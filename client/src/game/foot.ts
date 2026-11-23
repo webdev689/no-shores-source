@@ -217,7 +217,7 @@ export class Foot {
         throw error;
       }
       const text = nodeText(node, rect, ground, boxes, await context.land.grounds(node.id));
-      const link = connection ?? (await openNodeAlone(module, node.id, text, heard, arriving?.number));
+      const link = connection ?? (await openNodeAlone(module, node.id, text, heard, arriving?.number, seas));
       return { link, boxes, text, dungeon: null, seas };
     });
   }
@@ -449,8 +449,9 @@ export class Foot {
     const eye = { x: eyeX, y: eyeY, nearest };
     figures.push(...foes.cards(fight, forge, eye, clock, frameTicks, tickSeconds, effects.flashes, foeFeel));
     // The player's own shots leave the weapon as drawn: the first person's muzzle, or the figure's along its shot.
-    const [muzzle, gearNow, floor] = [walker.muzzle, this.gear?.gear ?? null, this.floor];
-    const marked = markedHere(gearNow, countersOf(this.node), floor, this.context.trips.props(), this.context.speak);
+    const [muzzle, gearNow, floor, doors] = [walker.muzzle, this.gear?.gear ?? null, this.floor, this.held.entrances];
+    const { trips, speak } = this.context;
+    const marked = markedHere(gearNow, countersOf(this.node), floor, trips.props(), speak, doors.entrances);
     const lit = litMarksSeen(marked, shot.eye, clock);
     const hidden = marksHidden(marked, shot.eye, clock);
     const laid = (gearNow?.drops ?? []).filter((drop) => drop.kind !== DROPPED.chest);
@@ -528,7 +529,6 @@ export class Foot {
     const placeUse = this.uses?.(x, y, (asked) => fight.askGear(asked)) ?? null;
     const { mounted } = walker.player;
     const counters = countersOf(this.node);
-    const { trips, speak } = this.context;
     const chest = this.publicView.use(chests, feet, (asked) => fight.askGear(asked), clock);
     this.using = able ? (chest ?? useOnFoot(x, y, placeUse, counters, gear, here, trips, speak, mounted)) : null;
     // Use let go, as bound (a key, the pad's button, or the page's focus lost): a gather under way is let go of.

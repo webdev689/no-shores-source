@@ -112,6 +112,47 @@ test("a node's room in the worker keeps the player's gear as the same room in th
   worker.close();
 });
 
+/** A patrol zone on Saltmere's island, 400 m square round its spawns, on level land 10 m up. */
+function patrol(): string {
+  const node = JSON.parse(glade()) as Record<string, unknown>;
+  const ring = [
+    [-200, -200],
+    [200, -200],
+    [200, 200],
+    [-200, 200],
+  ];
+  const spawns = [
+    [0, 180],
+    [15, 185],
+  ];
+  return JSON.stringify({ ...node, id: 'downs', kind: 'patrol', continent: 'continent-1', ring, spawns });
+}
+
+test("a patrol played alone stands its garrison at the voyage's seas, as the server's room does", async () => {
+  joinedPort();
+  const levels = (snapshots: readonly Snapshot[]) =>
+    (snapshots.find((snapshot) => snapshot.foes.length > 0)?.foes ?? []).map((foe) => foe.level);
+  const [normal, elite, worker]: Snapshot[][] = [[], [], []];
+  const plain = LocalRoom.openNode(compiled, patrol(), (snapshot) => normal.push(snapshot));
+  const raised = LocalRoom.openNode(compiled, patrol(), (snapshot) => elite.push(snapshot), false, { seas: 1 });
+  const thread = await RoomThread.openNode(compiled, patrol(), (snapshot) => worker.push(snapshot), false, {
+    seas: 1,
+  });
+  for (let frame = 0; frame < 4; frame++) {
+    plain.pump(0.05);
+    raised.pump(0.05);
+    thread.pump(0.05);
+    await settled();
+  }
+  await until(() => levels(worker).length > 0);
+  const plainLevels = levels(normal);
+  assert.ok(plainLevels.length > 0, 'the garrison stands');
+  const raisedEach = levels(elite).every((level, index) => level > (plainLevels[index] ?? level));
+  assert.ok(raisedEach && levels(elite).length === plainLevels.length, 'each foe raised at the elite seas');
+  assert.deepEqual(levels(worker), levels(elite), "the worker's room as the page's");
+  thread.close();
+});
+
 test('a room that cannot open says why, and the game hears it as a failed opening', async () => {
   joinedPort();
   await assert.rejects(

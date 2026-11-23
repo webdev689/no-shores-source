@@ -108,9 +108,10 @@ export class LocalRoom implements RoomLink {
   }
 
   /** Opens a node's room from its file's text (as the bake writes it) from the compiled `room-wasm` module, its player
-   *  joined at its first spawn, or before entrance `entrance`'s door; the player's own gear goes to `gear`. With
-   *  `foeAsks` the player may ask it for foes, to try a fight on the node's land; with `minuteShift` its clock stands
-   *  that many minutes ahead, and `play` plays it (a dev page's alone). */
+   *  joined at its first spawn, or before entrance `entrance`'s door; the player's own gear goes to `gear`. Its
+   *  garrison stands at the voyage's `seas` (0 Normal, 1 Elite, 2 Abyss), as the server's room does. With `foeAsks`
+   *  the player may ask it for foes, to try a fight on the node's land; with `minuteShift` its clock stands that many
+   *  minutes ahead, and `play` plays it (a dev page's alone). */
   static openNode(
     module: WebAssembly.Module,
     nodeText: string,
@@ -119,17 +120,19 @@ export class LocalRoom implements RoomLink {
     {
       gear = () => undefined,
       entrance,
+      seas = 0,
       minuteShift = 0,
       play = null,
     }: {
       gear?: (gear: GearMessage) => void;
       entrance?: number;
+      seas?: number;
       minuteShift?: number;
       play?: RoomPlay | null;
     } = {},
   ): LocalRoom {
     const door = startRoomDoor(module);
-    if (!door.openNode(nodeText)) throw new Error('the place is not one a room can stand on');
+    if (!door.openNode(nodeText) || !door.difficulty(seas)) throw new Error('the place is not one a room can stand on');
     door.epoch(Date.now());
     if (foeAsks) door.takeFoeAsks();
     // An entrance the room does not have is an ordinary join, as the servers take it.

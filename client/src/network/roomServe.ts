@@ -12,6 +12,7 @@ export type Opening =
       readonly nodeText: string;
       readonly foeAsks: boolean;
       readonly entrance: number | undefined;
+      readonly seas: number;
     }
   | { readonly how: 'dungeon'; readonly patrolText: string; readonly number: number }
   | { readonly how: 'run'; readonly ask: string; readonly patrolText: string }
@@ -106,8 +107,8 @@ export function serveRooms(say: (told: FromRooms) => void): (told: ToRooms) => v
     // Each word on the player's gear, before its tick's snapshot, as the room gives them.
     const gear = (said: GearMessage) => say({ kind: 'gear', id, gear: said });
     if (opening.how === 'node') {
-      const { nodeText, foeAsks, entrance } = opening;
-      return LocalRoom.openNode(module, nodeText, snapshot, foeAsks, { gear, entrance });
+      const { nodeText, foeAsks, entrance, seas } = opening;
+      return LocalRoom.openNode(module, nodeText, snapshot, foeAsks, { gear, entrance, seas });
     }
     if (opening.how === 'dungeon')
       return LocalRoom.openDungeon(module, opening.patrolText, opening.number, snapshot, gear);
