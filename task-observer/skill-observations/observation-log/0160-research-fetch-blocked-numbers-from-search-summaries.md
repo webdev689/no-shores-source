@@ -9,7 +9,7 @@ target_file: ["bible/03-Code/Toolkit.md"]
 siblings_checked: "checked: Toolkit.md's Web research row lists the sites that refuse WebFetch (reddit, GameSpot, GameFAQs, dotesports, fandom) but not that a cloud session's proxy may refuse every fetch; the brief template has no line for source quality. Instance-general: any delegated research."
 area: "delegated web research in a cloud session"
 date: 2026-11-23
-session_context: "The balance and economy pass after Destiny 1 vanilla: a background research agent gathered D1's numbers (XP, Light, marks, engrams, Ascendant materials, Xur). It reported that destinypedia, destinygamewiki, the fandom mirrors, kotaku, bungie.net and web.archive.org all failed to fetch, so each number was a search engine's summary of the cited page. Its brief asked for a confidence tag per number, which caught it; without that line the report would have read as page-checked."
+session_context: "The balance and economy pass after Destiny 1 vanilla: a background research agent gathered D1's numbers (XP, Light, marks, engrams, Ascendant materials, Xur). It reported that destinypedia, destinygamewiki, the fandom mirrors, kotaku, bungie.net and web.archive.org all failed to fetch, so each number was a search engine's summary of the cited page. Its brief asked for a confidence tag per number, which caught it; without that line the report would have read as page-checked.; worker shape: origin/main was 13 commits behind its base, so it reviewed 8d698c1f~1..8d698c1f by hand; worker breach likewise"
 parked_until:
 resolved:
 resolution:
@@ -27,3 +27,5 @@ summary-only numbers as unchecked in what is recorded.
 
 **Principle:** When a researcher cannot reach its sources, the report must say how each fact was obtained; ask for
 that in the brief, since a delegate's summary flattens "read" and "was told" into the same confident line.
+
+**Instance (2026-11-23, workers shape and breach):** each found `origin/main` far behind its fork point and reviewed a hand-picked range instead. Shape also ran `cargo test` over four crates past the 600 s foreground limit twice while sharing CPUs, and had to background it.

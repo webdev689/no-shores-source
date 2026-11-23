@@ -9,3 +9,5 @@
 - Proposed change: the brief template says the Serena steps apply to Rust and TypeScript files; for Python, read with
   Read/Grep and edit with Edit. Or add python to serena-languages.sh when tools/ holds .py files the item changes.
 - Status: open
+
+**Instance (2026-11-23, worker fpforge):** Serena's get_symbols_overview failed on `tools/forge/tools/sprite-forge/fplayers.py` (no Python language server), so the worker used Read and Edit. `graphify explain` found the file only by its bare name (`fplayers.py`); the path form the brief gave found no node. Briefs that name a Python file for graphify should give its bare name.
