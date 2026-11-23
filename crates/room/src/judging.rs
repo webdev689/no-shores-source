@@ -58,6 +58,10 @@ pub enum EventKind {
     ReckoningLanded = 30,
     BossWoke = 31,
     RelicDrained = 32,
+    /// An Ascent's drowned floor harmed a player, told to them alone (the amount the share it took); the warded Boss's
+    /// slam landed (the amount how many it struck), told to every player.
+    Drowned = 33,
+    BossSlammed = 34,
 }
 
 /// How a blow was struck, for the words a client shows: an Atheric's leap from one foe to the next, its burst round

@@ -98,6 +98,8 @@ test('between events the banner is one line, with what runs elsewhere under it',
   assert.ok(words.includes('Raid at Gullwing Vale'));
   assert.ok(!words.includes('3 / 12 shards'), 'no bar between events');
   assert.ok(laidOf(banner.node(1280, 1) as Node).length > 0, 'it lays out');
+  const line = banner.node(1280, 1) as Node;
+  assert.deepEqual([line.width, line.maxWidth], ['fit', 440], 'as wide as its words, no wider than the banner');
 });
 
 test('the banner reads out its beats, and never its ticking clocks', () => {

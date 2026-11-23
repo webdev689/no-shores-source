@@ -37,8 +37,8 @@ export interface Banner {
 export type BannerBeat = 'begun' | 'stage' | 'heroic' | 'missed' | 'won' | 'failed' | 'chance' | 'soon';
 
 /** What the display shows of the zone's public event this frame: its banner and the beat it slides in for, the
- *  places the compass marks, each store's health over it while a raid runs (struck: under attack), and the least
- *  mood it holds the music to. */
+ *  places the compass marks, each store's health over it while a raid runs (struck: under attack), the least mood it
+ *  holds the music to, and an Elite Dungeon's Court the part its Boss's score plays (by its wards broken). */
 export interface PublicShown {
   readonly banner: Banner | null;
   readonly beat: BannerBeat | null;
@@ -49,6 +49,7 @@ export interface PublicShown {
     readonly struck?: boolean;
   }[];
   readonly mood?: 'tension' | 'peak' | null;
+  readonly part?: number;
 }
 
 /** How high over a store's foot its bar stands, metres: over its stack and tarp (1.6 m), as a plate over a head. */
@@ -215,8 +216,10 @@ export class PublicBanner {
             !!banner.elsewhere && line({ words: banner.elsewhere, colour: TONES.wordDim }),
           ];
     return {
-      // Short, its two lines take the whole share of the view, so neither wraps.
-      width: Math.round((short && !next ? WIDTH.share * room : Math.min(WIDTH.most, WIDTH.share * room)) * zoom),
+      // Short, its two lines take the whole share of the view, so neither wraps. The line between events (or between
+      // an Elite Dungeon's seals) is as wide as its words, no wider than the banner.
+      width: next ? 'fit' : Math.round((short ? WIDTH.share * room : Math.min(WIDTH.most, WIDTH.share * room)) * zoom),
+      maxWidth: Math.round(Math.min(WIDTH.most, WIDTH.share * room) * zoom),
       direction: 'column',
       padding: next || short ? [4 * zoom, 12 * zoom, 4 * zoom, 10 * zoom] : [6 * zoom, 12 * zoom, 7 * zoom, 14 * zoom],
       outline: { width: zoom, colour: this.flare(tone, since, still) ?? TONES.outline },

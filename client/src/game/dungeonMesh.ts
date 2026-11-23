@@ -27,6 +27,7 @@ export const COLOUR = {
   crystal: -7,
   fungus: -8,
   water: -9,
+  foulWater: -10,
 } as const;
 /** The textures' ironwork (archive 93), for the torches' brackets and the cache's bands. */
 export const IRON: Picture = [93, 0];

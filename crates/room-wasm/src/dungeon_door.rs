@@ -165,7 +165,8 @@ pub fn dungeon_json(text: &[u8]) -> String {
 /// An Elite Dungeon's encounters as JSON: each seal's kind (1 the Litany, 2 the Weighing, 3 the Ascent, 4 the
 /// Holdfast), its room, its pieces (x, y, z: runes in the order they light, plates, the seal stone or the relic), its
 /// pads (min x, min y, max x, max y, top), the cells its drowned floor covers and its doorways' middles; the Court's
-/// anchors (x, y, z); and how near a piece's middle a player stands on it (m), as the room judges it.
+/// anchors (x, y, z); and how near a piece's middle a player stands on it, and how far round the warded Boss its slam
+/// reaches (m), as the room judges it.
 fn encounters_json(plan: &room::encounter_plan::EncounterPlan) -> Value {
     let seals: Vec<Value> = plan
         .seals
@@ -192,6 +193,7 @@ fn encounters_json(plan: &room::encounter_plan::EncounterPlan) -> Value {
             "relic": room::encounter_plan::RELIC_RING_M,
             "anchor": room::encounters::court::ANCHOR_REACH_M,
             "light": room::encounters::court::LIGHT_REACH_M,
+            "slam": room::encounters::court::SLAM_M,
         },
     })
 }
@@ -302,24 +304,24 @@ mod tests {
         assert_eq!(format!("{hash:016x}"), format!("{AGREED_HASH:016x}"));
     }
 
-    /// Every Elite Dungeon's ask, as the browser's agreement test makes them too, and the FNV-1a hash of their
-    /// answers' text one after another, each with its encounters: an Elite Dungeon's plan is these bytes anywhere.
+    /// Every Elite Dungeon's ask, as the browser's agreement test makes them too.
     fn elite_asks() -> Vec<String> {
         gear::activities::elite_dungeons()
             .map(|elite| format!(r#"{{"place":"{}","name":"{}"}}"#, elite.id, elite.id))
             .collect()
     }
-    const ELITE_HASH: u64 = 0x2535_1a6c_0521_7df4;
 
+    /// The 18 answers laid natively, each with its encounters, written for the browser's agreement test
+    /// (client/src/rules/dungeonRules.test.ts), which lays them through WebAssembly and compares them field by field.
     #[test]
-    fn every_elite_dungeon_answers_its_encounters_as_the_bytes_the_browser_checks() {
+    fn every_elite_dungeon_answers_its_encounters_and_writes_them_for_the_browser() {
         let asks = elite_asks();
         assert_eq!(asks.len(), 18);
-        let hash = asks
-            .iter()
-            .flat_map(|ask| dungeon_json(ask.as_bytes()).into_bytes())
-            .fold(0xcbf2_9ce4_8422_2325_u64, |hash, byte| (hash ^ u64::from(byte)).wrapping_mul(0x0100_0000_01b3));
-        assert_eq!(format!("{hash:016x}"), format!("{ELITE_HASH:016x}"));
+        let answers: Vec<Value> =
+            asks.iter().map(|ask| serde_json::from_str(&dungeon_json(ask.as_bytes())).unwrap()).collect();
+        let folder = concat!(env!("CARGO_MANIFEST_DIR"), "/../../target/room-wasm");
+        std::fs::create_dir_all(folder).unwrap();
+        std::fs::write(format!("{folder}/elite_layouts.json"), Value::from(answers).to_string()).unwrap();
         for ask in &asks {
             let laid: Value = serde_json::from_str(&dungeon_json(ask.as_bytes())).unwrap();
             let seals = laid["encounters"]["seals"].as_array().unwrap();

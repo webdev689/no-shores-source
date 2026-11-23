@@ -3,8 +3,8 @@ import { test } from 'node:test';
 import { meshBuilder } from '../models/model.ts';
 import { SEAL_KIND, SEAL_STATE } from '../network/encounterMessages.ts';
 import type { DungeonLayout } from './dungeonLayout.ts';
-import { drownedNow, layEncounters, waterMesh } from './encounterMesh.ts';
-import { COLOUR } from './dungeonMesh.ts';
+import { drownedNow, layEncounters, PLATE, waterMesh } from './encounterMesh.ts';
+import { COLOUR, ROLE } from './dungeonMesh.ts';
 
 /** An Ascent of two pads over a room of two cells, and a Court of one anchor. */
 const layout = {
@@ -31,7 +31,7 @@ const layout = {
       },
     ],
     anchors: [[1.6, 1.6, 0]],
-    reach: { rune: 0.9, plate: 1, relic: 3, anchor: 1, light: 1.25 },
+    reach: { rune: 0.9, plate: 1, relic: 3, anchor: 1, light: 1.25, slam: 4 },
   },
 } as unknown as DungeonLayout;
 
@@ -52,16 +52,39 @@ test("an Ascent's pads stand to their tops in the room's stone, the last with it
   );
 });
 
-test("the drowned floor's water lies while its seal holds and is gone once it breaks", () => {
+test("the drowned floor's foul water lies while its seal holds and is gone once it breaks", () => {
   const holding = { seals: [{ kind: SEAL_KIND.ascent, state: SEAL_STATE.running, progress: 0, marks: [0], relic: 1 }] };
   const broken = { seals: [{ ...holding.seals[0]!, state: SEAL_STATE.broken }] };
   assert.deepEqual(drownedNow(layout, holding as never), [0]);
   assert.deepEqual(drownedNow(layout, broken as never), []);
   const water = waterMesh(layout, [0]);
   assert.ok(
-    water?.parts.every((part) => part.archive === COLOUR.water),
-    'still water',
+    water?.parts.every((part) => part.archive === COLOUR.foulWater),
+    "foul water, not the dungeon's plain still water",
   );
   assert.equal(water?.indices.length, 12, 'one face over each drowned cell');
   assert.equal(waterMesh(layout, []), null);
+});
+
+test("a Weighing's plates stand as raised slabs of its room's stone, and a Litany's runes lay none", () => {
+  const plates = (kind: number) => {
+    const seal = { kind, room: 0, pieces: [[1.6, 1.6, 0]], pads: [], drowned: [], doors: [] };
+    const mesh = meshBuilder();
+    layEncounters(mesh, { ...layout, encounters: { ...layout.encounters!, seals: [seal], anchors: [] } });
+    const model = mesh.model();
+    return Array.from({ length: model.positions.length / 3 }, (unused, index) => model.positions[index * 3 + 2]);
+  };
+  assert.ok(
+    plates(SEAL_KIND.weighing).some((height) => Math.abs((height ?? 0) - PLATE.height) < 1e-6),
+    'raised to its height',
+  );
+  assert.equal(plates(SEAL_KIND.litany).length, 0, 'a rune is only its mark on the floor');
+});
+
+test("a plate is all of its room's trim, never the floor's own picture, so it stands apart from the floor", () => {
+  const seal = { kind: SEAL_KIND.weighing, room: 0, pieces: [[1.6, 1.6, 0]], pads: [], drowned: [], doors: [] };
+  const mesh = meshBuilder();
+  layEncounters(mesh, { ...layout, encounters: { ...layout.encounters!, seals: [seal], anchors: [] } });
+  const records = new Set(mesh.model().parts.map((part) => part.record));
+  assert.deepEqual([...records], [ROLE.trim]);
 });

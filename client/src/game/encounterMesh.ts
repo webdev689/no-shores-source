@@ -1,6 +1,8 @@
 // An Elite Dungeon's encounters as stone and water: each Ascent's pads in its room's own dressed stone, a band of trim
-// round each top and the seal stone glowing on the last; a slab under each of the Court's anchors and a crystal over
-// each Holdfast's relic; and, while an Ascent's seal holds, the dungeon's still water over its drowned floor. The
+// round each top and the seal stone glowing on the last; each Weighing's plates as raised slabs of its room's trim, a
+// stone apart from a rune's mark on the floor; a slab under each of the Court's anchors and a crystal over
+// each Holdfast's relic; and, while an Ascent's seal holds, foul water over its drowned floor, tinted apart from the
+// dungeon's plain still water as the floor that harms. The
 // pads are the blocks the room's bodies climb, laid where the room lays them (`room_dungeon`).
 import { type ForgedModel, type MeshBuilder, meshBuilder } from '../models/model.ts';
 import { type EncounterSeen, SEAL_KIND, SEAL_STATE } from '../network/encounterMessages.ts';
@@ -12,6 +14,8 @@ import { box, COLOUR, face, lookOf, ROLE } from './dungeonMesh.ts';
 const PAD_TRIM_M = 0.08;
 const STONE = { inset: 0.35, height: 0.06 } as const;
 const SLAB = { half: 0.6, height: 0.03 } as const;
+/** A Weighing's plate: a slab as wide as a body standing on it is held, raised under a step. */
+export const PLATE = { half: 0.8, height: 0.06, rim: 0.1 } as const;
 const RELIC = { half: 0.18, low: 1.9, high: 2.6 } as const;
 /** How far over the floor the drowned floor's water lies (m): over the floor's own face, under a body's step. */
 const WATER_M = 0.04;
@@ -21,8 +25,8 @@ function setOf(layout: DungeonLayout, room: number): number {
   return lookOf(layout, room, layout.rooms[room]?.look ?? 0).set;
 }
 
-/** Lays the encounters' standing pieces into the dungeon's mesh: each Ascent's pads, each anchor's slab and each
- *  Holdfast's crystal. */
+/** Lays the encounters' standing pieces into the dungeon's mesh: each Ascent's pads, each Weighing's plates, each
+ *  anchor's slab and each Holdfast's crystal. */
 export function layEncounters(mesh: MeshBuilder, layout: DungeonLayout): void {
   const plan = layout.encounters;
   if (!plan) return;
@@ -37,6 +41,13 @@ export function layEncounters(mesh: MeshBuilder, layout: DungeonLayout): void {
         box(mesh, [COLOUR.crystal, 0], [minX + low, minY + low, top], [maxX - high, maxY - high, top + STONE.height]);
       }
     });
+    if (seal.kind === SEAL_KIND.weighing)
+      for (const [x, y] of seal.pieces) {
+        // All of it the room's trim, not its floor's picture, so the slab stands apart from the floor round it.
+        const [low, high] = [PLATE.half, PLATE.half - PLATE.rim];
+        box(mesh, [set, ROLE.trim], [x - low, y - low, 0], [x + low, y + low, PLATE.height / 2]);
+        box(mesh, [set, ROLE.trim], [x - high, y - high, PLATE.height / 2], [x + high, y + high, PLATE.height]);
+      }
     const [relic] = seal.pieces;
     if (seal.kind === SEAL_KIND.holdfast && relic) {
       const [x, y] = relic;
@@ -71,7 +82,7 @@ export function drownedNow(layout: DungeonLayout, seen: EncounterSeen | null): n
   );
 }
 
-/** The still water over the drowned floors of `drowned` (`drownedNow`), each cell its own face over its room's set's
+/** The foul water over the drowned floors of `drowned` (`drownedNow`), each cell its own face over its room's set's
  *  floor; null for none. */
 export function waterMesh(layout: DungeonLayout, drowned: readonly number[]): ForgedModel | null {
   const seals = layout.encounters?.seals ?? [];
@@ -83,7 +94,13 @@ export function waterMesh(layout: DungeonLayout, drowned: readonly number[]): Fo
     const set = setOf(layout, seal.room);
     for (const cell of seal.drowned) {
       const [x, y] = [(cell % layout.columns) * layout.cell, Math.floor(cell / layout.columns) * layout.cell];
-      face(mesh, [COLOUR.water, set], cornersAt(x, y, x + layout.cell, y + layout.cell, WATER_M), [0, 0, 1], WATER_M);
+      face(
+        mesh,
+        [COLOUR.foulWater, set],
+        cornersAt(x, y, x + layout.cell, y + layout.cell, WATER_M),
+        [0, 0, 1],
+        WATER_M,
+      );
     }
   }
   return mesh.model();

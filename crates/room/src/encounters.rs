@@ -9,8 +9,8 @@ use crate::{EventKind, PlayerId, Room};
 use ::foes::Rank;
 use combat::fighter::FighterId;
 
-/// How many foes a wave stands: one for each player in the run, two at the fewest and four at the most; and the most
-/// of a seal's foes that stand at once, so a wave left alone never fills the dungeon.
+/// How many foes a wave stands: one for each living player it is stood against, two at the fewest and four at the most;
+/// and the most of a seal's foes that stand at once, so a wave left alone never fills the dungeon.
 pub const WAVE_FOES: (usize, usize) = (2, 4);
 pub const WAVE_LIVING_MOST: usize = 8;
 /// The waves' draws are made on a stream of their own, so drawing them moves no garrison draw.
@@ -25,8 +25,9 @@ pub enum SealState {
 }
 
 /// A seal as it stands: how long it has been held (a Litany: how many runes stepped in order), when its Litany's show
-/// begins again, which of its pieces were stood on last tick and the tick each was last stood on, its relic's strength
-/// (1 whole), when its next wave comes, its waves' foes and how many waves it has stood.
+/// begins again, which of its pieces were stood on last tick (an Ascent: whether each living player in its room stands
+/// on its stone) and the tick each was last stood on, its relic's strength (1 whole), when its next wave comes, its
+/// waves' foes and how many waves it has stood; and a Litany's last right step and its last wrong rune with its tick.
 #[derive(Clone, Debug, PartialEq)]
 pub(crate) struct Seal {
     pub state: SealState,
@@ -38,6 +39,8 @@ pub(crate) struct Seal {
     pub next_wave: u64,
     pub waves: Vec<FighterId>,
     pub stood: u64,
+    pub last_step: u64,
+    pub wrong: Option<(usize, u64)>,
 }
 
 impl Seal {
@@ -52,20 +55,29 @@ impl Seal {
             next_wave: 0,
             waves: Vec::new(),
             stood: 0,
+            last_step: 0,
+            wrong: None,
         }
     }
 }
 
-/// The Court as it stands: when its Boss woke, how many wards it has broken, whether one is up now and was told, how
-/// long each anchor has been stood on, when the Reckonings began, and when Fury was last weighed from.
+/// The Court as it stands: when its Boss woke, how many wards it has broken, whether one is up now and was told, when
+/// it rose and how many waves it has stood, how long each anchor has been stood on and when each last was, when the
+/// Reckonings began, when Fury's clock began (a living player first in the end room), and whether the Boss's health
+/// was made a match for the company.
 #[derive(Clone, Debug, Default, PartialEq)]
 pub(crate) struct Court {
     pub woke_at: Option<u64>,
     pub wards_broken: usize,
     pub ward_up: bool,
     pub ward_told: bool,
+    pub ward_at: u64,
+    pub ward_waves: usize,
     pub anchors: Vec<u64>,
+    pub anchors_left: Vec<u64>,
     pub reckoning_from: Option<u64>,
+    pub fury_from: Option<u64>,
+    pub matched: bool,
 }
 
 /// An Elite Dungeon's encounters: its plan, each seal's state, the Court's, and the levels its waves stand at.
@@ -75,15 +87,23 @@ pub(crate) struct Encounters {
     pub seals: Vec<Seal>,
     pub court: Court,
     pub levels: Option<(u8, u8)>,
-    /// The end room's cells, where the Court is fought and the Reckoning reaches.
+    /// The end room's cells, where the Court is fought and Fury's clock starts; and the cells the Reckoning reaches,
+    /// those and the rooms and corridors sharing a doorway with it (`court::reckoning_reach`).
     pub court_cells: Vec<usize>,
+    pub reckoning_cells: Vec<usize>,
+}
+
+impl Court {
+    fn of(anchors: usize) -> Self {
+        Self { anchors: vec![0; anchors], anchors_left: vec![0; anchors], ..Self::default() }
+    }
 }
 
 impl Encounters {
     pub(crate) fn new(plan: EncounterPlan, levels: Option<(u8, u8)>) -> Self {
         let seals = plan.seals.iter().map(|seal| Seal::waiting(seal.pieces.len())).collect();
-        let court = Court { anchors: vec![0; plan.anchors.len()], ..Court::default() };
-        Self { plan, seals, court, levels, court_cells: Vec::new() }
+        let court = Court::of(plan.anchors.len());
+        Self { plan, seals, court, levels, court_cells: Vec::new(), reckoning_cells: Vec::new() }
     }
 
     /// Whether every seal is broken.
@@ -93,8 +113,8 @@ impl Encounters {
 }
 
 /// One seal as a snapshot carries it: its kind, its state, its progress per mille, its pieces' marks (a Litany's runes
-/// 0 dark, 1 showing, 2 stepped in order; a Weighing's plates in play, an Ascent's stone and a Holdfast's ring 0 or 1
-/// stood on) and its relic's strength per mille.
+/// 0 dark, 1 showing, 2 stepped in order, 3 stepped wrong a moment ago; a Weighing's plates in play and a Holdfast's
+/// ring 0 or 1 stood on; an Ascent's players on its stone and living in its room) and its relic's strength per mille.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct SealSeen {
     pub kind: u8,
@@ -106,7 +126,9 @@ pub struct SealSeen {
 
 /// An Elite Dungeon's encounters as a snapshot carries them: each seal; whether the Boss is awake and its number;
 /// the ward up (0 none, 1 at two thirds, 2 at one third) and how many are broken; each anchor's progress per mille;
-/// the ticks until a Reckoning lands (0 while none is coming) and at which anchor; and Fury's step.
+/// the ticks until a Reckoning lands (0 while none is coming) and at which anchor; Fury's step; the ticks until Fury
+/// begins while its clock runs (0 before and after); and the ticks until the warded Boss's slam lands (0 while none
+/// is shown).
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct EncounterSeen {
     pub seals: Vec<SealSeen>,
@@ -118,6 +140,8 @@ pub struct EncounterSeen {
     pub reckoning_ticks: u32,
     pub reckoning_at: u8,
     pub fury: u8,
+    pub fury_ticks: u32,
+    pub slam_ticks: u32,
 }
 
 /// A share of a whole as per mille.
@@ -206,6 +230,11 @@ impl Room {
         self.tell_all(EventKind::SealBroken, broken as f64);
     }
 
+    /// The living players in the run.
+    pub(crate) fn living_players(&self) -> usize {
+        self.players.values().filter(|found| found.living()).count()
+    }
+
     /// The living players standing in a room's cells: each its id, where its feet are and whether it stands on the
     /// ground.
     pub(crate) fn players_in(&self, plan: &EncounterPlan, cells: &[usize]) -> Vec<(PlayerId, [f64; 3], bool)> {
@@ -220,20 +249,22 @@ impl Room {
             .collect()
     }
 
-    /// A wave of the dungeon's own foes, one for each player in the run (WAVE_FOES), at `spots` in turn, each hunting
+    /// A wave of the dungeon's own foes, one for each of `living` players (WAVE_FOES), at `spots` in turn, each hunting
     /// the living player nearest it; none while the room or the seal has no room for them.
     pub(crate) fn stand_seal_wave(
         &mut self,
         encounters: &mut Encounters,
         seal: Option<usize>,
         spots: &[[f64; 2]],
+        living: usize,
     ) -> usize {
-        let count = self.players.len().clamp(WAVE_FOES.0, WAVE_FOES.1);
+        let count = living.clamp(WAVE_FOES.0, WAVE_FOES.1);
         self.stand_foes(encounters, seal, spots, count)
     }
 
     /// `count` of the dungeon's own Major and Elite foes at `spots` in turn, hunting the nearest living player; their
-    /// number. A seal's waves are kept to WAVE_LIVING_MOST living at once.
+    /// number. A seal's waves are kept to WAVE_LIVING_MOST living at once. They drop nothing, as a defence tried again
+    /// stands foes that drop nothing: an encounter's foes come again, and its seal and cache are its reward.
     pub(crate) fn stand_foes(
         &mut self,
         encounters: &mut Encounters,
@@ -284,6 +315,7 @@ impl Room {
         let posted = self.garrison.len() - 1;
         self.stand_post(posted);
         let ids = self.garrison[posted].standing.clone();
+        self.quests.spoilless.extend(&ids);
         self.hunt_nearest(&ids);
         if let Some(seal) = seal.and_then(|seal| encounters.seals.get_mut(seal)) {
             seal.waves.extend(&ids);
@@ -331,7 +363,7 @@ impl Room {
             seal.waves.clear();
         }
         let unsealed = encounters.unsealed();
-        encounters.court = Court { anchors: vec![0; encounters.plan.anchors.len()], ..Court::default() };
+        encounters.court = Court::of(encounters.plan.anchors.len());
         if unsealed {
             encounters.court.woke_at = Some(self.clock);
         } else {
@@ -343,6 +375,7 @@ impl Room {
     #[must_use]
     pub fn encounter_seen(&self) -> Option<EncounterSeen> {
         let encounters = self.encounters.as_ref()?;
+        let living_in = |plan: &crate::encounter_plan::SealPlan| self.players_in(&encounters.plan, &plan.cells).len();
         let seals = encounters
             .plan
             .seals
@@ -352,7 +385,7 @@ impl Room {
                 kind: plan.kind as u8,
                 state: seal.state as u8,
                 progress: per_mille(self.seal_progress(plan, seal)),
-                marks: self.seal_marks(plan, seal),
+                marks: self.seal_marks(plan, seal, living_in(plan)),
                 relic: per_mille(seal.relic),
             })
             .collect();
@@ -368,6 +401,8 @@ impl Room {
             reckoning_ticks,
             reckoning_at,
             fury: self.fury_step(),
+            fury_ticks: self.fury_ticks(),
+            slam_ticks: self.slam_seen(),
         })
     }
 }

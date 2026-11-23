@@ -113,6 +113,8 @@ export interface Hearing {
   readonly story?: StoryHeard;
   /** The least mood a public event holds the player to, on its ground while it runs. */
   readonly least?: Mood;
+  /** An Elite Dungeon's Court: the part its Boss's score plays, by its wards broken, short of its last stand. */
+  readonly part?: number;
 }
 
 /** The ranks: an Elite and a Miniboss bring the peak, a Boss its own score. */
@@ -301,6 +303,13 @@ export function bossPart(health: number): BossPart {
   return health > 2 / 3 ? 1 : health > 1 / 3 ? 2 : 3;
 }
 
+/** A Boss's part: by its wards broken in an Elite Dungeon's Court (`part`, 1 to 3), else by its health; its last
+ *  stand by its health either way. */
+export function courtPart(byHealth: BossPart, part: number | undefined): BossPart {
+  if (byHealth === 'last' || part === undefined) return byHealth;
+  return part <= 1 ? 1 : part === 2 ? 2 : 3;
+}
+
 /** The sea's song for an encounter, the sea score's own law on the game's waters: its storm, its gravest arm, for two
  *  hostile ships or one of Elite rank or over; else its fight. Held for the whole encounter. */
 export function seaSongFor(sea: HeardSea): SeaSong {
@@ -383,7 +392,7 @@ export function hear(memory: Memory, hearing: Hearing, seconds: number, songs: S
   const seaSong = atSea && playing ? (memory.seaSong ?? seaSongFor(sea)) : null;
   const roam = roamOf(memory, clock, !playing && !boss, hearing, songs);
   let cue: Cue = { kind: 'none' };
-  if (boss) cue = { kind: 'boss', boss: boss.boss, part: bossPart(bossFoe?.health ?? 1) };
+  if (boss) cue = { kind: 'boss', boss: boss.boss, part: courtPart(bossPart(bossFoe?.health ?? 1), hearing.part) };
   else if (seaSong) cue = { kind: 'sea', song: seaSong };
   else if (roam.roaming) cue = roam.roaming.cue;
   else if (playing && story?.score) cue = { kind: 'boss', boss: story.score, part: 1 };

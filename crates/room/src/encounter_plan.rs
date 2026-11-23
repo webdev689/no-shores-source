@@ -13,18 +13,28 @@ pub const LITANY_RUNES: (usize, usize) = (4, 6);
 /// The plates of a Weighing, and how far apart each two stand at the least (m): two cells, so no body holds two.
 pub const PLATES: usize = 3;
 pub const PLATES_APART_M: f64 = 2.0 * CELL_M;
-/// An Ascent's pads: half a pad's side, how much higher each stands than the one before, the fewest and the most of
-/// them, and the room kept between a body's head on the top pad and the ceiling (m).
+/// An Ascent's pads: half a pad's side; the first's top, mantled from the dry doorway (within `TUNING.reach`); how
+/// much higher each next stands than the one before at the most, and how far every pad after the first stands over a
+/// mantle's reach from the floor at the least; the fewest and the most of them; the leap from each to the next, edge to edge along the line
+/// between their middles, the least and the most (m), which a run off the edge never crosses and a running jump does;
+/// and the room kept between a body's head on the top pad and the ceiling, and on any other pad, which a running jump
+/// (`TUNING.jump`, rising about half a metre) leaves from (m).
 pub const PAD_HALF_M: f64 = 0.8;
+pub const FIRST_PAD_TOP_M: f64 = 1.6;
 pub const PAD_RISE_M: f64 = 0.4;
-pub const ASCENT_PADS: (usize, usize) = (3, 6);
+pub const ASCENT_PADS: (usize, usize) = (4, 6);
+pub const PAD_OVER_REACH_M: f64 = 0.1;
+pub const LEAP_M: (f64, f64) = (4.4, 5.2);
 pub const HEAD_ROOM_M: f64 = 0.3;
+pub const JUMP_ROOM_M: f64 = 0.6;
 /// The Court's anchors round the end foe's post, and how far from the post each stands at the least (m).
 pub const ANCHORS: usize = 3;
 pub const ANCHOR_FROM_POST_M: f64 = 2.4;
-/// How far a piece's spot keeps from every solid, how far apart two runes stand at the least, and the reach of a
-/// Holdfast's ring round its relic (m).
+/// How far a piece's spot keeps from every solid, and from the middle of every prop and fixture (a brazier, candles),
+/// so none stands on a piece, how far apart two runes stand at the least, and the reach of a Holdfast's ring round
+/// its relic (m).
 pub const SPOT_CLEAR_M: f64 = 0.9;
+pub const PROP_CLEAR_M: f64 = 1.4;
 pub const RUNES_APART_M: f64 = 2.0;
 pub const RELIC_RING_M: f64 = 3.0;
 /// A quarter of a cell: a spot's offset from its cell's middle toward a corner.
@@ -126,14 +136,15 @@ fn walks(dungeon: &Dungeon) -> Vec<u32> {
     steps
 }
 
-/// What the plan reads of a dungeon: its cells' walks, the cells framed as doorways, those torches hang in, and every
-/// solid (`Dungeon::boxes`).
+/// What the plan reads of a dungeon: its cells' walks, the cells framed as doorways, those torches hang in, every
+/// solid (`Dungeon::boxes`), and where every prop and fixture stands.
 struct Reading<'laid> {
     dungeon: &'laid Dungeon,
     walks: Vec<u32>,
     doorways: Vec<usize>,
     torched: Vec<usize>,
     boxes: Vec<[f64; 5]>,
+    furnished: Vec<[f64; 2]>,
 }
 
 /// Squared distance between two points on the floor: compared squared, so no root is taken.
@@ -154,21 +165,25 @@ impl<'laid> Reading<'laid> {
             doorways: dungeon.frames.iter().map(|frame| frame.cell).collect(),
             torched: dungeon.torches.iter().map(|torch| cell_of([torch.at[0], torch.at[1]])).collect(),
             boxes: dungeon.boxes(),
+            furnished: (dungeon.props.iter().map(|prop| [prop.at[0], prop.at[1]]))
+                .chain(dungeon.fixtures.iter().map(|fixture| [fixture.at[0], fixture.at[1]]))
+                .collect(),
         }
     }
 
-    /// A room's cells a pad may stand on: no solid, no doorway, neither the way in's nor the portal's.
-    fn free(&self, room: usize) -> Vec<usize> {
+    /// A room's cells a pad may stand over: no doorway, no torch, neither the way in's nor the portal's. A pad keeps
+    /// clear of every solid itself (`ascent`).
+    fn padded(&self, room: usize) -> Vec<usize> {
         let (dungeon, door, portal) = (self.dungeon, self.dungeon.way_in.cell, self.dungeon.portal.cell);
-        let found = &dungeon.rooms[room];
         let open = |cell: &usize| {
-            !dungeon.holds_solid(*cell) && !self.doorways.contains(cell) && *cell != door && *cell != portal
+            !self.doorways.contains(cell) && !self.torched.contains(cell) && *cell != door && *cell != portal
         };
-        found.cells.iter().copied().filter(open).collect()
+        dungeon.rooms[room].cells.iter().copied().filter(open).collect()
     }
 
     /// The spots of a room a ring may lie on: each cell's middle and its four quarters' (neither the way in's cell nor
-    /// the portal's, nor a doorway's unless `doorways`), each SPOT_CLEAR_M from every solid.
+    /// the portal's, nor a doorway's unless `doorways`), each SPOT_CLEAR_M from every solid and PROP_CLEAR_M from
+    /// every prop's and fixture's middle.
     fn spots(&self, room: usize, doorways: bool) -> Vec<[f64; 2]> {
         let (dungeon, door, portal) = (self.dungeon, self.dungeon.way_in.cell, self.dungeon.portal.cell);
         let clear = |[x, y]: [f64; 2]| {
@@ -191,6 +206,7 @@ impl<'laid> Reading<'laid> {
             quarters.map(|(east, south)| [x + east, y + south])
         })
         .filter(|spot| clear(*spot))
+        .filter(|spot| self.furnished.iter().all(|at| apart(*at, *spot) >= PROP_CLEAR_M * PROP_CLEAR_M))
         .collect()
     }
 }
@@ -218,9 +234,22 @@ pub fn plan_encounters(dungeon: &Dungeon) -> EncounterPlan {
         let mut order: Vec<usize> = (0..rooms.len()).collect();
         order.sort_by_key(|&at| (at.abs_diff(target), at));
         let taken = |room: usize, seals: &[SealPlan]| seals.iter().any(|seal| seal.room == room);
-        let found = order.into_iter().map(|at| rooms[at]).filter(|&room| !taken(room, &seals)).find_map(|room| {
-            let left = kinds.iter().copied().filter(|kind| seals.iter().all(|seal| seal.kind != *kind));
-            left.collect::<Vec<_>>().into_iter().find_map(|kind| laid(&reading, &mut lane, kind, room))
+        // An Ascent first wherever a room of the stretch fits one, as the climb is the rarest fit; then any kind left
+        // in the nearest room that fits it.
+        // Never the first room of the walk where there are four or more, so the way in is not straight into a seal.
+        let stretch = (nth * rooms.len() / count).max(usize::from(rooms.len() >= 4))..(nth + 1) * rooms.len() / count;
+        let climbed = seals.iter().any(|seal| seal.kind == SealKind::Ascent);
+        let ascent = order
+            .iter()
+            .filter(|at| !climbed && stretch.contains(*at))
+            .map(|&at| rooms[at])
+            .filter(|&room| !taken(room, &seals))
+            .find_map(|room| laid(&reading, &mut lane, SealKind::Ascent, room));
+        let found = ascent.or_else(|| {
+            order.into_iter().map(|at| rooms[at]).filter(|&room| !taken(room, &seals)).find_map(|room| {
+                let left = kinds.iter().copied().filter(|kind| seals.iter().all(|seal| seal.kind != *kind));
+                left.collect::<Vec<_>>().into_iter().find_map(|kind| laid(&reading, &mut lane, kind, room))
+            })
         });
         if let Some(seal) = found {
             seals.push(seal);
@@ -239,7 +268,7 @@ fn laid(reading: &Reading, lane: &mut Lane, kind: SealKind, room: usize) -> Opti
         SealKind::Weighing => (plates(&spots)?, Vec::new(), Vec::new()),
         SealKind::Holdfast => (vec![relic(reading, room, &spots)?], Vec::new(), Vec::new()),
         SealKind::Ascent => {
-            let (pads, stone) = ascent(reading, room, &reading.free(room))?;
+            let (pads, stone) = ascent(reading, room)?;
             let cells = &reading.dungeon.rooms[room].cells;
             let drowned = cells.iter().copied().filter(|cell| !reading.doorways.contains(cell)).collect();
             (vec![stone], pads, drowned)
@@ -317,71 +346,166 @@ fn relic(reading: &Reading, room: usize, spots: &[[f64; 2]]) -> Option<[f64; 3]>
     nearest.into_iter().find(|spot| ringed(*spot)).map(on_floor)
 }
 
-/// An Ascent's pads and its seal stone: from the room's doorway nearest the way in, the longest line of the room's
-/// free cells one beside the next (no torch's), a pad on each, each PAD_RISE_M over the one before, the last under the
-/// room's lowest ceiling less a body's height and HEAD_ROOM_M; the stone on the last pad's top. None for fewer than
-/// the fewest pads.
-fn ascent(reading: &Reading, room: usize, free: &[usize]) -> Option<(Vec<Block>, [f64; 3])> {
+/// A pad's footprint: west, north, east and south edges (m).
+type Footprint = [f64; 4];
+
+/// How far apart two footprints stand edge to edge, squared.
+fn gap_squared(a: Footprint, b: Footprint) -> f64 {
+    let east = (a[0] - b[2]).max(b[0] - a[2]).max(0.0);
+    let south = (a[1] - b[3]).max(b[1] - a[3]).max(0.0);
+    east * east + south * south
+}
+
+/// Whether the leap from one footprint to the next, edge to edge along the line between their middles, is within
+/// LEAP_M; compared squared, so no root is taken.
+fn leaps(a: Footprint, b: Footprint) -> bool {
+    let middle = |pad: Footprint| [(pad[0] + pad[2]) / 2.0, (pad[1] + pad[3]) / 2.0];
+    let ([ax, ay], [bx, by]) = (middle(a), middle(b));
+    let (east, south) = ((bx - ax).abs(), (by - ay).abs());
+    // The share of the line between the middles each pad covers, out from its middle to its edge.
+    let out = |pad: Footprint| {
+        let (half_x, half_y) = ((pad[2] - pad[0]) / 2.0, (pad[3] - pad[1]) / 2.0);
+        match (east > 0.0, south > 0.0) {
+            (true, true) => (half_x / east).min(half_y / south),
+            (true, false) => half_x / east,
+            (false, true) => half_y / south,
+            (false, false) => 1.0,
+        }
+    };
+    let open = 1.0 - out(a) - out(b);
+    let leap_squared = (east * east + south * south) * open * open;
+    open > 0.0 && leap_squared >= LEAP_M.0 * LEAP_M.0 && leap_squared <= LEAP_M.1 * LEAP_M.1
+}
+
+/// Whether the way from one footprint's middle to the next's, as wide as a body and a hand besides, meets no solid: the
+/// dungeon's solids are walls to a body however high it leaps.
+fn open_air(a: Footprint, b: Footprint, boxes: &[[f64; 5]]) -> bool {
+    let middle = |pad: Footprint| [(pad[0] + pad[2]) / 2.0, (pad[1] + pad[3]) / 2.0];
+    let ([ax, ay], [bx, by]) = (middle(a), middle(b));
+    let wide = TUNING.radius + 0.1;
+    boxes.iter().all(|&[min_x, min_y, max_x, max_y, _]| {
+        // The share of the way inside the box's span on each axis, widened; the way meets it where all overlap.
+        let span = |from: f64, to: f64, low: f64, high: f64| {
+            let (low, high, run) = (low - wide, high + wide, to - from);
+            if run == 0.0 {
+                return if from >= low && from <= high { (0.0, 1.0) } else { (1.0, 0.0) };
+            }
+            let (first, second) = ((low - from) / run, (high - from) / run);
+            (first.min(second), first.max(second))
+        };
+        let ((east_in, east_out), (south_in, south_out)) = (span(ax, bx, min_x, max_x), span(ay, by, min_y, max_y));
+        east_in.max(south_in).max(0.0) > east_out.min(south_out).min(1.0)
+    })
+}
+
+/// An Ascent's pads and its seal stone. The first pad stands on a free cell beside the room's doorway nearest the way
+/// in, reaching back to that doorway so the way onto it crosses no water, its top FIRST_PAD_TOP_M; each next a leap
+/// away (LEAP_M) and every two at least the least leap apart, so no pad after the first is reached but by a running
+/// jump; each PAD_RISE_M over the one before, to under the room's lowest ceiling less a body's height and JUMP_ROOM_M,
+/// the last HEAD_ROOM_M.
+/// The stone stands on the last pad's top. None for fewer than the fewest pads, or a ceiling too low for the second
+/// pad to stand over a mantle's reach.
+fn ascent(reading: &Reading, room: usize) -> Option<(Vec<Block>, [f64; 3])> {
     let dungeon = reading.dungeon;
     let found = &dungeon.rooms[room];
     let lowest = found.cells.iter().map(|&cell| dungeon.ceilings[cell]).fold(f64::INFINITY, f64::min);
-    let under = lowest - TUNING.height - HEAD_ROOM_M;
-    let most = (1..=ASCENT_PADS.1).take_while(|&pads| pads as f64 * PAD_RISE_M <= under).last()?;
+    let (under, leapt_under) = (lowest - TUNING.height - HEAD_ROOM_M, lowest - TUNING.height - JUMP_ROOM_M);
+    if leapt_under < TUNING.reach + PAD_OVER_REACH_M {
+        return None;
+    }
     let start = found.cells.iter().copied().filter(|cell| reading.doorways.contains(cell)).min_by_key(|&cell| {
         (reading.walks[cell], cell) // the doorway a company comes in by
     })?;
-    let padded: Vec<usize> = free.iter().copied().filter(|cell| !reading.torched.contains(cell)).collect();
-    let mut best: Vec<usize> = Vec::new();
-    let mut path = Vec::new();
-    longest(dungeon, start, &padded, most, &mut path, &mut best);
+    let padded = reading.padded(room);
+    let clear = |pad: Footprint| {
+        reading.boxes.iter().all(|&[min_x, min_y, max_x, max_y, _]| {
+            max_x <= pad[0] || min_x >= pad[2] || max_y <= pad[1] || min_y >= pad[3]
+        })
+    };
+    let fits = |pad: Footprint| {
+        let on = |x: f64, y: f64| {
+            let cell = (y / CELL_M) as usize * dungeon.columns + (x / CELL_M) as usize;
+            x >= 0.0 && y >= 0.0 && padded.contains(&cell)
+        };
+        clear(pad) && on(pad[0], pad[1]) && on(pad[2], pad[1]) && on(pad[0], pad[3]) && on(pad[2], pad[3])
+    };
+    // Every pad's middle on a grid QUARTER_M apart over the room's cells, four a side to a cell.
+    let offsets = [-1.5 * QUARTER_M, -0.5 * QUARTER_M, 0.5 * QUARTER_M, 1.5 * QUARTER_M];
+    let spots: Vec<Footprint> = found
+        .cells
+        .iter()
+        .flat_map(|&cell| {
+            let [x, y] = dungeon.centre(cell);
+            offsets.into_iter().flat_map(move |east| offsets.map(|south| [x + east, y + south]))
+        })
+        .map(|[x, y]| [x - PAD_HALF_M, y - PAD_HALF_M, x + PAD_HALF_M, y + PAD_HALF_M])
+        .filter(|pad| fits(*pad))
+        .collect();
+    let mut best: Vec<Footprint> = Vec::new();
+    for side in SIDES {
+        let Some(first_cell) = dungeon.beside(start, side).filter(|cell| padded.contains(cell)) else { continue };
+        let ([start_x, start_y], [x, y]) = (dungeon.centre(start), dungeon.centre(first_cell));
+        let mut first = [x - PAD_HALF_M, y - PAD_HALF_M, x + PAD_HALF_M, y + PAD_HALF_M];
+        // Reaching back to the doorway's cell.
+        let edge = |from: f64, to: f64| (from + to) / 2.0;
+        match (x.total_cmp(&start_x), y.total_cmp(&start_y)) {
+            (core::cmp::Ordering::Greater, _) => first[0] = edge(start_x, x),
+            (core::cmp::Ordering::Less, _) => first[2] = edge(start_x, x),
+            (_, core::cmp::Ordering::Greater) => first[1] = edge(start_y, y),
+            _ => first[3] = edge(start_y, y),
+        }
+        if !clear(first) {
+            continue;
+        }
+        let mut path = vec![first];
+        let mut budget = LEAP_SEARCH;
+        leaping(&spots, &reading.boxes, &mut path, &mut best, &mut budget);
+    }
     if best.len() < ASCENT_PADS.0 {
         return None;
     }
-    let mut pads: Vec<Block> = best
+    let mut top = FIRST_PAD_TOP_M - PAD_RISE_M;
+    let pads: Vec<Block> = best
         .iter()
         .enumerate()
-        .map(|(nth, &cell)| {
-            let [x, y] = dungeon.centre(cell);
-            let top = (nth + 1) as f64 * PAD_RISE_M;
-            let (min_x, min_y, max_x, max_y) = (x - PAD_HALF_M, y - PAD_HALF_M, x + PAD_HALF_M, y + PAD_HALF_M);
+        .map(|(nth, &[min_x, min_y, max_x, max_y])| {
+            top = (top + PAD_RISE_M).min(if nth + 1 == best.len() { under } else { leapt_under });
             Block { min_x, min_y, max_x, max_y, top, bottom: dungeon::FLOOR_M }
         })
         .collect();
-    // The first pad reaches back to the doorway's cell, so the way onto it from the dry doorway crosses no water.
-    let ([start_x, start_y], [first_x, first_y]) = (dungeon.centre(start), dungeon.centre(*best.first()?));
-    let edge = |from: f64, to: f64| (from + to) / 2.0;
-    if let Some(first) = pads.first_mut() {
-        match (first_x.total_cmp(&start_x), first_y.total_cmp(&start_y)) {
-            (core::cmp::Ordering::Greater, _) => first.min_x = edge(start_x, first_x),
-            (core::cmp::Ordering::Less, _) => first.max_x = edge(start_x, first_x),
-            (_, core::cmp::Ordering::Greater) => first.min_y = edge(start_y, first_y),
-            _ => first.max_y = edge(start_y, first_y),
-        }
-    }
     let last = pads.last()?;
     let stone = [(last.min_x + last.max_x) / 2.0, (last.min_y + last.max_y) / 2.0, last.top];
     Some((pads, stone))
 }
 
-/// The longest line of `cells` one beside the next from `from`, `most` at the most; of two as long, the one ending
-/// farther from the start, then the first found.
-fn longest(dungeon: &Dungeon, from: usize, cells: &[usize], most: usize, path: &mut Vec<usize>, best: &mut Vec<usize>) {
-    let better = |path: &[usize], best: &[usize]| {
-        let far = |line: &[usize]| line.last().map_or(0.0, |&end| apart(dungeon.centre(end), dungeon.centre(from)));
-        path.len() > best.len() || (path.len() == best.len() && far(path) > far(best))
-    };
-    let here = path.last().copied().unwrap_or(from);
-    if better(path, best) {
+/// How many steps the search for an Ascent's leaps takes from each first pad at the most.
+const LEAP_SEARCH: usize = 20_000;
+
+/// The longest run of `spots` from `path`'s last, each a leap through open air from the one before and at least the
+/// least leap from every other, ASCENT_PADS' most at the most; of two as long, the first found.
+fn leaping(
+    spots: &[Footprint],
+    boxes: &[[f64; 5]],
+    path: &mut Vec<Footprint>,
+    best: &mut Vec<Footprint>,
+    budget: &mut usize,
+) {
+    if path.len() > best.len() {
         best.clone_from(path);
     }
-    if path.len() == most {
+    if path.len() == ASCENT_PADS.1 || best.len() == ASCENT_PADS.1 {
         return;
     }
-    for side in SIDES {
-        let Some(next) = dungeon.beside(here, side) else { continue };
-        if cells.contains(&next) && !path.contains(&next) {
+    let Some(&here) = path.last() else { return };
+    for &next in spots {
+        if *budget == 0 {
+            return;
+        }
+        *budget -= 1;
+        let apart = path.iter().all(|&pad| gap_squared(pad, next) >= LEAP_M.0 * LEAP_M.0);
+        if apart && leaps(here, next) && open_air(here, next, boxes) {
             path.push(next);
-            longest(dungeon, from, cells, most, path, best);
+            leaping(spots, boxes, path, best, budget);
             path.pop();
         }
     }

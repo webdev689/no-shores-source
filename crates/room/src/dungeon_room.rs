@@ -168,6 +168,7 @@ impl Room {
             let end = dungeon.rooms.get(dungeon.end()).map(|end| end.cells.clone()).unwrap_or_default();
             if let Some(encounters) = room.encounters.as_mut() {
                 encounters.court_cells = end;
+                encounters.reckoning_cells = crate::encounters::court::reckoning_reach(dungeon);
             }
         }
         Some(room)
