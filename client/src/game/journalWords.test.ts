@@ -63,7 +63,11 @@ test('the roads are cards: the one walked at its task from one, each done at its
     ],
     'the opening done, the house walked; the house not begun shows nothing',
   );
-  assert.equal(cards[0]?.tale, 'Hear all three houses before you choose. Start with the loudest. Me.', 'its opening line');
+  assert.equal(
+    cards[0]?.tale,
+    'Hear all three houses before you choose. Start with the loudest. Me.',
+    'its opening line',
+  );
   assert.deepEqual(
     questCardsOf(walking(1, 0, [0, 0, 0]), roads).map((card) => card.id),
     ['opening'],

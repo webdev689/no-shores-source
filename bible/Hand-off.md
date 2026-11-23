@@ -192,6 +192,14 @@ each part works is in its system note.
 
 The decisions in [[Open Questions]] are not repeated here.
 
+- **The writing pass** (#176, branch `ccr-c249af15-iwfmsb`, stacked on #172's `ccr-435c1d22-loawza` and merging
+  after it), for the owner's read and yes: every spoken line and all 33 lore chapters reworded, the new tutorial with
+  them, each speaker in a voice of their own within [[Dialogue]], and the lore given more detail and mysteries shown
+  and never explained ([[Every Line Reads as Spoken, and the Lore Is Detailed, Mysterious and Gripping]], every call
+  listed there). Ids, scene names, each scene's speakers in order and the puzzles' orders are kept, so no code
+  changes. Merging deploys the rooms too: `lore.json`, `quests.json` and `items.json` feed the protocol's version.
+  Tested offline: every scene held to the Dialogue rule's numbers, the lore's markup checked, `cargo xtask check` on
+  the head. Not yet read or heard in the game.
 - **The wreck's R2 tools after #172**, which no session may edit: `tools/wreck/wreck_level.py`'s waves still list the
   Tithe-Mates and Bosuns at rank 1; to match `content/prologue/wreck.json` each `(11, 1, ...)` becomes `(11, 2, ...)`
   and each `(10, 1, ...)` `(10, 2, ...)`, and `export_wreck.py` should write the quiet deck's `masts` (added to
