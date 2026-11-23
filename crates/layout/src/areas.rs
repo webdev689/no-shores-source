@@ -26,6 +26,8 @@ const SPREAD_M: f64 = 520.0;
 
 /// Half a plot's side, metres: the square a guild builds on, axis-aligned round its middle.
 pub const PLOT_HALF_M: f64 = 32.0;
+/// How far a plot's corners lie from its middle, metres.
+pub const PLOT_CORNER_M: f64 = PLOT_HALF_M * std::f64::consts::SQRT_2;
 /// How far a plot reaches: past its square's corners, with room to walk round it.
 pub const PLOT_REACH_M: f64 = 52.0;
 /// How far from the landing's middle a plot's middle lies at most, where the land allows, metres.

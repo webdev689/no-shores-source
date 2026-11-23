@@ -11,7 +11,7 @@ use land::landmass::generate;
 use land::sites::NodeKind;
 use layout::book::Book;
 use layout::brief::Briefs;
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 use std::path::{Path, PathBuf};
 use world::layout::Continent;
 
@@ -63,7 +63,7 @@ pub struct NodeFile {
 
 /// An outpost site's ground: its plot's middle and level (the ground's height on its platform, as the window reads
 /// it), and the middles of its muster ground and its landing, metres.
-#[derive(Debug, Clone, Copy, PartialEq, Serialize, serde::Deserialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Serialize, Deserialize)]
 pub struct OutpostGround {
     pub plot: [f64; 2],
     pub level: f64,
@@ -183,7 +183,7 @@ pub struct Builders {
 
 /// Every node of a continent, drawn and social, generated with its edits, its city settled on the land and every
 /// drawn node's layout laid on it: a drawn node's section, spawns and boxes are its layout's. Fails for edits that
-/// break their rules or a city that cannot be planned.
+/// break their rules, a city that cannot be planned or an outpost site whose land holds no plot.
 pub fn nodes_of(
     continent: &Continent,
     edits: Edits,
@@ -262,7 +262,11 @@ pub fn nodes_of(
             ..cut(id, NodeKind::Social, plan.name.clone(), social.ring.clone(), social.spawns.clone())
         }
     });
-    Ok(drawn.chain(social).collect())
+    let nodes: Vec<NodeFile> = drawn.chain(social).collect();
+    if let Some(bare) = nodes.iter().find(|node| node.kind == NodeKind::Outpost && node.outpost.is_none()) {
+        return Err(format!("{}: {}: no plot, muster ground or landing found room", continent.id, bare.id));
+    }
+    Ok(nodes)
 }
 
 /// Marks each node locked or not by the open list, `open` the ids in `content/world/open.json`

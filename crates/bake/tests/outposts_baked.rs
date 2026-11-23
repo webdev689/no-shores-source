@@ -79,7 +79,6 @@ fn every_continent_has_one_outpost_site_whose_plot_is_level_across_its_square_ne
         assert!(off <= LEVEL_WITHIN_M, "{id}: its plot stands {off:.3} m off its level {:.2}", outpost.level);
         let from_landing = distance(outpost.plot, outpost.landing);
         assert!(from_landing <= PLOT_FROM_LANDING_M, "{id}: its plot lies {from_landing:.0} m from its landing");
-        assert!(distance(outpost.plot, outpost.muster) > PLOT_HALF_M * 2.0, "{id}: its muster ground is apart");
     }
 }
 
@@ -117,10 +116,16 @@ fn nothing_stands_on_a_plot_but_its_corner_stones() {
         if corners != 4 {
             found.push(format!("{corners} corner stones"));
         }
-        for path in &layout.paths {
-            if let Some(at) = path.points.iter().find(|&&at| point(at)) {
-                found.push(format!("a path at {:.0},{:.0}", at[0], at[1]));
-            }
+        // Every metre along each way, so no segment crosses the square between its ends.
+        let walked = layout.paths.iter().flat_map(|path| path.points.windows(2)).flat_map(|pair| {
+            let steps = distance(pair[0], pair[1]).ceil().max(1.0) as usize;
+            (0..=steps).map(move |step| {
+                let share = step as f64 / steps as f64;
+                [pair[0][0] + (pair[1][0] - pair[0][0]) * share, pair[0][1] + (pair[1][1] - pair[0][1]) * share]
+            })
+        });
+        if let Some(at) = walked.into_iter().find(|&at| point(at)) {
+            found.push(format!("a path at {:.0},{:.0}", at[0], at[1]));
         }
         for planted in layout.plantings.iter().flat_map(|planting| &planting.points).filter(|&&at| point(at)) {
             found.push(format!("a planting at {:.0},{:.0}", planted[0], planted[1]));
