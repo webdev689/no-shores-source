@@ -78,6 +78,14 @@ const HALO: Sprite = sprite(19, 19, (across, up) => {
   return CLEAR;
 });
 
+/** Nearer than this (metres) its halo is laid as discs of light (`HALO_DISCS`) rather than dithered. */
+const NEAR_HALO_M = 4;
+/** Its halo near: six discs half a cell fine, the inner in Volt's body, the outer in its dark, so the light added
+ *  falls off in fine steps from its heart to the halo's edge. */
+const HALO_DISCS: readonly Sprite[] = [5, 8, 11, 13.5, 16, 18].map((radius, index) =>
+  sprite(37, 37, (across, up) => (Math.hypot(across, up) <= radius ? (index < 3 ? BODY : DARK) : CLEAR)),
+);
+
 /** How long its trail of motes lasts (seconds), how many, and how far they fall away as they fade (metres). */
 const TRAIL_S = 0.9;
 const TRAIL_MOTES = 14;
@@ -111,7 +119,15 @@ export function layWisp(
     const picture = (share < 0.45 ? GLINTS[stop] : MOTES[stop]) ?? STAR_MOTE;
     billboard(out, picture, VOLT, drift, eye, { opacity: 1 - share * 0.6, cell: CELL_M * 1.2 });
   }
-  billboard(out, HALO, VOLT, now.at, eye, { opacity: -0.25 - 0.3 * glow, cell: CELL_M * (0.9 + 0.5 * glow) });
+  const opacity = -0.25 - 0.3 * glow;
+  const cell = CELL_M * (0.9 + 0.5 * glow);
+  const apart = Math.hypot(now.at[0] - eye[0], now.at[1] - eye[1], now.at[2] - eye[2]);
+  if (apart > NEAR_HALO_M) billboard(out, HALO, VOLT, now.at, eye, { opacity, cell });
+  // Near, where a dithered cell would show as a block, discs of light half a cell fine, each adding less outward.
+  else
+    HALO_DISCS.forEach((disc, index) =>
+      billboard(out, disc, VOLT, now.at, eye, { opacity: opacity * (0.55 - index * 0.06), cell: cell / 2 }),
+    );
   billboard(out, coreSprite(strike), VOLT, now.at, eye, { cell: CELL_M * (0.6 + 0.25 * glow) });
   // Small arcs crackling off it, two to four a strike, reaching out past its halo, longer as it brightens.
   const arcs = 2 + (hashOf(strike, 9) < glow ? 1 : 0) + (hashOf(strike, 10) < glow - 0.5 ? 1 : 0);

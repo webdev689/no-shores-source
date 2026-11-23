@@ -61,3 +61,17 @@ test('it is drawn as a core, a halo, a trail of motes and arcs, never a plain do
   layEngulf(ringed, feet, eye, FLASH_IN_S + 0.3);
   assert.ok(wraps.length > 0 && ringed.length > wraps.length * 0.5, 'arcs, then the ring as well');
 });
+
+test('up close its halo falls off smoothly, band on band of light finer than a cell, with no dither', () => {
+  const halo = (eye: readonly [number, number, number]) => {
+    const laid = new Laid();
+    layWisp(laid, { at: [0, 0, 3], part: 'wander', glow: 0.7 }, [], eye, 0);
+    const opacities = new Set<number>();
+    for (let index = 6; index < laid.length; index += 7) {
+      const opacity = laid.values[index] ?? 0;
+      if (opacity < 0) opacities.add(Math.round(opacity * 1000));
+    }
+    return opacities.size;
+  };
+  assert.ok(halo([0, 1.2, 3]) >= 5, `near: ${halo([0, 1.2, 3])} bands of light`);
+});
