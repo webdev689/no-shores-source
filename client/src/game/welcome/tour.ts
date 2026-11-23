@@ -36,7 +36,7 @@ const HEIGHT_M = 7;
 /** How far out and up a place inside a building is seen from, clear of its roof, metres. */
 const HIGH_BACK_M = 40;
 const HIGH_M = 30;
-const SPREAD_BACK = 1;
+const SPREAD_BACK = 1.3;
 const SPREAD_HEIGHT = 0.35;
 /** The height over the ground the eye looks at: over a keeper's head, so their stall's roof is in the view. */
 const LOOK_M = 2.5;
