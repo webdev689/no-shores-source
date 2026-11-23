@@ -99,14 +99,16 @@ struct Planned {
 }
 
 /// Which nodes each node's layout links to: a patrol area to the instances nearer it than any other patrol area, an
-/// instance to that patrol area. With no patrol area, nothing links.
+/// instance to that patrol area. With no patrol area, nothing links; an outpost site links to nothing.
 #[must_use]
 pub fn links_of(nodes: &[Node]) -> BTreeMap<String, Vec<Link>> {
     let patrols: Vec<&Node> = nodes.iter().filter(|node| node.kind == NodeKind::Patrol).collect();
     let square =
         |from: [f64; 2], to: [f64; 2]| (to[0] - from[0]) * (to[0] - from[0]) + (to[1] - from[1]) * (to[1] - from[1]);
     let mut links: BTreeMap<String, Vec<Link>> = BTreeMap::new();
-    for node in nodes.iter().filter(|node| !matches!(node.kind, NodeKind::Patrol | NodeKind::Social)) {
+    for node in
+        nodes.iter().filter(|node| !matches!(node.kind, NodeKind::Patrol | NodeKind::Social | NodeKind::Outpost))
+    {
         let middle = middle_of(node);
         let nearest = patrols.iter().min_by(|first, second| {
             square(middle_of(first), middle)
@@ -170,6 +172,19 @@ pub fn settle(landmass: &mut Landmass, book: &Book, briefs: &Briefs) -> Vec<Layo
         let seed = land::exact::seed_of(0x1A70, &layout.id) ^ 0x3A11;
         let mut kit = crate::pieces::Kit { ground: &landmass.surface, book, seed, draws: 0, into: &mut layout.seating };
         crate::skyline::rim(&mut kit, &layout.ring, (&ways, &layout.sculpt.outcrops), &carved_already);
+    }
+    // A plot's platform swells a little with the land's own level under it, so its square (and a little past it, its
+    // corner stones with it) is padded level at the carved ground's height at its middle.
+    for layout in &mut layouts {
+        let reach = crate::areas::PLOT_HALF_M + 2.0;
+        let plots = layout.areas.iter().filter(|area| area.kind == crate::brief::AreaKind::Plot);
+        let pads: Vec<Pad> = plots
+            .map(|plot| {
+                let [x, y] = plot.at;
+                Pad::flat([x - reach, y - reach, x + reach, y + reach], landmass.surface.height_at(x, y))
+            })
+            .collect();
+        layout.seating.pads.extend(pads);
     }
     // Every piece was planned on the carved ground (the carving keeps off the floor the pieces stand on, and rock
     // stands on the carved faces), so it is that ground the pads and roads are measured from.
@@ -255,6 +270,13 @@ mod tests {
         assert_eq!(links["mill"][0].id, "west");
         assert_eq!(links["tomb"][0].id, "east");
         assert_eq!(links["west"].iter().map(|link| link.id.as_str()).collect::<Vec<_>>(), ["mill"]);
+    }
+
+    #[test]
+    fn an_outpost_site_links_to_no_patrol_area() {
+        let nodes = [node("west", NodeKind::Patrol, 0), node("cove", NodeKind::Outpost, 1_000)];
+        let links = links_of(&nodes);
+        assert!(!links.contains_key("cove") && !links.contains_key("west"), "{links:?}");
     }
 
     #[test]

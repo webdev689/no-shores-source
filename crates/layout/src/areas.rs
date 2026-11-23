@@ -24,6 +24,23 @@ const GAP_M: f64 = 50.0;
 /// How far an area's spread counts, metres: past it, being further from the others earns nothing more.
 const SPREAD_M: f64 = 520.0;
 
+/// Half a plot's side, metres: the square a guild builds on, axis-aligned round its middle.
+pub const PLOT_HALF_M: f64 = 32.0;
+/// How far a plot reaches: past its square's corners, with room to walk round it.
+pub const PLOT_REACH_M: f64 = 52.0;
+/// How far from the landing's middle a plot's middle lies at most, where the land allows, metres.
+pub const PLOT_FROM_LANDING_M: f64 = 250.0;
+
+/// Whether a point stands on a plot's square of the areas, or within `margin` metres of it.
+#[must_use]
+pub fn on_plot(areas: &[Area], at: [f64; 2], margin: f64) -> bool {
+    let reach = PLOT_HALF_M + margin;
+    areas
+        .iter()
+        .filter(|area| area.kind == AreaKind::Plot)
+        .any(|area| (at[0] - area.at[0]).abs() <= reach && (at[1] - area.at[1]).abs() <= reach)
+}
+
 /// How far an area of a kind reaches, metres; a hamlet by its blocks.
 #[must_use]
 pub fn radius_of(kind: AreaKind, blocks: u8) -> f64 {
@@ -36,6 +53,7 @@ pub fn radius_of(kind: AreaKind, blocks: u8) -> f64 {
         AreaKind::Camp | AreaKind::Mill | AreaKind::Landing => 48.0,
         AreaKind::Dock | AreaKind::Wreck | AreaKind::Shrine | AreaKind::Entrance | AreaKind::Gate => 40.0,
         AreaKind::Tower | AreaKind::Lighthouse | AreaKind::Cave => 30.0,
+        AreaKind::Plot => PLOT_REACH_M,
     }
 }
 
@@ -93,6 +111,7 @@ fn wants(kind: AreaKind, land: &Reading, radius: f64) -> Option<f64> {
             bell(land.slope, 0.35, 0.9, 0.3) * 0.7 + (land.relief / 20.0).min(1.0) * 0.3
         }
         AreaKind::Entrance | AreaKind::Gate => flat(8.0),
+        AreaKind::Plot => flat(4.0) * 0.8 + 0.2 * (1.0 - land.slope * 4.0).max(0.0),
     };
     (score > 0.0).then_some(score)
 }
