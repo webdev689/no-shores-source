@@ -43,7 +43,7 @@ import type { SeaShip } from './seaShips.ts';
 import type { SloopBuild } from './shipPanel.ts';
 import { standingDrawers } from './standingDrawers.ts';
 import type { NodeInfo } from './worldData.ts';
-import type { AfterStory } from './welcome/afterStory.ts';
+import { type AfterStory, clearOfEye, heldHud } from './welcome/afterStory.ts';
 import type { Quests } from './quests/quests.ts';
 import type { Lore } from './compendium/lore.ts';
 import type { StoryHost } from './prologue/host.ts';
@@ -72,7 +72,7 @@ export interface Playing {
   sea: Sea | null;
   /** The held map at the helm, made when it is first asked for. */
   readonly helmMap: HelmMap;
-  /** The story's last moment, played on foot once it has ended, and the elder's welcome after it. */
+  /** The story's last moment, played on foot once it has ended: the stranger's welcome to Overlook. */
   readonly after: AfterStory;
   /** The houses' roads, shown once the story and the welcome are past. */
   readonly quests: Quests;
@@ -201,7 +201,17 @@ export function startFrames(parts: FrameParts, playing: Playing): void {
       eyesBeforeMap = looking ? walker.player.view.firstPerson : null;
       walker.player = { ...walker.player, view: { ...walker.player.view, firstPerson } };
     }
-    const shown = here.frame(controls, seconds, clock, { paused, looking, hands: handsFree(controls, paused), aspect });
+    // While the stranger speaks her welcome no key moves or acts (Space moves her words on, `gameKeys`), and the view
+    // is hers.
+    const told = playing.after.holding;
+    const turned = playing.after.takeTurn();
+    // The figure kept still keeps its facing, so it is turned with the view.
+    if (turned !== null) walker.player = { ...walker.player, yaw: turned, facing: turned };
+    const heard = told ? IDLE : controls;
+    // While she speaks the figures are drawn for the tour's eye (last frame's), not the player's own camera.
+    const eye = playing.after.seen?.eye ?? null;
+    const own = here.frame(heard, seconds, clock, { paused, looking, hands: handsFree(heard, paused), aspect, eye });
+    const shown = { ...own, shot: playing.after.shot(own.shot, seconds) };
     // A public event's beat is the music's moment, its props the drawer's, its steps the tracker's.
     if (shown.sting) parts.music.moment(shown.sting);
     const listener = [walker.player.body.x, walker.player.body.y] as const;
@@ -243,24 +253,23 @@ export function startFrames(parts: FrameParts, playing: Playing): void {
     const fight = footView.frame(here, questShown, seconds, { size, viewport, groundAt: here.groundAt });
     // Use held on another player opens their menu, where it does nothing else (a deed or a gate) and no menu or map is up.
     const offered = !paused && !looking && !here.fallen && !hud.usePrompt.showing && !playing.through;
-    holdOnPlayer(footView.playerPlates, offered, controls.held('use'), clock, {
+    holdOnPlayer(footView.playerPlates, offered, heard.held('use'), clock, {
       width: size.width / uiScale(devicePixelRatio),
     });
     // The fight's crosshair, plates and compass give way to the map while it is up.
     if (looking) footView.hideDisplay();
     const water = parts.waterHere();
     const fleet = traffic.onFoot(shown.shot.eye, water, seconds, clock);
-    // The story's last moment, on foot once the veil is gone: the stranger before the player, then the elder's welcome.
-    const met = playing.after.frame(
-      shown.shot,
-      viewport,
-      seconds,
-      clock,
-      walker.you,
-      flow.mode !== 'foot',
-      here,
-      paused,
-    );
+    // The story's last moment, on foot once the veil is gone: the stranger before the player, her welcome, and her
+    // gift asked of this room.
+    const met = playing.after.frame(shown.shot, viewport, seconds, clock, walker.you, flow.mode !== 'foot', {
+      node: here.node,
+      floor: here.floor,
+      blocks: here.boxes,
+      held: paused,
+      gear: here.gear?.gear ?? null,
+      ask: (asked) => here.gear?.ask(asked),
+    });
     const carried = { left: walker.you.dress.outfit.left, feet: [body.x, body.y, body.z] as const };
     const moorings = here.node.kind === 'social' ? (playing.landmass.plan?.social.moorings ?? []) : [];
     const moored = mooredShips(moorings, clock, water);
@@ -280,7 +289,9 @@ export function startFrames(parts: FrameParts, playing: Playing): void {
     );
     const walking = quests.cards(shown.shot.eye, clock, parts.groundAt);
     const crews = parts.crews.cards(ships, shown.shot, viewport.height, seconds, clock);
-    const cards = [...shown.figures, ...met, ...nodes, ...walking, ...crews];
+    // While she speaks, none but her stands within reach of the tour's eye.
+    const near = [...shown.figures, ...nodes, ...walking, ...crews];
+    const cards = [...(eye ? clearOfEye(near, eye) : near), ...met];
     if (here.dungeon) parts.dungeons.draw(here, shown, size, clock, fight, hands, more.drain);
     else scene.draw(shown.shot, size, clock, seconds, standing(ships, cards, fight), more);
     showStanding(shown.standing);
@@ -297,6 +308,7 @@ export function startFrames(parts: FrameParts, playing: Playing): void {
     // The tracker is set once a frame, so a public event's steps stand in it unblinking, in the quest's place.
     hud.tasks.show(shown.quest ?? quests.tracked);
     hud.toast(...toldNow(), ...quests.toasts, ...playing.lore.toasts);
+    if (told) heldHud(hud, footView);
     hideSeaHud(hud);
     hud.note(here.roomNote);
     // A dungeon's floor is all there before the veil lifts; a node waits for the exact ground round the player.

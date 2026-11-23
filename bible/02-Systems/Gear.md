@@ -162,7 +162,11 @@ number is one of [[Gear as Claude Shapes It]].
 
 ## In the rooms
 
-- **Each player's gear** is held by the room they are in ([[Server]]), the starting kit as they join, and sent to
+- **A new character** arrives with no weapon and no armour, only their ship's first modules
+  ([[The Stranger Welcomes the Player, and a Quest Walks Them Round Overlook]]); the Test Ground's player, and the
+  scripted players that try the public events, wear a level 1 Normal sword and level 1 Normal armour
+  (`Character::kitted`). A character kept before keeps its gear.
+- **Each player's gear** is held by the room they are in ([[Server]]), a new character's as they join, and sent to
   them alone whenever it changes, every column of every item spelled out so the browser draws it without the rules.
 - **Hands.** A player holds only what a loadout they wear puts in their hands, the fists with no Melee worn, or a
   torch beside a loadout that leaves the left hand free; the browser draws the hands from the loadout drawn, in a
@@ -417,8 +421,12 @@ the factions' counters are in [[Factions]].
   Ranged, and an Ammo crate, in a social space's arcades ([[Cities]]). Each shows six wares a day, three Rare and three
   Magic, made at the buyer's level (at most 20), the same for everyone that day and new the next (`gear::vendor`). The
   slots turn with the day, so over four days the Armorsmith sells each armour piece at each rarity.
-- A ware costs Aurem only: 2,000 for Rare, 600 for Magic. It is bought only at its smith's counter, and carried with
-  its slot's nine. The smiths sell no Legendary or Atheric gear: it is earned, had from Shape, or a faction's own
+- **The starter stock.** Beside the day's wares each smith always sells plain pieces to start with, Normal at the
+  buyer's level (at most 20), 50 Aurem each: the Armorsmith a head, a torso, arms and legs; the Weaponsmith a Sword &
+  Shield (Melee) and a bow (Ranged). Their screens show them first, under "To start". A smith's stock is numbered the
+  day's six first, then the starter stock (`gear::vendor::stock`).
+- A ware costs Aurem only: 2,000 for Rare, 600 for Magic, 50 for a starter piece. It is bought only at its smith's
+  counter, and carried with its slot's nine; the quest walked hears of it by its slot ([[Quests]]). The smiths sell no Legendary or Atheric gear: it is earned, had from Shape, or a faction's own
   bought at its counter by rank ([[Factions]]).
 - **The Mage** identifies Vestiges, free.
 - **The Tailor** sells six emblems a day ("Emblems") and four dyes; **the Tack** four a day of horses and bardings
@@ -433,7 +441,7 @@ the factions' counters are in [[Factions]].
   200 at most.
 - The room keeps the minute, set by its host before its first tick and each second after (and by the page as its own
   room steps, playing alone), whose day (`gear::clock`, from 09:00 UTC) sets every daily list and whose week (from
-  Tuesday 09:00 UTC) sets Shape. It sends the day's wares, the Tailor's emblems and dyes, the Tack's pieces and, while he is here, Shape's place and his
+  Tuesday 09:00 UTC) sets Shape. It sends each smith's stock and the Shipwright's in turn, the Tailor's emblems and dyes, the Tack's pieces and, while he is here, Shape's place and his
   wares (none twice in a week) with a player's gear while they stand in a social space, sends them again as the
   day turns or Shape comes, goes or moves, and a purchase is an ask like any other: 12 a smith's ware (its place in
   `node` and the day it was shown, which the gear message carries, so one shown before the day turned is refused as

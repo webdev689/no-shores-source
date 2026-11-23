@@ -93,20 +93,27 @@ export function listenForControls(game: Controlled): void {
     const key = keyNameOf(event);
     if (event.repeat || ui.typing) return;
     if (playing.flow.mode === 'story') return void story?.key(key, true);
-    act((id) => BINDS.now[id].keys.includes(key), key === 'escape');
+    // While the stranger speaks her welcome Space moves her words on and the menu opens, as in the story's cutscenes;
+    // no other game key acts.
+    const welcome = playing.after.holding;
+    if (welcome && BINDS.now.jump.keys.includes(key)) return void playing.after.press();
+    act((id) => (!welcome || id === 'menu') && BINDS.now[id].keys.includes(key), key === 'escape');
   });
   // The pad's presses do as the keys do, but under the gear screen or the sheet, whose buttons they are; B is
-  // Escape in the game's menu, at the helm's map and at a landing; in the story A is a tap. Start and View open and shut the
+  // Escape in the game's menu, at the helm's map and at a landing; in the story, and while she speaks, A is a tap. Start and View open and shut the
   // menu and the sheet wherever their keys would.
   input.onPad((pressed, buttons) => {
     // A button being bound in the sheet is the sheet's alone.
     if (hud.controls.rebinding.slot) return;
+    const welcome = playing.after.holding;
+    if (welcome && (pressed.has('jump') || pressed.has('confirm'))) playing.after.press();
     const covered = gearScreenOpen() || hud.controls.open || socialUp() || chatOpen();
     const escape = buttons.has('B') && (playing.helmMap.busy || playing.flow.mode === 'landing');
     // B steps out of the game's menu, as Escape does.
     if (buttons.has('B') && !covered && contextOf(playing) === 'menu') return change({ kind: 'back' });
     if (playing.flow.mode === 'story' && (pressed.has('jump') || pressed.has('confirm'))) story?.press();
-    else if (playing.flow.mode !== 'story' && !covered) act((id) => !escape && pressed.has(id), escape);
+    else if (playing.flow.mode !== 'story' && !covered)
+      act((id) => !escape && (!welcome || id === 'menu') && pressed.has(id), escape && !welcome);
     // As the key does, in the story too: the menu itself refuses where the story keeps no gear.
     if (pressed.has('character') && !hud.controls.open && !playing.sea?.travelling)
       openGearWindow({ view: 'character', toggle: true });

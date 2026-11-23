@@ -249,9 +249,37 @@ impl Character {
         }
     }
 
-    /// A new player, as Destiny 1 starts a Guardian: a level 1 Normal sword for Melee and level 1 Normal armour.
+    /// A new player, arriving with no weapon and no armour: only their ship's first modules.
     #[must_use]
     pub fn starting() -> Self {
+        Self::new_player(false)
+    }
+
+    /// A new player wearing a level 1 Normal sword for Melee and level 1 Normal armour: the Test Ground's, whose
+    /// fights are tried at once, and the scripted players'.
+    #[must_use]
+    pub fn kitted() -> Self {
+        Self::new_player(true)
+    }
+
+    /// The Test Ground's player: kitted, every Art mastered, and at a quest's `kept` task, as a character kept before:
+    /// no stranger stands on the Test Ground, and its stall serves the houses.
+    #[must_use]
+    pub fn test_grounds() -> Self {
+        let mut character = Self::kitted();
+        character.arts = crate::arts::WornArts::mastered();
+        for quest in crate::quests::quests().quests.iter() {
+            if let Some(kept) = &quest.kept {
+                let road = crate::quests::Road { task: kept.clone(), ..crate::quests::Road::default() };
+                character.quests.roads.insert(quest.id.clone(), road);
+            }
+        }
+        character.quests = std::mem::take(&mut character.quests).kept();
+        character
+    }
+
+    /// A new player, `kit` wearing the sword and armour, numbered before the ship's modules.
+    fn new_player(kit: bool) -> Self {
         let mut character = Self {
             xp: 0,
             fruit_grown: 0,
@@ -273,19 +301,20 @@ impl Character {
             scavenged: Vec::new(),
             allegiance: crate::factions::Allegiance::default().kept(),
             cosmetics: crate::cosmetics::Cosmetics::default(),
-            quests: crate::quests::QuestLog::default().kept(),
+            quests: crate::quests::QuestLog::begun(),
             mail: Vec::new(),
             lore: Vec::new(),
             left: None,
             unknown: UnknownKeys::new(),
         };
-        for (kind, slot) in [
+        let pieces = [
             (Kind::Sword, Slot::Melee),
             (Kind::Head, Slot::Head),
             (Kind::Torso, Slot::Torso),
             (Kind::Arms, Slot::Arms),
             (Kind::Legs, Slot::Legs),
-        ] {
+        ];
+        for (kind, slot) in pieces.into_iter().filter(|_| kit) {
             let id = character.take_id();
             character.items.insert(id, (Item::new(id, kind, Rarity::Normal, 1, slot), At::Worn(slot)));
         }

@@ -43,8 +43,8 @@ code:
   - client/src/game/prologue/shore.ts#Shore
   - client/src/game/prologue/beach.ts#findBeach
   - client/src/game/prologue/epilogue.ts#Epilogue
-  - client/src/game/welcome/welcome.ts#Welcome
-  - client/src/game/welcome/walk.ts#WelcomeWalk
+  - client/src/game/welcome/tour.ts#StrangerWelcome
+  - client/src/game/welcome/tour.ts#framing
   - client/src/game/welcome/afterStory.ts#AfterStory
   - content/story/welcome.json
   - client/src/game/prologue/brig.ts#Brig
@@ -140,39 +140,56 @@ well; if even that cannot be laid, the shore fails and the story ends
 played.
 
 **After the shore** the flow's `story-ended` takes the player through the veil to Overlook's social space. The story's
-black holds until the veil has risen under it (0.7 s), then goes. The stranger waits behind the veil; she stands 2.2 m ahead of the
-player and 1 m to their right (their left where the right is water), facing them, and says her last line once the
-veil has fallen, the story's black has gone and she is in the player's view. Then she walks toward the town's middle on dry ground only (she stands where the next step is water or
-unknown), and is let go once none of her, feet to head, is on the player's view, or a minute after she set off if she
-still stands in sight, held at the water or at the town's middle. Leaving Overlook's social space before then ends her
-part at once, her words with it. The game is the player's from there.
+black holds until the veil has risen under it (0.7 s), then goes. The stranger waits behind the veil; she stands before the
+player, facing them: 2.2 m ahead and 1 m to their right, else to their left, else nearer and more to the side (1.2 m
+ahead and 1.6 m out, then 0.3 m and 2 m), the first spot on the player's own floor (within 1 m of it) whose line to
+them clears the place's solids, so never past a parapet or a wall; where none is, the first on dry ground. Over dry ground
+she stands, and walks, on the floor a figure stands on there (a paved walk, a pier), never sunk to the ground under it. She begins her welcome
+once the veil has fallen, the story's black has gone and she is in the player's view. Then she walks toward the town's
+middle on dry ground only (she stands where the next step is water or unknown), and is let go once none of her, feet
+to head, is on the player's view, or a minute after she set off if she still stands in sight, held at the water or at
+the town's middle. Leaving Overlook's social space before then ends her part at once, her words with it. The game is
+the player's from there.
 
-**The elder's welcome** ([[Elder Maren Hale Welcomes the Player to Overlook]]). Once the stranger has gone, on that
-first arrival, Elder Maren Hale of the Lamplighters starts at a point of the townsfolk's ways at least 15 m from the
-player, and out of their view where one is, and comes to them by the ways at three quarters of a player's walk, about 3.3 m/s, her walk's frames paced to it
-([[Elder Maren Hale Walks at Three Quarters of a Player's Pace]]), on the floor the plaza's townsfolk stand on
-([[Game]]), up on a podium or a landing. She stops 1.8 m before a player on
-the ways, facing them; for a player off them, she stops at the point of the ways nearest them and greets them there once
-they are within 6 m, waiting until then with "Follow" shown. She leads them to the plaza's counters, the nearest stop
-first each time: the Mage, the Armorsmith and the Weaponsmith, the Tailor and the Tack, the vault, the Stormcallers, the
-Veiled and her own Lamplighters, then walks home. She keeps to the middle of the townsfolk's ways (`life/ways.ts`; the
-ways are the plan's), which keep clear of every solid and of Shape, and goes round her counter's end clear of the
-arcade's columns (`welcome/walk.ts`). Each stop is where customers stand before its counter (3.1 m out), a pair's the
-middle of the two. At each she waits until the player is within 6 m, then says its lines in the dialogue box, some of
-the keepers she names answering her, with no mark over a head ([[Speech Blurbs Show Their Text Without Glyphs]]); the
-HUD says "Follow" over her name past 6 m and clears it inside 5 m. The player walks freely the whole time: it is no
-cutscene. What she says (`content/story/welcome.json`) is the state of the world as Overlook's people know it and what
-the plaza offers: the Grey Tithe's tenth and the ships taken whole, Overlook paying the Tithe nothing, three ports
-standing and ruins no one agrees about ([[Three Port Cities Remain, and the Others Are Desolate and Destroyed]]), and
-the town's memory (three people name four builders of the beacon). It is due from the story's end until its last scene
-is said: the browser keeps the scenes said (`noshores.welcome.said`), so a reload or a leaving takes it up from there on
-the next arrival in Overlook's social space, without the greeting; leaving before the stranger has gone forgoes it. A
-browser that has played the story and holds no mark of the welcome is welcomed on its next arrival there. A player more
-than 40 m from her for a minute ends the walk: she goes home, and it stays due. While the menu or a keeper's screen is
-open she stands idle and no stop begins and the Follow prompt is hidden; opening her counter while she walks ends the
-welcome there and opens the Lamplighters' whole screen; at her own counter she is the one speaking, and no mark stands
-over its place. When it ends she is her counter's keeper again, never two of her at once. Under `npm run dev`, and on a
-built page served on `localhost`, `?welcome=1` plays it at once in the social space.
+**The stranger's welcome** ([[The Stranger Welcomes the Player, and a Quest Walks Them Round Overlook]]). Her words
+(`content/story/welcome.json`, said on the story's stage in the dialogue box, `welcome/tour.ts`) go in turn: a little
+of the world (the Grey Tithe's tenth, Overlook paying it nothing, three ports standing and the rest ruins grown over
+with something nobody names); then each place to visit, the camera flying to it as she names it and holding there
+while she and its keeper speak: the smiths' arcade (the Armorsmith and the Weaponsmith), the Mage, the Vault, the
+Tailor, the Tack, the Postmaster, the harbour's Harbourmaster for the Shipwright, and the Hall of the Arts, turning to
+each house's chapel as she names it (Arlo Kestrel, Sable and Elder Maren Hale answering); then her farewell face to
+face. A place's eye (`welcome/framing.ts`) is the first of a set of candidates round its counters whose lines to each
+keeper's head and each stall's front clear the node's solids (the blocks the camera's boom keeps clear of), both in
+the view: 11, 8, 14 then 5.5 m out, turned 0, 20, 40, 60 then 80 degrees either side of the counter's facing, a group from 7, 4.5,
+10 then 3 m up and a single counter from 2.6, 4.5, 7 then 10 m (a stall's awning, drawn but no solid, hides its
+keeper from above); where none clears a keeper's head (the Vault's keeper stands behind its front wall, whose window
+is drawn but whose solid is whole), the first that sees each stall's front clear with each keeper's head in the view. Each looks at the counters' middle 2.5 m over the ground through the player's own lens; a group's spread
+adds 1.3 times its farthest counter from the middle to the distance and 0.35 times to the height. Its first counter is
+the one of its kind nearest the player, each other the one of its kind nearest that. The Hall of the Arts is an
+interior: it is seen from inside, a few metres in from its door (3, 2, 5, 7 then 9 m) and up under its 14 m roof (10,
+11, 8, 12 then 7 m), down the nave toward the Lamplighters' chapel with a wider lens (1.35 radians), the first eye that
+sees all three keepers and their banners clear of the columns; as she names a house the camera comes before its chapel
+(15, 13, 17 then 11 m out from its counter, 2.6, 3.5 then 4.5 m up, under the hung rings of light, straight before it
+first, then turned 25 then 35 degrees either side so it sees between the columns standing on a side chapel's axis,
+through the player's own lens), its keeper and banner the picture, the keeper's feet 36% down the view, whole above
+the dialogue box; the chapel's own hung light may be cut by the view's top. Her first lines and her farewell are seen from 6 m to the side of the pair, from the height of their faces, on the side nearer the player's
+view unless a solid stands between, looking down so their feet stand 36% down the view, both figures whole above the dialogue box
+(whose top is 43% down at 960x540). Each other view looks a fifth of its lens below its target, so what it frames stands in its upper part, clear of the dialogue box over its lower middle. A flight takes 2.4 s, eased out of rest and into it, from wherever the view stands; a place the plaza lacks keeps the
+view where it is, her words said all the same. From her first word to her farewell the view is hers and, as in the
+story's cutscenes, Space (or the pad's jump or confirm) moves her words on a line and Escape, the menu's key and the
+pad's Start and View open the menu, the character page or the sheet, her words and their time holding still under it;
+no other game key acts (no move or look, no use, map, chat or respawn). While she speaks every figure is drawn for the tour's own eye (the one last shown), not the player's camera, so each is turned and stands as that eye sees it; none but her is drawn within 4 m of that eye (a townsman walking past the camera would fill the view; her pair stands 6 m off it, a keeper at least 5.5 m). While she speaks a soft warm lamp hangs 2.6 m over the middle of the pair, a lantern of the town's at seven tenths of its light, reaching 8 m: lit as the city's lamps are, only as the daylight fades, so the two of them are seen at any hour, and put out once the welcome ends. As her first lines and her farewell begin the player is turned to face her, as she faces them. As she walks off the player is turned toward a point 3 m along her way into the town and the
+view eases back over their shoulder, so she is seen going; the keys are theirs once it has. It is a cutscene: the HUD's
+bars, compass, tracker, marks and key strip are hidden while the keys are held, until the view is the player's again,
+the dialogue box hers. Her words wait while a menu is open over the view. A place no candidate eye sees clearly gives
+no shot: the view stays where it was. As she bids
+farewell she gives the player 400 Aurem, the opening quest's first task heard ([[Quests]]); the room gives it once a
+character, so a second hearing, a rejoin or a second tab gives none. Leaving the place mid-welcome ends it at once, the
+view and the keys the player's again, and gives nothing then: a character still owed her gift is given it on its next
+frame in a social space with no welcome to hear (a reload, or a browser that played the story before). Either way the
+room is asked once a page, and only once its word on the player's own character (not a room's starting one) shows her
+task waiting. Under `npm run dev`, `?arrival=1` ends the story as the shore does, so the arrival and her welcome
+play at once.
 
 **Where it happens.** The storm lies 24 km out past Saltmere's harbour (`stormPlaces`), the Brig heading across the
 swell. The sea is sounded every 150 m across the 3 km round it, where every ship of the story sails, and the place is

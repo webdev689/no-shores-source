@@ -58,6 +58,7 @@ import { ceilingAt, type DungeonAsk, type DungeonLayout, openAt, seenBlocks } fr
 import { worldOutput } from './uiSounds.ts';
 import type { UsePrompt } from './usePrompt.ts';
 import { type Dressed, dressInGear, figureWhere, otherCards, ownCard, strikersOf } from './footFigures.ts';
+import type { FootAsk } from './footFigures.ts';
 import type { AtEntrance, FootContext, FootFight, FootFrame, Heard, Held, Opened, Uses } from './footPlace.ts';
 import { stand } from './footPlace.ts';
 import { hearing, nextOtherId, roomNote, rulesOf } from './footRoom.ts';
@@ -382,7 +383,7 @@ export class Foot {
     controls: InputFrame,
     seconds: number,
     clock: number,
-    { paused, looking = false, hands, aspect }: { paused: boolean; looking?: boolean; hands: boolean; aspect: number },
+    { paused, looking = false, hands, aspect, eye: cutscene = null }: FootAsk,
   ): FootFrame {
     const still = paused || looking;
     const { walker, movement, forge } = this.context;
@@ -425,7 +426,7 @@ export class Foot {
       [fallX, fallY, fallZ],
       seconds,
     );
-    const [eyeX, eyeY] = shot.eye;
+    const [eyeX, eyeY] = cutscene ?? shot.eye;
     // Through the player's own eyes no other figure stands so near that it fills the view.
     const nearest = firstPerson ? CARD_NEAREST_M : 0;
     const frameTicks = seconds / movement.tickSeconds;

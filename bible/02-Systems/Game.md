@@ -260,7 +260,7 @@ third person, the forge's figure and the first person's hands, and the Test Grou
   either side so a keeper across the plaza still shows one; it bobs 6 cm once a second on a phase of its own, holding
   still under reduced motion, and fades out over the last fifth of its 30 m, the nearest twelve laid. A keeper's mark
   is lit while the keeper has something for the player (`keeperLit`;
-  [[A Keeper With Something for You Pulses and Is Seen From Everywhere]]): a step of the quest walked asks to speak with them, once the story and the welcome are
+  [[A Keeper With Something for You Pulses and Is Seen From Everywhere]]): a step of the quest walked asks to speak with them or to buy one of their wares, once the story and the welcome are
   past (`Quests.wants`), or, the Postmaster's sealed letter, letters wait. A lit mark is laid apart (`litMarksSeen`):
   at any distance, every one of them, whole, beating (a fifth wider and back every 1.3 s), farthest first, and drawn
   over the finished picture after the water with no depth (`MarkDraw.drawAbove`), so it is seen from everywhere in the

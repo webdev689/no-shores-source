@@ -1107,8 +1107,8 @@ serves each ask only at its own counter ([[Gear]], "In the rooms"; [[Factions]])
   the left, from the forge in their own dress (`keepers.ts`), idle and facing the viewer, grown by whole pixels and
   breathing between the idle's two frames (still with less motion asked for), over a ground lit in their colour (a
   faction's in its Art's element, the rest brass), with their mark and their title in capitals above them. At the right
-  their words, the currencies they deal in (Aurem; Shapes at Shape's; at a faction's its rank, its meter to the next and
-  the materials an Art's rise takes), the band they speak in, then their wares in rows under engraved headings, each a
+  their words with the currencies they deal in beside them on one line (Aurem; Shapes at Shape's; at a faction's its
+  rank, its meter to the next and the materials an Art's rise takes), the band they speak in, then their wares in rows under engraved headings, each a
   gear tile held to buy, its price under it, red with "Not enough" when short, a card on hover or focus; a ware that
   cannot be asked for says why under its price (a level not reached, a pack full), and "Not enough" is only for one the
   room would sell. At the foot "Stock refresh" and the time to the next daily reset, 09:00 UTC, for the smiths, the
@@ -1120,7 +1120,8 @@ serves each ask only at its own counter ([[Gear]], "In the rooms"; [[Factions]])
   presses, Escape steps back, and the focus goes back where it came from. In a room narrower than 600 px, as on a phone,
   the keeper stands over the rest, a third of its height, and the rest takes its whole width.
 - **The keepers' rows.** The Mage: VESTIGES, those carried, each held to identify, the piece it opened to shown after.
-  The Armorsmith: ARMOUR, the day's six. The Weaponsmith: WEAPONS, the day's six, and SUPPLIES, the Ammo crate with how
+  The Armorsmith: TO START, the four starter pieces, then ARMOUR, the day's six. The Weaponsmith: TO START, the sword
+  and shield and the bow, then WEAPONS, the day's six, and SUPPLIES, the Ammo crate with how
   many of the five are carried. The Tailor: DYES, the day's four, each a swatch of its ramp, then EMBLEMS, the day's
   six. The Tack: MOUNT, the day's four horses and bardings, a horse as any item ware is, its picture, its card and
   "Normal Horse", kept once a horse in its coat is held. A piece kept says so.

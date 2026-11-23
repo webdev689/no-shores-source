@@ -21,7 +21,7 @@ import type { KeeperKind } from '../keepers.ts';
 import { KEEPERS } from '../keepers.ts';
 import { emblemOf } from '../emblemArt.ts';
 import { CRATES_MOST, type Card, cardOf } from '../gearCards.ts';
-import { WARES, vendorsOf } from '../gearScreen.ts';
+import { vendorsOf } from '../gearScreen.ts';
 import { factionRows } from './factionRows.ts';
 
 /** What a ware's tile shows: an item's own picture (a horse's too), a Vestige, the Ammo crate, a dye's colours, an
@@ -244,18 +244,28 @@ function crateWare(gear: GearState): Ware {
     words: "Fills your Ranged weapon's ammunition.",
     price: { amount: price, currency: 'aurem' },
     short,
-    note: room ? '' : 'You carry five',
+    note: room ? '' : 'All five',
     ask: room ? { kind: ASKS.buyCrate } : null,
   };
 }
 
-function smithRow(gear: GearState, vendor: number, heading: string): Row {
+/** A smith's rows: their starter stock under "To start", the short rows `beside` it, then the day's wares under
+ *  `heading`. Short rows stand side by side (`rowsNode`), so the day's six keep in view. */
+function smithRows(gear: GearState, vendor: number, heading: string, beside: readonly Row[] = []): Row[] {
   const wares = (vendorsOf(gear)[vendor]?.wares ?? []).map((ware, place) => {
-    const item = gear.wares[WARES * vendor + place];
     const price = { amount: ware.price, currency: 'aurem' as const };
-    return item ? [itemWare(`buy-${vendor}-${place}`, item, price, !ware.affordable, ware.press.ask)] : [];
+    return {
+      starter: ware.starter,
+      ware: itemWare(`buy-${vendor}-${place}`, ware.item, price, !ware.affordable, ware.press.ask),
+    };
   });
-  return { heading, wares: wares.flat(), empty: 'Sold only in a social space.' };
+  const day = { heading, wares: wares.filter((each) => !each.starter).map((each) => each.ware) };
+  const start = wares.filter((each) => each.starter).map((each) => each.ware);
+  return [
+    ...(start.length > 0 ? [{ heading: 'To start', wares: start }] : []),
+    ...beside,
+    { ...day, empty: 'Sold only in a social space.' },
+  ];
 }
 
 function mageRows(gear: GearState): Row[] {
@@ -313,12 +323,14 @@ export function rowsOf(kind: KeeperKind, gear: GearState, choosing = false): Row
     case 'mage':
       return mageRows(gear);
     case 'armorsmith':
-      return [smithRow(gear, 0, 'Armour')];
+      return smithRows(gear, 0, 'Armour');
     case 'weaponsmith':
-      return [
-        smithRow(gear, 1, 'Weapons'),
-        ...((gear.cratePrice ?? 0) > 0 ? [{ heading: 'Supplies', wares: [crateWare(gear)] }] : []),
-      ];
+      return smithRows(
+        gear,
+        1,
+        'Weapons',
+        (gear.cratePrice ?? 0) > 0 ? [{ heading: 'Supplies', wares: [crateWare(gear)] }] : [],
+      );
     case 'tailor':
       return [
         { heading: 'Dyes', wares: cosmeticWares(gear, ['dye']), empty: 'Sold only in a social space.' },

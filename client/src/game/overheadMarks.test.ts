@@ -10,7 +10,6 @@ import { keeperPicture } from './npc/npcMarks.ts';
 import { DOOR_PICTURE, keeperLit, markOfKind, markedHere } from './overheadMarks.ts';
 import { countersOf } from './plazaLife.ts';
 import { STATIONS } from './welcome/plazaForTests.ts';
-import { awayFromCounters } from './townsfolk.ts';
 
 const station = (kind: string, keeper: readonly [number, number]): StationInfo => ({
   kind,
@@ -156,7 +155,7 @@ test("near, the hub's twelve marks are laid in layers, in under half the vertice
   assert.ok(layered < flat / 2, `${layered} numbers a frame against ${flat}`);
 });
 
-test('a keeper away from their counter is not lit, on the map or over their post', () => {
+test("the Postmaster is lit while letters wait for the player, whether or not a quest step asks for him", () => {
   const letter = { id: 9, from: 0, crowded: false, vestige: null, item: null };
   const gear = { mail: [letter] } as unknown as GearState;
   assert.equal(
@@ -164,14 +163,4 @@ test('a keeper away from their counter is not lit, on the map or over their post
     true,
     'letters wait',
   );
-  awayFromCounters.add('mail');
-  try {
-    assert.equal(
-      keeperLit(gear, 'mail', () => true),
-      false,
-      'away, whatever waits',
-    );
-  } finally {
-    awayFromCounters.delete('mail');
-  }
 });

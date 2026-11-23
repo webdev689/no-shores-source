@@ -2,6 +2,7 @@
 //! words the tracker shows, how many times it is met and the scene said as it is, a field missing or left over named as
 //! the file is read; what meets each; and what of each the rooms read.
 
+use crate::kinds::Slot;
 use crate::quests::{Event, Kill};
 use serde::de::{Deserializer, Error as _};
 use serde::{Deserialize, Serialize};
@@ -30,6 +31,8 @@ pub enum GoalKind {
     Puzzle,
     Unseen,
     Race,
+    Buy,
+    Wear,
 }
 
 impl GoalKind {
@@ -47,7 +50,9 @@ impl GoalKind {
             | Self::Sea
             | Self::Land
             | Self::Scavenge
-            | Self::Enter => false,
+            | Self::Enter
+            | Self::Buy
+            | Self::Wear => false,
         }
     }
 }
@@ -65,6 +70,13 @@ pub struct Plain {}
 #[serde(deny_unknown_fields)]
 pub struct Talk {
     pub to: String,
+}
+
+/// A smith's ware bought, or a piece worn, in a slot.
+#[derive(Clone, Debug, PartialEq, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct InSlot {
+    pub slot: Slot,
 }
 
 /// Standing within a place's reach in a node.
@@ -235,6 +247,8 @@ pub enum Goal {
     Puzzle(Puzzle),
     Unseen(Unseen),
     Race(Race),
+    Buy(InSlot),
+    Wear(InSlot),
 }
 
 /// One goal: the tracker's words, how many times it is met (1 when left out), the scene said as it is met, and what
@@ -288,6 +302,8 @@ impl Goal {
             Goal::Puzzle(_) => GoalKind::Puzzle,
             Goal::Unseen(_) => GoalKind::Unseen,
             Goal::Race(_) => GoalKind::Race,
+            Goal::Buy(_) => GoalKind::Buy,
+            Goal::Wear(_) => GoalKind::Wear,
         }
     }
 
@@ -310,7 +326,9 @@ impl Goal {
             | Goal::Cast(_)
             | Goal::Sea(_)
             | Goal::Land(_)
-            | Goal::Scavenge(_) => None,
+            | Goal::Scavenge(_)
+            | Goal::Buy(_)
+            | Goal::Wear(_) => None,
         }
     }
 
@@ -333,7 +351,9 @@ impl Goal {
             | Goal::Enter(_)
             | Goal::Escort(_)
             | Goal::Tail(_)
-            | Goal::Race(_) => None,
+            | Goal::Race(_)
+            | Goal::Buy(_)
+            | Goal::Wear(_) => None,
         }
     }
 
@@ -355,7 +375,9 @@ impl Goal {
             | Goal::Sea(_)
             | Goal::Land(_)
             | Goal::Scavenge(_)
-            | Goal::Enter(_) => None,
+            | Goal::Enter(_)
+            | Goal::Buy(_)
+            | Goal::Wear(_) => None,
         }
     }
 
@@ -377,7 +399,9 @@ impl Goal {
             | Goal::Enter(_)
             | Goal::Tail(_)
             | Goal::Puzzle(_)
-            | Goal::Race(_) => Box::new(core::iter::empty()),
+            | Goal::Race(_)
+            | Goal::Buy(_)
+            | Goal::Wear(_) => Box::new(core::iter::empty()),
         }
     }
 
@@ -400,7 +424,9 @@ impl Goal {
             | Goal::Sea(_)
             | Goal::Land(_)
             | Goal::Scavenge(_)
-            | Goal::Enter(_) => Vec::new(),
+            | Goal::Enter(_)
+            | Goal::Buy(_)
+            | Goal::Wear(_) => Vec::new(),
         };
         lines.into_iter().filter_map(Option::as_deref).collect()
     }
@@ -436,6 +462,8 @@ impl Goal {
             Goal::Puzzle(_) => stepped(GoalKind::Puzzle),
             Goal::Unseen(_) => stepped(GoalKind::Unseen),
             Goal::Race(_) => stepped(GoalKind::Race),
+            Goal::Buy(buy) => matches!(event, Event::Bought(slot) if *slot == buy.slot),
+            Goal::Wear(wear) => matches!(event, Event::Worn(slot) if *slot == wear.slot),
         }
     }
 }

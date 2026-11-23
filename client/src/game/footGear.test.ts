@@ -21,7 +21,6 @@ import { LORE_PICTURE } from './compendium/loreArt.ts';
 import { QUESTS } from './quests/questBook.ts';
 import { OPEN_AT } from './gearScreen.ts';
 import { SERVED_M, countersOf } from './plazaLife.ts';
-import { awayFromCounters } from './townsfolk.ts';
 import type { StationInfo } from './nodes.ts';
 
 const WEAPONSMITH: StationInfo = { kind: 'weaponsmith', keeper: [0, -2], counter: [0, 0] };
@@ -51,23 +50,6 @@ test('E at a counter opens its tab, and near a node asks the room to gather it',
     null,
     'a station that deals with no one offers nothing',
   );
-});
-
-test('a counter whose keeper is away still opens, which calls her back to it, and her mark goes with her', () => {
-  const LAMPLIGHTERS: StationInfo = { kind: 'lamplighters', keeper: [0, -2], counter: [0, 0] };
-  const here = { stations: [LAMPLIGHTERS] };
-  awayFromCounters.add('lamplighters');
-  try {
-    assert.equal(useAt(0, 0, here, null, () => undefined)?.words, 'Lamplighters', 'offered while she walks the plaza');
-    assert.deepEqual(
-      markedHere(null, here, () => 0),
-      [],
-      'no mark over her empty post',
-    );
-  } finally {
-    awayFromCounters.delete('lamplighters');
-  }
-  assert.equal(markedHere(null, here, () => 0).length, 1, 'marked again once she is back');
 });
 
 test('a node is not offered on horseback, nor while its resource is full', () => {

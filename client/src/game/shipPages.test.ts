@@ -48,7 +48,7 @@ const ship = (fields: Partial<GearShip> = {}): GearShip => ({
   ...fields,
 });
 
-/** Guns fitted, the Sails carried, and the Shipwright's six modules for sale after the smiths' twelve wares. */
+/** Guns fitted, the Sails carried, and the Shipwright's six modules for sale after the smiths' eighteen wares. */
 const gear = (fields: Partial<GearState> = {}): GearState =>
   ({
     aurem: 12_480,
@@ -57,7 +57,7 @@ const gear = (fields: Partial<GearState> = {}): GearState =>
       sampleItem({ id: 23, kind: 26, rarity: 3, level: 5, at: 0, bucket: 9, prestige: 6 }),
     ],
     wares: [
-      ...Array.from({ length: 12 }, (unused, place) => sampleItem({ id: 100 + place, kind: 13, price: 500 })),
+      ...Array.from({ length: 18 }, (unused, place) => sampleItem({ id: 100 + place, kind: 13, price: 500 })),
       ...[24, 25, 26, 27, 24, 26].map((kind, place) =>
         sampleItem({ id: 120 + place, kind, level: 2 + place, price: place === 5 ? 13_400 : 2_400 }),
       ),
@@ -205,11 +205,11 @@ test('the Harbourmaster sells the Shipwright’s modules, each held to buy, and 
   const page = drawn(gear(), (context) => harbourPage(context));
   assert.match(page.shows(), /Guns \| Normal Guns · level 2 \| .*2,400/);
   assert.match(page.shows(), /13,400 \| Not enough Aurem/);
-  page.click('buy-12');
+  page.click('buy-2-0');
   assert.deepEqual(page.asked, [], 'a click buys nothing');
-  page.hold('buy-12', 900);
+  page.hold('buy-2-0', 900);
   assert.equal(page.asked.length, 1, 'held, it is bought');
-  page.hold('buy-17', 900);
+  page.hold('buy-2-5', 900);
   assert.equal(page.asked.length, 1, 'one not paid for is never bought');
   assert.equal(stationTitle('harbourmaster'), 'The Harbourmaster');
   assert.equal(stationTitle('lamplighters'), 'Lamplighters');

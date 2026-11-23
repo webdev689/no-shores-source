@@ -104,7 +104,7 @@ async function play(minute: number): Promise<{ hash: string; ended: readonly num
   const players = [room.join(), room.join()];
   // Raised as the page raises its bots (`&bots=`), so the fingerprints prove its bots are the rules' players.
   for (const player of players)
-    assert.equal(room.restoreCharacter(player, seasoned(room.character(player) ?? '')), true);
+    assert.equal(room.restoreCharacter(player, seasoned(room.kitted())), true);
   let hash = 0x811c_9dc5;
   let last: Read | null = null;
   let ended: { tick: number; event: number[]; at: number[] } | null = null;

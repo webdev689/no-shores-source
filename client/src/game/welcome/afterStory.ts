@@ -1,77 +1,88 @@
-// What the story leaves to play on foot in Overlook's social space: the stranger's last moment (`Epilogue`), and once
-// she has gone, Elder Maren Hale's welcome. The browser keeps it due from the story's end until it is given, with the
-// stops said, so a reload or a leaving before its end brings it on the next arrival in a social space, from where it
-// was; leaving the place before the stranger has gone forgoes it. A browser that has played the story and holds no
-// mark of the welcome is welcomed on its next arrival. A browser that keeps nothing keeps it in the page.
-// Under `npm run dev` (or a built page on localhost), `?welcome=1` plays it at once on arriving in a social space,
-// played or not, as `?prologue=<beat>` starts the story where asked.
-import cast from '../../../../content/story/cast.json' with { type: 'json' };
-import scenes from '../../../../content/story/welcome.json' with { type: 'json' };
-import type { CardAt, Cards } from '../../player/cards.ts';
-import { castOf, scenesOf } from '../../speech/cast.ts';
-import { DialogueBox } from '../../speech/dialogue.ts';
+// What the story leaves to play on foot in Overlook's social space: the stranger's last moment (`Epilogue`), in which
+// she welcomes the player to Overlook (`tour.ts`). While she speaks the view is hers, flown from place to place, and
+// the player's keys are held; a press of Space (jump) moves her words on a line. Her farewell asks the room for her
+// gift. Leaving the place ends it all at once, the view and the keys the player's again.
+import { ASKS, type GearAsk, type GearState } from '../../network/gearMessages.ts';
+import type { CardAt } from '../../player/cards.ts';
+import type { Block } from '../../rules/movementRules.ts';
+import { FIRELIGHT, type LampPlace } from '../../sky/lamps.ts';
 import type { Shot } from '../camera.ts';
-import { OPEN_AT, type Opening } from '../gearScreen.ts';
-import { prologuePlayed } from '../prologue/beat.ts';
+import type { StationInfo } from '../nodes.ts';
 import type { Epilogue } from '../prologue/epilogue.ts';
-import { Objective } from '../prologue/objective.ts';
-import { worldOutput } from '../uiSounds.ts';
-import type { Stack } from '../../ui/stack.ts';
-import type { NodeInfo } from '../worldData.ts';
-import {
-  Welcome,
-  type WelcomeParts,
-  type WelcomeVoice,
-  keepWelcome,
-  welcomeDue,
-  welcomePlayed,
-  welcomeSaid,
-  welcomeUnmarked,
-} from './welcome.ts';
+import { COUNTERS, talkAt } from '../quests/questBook.ts';
+import { lineClear } from './framing.ts';
+import { StrangerWelcome } from './tour.ts';
+
+/** How far along her way the player is turned to look as she walks off, metres. */
+const AHEAD_M = 3;
+/** While she speaks no figure is drawn nearer the tour's eye than this, metres: a townsman walking past the camera
+ *  would fill the view. Her pair stands 6 m off it and a keeper at least 5.5 m (`framing.ts`). */
+export const TOUR_CLEAR_M = 4;
+
+/** The soft warm light over the pair while she speaks: a lantern of the town's (`glowLamps`), dimmer, hung over the
+ *  middle of the two of them, so they are seen at any hour; the sky's lamps light it only as the daylight fades. */
+const PAIR_LAMP = { upM: 2.6, reachM: 8, strength: 0.7, seed: 0.5 } as const;
+
+/** The lamp over the pair, her feet and the player's. */
+export function pairLamp(
+  her: { readonly x: number; readonly y: number; readonly z: number },
+  you: { readonly x: number; readonly y: number; readonly z: number },
+): LampPlace {
+  return {
+    at: [(her.x + you.x) / 2, (her.y + you.y) / 2, Math.max(her.z, you.z) + PAIR_LAMP.upM],
+    reachM: PAIR_LAMP.reachM,
+    light: [FIRELIGHT[0] * PAIR_LAMP.strength, FIRELIGHT[1] * PAIR_LAMP.strength, FIRELIGHT[2] * PAIR_LAMP.strength],
+    seed: PAIR_LAMP.seed,
+  };
+}
+
+/** The figures a tour's eye sees, all but those nearer it than `TOUR_CLEAR_M`. */
+export function clearOfEye<Card extends { readonly x: number; readonly y: number }>(
+  cards: readonly Card[],
+  eye: readonly [number, number, number],
+): Card[] {
+  return cards.filter((card) => Math.hypot(card.x - eye[0], card.y - eye[1]) >= TOUR_CLEAR_M);
+}
 
 type You = { readonly x: number; readonly y: number; readonly z: number; readonly facing: number };
+
+/** Where the player stands as the stranger meets them: the place's kind and counters, the floor a figure stands on,
+ *  the blocks the camera's lines must clear, this room's word on the player's gear, and how an ask reaches it. */
+export interface Arrival {
+  readonly node: { readonly kind: string; readonly stations?: readonly StationInfo[] };
+  readonly floor: (x: number, y: number) => number;
+  readonly blocks: readonly Block[];
+  readonly gear: GearState | null;
+  readonly ask: (asked: GearAsk) => void;
+  /** Whether a menu or a keeper's screen is open over the view. */
+  readonly held?: boolean;
+}
+
+/** Whether a word of the room on the player's own character (`claimed`) shows the stranger's task waiting. */
+const owed = (gear: GearState | null): boolean =>
+  gear?.quest?.claimed === true && talkAt(gear.quest, 'stranger') !== null;
 
 export class AfterStory {
   /** The stranger's last moment, set as the story hands the player over; null once she has gone or been left. */
   private epilogue: Epilogue | null = null;
-  private welcome: Welcome | null = null;
-  private readonly parts: WelcomeParts & { readonly kept: Pick<Storage, 'getItem' | 'setItem'> };
-  private readonly voice: () => WelcomeVoice;
-  /** The development switch, until a social space is arrived in. */
-  private asked: boolean;
-  /** Whether this arrival has been looked at for a welcome due, so it is looked at once a place. */
-  private arrived = false;
+  /** Her welcome, set on the first frame in a social space. */
+  private welcome: StrangerWelcome | null = null;
+  /** Whether her farewell has asked for her gift, and whether the room has been asked for it in this page. */
+  private farewell = false;
+  /** The bearing to turn the player to as she walks off, until the frame takes it. */
+  private turn: number | null = null;
+  private gifted = false;
+  /** Whether the lamp over the pair is lit. */
+  private lit = false;
+  /** Where the player stood on the last frame. */
+  private you: You = { x: 0, y: 0, z: 0, facing: 0 };
 
-  constructor(parts: AfterStory['parts'], voice: () => WelcomeVoice, asked: boolean) {
-    // What the browser keeps is kept in the page too, and read from there first: a browser that stops keeping holds
-    // only what it last kept.
-    const page = new Map<string, string>();
-    const kept = {
-      getItem: (key: string) => {
-        try {
-          return page.get(key) ?? parts.kept.getItem(key);
-        } catch {
-          return page.get(key) ?? null;
-        }
-      },
-      setItem: (key: string, value: string) => {
-        page.set(key, value);
-        parts.kept.setItem(key, value);
-      },
-    };
-    [this.parts, this.voice, this.asked] = [{ ...parts, kept }, voice, asked];
-  }
-
-  /** The story has ended and hands over the stranger's last moment, none where it was not played through: then the
-   *  welcome is due, unless already played. */
+  /** The story has ended and hands over the stranger's last moment, none where it was not played through. */
   storyEnded(epilogue: Epilogue | null): void {
-    [this.epilogue, this.arrived] = [epilogue, false];
-    if (epilogue && !welcomePlayed(this.parts.kept) && !welcomeDue(this.parts.kept))
-      keepWelcome(this.parts.kept, 'due');
+    [this.epilogue, this.welcome] = [epilogue, null];
   }
 
-  /** A frame on foot in `here`, her feet on its floor as a placed figure's; `veiled` while the arrival's veil is still
-   *  up, `held` while the menu or a keeper's screen is open. The cards of whoever is drawn. */
+  /** A frame on foot in `here`; `veiled` while the arrival's veil is still up. The cards of whoever is drawn. */
   frame(
     shot: Shot,
     viewport: { readonly width: number; readonly height: number },
@@ -79,82 +90,120 @@ export class AfterStory {
     clock: number,
     you: You,
     veiled: boolean,
-    here: { readonly node: NodeInfo; readonly floor: (x: number, y: number) => number },
-    held = false,
+    here: Arrival,
   ): CardAt[] {
-    const { node } = here;
+    this.gift(here);
+    this.you = you;
     const epilogue = this.epilogue;
-    if (epilogue && !epilogue.done) return epilogue.frame(shot, viewport, seconds, clock, you, veiled);
-    if (!veiled && node.kind === 'social' && !this.arrived) {
-      this.arrived = true;
-      const kept = this.parts.kept;
-      // A browser that has played the story and holds no mark of the welcome is welcomed all the same.
-      const due = welcomeDue(kept) || (prologuePlayed(kept) && welcomeUnmarked(kept));
-      const asked = this.asked;
-      [this.epilogue, this.asked] = [null, false];
-      const said = asked ? [] : welcomeSaid(kept);
-      if (asked || due)
-        this.welcome = Welcome.begin(
-          node,
-          { ...this.parts, groundAt: here.floor },
-          this.voice,
-          you,
-          said,
-          shot,
-          viewport,
-        );
+    if (!epilogue || epilogue.done) {
+      if (this.lit) epilogue?.light([]);
+      [this.epilogue, this.welcome, this.lit] = [null, null, false];
+      return [];
     }
-    const cards = this.welcome?.frame(shot, seconds, clock, you, held) ?? [];
-    if (this.welcome?.done) this.welcome = null;
+    if (!this.welcome && here.node.kind === 'social') {
+      const place = { stations: here.node.stations ?? [], groundAt: here.floor, blocks: here.blocks };
+      const welcome = new StrangerWelcome(place, {
+        play: (scene) => epilogue.say(scene),
+        gift: () => {
+          this.farewell = true;
+          this.turn = this.toward(epilogue);
+        },
+        faces: () => {
+          const her = epilogue.where;
+          if (!her) return null;
+          // Face to face: the player is turned toward her, as she stands facing them.
+          this.turn = Math.atan2(her.x - this.you.x, this.you.y - her.y);
+          return { stranger: [her.x, her.y, her.z], player: [this.you.x, this.you.y, this.you.z] };
+        },
+      });
+      epilogue.words = () => welcome.run();
+      epilogue.clear = lineClear(here.blocks);
+      epilogue.floor = here.floor;
+      this.welcome = welcome;
+    }
+    const cards = epilogue.frame(shot, viewport, seconds, clock, you, veiled, here.held);
+    const her = epilogue.where;
+    const lamps = this.holding && her ? [pairLamp(her, you)] : [];
+    if (lamps.length > 0 || this.lit) epilogue.light(lamps);
+    this.lit = lamps.length > 0;
     return cards;
   }
 
-  /** The place is left: the stranger goes, the welcome ends where it is, and one not yet begun is forgone. Before the
-   *  player has arrived anywhere the stranger has no place to leave, and waits for it. */
+  /** Her gift, asked of the room once in a page: after her farewell, or owed with no welcome to hear in a social space
+   *  (a reload mid-welcome, a browser that played the story before); never before this room's gear is the player's
+   *  own and shows her task waiting, so no temporary character, nor another room's, takes it. */
+  private gift(here: Arrival): void {
+    const due = here.node.kind === 'social' && (this.farewell || this.past);
+    if (this.gifted || !due || !owed(here.gear)) return;
+    this.gifted = true;
+    here.ask({ kind: ASKS.speakWith, column: COUNTERS.stranger ?? 0 });
+  }
+
+  /** The bearing to turn the player's own view to, once, as she walks off: toward a point a few metres along her way,
+   *  so the view easing back over their shoulder sees her go into the town. */
+  takeTurn(): number | null {
+    const turn = this.turn;
+    this.turn = null;
+    return turn;
+  }
+
+  private toward(epilogue: Epilogue): number | null {
+    const her = epilogue.where;
+    if (!her) return null;
+    const [toX, toY] = [epilogue.goingTo[0] - her.x, epilogue.goingTo[1] - her.y];
+    const away = Math.hypot(toX, toY) || 1;
+    const [x, y] = [her.x + (toX / away) * AHEAD_M, her.y + (toY / away) * AHEAD_M];
+    return Math.atan2(x - this.you.x, this.you.y - y);
+  }
+
+  /** The view this frame, the player's own being `own`: the welcome's while she speaks. */
+  shot(own: Shot, seconds: number): Shot {
+    return this.welcome?.shot(own, seconds) ?? own;
+  }
+
+  /** The tour's shot last shown while she speaks, for the figures to be drawn for its eye; null in the player's own
+   *  view. */
+  get seen(): Shot | null {
+    return this.holding ? (this.welcome?.last ?? null) : null;
+  }
+
+  /** Whether the player's keys are held: while she speaks her welcome. */
+  get holding(): boolean {
+    return this.welcome?.holding ?? false;
+  }
+
+  /** Space pressed while she speaks: her words move on a line. */
+  press(): void {
+    if (this.holding) this.epilogue?.advance();
+  }
+
+  /** The place is left: the stranger goes, her welcome with her. Before the player has arrived anywhere the
+   *  stranger has no place to leave, and waits for it. */
   leave(): void {
-    this.welcome?.leave();
+    this.welcome?.end();
     this.welcome = null;
     this.epilogue?.leave();
-    if (this.epilogue?.done) {
-      this.epilogue = null;
-      if (welcomeDue(this.parts.kept)) keepWelcome(this.parts.kept, 'forgone');
-    }
-    this.arrived = false;
+    if (this.epilogue?.done) this.epilogue = null;
   }
 
-  /** Whether the story's last moment and the welcome are past: neither plays, nor waits for an arrival. */
+  /** Whether the story's last moment is past: the stranger has gone, or none waits. */
   get past(): boolean {
-    const kept = this.parts.kept;
-    const waiting = welcomeDue(kept) || (prologuePlayed(kept) && welcomeUnmarked(kept));
-    return !this.epilogue && !this.welcome && !this.asked && !waiting;
-  }
-
-  /** The menu opens at `view`, as a counter opens it: her own counter's ends her walk. */
-  counterOpened(view: string): void {
-    this.welcome?.counterOpened(view);
+    return !this.epilogue || this.epilogue.done;
   }
 }
 
-/** What the story leaves on the game's own page: the welcome's words read from content/story/, its speech drawn on
- *  the game's interface, kept in the browser, and the development switch read from the address. */
-export function afterStoryOn(
-  stack: Stack,
-  forge: Cards,
-  groundAt: (x: number, y: number) => number | null,
-): AfterStory {
-  const read = castOf(cast);
-  const voice = () => ({
-    dialogue: new DialogueBox(stack, worldOutput),
-    objective: new Objective(stack),
-  });
-  // A built page served on this machine honours it too, for the headless pictures taken of a built page.
-  const here = import.meta.env.DEV || location.hostname === 'localhost';
-  const asked = here && new URLSearchParams(location.search).get('welcome') === '1';
-  const after = new AfterStory(
-    { forge, groundAt, cast: read, scenes: scenesOf(scenes, read), kept: localStorage },
-    voice,
-    asked,
-  );
-  addEventListener(OPEN_AT, (event) => after.counterOpened((event as CustomEvent<Opening>).detail.view));
-  return after;
+/** The HUD's parts of the player's own play that a cutscene hides. */
+export interface HeldHud {
+  hints(hints: readonly never[]): void;
+  marks(marks: readonly never[]): void;
+  readonly tasks: { show(quest: null): void };
+}
+
+/** The HUD while she speaks, as a cutscene's: the fight's bars and compass, the tracker, the marks and the key strip
+ *  hidden, the dialogue box hers; each comes back on the next frame after, as the game sets them. */
+export function heldHud(hud: HeldHud, display: { hideDisplay(): void }): void {
+  display.hideDisplay();
+  hud.hints([]);
+  hud.marks([]);
+  hud.tasks.show(null);
 }
