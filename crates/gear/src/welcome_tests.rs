@@ -237,3 +237,24 @@ fn a_character_kept_before_the_quest_log_reads_on_the_houses_with_no_gift_and_a_
 fn object_keys(character: &Character) -> Vec<String> {
     character.quests.roads.keys().cloned().collect()
 }
+
+#[test]
+fn the_openings_purchases_are_let_go_once_it_is_armed_so_a_later_buy_goal_counts_only_its_own() {
+    let mut character = welcomed();
+    for key in ["weaponsmith", "armorsmith", "mage", "vault", "tailor", "tack", "mail", "harbourmaster"] {
+        assert!(character.ask(Ask::Speak { keeper: keeper(key) }, SOCIAL, &DICE).is_ok(), "{key}");
+    }
+    let level = character.level();
+    let buy = |character: &mut Character, vendor, kind| {
+        let ware = starter(vendor, kind, level);
+        assert!(character.ask(Ask::Vend { vendor, ware, day: 4 }, SOCIAL, &DICE).is_ok());
+    };
+    buy(&mut character, Vendor::Weaponsmith, Kind::SwordAndShield);
+    assert_eq!(character.quests.bought, vec![Slot::Melee], "kept while the opening asks");
+    for kind in [Kind::Head, Kind::Torso, Kind::Arms, Kind::Legs] {
+        buy(&mut character, Vendor::Armorsmith, kind);
+    }
+    assert!(character.quests.bought.is_empty(), "let go once its buy task is met");
+    buy(&mut character, Vendor::Weaponsmith, Kind::Bow);
+    assert_eq!(character.quests.bought, vec![Slot::Ranged], "a later purchase is a later goal's own");
+}

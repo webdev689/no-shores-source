@@ -107,8 +107,8 @@ pub struct Road {
 pub struct QuestLog {
     pub roads: BTreeMap<String, Road>,
     pub choices: Vec<u8>,
-    /// The slots a smith has sold the player a piece for, each once: a `buy` goal is met by one, however long before
-    /// its task the piece was bought.
+    /// The slots a smith has sold the player a piece for, each once, since the last task that asked for purchases was
+    /// met: a `buy` goal is met by one, however long before its task the piece was bought.
     #[serde(skip_serializing_if = "Vec::is_empty")]
     pub bought: Vec<Slot>,
     /// Keys this room does not know, from a later room's save, written back as read.
@@ -289,6 +289,10 @@ impl Character {
                 (road.task, road.counts, road.fought) = (next.id.clone(), vec![0; next.goals.len()], Vec::new())
             }
             None => road.done = true,
+        }
+        // The purchases a buy task counted are its own: a later buy goal counts only those made after it.
+        if goals.iter().any(|goal| goal.kind() == GoalKind::Buy) {
+            self.quests.bought.clear();
         }
         self.reward(def.faction, def.tasks[task].reward);
         self.find_lore_due(crate::lore::lore());
