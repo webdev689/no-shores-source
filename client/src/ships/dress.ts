@@ -2,8 +2,8 @@
 // along its gunports, its canvas and the flag at its masthead. A side's colours are the painter's, laid over the
 // same pictures every hull wears.
 
-/** Whose a ship is: a player's, a friendly merchantman's, the Grey Tithe's or the pirates'. */
-export const SHIP_SIDES = ['player', 'friendly', 'tithe', 'pirate'] as const;
+/** Whose a ship is: a player's, a friendly merchantman's or the Grey Tithe's. */
+export const SHIP_SIDES = ['player', 'friendly', 'tithe'] as const;
 export type ShipSide = (typeof SHIP_SIDES)[number];
 
 /** A colour as red, green and blue, 0 to 1. */
@@ -44,24 +44,17 @@ export const DRESSES: Readonly<Record<ShipSide, ShipDress>> = {
     hull: colourOf('#59636b'),
     stripe: colourOf('#ebe0c2'),
     canvas: colourOf('#8f9092'),
-    // Its canvas grey, so at fight range its flag never reads as the pirates' black; the balance in dark slate.
+    // Its canvas grey and its flag the same; the balance on it in dark slate.
     flag: colourOf('#8f9092'),
     emblem: 1,
     emblemTint: colourOf('#2e3438'),
   },
-  pirate: {
-    hull: colourOf('#1d1c1c'),
-    stripe: colourOf('#b0302a'),
-    canvas: colourOf('#4b4640'),
-    flag: colourOf('#151414'),
-    emblem: 2,
-    emblemTint: null,
-  },
 };
 
-/** The side a captain of a faction sails for: 1 the Grey Tithe, 2 the pirates; any other a friendly ship. */
+/** The side a captain of a faction sails for: 0, the players', a friendly ship; any other a hostile one, the Grey
+ *  Tithe's (the Lattice's ships come later). */
 export function factionSide(faction: number): ShipSide {
-  return faction === 1 ? 'tithe' : faction === 2 ? 'pirate' : 'friendly';
+  return faction === 0 ? 'friendly' : 'tithe';
 }
 
 /** How a ship is drawn: its side, and how light (1 as painted, less for another player's in the World Editor). */

@@ -15,7 +15,7 @@ import type { Difficulty } from '../heldmap/heldMap.ts';
 import { ASKS, DROPPED, type GearState } from '../network/gearMessages.ts';
 import { RoomConnection, type RoomLink, type Snapshot } from '../network/roomConnection.ts';
 import type { CardAt } from '../player/cards.ts';
-import { crosshairPoint } from '../player/crosshair.ts';
+import { crosshairPoint, shotBodies } from '../player/crosshair.ts';
 import { CARD_NEAREST_M, type Placed } from '../player/figures.ts';
 import { Glides } from '../player/glide.ts';
 import { IDLE, type InputFrame } from '../player/input.ts';
@@ -39,7 +39,7 @@ import { ACCOUNT_CHANGED, type GearHere } from './gearScreen.ts';
 import { keysShown, onFoot } from './hints.ts';
 import { type Standing, standingOf } from './hudLaw.ts';
 import { windowRect } from './nodes.ts';
-import { PlazaLife, countersOf } from './plazaLife.ts';
+import { PlazaLife, countersOf, floorOver } from './plazaLife.ts';
 import { PublicView } from './publicView.ts';
 import { openNodeAlone } from './footNode.ts';
 import { nodeRoom } from './rooms.ts';
@@ -91,6 +91,8 @@ export class Foot {
   readonly seas: Difficulty;
   /** The ground's height under a world point as drawn: the land's, or a dungeon's floor. */
   readonly groundAt: (x: number, y: number) => number | null;
+  /** The floor a placed figure stands on: in a social space on a pier, a podium or a landing (`floorOver`). */
+  readonly floor: (x: number, y: number) => number;
   /** The ceiling over a world point in a dungeon, which the camera stays under; none on a node's land. */
   private readonly roof: ((x: number, y: number) => number | null) | null;
   private readonly module: WebAssembly.Module;
@@ -160,7 +162,7 @@ export class Foot {
     this.foes = new FoeFigures(parts.roster);
     this.feel = new AttackFeel(parts.combat, context.movement.tickSeconds);
     this.prompt = context.usePrompt;
-    const floor = (x: number, y: number) => context.movement.standing(x, y).z;
+    this.floor = floorOver(node.kind === 'social' ? opened.boxes : [], (x, y) => context.movement.standing(x, y).z);
     const placing: Others = {
       place: (dress, x, y, facing) => {
         const one = { id: nextOtherId(), x, y, z: 0, facing, dress, anim: 'idle', frame: null, spin: false };
@@ -172,7 +174,7 @@ export class Foot {
         context.forge.forget(one.id);
       },
     };
-    this.plaza = node.kind === 'social' ? new PlazaLife(node, placing, floor) : null;
+    this.plaza = node.kind === 'social' ? new PlazaLife(node, placing, this.floor) : null;
     this.publicView = new PublicView(node.id, this.feel, {
       boxes: opened.boxes,
       courses: [context.movement, parts.combat],
@@ -400,7 +402,7 @@ export class Foot {
     const shown = this.player.frame(still ? IDLE : { ...controls, locked: true }, this.steps, seconds, clock, {
       running: true,
       hands: hands && !still,
-      markOf: () => crosshairPoint(camera(), aspect, this.boxes, bodies, groundAt),
+      markOf: () => crosshairPoint(camera(), aspect, this.boxes, shotBodies(foes.placed, fight.foes), groundAt),
       zoomOf: () => handsZoom(camera(), walker.player.view),
       handsSeconds: feel.shownSeconds(fight.player, seconds),
     });
@@ -447,8 +449,7 @@ export class Foot {
     const eye = { x: eyeX, y: eyeY, nearest };
     figures.push(...foes.cards(fight, forge, eye, clock, frameTicks, tickSeconds, effects.flashes, foeFeel));
     // The player's own shots leave the weapon as drawn: the first person's muzzle, or the figure's along its shot.
-    const muzzle = walker.muzzle;
-    const [gearNow, floor] = [this.gear?.gear ?? null, (x: number, y: number) => movement.standing(x, y).z];
+    const [muzzle, gearNow, floor] = [walker.muzzle, this.gear?.gear ?? null, this.floor];
     const marked = markedHere(gearNow, countersOf(this.node), floor, this.context.trips.props(), this.context.speak);
     const lit = litMarksSeen(marked, shot.eye, clock);
     const hidden = marksHidden(marked, shot.eye, clock);

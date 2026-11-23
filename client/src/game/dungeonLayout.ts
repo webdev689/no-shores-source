@@ -126,12 +126,6 @@ export function askLayout(module: WebAssembly.Module, ask: DungeonAsk): DungeonL
   return layout;
 }
 
-/** A dungeon laid by `seed` and the style keyed `style` where no patrol lays it (a sea island's), named for its place
- *  `name`, by the room module's own rules; a style that is none throws. */
-export function askDungeonOf(module: WebAssembly.Module, seed: number, style: StyleKey, name: string): DungeonLayout {
-  return askLayout(module, { seed: seed >>> 0, style, name });
-}
-
 /** The dungeon `number` of the patrol `patrol` (its id) named `name`, laid by the room module's own rules; an ask it
  *  does not answer throws. */
 export function askDungeon(module: WebAssembly.Module, patrol: string, name: string, number: number): DungeonLayout {

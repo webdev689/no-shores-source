@@ -152,7 +152,7 @@ export function landDrawers(
 ): LandDrawers {
   const plan = landmass.drawnPlan;
   let [version, patch, sample] = [0, scene.closePatch(), landSampler(landmass.view, scene.closePatch())];
-  const city = plan ? new CityView(gpu) : null;
+  const city = plan ? new CityView(gpu, shipScale) : null;
   let released = false;
   // While the city's blocks come it is not built, and stands in as nothing.
   let building = !!(plan && city);

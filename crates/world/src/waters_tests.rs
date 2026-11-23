@@ -52,15 +52,11 @@ fn brute_force(waters: &Waters, point: [f64; 2]) -> Option<(usize, f64)> {
     best
 }
 
-fn index_of(layout: &Layout, id: &str) -> usize {
-    layout.continents.iter().position(|continent| continent.id == id).expect("the continent is in the layout")
-}
-
 #[test]
 fn the_table_names_each_island_water_and_its_holder() {
     let holders: Vec<Holder> = (1..=9).map(|n| holder_of(&format!("continent-{n}")).unwrap()).collect();
-    use Holder::{Contested, GreyTithe, Home, Pirates};
-    assert_eq!(holders, [Home, Contested, GreyTithe, Pirates, Pirates, Pirates, GreyTithe, GreyTithe, GreyTithe]);
+    use Holder::{GreyTithe, Home, Lattice};
+    assert_eq!(holders, [Home, Lattice, Lattice, GreyTithe, Lattice, Lattice, Lattice, Lattice, GreyTithe]);
     assert_eq!(name_of("continent-1"), Some("The Lantern Sea"));
     assert_eq!(name_of("continent-4"), Some("The Sunscorch Coves"));
     assert_eq!(name_of("continent-9"), Some("The Rimeholt Deep"));
@@ -92,14 +88,6 @@ fn the_waters_border_exactly_as_measured() {
         [7, 9],
     ];
     assert_eq!(named, expected);
-    let pirate_tithe: Vec<&[usize; 2]> = expected
-        .iter()
-        .filter(|pair| {
-            let holders = pair.map(|n| holder_of(&format!("continent-{n}")).unwrap());
-            holders.contains(&Holder::Pirates) && holders.contains(&Holder::GreyTithe)
-        })
-        .collect();
-    assert_eq!(pirate_tithe, [&[4, 8]], "4-8 is the one border between the pirates and the Tithe");
 }
 
 #[test]
@@ -145,25 +133,16 @@ fn just_offshore_each_port_city_is_its_own_island_water() {
 }
 
 #[test]
-fn seam_points_are_contested_and_only_along_the_fourth_and_eighth() {
+fn every_point_of_sea_is_held_as_its_island_water_is() {
     let layout = world_layout();
     let waters = Waters::new(&layout);
-    let (fourth, eighth) = (index_of(&layout, "continent-4"), index_of(&layout, "continent-8"));
     let grid = waters.grid(20_000.0).unwrap();
-    let mut seen = [false; 2];
     for (cell, &byte) in grid.cells.iter().enumerate() {
         let middle = [((cell % grid.columns) as f64 + 0.5) * 20_000.0, ((cell / grid.columns) as f64 + 0.5) * 20_000.0];
         let Some(water) = waters.water_at(middle) else { continue };
-        if water.seam {
-            assert_eq!(water.holder, Holder::Contested);
-            assert!(byte & SEAM_BIT != 0);
-            assert!(water.continent == fourth || water.continent == eighth, "seam only off the fourth and eighth");
-            seen[usize::from(water.continent == eighth)] = true;
-        } else {
-            assert_eq!(water.holder, holder_of(&layout.continents[water.continent].id).unwrap());
-        }
+        assert_eq!(usize::from(byte), water.continent, "a sea cell holds its water's index alone");
+        assert_eq!(water.holder, holder_of(&layout.continents[water.continent].id).unwrap());
     }
-    assert_eq!(seen, [true, true], "the seam runs on both sides of the border");
 }
 
 #[test]
@@ -201,7 +180,7 @@ fn the_grid_agrees_with_water_at_at_its_cell_middles() {
             let middle = [(column as f64 + 0.5) * 48_000.0, (row as f64 + 0.5) * 48_000.0];
             let expected = match waters.water_at(middle) {
                 None => LAND_CELL,
-                Some(water) => water.continent as u8 | if water.seam { SEAM_BIT } else { 0 },
+                Some(water) => water.continent as u8,
             };
             assert_eq!(grid.cells[row * grid.columns + column], expected);
         }

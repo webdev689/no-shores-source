@@ -19,6 +19,7 @@ code:
   - crates/foes/src/tactics.rs#decide
   - crates/foes/src/leash.rs#leash
   - crates/foes/src/leash.rs#unoccupied
+  - crates/foes/src/leash.rs#reachable
   - crates/foes/src/brain.rs#Orders
   - crates/foes/src/brain.rs#breaks
   - crates/foes/src/rally.rs#broken
@@ -97,19 +98,19 @@ strikes ([[Public Events]]).
   reach: a gunshot 2.0 to 40 m, a bow or crossbow 0.7 to 10 m, a swing or a blow landing 1.0 to 15 m (heard where it
   lands), a fighter running 0.42 to 8 m each half second. A noise whose line from it to the foe's chest passes through a
   block or a dungeon's wall ([[Dungeons]]) carries half as loud and half as far. A foe pays no heed to its own side's
-  noises. With no target, a foe hears
-  the stir of every foe of another faction, 0.2 a second at its feet to nothing at 60 m (halved through a block, as any
-  noise), so two factions left apart beyond sight find each other; a player makes no such stir. With nothing stirring
-  the level bleeds 0.16 a second, but not while it fights or hunts. Above 0.02 a foe is **suspicious**: it turns and
-  walks up to 3 m toward what stirred it. At 1 it is **alert**: it shouts once, waking allies within 12 m toward that
-  place, and takes the nearest it sees (or another, sharing out: below), or the one that strikes it (a blow alerts at
-  once). Seen farther off than its range, a target is pursued, not fought; a shooter pursuing one walks on until it
-  stands 6 m inside its range. Out of sight, its target is hunted where it was last seen for 5 s, its turn kept 1.5 s
-  (DFO's stale lease), and by a garrison foe for as long as the target stands within 14 m of it; then it **searches**: walks to within 1.4 m of the place, sweeps its gaze at 2.2 radians a second
-  out and back for 2.6 s, then lets go, and its level bleeds back to idle. Suspicious, hunting or searching, it stops
-  short of the place behind an ally that already stands nearer it, within 1.2 m. The foe's soft lock holds its target,
-  but while it answers a blow, the striker. A player just stood again is left be for 3 s, unless they strike first, and
-  their feet make no noise.
+  noises. With no target, a foe hears the stir of every foe of another faction, 0.2 a second at its feet to nothing at
+  60 m (halved through a block, as any noise), so two factions left apart beyond sight find each other; a player makes
+  no such stir. With nothing stirring the level bleeds 0.16 a second, but not while it fights or hunts. Above 0.02 a foe
+  is **suspicious**: it turns and walks up to 3 m toward what stirred it. At 1 it is **alert**: it shouts once, waking
+  allies within 12 m toward that place, and takes the nearest it sees that its leash lets it fight (or another, sharing
+  out: below), or the one that strikes it (a blow alerts at once). Seen farther off than its range, a target is pursued,
+  not fought; a shooter pursuing one walks on until it stands 6 m inside its range. Out of sight, its target is hunted
+  where it was last seen for 5 s, its turn kept 1.5 s (DFO's stale lease), and by a garrison foe for as long as
+  the target stands within 14 m of it; then it **searches**: walks to within 1.4 m
+  of the place, sweeps its gaze at 2.2 radians a second out and back for 2.6 s, then lets go, and its level bleeds back
+  to idle. Suspicious, hunting or searching, it stops short of the place behind an ally that already stands nearer it,
+  within 1.2 m. The foe's soft lock holds its target, but while it answers a blow, the striker. A player just stood
+  again is left be for 3 s, unless they strike first, and their feet make no noise.
 - **The veil.** A Veiled fighter ([[Combat]], "Statuses") is not one a foe sees, takes as a target, answers or aims at:
   a foe fighting one lets it go at once and swings or winds up at it no more, though a wind-up already under way still
   lands. Its noises still stir a foe. Its own blow ends the veil, and the foe it strikes takes it as its target.
@@ -149,27 +150,32 @@ strikes ([[Public Events]]).
   along the wall; only a link climbs it. A target within 4 m across but higher or lower than a blow reaches (1.4 m) is
   as far as the walk to it, so a foe beneath a ledge goes up to it rather than swing at it from below.
 - **The leash.** A garrison foe ([[Enemies]]) is leashed to its place in its group, at its post or on its beat, which
-  holds still while the group fights ([[Foes Leash to Their Posts and Fall With Their Boss]]). Once its target stands
-  50 m from that place, or, farther from the foe than the 14 m it engages a target it sees within, off the room's
-  navmesh (more than 1.5 m across from the mesh's nearest point, or on no level it has), it gives its fight up once no wind-up of its own is under way: its target, its turn, the blow it saw coming
-  and its answer, its hunt, its search, its awareness, and a roar its health no longer calls for. A target within
-  those 14 m it never gives up on, wherever the target stands ([[A Foe Gives Up Only When the Player Is Far Away]]). It sheds its Expose
-  and its Charge ([[Combat]], "Statuses") and walks back by the room's routes, healing each tick the share of what it
-  lacks that a tick's walk is of the way left, so it is whole as it arrives (from 40 m, about 12 s), then turns to face
-  as its place does and stands idle. Walking back it heeds nothing it sees or hears and shows as idle, so the one it
-  gave up on cannot draw it out again at once. A blow on it brings it back, alert with the striker as its target; one
-  struck from past its leash it gives up again. A foe a player asked for, or one a Boss called, has no post and never
-  leashes. A foe a page playing a course alone stands where it wants it ([[Server]], "A course a page plays alone") is
-  posted where it stands and leashes to it; a Boss stood so calls no one in its phases, so a scene that places its own
-  foes keeps them as it placed them.
-- **Home after a search.** A garrison foe whose search finds no one (its look about ends, or its awareness bleeds
-  back first) walks home the same way, healing (from 20 m, about 6 s). On this walk it heeds what it sees and hears
-  as ever: they raise its awareness, and once it is alert it takes its target or searches again; short of that it
-  walks on home, so a passing stir never leaves it standing short of its post. Either walk home takes a Boss or a
-  Miniboss back to its first phase, and the foes it called fall ([[Enemies]]). With nothing stirring it, a garrison
-  foe keeps to its place: one a stir drew off, or an ally walking past moved, walks back to it once idle. While its
-  group walks its beat it keeps up with its place, walking at the share of a walk that its distance behind is of 2 m,
-  its own walk at most, and faces its way.
+  holds still while the group fights ([[Foes Leash to Their Posts and Fall With Their Boss]]). Once its target stands 50
+  m from that place, or, farther from the foe than the 14 m it engages a target it sees within, stands on the ground
+  off the room's navmesh (more than 1.5 m across from the mesh's nearest point, or on no level it has), it gives its fight up once no wind-up of its own is under way: its target, its turn,
+  the blow it saw coming and its answer, its hunt, its search, its awareness, and a roar its health no longer calls for.
+  A target within those 14 m it never gives up on, wherever the target stands
+  ([[A Foe Gives Up Only When the Player Is Far Away]]).
+  It sheds its Expose and its Charge ([[Combat]], "Statuses") and walks back by the room's routes, healing each tick the
+  share of what it lacks that a tick's walk is of the way left, so it is whole as it arrives (from 40 m, about 12 s),
+  then turns to face as its place does and stands idle. Walking back it heeds nothing it sees or hears and shows as
+  idle, so the one it gave up on cannot draw it out again at once. A blow on it brings it back, alert with the striker
+  as its target; one struck from past its leash it gives up again. A foe a player asked for, or one a Boss called, has
+  no post and never leashes. A foe a page playing a course alone stands where it wants it ([[Server]], "A course a page
+  plays alone") is posted where it stands and leashes to it; a Boss stood so calls no one in its phases, so a scene that
+  places its own foes keeps them as it placed them. A target in the air, hanging, climbing or going over a lip is judged
+  by its distance alone, so a foe fights on at one on a wall or over a ledge. Seeing one past its leash on ground its
+  routes reach stirs it (it searches toward them) but it takes them as no target; one farther than 14 m from it on
+  ground its routes do not reach from its place, a part of the navmesh with no way to it, stirs it not at all
+  (`leash::reachable`).
+- **Home after a search.** A garrison foe whose search finds no one (its look about ends, or its awareness bleeds back
+  first) walks home the same way, healing (from 20 m, about 6 s). On this walk it heeds what it sees and hears as ever:
+  they raise its awareness, and once it is alert it takes its target or searches again; short of that it walks on home,
+  so a passing stir never leaves it standing short of its post. Either walk home takes a Boss or a Miniboss back to its
+  first phase, and the foes it called fall ([[Enemies]]); walking home after a search it roars into no later phase, so
+  it arrives whole in its first. With nothing stirring it, a garrison foe keeps to its place: one a stir drew off, or an
+  ally walking past moved, walks back to it once idle. While its group walks its beat it keeps up with its place,
+  walking at the share of a walk that its distance behind is of 2 m, its own walk at most, and faces its way.
 - **Its group.** A garrison foe does as its group asks ([[Enemies]], "A garrison";
   [[Foes Fight in Groups That Lead, Break and Give Ground, After Bungie]]; the numbers are Claude's,
   [[Foe Groups as Claude Builds Them]]):
@@ -259,9 +265,9 @@ strikes ([[Public Events]]).
   target starts its count afresh. A foe's riposte after its own parry, its counter after a perfect dodge, and, in its
   turn, a swing at a target spent in its own swing's follow-through, staggered or tending a bow (not one knocked down:
   the iron blow already punished that), are struck at once with a chop.
-- **Backing off and running.** A quarter of its health lost inside 3 s, or, for a foe that guards or dodges, its poise
-  four fifths full: it hands its turn on and walks out to a ring 2 m farther, then holds it facing its target, for 2
-  s in all, at most once in 10 s.
+- **Backing off and running.** A quarter of its health lost inside 3 s (counted from its health at its level as it
+  stands), or, for a foe that guards or dodges, its poise four fifths full: it hands its turn on and walks out to a ring
+  2 m farther, then holds it facing its target, for 2 s in all, at most once in 10 s.
 - **Shooters.** A shooter shoots its own weapon: a bow drawn 1.0 s, a crossbow 1.3 s, a pistolet 1.2 s, a thunderlock
   1.5 s, aiming up for a bolt's or arrow's fall, 0.5 to 1.5 s between shots; its shots strike as a player's quick shot
   does ([[Combat]], [[Ranged Weapons Aim and Fire]]). A foe's gun ball flies at 70 m/s (pistolet) or 110 m/s

@@ -129,6 +129,30 @@ test('an arrow in a body follows it while it stands, and falls with it', () => {
   assert.equal(tracers.mesh(eye, [], 1).length, 0, 'gone with the body');
 });
 
+test("the player's own arrow flies on past a body that is not among its targets: the dead, its own side", () => {
+  const body: [number, number, number] = [0, -6, 0];
+  const passing = new Tracers();
+  passing.fired([{ ...arrow, velocity: [0, -45, 0] }], () => [0, 0, 1.4]);
+  const struck: unknown[] = [];
+  for (let tick = 0; tick < 18; tick++) {
+    passing.update(TICK, [], [body], undefined, []);
+    struck.push(...passing.struck);
+  }
+  assert.equal(struck.length, 0, 'it met nothing');
+  const stopping = new Tracers();
+  stopping.fired([{ ...arrow, velocity: [0, -45, 0] }], () => [0, 0, 1.4]);
+  const met: { surface: string }[] = [];
+  for (let tick = 0; tick < 18; tick++) {
+    stopping.update(TICK, [], [body], undefined, [body]);
+    met.push(...stopping.struck);
+  }
+  assert.deepEqual(
+    met.map((one) => one.surface),
+    ['body'],
+    'the same body among its targets stops it',
+  );
+});
+
 test('a shot that strikes stone answers where, for its sparks; one in the ground or a body answers none', () => {
   const stone = new Tracers();
   stone.fired([{ ...arrow, velocity: [0, -45, 0] }], () => [0, 0, 1.4]);

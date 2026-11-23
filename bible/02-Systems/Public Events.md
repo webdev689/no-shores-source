@@ -93,7 +93,8 @@ still standing shatters, sharing no kill, and it is won.
   for 45 seconds, rising over its first 2.4 and sinking over its last 3, as the page draws it, then is gone. A body
   walks through it: a box round it would stop every blow and shot at it. Broken in time, the event turns heroic: half of the shards
   still needed are added, every wave after holds an Elite (a Bulwark or a Ravager by turns), and the seal complete
-  brings out the Warden (a Bulwark Miniboss, "The Warden of the Fissure"), who must fall to win; then the rest shatter.
+  brings out the Warden (a Bulwark Miniboss, "The Warden of the Fissure"), posted where it climbs out 4 m from the
+  middle, clear of the spires that stand until it falls, who must fall to win; then the rest shatter.
 - **Bonus:** sealed with at least half of the 8 minutes left; a Warden falling later keeps it.
 
 **The raid.** Its banners are planted and its first wave forms out of sight, 14 m beyond its approach, away from the

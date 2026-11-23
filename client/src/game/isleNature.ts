@@ -83,6 +83,12 @@ export class IslesNature implements Drawer {
     this.version += 1;
     for (const climate of this.plantings.keys())
       if (!this.views.has(climate)) this.views.set(climate, new NatureView(this.gpu));
+    // A climate no longer shown gives its flora's pictures back, so only the climates shown hold them.
+    for (const [climate, view] of this.views)
+      if (!this.plantings.has(climate)) {
+        view.destroy();
+        this.views.delete(climate);
+      }
   }
 
   private keep(

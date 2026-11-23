@@ -15,7 +15,7 @@ import type { Gpu } from '../../gpu.ts';
 import type { GearState } from '../../network/gearMessages.ts';
 import { RoomThread } from '../../network/roomThread.ts';
 import type { CardAt, Cards } from '../../player/cards.ts';
-import { crosshairPoint } from '../../player/crosshair.ts';
+import { crosshairPoint, shotBodies } from '../../player/crosshair.ts';
 import { CARD_NEAREST_M } from '../../player/figures.ts';
 import { handsZoom } from '../../player/playerCamera.ts';
 import type { Dress } from '../../player/dressing.ts';
@@ -35,7 +35,7 @@ import { louder, STORY_FIGHT_GAIN } from './fightSound.ts';
 import type { Arms, Boarder } from './tutorial.ts';
 import { cameraCourse } from './wreckCamera.ts';
 import { WreckCrew } from './wreckCrew.ts';
-import { courseOf, titheCrew, topAt, type WreckLayout } from './wreckLayout.ts';
+import { courseOf, topAt, type WreckLayout } from './wreckLayout.ts';
 import { type Outcome, type Standing, WreckProgress } from './wreckProgress.ts';
 import type { WreckDrawn, WreckScenery } from './wreckScenery.ts';
 import { armsOf, BOARDER, boarderAt, holdingArms, LyingArms } from './wreckTeaching.ts';
@@ -350,13 +350,12 @@ export class WreckRun {
     return kept ? { health: kept.view.health, healthMax: kept.view.healthMax } : null;
   }
 
-  /** World points over heads, for barks: Thule's as 'thule', each wave's foe's by its crew and number,
-   *  'tithe-<number>' or 'pirate-<number>', and each of the Brig's crew's as 'crew-<number>'. */
+  /** World points over heads, for barks: Thule's as 'thule', each wave's foe's as 'tithe-<number>', and each of the
+   *  Brig's crew's as 'crew-<number>'. */
   heads(): ReadonlyMap<string, readonly [number, number, number]> {
     const heads = new Map<string, readonly [number, number, number]>();
     for (const [id, placed] of this.foes.placed) {
-      const foe = this.stood.get(id);
-      const side = this.crew.has(id) ? 'crew' : foe && titheCrew(foe.type) ? 'tithe' : 'pirate';
+      const side = this.crew.has(id) ? 'crew' : 'tithe';
       const name = id === this.thule ? 'thule' : `${side}-${id}`;
       heads.set(name, [placed.x, placed.y, placed.z + OVER_THE_HEAD_M]);
     }
@@ -446,7 +445,7 @@ export class WreckRun {
     const shown = this.player.frame(still ? IDLE : { ...controls, locked: true }, this.steps, seconds, clock, {
       running: !held && !frozen,
       hands: hands && !still,
-      markOf: () => crosshairPoint(camera(), aspect, this.course, bodies, groundAt),
+      markOf: () => crosshairPoint(camera(), aspect, this.course, shotBodies(foes.placed, fight.foes), groundAt),
       zoomOf: () => handsZoom(camera(), walker.player.view),
       handsSeconds: feel.shownSeconds(fight.player, seconds),
     });

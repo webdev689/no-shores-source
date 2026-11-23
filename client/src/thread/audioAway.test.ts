@@ -64,8 +64,12 @@ class FakeContext extends EventTarget {
   }
   readonly made: FakeNode[] = [];
   readonly sampleRate = 44_100;
-  currentTime = 2;
   state: AudioContextState = 'running';
+  private readonly madeAt = performance.now();
+  /** Running, its clock runs on as a page's does, so a later word of it never says an earlier time. */
+  get currentTime() {
+    return 2 + (performance.now() - this.madeAt) / 1000;
+  }
   createGain() {
     return this.add(new FakeNode('gain'));
   }

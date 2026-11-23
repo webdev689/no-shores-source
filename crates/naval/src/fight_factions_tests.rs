@@ -4,7 +4,7 @@ use crate::captain::{Mode, Temper};
 use crate::damage::Hurt;
 use crate::gunnery::reload_seconds;
 use crate::guns::SWIVEL;
-use crate::ranks::{GREY_TITHE, PIRATES, Rank};
+use crate::ranks::{GREY_TITHE, PLAYERS, Rank};
 use crate::shots::ShotEvent;
 use sailing::waters::Spot;
 
@@ -53,8 +53,8 @@ fn elite(faction: u8) -> Commission {
 }
 
 #[test]
-fn a_tithe_captain_and_a_pirate_take_each_other_on_and_trade_broadsides_with_no_player_near() {
-    let mut fight = two_captains(elite(GREY_TITHE), elite(PIRATES));
+fn a_tithe_captain_and_a_friendly_captain_take_each_other_on_and_trade_broadsides_with_no_player_near() {
+    let mut fight = two_captains(elite(GREY_TITHE), elite(PLAYERS));
     tick(&mut fight);
     for (id, other) in [(FIRST, SECOND), (SECOND, FIRST)] {
         let mind = &command(&fight, id).mind;
@@ -75,8 +75,49 @@ fn a_tithe_captain_and_a_pirate_take_each_other_on_and_trade_broadsides_with_no_
 }
 
 #[test]
+fn a_captain_of_the_players_side_flies_their_flag_is_bold_and_fights_the_tithe_beside_their_sloop() {
+    let friendly = Commission { faction: PLAYERS, rank: Rank::Major };
+    assert!(
+        (0..64).all(|seed| crate::captain::temper_for(friendly, seed) == Temper::Bold),
+        "it fights, whatever its seed"
+    );
+    let mut fight = two_captains(friendly, Commission { faction: GREY_TITHE, rank: Rank::Major });
+    fight.put_to_sea(PLAYER, Ship { rung: 0, ..sloop_at(-300.0, 0.0) }, &Open, 0.0);
+    assert_eq!(fight.vessel(FIRST).map(Vessel::flag), Some(Flag::Player), "it flies the players' flag");
+    tick(&mut fight);
+    assert_eq!(command(&fight, FIRST).mind.target(), Some(SECOND), "it marks the Tithe's ship, never the Sloop");
+    let mut struck_by_friend = false;
+    for _ in 0..180 * 60 {
+        for event in tick(&mut fight) {
+            if let Event::Shot(ShotEvent::Hit { shooter, target, .. }) = event {
+                assert!(!(shooter == FIRST && target == PLAYER), "its balls never strike the players' Sloop");
+                struck_by_friend |= shooter == FIRST && target == SECOND;
+            }
+        }
+    }
+    assert!(struck_by_friend, "it strikes the Tithe's ship");
+}
+
+#[test]
+fn a_captain_enlisted_in_another_hull_than_its_ranks_fights_in_it_at_its_rank() {
+    let friendly = Commission { faction: PLAYERS, rank: Rank::Major };
+    let mut fight = Fight::new(5);
+    fight.enlist_in(FIRST, sloop_at(0.0, 0.0), (friendly, HullKind::Schooner), 11, &Open, 0.0);
+    fight.raise(FIRST, 2.0);
+    let Some(vessel) = fight.vessel(FIRST) else { panic!("it is at sea") };
+    let built = friendly.build_in(HullKind::Schooner, 2.0);
+    assert_eq!(
+        (vessel.hull, vessel.damage.max_hull, built.name),
+        (HullKind::Schooner, built.hull, "Merchant Schooner")
+    );
+    assert_eq!(command(&fight, FIRST).mind.build, built, "its captain reckons by the hull it sails");
+    let major_sloop = Commission { faction: PLAYERS, rank: Rank::Major }.build_at(2.0).hull;
+    assert!(built.hull > major_sloop, "a Major's hull, as big as a Schooner's makes it");
+}
+
+#[test]
 fn two_captains_of_one_faction_never_take_each_other_on() {
-    for faction in [GREY_TITHE, PIRATES] {
+    for faction in [GREY_TITHE, PLAYERS] {
         let mut fight = two_captains(elite(faction), elite(faction));
         // A player far off keeps them in the fight, out of their sight.
         fight.put_to_sea(9, Ship { y: 1_600.0, rung: 0, ..sloop_at(200.0, 0.0) }, &Open, 0.0);
@@ -94,13 +135,13 @@ fn two_captains_of_one_faction_never_take_each_other_on() {
 #[test]
 fn its_rank_sets_its_hull_arms_its_volley_and_paces_its_reload() {
     for rank in Rank::ALL {
-        let fight = two_captains(Commission { faction: GREY_TITHE, rank }, elite(PIRATES));
+        let fight = two_captains(Commission { faction: GREY_TITHE, rank }, elite(PLAYERS));
         let hull = fight.vessel(FIRST).map(|vessel| vessel.damage.max_hull);
         let exposed = crate::ranks::hull_exposure(rank.hull());
         assert_eq!(hull, Some((264.0 * rank.scale().hull * exposed).round()), "{rank:?}");
     }
     let minor = Commission { faction: GREY_TITHE, rank: Rank::Minor };
-    let mut fight = two_captains(minor, elite(PIRATES));
+    let mut fight = two_captains(minor, elite(PLAYERS));
     for _ in 0..180 * 60 {
         tick(&mut fight);
         let Some(ball) = fight.balls.iter().find(|ball| ball.shooter == FIRST) else { continue };
@@ -120,7 +161,7 @@ fn its_rank_sets_its_hull_arms_its_volley_and_paces_its_reload() {
 fn hulled(rank: Rank, share: f64) -> (State, Mode) {
     let mut fight = Fight::new(5);
     fight.put_to_sea(PLAYER, Ship { rung: 0, ..sloop_at(200.0, 0.0) }, &Open, 0.0);
-    fight.enlist(FIRST, sloop_at(0.0, 0.0), Commission { faction: PIRATES, rank }, 11, &Open, 0.0);
+    fight.enlist(FIRST, sloop_at(0.0, 0.0), Commission { faction: GREY_TITHE, rank }, 11, &Open, 0.0);
     let Some(vessel) = fight.ships.get_mut(&FIRST) else { panic!("its ship") };
     if let Sailor::Captain(command) = &mut vessel.sailor {
         command.mind.temper = Temper::Bold;
@@ -162,7 +203,7 @@ fn recommissioned(fight: &Fight, commission: Commission) -> Fight {
 
 #[test]
 fn a_captain_sizes_up_another_by_its_whole_rank_its_guns_and_reload_too() {
-    let fight = two_captains(Commission { faction: GREY_TITHE, rank: Rank::Boss }, elite(PIRATES));
+    let fight = two_captains(Commission { faction: GREY_TITHE, rank: Rank::Boss }, elite(PLAYERS));
     let major = recommissioned(&fight, Commission { faction: GREY_TITHE, rank: Rank::Major });
     let reckoned = |fight: &Fight| fight.sightings(SECOND).iter().find(|seen| seen.id == FIRST).map(|seen| seen.power);
     let (Some(boss), Some(major)) = (reckoned(&fight), reckoned(&major)) else { panic!("it sees the other") };
@@ -177,8 +218,8 @@ fn a_captain_sizes_up_another_by_its_whole_rank_its_guns_and_reload_too() {
 
 #[test]
 fn the_fights_fingerprint_holds_each_captains_commission_and_strike_share() {
-    let fight = two_captains(elite(GREY_TITHE), elite(PIRATES));
-    let other_faction = recommissioned(&fight, elite(PIRATES));
+    let fight = two_captains(elite(GREY_TITHE), elite(PLAYERS));
+    let other_faction = recommissioned(&fight, elite(PLAYERS));
     let other_rank = recommissioned(&fight, Commission { faction: GREY_TITHE, rank: Rank::Boss });
     let mut other_strike = fight.clone();
     if let Some(vessel) = other_strike.ships.get_mut(&FIRST) {
@@ -204,14 +245,14 @@ fn fought_out(fight: &mut Fight) -> Option<(ShipId, f64)> {
 #[test]
 fn its_men_are_as_many_as_its_hull_makes_them_so_a_boss_outlasts_a_minor() {
     for rank in Rank::ALL {
-        let build = Commission { faction: PIRATES, rank }.build();
+        let build = Commission { faction: GREY_TITHE, rank }.build();
         assert_eq!(build.crew, (10.0 * rank.scale().hull * crate::ranks::exposure(rank.hull())).round(), "{rank:?}");
     }
     let (boss, minor) = (Rank::Boss, Rank::Minor);
     for (first, second, beaten) in [(boss, minor, SECOND), (minor, boss, FIRST)] {
         let mut fight = two_captains(
             Commission { faction: GREY_TITHE, rank: first },
-            Commission { faction: PIRATES, rank: second },
+            Commission { faction: PLAYERS, rank: second },
         );
         let (struck, share) = fought_out(&mut fight).expect("one gives in within ten minutes");
         assert_eq!(struck, beaten, "the Minor gives in, at {share:.2} of its hull");
@@ -227,7 +268,7 @@ fn a_captain_of_a_higher_rank_runs_down_a_wary_one_sailing_away_at_the_same_poin
     let mut fight = Fight::new(5);
     fight.enlist(FIRST, sloop_at(0.0, 0.0), Commission { faction: GREY_TITHE, rank: Rank::Boss }, 11, &Open, 0.0);
     let away = Ship { heading: 141f64.to_radians(), ..sloop_at(400.0, 0.0) };
-    fight.enlist(SECOND, away, Commission { faction: PIRATES, rank: Rank::Minor }, 12, &Open, 0.0);
+    fight.enlist(SECOND, away, Commission { faction: PLAYERS, rank: Rank::Minor }, 12, &Open, 0.0);
     if let Some(Sailor::Captain(command)) = fight.ships.get_mut(&SECOND).map(|vessel| &mut vessel.sailor) {
         command.mind.temper = Temper::Wary;
     }
@@ -245,7 +286,7 @@ fn a_captain_of_a_higher_rank_runs_down_a_wary_one_sailing_away_at_the_same_poin
 #[test]
 fn a_captain_of_each_rank_sails_and_fights_in_its_ranks_hull() {
     for rank in Rank::ALL {
-        let fight = two_captains(Commission { faction: GREY_TITHE, rank }, elite(PIRATES));
+        let fight = two_captains(Commission { faction: GREY_TITHE, rank }, elite(PLAYERS));
         let Some(vessel) = fight.vessel(FIRST) else { panic!("it is at sea") };
         assert_eq!(vessel.hull, rank.hull(), "{rank:?}");
         assert_eq!(vessel.arms(), crate::arms::arms_of(rank.hull()));
@@ -261,7 +302,8 @@ fn a_volley_from_any_hull_of_one_rank_throws_the_same_broadside() {
     // Each rank's captain fights a Major: its first volley's balls, every gun of its side, weigh its rank's Sloop's
     // (each ball's harm by its share of the broadside).
     for rank in Rank::ALL {
-        let mut fight = two_captains(Commission { faction: GREY_TITHE, rank }, Commission::default());
+        let mut fight =
+            two_captains(Commission { faction: GREY_TITHE, rank }, Commission { faction: PLAYERS, rank: Rank::Major });
         let guns = crate::arms::arms_of(rank.hull()).port.len();
         let volley = (0..180 * 60).find_map(|_| {
             tick(&mut fight);
@@ -274,4 +316,40 @@ fn a_volley_from_any_hull_of_one_rank_throws_the_same_broadside() {
         let sloops = 3.0 * SWIVEL.hull * rank.scale().might;
         assert!((whole - sloops).abs() < 1e-9, "{rank:?}: {whole} against its rank's Sloop's {sloops}");
     }
+}
+
+#[test]
+fn a_friendly_captain_that_strikes_leaves_the_fight_at_once_and_is_never_held_or_scuttled() {
+    let friendly = Commission { faction: PLAYERS, rank: Rank::Major };
+    let mut fight = two_captains(friendly, Commission { faction: GREY_TITHE, rank: Rank::Major });
+    fight.put_to_sea(PLAYER, Ship { rung: 0, ..sloop_at(-300.0, 0.0) }, &Open, 0.0);
+    tick(&mut fight);
+    let Some(vessel) = fight.ships.get_mut(&FIRST) else { panic!("the friendly ship") };
+    let hull = vessel.damage.max_hull * 0.95;
+    vessel.damage.apply(Hurt { hull, sail: 0.0, crew: 0.0, fire: false }, fight.clock, 0.0);
+    let events = tick(&mut fight);
+    assert!(events.contains(&Event::Gone { ship: FIRST, end: End::Gone }), "it sails off: {events:?}");
+    let left = fight.vessel(FIRST).map(|vessel| vessel.damage.state);
+    assert_eq!(left, Some(State::Struck), "afloat, its colours down");
+    for _ in 0..(STRUCK_HOLD_S as usize + 5) * 60 {
+        let events = tick(&mut fight);
+        assert!(!events.iter().any(|event| matches!(event, Event::Gone { ship: FIRST, .. })), "never scuttled");
+    }
+}
+
+#[test]
+fn a_friendly_captain_beside_a_hurt_players_ship_never_stops_its_hands_mending_it() {
+    let mut fight = Fight::new(5);
+    fight.put_to_sea(PLAYER, Ship { rung: 0, ..sloop_at(0.0, 0.0) }, &Open, 0.0);
+    fight.enlist(FIRST, sloop_at(300.0, 0.0), Commission { faction: PLAYERS, rank: Rank::Major }, 11, &Open, 0.0);
+    // A Tithe ship 1.5 km off keeps the friendly captain in the fight, too far to stop the mending itself.
+    fight.enlist(SECOND, sloop_at(0.0, 1_500.0), Commission { faction: GREY_TITHE, rank: Rank::Major }, 12, &Open, 0.0);
+    let Some(player) = fight.ships.get_mut(&PLAYER) else { panic!("the player's ship") };
+    player.damage.apply(Hurt { hull: 200.0, sail: 0.0, crew: 0.0, fire: false }, 0.0, 0.0);
+    let hurt = player.damage.hull;
+    for _ in 0..60 * 20 {
+        tick(&mut fight);
+    }
+    assert!(fight.vessel(FIRST).is_some_and(Vessel::in_fight), "the friendly captain still fights");
+    assert!(fight.vessel(PLAYER).is_some_and(|vessel| vessel.damage.hull > hurt), "its hands mend it");
 }

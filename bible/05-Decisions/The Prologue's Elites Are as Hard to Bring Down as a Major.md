@@ -26,3 +26,5 @@ Thule becomes a Tithe-Mate."
 | What is a Major's | Health, poise and parry, block and dodge; the elite's blows, wind-ups and look kept | "health and defence"; poise is how long a guard holds |
 
 Links: [[Prologue]], [[Enemies]].
+
+Replaced in part by [[Pirates Are Replaced by the Grey Tithe]]: there is no pirate Captain.

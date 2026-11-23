@@ -7,7 +7,7 @@ import { COMPASS, headingOf, type PlaceMark } from '../plus/compass.ts';
 import { compassNode } from './compassNode.ts';
 import type { Child, Node } from '../ui/node.ts';
 import type { Interface } from '../ui/ui.ts';
-import { AbilityBar, type AbilityState, type ArtPictures } from './abilityBar.ts';
+import { ABILITY_KEYS, AbilityBar, type AbilityState, type ArtPictures } from './abilityBar.ts';
 import { ammoNode } from './ammoCounter.ts';
 import { animaEdgeNode } from './animaMoment.ts';
 import { EVENT, edgeArrow, parryCue, threatens } from './cues.ts';
@@ -28,7 +28,8 @@ import { type HudLayout, hudLayout } from './hudLayout.ts';
 import { Crosshair, type CrosshairFrame } from './reticle.ts';
 import { Vitals } from './vitals.ts';
 import { type PlatedPlayer, PlayerPlates } from './playerPlates.ts';
-import { type ArmsShown, WeaponRows } from './weapons.ts';
+import { type ArmsShown, LOADOUT_KEYS, WeaponRows } from './weapons.ts';
+import type { CapFace } from './shipAbilityBar.ts';
 
 /** What the display is drawn from each frame: the player's fighter, the foes, every fighter's place by number, how the
  *  camera projects a point, the canvas's size in CSS pixels, the fight's events since the last frame, whether the view
@@ -74,6 +75,16 @@ export interface HudFrame {
   /** Every other player as their plate over their head is drawn; none for none. */
   readonly players?: readonly PlatedPlayer[];
 }
+
+/** The keycaps of the Art's abilities (the Anima's, then each Tenet's) and of the two loadouts: a key's name, or a
+ *  pad's button with `pad:` before it. */
+export interface HudKeys {
+  readonly arts: readonly [string, string, string];
+  readonly loadouts: readonly [string, string];
+}
+
+/** The keys the game binds at first, for a display given none. */
+const FIRST_KEYS: HudKeys = { arts: ABILITY_KEYS, loadouts: LOADOUT_KEYS };
 
 /** A foe winding up an iron blow this near is told to be dodged. */
 const IRON_NEAR_M = 12;
@@ -158,16 +169,18 @@ export function blockedBy(
 /** The fight's display over the view, kept each frame from a `HudFrame` and drawn as a layer of the interface. */
 export class Hud {
   private readonly vitals = new Vitals();
-  private readonly target = new FoePlate({ poise: true, remembers: 'whole' });
-  private readonly foeBars = new FoeBars();
+  private target = new FoePlate({ poise: true, remembers: 'whole' });
+  private foeBars = new FoeBars();
   /** The plates over other players, and the one the crosshair rests on within reach. */
   readonly playerPlates = new PlayerPlates();
   private readonly crosshair = new Crosshair();
-  private readonly foeTarget = new FoeTarget();
+  private foeTarget = new FoeTarget();
   private readonly words = new Words();
   /** The side the next number with no stroke to follow is thrown to. */
   private nextSide = 1;
   private readonly abilities: AbilityBar | null;
+  /** The Arts' and the loadouts' keycaps, as bound now. */
+  private readonly caps: () => HudKeys;
   private readonly weapons: WeaponRows;
   private layout: HudLayout = hudLayout(0, 0);
   /** The page's own pieces beside the display (the game's hints), in its CSS pixels, which the arrows keep clear of. */
@@ -207,15 +220,29 @@ export class Hud {
 
   /** With `pictures`, the game's pictures of an Art (`abilityPictures`), the Art's abilities stand at the bottom left;
    *  with `forge`, the weapons beside them are drawn as its pictures. The page's own pieces `beside` answers (the game's
-   *  hints, CSS pixels) are kept clear of as the display's corners are. */
+   *  hints, CSS pixels) are kept clear of as the display's corners are. With `keys`, the Arts' and the loadouts' keycaps
+   *  show the keys `caps` answers each frame, a pad's button drawn on its cap by `face`. */
   constructor(
     pictures: ((art: number) => ArtPictures | null) | null = null,
     forge: Cards | null = null,
     beside: () => readonly Box[] = () => [],
+    keys: { readonly caps: () => HudKeys; readonly face: CapFace } | null = null,
   ) {
     this.beside = beside;
-    this.abilities = pictures && new AbilityBar(pictures);
-    this.weapons = new WeaponRows(forge && new ItemPictures(forge));
+    this.caps = keys?.caps ?? (() => FIRST_KEYS);
+    this.abilities = pictures && new AbilityBar(pictures, keys?.face);
+    this.weapons = new WeaponRows(forge && new ItemPictures(forge), keys?.face);
+  }
+
+  /** Forgets every foe the display kept (its target, plates and wind-ups told): a room left, its foes' numbers mean
+   *  other foes in the next. */
+  forget(): void {
+    [this.target, this.foeBars, this.foeTarget] = [
+      new FoePlate({ poise: true, remembers: 'whole' }),
+      new FoeBars(),
+      new FoeTarget(),
+    ];
+    this.ironTold.clear();
   }
 
   /** The tone the public event's banner shows in under the compass, none while it shows none. */
@@ -269,9 +296,12 @@ export class Hud {
     this.crosshair.update(frame.crosshair ?? null, own, under, frame.events, frame.player, seconds);
     this.markTarget(frame, chosen, boss, seconds);
     this.vitals.update(own, seconds, this.staminaFlash > 0, !!chosen || !!boss);
-    if (frame.abilities) this.abilities?.update(frame.abilities, seconds, UNABLE.has(own?.action.kind ?? ''));
+    const caps = this.caps();
+    if (frame.abilities)
+      this.abilities?.update(frame.abilities, seconds, UNABLE.has(own?.action.kind ?? ''), caps.arts);
     else this.abilities?.hide();
-    this.weapons.update(frame.arms ?? { gear: null, loadout: 0, drawn: false, dress: null }, own, seconds);
+    const arms = frame.arms ?? { gear: null, loadout: 0, drawn: false, dress: null };
+    this.weapons.update(arms, own, seconds, caps.loadouts);
     this.edges = this.threats(frame);
     this.rings = this.parries(frame);
     this.floatWords(frame, seconds);

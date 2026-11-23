@@ -10,7 +10,8 @@ import { panShot, type Shot } from './camera.ts';
 import { IDLE, type InputFrame } from '../player/input.ts';
 import { SeaCombat } from './seaCombat.ts';
 import { pictureAt, shownScale } from './seaLaw.ts';
-import type { SeaRoom } from './seaRoom.ts';
+import { SeaRoom } from './seaRoom.ts';
+import type { Snapshot } from '../network/roomConnection.ts';
 
 const vessel: FightVessel = {
   ship: [5000, 6000, 0.4, 0, 0, 0, 0, 2],
@@ -30,8 +31,8 @@ const captain: FightCaptain = {
   ...vessel,
   id: 1,
   ship: [5400, 5500, 2, 0, 0, 0, 0, 2],
-  name: 'Pirate Sloop',
-  faction: 2,
+  name: 'Tithe Sloop',
+  faction: 1,
   rank: 2,
   mode: 'engage',
   hostile: true,
@@ -71,9 +72,9 @@ test('a fight draws every ship, its footprint, everyone aboard and each bar at t
     ships.map(({ hull, look }) => [hull, look.side]),
     [
       [0, 'player'],
-      [0, 'pirate'],
+      [0, 'tithe'],
     ],
-    "the player's Sloop as it is, the pirate's in the pirates' colours",
+    "the player's Sloop as it is, the hostile's in the Grey Tithe's colours",
   );
   assert.equal(fight.ownAt(3)?.scale, 3);
   assert.deepEqual(fight.bars(3)[0]?.over, [5400, 5500, (0.2 + BAR_OVER_M) * 3]);
@@ -385,7 +386,7 @@ test("the fight's readout: its plate and its abilities' bar, the card on the nea
   assert.ok(model, 'a fight on shows it');
   assert.equal(model.ship?.name, 'Your Sloop');
   assert.equal(model.ship?.abilities.find((ability) => ability.id === 'port')?.state, 'ready');
-  assert.equal(model.card?.name, 'Pirate Sloop');
+  assert.equal(model.card?.name, 'Tithe Sloop');
   assert.match(model.card?.sub ?? '', / - 640 m$/);
   const struck = { ...captain, ship: [5010, 6000, 2, 0, 0, 0, 0, 0], state: 'struck' } as const;
   assert.equal(display({ ...FIRST, captain: struck }, true)?.card?.boardKey, 'E', 'the room would take it');
@@ -410,6 +411,60 @@ test("the pad's brace tapped braces for that tap alone, and held braces until it
   assert.equal(orders.at(-1)?.brace, false);
 });
 
+/** A sea room on a link that does nothing, holding `FIRST` as the player's fight, and the hand its snapshots come by. */
+async function roomInFight() {
+  let hand: (snapshot: Snapshot) => void = () => undefined;
+  const link = {
+    player: 1,
+    dressed: [],
+    joins: 1,
+    rejoining: false,
+    lost: null,
+    send: () => undefined,
+    pump: () => undefined,
+  };
+  const room = await SeaRoom.join((snapshot) => ((hand = snapshot), link), [5000, 6000], 10);
+  Object.assign(room, { fight: FIRST });
+  const empty = {
+    tick: 1n,
+    players: [],
+    ships: [],
+    hostiles: [],
+    fights: [],
+    flotsam: [],
+    kept: [],
+    told: [],
+    decks: [],
+    islands: [],
+    taken: [],
+    friendlies: [],
+  };
+  return { room, nothingFought: () => hand(empty as unknown as Snapshot) };
+}
+
+/** Steps `fight` past the pan, a frame at a time, and says whether the view came back up. */
+async function pannedUp(fight: SeaCombat): Promise<boolean> {
+  for (let frame = 1; frame <= 60; frame++) {
+    fight.frame(1 / 20, frame / 20, 1000, (error) => assert.fail(String(error)));
+    await new Promise((settled) => setImmediate(settled));
+  }
+  return fight.done;
+}
+
+test('a fight whose sea room is let go, its link lost, ends: the view comes back up to the sea', async () => {
+  const { room } = await roomInFight();
+  const fight = new SeaCombat(room, FIRST, MARKS, 0);
+  room.close();
+  assert.ok(await pannedUp(fight));
+});
+
+test('a fight the room no longer lists, the link joined again with no frame between, ends too', async () => {
+  const { room, nothingFought } = await roomInFight();
+  const fight = new SeaCombat(room, FIRST, MARKS, 0);
+  nothingFought();
+  assert.ok(await pannedUp(fight));
+});
+
 test("each captain's ship carries its people as the fight leaves its men; the player's own and one boarded carry none", () => {
   const struck: FightCaptain = { ...captain, crew: 6, max_crew: 12, state: 'struck', run_out: ['port'] };
   const fight = new SeaCombat(ROOM, { ...FIRST, captain: struck }, MARKS, 0);
@@ -417,7 +472,7 @@ test("each captain's ship carries its people as the fight leaves its men; the pl
   assert.equal(own?.crew, undefined);
   assert.deepEqual(theirs?.crew, {
     key: 'fight-1',
-    faction: 2,
+    faction: 1,
     rank: 2,
     share: 0.5,
     state: 'struck',

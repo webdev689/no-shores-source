@@ -303,7 +303,7 @@ test('in the first person each swing is drawn the way the chain strikes it: side
 
 test('locked on, a dodge is drawn rolling the way it goes, while the rules keep the fighter facing its foe', () => {
   const { fighting, walker, frame } = fightingPlayer();
-  fighting.ask({ type: 14, rank: 2 });
+  fighting.ask({ type: 2, rank: 2 });
   for (let tick = 0; tick < 20; tick += 1) frame(controls());
   frame(controls(['swing'], ['swing']));
   for (let tick = 0; tick < 50; tick += 1) frame(controls());

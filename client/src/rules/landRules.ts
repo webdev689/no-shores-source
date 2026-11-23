@@ -178,7 +178,7 @@ export interface LandRules {
   /** The ship sailed `ticks` ticks from the swell's `time`, in the weather's wind at world time `world` (seconds), and
    *  its pose after. */
   sail(ship: ShipFloats, helm: Helm, time: number, ticks: number, world: number): { ship: ShipFloats; pose: Pose };
-  /** A fight begun round the ship: a pirate captain put to sea in its rank's hull (a Major's unless `begun` names a
+  /** A fight begun round the ship: a Grey Tithe captain put to sea in its rank's hull (a Major's unless `begun` names a
    *  rank), or `begun`'s captains set upon it where given, every chance drawn from `seed`. */
   fightBegin(ship: ShipFloats, seed: number, time: number, begun?: FightBegun): FightView;
   /** The fight stepped `ticks` ticks from `time` by the player's orders. */

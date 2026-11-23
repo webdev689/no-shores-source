@@ -356,7 +356,13 @@ export class NatureView {
       };
       this.loading = loading;
       loadFlora(cast, biome).then(
-        (loaded) => ([loading.loaded, loading.failed] = [loaded, !loaded]),
+        (loaded) => {
+          [loading.loaded, loading.failed] = [loaded, !loaded];
+          // Come for a view that has moved on or been let go: its pictures are never uploaded, so let them go now.
+          if (this.loading !== loading)
+            for (const layer of loaded?.layers ?? [])
+              [layer.albedo, layer.normal].forEach((picture) => picture.close());
+        },
         (error: unknown) => {
           loading.failed = true;
           console.warn(`the ${biome} flora did not load`, error);

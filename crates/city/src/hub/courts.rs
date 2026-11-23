@@ -178,7 +178,7 @@ pub fn west_court(frame: &Frame, laid: &mut Laid) {
         laid.piece(stand_at("bench", "front", frame.at(toward, side), frame.level, facing));
     }
     laid.piece(stand_at("bandstand", "front", frame.at(-40.0, -98.0), frame.level, frame.seaward));
-    laid.spots.push(frame.at(4.5, -98.0));
+    laid.spots.push(frame.at(7.25, -96.25));
     for (toward, side) in [(44.0, -76.0), (44.0, -122.0), (-56.0, -122.0)] {
         laid.piece(stand_at("lamp-post", "front", frame.at(toward, side), frame.level, frame.seaward));
     }

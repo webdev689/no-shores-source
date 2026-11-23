@@ -10,7 +10,7 @@ use combat::Status;
 use gear::arts::{ArtAsk, arts};
 use std::collections::BTreeMap;
 
-const SWORDSMAN: u8 = 14;
+const SWORDSMAN: u8 = ::foes::roster::COLLECTOR;
 const QUICKEN: u8 = 2;
 const MEND: u8 = 5;
 const VANISH: u8 = 9;
@@ -27,10 +27,10 @@ pub(crate) fn room_with_player() -> (Room, PlayerId) {
     (room, player)
 }
 
-/// A pirate swordsman of `health` standing at (x, y), facing north.
+/// A hostile swordsman of `health` standing at (x, y), facing north.
 pub(crate) fn stand_foe(room: &mut Room, x: f64, y: f64, health: f64) -> FighterId {
     let id = room.next_id();
-    let foe_type = ::foes::foe_type(SWORDSMAN).expect("the pirates' swordsman");
+    let foe_type = ::foes::foe_type(SWORDSMAN).expect("the Tithe's Collector");
     let (fighter, brain) = ::foes::spawn(foe_type, ::foes::Rank::Major, x, y, 0.0);
     let fighter = Fighter { health, health_max: health, ..fighter };
     room.foes.insert(id, Foe { fighter, brain, caller: None, level: 0, struck_by: BTreeMap::new(), shield: None });

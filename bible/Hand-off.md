@@ -125,6 +125,14 @@ each part works is in its system note.
   merged a third time before the merge: the events' fight events 16 to 25 (main's Wiped is 15), the Tithe-Taker 45 after
   main's wardens (21 to 38), the chest's Vestige drawn on main's rank colours (Major plain, Boss heroic), and the
   Lattice laid into main's forge tables again by `lattice.yml`'s run 45048576675.
+- **The third codebase audit, the Grey Tithe in the pirates' place, travel by the held map and the overtaken ruins**
+  (#155, merged on the owner's "I really want to merge the code fixes we did"): an audit of every module and an audit of
+  it, each finding tested before its fix; then, built on it, [[Pirates Are Replaced by the Grey Tithe]] (clashes are a
+  Tithe ship attacking a merchant of the traffic, which a player joins beside),
+  [[The Ruined Cities' Waters Are the Lattice's, and Their Ruins Are Overtaken]] (the held map's Lattice waters, the six
+  ruins grown through with crystal) and [[The Held Map Takes the Ship to Other Waters, Seen Sailing Away]]; Claude's
+  calls in [[The Grey Tithe's Sea, Travel and the Overtaken Ruins as Claude Builds Them]]. Each feature reviewed on its
+  own and its findings fixed; tested offline, the ruins pictured headless; the travel's cinematic not pictured.
 - **The game is No Shores** (#157, merged on the owner's "Merge and deploy"; [[The Game Is Named No Shores]]): the
   title, the bible and the game's note with the owner's premise; Overlook stays the port city. The owner's logo is
   the title on the tap to start and the intro, a pixel picture written from the owner's PNG by `tools/logo/write.py`
@@ -147,6 +155,9 @@ each part works is in its system note.
     other's dyes, horses, faction gear and Veiled figure; Maren's whole walk; a blow on a shield; the walking blows
     frame by frame; the display beside the owner's two pictures (#68); a ware bought at the Quartermaster's, a
     Vestige opened at the Reader's; a faction set worn in the page; the water's order at a coast.
+  - #155's, played by hand: the travel's cinematic from the helm to the arrival, the hover and the prompt on the pad;
+    a clash of a Tithe ship and a merchant, joined; a ruin up close (its buildings' veins and sheets) and its wrecks
+    from the sea at the sea's size.
   - Known and left: at a steep downward look the aiming camera can show the figure's diagonal back view; a crowd's
     dresses are composed ahead only as room comes, small objects are made each frame, and the Test Ground's panels
     run the room while the pointer is free (#68).
@@ -282,6 +293,12 @@ The decisions in [[Open Questions]] are not repeated here.
   refused while fallen or just struck; long recordings in order; the island packs, `runs_everywhere` and the quests'
   lines checked in CI. Tested offline; the split asset workflows are first tested live on their next run, and nothing
   is yet played by hand or in a deployed room.
+- **#155's open points**, each the owner's: a limit on travel (each travel resets the hostile roll to 30 s, so one who
+  keeps travelling meets no hostile ship); whether the healing drink is "a heal" that Exposure halves; whether a lip
+  caught off square is hung square; whether control waits a moment for a run that opens in the wake's last instant;
+  the wreck scene's sunk Sloop, which wears the pirates' colours until `tools/wreck` is rendered again (a push there
+  publishes to R2), and `wreck_level.py`'s comments, which name the pirates' types; a ship the room took off its route
+  still drawn on it from land; the crystal of a ruin's buildings round its plaza, kept clear in its 110 m window.
 - **Open pull requests.** For the owner's yes once their checks pass: #125 (main's
   screens: the Harbourmaster's rows, the menu under 600 px). Drafts: #82
   (the owner's loop); #93 and #114 sit on the merged `claude/waters-from-islands`. Whether to close #112, which #127

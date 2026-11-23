@@ -9,7 +9,7 @@ import type { Swell } from './landRules.ts';
 
 type Point = readonly [number, number];
 
-export type WaterHolder = 'home' | 'contested' | 'grey-tithe' | 'pirates';
+export type WaterHolder = 'home' | 'grey-tithe' | 'lattice';
 
 /** One island's water: its continent's index and id in the layout, its name, holder and level band. */
 export interface WaterInfo {
@@ -66,15 +66,14 @@ export interface SeaFacts {
   readonly shipNames: readonly (readonly string[])[];
 }
 
-/** The water at a point of sea: its continent's index, its holder (contested on the seam), and the seam. */
+/** The water at a point of sea: its continent's index and its holder. */
 export interface WaterAtPoint {
   readonly continent: number;
   readonly holder: WaterHolder;
-  readonly seam: boolean;
 }
 
 /** The waters at the middle of each cell over the frame, row by row from the north-west: `cells[row * columns +
- *  column]` holds the continent's index for sea, with `SEAM_BIT` set on the seam, and `LAND_CELL` for land. */
+ *  column]` holds the continent's index for sea, and `LAND_CELL` for land. */
 export interface WatersGrid {
   readonly columns: number;
   readonly rows: number;
@@ -109,7 +108,6 @@ export interface WeatherSwell extends Swell {
 }
 
 export const LAND_CELL = 255;
-export const SEAM_BIT = 0x80;
 const NOT_OPEN = 256;
 const SHIP_FLOATS = 11;
 
@@ -246,9 +244,7 @@ export function startWatersRules(module: WebAssembly.Module): WatersRules {
       const byte = exports.waters_at(x, y);
       if (byte === NOT_OPEN) throw new Error('the waters are not open');
       if (byte === LAND_CELL) return null;
-      const continent = byte & ~SEAM_BIT;
-      const seam = (byte & SEAM_BIT) !== 0;
-      return { continent, seam, holder: seam ? 'contested' : (holders[continent] ?? 'home') };
+      return { continent: byte, holder: holders[byte] ?? 'home' };
     },
     grid: (cellM) => {
       opened();

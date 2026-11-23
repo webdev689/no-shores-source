@@ -6,6 +6,7 @@ import { aimStation } from './aimStation.ts';
 import { type FightSource, Fighting } from './fighting.ts';
 import type { Sailed } from '../terrain/landClient.ts';
 import { aimOf, Naval } from './naval.ts';
+import { countingGpu } from '../gpuForTests.ts';
 import { cameraOf, type Orbit } from './orbit.ts';
 import { Sailing, type SailSource } from './sailing.ts';
 
@@ -27,8 +28,8 @@ const captain: FightCaptain = {
   ...vessel,
   id: 1,
   ship: [600, 800, 0, 0, 0, 0, 0, 2],
-  name: 'Pirate Sloop',
-  faction: 2,
+  name: 'Tithe Sloop',
+  faction: 1,
   rank: 2,
   mode: 'engage',
   hostile: true,
@@ -116,7 +117,7 @@ test('a captain sent off before it comes is never taken up, nor one called befor
   await letGo();
   assert.equal(naval.fighting, true, 'the second call stands');
   assert.equal(asked.begins, 1, 'only the call that stands reaches the door');
-  assert.ok(naval.lines(0).includes('A Pirate Sloop sighted, 1.0 km off.'), naval.lines(0).join(' | '));
+  assert.ok(naval.lines(0).includes('A Tithe Sloop sighted, 1.0 km off.'), naval.lines(0).join(' | '));
 });
 
 test("it takes each answer's numbers for the Sloop, and none from a fight since ended", async () => {
@@ -237,4 +238,14 @@ test("the World Editor's aim eases the eye out to its battery and home again, la
   for (let frame = 0; frame < 240; frame++) seen = naval.aimCamera(orbit, sailing, WINDOW, 1, false, 1 / 60);
   assert.equal(seen, orbit, 'let go, it is home');
   assert.equal(naval.look(), null);
+});
+
+test('fight after fight on one GPU draws the aim with the one set of its buffers, never another left live', () => {
+  const { gpu, live } = countingGpu();
+  const marks = { gpu, drawInto: () => undefined };
+  new Naval(marks);
+  const once = live();
+  assert.ok(once > 0, 'the aim holds its buffers');
+  for (let fight = 0; fight < 3; fight++) new Naval(marks);
+  assert.equal(live(), once);
 });

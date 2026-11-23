@@ -18,6 +18,8 @@ export interface ArtState {
   readonly anima: number;
   readonly tenets: readonly [number, number];
   readonly earned?: readonly number[];
+  /** How much longer the room takes to recharge each share (1.5 under a run's Trickle); 1 where unsaid. */
+  readonly recharge?: number;
 }
 
 /** Every bit an Art's road earns: the Art and both its Tenets. */
@@ -82,7 +84,7 @@ export function artsOf(gear: Gear): ArtState {
   );
   const [first = 0, second = 0] = Array.from(gear.tenetsArray() ?? []);
   const earned = Array.from(gear.artsEarnedArray() ?? []);
-  return { art: gear.art(), cores, anima: gear.anima(), tenets: [first, second], earned };
+  return { art: gear.art(), cores, anima: gear.anima(), tenets: [first, second], earned, recharge: gear.recharge() };
 }
 
 /** Every spell a snapshot holds. */

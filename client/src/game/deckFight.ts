@@ -80,13 +80,16 @@ export function deckNode(deck: Deck, name: string, side: number): NodeInfo {
   };
 }
 
-/** The captain of a fight lying nearest `near`, the boarded one, and where it lies, drawn `scale` times its size. */
+/** The captain of a fight lying nearest `near`, the boarded one, and where it lies, drawn `scale` times its size: never
+ *  a friendly ship (faction 0), which holds no crew for boarders, while any other lies in the fight. */
 export function boardedLying(
   view: FightView,
   near: readonly [number, number],
   scale: number,
 ): { readonly captain: FightCaptain; readonly lying: Lying } {
-  const captains = [view.captain, ...(view.others ?? [])];
+  const all = [view.captain, ...(view.others ?? [])];
+  const hostile = all.filter((captain) => captain.faction !== 0);
+  const captains = hostile.length > 0 ? hostile : all;
   const away = (captain: FightCaptain) =>
     Math.hypot((captain.ship[0] ?? 0) - near[0], (captain.ship[1] ?? 0) - near[1]);
   const captain = captains.reduce((nearest, each) => (away(each) < away(nearest) ? each : nearest));
@@ -100,7 +103,8 @@ export function boardedLying(
  *  `side_of`): 1 its starboard, -1 its port. */
 export function boardingSide(view: FightView): number {
   const [x = 0, y = 0] = view.player.ship;
-  const struck = [view.captain, ...(view.others ?? [])].filter((captain) => captain.state === 'struck');
+  const all = [view.captain, ...(view.others ?? [])];
+  const struck = all.filter((captain) => captain.state === 'struck' && captain.faction !== 0);
   const [first, ...others] = struck.length > 0 ? struck : [view.captain];
   const { lying } = boardedLying({ ...view, captain: first ?? view.captain, others }, [x, y], 1);
   const across = (x - lying.x) * Math.cos(lying.heading) + (y - lying.y) * Math.sin(lying.heading);

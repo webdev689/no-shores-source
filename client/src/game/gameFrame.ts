@@ -4,7 +4,7 @@
 import type { FirstPerson } from '../firstperson/firstPerson.ts';
 import type { Gpu } from '../gpu.ts';
 import type { CardAt } from '../player/cards.ts';
-import { IDLE, type Input, type InputFrame, axis } from '../player/input.ts';
+import { IDLE, type Input, type InputFrame, axis, handsFree } from '../player/input.ts';
 import type { Walker } from '../player/walker.ts';
 import type { ShipModels } from '../ships/shipModels.ts';
 import type { seaWeatherOn } from '../water/seaWeather.ts';
@@ -199,7 +199,7 @@ export function startFrames(parts: FrameParts, playing: Playing): void {
       eyesBeforeMap = looking ? walker.player.view.firstPerson : null;
       walker.player = { ...walker.player, view: { ...walker.player.view, firstPerson } };
     }
-    const shown = here.frame(controls, seconds, clock, { paused, looking, hands: controls.locked, aspect });
+    const shown = here.frame(controls, seconds, clock, { paused, looking, hands: handsFree(controls, paused), aspect });
     // A public event's beat is the music's moment, its props the drawer's, its steps the tracker's.
     if (shown.sting) parts.music.moment(shown.sting);
     const listener = [walker.player.body.x, walker.player.body.y] as const;
@@ -256,7 +256,7 @@ export function startFrames(parts: FrameParts, playing: Playing): void {
       clock,
       walker.you,
       flow.mode !== 'foot',
-      here.node,
+      here,
       paused,
     );
     const carried = { left: walker.you.dress.outfit.left, feet: [body.x, body.y, body.z] as const };
@@ -355,7 +355,11 @@ export function startFrames(parts: FrameParts, playing: Playing): void {
         ? (encoder: GPUCommandEncoder, view: GPUTextureView, over: Overlay) => firstPerson.draw(encoder, view, over)
         : undefined);
     parts.seaView.reachM = Math.max(0, shown.shot.eye[2]) * 6;
-    const fleet = traffic.atSea(shown, parts.waterHere(), seconds, clock);
+    const fleet = traffic.atSea(shown, parts.waterHere(), {
+      seconds,
+      time: clock,
+      taken: here.sighted?.taken ?? new Set(),
+    });
     // Walking its deck, what the player carries lights round them as it does ashore.
     const carried = shown.feet ? { left: walker.you.dress.outfit.left, feet: shown.feet } : undefined;
     const more = {
@@ -388,7 +392,8 @@ export function startFrames(parts: FrameParts, playing: Playing): void {
     // Only while sailing: a landing chosen, or under way, stands on the landmass open now.
     charting.tick(here.position, landmass.id, seconds, flow.mode === 'sea');
     parts.isleFrame();
-    const ashore = flow.mode === 'sea' ? seaWord?.ashore(landmass) : null;
+    // Washed up, ashore only once the fight's view has panned home and the ship lies where the room moored it.
+    const ashore = flow.mode === 'sea' && !here.fight ? seaWord?.ashore(landmass) : null;
     if (ashore)
       parts.travel(ashore.washUp, () =>
         parts.goFoot(ashore.node, arrivalFacing(ashore.node, playing.landmass.plan, null)),

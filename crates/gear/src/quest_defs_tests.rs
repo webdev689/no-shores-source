@@ -109,6 +109,7 @@ fn a_goal_holding_a_value_none_of_its_own_is_a_problem_naming_the_field() {
         (r#"{ "kind": "kill", "place": "p", "text": "t" }"#, "node"),
         (r#"{ "kind": "kill", "node": "n", "rank": "Captain", "text": "t" }"#, "rank"),
         (r#"{ "kind": "sea", "side": "tithe", "how": "ram", "text": "t" }"#, "how"),
+        (r#"{ "kind": "sea", "side": "hostiles", "text": "t" }"#, "side"),
         (r#"{ "kind": "land", "island": "rock", "text": "t" }"#, "island"),
         (
             r#"{ "kind": "escort", "node": "n", "from": "a", "to": "b", "who": "nobody", "near": 15, "text": "t" }"#,

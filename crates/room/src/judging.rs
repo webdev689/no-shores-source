@@ -450,15 +450,3 @@ impl Room {
         }
     }
 }
-
-/// How a blow's kind reads.
-#[must_use]
-pub fn how_of(blow: &Blow, iron: bool) -> How {
-    match blow.kind {
-        BlowKind::Swing(_) => How::Swing,
-        BlowKind::Telegraph(_) if iron => How::Iron,
-        BlowKind::Telegraph(_) => How::Telegraph,
-        BlowKind::Shot(_) => How::Shot,
-        BlowKind::Spell(_) => How::Spell,
-    }
-}

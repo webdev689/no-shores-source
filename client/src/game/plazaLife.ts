@@ -6,6 +6,7 @@
 import type { GearState } from '../network/gearMessages.ts';
 import type { Placed } from '../player/figures.ts';
 import type { Others } from '../player/others.ts';
+import type { Block } from '../rules/movementRules.ts';
 import type { Opening } from './gearScreen.ts';
 import { HARBOURMASTER, KEEPERS, KEEPER_KINDS } from './keepers.ts';
 import type { StationInfo } from './nodes.ts';
@@ -60,6 +61,27 @@ export function offerAt(stations: readonly StationInfo[], x: number, y: number):
 
 /** How far a person walks before the floor under them is found again, in metres. */
 const FLOOR_STEP_M = 0.5;
+
+/** The movement crate's step, metres: a body climbs a block's top this far above its feet. */
+const CLIMB_M = 0.5;
+
+/** The floor a placed figure stands on at (x, y): over the ground (`standing`, as the movement rules stand a body),
+ *  on the highest top of the blocks under it whose underside is within a step of that floor, climbed in turn. A pier,
+ *  a podium or a landing a plaza's ways lead onto is stood on; a roof or a bridge overhead is not. A figure inside a
+ *  block from the ground up would stand on its top: a plaza's people and places keep clear of its solids. */
+export function floorOver(
+  blocks: readonly Block[],
+  standing: (x: number, y: number) => number,
+): (x: number, y: number) => number {
+  return (x, y) => {
+    const under = blocks.filter((b) => x >= b.minX && x <= b.maxX && y >= b.minY && y <= b.maxY);
+    for (let z = standing(x, y); ;) {
+      const climbed = under.reduce((top, b) => (b.top > top && b.bottom <= z + CLIMB_M ? b.top : top), z);
+      if (climbed === z) return z;
+      z = climbed;
+    }
+  };
+}
 
 /** The figures of a social space's people, kept among those drawn while the player is there. */
 export class PlazaLife {

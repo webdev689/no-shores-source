@@ -20,13 +20,14 @@ import { filteredSvg } from './ringSlot.ts';
 import { ammoWords } from './ammoCounter.ts';
 import { baselineOf, lineHeight } from '../ui/text.ts';
 import { keycapNode, mix, paintBox, type Pen, ring } from './barDraw.ts';
+import { type CapFace, capWords } from './shipAbilityBar.ts';
 import { weaponFit } from './weaponPicture.ts';
 
 /** How long a swap between loadouts takes, in seconds (crates/combat/src/tuning.rs SWAP_TICKS, at 60 a second). */
 export const SWAP_SECONDS = 24 / 60;
 /** How long a weapon drawn flashes, in seconds. */
 const DRAW_SECONDS = 0.3;
-/** The keys that draw each loadout. */
+/** The keys the game binds at first to draw each loadout. */
 export const LOADOUT_KEYS = ['1', '2'] as const;
 /** Each row's picture box, in CSS pixels, at each step: the weapon in hand's, then the other's. */
 export const PICTURE_BOXES = {
@@ -58,10 +59,11 @@ export interface WeaponShown {
 }
 
 /** The two rows: the loadout in hand and the other, each null where no weapon is worn in it, from `arms` and the
- *  shots left `ammo` (the player's own fighter's count, which a shot takes from at once). */
+ *  shots left `ammo` (the player's own fighter's count, which a shot takes from at once), each with its key in `keys`. */
 export function weaponsOf(
   arms: ArmsShown,
   ammo: number | null,
+  keys: readonly string[] = LOADOUT_KEYS,
 ): { readonly hand: WeaponShown | null; readonly next: WeaponShown | null } {
   const row = (slot: number): WeaponShown | null => {
     const item = arms.gear ? worn(arms.gear, slot) : undefined;
@@ -73,7 +75,7 @@ export function weaponsOf(
       item,
       name: itemName(item) === KINDS[item.kind] ? kindName(item.kind) : itemName(item),
       rarity: item.rarity,
-      key: LOADOUT_KEYS[slot] ?? '',
+      key: keys[slot] ?? '',
       shots: said?.words ?? null,
       most: said && !said.empty && most > 0 ? most : null,
       low: said?.low ?? false,
@@ -88,7 +90,7 @@ export function weaponsOf(
 export function weaponWords(shown: WeaponShown, inHand: boolean, drawn: boolean): string {
   const most = shown.most === null ? '' : ` of ${shown.most}`;
   const shots = shown.empty ? ', no ammo' : shown.shots ? `, ${shown.shots}${most} shots` : '';
-  const where = inHand ? (drawn ? 'In hand' : 'Put away') : `Press ${shown.key} to draw`;
+  const where = inHand ? (drawn ? 'In hand' : 'Put away') : `Press ${capWords(shown.key)} to draw`;
   const element = ELEMENTS[shown.item.element]?.name;
   return `${where}: ${shown.name}${element ? `, ${element}` : ''}${shots}`;
 }
@@ -117,8 +119,12 @@ export class WeaponRows {
     { readonly asked: string; readonly fit: ReturnType<typeof weaponFit> }
   >();
 
-  constructor(pictures: ItemPictures | null) {
+  private readonly face: CapFace | null;
+
+  /** With `face`, a key that is no word (a pad's button) stands drawn on its keycap. */
+  constructor(pictures: ItemPictures | null, face: CapFace | null = null) {
     this.pictures = pictures;
+    this.face = face;
   }
 
   /** Lays the rows at the display's step and zoom. */
@@ -126,8 +132,8 @@ export class WeaponRows {
     [this.wide, this.zoom] = [wide, zoom];
   }
 
-  /** Shows `arms` for the player's fighter `own`, `seconds` on. */
-  update(asked: ArmsShown, own: FighterView | null, seconds: number): void {
+  /** Shows `arms` for the player's fighter `own`, `seconds` on, each loadout's key in `keys`. */
+  update(asked: ArmsShown, own: FighterView | null, seconds: number, keys: readonly string[] = LOADOUT_KEYS): void {
     // The rules take up another loadout, or put one away, only at rest: while the fighter is busy (a swing, a guard,
     // a draw, a reload) the rows keep what the hands still hold.
     const resting = !own || own.action.kind === 'idle' || own.action.kind === 'dead';
@@ -135,7 +141,7 @@ export class WeaponRows {
     const arms = takenUp
       ? asked
       : { ...asked, loadout: this.loadout ?? asked.loadout, drawn: this.drawn ?? asked.drawn };
-    this.rows = weaponsOf(arms, own?.ammo ?? null);
+    this.rows = weaponsOf(arms, own?.ammo ?? null, keys);
     this.arms = arms;
     if (this.loadout !== null && arms.loadout !== this.loadout) this.swapping = SWAP_SECONDS;
     else this.swapping = Math.max(0, this.swapping - seconds);
@@ -272,7 +278,19 @@ export class WeaponRows {
       width: (wide ? 128 : 88) * zoom,
       clip: true,
       ...(away ? { opacity: 0.6 } : {}),
-      children: [!inHand && keycapNode(shown.key, small, wide ? 28 : 18, wide ? 27 : 17, zoom), count, name],
+      children: [
+        !inHand &&
+          keycapNode(
+            capWords(shown.key),
+            small,
+            wide ? 28 : 18,
+            wide ? 27 : 17,
+            zoom,
+            this.face?.(shown.key, small * zoom) ?? null,
+          ),
+        count,
+        name,
+      ],
     };
     // The glyph greys and flashes with the picture it stands in, as one filter took both.
     const glyph = elementSvg(shown.item.element);

@@ -61,11 +61,11 @@ export interface SeenShip {
   readonly pace: number;
 }
 
-/** A captain's ship at sea, a pirate's or the Grey Tithe's: its number, where it is, its heading in radians clockwise
- *  from north, its faction (1 the Grey Tithe, 2 pirates), its rank (1 Minor to 5 Boss), its hull (0 the Sloop to 3
+/** A hostile ship at sea, the Grey Tithe's: its number, where it is, its heading in radians clockwise
+ *  from north, its faction (1 the Grey Tithe), its rank (1 Minor to 5 Boss), its hull (0 the Sloop to 3
  *  the Frigate), its level (0 none), the distance it is sighted from, metres (0 from a room that sends none), and its
  *  way at sea, metres a second at the world's own time. */
-export interface SeenPirate {
+export interface SeenHostile {
   readonly id: number;
   readonly x: number;
   readonly y: number;
@@ -252,7 +252,7 @@ export type FromRoomMessage =
       readonly events: readonly FightEvent[];
       readonly shots: readonly FlyingShot[];
       readonly ships: readonly SeenShip[];
-      readonly pirates: readonly SeenPirate[];
+      readonly hostiles: readonly SeenHostile[];
       readonly fights: readonly SeenSeaFight[];
       /** Every spell in a room on land, which every player sees. */
       readonly spells: readonly SeenSpell[];
@@ -361,11 +361,17 @@ function inputOffset(builder: flatbuffers.Builder, sequence: number, parts: Inpu
 }
 
 /** A ship's course as its bytes: the world points it sails through in turn, and its pace, one of the steps of a
- *  ship's speed. No points brings it to rest. */
-export function courseBytes(points: readonly (readonly [number, number])[], pace: number): Uint8Array<ArrayBuffer> {
+ *  ship's speed. No points brings it to rest. With `travel`, the held map takes the ship to the other waters it ends
+ *  in. */
+export function courseBytes(
+  points: readonly (readonly [number, number])[],
+  pace: number,
+  travel = false,
+): Uint8Array<ArrayBuffer> {
   const builder = new flatbuffers.Builder(256);
   const numbers = Course.createPointsVector(builder, points.flat());
-  builder.finish(Course.createCourse(builder, numbers, wholeIn(pace, 0, 0xffff, 'the pace'), 0, 0, 0, 0, 0, 0, 0));
+  const paced = wholeIn(pace, 0, 0xffff, 'the pace');
+  builder.finish(Course.createCourse(builder, numbers, paced, 0, 0, 0, 0, 0, 0, 0, travel));
   return builder.asUint8Array().slice();
 }
 
@@ -374,7 +380,7 @@ export function courseBytes(points: readonly (readonly [number, number])[], pace
 export function faceBytes(heading: number): Uint8Array<ArrayBuffer> {
   const builder = new flatbuffers.Builder(64);
   const facing = Course.createFacingVector(builder, [heading]);
-  builder.finish(Course.createCourse(builder, 0, 0, 0, 0, 0, 0, facing, 0, 0));
+  builder.finish(Course.createCourse(builder, 0, 0, 0, 0, 0, 0, facing, 0, 0, false));
   return builder.asUint8Array().slice();
 }
 
@@ -384,21 +390,21 @@ export function walkBytes(sequence: number, controls: readonly number[]): Uint8A
   const builder = new flatbuffers.Builder(128);
   const numbers = Course.createWalkVector(builder, [...controls]);
   const numbered = wholeIn(sequence, 0, 0xffff_ffff, "the step's number");
-  builder.finish(Course.createCourse(builder, 0, 0, 0, numbers, numbered, 0, 0, 0, 0));
+  builder.finish(Course.createCourse(builder, 0, 0, 0, numbers, numbered, 0, 0, 0, 0, false));
   return builder.asUint8Array().slice();
 }
 
 /** A chase of the hostile ship numbered `ship` (null for none), as its bytes, in a course's message. */
 export function chaseBytes(ship: number | null): Uint8Array<ArrayBuffer> {
   const builder = new flatbuffers.Builder(32);
-  builder.finish(Course.createCourse(builder, 0, 0, 0, 0, 0, 3, 0, ship ?? 0, 0));
+  builder.finish(Course.createCourse(builder, 0, 0, 0, 0, 0, 3, 0, ship ?? 0, 0, false));
   return builder.asUint8Array().slice();
 }
 
 /** Leaving the helm (`leave`), or taking it again at the wheel, as its bytes, in a course's message. */
 export function helmBytes(leave: boolean): Uint8Array<ArrayBuffer> {
   const builder = new flatbuffers.Builder(32);
-  builder.finish(Course.createCourse(builder, 0, 0, 0, 0, 0, leave ? 1 : 2, 0, 0, 0));
+  builder.finish(Course.createCourse(builder, 0, 0, 0, 0, 0, leave ? 1 : 2, 0, 0, 0, false));
   return builder.asUint8Array().slice();
 }
 
@@ -407,7 +413,7 @@ export function helmBytes(leave: boolean): Uint8Array<ArrayBuffer> {
 export function askBytes(ask: 'repair' | 'board' | 'leave-deck'): Uint8Array<ArrayBuffer> {
   const builder = new flatbuffers.Builder(32);
   const number = { repair: 1, board: 2, 'leave-deck': 3 }[ask];
-  builder.finish(Course.createCourse(builder, 0, 0, 0, 0, 0, 0, 0, 0, number));
+  builder.finish(Course.createCourse(builder, 0, 0, 0, 0, 0, 0, 0, 0, number, false));
   return builder.asUint8Array().slice();
 }
 
@@ -415,7 +421,7 @@ export function askBytes(ask: 'repair' | 'board' | 'leave-deck'): Uint8Array<Arr
 export function ordersBytes(orders: readonly number[]): Uint8Array<ArrayBuffer> {
   const builder = new flatbuffers.Builder(128);
   const numbers = Course.createOrdersVector(builder, [...orders]);
-  builder.finish(Course.createCourse(builder, 0, 0, numbers, 0, 0, 0, 0, 0, 0));
+  builder.finish(Course.createCourse(builder, 0, 0, numbers, 0, 0, 0, 0, 0, 0, false));
   return builder.asUint8Array().slice();
 }
 
@@ -529,16 +535,16 @@ export function readFromRoom(bytes: Uint8Array): FromRoomMessage | null {
       if (!ship) throw new Error(`snapshot ship ${index} does not read`);
       return { player: ship.player(), x: ship.x(), y: ship.y(), heading: ship.heading(), pace: ship.pace() };
     });
-    const pirates = Array.from({ length: snapshot.piratesLength() }, (unused, index) => {
-      const pirate = snapshot.pirates(index);
-      if (!pirate) throw new Error(`snapshot pirate ${index} does not read`);
-      const { faction, rank } = commissionOf(pirate.faction(), pirate.rank());
-      const [hull, level, sight, way] = [pirate.hull(), pirate.level(), pirate.sight(), pirate.way()];
+    const hostiles = Array.from({ length: snapshot.hostilesLength() }, (unused, index) => {
+      const hostile = snapshot.hostiles(index);
+      if (!hostile) throw new Error(`snapshot hostile ${index} does not read`);
+      const { faction, rank } = commissionOf(hostile.faction(), hostile.rank());
+      const [hull, level, sight, way] = [hostile.hull(), hostile.level(), hostile.sight(), hostile.way()];
       return {
-        id: pirate.id(),
-        x: pirate.x(),
-        y: pirate.y(),
-        heading: pirate.heading(),
+        id: hostile.id(),
+        x: hostile.x(),
+        y: hostile.y(),
+        heading: hostile.heading(),
         faction,
         rank,
         hull,
@@ -565,7 +571,7 @@ export function readFromRoom(bytes: Uint8Array): FromRoomMessage | null {
       events,
       shots,
       ships,
-      pirates,
+      hostiles,
       fights,
       spells: spellsOf(snapshot),
       public: publicOf(snapshot),

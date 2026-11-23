@@ -4,13 +4,13 @@ use crate::guns::SWIVEL;
 #[test]
 fn a_major_is_a_ship_as_it_was_before_ranks() {
     let major = Commission::default();
-    assert_eq!((major.faction, major.rank), (PIRATES, Rank::Major));
-    assert_eq!(major.build(), PIRATE_SLOOP);
+    assert_eq!((major.faction, major.rank), (GREY_TITHE, Rank::Major));
+    assert_eq!(major.build(), TITHE_SLOOP);
     assert_eq!(major.armed(SWIVEL, 1.0), SWIVEL);
     let scale = Rank::Major.scale();
     assert_eq!([scale.hull, scale.might, scale.reload, scale.aim_error], [1.0; 4]);
-    assert_eq!((scale.always_bold, scale.runs_at, scale.strikes_at), (false, PIRATE_RUNS_AT, STRUCK_AT));
-    assert_eq!(major.damage(), Damage::new(&PIRATE_SLOOP, false));
+    assert_eq!((scale.always_bold, scale.runs_at, scale.strikes_at), (false, RUNS_AT, STRUCK_AT));
+    assert_eq!(major.damage(), Damage::new(&TITHE_SLOOP, false));
 }
 
 #[test]
@@ -39,16 +39,17 @@ fn each_rank_scales_its_hull_its_guns_its_reload_its_aim_and_its_boldness() {
 }
 
 #[test]
-fn each_faction_sails_its_own_class_and_only_captains_factions_take_a_commission() {
-    let minor = Commission { faction: PIRATES, rank: Rank::Minor }.build().hull;
-    let elite = Commission { faction: PIRATES, rank: Rank::Elite }.build().hull;
+fn each_faction_sails_its_own_class_and_only_the_tithe_takes_a_commission() {
+    let minor = Commission { faction: GREY_TITHE, rank: Rank::Minor }.build().hull;
+    let elite = Commission { faction: GREY_TITHE, rank: Rank::Elite }.build().hull;
     let schooner = hull_exposure(sailing::HullKind::Schooner);
     assert_eq!((minor, elite), (158.0, (475.2 * schooner).round()), "a Minor's and an Elite's hull in whole points");
     assert_eq!(Commission { faction: GREY_TITHE, rank: Rank::Major }.build().name, "Tithe Sloop");
-    assert_eq!(Commission { faction: PIRATES, rank: Rank::Boss }.build().name, "Pirate Frigate");
+    assert_eq!(Commission { faction: PLAYERS, rank: Rank::Boss }.build().name, "Merchant Frigate");
     assert_eq!(Commission::of(GREY_TITHE, Rank::Elite), Some(Commission { faction: GREY_TITHE, rank: Rank::Elite }));
     assert_eq!(Commission::of(PLAYERS, Rank::Major), None, "the players' ships take no commission");
-    assert_eq!(Commission::of(3, Rank::Major), None, "no third faction sails yet");
+    assert_eq!(Commission::of(2, Rank::Major), None, "no faction of that number");
+    assert_eq!(Commission::of(3, Rank::Major), None, "the Lattice's ships come later");
 }
 
 #[test]
@@ -66,7 +67,7 @@ fn each_rank_sails_its_own_hull() {
     let hulls = [HullKind::Sloop, HullKind::Sloop, HullKind::Schooner, HullKind::Brig, HullKind::Frigate];
     for (rank, hull) in Rank::ALL.into_iter().zip(hulls) {
         assert_eq!(rank.hull(), hull, "{rank:?}");
-        for faction in CAPTAIN_FACTIONS {
+        for faction in [PLAYERS, GREY_TITHE] {
             assert_eq!(Commission { faction, rank }.hull(), hull);
         }
     }
@@ -75,7 +76,8 @@ fn each_rank_sails_its_own_hull() {
 #[test]
 fn a_captain_is_named_for_its_faction_and_its_hull() {
     let names = |faction: u8| Rank::ALL.map(|rank| Commission { faction, rank }.build().name);
-    assert_eq!(names(PIRATES), ["Pirate Sloop", "Pirate Sloop", "Pirate Schooner", "Pirate Brig", "Pirate Frigate"]);
+    let merchants = ["Merchant Sloop", "Merchant Sloop", "Merchant Schooner", "Merchant Brig", "Merchant Frigate"];
+    assert_eq!(names(PLAYERS), merchants, "a friendly ship of the traffic, fighting beside the players");
     assert_eq!(names(GREY_TITHE), ["Tithe Sloop", "Tithe Sloop", "Tithe Schooner", "Tithe Brig", "Tithe Frigate"]);
 }
 
@@ -96,8 +98,11 @@ fn a_bigger_hull_is_as_much_tougher_as_it_is_easier_to_hit() {
     }
     let boss = |faction| Commission { faction, rank: Rank::Boss }.build();
     let exposed = exposure(HullKind::Frigate);
-    assert_eq!(boss(PIRATES).hull, (264.0 * 5.0 * hulled).round(), "its hull, its rank's and its size's");
-    assert_eq!((boss(PIRATES).sail, boss(PIRATES).crew), ((96.0 * exposed).round(), (10.0 * 5.0 * exposed).round()));
+    assert_eq!(boss(GREY_TITHE).hull, (264.0 * 5.0 * hulled).round(), "its hull, its rank's and its size's");
+    assert_eq!(
+        (boss(GREY_TITHE).sail, boss(GREY_TITHE).crew),
+        ((96.0 * exposed).round(), (10.0 * 5.0 * exposed).round())
+    );
 }
 
 /// Balls fired at a ship of `hull` sound as `damage` (each striking by the fight's hit share on its hull, a round
@@ -107,7 +112,7 @@ fn balls_to_strike(hull: sailing::HullKind, sound: &Damage) -> f64 {
     use crate::arms::{SLOOP_ARMS, arms_of};
     use crate::captain::odds::hit_share;
     use crate::damage::{SHIP_TOUGHNESS, State, Zone, shot_harm};
-    let strikes = hit_share(&SLOOP_ARMS, arms_of(hull), PIRATE_SLOOP.skill);
+    let strikes = hit_share(&SLOOP_ARMS, arms_of(hull), TITHE_SLOOP.skill);
     let holed = (crate::damage::WATERLINE_BAND_M / arms_of(hull).hull[1][2]).min(1.0);
     let mut draws = crate::random::Mulberry32::new(5);
     let (mut fired, seeds) = (0.0, 2000);
@@ -128,11 +133,11 @@ fn balls_to_strike(hull: sailing::HullKind, sound: &Damage) -> f64 {
 #[test]
 fn the_same_fire_makes_any_hull_of_one_rank_strike_as_soon_as_the_sloop() {
     for rank in [Rank::Elite, Rank::Miniboss, Rank::Boss] {
-        let commission = Commission { faction: PIRATES, rank };
+        let commission = Commission { faction: GREY_TITHE, rank };
         let own = balls_to_strike(rank.hull(), &commission.damage());
         // The same rank in the Sloop: its class's hull and men by its rank's alone, striking where its rank strikes.
         let (hull, crew) = ((264.0 * rank.scale().hull).round(), (10.0 * rank.scale().hull).round());
-        let in_sloop = Build { hull, crew, ..PIRATE_SLOOP };
+        let in_sloop = Build { hull, crew, ..TITHE_SLOOP };
         let mut in_sloop = Damage::new(&in_sloop, false);
         in_sloop.struck_at = rank.scale().strikes_at;
         let sloop = balls_to_strike(sailing::HullKind::Sloop, &in_sloop);
@@ -141,14 +146,14 @@ fn the_same_fire_makes_any_hull_of_one_rank_strike_as_soon_as_the_sloop() {
     // Its strike time as a captain reckons it, under a Major's fire from a Sloop: its hull's, to a hair of the Sloop's.
     use crate::arms::{SLOOP_ARMS, arms_of};
     use crate::captain::odds::{Power, strike_time};
-    let major = Power::captain(&PIRATE_SLOOP, 1.0, 1.0);
+    let major = Power::captain(&TITHE_SLOOP, 1.0, 1.0);
     let time = |commission: Commission| {
         let power = Power::captain(&commission.build(), 1.0, 1.0);
         strike_time(&major, &power, [&SLOOP_ARMS, arms_of(commission.hull())])
     };
-    let sloop = time(Commission { faction: PIRATES, rank: Rank::Major });
+    let sloop = time(Commission { faction: GREY_TITHE, rank: Rank::Major });
     for rank in [Rank::Elite, Rank::Miniboss, Rank::Boss] {
-        let own = time(Commission { faction: PIRATES, rank }) / rank.scale().hull;
+        let own = time(Commission { faction: GREY_TITHE, rank }) / rank.scale().hull;
         // Within its whole men and points' rounding.
         assert!((own - sloop).abs() <= 0.02 * sloop, "{rank:?}: {own} against {sloop}");
     }

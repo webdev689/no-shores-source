@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import { test } from 'node:test';
+import { WORLD_CLOCK, roomNow } from '../../sky/worldClock.ts';
 import { clockWords, countdownsAt } from './npcClock.ts';
 
 const bytes = await readFile(
@@ -28,6 +29,16 @@ test('Shape’s time left runs by the room module’s rules to Sunday 21:00 UTC,
   assert.equal(shape(Date.UTC(2026, 10, 22, 20, 58, 30)), 90);
   assert.equal(shape(Date.UTC(2026, 10, 22, 21, 0, 0)), 0, 'as he goes');
   assert.equal(shape(Date.UTC(2026, 10, 22, 23, 0, 0)), 0, 'gone till Friday');
+});
+
+test('a keeper counts down by the rooms’ clock, not a page clock that is wrong', async () => {
+  const rules = await module;
+  // The rooms say it is a day and a quarter-hour later than the page thinks.
+  WORLD_CLOCK.heard(WORLD_CLOCK.seconds() + 86_400 + 900);
+  const stock = (moment?: number) => countdownsAt(moment, rules)?.stock ?? Number.NaN;
+  // A second may turn between two readings.
+  assert.ok(Math.abs(stock() - stock(roomNow())) <= 1, `${stock()} by the rooms, ${stock(roomNow())}`);
+  assert.ok(Math.abs(stock() - stock(Date.now())) >= 800, 'not by the page');
 });
 
 test('there is no count before the game’s room module is read', () => {

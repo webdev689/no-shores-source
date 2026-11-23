@@ -312,7 +312,7 @@ test('an isle offers its own landfall over the sea bar', () => {
 test('the notices stand at the top right, 28 px in and 64 down, newest last, sliding in from the right', () => {
   const [ui, hud] = [new Interface(renderer()), new Hud()];
   hud.veil(null);
-  hud.notices(['The Pirate Brig surrenders!', 'No guns bear there.']);
+  hud.notices(['The Tithe Brig surrenders!', 'No guns bear there.']);
   frame(ui, hud);
   const rows = () => frame(ui, hud).filter((each) => each.node.id?.startsWith('notice:'));
   const [first, last] = rows();
@@ -371,9 +371,9 @@ test('a hostile ship’s mark wears its rank’s colour, its faction’s emblem 
   };
   hud.marks([
     {
-      id: 'pirate',
+      id: 'hostile',
       kind: 'hostile',
-      name: 'Pirate Brig',
+      name: 'Tithe Brig',
       x: 300,
       y: 300,
       sizePx: 28,
@@ -386,7 +386,7 @@ test('a hostile ship’s mark wears its rank’s colour, its faction’s emblem 
     },
   ]);
   const laid = frame(ui, hud);
-  const ring = laid.find((each) => each.node.id === 'mark:pirate');
+  const ring = laid.find((each) => each.node.id === 'mark:hostile');
   assert.match(ring?.node.picture?.key ?? '', /#ff0000/);
   const emblem = laid.find((each) => each.node.picture?.key.startsWith('mark emblem'));
   assert.equal(emblem?.box.width, 17, '62% of its ring');

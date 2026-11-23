@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { CLEAR, mixWeather, strikeAt, swellGained, WEATHERS, type Weather } from './weather.ts';
+import { CLEAR, mixWeather, swellGained, type Weather } from './weather.ts';
+import { WEATHERS } from './weathersForTests.ts';
 
 const STORM = WEATHERS.storm;
 
@@ -68,30 +69,4 @@ test('each weather to try is within its ranges', () => {
       assert.ok(weather[key] >= 0 && weather[key] <= 1, `${name}.${key}`);
     }
   }
-});
-
-test('a stroke of lightning comes once in each spell and flickers out within its third of a second', () => {
-  const lit: number[] = [];
-  for (let frame = 0; frame < 60 * 40; frame++) {
-    const seconds = frame / 60;
-    const strike = strikeAt(seconds, 8, [100, 200], 500, 4);
-    assert.equal(strike.flash > 0, strike.bolt !== null);
-    if (strike.bolt) {
-      assert.ok(Math.hypot(strike.bolt.x - 100, strike.bolt.y - 200) <= 500);
-      lit.push(seconds);
-    }
-  }
-  const strokes = new Set(lit.map((seconds) => Math.floor(seconds / 8)));
-  assert.equal(strokes.size, 5);
-  for (const stroke of strokes) {
-    const within = lit.filter((seconds) => Math.floor(seconds / 8) === stroke);
-    assert.ok(within.length >= 10 && within.length <= 22, `${within.length} frames lit`);
-  }
-});
-
-test('the same seed strikes the same, another seed elsewhere', () => {
-  const flashes = (seed: number) =>
-    [...Array(400).keys()].map((frame) => strikeAt(frame / 50, 8, [0, 0], 500, seed).flash);
-  assert.deepEqual(flashes(1), flashes(1));
-  assert.notDeepEqual(flashes(1), flashes(2));
 });

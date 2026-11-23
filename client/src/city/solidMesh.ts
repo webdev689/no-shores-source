@@ -137,8 +137,16 @@ function frustum(half: [number, number], height: number, top: number, surface: S
   return faces;
 }
 
-/** A round column of `sides` faces, its top `top` of its base, smooth round its sides. */
-function column(half: [number, number], height: number, sides: number, top: number, surface: Surface): Face[] {
+/** A round column of `sides` faces, its top `top` of its base, smooth round its sides; or `faceted`, each face flat
+ *  and lit as one (the Lattice's crystal). */
+function column(
+  half: [number, number],
+  height: number,
+  sides: number,
+  top: number,
+  surface: Surface,
+  faceted = false,
+): Face[] {
   const count = Math.max(ROUND_SIDES_MIN, Math.round(sides));
   const ring = (share: number, step: number, up: number): Vector => {
     const angle = (2 * Math.PI * step) / count;
@@ -163,7 +171,10 @@ function column(half: [number, number], height: number, sides: number, top: numb
     cap.push(high);
     const [uFrom, uTo] = [(k / count) * perimeter * scaleU, ((k + 1) / count) * perimeter * scaleU];
     const vTop = -height * scaleV;
-    if (top > 0)
+    if (faceted) {
+      const corners = top > 0 ? [low, lowNext, highNext, high] : [low, lowNext, high];
+      faces.push(flat(corners, normalised(cross(minus(lowNext, low), minus(high, low))), surface));
+    } else if (top > 0)
       faces.push(
         curved(
           [low, lowNext, highNext, high],
@@ -190,7 +201,8 @@ function column(half: [number, number], height: number, sides: number, top: numb
       );
   }
   faces.push(flat(bottom, [0, 0, -1], surface));
-  if (top > 0) faces.push(flat(cap, [0, 0, 1], surface));
+  // A facetted column is the crystal's: a spire's body is capped by its tip, so its own top is never seen.
+  if (top > 0 && !faceted) faces.push(flat(cap, [0, 0, 1], surface));
   return faces;
 }
 
@@ -460,7 +472,7 @@ export function solidFaces(solid: Solid, surface: Surface): Face[] {
     case 'block':
       return box(half, height, surface);
     case 'column':
-      return column(half, height, solid.sides, solid.top, surface);
+      return column(half, height, solid.sides, solid.top, surface, solid.material === 'crystal');
     case 'dome':
       return dome(half, height, solid.sides, surface);
     case 'pyramid':

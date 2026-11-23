@@ -184,7 +184,7 @@ test("the page sails its ship at the room's pace and draws it to where the room 
   const behind = { x: 0, y: -900, pace: 1 };
   const drawn = followed(voyage, 1_000, 0.1, 60, behind);
   assert.ok(drawn < 1_000 && drawn > 900, `drawn back toward the room's place: ${drawn}`);
-  assert.equal(heldNote(60, held), ' · Held to ×1: a pirate near');
+  assert.equal(heldNote(60, held), ' · Held to ×1: a hostile ship near');
   assert.equal(heldNote(60, { ...held, pace: 60 }), '', 'sailing at the dial, nothing to say');
   assert.equal(heldNote(60, null), '');
   const torn = { x: 0, y: -1_000 - SHIP_SPEED * 0.6, pace: 1 };
@@ -213,7 +213,7 @@ test("at the world's own time, with no word from the room, it sails at its true 
   assert.equal(followed(voyage, 1_000, 1, WORLD_PACE, null), 1_000 + SHIP_SPEED, '12 m a second');
   const easing = followed(voyage, 1_000, 1, WORLD_PACE, null, 40);
   assert.equal(easing, 1_000 + SHIP_SPEED * 40, 'until the room takes the eased course, at the pace it sails it at');
-  assert.equal(heldNote(WORLD_PACE, { x: 0, y: 0, pace: WORLD_PACE }), '', 'eased for the view, not held by a pirate');
+  assert.equal(heldNote(WORLD_PACE, { x: 0, y: 0, pace: WORLD_PACE }), '', 'eased for the view, not held by a hostile');
 });
 
 test('the page asks a pace again where the room sails it otherwise, but not where a hostile ship holds it', () => {

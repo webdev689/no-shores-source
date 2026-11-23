@@ -70,7 +70,7 @@ test("the ships of one hull take that model's slots in turn", async () => {
   const [sloop, brig] = [[] as number[], [] as number[]];
   const models = new ShipModels(async (hull) => viewOf(hull === 2 ? brig : sloop));
   await Promise.all([models.load(0), models.load(2)]);
-  const ship = (hull: number) => ({ hull, place: PLACE, rig: null, look: { side: 'pirate' as const } });
+  const ship = (hull: number) => ({ hull, place: PLACE, rig: null, look: { side: 'tithe' as const } });
   models.draw({} as GPURenderPassEncoder, [ship(2), ship(0), ship(2), ship(2), ship(0)], CAMERA);
   assert.deepEqual(
     [brig, sloop],

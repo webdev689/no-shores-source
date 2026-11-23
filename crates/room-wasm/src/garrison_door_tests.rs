@@ -60,7 +60,7 @@ pub const GARRISON_NODE: &str = r#"{ "id": "glade", "kind": "mission", "name": "
             -50] } } }"#;
 
 /// Both tests hold this value; a change to the garrison, the foes or the fight changes it in both, on purpose.
-pub const GARRISON_HASH: &str = "be4c964a";
+pub const GARRISON_HASH: &str = "6df4581a";
 
 /// Ticks the player runs north into the garrison, then stands and swings each SWING_EVERY ticks until RUN_TICKS.
 const RUN_IN: u32 = 420;
@@ -103,7 +103,7 @@ fn input_of(player: PlayerId, input: &room::Input) -> i32 {
 }
 
 /// Both tests hold this value: two players in one node's room, the garrison's foes shared out between them.
-pub const GARRISON_PAIR_HASH: &str = "e89b5f4f";
+pub const GARRISON_PAIR_HASH: &str = "c0541149";
 
 #[test]
 fn two_players_against_a_node_s_garrison_fight_to_the_same_fingerprint_natively_as_in_the_browser_s_webassembly() {

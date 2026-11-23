@@ -62,12 +62,15 @@ fn an_item_found_is_carried_then_vaulted_then_left_as_a_vestige_of_its_colour() 
     let make = |id| Item::new(id, Kind::Head, Rarity::Rare, 12, Slot::Head);
     let start = character.carried_in(Slot::Head);
     for id in 0..(CARRIED_MOST - start + VAULT_MOST) as u32 {
-        assert_eq!(character.keep_found(make(id)), None);
+        assert_eq!(character.keep_found(make(id), 12), None);
     }
     assert_eq!(character.carried_in(Slot::Head), CARRIED_MOST);
     assert_eq!(character.items.values().filter(|(_, at)| *at == At::Vault).count(), VAULT_MOST);
-    let left = character.keep_found(make(99)).expect("no room left");
+    let left = character.keep_found(make(99), 12).expect("no room left");
     assert_eq!((left.rarity, left.slot, left.level), (Rarity::Rare, Slot::Head, 12));
+    // A named item opens at 20 (a cloak at 1): left as a Vestige, it takes its foe's level, not its own.
+    let named = Item::new(100, Kind::Head, Rarity::Legendary, 20, Slot::Head);
+    assert_eq!(character.keep_found(named, 7).expect("no room left").level, 7);
 }
 
 #[test]

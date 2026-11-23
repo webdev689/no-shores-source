@@ -40,7 +40,7 @@ and record, at Daggerfall's sizes and in its palette, so every model's mapping h
   `pictureArchives(uses)` lists the archives those uses name.
 - `shipPictures()` answers the five pictures a ship's parts wear ([[Sailing]]): hull and deck from the ship archive,
   spar, canvas and iron painted on the same surface and finish. `flagPictures()` answers a flag a side (a player's, a
-  friendly ship's, the Grey Tithe's and the pirates'), 64 texels square: the side's ground over a faint weave, and
+  friendly ship's and the Grey Tithe's), 64 texels square: the side's ground over a faint weave, and
   the faction's emblem the plates show in its middle, two texels a pixel across and three down, so it stands square
   on a flag half again as long as it is deep.
 - `pictureSize(archive, record)` gives a record's size and frames from the catalog; `climateArchive` moves an

@@ -41,3 +41,5 @@ Claude's choice of every ship type, for the sea the owner approved
 - **Built in this order**, each rendered from four sides for the owner's yes, then UV-mapped into its parts and
   painted: the Schooner, whose rig the game already sails; the Brig, the first square sails; the Frigate, with its
   two gun decks; the Tithe Ram, the Frigate's hull with its ram; the Fluyt, which waits on the merchantmen anyway.
+
+Replaced in part by [[Pirates Are Replaced by the Grey Tithe]]: no ship wears the pirates' colours.

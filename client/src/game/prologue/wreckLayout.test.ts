@@ -147,13 +147,10 @@ test('the zones follow the path, each checkpoint on the ground in its own zone, 
     for (const [x, y] of zone.crew) assert.ok(topAt(course, x, y) >= LOWEST_GROUND_M, `crew of ${zone.name} on deck`);
   });
   const seen = new Set(layout.zones.flatMap((zone) => zone.wave.map((foe) => foe.type)));
-  assert.ok(
-    [...seen].some((type) => type >= 7 && type <= 11),
-    'Grey Tithe deck crew',
-  );
-  assert.ok(
-    [...seen].some((type) => type >= 13 && type <= 17),
-    'and pirates, boarding together',
+  assert.deepEqual(
+    [...seen].sort((one, other) => one - other),
+    [7, 8, 9, 10, 11],
+    'every boarder of the Grey Tithe’s deck crew, each role among them',
   );
 });
 

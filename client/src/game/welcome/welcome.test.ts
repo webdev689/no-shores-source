@@ -87,11 +87,12 @@ async function framesDrawn(
   count: number,
   standing: () => readonly [number, number],
   held = false,
+  floor = () => 30,
 ): Promise<CardAt[]> {
   let cards: CardAt[] = [];
   for (let frame = 0; frame < count; frame++) {
     const [x, y] = standing();
-    cards = after.frame(shotAt(x, y), VIEW, 0.25, frame, you(x, y), false, SOCIAL, held);
+    cards = after.frame(shotAt(x, y), VIEW, 0.25, frame, you(x, y), false, { node: SOCIAL, floor }, held);
     await Promise.resolve();
   }
   return cards;
@@ -268,4 +269,18 @@ test('a browser that keeps nothing still plays the welcome once the stranger has
   welcome.storyEnded(stranger(2));
   assert.equal(await frames(welcome, 4, () => ARRIVAL), 1, 'Elder Maren Hale comes');
   welcome.leave();
+});
+
+test('she stands on the floor the plaza’s figures stand on, up on a podium over the ground', async () => {
+  const { after } = page();
+  const welcome = after(true);
+  const drawn = await framesDrawn(
+    welcome,
+    40,
+    () => ARRIVAL,
+    false,
+    () => 30.9,
+  );
+  assert.equal(drawn.length, 1, 'she comes');
+  assert.equal(drawn[0]?.z, 30.9, 'on the podium’s top, not the ground under it at 30');
 });

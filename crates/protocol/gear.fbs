@@ -234,6 +234,9 @@ table Gear {
   // this room's node that they have not, each its number, x and y.
   lore: [ushort];
   lore_here: [double];
+  // How much longer the room takes to recharge each Art's Anima and Tenets: 1.5 under a run's Trickle, else 1. The page
+  // runs `anima` and `tenets` on by it.
+  recharge: double = 1.0;
 }
 
 // A named officer: their number, post (0 First Mate, 1 Gunner, 2 Bosun, 3 Carpenter, 4 Lookout), grade (a rarity),

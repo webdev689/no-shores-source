@@ -1,6 +1,8 @@
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import { test } from 'node:test';
+import { CRYSTAL } from '../city/crystal.ts';
+import { HOLDER_COLOURS } from '../heldmap/watersWash.ts';
 import type { TrafficShip } from '../rules/watersRules.ts';
 import { FriendlyTraffic } from './friendlyShips.ts';
 import { openWaters, type OpenWaters, seaWatersOf, watersOnce } from './pageWaters.ts';
@@ -72,9 +74,24 @@ test('at sea the friendly ships take only the slots of their hull the room’s o
     hulls: [],
   } as unknown as SeaFrame;
   const still = { swell: undefined, depthAt: () => 50 };
-  assert.deepEqual(traffic.atSea(shown, still, 0.1, 1).ships, [], 'none before the waters open');
+  assert.deepEqual(
+    traffic.atSea(shown, still, { seconds: 0.1, time: 1, taken: new Set() }).ships,
+    [],
+    'none before the waters open',
+  );
   await Promise.resolve();
-  const frame = traffic.atSea(shown, still, 0.1, 1);
+  const frame = traffic.atSea(shown, still, { seconds: 0.1, time: 1, taken: new Set() });
   assert.equal(frame.ships.length, 16 - 3);
   assert.equal(frame.marks.length, 30);
+});
+
+test('the held map washes the Lattice’s waters in its crystal’s red, lit a third again', () => {
+  const srgb = (linear: number) =>
+    Math.round(255 * (linear <= 0.0031308 ? 12.92 * linear : 1.055 * linear ** (1 / 2.4) - 0.055));
+  const lit = CRYSTAL.red.map((channel) =>
+    srgb((channel * 4) / 3)
+      .toString(16)
+      .padStart(2, '0'),
+  );
+  assert.equal(HOLDER_COLOURS.lattice, `#${lit.join('')}`);
 });

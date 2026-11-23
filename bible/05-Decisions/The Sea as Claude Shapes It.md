@@ -184,3 +184,5 @@ Its rank, by the lowest level of its water's band:
 - **The sea's clock**: the sea holds the Unix minute its host sets (`Sea::minute`), as a room on land does; the
   bounties count the ships sunk or taken in the sea room itself once the activities branch lands, so the sea tells
   its hosts no word of a ship gone down.
+
+Replaced in part by [[Pirates Are Replaced by the Grey Tithe]]: the pirates, their colours and their places by the coasts are gone; the Grey Tithe sails every hostile ship.

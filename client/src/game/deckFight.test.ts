@@ -82,6 +82,13 @@ test('its ship is the fight’s captain lying nearest where it lay last, posed a
   assert.deepEqual(lying, { x: 10, y: 25, heading: 0.4, scale: 1, heave: 0.3, pitch: 0.01, roll: 0.02 });
 });
 
+test('a struck friendly ship lying nearer is never taken for the boarded deck: only a Tithe ship is boarded', () => {
+  const friendly = { ...captain(11, 21, 'Merchant'), faction: 0 } as FightCaptain;
+  const tithe = { ...captain(40, 20, 'Tithe'), faction: 1 } as FightCaptain;
+  const view = { captain: friendly, others: [tithe], player: { ship: [12, 20] } } as unknown as FightView;
+  assert.equal(boardedLying(view, [12, 20], 1).captain.name, 'Tithe');
+});
+
 test('its deck is a place on foot whose ring is its bounds and whose spawn is at its rail on the boarder’s side, as its room stands them', () => {
   const [sloop, schooner] = HULL_DECKS;
   assert.ok(sloop && schooner && HULL_DECKS.length === 4, 'the four hulls’ decks');
@@ -160,7 +167,7 @@ test('the sea room hands each snapshot of the deck the player stands on, decoded
       tick: 5n,
       players: [],
       ships: [],
-      pirates: [],
+      hostiles: [],
       fights: [],
       flotsam: [],
       kept: [],
@@ -182,9 +189,9 @@ test('the page predicts its boarder on its deck exactly as its deck room steps t
   const schooner = HULL_DECKS[1];
   assert.ok(schooner);
   const door = startRoomDoor(compiled);
-  assert.ok(door.openDeck(1, 2, 1, 5), 'a Minor pirate Schooner’s deck');
-  assert.equal(door.openDeck(9, 2, 1, 5), false, 'no such hull');
-  door.openDeck(1, 2, 1, 5);
+  assert.ok(door.openDeck(1, 1, 1, 5), 'a Minor Tithe Schooner’s deck');
+  assert.equal(door.openDeck(9, 1, 1, 5), false, 'no such hull');
+  door.openDeck(1, 1, 1, 5);
   let fight: Fighting | null = null;
   const kept = new SnapshotKeeper();
   const link: RoomLink = {

@@ -378,8 +378,10 @@ export function itemPage(
   };
   if (ui.clicked('press-back')) back();
   const presses: Node[] = [pressNode('press-back', 'Back', 'button', 'Esc', sizes.label)];
-  for (const press of detail.presses) {
-    const id = `press-${press.label}`;
+  for (const [place, press] of detail.presses.entries()) {
+    // Two like modules to infuse share a name; an id is the frame's own (ui/node.ts), so the second takes its place.
+    const named = `press-${press.label}`;
+    const id = presses.some((each) => each.id === named) ? `${named} ${place}` : named;
     const run = () => context.ask(press.ask);
     let charged = 0;
     if (press.held)

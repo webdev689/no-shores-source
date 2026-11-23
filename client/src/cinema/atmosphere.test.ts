@@ -1,7 +1,8 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { ATMOSPHERE_FLOATS, type AtmosphereFrame, atmosphereValues, drawsNothing } from './atmosphere.ts';
-import { CLEAR, WEATHERS } from './weather.ts';
+import { CLEAR } from './weather.ts';
+import { WEATHERS } from './weathersForTests.ts';
 
 const FRAME: AtmosphereFrame = {
   weather: { ...WEATHERS.storm, flash: 0.9, bolt: { x: 1100, y: 2050, seed: 7 } },

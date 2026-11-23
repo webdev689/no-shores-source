@@ -166,7 +166,7 @@ pub(crate) struct Dressed {
 /// A rectangle square to the world: west, north, east, south.
 pub(super) type Rect = [f64; 4];
 
-fn point_to_segment(point: [f64; 2], [from, to]: [[f64; 2]; 2]) -> f64 {
+pub(super) fn point_to_segment(point: [f64; 2], [from, to]: [[f64; 2]; 2]) -> f64 {
     let along = [to[0] - from[0], to[1] - from[1]];
     let length = along[0] * along[0] + along[1] * along[1];
     let share = if length > 0.0 {

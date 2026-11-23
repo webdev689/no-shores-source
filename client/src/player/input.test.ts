@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { HOLD_S } from './binds.ts';
-import { BINDS, Input, type InputFrame, axis, keyNameOf } from './input.ts';
+import { BINDS, handsFree, IDLE, Input, type InputFrame, axis, keyNameOf } from './input.ts';
 import type { PadState } from './pad.ts';
 
 /** A page with one standard pad whose buttons `held` are down (a trigger by its pull) and sticks at `axes`, read
@@ -220,4 +220,18 @@ test('a sign is named by its key, Shift or not, and is let go under the name it 
   key('?', 'KeyM', 'keyup');
   assert.equal(frame().held('mount'), false);
   done();
+});
+
+test('the pad fights with the pointer free once the menu is shut; the keys and mouse only with it locked', () => {
+  const device = BINDS.device;
+  try {
+    BINDS.device = 'pad';
+    assert.equal(handsFree({ ...IDLE, locked: false }, false), true, 'the pad, the pointer free');
+    assert.equal(handsFree({ ...IDLE, locked: false }, true), false, 'never under the menu');
+    BINDS.device = 'keys';
+    assert.equal(handsFree({ ...IDLE, locked: false }, false), false, 'a click on a free pointer only locks it');
+    assert.equal(handsFree({ ...IDLE, locked: true }, false), true);
+  } finally {
+    BINDS.device = device;
+  }
 });

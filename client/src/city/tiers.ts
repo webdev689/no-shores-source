@@ -9,6 +9,17 @@ export const NEAR_BAND_M = 140;
 export const FAR_M = 2600;
 export const FAR_BAND_M = 400;
 
+/** A ruin's middle-distance crystal: how far from the eye a chunk's is drawn, metres (past the near cells, to where a
+ *  heavily overtaken building's crystal is a few pixels; crystalInstances.ts). */
+export const MIDDLE_M = 1200;
+/** The band short of `MIDDLE_M` over which it fades out, dithered as the buildings' tiers are, so none pops. */
+export const MIDDLE_BAND_M = 300;
+
+/** How far a middle-distance formation `distance` metres from the eye has faded out: 0 whole, 1 gone. The city's
+ *  shaders fade it alike (cityShaders.ts `crystal_fade`). */
+export const middleFade = (distance: number): number =>
+  Math.min(1, Math.max(0, (distance - (MIDDLE_M - MIDDLE_BAND_M)) / MIDDLE_BAND_M));
+
 const clamp01 = (value: number): number => Math.min(1, Math.max(0, value));
 
 /** How far a cell has turned from whole to masses (0 whole, 1 masses), and from masses to hulls. */

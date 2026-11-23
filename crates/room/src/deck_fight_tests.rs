@@ -1,13 +1,13 @@
 use super::*;
 use crate::deck::test_deck;
-use ::foes::factions::{GREY_TITHE, PIRATES};
+use ::foes::factions::GREY_TITHE;
 use movement::Terrain;
 
 #[test]
 fn a_captains_deck_room_stands_its_rank_and_factions_crew_at_its_level_on_its_planks() {
     let deck = test_deck();
     for (faction, rank, count) in
-        [(PIRATES, Rank::Major, 4), (GREY_TITHE, Rank::Miniboss, 6), (PIRATES, Rank::Minor, 3)]
+        [(GREY_TITHE, Rank::Major, 4), (GREY_TITHE, Rank::Miniboss, 6), (GREY_TITHE, Rank::Minor, 3)]
     {
         let room = Room::deck(&deck, faction, rank, 14);
         assert_eq!(room.foes.len(), count, "{rank:?}");
@@ -25,7 +25,7 @@ fn a_captains_deck_room_stands_its_rank_and_factions_crew_at_its_level_on_its_pl
 fn a_boarder_comes_over_the_rail_on_their_ships_side_clear_of_its_middle_and_its_room_tells_when_crew_or_boarders_are_down()
  {
     let deck = test_deck();
-    let mut room = Room::deck(&deck, PIRATES, Rank::Minor, 3);
+    let mut room = Room::deck(&deck, GREY_TITHE, Rank::Minor, 3);
     // Its rails amidships, half a metre in from its outermost planks (the test deck's are at 1 m either side).
     let [starboard, port] = [rail_spot(&deck, 1.0), rail_spot(&deck, -1.0)];
     assert!((starboard[0] - 0.45).abs() < 0.06 && starboard[1] == 0.0, "{starboard:?}");
@@ -60,7 +60,7 @@ fn a_boarder_comes_over_the_rail_on_their_ships_side_clear_of_its_middle_and_its
 #[test]
 fn a_kill_on_a_deck_pays_by_the_seas_tier_but_drops_no_vestige_or_item_as_the_hold_is_the_boardings_loot() {
     let paid = |difficulty: gear::Difficulty| {
-        let mut room = Room::deck(&test_deck(), PIRATES, Rank::Miniboss, 20);
+        let mut room = Room::deck(&test_deck(), GREY_TITHE, Rank::Miniboss, 20);
         room.difficulty = difficulty;
         let player = room.board_at(rail_spot(&test_deck(), 1.0)).expect("aboard");
         let items = room.players[&player].character.items.len();
@@ -73,4 +73,20 @@ fn a_kill_on_a_deck_pays_by_the_seas_tier_but_drops_no_vestige_or_item_as_the_ho
         room.players[&player].character.xp
     };
     assert_eq!(paid(gear::Difficulty::Abyss), paid(gear::Difficulty::Normal) * 2, "an Abyss sea's deck pays twice");
+}
+
+#[test]
+fn on_a_deck_fights_floor_a_run_or_a_dodges_hop_is_never_carried_through_a_wall_one_cell_thick() {
+    // The test deck's mast is one 0.1 m cell, x 0.0 to 0.1 and y 0.0 to 0.1; a run's tick (0.1265 m) and a hop's
+    // (0.167 m) are each longer than it.
+    let floor = Floor::Deck(Box::new(test_deck().heights));
+    let start = movement::Body { z: 0.8, ..movement::standing(0.05, 0.3) };
+    let running = movement::Controls { forward: 1.0, run: true, ..movement::Controls::default() };
+    let hop = movement::Body { mode: movement::Mode::Air, vy: -10.0, vz: 3.0, grounded: 0.0, ..start };
+    for (mut body, controls) in [(start, running), (hop, movement::Controls::default())] {
+        for _ in 0..60 {
+            body = movement::step_body(&body, &controls, &[], &floor, movement::TICK_SECONDS);
+            assert!(body.y > 0.05, "carried through the mast: {body:?}");
+        }
+    }
 }
