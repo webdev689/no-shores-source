@@ -1,5 +1,5 @@
 ---
-id: 152
+id: 164
 title: "The harness's stop hook asks to commit and push at every turn's end, though CLAUDE.md holds a push until the full check passes"
 status: open
 type: open-source
