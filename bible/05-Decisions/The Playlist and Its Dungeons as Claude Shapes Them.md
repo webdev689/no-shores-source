@@ -59,6 +59,10 @@ be; the calls below are the work after it. Claude's choices for [[Armour and Wea
 | Launch again | Each Launch draws anew: the daily and the weekly pay alike whichever dungeon is drawn (a Boss's colours, the playlist's tier) | As leaving and joining a playlist again draws anew in the owner's reference |
 | A Roster join | A company member may join a playlist's run from another island; leaving puts them on the sea | Companies play together wherever they stood |
 | Below a playlist's level | The finder closes the queue with the gate's words | The rooms would refuse the run anyway |
+| The screen's presses | Find a Company the primary press; Launch reads "Go alone", or "Go with your company" when the Roster's company has more than one; Launch hidden while a search or a launch runs; no Stop while a Launch waits, though Close stops it | One clear first choice, and no press that does two things |
+| A shut entry | Its padlock on the crest's shoulder, its reason in neutral ink with a padlock on its card and footer ("Opens at level 24 · You are 22"), its Launch dim; red only for a refusal | A lock is information, not an error |
+| The crests' words | A crest's words drop its tier, which its shield and name say, one part a line; a week's dungeon's name on two lines, broken before "of"; the Abyss Playlist's rule "One of the 18 Elite Dungeons, at Abyss, drawn as each run starts." | Short lines that never break mid-phrase |
+| The Playlist's mark on land | Shown over an island's side only when docking at its port | A landing view frames its own island |
 
 ### Encounters
 
