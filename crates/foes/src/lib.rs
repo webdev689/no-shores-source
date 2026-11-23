@@ -39,7 +39,7 @@ pub use director::{Caps, Director, Pressed};
 pub use factions::{FACTIONS, Faction, faction};
 pub use noises::Noise;
 pub use ranks::{Call, Place, Rank};
-pub use react::swung_at;
+pub use react::{shot_at, swung_at};
 pub use roles::Role;
 pub use roster::{FoeType, ROSTER, foe_type, in_role, spawn};
 pub use shoot::aimed_shot;

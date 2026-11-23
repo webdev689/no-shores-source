@@ -415,13 +415,15 @@ impl Room {
     }
 
     /// Stands one of an event's foes of a type and rank at a place, at the event's level, at home round `home` and
-    /// hunting the nearest player on its ground; none while the room has no room for it.
+    /// hunting the nearest player on its ground if it `hunts` (the growth and the tithe-taker, which the room moves itself,
+    /// do not); none while the room has no room for it.
     pub(crate) fn stand_event_foe(
         &mut self,
         running: &mut Running,
         (number, rank): (u8, Rank),
         (at, facing): ([f64; 3], f64),
         (home, level): ([f64; 3], u8),
+        hunts: bool,
     ) -> Option<FighterId> {
         if self.living_foes() >= self.foes_most {
             return None;
@@ -434,7 +436,7 @@ impl Room {
         let foe = self.foes.get_mut(&id)?;
         foe.brain.posted_at(home, facing);
         foe.brain.leashed(running.leash);
-        if let Some((player, at)) = hunted {
+        if let Some((player, at)) = hunted.filter(|_| hunts) {
             foe.brain.hunt(player, at, clock);
         }
         running.foes.push(id);

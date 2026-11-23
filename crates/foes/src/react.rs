@@ -88,6 +88,15 @@ pub fn swung_at(striker: &Fighter, me: FighterId, at: [f64; 2]) -> bool {
     apart(from, at) <= reach + THREAT_MARGIN && aimed
 }
 
+/// Whether `shooter`, loosing now, aims at the fighter standing at `at`: its aim within SHOT_AIMED of the bearing.
+#[must_use]
+pub fn shot_at(shooter: &Fighter, at: [f64; 2]) -> bool {
+    off(shooter.aim, bearing([shooter.body.x, shooter.body.y], at)) <= SHOT_AIMED
+}
+
+/// How far off its aim a shot is still taken as one at a fighter, radians.
+const SHOT_AIMED: f64 = 0.2;
+
 /// The answer it settles on for a threat its reaction time has passed, if any: whether the blow is at it at all, then
 /// its shares, then what its action and stamina allow, then whether there is time.
 fn weigh(here: &Here<'_, '_>, threat: &Threat) -> Option<Defence> {
@@ -100,7 +109,6 @@ fn weigh(here: &Here<'_, '_>, threat: &Threat) -> Option<Defence> {
         return None;
     }
     let distance = apart(from, at);
-    let facing = off(striker.aim, bearing(from, at));
     let lands = match threat.lands {
         Some(lands) => swung_at(striker, here.me, at).then_some(lands)?,
         None => {
@@ -108,7 +116,7 @@ fn weigh(here: &Here<'_, '_>, threat: &Threat) -> Option<Defence> {
             // An aimed shot flies faster than its weapon's plain one: the room's word on its speed comes first.
             let weapon = if striker.is_player() { shot_numbers(ranged).0 } else { foe_speed(ranged) };
             let speed = if threat.speed > 0.0 { threat.speed } else { weapon };
-            if speed <= 0.0 || facing > 0.2 {
+            if speed <= 0.0 || !shot_at(striker, at) {
                 return None;
             }
             threat.seen + Here::ticks(distance / speed)

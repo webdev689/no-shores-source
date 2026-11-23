@@ -291,7 +291,7 @@ impl Room {
             let facing = start + TAU * turn as f64 / count as f64;
             let place = [formed[0] + libm::sin(facing) * COME_IN, formed[1] - libm::cos(facing) * COME_IN, formed[2]];
             let toward = bearing([formed[0], formed[1]], middle);
-            let Some(id) = self.stand_event_foe(running, member, (place, toward), (home, public.level)) else {
+            let Some(id) = self.stand_event_foe(running, member, (place, toward), (home, public.level), true) else {
                 continue;
             };
             raid.wave_foes.push(id);
@@ -332,7 +332,9 @@ impl Room {
         let pace = (length / walking).clamp(WALK_LEAST, WALK_MOST);
         let facing = bearing([from[0], from[1]], [round[0].0[0], round[0].0[1]]);
         let home = (raid.home, public.level);
-        let Some(foe) = self.stand_event_foe(running, (TITHE_TAKER, Elite), (from, facing), home) else { return };
+        let Some(foe) = self.stand_event_foe(running, (TITHE_TAKER, Elite), (from, facing), home, false) else {
+            return;
+        };
         self.inert.insert(foe);
         raid.taker = Some(Taker { foe, round, leg: 0, counting: None, pace });
         (running.heroic, running.heroic_ticks) = (Heroic::Offered, TITHE_TAKER_TICKS);

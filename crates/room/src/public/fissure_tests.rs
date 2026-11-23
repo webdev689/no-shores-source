@@ -595,6 +595,7 @@ fn the_growth_broken_by_no_player_misses_the_heroic_task_and_leaves_no_mark() {
         seal_one(&mut room, players[0]);
     }
     let growth = fissure(&room).growth.unwrap();
+    assert_eq!(room.foes[&growth].brain.fights(), None, "the growth hunts no one");
     let foe = lesser(&room)[0];
     killed_by_a_foe(&mut room, growth, foe);
     room.tick();

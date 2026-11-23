@@ -10,7 +10,7 @@ use crate::spells::feet_of;
 use crate::{EventKind, Room, SpawnAsk};
 use ::foes::noises::{Noise, landed, running, shot, swing};
 use ::foes::{Brain, Call, FoeType, Place, Rank, Seen, aimed_shot, foe_type, notice, spawn};
-use combat::fighter::{Action, FighterId, Side};
+use combat::fighter::{Action, FighterId};
 use combat::judge::telegraph_blow;
 use combat::shapes::{Shape, Telegraph};
 use combat::shots::shot_numbers;
@@ -37,6 +37,8 @@ pub const CLEAR_FOES: u8 = 255;
 /// A body this near the navmesh's nearest point to it, across, stands on the mesh: the margin its erosion trims by a
 /// wall.
 const ON_MESH: f64 = 1.5;
+/// How far off the mesh a foe with no way from where it stands makes back for it, metres: past any leash.
+const BACK_TO_MESH: f64 = 80.0;
 /// A telegraphed blow is judged against every player within its shape's reach and this much more.
 const SHAPE_MARGIN: f64 = 2.0;
 /// An aimed shot strikes harder than a plain one.
@@ -150,7 +152,14 @@ impl ::foes::Routes for MeshRoutes<'_> {
             return Some(to);
         }
         let path = self.mesh.find_path_kept(way, from, reachable);
-        Some(path.map_or(to, |points| self.onward(way, &points, from, to)))
+        // With no way from where it stands, off the mesh, it makes back for the mesh, never straight through what stands
+        // between it and its goal.
+        let back = || {
+            self.mesh
+                .nearest_point_within(from, BACK_TO_MESH)
+                .filter(|near| combat::sight::apart([near[0], near[1]], [from[0], from[1]]) > CORNER_REACHED)
+        };
+        Some(path.map_or_else(|| back().unwrap_or(to), |points| self.onward(way, &points, from, to)))
     }
 
     fn drops(&self, from: [f64; 3], to: [f64; 3]) -> bool {
@@ -513,7 +522,6 @@ impl Room {
     pub(crate) fn tell_brains(&mut self) {
         let (swings, loosed) = (std::mem::take(&mut self.swings), std::mem::take(&mut self.loosed));
         let noises = self.noises(&swings, &loosed);
-        let side = |id: &FighterId| self.fighter(*id).map(|fighter| fighter.side);
         let swings: Vec<(FighterId, combat::fighter::Attack, Option<Fighter>)> =
             swings.into_iter().map(|(by, attack)| (by, attack, self.fighter(by).copied())).collect();
         // Each shot's speed as it flies, the newest of its shooter's: a ball that reaches its mark at once flies none.
@@ -521,15 +529,14 @@ impl Room {
             let shot = self.shots.iter().rev().map(|(shot, _)| shot).find(|shot| shot.owner == by);
             shot.map_or(0.0, |shot| libm::sqrt(shot.velocity.iter().map(|part| part * part).sum()))
         };
-        let loosed: Vec<(FighterId, Option<Side>, f64)> =
-            loosed.into_iter().map(|by| (by, side(&by), speed(by))).collect();
+        let loosed: Vec<(FighterId, Option<Fighter>, f64)> =
+            loosed.into_iter().map(|by| (by, self.fighter(by).copied(), speed(by))).collect();
         let verdicts = std::mem::take(&mut self.verdicts);
         let ended = std::mem::take(&mut self.ended_telegraphs);
         let tick = self.clock;
         for (id, Foe { fighter, brain, .. }) in &mut self.foes {
             // Only a blow from another side is a threat to answer: an ally's would only crowd it out, and so would a
             // swing begun at another, which is not a swing begun at it.
-            let hostile = |by: &Option<Side>| by.is_some_and(|by| by != fighter.side);
             let at = [fighter.body.x, fighter.body.y];
             let swung_at = |striker: &Option<Fighter>| {
                 striker.is_some_and(|striker| striker.side != fighter.side && ::foes::swung_at(&striker, *id, at))
@@ -537,7 +544,11 @@ impl Room {
             for (by, attack, _) in swings.iter().filter(|(_, _, striker)| swung_at(striker)) {
                 notice(brain, *id, &Seen::Swung { by: *by, attack: *attack }, tick);
             }
-            for (by, _, speed) in loosed.iter().filter(|(_, by, _)| hostile(by)) {
+            // And only a shot loosed at it: one loosed away from it would only crowd out one that is.
+            let shot_at = |shooter: &Option<Fighter>| {
+                shooter.is_some_and(|shooter| shooter.side != fighter.side && ::foes::shot_at(&shooter, at))
+            };
+            for (by, _, speed) in loosed.iter().filter(|(_, shooter, _)| shot_at(shooter)) {
                 notice(brain, *id, &Seen::Loosed { by: *by, speed: *speed }, tick);
             }
             for (striker, defender, verdict) in &verdicts {

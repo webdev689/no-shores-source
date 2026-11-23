@@ -337,3 +337,27 @@ fn a_player_the_foes_leave_be_is_struck_by_no_sweep_or_shot_aimed_at_another() {
     assert!(shot_at.contains(&fought), "the bolt struck the one it was loosed at: {shot_at:?}");
     assert!(!shot_at.contains(&spared), "and passed the one left be by");
 }
+
+#[test]
+fn a_foe_is_told_of_no_shot_loosed_away_from_it() {
+    let mut room = room();
+    let (near, far) = (room.join().unwrap(), room.join().unwrap());
+    let foe = stand(&mut room, ::foes::roster::COLLECTOR, 0.0, -2.0);
+    let clock = room.clock();
+    room.foes.get_mut(&foe).unwrap().brain.hunt(near, [0.0, 0.0, 0.0], clock);
+    // Fifteen metres south, facing away from the foe, a shot loosed at another.
+    let mut shooter = *room.fighter(far).unwrap();
+    (shooter.body, shooter.aim) = (standing(0.0, 15.0), core::f64::consts::PI);
+    shooter.arms = combat::Arms { ranged: Some(combat::Ranged::Pistolet), ..combat::arms::BARE_HANDS };
+    room.set_fighter(far, shooter);
+    room.loosed.push(far);
+    room.tell_brains();
+    assert_eq!(room.foes[&foe].brain.seen_coming(), None, "a shot away from it is no shot at it");
+    // Facing it, the same shot is one to answer.
+    let mut facing = shooter;
+    facing.aim = 0.0;
+    room.set_fighter(far, facing);
+    room.loosed.push(far);
+    room.tell_brains();
+    assert_eq!(room.foes[&foe].brain.seen_coming(), Some(far), "a shot at it");
+}
