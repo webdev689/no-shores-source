@@ -168,6 +168,17 @@ each part works is in its system note.
 
 The decisions in [[Open Questions]] are not repeated here.
 
+- **The ship aim under the crosshair, and the ship steady in it** (#168, branch `ccr-bc9c76c9-rau31m`), for the owner's
+  yes to merge; `main` is merged in and `cargo xtask check` passes on its head. The owner: "The aim UI needs to be
+  center on the camera and its currently offset. Ship geometry in the aim jitters" ([[Aiming a Ship Looks Square Off Its
+  Side, Clear of Its Rig]], its calls). Measured offline on the rules' own swell (`seaAim.test.ts`, and a probe driving
+  `SeaCombat` on the wasm rules): the volley's fall stood 90 to 100 px past the crosshair on a 1080-line screen, as the
+  rules laid for a sea at rest at the ship's heave; it now stands within about 4 px settled, the rules laying where the
+  look's ray meets the swell (`on_water`), the view held at the guns' real nearest (`laidNearest`) and turned over the
+  fall (`laidAlong`). The eye stood 0 to 13 cm off its place on the drawn ship from frame to frame when answers came
+  unevenly, placed from the answer before the one the ship was drawn from; it now stands on it. Not yet seen on a real
+  GPU: how the aim feels and looks in the game. Left: answers that come unevenly still move the ship and the eye
+  together in uneven steps against the sea.
 - **The owner's bugs from two rounds of play** (#163), merged, which deploys the page and the rooms. Each fix was audited read-only, and every finding fixed with a test
   that fails without it. Elder Maren Hale's welcome is left to another session, which reworks it; its reload bug
   (no greeting, "Follow" before it, a left-behind walk hiding the houses' roads) is that session's:
@@ -397,6 +408,11 @@ The decisions in [[Open Questions]] are not repeated here.
 
 ## Next
 
+- **A cloud session runs on the `no-shores-source` environment** (personal, set up with the owner's approval): its
+  network allows R2's public bucket (`ships.base`), which `client/src/ships/shipTags.test.ts` fetches meshes from, and
+  its setup script runs `npm ci`. Run the check there as `NODE_USE_ENV_PROXY=1 cargo xtask check`: Node's `fetch`
+  ignores `HTTPS_PROXY` without it. On the Default environment those four tests fail with "fetch failed" and xtask
+  stops before the build, the bundle and the repo checks. The Context7 and SkillsMP keys are on neither environment.
 - **Unchecked, from the encounters' headless run**: on an Elite Dungeon's node the game's worker logged a WebGPU
   validation error each frame ("Instance range ... requires a larger buffer (28) than the bound buffer size (24) of
   the vertex buffer at slot 1 with stride 28"), the city models' instances by its look; whether `main` shows it too.
