@@ -8,7 +8,7 @@ use crate::PlayerId;
 use gear::Character;
 use gear::asks::Refusal;
 use gear::dice::Dice;
-use gear::guild::Standing;
+use gear::guild::{Boons, Standing};
 use gear::objectives::Feat;
 use std::collections::BTreeMap;
 
@@ -17,6 +17,7 @@ use std::collections::BTreeMap;
 pub struct GuildSeen {
     pub id: String,
     pub standing: Standing,
+    pub boons: Boons,
 }
 
 /// One player's guild in the room, the XP they held when it last gave their guild its share, and whether their kept
@@ -55,8 +56,8 @@ impl Guilds {
         self.held.get(&player).and_then(|held| held.seen.as_ref())
     }
 
-    /// Gives each member's guild a tenth of the XP they gained since the mark, for `week`; a player in no guild gives
-    /// nothing, their mark moved on all the same. Each is given with whether their kept character is theirs yet: the
+    /// Gives each member's guild a tenth of the XP they gained since the mark, for `week`, and each member their
+    /// guild's boons; a player in no guild gives nothing, their mark moved on all the same. Each is given with whether their kept character is theirs yet: the
     /// character given them in its place is measured afresh, not counted as gained. Players gone are let go. Answers
     /// those whose record moved.
     pub fn give<'kept>(
@@ -69,6 +70,8 @@ impl Guilds {
         for (player, character, claimed) in characters {
             present.push(player);
             let Some(held) = self.held.get_mut(&player) else { continue };
+            // A character given back or replaced holds no boons of its own: they are the guild's, given each tick.
+            character.boons = held.seen.as_ref().map(|seen| seen.boons).unwrap_or_default();
             let gained = character.xp.saturating_sub(held.mark);
             held.mark = character.xp;
             let given_back = claimed && !held.claimed;

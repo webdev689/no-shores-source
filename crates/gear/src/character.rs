@@ -220,6 +220,9 @@ pub struct Character {
     /// Their part in their guild's week (`guild.rs`).
     #[serde(default)]
     pub guild: crate::guild::GuildWeek,
+    /// What their guild's outposts give them, as the room was last told (`guild.rs`); never kept.
+    #[serde(skip)]
+    pub boons: crate::guild::Boons,
     /// The body as it last left a room, given back on a return (`left.rs`); none before it first leaves one.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub left: Option<crate::left::Left>,
@@ -290,6 +293,7 @@ impl Character {
             mail: Vec::new(),
             lore: Vec::new(),
             guild: crate::guild::GuildWeek::default(),
+            boons: crate::guild::Boons::default(),
             left: None,
             unknown: UnknownKeys::new(),
         };

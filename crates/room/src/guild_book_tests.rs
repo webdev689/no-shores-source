@@ -5,7 +5,7 @@ use super::{GuildSeen, Guilds};
 use gear::Character;
 use gear::asks::Refusal;
 use gear::dice::Dice;
-use gear::guild::{SLOTS, Standing, bounties_of, numbers};
+use gear::guild::{Boons, SLOTS, Standing, bounties_of, numbers};
 use gear::objectives::{Feat, Objective};
 use gear::world::Difficulty;
 
@@ -13,7 +13,11 @@ const WEEK: u64 = 2_916;
 const DICE: Dice = Dice { seed: 7, tick: 1, player: 1 };
 
 fn seen(id: &str) -> Option<GuildSeen> {
-    Some(GuildSeen { id: id.to_owned(), standing: Standing { done: [true; SLOTS], before_the_week: true } })
+    Some(GuildSeen {
+        id: id.to_owned(),
+        standing: Standing { done: [true; SLOTS], before_the_week: true },
+        boons: Boons::default(),
+    })
 }
 
 /// Gives once for one player, their character kept as theirs.
@@ -101,4 +105,18 @@ fn a_player_gone_from_the_room_is_let_go() {
     give(&mut guilds, &mut character);
     assert!(guilds.of(1).is_some());
     assert!(guilds.of(2).is_none(), "not among those given");
+}
+
+#[test]
+fn each_member_holds_their_guilds_boons_and_loses_them_on_leaving_it() {
+    let mut guilds = Guilds::default();
+    let mut character = Character::starting();
+    let boons = Boons { xp: 10, aurem: 5, reputation: 15 };
+    let seen = GuildSeen { id: "salt".to_owned(), standing: Standing::default(), boons };
+    guilds.set(1, Some(seen), character.xp);
+    guilds.give(0, std::iter::once((1, &mut character, true)));
+    assert_eq!(character.boons, boons);
+    guilds.set(1, None, character.xp);
+    guilds.give(0, std::iter::once((1, &mut character, true)));
+    assert_eq!(character.boons, Boons::default());
 }

@@ -182,6 +182,20 @@ fn reputation_comes_from_kills_only_pledged_with_its_cape_worn() {
 }
 
 #[test]
+fn a_guilds_outposts_raise_what_a_kill_pays_each_boon_by_its_own_share() {
+    let mut plain = caped(1);
+    let paid = plain.reward_kill(Foe::Brute, 2, 5, None, Difficulty::Normal);
+    let mut member = caped(1);
+    member.boons = crate::guild::Boons { xp: 10, aurem: 15, reputation: 5 };
+    let (xp, aurem) = (member.xp, member.materials.aurem);
+    let boosted = member.reward_kill(Foe::Brute, 2, 5, None, Difficulty::Normal);
+    assert_eq!(boosted.xp, paid.xp + paid.xp / 10);
+    assert_eq!(boosted.aurem, paid.aurem + paid.aurem * 15 / 100);
+    assert_eq!((member.xp - xp, member.materials.aurem - aurem), (u64::from(boosted.xp), boosted.aurem));
+    assert_eq!(member.reputation(1), u64::from(paid.xp + paid.xp * 5 / 100), "reputation by its own boon alone");
+}
+
+#[test]
 fn ranks_keep_the_emblem_then_the_dye_then_leave_packages_without_end() {
     let mut character = caped(3);
     let per_rank = factions().reputation_per_rank;

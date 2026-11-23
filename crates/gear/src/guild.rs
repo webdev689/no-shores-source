@@ -158,6 +158,24 @@ pub struct Standing {
     pub before_the_week: bool,
 }
 
+/// What a member's guild's outposts give them wherever they play, each a percent more of what kills and clears pay:
+/// the highest of each standing at any of the guild's outposts, as the accounts tell the room (`outpostLaw.ts`
+/// `boonsOf`). Never kept: the room is told them afresh.
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub struct Boons {
+    pub xp: u8,
+    pub aurem: u8,
+    pub reputation: u8,
+}
+
+impl Boons {
+    /// `amount` and a share of it more.
+    #[must_use]
+    pub fn more(amount: u32, percent: u8) -> u32 {
+        amount.saturating_add(amount.saturating_mul(u32::from(percent)) / 100)
+    }
+}
+
 impl Character {
     /// Their record for `week`, begun afresh when it is a new one.
     fn guild_week(&mut self, week: u64) -> &mut GuildWeek {
