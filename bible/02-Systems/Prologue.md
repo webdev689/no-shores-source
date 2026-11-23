@@ -151,8 +151,9 @@ Tailor, the Tack, the Postmaster, the harbour's Harbourmaster for the Shipwright
 each house's chapel as she names it (Arlo Kestrel, Sable and Elder Maren Hale answering); then her farewell face to
 face. A place's eye (`welcome/framing.ts`) is the first of a set of candidates round its counters whose lines to each
 keeper's head and each stall's front clear the node's solids (the blocks the camera's boom keeps clear of), both in
-the view: 11, 8, 14 then 5.5 m out, turned 0, 20, 40, 60 then 80 degrees either side of the counter's facing, 7, 4.5,
-10 then 3 m up, looking at the counters' middle 2.5 m over the ground through the player's own lens; a group's spread
+the view: 11, 8, 14 then 5.5 m out, turned 0, 20, 40, 60 then 80 degrees either side of the counter's facing, a group from 7, 4.5,
+10 then 3 m up and a single counter from 2.6, 4.5, 7 then 10 m (a stall's awning, drawn but no solid, hides its
+keeper from above), looking at the counters' middle 2.5 m over the ground through the player's own lens; a group's spread
 adds 1.3 times its farthest counter from the middle to the distance and 0.35 times to the height. Its first counter is
 the one of its kind nearest the player, each other the one of its kind nearest that. The Hall of the Arts is an
 interior: it is seen from inside, a few metres in from its door (3, 2, 5, 7 then 9 m) and up under its 14 m roof (10,

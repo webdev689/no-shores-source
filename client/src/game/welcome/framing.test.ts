@@ -132,3 +132,12 @@ test('a place no eye sees clearly gives no shot, so the view stays where it is',
   assert.equal(counterShot(walled, ['tack'], OWN), null);
   assert.equal(hallShot(walled, ['stormcallers'], OWN), null);
 });
+
+test("a single counter is seen from about a keeper's height first, under a stall's awning", () => {
+  // A stall's awning is drawn, not one of the solids the lines are tested against, so the order alone keeps it clear.
+  const place = { stations: PLAZA, groundAt: ground, blocks: [] };
+  const shot = counterShot(place, ['tack'], OWN);
+  assert.ok(shot && shot.eye[2] < GROUND + 3.5, `low enough to see under it: ${shot && shot.eye[2] - GROUND}`);
+  const pair = counterShot(place, ['armorsmith', 'weaponsmith'], OWN);
+  assert.ok(pair && pair.eye[2] > GROUND + 6, 'a group from over them');
+});

@@ -28,6 +28,8 @@ const CLEAR_M = 0.05;
 const BACKS_M = [11, 8, 14, 5.5];
 const TURNS = [0, 20, -20, 40, -40, 60, -60, 80, -80];
 const UPS_M = [7, 4.5, 10, 3];
+/** A single counter's heights, a keeper's first: a stall's awning, drawn but no solid, hides its keeper from above. */
+const ONE_UPS_M = [2.6, 4.5, 7, 10];
 const SPREAD_BACK = 1.3;
 const SPREAD_HEIGHT = 0.35;
 /** The height over the ground a counter's eye looks at: over a keeper's head, so their stall's roof is in the view. */
@@ -111,7 +113,7 @@ export function counterShot(place: Place, kinds: readonly string[], own: Shot): 
   const target: Point3 = [x, y, ground + LOOK_M];
   const shots = BACKS_M.flatMap((back) =>
     TURNS.flatMap((turn) =>
-      UPS_M.map((up) => {
+      (found.length > 1 ? UPS_M : ONE_UPS_M).map((up) => {
         const bearing = facing + (turn * Math.PI) / 180;
         const out = back + spread * SPREAD_BACK;
         const eye: Point3 = [
