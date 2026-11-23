@@ -109,6 +109,13 @@ export class Epilogue {
     return this.standing;
   }
 
+  /** Where she walks off to: the town's middle. */
+  get goingTo(): readonly [number, number] {
+    const landmass = this.stage.parts.landmass();
+    const standing = this.standing ?? { x: 0, y: 0 };
+    return landmass.plan?.centre ?? landmass.nodes[0]?.centre ?? [standing.x, standing.y];
+  }
+
   /** Says a scene of hers, and of whoever answers her, in the dialogue box; resolved once said or hushed. */
   say(scene: string): Promise<void> {
     return this.stage.play(scene, true, { stranger: 'stranger' });
@@ -151,8 +158,7 @@ export class Epilogue {
   /** A step toward the town's middle, on dry ground only: where the next step is water or unknown she stands. True
    *  when she stepped. */
   private walk(standing: Standing, seconds: number): boolean {
-    const landmass = this.stage.parts.landmass();
-    const [toX, toY] = landmass.plan?.centre ?? landmass.nodes[0]?.centre ?? [standing.x, standing.y];
+    const [toX, toY] = this.goingTo;
     const far = Math.hypot(toX - standing.x, toY - standing.y);
     if (far <= THERE_M) return false;
     standing.facing = Math.atan2(toX - standing.x, standing.y - toY);

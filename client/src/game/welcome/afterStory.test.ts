@@ -2,14 +2,14 @@ import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import type { GearAsk, GearState } from '../../network/gearMessages.ts';
 import type { QuestState } from '../../network/questMessages.ts';
-import type { Shot } from '../camera.ts';
+import { type Shot, onScreen } from '../camera.ts';
 import type { Epilogue } from '../prologue/epilogue.ts';
 import { AfterStory, heldHud } from './afterStory.ts';
 import { SOCIAL } from './plazaForTests.ts';
 import { FLY_S, TOUR } from './tour.ts';
 
 const VIEW = { width: 800, height: 600 };
-const YOU = { x: 1000, y: 2030, z: 30, facing: 0 };
+const YOU = { x: 1000, y: 2030, z: 30, facing: Math.PI };
 const OWN: Shot = { eye: [1000, 2034, 33], yaw: 0, pitch: 0.2, fov: 1, near: 0.1, far: 3000 };
 const settled = () => new Promise((resolve) => setImmediate(resolve));
 
@@ -29,6 +29,8 @@ function story(gear: { now: GearState | null } = { now: gearOf(true) }) {
   let speaking = false;
   const epilogue = {
     done: false,
+    where: { x: 1001.8, y: 2029, z: 30, facing: 0 },
+    goingTo: [1000, 2000] as const,
     words: () => Promise.resolve(),
     say: (scene: string) => new Promise<void>((finish) => (said.push(scene), finishes.push(finish))),
     advance: () => void (pressed += 1),
@@ -133,4 +135,30 @@ test('while she speaks the HUD of the player’s own play is hidden, the dialogu
   };
   heldHud(hud, { hideDisplay: () => void shown.push('bars and compass hidden') });
   assert.deepEqual(shown.sort(), ['bars and compass hidden', 'hints 0', 'marks 0', 'tracker null']);
+});
+
+test('as she walks off the player is turned the way she goes, her first seconds of walk in the view over their shoulder', async () => {
+  const { after, frame, finish } = story();
+  frame();
+  await settled();
+  assert.equal(after.takeTurn(), null, 'not while she speaks');
+  for (let step = 0; step < TOUR.length; step++) {
+    finish();
+    await settled();
+  }
+  const yaw = after.takeTurn();
+  assert.ok(yaw !== null, 'turned once her farewell is said');
+  assert.equal(after.takeTurn(), null, 'once');
+  // The arrival as Overlook lays it: the player faces the parapet, south, and the town's middle lies behind them.
+  const forward = [Math.sin(yaw), -Math.cos(yaw)] as const;
+  const eye = [YOU.x - forward[0] * 4.5, YOU.y - forward[1] * 4.5, YOU.z + 2.5] as const;
+  const shoulder: Shot = { eye, yaw, pitch: 0.2, fov: 1, near: 0.1, far: 3000 };
+  const [toX, toY] = [1000 - 1001.8, 2000 - 2029];
+  const away = Math.hypot(toX, toY);
+  for (let seconds = 0; seconds <= 3; seconds += 0.5) {
+    const walked = 1.3 * seconds;
+    const point = [1001.8 + (toX / away) * walked, 2029 + (toY / away) * walked, 30 + 1] as const;
+    const spot = onScreen(shoulder, VIEW, point);
+    assert.ok(spot && spot[0] > 0 && spot[0] < VIEW.width && spot[1] > 0 && spot[1] < VIEW.height, `${seconds} s`);
+  }
 });

@@ -12,6 +12,9 @@ import { COUNTERS, talkAt } from '../quests/questBook.ts';
 import { lineClear } from './framing.ts';
 import { StrangerWelcome } from './tour.ts';
 
+/** How far along her way the player is turned to look as she walks off, metres. */
+const AHEAD_M = 3;
+
 type You = { readonly x: number; readonly y: number; readonly z: number; readonly facing: number };
 
 /** Where the player stands as the stranger meets them: the place's kind and counters, the floor a figure stands on,
@@ -37,6 +40,8 @@ export class AfterStory {
   private welcome: StrangerWelcome | null = null;
   /** Whether her farewell has asked for her gift, and whether the room has been asked for it in this page. */
   private farewell = false;
+  /** The bearing to turn the player to as she walks off, until the frame takes it. */
+  private turn: number | null = null;
   private gifted = false;
   /** Where the player stood on the last frame. */
   private you: You = { x: 0, y: 0, z: 0, facing: 0 };
@@ -67,7 +72,10 @@ export class AfterStory {
       const place = { stations: here.node.stations ?? [], groundAt: here.floor, blocks: here.blocks };
       const welcome = new StrangerWelcome(place, {
         play: (scene) => epilogue.say(scene),
-        gift: () => void (this.farewell = true),
+        gift: () => {
+          this.farewell = true;
+          this.turn = this.toward(epilogue);
+        },
         faces: () => {
           const her = epilogue.where;
           return her && { stranger: [her.x, her.y, her.z], player: [this.you.x, this.you.y, this.you.z] };
@@ -88,6 +96,23 @@ export class AfterStory {
     if (this.gifted || !due || !owed(here.gear)) return;
     this.gifted = true;
     here.ask({ kind: ASKS.speakWith, column: COUNTERS.stranger ?? 0 });
+  }
+
+  /** The bearing to turn the player's own view to, once, as she walks off: toward a point a few metres along her way,
+   *  so the view easing back over their shoulder sees her go into the town. */
+  takeTurn(): number | null {
+    const turn = this.turn;
+    this.turn = null;
+    return turn;
+  }
+
+  private toward(epilogue: Epilogue): number | null {
+    const her = epilogue.where;
+    if (!her) return null;
+    const [toX, toY] = [epilogue.goingTo[0] - her.x, epilogue.goingTo[1] - her.y];
+    const away = Math.hypot(toX, toY) || 1;
+    const [x, y] = [her.x + (toX / away) * AHEAD_M, her.y + (toY / away) * AHEAD_M];
+    return Math.atan2(x - this.you.x, this.you.y - y);
   }
 
   /** The view this frame, the player's own being `own`: the welcome's while she speaks. */
