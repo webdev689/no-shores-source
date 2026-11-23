@@ -13,6 +13,7 @@ export interface Held {
 }
 
 let held: Promise<Held | null> = Promise.resolve(null);
+let accounts: AccountLink | null = null;
 const heard = new Set<() => void>();
 
 /** Reads the guild once from the accounts: null in none, or when the accounts do not answer. */
@@ -27,6 +28,7 @@ async function readGuild(link: AccountLink): Promise<Held | null> {
 
 /** Keeps the player's guild as the accounts say it, now and after each change. */
 export function keepGuild(link: AccountLink): void {
+  accounts = link;
   const read = () => {
     held = readGuild(link).catch(() => null);
     void held.then(() => heard.forEach((listener) => listener()));
@@ -37,6 +39,9 @@ export function keepGuild(link: AccountLink): void {
 
 /** The player's guild as last read (waiting on a read under way). */
 export const guildHeld = (): Promise<Held | null> => held;
+
+/** The link to the accounts the guild is read from; null offline. */
+export const accountsHeld = (): AccountLink | null => accounts;
 
 /** Calls `listener` each time a read of the guild lands. */
 export function onGuildHeld(listener: () => void): void {

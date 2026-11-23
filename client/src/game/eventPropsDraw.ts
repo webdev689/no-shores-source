@@ -34,7 +34,7 @@ const PROP_FLOATS = 16;
 const NO_LAMPS: readonly LampPlace[] = [];
 const NONE_DRAWN: readonly [EventProp, Made, number][] = [];
 /** The props whose canvas is the Tithe's unmarked grey, as its sails are; every other canvas is oiled tan. */
-const GREY_CANVAS: ReadonlySet<PropModule> = new Set(['tithe-banner']);
+const GREY_CANVAS: ReadonlySet<EventProp['module']> = new Set<PropModule>(['tithe-banner']);
 
 const VERTEX_LAYOUT: GPUVertexBufferLayout = {
   arrayStride: STRIDE,
@@ -278,7 +278,7 @@ export class EventPropsDraw implements Drawer {
   private lipsTaken = 0;
   private table: GPUBuffer | null = null;
   private tableGroup: GPUBindGroup | null = null;
-  private readonly made = new Map<PropModule, Made>();
+  private readonly made = new Map<string, Made>();
   private props: readonly EventProp[] = [];
   /** The table's rows as written, kept between frames so a frame allocates none. */
   private rows = new Float32Array(16 * PROP_FLOATS);
@@ -379,7 +379,7 @@ export class EventPropsDraw implements Drawer {
   }
 
   /** A module made ready to draw, the first time it is drawn after its meshes have come; none before. */
-  private madeOf(name: PropModule): Made | null {
+  private madeOf(name: EventProp['module']): Made | null {
     const known = this.made.get(name);
     if (known) return known;
     if (!this.ready) return null;

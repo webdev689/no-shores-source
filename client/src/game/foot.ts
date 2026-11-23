@@ -31,7 +31,7 @@ import type { FoeType } from '../rules/roster.ts';
 import { WORLD_CLOCK } from '../sky/worldClock.ts';
 import { shotOfOrbit } from './camera.ts';
 import { FallWatch } from './fallWatch.ts';
-import { STORY_BEHIND_ON_FOOT, type Use, dropsLaid, questRings, tellsPrologue } from './footGear.ts';
+import { type Use, dropsLaid, questRings, tellPrologue } from './footGear.ts';
 import { GatherHold } from './gatherHold.ts';
 import { markedHere } from './overheadMarks.ts';
 import { nodeText, standOn } from './footGround.ts';
@@ -59,6 +59,7 @@ import type { UsePrompt } from './usePrompt.ts';
 import { type Dressed, dressInGear, figureWhere, otherCards, ownCard, strikersOf } from './footFigures.ts';
 import type { AtEntrance, FootContext, FootFight, FootFrame, Heard, Held, Opened, Uses } from './footPlace.ts';
 import { nodeAddress, stand } from './footPlace.ts';
+import { type OutpostHere, outpostAt } from './guild/outpostHere.ts';
 import { hearing, nextOtherId, roomNote, rulesOf } from './footRoom.ts';
 
 export type { AtEntrance, FootContext, FootFight, FootFrame, Uses } from './footPlace.ts';
@@ -121,6 +122,8 @@ export class Foot {
   private prologueTold: GearState | null = null;
   /** A social space's people, and what E does where the player stands, shown low in the middle of the view. */
   private readonly plaza: PlazaLife | null;
+  /** At an outpost site, its outpost as the accounts keep it. */
+  readonly outpost: OutpostHere | null;
   readonly folk: Placed[];
   private readonly prompt: UsePrompt;
   private using: Use | null = null;
@@ -174,6 +177,7 @@ export class Foot {
       },
     };
     this.plaza = node.kind === 'social' ? new PlazaLife(node, placing, this.floor) : null;
+    this.outpost = node.kind === 'outpost' ? outpostAt(node, opened.boxes, context.movement, parts.combat) : null;
     this.publicView = new PublicView(node.id, this.feel, {
       boxes: opened.boxes,
       courses: [context.movement, parts.combat],
@@ -325,14 +329,6 @@ export class Foot {
     return foot;
   }
 
-  /** Tells the room the story is behind the player, once for each word on the gear that says it is not kept. */
-  private tellPrologue(): void {
-    const gear = this.held.gear;
-    if (!tellsPrologue(gear, STORY_BEHIND_ON_FOOT, this.prologueTold)) return;
-    this.prologueTold = gear;
-    this.gear?.ask({ kind: ASKS.finishPrologue });
-  }
-
   /** The player's gear in their room, and the way to ask of it; null offline or once the room is lost. */
   get gear(): GearHere | null {
     const { link, fight } = this;
@@ -387,7 +383,7 @@ export class Foot {
     const { groundAt } = this;
     const { fight, foes, effects } = this;
     dressInGear(walker, forge, this.held.gear, this.dressed);
-    this.tellPrologue();
+    this.prologueTold = tellPrologue(this.held.gear, this.prologueTold, this.gear);
     this.plaza?.frame(WORLD_CLOCK.seconds(), this.gear?.gear ?? null);
     const near = [...foes.placed.values(), ...this.otherPlayers.placed.values()];
     const bodies = near.map((placed) => [placed.x, placed.y, placed.z] as const);
@@ -523,7 +519,7 @@ export class Foot {
       entrances: this.held.entrances,
       module: this.module,
     };
-    const placeUse = this.uses?.(x, y, (asked) => fight.askGear(asked)) ?? null;
+    const placeUse = (this.outpost?.uses ?? this.uses)?.(x, y, (asked) => fight.askGear(asked)) ?? null;
     const { mounted } = walker.player;
     const counters = countersOf(this.node);
     const { trips, speak } = this.context;
@@ -587,6 +583,7 @@ export class Foot {
     this.otherPlayers.clear();
     this.arrivals.clear();
     this.plaza?.close();
+    this.outpost?.stop();
     this.prompt.show(null);
     this.falling.close();
     this.hold.release();

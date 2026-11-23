@@ -165,3 +165,11 @@ export const STORY_BEHIND_ON_FOOT = true;
 export function tellsPrologue(gear: GearState | null, played: boolean, told: GearState | null): boolean {
   return played && gear !== null && gear !== told && gear.prologueDone === false;
 }
+
+/** Tells the room the story is behind the player, once for each word on the gear that says it is not kept; answers the
+ *  gear last told of. */
+export function tellPrologue(gear: GearState | null, told: GearState | null, here: { ask(ask: GearAsk): void } | null) {
+  if (!tellsPrologue(gear, STORY_BEHIND_ON_FOOT, told)) return told;
+  here?.ask({ kind: ASKS.finishPrologue });
+  return gear;
+}

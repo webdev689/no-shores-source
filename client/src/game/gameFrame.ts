@@ -205,7 +205,8 @@ export function startFrames(parts: FrameParts, playing: Playing): void {
     if (shown.sting) parts.music.moment(shown.sting);
     const listener = [walker.player.body.x, walker.player.body.y] as const;
     parts.music.onFoot(parts.world, here.node, shown.fight, seconds, { musicians: musiciansOf(here.folk), listener });
-    parts.eventProps.set(shown.props ?? []);
+    // An outpost's structures and decoration are drawn as the events' props are.
+    parts.eventProps.set(here.outpost?.props(shown.props) ?? shown.props ?? []);
     parts.ambience.onFoot(here.node, playing.landmass, shown.shot, here.folk, !!here.dungeon);
     const { body } = walker.player;
     if (!here.dungeon) {
