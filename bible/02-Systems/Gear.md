@@ -505,7 +505,9 @@ is a horse's hide, kept as its horse ("Horses").
   cosmetics (`horses`), so this is done once: a coat found beside the mark is what a room from before horses wrote
   back as its own default, and is dropped, so a room rolled back and forward gives no horse; a coat bought from the
   older room meanwhile is dropped with it, and a character made there is read as one from before horses (the Bay
-  worn).
+  worn). A room rolled back past the welcome to Overlook resets an opening task it does not know to its own first, so a
+  new character rolled back and forward reads on "Hear the three houses": the stranger's 400 Aurem and the round of the
+  counters are lost to it.
 
 ## Elements and shields
 

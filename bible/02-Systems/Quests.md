@@ -96,7 +96,9 @@ A reward gives Aurem (`aurem`, any quest's), the Art (`art`, its Anima with it, 
 (the Weaponsmith, the Armorsmith, the Mage, the Vault, the Tailor, the Tack, the Postmaster, and the Harbourmaster for
 the Shipwright), each keeper saying what their counter is for; **Arm yourself**, a Melee weapon bought of the
 Weaponsmith and the four armour pieces of the Armorsmith, which the starter stock sells for 50 Aurem each ([[Gear]]);
-**Wear them**; **Hear the three houses** (Arlo Kestrel, Elder Maren Hale and Sable each introducing their house,
+**Wear them**. Both are told of the pieces held after every answered ask, again until nothing more counts, so pieces
+bought and worn during the round meet both as the last keeper is heard; a buy or wear goal names a weapon's or
+armour's slot and a count of 1; **Hear the three houses** (Arlo Kestrel, Elder Maren Hale and Sable each introducing their house,
 [[Factions]]); and **Choose a house**, the pledge. Its `begin` is the Weaponsmith calling the player over; the houses'
 task begins with Arlo's word to hear all three. A character whose log stood at the houses before keeps its place by
 its task's id, and one kept with no place in the opening reads at "Hear the three houses" (its `kept`): neither is
@@ -108,7 +110,9 @@ stall serves; the stranger is heard in a social space alone, never at the stall.
 - **Kept in the character** (`gear`, `quests.rs`), **by id**: for each quest by its `id`, the task reached by its task's `id` (so a quest or task added anywhere in the file keeps every save's place), each of that
   task's goals' counts, and whether it is done; and for each Art, the fragment choices waiting. A new character begins
   every quest at its first task; one that holds no place in a quest (kept before it was laid out) reads at the
-  quest's `kept` task, else its first.
+  quest's `kept` task, else its first; and one kept on a task this room does not hold (a task renamed keeps its old
+  id in `was`) reads at the quest's `kept` task too, else its first, so the opening's gift, before `kept`, is never
+  paid twice.
 - **Read leniently**: a quest log of a shape this room cannot read reads as one kept before (above) and is written back as it was. A
   fragment choice waiting for an Art none of whose fragments is left to own is paid at its price as soon as the room
   answers any ask.

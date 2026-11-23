@@ -108,7 +108,7 @@ the player's fight (`PlayerFight`), the foes' figures (`FoeFigures`), the fight'
 - **Sounds.** The world's sounds play here as on foot ([[Interface]], "World sounds"), from the first click into the
   view, at full volume: the course's crate is wood underfoot, its other blocks stone. A cue not yet picked is silent.
 - **Foes.** The panel picks a faction, then one of its types (marked land or deck), then one of the ranks that type
-  comes in, the level it stands at (0 for none, which fights by combat's own numbers) and a Blaze, Volt or Cosmic
+  comes in, plainest first (a type asked for with no rank takes the roster's first, the Tithe-Mate's Elite), the level it stands at (0 for none, which fights by combat's own numbers) and a Blaze, Volt or Cosmic
   shield if one is picked ([[Gear]], "Elements and shields"); Spawn stands it 5 m ahead of where the player looks,
   facing them, at most twelve, and Clear sends every foe away; a foe asked for while the forge still loads is not asked
   for. Names, factions and hands come from the rules' roster through WebAssembly. Each fights by its brain ([[Foes]])
