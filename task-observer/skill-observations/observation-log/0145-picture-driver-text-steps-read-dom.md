@@ -1,6 +1,6 @@
 ---
 title: "The picture driver's waitFor and clickText read the page's DOM, which the drawn interface no longer has"
-status: open
+status: resolved
 type: internal
 skill: []
 proposes_skill: []
@@ -10,8 +10,8 @@ area: "browser QA of the game since the interface went to WebGPU"
 date: 2026-11-23
 session_context: "Owner asked how to set up a true headless environment, as sessions struggle to test since HTML went."
 parked_until:
-resolved:
-resolution: "#165: waitFor, clickText and press read __ui(), the laid interface; noGpu runs the game with nothing drawn. Awaiting the owner's merge."
+resolved: 2026-11-23
+resolution: "#165: waitFor, clickText and press read __ui(), the laid interface; noGpu runs the game with nothing drawn. Merged on the owner's yes (19dc3292)."
 reference: "https://github.com/Lattymoy/no-shores-source/pull/165"
 commands_verified: "webgpu-shot.cjs lines 240/255 use page.getByText; full Chromium + lavapipe: chrome://gpu Dawn Info lists only an ANGLE GLES compat adapter, requestAdapter gives SwiftShader"
 ---
