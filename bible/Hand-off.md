@@ -205,10 +205,8 @@ The decisions in [[Open Questions]] are not repeated here.
   - Tested offline: `cargo xtask check` on each pushed head (c2361953 last, with main merged in at 1cd6a379); three
     rounds of read-only audits (rules, page, design, bible, looks, and two mutation audits of the tests), every finding
     fixed with a test or recorded. Not yet: played by hand, or in a deployed room.
-  - Held by the owner: faction blades (built on `wt/fblade`, the forge's trim; its art unpublished); the Abyss
-    Dungeons' crossbow art ("Not now").
-  - To talk through with the owner: the named-piece gaps (36 of 60 contents, colours and slots have no named piece of
-    their own), and the Veiled's colour on a blade ([[Open Questions]]).
+  - The Abyss Dungeons' crossbow art waits ("Not now"). The faction blades, the named-piece gaps and the Veiled's
+    colour were settled by the owner in #169 (below).
 - **The whole-codebase audit** (#167), merged with the owner's yes ("Merge and deploy"), which deploys the page and
   the rooms: twelve read-only auditors by area and a reviewer of the diff, every
   finding checked against the code first and each bug fixed with a test that fails without it. Among the fixes: quest
@@ -231,6 +229,22 @@ The decisions in [[Open Questions]] are not repeated here.
     practice merges; `built` is a status Writing Notes does not list; two repo-check gaps (the vault check passes a
     `code:` symbol any word of its file names; the html check excuses `.append(` on a name made with `new` anywhere and
     misses `insertNode`, `importNode` and `new Text(`).
+- **#169, the owner's gear calls, every perk approved and the factions' nine perks built**, a draft for the owner's
+  yes to merge, CI green on `b6641cda` (the perks' head `651fb0a6` tested offline, `cargo xtask check` green but for
+  the four R2 ship-mesh tests this container cannot fetch):
+  - The owner's calls, in their words: every drop in its content's set look with random perks; Breaches a perk pool
+    of their own; faction weapons in their faction's colour (the Veiled a faint cold violet), rolling their faction's
+    perks beside the shared pool; no metal names reach the player; every piece named by its set
+    ([[Everything Carries a Set Name, and Perks Roll by Pool]] and the decisions it links).
+  - Every perk in the game approved ("All approved"), the factions' nine with them
+    ([[Every Perk Stands, the Factions' Nine With Them]]); built: faction armour and weapons roll their traits when
+    bought, one always their faction's ([[Gear]], "The factions' perks"; Claude's calls in [[Gear as Claude Shapes
+    It]]). The review page the owner marked: https://claude.ai/artifact/Jtfdq4zJyoUsQdsJqWgA4y.
+  - The Playlist card names its content's gear ("Drops Elite Dungeon gear"), never a metal.
+  - Still to build from those calls: set names, which wait on the owner ("Not yet": [[Set Names and Faction Perks as
+    Claude Drafts Them]]); every drop rolled in its content's set look, Legendaries included; the Breaches' own pool,
+    made with the Breaches; the faction blades' colour. `wt/fblade`, where an earlier session built the blades' trim,
+    was never pushed and is lost: the work starts again, and publishing its art needs the owner's yes.
 - **Open pull requests**, for the owner's yes once their checks pass: #162 (the game's words out to Type and back; it
   conflicts with `main` in `Decisions.md`) and #159 (the rooms' worker tests wait for what they check; it conflicts
   with `main` in `roomThread.test.ts`). Drafts: #93 (the toolkit's first
@@ -385,7 +399,8 @@ The decisions in [[Open Questions]] are not repeated here.
   same way.
 - **The forge's renders** leave `r2.dev`, which limits its rate, once `daggerfalljs.dev`'s DNS moves to Cloudflare
   ([[The Forge's Renders Will Use daggerfalljs.dev]]).
-- **Names** for the armour sets and weapons, to replace the forge's ([[Three Races]]).
+- **Names** for the armour sets and weapons, to replace the forge's ([[Three Races]]): Claude's draft is in [[Set Names
+  and Faction Perks as Claude Drafts Them]]; the owner: "Not yet".
 - **Proposed, not agreed**: a check for [[Plain Text]] like DFO's word limits (held in review for now); the comments
   check also catching a comment that names a note ("see the X note"); whether a ship deck's grid (`deck.py`) stays in
   the manifest or goes to R2 as a bake; whether the Overworld's rise and fall, ported but never wired, stays out
