@@ -187,23 +187,23 @@ pub fn read_dress(sent: &str) -> Option<serde_json::Map<String, serde_json::Valu
 }
 
 /// A dress as a browser wrote it, made the room's word on what others see, not the browser's: the dye, coat and
-/// barding worn put in its outfit, and none of a start piece; its armour and the things in its hands only those of
-/// the pieces the character wears (`layers_of`), a light in the left hand kept; and its own dyes keeping a faction's
-/// colour or a cosmetic dye only on a layer the character may show it on (`colours_shown`). None for a dress that
-/// does not read.
+/// barding worn put in its outfit, and none of a start piece; its armour and the things in its hands only looks the
+/// page could draw the pieces worn in on the dress's body (`looks::shown`), a light in the left hand kept; and its
+/// own dyes keeping a faction's colour or a cosmetic dye only on a layer the character may show it on
+/// (`colours_shown`). None for a dress that does not read.
 #[must_use]
 pub fn dressed(sent: &str, character: &Character) -> Option<String> {
     let mut dress = read_dress(sent)?;
+    let body = dress.get("body").and_then(serde_json::Value::as_str).unwrap_or_default();
+    let looks = crate::looks::shown(character, body);
     let serde_json::Value::Object(outfit) = dress.get_mut("outfit")? else { return None };
-    let pieces: Vec<&str> =
-        character.all_worn().flat_map(|(slot, item)| layers_of(slot, item.kind).iter().copied()).collect();
-    let wears = |layer: &str| pieces.iter().any(|piece| layer.starts_with(piece));
     if let Some(serde_json::Value::Object(armour)) = outfit.get_mut("armour") {
-        armour.retain(|piece, set| set.as_str().is_some_and(|set| wears(&format!("{piece}_{set}"))));
+        armour.retain(|piece, set| set.as_str().is_some_and(|set| looks.armour.contains(&(piece.as_str(), set))));
     }
     for hand in ["right", "left"] {
         let held = outfit.get(hand).and_then(serde_json::Value::as_str);
-        if held.is_some_and(|layer| !wears(layer) && !(hand == "left" && LIGHTS.contains(&layer))) {
+        let kept = |layer: &str| looks.held.iter().any(|each| each == layer);
+        if held.is_some_and(|layer| !kept(layer) && !(hand == "left" && LIGHTS.contains(&layer))) {
             outfit.insert(hand.to_owned(), serde_json::Value::Null);
         }
     }

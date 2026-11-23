@@ -80,7 +80,10 @@ impl Room {
                 director: self.director,
             };
             routes[mesh].asking.set(id);
-            intents.push((id, think(id, &foe.brain, &mut self.board, &world)));
+            let (brain, mut intent) = think(id, &foe.brain, &mut self.board, &world);
+            // A warded Boss stands at its post (`court.rs`).
+            self.hold_ward(id, &mut intent);
+            intents.push((id, (brain, intent)));
         }
         let kept: Vec<BTreeMap<FighterId, Way>> = routes.into_iter().map(|routes| routes.ways.into_inner()).collect();
         self.quests.way_on.clear();

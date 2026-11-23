@@ -3,6 +3,9 @@ type: system
 status: live
 code:
   - client/src/ui/paint.ts#PaintedRole
+  - client/src/game/playlistScreen.ts#PlaylistView
+  - client/src/game/playlistMap.ts#drawCrest
+  - client/src/game/playlistParts.ts#crestOf
   - client/src/cinema/screen.ts#Screen
   - client/src/speech/dialogue.ts#DialogueBox
   - client/src/speech/overheads.ts#Overheads
@@ -87,8 +90,9 @@ code:
   - client/src/plus/compass.ts#markPlace
   - client/src/game/seaHud.ts#seaShipMarks
   - client/src/game/seaHostiles.ts#hostileLook
-  - client/src/combat/hud.ts#veilOf
-  - client/src/combat/hud.ts#clearOf
+  - client/src/combat/hudPlace.ts#veilOf
+  - client/src/combat/hudPlace.ts#clearOf
+  - client/src/combat/callout.ts#Callout
   - client/src/combat/vitals.ts#Vitals
   - client/src/combat/vitals.ts#chargesShown
   - client/src/combat/hudLayout.ts#hudLayout
@@ -427,7 +431,8 @@ The game draws every screen itself, and by the owner's word no HTML is laid over
   px rule, showing a quarter of the circle. Its eight points (N, NE, E, SE, S, SW, W, NW, the four cardinals at 22 px
   and the others at 11, on the face's grid) stand by the bearing the view looks at, the shortest way round; one off the
   strip is hidden, never held at an end. A brass needle marks its middle. Its column stands what comes under it 10 px
-  under its rule, 56 px down: a public event's banner ([[Public Events]]), then a boss's bar, then the target's plate.
+  under its rule, 56 px down: a public event's banner ([[Public Events]]), or in an Elite Dungeon its encounters'
+  ([[Dungeons]], "Encounters"), then a boss's bar 26 px under the banner, then the target's plate.
   A view too narrow for health's bar to stand 150 px long beside the compass stands the whole column under the vitals
   instead. On foot past 1440p the whole column (the compass, the banner, the boss bar and the target's plate) stands
   at twice its size, as the corners do. At sea it marks each hostile
@@ -546,10 +551,31 @@ The game draws every screen itself, and by the owner's word no HTML is laid over
   blinks (it holds blood or white), no flash plays and plates over figures and ships go straight to their places. The
   compass and its marks move only as the view turns.
 - **Its layers**, back to front: what stands over the world (the plates over figures, nearest in front, the parry
-  rings, the words, the arrows), then the compass's column, then the veil over the whole display: blood while
-  the player lies dead, plain while the link to the room is lost or joining again. The display never stands over
-  the game's own windows. An arrow to a threat off the screen that would fall on the vitals stands just below them,
-  and one that would fall on the Arts and weapons, or on the game's key strip, just above them.
+  rings, the words, the arrows), then the compass's column, then a raid's call, then the veil over the whole display:
+  blood while the player lies dead, plain while the link to the room is lost or joining again. The display never
+  stands over the game's own windows. An arrow to a threat off the screen that would fall on the vitals stands just
+  below them, and one that would fall on the Arts and weapons, or on the game's key strip, just above them.
+- **The top keeps clear.** The fight's words over the world (a number, "Dodge!") stand under the compass's column and
+  a raid's call where they would fall on them, as they stand under the plates over figures; a plate over a figure
+  that would stand on the compass, the banner, the boss bar, the target's plate or the call, or within 12 px of one so
+  it reads as theirs, is laid unseen until it stands clear (judged at its foot this frame, so one first shown is hidden
+  at once), so nothing shows through the banner. Each keeps clear of where these were last laid (the words a frame
+  later than the plates), and a word pushed down past the display's foot stands at its foot again.
+  `hudCourt.test.ts` lays the Court's fullest banner, the boss bar, the target's plate, a "Dodge!" over the Boss and
+  the call at 1600 by 900, 1280 by 720, 1024 by 600, 844 by 390 and 390 by 844 and finds no two overlapping, each on
+  the display and the call clear of the crosshair.
+- **A raid's call** (`combat/callout.ts`): an Elite Dungeon's Court calls a few words over the middle of the view as
+  its mechanic is shown: "Get clear!" as the warded Boss's slam is, "Into the light!" as the Reckoning's warning
+  starts. White words three steps of the face tall on the red of the fight's own warnings, in a 2 px white edge; it
+  slides in as the banner does at a beat, stands 1.8 s and fades over its last 0.4 s, and is read out. Its top stands
+  16 px under the compass's column, no higher than a quarter down the view, or under the crosshair where above it
+  would cover the crosshair, or more of the Boss's figure (standing within 200 px of the view's middle, at the
+  display's zoom) than under it would. A view under 480 px tall has no room under the column: there the call, its words two steps tall,
+  stands in the banner's place while it shows. Each new call shows afresh; one held on (the slam still shown) shows
+  once; once its mechanic ends (the slam landed) a call still standing fades at once.
+- **Foul water's edge.** While an Ascent's foul water harms the player (from the room's harm told to them, while
+  their feet stay on its floor), the view's edge turns sick green, drawn as the struck edge is: it rises over 0.25 s, is held from one
+  harm to the next (1.5 s), and fades over 0.6 s from the moment they leave it.
 - **Words** over the world or a fill (plates' names, the vitals' words, the veil's) carry a hard 1 px outline all
   round (a word's `halo` edge, `ui/drawLaid.ts`), as a ship's plate strokes its words, so they read over bright sky. The
   [[Game]]'s place name and key strip, laid straight on the world too, carry the same outline.
@@ -862,7 +888,8 @@ never while a press is held. Each press is an ask the room answers.
     dungeon with its levels, read down its columns, the band this character's level falls in lit; and the bounties (a
     sealed notice), their six a day said at the foot.
     Under This week: the Elite and the Abyss Dungeon of the week (their doors under a brass chevron and with a
-    burning eye), each its level, its tick or padlock, the Abyss's five revives (a heart) and its wipe (a skull), its
+    burning eye), each its level, its tick or padlock, a "Playlist" mark whose words say it is queued from the
+    Playlist beside any port, the Abyss's five revives (a heart) and its wipe (a skull), its
     modifiers each by its icon alone, its name and what it does said at the foot (Burn's flame in its Art's colours,
     Brawler's fist, Marksman's target, Lightswitch's claws, Ironclad's shield, Trickle's drop, Juggler's three balls on
     an arc, Exposure's broken heart) and its pay (the Vestige
@@ -995,6 +1022,56 @@ each stopping the search. A search that ended unasked says why on the card ("You
 tab.", or "The search stopped. Try again."). A search for a run the card no longer opens ends, as when the week
 turns while it finds; a run found just as the week turned, for a run the card built again no longer opens, is not
 gone into, and the card says "The week turned. Try again.".
+
+## The Playlist
+
+A Playlist mark beside a port's harbour ([[Overworld]], "Marks") opens the Playlist screen ([[Activities]], "The
+Playlist"), drawn after the owner's reference, Destiny's Vanguard screen (`PlaylistView`, its parts in
+`playlistParts.ts`, in the entrance card's layer, over a dark scrim): "PLAYLIST" at its head and the port it was opened
+beside ("Beside Overlook") over a brass rule; then the four entries as crests, the Elite Playlist (three chevrons) and
+the Abyss Playlist (an eye of the deep) above, the Elite Dungeon of the week (crossed blades under a star) and the
+Abyss Dungeon of the week (a crown over the deep) below their playlists, a fifth smaller. A crest is a shield, brass
+for Elite, violet for Abyss, grey while its entry is shut; at its shoulder a gold dot while a reward of it waits, or a
+padlock while it is shut. Under it its name in capitals (a week's dungeon's on two lines, broken before "of"), and its
+level a part a line past its tier ("Levels 15 to 19", "Foes at level 17"; "From level 10" before it), or, shut, why in
+neutral ink ("Opens at level 24", "You are 15", from its gate's words), so no separator ends or starts a line. The chosen crest's name is lit over a
+brass rule as wide as the name, its shield drawn 8% larger with a brighter glow; a crest under the pointer or the
+focus glows a little.
+
+On a screen 1000 pixels wide or more the crests stand on a chart (`playlistMap.ts`: a lit middle fading to nothing
+before its edges, faint stars, two wide rings, a ring round each crest's spot and dotted lines from each playlist to
+the other and to its week's dungeon), each shield's middle on its spot, its words wrapped to 2.2 times a playlist's
+shield; the chart's picture is drawn again only at 64-pixel steps of the screen. The chosen entry's card stands beside
+it in a column that grows to the footer and scrolls. Narrower, the crests stand two by two over the chart's ground
+(its stars and rings, no spots), each its half of a row, and the card under them, the two scrolling together. A list
+taller than its room (`scrolledNode`) fades its foot into the card's ground while more lies below, so a line cut there
+fades out, and keeps a thin brass bar in a gutter at its right whose thumb stands where the list does; the wheel over
+it, Page Up and Page Down, and the pad's right stick scroll it (`Interface.scrollBy`, `Interface.stickScroll`).
+
+The card: its name on a brass band (balanced over two lines where it is long) with its level and what its runs drop
+("Drops orcish and mithril gear" for Elite, "Drops adamantium and ebony gear" for Abyss, from
+`content/gear/looks.json`); why it is shut, led by a padlock in neutral ink (red is kept for a refusal); its rules
+(the Abyss Playlist's "One of the 18 Elite Dungeons, at Abyss, drawn as each run starts."); its modifiers, each led by
+its icon with what it does; its rewards, kept while it is shut, each its words ("a Vestige in a Boss's colours"),
+then "Taken" (with the timers' tick) or "Not taken", a playlist's weekly as three marks filling with its clears ("2 of
+3", then "Paid"), each with the time to its reset at the right; and "Every clear pays its kills and its cache, as any
+run does." Words come from `playlistScreenOf` (`playlistWords.ts`), built again each second it stands (its countdowns)
+and as the character's word changes.
+
+The pointer over a crest only lights it; a click, Enter, Space or the pad's A on it chooses it. The arrows choose the
+next (up and down between a playlist and its week's dungeon), and the card follows the focus as the pad's cross moves
+it over the crests. The footer bar holds the search's word at the left ("Finding a company · 0:23" with "A run starts
+with four, or with fewer after a minute." beside it on a wide screen; "Launching…" while Launch asks the server; or why
+the last ended, "The accounts did not answer. Try again." where they did not), why a shut entry is shut beside its
+resting Launch, and the presses: Find a Company (F) first and primary where the entry is matched, open and the page
+signed in, Stop finding (F) while it finds; Launch (E), "Go alone", or "Go with your company" once the Roster shows the
+player in one, primary where nothing is matched, drawn dim and resting while the entry is shut, and not offered while
+a search or a launch runs;
+and Close (Esc, the pad's B). Under 1100 pixels the word stands over the presses, which wrap. As a search starts or ends
+the focus goes to the press that takes the other's place, Close where none does. Launch and a run found close the screen
+and go into the run from the sea; so does leaving the sea, the screen closing and its search stopped once the player
+is no longer at sea or over an island's side. While it stands the pointer is free and no key of the game's or the
+menu's acts behind it.
 
 ## How recordings load
 
@@ -1198,7 +1275,7 @@ serves each ask only at its own counter ([[Gear]], "In the rooms"; [[Factions]])
   the menu shows the player's own: their emblem's banner across its head, their name and guild's tag, level, Prestige
   and Defense over it, and under it the Character tab: their figure in the dress they wear here, each piece they wear in
   its slot with its card, their level and Prestige, their power and the Art they wear, from what their room kept for
-  others to see. Nothing on it can be asked or changed: no hints, no XP meter and no Appearance. Back or Escape goes
+  others to see. Each piece keeps its own id there, so its pictures make the look's choices its figure makes. Nothing on it can be asked or changed: no hints, no XP meter and no Appearance. Back or Escape goes
   back to their menu.
 - **Settings** lists the muted under the blocked, each with Unmute.
 

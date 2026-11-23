@@ -20,6 +20,7 @@ pub(crate) fn mail_offset<'built>(
                     slot: vestige.slot as u8,
                     level: vestige.level,
                     vaulted: false,
+                    source: vestige.source as u8,
                 };
                 messages::GearVestige::create(builder, &args)
             });

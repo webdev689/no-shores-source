@@ -324,3 +324,26 @@ test('a run Find a Company found is entered by its own name, and one of another 
     assert.deepEqual(wrong.happenings, [], `not this entrance’s run: ${run}`);
   }
 });
+
+test('a run the Playlist starts is entered from the sea by its name and left back onto the sea, as a member joins it', async () => {
+  const { trips, happenings, ways, settled } = recorded({ foot: null });
+  const coral = elite('coral-halls', 'Coral Halls');
+  trips.intoRun(coral, 'node-coral-halls--abyss--playlist-28--run-m9n8b7v6');
+  trips.intoRun(coral, 'node-pearl-tomb--abyss--playlist-28--run-m9n8b7v6');
+  await settled();
+  assert.deepEqual(ways[0]?.slice(2), ['node-coral-halls--abyss--playlist-28--run-m9n8b7v6', 'Coral Halls', 'abyss']);
+  assert.equal(ways.length, 1, 'a run of another dungeon goes nowhere');
+  trips.fell();
+  await settled();
+  assert.deepEqual(ways[1], ['sea', undefined], 'back onto the sea where the ship lies');
+  const joined = recorded({ foot: null });
+  joined.trips.join(coral, 'node-coral-halls--elite--playlist-17--run-m9n8b7v6');
+  await joined.settled();
+  joined.trips.leave();
+  await joined.settled();
+  assert.deepEqual(joined.ways[1], ['sea', undefined]);
+  assert.deepEqual(
+    [...happenings, ...joined.happenings].map((happening) => happening.kind),
+    ['enter', 'surface', 'join', 'surface'],
+  );
+});

@@ -47,9 +47,21 @@ export function scrolledAt(
   for (let each = hitAt(laid, x, y); each; each = each.parent) {
     const id = each.node.id;
     if (each.node.scroll && id) {
-      scrolls.set(id, Math.max(0, Math.min((scrolls.get(id) ?? 0) + rolled, each.content - each.box.height)));
+      scrolls.set(id, keptIn(each, (scrolls.get(id) ?? 0) + rolled));
       return true;
     }
   }
   return hitAt(laid, x, y) !== null;
+}
+
+/** A scroll of `laid` kept within what it holds. */
+export const keptIn = (laid: Laid, scroll: number): number =>
+  Math.max(0, Math.min(scroll, laid.content - laid.box.height));
+
+/** Whether any of the pointer's presses `downs` (what each hit) fell on something neither `id` nor inside it. */
+export function pressedOutside(downs: readonly (Laid | null)[], id: string): boolean {
+  return downs.some((hit) => {
+    for (let each = hit; each; each = each.parent) if (each.node.id === id) return false;
+    return true;
+  });
 }

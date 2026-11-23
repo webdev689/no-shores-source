@@ -25,6 +25,7 @@ mod deck_door;
 mod dungeon_door;
 mod snapshot_door;
 pub use snapshot_door::snapshot;
+mod dress_door;
 mod fighter_door;
 mod fleet_door;
 mod gear_door;

@@ -158,3 +158,13 @@ test('a flame behind rock shows no image in still water: its line is walked cell
   assert.equal(between([0.5, 0.5], [0.5, 0.5]), false, 'its own cell');
   assert.ok(most >= 32, 'far enough for a dungeon');
 });
+
+test('foul water seethes with bubbles of a brighter bile, so it reads as the floor that harms', () => {
+  const foul = /if water && foul \{([\s\S]*?)\n {2}\}/.exec(DUNGEON_SHADER)?.[1] ?? '';
+  assert.match(foul, /foul_bubbles\(surface\.point\.xy, time\)/, 'its bubbles drawn on it');
+  const colour = (name: string) =>
+    (new RegExp(`const ${name} = vec3f\\(([^)]+)\\)`).exec(DUNGEON_SHADER)?.[1] ?? '').split(',').map(Number);
+  const [red = 0, green = 0, blue = 0] = colour('FOUL_BUBBLE');
+  assert.ok(green > red && red > blue, 'a sickly yellow green');
+  assert.ok(green > (colour('FOUL_GLOW')[1] ?? 0) * 3, 'brighter than its breathing glow, so a bubble shows');
+});

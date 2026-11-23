@@ -4,7 +4,7 @@ import { test } from 'node:test';
 import { runAsk, runInstance } from '../roomNames.ts';
 import { accounts } from './accountsForTests.ts';
 import { characters } from './characters.ts';
-import { FOUND_KEPT_MS, companionsOf } from './companies.ts';
+import { FOUND_KEPT_MS, companionsOf, launchedFor } from './companies.ts';
 import {
   FINDING_MOST,
   Finder,
@@ -41,8 +41,8 @@ class FakeSocket implements FinderSocket {
   }
 }
 
-/** Named players, each one's token and account, kept at `level` as their room last saved them. */
-async function world(names: readonly string[], level = 5) {
+/** Named players, each one's token and account, kept at `level` past the prologue as their room last saved them. */
+async function world(names: readonly string[], level = 5, prologue = true) {
   const made = accounts();
   const kept = characters(
     made.deps.database,
@@ -54,7 +54,7 @@ async function world(names: readonly string[], level = 5) {
     const token = (await made.ask('POST', '/v1/guest')).body['token'] as string;
     await made.ask('POST', '/v1/register', { username: name, password: 'long enough' }, token);
     const claimed = await kept.claim(token, `room:${name}`);
-    await kept.save(claimed?.account ?? '', `room:${name}`, JSON.stringify({ shown: { level } }));
+    await kept.save(claimed?.account ?? '', `room:${name}`, JSON.stringify({ shown: { level }, story: { prologue } }));
     [tokens[name], ids[name]] = [token, claimed?.account ?? ''];
   }
   const finderOf = (base: string) =>
@@ -135,6 +135,7 @@ test('bands are tens of levels, and an instance is eight of a-z0-9', () => {
 test('Find a Company is reached by WebSocket for an Elite Dungeon or the week’s at Elite, not the Abyss’s', () => {
   assert.equal(asked('/v1/find/node-krakens-grotto'), 'node-krakens-grotto');
   assert.equal(asked('/v1/find/node-forsaken-cistern--elite'), 'node-forsaken-cistern--elite');
+  assert.equal(asked('/v1/find/node-forsaken-cistern--elite--sea'), 'node-forsaken-cistern--elite--sea');
   for (const path of [
     '/v1/find/node-saltworm-warrens--abyss',
     '/v1/find/node-saltgrass-downs--dungeon-1',
@@ -143,9 +144,16 @@ test('Find a Company is reached by WebSocket for an Elite Dungeon or the week’
     '/v1/find/sea',
     `/v1/find/node-${'a'.repeat(46)}`,
     '/v1/find/node-krakens-grotto/',
+    '/v1/find/playlist-normal',
+    '/v1/find/node-forsaken-cistern--sea',
+    '/v1/find/node-forsaken-cistern--abyss--sea',
+    '/v1/find/node-forsaken-cistern--elite--sea--sea',
+    '/v1/find/playlist-elite--run-k3j4h5g6',
   ])
     assert.equal(asked(path), null, path);
   assert.equal(asked('/v1/find/node-krakens-grotto', ''), null, 'only by WebSocket');
+  assert.equal(asked('/v1/find/playlist-elite'), 'playlist-elite');
+  assert.equal(asked('/v1/find/playlist-abyss'), 'playlist-abyss', 'the Abyss Playlist is matched');
 });
 
 test('a run found for each Elite Dungeon, and for each at Elite, is named as its room reads a run', () => {
@@ -178,10 +186,34 @@ test('a seeker is their session’s account, the level their room last kept, and
   assert.deepEqual(await seekerOf(database, tokens['Ada'] ?? '', made.clock.now), {
     account: ids['Ada'],
     level: 24,
+    prologue: true,
     apart: [ids['Ben'], ids['Cal']].sort(),
   });
-  assert.equal((await seekerOf(database, fresh, made.clock.now))?.level, 1, 'no character kept yet');
+  const kept = await seekerOf(database, fresh, made.clock.now);
+  assert.deepEqual([kept?.level, kept?.prologue], [1, false], 'no character kept yet');
   assert.equal(await seekerOf(database, '0'.repeat(64), made.clock.now), null);
+});
+
+test('a seeker under the week’s Elite Dungeon’s level finds no company for it, as its room would refuse them', async () => {
+  const { tokens, finderOf } = await world(['Ada', 'Ben'], 23);
+  for (const base of ['node-forsaken-cistern--elite', 'node-forsaken-cistern--elite--sea']) {
+    const finder = finderOf(base);
+    assert.deepEqual((await seeking(finder, tokens['Ada'] ?? '')).closed, [4003, 'This dungeon opens at level 24.']);
+  }
+  const { tokens: older, finderOf: at24 } = await world(['Cal'], 24);
+  const finder = at24('node-forsaken-cistern--elite');
+  await seeking(finder, older['Cal'] ?? '');
+  assert.equal(finder.waiting, 1, 'at its level, in the queue');
+});
+
+test('one who has not played the prologue finds no company, as no run a finder starts lets them in', async () => {
+  const { tokens, finderOf } = await world(['Ada'], 12, false);
+  for (const base of ['node-krakens-grotto', 'playlist-elite']) {
+    const finder = finderOf(base);
+    const socket = await seeking(finder, tokens['Ada'] ?? '');
+    assert.deepEqual(socket.closed, [4003, 'This place opens after the prologue.'], base);
+    assert.equal(finder.waiting, 0, 'in no queue');
+  }
 });
 
 test('four seekers of a band are sent into one run, which their room lets them into together', async () => {
@@ -264,16 +296,22 @@ test('a socket that sends no token in time is let go, and only those with a toke
   assert.equal(finder.waiting, 1, 'a seeker with a token gets in');
 });
 
-test('a finder takes twice its most of sockets in all, silent ones too, till the silent are let go', async () => {
-  const { made, finderOf } = await world([]);
-  const finder = finderOf('node-krakens-grotto');
-  for (let opened = 0; opened < FINDING_MOST * 2 - 1; opened++) finder.opened(new FakeSocket());
-  assert.equal(finder.full, false);
-  finder.opened(new FakeSocket());
-  assert.equal(finder.full, true, 'silent sockets, within the wait');
-  made.clock.now += TOKEN_WAIT_MS;
-  await finder.tick();
-  assert.deepEqual([finder.open, finder.full], [0, false]);
+test('silent sockets never fill a finder: past its most, the oldest silent one is let go for each new one', async () => {
+  const { tokens, finderOf } = await world(['Ada'], 12);
+  const finder = finderOf('playlist-elite');
+  const flood = Array.from({ length: FINDING_MOST * 3 }, () => new FakeSocket());
+  for (const socket of flood) finder.opened(socket);
+  assert.deepEqual([finder.open, finder.full], [FINDING_MOST, false]);
+  assert.ok(
+    flood.slice(0, FINDING_MOST * 2).every((socket) => socket.closed[0] === 4003),
+    'the oldest let go',
+  );
+  assert.ok(
+    flood.slice(FINDING_MOST * 2).every((socket) => socket.closed.length === 0),
+    'the newest kept',
+  );
+  await seeking(finder, tokens['Ada'] ?? '');
+  assert.equal(finder.waiting, 1, 'a seeker with a token still gets in');
 });
 
 test('a second tab that searches while its account’s run is being started joins no second group', async () => {
@@ -341,4 +379,69 @@ test('whom a run was found for admits them for a day after it was found, and no 
   assert.equal(await foundRun(database, run, [ada, ben], made.clock.now), true);
   assert.deepEqual(await companionsOf(database, ada, run, made.clock.now + FOUND_KEPT_MS), [ada, ben]);
   assert.deepEqual(await companionsOf(database, ada, run, made.clock.now + FOUND_KEPT_MS + 1), [ada], 'alone');
+});
+
+test('a playlist’s seekers are banded by five levels and sent into an Elite Dungeon drawn for them at the band’s level', async () => {
+  const { made, tokens, ids, database } = await world(['Ada', 'Ben'], 17);
+  const young = await world(['Cal'], 9);
+  const drawn: number[] = [];
+  const finder = new Finder('playlist-elite', {
+    seeker: (token) => seekerOf(token === young.tokens['Cal'] ? young.database : database, token, made.clock.now),
+    found: (run, found) => foundRun(database, run, found, made.clock.now),
+    now: () => made.clock.now,
+    instance: () => 'k3j4h5g6',
+    pick: (count) => (drawn.push(count), 13),
+  });
+  const cal = await seeking(finder, young.tokens['Cal'] ?? '');
+  assert.deepEqual(cal.closed, [4003, 'The Elite Playlist opens at level 10.']);
+  const both = [await seeking(finder, tokens['Ada'] ?? ''), await seeking(finder, tokens['Ben'] ?? '')];
+  made.clock.now += 60_000;
+  await finder.tick();
+  const run = 'node-saltworm-warrens--elite--playlist-17--run-k3j4h5g6';
+  for (const socket of both) assert.deepEqual(socket.sent, [JSON.stringify({ run })]);
+  assert.deepEqual(drawn, [18], 'one of the 18');
+  assert.deepEqual(
+    (await companionsOf(database, ids['Ada'] ?? '', run, made.clock.now)).sort(),
+    Object.values(ids).sort(),
+  );
+  assert.deepEqual(JSON.parse(runAsk(run, 29_919_420) ?? 'null'), {
+    dungeon: { place: 'saltworm-warrens' },
+    tier: 1,
+    minute: 29_919_420,
+    playlist: 17,
+  });
+});
+
+test('a playlist’s Launch is started at once, for its seeker alone, its Elite Dungeon drawn and kept by the server', async () => {
+  const { made, tokens, ids, database } = await world(['Ada', 'Ben'], 22);
+  const finder = new Finder('playlist-abyss', {
+    seeker: (token) => seekerOf(database, token, made.clock.now),
+    found: (run, found) => foundRun(database, run, found, made.clock.now),
+    now: () => made.clock.now,
+    instance: () => 'k3j4h5g6',
+    pick: () => 1,
+  });
+  const ben = await seeking(finder, tokens['Ben'] ?? '');
+  const launch = new FakeSocket();
+  await finder.heard(finder.opened(launch, true), tokens['Ada'] ?? '');
+  await finder.tick();
+  const run = 'node-pearl-tomb--abyss--playlist-23--run-k3j4h5g6';
+  assert.deepEqual(launch.sent, [JSON.stringify({ run })], 'at once, not after a minute');
+  assert.deepEqual(ben.sent, [], 'a seeker of Find a Company waits on, never put into a launch');
+  assert.equal(await launchedFor(database, ids['Ada'] ?? '', run, made.clock.now), true, 'kept for its seeker');
+  assert.equal(await launchedFor(database, ids['Ben'] ?? '', run, made.clock.now), false);
+  // One of the launcher's company may be the first back into it, as the run would let them in after the launcher.
+  await made.ask('POST', '/v1/social/company/invite', { name: 'Ben' }, tokens['Ada']);
+  assert.equal((await made.ask('POST', '/v1/social/company/accept', { name: 'Ada' }, tokens['Ben'])).status, 200);
+  assert.equal(await launchedFor(database, ids['Ben'] ?? '', run, made.clock.now), true, 'a member of its company');
+  const elsewhere = new Finder('node-pearl-tomb', {
+    seeker: (token) => seekerOf(database, token, made.clock.now),
+    found: (found, accounts) => foundRun(database, found, accounts, made.clock.now),
+    now: () => made.clock.now,
+    instance: () => 'k3j4h5g7',
+  });
+  const alone = new FakeSocket();
+  await elsewhere.heard(elsewhere.opened(alone, true), tokens['Ada'] ?? '');
+  await elsewhere.tick();
+  assert.deepEqual(alone.sent, [], 'only a playlist launches: an Elite Dungeon’s search waits for its company');
 });

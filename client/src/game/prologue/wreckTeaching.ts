@@ -48,6 +48,7 @@ export const ARMS_ITEM: GearItem = {
   columns: [],
   price: 0,
   element: 0,
+  source: 0,
 };
 /** The forge draws a weapon's picture this many times as many pixels a metre as a figure's (weaponart.py `SIZE`): a
  *  card of it at this share stands true to size. */

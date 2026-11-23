@@ -212,7 +212,8 @@ impl Room {
             let character = &mut found.character;
             let reward = character.reward_kill(worth, rank, level, Some(hand), self.difficulty);
             let looted = deck || spoilless;
-            let vestiges = if looted { Vec::new() } else { character.loot_kill(rank, level, self.difficulty, &dice) };
+            let vestiges =
+                if looted { Vec::new() } else { character.loot_kill(rank, level, self.difficulty, self.source, &dice) };
             // A ship's deck is no island: what is felled there counts toward no land bounty and earns no boon.
             if !deck {
                 character.boon_xp(week, reward.xp, Some(hand));

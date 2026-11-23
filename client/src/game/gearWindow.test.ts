@@ -268,7 +268,7 @@ test('a hover card shows beside a slot under the pointer, kept on the screen', (
 });
 
 test('the hover card lets the pointer through, so where it must cover its tile, as on a phone, it holds still', () => {
-  const vestige = { id: 4, rarity: 2, slot: 2, level: 12, vaulted: false };
+  const vestige = { id: 4, rarity: 2, slot: 2, level: 12, vaulted: false, source: 0 };
   const mail = [{ id: 31, from: 0, crowded: false, vestige, item: null }];
   const { ui, open, frame } = menu({ ...sampleGear(), mail }, () => false, null, { width: 390, height: 844, scale: 1 });
   open('mail');

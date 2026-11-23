@@ -269,6 +269,7 @@ export function officerNode(officer: GearOfficer, column: number, node: number):
     prestige: 0,
     price: 0,
     element: 0,
+    source: 0,
   };
   const shown = nodeShown(asItem, column, node);
   const kind = officer.columns[column];

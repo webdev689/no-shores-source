@@ -27,6 +27,15 @@ pub struct FactionDef {
     pub cape: String,
     pub emblem: String,
     pub dye: String,
+    /// The armour set and weapon metal its armour and weapons are drawn in, which the room lets others see.
+    pub gear: FactionGear,
+}
+
+/// A faction's own look: its armour set and its weapon metal.
+#[derive(Clone, Debug, PartialEq, Eq, Deserialize)]
+pub struct FactionGear {
+    pub armour: String,
+    pub metal: String,
 }
 
 /// Everything in `content/gear/factions.json` the rules read.

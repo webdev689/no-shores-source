@@ -24,6 +24,7 @@ const item = (fields: Partial<GearItem>): GearItem => ({
   columns: [],
   price: 0,
   element: 0,
+  source: 0,
   ...fields,
 });
 
@@ -85,6 +86,7 @@ test('an item’s detail lays out its nodes: bought, to buy once unlocked, and w
   assert.deepEqual(detail.numbers, [
     ['Attack', '248'],
     ['Level', '20'],
+    ['From', 'The world'],
   ]);
   const [upgrade, perk] = detail.columns;
   assert.equal(upgrade?.nodes[0]?.chosen, true);
@@ -98,6 +100,8 @@ test('an item’s detail lays out its nodes: bought, to buy once unlocked, and w
       ['Hold to feed a Fruit of Dagon', 'button'],
     ],
   );
+  const module = itemDetailOf({ ...legendary, kind: 25, bucket: 8, source: 4 }, state({}));
+  assert.ok(!module.numbers.some(([label]) => label === 'From'), 'a ship’s module keeps no look of a content');
   const carried = itemDetailOf({ ...legendary, at: 0 }, state({ atMage: true }));
   assert.deepEqual(
     carried.presses.map((press) => press.label),
