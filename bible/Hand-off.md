@@ -155,6 +155,36 @@ each part works is in its system note.
 
 ## Waiting on the owner
 
+- **The prologue reworked, horses in a Mount slot and the stranger's welcome to Overlook** (branch
+  `ccr-06efd4d0-ffd79v`, its pull request), for the owner's yes to merge, which deploys the page and the rooms (the
+  wire, the protocol's version and the room's rules changed). Built on the owner's "take some autonomy" from
+  [[The Prologue Is Reworked With Real Armour, a Bow, the Storm and No Elites]],
+  [[Horses Are Items Worn in a Mount Slot]] and
+  [[The Stranger Welcomes the Player, and a Quest Walks Them Round Overlook]]; every call of Claude's in
+  [[The Prologue, Horses and the Welcome to Overlook as Claude Builds Them]]. The wreck dresses the player in the
+  story's steel as real gear, a parry window of 15 ticks everywhere, no Elite but Thule, the first boarder's bow and
+  its lesson, the wisp that circles and engulfs the player and gives the Storm, the Storm's lesson, and the story's
+  gear and Art taken at the prologue's end; horses are items worn in the Mount slot, the Appearance screen draws no
+  horse, the Tack always sells the Bay; a new character starts with nothing, the stranger's tour of Overlook with its
+  gift of 400 Aurem, the smiths' starter stock, and the opening quest round the vendors to the houses. Each feature
+  built on its own branch, reviewed independently and fixed until its pictures read right; then a review of where the
+  three meet, its six small findings fixed. Then the owner's "Audit this and ensure perfection": five independent
+  audits (the owner's words ask by ask, the rules and the server, the page, the notes and content, the tests by 53
+  mutations), every finding fixed with a test that failed first, or written down: among them "Wear them" stuck at 0/5
+  for a player who bought and wore everything during the round, the sea now taking the story's arms so the player
+  comes ashore with nothing as the stranger says, every cutscene drawing every figure for its own eye (first person
+  too), the welcome's lamp put out when left, every Character page flyout kept on the screen, the gift never paid
+  twice on a task a room does not know, and Arlo's line tying the wisp to the Stormcallers' hounds. Tested offline:
+  the full check at the branch's head; the wisp, the Mount tile and flyout, the Appearance screen and every stop of
+  the tour pictured headless, by day and by night, and the tour held to clear shots on Overlook's real hub by a test.
+  Not seen: the 400 Aurem, the tracker and a starter piece bought, pictured live (the picture driver's game worker
+  cannot reach a local room; the rules are tested); the shore's plain clothes (its key beat does not advance
+  headless; tested); anything on a real GPU or played by hand. Known and left: the tour's keepers read small behind
+  their counters (each stall is framed whole); a rollback past this round loses a new character's welcome (Gear).
+  - Left for the owner, in the R2 tools no session may edit: `tools/wreck/wreck_level.py`'s waves still list the
+    Tithe-Mates and Bosuns at rank 1; to match `content/prologue/wreck.json` each `(11, 1, ...)` becomes
+    `(11, 2, ...)` and each `(10, 1, ...)` `(10, 2, ...)`, and `export_wreck.py` should write the quiet deck's `masts`
+    (added to wreck.json by hand), or the next export drops them.
 - **The owner's six prologue points, the wreck's room in the worker and a full audit** (#161, branch
   `claude/gifted-knuth-lijjf2`), for the owner's yes to merge, which deploys the page and the rooms (the naval rules
   and the protocol's version changed): the wreck's hitches (blood's rays, its sheet drawn behind the wake's shut lids)
@@ -365,6 +395,14 @@ The decisions in [[Open Questions]] are not repeated here.
 
 ## Next
 
+- **The welcome's live pictures**: the header's 400 Aurem after the stranger's gift, the tracker's first task, a
+  starter piece bought at the Weaponsmith and the Character page with it worn. A local room runs (`npm run server`),
+  but under `tools/claude-toolkit/webgpu-shot.cjs` the game's worker opens no socket to it (the driver rewrites the
+  worker's script); the `/editor/` page, which has no game worker, reaches it. Fix the driver, then picture them
+  (`?arrival=1` begins at the arrival under `npm run dev`; `__qaGame` is lent in a live room too). Also unpictured:
+  the wreck's ability bar just after the engulfing (pictured in the Storm's lesson), the shore and the deep in plain
+  clothes (the shore's taking of her hand does not advance headless; a dev start past it would), and the Mount
+  flyout at 960x540 (measured by the screens' layout harness; the offline page has no gear).
 - **The public events' last pictures**, left for later by the owner: the raid's waves marching, a store
   plundered, Marrow, the Tithe giving up and a failed raid; the Fissure's growth sinking, the Warden, the last minute,
   the seal and a failed Fissure; the chest, the result and the reward feed; night; the banner at 1280x720, 1000x600,
