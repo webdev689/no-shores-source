@@ -53,19 +53,30 @@ test('a spell cast is read from its charge spent between two frames', () => {
   assert.deepEqual(castBetween(null, after), []);
 });
 
-test('the fight freezes on each ability until its own key, then plays on, and never freezes on it again', () => {
+test('the fight freezes on each ability until its own key, then plays on while the cast goes out', () => {
   const freeze = new CastFreeze();
   const pressing =
     (key: BindId | null, locked = true) =>
     () => ({ locked, pressed: (bound: BindId) => bound === key });
-  assert.ok(freeze.frame('arcLash', true, pressing(null)), 'frozen until pressed');
-  assert.ok(freeze.frame('arcLash', true, pressing('tenetOne')), 'another key does not answer it');
-  assert.ok(freeze.frame('arcLash', true, pressing('tenetTwo', false)), 'nor its key with the pointer free');
-  assert.ok(!freeze.frame('arcLash', true, pressing('tenetTwo')), 'its key plays on');
-  assert.ok(!freeze.frame('arcLash', true, pressing(null)), 'answered once, never again');
-  assert.ok(!freeze.frame('quicken', false, pressing(null)), 'nothing to teach it on');
-  assert.ok(freeze.frame('quicken', true, pressing(null)));
-  assert.ok(!freeze.frame(null, true, pressing(null)));
+  const TICK = 1 / 60;
+  assert.ok(freeze.frame('arcLash', true, pressing(null), TICK), 'frozen until pressed');
+  assert.ok(freeze.frame('arcLash', true, pressing('tenetOne'), TICK), 'another key does not answer it');
+  assert.ok(freeze.frame('arcLash', true, pressing('tenetTwo', false), TICK), 'nor its key with the pointer free');
+  assert.ok(!freeze.frame('arcLash', true, pressing('tenetTwo'), TICK), 'its key plays on');
+  assert.ok(!freeze.frame('arcLash', true, pressing(null), 0.5), 'not again while the cast goes out');
+  assert.ok(!freeze.frame('quicken', false, pressing(null), TICK), 'nothing to teach it on');
+  assert.ok(freeze.frame('quicken', true, pressing(null), TICK));
+  assert.ok(!freeze.frame(null, true, pressing(null), TICK));
+});
+
+test('a press that cast nothing (refused, its charge unspent) is asked again at the next chance, until its step ticks', () => {
+  const freeze = new CastFreeze();
+  const pressing = (key: BindId | null) => () => ({ locked: true, pressed: (bound: BindId) => bound === key });
+  freeze.frame('arcLash', true, pressing(null), 0.1);
+  assert.ok(!freeze.frame('arcLash', true, pressing('tenetTwo'), 0.1), 'answered');
+  assert.ok(!freeze.frame('arcLash', true, pressing(null), 0.5));
+  assert.ok(freeze.frame('arcLash', true, pressing(null), 0.6), 'still the lesson a second on: frozen again');
+  assert.ok(!freeze.frame('arcLash', false, pressing(null), 0.1), 'but only once it may be taught');
 });
 
 test('the prompts name each key as bound now', () => {

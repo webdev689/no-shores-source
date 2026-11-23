@@ -456,7 +456,7 @@ the cutscenes, the camera's moves, the nameplate, the fires and the lines are th
     begins the wreck at its coming, and `&wisp=<n>` n - 1 seconds into it.
   - "Call the Storm": until the Storm is given, the waves wait; from then the next zone's wave comes, and its fight
     teaches each ability as the parry is (`CastFreeze`): the fight frozen with its prompt breathing until its key is
-    pressed, each once: "Press G to cast Arc Lash" once a foe stands in its cone and reach (7 m), then "Press Q to cast
+    pressed, and again at the next chance a second on should the press cast nothing, until it is cast: "Press G to cast Arc Lash" once a foe stands in its cone and reach (7 m), then "Press Q to cast
     Quicken" and "Press R to release Tempest" once a foe stands within 12 m, each with its charge full. Each step is
     ticked once cast, read from its charge spent: Cast Arc Lash (G), Cast Quicken (Q), Release Tempest (R); then the
     fight runs as any.

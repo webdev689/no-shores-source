@@ -66,20 +66,28 @@ export function castBetween(before: AbilityState | null, after: AbilityState | n
   return spells.filter((spell) => shareOf(before, spell) >= 1 && shareOf(after, spell) < 1);
 }
 
-/** The fight frozen to teach the Storm's abilities, each at most once: frozen while `spell` may be taught, until
- *  its key is pressed with the pointer the game's, when the press plays on into the fight. */
+/** How long after a press answers a freeze it may not freeze again, seconds: the cast goes out (18 ticks) and its
+ *  charge is seen spent. A press that cast nothing is asked again after it, until its step ticks. */
+const ANSWERED_S = 1;
+
+/** The fight frozen to teach the Storm's abilities: frozen while `spell` (the step not yet ticked) may be taught,
+ *  until its key is pressed with the pointer the game's, when the press plays on into the fight. */
 export class CastFreeze {
-  private readonly answered = new Set<Spell>();
+  /** The spell last answered and the seconds since: no freeze while its cast goes out (`ANSWERED_S`). */
+  private answered: { spell: Spell; seconds: number } | null = null;
 
   frame(
     spell: Spell | null,
     teaches: boolean,
     answer: () => { readonly locked: boolean; readonly pressed: (key: BindId) => boolean },
+    seconds: number,
   ): boolean {
-    if (!spell || !teaches || this.answered.has(spell)) return false;
+    if (this.answered) this.answered.seconds += seconds;
+    const waiting = this.answered?.spell === spell && (this.answered?.seconds ?? 0) < ANSWERED_S;
+    if (!spell || !teaches || waiting) return false;
     const { locked, pressed } = answer();
     if (!locked || !pressed(ABILITIES[spell].key)) return true;
-    this.answered.add(spell);
+    this.answered = { spell, seconds: 0 };
     return false;
   }
 }

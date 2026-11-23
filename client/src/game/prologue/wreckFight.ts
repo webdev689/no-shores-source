@@ -258,7 +258,7 @@ export class WreckFight implements Beat {
     const { stage, walker, firstPerson } = story;
     this.clock += tick.seconds;
     // Frozen, the fight and its storm stand still: only the player's answer moves them on.
-    const frozen = this.frozen(run, tick.controls);
+    const frozen = this.frozen(run, tick.controls, tick.seconds);
     const seconds = frozen ? 0 : tick.seconds;
     const easing = tick.seconds / DRAIN_S;
     this.drained = frozen ? Math.min(FROZEN_DRAIN, this.drained + easing) : Math.max(0, this.drained - easing);
@@ -361,7 +361,7 @@ export class WreckFight implements Beat {
   /** Whether the fight stands frozen this frame on the boarder's blow, its prompt shown while it does. The press that
    *  answers it, with the pointer the game's, lets the blow play on, the press the fight's own; a pointer let go
    *  leaves it frozen until it is taken again. */
-  private frozen(run: WreckRun, controls: InputFrame): boolean {
+  private frozen(run: WreckRun, controls: InputFrame, seconds: number): boolean {
     const { lesson, spell } = this.tutorial;
     const held = !!this.coming || !!this.wisp || this.ending !== null;
     const { player, parryOpen, own, abilities } = run.fight;
@@ -374,7 +374,7 @@ export class WreckFight implements Beat {
     const foes = () => [...run.fight.foes.values()].map((kept) => kept.view);
     const teaches = !!spell && teachable(spell, own, foes(), abilities);
     const pressed = () => ({ locked: controls.locked, pressed: controls.pressed });
-    const casting = !held && !parrying && this.castFreeze.frame(spell, teaches, pressed);
+    const casting = !held && !parrying && this.castFreeze.frame(spell, teaches, pressed, seconds);
     const frozen = parrying || casting;
     const prompt = parrying && lesson ? asked(lesson) : casting && spell ? castPrompt(spell) : null;
     if (prompt !== this.prompting) {
