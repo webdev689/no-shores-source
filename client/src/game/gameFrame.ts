@@ -57,7 +57,7 @@ import { keeperLit } from './overheadMarks.ts';
 import { HULLS } from '../water/hullMask.ts';
 import { chatAtSea, chatOpen, holdOnPlayer, platedPlayers, socialUp } from './social/social.ts';
 import { uiScale } from '../ui/uiRenderer.ts';
-import { standIns } from '../standIns.ts';
+import { setBehindVeil, standIns } from '../standIns.ts';
 
 /** The region every island lies in. */
 const REGION = 'The Pale Expanse';
@@ -453,6 +453,7 @@ export function startFrames(parts: FrameParts, playing: Playing): void {
     const size = { width: canvas.width, height: canvas.height };
     const { flow, foot, sea, ready } = playing;
     const shown = flow.mode === 'loading' ? (ready ? flow.then : null) : flow;
+    setBehindVeil(flow.mode === 'loading');
     let settled = true;
     playing.shipScale = 1;
     if (shown?.mode === 'story' && parts.story) storyFrame(parts.story, controls, seconds, size);

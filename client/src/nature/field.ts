@@ -4,6 +4,12 @@ import { type FloraForm, formsOf } from './flora.ts';
 import type { Cast, Kind } from './kinds.ts';
 import { formKinds, PLANTED_FLOATS, type ScatterGround, scatterTile, TILE_M } from './scatter.ts';
 import { PAGE_SHIFT, PAGE_SLOTS, SLOT_FLOATS, SlotStore } from './slots.ts';
+import { behindVeil } from '../standIns.ts';
+
+/** How long one update may spend scattering behind a trip's veil, milliseconds: no one sees those frames, and the veil
+ *  lifts once the plants round the player are scattered; the loading screen still breathes at some 30 frames a
+ *  second. */
+const VEILED_BUDGET_MS = 30;
 
 /** The ground round the eye, as the caller has it this frame. */
 export interface NatureGround extends ScatterGround {
@@ -188,7 +194,8 @@ export class NatureField {
   /** How many tile layers have been scattered: for tests and the page's own readout. */
   scattered = 0;
 
-  /** `budgetMs` is how long one update may spend scattering. */
+  /** `budgetMs` is how long one update may spend scattering in play; behind a trip's veil it may spend
+   *  VEILED_BUDGET_MS. */
   constructor(budgetMs = 6) {
     this.budgetMs = budgetMs;
   }
@@ -220,7 +227,7 @@ export class NatureField {
     const started = performance.now();
     const offsets = this.settled?.version === ground.version ? [] : this.offsets;
     for (; this.cursor.at < offsets.length; this.cursor.at++) {
-      if (performance.now() - started > this.budgetMs) {
+      if (performance.now() - started > (behindVeil() ? VEILED_BUDGET_MS : this.budgetMs)) {
         waiting = true;
         break;
       }
