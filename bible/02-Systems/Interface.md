@@ -1107,8 +1107,8 @@ serves each ask only at its own counter ([[Gear]], "In the rooms"; [[Factions]])
   the left, from the forge in their own dress (`keepers.ts`), idle and facing the viewer, grown by whole pixels and
   breathing between the idle's two frames (still with less motion asked for), over a ground lit in their colour (a
   faction's in its Art's element, the rest brass), with their mark and their title in capitals above them. At the right
-  their words, the currencies they deal in (Aurem; Shapes at Shape's; at a faction's its rank, its meter to the next and
-  the materials an Art's rise takes), the band they speak in, then their wares in rows under engraved headings, each a
+  their words with the currencies they deal in beside them on one line (Aurem; Shapes at Shape's; at a faction's its
+  rank, its meter to the next and the materials an Art's rise takes), the band they speak in, then their wares in rows under engraved headings, each a
   gear tile held to buy, its price under it, red with "Not enough" when short, a card on hover or focus; a ware that
   cannot be asked for says why under its price (a level not reached, a pack full), and "Not enough" is only for one the
   room would sell. At the foot "Stock refresh" and the time to the next daily reset, 09:00 UTC, for the smiths, the

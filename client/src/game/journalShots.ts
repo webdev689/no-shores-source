@@ -189,7 +189,7 @@ const ARRIVED: GearState = {
   defense: 0,
   aurem: 400,
   cratePrice: 300,
-  crates: 5,
+  crates: 0,
   wares: [
     ...day([13, 14, 15, 16, 13, 14]),
     ...plain([
@@ -209,6 +209,8 @@ const ARRIVED: GearState = {
 export const armorsmithShot = menuShot('armorsmith', undefined, ARRIVED);
 /** The Weaponsmith's screen, its starter stock first. */
 export const weaponsmithShot = menuShot('weaponsmith', undefined, ARRIVED);
+/** The Weaponsmith's screen for one who carries all five Ammo crates, which the supplies' row says. */
+export const weaponsmithFullShot = menuShot('weaponsmith', undefined, { ...ARRIVED, crates: 5 });
 
 /** The Abyss Dungeon of the week's card at its entrance: its rules, its three modifiers and what it pays. */
 const ABYSS_CARD: EntranceCard = {
