@@ -5,6 +5,7 @@ import {
   DRY_STAGES,
   DRY_TIME,
   atlasCells,
+  bloodSheet,
   buildAtlas,
   driedTint,
   dryStage,
@@ -51,4 +52,10 @@ test('the sheet is generated: clear at its borders, inked inside its cells', () 
   let inked = 0;
   for (let i = 3; i < atlas.colours.length; i += 4) if ((atlas.colours[i] ?? 0) > 0) inked++;
   assert.ok(inked > 100);
+});
+
+test("the blood's sheet is drawn once a page, the same as drawing it anew, and handed out after", () => {
+  const sheet = bloodSheet();
+  assert.equal(bloodSheet(), sheet, 'drawn once');
+  assert.deepEqual(sheet.colours, buildAtlas().colours, 'seeded: the sheet any fight would draw');
 });

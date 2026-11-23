@@ -35,12 +35,12 @@ for (const name of readdirSync(join(OUT, 'ts'), { recursive: true, encoding: 'ut
 }
 
 // The protocol's version is the hash of the schema's files, of the fight's numbers as combat lays them out (a fighter,
-// an intent and a glance cross as plain lists of numbers), and of the content numbered on the wire, never a number
-// bumped by hand: a page and a room built from different layouts, or from lists in a different order, know it from the
-// room's welcome.
-const FLOATS = 'crates/combat/src/floats.rs';
+// an intent and a glance cross as plain lists of numbers) and as the sea fight lays them out (its view, its lay), and
+// of the content numbered on the wire, never a number bumped by hand: a page and a room built from different layouts,
+// or from lists in a different order, know it from the room's welcome.
+const FLOATS = ['crates/combat/src/floats.rs', 'crates/naval/src/wire.rs'];
 const hash = createHash('sha256');
-for (const path of [...SCHEMAS, FLOATS, ...NUMBERED]) hash.update(readFileSync(path));
+for (const path of [...SCHEMAS, ...FLOATS, ...NUMBERED]) hash.update(readFileSync(path));
 const version = hash.digest().readUInt32BE(0);
 writeFileSync(join(OUT, 'rust', 'version.rs'), `${version}\n`);
 writeFileSync(join(OUT, 'ts', 'version.ts'), `export const PROTOCOL = ${version};\n`);

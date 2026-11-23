@@ -189,7 +189,7 @@ refresh" counts to the daily reset, 09:00 UTC, as the rules count it ([[Interfac
 | How | A walk, not a cutscene: she starts at the lane crossing nearest the player at least 15 m from them, out of their view where one is, and comes to them by the lanes, greeting a player off them from the lane point nearest them once they are within 6 m; then she leads them to the counters, the nearest stop first each time, speaking at each once they are within 6 m, then walks home. She keeps to the townsfolk's lanes, the counters' fronts and the parapet's lookers' line, round her counter's end clear of the arcade's columns. While she comes to the player she keeps coming, however far off; the left-behind minute counts only while she leads or waits |
 | Played before | A browser that has played the story and holds no mark of the welcome is welcomed on its next arrival; a forgone welcome stays forgone |
 | Ending it | Opening the Lamplighters' counter while she walks ends the welcome there. A player more than 40 m from her for a minute ends the walk: she goes home, and it stays due |
-| Pace | 1.5 m/s, brisker than the townsfolk's 1.25, for a plaza 260 m across; she stops 1.8 m before the player |
+| Pace | Replaced by [[Elder Maren Hale Walks at Three Quarters of a Player's Pace]]; she stops 1.8 m before the player |
 | Marks | No mark over a head, as the owner had every glyph taken off the speech; the HUD says "Follow" over her name past 6 m and clears it inside 5 m |
 | Lines | In the dialogue box, as the epilogue's; the factions are "houses" in her mouth, and her last line invites a pledge without naming it |
 

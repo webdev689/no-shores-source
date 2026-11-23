@@ -3,6 +3,7 @@
 //! lay it. Both run the naval crate on the room's open sea, in little-endian 64-bit numbers.
 
 use land::sea::Swell;
+use naval::fight::focus::spread_after;
 use naval::fight::{Aim, Hurts, sail_hurt};
 use naval::guns::Shot;
 use naval::laying::{Sighted, preview};
@@ -102,10 +103,10 @@ fn sighted_of(numbers: &[f64]) -> Option<Sighted> {
 
 /// A player's look's lay as the fleet room would lay it: from their own ship as `sighted_of` reads one, its load
 /// (1 round to 4 heated), their look's bearing and range, 1 and its ray's six numbers or 0 and six of anything, the
-/// room's time, then every other ship they see. Answers 0 for no side bearing; else 1, its side (0 port, 1 starboard),
-/// the elevation, the reach, the landing zone's radius, 1 if on target, and for each gun its launch's six numbers and
-/// where it stops: 1, the seconds, the point, 1 in the water, and 1 and a strike's point (or 0 and three zeros); or 0
-/// and eight zeros, still aloft.
+/// room's time, the seconds the look has been held, then every other ship they see. Answers 0 for no side bearing;
+/// else 1, its side (0 port, 1 starboard), the elevation, the reach, the landing zone's radius, its spread over its
+/// gun's own, 1 if on target, and for each gun its launch's six numbers and where it stops: 1, the seconds, the point,
+/// 1 in the water, and 1 and a strike's point (or 0 and three zeros); or 0 and eight zeros, still aloft.
 #[must_use]
 pub fn lay(numbers: &[f64]) -> Vec<f64> {
     lay_numbers(numbers).unwrap_or_default()
@@ -119,7 +120,7 @@ fn lay_numbers(numbers: &[f64]) -> Option<Vec<f64>> {
     let rest = numbers.get(OTHER_FLOATS..)?;
     let (&[load, bearing_deg, range_m, has_ray], rest) = rest.split_first_chunk::<4>()?;
     let (ray, rest) = rest.split_first_chunk::<6>()?;
-    let (&[time], others) = rest.split_first_chunk::<1>()?;
+    let (&[time, held_s], others) = rest.split_first_chunk::<2>()?;
     let load = Shot::CYCLE.get((load as usize).checked_sub(1)?).copied()?;
     let fits = (-180.0..=180.0).contains(&bearing_deg) && (0.0..=room::fleet::MOST_RANGE_M).contains(&range_m);
     if !fits || !others.len().is_multiple_of(OTHER_FLOATS) {
@@ -130,9 +131,12 @@ fn lay_numbers(numbers: &[f64]) -> Option<Vec<f64>> {
     let ships: Vec<Sighted> = std::iter::once(Some(own))
         .chain(others.chunks_exact(OTHER_FLOATS).map(sighted_of))
         .collect::<Option<Vec<Sighted>>>()?;
-    let shown = with_weather(|swell, _| preview(&own, load, &aim, &ships, (&OpenSea { swell }, time)));
+    // Held as long as the page has held it, as the room counts its orders (`Fight::hold_lays`).
+    let spread = spread_after(held_s);
+    let shown = with_weather(|swell, _| preview(&own, load, &aim, &ships, (&OpenSea { swell }, time), spread));
     let Some(shown) = shown else { return Some(vec![0.0]) };
     let mut out = vec![1.0, shown.lay.side.index() as f64, shown.lay.elevation, shown.lay.reach, shown.radius];
+    out.push(shown.spread);
     out.push(f64::from(u8::from(shown.on_target)));
     for (launch, end) in shown.launches.iter().zip(&shown.ends) {
         out.extend(launch);

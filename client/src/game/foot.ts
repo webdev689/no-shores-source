@@ -2,7 +2,7 @@ import { QUIET, pushedIn, showAnimaEdge } from '../combat/animaMoment.ts';
 import { Arrivals } from '../combat/arrivals.ts';
 import { AttackFeel, type DrawnFigure } from '../combat/attackFeel.ts';
 import { DropsShown } from '../combat/drops.ts';
-import { litMarksSeen, marksSeen } from '../combat/marksOver.ts';
+import { litMarksSeen, marksHidden, marksSeen } from '../combat/marksOver.ts';
 import { FightEffects } from '../combat/fightEffects.ts';
 import { Fighting } from '../combat/fighting.ts';
 import { FoeFigures } from '../combat/foeFigures.ts';
@@ -389,8 +389,8 @@ export class Foot {
     dressInGear(walker, forge, this.held.gear, this.dressed);
     this.tellPrologue();
     this.plaza?.frame(WORLD_CLOCK.seconds(), this.gear?.gear ?? null);
-    const standing = [...foes.placed.values(), ...this.otherPlayers.placed.values()];
-    const bodies = standing.map((placed) => [placed.x, placed.y, placed.z] as const);
+    const near = [...foes.placed.values(), ...this.otherPlayers.placed.values()];
+    const bodies = near.map((placed) => [placed.x, placed.y, placed.z] as const);
     const { feel } = this;
     // The tumble starts the way the figure was last drawn facing (the aim, while aiming).
     walker.fall = this.falling.figure(fight.standing, walker.player.body, walker.you.facing);
@@ -451,6 +451,7 @@ export class Foot {
     const [gearNow, floor] = [this.gear?.gear ?? null, (x: number, y: number) => movement.standing(x, y).z];
     const marked = markedHere(gearNow, countersOf(this.node), floor, this.context.trips.props(), this.context.speak);
     const lit = litMarksSeen(marked, shot.eye, clock);
+    const hidden = marksHidden(marked, shot.eye, clock);
     const laid = (gearNow?.drops ?? []).filter((drop) => drop.kind !== DROPPED.chest);
     const dropped = dropsLaid(this.drops, laid, clock, shot.eye, [
       ...questRings(gearNow, floor, clock),
@@ -558,11 +559,11 @@ export class Foot {
       },
       public: shownPublic.shown,
     };
-    const edge = this.standing;
-    const hints = keysShown(edge, onFoot(walker, shown, fight, !controls.locked && !paused));
+    const standing = this.standing;
+    const hints = keysShown(standing, onFoot(walker, shown, fight, !controls.locked && !paused));
     const dark = arrivals.darkOf(fight.player, clock);
     const { props, quest, sting } = shownPublic;
-    return { shot, figures, standing: edge, marks, lit, swings, fight: fought, hints, dark, props, quest, sting };
+    return { shot, figures, standing, marks, lit, hidden, swings, fight: fought, hints, dark, props, quest, sting };
   }
 
   /** Where the player stands with the section's edge, as the room said. */
