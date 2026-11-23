@@ -122,3 +122,15 @@ test('her farewell is seen from the side, both faces in the view', () => {
   const walled = facesShot(OWN, stranger, player, [box(1003.5, 2029, 0.5, 4, 4)]);
   assert.ok(walled.eye[0] < 1000, 'from the side a wall leaves clear');
 });
+
+test("each place stands in the view's upper part, clear of the dialogue box over its lower middle", () => {
+  const place = { stations: PLAZA, groundAt: ground, blocks: BLOCKS };
+  const shots: [string, Shot | null, readonly [number, number, number]][] = [
+    ['tack', counterShot(place, ['tack'], OWN), head(TACK)],
+    ['storm', hallShot(place, ['stormcallers'], OWN), head(HALL_STATIONS[0] as StationInfo)],
+  ];
+  for (const [name, shot, point] of shots) {
+    const spot = shot && onScreen(shot, VIEW, point);
+    assert.ok(spot && spot[1] < VIEW.height * 0.42, `${name}'s keeper above the box: ${spot?.[1]}`);
+  }
+});

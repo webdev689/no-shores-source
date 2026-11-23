@@ -39,6 +39,9 @@ const HALL_UPS_M = [10, 11, 8, 12, 7];
 const HALL_LENS = 1.35;
 const DOOR_SHARE = 1.08;
 const BANNER_M = 5;
+/** How far below its target the view looks, a share of its lens: what it frames stands in the view's upper part,
+ *  clear of the dialogue box over its lower middle. */
+const RAISE = 0.2;
 /** How far from the pair the farewell's eye stands. */
 const FACES_M = 3.2;
 /** The view a framing is checked against: the widest screen the game is laid out for. */
@@ -72,12 +75,10 @@ function sees(shot: Shot, points: readonly Point3[], blocks: readonly Block[]): 
 }
 
 /** A shot from `eye` looking at `target` through the player's lens, or `fov`. */
-const looking = (own: Shot, eye: Point3, target: Point3, fov = own.fov): Shot => ({
-  ...own,
-  fov,
-  eye,
-  ...lookAt(eye, target),
-});
+const looking = (own: Shot, eye: Point3, target: Point3, fov = own.fov): Shot => {
+  const { yaw, pitch } = lookAt(eye, target);
+  return { ...own, fov, eye, yaw, pitch: pitch + fov * RAISE };
+};
 
 /** The first shot that sees every point, else the first tried. */
 const firstSeeing = (shots: readonly Shot[], points: readonly Point3[], blocks: readonly Block[]): Shot | null =>
