@@ -27,6 +27,8 @@ fn a_script_that_builds_an_element_in_any_spelling_is_refused() {
         "const choice = new Option('a', 'b');",
         "const sound = new  Audio ('x.mp3');",
         "const held = new DocumentFragment();",
+        "const words = new Text('x');",
+        "const copy = document.importNode(template.content, true);",
         "const copy = template.cloneNode(true);",
         "document.body.attachShadow({ mode: 'open' });",
         "customElements.define('x-menu', class {});",
@@ -42,6 +44,7 @@ fn a_script_that_builds_an_element_in_any_spelling_is_refused() {
 fn a_script_that_puts_an_element_or_words_into_the_page_is_refused() {
     for line in [
         "document.body.insertAdjacentElement('beforeend', node);",
+        "document.createRange().insertNode(node);",
         "document.body.insertAdjacentHTML('beforeend', '<b>x</b>');",
         "document.body.insertAdjacentText('beforeend', 'x');",
         "document.body.appendChild(node);",
@@ -116,6 +119,20 @@ fn what_only_looks_like_the_page_passes() {
         assert!(script("client/src/game/menu.ts", text).is_empty(), "{text}");
     }
     assert!(script("tools/shot.mjs", "document.createElement('canvas')").is_empty());
+}
+
+#[test]
+fn a_name_given_an_element_anywhere_is_not_excused_by_a_new_one() {
+    for text in [
+        "let held = new Laid();\nheld = document.body;\nheld.append(words);",
+        "const mylist = new Laid();\nfunction lay(list) { list.append(words); }",
+    ] {
+        let problems = script("client/src/game/menu.ts", text);
+        assert_eq!(problems.len(), 1, "{text}");
+        assert!(problems[0].message.starts_with("puts an element into the page"), "{text}");
+    }
+    let decoded = "const words = new TextDecoder().decode(bytes);\nconst encoder = new TextEncoder();";
+    assert!(script("client/src/game/menu.ts", decoded).is_empty());
 }
 
 #[test]
