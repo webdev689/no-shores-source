@@ -321,6 +321,15 @@ test("with no Art worn, the Character page says a house's road gives one, and th
   assert.deepEqual(asked, [], 'none may be worn');
 });
 
+test('in the story, before the Storm is given, the Character page says nothing of pledging to a house', () => {
+  const sample = sampleGear();
+  const steel = sampleItem({ id: 60, kind: 2, name: 1, level: 1, at: 0, story: true });
+  const gear = { ...sample, items: [...sample.items, steel], arts: { ...sample.arts!, art: 0, earned: [0, 0, 0] } };
+  const { open, labelOf } = menu(gear);
+  open('character');
+  assert.equal(labelOf('art-diamond'), 'Art: none.');
+});
+
 test('the Mount slot stands with the gear: empty with a horse glyph, then the horse worn; its flyout wears a horse and a barding', () => {
   const sample = sampleGear();
   const empty = menu(sample);
