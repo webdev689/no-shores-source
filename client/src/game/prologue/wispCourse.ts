@@ -283,14 +283,14 @@ export function chaseShot(course: WispCourse, seconds: number): { readonly eye: 
   return { eye, look: mix(now, [x, y, z + CHEST_M], Math.min(1, lean / Math.max(apart, 0.001))) };
 }
 
+/** The share of the wisp's moments in its rings the ring camera must see it clear. */
+export const SEEN_SHARE = 0.95;
+
 /** The camera that watches the rings, a cutscene's shot and not a map's: of the places round the player 2.6 to 5.4 m
  *  out and 1 to 2.9 m over their deck (nearest first to 4.2 m out to their right and 1.8 m up), the first from which
  *  the player's chest and the wisp at every moment of its rings and engulfing are seen in one frame, looking a little
  *  down, with nothing of the wreck between the chest and it (the wisp at `SEEN_SHARE` of its moments). Near so, the
  *  player stands a third of the frame's height or more. */
-/** The share of the wisp's moments in its rings the ring camera must see it clear. */
-export const SEEN_SHARE = 0.95;
-
 export function ringEye(course: WispCourse): Point {
   const [x, y, z] = course.feet;
   const chest: Point = [x, y, z + CHEST_M];
@@ -354,13 +354,13 @@ export function ringLook(course: WispCourse, seconds: number, eye: Point): Point
 const RISES_M = [0, 1.5] as const;
 const STEEPEST = Math.PI / 3;
 
-type Seen = { readonly eye: Point; readonly look: Point };
+type Aim = { readonly eye: Point; readonly look: Point };
 
 /** The camera `share` of its way from the shot `from` to the shot `to` among `blocks`: its eye straight along, or
  *  rising a little over the wreck between, and its look eased between theirs, never through the wreck nor looking
  *  more than 60 degrees down; where neither way is so, a cut at the middle of its time. */
-export function moveTo(blocks: readonly CourseBlock[], from: Seen, to: Seen, share: number): Seen {
-  const along = (rise: number, part: number): Seen => {
+export function moveTo(blocks: readonly CourseBlock[], from: Aim, to: Aim, share: number): Aim {
+  const along = (rise: number, part: number): Aim => {
     const [x, y, z] = mix(from.eye, to.eye, part);
     return { eye: [x, y, z + rise * Math.sin(Math.PI * part)], look: mix(from.look, to.look, part) };
   };

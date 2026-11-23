@@ -125,8 +125,8 @@ export class WispScene {
     this.trail = this.trail.filter((point) => point.age <= TRAIL_KEPT_S);
   }
 
-  /** The camera: from the player's shot round to follow the wisp close as it comes and wanders; off to watch its
-   *  rings close on them, nothing of the wreck between; and back over their shoulder once it has engulfed them. */
+  /** The camera: from the player's shot round to follow the wisp close as it comes and wanders; low and near to
+   *  watch its rings close on them (`ringEye`); and back over their shoulder once it has engulfed them. */
   private shotOf(back: Shot): Shot {
     const aimed = (eye: Point, target: Point): Shot => ({ ...this.from, eye, ...lookAt(eye, target) });
     const into = this.seconds;
@@ -141,11 +141,14 @@ export class WispScene {
     const end = ENGULF_AT_S + WISP_S.engulf;
     const look = ringLook(this.course, Math.min(into, end), this.ringsFrom);
     const rings = { eye: this.ringsFrom, look };
-    if (into < end) {
-      // From following it to watching its rings: eased, rising a little over the wreck between, or a cut.
-      const moved = moveTo(blocks, chase, rings, ease((into - circleAt) / LEAVE_S));
+    if (into < circleAt + LEAVE_S) {
+      // From following it to watching its rings: eased, rising a little over the wreck between, or a cut, toward the
+      // look the rings begin with, so the way is chosen once.
+      const begun = { eye: this.ringsFrom, look: ringLook(this.course, circleAt, this.ringsFrom) };
+      const moved = moveTo(blocks, chase, begun, ease((into - circleAt) / LEAVE_S));
       return aimed(moved.eye, moved.look);
     }
+    if (into < end) return aimed(rings.eye, rings.look);
     // Back over the shoulder as the shot stood as it began: the player stands held, so it holds.
     this.backTo ??= back;
     const { eye, yaw, pitch } = this.backTo;
@@ -157,7 +160,7 @@ export class WispScene {
     const share = ease((into - end) / WISP_S.back);
     if (share >= 1) return this.backTo;
     const moved = moveTo(blocks, rings, { eye, look: ahead }, share);
-    return aimed(moved.eye, moved.look);
+    return { ...this.backTo, eye: moved.eye, ...lookAt(moved.eye, moved.look) };
   }
 }
 
