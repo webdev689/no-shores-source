@@ -25,7 +25,7 @@ Claude's choices in building [[The Prologue Is Reworked With Real Armour, a Bow,
 | A new player's first horse | None at the start; the Tack always sells the Bay Horse, first on its screen, at 1,500 Aurem (the cheapest coat's price), beside its day's four | "Later, not in the tutorial" |
 | Characters kept before | Each coat kept becomes a horse in the pack, the coat worn the horse worn; a save from before cosmetics keeps its Bay; a room rolled back and forward gives no Bay to a character with none | No one loses a horse, and no one gains one |
 | Others' view | A player the room has on foot is shown on foot, whatever the page sends | The room decides what others see |
-| The Test Ground | Its player rides the Bay Horse; its grant hands out no other horse | Riding can be tried there; the grant made horses of any rarity |
+| The Test Ground | Hands out no horse; its help says so | Its grant made horses of any rarity |
 
 **The prologue**
 
