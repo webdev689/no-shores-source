@@ -7,6 +7,8 @@ import { PX_PER_M } from '../../player/figures.ts';
 import { onScreen } from '../camera.ts';
 import type { Actor } from './actors.ts';
 import type { Tick } from './beat.ts';
+import { YOU_ID } from './helm.ts';
+import { FIRST_LOOK, armouredDress, plainDressOf, unarmed } from './look.ts';
 import { KNEELS_AT_S, Shore, STRANGER_DRESS, STRANGER_HEAD, STRANGER_ID, takeHandPrompt } from './shore.ts';
 import { headOnView, type StoryFrame } from './stage.ts';
 import type { Story } from './story.ts';
@@ -33,7 +35,7 @@ function shoreStory(landmass: () => unknown = () => plaza) {
     play: (scene: string) => new Promise<void>((finish) => said.push({ scene, finish })),
   };
   const land = { ground: () => Promise.reject(new Error('no ground here')) };
-  const story = { stage, land, dress: {} } as unknown as Story;
+  const story = { stage, land, dress: armouredDress(FIRST_LOOK), look: FIRST_LOOK } as unknown as Story;
   return { story, said, prompts };
 }
 
@@ -76,6 +78,27 @@ test('a shore that cannot be laid at all is thrown from its frame, so the story 
   );
   await settled();
   assert.throws(() => shore.frame(tick), /no landmass/);
+});
+
+test('the player comes ashore with nothing: in the plain clothes of a player with nothing, no sword at the hip', async () => {
+  const failed = mock.method(console, 'error', () => undefined);
+  const { story, said } = shoreStory();
+  const shore = new Shore(story);
+  await settled();
+  while (said.length === 0) shore.frame(tick);
+  said[0]?.finish();
+  await settled();
+  shore.press();
+  while (said.length === 1) shore.frame(tick);
+  said[1]?.finish();
+  await settled();
+  const youIn = () => shore.frame(tick)?.actors?.find((actor) => actor.id === YOU_ID);
+  let you = youIn();
+  for (let frame = 0; frame < 300 && !you; frame++) you = youIn();
+  assert.ok(you, 'they walk off with her');
+  assert.deepEqual(you.dress, unarmed(plainDressOf(FIRST_LOOK)));
+  assert.equal(you.dress.outfit.armour.cuirass, undefined, 'no steel');
+  failed.mock.restore();
 });
 
 test('the stranger walks down to the player, kneels, and speaks only then, heard; she never jumps', async () => {
