@@ -40,3 +40,8 @@ asking for a push only once the head has passed. Proposing this needs the owner'
 mid-check, twice with commits a later check was to cover); each time the push waited for the check, as CLAUDE.md
 says. `headroom learn --apply` then wrote a rule from those four firings: push once "ready and checked", which keeps
 the check first. The hook still cannot tell a checked head from an unchecked one.
+
+2026-11-23, picking up claude/zen-ritchie-u40hax and the patrol audit: the Stop hook asked for a push three times while
+a full check ran (`cargo xtask check` takes some 15 minutes here); each push waited for the check. Third session in a
+row with the same firing, so this is past rewording: the hook needs to read the last `checked <commit>` line the
+check prints (or a marker the check writes) and stay quiet while the head is the one being checked.
