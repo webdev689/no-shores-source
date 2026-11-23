@@ -285,7 +285,10 @@ fn check_seams(value: &Value, scenes: &BTreeMap<String, &Value>) -> Vec<Problem>
             if leading > 0 && run > TURN_LINES {
                 found.push(problem(
                     QUESTS,
-                    format!("\"{who}\" says {run} lines in a row across \"{before}\" and \"{after}\""),
+                    format!(
+                        "quest \"{}\": \"{who}\" says {run} lines in a row across \"{before}\" and \"{after}\"",
+                        named(quest.get("id"))
+                    ),
                 ));
             }
         }
@@ -357,16 +360,31 @@ mod tests {
 
     #[test]
     fn one_speaker_saying_more_than_two_lines_across_a_quests_seam_is_refused() {
-        let story = r#"{"scenes": {"one": [{"who": "mate", "say": "Go."}],
-            "two": [{"who": "mate", "say": "Up."}, {"who": "mate", "say": "Now."}]}}"#;
-        let quests = r#"{"quests": [{"begin": "one", "tasks": [{"start": "one", "end": "two"}, {"start": "one"}]}]}"#;
+        let cast = format!(
+            r#"{{"speakers": {{"mate": {{"name": "Mate", "voice": "low"}}, "bosun": {{"name": "Bosun", "voice": "low"}}}},
+            "voices": {{"low": {VOICE}}}}}"#
+        );
+        let story = r#"{"scenes": {"one": [{"who": "mate", "say": "Go."}], "hand": [{"who": "bosun", "say": "Aye."}],
+            "two": [{"who": "mate", "say": "Up."}, {"who": "mate", "say": "Now."}],
+            "three": [{"who": "mate", "say": "Up."}, {"who": "mate", "say": "Now."}, {"who": "mate", "say": "Go."}]}}"#;
+        let quests = r#"{"quests": [{"id": "deck", "begin": "two", "tasks": [{"start": "one", "end": "two"},
+            {"start": "hand", "end": "two"}, {"start": "one"}]}, {"id": "hold", "begin": "one", "tasks": [{"start": "one", "end": "three"}, {"start": "hand"}]}]}"#;
         let files = vec![
-            (CAST.to_owned(), cast_text()),
+            (CAST.to_owned(), cast),
             ("content/story/one.json".to_owned(), story.to_owned()),
             (QUESTS.to_owned(), quests.to_owned()),
         ];
         let found: Vec<String> = check(&files).into_iter().map(|found| found.message).collect();
-        assert_eq!(found, ["\"mate\" says 3 lines in a row across \"two\" and \"one\""], "the begin's seam holds two");
+        assert_eq!(
+            found,
+            [
+                "scene \"three\", line 3: \"mate\" says more than 2 lines in a row",
+                "quest \"deck\": \"mate\" says 3 lines in a row across \"two\" and \"one\"",
+                "quest \"deck\": \"mate\" says 3 lines in a row across \"two\" and \"one\"",
+            ],
+            "the begin's seam and the third task's; another speaker's start, two lines across a seam, and a run told \
+             within its own scene are not told again",
+        );
     }
 
     #[test]

@@ -11,6 +11,15 @@ status: in force
 
 ## What it settles
 
-- **The dialogue check holds [[Dialogue]]'s two lines a turn across a quest's seams**: a quest's `begin` then its
-  first task's `start`, and each task's `end` then the next task's `start`, are heard in a row ([[Quests]]), so one
-  speaker says at most two lines across each, as within a scene.
+- **The dialogue check holds [[Dialogue]]'s two lines a turn across a quest's seams**: each task's `end` then the
+  next task's `start` are heard in a row ([[Quests]]), so one speaker says at most two lines across each, as within a
+  scene.
+
+## Claude's calls
+
+Each the owner's to change:
+
+- **A quest's `begin` then its first task's `start`** is held the same way, as those too are heard in a row.
+- **Each problem names its quest**, its speaker, how many lines they say in a row and the two scenes.
+- **Not held**: a goal's scene before its task's `end`, two tasks ended by one word from the room, and the welcome's
+  scenes, whose order is the page's (`welcome/tour.ts`). None says three in a row today.

@@ -19,11 +19,11 @@
     ],
     "tourTailor": [
       { "who": "stranger", "say": "The Tailor. Colours, emblems, and opinions you didn't ask for." },
-      { "who": "tailor", "say": "I heard that. Come back when you're ready to look like someone." }
+      { "who": "tailor", "say": "Opinions are free. Looking like someone is not." }
     ],
     "tourTack": [
       { "who": "stranger", "say": "The Tack has horses. Better than walking." },
-      { "who": "tack", "say": "There's always a Bay in my stable, love. The rest come and go." }
+      { "who": "tack", "say": "There's always a Bay in my stable, love. The rest don't stay long." }
     ],
     "tourPost": [
       { "who": "stranger", "say": "Anything you drop on the road tends to end up with the Postmaster." },

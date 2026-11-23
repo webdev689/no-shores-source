@@ -1,6 +1,6 @@
 {
   "resources": [
-    { "id": "brineglass", "name": "Brineglass", "continent": "continent-1", "words": "Green glass the storms leave on Saltmere's shingle. The good pieces stay warm." },
+    { "id": "brineglass", "name": "Brineglass", "continent": "continent-1", "words": "Salt grown clear as glass in Saltmere's tide pools." },
     { "id": "cairn_iron", "name": "Cairn Iron", "continent": "continent-2", "words": "Ore weathered out of the highland cairns round Cairnwatch." },
     { "id": "heartwood_resin", "name": "Heartwood Resin", "continent": "continent-3", "words": "Amber bled from the old trees of Elmhaven's woods." },
     { "id": "sunstone", "name": "Sunstone", "continent": "continent-4", "words": "Desert stone that holds the day's heat long after Sunspire's sunset." },

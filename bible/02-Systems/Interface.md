@@ -1234,7 +1234,7 @@ serves each ask only at its own counter ([[Gear]], "In the rooms"; [[Factions]])
   and he speaks only to thank. The footer: Click / E (Take).
 - **What they say.** As the screen opens the keeper greets the player in a line of their own, typed and voiced in
   the band as [[Speech]] types and voices the dialogue box's; after a ware bought they thank them, and after a
-  refusal for want of the price they say so ("Not yet, dear. Come back when you can. I will be here."). Each line is
+  refusal for want of the price they say so ("Not yet, dear. Come back when you can. I'll be here."). Each line is
   a scene of `content/story/keepers.json`, said in turn, held to [[Dialogue]]. Once typed whole, the line is read to a
   screen reader from a polite live copy, as every line of the dialogue box is; the currencies are read with their
   names.

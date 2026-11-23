@@ -18,9 +18,9 @@
     "calmCutOff": [{ "who": "mate", "say": "Patch her up. We raise Overlook by first light." }],
     "ram": [
       { "who": "lookout", "say": "Ship to starboard!", "kind": "bark", "emote": "alert" },
-      { "who": "lookout", "say": "She's huge. She isn't turning. She isn't turning!", "emote": "fear" },
+      { "who": "lookout", "say": "She's huge. She isn't turning!", "emote": "fear" },
       { "who": "mate", "say": "All hands, brace!", "kind": "bark", "emote": "fear" },
-      { "who": "bosun", "say": "Grab hold! Anything!", "kind": "bark", "emote": "fear" }
+      { "who": "bosun", "say": "Grab hold!", "kind": "bark", "emote": "fear" }
     ],
     "wreck": [
       { "who": "tithe", "say": "For the Tithe!", "kind": "bark", "emote": "anger" },
@@ -28,7 +28,7 @@
     ],
     "survivor": [{ "who": "tithe", "say": "That one's still breathing!", "kind": "bark", "emote": "alert" }],
     "wisp": [
-      { "who": "lookout", "say": "What in the deep is that?", "emote": "question" },
+      { "who": "lookout", "say": "What is that? It's coming aboard!", "emote": "question" },
       { "who": "bosun", "say": "Captain, don't touch it!", "emote": "fear" }
     ],
     "warCry": [{ "who": "thule", "say": "The Tithe is owed!", "kind": "bark", "emote": "anger" }],
@@ -44,7 +44,7 @@
       { "who": "voice", "say": "Wake." }
     ],
     "shore": [
-      { "who": "stranger", "say": "Easy. You're breathing. Keep doing that.", "emote": "alert" },
+      { "who": "stranger", "say": "Easy. You're breathing. Cough it up, all of it.", "emote": "alert" },
       { "who": "stranger", "say": "Can you stand? Take my hand. Slowly.", "emote": "question" }
     ],
     "standing": [{ "who": "stranger", "say": "There. Lean on me until your legs remember." }]

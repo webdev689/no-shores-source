@@ -79,7 +79,8 @@ The game's first story mission and the way into the game, as the owner set it
 Saltmere, a storm at sea aboard a brig, character creation at its helm, a fight at sea, a ram, a wreck fought through
 on foot to a boss who cannot be beaten, the deep, and waking on Saltmere's shore. Claude's calls are in
 [[The Prologue as Claude Shapes It]] and, for its rework and the welcome to Overlook,
-[[The Prologue, Horses and the Welcome to Overlook as Claude Builds Them]]; how it is drawn and heard is [[Cinema]] and [[Speech]].
+[[The Prologue, Horses and the Welcome to Overlook as Claude Builds Them]]; how it is drawn and heard is [[Cinema]] and [[Speech]];
+how its lines are written, [[Every Line Reads as Spoken, and the Lore Is Detailed, Mysterious and Gripping]].
 
 ## How it works
 
@@ -498,7 +499,7 @@ the cutscenes, the camera's moves, the nameplate, the fires and the lines are th
     stands (`wispCourse`): it drifts in (2.6 s) from 32 m out over the sea, of the bearings round the quiet deck's
     middle with nothing of the wreck within 3 m the one most nearly ahead of the player and to their left; wanders the
     quiet deck (4.8 s) round its mast (the layout's `masts`: the Brig's mainmast, snapped to a stump in the fallen
-    waist), 2.4 m out and 3.2 to 4.6 m over its deck, then toward the player, the Lookout ("What in the deep is that?") and the
+    waist), 2.4 m out and 3.2 to 4.6 m over its deck, then toward the player, the Lookout ("What is that? It's coming aboard!") and the
     Bosun ("Captain, don't touch it!") crying out; then circles them in rings tightening from 2.6 m to under half a metre,
     faster and brighter (3.4 s), coming down as they tighten from where the wander left it to the chest (1.15 m) by
     the end of the first ring, and swaying 0.08 m there to the engulfing. Every point of it is lifted 0.35 m clear of

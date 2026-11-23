@@ -155,7 +155,7 @@ stall serves; the stranger is heard in a social space alone, never at the stall.
   gives its house's book a chapter a task, the last as the road ends ([[Each House's Lore Book Tells Its Art's Origin]]).
 - **The lines** are the speech system's ([[Speech]]): a quest's `begin` as it is first walked, a task's `end` as it is
   done and the next task's `start` as it begins, a `talk` goal's `scene` as the keeper is spoken with. A page that loads
-  mid-road says nothing it has said before.
+  mid-road says nothing it has said before. How they are written: [[Every Line Reads as Spoken, and the Lore Is Detailed, Mysterious and Gripping]].
 - **Speaking with a keeper**: within reach of a counter that a `talk` goal of the task names, the offer reads "Speak
   with" and the keeper's name; pressed, it asks 64 and the lines are said. Otherwise the counter opens as before.
 - **Marks**: `quest_at` stands a mark at its place, and the held map at sea rings the nodes the task's goals name (the land's map, raised on foot, draws no places). Both give way while the map is up.

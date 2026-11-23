@@ -49,7 +49,7 @@
 
     "stormcallerHello1": [{ "who": "stormcaller", "say": "Quick now, what do you need? The weather's turning." }],
     "stormcallerHello2": [{ "who": "stormcaller", "say": "You look like someone who hates standing still. Good." }],
-    "stormcallerHello3": [{ "who": "stormcaller", "say": "Make it quick. The clouds are building." }],
+    "stormcallerHello3": [{ "who": "stormcaller", "say": "Every caller climbs the Beacon once. Have you?" }],
     "stormcallerHello4": [{ "who": "stormcaller", "say": "Smell that? Rain by nightfall. Talk fast." }],
     "stormcallerThanks1": [{ "who": "stormcaller", "say": "Done. Go, before the wind changes." }],
     "stormcallerThanks2": [{ "who": "stormcaller", "say": "Good. Now run." }],
@@ -59,7 +59,7 @@
     "marenHello2": [{ "who": "maren", "say": "Three ports still stand. We keep our lamps lit all the same." }],
     "marenHello3": [{ "who": "maren", "say": "Overlook remembers things its own way. I remember them slowly." }],
     "marenHello4": [{ "who": "maren", "say": "Ask three people who built the Beacon, and you'll hear four names." }],
-    "marenThanks1": [{ "who": "maren", "say": "There. May it light your way home." }],
+    "marenThanks1": [{ "who": "maren", "say": "There. Keep it close on dark nights." }],
     "marenThanks2": [{ "who": "maren", "say": "Look after it, and it will outlast us both." }],
     "marenShort1": [{ "who": "maren", "say": "Not yet, dear. Come back when you can. I'll be here." }],
 
@@ -74,7 +74,7 @@
     "shapeHello1": [{ "who": "shape", "say": "You came. The sea said you would." }],
     "shapeHello2": [{ "who": "shape", "say": "Shapes. Only Shapes." }],
     "shapeHello3": [{ "who": "shape", "say": "I was here before. You do not remember. No one does." }],
-    "shapeHello4": [{ "who": "shape", "say": "Same as last time. You do not remember last time." }],
+    "shapeHello4": [{ "who": "shape", "say": "I am only here a little while. Choose." }],
     "shapeThanks1": [{ "who": "shape", "say": "It was always yours." }],
     "shapeThanks2": [{ "who": "shape", "say": "Carry it carefully." }],
     "shapeShort1": [{ "who": "shape", "say": "Not enough Shapes. Not yet." }],

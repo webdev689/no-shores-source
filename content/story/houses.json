@@ -5,7 +5,7 @@
       { "who": "weaponsmith", "say": "Come and see me first. Then meet the rest of them." }
     ],
     "roundWeaponsmith": [
-      { "who": "weaponsmith", "say": "Swords, shields, bows. Plain steel's cheap here, and it'll keep you breathing." },
+      { "who": "weaponsmith", "say": "Swords, shields, bows. Buy plain, and it'll keep you breathing." },
       { "who": "weaponsmith", "say": "The finer pieces change with the day. Come back and look often." }
     ],
     "roundArmorsmith": [
@@ -36,7 +36,7 @@
       { "who": "harbourmaster", "say": "Keep her sound, and she'll bring you home." }
     ],
     "houseBegin": [
-      { "who": "stormcaller", "say": "Hear all three houses before you choose. Start with the loudest. Me." }
+      { "who": "stormcaller", "say": "You'll hear all three of us. Start with the loudest. Me." }
     ],
     "houseStorm": [
       { "who": "stormcaller", "say": "Arlo Kestrel. We keep the Storm, and the Storm keeps nobody waiting." },
@@ -116,7 +116,7 @@
       { "who": "stormcaller", "say": "The rods are cold. Corvane has nothing left to count." }
     ],
     "stormMaw": [
-      { "who": "stormcaller", "say": "Corvane waits in the Maw of the Shallows. If the sky reddens, come up." }
+      { "who": "stormcaller", "say": "The High Assessor waits in the Maw of the Shallows. End his counting." }
     ],
     "stormFalls": [
       { "who": "corvane", "say": "Everything is owed. Even the storm. Even me." }
@@ -126,7 +126,7 @@
     ],
     "stormHome": [
       { "who": "stormcaller", "say": "The racks are full again. Pell's mending them himself, and won't take help." },
-      { "who": "stormcaller", "say": "You climbed before you walked. That's what makes a Stormcaller." },
+      { "who": "stormcaller", "say": "You climbed before you walked. That's a Stormcaller." },
       { "who": "pell", "say": "Thank you. I won't sell the sky again. Not for anything." }
     ],
     "lampBegin": [
@@ -205,7 +205,7 @@
       { "who": "maren", "say": "Tobin watched it light from Ewe Fold. You light the way now." }
     ],
     "veilBegin": [
-      { "who": "veiled", "say": "The Tithe wrote your name in their book before you washed ashore." },
+      { "who": "veiled", "say": "Your name was in the Tithe's book before you washed ashore." },
       { "who": "veiled", "say": "I want that page. Their collectors carry tallies through Saltgrass. Follow one." }
     ],
     "veilTail": [
@@ -251,7 +251,7 @@
       { "who": "wren", "say": "You're the one Thule couldn't drown. Keep up, and keep quiet." }
     ],
     "veilOrchard": [
-      { "who": "wren", "say": "Collectors work this orchard. Head down. We're only walking." }
+      { "who": "wren", "say": "Collectors work this orchard. Head down, and carry something." }
     ],
     "veilHalf": [
       { "who": "wren", "say": "His ledger says half your debt's already paid. By someone in Overlook." },
@@ -280,7 +280,7 @@
     "veilHome": [
       { "who": "veiled", "say": "I burned your page unread. The Tithe will have to remember you unwritten." },
       { "who": "veiled", "say": "Who paid half? That question keeps." },
-      { "who": "wren", "say": "We never say welcome. You will know it anyway." }
+      { "who": "wren", "say": "We never say welcome. You'll know it anyway." }
     ]
   }
 }
