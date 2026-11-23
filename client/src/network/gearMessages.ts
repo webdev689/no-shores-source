@@ -77,7 +77,8 @@ export const ASKS = {
    *  fragment's place in `node`. */
   riseArt: 53,
   buyFragment: 54,
-  /** A dye, coat or barding worn, or bought from the Tailor or the Tack, by its number in `item`. */
+  /** A dye or barding worn, or one bought from the Tailor or the Tack (a coat's number buys its horse), by its number
+   *  in `item`. */
   wearCosmetic: 55,
   buyCosmetic: 56,
   /** One of Shape's wares of the week, by its place in `node`. */
@@ -160,6 +161,8 @@ export interface GearItem {
   readonly element: number;
   /** The content it came from, which its look follows (`SOURCES`). */
   readonly source: number;
+  /** One of the prologue's own items, which its end takes back; none said is none. */
+  readonly story?: boolean;
 }
 
 export interface GearVestige {
@@ -253,8 +256,9 @@ export interface GearState extends LoreState {
   readonly ship?: GearShip | null;
   /** Where they stand with the factions (content/gear/factions.json's order). */
   readonly standing?: GearStanding;
-  /** The cosmetics they keep and the dye, coat and barding they wear, by their place in content/gear/cosmetics.json;
-   *  and in a social space, those the Tailor and the Tack sell today. */
+  /** The cosmetics they keep, the dye and barding they wear and the coat of the horse they ride (0, no coat, with none
+   *  worn), by their place in content/gear/cosmetics.json; and in a social space, those the Tailor and the Tack sell
+   *  today. */
   readonly cosmetics?: readonly number[];
   readonly worn?: { readonly dye: number; readonly coat: number; readonly barding: number };
   readonly cosmeticsSold?: readonly number[];
@@ -359,6 +363,7 @@ function itemOf(item: GearItemTable): GearItem {
     price: item.price(),
     element: item.element(),
     source: item.source(),
+    story: item.story(),
   };
 }
 

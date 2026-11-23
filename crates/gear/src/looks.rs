@@ -138,17 +138,22 @@ fn nearest_to<'a>(ladder: &[&'a str], look: &str) -> Vec<&'a str> {
     nearest(ladder, ladder.iter().position(|each| *each == look).unwrap_or(0))
 }
 
-/// The sets an armour piece worn in `slot` may be drawn in: its faction's, the look written on it, or its content's
-/// by its rarity (none for a Normal piece's clothes); and for each the forge does not draw on `body`, the one the page
-/// falls to.
+/// The set the prologue's own armour is drawn in, Normal though it is (`gearLooks.ts` `STORY_SET`).
+const STORY_SET: &str = "steel";
+
+/// The sets an armour piece worn in `slot` may be drawn in: the story's steel, its faction's, the look written on it,
+/// or its content's by its rarity (none for any other Normal piece's clothes); and for each the forge does not draw on
+/// `body`, the one the page falls to.
 fn armour_sets(item: &Item, slot: Slot, body: Option<&'static Drawn>) -> Vec<&'static str> {
-    if pieces(slot).is_empty() || item.rarity == Rarity::Normal {
+    if pieces(slot).is_empty() || (item.rarity == Rarity::Normal && !item.story) {
         return Vec::new();
     }
     let own: Vec<&'static str> = content(item.source).armour.iter().map(String::as_str).collect();
     let world = item.source == Source::World;
     let faction = faction(item);
-    let looks: Vec<&'static str> = if let Some(faction) = faction {
+    let looks: Vec<&'static str> = if item.story {
+        vec![STORY_SET]
+    } else if let Some(faction) = faction {
         vec![&faction.gear.armour]
     } else if let Some(look) = named(item).and_then(|named| named.look.as_deref()) {
         vec![look]

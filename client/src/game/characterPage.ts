@@ -1,12 +1,13 @@
 // The character page, after Destiny's: the player's own figure in the middle under their level and its meter, their
 // power beneath it; the worn Art's diamond, the Melee and Ranged loadouts (the Ranged with its shots left), the cloak
-// and the Appearance button in rows to its left, level with the armour's rows to its right, each slot its item's own
-// picture in a frame of its rarity. Hovering or focusing a slot shows its item's card; a click opens its flyout of the
-// nine it carries, toward the figure, each worn by a click and dismantled by holding F; a right press (or X) on any
-// opens the item's page.
+// and the Appearance button in rows to its left, level with the Mount (a horse's head while none is worn) and the
+// armour's rows to its right, each slot its item's own picture in a frame of its rarity. Hovering or focusing a slot shows its
+// item's card; a click opens its flyout of the nine it carries, toward the figure, each worn by a click and dismantled
+// by holding F (never a horse), the Mount's with the bardings beneath; a right press (or X) on any opens the item's
+// page.
 
 import { ASKS, type GearItem, type GearState } from '../network/gearMessages.ts';
-import { ELEMENTS, RANGED_SLOT, RARITIES, SLOTS, capital, itemName } from '../player/gear.ts';
+import { ELEMENTS, HORSE, MOUNT_SLOT, RANGED_SLOT, RARITIES, itemName, slotName } from '../player/gear.ts';
 import { LARGE_CAP } from '../player/iconFit.ts';
 import type { Child, Node } from '../ui/node.ts';
 import { rarityNumber } from './appearance/appearanceModel.ts';
@@ -38,6 +39,7 @@ import {
 } from './gearNodes.ts';
 import { characterOf } from './gearScreen.ts';
 import type { MenuContext } from './menuPage.ts';
+import { bardingRow } from './mountSlot.ts';
 
 /** The slots each side of the figure, by the gear's slot numbers. */
 const WEAPONS = [0, 1, 6];
@@ -63,6 +65,8 @@ const CELL_HINTS: readonly Hint[] = [
   ['Right-click / details', 'Details'],
   [DISMANTLE_KEY, 'Hold to dismantle'],
 ];
+/** A horse is never dismantled. */
+const HORSE_HINTS = CELL_HINTS.slice(0, 2);
 
 /** The ammunition left in the Ranged loadout worn, of its capacity, or none; null with none worn. */
 export function ammoLine(gear: GearState): { readonly words: string; readonly none: boolean } | null {
@@ -110,14 +114,17 @@ function cellNode(context: MenuContext, item: GearItem | null, worn: GearItem | 
   if (!item) return tileNode(CELL_TILE, null, 'rest', [glyphNode('empty', 24)], { faded: 0.55 });
   const id = `item-${item.id}`;
   const rgb = rarityRgb(item.rarity);
-  const charged = holds.dismantle(ui, id, item.rarity, rgb, () => context.ask({ kind: ASKS.dismantle, item: item.id }));
+  const horse = item.kind === HORSE;
+  const dismantle = () => context.ask({ kind: ASKS.dismantle, item: item.id });
+  const charged = horse ? 0 : holds.dismantle(ui, id, item.rarity, rgb, dismantle);
   if (ui.clicked(id)) {
     const wear = wearIn(item);
     if (wear) context.ask(wear.ask);
   }
   if (ui.rightClicked(id)) context.inspect(item);
   context.details(id, item);
-  context.card(id, () => cardNode(cardOf(item, worn), context.picture(item), CELL_HINTS, sizes), 'flyout');
+  const hints = horse ? HORSE_HINTS : CELL_HINTS;
+  context.card(id, () => cardNode(cardOf(item, worn), context.picture(item), hints, sizes), 'flyout');
   const icon = itemIconNode(context.picture(item), itemName(item), CELL_PX, sizes, item.rarity);
   const { marks, gilded } = itemMarks(item);
   const shaken = quiver(charged);
@@ -140,7 +147,7 @@ function cellNode(context: MenuContext, item: GearItem | null, worn: GearItem | 
 function flyoutNode(context: MenuContext, slot: number, end: boolean, low: boolean): Node {
   const { worn, cells } = flyoutOf(context.gear, slot);
   const filled = cells.filter(Boolean).length;
-  const name = capital(SLOTS[slot] ?? '');
+  const name = slotName(slot);
   return {
     id: 'flyout',
     role: 'panel',
@@ -155,17 +162,25 @@ function flyoutNode(context: MenuContext, slot: number, end: boolean, low: boole
       x: end ? 10 : -10,
       y: low ? 8 : -8,
       z: 26,
+      kept: true,
     },
     children: [
       label(`${name} · ${filled} of ${cells.length} carried`, context.sizes.label),
       filled === 0 && words('Nothing carried for this slot yet.', 1, INK.faint),
       {
-        direction: 'column',
-        gap: 6,
-        children: [0, 1, 2].map((row) => ({
-          gap: 6,
-          children: cells.slice(row * 3, row * 3 + 3).map((item) => cellNode(context, item, worn)),
-        })),
+        // The Mount's bardings stand beside its horses, so its flyout is no taller than a gear slot's.
+        gap: 16,
+        children: [
+          {
+            direction: 'column',
+            gap: 6,
+            children: [0, 1, 2].map((row) => ({
+              gap: 6,
+              children: cells.slice(row * 3, row * 3 + 3).map((item) => cellNode(context, item, worn)),
+            })),
+          },
+          slot === MOUNT_SLOT && bardingRow(context, CELL_TILE),
+        ],
       },
     ],
   };
@@ -203,7 +218,7 @@ function slotNode(
   const { ui, sizes, gear } = context;
   const { worn } = flyoutOf(gear, slot);
   const id = `slot-${slot}`;
-  const name = capital(SLOTS[slot] ?? '');
+  const name = slotName(slot);
   const size = sizes.short ? SLOT_TILE_SHORT : SLOT_TILE;
   if (ui.clicked(id)) choose(open === slot ? null : slot);
   else if (open === slot && closedOffHover(context, slot)) choose(null);
@@ -219,7 +234,11 @@ function slotNode(
     size,
     worn?.rarity ?? null,
     open === slot ? 'open' : litOf(context, id) ? 'lit' : 'rest',
-    [worn ? itemIconNode(context.picture(worn), itemName(worn), SLOT_PX, sizes, worn.rarity) : glyphNode('empty')],
+    [
+      worn
+        ? itemIconNode(context.picture(worn), itemName(worn), SLOT_PX, sizes, worn.rarity)
+        : glyphNode(slot === MOUNT_SLOT ? 'horse' : 'empty'),
+    ],
     {
       id,
       press: true,
@@ -260,6 +279,8 @@ export const NO_ART_WORDS = 'Pledge to a house; its road gives its Art.';
 function noArtNode(context: MenuContext, open: () => void): Node {
   const { ui, sizes } = context;
   const first = ARTS[0];
+  // In the story (its own items held) the Art comes as it tells, so the houses are not named.
+  const told = context.gear.items.some((item) => item.story) ? '' : NO_ART_WORDS;
   if (ui.clicked(ART_DIAMOND_KEY)) open();
   context.card(ART_DIAMOND_KEY, () =>
     cardNode(
@@ -271,7 +292,7 @@ function noArtNode(context: MenuContext, open: () => void): Node {
         rows: [],
         element: 0,
         traits: [],
-        words: NO_ART_WORDS,
+        words: told,
         compare: null,
       },
       null,
@@ -283,7 +304,7 @@ function noArtNode(context: MenuContext, open: () => void): Node {
   const diamond: Node = {
     id: ART_DIAMOND_KEY,
     press: true,
-    label: `Art: none. ${NO_ART_WORDS}`,
+    label: told ? `Art: none. ${told}` : 'Art: none.',
     width: 96,
     height: 96,
     alignX: 'center',
@@ -297,7 +318,7 @@ function noArtNode(context: MenuContext, open: () => void): Node {
   return holder(
     'art-holder',
     diamond,
-    slotWords(context, 'Art', 'None', INK.faint, words(NO_ART_WORDS, sizes.label, INK.faint, { wrap: true }), true),
+    slotWords(context, 'Art', 'None', INK.faint, !!told && words(told, sizes.label, INK.faint, { wrap: true }), true),
     true,
   );
 }
@@ -351,12 +372,12 @@ function appearanceNode(context: MenuContext): Node {
     cardFrame(
       sizes,
       rarityTone(0),
-      [cardName('Appearance', 0), words('Emblem, Dye, Coat, Barding', sizes.label, INK.word)],
+      [cardName('Appearance', 0), words('Emblem, Dye', sizes.label, INK.word)],
       [
         {
           width: 'grow',
           text: {
-            words: "Your emblem, the dye on your armour, and your horse's coat and barding.",
+            words: 'Your emblem and the dye on your armour. Your horse and its barding are worn in the Mount slot.',
             size: sizes.label,
             colour: INK.faint,
           },
@@ -536,8 +557,8 @@ export function characterPage(context: MenuContext, open: number | null, choose:
     direction: 'column',
     gap,
     children: [
-      // Room beside the Art, so the two headings stand on one line and each armour row level with a weapon's.
-      { height: artRow },
+      // The Mount beside the Art, so the two headings stand on one line and each armour row level with a weapon's.
+      { height: artRow, alignY: 'center', children: [slotNode(context, MOUNT_SLOT, open, choose, false, false)] },
       heading('Armour', sizes.label, false, below),
       ...ARMOUR.map((slot, place) => slotNode(context, slot, open, choose, false, place >= ARMOUR.length - 2)),
     ],

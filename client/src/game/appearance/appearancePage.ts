@@ -1,7 +1,7 @@
-// The Appearance screen, after Destiny's: the display at the left (the player's figure turning in the dye worn, and
-// their horse in its coat and barding), and at the right rows under engraved headings: EMBLEM five a row, then DYE,
-// COAT and BARDING, every piece of each, those kept lit and worn with a click, the rest dim, the one worn set in
-// brass. Hovering a piece, or reaching it with the keys, shows its card and previews it on the display. The arrows move
+// The Appearance screen, after Destiny's: the display at the left (the player's figure turning in the dye worn, no
+// horse: a horse and its barding are the Mount slot's), and at the right rows under engraved headings: EMBLEM five a
+// row, then DYE, every piece of each, those kept lit and worn with a click, the rest dim, the one worn set in
+// brass. A piece's tile is the Mount slot's barding tiles' too (`tileOf`). Hovering a piece, or reaching it with the keys, shows its card and previews it on the display. The arrows move
 // between the pieces, Enter wears one, Escape goes back to the Character page with the focus on its button.
 
 import { cosmeticRamp } from '../../forge/cosmetics.ts';
@@ -14,7 +14,7 @@ import { cardNode } from '../gearCard.ts';
 import { type Hint, INK, emblemNode, focusRing, label, svgNode, tileLabel, tileNode, words } from '../gearNodes.ts';
 import type { MenuContext } from '../menuPage.ts';
 import { displayNode } from './appearanceDisplay.ts';
-import { coatSvg, dyeSvg } from './appearanceMarks.ts';
+import { dyeSvg } from './appearanceMarks.ts';
 import { type AppearanceTile, appearanceRows, previewDress, previewedTile } from './appearanceModel.ts';
 import { bardingPicture } from './bardingTile.ts';
 import { GAME_PALETTE } from './gamePalette.ts';
@@ -26,7 +26,7 @@ export const APPEARANCE_HINTS: readonly Hint[] = [
   ['Enter', 'Wear'],
   ['Esc', 'Back'],
 ];
-/** A tile's picture, in pixels: a whole multiple of every mark's (emblem signs 24, dyes 16, coats 12, the horse 1). */
+/** A tile's picture, in pixels: a whole multiple of every mark's (emblem signs 24, dyes 16, the horse 1). */
 const TILE_PX = 48;
 /** A tile, and on a short screen as small as its picture allows, so every row shows without scrolling. */
 const TILE = 64;
@@ -35,20 +35,17 @@ const TILE_SHORT = 52;
 const DISPLAY_WIDTH = 360;
 const DISPLAY_AROUND = 24;
 
-/** Each dye's and coat's picture, written once: the screen is drawn every frame. */
+/** Each dye's picture, written once: the screen is drawn every frame. */
 const swatches = new Map<string, string>();
 
-/** A tile's picture: an emblem's sign, a dye over a cuirass, a coat's swatch, or the horse in a barding. */
+/** A tile's picture: an emblem's sign, a dye over a cuirass, or the horse worn in a barding. */
 function markOf(context: MenuContext, tile: AppearanceTile): Node {
   const emblem = EMBLEMS[tile.number];
   if (tile.kind === 'emblem' && emblem) return emblemNode(emblem, 'sign', 24, TILE_PX, TILE_PX);
-  if (tile.kind === 'dye' || tile.kind === 'coat') {
+  if (tile.kind === 'dye') {
     const key = `${tile.kind} ${tile.id}`;
     let svg = swatches.get(key);
-    if (svg === undefined) {
-      const ramp = cosmeticRamp(tile.id, GAME_PALETTE);
-      swatches.set(key, (svg = tile.kind === 'dye' ? dyeSvg(ramp) : coatSvg(ramp)));
-    }
+    if (svg === undefined) swatches.set(key, (svg = dyeSvg(cosmeticRamp(tile.id, GAME_PALETTE))));
     return svgNode(key, svg, TILE_PX);
   }
   const picture = bardingPicture(context.forge, context.dress, tile.id);
@@ -89,7 +86,7 @@ const idOf = (tile: AppearanceTile): string => `${tile.kind}-${tile.id}`;
 
 /** A piece's tile: lit and worn with a click when kept, dim with how it is had when not, set in brass with a brass
  *  corner when worn, so it never reads as a rarity's frame (Rare's is yellow too). */
-function tileOf(context: MenuContext, tile: AppearanceTile, size: number): Node {
+export function tileOf(context: MenuContext, tile: AppearanceTile, size: number): Node {
   const { ui, sizes } = context;
   const id = idOf(tile);
   if (ui.clicked(id) && tile.kept && !tile.worn)

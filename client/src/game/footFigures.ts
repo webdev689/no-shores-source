@@ -14,7 +14,7 @@ import type { Dress } from '../player/dressing.ts';
 import type { GlowLook } from '../elementGlow.ts';
 import { heldElements } from '../player/gear.ts';
 import { gearOutfit, otherLoadout, spareOutfit } from '../player/gearLooks.ts';
-import { cardStand, frameAt, type Placed, viewOf } from '../player/figures.ts';
+import { CARD_NEAREST_M, cardStand, frameAt, type Placed, viewOf } from '../player/figures.ts';
 import type { Glides } from '../player/glide.ts';
 import type { OtherPlayers } from '../player/others.ts';
 import { shownBody } from '../player/player.ts';
@@ -130,13 +130,13 @@ export function figureWhere(
 /** The player's own figure as `walker` draws it from the eye at `eye`, off where it stands by the attack feel's
  *  `shift` and kept in `drawnAt` as drawn (its blow's arc follows it): flashing as it is struck, Veiled, Charged or
  *  Exposed as its fight says, smeared by its own swing, built as it `arrival` says, and leaning to face the eye as it
- *  falls. None while it is not drawn, through the player's own eyes. */
+ *  falls. None through the player's own eyes, unless a cutscene holds the camera. */
 export function ownCard(
   walker: Walker,
   fight: Fighting,
   flashes: Flashes,
   arrival: number | undefined,
-  [eyeX, eyeY]: readonly [number, number],
+  eye: FiguresEye,
   feel: {
     readonly shift: (id: number, view: FighterView | null) => Vector;
     readonly smear: (id: number) => Smear | null;
@@ -144,7 +144,7 @@ export function ownCard(
   },
 ): CardAt | null {
   const shift = feel.shift(fight.player, fight.own);
-  const own = walker.figure(eyeX, eyeY, flashes.flashOf(fight.player), shift);
+  const own = walker.figure(eye.x, eye.y, flashes.flashOf(fight.player), shift, eye.held);
   if (!own) return null;
   const body = shownBody(walker.player);
   const feet: Vector = [body.x + shift[0], body.y + shift[1], body.z + shift[2]];
@@ -155,6 +155,26 @@ export function ownCard(
   return { ...own, ...looks, facesEye: walker.fall !== null };
 }
 
+/** Where every figure is placed from this frame (x, y) and how near the eye one may stand: while a cutscene holds the
+ *  camera (`held`), from its eye, nothing kept off the lens; else from the player's own, where through their own eyes
+ *  no other figure stands so near that it fills the view. */
+export interface FiguresEye {
+  readonly x: number;
+  readonly y: number;
+  readonly nearest: number;
+  readonly held: boolean;
+}
+
+/** The eye figures are placed for: a cutscene's (`cutscene`, null for none), else the player's own shot's. */
+export function figuresEye(
+  cutscene: readonly [number, number, number] | null | undefined,
+  own: readonly [number, number, number],
+  firstPerson: boolean,
+): FiguresEye {
+  if (cutscene) return { x: cutscene[0], y: cutscene[1], nearest: 0, held: true };
+  return { x: own[0], y: own[1], nearest: firstPerson ? CARD_NEAREST_M : 0, held: false };
+}
+
 /** What the player's figure was last dressed in: their gear and the loadout drawn. */
 export interface Dressed {
   gear: GearState | null;
@@ -162,7 +182,7 @@ export interface Dressed {
 }
 
 /** Dresses the player's figure in their gear as their room last sent it, its hands the loadout drawn, once either
- *  changes from what it was `dressed` in, its weapons glowing in their element. */
+ *  changes from what it was `dressed` in, its weapons glowing in their element; and says whether a horse is worn. */
 export function dressInGear(walker: Walker, forge: Cards, gear: GearState | null, dressed: Dressed): void {
   const { loadout } = walker.player;
   if (!gear || (gear === dressed.gear && loadout === dressed.loadout)) return;
@@ -174,5 +194,6 @@ export function dressInGear(walker: Walker, forge: Cards, gear: GearState | null
     walker.spare = spareOutfit(gear, wardrobe, outfit, loadout);
   }
   walker.glow = heldElements(gear, loadout);
+  walker.ridesIn(gear);
   walker.spareGlow = heldElements(gear, otherLoadout(loadout))[0];
 }

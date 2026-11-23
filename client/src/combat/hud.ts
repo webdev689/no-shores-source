@@ -55,8 +55,10 @@ export interface HudFrame {
   readonly ammo?: number | null;
   /** The Ranged loadout's capacity, by which few shots left read as low; null unknown. */
   readonly ammoMost?: number | null;
-  /** Whether a press of the player's guard now could open a parry window (Fighting's parryOpen). */
+  /** Whether a press of the player's guard now could open a parry window (Fighting's parryOpen), and how many ticks
+   *  that window stays open, as the rules give it (Fighting's parryWindow); with none, no ring shows. */
   readonly parryOpen?: boolean;
+  readonly parryWindow?: number;
   /** The blocks of the place, which no plate over a figure is seen through. */
   readonly blocks?: readonly Block[];
   /** The land's height under a point (null where none is known), which no plate over a figure is seen through either;
@@ -284,7 +286,8 @@ export class Hud {
     // Its figure's card stands nearer the eye than its body, and in first person no nearer than CARD_NEAREST_M.
     const eye = cameraOf(frame.matrix)?.eye ?? null;
     return frame.foes.flatMap(({ view }): Hud['rings'] => {
-      const cue = parryCue(view, frame.player, frame.parryOpen ?? true);
+      if (frame.parryWindow === undefined) return [];
+      const cue = parryCue(view, frame.player, frame.parryWindow, frame.parryOpen ?? true);
       if (!cue) return [];
       const nearest = frame.firstPerson ? CARD_NEAREST_M : 0;
       const stand = eye ? cardStand(view.x, view.y, eye[0], eye[1], nearest) : view;

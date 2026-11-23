@@ -1,11 +1,42 @@
 {
   "scenes": {
+    "roundBegin": [
+      { "who": "weaponsmith", "say": "You, fresh off the shore. Every counter here has something for you." },
+      { "who": "weaponsmith", "say": "Start with mine." }
+    ],
+    "roundWeaponsmith": [
+      { "who": "weaponsmith", "say": "Blades, shields and bows. A plain one always costs little here." },
+      { "who": "weaponsmith", "say": "Better pieces come and go with the day." }
+    ],
+    "roundArmorsmith": [
+      { "who": "armorsmith", "say": "Head, body, arms and legs. I fit all four." },
+      { "who": "armorsmith", "say": "Start plain. Plain is what you can afford." }
+    ],
+    "roundMage": [
+      { "who": "mage", "say": "Bring me Vestiges from the sea. I open them and say what they hold." }
+    ],
+    "roundVault": [
+      { "who": "vaultkeeper", "say": "What you leave with me stays here until you come back for it." }
+    ],
+    "roundTailor": [
+      { "who": "tailor", "say": "Dyes for your cloth and emblems for your back. Wear your colours well." }
+    ],
+    "roundTack": [
+      { "who": "tack", "say": "Horses, and barding to dress them in. A good mount spares your legs." }
+    ],
+    "roundMail": [
+      { "who": "postmaster", "say": "Letters for you wait here until you take them." }
+    ],
+    "roundHarbour": [
+      { "who": "harbourmaster", "say": "The Shipwright's modules are sold here, to fit out your ship." },
+      { "who": "harbourmaster", "say": "Keep your ship sound and it brings you home." }
+    ],
     "houseBegin": [
       { "who": "stormcaller", "say": "Hear all three houses before you choose. Start with the loudest." }
     ],
     "houseStorm": [
       { "who": "stormcaller", "say": "Arlo Kestrel. We keep the Storm, and the Storm keeps nobody waiting." },
-      { "who": "stormcaller", "say": "Pledge here and you climb before you walk. Lightning likes the heights." }
+      { "who": "stormcaller", "say": "You have met one of its hounds, I think. Pledge here and climb." }
     ],
     "houseLamp": [
       { "who": "maren", "say": "We mend what the sea breaks, and we keep the lamps lit." },

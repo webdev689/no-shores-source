@@ -273,6 +273,7 @@ fn an_account_s_arts_are_kept_while_it_is_away_and_given_back_as_it_rejoins() {
 #[test]
 fn a_cast_is_refused_while_mounted() {
     let (mut room, player) = room_with_player();
+    crate::gear_tests::horsed(&mut room, player);
     let controls = movement::Controls { mounted: true, ..movement::Controls::default() };
     let intent = combat::Intent { controls, combat: combat::CombatInput::default() };
     let cast = Some(Cast { spell: QUICKEN, aim: None });

@@ -5,11 +5,143 @@
       "id": "house",
       "name": "A House of Your Own",
       "faction": 0,
-      "begin": "houseBegin",
+      "begin": "roundBegin",
+      "kept": "hear-three-houses",
       "tasks": [
+        {
+          "id": "hear-the-stranger",
+          "task": "Hear the stranger out",
+          "goals": [
+            {
+              "kind": "talk",
+              "to": "stranger",
+              "text": "The stranger who found you"
+            }
+          ],
+          "reward": {
+            "aurem": 400
+          }
+        },
+        {
+          "id": "find-your-way",
+          "task": "Find your way round Overlook",
+          "goals": [
+            {
+              "kind": "talk",
+              "to": "weaponsmith",
+              "scene": "roundWeaponsmith",
+              "text": "The Weaponsmith"
+            },
+            {
+              "kind": "talk",
+              "to": "armorsmith",
+              "scene": "roundArmorsmith",
+              "text": "The Armorsmith"
+            },
+            {
+              "kind": "talk",
+              "to": "mage",
+              "scene": "roundMage",
+              "text": "The Mage"
+            },
+            {
+              "kind": "talk",
+              "to": "vault",
+              "scene": "roundVault",
+              "text": "The Vault Keeper"
+            },
+            {
+              "kind": "talk",
+              "to": "tailor",
+              "scene": "roundTailor",
+              "text": "The Tailor"
+            },
+            {
+              "kind": "talk",
+              "to": "tack",
+              "scene": "roundTack",
+              "text": "The Tack"
+            },
+            {
+              "kind": "talk",
+              "to": "mail",
+              "scene": "roundMail",
+              "text": "The Postmaster"
+            },
+            {
+              "kind": "talk",
+              "to": "harbourmaster",
+              "scene": "roundHarbour",
+              "text": "The Harbourmaster, for the Shipwright"
+            }
+          ]
+        },
+        {
+          "id": "arm-yourself",
+          "task": "Arm yourself",
+          "goals": [
+            {
+              "kind": "buy",
+              "slot": "melee",
+              "text": "A Melee weapon from the Weaponsmith"
+            },
+            {
+              "kind": "buy",
+              "slot": "head",
+              "text": "Head armour from the Armorsmith"
+            },
+            {
+              "kind": "buy",
+              "slot": "torso",
+              "text": "Torso armour from the Armorsmith"
+            },
+            {
+              "kind": "buy",
+              "slot": "arms",
+              "text": "Arm armour from the Armorsmith"
+            },
+            {
+              "kind": "buy",
+              "slot": "legs",
+              "text": "Leg armour from the Armorsmith"
+            }
+          ]
+        },
+        {
+          "id": "wear-them",
+          "task": "Wear them",
+          "goals": [
+            {
+              "kind": "wear",
+              "slot": "melee",
+              "text": "Your Melee weapon"
+            },
+            {
+              "kind": "wear",
+              "slot": "head",
+              "text": "Your head armour"
+            },
+            {
+              "kind": "wear",
+              "slot": "torso",
+              "text": "Your torso armour"
+            },
+            {
+              "kind": "wear",
+              "slot": "arms",
+              "text": "Your arm armour"
+            },
+            {
+              "kind": "wear",
+              "slot": "legs",
+              "text": "Your leg armour"
+            }
+          ]
+        },
         {
           "id": "hear-three-houses",
           "task": "Hear the three houses",
+          "start": "houseBegin",
           "goals": [
             {
               "kind": "talk",

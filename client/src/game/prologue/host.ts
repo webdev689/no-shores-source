@@ -45,13 +45,17 @@ export class StoryHost {
     // A player back from Discord picks the story up at the helm, where they left it; the mark is read and cleared
     // here, and a story played through is never begun again from it.
     const back = backAtHelm(sessionStorage, prologuePlayed(localStorage)) ? 'creation' : null;
-    const from = (import.meta.env.DEV ? beatNamed(new URLSearchParams(location.search).get('prologue')) : null) ?? back;
+    // Under `npm run dev`, `?arrival=1` ends the story as the shore would, so the arrival in Overlook plays at once.
+    const asked = new URLSearchParams(location.search);
+    const arrival = import.meta.env.DEV && asked.get('arrival') === '1';
+    const from = (import.meta.env.DEV ? beatNamed(arrival ? 'shore' : asked.get('prologue')) : null) ?? back;
     game.roomModule
       .then((module) => startStory({ ...game, roster: rosterOf(module) }, from))
       .then(
         (started) => {
           // A headless check reads the story's state from the page.
           if (import.meta.env.DEV) Object.assign(window, { __prologue: started.prologue });
+          if (arrival) started.prologue.end = 'played';
           this.started(started);
         },
         (error: unknown) => {

@@ -18,3 +18,6 @@ status: in force
 - **The Art's screen shows the Arts' levels and what comes with them, in detail**
   ([[Three Factions Keep the Arts, After Destiny 1]], [[Arts Are Overlook's Subclasses]]).
 - How it looks is Claude's: [[Factions and Vendors as Claude Shapes Them]].
+
+Replaced in part by [[Horses Are Items Worn in a Mount Slot]]: the menu equips emblems and dyes; the horse is an
+item worn in the Mount slot, and the display draws no horse.

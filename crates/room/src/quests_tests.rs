@@ -127,7 +127,10 @@ fn a_keeper_is_spoken_with_within_reach_of_their_counter_and_nowhere_else() {
     let mut room = node_room("harbour-social", &[]);
     let counters = [(CounterKind::Faction(1), [10.0, 0.0]), (CounterKind::Mage, [20.0, 0.0])];
     room.counters = Some(counters.map(|(kind, at)| Counter { kind, at }).to_vec());
-    let player = joined(&mut room, &Character::starting(), [10.0, 1.0]);
+    let storm =
+        |_: &TaskDef, goal: &GoalDef| matches!(&goal.goal, Goal::Talk(talk) if Some(talk.to.as_str()) == keeper_key(1));
+    let ([quest, task, _], _) = goal_where(storm);
+    let player = joined(&mut room, &on_road(quest, task), [10.0, 1.0]);
     let opening = room.player(player).expect("in").character.quest_now().expect("the opening");
     let heard: Vec<u16> = quests().quests[opening.0].tasks[opening.1]
         .goals

@@ -83,6 +83,11 @@ fn a_deck_refuses_what_the_sea_keeps_of_its_ship_and_answers_the_rest() {
         room.answer(player, crate::Asked::Gear(ask));
         assert_eq!(room.player(player).map(|found| found.answer), Some(not_here), "{ask:?}");
     }
+    let cap = room.player(player).and_then(|found| found.character.items.keys().max().copied()).map_or(1, |id| id + 1);
+    if let Some(found) = room.players.get_mut(&player) {
+        let item = gear::Item::new(cap, gear::Kind::Head, gear::Rarity::Normal, 1, gear::Slot::Head);
+        found.character.items.insert(cap, (item, gear::At::Worn(gear::Slot::Head)));
+    }
     room.answer(player, crate::Asked::Gear(gear::Ask::TakeOff { slot: gear::Slot::Head }));
     assert_eq!(room.player(player).map(|found| found.answer), Some(0), "its own gear is its to change");
 }

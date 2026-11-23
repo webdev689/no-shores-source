@@ -390,8 +390,13 @@ fn a_social_space_shows_the_days_wares_and_sells_them_for_aurem_at_the_vendors_c
     let sent = gear(player);
     let message = messages::root_as_from_room(&sent).unwrap();
     let wares = message.gear().unwrap().wares().unwrap();
-    assert_eq!(wares.len(), 3 * gear::vendor::WARES, "the Armorsmith's, the Weaponsmith's and the Shipwright's");
+    let starter = gear::vendor::Vendor::ALL.map(|vendor| vendor.starter_kinds().len());
+    assert_eq!(starter, [4, 2, 0], "the Armorsmith's four pieces, the Weaponsmith's two");
+    assert_eq!(wares.len(), 3 * gear::vendor::WARES + 6, "the Armorsmith's, the Weaponsmith's and the Shipwright's");
     assert_eq!((wares.get(0).price(), wares.get(5).price()), (2_000, 600), "Rare, then Magic");
+    let head = wares.get(gear::vendor::WARES);
+    assert_eq!((head.id(), head.price(), head.rarity()), (6, 50, 0), "the starter stock after, numbered on, at 50");
+    assert_eq!(wares.get(gear::vendor::WARES + 4).id(), 0, "the Weaponsmith's numbered from none again");
     assert_eq!(message.gear().unwrap().day(), 20_400, "the day the wares are of, which a ware is asked by");
     // Too poor to buy: refused, and the wares stay.
     let ask = room::Asked::Gear(gear::Ask::Vend { vendor: gear::vendor::Vendor::Weaponsmith, ware: 4, day: 20_400 });

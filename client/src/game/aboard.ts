@@ -15,6 +15,7 @@ import { smooth01 } from '../overworld/overworldCamera.ts';
 import { type Shot, shotOfOrbit } from './camera.ts';
 import { Crew } from './crew.ts';
 import { type DeckRoom, DeckWalk } from './deckWalk.ts';
+import type { GearState } from '../network/gearMessages.ts';
 
 /** Seconds the view takes to come down aboard, or go back up. */
 const PAN_S = 1.4;
@@ -48,6 +49,8 @@ export interface AboardContext {
 export interface HelmRoom extends DeckRoom {
   leaveHelm(): void;
   takeHelm(): void;
+  /** The player's gear as the sea last sent it, null before its first word. */
+  readonly gearSent: GearState | null;
 }
 
 /** Manage or the walk, `at` how far down (0 the sea's view, 1 aboard), coming down or going back up. */
@@ -166,6 +169,8 @@ export class Aboard {
    *  taken. */
   step(seconds: number, clock: number, controls: InputFrame, paused: boolean, room: HelmRoom | null): void {
     this.crew.step(seconds);
+    // The horse worn is read from the gear wherever it arrives, at sea as ashore.
+    if (room?.gearSent) this.context.walker.ridesIn(room.gearSent);
     if (!this.view) return;
     const down = Math.min(1, Math.max(0, this.view.at + (this.view.going === 'down' ? seconds : -seconds) / PAN_S));
     this.view = { ...this.view, at: down };
