@@ -94,3 +94,18 @@ fn a_run_opened_before_the_day_turns_pays_no_daily_after_it_but_still_counts_tow
     assert_eq!(paid.playlist_clears(2_968, Playlist::Abyss), 1, "the same week");
     assert!(paid.vestiges.is_empty());
 }
+
+#[test]
+fn a_run_opened_before_the_week_turns_counts_toward_neither_week_after_it() {
+    let turns = FRIDAY_NINE + gear::clock::minutes_to_next_week(FRIDAY_NINE);
+    let of = RunOf::Playlist { place: "coral-halls".into(), foes_at: 23 };
+    let mut room = Room::dungeon_run(&of, Difficulty::Abyss, turns - 1).expect("opened in the week's last minute");
+    let player = kept_in(&mut room, &at_level(20), "one").expect("in its band");
+    room.set_minute(turns);
+    room.pay_clear(player, 23);
+    let paid = &room.players[&player].character;
+    let (last, this) = (gear::clock::week_of(turns - 1), gear::clock::week_of(turns));
+    assert_eq!(this, last + 1);
+    assert_eq!(paid.playlist_clears(this, Playlist::Abyss), 0, "not toward the new week's weekly");
+    assert_eq!(paid.playlist_clears(last, Playlist::Abyss), 0, "nor the old one's, which is gone");
+}
