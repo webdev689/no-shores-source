@@ -188,3 +188,27 @@ fn starter_gear_bought_during_the_round_counts_once_its_task_is_reached() {
     assert_eq!(task, Some("wear-them"), "the pieces already owned arm the player: nothing more to buy");
     assert_eq!(character.materials.aurem, 400 - 5 * 50);
 }
+
+#[test]
+fn pieces_never_bought_from_a_smith_do_not_arm_the_player() {
+    let mut character = welcomed();
+    for key in ["weaponsmith", "armorsmith", "mage", "vault", "tailor", "tack", "mail", "harbourmaster"] {
+        assert!(character.ask(Ask::Speak { keeper: keeper(key) }, SOCIAL, &DICE).is_ok(), "{key}");
+    }
+    // Five Magic pieces looted, one for each slot the task asks.
+    for (kind, slot) in [(Kind::Sword, Slot::Melee), (Kind::Head, Slot::Head), (Kind::Torso, Slot::Torso)]
+        .into_iter()
+        .chain([(Kind::Arms, Slot::Arms), (Kind::Legs, Slot::Legs)])
+    {
+        let id = character.take_id();
+        character
+            .items
+            .insert(id, (crate::item::Item::new(id, kind, Rarity::Magic, 1, slot), crate::character::At::Carried));
+    }
+    // An ask answered, after which the quest hears what is held: one of the looted pieces put on.
+    let looted = character.items.values().find(|(item, _)| item.kind == Kind::Head).map(|(item, _)| item.id);
+    assert!(character.ask(Ask::Wear { item: looted.expect("looted"), slot: Slot::Head }, SOCIAL, &DICE).is_ok());
+    let task = character.quest_now().map(|(quest, task)| quests().quests[quest].tasks[task].id.as_str());
+    assert_eq!(task, Some("arm-yourself"), "nothing was bought");
+    assert_eq!(character.quest_counts(), vec![0; 5]);
+}

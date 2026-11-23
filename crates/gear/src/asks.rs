@@ -366,8 +366,8 @@ impl Character {
     }
 
     /// Buys a vendor's ware of the day or of their starter stock, at the buyer's own level, carried with its slot's:
-    /// only in a social space, and only as shown today, since the wares at each place change as the day turns. The
-    /// quest walked hears of it by the ware's slot.
+    /// only in a social space, and only as shown today, since the wares at each place change as the day turns. A
+    /// smith's sale is kept by its slot for the quests (`tell_held`).
     fn vend(&mut self, vendor: Vendor, ware: u8, day: u32, here: Here) -> Result<Option<Done>, Refusal> {
         if !here.social {
             return Err(Refusal::NotHere);
@@ -389,7 +389,9 @@ impl Character {
         self.materials.aurem -= cost;
         let slot = item.kind.slot();
         self.items.insert(item.id, (item, At::Carried));
-        self.tell(&crate::quests::Event::Bought(slot));
+        if !vendor.for_ship() && !self.quests.bought.contains(&slot) {
+            self.quests.bought.push(slot);
+        }
         Ok(None)
     }
 

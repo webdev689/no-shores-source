@@ -107,6 +107,10 @@ pub struct Road {
 pub struct QuestLog {
     pub roads: BTreeMap<String, Road>,
     pub choices: Vec<u8>,
+    /// The slots a smith has sold the player a piece for, each once: a `buy` goal is met by one, however long before
+    /// its task the piece was bought.
+    #[serde(skip_serializing_if = "Vec::is_empty")]
+    pub bought: Vec<Slot>,
     /// Keys this room does not know, from a later room's save, written back as read.
     #[serde(flatten)]
     pub unknown: UnknownKeys,
@@ -274,8 +278,8 @@ impl Character {
         true
     }
 
-    /// Tells the quest walked of every piece worn, and of every slot a piece is held for, so a piece bought or put on
-    /// before its task was reached counts once it is.
+    /// Tells the quest walked of every piece worn, and of every slot a smith has sold a piece for, so a piece bought
+    /// or put on before its task was reached counts once it is.
     pub(crate) fn tell_held(&mut self) {
         let asks = |kind| self.goals_unmet().any(|(_, goal)| goal.kind() == kind);
         let (wear, buy) = (asks(GoalKind::Wear), asks(GoalKind::Buy));
@@ -283,7 +287,7 @@ impl Character {
             if wear && self.worn(slot).is_some() {
                 self.tell(&Event::Worn(slot));
             }
-            if buy && self.items.values().any(|(item, _)| item.kind.slot() == slot) {
+            if buy && self.quests.bought.contains(&slot) {
                 self.tell(&Event::Bought(slot));
             }
         }
