@@ -225,7 +225,8 @@ export class GearPanel {
     const kinds = KINDS.map((kind, index) => [String(index), kindName(index)] as const).filter(
       ([number, name]) => name && number !== String(KINDS.indexOf('cloak')),
     );
-    const lesser = RARITIES.slice(0, 3).map((rarity, index) => [String(index), rarity.name] as const);
+    // Every rarity but the Atheric is rolled; an Atheric is handed out by its name.
+    const rolled = RARITIES.slice(0, 4).map((rarity, index) => [String(index), rarity.name] as const);
     return [
       heading('Hand out'),
       labelled('Level', field('tg:grant:level', 'Level', { width: 60 })),
@@ -246,7 +247,7 @@ export class GearPanel {
       ),
       labelled(
         'Rarity',
-        pick(ui, 'tg:grant:rarity', lesser, String(grant.rarity), (value) => (grant.rarity = Number(value))),
+        pick(ui, 'tg:grant:rarity', rolled, String(grant.rarity), (value) => (grant.rarity = Number(value))),
       ),
       presses([
         press(ui, 'tg:grant:item', 'Hand out that item', () =>

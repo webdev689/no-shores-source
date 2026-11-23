@@ -1,6 +1,7 @@
 //! The gear's content, authored in `content/gear/` and built into the rules, so the server and every browser read
 //! the same: each trait and what it fits, the named Legendaries, Atherics and cloaks with their nodes' traits, each
-//! island's resource, and the names a rolled item may take. `problems` lists anything in it the rules cannot keep.
+//! island's resource, each armour and weapon kind's word and the names a ship's rolled module may take. `problems`
+//! lists anything in it the rules cannot keep.
 
 use crate::grid::{Column, columns};
 use crate::kinds::{Kind, Slot};
@@ -97,7 +98,7 @@ pub struct Resource {
     pub words: String,
 }
 
-/// The names a rolled item of a kind may take, by rarity.
+/// The names a ship's rolled module of a kind may take, by rarity.
 #[derive(Clone, Debug, Default, PartialEq, Eq, Deserialize)]
 pub struct Names {
     pub normal: Vec<String>,
@@ -112,6 +113,8 @@ pub struct Catalogue {
     pub items: Vec<NamedDef>,
     pub resources: Vec<Resource>,
     pub names: BTreeMap<Kind, Names>,
+    /// Each armour and weapon kind's word, said after its set's name ("Portwatch Helm").
+    pub kinds: BTreeMap<Kind, String>,
 }
 
 #[derive(Deserialize)]
@@ -132,6 +135,8 @@ struct ResourcesFile {
 #[derive(Deserialize)]
 struct RolledFile {
     names: BTreeMap<Kind, Names>,
+    #[serde(default)]
+    kinds: BTreeMap<Kind, String>,
 }
 
 /// The catalogue built into the rules, read once.
@@ -161,13 +166,15 @@ impl Catalogue {
     /// The first file that is not the shape the rules read, and why.
     pub fn parse(traits: &str, items: &str, resources: &str, rolled: &str) -> Result<Self, String> {
         let read = |file: &str, error: serde_json::Error| format!("content/gear/{file}: {error}");
+        let rolled = serde_json::from_str::<RolledFile>(rolled).map_err(|error| read("rolled.json", error))?;
         Ok(Self {
             traits: serde_json::from_str::<TraitsFile>(traits).map_err(|error| read("traits.json", error))?.traits,
             items: serde_json::from_str::<ItemsFile>(items).map_err(|error| read("items.json", error))?.items,
             resources: serde_json::from_str::<ResourcesFile>(resources)
                 .map_err(|error| read("resources.json", error))?
                 .resources,
-            names: serde_json::from_str::<RolledFile>(rolled).map_err(|error| read("rolled.json", error))?.names,
+            names: rolled.names,
+            kinds: rolled.kinds,
         })
     }
 
@@ -195,7 +202,14 @@ impl Catalogue {
         self.resources.iter().position(|found| found.id == id)
     }
 
-    /// The names a rolled item of this kind and rarity may take; none for a named rarity.
+    /// The word an armour or weapon kind is said by after its set's name; none for a cloak or a module.
+    #[must_use]
+    pub fn kind_word(&self, kind: Kind) -> Option<&str> {
+        self.kinds.get(&kind).map(String::as_str)
+    }
+
+    /// The names a ship's rolled module of this kind and rarity may take; none for any other kind, or a rarity a
+    /// module is named at.
     #[must_use]
     pub fn names_of(&self, kind: Kind, rarity: Rarity) -> &[String] {
         let Some(names) = self.names.get(&kind) else { return &[] };
@@ -226,8 +240,8 @@ impl Catalogue {
         self.traits.iter().filter(own).filter(|found| fits(found, kind, None, Some(faction))).collect()
     }
 
-    /// The named items a Vestige of this rarity may open to in this slot: Breach items come from Breaches alone, and a
-    /// faction's from its counter alone.
+    /// The named items of this rarity and slot that a Vestige's Atheric or ship's module, or Shape's ware, is drawn
+    /// among: Breach items come from Breaches alone, and a faction's from its counter alone.
     pub fn vestige_pool(&self, rarity: Rarity, slot: Slot) -> impl Iterator<Item = &NamedDef> {
         self.items.iter().filter(move |found| {
             found.rarity == rarity && !found.breach && found.faction.is_none() && found.kind.fits(slot)
@@ -308,7 +322,7 @@ impl Catalogue {
             }
             return;
         }
-        if !item.rarity.named() {
+        if item.rarity < Rarity::Legendary {
             problems.push(format!("{id}: only Legendaries, Atherics and cloaks are named"));
         }
         if item.breach && !(item.kind.armour() && item.rarity == Rarity::Legendary) {
@@ -370,8 +384,17 @@ impl Catalogue {
     }
 
     fn kind_problems(&self, kind: Kind, problems: &mut Vec<String>) {
-        for rarity in [Rarity::Normal, Rarity::Magic, Rarity::Rare] {
-            if self.names_of(kind, rarity).is_empty() {
+        // A module is rolled up to Rare and named past it; an armour piece or a weapon is rolled up to Legendary.
+        let rolled: &[Rarity] = if kind.module() {
+            &[Rarity::Normal, Rarity::Magic, Rarity::Rare]
+        } else {
+            &[Rarity::Normal, Rarity::Magic, Rarity::Rare, Rarity::Legendary]
+        };
+        if !kind.module() && self.kind_word(kind).is_none() {
+            problems.push(format!("no word for a {kind:?}"));
+        }
+        for &rarity in rolled {
+            if kind.module() && self.names_of(kind, rarity).is_empty() {
                 problems.push(format!("no names for a {rarity:?} {kind:?}"));
             }
             // A rolled item never offers one trait twice, so each pool must hold its rarity's trait nodes.

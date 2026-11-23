@@ -31,7 +31,7 @@ of the same content and look share a name. No name is a material's.
 | An Abyss Dungeon | adamantium | Deepwarden |
 | An Abyss Dungeon | ebony | Blackwater |
 | A faction | its guild's set and metal | its faction's: Stormcaller, Lamplighter, Veiled |
-| A Breach | daedric | named with the Breaches |
+| A Breach | daedric, to become the Lattice's | Lattice |
 
 ## Faction perks
 

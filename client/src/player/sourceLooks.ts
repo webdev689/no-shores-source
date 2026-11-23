@@ -1,22 +1,27 @@
 // The looks each content gives, as the owner chose: every armour set and weapon metal the forge draws belongs to the
 // content that drops it (`content/gear/looks.json`, numbered as the gear crate's `Source`), so what a player wears says
-// where it was earned. A rolled piece climbs its own content's sets and metals by its level and name.
+// where it was earned. A rolled piece climbs its own content's sets and metals by its level and name, and is named by
+// the set it is drawn in.
 
 import factions from '../../../content/gear/factions.json' with { type: 'json' };
 import items from '../../../content/gear/items.json' with { type: 'json' };
 import looks from '../../../content/gear/looks.json' with { type: 'json' };
 import type { GearItem } from '../network/gearMessages.ts';
 
-/** One content's looks: its key and name, its armour sets and its weapon metals, each lightest first. */
+/** One content's looks: its key and name, its armour sets and its weapon metals, each lightest first, and the set
+ *  name each look carries (a faction's by its faction's key). */
 export interface SourceLooks {
   readonly key: string;
   readonly name: string;
   readonly armour: readonly string[];
   readonly metals: readonly string[];
+  readonly sets: Readonly<Record<string, string | undefined>>;
 }
 
 /** Every content's looks, by the gear crate's `Source` numbers: the world first. */
 export const SOURCES: readonly SourceLooks[] = looks.sources;
+/** The set name of a Normal piece, the world's clothes or a plain weapon. */
+export const NORMAL_SET: string = looks.normal;
 
 /** The world's: patrols, missions, the sea's fights, the smiths. */
 const WORLD = 0;
@@ -56,6 +61,29 @@ export function rolledMetal(item: Pick<GearItem, 'source' | 'level' | 'name'>): 
   const own = sourceLooks(item);
   return own.metals[climbed(item, 0, own.metals.length, own.key === SOURCES[WORLD]?.key)] ?? 'iron';
 }
+
+/** The item's own number for a choice its name does not make: its id (a smith's ware comes with the one it takes once
+ *  bought), its name while it has none, and a named piece's name, so a faction's piece always shows one make. */
+export const numberOf = (item: Pick<GearItem, 'named' | 'id' | 'name'>): number =>
+  item.named ? item.name : item.id || item.name;
+
+/** The set a rolled armour piece is drawn in where the forge draws it, or null for clothes: a Normal piece's clothes;
+ *  a Magic one's its content's lightest sets by its number, on the torso and legs clothes among them; a finer one's
+ *  `rareSet`. */
+export function rolledArmourSet(
+  item: Pick<GearItem, 'source' | 'level' | 'name' | 'id' | 'named' | 'rarity'>,
+  clothesToo: boolean,
+): string | null {
+  if (item.rarity === 0) return null;
+  if (item.rarity > 1) return rareSet(item);
+  const choices = clothesToo ? [null, ...magicSets(item)] : magicSets(item);
+  return choices[numberOf(item) % choices.length] ?? null;
+}
+
+/** The set name a piece drawn in `look` carries (`content/gear/looks.json`): its content's name for that set or
+ *  metal, Homespun for clothes (none) or a plain look. */
+export const setName = (item: Pick<GearItem, 'source'>, look: string | null): string =>
+  (look && sourceLooks(item).sets[look]) || NORMAL_SET;
 
 /** A content's sets nearest first from `set`, then every other set by `ladder` nearest `set` first: a set the forge
  *  does not draw for a body falls to the nearest of its own content's before any other's. */

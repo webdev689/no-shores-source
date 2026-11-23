@@ -244,7 +244,7 @@ fn a_vendor_sells_the_days_wares_in_a_social_space_for_aurem_at_the_buyers_level
     }
     assert_eq!(today, wares(Vendor::Weaponsmith, 20_400, 12), "the same for everyone that day");
     assert_ne!(today, wares(Vendor::Weaponsmith, 20_401, 12), "and new the next");
-    assert!(today.iter().all(|item| item.level == 12 && !item.rarity.named()));
+    assert!(today.iter().all(|item| item.level == 12 && item.rarity < Rarity::Legendary));
     assert_eq!(today.iter().filter(|item| item.rarity == Rarity::Rare).count(), WARES / 2);
     assert!(wares(Vendor::Armorsmith, 20_400, 12).iter().all(|item| item.kind.armour()));
     let ranged = today.iter().filter(|item| item.kind.ranged()).count();
