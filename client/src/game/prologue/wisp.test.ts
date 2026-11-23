@@ -81,6 +81,29 @@ test('up close its halo falls off smoothly, band on band of light, its heart as 
   assert.ok(Math.abs(sum - (far[0] ?? 0)) < 1e-4, `the heart's light near ${sum} as far ${far[0]}`);
 });
 
+test('up close its trail of motes stays fine: no mote looks larger than it does from where its halo turns soft', () => {
+  /** The widest a mote of its trail spans, as an angle from the eye (radians), the trail one mote at `away` metres. */
+  const widest = (away: number) => {
+    const bare = new Laid();
+    const now = { at: [0, 0, 3], part: 'wander', glow: 0.7 } as const;
+    layWisp(bare, now, [], [0, 30, 3], 0);
+    const laid = new Laid();
+    layWisp(laid, now, [{ at: [0, 30 - away, 3], age: 0.02 }], [0, 30, 3], 0);
+    const across: number[] = [];
+    const heights: number[] = [];
+    // The trail is laid first: what the lone wisp does not lay is its mote.
+    for (let index = 0; index < laid.length - bare.length; index += 7) {
+      across.push(laid.values[index] ?? 0);
+      heights.push(laid.values[index + 2] ?? 0);
+    }
+    return Math.max(Math.max(...across) - Math.min(...across), Math.max(...heights) - Math.min(...heights)) / away;
+  };
+  const atSoftening = widest(4);
+  for (const away of [0.6, 1, 2, 3])
+    assert.ok(widest(away) <= atSoftening + 1e-9, `${away} m: ${widest(away).toFixed(4)} > ${atSoftening.toFixed(4)}`);
+  assert.ok(widest(8) <= atSoftening, 'far off, smaller still');
+});
+
 test('it lights a pool round it in Volt’s white-blue, brighter as its rings tighten, and its flash lights the deck white', () => {
   const place = [1, 2, 3] as const;
   const wandering = wispLight({ at: place, part: 'wander', glow: 0.6 }, 0);

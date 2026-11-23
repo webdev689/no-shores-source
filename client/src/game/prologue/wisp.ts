@@ -104,7 +104,8 @@ const HALO: Sprite = sprite(19, 19, (across, up) => {
   return CLEAR;
 });
 
-/** Nearer than this (metres) its halo is laid as discs of light (`HALO_DISCS`) rather than dithered. */
+/** Nearer than this (metres) its halo is laid as discs of light (`HALO_DISCS`) rather than dithered, and its trail's
+ *  motes are laid finer the nearer they are. */
 const NEAR_HALO_M = 4;
 /** Its halo near: six discs half a cell fine, the inner in Volt's body, the outer in its dark, so the light added
  *  falls off in fine steps from its heart to the halo's edge. */
@@ -146,7 +147,10 @@ export function layWisp(
     // The newest a glint's small cross, cooling to single motes as they fall away.
     const stop = share < 0.3 ? HOT : share < 0.6 ? LIGHT : BODY;
     const picture = (share < 0.45 ? GLINTS[stop] : MOTES[stop]) ?? STAR_MOTE;
-    billboard(out, picture, VOLT, drift, eye, { opacity: 1 - share * 0.6, cell: CELL_M * 1.2 });
+    // Nearer than its halo turns soft, a mote's cells shrink with the distance, so it looks no larger than it does
+    // from there: a fine spark beside the camera, never a cross or a block filling the view.
+    const near = Math.min(1, Math.hypot(drift[0] - eye[0], drift[1] - eye[1], drift[2] - eye[2]) / NEAR_HALO_M);
+    billboard(out, picture, VOLT, drift, eye, { opacity: 1 - share * 0.6, cell: CELL_M * 1.2 * near });
   }
   const opacity = -0.25 - 0.3 * glow;
   const cell = CELL_M * (0.9 + 0.5 * glow);
