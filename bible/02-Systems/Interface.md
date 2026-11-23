@@ -542,8 +542,9 @@ The game draws every screen itself, and by the owner's word no HTML is laid over
   blood while the player lies dead, plain while the link to the room is lost or joining again.
 - **The top keeps clear.** The fight's words over the world (a number, "Dodge!") stand under the compass's column and
   a raid's call where they would fall on them, as they stand under the plates over figures; a plate over a figure
-  that would stand on the compass, the banner, the boss bar, the target's plate or the call is laid unseen until it
-  stands clear, so nothing shows through the banner. Each keeps clear of where these were laid the frame before.
+  that would stand on the compass, the banner, the boss bar, the target's plate or the call, or within 12 px of one so
+  it reads as theirs, is laid unseen until it stands clear (judged at its foot this frame, so one first shown is hidden
+  at once), so nothing shows through the banner. Each keeps clear of where these were laid the frame before.
   `hudCourt.test.ts` lays the Court's fullest banner, the boss bar, a "Dodge!" over the Boss and the call at 1600 by
   900, 1280 by 720, 1024 by 600, 844 by 390 and 390 by 844 and finds no two overlapping.
 - **A raid's call** (`combat/callout.ts`): an Elite Dungeon's Court calls a few words over the middle of the view as

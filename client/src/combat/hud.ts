@@ -107,8 +107,10 @@ const FOUL = { colour: [96, 150, 24], heldS: 1.25, riseS: 0.25, fadeS: 0.6 } as 
 const BOSS_CLEAR = 6;
 const CALL_CLEAR = 16;
 const CROSSHAIR_CLEAR = 28;
-/** A plate over a figure at its largest, CSS pixels, for one not yet laid. */
+/** A plate over a figure at its largest, CSS pixels, for one not yet laid; and how near the top's pieces it may stand
+ *  before it is hidden, so it never reads as one of them. */
 const PLATE_MOST = { width: 220, height: 48 } as const;
+const PLATE_CLEAR = 12;
 /** The ids of the top's pieces. */
 const TOPS = ['fight-compass', 'fight-banner', 'fight-boss', 'fight-target'] as const;
 
@@ -461,7 +463,8 @@ export class Hud {
     // at its foot this frame, as large as it was last laid (a plate first shown, as large as a plate is at most).
     const hidden = (id: string, x: number, y: number) => {
       const { width, height } = ui.boxOf(id) ?? PLATE_MOST;
-      const box = { left: x - width / 2, right: x + width / 2, top: y - height, bottom: y };
+      const half = width / 2 + PLATE_CLEAR;
+      const box = { left: x - half, right: x + half, top: y - height - PLATE_CLEAR, bottom: y + PLATE_CLEAR };
       return this.tops.some((top) => meets(box, top));
     };
     const banner = this.banner.node(room, zoom, this.view.height / zoom < SHORT_VIEW);
@@ -541,7 +544,7 @@ export class Hud {
       width: Math.round(Math.min(340, PLATES.boss.share * room) * zoom),
       zoom,
     });
-    return made && (this.targetShare < 1 ? { ...made, opacity: this.targetShare } : made);
+    return made && { ...made, id: 'fight-target', ...(this.targetShare < 1 ? { opacity: this.targetShare } : {}) };
   }
 
   /** The Art's abilities and the weapons at the bottom left, the weapons over the Arts in a view too narrow for both. */

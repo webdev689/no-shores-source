@@ -274,8 +274,8 @@ encounter(10, 1, 0);
 const bossAhead = (from: Point, to: Point) => {
   const [east = 0, south = 0] = toward(from, to, 4);
   encounter(11, east, south);
-  // A few frames for the page's figure to follow it there.
-  steps.push({ frames: 6 });
+  // Frames enough for the page's figure to follow it there (six were too few after a long move).
+  steps.push({ frames: 20 });
 };
 encounter(3, 0, 0);
 pause(1500);
@@ -294,10 +294,10 @@ encounter(5, 1, 0.5);
 // Beside an anchor, not on it, so its beam does not stand in the camera's way.
 const beside = toward(anchor1, anchors, 1.8);
 stand(beside);
-bossAhead(beside, anchor1);
+// The Boss stays where the slam and Fury pictures want it; the filling anchor is this picture's own.
+bossAhead(beside, anchor0);
 picture(beside, anchor1, 'third,7,45', 'court_anchors_filling');
 encounter(6, 0, 50);
-bossAhead(beside, anchor0);
 picture(beside, anchor0, 'third,8,30', 'court_slam');
 encounter(6, 0, 300);
 encounter(8, 0, 45 * 60);

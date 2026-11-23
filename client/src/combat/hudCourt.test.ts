@@ -4,6 +4,7 @@ import { viewProjection } from '../editor/orbit.ts';
 import type { Action, FighterView } from '../rules/fighters.ts';
 import type { Node } from '../ui/node.ts';
 import type { Box } from '../ui/quads.ts';
+import { EVENT } from './cues.ts';
 import { Hud, type HudFrame } from './hud.ts';
 import { cameraOf } from './plateSight.ts';
 import { allOf, fakeInterface, laidOf, wordsIn } from './nodes.test.ts';
@@ -105,6 +106,8 @@ function courtFrame(width: number, height: number): HudFrame {
   };
 }
 
+/** `box` grown 11 px each way: a plate this near the top's pieces reads as one of them. */
+const grown = (box: Box): Box => ({ x: box.x - 11, y: box.y - 11, width: box.width + 22, height: box.height + 22 });
 const meets = (one: Box, two: Box) =>
   one.x < two.x + two.width && two.x < one.x + one.width && one.y < two.y + two.height && two.y < one.y + one.height;
 
@@ -115,13 +118,18 @@ for (const [width, height] of [
   [844, 390],
   [390, 844],
 ] as const) {
-  test(`at ${width} by ${height} the Court's banner, the Boss's bar, "Dodge!" and the call stand clear of each other`, () => {
+  test(`at ${width} by ${height} the Court's banner, the Boss's bar, the target's plate, "Dodge!" and the call stand clear of each other`, () => {
     const hud = new Hud();
     const ui = fakeInterface(width, height);
     const frame = courtFrame(width, height);
+    // The player's blow on the Crossbowman shows its plate as the target's, under the Boss's bar.
+    const struck = {
+      ...frame,
+      events: [{ tick: 0n, kind: EVENT.hit, how: 0, striker: 1, defender: 3, amount: 5, stroke: 0 }],
+    };
     // Words and plates keep clear of where the display was last laid, so a few frames settle it.
     for (let step = 0; step < 6; step++) {
-      hud.update(frame, 1 / 60);
+      hud.update(step === 0 ? struck : frame, 1 / 60);
       ui.draw(hud.node(ui));
     }
     const laid = laidOf(hud.node(ui), width, height);
@@ -130,15 +138,16 @@ for (const [width, height] of [
     const bar = byId('fight-boss');
     const call = byId('fight-call');
     const dodge = laid.find((each) => wordsIn(each.node)[0] === 'Dodge!' && each.node.float)?.box;
-    assert.ok(banner && bar && call && dodge, 'all four are laid');
-    const named = { banner, bar, call, dodge } as const;
+    const target = byId('fight-target');
+    assert.ok(banner && bar && call && dodge && target, 'all five are laid');
+    const named = { banner, bar, call, dodge, target } as const;
     const names = Object.keys(named) as (keyof typeof named)[];
     for (const one of names)
       for (const two of names)
         if (one < two) assert.ok(!meets(named[one], named[two]), `${one} ${JSON.stringify(named[one])} meets ${two}`);
-    // No plate over a figure shows through the banner or the Boss's bar.
+    // No plate over a figure shows through the banner or the Boss's bar, or stands so near either it reads as theirs.
     for (const each of laid.filter((one) => one.node.float?.anchor?.[1] === 1 && one.node.direction === 'row'))
-      if (meets(each.box, banner) || meets(each.box, bar))
+      if (meets(grown(each.box), banner) || meets(grown(each.box), bar))
         assert.equal(each.node.opacity, 0, `${wordsIn(each.node).join(' ')} hidden under the banner`);
   });
 }
@@ -157,13 +166,13 @@ test('a plate over a figure under the banner is hidden, and shows again once it 
   assert.equal(plate(hud.node(ui))?.opacity, 0, 'under the banner');
   const low = {
     ...frame,
-    foes: frame.foes.map((foe) => (foe.id === 3 ? { ...foe, view: { ...foe.view, z: 0 } } : foe)),
+    foes: frame.foes.map((foe) => (foe.id === 3 ? { ...foe, view: { ...foe.view, x: foe.view.x + 8, z: 0 } } : foe)),
   };
   for (let step = 0; step < 6; step++) {
     hud.update(low, 1 / 60);
     ui.draw(hud.node(ui));
   }
-  assert.notEqual(plate(hud.node(ui))?.opacity, 0, 'on the floor, below it');
+  assert.notEqual(plate(hud.node(ui))?.opacity, 0, 'on the floor, aside and below it');
 });
 
 test('the call stands large in the middle for a moment, then goes; a new call shows afresh', () => {
