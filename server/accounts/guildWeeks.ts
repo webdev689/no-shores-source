@@ -8,7 +8,9 @@
  */
 
 import { BOUNTY_XP, GUILD_BOUNTIES, bountiesOf, weekOf, weekStart } from '../../client/src/game/guild/guildLaw.ts';
+import { boonsOf } from '../../client/src/game/guild/outpostLaw.ts';
 import type { Db } from './database.ts';
+import { plotOf } from './outpostStores.ts';
 import { randomToken } from './secrets.ts';
 
 /** The week's four guild bounties, by slot. */
@@ -130,7 +132,12 @@ export async function guildTold(
   database: Db,
   account: string,
   now: number,
-): Promise<{ id: string; done: boolean[]; beforeTheWeek: boolean } | null> {
+): Promise<{
+  id: string;
+  done: boolean[];
+  beforeTheWeek: boolean;
+  boons: { xp: number; aurem: number; reputation: number };
+} | null> {
   const week = weekOf(now);
   const row = await database
     .prepare(
@@ -141,10 +148,16 @@ export async function guildTold(
     .bind(account, week)
     .first<{ guild_id: string; joined_at: number; [done: `done${number}`]: number | null }>();
   if (!row) return null;
+  const { results: sites } = await database
+    .prepare('SELECT site FROM outposts WHERE guild_id = ?1')
+    .bind(row.guild_id)
+    .all<{ site: string }>();
+  const plots = await Promise.all(sites.map(({ site }) => plotOf(database, row.guild_id, site)));
   return {
     id: row.guild_id,
     done: SLOTTED.map((slot) => row[`done${slot}`] === 1),
     beforeTheWeek: row.joined_at < weekStart(week),
+    boons: boonsOf(plots),
   };
 }
 

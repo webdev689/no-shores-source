@@ -537,6 +537,7 @@ test("a kept player's room is told their guild as it keeps them, again now and t
     id: 'g',
     done: [false, false, false, false],
     beforeTheWeek: true,
+    boons: { xp: 0, aurem: 0, reputation: 0 },
   });
   await database.prepare('DELETE FROM guild_members').run();
   await keeper.due(clock.now + GUILD_EVERY_MS);

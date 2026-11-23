@@ -145,7 +145,7 @@ async function finish(request: Request, deps: Deps, now: number): Promise<Respon
  *  `POST /v1/social/<ask>`, each for a signed-in player with a username. Asks that reach other players are limited. */
 async function social(request: Request, deps: Deps, route: string, now: number): Promise<Response> {
   const { database } = deps;
-  const read = /^GET \/v1\/(roster|guild|players\/[^/]+)$/.exec(route)?.[1];
+  const read = /^GET \/v1\/(roster|guild|outposts|players\/[^/]+)$/.exec(route)?.[1];
   const asked = /^POST \/v1\/social\/([a-z]+(?:\/[a-z]+)?)$/.exec(route)?.[1];
   if (!read && !asked) return refused(404, 'No such page.');
   const account = await sessionOf(request, database, now);

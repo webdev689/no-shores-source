@@ -58,7 +58,7 @@ jobs:
             content/world content/islands/kits.json content/testground content/gear content/arts content/modules
             content/dungeon content/lore content/quests content/story/cast.json content/ships/ships.json content/guilds
             client/src/game/worldData.ts client/src/game/nodes.ts client/src/ruinedName.ts client/src/player/binds.ts
-            client/src/game/guild/bannerLaw.ts client/src/game/guild/guildLaw.ts
+            client/src/game/guild/bannerLaw.ts client/src/game/guild/guildLaw.ts client/src/game/guild/outpostLaw.ts
             Cargo.toml Cargo.lock rust-toolchain.toml package.json package-lock.json .github/workflows/rooms.yml
         run: |
           repo="${{ github.repository }}"

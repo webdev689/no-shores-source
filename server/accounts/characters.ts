@@ -9,6 +9,9 @@
 import { companionsOf, launchedFor } from './companies.ts';
 import { type Db, SESSION_IDLE_MS } from './database.ts';
 import { creditGuild, guildTold } from './guildWeeks.ts';
+import type { Stuff } from '../../client/src/game/guild/outpostLaw.ts';
+import { deliver, deposit, outpostFor, soundHorn, takeStores } from './outpostStores.ts';
+import type { Moved } from './treasury.ts';
 import { guildTagOf, present, usernameOf } from './people.ts';
 import { hashOf } from './secrets.ts';
 
@@ -55,6 +58,12 @@ export interface Characters {
   launched(account: string, room: string): Promise<boolean>;
   /** What a room is told of a player's guild (`guildWeeks.ts`), null in none. */
   guild(account: string): ReturnType<typeof guildTold>;
+  /** What an outpost's room asks for its players (`outpostStores.ts`). */
+  deposit(account: string, amount: number, rid: string): Promise<Moved>;
+  deliver(account: string, room: string, given: { id: number; stuff: Stuff; amount: number }): Promise<number>;
+  takeStores(account: string, room: string, stuff: Stuff, amount: number): Promise<number>;
+  soundHorn(account: string, room: string): Promise<number>;
+  outpost(room: string): ReturnType<typeof outpostFor>;
 }
 
 /** The characters on a database, with a clock and a way to wait. */
@@ -81,6 +90,11 @@ export function characters(database: Db, now: () => number, wait: (millis: numbe
     /** Whether the server found or launched `room` for the account within FOUND_KEPT_MS (`finding.ts`). */
     launched: (account, room) => launchedFor(database, account, room, now()),
     guild: (account) => guildTold(database, account, now()),
+    deposit: (account, amount, rid) => deposit(database, account, amount, rid, now()),
+    deliver: (account, room, given) => deliver(database, account, room, given),
+    takeStores: (account, room, stuff, amount) => takeStores(database, account, room, stuff, amount, now()),
+    soundHorn: (account, room) => soundHorn(database, account, room, now()),
+    outpost: (room) => outpostFor(database, room),
     /** Notes that a session's player is in a room that keeps no character, at sea in which water, or with none that
      *  they left it; false when the token is no live session. */
     async present(token, room, water = null) {

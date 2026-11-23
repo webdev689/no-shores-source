@@ -58,6 +58,26 @@ export class CharacterKeeper extends WorkerEntrypoint<Env> implements Characters
   guild(account: string): ReturnType<Characters['guild']> {
     return this.kept.guild(account);
   }
+
+  deposit(...asked: Parameters<Characters['deposit']>): ReturnType<Characters['deposit']> {
+    return this.kept.deposit(...asked);
+  }
+
+  deliver(...asked: Parameters<Characters['deliver']>): ReturnType<Characters['deliver']> {
+    return this.kept.deliver(...asked);
+  }
+
+  takeStores(...asked: Parameters<Characters['takeStores']>): ReturnType<Characters['takeStores']> {
+    return this.kept.takeStores(...asked);
+  }
+
+  soundHorn(...asked: Parameters<Characters['soundHorn']>): ReturnType<Characters['soundHorn']> {
+    return this.kept.soundHorn(...asked);
+  }
+
+  outpost(room: string): ReturnType<Characters['outpost']> {
+    return this.kept.outpost(room);
+  }
 }
 
 /** The accounts' web API (`accounts.ts`). */

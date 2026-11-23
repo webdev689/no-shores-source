@@ -1,0 +1,576 @@
+{
+  "plotCells": 16,
+  "cellM": 4,
+  "raiseAurem": 5000,
+  "outpostsAtLevels": [
+    1,
+    4,
+    7
+  ],
+  "tierLevels": [
+    1,
+    3,
+    6
+  ],
+  "treasuryMost": 1000000,
+  "storesTakeADay": 20,
+  "storesHoldDays": 3,
+  "strongboxHours": 48,
+  "decorAurem": {
+    "perMetre": 50,
+    "least": 25,
+    "most": 500
+  },
+  "decorCaps": [
+    40,
+    80,
+    150
+  ],
+  "structures": [
+    {
+      "id": "hall",
+      "name": "Hall",
+      "tierNames": [
+        "Camp",
+        "Longhouse",
+        "Stronghold"
+      ],
+      "cells": [
+        4,
+        4
+      ],
+      "level": 1,
+      "most": 1,
+      "words": "The outpost's heart. Its tier is the highest any other may reach, and it holds the decoration.",
+      "effect": {
+        "kind": "hall"
+      },
+      "tiers": [
+        {
+          "aurem": 0,
+          "materials": {}
+        },
+        {
+          "aurem": 15000,
+          "materials": {
+            "timber": 160,
+            "iron": 60,
+            "island": 80
+          }
+        },
+        {
+          "aurem": 40000,
+          "materials": {
+            "timber": 300,
+            "iron": 160,
+            "heartwood": 40,
+            "island": 200
+          }
+        }
+      ]
+    },
+    {
+      "id": "standard",
+      "name": "Banner Standard",
+      "cells": [
+        1,
+        1
+      ],
+      "level": 1,
+      "most": 1,
+      "words": "The guild's banner on its staff, in the wind.",
+      "effect": {
+        "kind": "banner"
+      },
+      "tiers": [
+        {
+          "aurem": 0,
+          "materials": {}
+        }
+      ]
+    },
+    {
+      "id": "counting",
+      "name": "Counting House",
+      "cells": [
+        2,
+        2
+      ],
+      "level": 1,
+      "most": 1,
+      "words": "Its strongbox fills with Aurem by the hour and holds two days of it.",
+      "effect": {
+        "kind": "income",
+        "amounts": [
+          30,
+          60,
+          120
+        ]
+      },
+      "tiers": [
+        {
+          "aurem": 3000,
+          "materials": {
+            "timber": 40,
+            "iron": 20
+          }
+        },
+        {
+          "aurem": 9000,
+          "materials": {
+            "timber": 90,
+            "iron": 50,
+            "island": 30
+          }
+        },
+        {
+          "aurem": 24000,
+          "materials": {
+            "timber": 160,
+            "iron": 100,
+            "heartwood": 20,
+            "island": 80
+          }
+        }
+      ]
+    },
+    {
+      "id": "war-table",
+      "name": "War Table",
+      "cells": [
+        2,
+        2
+      ],
+      "level": 2,
+      "most": 1,
+      "words": "Members earn more XP from kills and clears.",
+      "effect": {
+        "kind": "boon",
+        "boon": "xp",
+        "amounts": [
+          5,
+          10,
+          15
+        ]
+      },
+      "tiers": [
+        {
+          "aurem": 4000,
+          "materials": {
+            "timber": 50,
+            "canvas": 30
+          }
+        },
+        {
+          "aurem": 10000,
+          "materials": {
+            "timber": 100,
+            "canvas": 60,
+            "island": 40
+          }
+        },
+        {
+          "aurem": 28000,
+          "materials": {
+            "timber": 180,
+            "canvas": 100,
+            "heartwood": 25,
+            "island": 100
+          }
+        }
+      ]
+    },
+    {
+      "id": "camp",
+      "name": "Island Camp",
+      "cells": [
+        2,
+        2
+      ],
+      "level": 2,
+      "most": 1,
+      "words": "Gathers its island's resource into the outpost's stores each day.",
+      "effect": {
+        "kind": "stores",
+        "stuff": "island",
+        "amounts": [
+          15,
+          30,
+          60
+        ]
+      },
+      "tiers": [
+        {
+          "aurem": 3000,
+          "materials": {
+            "timber": 40,
+            "canvas": 20
+          }
+        },
+        {
+          "aurem": 8000,
+          "materials": {
+            "timber": 90,
+            "canvas": 40,
+            "iron": 30
+          }
+        },
+        {
+          "aurem": 22000,
+          "materials": {
+            "timber": 160,
+            "iron": 80,
+            "heartwood": 20
+          }
+        }
+      ]
+    },
+    {
+      "id": "dock",
+      "name": "Dockyard",
+      "cells": [
+        2,
+        3
+      ],
+      "level": 3,
+      "most": 1,
+      "words": "Brings Timber, Canvas and Iron into the outpost's stores each day.",
+      "effect": {
+        "kind": "stores",
+        "stuff": "ship",
+        "amounts": [
+          8,
+          16,
+          32
+        ]
+      },
+      "tiers": [
+        {
+          "aurem": 4000,
+          "materials": {
+            "timber": 60,
+            "canvas": 30,
+            "iron": 20
+          }
+        },
+        {
+          "aurem": 11000,
+          "materials": {
+            "timber": 120,
+            "canvas": 60,
+            "iron": 50
+          }
+        },
+        {
+          "aurem": 30000,
+          "materials": {
+            "timber": 220,
+            "canvas": 120,
+            "iron": 100,
+            "heartwood": 30
+          }
+        }
+      ]
+    },
+    {
+      "id": "gate",
+      "name": "Delve Gate",
+      "cells": [
+        3,
+        3
+      ],
+      "level": 4,
+      "most": 1,
+      "words": "Opens the guild dungeon, in its island's style, at Normal, Elite or Abyss by its tier.",
+      "effect": {
+        "kind": "dungeon"
+      },
+      "tiers": [
+        {
+          "aurem": 6000,
+          "materials": {
+            "timber": 60,
+            "iron": 40,
+            "island": 40
+          }
+        },
+        {
+          "aurem": 15000,
+          "materials": {
+            "timber": 120,
+            "iron": 80,
+            "island": 80
+          }
+        },
+        {
+          "aurem": 40000,
+          "materials": {
+            "timber": 200,
+            "iron": 140,
+            "heartwood": 40,
+            "island": 160
+          }
+        }
+      ]
+    },
+    {
+      "id": "lodge",
+      "name": "Captain's Lodge",
+      "cells": [
+        2,
+        2
+      ],
+      "level": 5,
+      "most": 1,
+      "words": "Members earn more faction reputation.",
+      "effect": {
+        "kind": "boon",
+        "boon": "reputation",
+        "amounts": [
+          5,
+          10,
+          15
+        ]
+      },
+      "tiers": [
+        {
+          "aurem": 4000,
+          "materials": {
+            "timber": 50,
+            "canvas": 30
+          }
+        },
+        {
+          "aurem": 10000,
+          "materials": {
+            "timber": 100,
+            "canvas": 60,
+            "island": 40
+          }
+        },
+        {
+          "aurem": 28000,
+          "materials": {
+            "timber": 180,
+            "canvas": 100,
+            "heartwood": 25,
+            "island": 100
+          }
+        }
+      ]
+    },
+    {
+      "id": "horn",
+      "name": "War Horn",
+      "cells": [
+        2,
+        2
+      ],
+      "level": 5,
+      "most": 1,
+      "words": "Sounded once a week, it calls the guild boss to the muster ground, stronger by its tier.",
+      "effect": {
+        "kind": "boss"
+      },
+      "tiers": [
+        {
+          "aurem": 5000,
+          "materials": {
+            "timber": 50,
+            "iron": 30
+          }
+        },
+        {
+          "aurem": 13000,
+          "materials": {
+            "timber": 100,
+            "iron": 60,
+            "canvas": 40
+          }
+        },
+        {
+          "aurem": 35000,
+          "materials": {
+            "timber": 180,
+            "iron": 120,
+            "heartwood": 35,
+            "island": 120
+          }
+        }
+      ]
+    },
+    {
+      "id": "assay",
+      "name": "Assay House",
+      "cells": [
+        2,
+        2
+      ],
+      "level": 8,
+      "most": 1,
+      "words": "Members earn more Aurem from kills and clears.",
+      "effect": {
+        "kind": "boon",
+        "boon": "aurem",
+        "amounts": [
+          5,
+          10,
+          15
+        ]
+      },
+      "tiers": [
+        {
+          "aurem": 5000,
+          "materials": {
+            "timber": 40,
+            "iron": 50
+          }
+        },
+        {
+          "aurem": 13000,
+          "materials": {
+            "timber": 80,
+            "iron": 110,
+            "island": 50
+          }
+        },
+        {
+          "aurem": 36000,
+          "materials": {
+            "timber": 150,
+            "iron": 200,
+            "heartwood": 35,
+            "island": 140
+          }
+        }
+      ]
+    }
+  ],
+  "decor": [
+    {
+      "piece": "lamp-post",
+      "name": "Lamp Post",
+      "reach": 0.76
+    },
+    {
+      "piece": "bench",
+      "name": "Bench",
+      "reach": 1.25
+    },
+    {
+      "piece": "table-benches",
+      "name": "Table and Benches",
+      "reach": 1.25
+    },
+    {
+      "piece": "parasol-table",
+      "name": "Parasol Table",
+      "reach": 1.57
+    },
+    {
+      "piece": "planter",
+      "name": "Planter",
+      "reach": 1.0
+    },
+    {
+      "piece": "potted-tree",
+      "name": "Potted Tree",
+      "reach": 0.73
+    },
+    {
+      "piece": "court-tree",
+      "name": "Court Tree",
+      "reach": 2.45
+    },
+    {
+      "piece": "lawn-bed",
+      "name": "Lawn Bed",
+      "reach": 4.0
+    },
+    {
+      "piece": "well",
+      "name": "Well",
+      "reach": 1.5
+    },
+    {
+      "piece": "statue-keeper",
+      "name": "Statue of a Keeper",
+      "reach": 0.95
+    },
+    {
+      "piece": "statue-sentinel",
+      "name": "Statue of a Sentinel",
+      "reach": 0.94
+    },
+    {
+      "piece": "crates-barrels",
+      "name": "Crates and Barrels",
+      "reach": 1.54
+    },
+    {
+      "piece": "barrel-stack",
+      "name": "Barrel Stack",
+      "reach": 1.85
+    },
+    {
+      "piece": "sacks-grain",
+      "name": "Grain Sacks",
+      "reach": 1.07
+    },
+    {
+      "piece": "amphorae",
+      "name": "Amphorae",
+      "reach": 1.75
+    },
+    {
+      "piece": "woodpile",
+      "name": "Woodpile",
+      "reach": 2.55
+    },
+    {
+      "piece": "bale-stack",
+      "name": "Hay Bales",
+      "reach": 1.86
+    },
+    {
+      "piece": "cart",
+      "name": "Cart",
+      "reach": 2.15
+    },
+    {
+      "piece": "hay-cart",
+      "name": "Hay Cart",
+      "reach": 2.03
+    },
+    {
+      "piece": "flower-cart",
+      "name": "Flower Cart",
+      "reach": 1.87
+    },
+    {
+      "piece": "market-stall-cloth",
+      "name": "Cloth Stall",
+      "reach": 2.5
+    },
+    {
+      "piece": "market-stall-bread",
+      "name": "Bread Stall",
+      "reach": 2.5
+    },
+    {
+      "piece": "market-stall-flowers",
+      "name": "Flower Stall",
+      "reach": 2.5
+    },
+    {
+      "piece": "anvil-yard",
+      "name": "Anvil Yard",
+      "reach": 2.95
+    },
+    {
+      "piece": "bollards",
+      "name": "Bollards",
+      "reach": 1.91
+    }
+  ]
+}
