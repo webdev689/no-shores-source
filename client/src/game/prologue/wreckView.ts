@@ -105,6 +105,9 @@ struct Place {
 
 ${SKY_WGSL}
 
+// The share of the near light added whole over the timber's own colour.
+const NEAR_WASH = 0.06;
+
 // The fire's light rolls off toward this, its most: light of this much is drawn at half of it.
 const FIRE_KNEE = 2.5;
 
@@ -171,12 +174,12 @@ fn fragment_main(drawn: Drawn, @builtin(front_facing) facing: bool) -> @location
   let fire = baked / (1.0 + max(baked.r, max(baked.g, baked.b)) / FIRE_KNEE);
   let open = held.a * held.a * place.full.y;
   let sky = open * (sky_ambient(normal) + sky_direct(normal, sky_dapple(drawn.from_eye)));
-  // The near light falls off to none at its reach, evenly, so it reads over the fires' light, and lights a face
-  // turned from it a little.
+  // The near light, a pool falling softly to none at its reach, lights a face turned from it a little; a part of it
+  // is added whole, so orange timber under it goes pale white-blue rather than green.
   let toward = place.near.xyz - drawn.from_eye;
   let fall = saturate(1.0 - length(toward) / max(place.near.w, 0.001));
-  let near = place.near_light.rgb * fall * (0.25 + 0.75 * max(dot(normal, normalize(toward)), 0.0));
-  return vec4f(colour * (fire + sky + near), 1.0);
+  let near = place.near_light.rgb * fall * fall * (0.25 + 0.75 * max(dot(normal, normalize(toward)), 0.0));
+  return vec4f(colour * (fire + sky + near) + near * NEAR_WASH, 1.0);
 }
 `;
 

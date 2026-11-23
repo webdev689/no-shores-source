@@ -81,24 +81,26 @@ test('up close its halo falls off smoothly, band on band of light, its heart as 
   assert.ok(Math.abs(sum - (far[0] ?? 0)) < 1e-4, `the heart's light near ${sum} as far ${far[0]}`);
 });
 
-test('it lights what is near it in Volt’s blue, brighter as its rings tighten, and its flash lights the deck white', () => {
+test('it lights a pool round it in Volt’s white-blue, brighter as its rings tighten, and its flash lights the deck white', () => {
   const place = [1, 2, 3] as const;
   const wandering = wispLight({ at: place, part: 'wander', glow: 0.6 }, 0);
   const closing = wispLight({ at: place, part: 'circle', glow: 0.95 }, 0);
   const flashing = wispLight({ at: place, part: 'engulf', glow: 1 }, 1);
   assert.ok(wandering && closing && flashing);
   assert.deepEqual(wandering.at, place, 'from its place');
-  assert.ok(wandering.reachM >= 2 && wandering.reachM <= 6, `a few metres: ${wandering.reachM}`);
+  for (const light of [wandering, closing])
+    assert.ok(light.reachM >= 2 && light.reachM <= 3.5, `a pool a few metres across: ${light.reachM}`);
   const strength = (light: { light: readonly number[] }) => light.light.reduce((sum, part) => sum + part, 0);
   assert.ok(strength(closing) > strength(wandering), 'brighter as the rings tighten');
   const [red, green, blue] = wandering.light;
-  assert.ok(blue > green && green > red, `Volt's blue: ${wandering.light.join(', ')}`);
+  assert.ok(blue >= green && green > red, `Volt's blue: ${wandering.light.join(', ')}`);
+  assert.ok(red / blue > 0.7 && green / blue > 0.9, `white-blue, not cyan: ${wandering.light.join(', ')}`);
   assert.ok(
     strength(flashing) > 2 * strength(closing) && flashing.reachM > closing.reachM,
     'the flash brighter, wider',
   );
   const [flashRed = 0, , flashBlue = 0] = flashing.light;
-  assert.ok(flashRed / flashBlue > red / blue, 'and whiter');
+  assert.ok(flashRed / flashBlue >= red / blue, 'and as white or whiter');
   assert.equal(
     wispLight({ at: place, part: 'gone', glow: 0 }, 0),
     null,

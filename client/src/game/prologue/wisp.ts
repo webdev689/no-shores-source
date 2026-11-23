@@ -47,12 +47,12 @@ export interface WispNow {
   readonly glow: number;
 }
 
-/** Its light on what is near it: Volt's body, reaching a few metres and strengthening as it brightens; and the
- *  engulfing's flash, near white, wider and far stronger, fading as the flash does. */
-const LIGHT_REACH_M = [3.5, 6] as const;
+/** Its light on what is near it: a pool of Volt's white-blue, reaching a few metres and strengthening as it
+ *  brightens; and the engulfing's flash, near white, wider and far stronger, fading as the flash does. */
+const LIGHT_REACH_M = [2.5, 3.5] as const;
 const LIGHT_STRENGTH = [2.5, 6] as const;
 const FLASH_REACH_M = 9;
-const FLASH_STRENGTH = 4;
+const FLASH_STRENGTH = 8;
 
 /** The light the wisp throws now, `flash` (0 to 1) the engulfing's flash as it fades: from where it is, how far it
  *  reaches (metres) and its colour, already as strong as it shines; none once it is gone and the flash has faded. */
@@ -62,7 +62,9 @@ export function wispLight(
 ): { readonly at: Point; readonly reachM: number; readonly light: readonly [number, number, number] } | null {
   const glow = now.part === 'gone' ? 0 : now.glow;
   if (glow <= 0 && flash <= 0) return null;
-  const [body, white] = [GLOW_RAMPS[VOLT][1], GLOW_RAMPS[VOLT][3]];
+  // Volt's light stop and its white-hot one, half and half: white-blue, so it reads pale on the orange planks.
+  const [pale, white] = [GLOW_RAMPS[VOLT][2], GLOW_RAMPS[VOLT][3]];
+  const body = [(pale[0] + white[0]) / 2, (pale[1] + white[1]) / 2, (pale[2] + white[2]) / 2] as const;
   const strength = (LIGHT_STRENGTH[0] + (LIGHT_STRENGTH[1] - LIGHT_STRENGTH[0]) * glow) * (glow > 0 ? 1 : 0);
   const lit = (axis: 0 | 1 | 2) => body[axis] * strength + white[axis] * FLASH_STRENGTH * flash;
   const light = [lit(0), lit(1), lit(2)] as const;
