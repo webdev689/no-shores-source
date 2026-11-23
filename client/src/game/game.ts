@@ -183,8 +183,8 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement): Promise<vo
       islesNature.drawInto(pass, fromEye, shot, time, shadow);
     },
   };
-  /** The island the player stands on, drawn though the sea no longer tells of it. */
-  let ashore: IsleHeld | null = null;
+  /** The island the player stands on, drawn though the sea no longer tells of it, and the sea's word it opened on. */
+  let [ashore, ashoreWord]: [IsleHeld | null, string | null] = [null, null];
   const waterHere = () => waterOf(scene.land?.swell, playing.landmass.heightAt);
   /** Draws the landmass `opened` in place of the one left, at sea and on land. */
   const showLandmass = (opened: Landmass) => {
@@ -297,7 +297,7 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement): Promise<vo
     ...{ playing, hud, footContext, goInto, goFoot, goSea, showLandmass },
     ashore: () => ashore,
     backAshore: async (held) => {
-      await goInto(() => isleFoot(held, null));
+      await goInto(() => isleFoot(held, ashoreWord));
       ashore = held;
     },
     // Overlook's landmass, opened where the player was on another.
@@ -417,7 +417,7 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement): Promise<vo
       leaveHere();
       playing.foot?.leave();
       playing.sea?.leaveRoom();
-      ashore = held;
+      [ashore, ashoreWord] = [held, word];
       playing.foot = foot;
       scene.sky.shelterUnder(foot.boxes);
     });
