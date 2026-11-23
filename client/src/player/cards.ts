@@ -56,6 +56,8 @@ export interface CardAt {
   readonly crystal?: boolean;
   /** Leaned to face the eye rather than standing upright, as a fallen body seen from above is drawn. */
   readonly facesEye?: boolean;
+  /** No contact shade nor shadow: a thing hovering over the ground, as a drop does, not standing on it. */
+  readonly hovers?: boolean;
 }
 
 /** Whatever turns a composed picture into a card it can draw, and an outline's field into a texture: the Test

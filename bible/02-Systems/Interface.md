@@ -945,7 +945,7 @@ plays any but the one it played last. The Duskraven plays its raven with a fire 
   its weapon (a braced pair fires twice), a crossbow wound, a gun loaded, and a click when the player fires a gun with
   no shot left. Where a shot stops: a ball on stone, an arrow in the ground, any shot in water; on a body, the blow.
 - **Moving.** A footstep each 2.5 m walked, in time with the first person's bob, never mounted: on wood (the Test
-  Ground's crate), on a block (the city's stone), in water (land below the sea) or on the ground. A jump as a body
+  Ground's crate, and the prologue's wreck, timber throughout), on a block (the city's stone), in water (land below the sea) or on the ground. A jump as a body
   rises, a landing after a fall of 0.6 m or more, and a dodge's roll.
 - **The Arts.** The player's own Anima gathering as it is cast; each spell as it first appears, an Anima with its
   Art's release, once a cast; a Tempest orb bursting on what it sought; each Duskraven bolt; Linked and Veiled as
@@ -995,7 +995,12 @@ to come leaves another held to play meanwhile, never the one played last, so a b
 two chunks at most. A file or chunk that fails to come is asked for again only after 30 s. The page
 decodes each and keeps it; the worker holds only its shape and how it measures, its level and its loudness over each
 window the game asks (`soundMeasure.ts`). What is held is kept within 192 MB, the ambience and story recordings
-played least lately let go first, never one played in the last two minutes nor a sound of play. Every file and chunk
+played least lately let go first, never one played in the last two minutes, a sound of play nor the story's one-shots
+while it plays; a sound let go is no longer kept as the one played last either, so its samples are let go too.
+The story's one-shots (thunder, the whoosh, the crash, the splash, the thud, the ringing, the heart and the flash) are
+fetched as its sound wakes (`Samples.prefetch`) and held until it stops (`release`): each is first heard too soon after
+it is asked for to fetch then, the crash and the splash only once. A gull's cry, heard again and again, is not.
+Every file and chunk
 fetched is kept in the browser's own storage under its address (`contentCache.ts`): named by its hash, it never
 changes, so one let go comes back from the disk. The storage holds every file the game reads from R2, within 1 GB, the
 files kept longest ago let go first.

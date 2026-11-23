@@ -39,7 +39,7 @@ const VIEW: FightView = {
   captain: captain('Pirate Brig', 200),
   others: [captain('Tithe Sloop', 70, { state: 'struck', faction: 1, id: 2 })],
   balls: [],
-  lay: { side: 'starboard', launches: [], elevation: 0, reach: 150, ends: [], radius: 3, on_target: false },
+  lay: { side: 'starboard', launches: [], elevation: 0, reach: 150, ends: [], radius: 3, spread: 1, on_target: false },
   events: [],
   over: null,
   fingerprint: '',

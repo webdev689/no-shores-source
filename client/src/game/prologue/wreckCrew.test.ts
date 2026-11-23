@@ -3,6 +3,7 @@ import { readFile } from 'node:fs/promises';
 import { test } from 'node:test';
 import { LocalRoom } from '../../network/localRoom.ts';
 import type { Snapshot } from '../../network/roomConnection.ts';
+import { storyOn } from '../../network/roomServe.ts';
 import { glanceView } from '../../rules/fighters.ts';
 import {
   CREW_ALIVE_MOST,
@@ -65,11 +66,11 @@ function fakeRun(alive: Map<number, number>): { run: CrewRun; stood: number[][];
   let next = 100;
   const run: CrewRun = {
     room: {
-      standFoe: (type, rank, x, y, facing, level) => {
-        stood.push([type, rank, x, y, facing, level]);
+      story: async (asked) => {
+        if (asked.ask !== 'stand') return 1;
+        stood.push([asked.type, asked.rank, asked.x, asked.y, asked.facing, asked.level]);
         return next++;
       },
-      storyPost: () => true,
     },
     figures: { dressFoe: (id) => void dressed.push(id) },
     foes: new Map([...alive].map(([id, health]) => [id, { view: { health } }])),
@@ -79,10 +80,20 @@ function fakeRun(alive: Map<number, number>): { run: CrewRun; stood: number[][];
   return { run, stood, dressed };
 }
 
+/** The room's answers come later, as the rooms' worker's do: each asked so far answered. */
+const answered = () => new Promise((done) => setTimeout(done, 0));
+/** A fake room that numbers each foe it stands into `ids`, from `next`. */
+const numbering = (ids: number[], from = 100): CrewRun['room'] => {
+  let next = from;
+  return { story: async (asked) => (asked.ask === 'stand' ? (ids.push(next), next++) : 1) };
+};
+/** The wreck's own room, asked as the rooms' worker asks it. */
+const asWorker = (room: LocalRoom): CrewRun['room'] => ({ story: async (asked) => storyOn(room, asked) });
+
 const waveOf = (zone: number): Standing[] => (layout.zones[zone]?.wave ?? []).map((foe) => ({ ...foe, zone }));
 const fought = layout.zones.findIndex((zone, index) => zone.wave.length > 0 && index !== layout.arena.zone);
 
-test("a zone's crew stand once, as its first boarder does, as the crew's types at the boarders' level", () => {
+test("a zone's crew stand once, as its first boarder does, as the crew's types at the boarders' level", async () => {
   const crew = new WreckCrew();
   const { run, stood, dressed } = fakeRun(new Map());
   crew.stand([], run);
@@ -90,6 +101,7 @@ test("a zone's crew stand once, as its first boarder does, as the crew's types a
   const [first, ...rest] = waveOf(fought);
   assert.ok(first);
   crew.stand([first], run);
+  await answered();
   const spots = crewSpots(layout.zones[fought] as Zone, course);
   assert.equal(stood.length, spots.length);
   stood.forEach(([type, rank, x, y, facing, level], index) => {
@@ -99,24 +111,24 @@ test("a zone's crew stand once, as its first boarder does, as the crew's types a
   assert.deepEqual(dressed, [100, 101, 102].slice(0, spots.length), 'each dressed as a hand of the Brig');
   assert.ok(dressed.every((id) => crew.has(id)) && !crew.has(99), 'known for one of the crew');
   crew.stand(rest, run);
+  await answered();
   assert.equal(stood.length, spots.length, 'never twice');
 });
 
-test('no more of the crew stand than may live at once, so the boarders always find room', () => {
+test('no more of the crew stand than may live at once, so the boarders always find room', async () => {
   const crew = new WreckCrew();
   const zones = layout.zones.flatMap((zone, index) => (crewSpots(zone, course).length ? [index] : []));
   const ids: number[] = [];
-  let next = 100;
-  const runWith = (alive: Map<number, number>): CrewRun => ({
-    ...fakeRun(alive).run,
-    room: { standFoe: () => (ids.push(next), next++), storyPost: () => true },
-  });
-  // Standing every zone's crew, none yet shown by the room: all are counted living.
+  const room = numbering(ids);
+  const runWith = (alive: Map<number, number>): CrewRun => ({ ...fakeRun(alive).run, room });
+  // Standing every zone's crew, none yet answered nor shown by the room: all are counted living, asked for or stood.
   for (const zone of zones.slice(0, -1)) crew.stand(waveOf(zone).slice(0, 1), runWith(new Map()));
+  await answered();
   assert.ok(ids.length <= CREW_ALIVE_MOST && ids.length > 0, `${ids.length} living`);
   const before = ids.length;
   // Every one of them shown fallen: the last zone's crew find room.
   crew.stand(waveOf(zones.at(-1) ?? 0).slice(0, 1), runWith(new Map(ids.map((id) => [id, 0]))));
+  await answered();
   assert.ok(ids.length > before, 'the fallen leave room');
 });
 
@@ -131,7 +143,8 @@ test('in the room on the wreck, a zone’s crew and boarders fight each other wi
   const crew = new WreckCrew();
   const ids = new Set<number>();
   const figures = { dressFoe: (id: number) => void ids.add(id) };
-  crew.stand(waveOf(zone), { room, figures, foes: new Map(), layout, level: 1 });
+  crew.stand(waveOf(zone), { room: asWorker(room), figures, foes: new Map(), layout, level: 1 });
+  await answered();
   for (const foe of waveOf(zone)) room.standFoe(foe.type, foe.rank, ...foe.at, foe.facing, 1);
   const hurt = new Set<number>();
   for (let tick = 0; tick < 30 * 60; tick++) {
@@ -161,17 +174,15 @@ test('the wreck’s room stands as many foes alive as the crew’s share counts 
   assert.equal(stood.at(-1), 0);
 });
 
-test('a crewman shown fallen and taken away by the room is never counted living again', () => {
+test('a crewman shown fallen and taken away by the room is never counted living again', async () => {
   const crew = new WreckCrew();
   const ids: number[] = [];
-  let next = 100;
-  const runWith = (alive: Map<number, number>): CrewRun => ({
-    ...fakeRun(alive).run,
-    room: { standFoe: () => (ids.push(next), next++), storyPost: () => true },
-  });
+  const room = numbering(ids);
+  const runWith = (alive: Map<number, number>): CrewRun => ({ ...fakeRun(alive).run, room });
   const zones = layout.zones.flatMap((zone, index) => (crewSpots(zone, course).length ? [index] : []));
   for (const zone of zones) {
     crew.stand(waveOf(zone).slice(0, 1), runWith(new Map()));
+    await answered();
     const shown = [...ids];
     crew.stand([], runWith(new Map(shown.map((id) => [id, 50]))));
     crew.stand([], runWith(new Map()));
@@ -203,18 +214,25 @@ test("the crew regroup round each zone's checkpoint, on its deck with room round
   });
 });
 
-test('as the player reaches a zone, the crew still standing from before it regroup there, once; the fallen never', () => {
+test('as the player reaches a zone, the crew still standing from before it regroup there, once; the fallen never', async () => {
   const crew = new WreckCrew();
   const posted: number[][] = [];
   const alive = new Map<number, number>();
   const { run } = fakeRun(alive);
-  const posting: CrewRun = { ...run, room: { ...run.room, storyPost: (id, x, y) => (posted.push([id, x, y]), true) } };
+  const story: CrewRun['room']['story'] = async (asked) => {
+    if (asked.ask === 'post') posted.push([asked.crew, asked.x, asked.y]);
+    return run.room.story(asked);
+  };
+  const posting: CrewRun = { ...run, room: { story } };
   crew.stand(waveOf(1).slice(0, 1), posting);
+  await answered();
   const first = [100, 101, 102];
   first.forEach((id, index) => alive.set(id, index === 1 ? 0 : 40));
   const shown: CrewRun = { ...posting, foes: new Map([...alive].map(([id, health]) => [id, { view: { health } }])) };
   crew.stand(waveOf(2).slice(0, 1), shown);
+  await answered();
   crew.regroup(2, shown);
+  await answered();
   assert.deepEqual(
     posted.map(([id]) => id),
     [100, 102],
@@ -223,8 +241,10 @@ test('as the player reaches a zone, the crew still standing from before it regro
   const [x, y] = layout.zones[2]?.checkpoint ?? [0, 0];
   for (const [, atX = 0, atY = 0] of posted) assert.ok(Math.hypot(atX - x, atY - y) < 2, 'round its checkpoint');
   crew.regroup(2, shown);
+  await answered();
   assert.equal(posted.length, 2, 'once');
   crew.regroup(3, shown);
+  await answered();
   const onward = posted.slice(2).map(([id]) => id ?? 0);
   assert.deepEqual(
     onward.sort((one, two) => one - two),

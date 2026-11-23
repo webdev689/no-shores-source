@@ -41,3 +41,6 @@ they wear?", the owner chose "!, letter, door (Recommended)":
 | The bounty board's "!" | A gold "!" (a stroke over a dot) in the keepers' 21-cell diamond, the diamond gold as the "!" is in place of a keeper's brass, standing 0.2 m over the board's gable (3.7 m) over the board's own middle, not where it is read | The keepers' signs' style and size, as asked; over the board itself, so a player reading it is not under it |
 | The Postmaster's beat | His sealed letter swells a fifth wider and eases back every 1.3 s while a letter waits for the player, and stands still while none does and under reduced motion, as the bob does | A swell reads from across the plaza, and his mark stays whole as every near mark is |
 | A quest's puzzle points and the ward it defends | Their rings under beams, gold once lit, as the quests draw them; no mark | They came with the quests beside this change; a mark of their own waits on the owner |
+
+Changed in part by [[A Mark Over What a Player Can Use Is Seen Through Walls]]: a mark is seen, faded, through what
+stands before it.

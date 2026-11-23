@@ -1,22 +1,16 @@
-// The aim camera: while a broadside is laid the view eases out to its battery's station (aimStation) on the side
-// taken, riding the ship as it is drawn, and looks square off it at the water where the guns are laid, so the sight
-// at the view's middle stands on the landing zone; let go, it eases home. A sinking ship's guns are silent, so its
-// eye never moves (the caller asks for no side).
+// The aim camera: while a broadside is laid the view eases to its battery's station (aimStation) on the side taken,
+// aboard over its deck as Black Flag's is, riding the ship as it is drawn, zoomed a little, and looks off the side at
+// the water where the guns are laid, so the sight at the view's middle stands on the landing zone; let go, it eases
+// home. A sinking ship's guns are silent, so its eye never moves (the caller asks for no side).
 import type { FightLook } from '../rules/fightRules.ts';
-import { hullBox, hullMouths, hullSails } from '../ships/hulls.ts';
+import { hullBox } from '../ships/hulls.ts';
 import { shipAxes } from '../ships/shipAxes.ts';
 import { lookPitch, lookReach } from './aim.ts';
-import { aimStation } from './aimStation.ts';
+import { aimStation, batteryOf } from './aimStation.ts';
 import { clearAround, sweptBoxes } from './shipClear.ts';
 
 /** How long the eye takes to ease in or out, and from one battery to the other: its time constant, seconds. */
 export const AIM_CAM_TAU = 0.22;
-/** How far short of a ship alongside the eye stops on its way out from its ports, metres. */
-export const AIM_CAM_CLEAR = 1.2;
-/** How far a hull's rail stands over its box's top, metres. */
-const RAIL_OVER_BOX_M = 1;
-/** A ship alongside's yards over its side count as its side up to this far over its box, metres. */
-const YARDS_OVER_BOX_M = 4;
 /** The landing zone's drift along the keel (the ship's own way carried by the balls) is followed this slowly,
  *  seconds, so a late answer from the rules never jerks the view. */
 const DRIFT_TAU = 0.25;
@@ -25,24 +19,11 @@ const SWAP_SHARE = 0.05;
 /** On its way between the camera's own place and the battery the eye keeps this far out past the ship and its rig,
  *  and this far over and under each part of it, metres, coming in to the battery's station at the end. */
 const ROUND_CLEAR_M = 0.6;
-/** However close a ship alongside, the aim's eye stays this far clear of its own hull and sails' swing, metres. */
-const OWN_CLEAR_M = 0.5;
-/** The eye's way round the ship is felt every this many radians of bearing (5°). */
+/** The eye's way round the ship is felt every this many radians of bearing (5°), and every this many metres of height. */
 const ROUND_STEP = Math.PI / 36;
+const ROUND_RISE_M = 0.5;
 
 type Point = readonly [number, number, number];
-
-/** A hull the eye keeps clear of, in the world: its middle on the water (east, south), heading, half length and half
- *  beam, and the heights its keel and its rail stand at. */
-export interface AimHull {
-  readonly x: number;
-  readonly y: number;
-  readonly heading: number;
-  readonly halfLength: number;
-  readonly halfBeam: number;
-  readonly bottom: number;
-  readonly top: number;
-}
 
 /** The ship the guns are laid from, as it is drawn: its middle (metres east and south), heading (radians clockwise
  *  from north), its waterline's height, its bow's rise and its heel to starboard (radians), its hull's number, and the
@@ -66,12 +47,17 @@ export interface AimView {
 }
 
 /** A frame of the aim: the view drawn, and the look laid while aiming (its bearing square off the side, its range
- *  out from the ship's middle, its ray from the eye along the view's middle), none while it eases home; and the look's
- *  pitch held where the guns' nearest or longest stopped it. */
+ *  out from the ship's middle, its ray from the eye along the view's middle), none while it eases home; the look's
+ *  pitch held where the guns' nearest or longest stopped it; and how far the view has eased to the aim (0 home, 1
+ *  there), for its zoom. */
 export interface AimFrame extends AimView {
   readonly look: FightLook | null;
   readonly heldPitch: number;
+  readonly eased: number;
 }
+
+/** How much narrower the view is, eased in to the aim: a little zoom, as Black Flag's. */
+export const AIM_ZOOM = 0.15;
 
 /** A lay as the aim follows it, the sea's or a fleet room's: its side, each gun's launch (its mouth, then its
  *  velocity), where each stops, and its guns' longest throw from where they leave. */
@@ -80,28 +66,6 @@ export interface Laid {
   readonly launches: readonly (readonly number[])[];
   readonly ends: readonly ({ readonly point: readonly number[] } | null)[];
   readonly reach: number;
-}
-
-/** A ship's hull as the eye keeps clear of it, from its numbers and pose: its box from its keel to its rail, as wide
- *  as its hull, its guns' mouths or the low yards over its side. */
-export function aimHullOf(ship: readonly number[], heave: number, hull: number): AimHull {
-  const [x = 0, y = 0, heading = 0] = ship;
-  const [low, high] = hullBox(hull);
-  const yards = hullSails(hull).flatMap((sail) =>
-    sail.kind === 'square' && sail.foot_port[2] < high[2] + YARDS_OVER_BOX_M
-      ? [Math.abs(sail.foot_port[1]), Math.abs(sail.foot_starboard[1])]
-      : [],
-  );
-  const mouths = hullMouths(hull).map((mouth) => Math.abs(mouth[1]));
-  return {
-    x,
-    y,
-    heading,
-    halfLength: Math.max(Math.abs(low[0]), Math.abs(high[0])),
-    halfBeam: Math.max(Math.abs(low[1]), Math.abs(high[1]), ...mouths, ...yards),
-    bottom: heave + low[2],
-    top: heave + high[2] + RAIL_OVER_BOX_M,
-  };
 }
 
 /** The point `share` of the way from `from` to `to`. */
@@ -133,32 +97,6 @@ function toLocal(ship: AimShip, point: Point): Point {
   return [onto(bow), onto(starboard), onto(up)];
 }
 
-/** Where along the segment from `from` to `to` (0 to 1) it first enters `box` grown by `pad` on every side; null if it
- *  never does (DFO's segmentBoxEntry). */
-export function segmentBoxEntry(from: Point, to: Point, box: AimHull, pad: number): number | null {
-  const ship = { x: box.x, y: box.y, heading: box.heading, heave: 0, pitch: 0, roll: 0, hull: 0 };
-  const [start, end] = [toLocal(ship, from), toLocal(ship, to)];
-  const slabs = [
-    [-box.halfLength - pad, box.halfLength + pad],
-    [-box.halfBeam - pad, box.halfBeam + pad],
-    [box.bottom - pad, box.top + pad],
-  ] as const;
-  let [enter, leave] = [0, 1];
-  for (let axis = 0; axis < 3; axis++) {
-    const [low, high] = slabs[axis] ?? [0, 0];
-    const [begin, way] = [start[axis] ?? 0, (end[axis] ?? 0) - (start[axis] ?? 0)];
-    if (Math.abs(way) < 1e-12) {
-      if (begin < low || begin > high) return null;
-      continue;
-    }
-    const [one, other] = [(low - begin) / way, (high - begin) / way];
-    enter = Math.max(enter, Math.min(one, other));
-    leave = Math.min(leave, Math.max(one, other));
-    if (enter > leave) return null;
-  }
-  return enter;
-}
-
 /** How far along its keel a lay's balls fall from where they leave (metres): the ship's own way they carry, and their
  *  ripple; none where it lays nothing on that side or nothing falls. */
 export function laidDrift(lay: Laid | null, side: 1 | -1, heading: number): number {
@@ -182,15 +120,14 @@ export function laidReach(lay: Laid | null, side: 1 | -1, ship: { x: number; y: 
 }
 
 /** What the aim is given each frame: the view it eases from, the side wanted (1 starboard, -1 port, null to ease
- *  home), the ship as drawn, the look's pitch (down positive, its input: how far out the guns are laid), the lay the
- *  rules last answered, and each hull alongside to keep short of. */
+ *  home), the ship as drawn, the look's pitch (down positive, its input: how far out the guns are laid), and the lay
+ *  the rules last answered. */
 export interface AimAsk {
   readonly home: AimView;
   readonly want: 1 | -1 | null;
   readonly ship: AimShip;
   readonly pitch: number;
   readonly lay: Laid | null;
-  readonly alongside: readonly AimHull[];
 }
 
 /** The aim's view, eased in and out, kept from frame to frame. A held aim keeps the side it was taken on; taken
@@ -201,8 +138,6 @@ export class AimCamera {
   private side: 1 | -1 | null = null;
   /** The side the aim held now was taken on, kept until it is let go. */
   private held: 1 | -1 | null = null;
-  /** The eye's place in its ship's frame, eased as a ship alongside comes and goes. */
-  private local: Point | null = null;
   /** The landing zone's drift along the keel, eased. */
   private drift = 0;
 
@@ -214,34 +149,23 @@ export class AimCamera {
     const wanted = this.held;
     const swapping = wanted !== null && this.side !== null && wanted !== this.side;
     this.share += ((wanted && !swapping ? 1 : 0) - this.share) * step;
-    if (swapping && this.share < SWAP_SHARE) [this.side, this.local, this.drift] = [wanted, null, 0];
+    if (swapping && this.share < SWAP_SHARE) [this.side, this.drift] = [wanted, 0];
     else if (!this.side) this.side = wanted;
-    if (!wanted && this.share < 1e-3) [this.share, this.side, this.local, this.drift] = [0, null, null, 0];
+    if (!wanted && this.share < 1e-3) [this.share, this.side, this.drift] = [0, null, 0];
     const side = this.side;
-    if (!side || this.share <= 0) return { ...home, look: null, heldPitch: ask.pitch };
+    if (!side || this.share <= 0) return { ...home, look: null, heldPitch: ask.pitch, eased: 0 };
     const station = aimStation(ship.hull);
-    const mirrored = (point: Point): Point => [point[0], point[1] * side, point[2]];
-    const ports = toWorld(ship, mirrored(station.ports));
-    let eye = toWorld(ship, mirrored(station.eye));
-    const alongside = Math.min(
-      1,
-      ...ask.alongside.map((hull) => segmentBoxEntry(ports, eye, hull, AIM_CAM_CLEAR) ?? 1),
-    );
-    // Never so far in that its own hull or a sail's swing stands in the view, however close the other ship lies.
-    const clear = Math.max(alongside, ownClear(ship.hull, station));
-    if (clear < 1) eye = toward(ports, eye, clear);
-    const local = toLocal(ship, eye);
-    this.local = this.local ? toward(this.local, local, step) : local;
-    eye = toWorld(ship, this.local);
+    const local = [station.eye[0], station.eye[1] * side, station.eye[2]] as const;
+    const eye = toWorld(ship, local);
     const driftStep = 1 - Math.exp(-Math.max(0, seconds) / DRIFT_TAU);
     this.drift += (laidDrift(ask.lay, side, ship.heading) - this.drift) * driftStep;
     const height = station.eye[2];
     const asked = station.eye[1] + lookReach(-ask.pitch, height);
-    const { nearestM } = aimStation(ship.guns ?? ship.hull);
+    const { nearestM } = batteryOf(ship.guns ?? ship.hull);
     const range = Math.min(laidReach(ask.lay, side, ship), Math.max(nearestM, asked));
     const heldPitch = range === asked ? ask.pitch : -lookPitch(range - station.eye[1], height);
     // The point laid on the water, square off the battery's middle and on along the keel as far as the balls drift.
-    const along = station.eye[0] + this.drift;
+    const along = station.ports[0] + this.drift;
     const out = range * side;
     const target = [
       ship.x + Math.sin(ship.heading) * along + Math.cos(ship.heading) * out,
@@ -253,7 +177,7 @@ export class AimCamera {
     const [yaw, pitch] = [Math.atan2(east, -south), Math.atan2(-up, flat)];
     const length = Math.hypot(flat, up) || 1;
     const k = this.share * this.share * (3 - 2 * this.share);
-    const drawn = toWorld(ship, roundShip(ship.hull, toLocal(ship, home.eye), this.local, k));
+    const drawn = toWorld(ship, wayAboard(ship.hull, toLocal(ship, home.eye), local, k, side, station.onDeck));
     const laying = wanted === side;
     const look = laying
       ? { bearing: 90 * side, range, ray: [...eye, east / length, south / length, up / length] }
@@ -264,30 +188,31 @@ export class AimCamera {
       pitch: home.pitch + (pitch - home.pitch) * k,
       look,
       heldPitch,
+      eased: k,
     };
   }
 }
 
-/** How far out from its ports toward its station (0 to 1) the eye must stay to stand `OWN_CLEAR_M` clear of its own
- *  hull and every sail's swing. */
-function ownClear(hull: number, station: ReturnType<typeof aimStation>): number {
-  const within = (share: number) => {
-    const [along, out, up] = [0, 1, 2].map(
-      (axis) => (station.ports[axis] ?? 0) + ((station.eye[axis] ?? 0) - (station.ports[axis] ?? 0)) * share,
-    ) as [number, number, number];
-    return sweptBoxes(hull).some(
-      ([low, high]) =>
-        along > low[0] - OWN_CLEAR_M &&
-        along < high[0] + OWN_CLEAR_M &&
-        out > low[1] - OWN_CLEAR_M &&
-        out < high[1] + OWN_CLEAR_M &&
-        up > low[2] - OWN_CLEAR_M &&
-        up < high[2] + OWN_CLEAR_M,
-    );
-  };
-  let share = 1;
-  while (share > 0 && !within(share - 0.05)) share -= 0.05;
-  return Math.max(0, share);
+/** The point `share` of the way from `from` to an eye `to` (both in a ship's frame) laying `side` (1 starboard, -1
+ *  port): round the ship as `roundShip` goes to a point abeam of `to` on that side clear of its hull and every sail's
+ *  swing, then straight in over its rail, square to its side, to the eye aboard; an eye out past its side, round to it
+ *  alone. */
+export function wayAboard(hull: number, from: Point, to: Point, share: number, side: 1 | -1, onDeck: boolean): Point {
+  // There, the way is not looked for: the ship heels and pitches under the eye, and no frame of a held aim searches.
+  if (share >= 1) return to;
+  if (!onDeck) return roundShip(hull, from, to, share);
+  const [, high] = hullBox(hull);
+  const past = sweptBoxes(hull)
+    .filter(
+      ([low, top]) =>
+        to[0] > low[0] && to[0] < top[0] && to[2] > low[2] - ROUND_CLEAR_M && to[2] < top[2] + ROUND_CLEAR_M,
+    )
+    .map(([, top]) => top[1]);
+  const abeam: Point = [to[0], side * (Math.max(Math.abs(high[1]), ...past) + ROUND_CLEAR_M), to[2]];
+  const [round, last] = [sweepOf(hull, from, abeam).length, Math.abs(abeam[1] - to[1])];
+  const split = round / Math.max(1e-9, round + last);
+  if (share < split) return roundShip(hull, from, abeam, share / split);
+  return toward(abeam, to, (share - split) / Math.max(1e-9, 1 - split));
 }
 
 /** A place in a ship's frame as its bearing from its bow (radians, to starboard positive), its distance out from its
@@ -344,7 +269,8 @@ function sweepFor(hull: number, from: Point, to: Point) {
     [low[0], high[0]].flatMap((along) => [low[1], high[1]].map((out) => Math.atan2(out, along))),
   );
   const ways = [short, short - Math.sign(short || 1) * 2 * Math.PI].map((turn) => {
-    const steps = Math.max(1, Math.ceil(Math.abs(turn) / ROUND_STEP));
+    // Felt every 5° round and every half metre up or down, so a drop through a sail's swing is felt however short.
+    const steps = Math.max(1, Math.ceil(Math.abs(turn) / ROUND_STEP), Math.ceil(Math.abs(toUp - up) / ROUND_RISE_M));
     const partOf = (round: number) => {
       const ahead = (((Math.sign(turn) * (round - bearing)) % (2 * Math.PI)) + 2 * Math.PI) % (2 * Math.PI);
       return turn === 0 ? 0 : ahead / Math.abs(turn);
@@ -355,7 +281,9 @@ function sweepFor(hull: number, from: Point, to: Point) {
     ];
     const safe = Math.max(...felt.map((part) => clearOf(hull, bearing + turn * part, up + (toUp - up) * part)));
     const [outward, inward] = [Math.max(0, safe - out), Math.max(0, safe - toOut)];
-    return { turn, safe, outward, inward, length: outward + Math.abs(turn) * Math.max(safe, out, toOut) + inward };
+    // The way round counts its climb or drop too, so a change of height is eased over it, never taken in a frame.
+    const round = Math.hypot(Math.abs(turn) * Math.max(safe, out, toOut), toUp - up);
+    return { turn, safe, outward, inward, length: outward + round + inward };
   });
   const [first, second] = ways as [(typeof ways)[0], (typeof ways)[0]];
   return first.length <= second.length ? first : second;

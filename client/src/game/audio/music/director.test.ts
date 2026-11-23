@@ -221,6 +221,22 @@ test("a boss's wake holds the song it leads into, though that song played before
   );
 });
 
+test('a fight that cuts a sting short brings in the song waiting behind it as the sting ends, not where it would have', () => {
+  const { frames, starts, clock } = directed();
+  // In the desert, whose family's score has a defeat of its own.
+  const desert: Hearing = { ...island, place: { kind: 'island', climate: 'desert', node: 'patrol' } };
+  const near = brute({ distance: 10 });
+  frames({ ...desert, foes: [brute({ engaged: true })] }, 4);
+  // Felled: the family's defeat sounds; risen with a foe alert near, the tension waits behind it.
+  frames({ ...desert, dead: true, health: 0, foes: [near] }, 1);
+  frames({ ...desert, foes: [near] }, 2);
+  const engaged = clock();
+  frames({ ...desert, foes: [brute({ engaged: true })] }, 8);
+  // The sting (9 s, its bars 1.4 s) fades out by its next bar after the cut: past that, any note is the song's.
+  const after = starts.filter((when) => when > engaged + 3 && when < engaged + 5.5);
+  assert.ok(after.length > 0, "the fight's song plays once the cut sting has faded, never seconds of silence");
+});
+
 test('the plaza band plays where it is heard in the social space, and nowhere else', () => {
   const social: Hearing = { ...island, place: { kind: 'social', climate: 'temperate-coast' } };
   const band = (metres: number): BandHeard => ({

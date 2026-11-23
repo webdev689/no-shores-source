@@ -189,8 +189,9 @@ struct Shadowed { @builtin(position) position: vec4f, @location(0) corner: vec2f
 }
 `;
 
-/** A figure that throws no shadow and has no contact shade: a Veiled one, all but unseen, or one still arriving. */
-const unshaded = (figure: CardAt | undefined) => !!figure?.veiled || !!figure?.arrival;
+/** A figure that throws no shadow and has no contact shade: a Veiled one, all but unseen, one still arriving, or a
+ *  thing hovering over the ground as a drop does. */
+const unshaded = (figure: CardAt | undefined) => !!figure?.veiled || !!figure?.arrival || !!figure?.hovers;
 
 /** Every card's terms in one buffer, a slot apart, and each composed picture's group, made once a picture and read at
  *  a card's slot: a figure's frame changing finds its picture's group made. The groups go with their pictures. */

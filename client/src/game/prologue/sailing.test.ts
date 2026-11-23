@@ -66,4 +66,5 @@ test('a move held plays through once and stays on its last frame; a looping one 
   assert.equal(actorFrame({ since: 0, hold: true }, 0.2, 6), 1);
   assert.equal(actorFrame({ since: 0 }, 1, 4), 2);
   assert.equal(actorFrame({ since: 5 }, 4, 4), 0, 'not yet begun is its first frame');
+  assert.equal(actorFrame({ since: 0, fps: 3 }, 1, 4), 3, 'a walker paced slower steps at its own rate');
 });

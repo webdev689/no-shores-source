@@ -313,6 +313,10 @@ export class MusicDirector {
     if (song && roles.has('combat') && stinging && now < this.holdUntil && !this.waking && this.stinger) {
       this.holdUntil = this.stinger.nextBar(now);
       this.stinger.fade(0, this.holdUntil, beatOf(stinging));
+      // A song already waiting behind the sting comes in where the sting now ends, not where it would have.
+      const waiting = this.current?.player.waiting(now) ? this.current : null;
+      if (waiting && waiting.player.startsAt > this.holdUntil)
+        waiting.player.play(waiting.song, this.holdUntil, { roles: waiting.roles, level: waiting.level, loop });
     }
     const playing = this.current;
     if (!song) {

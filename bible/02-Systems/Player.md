@@ -81,7 +81,9 @@ moves and figure are DFO's ([[The Player Plays as in DFO]]); the Test Ground's n
 - **The crosshair** (`crosshair.ts`) finds where a shot would strike, over the ground and the bodies.
 - **The input** (`Input`) reads the keys and the mouse on the page's canvas, with the pointer locked to look round,
   and the pad each frame (`PadReader`), each through the player's binds (`binds.ts`, [[Interface]], "The pad" and
-  "Binding a control"): a stick moves and turns as far as it leans, as the keys move and turn the whole way.
+  "Binding a control"): a stick moves and turns as far as it leans, as the keys move and turn the whole way. The game
+  has its controls (a frame's `locked`: the fight's buttons, the teaching's answers) while the pointer is locked, or
+  while the pad was the last played, as a pad's press is never a click on the page.
 
 ## Limits
 
