@@ -139,7 +139,9 @@ edge, its flames, smoke and embers spread over its length; without it a fire is 
 
 A fire is drawn in the game's pixel look. Every part is laid out on a grid of 48 texels a metre, between the ships' 40
 and the figures' 62, and coloured from a stepped palette: deep red at the rim, red, orange, yellow and a pale heart.
-Nothing in it is a smooth gradient; smoke's cover comes in three steps. Its flicker is held in frames, ten a second as a
+Nothing in it is a smooth gradient; smoke's cover comes in three steps. Only as the eye comes to a puff of smoke does
+it fade softly to nothing, over the last 2.5 to 0.3 m to its near side (`nearFade.ts`), so a camera in or against a
+column never sees it as a flat sheet over the whole view. Its flicker is held in frames, ten a second as a
 sprite's are, and each fire turns its frames at a moment of its own, so a deck of fires never flickers in step.
 
 Each frame of a fire comes from its seed and the clock. Its tongues of flame wander in height within a band, sway and
@@ -154,12 +156,13 @@ red. A fire's parts are worked out on the CPU once a frame of its flicker and ke
 edges, cost about 0.8 ms a frame on the test machine, and no frame draws more than 16,384 parts.
 
 Smoke and flame are laid over the picture after the water, tested against the scene's depth, so the water never covers a
-fire burning above it. Each fire also throws its light into the light layer ([[Weapon Glow]]): the glow reads the
-scene's depth back into the point drawn at each pixel and lights it by how near it stands to the fire's middle, out to
-three times the fire's height, so the deck round a fire and whoever stands there are lit and the sea and sky seen past
-it are not. A fire along an edge throws the same light from up to seven points spaced no further apart than that reach,
-so the edge is lit end to end. The glow is light itself, so it is added as it is, not only where it passes white-hot;
-its green is half its red and its blue never steps, so it runs from a red rim through orange to a gold heart.
+fire burning above it. Each fire also throws its light round it, laid under its flames at the picture's own size: the
+glow reads the scene's depth back into the point drawn at each pixel and lights it by how near it stands to the fire's
+middle, out to three times the fire's height, so the deck round a fire and whoever stands there are lit and the sky
+seen past it is not. A fire along an edge throws the same light from up to seven points spaced no further apart than
+that reach, so the edge is lit end to end. Its light is red-orange, its green half its red, added at half its strength
+at the middle and falling off softly as the square of the way out (`fireLit`), so it warms orange timber and never
+turns it yellow-green, and shows no edge; it is not the stepped light layer's.
 
 ### Trying it
 
@@ -171,7 +174,7 @@ starts at any beat with `?prologue=<beat>` ([[Prologue]]), each in its own weath
 - The overcast's ceiling and the mist are laid over the water's own sky, not drawn into it: a storm's sun still sets
   the water's highlights, only dimmed.
 - Rain and snow are drawn round the eye only; they do not wet or whiten the ground.
-- A fire's light is the light layer's, so it is stepped and casts no shadow: what stands behind a mast is lit too.
+- A fire's light casts no shadow: what stands behind a mast is lit too.
 - The water writes no depth, so a fire's light never falls on the sea's surface round it.
 - A fire's parts are not sorted by distance: within a fire the brightest flame is drawn last, and two fires that
   overlap on the screen are drawn in the order they were lit.

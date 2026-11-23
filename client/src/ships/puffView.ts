@@ -4,6 +4,7 @@
 // (alpha none). They are drawn after the water, far to near, over the finished picture, hidden by hand where the
 // scene's depth stands nearer, so the water's sky and surface never cover them. Each glow also gives its stepped halo
 // through the light layer, as the land's bright things do.
+import { NEAR_FADE_WGSL } from '../nearFade.ts';
 import { BUFFER_USAGE, type Gpu, SHADER_STAGE } from '../gpu.ts';
 import type { Mark } from './effects.ts';
 import type { ShipCamera } from './shipView.ts';
@@ -63,8 +64,10 @@ struct Out {
   @location(0) colour: vec4f,
   @location(1) corner: vec2f,
   @location(2) @interpolate(flat) kind: vec2f,
+  // How much shows as the eye comes to it: in or against a puff it would be a sheet over the whole view.
+  @location(3) @interpolate(flat) near: f32,
 }
-
+${NEAR_FADE_WGSL}
 const CORNERS = array<vec2f, 6>(vec2f(-1, -1), vec2f(1, -1), vec2f(1, 1), vec2f(-1, -1), vec2f(1, 1), vec2f(-1, 1));
 
 @vertex fn puff_vertex(
@@ -86,6 +89,7 @@ const CORNERS = array<vec2f, 6>(vec2f(-1, -1), vec2f(1, -1), vec2f(1, 1), vec2f(
   out.colour = colour;
   out.corner = corner;
   out.kind = kind.xy;
+  out.near = near_fade(length(from_eye) - place.w);
   return out;
 }
 
@@ -101,7 +105,7 @@ fn cover(corner: vec2f, flat: f32) -> f32 {
 
 @fragment fn puff_fragment(in: Out) -> @location(0) vec4f {
   if (in.position.z < textureLoad(depths, vec2i(in.position.xy), 0).r) { discard; }
-  let alpha = cover(in.corner, in.kind.y) * in.colour.a;
+  let alpha = cover(in.corner, in.kind.y) * in.colour.a * in.near;
   if (alpha <= 0.002) { discard; }
   // Premultiplied: a glow adds its light and covers nothing.
   return vec4f(in.colour.rgb * alpha, select(alpha, 0.0, in.kind.x > 0.5));

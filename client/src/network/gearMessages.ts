@@ -156,6 +156,8 @@ export interface GearItem {
   readonly price: number;
   /** A weapon's element, by the gear crate's numbers: 0 for none. */
   readonly element: number;
+  /** One of the prologue's own items, which its end takes back; none said is none. */
+  readonly story?: boolean;
 }
 
 export interface GearVestige {
@@ -405,6 +407,7 @@ function itemOf(item: GearItemTable): GearItem {
     columns,
     price: item.price(),
     element: item.element(),
+    story: item.story(),
   };
 }
 

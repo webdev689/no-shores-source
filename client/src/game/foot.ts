@@ -546,6 +546,7 @@ export class Foot {
       firstPerson,
       pressed: shown.pressed,
       parryOpen: fight.parryOpen,
+      parryWindow: fight.parryWindow,
       abilities: fight.abilities,
       // The shots left stand beside the crosshair, wherever it shows.
       ammo: sights ? (ownView?.ammo ?? null) : null,

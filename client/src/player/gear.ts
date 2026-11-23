@@ -168,9 +168,19 @@ export function answerText(answer: number): string {
   return answer === 0 || answer === 107 ? '' : (REFUSALS[answer] ?? `Refused (${answer}).`);
 }
 
-/** An item's name: a named item's own, or a rolled one's among its kind's for its rarity. */
-export function itemName(item: Pick<GearItem, 'named' | 'kind' | 'rarity' | 'name'>): string {
+/** The prologue's own armour's names, by kind, for the steel it is drawn in (`gearLooks.ts` `STORY_SET`). */
+const STORY_NAMES: Readonly<Record<number, string>> = {
+  14: 'Steel Cuirass',
+  15: 'Steel Gauntlets',
+  16: 'Steel Greaves',
+};
+
+/** An item's name: a named item's own, the prologue's armour its steel's, or a rolled one's among its kind's for its
+ *  rarity. */
+export function itemName(item: Pick<GearItem, 'named' | 'kind' | 'rarity' | 'name' | 'story'>): string {
   if (item.named) return items.items.find((found) => found.id === item.named)?.name ?? item.named;
+  const story = item.story ? STORY_NAMES[item.kind] : undefined;
+  if (story) return story;
   const kind = kindKey(item.kind);
   const names = (rolled.names as Record<string, Record<string, readonly string[]> | undefined>)[kind];
   const rarity = (RARITIES[item.rarity]?.name ?? '').toLowerCase();

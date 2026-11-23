@@ -58,7 +58,8 @@ A fighter's side is the players' or a faction's, by its number. Fighters of diff
 factions fight each other as they fight players, and never their own side. The Brig's crew (number 0 for a faction)
 fight on the players' side: foes of every faction fight them, and no player strikes them, nor they a player; so do
 the crew's own five types (13 to 17), the types a companion fights as. On the prologue's wreck every boarder is the
-Grey Tithe's ([[The Wreck's Boarders Are One Side]], [[Pirates Are Replaced by the Grey Tithe]]).
+Grey Tithe's ([[The Wreck's Boarders Are One Side]], [[Pirates Are Replaced by the Grey Tithe]]), each a Minor or a
+Major at its own rank's strength but Thule, the boss ([[Prologue]]).
 
 | Number | Faction | Present | On land | On deck | Ships |
 |---|---|---|---|---|---|
@@ -89,7 +90,7 @@ out among them ([[Foes]]).
 | 8 | Hookman | Swordsman | `axe_iron` (two hands) | | Minor, Major |
 | 9 | Pistoleer | Archer | `pistolet` | | Minor, Major |
 | 10 | Bosun | Brute | `warhammer_iron` | | Major, Elite |
-| 11 | Tithe-Mate | Captain | `sword_steel` | | Elite, Miniboss |
+| 11 | Tithe-Mate | Captain | `sword_steel` | | Elite, Miniboss, Major (the prologue's wreck alone stands it so) |
 | 12 | Captain Brannoc Thule | Captain | `sword_ebony` | | Boss |
 | 13 | Skirmisher (the crew's) | Skirmisher | `dagger_iron` | `dagger_iron_l` | Minor, Major |
 | 14 | Swordsman (the crew's) | Swordsman | `sword_steel` | `shield_kite_steel` | Minor, Major |

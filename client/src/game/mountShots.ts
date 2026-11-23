@@ -45,7 +45,7 @@ function gearWith(horse: boolean): GearState {
 }
 
 /** The menu open at `view` over `gear`, a frame at a time. */
-function menuShot(view: string, gear: GearState): (ui: Interface) => Node {
+export function menuShot(view: string, gear: GearState): (ui: Interface) => Node {
   let dress: Dress | null = null;
   const here = () => {
     const plain = plainDress('human', 0.3);

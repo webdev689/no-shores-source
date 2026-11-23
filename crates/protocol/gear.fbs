@@ -20,7 +20,7 @@ table GearColumn {
 // its island resource (255 for none), whether a Breach's, its XP and the most it earns, the nodes bought (a bit each)
 // and the one chosen in each column (255 none), the slot it is carried with, where it is (0 carried, 1 the vault, 2
 // and on worn in the slot that many less 2), its Attack, Defense and Prestige, its columns, its price at a vendor, and
-// a weapon's element (the gear crate's numbers, 0 for none).
+// a weapon's element (the gear crate's numbers, 0 for none), and whether it is one of the prologue's own.
 table GearItem {
   id: uint;
   kind: ubyte;
@@ -42,6 +42,7 @@ table GearItem {
   columns: [GearColumn];
   price: uint;
   element: ubyte;
+  story: bool;
 }
 
 // A Vestige a player holds: their number for it, its colour, the slot it holds an item for, that item's level, and

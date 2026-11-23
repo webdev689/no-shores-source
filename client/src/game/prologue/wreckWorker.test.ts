@@ -5,6 +5,7 @@ import type { Snapshot } from '../../network/roomConnection.ts';
 import { type FromRooms, serveRooms, type ToRooms } from '../../network/roomServe.ts';
 import { roomPort, RoomThread } from '../../network/roomThread.ts';
 import { courseOf, readWreck } from './wreckLayout.ts';
+import { SWORD_AND_SHIELD } from './wreckTeaching.ts';
 
 const compiled = new WebAssembly.Module(
   await readFile(new URL('../../../../target/wasm32-unknown-unknown/release/room_wasm.wasm', import.meta.url)),
@@ -42,8 +43,8 @@ test("the wreck's room in the worker answers the story's asks in turn, as the sa
   const asked = [
     room.story({ ask: 'wreck' }),
     room.story({ ask: 'stand', type: 8, rank: 1, x, y: y + 4, facing: 0, level: 1, hunt: true }),
-    room.story({ ask: 'arms' }),
-    room.story({ ask: 'arms' }),
+    room.story({ ask: 'take', kind: SWORD_AND_SHIELD }),
+    room.story({ ask: 'take', kind: SWORD_AND_SHIELD }),
   ];
   const [woke, boarder = 0, given, again] = await Promise.all(asked);
   assert.equal(woke, 1);

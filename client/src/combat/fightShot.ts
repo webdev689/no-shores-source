@@ -8,6 +8,7 @@ import type { FightEvent } from '../network/messages.ts';
 import type { GearItem, GearState } from '../network/gearMessages.ts';
 import { abilityPictures } from '../player/artGlyphs.ts';
 import { KINDS, WORN } from '../player/gear.ts';
+import { fetchRoomWasm, startCombatRules } from '../rules/combatRules.ts';
 import type { Action, FighterView } from '../rules/fighters.ts';
 import { cameraOf } from './plateSight.ts';
 import type { MarkedFoe } from './foePlate.ts';
@@ -16,6 +17,10 @@ import type { Interface } from '../ui/ui.ts';
 import { Hud, type HudFrame } from './hud.ts';
 
 const PLAYER = 1;
+/** A player's parry window as the room's rules give it, so the scene's rings band it as the game's do. */
+const PARRY_WINDOW = startCombatRules(
+  await WebAssembly.compileStreaming(fetchRoomWasm(import.meta.env.BASE_URL)),
+).parryWindow(true);
 
 const body: FighterView = {
   x: 0,
@@ -175,6 +180,7 @@ export function fightScene(width: number, height: number, dead = false): { frame
       height,
       events,
       player: PLAYER,
+      parryWindow: PARRY_WINDOW,
       firstPerson: false,
       pressed: true,
       lost: null,

@@ -1,9 +1,8 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { isDeepStrictEqual } from 'node:util';
-import { lightLevel } from '../combat/lightLayer.ts';
-import { FIRE_FRAMES_PER_SECOND, type Fire, fireFrame, fireParts, GLOW_REACH } from './flameParts.ts';
-import { GLOW_COLOUR, MOST_PARTS, packFires } from './flames.ts';
+import { FIRE_FRAMES_PER_SECOND, type Fire, fireFrame, fireParts, GLOW_REACH, inSmoke } from './flameParts.ts';
+import { fireLit, MOST_PARTS, packFires } from './flames.ts';
 import { PART, PART_KINDS } from './flamesShader.ts';
 
 const FIRE: Fire = { at: [10, 20, 3], sizeM: 1, seed: 4 };
@@ -168,13 +167,41 @@ test('packed parts never pass the buffer, and every fire keeps its glow', () => 
   assert.equal(written.shown + written.glows, 200);
 });
 
-test("a fire's light steps from a red rim through orange to a gold heart, and no other colour", () => {
-  const steps: string[] = [];
-  for (let share = 0; share <= 1.0001; share += 0.001) {
-    const step = GLOW_COLOUR.map((channel) => lightLevel(channel * share)).join(' ');
-    if (steps.at(-1) !== step) steps.push(step);
+/** The hue of a colour, degrees: 0 red, 30 orange, 60 yellow, 90 lime. */
+const hueOf = ([red, green, blue]: readonly number[]) => {
+  const [high, low] = [Math.max(red ?? 0, green ?? 0, blue ?? 0), Math.min(red ?? 0, green ?? 0, blue ?? 0)];
+  return high === low ? 0 : (60 * ((green ?? 0) - (blue ?? 0))) / (high - low);
+};
+
+test("a fire's light warms the planks round it orange, never yellow-green, however bright they stand", () => {
+  // Planks as the wreck draws them by a fire, from its pictures: deep, lit and lit to full red.
+  for (const plank of [
+    [0.5, 0.25, 0.04],
+    [0.94, 0.36, 0.05],
+    [1, 0.38, 0.05],
+    [0.84, 0.5, 0.04],
+  ])
+    for (const strength of [0.6, 1, 1.4]) {
+      const lit = fireLit(plank, strength, 0);
+      assert.ok(hueOf(lit) <= 42, `${plank} lit ${lit.map((value) => value.toFixed(2))}: hue ${hueOf(lit).toFixed(0)}`);
+      assert.ok((lit[0] ?? 0) >= (plank[0] ?? 0) && (lit[1] ?? 0) >= (plank[1] ?? 0), 'lit, not darkened');
+    }
+});
+
+test("a fire's light falls off softly to nothing at its reach, never in a step", () => {
+  const plank = [0.6, 0.28, 0.04];
+  assert.deepEqual(fireLit(plank, 1, 1), plank, 'none at its reach');
+  let before = fireLit(plank, 1, 0);
+  for (let near = 0.01; near <= 1.0001; near += 0.01) {
+    const now = fireLit(plank, 1, near);
+    const step = Math.max(...now.map((value, channel) => Math.abs(value - (before[channel] ?? 0))));
+    assert.ok(step < 0.012, `a step of ${step.toFixed(3)} at ${near.toFixed(2)} of its reach`);
+    assert.ok(
+      now.every((value, channel) => value <= (before[channel] ?? 0) + 1e-9),
+      'falling as it goes out',
+    );
+    before = now;
   }
-  assert.deepEqual(steps, ['0 0 0', '0.5 0 0', '1 0.5 0', '1 1 0']);
 });
 
 test('a packed fire gives each part its kind, its place from the eye and its size, and keeps them for the frame', () => {
@@ -208,4 +235,26 @@ test('a fire lit from any seed, even a negative or broken one, packs parts of kn
   const written = packFires([{ ...FIRE, seed: -7.5 }], 1, CALM, [0, 0, 0], into);
   for (let slot = 0; slot < written.shown + written.glows; slot++)
     assert.ok(Object.values(PART).includes(((into[slot * 12 + 3] ?? -1) % PART_KINDS) as 0));
+});
+
+test('its smoke column holds every puff it rolls up, for any wind, and nothing well clear of it', () => {
+  const fires: Fire[] = [
+    { at: [2, -3, 1], sizeM: 1.5, seed: 4 },
+    { at: [0, 0, 0], sizeM: 3, seed: 9, along: [4, 1, 0.5] },
+  ];
+  for (const fire of fires)
+    for (const wind of [
+      [0, 0],
+      [3, -2],
+      [-6, 1],
+    ] as const)
+      for (let seconds = 0; seconds < 9; seconds += 0.25)
+        for (const puff of fireParts(fire, seconds, wind).smoke)
+          assert.ok(
+            inSmoke(fire, wind, puff.position, 0),
+            `a puff at ${puff.position.map((value) => value.toFixed(2))}`,
+          );
+  const [round] = fires;
+  assert.ok(round && !inSmoke(round, [0, 0], [round.at[0] + 6, round.at[1], round.at[2] + 3], 1), 'well beside it');
+  assert.ok(round && !inSmoke(round, [0, 0], [round.at[0], round.at[1], round.at[2] - 2], 0), 'under the fire');
 });

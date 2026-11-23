@@ -1,18 +1,23 @@
 // Fires that burn, smoke and throw embers. A fire's parts are worked out on the CPU from its seed and the clock once a
 // frame of its flicker (flameParts.ts), so a fire looks the same every time it is drawn, then laid over the finished
-// picture after the water and drawn again into the light layer, where it lights what stands round it.
-import { LIGHT_DEPTH, LIGHT_TARGET } from '../combat/lightLayer.ts';
+// picture after the water, its glows under its flames lighting what stands round it.
 import { BUFFER_USAGE, type Gpu, SHADER_STAGE } from '../gpu.ts';
-import { FLAMES_WGSL, NOISE_SEEDS, PART, PART_KINDS } from './flamesShader.ts';
+import { FLAMES_WGSL, GLOW_GAIN, NOISE_SEEDS, PART, PART_KINDS } from './flamesShader.ts';
 import { inverted } from './inverted.ts';
 import { FIRE_TEXELS_PER_METRE, type Fire, fireFrame, fireParts, type Point, type Wind } from './flameParts.ts';
 
 /** Floats a part takes: where it stands from the eye and its kind, its shape and lean, its colour and strength. */
 const PART_FLOATS = 12;
-/** The light at a fire's middle, as the light layer takes it before its cut, which steps each channel on its own. Its
- *  green is half its red, so green's first step falls with red's second, and its blue never steps: the light runs
- *  from a red rim through orange to a gold heart, never a yellow, grey or pink step. */
+/** The light at a fire's middle, red and orange: added to what it lights it warms it, and where that already stands
+ *  at full red it goes no further than yellow-orange. */
 export const GLOW_COLOUR = [0.6, 0.3, 0.03] as const;
+
+/** `colour` (0 to 1 a channel) as a fire's light leaves it, the fire of `strength` and the point `near` of its reach
+ *  from its middle: its light added, falling off softly to none at its reach. As `glow_fragment` adds it. */
+export function fireLit(colour: readonly number[], strength: number, near: number): number[] {
+  const fall = (1 - Math.min(1, Math.max(0, near))) ** 2;
+  return colour.map((value, channel) => Math.min(1, value + (GLOW_COLOUR[channel] ?? 0) * strength * GLOW_GAIN * fall));
+}
 /** The most parts drawn in a frame: forty large fires, some burning along edges, fit well inside it. */
 export const MOST_PARTS = 16_384;
 const PREMULTIPLIED = { srcFactor: 'one', dstFactor: 'one-minus-src-alpha', operation: 'add' } as const;
@@ -97,7 +102,7 @@ export function packFires(
   return { shown, glows: slot - shown };
 }
 
-/** Fires, lit and put out by id, drawn as one of the scene's drawers over the water and into the light layer. */
+/** Fires, lit and put out by id, drawn as one of the scene's drawers over the water. */
 export class Flames {
   /** The wind the smoke leans with, m/s east and south. */
   wind: Wind = [0, 0];
@@ -105,7 +110,7 @@ export class Flames {
   private readonly module: GPUShaderModule;
   private readonly overLayout: GPUBindGroupLayout;
   private readonly overPipeline: GPURenderPipeline;
-  private readonly lightPipeline: GPURenderPipeline;
+  private readonly glowPipeline: GPURenderPipeline;
   private readonly view: GPUBuffer;
   private bound: { depth: GPUTexture; group: GPUBindGroup } | null = null;
   private readonly fires = new Map<number, Fire>();
@@ -150,13 +155,17 @@ export class Flames {
       },
       primitive: { topology: 'triangle-list', cullMode: 'none' },
     });
-    // The glow tests the scene's own depth in its light, point by point, so the layer's coarser depth is not asked.
-    this.lightPipeline = device.createRenderPipeline({
+    // Its glows under its flames, at the picture's own size, so their light falls off softly rather than in the light
+    // layer's steps.
+    this.glowPipeline = device.createRenderPipeline({
       layout: device.createPipelineLayout({ bindGroupLayouts: [this.overLayout] }),
       vertex,
-      fragment: { module: this.module, entryPoint: 'light_fragment', targets: [LIGHT_TARGET] },
+      fragment: {
+        module: this.module,
+        entryPoint: 'glow_fragment',
+        targets: [{ format: gpu.format, blend: { color: PREMULTIPLIED, alpha: PREMULTIPLIED } }],
+      },
       primitive: { topology: 'triangle-list', cullMode: 'none' },
-      depthStencil: { ...LIGHT_DEPTH, depthCompare: 'always' },
     });
     this.view = device.createBuffer({ size: 144, usage: BUFFER_USAGE.uniform | BUFFER_USAGE.copyDestination });
   }
@@ -211,20 +220,15 @@ export class Flames {
   overWater(encoder: GPUCommandEncoder, target: GPUTextureView, _fromEye: Float32Array, depth: GPUTexture): void {
     if (!this.instances || this.counts.shown === 0) return;
     const pass = encoder.beginRenderPass({ colorAttachments: [{ view: target, loadOp: 'load', storeOp: 'store' }] });
-    pass.setPipeline(this.overPipeline);
     pass.setBindGroup(0, this.groupFor(depth));
     pass.setVertexBuffer(0, this.instances);
+    if (this.counts.glows > 0) {
+      pass.setPipeline(this.glowPipeline);
+      pass.draw(6, this.counts.glows, 0, this.counts.shown);
+    }
+    pass.setPipeline(this.overPipeline);
     pass.draw(6, this.counts.shown);
     pass.end();
-  }
-
-  /** Each fire's glow, into the light layer's pass (`LightLayer.encode`), lighting the scene drawn into `depth`. */
-  lightInto(pass: GPURenderPassEncoder, _fromEye: Float32Array, depth: GPUTexture): void {
-    if (!this.instances || this.counts.glows === 0) return;
-    pass.setPipeline(this.lightPipeline);
-    pass.setBindGroup(0, this.groupFor(depth));
-    pass.setVertexBuffer(0, this.instances);
-    pass.draw(6, this.counts.glows, 0, this.counts.shown);
   }
 
   /** The view and the scene's `depth` (one float a pixel, reversed), bound once for each depth texture. */
