@@ -289,20 +289,22 @@ export class PlaylistView {
     };
   };
 
-  /** Scrolls list `id` a page at a time for Page Up and Page Down, and by the pad's right stick while the focus
-   *  stands outside it (inside it, the interface scrolls it under the focus itself). */
+  /** Scrolls list `id` a page at a time for Page Up and Page Down, and by the pad's right stick where the interface
+   *  does not: it scrolls what lies under the pad's cursor while it is out, else under the focus's middle. */
   private scroll(ui: Interface, id: string): void {
     const [room, focus] = [ui.boxOf(id), ui.focusedId ? ui.boxOf(ui.focusedId) : null];
     if (!room) return;
     if (this.paged !== 0) ui.scrollBy(id, this.paged * Math.round(room.height * 0.8));
     this.paged = 0;
-    const within =
-      focus !== null &&
-      focus.x >= room.x &&
-      focus.x + focus.width <= room.x + room.width &&
-      focus.y >= room.y &&
-      focus.y + focus.height <= room.y + room.height;
-    if (ui.stickScroll !== 0 && !within) ui.scrollBy(id, ui.stickScroll);
+    const home =
+      ui.cursor !== 'none' && focus ? { x: focus.x + focus.width / 2, y: focus.y + focus.height / 2 } : ui.pointerAt;
+    const under =
+      home !== null &&
+      home.x >= room.x &&
+      home.x < room.x + room.width &&
+      home.y >= room.y &&
+      home.y < room.y + room.height;
+    if (ui.stickScroll !== 0 && !under) ui.scrollBy(id, ui.stickScroll);
   }
 
   /** The footer: the search's word, or why the last one ended, at the left; why the entry is shut beside the resting

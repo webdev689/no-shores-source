@@ -238,7 +238,7 @@ test('no line under a crest ends or starts with a separator, at any size', () =>
     const screen = standing(width, height);
     for (let place = 0; place < 4; place += 1)
       for (const said of wordsIn(byId(screen.built(), `playlist-tile-${place}`)))
-        assert.ok(!/^·|·$/.test(said.trim()), `"${said}" at ${width}x${height}`);
+        assert.ok(!said.includes('·'), `"${said}" at ${width}x${height}: a part a line, no separator to wrap on`);
     assert.ok(wordsIn(screen.built()).includes('Foes at level 22'), 'a part a line');
   }
 });
@@ -300,4 +300,23 @@ test('the card scrolls to its end by Page Down and the right stick, its bar’s 
     screen.frame();
     assert.ok(screen.ui.boxOf(`${list}-fade`), 'a page back up, more below again');
   }
+});
+
+test('the right stick scrolls the list once a frame, under the focus, never again on top', () => {
+  const screen = standing(390, 844);
+  assert.equal(screen.ui.focusedId, 'playlist-tile-0', 'the focus inside the stacked list');
+  // Scrolled a little, so its crest is cut at the list's top though its middle is still in it.
+  screen.ui.scrollBy('playlist-body', 20);
+  screen.frame();
+  screen.frame();
+  const before = screen.ui.boxOf('playlist-body-held')?.y ?? 0;
+  let stuck = 0;
+  for (const scroll of [1, 0]) {
+    screen.frame([{ kind: 'stick', x: 0, y: 0, scroll }]);
+    stuck += screen.ui.stickScroll;
+  }
+  screen.frame();
+  const moved = before - (screen.ui.boxOf('playlist-body-held')?.y ?? 0);
+  assert.ok(stuck > 0 && moved > 0, 'it scrolled');
+  assert.ok(Math.abs(moved - stuck) <= 1, `moved ${moved} for a stick of ${stuck}`);
 });
