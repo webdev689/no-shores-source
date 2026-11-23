@@ -447,7 +447,7 @@ the cutscenes, the camera's moves, the nameplate, the fires and the lines are th
     Stormcallers' hounds ("The Six Hounds") comes out of the storm, shown and never explained (`WispScene`), the
     fight held and the tracker hidden: an apple's size of white-blue light in Volt's colours, a white-hot core in
     steps, a soft halo laid as light (dithered far off, as six finer discs within 4 m), a trail of motes falling away and small arcs crackling off it, its light in Volt's blue on the wreck (`WreckLook.near`) and as a lamp of the night
-    on the figures and the sea round it, reaching 2.5 to 5 m and brighter as its rings tighten, the flash lighting all
+    on the figures and the sea round it, reaching 3.5 to 6 m and brighter as its rings tighten, the flash lighting all
     within 9 m near white for an instant (`wispLight`), a low hum
     trembling and a crackle now and then following it. Its course is laid on the layout for where the player
     stands (`wispCourse`): it drifts in (2.6 s) from 32 m out over the sea, of the bearings round the quiet deck's

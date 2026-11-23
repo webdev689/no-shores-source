@@ -299,7 +299,8 @@ export class WreckFight implements Beat {
     this.fallen(shown.fight.own?.action.kind === 'dead');
     this.end(tick.seconds, !!run.outcome);
     const { footView, hud, scene } = stage.parts;
-    const fight = footView.frame(run, shown, seconds, {
+    // A cutscene's marks are measured from its own eye, so they are drawn from it.
+    const fight = footView.frame(run, wisp ? { ...shown, shot: wisp.shot } : shown, seconds, {
       size: tick.size,
       viewport: tick.viewport,
       groundAt: (x, y) => scene.groundAt(x, y),
