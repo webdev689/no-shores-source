@@ -195,7 +195,7 @@ pub struct Character {
     /// The faction pledged to, and the reputation earned with each (`factions.rs`).
     #[serde(default)]
     pub allegiance: crate::factions::Allegiance,
-    /// The dyes, coats and bardings kept, and the one of each worn (`cosmetics.rs`).
+    /// The dyes and bardings kept, and the one of each worn (`cosmetics.rs`).
     #[serde(default)]
     pub cosmetics: crate::cosmetics::Cosmetics,
     /// Their place in every quest, and the fragment choices their roads gave (`quests.rs`).
@@ -318,6 +318,8 @@ impl Character {
         // What others see is made again from the gear on each write (`to_json`), never kept as an unknown key.
         if let Some(object) = kept.as_object_mut() {
             object.remove("shown");
+            // One kept before cosmetics was read wearing the Bay, which is its horse now.
+            object.entry("cosmetics").or_insert_with(|| serde_json::json!({ "coat": crate::horses::FIRST_HORSE }));
         }
         let mut character: Self = serde_json::from_value(kept).ok()?;
         let resources = catalogue().resources.len();
@@ -374,6 +376,7 @@ impl Character {
         character.materials.shapes = character.materials.shapes.min(STOCK_MOST);
         let mut seen = std::collections::BTreeSet::new();
         character.lore.retain(|key| seen.insert(key.clone()));
+        character.horses_from_coats();
         character.earn_due();
         Some(character)
     }

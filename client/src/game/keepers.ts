@@ -119,7 +119,7 @@ export const KEEPERS: Readonly<Record<KeeperKind, Keeper>> = {
   },
   tack: {
     title: 'The Tack',
-    words: 'Coats and barding for your horse. New ones every day.',
+    words: 'Horses, and barding for them. New ones every day.',
     speaker: 'tack',
     dress: dressed(
       'female',

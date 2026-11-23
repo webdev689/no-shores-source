@@ -445,7 +445,8 @@ impl Room {
                 return carry(character, item);
             }
             Grant::Item { kind, rarity, level } => {
-                if rarity.named() || kind == Kind::Cloak {
+                // A horse is bought at the Tack, Normal and of its coat (`gear::horses`), never handed out.
+                if rarity.named() || kind == Kind::Cloak || kind == Kind::Horse {
                     return answer_code(Err(Refusal::NoSuchItem));
                 }
                 let mut item = gear::vestige::rolled(character.take_id(), kind, rarity, kind.slot(), level, &dice);
