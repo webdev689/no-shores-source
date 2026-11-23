@@ -717,7 +717,9 @@ the tabs Character (I), Inventory (O), Journal, Compendium, Ship, Social, Guild 
 whole number of pixels wide, their words at the names' size (the words' under 1100 px, or wherever one would not fit
 its tab at the names' size);
 keys on keycaps where the menu is wide enough; Guild opens the player's guild after Destiny 2's clan screen
-([[Guilds]]). The chosen tab is a lit brass press; a tab with something new on it
+([[Guilds]]), with its Outposts page (each outpost's plan from above, a structure a block in its colour, a blueprint
+while built, the footprint's ghost green or red as one is placed) and its Treasury page (the ledger in words)
+([[Outposts]]). The chosen tab is a lit brass press; a tab with something new on it
 (the Compendium, while a chapter found waits unread) wears Destiny's small diamond at its top right, and its name is
 read with ", new"; the arrow keys move between tabs. At the top line's right stands the account's mark, after DFO's
 ([[The HUD Drops Its Room Line, and the Account Mark Comes From DFO]]): a round well rimmed in brass with the player's
