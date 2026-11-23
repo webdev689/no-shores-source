@@ -276,12 +276,12 @@ export class WreckRun {
     this.progress.held = held;
   }
 
-  /** The boarder met one on one stands at the far end of the quiet deck from the player, facing them, and comes for
-   *  them at once, wherever on the wreck they stand. */
-  standBoarder(): void {
+  /** The boarder met one on one stands at the far end of the quiet deck from the player (or at `place`), facing
+   *  them, and comes for them at once, wherever on the wreck they stand. */
+  standBoarder(place?: { readonly at: readonly [number, number]; readonly facing: number }): void {
     if (this.boarderAsked) return;
     const { body } = this.context.walker.player;
-    const { at, facing } = boarderAt(this.layout, body.x, body.y);
+    const { at, facing } = place ?? boarderAt(this.layout, body.x, body.y);
     const room = this.openRoom;
     this.boarderAsked = true;
     const asked = { ask: 'stand', ...BOARDER, x: at[0], y: at[1], facing, level: this.level, hunt: true } as const;

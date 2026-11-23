@@ -28,14 +28,30 @@ export const pageDevStart = (): DevStart | null =>
 /** How far along the path from where the player wakes the bow lies for a start at the bow, metres. */
 const BOW_ALONG_M = 4;
 
-/** Lays the world as the start asks, on its first frame: the bow on the deck, or the Storm given and a boarder sent. */
-export function beginAt(start: DevStart, run: WreckRun, layout: WreckLayout): void {
+/** How far before the player the boarder stands for a start at the Storm: in Arc Lash's reach and cone. */
+const LASH_AHEAD_M = 4;
+
+/** Where the boarder stands for a start at the Storm: `LASH_AHEAD_M` before a player at (`x`, `y`) facing `facing`,
+ *  facing them. */
+export function lashBoarder(x: number, y: number, facing: number): { at: [number, number]; facing: number } {
+  const place: [number, number] = [x + Math.sin(facing) * LASH_AHEAD_M, y - Math.cos(facing) * LASH_AHEAD_M];
+  return { at: place, facing: facing + Math.PI };
+}
+
+/** Lays the world as the start asks, on its first frame, for the player `player`: the bow on the deck, or the Storm
+ *  given and a boarder stood before them. */
+export function beginAt(
+  start: DevStart,
+  run: WreckRun,
+  layout: WreckLayout,
+  player: { readonly x: number; readonly y: number; readonly facing: number },
+): void {
   if (start.stage === 'bow') {
     const [x, y] = pointAlong(layout.path, BOW_ALONG_M);
     run.storyArms.dropBow([x, y, topAt(layout.course, x, y)]);
   }
   if (start.stage === 'storm') {
     run.giveStorm();
-    run.standBoarder();
+    run.standBoarder(lashBoarder(player.x, player.y, player.facing));
   }
 }

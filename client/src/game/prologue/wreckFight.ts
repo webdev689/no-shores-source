@@ -256,7 +256,8 @@ export class WreckFight implements Beat {
     if (!run || this.scenery.coming) return null;
     if (this.devStart && !this.devBegun) {
       this.devBegun = true;
-      beginAt(this.devStart, run, this.layout);
+      const { body, facing } = this.story.walker.player;
+      beginAt(this.devStart, run, this.layout, { x: body.x, y: body.y, facing });
     }
     const { story } = this;
     const { stage, walker, firstPerson } = story;

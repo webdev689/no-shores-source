@@ -275,14 +275,14 @@ test("frozen on the boarder's blow, a guard pressed parries it; frozen on the ne
 
 test('the bow lying shows its line of light as the sword and shield do, and is drawn larger to be seen', async () => {
   const { forge } = forged();
-  const at = armsAt(layout);
-  const [sword, bow] = [new LyingArms(ARMS_ITEM, at, forge), new LyingArms(BOW_ITEM, at, forge)];
+  const place = armsAt(layout);
+  const [sword, bow] = [new LyingArms(ARMS_ITEM, place, forge), new LyingArms(BOW_ITEM, place, forge)];
   const body = armouredDress(FIRST_LOOK);
   for (const lying of [sword, bow]) lying.figure(body, 0);
   await new Promise((resolve) => setTimeout(resolve, 0));
   const [swordCard, bowCard] = [sword.figure(body, 10), bow.figure(body, 10)];
   for (const lying of [sword, bow]) lying.figure(body, 13);
-  const eye = [at[0], at[1] - 6, at[2] + 1.6] as const;
+  const eye = [place[0], place[1] - 6, place[2] + 1.6] as const;
   const [swordLine, bowLine]: number[][] = [[], []];
   sword.mark(swordLine, 13, eye);
   bow.mark(bowLine, 13, eye);
