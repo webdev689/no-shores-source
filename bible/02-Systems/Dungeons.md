@@ -504,13 +504,14 @@ or glows, and is read as standing none (`readDungeon`).
   slab of the end room's trim under each anchor, 8 cm high, and a crystal over each relic. On the floor, rings: runes
   dim, lit gold under a beam while showing, green once stepped and red under a beam for a second when stepped wrong,
   each with a glyph of its own (one, two or three strokes round a dot, then round a small ring, so no two of six read
-  alike however turned); plates in play under a beam, dim at rest and gold and filled while held; the seal stone's ring, lighting as its players stand on it; the relic's
-  ring coloured by its strength, held or not, and its strength as an arc inside it; while an Ascent holds, each pad's
-  top edge banded in the seal's blue with a glow fading down its faces, brightening pad by pad from the first to the
-  last in a slow wave, the last pad's in the stone's gold; each anchor ringed dim under a short beam while the Boss stands (before
-  it wakes too, so the company learns where they are) and, while a ward stands, brighter under a beam and filling as it
-  is stood on, a ring round the Boss and a dome of light over it; the slam's ring
-  4 m round the Boss, filling as it comes; a red ring round the Boss through Fury; a Reckoning's ring of light under a
+  alike however turned); plates in play under a beam, dim at rest and gold and filled while held; the seal stone's ring,
+  lighting as its players stand on it; the relic's ring coloured by its strength, held or not, and its strength as an
+  arc inside it; while an Ascent holds, each pad's top edge banded in the seal's blue with a glow fading down its faces,
+  brightening pad by pad from the first to the last in a slow wave, the last pad's in the stone's gold; each anchor
+  ringed dim under a short beam while the Boss stands (before it wakes too, so the company learns where they are) and,
+  while a ward stands, brighter under a beam and filling as it is stood on, a ring round the Boss and a dome of light
+  over it; the slam's ring 4 m round the Boss, filling as it comes; a red ring round the Boss through Fury; a
+  Reckoning's ring of light under a
   tall beam while it is shown, and a flash from the light as it lands. Under the compass the public event's banner
   shows the seals broken of how many, the seal the player stands in (else the nearest unbroken one, by its room's
   middle, as the next to go to) with its task in a line
