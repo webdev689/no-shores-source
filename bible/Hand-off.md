@@ -133,8 +133,14 @@ each part works is in its system note.
   ruins grown through with crystal) and [[The Held Map Takes the Ship to Other Waters, Seen Sailing Away]]; Claude's
   calls in [[The Grey Tithe's Sea, Travel and the Overtaken Ruins as Claude Builds Them]]. Each feature reviewed on its
   own and its findings fixed; tested offline, the ruins pictured headless; the travel's cinematic not pictured.
-- **Not yet seen or heard.** Sessions test offline and picture headless, and headless Chromium in a cloud session now
-  loses the game's WebGPU device about 2 s in, so these wait on a real GPU, an ear or a hand:
+- **The picture driver reads the drawn interface** (#165, merged on the owner's "Yes"): `__ui()` lists what the
+  game's interface shows, the driver's `waitFor`, `clickText` and `press` read it, and a plan's `"noGpu": true` runs
+  the game at full speed with nothing drawn ([[Toolkit]], Browser QA). Tested offline: the title, the story's skip and
+  its "begin" driven with no GPU. Proposed next, not yet asked for: a cloud environment whose setup script installs and
+  builds, and a CI check that boots the game and finds its HUD.
+- **Not yet seen or heard.** Sessions test offline and picture headless. Headless Chromium has lost the game's WebGPU
+  device about 2 s in when other jobs shared the cores; on an idle container at b81f0c40 the title and the social
+  space kept it 80 s. SwiftShader is too slow to show the world, so these wait on a real GPU, an ear or a hand:
   - Timed on a real GPU: the game in and out of its worker, the hub with some 125 figures, the wreck with every fire,
     the light layer of the attack visuals (0.4 to 0.5 ms is an estimate), ships and marks under the lamps.
   - Heard in the game: the music, the ambience, the world's, sea's and menu's sounds and their levels, the
