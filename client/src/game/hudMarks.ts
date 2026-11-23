@@ -8,6 +8,7 @@ import { EMBLEM_PIXELS, markPicture } from '../plus/emblems.ts';
 import { TONES } from '../plus/tones.ts';
 import type { Child, Node, Picture } from '../ui/node.ts';
 import type { Interface } from '../ui/ui.ts';
+import { ownOutpostColours } from './guild/guildHeld.ts';
 import { KIND_WORDS, type MarkKind } from './hudLaw.ts';
 import type { HostileLook } from './seaHostiles.ts';
 
@@ -75,12 +76,12 @@ const glyphPx = (size: number): number => Math.max(11, Math.floor(size / 2 / 11)
  *  the ship nears it reuses a few pictures rather than laying a new one in the atlas at every pixel it grows. */
 const texels = (size: number) => Math.ceil(size / 8) * 16;
 
-/** The ring and its glyph, the glyph in the mended face, which holds the ones Pixelify lacks. */
-function ring(glyph: string, colour: string, size: number, hovered: boolean, chosen: boolean): Picture {
+/** The ring and its glyph (in `ink`, the ring's colour unless given), the glyph in the mended face, which holds the ones Pixelify lacks. */
+function ring(glyph: string, colour: string, size: number, hovered: boolean, chosen: boolean, ink = colour): Picture {
   const edge = chosen ? GOLD : colour;
   const side = texels(size);
   return {
-    key: `mark ${glyph} ${colour} ${side} ${glyphPx(size)} ${hovered} ${chosen}`,
+    key: `mark ${glyph} ${colour} ${ink} ${side} ${glyphPx(size)} ${hovered} ${chosen}`,
     pixel: { width: side, height: side },
     source: {
       draw: (context, width, height) => {
@@ -93,7 +94,7 @@ function ring(glyph: string, colour: string, size: number, hovered: boolean, cho
         context.lineWidth = 2 * unit;
         context.strokeStyle = edge;
         context.stroke();
-        context.fillStyle = colour;
+        context.fillStyle = ink;
         context.font = `${glyphPx(size) * unit}px ${CANVAS_FACE}`;
         context.textAlign = 'center';
         context.textBaseline = 'middle';
@@ -162,7 +163,9 @@ export function markNodes(ui: Interface, marks: readonly ScreenMark[], chosen: (
     const size = Math.round(mark.sizePx);
     const [x, y] = [Math.round(mark.x), Math.round(mark.y)];
     const look = mark.hostile;
-    const colour = mark.locked ? KIND_COLOURS.locked : (look?.colour ?? KIND_COLOURS[mark.kind]);
+    // The guild's own outposts fly its banner's colours.
+    const own = mark.kind === 'outpost' && !mark.locked ? ownOutpostColours(mark.id) : null;
+    const colour = mark.locked ? KIND_COLOURS.locked : (look?.colour ?? own?.cloth ?? KIND_COLOURS[mark.kind]);
     // An emblem's ground stands as it is under the pointer too, so the emblem's own colours stay true.
     const hovered = ui.hovered(id) && !look?.emblem;
     const held = mark.arrowDegrees !== null;
@@ -188,7 +191,7 @@ export function markNodes(ui: Interface, marks: readonly ScreenMark[], chosen: (
         width: size,
         height: size,
         float: { to: 'screen', anchor: [0.5, 0.5], x, y },
-        picture: ring(glyph, colour, size, hovered, mark.chosen),
+        picture: ring(glyph, colour, size, hovered, mark.chosen, own?.device),
         children: [
           look?.emblem ? emblemNode(look.emblem, size) : null,
           look?.badge ? badgeNode(look.badge) : null,

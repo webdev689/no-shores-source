@@ -1,4 +1,5 @@
 import type { AccountLink } from '../../network/accounts.ts';
+import { bannerFrom, hexOf } from './bannerLaw.ts';
 import { ACCOUNT_CHANGED, GUILD_CHANGED, OUTPOST_CHANGED } from '../gearScreen.ts';
 
 /**
@@ -14,6 +15,7 @@ export interface Held {
 
 let held: Promise<Held | null> = Promise.resolve(null);
 let accounts: AccountLink | null = null;
+let landed: Held | null = null;
 const heard = new Set<() => void>();
 
 /** Reads the guild once from the accounts: null in none, or when the accounts do not answer. */
@@ -31,7 +33,10 @@ export function keepGuild(link: AccountLink): void {
   accounts = link;
   const read = () => {
     held = readGuild(link).catch(() => null);
-    void held.then(() => heard.forEach((listener) => listener()));
+    void held.then((guild) => {
+      landed = guild;
+      heard.forEach((listener) => listener());
+    });
   };
   read();
   for (const changed of [ACCOUNT_CHANGED, GUILD_CHANGED, OUTPOST_CHANGED]) addEventListener(changed, read);
@@ -42,6 +47,14 @@ export const guildHeld = (): Promise<Held | null> => held;
 
 /** The link to the accounts the guild is read from; null offline. */
 export const accountsHeld = (): AccountLink | null => accounts;
+
+/** The colours a site's mark wears where the player's guild holds an outpost there: its banner's cloth round its
+ *  device's colour; null at any other site, or before the guild is read. */
+export function ownOutpostColours(site: string): { readonly cloth: string; readonly device: string } | null {
+  if (!landed?.sites.includes(site)) return null;
+  const banner = bannerFrom(landed.banner);
+  return banner ? { cloth: hexOf(banner.cloth), device: hexOf(banner.deviceColour) } : null;
+}
 
 /** Calls `listener` each time a read of the guild lands. */
 export function onGuildHeld(listener: () => void): void {
