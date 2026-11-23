@@ -2,27 +2,39 @@
 // she welcomes the player to Overlook (`tour.ts`). While she speaks the view is hers, flown from place to place, and
 // the player's keys are held; a press of Space (jump) moves her words on a line. Her farewell asks the room for her
 // gift. Leaving the place ends it all at once, the view and the keys the player's again.
+import { ASKS, type GearAsk, type GearState } from '../../network/gearMessages.ts';
 import type { CardAt } from '../../player/cards.ts';
+import type { Block } from '../../rules/movementRules.ts';
 import type { Shot } from '../camera.ts';
 import type { StationInfo } from '../nodes.ts';
 import type { Epilogue } from '../prologue/epilogue.ts';
+import { COUNTERS, talkAt } from '../quests/questBook.ts';
 import { StrangerWelcome } from './tour.ts';
 
 type You = { readonly x: number; readonly y: number; readonly z: number; readonly facing: number };
 
 /** Where the player stands as the stranger meets them: the place's kind and counters, the floor a figure stands on,
- *  and how her gift is asked of the room. */
+ *  the blocks the camera's lines must clear, this room's word on the player's gear, and how an ask reaches it. */
 export interface Arrival {
   readonly node: { readonly kind: string; readonly stations?: readonly StationInfo[] };
   readonly floor: (x: number, y: number) => number;
-  readonly gift: () => void;
+  readonly blocks: readonly Block[];
+  readonly gear: GearState | null;
+  readonly ask: (asked: GearAsk) => void;
 }
+
+/** Whether a word of the room on the player's own character (`claimed`) shows the stranger's task waiting. */
+const owed = (gear: GearState | null): boolean =>
+  gear?.quest?.claimed === true && talkAt(gear.quest, 'stranger') !== null;
 
 export class AfterStory {
   /** The stranger's last moment, set as the story hands the player over; null once she has gone or been left. */
   private epilogue: Epilogue | null = null;
   /** Her welcome, set on the first frame in a social space. */
   private welcome: StrangerWelcome | null = null;
+  /** Whether her farewell has asked for her gift, and whether the room has been asked for it in this page. */
+  private farewell = false;
+  private gifted = false;
 
   /** The story has ended and hands over the stranger's last moment, none where it was not played through. */
   storyEnded(epilogue: Epilogue | null): void {
@@ -39,6 +51,7 @@ export class AfterStory {
     veiled: boolean,
     here: Arrival,
   ): CardAt[] {
+    this.gift(here);
     const epilogue = this.epilogue;
     if (!epilogue || epilogue.done) {
       [this.epilogue, this.welcome] = [null, null];
@@ -47,12 +60,22 @@ export class AfterStory {
     if (!this.welcome && here.node.kind === 'social') {
       const welcome = new StrangerWelcome(here.node.stations ?? [], here.floor, {
         play: (scene) => epilogue.say(scene),
-        gift: here.gift,
+        gift: () => void (this.farewell = true),
       });
       epilogue.words = () => welcome.run();
       this.welcome = welcome;
     }
     return epilogue.frame(shot, viewport, seconds, clock, you, veiled);
+  }
+
+  /** Her gift, asked of the room once in a page: after her farewell, or owed with no welcome to hear in a social space
+   *  (a reload mid-welcome, a browser that played the story before); never before this room's gear is the player's
+   *  own and shows her task waiting, so no temporary character, nor another room's, takes it. */
+  private gift(here: Arrival): void {
+    const due = here.node.kind === 'social' && (this.farewell || this.past);
+    if (this.gifted || !due || !owed(here.gear)) return;
+    this.gifted = true;
+    here.ask({ kind: ASKS.speakWith, column: COUNTERS.stranger ?? 0 });
   }
 
   /** The view this frame, the player's own being `own`: the welcome's while she speaks. */

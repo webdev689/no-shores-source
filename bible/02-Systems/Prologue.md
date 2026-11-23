@@ -158,7 +158,9 @@ view is hers; Space moves her words on a line, and the keys and the view are giv
 farewell she gives the player 400 Aurem, the opening quest's first task heard ([[Quests]]); the room gives it once a
 character, so a second hearing, a rejoin or a second tab gives none. Leaving the place mid-welcome ends it at once, the
 view and the keys the player's again, and gives nothing then: a character still owed her gift is given it on its next
-frame in a social space with no welcome to hear (a reload, or a browser that played the story before).
+frame in a social space with no welcome to hear (a reload, or a browser that played the story before). Either way the
+room is asked once a page, and only once its word on the player's own character (not a room's starting one) shows her
+task waiting.
 
 **Where it happens.** The storm lies 24 km out past Saltmere's harbour (`stormPlaces`), the Brig heading across the
 swell. The sea is sounded every 150 m across the 3 km round it, where every ship of the story sails, and the place is

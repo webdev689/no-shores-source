@@ -176,11 +176,6 @@ export class Quests {
     return this.speak(counter, () => undefined) !== null || (this.past && buyAt(this.gear?.quest, counter));
   }
 
-  /** Whether the quest walked waits on the stranger's welcome, whose end asks the room for her gift. */
-  get waitsOnStranger(): boolean {
-    return talkAt(this.gear?.quest, 'stranger') !== null;
-  }
-
   /** What E does at the counter of a station of kind `counter` (its offer's view), while a talk goal of the task names
    *  it: speaks with its keeper, asking the room (ask 64); the goal's scene is said as the room meets it. Null
    *  otherwise, so the counter opens as before. */

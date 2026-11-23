@@ -44,8 +44,6 @@ import type { SloopBuild } from './shipPanel.ts';
 import { standingDrawers } from './standingDrawers.ts';
 import type { NodeInfo } from './worldData.ts';
 import type { AfterStory } from './welcome/afterStory.ts';
-import { ASKS } from '../network/gearMessages.ts';
-import { COUNTERS } from './quests/questBook.ts';
 import type { Quests } from './quests/quests.ts';
 import type { Lore } from './compendium/lore.ts';
 import type { StoryHost } from './prologue/host.ts';
@@ -149,8 +147,6 @@ export function startFrames(parts: FrameParts, playing: Playing): void {
   const { ui, stack, drain } = parts;
   let [last, clock] = [performance.now(), 0];
   let wasWalking = false;
-  /** Whether the stranger's gift has been asked of the room in this page. */
-  let giftAsked = false;
   /** Whether the view was in the player's eyes before the land's held map took it there; null while it has not. */
   let eyesBeforeMap: boolean | null = null;
 
@@ -259,19 +255,14 @@ export function startFrames(parts: FrameParts, playing: Playing): void {
     if (looking) footView.hideDisplay();
     const water = parts.waterHere();
     const fleet = traffic.onFoot(shown.shot.eye, water, seconds, clock);
-    // The story's last moment, on foot once the veil is gone: the stranger before the player, and her welcome. A
-    // character still owed her gift in a social space with no welcome to hear (a page reloaded mid-welcome, or a
-    // browser that played the story before) is given it there.
-    const gift = () => {
-      if (giftAsked || !quests.waitsOnStranger || !here.gear) return;
-      giftAsked = true;
-      here.gear.ask({ kind: ASKS.speakWith, column: COUNTERS.stranger ?? 0 });
-    };
-    if (playing.after.past && here.node.kind === 'social') gift();
+    // The story's last moment, on foot once the veil is gone: the stranger before the player, her welcome, and her
+    // gift asked of this room.
     const met = playing.after.frame(shown.shot, viewport, seconds, clock, walker.you, flow.mode !== 'foot', {
       node: here.node,
       floor: here.floor,
-      gift,
+      blocks: here.boxes,
+      gear: here.gear?.gear ?? null,
+      ask: (asked) => here.gear?.ask(asked),
     });
     const carried = { left: walker.you.dress.outfit.left, feet: [body.x, body.y, body.z] as const };
     const moorings = here.node.kind === 'social' ? (playing.landmass.plan?.social.moorings ?? []) : [];

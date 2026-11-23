@@ -127,14 +127,10 @@ test('a keeper a talk goal names has something for the player, once the story an
   assert.equal(quests.wants('stormcallers'), false, 'spoken with');
 });
 
-test('a smith whose ware is to be bought is lit; the stranger is waited on until her gift is given', async () => {
+test('a smith whose ware is to be bought is lit', async () => {
   const { quests, frame } = roads();
-  quests.hear(gear(1, 0));
-  await frame(false);
-  assert.equal(quests.waitsOnStranger, true, 'her task, even while the welcome plays');
   quests.hear(gear(1, ARM));
   await frame();
-  assert.equal(quests.waitsOnStranger, false);
   assert.deepEqual(
     ['weaponsmith', 'armorsmith', 'mage'].map((counter) => quests.wants(counter)),
     [true, true, false],
