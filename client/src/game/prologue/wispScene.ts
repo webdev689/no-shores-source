@@ -29,7 +29,7 @@ type Point = readonly [number, number, number];
  *  it watches the wisp from, and how far out and up it stands to watch the rings. */
 const LEAVE_S = 1.1;
 const WATCH = { back: 3.4, up: 2.6, side: 1.2 } as const;
-const RINGS = { out: 7.6, up: 3.4 } as const;
+const RINGS = { out: 5.6, up: 2.5 } as const;
 /** How far back the trail is kept, seconds, and how often a point of it is kept. */
 const TRAIL_KEPT_S = 1;
 const TRAIL_EVERY_S = 1 / 30;
