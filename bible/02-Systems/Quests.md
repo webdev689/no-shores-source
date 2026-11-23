@@ -126,6 +126,8 @@ fragments to choose (`fragments`: how many choices). Which Art is the quest's ho
   its task's number and words; nothing from a word not on the player's own character.
 - **The tracker** shows the quest walked on foot, once the story and Maren's welcome are past: its name, its task and
   each goal's words with its count.
+- **Lore**: a chapter the lore's file gives to a task is found as the task is done ([[Lore]]). Each house's road
+  gives its house's book a chapter a task, the last as the road ends ([[Each House's Lore Book Tells Its Art's Origin]]).
 - **The lines** are the speech system's ([[Speech]]): a quest's `begin` as it is first walked, a task's `end` as it is
   done and the next task's `start` as it begins, a `talk` goal's `scene` as the keeper is spoken with. A page that loads
   mid-road says nothing it has said before.

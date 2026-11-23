@@ -444,10 +444,10 @@ impl Room {
         self.shut(&self.carried_forward(player, character.clone()))
     }
 
-    /// A kept character with the story its player already holds in the room carried forward, never put back.
+    /// A kept character with the story and lore its player already holds in the room carried forward, never put back.
     fn carried_forward(&self, player: PlayerId, mut character: gear::Character) -> gear::Character {
         if let Some(found) = self.players.get(&player) {
-            character.story = character.story.merged(&found.character.story);
+            character.carry_forward(&found.character);
         }
         character
     }

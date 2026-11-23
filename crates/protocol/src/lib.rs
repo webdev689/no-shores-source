@@ -37,6 +37,7 @@ mod bounty_wire;
 pub mod fleet;
 pub mod gear_wire;
 pub mod land;
+mod lore_wire;
 mod mail_wire;
 pub mod pack;
 pub mod plates_wire;

@@ -29,7 +29,8 @@ the Stormcallers keep Storm, the Lamplighters Divine and the Veiled Shadow. A pl
 reputation in the world while wearing its cape, and ranks up without end; each sells its cape, armour and weapons in a
 colour of its own ([[Each Faction Sells Gear of Its Own, in Its Own Colour]]); the faction of each Art raises it from
 level 1 to 5 and sells its Core fragments. Claude's numbers: [[Factions and Vendors as Claude Shapes Them]]. Each
-keeps a counter in Overlook's plaza ([[Cities]]).
+keeps a counter in Overlook's plaza ([[Cities]]), and a lore book its road gives, telling where its Art came from
+([[Each House's Lore Book Tells Its Art's Origin]], [[Lore]]).
 
 ## How it works
 

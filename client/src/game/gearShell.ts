@@ -9,6 +9,8 @@ import { type Emblem, SIGN_CELLS } from './emblemArt.ts';
 import { type Hint, INK, emblemNode, focusRing, glyphNode, hintsNode, keycap, words, type Sizes } from './gearNodes.ts';
 import { boundCap } from './controls.ts';
 import { TABS, type Tab, characterOf } from './gearScreen.ts';
+import { NEW_PIXELS, NEW_SVG } from './compendium/loreArt.ts';
+import { pixelNode } from './journalIcons.ts';
 
 /** Each tab's name, the control that opens it, and, for one still to come, what it will hold. */
 export const TAB_PRESSES: Readonly<
@@ -17,6 +19,7 @@ export const TAB_PRESSES: Readonly<
   character: { label: 'Character', opens: 'character' },
   inventory: { label: 'Inventory', opens: 'inventory' },
   journal: { label: 'Journal' },
+  compendium: { label: 'Compendium' },
   ship: { label: 'Ship' },
   social: { label: 'Social' },
   guild: { label: 'Guild', later: 'Your guild will gather here.' },
@@ -34,18 +37,26 @@ const DIMMING_S = 0.2;
 /** The id of a tab's press. */
 export const tabId = (tab: Tab): string => `tab-${tab}`;
 
-/** The tabs filling the top, each a whole number of pixels wide; the chosen one a lit brass press. Keycaps show where
- *  the menu is wide enough; narrower, a tab to come says so under its name, and narrower still its words step down. */
+/** The tabs filling the top, each a whole number of pixels wide; the chosen one a lit brass press, and one `marked`
+ *  wearing Destiny's small diamond for what is new on it. Keycaps show where the menu is wide enough; narrower, a tab
+ *  to come says so under its name, and narrower still its words step down. */
 export function tabsNode(
   ui: Interface,
   chosen: string,
   width: number,
   view: { readonly width: number; readonly height: number },
   capSize = 1,
+  marked: (tab: Tab) => boolean = () => false,
 ): Node {
   const each = Math.floor((width - 36) / TABS.length);
   const keys = view.width >= 1500 && !(view.width >= 2400 && view.height >= 1300);
-  const size = view.width < 1100 ? 1 : 2;
+  // The names step down together under 1100 px, or where one would not fit its tab, its keycap beside it.
+  const cap = (opens?: 'character' | 'inventory') =>
+    keys && opens ? 8 + Math.max(18, ui.renderer.measure(boundCap(opens), capSize) + 10) : 0;
+  const fits = TABS.every(
+    (tab) => ui.renderer.measure(TAB_PRESSES[tab].label.toUpperCase(), 2) + cap(TAB_PRESSES[tab].opens) + 16 <= each,
+  );
+  const size = view.width < 1100 || !fits ? 1 : 2;
   const step = TABS.length > 1 ? Math.floor((width - each * TABS.length) / (TABS.length - 1)) : 0;
   return {
     width: 'grow',
@@ -61,7 +72,7 @@ export function tabsNode(
         id,
         press: true,
         role: picked ? 'primary' : 'button',
-        label: `${label}${later ? ', later' : ''}`,
+        label: `${label}${later ? ', later' : ''}${marked(tab) ? ', new' : ''}`,
         keys: ['ArrowLeft', 'ArrowRight'],
         width: each,
         height: TAB_HEIGHT,
@@ -81,6 +92,10 @@ export function tabsNode(
             float: { to: 'parent', anchor: [0, 1], at: [0, 1], x: 0, y: -2 },
           },
           ui.focused(id) && ui.keyFocused && focusRing(each, TAB_HEIGHT),
+          marked(tab) && {
+            float: { to: 'parent', anchor: [1, 0], at: [1, 0], x: -6, y: 6 },
+            children: [pixelNode('lore new', NEW_SVG, NEW_PIXELS, 10)],
+          },
         ],
       };
     }),

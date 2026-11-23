@@ -1,7 +1,17 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { glyphDrawn } from './glyphs.ts';
-import { baselineOf, type Face, layLine, letterSpacing, lineHeight, widthOf, wordSpacing, wrapped } from './text.ts';
+import {
+  baselineOf,
+  type Face,
+  layLine,
+  letterSpacing,
+  lineHeight,
+  styled,
+  widthOf,
+  wordSpacing,
+  wrapped,
+} from './text.ts';
 
 /** A face of three glyphs: a capital 7 rows tall, a descender and a space, each 600 units on. */
 const capital = glyphDrawn({ rows: ['###', '#.#', '#.#', '###', '#.#', '#.#', '#.#'], advance: 600 });
@@ -52,3 +62,29 @@ test('a line broken at spaces keeps a paragraph’s leading space, and drops eve
   assert.deepEqual(wrapped(face, 'A  A', 1, 10), ['A', 'A'], 'both spaces at the break hang');
   assert.deepEqual(wrapped(face, 'A  A', 1, 100), ['A  A'], 'spaces inside a line stay');
 });
+
+test('bold letters stand a cell wider, each stroke doubled to its right, the pen a cell further on', () => {
+  const [bold] = layLine(face, styled('A', 'bold'), 1).glyphs;
+  assert.equal(bold?.glyph.width, 4);
+  assert.deepEqual([...(bold?.glyph.cells ?? [])].slice(0, 8), [1, 1, 1, 1, 1, 1, 1, 1], "'###' and '#.#' doubled");
+  // A pen of 690 units at 11 a 1000 and the letter's spacing, twice.
+  assert.equal(widthOf(face, styled('AA', 'bold'), 1), Math.ceil(2 * (6.9 * 1.1 + 1)));
+  assert.equal(layLine(face, styled('AA', 'bold'), 1).glyphs[1]?.glyph, bold?.glyph, 'made once, so laid once');
+});
+
+test('italic letters lean a cell right for every three rows over the baseline, a descender a cell left', () => {
+  const [lean] = layLine(face, styled('A', 'italic'), 1).glyphs;
+  assert.equal(lean?.glyph.width, 5);
+  const row = (index: number) => [...(lean?.glyph.cells ?? [])].slice(index * 5, index * 5 + 5).join('');
+  assert.deepEqual([row(0), row(2), row(5), row(6)], ['00111', '01010', '10100', '10100']);
+  const [low] = layLine(face, styled('j', 'italic'), 1).glyphs;
+  assert.deepEqual([low?.glyph.left, low?.glyph.width], [descender.left - 1, 2]);
+  assert.equal(advanceWidth('A A'), advanceWidth(styled('A A', 'italic')), 'leaning moves no pen');
+});
+
+test('a space and a newline stay themselves in styled words, so they break as plain words do', () => {
+  assert.equal(styled('A A\nA', 'bold').replace(/[^ \n]/gu, ''), ' \n');
+  assert.equal(wrapped(face, styled('A A', 'italic'), 1, 8).length, 2);
+});
+
+const advanceWidth = (words: string) => widthOf(face, words, 1);
