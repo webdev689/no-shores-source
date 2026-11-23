@@ -26,3 +26,5 @@ Asked how the Veiled's weapons should read, their colour being four neutral grey
   1]]). Claude drafts each pool for the owner's yes before any is built.
 - **The Veiled's colour leans to a faint cold violet**, so their trim reads on a black blade; their armour shifts with
   it.
+
+Its pools are approved: [[Every Perk Stands, the Factions' Nine With Them]].

@@ -298,6 +298,7 @@ a decision is a record. How to add one: [[Recording a Decision]].
 - [[No Elder Scrolls Metal Names Reach the Player]]
 - [[Everything Carries a Set Name, and Perks Roll by Pool]]
 - [[Set Names and Faction Perks as Claude Drafts Them]]
+- [[Every Perk Stands, the Factions' Nine With Them]]
 - [[The Prologue Wakes by Darkening and Pulsing, Not Eyelids]]
 - [[The Prologue's Scenes Change Slower, Behind the Logo While They Load]]
 - [[Thule Fights on a Quarterdeck Twice as Long]]

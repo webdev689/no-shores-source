@@ -6,8 +6,8 @@ status: draft, for the owner's yes
 # Set Names and Faction Perks as Claude Drafts Them
 
 Claude's drafts for [[Everything Carries a Set Name, and Perks Roll by Pool]] and [[Faction Weapons Wear Their Colour
-and Roll Their Faction's Perks]], each the owner's to change. Built as drafted until the owner's word; nothing here is
-in force until the owner says yes.
+and Roll Their Faction's Perks]], each the owner's to change. The faction perks are approved; the set names are not in
+force until the owner says yes.
 
 ## Set names
 
@@ -34,6 +34,8 @@ of the same content and look share a name. No name is a material's.
 | A Breach | daedric | named with the Breaches |
 
 ## Faction perks
+
+Approved by the owner, as drafted: [[Every Perk Stands, the Factions' Nine With Them]].
 
 Each faction's pieces roll its own perks beside the shared pool, tied to its Art's element and the statuses the fight
 already has. Three a faction: two for weapons, one for armour.

@@ -61,7 +61,7 @@ Decisions waiting on the owner. None is in force until the owner decides it and 
 - **What others see.** The room puts the cosmetics and faction colours a player has earned into the dress others see,
   and keeps a worn set or metal only of its piece's own content ([[The Room Keeps Only Looks of a Piece's Own
   Content]]); the garments drawn are still each page's own word ([[Server]]).
-- **Faction weapons' perks** ([[Faction Weapons Wear Their Colour and Roll Their Faction's Perks]]): each faction's
-  own pool, tied to its Art's element, is Claude's draft until the owner says yes.
+- **Set names** ([[Everything Carries a Set Name, and Perks Roll by Pool]]): Claude's draft of each set's name
+  ([[Set Names and Faction Perks as Claude Drafts Them]]) waits on the owner's yes (the owner: "Not yet").
 - **The Abyss Dungeons' crossbows.** The forge draws no adamantium or ebony crossbow, so they show the nearest metal it
   draws (mithril); their own art waits (the owner: "Not now").
