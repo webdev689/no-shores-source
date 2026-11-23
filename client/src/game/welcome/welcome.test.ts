@@ -208,13 +208,15 @@ test('a reload before the welcome began, or during it, brings it on the next arr
   assert.equal(await frames(welcome, 2, () => ARRIVAL), 1, 'she comes all the same');
   await untilSaid(welcome, reloaded.said);
   assert.equal(reloaded.said.length, 1, 'met');
-  // Loaded again during the walk: she comes, greets no more, and leads on from where it was.
+  // Loaded again during the walk: she comes, greets them again, and leads on from where it was.
   const again = page(false, first.kept);
   const resumed = again.after();
   assert.equal(await frames(resumed, 2, () => ARRIVAL), 1, 'she comes again');
   await followHer(resumed, 40_000);
-  assert.ok(again.said.length > 0, 'the rest is said');
-  assert.ok(!again.said.some((lines) => lines === SCENES[MET_SCENE] || lines[0]?.say === SCENES[MET_SCENE]?.[0]?.say));
+  const greeting = (lines: readonly Line[] | undefined) => lines?.[0]?.say === SCENES[MET_SCENE]?.[0]?.say;
+  assert.ok(greeting(again.said[0]), 'she greets them first');
+  assert.equal(again.said.filter(greeting).length, 1, 'once');
+  assert.ok(again.said.length > 1, 'the rest is said');
   assert.equal(first.kept.get(WELCOME_KEY), 'played', 'and is due no more');
   assert.equal(await frames(page(false, first.kept).after(), 2, () => ARRIVAL), 0, 'once only');
 });

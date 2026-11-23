@@ -213,14 +213,18 @@ test('a player left far behind for a minute ends the walk: she goes home, and th
   assert.equal(walk.given, false);
 });
 
-test('taken up after the stops said, she greets no more and leads to a stop not yet said', () => {
+test('taken up after the stops said, she greets a player who stands still before leading to a stop not yet said', () => {
   const start = SPAWNS[0] as Point;
   const said = [MET_SCENE, 'welcomeMage', 'welcomeSmiths'];
   const walk = WelcomeWalk.round(STATIONS, FRAME, GRAPH, start, said) as WelcomeWalk;
-  let asked = walk.step(0, start);
-  for (let tick = 0; tick < 40_000 && !asked.say; tick++)
-    asked = walk.step(0.1, walk.phase === 'coming' ? start : [walk.maren.x, walk.maren.y + 1.5]);
-  assert.ok(asked.say && !said.includes(asked.say), `said ${asked.say}`);
+  const heard: string[] = [];
+  for (let tick = 0; tick < 40_000 && heard.length < 2; tick++) {
+    const { say, lagging } = walk.step(0.1, heard.length === 0 ? start : [walk.maren.x, walk.maren.y + 1.5]);
+    if (heard.length === 0) assert.equal(lagging, false, 'no follow prompt before she has greeted them');
+    if (say) (heard.push(say), walk.said());
+  }
+  assert.equal(heard[0], MET_SCENE, 'she greets them again, so they see her come');
+  assert.ok(heard[1] && !said.includes(heard[1]), `then said ${heard[1]}`);
 });
 
 test('ended, she stops where she is; a plaza without her counter has no welcome', () => {

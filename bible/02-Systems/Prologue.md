@@ -156,7 +156,8 @@ the plaza offers: the Grey Tithe's tenth and the ships taken whole, Overlook pay
 standing and ruins no one agrees about ([[Three Port Cities Remain, and the Others Are Desolate and Destroyed]]), and
 the town's memory (three people name four builders of the beacon). It is due from the story's end until its last scene
 is said: the browser keeps the scenes said (`noshores.welcome.said`), so a reload or a leaving takes it up from there on
-the next arrival in Overlook's social space, without the greeting; leaving before the stranger has gone forgoes it. A
+the next arrival in Overlook's social space, where she greets the player again before leading on, so one who
+reloaded sees her come; leaving before the stranger has gone forgoes it. A
 browser that has played the story and holds no mark of the welcome is welcomed on its next arrival there. A player more
 than 40 m from her for a minute ends the walk: she goes home, and it stays due. While the menu or a keeper's screen is
 open she stands idle and no stop begins and the Follow prompt is hidden; opening her counter while she walks ends the

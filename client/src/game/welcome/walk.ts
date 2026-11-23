@@ -1,6 +1,6 @@
 // Where Elder Maren Hale walks in her welcome, and when she speaks. She starts at a point of the townsfolk's ways a
 // way off from the player, out of their view where she can, and comes to them by the ways, greeting them from the
-// ways where they stand off them; then she leads them to the plaza's counters by the shortest way to each counter's
+// ways where they stand off them, again on each arrival of a walk taken up; then she leads them to the plaza's counters by the shortest way to each counter's
 // way point, the nearest stop first each time, waiting at each for the player to come within reach before she says
 // its lines. A player who leaves her far behind for a minute ends the walk, and she goes back behind her counter, as
 // she does once every stop is said. She keeps to the middle of the ways (`life/ways.ts`), which keep clear of every
@@ -184,11 +184,10 @@ export class WelcomeWalk {
     this.maren.walking = false;
   }
 
-  /** She has come to the player: she greets them, unless she did in a walk ended early, when she leads on. */
+  /** She has come to the player: she greets them, on every arrival, so a walk taken up after a reload is noticed
+   *  before she leads on, as she comes from out of their view. */
   private met(player: Point): Asked {
-    if (!this.saidScenes.has(MET_SCENE)) return this.speak(player, MET_SCENE);
-    this.leadOn();
-    return { say: null, lagging: false };
+    return this.speak(player, MET_SCENE);
   }
 
   private speak(player: Point, scene: string): Asked {

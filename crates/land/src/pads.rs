@@ -1,8 +1,9 @@
 //! Levels a city sets the land to: rectangles of ground made flat at a level, a terrace each, or sloped from one level
 //! to another, a ramp, the later standing over the earlier where they overlap. The ground reads them before its own
 //! relief, so a terrace is flat to the bit on the server and in every browser; past its edge the land blends into it
-//! within `EDGE_M`, and where two pads meet each blends to their middle, so a lip a body would step is a slope it
-//! walks, and a terrace standing higher is still a step the city walls.
+//! within `EDGE_M`, and where two pads meet within `BLEND_MOST_M` of each other each blends to their middle, so a lip
+//! a body would step is a slope it walks; a terrace standing higher keeps its level to its edge, where the city walls
+//! it.
 
 use serde::{Deserialize, Serialize};
 use std::collections::BTreeMap;
@@ -11,6 +12,9 @@ use std::collections::BTreeMap;
 const BUCKET_M: f64 = 128.0;
 /// How far past a pad's edge the land blends into its level, metres.
 pub const EDGE_M: f64 = 1.0;
+/// The highest seam between two pads blended into a slope, metres: a body's step (the movement crate's `step`). A
+/// higher one is a wall's, and blending it would sink the floor beside the wall, where a body falls in.
+pub const BLEND_MOST_M: f64 = 0.5;
 
 /// One pad: west, north, east and south edges, metres, and its level; a sloped pad (a ramp) falls from that level at
 /// its west or north edge to a second level at its east or south edge. A level pad writes no fall at all.

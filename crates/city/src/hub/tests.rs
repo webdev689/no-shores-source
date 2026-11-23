@@ -92,6 +92,46 @@ fn the_hubs_ways_are_walked_clear_from_the_seaward_walk_to_the_pier() {
     assert!(faults.is_empty(), "{} faults:\n{}", faults.len(), faults.join("\n"));
 }
 
+/// Walked or run from each spawn into the seaward parapet, straight and slantwise, a body stays on its feet at the
+/// plaza's level: the floor beside the parapet does not sink, so it is never carried up and over to fall.
+#[test]
+fn a_body_walked_or_run_into_the_seaward_parapet_stays_on_the_plaza() {
+    use movement::{Block, Blocks, Body, Controls, Mode, TICK_SECONDS, TUNING, standing, step_body};
+    let (ground, plan) = planned();
+    let social = &plan.social;
+    let list = crate::collision::boxes_within(plan, ring_bounds(&social.ring))
+        .into_iter()
+        .map(|[min_x, min_y, max_x, max_y, top, bottom]| Block { min_x, min_y, max_x, max_y, top, bottom })
+        .collect();
+    let blocks = Blocks::new(list);
+    // The spawns stand just inside the seaward parapet: seaward is from the plaza's middle toward them.
+    let [west, north, east, south] = social.bounds;
+    let count = social.spawns.len() as f64;
+    let toward = [
+        social.spawns.iter().map(|spawn| spawn[0]).sum::<f64>() / count - (west + east) / 2.0,
+        social.spawns.iter().map(|spawn| spawn[1]).sum::<f64>() / count - (north + south) / 2.0,
+    ];
+    let seaward = libm::atan2(toward[0], -toward[1]);
+    for &[x, y] in &social.spawns {
+        for (turn, run) in [(0.0, false), (0.0, true), (0.6, false), (-0.6, true)] {
+            let controls = Controls { forward: 1.0, yaw: seaward + turn, run, ..Controls::default() };
+            let mut body = Body { z: social.level, ..standing(x, y) };
+            for tick in 0..240 {
+                body = step_body(&body, &controls, &blocks, &Ground(ground), TICK_SECONDS);
+                assert!(
+                    body.z > social.level - TUNING.step,
+                    "from {:?}, turned {turn}, run {run}: {:.2} m under the plaza at tick {tick}, ({:.2}, {:.2})",
+                    [x, y],
+                    social.level - body.z,
+                    body.x,
+                    body.y,
+                );
+            }
+            assert_eq!(body.mode, Mode::Ground, "from {:?}, turned {turn}, run {run}", [x, y]);
+        }
+    }
+}
+
 /// The courts set as scenes: the ways laid as flagstone walks, and each court's own pieces standing, each with a place
 /// for the walkers.
 #[test]
