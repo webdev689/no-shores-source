@@ -39,6 +39,9 @@ pub struct Trim {
     pub drawn_poise_taken: f64,
     pub behind_taken: f64,
     pub telegraph_taken: f64,
+    /// What a dodge costs in stamina while its fighter is Veiled, on top; and what a healing charge restores.
+    pub veiled_dodge_stamina: f64,
+    pub drink_heal: f64,
     /// Stamina given back by a kill, a parry and a block; and whether a kill reloads its weapon at once.
     pub kill_stamina: f64,
     pub parry_stamina: f64,
@@ -47,7 +50,7 @@ pub struct Trim {
 }
 
 /// How many numbers a trim crosses as.
-pub const TRIM_FLOATS: usize = 29;
+pub const TRIM_FLOATS: usize = 31;
 
 impl Default for Trim {
     fn default() -> Self {
@@ -83,6 +86,8 @@ impl Trim {
         drawn_poise_taken: 1.0,
         behind_taken: 1.0,
         telegraph_taken: 1.0,
+        veiled_dodge_stamina: 1.0,
+        drink_heal: 1.0,
         kill_stamina: 0.0,
         parry_stamina: 0.0,
         block_stamina: 0.0,
@@ -118,6 +123,8 @@ impl Trim {
             self.drawn_poise_taken,
             self.behind_taken,
             self.telegraph_taken,
+            self.veiled_dodge_stamina,
+            self.drink_heal,
             self.kill_stamina,
             self.parry_stamina,
             self.block_stamina,
@@ -157,10 +164,12 @@ impl Trim {
             drawn_poise_taken: factor(22),
             behind_taken: factor(23),
             telegraph_taken: factor(24),
-            kill_stamina: given(25),
-            parry_stamina: given(26),
-            block_stamina: given(27),
-            kill_reload: numbers[28] == 1.0,
+            veiled_dodge_stamina: factor(25),
+            drink_heal: factor(26),
+            kill_stamina: given(27),
+            parry_stamina: given(28),
+            block_stamina: given(29),
+            kill_reload: numbers[30] == 1.0,
         }
     }
 }

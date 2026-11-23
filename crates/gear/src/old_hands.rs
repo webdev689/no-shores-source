@@ -150,14 +150,13 @@ const MERGED: [(&str, &str); 14] = [
     ("sealed_magazine", "boarding_nets"),
 ];
 
-/// An item read against the catalogue as it is now. A named item of its entry's rarity follows its entry: its columns
-/// offer the entry's traits, each node bought and choice kept, so a reworked Atheric's new perk stands where its old one
-/// was bought, as Destiny's reworked exotics changed in every copy, and nothing is given back or lost. A rolled item
-/// offering a trait the catalogue no longer holds offers in its place, bought and chosen as it was, the perk it merged
-/// into where that fits it, else the first plain perk of its column's pool it does not offer already; with none left
-/// but perks that give and take, the first of those, its node given back, so no cost is pressed on a player who never
-/// chose it. A node bought whose trait no longer fits the item (armour kept with a shield's Bulwark from before the
-/// loadouts) is given back once, for what it cost, and its choice is cleared.
+/// An item read against the catalogue as it is now. A named item of its entry's rarity
+/// follows its entry, each node bought and choice kept, so a reworked Atheric's new perk stands where its old one was
+/// bought, as Destiny's reworked exotics changed in every copy; a faction's armour or weapon keeps what it rolled, so a
+/// piece bought never changes under its player. A rolled item's trait the catalogue no longer holds gives way to the
+/// perk it merged into, else the first plain perk of its column's pool it lacks, bought and chosen as it was; with only
+/// perks that give and take left, the first of those, its node given back, so no cost is pressed on a player who never
+/// chose it. A node whose trait no longer fits the item is given back once, for what it cost, and its choice cleared.
 pub(crate) fn unfit(character: &mut Character, mut item: Item) -> Item {
     let content = catalogue();
     let entry = item.named.as_deref().and_then(|named| content.named(named));
@@ -166,21 +165,32 @@ pub(crate) fn unfit(character: &mut Character, mut item: Item) -> Item {
     if let Some(entry) = entry {
         item.source = entry.source();
     }
-    if let Some(entry) = entry.filter(|entry| entry.rarity == item.rarity) {
+    // A faction's armour or weapon keeps the traits it rolled as it was made (`vestige::made_named`), its faction's own
+    // perks among its perk columns' pools.
+    let faction = entry.and_then(|entry| entry.faction.as_deref()).filter(|_| item.kind != Kind::Cloak);
+    if let Some(entry) = entry.filter(|entry| entry.rarity == item.rarity && faction.is_none()) {
         item = follow(character, item, entry);
     }
+    let kind = item.kind;
+    let own_perk = |column: Column, id: &str| {
+        matches!(column, Column::Perk(_))
+            && faction.is_some_and(|key| content.faction_perks(key, kind).iter().any(|found| found.id == id))
+    };
     let mut pressed: Vec<(usize, u8)> = Vec::new();
-    // A named item's traits are its entry's (`follow`); a rolled one's are those of its columns' pools.
+    // A named item's traits are its entry's (`follow`); a rolled one's and a faction piece's are those of its columns'
+    // pools.
     let trait_columns: Vec<(usize, Column)> = (item.columns().iter().copied().enumerate())
-        .filter(|(_, kind)| kind.traits() && item.named.is_none())
+        .filter(|(_, kind)| kind.traits() && (item.named.is_none() || faction.is_some()))
         .collect();
     for (place, (index, column)) in trait_columns.into_iter().enumerate() {
         for node in 0..item.layout.get(place).map_or(0, Vec::len) {
             let gone = item.layout[place][node].clone();
             // A trait its column still offers stays; one that no longer fits the item is given back below; one that
             // has gone, or has moved to another column (Double Shotted, a perk become a finish), is replaced.
-            let offered_here = content.pool(column, item.kind).iter().any(|found| found.id == gone);
-            let misfit = content.trait_def(&gone).is_some() && !content.trait_fits(&gone, item.kind, None);
+            let offered_here =
+                content.pool(column, item.kind).iter().any(|found| found.id == gone) || own_perk(column, &gone);
+            let misfit =
+                content.trait_def(&gone).is_some() && !content.trait_fits(&gone, item.kind, item.named.as_deref());
             if offered_here || misfit {
                 continue;
             }

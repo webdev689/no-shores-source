@@ -29,6 +29,8 @@ code:
   - crates/room/src/power.rs#loadout_arms
   - crates/room/src/power.rs#arms_allowed
   - crates/gear/src/catalogue.rs#trait_fits
+  - crates/gear/src/catalogue.rs#faction_perks
+  - crates/gear/src/vestige.rs#made_named
   - crates/room/src/perks.rs#sharpened
   - crates/room/src/perks.rs#verbs_after
   - crates/room/src/perks.rs#PerkCounts
@@ -94,10 +96,14 @@ number is one of [[Gear as Claude Shapes It]].
   islands' resources and rolled items' names. The catalogue is checked whole by a test: every trait a named item
   offers exists, sits in the right kind of column and fits the item; no item offers a trait twice; each signature
   and each intrinsic belongs to one Atheric, and every Atheric weapon has an intrinsic; every kind of loadout has a Legendary; every slot has a Legendary and an Atheric a Vestige
-  can open to; every rolled pool holds enough traits.
+  can open to; every rolled pool holds enough traits; every faction perk is a perk of a faction the factions' file
+  holds, and each faction's armour piece and weapon writes no traits and has one of its faction's perks that fits it.
 - **An item** is a kind (a Melee or a Ranged loadout, four armour pieces, the cloak, or one of a ship's four modules,
   [[Ship Power]]), a rarity, a level (1 to 20; a
-  Legendary or Atheric is 20), its XP and the nodes bought and chosen. A named item follows its catalogue entry: in
+  Legendary or Atheric is 20), its XP and the nodes bought and chosen. A faction's armour or weapon keeps the traits it
+  rolled as it was made ("Verbs", "The factions' perks"), checked as a rolled item's are, its faction's perks among its
+  perk columns' pools; one kept from before keeps the traits its entry once wrote. Any other named item follows its
+  catalogue entry: in
   a kept one's column whose traits changed, a node bought moves with its perk to where the perk stands now, else to the
   perk it merged into, else stays where it was if a plain perk stands there (a reworked one, as an Atheric's own);
   one where only a perk that gives and takes stands, or a place another took, is given back for what it cost, so no
@@ -201,7 +207,7 @@ number is one of [[Gear as Claude Shapes It]].
   pays, once").
 - **Perks.** The traits a player's worn gear gives make a trim of combat's numbers, which their fighter carries, so
   their browser predicts it to the bit ([[Combat]]). The room adds what only it knows the moment of: Honed, Executioner,
-  Undertow, Exploit and Attuned as a blow is struck, Point Blank and Long Shot by the ground a shot covered, the
+  Undertow, Exploit, Attuned, Thunderhead, Shared Flame and From the Dark as a blow is struck, Point Blank and Long Shot by the ground a shot covered, the
   stamina a kill, a parry or a block gives back, with Last Light's reload, the verbs ("Verbs", below) and the
   Atherics' own ("Atherics", below). A player's
   perks are the armour's and the drawn loadout's alone: the other loadout's wait until it is drawn, and drawing its
@@ -228,7 +234,8 @@ number is one of [[Gear as Claude Shapes It]].
   long reload.
 - **Drawn.** Melee is drawn first; `1` draws Melee and `2` Ranged ([[Interface]]). The room takes up the arms of
   either worn loadout, and a swap between them holds off blows and shots for 0.4 s.
-- **Perks.** A trait fits `melee`, `ranged`, `weapon` (either loadout), `armour` or `shield`. A shield's block perks
+- **Perks.** A trait fits `melee`, `ranged`, `weapon` (either loadout), `armour` or `shield`; a faction's own perk
+  fits only its faction's pieces ("Verbs", "The factions' perks"). A shield's block perks
   fit only the loadouts with a shield: Bulwark is rolled onto no other piece, and Coral Guard is The Reefwall's
   intrinsic. A worn piece gives a trait only where a roll could offer it (`gear::catalogue::trait_fits`). A node bought on a kept
   piece whose trait does not fit it, such as armour with Bulwark, is given back once as the character is read, for the
@@ -270,6 +277,21 @@ player while they are in it (`room::perks`). A blow lands when it strikes, is bl
 - **Either loadout.** Keen Eye (perk) gives Crit for 4 s on a kill. Attuned (finish) makes a blow or shot 10% harder
   while its element is the worn Art's. Spellfeed (finish) takes 3% off both Tenets' cooldowns on a kill. Each counts
   only its own loadout's blows and kills, never a spell's.
+- **The factions' perks** ([[Every Perk Stands, the Factions' Nine With Them]]). Nine perks, three a faction, which no
+  shared pool offers: a faction's armour and weapons roll every trait column from their kind's shared pools, never one
+  trait twice, and the first node of their first perk column from their faction's perks that fit them, as they are
+  bought at its counter or handed out at the [[Test Ground]] (`vestige::made_named`); its counter shows each piece
+  unrolled. The Stormcallers': Gathering Storm (weapon) Charges a foe on the fourth swing in a row to land on it, as
+  Exposing Strikes counts a row, or on the fourth shot in a row to land on it (one landing on another foe begins a row
+  of its own; one the foe dodges or parries ends it); Thunderhead (weapon) strikes a Charged foe 15% harder, a blow or
+  a shot, a riposte counted; Squall Step (armour) gives Haste for 3 s on a perfect dodge. The Lamplighters': Kindling
+  (weapon) Links its striker for 6 s on a kill, and the nearest other living player within 10 m of them, the Sunwell's
+  reach (none beside them alone); Shared Flame (weapon) strikes 10% harder while its striker is Linked; Lightbearer
+  (armour) heals 15% more with each healing charge, a trim. The Veiled's: Nightfall (melee) Veils its striker for 3 s
+  on a riposte that lands; From the Dark (weapon) crits a blow or shot struck or loosed while its striker is Veiled,
+  the one that ends the veil; Shade Step (armour) makes a dodge while Veiled cost 20% less stamina, a trim. Shared
+  Flame and From the Dark take the striker's statuses as the blow is struck or the shot loosed. Every number is
+  Claude's, in [[Gear as Claude Shapes It]] ("The factions' perks").
 - **The pools.** With the verbs and the perks that give and take, a Melee loadout is offered among 6 handling traits,
   7 finishes and 8 perks (9 with a shield), a Ranged one among 6, 7 and 6; armour among its 6 perks.
 

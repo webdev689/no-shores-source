@@ -124,6 +124,25 @@ Destiny 1's perks were for guns and space magic; these are Overlook's own, for i
 armour stats (Intellect, Discipline, Strength) shortened ability cooldowns Overlook does not have, so armour has none
 yet.
 
+### The factions' perks
+
+The factions' nine, approved by the owner ([[Every Perk Stands, the Factions' Nine With Them]]), as the rules carry
+them ([[Gear]], "Verbs"; [[Factions]]):
+
+| Choice | Chosen | Why |
+|---|---|---|
+| What a faction perk is | A perk-column trait with its faction's key (`faction`); no shared pool offers it, and it fits only a piece whose named entry is that faction's | One trait list for every perk, so the page shows its words from `traits.json` as it shows any other's |
+| How a faction's piece rolls | Its armour and weapons roll every trait column from their kind's shared pools, never one trait twice, as a rolled piece does, when bought or handed out at the Test Ground; the first node of the first perk column is always drawn from its faction's perks that fit it. Name, look, faction, resource and source stay the entry's; the cape has no nodes | The owner: "their own faction specific perk pool along with the general perk roll". The first perk column is the earliest a player can buy one |
+| Their written layouts | Gone from `items.json`: nothing reads them | Less to keep |
+| A kept faction piece | Keeps the traits it rolled, checked against its columns' pools and its faction's perks, as a rolled piece's are; one kept from before keeps its old written traits, all of which still fit | A piece a player bought never changes under them |
+| Its counter | Shows each piece by name, rarity and level, its traits unrolled until it is bought | Each one bought rolls its own |
+| Gathering Storm's row | A swing's row is Exposing Strikes'. A shot's is the shots landing on one foe one after another: one landing on another foe begins a row of its own, and one dodged or parried by that foe ends it | The same row a swing keeps, said for a shot |
+| Thunderhead | 1.15 times on a foe Charged as the blow or shot lands, a riposte counted | Executioner's number; a riposte answers a stagger, not a Charge |
+| Shared Flame, From the Dark | The striker's Linked, and their veil, as the blow was struck or the shot loosed | A shot carries what its striker was as it left the bow; the veil it ends is gone by the time it lands |
+| Kindling's reach | The nearest other living player within 10 m of the striker, Linked beside them for 6 s; alone, the striker only | The Sunwell's reach, the one Art that Links allies |
+| Nightfall | On a riposte that lands | A verb gives its status as a blow lands |
+| Squall Step, Shade Step, Lightbearer | The armour's, whatever loadout is drawn; Shade Step and Lightbearer are trims, so a browser predicts them | Armour perks are the armour's alone |
+
 ### Islands, seas and patrols
 
 | Choice | Chosen | Why |

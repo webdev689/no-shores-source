@@ -425,7 +425,8 @@ fn dodge<B: Near + ?Sized>(next: &mut Fighter, controls: Controls, around: &Surr
     let facing =
         around.target_at.map_or_else(|| bearing([0.0, 0.0], toward), |at| bearing([body.x, body.y], [at[0], at[1]]));
     let drawn = if next.arms == crate::arms::BARE_HANDS { 1.0 } else { next.trim.drawn_dodge_stamina };
-    spend(next, DODGE_STAMINA * next.trim.dodge_stamina * drawn);
+    let veiled = if next.statuses.has(crate::Status::Veiled) { next.trim.veiled_dodge_stamina } else { 1.0 };
+    spend(next, DODGE_STAMINA * next.trim.dodge_stamina * drawn * veiled);
     next.body = Body {
         mode: Mode::Air,
         vx: toward[0] * DODGE_SPEED,

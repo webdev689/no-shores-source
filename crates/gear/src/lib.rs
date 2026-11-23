@@ -81,6 +81,8 @@ mod cosmetics_tests;
 #[cfg(test)]
 mod emblems_tests;
 #[cfg(test)]
+mod faction_perks_tests;
+#[cfg(test)]
 mod factions_tests;
 #[cfg(test)]
 mod gate_tests;

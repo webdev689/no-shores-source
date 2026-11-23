@@ -54,7 +54,9 @@ keeps a counter in Overlook's plaza ([[Cities]]), and a lore book its road gives
   faction's key; `wares` lists them in that file's order, the cape first): its cape, level 1, for 2,500 Aurem, only to a
   player pledged to it, one kept at a time; a full armour set from rank 2 for 6,000 Aurem a piece; and a Melee and a
   Ranged weapon from rank 3 for 9,000 (`terms`). Armour and weapons need the rank alone, pledged or not, and are made
-  and sold at level 20, refused below it; a weapon rolls its element as it is bought, as every weapon made does. One
+  and sold at level 20, refused below it; a weapon rolls its element as it is bought, as every weapon made does. Each
+  armour piece and weapon rolls its traits as it is bought, one always among its faction's own perks
+  ([[Every Perk Stands, the Factions' Nine With Them]]; [[Gear]], "The factions' perks"). One
   ask buys any of them (`buy_faction_ware`, by its place among the faction's), refused for a slot that
   carries nine. No Vestige, package or Shape offers a faction's piece (`vestige_pool`), and one dismantled gives back as
   a Normal piece with the third of its Essence, so faction gear bought and broken makes no Essence.

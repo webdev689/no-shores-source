@@ -15,7 +15,8 @@ pub const NAMED_LEVEL: u8 = 20;
 pub const ITEM_LEVEL_MOST: u8 = 20;
 
 /// An item as a player holds it. Its own number is the player's for it; a named item's traits are copied from the
-/// catalogue when it is made, and follow it as a kept character is read (`old_hands::unfit`). `bucket` is the slot
+/// catalogue when it is made, and follow it as a kept character is read (`old_hands::unfit`), but a faction's armour
+/// and weapons, which roll theirs (`vestige::made_named`). `bucket` is the slot
 /// whose carried items it counts among: its kind's own.
 #[derive(Clone, Debug, PartialEq, Eq, serde::Deserialize, serde::Serialize)]
 pub struct Item {

@@ -440,8 +440,7 @@ impl Room {
                 let Some(def) = gear::catalogue::catalogue().named(&named) else {
                     return answer_code(Err(Refusal::NoSuchItem));
                 };
-                let mut item = gear::vestige::named_item(character.take_id(), def, def.kind.slot());
-                item.element = gear::element::rolled(item.kind, item.rarity, &dice);
+                let item = gear::vestige::made_named(character.take_id(), def, def.kind.slot(), &dice);
                 return carry(character, item);
             }
             Grant::Item { kind, rarity, level } => {

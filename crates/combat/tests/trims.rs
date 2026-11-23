@@ -54,6 +54,28 @@ fn a_trimmed_swing_and_dodge_cost_less_stamina() {
 }
 
 #[test]
+fn a_dodge_while_veiled_costs_its_own_trim_and_only_while_veiled() {
+    let shade = Trim { veiled_dodge_stamina: 0.8, ..Trim::PLAIN };
+    let open = step_fighter(&armed(shade), &dodging(0.0, 0.0, 1.0), &AROUND).0;
+    assert!((STAMINA - open.stamina - DODGE_STAMINA).abs() < 1e-9, "unveiled, a dodge costs what it does");
+    let mut veiled = armed(shade);
+    veiled.statuses = combat::give(&veiled, combat::Status::Veiled, 60, None).expect("veiled").statuses;
+    let hidden = step_fighter(&veiled, &dodging(0.0, 0.0, 1.0), &AROUND).0;
+    assert!((STAMINA - hidden.stamina - DODGE_STAMINA * 0.8).abs() < 1e-9, "Shade Step: 20% less while Veiled");
+}
+
+#[test]
+fn a_trimmed_healing_charge_restores_more() {
+    let wounded = Fighter { health: 20.0, trim: Trim { drink_heal: 1.15, ..Trim::PLAIN }, ..player_at(0.0, 0.0) };
+    let heal = combat::CombatInput { heal: true, ..combat::CombatInput::default() };
+    let mut intents = vec![common::asking(0.0, heal)];
+    intents.extend(std::iter::repeat_n(idle(0.0), usize::try_from(combat::tuning::DRINK_TICKS).unwrap()));
+    let (drunk, _) = common::script(wounded, &intents);
+    let healed = drunk.health - 20.0;
+    assert!((healed - 100.0 * combat::tuning::DRINK_HEALS * 1.15).abs() < 1e-9, "Lightbearer: 15% more, {healed}");
+}
+
+#[test]
 fn stamina_comes_back_faster_trimmed_and_faster_again_below_half_health() {
     let rested = |trim: Trim, health: f64| {
         let tired = Fighter { stamina: 10.0, stamina_rest: 100, health, trim, ..player_at(0.0, 0.0) };
@@ -147,7 +169,7 @@ fn a_trim_crosses_with_its_fighter_to_the_bit() {
     let floats: [f64; FIGHTER_FLOATS] = fighter.to_floats();
     assert_eq!(Fighter::from_floats(&floats), fighter);
     let mut broken = floats;
-    broken[FIGHTER_FLOATS - 29] = f64::NAN;
+    broken[FIGHTER_FLOATS - combat::trim::TRIM_FLOATS] = f64::NAN;
     assert_eq!(Fighter::from_floats(&broken).trim.swing_stamina, 1.0, "a factor that is not a number trims nothing");
 }
 

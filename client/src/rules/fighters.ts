@@ -89,7 +89,7 @@ export const GLANCE_FLOATS = 17 + ACTION_NUMBERS;
  *  counted), its drinks (the healing charges in the low two bits, the drink's press kept and held above them) and the
  *  meter toward the next charge, its statuses (each one's ticks, a Charge's immunity, each one's giver), then its
  *  gear's trim (combat's TRIM_FLOATS). */
-export const TRIM_FLOATS = 29;
+export const TRIM_FLOATS = 31;
 const AMMO_AT = BODY_FLOATS + 24 + ACTION_NUMBERS;
 export const DRINKS_AT = AMMO_AT + 1;
 const METER_AT = AMMO_AT + 2;
@@ -102,7 +102,7 @@ export const INTENT_FLOATS = CONTROLS_FLOATS + 10;
 /** A fighter as a snapshot carries it: all but its trim, which only its own player has, in their gear. */
 export const UNTRIMMED_FLOATS = FIGHTER_FLOATS - TRIM_FLOATS;
 /** The trim of a fighter whose gear trims nothing (combat's `Trim::PLAIN`): every factor 1, nothing given back. */
-export const PLAIN_TRIM: readonly number[] = [...Array<number>(25).fill(1), 0, 0, 0, 0];
+export const PLAIN_TRIM: readonly number[] = [...Array<number>(27).fill(1), 0, 0, 0, 0];
 
 /** A whole fighter from a snapshot's, its trim put back. */
 export function trimmed(untrimmed: ArrayLike<number>, trim: readonly number[] | null | undefined): Float64Array {

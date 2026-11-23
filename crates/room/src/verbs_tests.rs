@@ -9,7 +9,7 @@ use gear::{At, Element, Item, Kind, Rarity, Slot};
 use std::collections::BTreeMap;
 
 const SWORDSMAN: u8 = ::foes::roster::COLLECTOR;
-const SWING: BlowKind = BlowKind::Swing(Stroke::Down);
+pub(super) const SWING: BlowKind = BlowKind::Swing(Stroke::Down);
 const HIT: Verdict = Verdict::Hit { damage: 10.0, poise: 0.0 };
 /// The item `room_wearing` puts on the player.
 const WORN: u32 = 99;
@@ -40,7 +40,7 @@ fn wear(room: &mut Room, player: PlayerId, id: u32, kind: Kind, perk: &str) {
     character.items.insert(id, (item, At::Worn(kind.slot())));
 }
 
-fn stand(room: &mut Room, x: f64, y: f64) -> FighterId {
+pub(super) fn stand(room: &mut Room, x: f64, y: f64) -> FighterId {
     let id = room.next_id();
     let foe_type = ::foes::foe_type(SWORDSMAN).expect("the Tithe's Collector");
     let (fighter, brain) = ::foes::spawn(foe_type, ::foes::Rank::Major, x, y, 0.0);
@@ -49,7 +49,7 @@ fn stand(room: &mut Room, x: f64, y: f64) -> FighterId {
     id
 }
 
-fn blow(player: PlayerId, kind: BlowKind) -> Blow {
+pub(super) fn blow(player: PlayerId, kind: BlowKind) -> Blow {
     Blow {
         striker: player,
         kind,
@@ -67,19 +67,19 @@ fn blow(player: PlayerId, kind: BlowKind) -> Blow {
     }
 }
 
-fn has(room: &Room, fighter: FighterId, status: Status) -> bool {
+pub(super) fn has(room: &Room, fighter: FighterId, status: Status) -> bool {
     room.fighter(fighter).expect("in the room").statuses.has(status)
 }
 
 /// One swing a moment after the last, landing on each foe in turn as `verdict`.
-fn swing(room: &mut Room, player: PlayerId, on: &[FighterId], verdict: Verdict) {
+pub(super) fn swing(room: &mut Room, player: PlayerId, on: &[FighterId], verdict: Verdict) {
     room.clock += 30;
     for foe in on {
         room.settle(&blow(player, SWING), How::Swing, *foe, verdict, Some(Slot::Melee));
     }
 }
 
-fn shoot(room: &mut Room, player: PlayerId, ranged: Ranged, on: FighterId, verdict: Verdict) {
+pub(super) fn shoot(room: &mut Room, player: PlayerId, ranged: Ranged, on: FighterId, verdict: Verdict) {
     room.clock += 30;
     room.settle(&blow(player, BlowKind::Shot(ranged)), How::Shot, on, verdict, Some(Slot::Ranged));
 }

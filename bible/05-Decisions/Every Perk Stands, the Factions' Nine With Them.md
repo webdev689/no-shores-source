@@ -21,3 +21,6 @@ and, having gone through it:
   to its Art's element ([[Set Names and Faction Perks as Claude Drafts Them]]), and built for a faction's pieces to roll
   beside the shared pool ([[Faction Weapons Wear Their Colour and Roll Their Faction's Perks]]).
 - **The set names are not part of it**: they wait on the owner ("Not yet").
+
+How the rules carry the nine: [[Gear]] ("Verbs") and [[Factions]], with Claude's calls in
+[[Gear as Claude Shapes It]] ("The factions' perks").

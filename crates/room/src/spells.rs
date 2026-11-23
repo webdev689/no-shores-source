@@ -216,7 +216,7 @@ impl Room {
     }
 
     /// The living players within `radius` of `at`, across and up; one dead past the section's edge is not living.
-    fn players_near(&self, at: [f64; 3], radius: f64) -> Vec<PlayerId> {
+    pub(crate) fn players_near(&self, at: [f64; 3], radius: f64) -> Vec<PlayerId> {
         let near =
             |body: &Body| libm::hypot(body.x - at[0], body.y - at[1]) <= radius && (body.z - at[2]).abs() <= radius;
         let fallen = |found: &crate::players::Player| matches!(found.standing, crate::Standing::Dead { .. });
@@ -264,8 +264,11 @@ impl Room {
             element: 0,
             crit: false,
         };
-        let blow =
-            self.empower_as(blow, foe, Some(Loosed { attack, element, trim: Trim::PLAIN, aimed: false, item: None }));
+        let blow = self.empower_as(
+            blow,
+            foe,
+            Some(Loosed { attack, element, trim: Trim::PLAIN, aimed: false, item: None, veiled: false, linked: false }),
+        );
         // A dodge passes a spell whole: none of its harm, nor the status it would give.
         if matches!(self.judge_now(&blow, How::Spell, foe, &then, Some(hand)), Verdict::Dodged { .. }) {
             return None;
