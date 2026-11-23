@@ -41,7 +41,7 @@ pub fn decide(brain: &mut Brain, here: &Here<'_, '_>, board: &mut Board) -> Ask 
     let hurt = brain.hurt(here.fighter.health, here.fighter.health_max, here.tick());
     if brain.raging {
         // A rage lasts its fight; raging, it answers no blow.
-        brain.raging = brain.awareness.alert;
+        brain.raging = brain.awareness.alert || brain.target.is_some();
         brain.reactions = Reactions::default();
     }
     if let Some(ask) = leash(brain, here, board) {
@@ -65,7 +65,10 @@ pub fn decide(brain: &mut Brain, here: &Here<'_, '_>, board: &mut Board) -> Ask 
     if let Some(ask) = held(brain, here, board) {
         return ask;
     }
-    if let Some(order) = roar(brain, here) {
+    // Walking home it roars into no phase: it arrives whole, in its first.
+    if brain.returning != Some(Homeward::Searched)
+        && let Some(order) = roar(brain, here)
+    {
         return telegraph(brain, order);
     }
     match follow(brain, here, sight.as_ref()) {

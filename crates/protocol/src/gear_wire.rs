@@ -422,7 +422,6 @@ pub fn gear_bytes(room: &Room, player: PlayerId) -> Option<Vec<u8>> {
     let scavenged = builder.create_vector(&room.scavenged(player));
     let items: Vec<_> = character.items.values().map(|(item, at)| item_offset(&mut builder, item, *at, 0)).collect();
     let emblems: Vec<u16> = character.emblems.iter().filter_map(|id| gear::emblems::number_of(id)).collect();
-    // In a social space, the emblems the Tailor sells that day.
     let emblems_sold = if room.in_social_space(player) { gear::emblems::sold_on(room.day()) } else { Vec::new() };
     let items = Some(builder.create_vector(&items));
     let vestiges: Vec<_> = character
@@ -568,6 +567,7 @@ pub fn gear_bytes(room: &Room, player: PlayerId) -> Option<Vec<u8>> {
         mail: Some(crate::mail_wire::mail_offset(&mut builder, character)),
         lore: Some(crate::lore_wire::found_of(&mut builder, room, player)),
         lore_here: Some(crate::lore_wire::here_of(&mut builder, room, player)),
+        recharge: room.recharge_times(),
         next_id: character.id_to_take(),
     };
     let gear = messages::Gear::create(&mut builder, &args);

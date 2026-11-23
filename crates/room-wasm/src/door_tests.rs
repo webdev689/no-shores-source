@@ -237,29 +237,29 @@ fn the_sea_opens_on_a_layout_with_its_ports_whose_lanes_the_tithe_patrols() {
 }
 
 /// Both tests hold this value: roomDoor.test.ts runs the same sea through WebAssembly, as the servers and the page do.
-pub const SEA_CLASH_HASH: &str = "1234e219d09eb4d9";
+pub const SEA_CLASH_HASH: &str = "3cffd75a50ec0434";
 /// The world time the sea opens at, so the weather its fights sail in is the same every run.
 pub const CLASH_START_S: f64 = 1_790_151_200.0;
 
 #[test]
-fn a_sea_where_rivals_clash_and_a_player_joins_them_snapshots_to_its_pinned_fingerprint() {
-    // The second island's waters are contested, so both factions come; on this seed two of them meet about 5 km from
-    // the player by tick 6522, and the player sails there.
-    let layout = r#"{ "continents": [{ "id": "continent-2", "outline": [[100000, 100000], [200000, 100000], [200000, 200000], [100000, 200000]] }], "isles": [] }"#;
-    assert!(open_sea(layout.as_bytes(), 484));
+fn a_sea_where_a_tithe_ship_attacks_a_friendly_ship_and_a_player_joins_them_snapshots_to_its_pinned_fingerprint() {
+    // On this seed a bold Tithe ship comes out by the lane as the player sails from Sunspire, and attacks a friendly ship
+    // there half a minute out; the player turns for them and joins the fight beside the friendly ship.
+    assert!(open_sea(TRAFFIC_SEA.as_bytes(), 6));
     room_world_start(CLASH_START_S);
     let player = room_join();
-    assert_eq!(input(player, &protocol::course_bytes(&[[50_000.0, 50_000.0]], 10)), TAKEN);
+    assert_eq!(input(player, &protocol::course_bytes(&[[450_000.0, 97_000.0], [340_000.0, 92_000.0]], 10)), TAKEN);
     let (mut hash, mut clashed, mut three) = (0xcbf2_9ce4_8422_2325_u64, false, false);
     for tick in 1..=16_000 {
-        if tick == 6_523 {
-            assert_eq!(input(player, &protocol::course_bytes(&[[53_327.0, 53_450.0]], 10)), TAKEN);
+        if tick == 1_831 {
+            assert_eq!(input(player, &protocol::course_bytes(&[[441_700.0, 96_800.0]], 10)), TAKEN);
         }
         room_tick();
         with_open(|opened| {
             if let Opened::Sea(sea) = opened {
                 clashed |= !sea.clashes().is_empty();
-                three |= sea.fights().any(|(_, fought)| fought.fight.ships.len() == 3);
+                let beside = |fought: &room::sea::SeaFight| fought.fight.ships.len() == 3 && !fought.friends.is_empty();
+                three |= sea.fights().any(|(_, fought)| beside(fought));
             }
         });
         if tick % 60 == 0 {
@@ -268,7 +268,7 @@ fn a_sea_where_rivals_clash_and_a_player_joins_them_snapshots_to_its_pinned_fing
                 .fold(hash, |hash, byte| (hash ^ u64::from(*byte)).wrapping_mul(0x0100_0000_01b3));
         }
     }
-    assert!(clashed && three, "rivals clashed, and the player joined them");
+    assert!(clashed && three, "the Tithe ship attacked, and the player joined beside the friendly ship");
     assert_eq!(format!("{hash:016x}"), SEA_CLASH_HASH);
 }
 
@@ -568,18 +568,18 @@ fn the_sea_takes_a_boarding_and_the_boarder_fights_on_its_deck() {
     let player = room_join();
     assert_eq!(input(player, &protocol::course_bytes(&[[50_000.0, 50_000.0]], 10)), TAKEN);
     assert_eq!(input(player, &protocol::ask_bytes(2)), REFUSED, "no captain has struck");
-    let commission = naval::ranks::Commission { faction: 2, rank: naval::ranks::Rank::Minor };
-    let pirate = room::pirates::Pirate::standing(1, 7, commission, [50_000.0, 49_980.0], 0.0, true);
+    let commission = naval::ranks::Commission { faction: naval::ranks::GREY_TITHE, rank: naval::ranks::Rank::Minor };
+    let hostile = room::hostiles::Hostile::standing(1, 7, commission, [50_000.0, 49_980.0], 0.0, true);
     with_open(|opened| {
         if let Opened::Sea(sea) = opened {
-            sea.put_to_sea(pirate)
+            sea.put_to_sea(hostile)
         }
     });
     room_tick();
     // Its colours come down alongside, and it lies still.
     with_open(|opened| {
         let Opened::Sea(sea) = opened else { panic!("a sea is open") };
-        let fought = sea.fight_mut(player).expect("the pirate met their ship");
+        let fought = sea.fight_mut(player).expect("the hostile met their ship");
         let clock = fought.fight.clock;
         let vessel = fought.fight.ships.get_mut(&naval::fight::CAPTAIN).unwrap();
         let hurt = naval::damage::Hurt { hull: vessel.damage.max_hull * 0.8, sail: 0.0, crew: 0.0, fire: false };
@@ -623,8 +623,9 @@ fn seen_at_sea(player: PlayerId) -> (Vec<PlayerId>, Vec<u32>) {
     let bytes = snapshot_door::snapshot_for(player);
     let snapshot = messages::root_as_from_room(&bytes).unwrap().snapshot().unwrap();
     let ships = snapshot.ships().map_or(Vec::new(), |ships| ships.iter().map(|ship| ship.player()).collect());
-    let pirates = snapshot.pirates().map_or(Vec::new(), |pirates| pirates.iter().map(|pirate| pirate.id()).collect());
-    (ships, pirates)
+    let hostiles =
+        snapshot.hostiles().map_or(Vec::new(), |hostiles| hostiles.iter().map(|hostile| hostile.id()).collect());
+    (ships, hostiles)
 }
 
 #[test]
@@ -697,14 +698,14 @@ fn each_player_at_sea_is_sent_the_hostile_ships_within_their_keeping_sight_and_t
     for (player, at) in [(one, [50_000.0, 50_000.0]), (near, [50_000.0, 90_000.0]), (far, [300_000.0, 50_000.0])] {
         assert_eq!(input(player, &protocol::course_bytes(&[at], 10)), TAKEN);
     }
-    let commission = naval::ranks::Commission { faction: 2, rank: naval::ranks::Rank::Minor };
+    let commission = naval::ranks::Commission { faction: naval::ranks::GREY_TITHE, rank: naval::ranks::Rank::Minor };
     // Wary Minors that leave a sound Sloop be, each kept at sea by the player within 1.1 times the Minor's 5 km sight
     // of it: the first player, and the near one.
     for (id, at) in [(1, [50_000.0, 44_600.0]), (2, [50_000.0, 95_400.0])] {
-        let pirate = room::pirates::Pirate::standing(id, 7, commission, at, 0.0, false);
+        let hostile = room::hostiles::Hostile::standing(id, 7, commission, at, 0.0, false);
         with_open(|opened| {
             if let Opened::Sea(sea) = opened {
-                sea.put_to_sea(pirate)
+                sea.put_to_sea(hostile)
             }
         });
     }
@@ -768,3 +769,13 @@ fn a_leaving_players_vestige_still_lying_is_in_their_character_before_the_room_l
     assert_eq!(character.mail[0].vestige.as_ref().map(|kept| kept.rarity), Some(gear::Rarity::Rare));
     room_leave(player);
 }
+
+/// Two islands of the traffic, Overlook's and Sunspire's, 100 km squares 200 km apart on the line y = 150 km, their
+/// ports in their middles: the lane between them runs east through the Grey Tithe's waters past x = 300 km.
+pub const TRAFFIC_SEA: &str = r#"{ "layout": { "continents": [
+    { "id": "continent-1", "outline": [[100000, 100000], [200000, 100000], [200000, 200000], [100000, 200000]] },
+    { "id": "continent-4", "outline": [[400000, 100000], [500000, 100000], [500000, 200000], [400000, 200000]] }
+  ], "isles": [] }, "ports": [
+    { "id": "overlook", "name": "Overlook", "continent": "continent-1", "centre": [150000, 150000] },
+    { "id": "sunspire", "name": "Sunspire", "continent": "continent-4", "centre": [450000, 150000] }
+  ] }"#;

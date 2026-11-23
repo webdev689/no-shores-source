@@ -234,6 +234,9 @@ table Gear {
   // this room's node that they have not, each its number, x and y.
   lore: [ushort];
   lore_here: [double];
+  // How much longer the room takes to recharge each Art's Anima and Tenets: 1.5 under a run's Trickle, else 1. The page
+  // runs `anima` and `tenets` on by it.
+  recharge: double = 1.0;
   // The number the next item they get takes (`Character::id_to_take`): a smith's ware is drawn by it, as the piece it
   // becomes once bought.
   next_id: uint;

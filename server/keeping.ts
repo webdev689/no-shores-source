@@ -131,20 +131,18 @@ export class Keeper {
     const characters = this.characters;
     if (!characters || this.held.has(player) || this.room.character(player) === null) return false;
     const holder = `${this.name}:${crypto.randomUUID()}`;
-    if (this.company || this.arrives) {
-      // A run, and a room that judges where a character comes from, judge it before they claim it, so one turned away
-      // is never taken from the room that plays it (a second tab plays on, its unsaved progress kept); the claim is
-      // judged again, as the character may have moved on meanwhile.
-      const looked = await this.tried(() => characters.look(token), here);
-      const shut = looked ? await this.judged(player, looked, here) : looked === null ? this.unsigned : undefined;
-      // Outside a run, accounts that do not answer leave the player to play unkept, as a claim unanswered does, and
-      // claim nothing: a claim judged after them could take the character from the room that plays it.
-      if (shut === undefined && !this.company) return false;
-      if (shut !== '') {
-        const trouble = shut === undefined;
-        if (here()) this.lost(player, shut ?? ACCOUNTS_TROUBLE, trouble);
-        return false;
-      }
+    // Every room judges a character before it claims it, so one turned away (by its gate, its company or the way it
+    // came) is never taken from the room that plays it (a second tab plays on, its unsaved progress kept); the claim is
+    // judged again, as the character may have moved on meanwhile.
+    const looked = await this.tried(() => characters.look(token), here);
+    const judgedFirst = looked ? await this.judged(player, looked, here) : looked === null ? this.unsigned : undefined;
+    // Outside a run, accounts that do not answer leave the player to play unkept, as a claim unanswered does, and
+    // claim nothing: a claim judged after them could take the character from the room that plays it.
+    if (judgedFirst === undefined && !this.company) return false;
+    if (judgedFirst !== '') {
+      const trouble = judgedFirst === undefined;
+      if (here()) this.lost(player, judgedFirst ?? ACCOUNTS_TROUBLE, trouble);
+      return false;
     }
     const claimed = await this.tried(() => characters.claim(token, holder), here);
     if (!claimed) {

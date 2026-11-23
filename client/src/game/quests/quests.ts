@@ -58,6 +58,8 @@ export class Quests {
   private toasted: { readonly text: string; readonly until: number }[] = [];
   /** The step's figures, drawn between the room's words on them. */
   private readonly glides = new FigureGlides();
+  /** When the room's last word on the quest came, milliseconds on `now`. */
+  private heardAt = 0;
   /** The forge the figures are drawn by, and the rules' roster their looks are read from, once it has come. */
   private readonly forge: Cards | null;
   roster: readonly FoeType[] = [];
@@ -109,6 +111,8 @@ export class Quests {
   hear(gear: GearState | null | undefined): void {
     const own = gear && gear.quest?.claimed !== false ? gear : null;
     if (own !== this.here) this.glides.heard(own?.quest?.figures ?? [], this.now());
+    // Each word sets the step's clock afresh; between words the tracker runs it down from when it came.
+    if (own && own.quest !== this.gear?.quest) this.heardAt = this.now();
     this.here = own;
     if (own) this.gear = own;
   }
@@ -151,7 +155,7 @@ export class Quests {
 
   /** What the tracker shows: the quest walked, once the story and the welcome are past. */
   get tracked(): Quest | null {
-    return this.past ? trackedOf(this.gear?.quest) : null;
+    return this.past ? trackedOf(this.gear?.quest, (this.now() - this.heardAt) / 1000) : null;
   }
 
   /** The nodes the task's goals name, for the held map. */

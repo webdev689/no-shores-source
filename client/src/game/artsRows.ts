@@ -28,6 +28,8 @@ import {
   spellSvg,
 } from './artsCards.ts';
 import { LEVEL_MOST, fragmentWords, howHad, levelOf, owns, ownedCount } from './artLevels.ts';
+import { capFace } from './hudParts.ts';
+import { capWords } from '../combat/shipAbilityBar.ts';
 import type { ArtsState } from './artsPage.ts';
 import { type Tone, cardNode, elementTone } from './gearCard.ts';
 import {
@@ -201,7 +203,10 @@ const lockMark = (art: Art): Node => ({
 function spellTile(context: MenuContext, art: Art, spell: Spell, look: ArtLook): Node {
   const { ui, sizes, gear } = context;
   const anima = spell === art.anima;
-  const key = keyOf(art, spell);
+  const bound = keyOf(art, spell);
+  const key = capWords(bound);
+  // A pad's button stands drawn on the tile's keycap, as on the bar's.
+  const face = capFace(bound, look.text);
   const id = spellKey(spell);
   const level = levelOf(gear.standing, art.id).level;
   const bit = anima ? 1 : 2 << art.tenets.indexOf(spell);
@@ -261,6 +266,7 @@ function spellTile(context: MenuContext, art: Art, spell: Spell, look: ArtLook):
         },
         {
           ...keycap(key, look.text),
+          ...(face ? { children: [face] } : {}),
           float: { to: 'parent', anchor: [0.5, 0], at: [0.5, 1], y: look.wide ? -14 : -11 },
         },
         ui.focused(id) && ui.keyFocused && focusRing(size, size),

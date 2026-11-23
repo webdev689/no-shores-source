@@ -512,3 +512,16 @@ fn a_dress_is_made_again_only_once_the_gear_it_is_made_from_changed() {
     let [(_, relayed)] = changes.as_slice() else { panic!("made again once the gear changed: {changes:?}") };
     assert_eq!(relayed_cosmetics(relayed), [Some("harbour_blue".to_owned()), None, None]);
 }
+
+#[test]
+fn a_dress_sent_while_held_is_shown_once_let_go() {
+    let (mut room, player) = room_with_player();
+    assert!(room.hold(player, true));
+    let sent = r#"{"body":"m","race":"human","tone":1,"outfit":{}}"#;
+    room.input(player, Input { sequence: 1, dress: Some(sent.to_owned()), ..Input::default() }).unwrap();
+    room.hold(player, false);
+    for _ in 0..=crate::players::DRESS_EVERY {
+        room.tick();
+    }
+    assert!(room.dresses().any(|(id, _)| id == player), "the dress sent while held is kept");
+}

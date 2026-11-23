@@ -19,7 +19,7 @@ use movement::{Block, Controls, standing};
 use navmesh::{AGENT, Bounds, NavMesh};
 use std::rc::Rc;
 
-/// The pirates' types, the five foes as the Test Ground first had them.
+/// The crew's own types, the five foes as the Test Ground first had them; a room stands them against the player (`foe`).
 pub const SKIRMISHER: u8 = 13;
 pub const SWORDSMAN: u8 = 14;
 pub const BRUTE: u8 = 15;
@@ -88,7 +88,13 @@ impl Room {
 
     /// A foe of the type numbered `number` at `rank`.
     pub fn foe(mut self, id: FighterId, number: u8, rank: Rank, x: f64, y: f64, facing: f64) -> Self {
-        let (fighter, brain) = spawn(foe_type(number).expect("a type of the roster"), rank, x, y, facing);
+        let (mut fighter, mut brain) = spawn(foe_type(number).expect("a type of the roster"), rank, x, y, facing);
+        // The crew's types fight here as foes: on a hostile side of their own, the Lattice's, which no other type
+        // these tests stand shares.
+        if fighter.side.is_players() {
+            (fighter.side, fighter.ally) = (combat::fighter::Side::Faction(foes::factions::LATTICE), false);
+            brain.fights_for(fighter.side);
+        }
         self.fighters.push((id, fighter));
         self.brains.push((id, brain));
         self

@@ -73,7 +73,7 @@ fn a_call_names_the_faction_and_rank_of_the_captain_it_calls() {
     assert_eq!(
         write(0, 0),
         Ok(Call::Captain(Commission::default(), Levels::default())),
-        "a call that names none: a Major pirate"
+        "a call that names none: a Major hostile"
     );
     assert_eq!(
         write(GREY_TITHE, 0),
@@ -135,6 +135,7 @@ pub fn fleet() -> (Fight, Vec<(u64, Event)>) {
         gun: SWIVEL,
         shot: Shot::Round,
         sail: None,
+        rigged: false,
     };
     let events = vec![
         (7, Event::Shot(ShotEvent::Muzzle { shooter: 3, point: [1.0, 2.0, 3.0], launch: [50.0, 2.0, 4.0] })),

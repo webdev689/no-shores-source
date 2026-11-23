@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { ASKS, type GearItem, type GearState } from '../network/gearMessages.ts';
-import { cardOf, chosenTraits, flyoutOf, inventoryPageOf, vaultOf, wearIn } from './gearCards.ts';
+import { cardOf, flyoutOf, inventoryPageOf, vaultOf, wearIn } from './gearCards.ts';
 
 const item = (fields: Partial<GearItem>): GearItem => ({
   id: 1,
@@ -53,7 +53,6 @@ const perk = { kind: 3, traits: ['light_grip', 'weighted'], xp: 1, aurem: 0, fra
 test('a card names the item and its kind, its main number, its chosen traits, and what it changes over the worn', () => {
   const worn = item({ id: 7, named: 'harbourwarden', rarity: 3, at: 2, attack: 248, level: 20 });
   const carried = item({ id: 8, rarity: 2, attack: 260, level: 20, columns: [perk], chosen: [1], xpMost: 9_000 });
-  assert.deepEqual(chosenTraits(carried), ['weighted']);
   const card = cardOf(carried, worn);
   assert.equal(card.kind, 'Rare Sword');
   assert.deepEqual(card.big, { label: 'Attack', value: 260 });

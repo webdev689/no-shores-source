@@ -70,7 +70,7 @@ const ofGear = (view: View) => view === 'character' || view === 'inventory' || v
  * Journal, Compendium, Ship, Social, Guild, Settings), a station's screen in their place at its counter, and an item's
  * page over either. While open the world is dimmed and the pointer, keys and pad are its; Escape or the pad's B steps
  * back: the item's page, then a slot's flyout, then the menu. Gear shows as the room last sent it, each press an ask;
- * while `resting` (the story, all but the wreck) it never opens. The Journal, the Compendium and the bounty board read
+ * while `resting` (the story, all but the wreck, and a travel's cinematic) it never opens. The Journal, the Compendium and the bounty board read
  * `source`, the Compendium what is read with `lore`. Answers the layer that draws it, with the company and what the
  * player gains, shown in play too.
  */
@@ -245,9 +245,15 @@ export function startGearWindow(
     for (const tab of TABS) {
       const id = tabId(tab);
       if (frame.clicked(id) && view !== tab) open(tab);
+      // Each arrow steps on from the focused tab, then from the one the last arrow reached; one reaching the tab
+      // shown takes the focus there, as opening it again would shut the menu.
+      let from: Tab = tab;
       for (const key of frame.keysOn(id)) {
-        const next = TABS[(TABS.indexOf(tab) + (key === 'arrowright' ? 1 : -1) + TABS.length) % TABS.length];
-        if (next) open(next);
+        const next = TABS[(TABS.indexOf(from) + (key === 'arrowright' ? 1 : -1) + TABS.length) % TABS.length];
+        if (!next) continue;
+        if (next === view) focusNext = tabId(next);
+        else open(next);
+        from = next;
       }
     }
     if (view !== shown) return [];

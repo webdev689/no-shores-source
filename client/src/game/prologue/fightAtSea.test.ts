@@ -10,14 +10,14 @@ const near = (value: number, to: number): boolean => Math.abs(value - to) < 1e-6
 test('each ambusher is put to sea on its bearing off the bow, at its distance, heading for the player unless told', () => {
   const ship = { x: 1000, y: 2000, heading: Math.PI / 2 };
   const [ahead, astern, toPort] = ambushersAt(ship, [
-    { bearing: 0, distanceM: 400, faction: 2, rank: 1 },
+    { bearing: 0, distanceM: 400, faction: 1, rank: 1 },
     { bearing: Math.PI, distanceM: 300, faction: 1, rank: 3, heading: 1 },
-    { bearing: -Math.PI / 2, distanceM: 500, faction: 2, rank: 2 },
+    { bearing: -Math.PI / 2, distanceM: 500, faction: 1, rank: 2 },
   ]);
   // Heading east, its bow points +x; its port side is north (-y).
   assert.ok(ahead && near(ahead.x, 1400) && near(ahead.y, 2000), JSON.stringify(ahead));
   assert.ok(near(ahead.heading, (3 * Math.PI) / 2), 'ahead of the ship, it heads west for it');
-  assert.equal(ahead.faction, 2);
+  assert.equal(ahead.faction, 1);
   assert.ok(astern && near(astern.x, 700) && near(astern.y, 2000) && astern.heading === 1 && astern.rank === 3);
   assert.ok(toPort && near(toPort.x, 1000) && near(toPort.y, 1500) && near(toPort.heading, Math.PI));
 });
@@ -60,8 +60,8 @@ const captainAt = (x: number, state: FightVessel['state'], id = 1): FightCaptain
   founder: state === 'sinking' ? [3, 0, 0.4] : [0, 0, 0],
   ship: [x, 5600, 2, 0, 0, 0, 0, 2],
   state,
-  name: 'Pirate Sloop',
-  faction: 2,
+  name: 'Tithe Sloop',
+  faction: 1,
   rank: 1,
   mode: 'engage',
   hostile: true,
@@ -105,8 +105,8 @@ test('the story fight begins on the land door with its captains, draws them, hea
   // The story's storm, and the wind it eases to: every step sails in the wind the story blows as it is sent.
   const winds: (readonly [number, number])[] = [];
   let wind: readonly [number, number] = [14, 6];
-  const pirate = { distanceM: 300, faction: 2, rank: 1 } as const;
-  const ambushers = [0, 2, 4].map((bearing) => ({ ...pirate, bearing }));
+  const hostile = { distanceM: 300, faction: 1, rank: 1 } as const;
+  const ambushers = [0, 2, 4].map((bearing) => ({ ...hostile, bearing }));
   const fight = await StoryFight.begin(
     land,
     { x: 5000, y: 6000, heading: -Math.PI / 2 },
@@ -168,7 +168,7 @@ const begunOn = (land: LandWorker) =>
   StoryFight.begin(
     land,
     { x: 5000, y: 6000, heading: 0 },
-    [0, 2, 4].map((bearing) => ({ bearing, distanceM: 300, faction: 2, rank: 2 }) as const),
+    [0, 2, 4].map((bearing) => ({ bearing, distanceM: 300, faction: 1, rank: 2 }) as const),
     { sails: [], marks: { drawInto: () => undefined } as unknown as MarkDrawer },
     0,
     () => [14, 6],
@@ -215,7 +215,7 @@ test("the story fight draws its see-through puffs and its puffs' light after the
   const fight = await StoryFight.begin(
     door([]),
     { x: 5000, y: 6000, heading: 0 },
-    [{ bearing: 2, distanceM: 300, faction: 2, rank: 2 }],
+    [{ bearing: 2, distanceM: 300, faction: 1, rank: 2 }],
     { sails: [], marks },
     0,
     () => [14, 6],

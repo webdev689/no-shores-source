@@ -40,6 +40,12 @@ export class Charting<Opened> {
     return this.opening !== null;
   }
 
+  /** Whether a continent near `position` is still to open, `openId` open: a travel's arrival waits on it. */
+  waiting(position: Point2, openId: string): boolean {
+    const other = continentToOpen(position, this.continents, openId);
+    return this.busy || (other !== null && !this.refused.has(other));
+  }
+
   /** `seconds` more on the sea's view with the ship at `position` and `openId` open; charts only while `sailing`. */
   tick(position: Point2, openId: string, seconds: number, sailing: boolean): void {
     this.since += seconds;

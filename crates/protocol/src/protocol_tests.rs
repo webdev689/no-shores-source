@@ -8,7 +8,7 @@ use combat::shots::loose;
 use combat::{CombatInput, Fighter};
 use movement::{Controls, Flat, TICK_SECONDS, standing, step_body};
 use naval::ranks::Commission;
-use room::pirates::Pirate;
+use room::hostiles::Hostile;
 use room::sea::Ship;
 use room::{Event, FoeSeen, Seen};
 use room::{EventKind, How};
@@ -51,7 +51,7 @@ pub fn players() -> Vec<Seen> {
     ]
 }
 
-/// The foe the client's test expects: a pirate brute (type 15) of the Elite rank, foe 12, in its first phase,
+/// The foe the client's test expects: a hostile brute (type 15) of the Elite rank, foe 12, in its first phase,
 /// staggered with 40 of its 130 health gone, alert to the player its lock is on, Exposed for 200 ticks and immune to a
 /// Charge for 90, standing under a name of its own.
 pub fn foes() -> Vec<FoeSeen> {
@@ -65,9 +65,9 @@ pub fn foes() -> Vec<FoeSeen> {
     let brute = FoeSeen {
         foe: 12,
         kind: 3,
-        foe_type: 15,
+        foe_type: 4,
         rank: 3,
-        faction: 2,
+        faction: 1,
         phase: 1,
         alert: 2,
         fighter: brute,
@@ -76,7 +76,7 @@ pub fn foes() -> Vec<FoeSeen> {
         companion: None,
         name: "The Warden of the Fissure",
     };
-    // An officer ashore beside player 9: a pirate swordsman's figure on the players' side.
+    // An officer ashore beside player 9: a hostile swordsman's figure on the players' side.
     let sword = Arms { melee: WeaponClass::Sword, ranged: None, off_hand: OffHand::Shield };
     let mate = fighter(Side::Players, standing(1.0, 1.8), sword, Weight::Medium, 100.0, 50.0);
     let companion = room::Companion {
@@ -174,7 +174,7 @@ const SPELLS: [room::SpellSeen; 2] = [
 /// The node and rect the client's test expects in the welcome.
 const NODE: (&str, [f64; 4]) = ("overlook-social", [2_808_986.0, 1_201_139.0, 2_809_442.0, 1_201_455.5]);
 /// The ships the client's test expects in the sea's snapshot.
-const PIRATES: [Pirate; 1] = [Pirate {
+const HOSTILES: [Hostile; 1] = [Hostile {
     id: 4,
     seed: 9,
     commission: Commission { faction: naval::ranks::GREY_TITHE, rank: naval::ranks::Rank::Elite },
@@ -197,7 +197,7 @@ impl sailing::waters::Waters for Open {
 }
 
 /// Two fights as a snapshot carries them: each its player, and its view with the player's look laid to starboard, the
-/// captain's port guns run out and the player's stem ramming it; player 2's with a pirate fighting too, player 5's the
+/// captain's port guns run out and the player's stem ramming it; player 2's with a hostile fighting too, player 5's the
 /// same fight without it (the client's test reads both back).
 fn fights_seen() -> Vec<room::battle::FightSeen> {
     let at = |x: f64, y: f64, heading: f64| sailing::ship::Ship {
@@ -210,8 +210,8 @@ fn fights_seen() -> Vec<room::battle::FightSeen> {
         sail_way: 0.0,
         rung: 2,
     };
-    let pirate_elite = Commission { faction: naval::ranks::PIRATES, rank: naval::ranks::Rank::Elite };
-    let captains = [(at(0.0, -700.0, 3.0), TITHE_MINIBOSS, 7), (at(400.0, -700.0, 0.5), pirate_elite, 8)];
+    let friendly = Commission { faction: naval::ranks::PLAYERS, rank: naval::ranks::Rank::Major };
+    let captains = [(at(0.0, -700.0, 3.0), TITHE_MINIBOSS, 7), (at(400.0, -700.0, 0.5), friendly, 8)];
     let aim = naval::fight::Aim { bearing_deg: 90.0, range_m: 80.0, ray: None };
     let (player, captain) = (naval::fight::PLAYER, naval::fight::CAPTAIN);
     let events = [
@@ -334,7 +334,7 @@ fn an_input_reads_back_as_its_number_intent_look_dress_arms_view_ask_and_respawn
 }
 
 #[test]
-fn a_foe_asked_for_by_its_role_alone_is_the_pirates_type_in_that_role() {
+fn a_foe_asked_for_by_its_role_alone_is_the_grey_tithes_type_in_that_role() {
     let asked = |role: u8| {
         let mut builder = flatbuffers::FlatBufferBuilder::new();
         let controls = Some(builder.create_vector(&[0.0; CONTROLS_FLOATS]));
@@ -344,12 +344,13 @@ fn a_foe_asked_for_by_its_role_alone_is_the_pirates_type_in_that_role() {
         read_input(builder.finished_data()).unwrap().spawn
     };
     let foe = |foe_type, rank| Some(SpawnAsk::Foe { foe_type, rank, shield: 0 });
-    // The pirates' Skirmisher to their Brute and Archer as Majors; their Captain at his first rank, an Elite.
+    // The Grey Tithe's Runner, Collector, Enforcer and Crossbowman as Majors, foes all; its Reeve at his first rank, an
+    // Elite.
     let roles: Vec<_> = (1..=5).map(asked).collect();
-    assert_eq!(roles, [foe(13, 2), foe(14, 2), foe(15, 2), foe(16, 2), foe(17, 3)]);
+    assert_eq!(roles, [foe(1, 2), foe(2, 2), foe(4, 2), foe(3, 2), foe(6, 3)]);
     assert_eq!((asked(0), asked(6), asked(CLEAR_FOES)), (None, None, Some(SpawnAsk::Clear)));
     // A shield's element rides above the role's four bits.
-    let shielded = Some(SpawnAsk::Foe { foe_type: 14, rank: 2, shield: 3 });
+    let shielded = Some(SpawnAsk::Foe { foe_type: 2, rank: 2, shield: 3 });
     assert_eq!(asked(2 | (3 << room::SHIELD_SHIFT)), shielded);
 }
 
@@ -433,7 +434,7 @@ fn a_welcome_and_snapshots_read_back_to_the_bit() {
     assert_eq!(foe.id(), 12);
     assert!(near(&foes[0].fighter.glance(), glance), "a foe's glance crosses packed");
     // Its role, type, rank, faction, phase, alertness and level; its shield; its debuffs' ticks; no one's companion.
-    assert_eq!(rest, [3.0, 15.0, 3.0, 2.0, 1.0, 2.0, 7.0, 3.0, 40.0, 40.0, 200.0, 0.0, 90.0, 0.0, 0.0, 0.0, 0.0]);
+    assert_eq!(rest, [3.0, 4.0, 3.0, 1.0, 1.0, 2.0, 7.0, 3.0, 40.0, 40.0, 200.0, 0.0, 90.0, 0.0, 0.0, 0.0, 0.0]);
     assert_eq!(foe.name(), Some("The Warden of the Fissure"), "the name it stands under crosses");
     let event = read.public_event().unwrap();
     let counts = (event.kind(), event.phase(), event.ticks_left(), event.next_kind(), event.next_ticks());
@@ -478,7 +479,7 @@ fn a_welcome_and_snapshots_read_back_to_the_bit() {
     assert_eq!(told, (Some(vec![1.0, -26.0, 1.1]), 30, 96, 3.0));
     assert!(spells[1].heads().is_none(), "a bolt seeks; it heads nowhere");
 
-    let bytes = sea_snapshot_bytes(77, &SHIPS, &PIRATES, &fights_seen(), &aboard_seen(), &SeaHarbour::default());
+    let bytes = sea_snapshot_bytes(77, &SHIPS, &HOSTILES, &fights_seen(), &aboard_seen(), &SeaHarbour::default());
     let sea = flatbuffers::root::<messages::FromRoom>(&bytes).unwrap().snapshot().unwrap();
     let ships: Vec<(PlayerId, Ship)> = sea
         .ships()
@@ -491,16 +492,16 @@ fn a_welcome_and_snapshots_read_back_to_the_bit() {
             )
         })
         .collect();
-    // The pace a ship crosses at is the one it sailed at, held down near a pirate, not the one asked.
+    // The pace a ship crosses at is the one it sailed at, held down near a hostile, not the one asked.
     let sent = SHIPS.map(|(player, ship)| (player, Ship { pace: ship.rate, ..ship }));
     assert_eq!((sea.tick(), ships), (77, sent.to_vec()));
-    let pirate = sea.pirates().unwrap().get(0);
-    assert_eq!((pirate.id(), pirate.x(), pirate.y(), pirate.heading()), (4, 1_000.5, 2_000.25, 1.5));
-    let commission = PIRATES[0].commission;
-    assert_eq!((pirate.faction(), pirate.rank()), (commission.faction, commission.rank.number()));
-    assert_eq!(pirate.hull(), commission.hull().number(), "it sails its rank's hull");
-    assert_eq!((pirate.level(), pirate.sight()), (23, 25_920.0), "its level and the distance it is sighted from");
-    assert!((pirate.way() - 2.64).abs() < 1e-12, "an Elite's way at sea: {}", pirate.way());
+    let hostile = sea.hostiles().unwrap().get(0);
+    assert_eq!((hostile.id(), hostile.x(), hostile.y(), hostile.heading()), (4, 1_000.5, 2_000.25, 1.5));
+    let commission = HOSTILES[0].commission;
+    assert_eq!((hostile.faction(), hostile.rank()), (commission.faction, commission.rank.number()));
+    assert_eq!(hostile.hull(), commission.hull().number(), "it sails its rank's hull");
+    assert_eq!((hostile.level(), hostile.sight()), (23, 25_920.0), "its level and the distance it is sighted from");
+    assert!((hostile.way() - 2.64).abs() < 1e-12, "an Elite's way at sea: {}", hostile.way());
     let fight = sea.fights().unwrap().get(0);
     assert_eq!((fight.faction(), fight.rank()), (1, 4), "the fight's captain a Grey Tithe Miniboss");
     assert_eq!(fight.hull(), sailing::HullKind::Brig.number(), "in a Brig");
@@ -578,7 +579,20 @@ fn the_bytes_for_the_clients_test_are_written() {
     std::fs::write(format!("{folder}/joined.bin"), welcome()).unwrap();
     let snapshot = snapshot_bytes(&snapshot(&players, &foes, (&shots, &lines, &plates), &public));
     std::fs::write(format!("{folder}/snapshot.bin"), snapshot).unwrap();
-    let sea = sea_snapshot_bytes(77, &SHIPS, &PIRATES, &fights_seen(), &aboard_seen(), &SeaHarbour::default());
+    let friend = room::friendlies::Friendly {
+        traffic: 2_605,
+        hull: sailing::HullKind::Schooner,
+        seed: 3,
+        level: 9,
+        sight_m: 5e3,
+        x: 1_500.5,
+        y: 2_200.25,
+        heading: 0.75,
+        to: [0.0; 2],
+        lane: None,
+    };
+    let harbour = SeaHarbour { taken: vec![2_605, 777], friendlies: vec![friend], ..SeaHarbour::default() };
+    let sea = sea_snapshot_bytes(77, &SHIPS, &HOSTILES, &fights_seen(), &aboard_seen(), &harbour);
     std::fs::write(format!("{folder}/sea.bin"), sea).unwrap();
 }
 
@@ -643,4 +657,41 @@ fn an_abyss_runs_revives_cross_in_its_snapshot_and_every_other_room_sends_none()
     assert_eq!(read(&plain), -1);
     assert_eq!(read(&Snapshot { revives: Some(5), ..plain }), 5);
     assert_eq!(read(&Snapshot { revives: Some(0), ..plain }), 0);
+}
+
+#[test]
+fn a_course_asked_with_the_travel_flag_reads_as_a_travel_and_one_without_as_a_course() {
+    let points = vec![[50_000.0, 150_000.0], [550_000.0, 150_000.0]];
+    assert_eq!(read_sea_input(&travel_bytes(&points, 20)), Ok(SeaInput::Travel(points.clone(), 20)));
+    assert_eq!(read_sea_input(&course_bytes(&points, 20)), Ok(SeaInput::Course(points, 20)));
+}
+
+#[test]
+fn a_sea_snapshot_carries_the_traffic_ids_the_room_took_and_the_friendly_ships_it_keeps_at_sea() {
+    let id = (1_u64 << 40) | 5;
+    let hull = sailing::HullKind::Brig;
+    let friend = room::friendlies::Friendly {
+        traffic: id,
+        hull,
+        seed: 3,
+        level: 0,
+        sight_m: 5e3,
+        x: 10.5,
+        y: 20.25,
+        heading: 1.5,
+        to: [0.0; 2],
+        lane: None,
+    };
+    let harbour = SeaHarbour { taken: vec![id, 9], friendlies: vec![friend], ..SeaHarbour::default() };
+    let bytes = sea_snapshot_bytes(1, &[], &[], &[], &[], &harbour);
+    let sea = flatbuffers::root::<messages::FromRoom>(&bytes).unwrap().snapshot().unwrap();
+    assert_eq!(sea.taken().map(|taken| taken.iter().collect::<Vec<u64>>()), Some(vec![id, 9]));
+    let seen = sea.friendlies().unwrap().get(0);
+    assert_eq!(
+        (seen.traffic(), seen.x(), seen.y(), seen.heading(), seen.hull()),
+        (id, 10.5, 20.25, 1.5, hull.number())
+    );
+    let bytes = sea_snapshot_bytes(1, &[], &[], &[], &[], &SeaHarbour::default());
+    let sea = flatbuffers::root::<messages::FromRoom>(&bytes).unwrap().snapshot().unwrap();
+    assert!(sea.taken().is_none() && sea.friendlies().is_none(), "none when there are none: the bytes as before");
 }

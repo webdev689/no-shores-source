@@ -15,7 +15,7 @@ export interface FightReadout {
 /** What the HUD shows of fight `view`, with the messages `said` now. */
 export function readoutOf(view: FightView, said: readonly string[]): FightReadout {
   const captains = [view.captain, ...(view.others ?? [])];
-  // Only those fighting the player are theirs to beat: a rival's ship in a clash the player joined is not.
+  // Only hostile ships are theirs to beat: a friendly ship fighting beside them in a clash they joined is not.
   const afloat = captains.filter((each) => each.state === 'afloat' && each.hostile);
   return { said, left: afloat.length, men: afloat.reduce((sum, each) => sum + Math.ceil(each.crew), 0) };
 }

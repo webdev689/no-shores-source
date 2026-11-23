@@ -1,6 +1,6 @@
 use super::*;
 use crate::arms::Side;
-use crate::arms::{PIRATE_SLOOP, SLOOP_ARMS};
+use crate::arms::{SLOOP_ARMS, TITHE_SLOOP};
 use crate::ballistics::Ball;
 use crate::captain::Temper;
 use crate::damage::{Hurt, Zone};
@@ -25,6 +25,11 @@ const IDLE: Orders = Orders { helm: STILL, aim: None, fire: false, brace: false,
 
 fn sloop_at(x: f64, y: f64) -> Ship {
     Ship { x, y, heading: 0.0, ahead: 0.0, abeam: 0.0, turn: 0.0, sail_way: 0.0, rung: 0 }
+}
+
+/// Where each gun of the player's lay stops, the fight's ships as they lie now.
+fn ends(fight: &Fight, laid: &Lay) -> Vec<Option<crate::shots::Stop>> {
+    crate::laying::ends_of(&Sighted::of(PLAYER, player(fight)), laid, &fight.sighted(), &Open, 0.0)
 }
 
 fn player(fight: &Fight) -> &Vessel {
@@ -123,7 +128,7 @@ fn a_broadside_laid_on_it_strikes_it() {
     let hits =
         events.iter().filter(|event| matches!(event, Event::Shot(ShotEvent::Hit { target: CAPTAIN, .. }))).count();
     assert!(hits >= 1, "{events:?}");
-    assert!(captain(&fight).damage.hull < PIRATE_SLOOP.hull);
+    assert!(captain(&fight).damage.hull < TITHE_SLOOP.hull);
     assert!(mind(&fight).hostile_to(PLAYER), "struck, it is provoked");
 }
 
@@ -201,6 +206,7 @@ fn the_rest_of_the_volley_that_made_it_strike_cannot_sink_it() {
         gun: crate::guns::Gun { hull, ..gun },
         shot: Shot::Round,
         sail: None,
+        rigged: false,
     };
     fight.strike(&hit(10.0), &mut events);
     assert_eq!(captain(&fight).damage.state, State::Struck);
@@ -224,9 +230,7 @@ fn the_lay_reads_on_target_only_where_its_balls_would_strike_it() {
     let fight = alongside(50.0, Temper::Wary);
     let on = |range_m: f64| {
         let laid = fight.laid(PLAYER, &Aim { bearing_deg: 90.0, range_m, ray: None });
-        laid.is_some_and(|laid| {
-            fight.ends(PLAYER, &laid, &Open, 0.0).iter().flatten().any(|stop| stop.strike.is_some())
-        })
+        laid.is_some_and(|laid| ends(&fight, &laid).iter().flatten().any(|stop| stop.strike.is_some()))
     };
     assert!(on(50.0));
     assert!(!on(44.0), "the balls splash short of it");
@@ -257,7 +261,7 @@ fn a_look_on_its_hull_lays_on_that_point_and_its_unscattered_volley_strikes_it()
         (laid.elevation - on.elevation).abs() < 1e-12 && Lay { elevation: on.elevation, ..laid } == on
     });
     assert!(same, "laid for the point the look meets on its side, not the water's 300 m: {laid:?} against {on:?}");
-    let ends = laid.map(|laid| fight.ends(PLAYER, &laid, &Open, 0.0)).unwrap_or_default();
+    let ends = laid.map(|laid| ends(&fight, &laid)).unwrap_or_default();
     assert_eq!(ends.len(), 3);
     assert!(ends.iter().all(|end| end.is_some_and(|stop| stop.strike.is_some() && !stop.water)), "{ends:?}");
 }
@@ -302,7 +306,7 @@ fn each_gun_ends_where_an_unscattered_ball_fired_by_the_fight_stops() {
         let Some(laid) = fight.laid(PLAYER, &Aim { bearing_deg: 90.0, range_m, ray: None }) else {
             panic!("the starboard side bears");
         };
-        let ends = fight.ends(PLAYER, &laid, &Open, 0.0);
+        let ends = ends(&fight, &laid);
         let carry = carry_of(&player(&fight).ship);
         let mut balls: Vec<Ball> =
             (0..3).map(|index| crate::gunnery::aimed(&laid, index, carry, 0.0, (PLAYER, Flag::Player))).collect();
@@ -377,6 +381,7 @@ fn a_captain_whose_fires_made_it_strike_is_graced_against_the_volley_then_aloft(
         gun: crate::guns::Gun { hull: 100.0, ..crate::guns::SWIVEL },
         shot: Shot::Round,
         sail: None,
+        rigged: false,
     };
     let mut events = Vec::new();
     fight.strike(&hit, &mut events);
@@ -398,6 +403,7 @@ fn a_ball_of_a_side_of_many_guns_takes_its_share_of_a_sloops_ball_from_it() {
             gun,
             shot: Shot::Round,
             sail: None,
+            rigged: false,
         };
         let before = captain(&fight).damage.clone();
         for _ in 0..10 {
@@ -417,9 +423,9 @@ fn a_ball_of_a_side_of_many_guns_takes_its_share_of_a_sloops_ball_from_it() {
 #[test]
 fn a_captain_coming_to_engage_is_round_to_its_broadside_as_the_range_comes_to_its_reach() {
     use crate::captain::course::{distance, heading_to, wrap};
-    use crate::ranks::{PIRATES, Rank};
+    use crate::ranks::{GREY_TITHE, Rank};
     for rank in Rank::ALL {
-        let commission = Commission { faction: PIRATES, rank };
+        let commission = Commission { faction: GREY_TITHE, rank };
         let seed = (1..).find(|seed| crate::captain::temper_for(commission, *seed) == Temper::Bold).unwrap();
         let coming = Ship { heading: std::f64::consts::PI, ..sloop_at(0.0, -700.0) };
         let mut fight = Fight::meet(sloop_at(0.0, 0.0), coming, commission, seed, &Open, 0.0);
@@ -447,7 +453,7 @@ fn a_captain_coming_to_engage_is_round_to_its_broadside_as_the_range_comes_to_it
 
 #[test]
 fn a_captain_raised_to_a_strength_fights_with_that_many_times_its_hull_men_and_guns_harm() {
-    let commission = Commission { faction: crate::ranks::PIRATES, rank: crate::ranks::Rank::Minor };
+    let commission = Commission { faction: crate::ranks::GREY_TITHE, rank: crate::ranks::Rank::Minor };
     let mut fight = Fight::meet(sloop_at(0.0, 0.0), sloop_at(0.0, -400.0), commission, 3, &Open, 0.0);
     fight.raise(CAPTAIN, 2.0);
     let (plain, raised, build) = (commission.damage(), &captain(&fight).damage, commission.build_at(2.0));

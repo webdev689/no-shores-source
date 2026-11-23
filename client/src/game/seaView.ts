@@ -38,7 +38,9 @@ type Where =
     }
   | { readonly kind: 'landing' }
   /** Coming down to the helm, there, or going back up: `at` how far down, 0 the sea's view, 1 the helm. */
-  | { readonly kind: 'helm'; readonly at: number; readonly going: 'down' | 'up' };
+  | { readonly kind: 'helm'; readonly at: number; readonly going: 'down' | 'up' }
+  /** Sailing away to other waters on the cinematic's rails (`SailAway`), which no press, key or wheel moves. */
+  | { readonly kind: 'travel' };
 
 /**
  * The view over the player's ship at sea: DFO's raised camera, turned and zoomed, brought in close past its lowest;
@@ -114,6 +116,11 @@ export class SeaView {
   /** The view stands over the ship again, at once. */
   sail(): void {
     this.where = { kind: 'sail' };
+  }
+
+  /** The view is given to the cinematic of a travel to other waters, until `sail` gives it back. */
+  travel(): void {
+    this.where = { kind: 'travel' };
   }
 
   /** Sets off down to the helm, from over the ship only; answers whether it did. */

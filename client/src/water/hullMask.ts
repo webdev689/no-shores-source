@@ -28,7 +28,7 @@ export const HULL_FIT = 0.97;
 export const HULL_FOAM_M = 0.8;
 export const HULL_FOAM_WAY = 2;
 /** How many ships the water draws, nearest the eye first: every ship of a full sea in view (a sea room's players and
- *  its pirates) while each water pixel's walk over them stays within the swell's own cost. */
+ *  its hostile ships) while each water pixel's walk over them stays within the swell's own cost. */
 export const HULLS = 48;
 /** The stations along a hull line, stern first, bow last. */
 export const STATIONS = 16;

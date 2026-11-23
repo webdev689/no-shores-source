@@ -106,14 +106,14 @@ export type Commissioned = Pick<FightCaptain, 'name' | 'faction' | 'rank'>;
 
 /** The first captain's number in a fight (crates/naval CAPTAIN); every other carries its own on the wire. */
 const CAPTAIN_SHIP = 1;
-/** A captain the room has not named: a Major of the pirates. */
-const PIRATE_MAJOR: Commissioned = { name: 'Pirate Sloop', faction: 2, rank: 2 };
+/** A captain the room has not named: a Major of the Grey Tithe. */
+const TITHE_MAJOR: Commissioned = { name: 'Tithe Sloop', faction: 1, rank: 2 };
 
-/** The fight a sea room's numbers show, its captain `who` (a Major of the pirates unless told) and each other captain
+/** The fight a sea room's numbers show, its captain `who` (a Major of the Grey Tithe unless told) and each other captain
  *  named by its faction (`nameOf`); throws where the numbers run short or name nothing. */
 export function fightViewOf(
   numbers: ArrayLike<number>,
-  who: Commissioned = PIRATE_MAJOR,
+  who: Commissioned = TITHE_MAJOR,
   nameOf: (faction: number, hull: number) => string = () => 'Sloop',
 ): SeaFightView {
   let read = 0;
@@ -148,7 +148,7 @@ export function fightViewOf(
     boost: [next(), next()],
     hull_kind: next(),
   });
-  // A captain's Sloop, then its mode, whether it is hostile to the player, and its sides run out.
+  // A captain's Sloop, then its mode, whether it is hostile to the player (not of their side), and its sides run out.
   const commanded = (id: number, commission: Commissioned): FightCaptain => {
     const base = vessel();
     const mode = named(MODES);
@@ -172,11 +172,11 @@ export function fightViewOf(
   };
   let lay: FightLay | null = null;
   if (next() === 1) {
-    const [side, elevation, reach, radius] = [named(SIDES), next(), next(), next()];
+    const [side, elevation, reach, radius, spread] = [named(SIDES), next(), next(), next(), next()];
     const onTarget = next() === 1;
     const guns = Array.from({ length: next() }, () => ({ launch: many(6), end: stop() }));
     const [launches, ends] = [guns.map((gun) => gun.launch), guns.map((gun) => gun.end)];
-    lay = { side, elevation, reach, ends, radius, on_target: onTarget, launches };
+    lay = { side, elevation, reach, ends, radius, spread, on_target: onTarget, launches };
   }
   const naval: NavalEvent[] = [];
   // The hit the room tells just before its ball's, where on the ship it struck and on which part, for that ball's hit.

@@ -26,12 +26,12 @@ import { aimLineOf, type Sight } from '../seaSight.ts';
 import type { FightReadout } from '../seaPanel.ts';
 
 /** A captain the story sets upon the player: its bearing off the player's bow (radians, to starboard), how far off
- *  (metres), its faction (1 the Grey Tithe, 2 pirates) and rank (1 Minor to 5 Boss), and its heading (radians
+ *  (metres), its faction (1 the Grey Tithe) and rank (1 Minor to 5 Boss), and its heading (radians
  *  clockwise from north; straight for the player when not given), and its way (m/s) if it comes on under sail. */
 export interface Ambusher {
   readonly bearing: number;
   readonly distanceM: number;
-  readonly faction: 1 | 2;
+  readonly faction: 1;
   readonly rank: number;
   readonly heading?: number;
   readonly way?: number;
@@ -243,7 +243,7 @@ export class StoryFight {
           : null;
       const founder: Founder = [settled, trim, list];
       // Each captain's people stand aboard as the fight leaves its men, named as the sighting named its ship.
-      const crew = 'faction' in vessel ? { crew: captainInFight(`pirate-${vessel.id}`, vessel) } : {};
+      const crew = 'faction' in vessel ? { crew: captainInFight(`tithe-${vessel.id}`, vessel) } : {};
       const sunk = vessel.state === 'sunk';
       return { place, hull, shade, rig, state: vessel.state, sunk, founder, going, ...crew };
     };

@@ -32,6 +32,7 @@ const LAY: FightLay = {
     { time: 2.2, point: [115, 2, 0], water: true, strike: null },
   ],
   radius: 2,
+  spread: 1,
   on_target: false,
 };
 

@@ -1,21 +1,20 @@
 //! The sea's nine waters. A point of sea belongs to the island whose coast is nearest, by straight-line distance in
-//! metres; each island's continent id names its water and its holder. The sea near the border between the fourth and
-//! eighth islands' waters is contested whatever its water's holder. Only + - * / and sqrt on f64, so every machine
+//! metres; each island's continent id names its water and its holder. Only + - * / and sqrt on f64, so every machine
 //! gives the same answer.
 
 use crate::check::{FRAME_HEIGHT_M, FRAME_WIDTH_M};
 use crate::layout::Layout;
 use std::collections::BTreeSet;
 
-/// Who holds a water: the hostile ships it sends, or none.
+/// Who holds a water, or none.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum Holder {
     /// Home waters: no hostile ship.
     Home,
-    /// Pirates and the Grey Tithe, fighting each other.
-    Contested,
+    /// Sunspire's and Rimeholt's waters.
     GreyTithe,
-    Pirates,
+    /// The six ruined cities' waters. The Grey Tithe's ships sail them; the Lattice is met on land.
+    Lattice,
 }
 
 impl Holder {
@@ -24,9 +23,8 @@ impl Holder {
     pub fn name(self) -> &'static str {
         match self {
             Holder::Home => "home",
-            Holder::Contested => "contested",
             Holder::GreyTithe => "grey-tithe",
-            Holder::Pirates => "pirates",
+            Holder::Lattice => "lattice",
         }
     }
 }
@@ -34,29 +32,21 @@ impl Holder {
 /// Each island's water: its continent id, its holder and its name.
 pub const WATERS: [(&str, Holder, &str); 9] = [
     ("continent-1", Holder::Home, "The Lantern Sea"),
-    ("continent-2", Holder::Contested, "The Cairn Straits"),
-    ("continent-3", Holder::GreyTithe, "The Elmwater"),
-    ("continent-4", Holder::Pirates, "The Sunscorch Coves"),
-    ("continent-5", Holder::Pirates, "The Gilded Reach"),
-    ("continent-6", Holder::Pirates, "The Mistwrack"),
-    ("continent-7", Holder::GreyTithe, "The Windward Levy"),
-    ("continent-8", Holder::GreyTithe, "The Fen Deeps"),
+    ("continent-2", Holder::Lattice, "The Cairn Straits"),
+    ("continent-3", Holder::Lattice, "The Elmwater"),
+    ("continent-4", Holder::GreyTithe, "The Sunscorch Coves"),
+    ("continent-5", Holder::Lattice, "The Gilded Reach"),
+    ("continent-6", Holder::Lattice, "The Mistwrack"),
+    ("continent-7", Holder::Lattice, "The Windward Levy"),
+    ("continent-8", Holder::Lattice, "The Fen Deeps"),
     ("continent-9", Holder::GreyTithe, "The Rimeholt Deep"),
 ];
-
-/// The two islands whose waters meet along the contested seam.
-pub const SEAM_CONTINENTS: [&str; 2] = ["continent-4", "continent-8"];
-
-/// A seam point is at most this much farther from the other seam island's coast than from its own: about 100 km
-/// either side of the border.
-pub const SEAM_EXTRA_M: f64 = 200_000.0;
 
 /// The grid cell `borders` judges on.
 pub const BORDER_CELL_M: f64 = 10_000.0;
 
-/// A grid cell's byte for land; a sea cell holds its water's continent index, with `SEAM_BIT` set on the seam.
+/// A grid cell's byte for land; a sea cell holds its water's continent index.
 pub const LAND_CELL: u8 = 255;
-pub const SEAM_BIT: u8 = 0x80;
 
 /// The side of a bucket of the acceleration grid, metres.
 const BUCKET_M: f64 = 32_000.0;
@@ -78,10 +68,8 @@ pub fn name_of(continent_id: &str) -> Option<&'static str> {
 pub struct Water {
     /// The index in the layout of the continent whose coast is nearest.
     pub continent: usize,
-    /// The water's holder; `Contested` on the seam.
+    /// Its island water's holder.
     pub holder: Holder,
-    /// Whether the point lies on the contested seam.
-    pub seam: bool,
 }
 
 /// The sea's waters judged over the whole frame, cell by cell: `cells[row * columns + column]`.
@@ -111,7 +99,7 @@ pub struct Nearest {
 }
 
 /// The waters of a layout, with a bucket grid over the frame: each bucket lists the edges that can be nearest to some
-/// point in it, and the edges of each seam island that can be its nearest.
+/// point in it.
 #[derive(Debug, Clone)]
 pub struct Waters {
     rings: Vec<Vec<[f64; 2]>>,
@@ -119,11 +107,9 @@ pub struct Waters {
     orientation: Vec<f64>,
     holders: Vec<Holder>,
     edges: Vec<Edge>,
-    seam: Option<[usize; 2]>,
     columns: usize,
     rows: usize,
     nearest_lists: Vec<Vec<u32>>,
-    seam_lists: Vec<[Vec<u32>; 2]>,
     /// Each static isle's centre and radius: land, but no island's water.
     isles: Vec<([f64; 2], f64)>,
     /// For each bucket, the isles that can be the nearest land to some point in it.
@@ -193,11 +179,6 @@ impl Waters {
                 })
             })
             .collect();
-        let position = |id: &str| layout.continents.iter().position(|continent| continent.id == id);
-        let seam = match (position(SEAM_CONTINENTS[0]), position(SEAM_CONTINENTS[1])) {
-            (Some(first), Some(second)) => Some([first, second]),
-            _ => None,
-        };
         let columns = (FRAME_WIDTH_M as f64 / BUCKET_M).ceil() as usize;
         let rows = (FRAME_HEIGHT_M as f64 / BUCKET_M).ceil() as usize;
         let mut waters = Self {
@@ -205,11 +186,9 @@ impl Waters {
             orientation,
             holders,
             edges,
-            seam,
             columns,
             rows,
             nearest_lists: Vec::new(),
-            seam_lists: Vec::new(),
             isles: layout
                 .isles
                 .iter()
@@ -228,11 +207,6 @@ impl Waters {
     fn fill_buckets(&mut self) {
         let half_diagonal = BUCKET_M * std::f64::consts::FRAC_1_SQRT_2 + 1.0;
         let all: Vec<u32> = (0..self.edges.len() as u32).collect();
-        let seam_edges: [Vec<u32>; 2] = self.seam.map_or_else(Default::default, |seam| {
-            seam.map(|continent| {
-                all.iter().copied().filter(|&edge| self.edges[edge as usize].continent == continent).collect()
-            })
-        });
         // The edges that can be nearest to some point in the bucket, and the nearest one's distance from its middle.
         let within = |middle: [f64; 2], from: &[u32]| -> (Vec<u32>, f64) {
             let distances: Vec<f64> = from
@@ -253,7 +227,6 @@ impl Waters {
                     (0..self.isles.len() as u32).filter(|&isle| self.isle_gap(middle, std::iter::once(isle)) <= reach);
                 self.isle_lists.push(isles.collect());
                 self.nearest_lists.push(edges);
-                self.seam_lists.push([within(middle, &seam_edges[0]).0, within(middle, &seam_edges[1]).0]);
             }
         }
     }
@@ -364,28 +337,10 @@ impl Waters {
         if nearest.land || self.nearest_isle(point) == 0.0 {
             return None;
         }
-        let seam = self.on_seam(point, nearest);
-        let holder = if seam { Holder::Contested } else { self.holders[nearest.continent] };
-        Some(Water { continent: nearest.continent, holder, seam })
+        Some(Water { continent: nearest.continent, holder: self.holders[nearest.continent] })
     }
 
-    fn on_seam(&self, point: [f64; 2], nearest: Nearest) -> bool {
-        let Some(seam) = self.seam else { return false };
-        let Some(own) = seam.iter().position(|&continent| continent == nearest.continent) else { return false };
-        let other = 1 - own;
-        let found = match self.bucket(point) {
-            Some(bucket) => self.nearest_of(point, self.seam_lists[bucket][other].iter().copied()),
-            None => self.nearest_of(
-                point,
-                (0..self.edges.len() as u32).filter(|&edge| self.edges[edge as usize].continent == seam[other]),
-            ),
-        };
-        found.is_some_and(|(distance_squared, ..)| {
-            distance_squared.sqrt() - nearest.distance_squared.sqrt() <= SEAM_EXTRA_M
-        })
-    }
-
-    /// A continent's water's holder off the seam; home waters for a continent the table does not name.
+    /// A continent's water's holder; home waters for a continent the table does not name.
     #[must_use]
     pub fn holder(&self, continent: usize) -> Holder {
         self.holders[continent]
@@ -403,8 +358,8 @@ impl Waters {
         &self.rings[continent]
     }
 
-    /// The waters judged at the middle of each `cell_m` cell over the frame: the continent index for sea, with
-    /// `SEAM_BIT` on the seam, and `LAND_CELL` for land. None for a cell that is not a positive finite number.
+    /// The waters judged at the middle of each `cell_m` cell over the frame: the continent index for sea, and
+    /// `LAND_CELL` for land. None for a cell that is not a positive finite number.
     #[must_use]
     pub fn grid(&self, cell_m: f64) -> Option<Grid> {
         if !(cell_m.is_finite() && cell_m > 0.0) {
@@ -418,7 +373,7 @@ impl Waters {
                 let middle = [(column as f64 + 0.5) * cell_m, (row as f64 + 0.5) * cell_m];
                 cells.push(match self.water_at(middle) {
                     None => LAND_CELL,
-                    Some(water) => (water.continent as u8 & !SEAM_BIT) | if water.seam { SEAM_BIT } else { 0 },
+                    Some(water) => water.continent as u8,
                 });
             }
         }
@@ -430,7 +385,7 @@ impl Waters {
     #[must_use]
     pub fn borders(&self) -> Vec<[usize; 2]> {
         let Some(grid) = self.grid(BORDER_CELL_M) else { return Vec::new() };
-        let water = |cell: u8| (cell != LAND_CELL).then_some(usize::from(cell & !SEAM_BIT));
+        let water = |cell: u8| (cell != LAND_CELL).then_some(usize::from(cell));
         let mut pairs = BTreeSet::new();
         for row in 0..grid.rows {
             for column in 0..grid.columns {

@@ -4,7 +4,7 @@
 //! though nothing of theirs fills a healing meter.
 
 use super::*;
-use crate::foes::pirate_in;
+use crate::foes::hostile_in;
 use crate::judging::How;
 use crate::{EventKind, FoeSeen};
 use ::foes::Role;
@@ -194,7 +194,7 @@ fn a_player_never_harms_a_companion_and_one_beaten_down_is_knocked_out_rests_eig
     room.settle(&blow(player), How::Swing, id, hit, Some(gear::Slot::Melee));
     room.settle(&blow(other), How::Swing, id, hit, None);
     assert_eq!(room.foes[&id].fighter.health, before.health, "neither their player nor another's companion");
-    let (foe_type, rank) = pirate_in(Role::Brute).unwrap();
+    let (foe_type, rank) = hostile_in(Role::Brute).unwrap();
     let foe = room.stand_foe(foe_type, rank, [0.0, -3.0, 0.0], 0.0, None);
     room.foes.get_mut(&foe).unwrap().fighter.side = Side::Faction(1);
     room.settle(&blow(foe), How::Swing, id, hit, None);
@@ -376,7 +376,7 @@ fn an_officer_knocked_out_rests_through_a_return_to_another_room_and_comes_ashor
     let (player, ids) = with_officers(&mut room, &[Post::Lookout], 2);
     room.tick();
     let id = room.companion_of(player, ids[0]).unwrap();
-    let (foe_type, rank) = pirate_in(Role::Brute).unwrap();
+    let (foe_type, rank) = hostile_in(Role::Brute).unwrap();
     let foe = room.stand_foe(foe_type, rank, [0.0, -3.0, 0.0], 0.0, None);
     room.foes.get_mut(&foe).unwrap().fighter.side = Side::Faction(1);
     let blow = Blow {

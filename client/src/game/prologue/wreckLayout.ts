@@ -28,9 +28,6 @@ export interface Zone {
   readonly crew: readonly Point[];
 }
 
-/** Whether a deck crew's roster type fights for the Grey Tithe (7 to 12); the pirates' are 13 to 17. */
-export const titheCrew = (type: number): boolean => type >= 7 && type <= 12;
-
 /** A fire burning in the wreck: where its base burns, how big it is, metres, and, for one burning along a line (a
  *  yard, a rail, a strip of canvas), the line from its base to its far end. */
 export interface Fire {

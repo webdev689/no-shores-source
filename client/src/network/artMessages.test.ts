@@ -2,8 +2,8 @@ import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import { test } from 'node:test';
 import * as flatbuffers from 'flatbuffers';
-import { Input } from '../../../generated/messages/ts/overlook/wire.ts';
-import { SPELLS, spellNumber } from './artMessages.ts';
+import { Gear, Input } from '../../../generated/messages/ts/overlook/wire.ts';
+import { SPELLS, artsOf, spellNumber } from './artMessages.ts';
 import { ASKS } from './gearMessages.ts';
 import { inputBytes, readFromRoom } from './messages.ts';
 
@@ -27,6 +27,16 @@ test('the Arts in the gear the server wrote read back: Storm worn, every Core em
   ]);
   assert.ok(gear.arts.anima > 0 && gear.arts.anima < 0.01, 'a new room’s Anima, charging');
   assert.deepEqual(gear.arts.tenets, [1, 1]);
+});
+
+test("the gear word's recharge reads into the Arts: a run's Trickle makes each recharge half again as long", () => {
+  const builder = new flatbuffers.Builder(64);
+  Gear.startGear(builder);
+  Gear.addArt(builder, 1);
+  Gear.addRecharge(builder, 1.5);
+  builder.finish(Gear.endGear(builder));
+  const gear = Gear.getRootAsGear(new flatbuffers.ByteBuffer(builder.asUint8Array()));
+  assert.equal(artsOf(gear).recharge, 1.5);
 });
 
 test('every spell in the snapshot the server wrote reads back, a Dawnflare heading on and a bolt seeking', async () => {

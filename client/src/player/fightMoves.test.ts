@@ -25,12 +25,12 @@ const standing: FighterView = {
   action: { kind: 'idle' },
 };
 const doing = (action: Action) => ({ ...standing, action });
-/** The pirates' swordsman, with a sword and a kite shield, as the rules' roster has it. */
+/** The crew's swordsman, with a sword and a kite shield, as the rules' roster has it. */
 const swordsman: FoeType = {
   type: 14,
   name: 'Swordsman',
-  faction: 2,
-  factionName: 'Pirates',
+  faction: 0,
+  factionName: '',
   domain: 'deck',
   role: 2,
   ranks: [1, 2],

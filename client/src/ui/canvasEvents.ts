@@ -151,7 +151,9 @@ export class CanvasEvents implements PageEvents {
         // character typed is words.
         const browsers = this.browserTypes();
         const typed = browsers && (event.key.length === 1 || /^(Backspace|Delete)$/.test(event.key));
-        this.events.push({ kind: 'key', key: event.key, shift: event.shiftKey, ctrl, typed });
+        // A held Enter or Space presses once, as the pad's A does: its repeats would press a tap button again.
+        if (!(event.repeat && (event.key === 'Enter' || event.key === ' ')))
+          this.events.push({ kind: 'key', key: event.key, shift: event.shiftKey, ctrl, typed });
         const words = typingHere && !browsers && event.key.length === 1 && !ctrl;
         if (words) this.events.push({ kind: 'text', text: event.key });
         // Tab moves the interface's focus, not the page's; without the browser's typing, a key that types words, or

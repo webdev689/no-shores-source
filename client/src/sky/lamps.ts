@@ -101,10 +101,17 @@ export function lampsRound(
     const hand = fromEye([carried.feet[0], carried.feet[1], carried.feet[2] + HAND_M]);
     lamps.push({ fromEye: hand, reachM: held.reachM, light: held.light.map((part) => part * shown) as Rgb });
   }
-  const ranked = places
-    .map((place) => ({ place, away: Math.hypot(...fromEye(place.at)) - place.reachM }))
-    .sort((one, other) => one.away - other.away);
   const room = LAMPS_MOST - lamps.length;
+  // The nearest room + 1 kept in order as the places are passed, not every place ranked: a ruin has a thousand.
+  const ranked: { place: LampPlace; away: number }[] = [];
+  for (const place of places) {
+    const away = Math.hypot(place.at[0] - eye[0], place.at[1] - eye[1], place.at[2] - eye[2]) - place.reachM;
+    if (ranked.length > room && away >= ranked[room].away) continue;
+    let slot = ranked.length;
+    while (slot > 0 && ranked[slot - 1].away > away) slot--;
+    ranked.splice(slot, 0, { place, away });
+    if (ranked.length > room + 1) ranked.pop();
+  }
   // A lamp near the cut fades by how far it leads the first left out, so none switches on or off as the eye moves.
   const cut = ranked[room]?.away ?? Infinity;
   for (const { place, away } of ranked.slice(0, room)) {

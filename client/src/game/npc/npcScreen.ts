@@ -207,7 +207,7 @@ function purseNode(context: MenuContext, kind: KeeperKind, look: KeeperLook): No
 function footNode(kind: KeeperKind, gear: GearState, look: KeeperLook, width: number): Node | null {
   const shape = kind === 'shape' ? gear.shape : null;
   if (!DAILY.includes(kind) && !shape) return null;
-  const left = countdownsAt(Date.now());
+  const left = countdownsAt();
   return {
     role: 'well',
     width,

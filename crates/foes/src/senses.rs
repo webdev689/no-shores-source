@@ -8,6 +8,7 @@ use crate::awareness::{latch, stir, strongest, woken};
 use crate::board::Board;
 use crate::brain::Brain;
 use crate::dice::Dice;
+use crate::leash::{reachable, within};
 use crate::noises::stir_of;
 use crate::roles::Numbers;
 use crate::share::sooner;
@@ -131,7 +132,9 @@ pub fn sense(brain: &mut Brain, here: &Here<'_, '_>, board: &Board) -> Option<Si
         latch(brain, here, called);
         return Some(sight);
     }
-    let seen = in_sight(here);
+    let mut seen = in_sight(here);
+    // One its routes cannot reach stirs it not at all, so it never searches toward ground it has no way to.
+    seen.retain(|(_, _, other, _)| reachable(brain, here, other));
     let glimpse = seen.iter().map(|(_, _, other, gain)| (*gain, feet(other))).fold(None, strongest);
     let glimpse = stirring(here).fold(glimpse, strongest);
     stir(brain, here, glimpse, &heard);
@@ -139,6 +142,8 @@ pub fn sense(brain: &mut Brain, here: &Here<'_, '_>, board: &Board) -> Option<Si
     if !brain.awareness.alert {
         return None;
     }
+    // It takes only one its leash lets it fight; any it sees on ground it can reach still stirs it.
+    seen.retain(|(_, _, other, _)| within(brain, here, other));
     let nearest = *seen.iter().min_by(|first, second| first.0.total_cmp(&second.0).then(first.1.cmp(&second.1)))?;
     let (_, id, other, _) = *sooner(brain, here, board, (nearest.1, nearest.0), &seen).unwrap_or(&nearest);
     brain.target = Some(id);

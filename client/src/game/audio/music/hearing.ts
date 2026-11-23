@@ -5,7 +5,7 @@
 
 import { EVENT } from '../../../combat/cues.ts';
 import type { MarkedFoe } from '../../../combat/foePlate.ts';
-import type { FightEvent, SeenPirate } from '../../../network/messages.ts';
+import type { FightEvent, SeenHostile } from '../../../network/messages.ts';
 import type { FightCaptain, FightVessel } from '../../../rules/fightRules.ts';
 import type { FighterView } from '../../../rules/fighters.ts';
 import type { SkyReading } from '../../../sky/skyLaw.ts';
@@ -28,7 +28,7 @@ export interface FootHeard {
 export interface SeaHeard {
   readonly position: readonly [number, number];
   readonly landfall?: Landfall;
-  readonly sighted: { readonly pirates: readonly SeenPirate[] } | null;
+  readonly sighted: { readonly hostiles: readonly SeenHostile[] } | null;
   readonly fight: { readonly captains: readonly FightCaptain[]; readonly vessel: FightVessel } | null;
 }
 
@@ -93,7 +93,7 @@ export const heardSky = (reading: SkyReading | null): HeardSky | null =>
  *  may land on, and the sky. */
 export function hearSea(sea: SeaHeard, sky: HeardSky | null = null): Hearing {
   const [x, y] = sea.position;
-  const near = (sea.sighted?.pirates ?? []).filter((ship) => Math.hypot(ship.x - x, ship.y - y) <= SEA_NEAR_M);
+  const near = (sea.sighted?.hostiles ?? []).filter((ship) => Math.hypot(ship.x - x, ship.y - y) <= SEA_NEAR_M);
   const fight = sea.fight;
   const captains = (fight?.captains ?? []).filter((captain) => captain.hostile && captain.state === 'afloat');
   const vessel = fight?.vessel ?? null;

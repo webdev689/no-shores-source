@@ -4,7 +4,7 @@
 import type { FightCaptain, ShipState, SideName } from '../rules/fightRules.ts';
 
 /** A ship's people as its drawing tells them: its own name there, so its hands walk on from frame to frame; its
- *  captain's faction (1 the Grey Tithe, 2 pirates) and rank (1 Minor to 5 Boss), both 0 for a plain crew; the share of
+ *  captain's faction (1 the Grey Tithe) and rank (1 Minor to 5 Boss), both 0 for a plain crew; the share of
  *  its men left, 0 to 1; its state; and its sides whose guns stand run out. */
 export interface ShipCrew {
   readonly key: string;

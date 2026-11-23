@@ -15,6 +15,11 @@ use movement::{Controls, Mode, TUNING};
 const PATROLS: [&str; 3] = ["saltgrass-downs", "thunderhoof-grasslands", "whitewind-tundra"];
 const LEVELS: Option<(u8, u8)> = Some((10, 14));
 
+/// The room of a dungeon laid by a seed and a style where no patrol lays it, as a sea island's run lays it.
+fn laid_by_seed(name: &str, seed: u32, style: dungeon::Style, levels: Option<(u8, u8)>) -> Option<Room> {
+    Room::laid_dungeon(name, &Dungeon::forge(seed, style), levels, (REEVE, Miniboss), None)
+}
+
 /// Kills every foe of a post's group still there.
 fn clear(room: &mut Room, post: usize) {
     for id in room.garrison[post].standing.clone() {
@@ -52,7 +57,7 @@ fn a_dungeon_laid_by_a_seed_and_a_style_stands_as_a_patrols_does() {
     // A sea island's: no patrol, a seed and a style by its key.
     for (seed, key) in [(4242, "caverns"), (77, "crypt"), (9001, "mines")] {
         let style = dungeon::style_of(key).expect("a style");
-        let room = Room::dungeon_of("isle-test--dungeon", seed, style, LEVELS).expect("an island's dungeon");
+        let room = laid_by_seed("isle-test--dungeon", seed, style, LEVELS).expect("an island's dungeon");
         let (arrival, _) = Dungeon::forge(seed, style).arrival();
         assert_eq!(room.section.as_ref().map(|section| section.spawns.clone()), Some(vec![arrival]));
         assert!(room.garrison.len() > 1 && room.cache().is_some(), "{key}: its bands and its cache");
@@ -60,7 +65,7 @@ fn a_dungeon_laid_by_a_seed_and_a_style_stands_as_a_patrols_does() {
     }
     let (seed, style) = dungeon::of_patrol(PATROLS[0], 0);
     let by_patrol = Room::dungeon(PATROLS[0], 0, LEVELS).expect("a patrol's dungeon");
-    let by_seed = Room::dungeon_of(&format!("{}--dungeon-0", PATROLS[0]), seed, style, LEVELS).expect("the same");
+    let by_seed = laid_by_seed(&format!("{}--dungeon-0", PATROLS[0]), seed, style, LEVELS).expect("the same");
     assert_eq!(by_patrol.living_foes(), by_seed.living_foes(), "the same dungeon, the same garrison");
 }
 
@@ -422,7 +427,7 @@ fn a_cache_on_the_reeves_post_throws_its_vestige_onto_clear_floor() {
     let dungeon = Dungeon::forge(1, style);
     let floor = Floor::of_dungeon(&dungeon).expect("a dungeon's ground");
     let Floor::Dungeon(ground) = &floor else { panic!("a dungeon's ground") };
-    let mut room = Room::dungeon_of("isle-test--dungeon", 1, style, LEVELS).expect("an island's dungeon");
+    let mut room = laid_by_seed("isle-test--dungeon", 1, style, LEVELS).expect("an island's dungeon");
     room.join().expect("a player for the cache to pay");
     room.garrison[0].cleared_at = Some(0);
     let (mut on_post, mut thrown) = (0, 0);

@@ -221,7 +221,8 @@ export function pageAway(start: Start, send: Send): Away {
     history: { value: address.history, configurable: true },
     localStorage: { value: new KeptStorage(start.local, 'local', send), configurable: true },
     sessionStorage: { value: new KeptStorage(start.session, 'session', send), configurable: true },
-    devicePixelRatio: { get: () => view.ratio, configurable: true },
+    // The ratio the canvas is drawn at, which a canvas shrunk to the GPU's most is not the screen's.
+    devicePixelRatio: { get: () => canvasSize(view.width, view.height, view.ratio).ratio, configurable: true },
     innerWidth: { get: () => view.width, configurable: true },
     innerHeight: { get: () => view.height, configurable: true },
     document: { value: page, configurable: true },
