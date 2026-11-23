@@ -17,9 +17,9 @@ Asked what a Legendary or Atheric drop should be, the owner chose:
 
 ## What it settles
 
-- **Every drop is a piece in its content's own set look**, its perks rolled at random, at every rarity, Legendary and
-  Atheric too ([[Armour and Weapon Looks Belong to the Content That Gives Them]]).
-- **Named pieces never drop**: they come from the vendors, the factions and Shape alone, so no drop wears another
-  content's look.
+- **Every drop is a piece in its content's own set look**, its perks rolled at random, at every rarity up to
+  Legendary ([[Armour and Weapon Looks Belong to the Content That Gives Them]]).
+- **A Legendary drop is never another content's named piece**; the Atherics stay the unique named pieces they are
+  ([[Everything Carries a Set Name, and Perks Roll by Pool]]).
 
 How it works: [[Gear]].
