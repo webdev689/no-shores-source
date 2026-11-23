@@ -27,7 +27,7 @@ fn the_table_names_each_water_its_holder_and_its_levels() {
     assert_eq!(waters[3]["holder"], "grey-tithe");
     assert_eq!(waters[8]["levels"], json!([26, 30]));
     assert_eq!(table["borders"].as_array().unwrap().len(), 17);
-    assert_eq!(table["routes"].as_array().unwrap().len(), 3);
+    assert_eq!(table["routes"].as_array().unwrap().len(), 9, "three courses between each pair of the port cities");
     assert_eq!(table["main_ports"], json!(["overlook", "sunspire", "rimeholt"]));
     let ports: Vec<&Value> = table["ports"].as_array().unwrap().iter().map(|port| &port["id"]).collect();
     assert_eq!(ports, [&json!("overlook"), &json!("sunspire"), &json!("rimeholt")], "only the port cities sail");

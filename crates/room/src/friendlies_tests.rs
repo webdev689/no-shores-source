@@ -170,10 +170,15 @@ fn a_friendly_ship_off_its_route_goes_back_to_it_and_follows_what_is_left_of_it_
     let chart = crate::chart::SeaChart { coasts: &coasts, charted: &charted, islands: &[] };
     let traffic = charted.traffic.as_ref().expect("the world's traffic");
     let centre = traffic.roadsteads.first().map_or([0.0; 2], |at| [at.x as f64, at.y as f64]);
-    let ships = traffic.ships_near(centre, 3_000_000.0, TIME);
+    let ships: Vec<_> = traffic
+        .ships_near(centre, 3_000_000.0, TIME)
+        .into_iter()
+        .filter(|ship| ship.progress_m < ship.length_m)
+        .collect();
     let mut tried = 0;
-    // Ships at every stage of every route, each taken and set 2 km off its way, as a fight leaves one.
-    for ship in ships.iter().filter(|ship| ship.progress_m < ship.length_m).step_by(97).take(24) {
+    // Ships at every stage of every route, 24 spread over all sailing, each taken and set 2 km off its way, as a fight
+    // leaves one.
+    for ship in ships.iter().step_by((ships.len() / 24).max(1)).take(24) {
         tried += 1;
         let tithe = Hostile { level: 0, sight_m: 9_000.0, ..at_sea(7, Commission::default(), 0.0, true) };
         let friend = taken_of(traffic, ship, &tithe);

@@ -37,6 +37,7 @@ pub mod harbour;
 pub mod hostiles;
 pub mod island;
 mod judging;
+mod landing;
 mod left;
 pub mod lore;
 pub mod patrol;
@@ -193,6 +194,8 @@ pub struct Room {
     pub(crate) place: Option<gear::gate::Place>,
     /// A dungeon's run (`run.rs`): what its clear pays, its modifiers and its revives; none in any other room.
     pub(crate) run: Option<run::Run>,
+    /// The players who struck in a patrol zone's landing since they last stood out of it (`landing.rs`).
+    pub(crate) landing_struck: BTreeSet<FighterId>,
     /// The island it stands on, by its continent's id, for the feats it counts (`bounties.rs`); none at sea.
     pub(crate) island: Option<&'static str>,
     /// The content its drops come from, which their looks follow: a dungeon's, an Elite or Abyss Dungeon's or a sea
@@ -281,6 +284,7 @@ impl Room {
             place: None,
             source: gear::Source::World,
             run: None,
+            landing_struck: BTreeSet::new(),
             island: None,
             ashore: companions::Ashore::default(),
             isle: None,

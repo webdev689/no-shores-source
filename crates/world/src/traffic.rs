@@ -1,6 +1,7 @@
-//! Friendly traffic: ships sailing between the port cities all the time. One route joins every pair of them, planned
-//! round land, so each port trades with both others and the lanes cross the most waters. On each route a ship leaves
-//! each end every 1,200 s of world time, sails at 5 m/s, lies 600 s at its destination's roadstead and is then gone.
+//! Friendly traffic: ships sailing between the port cities all the time. Up to three courses join every pair of them,
+//! planned round land, so each port trades with both others, its ships leave it different ways and the lanes cross the
+//! most waters. On each course a ship leaves each end every 3,000 s of world time, sails at 60 m/s, lies 600 s at its
+//! destination's roadstead and is then gone.
 //! World time is seconds since the Unix epoch, so every machine computes the same ships for the same time, and a
 //! ship's place comes in closed form from its departure, never by stepping it.
 
@@ -14,13 +15,19 @@ use std::collections::BTreeSet;
 #[path = "traffic_routes.rs"]
 mod routes;
 
-/// A ship leaves each end of each route this often, seconds.
-pub const DEPARTURE_EVERY_S: f64 = 1_200.0;
-/// Every friendly ship sails at this speed, metres a second.
-pub const SPEED_M_S: f64 = 5.0;
-/// A ship lies at its destination's roadstead this long once it arrives, seconds, then is gone: with a ship arriving
-/// at each end of a route every `DEPARTURE_EVERY_S`, about one lies at each port's roadstead at any moment.
+/// A ship leaves each end of each course this often, seconds: so about five friendly ships are within 60 km of
+/// Overlook's roadstead at once, counting those lying there, the owner's five.
+pub const DEPARTURE_EVERY_S: f64 = 3_000.0;
+/// Every friendly ship sails at this speed, metres a second: the pace dial's slowest step, the owner's.
+pub const SPEED_M_S: f64 = 60.0;
+/// A ship lies at its destination's roadstead this long once it arrives, seconds, then is gone.
 pub const DWELL_S: f64 = 600.0;
+/// A pair's other two courses leave each port 30 degrees off the shortest course's heading (its sine; its cosine is
+/// the square root of three over two) to a point this far out, metres, so they part near both ports; one longer than
+/// the shortest by more than this share is left out.
+const TURN_SINE: f64 = 0.5;
+const TURN_OUT_M: f64 = 100_000.0;
+const LONGEST: f64 = 1.3;
 /// A roadstead lies this far out to sea from its port's nearest coast, metres, and farther if it must be.
 pub const ROADSTEAD_OUT_M: f64 = 3_000.0;
 /// A roadstead stays at least this clear of every coast, metres.
@@ -47,7 +54,8 @@ pub struct Port {
     pub centre: [f64; 2],
 }
 
-/// A route between two ports: its path from the first port's roadstead to the second's, in whole metres.
+/// A course between two ports: its path from the first port's roadstead to the second's, in whole metres, and when its
+/// first ships leave.
 #[derive(Debug, Clone, PartialEq)]
 pub struct Route {
     /// Indices into the ports the traffic was made with.
@@ -55,18 +63,21 @@ pub struct Route {
     pub to_port: usize,
     pub path: Vec<Point>,
     pub length_m: f64,
+    /// World time its departure 0 leaves, seconds: each course of a pair a share of the gap after the one before, so
+    /// a port's ships leave on its courses in turn.
+    pub start_s: f64,
     /// How far along the path each of its points lies, metres.
     along: Vec<f64>,
 }
 
 impl Route {
-    fn new(from_port: usize, to_port: usize, path: Vec<Point>) -> Self {
+    fn new(from_port: usize, to_port: usize, path: Vec<Point>, start_s: f64) -> Self {
         let mut along = vec![0.0];
         for leg in path.windows(2) {
             let (dx, dy) = ((leg[1].x - leg[0].x) as f64, (leg[1].y - leg[0].y) as f64);
             along.push(along[along.len() - 1] + (dx * dx + dy * dy).sqrt());
         }
-        Self { from_port, to_port, length_m: along[along.len() - 1], path, along }
+        Self { from_port, to_port, length_m: along[along.len() - 1], start_s, path, along }
     }
 
     fn corner(&self, index: usize) -> [f64; 2] {
@@ -190,13 +201,60 @@ pub struct Traffic {
 }
 
 impl Traffic {
-    /// Keeps the first port of each id that is a port city (`ports::is_main_port`), on a continent the layout holds and with a clear
-    /// roadstead, in the order given, then plans a route between every pair of them, first with second, first with
-    /// third, second with third. A pair no path joins gets none.
+    /// The ports `roadsteads` keeps, then up to three courses between every pair of them, first with second, first
+    /// with third, second with third: the shortest, and one to either side, leaving each port 30 degrees off the
+    /// shortest's heading to the clear water TURN_OUT_M out, each stretch planned round land as the shortest is, so
+    /// ships leaving a port head different ways. A pair no path joins gets none; a side course no clear water makes,
+    /// or LONGEST times the shortest's length, is left out. The courses' departures are staggered across all of them,
+    /// so ships on two courses that share a stretch out of a port never leave it together.
     #[must_use]
     pub fn new(layout: &Layout, waters: &Waters, ports: &[Port]) -> Self {
+        let (kept, roadsteads) = Self::roadsteads(layout, waters, ports);
+        let land = routes::Land::new(layout);
+        let mask = routes::Mask::new(waters);
+        let mut planned = Vec::new();
+        for from in 0..kept.len() {
+            for to in from + 1..kept.len() {
+                let (start, end) = (roadsteads[from], roadsteads[to]);
+                let Some(shortest) = mask.route(&land, start, end) else { continue };
+                // The way from `from` toward `toward` turned by the angle whose sine is `sine`, TURN_OUT_M out.
+                let out = |from: Point, toward: Point, sine: f64| {
+                    let (x, y) = ((toward.x - from.x) as f64, (toward.y - from.y) as f64);
+                    let (length, cosine) = ((x * x + y * y).sqrt(), 3.0_f64.sqrt() / 2.0);
+                    let (x, y) = ((x * cosine - y * sine) / length, (x * sine + y * cosine) / length);
+                    let at =
+                        Point::new(from.x + (x * TURN_OUT_M).round() as i64, from.y + (y * TURN_OUT_M).round() as i64);
+                    mask.clear_near(at)
+                };
+                let last = shortest.len() - 1;
+                let length = |path: &[Point]| Route::new(from, to, path.to_vec(), 0.0).length_m;
+                let beside = [-TURN_SINE, TURN_SINE].into_iter().filter_map(|turn| {
+                    // Turned one way leaving the first port and the other arriving, the course keeps to one side.
+                    let (near, far) = (out(start, shortest[1], turn)?, out(end, shortest[last - 1], -turn)?);
+                    let mut path = vec![start];
+                    for (from, to) in [(start, near), (near, far), (far, end)] {
+                        path.extend(&mask.route(&land, from, to)?[1..]);
+                    }
+                    (length(&path) <= LONGEST * length(&shortest)).then_some(path)
+                });
+                let beside: Vec<Vec<Point>> = beside.collect();
+                let courses: Vec<Vec<Point>> = std::iter::once(shortest).chain(beside).collect();
+                planned.extend(courses.into_iter().map(|path| Route::new(from, to, path, 0.0)));
+            }
+        }
+        let count = planned.len() as f64;
+        for (index, route) in planned.iter_mut().enumerate() {
+            route.start_s = DEPARTURE_EVERY_S * index as f64 / count;
+        }
+        Self { ports: kept, routes: planned, roadsteads }
+    }
+
+    /// Keeps the first port of each id that is a port city (`ports::is_main_port`), on a continent the layout holds and
+    /// with a clear roadstead, in the order given, with its roadstead; no route is planned.
+    #[must_use]
+    pub fn roadsteads(layout: &Layout, waters: &Waters, ports: &[Port]) -> (Vec<Port>, Vec<Point>) {
         let continent_of = |port: &Port| layout.continents.iter().position(|continent| continent.id == port.continent);
-        let (kept, roadsteads): (Vec<Port>, Vec<Point>) = ports
+        ports
             .iter()
             .enumerate()
             .filter(|&(index, port)| {
@@ -204,18 +262,7 @@ impl Traffic {
             })
             .map(|(_, port)| port)
             .filter_map(|port| Some((port.clone(), routes::roadstead(waters, continent_of(port)?, port.centre)?)))
-            .unzip();
-        let land = routes::Land::new(layout);
-        let mask = routes::Mask::new(waters);
-        let mut planned = Vec::new();
-        for from in 0..kept.len() {
-            for to in from + 1..kept.len() {
-                if let Some(path) = mask.route(&land, roadsteads[from], roadsteads[to]) {
-                    planned.push(Route::new(from, to, path));
-                }
-            }
-        }
-        Self { ports: kept, routes: planned, roadsteads }
+            .unzip()
     }
 
     /// The ship with this id at this world time; none if it has not left yet, has lain its `DWELL_S` at the end, or
@@ -225,7 +272,7 @@ impl Traffic {
         let direction = (id & 1) as u8;
         let route_index = ((id >> 1) & ROUTE_BITS) as usize;
         let route = self.routes.get(route_index)?;
-        let since = time_s - (id >> DEPARTURE_SHIFT) as f64 * DEPARTURE_EVERY_S;
+        let since = time_s - route.start_s - (id >> DEPARTURE_SHIFT) as f64 * DEPARTURE_EVERY_S;
         if !(0.0..route.length_m / SPEED_M_S + DWELL_S).contains(&since) {
             return None;
         }
@@ -263,6 +310,7 @@ impl Traffic {
         }
         let mut ids = BTreeSet::new();
         for (route_index, route) in self.routes.iter().enumerate() {
+            let time_s = time_s - route.start_s;
             for [start, end] in route.stretches_near(centre, radius_m) {
                 for direction in 0..2_u8 {
                     let (low, high) =

@@ -355,7 +355,7 @@ test('the sea travels a ship a browser asks to take to other waters, and refuses
 });
 
 /** The world time the clash's sea opens at (crates/room-wasm/src/door_tests.rs `CLASH_START_S`). */
-const CLASH_START_S = 1_790_151_200;
+const CLASH_START_S = 1_790_153_100;
 
 test('a sea where a Tithe ship attacks a friendly ship and a player joins them snapshots to the crate’s fingerprint', () => {
   // crates/room-wasm/src/door_tests.rs runs the same sea natively and holds the same value (SEA_CLASH_HASH): Overlook's
@@ -399,7 +399,7 @@ test('a sea where a Tithe ship attacks a friendly ship and a player joins them s
     friendly ||= others.some((other) => other.faction === 0);
   }
   assert.ok(friendly, 'the player fights beside the friendly ship');
-  assert.equal(hash.toString(16).padStart(16, '0'), '3cffd75a50ec0434');
+  assert.equal(hash.toString(16).padStart(16, '0'), '74ddb4da44c57151');
 });
 
 test('a fleet room sails the ships a browser orders, and the browser predicts its own to the bit', () => {
