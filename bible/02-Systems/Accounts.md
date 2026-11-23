@@ -192,10 +192,13 @@ each playlist, never the Abyss Dungeon of the week, whose company forms it.
 
 - **The queue** is a Durable Object of the accounts' Worker, one for each run's base (`CompanyFinder`, `finder.ts`),
   reached at `/v1/find/<base>` by WebSocket: `node-<id>` for an Elite Dungeon at Normal, `node-<id>--elite` for the
-  week's, and `playlist-elite` and `playlist-abyss` for the playlists, one queue each for the whole game, whichever
+  week's from its door and `node-<id>--elite--sea` from the Playlist (its run named `--sea`, gone into from the sea),
+  and `playlist-elite` and `playlist-abyss` for the playlists, one queue each for the whole game, whichever
   port the Playlist was opened beside. A socket's first message is its session's token; one that is no session, or that sends none within five
   seconds (`TOKEN_WAIT_MS`, as a run's room waits), is closed with 4003 and "Sign in to find a company.". At most 64
-  sockets with a token wait in one, and 128 sockets in all, silent ones too; its clock stops once it holds none. It
+  sockets with a token wait in one (a search past them is answered 503; a Launch is always taken, as it is gone at the
+  next look), and at most 64 silent ones, the oldest let go as each new one comes, so silent sockets never shut out
+  those that sign in; its clock stops once it holds none. It
   checks a base's shape alone, not that a rule lays it: the accounts' Worker does not load the rules, and the room
   judges the run.
 - **Bands.** A seeker is matched by the level their room last kept (`shown.level`, 1 for none yet), in bands of ten:
