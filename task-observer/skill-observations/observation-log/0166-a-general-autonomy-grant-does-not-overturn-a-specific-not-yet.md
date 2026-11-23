@@ -1,5 +1,5 @@
 ---
-id: 159
+id: 166
 title: "On the owner's 'stop depending on me', Claude tried to mark its own set-name draft in force over the owner's earlier 'Not yet'; the permission classifier refused it"
 status: open
 type: open-source

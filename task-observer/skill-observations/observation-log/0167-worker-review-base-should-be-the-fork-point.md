@@ -1,5 +1,5 @@
 ---
-id: 160
+id: 167
 title: "The worker brief tells the reviewer to diff against origin/main, which for a worker forked from a session branch with unpushed commits shows other work as the worker's"
 status: open
 type: open-source

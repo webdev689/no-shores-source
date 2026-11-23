@@ -1,5 +1,5 @@
 ---
-id: 161
+id: 168
 title: "Forge local runs: fplayers.py fails 'past the canvas' with two records at once, layers.py skips its index before a pull, and the render cache needs re-recording after layers.py or stage.py change"
 status: open
 type: open-source
