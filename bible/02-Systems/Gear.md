@@ -551,9 +551,10 @@ to every other player. Every garment is armour ([[Clothing Is Armour, With a War
   before it is bought): the head and arms its content's lightest sets (the world's leather or the thieves', another
   content's first), the torso and legs clothes (a shirt with a tunic or vest over it, breeches, trousers or a skirt,
   and tall boots or shoes, in brighter dyes) or those sets.
-- **Rare and finer** pieces are armour sets of the forge. A rolled Rare piece climbs its content's sets over levels 1
-  to 20, and one more by its name where one is left (`rareSet`): the world's from chain to steel, another content's
-  from its first to its last. A named piece wears the set written on it in `content/gear/items.json` (`look`), one of
+- **Rare and finer** pieces are armour sets of the forge. A rolled Rare piece of the world climbs its sets over levels 1
+  to 20, chain to steel, and one more by its name where one is left (`rareSet`); another content's drops at its own
+  levels (an Abyss Dungeon's all at 20), so its set is chosen by its name alone, and each of its sets is seen at every
+  level it drops. A named piece wears the set written on it in `content/gear/items.json` (`look`), one of
   its own content's (a test holds every one to it). Daedric's
   armour and weapons are to give way to the Lattice's own, on hold for now
   ([[The Lattice's Armour and Weapons Take Daedric's Place]]). A faction's armour is its guild's set instead, in the
@@ -564,8 +565,9 @@ to every other player. Every garment is armour ([[Clothing Is Armour, With a War
 - **The cloak** is a casual cloak, or a formal one from Rare up, in the rarity's dye; a faction's cape is the formal
   cloak in its faction's rank-2 dye whatever its rarity, laid on its greys as any garment dye is.
 - **The hands** hold the loadout drawn in its look (`weaponLook`). A rolled Normal weapon is iron to level 10 and steel
-  past it from any content, as Normal armour is clothes; a Magic or finer one is made in its content's metals, climbing
-  them over levels 1 to 20 and one more by its name where one is left (`rolledMetal`). Its make is chosen by its own
+  past it from any content, as Normal armour is clothes; a Magic or finer one is made in its content's metals: the
+  world's climbing them over levels 1 to 20 and one more by its name where one is left, another content's chosen by its
+  name alone (`rolledMetal`). Its make is chosen by its own
   number: a Sword & Shield's shield kite, round or tower, a Dagger & Shield's buckler, round or kite, a Mace & Shield's
   round, kite or tower, a bow long or short. A Normal shield is plain or iron to level 10 by its number and its weapon's
   metal past it; a finer one its weapon's metal. A rolled pistolet, double pistolet or thunderlock is plain. A named

@@ -180,12 +180,13 @@ test("a weapon's look: a named piece's as written; a rolled one climbs with its 
     [metals(0, 1), metals(0, 10), metals(0, 11)],
     ['iron iron iron', 'iron iron iron', 'steel steel steel'],
   );
-  // A finer one is made in its content's metals, climbing with its level, one more by its name where one is left.
+  // A finer one is made in its content's metals: the world's climbing with its level, one more by its name where one
+  // is left; any other content's by its name alone, so each of its metals is seen at every level it drops.
   const from = (source: number, rarity: number, level: number) =>
     [0, 1, 2].map((name) => look({ rarity, level, name, source }).metal).join(' ');
   assert.deepEqual([from(0, 1, 1), from(0, 1, 20)], ['iron steel iron', 'steel steel steel'], 'the world');
-  assert.deepEqual([from(3, 2, 1), from(3, 2, 20)], ['orcish mithril orcish', 'mithril mithril mithril'], 'Elite');
-  assert.deepEqual(from(4, 2, 1), 'adamantium ebony adamantium', 'an Abyss Dungeon');
+  assert.deepEqual([from(3, 2, 1), from(3, 2, 20)], ['orcish mithril orcish', 'orcish mithril orcish'], 'Elite');
+  assert.deepEqual(from(4, 2, 20), 'adamantium ebony adamantium', 'an Abyss Dungeon, whose drops are all at 20');
   assert.deepEqual(
     [from(2, 2, 1), from(5, 1, 1), from(6, 2, 20)],
     ['silver silver silver', 'elven dwarven elven', 'daedric daedric daedric'],
