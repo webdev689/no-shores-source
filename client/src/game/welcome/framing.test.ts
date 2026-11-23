@@ -110,7 +110,7 @@ test('her farewell is seen from the side, both faces in the view', () => {
   for (const [east, south, up] of [stranger, player])
     assert.ok(seen(shot, [east, south, up + HEAD_M]), 'a face in the view');
   const away = Math.hypot(shot.eye[0] - 1000, shot.eye[1] - 2028.9);
-  assert.ok(away > 4 && away < 7 &&Math.abs(shot.eye[2] - (GROUND + HEAD_M)) < 1, `close and level: ${away}`);
+  assert.ok(away > 4 && away < 7 && Math.abs(shot.eye[2] - (GROUND + HEAD_M)) < 1, `close and level: ${away}`);
   const walled = facesShot(OWN, stranger, player, [box(1003.5, 2029, 0.5, 4, 4)]);
   assert.ok(walled.eye[0] < 1000, 'from the side a wall leaves clear');
 });
@@ -125,6 +125,26 @@ test("each place stands in the view's upper part, clear of the dialogue box over
     const spot = shot && onScreen(shot, VIEW, point);
     assert.ok(spot && spot[1] < VIEW.height * 0.42, `${name}'s keeper above the box: ${spot?.[1]}`);
   }
+});
+
+test("a keeper behind a window, the counter's front walled below its sill, is seen through the window", () => {
+  // The Vault's keeper stands inside a stone house, seen through a window 1.3 to 2.3 m up; its counter is the sill.
+  const vault = { kind: 'vault', keeper: [1000, 1990] as const, counter: [1000, 1991.2] as const };
+  const walls = [
+    box(1000, 1991.2, 3, 0.25, 1.3),
+    box(1000, 1991.2, 3, 0.25, 2, 2.3),
+    box(997.6, 1991.2, 0.6, 0.25, 1, 1.3),
+    box(1002.4, 1991.2, 0.6, 0.25, 1, 1.3),
+  ];
+  const shot = counterShot({ stations: [vault], groundAt: ground, blocks: walls }, ['vault'], OWN);
+  assert.ok(shot, 'a shot of the vault');
+  const keeper: readonly [number, number, number] = [...vault.keeper, GROUND + HEAD_M];
+  assert.ok(seen(shot, keeper), 'its keeper in the view');
+  assert.ok(
+    blockReach(shot.eye, keeper, walls, 0.05) >=
+      Math.hypot(...keeper.map((each, axis) => each - (shot.eye[axis] ?? 0))) - 1e-6,
+    'through the window',
+  );
 });
 
 test('a place no eye sees clearly gives no shot, so the view stays where it is', () => {

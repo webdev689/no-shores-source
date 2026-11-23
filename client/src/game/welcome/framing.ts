@@ -131,11 +131,10 @@ export function counterShot(place: Place, kinds: readonly string[], own: Shot): 
     ),
   );
   const floor = (station: StationInfo) => place.groundAt(...station.keeper) ?? ground;
-  const points = found.flatMap((station): Point3[] => [
-    [...station.keeper, floor(station) + HEAD_M],
-    [...station.counter, floor(station) + FRONT_M],
-  ]);
-  return firstSeeing(shots, points, place.blocks);
+  const heads = found.map((station): Point3 => [...station.keeper, floor(station) + HEAD_M]);
+  const fronts = found.map((station): Point3 => [...station.counter, floor(station) + FRONT_M]);
+  // A keeper behind a window (the Vault's) has a counter walled below its sill: their head alone is seen then.
+  return firstSeeing(shots, [...heads, ...fronts], place.blocks) ?? firstSeeing(shots, heads, place.blocks);
 }
 
 /** The Hall of the Arts seen from inside: from up under its roof a few metres in from its door, down the nave to all
