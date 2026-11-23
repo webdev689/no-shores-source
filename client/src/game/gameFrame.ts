@@ -205,7 +205,8 @@ export function startFrames(parts: FrameParts, playing: Playing): void {
     // is hers.
     const told = playing.after.holding;
     const turned = playing.after.takeTurn();
-    if (turned !== null) walker.player = { ...walker.player, yaw: turned };
+    // The figure kept still keeps its facing, so it is turned with the view.
+    if (turned !== null) walker.player = { ...walker.player, yaw: turned, facing: turned };
     const heard = told ? IDLE : controls;
     const own = here.frame(heard, seconds, clock, { paused, looking, hands: handsFree(heard, paused), aspect });
     const shown = { ...own, shot: playing.after.shot(own.shot, seconds) };
