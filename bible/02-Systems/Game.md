@@ -183,7 +183,8 @@ stranger's last moment plays there once the veil has fallen ([[Prologue]]); leav
 
 With `?at=<node id>` in the address the player arrives at that node instead, on its continent (a city's social space
 is `<city id>-social`): a way to look round the world. An id the world does not hold arrives at Overlook, and so
-does a social space still locked: only Overlook's opens for now ([[Cities]], "Open and locked"), so a ruined city's is
+does a patrol or mission still locked, played alone too, as the server refuses it
+([[The Patrol Audit's Leftovers Are Fixed as the Owner Chose]]), and a social space still locked: only Overlook's opens for now ([[Cities]], "Open and locked"), so a ruined city's is
 never arrived at. Should one open, it is named "Ruins of" and the city's name ([[Cities]], "Ruins"), on the veil too
 (the game waits for the rules' module to say which cities are ports, `mainPortsOf`), and on foot the line under its
 name says "Ruins" (`placeWords`). Online, a node's room lets a kept character in only by a way that leads there

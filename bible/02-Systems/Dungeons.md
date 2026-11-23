@@ -554,7 +554,10 @@ as standing none (`readDungeon`).
   relic falling below three tenths (once each time, as the banner reddens) play the refused sound. The page's fighter predicts on the pads
   (`fighter_dungeon`).
 - **The return portal** (`layout.portal`): an arch of the end room's trim round a face, dark while the cache is shut
-  and glowing, lighting the room, while it is open; E "Leave" within 2.5 m while it is open.
+  and glowing, lighting the room, while it is open; E "Leave" within 2.5 m while it is open. The room keeps, with the
+  body a player leaves with, whether they left by a way out: within 3.5 m of the exit door or the open portal, and
+  alive (`gear::left`'s `out`); the patrol's room stands them before the dungeon's door only then, else at a spawn
+  ([[The Patrol Audit's Leftovers Are Fixed as the Owner Chose]]).
 
 ## Limits
 

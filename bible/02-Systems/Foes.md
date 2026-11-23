@@ -311,7 +311,8 @@ parry window, shorter than a player's 15) the window spans the landing, earlier 
 blocks; never later than 2 ticks before. A block raises the guard only if its window will have closed before the blow
 lands (raised later it would parry, which a block is not), or keeps one already held; too late for that, it takes the
 blow. A dodge hops aside and a little back, still facing the blow, pressed 2 to 14 ticks before the landing. Mid-swing
-it can only dodge. A shot, which flies as fast as ever, is read in the whole reaction time, and timed by its distance
+it can only dodge. A shot, which flies as fast as ever, is seen coming only when loosed at it (its shooter's aim within
+0.2 radians of it), is read in the whole reaction time, and timed by its distance
 and the speed the room says it flies at (an aimed shot's faster than its weapon's plain one): a shield-bearer blocks it,
 others may dodge it. Only the swing or shot of a fighter of another side is weighed, never an ally's. Waiting on an
 answer, a foe neither swings nor winds up a telegraphed blow; while it answers, it faces the striker. The room judges a
