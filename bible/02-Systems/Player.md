@@ -3,6 +3,7 @@ type: system
 status: live
 code:
   - client/src/player/walker.ts#Walker
+  - client/src/player/walker.ts#mountAsked
   - client/src/player/player.ts#updatePlayer
   - client/src/player/playerCamera.ts#cameraOrbit
   - client/src/player/playerCamera.ts#handsZoom
@@ -40,6 +41,10 @@ moves and figure are DFO's ([[The Player Plays as in DFO]]); the Test Ground's n
   fighter ([[Combat]]), or a ship's deck. In a fight the walker steps and shows the frame in two halves, the fight's
   buttons pressed before the step and what the fight holds the player to shown after it (`PlayerFight`), on the Test
   Ground and in the game's nodes alike. A page may set the walker's player: a move played from a panel.
+- **Riding** ([[Horses Are Items Worn in a Mount Slot]]): the mount key mounts only with a horse worn in the Mount
+  slot, as the room allows (`mountAsked`); the walker reads whether one is worn from the gear the room sends, and with
+  no room, rides. With none, a press does nothing and the page says "You have no horse." once for it. Getting down is
+  never refused.
 - **The camera** sits in the head, or behind it and up in third person on a boom (`cameraOrbit`). Through the
   head it sees 65° tall where third person sees the lens's 50°, widening as the camera comes in past third person's
   nearest, 0.6 m;

@@ -178,6 +178,8 @@ export function startFrames(parts: FrameParts, playing: Playing): void {
     if (dead && !wasDead) document.exitPointerLock();
     drain.toward(dead);
   };
+  /** What the mount key says with no horse worn in the Mount slot ([[Horses Are Items Worn in a Mount Slot]]). */
+  const NO_HORSE = 'You have no horse.';
   /** The words that tell why the player is not where they went, while they stand. */
   const toldNow = () => (playing.told && performance.now() < playing.told.until ? [playing.told.words] : []);
 
@@ -290,6 +292,8 @@ export function startFrames(parts: FrameParts, playing: Playing): void {
     hud.marks(looking ? [] : quests.marks(shown.shot, viewport, [body.x, body.y], parts.groundAt, here.node.id));
     // The tracker is set once a frame, so a public event's steps stand in it unblinking, in the quest's place.
     hud.tasks.show(shown.quest ?? quests.tracked);
+    if (walker.noHorse)
+      [walker.noHorse, playing.told] = [false, { words: NO_HORSE, until: performance.now() + TOLD_MS }];
     hud.toast(...toldNow(), ...quests.toasts, ...playing.lore.toasts);
     hideSeaHud(hud);
     hud.note(here.roomNote);
