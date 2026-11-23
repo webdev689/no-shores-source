@@ -48,9 +48,9 @@ function gearWith(horse: boolean): GearState {
 function menuShot(view: string, gear: GearState): (ui: Interface) => Node {
   let dress: Dress | null = null;
   const here = () => {
-    const wardrobe = forge?.wardrobe('human') ?? null;
+    const plain = plainDress('human', 0.3);
+    const wardrobe = forge?.wardrobe(plain.body) ?? null;
     if (!dress && wardrobe) {
-      const plain = plainDress('human', 0.3);
       dress = { ...plain, outfit: gearOutfit(gear, wardrobe, plain.outfit) };
     }
     return { gear, ask: () => undefined, forge, dress };

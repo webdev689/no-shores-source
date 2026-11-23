@@ -161,7 +161,8 @@ export function displayNode(
   const dressKey = JSON.stringify(standing);
   const figure = pictureOf(forge, standing, 'idle', view, flip);
   if (figure) {
-    const scale = scales.get(dressKey) ?? scaleIn(figure, figureBox);
+    // Scaled to nine tenths of the height, so its head stands clear of the frame.
+    const scale = scales.get(dressKey) ?? scaleIn(figure, [width, Math.round(height * 0.9)]);
     scales.set(dressKey, scale);
     [shown.figure, shown.scale] = [figure, scale];
   }
