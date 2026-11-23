@@ -77,6 +77,8 @@ export class OutpostHere {
   private seen: OutpostSeen | null = null;
   private asked = 0;
   private shown: readonly EventProp[];
+  /** The plot's boxes as last read, which the camera keeps clear of too. */
+  walls: readonly Block[] = [];
   private readonly timer: ReturnType<typeof setInterval>;
 
   readonly site: string;
@@ -130,8 +132,8 @@ export class OutpostHere {
   take(seen: OutpostSeen | null): void {
     this.seen = seen;
     this.shown = this.standing();
-    const plot = seen ? plotBoxes(seen.plot, this.ground, staffOf(seen)) : [];
-    for (const course of this.course.courses) course.setCourse([...this.course.boxes, ...plot]);
+    this.walls = seen ? plotBoxes(seen.plot, this.ground, staffOf(seen)) : [];
+    for (const course of this.course.courses) course.setCourse([...this.course.boxes, ...this.walls]);
   }
 
   /** The guild's banner cloth, hung from its standard's `cloth` socket; none before the standard stands. */

@@ -390,7 +390,7 @@ export class Foot {
     const { feel } = this;
     // The tumble starts the way the figure was last drawn facing (the aim, while aiming).
     walker.fall = this.falling.figure(fight.standing, walker.player.body, walker.you.facing);
-    const blocks = [...this.boxes, ...(this.context.cameraBlocks ?? [])];
+    const blocks = [...this.boxes, ...(this.outpost?.walls ?? []), ...(this.context.cameraBlocks ?? [])];
     const aimed = () => playerCamera(walker.player, movement, blocks, AIM, groundAt, this.roof);
     const camera = () => pushedIn(aimed(), effects.anima.push);
     const shown = this.player.frame(still ? IDLE : { ...controls, locked: true }, this.steps, seconds, clock, {
