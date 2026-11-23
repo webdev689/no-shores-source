@@ -15,7 +15,7 @@ const PAD_TRIM_M = 0.08;
 const STONE = { inset: 0.35, height: 0.06 } as const;
 const SLAB = { half: 0.6, height: 0.03 } as const;
 /** A Weighing's plate: a slab as wide as a body standing on it is held, raised under a step. */
-export const PLATE = { half: 0.8, height: 0.05, rim: 0.1 } as const;
+export const PLATE = { half: 0.8, height: 0.06, rim: 0.1 } as const;
 const RELIC = { half: 0.18, low: 1.9, high: 2.6 } as const;
 /** How far over the floor the drowned floor's water lies (m): over the floor's own face, under a body's step. */
 const WATER_M = 0.04;
@@ -43,9 +43,10 @@ export function layEncounters(mesh: MeshBuilder, layout: DungeonLayout): void {
     });
     if (seal.kind === SEAL_KIND.weighing)
       for (const [x, y] of seal.pieces) {
+        // All of it the room's trim, not its floor's picture, so the slab stands apart from the floor round it.
         const [low, high] = [PLATE.half, PLATE.half - PLATE.rim];
         box(mesh, [set, ROLE.trim], [x - low, y - low, 0], [x + low, y + low, PLATE.height / 2]);
-        box(mesh, [set, ROLE.floor], [x - high, y - high, PLATE.height / 2], [x + high, y + high, PLATE.height]);
+        box(mesh, [set, ROLE.trim], [x - high, y - high, PLATE.height / 2], [x + high, y + high, PLATE.height]);
       }
     const [relic] = seal.pieces;
     if (seal.kind === SEAL_KIND.holdfast && relic) {

@@ -434,8 +434,8 @@ function floorPiece(site: Site, cell: number, piece: string, [x, y]: readonly [n
 
 /** The floor pieces: slabs on one quiet room cell in four, a runner (`floor.a`) unbroken along the straight
  *  corridors, and its medallion (`floor.b`) a room; a drain a room and a circle in a room of 3 by 3 or more, each of
- *  these on the clear cell nearest its room's middle; scree on one cell in five, and rails along the straight
- *  corridors. */
+ *  these on the clear cell nearest its room's middle, but in an Elite Dungeon's seal's room, where a ring on the floor
+ *  would read as one of its pieces; scree on one cell in five, and rails along the straight corridors. */
 function floors(site: Site): void {
   const { layout } = site;
   const size = layout.cell;
@@ -453,9 +453,10 @@ function floors(site: Site): void {
     if (kind === 'runner' && way !== null) floorPiece(site, cell, 'floor.a', middle, way);
     if (kind === 'rails' && way !== null) floorPiece(site, cell, piece(cell), middle, way);
   });
+  const sealed = new Set(layout.encounters?.seals.map((seal) => seal.room) ?? []);
   layout.rooms.forEach((room, number) => {
     const style = layout.looks[room.look]?.style;
-    if (!style) return;
+    if (!style || sealed.has(number)) return;
     const middle = [(room.x + room.width / 2) * size, (room.y + room.depth / 2) * size] as const;
     const kind = RULES[style].floor;
     // A room's middle mostly holds a prop or a pillar, so its piece lies on the clear cell nearest it.

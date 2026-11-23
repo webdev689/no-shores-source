@@ -8,6 +8,7 @@ import { HEAD_M, kitHash, type KitPlacement, kitPlacements } from './dungeonKits
 import { placedLandmarks } from './dungeonLandmarks.ts';
 import {
   askDungeon,
+  askLayout,
   CORRIDOR,
   type DungeonLayout,
   openAt,
@@ -419,6 +420,25 @@ test('floor pieces lie off every solid, the arrival’s cell, the end room and e
   });
   assert.deepEqual([...kinds].sort(), ['circle', 'drain', 'rails', 'runner', 'scree', 'slabs']);
   assert.ok(medallions > 20, `${medallions} medallions`);
+});
+
+test("no floor piece of a room's own lies in an Elite Dungeon's seal's room, where it would read as a piece", () => {
+  let seals = 0;
+  for (const place of ['pale-undercroft', 'saltworm-warrens', 'silt-barrows', 'krakens-grotto']) {
+    const layout = askLayout(module, { place, name: place });
+    const sealed = new Set(layout.encounters?.seals.map((seal) => seal.room) ?? []);
+    seals += sealed.size;
+    const placed = kitPlacements(layout, FULL_PACKS, propPlansOf(layout));
+    const own = kind(placed, /^floor\./).filter((piece) => {
+      const floor = kits.styles[styleOf(piece.module)].floor;
+      return floor === 'drain' || floor === 'circle' || (floor === 'runner' && pieceName(piece.module) === 'floor.b');
+    });
+    assert.ok(
+      own.every((piece) => !sealed.has(layout.cells[piece.cell] ?? -1)),
+      place,
+    );
+  }
+  assert.ok(seals >= 10);
 });
 
 test('a sconce at every torch holds its flame, and the arches stand on the portal’s and the exit’s walls', () => {

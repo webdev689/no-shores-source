@@ -4,7 +4,7 @@ import { meshBuilder } from '../models/model.ts';
 import { SEAL_KIND, SEAL_STATE } from '../network/encounterMessages.ts';
 import type { DungeonLayout } from './dungeonLayout.ts';
 import { drownedNow, layEncounters, PLATE, waterMesh } from './encounterMesh.ts';
-import { COLOUR } from './dungeonMesh.ts';
+import { COLOUR, ROLE } from './dungeonMesh.ts';
 
 /** An Ascent of two pads over a room of two cells, and a Court of one anchor. */
 const layout = {
@@ -79,4 +79,12 @@ test("a Weighing's plates stand as raised slabs of its room's stone, and a Litan
     'raised to its height',
   );
   assert.equal(plates(SEAL_KIND.litany).length, 0, 'a rune is only its mark on the floor');
+});
+
+test("a plate is all of its room's trim, never the floor's own picture, so it stands apart from the floor", () => {
+  const seal = { kind: SEAL_KIND.weighing, room: 0, pieces: [[1.6, 1.6, 0]], pads: [], drowned: [], doors: [] };
+  const mesh = meshBuilder();
+  layEncounters(mesh, { ...layout, encounters: { ...layout.encounters!, seals: [seal], anchors: [] } });
+  const records = new Set(mesh.model().parts.map((part) => part.record));
+  assert.deepEqual([...records], [ROLE.trim]);
 });

@@ -77,8 +77,9 @@ function barOf(seal: SealSeen): { share: number; label: string } {
     const stepped = seal.marks.filter((mark) => mark === RUNE.stepped).length;
     return { share: seal.progress, label: `${stepped} of ${seal.marks.length}` };
   }
-  if (seal.kind === SEAL_KIND.ascent)
-    return { share: seal.progress, label: `${seal.marks[0] ?? 0} of ${seal.marks[1] ?? 0}` };
+  // With nobody in its room an Ascent says how far it was held, never "0 of 0".
+  const [on = 0, living = 0] = seal.marks;
+  if (seal.kind === SEAL_KIND.ascent && living > 0) return { share: seal.progress, label: `${on} of ${living}` };
   return { share: seal.progress, label: `${Math.floor(seal.progress * 100)}%` };
 }
 

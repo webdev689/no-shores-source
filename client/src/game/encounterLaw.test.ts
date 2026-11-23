@@ -164,6 +164,12 @@ test("a Holdfast's banner says its relic's strength, and an Ascent's how many st
   const ascent = { kind: SEAL_KIND.ascent, state: SEAL_STATE.running, progress: 0, marks: [2, 4], relic: 1 };
   const climbing = encounterBanner(layout, seen({ seals: [ascent, seen().seals[1]!] }), [2, 1.6, 0]);
   assert.equal(climbing?.bar?.label, '2 of 4');
+  const empty = encounterBanner(
+    layout,
+    seen({ seals: [{ ...ascent, marks: [0, 0], progress: 0.25 }, seen().seals[1]!] }),
+    [-5, -5, 0],
+  );
+  assert.equal(empty?.bar?.label, '25%', 'nobody in its room: how far it was held, never 0 of 0');
 });
 
 test("the compass marks each unbroken seal's room, then the Court once the Boss wakes, until it falls", () => {

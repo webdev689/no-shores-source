@@ -81,22 +81,34 @@ for (const seal of plan.seals) {
   // Two metres into the room from its doorway, so the doorway's arch never stands between the camera and the seal.
   const door = seal.doors[0] ?? [(middle[0] ?? 0) + 4, middle[1] ?? 0];
   const inward = Math.hypot((middle[0] ?? 0) - (door[0] ?? 0), (middle[1] ?? 0) - (door[1] ?? 0)) || 1;
-  // An Ascent's first pad reaches back to its doorway, so it is seen from the doorway itself and from across the room.
+  // An Ascent's first pad reaches back to its doorway, so it is seen from the doorway itself and from across the room;
+  // any other's, two metres in unless that is on a piece (a rune stepped there would count).
   const step = seal.kind === 3 ? 0 : Math.min(2, inward / 2) / inward;
   const inside = [
     (door[0] ?? 0) + ((middle[0] ?? 0) - (door[0] ?? 0)) * step,
     (door[1] ?? 0) + ((middle[1] ?? 0) - (door[1] ?? 0)) * step,
   ];
-  picture(inside, middle, 'third,7,35', `${kind}_from_door`);
+  const onPiece = seal.pieces.some((piece) => Math.hypot((piece[0] ?? 0) - (inside[0] ?? 0), (piece[1] ?? 0) - (inside[1] ?? 0)) < 1.5);
+  picture(onPiece ? door : inside, middle, 'third,8,45', `${kind}_from_door`);
   const first = seal.pieces[0];
   // An Ascent's one piece is the stone on its top pad, which a move on the floor never reaches: the climb is seen
   // instead from the floor across the room, from the cell of its room clear of every pad farthest from its doorway.
   const across = seal.kind === 3 ? floorAcross(seal) : null;
   if (across) picture(across, middle, 'third,5,15', `${kind}_across`);
-  else if (first) picture(first, middle, 'third,5,20', `${kind}_on_first`);
+  // Beside its first piece, a step and a half back toward its doorway, looking over it toward the rest.
+  else if (first) {
+    const back = Math.hypot((door[0] ?? 0) - (first[0] ?? 0), (door[1] ?? 0) - (first[1] ?? 0)) || 1;
+    const share = Math.min(1.5, back) / back;
+    const beside = [
+      (first[0] ?? 0) + ((door[0] ?? 0) - (first[0] ?? 0)) * share,
+      (first[1] ?? 0) + ((door[1] ?? 0) - (first[1] ?? 0)) * share,
+    ];
+    picture(beside, first, 'third,6,50', `${kind}_by_first`);
+  }
 }
 const anchor = plan.anchors[0];
-if (anchor) picture(anchor, middleOf(plan.anchors), 'third,8,35', 'court_anchors');
+// From the anchors' middle, off every wall they keep to, looking at the first.
+if (anchor) picture(middleOf(plan.anchors), anchor, 'third,8,45', 'court_anchors');
 const url = `http://localhost:${port}/?at=1&spawn=&run=node-${place}--run-qaqa0001&view=third,7`;
 const anyPort = port !== '5173';
 writeFileSync(
