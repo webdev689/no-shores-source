@@ -192,12 +192,12 @@ test('the bow the boarder dropped is taught: taken up, equipped, drawn, an arrow
   assert.equal(quest.task, 'Arm yourself with the bow');
   assert.deepEqual(
     quest.steps.map((step) => step.text),
-    ['Take up the bow', 'Equip it', 'Draw it', 'Loose an arrow', 'Back to your sword'],
+    ['Take up the bow', 'Equip it', 'Switch to the bow', 'Loose an arrow', 'Back to your sword'],
   );
   assert.deepEqual(ticked(tutorial, { ...worn, bow: 'carried' }), ['Take up the bow']);
   assert.deepEqual(ticked(tutorial, { ...worn, bow: 'worn' }), ['Take up the bow', 'Equip it']);
   assert.deepEqual(ticked(tutorial, { ...worn, bow: 'worn', loosed: true }).length, 2, 'no arrow before the bow drawn');
-  assert.deepEqual(ticked(tutorial, { ...worn, bow: 'worn', ranged: true }).at(-1), 'Draw it');
+  assert.deepEqual(ticked(tutorial, { ...worn, bow: 'worn', ranged: true }).at(-1), 'Switch to the bow');
   assert.deepEqual(ticked(tutorial, { ...worn, bow: 'worn', ranged: true, loosed: true }).at(-1), 'Loose an arrow');
   assert.equal(tutorial.stage, 'bow');
   assert.deepEqual(ticked(tutorial, { ...worn, bow: 'worn' }).at(-1), 'Back to your sword');
@@ -434,7 +434,7 @@ test('the bow’s and the Storm’s steps name their controls as bound now', () 
     assert.deepEqual(keysOf('bow', { bow: 'lying' }), [
       ['Take up the bow', []],
       ['Equip it', ['I']],
-      ['Draw it', ['2']],
+      ['Switch to the bow', ['2']],
       ['Loose an arrow', ['Left button', 'F']],
       ['Back to your sword', ['1']],
     ]);

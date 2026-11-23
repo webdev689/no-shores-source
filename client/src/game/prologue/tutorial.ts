@@ -91,7 +91,7 @@ const STEPS = {
   fell: { text: 'Bring the boarder down' },
   takeBow: { text: 'Take up the bow' },
   equipBow: { text: 'Equip it', keys: 'character' },
-  draw: { text: 'Draw it', keys: 'ranged' },
+  draw: { text: 'Switch to the bow', keys: 'ranged' },
   loose: { text: 'Loose an arrow', keys: 'guard|swing' },
   sheathe: { text: 'Back to your sword', keys: 'melee' },
   arcLash: { text: 'Cast Arc Lash', keys: 'tenetTwo' },
