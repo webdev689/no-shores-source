@@ -463,7 +463,8 @@ the cutscenes, the camera's moves, the nameplate, the fires and the lines are th
   - "Fight your way through the wreck", counting the hostile foes standing while any do. Until the Storm is given,
     the zones' waves wait: a zone reached keeps its wave waiting and its way on shut (`WreckProgress.held`).
   - The boss fight's task is "Face Captain Brannoc Thule", whatever stands before. The tracker hides while a cutscene
-    holds the fight.
+    holds the fight, and so do the fight's display (its bars and compass) and the key strip, the dialogue box
+    staying; all come back as play does.
 - **The story's room.** Its room is told to play the story (`Room::story_wreck`): the player has no Art until the
   wisp gives them the Storm (`Room::story_storm`), so until then no ability bar shows and no cast is taken; every
   player wakes there, or joins, with no Melee weapon or armour carried or worn (the vault's kept), wearing the story's

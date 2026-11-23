@@ -496,6 +496,22 @@ test("Thule's cry brings one strike down 400 m beyond him, seen from where the p
   assert.ok(Math.abs(Math.hypot(x - thuleX, y - thuleY) - 400) < 1e-6, `${x}, ${y}`);
 });
 
+test("in Thule's coming the fight's display (its bars, compass and keys) is hidden, and shown again after", async () => {
+  const { story, calls } = recorded(FOOT_VIEW);
+  const nameplate = { show: () => undefined, hide: () => undefined } as unknown as Nameplate;
+  const fight = new WreckFight(story, layout, scenery, Promise.resolve(stillRun({ dead: false }, true)), nameplate);
+  await Promise.resolve();
+  const hidden = () => calls.filter((call) => call === 'stage.parts.footView.hideDisplay()').length;
+  fight.frame(tick(0.05));
+  fight.frame(tick(0.05));
+  assert.ok(hidden() >= 1, 'hidden as he comes');
+  assert.ok(calls.includes('stage.parts.hud.hints()'), 'no keys');
+  for (let frame = 0; frame < 140; frame++) fight.frame(tick(0.05));
+  const after = hidden();
+  fight.frame(tick(0.05));
+  assert.equal(hidden(), after, 'shown again once the fight is on');
+});
+
 /** A run the teaching can be walked through: its arms, the boarder, the player's action and the frame's events as
  *  `state` holds them; each frame's options, each boarder stood and each word on the waves written down. */
 function taughtRun(state: {

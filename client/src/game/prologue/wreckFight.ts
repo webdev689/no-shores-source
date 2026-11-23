@@ -299,6 +299,8 @@ export class WreckFight implements Beat {
       viewport: tick.viewport,
       groundAt: (x, y) => scene.groundAt(x, y),
     });
+    // A cutscene shows no bars, compass or keys; the dialogue box is the stage's own and stays.
+    if (held) footView.hideDisplay();
     hud.hints(held ? [] : shown.hints);
     // Read every frame, a cutscene's too, so a turn the camera makes for it is never taken for the player's look.
     const tasks = this.teach(run, shown.fight, seconds);
