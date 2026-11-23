@@ -8,6 +8,7 @@ code:
   - client/src/overworld/overworldMarks.ts#placeMarks
   - client/src/game/seaMarks.ts#landingChoice
   - client/src/game/seaMarks.ts#playlistPort
+  - client/src/game/seaMarks.ts#landfallMarks
   - client/src/overworld/seaRoute.ts#planSeaRoute
   - client/src/overworld/voyage.ts#shipAt
   - client/src/overworld/islandView.ts#frameSide
@@ -83,8 +84,10 @@ size from the sea camera and from the bird's-eye view. On the screen it is held 
 to be held stays at the picture's edge when off it, with an arrow pointing to it. Marks are laid farthest first, so a
 pointer picks the nearest.
 
-Each port city's harbour has a Playlist mark beside its port's (`<city>-playlist`, a list in amber), at sea within the
-port's sight and over the island's side, open whether or not the city's social space is. At sea it is laid beside
+Each port city's harbour has a Playlist mark beside its port's (`<city>-playlist`, a list in amber, '☰' drawn in the
+game's face), at sea within the port's sight and over the island's side when docking there, open whether or not the
+city's social space is. Over the side the view is framed on the nodes alone (`landfallMarks`), so going ashore far from
+the harbour never stretches the view to show it. At sea it is laid beside
 the port's mark, as far apart as the two are drawn, to its right or, at the picture's right edge, its left, never
 thinned away by it, and shown while its port's mark is. Choosing it opens the Playlist screen ([[Interface]], "The Playlist") rather than sailing there
 or landing.

@@ -86,7 +86,7 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement): Promise<vo
   // The activities: the dungeons' ways in and out (each as `goInto` goes), their screens, and the sea's word of gear.
   const { trips, screens, onFoot, heed } = startActivities(world.nodes, link, {
     foot: () => playing.foot,
-    atSea: () => (onTheSea(playing.flow) ? (playing.sea?.gear?.gear ?? null) : null),
+    atSea: () => (onTheSea(playing.flow) ? (playing.sea?.gear?.gear ?? null) : undefined),
     travel: (happening, work) => travel(happening, work),
     module: roomModule,
     intoDungeon: (...into) => goInto(() => Foot.enterDungeon(footContext, ...into)),

@@ -12,6 +12,7 @@ import {
   shown,
 } from './activityWords.ts';
 import type { ActivityRecord } from '../network/activityRecord.ts';
+import { SOURCES } from '../player/sourceLooks.ts';
 import { countdownWords } from './journalWords.ts';
 
 /** The four entries, in the order the screen shows them. */
@@ -42,8 +43,12 @@ export interface PlaylistEntry {
   readonly rules: readonly string[];
   readonly modifiers: readonly KeyedModifier[];
   readonly rewards: readonly PlaylistReward[];
+  /** What its runs drop: "Drops orcish and mithril gear". */
+  readonly drops: string;
   /** Why it is shut, in its gate's words; null where it is open. */
   readonly shut: string | null;
+  /** Why it is shut at a glance, its crest's line ("Opens at level 24 · You are 15"); null where it is open. */
+  readonly lock: string | null;
   readonly launch: PlaylistLaunch;
 }
 
@@ -56,8 +61,24 @@ export interface PlaylistScreenState {
 }
 
 const DRAWN_RULE = 'One of the 18 Elite Dungeons, drawn as each run starts.';
-const DAILY = "Daily, the first clear: a Boss's worth of XP and Aurem, and a Vestige.";
+const ABYSS_DRAWN_RULE = 'One of the 18 Elite Dungeons, at Abyss, drawn as each run starts.';
+const DAILY = "Daily, the first clear: a Boss's worth of XP and Aurem, and a Vestige in a Boss's colours.";
 const PLAIN = 'Every clear pays its kills and its cache, as any run does.';
+
+/** What a tier's runs drop, by the looks its content gives (`content/gear/looks.json`): "Drops orcish and mithril
+ *  gear". */
+function dropsWords(seas: 'elite' | 'abyss'): string {
+  const sets = SOURCES.find((source) => source.key === seas)?.armour ?? [];
+  return sets.length === 0 ? '' : `Drops ${sets.join(' and ')} gear`;
+}
+
+/** A shut entry's reason at a glance: "Opens at level 24 · You are 15", from its gate's words; the gate's own words
+ *  where it is shut for anything but a level. */
+export function lockWords(shut: string, level: number | null): string {
+  const opens = /opens at level (\d+)/.exec(shut)?.[1];
+  if (opens === undefined) return shut;
+  return level === null ? `Opens at level ${opens}` : `Opens at level ${opens} · You are ${level}`;
+}
 
 /** The band a level stands in, as the rules give the bands; none below the first. */
 const bandOf = (playlist: PlaylistOn, level: number | null) =>
@@ -66,7 +87,7 @@ const bandOf = (playlist: PlaylistOn, level: number | null) =>
 /** The weekly reward's words: "Weekly, at 3 clears: 2 Essence of each stock and a Vestige." */
 function weeklyWords(given: PlaylistOn): string {
   const vestiges = given.weekVestiges === 1 ? 'a Vestige' : `${given.weekVestiges} Vestiges`;
-  return `Weekly, at ${given.weekClears} clears: ${given.weekEssence} Essence of each stock and ${vestiges}.`;
+  return `Weekly, at ${given.weekClears} clears: ${given.weekEssence} Essence of each stock and ${vestiges} in a Boss's colours.`;
 }
 
 /** The Playlist screen opened beside `port`, at `now` (Unix milliseconds), for a character of `level`. */
@@ -97,7 +118,8 @@ export function playlistScreenOf(
       kind: seas,
       name: given.name,
       about,
-      rules: seas === 'abyss' ? [DRAWN_RULE, revivesWords(drawn)] : [DRAWN_RULE],
+      rules: seas === 'abyss' ? [ABYSS_DRAWN_RULE, revivesWords(drawn)] : [DRAWN_RULE],
+      drops: dropsWords(seas),
       modifiers: shown(drawn, given.modifiers),
       rewards: [
         {
@@ -114,6 +136,7 @@ export function playlistScreenOf(
         },
       ],
       shut,
+      lock: shut === null ? null : lockWords(shut, level),
       launch: { place: null, seas, playlist: band?.[2] ?? null, finds: shut === null ? `playlist-${seas}` : null },
     };
   };
@@ -127,8 +150,10 @@ export function playlistScreenOf(
       about: `${placeName(given.place)} · ${seas === 'elite' ? 'Elite' : 'Abyss'} · Level ${given.level}`,
       rules: seas === 'abyss' ? [revivesWords(drawn), NEVER_MATCHED] : [],
       modifiers: shown(drawn, given.modifiers),
+      drops: dropsWords(seas),
       rewards: [{ words: seas === 'elite' ? ELITE_PAYS : ABYSS_PAYS, taken, clears: null, resets: weekResets }],
       shut,
+      lock: shut === null ? null : lockWords(shut, level),
       launch: {
         place: given.place,
         seas,

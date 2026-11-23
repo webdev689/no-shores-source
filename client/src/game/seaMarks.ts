@@ -7,6 +7,7 @@ import type { SeenPirate } from '../network/messages.ts';
 import type { CameraPose, Viewport } from '../overworld/overworldCamera.ts';
 import { type Mark, type PlacedMark, placeMarks } from '../overworld/overworldMarks.ts';
 import type { Point2, Vec3 } from '../overworld/ground.ts';
+import { sideNodes } from '../overworld/islandView.ts';
 import type { ScreenMark } from './hud.ts';
 import { distanceText } from './hudLaw.ts';
 import { HOSTILE_PREFIX, hostileLook, hostileMarks, hostileNote } from './seaHostiles.ts';
@@ -74,6 +75,24 @@ function besidePorts(laid: readonly PlacedMark[], width: number): PlacedMark[] {
     const right = port.x + apart + mark.sizePx / 2 <= width;
     return { ...mark, x: right ? port.x + apart : port.x - apart, y: port.y };
   });
+}
+
+/** The marks over the island's side a landfall shows, the ship at `ship` off an island whose middle is `centre`: the
+ *  nodes on the ship's side, the city's social space among them when `docking`, and only then the Playlist beside its
+ *  harbour; and those the view is framed on, the nodes alone, so a landfall far from the harbour is never stretched
+ *  to show it. */
+export function landfallMarks(
+  island: readonly Mark[],
+  ship: Point2,
+  centre: Point2,
+  docking: boolean,
+): { readonly side: Mark[]; readonly framed: Mark[] } {
+  const nodes = island.filter((mark) => mark.kind !== 'port' && mark.kind !== 'playlist');
+  const near = sideNodes(ship, centre, nodes);
+  const social = nodes.find((mark) => mark.kind === 'social');
+  const framed = docking && social && !near.includes(social) ? [social, ...near] : near;
+  const playlist = docking ? island.filter((mark) => mark.kind === 'playlist') : [];
+  return { side: [...framed, ...playlist], framed };
 }
 
 /** The landing `id` among the side's marks, if a player may land there: a locked one is none. */
