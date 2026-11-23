@@ -200,7 +200,8 @@ pub fn counter_for(ask: &Ask) -> Option<CounterKind> {
 }
 
 /// The counter a keeper stands at, by the number ask 64 sends: a house's by its faction's, else the Mage's (10), the
-/// vault's, the Armorsmith's, the Weaponsmith's, the Tailor's, the Tack's and the Harbourmaster's (16).
+/// vault's, the Armorsmith's, the Weaponsmith's, the Tailor's, the Tack's, the Harbourmaster's and the Postmaster's
+/// (17); the stranger keeps none.
 fn keeper_counter(keeper: u8) -> Option<CounterKind> {
     Some(match keeper {
         10 => CounterKind::Mage,
@@ -210,6 +211,8 @@ fn keeper_counter(keeper: u8) -> Option<CounterKind> {
         14 => CounterKind::Tailor,
         15 => CounterKind::Tack,
         16 => CounterKind::Vendor(Vendor::Shipwright),
+        17 => CounterKind::Mail,
+        gear::quests::STRANGER => return None,
         house => CounterKind::Faction(gear::factions::factions().faction(house)?.id),
     })
 }
@@ -239,7 +242,10 @@ impl Room {
             let counters = self.counters.iter().flatten().copied().chain(shape);
             counters.into_iter().any(|counter| counter.kind == wanted && near(counter.at, COUNTER_REACH))
         });
-        let social = at_counter || self.stall.is_some_and(|stall| near(stall, STALL_REACH));
+        // The stranger is heard anywhere in a social space: she keeps no counter.
+        let stranger = *ask == Ask::Speak { keeper: gear::quests::STRANGER }
+            && self.counters.as_ref().is_some_and(|counters| !counters.is_empty());
+        let social = at_counter || stranger || self.stall.is_some_and(|stall| near(stall, STALL_REACH));
         let (pledge, rank) = self.player(player).map_or((0, 0), |found| crate::crew::pledge_of(&found.character));
         Here { social, day: self.day(), pledge, rank, week: gear::clock::week_of(self.minute) }
     }

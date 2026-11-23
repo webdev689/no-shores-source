@@ -7,12 +7,13 @@ use crate::arts::{EARNED_ART, EARNED_TENET_ONE, EARNED_TENET_TWO, FRAGMENTS, art
 use crate::asks::{Done, Here, Refusal};
 use crate::character::{Character, UnknownKeys};
 use crate::factions::factions;
+use crate::kinds::Slot;
 pub use crate::quest_defs::{
-    KEEPERS, PLACE_SQUARE, QuestDef, QuestsDef, RANKS, RewardDef, TaskDef, keeper_key, quests, speaker_place,
+    KEEPERS, PLACE_SQUARE, QuestDef, QuestsDef, RANKS, RewardDef, STRANGER, TaskDef, keeper_key, quests, speaker_place,
 };
 pub use crate::quest_goals::{
-    Arrival, Beaten, Defend, Escort, Foes, Goal, GoalDef, GoalKind, KILL_PAST, Landing, Plain, PointDef, Puzzle, Race,
-    Reach, SPAWN_NEAR, Slay, Spell, Tail, Talk, UNSEEN_WITHIN, Unseen,
+    Arrival, Beaten, Defend, Escort, Foes, Goal, GoalDef, GoalKind, InSlot, KILL_PAST, Landing, Plain, PointDef,
+    Puzzle, Race, Reach, SPAWN_NEAR, Slay, Spell, Tail, Talk, UNSEEN_WITHIN, Unseen,
 };
 use serde::{Deserialize, Serialize};
 use std::collections::BTreeMap;
@@ -69,6 +70,10 @@ pub enum Event<'told> {
     Scavenge,
     /// Arrived in a node, by its id.
     Enter(&'told str),
+    /// A smith's ware bought, by its slot.
+    Bought(Slot),
+    /// A piece worn in a slot.
+    Worn(Slot),
     /// A step the room ran met, of a kind, in a node, at its goal's anchor (`GoalDef::anchor`).
     Stepped {
         kind: GoalKind,
@@ -269,9 +274,23 @@ impl Character {
         true
     }
 
-    /// A task's reward, of its house's Art: the Art earned and worn at once, a Tenet earned, fragments to choose. A
-    /// fragment beyond those the Art has left unowned and unchosen is its price at the counter in Aurem instead.
+    /// Tells the quest walked of every piece worn, so a piece put on before its task was reached counts once it is.
+    pub(crate) fn tell_worn(&mut self) {
+        if !self.goals_unmet().any(|(_, goal)| goal.kind() == GoalKind::Wear) {
+            return;
+        }
+        for slot in Slot::VESTIGE {
+            if self.worn(slot).is_some() {
+                self.tell(&Event::Worn(slot));
+            }
+        }
+    }
+
+    /// A task's reward: its Aurem, and of its house's Art, the Art earned and worn at once, a Tenet earned, fragments
+    /// to choose. A fragment beyond those the Art has left unowned and unchosen is its price at the counter in Aurem
+    /// instead.
     fn reward(&mut self, faction: u8, reward: RewardDef) {
+        self.materials.add_aurem(reward.aurem);
         let Some(art) = factions().faction(faction).map(|found| found.art) else { return };
         let Some(at) = arts().arts.iter().position(|found| found.id == art) else { return };
         self.arts = std::mem::take(&mut self.arts).kept();

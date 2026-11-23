@@ -327,9 +327,10 @@ impl Character {
         }
         .map(|done| {
             // A level reached or a piece fully upgraded earns its emblem as it happens; a fragment choice left with
-            // nothing to own is paid.
+            // nothing to own is paid; a piece worn counts for the quest walked.
             self.earn_due();
             self.settle_choices();
+            self.tell_worn();
             done.unwrap_or(Done::Done)
         })
     }
@@ -364,8 +365,9 @@ impl Character {
         Ok(None)
     }
 
-    /// Buys a vendor's ware of the day, at the buyer's own level, carried with its slot's: only in a social space, and
-    /// only as shown today, since the wares at each place change as the day turns.
+    /// Buys a vendor's ware of the day or of their starter stock, at the buyer's own level, carried with its slot's:
+    /// only in a social space, and only as shown today, since the wares at each place change as the day turns. The
+    /// quest walked hears of it by the ware's slot.
     fn vend(&mut self, vendor: Vendor, ware: u8, day: u32, here: Here) -> Result<Option<Done>, Refusal> {
         if !here.social {
             return Err(Refusal::NotHere);
@@ -374,7 +376,7 @@ impl Character {
             return Err(Refusal::NotSold);
         }
         let level = if vendor.for_ship() { self.ship_level() } else { self.level() };
-        let wares = vendor::wares(vendor, here.day, level);
+        let wares = vendor::stock(vendor, here.day, level);
         let mut item = wares.into_iter().nth(usize::from(ware)).ok_or(Refusal::NoSuchItem)?;
         let cost = vendor::price(item.rarity);
         if self.materials.aurem < cost {
@@ -385,7 +387,9 @@ impl Character {
         }
         item.id = self.take_id();
         self.materials.aurem -= cost;
+        let slot = item.kind.slot();
         self.items.insert(item.id, (item, At::Carried));
+        self.tell(&crate::quests::Event::Bought(slot));
         Ok(None)
     }
 

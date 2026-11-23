@@ -1,11 +1,12 @@
 //! The social space's vendors: the Armorsmith sells armour, the Weaponsmith loadouts, two Melee to each Ranged, and the
 //! Shipwright a ship's modules, each six pieces a day, three Rare and three Magic at the buyer's level (the
 //! Shipwright's at their ship's), the same for everyone that day. Their wares are paid in Aurem; Legendary and
-//! Atheric gear is never sold for Aurem, only earned, or had from Shape (`shape.rs`).
+//! Atheric gear is never sold for Aurem, only earned, or had from Shape (`shape.rs`). Beside the day's wares each
+//! smith always sells a starter stock: Normal pieces at the buyer's level, `STARTER_PRICE` each.
 
 use crate::dice::Dice;
 use crate::item::{Item, NAMED_LEVEL};
-use crate::kinds::Slot;
+use crate::kinds::{Kind, Slot};
 use crate::rarity::Rarity;
 use crate::vestige;
 
@@ -44,13 +45,29 @@ impl Vendor {
 
 /// How many wares a vendor shows a day: the first half Rare, the rest Magic.
 pub const WARES: usize = 6;
+/// What a piece of a smith's starter stock costs, in Aurem.
+pub const STARTER_PRICE: u32 = 50;
 
-/// What a piece costs, in Aurem.
+impl Vendor {
+    /// The kinds of its starter stock: the Armorsmith's four armour pieces, the Weaponsmith's sword and shield and
+    /// bow, the Shipwright none.
+    #[must_use]
+    pub fn starter_kinds(self) -> &'static [Kind] {
+        match self {
+            Vendor::Armorsmith => &[Kind::Head, Kind::Torso, Kind::Arms, Kind::Legs],
+            Vendor::Weaponsmith => &[Kind::SwordAndShield, Kind::Bow],
+            Vendor::Shipwright => &[],
+        }
+    }
+}
+
+/// What a piece costs, in Aurem: a Normal one is the starter stock's.
 #[must_use]
 pub fn price(rarity: Rarity) -> u32 {
     match rarity {
         Rarity::Rare => 2_000,
         Rarity::Magic => 600,
+        Rarity::Normal => STARTER_PRICE,
         _ => 200,
     }
 }
@@ -74,6 +91,15 @@ pub fn wares(vendor: Vendor, day: u64, level: u8) -> Vec<Item> {
             vestige::make(0, rarity, slot, level.clamp(1, NAMED_LEVEL), &dice)
         })
         .collect()
+}
+
+/// Everything a vendor sells a buyer of `level` on a day, numbered by place: the day's wares, then its starter stock,
+/// Normal at that level (at most 20).
+#[must_use]
+pub fn stock(vendor: Vendor, day: u64, level: u8) -> Vec<Item> {
+    let level = level.clamp(1, NAMED_LEVEL);
+    let starter = vendor.starter_kinds().iter().map(|kind| Item::new(0, *kind, Rarity::Normal, level, kind.slot()));
+    wares(vendor, day, level).into_iter().chain(starter).collect()
 }
 
 #[cfg(test)]

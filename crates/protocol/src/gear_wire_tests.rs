@@ -134,7 +134,7 @@ fn the_gear_message_carries_the_quest_walked_its_counts_what_is_earned_and_where
     let gear = flatbuffers::root::<messages::FromRoom>(&bytes).expect("a message").gear().expect("the gear");
     let list = |vector: Option<flatbuffers::Vector<'_, u8>>| vector.map(|found| found.iter().collect::<Vec<_>>());
     assert_eq!((gear.quest(), gear.quest_task(), gear.art()), (1, 0, 0), "the opening, no Art worn");
-    assert_eq!(gear.quest_counts().map(|counts| counts.iter().collect::<Vec<_>>()), Some(vec![0, 0, 0]));
+    assert_eq!(gear.quest_counts().map(|counts| counts.iter().collect::<Vec<_>>()), Some(vec![0]), "the stranger");
     assert_eq!((list(gear.quests_done()), list(gear.arts_earned())), (Some(vec![0; 4]), Some(vec![0; 3])));
     assert_eq!(gear.quest_at().map(|at| at.len()), Some(0), "no place of the opening's is here");
     let mut pledged = gear::Character::starting();
@@ -557,7 +557,7 @@ fn every_daily_list_a_player_is_sent_turns_at_nine_utc_and_not_at_midnight() {
             .into_iter()
             .flat_map(|vendor| {
                 let level = if vendor.for_ship() { character.ship_level() } else { character.level() };
-                gear::vendor::wares(vendor, day, level)
+                gear::vendor::stock(vendor, day, level)
             })
             .map(|ware| (ware.kind as u8, ware.rarity as u8))
             .collect();

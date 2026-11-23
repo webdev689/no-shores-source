@@ -174,8 +174,8 @@ fn a_dress_shows_armour_and_hands_only_of_the_pieces_worn() {
     let lit = r#"{"outfit":{"right":"sword_iron","left":"torch_l"}}"#;
     let bare = relayed(lit, &only(&[]));
     assert_eq!((&bare["right"], &bare["left"]), (&serde_json::Value::Null, &serde_json::json!("torch_l")), "a light");
-    let start = relayed(sent, &Character::starting());
+    let start = relayed(sent, &Character::kitted());
     let armour = serde_json::json!({ "helm": "steel", "cuirass": "daedric", "boots": "iron" });
-    assert_eq!(start["armour"], armour, "a starting character wears every armour slot, and its sword");
-    assert_eq!(relayed(lit, &Character::starting())["right"], serde_json::json!("sword_iron"));
+    assert_eq!(start["armour"], armour, "a character wearing every armour slot, and its sword");
+    assert_eq!(relayed(lit, &Character::kitted())["right"], serde_json::json!("sword_iron"));
 }

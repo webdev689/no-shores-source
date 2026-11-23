@@ -54,6 +54,8 @@ fn meeting<'told>(goal: &'told GoalDef, places: &'told [Place]) -> Event<'told> 
         Goal::Puzzle(_) => stepped(GoalKind::Puzzle),
         Goal::Unseen(_) => stepped(GoalKind::Unseen),
         Goal::Race(_) => stepped(GoalKind::Race),
+        Goal::Buy(buy) => Event::Bought(buy.slot),
+        Goal::Wear(wear) => Event::Worn(wear.slot),
     }
 }
 
@@ -98,6 +100,8 @@ fn each_kind_of_goal_is_met_by_its_own_event_alone() {
         r#"{ "kind": "puzzle", "node": "n", "place": "p", "points": [{ "name": "a", "bearing": 0, "at": 5 }], "text": "t" }"#,
         r#"{ "kind": "unseen", "node": "n", "place": "p", "text": "t" }"#,
         r#"{ "kind": "race", "node": "n", "checkpoints": ["a", "p"], "seconds": 60, "text": "t" }"#,
+        r#"{ "kind": "buy", "slot": "melee", "text": "t" }"#,
+        r#"{ "kind": "wear", "slot": "melee", "text": "t" }"#,
     ]
     .map(goal);
     for (at, one) in goals.iter().enumerate() {
@@ -330,7 +334,7 @@ fn a_fragment_the_art_has_none_left_to_give_is_its_counters_price_in_aurem() {
 
 #[test]
 fn a_choice_waiting_for_an_art_whose_fragments_are_all_owned_is_paid_as_any_ask_is_answered() {
-    let mut character = Character::starting();
+    let mut character = Character::kitted();
     character.quests.choices[0] = 2;
     character.arts.owned = Some(vec![0b11_1111, 0, 0]);
     assert!(character.ask(Ask::TakeOff { slot: crate::kinds::Slot::Head }, AFIELD, &DICE).is_ok());

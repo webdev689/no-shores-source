@@ -106,3 +106,5 @@ mod rewards_tests;
 mod shape_tests;
 #[cfg(test)]
 mod vestige_tests;
+#[cfg(test)]
+mod welcome_tests;

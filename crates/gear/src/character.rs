@@ -249,9 +249,21 @@ impl Character {
         }
     }
 
-    /// A new player, as Destiny 1 starts a Guardian: a level 1 Normal sword for Melee and level 1 Normal armour.
+    /// A new player, arriving with no weapon and no armour: only their ship's first modules.
     #[must_use]
     pub fn starting() -> Self {
+        Self::new_player(false)
+    }
+
+    /// A new player wearing a level 1 Normal sword for Melee and level 1 Normal armour: the Test Ground's, whose
+    /// fights are tried at once, and the scripted players'.
+    #[must_use]
+    pub fn kitted() -> Self {
+        Self::new_player(true)
+    }
+
+    /// A new player, `kit` wearing the sword and armour, numbered before the ship's modules.
+    fn new_player(kit: bool) -> Self {
         let mut character = Self {
             xp: 0,
             fruit_grown: 0,
@@ -279,13 +291,14 @@ impl Character {
             left: None,
             unknown: UnknownKeys::new(),
         };
-        for (kind, slot) in [
+        let pieces = [
             (Kind::Sword, Slot::Melee),
             (Kind::Head, Slot::Head),
             (Kind::Torso, Slot::Torso),
             (Kind::Arms, Slot::Arms),
             (Kind::Legs, Slot::Legs),
-        ] {
+        ];
+        for (kind, slot) in pieces.into_iter().filter(|_| kit) {
             let id = character.take_id();
             character.items.insert(id, (Item::new(id, kind, Rarity::Normal, 1, slot), At::Worn(slot)));
         }

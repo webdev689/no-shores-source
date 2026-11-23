@@ -13,7 +13,7 @@ use std::sync::OnceLock;
 /// The ranks a goal names, lowest first: a foe's rank by its number (the foes crate's, 1 to 5) is its place plus one.
 pub const RANKS: [&str; 5] = ["Minor", "Major", "Elite", "Miniboss", "Boss"];
 /// The keepers spoken with that are not a house's, by the number ask 64 sends; a house's is its faction's number.
-pub const KEEPERS: [(u8, &str); 7] = [
+pub const KEEPERS: [(u8, &str); 9] = [
     (10, "mage"),
     (11, "vault"),
     (12, "armorsmith"),
@@ -21,7 +21,11 @@ pub const KEEPERS: [(u8, &str); 7] = [
     (14, "tailor"),
     (15, "tack"),
     (16, "harbourmaster"),
+    (17, "mail"),
+    (STRANGER, "stranger"),
 ];
+/// The stranger's number in ask 64: she keeps no counter, and is heard anywhere in a social space.
+pub const STRANGER: u8 = 18;
 /// How far each way from its middle a place's navmesh square reaches, metres: the room's own (its test holds them
 /// equal), within which a puzzle's points stand.
 pub const PLACE_SQUARE: f64 = 35.0;
@@ -29,10 +33,11 @@ const ISLANDS: [&str; 2] = ["cove", "isle"];
 const SIDES: [&str; 1] = ["tithe"];
 const HOWS: [&str; 3] = ["sink", "strike", "board"];
 
-/// What a task gives as it is done: its house's Art, a Tenet (1 or 2, 0 none), and fragments to choose.
+/// What a task gives as it is done: Aurem, its house's Art, a Tenet (1 or 2, 0 none), and fragments to choose.
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Deserialize)]
 #[serde(default, deny_unknown_fields)]
 pub struct RewardDef {
+    pub aurem: u32,
     pub art: bool,
     pub tenet: u8,
     pub fragments: u8,
@@ -214,7 +219,13 @@ impl GoalDef {
             Goal::Talk(talk) => {
                 (!(1..=u8::MAX).any(|keeper| keeper_key(keeper) == Some(talk.to.as_str()))).then_some("to")
             }
-            Goal::Pledge(_) | Goal::Reach(_) | Goal::Gather(_) | Goal::Scavenge(_) | Goal::Enter(_) => None,
+            Goal::Pledge(_)
+            | Goal::Reach(_)
+            | Goal::Gather(_)
+            | Goal::Scavenge(_)
+            | Goal::Enter(_)
+            | Goal::Buy(_)
+            | Goal::Wear(_) => None,
             Goal::Kill(slay) => slain(slay),
             Goal::Cast(cast) => {
                 let spells = arts().arts.iter().flat_map(|art| [&art.anima, &art.tenets[0], &art.tenets[1]]);

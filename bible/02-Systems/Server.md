@@ -150,7 +150,7 @@ on Cloudflare.
   blow that finds no one overreaches its foe once every player near it has been judged.
 - **Shots** fly a tick at a time and strike the first body of the other side on their line; arrows and bolts fly in
   the room's own time.
-- **Gear** ([[Gear]]): each player holds their gear while they are in the room, the starting kit as they join (in a
+- **Gear** ([[Gear]]): each player holds their gear while they are in the room, a new character's as they join (in a
   node's room, their own kept character once their session is given, [[Accounts]]), and
   only what it puts in their hands (or a torch beside a one-handed weapon): any other arms asked for are bare hands.
   Every blow is made with its power: a player's on a foe by the Attack of the hand that struck and their levels (an

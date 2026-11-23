@@ -28,7 +28,9 @@ fn places_of(goal: &GoalDef) -> Vec<&str> {
         | Goal::Sea(_)
         | Goal::Land(_)
         | Goal::Scavenge(_)
-        | Goal::Enter(_) => goal.goal.place().into_iter().collect(),
+        | Goal::Enter(_)
+        | Goal::Buy(_)
+        | Goal::Wear(_) => goal.goal.place().into_iter().collect(),
     }
 }
 
@@ -237,6 +239,10 @@ fn a_task_kept_by_an_id_it_had_before_reads_as_the_task_it_became() {
 
 /// Every task id the file has had, by its quest: one gone from the file must be an old id (`was`) of a task there.
 const TASK_IDS: &[(&str, &str)] = &[
+    ("house", "hear-the-stranger"),
+    ("house", "find-your-way"),
+    ("house", "arm-yourself"),
+    ("house", "wear-them"),
     ("house", "hear-three-houses"),
     ("house", "choose-house"),
     ("stormcallers", "climb-old-beacon"),

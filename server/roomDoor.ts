@@ -136,6 +136,8 @@ export interface RoomDoor {
   mailLying(player: number): void;
   /** A player's character as it is kept between sessions (JSON); null at sea or for no such player. */
   character(player: number): string | null;
+  /** A new character wearing a plain sword and armour (JSON): what scripted players start from. */
+  kitted(): string;
   /** Gives a player the character kept for them; false if the text is not one, they are not in, or the gate shuts. */
   restoreCharacter(player: number, kept: string): boolean;
   /** Why the open room's gate shuts to a player's kept character (JSON), or to a new one (null), in its words, with
@@ -234,6 +236,7 @@ interface RoomExports {
   room_snapshot_for(player: number): bigint;
   room_gear(player: number): bigint;
   room_character(player: number): bigint;
+  room_kitted(): bigint;
   room_mail_lying(player: number): void;
   room_shut(player: number, address: number, length: number): bigint;
   room_difficulty(seas: number): number;
@@ -398,6 +401,7 @@ export function startRoomDoor(module: WebAssembly.Module): RoomDoor {
       const bytes = take(exports.room_character(player));
       return bytes.length === 0 ? null : new TextDecoder().decode(bytes);
     },
+    kitted: () => new TextDecoder().decode(take(exports.room_kitted())),
     restoreCharacter: (player, kept) =>
       openWith((address, length) => exports.room_restore_character(player, address, length), kept),
     own: (player, account) => openWith((address, length) => exports.room_own(player, address, length), account),

@@ -177,10 +177,10 @@ fn decide(read: &Read, player: u32, tick: u32) -> (Controls, CombatInput) {
     (Controls { yaw, ..Controls::default() }, combat)
 }
 
-/// The character each scripted player plays: a starting one at SEASONED, its gear Rare at that level, as a player who
+/// The character each scripted player plays: a kitted one at SEASONED, its gear Rare at that level, as a player who
 /// comes to Saltmere's events (its foes at 1 to 4) is.
 fn seasoned() -> String {
-    let mut character = gear::Character::starting();
+    let mut character = gear::Character::kitted();
     character.xp = gear::power::xp_for_level(SEASONED);
     for (item, _) in character.items.values_mut() {
         (item.level, item.rarity) = (SEASONED, gear::Rarity::Rare);
