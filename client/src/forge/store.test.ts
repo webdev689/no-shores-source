@@ -1,14 +1,6 @@
 import { strict as assert } from 'node:assert';
 import { mock, test } from 'node:test';
-import {
-  BLOCK_BYTES,
-  ForgeStore,
-  PackBlocks,
-  RETRY_AFTER_MS,
-  joinedRange,
-  pictureRange,
-  stripAt,
-} from './store.ts';
+import { BLOCK_BYTES, ForgeStore, PackBlocks, RETRY_AFTER_MS, joinedRange, pictureRange, stripAt } from './store.ts';
 
 const manifest = { base: 'https://renders.example/', index: 'index/a.json', tables: {} };
 const index = {
