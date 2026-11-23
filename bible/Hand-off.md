@@ -178,10 +178,14 @@ The decisions in [[Open Questions]] are not repeated here.
     they stood, 25 m or more off (`crates/room/src/landing.rs`, [[Enemies]]).
   - [[Friendly Ships Take Several Courses, About Five in View, Sailing Visibly]]: three courses a pair, about five
     in view near a port, 60 m/s, departures staggered across all nine courses ([[World Map]], "Traffic").
-  - Tested offline only. Unexplained, waiting on the owner's browser console: in the owner's patrol screenshot the
-    world stopped being drawn while the death veils stacked. Left: ships start and stop at 60 m/s at once, and lie on
-    one point at a roadstead; some retaining walls near Overlook's plaza may be dropped whole (low confidence, the
-    seam audit's).
+  - Tested offline only. Left: ships start and stop at 60 m/s at once, and lie on one point at a roadstead; some
+    retaining walls near Overlook's plaza may be dropped whole (low confidence, the seam audit's).
+- **#163's follow-up** (#170, a draft for the owner's yes once its checks pass): the owner's solid red patrol screen
+  was the death veils piling up, a frame that threw before it presented leaving its quads under the next; each frame
+  now starts with none, and WebGPU's validation errors are logged once each. What threw is still unknown: the
+  owner's browser console names it (`FrameGuard` logs each error once). One struck from the landing who stands again
+  there has the landing's leave back, and a spell cast is a strike. Tested offline; the full check passes but for
+  `shipTags.test.ts`'s four R2 fetches, which this container's network refuses.
 - **Looks by content, the Playlist and the matchmade dungeons' encounters** (#160), merged with the owner's yes ("Let's merge and deploy and talk about this
   after"), which deploys the page and the rooms. The owner's asks are recorded ([[Armour and Weapon Looks Belong to the Content That Gives Them]],
   [[Elite and Abyss Dungeons Are Queued From a Playlist Beside Each Port]],
