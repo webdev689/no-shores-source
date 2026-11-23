@@ -4,6 +4,7 @@
 // gift. Leaving the place ends it all at once, the view and the keys the player's again.
 import { ASKS, type GearAsk, type GearState } from '../../network/gearMessages.ts';
 import type { CardAt } from '../../player/cards.ts';
+import { IDLE, type InputFrame } from '../../player/input.ts';
 import type { Block } from '../../rules/movementRules.ts';
 import { FIRELIGHT, type LampPlace } from '../../sky/lamps.ts';
 import type { Shot } from '../camera.ts';
@@ -36,12 +37,14 @@ export function pairLamp(
   };
 }
 
-/** The figures a tour's eye sees, all but those nearer it than `TOUR_CLEAR_M`. */
+/** The figures a tour's eye sees: the player's own (`own`, null while it is not drawn) wherever it stands, the rest
+ *  all but those nearer it than `TOUR_CLEAR_M`. She is drawn apart from these and never kept off. */
 export function clearOfEye<Card extends { readonly x: number; readonly y: number }>(
   cards: readonly Card[],
   eye: readonly [number, number, number],
+  own: Card | null = null,
 ): Card[] {
-  return cards.filter((card) => Math.hypot(card.x - eye[0], card.y - eye[1]) >= TOUR_CLEAR_M);
+  return cards.filter((card) => card === own || Math.hypot(card.x - eye[0], card.y - eye[1]) >= TOUR_CLEAR_M);
 }
 
 type You = { readonly x: number; readonly y: number; readonly z: number; readonly facing: number };
@@ -172,6 +175,12 @@ export class AfterStory {
     return this.welcome?.holding ?? false;
   }
 
+  /** The keys the player's own play hears this frame of those pressed (`controls`): none while she speaks, Space
+   *  moving her words on apart from them (`gameKeys`). */
+  heard(controls: InputFrame): InputFrame {
+    return this.holding ? IDLE : controls;
+  }
+
   /** Space pressed while she speaks: her words move on a line. */
   press(): void {
     if (this.holding) this.epilogue?.advance();
@@ -180,6 +189,8 @@ export class AfterStory {
   /** The place is left: the stranger goes, her welcome with her. Before the player has arrived anywhere the
    *  stranger has no place to leave, and waits for it. */
   leave(): void {
+    if (this.lit) this.epilogue?.light([]);
+    this.lit = false;
     this.welcome?.end();
     this.welcome = null;
     this.epilogue?.leave();
@@ -192,16 +203,21 @@ export class AfterStory {
   }
 }
 
-/** The HUD's parts of the player's own play that a cutscene hides. */
+/** The HUD's parts of the player's own play that a cutscene hides; `quiet` sets aside the use prompt, the toasts and
+ *  a gate's offer. */
 export interface HeldHud {
+  quiet: boolean;
   hints(hints: readonly never[]): void;
   marks(marks: readonly never[]): void;
   readonly tasks: { show(quest: null): void };
 }
 
-/** The HUD while she speaks, as a cutscene's: the fight's bars and compass, the tracker, the marks and the key strip
- *  hidden, the dialogue box hers; each comes back on the next frame after, as the game sets them. */
-export function heldHud(hud: HeldHud, display: { hideDisplay(): void }): void {
+/** The HUD this frame: while she speaks (`told`), as a cutscene's, the fight's bars and compass, the tracker, the
+ *  marks, the key strip, the use prompt, the toasts and a gate's offer hidden, the dialogue box hers; after, each as
+ *  the game sets it. */
+export function heldHud(hud: HeldHud, display: { hideDisplay(): void }, told: boolean): void {
+  hud.quiet = told;
+  if (!told) return;
   display.hideDisplay();
   hud.hints([]);
   hud.marks([]);

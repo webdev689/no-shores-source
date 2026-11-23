@@ -125,6 +125,8 @@ export class Foot {
   readonly folk: Placed[];
   private readonly prompt: UsePrompt;
   private using: Use | null = null;
+  /** The player's own figure as last drawn; null while it is not. */
+  ownFigure: CardAt | null = null;
   /** The zone's public events as the page plays them. */
   private readonly publicView: PublicView;
   /** A node being gathered while E is held. */
@@ -438,8 +440,8 @@ export class Foot {
     const figures: CardAt[] = [];
     const body = shownBody(walker.player);
     const arrival = this.arrivals.ownShareOf(fight.player, clock);
-    const own = ownCard(walker, fight, effects.flashes, arrival, eye, { shift, smear, drawnAt });
-    if (own) figures.push(own);
+    this.ownFigure = ownCard(walker, fight, effects.flashes, arrival, eye, { shift, smear, drawnAt });
+    if (this.ownFigure) figures.push(this.ownFigure);
     const { tickSeconds } = movement;
     const { otherPlayers, otherGlides, folk, folkLoops, arrivals } = this;
     const people = { forge, fight, effects, otherPlayers, otherGlides, folk, folkLoops, tickSeconds, arrivals };

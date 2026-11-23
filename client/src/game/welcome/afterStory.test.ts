@@ -5,6 +5,7 @@ import type { QuestState } from '../../network/questMessages.ts';
 import { type Shot, onScreen } from '../camera.ts';
 import type { Epilogue } from '../prologue/epilogue.ts';
 import type { CardAt } from '../../player/cards.ts';
+import { IDLE, type InputFrame } from '../../player/input.ts';
 import { FIRELIGHT, type LampPlace } from '../../sky/lamps.ts';
 import { AfterStory, clearOfEye, heldHud } from './afterStory.ts';
 import { SOCIAL } from './plazaForTests.ts';
@@ -137,8 +138,14 @@ test('while she speaks the HUD of the player’s own play is hidden, the dialogu
     marks: (marks: readonly unknown[]) => void shown.push(`marks ${marks.length}`),
     tasks: { show: (quest: unknown) => void shown.push(`tracker ${String(quest)}`) },
   };
-  heldHud(hud, { hideDisplay: () => void shown.push('bars and compass hidden') });
+  const quiet = { ...hud, quiet: false };
+  heldHud(quiet, { hideDisplay: () => void shown.push('bars and compass hidden') }, true);
   assert.deepEqual(shown.sort(), ['bars and compass hidden', 'hints 0', 'marks 0', 'tracker null']);
+  assert.equal(quiet.quiet, true, 'the use prompt, the toasts and a gate’s offer stand aside');
+  shown.length = 0;
+  heldHud(quiet, { hideDisplay: () => void shown.push('bars and compass hidden') }, false);
+  assert.deepEqual(shown, [], 'once she is done the HUD is the game’s again');
+  assert.equal(quiet.quiet, false);
 });
 
 test('the player is turned to face her as she speaks face to face, then the way she goes as she walks off, her first seconds of walk in the view over their shoulder', async () => {
@@ -180,6 +187,37 @@ test("while she speaks the figures are drawn for the tour's own eye, and none st
   const card = (x: number, y: number) => ({ x, y, z: 30 }) as unknown as CardAt;
   const [near, far] = [card(shot.eye[0] + 3, shot.eye[1]), card(shot.eye[0] + 6, shot.eye[1])];
   assert.deepEqual(clearOfEye([near, far], shot.eye), [far], 'a walker 3 m from the eye is not drawn; one 6 m off is');
+  const own = card(shot.eye[0] + 1, shot.eye[1]);
+  assert.deepEqual(clearOfEye([own, near, far], shot.eye, own), [own, far], 'the player is drawn however near');
+});
+
+test('the lamp over the pair goes out when the place is left mid-welcome', async () => {
+  const { after, frame, epilogue } = story();
+  const lit = (): readonly LampPlace[] => epilogue.lamps;
+  frame();
+  await settled();
+  frame();
+  assert.equal(lit().length, 1, 'lit while she speaks');
+  after.leave();
+  frame();
+  frame();
+  assert.deepEqual(lit(), [], 'out once the place is left');
+});
+
+test('while she speaks no key the player presses acts; before and after, every one does', async () => {
+  const { after, frame, finish } = story();
+  const pressed = { held: () => true, pressed: () => true } as unknown as InputFrame;
+  assert.equal(after.heard(pressed), pressed, 'before she speaks');
+  frame();
+  await settled();
+  assert.equal(after.heard(pressed), IDLE, 'held while she speaks');
+  for (let step = 0; step < TOUR.length; step++) {
+    finish();
+    await settled();
+  }
+  for (let flown = 0; flown < FLY_S + 0.2; flown += 1 / 30) after.shot(OWN, 1 / 30);
+  frame();
+  assert.equal(after.heard(pressed), pressed, 'the keys are theirs again');
 });
 
 test('while she speaks a soft warm lamp hangs over the pair, as a lantern of the town, gone once the welcome ends', async () => {
