@@ -49,7 +49,7 @@ export function startLandEditor(
   const { gpu, canvas } = editor;
   const requestFrame = () => editor.request();
   /** The view right of the panel, CSS pixels. */
-  const panelEdge = () => panelCss(devicePixelRatio || 1);
+  const panelEdge = () => panelCss(editor.ratio);
   const viewWidth = () => Math.max(1, canvas.clientWidth - panelEdge());
   const onView = (event: MouseEvent) => ({ x: event.offsetX - panelEdge(), y: event.offsetY });
   const relief = new ReliefView(gpu);

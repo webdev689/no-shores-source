@@ -1,9 +1,9 @@
 use super::*;
 use crate::clash::tests::{at_sea, still};
 use naval::fight::CAPTAIN;
-use naval::ranks::{GREY_TITHE, PIRATES, Rank};
+use naval::ranks::{GREY_TITHE, Rank};
 
-const MAJOR: Commission = Commission { faction: PIRATES, rank: Rank::Major };
+const MAJOR: Commission = Commission { faction: GREY_TITHE, rank: Rank::Major };
 
 fn sloop(x: f64, y: f64) -> Ship {
     ship_at(x, y, 0.0, 0)
@@ -48,8 +48,8 @@ fn a_hostile_ship_within_sight_of_a_fight_joins_it_on_its_own_side() {
     let fought = &fights.list[0];
     let joined = fought.fight.vessel(CAPTAIN + 1).and_then(Vessel::command).expect("a captain under the next number");
     assert_eq!(joined.mind.commission.faction, GREY_TITHE);
-    assert_eq!(fought.hostiles.get(&(CAPTAIN + 1)).map(|pirate| pirate.id), Some(12));
-    let far = Pirate { x: 5_000.0, ..tithe };
+    assert_eq!(fought.hostiles.get(&(CAPTAIN + 1)).map(|hostile| hostile.id), Some(12));
+    let far = Hostile { x: 5_000.0, ..tithe };
     assert!(!fights.join_hostile(&far, &[], 0.0));
 }
 
@@ -100,8 +100,8 @@ fn a_sloop_put_into_a_fight_starts_it_with_the_hurts_it_keeps() {
 
 #[test]
 fn a_ships_level_raises_its_hull_men_and_guns_as_a_foes_level_raises_it_on_land_wherever_it_fights() {
-    let minor = Commission { faction: PIRATES, rank: Rank::Minor };
-    let at_level = |level: u8| Pirate { level, ..at_sea(9, minor, 0.0, true) };
+    let minor = Commission { faction: GREY_TITHE, rank: Rank::Minor };
+    let at_level = |level: u8| Hostile { level, ..at_sea(9, minor, 0.0, true) };
     let met = |level: u8| {
         let mut fights = Fights::default();
         fights.begin_met((1, sloop(0.0, 0.0), [1.0; 3]), &at_level(level), (still(), &[]), 0.0);
@@ -114,7 +114,7 @@ fn a_ships_level_raises_its_hull_men_and_guns_as_a_foes_level_raises_it_on_land_
     assert_eq!(twenty_seven.2, gear::power::foe_health_times(27));
     assert!(twenty_seven.0 > 4.0 * four.0 && twenty_seven.1 > 4.0 * four.1, "{twenty_seven:?} over {four:?}");
     let mut fights = begun();
-    assert!(fights.join_hostile(&Pirate { level: 27, ..at_sea(12, minor, 500.0, false) }, &[], 0.0));
+    assert!(fights.join_hostile(&Hostile { level: 27, ..at_sea(12, minor, 500.0, false) }, &[], 0.0));
     let joined = fights.list[0].fight.vessel(CAPTAIN + 1).unwrap();
     assert_eq!(joined.damage.max_hull, twenty_seven.0, "one who joins a fight is raised as one who began it");
 }

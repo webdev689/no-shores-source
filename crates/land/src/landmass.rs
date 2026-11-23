@@ -58,8 +58,12 @@ impl Landmass {
     }
 
     /// One dab of a stroke, live: `starts` begins a new stroke with this brush, else the dab joins the last one.
-    /// The water is not run again until `settle`, so a stroke stays quick.
+    /// The water is not run again until `settle`, so a stroke stays quick. None, and nothing changed, once the edits
+    /// hold as many dabs as a file may (`MAX_DABS`), so what the editor saves it can open again.
     pub fn dab(&mut self, brush: &Stroke, point: Point, starts: bool) -> Option<CellRect> {
+        if self.edits.strokes.iter().map(|stroke| stroke.points.len()).sum::<usize>() >= edits::MAX_DABS {
+            return None;
+        }
         match self.edits.strokes.last_mut() {
             Some(last) if !starts => last.points.push(point),
             _ => self.edits.strokes.push(Stroke { points: vec![point], ..brush.clone() }),

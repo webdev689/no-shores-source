@@ -82,8 +82,8 @@ For the ship export (`tools/ships/export_ship.py`, [[Sailing]]): `pip install bp
 (one box a connected piece), the faces of every other named material as its hull, and faces in an empty slot as spars
 and rigging that take no balls ([[Naval Combat]]). `tools/r2.py` holds the R2 access the publishers use. In CI each
 workflow that publishes to R2 runs two jobs. The first builds with Blender, ffmpeg or the packages it installs, and
-holds no secret. The second installs no package, and it alone holds the repository's `R2_TOKEN` secret, a token for R2
-alone, since those workflows run on a push to any branch: it uploads what the first left as an artifact
+holds no secret. The second installs no package, and it alone holds the repository's `CLOUDFLARE_TOKEN` secret, the
+token the deploys use ([[The Asset Workflows Publish to R2 With the Cloudflare Token]]): it uploads what the first left as an artifact
 ([[The Audit's Leftovers Are Fixed as Claude Suggested]]). The `dungeon-modules` and `island-modules` workflows'
 second job runs their own publisher on the packs. In the others the first job runs its publisher with `R2_STAGE` set
 to a folder, where `tools/r2.py` writes each upload under its key instead of sending it, and reads it back from

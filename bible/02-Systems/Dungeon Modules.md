@@ -107,7 +107,7 @@ from its own first vertex. It lives on R2 under its hash ([[Generated Files on C
 
 The `dungeon-modules` workflow runs on every push that changes the tools or the contracts. It checks the envelopes
 without Blender, builds every style with its contact sheets (kept as the run's artifact), and checks the packs. It
-builds them again to the same bytes, and publishes them with the repository's `R2_TOKEN`. Its log ends with the manifest
+builds them again to the same bytes, and publishes them with the repository's `CLOUDFLARE_TOKEN`. Its log ends with the manifest
 on one line, which a commit takes into `content/dungeon/modules.json`.
 
 ## In the Game

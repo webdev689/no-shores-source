@@ -376,3 +376,104 @@ fn a_garrison_foe_walking_home_from_its_search_takes_a_player_it_sees_on_the_way
     assert_eq!(room.foes[&first].brain.target(), Some(player), "it sees them and turns on them");
     assert!(!room.foes[&first].brain.returning());
 }
+
+#[test]
+fn a_garrison_foe_keeps_its_target_hanging_climbing_mantling_or_leaping_well_above_the_ground_within_its_leash() {
+    for mode in [movement::Mode::Hang, movement::Mode::Climb, movement::Mode::Mantle, movement::Mode::Air] {
+        // Level land, so the navmesh's polys lie flat and a body 1.8 m up stands well off every one.
+        let level = super::garrison_tests::land(vec![10.0; 16]);
+        let mut room = Room::garrisoned(level, Vec::new(), section(), NodeKind::Patrol, ("glade", None));
+        let player = room.join().unwrap();
+        provoke(&mut room, player);
+        let first = group(&room)[0].0;
+        let to = point_at(&room, place_of(&room, first), 10.0, true);
+        for _ in 0..30 {
+            // Held 1.8 m over the floor, as on a 3.6 m wall's face or over a ledge's lip.
+            stand_player(&mut room, player, to);
+            let body = &mut room.players.get_mut(&player).unwrap().fighter.body;
+            let (from, to) = ([body.x, body.y, body.z], [body.x, body.y + 0.5, body.z + 2.4]);
+            (body.z, body.mode, body.vz) = (body.z + 1.8, mode, 0.0);
+            // Mid-way over a 2.4 m ledge's lip.
+            body.over =
+                (mode == movement::Mode::Mantle).then_some(movement::Over { from, to, progress: 0.5, seconds: 1.0 });
+            whole(&mut room, player);
+            run(&mut room, 1);
+            assert!(!room.foes[&first].brain.returning(), "{mode:?}: it fights on");
+            assert_eq!(room.foes[&first].brain.target(), Some(player), "{mode:?}");
+        }
+    }
+}
+
+/// A node's leader in its last phase, cut to a third of its health by a player who then stands 25 m off and leaves:
+/// it searches the place it last saw them, far enough off that its awareness bleeds away before it has looked about.
+fn lost_far(kind: NodeKind) -> (Room, FighterId) {
+    let mut room = node(kind, "glade");
+    let (leader, place, _) = group(&room)[0];
+    into_its_last_phase(&mut room, leader);
+    let player = room.join().unwrap();
+    provoke(&mut room, player);
+    let fighter = &mut room.foes.get_mut(&leader).unwrap().fighter;
+    fighter.health = 0.3 * fighter.health_max;
+    let far = point_at(&room, place, 25.0, true);
+    stand_player(&mut room, player, far);
+    run(&mut room, 1);
+    room.leave(player);
+    (room, leader)
+}
+
+#[test]
+fn a_boss_or_a_miniboss_walking_home_from_its_search_stays_in_its_first_phase_and_calls_no_one() {
+    for kind in [NodeKind::Boss, NodeKind::Dungeon] {
+        let (mut room, leader) = lost_far(kind);
+        let mut ticks = 0;
+        while !room.foes[&leader].brain.returning() {
+            run(&mut room, 1);
+            ticks += 1;
+            assert!(ticks < 2400, "{kind:?}: its search ends");
+        }
+        // The foes it called fall as its walk begins; none come again on the way or once home.
+        run(&mut room, 1);
+        room.take_events();
+        while room.foes[&leader].brain.returning() {
+            assert_eq!(room.foes[&leader].brain.phase(), 1, "{kind:?}: its first phase on the way");
+            run(&mut room, 1);
+            ticks += 1;
+            assert!(ticks < 4800, "{kind:?}: it reached its post");
+        }
+        run(&mut room, 600);
+        let fighter = room.foes[&leader].fighter;
+        assert_eq!((room.foes[&leader].brain.phase(), fighter.health), (1, fighter.health_max), "{kind:?}: home");
+        let spawned = room.take_events().iter().filter(|event| event.kind == crate::EventKind::Spawned).count();
+        assert_eq!(spawned, 0, "{kind:?}: no foe called on the way");
+    }
+}
+
+#[test]
+fn a_miniboss_whose_awareness_bleeds_out_on_a_long_search_walks_home_in_its_first_phase() {
+    let (mut room, leader) = lost_far(NodeKind::Dungeon);
+    let (mut walked, mut ticks) = (false, 0);
+    while !walked || room.foes[&leader].brain.returning() {
+        let brain = &room.foes[&leader].brain;
+        walked |= brain.returning();
+        assert!(!brain.returning() || brain.phase() == 1, "its first phase on the way");
+        run(&mut room, 1);
+        ticks += 1;
+        assert!(ticks < 4800, "it walked home, by its walk home: {walked}");
+    }
+}
+
+#[test]
+fn a_posted_shooter_takes_no_target_past_its_leash_though_within_its_range() {
+    let mut room = Room::new(Vec::new(), (0.0, 0.0));
+    let player = room.join().unwrap();
+    let crossbowman = foe_type(::foes::roster::CROSSBOWMAN).unwrap();
+    let foe = room.stand_foe(crossbowman, Major, [0.0, 0.0, 0.0], core::f64::consts::PI, None);
+    room.foes.get_mut(&foe).unwrap().brain.posted_at([0.0, 0.0, 0.0], core::f64::consts::PI);
+    for _ in 0..2000 {
+        // In plain sight and in its range, but past its leash: it never takes them, so never gives them up.
+        stand_player(&mut room, player, [0.0, LEASH + 0.8]);
+        whole(&mut room, player);
+        run(&mut room, 1);
+        assert_eq!(room.foes[&foe].brain.target(), None);
+    }
+}

@@ -464,15 +464,15 @@
               "greet": "lampWalk",
               "ambush": [
                 [
-                  "Skirmisher",
+                  "Runner",
                   "Minor"
                 ],
                 [
-                  "Skirmisher",
+                  "Runner",
                   "Minor"
                 ],
                 [
-                  "Archer",
+                  "Crossbowman",
                   "Minor"
                 ]
               ],
@@ -531,23 +531,23 @@
               "count": 5,
               "spawn": [
                 [
-                  "Skirmisher",
+                  "Runner",
                   "Minor"
                 ],
                 [
-                  "Skirmisher",
+                  "Runner",
                   "Minor"
                 ],
                 [
-                  "Archer",
+                  "Crossbowman",
                   "Minor"
                 ],
                 [
-                  "Archer",
+                  "Crossbowman",
                   "Minor"
                 ],
                 [
-                  "Brute",
+                  "Enforcer",
                   "Major"
                 ]
               ],
@@ -643,8 +643,8 @@
           "goals": [
             {
               "kind": "sea",
-              "side": "pirates",
-              "text": "A pirate ship beaten"
+              "side": "tithe",
+              "text": "A Tithe ship beaten"
             }
           ]
         },
@@ -994,8 +994,7 @@
             {
               "kind": "kill",
               "types": [
-                "Reeve",
-                "Captain"
+                "Reeve"
               ],
               "rank": "Elite",
               "island": "isle",

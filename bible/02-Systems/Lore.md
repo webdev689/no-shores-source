@@ -82,7 +82,7 @@ number in `item`.
   player can use"); E within its reach says "Read" and the book's name.
 - **Found**, a toast says "Lore found:", the book and the chapter. What a character already held when its first word
   on an account came is not toasted, nor a room's own starting character's.
-- **Read** is kept in the browser for the account (`overlook.lore.read.<account>`); a chapter is read as the
+- **Read** is kept in the browser for the account (`noshores.lore.read.<account>`); a chapter is read as the
   Compendium shows it. A chapter found and unread wears Destiny's small diamond, as do its book, its category's tile
   and the Compendium's tab.
 - **The Compendium** shows it all ([[Interface]], "Compendium").

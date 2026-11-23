@@ -25,10 +25,9 @@ code:
   - crates/room-wasm/src/fighter_door.rs#set_dungeon
   - client/src/rules/dungeonRules.test.ts
   - crates/room/src/dungeon_room.rs#dungeon
-  - crates/room/src/dungeon_room.rs#dungeon_of
+  - crates/room/src/run_room.rs#dungeon_run
   - crates/room/src/dungeon_room.rs#band_rooms
   - crates/room/src/dungeon_room.rs#keep_cache
-  - crates/room/src/run_room.rs#dungeon_run
   - crates/room/src/floor.rs#Floor
   - crates/room/src/entrances.rs#laid
   - crates/room/src/entrances.rs#model_of
@@ -40,13 +39,15 @@ code:
   - crates/room-wasm/src/dungeon_door.rs#room_join_at
   - server/roomNames.ts#nodeRoom
   - client/src/game/dungeonLayout.ts#askDungeon
-  - client/src/game/dungeonLayout.ts#askDungeonOf
   - client/src/game/dungeonLayout.ts#askLayout
   - client/src/game/dungeonMesh.ts#dungeonMesh
   - client/src/game/dungeonView.ts#DungeonView
   - client/src/game/dungeonLight.ts#lightAt
   - client/src/game/dungeonLight.ts#LIGHT_KINDS
   - client/src/game/dungeonLight.ts#MOODS
+  - client/src/game/dungeonLight.ts#NearestLights
+  - client/src/game/dungeonClusters.ts#LightClusters
+  - client/src/game/dungeonPipelines.ts#dungeonPipelines
   - client/src/game/dungeonCeilings.ts#ceilingHeights
   - client/src/game/dungeonCaveWall.ts#caveWall
   - client/src/game/dungeonFixtures.ts#fixtureMesh
@@ -72,8 +73,9 @@ The patrol areas' dungeons: three in each patrol, each laid by DFO's Forge from 
   three take three different styles of the six, shuffled by the patrol's id. `name` names one for its first style
   and its patrol: The Crypt of the Saltgrass Downs, The Caverns of the Sunken Fen.
 - **Laid where no patrol is.** A place that is no patrol, as a sea island, lays its dungeon by its own seed and a
-  style by its key (`style_of`): `Room::dungeon_of` stands its room, the room module answers its layout to an ask by
-  seed and style, and the page reads it with `askDungeonOf`. A patrol's dungeon is the same laid by `of_patrol`'s.
+  style by its key (`style_of`): `Room::dungeon_run` stands its room as a run of its own (`RunOf::Sea`), the room
+  module answers its layout to an ask by seed and style, and the page reads it with `askLayout`. A patrol's dungeon is
+  the same laid by `of_patrol`'s.
 - **The styles**, each with its two dungeon picture sets ([[Procedural Textures]]). The first four are the Forge's
   crypt, hall, cells and temple; the Caverns and the Mines are its cave and mine. Each style also names the style
   below it, which its last block may break into, and its entrances, the forged mounds or cave mouths with a door:
@@ -285,14 +287,15 @@ The patrol areas' dungeons: three in each patrol, each laid by DFO's Forge from 
 ## In the Game
 
 The page reads a dungeon from the room module's own `room_dungeon` by one ask (`askLayout`, a `DungeonAsk`: a
-patrol's by its number, `askDungeon`; an Elite Dungeon by its place, named as it is; or a seed and a style,
-`askDungeonOf`) and plays it as [[Game]] says ("A dungeon"). A module older than the landmarks answers no landmarks
-or glows, and is read as standing none (`readDungeon`).
+patrol's by its number, `askDungeon`; an Elite Dungeon by its place, named as it is; or a seed and a style) and
+plays it as [[Game]] says ("A dungeon"). A module older than the landmarks answers no landmarks or glows, and is read
+as standing none (`readDungeon`).
 
-- **The ways in** (`dungeonTrips`): a patrol's dungeon from its entrance, its shared room at Normal and a run above
-  it, the company's where a member is in one; an Elite Dungeon from its node's entrance, as the week's run where it
-  is the week's at the node's tier, else its run at Normal; and a sea island's from its door in the sea's room, by
-  its name, laid by its seed and style and named "The <Style> of the Sea", left back to the sea.
+- **The ways in** (`dungeonTrips`): a patrol's dungeon from its entrance, its shared room at Normal and a run above it,
+  the company's where a member is in one; an Elite Dungeon from its node's entrance, as the week's run where it is the
+  week's at the node's tier (the week by the rooms' clock, `roomNow`), else its run at Normal; and a sea island's from
+  its door in the sea's room, by its name, laid by its seed and style and named "The <Style> of the Sea", left back to
+  the sea.
 
 - **Its look** (`dungeonMesh`) is a port of DFO's Forge mesh for one floor, in the dungeon's own frame: floors,
   ceilings, walls with trim at foot and head, walls up from a lower ceiling, doorways' frames whose jambs are the
@@ -343,10 +346,21 @@ or glows, and is read as standing none (`readDungeon`).
   flicker (`LIGHT_KINDS`): a torch to `torchReach`, a brazier, candles, crystals, a lantern, a hearth and fungus, and a
   glow's spirit, daylight, water and rune. Each look has its own faint light,
   its mood (`MOODS`), enough that a room past every light's reach still shows its walls. The shader takes the 32
-  lights nearest the eye, and the figures are lit by the same 32, so the walls and the figures sum the same light
-  (`lightAt`). Each channel of the sum
+  lights that reach farthest past the eye (`NearestLights`), and the figures are lit by the same 32, so the walls and
+  the figures sum the same light (`lightAt`). Each channel of the sum
   stays as it is up to 0.8 and past that eases toward 1.4 (`shoulder`), so a room lit by many lights at once keeps
   its walls' colour and pictures rather than clipping to flat.
+- **What its light costs.** Each frame the page cuts the view into clusters (`LightClusters`): 16 tiles across the
+  screen by 9 up it by 24 slices of depth, each slice the same factor deeper than the last from 0.25 m to 256 m
+  (nearer is the first slice, farther the last). Each cluster lists the lights whose reach, taken 1 cm wider, touches
+  it, and a lit surface sums only its own cluster's list (`reaching`). A light adds nothing past its reach, so the
+  light is the same as summing all 32. Over six dungeons of the six styles, a surface in view sums 2.9 lights on
+  average and at most 9, where 1.3 reach it. A frame whose lists would hold more than 65,536 entries lights every
+  surface by all 32. Still water mirrors every one of the 32 flames, whatever its reach.
+- **Drawn depth first** (`dungeonPipelines`): the floor and the cache are drawn twice in the scene's pass, first
+  their depth alone, then lit where a face's depth equals the depth laid or is nearer, writing none. Both draws share
+  one vertex stage with its position invariant, so each lays a face's depth alike; each covered sample is lit once
+  however many faces lie behind it.
 - **Its fixtures** (`dungeonFixtures.ts`): a brazier on three legs with embers and flames, a cluster of three to five
   candles, five to eight glowing crystals, a lantern on its chain, a hearth's fire, and six to ten fungi, each a pale
   stalk under a glowing cap. Each is shaped by where it
@@ -380,6 +394,8 @@ or glows, and is read as standing none (`readDungeon`).
 - One floor: [[Movement]] and the [[Navmesh]] stand one floor at a point, so the Forge's storeys and stairs stay
   behind.
 - A room ringed by corridors would have no wall for a torch and stand unlit; no dungeon the tests lay has one.
+- The clusters take the eye's matrix to be a centred perspective, as `fromEyeMatrix` makes it; a lens shifted off
+  centre would leave their bounds short on one side.
 - A room can lay no props where nothing of its purpose fits: over 2,000 dungeons, 31 end rooms and 28 of 20,037 other
   rooms lay none; over the 27 patrols' 81 dungeons, 1 end room and 1 other room.
 - No fountain or cart is laid: each is wider than a cell.

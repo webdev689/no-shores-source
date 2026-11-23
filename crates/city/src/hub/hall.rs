@@ -87,5 +87,5 @@ pub fn hall(frame: &Frame, laid: &mut Laid) {
     }
     let to = far + 12.0;
     laid.solids.push(frame.block((rug_far + to) / 2.0, 0.0, 0.0, [4.0, rug_far - to, NAVE_HIGH_M], Material::Stone));
-    laid.spots.push(frame.at(TABLE_TOWARD_M + 12.0, 7.0));
+    laid.spots.push(frame.at(TABLE_TOWARD_M + 12.0, 6.25));
 }

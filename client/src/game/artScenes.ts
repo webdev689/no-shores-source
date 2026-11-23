@@ -6,6 +6,7 @@
 // toward the left in a dither, where the screen's words and tiles stand.
 
 import { GLOW_RAMPS, type GlowElement } from '../elementGlow.ts';
+import { seeded } from '../seeded.ts';
 
 /** How long a step lasts (ms), how many steps run before the scene repeats, and the step shown with less motion. */
 export const SCENE_STEP_MS = 160;
@@ -58,17 +59,6 @@ const clouds = (x: number, y: number, seed: number) => noise(x, y, seed) * 0.65 
 /** A share of the 4 × 4 ordered dither: a cell is kept where its share is under the amount wanted. */
 const BAYER = [0, 8, 2, 10, 12, 4, 14, 6, 3, 11, 1, 9, 15, 7, 13, 5];
 const dither = (x: number, y: number) => ((BAYER[(y & 3) * 4 + (x & 3)] ?? 0) + 0.5) / 16;
-
-/** A run of numbers from a seed, each from 0 to 1. */
-function seeded(seed: number): () => number {
-  let state = seed >>> 0;
-  return () => {
-    state = (state + 0x6d2b79f5) >>> 0;
-    let mixed = Math.imul(state ^ (state >>> 15), 1 | state);
-    mixed ^= mixed + Math.imul(mixed ^ (mixed >>> 7), 61 | mixed);
-    return ((mixed ^ (mixed >>> 14)) >>> 0) / 4294967296;
-  };
-}
 
 const clamp = (value: number, low = 0, high = 1) => Math.min(high, Math.max(low, value));
 /** A loop of the scene as a turn: a sway that comes back to where it began. */

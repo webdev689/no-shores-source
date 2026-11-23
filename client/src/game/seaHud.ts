@@ -38,11 +38,11 @@ export interface SeaHudState {
 
 /** The ships the compass marks at sea, as DFO's helm marks them: in a fight its captains, grey once its colours are
  *  down, red while it would take the player and lit while a battery of its stands run out at the player's ship
- *  (`own`), none going down; out of one, every other player's ship in bone and every hostile one in red, marked as far
- *  off as it is sighted. */
+ *  (`own`), none going down; out of one, every other player's ship in bone, every hostile one in red, marked as far
+ *  off as it is sighted, and every friendly ship the room keeps as the traffic's are. */
 export function seaShipMarks(
   captains: readonly FightCaptain[] | null,
-  sighted: Pick<SeaRoom, 'others' | 'pirates'> | null,
+  sighted: (Pick<SeaRoom, 'others' | 'hostiles'> & Partial<Pick<SeaRoom, 'friendlies'>>) | null,
   own: readonly number[] | null = null,
 ): ShipMark[] {
   if (captains)
@@ -54,12 +54,13 @@ export function seaShipMarks(
     });
   return [
     ...(sighted?.others ?? []).map((ship): ShipMark => ({ x: ship.x, y: ship.y, kind: 'ship' })),
-    ...(sighted?.pirates ?? []).map((pirate): ShipMark => ({
-      x: pirate.x,
-      y: pirate.y,
+    ...(sighted?.hostiles ?? []).map((hostile): ShipMark => ({
+      x: hostile.x,
+      y: hostile.y,
       kind: 'hostile',
-      rangeM: sightOf(pirate),
+      rangeM: sightOf(hostile),
     })),
+    ...(sighted?.friendlies ?? []).map((friend): ShipMark => ({ x: friend.x, y: friend.y, kind: 'friendly' })),
   ];
 }
 
@@ -97,6 +98,8 @@ export function showSeaHud(hud: Hud, here: Sea, shown: SeaFrame, state: SeaHudSt
   // On a struck ship's deck, the display says where its fight stands and lists the keys on foot.
   const deck = here.boarding.words;
   hud.place(...seaPlace(here, shown, state));
+  // Sailing away to other waters, the veil says where to while the picture is black.
+  if (here.travelling) hud.veil(here.travelling.away.veil);
   const { fight } = here;
   // In a fight the hints are its keys alone, as on foot; the sea's word and the fight's messages stand as DFO's
   // notices, and what the card, the plates, the sight and its warning show is not said again.
@@ -128,9 +131,10 @@ export function showSeaHud(hud: Hud, here: Sea, shown: SeaFrame, state: SeaHudSt
   hud.compass(
     atHelm ? null : { heading: headingOf(forwardOf(yaw, 0)), from: shown.focus, ships: [...ships, ...state.friendly] },
   );
-  // In a fight the sea bar goes: its map, pace, Manage and Leave wait for the fight's end, as its keys do.
-  const ship = { canLeave: here.inRoom, canManage: true };
-  hud.seaBar(onSea && !atHelm && !aboard.active && !deck && !here.fight ? { ...shown, ...ship } : null);
+  // In a fight, and sailing away to other waters, the sea bar goes: its map, pace, Manage and Leave wait, as its keys do.
+  const ship = { canLeave: here.sighted !== null, canManage: true };
+  const barred = atHelm || aboard.active || deck || here.fight || here.travelling;
+  hud.seaBar(onSea && !barred ? { ...shown, ...ship } : null);
   showSight(hud, here, deck !== null);
   const build = aboard.managing ? state.build() : null;
   hud.shipPanel(onSea && aboard.managing && build ? shipPanelOf(build, state.waterline, here) : null);

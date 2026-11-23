@@ -92,3 +92,5 @@ the riders gone, seen, noticed, a wrong rod, stone or mark) and is tried again: 
 unseen step once no foe has been on the player for 10 s, a race from its first checkpoint, a puzzle from its first
 point. Every task has an `id`, and the save keeps each road and task by id, so a mission added anywhere keeps every
 player's place. A figure, a ward and a puzzle's points are the player's own: other players in the room do not see them.
+
+Replaced in part by [[Pirates Are Replaced by the Grey Tithe]]: the foes a road stands are the island's Grey Tithe.

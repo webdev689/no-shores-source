@@ -35,7 +35,19 @@ export interface Beat {
   /** Whether the beat holds its world still: its time, the sea, the fires, the birds and the words all stopped, the
    *  music playing on. */
   readonly still?: boolean;
+  /** Whether it begins from black: the director holds the black after the beat before (SCENE) until it is `ready`,
+   *  draws its first frames under it, and fades it in. Such a beat lays no fade in of its own. */
+  readonly fromBlack?: boolean;
+  /** Whether what it shows has come (the wreck's mesh, the beach); none said, it is ready. */
+  readonly ready?: boolean;
+  /** How long the director fades it in from black, seconds: SCENE.inS unless said; a beat that darkens itself awake
+   *  takes none. */
+  readonly fadeInS?: number;
 }
+
+/** A change of scene through black, seconds: the fade out a beat ends with, the least the black holds between, and
+ *  the fade in. */
+export const SCENE = { outS: 2, blackS: 1, inS: 2.5 } as const;
 
 /** The story's beats in order, as the owner set them: each name is where a page under development may start
  *  (`?prologue=<name>`). */

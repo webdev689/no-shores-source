@@ -1,11 +1,13 @@
+import { viewPlanes } from '../frustum.ts';
 import { BUFFER_USAGE, type Gpu, SHADER_STAGE, TEXTURE_USAGE } from '../gpu.ts';
 import { ShadowMap, shadowLayouts } from '../shadow.ts';
 import type { Swell } from '../rules/landRules.ts';
 import { skyUniformFor } from '../sky/skyUniform.ts';
 import { RippleField } from './ripples.ts';
-import { GRAVITY, SHORE, type ShoreField, SLOW_CLOCK_S } from './shore.ts';
+import { FRESH_SINK_M, GRAVITY, SHORE, type ShoreField, SLOW_CLOCK_S } from './shore.ts';
 import { type HullMask, hullValues } from './hullMask.ts';
 import type { SeaGrid, SeaSwell } from './seaWeather.ts';
+import { type Disc, discDraws } from './surfaceDisc.ts';
 import { ANCHOR_M, CHOP_WAVES, MOST_WAVES } from './waterCommon.ts';
 import { WATER_SHADER } from './waterShader.ts';
 
@@ -33,6 +35,8 @@ export interface PatchWater {
   readonly heights: GPUTexture;
   readonly levels: GPUTexture;
   readonly shore: GPUTexture;
+  /** The highest its still water stands, metres. */
+  readonly highestM: number;
 }
 
 /** One frame of water: the camera, the moment, the land under it and what has been drawn already. */
@@ -46,7 +50,13 @@ export interface WaterScene {
   /** The window's north-west corner in the world, metres. */
   readonly world: readonly [number, number];
   readonly swell: Swell | undefined;
-  readonly coarse: { readonly wide: GPUTexture; readonly lakes: GPUTexture; readonly cellM: number };
+  /** The 1 km land and its lakes, and the highest those lakes stand (metres): without it, the whole disc is drawn. */
+  readonly coarse: {
+    readonly wide: GPUTexture;
+    readonly lakes: GPUTexture;
+    readonly cellM: number;
+    readonly highestM?: number;
+  };
   readonly patch: PatchWater | null;
   /** The water at the eye's point now: its surface in metres and whether it is fresh; null where there is none. */
   readonly eyeWater: { readonly surface: number; readonly fresh: boolean } | null;
@@ -78,6 +88,9 @@ export const SAMPLES = 4;
 /** The disc of water round the eye: rings out to the far plane, each this share wider than the last, and segments. */
 const RINGS = 220;
 const SEGMENTS = 192;
+/** How far the breakers and the wakes raise the water, and the rounding, at most: metres more the surface may stand
+ *  off its still level, and be carried sideways, than the swell's own waves take it. */
+const SURFACE_SLACK_M = 5;
 
 /** The bearings the chop is laid along: the local wind's, to the nearest of sixteen, so a slowly turning wind sets the
  *  pattern afresh only now and then; it fades from the last bearing's over this long, seconds, so it never jumps. */
@@ -148,8 +161,12 @@ export class WaterView {
   private readonly ripples: RippleField;
   private readonly empty: { readonly flat: GPUTexture; readonly shore: GPUTexture };
   private chop: ChopFade | null = null;
-  /** The shelter grid last sent to the GPU, and its texture. */
-  private shelter: { readonly grid: SeaGrid; readonly texture: GPUTexture } | null = null;
+  /** The shelter grid last sent to the GPU, its texture, and its largest share. */
+  private shelter: { readonly grid: SeaGrid; readonly texture: GPUTexture; readonly most: number } | null = null;
+  /** The bind groups made for the textures last drawn from, one for each of the ripples' three textures in turn:
+   *  made again only when the land, the close-up, the shelter or the drawn picture's textures change. */
+  private groups: { readonly made: readonly GPUTexture[]; readonly byRipples: Map<GPUTexture, GPUBindGroup> } | null =
+    null;
 
   constructor(gpu: Gpu) {
     this.gpu = gpu;
@@ -206,12 +223,16 @@ export class WaterView {
       ]);
       return texture;
     };
+    let highestM = 0;
+    for (let sample = 0; sample < field.levels.length; sample += 2)
+      highestM = Math.max(highestM, field.levels[sample] ?? 0);
     return {
       corner: [field.left - window[0], field.top - window[1]],
       step: field.step,
       heights: upload(field.heights, 'r32float', 1),
       levels: upload(field.levels, 'rg32float', 2),
       shore: upload(field.shore, 'rgba32float', 4),
+      highestM,
     };
   }
 
@@ -224,23 +245,7 @@ export class WaterView {
   encode(encoder: GPUCommandEncoder, scene: WaterScene): void {
     this.ripples.advance(encoder, scene.focus[0], scene.focus[1], scene.seconds);
     this.gpu.device.queue.writeBuffer(this.uniforms, 0, this.frameValues(scene));
-    const patch = scene.patch;
-    const bindGroup = this.gpu.device.createBindGroup({
-      layout: this.layout,
-      entries: [
-        { binding: 0, resource: { buffer: this.uniforms } },
-        { binding: 1, resource: scene.drawn.colour.createView() },
-        { binding: 2, resource: scene.drawn.depth.createView() },
-        { binding: 3, resource: scene.coarse.wide.createView() },
-        { binding: 4, resource: scene.coarse.lakes.createView() },
-        { binding: 5, resource: (patch?.heights ?? this.empty.flat).createView() },
-        { binding: 6, resource: (patch?.levels ?? this.empty.flat).createView() },
-        { binding: 7, resource: (patch?.shore ?? this.empty.shore).createView() },
-        { binding: 8, resource: this.ripples.heights.createView() },
-        { binding: 9, resource: this.sampler },
-        { binding: 10, resource: this.shelterOf(scene.swell).createView() },
-      ],
-    });
+    const bindGroup = this.groupFor(scene);
     const pass = encoder.beginRenderPass({
       colorAttachments: [
         {
@@ -259,8 +264,69 @@ export class WaterView {
     pass.setPipeline(this.backdrop);
     pass.draw(3);
     pass.setPipeline(this.surface);
-    pass.draw(RINGS * SEGMENTS * 6);
+    // The arcs of the disc the view may see, a ring a row; none where the view holds no water.
+    const draws = this.surfaceDraws(scene);
+    for (let draw = 0; draw < draws.length; draw += 4) {
+      const [first = 0, segments = 0, row = 0, rows = 0] = draws.slice(draw, draw + 4);
+      pass.draw(segments * 6, rows, first * 6, row);
+    }
     pass.end();
+  }
+
+  /** The frame's bind group: the one made for these textures, or a new one when any has changed. */
+  private groupFor(scene: WaterScene): GPUBindGroup {
+    const patch = scene.patch;
+    const shelter = this.shelterOf(scene.swell);
+    // Bound in this order from binding 1, the ripples' after them.
+    const made = [
+      scene.drawn.colour,
+      scene.drawn.depth,
+      scene.coarse.wide,
+      scene.coarse.lakes,
+      patch?.heights ?? this.empty.flat,
+      patch?.levels ?? this.empty.flat,
+      patch?.shore ?? this.empty.shore,
+    ];
+    if (!this.groups || [...made, shelter].some((texture, index) => texture !== this.groups?.made[index]))
+      this.groups = { made: [...made, shelter], byRipples: new Map() };
+    const ripples = this.ripples.heights;
+    const known = this.groups.byRipples.get(ripples);
+    if (known) return known;
+    const group = this.gpu.device.createBindGroup({
+      layout: this.layout,
+      entries: [
+        { binding: 0, resource: { buffer: this.uniforms } },
+        ...[...made, ripples].map((texture, index) => ({ binding: index + 1, resource: texture.createView() })),
+        { binding: 9, resource: this.sampler },
+        { binding: 10, resource: shelter.createView() },
+      ],
+    });
+    this.groups.byRipples.set(ripples, group);
+    return group;
+  }
+
+  /** The surface's draws (`discDraws`): the whole disc when the lakes' height is not known, else what the view may
+   *  see of it, its water from just under the sea's level to the highest lake's, raised and carried by the waves. */
+  private surfaceDraws(scene: WaterScene): number[] {
+    const { camera, exaggeration } = scene;
+    const highest = scene.coarse.highestM;
+    if (highest === undefined) return [0, SEGMENTS, 0, RINGS];
+    const waves = scene.swell?.waves.slice(0, MOST_WAVES) ?? [];
+    const share = Math.max(1, this.shelter?.most ?? 1);
+    const rise = waves.reduce((sum, wave) => sum + Math.abs(wave.amplitude), 0) * share + SURFACE_SLACK_M;
+    const shift = waves.reduce((sum, wave) => sum + Math.abs(wave.shift), 0) + SURFACE_SLACK_M;
+    const top = Math.max(highest, scene.patch?.highestM ?? 0);
+    const levels = [(-FRESH_SINK_M - rise) * exaggeration, (top + rise) * exaggeration].map(
+      (level) => level - camera.eye[2],
+    ) as [number, number];
+    return discDraws(viewPlanes(camera.fromEye), this.discOf(scene), levels, shift);
+  }
+
+  /** The disc the shader lays round the eye: its first ring a share of the eye's height out, its last at the far
+   *  plane. */
+  private discOf(scene: WaterScene): Disc {
+    const inner = Math.max(0.3, scene.eyeAboveM * 0.04);
+    return { inner, outer: Math.max(scene.camera.far, inner * 10), rings: RINGS, segments: SEGMENTS };
   }
 
   private frameValues(scene: WaterScene): Float32Array {
@@ -279,8 +345,8 @@ export class WaterView {
     const patch = scene.patch;
     values.set(patch ? [patch.corner[0], patch.corner[1], patch.step, 1] : [0, 0, 1, 0], 40);
     values.set([scene.coarse.cellM, scene.eyeWater?.fresh ? 1 : 0, 0, 0], 44);
-    const inner = Math.max(0.3, scene.eyeAboveM * 0.04);
-    values.set([inner, Math.max(far, inner * 10), RINGS, SEGMENTS], 48);
+    const disc = this.discOf(scene);
+    values.set([disc.inner, disc.outer, disc.rings, disc.segments], 48);
     const [rippleX, rippleY, rippleCell, rippleCells] = this.ripples.area;
     values.set([rippleX - eyeX, rippleY - eyeY, rippleCell, rippleCells], 52);
     const sea = scene.swell && 'grid' in scene.swell ? (scene.swell as SeaSwell) : null;
@@ -319,6 +385,7 @@ export class WaterView {
     if (!grid) return this.empty.flat;
     if (this.shelter?.grid === grid) return this.shelter.texture;
     this.shelter?.texture.destroy();
+    const most = grid.shares.reduce((largest, share) => Math.max(largest, share), 0);
     const texture = this.gpu.device.createTexture({
       size: [grid.cells, grid.cells],
       format: 'r32float',
@@ -328,7 +395,7 @@ export class WaterView {
       grid.cells,
       grid.cells,
     ]);
-    this.shelter = { grid, texture };
+    this.shelter = { grid, texture, most };
     return texture;
   }
 

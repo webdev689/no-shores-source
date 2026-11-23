@@ -43,11 +43,9 @@ FIRES = (
     ('frigate', -0.55, -7.6, None, 18.4, 1.2, (-0.55, 7.6)),
     ('frigate', 4.0, 3.0, 0.0, None, 1.4, None),
     ('frigate', 1.2, -3.9, 0.0, None, 1.0, None),
-    # The heaps closing her gangways for good, burning; her gun deck, burning between her guns.
+    # The heaps closing the steps up to her quarterdeck for good, burning.
     ('frigate', -2.0, 4.4, 0.6, None, 1.2, None),
-    ('frigate', -10.1, -4.4, 0.6, None, 1.2, None),
-    ('frigate', -4.6, 2.7, None, 2.32, 1.1, None),
-    ('frigate', -9.4, -2.5, None, 2.32, 1.0, None),
+    ('frigate', -2.0, -4.4, 0.6, None, 1.2, None),
     # Her quarterdeck, the arena: her stern rails ablaze behind Thule.
     ('frigate', -18.4, 1.8, 0.0, None, 1.4, None),
     ('frigate', -18.4, -1.8, 0.0, None, 1.4, None),

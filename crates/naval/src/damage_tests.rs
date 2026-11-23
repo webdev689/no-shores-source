@@ -1,5 +1,5 @@
 use super::*;
-use crate::arms::{LARGE_BOAT, PIRATE_SLOOP};
+use crate::arms::{LARGE_BOAT, TITHE_SLOOP};
 use crate::guns::{SWIVEL, Shot, loaded};
 
 fn hurt(hull: f64, sail: f64, crew: f64) -> Hurt {
@@ -45,7 +45,7 @@ fn the_waterline_band_is_1_1_metres_over_the_water() {
 
 #[test]
 fn a_captain_strikes_at_a_quarter_of_its_hull_and_sinks_at_none() {
-    let mut damage = Damage::new(&PIRATE_SLOOP, false);
+    let mut damage = Damage::new(&TITHE_SLOOP, false);
     assert_eq!(damage.apply(hurt(197.0, 0.0, 0.0), 1.0, 0.0), None);
     assert_eq!(damage.apply(hurt(1.0, 0.0, 0.0), 2.0, 0.0), Some(State::Struck), "66 of 264 left");
     assert!(!damage.fighting());
@@ -57,7 +57,7 @@ fn a_captain_strikes_at_a_quarter_of_its_hull_and_sinks_at_none() {
 
 #[test]
 fn a_crew_with_every_man_down_strikes() {
-    let mut damage = Damage::new(&PIRATE_SLOOP, false);
+    let mut damage = Damage::new(&TITHE_SLOOP, false);
     assert_eq!(damage.apply(hurt(5.0, 0.0, 9.0), 1.0, 0.0), None);
     assert_eq!(damage.apply(hurt(5.0, 0.0, 1.0), 2.0, 0.0), Some(State::Struck));
     assert_eq!(damage.crew_share(), 0.0);
@@ -65,7 +65,7 @@ fn a_crew_with_every_man_down_strikes() {
 
 #[test]
 fn the_rest_of_the_volley_that_struck_it_cannot_sink_it() {
-    let mut damage = Damage::new(&PIRATE_SLOOP, false);
+    let mut damage = Damage::new(&TITHE_SLOOP, false);
     damage.apply(hurt(200.0, 0.0, 0.0), 1.0, 0.0);
     assert_eq!(damage.state, State::Struck);
     damage.apply(hurt(100.0, 0.0, 0.0), 1.1, 1.0);
@@ -83,7 +83,7 @@ fn the_players_sloop_never_strikes_and_goes_down_at_none() {
 
 #[test]
 fn a_scuttled_ship_goes_down_from_where_it_lies() {
-    let mut damage = Damage::new(&PIRATE_SLOOP, false);
+    let mut damage = Damage::new(&TITHE_SLOOP, false);
     damage.apply(hurt(200.0, 0.0, 0.0), 1.0, 0.0);
     assert_eq!(damage.state, State::Struck);
     damage.scuttle();
@@ -93,7 +93,7 @@ fn a_scuttled_ship_goes_down_from_where_it_lies() {
 
 #[test]
 fn a_fire_burns_hull_canvas_and_men_for_15_seconds() {
-    let mut damage = Damage::new(&PIRATE_SLOOP, false);
+    let mut damage = Damage::new(&TITHE_SLOOP, false);
     damage.apply(Hurt { fire: true, ..hurt(0.0, 0.0, 0.0) }, 0.0, 0.0);
     for tick in 1..=600 {
         damage.step(0.025, f64::from(tick) * 0.025);
@@ -107,7 +107,7 @@ fn a_fire_burns_hull_canvas_and_men_for_15_seconds() {
 
 #[test]
 fn three_fires_burn_at_once_and_overlapping_ones_take_men() {
-    let mut damage = Damage::new(&PIRATE_SLOOP, false);
+    let mut damage = Damage::new(&TITHE_SLOOP, false);
     for _ in 0..4 {
         damage.apply(Hurt { fire: true, ..hurt(0.0, 0.0, 0.0) }, 0.0, 0.0);
     }
@@ -119,7 +119,7 @@ fn three_fires_burn_at_once_and_overlapping_ones_take_men() {
 
 #[test]
 fn a_ship_that_strikes_has_its_fires_doused() {
-    let mut damage = Damage::new(&PIRATE_SLOOP, false);
+    let mut damage = Damage::new(&TITHE_SLOOP, false);
     damage.apply(Hurt { fire: true, ..hurt(0.0, 0.0, 0.0) }, 0.0, 0.0);
     damage.apply(hurt(200.0, 0.0, 0.0), 1.0, 0.0);
     assert_eq!((damage.state, damage.fires()), (State::Struck, 0));
@@ -127,7 +127,7 @@ fn a_ship_that_strikes_has_its_fires_doused() {
 
 #[test]
 fn its_way_falls_with_its_canvas_to_bare_poles() {
-    let mut damage = Damage::new(&PIRATE_SLOOP, false);
+    let mut damage = Damage::new(&TITHE_SLOOP, false);
     assert_eq!(damage.way_share(), 1.0);
     damage.apply(hurt(0.0, 48.0, 0.0), 0.0, 0.0);
     assert!((damage.way_share() - 0.675).abs() < 1e-12);
@@ -140,21 +140,21 @@ fn its_hands_mend_it_only_in_quiet_waters_and_to_half() {
     let mut damage = Damage::new(&LARGE_BOAT, true);
     damage.apply(hurt(200.0, 96.0, 0.0), 0.0, 0.0);
     assert_eq!(damage.state, State::Afloat);
-    assert!(!damage.mend(1.0, 10.0, false), "struck 10 s ago");
-    assert!(!damage.mend(1.0, 20.0, true), "a hostile ship near");
-    assert!(damage.mend(1.0, 20.0, false));
+    assert!(!damage.mend(1.0, 10.0, false, 1.0), "struck 10 s ago");
+    assert!(!damage.mend(1.0, 20.0, true, 1.0), "a hostile ship near");
+    assert!(damage.mend(1.0, 20.0, false, 1.0));
     assert!((damage.hull - (40.0 + 240.0 * 0.002)).abs() < 1e-12, "{}", damage.hull);
     let mut now = 20.0;
     for _ in 0..400 {
         now += 1.0;
-        damage.mend(1.0, now, false);
+        damage.mend(1.0, now, false, 1.0);
     }
     assert_eq!((damage.hull, damage.sail), (120.0, 48.0), "mended to half at most");
 }
 
 #[test]
 fn going_down_it_lists_and_trims_by_its_seed_and_settles_slow_then_fast() {
-    let mut damage = Damage::new(&PIRATE_SLOOP, false);
+    let mut damage = Damage::new(&TITHE_SLOOP, false);
     damage.apply(hurt(264.0, 0.0, 0.0), 0.0, 0.0);
     damage.step(SINK_SECONDS / 2.0, 10.0);
     let (drop, pitch, roll) = founder(&damage, 0b01, 6.0);
@@ -163,13 +163,13 @@ fn going_down_it_lists_and_trims_by_its_seed_and_settles_slow_then_fast() {
     assert!((drop - 1.5).abs() < 1e-12, "a quarter of the way down at half the time");
     let (_, other_pitch, other_roll) = founder(&damage, 0b10, 6.0);
     assert!(other_roll < 0.0 && other_pitch < 0.0);
-    let afloat = Damage::new(&PIRATE_SLOOP, false);
+    let afloat = Damage::new(&TITHE_SLOOP, false);
     assert_eq!(founder(&afloat, 1, 6.0), (0.0, 0.0, 0.0));
 }
 
 #[test]
 fn hurt_it_lists_to_the_side_it_will_go_down_on() {
-    let mut damage = Damage::new(&PIRATE_SLOOP, false);
+    let mut damage = Damage::new(&TITHE_SLOOP, false);
     damage.apply(hurt(200.0, 0.0, 0.0), 0.0, 0.0);
     for _ in 0..600 {
         damage.step(0.05, 1.0);
@@ -182,7 +182,7 @@ fn hurt_it_lists_to_the_side_it_will_go_down_on() {
 
 #[test]
 fn a_crew_struck_down_to_the_last_man_strikes_with_its_fires_still_burning() {
-    let mut damage = Damage::new(&PIRATE_SLOOP, false);
+    let mut damage = Damage::new(&TITHE_SLOOP, false);
     damage.apply(Hurt { fire: true, ..hurt(0.0, 0.0, 0.0) }, 0.0, 0.0);
     assert_eq!(damage.apply(hurt(0.0, 0.0, 10.0), 1.0, 0.0), Some(State::Struck));
     assert_eq!(damage.fires(), 1, "nobody is left to fight them");
@@ -191,11 +191,11 @@ fn a_crew_struck_down_to_the_last_man_strikes_with_its_fires_still_burning() {
 /// Many seeded broadsides of `guns` a side from a gun of `rank`'s Sloop's harm and `shot`, each ball into its hull
 /// (`zone`), as the fight takes them: its mean hull, canvas, men and fires lost a broadside.
 fn broadsides(guns: usize, rank: crate::ranks::Rank, shot: Shot, zone: Zone) -> [f64; 4] {
-    let commission = crate::ranks::Commission { faction: crate::ranks::PIRATES, rank };
+    let commission = crate::ranks::Commission { faction: crate::ranks::GREY_TITHE, rank };
     let gun =
         Gun { share: crate::arms::SLOOP_GUNS_A_SIDE / guns as f64, ..commission.armed(loaded(&SWIVEL, shot), 1.0) };
     let mut draws = crate::random::Mulberry32::new(91);
-    let mut target = Damage::new(&Build { hull: 1e9, sail: 1e9, crew: 1e9, ..PIRATE_SLOOP }, false);
+    let mut target = Damage::new(&Build { hull: 1e9, sail: 1e9, crew: 1e9, ..TITHE_SLOOP }, false);
     let mut lost = [0.0; 4];
     const BROADSIDES: usize = 40_000;
     for _ in 0..BROADSIDES * guns {
@@ -232,10 +232,10 @@ fn a_broadside_takes_as_much_hull_canvas_men_and_fire_from_it_whatever_hull_fire
 
 #[test]
 fn a_share_of_a_blow_carries_its_parts_until_they_make_a_whole_point() {
-    let mut damage = Damage::new(&PIRATE_SLOOP, false);
+    let mut damage = Damage::new(&TITHE_SLOOP, false);
     let third = |damage: &mut Damage| damage.shared(hurt(2.0, 1.0, 1.0), 1.0 / 3.0);
     let taken: Vec<Hurt> = (0..3).map(|_| third(&mut damage)).collect();
     assert_eq!(taken.iter().map(|each| each.hull).sum::<f64>(), 1.0, "{taken:?}");
-    let mut sound = Damage::new(&PIRATE_SLOOP, false);
+    let mut sound = Damage::new(&TITHE_SLOOP, false);
     assert_eq!(sound.shared(hurt(5.0, 2.0, 1.0), 1.0), hurt(5.0, 2.0, 1.0), "the Sloop's ball, whole");
 }

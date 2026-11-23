@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import { test } from 'node:test';
-import { LAND_CELL, type PortInfo, SEAM_BIT, startWatersRules } from './watersRules.ts';
+import { LAND_CELL, type PortInfo, startWatersRules } from './watersRules.ts';
 
 const MODULE = new URL('../../../target/wasm32-unknown-unknown/release/room_wasm.wasm', import.meta.url);
 const WORLD = new URL('../../../content/world/', import.meta.url);
@@ -29,7 +29,7 @@ test('the table names the nine waters and the three port cities, and plans a rou
   assert.equal(table.waters.length, 9);
   assert.deepEqual(
     table.waters.map((water) => water.holder),
-    ['home', 'contested', 'grey-tithe', 'pirates', 'pirates', 'pirates', 'grey-tithe', 'grey-tithe', 'grey-tithe'],
+    ['home', 'lattice', 'lattice', 'grey-tithe', 'lattice', 'lattice', 'lattice', 'lattice', 'grey-tithe'],
   );
   assert.equal(table.waters[2]?.name, 'The Elmwater');
   assert.deepEqual(table.waters[7]?.levels, [22, 26]);
@@ -66,7 +66,7 @@ test('a city stands on land and the sea off it is its island water', async () =>
   const overlook = ports[0];
   assert.ok(overlook);
   assert.equal(rules.waterAt(overlook.centre), null);
-  assert.deepEqual(rules.waterAt(table.ports[0]?.roadstead ?? [0, 0]), { continent: 0, holder: 'home', seam: false });
+  assert.deepEqual(rules.waterAt(table.ports[0]?.roadstead ?? [0, 0]), { continent: 0, holder: 'home' });
 });
 
 test('the held map grid has its cells, and agrees with the water at each cell middle', async () => {
@@ -75,18 +75,11 @@ test('the held map grid has its cells, and agrees with the water at each cell mi
   const grid = rules.grid(4_800);
   console.log(`grid(4800) took ${(performance.now() - started).toFixed(0)} ms in WebAssembly`);
   assert.deepEqual([grid.columns, grid.rows, grid.cells.length], [1024, 640, 1024 * 640]);
-  let seam = 0;
   for (let cell = 0; cell < grid.cells.length; cell += 997) {
     const middle = [((cell % 1024) + 0.5) * 4_800, (Math.floor(cell / 1024) + 0.5) * 4_800] as const;
     const water = rules.waterAt(middle);
-    const byte = grid.cells[cell];
-    assert.equal(byte, water === null ? LAND_CELL : water.continent | (water.seam ? SEAM_BIT : 0));
-    if (water?.seam) {
-      seam += 1;
-      assert.equal(water.holder, 'contested');
-    }
+    assert.equal(grid.cells[cell], water === null ? LAND_CELL : water.continent, 'a sea cell holds its water alone');
   }
-  assert.ok(seam > 0, 'the seam shows on the grid');
   assert.throws(() => rules.grid(10), /no grid/);
 });
 
@@ -95,6 +88,13 @@ test('the table gives the sea’s facts as its rules have them: its reaches and 
   assert.deepEqual([table.sea.engageM, table.sea.repairReachM], [750, 3_000]);
   assert.ok(table.sea.holdReachM > table.sea.engageM, `the hold reaches past its sight: ${table.sea.holdReachM}`);
   assert.deepEqual(table.sea.shipNames[1], ['Tithe Sloop', 'Tithe Schooner', 'Tithe Brig', 'Tithe Frigate']);
+  assert.deepEqual(table.sea.shipNames[0], [
+    'Merchant Sloop',
+    'Merchant Schooner',
+    'Merchant Brig',
+    'Merchant Frigate',
+  ]);
+  assert.equal(table.sea.shipNames.length, 2, 'the friendly ships’ and the Grey Tithe’s');
 });
 
 test('ships near a port sail their routes at the pace the table gives', async () => {

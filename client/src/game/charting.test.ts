@@ -93,3 +93,19 @@ test("a continent is warmed once as the ship comes within twice its opening's re
   charting.tick(off(40_000), 'home', 1, true);
   assert.deepEqual(opened, ['far']);
 });
+
+test('the sea waits on charting while a continent near the ship is still to open, never on one refused', async () => {
+  let fail = (_why: Error) => {};
+  const charting = new Charting(
+    continents,
+    () => new Promise<string>((_resolve, reject) => (fail = reject)),
+    () => undefined,
+  );
+  assert.equal(charting.waiting([150_000, 50_000], 'home'), false, 'no continent near but the open one');
+  assert.equal(charting.waiting(nearFar, 'home'), true, 'the far one, near the ship, is still to open');
+  charting.tick(nearFar, 'home', 1, true);
+  assert.equal(charting.waiting(nearFar, 'home'), true, 'while it opens');
+  fail(new Error('no files'));
+  await new Promise((resolve) => setTimeout(resolve));
+  assert.equal(charting.waiting(nearFar, 'home'), false, 'refused, it is not waited on');
+});

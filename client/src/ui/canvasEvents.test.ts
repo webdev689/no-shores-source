@@ -51,7 +51,7 @@ function typingPage(editing: boolean, secret = false) {
   const events = new CanvasEvents(canvas as unknown as HTMLCanvasElement);
   const state = { text: 'pass', caret: 4, anchor: 4 };
   events.sync({ id: 'field', state, secret, box: { x: 0, y: 0, width: 100, height: 20 } }, 'text');
-  const press = (key: string, more: { ctrlKey?: boolean; altKey?: boolean } = {}) => {
+  const press = (key: string, more: { ctrlKey?: boolean; altKey?: boolean; repeat?: boolean } = {}) => {
     let prevented = false;
     const event = { key, shiftKey: false, ctrlKey: false, metaKey: false, altKey: false, ...more };
     listeners.get('keydown')?.({ ...event, preventDefault: () => (prevented = true) });
@@ -87,6 +87,18 @@ test('without the browser’s typing, every key that types words is kept from th
     'AltGr is no Ctrl',
   );
   assert.equal(press('c', { ctrlKey: true }), false, 'Ctrl+C is the page’s to copy');
+  done();
+});
+
+test('a held Enter or Space is heard as a key once, not again as it repeats; a held letter still types', () => {
+  const { events, press, done } = typingPage(false);
+  events.take();
+  for (const key of ['Enter', ' ', 'x']) press(key);
+  for (const key of ['Enter', ' ', 'x']) press(key, { repeat: true });
+  assert.deepEqual(
+    events.take().map((event) => (event.kind === 'key' ? `key ${event.key}` : event.kind === 'text' ? event.text : '')),
+    ['key Enter', 'key  ', ' ', 'key x', 'x', ' ', 'key x', 'x'],
+  );
   done();
 });
 

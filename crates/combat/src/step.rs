@@ -14,8 +14,8 @@ use crate::tuning::{
     STAMINA_GUARDING, STAMINA_PER_TICK, STAMINA_REST, STEER_REACH, parry_window,
 };
 use core::f64::consts::FRAC_PI_2;
-use movement::blocks::ground_at;
-use movement::{Block, Body, Controls, Mode, Near, TICK_SECONDS, Terrain, step_body, step_body_paced};
+use movement::blocks::{ground_at, room_at};
+use movement::{Block, Body, Controls, Mode, Near, TICK_SECONDS, TUNING, Terrain, step_body, step_body_paced};
 
 /// A falling hop this near the ground has come down: its last tick, whatever the sums' last bits.
 const LANDED: f64 = 1e-6;
@@ -201,7 +201,12 @@ fn spend(next: &mut Fighter, stamina: f64) {
 
 /// Whether a fighter can raise a guard: never with a bow, a crossbow or a gun in hand.
 fn guards(fighter: &Fighter) -> bool {
-    fighter.arms.ranged.is_none()
+    fighter.arms.ranged.is_none() && hands_free(fighter)
+}
+
+/// Whether the hands are free to fight: on foot or in the air, never holding a wall or a lip or going over one.
+fn hands_free(fighter: &Fighter) -> bool {
+    matches!(fighter.body.mode, Mode::Ground | Mode::Air)
 }
 
 /// What the fighter is doing, carried on a tick or ended, and anything new it begins; `pulled` a fresh pull of the
@@ -259,8 +264,9 @@ fn act<B: Near + ?Sized>(
             None
         }
         Action::Parry { elapsed } => {
-            // The riposte: a swing held or pressed through the deflect strikes at once.
-            if input.attack.is_some() || next.kept.attack > 0 {
+            // The riposte: a swing held or pressed through the deflect strikes at once, once a swing can start: until
+            // then the deflect plays on.
+            if can_swing(next, intent) {
                 next.action = Action::Idle;
                 return swing(next, intent);
             }
@@ -340,7 +346,7 @@ fn begin<B: Near + ?Sized>(next: &mut Fighter, intent: &Intent, around: &Surroun
     if (input.guard || next.kept.guard > 0) && guards(next) {
         return Some(raise_guard(next));
     }
-    if next.arms.ranged.is_some() && input.aim && next.swap == 0 {
+    if next.arms.ranged.is_some() && input.aim && next.swap == 0 && hands_free(next) {
         next.action = Action::Draw { elapsed: 0 };
         next.aim = intent.controls.yaw;
         return None;
@@ -349,7 +355,7 @@ fn begin<B: Near + ?Sized>(next: &mut Fighter, intent: &Intent, around: &Surroun
     // the shot flies along the look, as a swing turns only after a target within the lock's arc); the swing's button
     // swings a ranged holder's fists.
     let trigger = input.shoot || next.kept.shoot > 0;
-    if let Some(ranged) = next.arms.ranged.filter(|_| trigger && next.swap == 0 && next.loaded()) {
+    if let Some(ranged) = next.arms.ranged.filter(|_| trigger && next.swap == 0 && next.loaded() && hands_free(next)) {
         let (chest, yaw) = (next.chest(), intent.controls.yaw);
         let ahead = |at: &[f64; 3]| off(yaw, bearing([chest[0], chest[1]], [at[0], at[1]])) <= LOCK_ARC;
         let (heading, pitch) =
@@ -393,11 +399,12 @@ fn swing(next: &mut Fighter, intent: &Intent) -> Option<Happening> {
     Some(Happening::Swung(attack))
 }
 
-/// Whether a swing could start now: a stroke held or kept, stamina left, footed when riding, and no swap under way.
+/// Whether a swing could start now: a stroke held or kept, stamina left, the hands free, footed when riding, and no
+/// swap under way.
 fn can_swing(next: &Fighter, intent: &Intent) -> bool {
     let stroke = intent.combat.attack.is_some() || (next.kept.attack > 0 && next.kept.stroke.is_some());
     let riding_aloft = intent.controls.mounted && next.body.mode != Mode::Ground;
-    stroke && next.stamina > 0.0 && !riding_aloft && next.swap == 0
+    stroke && next.stamina > 0.0 && hands_free(next) && !riding_aloft && next.swap == 0
 }
 
 fn can_dodge<B: Near + ?Sized>(next: &Fighter, controls: Controls, around: &Surroundings<'_, B>) -> bool {
@@ -425,7 +432,8 @@ fn dodge<B: Near + ?Sized>(next: &mut Fighter, controls: Controls, around: &Surr
         vy: toward[1] * DODGE_SPEED,
         vz: DODGE_LIFT,
         grounded: 0.0,
-        crouched: false,
+        // As a crouched jump does, the hop stands the body up only where it has room.
+        crouched: body.crouched && !room_at(around.blocks, body.x, body.y, body.z, TUNING.height),
         facing,
         moving: true,
         ..body

@@ -7,6 +7,7 @@
 import bank from '../../content/audio/sounds.json' with { type: 'json' };
 import { contentBytes, type Fetched } from './contentCache.ts';
 import { channelsOf, matchedLevel, type Loudness, type Measured, measuredOf, measureOver } from './soundMeasure.ts';
+import { standIn } from './standIns.ts';
 
 /** A recorded sound's credit, as the licence asks it to be given. */
 export interface SoundCredit {
@@ -150,6 +151,8 @@ export class Samples {
     const variants = this.held.get(id);
     if (!variants || variants.length === 0) {
       this.want(id);
+      const sound = this.bank.sounds[id];
+      if (sound && keysOf(sound).some((file) => this.coming.has(`${file} 0`))) standIn('sounds');
       return null;
     }
     const last = this.lastPlayed.get(id);

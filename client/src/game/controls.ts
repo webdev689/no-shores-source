@@ -4,6 +4,7 @@
 import { type BindId, type Binds, type Device, type Slot, isStickWay } from '../player/binds.ts';
 import { BINDS } from '../player/input.ts';
 import type { ShipKeys } from '../ships/shipAbilities.ts';
+import type { HudKeys } from '../combat/hud.ts';
 
 /** One row of the sheet: what it does (on the pad, where that differs), the controls it stands for, and the keys or
  *  the pad's buttons written where they are not bound (`pad:` names a pad's). */
@@ -220,4 +221,11 @@ export function shipKeys(device: Device = BINDS.device, binds: Binds = BINDS.now
     brace: cap('brace'),
     load: load === '' && device === 'keys' ? 'Wheel' : load,
   };
+}
+
+/** The keycaps of the Art's abilities (the Anima's, then each Tenet's) and of the two loadouts, for the keys or the
+ *  pad last used, as `boundCap` writes them: the fight's display draws them as the ship's bar draws its own. */
+export function hudKeys(device: Device = BINDS.device, binds: Binds = BINDS.now): HudKeys {
+  const cap = (id: BindId) => boundCap(id, device, binds);
+  return { arts: [cap('anima'), cap('tenetOne'), cap('tenetTwo')], loadouts: [cap('melee'), cap('ranged')] };
 }

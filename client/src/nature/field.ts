@@ -4,14 +4,22 @@ import { type FloraForm, formsOf } from './flora.ts';
 import type { Cast, Kind } from './kinds.ts';
 import { formKinds, PLANTED_FLOATS, type ScatterGround, scatterTile, TILE_M } from './scatter.ts';
 import { PAGE_SHIFT, PAGE_SLOTS, SLOT_FLOATS, SlotStore } from './slots.ts';
+import { behindVeil } from '../standIns.ts';
+
+/** How long one update may spend scattering behind a trip's veil, milliseconds: no one sees those frames, and the veil
+ *  lifts once the plants round the player are scattered. */
+const VEILED_BUDGET_MS = 30;
 
 /** The ground round the eye, as the caller has it this frame. */
 export interface NatureGround extends ScatterGround {
   /** The landmass's biome, its `climate` in the layout; an unknown one grows nothing. */
   readonly biome: string;
   /** Changes whenever the ground under the plants changes (an edit, a new close patch): every tile is scattered
-   *  again, nearest first, the old plants drawn until their tile's turn comes. */
+   *  again, nearest first, the old plants drawn until their tile's turn comes, but those `unchanged` keeps. */
   readonly version: number;
+  /** Whether a tile's ground is the same now as on an earlier version: a tile scattered then keeps its plants.
+   *  Without it, a new version scatters every tile again. */
+  readonly unchanged?: (tileX: number, tileY: number, since: number) => boolean;
   /** The biome's low ground (0..1 a channel): the far plants' colours lean toward it. */
   readonly groundColour?: readonly [number, number, number];
 }
@@ -79,7 +87,8 @@ interface Tile {
   readonly number: number;
   readonly tall: Layered;
   low: Layered | null;
-  readonly version: number;
+  /** The ground's version it was scattered on, or found unchanged on since. */
+  version: number;
   /** Scattered far off, holding only what the thinning leaves there. */
   readonly sparse: boolean;
   /** The lowest and highest foot of the tile's plants, both layers', metres: Infinity and -Infinity for none. */
@@ -188,7 +197,8 @@ export class NatureField {
   /** How many tile layers have been scattered: for tests and the page's own readout. */
   scattered = 0;
 
-  /** `budgetMs` is how long one update may spend scattering. */
+  /** `budgetMs` is how long one update may spend scattering in play; behind a trip's veil it may spend
+   *  VEILED_BUDGET_MS. */
   constructor(budgetMs = 6) {
     this.budgetMs = budgetMs;
   }
@@ -220,7 +230,7 @@ export class NatureField {
     const started = performance.now();
     const offsets = this.settled?.version === ground.version ? [] : this.offsets;
     for (; this.cursor.at < offsets.length; this.cursor.at++) {
-      if (performance.now() - started > this.budgetMs) {
+      if (performance.now() - started > (behindVeil() ? VEILED_BUDGET_MS : this.budgetMs)) {
         waiting = true;
         break;
       }
@@ -229,6 +239,8 @@ export class NatureField {
       const key = keyOf(tileX, tileY);
       let kept = this.kept.get(key);
       const sparse = distance > SPARSE_FROM_M;
+      if (kept && kept.version !== ground.version && ground.unchanged?.(tileX, tileY, kept.version))
+        kept.version = ground.version;
       if (!kept || kept.version !== ground.version || (kept.sparse && !sparse)) {
         if (kept) this.letGo(kept, false);
         const number = kept?.number ?? this.freeNumbers.pop() ?? this.nextNumber++;

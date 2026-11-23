@@ -35,8 +35,7 @@ pub const DESPAWN_BEYOND: f64 = 1900.0;
 pub const HOSTILE_NEAR_M: f64 = 700.0;
 /// The rest of the volley that made a ship strike, this long after (seconds), cannot sink it.
 pub const STRUCK_GRACE_S: f64 = 2.0;
-/// A captain who struck lies hove to this long (seconds) for a player to board it; with no one aboard by then it is
-/// scuttled.
+/// A captain who struck lies hove to this long (seconds) for a player to board; with no one aboard by then, scuttled.
 pub const STRUCK_HOLD_S: f64 = 90.0;
 /// How much faster every ship sails and rows in a sea fight than at sea (half again, and a fifth on that), and how much
 /// faster it swings and answers its helm, at the owner's word.
@@ -82,7 +81,7 @@ impl Vessel {
     pub fn flag(&self) -> Flag {
         match &self.sailor {
             Sailor::Player => Flag::Player,
-            Sailor::Captain(command) => Flag::Faction(command.mind.commission.faction),
+            Sailor::Captain(command) => Flag::numbered(command.mind.commission.faction),
         }
     }
 
@@ -410,9 +409,21 @@ impl Fight {
         waters: &impl Waters,
         time: f64,
     ) {
-        let hull = commission.hull();
-        let mind = Captain::new(commission, seed, ship.heading, arms_of(hull));
-        let damage = commission.damage();
+        self.enlist_in(id, ship, (commission, commission.hull()), seed, waters, time);
+    }
+
+    /// As `enlist`, a captain sailing `hull` rather than its rank's: a friendly ship of the traffic keeps its own.
+    pub fn enlist_in(
+        &mut self,
+        id: ShipId,
+        ship: Ship,
+        (commission, hull): (Commission, HullKind),
+        seed: u32,
+        waters: &impl Waters,
+        time: f64,
+    ) {
+        let mind = Captain::new(commission, seed, ship.heading, arms_of(hull)).in_hull(hull);
+        let damage = commission.damage_in(hull, 1.0);
         let under = sink_depth(seed, arms_of(hull));
         let command = Command { mind, under, struck_at: None, gone: None, boarded: false, out_of_reach_since: None };
         let vessel = Vessel {
@@ -434,7 +445,7 @@ impl Fight {
         let Some(vessel) = self.ships.get_mut(&id) else { return };
         let Sailor::Captain(command) = &mut vessel.sailor else { return };
         command.mind = command.mind.clone().raised(strength);
-        vessel.damage = command.mind.commission.damage_at(strength);
+        vessel.damage = command.mind.commission.damage_in(vessel.hull, strength);
     }
 
     /// A ship leaves the fight: the captains forget it; balls it fired fly on.
@@ -548,15 +559,6 @@ impl Fight {
         let foe = |vessel: &Vessel| vessel.flag() != own && vessel.in_fight() && vessel.damage.fighting();
         let foes = self.ships.iter().filter(|(_, vessel)| foe(vessel));
         foes.map(|(id, vessel)| sighting_of(*id, vessel)).collect()
-    }
-
-    /// Every hull in the fight but `except`'s: where it is, its way and its pass reach, for a captain to keep clear of.
-    fn traffic(&self, except: ShipId) -> Vec<crate::captain::course::Traffic> {
-        use crate::captain::course::{pass_reach, velocity_of};
-        let others = self.ships.iter().filter(|(id, vessel)| **id != except && vessel.in_fight());
-        others
-            .map(|(_, vessel)| ([vessel.ship.x, vessel.ship.y], velocity_of(&vessel.ship), pass_reach(vessel.arms())))
-            .collect()
     }
 }
 

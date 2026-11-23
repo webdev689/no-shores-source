@@ -113,6 +113,8 @@ workflow renders every move of every foe and the wave this way, a job a move, an
   for the Fissure to call where it is sealed.
 - **At night** a Lattice figure's crystal, its bright and strongly hued texels, glows of itself: never lit below 0.8
   (`game/figureView.ts`).
+- **The ruined cities** are overtaken by its crystal, drawn by code in the city's crystal material: the landmark
+  crowned, the buildings, heaps, rubble and wrecks grown through ([[Cities]], "Overtaken by the Lattice").
 - **Before the pictures are published** a Lattice foe is drawn as a plain man in grey and brown at its size, and dies
   in its fade alone.
 

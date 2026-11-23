@@ -138,10 +138,11 @@ number is one of [[Gear as Claude Shapes It]].
   35 times in 100, each beside its Vestige and by a roll of its own, raised by the tier as the Vestige is
   (`vestige::found_items`, `loot_kill`). It is made as a Vestige of its rank's colours, opened, would make it, for any
   slot, at the foe's level, and goes into its slot's nine, else the vault; with both full it is laid as a Vestige of
-  its colour and slot (`keep_found`).
+  its colour and slot at the foe's level, whatever a named item's own (`keep_found`).
 - **A clear** ([[Bosses and Dungeons Drop Items, Clears Pay, and Shapes Come From the Week's Abyss]], `room::clears`):
   once every group of a mission's, a dungeon's or a world boss's garrison is down at once, no wave standing, each
-  player still in the room who shared a kill of it since its last clear is paid, at the garrison's highest level as a
+  player still in the room who shared a kill of it since its last clear (as their account, so one who rejoined keeps
+  it) is paid, at the garrison's highest level as a
   kill is: at level 5 a mission 400 XP and 30 Aurem, a dungeon 800 and 60, a world boss 1,600 and 120
   (`rewards::Clear`). A dungeon's clear also leaves an item, coloured as its Miniboss's, and a Vestige as often as its
   Miniboss leaves one. It pays once until a group stands again. A patrol never ends, so it pays none. A laid
@@ -178,11 +179,13 @@ number is one of [[Gear as Claude Shapes It]].
   for two minutes ("Drops", below). While a player holds the Abyss boon this week ([[Activities]]), each kill pays
   them a quarter more of its XP, rounded down, to them and to the weapon that earned it, and as much more reputation
   as the kill's own goes ([[Factions]]) (`boon_xp`).
-- **A dungeon's cache.** When a dungeon's end foe falls (its Reeve, or an Elite Dungeon's Boss), its cache opens,
-  and every player then in the dungeon's room finds a Vestige lying before it, theirs alone, whoever struck it: sure,
-  at the end foe's level, in the colours a boss's kill leaves, and lying for them as a kill's drop does ("Drops",
-  below; [[Dungeons]], "In the rooms"). A run's first clear in its period lays a second, further out: the dungeon of
-  the day's, or the week's two's ([[Activities]], "What it pays, once").
+- **A dungeon's cache.** When a dungeon's end foe falls (its Reeve, or an Elite Dungeon's Boss), its cache opens
+  and pays every player then in the dungeon's room a dungeon's clear at the end foe's level, whoever struck it
+  (`pay_cache`; "A clear", above): its XP and Aurem, an item coloured as its Miniboss's, and a Vestige as often as its
+  Miniboss leaves one, thrown out of the cache to lie before it for them as a kill's drop does ("Drops", below;
+  [[Dungeons]], "In the rooms"). A run's first clear in its period pays as well, the dungeon of the day's or the
+  week's two's, its Vestige kept straight into the carried ten, else the vault, else the mail ([[Activities]], "What it
+  pays, once").
 - **Perks.** The traits a player's worn gear gives make a trim of combat's numbers, which their fighter carries, so
   their browser predicts it to the bit ([[Combat]]). The room adds what only it knows the moment of: Honed, Executioner,
   Undertow, Exploit and Attuned as a blow is struck, Point Blank and Long Shot by the ground a shot covered, the
@@ -510,10 +513,12 @@ to every other player. Every garment is armour ([[Clothing Is Armour, With a War
 
 - **Normal** pieces are clothes: a shirt, breeches, trousers or a skirt, and shoes, dyed in the rarity's plain dyes;
   a Normal head or arms piece shows nothing.
-- **Magic** pieces are light armour or clothes by the item's own number (its name while it has none, a smith's ware
-  before it is bought): the head and arms leather or the thieves' set, the torso and legs clothes (a shirt with a tunic
-  or vest over it, breeches, trousers or a skirt, and tall boots or shoes, in brighter dyes), leather or the thieves'
-  set.
+- **Magic** pieces are light armour or clothes by the item's own number (its name while it has none): the head and
+  arms leather or the thieves' set, the torso and legs clothes (a shirt with a tunic or vest over it, breeches,
+  trousers or a skirt, and tall boots or shoes, in brighter dyes), leather or the thieves' set.
+- **A smith's ware** is drawn by the number it takes once bought, which the gear message sends (`next_id`, the number
+  the next item the player gets takes), so the shop shows the piece the player gets: its set or clothes, its shield
+  and its make. A test buys each of the day's wares in turn and holds each to its look in the shop.
 - **Rare and finer** pieces are armour sets of the forge. A rolled Rare piece climbs the sets' ladder (leather, the
   thieves', chain, iron, steel, the knights', silver, elven, dwarven, orcish, mithril, adamantium, ebony, daedric) from
   chain, nine rungs over levels 1 to 20 and up to two more by its name: chain, iron or steel at level 1, adamantium,
@@ -573,8 +578,8 @@ Officers ashore fight beside their player, as DFO's crew companions did
 ([[The Ship's Power, Crew and Islands as Claude Shapes Them]]).
 
 - **Who.** Each officer on duty ashore (two at most) stands as a fighter on the players' side beside a player in a
-  land room (a continent's node, a patrol, the Test Ground), thinking with a foe's own brain: the First Mate a pirate
-  swordsman, the Gunner and the Lookout pirate archers, the Bosun a pirate brute, the Carpenter a pirate skirmisher,
+  land room (a continent's node, a patrol, the Test Ground), thinking with a foe's own brain, as the crew's own types ([[Enemies]]): the First
+  Mate the Swordsman, the Gunner and the Lookout the Archer, the Bosun the Brute, the Carpenter the Skirmisher,
   each at Major, dressed by their post (below). A boarded deck has none yet.
 - **Following.** Their place is 1.8 m behind the leader, 1.1 m either side when two are ashore; their post moves there
   each tick, and with no one to fight they walk back once 2.5 m from it (3.7 m for the second). One 40 m from the

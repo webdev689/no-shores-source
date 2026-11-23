@@ -1,7 +1,7 @@
 import type { FightEvent, FightLay, FightLook, FightView } from '../rules/fightRules.ts';
 import type { ShadowMap } from '../shadow.ts';
 import type { LandView } from '../rules/landRules.ts';
-import { type AimDrawn, AimView } from '../ships/aimView.ts';
+import { type AimDrawn, type AimView, aimViewOf } from '../ships/aimView.ts';
 import type { Mark, Splash } from '../ships/effects.ts';
 import { fightDisplay } from '../ships/fightDisplay.ts';
 import { type Cue, type FeelShip, FightFeel } from '../ships/fightFeel.ts';
@@ -75,7 +75,7 @@ export class Naval {
 
   constructor(marks: MarkDrawer, shown: (hull: number) => number = (hull) => hull) {
     this.marks = marks;
-    this.aimView = marks.gpu ? new AimView(marks.gpu) : null;
+    this.aimView = marks.gpu ? aimViewOf(marks.gpu) : null;
     this.shown = shown;
   }
 
@@ -94,7 +94,7 @@ export class Naval {
     return this.fight !== null || this.calling;
   }
 
-  /** F: calls a pirate captain round it, or sends the one called off. */
+  /** F: calls a Grey Tithe captain round it, or sends the one called off. */
   toggle(source: FightSource | null, id: string, sailing: Sailing, time: number, fail: (error: unknown) => void): void {
     if (this.fight) {
       this.end();

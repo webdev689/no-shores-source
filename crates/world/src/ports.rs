@@ -1,8 +1,8 @@
-//! Which cities are ports. Three port cities remain, one for each holder of the waters; the other six cities are
-//! desolate and destroyed, no longer ports. The city crate, the traffic and the page all read this list.
+//! Which cities are ports. Three port cities remain: Overlook in home waters, Sunspire and Rimeholt in the Grey
+//! Tithe's; the other six cities are desolate and destroyed, no longer ports. The city crate, the traffic and the page all read this list.
 
-/// The port cities by city id: Overlook (home), Sunspire (the pirates' first island) and Rimeholt (the Grey Tithe's
-/// seat).
+/// The port cities by city id: Overlook (home), Sunspire (the Grey Tithe's first island) and Rimeholt (the Grey
+/// Tithe's seat).
 pub const MAIN_PORTS: [&str; 3] = ["overlook", "sunspire", "rimeholt"];
 
 /// Whether a city, by its id, is one of the port cities.

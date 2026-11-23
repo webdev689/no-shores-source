@@ -363,3 +363,73 @@ fn the_hubs_places_are_named_inside_its_ring_the_quay_among_them() {
     let inland = ["Quay", "Seaward Walk", "Watch Court", "Beacon Walk", "Hall of the Arts"].map(|name| at(name)[1]);
     assert!(inland.windows(2).all(|pair| pair[0] < pair[1]), "{inland:?}");
 }
+
+/// Shape stands where no one walks or stands: each of his places is over a metre clear of every walker, who keeps 0.7 m
+/// right of a way's middle and of the walk to a post (the page's `KEEP_RIGHT_M`), and of every post.
+#[test]
+fn shapes_places_stand_clear_of_the_townsfolks_ways_and_posts() {
+    let (_, plan) = planned();
+    let social = &plan.social;
+    let ways = &social.ways;
+    let mut near = Vec::new();
+    // The ways' links, and the walk from each post to the way point it is reached from.
+    let links = ways.links.iter().map(|&[one, two]| [ways.points[one as usize].at, ways.points[two as usize].at]);
+    let to_posts = social.posts.iter().map(|post| [ways.points[post.reached_from as usize].at, post.at]);
+    let walks: Vec<[[f64; 2]; 2]> = links.chain(to_posts).collect();
+    for &spot in &social.visitor_spots {
+        for &link in &walks {
+            let apart = super::dress::point_to_segment(spot, link);
+            if apart < 1.7 {
+                near.push(format!("{spot:?} {apart:.2} m from the way {link:?}"));
+            }
+        }
+        for post in &social.posts {
+            let apart = libm::hypot(post.at[0] - spot[0], post.at[1] - spot[1]);
+            if apart <= 1.0 {
+                near.push(format!("{spot:?} {apart:.2} m from the post at {:?}", post.at));
+            }
+        }
+    }
+    assert!(near.is_empty(), "{}", near.join("\n"));
+}
+
+/// A talker and whoever they talk with, kept at posts side by side, face each other: in the courts and on the quay.
+#[test]
+fn a_pair_at_posts_side_by_side_face_each_other() {
+    let (_, plan) = planned();
+    let posts = &plan.social.posts;
+    let faces = |from: &crate::life::Post, to: &crate::life::Post| {
+        let toward = [to.at[0] - from.at[0], to.at[1] - from.at[1]];
+        libm::sin(from.facing) * toward[0] - libm::cos(from.facing) * toward[1] > 0.0
+    };
+    let mut away = Vec::new();
+    for (nth, one) in posts.iter().enumerate() {
+        for two in &posts[nth + 1..] {
+            let apart = libm::hypot(two.at[0] - one.at[0], two.at[1] - one.at[1]);
+            let talking = one.task == crate::life::Task::Gesture || two.task == crate::life::Task::Gesture;
+            if talking && apart < 2.5 && !(faces(one, two) && faces(two, one)) {
+                away.push(format!("{:?} at {:?} and {:?} at {:?}", one.task, one.at, two.task, two.at));
+            }
+        }
+    }
+    assert!(away.is_empty(), "{}", away.join("\n"));
+}
+
+#[test]
+fn shape_stands_on_the_switchback_landing_aside_of_the_walkers_line_away_from_the_flights() {
+    use crate::ramps::Piece;
+    let (_, plan) = planned();
+    let middle = |ramp: &crate::ramps::Ramp| {
+        let [west, north, east, south] = ramp.pad.bounds;
+        [f64::midpoint(west, east), f64::midpoint(north, south)]
+    };
+    let apart = |one: [f64; 2], two: [f64; 2]| libm::hypot(one[0] - two[0], one[1] - two[1]);
+    let landed = plan.ramps.iter().filter(|ramp| ramp.piece == Piece::Landing).find_map(|landing| {
+        let at = middle(landing);
+        plan.social.visitor_spots.iter().find(|&&spot| (apart(spot, at) - 2.0).abs() < 1e-6).map(|&spot| (at, spot))
+    });
+    let (at, spot) = landed.expect("Shape's place on a landing");
+    let legs: Vec<[f64; 2]> = plan.ramps.iter().filter(|ramp| ramp.piece == Piece::Leg).map(middle).collect();
+    let nearest = |point: [f64; 2]| legs.iter().map(|&leg| apart(point, leg)).fold(f64::INFINITY, f64::min);
+    assert!(nearest(spot) > nearest(at), "away from the flights: {spot:?} by the landing at {at:?}");
+}

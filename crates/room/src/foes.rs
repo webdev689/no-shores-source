@@ -55,6 +55,15 @@ pub(crate) struct Foe {
     pub shield: Option<gear::element::Shield>,
 }
 
+impl Foe {
+    /// Its health and its most `times` what they were, as a level makes them, its hurt counted afresh from there.
+    pub(crate) fn grow(&mut self, times: f64) {
+        self.fighter.health *= times;
+        self.fighter.health_max *= times;
+        self.brain.heal_window(self.fighter.health);
+    }
+}
+
 /// A foe as the room last stepped it: its number, its role's, its type's, its rank's, its faction's, its phase and how
 /// alert it is (0 idle, 1 suspicious, 2 alert, 3 searching), its fighter, its level and its shield; the companion it
 /// is, if one, whose faction is the players' (0); and the name it stands under in place of its type's (empty for none).
@@ -196,11 +205,11 @@ fn shape_reach(telegraph: &Telegraph) -> f64 {
     }
 }
 
-/// The pirates' type in a role, at the rank a page asking by role alone gets (`SpawnAsk::by_role`).
+/// The Grey Tithe's type in a role, a Major or at its first rank if it comes in none.
 #[cfg(test)]
-pub(crate) fn pirate_in(role: ::foes::Role) -> Option<(&'static FoeType, Rank)> {
-    let SpawnAsk::Foe { foe_type: number, rank, .. } = SpawnAsk::by_role(role as u8, 0)? else { return None };
-    Some((foe_type(number)?, Rank::from_number(rank)?))
+pub(crate) fn hostile_in(role: ::foes::Role) -> Option<(&'static FoeType, Rank)> {
+    let found = ::foes::in_role(::foes::factions::GREY_TITHE, role)?;
+    Some((found, found.rank_or_first(Some(Rank::Major))))
 }
 
 impl Room {
@@ -261,9 +270,7 @@ impl Room {
     /// `element`, if one.
     pub(crate) fn gird(&mut self, id: FighterId, level: u8, element: Option<gear::Element>) {
         let Some(foe) = self.foes.get_mut(&id) else { return };
-        let times = gear::power::foe_health_times(level);
-        foe.fighter.health *= times;
-        foe.fighter.health_max *= times;
+        foe.grow(gear::power::foe_health_times(level));
         foe.level = level;
         foe.shield = element.map(|element| gear::element::Shield::whole(element, foe.fighter.health_max));
     }

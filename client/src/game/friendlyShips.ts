@@ -87,12 +87,20 @@ export class FriendlyShips {
     this.speedMS = speedMS;
   }
 
-  /** The ships within `radiusM` of `centre` at world time `nowS`, `seconds` on since the last frame, nearest first. */
-  near(centre: readonly [number, number], radiusM: number, nowS: number, seconds: number): FriendlySailing[] {
+  /** The ships within `radiusM` of `centre` at world time `nowS`, `seconds` on since the last frame, nearest first;
+   *  none the room has `taken` off its route, which it draws where it has them. */
+  near(
+    centre: readonly [number, number],
+    radiusM: number,
+    nowS: number,
+    seconds: number,
+    taken: ReadonlySet<number> = new Set(),
+  ): FriendlySailing[] {
     this.sinceAsk += seconds;
-    if (this.sinceAsk >= ASK_EVERY_S) {
+    if (this.sinceAsk >= ASK_EVERY_S || [...this.tracks.keys()].some((id) => taken.has(id))) {
       this.sinceAsk = 0;
-      const answered = new Map(this.ask(centre, radiusM, nowS).map((ship) => [ship.id, ship]));
+      const routed = this.ask(centre, radiusM, nowS).filter((ship) => !taken.has(ship.id));
+      const answered = new Map(routed.map((ship) => [ship.id, ship]));
       for (const id of this.tracks.keys()) if (!answered.has(id)) this.tracks.delete(id);
       for (const id of this.rigs.keys()) if (!answered.has(id)) this.rigs.delete(id);
       for (const [id, answer] of answered) {
@@ -195,6 +203,8 @@ export interface FriendlyStep {
   readonly seconds: number;
   readonly time: number;
   readonly slots: (hull: number) => number;
+  /** The traffic ids the room has taken off their routes. */
+  readonly taken?: ReadonlySet<number>;
 }
 
 /** The nearest `slots(hull)` of each hull among `ships` (nearest first), in their order. */
@@ -218,7 +228,7 @@ export function friendlyFrame(
   step: FriendlyStep,
 ): FriendlyFrame {
   const { seconds, time } = step;
-  const near = fleet.near(view.centre, view.radiusM, worldTimeS(), seconds);
+  const near = fleet.near(view.centre, view.radiusM, worldTimeS(), seconds, step.taken);
   const drawn = drawable(near, step.slots);
   const ships = fleet.drawn(drawn, view.scale, water, water.swell?.bearing ?? 0, seconds, time);
   const away = (mask: HullMask) => Math.hypot(mask.x - view.centre[0], mask.y - view.centre[1]);
@@ -260,12 +270,17 @@ export class FriendlyTraffic {
   }
 
   /** At sea: the ships within the view's reach of the player's, at the size every ship is drawn now, as the player's is
-   *  (`shownScale`), their footprints joining the sea's, as many of each hull as the room's own leave room for. */
-  atSea(shown: SeaFrame, water: FriendlyWater, seconds: number, time: number): FriendlyFrame {
+   *  (`shownScale`), their footprints joining the sea's, as many of each hull as the room's own leave room for; none
+   *  the room has `taken`, which the sea draws where the room has them. */
+  atSea(
+    shown: SeaFrame,
+    water: FriendlyWater,
+    { seconds, time, taken }: { readonly seconds: number; readonly time: number; readonly taken: ReadonlySet<number> },
+  ): FriendlyFrame {
     if (!this.fleet) return { ships: [], hulls: shown.hulls, marks: [] };
     const view = { centre: shown.focus, radiusM: shown.shot.far, scale: shown.ships[0]?.place.scale ?? 1 };
     const slots = (hull: number) => this.perHull - shown.ships.filter((ship) => ship.hull === hull).length;
-    return friendlyFrame(this.fleet, view, water, shown.hulls, { seconds, time, slots });
+    return friendlyFrame(this.fleet, view, water, shown.hulls, { seconds, time, slots, taken });
   }
 
   /** On foot: the ships within `SEEN_FROM_LAND_M` of the eye, at their true size. */

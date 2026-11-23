@@ -1,7 +1,7 @@
 use super::*;
 use crate::captain::{CHASE_GIVE_UP_S, Temper, wary_takes};
 use crate::damage::{Hurt, SINK_SECONDS, Zone};
-use crate::ranks::{PIRATES, Rank};
+use crate::ranks::{GREY_TITHE, Rank};
 use crate::rigging::masts_of;
 use crate::shots::ShotEvent;
 use sailing::waters::Spot;
@@ -29,9 +29,9 @@ fn at(x: f64, y: f64) -> Ship {
     Ship { x, y, heading: 0.0, ahead: 0.0, abeam: 0.0, turn: 0.0, sail_way: 0.0, rung: 0 }
 }
 
-/// A fight of the player's Sloop and a pirate Major lying 60 m east of it.
+/// A fight of the player's Sloop and a Tithe Major lying 60 m east of it.
 fn alongside() -> Fight {
-    Fight::meet(at(0.0, 0.0), at(60.0, 0.0), Commission { faction: PIRATES, rank: Rank::Major }, 3, &Open, 0.0)
+    Fight::meet(at(0.0, 0.0), at(60.0, 0.0), Commission { faction: GREY_TITHE, rank: Rank::Major }, 3, &Open, 0.0)
 }
 
 fn run(fight: &mut Fight, ticks: u32) -> Vec<Event> {
@@ -40,7 +40,7 @@ fn run(fight: &mut Fight, ticks: u32) -> Vec<Event> {
 
 fn hit(target: ShipId, zone: Zone, point: [f64; 3], sail: Option<usize>, harm: f64) -> ShotEvent {
     let gun = crate::guns::Gun { hull: harm, sail: harm, ..crate::guns::SWIVEL };
-    ShotEvent::Hit { shooter: PLAYER, target, zone, point, flight: 0.5, gun, shot: Shot::Round, sail }
+    ShotEvent::Hit { shooter: PLAYER, target, zone, point, flight: 0.5, gun, shot: Shot::Round, sail, rigged: false }
 }
 
 fn strike_it(fight: &mut Fight) {
@@ -164,8 +164,8 @@ fn a_players_ship_goes_down_at_none_and_is_no_ones_enemy_as_it_does() {
 
 #[test]
 fn a_wary_captain_falls_on_a_sloop_it_outguns_or_one_nearly_gone() {
-    let minor = Commission { faction: PIRATES, rank: Rank::Minor };
-    let elite = Commission { faction: PIRATES, rank: Rank::Elite };
+    let minor = Commission { faction: GREY_TITHE, rank: Rank::Minor };
+    let elite = Commission { faction: GREY_TITHE, rank: Rank::Elite };
     assert!(!wary_takes(minor, 1.0, 1.0), "a Minor does not outgun a sound Sloop");
     assert!(wary_takes(minor, 1.0, 0.3), "holed under GRAPPLE_HULL");
     for commission in [minor, elite] {
@@ -187,7 +187,7 @@ fn a_wary_captain_falls_on_a_sloop_it_outguns_or_one_nearly_gone() {
 
 #[test]
 fn a_wary_captain_who_will_not_engage_breaks_off_once_out_of_reach_for_its_give_up_time() {
-    let commission = Commission { faction: PIRATES, rank: Rank::Minor };
+    let commission = Commission { faction: GREY_TITHE, rank: Rank::Minor };
     let seed = (1..).find(|seed| crate::captain::temper_for(commission, *seed) == Temper::Wary).unwrap();
     assert!(!wary_takes(commission, 1.0, 1.0), "it will not fall on a whole Sloop");
     let mut fight = Fight::meet(at(0.0, 0.0), at(0.0, -400.0), commission, seed, &Open, 0.0);

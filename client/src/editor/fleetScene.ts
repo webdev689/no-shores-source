@@ -1,5 +1,5 @@
 import type { FightLay } from '../rules/fightRules.ts';
-import { AimView } from '../ships/aimView.ts';
+import { type AimView, aimViewOf } from '../ships/aimView.ts';
 import type { FleetLay, FleetLook } from '../rules/fleetRules.ts';
 import type { LandView } from '../rules/landRules.ts';
 import type { Mark, Splash } from '../ships/effects.ts';
@@ -60,7 +60,7 @@ export class FleetScene {
   constructor(play: FleetSloop, marks: MarkDrawer, shown: (hull: number) => number = (hull) => hull) {
     this.play = play;
     this.marks = marks;
-    this.aimView = marks.gpu ? new AimView(marks.gpu) : null;
+    this.aimView = marks.gpu ? aimViewOf(marks.gpu) : null;
     this.shown = shown;
   }
 

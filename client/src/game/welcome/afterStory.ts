@@ -70,8 +70,8 @@ export class AfterStory {
       keepWelcome(this.parts.kept, 'due');
   }
 
-  /** A frame on foot in `node`; `veiled` while the arrival's veil is still up, `held` while the menu or a keeper's
-   *  screen is open. The cards of whoever is drawn. */
+  /** A frame on foot in `here`, her feet on its floor as a placed figure's; `veiled` while the arrival's veil is still
+   *  up, `held` while the menu or a keeper's screen is open. The cards of whoever is drawn. */
   frame(
     shot: Shot,
     viewport: { readonly width: number; readonly height: number },
@@ -79,9 +79,10 @@ export class AfterStory {
     clock: number,
     you: You,
     veiled: boolean,
-    node: NodeInfo,
+    here: { readonly node: NodeInfo; readonly floor: (x: number, y: number) => number },
     held = false,
   ): CardAt[] {
+    const { node } = here;
     const epilogue = this.epilogue;
     if (epilogue && !epilogue.done) return epilogue.frame(shot, viewport, seconds, clock, you, veiled);
     if (!veiled && node.kind === 'social' && !this.arrived) {
@@ -92,7 +93,16 @@ export class AfterStory {
       const asked = this.asked;
       [this.epilogue, this.asked] = [null, false];
       const said = asked ? [] : welcomeSaid(kept);
-      if (asked || due) this.welcome = Welcome.begin(node, this.parts, this.voice, you, said, shot, viewport);
+      if (asked || due)
+        this.welcome = Welcome.begin(
+          node,
+          { ...this.parts, groundAt: here.floor },
+          this.voice,
+          you,
+          said,
+          shot,
+          viewport,
+        );
     }
     const cards = this.welcome?.frame(shot, seconds, clock, you, held) ?? [];
     if (this.welcome?.done) this.welcome = null;

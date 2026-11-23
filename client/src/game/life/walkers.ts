@@ -1,6 +1,7 @@
 // The walkers of a social space: townsfolk who loop through a seeded round of the posts walkers visit (views,
 // stalls, benches), staying a while at each. Every walker's loop is `LOOP_S` long, so the stays of all of them can
-// be booked against one another once: no two stand at one post at once, however long the clock runs.
+// be booked against one another once: no two stand at one post at once, however long the clock runs. A round's loop
+// is a whole number of them (`roundOf`), so its walks are booked first and no walker sets out with it.
 import type { Post } from '../nodes.ts';
 import type { Path } from './paths.ts';
 import { type Leg, type Routine, WALK_M_S, pathBetween, stayAt } from './routine.ts';
@@ -90,12 +91,14 @@ interface Stay {
   readonly leave: number;
 }
 
-/** Every walker's routine, `count` of them, through the posts `visited`, drawn from `random`. */
+/** Every walker's routine, `count` of them, through the posts `visited`, drawn from `random`, kept clear of the
+ *  `rounds`' walks. */
 export function walkerRoutines(
   graph: WayGraph,
   visited: readonly Post[],
   count: number,
   random: () => number,
+  rounds: readonly Routine[] = [],
 ): Routine[] {
   const booked = new Booked();
   const paths = new Map<string, Path | null>();
@@ -120,6 +123,11 @@ export function walkerRoutines(
       return next === undefined ? [] : [[`${index}>${next}`, leave + walked / WALK_M_S] as [string, number]];
     });
   };
+  for (const { legs } of rounds)
+    legs.forEach(({ path, start }, nth) => {
+      const [from, to] = [legs[nth - 1]?.post, legs[nth + 1]?.post ?? legs[0]?.post];
+      if (path && from && to) booked.enter(entries(from, to, start));
+    });
   const routines: Routine[] = [];
   for (let walker = 0; walker < count && visited.length > 0; walker++) {
     for (let attempt = 0; attempt < ATTEMPTS; attempt++) {

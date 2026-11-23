@@ -2,6 +2,7 @@
 // rising to the feet and looking round at two ships jammed into one and burning; then the camera eases out of the eyes
 // to over the player's shoulder, where their control begins, their sword and shield gone from them.
 import { Cues } from '../../cinema/cues.ts';
+import { motionReduced } from '../../plus/kit.ts';
 import { type Point3, type RailKey, railShot } from '../../cinema/rail.ts';
 import { frameOf, type Shot } from '../camera.ts';
 import type { Actor } from './actors.ts';
@@ -15,14 +16,14 @@ import type { Story } from './story.ts';
 import { topAt, type WreckLayout } from './wreckLayout.ts';
 import type { WreckRun } from './wreckRun.ts';
 import { setAblaze, type WreckScenery } from './wreckScenery.ts';
-import { blurAt, lidsAt, lightAt, OPEN_S } from './waking.ts';
+import { blurAt, darkAt, OPEN_S } from './waking.ts';
 import { bloodSheet } from '../../combat/blood/art.ts';
 
 const LENS = { fov: 1.0, near: 0.05, far: 20_000 } as const;
 /** When the eyes are open for good, when the player stands, when the camera leaves the eyes, and when control comes,
  *  once it has eased to over their shoulder. */
 const STAND_S = 10.5;
-/** When the blood's sheet is drawn, seconds in: a frame after the wake begins, the lids shut. */
+/** When the blood's sheet is drawn, seconds in: a frame after the wake begins, the screen dark. */
 const SHEET_AT_S = 0.1;
 const LEAVE_S = 13;
 const CONTROL_S = LEAVE_S + 2.5;
@@ -39,6 +40,9 @@ function restingKey(shot: Shot): Pick<RailKey, 'eye' | 'look' | 'fov'> {
 export class Wake implements Beat {
   readonly name = 'wake';
   readonly skippable = true;
+  readonly fromBlack = true;
+  /** It fades in by its own darkening, the eyes blinking open. */
+  readonly fadeInS = 0;
   private readonly story: Story;
   private readonly layout: WreckLayout;
   private readonly scenery: WreckScenery;
@@ -53,7 +57,7 @@ export class Wake implements Beat {
   private since = 0;
   /** Set once skipped: its moments left still change the world, but none sounds. */
   private skipped = false;
-  /** How long the heart has beaten, seconds: on with the wake, never held while the wreck comes. */
+  /** How long the heart has beaten, seconds: from the wake's first frame, as its sound begins, so the two keep time. */
   private heart = 0;
   done = false;
 
@@ -64,11 +68,9 @@ export class Wake implements Beat {
     const { stage } = story;
     const { ambience, screen } = stage.parts;
     setAblaze(story, layout);
-    ambience.heartbeat(true);
     screen.bars(false);
-    screen.lids(1, lightAt(0));
+    screen.darken(1);
     screen.blur(blurAt(0, 0));
-    screen.fade(0, 1.4);
     this.back = this.backKeys(null);
     // The camera ends where the run's own takes the player standing, so play begins without a cut: taken as the
     // camera leaves the eyes, once the wreck's mesh has come, as the run's camera keeps clear of what it draws. A run
@@ -108,11 +110,16 @@ export class Wake implements Beat {
     ];
   }
 
+  /** Ready once the wreck the eyes open on is drawn. */
+  get ready(): boolean {
+    return !this.scenery.coming;
+  }
+
   skip(): void {
     this.skipped = true;
     this.cues.finish();
     const { screen } = this.story.stage.parts;
-    screen.lids(0);
+    screen.darken(0);
     screen.blur(0);
     // The director frames a beat once more after its skip: that frame is the wake's last, eyes open.
     this.since = CONTROL_S;
@@ -126,8 +133,8 @@ export class Wake implements Beat {
 
   frame(tick: Tick): StoryFrame {
     const { stage } = this.story;
-    // Held lying on the deck, a second before the eyes open for good, until the wreck they open on has come.
-    if (!(this.scenery.coming && this.since >= OPEN_S - 1)) this.since += tick.seconds;
+    if (this.heart === 0 && !this.skipped) stage.parts.ambience.heartbeat(true);
+    this.since += tick.seconds;
     // The camera's course is long to work out: done as soon as the wreck is drawn, while the player still lies there,
     // never as the camera leaves the eyes and the music begins.
     if (this.run && !this.scenery.coming && !this.warmed) {
@@ -135,8 +142,8 @@ export class Wake implements Beat {
       this.warmed = true;
     }
     this.heart += tick.seconds;
-    // The fight's blood sheet, a few hundred milliseconds to draw, drawn while the lids are still shut: the frame held
-    // over the stall is their dark, never a picture the player is watching.
+    // The fight's blood sheet, a few hundred milliseconds to draw, drawn while the screen is still dark: the frame held
+    // over the stall is that dark, never a picture the player is watching.
     if (this.since >= SHEET_AT_S && !this.sheeted) {
       bloodSheet();
       this.sheeted = true;
@@ -144,7 +151,7 @@ export class Wake implements Beat {
     this.cues.step(this.since);
     stage.stepWeather(tick.seconds);
     const { screen } = stage.parts;
-    screen.lids(lidsAt(this.since), lightAt(this.heart));
+    screen.darken(darkAt(this.since, motionReduced() ? undefined : this.heart));
     screen.blur(blurAt(this.since, this.heart));
     if (this.since >= CONTROL_S) this.done = true;
     const shot = this.shotAt(this.since);
@@ -177,7 +184,16 @@ export class Wake implements Beat {
   private shotAt(since: number): Shot {
     const facing = this.layout.wake.facing;
     if (since >= LEAVE_S && !this.shouldered && this.run) {
-      this.back = this.backKeys(this.run.restingShot());
+      const rest = this.run.restingShot();
+      // A run come once the camera has left the eyes is eased to from where the camera is, never jumped to.
+      const easing = since > LEAVE_S && since < CONTROL_S;
+      const here = easing && restingKey({ ...LENS, ...railShot(this.back, since, LENS.fov, 'both') });
+      this.back = here
+        ? [
+            { at: since, ...here },
+            { at: CONTROL_S, ...restingKey(rest) },
+          ]
+        : this.backKeys(rest);
       this.shouldered = true;
     }
     if (since >= LEAVE_S) return { ...LENS, ...railShot(this.back, since, LENS.fov, 'both') };

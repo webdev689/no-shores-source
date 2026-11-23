@@ -43,7 +43,6 @@ test('the Grey Tithe wear grey cloth', () => {
 test('the panel offers a faction, then only the ranks its chosen type comes in', () => {
   assert.deepEqual(factionsOf(roster), [
     [1, 'The Grey Tithe'],
-    [2, 'Pirates'],
     [3, 'The Lattice'],
   ]);
   const ranksOf = (name: string) => {
@@ -64,11 +63,11 @@ test('the panel offers a faction, then only the ranks its chosen type comes in',
   assert.deepEqual(ranksOf('High Assessor Corvane'), [['5', 'Boss']]);
 });
 
-test('a foe from an older room, sent with no type, is shown as the pirates’ type in its role', () => {
+test('a foe from an older room, sent with no type, is shown as the Grey Tithe’s type in its role', () => {
   assert.deepEqual(
     [1, 3, 5].map((kind) => shownType(roster, { type: 0, kind })?.type),
-    [13, 15, 17],
-    'the pirates’ Skirmisher, Brute and Captain',
+    [1, 4, 6],
+    'the Tithe’s Runner, Enforcer and Reeve',
   );
   assert.equal(shownType(roster, { type: 4, kind: 3 })?.name, 'Enforcer', 'a type sent is its own');
   assert.equal(shownType(roster, { type: 0, kind: 0 }), undefined);

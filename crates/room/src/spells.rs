@@ -278,11 +278,12 @@ impl Room {
         let Some(fighter) = self.players.get(&caster).map(|found| found.fighter) else { return };
         let Some(art) = arts().art(cast.art()) else { return };
         let Some(def) = art.spell(cast.ability()) else { return };
-        // Casting is attacking, which ends the veil; Vanish's veil is what it casts.
-        if def.key != "vanish"
-            && let Some(found) = self.players.get_mut(&caster)
-        {
-            found.fighter.statuses.unveil();
+        // Casting is attacking, which ends the veil (Vanish's veil is what it casts) and the grace of one stood again.
+        if let Some(found) = self.players.get_mut(&caster) {
+            found.graced = 0;
+            if def.key != "vanish" {
+                found.fighter.statuses.unveil();
+            }
         }
         let (feet, chest, ahead) = (feet_of(&fighter), fighter.chest(), ahead_of(&fighter));
         // The Art's level: its share of the healing given, and of how long the spell and the buffs it gives last.

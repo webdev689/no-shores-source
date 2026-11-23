@@ -21,7 +21,7 @@ const roster = rosterOf(
   ),
 );
 
-const [TITHE, PIRATES] = [1, 2];
+const TITHE = 1;
 const [MAJOR, BOSS] = [2, 5];
 const CARD: Card = { texture: {} as GPUTexture, width: 12, height: 24, root: [6, 24] };
 
@@ -36,7 +36,7 @@ const FLAT: ShipPlace = { x: 1000, y: 2000, z: 0, heading: 0, pitch: 0, roll: 0,
 const EYE = [1040, 2000, 8] as const;
 const NEAR = () => 1000;
 
-const majorAt = (key: string): ShipCrew => captainAtSea(key, PIRATES, MAJOR);
+const majorAt = (key: string): ShipCrew => captainAtSea(key, TITHE, MAJOR);
 const peopleOn = (
   people: ShipPeople,
   ships: readonly Manned[],
@@ -54,7 +54,7 @@ test('its captain stands behind the wheel of every hull facing its bow, and its 
     const captain = people.filter((person) => atWheel(person, hull));
     assert.equal(captain.length, 1, `one at the wheel of hull ${hull}`);
     assert.equal(captain[0]?.facing, 0, 'facing its bow');
-    assert.deepEqual(captain[0]?.dress, companyOf(roster, PIRATES, MAJOR).captain, "in its captain's look");
+    assert.deepEqual(captain[0]?.dress, companyOf(roster, TITHE, MAJOR).captain, "in its captain's look");
     const deck = HULL_DECKS[hull];
     assert.ok(deck);
     for (const hand of people.filter((person) => !atWheel(person, hull))) {
@@ -102,7 +102,7 @@ test('the hands seen follow the share of its men left; a struck captain leaves t
     struck.every((person) => !atWheel(person, 0)),
     'and no one is at its wheel',
   );
-  const captain = companyOf(roster, PIRATES, MAJOR).captain;
+  const captain = companyOf(roster, TITHE, MAJOR).captain;
   for (const hull of [0, 1, 2, 3]) {
     const aside = count({ ...whole, key: `aside-${hull}`, state: 'struck' }, hull).find((person) =>
       isDeepStrictEqual(person.dress, captain),

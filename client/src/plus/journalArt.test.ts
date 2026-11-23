@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { BANNER_KEYS, HOURGLASS_SVG, bannerFor, bannerSvg } from './journalArt.ts';
+import { BANNER_KEYS, HOURGLASS_SVG, bannerSvg } from './journalArt.ts';
 import { pixelsOf } from './pixelsForTests.ts';
 import { TONES } from './tones.ts';
 
@@ -34,16 +34,4 @@ test('the banners are six story pennants and six side shields, each its own, and
   // The shields' fields each a tone of their own: the colour at the middle of the left of each field.
   assert.equal(new Set(side.map((key) => pixelsOf(bannerSvg(key)).pixels.get('1,5'))).size, 6);
   assert.equal(bannerSvg('a-kind-to-come'), bannerSvg('side'));
-});
-
-test('a quest naming no banner wears one of its kind’s by its id, the same each time, and quests differ', () => {
-  for (const id of ['the-wreck', 'a-debt-paid', 'q1'])
-    assert.equal(bannerFor('story', id), bannerFor('story', id), 'the same each time');
-  const stories = new Set(['a', 'b', 'c', 'd', 'e', 'f'].map((id) => bannerFor('story', id)));
-  assert.equal(stories.size, 6, 'six ids in a row wear the six pennants');
-  for (const id of ['a', 'b', 'c']) {
-    assert.ok(bannerFor('story', id).startsWith('story'));
-    assert.ok(bannerFor('side', id).startsWith('side'));
-    assert.ok(bannerFor('a-kind-to-come', id).startsWith('side'), 'a kind to come wears a side quest’s');
-  }
 });

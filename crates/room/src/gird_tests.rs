@@ -235,3 +235,44 @@ fn a_boss_or_a_miniboss_never_stands_with_a_shield_while_the_foes_about_it_may()
     }
     assert!(shielded_others > 0, "the foes about them still may carry one");
 }
+
+#[test]
+fn a_levelled_foe_backs_off_from_a_third_of_its_health_lost_in_its_first_seconds_as_at_level_one() {
+    for level in [1, 20] {
+        let mut room = Room::new(Vec::new(), (0.0, 0.0));
+        let _player = room.join().unwrap();
+        let collector = foe_type(::foes::roster::COLLECTOR).unwrap();
+        let foe = room.stand_foe(collector, ::foes::Rank::Major, [0.0, -2.0, 0.0], core::f64::consts::PI, None);
+        room.gird(foe, level, None);
+        run(&mut room, 20);
+        let fighter = &mut room.foes.get_mut(&foe).unwrap().fighter;
+        fighter.health -= fighter.health_max / 3.0;
+        let mut backed = false;
+        for _ in 0..60 {
+            run(&mut room, 1);
+            backed |= room.foes[&foe].brain.plan() == ::foes::brain::Plan::Backoff;
+        }
+        assert!(backed, "level {level}: it backs off");
+    }
+}
+
+#[test]
+fn a_garrison_foe_raised_to_the_seas_backs_off_from_a_third_of_its_health_lost_in_its_first_seconds() {
+    let mut room = levelled(NodeKind::Dungeon, "glade", (7, 10));
+    room.set_difficulty(Difficulty::Abyss);
+    let player = room.join().unwrap();
+    let (&foe, found) = room.foes.iter().find(|(_, found)| found.brain.rank < ::foes::Rank::Miniboss).unwrap();
+    let at = [found.fighter.body.x, found.fighter.body.y + 2.0];
+    assert!(room.put_player(player, at[0], at[1]));
+    let (clock, z) = (room.clock, room.foes[&foe].fighter.body.z);
+    room.foes.get_mut(&foe).unwrap().brain.hunt(player, [at[0], at[1], z], clock);
+    run(&mut room, 20);
+    let fighter = &mut room.foes.get_mut(&foe).unwrap().fighter;
+    fighter.health -= fighter.health_max / 3.0;
+    let mut backed = false;
+    for _ in 0..60 {
+        run(&mut room, 1);
+        backed |= room.foes[&foe].brain.plan() == ::foes::brain::Plan::Backoff;
+    }
+    assert!(backed, "raised, it backs off as one that stood at the level would");
+}

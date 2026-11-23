@@ -216,8 +216,8 @@ export interface GearState extends LoreState {
   readonly identified: number;
   readonly answered: number;
   readonly nodes: readonly GearNode[];
-  /** In a social space, the smiths' wares of the day: the Armorsmith's, then the Weaponsmith's, each numbered by
-   *  its place among its vendor's. */
+  /** In a social space, the smiths' wares of the day: the Armorsmith's, the Weaponsmith's, then the Shipwright's, six
+   *  each, each with the number it takes once bought. */
   readonly wares: readonly GearItem[];
   /** What the player's worn gear trims of the fight's numbers, which their browser predicts them by. */
   readonly trim?: readonly number[];
@@ -415,7 +415,12 @@ export function gearOf(gear: Gear): GearState {
       return itemOf(item);
     });
   const items = listed(gear.itemsLength(), (index) => gear.items(index), 'gear item');
-  const wares = listed(gear.waresLength(), (index) => gear.wares(index), 'ware');
+  // Each ware carries the number it takes once bought, so it is drawn as the piece it becomes; it is asked for by its
+  // place (`vendorsOf`).
+  const wares = listed(gear.waresLength(), (index) => gear.wares(index), 'ware').map((ware) => ({
+    ...ware,
+    id: gear.nextId(),
+  }));
   const vestiges = Array.from({ length: gear.vestigesLength() }, (unused, index) => {
     const vestige = gear.vestiges(index);
     if (!vestige) throw new Error(`gear Vestige ${index} is missing`);

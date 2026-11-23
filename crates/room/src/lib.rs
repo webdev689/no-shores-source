@@ -14,6 +14,7 @@ mod chain;
 pub mod chart;
 pub mod clash;
 mod clears;
+mod coast;
 mod companions;
 mod course;
 pub mod crew;
@@ -27,8 +28,10 @@ pub mod fleet;
 mod floor;
 pub mod flotsam;
 mod foes;
+pub mod friendlies;
 mod garrison;
 pub mod harbour;
+pub mod hostiles;
 pub mod island;
 mod judging;
 mod landing;
@@ -36,7 +39,6 @@ mod left;
 pub mod lore;
 pub mod patrol;
 mod perks;
-pub mod pirates;
 mod plates;
 mod players;
 mod power;
@@ -64,7 +66,7 @@ pub use drops::{AMMO_REST_TICKS, DROP_TICKS, Drop, Dropped, VESTIGE_REST_TICKS};
 pub use entrances::Entrance;
 pub use floor::{Floor, standing_on};
 pub use foes::{CLEAR_FOES, FOES_MOST, FoeSeen, NODE_FOES_MOST, SHIELD_SHIFT};
-pub use judging::{Event, EventKind, How, how_of};
+pub use judging::{Event, EventKind, How};
 pub use perks::trim_of;
 pub use plates::Plate;
 pub use players::{
@@ -372,9 +374,9 @@ impl Room {
         found.plate.menu = input.menu;
         found.shown_tick = found.shown_tick.max(input.seen.min(self.clock));
         if found.held {
-            // Taken in order, so the next follows on; played as standing still, asking and casting nothing.
-            let Input { sequence, seen, shown, arms, .. } = input;
-            input = Input { sequence, seen, shown, arms, ..Input::default() };
+            // Taken in order, as standing still, asking and casting nothing; its dress kept, sent only when it changes.
+            let Input { sequence, seen, shown, arms, dress, .. } = input;
+            input = Input { sequence, seen, shown, arms, dress, ..Input::default() };
         }
         // A dress waits its turn; one back to the dress shown clears whatever waited, so the last sent is the one shown.
         // One that does not read is refused, and the last that did is kept.

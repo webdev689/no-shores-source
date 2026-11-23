@@ -153,6 +153,38 @@ test('a menu’s choices run, and the veil stands over all and takes the pointer
   assert.equal(ran, 1);
 });
 
+test('a trip’s veil is the loading screen: the logo, LOADING and its words; failed, its words alone', () => {
+  const [ui, hud] = [new Interface(renderer()), new Hud()];
+  hud.veil('Landing at The Saltgrass Downs');
+  let laid = frame(ui, hud);
+  const logo = laid.some((each) => each.node.picture?.key === 'logo');
+  assert.ok(logo, 'the logo');
+  assert.ok(words(laid).includes('LOADING'));
+  assert.ok(words(laid).includes('LANDING AT THE SALTGRASS DOWNS'));
+  hud.veil('Landing at The Saltgrass Downs failed: the room is full. Press Enter to try again.', false);
+  laid = frame(ui, hud);
+  assert.ok(!words(laid).includes('LOADING'), 'nothing loads while the trip waits on the player');
+  assert.ok(words(laid).some((each) => each.startsWith('LANDING AT THE SALTGRASS DOWNS FAILED')));
+});
+
+test('a trip’s veil is said to a screen reader as it comes up, once, and again for a later trip in the same words', () => {
+  const said: string[] = [];
+  const page = globalThis as { document?: unknown };
+  const before = page.document;
+  page.document = { ariaNotify: (words: string) => said.push(words) };
+  try {
+    const hud = new Hud();
+    hud.veil(null);
+    hud.veil('Returning to your ship');
+    hud.veil('Returning to your ship');
+    hud.veil(null);
+    hud.veil('Returning to your ship');
+    assert.deepEqual(said, ['Returning to your ship', 'Returning to your ship']);
+  } finally {
+    page.document = before;
+  }
+});
+
 test('while a menu is up the keys walk its choices alone, never the sea bar under it', () => {
   const [ui, hud] = [new Interface(renderer()), new Hud()];
   hud.veil(null);
@@ -298,7 +330,7 @@ test('an isle offers its own landfall over the sea bar', () => {
 test('the notices stand at the top right, 28 px in and 64 down, newest last, sliding in from the right', () => {
   const [ui, hud] = [new Interface(renderer()), new Hud()];
   hud.veil(null);
-  hud.notices(['The Pirate Brig surrenders!', 'No guns bear there.']);
+  hud.notices(['The Tithe Brig surrenders!', 'No guns bear there.']);
   frame(ui, hud);
   const rows = () => frame(ui, hud).filter((each) => each.node.id?.startsWith('notice:'));
   const [first, last] = rows();
@@ -357,9 +389,9 @@ test('a hostile ship’s mark wears its rank’s colour, its faction’s emblem 
   };
   hud.marks([
     {
-      id: 'pirate',
+      id: 'hostile',
       kind: 'hostile',
-      name: 'Pirate Brig',
+      name: 'Tithe Brig',
       x: 300,
       y: 300,
       sizePx: 28,
@@ -372,7 +404,7 @@ test('a hostile ship’s mark wears its rank’s colour, its faction’s emblem 
     },
   ]);
   const laid = frame(ui, hud);
-  const ring = laid.find((each) => each.node.id === 'mark:pirate');
+  const ring = laid.find((each) => each.node.id === 'mark:hostile');
   assert.match(ring?.node.picture?.key ?? '', /#ff0000/);
   const emblem = laid.find((each) => each.node.picture?.key.startsWith('mark emblem'));
   assert.equal(emblem?.box.width, 17, '62% of its ring');

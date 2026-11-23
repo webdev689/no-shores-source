@@ -112,8 +112,8 @@ the player's fight (`PlayerFight`), the foes' figures (`FoeFigures`), the fight'
   shield if one is picked ([[Gear]], "Elements and shields"); Spawn stands it 5 m ahead of where the player looks,
   facing them, at most twelve, and Clear sends every foe away; a foe asked for while the forge still loads is not asked
   for. Names, factions and hands come from the rules' roster through WebAssembly. Each fights by its brain ([[Foes]])
-  and wears its type's dress ([[Enemies]]): the Grey Tithe in grey over leather or iron, the pirates as the foes of
-  each kind were dressed before.
+  and wears its type's dress ([[Enemies]]): the Grey Tithe in grey over leather or iron, the crew's own five types
+  in the Test Ground's first foes' clothes.
 - **Statuses.** The panel gives any status ([[Combat]], "Statuses") to the player or to every foe, from the player,
   for its own time or for as many seconds as asked (ten minutes at most), through the room's own door, as a spell or a
   perk will: the icons show on the foes' plates and under the vitals, and the rules act on them. Only a course's room
@@ -162,7 +162,10 @@ the player's fight (`PlayerFight`), the foes' figures (`FoeFigures`), the fight'
   splash and a ring on the sea. An arrow or a bolt stays stuck where it stopped for 8 s, in a body for as long as the
   body stands; the 24 newest are kept.
 - **How marks are drawn.** Solid marks (whole, or dithered whole on the ground) write depth, so a near one hides a
-  far one; the see-through rest is drawn after them, each triangle far to near from the eye.
+  far one; the see-through rest is drawn after them, each triangle far to near from the eye. The fight's marks are laid
+  each frame into arrays kept from frame to frame and grown to the most yet (`FightEffects.marks`, `MarkOrder`, the
+  marks over everything in `MarkDraw`), written over from the front and cut to their count, so laying them makes no
+  new array but the fight's own few.
 - **Blood.** Each hit sprays [[Blood]] from the struck body's chest onto the ground and the blocks, a player's swing
   throwing it the way the blade went; a wounded body drips a trail, and a dead one lies in a spreading pool.
   `?blood=off` draws none.
@@ -322,7 +325,7 @@ room stands where the room last saw them, dressed as they dress themselves, show
 screen shows: their weapon drawn or worn, their swings, their casts, the moves played from the panel, and their horse.
 Where the forge does not draw that move for their figure, it plays the move their body is in. The status line says
 which player this is, the room's name, and the link's lag (how much it strays) and the share of
-snapshots lost, as the page measures them. A foe an older room sends with no type is drawn as the pirates' type in its role.
+snapshots lost, as the page measures them. A foe an older room sends with no type is drawn as the Grey Tithe's type in its role.
 
 When the room's socket closes, for a deploy or a dropped network, the page joins the room again by itself ([[Server]],
 "The browser's side"): a new player there, standing where the room puts them, their dress and what their hands hold

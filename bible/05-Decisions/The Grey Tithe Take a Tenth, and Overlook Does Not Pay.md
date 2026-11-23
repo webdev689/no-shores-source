@@ -35,3 +35,5 @@ status: in force
   game says little of it ([[The Game Shows the Mystery and Explains Almost None of It]]).
 - **The pirates are a faction of their own**: the Tithe are the authority, the pirates the outlaws they also hunt
   ([[The Enemies as Claude Builds Them]]).
+
+Replaced in part by [[Pirates Are Replaced by the Grey Tithe]]: there are no pirates for the Tithe to hunt.

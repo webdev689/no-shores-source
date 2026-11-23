@@ -48,6 +48,9 @@ code:
   - client/src/game/aboard.ts#Aboard
   - client/src/game/deckWalk.ts#DeckWalk
   - client/src/game/crew.ts#Crew
+  - client/src/cinema/sailAway.ts#SailAway
+  - client/src/game/seaTravel.ts#SeaTravel
+  - client/src/game/charting.ts#Charting
 ---
 # Sailing
 
@@ -162,7 +165,11 @@ length of grain, its canvas 0.8 m cloths over a faint weave, its guns mottled ir
 Every hull of [[Hulls]] is one model, fetched from R2 by its manifest entry the first time a ship of that hull is drawn
 and kept (`ShipModels`), and dressed in its side's colours as it is drawn (`dress.ts`). Every hull's view on a
 device shares one pipeline, built off the frame, and one set of pictures and sampler (`shipKit`). While its model is
-still coming a ship is drawn as the Sloop, its footprint, foam and plate the Sloop's too. A fetch that fails is said
+still coming a ship is drawn as the Sloop, its footprint, foam and plate the Sloop's too. A ship out of view is not
+drawn in the picture, though it keeps its slot: its bounds are a sphere made once from its model (`shipSphere`), about
+the middle of its mesh and its sails' corners and twice as far as the farthest of them, so its yards braced, its booms
+swung and its flag flying stay inside; while a sail torn away or a mast fallen lies off its side or astern it is
+always drawn. A fetch that fails is said
 once and tried again from a frame 5 s later, the wait doubling each time to 60 s. A colour is laid over the
 picture's grain, the picture's lightness about its mean kept:
 
@@ -171,7 +178,6 @@ picture's grain, the picture's lightness about its mean kept:
 | A player's | As painted | None | As painted | Overlook's blue |
 | A friendly ship (merchantmen) | Natural timber, as painted | Overlook's blue | White | Overlook's blue |
 | The Grey Tithe | Slate grey | Bone | Grey | Its canvas grey, the balance in dark slate |
-| The pirates | Black | Red | Dark | Black, the skull |
 
 - **Its hull's paint** covers the outside of its shell, tagged when its model loads (`tagShip`). Its breadth is
   sampled across its hull's faces in slices 0.25 m along it and 0.1 m deep, taken from its planks and wales (its
@@ -189,10 +195,10 @@ picture's grain, the picture's lightness about its mean kept:
   length long and two thirds as deep, its hoist down the mast. It streams the way the wind blows and waves along its
   length, a crest and a half on it, running at 1.4 a second. Its picture is `flagPictures`, bearing the faction's
   emblem where the [[Interface]]'s plates have one, in its own tones or, on the Grey Tithe's, shaded from its dark
-  slate, so its grey flag never reads as the pirates' black at a fight's range.
+  slate.
 
 Which hull a ship sails is the wire's word, a number (0 the Sloop, 1 the Schooner, 2 the Brig, 3 the Frigate,
-`hullName`): a `Pirate`'s `hull` at sea and a fleet vessel's, a captain's `hull_kind` in a fight's view, where `hull`
+`hullName`): a `Hostile`'s `hull` at sea, a friendly ship's the room keeps, and a fleet vessel's, a captain's `hull_kind` in a fight's view, where `hull`
 is its hull points (`hullOfCaptain`). A number with no model, or none sent, is drawn as the Sloop.
 
 ## Its sails
@@ -292,6 +298,44 @@ A body walks its deck ([[The Ship Is Managed and Walked From the Sea's Panel]]):
   is, so a body never leaves its deck.
 - **Its own frame.** A body on deck moves in its frame, so its way, its heading and the swell never move it; the game
   lays it into the world as the ship lies, at its drawn size.
+
+## Travel by the held map
+
+The [[Held Map]] takes the ship to other waters, seen sailing away
+([[The Held Map Takes the Ship to Other Waters, Seen Sailing Away]]). A course chosen into another water asks whether to
+travel there; yes runs the cinematic (`SailAway`, `SeaTravel`), which no key, press or wheel breaks: the sea bar goes
+while it runs, Stop and the pace dial do nothing however they are asked, the menu does not open, and nothing takes the
+player elsewhere (the company's Go to them waits); a travel left behind any other way ends when they come aboard:
+
+1. The map lowers and the camera leaves the helm on an eased rail out to the ship's aft starboard quarter, 70 m off and
+   28 m up, carried along with the ship as it gets under way on the course at the world's own pace, 3 s.
+2. The camera holds there, looking at the ship as it sails off, while the picture fades to black over 2 s; the veil, the
+   loading screen with "Sailing for <water>" ([[One Loading Screen Covers Every Trip Until the Place Is Ready]]), comes up in its last 0.7 s. The travel is asked of the sea room as the fade begins
+   ([[Server]], "The sea"): a course into other waters with the travel flag, sent in its turn as any course is, and no
+   other course sent in its place until the room answers. Too soon after a course, it is asked again; a room joined
+   since, or the same link joined again (which drops what it was sent), is asked again, once it has the ship at sea (a tier's room just joined puts it there when its keeper has
+   answered); one that gives no answer in 10 s, or whose room never shows the ship, is given up, and courses are sent again. A yes in a fight
+   sails the course as Set sail does.
+3. Black for at least 1.5 s, and longer until the room has answered, no continent near the ship's new place is
+   still to open (`Charting.waiting`), and frames drawn since the answer have shown the new waters whole (nothing
+   standing in, [[Game]]), the plants scattering at the veil's pace meanwhile; all waited on 15 s at most; the sea, its islands and the sky come with the room's word and the land.
+   Taken, the ship is laid where the room put it, 400 m short of the course's end on its last leg, with no easing
+   across the jump, and sails on to the end of the course the room was sent; the view over it snaps there too, and the old waters' islands, flotsam
+   and marks go with the room's next word.
+4. The black lifts over 1.5 s on a low wide shot off the ship's starboard bow, 110 m out and 5 m up, that pans round
+   its beam to a view from its stern, 60 m back and 16 m up, as it sails in, 4 s.
+5. The view eases back to the usual one over the ship over 1.5 s, and the player has the ship again, sailing on to
+   the course's end.
+
+A fight the room begins at any point of it ends the cinematic at once, the picture open: the page forgets the travel
+(a late answer is no answer) and the view pans down to the fight as ever; if the room had already taken it, the fight
+is where the room put the ship. A voyage stopped before the fade asks nothing and is refused at once ("The voyage was
+stopped."). A refused travel fades back in where the ship is over 1.5 s: it heaves to, its voyage kept to be resumed, and its line
+says why ("No travel while fighting.", "No travel off the helm.", "No travel with a hostile ship giving chase.", "That
+lies in these waters.", "The way there crosses land.", else "The sea would not take that course."). A course set at
+another tier on the map begins the cinematic at once and enters that tier's sea room as setting sail does, the travel
+asked of it by the fade; a tier the player's level shuts is never sailed for. The ship is drawn under way, sails set
+and wake behind, from the yes until it has arrived.
 
 ## Limits
 

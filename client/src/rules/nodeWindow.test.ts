@@ -1,9 +1,18 @@
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import { test } from 'node:test';
-import { startLand } from './landRules.ts';
-import { type Body, type Controls, floatsOf, startMovementRules } from './movementRules.ts';
-import { type Rect, standOnNode } from './nodeGround.ts';
+import { type LandRules, startLand } from './landRules.ts';
+import { type Body, type Controls, floatsOf, type MovementRules, startMovementRules } from './movementRules.ts';
+
+/** A rect of the world: west, north, east and south, metres. */
+type Rect = readonly [number, number, number, number];
+
+/** Stands the movement rules on a node's ground as its room does: the open landmass's window over the rect, and its
+ *  city's boxes there as the course. */
+function standOnNode(land: LandRules, movement: MovementRules, bounds: Rect): boolean {
+  movement.setCourse(land.boxes(...bounds));
+  return movement.setGround(land.window(...bounds));
+}
 
 const built = (name: string) =>
   readFile(new URL(`../../../target/wasm32-unknown-unknown/release/${name}.wasm`, import.meta.url)).catch(() => {

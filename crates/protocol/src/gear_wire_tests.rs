@@ -366,6 +366,53 @@ fn the_gear_for_the_clients_test_is_written() {
     std::fs::write(format!("{folder}/gear_shape.bin"), gear_bytes(&room, player).expect("written")).expect("written");
 }
 
+/// Each of the Armorsmith's and the Weaponsmith's wares bought in turn at the stall takes the number the gear message
+/// before it said the next item takes. The page's test (`client/src/player/gearLooks.test.ts`) reads the messages,
+/// the first before any is bought and one after each, each its length in four bytes (little-endian) and then itself,
+/// to check that each ware is drawn as the piece it becomes.
+#[test]
+fn each_smiths_ware_bought_takes_the_number_sent_and_the_gear_for_the_clients_test_is_written() {
+    use gear::vendor::{Vendor, WARES};
+    let (mut room, player, _) = standing();
+    // `furnished` sent seven asks.
+    let mut sequence = 7;
+    let mut ask = |room: &mut Room, asked: Asked| {
+        for _ in 0..room::asks::ASK_EVERY_TICKS {
+            room.tick();
+        }
+        sequence += 1;
+        room.input(player, Input { sequence, ask: Some(asked), ..Input::default() }).expect("taken");
+        room.tick();
+        room.player(player).expect("in").answer
+    };
+    ask(&mut room, Asked::Grant(Grant::Materials(200)));
+    let day = u32::try_from(room.day()).expect("a day");
+    let mut written = Vec::new();
+    let mut sent = |room: &Room| {
+        let bytes = gear_bytes(room, player).expect("a player of the room");
+        written.extend(u32::try_from(bytes.len()).expect("a length").to_le_bytes());
+        written.extend(&bytes);
+        let gear = flatbuffers::root::<messages::FromRoom>(&bytes).expect("a message").gear().expect("the gear");
+        assert_eq!(gear.wares().map(|wares| wares.len()), Some(3 * WARES), "at the stall");
+        gear.next_id()
+    };
+    let mut next = sent(&room);
+    for vendor in [Vendor::Armorsmith, Vendor::Weaponsmith] {
+        for ware in 0..WARES {
+            let held: Vec<u32> = room.player(player).expect("in").character.items.keys().copied().collect();
+            let ware = u8::try_from(ware).expect("a place");
+            assert_eq!(ask(&mut room, Asked::Gear(Ask::Vend { vendor, ware, day })), 0, "{vendor:?}'s {ware} bought");
+            let items = &room.player(player).expect("in").character.items;
+            let bought: Vec<u32> = items.keys().copied().filter(|id| !held.contains(id)).collect();
+            assert_eq!(bought, [next], "{vendor:?}'s {ware} takes the number sent");
+            next = sent(&room);
+        }
+    }
+    let folder = concat!(env!("CARGO_MANIFEST_DIR"), "/../../target/protocol");
+    std::fs::create_dir_all(folder).expect("the folder");
+    std::fs::write(format!("{folder}/gear_vended.bin"), written).expect("written");
+}
+
 /// Each faction piece, as the page is sent it, and the layers the room lets its colour stand on in a dress others see,
 /// for the page's test that every layer it dresses one in is among them (`client/src/player/dressLayers.test.ts`).
 #[test]
@@ -692,4 +739,25 @@ fn the_gear_message_carries_a_steps_figure_points_ward_clock_and_failures() {
     let defence = step_gear(&held.node, &[(held.place.as_str(), [0.0, 0.0], 60.0)], quest, task, [0.0, 10.0]);
     let gear = flatbuffers::root::<messages::FromRoom>(&defence).expect("a message").gear().expect("the gear");
     assert_eq!(gear.quest_ward().map(|it| it.iter().collect::<Vec<_>>()), Some(vec![0.0, 0.0, 1.0]), "its ward whole");
+}
+
+#[test]
+fn the_gear_message_carries_how_much_longer_an_art_recharges_in_the_room() {
+    let recharge = |room: &Room, player: PlayerId| {
+        let bytes = gear_bytes(room, player).expect("a player of the room");
+        flatbuffers::root::<messages::FromRoom>(&bytes).expect("a message").gear().expect("the gear").recharge()
+    };
+    let mut plain = Room::new(Vec::new(), (0.0, 0.0));
+    let player = plain.join().expect("a room with space");
+    assert!((recharge(&plain, player) - 1.0).abs() < 1e-9, "no run: as tuned");
+    // A day whose modifier is Trickle, its dungeon of the day run at Elite.
+    let day = (0..400).find(|&day| gear::activities::modifier_of_the_day(day) == gear::activities::Modifier::Trickle);
+    let day = day.expect("a Trickle day");
+    let (patrol, number) = gear::activities::dungeon_of_the_day(day, "continent-1").expect("its dungeon");
+    let minute = day * 24 * 60;
+    assert_eq!(gear::clock::day_of(minute), day);
+    let of = room::RunOf::Patrol { patrol: patrol.to_owned(), number };
+    let mut run = Room::dungeon_run(&of, gear::Difficulty::Elite, minute).expect("its run");
+    let player = run.join().expect("a room with space");
+    assert!((recharge(&run, player) - 1.5).abs() < 1e-9, "Trickle: half as long again");
 }

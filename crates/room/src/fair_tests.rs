@@ -109,7 +109,7 @@ fn the_tick_a_player_says_they_saw_moves_on_a_few_at_a_time_and_a_full_room_turn
 fn a_ball_is_judged_against_the_foe_where_the_shooters_screen_showed_it() {
     let mut room = room();
     let player = room.join().expect("a room with space");
-    let foe = stand(&mut room, 15, 3.0, -5.0);
+    let foe = stand(&mut room, 4, 3.0, -5.0);
     let mut shooter = *room.fighter(player).expect("in");
     shooter.arms = combat::Arms { melee: WeaponClass::Fists, ranged: Some(Ranged::Pistolet), off_hand: OffHand::Empty };
     let mut seen_then = *room.fighter(foe).expect("in");
@@ -124,7 +124,7 @@ fn a_ball_is_judged_against_the_foe_where_the_shooters_screen_showed_it() {
 #[test]
 fn a_foes_guard_counts_as_it_stands_now_and_its_body_where_the_striker_saw_it() {
     let mut room = room();
-    let foe = stand(&mut room, 14, 5.0, -5.0);
+    let foe = stand(&mut room, 2, 5.0, -5.0);
     room.foes.get_mut(&foe).expect("stood").fighter.action = Action::Guard { elapsed: 2, window: 9 };
     let mut then = *room.fighter(foe).expect("stood");
     then.body = standing(0.0, -1.5);
@@ -138,7 +138,7 @@ fn a_foes_guard_counts_as_it_stands_now_and_its_body_where_the_striker_saw_it() 
 fn a_player_who_stands_again_is_left_be_until_they_strike() {
     let mut room = room();
     let player = room.join().expect("a room with space");
-    stand(&mut room, 14, 0.0, -1.5);
+    stand(&mut room, 2, 0.0, -1.5);
     room.players.get_mut(&player).expect("in").fighter.action = Action::Dead { elapsed: combat::tuning::RESPAWN };
     for sequence in 1..=150 {
         room.input(player, asking(sequence, room.clock(), FISTS, CombatInput::default(), 0.0)).unwrap();
@@ -157,7 +157,7 @@ fn a_player_who_stands_again_is_left_be_until_they_strike() {
 fn an_aimed_shot_is_aimed_up_for_its_fall_and_carries_its_whole_line() {
     for ahead in [20.0, 45.0] {
         let mut room = room();
-        let archer = stand(&mut room, 16, 0.0, -ahead);
+        let archer = stand(&mut room, 3, 0.0, -ahead);
         let foe = *room.fighter(archer).expect("stood");
         let order = combat::shapes::TelegraphOrder {
             shape: combat::shapes::Shape::Aimed,
@@ -200,4 +200,16 @@ fn an_aimed_shot_leaves_from_the_foes_own_weapon_a_ball_straight_and_quick() {
     assert_eq!(ball.ranged, Ranged::Pistolet);
     assert!(((east * east + south * south + up * up).sqrt() - 70.0 * 1.3).abs() < 1e-9 && up.abs() < 1e-12);
     assert!((ball.damage - 30.0 * 1.4 * foe.might).abs() < 1e-9, "{ball:?}");
+}
+
+#[test]
+fn a_dead_foe_gone_from_the_room_is_forgotten_by_every_set_that_named_it() {
+    let mut room = room();
+    let foe = stand(&mut room, 2, 0.0, -5.0);
+    room.quiet.insert(foe);
+    room.quests.spoilless.insert(foe);
+    room.foes.get_mut(&foe).expect("stood").fighter.action = Action::Dead { elapsed: combat::tuning::FOE_GONE };
+    room.tick();
+    assert!(room.fighter(foe).is_none(), "gone");
+    assert!(!room.quiet.contains(&foe) && !room.quests.spoilless.contains(&foe), "and named nowhere");
 }

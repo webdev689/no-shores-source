@@ -128,7 +128,7 @@ The `forge` workflow renders the Arts' birds, the weapons drawn large and the ma
 published whenever `artbirds.py`, `weaponart.py`, the item forge's models
 (`items/`, which the nodes are laid from), `itempics.py`, the nodes' rows or their pinned packages change on main, or
 when a run is asked for on a branch. The job that renders holds no secret and stages them, and its log ends with the
-manifest; a second job uploads them with the repository's `R2_TOKEN` ([[Toolchain]]), and a commit then takes the
+manifest; a second job uploads them with the repository's `CLOUDFLARE_TOKEN` ([[Toolchain]]), and a commit then takes the
 manifest into `content/forge/renders.json`.
 A run asked for may also draw figure strips first, for both bodies (`figures`: runs split by `;`, each `anims|layers`,
 either empty for all), with a limit of 300 minutes: a cloud session holds no Cloudflare key, so this is how a figure

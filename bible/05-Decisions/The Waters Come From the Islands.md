@@ -69,3 +69,5 @@ status: in force
 - The held map tints each water by its owner, with its name and level band, and hatches the contested seam
   ([[Held Map]]). Claude names the waters, and the owner can change any name.
 - Which port faction each friendly ship belongs to waits until later ([[Open Questions]]).
+
+Replaced in part by [[Pirates Are Replaced by the Grey Tithe]]: no water is the pirates'; the fourth is the Grey Tithe's, and the contested seam, where the pirates fought the Tithe, is gone with them. The ruined cities' waters are the Lattice's, sailed by the Grey Tithe for now ([[The Ruined Cities' Waters Are the Lattice's, and Their Ruins Are Overtaken]]).

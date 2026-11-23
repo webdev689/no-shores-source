@@ -25,8 +25,8 @@ export const INBOUND: readonly { readonly bearing: number; readonly distanceM: n
   { bearing: 0.38, distanceM: 720 },
 ];
 export const INBOUND_WAY_M_S = 5;
-/** Their captains, pirate Majors, as the fight takes them up (`ambushersFrom`). */
-const PIRATES = 2;
+/** Their captains, Majors of the Grey Tithe, as the fight takes them up (`ambushersFrom`). */
+const GREY_TITHE = 1;
 const MAJOR = 2;
 /** When the crew first cry out, the camera turned to look down its deck at them; when it is back where the fight's
  *  own camera stands; and the beat's length. */
@@ -100,7 +100,7 @@ export function inboundAt(brig: { readonly x: number; readonly y: number; readon
       heading: Math.atan2(brig.x - x, y - brig.y),
       underWay: true,
       shade: 0.5,
-      crew: captainAtSea(`pirate-${index + 1}`, PIRATES, MAJOR),
+      crew: captainAtSea(`tithe-${index + 1}`, GREY_TITHE, MAJOR),
     };
   });
 }
@@ -164,7 +164,7 @@ export class Sighted implements Beat {
     this.done = true;
   }
 
-  /** The storm's song whole, its choir and brass with it, as the pirates come out of the dark. */
+  /** The storm's song whole, its choir and brass with it, as the Grey Tithe come out of the dark. */
   music(): Hearing {
     return sung('storm', 'peak');
   }

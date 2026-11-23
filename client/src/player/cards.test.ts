@@ -4,10 +4,11 @@ import { PART, type Strip } from '../forge/compose.ts';
 import type { ForgeLooks } from '../forge/looks.ts';
 import type { ForgeStore } from '../forge/store.ts';
 import { type Card, type CardMaker, Cards } from './cards.ts';
-import type { ComposeJob } from './composeJob.ts';
+import type { ComposedCard, ComposeJob } from './composeJob.ts';
 import type { Haste } from './composeQueue.ts';
 import type { Composer } from './composer.ts';
 import { type Dress, plainDress } from './dressing.ts';
+import { standIns } from '../standIns.ts';
 
 // A figure one pixel wide and two tall in each of the forge's five views, holding a sword in either fist.
 const cell = { cell: [1, 2], frames: 1, root: [0, 1] } as const;
@@ -159,19 +160,44 @@ test('a frame shown now is composed ahead of every frame warmed, and asks for th
   const colours = { skins: { bodies: {} }, hair: { bodies: {} } };
   const dyes = { palette: [], clothing: {}, armour: {} };
   const forge = new Cards(maker, store, moving, colours, dyes, undefined, recording);
+  standIns();
   forge.card(1, bare, 'walk', 0, 1);
+  assert.deepEqual(standIns(), ['figures'], 'a figure with no frame of its own stands in');
   assert.deepEqual(asked, [
     { frame: 1, haste: 'now' },
     { frame: 2, haste: 'ahead' },
     { frame: 0, haste: 'ahead' },
   ]);
   forge.card(1, bare, 'walk', 0, 2);
+  assert.deepEqual(standIns(), ['figures'], 'and goes on standing in while its frame is under way');
   assert.equal(asked.length, 3, 'a frame under way is not asked for again, nor its move');
   assert.equal(hurried.length, 1, 'the next frame, shown, is hurried');
   asked.length = 0;
   forge.warm(bare, () => ['walk'], 0, 2);
   forge.pump();
   assert.ok(asked.length > 0 && asked.every((each) => each.haste === 'later'), 'warming waits for every frame shown');
+});
+
+test('a figure showing its last frame while its next composes stands in for nothing', async () => {
+  const walk = { cell: [1, 2], frames: 2, root: [0, 1] } as const;
+  const moving: ForgeLooks = { bodies: { male: { anims: { walk }, layers: { body: ['walk'] } } } };
+  const composed: ComposedCard = { width: 1, height: 1, pixels: new Uint8Array(4), root: [0, 1], field: null };
+  const firstOnly: Composer = {
+    offPage: true,
+    compose: (unused: string, job: ComposeJob) =>
+      job.frame === 0 ? Promise.resolve(composed) : new Promise(() => undefined),
+    hurry: () => undefined,
+    prefetch: () => undefined,
+  };
+  const colours = { skins: { bodies: {} }, hair: { bodies: {} } };
+  const dyes = { palette: [], clothing: {}, armour: {} };
+  const forge = new Cards(maker, store, moving, colours, dyes, undefined, firstOnly);
+  forge.card(1, bare, 'walk', 0, 0);
+  await settled();
+  standIns();
+  assert.ok(forge.card(1, bare, 'walk', 0, 0), 'its first frame');
+  assert.ok(forge.card(1, bare, 'walk', 0, 1), 'and that frame again while the next composes');
+  assert.deepEqual(standIns(), []);
 });
 
 test('a frame that failed is asked for again only after a while, not each tick with its whole move', async () => {
@@ -194,11 +220,13 @@ test('a frame that failed is asked for again only after a while, not each tick w
   assert.equal(asked, 4, 'the frame shown and the rest of its move');
   await settled();
   assert.equal(forge.failure, 'no strip');
+  standIns();
   for (let tick = 0; tick < 10; tick++) {
     forge.card(1, bare, 'walk', 0, tick % 4);
     forge.pump();
   }
   assert.equal(asked, 4, 'none asked for again within the wait');
+  assert.deepEqual(standIns(), [], 'a frame that failed holds up no veil while it waits');
 });
 
 test("warming goes at the page's pace whenever the frames are composed on it", () => {
@@ -303,4 +331,45 @@ test('a dye worn reaches the composer with the armour it covers whole', () => {
   assert.deepEqual(jobs[0]?.whole, ['cuirass_iron']);
   forge.card(2, { ...dyed, outfit: { ...dyed.outfit, dye: null } }, 'idle', 0, 0);
   assert.deepEqual(jobs[1]?.whole, [], 'own colours cover nothing');
+});
+
+test("a figure placed in the world keeps its card between the frames its scene poses it on, its move's clock running", async () => {
+  const walk = { cell: [1, 2], frames: 6, root: [0, 1] } as const;
+  const moving: ForgeLooks = { bodies: { male: { anims: { walk }, layers: { body: ['walk'] } } } };
+  // Each frame composed as wide as its view and frame tell: ten a view, one more a frame.
+  const telling: Composer = {
+    offPage: false,
+    compose: (_key: string, job: ComposeJob) => {
+      const width = 10 * job.view + job.frame + 1;
+      return Promise.resolve({ width, height: 1, root: [0, 0], pixels: new Uint8Array(width * 4), field: null });
+    },
+    hurry: () => undefined,
+    prefetch: () => undefined,
+  };
+  let frame = 0;
+  // Posed every third frame at 40 m, every frame near, each figure by its number.
+  const posing: CardMaker = {
+    ...maker,
+    poseDue: (id, feet) => (frame + id) % (Math.hypot(feet[0], feet[1]) > 25 ? 3 : 1) === 0,
+  };
+  const colours = { skins: { bodies: {} }, hair: { bodies: {} } };
+  const dyes = { palette: [], clothing: {}, armour: {} };
+  const forge = new Cards(posing, store, moving, colours, dyes, undefined, telling);
+  for (const view of [0, 1]) for (let each = 0; each < 6; each++) forge.card(9, bare, 'walk', view, each);
+  await settled();
+  const far = [40, 0, 0] as const;
+  const shown = (id: number, view: number, feet?: readonly [number, number, number]) =>
+    (forge.card(id, bare, 'walk', view, frame % 6, false, 0, feet)?.width ?? 0) - 10 * view - 1;
+  forge.card(1, bare, 'walk', 0, 5, false, 0, far);
+  const seen: number[] = [];
+  for (frame = 0; frame < 9; frame++) seen.push(shown(1, 0, far));
+  assert.deepEqual(seen, [5, 5, 2, 2, 2, 5, 5, 5, 2], 'posed on frames 2, 5 and 8, each showing the clock then');
+  frame = 9;
+  assert.equal(shown(1, 1, far), 3, 'seen in another view, posed at once');
+  const near: number[] = [];
+  for (frame = 0; frame < 4; frame++) near.push(shown(2, 0, [5, 0, 0]));
+  assert.deepEqual(near, [0, 1, 2, 3], 'near: every frame');
+  const unplaced: number[] = [];
+  for (frame = 0; frame < 4; frame++) unplaced.push(shown(3, 0));
+  assert.deepEqual(unplaced, [0, 1, 2, 3], 'one not placed in the world: every frame');
 });

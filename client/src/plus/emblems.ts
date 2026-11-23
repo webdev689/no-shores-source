@@ -26,24 +26,6 @@ const BALANCE: Pixels = {
   tones: { H: TONES.stoneHi, L: TONES.stoneLit, M: TONES.stoneMid },
 };
 
-/** The pirates' skull, in bone, over two brass bones crossed behind it. */
-const SKULL: Pixels = {
-  rows: [
-    'b.........b',
-    '.b.HHHHH.b.',
-    '..BBBBBBB..',
-    '.BBBBBBBBB.',
-    '.BB..B..BB.',
-    '.BB..B..BB.',
-    '.BBBB.BBBB.',
-    '..BBBBBBB..',
-    '...B.B.B...',
-    '.b.BBBBB.b.',
-    'b.........b',
-  ],
-  tones: { H: TONES.word, B: TONES.wordDim, b: TONES.brass },
-};
-
 /** An Elite's mark, one brass chevron; a Miniboss's, two. */
 const CHEVRON: Pixels = {
   rows: ['...h...', '..hbh..', '.hb.bh.', 'hb...bh'],
@@ -54,8 +36,8 @@ const CHEVRONS: Pixels = {
   tones: { h: TONES.brassHi, b: TONES.brassLo },
 };
 
-/** Each faction's emblem by its number: 1 the Grey Tithe's balance, 2 the pirates' skull. */
-const EMBLEMS: Readonly<Record<number, Pixels>> = { 1: BALANCE, 2: SKULL };
+/** Each faction's emblem by its number: 1 the Grey Tithe's balance. */
+const EMBLEMS: Readonly<Record<number, Pixels>> = { 1: BALANCE };
 const MARKS = { elite: CHEVRON, miniboss: CHEVRONS } as const;
 export type RankMarkName = keyof typeof MARKS;
 

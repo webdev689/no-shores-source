@@ -21,6 +21,9 @@ const keyOf = (picture: {
 /** What painting has done so far: layers painted of all, and the slowest and total time a picture took. */
 export type PaintProgress = { painted: number; total: number; slowestMs: number; totalMs: number; doneAt: number };
 
+/** Whether a painter still paints: some of its pictures stand in their guessed colour. */
+export const painting = (painter: CityPainter): boolean => painter.progress.painted < painter.progress.total;
+
 export class CityPainter {
   readonly texture: GPUTexture;
   readonly view: GPUTextureView;

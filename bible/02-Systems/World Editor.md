@@ -33,6 +33,7 @@ code:
   - client/src/editor/layoutCity.ts#LayoutCity
   - client/src/terrain/landTexts.ts#loadLandTexts
   - client/src/terrain/terrainView.ts#TerrainView
+  - client/src/terrain/clipmap.ts#ringDraws
   - vite.config.ts#worldFiles
   - .github/workflows/ci.yml
   - .github/workflows/pages.yml
@@ -98,7 +99,7 @@ the layout as drafted generates in the background, the chosen one first; each ro
 | Layouts (`L`) | Shows or hides the nodes' layouts over both views, with a legend of their colours |
 | Walk (`G`) | Drops to a walker's eyes on the ground: `W` `A` `S` `D` or the arrow keys to move (6 m/s, 40 with `Shift` on land), drag to look round. In water the walker wades, then swims; `C` dives and `Space` rises ([[Water]]). `G` again, the 2D map or `V` stops. Brushes and place tools do nothing while walking |
 | Sail (`B`) | Puts the owner's Sloop to sea at the camera's target, heading where the camera looks, and follows it ([[Sailing]]). `W` and `S` (or the up and down arrows) climb and come down the helm's ladder: oars astern, at rest, ahead, then sails set. `A` and `D` steer. Where the water is shallower than its draught it is refused, the panel says why and the camera stands back off. `B` again, Walk, another landmass, the 2D map or `V` brings it in |
-| Fight (`F`, while sailing) | Calls a pirate captain onto the ring round the Sloop, or sends it off ([[Naval Combat]]). Hold the right mouse to aim (the camera stands past the ports on the side looked at, and where the look meets the water is the range); let go to fire, left click to hold fire, the wheel to change shot, `C` to brace, `Shift` to burst. The panel shows both ships, the guns, DFO's messages and the warning to brace |
+| Fight (`F`, while sailing) | Calls a Grey Tithe captain onto the ring round the Sloop, or sends it off ([[Naval Combat]]). Hold the right mouse to aim (the camera stands past the ports on the side looked at, and where the look meets the water is the range); let go to fire, left click to hold fire, the wheel to change shot, `C` to brace, `Shift` to burst. The panel shows both ships, the guns, DFO's messages and the warning to brace |
 | In a fleet (`?room=` in the address) | Sail joins a fleet room on the [[Server]] instead, from open water 15 m deep or more: `?room=<name>` the deployed rooms' `fleet-<name>`, a local server's address its `fleet-editor`. Every other player's Sloop and every captain is drawn; `F` calls a captain round it, four at most in the room, and `X` sends them all off; aiming, firing, the brace and the load are as alone, and `Shift` gives no burst |
 | In 2D: drag, wheel | Shapes with a brush (or pans with Look, or with the right button), and zooms, 1 m to 20 km a pixel |
 | In 3D: left-drag, right-drag, middle-drag, wheel | Left-drag shapes with a brush (or orbits with Look); right-drag orbits (or pans with Look); middle-drag pans along the ground; the wheel zooms, 3 m to 5,000 km from the target |
@@ -115,7 +116,13 @@ each ring's edge eases onto the next ring's grid. Every ring's vertices lie on o
 share is the same point to the bit and they meet without a crack. Each pixel reads the ground under it along the
 same Catmull-Rom splines the land crate uses, for its light, its colour and the water's edge; the mesh only places
 it. Near water the mesh lies a little under the ground, so a coarse triangle never hides the water, and the coast
-reaches the sea's level on its painted line. Every pixel is sampled four times. The 2D map reads the land along the
+reaches the sea's level on its painted line. Every pixel is sampled four times. Only what the view may see is drawn
+(`ringDraws`): each ring's 96 x 96 quads lie in 32 sectors by their bearing from its middle, the quads every coarser
+ring leaves to the finer one (47 x 47 of them) last, and a ring draws the sectors whose box, its quads' a quad further
+back where a vertex slides onto the coarser grid, from the lowest ground read to the highest (30% of their span and
+10 m more either way), reaches inside the view's planes. Rings drawing the same quads join in one instanced draw; a
+frame takes from about a tenth to a half of the 829,440 vertices the whole rings would, as the view and the land's
+heights allow. The 2D map reads the land along the
 same splines and softens every edge across a pixel.
 
 Closer than 8 km, the 3D view shows the exact ground the game uses round the camera's target: a 2 km square sampled

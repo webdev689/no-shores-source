@@ -9,6 +9,17 @@ export const NEAR_BAND_M = 140;
 export const FAR_M = 2600;
 export const FAR_BAND_M = 400;
 
+/** A ruin's middle-distance crystal: how far from the eye a chunk's is drawn, metres (past the near cells, to where a
+ *  heavily overtaken building's crystal is a few pixels; crystalInstances.ts). */
+export const MIDDLE_M = 1200;
+/** The band short of `MIDDLE_M` over which it fades out, dithered as the buildings' tiers are, so none pops. */
+export const MIDDLE_BAND_M = 300;
+
+/** How far a middle-distance formation `distance` metres from the eye has faded out: 0 whole, 1 gone. The city's
+ *  shaders fade it alike (cityShaders.ts `crystal_fade`). */
+export const middleFade = (distance: number): number =>
+  Math.min(1, Math.max(0, (distance - (MIDDLE_M - MIDDLE_BAND_M)) / MIDDLE_BAND_M));
+
 const clamp01 = (value: number): number => Math.min(1, Math.max(0, value));
 
 /** How far a cell has turned from whole to masses (0 whole, 1 masses), and from masses to hulls. */
@@ -38,31 +49,6 @@ export function keeps(tier: Tier, distance: number, threshold: number): boolean 
   if (tier === 'whole') return threshold >= toMasses;
   if (tier === 'masses') return threshold < toMasses && threshold >= toHulls;
   return threshold < toHulls;
-}
-
-/** The planes a view sees between, each [a, b, c, d] with a x + b y + c z + d >= 0 inside, for points measured from
- *  the eye, read from the column-major view-projection: left, right, bottom, top and in front. */
-export function viewPlanes(fromEye: Float32Array): number[][] {
-  const row = (index: number): number[] => [
-    fromEye[index],
-    fromEye[4 + index],
-    fromEye[8 + index],
-    fromEye[12 + index],
-  ];
-  const [across, upward, , ahead] = [row(0), row(1), row(2), row(3)];
-  const plus = (a: number[], b: number[], sign: number): number[] => a.map((value, k) => value + sign * b[k]);
-  return [plus(ahead, across, 1), plus(ahead, across, -1), plus(ahead, upward, 1), plus(ahead, upward, -1), ahead];
-}
-
-/** Whether a box (low and high corners, measured from the eye) reaches inside every plane. */
-export function boxSeen(planes: readonly number[][], low: readonly number[], high: readonly number[]): boolean {
-  for (const plane of planes) {
-    const x = plane[0] >= 0 ? high[0] : low[0],
-      y = plane[1] >= 0 ? high[1] : low[1],
-      z = plane[2] >= 0 ? high[2] : low[2];
-    if (plane[0] * x + plane[1] * y + plane[2] * z + plane[3] < 0) return false;
-  }
-  return true;
 }
 
 /** The nearest and farthest a box (low and high corners, measured from the eye) reaches. */

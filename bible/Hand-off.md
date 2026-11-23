@@ -125,8 +125,31 @@ each part works is in its system note.
   merged a third time before the merge: the events' fight events 16 to 25 (main's Wiped is 15), the Tithe-Taker 45 after
   main's wardens (21 to 38), the chest's Vestige drawn on main's rank colours (Major plain, Boss heroic), and the
   Lattice laid into main's forge tables again by `lattice.yml`'s run 45048576675.
-- **Not yet seen or heard.** Sessions test offline and picture headless, and headless Chromium in a cloud session now
-  loses the game's WebGPU device about 2 s in, so these wait on a real GPU, an ear or a hand:
+- **The third codebase audit, the Grey Tithe in the pirates' place, travel by the held map and the overtaken ruins**
+  (#155, merged on the owner's "I really want to merge the code fixes we did"): an audit of every module and an audit of
+  it, each finding tested before its fix; then, built on it, [[Pirates Are Replaced by the Grey Tithe]] (clashes are a
+  Tithe ship attacking a merchant of the traffic, which a player joins beside),
+  [[The Ruined Cities' Waters Are the Lattice's, and Their Ruins Are Overtaken]] (the held map's Lattice waters, the six
+  ruins grown through with crystal) and [[The Held Map Takes the Ship to Other Waters, Seen Sailing Away]]; Claude's
+  calls in [[The Grey Tithe's Sea, Travel and the Overtaken Ruins as Claude Builds Them]]. Each feature reviewed on its
+  own and its findings fixed; tested offline, the ruins pictured headless; the travel's cinematic not pictured.
+- **The game is No Shores** (#157, merged on the owner's "Merge and deploy"; [[The Game Is Named No Shores]]): the
+  title, the bible and the game's note with the owner's premise; Overlook stays the port city. The owner's logo is
+  the title on the tap to start and the intro, a pixel picture written from the owner's PNG by `tools/logo/write.py`
+  (the PNG stays out of git with its C2PA credentials; [[Cinema]]). The repository and page are `no-shores-source`;
+  the browser's keys move once from `overlook.` to `noshores.` (`keptNames.ts`); No Shores is a reserved name. The
+  Workers, the D1 database, the R2 bucket, the code's own names and the download cache keep Overlook's. This
+  session's git proxy answers only at `github.com/Lattymoy/overlook-source`, which GitHub redirects: keep that remote.
+  Merged as `c0db6fc7` and deployed (CI run 45068542964's second attempt, after the first was cancelled at its last
+  step): the page live at `lattymoy.github.io/no-shores-source/` with the logo, the rooms and the accounts answering.
+- **The picture driver reads the drawn interface** (#165, merged on the owner's "Yes"): `__ui()` lists what the
+  game's interface shows, the driver's `waitFor`, `clickText` and `press` read it, and a plan's `"noGpu": true` runs
+  the game at full speed with nothing drawn ([[Toolkit]], Browser QA). Tested offline: the title, the story's skip and
+  its "begin" driven with no GPU. Proposed next, not yet asked for: a cloud environment whose setup script installs and
+  builds, and a CI check that boots the game and finds its HUD.
+- **Not yet seen or heard.** Sessions test offline and picture headless. Headless Chromium has lost the game's WebGPU
+  device about 2 s in when other jobs shared the cores; on an idle container at b81f0c40 the title and the social
+  space kept it 80 s. SwiftShader is too slow to show the world, so these wait on a real GPU, an ear or a hand:
   - Timed on a real GPU: the game in and out of its worker, the hub with some 125 figures, the wreck with every fire,
     the light layer of the attack visuals (0.4 to 0.5 ms is an estimate), ships and marks under the lamps.
   - Heard in the game: the music, the ambience, the world's, sea's and menu's sounds and their levels, the
@@ -138,6 +161,9 @@ each part works is in its system note.
     other's dyes, horses, faction gear and Veiled figure; Maren's whole walk; a blow on a shield; the walking blows
     frame by frame; the display beside the owner's two pictures (#68); a ware bought at the Quartermaster's, a
     Vestige opened at the Reader's; a faction set worn in the page; the water's order at a coast.
+  - #155's, played by hand: the travel's cinematic from the helm to the arrival, the hover and the prompt on the pad;
+    a clash of a Tithe ship and a merchant, joined; a ruin up close (its buildings' veins and sheets) and its wrecks
+    from the sea at the sea's size.
   - Known and left: at a steep downward look the aiming camera can show the figure's diagonal back view; a crowd's
     dresses are composed ahead only as room comes, small objects are made each frame, and the Test Ground's panels
     run the room while the pointer is free (#68).
@@ -159,10 +185,53 @@ each part works is in its system note.
     world stopped being drawn while the death veils stacked. Left: ships start and stop at 60 m/s at once, and lie on
     one point at a roadstead; some retaining walls near Overlook's plaza may be dropped whole (low confidence, the
     seam audit's).
-- **#161, merged**, leaves the owner two points: whether each hull's deck eye frames well (the Brig's on its
-  quarterdeck, aft of its battery; the Schooner's under its main boom), and the aim's narrowing's 2x and 1.5 s.
-- **Nameplates, the player menu and chat** (#154, branch `claude/player-nameplates-interaction-3b6cwr`), for the
-  owner's yes to merge, which deploys the page, the rooms and the accounts (a new Durable Object, the chat's hall, and
+- **The prologue's waking, scene changes and arena; one loading screen for the game; foes that give up only when
+  far; feet on the city's ground** (#158, branch `ccr-bedea921-gq44fj`), for the owner's yes to merge, which deploys
+  the page and the rooms. Each part is in its decision:
+  [[The Prologue Wakes by Darkening and Pulsing, Not Eyelids]],
+  [[The Prologue's Scenes Change Slower, Behind the Logo While They Load]],
+  [[Thule Fights on a Quarterdeck Twice as Long]],
+  [[One Loading Screen Covers Every Trip Until the Place Is Ready]],
+  [[A Foe Gives Up Only When the Player Is Far Away]], and the hub's sunk feet fixed (a figure's lowest quarter metre takes the city's
+  pull, [[Cities]]). The prologue's work audited by four read-only reviewers, the loading screen and #155's merge by
+  three more; every finding fixed or asked. Tested offline and pictured headless; not played live.
+  - **The arena is built.** The asset workflows upload with `CLOUDFLARE_TOKEN` now ([[The Asset Workflows Publish to R2 With the Cloudflare Token]]);
+    the `wreck` workflow built and published the longer quarterdeck, and its `wreck-level` artifact is
+    `content/prologue/wreck.json` whole (its mesh and light on R2, 31 dead-end slips). On it the waist's pistoleer
+    lost a player close behind its clutter, searched, and walked home healing; it now hunts a target within 14 m on
+    rather than search ([[A Foe Gives Up Only When the Player Is Far Away]]).
+  - **One loading screen everywhere** ([[One Loading Screen Covers Every Trip Until the Place Is Ready]]): every
+    trip's veil, the story's hand-over to the hub too, is the logo, LOADING and the trip's words, and lifts once
+    nothing stands in for the place round the player (`standIns.ts`) for three frames, at most 20 s; plants scatter
+    30 ms a frame behind it; a travel by the held map's black waits the same way. Mid-play nothing veils: the plants'
+    pipelines are made once per device and format, the lit keepers' marks and the first-person glow make theirs off
+    the frame. Tested headless in the hub (SwiftShader, about a frame every 10 s): it lifted by itself at frame 54,
+    the plants last; on a real GPU it is not yet timed.
+- **#164, a smith's ware drawn as the piece it becomes** (branch `claude/vigilant-wozniak-lu9pm3`), merged with the
+  owner's yes ("Yes"), which deploys the page and the rooms: the gear message sends `next_id`, the page draws each smith's
+  ware by it and asks for it by its place ([[Gear]], "Looks"). Tested offline: a test buys each of the day's twelve
+  armour and weapon wares and holds each to its look in the shop (it failed before, on a Magic torso). Open for the
+  owner: a purchase moves the number on, so the other wares still shown may redraw.
+- **The owner's six prologue points, the wreck's room in the worker and a full audit** (#161, branch
+  `claude/gifted-knuth-lijjf2`), merged into `main` (0fadd778; its deploy not checked here), which deploys the page and
+  the rooms (the naval rules and the protocol's version changed): the wreck's hitches (blood's rays, its sheet drawn while the wake's screen is dark)
+  and its room opened and ticked in the rooms' worker ([[The Wreck's Room Runs in the Rooms' Worker Too]]); the
+  ship's aim after Black Flag from its own deck with a lay that narrows as it is held
+  ([[Aiming a Ship Follows Black Flag, From Its Deck]]); the wreck's arms 8 m out as a loot drop
+  ([[The Wreck's Arms Lie Farther Out, as a Loot Drop]]); the story's one-shots (the crash, the splash) fetched as its
+  sound wakes; the Boarding playing on through a death before Thule; Maren at three quarters of a walk
+  ([[Elder Maren Hale Walks at Three Quarters of a Player's Pace]]); the marks seen faded through walls
+  ([[A Mark Over What a Player Can Use Is Seen Through Walls]]), beside main's lit marks. Then the owner's
+  "comprehensive audit on everything": six read-only auditors (the aim and the naval rules, sound and music, the
+  marks, arms and welcome, the prologue end to end, the bible against the code, the room's move), every finding fixed
+  with a test or written down as a limit in #161's description; among the fixes, the pad has the game's controls
+  without the pointer (a pad alone could not fight on foot), a cut sting no longer holds back the song behind it, and
+  the protocol's version covers the sea fight's numbers. Tested offline (the full check at abd1ad14); the deck eye's
+  framing on each hull, the faded marks, the arms' pop and the sounds are not yet seen on a real GPU, heard or played.
+  Open for the owner: whether each hull's eye frames well (the Brig's stands on its quarterdeck, aft of its battery;
+  the Schooner's under its main boom), and the narrowing's 2x and 1.5 s.
+- **Nameplates, the player menu and chat** (#154, branch `claude/player-nameplates-interaction-3b6cwr`), merged into
+  `main` (bc896f8b; its deploy not checked here); as it went to the owner's yes to merge, which deploys the page, the rooms and the accounts (a new Durable Object, the chat's hall, and
   two migrations: `presence.water` and `mutes`): [[Other Players Wear a Nameplate, Their Level or Prestige in a
   Square]] (level, 21 to 30 in gold, three dots in a menu, green company, blue others;
   [[A Player's Square Shows Their Level, Gold Past 20]]),
@@ -252,6 +321,12 @@ The decisions in [[Open Questions]] are not repeated here.
   refused while fallen or just struck; long recordings in order; the island packs, `runs_everywhere` and the quests'
   lines checked in CI. Tested offline; the split asset workflows are first tested live on their next run, and nothing
   is yet played by hand or in a deployed room.
+- **#155's open points**, each the owner's: a limit on travel (each travel resets the hostile roll to 30 s, so one who
+  keeps travelling meets no hostile ship); whether the healing drink is "a heal" that Exposure halves; whether a lip
+  caught off square is hung square; whether control waits a moment for a run that opens in the wake's last instant;
+  the wreck scene's sunk Sloop, which wears the pirates' colours until `tools/wreck` is rendered again (a push there
+  publishes to R2; #158's `wreck_level.py`, its waves now the Tithe's types as the layout has them, is one); a ship the room took off its route
+  still drawn on it from land; the crystal of a ruin's buildings round its plaza, kept clear in its 110 m window.
 - **Open pull requests.** For the owner's yes once their checks pass: #125 (main's
   screens: the Harbourmaster's rows, the menu under 600 px). Drafts: #82
   (the owner's loop); #93 and #114 sit on the merged `claude/waters-from-islands`. Whether to close #112, which #127
@@ -316,7 +391,8 @@ The decisions in [[Open Questions]] are not repeated here.
 - **The ships** ([[The Ships as Claude Shapes Them]]): the owner asked for the Frigate as one more model "and call its
   there", so the Tithe Ram and the Fluyt wait until asked; splitting ships into parts for upgrades, and the cabin's
   decoration from DFO's `decor/`, are set aside by the owner for now.
-- **The lore**: nothing in the prologue names the Cube or a crystal, and the voice in the deep has no name.
+- **The lore**: nothing in the prologue names the Cube or a crystal, and the voice in the deep has no name. The
+  owner's premise ([[No Shores]]) is for later in the game: "This is for later".
   Elder Maren Hale says the Grey Tithe take a tenth and Overlook pays nothing, the owner's decision
   ("The Grey Tithe Take a Tenth, and Overlook Does Not Pay").
 - **Accounts and hosting** ([[The Audit's Calls Are Claude's]]): the Workers plan (a password sign-in takes about
@@ -325,12 +401,12 @@ The decisions in [[Open Questions]] are not repeated here.
   over the deploy jobs; the Discord app's redirect (`/v1/discord/callback` on `overlook-accounts`) and its secrets
   `DISCORD_CLIENT_ID` and `DISCORD_CLIENT_SECRET`; the Cloudflare token's leave to edit D1; whether the page plays
   online by default (without `?room=` it has no accounts).
-- **Keys and workflows**: rotate the Cloudflare token the owner gave in the chat (the `rooms` workflow alone reads
-  the Actions secret `CLOUDFLARE_TOKEN`; the workflows that publish to R2 read `R2_TOKEN`,
-  [[The Asset Workflows Publish to R2 With a Token for R2 Alone]]); add `tools/install-flatc.sh` to `ROOMS_CODE` in
+- **Keys and workflows**: rotate the Cloudflare token the owner gave in the chat (the Actions secret
+  `CLOUDFLARE_TOKEN`, which the `rooms` workflow and every workflow that publishes to R2 read,
+  [[The Asset Workflows Publish to R2 With the Cloudflare Token]]); add `tools/install-flatc.sh` to `ROOMS_CODE` in
   `.github/workflows/rooms.yml`. A cloud session cannot deploy the rooms itself: its proxy writes the stored token
   over the upload token Cloudflare hands back.
-- **The cloud environment**: two environments named Default are listed and no `overlook-source` one; which one
+- **The cloud environment**: two environments named Default are listed and none for this repository; which one
   sessions should run on, and which holds the SkillsMP key, is unchecked. A Context7 key, if wanted, goes on it the
   same way.
 - **The forge's renders** leave `r2.dev`, which limits its rate, once `daggerfalljs.dev`'s DNS moves to Cloudflare
@@ -372,14 +448,15 @@ The decisions in [[Open Questions]] are not repeated here.
 - **Hitching in the prologue, left by #161**: the aim's view (`AimView`) is made again for every sea fight; the shore's
   return to Saltmere rebuilds its city in one go. A fleet room's lagging player has their held lay begun again by the
   room's standing orders while their page keeps counting.
-- **Hitching, after the areas' chunks** ([[Areas Load in Chunks With Proper Caching]]): playing alone, no veil when
-  a voyage's difficulty changes; a city is built in one go after each landmass switch and every 1.5 km (`landDrawers.ts`,
-  `cityView.ts`); flora is decoded and its mips made again on every switch; a landmass cannot be prepared before it
-  opens, as the land's worker holds one. R2's own `Cache-Control` waits on a test upload (the owner's yes, a write to
-  R2). Then the hitching measured on a real GPU. `client/src/ships/shipTags.test.ts` fetches ship meshes from `r2.dev`,
-  so every deploy waits on R2 answering. Memory to measure: the figure cards'
-  4000-texture budget (`player/cards.ts`), the scene's full-size targets, about 590 MB at 5120 by 2880, uncapped
-  (`scene.ts`), and the item pictures' cache, uncapped (`player/itemPictures.ts`).
+- **Hitching, after DFO's performance work** ([[DFO's Performance Work Comes Over, Measured First]]): the city is
+  built a few steps a frame, the veil waiting on its first; nature re-scatters only where the ground changed; flora is
+  kept between landmasses; rooms run in their worker, but for the Test Ground's. Still open: a landmass cannot be
+  prepared before it opens, as the land's worker holds one; the main city and the layouts' city may build at once, up
+  to 48 ms a frame behind the veil; a layouts rebuild re-scatters every tile. R2's own `Cache-Control` waits on a test
+  upload (the owner's yes, a write to R2). `client/src/ships/shipTags.test.ts` fetches ship meshes from `r2.dev`, so
+  every deploy waits on R2 answering. Memory to measure: the figure cards' 4000-texture budget (`player/cards.ts`) and
+  the item pictures' cache, uncapped (`player/itemPictures.ts`); the scene's targets are capped at 3840 by 2160's
+  worth. Everything in it measured on a real GPU with `?perf`.
 - **Browser QA** ([[Toolkit]]):
   - `tools/claude-toolkit/webgpu-shot.cjs` pictures the game in its worker. Run it on an idle machine: beside a
     cargo build the world may not draw for minutes.

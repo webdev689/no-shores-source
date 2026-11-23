@@ -60,8 +60,8 @@ mod tests {
         );
         let archer = &types[15];
         assert_eq!(
-            (archer["faction_name"].as_str(), archer["right"].as_str(), archer["left"].as_str()),
-            (Some("Pirates"), Some("bow_short_iron"), Some(""))
+            (archer["faction"].as_u64(), archer["faction_name"].as_str(), archer["right"].as_str()),
+            (Some(0), Some(""), Some("bow_short_iron"))
         );
         assert_eq!(archer["ranks"], json!([1, 2]));
     }

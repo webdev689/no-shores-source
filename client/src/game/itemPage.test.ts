@@ -113,3 +113,12 @@ test('a perk that gives and takes sets its cost apart, in the colour of a loss',
   );
   assert.equal(texts[2]?.colour, INK.loss);
 });
+
+test('two presses of one name on an item’s page, as two like modules to infuse, each have their own id', () => {
+  const kept = item({ id: 1, kind: 25, level: 2, at: 0 });
+  const twins = [item({ id: 5, kind: 25, level: 5, at: 0 }), item({ id: 6, kind: 25, level: 5, at: 0 })];
+  const { presses } = itemPage({ ...context, gear: state({ items: [kept, ...twins] }) }, kept, () => {});
+  const ids = presses.map((press) => press.id);
+  assert.equal(ids.filter((id) => id?.startsWith('press-Hold to infuse')).length, 2);
+  assert.equal(new Set(ids).size, ids.length, ids.join(', '));
+});
