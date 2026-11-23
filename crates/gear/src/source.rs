@@ -44,3 +44,8 @@ impl Source {
         if tier == crate::Difficulty::Abyss { Source::Abyss } else { Source::Elite }
     }
 }
+
+/// A kept source as read: one a later build names reads as the world's, so a room rolled back keeps the piece whole.
+pub(crate) fn known_source<'de, D: serde::Deserializer<'de>>(reader: D) -> Result<Source, D::Error> {
+    Ok(serde_json::from_value(serde_json::Value::deserialize(reader)?).unwrap_or_default())
+}

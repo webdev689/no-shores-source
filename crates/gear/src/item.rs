@@ -43,7 +43,7 @@ pub struct Item {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub element: Option<Element>,
     /// The content it came from, which its look follows; a save from before sources reads as the world's.
-    #[serde(default, skip_serializing_if = "Source::is_world")]
+    #[serde(default, skip_serializing_if = "Source::is_world", deserialize_with = "crate::source::known_source")]
     pub source: Source,
     /// Keys this room does not know, from a later room's save, written back as read, so a room rolled back to
     /// this one or later keeps them.

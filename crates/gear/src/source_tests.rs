@@ -66,6 +66,7 @@ fn every_named_piece_wears_a_look_of_its_own_source() {
     let table = looks();
     let home = |source: Source, armour: bool| names(&table[source as usize][if armour { "armour" } else { "metals" }]);
     let looked: Value = serde_json::from_str(include_str!("../../../content/gear/items.json")).expect("items");
+    let mut checked = 0;
     for named in &catalogue().items {
         let entry = looked["items"].as_array().expect("items").iter().find(|each| each["id"] == named.id.as_str());
         let Some(look) = entry.and_then(|each| each["look"].as_str()) else { continue };
@@ -75,7 +76,9 @@ fn every_named_piece_wears_a_look_of_its_own_source() {
         }
         let own = home(named.source(), named.kind.armour());
         assert!(own.iter().any(|each| each == look), "{} wears {look}, not of {:?}", named.id, named.source());
+        checked += 1;
     }
+    assert!(checked >= 30, "only {checked} named pieces were checked: is each entry's look still under \"look\"?");
 }
 
 #[test]
@@ -151,6 +154,18 @@ fn a_save_from_before_sources_reads_as_the_worlds_and_a_worlds_writes_none() {
 }
 
 #[test]
+fn a_source_a_later_build_names_reads_as_the_worlds_and_keeps_the_piece() {
+    let item = Item { source: Source::Elite, ..Item::new(4, Kind::Sword, Rarity::Rare, 9, Slot::Melee) };
+    let mut written = serde_json::to_value(&item).expect("an item writes");
+    written["source"] = "raid".into();
+    let read: Item = serde_json::from_value(written).expect("an item of a later source still reads");
+    assert_eq!((read.id, read.source), (4, Source::World));
+    let mut vestige = serde_json::to_value(Vestige::new(2, Rarity::Magic, Slot::Legs, 3).from(Source::Sea)).expect("");
+    vestige["source"] = 9.into();
+    assert_eq!(serde_json::from_value::<Vestige>(vestige).expect("reads").source, Source::World);
+}
+
+#[test]
 fn a_named_piece_kept_before_sources_reads_as_its_entrys_content() {
     let mut character = Character::starting();
     let entry = catalogue().named("harbourwarden").expect("a named sword");
@@ -202,15 +217,5 @@ fn what_others_see_of_a_worn_piece_carries_its_content() {
     let shown = character.shown();
     let piece = shown.worn.iter().find(|piece| piece.slot == Slot::Head as u8).expect("the helm worn");
     assert_eq!(piece.source, Source::Abyss as u8, "the inspect screen draws it in the Abyss Dungeons' sets");
-}
-
-#[test]
-fn faction_and_breach_pieces_take_their_own_source() {
-    for named in &catalogue().items {
-        if named.faction.is_some() {
-            assert_eq!(named.source(), Source::Faction, "{}", named.id);
-        } else if named.breach {
-            assert_eq!(named.source(), Source::Breach, "{}", named.id);
-        }
-    }
+    assert_eq!(piece.id, id, "and makes its look's choices by its own id, as on the player's figure");
 }

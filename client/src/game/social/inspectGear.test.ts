@@ -56,6 +56,13 @@ test("another player's kept pieces stand in their slots, with their level, Defen
     [5, 0],
     'each drawn in its content’s looks, an older room’s piece in the world’s',
   );
+  // Each piece keeps its own id, which its look's choices are drawn by as on the player's figure.
+  const kept = inspectedGear(details({ ...shown, worn: [{ ...piece(3, false), id: 41 }, piece(4, false)] }));
+  assert.deepEqual(
+    kept?.items.map((item) => item.id),
+    [41, 2],
+    'an older room’s piece by its place in the list',
+  );
   const old = inspectedGear(details({ level: 3, defense: 0, attack: 0, emblem: 'overlook', worn: [] }));
   assert.deepEqual([old?.prestige, old?.arts], [0, undefined], 'a room that kept neither shows none');
 });
