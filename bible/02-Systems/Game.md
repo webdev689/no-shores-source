@@ -101,8 +101,11 @@ the screen reader's announcements.
   ([[The Room for Playing Alone Runs in a Worker of Its Own]]): a node's, the sea's and an island's room (`LocalRoom`)
   is opened there, its navmesh baked and its sea laid, and ticked there as the game lets its clock run, its snapshots
   handed back as they come, as a server's are (`RoomThread`, `serveRooms`, `roomWorker.ts`). The game's thread only
-  sends the player's inputs and the seconds to run. The wreck's room in the prologue, which the story asks things of
-  and waits on the answer, and the [[Test Ground]]'s, are still opened in the thread that asks.
+  sends the player's inputs and the seconds to run. The prologue's wreck is opened there too (`openOverSea`): the
+  story's asks of it (`RoomThread.story`: stand a foe, send one at the player, post a crewman, give the arms, a
+  checkpoint, a heap standing or cleared) are made in the worker in the order asked, before any tick asked after
+  them, each answered in turn on the same queue as an island's word, a lost room's with none. The [[Test Ground]]'s
+  room is still opened in the thread that asks.
 - **Measured** headless on SwiftShader at 480 by 270, the world drawn at Overlook's social space for 30 seconds with
   W pressed every two: the page's thread is busy 0.0 ms a frame at the median and keeps 60 frames a second while the
   worker draws, with 4 long tasks (0.26 s in all); the worker is busy 25 ms a frame. SwiftShader draws on the CPU, so

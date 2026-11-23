@@ -371,9 +371,13 @@ the cutscenes, the camera's moves, the nameplate, the fires and the lines are th
   with his head on the view, so a cry unheard spends no gap; he tells the player to kneel again only once they have
   struck him since. The throw overboard is framed so Thule and his crier stand on the view on any screen, a tall one
   from further back.
-- **Played** by `WreckRun` as `Foot` plays a node: the walker and the fight in a room of the game's own, in its worker, on the
-  layout's blocks over open sea (`LocalRoom.openOverSea`: its foes' navmesh is the wreck's ground alone, so every wave
-  fights and Thule strikes), the fight's marks drawn by the view on foot. It tells the story whether the arena is
+- **Played** by `WreckRun` as `Foot` plays a node: the walker and the fight in a room of the game's own, in the rooms'
+  worker as alone a node's is ([[Game]], "The room for playing alone"), on the layout's blocks over open sea
+  (`RoomThread.openOverSea`: its foes' navmesh is the wreck's ground alone, so every wave fights and Thule strikes),
+  its navmesh baked and its ticks run off the game's frame; the fight's marks drawn by the view on foot. What the run
+  asks of the room (a wave's foes, the boarder, Thule, the crew, the arms, a checkpoint, a heap) is answered a moment
+  later: a foe asked for counts as alive in its zone until its number comes back, so no wave's heap clears early, and
+  one asked for before the boss fight clears the deck is not counted once answered. It tells the story whether the arena is
   entered, Thule's health, how the fight ended, the points over every head for barks (by crew), and the
   shot its camera takes of the player standing, where the wake ends: the player stood on the deck's top under
   where they wake, as the room stands them, never on the rim's own ground, the sea below it. A cutscene holds it

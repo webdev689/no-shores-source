@@ -322,12 +322,9 @@ The decisions in [[Open Questions]] are not repeated here.
   migration of each character's room. Known, small: before any gear has come a tier's seas show open, the server
   still refusing them. A change to `tools/dungeon/` or the contracts publishes new packs: take the manifest line from
   the workflow's log into `content/dungeon/modules.json`.
-- **Hitching in the prologue, left by #161**: the wreck's room still opens and ticks on the game's thread
-  (`LocalRoom.openOverSea`, its navmesh bake over some 134 by 116 m, and every tick's foes); moving it to the rooms'
-  worker as the other rooms are needs its story calls (`standFoe`, `storyTakeArms`, `storyHunt`, `storyPost`, the
-  teaching's freeze) made asynchronous. The aim's view (`AimView`) is made again for every sea fight; the shore's
-  return to Saltmere rebuilds its city in one go. A fleet room's lagging player has their held lay begun again by
-  the room's standing orders while their page keeps counting.
+- **Hitching in the prologue, left by #161**: the aim's view (`AimView`) is made again for every sea fight; the shore's
+  return to Saltmere rebuilds its city in one go. A fleet room's lagging player has their held lay begun again by the
+  room's standing orders while their page keeps counting.
 - **Hitching, after the areas' chunks** ([[Areas Load in Chunks With Proper Caching]]): playing alone, a room is
   opened on the game's thread (`localRoom.ts`: the navmesh bake, the sea's generation), with no veil when a voyage's
   difficulty changes; a city is built in one go after each landmass switch and every 1.5 km (`landDrawers.ts`,
