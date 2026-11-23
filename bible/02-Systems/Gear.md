@@ -102,12 +102,15 @@ number is one of [[Gear as Claude Shapes It]].
   offers exists, sits in the right kind of column and fits the item; no item offers a trait twice; each signature
   and each intrinsic belongs to one Atheric, and every Atheric weapon has an intrinsic; every kind of loadout has a named Legendary; every slot has a named Legendary and an Atheric; every armour and weapon
   kind has its word; every rolled pool holds enough traits for a Legendary; every faction perk is a perk of a faction the factions' file
-  holds, and each faction's armour piece and weapon writes no traits and has one of its faction's perks that fits it.
+  holds, and each faction's armour piece and weapon writes no traits and has one of its faction's perks that fits it;
+  every Breach perk is a perk and no faction's, and every armour and weapon kind has enough of them to fill a column.
 - **An item** is a kind (a Melee or a Ranged loadout, four armour pieces, the cloak, or one of a ship's four modules,
   [[Ship Power]]), a rarity, a level (1 to 20; a
   Legendary or Atheric is 20), its XP and the nodes bought and chosen. A faction's armour or weapon keeps the traits it
   rolled as it was made ("Verbs", "The factions' perks"), checked as a rolled item's are, its faction's perks among its
-  perk columns' pools; one kept from before keeps the traits its entry once wrote. Any other named item follows its
+  perk columns' pools; one kept from before keeps the traits its entry once wrote. A Breach's armour or weapon
+  (`breach`) keeps the traits it rolled too, the Breaches' perks its perk columns' pool, and one of those gone gives
+  way to another of them ("The Breaches' perks"). Any other named item follows its
   catalogue entry: in
   a kept one's column whose traits changed, a node bought moves with its perk to where the perk stands now, else to the
   perk it merged into, else stays where it was if a plain perk stands there (a reworked one, as an Atheric's own);
@@ -159,7 +162,8 @@ number is one of [[Gear as Claude Shapes It]].
   content's. Any other colour, a Legendary too, is a piece of a kind the slot takes in its content's set look, its look
   and traits rolled, never a trait twice ([[Every Drop Wears Its Content's Set, With Random Perks]]); a Legendary is
   level 20, its Prestige a Legendary's, its nodes asking for an island's resource rolled among the catalogue's, and a
-  Breach's Legendary armour climbs to 30 Prestige. A ship's Legendary module is a named one ([[Ship Power]]).
+  Breach's Legendary armour climbs to 30 Prestige. A Breach's armour or weapon rolls its perk columns from the
+  Breaches' own perks ("Verbs", "The Breaches' perks"). A ship's Legendary module is a named one ([[Ship Power]]).
 - **Names** ([[Everything Carries a Set Name, and Perks Roll by Pool]]). Every rolled armour piece and weapon is named
   by its set and its kind's word: "Portwatch Helm", "Wreckborn Sword and Shield" (`itemName`). Its set is the one its
   look is drawn in, before the forge's fallbacks: each look of each content carries its set's name in
@@ -311,6 +315,20 @@ player while they are in it (`room::perks`). A blow lands when it strikes, is bl
   the one that ends the veil; Shade Step (armour) makes a dodge while Veiled cost 20% less stamina, a trim. Shared
   Flame and From the Dark take the striker's statuses as the blow is struck or the shot loosed. Every number is
   Claude's, in [[Gear as Claude Shapes It]] ("The factions' perks").
+- **The Breaches' perks** ([[Breaches Roll From a Perk Pool of Their Own]]). Eight perks, the Breaches' own
+  (`breach` in `content/gear/traits.json`), which no shared pool and no faction offers and which fit only a Breach's
+  piece. A Breach's armour or weapon (`vestige::make` from a Breach) rolls its handling and finish columns from the
+  shared pools as any piece does, and every node of its perk columns from the Breaches' perks that fit it: never one
+  twice in a column, those it has not yet offered first; the pool is smaller than a Legendary's perk nodes, so a later
+  column may offer one an earlier one does. Shatterpoint (melee) Exposes a foe whose guard a blow breaks. Vein Strike
+  (weapon) strikes an Exposed foe 15% harder, a blow or a shot. Bloom (weapon) Exposes every other living foe within
+  4 m of a foe it slays. Crystal Sight (ranged) Exposes a foe a shot lands on 20 m or more from the shooter, as the
+  shot lands. Crystal Skin (armour) takes 10% off every blow while above three quarters of its wearer's health, a trim
+  (`hale_taken`), so a browser predicts it, a blocked blow's chip too. Regrowth (armour) gives back 5% of the most
+  health on a kill of a foe, a spell's too, as the room heals (none once fallen). Resonance (armour) Exposes the foe whose blow is perfectly dodged.
+  Lattice Wall (shield) Exposes the striker of a blow blocked while its loadout is drawn. Each is in the room's one
+  door for statuses but Crystal Skin; every number is Claude's, in [[Gear as Claude Shapes It]] ("The Breaches'
+  perks"). No Breach is built yet, so only the rules and their tests make a Breach's piece.
 - **The pools.** With the verbs and the perks that give and take, a Melee loadout is offered among 6 handling traits,
   7 finishes and 8 perks (9 with a shield), a Ranged one among 6, 7 and 6; armour among its 6 perks.
 
@@ -722,7 +740,7 @@ Officers ashore fight beside their player, as DFO's crew companions did
   woman's, and fails on any weapon or armour layer of the forge no item wears but a class's own (the class sword, axe,
   bow and staff, the archer's dark helm, the woman's horned one) and the laced boots, a garment. A gilded double
   pistolet's left gun is worn only by a named gilded double pistolet, Brass Chorus.
-- No Breach items exist yet. The factions' pieces (each one's cape, armour and two weapons) are the only named items a
+- No Breach items exist yet, and no Breach drops one: a Breach's piece and its perks are in the rules alone. The factions' pieces (each one's cape, armour and two weapons) are the only named items a
   Vestige never opens to ([[Factions]]).
 - The Wraith Mist barding's ride strips on R2 are blank, so it shows in third person only until the forge draws them
   again. In the ride, about a tenth of the hide (its darkest texels) keeps the bay's colour under a coat: colour alone

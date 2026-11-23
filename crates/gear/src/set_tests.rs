@@ -31,12 +31,14 @@ fn a_legendary_vestige_opens_to_a_rolled_piece_of_its_own_content() {
                 assert!(item.kind.fits(slot), "{:?} in {slot:?}", item.kind);
                 let resource = item.resource.map(usize::from).expect("its nodes ask for an island's resource");
                 assert!(resource < catalogue().resources.len());
-                assert_eq!(item.breach, source == Source::Breach && item.kind.armour());
+                assert_eq!(item.breach, source == Source::Breach);
+                // A Breach piece's pool is smaller than its perk nodes, so it may repeat across its columns
+                // (`breach_perks_tests`).
                 let offered: Vec<&String> = item.layout.iter().flatten().collect();
                 let mut distinct = offered.clone();
                 distinct.sort();
                 distinct.dedup();
-                assert_eq!(distinct.len(), offered.len(), "never one trait twice: {:?}", item.layout);
+                assert!(item.breach || distinct.len() == offered.len(), "never one trait twice: {:?}", item.layout);
                 for (column, traits) in item.columns().iter().filter(|column| column.traits()).zip(&item.layout) {
                     assert_eq!(traits.len(), usize::from(column.nodes()), "{:?}", item.kind);
                 }

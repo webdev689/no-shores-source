@@ -166,7 +166,7 @@ pub fn judge(blow: &Blow, defender: &Fighter) -> Verdict {
                     return Verdict::GuardBroken { damage: taken(defender, blow, behind) * GUARD_BROKEN_TAKEN };
                 }
                 return Verdict::Blocked {
-                    damage: blow.damage * chip * blow.through * telegraphed(defender, blow),
+                    damage: blow.damage * chip * blow.through * telegraphed(defender, blow) * hale(defender),
                     stamina,
                 };
             }
@@ -176,12 +176,18 @@ pub fn judge(blow: &Blow, defender: &Fighter) -> Verdict {
 }
 
 /// A blow's damage as this fighter takes it: more while staggered (but a riposte, the stagger's own answer, does not
-/// count it twice) or overreached; less from behind or telegraphed as its gear trims.
+/// count it twice) or overreached; less from behind, telegraphed or while it is hale as its gear trims.
 fn taken(defender: &Fighter, blow: &Blow, behind: bool) -> f64 {
     let staggered = if defender.staggered() && !blow.riposte() { STAGGER_TAKEN } else { 1.0 };
     let punished = if defender.punished > 0 { PUNISH_TAKEN } else { 1.0 };
     let from_behind = if behind { defender.trim.behind_taken } else { 1.0 };
-    blow.damage * staggered * punished * from_behind * telegraphed(defender, blow)
+    blow.damage * staggered * punished * from_behind * telegraphed(defender, blow) * hale(defender)
+}
+
+/// What of a blow this fighter's gear lets reach them while they are above three quarters of their health (Crystal
+/// Skin), through a guard or not.
+fn hale(defender: &Fighter) -> f64 {
+    if defender.health > defender.health_max * 0.75 { defender.trim.hale_taken } else { 1.0 }
 }
 
 /// What of a telegraphed blow this fighter's gear lets reach them, through a guard or not.

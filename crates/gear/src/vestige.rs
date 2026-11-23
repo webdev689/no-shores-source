@@ -148,8 +148,11 @@ pub fn make(id: u32, rarity: Rarity, slot: Slot, level: u8, source: Source, dice
         let kinds: Vec<Kind> = slot.kinds().collect();
         let mut item = rolled(id, *kinds.get(dice.pick(Purpose::Which, 0, kinds.len()))?, rarity, slot, level, dice);
         item.source = source;
-        // A Breach's Legendary armour climbs further in Prestige.
-        item.breach = source == Source::Breach && rarity == Rarity::Legendary && item.kind.armour();
+        // A Breach's armour and weapons roll their perks from the Breaches' own; its Legendary armour climbs further.
+        item.breach = source == Source::Breach && (item.kind.armour() || item.kind.weapon());
+        if item.breach {
+            item.layout = rolled_layout(&item, None, dice);
+        }
         item
     };
     item.element = element::rolled(item.kind, item.rarity, dice);
@@ -199,21 +202,33 @@ fn look_rolls(rarity: Rarity) -> usize {
 }
 
 /// The traits an item's columns offer, each column's rolled from its kind's pool, never one trait twice; with a
-/// faction, the first node of its first perk column is drawn from that faction's own perks that fit it instead.
+/// faction, the first node of its first perk column is drawn from that faction's own perks that fit it instead. A
+/// Breach's piece draws every node of its perk columns from the Breaches' own perks that fit it: those it has not yet
+/// offered first, and, as that pool is smaller than its perk nodes, any not yet in the column once they run out.
 fn rolled_layout(item: &Item, faction: Option<&str>, dice: &Dice) -> Vec<Vec<String>> {
     let content = catalogue();
     let mut used: Vec<&str> = Vec::new();
     let mut layout = Vec::new();
     let mut faction_node = faction;
+    let breach_perks: Vec<&str> = content.breach_perks(item.kind).into_iter().map(|found| found.id.as_str()).collect();
     for (column_index, column) in item.columns().iter().enumerate().filter(|(_, column)| column.traits()) {
         let fresh = |found: &&str| !used.contains(found);
         let shared: Vec<&str> = content.pool(*column, item.kind).into_iter().map(|found| found.id.as_str()).collect();
         let mut pool: Vec<&str> = shared.into_iter().filter(fresh).collect();
-        let mut offered = Vec::new();
+        let breach_column = item.breach && matches!(column, Column::Perk(_));
+        let mut offered: Vec<String> = Vec::new();
         for nth in 0..column.nodes() {
             let index = column_index as u32 * 8 + u32::from(nth);
             let own = faction_node.filter(|_| matches!(column, Column::Perk(_)));
-            let chosen = if let Some(faction) = own {
+            let chosen = if breach_column {
+                let unoffered: Vec<&str> = breach_perks.iter().copied().filter(|id| !used.contains(id)).collect();
+                let unoffered = if unoffered.is_empty() {
+                    breach_perks.iter().copied().filter(|id| !offered.iter().any(|each| each == id)).collect()
+                } else {
+                    unoffered
+                };
+                unoffered.get(dice.pick(Purpose::Traits, index, unoffered.len())).copied()
+            } else if let Some(faction) = own {
                 faction_node = None;
                 let perks = content.faction_perks(faction, item.kind);
                 perks.get(dice.pick(Purpose::Traits, index, perks.len())).map(|found| found.id.as_str())

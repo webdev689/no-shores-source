@@ -171,10 +171,13 @@ pub(crate) fn unfit(character: &mut Character, mut item: Item) -> Item {
     if let Some(entry) = entry.filter(|entry| entry.rarity == item.rarity && faction.is_none()) {
         item = follow(character, item, entry);
     }
-    let kind = item.kind;
+    let (kind, breach) = (item.kind, item.breach);
+    // A Breach's piece keeps what it rolled too, the Breaches' own perks its perk columns' pool.
     let own_perk = |column: Column, id: &str| {
+        let own = |perks: Vec<&crate::catalogue::TraitDef>| perks.iter().any(|found| found.id == id);
         matches!(column, Column::Perk(_))
-            && faction.is_some_and(|key| content.faction_perks(key, kind).iter().any(|found| found.id == id))
+            && (faction.is_some_and(|key| own(content.faction_perks(key, kind)))
+                || (breach && own(content.breach_perks(kind))))
     };
     let mut pressed: Vec<(usize, u8)> = Vec::new();
     // A named item's traits are its entry's (`follow`); a rolled one's and a faction piece's are those of its columns'
@@ -189,15 +192,16 @@ pub(crate) fn unfit(character: &mut Character, mut item: Item) -> Item {
             // has gone, or has moved to another column (Double Shotted, a perk become a finish), is replaced.
             let offered_here =
                 content.pool(column, item.kind).iter().any(|found| found.id == gone) || own_perk(column, &gone);
-            let misfit =
-                content.trait_def(&gone).is_some() && !content.trait_fits(&gone, item.kind, item.named.as_deref());
+            let misfit = content.trait_def(&gone).is_some()
+                && !content.trait_fits(&gone, item.kind, item.named.as_deref(), item.breach);
             if offered_here || misfit {
                 continue;
             }
             let offered = |id: &str| item.layout.iter().flatten().any(|each| each == id);
             let merged = MERGED.iter().find(|(old, _)| *old == gone).map(|(_, into)| *into);
-            let merged = merged.filter(|into| !offered(into) && content.trait_fits(into, item.kind, None));
-            let pool = content.pool(column, item.kind);
+            let merged = merged.filter(|into| !offered(into) && content.trait_fits(into, item.kind, None, item.breach));
+            let breach_perk = breach && matches!(column, Column::Perk(_));
+            let pool = if breach_perk { content.breach_perks(kind) } else { content.pool(column, kind) };
             let plain =
                 pool.iter().find(|found| found.takes.is_none() && !offered(&found.id)).map(|found| found.id.as_str());
             let trading = pool.iter().find(|found| !offered(&found.id)).map(|found| found.id.as_str());
@@ -208,7 +212,7 @@ pub(crate) fn unfit(character: &mut Character, mut item: Item) -> Item {
             item.layout[place][node] = id.to_owned();
         }
     }
-    let fits = |id: &String| content.trait_fits(id, item.kind, item.named.as_deref());
+    let fits = |id: &String| content.trait_fits(id, item.kind, item.named.as_deref(), item.breach);
     let misfits: Vec<(usize, u8)> = (item.columns().iter().enumerate())
         .flat_map(|(column, kind)| (0..kind.nodes()).map(move |node| (column, node)))
         .filter(|&(column, node)| item.has(column, node))

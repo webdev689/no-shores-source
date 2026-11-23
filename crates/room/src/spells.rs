@@ -128,7 +128,7 @@ pub struct SpellSeen {
     pub radius: f64,
 }
 
-fn distance(from: [f64; 3], to: [f64; 3]) -> f64 {
+pub(crate) fn distance(from: [f64; 3], to: [f64; 3]) -> f64 {
     let [east, south, up] = [to[0] - from[0], to[1] - from[1], to[2] - from[2]];
     (east * east + south * south + up * up).sqrt()
 }
