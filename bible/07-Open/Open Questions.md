@@ -61,6 +61,10 @@ Decisions waiting on the owner. None is in force until the owner decides it and 
 - **What others see.** The room puts the cosmetics and faction colours a player has earned into the dress others see,
   and keeps a worn set or metal only of its piece's own content ([[The Room Keeps Only Looks of a Piece's Own
   Content]]); the garments drawn are still each page's own word ([[Server]]).
+- **Faction blades** ([[Faction Blades Wear Their Faction's Colour on Hilt and Trim]]): built on the branch
+  `wt/fblade` (the forge marks a weapon's trim, the page lays the faction's colour on it), held by the owner, its art
+  not published. The Veiled's Nightveil is four neutral greys, so its trim does not read on an ebony blade; the owner:
+  "Lets talk about it".
 - **The Abyss Dungeons' crossbows.** The forge draws no adamantium or ebony crossbow, so they show the nearest metal it
   draws (mithril); their own art waits (the owner: "Not now").
 - **Named pieces for each content.** A Vestige now opens to its own content's named pieces where it has any of its
