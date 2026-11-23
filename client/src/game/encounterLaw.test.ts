@@ -103,7 +103,7 @@ test('the banner names the seal the player stands in, its task in a line, its pr
 test('away from every seal the banner names the nearest unbroken one, never one running farther off', () => {
   // The Litany runs in room 0; the player stands past the east end, nearer the Weighing's room.
   const away = encounterBanner(layout, seen(), [20, 1.6, 0]);
-  assert.deepEqual([away?.title, away?.tone, away?.objective], ['The Weighing', 'next', 'Hold both plates together']);
+  assert.deepEqual([away?.title, away?.tone], ['The Weighing', 'next'], 'named, as the line to the next seal');
   const west = encounterBanner(layout, seen(), [-3, 1.6, 0]);
   assert.deepEqual([west?.title, west?.tone], ['The Litany', 'next']);
   const inside = encounterBanner(layout, seen(), [2, 1.6, 0]);
@@ -414,4 +414,19 @@ test("a Weighing's plates in play stand under beams at rest, and a held one is f
     held.some((mark) => Math.hypot((mark.at[0] ?? 0) - 8, (mark.at[1] ?? 0) - 1.6) < 0.01 && mark.at[2]! < 0.1),
     'filled to its middle',
   );
+});
+
+test("a relic's banner reddens under three tenths exactly as its refused sound plays, never a hair before or after", () => {
+  const holdfast = (relic: number) => ({
+    kind: SEAL_KIND.holdfast,
+    state: SEAL_STATE.running,
+    progress: 0,
+    marks: [1],
+    relic,
+  });
+  const bonus = (relic: number) =>
+    encounterBanner(layout, seen({ seals: [holdfast(relic), seen().seals[1]!] }), [2, 1.6, 0])?.bonus;
+  assert.deepEqual(bonus(0.297), { text: 'Relic 29%', state: 'warns' });
+  assert.deepEqual(bonus(0.3), { text: 'Relic 30%', state: 'holds' });
+  assert.deepEqual(bonus(0.29), { text: 'Relic 29%', state: 'warns' });
 });

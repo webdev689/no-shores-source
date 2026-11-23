@@ -513,11 +513,12 @@ or glows, and is read as standing none (`readDungeon`).
   over it; the slam's ring 4 m round the Boss, filling as it comes; a red ring round the Boss through Fury; a
   Reckoning's ring of light under a
   tall beam while it is shown, and a flash from the light as it lands. Under the compass the public event's banner
-  shows the seals broken of how many, the seal the player stands in (else the nearest unbroken one, by its room's
-  middle, as the next to go to) with its task in a line
+  shows the seals broken of how many and, away from every seal, the nearest unbroken one by its room's middle in the
+  banner's one line to the next; in a seal's room, that seal with its task in a line
   ("Step on the runes in the order they light", "Hold all three plates together" or "Hold both plates together",
   "Climb to the seal stone together", "Hold the relic's ring") and its progress (an Ascent's "2 of 4" on the stone, a
-  Holdfast's "Relic 40%"; an Ascent's "Foul water harms" in red); once the Boss wakes, the Court ("Defeat the Boss", "Break the anchors" while warded, "Get
+  Holdfast's "Relic 40%", red under 30%; an Ascent's "Foul water harms" in red); once the Boss wakes, the Court
+  ("Defeat the Boss", "Break the anchors" while warded, "Get
   clear of the Boss" while its slam is shown, "Stand in the light" with the Reckoning's seconds left in the banner's
   large clock, red and pulsing), "Fury in 1:00" in its last minute and "Fury ×1.4" once it begins, wherever the player
   stands; with every seal broken and the Boss not yet up, only the count; none once the Boss has fallen. The compass marks each unbroken seal's room, then the end room once the Boss

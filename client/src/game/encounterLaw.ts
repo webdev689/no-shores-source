@@ -160,7 +160,8 @@ export function encounterBanner(layout: DungeonLayout, seen: EncounterSeen, feet
       bar: null,
     };
   const plates = seal.kind === SEAL_KIND.weighing ? seal.marks.length : 0;
-  const relic = Math.round(seal.relic * 100);
+  // Whole per cent rounded down from its per mille, so it reads under 30 exactly as it is refused (`EncounterCues`).
+  const relic = Math.floor(Math.round(seal.relic * 1000) / 10);
   return {
     ...plain,
     tone: here?.inside ? 'running' : 'next',
@@ -171,7 +172,7 @@ export function encounterBanner(layout: DungeonLayout, seen: EncounterSeen, feet
     bar: barOf(seal),
     bonus:
       seal.kind === SEAL_KIND.holdfast
-        ? { text: `Relic ${relic}%`, state: relic < 30 ? 'warns' : 'holds' }
+        ? { text: `Relic ${relic}%`, state: seal.relic < 0.3 ? 'warns' : 'holds' }
         : seal.kind === SEAL_KIND.ascent
           ? { text: 'Foul water harms', state: 'warns' }
           : null,
@@ -248,6 +249,7 @@ function quad(out: number[], corners: readonly (readonly number[])[], colour: Co
 function padMarks(out: number[], pads: SealLayout['pads'], seconds: number): void {
   const { band, face, off, speed, step } = PAD_EDGE;
   pads.forEach(([minX, minY, maxX, maxY, top], index) => {
+    const down = Math.min(face, top);
     const colour = index === pads.length - 1 ? LIT : AT_REST;
     const alpha = 0.45 + 0.45 * (0.5 + 0.5 * Math.cos(seconds * speed - index * step));
     const z = top + off;
@@ -287,8 +289,8 @@ function padMarks(out: number[], pads: SealLayout['pads'], seconds: number): voi
       const sideways = [
         [startX, startY, top],
         [endX, endY, top],
-        [endX, endY, top - face],
-        [startX, startY, top - face],
+        [endX, endY, top - down],
+        [startX, startY, top - down],
       ];
       quad(out, sideways, colour, [alpha, alpha, alpha * 0.15, alpha * 0.15]);
     }

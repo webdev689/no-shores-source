@@ -114,12 +114,20 @@ for (const todo = [layout.wayIn.cell]; todo.length > 0; ) {
 function entry(room: number): { door: Point; outside: Point } {
   const doors = (plan?.seals.find((seal) => seal.room === room)?.doors ?? []).map(cellOf);
   const cells = doors.length > 0 ? doors : layout.cells.flatMap((found, cell) => (found === room ? [cell] : []));
-  const door = cells.reduce((best, cell) => ((walks[cell] ?? 0) < (walks[best] ?? 0) ? cell : best));
-  const columns = layout.columns;
-  const around = [door + 1, door - 1, door + columns, door - columns].filter(
-    (cell) => layout.cells[cell] !== undefined && layout.cells[cell] !== room && layout.cells[cell] !== -2,
-  );
-  const outside = around.reduce((best, cell) => ((walks[cell] ?? 0) < (walks[best] ?? 0) ? cell : best), door);
+  // Nearest the way in on the walk, the lower cell on a tie, as the room's plan reads it (`entered_by`).
+  const first = (best: number, cell: number) => {
+    const [mine, theirs] = [walks[cell] ?? Infinity, walks[best] ?? Infinity];
+    return mine < theirs || (mine === theirs && cell < best) ? cell : best;
+  };
+  const door = cells.reduce(first);
+  const [columns, column] = [layout.columns, door % layout.columns];
+  const around = [
+    column + 1 < columns ? door + 1 : -1,
+    column > 0 ? door - 1 : -1,
+    door + columns,
+    door - columns,
+  ].filter((cell) => layout.cells[cell] !== undefined && layout.cells[cell] !== room && layout.cells[cell] !== -2);
+  const outside = around.reduce(first, door);
   return { door: centre(door), outside: centre(outside) };
 }
 /** The middle of the seal's room's cell, clear of every pad and solid by a metre, farthest from `from`. */

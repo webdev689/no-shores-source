@@ -20,13 +20,13 @@ python3 - <<'PY'
 import os, pathlib
 
 # 0 heals every player; 1 lifts every player to height a (onto a pad); 2 sets seal a's relic to b; 3 breaks every
-# seal; 4 raises the Boss's next ward; 5 fills anchor a to share b; 6 shows the slam with b ticks left; 7 shows the
+# seal; 4 raises the Boss's next ward (a tick unfrozen tells it); 5 fills anchor a to share b; 6 shows a told ward's
+# slam with b ticks left (b at most SLAM_EVERY, on a room older than that); 7 shows the
 # Reckoning with b ticks left; 8 starts Fury's clock with b ticks left (b <= 0: Fury b ticks in), the room's clock run
 # on first where it is too young for that, every stamp of the encounters moved on with it; 9 sets Litany a's show b
 # ticks in (30: its first rune half shown).
 QA_ENCOUNTER = '''    pub fn qa_encounter(&mut self, what: u32, a: f64, b: f64) {
         use crate::encounters::court::{ANCHOR_TICKS, FURY_FROM, RECKONING_WARNING, SLAM_EVERY, WARDS};
-        let clock = self.clock;
         let ticks = |left: f64| left.max(0.0) as u64;
         if what <= 1 {
             for found in self.players.values_mut() {
@@ -66,10 +66,10 @@ QA_ENCOUNTER = '''    pub fn qa_encounter(&mut self, what: u32, a: f64, b: f64) 
                 }
             }
             5 => { if let Some(held) = court.anchors.get_mut(a as usize) { *held = (b * ANCHOR_TICKS as f64) as u64; } }
-            6 => court.ward_at = (clock + ticks(b)).saturating_sub(SLAM_EVERY),
+            6 => court.ward_at = clock.saturating_sub(SLAM_EVERY - ticks(b).min(SLAM_EVERY)),
             7 => {
                 court.wards_broken = court.wards_broken.max(1);
-                court.reckoning_from = Some((clock + ticks(b)).saturating_sub(RECKONING_WARNING));
+                court.reckoning_from = Some(clock.saturating_sub(RECKONING_WARNING - ticks(b).min(RECKONING_WARNING)));
             }
             9 => { if let Some(seal) = encounters.seals.get_mut(a as usize) { seal.shown_from = clock.saturating_sub(ticks(b)); } }
             8 => court.fury_from = Some((clock as f64 + b - FURY_FROM as f64).max(0.0) as u64),
