@@ -41,6 +41,9 @@ const HALL_UPS_M = [10, 11, 8, 12, 7];
 const HALL_LENS = 1.35;
 const DOOR_SHARE = 1.08;
 const BANNER_M = 5;
+/** How far before a chapel, and how high, the eye stands as she names its house, metres: under the rings' height. */
+const CHAPEL_BACKS_M = [11, 13, 9, 15];
+const CHAPEL_UPS_M = [3.5, 4.5, 2.6];
 /** How far below its target the view looks, a share of its lens: what it frames stands in the view's upper part,
  *  clear of the dialogue box over its lower middle. */
 const RAISE = 0.2;
@@ -159,10 +162,23 @@ export function hallShot(place: Place, kinds: readonly string[], own: Shot): Sho
   const fromNave = firstSeeing(naveShots, [...heads, ...banners], place.blocks);
   const house = kinds.length === 1 ? chapels.find((station) => station.kind === kinds[0]) : undefined;
   if (!house || !fromNave) return fromNave;
-  // As she names a house the camera turns to its chapel from where it stands, or the nearest eye that sees it.
+  // As she names a house the camera comes before its chapel, low under the hung rings of light, through the
+  // player's own lens: its chapel and keeper the picture.
   const its: Point3 = [...house.keeper, floor(house) + HEAD_M];
-  const turned = [fromNave.eye, ...eyes].map((eye) => looking(own, eye, [its[0], its[1], its[2] + 1], HALL_LENS));
-  return firstSeeing(turned, [its], place.blocks);
+  const banner: Point3 = [house.keeper[0], house.keeper[1], floor(house) + BANNER_M];
+  const [outX, outY] = [house.counter[0] - house.keeper[0], house.counter[1] - house.keeper[1]];
+  const out = Math.hypot(outX, outY) || 1;
+  const near = CHAPEL_BACKS_M.flatMap((back) =>
+    CHAPEL_UPS_M.map((up): Shot => {
+      const eye: Point3 = [
+        house.counter[0] + (outX / out) * back,
+        house.counter[1] + (outY / out) * back,
+        floor(house) + up,
+      ];
+      return looking(own, eye, [its[0], its[1], its[2] + 1]);
+    }),
+  );
+  return firstSeeing(near, [its, banner], place.blocks);
 }
 
 /** Her farewell seen from the side of the pair, the side nearer the player's view first, else the one a solid leaves

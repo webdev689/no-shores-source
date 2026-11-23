@@ -152,3 +152,25 @@ test('her face stands whole above the dialogue box, the eye beyond the near dith
   assert.ok(feet && feet[1] < VIEW.height * 0.62, `her figure above the box: ${feet?.[1]}`);
   for (const [east, south] of [stranger, player]) assert.ok(Math.hypot(shot.eye[0] - east, shot.eye[1] - south) > 3);
 });
+
+test("each house's turn makes its chapel and keeper the picture, near, the hung rings of light left out whole", () => {
+  const place = { stations: PLAZA, groundAt: ground, blocks: BLOCKS };
+  const rings = [1878, 1862].flatMap((y) =>
+    Array.from({ length: 8 }, (_none, nth): [number, number, number] => {
+      const turn = (nth * Math.PI) / 4;
+      return [1000 + Math.cos(turn) * 1.6, y + Math.sin(turn) * 1.6, GROUND + 9.8];
+    }),
+  );
+  for (const station of HALL_STATIONS) {
+    const shot = hallShot(place, [station.kind], OWN);
+    assert.ok(shot, station.kind);
+    const away = Math.hypot(shot.eye[0] - station.keeper[0], shot.eye[1] - station.keeper[1]);
+    assert.ok(away < 18, `${station.kind} from near: ${away}`);
+    assert.ok(clear(shot, head(station)) && seen(shot, head(station)), `${station.kind}'s keeper`);
+    assert.ok(seen(shot, [station.keeper[0], station.keeper[1], GROUND + 5]), `${station.kind}'s banner`);
+    assert.ok(
+      rings.every((point) => !seen(shot, point)),
+      `${station.kind}: no ring of light at the frame's edge`,
+    );
+  }
+});
