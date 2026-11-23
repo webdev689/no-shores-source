@@ -29,6 +29,7 @@ import { unarmed } from './look.ts';
 import { headOnView, type StoryFrame } from './stage.ts';
 import type { Story } from './story.ts';
 import { castBetween, CastFreeze, castPrompt, teachable } from './stormTeaching.ts';
+import { beginAt, pageDevStart } from './wreckDevStart.ts';
 import { type Done, Freeze, Tutorial } from './tutorial.ts';
 import { WispScene } from './wispScene.ts';
 import { topAt, type WreckLayout } from './wreckLayout.ts';
@@ -60,14 +61,6 @@ export function heardOnWreck(
   return { ...heard, dead: beaten, foes: thuleHeard ? [...foes, thule] : foes };
 }
 
-/** How far into the wisp's coming a page under development asks to begin the wreck, to picture it: `&wisp=1` at its
- *  start, `&wisp=<n>` n - 1 seconds into it; null for none. */
-const wispAsked = (): number | null => {
-  if (!import.meta.env?.DEV || typeof location === 'undefined') return null;
-  const asked = Number(new URLSearchParams(location.search).get('wisp') ?? NaN);
-  return asked >= 1 ? asked - 1 : null;
-};
-
 /** While the fight is frozen the world drains this far toward grey under the interface, easing there and back over
  *  this long, so the stop reads as time held. */
 const FROZEN_DRAIN = 0.55;
@@ -88,7 +81,10 @@ export class WreckFight implements Beat {
   private fought = false;
   private barked = { struck: -Infinity, strikes: -Infinity };
   /** The teaching on the wreck's quiet deck, then the fight's own task; and the fight frozen on a blow to teach. */
-  private readonly tutorial = new Tutorial(wispAsked() === null ? 'find' : 'wisp');
+  /** Where a page under development asked to begin, and whether it has; none in a built game. */
+  private readonly devStart = pageDevStart();
+  private devBegun = false;
+  private readonly tutorial = new Tutorial(this.devStart?.stage ?? 'find');
   private readonly freeze = new Freeze();
   private readonly castFreeze = new CastFreeze();
   /** The wisp's coming, while it plays; the bar of the Storm's abilities and the shots left last frame, for what was
@@ -254,6 +250,10 @@ export class WreckFight implements Beat {
     const run = this.run;
     // Held on the picture before it until the wreck is drawn, so the run's camera never plays against its course alone.
     if (!run || this.scenery.coming) return null;
+    if (this.devStart && !this.devBegun) {
+      this.devBegun = true;
+      beginAt(this.devStart, run, this.layout);
+    }
     const { story } = this;
     const { stage, walker, firstPerson } = story;
     this.clock += tick.seconds;
@@ -417,7 +417,7 @@ export class WreckFight implements Beat {
         { feet: [body.x, body.y, body.z], facing },
         run.restingShot(),
         give,
-        wispAsked() ?? 0,
+        this.devStart?.wispInto ?? 0,
       );
     }
     const { body } = this.story.walker.player;
