@@ -280,7 +280,6 @@ a decision is a record. How to add one: [[Recording a Decision]].
 - [[The Stranger Welcomes the Player, and a Quest Walks Them Round Overlook]]
 - [[The Prologue, Horses and the Welcome to Overlook as Claude Builds Them]]
 - [[The Game Is Named No Shores]]
-- [[Elder Maren Hale Walks at Three Quarters of a Player's Pace]]
 - [[A Mark Over What a Player Can Use Is Seen Through Walls]]
 - [[The Wreck's Arms Lie Farther Out, as a Loot Drop]]
 - [[Aiming a Ship Follows Black Flag, From Its Deck]]
@@ -329,3 +328,5 @@ a decision is a record. How to add one: [[Recording a Decision]].
 - [[Private Repo overlook-source]], by [[The Game Is Named No Shores]]
 - [[The Prologue's Elites Are as Hard to Bring Down as a Major]], by [[The Prologue Is Reworked With Real Armour, a Bow, the Storm and No Elites]]
 - [[Elder Maren Hale Welcomes the Player to Overlook]], by [[The Stranger Welcomes the Player, and a Quest Walks Them Round Overlook]]
+- [[Elder Maren Hale Walks at Three Quarters of a Player's Pace]], by
+  [[The Stranger Welcomes the Player, and a Quest Walks Them Round Overlook]]

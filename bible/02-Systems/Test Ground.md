@@ -81,7 +81,7 @@ Click the view to play; Escape frees the mouse. The body moves by the [[Movement
 | Left click, held | Guard; pressed just as a blow lands, parry. With a bow, a crossbow or a gun drawn: fire, a quick shot at the locked foe, or the aimed shot onto the crosshair; holding fires again as it reloads |
 | `V` or Mouse5 | Dodge the way you move, or straight back |
 | `R`, `Q`, `G` | Cast the worn Art's Anima, first Tenet and second Tenet, each once ready ([[Arts]]). Shadow's Dusk Daggers aims while `Q` is held, a ring on the ground at the crosshair, and casts as it is let go |
-| `,` | Mount or dismount: 6 m/s, galloping at 12 with `Shift` |
+| `,` | Mount or dismount, with a horse worn in the Mount slot ([[Gear]]); the Test Ground gives none: 6 m/s, galloping at 12 with `Shift` |
 | Wheel, Mouse4 | Pull back into third person and further, or come back into first person; Mouse4 switches straight |
 
 Third person starts 2 m behind the head and 0.5 m up, and each wheel notch moves it 0.2 m, up to 10 m. Nearer than

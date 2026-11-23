@@ -486,7 +486,8 @@ is a horse's hide, kept as its horse ("Horses").
 
 ## Horses
 
-[[Horses Are Items Worn in a Mount Slot]] (`gear::horses`).
+[[Horses Are Items Worn in a Mount Slot]] (`gear::horses`; Claude's calls in
+[[The Prologue, Horses and the Welcome to Overlook as Claude Builds Them]]).
 
 - **A horse is an item** of its own kind (28), worn in the Mount slot (11), one to each coat: the Bay Horse, the
   Chestnut Horse and so on, its name its coat's place among the coats (`content/gear/rolled.json` names them in that

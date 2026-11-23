@@ -19,4 +19,6 @@ status: in force
 - **The Appearance screen draws no horse.**
 - **A new player has no horse** through the tutorial; one comes later.
 
-How it is built: [[Gear]], [[Interface]], [[Player]].
+Replaces in part [[The Character Page Opens Appearance From an Icon Button]] (the mount on the Appearance screen).
+How it is built: [[Gear]], [[Interface]], [[Player]]; Claude's calls in
+[[The Prologue, Horses and the Welcome to Overlook as Claude Builds Them]].

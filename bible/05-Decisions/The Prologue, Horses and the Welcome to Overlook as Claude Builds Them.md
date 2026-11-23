@@ -18,7 +18,7 @@ Claude's choices in building [[The Prologue Is Reworked With Real Armour, a Bow,
 
 | Choice | Chosen | Why |
 |---|---|---|
-| A horse | An item of its own kind, one to each coat (the coat its hide), Normal, no level, stats or perks; never upgraded or dismantled; sold back and stored as gear is, counted among the armour in the vault | "Horses become an item you can equip" |
+| A horse | An item of its own kind, one to each coat (the coat its hide), Normal, no level, stats or perks; never upgraded, dismantled or sold back; carried in the Mount slot's nine and stored in the vault among the armour | "Horses become an item you can equip" |
 | The Mount slot | Its own tile at the top of the Character page's right column, beside the Art's diamond; a grey horse's head when empty; the barding chosen in its flyout, drawn on the horse worn (the bay's hide with none) | "Mount icon slot in inventory"; it did not fit under the cloak at 720 lines |
 | The Appearance screen | The figure alone, Emblem and Dye | "Remove horse from appearance tab" |
 | Riding | Only with a horse worn, by the room's word; with none the key says "You have no horse." once a press, where it was pressed; the prologue says nothing | The room is the authority; the page and the room agree |

@@ -90,7 +90,8 @@ A reward gives Aurem (`aurem`, any quest's), the Art (`art`, its Anima with it, 
 ## The opening
 
 "A House of Your Own" walks a new player round Overlook, then to a house
-([[The Stranger Welcomes the Player, and a Quest Walks Them Round Overlook]]): **Hear the stranger out** (her welcome,
+([[The Stranger Welcomes the Player, and a Quest Walks Them Round Overlook]]; Claude's calls in
+[[The Prologue, Horses and the Welcome to Overlook as Claude Builds Them]]): **Hear the stranger out** (her welcome,
 [[Prologue]]; its reward the 400 Aurem she gives); **Find your way round Overlook**, speaking at each counter in turn
 (the Weaponsmith, the Armorsmith, the Mage, the Vault, the Tailor, the Tack, the Postmaster, and the Harbourmaster for
 the Shipwright), each keeper saying what their counter is for; **Arm yourself**, a Melee weapon bought of the

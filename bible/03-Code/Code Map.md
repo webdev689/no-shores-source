@@ -32,6 +32,11 @@ decision, made in the same change as its entry here.
 | `client/src/soundMeasure.ts` | How loud a recording is, measured once where it is decoded: its level, its rush and its loudness over each window the game asks |
 | `client/src/contentCache.ts` | R2's files and ranges of them, kept in the browser's own storage within 1 GB, since a file named by its hash never changes |
 | `client/src/seeded.ts` | A seeded stream of numbers in [0, 1), the same in every engine, which any layer draws from |
+| `client/src/nearFade.ts` | How a billboard (a puff of smoke, a sea fight's puff) fades softly to nothing as the eye comes within a couple of metres of it, the same in the shaders |
+| `client/src/frameGuard.ts` | A frame's work kept from stopping the frames: what one part throws is reported once and the next frame is still drawn |
+| `client/src/gameWorker.ts` | The game in a thread of its own, WebGPU on the canvas the page hands it, with stand-ins for what the page keeps ([[Game]]) |
+| `client/src/gpuForTests.ts` | A GPU for tests that draws nothing and counts what is made and not destroyed |
+| `client/src/listener.ts` | The page's one audio listener, round which the world's sounds and the ambience place theirs in one frame |
 | `client/src/keptNames.ts` | Moves what a browser kept under the game's former name (`overlook.`) to `noshores.`, once, before any page reads it ([[The Game Is Named No Shores]]) |
 | `client/src/elementGlow.ts` | The [[Weapon Glow]]'s colours, outline field, shader and bursts, which the figures, the first person and the fight's effects draw with |
 | `client/editor/`, `client/src/editor/` | The [[World Editor]]: its page, and the layer that paints the continents and shapes the land, in 2D, in 3D and close up, and sails the Sloop alone or, through what its page offers, in a fleet room |

@@ -27,7 +27,7 @@ status: in force
 >
 > - After defeating the boss, and awakening, the npc should lead you to overlook as usual"
 
-> Asked where the parry timing is too fast and what to change: "A longer window everywhere (Recommended)", the option
+> Asked where the parry timing is too fast and what to change: "A longer window everywhere", the option
 > that read: "The time a press stays a parry grows a little for every fight in the game (12 ticks, 0.2 s, to about 15,
 > 0.25 s)."
 

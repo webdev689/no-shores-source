@@ -44,7 +44,10 @@ code:
   - client/src/game/prologue/beach.ts#findBeach
   - client/src/game/prologue/epilogue.ts#Epilogue
   - client/src/game/welcome/tour.ts#StrangerWelcome
-  - client/src/game/welcome/tour.ts#framing
+  - client/src/game/welcome/tour.ts#TOUR
+  - client/src/game/welcome/framing.ts#counterShot
+  - client/src/game/welcome/framing.ts#hallShot
+  - client/src/game/welcome/framing.ts#facesShot
   - client/src/game/welcome/afterStory.ts#AfterStory
   - content/story/welcome.json
   - client/src/game/prologue/brig.ts#Brig
@@ -75,7 +78,8 @@ The game's first story mission and the way into the game, as the owner set it
 ([[The Game Opens With a Story Mission at Sea]]): a tap to start, an intro over the islands, the title over
 Saltmere, a storm at sea aboard a brig, character creation at its helm, a fight at sea, a ram, a wreck fought through
 on foot to a boss who cannot be beaten, the deep, and waking on Saltmere's shore. Claude's calls are in
-[[The Prologue as Claude Shapes It]]; how it is drawn and heard is [[Cinema]] and [[Speech]].
+[[The Prologue as Claude Shapes It]] and, for its rework and the welcome to Overlook,
+[[The Prologue, Horses and the Welcome to Overlook as Claude Builds Them]]; how it is drawn and heard is [[Cinema]] and [[Speech]].
 
 ## How it works
 
