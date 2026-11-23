@@ -182,9 +182,9 @@ each part works is in its system note.
     display kept clear at every size, a centre call for the slam ("Get clear!") and the Reckoning ("Into the light!"),
     foul water's green edge, beams fading beside the camera; each moment pictured in three dungeons
     (`tools/claude-toolkit/encounter-plan.ts`).
-  - Tested offline: `cargo xtask check` on each pushed head (058f83e3 last); three rounds of read-only audits (rules,
-    page, design, bible, looks, and two mutation audits of the tests), every finding fixed with a test or recorded.
-    Not yet: played by hand, or in a deployed room.
+  - Tested offline: `cargo xtask check` on each pushed head (c2361953 last, with main merged in at 1cd6a379); three
+    rounds of read-only audits (rules, page, design, bible, looks, and two mutation audits of the tests), every finding
+    fixed with a test or recorded. Not yet: played by hand, or in a deployed room.
   - Held by the owner: faction blades (built on `wt/fblade`, the forge's trim; its art unpublished); the Abyss
     Dungeons' crossbow art ("Not now").
   - To talk through with the owner: the named-piece gaps (36 of 60 contents, colours and slots have no named piece of
