@@ -17,6 +17,8 @@ pub const CROWN_REACH: f64 = 0.85;
 /// The crown's great spires round the tallest, and the small ones round its rim: least and most.
 const CROWN_GREAT: [f64; 2] = [5.0, 8.0];
 const CROWN_SMALL: [f64; 2] = [14.0, 20.0];
+/// The small spires round a lesser crown's rim (on another kept top at the break): least and most.
+const LESSER_SMALL: [f64; 2] = [2.0, 4.0];
 /// The shards on a heap of rubble: least and most, and more on a breach's fall (a heap at least this high, metres).
 const HEAP_SHARDS: [f64; 2] = [2.0, 5.0];
 const BREACH_HIGH_M: f64 = 4.0;
@@ -83,7 +85,7 @@ fn count(range: [f64; 2], draw: f64) -> usize {
 /// The great formation crowning a broken landmark, standing on what it kept: on the broadest top of its highest kept
 /// solids (those broken off at the break, or else its highest), a tallest spire from the middle of that top reaching
 /// back toward `lost_to` (the height the whole landmark had), great spires round it and small ones leaning out round
-/// the top's rim, every foot on that top.
+/// the top's rim, every foot on that top; and a lesser crown on every other kept top at the same height.
 #[must_use]
 pub fn crown(kept: &[Solid], lost_to: f64, seed: u32) -> Vec<Solid> {
     let top_of = |solid: &Solid| solid.at[2] + solid.size[2];
@@ -133,6 +135,25 @@ pub fn crown(kept: &[Solid], lost_to: f64, seed: u32) -> Vec<Solid> {
         let height = tallest * (0.05 + 0.12 * draw(at, 2));
         let turns = [leaning_toward(bearing + seat.turn), 0.5 + 0.6 * draw(at, 3), 0.4 * (draw(at, 4) - 0.5)];
         crystal.extend(spire(foot, height, height / 4.5, turns));
+    }
+    // Every other kept top at the break (a span's piers, a ring of columns) bears a lesser crown: a spire from its
+    // middle and a few round its rim, as tall as its top is broad allows.
+    let others = kept
+        .iter()
+        .filter(|solid| !core::ptr::eq(*solid, seat) && top_of(solid) > highest - 1e-6 && breadth(solid) > 0.0);
+    for (number, other) in others.enumerate() {
+        let draw = |at: i64, salt: i64| rand01(seed, &[47, number as i64, at, salt]);
+        let reach = 0.9 * breadth(other);
+        let main = (tallest * (0.2 + 0.15 * draw(0, 0))).min(12.0 * reach);
+        let turns = [draw(0, 1) * core::f64::consts::TAU, 0.08 + 0.1 * draw(0, 2), 0.0];
+        crystal.extend(spire(on_top(other, 0.0, 0.0), main, (main / 7.0).min(reach), turns));
+        for at in 1..=count(LESSER_SMALL, draw(0, 3)) as i64 {
+            let bearing = draw(at, 0) * core::f64::consts::TAU;
+            let foot = on_top(other, bearing, reach * (0.6 + 0.4 * draw(at, 1)));
+            let height = main * (0.2 + 0.3 * draw(at, 2));
+            let lean = [leaning_toward(bearing + other.turn), 0.4 + 0.5 * draw(at, 3), 0.3 * (draw(at, 4) - 0.5)];
+            crystal.extend(spire(foot, height, (height / 4.5).min(reach * 0.5), lean));
+        }
     }
     crystal
 }

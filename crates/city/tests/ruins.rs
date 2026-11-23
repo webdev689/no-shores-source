@@ -131,7 +131,7 @@ fn a_ruin_keeps_its_site_and_breaks_what_stands_on_it() {
     bare.landmark.retain(|solid| solid.material != Material::Crystal);
     bare.works.retain(|solid| solid.material != Material::Crystal);
     assert_eq!(fingerprint(&bare), "0aa79975fce0e825");
-    assert_eq!(fingerprint(&ruin), "a280d163dc91fc28");
+    assert_eq!(fingerprint(&ruin), "8796736ff57b82ff");
 }
 
 #[test]
