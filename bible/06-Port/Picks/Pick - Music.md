@@ -16,7 +16,7 @@ dfo_commit: 1c0fd681
 # Pick - Music
 
 DFO's own music: its FM voice bank, its song player and the scores it wrote as notes in code. The [[Pick List]] names
-"our synthesiser and its written scores" among DFO's Clean pieces, and the owner chose them for Overlook
+"our synthesiser and its written scores" among DFO's Clean pieces, and the owner chose them for No Shores
 ([[Music and Ambience Come From DFO's Synthesiser]]). How it works now is [[Music]].
 
 ## What comes over
@@ -27,7 +27,7 @@ DFO's own music: its FM voice bank, its song player and the scores it wrote as n
 - The scores, note for note, renamed: the six sea songs; the gate's war songs and fall (the Wrath); the Hour's three
   wars, its last minute and its fall (the Reckoning); the Spire lord's wake, three phases on one lord's motif, the
   count, the end and the hymn (the Boarding).
-- The sea score's law, its arms on Overlook's waters.
+- The sea score's law, its arms on the game's waters.
 
 ## What stays behind
 
@@ -40,7 +40,7 @@ Hour's place songs, the Spire's halls, trials, set pieces and its other lords' m
 
 - A layer role on every track and drum, and a director that brings a score in a layer at a time on the bar line,
   under a soft ceiling of the music's own at -1 dBFS, so songs crossing and stings over them never clip.
-- The boss scores lend their phases to Overlook's Bosses by their health, with a last stand in a boss's last tenth.
+- The boss scores lend their phases to the game's Bosses by their health, with a last stand in a boss's last tenth.
 - Measured and changed: every song is floored at 30 Hz (the gate's and the Hour's songs carried a standing offset
   of up to -21.6 dBFS without it); the boss scores' drive is lowered so a first phase sits at -18.5 dBFS under a soft
   ceiling at -3 dBFS, where the ceiling had flattened every peak at -1; the sea songs are 3 dB louder; a cymbal's

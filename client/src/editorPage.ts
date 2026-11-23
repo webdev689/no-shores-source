@@ -1,3 +1,4 @@
+import './keptNames.ts';
 import { FleetBerth, fleetRulesAt } from './combat/fleetBerth.ts';
 import { SeaFightReadout } from './combat/seaReadout.ts';
 import { offerFleet, offerPlates, offerReadout } from './editor/fleetLink.ts';

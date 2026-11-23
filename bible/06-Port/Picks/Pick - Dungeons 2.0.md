@@ -33,7 +33,7 @@ DFO's Dungeons 2.0: the Forge, which lays every dungeon in blocks of DFO's own, 
   chain, as the owner wants a run and not a labyrinth.
 - **The Forge's mesh**: floors, ceilings and walls from the cells, trim bands at a wall's foot and head, doorway
   frames where a room meets a corridor, pillars at a great room's inner corners, each face by its picture's role.
-- **Its population**, as far as Overlook uses it: the way in's exit door against rock, markers on a room's quiet
+- **Its population**, as far as No Shores uses it: the way in's exit door against rock, markers on a room's quiet
   floor, a torch on each room's wall and every fourth corridor cell, no foe in the way-in room.
 - **The heart**: the end room is held by its guardian, and a cache beside it opens when it falls; its stone that
   carried the player back to the way in becomes the return portal out of the dungeon.
@@ -50,7 +50,7 @@ DFO's Dungeons 2.0: the Forge, which lays every dungeon in blocks of DFO's own, 
 
 - Stairs and storeys: [[Movement]] and the [[Navmesh]] stand one floor at a point.
 - Doors and their locks, traps and their notice and disarm, poison, magicka drains, last fire and its rest, the
-  scenery sprites themselves, block names, the director's noise and patrols: each needs a system Overlook does not
+  scenery sprites themselves, block names, the director's noise and patrols: each needs a system No Shores does not
   have, or only repeats what its garrison already does.
 - The blocks' people, fixed foes, castle courts and riddle vaults, the source dungeons' squares and kinds, curated
   blocks, the plan's print and saves: all of them Daggerfall's dungeons or DFO's saves.

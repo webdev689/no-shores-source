@@ -1,4 +1,4 @@
-//! The Arts, Overlook's subclasses: their spells and Core fragments as `content/arts/arts.json` has them, built into
+//! The Arts, the game's subclasses: their spells and Core fragments as `content/arts/arts.json` has them, built into
 //! the rules so the rooms and every browser read the same; the Art a player wears and the Core each Art keeps, on
 //! their character; and the asks that change them, which the room answers.
 

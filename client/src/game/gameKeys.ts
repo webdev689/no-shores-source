@@ -11,6 +11,7 @@ import { gearScreenOpen } from './gearWindow.ts';
 import type { Hud } from './hud.ts';
 import type { StoryHost } from './prologue/host.ts';
 import { deckKey, fightAsk } from './seaWord.ts';
+import { chatOpen, openChat, socialUp } from './social/social.ts';
 
 /** What the controls reach: the game as it plays, its input, interface and display, the story, and its deeds. */
 export interface Controlled {
@@ -37,7 +38,7 @@ export interface Controlled {
  *  walking a deck). */
 export function contextOf(playing: Pick<Playing, 'flow' | 'sea' | 'foot'>): Context {
   const { flow, sea, foot } = playing;
-  if ('menu' in flow && flow.menu) return 'menu';
+  if (('menu' in flow && flow.menu) || socialUp()) return 'menu';
   if (flow.mode === 'foot') return foot?.standing.kind === 'dead' ? 'dead' : 'foot';
   if (sea?.boarding.onDeck) return sea.boarding.foot?.standing.kind === 'dead' ? 'dead' : 'foot';
   if (sea?.aboard.walking) return 'foot';
@@ -61,6 +62,7 @@ export function listenForControls(game: Controlled): void {
     if (deckKey(acts, escape, sailing ? sea : null, game.respawn)) return;
     if ((pressed('confirm') || pressed('respawn')) && retry) retry();
     else if (acts('menu')) change({ kind: 'menu' });
+    else if (acts('chat') && !gearScreenOpen() && !socialUp()) openChat();
     else if (escape && flow.mode === 'landing') {
       sea?.view.backToSea();
       change({ kind: 'back' });
@@ -99,7 +101,7 @@ export function listenForControls(game: Controlled): void {
   input.onPad((pressed, buttons) => {
     // A button being bound in the sheet is the sheet's alone.
     if (hud.controls.rebinding.slot) return;
-    const covered = gearScreenOpen() || hud.controls.open;
+    const covered = gearScreenOpen() || hud.controls.open || socialUp() || chatOpen();
     const escape = buttons.has('B') && (playing.helmMap.busy || playing.flow.mode === 'landing');
     // B steps out of the game's menu, as Escape does.
     if (buttons.has('B') && !covered && contextOf(playing) === 'menu') return change({ kind: 'back' });

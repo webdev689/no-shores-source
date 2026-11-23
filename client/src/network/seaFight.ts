@@ -172,11 +172,11 @@ export function fightViewOf(
   };
   let lay: FightLay | null = null;
   if (next() === 1) {
-    const [side, elevation, reach, radius] = [named(SIDES), next(), next(), next()];
+    const [side, elevation, reach, radius, spread] = [named(SIDES), next(), next(), next(), next()];
     const onTarget = next() === 1;
     const guns = Array.from({ length: next() }, () => ({ launch: many(6), end: stop() }));
     const [launches, ends] = [guns.map((gun) => gun.launch), guns.map((gun) => gun.end)];
-    lay = { side, elevation, reach, ends, radius, on_target: onTarget, launches };
+    lay = { side, elevation, reach, ends, radius, spread, on_target: onTarget, launches };
   }
   const naval: NavalEvent[] = [];
   // The hit the room tells just before its ball's, where on the ship it struck and on which part, for that ball's hit.

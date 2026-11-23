@@ -48,7 +48,7 @@ pub struct Agent {
     pub cell_height: f64,
 }
 
-/// Overlook's body: its radius, step and standing height from the movement rules. Cells are DFO's 0.25 m. A
+/// The game's body: its radius, step and standing height from the movement rules. Cells are DFO's 0.25 m. A
 /// voxel is half the step, so a step is two voxels as in DFO, and the welding of corners within two voxels still
 /// joins the floors on either side of every step a body climbs.
 pub const AGENT: Agent = Agent {

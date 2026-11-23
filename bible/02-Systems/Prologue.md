@@ -71,7 +71,7 @@ on foot to a boss who cannot be beaten, the deep, and waking on Saltmere's shore
 
 ## How it works
 
-**The way in.** The page shows black, the game's name and "Click or press any key to start" ("Tap to start" on a
+**The way in.** The page shows black, the game's logo and "Click or press any key to start" ("Tap to start" on a
 touch screen) at once, and loads the world behind it. The tap wakes the browser's sound. Once both are done the intro
 begins. With `?at=<node>` the page goes straight to that node, as before, and plays no story.
 
@@ -85,7 +85,7 @@ beat that fails is left for the next with what it said stopped and the view clea
 beat that fails ends the story with its screen kept, so the black lifts only once the game's veil is up under it.
 The intro offers no skip once it has reached Saltmere. Each beat sets its own weather, sound and lightning at
 its start, so under `npm run dev` `?prologue=<beat>` starts at that beat as the story would reach it. A player who
-has played the story to its end (kept in the browser, `overlook.prologue`) sees the intro and the title, and Begin
+has played the story to its end (kept in the browser, `noshores.prologue`) sees the intro and the title, and Begin
 takes them straight to Overlook's social space. Every way onto foot comes after the story, played through or passed
 over (Begin, `?at=`, a story that could not start or go on), so on foot the page tells each room on land whose word
 on the gear says the prologue is not kept that it is done (`Ask::FinishPrologue`), and the room keeps it with the
@@ -141,8 +141,9 @@ part at once, her words with it. The game is the player's from there.
 
 **The elder's welcome** ([[Elder Maren Hale Welcomes the Player to Overlook]]). Once the stranger has gone, on that
 first arrival, Elder Maren Hale of the Lamplighters starts at a point of the townsfolk's ways at least 15 m from the
-player, and out of their view where one is, and comes to them by the ways at 1.5 m/s, on the floor the plaza's
-townsfolk stand on ([[Game]]), up on a podium or a landing. She stops 1.8 m before a player on
+player, and out of their view where one is, and comes to them by the ways at three quarters of a player's walk, about 3.3 m/s, her walk's frames paced to it
+([[Elder Maren Hale Walks at Three Quarters of a Player's Pace]]), on the floor the plaza's townsfolk stand on
+([[Game]]), up on a podium or a landing. She stops 1.8 m before a player on
 the ways, facing them; for a player off them, she stops at the point of the ways nearest them and greets them there once
 they are within 6 m, waiting until then with "Follow" shown. She leads them to the plaza's counters, the nearest stop
 first each time: the Mage, the Armorsmith and the Weaponsmith, the Tailor and the Tack, the vault, the Stormcallers, the
@@ -156,7 +157,7 @@ cutscene. What she says (`content/story/welcome.json`) is the state of the world
 the plaza offers: the Grey Tithe's tenth and the ships taken whole, Overlook paying the Tithe nothing, three ports
 standing and ruins no one agrees about ([[Three Port Cities Remain, and the Others Are Desolate and Destroyed]]), and
 the town's memory (three people name four builders of the beacon). It is due from the story's end until its last scene
-is said: the browser keeps the scenes said (`overlook.welcome.said`), so a reload or a leaving takes it up from there on
+is said: the browser keeps the scenes said (`noshores.welcome.said`), so a reload or a leaving takes it up from there on
 the next arrival in Overlook's social space, without the greeting; leaving before the stranger has gone forgoes it. A
 browser that has played the story and holds no mark of the welcome is welcomed on its next arrival there. A player more
 than 40 m from her for a minute ends the walk: she goes home, and it stays due. While the menu or a keeper's screen is
@@ -231,7 +232,7 @@ the accounts leave unanswered for 10 s is given up as out of reach, so the way o
 came back is said once, with that offer ("You are signed in with Discord.", or "Discord is linked." before "You are
 signed in as" the username); one that did not go through is said under the form, as a refusal is. Offline (no
 `?room=`) it says "Accounts are kept when you play online." and offers "Go on". A player who leaves for Discord comes
-back to the helm at the account step, not the story's start: the tab marks it (`overlook.story.helm`), read once and
+back to the helm at the account step, not the story's start: the tab marks it (`noshores.story.helm`), read once and
 cleared at the next load, and never heeded once the story has been played through. The rooms read the session as each
 connects, and the step's end tells the page the account changed, so the menu's mark and banner and the company HUD
 follow the account signed in to at the helm.
@@ -249,7 +250,7 @@ and never higher than 2.5 m over the deck, under the spanker's boom; it rides th
 slung on the back (`armouredDress`; [[The Player's Sword and Shield Are Holstered]]): they stand at the helm with
 their hands free. The ram throws the sword and shield from them: they wake on the wreck without them (`unarmed`), and
 once they equip the story's there they hold the item as their gear has it and the Character page shows it, a Normal
-Sword & Shield drawn in iron (`holdingArms`), for the rest of the story; a swing draws them, as the game's does. Their look is kept in the browser (`overlook.look`) and dresses them in the game afterwards.
+Sword & Shield drawn in iron (`holdingArms`), for the rest of the story; a swing draws them, as the game's does. Their look is kept in the browser (`noshores.look`) and dresses them in the game afterwards.
 
 ## The wreck
 
@@ -372,9 +373,13 @@ the cutscenes, the camera's moves, the nameplate, the fires and the lines are th
   with his head on the view, so a cry unheard spends no gap; he tells the player to kneel again only once they have
   struck him since. The throw overboard is framed so Thule and his crier stand on the view on any screen, a tall one
   from further back.
-- **Played** by `WreckRun` as `Foot` plays a node: the walker and the fight in a room of the game's own, in its worker, on the
-  layout's blocks over open sea (`LocalRoom.openOverSea`: its foes' navmesh is the wreck's ground alone, so every wave
-  fights and Thule strikes), the fight's marks drawn by the view on foot. It tells the story whether the arena is
+- **Played** by `WreckRun` as `Foot` plays a node: the walker and the fight in a room of the game's own, in the rooms'
+  worker as alone a node's is ([[Game]], "The room for playing alone"), on the layout's blocks over open sea
+  (`RoomThread.openOverSea`: its foes' navmesh is the wreck's ground alone, so every wave fights and Thule strikes),
+  its navmesh baked and its ticks run off the game's frame; the fight's marks drawn by the view on foot. What the run
+  asks of the room (a wave's foes, the boarder, Thule, the crew, the arms, a checkpoint, a heap) is answered a moment
+  later: a foe asked for counts as alive in its zone until its number comes back, so no wave's heap clears early, and
+  one asked for before the boss fight clears the deck is not counted once answered. It tells the story whether the arena is
   entered, Thule's health, how the fight ended, the points over every head for barks (by crew), and the
   shot its camera takes of the player standing, where the wake ends: the player stood on the deck's top under
   where they wake, as the room stands them, never on the rim's own ground, the sea below it. A cutscene holds it
@@ -393,10 +398,13 @@ the cutscenes, the camera's moves, the nameplate, the fires and the lines are th
   serves. Each step's keys, and the frozen fight's words, name the controls as bound now on the keys or the pad played
   last; below are the defaults on the keys. A step done early stays done, and a task stays up 1.5 s once all of it is met, so its last tick is seen. In
   turn:
-  - "Find your sword and shield": they lie on the deck 3 m along the path from where the player wakes, below the step
-    down from it, drawn as the item itself (`LyingArms`): the forge's picture of it, as the Character page shows it,
-    lying face up to the eye at its true size, with a Normal drop's line of light over it. Walked over, the room puts
-    them in the pack
+  - "Find your sword and shield": they lie out on the quiet deck 8 m along the path from where the player wakes,
+    past the step down from it ([[The Wreck's Arms Lie Farther Out, as a Loot Drop]]), drawn as the item itself
+    (`LyingArms`): the forge's picture of it, as the Character page shows it, upright and turned to the eye at its true
+    size, moving as a drop of loot does: popped up from its planks the first time it is drawn, as play begins, bouncing
+    to rest, then hovering and bobbing as a Vestige's crystal does, with no shade under it, its Normal drop's line of
+    light rising over it once it rests.
+    Walked over, the room puts them in the pack
     (`Room::story_take_arms`). Should they leave the pack (dismantled), they lie on the deck again.
   - "Equip your sword and shield": Open your Character page (I; ticked by the menu open once the arms are taken),
     Equip them from the Melee slot, Close it (Esc).

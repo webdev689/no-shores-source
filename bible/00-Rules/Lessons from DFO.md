@@ -4,11 +4,11 @@ type: reference
 # Lessons from DFO
 
 DFO Online went from its first commit to 14,623 commits on `main` and 1,674 pull requests in about four and a half
-months. Much of it worked; some of it cost us. These are the costs, measured from its history, and what Overlook does
+months. Much of it worked; some of it cost us. These are the costs, measured from its history, and what No Shores does
 instead. Counts are commit subjects across `main`, the newest branch and the server branch (11,886 commits, plus 5,264
 merges).
 
-| What happened in DFO | Evidence | What Overlook does |
+| What happened in DFO | Evidence | What No Shores does |
 |---|---|---|
 | Files grew until they had to be split by force | `world.js` 33,254 lines; 25 files over 3,000; a ceiling per host; ~127 split commits | [[Small Files]], checked from day one |
 | Rules arrived late, as ratchets that "only go down" | 5 baseline files; ~400 commits spelling out names; ~240 cutting words; ~135 sweeping comments | Every rule holds everywhere from the first commit ([[Rules]]) |

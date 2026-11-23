@@ -1,4 +1,5 @@
 import type { PlayerDress, SeenPlayer } from '../network/messages.ts';
+import type { PlayerPlate } from '../network/plateMessages.ts';
 import { glanceFrom, glanceView } from '../rules/fighters.ts';
 import type { Body } from '../rules/movementRules.ts';
 import type { Cards } from './cards.ts';
@@ -49,6 +50,7 @@ export class OtherPlayers {
   readonly placed: ReadonlyMap<number, Placed>;
   private readonly figures = new Map<number, Placed>();
   private readonly dresses = new Map<number, Dress>();
+  private readonly plates = new Map<number, PlayerPlate>();
   private readonly page: Others;
 
   constructor(page: Others) {
@@ -56,9 +58,11 @@ export class OtherPlayers {
     this.placed = this.figures;
   }
 
-  /** Another player's dress is used only when it is one: a broken or hostile one keeps the dress they had. */
-  takeDresses(dressed: readonly PlayerDress[]): void {
-    for (const { player: number, dress } of dressed) {
+  /** The dresses and plates a welcome or a snapshot carries. Another player's dress is used only when it is one: a
+   *  broken or hostile one keeps the dress they had. */
+  take(said: { readonly dressed: readonly PlayerDress[]; readonly plates?: readonly PlayerPlate[] }): void {
+    for (const plate of said.plates ?? []) this.plates.set(plate.player, plate);
+    for (const { player: number, dress } of said.dressed) {
       const taken = dressFrom(dress);
       if (!taken) continue;
       this.dresses.set(number, taken);
@@ -86,6 +90,16 @@ export class OtherPlayers {
       this.page.remove(placed);
       this.figures.delete(number);
     }
+  }
+
+  /** Another player's dress as their figure wears it now; null for one not placed. */
+  dressOf(number: number): Dress | null {
+    return this.figures.get(number)?.dress ?? null;
+  }
+
+  /** What another player's plate says, as the room last sent it; null before it has. */
+  plateOf(number: number): PlayerPlate | null {
+    return this.plates.get(number) ?? null;
   }
 
   /** Takes away every figure. */

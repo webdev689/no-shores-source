@@ -251,7 +251,7 @@ test('while aiming the look may rise over the horizon to the longest throw; the 
   assert.ok(shot && shot.pitch >= 0.05 - 1e-9, `the orbit looks ${shot?.pitch} down`);
 });
 
-test('a held aim looks square off the side it was taken on: a drag across lays nothing new, up and down lays range', async () => {
+test('a held aim looks off the side it was taken on at its lay: a drag across lays nothing new, up and down lays range', async () => {
   const { fight, orders, frames } = ordered();
   const turn = (degrees: number) => fight.drag((degrees * Math.PI) / 180 / 0.005, 0);
   const heading = vessel.ship[2] ?? 0;
@@ -261,7 +261,8 @@ test('a held aim looks square off the side it was taken on: a drag across lays n
   const shots = await frames(60);
   const last = shots.at(-1);
   assert.equal(orders.at(-1)?.aim?.bearing, 90);
-  assert.ok(last && Math.abs(last.yaw - (heading + Math.PI / 2)) < 0.02, `it looks along ${last?.yaw}`);
+  // At its lay, off the battery's middle, from an eye aboard half a metre forward of it: within a few degrees of square.
+  assert.ok(last && Math.abs(last.yaw - (heading + Math.PI / 2)) < 0.05, `it looks along ${last?.yaw}`);
   const range = orders.at(-1)?.aim?.range ?? 0;
   turn(-200);
   await frames(5);

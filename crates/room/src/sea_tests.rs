@@ -762,4 +762,11 @@ fn an_ended_fight_is_shown_in_the_next_snapshot_however_many_ticks_ran_before_it
     sea.fights_sent();
     ticks(&mut sea, 2);
     assert!(sea.fight_views().is_empty(), "not twice");
+#[test]
+fn a_ships_water_is_named_once_it_puts_to_sea() {
+    let mut sea = sea();
+    let player = sea.join();
+    assert_eq!(sea.water_name(player), None, "no water before its first course");
+    sea.course(player, &[[50_000.0, 150_000.0], [50_000.0, 50_000.0]], 10).unwrap();
+    assert_eq!(sea.water_name(player), Some("The Sunscorch Coves"), "the fourth island's water");
 }

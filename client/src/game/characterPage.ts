@@ -211,7 +211,8 @@ function slotNode(
     if (ui.rightClicked(id)) context.inspect(worn);
     context.details(id, worn);
     // An open slot's flyout stands where its card would, so the card waits until it closes.
-    if (open !== slot) context.card(id, () => cardNode(cardOf(worn), context.picture(worn), SLOT_HINTS, sizes));
+    const hints = context.inspected ? [] : SLOT_HINTS;
+    if (open !== slot) context.card(id, () => cardNode(cardOf(worn), context.picture(worn), hints, sizes));
   }
   const { marks, gilded } = worn ? itemMarks(worn) : { marks: [], gilded: false };
   const tile = tileNode(
@@ -304,21 +305,23 @@ function noArtNode(context: MenuContext, open: () => void): Node {
 /** The worn Art's diamond, which opens its screen, its name in its element and its level's pips beside it; while none
  *  is worn, the row saying how one is had. */
 function artNode(context: MenuContext): Node | null {
-  const { gear, ui, sizes } = context;
-  if (!gear.arts || !context.arts) return null;
+  const { gear, ui, sizes, inspected } = context;
+  const open = context.arts;
+  if (!gear.arts || (!open && !inspected)) return null;
   const art = artOf(gear.arts.art) ?? null;
-  if (!art) return noArtNode(context, context.arts);
+  if (!art) return open ? noArtNode(context, open) : null;
   const level = levelOf(gear.standing, art.id).level;
-  if (ui.clicked(ART_DIAMOND_KEY)) context.arts();
+  if (open && ui.clicked(ART_DIAMOND_KEY)) open();
   context.card(ART_DIAMOND_KEY, () =>
-    cardNode(artCard(art, false, level), null, [['Click', 'Open its screen']], sizes, {
+    cardNode(artCard(art, false, level), null, open ? [['Click', 'Open its screen']] : [], sizes, {
       tone: elementTone(art.element),
       icon: svgNode(`art ${art.id}`, emblemSvg(art), 96),
     }),
   );
   const diamond: Node = {
     id: ART_DIAMOND_KEY,
-    press: true,
+    press: Boolean(open),
+    focusable: true,
     label: `Art: ${art.name}, level ${level}`,
     width: 96,
     height: 96,
@@ -383,12 +386,12 @@ function appearanceNode(context: MenuContext): Node {
 }
 
 /** A side's heading over a rule, at its side's edge. */
-function heading(said: string, size: number, end: boolean): Node {
+function heading(said: string, size: number, end: boolean, below: number): Node {
   return {
     width: 'grow',
     direction: 'column',
     gap: 4,
-    padding: [4, 0, 10, 0],
+    padding: [4, 0, below, 0],
     children: [
       { width: 'grow', alignX: end ? 'end' : 'start', children: [label(said, size)] },
       { width: 'grow', height: 1, fill: 'rgba(163,152,128,0.26)' },
@@ -396,7 +399,29 @@ function heading(said: string, size: number, end: boolean): Node {
   };
 }
 
-/** The level, the meter to the next and what it takes, the figure on its lit floor, and the power beneath. */
+/** Prestige's own colour beside the level's brass: a pale steel. */
+const PRESTIGE_INK = '#d3e4f2';
+
+/** One of the two plaques over the figure: its name over a rule, and its number large. */
+function plaqueNode(name: string, value: number, colour: string, sizes: MenuContext['sizes']): Node {
+  return {
+    width: 'grow',
+    direction: 'column',
+    alignX: 'center',
+    gap: 4,
+    padding: [8, 10, 10, 10],
+    role: 'well',
+    label: `${name} ${value}`,
+    children: [
+      label(name, sizes.label),
+      { width: 'grow', height: 1, fill: 'rgba(192,138,62,0.45)' },
+      words(String(value), 5, colour, { edge: 'shadow', edgeColour: '#000' }),
+    ],
+  };
+}
+
+/** The level and Prestige side by side, the meter to the next and what it takes, the figure on its lit floor, and
+ *  the power beneath. */
 function middleNode(context: MenuContext, width: number, hidden: boolean): Node {
   const { gear, sizes, figure } = context;
   const character = characterOf(gear);
@@ -407,8 +432,6 @@ function middleNode(context: MenuContext, width: number, hidden: boolean): Node 
     ['Melee', shown(melee)],
     ['Ranged', shown(ranged)],
     ['Defense', String(character.defense)],
-    ['Prestige', String(character.prestige)],
-    ['Fruit of Dagon', String(character.fruit)],
   ];
   const tall = sizes.label > 1;
   return {
@@ -418,15 +441,22 @@ function middleNode(context: MenuContext, width: number, hidden: boolean): Node 
     gap: 10,
     children: [
       {
-        width: Math.min(width, tall ? 480 : 300),
+        width: Math.min(width, tall ? 520 : 340),
         direction: 'column',
         alignX: 'center',
-        gap: 4,
+        gap: 6,
         opacity: hidden ? 0 : 1,
         children: [
-          label('Level', sizes.label),
-          words(String(character.level), 5, INK.brassLit),
           {
+            width: 'grow',
+            gap: 8,
+            children: [
+              plaqueNode('Level', character.level, INK.brassLit, sizes),
+              plaqueNode('Prestige', character.prestige, PRESTIGE_INK, sizes),
+            ],
+          },
+          // How far another player is to their next level is theirs alone to see.
+          !context.inspected && {
             width: 'grow',
             height: 10,
             padding: 2,
@@ -434,7 +464,7 @@ function middleNode(context: MenuContext, width: number, hidden: boolean): Node 
             label: 'Toward the next level',
             children: [{ width: `${Math.round(character.toNext * 100)}%`, height: 'grow', fill: '#d9d0ae' }],
           },
-          words(character.toNextWords, sizes.label, INK.faint),
+          !context.inspected && words(character.toNextWords, sizes.label, INK.faint),
         ],
       },
       {
@@ -485,16 +515,20 @@ export function characterPage(context: MenuContext, open: number | null, choose:
   const [side, middle] = [Math.max(220, Math.floor(share)), Math.max(300, Math.floor(share * 1.6))];
   const gap = sizes.short ? 10 : 14;
   const art = artNode(context);
+  // The Art's row holds its 96 px diamond, so the heading under it stands clear; a short view lets its tip into the
+  // gap and the heading's top, and keeps the heading's foot close, so the page stands as tall as before.
+  const artRow = sizes.short ? 84 : 96;
+  const below = sizes.short ? 3 : 10;
   const left: Node = {
     width: side,
     direction: 'column',
     alignX: 'end',
     gap,
     children: [
-      heading('Weapons', sizes.label, true),
-      { height: sizes.short ? SLOT_TILE_SHORT : SLOT_TILE, alignY: 'center', children: [art] },
+      { height: artRow, alignY: 'center', children: [art] },
+      heading('Weapons', sizes.label, true, below),
       ...WEAPONS.map((slot, place) => slotNode(context, slot, open, choose, true, place >= WEAPONS.length - 1)),
-      appearanceNode(context),
+      !context.inspected && appearanceNode(context),
     ],
   };
   const right: Node = {
@@ -502,7 +536,9 @@ export function characterPage(context: MenuContext, open: number | null, choose:
     direction: 'column',
     gap,
     children: [
-      heading('Armour', sizes.label, false),
+      // Room beside the Art, so the two headings stand on one line and each armour row level with a weapon's.
+      { height: artRow },
+      heading('Armour', sizes.label, false, below),
       ...ARMOUR.map((slot, place) => slotNode(context, slot, open, choose, false, place >= ARMOUR.length - 2)),
     ],
   };

@@ -3,7 +3,8 @@
 // room's fight is fought there, by the World Editor's own fight (its aim, lay, effects and panel), until every
 // captain sinks or is gone; then it pans back up.
 import { AIM_LOOK_TOP, lookBearing } from '../editor/aim.ts';
-import { AimCamera, type AimFrame, aimHullOf, type AimShip } from '../editor/aimCamera.ts';
+import { AIM_ZOOM, AimCamera, type AimFrame, type AimShip } from '../editor/aimCamera.ts';
+import { aimStation } from '../editor/aimStation.ts';
 import { type FightInput, type FightSource, Fighting } from '../editor/fighting.ts';
 import { type MarkDrawer, Naval, type Window } from '../editor/naval.ts';
 import { cameraOf, type Orbit } from '../editor/orbit.ts';
@@ -63,7 +64,7 @@ export const FIGHT_CONTROLS = [
   'shotBack',
   'shotNext',
 ] as const satisfies readonly BindId[];
-const PASSED: readonly BindId[] = ['menu', 'character', 'inventory', 'controls', 'use'];
+const PASSED: readonly BindId[] = ['menu', 'character', 'inventory', 'controls', 'use', 'chat'];
 /** The controls held as the naval rules hear them held: the helm's keys, the rungs', the brace's and the burst's. */
 const HELD_AS: Partial<Record<BindId, string>> = {
   fightLeft: 'a',
@@ -183,6 +184,8 @@ export class SeaCombat {
     const own = 'source' in fought ? fought : null;
     this.room = own ? { mayBoard: false } : (fought as SeaRoom);
     this.ownHull = own?.hull ?? SLOOP_HULL;
+    // Its aim's station found as the fight opens, not on the first aim.
+    aimStation(this.ownHull);
     this.naval = new Naval(marks, shown);
     this.naval.shipsOf = (answer) => this.feelShips(answer);
     const source = own?.source ?? roomSource(fought as SeaRoom, first);
@@ -334,7 +337,7 @@ export class SeaCombat {
   }
 
   /** The aim's frame: the orbit's view eased out to the ship's battery on the side looked at while aiming (never for
-   *  a sinking ship, its guns silent), short of every other ship afloat, and the look it lays. */
+   *  a sinking ship, its guns silent), and the look it lays. */
   private aimAt(orbit: Orbit, seconds: number): AimFrame {
     // The orbit's own eye keeps the orbit's clamp, so a look raised over the horizon never takes it under the sea.
     const [eastM, southM, upM] = cameraOf({ ...orbit, pitch: Math.max(PITCH[0], orbit.pitch) }).eye;
@@ -343,11 +346,7 @@ export class SeaCombat {
     const ship = this.ownShip();
     const afloat = this.last.player.state === 'afloat';
     const want = this.aiming && afloat ? (lookBearing(this.orbit.yaw, ship.heading) >= 0 ? 1 : -1) : null;
-    const alongside = this.vessels()
-      .slice(1)
-      .filter(({ vessel }) => vessel.state !== 'sunk')
-      .map(({ vessel, hull }) => aimHullOf(vessel.ship, vessel.pose[0] ?? 0, hull));
-    const ask = { home, want, ship, pitch: this.orbit.pitch, lay: this.last.lay, alongside } as const;
+    const ask = { home, want, ship, pitch: this.orbit.pitch, lay: this.last.lay } as const;
     return this.aimCamera.frame(ask, seconds);
   }
 
@@ -387,7 +386,8 @@ export class SeaCombat {
       eye: [eye[0] + jar.east, eye[1] + jar.south, eye[2] + jar.up],
       yaw: aimed.yaw + jar.yaw,
       pitch: aimed.pitch + jar.pitch,
-      fov: FIELD_OF_VIEW,
+      // Zoomed a little as the aim eases in, as Black Flag's.
+      fov: FIELD_OF_VIEW * (1 - AIM_ZOOM * aimed.eased),
       near: 0.3,
       far,
     };

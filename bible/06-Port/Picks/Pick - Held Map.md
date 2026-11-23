@@ -41,7 +41,7 @@ and picked from under the thumbs ([[The Sea Is Navigated From the Helm With the 
   Options' ports and filters, the journal and search.
 - Daggerfall's and Tamriel's world: its land and water pixels, climates, tree and snow lines, roads, regions, mark
   buckets and ranks, and the town, seat and event painters.
-- The browser's 2D canvas and DOM drawing: Overlook draws with WebGPU only ([[WebGPU Only]]), so the sheet, the ink
+- The browser's 2D canvas and DOM drawing: No Shores draws with WebGPU only ([[WebGPU Only]]), so the sheet, the ink
   and the hands are drawn on the GPU; names and buttons stay page elements, as the game's marks are.
 
 ## Our version

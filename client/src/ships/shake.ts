@@ -1,7 +1,7 @@
 // The sea fight's eye shaken, after DFO's (navalHost.js and navalFeel.js through its camera shaker): each of its guns
 // kicks it as it goes, a ball striking the ship jars it, a fall alongside rocks it, a magazine going up near the ship
 // throws it. Each jar swells over a moment and dies away over another, moving the eye a little and turning it a little,
-// the jars at once added together. Overlook's own noise: a few slow waves at each jar's own phases.
+// the jars at once added together. The game's own noise: a few slow waves at each jar's own phases.
 
 /** DFO's shaker: the most a jar may be, how rough it is (waves a second, about), how long it swells and dies away
  *  (seconds), and how far a jar of one moves the eye (metres) and turns it (degrees) at most either way. */

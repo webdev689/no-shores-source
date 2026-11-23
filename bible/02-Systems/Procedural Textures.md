@@ -85,7 +85,7 @@ of ore. Record 5 is hammered gilt brass, tarnished in the hollows. Each climate 
 caverns' vein as its ore. The cloth takes a dye of its land that stands off its stone: indigo in the desert, madder red
 in the mountains, weld green in temperate lands, lichen purple in the swamp.
 
-Daggerfall's archives 121 and 321 are arches, so Overlook files its own sets 1000 further on. The dressing is 1021 in
+Daggerfall's archives 121 and 321 are arches, so No Shores files its own sets 1000 further on. The dressing is 1021 in
 the desert, 1121 in the mountains, 1321 in temperate lands and 1421 in the swamp, and `climateArchive` turns it as it
 turns a dungeon set.
 
@@ -93,7 +93,7 @@ turns a dungeon set.
 
 The maths is IEEE arithmetic only. Sine, cosine, exp, log, atan2, pow and hypot are written out (`portableMath.ts`)
 as V8 computes them, since ECMAScript lets each engine round its own. The pictures DFO Online also paints are the
-bytes its own painter gives: the tests pin 78 of them. The mines, the caverns and the dressing are Overlook's own: the
+bytes its own painter gives: the tests pin 78 of them. The mines, the caverns and the dressing are the game's own: the
 tests pin all 64 of their pictures.
 
 ## Limits

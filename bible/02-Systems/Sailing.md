@@ -120,7 +120,7 @@ nothing.
 Its faces are in five part materials, `hull`, `deck`, `spar`, `sail` and `iron`, and its UVs are metres, each face
 laid flat on the axis it faces most so the planks run along the ship and a spar's grain up it
 (`tools/ships/paint_ship.py` sorted the owner's model so, and packed the game's pictures into it, so Blender shows it
-as the game does). `tools/ships/export_ship.py` turns what Blender would render into Overlook's mesh: a header with
+as the game does). `tools/ships/export_ship.py` turns what Blender would render into the game's mesh: a header with
 its waterline, 28 bytes a vertex (position, normal, UV, part) and the corners' indices. Its canvas is left out of the
 mesh: the export writes each sail's corners to `ships.json`, and the game sets the sails on them. Its frame is x to its
 bow, y to starboard and z up, mirrored from the model's as the world (east, south, up) is, so each face keeps the

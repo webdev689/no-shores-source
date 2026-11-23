@@ -112,7 +112,7 @@ on ([[The Held Map Comes to the Social Spaces and Every Land Area]]).
     1280 × 720, never below 1), so at 1920 × 1080 the words are 20 px and 23 px.
   - *Hierarchy.* Ports strongest: the larger size, the darkest ink and a filled ring. Waters' names in their rings in
     their difficulty's colour. Ruins (a dashed diamond) and nodes (a ring) in a lighter brown, `#5c4631`. The place
-    chosen is named in the route's red-brown. Every word is haloed in the parchment's colour, 3 px, so it reads at
+    chosen is named in the route's red-brown, and a place a step of the quest walked names is ringed in it. Every word is haloed in the parchment's colour, 3 px, so it reads at
     least 4.5 : 1 over the coasts' lines and the washes.
   - *Alignment.* A place's name stands right of its mark, its middle on the mark's, 5 px from it; where the right is
     taken or off the map, the same on the left; where the ship's arrow stands on the mark and both are taken, the same
@@ -199,12 +199,19 @@ The map on land speaks in icon glyphs, with little text, and a table on it says 
     the Arts, the Stair Yard and the Quay).
   - **The glyphs.** Each keeper is a coin in their sign's board colour carrying their sign's device: a star for the
     Mage, a key for the vaults, an anvil for the Weaponsmith, a helm for the Armorsmith, open shears for the Tailor, a
-    horseshoe for the Tack, a ship's wheel for the Harbourmaster, candles for the chandler; each faction's coin in its
+    horseshoe for the Tack, a ship's wheel for the Harbourmaster, candles for the chandler, and the Postmaster, who
+    keeps no stall, a sealed letter on a slate coin, the blue of his vest toward the ink; each faction's coin in its
     cloth with its banner's emblem (the Stormcallers' bolt, the Lamplighters' flame over a lamp, the Veiled's crescent
     and star). Each site: a landing's chevrons, a public event's red-brown diamond, a gate's open arch and a sealed
     door's barred one, an objective's target, foes' crossed blades, a beacon's tower, and a resource node's small ring with
     a cut stone, named in the table for the island's resource ("Brineglass"; [[Material Nodes Stand Where They Are Dressed, Worked by Holding E]]). The player's red-brown arrow points
     where they look.
+  - **A lit coin.** A keeper's coin is lit as their mark over them is ([[Game]], "Over what a player can use";
+    [[A Keeper With Something for You Pulses and Is Seen From Everywhere]]): a quest step asks to speak with them, or
+    letters wait at the Postmaster. It is ringed in the route's red-brown, a quarter wider than the coin, and a second
+    ring goes out from it to twice its width and fades, once every 1.3 s; under reduced motion only the first. The
+    rings are inked by the map's own pass each frame (`pulse_at`, at most 16 coins), so the parchment's picture is
+    never painted again for them, and the gauntlets cover them as they cover the coin.
   - **The table**, framed as the sea's key is, in the corner clear of the gauntlets over the fewest glyphs and names
     (keeping its corner while it can): the land's name at its head; then each glyph the land holds, once, beside what
     it is ("The Mage", "Public event"), in columns of at most seven, and the player's arrow, "You"; under them a bar
@@ -213,7 +220,7 @@ The map on land speaks in icon glyphs, with little text, and a table on it says 
 
 ## Fog of war
 
-What the player has discovered is kept in this browser (`overlook-discovery`), every 30 s once it changes and as the
+What the player has discovered is kept in this browser (`noshores-discovery`), every 30 s once it changes and as the
 page is hidden or goes ([[World Map]]):
 
 | What | Discovered |
@@ -233,7 +240,7 @@ The player starts with the island they arrive on, its port, the place they arriv
   softened.
 - The charted sea's wash is laid when the map is raised: what the ship charts while it is up shows the next time.
 - The route is inked through at most 128 of its points.
-- Quests are not tracked on the map yet.
+- On land, the map marks a keeper a quest step names, not the place of a quest's other goals.
 - The waters' wash is laid when the map is raised, as the charted sea's is. A water's sea is judged a 4.8 km cell at a
   time, so its words may stand over an isle smaller than a cell.
 - A place's mark under a gauntlet's thumb stays there, under it; only its name keeps clear.

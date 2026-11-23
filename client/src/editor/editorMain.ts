@@ -18,7 +18,7 @@ import { labelNode } from './viewMarks.ts';
 
 const LAYOUT_URL = `${import.meta.env.BASE_URL}world/layout.json`;
 /** Where this browser keeps the painting between visits, until it is saved. */
-const KEPT_KEY = 'overlook.worldEditor.painting';
+const KEPT_KEY = 'noshores.worldEditor.painting';
 /** How close Show takes the map, in metres a pixel: a one-cell stray is a few pixels wide. */
 const SHOW_METRES_PER_PIXEL = 250;
 

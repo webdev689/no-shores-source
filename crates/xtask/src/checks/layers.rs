@@ -112,7 +112,7 @@ const NODE_MODULES: [&str; 23] = [
     "async_hooks",
 ];
 
-/// What a client file may not use, whatever its layer: Overlook draws with WebGPU only. Any lowercase `webgl` on a
+/// What a client file may not use, whatever its layer: the game draws with WebGPU only. Any lowercase `webgl` on a
 /// line catches every context name, `experimental-webgl` included, in any quote.
 const WEBGL_MARKERS: [&str; 3] = ["webgl", "WebGLRenderingContext", "WebGL2RenderingContext"];
 
@@ -206,7 +206,7 @@ pub fn check(sources: &[(String, String)]) -> Vec<Problem> {
         }
         for (offset, line_text) in text.lines().enumerate() {
             if WEBGL_MARKERS.iter().any(|marker| line_text.contains(marker)) {
-                let message = "Overlook draws with WebGPU only: no WebGL";
+                let message = "The game draws with WebGPU only: no WebGL";
                 problems.push(Problem::new("layers", path, Some(offset + 1), message));
             }
         }

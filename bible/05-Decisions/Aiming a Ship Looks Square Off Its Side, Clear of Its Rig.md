@@ -30,3 +30,6 @@ status: in force
 | The story's fight | Shows the crosshair and the aim line, as the sea's fights do | It showed only the marks on the water, with nothing at the middle to read them by |
 
 Links: [[Naval Combat]], [[The Sea Fight Looks and Aims as DFO's Does]].
+
+Replaced in part by [[Aiming a Ship Follows Black Flag, From Its Deck]]: the eye stands aboard, over its deck, comes
+in to it square over its rail, and keeps no distance from a ship alongside.

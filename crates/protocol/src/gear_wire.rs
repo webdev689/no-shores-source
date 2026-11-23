@@ -2,6 +2,7 @@
 //! player's own gear, written for them alone whenever it changes, with every column of every item's nodes spelled out
 //! so a browser draws them without the rules.
 
+use crate::lore_wire::FIND_LORE;
 use crate::messages;
 use flatbuffers::{FlatBufferBuilder, WIPOffset};
 use gear::arts::ArtAsk;
@@ -193,6 +194,7 @@ pub fn asked_of(ask: &messages::Ask<'_>) -> Option<Asked> {
         SPEAK => Asked::Gear(Ask::Speak { keeper: column }),
         CHOOSE_FRAGMENT => Asked::Gear(Ask::ChooseFragment { art: column, fragment: node }),
         USE_POINT => Asked::UsePoint { point: column },
+        FIND_LORE => Asked::FindLore { chapter: u16::try_from(item).ok()? },
         TO_SHIP => Asked::ToShip,
         _ => return None,
     })
@@ -282,6 +284,7 @@ pub fn ask_offset<'built>(builder: &mut FlatBufferBuilder<'built>, asked: &Asked
         Asked::Scavenge { wreck } => args = messages::AskArgs { kind: SCAVENGE, node: *wreck, ..args },
         Asked::StopGather => args = messages::AskArgs { kind: STOP_GATHER, ..args },
         Asked::UsePoint { point } => args = messages::AskArgs { kind: USE_POINT, column: *point, ..args },
+        Asked::FindLore { chapter } => args = messages::AskArgs { kind: FIND_LORE, item: u32::from(*chapter), ..args },
         Asked::ToShip => args = messages::AskArgs { kind: TO_SHIP, ..args },
         Asked::Grant(Grant::Vestige { rarity, slot, level }) => {
             args = messages::AskArgs {
@@ -582,6 +585,8 @@ pub fn gear_bytes(room: &Room, player: PlayerId) -> Option<Vec<u8>> {
         bounty_xp,
         bounty_aurem,
         mail: Some(crate::mail_wire::mail_offset(&mut builder, character)),
+        lore: Some(crate::lore_wire::found_of(&mut builder, room, player)),
+        lore_here: Some(crate::lore_wire::here_of(&mut builder, room, player)),
         recharge: room.recharge_times(),
     };
     let gear = messages::Gear::create(&mut builder, &args);

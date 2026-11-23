@@ -538,6 +538,9 @@ fn sail(sailing: &mut Sailing, distance: f64) {
 
 #[path = "sea_decks.rs"]
 pub mod decks;
+#[cfg(test)]
+#[path = "fight_measure_tests.rs"]
+pub(crate) mod fight_measure_tests;
 #[path = "sea_islands.rs"]
 pub mod islands;
 #[path = "sea_ports.rs"]
@@ -553,3 +556,5 @@ pub(crate) mod fight_measure_tests;
 #[cfg(test)]
 #[path = "sea_tests.rs"]
 mod sea_tests;
+#[path = "sea_waters.rs"]
+mod waters;

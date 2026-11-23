@@ -7,9 +7,10 @@ import type { GearState } from '../network/gearMessages.ts';
 import { BODY_HEIGHT } from '../player/crosshair.ts';
 import type { StationInfo } from './nodes.ts';
 import { keeperPicture } from './npc/npcMarks.ts';
-import { DOOR_PICTURE, markOfKind, markedHere } from './overheadMarks.ts';
+import { DOOR_PICTURE, keeperLit, markOfKind, markedHere } from './overheadMarks.ts';
 import { countersOf } from './plazaLife.ts';
 import { STATIONS } from './welcome/plazaForTests.ts';
+import { awayFromCounters } from './townsfolk.ts';
 
 const station = (kind: string, keeper: readonly [number, number]): StationInfo => ({
   kind,
@@ -32,14 +33,31 @@ test('each keeper who deals with a player wears their own mark over their crown;
   assert.ok(keeperPicture('harbourmaster'), 'the Harbourmaster has a sign of his own');
 });
 
-test("the Postmaster's sealed letter beats over him while letters wait for the player, and stands still while none does", () => {
+test("the Postmaster's sealed letter is lit over him while letters wait for the player, and unlit while none does", () => {
   const here = { stations: [station('mail', [0, 0]), station('weaponsmith', [10, 0])] };
   const letter = { id: 9, from: 0, crowded: false, vestige: null, item: null };
-  const beating = (mail: readonly unknown[]) =>
-    markedHere({ mail } as unknown as GearState, here, () => 0).map((mark) => mark.beating);
+  const lit = (mail: readonly unknown[]) =>
+    markedHere({ mail } as unknown as GearState, here, () => 0).map((mark) => mark.lit);
   assert.equal(markedHere(null, here, () => 0)[0]?.picture, keeperPicture('mail'), 'his own sign');
-  assert.deepEqual(beating([letter]), [true, false], 'his alone, while a letter waits');
-  assert.deepEqual(beating([]), [false, false]);
+  assert.deepEqual(lit([letter]), [true, false], 'his alone, while a letter waits');
+  assert.deepEqual(lit([]), [false, false]);
+});
+
+test('a keeper a quest step asks the player to speak with is lit; the others are not', () => {
+  const here = { stations: [station('stormcallers', [0, 0]), station('lamplighters', [10, 0])] };
+  const lit = markedHere(
+    null,
+    here,
+    () => 0,
+    null,
+    (counter) => counter === 'lamplighters',
+  ).map((mark) => mark.lit);
+  assert.deepEqual(lit, [false, true]);
+  assert.deepEqual(
+    markedHere(null, here, () => 0).map((mark) => mark.lit),
+    [false, false],
+    'none, asked by no quest',
+  );
 });
 
 test('the bounty board wears a gold "!" over its gable, a sign of its own in the keepers\' diamond; no other plaza one', () => {
@@ -136,4 +154,24 @@ test("near, the hub's twelve marks are laid in layers, in under half the vertice
     return sum + out.length;
   }, 0);
   assert.ok(layered < flat / 2, `${layered} numbers a frame against ${flat}`);
+});
+
+test('a keeper away from their counter is not lit, on the map or over their post', () => {
+  const letter = { id: 9, from: 0, crowded: false, vestige: null, item: null };
+  const gear = { mail: [letter] } as unknown as GearState;
+  assert.equal(
+    keeperLit(gear, 'mail', () => false),
+    true,
+    'letters wait',
+  );
+  awayFromCounters.add('mail');
+  try {
+    assert.equal(
+      keeperLit(gear, 'mail', () => true),
+      false,
+      'away, whatever waits',
+    );
+  } finally {
+    awayFromCounters.delete('mail');
+  }
 });

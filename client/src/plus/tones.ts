@@ -32,8 +32,10 @@ export const TONES = {
   /** Deep water, the ground of what is done at sea; and old blood, of what is done in a dungeon, as dim as it. */
   sea: '#1d2a33',
   bloodDeep: '#3e1814',
-  /** The players' side: a companion's name over their head. */
+  /** The players' side: a companion's name over their head, and another player's. */
   ally: '#9fd4ff',
+  /** A player in the viewer's company: their name over their head. */
+  company: '#a8e6a0',
 } as const;
 
 /** The four edges of a bevel in one string, their colours apart by spaces: top, right, bottom, left. */

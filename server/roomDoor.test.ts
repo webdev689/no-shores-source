@@ -51,10 +51,12 @@ test('a room welcomes players, takes the inputs a browser writes in order, and i
   const [first, second] = [room.join(), room.join()];
   // The room speaks the protocol the page was built from: the same schema's hash.
   const protocol = PROTOCOL;
+  const plate = (player: number, more = {}) => ({ player, name: '', level: 1, menu: false, ...more });
   assert.deepEqual(readFromRoom(room.joined(first)), {
     kind: 'joined',
     player: first,
     dressed: [],
+    plates: [plate(first), plate(second)],
     node: null,
     protocol,
     epoch: 0,
@@ -82,15 +84,34 @@ test('a room welcomes players, takes the inputs a browser writes in order, and i
   assert.equal(room.input(first, shown), 'taken');
   room.tick();
   assert.deepEqual((readFromRoom(room.snapshot(first)) as { dressed: unknown }).dressed, []);
+  // Named by their account and with a menu open, a player's plate goes to everyone once, as a dress does.
+  assert.equal(room.name(first, 'Mariner'), true);
+  assert.equal(room.name(second, 'not a name'), false);
+  const busy = inputBytes(32, { intent: walk, look: walking, arms: 0, seen: snapshot.tick, menu: true });
+  assert.equal(room.input(first, busy), 'taken');
+  room.tick();
+  const named = plate(first, { name: 'Mariner', menu: true });
+  // The page's screen showed the tick before, so only what changed since comes.
+  assert.deepEqual((readFromRoom(room.snapshot(first)) as { plates: unknown }).plates, [named]);
   const third = room.join();
   assert.deepEqual(readFromRoom(room.joined(third)), {
     kind: 'joined',
     player: third,
     dressed: [{ player: first, dress: '{"body":"male","outfit":{}}' }],
+    plates: [named, plate(second), plate(third)],
     node: null,
     protocol,
     epoch: 0,
   });
+  // Shut again before any screen showed it open, the plate goes as it is now, once: its newest change alone.
+  const shut = inputBytes(33, { intent: walk, look: walking, arms: 0, seen: snapshot.tick });
+  assert.equal(room.input(first, shut), 'taken');
+  room.tick();
+  const { plates } = readFromRoom(room.snapshot(second)) as unknown as { plates: { player: number }[] };
+  assert.deepEqual(
+    plates.filter((each) => each.player === first),
+    [plate(first, { name: 'Mariner' })],
+  );
 });
 
 test('the roster reads from the rules: every type it drives with its name, faction, ranks and hands', () => {
@@ -192,10 +213,12 @@ test('a node’s room warns a player past its edge, kills them 60 m out, and res
   assert.equal(room.openNode(text), true);
   const [first, second] = [room.join(), room.join()];
   const node = { id: 'glade', bounds: [-150, -150, 150, 150] };
+  const plate = (player: number) => ({ player, name: '', level: 1, menu: false });
   assert.deepEqual(readFromRoom(room.joined(first)), {
     kind: 'joined',
     player: first,
     dressed: [],
+    plates: [plate(first), plate(second)],
     node,
     protocol: PROTOCOL,
     epoch: 0,

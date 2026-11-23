@@ -146,6 +146,17 @@ test('the pad pressed makes it the one shown, and a key the keyboard', () => {
   done();
 });
 
+test('played on the pad the game has its controls, its pointer free; a key gives them back to the pointer', () => {
+  const { pad, frame, key, done } = padPage();
+  BINDS.device = 'keys';
+  assert.equal(frame().locked, false, 'on the keys, the pointer not locked');
+  pad.held = { [TRIGGER_R]: 1 };
+  assert.equal(frame().locked, true, 'so the pad swings, guards and drinks without a click');
+  key('w');
+  assert.equal(frame().locked, false);
+  done();
+});
+
 test('B waits for its hold only where a hold of it is bound: in a sea fight it braces as it goes down, held', () => {
   const { input, pad, frame, done } = padPage();
   input.context = 'fight';

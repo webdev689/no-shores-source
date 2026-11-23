@@ -1,7 +1,7 @@
 import { trueType } from './trueType.ts';
 
 /**
- * The glyphs Overlook draws over Pixelify Sans: its 5 reads as an 8, its 2 and Z are one corner apart, and its B is an
+ * The glyphs the game draws over Pixelify Sans: its 5 reads as an 8, its 2 and Z are one corner apart, and its B is an
  * 8 with a stem; and it has none of the symbols the map, the HUD and the rarities use. Each is drawn here on
  * Pixelify's own grid; the interface draws these cells in place of what it reads from the face (`ui/glyphs.ts`), and
  * the held map's lettering, which a 2D canvas writes, has them as a font (`useMendedFace`).

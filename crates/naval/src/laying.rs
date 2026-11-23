@@ -143,18 +143,20 @@ pub fn ends_of(shooter: &Sighted, lay: &Lay, ships: &[Sighted], waters: &impl Wa
 }
 
 /// What a lay shows before it is fired: the lay, where each gun's ball stops, each gun's unscattered launch (where
-/// its ball leaves, then its velocity), the landing zone's radius at the mean range its balls splash at, and whether any
-/// would strike a ship.
+/// its ball leaves, then its velocity), the landing zone's radius at the mean range its balls splash at, how much wider
+/// than its gun's own it scatters as long as it has been held (`spread_after`), and whether any would strike a ship.
 #[derive(Debug, Clone, PartialEq)]
 pub struct Preview {
     pub lay: Lay,
     pub ends: Vec<Option<Stop>>,
     pub launches: Vec<[f64; 6]>,
     pub radius: f64,
+    pub spread: f64,
     pub on_target: bool,
 }
 
-/// The preview of `shooter`'s look laid with `load` among `ships`, if a side bears.
+/// The preview of `shooter`'s look laid with `load` among `ships`, if a side bears, its scatter `spread` times its
+/// gun's own.
 #[must_use]
 pub fn preview(
     shooter: &Sighted,
@@ -162,6 +164,7 @@ pub fn preview(
     aim: &Aim,
     ships: &[Sighted],
     (waters, time): (&impl Waters, f64),
+    spread: f64,
 ) -> Option<Preview> {
     let laid = lay_for(shooter, load, aim, ships)?;
     let ends = ends_of(shooter, &laid, ships, waters, time);
@@ -184,17 +187,22 @@ pub fn preview(
             [ball.start[0], ball.start[1], ball.start[2], ball.launch[0], ball.launch[1], ball.launch[2]]
         })
         .collect();
-    let radius = zone_radius(&laid.gun, LARGE_BOAT.skill, range);
+    let widened = crate::guns::Gun { yaw_spread_deg: laid.gun.yaw_spread_deg * spread, ..laid.gun };
+    let radius = zone_radius(&widened, LARGE_BOAT.skill, range);
     let on_target = ends.iter().flatten().any(|stop| stop.strike.is_some());
-    Some(Preview { lay: laid, ends, launches, radius, on_target })
+    Some(Preview { lay: laid, ends, launches, radius, spread, on_target })
 }
 
 impl Fight {
-    /// The preview of a player's look as their guns would lay it now (`preview`), the fight's ships as they lie.
+    /// The preview of a player's look as their guns would lay it now (`preview`), the fight's ships as they lie, its
+    /// scatter as long as they have held it and as their ship's fitting trims it.
     #[must_use]
     pub fn preview(&self, shooter: ShipId, aim: &Aim, waters: &impl Waters, time: f64) -> Option<Preview> {
         let vessel = self.vessel(shooter)?;
-        preview(&Sighted::of(shooter, vessel), vessel.guns.load, aim, &self.sighted(), (waters, time))
+        // As wide as the volley would scatter: as long as it has been held, and as its fitting trims it.
+        let trim = self.fitting(shooter).map_or(1.0, |fitted| fitted.trim.scatter);
+        let spread = self.spread_of(shooter) * trim;
+        preview(&Sighted::of(shooter, vessel), vessel.guns.load, aim, &self.sighted(), (waters, time), spread)
     }
 
     /// Every ship still in the fight as a lay and a ball see it, by number.

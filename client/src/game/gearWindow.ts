@@ -41,6 +41,8 @@ import { TAB_PRESSES, bannerNode, footerNode, screenNode, tabId, tabsNode, topNo
 import { inventoryPage } from './inventoryPage.ts';
 import { ITEM_NAME, itemPage } from './itemPage.ts';
 import { HOURGLASS, Journal, type JournalSource } from './journalPage.ts';
+import { Compendium } from './compendium/compendiumPage.ts';
+import type { Lore } from './compendium/lore.ts';
 import type { MenuContext, PlainContext } from './menuPage.ts';
 import { laterPage, settingsPage, shipPage } from './menuPages.ts';
 import { hush } from './npc/npcSpeech.ts';
@@ -65,11 +67,12 @@ const ofGear = (view: View) => view === 'character' || view === 'inventory' || v
 
 /**
  * The menu, after Destiny's, in the Enhanced Plus kit, drawn by the game: its tabs (Character (I), Inventory (O),
- * Journal, Ship, Social, Guild, Settings), a station's screen in their place at its counter, and an item's page over
- * either. While open the world is dimmed and the pointer, keys and pad are its; Escape or the pad's B steps back: the
- * item's page, then a slot's flyout, then the menu. Gear shows as the room last sent it, each press an ask; while
- * `resting` (the story, all but the wreck, and a travel's cinematic) it never opens. The Journal and the bounty board
- * read `source`. Answers the layer that draws it, with the company and what the player gains, shown in play too.
+ * Journal, Compendium, Ship, Social, Guild, Settings), a station's screen in their place at its counter, and an item's
+ * page over either. While open the world is dimmed and the pointer, keys and pad are its; Escape or the pad's B steps
+ * back: the item's page, then a slot's flyout, then the menu. Gear shows as the room last sent it, each press an ask;
+ * while `resting` (the story, all but the wreck, and a travel's cinematic) it never opens. The Journal, the Compendium and the bounty board read
+ * `source`, the Compendium what is read with `lore`. Answers the layer that draws it, with the company and what the
+ * player gains, shown in play too.
  */
 export function startGearWindow(
   fighting: () => boolean,
@@ -80,6 +83,7 @@ export function startGearWindow(
   resting: () => boolean = () => false,
   fed: () => GearHere | null = here,
   source: JournalSource | null = null,
+  lore: Lore | null = null,
 ): Layer {
   // What the player gains shows at the right, in play and over the menu alike, its pieces drawn by the menu's forge.
   let pictures: ItemPictures | null = null;
@@ -89,6 +93,7 @@ export function startGearWindow(
   const company = new CompanyHud(link);
   const holds = new Holds();
   const journal = new Journal(source);
+  const compendium = new Compendium(source, lore);
   let view: View | null = null;
   let slot: number | null = null;
   /** Whether the Character page shows the worn Art's screen, and the Core slot whose flyout is open on it. */
@@ -128,8 +133,9 @@ export function startGearWindow(
   const shut = () => {
     holds.letGo();
     view = null;
-    // The timers go up with the Journal, so they never stand over another tab.
+    // The timers go up with the Journal, so they never stand over another tab; the Compendium opens at its front.
     journal.up();
+    compendium.reset();
     // Its keeper falls silent with it.
     hush();
     play('close');
@@ -154,6 +160,7 @@ export function startGearWindow(
     } else if (artSlot !== null) [artSlot, focusNext] = [null, `core-${artSlot}`];
     else if (npcStepBack()) return play('back');
     else if (view === 'journal' && journal.up()) focusNext = HOURGLASS;
+    else if (view === 'compendium' && compendium.back()) focusNext = null;
     else if (arts) [arts, focusNext] = [false, ART_DIAMOND_KEY];
     else if (appearance) [appearance, focusNext] = [false, APPEARANCE_KEY];
     else return shut();
@@ -165,6 +172,7 @@ export function startGearWindow(
     holds.letGo();
     const opening = view === null;
     if (wanted !== 'journal') journal.up();
+    if (wanted !== 'compendium') compendium.reset();
     [view, slot, inspecting, roster, accountPanel] = [wanted, null, null, null, null];
     [arts, artSlot, appearance] = [false, null, false];
     shelf = onShelf ?? FIRST_SHELF;
@@ -191,9 +199,10 @@ export function startGearWindow(
   nameAgain();
   addEventListener(ACCOUNT_CHANGED, nameAgain);
 
-  /** A page that needs no gear: the Journal, a page to come, Social or Settings. */
+  /** A page that needs no gear: the Journal, the Compendium, a page to come, Social or Settings. */
   const plainPage = (shown: View, plain: PlainContext): Node => {
     if (shown === 'journal') return journal.page(plain);
+    if (shown === 'compendium') return compendium.page(plain);
     const later = isTab(shown) ? TAB_PRESSES[shown].later : undefined;
     if (later !== undefined) return laterPage(TAB_PRESSES[shown as Tab].label, later);
     if (shown === 'social') return socialPage(plain, link ? (roster ??= new RosterPage({ link, travel })) : null);
@@ -393,7 +402,15 @@ export function startGearWindow(
               // A station's name stands where the tabs do, in brass capitals spaced wide.
               children: [words(station.toUpperCase(), 2, INK.brassLit, { tracking: 3 })],
             }
-          : tabsNode(frame, shown, (frame.boxOf('gear-top')?.width ?? layer.width - 64) - 36 - 60, layer, sizes.label),
+          : tabsNode(
+              frame,
+              shown,
+              (frame.boxOf('gear-top')?.width ?? layer.width - 64) - 36 - 60,
+              layer,
+              sizes.label,
+              // The Compendium wears Destiny's diamond while a chapter found waits unread.
+              (tab) => tab === 'compendium' && (lore?.unread(source?.kept()?.lore ?? []) ?? false),
+            ),
         // On the Journal DFO's hourglass stands in the account mark's place.
         shown === 'journal'
           ? journal.hourglass(frame)
@@ -518,7 +535,7 @@ export function startGearWindow(
 }
 
 /** The hover card beside what it describes, kept on the screen and above the footer, whose keys stay readable. */
-function cardFloat(
+export function cardFloat(
   ui: Interface,
   card: { readonly beside: string; readonly content: () => Node },
   width: number,

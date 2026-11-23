@@ -42,6 +42,7 @@ impl Fight {
         let mut events = Vec::new();
         let seconds = TICK_SECONDS;
         self.clock += seconds;
+        self.hold_lays(orders);
         self.sail_players(orders, waters, wind_at, time, &mut events);
         for id in self.ids(true) {
             self.sail_captain(id, waters, wind_at, time);
@@ -217,15 +218,16 @@ impl Fight {
     /// A player's release: their lay fired, or why their guns would not.
     fn player_fires(&mut self, id: ShipId, order: &Orders, events: &mut Vec<Event>) {
         match self.fire_order(id, order.aim.as_ref()) {
-            Ok(laid) => self.player_volley(id, laid),
+            Ok(laid) => self.player_volley(id, laid, self.spread_of(id)),
             Err(refusal) => events.push(Event::Refused { ship: id, refusal }),
         }
     }
 
-    /// A player's laid side fired: its scatter and its reload as its fitting trims them.
-    fn player_volley(&mut self, id: ShipId, laid: Lay) {
+    /// A player's laid side fired: its scatter `spread` times its gun's own (as long as its lay was held), and its
+    /// scatter and its reload as its fitting trims them.
+    fn player_volley(&mut self, id: ShipId, laid: Lay, spread: f64) {
         let trim = self.fittings.get(&id).map(|fitted| fitted.trim).unwrap_or_default();
-        let scatter = |spread: f64| spread * trim.scatter;
+        let scatter = |gun_spread: f64| gun_spread * trim.scatter * spread;
         let gun = crate::guns::Gun {
             yaw_spread_deg: scatter(laid.gun.yaw_spread_deg),
             pitch_spread_deg: scatter(laid.gun.pitch_spread_deg),
@@ -246,7 +248,8 @@ impl Fight {
         let own = order.aim.as_ref().and_then(|aim| self.laid(id, aim)).map(|laid| laid.side);
         let afloat = self.ships.get(&id).is_some_and(|vessel| vessel.damage.fighting() && !vessel.guns.braced);
         if let Some(laid) = self.gunners_lay(id, own).filter(|_| afloat) {
-            self.player_volley(id, laid);
+            // A Gunner's lay is his own, laid as he fires it: it scatters as the gun's own.
+            self.player_volley(id, laid, 1.0);
         }
     }
 

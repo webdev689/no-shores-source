@@ -1,15 +1,17 @@
 import * as flatbuffers from 'flatbuffers';
 import { Course, FromRoom, Input } from '../../../generated/messages/ts/overlook/wire.ts';
+import { Ask } from '../../../generated/messages/ts/overlook/wire/ask.ts';
 import type { Dressed } from '../../../generated/messages/ts/overlook/wire/dressed.ts';
 import { GLANCE_FLOATS, UNTRIMMED_FLOATS } from '../rules/fighters.ts';
 import { type FleetPart, commissionOf, fleetOf, heldIn, point, whole, wholeIn } from './fleetMessages.ts';
-import { type GearAsk, type GearState, askOffset, gearOf } from './gearMessages.ts';
+import { type GearAsk, type GearState, gearOf } from './gearMessages.ts';
 import { type CastAsk, type SeenSpell, spellsOf } from './artMessages.ts';
 import { BODY_FLOATS, type Body, CONTROLS_FLOATS, bodyOf } from '../rules/movementRules.ts';
 import { unpack } from './pack.ts';
 import { withOthers } from './seaFight.ts';
 import { type PublicEvent, publicOf } from './publicMessages.ts';
 import { type HarbourPart, harbourOf } from './seaHarbour.ts';
+import { type PlayerPlate, platesOf } from './plateMessages.ts';
 
 /** What a player's figure shows on their own screen: the forge's move, its frame, and the way it faces. */
 export interface Look {
@@ -232,6 +234,7 @@ export type FromRoomMessage =
       readonly kind: 'joined';
       readonly player: number;
       readonly dressed: readonly PlayerDress[];
+      readonly plates: readonly PlayerPlate[];
       readonly node: JoinedNode | null;
       /** The room's protocol: its schema's hash. */
       readonly protocol: number;
@@ -243,6 +246,8 @@ export type FromRoomMessage =
       readonly tick: bigint;
       readonly players: readonly SeenPlayer[];
       readonly dressed: readonly PlayerDress[];
+      /** On land, the plates that changed since the snapshot the screen showed. */
+      readonly plates: readonly PlayerPlate[];
       readonly foes: readonly SeenFoe[];
       readonly events: readonly FightEvent[];
       readonly shots: readonly FlyingShot[];
@@ -281,6 +286,8 @@ export interface InputParts {
   readonly respawn?: boolean;
   readonly ask?: GearAsk;
   readonly cast?: CastAsk;
+  /** A menu is open on the player's screen, which others see over their head. */
+  readonly menu?: boolean;
 }
 
 /** The most a ulong field holds. */
@@ -299,6 +306,23 @@ export function inputBytes(
   const carried = before.length > 0 ? Input.createEarlierVector(builder, before) : 0;
   builder.finish(inputOffset(builder, sequence, parts, carried));
   return builder.asUint8Array().slice();
+}
+
+/** An ask written into an input being built. */
+export function askOffset(builder: flatbuffers.Builder, ask: GearAsk): flatbuffers.Offset {
+  const named = ask.named === undefined ? 0 : builder.createString(ask.named);
+  Ask.startAsk(builder);
+  Ask.addKind(builder, ask.kind);
+  Ask.addItem(builder, ask.item ?? 0);
+  Ask.addSlot(builder, ask.slot ?? 0);
+  Ask.addColumn(builder, ask.column ?? 0);
+  Ask.addNode(builder, ask.node ?? 0);
+  Ask.addRarity(builder, ask.rarity ?? 0);
+  Ask.addLevel(builder, ask.level ?? 0);
+  Ask.addCount(builder, ask.count ?? 0);
+  Ask.addItemKind(builder, ask.itemKind ?? 0);
+  if (named) Ask.addNamed(builder, named);
+  return Ask.endAsk(builder);
 }
 
 function inputOffset(builder: flatbuffers.Builder, sequence: number, parts: InputParts, earlier: number): number {
@@ -332,6 +356,7 @@ function inputOffset(builder: flatbuffers.Builder, sequence: number, parts: Inpu
   if (parts.cast) Input.addCast(builder, wholeIn(parts.cast.spell, 0, 0xff, 'the spell'));
   if (aim) Input.addCastAim(builder, aim);
   if (earlier) Input.addEarlier(builder, earlier);
+  if (parts.menu) Input.addMenu(builder, true);
   return Input.endInput(builder);
 }
 
@@ -427,7 +452,8 @@ export function readFromRoom(bytes: Uint8Array): FromRoomMessage | null {
       const [west = 0, north = 0, east = 0, south = 0] = bounds;
       const node = id !== null && bounds.length === 4 ? { id, bounds: [west, north, east, south] as const } : null;
       const [player, protocol, epoch] = [joined.player(), joined.protocol(), joined.epoch()];
-      return { kind: 'joined', player, dressed, node, protocol, epoch };
+      const plates = platesOf(joined.platesLength(), (index) => joined.plates(index));
+      return { kind: 'joined', player, dressed, plates, node, protocol, epoch };
     }
     const gear = message.gear();
     if (gear) return { kind: 'gear', ...gearOf(gear) };
@@ -540,6 +566,7 @@ export function readFromRoom(bytes: Uint8Array): FromRoomMessage | null {
       tick: snapshot.tick(),
       players,
       dressed,
+      plates: platesOf(snapshot.platesLength(), (index) => snapshot.plates(index)),
       foes,
       events,
       shots,

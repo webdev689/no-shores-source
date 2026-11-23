@@ -13,6 +13,7 @@ import {
   CONE,
   coneStep,
   coneWant,
+  HEAD_M,
   PLATE_RANGE_M,
   PlateSight,
   plateScale,
@@ -70,9 +71,6 @@ export interface PlateViewing {
   readonly fought: (id: number) => number;
   readonly locked: number | null;
 }
-
-/** How high a foe's head stands over its feet, in metres: where its plate's sight and angle are read. */
-const HEAD_M = 1.8;
 
 /** A plate over a figure as this frame draws it: where its foot stands (CSS pixels), how much the cone shows of it,
  *  how large it stands and how far in front of the others. */

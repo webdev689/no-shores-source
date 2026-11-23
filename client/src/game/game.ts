@@ -35,6 +35,7 @@ import { FootView } from './footView.ts';
 import { bootGame, FIRST_NODE, SEA_SHIPS } from './gameBoot.ts';
 import { afterStoryOn } from './welcome/afterStory.ts';
 import { questsOn } from './quests/quests.ts';
+import { Lore } from './compendium/lore.ts';
 import { FIRST_LOOK, keptLook, plainDressOf } from './prologue/look.ts';
 import { askedArrival } from './gates.ts';
 import { installQaViews } from './qaViews.ts';
@@ -116,9 +117,8 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement): Promise<vo
   // The fight's display keeps clear of the HUD's hints, where the interface last laid them.
   const footView = new FootView(gpu, stack, forge, (drawn) => [hud.hintsBox(drawn)].filter((box) => box !== null));
   hud.onBesides(() => ({ ...footView.shown, speaking: speaking(), map: playing.helmMap.shown }));
-  /** Death's grey over the world, drawn under the interface. */
-  const drain = new Drain();
-  const music = new MusicDirector();
+  /** Death's grey over the world, drawn under the interface, and the music. */
+  const [drain, music] = [new Drain(), new MusicDirector()];
   const closeSource = (left: number, top: number, step: number, samples: number) =>
     land.ground(left, top, step, samples, samples);
   const landmass = boot.landmass;
@@ -128,6 +128,7 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement): Promise<vo
     sea: null,
     after: afterStoryOn(stack, forge, (x, y) => scene.groundAt(x, y)),
     quests,
+    lore: new Lore(localStorage, () => link?.account?.id ?? null),
     through: null,
     helmMap: new HelmMap({
       ...{ gpu, store, stack, outlines: continents.map((each) => each.outline) },
@@ -548,10 +549,10 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement): Promise<vo
   const storyMode = () => playing.flow.mode === 'story';
   const gearHere = () =>
     playing.flow.mode === 'foot' ? (playing.foot?.gear ?? null) : storyMode() ? (story?.gear ?? null) : null;
-  const fighting = () => footView.shown.fight;
   const fed = () => (playing.flow.mode === 'sea' ? (playing.sea?.gear ?? null) : gearHere());
+  const fighting = () => footView.shown.fight;
   const resting = () => (storyMode() && !story?.gear) || Boolean(playing.sea?.travelling);
-  stack.add(startGearWindow(fighting, link, gearHere, shipNow, joinAt, resting, fed, screens));
+  stack.add(startGearWindow(fighting, link, gearHere, shipNow, joinAt, resting, fed, screens, playing.lore));
   stack.add(screens.layer); // the card E opens at a dungeon's entrance, over the menu's layer
   addEventListener('keyup', (event) => void (playing.flow.mode === 'story' && story?.key(keyUpNameOf(event), false)));
   listenForControls({

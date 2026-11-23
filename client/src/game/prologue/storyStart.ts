@@ -88,10 +88,17 @@ export interface Started {
   leave(): void;
 }
 
-/** The wreck's mesh and light, fetched once, the first time they are asked for. */
-function onceFetched(): () => Promise<WreckDrawn> {
-  let fetched: Promise<WreckDrawn> | null = null;
-  return () => (fetched ??= loadWreck(ships.base, drawnKeys()));
+/** The wreck's mesh and light, fetched once, the first time they are asked for; a fetch that failed is made again the
+ *  next time they are asked for (each beat as it begins asks), so one lost download never leaves the wreck unseen. */
+export function onceFetched<Drawn = WreckDrawn>(
+  load: () => Promise<Drawn> = () => loadWreck(ships.base, drawnKeys()) as Promise<Drawn>,
+): () => Promise<Drawn> {
+  let fetched: Promise<Drawn> | null = null;
+  return () =>
+    (fetched ??= load().catch((error: unknown) => {
+      fetched = null;
+      throw error;
+    }));
 }
 
 export async function startStory(game: StoryGame, from: BeatName | null): Promise<Started> {

@@ -40,6 +40,8 @@ export interface Roster {
   } | null;
   readonly guildInvites: readonly { readonly name: string; readonly tag: string; readonly from: string }[];
   readonly blocked: readonly string[];
+  /** Those the player mutes, whose chat lines never reach them; none from accounts before mutes. */
+  readonly muted?: readonly string[];
 }
 
 /** A worn piece as others see it, numbered as the gear message numbers it. */
@@ -66,6 +68,10 @@ export interface Details extends Person {
     readonly attack: number;
     readonly emblem: string;
     readonly worn: readonly ShownPiece[];
+    /** Their Prestige and the Art they wear at its level (0 for none); none from a room that kept neither. */
+    readonly prestige?: number;
+    readonly art?: number;
+    readonly art_level?: number;
   } | null;
 }
 
@@ -79,11 +85,11 @@ export interface Kept {
   removeItem(key: string): void;
 }
 
-const KEY = 'overlook.session';
+const KEY = 'noshores.session';
 /** What the accounts say of a session its player has not used in a month, which they end. */
 const LAPSED = 'Your sign-in lapsed after 30 days away. Sign in again.';
 /** Where the page keeps the nonce of the Discord sign-in it began, for the tab alone. */
-const NONCE_KEY = 'overlook.discord';
+const NONCE_KEY = 'noshores.discord';
 const TOKEN = /^[0-9a-f]{64}$/;
 /** What the page says of a Discord sign-in that came back and went through: a new session, or Discord linked. */
 export const DISCORD_SIGNED_IN = 'Signed in with Discord.';
@@ -129,6 +135,11 @@ export class AccountLink {
   /** Where Find a Company is for a run's base, by WebSocket, at these accounts. */
   finderAt(base: string): string {
     return `${this.base.replace(/^http/, 'ws')}/v1/find/${base}`;
+  }
+
+  /** Where the chat's hall is, by WebSocket, at these accounts. */
+  get chatAt(): string {
+    return `${this.base.replace(/^http/, 'ws')}/v1/chat`;
   }
 
   /** The account the accounts last said the page plays as, none until they have. */

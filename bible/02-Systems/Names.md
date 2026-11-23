@@ -27,19 +27,24 @@ kept: usernames, guild names, guild tags and guild mottos. Claude's calls for it
 None of them may hold a slur, an obscenity or a sexual term. A username, guild name or tag may not claim to speak for
 the game. A new username or guild name may not look like one already kept.
 
+A chat line is judged by the same blocked words ([[Chat]]): each word holding one is starred letter for letter, and a
+line whose single letters spell one out ("f u c k") is refused; whole words side by side are read apart. Cyrillic and Greek letters that look Latin are read as the Latin
+ones first (`folded`), so a look-alike spells the word it looks like.
+
 ## How it is checked
 
-- **Blocked words.** A list of 79 roots, written for Overlook, kept in ROT13 so the repo never shows them. The text
+- **Blocked words.** A list of 79 roots, written for No Shores, kept in ROT13 so the repo never shows them. The text
   is read as a reader takes it: lower case, accents dropped, and 0, 1, 3, 4, 5, 7, @, $ read as o, i, e, a, s, t, a,
   s. A "!" is an i only before a letter. A run of one letter counts once, unless the root spells it twice.
 - **Where a root counts.** A root of four letters or more counts inside a word. It also counts across words that
   spell it whole, or that begin it in pieces of one or two letters, as when its letters are spaced, dotted or dashed
   apart. It never counts from inside one word into the next, so "Push it" passes. A shorter root counts only as whole
   words, so Cassandra and Sussex pass.
-- **Reserved names.** Admin, administrator, moderator, mod, staff, owner, Overlook, Vestige, official, system,
-  sysop, support, GM, game master, dev, developer, server, guest, null and undefined, and some plurals. Each is
-  refused as the whole name, or as its first or last word ("Overlook Staff", "Admin_Ray"). A capital after a small
-  letter starts a word ("AdminRay"), and look-alike letters count ("Adm1n").
+- **Reserved names.** Admin, administrator, moderator, mod, staff, owner, No Shores, Overlook, Vestige, official,
+  system, sysop, support, GM, game master, dev, developer, server, guest, null and undefined, and some plurals. Each
+  is refused as the whole name, or as its first or last one or two words ("Overlook Staff", "Admin_Ray",
+  "NoShores_Ray"; [[The Game Is Named No Shores]]). A capital after a small letter starts a word ("AdminRay"), and
+  look-alike letters count ("Adm1n").
 - **Look-alikes.** A name's skeleton is how it looks: lower case, 0 as o, 1, l and | as i, 5 as s, rn as m, vv as w,
   with no spaces, dashes, apostrophes, underscores or dots. Each account keeps its username's skeleton
   (`name_skeleton`), and each guild its name's (`name_key`), and no two share one.

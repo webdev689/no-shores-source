@@ -2,7 +2,7 @@ import catalogue from '../../../content/gear/emblems.json' with { type: 'json' }
 import { MOTIFS } from './emblemMotifs.ts';
 
 /**
- * Emblems drawn as Destiny draws them, in Overlook's pixels: a square sign and the nameplate it heads, whose left square
+ * Emblems drawn as Destiny draws them, in the game's pixels: a square sign and the nameplate it heads, whose left square
  * is the sign's own ground, so the two join without a seam. The sign is 24 cells square and the nameplate 120 by 24,
  * shown at whole multiples (four times is Destiny's 96 and 474 by 96). Each is drawn from its emblem's colours, its
  * pattern and its sign, never from a picture.

@@ -350,3 +350,29 @@ fn a_save_keeps_each_road_and_task_by_id_wherever_the_file_puts_them() {
     character.quests.set_task(veiled, 0);
     assert_eq!(character.quest_now(), Some((veiled, 0)));
 }
+
+#[test]
+fn each_houses_road_gives_its_lore_book_a_chapter_a_task_the_whole_of_it_as_the_road_ends() {
+    let places = every_place();
+    for faction in [1, 2, 3] {
+        let mut character = Character::starting();
+        assert!(character.ask(Ask::Pledge { faction }, AT_COUNTER, &DICE).is_ok());
+        let road = &quests().quests[road_of(faction)];
+        let book = crate::lore::lore().books.iter().find(|book| {
+            book.chapters
+                .iter()
+                .all(|it| matches!(&it.found, crate::lore::Found::Quest { quest, .. } if *quest == road.id))
+        });
+        let book = book.unwrap_or_else(|| panic!("{} gives no book", road.id));
+        let mut done = 0;
+        while character.quest_now().is_some_and(|(quest, _)| quest == road_of(faction)) {
+            meet_task(&mut character, &places);
+            done += 1;
+            let kept: Vec<&str> = book.chapters[..done].iter().map(|chapter| chapter.id.as_str()).collect();
+            let held: Vec<&str> =
+                character.lore.iter().filter_map(|key| key.strip_prefix(&format!("{}/", book.id))).collect();
+            assert_eq!(held, kept, "{}: after task {done}", road.id);
+        }
+        assert_eq!(done, book.chapters.len(), "{}: the book whole as the road ends", road.id);
+    }
+}

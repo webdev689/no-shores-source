@@ -225,7 +225,8 @@ export class Input {
       lookX: this.lookX,
       lookY: this.lookY,
       wheel: this.wheel,
-      locked: this.locked,
+      // Played on the pad, the game has its controls without the pointer: a pad's press is never a click on the page.
+      locked: this.locked || BINDS.device === 'pad',
     };
     this.padAlone = {
       ...IDLE,

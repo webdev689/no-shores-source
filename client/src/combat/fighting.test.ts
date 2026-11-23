@@ -378,6 +378,7 @@ test('a foe’s two glances are as many ticks apart as the snapshots that brough
     taken: [],
     friendlies: [],
     dressed: [],
+    plates: [],
     foes: [
       {
         id: 7,

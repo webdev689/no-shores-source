@@ -1,7 +1,9 @@
 // The fight's marks on the GPU, for the Test Ground's scene and the game's alike. Solid marks write depth and are
 // drawn with the figures; the see-through ones are blended after them, far to near, tested against what is drawn.
 // The game draws its see-through marks after the water, testing them against the scene's depth by hand, so the water
-// laid over the land near a coast never covers a mark that stands above it.
+// laid over the land near a coast never covers a mark that stands above it; and a lit keeper's mark after them with no
+// depth, so no wall hides it and it is seen from everywhere (`setAbove`, `drawAbove`). A mark's faded copy is drawn
+// only where something stands before it, so it is seen through walls (`drawHiddenOver`).
 import { REVERSED_DEPTH } from '../editor/orbit.ts';
 import { BUFFER_USAGE, type Gpu, SHADER_STAGE } from '../gpu.ts';
 import { LIGHT_DEPTH, LIGHT_TARGET, LIGHT_WGSL } from './lightLayer.ts';
@@ -21,6 +23,9 @@ struct View { from_origin: mat4x4f, origin: vec4f }
 @group(0) @binding(0) var<uniform> view: View;
 struct Out { @builtin(position) position: vec4f, @location(0) colour: vec4f, @location(1) world: vec2f }
 
+// What hides a mark stands at least a thousandth of the mark's distance nearer than its copy (reversed depth grows as
+// distance shrinks): 3 cm at 30 m. The copy is laid nearer than the mark's own layers (marksHidden).
+const HIDDEN_NEARER = 1.001;
 const ORDER = array<f32, 16>(0.0, 8.0, 2.0, 10.0, 12.0, 4.0, 14.0, 6.0, 3.0, 11.0, 1.0, 9.0, 15.0, 7.0, 13.0, 5.0);
 const CELL = ${DITHER_M};
 
@@ -62,6 +67,13 @@ fn see_through(colour: vec4f) -> vec4f {
   return see_through(in.colour);
 }
 
+// Over the finished picture, only where the scene stands clearly nearer: a mark seen through what hides it. Its own
+// whole mark never counts, as its copy lies nearer than any of its layers.
+@fragment fn hidden_fragment(in: Out) -> @location(0) vec4f {
+  if (textureLoad(depths, vec2i(in.position.xy), 0).r <= in.position.z * HIDDEN_NEARER) { discard; }
+  return see_through(in.colour);
+}
+
 ${LIGHT_WGSL}
 // Its light: only what stands in the air gives any. A mark on the ground (a dither's code) and light already added
 // (a drop's line, a muzzle's pool) give none.
@@ -79,6 +91,8 @@ const VERTEX_LAYOUT: GPUVertexBufferLayout = {
   ],
 };
 const BLENDED = { srcFactor: 'one', dstFactor: 'one-minus-src-alpha', operation: 'add' } as const;
+/** The over-the-picture fragments: the see-through marks where nothing hides them, or marks only where something does. */
+export type OverEntry = 'over_fragment' | 'hidden_fragment';
 
 /** Where `origin` (world metres) lies in the ground's dither, wrapped to its period. */
 export function ditherOrigin(origin: Point): [number, number, number, number] {
@@ -93,27 +107,31 @@ export class MarkDraw {
   private readonly solid: GPURenderPipeline;
   private readonly clear: GPURenderPipeline;
   private readonly light: GPURenderPipeline;
-  private over: {
-    layout: GPUBindGroupLayout;
-    pipeline: GPURenderPipeline;
-    depth: GPUTexture | null;
-    group: GPUBindGroup | null;
-  } | null = null;
+  private overLayout: GPUBindGroupLayout | null = null;
+  private readonly overs = new Map<OverEntry, GPURenderPipeline>();
+  private overGroup: { depth: GPUTexture; group: GPUBindGroup } | null = null;
+  private above: GPURenderPipeline | null = null;
+  private readonly viewLayout: GPUBindGroupLayout;
   private readonly view: GPUBuffer;
   private readonly group: GPUBindGroup;
   private readonly order = new MarkOrder();
   private buffer: GPUBuffer | null = null;
   private counts = { solid: 0, clear: 0 };
+  private aboveBuffer: GPUBuffer | null = null;
+  private aboveCount = 0;
   private origin: [number, number, number, number] = [0, 0, 0, 0];
   private readonly values = new Float32Array(20);
 
-  constructor(gpu: Gpu, samples: number) {
+  /** `over` names the over-the-picture pass it draws with, made off the frame as it is made: the see-through marks
+   *  (`drawClearOver`) or the hidden ones (`drawHiddenOver`). */
+  constructor(gpu: Gpu, samples: number, over: OverEntry = 'over_fragment') {
     this.gpu = gpu;
     const { device } = gpu;
     this.module = device.createShaderModule({ code: MARK_WGSL });
     const layout = device.createBindGroupLayout({
       entries: [{ binding: 0, visibility: SHADER_STAGE.vertex, buffer: {} }],
     });
+    this.viewLayout = layout;
     const pipeline = (fragment: string, depthWrite: boolean) =>
       device.createRenderPipeline({
         layout: device.createPipelineLayout({ bindGroupLayouts: [layout] }),
@@ -143,6 +161,7 @@ export class MarkDraw {
     });
     this.view = device.createBuffer({ size: 80, usage: BUFFER_USAGE.uniform | BUFFER_USAGE.copyDestination });
     this.group = device.createBindGroup({ layout, entries: [{ binding: 0, resource: { buffer: this.view } }] });
+    this.warmOver(over);
   }
 
   /** The marks the next frame draws, measured from a point `origin` in the world (where a mark at 0 lies), seen from
@@ -152,12 +171,25 @@ export class MarkDraw {
     this.counts = { solid, clear };
     this.origin = ditherOrigin(origin);
     if (laid.length === 0) return;
-    if (!this.buffer || this.buffer.size < laid.byteLength) {
-      this.buffer?.destroy();
-      const size = Math.max(4096, 2 ** Math.ceil(Math.log2(laid.byteLength)));
-      this.buffer = this.gpu.device.createBuffer({ size, usage: BUFFER_USAGE.vertex | BUFFER_USAGE.copyDestination });
-    }
+    this.buffer = this.grown(this.buffer, laid.byteLength);
     this.gpu.device.queue.writeBuffer(this.buffer, 0, laid);
+  }
+
+  /** The marks the next frame draws over everything (`drawAbove`), measured from the eye, in the order given. */
+  setAbove(vertices: ArrayLike<number>): void {
+    const laid = Float32Array.from(vertices);
+    this.aboveCount = laid.length / MARK_FLOATS;
+    if (laid.length === 0) return;
+    this.aboveBuffer = this.grown(this.aboveBuffer, laid.byteLength);
+    this.gpu.device.queue.writeBuffer(this.aboveBuffer, 0, laid);
+  }
+
+  /** `buffer`, or a new one in its place when it holds fewer than `bytes`: a power of two, 4 KB at least. */
+  private grown(buffer: GPUBuffer | null, bytes: number): GPUBuffer {
+    if (buffer && buffer.size >= bytes) return buffer;
+    buffer?.destroy();
+    const size = Math.max(4096, 2 ** Math.ceil(Math.log2(bytes)));
+    return this.gpu.device.createBuffer({ size, usage: BUFFER_USAGE.vertex | BUFFER_USAGE.copyDestination });
   }
 
   /** The solid marks, into a pass with the scene's depth, `matrix` taking the marks' points to clip space. */
@@ -183,14 +215,54 @@ export class MarkDraw {
   /** The see-through marks over a finished single-sampled picture `target`, hidden where `depth` (the scene's depth,
    *  one float a pixel) stands nearer. */
   drawClearOver(encoder: GPUCommandEncoder, target: GPUTextureView, depth: GPUTexture, matrix: Float32Array): void {
+    this.drawOver(encoder, target, depth, matrix, 'over_fragment');
+  }
+
+  /** The see-through marks over a finished picture, only where `depth` stands nearer: seen through what hides them. */
+  drawHiddenOver(encoder: GPUCommandEncoder, target: GPUTextureView, depth: GPUTexture, matrix: Float32Array): void {
+    this.drawOver(encoder, target, depth, matrix, 'hidden_fragment');
+  }
+
+  private drawOver(
+    encoder: GPUCommandEncoder,
+    target: GPUTextureView,
+    depth: GPUTexture,
+    matrix: Float32Array,
+    entry: OverEntry,
+  ): void {
     if (!this.buffer || this.counts.clear === 0) return;
-    const over = this.overOf(depth);
+    const over = this.overOf(depth, entry);
     this.writeView(matrix);
     const pass = encoder.beginRenderPass({ colorAttachments: [{ view: target, loadOp: 'load', storeOp: 'store' }] });
     pass.setPipeline(over.pipeline);
     pass.setBindGroup(0, over.group);
     pass.setVertexBuffer(0, this.buffer);
     pass.draw(this.counts.clear, 1, this.counts.solid);
+    pass.end();
+  }
+
+  /** The marks `setAbove` gave over a finished single-sampled picture `target`, in the order given and hidden by
+   *  nothing: a lit keeper's mark, seen from everywhere (`litMarksSeen` lays them far to near, so a nearer one stands
+   *  over it). */
+  drawAbove(encoder: GPUCommandEncoder, target: GPUTextureView, matrix: Float32Array): void {
+    const [buffer, count] = [this.aboveBuffer, this.aboveCount];
+    if (!buffer || count === 0) return;
+    this.above ??= this.gpu.device.createRenderPipeline({
+      layout: this.gpu.device.createPipelineLayout({ bindGroupLayouts: [this.viewLayout] }),
+      vertex: { module: this.module, entryPoint: 'mark_vertex', buffers: [VERTEX_LAYOUT] },
+      fragment: {
+        module: this.module,
+        entryPoint: 'clear_fragment',
+        targets: [{ format: this.gpu.format, blend: { color: BLENDED, alpha: BLENDED } }],
+      },
+      primitive: { topology: 'triangle-list' },
+    });
+    this.writeView(matrix);
+    const pass = encoder.beginRenderPass({ colorAttachments: [{ view: target, loadOp: 'load', storeOp: 'store' }] });
+    pass.setPipeline(this.above);
+    pass.setBindGroup(0, this.group);
+    pass.setVertexBuffer(0, buffer);
+    pass.draw(count);
     pass.end();
   }
 
@@ -210,43 +282,66 @@ export class MarkDraw {
     this.gpu.device.queue.writeBuffer(this.view, 0, this.values);
   }
 
-  /** The over-the-picture pipeline, made the first time, and its bind group for `depth`, made again as it changes. */
-  private overOf(depth: GPUTexture): { pipeline: GPURenderPipeline; group: GPUBindGroup } {
+  /** The over-the-picture pipelines' layout, made once. */
+  private overLayoutOf(): GPUBindGroupLayout {
+    this.overLayout ??= this.gpu.device.createBindGroupLayout({
+      entries: [
+        { binding: 0, visibility: SHADER_STAGE.vertex, buffer: {} },
+        { binding: 1, visibility: SHADER_STAGE.fragment, texture: { sampleType: 'unfilterable-float' } },
+      ],
+    });
+    return this.overLayout;
+  }
+
+  /** How an over-the-picture pipeline for `entry` is made. */
+  private overMade(entry: OverEntry): GPURenderPipelineDescriptor {
     const { device, format } = this.gpu;
-    if (!this.over) {
-      const layout = device.createBindGroupLayout({
-        entries: [
-          { binding: 0, visibility: SHADER_STAGE.vertex, buffer: {} },
-          { binding: 1, visibility: SHADER_STAGE.fragment, texture: { sampleType: 'unfilterable-float' } },
-        ],
-      });
-      const pipeline = device.createRenderPipeline({
-        layout: device.createPipelineLayout({ bindGroupLayouts: [layout] }),
-        vertex: { module: this.module, entryPoint: 'mark_vertex', buffers: [VERTEX_LAYOUT] },
-        fragment: {
-          module: this.module,
-          entryPoint: 'over_fragment',
-          targets: [{ format, blend: { color: BLENDED, alpha: BLENDED } }],
-        },
-        primitive: { topology: 'triangle-list' },
-      });
-      this.over = { layout, pipeline, depth: null, group: null };
+    return {
+      layout: device.createPipelineLayout({ bindGroupLayouts: [this.overLayoutOf()] }),
+      vertex: { module: this.module, entryPoint: 'mark_vertex', buffers: [VERTEX_LAYOUT] },
+      fragment: {
+        module: this.module,
+        entryPoint: entry,
+        targets: [{ format, blend: { color: BLENDED, alpha: BLENDED } }],
+      },
+      primitive: { topology: 'triangle-list' },
+    };
+  }
+
+  /** The over-the-picture pipeline for `entry`, made off the frame, so the first mark over the water or through a
+   *  wall never waits on it. */
+  private warmOver(entry: OverEntry): void {
+    void this.gpu.device
+      .createRenderPipelineAsync(this.overMade(entry))
+      .then((pipeline) => {
+        if (!this.overs.has(entry)) this.overs.set(entry, pipeline);
+      })
+      .catch(() => undefined);
+  }
+
+  /** The over-the-picture pipeline for `entry` (made at once should it not have come yet), and its bind group for
+   *  `depth`, made again as it changes. */
+  private overOf(depth: GPUTexture, entry: OverEntry): { pipeline: GPURenderPipeline; group: GPUBindGroup } {
+    const { device } = this.gpu;
+    const layout = this.overLayoutOf();
+    let pipeline = this.overs.get(entry);
+    if (!pipeline) {
+      pipeline = device.createRenderPipeline(this.overMade(entry));
+      this.overs.set(entry, pipeline);
     }
-    if (this.over.depth !== depth || !this.over.group) {
-      this.over.depth = depth;
-      this.over.group = device.createBindGroup({
-        layout: this.over.layout,
-        entries: [
-          { binding: 0, resource: { buffer: this.view } },
-          { binding: 1, resource: depth.createView() },
-        ],
-      });
+    if (this.overGroup?.depth !== depth) {
+      const entries = [
+        { binding: 0, resource: { buffer: this.view } },
+        { binding: 1, resource: depth.createView() },
+      ];
+      this.overGroup = { depth, group: device.createBindGroup({ layout, entries }) };
     }
-    return { pipeline: this.over.pipeline, group: this.over.group };
+    return { pipeline, group: this.overGroup.group };
   }
 
   destroy(): void {
     this.buffer?.destroy();
+    this.aboveBuffer?.destroy();
     this.view.destroy();
   }
 }

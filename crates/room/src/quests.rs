@@ -50,6 +50,8 @@ pub(crate) struct QuestGround {
     pub square: Option<navmesh::Bounds>,
     pub grounds: Vec<QuestMesh>,
     pub way_on: BTreeMap<FighterId, usize>,
+    /// The lore read for what lies in its node (`lore.rs`): the file's, unless a test gives its own.
+    pub lore: Option<&'static gear::lore::LoreDef>,
 }
 
 /// The side of the sea a hostile ship sails for, by its faction (the foes crate's), as a goal names it.

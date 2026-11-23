@@ -17,5 +17,5 @@ status: in force
 
 ## Claude's calls
 
-- The wreck's room in the prologue, which the story asks things of and waits on, stays where it is for now; the
-  [[Test Ground]]'s too, as it is a page of its own.
+- The wreck's room in the prologue, which the story asks things of and waits on, stays where it is for now (replaced
+  by [[The Wreck's Room Runs in the Rooms' Worker Too]]); the [[Test Ground]]'s too, as it is a page of its own.

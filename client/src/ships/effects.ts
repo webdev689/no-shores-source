@@ -92,7 +92,7 @@ const TIMBER_LIFE = 18;
 /** A ball aloft leaves a trail puff this often (seconds), each lasting this long. */
 const TRAIL_EVERY_S = 0.04;
 const TRAIL_S = 0.5;
-/** Flames a burning ship sends up a second for each fire aboard: Overlook's own, where DFO stood Daggerfall's fire. */
+/** Flames a burning ship sends up a second for each fire aboard: the game's own, where DFO stood Daggerfall's fire. */
 const FLAMES_PER_S = 12;
 const GRAVITY = 9.81;
 

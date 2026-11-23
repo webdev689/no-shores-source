@@ -56,6 +56,11 @@ export class UsePrompt {
   private said: string | null = null;
   private held: number | null = null;
 
+  /** Whether a deed within reach is shown. */
+  get showing(): boolean {
+    return this.said !== null;
+  }
+
   /** Shows the deed within reach, or nothing, and how far E has been held for it (0 to 1), or null where it is not
    *  being held; a new deed is told aloud, as a status is. */
   show(deed: string | null, held: number | null = null): void {
@@ -71,25 +76,33 @@ export class UsePrompt {
     if (this.said === null) return null;
     const big = view.width >= 1500 && view.height >= 900;
     return {
-      role: 'chip',
-      through: true,
-      gap: 10,
-      alignY: 'center',
-      padding: [8, 16, 8, 10],
+      ...promptChip(this.said, this.held),
       float: { to: 'screen', at: [0.5, 1], anchor: [0.5, 1], y: big ? -154 : -110 },
-      children: [
-        {
-          minWidth: 36,
-          padding: [2, 7, 4, 7],
-          fill: 'rgba(192,138,62,0.15)',
-          alignX: 'center',
-          draw: heldCap(this.held),
-          children: [promptKey()],
-        },
-        { text: { words: this.said, colour: '#efe8d6', edge: 'shadow', edgeColour: '#000', wrap: false } },
-      ],
     };
   }
+}
+
+/** Use's keycap and `deed` in the prompt's chip, the keycap ringed as far as it is `held` (0 to 1; null while not),
+ *  for its caller to set where it stands. */
+export function promptChip(deed: string, held: number | null): Node {
+  return {
+    role: 'chip',
+    through: true,
+    gap: 10,
+    alignY: 'center',
+    padding: [8, 16, 8, 10],
+    children: [
+      {
+        minWidth: 36,
+        padding: [2, 7, 4, 7],
+        fill: 'rgba(192,138,62,0.15)',
+        alignX: 'center',
+        draw: heldCap(held),
+        children: [promptKey()],
+      },
+      { text: { words: deed, colour: '#efe8d6', edge: 'shadow', edgeColour: '#000', wrap: false } },
+    ],
+  };
 }
 
 /** Use's key in brass, or the pad's button drawn, as the player last played. */

@@ -18,7 +18,7 @@ import { type Box, type Said, Words, wordsOf } from './hitWords.ts';
 import { RING, arrowNode, hurtNode, lockMarkNode, parryNode, veilNode } from './hudCues.ts';
 import { contactOf, strokeTravel } from './impacts.ts';
 import { type BannerTone, PublicBanner, type PublicShown, StoreBars } from './publicBanner.ts';
-import { cameraOf, landBlocks, SIGHT_SKIN_M } from './plateSight.ts';
+import { cameraOf, landBlocks, PLATE_OVER_M, SIGHT_SKIN_M } from './plateSight.ts';
 import { CARD_NEAREST_M, cardStand } from '../player/figures.ts';
 import type { Cards } from '../player/cards.ts';
 import { ItemPictures } from '../player/itemPictures.ts';
@@ -27,6 +27,7 @@ import { CORNER } from '../plus/barFrame.ts';
 import { type HudLayout, hudLayout } from './hudLayout.ts';
 import { Crosshair, type CrosshairFrame } from './reticle.ts';
 import { Vitals } from './vitals.ts';
+import { type PlatedPlayer, PlayerPlates } from './playerPlates.ts';
 import { type ArmsShown, LOADOUT_KEYS, WeaponRows } from './weapons.ts';
 import type { CapFace } from './shipAbilityBar.ts';
 
@@ -71,6 +72,8 @@ export interface HudFrame {
   readonly public?: PublicShown | null;
   /** Where the houses' roads' next goal stands in the room (x, y), which the compass marks; none for none. */
   readonly questAt?: readonly [number, number] | null;
+  /** Every other player as their plate over their head is drawn; none for none. */
+  readonly players?: readonly PlatedPlayer[];
 }
 
 /** The keycaps of the Art's abilities (the Anima's, then each Tenet's) and of the two loadouts: a key's name, or a
@@ -102,9 +105,6 @@ const RING_KEPT = 6;
 /** How far a parry ring set at the screen's edge stands clear of the vitals and the Arts: its widest's half and a
  *  little more. */
 const RING_CLEAR = RING.widest / 2 + RING_KEPT;
-/** How high over a foe's feet its plate's foot stands, in metres: just over its head (a body is 1.8 m tall) and its
- *  parry ring, so the plate reads as the foe's own. */
-const PLATE_OVER_M = 1.9;
 /** A word with no striker to meet stands this high over its fighter's feet (metres). */
 const WORD_HIGH_M = 1.2;
 /** What the player is told on stepping onto an Ammo box they cannot take. */
@@ -169,8 +169,10 @@ export function blockedBy(
 /** The fight's display over the view, kept each frame from a `HudFrame` and drawn as a layer of the interface. */
 export class Hud {
   private readonly vitals = new Vitals();
-  private target = new FoePlate({ poise: true, remembers: 'whole' });
-  private foeBars = new FoeBars();
+  private readonly target = new FoePlate({ poise: true, remembers: 'whole' });
+  private readonly foeBars = new FoeBars();
+  /** The plates over other players, and the one the crosshair rests on within reach. */
+  readonly playerPlates = new PlayerPlates();
   private readonly crosshair = new Crosshair();
   private foeTarget = new FoeTarget();
   private readonly words = new Words();
@@ -262,11 +264,11 @@ export class Hud {
     this.flash(frame, seconds);
     this.veil = veilOf(frame);
     this.ammo = { ammo: frame.ammo, most: frame.ammoMost ?? null };
-    const overHead = (view: FighterView) => {
-      const point = [view.x, view.y, view.z + PLATE_OVER_M] as const;
-      const spot = project(frame.matrix, point, frame.width, frame.height);
-      return spot && { ...spot, depth: clipOf(frame.matrix, point)[2] };
+    const spot = (point: readonly [number, number, number]) => {
+      const onScreen = project(frame.matrix, point, frame.width, frame.height);
+      return onScreen && { ...onScreen, depth: clipOf(frame.matrix, point)[2] };
     };
+    const overHead = (view: FighterView) => spot([view.x, view.y, view.z + PLATE_OVER_M]);
     const lock = own?.target ?? null;
     const chosen = this.foeTarget.step({ player: frame.player, lock, foes: frame.foes, events: frame.events }, seconds);
     const { blocks = [], groundAt } = frame;
@@ -288,6 +290,8 @@ export class Hud {
     );
     this.quest = frame.questAt && own ? { at: frame.questAt, from: [own.x, own.y] } : null;
     const boss = this.foeBars.update(frame.foes, own, overHead, viewing, seconds);
+    const feet = own && ([own.x, own.y, own.z] as const);
+    this.playerPlates.update(frame.players ?? [], { ...viewing, spot, own: feet }, seconds);
     const under = frame.foes.find((foe) => foe.id === this.foeBars.under)?.view ?? null;
     this.crosshair.update(frame.crosshair ?? null, own, under, frame.events, frame.player, seconds);
     this.markTarget(frame, chosen, boss, seconds);
@@ -474,6 +478,7 @@ export class Hud {
         arms,
         this.lockSpot && lockMarkNode(this.lockSpot),
         ...this.stores.nodes(zoom),
+        ...this.playerPlates.nodes(),
         ...this.foeBars.overheadNodes(),
         ...this.rings.map((ring) =>
           parryNode(ring.edge && clear ? clear(ring, RING_CLEAR) : ring, ring.span, ring.kind, ring.window),

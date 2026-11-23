@@ -288,3 +288,18 @@ test("a session whose feel nobody takes keeps only the latest of the fight's eve
   );
   assert.equal(play.takeEvents().length, MOST_FELT, 'the panel’s events, untaken, are kept as few');
 });
+
+test('a look held through the orders sent lays as narrow as the room counts it, wide again on the other side', () => {
+  const fleet = new Fleet(1);
+  const play = fleet.join([200_000, 300_000, 0]);
+  fleet.tick();
+  const look = { bearing: 90, range: 80 };
+  const aiming = { ...NOTHING, look };
+  fleet.tick(() => aiming);
+  assert.equal(play.lay(look, 1)?.spread, 2, 'just taken, twice as wide');
+  for (let tick = 0; tick < 91; tick++) fleet.tick(() => aiming);
+  assert.equal(play.lay(look, 2)?.spread, 1, 'held a second and a half of orders, the guns own');
+  const port = { bearing: -90, range: 80 };
+  fleet.tick(() => ({ ...NOTHING, look: port }));
+  assert.equal(play.lay(port, 3)?.spread, 2, 'the other side begins again');
+});

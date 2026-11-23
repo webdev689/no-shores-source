@@ -94,6 +94,9 @@ const RESERVED = new Set(
   ].map(skeleton),
 );
 
+/** Reserved names of two words, refused whole or as a name's first or last two words. */
+const RESERVED_PAIRS = new Set(['no shores'].map(skeleton));
+
 const SWAPS: Readonly<Record<string, string>> = {
   '0': 'o',
   '1': 'i',
@@ -156,10 +159,14 @@ export function blocked(text: string): boolean {
 }
 
 /** Whether a name claims to speak for the game: a reserved word, however its letters are dressed, as the whole name or
- *  its first or last word. */
+ *  its first or last word; a reserved pair as its first or last two. */
 export function reserved(name: string): boolean {
   const words = wordsOf(apart(name));
-  return [words.join(''), words[0] ?? '', words.at(-1) ?? ''].some((word) => RESERVED.has(skeleton(word)));
+  const pairs = [words.join(''), words.slice(0, 2).join(''), words.slice(-2).join('')];
+  return (
+    [words.join(''), words[0] ?? '', words.at(-1) ?? ''].some((word) => RESERVED.has(skeleton(word))) ||
+    pairs.some((pair) => RESERVED_PAIRS.has(skeleton(pair)))
+  );
 }
 
 /** Why a player's name or line is refused, in words for them, or null when others may read it. */

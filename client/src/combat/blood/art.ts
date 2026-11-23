@@ -449,6 +449,11 @@ export function buildAtlas({ size = ATLAS_SIZE, cells = ATLAS_CELLS, seed = ATLA
   return { colours, width: size, height };
 }
 
+let sheet: Atlas | null = null;
+/** The sheet every fight's blood draws from, drawn once a page: it is seeded, so it is the same each time, and drawing
+ *  it takes a few hundred milliseconds. */
+export const bloodSheet = (): Atlas => (sheet ??= buildAtlas());
+
 /** A droplet in flight: a bead with a tail upward and a glint, in blood's own red. */
 export const DROPLET_SIZE = 16;
 export function dropletArt(): Atlas {

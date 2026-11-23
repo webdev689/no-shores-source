@@ -7,7 +7,7 @@
 import { seeded } from '../seeded.ts';
 import { clampLevel, glided, nextGapS, thunderShape } from './ambienceShapes.ts';
 import type { Loudness } from '../soundMeasure.ts';
-import { playSample } from '../soundSamples.ts';
+import { playSample, prefetchSamples, releaseSamples } from '../soundSamples.ts';
 
 /** Where the world's sounds play; the game passes uiSounds' worldOutput. Null while there is no sound. */
 export type SoundOut = () => { readonly audio: AudioContext; readonly out: AudioNode } | null;
@@ -116,6 +116,13 @@ interface Engine {
 }
 
 type Play = typeof playSample;
+type Prefetch = typeof prefetchSamples;
+/** The story's moments' cues and its thunder, fetched as the sound wakes and held until it stops: each is first heard
+ *  too soon after it is asked for to fetch then, the crash and the splash only once. A gull's cry comes again and
+ *  again, so it is fetched as it is wanted. */
+const SHOT_CUES = Object.values(RECORDED_SHOTS)
+  .filter((shot) => shot !== RECORDED_SHOTS.gull)
+  .map((shot) => shot.cue);
 
 /** Thunder farther than this is not heard at all. */
 const HEARD_KM = 20;
@@ -128,6 +135,7 @@ const finiteSeconds = (seconds: number): number => (Number.isFinite(seconds) ? M
 export class Ambience {
   private readonly output: SoundOut;
   private readonly play: Play;
+  private readonly prefetch: Prefetch;
   private readonly random = seeded(SEED + 1);
   private readonly glides = new Map<Bed, Glide>(
     BEDS.map((bed) => [bed, { from: 0, to: 0, elapsedS: 0, glideS: 0, value: 0 }]),
@@ -143,8 +151,8 @@ export class Ambience {
   private world = 0;
   private worldTo = 0;
 
-  constructor(output: SoundOut, play: Play = playSample) {
-    [this.output, this.play] = [output, play];
+  constructor(output: SoundOut, play: Play = playSample, prefetch: Prefetch = prefetchSamples) {
+    [this.output, this.play, this.prefetch] = [output, play, prefetch];
   }
 
   /** Each named bed glides from where it stands to its new level over `glideS` seconds. */
@@ -267,6 +275,8 @@ export class Ambience {
     this.gullCountdownS = null;
     this.heart = false;
     this.teardown();
+    // Held under the budget again; a sound woken after builds the engine afresh and holds them once more.
+    releaseSamples(SHOT_CUES);
   }
 
   /** The engine on the output as it answers now: built on the first answer, rebuilt should the context change. */
@@ -282,6 +292,7 @@ export class Ambience {
     shots.gain.value = SHOTS_GAIN;
     shots.connect(master);
     this.engine = { audio, out, master, shots, beds: new Map() };
+    this.prefetch(audio, SHOT_CUES);
     return this.engine;
   }
 

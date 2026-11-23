@@ -55,7 +55,7 @@ code:
 
 An open stretch of ground for playing a [[Sprite Forge]] figure with every move the forge draws, as the player plays
 it ([[The Player Plays as in DFO]]), the same [[Player]] the [[Game]] plays. It is published with the site at
-`https://lattymoy.github.io/overlook-source/testground/`. Under `npm run dev`, open `/testground/`.
+`https://lattymoy.github.io/no-shores-source/testground/`. Under `npm run dev`, open `/testground/`.
 
 ## Playing
 

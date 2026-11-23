@@ -22,11 +22,17 @@ test('a welcome and a snapshot the server wrote read back to the bit', async () 
   // protocol_tests.rs writes these messages: a welcome into Overlook's social space, in the protocol both were built
   // from; one player standing inside, one after half a second's walk, swinging and warned; and the first's dress.
   const dressed = [{ player: 7, dress: '{"body":"male"}' }];
+  // Everyone's plate: a named player at level 20, their Prestige and a menu open, and a guest, nameless.
+  const plates = [
+    { player: 7, name: 'Wooden_Osprey', level: 24, menu: true },
+    { player: 9, name: '', level: 6, menu: false },
+  ];
   const node = { id: 'overlook-social', bounds: [2_808_986, 1_201_139, 2_809_442, 1_201_455.5] };
   assert.deepEqual(readFromRoom(await written('joined.bin')), {
     kind: 'joined',
     player: 7,
     dressed,
+    plates,
     node,
     protocol: PROTOCOL,
     epoch: 1_234_567.25,
@@ -57,7 +63,7 @@ test('a welcome and a snapshot the server wrote read back to the bit', async () 
   assert.deepEqual(read[1]?.body, floatsOf(walked));
   const stood = floatsOf(rules.standing(1.5, -2.25));
   assert.ok(read[0]?.body.every((number, index) => Math.abs(number - (stood[index] ?? 0)) <= 0.0005 + 1e-9));
-  assert.deepEqual([snapshot.dressed, snapshot.ships], [dressed, []]);
+  assert.deepEqual([snapshot.dressed, snapshot.plates, snapshot.ships], [dressed, plates, []]);
   // The second player's fighter: a sword drawn, its lock on foe 12, stamina spent.
   const fighting = fighterView(snapshot.players[1]?.fighter ?? []);
   assert.deepEqual([fighting.target, fighting.stamina, fighting.health, fighting.side], [12, 88, 100, 'players']);

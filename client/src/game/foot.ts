@@ -2,7 +2,7 @@ import { QUIET, pushedIn, showAnimaEdge } from '../combat/animaMoment.ts';
 import { Arrivals } from '../combat/arrivals.ts';
 import { AttackFeel, type DrawnFigure } from '../combat/attackFeel.ts';
 import { DropsShown } from '../combat/drops.ts';
-import { marksSeen } from '../combat/marksOver.ts';
+import { litMarksSeen, marksHidden, marksSeen } from '../combat/marksOver.ts';
 import { FightEffects } from '../combat/fightEffects.ts';
 import { Fighting } from '../combat/fighting.ts';
 import { FoeFigures } from '../combat/foeFigures.ts';
@@ -35,7 +35,7 @@ import { STORY_BEHIND_ON_FOOT, type Use, dropsLaid, questRings, tellsPrologue } 
 import { GatherHold } from './gatherHold.ts';
 import { markedHere } from './overheadMarks.ts';
 import { nodeText, standOn } from './footGround.ts';
-import type { GearHere } from './gearScreen.ts';
+import { ACCOUNT_CHANGED, type GearHere } from './gearScreen.ts';
 import { keysShown, onFoot } from './hints.ts';
 import { type Standing, standingOf } from './hudLaw.ts';
 import { windowRect } from './nodes.ts';
@@ -101,7 +101,7 @@ export class Foot {
   readonly fight: Fighting;
   private readonly player: PlayerFight;
   private readonly steps: MovementRules;
-  private readonly otherPlayers: OtherPlayers;
+  readonly otherPlayers: OtherPlayers;
   private readonly otherGlides = new Glides();
   private readonly folkLoops = new WeakMap<Placed, PlacedLoop>();
   private readonly foes: FoeFigures;
@@ -115,8 +115,6 @@ export class Foot {
   private readonly arrivals = new Arrivals();
   /** The player arrives as the veil lifts on the place: their figure builds and their view blinks open. */
   readonly arrive = (clock: number): void => this.arrivals.arriveHere(this.fight.player, clock);
-  /** The link's welcomes followed: one more means the player joined the room again. */
-  private joined = 1;
   /** What the room last said of the player's gear and the place, and the gear the figure was last dressed in. */
   readonly held: Held;
   private readonly dressed: Dressed = { gear: null, loadout: 0 };
@@ -181,7 +179,11 @@ export class Foot {
       boxes: opened.boxes,
       courses: [context.movement, parts.combat],
     });
+    addEventListener(ACCOUNT_CHANGED, this.renamed);
   }
+
+  /** A username taken while here reaches the room, so the player's plate shows it. */
+  private readonly renamed = () => this.link.named?.();
 
   /** Lands the player in a node at its first spawn, facing `facing`, or before the door of the entrance `arriving`
    *  names, keeping how they hold the camera, and joins its room: online the server's at the voyage's `seas`, signed
@@ -276,9 +278,8 @@ export class Foot {
     const fight = new Fighting(rules.combat, opened.link);
     hearer.fight = fight;
     if (!opened.dungeon) for (const foe of asked) fight.ask(foe);
-    // The player starts at the first spawn, where the room stands its first to join; the room's word moves a later
-    // one to the spawn its turn gives, which its number does not tell, since the garrison's foes are numbered too.
-    players.takeDresses(opened.link.dressed);
+    // The welcome's dresses and plates come with the first snapshot after it (`RoomConnection`), so none newer is
+    // undone by the welcome taken late.
     return new Foot(
       context,
       node,
@@ -316,7 +317,7 @@ export class Foot {
     const link = open(received);
     const fight = new Fighting(rules.combat, link);
     heard.fight = fight;
-    players.takeDresses(link.dressed);
+    players.take(link);
     // The place's own holder of the gear, which its room's word fills, is the one the figure is dressed from.
     const held: Held = Object.assign(place.gear ?? { gear: null }, { alone: null }, unheard());
     const opened: Opened = { link, boxes, text: '', dungeon: null, seas: 'normal' };
@@ -390,13 +391,8 @@ export class Foot {
     dressInGear(walker, forge, this.held.gear, this.dressed);
     this.tellPrologue();
     this.plaza?.frame(WORLD_CLOCK.seconds(), this.gear?.gear ?? null);
-    if (this.link.joins !== this.joined) {
-      // A link that joined its room again brings every dress there with its welcome.
-      this.joined = this.link.joins;
-      this.otherPlayers.takeDresses(this.link.dressed);
-    }
-    const standing = [...foes.placed.values(), ...this.otherPlayers.placed.values()];
-    const bodies = standing.map((placed) => [placed.x, placed.y, placed.z] as const);
+    const near = [...foes.placed.values(), ...this.otherPlayers.placed.values()];
+    const bodies = near.map((placed) => [placed.x, placed.y, placed.z] as const);
     const { feel } = this;
     // The tumble starts the way the figure was last drawn facing (the aim, while aiming).
     walker.fall = this.falling.figure(fight.standing, walker.player.body, walker.you.facing);
@@ -454,7 +450,9 @@ export class Foot {
     figures.push(...foes.cards(fight, forge, eye, clock, frameTicks, tickSeconds, effects.flashes, foeFeel));
     // The player's own shots leave the weapon as drawn: the first person's muzzle, or the figure's along its shot.
     const [muzzle, gearNow, floor] = [walker.muzzle, this.gear?.gear ?? null, this.floor];
-    const marked = markedHere(gearNow, countersOf(this.node), floor, this.context.trips.props());
+    const marked = markedHere(gearNow, countersOf(this.node), floor, this.context.trips.props(), this.context.speak);
+    const lit = litMarksSeen(marked, shot.eye, clock);
+    const hidden = marksHidden(marked, shot.eye, clock);
     const laid = (gearNow?.drops ?? []).filter((drop) => drop.kind !== DROPPED.chest);
     const dropped = dropsLaid(this.drops, laid, clock, shot.eye, [
       ...questRings(gearNow, floor, clock),
@@ -562,11 +560,11 @@ export class Foot {
       },
       public: shownPublic.shown,
     };
-    const edge = this.standing;
-    const hints = keysShown(edge, onFoot(walker, shown, fight, !controls.locked && !paused));
+    const standing = this.standing;
+    const hints = keysShown(standing, onFoot(walker, shown, fight, !controls.locked && !paused));
     const dark = arrivals.darkOf(fight.player, clock);
     const { props, quest, sting } = shownPublic;
-    return { shot, figures, standing: edge, marks, swings, fight: fought, hints, dark, props, quest, sting };
+    return { shot, figures, standing, marks, lit, hidden, swings, fight: fought, hints, dark, props, quest, sting };
   }
 
   /** Where the player stands with the section's edge, as the room said. */
@@ -585,6 +583,7 @@ export class Foot {
 
   /** Leaves the node: its room lets the player go, and every other player's figure and its people are taken away. */
   leave(): void {
+    removeEventListener(ACCOUNT_CHANGED, this.renamed);
     this.link.close?.();
     this.otherPlayers.clear();
     this.arrivals.clear();

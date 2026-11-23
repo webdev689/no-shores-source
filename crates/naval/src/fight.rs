@@ -143,6 +143,8 @@ pub struct Fight {
     fittings: BTreeMap<ShipId, fitting::Fitting>,
     /// Each ship a Web's balls struck in the rigging: until when, and the share of its turn it costs.
     webbed: BTreeMap<ShipId, (f64, f64)>,
+    /// Each player's lay as long as it has been held (`fight_focus.rs`).
+    held: BTreeMap<ShipId, focus::Held>,
     ambush: bool,
 }
 
@@ -270,8 +272,8 @@ impl Fight {
     pub fn new(seed: u32) -> Self {
         let ships = BTreeMap::new();
         let (balls, stems, fittings) = (Vec::new(), BTreeMap::new(), BTreeMap::new());
-        let webbed = BTreeMap::new();
-        Self { clock: 0.0, draws: Mulberry32::new(seed), ships, balls, stems, fittings, webbed, ambush: false }
+        let (webbed, held) = (BTreeMap::new(), BTreeMap::new());
+        Self { clock: 0.0, draws: Mulberry32::new(seed), ships, balls, stems, fittings, webbed, held, ambush: false }
     }
 
     /// A player's Sloop and one captain of `commission` in its rank's hull, put to sea on the ring round the Sloop,
@@ -455,6 +457,7 @@ impl Fight {
         self.stems.remove(&id);
         self.fittings.remove(&id);
         self.webbed.remove(&id);
+        self.held.remove(&id);
         for vessel in self.ships.values_mut() {
             if let Sailor::Captain(command) = &mut vessel.sailor {
                 command.mind.forget(id);
@@ -566,6 +569,8 @@ impl Fight {
 mod events;
 #[path = "fight_exotics.rs"]
 pub mod exotics;
+#[path = "fight_focus.rs"]
+pub mod focus;
 pub use events::{End, Event, Part, Piece, Refusal};
 #[path = "fitting.rs"]
 pub mod fitting;
