@@ -2,6 +2,8 @@ import { DECOR_TURNS, type Plot, decorRefusal, pieceOf } from './outpostLaw.ts';
 import { PLOT_M } from './outpostLaw.ts';
 import type { Ground } from './outpostPlaces.ts';
 import type { StripHint } from '../hints.ts';
+import { gearScreenOpen } from '../gearScreen.ts';
+import { chatOpen } from '../social/social.ts';
 
 /**
  * A piece of decoration being stood on an outpost's plot in the world: chosen on the Outposts page's Decorate part,
@@ -29,9 +31,10 @@ export const PLACING_HINTS: readonly StripHint[] = [
 
 let placing: Placing | null = null;
 
-/** Turns the ghost a step either way, or lets it go. */
+/** Turns the ghost a step either way, or lets it go; keys typed into the chat or a menu's field are theirs.
+ *  shortcut: plain keys, not bound controls, so a pad cannot turn a piece; bind them when the pad needs it. */
 function heard(event: KeyboardEvent): void {
-  if (!placing) return;
+  if (!placing || chatOpen() || gearScreenOpen()) return;
   if (event.key === 'Escape') letGo();
   else if (event.key === '[' || event.key === ']') {
     placing.turn = (placing.turn + (event.key === ']' ? 1 : DECOR_TURNS - 1)) % DECOR_TURNS;

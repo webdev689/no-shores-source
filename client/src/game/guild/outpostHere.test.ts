@@ -74,7 +74,7 @@ test('a raised outpost stands each structure and piece, walls them beside the no
   assert.equal(useWords(structure(3, 'horn', 12, 0, 1, 0)), 'Sound the War Horn');
 });
 
-test('a piece being placed stands its ghost at the feet, snapped to a quarter metre, red where the law refuses', async () => {
+test('a piece being placed stands its ghost just before the player, snapped to a quarter metre, red where the law refuses', async () => {
   const asked: unknown[] = [];
   const link = {
     outpost: () => Promise.resolve('The accounts are away.'),
@@ -87,16 +87,19 @@ test('a piece being placed stands its ghost at the feet, snapped to a quarter me
   here.take(SEEN);
   startPlacing('gull-cove-outpost', 'bench');
   const corner = [GROUND.plot[0] - PLOT_M / 2, GROUND.plot[1] - PLOT_M / 2] as const;
-  const open: readonly [number, number] = [corner[0] + 3.1, corner[1] + 30.4];
+  // Facing east, the bench (reaching 1.25 m) stands 2.25 m before the player's feet, clear of their body.
+  const open: readonly [number, number] = [corner[0] + 0.85, corner[1] + 30.4];
+  const east = Math.PI / 2;
+  here.uses(...open, () => undefined, east);
   const ghost = here.props([], open).at(-1);
   assert.equal(ghost?.module, 'bench');
   assert.deepEqual(ghost?.at.slice(0, 2), [corner[0] + 3, corner[1] + 30.5]);
   assert.ok((ghost?.tint?.[1] ?? 0) > (ghost?.tint?.[0] ?? 1), 'green where it may stand');
-  assert.equal(here.uses(...open, () => undefined)?.words, 'Place the Bench');
+  assert.equal(here.uses(...open, () => undefined, east)?.words, 'Place the Bench');
   const onHall = placeOf(structure(1, 'hall', 6, 6), GROUND, '').at;
   assert.equal(here.uses(onHall[0], onHall[1], () => undefined)?.words, 'A structure stands there.');
   assert.ok((here.props([], [onHall[0], onHall[1]]).at(-1)?.tint?.[0] ?? 0) > 0.5, 'red where it may not');
-  const place = here.uses(...open, () => undefined);
+  const place = here.uses(...open, () => undefined, east);
   place?.run();
   place?.run();
   await Promise.resolve();

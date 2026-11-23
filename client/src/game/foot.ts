@@ -519,7 +519,9 @@ export class Foot {
       entrances: this.held.entrances,
       module: this.module,
     };
-    const placeUse = (this.outpost?.uses ?? this.uses)?.(x, y, (asked) => fight.askGear(asked)) ?? null;
+    const placeUse = this.outpost
+      ? this.outpost.uses(x, y, (asked) => fight.askGear(asked), walker.player.facing)
+      : (this.uses?.(x, y, (asked) => fight.askGear(asked)) ?? null);
     const { mounted } = walker.player;
     const counters = countersOf(this.node);
     const { trips, speak } = this.context;

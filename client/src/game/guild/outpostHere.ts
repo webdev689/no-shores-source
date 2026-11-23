@@ -25,6 +25,8 @@ import { type Ground, type Placed, decorPlaceOf, placeOf, plotBoxes, socketOf } 
 const LOOK_MS = 15_000;
 /** How near a structure's socket, or a piece of decoration, E reaches, metres. */
 const REACH_M = 2.5;
+/** How far before the player a piece being placed stands, past its own reach. */
+const AHEAD_M = 1;
 const GHOST_GREEN = [0.25, 0.85, 0.35] as const;
 const GHOST_RED = [0.9, 0.2, 0.15] as const;
 const RAISE_WORDS = "Raise your guild's outpost here from the Guild tab.";
@@ -85,6 +87,8 @@ export class OutpostHere {
   /** The plot's boxes as last read, which the camera keeps clear of too. */
   walls: readonly Block[] = [];
   private takenUp: { readonly id: number; readonly why: string } | null = null;
+  /** The way the player faced when last asked what E does: a piece being placed stands before them. */
+  private facing = 0;
   private readonly timer: ReturnType<typeof setInterval>;
 
   readonly site: string;
@@ -178,12 +182,15 @@ export class OutpostHere {
     return this.joined?.all ?? shown;
   }
 
-  /** The piece being placed here, where the player's feet would stand it, and the law's words on it. */
+  /** The piece being placed here, stood just before the player (clear of their body, which it would wall in), and
+   *  the law's words on it. */
   private placing(feet: readonly [number, number]) {
     const placing = placingNow();
     const { seen } = this;
     if (!placing || placing.site !== this.site || !seen) return null;
-    return { placing, ...ghostOf(placing, feet, seen.plot, this.ground) };
+    const ahead = AHEAD_M + (pieceOf(placing.piece)?.reach ?? 0);
+    const spot = [feet[0] + Math.sin(this.facing) * ahead, feet[1] - Math.cos(this.facing) * ahead] as const;
+    return { placing, ...ghostOf(placing, spot, seen.plot, this.ground) };
   }
 
   /** A piece being placed as its ghost: green where it may stand, red where not. */
@@ -234,7 +241,8 @@ export class OutpostHere {
 
   /** What E does at (`x`, `y`): opens the Guild tab on the structure whose socket is near, takes up a piece of
    *  decoration, or, while the outpost is bare, says how to raise it. */
-  readonly uses = (x: number, y: number, ask: (asked: GearAsk) => void): Use | null => {
+  readonly uses = (x: number, y: number, ask: (asked: GearAsk) => void, facing = this.facing): Use | null => {
+    this.facing = facing;
     const placing = this.place([x, y], ask);
     if (placing) return placing;
     const { seen, ground, site } = this;
