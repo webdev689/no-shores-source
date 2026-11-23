@@ -320,6 +320,8 @@ export function startFrames(parts: FrameParts, playing: Playing): void {
     const { flow, helmMap } = playing;
     const viewport = { width: canvas.clientWidth, height: canvas.clientHeight };
     const paused = flow.mode !== 'sea' || flow.menu || gearScreenOpen() || socialUp();
+    // Her welcome is ashore only: a place left mid-welcome leaves nothing of the HUD set aside at sea.
+    hud.quiet = false;
     chatAtSea(here.waterAt?.(here.position)?.name ?? null);
     // The sea by weather round the ship, reaching as far as the view last looked; the land's swell until it opens.
     const swell = parts.seaWeather()?.follow(here.position, parts.seaView.reachM, seconds) ?? scene.land?.swell;

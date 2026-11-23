@@ -54,7 +54,7 @@ export interface WispFrame {
 export class WispScene {
   private readonly layout: WreckLayout;
   private course: WispCourse;
-  /** Where the ring camera stands for the course, worked out a frame after it; the camera's ways from following the
+  /** Where the ring camera stands for the course, worked out a frame after it where it can; the camera's ways from following the
    *  wisp to the rings and from the rings back, each worked out once; and the shot it goes back to. */
   private ringsFrom: Point | null = null;
   private leaving: ((share: number) => Aim) | null = null;
@@ -111,7 +111,8 @@ export class WispScene {
   frame(seconds: number, clock: number, back: Shot, feet: Point): WispFrame {
     this.seconds += seconds;
     // Laid again only should the room stand the player elsewhere: it is worked out once for where they stand. The ring
-    // camera's place is worked out a frame after its course, so the two never fall on one frame.
+    // camera's place is worked out a frame after its course, so the two fall on one frame only where a course is
+    // laid again once the rings are watched.
     const [x, y, z] = this.course.feet;
     if (Math.hypot(feet[0] - x, feet[1] - y, feet[2] - z) > RESTOOD_M) {
       this.course = wispCourse(feet, this.facing, this.layout, this.wind);
