@@ -235,3 +235,29 @@ test('cues sharing one recording are all held from its one fetch, each heard the
     assert.ok(samples.play(audio as unknown as AudioContext, out, id), `${id} heard at once`);
   assert.equal(samples.bytes, 100 * 4, 'its samples counted once');
 });
+
+test('a cue asked once another holds their shared recording takes the same samples, never fetching it again', async () => {
+  const asked: string[] = [];
+  let failing = true;
+  const read = (url: string): Promise<Fetched> => {
+    asked.push(url);
+    if (failing) return Promise.reject(new Error('offline'));
+    return Promise.resolve({ bytes: new ArrayBuffer(100), total: 100 });
+  };
+  const shared = {
+    base: 'https://r2/',
+    sounds: { 'hit.blade': { key: 'hit.mp3' }, 'block.shield': { key: 'hit.mp3' } },
+  };
+  const samples = new Samples(shared, read);
+  const audio = fakeAudio();
+  samples.wake(audio as unknown as AudioContext);
+  await settled();
+  [failing, audio.currentTime] = [false, 1000];
+  samples.want('hit.blade');
+  await settled();
+  samples.want('block.shield');
+  await settled();
+  assert.equal(asked.length, 2, 'the failed fetch, then one for both');
+  assert.equal(audio.decoded, 1, 'decoded once');
+  assert.ok(samples.play(audio as unknown as AudioContext, {} as AudioNode, 'block.shield'), 'heard at once');
+});

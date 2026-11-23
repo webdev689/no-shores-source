@@ -4,7 +4,7 @@ type: reference
 # Testing
 
 Tests say what the code does ([[Tests Check Behaviour]]). They run in `cargo xtask check`, and the whole run stays
-fast enough to run before every push; but the Blender pipelines' tests run in their own workflows, as their tools
+fast enough to run before every push; but the asset pipelines' tests run in their own workflows, as their tools
 change: `tools/flora`'s, `tools/islands`', `tools/dungeon`'s, `tools/modules`', `tools/freesound`'s and the Lattice's
 (`tools/test_forge_lattice.py`, whose `MergeFoe` cases CI runs too). `tools/item-pictures/test_pixels.py` runs in no
 workflow ([[Item Pictures]]).

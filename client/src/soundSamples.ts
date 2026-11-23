@@ -125,12 +125,18 @@ export class Samples {
     for (const id of ids) this.kept.delete(id);
   }
 
-  /** Fetches each of `id`'s files not held or on its way. */
+  /** Fetches each of `id`'s files not held or on its way; one another cue holds whole, it holds too. */
   want(id: string): void {
     const sound = this.bank.sounds[id];
     if (!sound || !this.audio) return;
     const held = this.held.get(id) ?? [];
-    for (const file of keysOf(sound)) if (!held.some((each) => each.file === file)) this.fetch(id, file, 0);
+    for (const file of keysOf(sound)) {
+      if (held.some((each) => each.file === file)) continue;
+      const whole = [...this.held.values()].flat().find((each) => each.file === file && each.chunk === null);
+      // A copy of its own, as each cue keeps when it last played.
+      if (whole) this.keep(id, { ...whole });
+      else this.fetch(id, file, 0);
+    }
   }
 
   /** The bytes of decoded samples held now, a recording several cues share counted once. */

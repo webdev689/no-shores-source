@@ -30,19 +30,19 @@ export function refusedWords(answer: number): string | null {
   return answer === TO_SHIP ? null : 'You cannot return to your ship now.';
 }
 
-/** Asks the room whether the player may return to their ship: null once it says yes, or offline, where no room judges;
- *  else why not. A fallen player is refused at once, as the room would; online, a room out of reach (`asker` null) or
- *  yet to send the player's gear gives no yes. */
+/** Asks the room whether the player may return to their ship: null once it says yes, or with no room to ask (offline,
+ *  or a room lost for good, played on alone); else why not. A fallen player is refused at once, as the room would; a
+ *  room joining again (`rejoining`), or yet to send the player's gear, gives no yes. */
 export async function askToShip(
   asker: () => ShipAsker | null,
   fallen: boolean,
-  online: boolean,
+  rejoining: () => boolean,
   wait: (span: number) => Promise<void> = (span) => new Promise((done) => setTimeout(done, span)),
 ): Promise<string | null> {
   if (fallen) return refusedWords(FALLEN);
-  if (!online) return null;
   const first = asker();
-  if (!first?.gear) return UNANSWERED;
+  if (!first) return rejoining() ? UNANSWERED : null;
+  if (!first.gear) return UNANSWERED;
   const before = first.gear.answered;
   first.ask({ kind: ASKS.toShip });
   for (let waited = 0; waited < ANSWER_WAIT_MS; waited += POLL_MS) {
@@ -55,14 +55,17 @@ export async function askToShip(
   return UNANSWERED;
 }
 
-/** Returns the player on foot to their ship on the room's yes (offline at once), else says why: `travel` goes, `note`
- *  tells the HUD. */
+/** Returns the player on foot to their ship on the room's yes (with no room, at once), else says why: `travel` goes,
+ *  `note` tells the HUD. */
 export function returnToShip(
-  foot: { readonly gear: ShipAsker | null; readonly fallen: boolean } | null,
-  online: boolean,
+  foot: { readonly gear: ShipAsker | null; readonly fallen: boolean; readonly rejoining: boolean } | null,
   travel: () => void,
   note: (words: string) => void,
 ): void {
-  const asked = askToShip(() => foot?.gear ?? null, foot?.fallen ?? false, online);
+  const asked = askToShip(
+    () => foot?.gear ?? null,
+    foot?.fallen ?? false,
+    () => foot?.rejoining ?? false,
+  );
   void asked.then((why) => (why === null ? travel() : note(why)));
 }

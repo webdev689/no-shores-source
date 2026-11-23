@@ -136,7 +136,7 @@ activities' word (`startActivities`: a gate that shut, a company that fell); eac
 | From | Happening | To |
 |---|---|---|
 | Arriving | The ground round the spawn is in | On foot in Overlook's social space |
-| On foot | M, then Return to ship | The room's word first: refused while fallen or within 10 s of a foe's blow, said in a toast (`toShip.ts`, [[The Audit's Leftovers Are Fixed as Claude Suggested]]), and online no yes while the room is out of reach or has not sent the gear; else the veil, "Returning to your ship", then at sea |
+| On foot | M, then Return to ship | The room's word first: refused while fallen or within 10 s of a foe's blow, said in a toast (`toShip.ts`, [[The Audit's Leftovers Are Fixed as Claude Suggested]]), and no yes while the room joins again or has not sent the gear (a room lost for good is played on alone, and the page goes); else the veil, "Returning to your ship", then at sea |
 | On foot, or behind the veil to land | The room's gate shuts to the character, or it came by no way that leads there | The veil, the room's reason and "Returning to your ship", then at sea |
 | At sea | Enter, L or the offer to dock or go ashore, off a coast | Over the island's side |
 | Over the side | A mark clicked, then clicked again or Enter | The veil, "Landing at" the node, then on foot there |

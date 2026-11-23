@@ -135,8 +135,8 @@ export interface RoomDoor {
   /** Sends what still lies for a player to their mail, at sea from the deck they stand on: called as they leave,
    *  before their character is read for its last save. */
   mailLying(player: number): void;
-  /** A player's character as it is kept between sessions (JSON), at sea with their ship's hurts; null in a fleet, at
-   *  sea before the accounts gave it, or for no such player. */
+  /** A player's character as it is kept between sessions (JSON), at sea with their ship's hurts (a new one until the
+   *  accounts gave theirs); null in a fleet or for no such player. */
   character(player: number): string | null;
   /** Gives a player the character kept for them; false if the text is not one, they are not in, or the gate shuts. */
   restoreCharacter(player: number, kept: string): boolean;
