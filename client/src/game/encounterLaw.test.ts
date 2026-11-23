@@ -475,3 +475,27 @@ test("the player stands in foul water only on a running Ascent's drowned floor, 
     "the room's word, though the page has the feet out",
   );
 });
+
+test('a beam beside the eye fades away, so it never stands across the view, while the rings on the floor stay', () => {
+  const where = () => [10, 1.6, 0] as const;
+  const broken = seen({ seals: seen().seals.map((each) => ({ ...each, state: SEAL_STATE.broken })) });
+  const warded = { ...broken, woken: true, boss: 7, ward: 1 };
+  const [anchor] = layout.encounters!.anchors;
+  assert.ok(anchor);
+  const anchorMarks = (eye: readonly [number, number, number] | null) =>
+    marksOf(encounterMarks(layout.encounters!, warded, 0, where, null, eye)).filter(
+      (mark) => mark.colour === '0.78,0.55,1' && Math.hypot(mark.at[0]! - anchor[0]!, mark.at[1]! - anchor[1]!) < 1,
+    );
+  const beam = (eye: readonly [number, number, number] | null) =>
+    Math.max(
+      0,
+      ...anchorMarks(eye)
+        .filter((mark) => mark.at[2]! > 1)
+        .map((mark) => mark.alpha),
+    );
+  const at = (away: number) => [anchor[0]! + away, anchor[1]!, 1.7] as const;
+  assert.ok(beam(null) > 0 && beam(at(10)) === beam(null), 'whole from afar');
+  assert.equal(beam(at(0.5)), 0, 'none with the eye beside it');
+  assert.ok(beam(at(2.75)) > 0 && beam(at(2.75)) < beam(null), 'fading between');
+  assert.ok(anchorMarks(at(0.5)).length > 0, 'its ring on the floor still shown');
+});

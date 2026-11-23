@@ -141,7 +141,7 @@ function encounterFrame(
   const plan = layout?.encounters;
   if (!layout || !plan || !seen) return null;
   const heard = cues.frame(plan, seen, events, { ...bodies, seconds: clock });
-  marks.push(...encounterMarks(plan, seen, clock, bodies.where, heard.flash));
+  marks.push(...encounterMarks(plan, seen, clock, bodies.where, heard.flash, bodies.shot.eye));
   const banner = encounterBanner(layout, seen, bodies.feet);
   const beat = encounterBeat(events);
   const running = seen.seals.some((seal) => seal.state === SEAL_STATE.running);

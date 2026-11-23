@@ -53,6 +53,9 @@ const HELD_FILL = 0.3;
 /** An anchor at rest, before or between wards: dim, under a short beam, so it is learnt, not called for. */
 const ANCHOR_RESTING = 0.4;
 const RESTING_BEAM = { height: 1.4, half: 0.25 } as const;
+/** How near the eye a beam fades away, metres along the ground: none within `gone`, whole from `whole` out, so a beam
+ *  beside the camera never stands across the view as a wall of colour. */
+const NEAR = { gone: 1.5, whole: 4 } as const;
 /** How low feet stand to be on an Ascent's drowned floor, metres (seals.rs WET_M). */
 const WET_M = 0.05;
 /** The dome of light over the warded Boss: its reach round it and how many bands of light draw it. */
@@ -266,11 +269,32 @@ function glyphAt(out: number[], middle: Point, reach: number, colour: Colour, al
   markRing(out, middle, heart[0] ?? 0, heart[1] ?? 0, [...colour, alpha]);
 }
 
+/** A beam over `base`, faded as the eye comes near it along the ground (`NEAR`); whole where no eye is given. */
+function beamNear(
+  out: number[],
+  base: Point,
+  size: { readonly height: number; readonly half: number },
+  [red, green, blue, alpha = 1]: readonly number[],
+  eye: Point | null,
+): void {
+  const away = eye ? Math.hypot((base[0] ?? 0) - (eye[0] ?? 0), (base[1] ?? 0) - (eye[1] ?? 0)) : NEAR.whole;
+  const shown = Math.min(1, Math.max(0, (away - NEAR.gone) / (NEAR.whole - NEAR.gone)));
+  if (shown > 0) markBeam(out, base, size, [red ?? 1, green ?? 1, blue ?? 1, alpha * shown]);
+}
+
 /** A ring `reach` round a piece on the floor, a beam over it while `beam`, in `colour` at `alpha`. */
-function ringAt(out: number[], middle: Point, reach: number, colour: Colour, alpha: number, beam = false): void {
+function ringAt(
+  out: number[],
+  middle: Point,
+  reach: number,
+  colour: Colour,
+  alpha: number,
+  beam = false,
+  eye: Point | null = null,
+): void {
   markRing(out, middle, Math.max(0, reach - BAND_M), reach, [...colour, alpha]);
   markRing(out, middle, 0.15, 0.3, [...colour, alpha]);
-  if (beam) markBeam(out, middle, BEAM, [...colour, alpha]);
+  if (beam) beamNear(out, middle, BEAM, [...colour, alpha], eye);
 }
 
 /** Two triangles of one colour from four corners in turn, each corner's opacity its own. */
@@ -342,6 +366,7 @@ function sealMarks(
   reach: EncounterLayout['reach'],
   beat: number,
   seconds: number,
+  eye: Point | null,
 ): void {
   if (seal.state === SEAL_STATE.broken) return;
   if (seal.kind === SEAL_KIND.ascent) padMarks(out, plan.pads, seconds);
@@ -357,7 +382,7 @@ function sealMarks(
               ? [DONE, 0.95, false]
               : [AT_REST, 0.35 + 0.1 * beat, false];
       markRing(out, rune, reach.rune - BAND_M, reach.rune, [...colour, alpha]);
-      if (beam) markBeam(out, rune, BEAM, [...colour, alpha]);
+      if (beam) beamNear(out, rune, BEAM, [...colour, alpha], eye);
       glyphAt(out, rune, reach.rune, colour, alpha, index);
     });
   if (seal.kind === SEAL_KIND.weighing)
@@ -365,19 +390,19 @@ function sealMarks(
       // At rest under a beam, so every plate in play is found from across the room; held, gold and filled, its beam
       // gone so it never stands in the way of the camera of the player on it.
       const held = seal.marks[index] === 1;
-      ringAt(out, plate, reach.plate, held ? LIT : AT_REST, held ? 1 : 0.5 + 0.2 * beat, !held);
+      ringAt(out, plate, reach.plate, held ? LIT : AT_REST, held ? 1 : 0.5 + 0.2 * beat, !held, eye);
       if (held) markRing(out, plate, 0, reach.plate - BAND_M, [...LIT, HELD_FILL]);
     });
   const [first] = plan.pieces;
   if (seal.kind === SEAL_KIND.ascent && first) {
     const [holding = 0, living = 0] = seal.marks;
     const all = living > 0 && holding >= living;
-    ringAt(out, first, 0.6, mix(AT_REST, LIT, living > 0 ? holding / living : 0), 0.6 + 0.3 * beat, !all);
+    ringAt(out, first, 0.6, mix(AT_REST, LIT, living > 0 ? holding / living : 0), 0.6 + 0.3 * beat, !all, eye);
   }
   if (seal.kind === SEAL_KIND.holdfast && first) {
     const held = seal.marks[0] === 1;
     const colour = mix(DRAINED, held ? LIT : AT_REST, seal.relic);
-    ringAt(out, first, reach.relic, colour, held ? 0.9 : 0.7, !held);
+    ringAt(out, first, reach.relic, colour, held ? 0.9 : 0.7, !held, eye);
     markRing(out, first, reach.relic - 0.3, reach.relic - 0.15, [...colour, 1], [0, 2 * Math.PI * seal.relic]);
   }
 }
@@ -392,36 +417,39 @@ export function encounterMarks(
   seconds: number,
   where: (id: number) => Point | null,
   flash: { readonly at: number; readonly share: number } | null = null,
+  eye: Point | null = null,
 ): number[] {
   const out: number[] = [];
   const beat = 0.5 + 0.5 * Math.sin(seconds * 4);
   plan.seals.forEach((seal, index) => {
     const state = seen.seals[index];
-    if (state) sealMarks(out, seal, state, plan.reach, beat, seconds);
+    if (state) sealMarks(out, seal, state, plan.reach, beat, seconds, eye);
   });
   // Every anchor shows while the Boss stands, dim at rest so the company learns where they are before a ward.
   const fallen = seen.woken && !seen.boss;
   if (!fallen && seen.ward === 0)
     plan.anchors.forEach((anchor) => {
       ringAt(out, anchor, plan.reach.anchor, ANCHOR, ANCHOR_RESTING);
-      markBeam(out, anchor, RESTING_BEAM, [...ANCHOR, ANCHOR_RESTING]);
+      beamNear(out, anchor, RESTING_BEAM, [...ANCHOR, ANCHOR_RESTING], eye);
     });
   if (seen.ward > 0)
     plan.anchors.forEach((anchor, index) => {
       const held = seen.anchors[index] ?? 0;
-      ringAt(out, anchor, plan.reach.anchor, held >= 1 ? DONE : ANCHOR, held >= 1 ? 0.9 : 0.55 + 0.3 * beat, held < 1);
+      const alpha = held >= 1 ? 0.9 : 0.55 + 0.3 * beat;
+      ringAt(out, anchor, plan.reach.anchor, held >= 1 ? DONE : ANCHOR, alpha, held < 1, eye);
       if (held > 0 && held < 1)
         markRing(out, anchor, plan.reach.anchor - 0.3, plan.reach.anchor - 0.15, [...LIT, 1], [0, 2 * Math.PI * held]);
     });
   const light = seen.reckoningTicks > 0 ? plan.anchors[seen.reckoningAt] : undefined;
   if (light) {
     markRing(out, light, plan.reach.light - BAND_M * 2, plan.reach.light, [...LIGHT, 0.7 + 0.3 * beat]);
-    markBeam(out, light, LIGHT_BEAM, [...LIGHT, 0.55 + 0.35 * beat]);
+    beamNear(out, light, LIGHT_BEAM, [...LIGHT, 0.55 + 0.35 * beat], eye);
   }
   const landed = flash && flash.share > 0 ? plan.anchors[flash.at] : undefined;
   if (landed && flash) {
     const { share } = flash;
-    markBeam(out, landed, { height: LIGHT_BEAM.height, half: LIGHT_BEAM.half * (1 + share * 2) }, [...LIGHT, share]);
+    const size = { height: LIGHT_BEAM.height, half: LIGHT_BEAM.half * (1 + share * 2) };
+    beamNear(out, landed, size, [...LIGHT, share], eye);
     markRing(out, landed, 0, plan.reach.light * (1 + (1 - share) * 4), [...LIGHT, share * 0.8]);
   }
   const boss = seen.boss ? where(seen.boss) : null;

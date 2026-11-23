@@ -516,7 +516,9 @@ or glows, and is read as standing none (`readDungeon`).
   while a ward stands, brighter under a beam and filling as it is stood on, a ring round the Boss and a dome of light
   over it; the slam's ring 4 m round the Boss, filling as it comes; a red ring round the Boss through Fury; a
   Reckoning's ring of light under a
-  tall beam while it is shown, and a flash from the light as it lands. Under the compass the public event's banner
+  tall beam while it is shown, and a flash from the light as it lands. Each beam fades as the camera's eye comes near
+  it along the ground, gone within 1.5 m and whole from 4 m, so one beside the camera never stands across the view;
+  the rings on the floor stay (`encounterMarks`' `eye`). Under the compass the public event's banner
   shows the seals broken of how many and, away from every seal, the nearest unbroken one by its room's middle in the
   banner's one line to the next; in a seal's room, that seal with its task in a line
   ("Step on the runes in the order they light", "Hold all three plates together" or "Hold both plates together",
