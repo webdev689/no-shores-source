@@ -1,5 +1,5 @@
 ---
-id: 153
+id: 158
 title: "A pinned fight fingerprint broke after several fixes at once: each fix was taken out alone to find which moved it, and the fight it pins measured, before re-pinning"
 status: open
 type: open-source
