@@ -1,9 +1,10 @@
 // Where Elder Maren Hale walks in her welcome, and when she speaks. She starts at a point of the townsfolk's ways a
-// way off from the player, out of their view where she can, and comes to them by the ways, greeting them from the
-// ways where they stand off them, again on each arrival of a walk taken up; then she leads them to the plaza's counters by the shortest way to each counter's
-// way point, the nearest stop first each time, waiting at each for the player to come within reach before she says
-// its lines. A player who leaves her far behind for a minute ends the walk, and she goes back behind her counter, as
-// she does once every stop is said. She keeps to the middle of the ways (`life/ways.ts`), which keep clear of every
+// way off from the player, out of their view where she can, and comes to them by the ways, calling her greeting from
+// the ways where they stand off them, again on each arrival of a walk taken up; then she leads them to the plaza's
+// counters by the shortest way to each counter's way point, the nearest stop first each time, waiting at each for the
+// player to come within reach before she says its lines. The HUD bids them follow only once she has greeted them. A
+// player who leaves her far behind for a minute ends the walk, and she goes back behind her counter, as she does once
+// every stop is said. She keeps to the middle of the ways (`life/ways.ts`), which keep clear of every
 // solid and of Shape, and goes round her counter's end clear of the arcade's columns. No drawing and no words here:
 // the welcome (`welcome.ts`) draws her where this says and plays the scene it names.
 import { FULL_WALK } from '../../player/playerMoves.ts';
@@ -23,6 +24,8 @@ export const START_FAR_M = 15;
  *  Once they lag past it, they have caught up again only within the nearer reach, so the prompt does not flicker. */
 export const FOLLOW_M = 6;
 export const CAUGHT_UP_M = 5;
+/** How near the player she calls her greeting from the ways where they stand off them, metres. */
+export const CALL_M = 15;
 /** How far behind her a player is left, metres, and for how long, seconds, before the walk ends. */
 export const LEFT_BEHIND_M = 40;
 export const LEFT_BEHIND_S = 60;
@@ -94,8 +97,6 @@ export class WelcomeWalk {
   /** The place on the ways nearest the player her path to them was found for. */
   private aim: Point | null = null;
   private lagged = false;
-  /** Whether, coming to the player, she has stood on the ways nearest them: from then the prompt goes by distance. */
-  private reached = false;
   /** How long the player has been left far behind her, seconds. */
   private behindS = 0;
 
@@ -151,17 +152,17 @@ export class WelcomeWalk {
       this.behindS = far > LEFT_BEHIND_M ? this.behindS + seconds : 0;
       if (this.behindS >= LEFT_BEHIND_S) this.goHome();
     }
-    const following = this.phase === 'leading' || this.phase === 'waiting' || (this.phase === 'coming' && this.reached);
+    // Only one she has greeted is bid follow: before, she is coming to them, not leading.
+    const following = this.phase === 'leading' || this.phase === 'waiting';
     this.lagged = following && far > (this.lagged ? CAUGHT_UP_M : FOLLOW_M);
     const lagging = this.lagged;
     if (this.phase === 'coming') {
       if (far <= MEET_M + 1e-6) return this.met(player);
       if (!this.comeTo(player, seconds)) return { say: null, lagging };
-      // On the ways nearest the player: she greets them from there once they are in reach, as at a stop.
+      // On the ways nearest the player: she calls her greeting from there once they are within call.
       maren.facing = bearingTo(this.where, player);
-      if (far <= FOLLOW_M) return this.met(player);
-      [this.reached, this.lagged] = [true, true];
-      return { say: null, lagging: true };
+      if (far <= CALL_M) return this.met(player);
+      return { say: null, lagging: false };
     } else if (this.phase === 'leading' || this.phase === 'returning') {
       this.walk(seconds);
       if (this.path.length === 0) this.phase = this.phase === 'leading' ? 'waiting' : 'done';

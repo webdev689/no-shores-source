@@ -5,6 +5,7 @@ import { inPlaza, plazaPoint } from '../townsfolk.ts';
 import { WayGraph } from '../life/ways.ts';
 import { FRAME, SHAPE_SPOTS, STATIONS, WAYS, solidAt } from './plazaForTests.ts';
 import {
+  CALL_M,
   CAUGHT_UP_M,
   FOLLOW_M,
   LEFT_BEHIND_S,
@@ -79,7 +80,7 @@ function playerPlaces(step: number): [number, number][] {
 }
 
 /** She comes to a player standing still at `start`, by the lanes: clear of every solid, of Shape and of the player,
- *  until she greets them or stands on the lanes nearest them, waiting with the prompt. */
+ *  until she greets them or stands on the lanes nearest them, waiting with no prompt. */
 function cameTo(start: Point, seen?: (point: Point) => boolean): WelcomeWalk {
   const walk = WelcomeWalk.round(STATIONS, FRAME, GRAPH, start, [], seen) as WelcomeWalk;
   const from = inPlaza(FRAME, start);
@@ -94,8 +95,8 @@ function cameTo(start: Point, seen?: (point: Point) => boolean): WelcomeWalk {
       return walk;
     }
     if (!walk.maren.walking && tick > 0) {
-      assert.ok(asked.lagging, `${why}: she waits on the lanes with the prompt`);
-      assert.ok(near(walk, start) > FOLLOW_M, `${why}: she waits only for a player out of reach`);
+      assert.ok(!asked.lagging, `${why}: she waits on the lanes, bidding no one follow before her greeting`);
+      assert.ok(near(walk, start) > CALL_M, `${why}: she waits only for a player out of call`);
       return walk;
     }
   }
@@ -106,13 +107,13 @@ test('coming to a player wherever they stand, she keeps to the lanes, clear of e
   for (const [toward, across] of playerPlaces(8)) cameTo(place(toward, across));
 });
 
-test('coming to a player out of reach of the lanes, she waits on them and greets them once they come near', () => {
-  const portico = place(-50, 4);
+test('coming to a player out of call of the lanes, she waits on them and calls her greeting once they come near', () => {
+  const portico = place(-58, 4);
   const walk = cameTo(portico);
   assert.equal(walk.phase, 'coming');
   const { toward } = inPlaza(FRAME, [walk.maren.x, walk.maren.y]);
   assert.ok(Math.abs(toward - -38) < 1e-6, `on the landward lane, at ${toward}`);
-  assert.equal(walk.step(0.1, place(-43, 4)).say, MET_SCENE);
+  assert.equal(walk.step(0.1, place(-50, 4)).say, MET_SCENE, 'within call, 12 m off the lane');
 });
 
 test('between the last row and the benches, she greets the player from the row before them', () => {
@@ -237,19 +238,18 @@ test('ended, she stops where she is; a plaza without her counter has no welcome'
   assert.equal(WelcomeWalk.round(without, FRAME, GRAPH, SPAWNS[0] as Point), null);
 });
 
-test('coming to a player who strolls along off the lanes, her Follow prompt shows once and stays', () => {
-  const under = (across: number) => plazaPoint(FRAME, -50, across);
-  const walk = WelcomeWalk.round(STATIONS, FRAME, GRAPH, under(4)) as WelcomeWalk;
-  const shown: boolean[] = [];
-  // The player stands under the portico, 12 m off the landward lane, until she waits on it, then strolls across.
-  let across = 4;
-  for (let tick = 0; tick < 3000 && walk.phase === 'coming'; tick++) {
-    shown.push(walk.step(0.1, under(across)).lagging);
-    if (shown.includes(true) && across < 28) across += 0.08;
+test('coming to a player anywhere on the plaza, she bids them follow only once she has greeted them', () => {
+  for (const at of [place(-58, 4), place(0, 40), place(-50, 4), ...SPAWNS]) {
+    const walk = WelcomeWalk.round(STATIONS, FRAME, GRAPH, at, [MET_SCENE]) as WelcomeWalk;
+    // The player stands where they are until she has greeted them, then walks in from under the portico.
+    let player = at;
+    for (let tick = 0; tick < 3000 && walk.phase === 'coming'; tick++) {
+      const { lagging } = walk.step(0.1, player);
+      assert.equal(lagging, false, `no Follow before her greeting, for a player at ${at}`);
+      if (tick > 600) player = [player[0], player[1] + (inPlaza(FRAME, player).toward < -45 ? 0.1 : 0)];
+    }
+    assert.equal(walk.phase, 'speaking', `she greets a player at ${at}`);
   }
-  const shows = shown.filter((lagging, tick) => lagging && !shown[tick - 1]).length;
-  assert.equal(shows, 1, 'shown once she waits on the lanes, kept while she follows along them, cleared as they meet');
-  assert.equal(walk.phase, 'speaking', 'she greets them');
 });
 
 test('she leads by the ways and stops at each stop’s counters’ way points, on the ways until she goes home', () => {

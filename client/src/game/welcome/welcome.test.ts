@@ -271,3 +271,17 @@ test('a browser that keeps nothing still plays the welcome once the stranger has
   assert.equal(await frames(welcome, 4, () => ARRIVAL), 1, 'Elder Maren Hale comes');
   welcome.leave();
 });
+
+test('a player who leaves her far behind a minute ends the walk, and the welcome is given', async () => {
+  const { after, kept, said } = page();
+  const welcome = after();
+  welcome.storyEnded(stranger(1));
+  await frames(welcome, 2, () => ARRIVAL);
+  await untilSaid(welcome, said);
+  assert.equal(kept.get(WELCOME_KEY), 'due', 'greeted, still due');
+  // Gone a long way off along the parapet, standing there while she leads, waits and walks home.
+  const far: readonly [number, number] = [ARRIVAL[0] + 300, ARRIVAL[1]];
+  assert.equal(await frames(welcome, 2_000, () => far), 0, 'she is home, the walk over');
+  assert.equal(kept.get(WELCOME_KEY), 'played');
+  assert.ok(welcome.past, 'the houses’ roads open');
+});

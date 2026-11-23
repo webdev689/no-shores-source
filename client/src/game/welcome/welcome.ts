@@ -1,10 +1,10 @@
 // Elder Maren Hale's welcome, played on foot in Overlook's social space once the stranger has gone: she comes to the
 // player and walks them round the plaza (`walk.ts`), saying each stop's lines in the dialogue box, and the HUD saying
-// to follow her while the player lags. It is no cutscene: the player
-// walks where they like the whole time. While she walks, her counter stands empty; opening it ends the walk, and she
-// is back behind it, the plaza's own figure of her. Due once the story ends, kept in the browser with the stops said,
-// so a walk ended early (the place left, the page reloaded, the player gone far from her) takes up from them on the
-// next arrival; played once every stop is said, or once her counter is opened.
+// to follow her while the player lags once she has greeted them. It is no cutscene: the player walks where they like
+// the whole time. While she walks, her counter stands empty; opening it ends the walk, and she is back behind it, the
+// plaza's own figure of her. Due once the story ends, kept in the browser with the stops said, so a walk ended early
+// (the place left, the page reloaded) takes up from them on the next arrival; played once every stop is said, once
+// the player has left her far behind a minute, or once her counter is opened.
 import type { CardAt, Cards } from '../../player/cards.ts';
 import type { Dress } from '../../player/dressing.ts';
 import { walkFrameSeconds } from '../../player/playerMoves.ts';
@@ -135,6 +135,8 @@ export class Welcome {
       const asked = this.walk.step(seconds, [you.x, you.y]);
       if (asked.say) this.say(asked.say);
       if (this.walk.phase === 'done') {
+        // Home with every stop said, or a player who left her behind a minute: either way the welcome is given.
+        keepWelcome(this.parts.kept, 'played');
         this.finish();
         return [];
       }
