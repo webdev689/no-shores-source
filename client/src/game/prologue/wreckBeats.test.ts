@@ -368,6 +368,22 @@ test('the player felled by Thule is never told they will rise: the boss fight en
   assert.ok(!calls.some((call) => call.includes('Fallen')), 'no death words over the fade');
 });
 
+test('the push in to Thule goes 2.6 m in at most, so on the long quarterdeck it never passes the player', async () => {
+  const { story } = recorded(FOOT_VIEW);
+  const plate = { show: () => undefined, hide: () => undefined } as unknown as Nameplate;
+  const fight = new WreckFight(story, layout, scenery, Promise.resolve(stillRun({ dead: false }, true)), plate);
+  await Promise.resolve();
+  const [x, y] = layout.arena.thule;
+  const head = [x, y, topAt(courseOf(layout), x, y) + 1.9];
+  const away = (eye: readonly number[]) => Math.hypot(...head.map((part, axis) => part - (eye[axis] ?? 0)));
+  const eyeAt = (seconds: number) => fight.frame(tick(seconds))?.shot.eye ?? [Infinity, Infinity, Infinity];
+  const start = away(eyeAt(0.016));
+  let nearest = start;
+  for (let since = 0; since < 2; since += 0.05) nearest = Math.min(nearest, away(eyeAt(0.05)));
+  assert.ok(nearest < start - 2, `it pushed in: from ${start} m to ${nearest} m`);
+  assert.ok(nearest > start - 2.6 - 0.05, `no farther than 2.6 m: from ${start} m to ${nearest} m`);
+});
+
 test('the crew celebrating the throw overboard stand clear of what stands on its deck', () => {
   const { story } = recorded();
   const course = courseOf(layout);

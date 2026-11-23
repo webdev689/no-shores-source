@@ -16,5 +16,4 @@ line under it).
 
 - A change of scene through black fades out over 2 s, holds black at least a second, and fades in over 2.5 s
   ([[Prologue]], "Between scenes").
-- While the next scene is still coming, the logo and LOADING stand over the black, and its first frames are drawn
-  unseen under it.
+- While the next scene is still coming, the logo and LOADING stand over the black.

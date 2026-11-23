@@ -14,5 +14,5 @@ prolouge. Just use screen darkening, screen blinking."
 ## What it settles
 
 - The prologue's wakings (the wake on the wreck, the shore) and the deep's closing eyes draw no eyelids: the view
-  darkens and lightens as the eyes blink, and pulses darker with each beat of the heart until they are open
-  ([[Cinema]], [[Prologue]]).
+  darkens and lightens as the eyes blink, and pulses darker with each beat of the heart ([[Cinema]], [[Prologue]]).
+- It replaces the lids, their light and their lashes in [[The Wreck Opens by Teaching the Player]].
