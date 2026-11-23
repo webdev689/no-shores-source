@@ -663,3 +663,33 @@ pub(crate) fn horsed(room: &mut Room, player: PlayerId) {
     let horse = gear::horses::horse(id, "dun").expect("a coat");
     character.items.insert(id, (horse, gear::character::At::Worn(gear::kinds::Slot::Mount)));
 }
+
+#[test]
+fn the_test_grounds_hands_give_no_horse() {
+    use crate::asks::Grant;
+    let mut room = room();
+    let player = room.join().expect("a room with space");
+    room.answer(player, Asked::Grant(Grant::Item { kind: gear::Kind::Horse, rarity: Rarity::Rare, level: 20 }));
+    let character = &room.player(player).expect("in").character;
+    assert!(character.items.values().all(|(item, _)| item.kind != gear::Kind::Horse), "a horse is bought, not granted");
+}
+
+#[test]
+fn a_player_on_foot_shows_others_no_horse_whatever_the_page_sends() {
+    let mut room = room();
+    let player = room.join().expect("a room with space");
+    let mut input = asking(1, &room, CombatInput::default());
+    input.intent.controls.mounted = true;
+    input.shown = crate::players::Shown { anim: "horsegallop".to_owned(), frame: 2, facing: 0.5 };
+    room.input(player, input).unwrap();
+    room.tick();
+    let shown = &room.player(player).expect("in").shown;
+    assert_eq!((shown.anim.as_str(), shown.facing), ("idle", 0.5), "no horse worn: the body stands");
+    horsed(&mut room, player);
+    let mut riding = asking(2, &room, CombatInput::default());
+    riding.intent.controls.mounted = true;
+    riding.shown = crate::players::Shown { anim: "horsegallop".to_owned(), frame: 2, facing: 0.5 };
+    room.input(player, riding).unwrap();
+    room.tick();
+    assert_eq!(room.player(player).expect("in").shown.anim, "horsegallop", "with one, the horse shows");
+}
