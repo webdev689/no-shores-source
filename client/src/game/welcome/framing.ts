@@ -41,8 +41,9 @@ const HALL_UPS_M = [10, 11, 8, 12, 7];
 const HALL_LENS = 1.35;
 const DOOR_SHARE = 1.08;
 const BANNER_M = 5;
-/** How far before a chapel, and how high, the eye stands as she names its house, metres: under the rings' height. */
-const CHAPEL_BACKS_M = [11, 13, 9, 15];
+/** How far before a chapel, and how high, the eye stands as she names its house, metres: under the rings' height;
+ *  the nearest stand before a column on the chapel's axis (Overlook's stand 8 to 10 m out from the side chapels). */
+const CHAPEL_BACKS_M = [11, 13, 9, 15, 7, 5.5];
 const CHAPEL_UPS_M = [3.5, 4.5, 2.6];
 /** How far below its target the view looks, a share of its lens: what it frames stands in the view's upper part,
  *  clear of the dialogue box over its lower middle. */

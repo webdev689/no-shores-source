@@ -143,6 +143,22 @@ test("a keeper behind a house's front wall, its window drawn but the wall solid 
   assert.ok(seen(shot, [...vault.keeper, GROUND + HEAD_M]), 'its keeper where the window is drawn, in the view');
 });
 
+test("a house's turn is seen from before a column standing on its chapel's axis, as in Overlook's Hall", () => {
+  // Overlook's columns stand 8 to 10 m out from each side chapel's counter, straight before it.
+  const storm = HALL_STATIONS[0] as StationInfo;
+  const column = box(storm.counter[0] + 9, storm.counter[1], 1, 1, 13);
+  const place = { stations: PLAZA, groundAt: ground, blocks: [...BLOCKS, column] };
+  const shot = hallShot(place, ['stormcallers'], OWN);
+  assert.ok(shot, 'a shot of the chapel');
+  const keeper = head(storm);
+  assert.ok(
+    blockReach(shot.eye, keeper, [...BLOCKS, column], 0.05) >=
+      Math.hypot(...keeper.map((each, axis) => each - (shot.eye[axis] ?? 0))) - 1e-6,
+    'its keeper seen clear of the column',
+  );
+  assert.ok(seen(shot, keeper), 'its keeper in the view');
+});
+
 test('a place no eye sees clearly gives no shot, so the view stays where it is', () => {
   const walled = { stations: PLAZA, groundAt: ground, blocks: [box(1000, 2000, 400, 400, 60)] };
   assert.equal(counterShot(walled, ['tack'], OWN), null);
