@@ -146,13 +146,12 @@ plan.seals.forEach((seal, index) => {
   freeze(true);
   const inside = door;
   stand(inside);
-  picture(inside, middle, 'third,5,30', `${kind}_waiting_inside`);
+  picture(inside, middle, 'first,0,12', `${kind}_waiting_inside`);
   freeze(false);
   const first = seal.pieces[0] ?? middle;
   if (seal.kind === LITANY) {
-    pause(400);
     freeze(true);
-    picture(inside, first, 'third,5,30', 'litany_show');
+    picture(inside, first, 'first,0,20', 'litany_show');
     freeze(false);
     // A step on the second rune before the first is lit is wrong: it flashes red for a second.
     const wrong = seal.pieces[1] ?? first;
@@ -164,14 +163,16 @@ plan.seals.forEach((seal, index) => {
   if (seal.kind === WEIGHING) {
     pause(800);
     freeze(true);
-    picture(inside, middle, 'third,5,30', 'weighing_running');
+    picture(inside, middle, 'first,0,12', 'weighing_running');
     freeze(false);
     const [plate, other] = [seal.pieces[0] ?? first, seal.pieces[1] ?? first];
     stand(plate);
     pause(800);
-    stand(other, undefined, 300);
+    // On the second plate's far side, still on it, looking back over it to the first.
+    const held = toward(other, plate, -0.6);
+    stand(held, undefined, 300);
     freeze(true);
-    picture(other, plate, 'third,6,35', 'weighing_plates_held');
+    picture(held, plate, 'third,6,30', 'weighing_plates_held');
     freeze(false);
   }
   if (seal.kind === ASCENT) {
@@ -194,7 +195,7 @@ plan.seals.forEach((seal, index) => {
       const top = [(stone[0] + stone[2]) / 2, (stone[1] + stone[3]) / 2];
       stand(top, stone[4] + 0.05, 200);
       freeze(true);
-      picture(top, door, 'third,3,5', 'ascent_on_stone');
+      picture(top, door, 'first,0,50', 'ascent_on_stone');
       // Off the stone before the clock runs again, so the seal stays for the Court's pictures.
       stand(door);
       freeze(false);
@@ -218,9 +219,8 @@ plan.seals.forEach((seal, index) => {
 // The Court: the end room from inside the doorway it is entered by, looking over the anchors.
 const anchors = middleOf(plan.anchors);
 const court = entry(layout.end);
-const courtInside = toward(court.door, anchors, 2);
-stand(courtInside);
-picture(courtInside, anchors, 'third,9,40', 'court_before_wake');
+stand(court.door);
+picture(court.door, anchors, 'first,0,10', 'court_before_wake');
 const [anchor0 = anchors, anchor1 = anchors, anchor2 = anchors] = plan.anchors;
 const byAnchor = toward(anchor2, anchors, -1.5);
 stand(byAnchor);

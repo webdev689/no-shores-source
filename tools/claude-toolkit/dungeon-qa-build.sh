@@ -21,7 +21,8 @@ import os, pathlib
 
 # 0 heals every player; 1 lifts every player to height a (onto a pad); 2 sets seal a's relic to b; 3 breaks every
 # seal; 4 raises the Boss's next ward; 5 fills anchor a to share b; 6 shows the slam with b ticks left; 7 shows the
-# Reckoning with b ticks left; 8 starts Fury's clock with b ticks left (b <= 0: Fury b ticks in).
+# Reckoning with b ticks left; 8 starts Fury's clock with b ticks left (b <= 0: Fury b ticks in), the room's clock run
+# on first where it is too young for that, every stamp of the encounters moved on with it.
 QA_ENCOUNTER = '''    pub fn qa_encounter(&mut self, what: u32, a: f64, b: f64) {
         use crate::encounters::court::{ANCHOR_TICKS, FURY_FROM, RECKONING_WARNING, SLAM_EVERY, WARDS};
         let clock = self.clock;
@@ -43,6 +44,14 @@ QA_ENCOUNTER = '''    pub fn qa_encounter(&mut self, what: u32, a: f64, b: f64) 
             self.encounters = Some(encounters);
             return;
         }
+        if what == 8 && (self.clock as f64) < FURY_FROM as f64 - b {
+            let on = (FURY_FROM as f64 - b) as u64 - self.clock;
+            self.clock += on;
+            if let Some(encounters) = self.encounters.as_mut() {
+                for _ in 0..on { Self::qa_hold(encounters); }
+            }
+        }
+        let clock = self.clock;
         let boss = self.boss();
         let Some(encounters) = self.encounters.as_mut() else { return };
         let court = &mut encounters.court;

@@ -501,8 +501,9 @@ or glows, and is read as standing none (`readDungeon`).
   green over its bed whose glow breathes slowly (`FOUL_FLAG`), apart from the dungeon's plain still water, gone as it
   breaks, seething with bubbles of a brighter bile that swell and burst so it reads as the floor that harms; a stepped
   slab of the end room's trim under each anchor, 8 cm high, and a crystal over each relic. On the floor, rings: runes
-  dim, lit gold under a beam while showing, green once stepped and red under a beam for a second when stepped wrong;
-  plates dim under a beam, gold while held; the seal stone's ring, lighting as its players stand on it; the relic's
+  dim, lit gold under a beam while showing, green once stepped and red under a beam for a second when stepped wrong,
+  each with a glyph of its own (one, two or three strokes round a dot, then round a small ring, so no two of six read
+  alike however turned); plates in play under a beam, dim at rest and gold and filled while held; the seal stone's ring, lighting as its players stand on it; the relic's
   ring coloured by its strength, held or not, and its strength as an arc inside it; while an Ascent holds, each pad's
   top edge banded in the seal's blue with a glow fading down its faces, brightening pad by pad from the first to the
   last in a slow wave, the last pad's in the stone's gold; each anchor ringed dim while the Boss stands (before it

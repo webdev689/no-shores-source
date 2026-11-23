@@ -324,9 +324,10 @@ function sealMarks(
     });
   if (seal.kind === SEAL_KIND.weighing)
     plan.pieces.slice(0, seal.marks.length).forEach((plate, index) => {
-      // Under a beam either way, so every plate in play is found from across the room; held, gold and filled.
+      // At rest under a beam, so every plate in play is found from across the room; held, gold and filled, its beam
+      // gone so it never stands in the way of the camera of the player on it.
       const held = seal.marks[index] === 1;
-      ringAt(out, plate, reach.plate, held ? LIT : AT_REST, held ? 1 : 0.5 + 0.2 * beat, true);
+      ringAt(out, plate, reach.plate, held ? LIT : AT_REST, held ? 1 : 0.5 + 0.2 * beat, !held);
       if (held) markRing(out, plate, 0, reach.plate - BAND_M, [...LIT, HELD_FILL]);
     });
   const [first] = plan.pieces;
