@@ -262,11 +262,13 @@ impl Character {
         Self::new_player(true)
     }
 
-    /// The Test Ground's player: kitted, every Art mastered, and at a quest's `kept` task, as a character kept before:
-    /// no stranger stands on the Test Ground, and its stall serves the houses.
+    /// The Test Ground's player: kitted, riding the Bay, every Art mastered, past the prologue, and at a quest's `kept`
+    /// task, as a character kept before: no stranger stands on the Test Ground, and its stall serves the houses.
     #[must_use]
     pub fn test_grounds() -> Self {
         let mut character = Self::kitted();
+        character.give_horse(crate::horses::FIRST_HORSE, true);
+        character.story = crate::story::Story::kept_before();
         character.arts = crate::arts::WornArts::mastered();
         for quest in crate::quests::quests().quests.iter() {
             if let Some(kept) = &quest.kept {

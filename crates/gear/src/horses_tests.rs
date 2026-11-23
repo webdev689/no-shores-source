@@ -235,3 +235,12 @@ fn a_save_from_before_the_loadouts_rides_its_bay() {
     let character = Character::from_json(include_str!("old_saves/sword_and_shield.json")).expect("a character");
     assert_eq!(character.coat_worn(), Some("bay"));
 }
+
+#[test]
+fn the_test_grounds_player_rides_the_bay_and_stands_past_the_prologue() {
+    let player = Character::test_grounds();
+    assert!(player.may_ride(), "riding is tried on the Test Ground");
+    assert_eq!(player.coat_worn(), Some(crate::horses::FIRST_HORSE));
+    // So the prologue's end, were it ever told there, would take none of its mastered Arts.
+    assert_eq!(player.story, crate::story::Story::kept_before());
+}
