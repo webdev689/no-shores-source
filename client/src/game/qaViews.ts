@@ -41,7 +41,8 @@ export interface QaHost {
 }
 
 /** Puts `__qaView(view)`, `__qaEye(eye)` and `__qaWhere()` on `target` for the picture driver, when the page plays
- *  alone (`offline`) and asks for a spawn, and on a development page (`dev`) `__qaLook(view)`, `__qaSea()` and `__qaGame` too. A view
+ *  alone (`offline`) and asks for a spawn, and on a development page (`dev`) `__qaLook(view)` and `__qaSea()` too;
+ *  a development page lends `__qaGame` whether it plays alone or in a live room. A view
  *  arrives again in the same node with its point as the spawn, as `&spawn=` does, then sets the camera; it answers
  *  whether it did. */
 export function installQaViews(
@@ -51,6 +52,8 @@ export function installQaViews(
   host: QaHost,
   dev: boolean = import.meta.env?.DEV ?? false,
 ): void {
+  // A development page lends the game it plays to the driver's steps, a live room's too.
+  if (dev) Object.assign(target, { __qaGame: host.game });
   if (!offline || !new URLSearchParams(search).has('spawn')) return;
   const hook = target as { __qaView?: (view: QaView) => Promise<boolean>; __qaWhere?: () => object };
   hook.__qaView = async (view) => {
@@ -85,5 +88,5 @@ export function installQaViews(
     host.walker.player = { ...host.walker.player, yaw: look.yaw, view: look.view, pitch: look.pitch };
     return true;
   };
-  Object.assign(target, { __qaLook: lookAt, __qaSea: host.sea, __qaGame: host.game });
+  Object.assign(target, { __qaLook: lookAt, __qaSea: host.sea });
 }
