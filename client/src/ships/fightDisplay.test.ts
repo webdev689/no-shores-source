@@ -25,7 +25,7 @@ const captain = (name: string, east: number, more: Partial<FightCaptain> = {}): 
   fires: 0,
   id: 1,
   name,
-  faction: 2,
+  faction: 1,
   rank: 2,
   mode: 'engage',
   hostile: true,
@@ -36,7 +36,7 @@ const captain = (name: string, east: number, more: Partial<FightCaptain> = {}): 
 const VIEW: FightView = {
   clock: 0,
   player: vessel,
-  captain: captain('Pirate Brig', 200),
+  captain: captain('Tithe Brig', 200),
   others: [captain('Tithe Sloop', 70, { state: 'struck', faction: 1, id: 2 })],
   balls: [],
   lay: { side: 'starboard', launches: [], elevation: 0, reach: 150, ends: [], radius: 3, spread: 1, on_target: false },
@@ -122,7 +122,7 @@ test('while the guns are laid the card is on the captain where they fall, as DFO
   const end = (east: number) => ({ time: 3, point: [east, 0, 0] as const, water: true, strike: null });
   const lay = { ...VIEW.lay!, ends: [end(196), end(204)] };
   const model = fightDisplay({ ...VIEW, lay }, new FightFeel(1), 0, { boardable: false, boardKey: 'E', braceKey: 'C' });
-  assert.equal(model.card?.name, 'Pirate Brig', 'the far one laid on, not the nearer Sloop');
+  assert.equal(model.card?.name, 'Tithe Brig', 'the far one laid on, not the nearer Sloop');
 });
 
 test("the broadside warning names the nearest captain running out its guns at the player, as DFO's warning does", () => {
@@ -131,7 +131,7 @@ test("the broadside warning names the nearest captain running out its guns at th
   assert.equal(quiet.warn, null, 'none while no battery is run out');
   const running = {
     ...VIEW,
-    captain: captain('Pirate Brig', 200, { run_out: ['port'] }),
+    captain: captain('Tithe Brig', 200, { run_out: ['port'] }),
     others: [captain('Tithe Sloop', 70, { state: 'struck', run_out: ['port'], id: 2 })],
   };
   const model = fightDisplay(running, new FightFeel(1), 0, board);
@@ -139,7 +139,7 @@ test("the broadside warning names the nearest captain running out its guns at th
     model.warn,
     {
       id: '1 port',
-      name: 'Pirate Brig',
+      name: 'Tithe Brig',
       range: 200,
       bearing: 'on your starboard beam',
       load: 'chain',
@@ -158,13 +158,13 @@ test('a battery warns only run out at the player: not an ally’s, not one turne
   const board = { boardable: false, boardKey: 'E', braceKey: 'C' };
   const warnOf = (captains: FightCaptain[]) =>
     fightDisplay({ ...VIEW, captain: captains[0]!, others: captains.slice(1) }, new FightFeel(1), 0, board).warn;
-  assert.equal(warnOf([captain('Pirate Brig', 200, { run_out: ['starboard'] })]), null, 'its starboard faces away');
+  assert.equal(warnOf([captain('Tithe Brig', 200, { run_out: ['starboard'] })]), null, 'its starboard faces away');
   assert.equal(warnOf([captain('Tithe Sloop', 200, { run_out: ['port'], hostile: false })]), null, 'an ally’s');
   const many = warnOf([
-    captain('Pirate Brig', 200, { run_out: ['port'] }),
-    captain('Pirate Sloop', -90, { run_out: ['starboard'], id: 2 }),
+    captain('Tithe Brig', 200, { run_out: ['port'] }),
+    captain('Tithe Sloop', -90, { run_out: ['starboard'], id: 2 }),
   ]);
-  assert.deepEqual([many?.name, many?.bearing], ['Pirate Sloop', 'on your port beam'], 'nearest first');
+  assert.deepEqual([many?.name, many?.bearing], ['Tithe Sloop', 'on your port beam'], 'nearest first');
 });
 
 test('where a ship lies is said from the bow as a sailor says it, a quarter of a side each', () => {
@@ -198,4 +198,27 @@ test("the burst on the bar is the player's own, from the rules' view", () => {
   });
   const burst = model.ship?.abilities.find((ability) => ability.id === 'burst');
   assert.deepEqual([burst?.state, burst?.running], ['active', 0.5]);
+});
+
+test("a friendly ship's card is the players' side's, and a Tithe ship's its rank's though it fights the friendly one", () => {
+  const card = (near: FightCaptain) =>
+    fightDisplay({ ...VIEW, captain: near, others: [] }, new FightFeel(1), 0, {
+      boardable: false,
+      boardKey: 'E',
+      braceKey: 'C',
+    }).card;
+  const friendly = card(captain('Merchant Schooner', 90, { faction: 0, hostile: false }));
+  assert.deepEqual([friendly?.band, friendly?.hostile], ['ally', false]);
+  const tithe = card(captain('Tithe Sloop', 90, { hostile: false }));
+  assert.notEqual(tithe?.band, 'ally', 'the Tithe fights the players, whichever ship it marks now');
+});
+
+test('a struck friendly ship shows no board key: it holds no deck crew to fight', () => {
+  const struck = captain('Merchant Sloop', 40, { faction: 0, hostile: false, state: 'struck' });
+  const model = fightDisplay({ ...VIEW, captain: struck, others: [] }, new FightFeel(1), 0, {
+    boardable: true,
+    boardKey: 'E',
+    braceKey: 'C',
+  });
+  assert.deepEqual([model.card?.state, model.card?.boardKey], ['struck', null]);
 });

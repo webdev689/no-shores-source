@@ -3,7 +3,7 @@
 // pictures the HUD draws an Art with, and the asks the screen sends the room. Nothing changes until the room answers.
 
 import arts from '../../../content/arts/arts.json' with { type: 'json' };
-import { ABILITY_KEYS } from '../combat/abilityBar.ts';
+import { hudKeys } from './controls.ts';
 import { FRAGMENT_MAPS } from './artFragments.ts';
 import { EMBLEM_FRAME, EMBLEM_MAPS, SPELL_MAPS, mapSvg } from '../player/artGlyphs.ts';
 import type { ArtState } from '../network/artMessages.ts';
@@ -242,9 +242,10 @@ export function coreChoices(
   });
 }
 
-/** The key that casts each spell: the Anima's, then each Tenet's. */
-export function keyOf(art: Art, spell: Spell): string {
-  return spell === art.anima ? ABILITY_KEYS[0] : (ABILITY_KEYS[art.tenets.indexOf(spell) + 1] ?? '');
+/** The key that casts each spell, as bound now for the keys or the pad last used (`hudKeys`), or among `keys`: the
+ *  Anima's, then each Tenet's. */
+export function keyOf(art: Art, spell: Spell, keys: readonly string[] = hudKeys().arts): string {
+  return spell === art.anima ? (keys[0] ?? '') : (keys[art.tenets.indexOf(spell) + 1] ?? '');
 }
 
 /** An Art's emblem in its diamond, as SVG. */

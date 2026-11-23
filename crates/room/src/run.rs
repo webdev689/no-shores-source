@@ -111,7 +111,8 @@ impl Room {
     }
 
     /// How much longer an Art's recharge takes: half again under Trickle.
-    pub(crate) fn recharge_times(&self) -> f64 {
+    #[must_use]
+    pub fn recharge_times(&self) -> f64 {
         if self.modded(Modifier::Trickle) { TRICKLE_TIMES } else { 1.0 }
     }
 

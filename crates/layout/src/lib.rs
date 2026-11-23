@@ -42,6 +42,7 @@ pub mod settle;
 pub mod sites;
 pub mod skyline;
 pub mod spaces;
+mod spawns;
 pub mod works;
 
 use crate::areas::{Area, place, radius_of};
@@ -375,7 +376,12 @@ pub fn plan(
     for site in sites.iter_mut().filter(|site| site.kind == sites::SiteKind::Resource) {
         site.node = site.node.filter(|&node| sites::node_stands(node, &ring, &field, (&seating.solids, &plantings)));
     }
-    let spawns = spawns_round(&field, anchor);
+    let seated = collide::seated_boxes(&seating, &ring, book);
+    let stands = |[x, y]: [f64; 2]| {
+        let walkable = field.cell_of(x, y).is_some_and(|(column, row)| field.walkable(field.index(column, row)));
+        walkable && field::ring_holds(&ring, x, y) && collide::stands_clear(&seated, [x, y], carved_height(x, y))
+    };
+    let spawns = spawns::round(anchor, &stands);
     let ways: Vec<(Path, [usize; 2])> = paths.iter().cloned().zip(joined.iter().copied()).collect();
     let raise = |[x, y]: [f64; 2]| carved.raise(x, y, ground.coast.at(x, y));
     let land = spaces::Land {
@@ -529,20 +535,6 @@ fn blocked_by(field: &Field, seating: &Seating) -> Blocked {
         }
     }
     Blocked(blocked)
-}
-
-/// Three spawns round a landing or an entrance, a few metres apart on walkable ground.
-fn spawns_round(field: &Field, at: [f64; 2]) -> Vec<[f64; 2]> {
-    let offsets = [[0.0, 0.0], [6.0, 3.0], [-6.0, 3.0]];
-    offsets
-        .iter()
-        .map(|offset| [at[0] + offset[0], at[1] + offset[1]])
-        .filter(|point| {
-            field.cell_of(point[0], point[1]).is_some_and(|(column, row)| field.walkable(field.index(column, row)))
-        })
-        .chain(std::iter::once(at))
-        .take(3)
-        .collect()
 }
 
 /// Each climb to a lookout as the footpath it is walked as, a point every 8 m or less.

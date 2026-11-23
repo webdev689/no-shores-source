@@ -16,6 +16,8 @@ import {
   spellNumbers,
   spellSvg,
 } from './artsCards.ts';
+import { DEFAULTS, rebind } from '../player/binds.ts';
+import { BINDS } from '../player/input.ts';
 
 const storm = () => {
   const found = artOf(1);
@@ -68,6 +70,15 @@ test('a spell’s card lists its numbers with their units, and each spell its ke
     [art.anima, ...art.tenets].map((spell) => keyOf(art, spell)),
     ['R', 'Q', 'G'],
   );
+  // As bound now: Quicken rebound to E, then the pad played last.
+  const quicken = art.tenets[0];
+  assert.ok(quicken);
+  BINDS.set(rebind(DEFAULTS, { id: 'tenetOne', device: 'keys', place: 0 }, 'e').binds ?? DEFAULTS);
+  assert.equal(keyOf(art, quicken), 'E');
+  BINDS.device = 'pad';
+  assert.equal(keyOf(art, quicken), 'pad:LB');
+  BINDS.device = 'keys';
+  BINDS.set(DEFAULTS);
 });
 
 test('the Core’s flyout refuses a fragment already set in another slot', () => {

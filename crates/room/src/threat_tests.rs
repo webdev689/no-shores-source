@@ -17,9 +17,9 @@ fn the_ladder_steps_down_by_fives() {
 }
 
 #[test]
-fn a_voyage_eases_down_as_a_pirate_comes_near_along_its_way_and_is_held_inside_its_ring() {
+fn a_voyage_eases_down_as_a_hostile_comes_near_along_its_way_and_is_held_inside_its_ring() {
     let ahead = |metres: f64| held_pace(60, [0.0, 0.0], 0.0, [([0.0, -metres], true)]);
-    // Closing at 12 + 2.4 m/s with 0.6 s of warning: 8.64 m of its way to the pirate's 750 m sight for each step.
+    // Closing at 12 + 2.4 m/s with 0.6 s of warning: 8.64 m of its way to the hostile's 750 m sight for each step.
     assert_eq!(ahead(2_000.0), 60, "1250 m short of its sight asks no less than the pace");
     assert_eq!(ahead(1_000.0), 25, "250 m short: 28.9, down the ladder");
     assert_eq!(ahead(800.0), 5, "50 m short: 5.8");
@@ -29,7 +29,7 @@ fn a_voyage_eases_down_as_a_pirate_comes_near_along_its_way_and_is_held_inside_i
 }
 
 #[test]
-fn a_pirate_off_the_way_or_astern_leaves_the_pace_alone_but_its_hold_holds_whatever_the_way() {
+fn a_hostile_off_the_way_or_astern_leaves_the_pace_alone_but_its_hold_holds_whatever_the_way() {
     assert_eq!(held_pace(60, [0.0, 0.0], 0.0, [([900.0, 0.0], true)]), 60, "abeam, the way passes it by");
     assert_eq!(held_pace(60, [0.0, 0.0], 0.0, [([0.0, 1_000.0], true)]), 60, "astern");
     assert_eq!(held_pace(60, [0.0, 0.0], 0.0, [([0.0, 650.0], true)]), 1, "astern but within its hold");
@@ -38,11 +38,11 @@ fn a_pirate_off_the_way_or_astern_leaves_the_pace_alone_but_its_hold_holds_whate
 }
 
 #[test]
-fn the_nearest_ask_holds_among_several_pirates() {
-    let pirates = [([0.0, -2_000.0], true), ([0.0, -1_000.0], true), ([3_000.0, 0.0], true)];
-    assert_eq!(held_pace(60, [0.0, 0.0], 0.0, pirates), 25);
+fn the_nearest_ask_holds_among_several_hostiles() {
+    let hostiles = [([0.0, -2_000.0], true), ([0.0, -1_000.0], true), ([3_000.0, 0.0], true)];
+    assert_eq!(held_pace(60, [0.0, 0.0], 0.0, hostiles), 25);
     let east = std::f64::consts::FRAC_PI_2;
-    assert_eq!(held_pace(60, [0.0, 0.0], east, pirates), 60, "heading east, the two to the north are passed by");
+    assert_eq!(held_pace(60, [0.0, 0.0], east, hostiles), 60, "heading east, the two to the north are passed by");
 }
 
 #[test]
@@ -59,7 +59,7 @@ fn a_ship_that_will_not_engage_caps_the_pace_by_the_ladder_but_never_holds_it() 
 }
 
 #[test]
-fn past_the_hold_reach_no_pirate_ahead_slows_the_fastest_pace_and_within_it_one_does() {
+fn past_the_hold_reach_no_hostile_ahead_slows_the_fastest_pace_and_within_it_one_does() {
     let reach = hold_reach_m();
     let most = *crate::sea::PACES.iter().max().unwrap();
     let ahead = |metres: f64| held_pace(most, [0.0, 0.0], 0.0, [([0.0, -metres], false)]);

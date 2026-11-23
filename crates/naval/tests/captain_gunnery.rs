@@ -4,7 +4,7 @@
 
 use naval::damage::Zone;
 use naval::fight::{CAPTAIN, Event, Fight, Orders, PLAYER};
-use naval::ranks::{Commission, PIRATES, Rank};
+use naval::ranks::{Commission, GREY_TITHE, Rank};
 use naval::shots::ShotEvent;
 use sailing::TICK_SECONDS;
 use sailing::ship::{Helm, Ship};
@@ -29,7 +29,7 @@ fn struck_share(rank: Rank, weaving: bool, minutes: u32, seeds: u32) -> (u32, u3
     for seed in 1..=seeds {
         let ship = Ship { x: 0.0, y: 0.0, heading: 0.0, ahead: 4.0, abeam: 0.0, turn: 0.0, sail_way: 4.0, rung: 2 };
         let captain = Ship { x: 300.0, y: -200.0, heading: 4.0, ..ship };
-        let commission = Commission { faction: PIRATES, rank };
+        let commission = Commission { faction: GREY_TITHE, rank };
         let Ok(mut fight) = Fight::ambush(ship, &[(captain, commission, seed)], seed, &Open, 0.0) else {
             continue;
         };

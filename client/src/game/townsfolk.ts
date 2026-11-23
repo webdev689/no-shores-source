@@ -58,18 +58,16 @@ export interface PlazaFrame {
   readonly seaward: Point;
 }
 
-/** A social space's plaza, from its node: its ring's bounds, spawns, stations, visitor spots, ways and posts. */
+/** A social space's plaza, from its node: its plaza's bounds, or its ring's where it names none, spawns, stations,
+ *  visitor spots, ways and posts. */
 export function plazaOf(
-  node: Pick<NodeInfo, 'ring' | 'spawns' | 'stations' | 'visitorSpots' | 'ways' | 'posts'>,
+  node: Pick<NodeInfo, 'ring' | 'spawns' | 'stations' | 'visitorSpots' | 'ways' | 'posts' | 'plazaBounds'>,
 ): Plaza {
   const eastings = node.ring.map((point) => point[0]);
   const southings = node.ring.map((point) => point[1]);
-  const bounds = [
-    Math.min(...eastings),
-    Math.min(...southings),
-    Math.max(...eastings),
-    Math.max(...southings),
-  ] as const;
+  const bounds =
+    node.plazaBounds ??
+    ([Math.min(...eastings), Math.min(...southings), Math.max(...eastings), Math.max(...southings)] as const);
   const { spawns, stations = [], visitorSpots = [], ways, posts = [] } = node;
   return { bounds, spawns, stations, visitorSpots, ...(ways ? { ways, posts } : {}) };
 }

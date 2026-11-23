@@ -21,7 +21,7 @@ import {
   LIGHT_WGSL,
 } from './dungeonLight.ts';
 import { type DungeonLayout, FIXTURE } from './dungeonLayout.ts';
-import { seededRandom } from '../cinema/ambienceShapes.ts';
+import { seeded } from '../seeded.ts';
 
 test('a light is all there where it burns and gone at its reach', () => {
   assert.equal(falloff(0, 8), 1);
@@ -181,7 +181,7 @@ test('summed light keeps its value up to 0.8 and eases toward 1.4 past it, in th
 });
 
 test('a frame is lit by the lights reaching farthest past the eye, the portal among them only while it is open', () => {
-  const random = seededRandom(3);
+  const random = seeded(3);
   const kinds = [LIGHT_KINDS.torch, LIGHT_KINDS.candles, LIGHT_KINDS.brazier, LIGHT_KINDS.daylight];
   const burning: Light[] = Array.from({ length: 60 }, (_unused, number) => ({
     at: [random() * 80, random() * 80, 2],

@@ -122,3 +122,28 @@ test("a landmass's city and its layouts light their own lamps: one view set or c
     [4],
   );
 });
+
+test("of a ruin's thousand lamps the nearest are lit, nearest first, however the list runs", () => {
+  const places: LampPlace[] = Array.from({ length: 1400 }, (_unused, k) => ({
+    at: [(k * 137.3) % 3000, (k * 71.9) % 3000, 10],
+    reachM: 5 + (k % 7),
+    light: [1, 0.2, 0.1],
+    seed: k,
+  }));
+  const eye = [1500, 1500, 40] as const;
+  const lit = lampsRound(eye, places, null, 0, 0).map((lamp) => lamp.fromEye.join());
+  const nearest = [...places]
+    .sort(
+      (a, b) =>
+        Math.hypot(a.at[0] - 1500, a.at[1] - 1500, a.at[2] - 40) -
+        a.reachM -
+        (Math.hypot(b.at[0] - 1500, b.at[1] - 1500, b.at[2] - 40) - b.reachM),
+    )
+    .slice(0, LAMPS_MOST)
+    .map((place) => [place.at[0] - 1500, place.at[1] - 1500, place.at[2] - 40].join());
+  assert.deepEqual(lit, nearest);
+  assert.deepEqual(
+    lampsRound(eye, [...places].reverse(), null, 0, 0).map((lamp) => lamp.fromEye.join()),
+    nearest,
+  );
+});

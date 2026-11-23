@@ -62,7 +62,10 @@ async function realWorld() {
   );
   const rules = startWatersRules(new WebAssembly.Module(bytes));
   const table = rules.open(layoutText, cities);
-  const waters = new HeldMapWaters(mapWatersOf(table, rules.grid(4_800)));
+  const waters = new HeldMapWaters(
+    mapWatersOf(table, rules.grid(4_800)),
+    (point) => rules.waterAt(point)?.continent ?? null,
+  );
   const columns = WORLD.width / 4_800;
   const rows = WORLD.height / 4_800;
   waters.chart(new Uint8Array(columns * rows).fill(1));

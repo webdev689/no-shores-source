@@ -1,7 +1,6 @@
 // What the sky and the sea are doing, as plain numbers a director eases from one to the next. The weather is drawn by
 // the atmosphere pass over the finished picture and by the water on a gained swell; nothing here touches the rules.
 import type { reach } from '../water/swell.ts';
-import { hashUnit } from './seeded.ts';
 
 /** The sea's swell as the shared rules give it. The cinema layer may not import the rules, so the type is taken from
  *  the water's own reader of it. */
@@ -49,16 +48,6 @@ export const CLEAR: Weather = {
   glow: null,
   seaGain: 1,
 };
-
-/** A weather of each kind, to try by hand and to start a director's own from. */
-export const WEATHERS = {
-  storm: { ...CLEAR, overcast: 0.92, rain: 1, mist: 0.3, wind: [11, 5], seaGain: 2.5 },
-  rain: { ...CLEAR, overcast: 0.55, rain: 0.6, mist: 0.15, wind: [3, 2], seaGain: 1.3 },
-  snow: { ...CLEAR, overcast: 0.45, snow: 0.8, mist: 0.25, wind: [2, 1] },
-  mist: { ...CLEAR, overcast: 0.2, mist: 1 },
-  clouds: { ...CLEAR, overcast: 0.1, clouds: { base: 120, top: 260, cover: 0.7 }, wind: [6, 0] },
-  deep: { ...CLEAR, deep: 1, glow: { colour: [1, 0.45, 0.12], strength: 0.8 } },
-} as const satisfies Record<string, Weather>;
 
 const mix = (from: number, to: number, share: number) => from * (1 - share) + to * share;
 
@@ -117,31 +106,5 @@ export function swellGained(swell: Swell, gain: number): Swell {
   return {
     ...swell,
     waves: swell.waves.map((wave) => ({ ...wave, amplitude: wave.amplitude * gain, shift: wave.shift * gain })),
-  };
-}
-
-/** A lightning stroke's light at `seconds`: one stroke every `everyS` seconds or so, each flickering twice over
- *  about a third of a second, its bolt somewhere within `spreadM` of (x, y). Strokes are placed by `seed`. */
-export function strikeAt(
-  seconds: number,
-  everyS: number,
-  centre: readonly [number, number],
-  spreadM: number,
-  seed: number,
-): Pick<Weather, 'flash' | 'bolt'> {
-  const stroke = Math.floor(seconds / everyS);
-  const lot = (salt: number) => hashUnit(seed * 7919 + stroke * 104_729 + salt);
-  const since = seconds - (stroke + lot(1) * 0.6) * everyS;
-  if (since < 0 || since >= 0.35) return { flash: 0, bolt: null };
-  const flicker = since < 0.08 ? 1 : since < 0.14 ? 0.35 : since < 0.2 ? 0.85 : 1 - (since - 0.2) / 0.15;
-  const angle = lot(2) * Math.PI * 2;
-  const distance = Math.sqrt(lot(3)) * spreadM;
-  return {
-    flash: Math.max(0, flicker),
-    bolt: {
-      x: centre[0] + Math.cos(angle) * distance,
-      y: centre[1] + Math.sin(angle) * distance,
-      seed: Math.floor(lot(4) * 1000),
-    },
   };
 }

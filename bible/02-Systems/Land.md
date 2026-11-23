@@ -83,7 +83,8 @@ names new places `river-N`, `road-N`, `town-N`, `port-N` and `node-N`. It snaps 
 and town edges, so roads meet what they lead to exactly. A road's ends are not required to meet anything.
 
 A road or a town is on the land along every edge, not only at its points, so a road never crosses a bay. A file
-holds at most 200,000 dabs, a place at most 10,000 points, and a course at most 5,000 km.
+holds at most 200,000 dabs, and the editor dabs no more once its edits hold that many, so it never saves a file it
+cannot open; a place holds at most 10,000 points, and a course at most 5,000 km.
 
 ## The ground anywhere
 

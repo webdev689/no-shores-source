@@ -2,7 +2,7 @@
 //! in a room no one is in, nor once its cache stands open; and a wipe, when every player is down at once, starting
 //! the run over with its five revives.
 
-use crate::{Event, EventKind, PlayerId, Room, RunOf};
+use crate::{Dropped, Event, EventKind, PlayerId, Room, RunOf};
 use combat::Action;
 
 /// A Friday's 09:00 UTC: day 20,778, in week 2,968.
@@ -104,6 +104,26 @@ fn when_every_player_is_down_at_once_the_run_starts_over_and_its_five_revives_wi
     }
     cleared.tick();
     assert!(wiped(&cleared.take_events()).is_empty(), "a cleared run is won: no wipe");
+}
+
+#[test]
+fn a_wipe_sends_each_vestige_still_lying_to_its_players_mail_and_takes_the_rest_off_the_ground() {
+    let mut room = abyss_run();
+    let players = [room.join().expect("in"), room.join().expect("in")];
+    let vestige = gear::Vestige::new(0, gear::Rarity::Legendary, gear::Slot::Arms, 18);
+    room.lay_drop(players[0], Dropped::Vestige(vestige), [0.0, -30.0, 0.0]);
+    room.lay_drop(players[1], Dropped::AmmoBox, [0.0, -31.0, 0.0]);
+    for player in players {
+        let found = room.players.get_mut(&player).expect("in");
+        (found.fighter.health, found.fighter.action) = (0.0, Action::Dead { elapsed: 0 });
+    }
+    room.tick();
+    assert_eq!(wiped(&room.take_events()), players);
+    assert_eq!(room.drops_for(players[0]).count() + room.drops_for(players[1]).count(), 0, "nothing lies");
+    let mail = &room.players[&players[0]].character.mail;
+    assert_eq!(mail.len(), 1, "the Vestige, not lost: {mail:?}");
+    assert_eq!(mail[0].vestige.as_ref().map(|kept| kept.rarity), Some(gear::Rarity::Legendary));
+    assert!(room.players[&players[1]].character.mail.is_empty(), "an Ammo box is no item");
 }
 
 #[test]

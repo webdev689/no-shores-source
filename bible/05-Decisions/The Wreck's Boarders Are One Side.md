@@ -23,3 +23,5 @@ status: in force
 Replaces the wreck's factions fighting each other in [[The Prologue as Claude Shapes It]].
 
 Links: [[Prologue]], [[Enemies]].
+
+Replaced in part by [[Pirates Are Replaced by the Grey Tithe]]: every boarder is the Grey Tithe's.

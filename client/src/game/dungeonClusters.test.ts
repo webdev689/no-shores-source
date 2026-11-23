@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { runInNewContext } from 'node:vm';
-import { seededRandom } from '../cinema/ambienceShapes.ts';
+import { seeded } from '../seeded.ts';
 import { fromEyeMatrix, type Shot } from './camera.ts';
 import {
   CLUSTER_COUNT,
@@ -102,7 +102,7 @@ test('the clusters are 16 tiles across, 9 up and 24 slices deep, each slice the 
 });
 
 test('every point a light reaches finds that light in the cluster the shader reads it from, at the screen edges and nearer than the slices begin', () => {
-  const random = seededRandom(7);
+  const random = seeded(7);
   const between = (low: number, high: number) => low + (high - low) * random();
   // Torches ahead, some astride the screen's edges, two beside the eye, one behind it reaching past it, small candles.
   const lights: Light[] = [
@@ -149,7 +149,7 @@ test('every point a light reaches finds that light in the cluster the shader rea
 });
 
 test('a point is lit by its cluster’s lights alone exactly as by every light', () => {
-  const random = seededRandom(11);
+  const random = seeded(11);
   const lights = Array.from({ length: 32 }, (_unused, index) =>
     lit(
       seen(-15 + random() * 30, -2 + random() * 4, random() * 40),

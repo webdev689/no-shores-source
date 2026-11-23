@@ -8,8 +8,10 @@ import type { Node } from '../ui/node.ts';
 import { viewProjection } from '../editor/orbit.ts';
 import type { MarkedFoe } from './foeBars.ts';
 import { EVENT } from './cues.ts';
-import { blockedBy, clearOf, Hud, type HudFrame, veilOf } from './hud.ts';
+import { blockedBy, clearOf, Hud, type HudFrame, type HudKeys, veilOf } from './hud.ts';
 import { vitalsDepth } from './hudLayout.ts';
+import type { GearState } from '../network/gearMessages.ts';
+import { KINDS, WORN } from '../player/gear.ts';
 import { cameraOf } from './plateSight.ts';
 import { allOf, coloursDrawn, fakeInterface, laidOf, wordsIn } from './nodes.test.ts';
 
@@ -576,4 +578,42 @@ test('a parry ring for a head off the screen stands at the edge the way it lies,
   const [, nearY] = ringAt(0.7, 0, true);
   assert.ok(Math.abs(nearY - downAt([drawnHead.x, drawnHead.y, 1.6])) < 1, `round the drawn head: ${nearY}`);
   assert.ok(Math.abs(nearY - downAt([near.x, near.y, 1.6])) > 20, 'not round the body nearer the eye');
+});
+
+test('a room left, its foes are forgotten: the next room’s foe of the same number shows no plate of the last', () => {
+  const { matrix, foeAt } = levelView();
+  const hud = new Hud();
+  const hit = { tick: 0n, kind: EVENT.hit, how: 0, striker: 1, defender: 5, amount: 4, stroke: 0 };
+  // Far aside, out of the cone: only the target plate would show it.
+  const old = foeAt(5, 'Brigand', 10, 10 * Math.tan(Math.PI / 3));
+  hud.update(bare({ matrix, foes: [old], events: [hit] }), 1 / 60);
+  assert.ok(wordsIn(drawn(hud)).includes('Brigand'), 'struck, it is the target');
+  hud.forget();
+  hud.update(bare({ matrix, foes: [{ ...old, name: 'Wolf' }] }), 1 / 60);
+  assert.ok(!wordsIn(drawn(hud)).includes('Wolf'), 'the new room’s foe 5 is no target');
+});
+
+test("the Arts' and the loadouts' keycaps are the keys the game answers each frame, not those it binds at first", () => {
+  const pictures = () => ({ anima: '<svg></svg>', animaOutline: '', tenets: ['', ''] as const, diamond: '', ring: '' });
+  let keys: HudKeys = { arts: ['R', 'E', 'G'], loadouts: ['1', '2'] };
+  const hud = new Hud(pictures, null, () => [], { caps: () => keys, face: () => null });
+  const labels = () =>
+    allOf(drawn(hud))
+      .flatMap((node) => node.label ?? [])
+      .join('|');
+  hud.update(bare({ abilities: { art: 1, animaShare: 1, tenets: [1, 1] } }), 1 / 60);
+  assert.ok(labels().includes('Quicken (E), ready'), labels());
+  keys = { arts: ['pad:LB+RB', 'pad:LB', 'pad:RB'], loadouts: ['pad:Left', 'pad:Right'] };
+  // A sword in hand, a crossbow in the other loadout, its row naming the key that draws it.
+  const worn = (kind: string, slot: number) => ({ kind: KINDS.indexOf(kind as never), at: WORN + slot, rarity: 0 });
+  const items = [worn('sword', 0), worn('crossbow', 1)];
+  const arms = {
+    gear: { items, ammo: 18, ammoMost: 24 } as unknown as GearState,
+    loadout: 0,
+    drawn: true,
+    dress: null,
+  };
+  hud.update(bare({ abilities: { art: 1, animaShare: 1, tenets: [1, 1] }, arms }), 1 / 60);
+  assert.ok(labels().includes('Quicken (LB), ready'), 'the pad played last');
+  assert.ok(labels().includes('Press Right to draw'), labels());
 });

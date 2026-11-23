@@ -43,6 +43,11 @@ export class LiveBinds {
 /** The binds of the page: one game, one player. */
 export const BINDS = new LiveBinds();
 
+/** Whether the player's hands fight this frame: with the pointer locked, or with the pad last used and nothing paused,
+ *  since a pad button cannot lock the pointer again; a click on a free pointer only locks it. */
+export const handsFree = (controls: InputFrame, paused: boolean): boolean =>
+  controls.locked || (!paused && BINDS.device === 'pad');
+
 /** One frame's input: what is held, what was pressed or let go since the last frame, how far it is pressed (a
  *  stick's lean; 1 for a key held), how far the mouse moved while the pointer was locked, and the wheel's notches
  *  (positive pulled back). */

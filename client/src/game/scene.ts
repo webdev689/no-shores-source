@@ -218,8 +218,8 @@ export class GameScene {
         terrain.drawn.showMiddle({ corner, step: MIDDLE_STEP_M, size: MIDDLE_SAMPLES, heights: patch.heights });
       })
       .catch(() => {
-        // Asked again on the next frame.
-        this.middle = null;
+        // Asked again on the next frame, unless a newer land asked its own since.
+        if (this.middle === asked) this.middle = null;
       });
   }
 

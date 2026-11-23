@@ -148,7 +148,7 @@ export function landDrawers(
   const plan = landmass.drawnPlan;
   let [patch, sample] = [scene.closePatch(), landSampler(landmass.view, scene.closePatch())];
   const changes = new GroundChanges();
-  const city = plan ? new CityView(gpu) : null;
+  const city = plan ? new CityView(gpu, shipScale) : null;
   let released = false;
   let cityStands = !plan;
   if (plan && city) {

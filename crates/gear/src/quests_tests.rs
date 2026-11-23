@@ -144,7 +144,6 @@ fn a_sea_goal_takes_its_side_and_its_way_alone_where_it_names_one() {
     );
     for how in ["sink", "strike", "board"] {
         assert!(any.met_by(&Event::Sea { side: "tithe", how }), "any way");
-        assert!(!any.met_by(&Event::Sea { side: "pirates", how }), "not the pirates");
         assert_eq!(board.met_by(&Event::Sea { side: "tithe", how }), how == "board");
     }
 }

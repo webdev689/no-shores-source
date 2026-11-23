@@ -76,7 +76,7 @@ test("the ships of one hull take that model's slots in turn", async () => {
   const [sloop, brig] = [[] as number[], [] as number[]];
   const models = new ShipModels(async (hull) => viewOf(hull === 2 ? brig : sloop));
   await Promise.all([models.load(0), models.load(2)]);
-  const ship = (hull: number) => ({ hull, place: PLACE, rig: null, look: { side: 'pirate' as const } });
+  const ship = (hull: number) => ({ hull, place: PLACE, rig: null, look: { side: 'tithe' as const } });
   models.draw({} as GPURenderPassEncoder, [ship(2), ship(0), ship(2), ship(2), ship(0)], CAMERA);
   assert.deepEqual(
     [brig, sloop],
@@ -115,7 +115,7 @@ test('a ship out of view is not drawn, and the next of its hull still takes the 
     hull: 0,
     place: { ...PLACE, y: -metres },
     rig: null,
-    look: { side: 'pirate' as const },
+    look: { side: 'tithe' as const },
   });
   models.draw({} as GPURenderPassEncoder, [ahead(50), ahead(-50), ahead(80)], CAMERA);
   assert.deepEqual(slots, [0, 2], 'the one behind the eye is left out, its slot kept');

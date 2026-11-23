@@ -1,3 +1,4 @@
+import { seeded } from '../seeded.ts';
 // Seeded noise. Every field is periodic: a lattice wraps at its period, so a picture made from it tiles with no seam.
 // The same seed and place always give the same value; the only state is a cache of exactly what the hash gives.
 
@@ -24,7 +25,7 @@ function hash4(first: number, second: number, third: number, fourth: number): nu
 /** A hash as a number in [0, 1). */
 export const hash01 = (a: number, b = 0, cell = 0, dist = 0): number => hash4(a, b, cell, dist) / 4294967296;
 
-/** A small seeded stream (mulberry32). */
+/** A small seeded stream, with its draws in ranges and lists. */
 export interface Stream {
   /** The next number in [0, 1). */
   next(): number;
@@ -37,14 +38,7 @@ export interface Stream {
 }
 
 export function stream(seed: number): Stream {
-  let state = seed >>> 0;
-  const next = (): number => {
-    state = (state + 0x6d2b79f5) >>> 0;
-    let mixed = state;
-    mixed = Math.imul(mixed ^ (mixed >>> 15), mixed | 1);
-    mixed ^= mixed + Math.imul(mixed ^ (mixed >>> 7), mixed | 61);
-    return ((mixed ^ (mixed >>> 14)) >>> 0) / 4294967296;
-  };
+  const next = seeded(seed);
   return {
     next,
     range: (a, b) => a + (b - a) * next(),

@@ -41,7 +41,7 @@ impl Room {
     }
 
     /// Gives a returning player the body their character left with, what of it still holds at the room's minute; a
-    /// boarder comes onto a pirate's deck from their own ship, unhurt.
+    /// boarder comes onto a hostile's deck from their own ship, unhurt.
     fn give_left_back(&mut self, player: PlayerId) {
         let (minute, on_deck) = (self.minute, matches!(self.floor, crate::Floor::Deck(_)));
         let Some(found) = self.players.get_mut(&player) else { return };

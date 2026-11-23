@@ -168,7 +168,7 @@ export function landPanel(ui: Interface, view: LandPanelView, handlers: LandPane
     ui,
     'captain-faction',
     String(captain.faction),
-    SHIP_FACTIONS.map((each) => ({ value: String(each.faction), words: each.name })),
+    SHIP_FACTIONS.filter((each) => each.faction > 0).map((each) => ({ value: String(each.faction), words: each.name })),
   );
   const rank = chooser(
     ui,
@@ -296,7 +296,7 @@ export function landPanel(ui: Interface, view: LandPanelView, handlers: LandPane
     ),
     hint('Sailing: W and S climb and come down from oars to sails, A and D steer, B to stop.', view.sailing),
     hint(
-      'F calls a pirate, or sends it off. Hold the right mouse to aim where the balls should fall, and let go to fire.' +
+      'F calls a Tithe ship, or sends it off. Hold the right mouse to aim where the balls should fall, and let go to fire.' +
         ' A left click holds fire, the wheel changes shot, C braces, and Shift gives a burst of speed. In a fleet' +
         ' (?room= in the address), F calls a captain, X sends them all off, and Shift gives no burst.',
       view.sailing,

@@ -25,6 +25,8 @@ const workerPort = (): RoomPort => {
 };
 
 let port: RoomPort | null = null;
+// A worker that failed answers nothing more; every later opening is refused at once with why.
+let portFailed: Error | null = null;
 const rooms = new Map<number, RoomThread>();
 const opening = new Map<number, { resolve: (room: RoomThread) => void; reject: (error: Error) => void }>();
 const words = new Map<number, ((word: string) => void)[]>();
@@ -34,6 +36,7 @@ let next = 1;
 export function roomPort(given?: RoomPort): RoomPort {
   if (given || !port) {
     port = given ?? workerPort();
+    portFailed = null;
     port.hear(heard);
     port.fail(workerFailed);
   }
@@ -49,6 +52,7 @@ function unasked(id: number): void {
 /** The worker failed: every opening still waiting is refused and every room is lost, each told why. */
 function workerFailed(reason: string): void {
   console.error(`the rooms for playing alone failed: ${reason}`);
+  portFailed = new Error(reason);
   for (const [id, waiting] of opening) {
     opening.delete(id);
     waiting.reject(new Error(reason));
@@ -109,6 +113,7 @@ export class RoomThread implements RoomLink {
     snapshot: (snapshot: Snapshot) => void,
     gear: (gear: GearMessage) => void = () => undefined,
   ): Promise<RoomThread> {
+    if (portFailed) return Promise.reject(portFailed);
     const id = next++;
     const opened = new Promise<RoomThread>((resolve, reject) => opening.set(id, { resolve, reject })).then((room) => {
       [room.snapshot, room.gear] = [snapshot, gear];

@@ -33,7 +33,7 @@ struct OpenRequest {
 /// `{ "waters": [{ "continent": <layout index>, "id", "name", "holder", "levels": [low, high] or null }],
 ///    "borders": [[a, b]], "main_ports": [<city id>], "ports": [{ "id", "name", "roadstead": [x, y] }],
 ///    "routes": [{ "from_port", "to_port", "length_m", "path": [[x, y]] }] }`, or `{ "error" }`.
-/// A holder is "home", "contested", "grey-tithe" or "pirates" (home for a continent the table does not name).
+/// A holder is "home", "grey-tithe" or "lattice" (home for a continent the table does not name).
 /// `main_ports` names the port cities; `ports` holds only those of the given ports that are, in the order given, and a
 /// ship's or route's port is an index into it. A layout that breaks the world's rules is refused.
 #[must_use]
@@ -95,9 +95,9 @@ fn table_of(layout: &Layout, waters: &Waters, traffic: &Traffic) -> Value {
 
 /// What the page reads of the sea's rules beside its waters: the reach a hostile ship meets a player within, the
 /// furthest one may hold a voyage, metres; the reach of a port city's repairs; and each ship's name, by its faction's
-/// number (0 to the captains' last) and then its hull's.
+/// number (0 a friendly ship's, 1 the Grey Tithe's) and then its hull's.
 fn sea_facts() -> Value {
-    let factions = 0..=naval::ranks::CAPTAIN_FACTIONS.into_iter().max().unwrap_or(0);
+    let factions = [naval::ranks::PLAYERS, naval::ranks::GREY_TITHE].into_iter();
     let names: Vec<Vec<&str>> = factions
         .map(|faction| sailing::HullKind::ALL.iter().map(|hull| naval::ranks::ship_name(faction, *hull)).collect())
         .collect();
@@ -109,14 +109,13 @@ fn sea_facts() -> Value {
     })
 }
 
-/// The water at a point as one grid byte: its continent's layout index, with 0x80 set on the contested seam; 255 on
-/// land; `NOT_OPEN` before the waters are opened.
+/// The water at a point as one grid byte: its continent's layout index; 255 on land; `NOT_OPEN` before the waters are opened.
 #[must_use]
 pub fn water_byte(x: f64, y: f64) -> u32 {
     OPEN.with(|open| {
         open.borrow().as_ref().map_or(NOT_OPEN, |(waters, _)| match waters.water_at([x, y]) {
             None => u32::from(world::waters::LAND_CELL),
-            Some(water) => water.continent as u32 | if water.seam { u32::from(world::waters::SEAM_BIT) } else { 0 },
+            Some(water) => water.continent as u32,
         })
     })
 }

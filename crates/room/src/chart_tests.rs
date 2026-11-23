@@ -1,7 +1,7 @@
 use super::*;
 use crate::sea::Coast;
 
-/// Overlook's island, home waters, 100 km a side west, and the fourth island, the pirates', 100 km a side east,
+/// Overlook's island, home waters, 100 km a side west, and the fourth island, the Grey Tithe's, 100 km a side east,
 /// 200 km of sea between.
 fn layout() -> Layout {
     let text = r#"{ "continents": [
@@ -19,8 +19,8 @@ fn the_chart_reads_each_water_its_band_and_refuses_a_step_into_home_waters() {
     let chart = SeaChart { coasts: &coasts, charted: &charted, islands: &[] };
     let home = chart.water([250_000.0, 150_000.0]).unwrap();
     assert_eq!((home.holder, home.levels), (Holder::Home, Some((1, 4))));
-    let pirates = chart.water([350_000.0, 150_000.0]).unwrap();
-    assert_eq!((pirates.holder, pirates.levels), (Holder::Pirates, Some((10, 13))));
+    let tithe = chart.water([350_000.0, 150_000.0]).unwrap();
+    assert_eq!((tithe.holder, tithe.levels), (Holder::GreyTithe, Some((10, 13))));
     assert_eq!(chart.water([150_000.0, 150_000.0]), None, "land");
     assert!(chart.open([350_000.0, 150_000.0], [330_000.0, 150_000.0]));
     assert!(!chart.open([310_000.0, 150_000.0], [290_000.0, 150_000.0]), "into home waters");
@@ -43,7 +43,7 @@ fn a_lane_is_the_nearest_leg_and_the_way_it_runs() {
 
 #[test]
 fn the_worlds_sea_opened_with_its_ports_sends_tithe_ships_along_its_lanes() {
-    use crate::pirates::{Pirates, Voyager};
+    use crate::hostiles::{Hostiles, Voyager};
     let (layout, ports) = crate::measure_tests::world();
     let charted = Charted::new(&layout, &ports);
     assert!(!charted.lanes.is_empty(), "the lanes between the port cities");
@@ -55,24 +55,26 @@ fn the_worlds_sea_opened_with_its_ports_sends_tithe_ships_along_its_lanes() {
     });
     let lane_at = on_lane.expect("a lane through the Tithe's waters");
     let player = [lane_at[0] + 20_000.0, lane_at[1]];
-    let ship = Voyager { player: 1, at: player, heading: 0.0, pace: 0, fighting: false, clock: 1.0, hull: 1.0 };
+    let ship =
+        Voyager { player: 1, at: player, heading: 0.0, pace: 0, fighting: false, home: false, clock: 1.0, hull: 1.0 };
     let mut seen = std::collections::BTreeMap::new();
     for seed in 1..=30 {
-        let mut pirates = Pirates::new(seed);
+        let mut hostiles = Hostiles::new(seed);
         for _ in 0..3600 {
-            pirates.tick(1.0, &[ship], &chart);
-            for pirate in &pirates.sailing {
-                seen.entry((seed, pirate.id)).or_insert(*pirate);
+            hostiles.tick(1.0, &[ship], &chart);
+            for hostile in &hostiles.sailing {
+                seen.entry((seed, hostile.id)).or_insert(*hostile);
             }
-            pirates.sailing.retain(|pirate| !pirate.bold);
+            hostiles.sailing.retain(|hostile| !hostile.bold);
         }
     }
-    let tithe: Vec<_> = seen.values().filter(|pirate| pirate.commission.faction == naval::ranks::GREY_TITHE).collect();
+    let tithe: Vec<_> =
+        seen.values().filter(|hostile| hostile.commission.faction == naval::ranks::GREY_TITHE).collect();
     assert!(!tithe.is_empty(), "the Tithe's waters send its ships");
-    let along = tithe.iter().filter(|pirate| {
-        let (off, [east, south]) = chart.lane([pirate.x, pirate.y]).unwrap();
+    let along = tithe.iter().filter(|hostile| {
+        let (off, [east, south]) = chart.lane([hostile.x, hostile.y]).unwrap();
         let heading = libm::atan2(east, -south).rem_euclid(std::f64::consts::TAU);
-        let turned = (pirate.heading - heading).rem_euclid(std::f64::consts::PI);
+        let turned = (hostile.heading - heading).rem_euclid(std::f64::consts::PI);
         off <= crate::sighting::LANE_REACH_M && (turned < 1e-9 || std::f64::consts::PI - turned < 1e-9)
     });
     assert_eq!(along.count(), tithe.len(), "each on a lane, heading along it");
@@ -80,7 +82,7 @@ fn the_worlds_sea_opened_with_its_ports_sends_tithe_ships_along_its_lanes() {
 
 #[test]
 fn a_bold_ship_coming_for_a_player_in_home_waters_follows_their_edge_round_rather_than_swinging_at_it() {
-    use crate::pirates::{Pirate, Pirates, Voyager};
+    use crate::hostiles::{Hostile, Hostiles, Voyager};
     let (layout, ports) = crate::measure_tests::world();
     let charted = Charted::new(&layout, &ports);
     let coasts = Coast::of(&layout);
@@ -100,17 +102,18 @@ fn a_bold_ship_coming_for_a_player_in_home_waters_follows_their_edge_round_rathe
         heading: 0.0,
         pace: 0,
         fighting: false,
+        home: false,
         clock: 1.0,
         hull: 1.0,
     };
-    let elite = naval::ranks::Commission { faction: naval::ranks::PIRATES, rank: naval::ranks::Rank::Elite };
+    let elite = naval::ranks::Commission { faction: naval::ranks::GREY_TITHE, rank: naval::ranks::Rank::Elite };
     let start = [edge[0] + 1_100.0, edge[1]];
-    let mut pirates = Pirates::new(1);
-    pirates.sailing.push(Pirate::standing(1, 1, elite, start, 1.5 * std::f64::consts::PI, true));
+    let mut hostiles = Hostiles::new(1);
+    hostiles.sailing.push(Hostile::standing(1, 1, elite, start, 1.5 * std::f64::consts::PI, true));
     let (mut headings, mut sailed, mut last) = (Vec::new(), 0.0, start);
     for _ in 0..600 {
-        pirates.tick(1.0, &[player], &chart);
-        let Some(ship) = pirates.sailing.iter().find(|ship| ship.id == 1) else { break };
+        hostiles.tick(1.0, &[player], &chart);
+        let Some(ship) = hostiles.sailing.iter().find(|ship| ship.id == 1) else { break };
         assert_ne!(holder([ship.x, ship.y]), Some(Holder::Home), "never into home waters");
         headings.push(ship.heading);
         let (east, south) = (ship.x - last[0], ship.y - last[1]);

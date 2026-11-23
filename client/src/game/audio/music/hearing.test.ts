@@ -71,7 +71,7 @@ test('at sea: the hostile ships within reach, and the fight by its hostile capta
   const sea = {
     position: [0, 0],
     sighted: {
-      pirates: [
+      hostiles: [
         { x: 600, y: 0, rank: 2 },
         { x: SEA_NEAR_M + 1, y: 0, rank: 4 },
       ],

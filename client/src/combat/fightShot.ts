@@ -148,7 +148,7 @@ export function fightScene(width: number, height: number, dead = false): { frame
   };
   const foes = (struck: boolean): MarkedFoe[] => [
     foe(11, 'Deckhand', 1, ahead(9, -3.2), { alert: 1 }, { health: 40 }),
-    foe(12, 'Corsair Gunner', 2, ahead(8, 0.4), {}, { health: struck ? 70 : 120 }),
+    foe(12, 'Tithe Gunner', 2, ahead(8, 0.4), {}, { health: struck ? 70 : 120 }),
     foe(
       13,
       'Tithe Warden',

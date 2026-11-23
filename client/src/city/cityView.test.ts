@@ -138,3 +138,23 @@ test('a city begun again before it is whole is let go with what it made, and nev
     'everything made let go',
   );
 });
+
+test("a ruin's crystal and its wrecks' crust are the city's, let go with all else it made", () => {
+  const { gpu, made } = standInGpu();
+  const view = new CityView(gpu);
+  // The sky's terms are the device's, kept for every view.
+  const first = made.length;
+  const wrecks = [{ ship: 'sloop', at: HERE, heading: 0, heel: 0 }] as const;
+  const madeBy = (plan: CityPlan) => {
+    const before = made.length;
+    view.setCity(plan, TEMPERATE, new Map(), TABLES);
+    return made.length - before;
+  };
+  const port = madeBy(cityAt(HERE));
+  assert.equal(madeBy({ ...cityAt(HERE), ruined: true, wrecks }), port + 1, 'its crust by instance');
+  view.clear();
+  assert.ok(
+    made.slice(first).every((each) => each.destroyed),
+    'everything made let go',
+  );
+});

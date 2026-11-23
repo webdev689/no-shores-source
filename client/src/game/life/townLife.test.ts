@@ -125,10 +125,12 @@ test('no one stands or walks in any solid of the courtyard, nor where Shape stan
     }
 });
 
-test('two walking one way never walk in each other, whatever the seed', () => {
+test('two walking one way never walk in each other, whatever the seed, loop after loop of the walkers', () => {
+  // The round's loop and the walkers' keep step: fifty loops on, the sweeper still never walks in a walker.
+  const loops = Array.from({ length: 51 }, (unused, loop) => MOMENTS.map((moment) => moment + loop * LOOP_S));
   for (const seed of [42, 12345, 28910]) {
     const life = new TownLife(WAYS, POSTS, seed);
-    for (const moment of MOMENTS) {
+    for (const moment of loops.flat()) {
       const people = life.everyoneAt(moment);
       people.forEach((doing, nth) => {
         if (doing.anim !== 'walk') return;

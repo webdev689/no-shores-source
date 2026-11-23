@@ -2,19 +2,17 @@
 //! each rank makes of its ship over a Major's (its hull and men, its way, its guns' harm and reload, its gunners' aim,
 //! its boldness), kept in one table.
 
-use crate::arms::{Arms, Build, PIRATE_SLOOP, SLOOP_ARMS, TITHE_SLOOP, arms_of};
-use crate::captain::PIRATE_RUNS_AT;
+use crate::arms::{Arms, Build, SLOOP_ARMS, TITHE_SLOOP, arms_of};
+use crate::captain::RUNS_AT;
 use crate::captain::odds::hit_share;
 use crate::damage::{Damage, HOLED_BONUS, STRUCK_AT, WATERLINE_BAND_M};
 use crate::guns::Gun;
 use sailing::HullKind;
 
-/// The factions by number, as the foes number them: the players' own ships are 0.
+/// The factions by number, as the foes number them: the players' own ships are 0, and so is a friendly ship of the
+/// traffic a captain sails beside them. The Grey Tithe's captains alone sail against them.
 pub const PLAYERS: u8 = 0;
 pub const GREY_TITHE: u8 = 1;
-pub const PIRATES: u8 = 2;
-/// The factions whose captains sail, in their numbers' order.
-pub const CAPTAIN_FACTIONS: [u8; 2] = [GREY_TITHE, PIRATES];
 
 /// A ship's rank, Minor to Boss, numbered 1 to 5 on the wire.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
@@ -52,7 +50,7 @@ pub const SCALES: [Scale; 5] = [
         reload: 1.2,
         aim_error: 1.3,
         always_bold: false,
-        runs_at: PIRATE_RUNS_AT,
+        runs_at: RUNS_AT,
         strikes_at: STRUCK_AT,
     },
     Scale {
@@ -62,7 +60,7 @@ pub const SCALES: [Scale; 5] = [
         reload: 1.0,
         aim_error: 1.0,
         always_bold: false,
-        runs_at: PIRATE_RUNS_AT,
+        runs_at: RUNS_AT,
         strikes_at: STRUCK_AT,
     },
     Scale {
@@ -72,7 +70,7 @@ pub const SCALES: [Scale; 5] = [
         reload: 0.9,
         aim_error: 0.8,
         always_bold: true,
-        runs_at: PIRATE_RUNS_AT,
+        runs_at: RUNS_AT,
         strikes_at: 0.2,
     },
     Scale {
@@ -135,7 +133,7 @@ impl Rank {
 /// the same fire takes as long to make any hull of one rank strike; the Sloop's is 1.
 #[must_use]
 pub fn exposure(hull: HullKind) -> f64 {
-    let at = |arms: &Arms| hit_share(&SLOOP_ARMS, arms, PIRATE_SLOOP.skill);
+    let at = |arms: &Arms| hit_share(&SLOOP_ARMS, arms, TITHE_SLOOP.skill);
     at(arms_of(hull)) / at(&SLOOP_ARMS)
 }
 
@@ -148,7 +146,8 @@ pub fn hull_exposure(hull: HullKind) -> f64 {
     exposure(hull) * (holed(arms_of(hull)) / holed(&SLOOP_ARMS))
 }
 
-/// A captain's ship's name, by its faction and its hull: the Tithe's or the pirates' Sloop, Schooner, Brig or Frigate.
+/// A captain's ship's name, by its faction and its hull: the Tithe's Sloop, Schooner, Brig or Frigate, or a friendly
+/// merchant's of the players' side.
 #[must_use]
 pub fn ship_name(faction: u8, hull: HullKind) -> &'static str {
     let tithe = faction == GREY_TITHE;
@@ -157,10 +156,10 @@ pub fn ship_name(faction: u8, hull: HullKind) -> &'static str {
         HullKind::Schooner if tithe => "Tithe Schooner",
         HullKind::Brig if tithe => "Tithe Brig",
         HullKind::Frigate if tithe => "Tithe Frigate",
-        HullKind::Sloop => "Pirate Sloop",
-        HullKind::Schooner => "Pirate Schooner",
-        HullKind::Brig => "Pirate Brig",
-        HullKind::Frigate => "Pirate Frigate",
+        HullKind::Sloop => "Merchant Sloop",
+        HullKind::Schooner => "Merchant Schooner",
+        HullKind::Brig => "Merchant Brig",
+        HullKind::Frigate => "Merchant Frigate",
     }
 }
 
@@ -172,17 +171,18 @@ pub struct Commission {
 }
 
 impl Default for Commission {
-    /// A Major of the pirates: the plain captain, as a call that names no faction or rank brings.
+    /// A Major of the Grey Tithe: the plain captain, as a call that names no faction or rank brings.
     fn default() -> Self {
-        Self { faction: PIRATES, rank: Rank::Major }
+        Self { faction: GREY_TITHE, rank: Rank::Major }
     }
 }
 
 impl Commission {
-    /// A commission for a faction whose captains sail, or none.
+    /// A commission for the Grey Tithe, whose captains sail against the players, or none: a friendly ship's is the
+    /// room's to give.
     #[must_use]
     pub fn of(faction: u8, rank: Rank) -> Option<Commission> {
-        CAPTAIN_FACTIONS.contains(&faction).then_some(Commission { faction, rank })
+        (faction == GREY_TITHE).then_some(Commission { faction, rank })
     }
 
     /// The hull it sails: its rank's.
@@ -201,12 +201,17 @@ impl Commission {
     /// Its class as `build`, its hull and its men `strength` times as many: what its level makes of them.
     #[must_use]
     pub fn build_at(&self, strength: f64) -> Build {
-        let base = if self.faction == GREY_TITHE { TITHE_SLOOP } else { PIRATE_SLOOP };
+        self.build_in(self.hull(), strength)
+    }
+
+    /// Its class as `build_at` makes it, sailing `kind` rather than its rank's hull: a friendly ship keeps its own.
+    #[must_use]
+    pub fn build_in(&self, kind: HullKind, strength: f64) -> Build {
+        let base = TITHE_SLOOP;
         let scale = self.rank.scale().hull * strength;
-        let (name, exposed) = (ship_name(self.faction, self.hull()), exposure(self.hull()));
+        let (name, exposed) = (ship_name(self.faction, kind), exposure(kind));
         // Whole points and whole men, as every blow takes, so neither ever shows a fraction left.
-        let (hull, crew) =
-            ((base.hull * scale * hull_exposure(self.hull())).round(), (base.crew * scale * exposed).round());
+        let (hull, crew) = ((base.hull * scale * hull_exposure(kind)).round(), (base.crew * scale * exposed).round());
         Build { name, hull, sail: (base.sail * exposed).round(), crew, ..base }
     }
 
@@ -219,7 +224,13 @@ impl Commission {
     /// Its ship's hurts, sound, as `damage`, its hull and men `strength` times as many.
     #[must_use]
     pub fn damage_at(&self, strength: f64) -> Damage {
-        let mut damage = Damage::new(&self.build_at(strength), false);
+        self.damage_in(self.hull(), strength)
+    }
+
+    /// Its ship's hurts, sound, as `damage_at`, sailing `kind` (`build_in`).
+    #[must_use]
+    pub fn damage_in(&self, kind: HullKind, strength: f64) -> Damage {
+        let mut damage = Damage::new(&self.build_in(kind, strength), false);
         damage.struck_at = self.rank.scale().strikes_at;
         damage
     }

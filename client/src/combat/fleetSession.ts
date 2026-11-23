@@ -15,7 +15,7 @@ const MOST_AHEAD_S = 0.25;
 const GRAVITY = 9.81;
 const LOADS: readonly ShotName[] = ['round', 'grape', 'chain', 'heated'];
 const ZONES = ['hull', 'holed', 'rig'] as const;
-/** The most of the fight's events kept for its feel until taken. */
+/** The most of the fight's events kept for its feel, or for the panel, until taken. */
 export const MOST_FELT = 512;
 const SIDES = ['port', 'starboard'] as const;
 const STATES = ['afloat', 'struck', 'sinking', 'sunk'] as const;
@@ -174,7 +174,8 @@ export class FleetSession {
       const said = this.fightEvent(event);
       if (said) this.events.push(said);
     }
-    // A session whose feel nobody takes keeps only the latest.
+    // A session whose feel or events nobody takes keeps only the latest.
+    this.events = this.events.slice(-MOST_FELT);
     this.felt = [...this.felt, ...fleetFeel(snapshot.naval)].slice(-MOST_FELT);
   }
 

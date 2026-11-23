@@ -9,11 +9,15 @@ const KINDS: [NodeKind; 4] = [NodeKind::Patrol, NodeKind::Mission, NodeKind::Dun
 
 /// Land rising 300 m a kilometre east and south, over 4 km square round the origin.
 pub(super) fn sloped() -> Floor {
+    land((0..16).map(|cell| f64::from(cell % 4 + cell / 4) * 300.0).collect())
+}
+
+/// Land over 4 km square round the origin, its heights at the corners of a kilometre grid (`rising`, row by row).
+pub(super) fn land(rising: Vec<f64>) -> Floor {
     let grid = |data: Vec<f64>| {
         json!({ "width": 4, "height": 4, "left_m": -2000.0, "top_m": -2000.0, "cell_m": 1000.0,
             "first_column": 0, "first_row": 0, "data": data })
     };
-    let rising: Vec<f64> = (0..16).map(|cell| f64::from(cell % 4 + cell / 4) * 300.0).collect();
     let ground = json!({ "land": grid(rising), "lake_level": vec![0.0; 16], "rivers": [], "roads": [], "towns": [],
         "coast": grid(vec![5000.0; 16]), "across": grid(vec![-50.0; 16]), "pads": [], "seed": 7 });
     Floor::Land(Box::new(serde_json::from_value(ground).unwrap()))
@@ -373,4 +377,25 @@ fn a_node_s_mesh_keeps_its_layout_s_wall_a_body_s_radius_off_and_bakes_no_box_pa
     });
     assert!(route.len() > 2 && clear, "round the wall's end: {route:?}");
     assert_eq!(nav, baked(&floor, &[wall], first, Some(&section)), "a box off the square bakes nothing");
+}
+
+#[test]
+fn a_quests_group_arriving_leaves_the_last_stand_its_leader_and_its_break() {
+    let mut room = crate::quests::quests_tests::node_room("node-test", &[("glade", [0.0, 0.0], 48.0)]);
+    let leader = room.next_id();
+    room.encounter = Some(Encounter {
+        stage: super::groups::Stage::LastStand,
+        last_stand: [0.0, 30.0, 0.0],
+        leader: Some(leader),
+        broken: true,
+        waves: None,
+        called: 0,
+        levels: None,
+    });
+    let place = gear::quests::Place { name: "glade".to_owned(), at: [0.0, 0.0], radius: 48.0 };
+    let ground = room.ground_of(&place, 48.0).expect("a mesh round the glade");
+    let stood = room.stand_arriving(ground, [0.0, 0.0], 48.0, &[(14, ::foes::Rank::Minor)], 2.0, 1);
+    assert!(stood.is_some_and(|ids| ids.len() == 1), "the group stands");
+    let encounter = room.encounter.as_ref().expect("an encounter");
+    assert_eq!((encounter.leader, encounter.broken), (Some(leader), true), "the last stand is as it was");
 }

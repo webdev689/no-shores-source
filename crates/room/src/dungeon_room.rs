@@ -123,14 +123,6 @@ impl Room {
         Some(room)
     }
 
-    /// The room of a dungeon laid by a seed and a style, where no patrol lays it (a sea island's): `name` seeds its
-    /// world, as a patrol's dungeon's room name does, and `levels` is its foes' band, the tier already applied. None
-    /// where its floor cannot be made.
-    #[must_use]
-    pub fn dungeon_of(name: &str, seed: u32, style: dungeon::Style, levels: Option<(u8, u8)>) -> Option<Self> {
-        Self::laid_dungeon(name, &Dungeon::forge(seed, style), levels, (REEVE, Miniboss), None)
-    }
-
     /// The room of a laid dungeon: `name` seeds its world, `levels` is its foes' band, `end` the type and rank that
     /// stands alone in its end room, and `run` what its run carries, known before its garrison stands. Gated by its
     /// tier alone until its maker says what place it is. None where its floor cannot be made.

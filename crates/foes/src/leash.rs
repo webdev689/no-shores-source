@@ -62,12 +62,20 @@ fn fall_back(brain: &mut Brain, here: &Here<'_, '_>, board: &mut Board, home: Ho
 }
 
 /// Whether a foe may fight a fighter where it stands: a garrison foe only within its leash (LEASH, or its own) of its
-/// place, on ground the room's routes cover from that place.
+/// place, and, while that fighter stands on the ground, only on ground the room's routes cover from that place. A body
+/// in the air, on a wall or over a lip is judged by its distance alone: the navmesh lies on the floor, and its leap or
+/// climb lands back on it.
 pub fn within(brain: &Brain, here: &Here<'_, '_>, other: &combat::Fighter) -> bool {
+    let near = |home: Home| apart([home.at[0], home.at[1]], [other.body.x, other.body.y]) <= brain.leash;
+    brain.home.is_none_or(near) && reachable(brain, here, other)
+}
+
+/// Whether a garrison foe's routes reach where a fighter stands from its place, however far: always for a body off the
+/// ground, and for any foe with no place.
+pub fn reachable(brain: &Brain, here: &Here<'_, '_>, other: &combat::Fighter) -> bool {
     let feet = [other.body.x, other.body.y, other.body.z];
-    brain.home.is_none_or(|home| {
-        apart([home.at[0], home.at[1]], [feet[0], feet[1]]) <= brain.leash && here.world.routes.walkable(home.at, feet)
-    })
+    let grounded = other.body.mode == movement::Mode::Ground;
+    brain.home.is_none_or(|home| !grounded || here.world.routes.walkable(home.at, feet))
 }
 
 /// What a foe with no one to fight asks: a garrison foe whose search has just let go (it was alert before its senses
@@ -84,14 +92,15 @@ pub fn unoccupied(brain: &mut Brain, here: &Here<'_, '_>, was_alert: bool) -> As
     }
     brain.returning = None;
     let ask = look(brain, here);
+    // Its search over, by its look about or by its awareness bleeding away first: it walks home either way.
+    if was_alert && !brain.awareness.alert {
+        start_home(brain, Homeward::Searched);
+        return walk_home(brain, here, home);
+    }
     if !brain.awareness.alert && brain.awareness.level <= ALERT_OFF {
         return walk_home(brain, here, home);
     }
-    if !was_alert || brain.awareness.alert {
-        return ask;
-    }
-    start_home(brain, Homeward::Searched);
-    walk_home(brain, here, home)
+    ask
 }
 
 /// Its fight given up: its turn and its post on the board, its target, where it last knew it, its awareness, the blow

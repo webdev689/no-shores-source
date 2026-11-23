@@ -14,6 +14,7 @@ import { Sparks } from './sparks.ts';
 import type { AnimaScreen } from './animaMoment.ts';
 import { type Drawn, SpellLooks, castLookOf } from './spellLooks.ts';
 import { IMPACT_SPARKS, type Struck, Tracers, othersArrows } from './tracers.ts';
+import { shotBodies } from '../player/crosshair.ts';
 
 type Point = readonly [number, number, number];
 
@@ -107,7 +108,9 @@ export class FightEffects {
     const fired = fight.fired.splice(0);
     this.tracers.fired(fired, muzzleOf);
     this.tracers.seen(fight.takeShots(), fight.player);
-    for (const impact of this.tracers.update(seconds, blocks, bodies, groundAt))
+    // The player's own arrows fly as the room flies them: past the dead and their own side.
+    const targets = drawn ? shotBodies(drawn.foes, fight.foes) : bodies;
+    for (const impact of this.tracers.update(seconds, blocks, bodies, groundAt, targets))
       this.sparks.burst(impact.at, impact.back, IMPACT_SPARKS);
     this.shotsHeard = { fired, struck: this.tracers.struck };
     const look = this.ownLook;

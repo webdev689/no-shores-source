@@ -33,8 +33,8 @@ test('the key is one panel: four lines, the holders in two columns under their t
   const measured = keySize({ font: '', measureText: (text: string) => ({ width: text.length * 7 }) });
   // Four lines of 16 with three gaps of 2 and a padding of 7 above and below.
   assert.equal(measured.height, 84);
-  // Two columns of a swatch, a gap and the widest word: "Pirates" under "Home", "Grey Tithe" over "Contested".
-  assert.equal(measured.width, 7 * 2 + (20 + 5 + 7 * 7) + 12 + (20 + 5 + 10 * 7));
+  // Two columns of a swatch, a gap and the widest word: "The Lattice" under "Home", "Grey Tithe" beside them.
+  assert.equal(measured.width, 7 * 2 + (20 + 5 + 11 * 7) + 12 + (20 + 5 + 10 * 7));
 });
 
 test('land under a box is a discovered island’s, asked across the whole box', () => {
@@ -52,7 +52,7 @@ test('land under a box is a discovered island’s, asked across the whole box', 
   assert.equal(landUnder(field, 0, view, { x: 0, y: 0, width: 200, height: 200 }), false, 'an undiscovered island');
 });
 
-test('each holder’s swatch is painted as the map shows it: its wash over its parchment, the contested and Tithe hatched', () => {
+test('each holder’s swatch is painted as the map shows it: its wash over its parchment, the Tithe and Lattice hatched', () => {
   const calls: { name: string; args: unknown[]; fillStyle: unknown }[] = [];
   const state = { font: '', fillStyle: '' as unknown, strokeStyle: '' as unknown, lineWidth: 1, textAlign: 'left' };
   const painter = new Proxy(state, {
@@ -80,6 +80,6 @@ test('each holder’s swatch is painted as the map shows it: its wash over its p
   const swatches = calls
     .filter((call) => call.name === 'fillRect' && call.args[2] === 20)
     .map((call) => call.fillStyle);
-  assert.deepEqual(swatches, (['home', 'grey-tithe', 'pirates', 'contested'] as const).map(blend));
-  assert.equal(calls.filter((call) => call.name === 'clip').length, 2, 'the Tithe’s and the contested’s hatching');
+  assert.deepEqual(swatches, (['home', 'grey-tithe', 'lattice'] as const).map(blend));
+  assert.equal(calls.filter((call) => call.name === 'clip').length, 2, 'the Tithe’s and the Lattice’s hatching');
 });

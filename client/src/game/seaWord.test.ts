@@ -13,7 +13,7 @@ test('the sea’s word becomes the player’s lines: washing up, a piece that ga
       [20, 100, 1, 1],
       [21, 101, 7, 3, 1, 0],
       [21, 101, 8, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-      [22, 102, 0, 2, 3, 1],
+      [22, 102, 0, 1, 3, 1],
       [22, 103, 4, 0, 0, 0],
     ],
     [
@@ -27,7 +27,7 @@ test('the sea’s word becomes the player’s lines: washing up, a piece that ga
     'Boarders away: the Tithe Brig’s crew stands to meet them.',
     'Your ship went down: you washed up at Sunspire; your ship lies at its roadstead.',
     'Gathered a chest: nothing you had room for.',
-    'The Pirate Schooner joined the fight.',
+    'The Tithe Schooner joined the fight.',
     'Player 4 joined the fight.',
   ]);
 });
@@ -95,15 +95,15 @@ test('washed up on a found island, the player is told so and walks ashore there,
 });
 
 test('each line of the sea’s word stands as a notice for a while, as DFO’s toasts do, several at once', () => {
-  const told = [[[22, 1, 0, 2, 3, 1]], [[22, 2, 4, 0, 0, 0]], []];
+  const told = [[[22, 1, 0, 1, 3, 1]], [[22, 2, 4, 0, 0, 0]], []];
   const room = {
     flotsam: [],
     takeTold: () => ({ naval: [], told: told.shift() ?? [] }),
     shipNamed: () => null,
   } as unknown as Parameters<SeaWord['step']>[0];
   const word = new SeaWord([], FACTS);
-  assert.deepEqual(word.notices(room, 0), ['The Pirate Schooner joined the fight.']);
-  assert.deepEqual(word.notices(room, 1), ['The Pirate Schooner joined the fight.', 'Player 4 joined the fight.']);
+  assert.deepEqual(word.notices(room, 0), ['The Tithe Schooner joined the fight.']);
+  assert.deepEqual(word.notices(room, 1), ['The Tithe Schooner joined the fight.', 'Player 4 joined the fight.']);
   assert.deepEqual(word.notices(room, 6.5), ['Player 4 joined the fight.'], 'each stands its own while');
   assert.deepEqual(word.notices(null, 8), []);
 });
