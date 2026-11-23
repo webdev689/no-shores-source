@@ -156,12 +156,13 @@ red. A fire's parts are worked out on the CPU once a frame of its flicker and ke
 edges, cost about 0.8 ms a frame on the test machine, and no frame draws more than 16,384 parts.
 
 Smoke and flame are laid over the picture after the water, tested against the scene's depth, so the water never covers a
-fire burning above it. Each fire also throws its light into the light layer ([[Weapon Glow]]): the glow reads the
-scene's depth back into the point drawn at each pixel and lights it by how near it stands to the fire's middle, out to
-three times the fire's height, so the deck round a fire and whoever stands there are lit and the sea and sky seen past
-it are not. A fire along an edge throws the same light from up to seven points spaced no further apart than that reach,
-so the edge is lit end to end. The glow is light itself, so it is added as it is, not only where it passes white-hot;
-its green is half its red and its blue never steps, so it runs from a red rim through orange to a gold heart.
+fire burning above it. Each fire also throws its light round it, laid under its flames at the picture's own size: the
+glow reads the scene's depth back into the point drawn at each pixel and lights it by how near it stands to the fire's
+middle, out to three times the fire's height, so the deck round a fire and whoever stands there are lit and the sky
+seen past it is not. A fire along an edge throws the same light from up to seven points spaced no further apart than
+that reach, so the edge is lit end to end. Its light is red-orange, its green half its red, added at half its strength
+at the middle and falling off softly as the square of the way out (`fireLit`), so it warms orange timber and never
+turns it yellow-green, and shows no edge; it is not the stepped light layer's.
 
 ### Trying it
 
@@ -173,7 +174,7 @@ starts at any beat with `?prologue=<beat>` ([[Prologue]]), each in its own weath
 - The overcast's ceiling and the mist are laid over the water's own sky, not drawn into it: a storm's sun still sets
   the water's highlights, only dimmed.
 - Rain and snow are drawn round the eye only; they do not wet or whiten the ground.
-- A fire's light is the light layer's, so it is stepped and casts no shadow: what stands behind a mast is lit too.
+- A fire's light casts no shadow: what stands behind a mast is lit too.
 - The water writes no depth, so a fire's light never falls on the sea's surface round it.
 - A fire's parts are not sorted by distance: within a fire the brightest flame is drawn last, and two fires that
   overlap on the screen are drawn in the order they were lit.
