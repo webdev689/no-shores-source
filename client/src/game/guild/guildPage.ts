@@ -8,7 +8,7 @@ import type { AccountLink, GuildFace, OutpostsFace, Roster } from '../../network
 import { ASKS, type GearAsk } from '../../network/gearMessages.ts';
 import { announce } from '../../ui/announce.ts';
 import type { Node } from '../../ui/node.ts';
-import { GUILD_CHANGED } from '../gearScreen.ts';
+import { GUILD_CHANGED, OUTPOST_CHANGED } from '../gearScreen.ts';
 import { INK, pressNode, words } from '../gearNodes.ts';
 import type { PlainContext } from '../menuPage.ts';
 import { hintNode } from '../menuPages.ts';
@@ -139,7 +139,10 @@ export class GuildPage {
           this.founding = null;
         }
         if (path === 'guild/banner') this.back();
-        if (changes) this.here()?.ask({ kind: ASKS.outpostChanged });
+        if (changes) {
+          this.here()?.ask({ kind: ASKS.outpostChanged });
+          dispatchEvent(new Event(OUTPOST_CHANGED));
+        }
         for (const [id] of Object.values(FIELDS)) this.clearField(id);
       })
       .finally(() => {

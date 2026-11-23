@@ -44,6 +44,9 @@ export const OPEN_AT = 'overlook:gear';
 export const ACCOUNT_CHANGED = 'overlook:account';
 /** The event sent once a player's guild changes (founded, joined, left), so the room reads their plate's tag again. */
 export const GUILD_CHANGED = 'overlook:guild';
+/** Said on the window when the player changed an outpost's plot through the accounts, so the outpost drawn reads it
+ *  again. */
+export const OUTPOST_CHANGED = 'overlook:outpost';
 /** The event the Roster sends with each answer it hears, so the company on the HUD need not ask as well. */
 export const ROSTER_HEARD = 'overlook:roster';
 
