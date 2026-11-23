@@ -93,6 +93,8 @@ export function listenForControls(game: Controlled): void {
     const key = keyNameOf(event);
     if (event.repeat || ui.typing) return;
     if (playing.flow.mode === 'story') return void story?.key(key, true);
+    // While the stranger speaks her welcome no game key acts: Space moves her words on.
+    if (playing.after.holding) return void (BINDS.now.jump.keys.includes(key) && playing.after.press());
     act((id) => BINDS.now[id].keys.includes(key), key === 'escape');
   });
   // The pad's presses do as the keys do, but under the gear screen or the sheet, whose buttons they are; B is
@@ -101,6 +103,7 @@ export function listenForControls(game: Controlled): void {
   input.onPad((pressed, buttons) => {
     // A button being bound in the sheet is the sheet's alone.
     if (hud.controls.rebinding.slot) return;
+    if (playing.after.holding) return void ((pressed.has('jump') || pressed.has('confirm')) && playing.after.press());
     const covered = gearScreenOpen() || hud.controls.open || socialUp() || chatOpen();
     const escape = buttons.has('B') && (playing.helmMap.busy || playing.flow.mode === 'landing');
     // B steps out of the game's menu, as Escape does.

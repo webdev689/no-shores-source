@@ -39,7 +39,7 @@ test('the repair key repairs at the helm and walking its own deck, never in a fi
     fight: null as object | null,
     sighted: { ask: (what: string) => asked.push(what) },
   };
-  const playing = { flow: { mode: 'sea' }, sea, foot: null, helmMap: { key: () => false }, through: null };
+  const playing = { flow: { mode: 'sea' }, sea, foot: null, helmMap: { key: () => false }, through: null, after: {} };
   const nothing = () => undefined;
   listenForControls({
     playing,
@@ -67,7 +67,14 @@ test("the pad's Start opens the Character page in the story as the key does, for
   let pad: (pressed: Set<string>, buttons: Set<string>) => void = () => undefined;
   const nothing = () => undefined;
   listenForControls({
-    playing: { flow: { mode: 'story' }, sea: null, foot: null, helmMap: { key: () => false }, through: null },
+    playing: {
+      flow: { mode: 'story' },
+      sea: null,
+      foot: null,
+      helmMap: { key: () => false },
+      through: null,
+      after: {},
+    },
     input: { onPad: (heard: typeof pad) => (pad = heard) },
     ui: { typing: false },
     hud: { controls: { open: false, rebinding: { slot: null } } },
@@ -77,4 +84,48 @@ test("the pad's Start opens the Character page in the story as the key does, for
   } as unknown as Controlled);
   pad(new Set(['character']), new Set(['Start']));
   assert.deepEqual(opened, [{ view: 'character', toggle: true }]);
+});
+
+test('while the stranger speaks her welcome no game key acts but Space, which moves her words on', () => {
+  const { window } = fakePage();
+  const changes: unknown[] = [];
+  let pressed = 0;
+  const after = { holding: true, press: () => void (pressed += 1) };
+  const playing = {
+    flow: { mode: 'foot' },
+    sea: null,
+    foot: { standing: { kind: 'inside' }, use: () => changes.push('used') },
+    helmMap: { key: () => false },
+    through: null,
+    after,
+  };
+  const pads: ((pressed: Set<string>, buttons: Set<string>) => void)[] = [];
+  listenForControls({
+    playing,
+    input: { onPad: (heard: (pressed: Set<string>, buttons: Set<string>) => void) => pads.push(heard) },
+    ui: { typing: false },
+    hud: { controls: { rebinding: {}, open: false } },
+    story: null,
+    retry: () => null,
+    change: (asked: unknown) => changes.push(asked),
+    openMap: () => changes.push('map'),
+    respawn: () => changes.push('respawn'),
+  } as unknown as Controlled);
+  const key = (name: string, code: string) => window.dispatchEvent(new FakeEvent('keydown', { key: name, code }));
+  for (const [name, code] of [
+    ['Escape', 'Escape'],
+    ['m', 'KeyM'],
+    ['e', 'KeyE'],
+    ['n', 'KeyN'],
+    ['Enter', 'Enter'],
+  ])
+    key(name, code);
+  pads[0]?.(new Set(['menu', 'use', 'map']), new Set());
+  assert.deepEqual(changes, [], 'no menu, map, chat, use or respawn');
+  key(' ', 'Space');
+  pads[0]?.(new Set(['jump']), new Set());
+  assert.equal(pressed, 2, 'her words move on');
+  after.holding = false;
+  key('m', 'KeyM');
+  assert.deepEqual(changes, [{ kind: 'menu' }], 'the keys are the player’s again');
 });

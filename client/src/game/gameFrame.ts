@@ -201,9 +201,9 @@ export function startFrames(parts: FrameParts, playing: Playing): void {
       eyesBeforeMap = looking ? walker.player.view.firstPerson : null;
       walker.player = { ...walker.player, view: { ...walker.player.view, firstPerson } };
     }
-    // While the stranger speaks her welcome the keys wait, but Space, which moves her words on, and the view is hers.
+    // While the stranger speaks her welcome no key moves or acts (Space moves her words on, `gameKeys`), and the view
+    // is hers.
     const told = playing.after.holding;
-    if (told && controls.pressed('jump')) playing.after.press();
     const heard = told ? IDLE : controls;
     const own = here.frame(heard, seconds, clock, { paused, looking, hands: handsFree(heard, paused), aspect });
     const shown = { ...own, shot: playing.after.shot(own.shot, seconds) };
@@ -248,7 +248,7 @@ export function startFrames(parts: FrameParts, playing: Playing): void {
     const fight = footView.frame(here, questShown, seconds, { size, viewport, groundAt: here.groundAt });
     // Use held on another player opens their menu, where it does nothing else (a deed or a gate) and no menu or map is up.
     const offered = !paused && !looking && !here.fallen && !hud.usePrompt.showing && !playing.through;
-    holdOnPlayer(footView.playerPlates, offered, controls.held('use'), clock, {
+    holdOnPlayer(footView.playerPlates, offered, heard.held('use'), clock, {
       width: size.width / uiScale(devicePixelRatio),
     });
     // The fight's crosshair, plates and compass give way to the map while it is up.
