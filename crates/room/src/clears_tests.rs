@@ -113,6 +113,37 @@ fn a_wave_that_stands_and_falls_after_a_clear_pays_no_clear_again() {
 }
 
 #[test]
+fn a_player_who_felled_only_a_waves_foe_takes_no_share_of_the_clear() {
+    let (mut room, player) = cleared_room(NodeKind::Dungeon);
+    let other = room.join().expect("room");
+    let at = room.garrison[0].at;
+    let foe_type = ::foes::foe_type(::foes::roster::COLLECTOR).expect("the Tithe's Collector");
+    let wave = room.stand_foe(foe_type, ::foes::Rank::Minor, at, 0.0, None);
+    room.garrison.push(Post {
+        at,
+        members: vec![(14, ::foes::Rank::Minor, at, 0.0)],
+        girds: vec![(0, None)],
+        beat: None,
+        standing: vec![wave],
+        cleared_at: None,
+        leader: None,
+        broken: false,
+        defending: false,
+        fallback: at,
+        anchor: None,
+        arrival: true,
+    });
+    land(&mut room, other, wave, 1e9);
+    room.tick();
+    fell_all(&mut room, player);
+    let before = (room.players[&player].character.xp, room.players[&other].character.xp);
+    room.tick();
+    let fought = room.players[&player].character.xp - before.0;
+    assert!(fought >= 2_000, "who felled the garrison is paid its clear: {fought}");
+    assert_eq!(room.players[&other].character.xp, before.1, "a wave's foe is not the garrison's");
+}
+
+#[test]
 fn a_player_who_rejoins_keeps_their_share_of_the_clear() {
     let (mut room, player) = cleared_room(NodeKind::Dungeon);
     assert!(room.own(player, "account"));

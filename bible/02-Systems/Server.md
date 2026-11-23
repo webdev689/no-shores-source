@@ -550,7 +550,10 @@ so every decision is Rust and the shell only carries bytes and time.
   replaces, and every player of a room a deploy restarts or a fault stops, leave without that last save. A socket there
   that sends no token within five seconds of the join (a claim's own waits, `TOKEN_WAIT_MS`), or whose token is no
   session, is closed with 4003 and "Sign in to play online." (in a run, "Sign in to enter this run."), so sockets that
-  never sign in cannot hold a room's places; every page of the game sends one, a guest's included. While the accounts do
+  never sign in cannot hold a room's places; every page of the game sends one, a guest's included. Nor can one address
+  fill them in those five seconds: a room holds eight of its sockets unsigned at most (`UNSIGNED_FROM_ONE`, an IPv6
+  address by its /64 as the accounts count it, `addressKey`), and a ninth closes with 1013, which the page joins again
+  on. While the accounts do
   not answer a claim, or the look before it, the player plays on unkept, and a look unanswered claims nothing. The Test
   Ground's rooms and a fleet's keep nothing and take anyone. A character the room's gate shuts ([[Activities]]) is let
   go untouched, and the socket closed with 4003 and the gate's reason. Every room that keeps characters judges one on a

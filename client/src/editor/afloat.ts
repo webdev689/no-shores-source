@@ -55,7 +55,8 @@ export class Afloat {
   /** Its footprint on the water, for the water's surface. */
   hull(view: LandView, waterline: Waterline): HullMask {
     const { x, y, heading } = this.place(view, 1);
-    return { x, y, heading, halfLength: waterline.lengthM / 2, halfBeam: waterline.beamM / 2, way: this.way() };
+    const [halfLength, halfBeam] = [waterline.lengthM / 2, waterline.beamM / 2];
+    return { id: 'own', x, y, heading, halfLength, halfBeam, way: this.way() };
   }
 
   /** Its way, m/s. */

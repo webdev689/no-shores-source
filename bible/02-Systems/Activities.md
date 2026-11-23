@@ -1,6 +1,6 @@
 ---
 type: system
-status: built
+status: live
 code:
   - crates/gear/src/clock.rs#day_of
   - crates/gear/src/activity.rs#Activity

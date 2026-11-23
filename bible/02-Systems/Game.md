@@ -163,8 +163,8 @@ plants' pipelines are made once per device and format, and the lit keepers' mark
 frame as the game starts, so a continent or an island opened while sailing compiles none.
 
 A trip that fails, its room full or out of reach, puts the player back where they stood before it, joined again:
-aboard their ship, on the island's beach, in the dungeon, or in the node at its arrival spot
-([[The Audit's Leftovers Are Fixed as Claude Suggested]]; `travel.ts`, `tripBack.ts`). Should that fail too, or should
+aboard their ship, on the island's beach (online or alone, [[Only the Garrison's Own Kills Share Its Clear, and a Failed Trip Goes Back to the Beach]]), in the dungeon, or in the node at its
+arrival spot ([[The Audit's Leftovers Are Fixed as Claude Suggested]]; `travel.ts`, `tripBack.ts`). Should that fail too, or should
 the trip be one that sent them out of where they stood (a gate shut on them, their company fallen), they are taken
 to the hub, Overlook's social space, its landmass opened first where another is. The veil says why while they go
 ("You could not reach The Saltgrass Downs:" and the reason), and once it lifts the same words stand as a toast for

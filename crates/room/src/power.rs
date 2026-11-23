@@ -191,8 +191,9 @@ impl Room {
     /// Pays a foe's kill to every player who struck it within its last ten seconds, or whose companion did, throwing
     /// out what it drops for each, and tells each one's quest log; off a ship's deck its XP also pays their officers
     /// ashore and the Abyss boon's share, and the kill counts toward their bounties. On a boarded deck, or from a
-    /// defence tried again, a kill drops no Vestige or item: the hold, or the first try, is the loot. Each player paid
-    /// has fought the room's garrison, for its clear (`clears.rs`).
+    /// defence tried again, a kill drops no Vestige or item: the hold, or the first try, is the loot. A foe of the
+    /// room's own garrison, not a wave's or a quest's, counts each player paid as having fought it, for its clear
+    /// (`clears.rs`).
     pub(crate) fn pay_kill(&mut self, defender: FighterId) {
         let Some(Foe { fighter, brain, level, struck_by, .. }) = self.foes.get(&defender).cloned() else { return };
         let Some(worth) = worth_of(brain.role() as u8) else { return };
@@ -203,6 +204,7 @@ impl Room {
         // A defence tried again stands foes that drop nothing (`steps.rs`).
         let spoilless = self.quests.spoilless.contains(&defender);
         let rank = brain.rank as u8;
+        let garrison = self.garrison.iter().any(|post| !post.arrival && post.standing.contains(&defender));
         for (player, (tick, hand)) in struck_by {
             if self.clock.saturating_sub(tick) > SHARE_TICKS {
                 continue;
@@ -220,7 +222,9 @@ impl Room {
                 character.earn_officer_xp(reward.xp, false);
             }
             found.gear_changed = true;
-            self.fought_garrison(player);
+            if garrison {
+                self.fought_garrison(player);
+            }
             if !spoilless {
                 self.drop_spoils(player, vestiges, rank, at, &dice);
             }

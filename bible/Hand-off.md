@@ -192,22 +192,30 @@ each part works is in its system note.
 
 The decisions in [[Open Questions]] are not repeated here.
 
+- **A ship's wake follows the track it sailed** (#177, branch `ccr-836ab6ff-vgzmxg`), for the owner's yes to merge,
+  which deploys the page. The owner: "the waves that follow behind the ship dont animate when you turn your ship. They
+  are always straight". The water drew every wake straight aft of the heading the ship had that frame; it now keeps
+  where each ship's stern has been and lays the arms and the wash along it ([[Water]], "Its wake"; the numbers in [[The
+  Sea as Claude Shapes It]]). Tested offline (`wakes.test.ts`: a turn's wash where it sailed, no wake ahead of the bow
+  after a stop or going astern, a ship drawn 5x in a hard turn, the wake's box holding all of it); a read-only review's
+  five findings fixed with those tests. Not seen on a real GPU: how the curved wake looks, and the shader's cost while a
+  ship turns (unmeasured; a straight course takes the old path).
 - **The wreck's R2 tools after #172**, which no session may edit: `tools/wreck/wreck_level.py`'s waves still list the
   Tithe-Mates and Bosuns at rank 1; to match `content/prologue/wreck.json` each `(11, 1, ...)` becomes `(11, 2, ...)`
   and each `(10, 1, ...)` `(10, 2, ...)`, and `export_wreck.py` should write the quiet deck's `masts` (added to
   wreck.json by hand), or the next export drops them. A horse's card names no content it came from, as a ship's
   module's does not (Claude's call in the merge, the owner's to change).
-- **The ship aim under the crosshair, and the ship steady in it** (#168), merged; `cargo xtask check`
-  passed on its head. The owner: "The aim UI needs to be
-  center on the camera and its currently offset. Ship geometry in the aim jitters"
-  ([[Aiming a Ship Looks Square Off Its Side, Clear of Its Rig]], its calls). Measured offline on the rules' own swell (`seaAim.test.ts`, and a probe driving
-  `SeaCombat` on the wasm rules): the volley's fall stood 90 to 100 px past the crosshair on a 1080-line screen, as the
-  rules laid for a sea at rest at the ship's heave; it now stands within about 4 px settled, the rules laying where the
-  look's ray meets the swell (`on_water`), the view held at the guns' real nearest (`laidNearest`) and turned over the
-  fall (`laidAlong`). The eye stood 0 to 13 cm off its place on the drawn ship from frame to frame when answers came
-  unevenly, placed from the answer before the one the ship was drawn from; it now stands on it. Not yet seen on a real
-  GPU: how the aim feels and looks in the game. Left: answers that come unevenly still move the ship and the eye
-  together in uneven steps against the sea.
+- **The ship aim under the crosshair, and the ship steady in it** (#168), merged with the owner's yes ("Deploy 168 when
+  ready"), which deployed the page and the rooms. The owner: "The aim UI needs to be center on the camera and its
+  currently offset. Ship geometry in the aim jitters" ([[Aiming a Ship Looks Square Off Its Side, Clear of Its Rig]],
+  its calls). Measured offline on the rules' own swell (`seaAim.test.ts`, and a probe driving `SeaCombat` on the wasm
+  rules): the volley's fall stood 90 to 100 px past the crosshair on a 1080-line screen, as the rules laid for a sea at
+  rest at the ship's heave; it now stands within about 4 px settled, the rules laying where the look's ray meets the
+  swell (`on_water`), the view held at the guns' real nearest (`laidNearest`) and turned over the fall (`laidAlong`).
+  The eye stood 0 to 13 cm off its place on the drawn ship from frame to frame when answers came unevenly, placed from
+  the answer before the one the ship was drawn from; it now stands on it. Not yet seen on a real GPU: how the aim feels
+  and looks in the game. Left: answers that come unevenly still move the ship and the eye together in uneven steps
+  against the sea.
 - **The owner's bugs from two rounds of play** (#163), merged, which deploys the page and the rooms. Each fix was audited read-only, and every finding fixed with a test
   that fails without it. Elder Maren Hale's welcome was left to the session reworking it (#172, where her walk is
   gone):
@@ -271,23 +279,23 @@ The decisions in [[Open Questions]] are not repeated here.
   is put away at sea; the wheel scrolls in the interface's pixels; flora that failed to come is asked for again; the
   island door, `identify`'s number, the bake's panics, the chat hall's sizes, mottos' hidden marks and the World
   Editor's keys; dead code and some 25 stale docs out; the Code Map, Toolchain, Testing and other notes made true.
-  Tested offline (the full check at its head, `main` merged in); not played. What it left for the owner:
-  - The `modules` workflow's publish uploads `"$RUNNER_TEMP/stage"`, a folder nothing writes, so it uploads nothing and
-    passes; the next change to a module would name meshes R2 does not hold. A one-line fix (`"$RUNNER_TEMP/modules"`)
-    and a guard in `tools/r2.py`, held back because pushing either starts the asset workflows with the Cloudflare
-    token.
-  - One address can hold all 64 of the sea's places with sockets that never sign in, each let go after 5 s and opened
-    again: a per-address cap like the chat hall's is a new security limit, the owner's to approve. The roster's and a
-    player's reads have no rate limit.
-  - Any kill pays a dungeon node's clear as fighting its garrison (`room/src/power.rs`); a failed trip from an offline
-    island's beach goes to Overlook, though [[Game]] says the beach; the procedure says rebase and squash where
-    practice merges; `built` is a status Writing Notes does not list; two repo-check gaps (the vault check passes a
-    `code:` symbol any word of its file names; the html check excuses `.append(` on a name made with `new` anywhere and
-    misses `insertNode`, `importNode` and `new Text(`).
+  Tested offline (the full check at its head, `main` merged in); not played. What it left is in four drafts, each
+  on the owner's yes, each passing the full check at its head:
+  - #171: the `modules` workflow uploads the folder its bake fills, and `r2.py upload` refuses a missing one. Tested
+    live on its push: the publish ended "491 staged files on R2" (it had said 0).
+  - #173: a room holds eight sockets unsigned from one address at most (`UNSIGNED_FROM_ONE`); every room, not only
+    the sea, which the owner may narrow. The roster's and a player's reads still have no rate limit.
+  - #174: the vault check wants a `code:` symbol defined in its file, not only named; the html check refuses
+    `insertNode`, `importNode` and `new Text(`, and excuses `.append(` only on a name given nothing but `new`.
+  - #175: the owner's answers,
+    [[Only the Garrison's Own Kills Share Its Clear, and a Failed Trip Goes Back to the Beach]]: only the garrison's
+    own kills share its clear; a failed trip from a beach, played alone, goes back to it; Branches and Merging says
+    merge, not rebase and squash, and the `built` notes are `live` (Claude's calls).
 - **Open pull requests**, for the owner's yes once their checks pass: #162 (the game's words out to Type and back; it
   conflicts with `main` in `Decisions.md`) and #159 (the rooms' worker tests wait for what they check; it conflicts
-  with `main` in `roomThread.test.ts`). Drafts: #93 (the toolkit's first
-  review) and #114 (the gear message carries the pledge once).
+  with `main` in `roomThread.test.ts`). Drafts:
+  #171, #173, #174 and #175 (above), #93 (the toolkit's first review) and #114 (the gear message carries the pledge
+  once).
 - **Open points from merged work**, each the owner's to say:
   - #158 (the prologue's waking, scenes and arena, one loading screen, foes that give up only when far, feet on the
     city's ground; [[One Loading Screen Covers Every Trip Until the Place Is Ready]] and the decisions it names): the
