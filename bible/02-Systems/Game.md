@@ -101,8 +101,11 @@ the screen reader's announcements.
   ([[The Room for Playing Alone Runs in a Worker of Its Own]]): a node's, the sea's and an island's room (`LocalRoom`)
   is opened there, its navmesh baked and its sea laid, and ticked there as the game lets its clock run, its snapshots
   handed back as they come, as a server's are (`RoomThread`, `serveRooms`, `roomWorker.ts`). The game's thread only
-  sends the player's inputs and the seconds to run. The wreck's room in the prologue, which the story asks things of
-  and waits on the answer, and the [[Test Ground]]'s, are still opened in the thread that asks.
+  sends the player's inputs and the seconds to run. The prologue's wreck is opened there too (`openOverSea`): the
+  story's asks of it (`RoomThread.story`: stand a foe, send one at the player, post a crewman, give the arms, a
+  checkpoint, a heap standing or cleared) are made in the worker in the order asked, before any tick asked after
+  them, each answered in turn on the same queue as an island's word, a lost room's with none. The [[Test Ground]]'s
+  room is still opened in the thread that asks.
 - **Measured** headless on SwiftShader at 480 by 270, the world drawn at Overlook's social space for 30 seconds with
   W pressed every two: the page's thread is busy 0.0 ms a frame at the median and keeps 60 frames a second while the
   worker draws, with 4 long tasks (0.26 s in all); the worker is busy 25 ms a frame. SwiftShader draws on the CPU, so
@@ -245,7 +248,7 @@ third person, the forge's figure and the first person's hands, and the Test Grou
   over each chapter of the lore lying there for the player a closed book in a brass binding, 0.9 m over where it
   lies ([[Lore]]); and over each of a patrol's dungeon entrances a door, an arched door of planks banded in iron with a brass ring, 0.2 m
   over its door's lintel and a mark's width out from its face, once the forged props say where its door is. As DFO's, a mark's foot stands 0.2 m over the crown,
-  0.32 m across, turned to the eye and hidden by what stands before it, never narrower on the screen than 0.017 radians
+  0.32 m across, turned to the eye, never narrower on the screen than 0.017 radians
   either side so a keeper across the plaza still shows one; it bobs 6 cm once a second on a phase of its own, holding
   still under reduced motion, and fades out over the last fifth of its 30 m, the nearest twelve laid. A keeper's mark
   is lit while the keeper has something for the player (`keeperLit`;
@@ -258,7 +261,11 @@ third person, the forge's figure and the first person's hands, and the Test Grou
   player has spoken with the keeper or taken their letters, and is not lit while its keeper is away from the counter. A whole mark
   gives the fight's light layer no light, so a sign's brass never lights its own diamond. Its colours are laid in
   layers as a drop's are, the widest first, each a little nearer the eye, so a mark is a few dozen quads; a fading one
-  is laid flat, so no layer shows through another.
+  is laid flat, so no layer shows through another. Where something stands before a mark, a keeper's stall, the Hall's
+  walls or a hill, it is drawn through it, faded to 0.45 and laid flat 3 cm nearer the eye than any layer of the mark,
+  after the scene and only where the scene stands a thousandth of its distance nearer still (`marksHidden`,
+  `MarkDraw.drawHiddenOver`;
+  [[A Mark Over What a Player Can Use Is Seen Through Walls]]).
 - **On the ground**: each resource node stands as the forge's picture of its island's resource (`nodeCards`,
   [[Sprite Forge]], [[Material Nodes Stand Where They Are Dressed, Worked by Holding E]]), every resource at one scale,
   before the place its resource comes from, while the room stands it for the player, and as it looks spent once they

@@ -65,6 +65,8 @@ flyover: Go straight from waking into the gear and lessons; the wreck is seen as
 | The staged pair's cry | Kept, cried the first time a Tithe foe and one of the Brig's crew are on the view together | Its lines went with the flight |
 | The menu in the story | It opens on the wreck alone, while the player plays it, and shuts as that ends | Equipping is taught there; elsewhere the story's keys stay its own |
 
+Changed in part by [[The Wreck's Arms Lie Farther Out, as a Loot Drop]] (where the arms lie and how they look).
+
 Replaces in part [[The Game Opens With a Story Mission at Sea]] (beat 8's camera through the wreckage),
 [[The Prologue's Camera Flights Stand Clear and Go Slower]] (the wake's flight),
 [[Quests Get a Task Tracker, and the Placeholder Panel Goes]] (the wreck's "Learn the controls"),

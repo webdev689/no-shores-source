@@ -39,6 +39,8 @@ const OVER_THE_LAND_M = 0.12;
 export class FootView {
   private readonly gpu: Gpu;
   private readonly marks: MarkDraw;
+  /** The marks over what the player can use, again: faded where something hides them. */
+  private readonly hidden: MarkDraw;
   private readonly swings: SwingView;
   private readonly hud: Hud;
   /** Whether the fight's display shows: on foot only. */
@@ -50,6 +52,7 @@ export class FootView {
   constructor(gpu: Gpu, stack: Stack, forge: Cards, beside: (ui: Interface) => readonly Laid[] = () => []) {
     this.gpu = gpu;
     this.marks = new MarkDraw(gpu, SAMPLES);
+    this.hidden = new MarkDraw(gpu, SAMPLES, 'hidden_fragment');
     this.swings = new SwingView(gpu);
     // Where the game's own pieces stand, as the interface last laid them.
     let laidBy: Interface | null = null;
@@ -130,6 +133,7 @@ export class FootView {
     });
     // The marks are measured from the eye: it stands at their origin.
     this.marks.set(shown.marks, [0, 0, 0], shot.eye);
+    this.hidden.set(shown.hidden ?? [], [0, 0, 0], shot.eye);
     this.marks.setAbove(shown.lit);
     this.swings.set(shown.swings);
     const matrix = shiftedExactly(fromEye, [-eyeX, -eyeY, -eyeZ]);
@@ -147,7 +151,7 @@ export class FootView {
       seconds,
     );
     const drawn = blood.drawn;
-    const marks = this.marks;
+    const { marks, hidden } = this;
     const raised = (eyeMatrix: Float32Array) => shifted(own(eyeMatrix), [0, 0, OVER_THE_LAND_M]);
     const lit = FEEL.light && (shown.marks.length > 0 || shown.swings.length > 0);
     const lightInto = (pass: GPURenderPassEncoder, eyeMatrix: Float32Array) => {
@@ -163,6 +167,7 @@ export class FootView {
         overWater: (encoder, target, eyeMatrix, depth) => {
           this.swings.drawOver(encoder, target, depth, own(eyeMatrix));
           marks.drawClearOver(encoder, target, depth, raised(eyeMatrix));
+          hidden.drawHiddenOver(encoder, target, depth, raised(eyeMatrix));
           marks.drawAbove(encoder, target, raised(eyeMatrix));
         },
         ...(lit ? { lightInto } : {}),

@@ -159,7 +159,7 @@ fn a_fight_steps_to_its_pinned_fingerprint() {
     // Each leg's: the balls aloft at a leg's end are in it, and the captain's commission and strike share.
     assert_eq!(
         prints.join(" "),
-        "b14f9598cbf5b61b e397e5f02e7a84cc 2ad50820d6be449b 1317600c5c5fbd17 5528fe740d7fac46 d804cb133e9748c9 02caed3cd7fd035f a5ab81f02b0b956c f10178758430a2b5"
+        "b14f9598cbf5b61b e397e5f02e7a84cc 2ad50820d6be449b aba545ec422d28f1 88a4d1fcc37df241 d804cb133e9748c9 02caed3cd7fd035f a5ab81f02b0b956c f10178758430a2b5"
     );
 }
 

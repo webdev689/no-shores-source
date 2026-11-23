@@ -17,11 +17,14 @@ import { topAt, type WreckLayout } from './wreckLayout.ts';
 import type { WreckRun } from './wreckRun.ts';
 import { setAblaze, type WreckScenery } from './wreckScenery.ts';
 import { blurAt, darkAt, OPEN_S } from './waking.ts';
+import { bloodSheet } from '../../combat/blood/art.ts';
 
 const LENS = { fov: 1.0, near: 0.05, far: 20_000 } as const;
 /** When the eyes are open for good, when the player stands, when the camera leaves the eyes, and when control comes,
  *  once it has eased to over their shoulder. */
 const STAND_S = 10.5;
+/** When the blood's sheet is drawn, seconds in: a frame after the wake begins, the screen dark. */
+const SHEET_AT_S = 0.1;
 const LEAVE_S = 13;
 const CONTROL_S = LEAVE_S + 2.5;
 /** How far out of the eyes the camera stands before the player's own figure is drawn, metres. */
@@ -50,6 +53,7 @@ export class Wake implements Beat {
   private shouldered = false;
   /** Whether the run's camera has worked out its course: once, while the player still lies on the deck. */
   private warmed = false;
+  private sheeted = false;
   private since = 0;
   /** Set once skipped: its moments left still change the world, but none sounds. */
   private skipped = false;
@@ -138,6 +142,12 @@ export class Wake implements Beat {
       this.warmed = true;
     }
     this.heart += tick.seconds;
+    // The fight's blood sheet, a few hundred milliseconds to draw, drawn while the screen is still dark: the frame held
+    // over the stall is that dark, never a picture the player is watching.
+    if (this.since >= SHEET_AT_S && !this.sheeted) {
+      bloodSheet();
+      this.sheeted = true;
+    }
     this.cues.step(this.since);
     stage.stepWeather(tick.seconds);
     const { screen } = stage.parts;

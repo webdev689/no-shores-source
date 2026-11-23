@@ -189,8 +189,9 @@ struct Shadowed { @builtin(position) position: vec4f, @location(0) corner: vec2f
 
 /** Draws the forge's figures into the scene's pass, after the land and before the water, and their shadows into the
  *  sun's near map before that. */
-/** A figure that throws no shadow and has no contact shade: a Veiled one, all but unseen, or one still arriving. */
-const unshaded = (figure: CardAt | undefined) => !!figure?.veiled || !!figure?.arrival;
+/** A figure that throws no shadow and has no contact shade: a Veiled one, all but unseen, one still arriving, or a
+ *  thing hovering over the ground as a drop does. */
+const unshaded = (figure: CardAt | undefined) => !!figure?.veiled || !!figure?.arrival || !!figure?.hovers;
 
 export class FigureView implements CardMaker {
   private readonly gpu: Gpu;

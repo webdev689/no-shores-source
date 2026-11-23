@@ -114,6 +114,8 @@ export interface FootFrame {
   readonly standing: Standing;
   readonly marks: Float32Array;
   readonly lit: readonly number[];
+  /** The marks over what the player can use, measured from the eye, drawn faded only where something hides them. */
+  readonly hidden?: Float32Array;
   readonly swings: Float32Array;
   readonly fight: FootFight;
   readonly hints: readonly StripHint[];

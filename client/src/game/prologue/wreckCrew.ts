@@ -4,6 +4,7 @@
 // each zone's checkpoint as the player reaches it and join its fight, all but the arena's.
 import type { CourseBlock } from '../../../../server/roomDoor.ts';
 import type { Dress } from '../../player/dressing.ts';
+import type { StoryAsk } from '../../network/roomServe.ts';
 import { HANDS } from './brig.ts';
 import { inArea, topAt, type WreckLayout, type Zone } from './wreckLayout.ts';
 import { ALIVE_MOST, type Standing } from './wreckProgress.ts';
@@ -114,13 +115,10 @@ function roomy(course: readonly CourseBlock[], spot: Point, deck: number): boole
   );
 }
 
-/** What standing the crew needs of the wreck's run: its room, its foes' figures, the foes the room last showed, its
- *  layout, and the level the boarders stand at. */
+/** What standing the crew needs of the wreck's run: its room (asked in the rooms' worker, answered later), its foes'
+ *  figures, the foes the room last showed, its layout, and the level the boarders stand at. */
 export interface CrewRun {
-  readonly room: {
-    standFoe(type: number, rank: number, x: number, y: number, facing: number, level: number): number;
-    storyPost(crew: number, x: number, y: number, facing: number): boolean;
-  };
+  readonly room: { story(story: StoryAsk): Promise<number> };
   readonly figures: { dressFoe(id: number, type: number, look: Dress): void };
   readonly foes: ReadonlyMap<number, { readonly view: { readonly health: number } }>;
   readonly layout: WreckLayout;
@@ -135,6 +133,8 @@ export class WreckCrew {
   private readonly seen = new Set<number>();
   /** The zone each crewman stands in now: stood there, or regrouped to it. */
   private readonly zoneOf = new Map<number, number>();
+  /** Crewmen asked for whose number the room has not answered: counted living. */
+  private asking = 0;
 
   /** The crew living: shown standing, or stood and not shown yet. A crewman shown once and gone is no more. */
   private living(foes: CrewRun['foes']): number {
@@ -144,7 +144,7 @@ export class WreckCrew {
       if (kept) this.seen.add(id);
       if (kept ? kept.view.health > 0 : !this.seen.has(id)) living++;
     }
-    return living;
+    return living + this.asking;
   }
 
   /** As the player reaches zone `zone`, the crew still standing from the zones before it regroup round its
@@ -159,8 +159,11 @@ export class WreckCrew {
     const spots = regroupSpots(found, run.layout.course, living.length);
     living.forEach((id, index) => {
       const spot = spots[index];
-      if (!spot || !run.room.storyPost(id, ...spot.at, spot.facing)) return;
-      this.zoneOf.set(id, zone);
+      if (!spot) return;
+      const [x, y] = spot.at;
+      void run.room.story({ ask: 'post', crew: id, x, y, facing: spot.facing }).then((posted) => {
+        if (posted) this.zoneOf.set(id, zone);
+      });
     });
   }
 
@@ -182,12 +185,17 @@ export class WreckCrew {
       const roomLeft = CREW_ALIVE_MOST - this.living(run.foes);
       spots.slice(0, Math.max(0, roomLeft)).forEach(({ at, facing }, index) => {
         const type = CREW_TYPES[index % CREW_TYPES.length] ?? 0;
-        const id = room.standFoe(type, CREW_RANK, ...at, facing, run.level);
-        if (id === 0) return;
-        this.stood.add(id);
-        this.zoneOf.set(id, zone);
-        const look = HANDS[(this.stood.size - 1) % HANDS.length];
-        if (look) figures.dressFoe(id, type, look);
+        // Dressed by the order asked, as the room answers each in turn.
+        const look = HANDS[(this.stood.size + this.asking) % HANDS.length];
+        this.asking += 1;
+        const [x, y] = at;
+        void room.story({ ask: 'stand', type, rank: CREW_RANK, x, y, facing, level: run.level }).then((id) => {
+          this.asking -= 1;
+          if (id === 0) return;
+          this.stood.add(id);
+          this.zoneOf.set(id, zone);
+          if (look) figures.dressFoe(id, type, look);
+        });
       });
     }
   }

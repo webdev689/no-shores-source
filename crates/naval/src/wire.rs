@@ -256,7 +256,15 @@ pub fn view_numbers(
         Some(shown) => {
             let on_target = f64::from(u8::from(shown.on_target));
             let lay = &shown.lay;
-            numbers.extend([1.0, side_number(lay.side), lay.elevation, lay.reach, shown.radius, on_target]);
+            numbers.extend([
+                1.0,
+                side_number(lay.side),
+                lay.elevation,
+                lay.reach,
+                shown.radius,
+                shown.spread,
+                on_target,
+            ]);
             numbers.push(shown.launches.len() as f64);
             for (launch, stop) in shown.launches.iter().zip(&shown.ends) {
                 numbers.extend(launch);

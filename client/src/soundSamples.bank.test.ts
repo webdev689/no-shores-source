@@ -107,6 +107,38 @@ test('over its budget, the bank lets go of the ambience played least lately, nev
   assert.ok(play('amb.land.breeze'), 'and comes back once asked for again');
 });
 
+test('a cue fetched ahead of its first play is held whatever the budget, so a one-shot heard minutes on still plays', async () => {
+  const { asked, read } = reading({});
+  const samples = new Samples(sounds, read, 450 * 4);
+  const audio = fakeAudio();
+  const out = {} as AudioNode;
+  samples.wake(audio as unknown as AudioContext);
+  samples.prefetch(audio as unknown as AudioContext, ['story.creak']);
+  await settled();
+  assert.ok(asked.includes('creak.mp3'), 'fetched before anything asks to play it');
+  const play = (id: string) => samples.play(audio as unknown as AudioContext, out, id);
+  audio.currentTime = 500;
+  play('amb.land.breeze');
+  await settled();
+  assert.ok(play('story.creak'), 'still held, minutes on, though the bank went over its budget');
+});
+
+test('a cue released is held under the budget as any other again, and let go to make room', async () => {
+  const { read } = reading({});
+  const samples = new Samples(sounds, read, 450 * 4);
+  const audio = fakeAudio();
+  const out = {} as AudioNode;
+  samples.wake(audio as unknown as AudioContext);
+  samples.prefetch(audio as unknown as AudioContext, ['story.creak']);
+  await settled();
+  samples.release(['story.creak']);
+  const play = (id: string) => samples.play(audio as unknown as AudioContext, out, id);
+  audio.currentTime = 500;
+  play('amb.land.breeze');
+  await settled();
+  assert.equal(play('story.creak'), null, 'its story over, let go for the breeze');
+});
+
 test('a long recording plays each chunk it fetches, never one twice in a row, and none is let go unplayed', async () => {
   const { asked, read } = reading({ 'breeze.mp3': CHUNK_BYTES * 12 });
   const samples = new Samples(sounds, read);
