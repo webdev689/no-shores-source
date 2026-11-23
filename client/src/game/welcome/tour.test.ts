@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { type Shot, onScreen } from '../camera.ts';
 import type { StationInfo } from '../nodes.ts';
+import welcome from '../../../../content/story/welcome.json' with { type: 'json' };
 import { STATIONS } from './plazaForTests.ts';
 import { FLY_S, TOUR, StrangerWelcome, framing } from './tour.ts';
 
@@ -29,6 +30,10 @@ test('the stranger speaks of the world, then names each place in turn, and last 
       ['strangerFarewell', []],
     ],
   );
+});
+
+test('every scene of the welcome is one of hers, said in turn, and no other is kept', () => {
+  assert.deepEqual(Object.keys(welcome.scenes).sort(), TOUR.map((step) => step.scene).sort());
 });
 
 test("each place is framed from above, on the plaza's side of its counters, every one of them in the view", () => {
