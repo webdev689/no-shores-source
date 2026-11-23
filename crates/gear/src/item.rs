@@ -41,6 +41,9 @@ pub struct Item {
     /// A weapon's element, if it was made with one.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub element: Option<Element>,
+    /// One of the prologue's own items, which its end takes back (`crate::story::story_item`).
+    #[serde(default, skip_serializing_if = "std::ops::Not::not")]
+    pub story: bool,
     /// Keys this room does not know, from a later room's save, written back as read, so a room rolled back to
     /// this one or later keeps them.
     #[serde(flatten)]
@@ -66,6 +69,7 @@ impl Item {
             chosen: Vec::new(),
             bucket,
             element: None,
+            story: false,
             unknown: crate::character::UnknownKeys::new(),
         };
         item.chosen = vec![NONE_CHOSEN; item.columns().len()];

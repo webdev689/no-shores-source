@@ -65,7 +65,6 @@ impl Room {
         let rank = found.rank_or_first(Rank::from_number(rank_number));
         let top = self.on_top(x, y);
         let id = self.stand_foe(found, rank, [x, y, top.z], facing, None);
-        self.as_boarder(id);
         self.gird(id, level, None);
         if let Some(foe) = self.foes.get_mut(&id) {
             foe.brain.posted_at([x, y, top.z], facing);

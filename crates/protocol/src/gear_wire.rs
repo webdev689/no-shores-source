@@ -408,6 +408,7 @@ pub(crate) fn item_offset<'built>(
         columns,
         price,
         element: item.element.map_or(0, |element| element as u8),
+        story: item.story,
     };
     messages::GearItem::create(builder, &args)
 }
