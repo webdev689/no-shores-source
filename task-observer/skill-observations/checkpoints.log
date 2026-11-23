@@ -75,3 +75,5 @@
 2026-11-23 18:50 [no-shores-source] session-start scan: files=124 parsed=116 principles=0
 2026-11-23 18:51 [no-shores-source] session-start scan: files=124 parsed=116 principles=0
 2026-11-23 20:47 [no-shores-source] session-start scan: files=128 parsed=120 principles=0
+2026-11-23 20:48 [no-shores-source] session-start scan: files=128 parsed=120 principles=0
+2026-11-23 checkpoint: balance pass done, two observations logged (155, 156)
