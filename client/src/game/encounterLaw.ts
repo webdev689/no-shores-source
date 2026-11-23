@@ -53,6 +53,8 @@ const HELD_FILL = 0.3;
 /** An anchor at rest, before or between wards: dim, under a short beam, so it is learnt, not called for. */
 const ANCHOR_RESTING = 0.4;
 const RESTING_BEAM = { height: 1.4, half: 0.25 } as const;
+/** How low feet stand to be on an Ascent's drowned floor, metres (seals.rs WET_M). */
+const WET_M = 0.05;
 /** The dome of light over the warded Boss: its reach round it and how many bands of light draw it. */
 const DOME = { reach: 2.2, bands: 6 } as const;
 /** How long before Fury begins the banner warns of it (seconds), and how long a landed Reckoning's flash burns. */
@@ -209,6 +211,26 @@ export function encounterBeat(events: readonly FightEvent[]): BannerBeat | null 
     [EVENT.wardBroken]: 'stage',
   };
   return events.reduce<BannerBeat | null>((last, event) => beats[event.kind] ?? last, null);
+}
+
+/** The call over the middle of the view as the awake Court's mechanic is shown: the Reckoning's warning before the
+ *  slam, as the banner's objective orders them; none at any other time. */
+export function encounterCall(seen: EncounterSeen): string | null {
+  if (!seen.woken || !seen.boss) return null;
+  return seen.reckoningTicks > 0 ? 'Into the light!' : seen.slamTicks > 0 ? 'Get clear!' : null;
+}
+
+/** Whether `feet` stand in foul water that harms: on a cell of a running Ascent's drowned floor, no higher than the
+ *  room's rule takes for standing on it (seals.rs WET_M). */
+export function inFoulWater(layout: DungeonLayout, seen: EncounterSeen, feet: Point): boolean {
+  if (feet[2] >= WET_M) return false;
+  const [column, row] = [Math.floor(feet[0] / layout.cell), Math.floor(feet[1] / layout.cell)];
+  if (column < 0 || row < 0 || column >= layout.columns) return false;
+  const cell = row * layout.columns + column;
+  return (layout.encounters?.seals ?? []).some(
+    (seal, index) =>
+      seal.kind === SEAL_KIND.ascent && seen.seals[index]?.state === SEAL_STATE.running && seal.drowned.includes(cell),
+  );
 }
 
 /** The colour `share` of the way from `from` to `to`. */

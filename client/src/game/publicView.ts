@@ -24,7 +24,14 @@ import { type Moments, PublicMoments } from './publicMoments.ts';
 import { SpireCourse } from './fissureSpires.ts';
 import type { DungeonLayout } from './dungeonLayout.ts';
 import { EncounterCues, type EncounterHeard } from './encounterCues.ts';
-import { encounterBanner, encounterBeat, encounterMarks, encounterPlaces } from './encounterLaw.ts';
+import {
+  encounterBanner,
+  encounterBeat,
+  encounterCall,
+  encounterMarks,
+  encounterPlaces,
+  inFoulWater,
+} from './encounterLaw.ts';
 import { type EncounterSeen, SEAL_STATE } from '../network/encounterMessages.ts';
 import type { Block } from '../rules/movementRules.ts';
 import type { Shot } from './camera.ts';
@@ -119,8 +126,8 @@ export interface EncounterHere {
   readonly seen: EncounterSeen | null;
 }
 
-/** An Elite Dungeon's frame: its marks laid into `marks`, its banner with the beat it slides in for and the places
- *  the compass marks, the music's mood (its Court at its peak, its Boss's part by the wards broken, a seal running
+/** An Elite Dungeon's frame: its marks laid into `marks`, its banner with the beat it slides in for, the places
+ *  the compass marks, its call over the middle of the view, whether the player stands in its foul water, the music's mood (its Court at its peak, its Boss's part by the wards broken, a seal running
  *  tense), the sting a moment plays (a seal broken or a ward won, a cadence as the Boss wakes), and what `cues` hears
  *  of it (a ward rising rings its own). None outside one. */
 function encounterFrame(
@@ -141,7 +148,9 @@ function encounterFrame(
   const mood = seen.woken ? 'peak' : running ? 'tension' : null;
   const part = seen.woken ? Math.min(3, seen.wardsBroken + 1) : undefined;
   const places = encounterPlaces(layout, seen);
-  const shown: PublicShown | null = banner && { banner, beat, places, stores: [], mood, part };
+  const call = encounterCall(seen);
+  const foul = inFoulWater(layout, seen, bodies.feet);
+  const shown: PublicShown | null = banner && { banner, beat, places, stores: [], mood, part, call, foul };
   const won = events.some((each) => each.kind === EVENT.sealBroken || each.kind === EVENT.wardBroken);
   const rose = events.some((each) => each.kind === EVENT.bossWoke);
   return { ...heard, shown, sting: won ? 'victory' : rose ? 'cadence' : null };

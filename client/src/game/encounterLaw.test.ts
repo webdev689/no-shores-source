@@ -8,8 +8,10 @@ import {
   COURT,
   encounterBanner,
   encounterBeat,
+  encounterCall,
   encounterMarks,
   encounterPlaces,
+  inFoulWater,
   SEAL_NAMES,
   taskOf,
 } from './encounterLaw.ts';
@@ -429,4 +431,35 @@ test("a relic's banner reddens under three tenths exactly as its refused sound p
   assert.deepEqual(bonus(0.297), { text: 'Relic 29%', state: 'warns' });
   assert.deepEqual(bonus(0.3), { text: 'Relic 30%', state: 'holds' });
   assert.deepEqual(bonus(0.29), { text: 'Relic 29%', state: 'warns' });
+});
+
+test('the Court calls over the middle of the view as its slam and its Reckoning are shown, and at nothing else', () => {
+  const awake = { woken: true, boss: 9, ward: 1 };
+  assert.equal(encounterCall(seen(awake)), null);
+  assert.equal(encounterCall(seen({ ...awake, slamTicks: 90 })), 'Get clear!');
+  assert.equal(encounterCall(seen({ ...awake, reckoningTicks: 300 })), 'Into the light!');
+  assert.equal(
+    encounterCall(seen({ ...awake, reckoningTicks: 300, slamTicks: 90 })),
+    'Into the light!',
+    'the light first',
+  );
+  assert.equal(encounterCall(seen({ woken: true, boss: 0, slamTicks: 90 })), null, 'the Boss fallen');
+  for (const call of ['Get clear!', 'Into the light!']) assert.ok(!/[\u2013\u2014]/.test(call), 'no dashes');
+});
+
+test("the player stands in foul water only on a running Ascent's drowned floor, at its floor", () => {
+  const drowned = {
+    ...layout,
+    encounters: {
+      ...layout.encounters!,
+      seals: [{ ...layout.encounters!.seals[0]!, kind: SEAL_KIND.ascent, drowned: [1] }, layout.encounters!.seals[1]!],
+    },
+  } as DungeonLayout;
+  const ascent = (state: number) => ({ kind: SEAL_KIND.ascent, state, progress: 0, marks: [0, 1], relic: 1 });
+  const running = seen({ seals: [ascent(SEAL_STATE.running), seen().seals[1]!] });
+  assert.equal(inFoulWater(drowned, running, [4.8, 1.6, 0]), true, 'on a drowned cell');
+  assert.equal(inFoulWater(drowned, running, [1.6, 1.6, 0]), false, 'on a dry cell of its room (a doorway)');
+  assert.equal(inFoulWater(drowned, running, [4.8, 1.6, 0.4]), false, 'on a pad over it');
+  for (const state of [SEAL_STATE.waiting, SEAL_STATE.broken])
+    assert.equal(inFoulWater(drowned, seen({ seals: [ascent(state), seen().seals[1]!] }), [4.8, 1.6, 0]), false);
 });

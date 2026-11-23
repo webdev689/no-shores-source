@@ -169,11 +169,14 @@ export class PlayerPlates {
     this.markAt = feet && head ? { x: feet.x, y: (feet.y + head.y) / 2, height: (feet.y - head.y) * 1.15 } : null;
   }
 
-  /** The plates, the nearest drawn over the farther, and the interact mark round the player aimed at. */
-  nodes(): Node[] {
+  /** The plates, the nearest drawn over the farther (those `hidden` says laid unseen), and the interact mark round the
+   *  player aimed at. */
+  nodes(hidden: (id: string) => boolean = () => false): Node[] {
     const order = [...this.drawn].sort((one, two) => two.front - one.front);
     const plates = order.map(({ player, x, y, scale }): Node => ({
       ...plateNode(player, scale),
+      id: `player-plate-${player.id}`,
+      ...(hidden(`player-plate-${player.id}`) ? { opacity: 0 } : {}),
       through: true,
       float: { to: 'screen', anchor: [0.5, 1], x, y: y - 4, z: 1 },
     }));

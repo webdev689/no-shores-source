@@ -216,15 +216,16 @@ plan.seals.forEach((seal, index) => {
     }
   }
   if (seal.kind === HOLDFAST) {
-    const ring = toward(first, door, 1.5);
+    // Inside the ring on the doorway's side, the camera high behind, so the body and the whole relic stand in frame.
+    const ring = toward(first, door, 2.2);
     stand(ring);
     pause(800);
     freeze(true);
-    picture(ring, first, 'third,4,25', 'holdfast_held');
+    picture(ring, first, 'third,6,35', 'holdfast_held');
     encounter(2, index, 0.45);
-    picture(ring, first, 'third,4,25', 'holdfast_draining');
+    picture(ring, first, 'third,6,35', 'holdfast_draining');
     encounter(2, index, 0);
-    picture(ring, first, 'third,4,25', 'holdfast_drained');
+    picture(ring, first, 'third,6,35', 'holdfast_drained');
     encounter(2, index, 1);
     freeze(false);
   }
@@ -240,23 +241,34 @@ const [anchor0 = anchors, anchor1 = anchors, anchor2 = anchors] = plan.anchors;
 const byAnchor = toward(anchor2, anchors, 1.8);
 stand(byAnchor);
 picture(byAnchor, anchor2, 'third,6,45', 'court_anchors_resting');
+// Awake, the Boss strikes: the body's health is held whole from here, so no death hides a moment. Before each picture
+// the Boss is stood a few metres ahead on the camera's line, so it stands in frame.
+encounter(10, 1, 0);
+const bossAhead = (from: Point, to: Point) => {
+  const [east = 0, south = 0] = toward(from, to, 4);
+  encounter(11, east, south);
+};
 encounter(3, 0, 0);
 pause(1500);
 freeze(true);
+bossAhead(byAnchor, anchor0);
 picture(byAnchor, anchor0, 'third,9,50', 'court_awake');
 freeze(false);
 encounter(4, 0, 0);
 pause(2500);
 encounter(0, 0, 0);
 freeze(true);
+bossAhead(byAnchor, anchor0);
 picture(byAnchor, anchor0, 'third,9,50', 'court_ward');
 encounter(5, 0, 1);
 encounter(5, 1, 0.5);
 // Beside an anchor, not on it, so its beam does not stand in the camera's way.
 const beside = toward(anchor1, anchors, 1.8);
 stand(beside);
+bossAhead(beside, anchor1);
 picture(beside, anchor1, 'third,7,45', 'court_anchors_filling');
 encounter(6, 0, 50);
+bossAhead(beside, anchor0);
 picture(beside, anchor0, 'third,10,55', 'court_slam');
 encounter(6, 0, 300);
 encounter(8, 0, 45 * 60);
@@ -268,6 +280,7 @@ for (const nth of [0, 1, 2]) encounter(5, nth, 1);
 pause(300);
 encounter(7, 0, 420);
 freeze(true);
+bossAhead(beside, anchor0);
 picture(beside, anchor0, 'third,8,25', 'court_reckoning');
 const url = `http://localhost:${port}/?at=1&spawn=&run=node-${place}--run-qaqa0001&view=third,7`;
 const anyPort = port !== '5173';

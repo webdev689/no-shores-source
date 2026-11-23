@@ -3,7 +3,8 @@
 # never committed, it adds `room_qa_entrance(n)`, so a land room's next join stands before entrance n,
 # `room_qa_move(x, y)`, which stands every player of the open room there, `room_qa_freeze(on)`, which holds the
 # encounters' clock while the room ticks on (a moment held for a picture), and `room_qa_encounter(what, a, b)`, which
-# sets an Elite Dungeon's encounters to a moment (`QA_ENCOUNTER` below says each `what`). QA_NOFOES=1 also leaves a
+# sets an Elite Dungeon's encounters to a moment, holds the players' health or stands the Boss (`QA_ENCOUNTER` below
+# says each `what`). QA_NOFOES=1 also leaves a
 # dungeon's garrison out but its Boss, and stands no encounter's foes (waves, a wrong rune's, a ward's), which
 # otherwise kill a headless player first. It builds from HEAD in a worktree under <out dir>, which it removes again.
 #
@@ -24,10 +25,15 @@ import os, pathlib
 # slam with b ticks left (b at most SLAM_EVERY, on a room older than that); 7 shows the
 # Reckoning with b ticks left; 8 starts Fury's clock with b ticks left (b <= 0: Fury b ticks in), the room's clock run
 # on first where it is too young for that, every stamp of the encounters moved on with it; 9 sets Litany a's show b
-# ticks in (30: its first rune half shown).
+# ticks in (30: its first rune half shown); 10 holds every player's health whole each tick while a is not 0, so a
+# headless body outlives the awake Boss; 11 stands the Boss at (a, b).
 QA_ENCOUNTER = '''    pub fn qa_encounter(&mut self, what: u32, a: f64, b: f64) {
         use crate::encounters::court::{ANCHOR_TICKS, FURY_FROM, RECKONING_WARNING, SLAM_EVERY, WARDS};
         let ticks = |left: f64| left.max(0.0) as u64;
+        if what == 10 {
+            crate::QA_HEALTH.store(a != 0.0, core::sync::atomic::Ordering::Relaxed);
+            return;
+        }
         if what <= 1 {
             for found in self.players.values_mut() {
                 if what == 0 { found.fighter.health = found.fighter.health_max; }
@@ -73,6 +79,11 @@ QA_ENCOUNTER = '''    pub fn qa_encounter(&mut self, what: u32, a: f64, b: f64) 
             }
             9 => { if let Some(seal) = encounters.seals.get_mut(a as usize) { seal.shown_from = clock.saturating_sub(ticks(b)); } }
             8 => court.fury_from = Some((clock as f64 + b - FURY_FROM as f64).max(0.0) as u64),
+            11 => {
+                if let Some(foe) = boss.and_then(|id| self.foes.get_mut(&id)) {
+                    (foe.fighter.body.x, foe.fighter.body.y) = (a, b);
+                }
+            }
             _ => {}
         }
     }
@@ -154,10 +165,14 @@ edit('crates/room-wasm/src/lib.rs', '        Opened::Land { room, refusal: None,
 edit('crates/room/src/lib.rs', '    /// The player leaves: blows waiting on them are dropped',
      QA_HOLD + '    /// The player leaves: blows waiting on them are dropped')
 pathlib.Path('crates/room/src/lib.rs').write_text(pathlib.Path('crates/room/src/lib.rs').read_text() +
-     '\npub static QA_FROZEN: core::sync::atomic::AtomicBool = core::sync::atomic::AtomicBool::new(false);\n')
+     '\npub static QA_FROZEN: core::sync::atomic::AtomicBool = core::sync::atomic::AtomicBool::new(false);\n'
+     'pub static QA_HEALTH: core::sync::atomic::AtomicBool = core::sync::atomic::AtomicBool::new(false);\n')
 edit('crates/room/src/encounters.rs',
      '        let Some(mut encounters) = self.encounters.take() else { return };\n        for seal in 0..encounters.seals.len() {',
      '        let Some(mut encounters) = self.encounters.take() else { return };\n'
+     '        if crate::QA_HEALTH.load(core::sync::atomic::Ordering::Relaxed) {\n'
+     '            for found in self.players.values_mut() { found.fighter.health = found.fighter.health_max; }\n'
+     '        }\n'
      '        if crate::QA_FROZEN.load(core::sync::atomic::Ordering::Relaxed) {\n'
      '            Self::qa_hold(&mut encounters);\n'
      '            self.encounters = Some(encounters);\n'
