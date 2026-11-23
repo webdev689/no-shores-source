@@ -4,7 +4,8 @@ import layout from '../content/world/layout.json' with { type: 'json' };
 import roomModule from '../target/wasm32-unknown-unknown/release/room_wasm.wasm';
 import type { CharacterKeeper } from './accounts/worker.ts';
 import { type Listed, arrives, cameOutOf, reachOf, shipOf } from './arrival.ts';
-import { type Count, counted } from './budget.ts';
+import { addressKey } from './address.ts';
+import { type Count, admitsFrom, counted } from './budget.ts';
 import { Keeper, partFrom, TOKEN, TOKEN_WAIT_MS } from './keeping.ts';
 import {
   canonicalRoom,
@@ -97,6 +98,8 @@ export class RoomHost extends DurableObject<Env> {
     WebSocket,
     {
       readonly player: number;
+      /** The address it joined from (`addressKey`), which holds only so many sockets unsigned (`admitsFrom`). */
+      readonly address: string;
       count: Count | undefined;
       signed: boolean;
       spoke: boolean;
@@ -169,6 +172,12 @@ export class RoomHost extends DurableObject<Env> {
       server.close(1013, 'the room is full');
       return new Response(null, { status: 101, webSocket: client });
     }
+    const address = addressKey(request.headers.get('CF-Connecting-IP') ?? 'nowhere');
+    if (!admitsFrom(this.players.values(), address)) {
+      server.accept();
+      server.close(AGAIN, 'too many joins from one address');
+      return new Response(null, { status: 101, webSocket: client });
+    }
     // A join at an entrance that is not one is the room's ordinary join; one at an entrance stays there only once the
     // room keeps the player's character as come out of its dungeon (`outOfDoor`).
     const entrance = entranceOf(request);
@@ -183,7 +192,8 @@ export class RoomHost extends DurableObject<Env> {
     }
     server.binaryType = 'arraybuffer';
     server.accept();
-    const held = { player, count: undefined, signed: false, spoke: false, token: null, door: atDoor ? entrance : null };
+    const door = atDoor ? entrance : null;
+    const held = { player, address, count: undefined, signed: false, spoke: false, token: null, door };
     this.players.set(server, held);
     if (held.door !== null) setTimeout(() => !held.signed && this.outOfDoor(server), TOKEN_WAIT_MS);
     // In a run no one plays before the room keeps their character, nor in a sea island's dungeon before the sea says

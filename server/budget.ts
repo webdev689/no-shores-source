@@ -15,3 +15,17 @@ export function counted(count: Count | undefined, now: number): { readonly count
   const messages = count?.second === second ? count.messages + 1 : 1;
   return { count: { second, messages }, within: messages <= MESSAGES_A_SECOND };
 }
+
+/** The most sockets one address may hold in a room before they sign in, each let go of a few seconds on
+ *  (`TOKEN_WAIT_MS`): enough for a household's tabs, too few for one address to fill a room's places. */
+export const UNSIGNED_FROM_ONE = 8;
+
+/** Whether a room takes one more socket from `address` (`addressKey`), its sockets' own addresses being `held`. */
+export function admitsFrom(
+  held: Iterable<{ readonly address: string; readonly signed: boolean }>,
+  address: string,
+): boolean {
+  let unsigned = 0;
+  for (const socket of held) if (!socket.signed && socket.address === address) unsigned += 1;
+  return unsigned < UNSIGNED_FROM_ONE;
+}
