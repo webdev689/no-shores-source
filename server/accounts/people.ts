@@ -53,6 +53,27 @@ export async function accountNamed(database: Db, name: unknown): Promise<{ id: s
     .first<{ id: string; username: string }>();
 }
 
+/** The username an account keeps; null for a guest. */
+export async function usernameOf(database: Db, account: string): Promise<string | null> {
+  const row = await database
+    .prepare('SELECT username FROM accounts WHERE id = ?1')
+    .bind(account)
+    .first<{ username: string | null }>();
+  return row?.username ?? null;
+}
+
+/** The accounts `account` blocks or is blocked by. */
+export async function apartFrom(database: Db, account: string): Promise<string[]> {
+  const { results } = await database
+    .prepare(
+      `SELECT blocked_id AS other FROM blocks WHERE blocker_id = ?1
+       UNION SELECT blocker_id AS other FROM blocks WHERE blocked_id = ?1 ORDER BY other`,
+    )
+    .bind(account)
+    .all<{ other: string }>();
+  return results.map((row) => row.other);
+}
+
 /** Whether `blocker` blocks `blocked`. */
 export async function blocks(database: Db, blocker: string, blocked: string): Promise<boolean> {
   const found = await database
@@ -62,17 +83,23 @@ export async function blocks(database: Db, blocker: string, blocked: string): Pr
   return found !== null;
 }
 
-/** Notes that a player is in a room that keeps no character, for a while; or, with no room, that they left it now.
- *  The row stays, to say when they were last seen. */
-export async function present(database: Db, account: string, room: string | null, now: number): Promise<void> {
+/** Notes that a player is in a room that keeps no character, for a while, and at sea the water their ship lies in
+ *  (the chat's Region); or, with no room, that they left it now. The row stays, to say when they were last seen. */
+export async function present(
+  database: Db,
+  account: string,
+  room: string | null,
+  now: number,
+  water: string | null = null,
+): Promise<void> {
   await (
     room === null
       ? database.prepare('UPDATE presence SET until = min(until, ?2) WHERE account_id = ?1').bind(account, now)
       : database
           .prepare(
-            `INSERT INTO presence (account_id, room, until) VALUES (?1, ?2, ?3)
-           ON CONFLICT (account_id) DO UPDATE SET room = ?2, until = ?3`,
+            `INSERT INTO presence (account_id, room, until, water) VALUES (?1, ?2, ?3, ?4)
+           ON CONFLICT (account_id) DO UPDATE SET room = ?2, until = ?3, water = ?4`,
           )
-          .bind(account, room, now + PRESENCE_MS)
+          .bind(account, room, now + PRESENCE_MS, water)
   ).run();
 }

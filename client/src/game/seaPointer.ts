@@ -3,6 +3,7 @@ import { wheelNotches } from '../overworld/overworldInput.ts';
 import type { Sea } from './sea.ts';
 import { BINDS, keyNameOf, keyUpNameOf } from '../player/input.ts';
 import { gearScreenOpen } from './gearScreen.ts';
+import { chatOpen } from './social/social.ts';
 import { FIGHT_CONTROLS, type SeaCombat } from './seaCombat.ts';
 
 /** What the sea's pointer reaches: whether the player is at sea with no menu up, the sea, the held map (raised at the
@@ -69,9 +70,9 @@ export function fightControls(canvas: HTMLCanvasElement, fight: () => SeaCombat 
   };
   // A key let go still reaches the sea's own controls, so none is held there once the fight is over.
   const key = (down: boolean) => (event: KeyboardEvent) => {
-    // Under the gear screen the fight takes no key pressed, they are the screen's; a key let go is still the fight's,
-    // so nothing it held stays held.
-    if (down && gearScreenOpen()) return;
+    // Under the gear screen or the chat's field the fight takes no key pressed, they are theirs; a key let go is still
+    // the fight's, so nothing it held stays held.
+    if (down && (gearScreenOpen() || chatOpen())) return;
     if (!fight()?.key(down ? keyNameOf(event) : keyUpNameOf(event), down)) return;
     if (down) taken(event);
     else event.preventDefault();

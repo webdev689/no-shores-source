@@ -64,7 +64,7 @@ export const FIGHT_CONTROLS = [
   'shotBack',
   'shotNext',
 ] as const satisfies readonly BindId[];
-const PASSED: readonly BindId[] = ['menu', 'character', 'inventory', 'controls', 'use'];
+const PASSED: readonly BindId[] = ['menu', 'character', 'inventory', 'controls', 'use', 'chat'];
 /** The controls held as the naval rules hear them held: the helm's keys, the rungs', the brace's and the burst's. */
 const HELD_AS: Partial<Record<BindId, string>> = {
   fightLeft: 'a',

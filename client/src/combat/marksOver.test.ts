@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { AMMO_BOX } from './dropPictures.ts';
 import { MARK_FLOATS, ditherCode } from './marks.ts';
-import { HIDDEN_SHARE, MIN_RAD, MOST, REACH_M, WIDTH_M, marksHidden, marksSeen } from './marksOver.ts';
+import { HIDDEN_SHARE, MIN_RAD, MOST, REACH_M, WIDTH_M, litMarksSeen, marksHidden, marksSeen } from './marksOver.ts';
 
 /** The widest a laid mark stands across, metres, from its vertices. */
 const widthOf = (vertices: readonly number[]): number => {
@@ -45,12 +45,13 @@ test('a mark bobs on a phase of its own, holds still under reduced motion, and o
   assert.equal(marksSeen(many, [0, -5, 2], 0, true).length, MOST * each, `the nearest ${MOST}`);
 });
 
-test('a beating mark swells and eases back, a mark that does not beat keeps its width, and both hold under reduced motion', () => {
+test('a lit mark swells and eases back, an unlit one keeps its width, and both hold under reduced motion', () => {
   const picture = AMMO_BOX;
-  const widths = (beating: boolean, holding: boolean) =>
-    [0, 0.2, 0.4, 0.6, 0.8, 1].map((seconds) =>
-      widthOf(marksSeen([{ picture, at: [0, 0, 2], beating }], [0, -3, 2], seconds, holding)),
-    );
+  const widths = (lit: boolean, holding: boolean) =>
+    [0, 0.2, 0.4, 0.6, 0.8, 1].map((seconds) => {
+      const mark = [{ picture, at: [0, 0, 2] as const, lit }];
+      return widthOf((lit ? litMarksSeen : marksSeen)(mark, [0, -3, 2], seconds, holding));
+    });
   const swelling = widths(true, false);
   assert.ok(Math.max(...swelling) > Math.min(...swelling) * 1.1, 'it swells');
   assert.ok(Math.min(...swelling) > WIDTH_M * 0.95, 'never narrower than at rest');
@@ -87,4 +88,24 @@ test("a mark's copy for the hidden pass lies nearer the eye than any layer of th
   const whole = depths(marksSeen(marked, eye, 0, true), eye[1]);
   const copy = depths(marksHidden(marked, eye, 0), 0);
   assert.ok(Math.max(...copy) < Math.min(...whole), `${Math.max(...copy)} against ${Math.min(...whole)}`);
+});
+
+test('a lit mark is laid apart: seen from everywhere, whole, every one of them, the farthest first', () => {
+  const picture = AMMO_BOX;
+  const lit = (where: readonly [number, number, number]) => ({ picture, at: where, lit: true });
+  const far = REACH_M * 6;
+  const unlit = { picture, at: [0, 4, 2] as const };
+  const marks = [lit([0, 3, 2]), lit([0, far, 2]), unlit];
+  assert.deepEqual(marksSeen(marks, [0, 0, 2], 0, true), marksSeen([unlit], [0, 0, 2], 0, true), 'only the unlit one');
+  const seen = litMarksSeen(marks, [0, 0, 2], 0, true);
+  const each = litMarksSeen([lit([0, 3, 2])], [0, 0, 2], 0, true).length;
+  assert.equal(seen.length, 2 * each, 'both, the one far past the reach too');
+  assert.ok(
+    seen.filter((unused, index) => index % MARK_FLOATS === 6).every((opacity) => opacity === 1),
+    'whole, with no ground dither',
+  );
+  const along = seen.filter((unused, index) => index % MARK_FLOATS === 1);
+  assert.ok((along[0] ?? 0) > far / 2 && (along.at(-1) ?? far) < far / 2, 'the farthest laid first');
+  const crowd = Array.from({ length: MOST + 4 }, (unused, place) => lit([place, 5, 2]));
+  assert.equal(litMarksSeen(crowd, [0, 0, 2], 0, true).length, (MOST + 4) * each, 'none left out for crowding');
 });

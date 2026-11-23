@@ -1,5 +1,6 @@
 import { FEEL } from '../combat/attackFeel.ts';
 import { FightBlood, surfacesOf } from '../combat/fightBlood.ts';
+import type { PlayerPlates } from '../combat/playerPlates.ts';
 import { Hud } from '../combat/hud.ts';
 import type { BannerTone } from '../combat/publicBanner.ts';
 import type { Box as Laid } from '../ui/quads.ts';
@@ -133,6 +134,7 @@ export class FootView {
     // The marks are measured from the eye: it stands at their origin.
     this.marks.set(shown.marks, [0, 0, 0], shot.eye);
     this.hidden.set(shown.hidden ?? [], [0, 0, 0], shot.eye);
+    this.marks.setAbove(shown.lit);
     this.swings.set(shown.swings);
     const matrix = shiftedExactly(fromEye, [-eyeX, -eyeY, -eyeZ]);
     this.hud.update(
@@ -159,17 +161,23 @@ export class FootView {
     return {
       under: { drawInto: (pass) => drawn.draw(pass) },
       // The solid marks with the figures; the blows' arcs and the see-through marks over the water, so its sky and
-      // surface never cover them.
+      // surface never cover them; and the lit keepers' marks after them with no depth, so no wall hides them.
       over: {
         drawInto: (pass, eyeMatrix) => marks.drawSolid(pass, raised(eyeMatrix)),
         overWater: (encoder, target, eyeMatrix, depth) => {
           this.swings.drawOver(encoder, target, depth, own(eyeMatrix));
           marks.drawClearOver(encoder, target, depth, raised(eyeMatrix));
           hidden.drawHiddenOver(encoder, target, depth, raised(eyeMatrix));
+          marks.drawAbove(encoder, target, raised(eyeMatrix));
         },
         ...(lit ? { lightInto } : {}),
       },
     };
+  }
+
+  /** The plates over other players, and the one the crosshair rests on within reach. */
+  get playerPlates(): PlayerPlates {
+    return this.hud.playerPlates;
   }
 
   /** Hides the fight's display for this frame alone, its drawing kept: as while the held map is up. */

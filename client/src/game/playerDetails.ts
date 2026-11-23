@@ -29,7 +29,11 @@ export const DETAILS_BACK = 'roster-back';
  * Another player's details, as Destiny's Inspect shows them: their nameplate, their guild, where they are (to their
  * friends, company and guild alone), their power, and each piece they wear in its rarity, with its element and gilding.
  */
-export function detailsNode({ ui, room, sizes }: PlainContext, found: Details, back: () => void): Node {
+export function detailsNode(
+  { ui, room, sizes }: Pick<PlainContext, 'ui' | 'room' | 'sizes'>,
+  found: Details,
+  back: () => void,
+): Node {
   const emblem = emblemOf(found.shown?.emblem ?? found.emblem);
   const level = found.shown?.level ?? found.level;
   const facts: (readonly [string, string])[] = [

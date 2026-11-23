@@ -9,13 +9,16 @@ import type { KeptRoom } from './keeping.ts';
  *  says, open to all unless told. */
 export function roomOf(
   gate: (kept: string | null) => string = () => '',
-): KeptRoom & { readonly held: Map<number, string> } {
+): KeptRoom & { readonly held: Map<number, string>; readonly named: Map<number, string> } {
   const held = new Map<number, string>();
+  const named = new Map<number, string>();
   return {
     held,
+    named,
     character: (player) => held.get(player) ?? null,
     restoreCharacter: (player, kept) => kept.startsWith('{') && held.has(player) && Boolean(held.set(player, kept)),
     own: (player) => held.has(player),
+    name: (player, name) => held.has(player) && Boolean(named.set(player, name)),
     shut: (_player, kept) => gate(kept),
   };
 }

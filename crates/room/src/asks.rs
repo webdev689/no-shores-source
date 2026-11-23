@@ -63,6 +63,10 @@ pub enum Asked {
     UsePoint {
         point: u8,
     },
+    /// Finds a chapter of the lore lying in the node, by its number (`lore.rs`).
+    FindLore {
+        chapter: u16,
+    },
     /// Asks to return to their ship: refused while fallen or within ten seconds of a foe's blow, as the owner chose
     /// ([[The Audit's Leftovers Are Fixed as Claude Suggested]]); the page leaves for the sea only on the room's word.
     ToShip,
@@ -354,6 +358,7 @@ impl Room {
             Asked::Grant(_) => NOT_THE_TEST_GROUND,
             Asked::Art(ask) => self.ask_art(player, ask),
             Asked::UsePoint { point } => self.use_point(player, point),
+            Asked::FindLore { chapter } => self.find_lore(player, chapter),
             Asked::ToShip => self.to_ship(player),
             Asked::OpenChest { chest } => self.open_chest(player, chest),
         };
