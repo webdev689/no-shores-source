@@ -41,7 +41,7 @@ pub struct TraitDef {
 /// A named item: a Legendary, an Atheric or a cloak. Its layout is the traits each of its trait columns offers, in
 /// order; its resource is the island's its nodes ask for. A Breach's armour climbs further in Prestige. An Atheric
 /// weapon or module has an intrinsic, a trait always on while it is worn, beside its own node. Its look (`look`,
-/// `make`) is the browser's alone.
+/// `make`) is the set or metal it is drawn in and the make of its shield, bow or blade, which the room checks a dress by.
 #[derive(Clone, Debug, PartialEq, Eq, Deserialize)]
 pub struct NamedDef {
     pub id: String,
@@ -59,6 +59,10 @@ pub struct NamedDef {
     pub faction: Option<String>,
     #[serde(default)]
     pub intrinsic: Option<String>,
+    #[serde(default)]
+    pub look: Option<String>,
+    #[serde(default)]
+    pub make: Option<String>,
     /// The content it drops from, which its look belongs to: the world's when unwritten. A faction's piece is its
     /// faction's and a Breach's its Breach's, whatever is written (`source`).
     #[serde(default, rename = "source")]

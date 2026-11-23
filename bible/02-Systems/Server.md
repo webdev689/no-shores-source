@@ -9,6 +9,8 @@ code:
   - crates/room/src/entrances.rs#join_at
   - crates/room/src/judging.rs#Event
   - crates/room/src/players.rs#VIEW_LAG
+  - crates/gear/src/cosmetics.rs#dressed
+  - crates/gear/src/looks.rs#shown
   - client/src/network/localRoom.ts#LocalRoom
   - client/src/network/roomThread.ts#RoomThread
   - client/src/combat/fighting.ts#Fighting
@@ -442,8 +444,10 @@ field holds (an input's or orders' number, the arms, a foe's type, a load, a cal
 held within it.
 
 Looks and dresses are each player's own word, passed on and decided nothing about, but for the gear they show: the
-room keeps in a dress's armour and hands only the pieces the character wears (`layers_of`; a light in the left hand
-is no piece, and stays), puts the dye, coat and barding the character wears into it, none for a start piece, and
+room keeps in a dress's armour and hands only the looks the page could draw the pieces worn in on the dress's body:
+each piece's own content's, written or faction's set or metal, or the one the page falls to where the forge does not
+draw it (`looks::shown`; [[Gear]], "Looks"; a light in the left hand is no piece, and stays), drops any other from
+what others see, puts the dye, coat and barding the character wears into it, none for a start piece, and
 keeps a faction's colour or a dye only on the layers its pieces worn and dyes kept allow, so no page can show another
 a piece it does not wear or keep ([[Gear]], "Cosmetics"). It makes a dress again when the browser sends one or after
 the player's gear is sent. A look goes out with the tick that
