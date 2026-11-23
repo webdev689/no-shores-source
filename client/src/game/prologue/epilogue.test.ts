@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import { mock, test } from 'node:test';
 import type { Cards } from '../../player/cards.ts';
 import type { Shot } from '../camera.ts';
+import { blockReach } from '../../player/boom.ts';
 import { Epilogue } from './epilogue.ts';
 import { HUD_VEIL_S, headOnView, type Stage } from './stage.ts';
 
@@ -176,4 +177,17 @@ test("she is let go in the end though she stands in sight, held at the water or 
     assert.equal(epilogue.done, true, `let go though seen, the middle at ${centre.join(', ')}`);
     assert.deepEqual(done, ['hushed']);
   }
+});
+
+test('a parapet before the player puts her at their side, on their own floor and in clear sight of them', () => {
+  const { epilogue, stage } = epilogueOn();
+  // A wall 1.5 m ahead and a drop of 20 m past it, as the arrival over Overlook's parapet faces.
+  stage.parts.scene.groundAt = (_east, y) => (y < -1.5 ? -19 : 1);
+  const wall = { minX: -10, maxX: 10, minY: -1.9, maxY: -1.5, bottom: 1, top: 2.2 };
+  epilogue.clear = (from, to) =>
+    blockReach(from, to, [wall], 0.05) >= Math.hypot(...from.map((each, axis) => each - (to[axis] ?? 0))) - 1e-6;
+  const [stranger] = epilogue.frame(BEHIND, VIEW, STEP_S, 0, YOU, false);
+  assert.ok(stranger, 'she stands');
+  assert.equal(stranger.z, 1, "on the player's own floor, not down past the wall");
+  assert.ok(stranger.y > -1.5, 'on their side of it');
 });

@@ -8,9 +8,18 @@ import { actorCards, type Actor } from './actors.ts';
 import { OVER_HEAD_M, STRANGER_DRESS, STRANGER_HEAD, STRANGER_ID } from './shore.ts';
 import { headOnView, type Stage, HUD_VEIL_S } from './stage.ts';
 
-/** Where the stranger stands from the player, metres ahead and to their right, in front of the camera behind them. */
-const AHEAD_M = 2.2;
-const RIGHT_M = 1;
+/** Where the stranger stands from the player, metres ahead and to their right (left where negative), in front of the
+ *  camera behind them, tried in turn: the first on the player's own floor in clear sight of them. */
+const SPOTS: readonly (readonly [number, number])[] = [
+  [2.2, 1],
+  [2.2, -1],
+  [1.2, 1.6],
+  [1.2, -1.6],
+  [0.3, 2],
+  [0.3, -2],
+];
+/** How far her floor may stand from the player's and still be theirs, metres. */
+const SAME_FLOOR_M = 1;
 /** Her pace into the town, and how near its middle she stops. */
 const WALK_M_S = 1.3;
 const THERE_M = 2;
@@ -35,6 +44,8 @@ export class Epilogue {
   /** Seconds since she set off into the town. */
   private going = 0;
   done = false;
+  /** Whether a line between two points is clear of the place's solids: set where she stands in Overlook. */
+  clear: (from: readonly [number, number, number], to: readonly [number, number, number]) => boolean = () => true;
   /** What she says once the player sees her, resolved once said: her welcome, set where she stands in Overlook. */
   words: () => Promise<void> = () => Promise.resolve();
 
@@ -112,18 +123,25 @@ export class Epilogue {
     this.stage.hush();
   }
 
-  /** Ahead of the player and to their right, facing them, on the ground there; to their left where the right is
-   *  water, and at their own feet' height where both are. */
+  /** Before the player, facing them: the first of `SPOTS` on their own floor whose line to them is clear (not past a
+   *  parapet or a wall), else the first on dry ground, else at their feet' height. */
   private placed(you: { readonly x: number; readonly y: number; readonly z: number; readonly facing: number }) {
     const right = you.facing + Math.PI / 2;
-    const spots = [RIGHT_M, -RIGHT_M].map((side) => {
-      const x = you.x + Math.sin(you.facing) * AHEAD_M + Math.sin(right) * side;
-      const y = you.y - Math.cos(you.facing) * AHEAD_M - Math.cos(right) * side;
+    const spots = SPOTS.map(([ahead, side]) => {
+      const x = you.x + Math.sin(you.facing) * ahead + Math.sin(right) * side;
+      const y = you.y - Math.cos(you.facing) * ahead - Math.cos(right) * side;
       return { x, y, ground: this.stage.parts.scene.groundAt(x, y) };
     });
-    const dry = spots.find((spot) => spot.ground !== null && spot.ground >= 0);
-    const { x, y } = dry ?? (spots[0] as (typeof spots)[number]);
-    return { x, y, z: dry?.ground ?? you.z, facing: Math.atan2(you.x - x, y - you.y) };
+    const head = (x: number, y: number, z: number) => [x, y, z + HEAD_M * 0.8] as const;
+    const dry = spots.filter((spot) => spot.ground !== null && spot.ground >= 0);
+    const near = dry.find(
+      (spot) =>
+        Math.abs((spot.ground ?? 0) - you.z) <= SAME_FLOOR_M &&
+        this.clear(head(you.x, you.y, you.z), head(spot.x, spot.y, spot.ground ?? you.z)),
+    );
+    const chosen = near ?? dry[0];
+    const { x, y } = chosen ?? (spots[0] as (typeof spots)[number]);
+    return { x, y, z: chosen?.ground ?? you.z, facing: Math.atan2(you.x - x, y - you.y) };
   }
 
   /** A step toward the town's middle, on dry ground only: where the next step is water or unknown she stands. True

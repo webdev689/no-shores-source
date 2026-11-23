@@ -9,6 +9,7 @@ import type { Shot } from '../camera.ts';
 import type { StationInfo } from '../nodes.ts';
 import type { Epilogue } from '../prologue/epilogue.ts';
 import { COUNTERS, talkAt } from '../quests/questBook.ts';
+import { lineClear } from './framing.ts';
 import { StrangerWelcome } from './tour.ts';
 
 type You = { readonly x: number; readonly y: number; readonly z: number; readonly facing: number };
@@ -71,6 +72,7 @@ export class AfterStory {
         },
       });
       epilogue.words = () => welcome.run();
+      epilogue.clear = lineClear(here.blocks);
       this.welcome = welcome;
     }
     return epilogue.frame(shot, viewport, seconds, clock, you, veiled);

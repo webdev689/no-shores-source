@@ -55,17 +55,19 @@ const inBlock = (eye: Point3, blocks: readonly Block[]) =>
       eye[2] < block.top,
   );
 
+/** Whether the line between two points clears every solid by `CLEAR_M`. */
+export const lineClear =
+  (blocks: readonly Block[]) =>
+  (from: Point3, to: Point3): boolean =>
+    blockReach(from, to, blocks, CLEAR_M) >= Math.hypot(to[0] - from[0], to[1] - from[1], to[2] - from[2]) - 1e-6;
+
 /** Whether a shot sees every point, each by a line clear of the solids and on its view. */
 function sees(shot: Shot, points: readonly Point3[], blocks: readonly Block[]): boolean {
   if (inBlock(shot.eye, blocks)) return false;
   return points.every((point) => {
     const spot = onScreen(shot, CHECKED, point);
     const shown = spot !== null && spot[0] > 0 && spot[0] < CHECKED.width && spot[1] > 0 && spot[1] < CHECKED.height;
-    return (
-      shown &&
-      blockReach(shot.eye, point, blocks, CLEAR_M) >=
-        Math.hypot(...point.map((each, axis) => each - (shot.eye[axis] ?? 0))) - 1e-6
-    );
+    return shown && lineClear(blocks)(shot.eye, point);
   });
 }
 
