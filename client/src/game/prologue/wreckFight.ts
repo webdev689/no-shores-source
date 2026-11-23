@@ -543,6 +543,8 @@ export class WreckFight implements Beat {
    *  letterbox's bars down, the player in their story dress, the pointer free, and the run's room let go. */
   leave(): void {
     const { hud, footView, screen } = this.story.stage.parts;
+    // First, so the foot game's tracker is its own however the rest of the leaving goes.
+    hud.tasks.inMenu = false;
     this.nameplate.hide();
     screen.showPrompt(null);
     this.story.walker.you.dress = this.story.dress;
@@ -550,7 +552,6 @@ export class WreckFight implements Beat {
     hud.reach({ kind: 'inside' });
     footView.hide();
     hud.tasks.show(null);
-    hud.tasks.inMenu = false;
     hud.toast();
     screen.bars(false);
     this.wisp?.leave();

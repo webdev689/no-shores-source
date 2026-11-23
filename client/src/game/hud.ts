@@ -41,6 +41,7 @@ import {
 import { type Landfall, landfallWords } from './seaLaw.ts';
 import { SeaSight, type Sight } from './seaSight.ts';
 import type { ShipPanel } from './shipPanel.ts';
+import { gearScreenOpen } from './gearScreen.ts';
 import { TaskTracker } from './tasks.ts';
 import { drawToasts, keptToasts, layToasts, type Toast } from './toasts.ts';
 import { UsePrompt } from './usePrompt.ts';
@@ -374,7 +375,8 @@ export class Hud {
       ),
       // In a view too narrow for the tracker to stand clear of the compass's column, it gives way to a public event's
       // banner, which holds the same objective; the next event's line holds none, so the tracker stands beside it.
-      !(besides.banner && besides.banner !== 'next' && width < 1024) && this.tasks.node(view, clock, still, ui.boxOf('gear-foot')),
+      !(besides.banner && besides.banner !== 'next' && width < 1024) &&
+        this.tasks.node(view, clock, still, gearScreenOpen() ? ui.boxOf('gear-foot') : null),
       {
         width: 'grow',
         height: 'grow',

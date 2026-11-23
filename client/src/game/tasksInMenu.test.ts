@@ -6,7 +6,7 @@ import type { Laid } from '../ui/node.ts';
 import { type Box, QuadList } from '../ui/quads.ts';
 import { Stack } from '../ui/stack.ts';
 import { type Face, widthOf } from '../ui/text.ts';
-import { Interface } from '../ui/ui.ts';
+import { Interface, type UiEvent } from '../ui/ui.ts';
 import type { UiRenderer } from '../ui/uiRenderer.ts';
 import { OPEN_AT } from './gearScreen.ts';
 import { sampleGear } from './gearShots.ts';
@@ -24,17 +24,26 @@ const LESSON = {
     { text: 'Equip it', done: false, keys: ['I'] },
   ],
 };
+/** The longest lesson kept over the menu, and the one most seen there. */
+const EQUIP = {
+  name: 'Prologue',
+  task: 'Equip your sword and shield',
+  steps: [
+    { text: 'Open your Character page', done: true, keys: ['I'] },
+    { text: 'Equip them from the Melee slot', done: false },
+  ],
+};
 
 /** The HUD, the lesson tracked and kept in the menu while `inMenu`, under the Character page open on a view
  *  `width` by `height`: everything laid, in drawing order. */
-function laidWithMenu(width: number, height: number, inMenu: boolean): Laid[] {
+function laidWithMenu(width: number, height: number, inMenu: boolean, lesson = LESSON, close = false): Laid[] {
   const { window } = fakePage();
   Object.assign(globalThis, { devicePixelRatio: 1, innerWidth: width, innerHeight: height, setInterval: () => 0 });
   Object.assign(globalThis, { requestAnimationFrame: () => 0 });
   Object.assign(globalThis.document, { exitPointerLock: () => undefined, hidden: false });
   const hud = new Hud();
   hud.veil(null);
-  hud.tasks.show(LESSON, 0);
+  hud.tasks.show(lesson, 0);
   hud.tasks.inMenu = inMenu;
   const stack = new Stack();
   stack.add((ui) => hud.node(ui));
@@ -57,13 +66,17 @@ function laidWithMenu(width: number, height: number, inMenu: boolean): Laid[] {
     measure: (words: string, size: number) => widthOf(face, words, size),
   } as unknown as UiRenderer);
   ui.speak = () => undefined;
-  const frame = () => {
-    ui.frame({ width, height, scale: 1 }, [], 1 / 60);
+  const frame = (events: UiEvent[] = []) => {
+    ui.frame({ width, height, scale: 1 }, events, 1 / 60);
     ui.draw(stack.node(ui));
   };
   frame();
   window.dispatchEvent(new FakeEvent(OPEN_AT, { detail: { view: 'character' } }));
   for (let step = 0; step < 30; step++) frame();
+  if (close) {
+    window.dispatchEvent(new FakeEvent('keydown', { key: 'Escape' }));
+    frame([{ kind: 'key', key: 'Escape' }]);
+  }
   return layout(stack.node(ui), { x: 0, y: 0, width, height }, { face, scrollOf: () => 0 });
 }
 
@@ -75,13 +88,17 @@ const meets = (one: Box, two: Box) =>
   one.x < two.x + two.width && two.x < one.x + one.width && one.y < two.y + two.height && two.y < one.y + one.height;
 const PAGE_Z = 20;
 
-for (const [width, height] of [
-  [1280, 720],
-  [1920, 1080],
+for (const [width, height, lesson] of [
+  [1280, 720, LESSON],
+  [1920, 1080, LESSON],
+  [1280, 720, EQUIP],
+  [1920, 1080, EQUIP],
+  [960, 540, EQUIP],
 ] as const) {
-  test(`at ${width}x${height} the story's step stands over the open Character page, clear of every tile and label`, () => {
-    const laid = laidWithMenu(width, height, true);
-    const step = laid.filter((each) => /Arm yourself|Equip it/.test(wordsOf(each)));
+  test(`at ${width}x${height} "${lesson.task}" stands over the open Character page, clear of every tile and label`, () => {
+    const laid = laidWithMenu(width, height, true, lesson);
+    const next = lesson.steps.find((each) => !each.done)?.text;
+    const step = laid.filter((each) => [lesson.task, next].some((words) => words && wordsOf(each).includes(words)));
     assert.ok(step.length >= 2, 'the task and its step are laid');
     const page = laid.filter(
       (each) => each.z >= PAGE_Z && !step.includes(each) && (wordsOf(each) !== '' || each.node.role !== undefined),
@@ -103,4 +120,15 @@ test('in the foot game the tracker stays under the open menu, as it was', () => 
   const laid = laidWithMenu(1280, 720, false);
   const task = laid.find((each) => wordsOf(each) === LESSON.task);
   assert.ok(task && task.z < PAGE_Z);
+});
+
+test('the frame the menu closes, the step leaves its foot and the tracker stands where it does', () => {
+  const laid = laidWithMenu(1280, 720, true, LESSON, true);
+  assert.equal(
+    laid.find((each) => each.node.id === 'gear-screen'),
+    undefined,
+    'the menu closed',
+  );
+  const task = laid.find((each) => wordsOf(each) === LESSON.task);
+  assert.ok(task && task.z < PAGE_Z && task.box.y < 400, `the tracker at the right (${JSON.stringify(task?.box)})`);
 });

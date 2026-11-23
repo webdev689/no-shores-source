@@ -224,13 +224,16 @@ const OVER_MENU_Z = 21;
 /** How much of the menu's foot the step may take, centred: the foot's hints stand at its left, Close at its right. */
 const FOOT_SHARE = 0.44;
 
-/** The task and its next step on one line in the middle of the menu's foot `foot`, laid last frame. */
+/** The task over its next step (its keys and what is left of it beside), centred in the menu's foot `foot`, laid
+ *  last frame: two short lines, so the longest lesson stays between the foot's hints and Close. */
 function inFoot(quest: Quest, foot: Box, size: number): Node {
   const next = quest.steps.find((step) => !step.done);
+  const left = next && leftOf(next);
   return {
     through: true,
-    gap: 10,
-    alignY: 'center',
+    direction: 'column',
+    alignX: 'center',
+    gap: 3,
     maxWidth: Math.round(foot.width * FOOT_SHARE),
     float: {
       to: 'screen',
@@ -241,8 +244,15 @@ function inFoot(quest: Quest, foot: Box, size: number): Node {
     },
     children: [
       { text: { words: quest.task, size, colour: TONES.brassHi, wrap: false } },
-      next && { text: { words: next.text, size, colour: '#fbf8f0', wrap: false } },
-      ...(next?.keys ?? []).map((key) => keycap(key, size)),
+      next && {
+        gap: 6,
+        alignY: 'center',
+        children: [
+          { text: { words: next.text, size, colour: '#fbf8f0', wrap: false } },
+          ...(next.keys ?? []).map((key) => keycap(key, size)),
+          left !== undefined && { text: { words: left, size, colour: TONES.brassHi, wrap: false } },
+        ],
+      },
     ],
   };
 }
