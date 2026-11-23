@@ -57,6 +57,8 @@ test('a sea in the rooms’ worker sends the same snapshots as the same sea in t
     worker.pump(0.05);
     await settled();
   }
+  // The worker's last word comes a task later; under load, later than a settle, so it is waited for, a while at most.
+  for (let waited = 0; there.length < here.length && waited < 400; waited++) await settled();
   assert.ok(here.length > 0, 'the sea ticked');
   assert.deepEqual(there, here, 'tick for tick');
   assert.deepEqual(gearedThere, geared, 'and each word on the gear, if it says any');
