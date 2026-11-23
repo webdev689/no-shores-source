@@ -25,8 +25,8 @@ fn the_catalogue_reads_whole_with_one_start_of_each_kind() {
 fn a_new_player_keeps_and_wears_the_starts() {
     let character = Character::starting();
     let worn = &character.cosmetics;
-    assert_eq!((worn.dye.as_str(), worn.coat.as_str(), worn.barding.as_str()), ("own_colours", "bay", "bare"));
-    assert!(character.keeps_cosmetic("bay") && !character.keeps_cosmetic("ember_plate"));
+    assert_eq!((worn.dye.as_str(), worn.barding.as_str()), ("own_colours", "bare"));
+    assert!(character.keeps_cosmetic("bare") && !character.keeps_cosmetic("ember_plate"));
 }
 
 #[test]
@@ -49,12 +49,12 @@ fn each_seller_shows_a_few_of_its_own_the_same_all_day() {
 fn a_cosmetic_is_bought_at_its_counter_once_and_worn_in_its_kind() {
     let mut character = Character::starting();
     character.materials.aurem = 25_000;
-    let sold = sold_on(Seller::Tack, AT_COUNTER.day);
+    let sold = sold_on(Seller::Tailor, AT_COUNTER.day);
     let cheap = sold
         .iter()
         .copied()
         .find(|number| matches!(cosmetics()[usize::from(*number)].source, Source::Sold { level: 1, .. }));
-    let number = cheap.expect("a mount piece for any level that day");
+    let number = cheap.expect("a dye for any level that day");
     let found = &cosmetics()[usize::from(number)];
     assert_eq!(character.ask(Ask::WearCosmetic { cosmetic: number }, AT_COUNTER, &DICE), Err(Refusal::NotKept));
     let afield = Here { social: false, ..AT_COUNTER };
@@ -75,9 +75,9 @@ fn a_cosmetic_is_bought_at_its_counter_once_and_worn_in_its_kind() {
 fn a_worn_cosmetic_not_kept_or_of_the_wrong_kind_is_the_start_once_read() {
     let mut character = Character::starting();
     character.cosmetics.dye = "ember_plate".to_owned();
-    character.cosmetics.coat = "palomino".to_owned();
+    character.cosmetics.barding = "palomino".to_owned();
     let back = Character::from_json(&character.to_json()).expect("a character");
-    assert_eq!((back.cosmetics.dye.as_str(), back.cosmetics.coat.as_str()), ("own_colours", "bay"));
+    assert_eq!((back.cosmetics.dye.as_str(), back.cosmetics.barding.as_str()), ("own_colours", "bare"));
     assert_eq!(number_of("own_colours"), Some(0));
 }
 

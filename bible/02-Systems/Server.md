@@ -106,8 +106,8 @@ on Cloudflare.
   ([[Clients Predict With the Shared Rules]]). What the hands hold is taken up only at rest, never in the middle of a
   swing, a guard, a draw or a reload.
 - **Riding:** a player rides wherever they walk, in a node's room, a dungeon, a run or on an island, on the room's
-  word: it takes a page's mounted input only from a character with a horse, a coat worn, which every rider starts with
-  (`may_ride`, [[The Audit's Leftovers Are Fixed as Claude Suggested]]); on a deck, the ship's own or one boarded, the
+  word: it takes a page's mounted input only from a character with a horse worn in the Mount slot (`may_ride`,
+  [[Horses Are Items Worn in a Mount Slot]]); on a deck, the ship's own or one boarded, the
   room walks every body on foot. Nothing is fought from the saddle, as the page
   asks nothing there: a mounted input's swing, guard, shot and aim are dropped, and its cast refused.
 - **Foes:** on a course, a player may ask for a foe by its type and rank, at a level and with a shield (the
@@ -164,7 +164,7 @@ on Cloudflare.
   them. A social space's room serves each of its asks within 4 m of that ask's counter, which its node
   file names (a ruin's plaza names none, and its room serves and shows nothing: [[Cities]], "Ruins"): a Vestige
   opened at the Mage's, the vault at a vault's, a ware at its own smith's, an emblem or a dye at
-  the Tailor's, a coat or barding at the Tack's, a faction's asks and its Art's at that faction's counter, and Shape's
+  the Tailor's, a horse or barding at the Tack's, a faction's asks and its Art's at that faction's counter, and Shape's
   at his place of the week while he is there ([[Factions]], [[Gear]]); the Test Ground's course serves them all within
   4 m of its stall. A resource node is gathered by a player alive and on foot within
   2.5 m of it who holds E two seconds: the gather ask begins it, and the room gathers it two seconds on unless they
@@ -455,7 +455,7 @@ held within it.
 
 Looks and dresses are each player's own word, passed on and decided nothing about, but for the gear they show: the
 room keeps in a dress's armour and hands only the pieces the character wears (`layers_of`; a light in the left hand
-is no piece, and stays), puts the dye, coat and barding the character wears into it, none for a start piece, and
+is no piece, and stays), puts the dye and barding the character wears and the coat of the horse it wears into it, none for a start piece, and
 keeps a faction's colour or a dye only on the layers its pieces worn and dyes kept allow, so no page can show another
 a piece it does not wear or keep ([[Gear]], "Cosmetics"). It makes a dress again when the browser sends one or after
 the player's gear is sent. A look goes out with the tick that

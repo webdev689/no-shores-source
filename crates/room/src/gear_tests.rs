@@ -648,10 +648,18 @@ fn a_page_saying_its_player_is_mounted_rides_only_with_a_horse_and_never_on_a_bo
     };
     let mut room = room();
     let player = room.join().expect("a room with space");
-    assert!(ask_mounted(&mut room, player, 1), "on the horse every rider starts with");
-    room.players.get_mut(&player).expect("in").character.cosmetics.coat.clear();
-    assert!(!ask_mounted(&mut room, player, 2), "without one, on foot");
+    assert!(!ask_mounted(&mut room, player, 1), "a new rider has no horse, so stays on foot");
+    horsed(&mut room, player);
+    assert!(ask_mounted(&mut room, player, 2), "with a horse worn in the Mount slot, mounted");
     let mut deck = Room::deck(&crate::deck::test_deck(), 1, ::foes::Rank::Minor, 1);
     let boarder = deck.join().expect("a deck with space");
     assert!(!ask_mounted(&mut deck, boarder, 1), "no horse comes aboard");
+}
+
+/// Gives a player a horse worn in the Mount slot, which a new character has none of.
+pub(crate) fn horsed(room: &mut Room, player: PlayerId) {
+    let character = &mut room.players.get_mut(&player).expect("in").character;
+    let id = character.take_id();
+    let horse = gear::horses::horse(id, "dun").expect("a coat");
+    character.items.insert(id, (horse, gear::character::At::Worn(gear::kinds::Slot::Mount)));
 }

@@ -495,6 +495,9 @@ impl Character {
             Some(_) => return Err(Refusal::WrongPlace),
             None => return Err(Refusal::NoSuchItem),
         };
+        if item.kind == crate::kinds::Kind::Horse {
+            return Err(Refusal::DoesNotFit);
+        }
         self.items.remove(&id);
         self.salvage(&item, dice);
         Ok(None)

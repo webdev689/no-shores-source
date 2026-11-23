@@ -374,6 +374,7 @@ impl Character {
         character.materials.shapes = character.materials.shapes.min(STOCK_MOST);
         let mut seen = std::collections::BTreeSet::new();
         character.lore.retain(|key| seen.insert(key.clone()));
+        character.horses_from_coats();
         character.earn_due();
         Some(character)
     }

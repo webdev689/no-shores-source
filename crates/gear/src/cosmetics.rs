@@ -167,6 +167,8 @@ pub fn layers_of(slot: crate::kinds::Slot, kind: crate::kinds::Kind) -> &'static
         (_, Kind::Pistolet | Kind::DoublePistolet) => &["pistolet"],
         (_, Kind::Thunderlock) => &["thunderlock"],
         (_, Kind::Head | Kind::Torso | Kind::Arms | Kind::Legs | Kind::Cloak) => &[],
+        // A horse is drawn under the figure by its coat, never among its layers.
+        (_, Kind::Horse) => &[],
         // A ship's modules are never worn on a figure.
         (_, Kind::Guns | Kind::Hull | Kind::Sails | Kind::Rigging) => &[],
     }
@@ -220,8 +222,12 @@ pub fn dressed(sent: &str, character: &Character) -> Option<String> {
         dyes.retain(|layer, colour| colour.as_str().is_none_or(|colour| earned(layer, colour)));
     }
     for (key, kind) in [("dye", CosmeticKind::Dye), ("coat", CosmeticKind::Coat), ("barding", CosmeticKind::Barding)] {
-        let piece = character.cosmetics.worn(kind);
-        if piece == starting(kind) {
+        let piece = if kind == CosmeticKind::Coat {
+            character.coat_worn().unwrap_or_default()
+        } else {
+            character.cosmetics.worn(kind)
+        };
+        if piece.is_empty() || piece == starting(kind) {
             outfit.remove(key);
         } else {
             outfit.insert(key.to_owned(), serde_json::Value::String(piece.to_owned()));
@@ -230,13 +236,13 @@ pub fn dressed(sent: &str, character: &Character) -> Option<String> {
     Some(serde_json::Value::Object(dress).to_string())
 }
 
-/// The cosmetics a player keeps, by id, and the one of each kind they wear.
+/// The dyes and bardings a player keeps, by id, and the one of each kind they wear. A coat is a horse's hide, kept as
+/// the horse (`horses.rs`).
 #[derive(Clone, Debug, PartialEq, Eq, Deserialize, Serialize)]
 #[serde(default)]
 pub struct Cosmetics {
     pub kept: Vec<String>,
     pub dye: String,
-    pub coat: String,
     pub barding: String,
     /// Keys this room does not know, from a later room's save, written back as read, so a room rolled back to
     /// this one or later keeps them.
@@ -249,38 +255,28 @@ impl Default for Cosmetics {
         Cosmetics {
             kept: Vec::new(),
             dye: starting(CosmeticKind::Dye),
-            coat: starting(CosmeticKind::Coat),
             barding: starting(CosmeticKind::Barding),
             unknown: crate::character::UnknownKeys::new(),
         }
     }
 }
 
-impl crate::Character {
-    /// Whether the character has a horse to ride: a coat worn, which every rider starts with
-    /// ([[The Audit's Leftovers Are Fixed as Claude Suggested]]).
-    #[must_use]
-    pub fn may_ride(&self) -> bool {
-        !self.cosmetics.coat.is_empty()
-    }
-}
-
 impl Cosmetics {
-    /// The one of a kind worn.
+    /// The one of a kind worn: the dye or the barding; the coat is the horse worn's (`Character::coat_worn`).
     #[must_use]
     pub fn worn(&self, kind: CosmeticKind) -> &str {
         match kind {
             CosmeticKind::Dye => &self.dye,
-            CosmeticKind::Coat => &self.coat,
+            CosmeticKind::Coat => "",
             CosmeticKind::Barding => &self.barding,
         }
     }
 
-    fn worn_mut(&mut self, kind: CosmeticKind) -> &mut String {
+    fn worn_mut(&mut self, kind: CosmeticKind) -> Option<&mut String> {
         match kind {
-            CosmeticKind::Dye => &mut self.dye,
-            CosmeticKind::Coat => &mut self.coat,
-            CosmeticKind::Barding => &mut self.barding,
+            CosmeticKind::Dye => Some(&mut self.dye),
+            CosmeticKind::Coat => None,
+            CosmeticKind::Barding => Some(&mut self.barding),
         }
     }
 }
@@ -292,9 +288,10 @@ impl Character {
         self.cosmetics.kept.iter().any(|kept| kept == id)
     }
 
-    /// Keeps a cosmetic, once.
+    /// Keeps a dye or a barding, once: a coat is kept as its horse.
     pub fn keep_cosmetic(&mut self, id: &str) {
-        if !self.keeps_cosmetic(id) && number_of(id).is_some() {
+        let kind = number_of(id).map(|at| cosmetics()[usize::from(at)].kind);
+        if !self.keeps_cosmetic(id) && kind.is_some_and(|kind| kind != CosmeticKind::Coat) {
             self.cosmetics.kept.push(id.to_owned());
             self.cosmetics.kept.sort_unstable();
         }
@@ -315,26 +312,30 @@ impl Character {
         for id in due {
             self.keep_cosmetic(&id);
         }
-        for kind in [CosmeticKind::Dye, CosmeticKind::Coat, CosmeticKind::Barding] {
+        for kind in [CosmeticKind::Dye, CosmeticKind::Barding] {
             let worn = self.cosmetics.worn(kind).to_owned();
             let fits = cosmetics().iter().any(|found| found.id == worn && found.kind == kind);
-            if !fits || !self.keeps_cosmetic(&worn) {
-                *self.cosmetics.worn_mut(kind) = starting(kind);
+            if (!fits || !self.keeps_cosmetic(&worn))
+                && let Some(piece) = self.cosmetics.worn_mut(kind)
+            {
+                *piece = starting(kind);
             }
         }
     }
 
-    /// Wears a cosmetic the player keeps, in place of the one of its kind.
+    /// Wears a dye or barding the player keeps, in place of the one of its kind.
     pub(crate) fn wear_cosmetic(&mut self, number: u16) -> Result<Option<Done>, Refusal> {
         let found = cosmetics().get(usize::from(number)).ok_or(Refusal::NoSuchCosmetic)?;
         if !self.keeps_cosmetic(&found.id) {
             return Err(Refusal::NotKept);
         }
-        self.cosmetics.worn_mut(found.kind).clone_from(&found.id);
+        let piece = self.cosmetics.worn_mut(found.kind).ok_or(Refusal::NotKept)?;
+        piece.clone_from(&found.id);
         Ok(None)
     }
 
-    /// Buys a cosmetic its seller shows today, at its price in Aurem, from the level it is sold at.
+    /// Buys a cosmetic its seller shows today, at its price in Aurem, from the level it is sold at: a coat as its horse,
+    /// to the pack, one of each.
     pub(crate) fn buy_cosmetic(&mut self, number: u16, here: Here) -> Result<Option<Done>, Refusal> {
         let found = cosmetics().get(usize::from(number)).ok_or(Refusal::NoSuchCosmetic)?;
         if !here.social {
@@ -344,8 +345,12 @@ impl Character {
         if !sold_on(found.kind.seller(), here.day).contains(&number) {
             return Err(Refusal::NotSold);
         }
-        if self.keeps_cosmetic(&found.id) {
+        let horse = found.kind == CosmeticKind::Coat;
+        if self.keeps_cosmetic(&found.id) || horse && self.keeps_horse(&found.id) {
             return Err(Refusal::Kept);
+        }
+        if horse && self.carried_in(crate::kinds::Slot::Mount) >= crate::character::CARRIED_MOST {
+            return Err(Refusal::CarriedFull);
         }
         if self.level() < level {
             return Err(Refusal::TooLow);
@@ -354,6 +359,9 @@ impl Character {
             return Err(Refusal::Short);
         }
         self.materials.aurem -= aurem;
+        if horse {
+            self.give_horse(&found.id, false);
+        }
         self.keep_cosmetic(&found.id);
         Ok(None)
     }

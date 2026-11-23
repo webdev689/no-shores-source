@@ -421,8 +421,8 @@ the factions' counters are in [[Factions]].
   its slot's nine. The smiths sell no Legendary or Atheric gear: it is earned, had from Shape, or a faction's own
   bought at its counter by rank ([[Factions]]).
 - **The Mage** identifies Vestiges, free.
-- **The Tailor** sells six emblems a day ("Emblems") and four dyes; **the Tack** four horse pieces a day
-  ("Cosmetics").
+- **The Tailor** sells six emblems a day ("Emblems") and four dyes; **the Tack** four a day of horses and bardings
+  ("Horses", "Cosmetics").
 - A day runs from 09:00 UTC to 09:00 UTC (`gear::clock`): the smiths' wares, the Tailor's and the Tack's turn then.
 - **Shape** comes to Overlook from Friday 09:00 to Sunday 21:00 UTC and stands at one of eight places on the plaza,
   the week's (`gear::shape`, in the clock's weeks from Tuesday 09:00 UTC). He sells six pieces for the week, four
@@ -463,16 +463,34 @@ and its art (`gear::emblems`).
 ## Cosmetics
 
 Dyes, coats and bardings, after Destiny's shaders and Sparrows: `content/gear/cosmetics.json`, numbered by its order
-on the wire, each with a kind, a name, a rarity, words, where it comes from and its look (`gear::cosmetics`).
+on the wire, each with a kind, a name, a rarity, words, where it comes from and its look (`gear::cosmetics`). A coat
+is a horse's hide, kept as its horse ("Horses").
 
-- **Kept and worn** as emblems are: a character keeps every one they have had and wears one dye, one coat and one
-  barding. A new one keeps and wears the starts: Own Colours, Bay and Bare. One worn that is not kept, or of another
-  kind, is the start again as the character is read.
+- **Kept and worn** as emblems are: a character keeps every dye and barding they have had and wears one of each. A
+  new one keeps and wears the starts: Own Colours and Bare. One worn that is not kept, or of another kind, is the
+  start again as the character is read.
 - **Where each comes from**: the start; a faction's second rank (its dye, [[Factions]]); and the Tailor (dyes) and the
-  Tack (coats and bardings), each showing four a day of those they sell, the same for everyone that day, for Aurem,
+  Tack (horses and bardings), each showing four a day of those they sell, the same for everyone that day, for Aurem,
   some from a level.
-- **Asks**: wearing one kept, anywhere (55, its number in `item`); buying one of the day's at its seller's counter
-  (56). The gear message carries those kept, the three worn, and in a social space those sold today.
+- **Asks**: wearing a dye or barding kept, anywhere (55, its number in `item`); buying one of the day's at its
+  seller's counter (56), a coat's number buying its horse. The gear message carries those kept, the dye and barding
+  worn and the worn horse's coat, and in a social space those sold today.
+
+## Horses
+
+[[Horses Are Items Worn in a Mount Slot]] (`gear::horses`).
+
+- **A horse is an item** of its own kind (28), worn in the Mount slot (11), one to each coat: the Bay Horse, the
+  Chestnut Horse and so on, its name its coat's place among the coats (`content/gear/rolled.json` names them in that
+  order). It is Normal, of level 1, with no stats, nodes or perks; it is never upgraded, fed or dismantled. It is
+  carried with the Mount slot's nine and kept in the vault among the armour. Nothing buys an item back, so a horse is
+  kept until stored.
+- **Riding** needs a horse worn in the Mount slot (`Character::may_ride`).
+- **The Tack** sells horses as it sells bardings, at its coat's price; one bought goes to the pack, one of each coat,
+  refused while the Mount slot carries nine.
+- **A new character has no horse**; Bay is sold by no one. A character kept while coats were cosmetics is given, as it
+  is read, a horse in the pack for each coat it kept and the one it wore worn in the Mount slot; the coats leave its
+  cosmetics, so it is done once.
 
 ## Elements and shields
 
