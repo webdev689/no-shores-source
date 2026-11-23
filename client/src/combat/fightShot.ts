@@ -69,6 +69,7 @@ const item = (kind: string, slot: number, rarity: number): GearItem => ({
   columns: [],
   price: 0,
   element: 0,
+  source: 0,
 });
 
 const gear: GearState = {

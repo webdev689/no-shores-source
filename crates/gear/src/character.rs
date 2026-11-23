@@ -8,6 +8,7 @@ use crate::item::Item;
 use crate::kinds::{Group, Kind, Slot, Stock};
 use crate::power;
 use crate::rarity::Rarity;
+use crate::source::Source;
 use serde::{Deserialize, Serialize};
 use std::collections::BTreeMap;
 
@@ -39,6 +40,9 @@ pub struct Vestige {
     pub rarity: Rarity,
     pub slot: Slot,
     pub level: u8,
+    /// The content it came from, which the item it opens to keeps; a save from before sources reads as the world's.
+    #[serde(default, skip_serializing_if = "Source::is_world", deserialize_with = "crate::source::known_source")]
+    pub source: Source,
     /// Keys this room does not know, from a later room's save, written back as read, so a room rolled back to
     /// this one or later keeps them.
     #[serde(flatten, default)]
@@ -46,10 +50,16 @@ pub struct Vestige {
 }
 
 impl Vestige {
-    /// A Vestige of its own, with nothing a later room wrote on it.
+    /// A Vestige of its own from the world, with nothing a later room wrote on it.
     #[must_use]
     pub fn new(id: u32, rarity: Rarity, slot: Slot, level: u8) -> Self {
-        Vestige { id, rarity, slot, level, unknown: UnknownKeys::new() }
+        Vestige { id, rarity, slot, level, source: Source::World, unknown: UnknownKeys::new() }
+    }
+
+    /// The same Vestige from `source`.
+    #[must_use]
+    pub fn from(self, source: Source) -> Self {
+        Vestige { source, ..self }
     }
 }
 

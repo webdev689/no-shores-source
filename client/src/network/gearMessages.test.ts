@@ -23,7 +23,10 @@ test('a players own gear the server wrote reads back whole, every column spelled
   assert.equal(gear?.kind, 'gear');
   if (gear?.kind !== 'gear') return;
   assert.equal(gear.prologueDone, false, 'a new character');
-  const nothing = { day: 0, cleared: [], week: 0, elite: false, abyss: false, boon: false };
+  const nothing = {
+    ...{ day: 0, cleared: [], week: 0, elite: false, abyss: false, boon: false },
+    ...{ playlistTaken: [false, false], playlistClears: [0, 0] },
+  };
   assert.deepEqual(gear.activity, nothing, 'a character that has done nothing yet');
   assert.equal(gear.bounties?.length, 6, 'the day’s board');
   assert.equal(
@@ -78,6 +81,11 @@ test('a players own gear the server wrote reads back whole, every column spelled
   assert.ok((gear.mail?.[1]?.item?.columns.length ?? 0) > 0, 'its nodes spelled out');
   const sword = gear.items.find((item) => item.named === 'harbourwarden');
   assert.ok(sword);
+  assert.deepEqual(
+    [sword.source, gear.mail?.[0]?.vestige?.source],
+    [3, 5],
+    'Harbourwarden, mithril, an Elite Dungeon’s; the letter’s Vestige a sea dungeon’s',
+  );
   assert.deepEqual([sword.at, sword.attack, sword.rarity, sword.level, sword.xpMost], [2, 248, 3, 20, 90_000]);
   assert.deepEqual(
     sword.columns.map((column) => column.kind),

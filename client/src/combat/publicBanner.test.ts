@@ -98,6 +98,8 @@ test('between events the banner is one line, with what runs elsewhere under it',
   assert.ok(words.includes('Raid at Gullwing Vale'));
   assert.ok(!words.includes('3 / 12 shards'), 'no bar between events');
   assert.ok(laidOf(banner.node(1280, 1) as Node).length > 0, 'it lays out');
+  const line = banner.node(1280, 1) as Node;
+  assert.deepEqual([line.width, line.maxWidth], ['fit', 440], 'as wide as its words, no wider than the banner');
 });
 
 test('the banner reads out its beats, and never its ticking clocks', () => {
@@ -152,4 +154,20 @@ test("the compass marks a public event's places on its foot, the heroic one blin
     'the heroic mark blinks; the ground holds still',
   );
   assert.equal(places(0.5)[0]?.opacity, 1);
+});
+
+test('a bonus that warns of harm reads in red under a filled red diamond, never struck through as a lost one is', () => {
+  const banner = new PublicBanner();
+  banner.update({ ...shown, bonus: { text: 'Foul water harms', state: 'warns' } }, 1);
+  const node = banner.node(1280, 1) as Node;
+  const line = allOf(node).find((each) =>
+    each.children?.some((child) => child && child.text?.words === 'Foul water harms'),
+  );
+  assert.equal(line?.children?.filter(Boolean).length, 1, 'not struck through');
+  const words = line?.children?.find((child): child is Node => !!child && !!child.text);
+  assert.equal(words?.text?.colour, '#e0483c', 'in red');
+  assert.ok(
+    allOf(node).some((each) => each.picture?.key === 'diamond #e0483c #e0483c '),
+    'its diamond filled red',
+  );
 });

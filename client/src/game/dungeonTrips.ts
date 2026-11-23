@@ -1,6 +1,7 @@
 // Going into a dungeon and out again: a patrol's or an Elite Dungeon's from its node's entrance, back out before the
-// door the player went in by, facing away from it; and a sea island's from its door on the sea, back out onto the
-// island. Every dungeon at Elite or Abyss and every Elite Dungeon is a run: the company's where a member is in one.
+// door the player went in by, facing away from it; a sea island's from its door on the sea, back out onto the island;
+// and a run launched or found from the Playlist, from the sea and back out onto it where the ship lies. Every dungeon
+// at Elite or Abyss and every Elite Dungeon is a run: the company's where a member is in one.
 import { seaDungeonRoom } from '../../../server/roomNames.ts';
 import { activitiesAt, eliteRun } from './activities.ts';
 import { roomNow } from '../sky/worldClock.ts';
@@ -12,7 +13,7 @@ import type { Happening } from './flow.ts';
 import type { DungeonDoor } from './isleLaw.ts';
 import type { Difficulty } from '../heldmap/heldMap.ts';
 import type { PropTable } from '../models/tables.ts';
-import { dungeonRoom, nodeOfRoom, nodeRoom, runInstance, runOf, sharedRun } from './rooms.ts';
+import { dungeonRoom, nodeOfRoom, nodeRoom, runInstance, runOf, sharedRun, startedAtSea } from './rooms.ts';
 import type { NodeInfo } from './worldData.ts';
 
 /** What a trip reads of where the player stands on foot: the place, its node file's text, the seas of its room, the
@@ -47,7 +48,7 @@ export interface TripGame {
     seas: Difficulty,
   ) => Promise<void>;
   readonly ontoPatrol: (patrol: NodeInfo, facing: number, seas: Difficulty, arriving?: AtEntrance) => Promise<void>;
-  readonly ontoSea: (back: SeaBack) => Promise<void>;
+  readonly ontoSea: (back?: SeaBack) => Promise<void>;
   readonly companyPlaces: () => Promise<readonly (string | null)[]>;
   readonly drawers: {
     readonly props: PropTable | null;
@@ -76,6 +77,9 @@ export function dungeonTrips(
   /** Into a sea island's dungeon by its door's room name (`sea-dungeon-...`, server/roomNames.ts), back out before
    *  the door; a name that is none goes nowhere. */
   enterSeaDungeon(door: DungeonDoor): void;
+  /** Into a run of the Elite Dungeon `node` by its room's name, from the sea, as the Playlist launches or finds one;
+   *  out of it back onto the sea. */
+  intoRun(node: NodeInfo, run: string): void;
 } {
   /** The way out of the dungeon the player is in, kept as they went in; `fell` when their company fell. */
   let out: ((fell: boolean) => void) | null = null;
@@ -96,6 +100,9 @@ export function dungeonTrips(
         game.ontoPatrol(node, before?.facing ?? 0, seas, arriving),
       );
     };
+  /** Out of a run the Playlist started, back onto the sea where the ship lies. */
+  const toSea = (layout: DungeonLayout, fell: boolean) =>
+    game.travel({ kind: 'surface', name: layout.name, fell }, () => game.ontoSea());
   const into =
     (
       outside: { readonly node: NodeInfo; readonly text: string },
@@ -162,14 +169,19 @@ export function dungeonTrips(
       void game.module.then((module) => {
         const { name } = askLayout(module, ask);
         const inside = where.dungeon === null ? `${node.id}--dungeon` : `${node.id}--dungeon-${number}`;
-        const work = into(
-          { node, text: '' },
-          { number, ask },
-          where.seas,
-          async () => place,
-          toNode(node, where.seas, number),
-        );
+        const away = startedAtSea(place) ? toSea : toNode(node, where.seas, number);
+        const work = into({ node, text: '' }, { number, ask }, where.seas, async () => place, away);
         game.travel({ kind: 'join', node: inside, name }, work);
+      });
+    },
+    intoRun: (node, run) => {
+      const where = nodeOfRoom(run);
+      if (!where || where.id !== node.id || where.run === null || where.dungeon !== null) return;
+      const ask = { place: node.id, name: node.name };
+      void game.module.then((module) => {
+        const { name } = askLayout(module, ask);
+        const work = into({ node, text: '' }, { number: 0, ask }, where.seas, async () => run, toSea);
+        game.travel({ kind: 'enter', node: `${node.id}--dungeon`, name }, work);
       });
     },
     enterSeaDungeon: ({ room, at: [x, y], facing }) => {

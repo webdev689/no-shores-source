@@ -5,6 +5,7 @@ use crate::element::Element;
 use crate::grid::{Column, Cost, column_xp, columns, cost, node_offsets};
 use crate::kinds::{Kind, Slot};
 use crate::rarity::Rarity;
+use crate::source::Source;
 
 /// No node chosen in a column.
 pub const NONE_CHOSEN: u8 = u8::MAX;
@@ -41,6 +42,9 @@ pub struct Item {
     /// A weapon's element, if it was made with one.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub element: Option<Element>,
+    /// The content it came from, which its look follows; a save from before sources reads as the world's.
+    #[serde(default, skip_serializing_if = "Source::is_world", deserialize_with = "crate::source::known_source")]
+    pub source: Source,
     /// Keys this room does not know, from a later room's save, written back as read, so a room rolled back to
     /// this one or later keeps them.
     #[serde(flatten)]
@@ -66,6 +70,7 @@ impl Item {
             chosen: Vec::new(),
             bucket,
             element: None,
+            source: Source::World,
             unknown: crate::character::UnknownKeys::new(),
         };
         item.chosen = vec![NONE_CHOSEN; item.columns().len()];

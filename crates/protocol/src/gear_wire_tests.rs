@@ -212,7 +212,7 @@ fn furnished() -> (Room, PlayerId) {
     ask(&mut room, 7, Asked::Grant(Grant::Ammo(gear::ammo::AMMO_FULL / 2)));
     room.lay_drop(player, Dropped::AmmoBox, [1.0, 2.0, 0.0]);
     let mut kept = gear::Character::from_json(&room.kept_character(player).expect("in")).expect("a character");
-    kept.post(Source::LeftLying, Posted::Vestige(Vestige::new(0, Rarity::Rare, Slot::Arms, 9)));
+    kept.post(Source::LeftLying, Posted::Vestige(Vestige::new(0, Rarity::Rare, Slot::Arms, 9).from(gear::Source::Sea)));
     kept.post(Source::Salvage, Posted::Item(gear::Item::new(0, Kind::Hull, Rarity::Magic, 6, Slot::Hull)));
     assert!(room.restore_character(player, &kept.to_json()), "the character kept again");
     room.lay_drop(player, Dropped::Vestige(Vestige::new(90, Rarity::Magic, Slot::Head, 20)), [3.0, 2.0, 0.0]);
@@ -540,6 +540,20 @@ fn a_players_gear_carries_their_days_and_weeks_record_as_kept() {
     assert_eq!((gear.activity_day(), gear.activity_week()), (20_778, 2_968));
     assert_eq!(gear.cleared().map(|tiers| tiers.iter().collect::<Vec<u8>>()), Some(vec![1, 2]));
     assert_eq!((gear.week_elite(), gear.week_abyss(), gear.boon()), (true, false, true));
+}
+
+#[test]
+fn a_players_gear_carries_each_playlists_daily_and_weekly_record_as_kept() {
+    let mut room = Room::new(Vec::new(), (0.0, 0.0));
+    let player = room.join().expect("a room with space");
+    let mut character = room.player(player).expect("in the room").character.clone();
+    character.activity.today = gear::activity::Today { day: 20_778, abyss_playlist: true, ..Default::default() };
+    character.activity.this_week = gear::activity::ThisWeek { week: 2_968, elite_playlist: 2, ..Default::default() };
+    assert!(room.restore_character(player, &character.to_json()));
+    let bytes = gear_bytes(&room, player).expect("written");
+    let gear = messages::root_as_from_room(&bytes).expect("read").gear().expect("gear");
+    assert_eq!((gear.elite_playlist_taken(), gear.abyss_playlist_taken()), (false, true));
+    assert_eq!((gear.elite_playlist_clears(), gear.abyss_playlist_clears()), (2, 0));
 }
 
 #[test]

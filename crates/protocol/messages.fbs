@@ -457,6 +457,37 @@ table PublicEvent {
   next_wave_ticks: uint;
 }
 
+// One of an Elite Dungeon's seals: its kind (1 the Litany, 2 the Weighing, 3 the Ascent, 4 the Holdfast), its state
+// (0 waiting, 1 running, 2 broken), its progress per mille, its pieces' marks (a Litany's runes 0 dark, 1 showing, 2
+// stepped in order, 3 stepped wrong a moment ago; a Weighing's plates in play and a Holdfast's ring 1 while stood on;
+// an Ascent's players on its stone and the living players in its room), and its relic's strength per mille.
+table SealSeen {
+  kind: ubyte;
+  state: ubyte;
+  progress: ushort;
+  marks: [ubyte];
+  relic: ushort;
+}
+
+// An Elite Dungeon's encounters: each seal in walk order; whether its Boss has woken, and its number while it stands
+// (0 for none); the ward up (0 none, 1 at two thirds, 2 at one third) and how many are broken; each anchor's progress
+// per mille; the ticks until a Reckoning lands while one is shown (0 for none) and the anchor it is shown at; Fury's
+// step (each a tenth more on its company's blows); the ticks until Fury begins while its clock runs (0 before and
+// after); and the ticks until the warded Boss's slam lands while it is shown (0 for none).
+table EncounterSeen {
+  seals: [SealSeen];
+  woken: bool;
+  boss: uint;
+  ward: ubyte;
+  wards_broken: ubyte;
+  anchors: [ushort];
+  reckoning_ticks: uint;
+  reckoning_at: ubyte;
+  fury: ubyte;
+  fury_ticks: uint;
+  slam_ticks: uint;
+}
+
 // Every player in the room after one of its ticks, the dresses that changed since the last snapshot, every foe, what
 // happened in the fight since the last snapshot, and the shots in flight; in the sea room, every ship at sea, every
 // hostile, each player's fight, and as `players` each player off the helm, their fighter only their body on their ship's
@@ -464,8 +495,8 @@ table PublicEvent {
 // balls aloft, what happened in its fight since the last snapshot, and the fight's clock. Then every spell in a room on
 // land; and at sea what floats for each player, each player's ship's kept hurts, what each player is told this tick,
 // and each deck boarded; and in a fleet room the world time its clock started at, seconds since the Unix epoch, which
-// sets its weather. Then, at sea, the islands the player sees or has found. Last, in a zone that holds them, its
-// public events, sent whole in each snapshot.
+// sets its weather. Then, at sea, the islands the player sees or has found. Then, in a zone that holds them, its
+// public events, sent whole in each snapshot; last, in an Elite Dungeon, its encounters.
 table Snapshot {
   tick: ulong;
   players: [Seen];
@@ -507,6 +538,8 @@ table Snapshot {
   // ships the room keeps at sea.
   taken: [ulong];
   friendlies: [Friendly];
+  // In an Elite Dungeon's room, its encounters, sent whole in each snapshot; none in any other room.
+  encounter: EncounterSeen;
 }
 
 // What a room sends: exactly one of these is present.

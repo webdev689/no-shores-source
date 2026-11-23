@@ -144,7 +144,7 @@ impl Modifier {
     }
 
     /// The modifier of a kind (`kind`), Burn naming the Art `art`.
-    fn of_kind(kind: usize, art: u8) -> Self {
+    pub(crate) fn of_kind(kind: usize, art: u8) -> Self {
         match kind {
             0 => Modifier::Burn(art),
             1 => Modifier::Brawler,
@@ -266,6 +266,8 @@ const WEEK_DUNGEONS: u64 = 2;
 const WEEK_MODIFIERS: u64 = 3;
 /// The board's bounties.
 pub(crate) const BOUNTY_DRAWS: u64 = 4;
+/// The Abyss Playlist's second modifier (`playlist::Playlist::modifiers`).
+pub(crate) const PLAYLIST_MODIFIER: u64 = 5;
 
 /// The number the draws roll by, their place among a kind's added: any would do, as their own seed keeps them apart
 /// from every room's dice.
@@ -278,7 +280,7 @@ pub(crate) fn drawn(period: u64, kind: u64, nth: u32, count: usize) -> usize {
 }
 
 /// The Art a Burn drawn at `nth` names.
-fn burning(period: u64, kind: u64, nth: u32) -> u8 {
+pub(crate) fn burning(period: u64, kind: u64, nth: u32) -> u8 {
     let every = &arts().arts;
     every.get(drawn(period, kind, nth, every.len())).map_or(0, |art| art.id)
 }

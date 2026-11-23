@@ -539,7 +539,8 @@ impl Character {
         }
         let rarity = vestige::opens_to(vestige.rarity, vestige.level, dice);
         let item_id = self.id_to_take();
-        let item = vestige::make(item_id, rarity, vestige.slot, vestige.level, dice).ok_or(Refusal::NoSuchItem)?;
+        let item = vestige::make(item_id, rarity, vestige.slot, vestige.level, vestige.source, dice)
+            .ok_or(Refusal::NoSuchItem)?;
         self.take_id();
         self.vestiges.remove(&id);
         let opened = item.rarity;

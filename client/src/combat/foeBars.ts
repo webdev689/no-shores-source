@@ -75,6 +75,7 @@ export interface PlateViewing {
 /** A plate over a figure as this frame draws it: where its foot stands (CSS pixels), how much the cone shows of it,
  *  how large it stands and how far in front of the others. */
 interface Overhead {
+  readonly id: number;
   readonly plate: FoePlate;
   readonly x: number;
   readonly y: number;
@@ -208,7 +209,7 @@ export class FoeBars {
       plate.show(foe, seconds, foe.view.side === 'players' ? '' : alertMark(foe.alert, since));
       const place = laid.get(foe.id) ?? this.places.get(foe.id) ?? { lift: 0, front: 0 };
       this.places.set(foe.id, place);
-      return { plate, x, y: y - place.lift, cone, scale, front: place.front };
+      return { id: foe.id, plate, x, y: y - place.lift, cone, scale, front: place.front };
     });
     // A plate out of the cone is kept for its foe's next showing; one whose foe has gone or fallen is let go.
     const drawn = new Set(shown.map(({ foe }) => foe.id));
@@ -229,16 +230,19 @@ export class FoeBars {
     return boss;
   }
 
-  /** The plates over figures, each with its foot just over its foe's head, the nearest drawn over the farther. */
-  overheadNodes(): Node[] {
+  /** The plates over figures, each with its foot just over its foe's head, the nearest drawn over the farther; those
+   *  `hidden` says are laid unseen (asked by each one's id and the spot its foot stands at). */
+  overheadNodes(hidden: (id: string, x: number, y: number) => boolean = () => false): Node[] {
     const order = [...this.drawn].sort((one, two) => two.front - one.front);
-    return order.flatMap(({ plate, x, y, cone, scale }) => {
+    return order.flatMap(({ id, plate, x, y, cone, scale }) => {
       const made = plate.node({ kind: 'overhead', width: 0, scale });
+      const named = `foe-plate-${id}`;
       return made
         ? [
             {
               ...made,
-              ...(cone < 1 ? { opacity: cone } : {}),
+              id: named,
+              ...(hidden(named, x, y - 4) ? { opacity: 0 } : cone < 1 ? { opacity: cone } : {}),
               float: { to: 'screen', anchor: [0.5, 1], x, y: y - 4, z: 1 },
             } satisfies Node,
           ]

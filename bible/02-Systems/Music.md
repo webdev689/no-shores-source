@@ -3,6 +3,7 @@ type: system
 status: live
 code:
   - client/src/game/audio/music/fmBank.ts#fmVoice
+  - client/src/game/audio/music/directorLaw.ts#courtPart
   - client/src/game/audio/music/fmBank.ts#drumOf
   - client/src/game/audio/music/score.ts#makeSong
   - client/src/game/audio/music/score.ts#ROLES
@@ -158,7 +159,8 @@ on, and the sky over it.
   written as takes, with a cadence, a victory and a defeat. A family with no score is silent.
 - **Bosses.** Captain Brannoc Thule plays the Boarding; High Assessor Corvane plays the Reckoning; any other Boss
   plays the Wrath. The phase is the boss's health: a phase a third, the last stand in its last tenth (the Wrath, with
-  none, keeps its third phase). A new phase begins on the bar line, on one of its opening takes.
+  none, keeps its third phase). An Elite Dungeon's Boss, whose wards hold its health at two thirds and one third,
+  plays its phase by its wards broken instead, its last stand still by its health (`courtPart`). A new phase begins on the bar line, on one of its opening takes.
 - **Stings.** A boss engaged plays its wake if its score has one, straight into its first phase. A boss fallen plays
   its fall; the player dead plays the score's defeat. A fight that ends plays the family's cadence, or its victory
   if the player killed a foe in it. A sting holds the next song until it ends; where none is written, silence

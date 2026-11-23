@@ -2,7 +2,8 @@
 // clothes, a Magic one as clothes or light armour and a Rare or finer one as an armour set, finer as it climbs; the
 // cloak is a cloak, a faction's cape the formal cloak in its faction's dye; a faction's armour and weapons are its own
 // set and metal in its own colour; the hands hold what the gear wears; the dye, coat and barding worn ride along. A
-// named item wears the look written on it; a rolled one keeps its own by its level, name and number.
+// named item wears the look written on it; a rolled one its content's sets (`sourceLooks.ts`) by its level, name and
+// number.
 
 import factions from '../../../content/gear/factions.json' with { type: 'json' };
 import items from '../../../content/gear/items.json' with { type: 'json' };
@@ -11,14 +12,14 @@ import type { GearItem, GearState } from '../network/gearMessages.ts';
 import type { ArmourPiece, Outfit } from '../forge/outfit.ts';
 import type { Wardrobe } from './dressing.ts';
 import { MELEE, RANGED_SLOT, gearHands, nearest, numberOf, rung, worn, writtenLook } from './gear.ts';
+import { magicSets, nearestOwnFirst, rareSet } from './sourceLooks.ts';
 
 const [HEAD, TORSO, ARMS, LEGS, CLOAK] = [2, 3, 4, 5, 6];
 const MAGIC = 1;
 const RARE = 2;
 
-/** The forge's armour sets by their worth, the guilds' lighter ones among them: a rolled Rare piece climbs it from
- *  chain, nine rungs over its level and up to two more by its name (`rung`), and a set the forge does not draw falls
- *  to the nearest. */
+/** The forge's armour sets by their worth, the guilds' lighter ones among them: a set the forge does not draw for a
+ *  body falls to the nearest of its content's, then to the nearest here. */
 const SETS = [
   'leather',
   'thieves',
@@ -35,14 +36,10 @@ const SETS = [
   'ebony',
   'daedric',
 ];
-/** A Magic piece's set by its number: leather or the thieves' on the head and arms, and on the torso and legs clothes
- *  (none) besides. */
-const MAGIC_SETS: Readonly<Record<number, readonly (string | null)[]>> = {
-  [HEAD]: ['leather', 'thieves'],
-  [ARMS]: ['leather', 'thieves'],
-  [TORSO]: [null, 'leather', 'thieves'],
-  [LEGS]: [null, 'leather', 'thieves'],
-};
+/** A Magic piece's set by its number: its content's lightest sets on the head and arms (the world's leather or the
+ *  thieves'), and on the torso and legs clothes (none) besides. */
+const magicChoices = (item: GearItem, slot: number): readonly (string | null)[] =>
+  slot === HEAD || slot === ARMS ? magicSets(item) : slot === TORSO || slot === LEGS ? [null, ...magicSets(item)] : [];
 /** Each armour slot's pieces of a set. */
 const PIECES: Readonly<Record<number, readonly ArmourPiece[]>> = {
   [HEAD]: ['helm'],
@@ -98,15 +95,17 @@ const pick = <T>(choices: readonly T[], item: GearItem): T | undefined => choice
 function setOf(item: GearItem, slot: number, wardrobe: Wardrobe): string | null {
   const needed = slot === TORSO ? ['cuirass' as const] : (PIECES[slot] ?? []);
   const drawn = (set: string) => needed.every((piece) => wardrobe.sets[piece].includes(set));
-  const choices = item.rarity === MAGIC ? (MAGIC_SETS[slot] ?? []) : [];
+  const choices = item.rarity === MAGIC ? magicChoices(item, slot) : [];
   const magic = choices[numberOf(item) % choices.length];
   // A Magic torso or legs piece numbered for clothes wears no set.
   if (magic === null) return null;
-  const own = factionLook(item)?.armour ?? writtenLook(item)?.look ?? magic;
-  if (own && drawn(own)) return own;
-  // A look the forge does not draw for this body falls to the nearest it does, as a rolled piece's rung does.
-  const ownRung = own ? SETS.indexOf(own) : -1;
-  return nearest(SETS, ownRung >= 0 ? ownRung : rung(item, 2, 9, 3)).find(drawn) ?? null;
+  const faction = factionLook(item)?.armour;
+  const own = faction ?? writtenLook(item)?.look ?? magic ?? rareSet(item);
+  if (drawn(own)) return own;
+  // A look the forge does not draw for this body falls to the nearest it does: a faction's on the ladder from its
+  // rarity's rung, any other among its own content's first, so it says where it was earned wherever the forge allows.
+  const fallen = faction ? nearest(SETS, rung(item, 2, 9, 3)) : nearestOwnFirst(item, own, SETS);
+  return fallen.find(drawn) ?? null;
 }
 
 /** The outfit the gear worn makes of `outfit`: its armour and garments the gear's, and its hands the drawn loadout's

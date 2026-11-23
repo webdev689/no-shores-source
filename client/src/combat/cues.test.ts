@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
+import { readFile } from 'node:fs/promises';
 import { test } from 'node:test';
-import type { FightEvent } from '../network/messages.ts';
+import { type FightEvent, readFromRoom } from '../network/messages.ts';
 import type { Action, FighterView } from '../rules/fighters.ts';
 import { EVENT, edgeArrow, parryCue, threatens, wordOf } from './cues.ts';
 
@@ -120,4 +121,19 @@ test('a shield’s share of a blow is told in its own tone; a blow it held whole
 test('a drink’s heal says what it gave back: green over the player who drank, plain over another', () => {
   assert.deepEqual(said(event(EVENT.healed, PLAYER, PLAYER, 0, 39.6)), { text: '+40', tone: 'healed' });
   assert.deepEqual(said(event(EVENT.healed, OTHER, OTHER, 0, 20)), { text: '+20', tone: 'plain' });
+});
+
+test("an Elite Dungeon's moments are numbered as the room numbers them on the wire", async () => {
+  const written = await readFile(new URL('../../../target/protocol/snapshot.bin', import.meta.url)).catch(() => {
+    throw new Error('protocol/snapshot.bin is not built: run `cargo test -p protocol`');
+  });
+  const snapshot = readFromRoom(new Uint8Array(written));
+  if (snapshot?.kind !== 'snapshot') throw new Error('a snapshot');
+  const kinds = snapshot.events.filter((each) => each.tick === 1235n).map((each) => each.kind);
+  const moments = ['sealBroken', 'runeWrong', 'wardRaised', 'wardBroken', 'reckoningLanded', 'bossWoke'] as const;
+  const told = [...moments, 'relicDrained', 'drowned', 'bossSlammed'] as const;
+  assert.deepEqual(
+    kinds,
+    told.map((name) => EVENT[name]),
+  );
 });

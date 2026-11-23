@@ -7,9 +7,10 @@ use crate::character::Character;
 use crate::kinds::Slot;
 use serde::Serialize;
 
-/// A worn piece as others see it.
+/// A worn piece as others see it, by its own id, which the page draws its look's choices by as on its figure.
 #[derive(Debug, Serialize)]
 pub struct ShownPiece {
+    pub id: u32,
     pub slot: u8,
     pub kind: u8,
     pub rarity: u8,
@@ -21,6 +22,8 @@ pub struct ShownPiece {
     pub attack: u32,
     pub defense: u32,
     pub gilded: bool,
+    /// The content it came from (`Source`'s number), which its look follows.
+    pub source: u8,
 }
 
 /// A character as others see it.
@@ -44,6 +47,7 @@ impl Character {
             .all_worn()
             .filter(|(slot, _)| !slot.ship())
             .map(|(slot, item)| ShownPiece {
+                id: item.id,
                 slot: slot as u8,
                 kind: item.kind as u8,
                 rarity: item.rarity as u8,
@@ -54,6 +58,7 @@ impl Character {
                 attack: item.attack().unwrap_or_default(),
                 defense: item.defense().unwrap_or_default(),
                 gilded: item.fully_upgraded(),
+                source: item.source as u8,
             })
             .collect();
         Shown {

@@ -79,9 +79,10 @@ export function next(flow: Flow, happening: Happening): Flow {
       };
     case 'enter':
     case 'leave': {
-      // Into a dungeon, on foot or from a sea island's door at sea, or out of one to its node, with no menu open.
-      const from = happening.kind === 'enter' && flow.mode === 'sea' ? 'sea' : 'foot';
-      if (flow.mode !== from || flow.menu) return flow;
+      // Into a dungeon, on foot, or at sea or over an island's side as the Playlist starts a run, or out of one to its
+      // node, with no menu open.
+      const from = happening.kind === 'enter' && onTheSea(flow) ? flow.mode : 'foot';
+      if (flow.mode !== from || ('menu' in flow && flow.menu)) return flow;
       const words = `${happening.kind === 'enter' ? 'Entering' : 'Leaving'} ${happening.name}`;
       return { mode: 'loading', words, then: { mode: 'foot', node: happening.node, menu: false } };
     }

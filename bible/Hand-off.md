@@ -168,8 +168,35 @@ each part works is in its system note.
 
 The decisions in [[Open Questions]] are not repeated here.
 
-- **The whole-codebase audit** (branch `claude/stoic-heisenberg-k1l666`, its pull request), for the owner's yes to
-  merge, which deploys the page and the rooms: twelve read-only auditors by area and a reviewer of the diff, every
+- **Looks by content, the Playlist and the matchmade dungeons' encounters** (#160), merged with the owner's yes ("Let's merge and deploy and talk about this
+  after"), which deploys the page and the rooms. The owner's asks are recorded ([[Armour and Weapon Looks Belong to the Content That Gives Them]],
+  [[Elite and Abyss Dungeons Are Queued From a Playlist Beside Each Port]],
+  [[Matchmade Dungeons Gain Encounters, Puzzles, Climbs and Raid Mechanics]], [[A Playlist's Launch Is Drawn by the
+  Server]], [[The Room Keeps Only Looks of a Piece's Own Content]], [[Faction Blades Wear Their Faction's Colour on
+  Hilt and Trim]]), every call of Claude's in [[The Playlist and Its Dungeons as Claude Shapes Them]].
+  - Looks ([[Gear]], "Where it came from" and "Looks"): every item and Vestige keeps its content; each armour set and
+    metal is one content's; past the world a piece's set and metal follow its name, so each content's every look is
+    seen where it drops; "From" on the card, the page and a Vestige's line, a faction's piece naming its faction; the
+    room keeps only looks of a worn piece's own content (`gear::looks`, `content/gear/drawn.json`).
+  - The Playlist ([[Activities]], [[Accounts]], [[Interface]]): crests on a chart and one card, after the owner's
+    Vanguard reference, pictured clean at six sizes; Find a Company over one pool, Launch drawn by the server; runs
+    started from it (a playlist's, and the week's marked `--sea`) entered from the sea and left back to it; the finder
+    refuses a seeker before the prologue or under the week's level, and silent sockets never fill it.
+  - Encounters ([[Dungeons]], "Encounters"): two or three seals a run (the Litany, the Weighing, the Ascent's real
+    climb in nine of the 18, the Holdfast), the Court's wards, anchors, slam and Reckoning, Fury from the end room;
+    living players counted, encounter foes dropping nothing, compass marks, the Boss scaled to the company; the Court's
+    display kept clear at every size, a centre call for the slam ("Get clear!") and the Reckoning ("Into the light!"),
+    foul water's green edge, beams fading beside the camera; each moment pictured in three dungeons
+    (`tools/claude-toolkit/encounter-plan.ts`).
+  - Tested offline: `cargo xtask check` on each pushed head (c2361953 last, with main merged in at 1cd6a379); three
+    rounds of read-only audits (rules, page, design, bible, looks, and two mutation audits of the tests), every finding
+    fixed with a test or recorded. Not yet: played by hand, or in a deployed room.
+  - Held by the owner: faction blades (built on `wt/fblade`, the forge's trim; its art unpublished); the Abyss
+    Dungeons' crossbow art ("Not now").
+  - To talk through with the owner: the named-piece gaps (36 of 60 contents, colours and slots have no named piece of
+    their own), and the Veiled's colour on a blade ([[Open Questions]]).
+- **The whole-codebase audit** (#167), merged with the owner's yes ("Merge and deploy"), which deploys the page and
+  the rooms: twelve read-only auditors by area and a reviewer of the diff, every
   finding checked against the code first and each bug fixed with a test that fails without it. Among the fixes: quest
   steps keep within a public event's kept places; the raid's stores read 100% only while every store is whole and 0
   only once every store fell; silenced music stops; cues sharing a recording are each heard the first time; Return to
@@ -177,7 +204,7 @@ The decisions in [[Open Questions]] are not repeated here.
   is put away at sea; the wheel scrolls in the interface's pixels; flora that failed to come is asked for again; the
   island door, `identify`'s number, the bake's panics, the chat hall's sizes, mottos' hidden marks and the World
   Editor's keys; dead code and some 25 stale docs out; the Code Map, Toolchain, Testing and other notes made true.
-  Tested offline (the full check at its head); not played. Its description lists what it left for the owner:
+  Tested offline (the full check at its head, `main` merged in); not played. What it left for the owner:
   - The `modules` workflow's publish uploads `"$RUNNER_TEMP/stage"`, a folder nothing writes, so it uploads nothing and
     passes; the next change to a module would name meshes R2 does not hold. A one-line fix (`"$RUNNER_TEMP/modules"`)
     and a guard in `tools/r2.py`, held back because pushing either starts the asset workflows with the Cloudflare
@@ -191,10 +218,9 @@ The decisions in [[Open Questions]] are not repeated here.
     `code:` symbol any word of its file names; the html check excuses `.append(` on a name made with `new` anywhere and
     misses `insertNode`, `importNode` and `new Text(`).
 - **Open pull requests**, for the owner's yes once their checks pass: #163 (the owner's bugs from two rounds of play),
-  #162 (the game's words out to Type and back; it conflicts with `main` in `Decisions.md`), #160 (looks by content,
-  the Playlist beside each port and encounters in the matchmade dungeons; after the audit it meets three small
-  conflicts, both sides kept) and #159 (the rooms' worker tests wait for what they check; it conflicts with `main` in
-  `roomThread.test.ts`). Drafts: #93 (the toolkit's first review) and #114 (the gear message carries the pledge once).
+  #162 (the game's words out to Type and back; it conflicts with `main` in `Decisions.md`) and #159 (the rooms' worker
+  tests wait for what they check; it conflicts with `main` in `roomThread.test.ts`). Drafts: #93 (the toolkit's first
+  review) and #114 (the gear message carries the pledge once).
 - **Open points from merged work**, each the owner's to say:
   - #158 (the prologue's waking, scenes and arena, one loading screen, foes that give up only when far, feet on the
     city's ground; [[One Loading Screen Covers Every Trip Until the Place Is Ready]] and the decisions it names): the
@@ -357,6 +383,11 @@ The decisions in [[Open Questions]] are not repeated here.
 
 ## Next
 
+- **Unchecked, from the encounters' headless run**: on an Elite Dungeon's node the game's worker logged a WebGPU
+  validation error each frame ("Instance range ... requires a larger buffer (28) than the bound buffer size (24) of
+  the vertex buffer at slot 1 with stride 28"), the city models' instances by its look; whether `main` shows it too.
+  The dungeon picture driver (`tools/claude-toolkit/dungeon-plan.ts`) waits for an HTML "Enter" prompt the game now
+  draws in its worker, so it cannot picture a dungeon until it waits on the game's own word.
 - **The public events' last pictures**, left for later by the owner: the raid's waves marching, a store
   plundered, Marrow, the Tithe giving up and a failed raid; the Fissure's growth sinking, the Warden, the last minute,
   the seal and a failed Fissure; the chest, the result and the reward feed; night; the banner at 1280x720, 1000x600,

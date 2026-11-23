@@ -1,11 +1,14 @@
 import type { Gear } from '../../../generated/messages/ts/overlook/wire/gear.ts';
 import type { GearItem as GearItemTable } from '../../../generated/messages/ts/overlook/wire/gear-item.ts';
 import type { GearOfficer as GearOfficerTable } from '../../../generated/messages/ts/overlook/wire/gear-officer.ts';
-import type { GearShip as GearShipTable } from '../../../generated/messages/ts/overlook/wire/gear-ship.ts';
+import { type ActivityRecord, activityOf } from './activityRecord.ts';
 import { type ArtState, artsOf } from './artMessages.ts';
 import { type GearLetter, mailOf } from './mailMessages.ts';
 import { type QuestState, questOf } from './questMessages.ts';
 import { LORE_ASKS, type LoreState, loreOf } from './loreMessages.ts';
+import { type GearShip, shipOf } from './shipMessages.ts';
+
+export type { GearOfficer, GearShip } from './shipMessages.ts';
 
 /** The asks, by the number an input sends (protocol's gear_wire). */
 export const ASKS = {
@@ -155,6 +158,8 @@ export interface GearItem {
   readonly price: number;
   /** A weapon's element, by the gear crate's numbers: 0 for none. */
   readonly element: number;
+  /** The content it came from, which its look follows (`SOURCES`). */
+  readonly source: number;
 }
 
 export interface GearVestige {
@@ -163,6 +168,8 @@ export interface GearVestige {
   readonly slot: number;
   readonly level: number;
   readonly vaulted: boolean;
+  /** The content it came from, which the item it opens to keeps (`SOURCES`). */
+  readonly source: number;
 }
 
 /** The whole share of a Ranged loadout's ammunition, in parts (the gear crate's `AMMO_FULL`). */
@@ -290,17 +297,7 @@ export interface GearBounty {
   readonly name: string;
 }
 
-/** Their day's and week's record, as kept with their character (`Gear`'s comment says each field): the day it is for
- *  and the tiers of the dungeon of the day cleared then (0 Normal, 1 Elite, 2 Abyss); the week it is for, whether
- *  they cleared each of the week's two, and whether they hold the Abyss boon. The page judges each by its own day. */
-export interface ActivityRecord {
-  readonly day: number;
-  readonly cleared: readonly number[];
-  readonly week: number;
-  readonly elite: boolean;
-  readonly abyss: boolean;
-  readonly boon: boolean;
-}
+export type { ActivityRecord } from './activityRecord.ts';
 
 /** Where a player stands with the factions and their Arts: the faction pledged (0 none); for each faction in
  *  content/gear/factions.json's order, the reputation earned and the packages it holds; for each Art in
@@ -313,48 +310,6 @@ export interface GearStanding {
   readonly artLevels: readonly number[];
   readonly artXp: readonly number[];
   readonly artOwned: readonly number[];
-}
-
-/** A named officer as the gear message tells of them (protocol's `GearOfficer`): post 0 First Mate to 4 Lookout,
- *  grade a rarity, names by their places in content/gear/crew.json, duty 0 aboard, 1 at their post, 2 ashore; their
- *  nodes as an item's, each column's XP their service's; and an offer's wage in Aurem. */
-export interface GearOfficer {
-  readonly id: number;
-  readonly post: number;
-  readonly grade: number;
-  readonly given: number;
-  readonly family: number;
-  readonly duty: number;
-  readonly level: number;
-  readonly toNext: number;
-  readonly trained: number;
-  readonly trainedMost: number;
-  readonly strength: number;
-  readonly bought: number;
-  readonly chosen: readonly number[];
-  readonly columns: readonly GearColumn[];
-  readonly wage: number;
-}
-
-/** The ship's part of the gear message: its experience, level, Prestige, Attack and Defense and how far to its next;
- *  Timber, Canvas, Iron and Heartwood in `stocks`; its hands of its complement; its officers, the officers of the
- *  day at a pledged faction's counter, and its trim at sea (the gear crate's `ShipTrim::to_floats`, in its order). */
-export interface GearShip {
-  readonly xp: bigint;
-  readonly level: number;
-  readonly prestige: number;
-  readonly attack: number;
-  readonly defense: number;
-  readonly toNext: number;
-  readonly toNextNeeds: number;
-  readonly stocks: readonly number[];
-  readonly hands: number;
-  readonly handsMost: number;
-  readonly officers: readonly GearOfficer[];
-  readonly offers: readonly GearOfficer[];
-  readonly trim: readonly number[];
-  /** The faction pledged to, 0 none: the one whose counter signs officers on. */
-  readonly pledge: number;
 }
 
 /** No node chosen in a column, and no resource. */
@@ -403,6 +358,7 @@ function itemOf(item: GearItemTable): GearItem {
     columns,
     price: item.price(),
     element: item.element(),
+    source: item.source(),
   };
 }
 
@@ -430,6 +386,7 @@ export function gearOf(gear: Gear): GearState {
       slot: vestige.slot(),
       level: vestige.level(),
       vaulted: vestige.vaulted(),
+      source: vestige.source(),
     };
   });
   const drops = Array.from({ length: gear.dropsLength() }, (unused, index) => {
@@ -481,7 +438,7 @@ export function gearOf(gear: Gear): GearState {
     ammoShare: gear.ammoShare(),
     crates: gear.crates(),
     cratePrice: gear.cratePrice(),
-    ship: shipOf(gear.ship()),
+    ship: shipOf(gear.ship(), columnsOf),
     standing: {
       pledge: gear.pledge(),
       reputation: Array.from({ length: gear.reputationLength() }, (unused, index) =>
@@ -508,14 +465,7 @@ export function gearOf(gear: Gear): GearState {
     quest: questOf(gear),
     dungeons: Array.from(gear.dungeonsArray() ?? []),
     prologueDone: gear.prologueDone(),
-    activity: {
-      day: gear.activityDay(),
-      cleared: Array.from(gear.clearedArray() ?? []),
-      week: gear.activityWeek(),
-      elite: gear.weekElite(),
-      abyss: gear.weekAbyss(),
-      boon: gear.boon(),
-    },
+    activity: activityOf(gear),
     bounties: Array.from({ length: gear.bountiesLength() }, (unusedBounty, place) => {
       const bounty = gear.bounties(place);
       const words = bounty?.words() ?? '';
@@ -527,54 +477,6 @@ export function gearOf(gear: Gear): GearState {
     bountyAurem: gear.bountyAurem(),
     mail: mailOf(gear, itemOf),
     ...loreOf(gear),
-  };
-}
-
-/** An officer as a message holds them. */
-function officerOf(officer: GearOfficerTable): GearOfficer {
-  return {
-    id: officer.id(),
-    post: officer.post(),
-    grade: officer.grade(),
-    given: officer.given(),
-    family: officer.family(),
-    duty: officer.duty(),
-    level: officer.level(),
-    toNext: officer.toNext(),
-    trained: officer.trained(),
-    trainedMost: officer.trainedMost(),
-    strength: officer.strength(),
-    bought: officer.bought(),
-    chosen: Array.from(officer.chosenArray() ?? []),
-    columns: columnsOf(officer),
-    wage: officer.wage(),
-  };
-}
-
-/** The ship's part of a message, if it holds one. */
-function shipOf(ship: GearShipTable | null): GearShip | null {
-  if (!ship) return null;
-  const listed = (length: number, nth: (index: number) => GearOfficerTable | null, what: string) =>
-    Array.from({ length }, (unused, index) => {
-      const officer = nth(index);
-      if (!officer) throw new Error(`${what} ${index} is missing`);
-      return officerOf(officer);
-    });
-  return {
-    xp: ship.xp(),
-    level: ship.level(),
-    prestige: ship.prestige(),
-    attack: ship.attack(),
-    defense: ship.defense(),
-    toNext: ship.toNext(),
-    toNextNeeds: ship.toNextNeeds(),
-    stocks: Array.from(ship.stocksArray() ?? []),
-    hands: ship.hands(),
-    handsMost: ship.handsMost(),
-    officers: listed(ship.officersLength(), (index) => ship.officers(index), 'officer'),
-    offers: listed(ship.offersLength(), (index) => ship.offers(index), 'offer'),
-    trim: Array.from(ship.trimArray() ?? []),
-    pledge: ship.pledge(),
   };
 }
 

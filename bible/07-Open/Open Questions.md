@@ -59,5 +59,17 @@ Decisions waiting on the owner. None is in force until the owner decides it and 
   account on one browser never sees them and one account on a new browser sees them again; whether they should be
   kept with the character in its room ([[Prologue]]).
 - **What others see.** The room puts the cosmetics and faction colours a player has earned into the dress others see,
-  but the armour, garments and weapons drawn are still each page's own word; whether those should be the room's too
-  ([[Server]]).
+  and keeps a worn set or metal only of its piece's own content ([[The Room Keeps Only Looks of a Piece's Own
+  Content]]); the garments drawn are still each page's own word ([[Server]]).
+- **Faction blades** ([[Faction Blades Wear Their Faction's Colour on Hilt and Trim]]): built on the branch
+  `wt/fblade` (the forge marks a weapon's trim, the page lays the faction's colour on it), held by the owner, its art
+  not published. The Veiled's Nightveil is four neutral greys, so its trim does not read on an ebony blade; the owner:
+  "Lets talk about it".
+- **The Abyss Dungeons' crossbows.** The forge draws no adamantium or ebony crossbow, so they show the nearest metal it
+  draws (mithril); their own art waits (the owner: "Not now").
+- **Named pieces for each content.** A Vestige now opens to its own content's named pieces where it has any of its
+  slot and colour ([[Armour and Weapon Looks Belong to the Content That Gives Them]]), and the 40 named weapons and armour pieces outside the factions are spread
+  thinly: the world has one Legendary Melee piece (Mooring Chain) and only guns for Ranged, no named armour, and no
+  Atheric but two guns; a dungeon has no Atheric; an Elite Dungeon's Legendaries are three Melee pieces. Where a content
+  has none, its Vestige opens to any content's: 36 of the 60 contents, colours and slots have none of their own. The
+  owner: "Let's talk about this more when we finish everything".

@@ -42,3 +42,44 @@ test('a dungeon names its patrol, and an ask the door cannot read is null', () =
   assert.match(laid.name, /^The \w+ of the Saltgrass Downs$/);
   assert.equal(door.dungeon('saltgrass-downs', 'The Saltgrass Downs', 1.5), 'null');
 });
+
+/** The 18 Elite Dungeons, island by island, as the room-wasm crate asks them natively
+ *  (crates/room-wasm/src/dungeon_door.rs), which writes its answers for this test. */
+const ELITE_PLACES = [
+  'krakens-grotto',
+  'pearl-tomb',
+  'cinder-deep',
+  'hollow-crypt',
+  'black-tide-caverns',
+  'pale-undercroft',
+  'forsaken-cistern',
+  'sandworn-vault',
+  'smugglers-labyrinth',
+  'silt-barrows',
+  'deepwater-vault',
+  'coral-halls',
+  'barrow-halls',
+  'saltworm-warrens',
+  'mire-hollows',
+  'rotwater-sewers',
+  'frozen-sepulchre',
+  'brine-catacombs',
+] as const;
+const NATIVE_ELITE = new URL('../../../target/room-wasm/elite_layouts.json', import.meta.url);
+
+test("every Elite Dungeon's encounters laid through WebAssembly are the ones the crate lays natively", async () => {
+  const native = JSON.parse(
+    await readFile(NATIVE_ELITE, 'utf8').catch(() => {
+      throw new Error('the native layouts are not written: run `cargo test -p room-wasm` first');
+    }),
+  ) as unknown[];
+  const door = startRoomDoor(compiled);
+  assert.equal(native.length, ELITE_PLACES.length);
+  ELITE_PLACES.forEach((place, index) => {
+    const laid = JSON.parse(door.layout(JSON.stringify({ place, name: place }))) as {
+      encounters: { seals: unknown[]; anchors: unknown[] };
+    };
+    assert.deepEqual(laid, native[index], place);
+    assert.ok(laid.encounters.seals.length >= 2 && laid.encounters.anchors.length === 3, place);
+  });
+});

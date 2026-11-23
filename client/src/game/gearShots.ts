@@ -34,6 +34,7 @@ export const sampleItem = (fields: Partial<GearItem>): GearItem => ({
   columns: [],
   price: 0,
   element: 0,
+  source: 0,
   ...fields,
 });
 
@@ -50,6 +51,7 @@ export function sampleGear(): GearState {
       attack: 212,
       prestige: 9,
       element: 1,
+      source: 0,
       columns: [perk(3, 100), perk(4, 400), perk(5, 900)],
       bought: 3,
       chosen: [0],
@@ -81,6 +83,7 @@ export function sampleGear(): GearState {
       bucket: 0,
       attack: 230,
       element: 2,
+      source: 0,
       columns: [perk(3, 100)],
     }),
     sampleItem({ id: 8, kind: 33, rarity: 4, level: 14, at: 0, bucket: 0, attack: 251, prestige: 14 }),
@@ -97,9 +100,9 @@ export function sampleGear(): GearState {
     resources: [4, 0, 12, 1],
     items,
     vestiges: [
-      { id: 1, rarity: 1, slot: 0, level: 10, vaulted: false },
-      { id: 2, rarity: 3, slot: 2, level: 12, vaulted: false },
-      { id: 3, rarity: 2, slot: 3, level: 12, vaulted: false },
+      { id: 1, rarity: 1, slot: 0, level: 10, vaulted: false, source: 0 },
+      { id: 2, rarity: 3, slot: 2, level: 12, vaulted: false, source: 0 },
+      { id: 3, rarity: 2, slot: 3, level: 12, vaulted: false, source: 0 },
     ],
     drops: [],
     spent: [],

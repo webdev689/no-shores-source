@@ -46,6 +46,8 @@ export interface Roster {
 
 /** A worn piece as others see it, numbered as the gear message numbers it. */
 export interface ShownPiece {
+  /** Its own id, which its look's choices are drawn by; none in what an older room kept. */
+  readonly id?: number;
   readonly slot: number;
   readonly kind: number;
   readonly rarity: number;
@@ -56,6 +58,8 @@ export interface ShownPiece {
   readonly attack: number;
   readonly defense: number;
   readonly gilded: boolean;
+  /** The content it came from, which its look follows; none in what an older room kept, read as the world's. */
+  readonly source?: number;
 }
 
 /** Another player's details, as Destiny's Inspect shows them. */

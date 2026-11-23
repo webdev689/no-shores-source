@@ -2,7 +2,7 @@ import { projectPoint, type CameraPose, type ScreenPoint, type Viewport } from '
 import type { Vec3 } from './ground.ts';
 
 /** The kinds of node an island's side shows, each drawn by its kind. */
-export const MARK_KINDS = ['social', 'patrol', 'mission', 'dungeon', 'boss', 'port'] as const;
+export const MARK_KINDS = ['social', 'patrol', 'mission', 'dungeon', 'boss', 'port', 'playlist'] as const;
 export type MarkKind = (typeof MARK_KINDS)[number];
 
 /** A node to mark: its place in the world, whether it is held at the picture's edge when off it, and whether its node

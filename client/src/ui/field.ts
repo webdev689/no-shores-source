@@ -9,6 +9,9 @@ export interface FieldState {
   readonly anchor: number;
 }
 
+/** A second press this close in time (seconds) and place (pixels) to the first makes a double click. */
+export const DOUBLE = { seconds: 0.5, reach: 4 } as const;
+
 export const emptyField = (text = ''): FieldState => ({ text, caret: text.length, anchor: text.length });
 
 const low = (state: FieldState) => Math.min(state.caret, state.anchor);

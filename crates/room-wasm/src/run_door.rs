@@ -8,6 +8,7 @@ use gear::Difficulty;
 use gear::activities::{Modifier, Weekly, dungeon_of_the_day, modifier_of_the_day, of_the_week, week_modifiers};
 use gear::clock::{day_of, minutes_to_next_day, minutes_to_next_week, week_of};
 use gear::gate::{Place, shut_at};
+use gear::playlist::{Playlist, WEEK_CLEARS};
 use gear::world::ISLANDS;
 use room::{NodeKind, REVIVES, Room, RunOf};
 use serde::Deserialize;
@@ -22,12 +23,15 @@ enum DungeonAsked {
     Seed { seed: u32, style: String, continent: String },
 }
 
-/// A run's ask: its dungeon, its tier (0 Normal, 1 Elite, 2 Abyss) and the Unix minute it opens.
+/// A run's ask: its dungeon, its tier (0 Normal, 1 Elite, 2 Abyss) and the Unix minute it opens; for a playlist's run
+/// of an Elite Dungeon, the level its foes stand at.
 #[derive(Deserialize)]
 struct RunAsked {
     dungeon: DungeonAsked,
     tier: usize,
     minute: u64,
+    #[serde(default)]
+    playlist: Option<u8>,
 }
 
 /// What a patrol's dungeon's run reads of its patrol's node file: whose it is, and whether it is locked.
@@ -53,7 +57,10 @@ pub fn open_run(text: &[u8], patrol: &[u8]) -> bool {
             let Some(file) = file.filter(|file| file.kind == NodeKind::Patrol && file.id == id) else { return false };
             (RunOf::Patrol { patrol: id, number }, crate::lock_words(file.locked, &file.name))
         }
-        DungeonAsked::Place { place } => (RunOf::Elite { place }, None),
+        DungeonAsked::Place { place } => match asked.playlist {
+            Some(foes_at) => (RunOf::Playlist { place, foes_at }, None),
+            None => (RunOf::Elite { place }, None),
+        },
         DungeonAsked::Seed { seed, style, continent } => (RunOf::Sea { seed, style, continent }, None),
     };
     let Some(room) = Room::dungeon_run(&of, tier, asked.minute) else { return false };
@@ -89,7 +96,8 @@ fn of_week(week: u64, weekly: Weekly) -> Value {
 /// What is on at a Unix minute, as JSON: the day's and the week's numbers, the minutes to the next of each and to
 /// Shape's leaving (none while he is away), each island's dungeon of the day, the day's modifier, the week's two with
 /// their modifiers and levels, each island's band at each tier as its foes are raised, the revives an Abyss run's
-/// company shares, and the name and words of each modifier on.
+/// company shares, the name and words of each modifier on, the two playlists (`playlist_json`) and the 18 Elite
+/// Dungeons a playlist's run is drawn from.
 #[must_use]
 pub fn activities_json(minute: u64) -> String {
     let (day, week) = (day_of(minute), week_of(minute));
@@ -102,7 +110,8 @@ pub fn activities_json(minute: u64) -> String {
         .collect();
     let on = std::iter::once(modifier_of_the_day(day))
         .chain(week_modifiers(week, Weekly::Elite))
-        .chain(week_modifiers(week, Weekly::Abyss));
+        .chain(week_modifiers(week, Weekly::Abyss))
+        .chain(Playlist::Abyss.modifiers(day));
     let modifiers: serde_json::Map<String, Value> =
         on.map(|modifier| (modifier.key(), json!({ "name": modifier.name(), "words": modifier.words() }))).collect();
     let of_the_day: Vec<Value> = gear::activities::ISLAND_PLACES
@@ -125,8 +134,29 @@ pub fn activities_json(minute: u64) -> String {
         "bands": bands,
         "revives": REVIVES,
         "modifiers": modifiers,
+        "playlists": Playlist::ALL.map(|playlist| playlist_json(playlist, day)),
+        "elites": gear::activities::elite_dungeons().map(|elite| elite.id).collect::<Vec<_>>(),
     })
     .to_string()
+}
+
+/// A playlist as the page shows it: its key, name and tier, the level it opens at, each band's first and last level
+/// and its foes' level, its modifiers' keys on `day`, and what its weekly reward pays at its third clear.
+fn playlist_json(playlist: Playlist, day: u64) -> Value {
+    let bands: Vec<[u8; 3]> =
+        playlist.bands().into_iter().map(|band| [band.0, band.1, playlist.foes_at(band)]).collect();
+    let modifiers: Vec<String> = playlist.modifiers(day).into_iter().map(Modifier::key).collect();
+    json!({
+        "key": playlist.key(),
+        "name": playlist.name(),
+        "tier": Difficulty::ALL.iter().position(|tier| *tier == playlist.tier()),
+        "opens": playlist.opens_at(),
+        "bands": bands,
+        "modifiers": modifiers,
+        "weekClears": WEEK_CLEARS,
+        "weekEssence": playlist.week_essence(),
+        "weekVestiges": playlist.week_vestiges(),
+    })
 }
 
 /// What is on at a Unix minute, as JSON (`activities_json`).
@@ -136,8 +166,8 @@ pub extern "C" fn room_activities(minute: u32) -> u64 {
 }
 
 /// What the gates shut to a character of `level`, past the prologue or not, each the reason or null where it is
-/// open: the dungeon of the day at each tier, an Elite Dungeon at Normal, the week's two at their tiers, and the seas
-/// at each tier, which ask the level alone.
+/// open: the dungeon of the day at each tier, an Elite Dungeon at Normal, the week's two at their tiers, the seas
+/// at each tier, which ask the level alone, and each playlist's run for the character's band.
 #[must_use]
 pub fn gates_json(level: u8, prologue: bool) -> String {
     let reason = |place, tier| shut_at(level, prologue, place, tier).map(|shut| shut.reason());
@@ -147,6 +177,11 @@ pub fn gates_json(level: u8, prologue: bool) -> String {
         "weekElite": reason(Place::Week(Weekly::Elite), Difficulty::Elite),
         "weekAbyss": reason(Place::Week(Weekly::Abyss), Difficulty::Abyss),
         "seas": Difficulty::ALL.map(|tier| reason(Place::Node, tier)),
+        "playlists": Playlist::ALL.map(|playlist| {
+            let band = playlist.band_of(level).or_else(|| playlist.bands().first().copied());
+            let foes_at = band.map_or(0, |band| playlist.foes_at(band));
+            reason(Place::Playlist(playlist, foes_at), playlist.tier())
+        }),
     })
     .to_string()
 }
@@ -241,7 +276,45 @@ mod tests {
         assert_eq!(drawn["modifiers"]["burn-shadow"], json!({ "name": "Burn (Shadow)", "words": burn }));
         let keys: std::collections::BTreeSet<&str> =
             drawn["modifiers"].as_object().expect("an object").keys().map(String::as_str).collect();
-        assert_eq!(keys, ["brawler", "burn-divine", "burn-shadow", "juggler", "lightswitch"].into_iter().collect());
+        assert_eq!(
+            keys,
+            ["brawler", "burn-divine", "burn-shadow", "juggler", "lightswitch", "trickle"].into_iter().collect()
+        );
+    }
+
+    #[test]
+    fn a_playlists_run_opens_at_one_of_its_bands_levels_and_what_is_on_says_its_bands_modifiers_and_rewards() {
+        let playlist = |place: &str, tier: u8, level: u8| {
+            let asked =
+                json!({ "dungeon": { "place": place }, "tier": tier, "minute": 29_919_420_u64, "playlist": level });
+            open_run(asked.to_string().as_bytes(), b"")
+        };
+        assert!(playlist("krakens-grotto", 1, 12), "any Elite Dungeon, not only the week's");
+        assert!(playlist("krakens-grotto", 2, 28));
+        assert_eq!(revives(), 5);
+        assert!(!playlist("krakens-grotto", 1, 13), "no band's level");
+        assert!(!playlist("krakens-grotto", 0, 12), "no playlist at Normal");
+        let on: Value = serde_json::from_str(&activities_json(29_919_420)).expect("JSON");
+        let elite = &on["playlists"][0];
+        assert_eq!([&elite["key"], &elite["tier"], &elite["opens"]], [&json!("elite"), &json!(1), &json!(10)]);
+        assert_eq!(elite["bands"], json!([[10, 14, 12], [15, 19, 17], [20, 24, 22], [25, 29, 27], [30, 30, 32]]));
+        assert_eq!(elite["modifiers"], json!(["burn-shadow"]), "the day's");
+        let abyss = &on["playlists"][1];
+        assert_eq!(abyss["bands"], json!([[20, 24, 23], [25, 29, 28], [30, 30, 32]]));
+        assert_eq!(
+            [&abyss["weekClears"], &abyss["weekEssence"], &abyss["weekVestiges"]],
+            [&json!(3), &json!(3), &json!(2)]
+        );
+        let second = abyss["modifiers"][1].as_str().expect("a second modifier");
+        assert!(on["modifiers"][second]["words"].is_string(), "its words are on");
+        assert_eq!(on["elites"].as_array().map(Vec::len), Some(18));
+        let gates = |level, prologue| serde_json::from_str::<Value>(&gates_json(level, prologue)).expect("JSON");
+        assert_eq!(
+            gates(9, true)["playlists"],
+            json!(["The Elite Playlist opens at level 10.", "The Abyss Playlist opens at level 20."])
+        );
+        assert_eq!(gates(20, true)["playlists"], json!([null, null]));
+        assert_eq!(gates(20, false)["playlists"][0], json!("This place opens after the prologue."));
     }
 
     #[test]
