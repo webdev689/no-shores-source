@@ -171,8 +171,8 @@ the player's from there.
 
 **The stranger's welcome** ([[The Stranger Welcomes the Player, and a Quest Walks Them Round Overlook]]). Her words
 (`content/story/welcome.json`, said on the story's stage in the dialogue box, `welcome/tour.ts`) go in turn: a little
-of the world (the Grey Tithe's tenth, Overlook paying it nothing, three ports standing and the rest ruins grown over
-with something nobody names); then each place to visit, the camera flying to it as she names it and holding there
+of the world (the Grey Tithe's tenth, Overlook paying it nothing, three ports standing and the rest ruins, nobody
+agreeing what grew there); then each place to visit, the camera flying to it as she names it and holding there
 while she and its keeper speak: the smiths' arcade, held on the Armorsmith's stall (whose keeper calls out before she
 names the arcade, as no one speaks three lines in a row) and then on the Weaponsmith's, the Mage, the Vault, the
 Tailor, the Tack, the Postmaster, the harbour's Harbourmaster for the Shipwright, and the Hall of the Arts, turning to
@@ -423,9 +423,9 @@ the cutscenes, the camera's moves, the nameplate, the fires and the lines are th
   of his health or 150 s have passed ("overpowered"); never with Thule dead. Stood by the page, he calls no crew in
   his last phase, so it stays one on one. Once it ends, the fight holds still while the screen fades out over 2 s (`SCENE`).
   Felled there, the player is never told they will rise: that toast is for a death before the boss fight.
-- **The cries.** In the fight the first Grey Tithe foe on the view cries "Survivor! Get that one!", once; after it, the
+- **The cries.** In the fight the first Grey Tithe foe on the view cries "That one's still breathing!", once; after it, the
   first time a Grey Tithe foe and one of the Brig's crew stand on the view together, they cry "For the Tithe!" and
-  "Cut them down!", once. Thule cries when the player's blows land on him and when his land on them, at most once in 9 s each, and only
+  "Drive them off her!", once. Thule cries when the player's blows land on him and when his land on them, at most once in 9 s each, and only
   with his head on the view, so a cry unheard spends no gap; he tells the player to kneel again only once they have
   struck him since. The throw overboard is framed so Thule and his crier stand on the view on any screen, a tall one
   from further back.
@@ -498,8 +498,8 @@ the cutscenes, the camera's moves, the nameplate, the fires and the lines are th
     stands (`wispCourse`): it drifts in (2.6 s) from 32 m out over the sea, of the bearings round the quiet deck's
     middle with nothing of the wreck within 3 m the one most nearly ahead of the player and to their left; wanders the
     quiet deck (4.8 s) round its mast (the layout's `masts`: the Brig's mainmast, snapped to a stump in the fallen
-    waist), 2.4 m out and 3.2 to 4.6 m over its deck, then toward the player, the Lookout ("What is that?") and the
-    Bosun ("Don't touch it!") crying out; then circles them in rings tightening from 2.6 m to under half a metre,
+    waist), 2.4 m out and 3.2 to 4.6 m over its deck, then toward the player, the Lookout ("What in the deep is that?") and the
+    Bosun ("Captain, don't touch it!") crying out; then circles them in rings tightening from 2.6 m to under half a metre,
     faster and brighter (3.4 s), coming down as they tighten from where the wander left it to the chest (1.15 m) by
     the end of the first ring, and swaying 0.08 m there to the engulfing. Every point of it is lifted 0.35 m clear of
     the wreck's solids beside or under it (in its rings 0.05 m; none counts within 0.4 m of the player's feet) and

@@ -96,7 +96,7 @@ A reward gives Aurem (`aurem`, any quest's), the Art (`art`, its Anima with it, 
 (the Weaponsmith, the Armorsmith, the Mage, the Vault, the Tailor, the Tack, the Postmaster, and the Harbourmaster for
 the Shipwright), each keeper saying what their counter is for; **Arm yourself**, a Melee weapon bought of the
 Weaponsmith and the four armour pieces of the Armorsmith, which the starter stock sells for 50 Aurem each ([[Gear]]);
-**Wear them**. Both are told of the pieces held after every answered ask, again until nothing more counts, so pieces
+**Put them on**. Both are told of the pieces held after every answered ask, again until nothing more counts, so pieces
 bought and worn during the round meet both as the last keeper is heard; a buy or wear goal names a weapon's or
 armour's slot and a count of 1; **Hear the three houses** (Arlo Kestrel, Elder Maren Hale and Sable each introducing their house,
 [[Factions]]); and **Choose a house**, the pledge. Its `begin` is the Weaponsmith calling the player over; the houses'

@@ -173,7 +173,7 @@ mark and never open. Shape visits Overlook alone (its `shapeVisits`).
 | One screen | Every keeper who deals with a player opens the same screen, after the owner's three references; the vault's two sides stand in its right column, under the vault keeper |
 | The keeper | Drawn from the forge in their own dress, idle, facing the viewer, grown by whole pixels, breathing between the idle's two frames |
 | Prompt | A counter's prompt is its keeper's title alone ("The Mage", "Shape") |
-| Lines | One-line scenes, said in turn: three greetings, two thanks and one for being short of the price a keeper (the Mage and the vault keeper none short; he thanks for each thing moved) |
+| Lines | One-line scenes, said in turn: four greetings, two thanks (the Mage three) and one for being short of the price a keeper (the Mage and the vault keeper none short; he thanks for each thing moved) |
 | Voice | Through the world's sound, as the dialogue box's |
 | Currencies | A faction's top shows Aurem and the four materials an Art's rise takes; the Mage's shows none |
 | Countdown | "Stock refresh" for the smiths, the Tailor and the Tack (to midnight, UTC); "Leaves in" for Shape; none for the Mage and the factions |

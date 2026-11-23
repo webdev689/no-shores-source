@@ -1,54 +1,54 @@
 {
   "scenes": {
     "strangerHistory": [
-      { "who": "stranger", "say": "At sea the Grey Tithe take a tenth of every hold. Overlook pays nothing." },
-      { "who": "stranger", "say": "Three ports still stand. The rest are ruins, grown over with something nobody names." }
+      { "who": "stranger", "say": "The Grey Tithe take a tenth of every hold. Overlook pays them nothing." },
+      { "who": "stranger", "say": "Three ports still stand. The rest are ruins, and nobody agrees what grew there." }
     ],
     "tourSmiths": [
-      { "who": "armorsmith", "say": "Steel that fits, for whoever walks in." },
-      { "who": "stranger", "say": "The smiths. You came ashore with nothing, so start with them." }
+      { "who": "armorsmith", "say": "New face! Come here, let me guess your size." },
+      { "who": "stranger", "say": "The smiths. The sea kept your steel, so start with them." }
     ],
-    "tourWeaponsmith": [{ "who": "weaponsmith", "say": "Plain pieces cost little here. Better ones come and go." }],
+    "tourWeaponsmith": [{ "who": "weaponsmith", "say": "Plain steel's cheap here, always. The good pieces come and go." }],
     "tourMage": [
-      { "who": "stranger", "say": "The Mage reads what the sea gives up." },
-      { "who": "mage", "say": "Bring me what you find. Most of it is worth knowing." }
+      { "who": "stranger", "say": "The Mage opens what the sea gives up. Don't ask how." },
+      { "who": "mage", "say": "Bring me anything sealed. We'll both be surprised by what's inside." }
     ],
     "tourVault": [
-      { "who": "stranger", "say": "The Vault keeps what you cannot carry while you sail." },
-      { "who": "vaultkeeper", "say": "Nothing leaves my vault but with the one who left it." }
+      { "who": "stranger", "say": "The Vault. Whatever you can't carry, leave it there." },
+      { "who": "vaultkeeper", "say": "Nothing leaves my vault except in the hands that left it." }
     ],
     "tourTailor": [
-      { "who": "stranger", "say": "The Tailor dyes what you wear." },
-      { "who": "tailor", "say": "Nobody should meet the Tithe looking drab." }
+      { "who": "stranger", "say": "The Tailor. Colours, emblems, and opinions you didn't ask for." },
+      { "who": "tailor", "say": "I heard that. Come back when you're ready to look like someone." }
     ],
     "tourTack": [
-      { "who": "stranger", "say": "The Tack sells horses, and the barding to dress them." },
-      { "who": "tack", "say": "The Bay is always in my stable. The others come and go." }
+      { "who": "stranger", "say": "The Tack has horses. Your legs will thank you." },
+      { "who": "tack", "say": "There's always a Bay in my stable, love. The rest come and go." }
     ],
     "tourPost": [
-      { "who": "stranger", "say": "Letters written to you wait with the Postmaster." },
-      { "who": "postmaster", "say": "I keep them until you come for them." }
+      { "who": "stranger", "say": "Anything you lose out there tends to end up with the Postmaster." },
+      { "who": "postmaster", "say": "Letters too. I keep it all until you come for it." }
     ],
     "tourHarbour": [
-      { "who": "stranger", "say": "Down at the harbour the Shipwright keeps a ship sound." },
-      { "who": "harbourmaster", "say": "Bring your ship in, and she goes out sound." }
+      { "who": "stranger", "say": "The harbour. Whatever your ship needs, the Harbourmaster knows who makes it." },
+      { "who": "harbourmaster", "say": "Bring her in battered. She'll go out better than she came." }
     ],
-    "tourHall": [{ "who": "stranger", "say": "The Hall of the Arts. Each of the three houses keeps a chapel here." }],
+    "tourHall": [{ "who": "stranger", "say": "The Hall of the Arts. Three houses, three chapels, and no two agree." }],
     "tourHallStorm": [
-      { "who": "stranger", "say": "The Stormcallers keep the Storm, and keep it loud." },
-      { "who": "stormcaller", "say": "Loud is how lightning likes it." }
+      { "who": "stranger", "say": "The Stormcallers. They keep the Storm, and never quietly." },
+      { "who": "stormcaller", "say": "Quiet never called a storm down. Come and see me." }
     ],
     "tourHallVeiled": [
-      { "who": "stranger", "say": "The Veiled keep the Shadow. Ask them nothing you would not want answered." },
-      { "who": "veiled", "say": "She is kinder than she sounds." }
+      { "who": "stranger", "say": "The Veiled keep the Shadow. Don't ask them what you can't bear answered." },
+      { "who": "veiled", "say": "We already know what you would ask." }
     ],
     "tourHallLamps": [
-      { "who": "stranger", "say": "The Lamplighters keep the Divine. Hear all three before you choose." },
-      { "who": "maren", "say": "We keep the lamps lit, whoever you choose." }
+      { "who": "stranger", "say": "And the Lamplighters keep the Divine. Hear all three before you choose." },
+      { "who": "maren", "say": "Whoever you choose, child, our lamps stay lit for you." }
     ],
     "strangerFarewell": [
-      { "who": "stranger", "say": "Here. Four hundred Aurem. Enough to stand up in." },
-      { "who": "stranger", "say": "I wish you well. My own road goes on from here." }
+      { "who": "stranger", "say": "Here. Four hundred Aurem. It's enough to stand up in." },
+      { "who": "stranger", "say": "I wish you well. Stay out of the Tithe's books, if you can." }
     ]
   }
 }

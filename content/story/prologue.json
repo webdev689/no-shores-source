@@ -2,34 +2,34 @@
   "scenes": {
     "sighted": [
       { "who": "lookout", "say": "Sails off the bow!", "kind": "bark", "emote": "alert" },
-      { "who": "bosun", "say": "Three of them!", "kind": "bark", "emote": "alert" },
-      { "who": "mate", "say": "Running dark in this weather. They mean to take us.", "emote": "anger" },
-      { "who": "gunner", "say": "Both sides loaded, Captain. Waiting on you.", "emote": "alert" }
+      { "who": "bosun", "say": "Three! No colours!", "kind": "bark", "emote": "alert" },
+      { "who": "mate", "say": "Running dark in a storm like this? They're not here to trade.", "emote": "anger" },
+      { "who": "gunner", "say": "Guns are run out both sides, Captain. Say the word.", "emote": "alert" }
     ],
-    "hitTaken": [{ "who": "bosun", "say": "Took one, Captain!", "kind": "bark", "emote": "pain" }],
-    "hitGiven": [{ "who": "gunner", "say": "Good hit!", "kind": "bark", "emote": "cheer" }],
+    "hitTaken": [{ "who": "bosun", "say": "Took one! She holds!", "kind": "bark", "emote": "pain" }],
+    "hitGiven": [{ "who": "gunner", "say": "Right in her ribs!", "kind": "bark", "emote": "cheer" }],
     "sinking": [{ "who": "lookout", "say": "She's foundering!", "kind": "bark", "emote": "cheer" }],
     "calm": [
-      { "who": "bosun", "say": "Three ships, Captain. Not a man lost.", "emote": "cheer" },
-      { "who": "lookout", "say": "What about them? We could board what's left.", "emote": "question" },
-      { "who": "mate", "say": "Leave them. Nothing aboard is worth one of us.", "emote": "silence" },
-      { "who": "gunner", "say": "Storm's not done with us either.", "emote": "fear" }
+      { "who": "bosun", "say": "Three of them beaten, Captain, and every one of us still standing.", "emote": "cheer" },
+      { "who": "lookout", "say": "Do we board what's left? Could be coin in those holds.", "emote": "question" },
+      { "who": "mate", "say": "Leave them. Whatever they're carrying, it isn't worth one of us.", "emote": "silence" },
+      { "who": "gunner", "say": "Don't get comfortable. This storm's not done with us.", "emote": "fear" }
     ],
-    "calmCutOff": [{ "who": "mate", "say": "Patch her up. We make for land at first light." }],
+    "calmCutOff": [{ "who": "mate", "say": "Patch her up. We raise Overlook by first light." }],
     "ram": [
       { "who": "lookout", "say": "Ship to starboard!", "kind": "bark", "emote": "alert" },
-      { "who": "lookout", "say": "She's huge. Coming straight for us!", "emote": "fear" },
-      { "who": "mate", "say": "Brace!", "kind": "bark", "emote": "fear" },
-      { "who": "bosun", "say": "Grab a line!", "kind": "bark", "emote": "fear" }
+      { "who": "lookout", "say": "She's huge. She isn't turning. She isn't turning!", "emote": "fear" },
+      { "who": "mate", "say": "All hands, brace!", "kind": "bark", "emote": "fear" },
+      { "who": "bosun", "say": "Grab hold! Anything!", "kind": "bark", "emote": "fear" }
     ],
     "wreck": [
       { "who": "tithe", "say": "For the Tithe!", "kind": "bark", "emote": "anger" },
-      { "who": "crew", "say": "Cut them down!", "kind": "bark", "emote": "anger" }
+      { "who": "crew", "say": "Drive them off her!", "kind": "bark", "emote": "anger" }
     ],
-    "survivor": [{ "who": "tithe", "say": "Survivor! Get that one!", "kind": "bark", "emote": "alert" }],
+    "survivor": [{ "who": "tithe", "say": "That one's still breathing!", "kind": "bark", "emote": "alert" }],
     "wisp": [
-      { "who": "lookout", "say": "What is that?", "emote": "question" },
-      { "who": "bosun", "say": "Don't touch it!", "emote": "fear" }
+      { "who": "lookout", "say": "What in the deep is that?", "emote": "question" },
+      { "who": "bosun", "say": "Captain, don't touch it!", "emote": "fear" }
     ],
     "warCry": [{ "who": "thule", "say": "The Tithe is owed!", "kind": "bark", "emote": "anger" }],
     "bossStruck": [{ "who": "thule", "say": "Your debt grows.", "kind": "bark" }],
@@ -37,16 +37,16 @@
     "overboard": [
       { "who": "thule", "say": "Over the side.", "kind": "bark" },
       { "who": "tithe", "say": "Tithe paid!", "kind": "bark", "emote": "cheer" },
-      { "who": "tithe", "say": "Ha! Into the deep!", "kind": "bark", "emote": "cheer" }
+      { "who": "tithe", "say": "One less to count!", "kind": "bark", "emote": "cheer" }
     ],
     "deep": [
       { "who": "voice", "say": "Not yet." },
       { "who": "voice", "say": "Wake." }
     ],
     "shore": [
-      { "who": "stranger", "say": "You're breathing. Good.", "emote": "alert" },
-      { "who": "stranger", "say": "Can you stand? Here, slowly.", "emote": "question" }
+      { "who": "stranger", "say": "Easy. You're breathing. That's the hard part done.", "emote": "alert" },
+      { "who": "stranger", "say": "Can you stand? Take my hand. Slowly.", "emote": "question" }
     ],
-    "standing": [{ "who": "stranger", "say": "Walk with me. You're shaking." }]
+    "standing": [{ "who": "stranger", "say": "There. Lean on me until your legs remember." }]
   }
 }

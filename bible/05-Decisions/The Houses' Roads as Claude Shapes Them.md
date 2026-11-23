@@ -16,7 +16,7 @@ in [[Quests]].
 |---|---|
 | When | Once Elder Maren Hale's welcome is played or forgone, a player pledged to no house is on "A House of Your Own" |
 | Its tasks | Hear the three houses (speak with each keeper in the Hall of the Arts, each saying what their house is in two lines), then choose a house (pledge at a chapel) |
-| Its first line | Arlo Kestrel calls across the Hall: "Hear all three houses before you choose. Start with the loudest." |
+| Its first line | Arlo Kestrel calls across the Hall: "Hear all three houses before you choose. Start with the loudest. Me." |
 | The keepers | The Stormcallers' keeper is **Arlo Kestrel**; the Veiled's gives only **Sable**; the Lamplighters' is Elder Maren Hale ([[Elder Maren Hale Welcomes the Player to Overlook]]). This answers the open question of their names |
 | A pledge begins the road | Pledging starts that house's road at once, its first lines spoken at the chapel |
 

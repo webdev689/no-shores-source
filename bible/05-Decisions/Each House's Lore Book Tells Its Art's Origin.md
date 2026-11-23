@@ -69,5 +69,6 @@ Under "Be as detailed as possible", the owner's to change:
     - The Tithe's book is never written in, only copied from. Its ink is always wet, and it holds names before
       their people come.
     - The reckoner's ledger has a column about the player that Wren cannot read.
-- **Every word the roads' scenes already say is kept as said** (`content/story/houses.json`). No book names the Cube,
+- **Each chapter ends on the line its road's scene says** (`content/story/houses.json`), as the scenes say it now
+  ([[Every Line Reads as Spoken, and the Lore Is Detailed, Mysterious and Gripping]]). No book names the Cube,
   the Covenant or what calls in the deep.
