@@ -281,5 +281,6 @@ fn the_frigate_s_waist_pistoleer_fights_on_at_a_player_close_by_on_ground_its_ro
         health = foe.fighter.health;
     }
     assert!(fought, "it fought the player");
+    assert_eq!(room.foes[&pistoleer].brain.target(), Some(player), "and is fighting them still, ten seconds on");
     assert!(health < 0.6 * room.foes[&pistoleer].fighter.health_max, "the ball struck it");
 }

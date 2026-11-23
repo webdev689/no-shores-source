@@ -34,7 +34,7 @@ pub fn sooner<'seen>(
 ) -> Option<&'seen (f64, FighterId, Fighter, f64)> {
     let bar = soon(here, board, kept.0, kept.1) - SHARE_SOONER * here.world.director.pressed().beat;
     seen.iter()
-        .filter(|(_, id, other, _)| *id != kept.0 && within(brain, other))
+        .filter(|(_, id, other, _)| *id != kept.0 && within(brain, here, other))
         .map(|entry| (soon(here, board, entry.1, entry.0), entry))
         .filter(|(time, _)| *time < bar)
         .min_by(|first, second| first.0.total_cmp(&second.0).then(first.1.1.cmp(&second.1.1)))
@@ -60,7 +60,7 @@ pub fn share(brain: &mut Brain, here: &Here<'_, '_>, board: &Board, sight: Optio
         return Some(kept);
     }
     let striker = brain.struck_by.take().and_then(|id| here.enemy(id).map(|other| (id, *other)));
-    if let Some((id, other)) = striker.filter(|(_, other)| within(brain, other)) {
+    if let Some((id, other)) = striker.filter(|(_, other)| within(brain, here, other)) {
         let seen = sees(here.world.blocks, here.world.terrain, &here.fighter, &other);
         brain.drawn_at = Some(tick);
         return Some(turn_to(brain, here, id, &other, seen));

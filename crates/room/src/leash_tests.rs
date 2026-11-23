@@ -1,5 +1,5 @@
-//! A garrison foe leashed to its place in its group: it gives its target up 50 m from its place, wherever the target
-//! stands, walks back healing, heeds no one on its way but a blow, and stands idle in its place again, its group then
+//! A garrison foe leashed to its place in its group: it gives its target up 50 m from its place or off the room's
+//! navmesh, walks back healing, heeds no one on its way but a blow, and stands idle in its place again, its group then
 //! walking its beat on; a foe with no post never does. A Boss or a Miniboss that leashes goes back to its first phase,
 //! its called foes falling; and a garrison foe whose search finds no one walks home as well, heeding what it sees on
 //! the way. A blow on a foe walking home fills no healing meter.
@@ -179,7 +179,7 @@ fn stands_home(room: &Room, posted: &[Posted], kind: NodeKind) {
 }
 
 #[test]
-fn a_garrison_foe_keeps_its_target_within_50_m_of_its_place_on_or_off_the_navmesh_and_gives_it_up_past_that() {
+fn a_garrison_foe_keeps_its_target_within_50_m_of_its_place_and_gives_it_up_past_that_or_off_the_navmesh() {
     let mut room = node(NodeKind::Patrol, "glade");
     let player = room.join().unwrap();
     provoke(&mut room, player);
@@ -200,9 +200,8 @@ fn a_garrison_foe_keeps_its_target_within_50_m_of_its_place_on_or_off_the_navmes
     let first = group(&room)[0].0;
     let off = point_at(&room, place_of(&room, first), LEASH - 10.0, false);
     stand_player(&mut room, player, off);
-    run(&mut room, 2);
-    assert_eq!(room.foes[&first].brain.target(), Some(player), "off the navmesh, 40 m off, it fights on");
-    assert!(!room.foes[&first].brain.returning());
+    run(&mut room, 1);
+    assert!(room.foes[&first].brain.returning(), "off the navmesh, 40 m off, it gives up");
 
     // A foe a player asked for has no post: it fights on wherever its target leads.
     let mut room = Room::new(Vec::new(), (0.0, 0.0));
@@ -236,13 +235,13 @@ fn a_blow_on_a_garrison_foe_walking_back_brings_it_back_to_the_fight() {
 }
 
 #[test]
-fn a_garrison_foe_shot_from_past_its_leash_as_it_walks_home_fills_no_healing_meter() {
+fn a_garrison_foe_shot_from_off_its_navmesh_as_it_walks_home_fills_no_healing_meter() {
     let mut room = node(NodeKind::Patrol, "glade");
     let player = room.join().unwrap();
     provoke(&mut room, player);
     let first = group(&room)[0].0;
-    let past = point_at(&room, place_of(&room, first), LEASH + 1.0, true);
-    stand_player(&mut room, player, past);
+    let off = point_at(&room, place_of(&room, first), LEASH - 10.0, false);
+    stand_player(&mut room, player, off);
     run(&mut room, 1);
     let found = room.players.get_mut(&player).unwrap();
     (found.fighter.charges, found.fighter.meter) = (0, 0.0);
