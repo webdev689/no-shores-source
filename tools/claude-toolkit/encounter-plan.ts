@@ -58,7 +58,8 @@ const call = (name: string, ...args: number[]) =>
   });
 const freeze = (held: boolean) => call('room_qa_freeze', held ? 1 : 0);
 const encounter = (what: number, first: number, second: number) => call('room_qa_encounter', what, first, second);
-const pause = (millis: number) => steps.push({ eval: `(async()=>{${sleep(millis)}})()` });
+// The room ticks as the page draws (a slow frame runs many ticks), so a pause is a frame as well as its time.
+const pause = (millis: number) => steps.push({ eval: `(async()=>{${sleep(millis)}})()` }, { frames: 1 });
 /** Stands the body at `point` (on a pad's top at `lift`), asked again every `every` ms until the page's own body
  *  stands there; the run fails if it never does. */
 const stand = ([east = 0, south = 0]: Point, lift?: number, every = 1000) =>
@@ -150,7 +151,9 @@ plan.seals.forEach((seal, index) => {
   freeze(false);
   const first = seal.pieces[0] ?? middle;
   if (seal.kind === LITANY) {
-    // The show's first rune half shown: the rooms' worker may run many ticks at once, so the moment is set, not waited.
+    // The room ticks as the page draws, many ticks to a slow frame: a frame lets the seal start, then the show's
+    // first rune half shown is set, not waited for.
+    steps.push({ frames: 1 });
     freeze(true);
     encounter(9, index, 30);
     picture(inside, first, 'first,0,20', 'litany_show');
@@ -174,14 +177,15 @@ plan.seals.forEach((seal, index) => {
     const held = toward(other, plate, -0.6);
     stand(held, undefined, 300);
     freeze(true);
-    picture(held, plate, 'third,6,30', 'weighing_plates_held');
+    picture(held, plate, 'third,9,50', 'weighing_plates_held');
     freeze(false);
   }
   if (seal.kind === ASCENT) {
     const stone = seal.pads[seal.pads.length - 1];
     const water = floorAcross(seal, door);
+    // No frame waited: a slow frame's ticks in the water could drown the body.
     stand(water, undefined, 300);
-    pause(2500);
+    steps.push({ eval: `(async()=>{${sleep(2500)}})()` });
     freeze(true);
     picture(water, middleOf(seal.pads.map(([minX, minY, maxX, maxY]) => [(minX + maxX) / 2, (minY + maxY) / 2])), 'third,6,25', 'ascent_foul_water');
     encounter(0, 0, 0);
@@ -208,11 +212,11 @@ plan.seals.forEach((seal, index) => {
     stand(ring);
     pause(800);
     freeze(true);
-    picture(ring, first, 'third,6,40', 'holdfast_held');
+    picture(ring, first, 'third,4,25', 'holdfast_held');
     encounter(2, index, 0.45);
-    picture(ring, first, 'third,6,40', 'holdfast_draining');
+    picture(ring, first, 'third,4,25', 'holdfast_draining');
     encounter(2, index, 0);
-    picture(ring, first, 'third,6,40', 'holdfast_drained');
+    picture(ring, first, 'third,4,25', 'holdfast_drained');
     encounter(2, index, 1);
     freeze(false);
   }
@@ -224,38 +228,39 @@ const court = entry(layout.end);
 stand(court.door);
 picture(court.door, anchors, 'first,0,10', 'court_before_wake');
 const [anchor0 = anchors, anchor1 = anchors, anchor2 = anchors] = plan.anchors;
-const byAnchor = toward(anchor2, anchors, -1.5);
+// From the anchors' middle side of each, never its wall side, so the camera behind stands in the open room.
+const byAnchor = toward(anchor2, anchors, 1.8);
 stand(byAnchor);
-picture(byAnchor, anchors, 'third,6,35', 'court_anchors_resting');
+picture(byAnchor, anchor2, 'third,6,45', 'court_anchors_resting');
 encounter(3, 0, 0);
 pause(1500);
 freeze(true);
-picture(byAnchor, anchors, 'third,7,35', 'court_awake');
+picture(byAnchor, anchor0, 'third,9,50', 'court_awake');
 freeze(false);
 encounter(4, 0, 0);
 pause(2500);
 encounter(0, 0, 0);
 freeze(true);
-picture(byAnchor, anchors, 'third,7,35', 'court_ward');
+picture(byAnchor, anchor0, 'third,9,50', 'court_ward');
 encounter(5, 0, 1);
 encounter(5, 1, 0.5);
 // Beside an anchor, not on it, so its beam does not stand in the camera's way.
-const beside = toward(anchor1, anchors, -1.6);
+const beside = toward(anchor1, anchors, 1.8);
 stand(beside);
-picture(beside, anchors, 'third,8,40', 'court_anchors_filling');
+picture(beside, anchor1, 'third,7,45', 'court_anchors_filling');
 encounter(6, 0, 50);
-picture(beside, anchors, 'third,10,50', 'court_slam');
+picture(beside, anchor0, 'third,10,55', 'court_slam');
 encounter(6, 0, 300);
 encounter(8, 0, 45 * 60);
-picture(beside, anchors, 'third,8,40', 'court_fury_warning');
+picture(beside, anchor0, 'third,9,50', 'court_fury_warning');
 encounter(8, 0, -31 * 60);
-picture(beside, anchors, 'third,8,40', 'court_fury');
+picture(beside, anchor0, 'third,9,50', 'court_fury');
 freeze(false);
 for (const nth of [0, 1, 2]) encounter(5, nth, 1);
 pause(300);
 encounter(7, 0, 420);
 freeze(true);
-picture(beside, anchor0, 'third,8,15', 'court_reckoning');
+picture(beside, anchor0, 'third,8,25', 'court_reckoning');
 const url = `http://localhost:${port}/?at=1&spawn=&run=node-${place}--run-qaqa0001&view=third,7`;
 const anyPort = port !== '5173';
 writeFileSync(

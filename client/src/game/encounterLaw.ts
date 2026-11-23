@@ -50,8 +50,9 @@ const WARD_M = 1.3;
 const PAD_EDGE = { band: 0.12, face: 0.6, off: 0.02, speed: 2.5, step: 1.1 } as const;
 /** How opaque a held plate's filled disc is inside its ring. */
 const HELD_FILL = 0.3;
-/** An anchor at rest, before or between wards: dim, so it is learnt, not called for. */
-const ANCHOR_RESTING = 0.3;
+/** An anchor at rest, before or between wards: dim, under a short beam, so it is learnt, not called for. */
+const ANCHOR_RESTING = 0.4;
+const RESTING_BEAM = { height: 1.4, half: 0.25 } as const;
 /** The dome of light over the warded Boss: its reach round it and how many bands of light draw it. */
 const DOME = { reach: 2.2, bands: 6 } as const;
 /** How long before Fury begins the banner warns of it (seconds), and how long a landed Reckoning's flash burns. */
@@ -364,7 +365,10 @@ export function encounterMarks(
   // Every anchor shows while the Boss stands, dim at rest so the company learns where they are before a ward.
   const fallen = seen.woken && !seen.boss;
   if (!fallen && seen.ward === 0)
-    plan.anchors.forEach((anchor) => ringAt(out, anchor, plan.reach.anchor, ANCHOR, ANCHOR_RESTING));
+    plan.anchors.forEach((anchor) => {
+      ringAt(out, anchor, plan.reach.anchor, ANCHOR, ANCHOR_RESTING);
+      markBeam(out, anchor, RESTING_BEAM, [...ANCHOR, ANCHOR_RESTING]);
+    });
   if (seen.ward > 0)
     plan.anchors.forEach((anchor, index) => {
       const held = seen.anchors[index] ?? 0;

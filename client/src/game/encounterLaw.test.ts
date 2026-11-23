@@ -287,8 +287,12 @@ test('each anchor shows, dim, while the Boss stands, brighter and under a beam w
   );
   assert.ok(resting.length > 0, 'shown before the Boss wakes, so a player learns where they are');
   assert.ok(
-    resting.every((mark) => mark.alpha <= 0.4 && mark.at[2]! < 0.1),
-    'dim, on the floor, no beam',
+    resting.every((mark) => mark.alpha <= 0.5 && mark.at[2]! <= 1.5),
+    'dim, its beam short',
+  );
+  assert.ok(
+    resting.some((mark) => mark.at[2]! > 1),
+    'a short beam over it, so it is found across the end room',
   );
   const awake = marksOf(encounterMarks(layout.encounters!, { ...broken, woken: true, boss: 7 }, 0, where));
   assert.ok(
