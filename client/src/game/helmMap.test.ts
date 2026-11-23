@@ -36,8 +36,8 @@ test("the land's map up as a room's gate shuts on the player is put away at sea,
   map.openLand(SHEET);
   const raised = { shown: true, drop: () => (raised.shown = false), frame: () => assert.fail('drawn at sea') };
   Object.assign(map, { map: raised });
-  const at = { free: true, viewport: { width: 1, height: 1 }, dpr: 1, hands: null };
+  const frame = { free: true, viewport: { width: 1, height: 1 }, dpr: 1, hands: null };
   const here = { ...sea, view: { atHelm: false }, position: [0, 0] } as unknown as Sea;
-  map.frame(here, 1 / 60, at as unknown as Parameters<HelmMap['frame']>[2], {} as Parameters<HelmMap['frame']>[3]);
+  map.frame(here, 1 / 60, frame as unknown as Parameters<HelmMap['frame']>[2], {} as Parameters<HelmMap['frame']>[3]);
   assert.ok(!raised.shown && !map.busy, 'and the player is free');
 });

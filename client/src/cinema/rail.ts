@@ -109,11 +109,6 @@ export function railShot(keys: readonly RailKey[], time: number, fov: number, ea
   return { eye, ...lookAt(eye, look), fov: lens(from) + (lens(to) - lens(from)) * smooth(share) };
 }
 
-/** How long a rail runs, seconds. */
-export function railLength(keys: readonly RailKey[]): number {
-  return (keys[keys.length - 1]?.at ?? 0) - (keys[0]?.at ?? 0);
-}
-
 /** A rail's keys moved by `offset` (world metres) and shifted in time by `delay` seconds. */
 export function railMoved(keys: readonly RailKey[], offset: Point3, delay = 0): RailKey[] {
   const moved = (point: Point3): Point3 => [point[0] + offset[0], point[1] + offset[1], point[2] + offset[2]];

@@ -73,6 +73,10 @@ export class EditorFrame {
     for (const kind of ['pointermove', 'pointerdown', 'pointerup', 'pointerleave', 'wheel'] as const)
       canvas.addEventListener(kind, asked);
     for (const kind of ['keydown', 'keyup', 'paste'] as const) addEventListener(kind, asked);
+    // Tab moves the panel's focus, never the page's off its one canvas, where the editor's keys would stop reaching it.
+    addEventListener('keydown', (event) => {
+      if (event.key === 'Tab' && !this.events.typingHere) event.preventDefault();
+    });
     new ResizeObserver(asked).observe(canvas);
   }
 

@@ -276,8 +276,8 @@ export class SongPlayer {
   /** Falls silent over a tenth of a second from `now`. Asked every frame while the music is cut or has no output, so
    *  a stop already coming by then is kept, never put off. */
   hush(now: number): void {
-    const by = Math.max(now, this.clock()) + HUSH_S + 0.05;
-    if (this.playing && (this.stopAt === null || this.stopAt > by)) this.fade(0, now, HUSH_S);
+    const silentBy = Math.max(now, this.clock()) + HUSH_S + 0.05;
+    if (this.playing && (this.stopAt === null || this.stopAt > silentBy)) this.fade(0, now, HUSH_S);
   }
 
   /** The layers that play from `when` on: a layer coming in sounds from its next note there, one let go fades over two

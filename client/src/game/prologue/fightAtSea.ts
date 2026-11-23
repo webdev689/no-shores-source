@@ -189,8 +189,6 @@ export class StoryFight {
     return new StoryFight(land, combat, { heard, answered }, hull.sails, rigs);
   }
 
-  /** One frame, `seconds` on at `time`: the fight steps, drawing to `far`, every ship drawn `drawnScale` times its
-   *  size on `swell`. A step the rules refused is thrown here. */
   /** The fight's events this frame and its ships as they lie, as the sea's sounds hear them. */
   get fightHeard(): FightHeard {
     return this.combat.heard;
@@ -202,6 +200,8 @@ export class StoryFight {
     return { captains: [view.captain, ...(view.others ?? [])], vessel: view.player };
   }
 
+  /** One frame, `seconds` on at `time`: the fight steps, drawing to `far`, every ship drawn `drawnScale` times its
+   *  size on `swell`. A step the rules refused is thrown here. */
   frame(input: {
     seconds: number;
     time: number;

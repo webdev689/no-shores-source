@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { around, lookAt, railLength, railMoved, railShot, smooth, type RailKey } from './rail.ts';
+import { around, lookAt, railMoved, railShot, smooth, type RailKey } from './rail.ts';
 
 const KEYS: RailKey[] = [
   { at: 0, eye: [0, 0, 10], look: [0, -100, 0] },
@@ -52,11 +52,10 @@ test('a look north is bearing 0, east a quarter turn, and down is a positive pit
   assert.ok(Math.abs(lookAt([0, 0, 10], [0, -10, 0]).pitch - Math.PI / 4) < 1e-12);
 });
 
-test('a rail moves and delays whole, and its length is its keys', () => {
+test('a rail moves and delays whole', () => {
   const moved = railMoved(KEYS, [5, 6, 7], 2);
   assert.deepEqual(moved[0]?.eye, [5, 6, 17]);
   assert.equal(moved[2]?.at, 12);
-  assert.equal(railLength(moved), 10);
   assert.deepEqual(around([0, 0, 0], Math.PI / 2, 10, 3), [10, -6.123233995736766e-16, 3]);
   assert.equal(smooth(-1), 0);
   assert.equal(smooth(0.5), 0.5);

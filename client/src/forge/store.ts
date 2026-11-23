@@ -74,12 +74,6 @@ function rangeOf(range: string): readonly [number, number] {
   return [first, last];
 }
 
-/** How many bytes a range asks for (`bytes=first-last`). */
-export function rangeLength(range: string): number {
-  const [first = Number.NaN, last = Number.NaN] = range.replace('bytes=', '').split('-').map(Number);
-  return last - first + 1;
-}
-
 /** Packs are read a block of this many bytes at a time, each kept by the browser: the pictures a figure's moves ask
  *  for together lie together in a pack, so a burst of them comes in one request, and from the disk after. */
 export const BLOCK_BYTES = 256 * 1024;

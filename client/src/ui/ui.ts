@@ -7,7 +7,7 @@ import { edited, emptyField, type FieldState, keyed, placeNear, typed, wordAt } 
 import { drawLaid } from './drawLaid.ts';
 import { ARROWS, inside, modalOf, reachable, scrollToShow, stepped, toward } from './focus.ts';
 import { hitAt, scrolledAt, targetAt } from './hit.ts';
-import { layout } from './layout.ts';
+import { layout, sidesOf } from './layout.ts';
 import type { Laid, Node } from './node.ts';
 import { PadCursor } from './padCursor.ts';
 import type { State } from './paint.ts';
@@ -469,8 +469,7 @@ export class Interface {
     const id = laid.node.id ?? '';
     const { text } = this.fieldOf(id);
     const size = laid.node.field?.size ?? 1;
-    const padding = laid.node.padding;
-    const left = laid.box.x + (typeof padding === 'number' ? padding : (padding?.[padding.length === 2 ? 1 : 3] ?? 0));
+    const left = laid.box.x + sidesOf(laid.node.padding)[3];
     const shown = (place: number) =>
       laid.node.field?.secret ? '*'.repeat([...text.slice(0, place)].length) : text.slice(0, place);
     const units = x - left + (this.fieldScroll.get(id) ?? 0);

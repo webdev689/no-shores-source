@@ -44,13 +44,17 @@ export function stopped(message: string): void {
   document.body.style.cssText = 'color:#ddd;background:#000;font-size:22px;padding:24px';
 }
 
+/** How long a file handed over to save stays where the browser can read it, milliseconds. */
+const SAVE_KEPT_MS = 60_000;
+
 /** Hands the player `text` as a file named `name` to save. */
 export function saveFile(text: string, name: string, type = 'application/json'): void {
   const link = document.createElement('a');
   link.href = URL.createObjectURL(new Blob([text], { type }));
   link.download = name;
   link.click();
-  URL.revokeObjectURL(link.href);
+  // Let go once the browser has surely begun the download: some take the link after the click has returned.
+  setTimeout(() => URL.revokeObjectURL(link.href), SAVE_KEPT_MS);
 }
 
 /** Opens the browser's file chooser for files of `accept` (as an input's `accept` writes it); answers the chosen

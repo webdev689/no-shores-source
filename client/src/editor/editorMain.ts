@@ -377,16 +377,18 @@ async function start(): Promise<void> {
     } else if (ruler && measuring) ruler = { ...ruler, toX: world.x, toY: world.y };
     requestFrame();
   });
-  canvas.addEventListener('pointerup', () => {
-    if (stroke) {
-      recheck();
-      keep();
-    }
-    stroke = null;
-    panning = null;
-    measuring = false;
-    requestFrame();
-  });
+  // A drag the system takes back (a pen or a touch) ends as one let go does, or the next hover would paint on.
+  for (const ended of ['pointerup', 'pointercancel'] as const)
+    canvas.addEventListener(ended, () => {
+      if (stroke) {
+        recheck();
+        keep();
+      }
+      stroke = null;
+      panning = null;
+      measuring = false;
+      requestFrame();
+    });
   canvas.addEventListener('pointerleave', () => {
     pointer = { ...pointer, inside: false };
     requestFrame();
@@ -403,7 +405,8 @@ async function start(): Promise<void> {
     { passive: false },
   );
   window.addEventListener('keydown', (event) => {
-    if (mode !== 'continents' || editor.typing) return;
+    // The browser's own shortcuts (Ctrl+C, Ctrl+F) choose no tool.
+    if (mode !== 'continents' || editor.typing || event.ctrlKey || event.metaKey || event.altKey) return;
     const digit = Number(event.key);
     if (digit >= 1 && digit <= constants.continentCount) slot = digit;
     const byKey: Record<string, Tool> = { p: 'paint', e: 'erase', f: 'fill', r: 'ruler', c: 'reference' };

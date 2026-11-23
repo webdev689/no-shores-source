@@ -209,8 +209,9 @@ export class Fighting {
   }
 
   /** Follows the link into the room it joined again: a new player there, standing where the room puts them, with
-   *  nothing of the old room kept but what the hands hold and the dress, sent again. A cast waiting for the old room
-   *  is never sent into the new one. */
+   *  nothing of the old room kept but what the hands hold and the dress, sent again, and the asks made while it
+   *  rejoined (a foe, gear, a respawn), which go with the first input. A cast waiting for the old room is never sent
+   *  into the new one. */
   private follow(): void {
     if (this.link.joins === this.joined) return;
     this.joined = this.link.joins;

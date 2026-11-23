@@ -255,7 +255,7 @@ export async function startIsleEditor(editor: EditorFrame): Promise<IsleEditor> 
         : panOrbit(orbit, moveX, moveY, canvas.clientHeight);
     dragging = { ...dragging, x: event.offsetX, y: event.offsetY };
   });
-  canvas.addEventListener('pointerup', () => (dragging = null));
+  for (const ended of ['pointerup', 'pointercancel'] as const) canvas.addEventListener(ended, () => (dragging = null));
   canvas.addEventListener(
     'wheel',
     (event) => {
