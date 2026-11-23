@@ -210,6 +210,8 @@ pub struct Room {
     /// The way a body faces as it stands at a spawn, and a dungeon's cache by its Reeve's post (`dungeon_room.rs`).
     pub(crate) facing: f64,
     pub(crate) cache: Option<dungeon_room::Cache>,
+    /// A dungeon's ways out: its exit door's middle and its return portal's, at their feet; none in any other room.
+    pub(crate) ways_out: Option<([f64; 2], [f64; 2])>,
     /// The minute it is, counted from the epoch (`set_minute`), whose day's wares and week's Shape it shows.
     pub minute: u64,
     pub shape_spots: Vec<[f64; 2]>,
@@ -293,6 +295,7 @@ impl Room {
             clearing: None,
             facing: core::f64::consts::PI,
             cache: None,
+            ways_out: None,
             minute: 0,
             shape_spots: Vec::new(),
             public: None,

@@ -156,7 +156,8 @@ export async function loadWorld(base: string): Promise<WorldData> {
 
 /** Where a player arriving at the node `id` lands: its continent, and its id and name; a city's social space is
  *  `<city id>-social`, named for its city, "Ruins of" its name where it is not among the port cities' ids
- *  `mainPorts` (the rules' own; with none known, by its name alone). Null for an id the world does not hold. */
+ *  `mainPorts` (the rules' own; with none known, by its name alone). Null for an id the world does not hold, or a
+ *  locked one: played alone too, the page goes nowhere the server would refuse. */
 export function arrivalAt(
   world: WorldData,
   id: string,
@@ -164,7 +165,7 @@ export function arrivalAt(
 ): { continent: string; node: string; name: string } | null {
   if (socialLocked(id)) return null;
   const node = world.nodes.find((each) => each.id === id);
-  if (node) return { continent: node.continent, node: node.id, name: node.name };
+  if (node) return node.locked ? null : { continent: node.continent, node: node.id, name: node.name };
   const city = world.cities.find((each) => `${each.id}-social` === id);
   if (!city) return null;
   const ruined = mainPorts !== null && !mainPorts.includes(city.id);

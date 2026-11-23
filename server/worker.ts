@@ -306,13 +306,14 @@ export class RoomHost extends DurableObject<Env> {
   }
 
   /** Stands a player joined before an entrance at a spawn, as an ordinary join, unless the room keeps their character
-   *  as come out of that entrance's dungeon or run. */
+   *  as come out of that entrance's dungeon or run, by its exit door or its open portal. */
   private outOfDoor(socket: WebSocket): void {
     const held = this.players.get(socket);
     if (!held || held.door === null) return;
     const door = held.door;
     held.door = null;
-    if (!cameOutOf(this.name, this.keeper?.cameFrom(held.player) ?? null, door))
+    const cameOut = cameOutOf(this.name, this.keeper?.cameFrom(held.player) ?? null, door);
+    if (!cameOut || !this.keeper?.leftByWayOut(held.player))
       this.guarded(() => this.room.standAtSpawn(held.player), false);
   }
 

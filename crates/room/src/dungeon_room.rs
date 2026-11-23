@@ -147,6 +147,7 @@ impl Room {
         // Its jambs and pillars are its ground's own walls, not blocks a body could climb; its pads are blocks.
         let mut room = Self::node(floor, pads, Section { ring, spawns: vec![[x, y]], falls_kill: false });
         room.facing = bearing([x, y], [x + toward_x, y + toward_y]);
+        room.ways_out = Some((dungeon.exit_door(), dungeon.portal_door()));
         // Shut by its seas alone, as a node with no patrol is; a patrol's own dungeon is gated as its patrol.
         room.place = Some(gear::gate::Place::Node);
         room.world_seed = node_seed(name);
