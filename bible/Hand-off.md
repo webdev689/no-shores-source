@@ -146,10 +146,8 @@ each part works is in its system note.
 
 - **The owner's bugs from two rounds of play** (#163, branch `claude/zen-ritchie-u40hax`), for the owner's yes to
   merge, which deploys the page and the rooms. Each fix was audited read-only, and every finding fixed with a test
-  that fails without it:
-  - Elder Maren Hale greets on every arrival, calling it from the lanes within 15 m; "Follow" shows only once she has
-    greeted; a player who leaves her behind a minute has the welcome given, so the houses' roads open. The owner said
-    to forget reworking the walk itself; a shorter greeting for a walk taken up would be the owner's to write.
+  that fails without it. Elder Maren Hale's welcome is left to another session, which reworks it; its reload bug
+  (no greeting, "Follow" before it, a left-behind walk hiding the houses' roads) is that session's:
   - A pad seam blends toward a level at most a step off ([[Cities]]), so the floor beside the plaza's parapets no
     longer dips and carries a body over them, and no ledge runs along a ramp's side.
   - [[Each Patrol Zone Has a Built Landing Site, Its Guards Beyond It]]: no foe starts a fight with a player within
