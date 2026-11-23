@@ -73,7 +73,8 @@ impl Room {
             (figure.state, figure.noticed, noticed) = (NOTICED, Some(clock), true);
         } else if away <= near {
             if ambushed && figure.ambush.is_none() && figure.along >= length / 2.0 {
-                (figure.state, ambush) = (HELD, true);
+                // It waits halfway, held only once its ambush stands, so the page never shouts one that is not there.
+                (figure.state, ambush) = (WAITING, true);
             } else {
                 figure.along = (figure.along + step).min(length);
                 arrived = figure.along >= length;
@@ -101,8 +102,8 @@ impl Room {
         }
     }
 
-    /// An escort's ambush, standing round its figure on a mesh baked there, coming at the player; it waits a tick
-    /// while the room has no room for it or a mesh was baked this tick.
+    /// An escort's ambush, standing round its figure on a mesh baked there, coming at the player, and holding the
+    /// figure; it waits a tick while the room has no room for it or a mesh was baked this tick.
     fn stand_ambush(&mut self, player: PlayerId, goal: &'static GoalDef, at: [f64; 3]) {
         let Goal::Escort(escort) = &goal.goal else { return };
         let members = foes_of(escort.ambush.iter());
@@ -121,7 +122,11 @@ impl Room {
             }
         }
         if let Some(Step { kind: Stepping::Figure(figure), .. }) = self.quests.steps.get_mut(&player) {
+            figure.state = if stood.is_empty() { figure.state } else { HELD };
             figure.ambush = Some(stood);
+        }
+        if let Some(found) = self.players.get_mut(&player) {
+            found.gear_changed = true;
         }
     }
 
@@ -137,7 +142,7 @@ impl Room {
         let fallen = |id: &FighterId| self.foes.get(id).is_none_or(|foe| foe.fighter.dead());
         let Some(ward) = ward else {
             let first = defend.waves.first().map_or(0, |wave| wave.len());
-            let room = self.living_foes() + first < self.foes_most;
+            let room = self.living_foes() + first <= self.foes_most;
             if retry.is_some_and(|tick| clock < tick) || !place.holds(at, 0.0) || !room {
                 return;
             }

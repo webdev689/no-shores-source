@@ -8,7 +8,7 @@ export type FleetCall = 'none' | 'captain' | 'send off';
 
 /** One tick's orders at sea in a fleet room (crates/room/src/fleet.rs Input): its helm, its look, the fire, the
  *  brace, a load (0 none, 1 round, 2 grape, 3 chain, 4 heated), where it puts to sea (heeded once), and a call,
- *  with the faction and rank of a captain called (a Major of the pirates when none is named). */
+ *  with the faction and rank of a captain called (a Major of the Grey Tithe when none is named). */
 export interface FleetOrders {
   readonly steer: number;
   readonly climb: number;
@@ -27,10 +27,10 @@ export interface FleetOrders {
   };
 }
 
-/** A captain's faction and rank as a room sends them; an older room sends 0 for both, and every captain it held was a
- *  Major of the pirates (2 for each, as the messages number them). */
+/** A captain's faction and rank as a room sends them; an older room sends 0 for both, and every captain it held is
+ *  read as a Major of the Grey Tithe (1 and 2, as the messages number them). */
 export function commissionOf(faction: number, rank: number): { readonly faction: number; readonly rank: number } {
-  return { faction: faction || 2, rank: rank || 2 };
+  return { faction: faction || 1, rank: rank || 2 };
 }
 
 /** The calls as the messages number them. */

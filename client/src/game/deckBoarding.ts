@@ -3,7 +3,7 @@
 // once the room says they have left it (its hold taken, its minute up, or washed up beaten), it is let go and the view
 // is the sea's fight's again, at the player's own ship.
 import type { CardAt } from '../player/cards.ts';
-import type { InputFrame } from '../player/input.ts';
+import { handsFree, type InputFrame } from '../player/input.ts';
 import type { FightCaptain, FightView } from '../rules/fightRules.ts';
 import { cellHeight, type Lying } from '../ships/deck.ts';
 import type { Shot } from './camera.ts';
@@ -95,7 +95,8 @@ export class Boarding {
       fight.foot.arrive(input.time);
     }
     const { width, height } = input.viewport;
-    const how = { paused: input.paused, hands: input.controls.locked, aspect: width / Math.max(1, height) };
+    const hands = handsFree(input.controls, input.paused);
+    const how = { paused: input.paused, hands, aspect: width / Math.max(1, height) };
     const frame = fight.frame(input.controls, input.seconds, input.time, how);
     // Its deck is laid on it at its true size, as the sea's fight draws it once its view is down.
     const { captain, lying } = fight.boarded(view, 1);

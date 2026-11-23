@@ -1,11 +1,12 @@
 //! The sea room's snapshot: every ship at sea, every hostile ship, each player's fight, each player off the helm on
 //! their ship's deck, and what the sea keeps after its fights (what floats, each ship's kept hurts, what each player is
-//! told, and each deck boarded), and the islands each player sees or has found.
+//! told, and each deck boarded), the islands each player sees or has found, and the traffic's friendly ships the room
+//! has taken off their routes.
 
 use crate::{PlayerId, finish_snapshot, messages};
 use movement::Body;
 use naval::ranks::Commission;
-use room::pirates::Pirate;
+use room::hostiles::Hostile;
 use room::sea::Ship;
 
 /// Everything at sea after the sea room's tick `tick`: every ship, every captain's with its faction, rank and hull,
@@ -16,7 +17,7 @@ use room::sea::Ship;
 pub fn sea_snapshot_bytes(
     tick: u64,
     ships: &[(PlayerId, Ship)],
-    pirates: &[Pirate],
+    hostiles: &[Hostile],
     fights: &[room::battle::FightSeen],
     aboard: &[(PlayerId, u32, Body)],
     harbour: &SeaHarbour,
@@ -40,19 +41,19 @@ pub fn sea_snapshot_bytes(
         })
         .collect();
     let ships = Some(builder.create_vector(&each));
-    let each: Vec<_> = pirates
+    let each: Vec<_> = hostiles
         .iter()
-        .map(|pirate| {
-            let Pirate { id, x, y, heading, level, sight_m: sight, commission: Commission { faction, rank }, .. } =
-                *pirate;
+        .map(|hostile| {
+            let Hostile { id, x, y, heading, level, sight_m: sight, commission: Commission { faction, rank }, .. } =
+                *hostile;
             let hull = rank.hull().number();
             let way = room::sighting::way_of(rank);
             let args =
-                messages::PirateArgs { id, x, y, heading, faction, rank: rank.number(), hull, level, sight, way };
-            messages::Pirate::create(&mut builder, &args)
+                messages::HostileArgs { id, x, y, heading, faction, rank: rank.number(), hull, level, sight, way };
+            messages::Hostile::create(&mut builder, &args)
         })
         .collect();
-    let pirates = Some(builder.create_vector(&each));
+    let hostiles = Some(builder.create_vector(&each));
     let each: Vec<_> = fights
         .iter()
         .map(|room::battle::FightSeen { player, numbers, captain: commission, may_board }| {
@@ -116,17 +117,29 @@ pub fn sea_snapshot_bytes(
         .collect();
     // None when there are none, so a sea without islands sends the bytes it always did.
     let islands = (!each.is_empty()).then(|| builder.create_vector(&each));
+    let each: Vec<_> = harbour
+        .friendlies
+        .iter()
+        .map(|&room::friendlies::Friendly { traffic, x, y, heading, hull, .. }| {
+            let args = messages::FriendlyArgs { traffic, x, y, heading, hull: hull.number() };
+            messages::Friendly::create(&mut builder, &args)
+        })
+        .collect();
+    let friendlies = (!each.is_empty()).then(|| builder.create_vector(&each));
+    let taken = (!harbour.taken.is_empty()).then(|| builder.create_vector(&harbour.taken));
     let args = messages::SnapshotArgs {
         tick,
         players,
         ships,
-        pirates,
+        hostiles,
         fights,
         flotsam,
         kept,
         told,
         decks,
         islands,
+        taken,
+        friendlies,
         ..messages::SnapshotArgs::default()
     };
     finish_snapshot(builder, &args)
@@ -135,7 +148,8 @@ pub fn sea_snapshot_bytes(
 /// What the sea's snapshot carries beside its ships and fights: each piece of what floats (its player, its number,
 /// where it floats and its kind, 0 a crate, 1 a barrel, 2 a chest), each player's ship's kept hurts with the seconds
 /// its repair has left, what each player is told this tick, and each deck boarded (each boarder's number at sea with
-/// theirs on its deck, its hull, and its deck room's snapshot), and the islands the player sees or has found.
+/// theirs on its deck, its hull, and its deck room's snapshot), the islands the player sees or has found, each traffic
+/// id the room has taken off its route, and the friendly ships it keeps at sea.
 #[derive(Clone, Debug, Default, PartialEq)]
 pub struct SeaHarbour {
     pub flotsam: Vec<(PlayerId, u32, [f64; 2], u8)>,
@@ -143,6 +157,8 @@ pub struct SeaHarbour {
     pub told: Vec<(PlayerId, Vec<f64>)>,
     pub decks: Vec<SeaDeck>,
     pub islands: Vec<IsleSeen>,
+    pub taken: Vec<u64>,
+    pub friendlies: Vec<room::friendlies::Friendly>,
 }
 
 /// A sea island as a player is told of it: its number and seed, where its middle is, its kind's number, its water's

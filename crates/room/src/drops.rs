@@ -98,7 +98,7 @@ impl Room {
         if walled || outside || buried || ground < from[2] - TUNING.step { from } else { [x, y, ground] }
     }
 
-    /// Lays a drop for a player where it lies already, thrown from nowhere: for tests and the Test Ground.
+    /// Lays a drop for a player where it lies already, thrown from nowhere: for tests, this crate's and the door's.
     pub fn lay_drop(&mut self, player: PlayerId, what: Dropped, at: [f64; 3]) {
         self.lay(player, what, at, at);
     }
@@ -168,6 +168,17 @@ impl Room {
             found.gear_changed = true;
             if let Dropped::Vestige(vestige) = drop.what {
                 found.character.post(Source::LeftBehind, Posted::Vestige(vestige));
+            }
+        }
+    }
+
+    /// Takes every drop off the ground, each Vestige still lying to its player's mail, as a wipe starts a run over.
+    pub(crate) fn mail_all_lying(&mut self) {
+        for drop in std::mem::take(&mut self.drops) {
+            let Some(found) = self.players.get_mut(&drop.player) else { continue };
+            found.gear_changed = true;
+            if let Dropped::Vestige(vestige) = drop.what {
+                found.character.post(Source::LeftLying, Posted::Vestige(vestige));
             }
         }
     }

@@ -4,7 +4,7 @@ use crate::PlayerId;
 use crate::harbour::{Harbours, SUNK_KEPT, WASHED_UP};
 
 /// A square continent 100 km a side, its north-west corner 100 km from the frame's. Of `id` and `climate`: the
-/// fourth, a desert, sets the sea round it the pirates'; the first, Overlook's, makes it home waters.
+/// fourth, a desert, sets the sea round it the Grey Tithe's; the first, Overlook's, makes it home waters.
 fn sea_round(id: &str, climate: &str) -> Sea {
     let text = format!(
         r#"{{ "continents": [{{ "id": "{id}", "climate": "{climate}", "outline": [[100000, 100000], [200000, 100000], [200000, 200000], [100000, 200000]] }}], "isles": [] }}"#
@@ -51,7 +51,7 @@ fn islands_are_rolled_near_a_ship_in_hostile_waters_clear_of_it() {
         let off = apart(island.at, [50_000.0, 50_000.0]);
         assert!((3_000.0..=7_000.0).contains(&off), "an island {off} m off the ship");
         assert_eq!(island.climate, "desert");
-        assert_eq!(island.guards, Some(::foes::factions::PIRATES));
+        assert_eq!(island.guards, Some(::foes::factions::GREY_TITHE));
         assert!(island.anchorage != island.at);
     }
     let near = islands.iter().filter(|island| apart(island.at, [50_000.0, 50_000.0]) <= NEAR_M).count();
@@ -89,8 +89,8 @@ fn a_ship_finds_an_island_it_sails_near_and_is_told_of_those_in_sight() {
         (island.id, island.anchorage, island.at)
     };
     assert!(apart(at, [50_000.0, 50_000.0]) <= SIGHT_M);
-    assert_eq!(sea.islands().sighted([50_000.0, 50_000.0]).count(), sea.islands().standing.len());
     assert!(!sea.islands().found(player, id), "found from afar");
+    assert_eq!(sea.islands().told(player, [50_000.0, 50_000.0]).count(), sea.islands().standing.len(), "all in sight");
     ticks(&mut sea, 30);
     sea.course(player, &round_to(at, anchorage, [50_000.0, 50_000.0]), 100).expect("the way in is open sea");
     for _ in 0..60 * 60 {

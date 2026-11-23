@@ -302,11 +302,13 @@ impl Room {
         }
     }
 
-    /// The seal complete on a heroic Fissure: its last push brings out the Warden.
+    /// The seal complete on a heroic Fissure: its last push brings out the Warden, posted where it climbs out, clear of
+    /// the spires that still stand round the middle (the navmesh does not hold them, so a post among them is one a
+    /// fight can wedge against).
     fn raise_warden(&mut self, public: &Public, running: &mut Running, fissure: &mut Fissure) {
         let at = fissure.at;
         let place = [at[0], at[1] - POUR_OUT, at[2]];
-        if let Some(id) = self.stand_event_foe(running, (BULWARK, Miniboss), (place, 0.0), (at, public.level)) {
+        if let Some(id) = self.stand_event_foe(running, (BULWARK, Miniboss), (place, 0.0), (place, public.level)) {
             self.toughen(id, usize::from(fissure.players_most));
             self.names.insert(id, WARDEN_NAME);
             fissure.warden = Some(id);

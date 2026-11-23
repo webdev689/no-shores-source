@@ -2,6 +2,7 @@
 // dungeon's exit door, and the place a dungeon is played as.
 import { runAsk } from '../../../server/roomNames.ts';
 import { EVENT } from '../combat/cues.ts';
+import { roomNow } from '../sky/worldClock.ts';
 import type { GearAsk } from '../network/gearMessages.ts';
 import { RoomThread } from '../network/roomThread.ts';
 import type { FightEvent } from '../network/messages.ts';
@@ -91,7 +92,7 @@ export function openAlone(
   into: { readonly number: number; readonly room: string },
   heard: Heard,
 ): Promise<RoomThread> {
-  const ask = runAsk(into.room, Math.floor(Date.now() / 60_000));
+  const ask = runAsk(into.room, Math.floor(roomNow() / 60_000));
   return ask === null
     ? RoomThread.openDungeon(module, outsideText, into.number, heard.snapshot, heard.gear)
     : RoomThread.openRun(module, ask, outsideText, heard.snapshot, heard.gear);

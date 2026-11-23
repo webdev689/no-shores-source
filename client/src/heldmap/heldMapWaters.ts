@@ -4,6 +4,7 @@
 import { ruinedName } from '../ruinedName.ts';
 import type { CoastField } from './coastField.ts';
 import type { MapPlace } from './heldMap.ts';
+import type { WaterJudge } from './heldMapAsk.ts';
 import type { Rect } from './heldMapLaw.ts';
 import { anyCellUnder } from './mapKey.ts';
 import {
@@ -34,11 +35,13 @@ const SPOT_PX = 10;
 
 export class HeldMapWaters {
   readonly waters: MapWaters;
+  /** The water at a point by the exact rule, the room's. */
+  readonly judge: WaterJudge;
   private readonly points: Map<number, readonly [number, number]>;
   private charted = new Set<number>();
 
-  constructor(waters: MapWaters) {
-    this.waters = waters;
+  constructor(waters: MapWaters, judge: WaterJudge) {
+    [this.waters, this.judge] = [waters, judge];
     this.points = labelPoints(waters);
   }
 

@@ -43,6 +43,7 @@ test("a city's social space is a node named for the city, with the plaza's secti
   assert.equal(node.name, 'Overlook');
   assert.deepEqual(node.spawns[0], [940, 1112]);
   assert.deepEqual(node.centre, [1000, 1160]);
+  assert.deepEqual(node.plazaBounds, [870, 1100, 1130, 1220], "the plaza the townsfolk walk is the plan's");
 });
 
 test('bearings are compass bearings: north 0, east a quarter turn, south half', () => {

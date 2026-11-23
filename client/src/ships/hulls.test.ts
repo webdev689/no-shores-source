@@ -53,6 +53,6 @@ test("a fight captain's hull points are never read as its hull's number", () => 
 });
 
 test('a ship at sea and a fleet vessel name their hull in `hull`', () => {
-  assert.equal(hullOfCaptain({ hull: 1 }), 1, "a Pirate's Schooner at sea");
+  assert.equal(hullOfCaptain({ hull: 1 }), 1, "a Hostile's Schooner at sea");
   assert.equal(hullOfCaptain({}), SLOOP_HULL, 'a room from before hulls: the Sloop');
 });

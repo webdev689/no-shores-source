@@ -76,11 +76,12 @@ export class DungeonScene {
     device.queue.submit([encoder.finish()]);
   }
 
-  /** Lets go of the targets and the light layer's, made again on the next frame drawn. */
+  /** Lets go of the targets, the light layer's and the drain's copy, made again on the next frame drawn. */
   release(): void {
     for (const texture of Object.values(this.targets ?? {})) texture.destroy();
     this.targets = null;
     this.light.destroy();
+    this.drain.release();
   }
 
   private targetsOf(width: number, height: number) {

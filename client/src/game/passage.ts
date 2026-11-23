@@ -133,6 +133,14 @@ export class Passage {
     this.room?.course(courseAhead(this.voyage, 0), this.sailed);
   }
 
+  /** Asks the room to travel the voyage still ahead: to take the ship to the other waters it ends in (`SeaTravel`).
+   *  Answers the course sent, none with no voyage. */
+  travel(): Point2[] {
+    const ahead = this.voyage ? courseAhead(this.voyage, this.travelled) : [];
+    if (ahead.length) this.room?.travel(ahead, this.sailed);
+    return ahead;
+  }
+
   /** Sets sail through a course's points in turn, from where the ship lies, as planned: to anchor off an island. */
   sailAlong(points: readonly Point2[]): void {
     const end = points.at(-1);
@@ -212,7 +220,7 @@ export class Passage {
     if (!this.voyage) return;
     const settled = this.room?.settledShip ?? null;
     // A step the room refused is asked again, once its word on the last has come, until the two agree.
-    if (paceToAskAgain(this.sailed, settled, this.room?.pirates ?? [], this.holdReachM)) this.sendVoyage();
+    if (paceToAskAgain(this.sailed, settled, this.room?.hostiles ?? [], this.holdReachM)) this.sendVoyage();
     if (settled?.pace === 0) {
       this.restWhereTheRoomHasIt(this.voyage, settled);
       return;

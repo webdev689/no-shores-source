@@ -7,11 +7,11 @@ const words = (stack: NoticeStack) => stack.rows.map((row) => row.text);
 test('the notices stand newest last, three at most, and one said again moves to the foot', () => {
   const stack = new NoticeStack();
   const told: string[] = [];
-  stack.show(['No guns bear there.', 'The Pirate Brig surrenders!'], 0, (text) => told.push(text));
-  assert.deepEqual(words(stack), ['No guns bear there.', 'The Pirate Brig surrenders!']);
-  stack.show(['The Pirate Brig surrenders!', 'No guns bear there.'], 1, (text) => told.push(text));
-  assert.deepEqual(words(stack), ['The Pirate Brig surrenders!', 'No guns bear there.'], 'said again, it is newest');
-  assert.deepEqual(told, ['No guns bear there.', 'The Pirate Brig surrenders!'], 'a line is told once, as it comes');
+  stack.show(['No guns bear there.', 'The Tithe Brig surrenders!'], 0, (text) => told.push(text));
+  assert.deepEqual(words(stack), ['No guns bear there.', 'The Tithe Brig surrenders!']);
+  stack.show(['The Tithe Brig surrenders!', 'No guns bear there.'], 1, (text) => told.push(text));
+  assert.deepEqual(words(stack), ['The Tithe Brig surrenders!', 'No guns bear there.'], 'said again, it is newest');
+  assert.deepEqual(told, ['No guns bear there.', 'The Tithe Brig surrenders!'], 'a line is told once, as it comes');
   stack.show(['a', 'b', 'c', 'd'], 2);
   assert.deepEqual(words(stack), ['b', 'c', 'd']);
   stack.show([], 3);

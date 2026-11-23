@@ -8,7 +8,7 @@ use crate::measure_tests::world;
 use naval::captain::course::{distance, heading_to, wrap};
 use naval::damage::State;
 use naval::fight::{Aim, Fight, Sailor};
-use naval::ranks::{Commission, PIRATES, Rank};
+use naval::ranks::{Commission, GREY_TITHE, Rank};
 use naval::shots::ShipId;
 use sailing::ship::{Helm, SAILS_SET};
 use world::waters::Holder;
@@ -132,7 +132,7 @@ pub(crate) fn hostile_points(sea: &Sea) -> Vec<[f64; 2]> {
 fn row(rank: Rank, level: u8, close: f64, fights: usize) -> String {
     let (layout, ports) = world();
     let points = hostile_points(&Sea::new(&layout, crate::deck::test_deck(), 1, &ports));
-    let commission = Commission { faction: PIRATES, rank };
+    let commission = Commission { faction: GREY_TITHE, rank };
     let mut seeds = (0x1000u32..)
         .step_by(7919)
         .filter(|seed| matches!(naval::captain::temper_for(commission, *seed), naval::captain::Temper::Bold));
@@ -144,8 +144,8 @@ fn row(rank: Rank, level: u8, close: f64, fights: usize) -> String {
         let player = sea.join();
         sea.harbour.characters.insert(player, gear::Character::starting());
         sea.course_anywhere(player, &[at], 10).unwrap();
-        let standing = Pirate::standing(1, seed, commission, [at[0], at[1] - 700.0], std::f64::consts::PI, true);
-        sea.pirates.sailing.push(Pirate { level, ..standing });
+        let standing = Hostile::standing(1, seed, commission, [at[0], at[1] - 700.0], std::f64::consts::PI, true);
+        sea.hostiles.sailing.push(Hostile { level, ..standing });
         sea.tick();
         if sea.fights.fighting(player) {
             all.push(fight_out(&mut sea, player, close));

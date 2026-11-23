@@ -4,6 +4,7 @@
 // move the same however it is drawn. In its own frame.
 import { type Race } from '../player/dressing.ts';
 import { cellHeight, cellsReached, type Deck } from '../ships/deck.ts';
+import { seeded } from '../seeded.ts';
 
 /** How many hands stand in for its crew. */
 export const STAND_INS = 3;
@@ -30,17 +31,6 @@ export interface Hand {
   readonly walking: boolean;
   readonly race: Race;
   readonly tone: number;
-}
-
-/** A small seeded stream of numbers in [0, 1). */
-function seeded(seed: number): () => number {
-  let state = seed >>> 0;
-  return () => {
-    state = (state + 0x6d2b79f5) >>> 0;
-    let mixed = Math.imul(state ^ (state >>> 15), 1 | state);
-    mixed = (mixed + Math.imul(mixed ^ (mixed >>> 7), 61 | mixed)) ^ mixed;
-    return ((mixed ^ (mixed >>> 14)) >>> 0) / 4294967296;
-  };
 }
 
 /** How long a hand stands at a spot, seconds. */

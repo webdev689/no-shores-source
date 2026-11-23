@@ -1,6 +1,7 @@
 // The time a keeper's screen counts down at its foot: to the daily reset, when the daily keepers' wares change, as
 // Destiny's vendors refresh then; and to Shape's leaving. The room module's rules count both in whole minutes
 // (`activitiesAt`), so the page only takes off the seconds gone in the minute.
+import { roomNow } from '../../sky/worldClock.ts';
 import { activitiesAt } from '../activities.ts';
 
 const DAY_S = 86_400;
@@ -15,10 +16,10 @@ export function countBy(module: Promise<WebAssembly.Module>): void {
 
 let read: { minute: number; module: WebAssembly.Module; drawn: ReturnType<typeof activitiesAt> } | null = null;
 
-/** Whole seconds from `nowMs` to the next stock and to Shape's leaving (none once he has gone), by `module`'s rules;
- *  null before the game's is read. */
+/** Whole seconds from `nowMs` (the rooms' now) to the next stock and to Shape's leaving (none once he has gone), by
+ *  `module`'s rules; null before the game's is read. */
 export function countdownsAt(
-  nowMs: number,
+  nowMs = roomNow(),
   module: WebAssembly.Module | null = rules,
 ): { readonly stock: number; readonly shape: number } | null {
   if (!module) return null;

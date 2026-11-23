@@ -339,17 +339,20 @@ impl Damage {
     }
 
     /// Its hands mend its hull and canvas at `now` if nothing has hurt it for a while and no hostile ship is near: up
-    /// to half of each, at a player's single-handed rate. Answers whether they mended anything.
-    pub fn mend(&mut self, seconds: f64, now: f64, hostile_near: bool) -> bool {
+    /// to half of its hull and of the canvas its `standing` sails hold (their share of its drive), at a player's
+    /// single-handed rate. Answers whether they mended anything.
+    pub fn mend(&mut self, seconds: f64, now: f64, hostile_near: bool, standing: f64) -> bool {
         if now - self.last_hit_at < FIELD_QUIET_S || hostile_near || matches!(self.state, State::Sinking | State::Sunk)
         {
             return false;
         }
         let rate = FIELD_MEND_PER_S * FIELD_MEND_ALONE;
-        let part =
-            |have: f64, whole: f64| (whole * FIELD_MEND_CAP - have).min(whole * rate * seconds.max(0.0)).max(0.0);
-        let (hull, sail) =
-            (part(self.hull, self.max_hull), if self.max_sail > 0.0 { part(self.sail, self.max_sail) } else { 0.0 });
+        // Mended at the rate of the whole, up to half of what can hold it.
+        let part = |have: f64, whole: f64, holds: f64| {
+            (holds * FIELD_MEND_CAP - have).min(whole * rate * seconds.max(0.0)).max(0.0)
+        };
+        let hull = part(self.hull, self.max_hull, self.max_hull);
+        let sail = if self.max_sail > 0.0 { part(self.sail, self.max_sail, self.max_sail * standing) } else { 0.0 };
         if hull <= 0.0 && sail <= 0.0 {
             return false;
         }

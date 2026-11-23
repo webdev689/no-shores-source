@@ -216,12 +216,9 @@ pub struct Build {
 pub const LARGE_BOAT: Build =
     Build { name: "Sloop", hull: 240.0, sail: 96.0, crew: 10.0, skill: 0.6, range_m: 50.0, crewed: false };
 
-/// DFO's Pirate Sloop, its only pirate at the first level, on the same hull.
-pub const PIRATE_SLOOP: Build =
-    Build { name: "Pirate Sloop", hull: 264.0, sail: 96.0, crew: 10.0, skill: 0.45, range_m: 50.0, crewed: true };
-
-/// The Grey Tithe's Sloop: the pirates' class under the Tithe's colours, until it has hulls of its own.
-pub const TITHE_SLOOP: Build = Build { name: "Tithe Sloop", ..PIRATE_SLOOP };
+/// The Grey Tithe's Sloop: DFO's first-level hostile Sloop, on the same hull. Every captain's class is drawn from it.
+pub const TITHE_SLOOP: Build =
+    Build { name: "Tithe Sloop", hull: 264.0, sail: 96.0, crew: 10.0, skill: 0.45, range_m: 50.0, crewed: true };
 
 /// No battery bears within this of its bow or its stern, degrees: the Sloop has guns only along its sides.
 pub const BOW_ARC_DEG: f64 = 35.0;

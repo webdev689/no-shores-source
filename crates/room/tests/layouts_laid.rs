@@ -1,6 +1,7 @@
 //! Continent 1's layouts as the bake settles them, checked for what a body meets on their ways: every gate and
 //! signpost on open ground at its own floor's level, every set piece at an area's middle standing, no box of any
-//! solid, prop or building across a way's walked width under head height, and the rock and walls where they belong.
+//! solid, prop or building across a way's walked width under head height, every spawn inside its section and clear
+//! of the boxes, and the rock and walls where they belong.
 
 use city::solids::{Material, Shape};
 use land::ground::Ground;
@@ -275,6 +276,29 @@ fn no_way_ends_inside_a_solid() {
         }
     }
     assert!(failed.is_empty(), "{} points: {:#?}", failed.len(), &failed[..failed.len().min(30)]);
+}
+
+#[test]
+fn every_spawn_stands_inside_its_section_and_clear_of_every_box() {
+    let laid = laid();
+    let mut failed = Vec::new();
+    for layout in &laid.layouts {
+        for &[x, y] in &layout.spawns {
+            let floor = laid.ground.height_at(x, y);
+            let boxed = layout.boxes.iter().any(|&[west, north, east, south, top, underside]| {
+                x > west
+                    && x < east
+                    && y > north
+                    && y < south
+                    && underside < floor + HEAD_M
+                    && top > floor + STEPPED_OVER_M
+            });
+            if !reach::inside(&layout.ring, x, y) || boxed {
+                failed.push(format!("{}: a spawn at {x:.1}, {y:.1}, boxed in: {boxed}", layout.id));
+            }
+        }
+    }
+    assert!(failed.is_empty(), "{failed:#?}");
 }
 
 /// The retaining walls' lengths, as `works::retaining` lays them.

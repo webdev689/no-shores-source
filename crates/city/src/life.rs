@@ -44,8 +44,6 @@ pub enum Task {
     Charm,
     Hold,
     Pray,
-    Beg,
-    LeanCane,
     PlayLute,
     PlayFlute,
     PlayRecorder,
@@ -97,7 +95,6 @@ mod tests {
         assert_eq!(read["task"], "play_lute");
         assert_eq!(read["keep"], serde_json::json!({ "round": 2 }));
         assert_eq!(serde_json::to_value(Keep::Visited).expect("writes"), "visited");
-        assert_eq!(serde_json::to_value(Task::LeanCane).expect("writes"), "lean_cane");
     }
 
     #[test]

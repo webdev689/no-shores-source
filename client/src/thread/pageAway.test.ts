@@ -86,6 +86,7 @@ test("an event the page heard on its canvas reaches the canvas's listeners, then
   try {
     const away = pageAway(start, (message) => sent.push(message));
     assert.deepEqual([canvas.width, canvas.height], [1280, 720], 'drawn at the screen’s pixels');
+    assert.equal(devicePixelRatio, 2);
     assert.equal(localStorage.getItem('seen'), '1');
     assert.equal(location.search, '?at=overlook-social');
     assert.equal(location.hash, '#discord=done');
@@ -128,6 +129,9 @@ test("an event the page heard on its canvas reaches the canvas's listeners, then
     assert.equal(document.pointerLockElement, away.canvas);
     away.heard({ kind: 'view', view: { width: 800, height: 600, left: 0, top: 0, ratio: 1 } });
     assert.deepEqual([canvas.width, canvas.height, away.canvas.clientWidth], [800, 600, 800]);
+    // Wider than the GPU draws, the canvas is shrunk, and what is drawn by the ratio is drawn at the shrunk one.
+    away.heard({ kind: 'view', view: { width: 5000, height: 1000, left: 0, top: 0, ratio: 2 } });
+    assert.deepEqual([canvas.width, devicePixelRatio * 5000], [8192, 8192]);
     assert.ok(sent.some((message) => message.kind === 'lock' && message.locked));
     // The password store is the page's: an ask goes to it, and its answer comes back to the one who asked.
     const asked = SIGN_INS.kept();

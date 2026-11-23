@@ -38,8 +38,33 @@ test('a Tenet counts its last seconds, rounded up so it never reads 0 before it 
   const vanish = abilityBarOf({ art: SHADOW, animaShare: 0, tenets: [0, 0.9] }).tenets[1];
   assert.deepEqual(vanish, { sweep: 36, seconds: '4', ready: false });
   assert.equal(tenetShown(0.75, 38).seconds, '', '9.5 s left is still counted as ten');
+  // Under a run's Trickle a recharge takes half again as long, and the seconds left count that out.
+  const trickled = abilityBarOf({ art: SHADOW, animaShare: 0, tenets: [0, 0.9], recharge: 1.5 }).tenets[1];
+  assert.equal(trickled.seconds, String(Math.ceil(0.1 * 38 * 1.5)));
   assert.equal(tenetShown(0.999, 38).seconds, '1');
   assert.equal(tenetShown(0.999, 38).sweep, 6, 'a sliver left still shows one step of the wedge');
+});
+
+test("under a run's Trickle the bar's spoken words count the longer recharge", () => {
+  const bar = new AbilityBar(() => null);
+  // Vanish recharges over 38 s; half way, 19 s are left, and half again as long under Trickle: 28.5, said as 29.
+  bar.update({ art: SHADOW, animaShare: 0, tenets: [1, 0.5], recharge: 1.5 });
+  assert.equal(bar.words()[2], 'Vanish (G), 29 s to recharge');
+  bar.update({ art: SHADOW, animaShare: 0, tenets: [1, 0.5] });
+  assert.equal(bar.words()[2], 'Vanish (G), 19 s to recharge');
+});
+
+test("the bar's keycaps and its spoken words name the keys bound now, and the pad's buttons drawn on their caps", () => {
+  const faces: string[] = [];
+  const pictures = () => ({ anima: '<svg></svg>', animaOutline: '', tenets: ['', ''] as const, diamond: '', ring: '' });
+  const bar = new AbilityBar(pictures, (key) => (key.startsWith('pad:') ? (faces.push(key), { width: 1 }) : null));
+  bar.update({ art: STORM, animaShare: 1, tenets: [1, 1] }, 0, false, ['R', 'E', 'G']);
+  assert.equal(bar.words()[1], 'Quicken (E), ready');
+  assert.ok(wordsIn(bar.node(false)).includes('E'), 'E on its keycap');
+  bar.update({ art: STORM, animaShare: 1, tenets: [1, 1] }, 0, false, ['pad:LB+RB', 'pad:LB', 'pad:RB']);
+  assert.equal(bar.words()[1], 'Quicken (LB), ready');
+  bar.node(false);
+  assert.deepEqual(faces, ['pad:LB+RB', 'pad:LB', 'pad:RB'], "each pad button drawn on its cap, as the ship bar's");
 });
 
 test('shares out of range or unknown are held to the bar', () => {

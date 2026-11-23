@@ -63,7 +63,7 @@ pub(crate) struct Ashore {
     pub fallen: BTreeMap<PlayerId, u8>,
 }
 
-/// The type in the pirates' deck roster each post fights as, in its clothes: the First Mate a swordsman, the Gunner
+/// The crew's own type each post fights as, in its clothes: the First Mate a swordsman, the Gunner
 /// and the Lookout archers, the Bosun a brute, the Carpenter a skirmisher.
 #[must_use]
 pub fn type_of(post: Post) -> u8 {

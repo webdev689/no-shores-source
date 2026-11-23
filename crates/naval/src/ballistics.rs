@@ -28,12 +28,6 @@ pub fn flight(start: [f64; 3], launch: [f64; 3], time: f64) -> [f64; 3] {
     ]
 }
 
-/// A ball's velocity `time` seconds after its launch.
-#[must_use]
-pub fn velocity(launch: [f64; 3], time: f64) -> [f64; 3] {
-    [launch[0], launch[1], launch[2] - GRAVITY * time]
-}
-
 /// When a ball at height `start` rising at `rise` comes down through `height`, or none if it never reaches it.
 fn time_to_height(start: f64, rise: f64, height: f64) -> Option<f64> {
     let square = rise * rise + 2.0 * GRAVITY * (start - height);

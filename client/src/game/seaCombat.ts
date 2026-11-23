@@ -1,4 +1,4 @@
-// The fight at sea: once a pirate meets the player, or they come upon captains fighting each other, the view pans
+// The fight at sea: once a hostile ship meets the player, or they come upon captains fighting each other, the view pans
 // down from the raised sea to their Sloop at true scale, every captain in its own hull and colours, and the sea
 // room's fight is fought there, by the World Editor's own fight (its aim, lay, effects and panel), until every
 // captain sinks or is gone; then it pans back up.

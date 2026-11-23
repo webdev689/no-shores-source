@@ -41,9 +41,11 @@ struct Ink {
 // Each of the route's points: where it lies, metres, and how far along the route.
 @group(0) @binding(5) var<storage, read> route: array<vec4f>;
 // The waters' wash over the charted sea, its holders' colours blended and its alpha how much is charted sea; and how
-// much of it is contested and how much the Grey Tithe's, each hatched (watersWash.ts).
+// much of it is the Lattice's and how much the Grey Tithe's, each hatched (watersWash.ts).
 @group(0) @binding(6) var wash: texture_2d<f32>;
 @group(0) @binding(7) var hatch: texture_2d<f32>;
+// The water under the pointer, 1 over its cells and the land beside them (litCells, heldMapAsk.ts).
+@group(0) @binding(8) var lit: texture_2d<f32>;
 // The parchment's words, marks and key, painted at its own pixels, premultiplied (mapLetters.ts).
 @group(1) @binding(0) var lettering: texture_2d<f32>;
 
@@ -52,10 +54,14 @@ const INK_RGB = vec3f(58.0, 40.0, 22.0) / 255.0;
 const ROUTE_RGB = vec3f(120.0, 28.0, 20.0) / 255.0;
 const NO_ISLAND = 255u;
 const PULSE_HZ = ${PULSE_HZ.toFixed(3)};
-// How strong the waters' wash is; the contested's diagonal hatching and the Grey Tithe's level hatching, each its
-// strength, colour and lines' spacing, device pixels (watersWash.ts).
+// The lit water's wash, the parchment's light over it, and its edge with the other waters, in the ink.
+const LIT_RGB = vec3f(255.0, 250.0, 232.0) / 255.0;
+const LIT_ALPHA = 0.22;
+const LIT_EDGE_ALPHA = 0.45;
+// How strong the waters' wash is; the Lattice's and the Grey Tithe's level hatching, each its strength, colour and
+// lines' spacing, device pixels (watersWash.ts).
 const WASH_ALPHA = ${WASH_STRENGTH.toFixed(3)};
-${Object.entries({ CONTESTED: HATCHES.contested, TITHE: HATCHES['grey-tithe'] })
+${Object.entries({ LATTICE: HATCHES.lattice, TITHE: HATCHES['grey-tithe'] })
   .map(
     ([name, hatch]) => `const ${name}_ALPHA = ${hatch.strength.toFixed(3)};
 const ${name}_RGB = vec3f(${hatch.colour.map((channel) => channel.toFixed(1)).join(', ')}) / 255.0;
@@ -147,19 +153,27 @@ fn route_at(world: vec2f) -> f32 {
       alpha = max(alpha, 0.28 * fade * (1.0 - smoothstep(0.3, 1.0, ring)) * step(4.0, pixels));
     }
   }
-  // The waters under the ink: their wash, and over the contested fine diagonal lines in a dark amber.
+  // The waters under the ink: their wash, and over the Lattice's and the Tithe's fine level lines in their dark ink.
   let sea = select(0.0, 1.0, metres > 0.0 && inside);
   let tint = textureSampleLevel(wash, soft, world / size, 0.0);
   let shares = textureSampleLevel(hatch, soft, world / size, 0.0).rg;
-  let line = (1.0 - smoothstep(0.5, 1.1, abs(fract((at.x + at.y) / CONTESTED_PX) - 0.5) * CONTESTED_PX));
+  let line = (1.0 - smoothstep(0.5, 1.1, abs(fract(at.y / LATTICE_PX) - 0.5) * LATTICE_PX));
   let level = (1.0 - smoothstep(0.5, 1.1, abs(fract(at.y / TITHE_PX) - 0.5) * TITHE_PX));
-  let diagonal = CONTESTED_ALPHA * shares.r * tint.a * sea * line;
+  let crystal = LATTICE_ALPHA * shares.r * tint.a * sea * line;
   let flat = TITHE_ALPHA * shares.g * tint.a * sea * level;
-  let hatched = diagonal + flat * (1.0 - diagonal);
-  let hatchedRgb = CONTESTED_RGB * diagonal + TITHE_RGB * flat * (1.0 - diagonal);
+  let hatched = crystal + flat * (1.0 - crystal);
+  let hatchedRgb = LATTICE_RGB * crystal + TITHE_RGB * flat * (1.0 - crystal);
   let tinted = WASH_ALPHA * tint.a * sea;
-  let under = hatched + tinted * (1.0 - hatched);
-  let underRgb = hatchedRgb + tint.rgb / max(tint.a, 1e-4) * tinted * (1.0 - hatched);
+  let washed = hatched + tinted * (1.0 - hatched);
+  let washedRgb = hatchedRgb + tint.rgb / max(tint.a, 1e-4) * tinted * (1.0 - hatched);
+  // The lit water brightened, and softly lined where its share crosses a half between its cells and another's.
+  let share = textureSampleLevel(lit, soft, world / size, 0.0).r * sea;
+  let edge = LIT_EDGE_ALPHA * (1.0 - smoothstep(0.1, 0.4, abs(share - 0.5))) * sea;
+  let bright = LIT_ALPHA * share;
+  let lifted = bright + washed * (1.0 - bright);
+  let liftedRgb = LIT_RGB * bright + washedRgb * (1.0 - bright);
+  let under = edge + lifted * (1.0 - edge);
+  let underRgb = INK_RGB * edge + liftedRgb * (1.0 - edge);
   // The route and a lit coin's rings in the route's red-brown, as the sea's map rings a place a quest names.
   let course = select(0.0, max(route_at(world), pulse_at(at.xy)), onMap);
   let over = max(alpha, 0.9 * course);
@@ -213,6 +227,7 @@ export class HeldMapView {
   private readonly chartedBytes: Uint8Array;
   private readonly wash: GPUTexture;
   private readonly hatch: GPUTexture;
+  private readonly lit: GPUTexture;
   private readonly inkGroup: GPUBindGroup;
   private readonly letteringLayout: GPUBindGroupLayout;
   /** The parchment's picture on the device, made again when its size changes. */
@@ -241,6 +256,7 @@ export class HeldMapView {
         { binding: 5, visibility: SHADER_STAGE.fragment, buffer: { type: 'read-only-storage' } },
         { binding: 6, visibility: SHADER_STAGE.fragment, texture: {} },
         { binding: 7, visibility: SHADER_STAGE.fragment, texture: {} },
+        { binding: 8, visibility: SHADER_STAGE.fragment, texture: {} },
       ],
     });
     this.letteringLayout = device.createBindGroupLayout({
@@ -273,6 +289,7 @@ export class HeldMapView {
     this.chartedBytes = new Uint8Array(columns * rows);
     this.wash = texture('rgba8unorm');
     this.hatch = texture('rg8unorm');
+    this.lit = texture('r8unorm');
     this.inkGroup = device.createBindGroup({
       layout: inkLayout,
       entries: [
@@ -284,6 +301,7 @@ export class HeldMapView {
         { binding: 5, resource: { buffer: this.routeBuffer } },
         { binding: 6, resource: this.wash.createView() },
         { binding: 7, resource: this.hatch.createView() },
+        { binding: 8, resource: this.lit.createView() },
       ],
     });
   }
@@ -331,6 +349,13 @@ export class HeldMapView {
     const queue = this.gpu.device.queue;
     queue.writeTexture({ texture: this.wash }, wash.colour, { bytesPerRow: columns * 4 }, [columns, rows]);
     queue.writeTexture({ texture: this.hatch }, wash.hatch, { bytesPerRow: columns * 2 }, [columns, rows]);
+  }
+
+  /** Lights the water under the pointer: a byte a cell on the coast field's own cells (`litCells`). */
+  setLit(cells: Uint8Array): void {
+    const { columns, rows } = this.field;
+    if (cells.length !== columns * rows) throw new Error('the lit water is not on the coast field’s cells');
+    this.gpu.device.queue.writeTexture({ texture: this.lit }, cells, { bytesPerRow: columns }, [columns, rows]);
   }
 
   /** The parchment's picture copied to the device, its texture made again only when its size changes. */

@@ -11,6 +11,7 @@ import { roadOf } from '../player/factionNames.ts';
 import { ELEMENTS } from '../player/gear.ts';
 import type { Child, Node } from '../ui/node.ts';
 import { ARMS_SIZES, DIAMOND_CELLS } from './hudLayout.ts';
+import { type CapFace, capWords } from './shipAbilityBar.ts';
 import {
   flashing,
   framed,
@@ -27,7 +28,7 @@ import {
   whole,
 } from './ringSlot.ts';
 
-/** The keys that cast the Anima and the two Tenets. */
+/** The keys the game binds at first to cast the Anima and the two Tenets. */
 export const ABILITY_KEYS = ['R', 'Q', 'G'] as const;
 /** The Anima's icon's rows: it lights a whole row of its picture at a time. */
 export const ANIMA_ROWS = 24;
@@ -35,13 +36,15 @@ export const ANIMA_ROWS = 24;
 const EPSILON = 1e-9;
 
 /** What the bar is shown from: the Art worn (its id in the Arts' file, 0 for none), how far the Anima has charged,
- *  and how far each Tenet has recharged, each a share from 0 (just cast) to 1 (ready); and what its road has earned
- *  (1 the Art, 2 its first Tenet, 4 its second), every bit where none is said. */
+ *  and how far each Tenet has recharged, each a share from 0 (just cast) to 1 (ready); what its road has earned
+ *  (1 the Art, 2 its first Tenet, 4 its second), every bit where none is said; and how many times as long a
+ *  recharge takes in the run (a run's Trickle), once where none is said. */
 export interface AbilityState {
   readonly art: number;
   readonly animaShare: number;
   readonly tenets: readonly [number, number];
   readonly earned?: number;
+  readonly recharge?: number;
 }
 
 /** What the bar shows: the Art, how many of the Anima's rows are lit from the bottom, whether it is full, each
@@ -79,8 +82,8 @@ export function abilityBarOf(state: AbilityState): AbilityShown {
     animaRows: Math.floor(charged * ANIMA_ROWS + EPSILON),
     animaFull: charged >= 1,
     tenets: [
-      tenetShown(state.tenets[0], tenets[0]?.rechargeS ?? 0),
-      tenetShown(state.tenets[1], tenets[1]?.rechargeS ?? 0),
+      tenetShown(state.tenets[0], (tenets[0]?.rechargeS ?? 0) * (state.recharge ?? 1)),
+      tenetShown(state.tenets[1], (tenets[1]?.rechargeS ?? 0) * (state.recharge ?? 1)),
     ],
     locked: [lockedOf(1), lockedOf(2), lockedOf(4)],
   };
@@ -100,6 +103,9 @@ export function spentBetween(was: AbilityState | null, now: AbilityState): reado
 /** The bar on the HUD, kept each frame from an `AbilityState` and drawn from what it last kept. */
 export class AbilityBar {
   private readonly pictures: (art: number) => ArtPictures | null;
+  private readonly face: CapFace | null;
+  /** The keycaps of the Anima and the two Tenets, as last shown. */
+  private keys: readonly [string, string, string] = ABILITY_KEYS;
   private shown: AbilityShown | null = null;
   private state: AbilityState | null = null;
   private unable = false;
@@ -110,12 +116,20 @@ export class AbilityBar {
   /** Each picture's SVG with its colours turned, made once. */
   private readonly turned = new TurnedPictures();
 
-  constructor(pictures: (art: number) => ArtPictures | null) {
+  /** With `face`, a key that is no word (a pad's button) stands drawn on its keycap. */
+  constructor(pictures: (art: number) => ArtPictures | null, face: CapFace | null = null) {
     this.pictures = pictures;
+    this.face = face;
   }
 
-  /** Shows `state` `seconds` on, greyed while the player is `unable` to cast. */
-  update(state: AbilityState, seconds = 0, unable = false): void {
+  /** Shows `state` `seconds` on, greyed while the player is `unable` to cast, each over its key in `keys`. */
+  update(
+    state: AbilityState,
+    seconds = 0,
+    unable = false,
+    keys: readonly [string, string, string] = ABILITY_KEYS,
+  ): void {
+    this.keys = keys;
     const spent = spentBetween(this.state, state);
     this.shown = abilityBarOf(state);
     this.state = state;
@@ -141,12 +155,13 @@ export class AbilityBar {
     const lock = (index: number, how: string) => (shown.locked[index] ? `earned on ${roadOf(art.id)}` : how);
     const animaWords = shown.animaFull ? 'ready' : `charging, ${Math.floor(share(this.state.animaShare) * 100)}%`;
     return [
-      `${art.anima.name} (${ABILITY_KEYS[0]}), ${lock(0, unable ? 'cannot be cast now' : animaWords)}`,
+      `${art.anima.name} (${capWords(this.keys[0])}), ${lock(0, unable ? 'cannot be cast now' : animaWords)}`,
       ...shown.tenets.map((tenet, index) => {
         const name = art.tenets[index]?.name ?? '';
-        const left = Math.ceil((1 - share(this.state?.tenets[index] ?? 0)) * (art.tenets[index]?.rechargeS ?? 0));
+        const rechargeS = (art.tenets[index]?.rechargeS ?? 0) * (this.state?.recharge ?? 1);
+        const left = Math.ceil((1 - share(this.state?.tenets[index] ?? 0)) * rechargeS);
         const how = unable ? 'cannot be cast now' : tenet.ready ? 'ready' : `${left} s to recharge`;
-        return `${name} (${ABILITY_KEYS[index + 1]}), ${lock(index + 1, how)}`;
+        return `${name} (${capWords(this.keys[index + 1] ?? '')}), ${lock(index + 1, how)}`;
       }),
     ];
   }
@@ -239,16 +254,17 @@ export class AbilityBar {
       } as const;
       return ringNode(look, turned, cell, zoom, still);
     };
+    const texel = (cell === 2 ? 1 : 2) * zoom;
+    const slot = (made: Node, index: number) => {
+      const key = this.keys[index] ?? '';
+      return slotNode(made, capWords(key), words[index] ?? '', cell, zoom, this.face?.(key, texel) ?? null);
+    };
     return {
       label: 'Your Art',
       direction: 'row',
       alignY: 'end',
       gap: gap * zoom,
-      children: [
-        slotNode(anima, ABILITY_KEYS[0], words[0] ?? '', cell, zoom),
-        slotNode(tenet(0), ABILITY_KEYS[1], words[1] ?? '', cell, zoom),
-        slotNode(tenet(1), ABILITY_KEYS[2], words[2] ?? '', cell, zoom),
-      ],
+      children: [slot(anima, 0), slot(tenet(0), 1), slot(tenet(1), 2)],
     };
   }
 }

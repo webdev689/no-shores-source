@@ -135,7 +135,7 @@ export function landDrawers(
 ): LandDrawers {
   const plan = landmass.drawnPlan;
   let [version, patch, sample] = [0, scene.closePatch(), landSampler(landmass.view, scene.closePatch())];
-  const city = plan ? new CityView(gpu) : null;
+  const city = plan ? new CityView(gpu, shipScale) : null;
   let released = false;
   if (plan && city) {
     const names = plan.cells.flatMap((cell) => (cell.use === 'block' && cell.block ? [cell.block] : []));

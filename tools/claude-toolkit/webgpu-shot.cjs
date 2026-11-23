@@ -14,7 +14,8 @@
 //
 // steps.json: { "url": "...", "size": [w, h], "routes": { "<url part>": "<local file>" }, "anyPort": true, "init": "js
 // run before the page's own, e.g. a shifted Date.now for the world's hour", "steps": [ ... ] }, each step one of
-// { "wait": seconds }, { "waitFor": "text on the page" }, { "key": "Escape" }, { "click": [x, y] },
+// { "wait": seconds }, { "waitFor": "text on the page" }, { "key": "Escape" }, { "click": [x, y] }, { "move": [x, y] }
+// (the pointer brought there, no button: a hover),
 // { "wheel": [x, y, deltaY, notches] }, { "hold": ["ArrowLeft", seconds] }, { "clickText": "Return to ship" },
 // { "eval": "js" }, { "shot": "out.png" }. A held key acts at the page's slow headless frames: an arrow turns the
 // player about 0.03 rad a second. { "frames": n } waits until the page has drawn n more frames: read what a frame
@@ -245,6 +246,7 @@ async function main() {
       await page.keyboard.up(step.hold[0]);
     }
     else if (step.click) await page.mouse.click(step.click[0], step.click[1]);
+    else if (step.move) await page.mouse.move(step.move[0], step.move[1], { steps: 4 });
     else if (step.wheel) {
       await page.mouse.move(step.wheel[0], step.wheel[1]);
       for (let notch = 0; notch < (step.wheel[3] ?? 1); notch++) {

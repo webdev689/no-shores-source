@@ -16,20 +16,18 @@ import {
   waterWords,
 } from './watersWash.ts';
 
-const HOLDERS = ['home', 'contested', 'grey-tithe', 'pirates'] as const;
-/** A land cell, and the seam's bit on a sea cell's water, in the rows the tests write. */
+const HOLDERS = ['home', 'grey-tithe', 'lattice'] as const;
+/** A land cell in the rows the tests write. */
 const LAND = -1;
-const SEAM_BIT = 0x80;
 
-/** The waters from rows of cells, 1,000 m a cell: each its water's index, `SEAM_BIT` set on the seam, or `LAND`. */
+/** The waters from rows of cells, 1,000 m a cell: each its water's index, or `LAND`. */
 const gridOf = (rows: readonly (readonly number[])[]): MapWaters => {
   const cells = rows.flat();
   return {
     columns: rows[0]?.length ?? 0,
     rows: rows.length,
     cellM: 1_000,
-    water: Int16Array.from(cells, (cell) => (cell === LAND ? -1 : cell & ~SEAM_BIT)),
-    seam: Uint8Array.from(cells, (cell) => (cell !== LAND && cell & SEAM_BIT ? 1 : 0)),
+    water: Int16Array.from(cells),
     waters: HOLDERS.map((holder, continent) => ({
       continent,
       id: `continent-${continent + 1}`,
@@ -47,21 +45,19 @@ const rgba = (hex: string, alpha: number) => [
   alpha,
 ];
 
-test('each holder washes its water in its own colour; the seam is contested, the contested and the Tithe hatched', () => {
+test('each holder washes its water in its own colour; the Lattice and the Tithe hatched', () => {
   const block = (cell: number) => Array.from({ length: 3 }, () => Array.from({ length: 3 }, () => cell));
   for (const [cell, holder] of [
     [0, 'home'],
-    [2, 'grey-tithe'],
-    [3, 'pirates'],
-    [1, 'contested'],
-    [0 | SEAM_BIT, 'contested'],
+    [1, 'grey-tithe'],
+    [2, 'lattice'],
   ] as const) {
     const grid = gridOf(block(cell));
     const wash = washOf(grid, new Uint8Array(9).fill(1));
     assert.deepEqual([...wash.colour.subarray(16, 20)], rgba(HOLDER_COLOURS[holder], 255), holder);
     assert.deepEqual(
       [wash.hatch[8], wash.hatch[9]],
-      [holder === 'contested' ? 255 : 0, holder === 'grey-tithe' ? 255 : 0],
+      [holder === 'lattice' ? 255 : 0, holder === 'grey-tithe' ? 255 : 0],
       `${holder}'s hatching`,
     );
   }
@@ -69,8 +65,8 @@ test('each holder washes its water in its own colour; the seam is contested, the
 
 test('the wash lies only on charted sea, and blends across a border rather than stepping', () => {
   const grid = gridOf([
-    [0, 0, 3, 3],
-    [0, 0, 3, 3],
+    [0, 0, 2, 2],
+    [0, 0, 2, 2],
     [LAND, LAND, LAND, LAND],
   ]);
   const charted = Uint8Array.from([1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1]);
@@ -80,9 +76,9 @@ test('the wash lies only on charted sea, and blends across a border rather than 
   const red = (index: number) => ((wash.colour[index * 4] ?? 0) * 255) / (alpha(index) ?? 1);
   // A land cell far from any sea would have none; here every cell touches sea, but a cell next to land holds less.
   assert.ok((alpha(8) ?? 0) < (alpha(1) ?? 0), 'land dims the wash beside it');
-  const [home, pirates] = [rgba(HOLDER_COLOURS.home, 0)[0] ?? 0, rgba(HOLDER_COLOURS.pirates, 0)[0] ?? 0];
-  assert.ok(red(1) > home && red(1) < pirates, 'the cell beside the border is blended');
-  assert.ok(red(2) > home && red(2) < pirates, 'from both sides');
+  const [home, lattice] = [rgba(HOLDER_COLOURS.home, 0)[0] ?? 0, rgba(HOLDER_COLOURS.lattice, 0)[0] ?? 0];
+  assert.ok(red(1) > home && red(1) < lattice, 'the cell beside the border is blended');
+  assert.ok(red(2) > home && red(2) < lattice, 'from both sides');
   const uncharted = washOf(grid, Uint8Array.from([0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0]));
   assert.equal(uncharted.colour[0 * 4 + 3], 0, 'sea away from the charted has no wash');
   assert.ok((uncharted.colour[3 * 4 + 3] ?? 0) > 0, 'the charted cell and those by it do');
@@ -181,6 +177,11 @@ test('the holders’ washes are told apart on the parchment, by colour or by the
       assert.ok(apart >= 10 || hatchedApart, `${one} and ${other}: ${apart.toFixed(1)} apart, and hatched alike`);
     }
   }
+});
+
+test('no holder is but home, the Grey Tithe and the Lattice, and the Lattice and the Tithe are hatched', () => {
+  assert.deepEqual(Object.keys(HOLDER_COLOURS).sort(), ['grey-tithe', 'home', 'lattice']);
+  assert.deepEqual(Object.keys(HATCHES).sort(), ['grey-tithe', 'lattice']);
 });
 
 test('a holder’s wash as the map shows it is its colour at the wash’s strength over the parchment', () => {

@@ -58,7 +58,7 @@ const WARDEN_BODIES: readonly string[] = [
 /** Each type's clothes by its number. The Grey Tithe wear grey cloth, over leather when they skirmish or shoot and
  *  over iron when they stand and fight; their captain is in steel from head to foot under a long grey cloak, and their
  *  High Assessor and the Elite Dungeons' Bosses in iron from head to foot under a grey surcoat and a long grey cloak.
- *  The pirates wear the Test Ground's five foes' clothes. The Brig's crew wear a plain hand's white shirt and brown
+ *  The crew's own five types wear the Test Ground's five foes' clothes. The Brig's crew wear a plain hand's white shirt and brown
  *  breeches. The Lattice's foes wear what the ruined ports' people wore when it took them, torn and soaked; the
  *  Tithe-Taker, a Grey Tithe officer, a dark coat over grey under a grey cloak. */
 const CLOTHES: Readonly<Record<number, Clothes>> = {

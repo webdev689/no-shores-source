@@ -45,14 +45,14 @@ const MODEL: SeaFightModel = {
     ],
   },
   card: {
-    name: 'Pirate Brig',
+    name: 'Tithe Brig',
     sub: 'Brig - 140 m',
     hull: 0.55,
     sail: 1,
     state: 'afloat',
     hostile: true,
     boardKey: null,
-    faction: 2,
+    faction: 1,
     band: 'orange',
   },
   tally: null,
@@ -156,13 +156,13 @@ test("the hull's frame flashes blood low as health's does, on for the first half
 
 test("the card is the target plate under the compass: the faction's emblem framed, its name, one bar in its rank's colour, small words", () => {
   const root = readoutOf(MODEL).node();
-  const card = labelled(root, 'Pirate Brig');
+  const card = labelled(root, 'Tithe Brig');
   assert.ok(card, 'the card');
-  const emblem = allOf(card).find((node) => node.picture?.key === 'emblem 2');
-  assert.ok(emblem, "the pirates' emblem");
+  const emblem = allOf(card).find((node) => node.picture?.key === 'emblem 1');
+  assert.ok(emblem, "the Grey Tithe's emblem");
   assert.deepEqual(
     wordsIn(card),
-    ['Pir', 'ate Brig', 'BRIG - 140 M', 'HOSTILE'],
+    ['Tit', 'he Brig', 'BRIG - 140 M', 'HOSTILE'],
     'the name its first letters and the rest',
   );
   assert.equal(allOf(card).filter((node) => node.role === 'track').length, 1, 'one bar, the hull, as a foe has');
@@ -173,7 +173,7 @@ test("the card is the target plate under the compass: the faction's emblem frame
 test('long class and state words leave the name its first letters, cut short after them', () => {
   const struck = {
     ...MODEL.card!,
-    name: 'Pirate Sloop',
+    name: 'Tithe Sloop',
     sub: 'Frigate - 1,254 m',
     state: 'struck' as const,
     boardKey: 'E',
@@ -183,7 +183,7 @@ test('long class and state words leave the name its first letters, cut short aft
   const shown = laidOf(root)
     .filter((each) => each.node.text && each.box.y < 80)
     .map((each) => each.lines.map((line) => line.map((span) => span.words).join('')).join(''));
-  assert.match(shown.join(''), /^Pir.*\.\.\./, `the name kept as "Pir..." (${JSON.stringify(shown)})`);
+  assert.match(shown.join(''), /^Tit.*\.\.\./, `the name kept as "Tit..." (${JSON.stringify(shown)})`);
 });
 
 test("an ally's card shows no emblem, its name in the players' colour and its bar in their blue", () => {
@@ -203,10 +203,10 @@ test("an ally's card shows no emblem, its name in the players' colour and its ba
   assert.ok(card && coloursDrawn(card).has(written(FILLS.ally)));
 });
 
-/** A battery run out at the player: the Pirate Brig's port side, chain shot, on its starboard beam. */
+/** A battery run out at the player: the Tithe Brig's port side, chain shot, on its starboard beam. */
 const WARN: SeaWarning = {
   id: '1 port',
-  name: 'Pirate Brig',
+  name: 'Tithe Brig',
   range: 140.4,
   bearing: 'on your starboard beam',
   load: 'chain',
@@ -216,7 +216,7 @@ const WARN: SeaWarning = {
   braced: false,
 };
 const warnedOf = (more: Partial<SeaWarning> = {}) => ({ ...MODEL, warn: { ...WARN, ...more } });
-const WARN_LABEL = 'Broadside from the Pirate Brig';
+const WARN_LABEL = 'Broadside from the Tithe Brig';
 
 test('the broadside warning stands under the target card at the top, never over the sight; the ships’ plates under both', () => {
   assert.equal(readoutOf({ ...MODEL, card: null }).under, UNDER_COMPASS, 'under the compass with nothing shown');
@@ -292,8 +292,7 @@ test('each battery’s warning is said to a screen reader once as it comes, its 
   const page = globalThis as { document?: unknown };
   const was = page.document;
   page.document = { ariaNotify: (words: string) => said.push(words) };
-  const line =
-    'Broadside from the Pirate Brig - 140 m on your starboard beam. Chain shot - tears your sails. C: brace.';
+  const line = 'Broadside from the Tithe Brig - 140 m on your starboard beam. Chain shot - tears your sails. C: brace.';
   try {
     const readout = readoutOf(MODEL, 0);
     readout.update(warnedOf(), 0.1);

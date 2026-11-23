@@ -275,7 +275,7 @@ fn a_shooter_holds_its_draw_only_while_it_holds_its_turn() {
 
 #[test]
 fn a_foe_with_no_shield_flanks_though_it_blocks_with_its_blade() {
-    // The pirates' captain guards with its sword alone; their swordsmen carry shields.
+    // The crew's captain guards with its sword alone; their swordsmen carry shields.
     let ids = [10, 11, 12];
     let foes = [(SWORDSMAN, -15.0), (CAPTAIN, 0.0), (SWORDSMAN, 15.0)];
     let mut room = group(6, 0.1, &foes);
@@ -283,4 +283,15 @@ fn a_foe_with_no_shield_flanks_though_it_blocks_with_its_blade() {
     let wide = |id: u32| samples.iter().filter(|(by, toward)| *by == id && off(*toward, 0.0) > LINE_ARC + 0.2).count();
     assert!(wide(11) > 300, "the captain stands out on the flank: {} samples", wide(11));
     assert!(wide(10) + wide(12) < wide(11) / 10, "the shields hold the line: {} samples off it", wide(10) + wide(12));
+}
+
+#[test]
+fn a_foe_struck_from_idle_and_picked_to_rage_keeps_its_rage_as_it_thinks() {
+    let mut room = Room::new(1).player(PLAYER, 0.0, 0.0, 0.0).foe(10, SWORDSMAN, Major, 0.0, -6.0, PI);
+    // A blow stirs it fully and gives it its target, though it has not yet thought itself alert.
+    room.tell(10, foes::Seen::Struck { by: PLAYER, verdict: combat::Verdict::Hit { damage: 1.0, poise: 0.0 } });
+    let tick = room.tick;
+    room.brains[0].1.breaks(tick, true);
+    room.run(1, &mut still(0.0));
+    assert_eq!(room.brain(10).mood(room.tick), foes::Mood::Raging);
 }

@@ -50,12 +50,12 @@ impl Terrain for Floor {
         }
     }
 
-    /// Open ground, the land, a deck and an island have no walls of their own; the sea's rim and a dungeon's rock, jambs
-    /// and pillars are.
+    /// Open ground, the land and an island have no walls of their own; the sea's rim, a deck's cells off its planks (a
+    /// mast, a gun, its rails) and a dungeon's rock, jambs and pillars are.
     fn walled(&self, from: (f64, f64), to: (f64, f64)) -> bool {
         match self {
-            Floor::Flat | Floor::Land(_) | Floor::Deck(_) | Floor::Island(_) => false,
-            Floor::Sea(rim) => rim.walled(from, to),
+            Floor::Flat | Floor::Land(_) | Floor::Island(_) => false,
+            Floor::Sea(heights) | Floor::Deck(heights) => heights.walled(from, to),
             Floor::Dungeon(ground) => ground.walled(from, to),
         }
     }

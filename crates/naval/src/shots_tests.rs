@@ -2,7 +2,7 @@ use super::*;
 use crate::ballistics::{Ball, Block, launch_velocity};
 use crate::damage::Zone;
 use crate::guns::{SWIVEL, Shot};
-use crate::ranks::PIRATES;
+use crate::ranks::GREY_TITHE;
 use sailing::TICK_SECONDS;
 use sailing::waters::{Spot, Waters};
 
@@ -38,9 +38,9 @@ fn east_ball(height: f64, elevation: f64, born: f64) -> Ball {
     }
 }
 
-/// Ship `id` with its hull and canvas: the shooter's own (0) flies the players' flag, any other the pirates'.
+/// Ship `id` with its hull and canvas: the shooter's own (0) flies the players' flag, any other the Grey Tithe's.
 fn ship(id: ShipId, hull: Block, rig: Vec<Block>) -> Target {
-    let flag = if id == 0 { Flag::Player } else { Flag::Faction(PIRATES) };
+    let flag = if id == 0 { Flag::Player } else { Flag::Faction(GREY_TITHE) };
     Target { id, flag, hull, up: vec![true; rig.len()], rig, alive: true }
 }
 
@@ -139,7 +139,7 @@ fn a_ball_never_meets_its_own_ship_nor_a_ship_gone_down() {
     let events = fly(&mut balls, &[own.clone(), nobody()[1].clone()], &Sea);
     assert!(!events.iter().any(|event| matches!(event, ShotEvent::Hit { .. })));
     let mut again = vec![east_ball(1.1, 0.0, 0.0)];
-    let gone = Target { id: 1, flag: Flag::Faction(PIRATES), alive: false, ..own };
+    let gone = Target { id: 1, flag: Flag::Faction(GREY_TITHE), alive: false, ..own };
     let events = fly(&mut again, &[nobody()[0].clone(), gone], &Sea);
     assert!(!events.iter().any(|event| matches!(event, ShotEvent::Hit { .. })));
 }
@@ -148,9 +148,9 @@ fn a_ball_never_meets_its_own_ship_nor_a_ship_gone_down() {
 fn a_ball_flies_through_a_ship_of_its_own_flag_into_the_other_flag_beyond() {
     let friend =
         Target { id: 2, flag: Flag::Player, ..ship(2, upright([10.0, 0.0, 1.0], [1.0, 2.0, 1.0]), Vec::new()) };
-    let pirate = ship(1, upright([20.0, 0.0, 0.5], [1.0, 2.0, 1.0]), Vec::new());
+    let tithe = ship(1, upright([20.0, 0.0, 0.5], [1.0, 2.0, 1.0]), Vec::new());
     let mut balls = vec![east_ball(1.1, 0.0, 0.0)];
-    let events = fly(&mut balls, &[nobody()[0].clone(), pirate, friend], &Sea);
+    let events = fly(&mut balls, &[nobody()[0].clone(), tithe, friend], &Sea);
     let struck: Vec<ShipId> = events
         .iter()
         .filter_map(|event| match event {

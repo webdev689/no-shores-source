@@ -31,7 +31,7 @@ fn a_spawn_off_every_block_stands_on_the_floor() {
 #[test]
 fn a_foe_stood_by_the_page_stands_on_the_top_under_it_facing_as_asked_at_its_level_posted_there() {
     let mut room = Room::new(vec![deck()], (0.0, 0.0));
-    let foe = room.stand_foe_at(14, 1, (2.0, 1.0), 1.5, 3).expect("a pirate Swordsman");
+    let foe = room.stand_foe_at(14, 1, (2.0, 1.0), 1.5, 3).expect("a hostile Swordsman");
     let seen = room.foes_seen().find(|seen| seen.foe == foe).unwrap();
     assert_eq!((seen.foe_type, seen.rank, seen.level), (14, 1, 3));
     assert_eq!((seen.fighter.body.x, seen.fighter.body.y, seen.fighter.body.z), (2.0, 1.0, 2.3));

@@ -75,8 +75,6 @@ export type Task =
   | 'charm'
   | 'hold'
   | 'pray'
-  | 'beg'
-  | 'lean_cane'
   | 'play_lute'
   | 'play_flute'
   | 'play_recorder'
@@ -136,6 +134,7 @@ export function socialNode(plan: CityPlan, continent: string): NodeInfo {
     board: plan.social.board?.front ?? null,
     boardAt: plan.social.board?.at ?? null,
     visitorSpots,
+    plazaBounds: plan.social.bounds,
     ...(ways ? { ways, posts } : {}),
   };
 }

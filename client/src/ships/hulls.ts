@@ -26,7 +26,7 @@ export function hullName(hull: number): HullName {
   return HULL_NAMES[hull] ?? 'sloop';
 }
 
-/** The hull a captain's ship sails, by the room's word on it: at sea its `Pirate`'s `hull` and in a fleet its
+/** The hull a captain's ship sails, by the room's word on it: at sea its `Hostile`'s `hull` and in a fleet its
  *  vessel's; in a fight's view its `hull_kind`, since `hull` there is its hull points (a fight's vessel is told by its
  *  `max_hull`). The Sloop where the room names none. */
 export function hullOfCaptain(ship: {

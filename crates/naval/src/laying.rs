@@ -91,7 +91,9 @@ fn look_on(shooter: &Sighted, square: &Lay, [eye, look]: [[f64; 3]; 2], ships: &
         .filter_map(|other| {
             let mark = other.target();
             let hull = segment_entry(eye, far, &mark.hull, 0.0).map(|share| (share, false));
-            let rig = mark.rig.iter().filter_map(|sail| segment_entry(eye, far, sail, 0.0)).map(|share| (share, true));
+            // Where a fallen mast stood, the look passes as a ball does.
+            let standing = mark.rig.iter().zip(&mark.up).filter(|(_, up)| **up).map(|(sail, _)| sail);
+            let rig = standing.filter_map(|sail| segment_entry(eye, far, sail, 0.0)).map(|share| (share, true));
             let first = hull.into_iter().chain(rig).min_by(|one, other| one.0.total_cmp(&other.0))?;
             Some((first, other, mark.hull.centre))
         })
@@ -222,13 +224,6 @@ impl Fight {
         lay_for(&Sighted::of(shooter, vessel), vessel.guns.load, aim, &self.sighted())
     }
 
-    /// Where each gun of a player's lay stops (`ends_of`), the fight's ships as they lie now.
-    #[must_use]
-    pub fn ends(&self, shooter: ShipId, lay: &Lay, waters: &impl Waters, time: f64) -> Vec<Option<Stop>> {
-        let Some(vessel) = self.vessel(shooter) else { return Vec::new() };
-        ends_of(&Sighted::of(shooter, vessel), lay, &self.sighted(), waters, time)
-    }
-
     /// A player's lay, or why their guns will not fire it.
     pub(crate) fn fire_order(&self, shooter: ShipId, aim: Option<&Aim>) -> Result<Lay, Refusal> {
         let lay = aim.and_then(|aim| self.laid(shooter, aim)).ok_or(Refusal::NoGuns)?;
@@ -245,3 +240,7 @@ impl Fight {
         Ok(lay)
     }
 }
+
+#[cfg(test)]
+#[path = "laying_tests.rs"]
+mod tests;

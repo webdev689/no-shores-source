@@ -12,6 +12,7 @@ import {
   cellsOf,
   controlWords,
   doesFor,
+  hudKeys,
   shipKeys,
   withKey,
 } from './controls.ts';
@@ -90,6 +91,16 @@ test("the ship's bar shows what fires a broadside (the aim's release, the pad's 
   const bound = rebind(DEFAULTS, { id: 'shotNext', device: 'keys', place: 0 }, 'x').binds ?? DEFAULTS;
   const braced = rebind(bound, { id: 'brace', device: 'keys', place: 0 }, 'v').binds ?? bound;
   assert.deepEqual([shipKeys('keys', braced).load, shipKeys('keys', braced).brace], ['X', 'V']);
+});
+
+test("the Arts' and the loadouts' keycaps are the keys bound now, or the pad's buttons once the pad was played last", () => {
+  assert.deepEqual(hudKeys('keys', DEFAULTS), { arts: ['R', 'Q', 'G'], loadouts: ['1', '2'] });
+  assert.deepEqual(hudKeys('pad', DEFAULTS), {
+    arts: ['pad:LB+RB', 'pad:LB', 'pad:RB'],
+    loadouts: ['pad:Left', 'pad:Right'],
+  });
+  const bound = rebind(DEFAULTS, { id: 'tenetOne', device: 'keys', place: 0 }, 'e').binds ?? DEFAULTS;
+  assert.equal(hudKeys('keys', bound).arts[1], 'E');
 });
 
 test("a press names its control's key as bound now, on the keys or the pad played last, and none where it has none", () => {

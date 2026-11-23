@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import type { SeenPirate, SeenShip } from '../network/messages.ts';
+import type { SeenHostile, SeenShip } from '../network/messages.ts';
+import type { SeenFriendly } from '../network/seaHarbour.ts';
 import { hullOfCaptain, hullSails, hullWaterline, SLOOP_HULL } from '../ships/hulls.ts';
 import { SailRig, windOff } from '../ships/sails.ts';
 import { captainAtSea, plainCrew } from '../ships/shipCrew.ts';
@@ -16,13 +17,13 @@ const OWN = {
   place: { x: 0, y: 0, z: 0, heading: 0, pitch: 0, roll: 0 },
 };
 
-test('a pirate first drawn is drawn under the sails it sails by, never setting them as it comes in view', () => {
-  const pirate: SeenPirate = { id: 3, x: 800, y: -300, heading: 1.2, faction: 2, rank: 1 };
-  const [, drawn] = new SeaShips(undefined, FAIR_LINES).ships(1 / 60, 10, 0.4, OWN, [], [pirate], 4, WATER);
+test('a hostile first drawn is drawn under the sails it sails by, never setting them as it comes in view', () => {
+  const hostile: SeenHostile = { id: 3, x: 800, y: -300, heading: 1.2, faction: 1, rank: 1 };
+  const [, drawn] = new SeaShips(undefined, FAIR_LINES).ships(1 / 60, 10, 0.4, OWN, [], [hostile], 4, WATER);
   // A rig sailed long at its heading in the same wind: its sails stand full.
   const sailed = new SailRig(hullSails(SLOOP_HULL));
   for (let tick = 0; tick < 600; tick++) sailed.step(1 / 60, { offDeg: windOff(1.2, 0.4), set: true }, 10);
-  assert.equal(drawn?.look.side, 'pirate', "in the pirates' colours");
+  assert.equal(drawn?.look.side, 'tithe', "in the Grey Tithe's colours");
   const [first, full] = [drawn?.rig?.canvas(), sailed.canvas()];
   assert.ok(first && full);
   first.forEach((canvas, sail) =>
@@ -32,11 +33,11 @@ test('a pirate first drawn is drawn under the sails it sails by, never setting t
   );
 });
 
-test('every ship leaves its footprint on the water as it is drawn, pirates too, the nearest its first', () => {
-  const far: SeenPirate = { id: 3, x: 900, y: 0, heading: 1.2, faction: 2, rank: 1 };
-  const pirates = [far, { id: 4, x: 0, y: -300, heading: 0.4, faction: 1, rank: 2 }];
+test('every ship leaves its footprint on the water as it is drawn, hostiles too, the nearest its first', () => {
+  const far: SeenHostile = { id: 3, x: 900, y: 0, heading: 1.2, faction: 1, rank: 1 };
+  const hostiles = [far, { id: 4, x: 0, y: -300, heading: 0.4, faction: 1, rank: 2 }];
   const other: SeenShip = { player: 2, x: 500, y: 0, heading: 0, pace: 0 };
-  const hulls = new SeaShips(undefined, FAIR_LINES).hulls(OWN.lies, [other], pirates, 4);
+  const hulls = new SeaShips(undefined, FAIR_LINES).hulls(OWN.lies, [other], hostiles, 4);
   assert.deepEqual(
     hulls.map((hull) => [hull.x, hull.y, hull.way > 0]),
     [
@@ -45,7 +46,7 @@ test('every ship leaves its footprint on the water as it is drawn, pirates too, 
       [500, 0, false],
       [900, 0, true],
     ],
-    "the player's first, then the nearest the player's; a pirate is under way",
+    "the player's first, then the nearest the player's; a hostile is under way",
   );
   const { lengthM, beamM } = hullWaterline(SLOOP_HULL);
   for (const hull of hulls) assert.deepEqual([hull.halfLength, hull.halfBeam], [(lengthM / 2) * 4, (beamM / 2) * 4]);
@@ -70,23 +71,23 @@ test('in the same turn a narrow hull heels more than the Sloop and a broad one l
 });
 
 test('a captain whose hull is still coming is drawn, its footprint laid, as the Sloop', () => {
-  const pirate: SeenPirate = { id: 3, x: 800, y: -300, heading: 1.2, faction: 2, rank: 1 };
+  const hostile: SeenHostile = { id: 3, x: 800, y: -300, heading: 1.2, faction: 1, rank: 1 };
   const coming = new SeaShips(() => SLOOP_HULL);
-  const [, drawn] = coming.ships(1 / 60, 10, 0.4, OWN, [], [pirate], 4, WATER);
+  const [, drawn] = coming.ships(1 / 60, 10, 0.4, OWN, [], [hostile], 4, WATER);
   assert.equal(drawn?.hull, SLOOP_HULL);
   assert.equal(drawn?.rig?.sails.length, hullSails(SLOOP_HULL).length);
-  const [, footprint] = coming.hulls(OWN.lies, [], [pirate], 1);
+  const [, footprint] = coming.hulls(OWN.lies, [], [hostile], 1);
   assert.equal(footprint?.halfLength, hullWaterline(SLOOP_HULL).lengthM / 2);
 });
 
 test("each ship's footprint is its own hull at its drawn size, and its bow slams and throws spray in a rough sea", () => {
-  const pirate: SeenPirate = { id: 7, x: 0, y: -300, heading: 0.4, faction: 1, rank: 4 };
+  const hostile: SeenHostile = { id: 7, x: 0, y: -300, heading: 0.4, faction: 1, rank: 4 };
   const lines = [0, 1, 2, 3].map((hull) => FAIR_LINE.map((share) => share * (1 - hull / 10)));
   const ships = new SeaShips(undefined, { line: (hull) => lines[hull] ?? FAIR_LINE });
-  const [own, theirs] = ships.hulls(OWN.lies, [], [pirate], 4);
+  const [own, theirs] = ships.hulls(OWN.lies, [], [hostile], 4);
   assert.deepEqual([own?.scale, theirs?.scale], [4, 4]);
   assert.equal(own?.line, lines[SLOOP_HULL], 'its own hull line');
-  assert.equal(theirs?.line, lines[hullOfCaptain(pirate)], "a captain's ship theirs");
+  assert.equal(theirs?.line, lines[hullOfCaptain(hostile)], "a captain's ship theirs");
   // A steep, quick sea running at its bow: as its bow drops into the next crest it slams.
   const wave = {
     direction: [0, 1] as const,
@@ -120,12 +121,22 @@ test("each ship's footprint is its own hull at its drawn size, and its bow slams
 });
 
 test("every other ship carries its people: a player's Sloop its plain crew, a captain's its faction and rank", () => {
-  const pirate: SeenPirate = { id: 3, x: 800, y: -300, heading: 1.2, faction: 1, rank: 3, hull: 1 };
+  const hostile: SeenHostile = { id: 3, x: 800, y: -300, heading: 1.2, faction: 1, rank: 3, hull: 1 };
   const other: SeenShip = { player: 2, x: 500, y: 0, heading: 0, pace: 0 };
-  const ships = new SeaShips(undefined, FAIR_LINES).ships(1 / 60, 10, 0.4, OWN, [other], [pirate], 4, WATER);
+  const ships = new SeaShips(undefined, FAIR_LINES).ships(1 / 60, 10, 0.4, OWN, [other], [hostile], 4, WATER);
   assert.deepEqual(
     ships.map((ship) => ship.crew),
-    [undefined, plainCrew('player-2'), captainAtSea('pirate-3', 1, 3)],
+    [undefined, plainCrew('player-2'), captainAtSea('hostile-3', 1, 3)],
     "the player's own carries none here: its people are its own",
   );
+});
+
+test('a friendly ship the room keeps at sea is drawn where the room has it, in its own hull and friendly colours', () => {
+  const friend: SeenFriendly = { traffic: 2_605, x: 600, y: -200, heading: 0.5, hull: 2 };
+  const ships = new SeaShips(undefined, FAIR_LINES);
+  const [, drawn] = ships.ships(1 / 60, 10, 0.4, OWN, [], [], 4, WATER, [friend]);
+  assert.deepEqual([drawn?.hull, drawn?.look.side], [2, 'friendly'], 'never as a hostile ship');
+  assert.deepEqual([drawn?.place.x, drawn?.place.y, drawn?.place.heading], [600, -200, 0.5]);
+  const [, footprint] = ships.hulls(OWN.lies, [], [], 4, [friend]);
+  assert.equal(footprint?.halfLength, (hullWaterline(2).lengthM / 2) * 4);
 });

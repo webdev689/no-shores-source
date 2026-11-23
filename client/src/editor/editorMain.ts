@@ -79,7 +79,7 @@ async function start(): Promise<void> {
   const editor = new EditorFrame(canvas, gpu);
   const requestFrame = () => editor.request();
   /** The view right of the panel, CSS pixels, and a pointer's place on it. */
-  const panelEdge = () => panelCss(devicePixelRatio || 1);
+  const panelEdge = () => panelCss(editor.ratio);
   const viewWidth = () => Math.max(1, canvas.clientWidth - panelEdge());
   const onView = (event: MouseEvent) => ({ x: event.offsetX - panelEdge(), y: event.offsetY });
   const rules: WorldRules = await startWorldRules(

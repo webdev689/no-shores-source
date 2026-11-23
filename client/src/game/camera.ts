@@ -118,6 +118,9 @@ export function onScreen(
   return [((across + 1) / 2) * size.width, ((1 - upward) / 2) * size.height];
 }
 
+/** A QA view's eye, standing anywhere in place of the camera (qaViews.ts `__qaEye`), with its look; null in play. */
+export const QA_EYE: { shot: { eye: [number, number, number]; yaw: number; pitch: number } | null } = { shot: null };
+
 /** The shot a player's orbit camera takes (its eye back from its target along its look, its lens narrowed by the
  *  orbit's zoom), held `clearance` over the ground under the eye where the ground is known, so a camera pulled back up
  *  a slope never looks out from under it. */
@@ -127,6 +130,7 @@ export function shotOfOrbit(
   groundAt: (x: number, y: number) => number | null,
   clearance: number,
 ): Shot {
+  if (QA_EYE.shot) return { ...QA_EYE.shot, ...lens };
   const { forward } = frameOf({ eye: [0, 0, 0], yaw: orbit.yaw, pitch: orbit.pitch, ...lens });
   const eye: [number, number, number] = [
     orbit.targetX - forward[0] * orbit.distance,

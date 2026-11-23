@@ -39,7 +39,8 @@ Other ships show their hands and captain on deck ([[Ships Show Their People, and
   more as the player's First Mate and perks lead aboard, never more than their ship has left. They fight the struck ship's crew on the players'
   side with a foe's own brain, as swordsmen of the deck roster at their ship's level, by gear's power as a matched
   player's; a kill they have a hand in is their player's, and the deck is won once that crew is down whoever of them
-  stands. Each who falls is a man the player's ship has lost once the player is back aboard.
+  stands. Each who falls is a man the player's ship has lost once the player is back aboard, or once they leave the
+  sea from that deck.
 
 ## Officers
 

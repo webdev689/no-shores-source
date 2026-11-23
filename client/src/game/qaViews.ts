@@ -3,6 +3,7 @@
 import { insideRing, type Spot } from '../editor/placeDrawing.ts';
 import type { Player } from '../player/player.ts';
 import { FIRST_PERSON, type ViewMode } from '../player/playerCamera.ts';
+import { QA_EYE } from './camera.ts';
 import type { NodeInfo } from './worldData.ts';
 
 /** East and south in metres, the bearing in degrees, and the camera: `first`, or `third,<m>[,<degrees looking
@@ -33,12 +34,23 @@ export interface QaHost {
   readonly walker: { player: Player };
   /** Whether the player lies dead. */
   readonly dead?: () => boolean;
+  /** Puts the player aboard at sea, as the menu's "Return to ship" does. */
+  readonly sea?: () => void;
+  /** The game's state, for a development page's picture steps. */
+  readonly game?: object;
 }
 
-/** Puts `__qaView(view)`, `__qaLook(view)` and `__qaWhere()` on `target` for the picture driver, when the page plays
- *  alone (`offline`) and asks for a spawn. A view arrives again in the same node with its point as the spawn, as
- *  `&spawn=` does, then sets the camera; it answers whether it did. */
-export function installQaViews(target: object, search: string, offline: boolean, host: QaHost): void {
+/** Puts `__qaView(view)`, `__qaEye(eye)` and `__qaWhere()` on `target` for the picture driver, when the page plays
+ *  alone (`offline`) and asks for a spawn, and on a development page (`dev`) `__qaLook(view)`, `__qaSea()` and `__qaGame` too. A view
+ *  arrives again in the same node with its point as the spawn, as `&spawn=` does, then sets the camera; it answers
+ *  whether it did. */
+export function installQaViews(
+  target: object,
+  search: string,
+  offline: boolean,
+  host: QaHost,
+  dev: boolean = import.meta.env?.DEV ?? false,
+): void {
   if (!offline || !new URLSearchParams(search).has('spawn')) return;
   const hook = target as { __qaView?: (view: QaView) => Promise<boolean>; __qaWhere?: () => object };
   hook.__qaView = async (view) => {
@@ -49,18 +61,29 @@ export function installQaViews(target: object, search: string, offline: boolean,
     host.walker.player = { ...host.walker.player, view: look.view, pitch: look.pitch };
     return true;
   };
-  // Turns the camera to a view without arriving again, so the room (and an event it runs) plays on; the body stays.
-  // A development build's alone.
-  if (import.meta.env?.DEV)
-    (target as { __qaLook?: (view: QaView) => boolean }).__qaLook = (view) => {
-      const node = host.node();
-      const look = node && qaLook(node.ring, view);
-      if (!look) return false;
-      host.walker.player = { ...host.walker.player, yaw: look.yaw, view: look.view, pitch: look.pitch };
-      return true;
+  // Stands the camera at any point (east, south, up), looking along a bearing and down so many degrees, off the
+  // node too, as from a boat on the water; null lets it go back to the player's.
+  (target as { __qaEye?: (eye: readonly number[] | null) => boolean }).__qaEye = (eye) => {
+    QA_EYE.shot = eye && {
+      eye: [eye[0], eye[1], eye[2]],
+      yaw: ((eye[3] ?? 0) * Math.PI) / 180,
+      pitch: ((eye[4] ?? 0) * Math.PI) / 180,
     };
+    return true;
+  };
   hook.__qaWhere = () => {
     const { body } = host.walker.player;
     return { x: body.x, y: body.y, dead: host.dead?.() ?? false };
   };
+  if (!dev) return;
+  // A development build's alone: turning the camera to a view without arriving again, so the room (and an event it
+  // runs) plays on, the body staying; the way to sea; and the game's state, which a picture's steps read and drive.
+  const lookAt = (view: QaView) => {
+    const node = host.node();
+    const look = node && qaLook(node.ring, view);
+    if (!look) return false;
+    host.walker.player = { ...host.walker.player, yaw: look.yaw, view: look.view, pitch: look.pitch };
+    return true;
+  };
+  Object.assign(target, { __qaLook: lookAt, __qaSea: host.sea, __qaGame: host.game });
 }

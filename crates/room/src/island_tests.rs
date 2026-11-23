@@ -1,6 +1,6 @@
 use crate::island::WRECK_REACH;
 use crate::{PlayerId, Room, asks};
-use ::foes::factions::{GREY_TITHE, PIRATES};
+use ::foes::factions::GREY_TITHE;
 use isle::{Kind, Plan};
 use movement::Terrain;
 
@@ -40,11 +40,12 @@ fn a_player_lands_on_the_islands_beach_standing_on_its_ground() {
 }
 
 #[test]
-fn a_cove_holds_no_foes_and_an_isle_holds_its_holders_guards() {
-    let cove = Room::island(&plan(Kind::Cove), AT, Some(PIRATES), Some((5, 9)), None);
+fn a_cove_holds_no_foes_and_an_isle_holds_the_grey_tithes_guards() {
+    let cove = Room::island(&plan(Kind::Cove), AT, Some(GREY_TITHE), Some((5, 9)), None);
     assert!(cove.foes.is_empty());
     for kind in [Kind::Ruin, Kind::Quarry] {
-        for faction in [GREY_TITHE, PIRATES] {
+        {
+            let faction = GREY_TITHE;
             let room = Room::island(&plan(kind), AT, Some(faction), Some((5, 9)), None);
             assert!(room.foes.len() >= 6, "{kind:?}: {} guards", room.foes.len());
             for foe in room.foes.values() {
@@ -59,7 +60,7 @@ fn a_cove_holds_no_foes_and_an_isle_holds_its_holders_guards() {
 fn an_isles_guards_stand_by_its_landmark_at_its_door_and_at_its_camp() {
     for kind in [Kind::Ruin, Kind::Quarry] {
         let plan = plan(kind);
-        let room = Room::island(&plan, AT, Some(PIRATES), Some((5, 9)), None);
+        let room = Room::island(&plan, AT, Some(GREY_TITHE), Some((5, 9)), None);
         let near = |point: [f64; 2]| {
             let [x, y] = isle::placed(point, AT);
             room.foes.values().filter(|foe| libm::hypot(foe.fighter.body.x - x, foe.fighter.body.y - y) <= 12.0).count()
