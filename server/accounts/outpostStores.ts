@@ -47,7 +47,13 @@ export async function plotOf(database: Db, guild: string, site: string) {
     .prepare('SELECT id, piece, x, y, turn, paid FROM outpost_decor WHERE guild_id = ?1 AND site = ?2 ORDER BY id')
     .bind(guild, site)
     .all<Plot['decor'][number] & { paid: number }>();
-  return { structures: structures.map((row) => ({ ...row })), decor: decor.map((row) => ({ ...row })) };
+  return {
+    structures: structures.map((row) => ({
+      ...row,
+      delivered: JSON.parse(row.delivered) as Readonly<Partial<Record<Stuff, number>>>,
+    })),
+    decor: decor.map((row) => ({ ...row })),
+  };
 }
 
 /** A store filled by whole periods of `period` ms since `since`, `rate` a period, holding `most` at most. */
@@ -236,8 +242,8 @@ export async function outpostFor(database: Db, room: string) {
 }
 
 /** A member's guild's outposts as the Guild tab shows them: the treasury and its latest lines, how many outposts the
- *  guild's level allows, and each outpost with its plot, its strongbox and stores filled to now, its room, and whether
- *  the player stands at it. */
+ *  guild's level allows, the site the player stands at in their guild's room (null elsewhere), and each outpost with
+ *  its plot, its strongbox and stores filled to now, its room, and whether the player stands at it. */
 export async function outpostsRead(database: Db, account: string, guild: string, allowed: number, now: number) {
   const { treasury, ledger } = await treasuryOf(database, guild);
   const { results } = await database
@@ -271,5 +277,13 @@ export async function outpostsRead(database: Db, account: string, guild: string,
       here: holder?.holder?.startsWith(`${room}:`) ?? false,
     });
   }
-  return { treasury, ledger, allowed, outposts };
+  // The site whose guild room holds the player's character, raised there or not: where they may raise one.
+  const standing = outpostOf(holder?.holder?.split(':')[0] ?? '');
+  return {
+    treasury,
+    ledger,
+    allowed,
+    at: standing && standing.key === guildKey(guild) ? standing.site : null,
+    outposts,
+  };
 }

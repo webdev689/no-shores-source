@@ -1,3 +1,5 @@
+import type { Decor, Standing, Stuff } from '../game/guild/outpostLaw.ts';
+
 /** Where the deployed accounts are (`server/accounts`). */
 export const LIVE_ACCOUNTS = 'https://overlook-accounts.mackcothran.workers.dev';
 
@@ -70,6 +72,56 @@ export interface GuildFace {
   readonly contribution?: number;
   /** The week's four guild bounties, each with the guild's count, whether it is done and whether the player claimed it. */
   readonly bounties?: readonly GuildBountyShown[];
+}
+
+/** An outpost's plot as the accounts keep it: each structure with the Aurem spent on it and the materials delivered
+ *  toward the tier being built, each piece of decoration with what it cost. */
+export interface KeptPlot {
+  readonly structures: readonly (Standing & {
+    readonly spent: number;
+    readonly delivered: Readonly<Partial<Record<Stuff, number>>>;
+  })[];
+  readonly decor: readonly (Decor & { readonly paid: number })[];
+}
+
+/** One of a guild's outposts (`server/accounts/outpostStores.ts` `outpostsRead`): its site, its room, when it was
+ *  raised, its plot, its strongbox and stores filled to now, and whether the player stands at it. */
+export interface OutpostFace {
+  readonly site: string;
+  readonly room: string;
+  readonly raisedAt: number;
+  readonly plot: KeptPlot;
+  readonly strongbox: number;
+  readonly stores: Readonly<Partial<Record<Stuff, number>>>;
+  readonly here: boolean;
+}
+
+/** A line of a guild's treasury's ledger: what moved, by how much, the balance after, when, and by whom. */
+export interface LedgerLine {
+  readonly kind: string;
+  readonly amount: number;
+  readonly balance: number;
+  readonly at: number;
+  readonly name: string | null;
+}
+
+/** A guild's outposts and treasury as the Guild tab shows them: the treasury and its latest lines, how many outposts
+ *  its level allows, the site the player stands at in their guild's room (null elsewhere), and each outpost. */
+export interface OutpostsFace {
+  readonly treasury: number;
+  readonly ledger: readonly LedgerLine[];
+  readonly allowed: number;
+  readonly at: string | null;
+  readonly outposts: readonly OutpostFace[];
+}
+
+/** An outpost as anyone standing in its room reads it: its guild's id, name and banner, its site and its plot. */
+export interface OutpostSeen {
+  readonly guild: string;
+  readonly name: string;
+  readonly banner: string;
+  readonly site: string;
+  readonly plot: KeptPlot;
 }
 
 /** A guild bounty of the week as its tab shows it. */
@@ -325,6 +377,18 @@ export class AccountLink {
   async guild(): Promise<{ readonly guild: GuildFace | null } | string> {
     const answer = await this.call('GET', '/v1/guild');
     return typeof answer === 'string' ? answer : { guild: (answer['guild'] ?? null) as GuildFace | null };
+  }
+
+  /** The player's guild's outposts and treasury, or why not. */
+  async outposts(): Promise<OutpostsFace | string> {
+    const answer = await this.call('GET', '/v1/outposts');
+    return typeof answer === 'string' ? answer : (answer as unknown as OutpostsFace);
+  }
+
+  /** The outpost a room stands, null for none raised there; or why not. */
+  async outpost(room: string): Promise<{ readonly outpost: OutpostSeen | null } | string> {
+    const answer = await this.call('GET', `/v1/outposts/${encodeURIComponent(room)}`);
+    return typeof answer === 'string' ? answer : { outpost: (answer['outpost'] ?? null) as OutpostSeen | null };
   }
 
   /** Another player's details, or why not. */

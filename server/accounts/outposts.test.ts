@@ -48,7 +48,9 @@ test('an outpost is raised at its site by the founder or an admin for its Aurem,
   const { ask, standAt, fund, guild, read } = await world();
   const raise = () => ask('Ada', 'outpost/raise', { site: SITE, turn: 0 });
   assert.equal((await raise()).body['error'], 'Go to that outpost to do that.');
+  assert.equal((await read('Ada'))['at'], null);
   await standAt('Ada');
+  assert.equal((await read('Ada'))['at'], SITE, 'standing at a site the guild has not raised');
   assert.equal((await raise()).body['error'], 'Raising an outpost takes 5,000 Aurem from the treasury.');
   await fund(7_000);
   assert.equal((await raise()).status, 200);

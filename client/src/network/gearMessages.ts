@@ -104,6 +104,15 @@ export const ASKS = {
   toShip: 73,
   /** A guild bounty claimed, by its slot among the week's four in `column` (`gear::guild`). */
   claimGuildBounty: 75,
+  /** At an outpost (`crates/room/src/outpost*.rs`): Aurem put into the guild's treasury, `count` of it; a material
+   *  delivered to the structure `item` being built, `slot` the material (0 Timber, 1 Canvas, 2 Iron, 3 Heartwood, 4 the
+   *  island's own) and `count` how many; a material taken from the stores, `slot` and `count` so; the War Horn
+   *  sounded; and the plot changed through the accounts, which the room reads again. */
+  outpostDeposit: 76,
+  outpostDeliver: 77,
+  outpostTake: 78,
+  outpostHorn: 79,
+  outpostChanged: 80,
 } as const;
 
 /** Shape's place while he is away. */

@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import type { AccountLink, GuildBountyShown, GuildFace, Roster } from '../../network/accounts.ts';
+import type { AccountLink, GuildBountyShown, GuildFace, OutpostsFace, Roster } from '../../network/accounts.ts';
 import type { GearAsk } from '../../network/gearMessages.ts';
 import { drawn } from '../menuForTests.ts';
 import { SAVE_ID, choiceId, partId } from './bannerEditor.ts';
@@ -78,11 +78,12 @@ const roster = (more: Partial<Roster> = {}): Roster => ({
 });
 
 /** A fake of the accounts holding one guild, or none, that keeps every ask made of it. */
-function fakeLink(guild: GuildFace | null, rostered: Roster = roster()) {
+function fakeLink(guild: GuildFace | null, rostered: Roster = roster(), outposts: OutpostsFace | null = null) {
   const asked: string[] = [];
   const link = {
     guild: async () => ({ guild }),
     roster: async () => rostered,
+    outposts: async () => outposts ?? 'You are in no guild.',
     social: async (path: string, body: Record<string, unknown>) => {
       asked.push(`${path} ${JSON.stringify(body)}`);
       return null;

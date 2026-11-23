@@ -216,3 +216,10 @@ export function amountOf(standing: Standing): number {
   const effect = kindOf(standing.kind)?.effect;
   return effect && 'amounts' in effect && standing.tier > 0 ? (effect.amounts[standing.tier - 1] ?? 0) : 0;
 }
+
+/** The Aurem an outpost's strongbox gains an hour: its Counting House's rate at its tier. */
+export function strongboxRateOf(plot: Plot): number {
+  return plot.structures
+    .filter((standing) => kindOf(standing.kind)?.effect.kind === 'income')
+    .reduce((sum, standing) => sum + amountOf(standing), 0);
+}

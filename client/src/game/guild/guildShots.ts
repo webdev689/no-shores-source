@@ -1,7 +1,7 @@
 // Pictures of the Guild tab, headless (`tools/uiShot.mjs`): the menu drawn whole as the game draws it, open on a
-// guild of a handful at level 4, on the founding page of a player in no guild with an invite waiting, and the banner
-// editor on its cloths. The game never imports it.
-import type { AccountLink, GuildFace, Roster } from '../../network/accounts.ts';
+// guild of a handful at level 4, on the founding page of a player in no guild with an invite waiting, the banner
+// editor on its cloths, and the Outposts and Treasury pages of a guild with two outposts. The game never imports it.
+import type { AccountLink, GuildFace, OutpostsFace, Roster } from '../../network/accounts.ts';
 import type { Node } from '../../ui/node.ts';
 import type { Layer } from '../../ui/stack.ts';
 import type { Interface } from '../../ui/ui.ts';
@@ -11,6 +11,7 @@ import { openGearWindow } from '../gearScreen.ts';
 import { startGearWindow } from '../gearWindow.ts';
 import { BannerEditor } from './bannerEditor.ts';
 import type { Banner } from './bannerLaw.ts';
+import { GuildPage, guildPage } from './guildPage.ts';
 
 const BANNER: Banner = {
   cut: 'swallowtail',
@@ -126,6 +127,7 @@ function linkOf(guild: GuildFace | null): AccountLink {
     session: async () => ({ id: 'a', username: 'belghast', discord: false, guest: false }),
     guild: async () => ({ guild }),
     roster: async () => roster,
+    outposts: async () => (guild ? OUTPOSTS : 'You are in no guild.'),
     social: async () => null,
   } as unknown as AccountLink;
 }
@@ -169,3 +171,85 @@ export function editorShot(ui: Interface): Node {
     ],
   };
 }
+
+const HOUR_MS = 3_600_000;
+const built = (id: number, kind: string, x: number, y: number, tier: number, turn = 0) => ({
+  id,
+  kind,
+  tier,
+  building: 0,
+  x,
+  y,
+  turn,
+  spent: 0,
+  delivered: {},
+});
+
+const OUTPOSTS: OutpostsFace = {
+  treasury: 48_250,
+  ledger: [
+    { kind: 'strongbox', amount: 1_440, balance: 48_250, at: Date.now() - 0.4 * HOUR_MS, name: 'Jabberant' },
+    { kind: 'deposit', amount: 5_000, balance: 46_810, at: Date.now() - 3 * HOUR_MS, name: 'belghast' },
+    { kind: 'build dock', amount: -9_000, balance: 41_810, at: Date.now() - 20 * HOUR_MS, name: 'Ashwyn' },
+    { kind: 'raise hall', amount: -12_000, balance: 50_810, at: Date.now() - 40 * HOUR_MS, name: 'belghast' },
+    { kind: 'decorate well', amount: -75, balance: 62_810, at: Date.now() - 50 * HOUR_MS, name: 'Namaskar' },
+    { kind: 'raise', amount: -5_000, balance: 62_885, at: Date.now() - 120 * HOUR_MS, name: 'belghast' },
+  ],
+  allowed: 2,
+  at: 'gull-cove-outpost',
+  outposts: [
+    {
+      site: 'gull-cove-outpost',
+      room: 'node-gull-cove-outpost--guild-0a1b2c3d',
+      raisedAt: Date.now() - 120 * HOUR_MS,
+      plot: {
+        structures: [
+          built(1, 'hall', 6, 6, 2),
+          built(2, 'standard', 7, 11, 1),
+          built(3, 'counting', 1, 1, 2),
+          built(4, 'war-table', 4, 1, 1),
+          { ...built(5, 'dock', 12, 4, 0, 1), building: 1, delivered: { timber: 60, iron: 12 } },
+          built(6, 'camp', 1, 12, 1),
+          built(7, 'gate', 11, 11, 1),
+        ],
+        decor: [],
+      },
+      strongbox: 1_180,
+      stores: { island: 41, timber: 0 },
+      here: true,
+    },
+    {
+      site: 'salt-hythe-outpost',
+      room: 'node-salt-hythe-outpost--guild-0a1b2c3d',
+      raisedAt: Date.now() - 20 * HOUR_MS,
+      plot: { structures: [built(1, 'hall', 6, 6, 1), built(2, 'standard', 7, 11, 1)], decor: [] },
+      strongbox: 0,
+      stores: {},
+      here: false,
+    },
+  ],
+};
+
+/** The Guild tab's own page opened at the Outposts or Treasury page, over the window's ground; the Outposts page on a
+ *  structure being built where `chosen` names it. */
+function outpostsShotOf(view: 'outposts' | 'treasury', chosen?: number): (ui: Interface) => Node {
+  const pages = new WeakMap<Interface, GuildPage>();
+  return (ui) => {
+    let page = pages.get(ui);
+    if (!page) {
+      page = new GuildPage({ link: linkOf(FACE), here: () => null });
+      page.open(view, { site: 'gull-cove-outpost', ...(chosen === undefined ? {} : { structure: chosen }) });
+      pages.set(ui, page);
+    }
+    const holds = new Holds(() => 0);
+    const context = { ui, room: { width: 1180, height: 620 }, sizes: sizesOf(1600, 900, 1), holds };
+    return { width: 'grow', height: 'grow', fill: '#15171b', padding: 24, children: [guildPage(context, page)] };
+  };
+}
+
+/** The Outposts page at Gull Cove: its plan, strongbox and stores, the founder's list to build from. */
+export const outpostsShot = outpostsShotOf('outposts');
+/** The Outposts page on its Dockyard being built. */
+export const buildingShot = outpostsShotOf('outposts', 5);
+/** The Treasury page with its ledger. */
+export const treasuryShot = outpostsShotOf('treasury');
