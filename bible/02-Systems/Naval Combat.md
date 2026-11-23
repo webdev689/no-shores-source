@@ -127,9 +127,11 @@ sea's soundscape ([[Ambience]]).
   `fight_focus.rs`): a player's volley fired the moment its lay is taken scatters twice as wide as its guns' own,
   settling evenly to theirs over 1.5 s of holding. The rules count it by the player's orders, a tick an order holding a
   lay on the same side; one on the other side begins it again, one holding none lets it go, and a tick with no orders
-  keeps it. A Gunner's broadside scatters as the guns' own. The preview's landing zone is as wide as the scatter, and the
-  preview carries how much wider it is (`Preview::spread`) to the page; a fleet room's page tells its own lay how long
-  it has held it.
+  keeps it. A Gunner's broadside scatters as the guns' own. The preview's landing zone is as wide as the volley would
+  scatter, as long as it has been held and as the ship's fitting trims it, and the preview carries how much wider it is
+  (`Preview::spread`) to the page. A fleet room's page counts its own hold by the orders it sends, as the room counts
+  them (`FleetSession`); a page whose orders lag past the room's wait has its hold begun again by the room's standing
+  orders, so then its zone reads narrower than the volley scatters.
 - **The aim shows each gun's end**: its ball, unscattered, flown by the same law a fired ball flies by (in the fight's
   ticks) with the target where its way will have carried it by then, to where it stops. The lay is on target only when one
   of those balls meets the target, canvas or hull. Its landing zone's radius is DFO's: half the width the crew scatters the
@@ -411,8 +413,8 @@ whole bring the Pirate Sloop to strike.
 
 While sailing, `F` calls a pirate captain, a Major in their Sloop, onto the ring 650 to 1000 m round the Sloop, where the
 water floats it, heading across its waters on a slant; `F` again sends the captain off. The fight then steps the Sloop in its
-helm's place. Holding the right mouse aims as the game's fight does ("The aim, as DFO's"): the camera eases out to
-the battery on the side looked at and looks square off it, and a drag up or down lays the range, unless the view's
+helm's place. Holding the right mouse aims as the game's fight does ("The aim, as DFO's"): the camera goes round to
+the battery's eye aboard on the side looked at and looks off it at the lay, and a drag up or down lays the range, unless the view's
 middle is on the captain's ship: then the guns are laid on the point it meets. Letting go fires the lay held; a
 left click holds fire, the wheel changes shot, `C` braces, and `Shift` bursts.
 
@@ -641,13 +643,15 @@ DFO's `aimCamera.js`, `navalRender.js`, `navalHud.js`, `navalLoads.js` and `seaZ
   Black Flag's is: over its own deck, its rail and guns along the foot of the view. Each hull's station is searched for
   once a page (and as a sea fight opens): within 4 m of its battery's ends, in a gap of its rig no sail comes within
   0.8 m of in any wind (a square yard braced at most 45° round its mast and bellied either way, a gaff swung to either
-  beam aft of its luff, a staysail swaying on its stay) nor within 0.4 m of a mast, with the way in from abeam as clear;
+  beam aft of its luff, a staysail swaying on its stay) nor within 0.8 m of a mast 0.4 m thick each side of its line,
+  with the way in from abeam as clear;
   3 m over the deck at best and 1.7 m at least, 0.4 m over its rail, and high enough that the water at its guns' nearest
   lay shows over the rail; near its battery's middle and its centreline. The Sloop's stands 2 m forward of its mast,
   1.8 m out; the Schooner's under its main boom; the Brig's on its quarterdeck, aft of its main course; the Frigate's on
   its centreline between its mizzen and its main. A hull whose rig left no such gap would keep an eye 1.5 m out past its
   side, clear of its sails' swing. It rides the ship as drawn, its heave, pitch and heel (the story's Brig on the story's
-  swell); the view itself stays level, and narrows 15% as it eases in (`AIM_ZOOM`). A sinking ship's guns are silent:
+  swell); the view itself stays level, and narrows 15% as it eases in (`AIM_ZOOM`) in the sea's fights and the
+  story's. Once it is there, no way round is looked for again, however the ship heels. A sinking ship's guns are silent:
   its eye never moves.
 - **Where it looks**: off the side, at the water its guns are laid on square off its battery's middle, so the crosshair at the view's middle
   stands on the landing zone. A drag left or right does nothing while the aim is held; a drag up or down lays the
@@ -670,7 +674,8 @@ DFO's `aimCamera.js`, `navalRender.js`, `navalHud.js`, `navalLoads.js` and `seaZ
   side can fire, or dimmed " - reloading 4.2 s", " - braced" or " - guns silent".
 - **What the aim shows** (`aimOf`, drawn by `AimView`): each gun's unscattered flight to where the rules stop it,
   fanned out from the volley's middle fall in step with its flight as far as the lay scatters wider than its guns' own
-  (the rules' `spread`, below), its fall and ring with it, so the arcs close in as the aim is held; a
+  (the rules' `spread`, above), its fall and ring with it, so the arcs close in as the aim is held (the volley's middle
+  taken from the balls that come down, never one still aloft); a
   ribbon 0.003 of the view's height across at any distance, dashed every 6 m of flight (the second half 0.35 as
   strong) and marching out at 9 m/s; each splash a ring flat on the sea, at least 1.6 m across its radius, and a post
   of light 3.4 m tall over it, the ring DFO's foam ring (brightest at 0.7 of its radius, lit from 0.42 to 0.98 of
@@ -685,7 +690,8 @@ DFO's `aimCamera.js`, `navalRender.js`, `navalHud.js`, `navalLoads.js` and `seaZ
 - **The screen**: a captain's plate stands under the compass, never over it; the sea's status line ("Fighting") stands
   in the top right corner while the fight's readout shows, off the sky the aim looks at.
 
-The World Editor's fight and its fleet room aim the same way (`easedAimOf`), their look laid from the aim's last
+The World Editor's fight and its fleet room aim the same way (`easedAimOf`) but for the zoom, keeping their field of
+view, their look laid from the aim's last
 frame, and draw the lay with `AimView` after the water; a drag across while aiming turns nothing there either. Let
 go, the editor's camera eases back to its own place round the ship. The editor keeps its own camera: a drag past
 the guns' nearest or longest runs on unheld until it comes back, and its fight's orbit keeps no clearance off the

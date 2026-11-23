@@ -116,7 +116,7 @@ fn a_look_lays_through_the_door_as_the_fight_lays_it() {
     for _ in 0..3 {
         room_tick();
     }
-    let (fight_preview, request) = with_open(|opened| {
+    let (fight_preview, request, held_at) = with_open(|opened| {
         let Opened::Fleet(fleet) = opened else { panic!("a fleet room") };
         let fight = fleet.fight();
         let ships = fight.sighted();
@@ -144,8 +144,9 @@ fn a_look_lays_through_the_door_as_the_fight_lays_it() {
         request.extend(ray.iter().flatten());
         // Held no time yet, as the fight's own lay is: neither has taken an order holding it.
         request.extend([time, 0.0]);
+        let held_at = request.len() - 1;
         request.extend(sighted(&other));
-        (shown, request)
+        (shown, request, held_at)
     })
     .unwrap();
     let answer = lay(&request);
@@ -165,4 +166,10 @@ fn a_look_lays_through_the_door_as_the_fight_lays_it() {
     assert_eq!(answer.len(), 7 + 3 * 16);
     assert_eq!(answer[7..13], shown.launches[0]);
     assert!(lay(&request[..10]).is_empty(), "a request cut short");
+    // Held a second and a half of orders, as the page counts them: the guns' own spread, the zone narrower.
+    let mut held = request.clone();
+    held[held_at] = naval::fight::focus::SETTLE_S;
+    let settled = lay(&held);
+    assert_eq!(settled[5], 1.0);
+    assert!(settled[4] <= answer[4], "{} against {}", settled[4], answer[4]);
 }

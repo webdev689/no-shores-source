@@ -255,8 +255,9 @@ third person, the forge's figure and the first person's hands, and the Test Grou
   gives the fight's light layer no light, so a sign's brass never lights its own diamond. Its colours are laid in
   layers as a drop's are, the widest first, each a little nearer the eye, so a mark is a few dozen quads; a fading one
   is laid flat, so no layer shows through another. Where something stands before a mark, a keeper's stall, the Hall's
-  walls or a hill, it is drawn through it, faded to 0.45 and laid flat, after the scene and only where the scene's depth
-  stands nearer (`marksHidden`, `MarkDraw.drawHiddenOver`;
+  walls or a hill, it is drawn through it, faded to 0.45 and laid flat 3 cm nearer the eye than any layer of the mark,
+  after the scene and only where the scene stands a thousandth of its distance nearer still (`marksHidden`,
+  `MarkDraw.drawHiddenOver`;
   [[A Mark Over What a Player Can Use Is Seen Through Walls]]).
 - **On the ground**: each resource node stands as the forge's picture of its island's resource (`nodeCards`,
   [[Sprite Forge]], [[Material Nodes Stand Where They Are Dressed, Worked by Holding E]]), every resource at one scale,

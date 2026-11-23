@@ -399,8 +399,9 @@ the cutscenes, the camera's moves, the nameplate, the fires and the lines are th
   - "Find your sword and shield": they lie out on the quiet deck 8 m along the path from where the player wakes,
     past the step down from it ([[The Wreck's Arms Lie Farther Out, as a Loot Drop]]), drawn as the item itself
     (`LyingArms`): the forge's picture of it, as the Character page shows it, upright and turned to the eye at its true
-    size, moving as a drop of loot does: popped up from the deck the first time it is drawn, bouncing to rest, then
-    hovering and bobbing as a Vestige's crystal does, its Normal drop's line of light rising over it once it rests.
+    size, moving as a drop of loot does: popped up from its planks the first time it is drawn, as play begins, bouncing
+    to rest, then hovering and bobbing as a Vestige's crystal does, with no shade under it, its Normal drop's line of
+    light rising over it once it rests.
     Walked over, the room puts them in the pack
     (`Room::story_take_arms`). Should they leave the pack (dismantled), they lie on the deck again.
   - "Equip your sword and shield": Open your Character page (I; ticked by the menu open once the arms are taken),

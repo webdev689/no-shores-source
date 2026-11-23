@@ -54,7 +54,7 @@ export class FleetScene {
   /** What draws its lay's aim over the water, where the marks' device can, and the eye it is laid from. */
   private readonly aimView: AimView | null;
   private readonly aimEye = new AimCamera();
-  /** The look the aim laid at its last frame, while it lays one, with how long it has been laid on its side. */
+  /** The look the aim laid at its last frame, while it lays one. */
   private aimed: FleetLook | null = null;
 
   constructor(play: FleetSloop, marks: MarkDrawer, shown: (hull: number) => number = (hull) => hull) {
@@ -80,7 +80,7 @@ export class FleetScene {
     const speaks = aiming && this.play.session.own()?.state === 'afloat';
     const how = { shown, aiming: speaks };
     const aimed = easedAimOf(this.aimEye, orbit, this.play, view, how, this.lay, seconds);
-    this.aimed = aimed.look && { ...aimed.look, heldS: aimed.heldS };
+    this.aimed = aimed.look;
     return aimed.orbit;
   }
 

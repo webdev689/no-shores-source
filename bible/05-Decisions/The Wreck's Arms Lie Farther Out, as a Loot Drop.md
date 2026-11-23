@@ -18,6 +18,6 @@ status: in force
 | Call | Chosen | Why |
 |---|---|---|
 | How far | 8 m along the path from where the player wakes, out on the quiet deck past the step down; it was 3 m | Out where the player walks to them, still on the quiet deck, short of the boarder's far place at 13 m |
-| As a loot drop | Popped up from the deck the first time they are drawn, bouncing to rest, then hovering and bobbing as a Vestige's crystal does, the line of a Normal drop rising over them once they rest | The game's drops move as project-final's loot does; the pop draws the eye to them as the camera leaves the eyes |
+| As a loot drop | Popped up from the deck the first time they are drawn, as play begins, bouncing to rest, then hovering and bobbing as a Vestige's crystal does with no shade under them, the line of a Normal drop rising over them once they rest | The game's drops move as project-final's loot does; the pop draws the eye to them as play begins |
 | Their picture | The item itself, upright and turned to the eye, at its true size | A drop's picture stands turned to the eye; it was lying face up |
 | Taken | Walked over, as before and as a drop is | Unchanged |

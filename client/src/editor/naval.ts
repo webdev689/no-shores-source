@@ -361,7 +361,7 @@ function aimShipOf(ship: Aboard, view: Window): AimShip {
 /** The aim camera while laying from a Sloop (`AimCamera`): `orbit`'s eye eased to its battery's station on the
  *  side looked at while `aiming`, looking at the water its guns are laid on (`lay`,
  *  the rules' last answer), and home again once let go; heights drawn `shown` times their own. Answers the orbit
- *  drawn, the look laid and how long it has been laid on its side. */
+ *  drawn and the look laid. */
 export function easedAimOf(
   camera: AimCamera,
   orbit: Orbit,
@@ -370,7 +370,7 @@ export function easedAimOf(
   how: { readonly shown: number; readonly aiming: boolean },
   lay: Laid | null,
   seconds: number,
-): { readonly orbit: Orbit; readonly look: FightLook | null; readonly heldS: number } {
+): { readonly orbit: Orbit; readonly look: FightLook | null } {
   const lying = aimShipOf(ship, view);
   const [eastM, southM, upM] = cameraOf(orbit).eye;
   const eye = [eastM + view.leftM, southM + view.topM, upM / how.shown] as const;
@@ -378,7 +378,7 @@ export function easedAimOf(
   const home = { eye, yaw: orbit.yaw, pitch: orbit.pitch };
   const ask = { home, want, ship: lying, pitch: orbit.pitch, lay };
   const aimed = camera.frame(ask, seconds);
-  if (aimed.eye === eye) return { orbit, look: null, heldS: 0 };
+  if (aimed.eye === eye) return { orbit, look: null };
   const ahead = 3;
   const flat = Math.cos(aimed.pitch) * ahead;
   const drawn = {
@@ -390,7 +390,7 @@ export function easedAimOf(
     targetZ: (aimed.eye[2] - Math.sin(aimed.pitch) * ahead) * how.shown,
     distance: ahead,
   };
-  return { orbit: drawn, look: aimed.look, heldS: aimed.heldS };
+  return { orbit: drawn, look: aimed.look };
 }
 
 /** What the aim shows of a lay (DFO's drawn aim): each gun's unscattered flight to where the rules stop it, fanned out
@@ -416,7 +416,9 @@ export function aimOf(
   // A lay just taken fans out as wide as it scatters, narrowing as it is held (`spread`, Black Flag's focus): each
   // arc bent out from the volley's middle fall in step with how far it has flown, its fall with it.
   const falls = flights.map((flight) => flight[flight.length - 1] ?? ([0, 0, 0] as const));
-  const middle = [0, 1].map((axis) => falls.reduce((sum, fall) => sum + (fall[axis] ?? 0), 0) / (falls.length || 1));
+  // The volley's middle from the balls that come down; one still aloft at the arc's end would pull it out.
+  const landed = falls.filter((_fall, index) => lay.ends[index]);
+  const middle = [0, 1].map((axis) => landed.reduce((sum, fall) => sum + (fall[axis] ?? 0), 0) / (landed.length || 1));
   const wider = Math.max(0, lay.spread - 1);
   const fanned = (point: readonly number[], fall: readonly number[], share: number) =>
     placed([

@@ -114,7 +114,10 @@ export class LyingArms {
     }
     if (!this.card) return null;
     this.began ??= clock;
-    const motion = motionAt(CRYSTAL_FEEL, this.place, this.place, SEED, clock - this.began);
+    // Popped from the deck where they lie, its foot on the planks as the pop begins.
+    const [placeX, placeY, deck] = this.place;
+    const from: Point = [placeX, placeY, deck + CRYSTAL_FEEL.low - CRYSTAL_FEEL.leaves];
+    const motion = motionAt(CRYSTAL_FEEL, from, this.place, SEED, clock - this.began);
     const [x, y, middle] = motion.middle;
     // The card's foot stands where a crystal's foot would, its picture's root being where the forge put it.
     const metres = TRUE_SIZE / PX_PER_M;
@@ -122,7 +125,7 @@ export class LyingArms {
     const z = bottom - (this.card.root[1] - this.card.height) * metres;
     this.top = [x, y, z + this.card.root[1] * metres];
     this.rested = motion.settled ? motion.since : 0;
-    return { card: this.card, x, y, z, flip: false, scale: TRUE_SIZE };
+    return { card: this.card, x, y, z, flip: false, scale: TRUE_SIZE, hovers: true };
   }
 
   /** Lays the line of light over them into `out` once they rest, rising as a drop's does, for an eye at `eye`,

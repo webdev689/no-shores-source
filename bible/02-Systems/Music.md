@@ -184,6 +184,8 @@ on, and the sky over it.
   tension, heard for minutes on the wreck, changes take by take: the taiko's heartbeat, the bass's strikes, the
   strings' voicing, the bell, a soft shriek, the organ swelling into a rising take, the chords turned. The story's
   songs leave the ambience at 0.8.
+- **A cut sting lets in what waits.** A new fight cuts a sting short on its bar line, and a song already waiting
+  behind the sting comes in there, where the sting now ends, not where it would have.
 - **A wake holds what follows it.** A boss's wake is never heard over the song it leads into, even when that song was
   playing before it: the song begins again once the wake has played.
 - **A hidden page** falls silent at once; the music starts again when the page is seen, from the song's top or, for

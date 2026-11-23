@@ -193,11 +193,13 @@ pub fn preview(
 
 impl Fight {
     /// The preview of a player's look as their guns would lay it now (`preview`), the fight's ships as they lie, its
-    /// scatter as long as they have held it.
+    /// scatter as long as they have held it and as their ship's fitting trims it.
     #[must_use]
     pub fn preview(&self, shooter: ShipId, aim: &Aim, waters: &impl Waters, time: f64) -> Option<Preview> {
         let vessel = self.vessel(shooter)?;
-        let spread = self.spread_of(shooter);
+        // As wide as the volley would scatter: as long as it has been held, and as its fitting trims it.
+        let trim = self.fitting(shooter).map_or(1.0, |fitted| fitted.trim.scatter);
+        let spread = self.spread_of(shooter) * trim;
         preview(&Sighted::of(shooter, vessel), vessel.guns.load, aim, &self.sighted(), (waters, time), spread)
     }
 

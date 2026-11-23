@@ -1,9 +1,9 @@
 // The marks over what a player can use on foot, after DFO's marks over the people who do something: a pixel picture
-// standing on a point over each, bobbing, turned to the eye, seen faded through what stands before it, never narrower
-// on the screen than MIN_RAD of the view so a keeper across the plaza still shows one, faded out over the last fifth of
-// its reach, the nearest MOST of them; one beating while something waits there swells and eases back; each holds still
-// under reduced motion. It is laid as the drops' pictures are (drops.ts). What wears one is the game's
-// (game/overheadMarks.ts) and the Test Ground's (testground/gearGround.ts).
+// standing on a point over each, bobbing, turned to the eye, never narrower on the screen than MIN_RAD of the view so a
+// keeper across the plaza still shows one, faded out over the last fifth of its reach, the nearest MOST of them; one
+// beating while something waits there swells and eases back; each holds still under reduced motion. It is laid as the
+// drops' pictures are (drops.ts). What wears one is the game's (game/overheadMarks.ts), which also draws its faded
+// copy through what stands before it (`marksHidden`), and the Test Ground's (testground/gearGround.ts).
 
 import type { PixelPicture } from './dropPictures.ts';
 import { markPicture, PIXEL_M } from './drops.ts';
@@ -33,8 +33,10 @@ const BEAT_HZ = 0.75;
 export const MOST = 12;
 /** A whole mark's opacity: solid, lighting nothing. */
 const WHOLE = ditherCode(1);
-/** How much of a mark shows where something stands before it: seen through walls, faded. */
+/** How much of a mark shows where something stands before it: seen through walls, faded; and how much nearer the eye
+ *  its copy is laid than its foot: past a whole mark's layers, a picture's dozen or so of `LAYER_M` (drops.ts). */
 export const HIDDEN_SHARE = 0.45;
+const HIDDEN_NEARER_M = 0.03;
 
 /** One mark to lay: its picture, and the point its foot stands on before the bob. */
 export interface Marked {
@@ -83,7 +85,11 @@ export function marksSeen(
  *  stall, or the Hall's, is seen through its walls. */
 export function marksHidden(marked: readonly Marked[], eye: Point, seconds: number): Float32Array {
   const out = marksSeen(marked, eye, seconds, motionReduced(), HIDDEN_SHARE);
-  for (let start = 0; start < out.length; start += MARK_FLOATS)
-    for (let axis = 0; axis < 3; axis += 1) out[start + axis] = (out[start + axis] ?? 0) - (eye[axis] ?? 0);
+  for (let start = 0; start < out.length; start += MARK_FLOATS) {
+    const [x, y, z] = [0, 1, 2].map((axis) => (out[start + axis] ?? 0) - (eye[axis] ?? 0)) as [number, number, number];
+    // Laid as near as a whole mark's nearest layer, so where the mark is seen its copy is never behind it.
+    const toward = Math.max(0, 1 - HIDDEN_NEARER_M / (Math.hypot(x, y, z) || 1));
+    [out[start], out[start + 1], out[start + 2]] = [x * toward, y * toward, z * toward];
+  }
   return new Float32Array(out);
 }

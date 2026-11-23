@@ -21,9 +21,9 @@ struct View { from_origin: mat4x4f, origin: vec4f }
 @group(0) @binding(0) var<uniform> view: View;
 struct Out { @builtin(position) position: vec4f, @location(0) colour: vec4f, @location(1) world: vec2f }
 
-// What hides a mark stands at least 2% of the mark's distance nearer (reversed depth grows as distance shrinks):
-// 0.6 m at 30 m, 0.1 m at 5 m.
-const HIDDEN_NEARER = 1.02;
+// What hides a mark stands at least a thousandth of the mark's distance nearer than its copy (reversed depth grows as
+// distance shrinks): 3 cm at 30 m. The copy is laid nearer than the mark's own layers (marksHidden).
+const HIDDEN_NEARER = 1.001;
 const ORDER = array<f32, 16>(0.0, 8.0, 2.0, 10.0, 12.0, 4.0, 14.0, 6.0, 3.0, 11.0, 1.0, 9.0, 15.0, 7.0, 13.0, 5.0);
 const CELL = ${DITHER_M};
 

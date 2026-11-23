@@ -6,7 +6,8 @@ export interface FleetLook {
   readonly bearing: number;
   readonly range: number;
   readonly ray?: readonly number[];
-  /** How long the page has held the look on its side, seconds, as the room counts it: its lay's spread. */
+  /** How long the look has been held on its side, seconds, as the room counts it by the orders that held it: its
+   *  lay's spread (`FleetSession.lay` counts it). */
   readonly heldS?: number;
 }
 

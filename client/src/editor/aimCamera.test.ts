@@ -197,11 +197,10 @@ test('the eye rides the ship as drawn: its heave, its bow rising and its heel ca
   assert.ok(near(gap(aimed.eye, [rolled.x, rolled.y, rolled.heave]), gap(ON_STARBOARD, [SHIP.x, SHIP.y, 0]), 1e-6));
 });
 
-test('the eye aboard leans in on the zoom as it eases in, and counts how long the look is laid on its side', () => {
+test('the eye aboard leans in on the zoom as it eases in', () => {
   const camera = new AimCamera();
   const first = camera.frame(asked(1), 1 / 60);
   assert.ok(first.eased > 0 && first.eased < 0.1, `${first.eased}`);
-  const there = settled(camera, asked(1), 120);
-  assert.ok(there.eased > 0.999 && near(there.heldS, 121 / 60, 1e-6), `${there.eased}, ${there.heldS} s`);
-  assert.equal(camera.frame(asked(null), 1 / 60).heldS, 0, 'let go, it begins again');
+  assert.ok(settled(camera, asked(1), 120).eased > 0.999);
+  assert.equal(settled(camera, asked(null), 240).eased, 0, 'home, none');
 });

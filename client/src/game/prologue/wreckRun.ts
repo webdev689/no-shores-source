@@ -187,6 +187,8 @@ export class WreckRun {
   /** The room, while the run is played. */
   private get openRoom(): RoomThread {
     if (!this.room) throw new Error('the wreck has been left');
+    // Lost in the rooms' worker, nothing is left to fight on: the story goes on past it, as past any beat that fails.
+    if (this.room.lost) throw new Error(`the wreck's room was lost: ${this.room.lost}`);
     return this.room;
   }
 
@@ -274,10 +276,10 @@ export class WreckRun {
     const { at, facing } = boarderAt(this.layout, body.x, body.y);
     const room = this.openRoom;
     this.boarderAsked = true;
-    void room.story({ ask: 'stand', ...BOARDER, x: at[0], y: at[1], facing, level: this.level }).then((id) => {
+    const asked = { ask: 'stand', ...BOARDER, x: at[0], y: at[1], facing, level: this.level, hunt: true } as const;
+    void room.story(asked).then((id) => {
       this.boarderAsked = false;
       if (id === 0 || this.room !== room) return;
-      void room.story({ ask: 'hunt', foe: id });
       this.boarderId = id;
       this.unseen.add(id);
       this.stood.set(id, { ...BOARDER, at, facing, zone: 0 });
@@ -564,10 +566,10 @@ export class WreckRun {
     // The room raises a fallen player at the last checkpoint by itself: there is no edge to stray past, nothing
     // to press, and the story says what happens.
     const dead = ownView?.action.kind === 'dead';
-    // The story has no menu, so its keys leave the menu's out.
-    const hints = dead
-      ? []
-      : footHints(onFoot(walker, shown, fight, !controls.locked && !still)).filter(([key]) => key !== 'menu');
+    // The story has no menu, so its keys leave the menu's out. Frozen with the pointer free, the click that takes it is
+    // asked for too, as the parry's key does nothing until then.
+    const free = !controls.locked && !paused && !held;
+    const hints = dead ? [] : footHints(onFoot(walker, shown, fight, free)).filter(([key]) => key !== 'menu');
     return {
       shot,
       figures,
@@ -583,6 +585,8 @@ export class WreckRun {
   /** Leaves the wreck: the Anima's edge is taken down, as leaving a node does, the wreck's rim taken from the page's
    *  movement, and the room let go of in the rooms' worker. */
   leave(): void {
+    // Once: the story's end lets go of a run its beat already left, and the place after it keeps its own heights.
+    if (!this.room) return;
     showAnimaEdge(QUIET);
     this.lying.leave();
     this.context.movement.setHeights(null);

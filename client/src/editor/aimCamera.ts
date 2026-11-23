@@ -6,7 +6,7 @@ import type { FightLook } from '../rules/fightRules.ts';
 import { hullBox } from '../ships/hulls.ts';
 import { shipAxes } from '../ships/shipAxes.ts';
 import { lookPitch, lookReach } from './aim.ts';
-import { aimStation } from './aimStation.ts';
+import { aimStation, batteryOf } from './aimStation.ts';
 import { clearAround, sweptBoxes } from './shipClear.ts';
 
 /** How long the eye takes to ease in or out, and from one battery to the other: its time constant, seconds. */
@@ -48,13 +48,12 @@ export interface AimView {
 
 /** A frame of the aim: the view drawn, and the look laid while aiming (its bearing square off the side, its range
  *  out from the ship's middle, its ray from the eye along the view's middle), none while it eases home; the look's
- *  pitch held where the guns' nearest or longest stopped it; how far the view has eased to the aim (0 home, 1 there),
- *  for its zoom; and how long the look has been laid on its side, seconds. */
+ *  pitch held where the guns' nearest or longest stopped it; and how far the view has eased to the aim (0 home, 1
+ *  there), for its zoom. */
 export interface AimFrame extends AimView {
   readonly look: FightLook | null;
   readonly heldPitch: number;
   readonly eased: number;
-  readonly heldS: number;
 }
 
 /** How much narrower the view is, eased in to the aim: a little zoom, as Black Flag's. */
@@ -141,8 +140,6 @@ export class AimCamera {
   private held: 1 | -1 | null = null;
   /** The landing zone's drift along the keel, eased. */
   private drift = 0;
-  /** How long the look has been laid on its side, seconds. */
-  private laid = 0;
 
   /** The frame `seconds` on. */
   frame(ask: AimAsk, seconds: number): AimFrame {
@@ -156,10 +153,7 @@ export class AimCamera {
     else if (!this.side) this.side = wanted;
     if (!wanted && this.share < 1e-3) [this.share, this.side, this.drift] = [0, null, 0];
     const side = this.side;
-    if (!side || this.share <= 0) {
-      this.laid = 0;
-      return { ...home, look: null, heldPitch: ask.pitch, eased: 0, heldS: 0 };
-    }
+    if (!side || this.share <= 0) return { ...home, look: null, heldPitch: ask.pitch, eased: 0 };
     const station = aimStation(ship.hull);
     const local = [station.eye[0], station.eye[1] * side, station.eye[2]] as const;
     const eye = toWorld(ship, local);
@@ -167,7 +161,7 @@ export class AimCamera {
     this.drift += (laidDrift(ask.lay, side, ship.heading) - this.drift) * driftStep;
     const height = station.eye[2];
     const asked = station.eye[1] + lookReach(-ask.pitch, height);
-    const { nearestM } = aimStation(ship.guns ?? ship.hull);
+    const { nearestM } = batteryOf(ship.guns ?? ship.hull);
     const range = Math.min(laidReach(ask.lay, side, ship), Math.max(nearestM, asked));
     const heldPitch = range === asked ? ask.pitch : -lookPitch(range - station.eye[1], height);
     // The point laid on the water, square off the battery's middle and on along the keel as far as the balls drift.
@@ -188,7 +182,6 @@ export class AimCamera {
     const look = laying
       ? { bearing: 90 * side, range, ray: [...eye, east / length, south / length, up / length] }
       : null;
-    this.laid = laying ? this.laid + Math.max(0, seconds) : 0;
     return {
       eye: drawn,
       yaw: home.yaw + turnTo(home.yaw, yaw) * k,
@@ -196,7 +189,6 @@ export class AimCamera {
       look,
       heldPitch,
       eased: k,
-      heldS: this.laid,
     };
   }
 }
@@ -206,6 +198,8 @@ export class AimCamera {
  *  swing, then straight in over its rail, square to its side, to the eye aboard; an eye out past its side, round to it
  *  alone. */
 export function wayAboard(hull: number, from: Point, to: Point, share: number, side: 1 | -1, onDeck: boolean): Point {
+  // There, the way is not looked for: the ship heels and pitches under the eye, and no frame of a held aim searches.
+  if (share >= 1) return to;
   if (!onDeck) return roundShip(hull, from, to, share);
   const [, high] = hullBox(hull);
   const past = sweptBoxes(hull)

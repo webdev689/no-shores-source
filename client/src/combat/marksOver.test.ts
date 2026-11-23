@@ -77,3 +77,14 @@ test('a mark seen through what hides it is laid flat and faded, measured from th
     'fading further at its end',
   );
 });
+
+test("a mark's copy for the hidden pass lies nearer the eye than any layer of the whole mark, so never behind it", () => {
+  const marked = [{ picture: AMMO_BOX, at: [5, 0, 2] as const }];
+  const eye = [5, -10, 2] as const;
+  // Looking north along y: each vertex's depth is how far north of the eye it lies.
+  const depths = (vertices: ArrayLike<number>, from: number) =>
+    Array.from(vertices).flatMap((value, index) => (index % MARK_FLOATS === 1 ? [value - from] : []));
+  const whole = depths(marksSeen(marked, eye, 0, true), eye[1]);
+  const copy = depths(marksHidden(marked, eye, 0), 0);
+  assert.ok(Math.max(...copy) < Math.min(...whole), `${Math.max(...copy)} against ${Math.min(...whole)}`);
+});

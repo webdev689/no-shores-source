@@ -48,3 +48,14 @@ test("among a wreck's thousands of blocks blood meets the nearest in its way", (
   assert.ok(hit && Math.abs(hit.distance - Math.SQRT2) < 1e-9, `meets the first crate's corner: ${hit?.distance}`);
   assert.equal(many([2.5, 2.5, 0.5], [0, 0, -1], 0.4), null, 'a gap between crates, short of the ground');
 });
+
+test("blood's ray keeps a block at the very edge of its reach, passes one it starts inside, and runs along a face", () => {
+  const crate = { minX: 2, minY: -1, maxX: 3, maxY: 1, top: 1, bottom: 0 };
+  const ray = surfacesOf([crate]);
+  // Its reach ends exactly at the crate's side: the box the ray sweeps touches the crate's, and the crate is met.
+  assert.deepEqual(ray([0, 0, 0.5], [1, 0, 0], 2), { distance: 2, normal: [-1, 0, 0] });
+  // Begun inside the crate, it never meets the crate it started in: only the ground under it.
+  assert.deepEqual(ray([2.5, 0, 0.5], [1, 0, 0], 3), null);
+  // Thrown straight down along the crate's own side, at its edge: it meets the crate's top there.
+  assert.deepEqual(ray([2, 0, 2], [0, 0, -1], 3), { distance: 1, normal: [0, 0, 1] });
+});

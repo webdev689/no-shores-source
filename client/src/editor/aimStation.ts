@@ -62,7 +62,8 @@ export function clearOfSail(sail: SailCorners, along: number, up: number): numbe
 
 /** Whether a point over the deck (along, out, up) stands within `RIG_CLEAR_M` of where a sail swinging as `swing`
  *  can come in any wind: a square sail braced at most 45° round its mast and bellied either way, a gaff swung to
- *  either beam aft of its luff, a staysail swaying on its stay; or within its mast's thickness of the mast it sets on. */
+ *  either beam aft of its luff, a staysail swaying on its stay; or within `RIG_CLEAR_M` of the mast it sets on, as
+ *  thick as `MAST_M` each side of its line. */
 function inRig(swing: Swing, [along, out, up]: Point, pad = RIG_CLEAR_M): boolean {
   const mast = swing.kind !== 'stay' && Math.abs(along - swing.pivot) < MAST_M + pad && Math.abs(out) < MAST_M + pad;
   if (mast) return true;
@@ -130,10 +131,15 @@ function deckEye(hull: number, battery: readonly number[], nearestM: number): Po
 }
 
 const stations = new Map<number, AimStation>();
+const batteries = new Map<
+  number,
+  { readonly ports: Point; readonly tier: readonly number[]; readonly nearestM: number }
+>();
 
-/** The aim's station for a hull, by its number (0 the Sloop to 3 the Frigate), on its starboard side. */
-export function aimStation(hull: number): AimStation {
-  const kept = stations.get(hull);
+/** A hull's battery as the aim reads it, without its eye: its upper tier's ports' middle, each port's place along its
+ *  keel, and the nearest its guns lay on the water, out from its middle. */
+export function batteryOf(hull: number) {
+  const kept = batteries.get(hull);
   if (kept) return kept;
   const mouths = hullMouths(hull);
   const highest = Math.max(...mouths.map((mouth) => mouth[2]));
@@ -144,12 +150,18 @@ export function aimStation(hull: number): AimStation {
   const gunLine = paint.atM + paint.rise * along;
   const mouthsOut = Math.max(...tier.map((mouth) => Math.abs(mouth[1])));
   const nearestM = mouthsOut + gunLine / Math.tan(LOWEST_ELEVATION);
-  const ports: Point = [along, mouthsOut, gunLine];
-  const onDeck = deckEye(
-    hull,
-    tier.map((mouth) => mouth[0]),
-    nearestM,
-  );
+  const battery = { ports: [along, mouthsOut, gunLine] as Point, tier: tier.map((mouth) => mouth[0]), nearestM };
+  batteries.set(hull, battery);
+  return battery;
+}
+
+/** The aim's station for a hull, by its number (0 the Sloop to 3 the Frigate), on its starboard side. */
+export function aimStation(hull: number): AimStation {
+  const kept = stations.get(hull);
+  if (kept) return kept;
+  const { ports, tier, nearestM } = batteryOf(hull);
+  const [along, mouthsOut, gunLine] = ports;
+  const onDeck = deckEye(hull, tier, nearestM);
   if (onDeck) {
     const station: AimStation = { eye: onDeck, ports, onDeck: true, nearestM };
     stations.set(hull, station);

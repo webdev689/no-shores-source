@@ -41,9 +41,10 @@ export type StoryAsk =
       readonly y: number;
       readonly facing: number;
       readonly level: number;
+      /** Sent at the player as it stands, before any tick: the boarder met one on one. */
+      readonly hunt?: boolean;
     }
   | { readonly ask: 'post'; readonly crew: number; readonly x: number; readonly y: number; readonly facing: number }
-  | { readonly ask: 'hunt'; readonly foe: number }
   | { readonly ask: 'spawn' | 'put'; readonly x: number; readonly y: number }
   | { readonly ask: 'block'; readonly block: CourseBlock; readonly stands: boolean };
 
@@ -51,12 +52,13 @@ export type StoryAsk =
 export function storyOn(room: LocalRoom, story: StoryAsk): number {
   const done = (made: boolean) => (made ? 1 : 0);
   switch (story.ask) {
-    case 'stand':
-      return room.standFoe(story.type, story.rank, story.x, story.y, story.facing, story.level);
+    case 'stand': {
+      const id = room.standFoe(story.type, story.rank, story.x, story.y, story.facing, story.level);
+      if (id !== 0 && story.hunt) room.storyHunt(id);
+      return id;
+    }
     case 'post':
       return done(room.storyPost(story.crew, story.x, story.y, story.facing));
-    case 'hunt':
-      return done(room.storyHunt(story.foe));
     case 'arms':
       return done(room.storyTakeArms());
     case 'wreck':

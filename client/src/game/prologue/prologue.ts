@@ -1,7 +1,6 @@
 // The story's director: it runs the owner's beats in order, hands each what the last left (the camera's shot, the
 // ships sighted, where the two ships met), lets a cutscene be skipped by holding Space, and, once the player has
 // washed up on Saltmere's shore, gives the game back to the player at Overlook's social space.
-import { bloodSheet } from '../../combat/blood/art.ts';
 import { HoldToSkip } from '../../cinema/cues.ts';
 import type { InputFrame } from '../../player/input.ts';
 import type { Shot } from '../camera.ts';
@@ -175,11 +174,7 @@ export class Prologue {
     if (ended instanceof Sighted) this.carried.inbound = ended.inbound;
     if (ended instanceof Battle || ended instanceof Calm) this.carried.wrecks = ended.wrecks;
     if (ended instanceof Ram) this.carried.meeting = ended.meeting;
-    if (ended instanceof Ram) {
-      void this.openRun();
-      // The wreck's blood sheet is drawn here, behind the crash's black, not on the first frame the player plays.
-      bloodSheet();
-    }
+    if (ended instanceof Ram) void this.openRun();
     if (ended instanceof Intro && this.played) {
       this.end = 'begun';
       return;
@@ -294,10 +289,14 @@ export class Prologue {
     this.next(() => stage.parts.screen.clear());
   }
 
-  /** The story has ended: the wreck's drawing, if a beat after it never let it go, is let go now. */
+  /** The story has ended: the wreck's drawing and its room, if a beat after it never let them go, are let go now. */
   leave(): void {
     this.carried.scenery?.destroy();
     this.carried.scenery = null;
+    void this.carried.run?.then(
+      (run) => run.leave(),
+      () => undefined,
+    );
     this.carried.run = null;
   }
 }

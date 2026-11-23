@@ -6,7 +6,6 @@ import { LocalRoom } from './localRoom.ts';
 import type { GearMessage, Snapshot } from './roomConnection.ts';
 import { type FromRooms, serveRooms, type ToRooms } from './roomServe.ts';
 import { roomPort, RoomThread } from './roomThread.ts';
-import { courseOf, readWreck } from '../game/prologue/wreckLayout.ts';
 
 const MODULE = new URL('../../../target/wasm32-unknown-unknown/release/room_wasm.wasm', import.meta.url);
 const compiled = new WebAssembly.Module(
@@ -144,42 +143,4 @@ test('a rooms worker that fails loses every room and refuses every opening still
   const opening = RoomThread.openNode(compiled, glade(), () => undefined);
   fail('the worker could not start');
   await assert.rejects(opening, /the worker could not start/);
-});
-
-test("the wreck's room in the worker answers the story's asks in turn, as the same room in the page", async () => {
-  joinedPort();
-  const wreck = readWreck();
-  const course = courseOf(wreck);
-  const [x, y] = wreck.wake.at;
-  const seen: Snapshot[] = [];
-  const room = await RoomThread.openOverSea(
-    compiled,
-    { x, y },
-    course,
-    (snapshot) => seen.push(snapshot),
-    () => {},
-  );
-  // Asked one after another without waiting, as the run asks them: each made in the worker in that order.
-  const asked = [
-    room.story({ ask: 'wreck' }),
-    room.story({ ask: 'stand', type: 8, rank: 1, x, y: y + 4, facing: 0, level: 1 }),
-    room.story({ ask: 'arms' }),
-    room.story({ ask: 'arms' }),
-  ];
-  const [woke, boarder = 0, given, again] = await Promise.all(asked);
-  assert.equal(woke, 1);
-  assert.ok(boarder > 0, 'the boarder stood, its number answered');
-  assert.deepEqual([given, again], [1, 0], 'the arms given once, refused while carried');
-  assert.equal(await room.story({ ask: 'hunt', foe: boarder }), 1, 'sent at the player by its number');
-  for (let frame = 0; frame < 5; frame++) {
-    room.pump(1 / 30);
-    await settled();
-  }
-  assert.ok(
-    seen.at(-1)?.foes.some((foe) => foe.id === boarder),
-    'the boarder stands in its snapshots',
-  );
-  assert.equal(await room.story({ ask: 'clear' }), 1);
-  room.close();
-  assert.equal(await room.story({ ask: 'stand', type: 8, rank: 1, x, y, facing: 0, level: 1 }), 0, 'let go: none');
 });

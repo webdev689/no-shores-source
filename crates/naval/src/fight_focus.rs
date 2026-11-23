@@ -131,4 +131,19 @@ mod tests {
         let ratio = spread_of(&quick) / spread_of(&held);
         assert!((ratio - FIRST_SPREAD).abs() < 1e-9, "fired at once, twice the held volley's scatter: {ratio}");
     }
+
+    #[test]
+    fn a_fitting_that_trims_the_scatter_trims_the_preview_as_it_trims_the_volley() {
+        use crate::fight::fitting::{Fitting, Trim};
+        let aim = Aim { bearing_deg: 90.0, range_m: 250.0, ray: None };
+        let mut plain = fight();
+        run(&mut plain, laid(90.0, false), SETTLED_TICKS);
+        let mut fitted = fight();
+        fitted.fit(PLAYER, Fitting { trim: Trim { scatter: 0.5, ..Trim::default() }, ..Fitting::default() });
+        run(&mut fitted, laid(90.0, false), SETTLED_TICKS);
+        let shown = |fight: &Fight| fight.preview(PLAYER, &aim, &Open, 0.0).unwrap_or_else(|| panic!("a side bears"));
+        let (wide, narrow) = (shown(&plain), shown(&fitted));
+        assert!((narrow.spread - 0.5).abs() < 1e-9, "held and trimmed to half: {}", narrow.spread);
+        assert!(narrow.radius < wide.radius, "{} against {}", narrow.radius, wide.radius);
+    }
 }

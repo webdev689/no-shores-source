@@ -278,7 +278,9 @@ export class WreckFight implements Beat {
     const tasks = this.teach(run, shown.fight, seconds);
     hud.tasks.show(held ? null : tasks);
     hud.reach(shown.standing);
-    const thule = coming ? this.thuleActor(tick.clock - coming.since) : null;
+    // Until the room's Thule is shown (asked of the rooms' worker, answered a moment later), the story's stands for him.
+    const waiting = !coming && this.fought && !run.boss && !run.outcome;
+    const thule = coming ? this.thuleActor(tick.clock - coming.since) : waiting ? this.thuleActor(tick.clock) : null;
     const hands =
       walker.inFirstPerson && !coming
         ? (encoder: GPUCommandEncoder, view: GPUTextureView, over: Overlay) => firstPerson.draw(encoder, view, over)

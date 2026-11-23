@@ -325,8 +325,10 @@ test("the story's one-shots are fetched as its sound wakes, so one heard once is
   assert.deepEqual(asked, [], 'nothing before the sound wakes');
   answering = true;
   ambience.frame(0.016);
-  const shots = Object.values(RECORDED_SHOTS).map((shot) => shot.cue);
-  assert.deepEqual(asked.toSorted(), shots.toSorted(), 'every one-shot, the crash and the splash among them');
+  const shots = Object.values(RECORDED_SHOTS)
+    .map((shot) => shot.cue)
+    .filter((cue) => cue !== RECORDED_SHOTS.gull.cue);
+  assert.deepEqual(asked.toSorted(), shots.toSorted(), "every moment's one-shot, the crash and the splash among them");
   ambience.frame(0.016);
   assert.equal(asked.length, shots.length, 'once');
 });

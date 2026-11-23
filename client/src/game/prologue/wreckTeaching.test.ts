@@ -48,7 +48,9 @@ function forged(): { forge: Cards; carded: Picture[] } {
     weaponArt: (dress: unknown, layer: string, share = 1) => Promise.resolve(art(Math.round(64 * share))),
     cardOf: (picture: Picture) => {
       carded.push(picture);
-      return { texture: { destroy: () => undefined }, width: picture.width, height: picture.height, root: [0, 0] };
+      // Its root where the forge's cards keep one with none of their own: the middle of its foot.
+      const root = [picture.width / 2, picture.height];
+      return { texture: { destroy: () => undefined }, width: picture.width, height: picture.height, root };
     },
   } as unknown as Cards;
   return { forge, carded };
@@ -76,7 +78,8 @@ test('the arms on the deck are the item itself, drawn once, moving as a drop: po
   await new Promise((resolve) => setTimeout(resolve, 0));
   const first = arms.figure(body, 10);
   assert.ok(first, 'then the item');
-  assert.ok(!first.facesEye, 'upright, turned to the eye as a drop is');
+  assert.ok(Math.abs(first.z - deck) < 0.01, `popped from the planks: its foot ${(first.z - deck).toFixed(2)} m up`);
+  assert.ok(!first.facesEye && first.hovers, 'upright, turned to the eye, and hovering with no shade under it');
   assert.equal(first.scale, 1 / 4, "the forge draws a weapon four times a figure's pixels a metre");
   const eye = [x, y - 6, deck + 1.6] as const;
   const unlit: number[] = [];

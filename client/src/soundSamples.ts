@@ -119,6 +119,11 @@ export class Samples {
     }
   }
 
+  /** `ids` held under the budget again, as any other: their story is over. */
+  release(ids: readonly string[]): void {
+    for (const id of ids) this.kept.delete(id);
+  }
+
   /** Fetches each of `id`'s files not held or on its way. */
   want(id: string): void {
     const sound = this.bank.sounds[id];
@@ -240,6 +245,8 @@ export class Samples {
       const variants = (this.held.get(id) ?? []).filter((each) => each !== sound);
       if (variants.length > 0) this.held.set(id, variants);
       else this.held.delete(id);
+      // Nothing else may hold it, or its samples (and the page's decoded copy) are never let go.
+      if (this.lastPlayed.get(id) === sound) this.lastPlayed.delete(id);
       over -= sound.bytes;
     }
   }
@@ -256,6 +263,11 @@ export function loadSamples(audio: BaseAudioContext): void {
 /** Fetches the recordings of `ids` now, ahead of their first play, and holds them (`Samples.prefetch`). */
 export function prefetchSamples(audio: BaseAudioContext, ids: readonly string[]): void {
   samples.prefetch(audio, ids);
+}
+
+/** Holds `ids` under the budget again (`Samples.release`). */
+export function releaseSamples(ids: readonly string[]): void {
+  samples.release(ids);
 }
 
 /** Plays a recorded sound into `out`, its pitch at `rate`, answering it as it plays; null where it has not come. */

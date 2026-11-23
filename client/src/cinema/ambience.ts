@@ -6,7 +6,7 @@
 
 import { clampLevel, glided, nextGapS, seededRandom, thunderShape } from './ambienceShapes.ts';
 import type { Loudness } from '../soundMeasure.ts';
-import { playSample, prefetchSamples } from '../soundSamples.ts';
+import { playSample, prefetchSamples, releaseSamples } from '../soundSamples.ts';
 
 /** Where the world's sounds play; the game passes uiSounds' worldOutput. Null while there is no sound. */
 export type SoundOut = () => { readonly audio: AudioContext; readonly out: AudioNode } | null;
@@ -116,8 +116,12 @@ interface Engine {
 
 type Play = typeof playSample;
 type Prefetch = typeof prefetchSamples;
-/** The one-shots' cues, fetched as the sound wakes: each is heard once, too soon after it is asked for to fetch then. */
-const SHOT_CUES = Object.values(RECORDED_SHOTS).map((shot) => shot.cue);
+/** The story's moments' cues and its thunder, fetched as the sound wakes and held until it stops: each is first heard
+ *  too soon after it is asked for to fetch then, the crash and the splash only once. A gull's cry comes again and
+ *  again, so it is fetched as it is wanted. */
+const SHOT_CUES = Object.values(RECORDED_SHOTS)
+  .filter((shot) => shot !== RECORDED_SHOTS.gull)
+  .map((shot) => shot.cue);
 
 /** Thunder farther than this is not heard at all. */
 const HEARD_KM = 20;
@@ -270,6 +274,8 @@ export class Ambience {
     this.gullCountdownS = null;
     this.heart = false;
     this.teardown();
+    // Held under the budget again; a sound woken after builds the engine afresh and holds them once more.
+    releaseSamples(SHOT_CUES);
   }
 
   /** The engine on the output as it answers now: built on the first answer, rebuilt should the context change. */

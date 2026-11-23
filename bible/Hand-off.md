@@ -325,9 +325,8 @@ The decisions in [[Open Questions]] are not repeated here.
 - **Hitching in the prologue, left by #161**: the aim's view (`AimView`) is made again for every sea fight; the shore's
   return to Saltmere rebuilds its city in one go. A fleet room's lagging player has their held lay begun again by the
   room's standing orders while their page keeps counting.
-- **Hitching, after the areas' chunks** ([[Areas Load in Chunks With Proper Caching]]): playing alone, a room is
-  opened on the game's thread (`localRoom.ts`: the navmesh bake, the sea's generation), with no veil when a voyage's
-  difficulty changes; a city is built in one go after each landmass switch and every 1.5 km (`landDrawers.ts`,
+- **Hitching, after the areas' chunks** ([[Areas Load in Chunks With Proper Caching]]): playing alone, no veil when
+  a voyage's difficulty changes; a city is built in one go after each landmass switch and every 1.5 km (`landDrawers.ts`,
   `cityView.ts`); flora is decoded and its mips made again on every switch; a landmass cannot be prepared before it
   opens, as the land's worker holds one. R2's own `Cache-Control` waits on a test upload (the owner's yes, a write to
   R2). Then the hitching measured on a real GPU. `client/src/ships/shipTags.test.ts` fetches ship meshes from `r2.dev`,

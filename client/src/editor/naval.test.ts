@@ -184,7 +184,7 @@ test('a lay just taken fans its arcs out as wide as it scatters, and they close 
   const settled = aimOf(LAID, vessel, WINDOW, 1);
   assert.ok(fanned && settled);
   const fallOf = (aim: typeof fanned, gun: number) => aim.arcs[gun]?.at(-1) ?? [0, 0, 0];
-  // The two falls, settled, lie 15 m and 2 m apart from their middle; fanned twice as far out from it.
+  // The two falls, settled, lie apart by so much; fanned at twice the spread, twice as far from their middle.
   const gapOf = (aim: typeof fanned) =>
     Math.hypot(fallOf(aim, 1)[0] - fallOf(aim, 0)[0], fallOf(aim, 1)[1] - fallOf(aim, 0)[1]);
   assert.ok(Math.abs(gapOf(fanned) - 2 * gapOf(settled)) < 1e-9, `${gapOf(fanned)} against ${gapOf(settled)}`);

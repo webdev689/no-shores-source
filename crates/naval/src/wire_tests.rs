@@ -93,6 +93,7 @@ fn a_lay_crosses_as_the_fight_shows_it_each_gun_with_its_launch_and_its_stop() {
     let lay_at = 2 + 2 * VESSEL_NUMBERS + 4 + 2;
     let head = [1.0, 1.0, shown.lay.elevation, shown.lay.reach, shown.radius, shown.spread, 1.0, 3.0];
     assert_eq!(numbers[lay_at..lay_at + 8], head);
+    assert_eq!(numbers[lay_at + 5], crate::fight::focus::FIRST_SPREAD, "no order has held it yet: the widest");
     for (index, (launch, stop)) in shown.launches.iter().zip(&shown.ends).enumerate() {
         let at = lay_at + 8 + index * (6 + STOP_NUMBERS);
         assert_eq!(numbers[at..at + 6], *launch);
