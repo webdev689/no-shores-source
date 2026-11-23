@@ -155,7 +155,11 @@ impl QuestLog {
     #[must_use]
     pub fn kept_in(mut self, defs: &QuestsDef) -> Self {
         for quest in &defs.quests {
-            let road = self.roads.entry(quest.id.clone()).or_default();
+            // A quest a character holds no place in was laid out after it was kept: it reads at the quest's `kept`.
+            let road = self
+                .roads
+                .entry(quest.id.clone())
+                .or_insert_with(|| Road { task: quest.kept.clone().unwrap_or_default(), ..Road::default() });
             // A task kept by an old id starts afresh: its goals need not be the old task's.
             if let Some(now) = quest.tasks.iter().find(|task| task.was.contains(&road.task)) {
                 (road.task, road.counts, road.fought) = (now.id.clone(), Vec::new(), Vec::new());
@@ -172,6 +176,17 @@ impl QuestLog {
         }
         self.choices.resize(arts().arts.len(), 0);
         self
+    }
+
+    /// A new character's: every quest at its first task.
+    #[must_use]
+    pub fn begun() -> Self {
+        let mut log = Self::default();
+        for quest in &quests().quests {
+            let task = quest.tasks.first().map(|task| task.id.clone()).unwrap_or_default();
+            log.roads.insert(quest.id.clone(), Road { task, ..Road::default() });
+        }
+        log.kept()
     }
 
     /// Sets a quest's place at one of its tasks, by their places in the file, its counts at nothing, and every quest
@@ -226,7 +241,9 @@ impl Character {
     pub fn quest_now(&self) -> Option<(usize, usize)> {
         let quest = self.quest_walked()?;
         let tasks = &quests().quests[quest].tasks;
-        let task = self.quests.road(quest).and_then(|road| tasks.iter().position(|task| task.id == road.task));
+        let def = &quests().quests[quest];
+        let held = self.quests.road(quest).map_or(def.kept.as_deref(), |road| Some(road.task.as_str()));
+        let task = held.and_then(|held| tasks.iter().position(|task| task.id == held));
         Some((quest, task.unwrap_or(0)))
     }
 

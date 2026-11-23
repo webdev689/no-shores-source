@@ -212,3 +212,28 @@ fn pieces_never_bought_from_a_smith_do_not_arm_the_player() {
     assert_eq!(task, Some("arm-yourself"), "nothing was bought");
     assert_eq!(character.quest_counts(), vec![0; 5]);
 }
+
+#[test]
+fn a_character_kept_before_the_quest_log_reads_on_the_houses_with_no_gift_and_a_new_one_on_the_stranger() {
+    let task = |character: &Character| {
+        character.quest_now().map(|(quest, task)| quests().quests[quest].tasks[task].id.clone())
+    };
+    assert_eq!(task(&Character::starting()).as_deref(), Some("hear-the-stranger"), "a new character");
+    for log in [Some(serde_json::json!({ "roads": {} })), None] {
+        let mut kept = serde_json::to_value(Character::starting()).expect("kept");
+        let object = kept.as_object_mut().expect("an object");
+        match log {
+            Some(log) => object.insert("quests".to_owned(), log),
+            None => object.remove("quests"),
+        };
+        let mut read: Character = serde_json::from_value(kept).expect("read");
+        assert_eq!(task(&read).as_deref(), Some("hear-three-houses"), "kept before: {:?}", object_keys(&read));
+        let refused = read.ask(Ask::Speak { keeper: keeper("stranger") }, SOCIAL, &DICE);
+        assert_eq!(refused, Err(Refusal::NothingToSay));
+        assert_eq!(read.materials.aurem, 0, "no gift");
+    }
+}
+
+fn object_keys(character: &Character) -> Vec<String> {
+    character.quests.roads.keys().cloned().collect()
+}

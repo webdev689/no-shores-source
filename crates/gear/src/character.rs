@@ -285,7 +285,7 @@ impl Character {
             scavenged: Vec::new(),
             allegiance: crate::factions::Allegiance::default().kept(),
             cosmetics: crate::cosmetics::Cosmetics::default(),
-            quests: crate::quests::QuestLog::default().kept(),
+            quests: crate::quests::QuestLog::begun(),
             mail: Vec::new(),
             lore: Vec::new(),
             left: None,

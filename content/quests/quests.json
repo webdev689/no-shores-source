@@ -6,6 +6,7 @@
       "name": "A House of Your Own",
       "faction": 0,
       "begin": "roundBegin",
+      "kept": "hear-three-houses",
       "tasks": [
         {
           "id": "hear-the-stranger",

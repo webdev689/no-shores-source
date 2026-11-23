@@ -52,7 +52,7 @@ shows what the rules say: the tracker, the lines, the marks, and the Art's locks
 file. A quest has an `id`, a `name`, a `faction` (0 for the opening, else the house's number in
 `content/gear/factions.json`), the scene played as it begins (`begin`) and its `tasks`. A task has the words the tracker
 shows (`task`), its scenes (`start`, played as it begins; `end`, played as it is done), its `goals`, all met before the
-next task begins, and its `reward`, given as it is done. Any goal may name a `scene`, said as the room meets it. A quest may name the quests it comes `after` (by id); a house may have several. The quest walked is the first in the file of the pledged house's (the opening's, unpledged) not done whose `after` are all done. A task may list the ids it had (`was`); a save at one reads as that task, its counts at nothing. A goal has its tracker words (`text`), a `count` (1 when left
+next task begins, and its `reward`, given as it is done. Any goal may name a `scene`, said as the room meets it. A quest may name the quests it comes `after` (by id); a house may have several. A quest may name the task a character kept before it held any place in it reads at (`kept`). The quest walked is the first in the file of the pledged house's (the opening's, unpledged) not done whose `after` are all done. A task may list the ids it had (`was`); a save at one reads as that task, its counts at nothing. A goal has its tracker words (`text`), a `count` (1 when left
 out) and its kind:
 
 | Kind | Met by | Its fields |
@@ -98,14 +98,16 @@ Weaponsmith and the four armour pieces of the Armorsmith, which the starter stoc
 **Wear them**; **Hear the three houses** (Arlo Kestrel, Elder Maren Hale and Sable each introducing their house,
 [[Factions]]); and **Choose a house**, the pledge. Its `begin` is the Weaponsmith calling the player over; the houses'
 task begins with Arlo's word to hear all three. A character whose log stood at the houses before keeps its place by
-its task's id, so it is not walked round again, and is owed no gift.
+its task's id, and one kept with no place in the opening reads at "Hear the three houses" (its `kept`): neither is
+walked round again, nor owed the gift.
 
 ## In the rules
 
 - **Kept in the character** (`gear`, `quests.rs`), **by id**: for each quest by its `id`, the task reached by its task's `id` (so a quest or task added anywhere in the file keeps every save's place), each of that
-  task's goals' counts, and whether it is done; and for each Art, the fragment choices waiting. A character kept before
-  quests reads every quest unbegun.
-- **Read leniently**: a quest log of a shape this room cannot read reads as unbegun and is written back as it was. A
+  task's goals' counts, and whether it is done; and for each Art, the fragment choices waiting. A new character begins
+  every quest at its first task; one that holds no place in a quest (kept before it was laid out) reads at the
+  quest's `kept` task, else its first.
+- **Read leniently**: a quest log of a shape this room cannot read reads as one kept before (above) and is written back as it was. A
   fragment choice waiting for an Art none of whose fragments is left to own is paid at its price as soon as the room
   answers any ask.
 - **The quest walked**: with no pledge, the opening, until it is done; pledged, the pledged house's road, until it is

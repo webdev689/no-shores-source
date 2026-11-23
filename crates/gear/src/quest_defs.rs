@@ -60,7 +60,8 @@ pub struct TaskDef {
 }
 
 /// One quest: its id, name, faction (0 the opening), the quests done before it is walked (by id), the scene played as
-/// it is first walked, and its tasks.
+/// it is first walked, its tasks, and the task a character kept before it held any place in it reads at (`kept`, its
+/// first when left out).
 #[derive(Clone, Debug, PartialEq, Deserialize)]
 #[serde(deny_unknown_fields)]
 pub struct QuestDef {
@@ -71,6 +72,8 @@ pub struct QuestDef {
     pub after: Vec<String>,
     pub begin: String,
     pub tasks: Vec<TaskDef>,
+    #[serde(default)]
+    pub kept: Option<String>,
 }
 
 /// Everything in `content/quests/quests.json` the rules read.
@@ -110,6 +113,9 @@ impl QuestsDef {
             let ids = quest.tasks.iter().flat_map(|task| core::iter::once(&task.id).chain(&task.was));
             if !unique(ids) {
                 problems.push(format!("{}: a task's id or old id is empty or another's", quest.id));
+            }
+            if quest.kept.as_ref().is_some_and(|kept| !quest.tasks.iter().any(|task| task.id == *kept)) {
+                problems.push(format!("{}: kept names no task of its own", quest.id));
             }
             if let Some(after) = quest.after.iter().find(|after| !self.quests.iter().any(|it| it.id == **after)) {
                 problems.push(format!("{}: after names {after}, no quest", quest.id));

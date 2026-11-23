@@ -23,6 +23,13 @@ fn road_of(faction: u8) -> usize {
     found.expect("every house has a quest")
 }
 
+/// The task a character kept before a house's first quest held any place in it reads at, by its place.
+fn kept_task(faction: u8) -> usize {
+    let quest = &quests().quests[road_of(faction)];
+    let kept = quest.kept.as_ref().and_then(|kept| quest.tasks.iter().position(|task| task.id == *kept));
+    kept.unwrap_or(0)
+}
+
 /// An event that meets a goal, its places at the world's middle.
 fn meeting<'told>(goal: &'told GoalDef, places: &'told [Place]) -> Event<'told> {
     let stepped = |kind| Event::Stepped {
@@ -246,14 +253,14 @@ fn a_new_player_earns_no_art_and_wears_none_and_an_art_not_earned_is_refused() {
 }
 
 #[test]
-fn a_character_kept_before_quests_reads_every_quest_unbegun_and_every_art_earned_its_art_still_worn() {
+fn a_character_kept_before_quests_reads_each_at_its_kept_task_and_every_art_earned_its_art_still_worn() {
     let mut kept: serde_json::Value = serde_json::from_str(&Character::starting().to_json()).unwrap();
     let object = kept.as_object_mut().unwrap();
     object.remove("quests");
     object["arts"].as_object_mut().unwrap().remove("earned");
     object["arts"]["worn"] = 3.into();
     let back = Character::from_json(&kept.to_string()).unwrap();
-    assert_eq!(back.quest_now(), Some((road_of(0), 0)));
+    assert_eq!(back.quest_now(), Some((road_of(0), kept_task(0))), "the opening where a kept character stood");
     assert_eq!(back.quests.roads.len(), quests().quests.len());
     assert_eq!((back.arts.worn, back.earned(1), back.earned(3)), (3, ALL_EARNED, ALL_EARNED));
     let mut unearned = serde_json::from_str::<serde_json::Value>(&Character::starting().to_json()).unwrap();
@@ -284,7 +291,7 @@ fn the_quest_log_keeps_keys_it_does_not_know_and_is_made_whole_as_read() {
 }
 
 #[test]
-fn a_quest_log_of_a_shape_this_room_cannot_read_reads_unbegun_and_is_written_back_as_it_was() {
+fn a_quest_log_of_a_shape_this_room_cannot_read_reads_as_kept_before_and_is_written_back_as_it_was() {
     for unread in [
         serde_json::json!({ "roads": [{ "task": 3 }] }),
         serde_json::json!({ "roads": { "x": { "task": 3 } } }),
@@ -293,7 +300,7 @@ fn a_quest_log_of_a_shape_this_room_cannot_read_reads_unbegun_and_is_written_bac
         let mut kept: serde_json::Value = serde_json::from_str(&Character::starting().to_json()).unwrap();
         kept["quests"] = unread.clone();
         let back = Character::from_json(&kept.to_string()).expect("the character reads all the same");
-        assert_eq!(back.quest_now(), Some((road_of(0), 0)), "{unread}: unbegun");
+        assert_eq!(back.quest_now(), Some((road_of(0), kept_task(0))), "{unread}: as one kept before");
         let written: serde_json::Value = serde_json::from_str(&back.to_json()).unwrap();
         assert_eq!(written["quests"]["unread"], unread, "kept as it was");
     }
