@@ -485,6 +485,9 @@ the cutscenes, the camera's moves, the nameplate, the fires and the lines are th
   - The boss fight's task is "Face Captain Brannoc Thule", whatever stands before. The tracker hides while a cutscene
     holds the fight, and so do the fight's display (its bars and compass) and the key strip, the dialogue box
     staying; all come back as play does.
+  - With the menu open the lesson goes on: the task and its next step, with its keys, stand on one line in the middle
+    of the menu's foot, over the menu and clear of its tiles and labels (`TaskTracker.inMenu`). The rest of the
+    display stays under the menu, as on foot.
 - **The story's room.** Its room is told to play the story (`Room::story_wreck`): the player has no Art until the
   wisp gives them the Storm (`Room::story_storm`), so until then no ability bar shows and no cast is taken; every
   player wakes there, or joins, with no Melee weapon or armour carried or worn (the vault's kept), wearing the story's

@@ -311,6 +311,8 @@ export class WreckFight implements Beat {
     // Read every frame, a cutscene's too, so a turn the camera makes for it is never taken for the player's look.
     const tasks = this.teach(run, shown.fight, seconds);
     hud.tasks.show(held ? null : tasks);
+    // The lesson goes on as the menu is used (equip the bow), so its step stays in sight over the menu.
+    hud.tasks.inMenu = true;
     hud.reach(shown.standing);
     // Until the room's Thule is shown (asked of the rooms' worker, answered a moment later), the story's stands for him.
     const waiting = !coming && this.fought && !run.boss && !run.outcome;
@@ -546,6 +548,7 @@ export class WreckFight implements Beat {
     hud.reach({ kind: 'inside' });
     footView.hide();
     hud.tasks.show(null);
+    hud.tasks.inMenu = false;
     hud.toast();
     screen.bars(false);
     this.wisp?.leave();
