@@ -91,6 +91,7 @@ code:
   - client/src/game/seaHostiles.ts#hostileLook
   - client/src/combat/hud.ts#veilOf
   - client/src/combat/hud.ts#clearOf
+  - client/src/combat/callout.ts#Callout
   - client/src/combat/vitals.ts#Vitals
   - client/src/combat/vitals.ts#chargesShown
   - client/src/combat/hudLayout.ts#hudLayout
@@ -418,7 +419,7 @@ The game draws every screen itself, and by the owner's word no HTML is laid over
   and the others at 11, on the face's grid) stand by the bearing the view looks at, the shortest way round; one off the
   strip is hidden, never held at an end. A brass needle marks its middle. Its column stands what comes under it 10 px
   under its rule, 56 px down: a public event's banner ([[Public Events]]), or in an Elite Dungeon its encounters'
-  ([[Dungeons]], "Encounters"), then a boss's bar, then the target's plate.
+  ([[Dungeons]], "Encounters"), then a boss's bar 26 px under the banner, then the target's plate.
   A view too narrow for health's bar to stand 150 px long beside the compass stands the whole column under the vitals
   instead. On foot past 1440p the whole column (the compass, the banner, the boss bar and the target's plate) stands
   at twice its size, as the corners do. At sea it marks each hostile
@@ -537,8 +538,23 @@ The game draws every screen itself, and by the owner's word no HTML is laid over
   blinks (it holds blood or white), no flash plays and plates over figures and ships go straight to their places. The
   compass and its marks move only as the view turns.
 - **Its layers**, back to front: what stands over the world (the plates over figures, nearest in front, the parry
-  rings, the words, the arrows), then the compass's column, then the veil over the whole display: blood while
-  the player lies dead, plain while the link to the room is lost or joining again. The display never stands over
+  rings, the words, the arrows), then the compass's column, then a raid's call, then the veil over the whole display:
+  blood while the player lies dead, plain while the link to the room is lost or joining again.
+- **The top keeps clear.** The fight's words over the world (a number, "Dodge!") stand under the compass's column and
+  a raid's call where they would fall on them, as they stand under the plates over figures; a plate over a figure
+  that would stand on the compass, the banner, the boss bar, the target's plate or the call is laid unseen until it
+  stands clear, so nothing shows through the banner. Each keeps clear of where these were laid the frame before.
+  `hudCourt.test.ts` lays the Court's fullest banner, the boss bar, a "Dodge!" over the Boss and the call at 1600 by
+  900, 1280 by 720, 1024 by 600, 844 by 390 and 390 by 844 and finds no two overlapping.
+- **A raid's call** (`combat/callout.ts`): an Elite Dungeon's Court calls a few words over the middle of the view as
+  its mechanic is shown: "Get clear!" as the warded Boss's slam is, "Into the light!" as the Reckoning's warning
+  starts. White words three steps of the face tall on the red of the fight's own warnings, in a 2 px white edge; it
+  slides in as the banner does at a beat, stands 1.8 s and fades over its last 0.4 s, and is read out. Its top stands
+  16 px under the compass's column, no higher than a quarter down the view, or under the crosshair where above it
+  would cover it. Each new call shows afresh; one held on (the slam still shown) shows once.
+- **Foul water's edge.** While an Ascent's foul water harms the player (the room's harm told to them, and their feet
+  on its floor), the view's edge turns sick green, drawn as the struck edge is: it rises over 0.25 s, is held from one
+  harm to the next (1.25 s), and fades over 0.6 s from the moment they leave it. The display never stands over
   the game's own windows. An arrow to a threat off the screen that would fall on the vitals stands just below them,
   and one that would fall on the Arts and weapons, or on the game's key strip, just above them.
 - **Words** over the world or a fill (plates' names, the vitals' words, the veil's) carry a hard 1 px outline all

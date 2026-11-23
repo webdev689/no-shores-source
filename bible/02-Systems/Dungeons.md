@@ -69,6 +69,9 @@ code:
   - client/src/game/encounterLaw.ts#encounterBanner
   - client/src/game/encounterLaw.ts#encounterMarks
   - client/src/game/encounterLaw.ts#encounterPlaces
+  - client/src/game/encounterLaw.ts#encounterCall
+  - client/src/game/encounterLaw.ts#inFoulWater
+  - client/src/combat/callout.ts#Callout
   - client/src/game/encounterCues.ts#EncounterCues
   - client/src/game/encounterMesh.ts#layEncounters
   - client/src/game/encounterMesh.ts#waterMesh
@@ -521,7 +524,11 @@ or glows, and is read as standing none (`readDungeon`).
   ("Defeat the Boss", "Break the anchors" while warded, "Get
   clear of the Boss" while its slam is shown, "Stand in the light" with the Reckoning's seconds left in the banner's
   large clock, red and pulsing), "Fury in 1:00" in its last minute and "Fury ×1.4" once it begins, wherever the player
-  stands; with every seal broken and the Boss not yet up, only the count; none once the Boss has fallen. The compass marks each unbroken seal's room, then the end room once the Boss
+  stands; with every seal broken and the Boss not yet up, only the count; none once the Boss has fallen. Over the
+  middle of the view, large and brief, the Court calls "Get clear!" as its slam is shown and "Into the light!" as the
+  Reckoning's warning starts, the light first where both are ([[Interface]], "A raid's call"). While an Ascent's foul
+  water harms the player (its harm told to them while their feet stand on its floor, at most 5 cm up), the view's edge
+  turns sick green, fading as they leave it. The compass marks each unbroken seal's room, then the end room once the Boss
   wakes, until it falls. It slides in afresh as the Boss wakes, a seal breaks or a ward rises or breaks; the music
   stings as a seal breaks or a ward is won and as the Boss wakes, its mood holds tense while a seal runs and at its peak
   in the Court, and the Boss's score plays its part by the wards broken (its last stand still by its health). A ward
