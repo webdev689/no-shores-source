@@ -24,7 +24,8 @@ test('the stranger speaks of the world, then names each place in turn, and last 
     TOUR.map((step) => [step.scene, step.kinds]),
     [
       ['strangerHistory', []],
-      ['tourSmiths', ['armorsmith', 'weaponsmith']],
+      ['tourSmiths', ['armorsmith']],
+      ['tourWeaponsmith', ['weaponsmith']],
       ['tourMage', ['mage']],
       ['tourVault', ['vault']],
       ['tourTailor', ['tailor']],

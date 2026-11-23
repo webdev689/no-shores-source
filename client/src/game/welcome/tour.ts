@@ -22,7 +22,8 @@ export interface TourStep {
 const HOUSES = ['stormcallers', 'veiled', 'lamplighters'];
 export const TOUR: readonly TourStep[] = [
   { scene: 'strangerHistory', kinds: [], faces: true },
-  { scene: 'tourSmiths', kinds: ['armorsmith', 'weaponsmith'] },
+  { scene: 'tourSmiths', kinds: ['armorsmith'] },
+  { scene: 'tourWeaponsmith', kinds: ['weaponsmith'] },
   { scene: 'tourMage', kinds: ['mage'] },
   { scene: 'tourVault', kinds: ['vault'] },
   { scene: 'tourTailor', kinds: ['tailor'] },

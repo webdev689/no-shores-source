@@ -70,11 +70,11 @@ test('on arriving in Overlook the stranger says her welcome, the keys held and t
     assert.equal(said.at(-1), step.scene);
     let shot = after.shot(OWN, FLY_S);
     shot = after.shot(OWN, FLY_S);
-    if (step.kinds.length > 0) flown ||= shot.eye[2] > OWN.eye[2] + 5;
+    if (step.kinds.length > 0) flown ||= Math.hypot(shot.eye[0] - OWN.eye[0], shot.eye[1] - OWN.eye[1]) > 10;
     finish();
     await settled();
   }
-  assert.ok(flown, 'the view flew over the plaza');
+  assert.ok(flown, 'the view flew off to the places she names');
   frame();
   assert.deepEqual(gifts, ['64:18'], 'asked once, as she bids farewell');
   assert.equal(after.holding, false, "the keys are the player's again");
