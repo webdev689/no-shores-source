@@ -2,8 +2,7 @@ import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import type { Node, Picture } from '../ui/node.ts';
 import type { Interface } from '../ui/ui.ts';
-import type { ScreenMark } from './hudLaw.ts';
-import { markNodes } from './hudMarks.ts';
+import { markNodes, type ScreenMark } from './hudMarks.ts';
 
 /** What a picture's drawing does on a context that only notes it. */
 function drawnBy(picture: Picture): string[] {
