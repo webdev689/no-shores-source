@@ -36,6 +36,7 @@ import { WispScene } from './wispScene.ts';
 import { topAt, type WreckLayout } from './wreckLayout.ts';
 import type { WreckRun } from './wreckRun.ts';
 import { fireLamps, setAblaze, type WreckScenery } from './wreckScenery.ts';
+import { FIRST_PERSON } from '../../player/playerCamera.ts';
 
 /** Captain Brannoc Thule's type in the roster, and his faction's. */
 const THULE = 12;
@@ -259,6 +260,8 @@ export class WreckFight implements Beat {
       this.devBegun = true;
       const { body, facing } = this.story.walker.player;
       beginAt(this.devStart, run, this.layout, { x: body.x, y: body.y, facing });
+      const { player } = this.story.walker;
+      if (this.devStart.firstPerson) this.story.walker.player = { ...player, view: FIRST_PERSON };
     }
     this.arming?.step(run);
     const { story } = this;

@@ -27,6 +27,7 @@ test('a page under development begins the wreck at the wisp, the bow or the Stor
   assert.deepEqual(devStart('?prologue=wreck&wisp=9'), { stage: 'wisp', wispInto: 8 });
   assert.deepEqual(devStart('?prologue=wreck&bow=1'), { stage: 'bow', wispInto: 0 });
   assert.deepEqual(devStart('?prologue=wreck&lash=1'), { stage: 'storm', wispInto: 0 });
+  assert.deepEqual(devStart('?prologue=wreck&wisp=4&view=first'), { stage: 'wisp', wispInto: 3, firstPerson: true });
   assert.equal(devStart('?prologue=wreck'), null);
   assert.equal(devStart('?prologue=wreck&wisp=0'), null);
 });

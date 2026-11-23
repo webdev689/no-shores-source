@@ -1,7 +1,7 @@
 // Where a page under development may begin the wreck's teaching, to picture it: `?prologue=wreck&wisp=<n>` n - 1
 // seconds into the wisp's coming, `&bow=1` with the boarder's bow lying before the player, `&armed=1` the same with
 // the sword and shield and the bow taken up and worn, `&lash=1` with the Storm given and a boarder coming for them, to
-// be frozen on for Arc Lash. A built game never reads it.
+// be frozen on for Arc Lash; `&view=first` with the camera in the player's head. A built game never reads it.
 import { ASKS } from '../../network/gearMessages.ts';
 import { slotOf } from '../../player/gear.ts';
 import type { Stage } from './tutorial.ts';
@@ -15,16 +15,19 @@ export interface DevStart {
   readonly wispInto: number;
   /** The story's arms taken up and worn, as the player would have them once the bow is equipped (`Arming`). */
   readonly armed?: true;
+  /** The camera in the player's head from the start. */
+  readonly firstPerson?: true;
 }
 
 /** The start an address's `search` asks for, or none. */
 export function devStart(search: string): DevStart | null {
   const asked = new URLSearchParams(search);
   const wisp = Number(asked.get('wisp') ?? NaN);
-  if (wisp >= 1) return { stage: 'wisp', wispInto: wisp - 1 };
-  if (asked.get('armed') === '1') return { stage: 'bow', wispInto: 0, armed: true };
-  if (asked.get('bow') === '1') return { stage: 'bow', wispInto: 0 };
-  if (asked.get('lash') === '1') return { stage: 'storm', wispInto: 0 };
+  const eyes = asked.get('view') === 'first' ? { firstPerson: true as const } : {};
+  if (wisp >= 1) return { stage: 'wisp', wispInto: wisp - 1, ...eyes };
+  if (asked.get('armed') === '1') return { stage: 'bow', wispInto: 0, armed: true, ...eyes };
+  if (asked.get('bow') === '1') return { stage: 'bow', wispInto: 0, ...eyes };
+  if (asked.get('lash') === '1') return { stage: 'storm', wispInto: 0, ...eyes };
   return null;
 }
 
