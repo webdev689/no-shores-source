@@ -7,7 +7,7 @@ import { lookAt } from '../../cinema/rail.ts';
 import { Laid } from '../../combat/spellPixels.ts';
 import { audioPoint } from '../../listener.ts';
 import { playSample } from '../../soundSamples.ts';
-import { panShot, type Shot } from '../camera.ts';
+import type { Shot } from '../camera.ts';
 import { worldOutput } from '../uiSounds.ts';
 import type { Story } from './story.ts';
 import { ENGULF_AT_S, FLASH_IN_S, layEngulf, layWisp, WISP_LENGTH_S, WISP_S, wispLight, type WispNow } from './wisp.ts';
@@ -125,7 +125,7 @@ export class WispScene {
     this.trail = this.trail.filter((point) => point.age <= TRAIL_KEPT_S);
   }
 
-  /** The camera: from the player's shot round to follow the wisp close as it comes and wanders; low and near to
+  /** The camera: a cut from the player's shot to follow the wisp close as it comes and wanders; low and near to
    *  watch its rings close on them (`ringEye`); and back over their shoulder once it has engulfed them. */
   private shotOf(back: Shot): Shot {
     const aimed = (eye: Point, target: Point): Shot => ({ ...this.from, eye, ...lookAt(eye, target) });
@@ -137,7 +137,8 @@ export class WispScene {
       return clamped * clamped * (3 - 2 * clamped);
     };
     const { blocks } = this.course;
-    if (into < circleAt) return panShot(this.from, aimed(chase.eye, chase.look), ease(into / LEAVE_S));
+    // A cut to it out over the sea: a pan from the player's shoulder would cross 30 m with it a speck off the middle.
+    if (into < circleAt) return aimed(chase.eye, chase.look);
     const end = ENGULF_AT_S + WISP_S.engulf;
     const look = ringLook(this.course, Math.min(into, end), this.ringsFrom);
     const rings = { eye: this.ringsFrom, look };

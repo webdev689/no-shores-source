@@ -458,7 +458,7 @@ the cutscenes, the camera's moves, the nameplate, the fires and the lines are th
     faster and brighter (3.4 s). Every point of it is lifted 0.35 m clear of the wreck's solids beside or under it
     (none counts within 0.4 m of the player's feet) and eased up and down at 7 m/s at most, so it goes over a rail or
     the wheel and never through one; its rings instead close in toward the player where a solid stands within them at
-    their height (widening again at 4.8 m/s at most), so they keep low round the chest. As it comes the camera stands
+    their height (widening again at 4.8 m/s at most), so they keep low round the chest. As it comes the camera cuts from the player's shot to stand
     back 2 to 3.2 m along its level heading over the last second and 1.1 to 2.6 m over it, the first such place that
     sees it clear, looking on past it toward the player so the wreck stands in the frame; for the rings it stands low
     and near, a cutscene's shot (`ringEye`): of the places round the player 2.6 to 5.4 m out and 1 to 2.9 m over their
