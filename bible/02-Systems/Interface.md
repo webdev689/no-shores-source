@@ -562,7 +562,7 @@ The game draws every screen itself, and by the owner's word no HTML is laid over
   once; once its mechanic ends (the slam landed) a call still standing fades at once.
 - **Foul water's edge.** While an Ascent's foul water harms the player (from the room's harm told to them, while
   their feet stay on its floor), the view's edge turns sick green, drawn as the struck edge is: it rises over 0.25 s, is held from one
-  harm to the next (1.25 s), and fades over 0.6 s from the moment they leave it.
+  harm to the next (1.5 s), and fades over 0.6 s from the moment they leave it.
 - **Words** over the world or a fill (plates' names, the vitals' words, the veil's) carry a hard 1 px outline all
   round (a word's `halo` edge, `ui/drawLaid.ts`), as a ship's plate strokes its words, so they read over bright sky. The
   [[Game]]'s place name and key strip, laid straight on the world too, carry the same outline.

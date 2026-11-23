@@ -101,7 +101,7 @@ const WORD_HIGH_M = 1.2;
 const AMMO_FULL = 'Ammo full';
 /** Foul water's edge: its sick green, how long one harm holds it (the floor harms once a second, seals.rs
  *  DROWNED_EVERY), and how long it takes to rise and to fade, seconds. */
-const FOUL = { colour: [96, 150, 24], heldS: 1.25, riseS: 0.25, fadeS: 0.6 } as const;
+const FOUL = { colour: [96, 150, 24], heldS: 1.5, riseS: 0.25, fadeS: 0.6 } as const;
 /** How far under the banner the boss bar stands, past the column's own gap, CSS pixels at the first zoom. */
 const BOSS_CLEAR = 6;
 /** How tall a Boss's figure stands, metres, for the span of the view the call keeps clear of. */
@@ -159,12 +159,16 @@ export function veilOf(
   return { words: `You fell. Standing again in ${seconds} s`, link: false };
 }
 
-/** The span down the view a figure standing at `view` fills, where it stands within the call's reach of the view's
- *  middle across (CSS pixels); none off it or behind the eye. */
-function spanOf(frame: HudFrame, view: FighterView): { readonly top: number; readonly bottom: number } | null {
+/** The span down the view a figure standing at `view` fills, where it stands within the call's reach (at `zoom`) of
+ *  the view's middle across (CSS pixels); none off it or behind the eye. */
+function spanOf(
+  frame: HudFrame,
+  view: FighterView,
+  zoom: number,
+): { readonly top: number; readonly bottom: number } | null {
   const feet = project(frame.matrix, [view.x, view.y, view.z], frame.width, frame.height);
   const head = project(frame.matrix, [view.x, view.y, view.z + BOSS_TALL_M], frame.width, frame.height);
-  if (!feet || !head || Math.abs(feet.x - frame.width / 2) > CALL_REACH) return null;
+  if (!feet || !head || Math.abs(feet.x - frame.width / 2) > CALL_REACH * zoom) return null;
   return { top: head.y, bottom: feet.y };
 }
 
@@ -307,7 +311,7 @@ export class Hud {
     );
     this.quest = frame.questAt && own ? { at: frame.questAt, from: [own.x, own.y] } : null;
     const boss = this.foeBars.update(frame.foes, own, overHead, viewing, seconds);
-    this.bossSpan = boss && spanOf(frame, boss.view);
+    this.bossSpan = boss && spanOf(frame, boss.view, this.layout.zoom);
     const feet = own && ([own.x, own.y, own.z] as const);
     this.playerPlates.update(frame.players ?? [], { ...viewing, spot, own: feet }, seconds);
     const under = frame.foes.find((foe) => foe.id === this.foeBars.under)?.view ?? null;
