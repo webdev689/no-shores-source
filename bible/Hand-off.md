@@ -198,8 +198,11 @@ The decisions in [[Open Questions]] are not repeated here.
   and never explained ([[Every Line Reads as Spoken, and the Lore Is Detailed, Mysterious and Gripping]], every call
   listed there). Ids, scene names, each scene's speakers in order and the puzzles' orders are kept, so no code
   changes. Merging deploys the rooms too: `lore.json`, `quests.json` and `items.json` feed the protocol's version.
-  Tested offline: every scene held to the Dialogue rule's numbers, the lore's markup checked, `cargo xtask check` on
-  the head. Not yet read or heard in the game.
+  An independent read's findings are fixed, each checked first (six task seams where one speaker said three lines
+  in a row, stock phrases, contradictions in the books). Tested offline: every scene held to the Dialogue rule's
+  numbers, the seams too, the lore's markup checked, `cargo xtask check` on the head. Not yet read or heard in the
+  game. For the owner: the Pearl Tomb's brief (`briefs.json`, never shown) has dunes where the lore has cliffs; and
+  a proposed dialogue check across a task's end and the next task's start.
 - **The wreck's R2 tools after #172**, which no session may edit: `tools/wreck/wreck_level.py`'s waves still list the
   Tithe-Mates and Bosuns at rank 1; to match `content/prologue/wreck.json` each `(11, 1, ...)` becomes `(11, 2, ...)`
   and each `(10, 1, ...)` `(10, 2, ...)`, and `export_wreck.py` should write the quiet deck's `masts` (added to
