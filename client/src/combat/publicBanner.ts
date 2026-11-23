@@ -50,6 +50,11 @@ export interface PublicShown {
   }[];
   readonly mood?: 'tension' | 'peak' | null;
   readonly part?: number;
+  /** A raid's call over the middle of the view as its mechanic is shown (an Elite Dungeon's slam or Reckoning). */
+  readonly call?: string | null;
+  /** Foul water that harms at the player's feet (an Ascent's drowned floor while its seal runs): 'harmed' on the frame
+   *  the room tells them its harm, 'wet' while they stand in it otherwise. */
+  readonly foul?: 'harmed' | 'wet' | null;
 }
 
 /** How high over a store's foot its bar stands, metres: over its stack and tarp (1.6 m), as a plate over a head. */

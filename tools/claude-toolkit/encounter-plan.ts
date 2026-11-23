@@ -141,6 +141,21 @@ function floorAcross(seal: Seal, from: Point): Point {
   return cells.filter(clear).sort((first, second) => far(second) - far(first))[0] ?? from;
 }
 
+/** How far `point` stands inside room `index`'s walls and clear of every solid, metres (less than 0 outside). */
+function openness(index: number, [x = 0, y = 0]: Point): number {
+  const room = layout.rooms[index];
+  const walls = room
+    ? Math.min(
+        x - room.x * layout.cell,
+        (room.x + room.width) * layout.cell - x,
+        y - room.y * layout.cell,
+        (room.y + room.depth) * layout.cell - y,
+      )
+    : 0;
+  const solids = layout.boxes.map(([minX, minY, maxX, maxY]) => Math.max(minX - x, x - maxX, minY - y, y - maxY));
+  return Math.min(walls, ...solids);
+}
+
 plan.seals.forEach((seal, index) => {
   const kind = KINDS[seal.kind] ?? 'seal';
   // A Weighing's lone player has its first two plates in play: the picture looks between them.
@@ -191,9 +206,9 @@ plan.seals.forEach((seal, index) => {
   if (seal.kind === ASCENT) {
     const stone = seal.pads[seal.pads.length - 1];
     const water = floorAcross(seal, door);
-    // No frame waited: a slow frame's ticks in the water could drown the body.
+    // The room ticks only as the page draws: enough frames for the floor to harm the body a time or two.
     stand(water, undefined, 300);
-    steps.push({ eval: `(async()=>{${sleep(2500)}})()` });
+    steps.push({ frames: 30 });
     freeze(true);
     picture(water, middleOf(seal.pads.map(([minX, minY, maxX, maxY]) => [(minX + maxX) / 2, (minY + maxY) / 2])), 'third,6,25', 'ascent_foul_water');
     encounter(0, 0, 0);
@@ -216,15 +231,29 @@ plan.seals.forEach((seal, index) => {
     }
   }
   if (seal.kind === HOLDFAST) {
-    const ring = toward(first, door, 1.5);
+    // Inside the ring on the side whose camera, 4 m behind the body, stands deepest in the room's open floor, so neither
+    // a wall nor a pillar comes between it and the body and the whole relic.
+    const roomy = (point: Point) => openness(seal.room, point);
+    const sides = [0, 1, 2, 3, 4, 5, 6, 7].map((eighth) => {
+      const turn = (eighth * Math.PI) / 4;
+      const out = (metres: number): Point => [
+        (first[0] ?? 0) + Math.sin(turn) * metres,
+        (first[1] ?? 0) - Math.cos(turn) * metres,
+      ];
+      return { ring: out(2.4), room: Math.min(roomy(out(2.4)), roomy(out(4.4)), roomy(out(6.4))) };
+    });
+    const ring = sides.reduce((best, side) => (side.room > best.room ? side : best)).ring;
+    // Looking a little aside of the relic, so the ring at its middle never stands behind the body's head.
+    const [acrossX, acrossY] = [(first[1] ?? 0) - (ring[1] ?? 0), (ring[0] ?? 0) - (first[0] ?? 0)];
+    const aside: Point = [(first[0] ?? 0) + acrossX * 0.5, (first[1] ?? 0) + acrossY * 0.5];
     stand(ring);
     pause(800);
     freeze(true);
-    picture(ring, first, 'third,4,25', 'holdfast_held');
+    picture(ring, aside, 'third,4,20', 'holdfast_held');
     encounter(2, index, 0.45);
-    picture(ring, first, 'third,4,25', 'holdfast_draining');
+    picture(ring, aside, 'third,4,20', 'holdfast_draining');
     encounter(2, index, 0);
-    picture(ring, first, 'third,4,25', 'holdfast_drained');
+    picture(ring, aside, 'third,4,20', 'holdfast_drained');
     encounter(2, index, 1);
     freeze(false);
   }
@@ -240,32 +269,50 @@ const [anchor0 = anchors, anchor1 = anchors, anchor2 = anchors] = plan.anchors;
 const byAnchor = toward(anchor2, anchors, 1.8);
 stand(byAnchor);
 picture(byAnchor, anchor2, 'third,6,45', 'court_anchors_resting');
+// Awake, the Boss strikes: the body's health is held whole and deep from here, so no death hides a moment. Before
+// each picture of it the Boss (and its post, where a ward holds it) is stood ahead on the camera's line, 6.5 m or as
+// far as the end room's open floor allows, and the camera looks low enough that it stands in the frame's middle.
+encounter(10, 1, 0);
+const bossAhead = (from: Point, to: Point) => {
+  let metres = 6.5;
+  while (metres > 2 && openness(layout.end, toward(from, to, metres)) < 1.5) metres -= 0.25;
+  const [east = 0, south = 0] = toward(from, to, metres);
+  encounter(11, east, south);
+  // Frames enough for the page's figure to follow it there after a long move.
+  steps.push({ frames: 20 });
+};
 encounter(3, 0, 0);
 pause(1500);
+bossAhead(byAnchor, anchor0);
 freeze(true);
-picture(byAnchor, anchor0, 'third,9,50', 'court_awake');
+picture(byAnchor, anchor0, 'third,9,22', 'court_awake');
 freeze(false);
 encounter(4, 0, 0);
 pause(2500);
 encounter(0, 0, 0);
 freeze(true);
-picture(byAnchor, anchor0, 'third,9,50', 'court_ward');
+bossAhead(byAnchor, anchor0);
+picture(byAnchor, anchor0, 'third,9,22', 'court_ward');
 encounter(5, 0, 1);
 encounter(5, 1, 0.5);
 // Beside an anchor, not on it, so its beam does not stand in the camera's way.
 const beside = toward(anchor1, anchors, 1.8);
 stand(beside);
+// The Boss stands where the slam and Fury pictures want it; the filling anchor is this picture's own.
+bossAhead(beside, anchor0);
 picture(beside, anchor1, 'third,7,45', 'court_anchors_filling');
 encounter(6, 0, 50);
-picture(beside, anchor0, 'third,10,55', 'court_slam');
+picture(beside, anchor0, 'third,9,22', 'court_slam');
 encounter(6, 0, 300);
 encounter(8, 0, 45 * 60);
-picture(beside, anchor0, 'third,9,50', 'court_fury_warning');
+picture(beside, anchor0, 'third,9,14', 'court_fury_warning');
 encounter(8, 0, -31 * 60);
-picture(beside, anchor0, 'third,9,50', 'court_fury');
-freeze(false);
+picture(beside, anchor0, 'third,9,14', 'court_fury');
+// The ward broken, a Reckoning may start at once on its own: it is set straight after, so its call is pictured in
+// its moment.
 for (const nth of [0, 1, 2]) encounter(5, nth, 1);
-pause(300);
+freeze(false);
+steps.push({ frames: 1 });
 encounter(7, 0, 420);
 freeze(true);
 picture(beside, anchor0, 'third,8,25', 'court_reckoning');
