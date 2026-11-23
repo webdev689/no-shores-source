@@ -306,6 +306,7 @@ a decision is a record. How to add one: [[Recording a Decision]].
 - [[The Lore Books' Covers Are Drawn in Detail]]
 - [[The Factions Are the Baseline for Every Quest]]
 - [[A Keeper With Something for You Pulses and Is Seen From Everywhere]]
+- [[Friendly Ships Take Several Courses, About Five in View, Sailing Visibly]]
 
 ## Replaced
 
@@ -321,4 +322,3 @@ a decision is a record. How to add one: [[Recording a Decision]].
 - [[The Rooms Deploy on Each Merge]], by [[The Rooms Deploy When Their Code Changes]]
 - [[The Seas Chosen Bring Their Weather, and a Storm Is the Mystery's]], by [[The Tiers Are Normal, Elite and Abyss]]
 - [[Private Repo overlook-source]], by [[The Game Is Named No Shores]]
-- [[Friendly Ships Take Several Courses, About Five in View, Sailing Visibly]]
