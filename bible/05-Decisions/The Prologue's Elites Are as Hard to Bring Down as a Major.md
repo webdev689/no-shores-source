@@ -18,7 +18,8 @@ Thule becomes a Tithe-Mate."
 
 - The player fights the wreck with the sword and shield the story dresses them in, not bare hands.
 - The Tithe-Mate and the pirate Captain keep their elite look and have a Major's health and defence.
-- The gun deck's wave has a Tithe-Mate where a second Captain Brannoc Thule stood.
+- The gun deck's wave has a Tithe-Mate where a second Captain Brannoc Thule stood. Since [[Thule Fights on a Quarterdeck Twice as Long]] that zone is the
+  wreckage off her port quarter, its wave as it stood.
 
 ## Claude's calls
 

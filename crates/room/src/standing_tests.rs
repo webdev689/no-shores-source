@@ -440,7 +440,7 @@ fn relayed_cosmetics(dress: &str) -> [Option<String>; 3] {
 #[test]
 fn a_dress_sent_back_within_its_turn_is_the_one_others_see() {
     let (mut room, player) = room_with_player();
-    let dress = |right: &str| format!(r#"{{"body":"m","race":"human","tone":1,"outfit":{{"right":"{right}"}}}}"#);
+    let dress = |right: &str| format!(r#"{{"body":"male","race":"human","tone":1,"outfit":{{"right":"{right}"}}}}"#);
     let send = |room: &mut Room, sequence: u32, right: &str| {
         let input = Input { sequence, dress: Some(dress(right)), ..Input::default() };
         room.input(player, input).expect("taken");

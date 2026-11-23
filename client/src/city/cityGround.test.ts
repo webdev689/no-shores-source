@@ -3,14 +3,16 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import type { BuildingTable, PropTable } from '../models/tables.ts';
 import { parseBlockFile, type RmbBlock, TILES } from './blocks.ts';
-import { buildCity, detailRuns, retaining, runs } from './cityBuild.ts';
+import { buildCity, cityBuildSteps, detailRuns, retaining, runs } from './cityBuild.ts';
 import { clearedGround, groundPlates, PAVED_TILE, plateSkirts, sideOf } from './cityGround.ts';
 import { MASS_FLOATS, MASS_RUIN } from './cityMasses.ts';
+import { MODEL_FLOATS } from './cityModels.ts';
 import { emptyMesh } from './mesh.ts';
 import { PICTURE_LAYERS } from './pictures.ts';
 import { FORMATIONS } from './crystalFormations.ts';
 import { chunkDraws, withinMiddle } from './crystalInstances.ts';
 import { CELL_M, type CityPlan, type PlanCell, type Solid } from './plan.ts';
+import { stepWithin } from './steps.ts';
 
 const content = (path: string): string => readFileSync(new URL(`../../../content/${path}`, import.meta.url), 'utf8');
 
@@ -216,9 +218,13 @@ function drawingFingerprint(data: ReturnType<typeof buildCity>): string {
   const near = [...data.near.entries()].flatMap(([cell, list]) =>
     list.flatMap((each) => [cell, each.model, ...each.at]),
   );
+  const laid = new Float32Array(data.solids.vertices);
+  const corners = new Float32Array((laid.length / MODEL_FLOATS) * 3);
+  for (let vertex = 0; vertex < laid.length / MODEL_FLOATS; vertex++)
+    corners.set(laid.subarray(vertex * MODEL_FLOATS, vertex * MODEL_FLOATS + 3), vertex * 3);
   const bytes = [
     new Uint8Array(data.masses),
-    new Uint8Array(new Float32Array(data.solids.positions).buffer),
+    new Uint8Array(corners.buffer),
     new Uint8Array(new Float32Array(near).buffer),
   ];
   let hash = 0x811c9dc5;
@@ -231,6 +237,36 @@ const TABLES = {
   props: JSON.parse(content('forged/props.json')) as PropTable,
 };
 const TEMPERATE = { climate: 'temperate', season: 'summer' } as const;
+
+test('a city built a few steps a frame, at any budget, is the very city built in one go', () => {
+  const plan = { ...madePlan(), ruined: true };
+  const whole = buildCity(plan, TEMPERATE, blocksOf(), TABLES);
+  // Each step takes a millisecond on this clock, so a budget of one takes a step a frame.
+  for (const budget of [1, 7, 40]) {
+    const clock = { now: 0 };
+    const steps = cityBuildSteps(plan, TEMPERATE, blocksOf(), TABLES);
+    let [frames, built] = [0, stepWithin(steps, budget, () => clock.now++)];
+    for (; !built; frames++) built = stepWithin(steps, budget, () => clock.now++);
+    if (budget === 1) assert.ok(frames > 100, `${frames} frames`);
+    assert.equal(drawingFingerprint(built.made), drawingFingerprint(whole));
+    // What answers questions is asked them; the rest is compared whole.
+    const {
+      cleared,
+      book: { layerOf, ...book },
+      ...sliced
+    } = built.made;
+    const {
+      cleared: wholeCleared,
+      book: { layerOf: wholeLayerOf, ...wholeBook },
+      ...inOne
+    } = whole;
+    assert.deepEqual({ ...sliced, book }, { ...inOne, book: wholeBook }, `the same, a budget of ${budget} a frame`);
+    for (const [x, y] of [plan.centre, [plan.grid.west + 5, plan.grid.north + 5], [0, 0]] as const)
+      assert.equal(cleared(x, y), wholeCleared(x, y));
+    for (const { archive, record } of book.pictures)
+      assert.equal(layerOf(archive, record), wholeLayerOf(archive, record));
+  }
+});
 
 test("a port city's drawing is as it was before ruins were laid", () => {
   const port = buildCity({ ...madePlan(), ruined: false, wrecks: [] }, TEMPERATE, blocksOf(), TABLES);
@@ -272,13 +308,13 @@ test('a ruin breaks every building the same every time: some fallen to heaps, th
 /** The crystal's vertices in a drawing's solids, from the city's middle, inside some ranges of its indices. */
 function crystalCorners(data: ReturnType<typeof buildCity>, ranges: readonly { first: number; count: number }[]) {
   const crystal = data.book.materials.crystal;
+  const [floats, whole] = [new Float32Array(data.solids.vertices), new Uint32Array(data.solids.vertices)];
   const corners: [number, number, number][] = [];
   for (const { first, count } of ranges)
     for (let k = first; k < first + count; k++) {
-      const vertex = data.solids.indices[k];
-      if (data.solids.layers[vertex] !== crystal) continue;
-      const place = data.solids.positions.slice(vertex * 3, vertex * 3 + 3);
-      corners.push([place[0], place[1], place[2]]);
+      const laid = data.solids.indices[k] * MODEL_FLOATS;
+      if (whole[laid + 8] !== crystal) continue;
+      corners.push([floats[laid], floats[laid + 1], floats[laid + 2]]);
     }
   return corners;
 }

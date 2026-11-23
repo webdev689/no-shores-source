@@ -17,7 +17,7 @@ export function inspectedGear(found: Details): GearState | null {
   const shown = found.shown;
   if (!shown) return null;
   const items = shown.worn.map((piece, index): GearItem => ({
-    id: index + 1,
+    id: piece.id ?? index + 1,
     kind: piece.kind,
     rarity: piece.rarity,
     level: piece.level,
@@ -37,6 +37,7 @@ export function inspectedGear(found: Details): GearState | null {
     columns: piece.gilded ? GILDED : [],
     price: 0,
     element: piece.element,
+    source: piece.source ?? 0,
   }));
   const art = shown.art ?? 0;
   const emblem = EMBLEMS.findIndex((each) => each.id === shown.emblem);

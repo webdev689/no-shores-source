@@ -38,6 +38,8 @@ code:
   - crates/land/src/sites.rs#City
   - client/src/city/cityView.ts#CityView
   - client/src/city/cityBuild.ts#buildCity
+  - client/src/city/cityBuild.ts#cityBuildSteps
+  - client/src/city/steps.ts#stepWithin
   - client/src/city/plan.ts#cityClimate
   - client/src/city/blocks.ts#placed
   - client/src/city/tiers.ts#tierFades
@@ -183,7 +185,10 @@ middle landing 2 m aside of their line, away from the flights.
 before its own relief (`land::pads`): the terraces, the plaza and the landmark's ground. So the city's ground is the
 same to the bit wherever it is sampled, and a window cut round the social space keeps it ([[Land]]). Past a pad's
 edge the land blends into its level within a metre, and where the pad on top changes each side blends to their
-middle, so a lip a body would step is a slope it walks; a terrace standing higher is still a step its wall stands on.
+middle, toward a level at most a step (0.5 m, `BLEND_MOST_M`) off its own, so a lip a body would step is a slope it
+walks, the ground runs on without a ledge along a ramp's side, and a terrace standing higher sinks at most a quarter
+of a metre at its edge, where its wall stands: blended all the way, the floor beside the wall would sink, and a body
+walked into the dip would be carried up and over it.
 A seam hidden under a later pad (the cells under the plaza) shows nothing (`Pads::seam_near`), and at a pad's
 corner, where one edge borders the land and the next an earlier pad, each edge blends on its own side. A window
 keeps every pad whose seam reaches into it.
@@ -216,10 +221,18 @@ layout's own boxes (`crates/layout/src/collide.rs`) do not yet read them.
 ## How it is drawn
 
 `CityView` is a drawer for the game's scene, drawn into the scene's own pass. It is handed a plan, the continent's
-climate (`cityClimate` of its biome), the RMB blocks the plan names and the forged tables (`setCity`); `drawInto`
+climate (`cityClimate` of its biome), the RMB blocks the plan names and the forged tables; `drawInto`
 draws a frame; `cleared(x, y)` is true on the pads and under every solid's footprint, the quays and piers among
 them, for nature to keep off. Every position is measured from the city's middle, so the GPU's floats keep their
 precision 3 km out.
+
+**Built a few steps a frame.** The game hands a city over with `beginCity`: its drawing is worked out in small steps
+(`cityBuildSteps`: a cell's pieces, a model forged, a piece's masses and its crystal, a solid, 4,096 vertices laid) and put on the
+GPU a buffer a step, and before each frame is recorded (`prepare`) the build takes steps for 2 ms while an older city
+stands drawn, 24 ms while none does (behind the veil, which waits on it). The city drawn before is drawn, lit and kept clear until the new one is whole,
+then the new one in its place, so nothing half-built shows. A landmass's city is built so once it opens, and its
+layouts' city again whenever the layouts within 4 km change ([[Layouts]]). A city begun again before it is whole is
+let go. The [[World Editor]] builds in one go (`setCity`); either way the same city is made, to the byte.
 
 | Biome | Climate set |
 |---|---|
@@ -252,8 +265,10 @@ with no kerb or border, so a run of avenues reads as one road; the landmark's ow
 retaining walls and a plate's skirts, 30 m down its open sides or to the lower plate beside it, are rubble near the
 ground's colour, so the walls between the terraces read as terracing, not as a grid. The whole city is
 drawn nearer in depth than it stands (not on screen) by 5 cm and 1.2 % of the distance, above the sea only, since
-the 1 km land stands up to about 20 m off a terrace's level; a plate is drawn 3 cm under its level, so a floor laid
-at that level shows over it.
+the 1 km land stands up to about 20 m off a terrace's level (`PULL_WGSL`); a plate is drawn 3 cm under its level, so a
+floor laid at that level shows over it. Where a city or a layout is drawn, a figure's lowest quarter metre is pulled
+the same way, fading to none above it, and so is its contact shade, so the walks, lawns and paving under it no longer
+cut its soles off; nothing at a body's height (a hit's star, a weapon's glow) moves in depth.
 
 **The pictures.** One texture array of at most 252 layers, each picture resampled to 128 texels square, sampled
 nearest up close and mipmapped far off. Daggerfall's stone is dark, so a solid's picture may be painted lighter or
@@ -288,7 +303,9 @@ whose shadow at the far map's 1.2 m texels is the same; every face and plate is 
 Winter takes each picture's snowed turn where its set has one, unlightened.
 
 **What it costs.** Cells are grouped by 4 x 4 into chunks, culled against the view; consecutive chunks are one draw
-call. Overlook builds in about 1 s and paints its 157 pictures in about 5 s on three workers. In headless
+call. Overlook's build is about 0.8 to 1 s of work in Node, some 118,000 steps: about 500 frames at 2 ms, 40 at
+24 ms. Most steps take microseconds; a model's forging is one step, the largest about 10 ms in Node. Its 157
+pictures are painted in about 5 s on three workers. In headless
 SwiftShader at 1280 x 720:
 
 | From | Triangles | Draw calls |

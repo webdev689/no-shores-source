@@ -173,7 +173,7 @@ fn open(piece: &Floating, seed: u64, difficulty: gear::Difficulty, character: &m
     let rank = drop.number();
     // The best Vestige carried is the one told, the rest posted when the ten are full; the items a Miniboss or a Boss
     // leaves are kept as they are made.
-    let mut taken: Vec<Vestige> = character.loot_kill(rank, piece.level, difficulty, &dice);
+    let mut taken: Vec<Vestige> = character.loot_kill(rank, piece.level, difficulty, gear::Source::World, &dice);
     taken.retain(|vestige| character.carry_or_post(vestige.clone(), gear::mail::Source::Flotsam));
     held.vestige = taken.into_iter().max_by_key(|vestige| vestige.rarity);
     held.ammo_box = dice.roll(Purpose::AmmoBox, 0) < gear::ammo::box_chance(rank) && character.take_ammo_box();

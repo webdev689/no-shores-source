@@ -5,7 +5,7 @@ import type { Node } from '../ui/node.ts';
 import { paintBox } from './barDraw.ts';
 
 /** The struck edge: red at the view's edge, as a blurred inset shadow 24 px deep and 90 px soft drew it, laid in hard
- *  bands 6 px each, the whole at `shown` (0 to 1). */
+ *  bands 6 px each, the whole at `shown` (0 to 1). Foul water's sick green edge is drawn the same way. */
 const HURT = { colour: [196, 26, 18], spread: 24, soft: 45, band: 6, reach: 150 } as const;
 
 /** How much of the struck edge's red stands `depth` CSS pixels in from the view's edge. */
@@ -25,9 +25,9 @@ function erfc(value: number): number {
   return 1 - sign * erf;
 }
 
-export function hurtNode(shown: number): Node | null {
+export function hurtNode(shown: number, colour: readonly [number, number, number] = HURT.colour): Node | null {
   if (shown <= 0) return null;
-  const [red, green, blue] = HURT.colour;
+  const [red, green, blue] = colour;
   return {
     width: 'grow',
     height: 'grow',

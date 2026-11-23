@@ -15,16 +15,12 @@ const { createServer } = require('node:http');
 const { readFileSync } = require('node:fs');
 const { extname, resolve, sep } = require('node:path');
 const { chromium } = require('playwright');
-const { OWN_TEXTURE, SHADER_ERRORS } = require('./webgpu-shot.cjs');
+const { DROP_SUBMITS, OWN_TEXTURE, SHADER_ERRORS } = require('./webgpu-shot.cjs');
 
 const [dist, secondsArg, beatArg, flag] = process.argv.slice(2);
 const gpu = [secondsArg, beatArg, flag].includes('--gpu');
 const seconds = Number(secondsArg) || 100;
 const beat = beatArg && beatArg !== '--gpu' ? beatArg : null;
-const DROP_SUBMITS = () => {
-  GPUQueue.prototype.submit = () => undefined;
-};
-// Dropped first, so the driver's count of frames wraps the dropping submit.
 const prelude = [...(gpu ? [] : [DROP_SUBMITS]), OWN_TEXTURE, SHADER_ERRORS].map((patch) => `(${patch})();`).join('\n');
 const BEAT_LINE = 'const from = backAtHelm(sessionStorage, prologuePlayed(localStorage)) ? "creation" : null;';
 const TYPES = {

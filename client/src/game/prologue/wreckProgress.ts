@@ -3,7 +3,7 @@ import { inArea, topAt, type WaveFoe, type WreckLayout } from './wreckLayout.ts'
 /** The most of the wreck's foes alive at once; a wave's others wait their turn. */
 export const ALIVE_MOST = 6;
 /** A body this far over the sea, metres, with no block of the wreck under it, fell in. The wreck's own ground, some of
- *  it lower than this (its gun deck, the Sloop's side), is never the sea. */
+ *  it lower than this (the Sloop's side, the wreckage beside the Frigate), is never the sea. */
 export const IN_THE_SEA_M = 1.5;
 /** How long a body lies in the sea before it is brought back to its checkpoint, seconds. */
 export const BROUGHT_BACK_S = 1.2;

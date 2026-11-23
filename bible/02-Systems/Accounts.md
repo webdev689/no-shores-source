@@ -25,6 +25,7 @@ code:
   - server/accounts/chatDeps.ts#hallDeps
   - server/keeping.ts#Keeper
   - server/accounts/finding.ts#Finder
+  - server/accounts/playlists.ts#playlistBand
   - server/accounts/finder.ts#CompanyFinder
   - server/accounts/migrations/20261120181039_found_runs.sql
   - server/accounts/migrations/20261121120000_character_rooms.sql
@@ -186,18 +187,33 @@ username, as a player is found by theirs; a guest is told to add one in Settings
 
 ## Find a Company
 
-Find a Company ([[Activities]]) matches players for an Elite Dungeon at Normal or the Elite Dungeon of the week,
-never the Abyss Dungeon of the week, whose company forms it.
+Find a Company ([[Activities]]) matches players for an Elite Dungeon at Normal, the Elite Dungeon of the week and
+each playlist, never the Abyss Dungeon of the week, whose company forms it.
 
 - **The queue** is a Durable Object of the accounts' Worker, one for each run's base (`CompanyFinder`, `finder.ts`),
   reached at `/v1/find/<base>` by WebSocket: `node-<id>` for an Elite Dungeon at Normal, `node-<id>--elite` for the
-  week's. A socket's first message is its session's token; one that is no session, or that sends none within five
+  week's from its door and `node-<id>--elite--sea` from the Playlist (its run named `--sea`, gone into from the sea),
+  and `playlist-elite` and `playlist-abyss` for the playlists, one queue each for the whole game, whichever
+  port the Playlist was opened beside. A socket's first message is its session's token; one that is no session, or that sends none within five
   seconds (`TOKEN_WAIT_MS`, as a run's room waits), is closed with 4003 and "Sign in to find a company.". At most 64
-  sockets with a token wait in one, and 128 sockets in all, silent ones too; its clock stops once it holds none. It
+  sockets with a token wait in one (a search past them is answered 503; a Launch is always taken, as it is gone at the
+  next look), and at most 64 silent ones, the oldest let go as each new one comes, so silent sockets never shut out
+  those that sign in; its clock stops once it holds none. It
   checks a base's shape alone, not that a rule lays it: the accounts' Worker does not load the rules, and the room
   judges the run.
 - **Bands.** A seeker is matched by the level their room last kept (`shown.level`, 1 for none yet), in bands of ten:
-  1 to 10, 11 to 20 and 21 to 30 (`bandOf`).
+  1 to 10, 11 to 20 and 21 to 30 (`bandOf`). A playlist's are five levels each from the level it opens at
+  (`playlistBand`, `playlists.ts`): the Elite's 10 to 14 up to 30 alone, the Abyss's 20 to 24 up to 30 alone; a
+  seeker below it is closed with 4003 and "The Elite Playlist opens at level 10." (or the Abyss's at 20). Its levels
+  and the 18 Elite Dungeons are the rules' own, which a test holds to the room module's word (`playlists.test.ts`).
+  A seeker whose kept character has not played the prologue (`story.prologue`, none for one never kept) is closed
+  with 4003 and the gate's "This place opens after the prologue.", as every run a finder starts opens after it; one
+  under the week's Elite Dungeon's level, on its bases, with "This dungeon opens at level 24." (`WEEK_ELITE_OPENS`).
+- **Launch** (`?launch` on a playlist's address, `opened(socket, alone)`): the seeker's run is started at the next
+  look, alone, its Elite Dungeon drawn and kept for them as a found run is; no other seeker joins it, and it joins no
+  group. Only a playlist launches: on an Elite Dungeon's base a launch waits as any search does. A playlist's run
+  lets in first one it was found or launched for, or one of their company (`launchedFor`), as it would let them
+  in after them: a member back first, the room forgotten while empty, is not shut out.
 - **Matching** (`Queue`): within a band, the one waiting longest first, then each next longest still free who blocks
   none of those taken and is blocked by none of them. A run starts with four as soon as there are four, or with as
   many as there are once its first has waited a minute (`FIND_WAIT_MS`). It looks each second while it holds a
@@ -205,13 +221,16 @@ never the Abyss Dungeon of the week, whose company forms it.
 - **One search an account.** A second search, in another tab, replaces the first, which is closed with 4003 and
   "You are finding a company in another tab."; of two looked up at once, the newer socket stays. While an account's run is being started, a second search of theirs
   is closed with those words, so no account is in two groups. Closing the socket leaves the queue.
-- **A run found** is named `<base>--run-<instance>` and kept for those found (`found_runs`: it admits them for a day
+- **A run found** is named `<base>--run-<instance>`, a playlist's
+  `node-<Elite Dungeon>--<elite|abyss>--playlist-<foes' level>--run-<instance>`, its Elite Dungeon drawn by the
+  server's own randomness (`playlistRun`) and its foes' level its band's, and kept for those found (`found_runs`: it admits them for a day
   after it was found, and rows older than that are cleared as later runs are found), so its room lets them in
   together, for that run alone; no one's company changes. Each is sent `{"run":"<name>"}` and their socket closed.
-  The finder judges no gate and keeps no clock: the room is the authority, and the page offers Find a Company only
-  where the gate is open.
+  Beyond the level and the prologue the finder judges no gate and keeps no clock: the room is the authority, and the
+  page offers Find a Company only where the gate is open.
 - **The page's side** (`findCompany`): it opens `AccountLink.finderAt(base)`, the accounts' own address by `ws://`
-  or `wss://`, sends the session's token once open, and takes only a run of the base it asked for. Offline, or with
+  or `wss://`, sends the session's token once open, and takes only a run of the base it asked for (for a playlist,
+  a playlist's run at its tier). Offline, or with
   no session, it offers none.
 
 ## Chat

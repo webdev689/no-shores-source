@@ -2,9 +2,8 @@
 the zones along it with their checkpoints and waves, and Thule's place; and the check that the ground holds it: every
 zone and foe reached from the last, and none past a heap that still stands.
 
-A wave's foes are of the roster by type and rank, as content/prologue/wreck.json numbers them (the Grey Tithe's deck
-crews 7 to 12, the pirates' 13 to 17): Tithe and pirates board as one side against the player and the Brig's crew. A
-facing is degrees clockwise from north.
+A wave's foes are of the roster by type and rank, as content/prologue/wreck.json numbers them: the Grey Tithe's deck
+crews, 7 to 12, boarding against the player and the Brig's crew. A facing is degrees clockwise from north.
 """
 
 # Where the player wakes, by the Brig's wheel, and the way they face (degrees clockwise from north): down the way on.
@@ -14,37 +13,39 @@ WAKE = ((-28.9, 7.6), 35.2)
 PATH = (
     (-28.9, 7.6), (-27.7, 9.3), (-26.5, 9.6), (-25.0, 9.3), (-22.6, 9.0), (-19.0, 8.4), (-14.1, 7.8), (-6.0, 7.9),
     (0.3, 8.2), (8.0, 8.6), (15.2, 8.8), (19.6, 9.0), (20.4, 7.0), (23.2, 6.0), (23.9, 0.2), (26.5, -4.7),
-    (25.7, -11.0), (25.7, -17.0), (17.7, -18.0), (9.1, -14.1), (3.6, -13.0), (2.2, -15.5), (1.5, -18.6), (1.5, -20.9),
-    (0.4, -21.6), (0.1, -24.4), (0.1, -26.4), (0.1, -29.6), (0.4, -31.0), (1.8, -32.2), (1.8, -34.0),
+    (25.7, -11.0), (25.7, -17.0), (17.7, -18.0), (9.1, -14.1), (3.6, -13.0), (2.4, -10.2), (-3.6, -10.2),
+    (-8.0, -10.2), (-13.0, -13.0), (-13.0, -16.2), (-13.0, -20.8), (-11.0, -24.2), (-4.4, -24.2), (-1.0, -26.0),
+    (1.8, -32.2), (1.8, -34.0),
 )
 
 # Each zone: its name; the box (west, south, east, north) that, entered, reaches it; its checkpoint; its wave, in pairs
-# of a Grey Tithe crewman and a pirate side by side, with any odd one out after them, standing well on from
+# of Grey Tithe crewmen side by side, with any odd one out after them, standing well on from
 # where the zone is entered; and where three of the Brig's crew stand fighting them. The first is the quiet deck the
 # player wakes on, with no wave; the last is the arena.
 ZONES = (
     {'name': "the Brig's stern", 'area': (-36.5, 2.6, -16.4, 13.5), 'checkpoint': (-28.9, 7.6), 'wave': (),
      'crew': ()},
     {'name': "the wreckage of the Brig's waist", 'area': (-16.4, 2.6, -0.6, 14.5), 'checkpoint': (-12.5, 7.8),
-     'wave': ((7, 1, (-5.0, 9.6), 90), (13, 1, (-3.4, 9.6), 270), (8, 2, (-5.0, 6.0), 90), (14, 1, (-3.4, 6.0), 270)),
+     'wave': ((7, 1, (-5.0, 9.6), 90), (7, 1, (-3.4, 9.6), 270), (8, 2, (-5.0, 6.0), 90), (8, 1, (-3.4, 6.0), 270)),
      'crew': ((-6.6, 7.8), (-2.0, 7.8), (-4.2, 11.4))},
     {'name': 'the torn deck over the gap', 'area': (1.1, 2.0, 16.6, 15.0), 'checkpoint': (3.0, 8.4),
-     'wave': ((11, 1, (9.6, 10.4), 90), (15, 1, (11.2, 10.4), 270), (9, 1, (10.4, 6.4), 270)),
+     'wave': ((11, 1, (9.6, 10.4), 90), (10, 1, (11.2, 10.4), 270), (9, 1, (10.4, 6.4), 270)),
      'crew': ((8.2, 8.4), (12.8, 8.4), (10.4, 12.4))},
     {'name': "the Brig's fore deck", 'area': (18.6, -6.0, 41.0, 16.0), 'checkpoint': (20.6, 7.0),
-     'wave': ((7, 1, (28.4, -1.6), 180), (13, 1, (28.4, -3.4), 0), (10, 1, (32.0, -2.4), 180), (17, 1, (32.0, -4.2), 0)),
+     'wave': ((7, 1, (28.4, -1.6), 180), (7, 1, (28.4, -3.4), 0), (10, 1, (32.0, -2.4), 180), (11, 1, (32.0, -4.2), 0)),
      'crew': ((26.6, -1.1), (33.8, -3.3), (30.2, -4.6))},
     {'name': "the Sloop on her beam ends", 'area': (7.0, -29.5, 32.0, -8.9), 'checkpoint': (25.7, -11.0),
-     'wave': ((9, 1, (25.7, -19.5), 180), (16, 1, (25.7, -21.2), 0), (14, 1, (15.0, -19.0), 0)),
+     'wave': ((9, 1, (25.7, -19.5), 180), (9, 1, (25.7, -21.2), 0), (8, 1, (15.0, -19.0), 0)),
      'crew': ((25.7, -17.6), (13.0, -17.0), (16.6, -17.4))},
     {'name': "the Frigate's waist", 'area': (-24.5, -18.0, 5.8, -0.3), 'checkpoint': (3.0, -13.0),
-     'wave': ((11, 1, (-17.0, -6.0), 90), (17, 1, (-15.4, -6.0), 270), (8, 1, (-18.0, -10.0), 90),
-              (14, 1, (-16.4, -10.0), 270), (9, 2, (1.2, -6.8), 180)),
+     'wave': ((11, 1, (-17.0, -6.0), 90), (11, 1, (-15.4, -6.0), 270), (8, 1, (-18.0, -10.0), 90),
+              (8, 1, (-16.4, -10.0), 270), (9, 2, (1.2, -6.8), 180)),
      'crew': ((-19.8, -8.0), (-13.8, -8.0), (-16.2, -3.8))},
-    {'name': "the Frigate's gun deck", 'area': (-19.5, -28.4, 4.6, -22.0), 'checkpoint': (0.1, -25.2),
-     'wave': ((10, 1, (-13.0, -27.0), 180), (13, 1, (-13.0, -28.6), 0), (11, 1, (-10.6, -31.5), 270)),
+    {'name': "the wreckage off the Frigate's port quarter", 'area': (-19.6, -40.0, -6.0, -18.6),
+     'checkpoint': (-13.0, -21.8),
+     'wave': ((10, 1, (-13.0, -27.0), 180), (7, 1, (-13.0, -28.6), 0), (11, 1, (-10.6, -31.5), 270)),
      'crew': ((-15.6, -27.8), (-10.4, -27.8), (-13.0, -24.8))},
-    {'name': "the Frigate's quarterdeck", 'area': (-4.9, -41.0, 4.9, -30.7), 'checkpoint': (1.6, -33.2),
+    {'name': "the Frigate's quarterdeck", 'area': (-4.9, -41.0, 4.9, -21.7), 'checkpoint': (1.6, -33.2),
      'wave': (), 'crew': ()},
 )
 

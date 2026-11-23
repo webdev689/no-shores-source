@@ -119,12 +119,8 @@ each part works is in its system note.
   and leave the rest of the pictures for later (see "Next"). Tested offline: `cargo xtask check` passes at the head of
   #124, native and WebAssembly agreeing; the raid and the heroic Fissure pictured on the built page in part; not tested
   live. The `modules` workflow published the 13 event modules, and all their groups answer on R2, the sealed scar's
-  rubble since its run on 3e1bf535. `main` is merged in again after the hub, the healing charges and the ship's burst:
-  the events' banner, store bars and compass marks are drawn as nodes of the game's own interface, the events' fight
-  events moved up past main's heal (14), and their wire fields appended after main's packed, delta snapshots. Main
-  merged a third time before the merge: the events' fight events 16 to 25 (main's Wiped is 15), the Tithe-Taker 45 after
-  main's wardens (21 to 38), the chest's Vestige drawn on main's rank colours (Major plain, Boss heroic), and the
-  Lattice laid into main's forge tables again by `lattice.yml`'s run 45048576675.
+  rubble since its run on 3e1bf535. The events' banner, store bars and compass marks are drawn as nodes of the game's
+  own interface.
 - **The third codebase audit, the Grey Tithe in the pirates' place, travel by the held map and the overtaken ruins**
   (#155, merged on the owner's "I really want to merge the code fixes we did"): an audit of every module and an audit of
   it, each finding tested before its fix; then, built on it, [[Pirates Are Replaced by the Grey Tithe]] (clashes are a
@@ -133,8 +129,23 @@ each part works is in its system note.
   ruins grown through with crystal) and [[The Held Map Takes the Ship to Other Waters, Seen Sailing Away]]; Claude's
   calls in [[The Grey Tithe's Sea, Travel and the Overtaken Ruins as Claude Builds Them]]. Each feature reviewed on its
   own and its findings fixed; tested offline, the ruins pictured headless; the travel's cinematic not pictured.
-- **Not yet seen or heard.** Sessions test offline and picture headless, and headless Chromium in a cloud session now
-  loses the game's WebGPU device about 2 s in, so these wait on a real GPU, an ear or a hand:
+- **The game is No Shores** (#157, merged on the owner's "Merge and deploy"; [[The Game Is Named No Shores]]): the
+  title, the bible and the game's note with the owner's premise; Overlook stays the port city. The owner's logo is
+  the title on the tap to start and the intro, a pixel picture written from the owner's PNG by `tools/logo/write.py`
+  (the PNG stays out of git with its C2PA credentials; [[Cinema]]). The repository and page are `no-shores-source`;
+  the browser's keys move once from `overlook.` to `noshores.` (`keptNames.ts`); No Shores is a reserved name. The
+  Workers, the D1 database, the R2 bucket, the code's own names and the download cache keep Overlook's. This
+  session's git proxy answers only at `github.com/Lattymoy/overlook-source`, which GitHub redirects: keep that remote.
+  Merged as `c0db6fc7` and deployed (CI run 45068542964's second attempt, after the first was cancelled at its last
+  step): the page live at `lattymoy.github.io/no-shores-source/` with the logo, the rooms and the accounts answering.
+- **The picture driver reads the drawn interface** (#165, merged on the owner's "Yes"): `__ui()` lists what the
+  game's interface shows, the driver's `waitFor`, `clickText` and `press` read it, and a plan's `"noGpu": true` runs
+  the game at full speed with nothing drawn ([[Toolkit]], Browser QA). Tested offline: the title, the story's skip and
+  its "begin" driven with no GPU. Proposed next, not yet asked for: a cloud environment whose setup script installs and
+  builds, and a CI check that boots the game and finds its HUD.
+- **Not yet seen or heard.** Sessions test offline and picture headless. Headless Chromium has lost the game's WebGPU
+  device about 2 s in when other jobs shared the cores; on an idle container at b81f0c40 the title and the social
+  space kept it 80 s. SwiftShader is too slow to show the world, so these wait on a real GPU, an ear or a hand:
   - Timed on a real GPU: the game in and out of its worker, the hub with some 125 figures, the wreck with every fire,
     the light layer of the attack visuals (0.4 to 0.5 ms is an estimate), ships and marks under the lamps.
   - Heard in the game: the music, the ambience, the world's, sea's and menu's sounds and their levels, the
@@ -155,100 +166,97 @@ each part works is in its system note.
 
 ## Waiting on the owner
 
-- **The prologue reworked, horses in a Mount slot and the stranger's welcome to Overlook** (branch
-  `ccr-06efd4d0-ffd79v`, its pull request), for the owner's yes to merge, which deploys the page and the rooms (the
-  wire, the protocol's version and the room's rules changed). Built on the owner's "take some autonomy" from
-  [[The Prologue Is Reworked With Real Armour, a Bow, the Storm and No Elites]],
-  [[Horses Are Items Worn in a Mount Slot]] and
-  [[The Stranger Welcomes the Player, and a Quest Walks Them Round Overlook]]; every call of Claude's in
-  [[The Prologue, Horses and the Welcome to Overlook as Claude Builds Them]]. The wreck dresses the player in the
-  story's steel as real gear, a parry window of 15 ticks everywhere, no Elite but Thule, the first boarder's bow and
-  its lesson, the wisp that circles and engulfs the player and gives the Storm, the Storm's lesson, and the story's
-  gear and Art taken at the prologue's end; horses are items worn in the Mount slot, the Appearance screen draws no
-  horse, the Tack always sells the Bay; a new character starts with nothing, the stranger's tour of Overlook with its
-  gift of 400 Aurem, the smiths' starter stock, and the opening quest round the vendors to the houses. Each feature
-  built on its own branch, reviewed independently and fixed until its pictures read right; then a review of where the
-  three meet, its six small findings fixed. Then the owner's "Audit this and ensure perfection": five independent
-  audits (the owner's words ask by ask, the rules and the server, the page, the notes and content, the tests by 53
-  mutations), every finding fixed with a test that failed first, or written down: among them "Wear them" stuck at 0/5
-  for a player who bought and wore everything during the round, the sea now taking the story's arms so the player
-  comes ashore with nothing as the stranger says, every cutscene drawing every figure for its own eye (first person
-  too), the welcome's lamp put out when left, every Character page flyout kept on the screen, the gift never paid
-  twice on a task a room does not know, and Arlo's line tying the wisp to the Stormcallers' hounds. Tested offline:
-  the full check at the branch's head; the wisp, the Mount tile and flyout, the Appearance screen and every stop of
-  the tour pictured headless, by day and by night, and the tour held to clear shots on Overlook's real hub by a test.
-  Not seen: the 400 Aurem, the tracker and a starter piece bought, pictured live (the picture driver's game worker
-  cannot reach a local room; the rules are tested); the shore's plain clothes (its key beat does not advance
-  headless; tested); anything on a real GPU or played by hand. Known and left: the tour's keepers read small behind
-  their counters (each stall is framed whole); a rollback past this round loses a new character's welcome (Gear).
-  - Left for the owner, in the R2 tools no session may edit: `tools/wreck/wreck_level.py`'s waves still list the
-    Tithe-Mates and Bosuns at rank 1; to match `content/prologue/wreck.json` each `(11, 1, ...)` becomes
-    `(11, 2, ...)` and each `(10, 1, ...)` `(10, 2, ...)`, and `export_wreck.py` should write the quiet deck's `masts`
-    (added to wreck.json by hand), or the next export drops them.
-- **The owner's six prologue points, the wreck's room in the worker and a full audit** (#161, branch
-  `claude/gifted-knuth-lijjf2`), for the owner's yes to merge, which deploys the page and the rooms (the naval rules
-  and the protocol's version changed): the wreck's hitches (blood's rays, its sheet drawn behind the wake's shut lids)
-  and its room opened and ticked in the rooms' worker ([[The Wreck's Room Runs in the Rooms' Worker Too]]); the
-  ship's aim after Black Flag from its own deck with a lay that narrows as it is held
-  ([[Aiming a Ship Follows Black Flag, From Its Deck]]); the wreck's arms 8 m out as a loot drop
-  ([[The Wreck's Arms Lie Farther Out, as a Loot Drop]]); the story's one-shots (the crash, the splash) fetched as its
-  sound wakes; the Boarding playing on through a death before Thule; Maren at three quarters of a walk
-  ([[Elder Maren Hale Walks at Three Quarters of a Player's Pace]]); the marks seen faded through walls
-  ([[A Mark Over What a Player Can Use Is Seen Through Walls]]), beside main's lit marks. Then the owner's
-  "comprehensive audit on everything": six read-only auditors (the aim and the naval rules, sound and music, the
-  marks, arms and welcome, the prologue end to end, the bible against the code, the room's move), every finding fixed
-  with a test or written down as a limit in #161's description; among the fixes, the pad has the game's controls
-  without the pointer (a pad alone could not fight on foot), a cut sting no longer holds back the song behind it, and
-  the protocol's version covers the sea fight's numbers. Tested offline (the full check at abd1ad14); the deck eye's
-  framing on each hull, the faded marks, the arms' pop and the sounds are not yet seen on a real GPU, heard or played.
-  Open for the owner: whether each hull's eye frames well (the Brig's stands on its quarterdeck, aft of its battery;
-  the Schooner's under its main boom), and the narrowing's 2x and 1.5 s.
-- **Nameplates, the player menu and chat** (#154, branch `claude/player-nameplates-interaction-3b6cwr`), for the
-  owner's yes to merge, which deploys the page, the rooms and the accounts (a new Durable Object, the chat's hall, and
-  two migrations: `presence.water` and `mutes`): [[Other Players Wear a Nameplate, Their Level or Prestige in a
-  Square]] (level, 21 to 30 in gold, three dots in a menu, green company, blue others;
-  [[A Player's Square Shows Their Level, Gold Past 20]]),
-  [[Holding Use on a Player Opens Their Interact Menu]] (Add friend, Invite to company, Invite to guild, Whisper,
-  Inspect, Mute), [[Chat Comes From DFO With Local, World and Whisper]] ([[Chat]], [[Pick - Chat]]), and the owner's
-  second-pass answers: [[The Sea Has the Chat, Each Water a Region Channel]] (T opens the chat everywhere),
-  [[A Player May Mute Another]], [[Inspect Opens the Character Tab]] under their emblem's banner
-  ([[Inspect Shows the Player's Emblem Banner]]), and Prestige beside the level on the Character tab
-  ([[Prestige Stands Beside Level on the Character Tab]], [[The Level and Prestige Plaques Show Their Numbers Alone]]),
-  with no Fruit of Dagon stat ([[The Character Tab Shows No Fruit of Dagon]]) and the Weapons heading under the Art
-  ([[The Weapons Heading Stands Under the Art]]); Claude's calls in
-  [[Nameplates, the Interact Menu and Chat as Claude Shapes Them]]. Two full audits were folded in (the
-  hall's limits per account, look-alike letters, the welcome race, plates deduped and none at sea, the menu's keys and
-  waits). Tested offline (the room, the wire, the hall and its queries, the panel's law, the menus) and pictured
-  headless alone; not yet played live, nor seen over the game's HUD on a real GPU. Open: the pad has no button for
-  the chat; reporting a line.
-- **The owner's bugs and polish** (#148, branch `claude/prologue-bugs-polish-lphicj`), merged with the owner's yes ("Merge and deploy"), which
-  deploys the page and the rooms;, the owner's six points and "The entire prolouge honestly needs a detailed pass", each recorded with Claude's
-  calls: [[Aiming a Ship Looks Square Off Its Side, Clear of Its Rig]] (the aim looks square off the held side from a
-  station clear of hull, gun mouths and every sail's swing, the sight centred; the eye swings out and round at one
-  clear distance); [[A Ship's Abilities Stand at the Bottom Left, as the Arts Do]] (reload and the burst in a ring
-  bar); [[Ships Show Their People, and Captains' Gunners Misjudge]] (crew and captain on every other ship; captains'
-  misjudged volleys held within 13° of the beam);
-  [[The Fight Music Varies, Recombined From Takes]] (no two takes alike, even in the danger's layers);
-  [[The Prologue Is Passed Over, Its Camera and Footing Clear]] (the wreck's camera, footing and sea; every shot of
-  the Brig clear of its rig; creation's turn keys turn the figure); and, asked after,
-  [[The Broadside Warning Is Written Over the Sea, Not a Panel]] (BROADSIDE, the tell as a fuse and the brace, large).
-  The owner then asked for "a comprehensive audit": seven read-only auditors by area, every finding fixed or written
-  down as a limit, with tests. Tested offline (the full check); the HUD pictured headless with `tools/uiShot.mjs`.
-  Not yet: played live, the music heard by a person, anything seen on a real GPU. Open for the owner: whether a
-  Major's and higher's balls striking about half the time meets "insane accuracy"; whether the battery rose's red
-  outline on the side a blow came from comes back on the ship's bar; creation's turn keys turning the figure on the
-  spot; a Boss closing on the player's Sloop still wins every headless fight; the crew re-laid when a fight starts
-  ([[Game]], limits).
 The decisions in [[Open Questions]] are not repeated here.
 
-- **#153, a keeper with something for you lit** (branch `claude/keen-cannon-4nbe4z`), for the owner's yes to merge:
+- **The owner's bugs from two rounds of play** (#163), merged, which deploys the page and the rooms. Each fix was audited read-only, and every finding fixed with a test
+  that fails without it. Elder Maren Hale's welcome is left to another session, which reworks it; its reload bug
+  (no greeting, "Follow" before it, a left-behind walk hiding the houses' roads) is that session's:
+  - A pad seam blends toward a level at most a step off ([[Cities]]), so the floor beside the plaza's parapets no
+    longer dips and carries a body over them, and no ledge runs along a ramp's side.
+  - [[Each Patrol Zone Has a Built Landing Site, Its Guards Beyond It]]: no foe starts a fight with a player within
+    15 m of a patrol zone's spawn until they strike from there; a fight brought in goes on; the guards stand where
+    they stood, 25 m or more off (`crates/room/src/landing.rs`, [[Enemies]]).
+  - [[Friendly Ships Take Several Courses, About Five in View, Sailing Visibly]]: three courses a pair, about five
+    in view near a port, 60 m/s, departures staggered across all nine courses ([[World Map]], "Traffic").
+  - Tested offline only. Unexplained, waiting on the owner's browser console: in the owner's patrol screenshot the
+    world stopped being drawn while the death veils stacked. Left: ships start and stop at 60 m/s at once, and lie on
+    one point at a roadstead; some retaining walls near Overlook's plaza may be dropped whole (low confidence, the
+    seam audit's).
+- **Looks by content, the Playlist and the matchmade dungeons' encounters** (#160), merged with the owner's yes ("Let's merge and deploy and talk about this
+  after"), which deploys the page and the rooms. The owner's asks are recorded ([[Armour and Weapon Looks Belong to the Content That Gives Them]],
+  [[Elite and Abyss Dungeons Are Queued From a Playlist Beside Each Port]],
+  [[Matchmade Dungeons Gain Encounters, Puzzles, Climbs and Raid Mechanics]], [[A Playlist's Launch Is Drawn by the
+  Server]], [[The Room Keeps Only Looks of a Piece's Own Content]], [[Faction Blades Wear Their Faction's Colour on
+  Hilt and Trim]]), every call of Claude's in [[The Playlist and Its Dungeons as Claude Shapes Them]].
+  - Looks ([[Gear]], "Where it came from" and "Looks"): every item and Vestige keeps its content; each armour set and
+    metal is one content's; past the world a piece's set and metal follow its name, so each content's every look is
+    seen where it drops; "From" on the card, the page and a Vestige's line, a faction's piece naming its faction; the
+    room keeps only looks of a worn piece's own content (`gear::looks`, `content/gear/drawn.json`).
+  - The Playlist ([[Activities]], [[Accounts]], [[Interface]]): crests on a chart and one card, after the owner's
+    Vanguard reference, pictured clean at six sizes; Find a Company over one pool, Launch drawn by the server; runs
+    started from it (a playlist's, and the week's marked `--sea`) entered from the sea and left back to it; the finder
+    refuses a seeker before the prologue or under the week's level, and silent sockets never fill it.
+  - Encounters ([[Dungeons]], "Encounters"): two or three seals a run (the Litany, the Weighing, the Ascent's real
+    climb in nine of the 18, the Holdfast), the Court's wards, anchors, slam and Reckoning, Fury from the end room;
+    living players counted, encounter foes dropping nothing, compass marks, the Boss scaled to the company; the Court's
+    display kept clear at every size, a centre call for the slam ("Get clear!") and the Reckoning ("Into the light!"),
+    foul water's green edge, beams fading beside the camera; each moment pictured in three dungeons
+    (`tools/claude-toolkit/encounter-plan.ts`).
+  - Tested offline: `cargo xtask check` on each pushed head (c2361953 last, with main merged in at 1cd6a379); three
+    rounds of read-only audits (rules, page, design, bible, looks, and two mutation audits of the tests), every finding
+    fixed with a test or recorded. Not yet: played by hand, or in a deployed room.
+  - Held by the owner: faction blades (built on `wt/fblade`, the forge's trim; its art unpublished); the Abyss
+    Dungeons' crossbow art ("Not now").
+  - To talk through with the owner: the named-piece gaps (36 of 60 contents, colours and slots have no named piece of
+    their own), and the Veiled's colour on a blade ([[Open Questions]]).
+- **The whole-codebase audit** (#167), merged with the owner's yes ("Merge and deploy"), which deploys the page and
+  the rooms: twelve read-only auditors by area and a reviewer of the diff, every
+  finding checked against the code first and each bug fixed with a test that fails without it. Among the fixes: quest
+  steps keep within a public event's kept places; the raid's stores read 100% only while every store is whole and 0
+  only once every store fell; silenced music stops; cues sharing a recording are each heard the first time; Return to
+  ship waits for the room while it joins again; a company's fall heard behind the veil is taken on foot; the land's map
+  is put away at sea; the wheel scrolls in the interface's pixels; flora that failed to come is asked for again; the
+  island door, `identify`'s number, the bake's panics, the chat hall's sizes, mottos' hidden marks and the World
+  Editor's keys; dead code and some 25 stale docs out; the Code Map, Toolchain, Testing and other notes made true.
+  Tested offline (the full check at its head, `main` merged in); not played. What it left for the owner:
+  - The `modules` workflow's publish uploads `"$RUNNER_TEMP/stage"`, a folder nothing writes, so it uploads nothing and
+    passes; the next change to a module would name meshes R2 does not hold. A one-line fix (`"$RUNNER_TEMP/modules"`)
+    and a guard in `tools/r2.py`, held back because pushing either starts the asset workflows with the Cloudflare
+    token.
+  - One address can hold all 64 of the sea's places with sockets that never sign in, each let go after 5 s and opened
+    again: a per-address cap like the chat hall's is a new security limit, the owner's to approve. The roster's and a
+    player's reads have no rate limit.
+  - Any kill pays a dungeon node's clear as fighting its garrison (`room/src/power.rs`); a failed trip from an offline
+    island's beach goes to Overlook, though [[Game]] says the beach; the procedure says rebase and squash where
+    practice merges; `built` is a status Writing Notes does not list; two repo-check gaps (the vault check passes a
+    `code:` symbol any word of its file names; the html check excuses `.append(` on a name made with `new` anywhere and
+    misses `insertNode`, `importNode` and `new Text(`).
+- **Open pull requests**, for the owner's yes once their checks pass: #162 (the game's words out to Type and back; it
+  conflicts with `main` in `Decisions.md`) and #159 (the rooms' worker tests wait for what they check; it conflicts
+  with `main` in `roomThread.test.ts`). Drafts: #93 (the toolkit's first
+  review) and #114 (the gear message carries the pledge once).
+- **Open points from merged work**, each the owner's to say:
+  - #158 (the prologue's waking, scenes and arena, one loading screen, foes that give up only when far, feet on the
+    city's ground; [[One Loading Screen Covers Every Trip Until the Place Is Ready]] and the decisions it names): the
+    loading screen is not yet timed on a real GPU.
+  - #164 (a smith's ware drawn as the piece it becomes): a purchase moves the number on, so the other wares still shown
+    may redraw.
+  - #161 (the owner's six prologue points, the wreck's room in the worker): whether each hull's eye frames well (the
+    Brig's on its quarterdeck, aft of its battery; the Schooner's under its main boom), and the narrowing's 2x and
+    1.5 s.
+  - #154 (nameplates, the player menu and chat): the pad has no button for the chat; reporting a line.
+  - #148 (the owner's bugs and polish): whether a Major's and higher's balls striking about half the time meets
+    "insane accuracy"; whether the battery rose's red outline on the side a blow came from comes back on the ship's
+    bar; creation's turn keys turning the figure on the spot; a Boss closing on the player's Sloop still wins every
+    headless fight; the crew re-laid when a fight starts ([[Game]], limits).
+- **#153, a keeper with something for you lit**, merged:
   - A keeper's mark beats and is drawn over everything while a quest step asks to speak with them or letters wait.
   - Their coin on the held map is ringed, and the Postmaster has a coin.
-  - Its decisions, on its branch: "The Factions Are the Baseline for Every Quest" and "A Keeper With Something for You
+  - Its decisions: "The Factions Are the Baseline for Every Quest" and "A Keeper With Something for You
     Pulses and Is Seen From Everywhere", with Claude's calls listed there.
   - Pictured headless: a lit emblem over the Hall of the Arts, drawn through its walls, and the held map's rings.
     Not yet seen on a real GPU, nor the beat in motion.
-- **#156, the Compendium** (branch `claude/keen-cannon-4nbe4z-audio`), for the owner's yes to merge:
+- **#156, the Compendium**, merged:
   - The tab, its Collections-style front and its Lore-style book view ([[Lore]],
     [[The Compendium Holds the Lore Books, After Destiny's]]).
   - The houses' three books are written, a chapter for each task of each road
@@ -262,7 +270,6 @@ The decisions in [[Open Questions]] are not repeated here.
     ([[The Lore Books' Covers Are Drawn in Detail]]).
   - Its pictures: `tools/uiShot.mjs` with `compendium/compendiumShots.ts`. Finding a chapter in a deployed room
     waits on the first books.
-  - #153 and it both touch `Decisions.md` and `overheadMarks.ts`. The second to merge takes `main` first.
 - **A thin black vertical line across the world**, reported by the owner and not yet found: the canvas fills the
   page, so it is not a gap in the page. The owner will send a screenshot.
 - **The public events under main's balance pass** (#141): with the fight's harm at 1.5 and 0.75, the rules' two scripted
@@ -275,17 +282,15 @@ The decisions in [[Open Questions]] are not repeated here.
 - **The Lattice's story**: the talk stops at the rest of [[Open Questions]], "The Lattice's places and events": the
   nine story missions as three acts of three or one chain through the islands, where the Lattice and the Heart come
   in, how near the ninth comes to the Cube; who gives the side quests. Read with them: #82 (the loop, the nine
-  missions) and #97 (activities, the quest engine), both open; #97's one clock can replace the events' own schedule.
+  missions) and #97 (activities, the quest engine), both merged; #97's one clock can replace the events' own schedule.
 - **The Lattice's other props**: its sixteen props are pictures only; four of the events' modules are built from
   their parts, and the rest wait on where its corrupted areas lie.
-- **The codebase audit** (branch `ccr-e6d5616d-oe5iwr`), for the owner's yes to merge: its fixes and what it left
-  are in its pull request's description and under Next ("The audit's findings left").
+- **The codebase audit** (#142), merged: what it left is under Next ("The audit's findings left").
 - **#141's calls.** Claude's calls in bringing #97 under the owner's loot rules: a dungeon's cache pays a dungeon's
   clear (an item, a Vestige one time in three, XP and Aurem), the week's Abyss Dungeon pays 15 Shapes, and the dungeon
   of the day a Boss Captain's kill.
-- **The audit's leftovers, all fixed as the owner took them** (#152, branch `ccr-1e1aa6da-yox2v1`), for the owner's
-  yes to merge, which deploys the page and the rooms ([[The Audit's Leftovers Are Fixed as Claude Suggested]], its
-  Claude's calls there): the asset workflows' token held only by jobs that upload; a hand run of the rooms' deploy
+- **The audit's leftovers, all fixed as the owner took them** (#152), merged
+  ([[The Audit's Leftovers Are Fixed as Claude Suggested]], its Claude's calls there): the asset workflows' token held only by jobs that upload; a hand run of the rooms' deploy
   refused without main's check; the Sloop checked by its hash; guests capped at 500 an hour and deleted unused 30
   days; riding on the room's word; health, charges and the Arts' charge kept with the character through a return;
   the swings' chain kept by the room; a new ship put in at a roadstead and one sailed before back where it left;
@@ -298,12 +303,8 @@ The decisions in [[Open Questions]] are not repeated here.
   keeps travelling meets no hostile ship); whether the healing drink is "a heal" that Exposure halves; whether a lip
   caught off square is hung square; whether control waits a moment for a run that opens in the wake's last instant;
   the wreck scene's sunk Sloop, which wears the pirates' colours until `tools/wreck` is rendered again (a push there
-  publishes to R2), and `wreck_level.py`'s comments, which name the pirates' types; a ship the room took off its route
+  publishes to R2; #158's `wreck_level.py`, its waves now the Tithe's types as the layout has them, is one); a ship the room took off its route
   still drawn on it from land; the crystal of a ruin's buildings round its plaza, kept clear in its 110 m window.
-- **Open pull requests.** For the owner's yes once their checks pass: #125 (main's
-  screens: the Harbourmaster's rows, the menu under 600 px). Drafts: #82
-  (the owner's loop); #93 and #114 sit on the merged `claude/waters-from-islands`. Whether to close #112, which #127
-  holds.
 - **The combat notes' open points** (#135): whether the one-second reset of the swings' chain and the foes' pace feel
   right in play; whether a stroke that would not reach the locked foe is passed over, as now (at the edge of reach
   every swing thrusts), or the chain kept strictly and a short stroke left to miss, asked and not yet answered.
@@ -364,7 +365,8 @@ The decisions in [[Open Questions]] are not repeated here.
 - **The ships** ([[The Ships as Claude Shapes Them]]): the owner asked for the Frigate as one more model "and call its
   there", so the Tithe Ram and the Fluyt wait until asked; splitting ships into parts for upgrades, and the cabin's
   decoration from DFO's `decor/`, are set aside by the owner for now.
-- **The lore**: nothing in the prologue names the Cube or a crystal, and the voice in the deep has no name.
+- **The lore**: nothing in the prologue names the Cube or a crystal, and the voice in the deep has no name. The
+  owner's premise ([[No Shores]]) is for later in the game: "This is for later".
   Elder Maren Hale says the Grey Tithe take a tenth and Overlook pays nothing, the owner's decision
   ("The Grey Tithe Take a Tenth, and Overlook Does Not Pay").
 - **Accounts and hosting** ([[The Audit's Calls Are Claude's]]): the Workers plan (a password sign-in takes about
@@ -373,12 +375,12 @@ The decisions in [[Open Questions]] are not repeated here.
   over the deploy jobs; the Discord app's redirect (`/v1/discord/callback` on `overlook-accounts`) and its secrets
   `DISCORD_CLIENT_ID` and `DISCORD_CLIENT_SECRET`; the Cloudflare token's leave to edit D1; whether the page plays
   online by default (without `?room=` it has no accounts).
-- **Keys and workflows**: rotate the Cloudflare token the owner gave in the chat (the `rooms` workflow alone reads
-  the Actions secret `CLOUDFLARE_TOKEN`; the workflows that publish to R2 read `R2_TOKEN`,
-  [[The Asset Workflows Publish to R2 With a Token for R2 Alone]]); add `tools/install-flatc.sh` to `ROOMS_CODE` in
+- **Keys and workflows**: rotate the Cloudflare token the owner gave in the chat (the Actions secret
+  `CLOUDFLARE_TOKEN`, which the `rooms` workflow and every workflow that publishes to R2 read,
+  [[The Asset Workflows Publish to R2 With the Cloudflare Token]]); add `tools/install-flatc.sh` to `ROOMS_CODE` in
   `.github/workflows/rooms.yml`. A cloud session cannot deploy the rooms itself: its proxy writes the stored token
   over the upload token Cloudflare hands back.
-- **The cloud environment**: two environments named Default are listed and no `overlook-source` one; which one
+- **The cloud environment**: two environments named Default are listed and none for this repository; which one
   sessions should run on, and which holds the SkillsMP key, is unchecked. A Context7 key, if wanted, goes on it the
   same way.
 - **The forge's renders** leave `r2.dev`, which limits its rate, once `daggerfalljs.dev`'s DNS moves to Cloudflare
@@ -395,14 +397,11 @@ The decisions in [[Open Questions]] are not repeated here.
 
 ## Next
 
-- **The welcome's live pictures**: the header's 400 Aurem after the stranger's gift, the tracker's first task, a
-  starter piece bought at the Weaponsmith and the Character page with it worn. A local room runs (`npm run server`),
-  but under `tools/claude-toolkit/webgpu-shot.cjs` the game's worker opens no socket to it (the driver rewrites the
-  worker's script); the `/editor/` page, which has no game worker, reaches it. Fix the driver, then picture them
-  (`?arrival=1` begins at the arrival under `npm run dev`; `__qaGame` is lent in a live room too). Also unpictured:
-  the wreck's ability bar just after the engulfing (pictured in the Storm's lesson), the shore and the deep in plain
-  clothes (the shore's taking of her hand does not advance headless; a dev start past it would), and the Mount
-  flyout at 960x540 (measured by the screens' layout harness; the offline page has no gear).
+- **Unchecked, from the encounters' headless run**: on an Elite Dungeon's node the game's worker logged a WebGPU
+  validation error each frame ("Instance range ... requires a larger buffer (28) than the bound buffer size (24) of
+  the vertex buffer at slot 1 with stride 28"), the city models' instances by its look; whether `main` shows it too.
+  The dungeon picture driver (`tools/claude-toolkit/dungeon-plan.ts`) waits for an HTML "Enter" prompt the game now
+  draws in its worker, so it cannot picture a dungeon until it waits on the game's own word.
 - **The public events' last pictures**, left for later by the owner: the raid's waves marching, a store
   plundered, Marrow, the Tithe giving up and a failed raid; the Fissure's growth sinking, the Warden, the last minute,
   the seal and a failed Fissure; the chest, the result and the reward feed; night; the banner at 1280x720, 1000x600,
@@ -428,14 +427,15 @@ The decisions in [[Open Questions]] are not repeated here.
 - **Hitching in the prologue, left by #161**: the aim's view (`AimView`) is made again for every sea fight; the shore's
   return to Saltmere rebuilds its city in one go. A fleet room's lagging player has their held lay begun again by the
   room's standing orders while their page keeps counting.
-- **Hitching, after the areas' chunks** ([[Areas Load in Chunks With Proper Caching]]): playing alone, no veil when
-  a voyage's difficulty changes; a city is built in one go after each landmass switch and every 1.5 km (`landDrawers.ts`,
-  `cityView.ts`); flora is decoded and its mips made again on every switch; a landmass cannot be prepared before it
-  opens, as the land's worker holds one. R2's own `Cache-Control` waits on a test upload (the owner's yes, a write to
-  R2). Then the hitching measured on a real GPU. `client/src/ships/shipTags.test.ts` fetches ship meshes from `r2.dev`,
-  so every deploy waits on R2 answering. Memory to measure: the figure cards'
-  4000-texture budget (`player/cards.ts`), the scene's full-size targets, about 590 MB at 5120 by 2880, uncapped
-  (`scene.ts`), and the item pictures' cache, uncapped (`player/itemPictures.ts`).
+- **Hitching, after DFO's performance work** ([[DFO's Performance Work Comes Over, Measured First]]): the city is
+  built a few steps a frame, the veil waiting on its first; nature re-scatters only where the ground changed; flora is
+  kept between landmasses; rooms run in their worker, but for the Test Ground's. Still open: a landmass cannot be
+  prepared before it opens, as the land's worker holds one; the main city and the layouts' city may build at once, up
+  to 48 ms a frame behind the veil; a layouts rebuild re-scatters every tile. R2's own `Cache-Control` waits on a test
+  upload (the owner's yes, a write to R2). `client/src/ships/shipTags.test.ts` fetches ship meshes from `r2.dev`, so
+  every deploy waits on R2 answering. Memory to measure: the figure cards' 4000-texture budget (`player/cards.ts`) and
+  the item pictures' cache, uncapped (`player/itemPictures.ts`); the scene's targets are capped at 3840 by 2160's
+  worth. Everything in it measured on a real GPU with `?perf`.
 - **Browser QA** ([[Toolkit]]):
   - `tools/claude-toolkit/webgpu-shot.cjs` pictures the game in its worker. Run it on an idle machine: beside a
     cargo build the world may not draw for minutes.
@@ -459,7 +459,7 @@ The decisions in [[Open Questions]] are not repeated here.
 - **The islands** ([[Islands]]): coming out of a door's dungeon back onto its island, before the door, rather than at
   the ship (the trip takes the door's point already, `SeaBack`); pictures of the landfall offer, E's prompts and
   washing up, in the game itself. Picturing a dungeon headless: `tools/claude-toolkit/dungeon-qa-build.sh` and
-  `dungeon-plan.ts`, once `webgpu-shot` can picture the game's worker.
+  `dungeon-plan.ts` ([[Toolkit]], Browser QA).
 - **The sea**: the fleet room has no burst (`crates/protocol/src/fleet.rs` sends `boost: false`); no ship opens its
   cabin yet, and the Tithe Ram has no ram bow ([[Hulls]]); merchantmen, bounties, public events and fleets
   ([[The Sea Is a Patrol Zone, and the Ship Is Gear]]), which #82's loop overlaps (flotsam stays the gear loop's

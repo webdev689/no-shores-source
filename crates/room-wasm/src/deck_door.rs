@@ -52,14 +52,11 @@ pub fn deck_of(text: &str, name: &str) -> Result<Deck, String> {
     Ok(Deck { heights, helm: deck.helm, bounds: [[deck.west_m, deck.north_m], east_south] })
 }
 
-/// The Sloop's deck, read once from the manifest built in.
+/// The Sloop's deck, the first of the hulls' decks.
 pub fn sloop_deck() -> &'static Deck {
-    static DECK: OnceLock<Deck> = OnceLock::new();
-    DECK.get_or_init(|| deck_of(MANIFEST, "sloop").unwrap_or_else(|why| panic!("the built-in manifest: {why}")))
+    &hull_decks()[0]
 }
 
-/// The Sloop's build as JSON: its name, its hull and canvas whole, its crew, its guns on each side, and the loads it
-/// guns take, in the order a gunner steps through them.
 /// Every hull's deck as the built-in manifest has it, by its hull's number: the Sloop's, the Schooner's, the Brig's and
 /// the Frigate's.
 pub fn hull_decks() -> &'static [Deck] {
@@ -72,6 +69,8 @@ pub fn hull_decks() -> &'static [Deck] {
     })
 }
 
+/// The Sloop's build as JSON: its name, its hull and canvas whole, its crew, its guns on each side, and the loads it
+/// guns take, in the order a gunner steps through them.
 #[must_use]
 pub fn sloop_build_json() -> String {
     let loads: Vec<String> = Shot::CYCLE.iter().map(|shot| format!("\"{}\"", shot.name())).collect();

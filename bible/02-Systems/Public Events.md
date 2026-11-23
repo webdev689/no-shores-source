@@ -68,10 +68,11 @@ raised by the voyage's seas), at home round the event's ground. Each but the gro
 player nearest its home as it stands, wherever they are, and fights a player within a leash of the event's reach (its
 ground's radius, or its farthest point from its middle past it: the growth's spot, the approach, where the raid's waves
 form) and 16 m more, measured from its own place (the ground's middle, or a Collector's post at its store), on ground
-the room's mesh covers; past that it gives them up and walks back. A zone's room that holds events stands 40 foes alive
+the room's mesh covers, or anywhere within 14 m of it ([[A Foe Gives Up Only When the Player Is Far Away]]); past that it gives them up and walks back. A zone's room that holds events stands 40 foes alive
 at most and keeps 16 of them for its event (the most it stands at once: a Fissure's living foes short of a wave, its
-fullest wave and its growth or Warden); its garrison stands again, calls and arrives, and a road's kill goal stands its
-group, only while the foes not of the event stay within 24, as in any other node. The growth, the Warden and Marrow
+fullest wave and its growth or Warden); its garrison stands again, calls and arrives, a road's kill goal stands its
+group, and a road's ward, waves, ambush and watchers stand, only while the foes not of the event stay within 24, as in
+any other node. The growth, the Warden and Marrow
 stand half their health more for each player at the event beyond the first (the most seen at the Fissure; those on the
 raid's ground as Marrow comes). The Fissure's growth and the raid's tithe-taker the room handles itself: their brains
 are left be, so neither moves on its own nor strikes; the growth stands where it rose, and the tithe-taker walks the
@@ -262,9 +263,7 @@ sees and hears; the words are `game/publicLaw.ts`'s, worked out from the event a
   `crates/room/tests/grounds_planned.rs` holds Saltmere's three finished layouts' grounds clear of every box but the
   stores' own, and each fissure clear of its battlefield's obelisk and ruins.
 - A vault filled past its 20 by a leaver's chest shows more than its limit until its player takes some out.
-- The fissure's chasm is drawn 2 to 4% of its distance nearer the eye than the land at its mouth: land rising more
-  than that over the mouth's foot hides part of it, and anything standing that close in front of the mouth is drawn
-  behind it.
+- The fissure's chasm is drawn a little nearer the eye than the land at its mouth ([[Modules]], "Limits").
 - A chest's two minutes in the tracker run from when the page first saw it: a page come later counts the whole two.
 - A store's box covers both its whole and its plundered stack, so a body meets it as the larger of the two.
 - The fissure's spires are not in the navmesh: a Lattice foe's way may run into one.

@@ -28,7 +28,8 @@ export interface LayoutContext {
   readonly scrollOf?: (id: string) => number;
 }
 
-const sidesOf = (padding: Padding | undefined): readonly [number, number, number, number] => {
+/** A node's padding on each side: top, right, bottom and left. */
+export const sidesOf = (padding: Padding | undefined): readonly [number, number, number, number] => {
   if (padding === undefined) return [0, 0, 0, 0];
   if (typeof padding === 'number') return [padding, padding, padding, padding];
   if (padding.length === 2) return [padding[0], padding[1], padding[0], padding[1]];

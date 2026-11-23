@@ -109,7 +109,7 @@ export class Band {
 
   /** Stops playing, fading out over a tenth of a second from `now`. */
   hush(now: number): void {
-    for (const { player } of this.players.values()) if (player.song) player.fade(0, now, 0.1);
+    for (const { player } of this.players.values()) player.hush(now);
     this.playing = false;
   }
 }

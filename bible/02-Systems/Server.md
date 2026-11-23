@@ -9,6 +9,8 @@ code:
   - crates/room/src/entrances.rs#join_at
   - crates/room/src/judging.rs#Event
   - crates/room/src/players.rs#VIEW_LAG
+  - crates/gear/src/cosmetics.rs#dressed
+  - crates/gear/src/looks.rs#shown
   - client/src/network/localRoom.ts#LocalRoom
   - client/src/network/roomThread.ts#RoomThread
   - client/src/combat/fighting.ts#Fighting
@@ -51,6 +53,8 @@ code:
   - crates/room-wasm/src/run_door.rs#activities_json
   - server/roomNames.ts#nodeRoom
   - server/roomNames.ts#runAsk
+  - server/roomNames.ts#startedAtSea
+  - server/accounts/companies.ts#launchedFor
   - server/keeping.ts#forCompany
   - server/keeping.ts#judgingArrivals
   - server/keeping.ts#rename
@@ -455,8 +459,11 @@ field holds (an input's or orders' number, the arms, a foe's type, a load, a cal
 held within it.
 
 Looks and dresses are each player's own word, passed on and decided nothing about, but for the gear they show: the
-room keeps in a dress's armour and hands only the pieces the character wears (`layers_of`; a light in the left hand
-is no piece, and stays), puts the dye and barding the character wears and the coat of the horse it wears into it, none for a start piece, and
+room keeps in a dress's armour and hands only the looks the page could draw the pieces worn in on the dress's body:
+each piece's own content's, written or faction's set or metal, the prologue's own armour's steel, or the one the page
+falls to where the forge does not draw it (`looks::shown`; [[Gear]], "Looks"; a light in the left hand is no piece,
+and stays), drops any other from what others see, puts the dye and barding the character wears and the coat of the
+horse it wears into it, none for a start piece, and
 keeps a faction's colour or a dye only on the layers its pieces worn and dyes kept allow, so no page can show another
 a piece it does not wear or keep ([[Gear]], "Cosmetics"). It makes a dress again when the browser sends one or after
 the player's gear is sent. A look goes out with the tick that
@@ -488,13 +495,21 @@ so every decision is Rust and the shell only carries bytes and time.
   room and loads again. A name is 64 characters at most.
 - **Runs** (`roomNames.ts`): a name ending `--run-<instance>`, eight lowercase letters or digits, is a private room,
   a run ([[Activities]]): `node-<patrol>--elite--dungeon-<n>--run-<i>` or `--abyss--` a patrol's dungeon at Elite or
-  Abyss, `node-<Elite Dungeon>--run-<i>` an Elite Dungeon, and `node-<Elite Dungeon>--elite--run-<i>` or `--abyss--`
-  the week's two. A sea island's dungeon is `sea-dungeon-<continent>-<style>-<seed, 8 hex digits>`, shared at
+  Abyss, `node-<Elite Dungeon>--run-<i>` an Elite Dungeon, `node-<Elite Dungeon>--elite--run-<i>` or `--abyss--`
+  the week's two, and `node-<Elite Dungeon>--elite--playlist-<foes' level>--run-<i>` or `--abyss--` a playlist's run
+  (`nodeRoom`'s `playlist`, which `runAsk` hands the room module as the ask's `playlist`; [[Activities]], "The
+  Playlist"). The week's run the Playlist launches is marked `--sea` before its instance
+  (`node-<Elite Dungeon>--abyss--sea--run-<i>`): it opens as the week's run, and `startedAtSea` reads it and a
+  playlist's run as started at sea. A sea island's dungeon is `sea-dungeon-<continent>-<style>-<seed, 8 hex digits>`, shared at
   Normal, with `--elite--run-<i>` or `--abyss--run-<i>` after it a run (`seaDungeonRoom`). No name opens a shared
   Elite or Abyss dungeon, a private Normal one, or a run without its whole instance. A run and a sea island's
   dungeon (on its sea's word, "The sea") open from their name: `runAsk` makes the ask the room module's `open_run` takes, at the minute the first
   player joins, and a patrol's dungeon's run is given its patrol's node file too, so it keeps the patrol's lock. One
   no rule lays, or whose patrol's file is missing, answers 404.
+- **A playlist's run is the server's**: its first character is given only to an account the server found or launched
+  it for within a day, or one of that account's company, (`launched(account, room)`, `found_runs`), so its Elite Dungeon is always the server's draw
+  ([[A Playlist's Launch Is Drawn by the Server]]); any other first is let go untouched, closed with 4003 and "Start
+  this run from the Playlist.". Then it keeps to its company as any run does.
 - **A run keeps to its company** (`Keeper.forCompany`): a character is given to the first to come, then only to one
   it let in before, one in the company of someone it let in, or one it was found for with them by Find a Company
   (`companions(account, room)`, [[Accounts]]), for as long as the run lives, so a member back after every other
@@ -556,7 +571,9 @@ so every decision is Rust and the shell only carries bytes and time.
   the page offers it; that comes through a gate from a node whose gate leads there, at the same seas (the bake's
   `gates`); or that comes out of the node's own dungeon or run, at the seas it went in at. A dungeon's room or a run
   takes one from its node's room at its seas, and an Elite Dungeon's run (at Normal, or the week's at its own tier)
-  from its node at any seas. A character that came by none of these ways may still join one of its company who plays
+  from its node at any seas. A run started at sea (`startedAtSea`: a playlist's, or the week's marked `--sea`) takes
+  one from the sea alone, as the Playlist beside a port launches it, and never leads out to its node or by its door,
+  so no run carries a player across the sea onto an island. A character that came by none of these ways may still join one of its company who plays
   in the room, as the Roster's "Go to them" does (`companions`). Any other is let go untouched, and the socket closed with 4003 and "You cannot reach
   this place from where you were.", so the page takes the player back to their ship, saying so. A player unkept is
   not judged, as they keep nothing. The sea, its islands and their dungeons keep their own rules ("The sea").

@@ -7,6 +7,7 @@
 import bank from '../../content/audio/sounds.json' with { type: 'json' };
 import { contentBytes, type Fetched } from './contentCache.ts';
 import { channelsOf, matchedLevel, type Loudness, type Measured, measuredOf, measureOver } from './soundMeasure.ts';
+import { standIn } from './standIns.ts';
 
 /** A recorded sound's credit, as the licence asks it to be given. */
 export interface SoundCredit {
@@ -86,8 +87,8 @@ export class Samples {
   private readonly read: Read;
   private readonly most: number;
   private readonly held = new Map<string, Held[]>();
-  /** Each file and chunk on its way. */
-  private readonly coming = new Set<string>();
+  /** Each file and chunk on its way, and the cues waiting on it: cues sharing a recording share its one fetch. */
+  private readonly coming = new Map<string, Set<string>>();
   /** Each long file's size, once its first chunk has said it. */
   private readonly sizes = new Map<string, number>();
   /** The sound each cue played last, so the next play is another: by the sound, as a chunk let go moves the rest. */
@@ -124,18 +125,26 @@ export class Samples {
     for (const id of ids) this.kept.delete(id);
   }
 
-  /** Fetches each of `id`'s files not held or on its way. */
+  /** Fetches each of `id`'s files not held or on its way; one another cue holds whole, it holds too. */
   want(id: string): void {
     const sound = this.bank.sounds[id];
     if (!sound || !this.audio) return;
     const held = this.held.get(id) ?? [];
-    for (const file of keysOf(sound)) if (!held.some((each) => each.file === file)) this.fetch(id, file, 0);
+    for (const file of keysOf(sound)) {
+      if (held.some((each) => each.file === file)) continue;
+      const whole = [...this.held.values()].flat().find((each) => each.file === file && each.chunk === null);
+      // A copy of its own, as each cue keeps when it last played.
+      if (whole) this.keep(id, { ...whole });
+      else this.fetch(id, file, 0);
+    }
   }
 
-  /** The bytes of decoded samples held now. */
+  /** The bytes of decoded samples held now, a recording several cues share counted once. */
   get bytes(): number {
+    const counted = new Map<AudioBuffer, number>();
+    for (const variants of this.held.values()) for (const each of variants) counted.set(each.buffer, each.bytes);
     let total = 0;
-    for (const variants of this.held.values()) for (const each of variants) total += each.bytes;
+    for (const bytes of counted.values()) total += bytes;
     return total;
   }
 
@@ -150,6 +159,8 @@ export class Samples {
     const variants = this.held.get(id);
     if (!variants || variants.length === 0) {
       this.want(id);
+      const sound = this.bank.sounds[id];
+      if (sound && keysOf(sound).some((file) => this.coming.has(`${file} 0`))) standIn('sounds');
       return null;
     }
     const last = this.lastPlayed.get(id);
@@ -188,7 +199,7 @@ export class Samples {
   }
 
   private nextChunk(id: string, file: string, playing: number): void {
-    if (!this.sizes.has(file) || [...this.coming].some((each) => each.startsWith(`${file} `))) return;
+    if (!this.sizes.has(file) || [...this.coming.keys()].some((each) => each.startsWith(`${file} `))) return;
     const next = (playing + 1) % this.chunksOf(file);
     const held = (this.held.get(id) ?? []).some((each) => each.file === file && each.chunk === next);
     if (!held) this.fetch(id, file, next);
@@ -198,10 +209,16 @@ export class Samples {
   private fetch(id: string, file: string, chunk: number): void {
     const audio = this.audio;
     const coming = `${file} ${chunk}`;
-    if (!audio || this.coming.has(coming)) return;
+    const waiting = this.coming.get(coming);
+    if (!audio) return;
+    if (waiting) {
+      waiting.add(id);
+      return;
+    }
     const failedAt = this.failed.get(coming);
     if (failedAt !== undefined && audio.currentTime - failedAt < FAILED_WAIT_S) return;
-    this.coming.add(coming);
+    const cues = new Set([id]);
+    this.coming.set(coming, cues);
     const first = chunk * CHUNK_BYTES;
     void this.read(this.bank.base + file, [first, first + CHUNK_BYTES - 1])
       .then(async ({ bytes, total }) => {
@@ -211,7 +228,8 @@ export class Samples {
         const { buffer, measured } = await decodedMeasured(audio, bytes);
         const held = buffer.length * buffer.numberOfChannels * 4;
         const playedAt = audio.currentTime;
-        this.keep(id, { file, buffer, measured, bytes: held, chunk: long ? chunk : null, playedAt });
+        for (const cue of cues)
+          this.keep(cue, { file, buffer, measured, bytes: held, chunk: long ? chunk : null, playedAt });
       })
       // A sound that cannot be fetched leaves its cue silent, as before it was picked, and is asked for again later.
       .catch(() => this.failed.set(coming, audio.currentTime))
@@ -247,7 +265,8 @@ export class Samples {
       else this.held.delete(id);
       // Nothing else may hold it, or its samples (and the page's decoded copy) are never let go.
       if (this.lastPlayed.get(id) === sound) this.lastPlayed.delete(id);
-      over -= sound.bytes;
+      // A recording another cue still holds frees nothing.
+      over = this.bytes - this.most;
     }
   }
 }

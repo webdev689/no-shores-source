@@ -68,7 +68,8 @@ and their firing spots by it, and climb and drop where its links say.
    anchored bake keeps instead the part joined to the floor nearest a point it is given, the way in of a dungeon, whose
    rock stands as walls 10 m tall ([[Movement]]'s grid of heights) with flat tops larger than its floor. A dungeon
    bakes in cells of 0.4 m, an eighth of its own, so every wall of it lies on a cell's edge and the bake holds a third
-   of the columns 0.25 m would; its jambs and pillars are the bake's colliders.
+   of the columns 0.25 m would; its jambs, pillars and solids are the bake's colliders, and an Elite Dungeon's Ascents'
+   pads with them, so no foe paths onto a pad.
 4. **Outlines.** Each region's edge is traced around its cells and simplified to within half a cell, keeping every
    corner where the region across changes. A region round a pillar has an inner outline, a hole.
 5. **Polys.** Each outline, its holes bridged in, is cut into triangles, sliced on one lattice across the room so
@@ -146,7 +147,7 @@ climbing after them, is fingerprinted natively (`crates/room-wasm/src/climb_door
 
 - A node's room bakes a 70 m square of its [[Land]] (its first spawn 15 m inside the edge toward the middle of its
   section), and a 70 m square round each place a kill goal stands a group at, each with only the boxes that reach into
-  it. Elsewhere a node has no mesh, so a foe leashed there gives up its fights. Each place's square (a kill group's, a defence's, a puzzle's, an unseen step's watch, an escort's ambush) is baked the first time it is needed and kept, one in a tick at most (130 to 245 ms that tick natively), a step waiting a tick for its own; where the node's own square holds all the step stands things in, it is used instead. WebAssembly's cost is unmeasured. A larger square would hold more of a node, at a bake's cost.
+  it. Elsewhere a node has no mesh, so a foe leashed there gives up a fight with one more than 14 m from it ([[A Foe Gives Up Only When the Player Is Far Away]]). Each place's square (a kill group's, a defence's, a puzzle's, an unseen step's watch, an escort's ambush) is baked the first time it is needed and kept, one in a tick at most (130 to 245 ms that tick natively), a step waiting a tick for its own; where the node's own square holds all the step stands things in, it is used instead. WebAssembly's cost is unmeasured. A larger square would hold more of a node, at a bake's cost.
   A zone that holds public events also bakes a rectangle round each of its grounds and joins it to the node's square as
   a part of one mesh: a path runs within one part, never from one to another, and a point is placed on whichever part
   has it nearest ([[Public Events]], with what it adds to the room's open).

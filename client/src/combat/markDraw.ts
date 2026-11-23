@@ -119,6 +119,8 @@ export class MarkDraw {
   private counts = { solid: 0, clear: 0 };
   private aboveBuffer: GPUBuffer | null = null;
   private aboveCount = 0;
+  /** The marks over everything as last laid, kept from frame to frame and grown to the most yet. */
+  private aboveLaid = new Float32Array(0);
   private origin: [number, number, number, number] = [0, 0, 0, 0];
   private readonly values = new Float32Array(20);
 
@@ -162,6 +164,11 @@ export class MarkDraw {
     this.view = device.createBuffer({ size: 80, usage: BUFFER_USAGE.uniform | BUFFER_USAGE.copyDestination });
     this.group = device.createBindGroup({ layout, entries: [{ binding: 0, resource: { buffer: this.view } }] });
     this.warmOver(over);
+    // The lit keepers' pipeline too, so the first keeper lit never waits on it.
+    void device
+      .createRenderPipelineAsync(this.aboveMade())
+      .then((pipeline) => (this.above ??= pipeline))
+      .catch(() => undefined);
   }
 
   /** The marks the next frame draws, measured from a point `origin` in the world (where a mark at 0 lies), seen from
@@ -177,11 +184,13 @@ export class MarkDraw {
 
   /** The marks the next frame draws over everything (`drawAbove`), measured from the eye, in the order given. */
   setAbove(vertices: ArrayLike<number>): void {
-    const laid = Float32Array.from(vertices);
-    this.aboveCount = laid.length / MARK_FLOATS;
-    if (laid.length === 0) return;
-    this.aboveBuffer = this.grown(this.aboveBuffer, laid.byteLength);
-    this.gpu.device.queue.writeBuffer(this.aboveBuffer, 0, laid);
+    this.aboveCount = Math.floor(vertices.length / MARK_FLOATS);
+    if (this.aboveCount === 0) return;
+    const count = this.aboveCount * MARK_FLOATS;
+    if (this.aboveLaid.length < count) this.aboveLaid = new Float32Array(2 ** Math.ceil(Math.log2(count)));
+    for (let value = 0; value < count; value++) this.aboveLaid[value] = vertices[value] ?? 0;
+    this.aboveBuffer = this.grown(this.aboveBuffer, count * 4);
+    this.gpu.device.queue.writeBuffer(this.aboveBuffer, 0, this.aboveLaid, 0, count);
   }
 
   /** `buffer`, or a new one in its place when it holds fewer than `bytes`: a power of two, 4 KB at least. */
@@ -247,16 +256,7 @@ export class MarkDraw {
   drawAbove(encoder: GPUCommandEncoder, target: GPUTextureView, matrix: Float32Array): void {
     const [buffer, count] = [this.aboveBuffer, this.aboveCount];
     if (!buffer || count === 0) return;
-    this.above ??= this.gpu.device.createRenderPipeline({
-      layout: this.gpu.device.createPipelineLayout({ bindGroupLayouts: [this.viewLayout] }),
-      vertex: { module: this.module, entryPoint: 'mark_vertex', buffers: [VERTEX_LAYOUT] },
-      fragment: {
-        module: this.module,
-        entryPoint: 'clear_fragment',
-        targets: [{ format: this.gpu.format, blend: { color: BLENDED, alpha: BLENDED } }],
-      },
-      primitive: { topology: 'triangle-list' },
-    });
+    this.above ??= this.gpu.device.createRenderPipeline(this.aboveMade());
     this.writeView(matrix);
     const pass = encoder.beginRenderPass({ colorAttachments: [{ view: target, loadOp: 'load', storeOp: 'store' }] });
     pass.setPipeline(this.above);
@@ -303,6 +303,20 @@ export class MarkDraw {
         module: this.module,
         entryPoint: entry,
         targets: [{ format, blend: { color: BLENDED, alpha: BLENDED } }],
+      },
+      primitive: { topology: 'triangle-list' },
+    };
+  }
+
+  /** How the pipeline over the finished picture is made, for the lit keepers' marks seen from everywhere. */
+  private aboveMade(): GPURenderPipelineDescriptor {
+    return {
+      layout: this.gpu.device.createPipelineLayout({ bindGroupLayouts: [this.viewLayout] }),
+      vertex: { module: this.module, entryPoint: 'mark_vertex', buffers: [VERTEX_LAYOUT] },
+      fragment: {
+        module: this.module,
+        entryPoint: 'clear_fragment',
+        targets: [{ format: this.gpu.format, blend: { color: BLENDED, alpha: BLENDED } }],
       },
       primitive: { topology: 'triangle-list' },
     };

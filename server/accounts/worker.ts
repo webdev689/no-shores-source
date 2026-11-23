@@ -50,6 +50,10 @@ export class CharacterKeeper extends WorkerEntrypoint<Env> implements Characters
   companions(account: string, room: string): Promise<string[]> {
     return this.kept.companions(account, room);
   }
+
+  launched(account: string, room: string): Promise<boolean> {
+    return this.kept.launched(account, room);
+  }
 }
 
 /** The accounts' web API (`accounts.ts`). */

@@ -3,6 +3,9 @@ type: system
 status: live
 code:
   - client/src/ui/paint.ts#PaintedRole
+  - client/src/game/playlistScreen.ts#PlaylistView
+  - client/src/game/playlistMap.ts#drawCrest
+  - client/src/game/playlistParts.ts#crestOf
   - client/src/cinema/screen.ts#Screen
   - client/src/speech/dialogue.ts#DialogueBox
   - client/src/speech/overheads.ts#Overheads
@@ -87,8 +90,9 @@ code:
   - client/src/plus/compass.ts#markPlace
   - client/src/game/seaHud.ts#seaShipMarks
   - client/src/game/seaHostiles.ts#hostileLook
-  - client/src/combat/hud.ts#veilOf
-  - client/src/combat/hud.ts#clearOf
+  - client/src/combat/hudPlace.ts#veilOf
+  - client/src/combat/hudPlace.ts#clearOf
+  - client/src/combat/callout.ts#Callout
   - client/src/combat/vitals.ts#Vitals
   - client/src/combat/vitals.ts#chargesShown
   - client/src/combat/hudLayout.ts#hudLayout
@@ -290,7 +294,8 @@ The game draws every screen itself, and by the owner's word no HTML is laid over
 - **The heads-up display** is a layer of its own (`Hud`): the place's name, the edge's warning and its darkening,
   death's words and Respawn, the key strip on its keycaps, the task tracker, the
   toasts, the status line, the compass, the marks with their rings, glyphs and arrows, the ships' plates, the sea bar
-  and its offers, Manage's panel, the menu, the prompt for E, the veil and the sheet of every control. Each stands where the page's sheet stood
+  and its offers, Manage's panel, the menu, the prompt for E, the veil (the loading screen, `loadingNode`, with the
+  trip's words; [[One Loading Screen Covers Every Trip Until the Place Is Ready]]) and the sheet of every control. Each stands where the page's sheet stood
   it, gives way as it did, and eases, slides and flashes as it did. Words laid over the world, and the darkened edge,
   let a click through to the world; the marks, presses and panels take it. A mark's glyph is
   drawn into a picture in the mended face (`CANVAS_FACE`), which holds the ones Pixelify lacks. It gives way to the fight's display as that says it shows, and to the
@@ -314,7 +319,7 @@ The game draws every screen itself, and by the owner's word no HTML is laid over
   copied, a file saved or opened from the player's chooser, a yes or no asked in the browser's dialog; each borrows the
   page for a moment, and nothing of them is drawn interface.
 - **The story's screens** are layers of their own, each where the page stood it: the tap to start over everything,
-  the cinema's screen (its veils, bars, eyelids, flash, title, prompt and skip) over the HUD and the menu, a boss's
+  the cinema's screen (its veils, bars, darkening, flash, title, prompt, skip and loading screen) over the HUD and the menu, a boss's
   nameplate and the objective under it, the dialogue box and the barks over heads under every other layer, and the
   creation's two windows at the helm, whose fields are typed through the interface and whose keys are the
   interface's while either is up (`creationOpen`); each window, and the pause menu, is modal while up. Words over the world and the veils let the pointer through to the
@@ -341,6 +346,10 @@ The game draws every screen itself, and by the owner's word no HTML is laid over
   `game/social/socialShots.ts` draws the plates over players, a player's menu, and the chat open and shut. A shot may
   hear its events on a later frame (`at`), once a screen has put its focus where it wants it, and take more frames (`frames`) for many pictures
   to come; the page asks for reduced motion, so a screen stands settled.
+- **Read and driven headless.** The interfaces that hear a page's canvas (the game's, the World Editor's, the Test
+  Ground's panels) are listed by `__ui()`, on the page or in the game's worker (`ui/seen.ts`): each node shown with an
+  id, words or a label, its box clipped to what shows, in the page's CSS pixels, and whether it presses, is disabled or
+  has focus. The picture driver finds words and ids through it, as it once read the page's HTML ([[Toolkit]]).
 
 ## How it works
 
@@ -422,7 +431,8 @@ The game draws every screen itself, and by the owner's word no HTML is laid over
   px rule, showing a quarter of the circle. Its eight points (N, NE, E, SE, S, SW, W, NW, the four cardinals at 22 px
   and the others at 11, on the face's grid) stand by the bearing the view looks at, the shortest way round; one off the
   strip is hidden, never held at an end. A brass needle marks its middle. Its column stands what comes under it 10 px
-  under its rule, 56 px down: a public event's banner ([[Public Events]]), then a boss's bar, then the target's plate.
+  under its rule, 56 px down: a public event's banner ([[Public Events]]), or in an Elite Dungeon its encounters'
+  ([[Dungeons]], "Encounters"), then a boss's bar 26 px under the banner, then the target's plate.
   A view too narrow for health's bar to stand 150 px long beside the compass stands the whole column under the vitals
   instead. On foot past 1440p the whole column (the compass, the banner, the boss bar and the target's plate) stands
   at twice its size, as the corners do. At sea it marks each hostile
@@ -541,10 +551,31 @@ The game draws every screen itself, and by the owner's word no HTML is laid over
   blinks (it holds blood or white), no flash plays and plates over figures and ships go straight to their places. The
   compass and its marks move only as the view turns.
 - **Its layers**, back to front: what stands over the world (the plates over figures, nearest in front, the parry
-  rings, the words, the arrows), then the compass's column, then the veil over the whole display: blood while
-  the player lies dead, plain while the link to the room is lost or joining again. The display never stands over
-  the game's own windows. An arrow to a threat off the screen that would fall on the vitals stands just below them,
-  and one that would fall on the Arts and weapons, or on the game's key strip, just above them.
+  rings, the words, the arrows), then the compass's column, then a raid's call, then the veil over the whole display:
+  blood while the player lies dead, plain while the link to the room is lost or joining again. The display never
+  stands over the game's own windows. An arrow to a threat off the screen that would fall on the vitals stands just
+  below them, and one that would fall on the Arts and weapons, or on the game's key strip, just above them.
+- **The top keeps clear.** The fight's words over the world (a number, "Dodge!") stand under the compass's column and
+  a raid's call where they would fall on them, as they stand under the plates over figures; a plate over a figure
+  that would stand on the compass, the banner, the boss bar, the target's plate or the call, or within 12 px of one so
+  it reads as theirs, is laid unseen until it stands clear (judged at its foot this frame, so one first shown is hidden
+  at once), so nothing shows through the banner. Each keeps clear of where these were last laid (the words a frame
+  later than the plates), and a word pushed down past the display's foot stands at its foot again.
+  `hudCourt.test.ts` lays the Court's fullest banner, the boss bar, the target's plate, a "Dodge!" over the Boss and
+  the call at 1600 by 900, 1280 by 720, 1024 by 600, 844 by 390 and 390 by 844 and finds no two overlapping, each on
+  the display and the call clear of the crosshair.
+- **A raid's call** (`combat/callout.ts`): an Elite Dungeon's Court calls a few words over the middle of the view as
+  its mechanic is shown: "Get clear!" as the warded Boss's slam is, "Into the light!" as the Reckoning's warning
+  starts. White words three steps of the face tall on the red of the fight's own warnings, in a 2 px white edge; it
+  slides in as the banner does at a beat, stands 1.8 s and fades over its last 0.4 s, and is read out. Its top stands
+  16 px under the compass's column, no higher than a quarter down the view, or under the crosshair where above it
+  would cover the crosshair, or more of the Boss's figure (standing within 200 px of the view's middle, at the
+  display's zoom) than under it would. A view under 480 px tall has no room under the column: there the call, its words two steps tall,
+  stands in the banner's place while it shows. Each new call shows afresh; one held on (the slam still shown) shows
+  once; once its mechanic ends (the slam landed) a call still standing fades at once.
+- **Foul water's edge.** While an Ascent's foul water harms the player (from the room's harm told to them, while
+  their feet stay on its floor), the view's edge turns sick green, drawn as the struck edge is: it rises over 0.25 s, is held from one
+  harm to the next (1.5 s), and fades over 0.6 s from the moment they leave it.
 - **Words** over the world or a fill (plates' names, the vitals' words, the veil's) carry a hard 1 px outline all
   round (a word's `halo` edge, `ui/drawLaid.ts`), as a ship's plate strokes its words, so they read over bright sky. The
   [[Game]]'s place name and key strip, laid straight on the world too, carry the same outline.
@@ -864,7 +895,8 @@ never while a press is held. Each press is an ask the room answers.
     dungeon with its levels, read down its columns, the band this character's level falls in lit; and the bounties (a
     sealed notice), their six a day said at the foot.
     Under This week: the Elite and the Abyss Dungeon of the week (their doors under a brass chevron and with a
-    burning eye), each its level, its tick or padlock, the Abyss's five revives (a heart) and its wipe (a skull), its
+    burning eye), each its level, its tick or padlock, a "Playlist" mark whose words say it is queued from the
+    Playlist beside any port, the Abyss's five revives (a heart) and its wipe (a skull), its
     modifiers each by its icon alone, its name and what it does said at the foot (Burn's flame in its Art's colours,
     Brawler's fist, Marksman's target, Lightswitch's claws, Ironclad's shield, Trickle's drop, Juggler's three balls on
     an arc, Exposure's broken heart) and its pay (the Vestige
@@ -929,7 +961,9 @@ never while a press is held. Each press is an ask the room answers.
   and an invite waiting; it stands over the veil, so the company shows while the player travels.
 - **Settings** holds the account ([[Accounts]]): whether the player is a guest, signed in, or linked with Discord; a
   username and password to keep a guest by or sign in with; Discord; and signing out, here or everywhere, each held.
-  Under it, the players blocked, each with a press to unblock them; then the volumes of the interface, the world
+  Under it, the players blocked, each with a press to unblock them; then the resolution the world is drawn at
+  ("Resolution": Auto, the first, or 100%, 85%, 75%, 67% or 50%, kept in this browser; [[Game]], "Drawing"), the
+  interface staying at the screen's own; then the volumes of the interface, the world
   ("World sounds"), the music ("Music") and the [[Ambience]] ("Ambience"), each kept in this browser, and the recorded
   sounds' credits: each one's name, author, licence and source, and what was changed.
 - **Motion** runs in steps, as Enhanced Plus's sigils breathe. With less motion asked for, only a hold's fill and
@@ -995,6 +1029,56 @@ each stopping the search. A search that ended unasked says why on the card ("You
 tab.", or "The search stopped. Try again."). A search for a run the card no longer opens ends, as when the week
 turns while it finds; a run found just as the week turned, for a run the card built again no longer opens, is not
 gone into, and the card says "The week turned. Try again.".
+
+## The Playlist
+
+A Playlist mark beside a port's harbour ([[Overworld]], "Marks") opens the Playlist screen ([[Activities]], "The
+Playlist"), drawn after the owner's reference, Destiny's Vanguard screen (`PlaylistView`, its parts in
+`playlistParts.ts`, in the entrance card's layer, over a dark scrim): "PLAYLIST" at its head and the port it was opened
+beside ("Beside Overlook") over a brass rule; then the four entries as crests, the Elite Playlist (three chevrons) and
+the Abyss Playlist (an eye of the deep) above, the Elite Dungeon of the week (crossed blades under a star) and the
+Abyss Dungeon of the week (a crown over the deep) below their playlists, a fifth smaller. A crest is a shield, brass
+for Elite, violet for Abyss, grey while its entry is shut; at its shoulder a gold dot while a reward of it waits, or a
+padlock while it is shut. Under it its name in capitals (a week's dungeon's on two lines, broken before "of"), and its
+level a part a line past its tier ("Levels 15 to 19", "Foes at level 17"; "From level 10" before it), or, shut, why in
+neutral ink ("Opens at level 24", "You are 15", from its gate's words), so no separator ends or starts a line. The chosen crest's name is lit over a
+brass rule as wide as the name, its shield drawn 8% larger with a brighter glow; a crest under the pointer or the
+focus glows a little.
+
+On a screen 1000 pixels wide or more the crests stand on a chart (`playlistMap.ts`: a lit middle fading to nothing
+before its edges, faint stars, two wide rings, a ring round each crest's spot and dotted lines from each playlist to
+the other and to its week's dungeon), each shield's middle on its spot, its words wrapped to 2.2 times a playlist's
+shield; the chart's picture is drawn again only at 64-pixel steps of the screen. The chosen entry's card stands beside
+it in a column that grows to the footer and scrolls. Narrower, the crests stand two by two over the chart's ground
+(its stars and rings, no spots), each its half of a row, and the card under them, the two scrolling together. A list
+taller than its room (`scrolledNode`) fades its foot into the card's ground while more lies below, so a line cut there
+fades out, and keeps a thin brass bar in a gutter at its right whose thumb stands where the list does; the wheel over
+it, Page Up and Page Down, and the pad's right stick scroll it (`Interface.scrollBy`, `Interface.stickScroll`).
+
+The card: its name on a brass band (balanced over two lines where it is long) with its level and what its runs drop
+("Drops orcish and mithril gear" for Elite, "Drops adamantium and ebony gear" for Abyss, from
+`content/gear/looks.json`); why it is shut, led by a padlock in neutral ink (red is kept for a refusal); its rules
+(the Abyss Playlist's "One of the 18 Elite Dungeons, at Abyss, drawn as each run starts."); its modifiers, each led by
+its icon with what it does; its rewards, kept while it is shut, each its words ("a Vestige in a Boss's colours"),
+then "Taken" (with the timers' tick) or "Not taken", a playlist's weekly as three marks filling with its clears ("2 of
+3", then "Paid"), each with the time to its reset at the right; and "Every clear pays its kills and its cache, as any
+run does." Words come from `playlistScreenOf` (`playlistWords.ts`), built again each second it stands (its countdowns)
+and as the character's word changes.
+
+The pointer over a crest only lights it; a click, Enter, Space or the pad's A on it chooses it. The arrows choose the
+next (up and down between a playlist and its week's dungeon), and the card follows the focus as the pad's cross moves
+it over the crests. The footer bar holds the search's word at the left ("Finding a company · 0:23" with "A run starts
+with four, or with fewer after a minute." beside it on a wide screen; "Launching…" while Launch asks the server; or why
+the last ended, "The accounts did not answer. Try again." where they did not), why a shut entry is shut beside its
+resting Launch, and the presses: Find a Company (F) first and primary where the entry is matched, open and the page
+signed in, Stop finding (F) while it finds; Launch (E), "Go alone", or "Go with your company" once the Roster shows the
+player in one, primary where nothing is matched, drawn dim and resting while the entry is shut, and not offered while
+a search or a launch runs;
+and Close (Esc, the pad's B). Under 1100 pixels the word stands over the presses, which wrap. As a search starts or ends
+the focus goes to the press that takes the other's place, Close where none does. Launch and a run found close the screen
+and go into the run from the sea; so does leaving the sea, the screen closing and its search stopped once the player
+is no longer at sea or over an island's side. While it stands the pointer is free and no key of the game's or the
+menu's acts behind it.
 
 ## How recordings load
 
@@ -1200,7 +1284,7 @@ serves each ask only at its own counter ([[Gear]], "In the rooms"; [[Factions]])
   the menu shows the player's own: their emblem's banner across its head, their name and guild's tag, level, Prestige
   and Defense over it, and under it the Character tab: their figure in the dress they wear here, each piece they wear in
   its slot with its card, their level and Prestige, their power and the Art they wear, from what their room kept for
-  others to see. Nothing on it can be asked or changed: no hints, no XP meter and no Appearance. Back or Escape goes
+  others to see. Each piece keeps its own id there, so its pictures make the look's choices its figure makes. Nothing on it can be asked or changed: no hints, no XP meter and no Appearance. Back or Escape goes
   back to their menu.
 - **Settings** lists the muted under the blocked, each with Unmute.
 
@@ -1220,18 +1304,17 @@ button's corner and screen, and the Tailor's wares.
   fight has no touch controls yet.
 - The sea fight's readout writes at the face's 11 px where DFO's wrote 10, 12 and 15, and the sight's aim line at 11
   where DFO's was 13; the laid side's soft 8 px glow stands as a hard gold
-  halo round its broadside's ring; and a long ship's name on the card is cut short a little sooner, the face's
-  letters being wider than the page's.
+  halo round its broadside's ring; and a long ship's name on the card is cut short where the face's letters run
+  past it.
 - The ship's bar holds the guns as two broadsides, where DFO's battery rose also named the bow and the stern: it
   does not show the side a blow came from, which DFO's rose outlined red, nor flash a side as it comes ready.
 - The notices write at the face's 11 px, where DFO's wrote 14.
-- The place line's small words stay at the face's 11 px at the larger step, where the page wrote 16, and over the held
-  map at 11 (22 at the larger step), where it wrote 13 (20): the face has no step between, and 22 would stand them
-  level with the place's name above them.
-- The Harbourmaster's wares lay their words on one line under each tile, 6 px apart, where the page's ran together;
-  the muster stays inside the keeper's side on a view 1024 px wide, where the page's ran past it.
+- The place line's small words stay at the face's 11 px at the larger step, and over the held map at 11 (22 at the
+  larger step): the face has no step between, and 22 would stand them level with the place's name above them.
+- The Harbourmaster's wares lay their words on one line under each tile, 6 px apart; the muster stays inside the
+  keeper's side on a view 1024 px wide.
 - The World Editor's drop-downs stand a pixel shorter than a browser's. A captain's fight's readout shows over the
-  land's 3D view only; the page's stayed, still, over the 2D map. The Islands mode tells the GPU's errors only for what
+  land's 3D view only, not over the 2D map. The Islands mode tells the GPU's errors only for what
   it makes and draws itself, as the device is shared with the other modes.
 - Drawn by the game: the heads-up display, the toasts, the fight's display, the whole menu, the story's screens and
   the held map's marks. A word's soft shade past its hard outline is not drawn, as a blur has no crisp form, nor a
@@ -1242,43 +1325,39 @@ button's corner and screen, and the Tailor's wares.
   see. In Chromium its store is asked instead, through its credential manager (`SIGN_INS`): a sign-in that works is
   offered to be kept, and a kept one fills a guest's empty fields, the player choosing among several; elsewhere the
   player types them, and passkeys wait ([[Claude Makes the Four Points' Open Calls]]).
-- Settings' volumes are the kit's drawn sliders, a brass fill in a track, where the page showed the browser's own; a
+- Settings' volumes are the kit's drawn sliders, a brass fill in a track, not the browser's own; a
   credit's link opens its page in a new tab from a press, and the browser's own menu for a link (copy, open in a
   window) is not offered. A slider steps by its arrows only: Home, End and Page Up or Down do not move it.
 - A Roster row's words and a player's worn pieces keep to their line, cut short with '...' where they do not fit,
-  where the page wrapped a long status under itself. A column's arrow at its first or last page is drawn dimmed and
-  takes no press, as the page's did, and in a column of one page neither takes the focus.
-- A plate over a figure shrinks with its distance, but its words keep the face's 11 px, never smaller and never the
-  12 px a page's plate wrote; so does its alert's mark, 15 px on a page. A blow's number pops at sizes between the
-  face's steps for its first four frames, as no whole step is 1.4 times another. A ship's plate writes its name at
-  the face's 11 and 22 px, where the page wrote 12 and 18, outlined a pixel round where the page stroked it 1.5.
+  never wrapped. A column's arrow at its first or last page is drawn dimmed and takes no press, and in a column of one
+  page neither takes the focus.
+- A plate over a figure shrinks with its distance, but its words keep the face's 11 px, never smaller; so does its
+  alert's mark. A blow's number pops at sizes between the face's steps for its first four frames, as no whole step is
+  1.4 times another. A ship's plate writes its name at the face's 11 and 22 px, outlined a pixel round.
 - The small words in capitals of the fight's display and the menu (a boss's faction and phase, the poise's word,
-  the weapons' counts, the menu's headings and labels) keep the face's own spacing, not the wider spacing a page gave
-  them; the heads-up display's take theirs (`Text.tracking`).
-- The Anima's edge frame is drawn with the fight's display, under the game's own windows; on a page it stood over
-  everything.
+  the weapons' counts, the menu's headings and labels) keep the face's own spacing, not a wider one; the heads-up
+  display's take theirs (`Text.tracking`).
+- The Anima's edge frame is drawn with the fight's display, under the game's own windows, not over them.
 - The fight's display tells a screen reader nothing: its labels (each vital, status, ability and weapon) wait on the
   interface speaking what is not focused.
 - The drawn menu is not doubled past 1440p: the interface draws at one scale, so the menu there stands at 1280 by
   720's sizes rather than twice them. A tile's soft glow and a card's drop shadow are drawn as hard light and no
   shadow; a charging picture quivers but does not brighten.
-- A boss's name strikes in by fading alone: the page grew it from 1.6 times its size, which the face's whole steps
-  cannot. The tap's soft dark glow is not drawn, only its hard shadow. What each of the held
-  map's seas does, a tooltip on the page, is told only to a screen reader, in the press's label.
-- The creation's windows wear the kit's window, wells and presses, where the page's sheet had cleared the kit's frames
-  to plain light borders.
-- The tap to start shows once the face is read, a moment after the page opens; the page showed it at once.
+- A boss's name strikes in by fading alone, not growing in, which the face's whole steps cannot. The tap's soft dark
+  glow is not drawn, only its hard shadow. What each of the held map's seas does is told only to a screen reader, in
+  the press's label.
+- The tap to start shows once the face is read, a moment after the page opens.
 - A screen reader hears what the game draws only in Chromium (`ariaNotify`): a toast, a new task, a broadside run out
   at the player's ship (said once as the warning appears), the prompt for E, the menu's answers, what is gained, and each press's label as focus reaches it.
 - One look, DFO's Slate. Its other themes (Stone, Iron, Ember, Forest, Night) wait on a settings screen to choose
   them in.
 - The [[World Editor]] and the [[Test Ground]] keep their own panels' layout, in the game's face: they are tools, not
   the game's screens. The Test Ground's drop-downs, ticks and sliders wear the kit's look, not a browser's; its number
-  fields take words, not the browser's step arrows; its words in the face, not the page's monospace for the numbers
-  to copy, which cannot be selected: a press on them copies them whole (`copyText`); a name or a node's words show
-  over it, as a page's `title` did, while the pointer or the keys' focus is on it. With the mouse free, Tab or an
-  arrow moves focus into the panels, and the keys stay theirs until the view is clicked. The World Editor's panel is drawn by the game in its own look, its names over the view with a
-  halo a pixel wide where the page's stroke stood a pixel and a half out.
+  fields take words, not the browser's step arrows; its words are in the face, and the numbers to copy cannot be
+  selected: a press on them copies them whole (`copyText`); a name or a node's words show over it while the pointer
+  or the keys' focus is on it. With the mouse free, Tab or an
+  arrow moves focus into the panels, and the keys stay theirs until the view is clicked. The World Editor's panel is
+  drawn by the game in its own look, its names over the view with a halo a pixel wide.
 - The vitals always rest when whole: DFO's switch for it waits on a settings screen.
 - At sea the ship's bars stand beside the compass only on a view 908 px wide or more; on a narrower one they run under
   it, where on foot the compass's column steps down under the vitals. The sea's compass, card and tally do not double
@@ -1307,5 +1386,5 @@ button's corner and screen, and the Tailor's wares.
 - At sea the sea bar stays at the screen's foot. DFO stands its helm bar under the compass and the target's card
   under that bar, measured each frame; here a Boss ship's plate is drawn at a set place under the compass, where the
   bar would stand, and at 960 px the bar is as wide as the screen between the place's name and its right edge.
-- The compass marks only ships. DFO's marks for the player's own boats, a party, a quest, the way out, a profession's
-  nodes, Detect spells and its world's events wait on their like here ([[Pick - Enhanced Plus UI]]).
+- The compass marks ships and the public events. DFO's marks for the player's own boats, a party, a quest, the way out,
+  a profession's nodes and Detect spells wait on their like here ([[Pick - Enhanced Plus UI]]).

@@ -1,6 +1,6 @@
 // Find a Company from the page: a socket to the accounts' finder for one run's base (server/accounts/finding.ts),
 // which sends the session's token, hears the run found, and says why a search ended that the page did not stop.
-import { sharedRun } from './rooms.ts';
+import { nodeOfRoom, sharedRun } from './rooms.ts';
 
 /** The socket a search speaks through. */
 export type FinderSocket = Pick<WebSocket, 'send' | 'close' | 'addEventListener'>;
@@ -17,12 +17,18 @@ export const SEARCH_LOST = 'The search stopped. Try again.';
 /** The close the finder ends a search with for a reason the player reads: no session, or a search in another tab. */
 const SAID = 4003;
 
+/** The run a playlist's finder (`playlist-elite`, `playlist-abyss`) may name: a playlist's run at its tier. */
+function playlistRun(base: string, run: string): string | null {
+  const where = base.startsWith('playlist-') ? nodeOfRoom(run) : null;
+  return where && where.playlist !== null && where.run !== null && `playlist-${where.seas}` === base ? run : null;
+}
+
 /** The run a finder's message names, where it is one of `base`'s; null for any other message. */
 function runIn(data: unknown, base: string): string | null {
   if (typeof data !== 'string') return null;
   try {
     const { run } = JSON.parse(data) as { run?: unknown };
-    return typeof run === 'string' ? sharedRun(base, [run]) : null;
+    return typeof run === 'string' ? (playlistRun(base, run) ?? sharedRun(base, [run])) : null;
   } catch {
     return null;
   }

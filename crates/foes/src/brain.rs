@@ -234,7 +234,7 @@ impl Brain {
         self.side = Side::Players;
     }
 
-    /// Makes it think as `side`, whatever its type's: a story's boarders, all on one side against the players.
+    /// Makes it think as `side`, whatever its type's: how the foes' tests stand the crew's types as foes.
     pub fn fights_for(&mut self, side: Side) {
         self.side = side;
     }

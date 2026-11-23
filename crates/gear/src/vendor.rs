@@ -88,7 +88,7 @@ pub fn wares(vendor: Vendor, day: u64, level: u8) -> Vec<Item> {
             let rarity = if ware < WARES / 2 { Rarity::Rare } else { Rarity::Magic };
             // The slots turn with the day, so each is sold at each rarity in its turn.
             let slot = slots[(ware + (day % slots.len() as u64) as usize) % slots.len()];
-            vestige::make(0, rarity, slot, level.clamp(1, NAMED_LEVEL), &dice)
+            vestige::make(0, rarity, slot, level.clamp(1, NAMED_LEVEL), crate::Source::World, &dice)
         })
         .collect()
 }

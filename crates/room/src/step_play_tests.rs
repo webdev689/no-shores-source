@@ -165,6 +165,19 @@ fn a_ward_and_its_wave_and_an_ambush_stand_only_within_the_rooms_cap_on_foes() {
 }
 
 #[test]
+fn a_ward_and_its_wave_leave_a_public_events_kept_places_to_the_event() {
+    let (mut room, _, _, defend) = defence([0.0, 20.0]);
+    room.open_public("saltgrass-downs", crate::public::Grounds { fissure: None, raid: None }, None);
+    let first = foes_of(defend.waves[0].iter()).len();
+    room.foes_most = crate::public::EVENT_ROOM + first - 1;
+    run(&mut room, 60);
+    assert!(room.quests.wards.is_empty() && room.foes.is_empty(), "the event's kept places are not the road's");
+    room.foes_most = crate::public::EVENT_ROOM + first;
+    run(&mut room, 1);
+    assert_eq!(room.living_foes(), first, "room for its first wave beside them: it stands");
+}
+
+#[test]
 fn two_players_on_one_defence_have_their_waves_stand_apart() {
     let (mut room, one, key, _) = defence([0.0, 20.0]);
     let two = joined(&mut room, &on_goal(key), [0.0, 21.0]);

@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { courseOf, readWreck, topAt } from './wreckLayout.ts';
+import { courseOf, inArea, pointAlong, readWreck, topAt } from './wreckLayout.ts';
 import {
   ARENA_CLEAR_M,
   ALIVE_MOST,
@@ -84,14 +84,14 @@ test('a body in the sea reaches no zone, and the sea brings no one back who lies
   for (let frame = 0; frame < 30; frame++) assert.equal(progress.frame(sea(0, { dead: true }), 0.1).bringBack, null);
 });
 
-test("the wreck's own ground lower than the sea's line, as its gun deck, is never the sea", () => {
+test("the wreck's own ground lower than the sea's line, as the Sloop's side, is never the sea", () => {
   const progress = new WreckProgress(layout);
-  layout.zones.slice(0, 7).forEach((unused, index) => progress.frame(standing(index), 0.016));
-  const [x, y] = [-1.6, 27.0];
+  layout.zones.slice(0, 5).forEach((unused, index) => progress.frame(standing(index), 0.016));
+  const [x, y] = [25.75, 26.85];
   const z = topAt(courseOf(layout), x, y);
-  assert.ok(z > 0 && z < IN_THE_SEA_M, `the gun deck is ${z} m up`);
+  assert.ok(z > 0 && z < IN_THE_SEA_M, `the Sloop's side is ${z} m up`);
   for (let frame = 0; frame < 40; frame++)
-    assert.equal(progress.frame({ ...standing(6), x, y, z }, 0.1).bringBack, null, 'walked, never brought back');
+    assert.equal(progress.frame({ ...standing(4), x, y, z }, 0.1).bringBack, null, 'walked, never brought back');
 });
 
 test('once the boss fight begins, no wave still waiting comes', () => {
@@ -183,14 +183,13 @@ test('a wave stood this frame is not yet fallen, nor one with foes still waiting
   assert.deepEqual(crowded.frame(standing(1, { alive: [ALIVE_MOST] }), 0.016).open, [], 'its foes still wait');
 });
 
-test("a player anywhere aft of the arena's heap, on its deck or up on its rails, is never brought back", () => {
+test("a player anywhere on the arena's side of its heap, on its deck or up on its rails, is never brought back", () => {
   const progress = atTheBoss();
   const course = courseOf(layout);
-  const { gate } = layout.arena;
-  const [, , , maxY] = layout.zones[layout.arena.zone]?.area ?? [0, 0, 0, 0];
+  const [minX, minY, maxX, maxY] = layout.zones[layout.arena.zone]?.area ?? [0, 0, 0, 0];
   let rails = 0;
-  for (let y = gate.maxY + 0.05; y <= maxY + 1; y += 0.1)
-    for (let x = -8; x <= 8; x += 0.05) {
+  for (let y = minY; y <= maxY + 1; y += 0.1)
+    for (let x = minX - 0.6; x <= maxX + 0.6; x += 0.05) {
       const z = topAt(course, x, y);
       if (z < IN_THE_SEA_M) continue;
       if (z > topAt(course, 0, 34) + 0.5) rails += 1;
@@ -201,10 +200,12 @@ test("a player anywhere aft of the arena's heap, on its deck or up on its rails,
 
 test("once the boss fight begins, a player back over the arena's heap is brought back in; over its rail is the sea", () => {
   const course = courseOf(layout);
-  const { gate } = layout.arena;
-  const checkpoint = layout.zones[layout.arena.zone]?.checkpoint;
-  const over = { ...inArena(), y: gate.minY - 0.5, z: topAt(course, 0, gate.minY - 0.5) };
-  assert.deepEqual(atTheBoss().frame(over, 0.016).bringBack, checkpoint, 'over the heap');
+  const zone = layout.zones[layout.arena.zone];
+  assert.ok(zone);
+  // Where the path stands before it comes into the arena, over its heap.
+  const [x, y] = layout.path[layout.path.findIndex((point) => inArea(zone.area, ...point)) - 1] ?? [0, 0];
+  const over = { ...inArena(), x, y, z: topAt(course, x, y) };
+  assert.deepEqual(atTheBoss().frame(over, 0.016).bringBack, zone.checkpoint, 'over the heap');
   for (const x of [-5.6, 5.6]) assert.equal(topAt(course, x, 34), 0, `outboard of its rail at ${x}, the sea`);
 });
 
@@ -231,12 +232,24 @@ test("the arena is reached only once the player stands clear of its heap's place
     progress.frame(standing(zone, { alive }), 0.016);
   }
   const { gate, thule } = layout.arena;
-  const x = (gate.minX + gate.maxX) / 2;
-  const stepIn = (y: number) => progress.frame({ ...standing(layout.arena.zone), x, y }, 0.016);
-  stepIn(gate.maxY + 0.5);
+  const apart = ([x, y]: readonly [number, number]) =>
+    Math.hypot(Math.max(gate.minX - x, 0, x - gate.maxX), Math.max(gate.minY - y, 0, y - gate.maxY));
+  // The first point along the path, past the heap's place, that stands `clear` of it.
+  const past = (clear: number) => {
+    let crossed = false;
+    for (let metres = 0; metres < 500; metres += 0.01) {
+      const point = pointAlong(layout.path, metres);
+      if (apart(point) === 0) crossed = true;
+      else if (crossed && apart(point) >= clear) return point;
+    }
+    throw new Error(`the path never stands ${clear} m past the arena's heap`);
+  };
+  const stepIn = ([x, y]: readonly [number, number]) => progress.frame({ ...standing(layout.arena.zone), x, y }, 0.016);
+  stepIn(past(0.5));
   assert.equal(progress.arena, false, 'just over the heap, not yet');
-  assert.equal(stepIn(gate.maxY + ARENA_CLEAR_M - 0.05).bringBack, null, 'nor brought back while stepping in');
-  stepIn(gate.maxY + ARENA_CLEAR_M + 0.05);
+  assert.equal(stepIn(past(ARENA_CLEAR_M - 0.05)).bringBack, null, 'nor brought back while stepping in');
+  const clear = past(ARENA_CLEAR_M + 0.05);
+  stepIn(clear);
   assert.equal(progress.arena, true);
-  assert.ok(thule[1] - (gate.maxY + ARENA_CLEAR_M) > 1.5, 'and Thule still stands well before them');
+  assert.ok(Math.hypot(thule[0] - clear[0], thule[1] - clear[1]) > 1.5, 'and Thule still stands well before them');
 });

@@ -1,6 +1,6 @@
 //! What the gear message carries of where a player stands beyond their gear: the factions (pledge, reputation,
 //! packages), each Art's level, XP and owned fragments, their cosmetics and those sold today, and in their social space
-//! Shape while he is there and the factions' wares.
+//! the smiths' wares of the day, Shape while he is there and the factions' wares.
 
 use crate::messages;
 use flatbuffers::{FlatBufferBuilder, Vector, WIPOffset};
@@ -16,6 +16,7 @@ pub(crate) struct Standing<'built> {
     pub art_owned: WIPOffset<Vector<'built, u8>>,
     pub cosmetics: WIPOffset<Vector<'built, u16>>,
     pub cosmetics_sold: WIPOffset<Vector<'built, u16>>,
+    pub wares: WIPOffset<Vector<'built, flatbuffers::ForwardsUOffset<messages::GearItem<'built>>>>,
     pub shape_place: u8,
     pub shape_wares: WIPOffset<Vector<'built, flatbuffers::ForwardsUOffset<messages::GearItem<'built>>>>,
     pub faction_wares: WIPOffset<Vector<'built, flatbuffers::ForwardsUOffset<messages::GearItem<'built>>>>,
@@ -54,6 +55,23 @@ pub(crate) fn standing_of<'built>(
     } else {
         Vec::new()
     };
+    // Each smith's stock in turn, the day's wares then the starter stock, each numbered by its place in its vendor's.
+    let smiths: Vec<_> = if social {
+        gear::vendor::Vendor::ALL
+            .into_iter()
+            .flat_map(|vendor| {
+                let level = if vendor.for_ship() { character.ship_level() } else { character.level() };
+                gear::vendor::stock(vendor, room.day(), level).into_iter().enumerate()
+            })
+            .map(|(place, mut ware)| {
+                ware.id = u32::try_from(place).unwrap_or_default();
+                let price = gear::vendor::price(ware.rarity);
+                crate::gear_wire::item_offset(builder, &ware, At::Carried, price)
+            })
+            .collect()
+    } else {
+        Vec::new()
+    };
     let shape = room.shape_at().filter(|_| social);
     let week = gear::clock::week_of(room.minute);
     let shape_place = shape.map_or(crate::gear_wire::SHAPE_AWAY, |_| {
@@ -88,6 +106,7 @@ pub(crate) fn standing_of<'built>(
         art_owned: builder.create_vector(&art_owned),
         cosmetics: builder.create_vector(&cosmetics),
         cosmetics_sold: builder.create_vector(&sold),
+        wares: builder.create_vector(&smiths),
         shape_place,
         shape_wares: builder.create_vector(&wares),
         faction_wares: builder.create_vector(&faction_wares),

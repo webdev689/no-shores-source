@@ -14,7 +14,7 @@ const REACH_M = 1.8;
 /** A body's radius: the gate never stands on a player in the arena; and just inside it, where a wall stops a body. */
 const BODY_RADIUS_M = 0.35;
 const BODY_IN_M = BODY_RADIUS_M - 0.01;
-/** No ground a body walks lies lower than this over the sea: the Frigate's gun deck, open to the sky, is the lowest. */
+/** No ground the way or a figure stands on lies lower than this over the sea: the Sloop's side is the lowest. */
 const LOWEST_GROUND_M = 0.7;
 
 /** The point `walked` metres along the segment from `from` to `to`. */
@@ -36,7 +36,7 @@ test("the wreck's ground holds its pieces at their heights: the Brig's halves, t
   near(13.5, 16.5, 1.9, 'the wreckage the Sloop drifted into');
   near(2.5, 15.0, 2.7, "the Frigate's waist");
   near(-20.0, 8.8, 2.8, "the wreckage off the Frigate's port bow");
-  near(-1.6, 27.0, 1.0, "the Frigate's gun deck");
+  near(-1.6, 24.0, 3.4, "the Frigate's quarterdeck forward, toward its mainmast");
   near(-13.0, 29.2, 1.8, 'the wreckage off its port quarter');
   near(2.0, 35.0, 3.3, "the Frigate's quarterdeck");
   // The Brig's waist on the side the Frigate struck fell into its hold: the sea under it.
@@ -154,29 +154,41 @@ test('the zones follow the path, each checkpoint on the ground in its own zone, 
   );
 });
 
-test("the arena is the Frigate's quarterdeck, about 10 m square, Thule in it, and its gate across the way in", () => {
+test("the arena is the Frigate's quarterdeck, about 10 m by 20 m, Thule in it, and its gate across the way in", () => {
   const zone = layout.zones[layout.arena.zone];
   assert.ok(zone);
   const [minX, minY, maxX, maxY] = zone.area;
-  assert.ok(Math.abs(maxX - minX - 10) <= 1 && Math.abs(maxY - minY - 10) <= 1, 'about 10 m by 10 m');
+  assert.ok(Math.abs(maxX - minX - 10) <= 1 && Math.abs(maxY - minY - 20) <= 1, 'about 10 m by 20 m');
   assert.equal(zone.wave.length, 0, 'one on one');
   assert.ok(inArea(zone.area, ...layout.arena.thule));
+  // Its deck walked at one height, a step either way, along it and across it, every 0.1 m.
+  const floor = topAt(course, ...zone.checkpoint);
+  const walkedAt = (points: readonly (readonly [number, number])[]) =>
+    points.filter(([x, y]) => Math.abs(topAt(course, x, y) - floor) <= STEP_M).length * 0.1;
+  const steps = (metres: number) => Array.from({ length: Math.round(metres * 10) }, (unused, step) => step * 0.1);
+  const lengthwise = steps(maxY - minY).map((step) => [-1.5, minY + step] as const);
+  const across = steps(maxX - minX).map((step) => [minX + step, (minY + maxY) / 2] as const);
+  assert.ok(walkedAt(lengthwise) > 16, `${walkedAt(lengthwise).toFixed(1)} m of its deck along it`);
+  assert.ok(walkedAt(across) > 9, `${walkedAt(across).toFixed(1)} m of its deck across it`);
   const { gate } = layout.arena;
-  assert.ok(gate.minX < 0 && gate.maxX > 0 && gate.maxX - gate.minX > 7, 'the gate spans the way up into it');
-  assert.ok(
-    gate.maxY + BODY_RADIUS_M <= minY && gate.top - topAt(course, 0, gate.maxY + BODY_RADIUS_M) > 2,
-    'across its way in, higher than a step',
-  );
+  const apart = Math.max(minX - gate.maxX, gate.minX - maxX, minY - gate.maxY, gate.minY - maxY);
+  assert.ok(apart >= BODY_RADIUS_M, 'the gate stands a body clear of it');
   const entering = layout.path.findIndex(([x, y]) => inArea(zone.area, x, y));
   assert.ok(entering > 0, 'the path comes into it');
   assert.ok(
     layout.path.slice(entering).every(([x, y]) => inArea(zone.area, x, y)),
     'and ends in it',
   );
-  assert.ok(
-    layout.path.slice(0, entering).some(([, y]) => y < gate.minY),
-    'the path comes to it from beyond its gate',
+  const [from = [0, 0], to = [0, 0]] = [layout.path[entering - 1], layout.path[entering]];
+  const length = Math.hypot(to[0] - from[0], to[1] - from[1]);
+  const coming = Array.from({ length: Math.ceil(length / 0.05) }, (unused, step) =>
+    along(from, to, step * 0.05, length),
   );
+  assert.ok(
+    coming.some(([x = 0, y = 0]) => inArea([gate.minX, gate.minY, gate.maxX, gate.maxY], x, y)),
+    'the path comes to it through its gate',
+  );
+  assert.ok(gate.top - topAt(course, to[0], to[1]) > 2, 'higher than a step over its deck');
 });
 
 test('each zone after the quiet deck has a heap across the way on from it, too high to step or jump, standing on no one', () => {

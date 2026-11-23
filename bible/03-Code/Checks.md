@@ -10,8 +10,8 @@ code:
 # Checks
 
 `cargo xtask check` is the one command that says a change is done. CI runs it on every pull request and every push to
-`main`, and on `main` publishes the client to GitHub Pages once it passes. It stops at the first failing step, in the
-order a failure is cheapest to read:
+`main`, and on `main` publishes the client to GitHub Pages once it passes and the rooms have deployed or had nothing
+to deploy. It stops at the first failing step, in the order a failure is cheapest to read:
 
 1. **messages**: the Rust and the TypeScript for every network message, made from the schema with `flatc`
    (`npm run schema`), into `generated/`. Its first run on a machine installs the pinned `flatc`.

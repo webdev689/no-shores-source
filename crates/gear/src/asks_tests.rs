@@ -165,6 +165,22 @@ fn a_vestige_opens_only_in_a_social_space_into_the_slot_it_holds() {
 }
 
 #[test]
+fn a_vestige_opens_into_a_number_no_item_holds() {
+    let mut character = Character::starting();
+    let id = character.take_id();
+    character.vestiges.insert(id, (Vestige::new(id, Rarity::Magic, Slot::Arms, 4), false));
+    let held = *character.items.keys().next().expect("a starting item");
+    let before = character.item(held).cloned();
+    character.next_id = held;
+    let Ok(Done::Identified(opened)) = character.ask(Ask::Identify { vestige: id }, IN_TOWN, &DICE) else {
+        panic!("identified in town");
+    };
+    assert_ne!(opened, held, "a number an item holds is passed over");
+    assert_eq!(character.item(held).cloned(), before, "and the item holding it is kept");
+    assert!(character.item(opened).is_some(), "what it opened to");
+}
+
+#[test]
 fn fruit_of_dagon_grows_past_level_20_and_feeds_an_item() {
     let mut character = at_level_20();
     character.earn_xp(19_999, None);

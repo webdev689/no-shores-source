@@ -48,6 +48,7 @@ export const ARMS_ITEM: GearItem = {
   columns: [],
   price: 0,
   element: 0,
+  source: 0,
   story: true,
 };
 /** The gear crate's number for a Bow, and the bow the boarder drops as the room gives it (`Room::story_take`): a

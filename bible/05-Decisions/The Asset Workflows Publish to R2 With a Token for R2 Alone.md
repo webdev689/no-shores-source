@@ -1,9 +1,12 @@
 ---
 type: decision
 date: 2026-11-22
-status: in force
+status: replaced
+replaced_by: "[[The Asset Workflows Publish to R2 With the Cloudflare Token]]"
 ---
 # The Asset Workflows Publish to R2 With a Token for R2 Alone
+
+Replaced by [[The Asset Workflows Publish to R2 With the Cloudflare Token]].
 
 > Asked for a named yes to moving every workflow that publishes to R2 off the repository's `CLOUDFLARE_TOKEN` and onto
 > `R2_TOKEN`, a token for R2 alone, since those workflows run on a push to any branch: "The token is already in

@@ -260,7 +260,6 @@ a decision is a record. How to add one: [[Recording a Decision]].
 - [[Bosses and Dungeons Drop Items, Clears Pay, and Shapes Come From the Week's Abyss]]
 - [[The Server Is the Authority Over Everything]]
 - [[A Mail Vendor Keeps Lost Items and the Game's Mail]]
-- [[The Asset Workflows Publish to R2 With a Token for R2 Alone]]
 - [[Vestiges Are project-final's Crystals, and Physical Pictures Are Baked]]
 - [[Players Arrive as Destiny's Transmat Does, Unexplained]]
 - [[First Person Widens and Its Weapon Sways, and the Parry Ring Reads Bolder]]
@@ -284,6 +283,22 @@ a decision is a record. How to add one: [[Recording a Decision]].
 - [[The Wreck's Arms Lie Farther Out, as a Loot Drop]]
 - [[Aiming a Ship Follows Black Flag, From Its Deck]]
 - [[The Wreck's Room Runs in the Rooms' Worker Too]]
+- [[Each House Has Its Own Road to Its Art]]
+- [[Missions Are Varied, Not Only Simple Tasks]]
+- [[The Houses' Roads as Claude Shapes Them]]
+- [[Armour and Weapon Looks Belong to the Content That Gives Them]]
+- [[Elite and Abyss Dungeons Are Queued From a Playlist Beside Each Port]]
+- [[Matchmade Dungeons Gain Encounters, Puzzles, Climbs and Raid Mechanics]]
+- [[The Playlist and Its Dungeons as Claude Shapes Them]]
+- [[A Playlist's Launch Is Drawn by the Server]]
+- [[Faction Blades Wear Their Faction's Colour on Hilt and Trim]]
+- [[The Room Keeps Only Looks of a Piece's Own Content]]
+- [[The Prologue Wakes by Darkening and Pulsing, Not Eyelids]]
+- [[The Prologue's Scenes Change Slower, Behind the Logo While They Load]]
+- [[Thule Fights on a Quarterdeck Twice as Long]]
+- [[A Foe Gives Up Only When the Player Is Far Away]]
+- [[The Asset Workflows Publish to R2 With the Cloudflare Token]]
+- [[One Loading Screen Covers Every Trip Until the Place Is Ready]]
 
 - [[Overlook Is Our Own Game]]
 - [[The Owner Sets the Vision]]
@@ -308,8 +323,11 @@ a decision is a record. How to add one: [[Recording a Decision]].
 - [[Each House's Lore Book Tells Its Art's Origin]]
 - [[The Lore Is Set Out, Bold and Italic Where It Helps]]
 - [[The Lore Books' Covers Are Drawn in Detail]]
+- [[DFO's Performance Work Comes Over, Measured First]]
 - [[The Factions Are the Baseline for Every Quest]]
 - [[A Keeper With Something for You Pulses and Is Seen From Everywhere]]
+- [[Friendly Ships Take Several Courses, About Five in View, Sailing Visibly]]
+- [[Each Patrol Zone Has a Built Landing Site, Its Guards Beyond It]]
 
 ## Replaced
 
@@ -330,3 +348,4 @@ a decision is a record. How to add one: [[Recording a Decision]].
 - [[Elder Maren Hale Welcomes the Player to Overlook]], by [[The Stranger Welcomes the Player, and a Quest Walks Them Round Overlook]]
 - [[Elder Maren Hale Walks at Three Quarters of a Player's Pace]], by
   [[The Stranger Welcomes the Player, and a Quest Walks Them Round Overlook]]
+- [[The Asset Workflows Publish to R2 With a Token for R2 Alone]], by [[The Asset Workflows Publish to R2 With the Cloudflare Token]]

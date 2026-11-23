@@ -98,6 +98,7 @@ const item = (kind: string, slot: number): GearItem => ({
   columns: [],
   price: 0,
   element: 0,
+  source: 0,
 });
 /** An item's picture once the forge has drawn it. */
 const drawn = (pictures: ItemPictures, gear: GearItem) =>

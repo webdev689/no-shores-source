@@ -107,8 +107,8 @@ pub extern "C" fn room_none_kept(player: PlayerId) {
     });
 }
 
-/// A player's character as it is kept between sessions, as JSON's bytes, at sea with their ship's hurts in it; empty
-/// with no such player, at sea before the accounts gave it, and in a fleet room.
+/// A player's character as it is kept between sessions, as JSON's bytes, at sea with their ship's hurts in it (a new
+/// one until the accounts gave theirs); empty with no such player, and in a fleet room.
 #[must_use]
 pub fn character(player: PlayerId) -> Vec<u8> {
     with_open(|opened| match opened {

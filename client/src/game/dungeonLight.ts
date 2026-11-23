@@ -117,6 +117,49 @@ export function burningOf(layout: DungeonLayout): Light[] {
   ];
 }
 
+/**
+ * The lights a frame is lit by: the nearest the eye by how far each reaches past it, so a brazier's wide light
+ * outranks a candle's at one distance. Kept in order from frame to frame, where it barely changes, and sorted again in
+ * place, so a frame allocates nothing.
+ */
+export class NearestLights {
+  private readonly order: Light[];
+  /** How far each light reaches past the eye, by its number. */
+  private readonly past: Float64Array;
+  private readonly portal: Light;
+  private readonly chosen: Light[] = [];
+
+  /** `burning` the lights always lit, numbered from 0, and `portal` the one lit only while it stands open, numbered
+   *  after them. */
+  constructor(burning: readonly Light[], portal: Light) {
+    this.order = [...burning, portal];
+    this.past = new Float64Array(Math.max(portal.number, ...burning.map((light) => light.number)) + 1);
+    this.portal = portal;
+  }
+
+  /** The `most` lights nearest `eye`, the portal among them only while `open`: the same array every frame. */
+  nearest(eye: Point, open: boolean, most: number): readonly Light[] {
+    const { order, past, chosen } = this;
+    for (let index = 0; index < order.length; index++) {
+      const { at, number, burning } = order[index];
+      const east = at[0] - eye[0];
+      const south = at[1] - eye[1];
+      const up = at[2] - eye[2];
+      past[number] = Math.sqrt(east * east + south * south + up * up) - burning.reach;
+    }
+    if (!open) past[this.portal.number] = Infinity;
+    for (let index = 1; index < order.length; index++) {
+      const light = order[index];
+      let place = index;
+      for (; place > 0 && past[order[place - 1].number] > past[light.number]; place--) order[place] = order[place - 1];
+      order[place] = light;
+    }
+    chosen.length = Math.min(most, open ? order.length : order.length - 1);
+    for (let index = 0; index < chosen.length; index++) chosen[index] = order[index];
+    return chosen;
+  }
+}
+
 /** How bright a light burns at `time`, by its number and how much its kind flickers: a steady one never changes. */
 export function flicker(time: number, number: number, amount = 1): number {
   const wave = 0.07 * Math.sin(time * 9.3 + number * 2.17) + 0.05 * Math.sin(time * 15.1 + number * 4.41);
@@ -161,8 +204,9 @@ export function lightAt(lights: readonly Light[], point: Point, time: number, mo
 
 const vector = (colour: Colour) => `vec3f(${colour.map((value) => value.toFixed(3)).join(', ')})`;
 
-/** The same light in WGSL: `lights_at(point, normal, time, mood)` sums the lights the view holds, each turned by how
- *  squarely it faces the surface, the mood coming from no way at all, and eases the sum as `shoulder` does. */
+/** The same light in WGSL: `lights_at(point, normal, time, mood, span)` sums the lights `span` names of those the view
+ *  holds (`reaching`), each turned by how squarely it faces the surface, the mood coming from no way at all, and eases
+ *  the sum as `shoulder` does. */
 export const LIGHT_WGSL = /* wgsl */ `
 const LIGHT_KNEE = ${SHOULDER.knee.toFixed(3)};
 const LIGHT_CEILING = ${SHOULDER.ceiling.toFixed(3)};
@@ -196,10 +240,10 @@ fn shoulder(light: f32) -> f32 {
   return min(light, LIGHT_KNEE) + max(light - LIGHT_KNEE, 0.0) / (1.0 + max(light - LIGHT_KNEE, 0.0) / (LIGHT_CEILING - LIGHT_KNEE));
 }
 
-fn lights_at(point: vec3f, normal: vec3f, time: f32, mood: vec3f) -> vec3f {
+fn lights_at(point: vec3f, normal: vec3f, time: f32, mood: vec3f, span: vec3u) -> vec3f {
   var light = mood;
-  for (var index = 0u; index < u32(view.lights.x); index++) {
-    let lamp = lights[index];
+  for (var order = 0u; order < span.y; order++) {
+    let lamp = lights[reaching_light(span, order)];
     let towards = lamp.place.xyz - point;
     let distance = length(towards);
     let share = max(0.0, 1.0 - distance / lamp.colour.w);

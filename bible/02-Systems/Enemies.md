@@ -216,6 +216,10 @@ WebAssembly, so names, factions and weapons are read in one place.
 - **The posts** are on a 5 m lattice over the room's navmesh, 10 m inside the section's edge and 5 m inside the
   mesh's square, 20 m apart. Each group draws its post from those left; a Reeve alone and Corvane take the one
   farthest from the nearest spawn. Every foe stands at least 25 m from every spawn, inside the section, idle.
+- **A patrol zone's landing** is a safe place to arrive: no foe starts a fight with a player standing within 15 m of a
+  spawn there, past its boardwalk, stores and signpost and short of every guard, until that player strikes from it; a
+  fight brought into it goes on, so it is somewhere to arrive, not to hide. Its leave comes back once the player has
+  left it and come back (`Room::left_be`, [[Each Patrol Zone Has a Built Landing Site, Its Guards Beyond It]]).
 - **The beats**: every group patrols a beat from its post but a Boss's or a Miniboss's, which holds its post, the
   fight a player seeks out at the node's far end, its phases calling foes about it in a known place. A beat is the
   post and up to three more points of the lattice, each 12 to 30 m from the one before and 10 m from every other,
@@ -236,8 +240,8 @@ WebAssembly, so names, factions and weapons are read in one place.
   along the walk from the way in to the end. A dungeon has no lattice to draw beats from, so its bands hold their
   posts. Its levels, shields, leash and standing again are any garrison's, at its patrol's island band.
 - **The leash**: a garrison foe, Corvane and his escort too, gives its fight up once its target stands 50 m from its
-  place in its group or stands on the ground off the room's navmesh, and walks back there, healing as it goes, to
-  stand idle again; one whose search finds no one walks back the same way ([[Foes]]). Its group halts where its fight
+  place in its group or, farther than 14 m from the foe, stands on the ground off the room's navmesh
+  ([[A Foe Gives Up Only When the Player Is Far Away]]), and walks back there, healing as it goes, to stand idle again; one whose search finds no one walks back the same way ([[Foes]]). Its group halts where its fight
   began, so it walks back to its place round that spot, and the group walks its beat on once all its foes are idle in
   their places. It is still its group's: a walk home never clears a group or stands it again.
 - **Its leader** is its highest rank, a Captain first among equals, else the first of them. When it falls, every other

@@ -51,31 +51,6 @@ export function keeps(tier: Tier, distance: number, threshold: number): boolean 
   return threshold < toHulls;
 }
 
-/** The planes a view sees between, each [a, b, c, d] with a x + b y + c z + d >= 0 inside, for points measured from
- *  the eye, read from the column-major view-projection: left, right, bottom, top and in front. */
-export function viewPlanes(fromEye: Float32Array): number[][] {
-  const row = (index: number): number[] => [
-    fromEye[index],
-    fromEye[4 + index],
-    fromEye[8 + index],
-    fromEye[12 + index],
-  ];
-  const [across, upward, , ahead] = [row(0), row(1), row(2), row(3)];
-  const plus = (a: number[], b: number[], sign: number): number[] => a.map((value, k) => value + sign * b[k]);
-  return [plus(ahead, across, 1), plus(ahead, across, -1), plus(ahead, upward, 1), plus(ahead, upward, -1), ahead];
-}
-
-/** Whether a box (low and high corners, measured from the eye) reaches inside every plane. */
-export function boxSeen(planes: readonly number[][], low: readonly number[], high: readonly number[]): boolean {
-  for (const plane of planes) {
-    const x = plane[0] >= 0 ? high[0] : low[0],
-      y = plane[1] >= 0 ? high[1] : low[1],
-      z = plane[2] >= 0 ? high[2] : low[2];
-    if (plane[0] * x + plane[1] * y + plane[2] * z + plane[3] < 0) return false;
-  }
-  return true;
-}
-
 /** The nearest and farthest a box (low and high corners, measured from the eye) reaches. */
 export function boxReach(low: readonly number[], high: readonly number[]): { nearest: number; farthest: number } {
   let nearest = 0,

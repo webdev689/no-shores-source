@@ -30,10 +30,12 @@ pub mod horses;
 pub mod item;
 pub mod kinds;
 pub mod left;
+pub mod looks;
 pub mod lore;
 pub mod mail;
 pub mod objectives;
 mod old_hands;
+pub mod playlist;
 pub mod power;
 mod quest_defs;
 mod quest_goals;
@@ -43,6 +45,7 @@ pub mod rewards;
 pub mod shape;
 pub mod ship;
 pub mod shown;
+pub mod source;
 pub mod story;
 mod vault;
 pub mod vendor;
@@ -55,6 +58,7 @@ pub use element::Element;
 pub use item::Item;
 pub use kinds::{Kind, Slot};
 pub use rarity::Rarity;
+pub use source::Source;
 pub use world::Difficulty;
 
 #[cfg(test)]
@@ -88,6 +92,8 @@ mod item_tests;
 #[cfg(test)]
 mod keep_tests;
 #[cfg(test)]
+mod looks_tests;
+#[cfg(test)]
 mod lore_tests;
 #[cfg(test)]
 mod mail_tests;
@@ -95,6 +101,8 @@ mod mail_tests;
 mod objectives_tests;
 #[cfg(test)]
 mod old_hands_tests;
+#[cfg(test)]
+mod playlist_tests;
 #[cfg(test)]
 mod power_tests;
 #[cfg(test)]
@@ -107,6 +115,8 @@ mod refusals_tests;
 mod rewards_tests;
 #[cfg(test)]
 mod shape_tests;
+#[cfg(test)]
+mod source_tests;
 #[cfg(test)]
 mod vestige_tests;
 #[cfg(test)]

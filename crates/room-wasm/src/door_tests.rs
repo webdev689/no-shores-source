@@ -237,9 +237,9 @@ fn the_sea_opens_on_a_layout_with_its_ports_whose_lanes_the_tithe_patrols() {
 }
 
 /// Both tests hold this value: roomDoor.test.ts runs the same sea through WebAssembly, as the servers and the page do.
-pub const SEA_CLASH_HASH: &str = "3cffd75a50ec0434";
+pub const SEA_CLASH_HASH: &str = "74ddb4da44c57151";
 /// The world time the sea opens at, so the weather its fights sail in is the same every run.
-pub const CLASH_START_S: f64 = 1_790_151_200.0;
+pub const CLASH_START_S: f64 = 1_790_153_100.0;
 
 #[test]
 fn a_sea_where_a_tithe_ship_attacks_a_friendly_ship_and_a_player_joins_them_snapshots_to_its_pinned_fingerprint() {

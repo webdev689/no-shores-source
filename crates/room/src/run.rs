@@ -27,6 +27,8 @@ pub enum Pays {
     Day { day: u64 },
     /// The week's Elite or Abyss Dungeon's, in the week the run was opened for.
     Week { weekly: Weekly, week: u64 },
+    /// A playlist's, by the day and the week its run was opened in (`playlist_run`).
+    Playlist { playlist: gear::playlist::Playlist, day: u64, week: u64 },
 }
 
 /// A dungeon's run: what it pays, its modifiers, the revives left at Abyss, and the level every foe stands at in the
@@ -45,6 +47,8 @@ pub struct Run {
     pub won: bool,
     /// The day it last counted a clear on, and the accounts it counted one for then (`count_clear`).
     pub cleared_for: (u64, std::collections::BTreeSet<String>),
+    /// The accounts a playlist's clear was counted for in this run: once a run each (`pay_playlist`).
+    pub playlist_counted: std::collections::BTreeSet<String>,
 }
 
 impl Run {
@@ -81,8 +85,8 @@ impl Room {
     }
 
     /// What the run's modifiers weigh a blow by: Brawler a player's swing, Marksman a player's shot, Lightswitch a
-    /// foe's swing or telegraphed blow on a player, and Burn a foe's blow on a player wearing its Art; their product,
-    /// 1 for none.
+    /// foe's swing or telegraphed blow on a player, Burn a foe's blow on a player wearing its Art, and an Elite
+    /// Dungeon's Fury any foe's blow on a player (`court.rs`); their product, 1 for none.
     pub(crate) fn modded_blow(&self, blow: &Blow, defender: FighterId) -> f64 {
         let by_player = self.players.contains_key(&blow.striker);
         let on_player = self.players.get(&defender).filter(|_| self.foes.contains_key(&blow.striker));
@@ -101,6 +105,7 @@ impl Room {
             if self.burning() == Some(player.character.arts.worn) {
                 times *= BURN_TIMES;
             }
+            times *= self.fury_times();
         }
         times
     }
@@ -137,3 +142,6 @@ pub use run_room::{RunOf, elite_laid};
 
 #[path = "abyss.rs"]
 mod abyss;
+
+#[path = "playlist_run.rs"]
+mod playlist_run;

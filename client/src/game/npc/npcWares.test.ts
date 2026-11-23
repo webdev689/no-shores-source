@@ -9,8 +9,8 @@ const headings = (rows: ReturnType<typeof rowsOf>) => rows.map((row) => row.head
 
 test('the Mage holds each Vestige carried to open it, and shows what one opened to', () => {
   const vestiges = [
-    { id: 4, rarity: 2, slot: 0, level: 3, vaulted: false },
-    { id: 5, rarity: 1, slot: 2, level: 3, vaulted: true },
+    { id: 4, rarity: 2, slot: 0, level: 3, vaulted: false, source: 0 },
+    { id: 5, rarity: 1, slot: 2, level: 3, vaulted: true, source: 0 },
   ];
   const opened = item({ id: 9, rarity: 3 });
   const [row, shown] = rowsOf('mage', state({ vestiges, items: [opened], identified: 9 }));

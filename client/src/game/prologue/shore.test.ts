@@ -22,7 +22,7 @@ function shoreStory(landmass: () => unknown = () => plaza) {
   const prompts: (string | null)[] = [];
   const parts = {
     ambience: { set: () => undefined },
-    screen: { lids: () => undefined, fade: () => undefined, showPrompt: (text: string | null) => prompts.push(text) },
+    screen: { darken: () => undefined, fade: () => undefined, showPrompt: (text: string | null) => prompts.push(text) },
     landmass,
     keepClose: () => undefined,
     birds: { flock: () => undefined },

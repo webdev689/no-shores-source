@@ -8,6 +8,7 @@ import { CanvasEvents } from '../ui/canvasEvents.ts';
 import { readFace } from '../ui/faceReader.ts';
 import { stopped } from '../ui/page.ts';
 import type { Child } from '../ui/node.ts';
+import { seen } from '../ui/seen.ts';
 import { Interface } from '../ui/ui.ts';
 import { UiRenderer, uiScale } from '../ui/uiRenderer.ts';
 import { MarkPass } from './markPass.ts';
@@ -61,7 +62,7 @@ export class EditorFrame {
     this.marks = new MarkPass(gpu);
     readFace()
       .then((face) => {
-        this.ui = new Interface(new UiRenderer(gpu, face));
+        this.ui = seen(new Interface(new UiRenderer(gpu, face)));
         this.request();
       })
       .catch((error: unknown) => {
@@ -72,6 +73,10 @@ export class EditorFrame {
     for (const kind of ['pointermove', 'pointerdown', 'pointerup', 'pointerleave', 'wheel'] as const)
       canvas.addEventListener(kind, asked);
     for (const kind of ['keydown', 'keyup', 'paste'] as const) addEventListener(kind, asked);
+    // Tab moves the panel's focus, never the page's off its one canvas, where the editor's keys would stop reaching it.
+    addEventListener('keydown', (event) => {
+      if (event.key === 'Tab' && !this.events.typingHere) event.preventDefault();
+    });
     new ResizeObserver(asked).observe(canvas);
   }
 

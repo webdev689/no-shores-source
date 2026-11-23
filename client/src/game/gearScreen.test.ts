@@ -25,6 +25,7 @@ const item = (fields: Partial<GearItem>): GearItem => ({
   columns: [],
   price: 0,
   element: 0,
+  source: 0,
   ...fields,
 });
 
@@ -86,6 +87,7 @@ test('an item’s detail lays out its nodes: bought, to buy once unlocked, and w
   assert.deepEqual(detail.numbers, [
     ['Attack', '248'],
     ['Level', '20'],
+    ['From', 'The world'],
   ]);
   const [upgrade, perk] = detail.columns;
   assert.equal(upgrade?.nodes[0]?.chosen, true);
@@ -99,6 +101,8 @@ test('an item’s detail lays out its nodes: bought, to buy once unlocked, and w
       ['Hold to feed a Fruit of Dagon', 'button'],
     ],
   );
+  const module = itemDetailOf({ ...legendary, kind: 25, bucket: 8, source: 4 }, state({}));
+  assert.ok(!module.numbers.some(([label]) => label === 'From'), 'a ship’s module keeps no look of a content');
   const carried = itemDetailOf({ ...legendary, at: 0 }, state({ atMage: true }));
   assert.deepEqual(
     carried.presses.map((press) => press.label),
@@ -114,9 +118,9 @@ test('an item’s detail lays out its nodes: bought, to buy once unlocked, and w
 
 test('each vendor’s stall shows its six wares of the day and its starter stock, bought for their price in Aurem, the Shipwright’s last', () => {
   const six = (first: Partial<GearItem>, second: Partial<GearItem>) => [
-    item({ id: 0, level: 9, price: 2_000, ...first }),
-    item({ id: 1, level: 9, price: 600, ...second }),
-    ...[2, 3, 4, 5].map((id) => item({ id, ...first })),
+    item({ id: 40, level: 9, price: 2_000, ...first }),
+    item({ id: 40, level: 9, price: 600, ...second }),
+    ...[2, 3, 4, 5].map(() => item({ id: 40, ...first })),
   ];
   const plain = (kinds: number[]) => kinds.map((kind, place) => item({ id: 6 + place, kind, rarity: 0, price: 50 }));
   const wares = [
@@ -141,7 +145,8 @@ test('each vendor’s stall shows its six wares of the day and its starter stock
     [6, 7, 8, 9].map((node) => [true, 50, node]),
   );
   assert.equal(weaponsmith?.wares.length, 8);
-  // Asked by the day it was shown, so the room refuses it once the day has turned.
+  // Asked by its place, not the number it takes once bought, and by the day it was shown, so the room refuses it once
+  // the day has turned.
   assert.deepEqual(weaponsmith?.wares[0]?.press.ask, { kind: ASKS.vend, column: 1, node: 0, item: 20_400 });
   assert.equal(weaponsmith?.wares[0]?.press.label, 'Hold to buy · 2,000');
   assert.equal(shipwright?.name, 'The Shipwright');

@@ -167,16 +167,15 @@ fn a_dress_shows_armour_and_hands_only_of_the_pieces_worn() {
         character.items.retain(|_, (_, at)| !matches!(at, At::Worn(slot) if !slots.contains(slot)));
         character
     };
-    let sent = r#"{"outfit":{"armour":{"helm":"steel","cuirass":"daedric","boots":"iron","greaves":7},
-        "right":"bow_long_ebony","left":"shield_kite_iron","drawn":true}}"#;
+    let sent = r#"{"body":"male","outfit":{"armour":{"helm":"brotherhood","cuirass":"daedric","boots":"iron",
+        "greaves":7},"right":"bow_long_ebony","left":"shield_kite_iron","drawn":true}}"#;
     let cowl = relayed(sent, &only(&[Slot::Head, Slot::Ranged]));
-    assert_eq!(cowl["armour"], serde_json::json!({ "helm": "steel" }), "the helm alone of the armour");
+    assert_eq!(cowl["armour"], serde_json::json!({ "helm": "brotherhood" }), "the helm alone of the armour");
     assert_eq!((&cowl["right"], &cowl["left"]), (&serde_json::json!("bow_long_ebony"), &serde_json::Value::Null));
-    let lit = r#"{"outfit":{"right":"sword_iron","left":"torch_l"}}"#;
+    let lit = r#"{"body":"male","outfit":{"right":"sword_iron","left":"torch_l"}}"#;
     let bare = relayed(lit, &only(&[]));
     assert_eq!((&bare["right"], &bare["left"]), (&serde_json::Value::Null, &serde_json::json!("torch_l")), "a light");
     let start = relayed(sent, &Character::kitted());
-    let armour = serde_json::json!({ "helm": "steel", "cuirass": "daedric", "boots": "iron" });
-    assert_eq!(start["armour"], armour, "a character wearing every armour slot, and its sword");
-    assert_eq!(relayed(lit, &Character::kitted())["right"], serde_json::json!("sword_iron"));
+    assert_eq!(start["armour"], serde_json::json!({}), "a kitted character's Normal pieces are clothes");
+    assert_eq!(relayed(lit, &Character::kitted())["right"], serde_json::json!("sword_iron"), "and its iron sword");
 }

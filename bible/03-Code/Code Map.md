@@ -26,7 +26,9 @@ decision, made in the same change as its entry here.
 | `client/src/game/audio/ambience/dsp.ts` | The seeded die and the filters a place's room is cut from |
 | `client/src/player/` | The player layer: the [[Player]] as the Test Ground and the game both play it, with DFO's keys and Destiny's pad as the player binds them, the forge's figure and its frames; the fight's buttons and the moves a fight holds a figure to, the foes' dresses and figures, the crosshair, and the [[Arts]]' pictures |
 | `client/src/gpu.ts` | Starts WebGPU, or tells the player why it cannot ([[WebGPU Only]]) |
+| `client/src/perfMeter.ts`, `gpuTimer.ts` | What the game's frames cost: the time between them, the script's, each pass's on the GPU, and the `?perf` readout ([[Game]], "Drawing") |
 | `client/src/face.ts`, `trueType.ts` | The glyphs Pixelify Sans misreads or lacks, drawn in code on its grid for the interface to draw, and made into a font for the held map's lettering ([[Interface]], "The face") |
+| `client/src/frustum.ts` | What a view sees: a view-projection's six planes, and whether a box, a sphere or a set of points reaches inside them, for every drawer that leaves out what is out of view |
 | `client/src/shadow.ts` | The sun's shadow map round the eye, which every drawer of the [[Game]]'s scene casts into and reads |
 | `client/src/soundSamples.ts` | The recorded sounds the owner picked from Freesound, fetched as they are wanted (long ones a chunk at a time), held within a budget, levelled and played for the [[Interface]]'s cues and the world's, with their credits |
 | `client/src/soundMeasure.ts` | How loud a recording is, measured once where it is decoded: its level, its rush and its loudness over each window the game asks |
@@ -122,6 +124,7 @@ decision, made in the same change as its entry here.
 | `crates/xtask` | The repository's own checks: `cargo xtask check` ([[Checks]]) |
 | `generated/` | What the tools make, never in git ([[Generated Files Stay Out of Git]]): `generated/messages/`, the messages' code `flatc` makes, and `generated/nodes/`, the bake's file for each node and their index, which the server's rooms read |
 | `content/` | Authored game data, read by the tools, the server and the client: `content/world/layout.json`, each landmass's edits in `content/world/land/`, `content/world/open.json`, the patrol areas and missions open to players ([[World Map]]), `content/forge/renders.json`, which names the forge's published renders, `content/ships/ships.json`, which names each ship's published mesh and holds its waterline, guns and hit boxes, `content/testground/course.json`, the Test Ground's course, which the server's rooms stand on too, and `content/gear/`, the [[Gear]]'s traits, named items, islands' resources, rolled items' names, emblems, cosmetics and factions, built into the gear rules (the page reads the emblems, cosmetics and factions too), `content/arts/arts.json`, the [[Arts]]' spells and fragments with their numbers and the Arts' levels (`levels`: the bars, the rises' prices, power and lasting), built into the gear rules and read by the page, `content/world/social.json`, which social spaces open and the townsfolk's lanes, read by the city crate and the page, and `content/audio/`, the cues searched on Freesound and `sounds.json`, the published sounds the game plays and credits, and `content/story/`, the cast's voices and each mission's scenes, held to [[Dialogue]] by the dialogue check |
+| `content/` (the rest) | `content/dungeon/`, the dungeon styles' kits, landmarks and published packs ([[Dungeon Modules]]); `content/forged/`, the forged models' measures ([[Forged Models]]); `content/islands/`, the island modules' kits and packs ([[Island Modules]]); `content/lore/lore.json`, the Compendium's books ([[Lore]]); `content/modules/modules.json`, the handcrafted modules' manifest ([[Modules]]); `content/nature/flora.json`, each biome's published flora ([[Flora]]); `content/prologue/wreck.json`, the wreck's level ([[Prologue]]); and `content/quests/quests.json`, the roads' and side quests' tasks ([[Quests]]) |
 | `content/world/rmb/` | Daggerfall's RMB town blocks as data, for laying out towns: placements, ground tiles and flat counts ([[RMB Blocks]]) |
 | `tools/claude-toolkit/` | The co-dev's Claude Code toolkit, kept as shipped ([[Toolkit]]) |
 | `.claude/settings.json` | The repository's Claude Code settings: a hook that says, as a session starts, when the toolkit is not installed in its container ([[Toolkit]]) |
@@ -142,8 +145,14 @@ decision, made in the same change as its entry here.
 | `tools/ships/ship_pictures.ts` | Writes the pictures a ship's parts wear, from the procedural painter, for `paint_ship.py` to pack into its model |
 | `tools/dungeon/` | The [[Dungeon Modules]]: Blender scripts that build each dungeon style's kit and landmarks (`styles/`), the kit they build with (`kit/`, `shapes.py`, `details.py`), the envelopes a piece keeps, the pack writer, the contact sheets and the publisher; the `dungeon` crate's `build.rs` reads the landmarks from `content/dungeon/landmarks.json` |
 | `tools/forge_dyes.mjs` | Reads Daggerfall's palette once into the forge's dye table |
-| `tools/freesound/` | Finds candidate sounds on Freesound's public pages for the cues in `content/audio/freesound.json`, on GitHub's machines (the `freesound` workflow), and publishes the owner's picks to R2 with their credits ([[Sounds Come From Freesound, Judged on a Test Sheet]]): the workflow runs on each push that changes the cue list, `tools/freesound/` or itself, cuts long picks and stages the picks for R2 in a job that holds no key, keeping the game's `sounds.json` in its download for a commit to take in, and uploads them in a second job that holds the repository's `R2_TOKEN` |
+| `tools/freesound/` | Finds candidate sounds on Freesound's public pages for the cues in `content/audio/freesound.json`, on GitHub's machines (the `freesound` workflow), and publishes the owner's picks to R2 with their credits ([[Sounds Come From Freesound, Judged on a Test Sheet]]): the workflow runs on each push that changes the cue list, `tools/freesound/` or itself, cuts long picks and stages the picks for R2 in a job that holds no key, keeping the game's `sounds.json` in its download for a commit to take in, and uploads them in a second job that holds the repository's `CLOUDFLARE_TOKEN` |
 | `tools/install-flatc.sh`, `tools/schema.mjs` | Install the pinned `flatc`, and make the messages' code with it into `generated/` ([[Toolchain]]) |
+| `tools/numbered.json` | The content whose entries cross the wire by their place in its lists, which the protocol's version hashes |
+| `tools/shaders.mjs` | Writes out every shader the client compiles, for the check to validate ([[Checks]]) |
+| `tools/uiShot.mjs` | Pictures of the interface the game draws, headless, through the real renderer ([[Interface]]) |
+| `tools/wireSizes.mjs` | Measures what the rooms send a player, raw and deflated as the WebSocket sends it |
+| `tools/lattice/` | The [[Lattice]] drawn whole in Blender: each foe's body and moves, the death wave, its props, the growth and the armoury, rendered by the `lattice` workflow's jobs and laid into the forge's tables (`tools/test_forge_lattice.py` checks how) |
+| `tools/logo/` | Writes the owner's No Shores logo into the client as a pixel picture ([[Cinema]]) |
 | `bible/` | This vault |
 | `.github/workflows/` | CI (`ci.yml`), which runs `cargo xtask check` and on `main` then calls `rooms.yml` to deploy the rooms when their code changed and then `pages.yml` to publish the client to GitHub Pages once the rooms deployed or had nothing to, while that commit is still `main`'s head; actions are pinned by commit |
 
@@ -182,21 +191,23 @@ and outside crates it may use (`CRATES`, [[Checks]]):
 
 - **The rules**: what the world and its people may do. No graphics, network, files or clock, so the server and any
   predicting client compute the same bits ([[Agree to the Bit]]). They are `world`, which may use only `serde` and
-  `serde_json`; `land`, which may use `world`, `serde` and `serde_json`; `movement`, which may use only `libm`;
-  `sailing`, which may use `land` and `libm`; `naval`, which may use `sailing` and `libm`; `combat`, which may use
-  `movement` and `libm`; `navmesh`, which may use `movement` and `libm`; `foes`, which may use `combat`, `movement`
-  and `libm`; `reach` and `dungeon`, which use no other crate; `isle`, which may use `movement`, `serde`, `serde_json` and
-  `libm`; `gear`, which may use `serde`, `serde_json` and `libm`; and `city`,
-  which may use `land`, `world`, `serde`, `serde_json` and `libm`.
+  `serde_json`; `land`, which may use `world`, `serde` and `serde_json`; `city`, which may use `land`, `world`,
+  `serde`, `serde_json` and `libm`; `layout`, which may use `city`, `land`, `world`, `serde`, `serde_json` and `libm`;
+  `movement`, which may use only `libm`; `sky`, which may use `land` and `world`; `sailing`, which may use `land`,
+  `sky` and `libm`; `naval`, which may use `sailing` and `libm`; `combat`, which may use `movement` and `libm`;
+  `navmesh`, which may use `movement` and `libm`; `foes`, which may use `combat`, `movement` and `libm`; `reach` and
+  `dungeon`, which use no other crate; `isle`, which may use `movement`, `serde`, `serde_json` and `libm`; and `gear`,
+  which may use `serde`, `serde_json` and `libm`.
 - **The server**, at multiplayer ([[Server-Authoritative Multiplayer]]): the authority. It depends on the rules and its
-  own platform crates, never on the client. Its core is `room`, which may use `combat`, `dungeon`, `foes`, `gear`, `isle`, `land`,
-  `movement`, `naval`, `navmesh`, `reach`, `sailing`, `world` and `libm`; its messages are `protocol`, which may use
-  `combat`, `gear`, `movement`, `naval`, `room`, `sailing` and `flatbuffers`; and `room-wasm` puts them behind a WebAssembly door for
-  the Cloudflare shell in `server/`, and for a browser playing alone or predicting its ship in a fleet, reading a
-  node's baked file, an island's word and the layout with `dungeon`, `foes`, `gear`, `isle`, `land`, `naval`, `sailing`,
+  own platform crates, never on the client. Its core is `room`, which may use `combat`, `dungeon`, `foes`, `gear`,
+  `isle`, `land`, `movement`, `naval`, `navmesh`, `reach`, `sailing`, `sky`, `world` and `libm`; its messages are
+  `protocol`, which may use `combat`, `gear`, `movement`, `naval`, `room`, `sailing` and `flatbuffers`; and
+  `room-wasm` puts them behind a WebAssembly door for the Cloudflare shell in `server/`, and for a browser playing
+  alone or predicting its ship in a fleet, reading a node's baked file, an island's word and the layout with
+  `combat`, `dungeon`, `foes`, `gear`, `isle`, `land`, `movement`, `naval`, `protocol`, `room`, `sailing`, `sky`,
   `world`, `serde` and `serde_json`.
-- **Tools** run at build time, never in a room or a browser. `bake` may use `city`, `land`, `world`, `serde` and
-  `serde_json`.
+- **Tools** run at build time, never in a room or a browser. `bake` may use `city`, `land`, `layout`, `world`, `serde`
+  and `serde_json`.
 - **Door crates** hand memory across a boundary and are the only crates that may hold unsafe code. They are
   `world-wasm`, `land-wasm` and `movement-wasm`, which put the world rules, the land with its city (`city`) and a
   ship sailing and fighting over it, and movement on a window of the land behind WebAssembly doors for the browser;

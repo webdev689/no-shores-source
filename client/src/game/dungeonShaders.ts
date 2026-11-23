@@ -1,10 +1,11 @@
 // The dungeon's WGSL: its floor's mesh, its fixtures and its cache in the dungeon's pictures, lit by its lights and
 // the faint light of each cell's mood (`LIGHT_WGSL`), never by a sun; each flame, ember, lantern, crystal and fungus
 // cap glowing in its own colour, a crystal's and a lantern's glass by their facets, and still water over its bed,
-// mirroring the lit room and catching the lights.
+// mirroring the lit room and catching the lights. A lit surface sums only the lights its cluster lists (`reaching`).
 import { COLOUR_LAYERS } from '../city/pictures.ts';
-import { DUNGEON_LAYERS, PORTAL_FLAG, WATER_FLAG } from './dungeonBook.ts';
+import { DUNGEON_LAYERS, FOUL_FLAG, PORTAL_FLAG, WATER_FLAG } from './dungeonBook.ts';
 import { CAVE_BULGE_M } from './dungeonCeilings.ts';
+import { CLUSTER_WGSL } from './dungeonClusters.ts';
 import { CELL_ROCK, type Light, LIGHT_WGSL } from './dungeonLight.ts';
 
 /** The most lights lighting one frame: the nearest to the eye. */
@@ -16,11 +17,23 @@ export const VIEW_FLOATS = { fromEye: 0, eye: 16, lights: 20, grid: 24, moods: 2
 /** A light's three vec4s: where it burns and its number, its colour and reach, and its flicker. */
 export const LIGHT_FLOATS = 12;
 
-/** A light as the shader's `Light` holds it: where it burns and its number, its colour and reach, and its flicker,
- *  its pulse and how much of a gleam still water shows of it. */
-export function lightFloats({ at, number, burning }: Light): number[] {
-  const gleam = burning.gleams === false ? 0 : 1;
-  return [...at, number, ...burning.colour, burning.reach, burning.flicker, burning.pulse ?? 0, gleam, 0];
+/** A light as the shader's `Light` holds it, written into `into` from `start`: where it burns and its number, its
+ *  colour and reach, and its flicker, its pulse and how much of a gleam still water shows of it. */
+export function lightFloats({ at, number, burning }: Light, into: Float32Array, start = 0): Float32Array {
+  const { colour } = burning;
+  into[start] = at[0];
+  into[start + 1] = at[1];
+  into[start + 2] = at[2];
+  into[start + 3] = number;
+  into[start + 4] = colour[0];
+  into[start + 5] = colour[1];
+  into[start + 6] = colour[2];
+  into[start + 7] = burning.reach;
+  into[start + 8] = burning.flicker;
+  into[start + 9] = burning.pulse ?? 0;
+  into[start + 10] = burning.gleams === false ? 0 : 1;
+  into[start + 11] = 0;
+  return into;
 }
 
 export const DUNGEON_SHADER = /* wgsl */ `
@@ -28,7 +41,7 @@ struct View {
   from_eye: mat4x4f,
   // the eye, and the time
   eye: vec4f,
-  // how many lights the frame holds, and 1 while the portal stands open
+  // how many lights the frame holds, 1 while the portal stands open, and 1 while each cluster lists its own
   lights: vec4f,
   // a cell's side, and the grid's columns and rows
   grid: vec4f,
@@ -41,10 +54,13 @@ struct View {
 @group(0) @binding(3) var picture_sampler: sampler;
 // Each cell's look, by its number among the looks, and CELL_ROCK on rock.
 @group(0) @binding(4) var<storage, read> cell_looks: array<u32>;
+// Each cluster's word, then the lists of the lights that reach each.
+@group(0) @binding(5) var<storage, read> clusters: array<u32>;
 const CELL_ROCK = ${CELL_ROCK}u;
 // The most cells a line from still water to a flame is walked across before the flame is taken as hidden.
 const MOST_CELLS = 64u;
 
+${CLUSTER_WGSL}
 ${LIGHT_WGSL}
 
 const GLOW = ${COLOUR_LAYERS.glow}u;
@@ -57,6 +73,13 @@ const FUNGUS = ${DUNGEON_LAYERS.fungus}u;
 const PORTAL = ${PORTAL_FLAG}u;
 // A layer with this bit set is still water, over a bed in the picture the rest of its number names.
 const WATER = ${WATER_FLAG}u;
+// A layer with this bit set too is foul water that harms: a sickly green, its glow breathing slowly, seething with
+// bubbles that swell and burst in a brighter bile, one to each square FOUL_BUBBLE_M a side.
+const FOUL = ${FOUL_FLAG}u;
+const FOUL_TINT = vec3f(0.3, 0.4, 0.16);
+const FOUL_GLOW = vec3f(0.03, 0.07, 0.01);
+const FOUL_BUBBLE = vec3f(0.3, 0.45, 0.05);
+const FOUL_BUBBLE_M = 0.5;
 // Still water's bed seen through it: a wet floor is darker, and water takes the red first.
 const WATER_TINT = vec3f(0.45, 0.55, 0.6);
 // How much of the light on it the room round still water gives back, to be mirrored in it: stone's.
@@ -68,8 +91,9 @@ const WATER_F0 = 0.02;
 const FLAME_M = 0.12;
 const FLAME_IN_WATER = 20.0;
 
+// Invariant, so the depth laid first and the lit draw after it reach the same depth from the same vertex.
 struct Surface {
-  @builtin(position) clip: vec4f,
+  @builtin(position) @invariant clip: vec4f,
   @location(0) normal: vec3f,
   @location(1) uv: vec2f,
   @location(2) @interpolate(flat) layer: u32,
@@ -91,6 +115,10 @@ fn dungeon_vertex(
   surface.point = position;
   return surface;
 }
+
+// The depth laid first: no colour, and nothing that could keep the depth test from running before it.
+@fragment
+fn dungeon_depth() {}
 
 // The faint light of the cell a surface lies in: a wall faces into its cell, so a little past the farthest a cave's
 // wall bulges into the rock, along its normal, is inside.
@@ -142,8 +170,9 @@ fn rock_between(from_x: f32, from_y: f32, to_x: f32, to_y: f32) -> bool {
 
 // Still water over its bed, a slow ripple through its normal: through it the bed, lit as a floor is; in it the room,
 // its walls brighter toward its lights, and each light's flame but the water's own glow, which lies on it, all
-// mirrored more the lower the eye looks across it.
-fn water_at(point: vec3f, normal: vec3f, time: f32, mood: vec3f, bed: vec3f) -> vec3f {
+// mirrored more the lower the eye looks across it. A flame mirrored shows however far it burns, so every light's is
+// sought, not only those that reach the water.
+fn water_at(point: vec3f, normal: vec3f, time: f32, mood: vec3f, bed: vec3f, span: vec3u) -> vec3f {
   let ripple = 0.04 * vec2f(
     sin(point.x * 2.3 + time * 0.7) + 0.6 * sin(point.y * 3.1 - time * 0.5),
     sin(point.y * 2.7 - time * 0.6) + 0.6 * sin(point.x * 3.7 + time * 0.4),
@@ -164,9 +193,25 @@ fn water_at(point: vec3f, normal: vec3f, time: f32, mood: vec3f, bed: vec3f) -> 
     }
   }
   let mirrors = fresnel(max(dot(rippled, to_eye), 0.0));
-  let through = bed * WATER_TINT * lights_at(point, rippled, time, mood);
-  let mirrored = ROOM_ALBEDO * lights_at(point, mirror, time, mood);
+  let through = bed * WATER_TINT * lights_at(point, rippled, time, mood, span);
+  let mirrored = ROOM_ALBEDO * lights_at(point, mirror, time, mood, span);
   return mix(through, mirrored, mirrors) + gleam * mirrors;
+}
+
+// How much of a foul water's bubble shows at a point: about half the squares of the grid rise a bubble at a time, each
+// from its own spot and to its own size, a ring swelling and bursting on its own beat, then still a while, so the
+// water seethes unevenly and never reads as a pattern laid on the floor.
+fn foul_bubbles(point: vec2f, time: f32) -> f32 {
+  let grid = point / FOUL_BUBBLE_M;
+  let square = floor(grid);
+  let seed = fract(sin(dot(square, vec2f(12.9898, 78.233))) * 43758.547);
+  let other = fract(seed * 7.13);
+  let beat = time * (0.3 + 0.3 * other) + seed * 5.0;
+  let age = fract(beat) * 2.0;
+  let rises = fract(sin(floor(beat) * 91.7 + seed * 13.0) * 4375.85) < 0.5;
+  let spot = square + 0.5 + 0.7 * (vec2f(seed, other) - 0.5);
+  let edge = abs(length(grid - spot) - (0.04 + (0.12 + 0.2 * other) * age));
+  return select(0.0, (1.0 - smoothstep(0.0, 0.06, edge)) * (1.0 - age), rises && age < 1.0);
 }
 
 // How much of a flame shows along a line whose cosine to it is \`cosine\`, \`distance\` from it: all on its line,
@@ -188,8 +233,8 @@ fn facing_share(face: vec3f, to_eye: vec3f) -> f32 {
 // A crystal's or a lantern pane's glow by its facet, lifted a little toward its whole by the lights round it, so one
 // crystal's faces differ and it reads as a solid, not a flat cut-out; never past its glow, which would clip it.
 // \`face\` is the triangle's own normal, flat across it.
-fn facet(glow: vec3f, point: vec3f, face: vec3f, to_eye: vec3f, time: f32) -> vec3f {
-  let lit = lights_at(point, face, time, vec3f(0.0));
+fn facet(glow: vec3f, point: vec3f, face: vec3f, to_eye: vec3f, time: f32, span: vec3u) -> vec3f {
+  let lit = lights_at(point, face, time, vec3f(0.0), span);
   return glow * facing_share(face, to_eye) * (0.85 + 0.15 * min(max(lit.r, max(lit.g, lit.b)), 1.0));
 }
 
@@ -198,7 +243,8 @@ fn dungeon_fragment(surface: Surface) -> @location(0) vec4f {
   let last = textureNumLayers(pictures) - 1u;
   let portal = (surface.layer & PORTAL) != 0u;
   let water = (surface.layer & WATER) != 0u;
-  let layer = surface.layer & ~(PORTAL | WATER);
+  let foul = (surface.layer & FOUL) != 0u;
+  let layer = surface.layer & ~(PORTAL | WATER | FOUL);
   let sampled = textureSample(pictures, picture_sampler, surface.uv, min(layer, last)).rgb;
   // The triangle's own normal, turned to the eye: a piece's smooth normals would round a crystal's facets away.
   // Derivatives are taken here, before any branch, as they must be.
@@ -215,13 +261,14 @@ fn dungeon_fragment(surface: Surface) -> @location(0) vec4f {
   if layer == EMBER {
     return vec4f(EMBER_GLOW * flicker(time * 0.5, phase, 1.4), 1.0);
   }
+  let span = reaching(surface.point);
   if layer == LANTERN_GLASS {
-    return vec4f(facet(LANTERN_GLOW * flicker(time, phase, 0.35), surface.point, face, to_eye, time), 1.0);
+    return vec4f(facet(LANTERN_GLOW * flicker(time, phase, 0.35), surface.point, face, to_eye, time, span), 1.0);
   }
   if layer == CRYSTAL {
     // A slow swell through each crystal, from its foot to its tip.
     let swell = 0.85 + 0.15 * sin(time * 1.3 + phase + surface.point.z * 2.0);
-    return vec4f(facet(CRYSTAL_GLOW * swell, surface.point, face, to_eye, time), 1.0);
+    return vec4f(facet(CRYSTAL_GLOW * swell, surface.point, face, to_eye, time, span), 1.0);
   }
   if layer == FUNGUS {
     // A slower breath through each cap.
@@ -235,10 +282,15 @@ fn dungeon_fragment(surface: Surface) -> @location(0) vec4f {
   }
   let normal = normalize(surface.normal);
   let mood = mood_at(surface.point, normal);
-  if water {
-    return vec4f(water_at(surface.point, normal, time, mood, sampled), 1.0);
+  if water && foul {
+    let breath = 0.6 + 0.4 * sin(time * 1.7 + phase);
+    let seething = FOUL_BUBBLE * foul_bubbles(surface.point.xy, time);
+    return vec4f(water_at(surface.point, normal, time, mood, sampled, span) * FOUL_TINT + FOUL_GLOW * breath + seething, 1.0);
   }
-  let light = lights_at(surface.point, normal, time, mood);
+  if water {
+    return vec4f(water_at(surface.point, normal, time, mood, sampled, span), 1.0);
+  }
+  let light = lights_at(surface.point, normal, time, mood, span);
   if layer == WAX_LAYER {
     return vec4f(WAX * light, 1.0);
   }

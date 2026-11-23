@@ -5,6 +5,7 @@ use crate::item::NAMED_LEVEL;
 use crate::kinds::Slot;
 use crate::rarity::Rarity;
 use crate::rewards::{Foe, worth};
+use crate::source::Source;
 use crate::vestige::{
     ATHERIC_FROM, LEGENDARY_FROM, OPENS, chance, colours, dropped, gated, item_chance, make, of_colours, opens_to,
 };
@@ -200,7 +201,8 @@ fn what_a_vestige_makes_belongs_to_its_slot_and_never_offers_a_trait_twice() {
     for seed in 0..300 {
         for slot in Slot::VESTIGE {
             for rarity in Rarity::ALL {
-                let item = make(9, rarity, slot, 12, &dice(seed)).expect("every slot and rarity makes something");
+                let item = make(9, rarity, slot, 12, Source::World, &dice(seed))
+                    .expect("every slot and rarity makes something");
                 assert!(item.kind.fits(slot), "{:?} in {slot:?}", item.kind);
                 assert_eq!(item.bucket, slot);
                 let offered: Vec<&String> = item.layout.iter().flatten().collect();
@@ -226,7 +228,10 @@ fn what_a_vestige_makes_belongs_to_its_slot_and_never_offers_a_trait_twice() {
             }
         }
     }
-    assert_eq!(make(1, Rarity::Rare, Slot::Arms, 5, &dice(4)), make(1, Rarity::Rare, Slot::Arms, 5, &dice(4)));
+    assert_eq!(
+        make(1, Rarity::Rare, Slot::Arms, 5, Source::World, &dice(4)),
+        make(1, Rarity::Rare, Slot::Arms, 5, Source::World, &dice(4))
+    );
 }
 
 #[test]
@@ -299,7 +304,9 @@ fn a_harder_voyage_raises_foes_and_pays_more() {
     let harder = abyss.reward_kill(Foe::Swordsman, 2, 5, None, Difficulty::Abyss);
     assert_eq!((harder.xp, harder.aurem), (paid.xp * 2, paid.aurem * 2));
     let drops = |difficulty: Difficulty| {
-        (0..2_000).filter(|seed| !Character::starting().loot_kill(3, 10, difficulty, &dice(*seed)).is_empty()).count()
+        (0..2_000)
+            .filter(|seed| !Character::starting().loot_kill(3, 10, difficulty, Source::World, &dice(*seed)).is_empty())
+            .count()
     };
     let (normal_drops, abyss_drops) = (drops(Difficulty::Normal), drops(Difficulty::Abyss));
     assert!(

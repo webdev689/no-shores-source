@@ -15,6 +15,8 @@ import { type Note, type Press, ROLES, type Role, type Song, TICKS_PER_BEAT, typ
 /** How far ahead each wake schedules, and how often it wakes: the window must outlast the wait. */
 export const LOOKAHEAD_S = 0.25;
 const PUMP_MS = 100;
+/** How long a hush takes to fall silent, seconds. */
+const HUSH_S = 0.1;
 /** The music's trim under its volume: the FM bank's oscillators sum hot. */
 export const MUSIC_GAIN = 0.22;
 /** How far ahead of now a song begins when asked to begin at once. */
@@ -269,6 +271,13 @@ export class SongPlayer {
     const now = this.clock();
     this.fader.to(level, when, seconds, now);
     this.stopAt = level <= 0 ? Math.max(when, now) + seconds + 0.05 : null;
+  }
+
+  /** Falls silent over a tenth of a second from `now`. Asked every frame while the music is cut or has no output, so
+   *  a stop already coming by then is kept, never put off. */
+  hush(now: number): void {
+    const silentBy = Math.max(now, this.clock()) + HUSH_S + 0.05;
+    if (this.playing && (this.stopAt === null || this.stopAt > silentBy)) this.fade(0, now, HUSH_S);
   }
 
   /** The layers that play from `when` on: a layer coming in sounds from its next note there, one let go fades over two

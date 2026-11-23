@@ -147,7 +147,9 @@ export class LightLayer {
   }
 
   /** Lights the finished picture `target`, its scene's depth `depth` (the picture's size): `draw` draws the emitters'
-   *  light into a pass at the light's size, with its own depth and the viewport set to the picture's quarter. */
+   *  light into a pass at the light's size, with its own depth and the viewport set to the picture's quarter. The pass
+   *  is begun only once an emitter first uses it: on most frames none gives light, and then none of the layer's four
+   *  passes is made, as the light they would add is none. */
   encode(
     encoder: GPUCommandEncoder,
     target: GPUTextureView,
@@ -155,6 +157,26 @@ export class LightLayer {
     draw: (pass: GPURenderPassEncoder) => void,
   ): void {
     const targets = this.targetsFor(depth.width, depth.height);
+    const lit: { pass: GPURenderPassEncoder | null } = { pass: null };
+    const begun = () => (lit.pass ??= this.begin(encoder, targets, depth));
+    draw(
+      new Proxy({} as GPURenderPassEncoder, {
+        get: (_none, name) => {
+          const pass = begun();
+          const value: unknown = Reflect.get(pass, name);
+          return typeof value === 'function' ? value.bind(pass) : value;
+        },
+      }),
+    );
+    if (!lit.pass) return;
+    lit.pass.end();
+    this.whole(encoder, targets.second, this.blur, targets.fromFirst, 'clear');
+    this.whole(encoder, targets.first, this.blur, targets.fromSecond, 'clear');
+    this.whole(encoder, target, this.lay, targets.laid, 'load');
+  }
+
+  /** The emitters' pass, begun: cleared, and its depth primed with the scene's at the light's size. */
+  private begin(encoder: GPUCommandEncoder, targets: Targets, depth: GPUTexture): GPURenderPassEncoder {
     const pass = encoder.beginRenderPass({
       colorAttachments: [{ view: targets.first, loadOp: 'clear', storeOp: 'store', clearValue: [0, 0, 0, 0] }],
       depthStencilAttachment: {
@@ -168,11 +190,7 @@ export class LightLayer {
     pass.setBindGroup(0, this.primedFrom(depth));
     pass.draw(3);
     pass.setViewport(0, 0, depth.width / LIGHT.scale, depth.height / LIGHT.scale, 0, 1);
-    draw(pass);
-    pass.end();
-    this.whole(encoder, targets.second, this.blur, targets.fromFirst, 'clear');
-    this.whole(encoder, targets.first, this.blur, targets.fromSecond, 'clear');
-    this.whole(encoder, target, this.lay, targets.laid, 'load');
+    return pass;
   }
 
   /** One pass over the whole of `view` with `pipeline` reading `group`. */

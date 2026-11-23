@@ -10,6 +10,7 @@
 import type { PixelPicture } from './dropPictures.ts';
 import { markPicture, PIXEL_M } from './drops.ts';
 import { MARK_FLOATS, ditherCode } from './marks.ts';
+import { Nearest } from '../nearest.ts';
 import { motionReduced } from '../plus/kit.ts';
 
 type Point = readonly [number, number, number];
@@ -64,6 +65,9 @@ function lay(out: number[], mark: Marked, far: number, eye: Point, seconds: numb
 const distance = (mark: Marked, eye: Point) =>
   Math.hypot(mark.at[0] - eye[0], mark.at[1] - eye[1], mark.at[2] - eye[2]);
 
+/** The unlit marks nearest the eye within reach, found each frame without sorting them all. */
+const nearest = new Nearest(MOST);
+
 /** The marks seen from `eye` at `seconds` but the lit ones, as mark vertices: the nearest MOST within reach, fading at
  *  the far end, at `share` of their opacity (a share under 1 lays them flat). */
 export function marksSeen(
@@ -74,14 +78,15 @@ export function marksSeen(
   share = 1,
 ): number[] {
   const out: number[] = [];
-  const near = marked
-    .filter((mark) => !mark.lit)
-    .map((mark) => ({ mark, far: distance(mark, eye) }))
-    .filter(({ far }) => far <= REACH_M)
-    .sort((one, other) => one.far - other.far)
-    .slice(0, MOST);
+  nearest.clear();
+  for (let index = 0; index < marked.length; index++) {
+    const mark = marked[index] as Marked;
+    const far = mark.lit ? Infinity : distance(mark, eye);
+    if (far <= REACH_M) nearest.offer(index, far);
+  }
   const fading = REACH_M * (1 - FADE);
-  for (const { mark, far } of near) {
+  for (let nth = 0; nth < nearest.count; nth++) {
+    const [mark, far] = [marked[nearest.order[nth] ?? 0] as Marked, nearest.away[nth] ?? 0];
     // Whole, it is drawn by the ground's code for a mark kept whole, which gives the light layer no light: the
     // brightest brass of a keeper's sign would otherwise light the sign itself in blocks over its own colours.
     const faded = far <= fading ? 1 : Math.max(0, (REACH_M - far) / (REACH_M - fading));

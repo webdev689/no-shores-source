@@ -21,11 +21,14 @@ from ship_rig import build_rig  # noqa: E402
 
 # The sea's height in the ships' frame: their waterline.
 SEA_Z = 1.2
+# The ships as the wreck builds them: the Frigate's quarterdeck, Thule's arena, runs forward to just abaft her mainmast.
+WRECK_HULLS = {**HULLS, 'frigate': {**HULLS['frigate'], 'quarterdeck_m': (-2.0, 0.8)}}
 
 
 def build_ship(name, collection, sloop):
-    """Builds the ship `name` (a hull of the ships tool) into `collection` in her own frame; gives her Hull."""
-    hull = Hull(HULLS[name])
+    """Builds the ship `name` (a hull of the ships tool, as the wreck has her) into `collection` in her own frame;
+    gives her Hull."""
+    hull = Hull(WRECK_HULLS[name])
     build_hull(hull, collection)
     build_rig(hull, collection)
     build_fittings(hull, collection)

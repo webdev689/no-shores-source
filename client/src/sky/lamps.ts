@@ -1,5 +1,6 @@
 // The night's lamps: the places that give light (a city's glowing solids), the light a player carries, and the ones
 // nearest the eye each frame, as the sky's uniform lays them out. A lamp is lit only as the daylight fades.
+import { Nearest } from '../nearest.ts';
 import { LAMPS_MOST, type Lamp } from './skyUniform.ts';
 
 /** A place that gives light: world metres (east, south, up), how far its light reaches, its colour at full, and a
@@ -102,20 +103,17 @@ export function lampsRound(
     lamps.push({ fromEye: hand, reachM: held.reachM, light: held.light.map((part) => part * shown) as Rgb });
   }
   const room = LAMPS_MOST - lamps.length;
-  // The nearest room + 1 kept in order as the places are passed, not every place ranked: a ruin has a thousand.
-  const ranked: { place: LampPlace; away: number }[] = [];
-  for (const place of places) {
-    const away = Math.hypot(place.at[0] - eye[0], place.at[1] - eye[1], place.at[2] - eye[2]) - place.reachM;
-    if (ranked.length > room && away >= ranked[room].away) continue;
-    let slot = ranked.length;
-    while (slot > 0 && ranked[slot - 1].away > away) slot--;
-    ranked.splice(slot, 0, { place, away });
-    if (ranked.length > room + 1) ranked.pop();
+  // Every city lamp weighed each frame, only the few nearest kept: one past the room, the first left out.
+  ranked.clear();
+  for (let index = 0; index < places.length; index++) {
+    const { at, reachM } = places[index] as LampPlace;
+    ranked.offer(index, Math.hypot(at[0] - eye[0], at[1] - eye[1], at[2] - eye[2]) - reachM);
   }
   // A lamp near the cut fades by how far it leads the first left out, so none switches on or off as the eye moves.
-  const cut = ranked[room]?.away ?? Infinity;
-  for (const { place, away } of ranked.slice(0, room)) {
-    const shown = lit * flicker(place.seed, seconds) * Math.min(1, (cut - away) / CUT_FADE_M);
+  const cut = ranked.count > room ? (ranked.away[room] ?? Infinity) : Infinity;
+  for (let nth = 0; nth < Math.min(room, ranked.count); nth++) {
+    const place = places[ranked.order[nth] ?? 0] as LampPlace;
+    const shown = lit * flicker(place.seed, seconds) * Math.min(1, (cut - (ranked.away[nth] ?? 0)) / CUT_FADE_M);
     lamps.push({
       fromEye: fromEye(place.at),
       reachM: place.reachM,
@@ -126,3 +124,6 @@ export function lampsRound(
 }
 
 type Rgb = [number, number, number];
+
+/** The places nearest the eye past their reach, as many as are lit and the first left out. */
+const ranked = new Nearest(LAMPS_MOST + 1);

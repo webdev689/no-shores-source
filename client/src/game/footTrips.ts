@@ -6,6 +6,7 @@ import { roomNow } from '../sky/worldClock.ts';
 import type { GearAsk } from '../network/gearMessages.ts';
 import { RoomThread } from '../network/roomThread.ts';
 import type { FightEvent } from '../network/messages.ts';
+import type { EncounterSeen } from '../network/encounterMessages.ts';
 import { askDungeon, type DungeonAsk, type DungeonLayout } from './dungeonLayout.ts';
 import { DOOR_REACH_M, type Entrance, entranceAt, entrancesOf } from './entrances.ts';
 import type { PropTable } from '../models/tables.ts';
@@ -66,18 +67,26 @@ export function seaPlace(continent: string, layout: DungeonLayout): NodeInfo {
   return { id: 'sea-dungeon', kind: 'dungeon', name: layout.name, continent, ring: [], spawns: [], centre: [0, 0] };
 }
 
-/** Takes an Abyss run's word from a snapshot: its revives left, and whether it told this player their company fell. */
+/** Takes a run's word from a snapshot: an Abyss run's revives left, whether it told this player their company fell,
+ *  and an Elite Dungeon's encounters. */
 export function heardRun(
-  held: { revives: number; wiped: boolean },
-  snapshot: { readonly revives: number; readonly events: readonly FightEvent[] },
+  held: { revives: number; wiped: boolean; encounter: EncounterSeen | null },
+  snapshot: {
+    readonly revives: number;
+    readonly events: readonly FightEvent[];
+    readonly encounter: EncounterSeen | null;
+  },
   own: number | null,
 ): void {
   held.revives = snapshot.revives;
+  held.encounter = snapshot.encounter;
   if (snapshot.events.some((event) => event.kind === EVENT.wiped && event.defender === own)) held.wiped = true;
 }
 
-/** Whether the room said this player's company fell, taken once. */
-export function takeWipe(held: { wiped: boolean }): boolean {
+/** Whether the room said this player's company fell, taken once and only on foot (`onFoot`): a trip's veil refuses the
+ *  way out, so a fall heard behind it waits for the place. */
+export function takeWipe(held: { wiped: boolean }, onFoot: boolean): boolean {
+  if (!onFoot) return false;
   const wiped = held.wiped;
   held.wiped = false;
   return wiped;
@@ -178,5 +187,11 @@ export function useOnFoot(
   return place ?? useAt(x, y, counters, gear?.gear ?? null, ask, speak, mounted) ?? tripAt(x, y, here, trips);
 }
 
-/** What a room has said of a place before it says anything: no entrances, no cache, no run. */
-export const unheard = () => ({ entrances: new Entrances(), cache: null, revives: -1, wiped: false });
+/** What a room has said of a place before it says anything: no entrances, no cache, no run, no encounters. */
+export const unheard = () => ({
+  entrances: new Entrances(),
+  cache: null,
+  revives: -1,
+  wiped: false,
+  encounter: null as EncounterSeen | null,
+});

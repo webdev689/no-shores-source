@@ -45,6 +45,6 @@ chat. Each sea region is its own region channel + world chat" ([[The Sea Has the
 
 - A Whisper and `/r`, which DFO had none of; `/r` named DFO's regions, and `/sea` says to the water here.
 - A player's own mute, `/mute` and `/unmute`, where DFO's were a moderator's ([[A Player May Mute Another]]).
-- The hall judges words by Overlook's own [[Names]] judge, not DFO's lists.
+- The hall judges words by the game's own [[Names]] judge, not DFO's lists.
 - The panel redrawn after the owner's picture: a dark band between two rules, names in brackets.
 - System note: [[Chat]].

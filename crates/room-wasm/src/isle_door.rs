@@ -73,9 +73,13 @@ pub fn plan_json(seed: u64, climate: &str) -> String {
 }
 
 /// An island's ground as `movement::Heights::to_floats` gives it, little-endian, its middle at `at` in the world: what
-/// the page predicts its body on, to the bit. Empty for a climate the contract does not dress.
+/// the page predicts its body on, to the bit. Empty for a climate the contract does not dress, or a middle that is no
+/// finite number, which no grid can be moved to.
 #[must_use]
 pub fn heights_bytes(seed: u64, climate: &str, at: [f64; 2]) -> Vec<u8> {
+    if !at.iter().all(|value| value.is_finite()) {
+        return Vec::new();
+    }
     let floats = with_plan(seed, climate, |plan| plan.ground_at(at).to_floats()).unwrap_or_default();
     floats.iter().flat_map(|number| number.to_le_bytes()).collect()
 }

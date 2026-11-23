@@ -165,7 +165,11 @@ length of grain, its canvas 0.8 m cloths over a faint weave, its guns mottled ir
 Every hull of [[Hulls]] is one model, fetched from R2 by its manifest entry the first time a ship of that hull is drawn
 and kept (`ShipModels`), and dressed in its side's colours as it is drawn (`dress.ts`). Every hull's view on a
 device shares one pipeline, built off the frame, and one set of pictures and sampler (`shipKit`). While its model is
-still coming a ship is drawn as the Sloop, its footprint, foam and plate the Sloop's too. A fetch that fails is said
+still coming a ship is drawn as the Sloop, its footprint, foam and plate the Sloop's too. A ship out of view is not
+drawn in the picture, though it keeps its slot: its bounds are a sphere made once from its model (`shipSphere`), about
+the middle of its mesh and its sails' corners and twice as far as the farthest of them, so its yards braced, its booms
+swung and its flag flying stay inside; while a sail torn away or a mast fallen lies off its side or astern it is
+always drawn. A fetch that fails is said
 once and tried again from a frame 5 s later, the wait doubling each time to 60 s. A colour is laid over the
 picture's grain, the picture's lightness about its mean kept:
 
@@ -305,15 +309,16 @@ player elsewhere (the company's Go to them waits); a travel left behind any othe
 
 1. The map lowers and the camera leaves the helm on an eased rail out to the ship's aft starboard quarter, 70 m off and
    28 m up, carried along with the ship as it gets under way on the course at the world's own pace, 3 s.
-2. The camera holds there, looking at the ship as it sails off, while the picture fades to black over 2 s; the veil's
-   words, "Sailing for <water>", come up in its last 0.7 s. The travel is asked of the sea room as the fade begins
+2. The camera holds there, looking at the ship as it sails off, while the picture fades to black over 2 s; the veil, the
+   loading screen with "Sailing for <water>" ([[One Loading Screen Covers Every Trip Until the Place Is Ready]]), comes up in its last 0.7 s. The travel is asked of the sea room as the fade begins
    ([[Server]], "The sea"): a course into other waters with the travel flag, sent in its turn as any course is, and no
    other course sent in its place until the room answers. Too soon after a course, it is asked again; a room joined
    since, or the same link joined again (which drops what it was sent), is asked again, once it has the ship at sea (a tier's room just joined puts it there when its keeper has
    answered); one that gives no answer in 10 s, or whose room never shows the ship, is given up, and courses are sent again. A yes in a fight
    sails the course as Set sail does.
-3. Black for at least 1.5 s, and longer until the room has answered and no continent near the ship's new place is
-   still to open (`Charting.waiting`), the land waited on 15 s at most; the sea, its islands and the sky come with the room's word and the land.
+3. Black for at least 1.5 s, and longer until the room has answered, no continent near the ship's new place is
+   still to open (`Charting.waiting`), and frames drawn since the answer have shown the new waters whole (nothing
+   standing in, [[Game]]), the plants scattering at the veil's pace meanwhile; all waited on 15 s at most; the sea, its islands and the sky come with the room's word and the land.
    Taken, the ship is laid where the room put it, 400 m short of the course's end on its last leg, with no easing
    across the jump, and sails on to the end of the course the room was sent; the view over it snaps there too, and the old waters' islands, flotsam
    and marks go with the room's next word.
@@ -340,6 +345,6 @@ and wake behind, from the yes until it has arrived.
 - Its helm stands under the gaff, as the model has it: at the helm the canvas swings close by.
 - Alone, the editor steps it; in a fleet room the [[Server]] does, on the open sea, which has no coast or shallows;
   in the sea room's fights, the room steps it by its orders.
-- No current or cargo yet, and no crew but the stand-ins aboard ([[Game]]). Hulls are kept apart only in a fight
+- No current or cargo yet; three figures stand in for the ship's hands on its deck ([[Crew]], [[Game]]). Hulls are kept apart only in a fight
   ([[Naval Combat]]), as every fleet room is.
 - It waits while the land worker makes a close-up (about every 400 m), then catches up.

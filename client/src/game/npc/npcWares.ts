@@ -174,6 +174,7 @@ function horseWare(gear: GearState, coat: Cosmetic, number: number): Ware {
     columns: [],
     price: 0,
     element: 0,
+    source: 0,
   };
   const kept = gear.items.some((item) => coatOfHorse(item) === coat.id);
   const { aurem = 0, level = 1 } = coat.source;

@@ -14,45 +14,71 @@ export const MOST_PUFFS = 2048;
 /** A puff's floats: its place and radius, its colour and alpha, then whether it glows and whether it lies flat. */
 const PUFF_FLOATS = 12;
 
-/** The puffs to draw, far to near from `eye`, as their instance floats, and the glows' halos for the light pass. */
+/** What `puffFloats` writes into, kept from frame to frame by whoever draws the puffs: the floats of the most drawn,
+ *  and each mark's distance and the marks' order, grown to the most marks yet seen. */
+export class PuffScratch {
+  readonly picture = new Float32Array(MOST_PUFFS * PUFF_FLOATS);
+  readonly light = new Float32Array(MOST_PUFFS * PUFF_FLOATS);
+  away = new Float64Array(0);
+  order = new Uint32Array(0);
+}
+
+/** A puff's instance floats, written into `values` from `start` one at a time: a list made for them would be one a
+ *  puff a frame. */
+function putPuff(values: Float32Array, start: number, mark: Mark): void {
+  values[start] = mark.x;
+  values[start + 1] = mark.y;
+  values[start + 2] = mark.z;
+  values[start + 3] = mark.radius;
+  values[start + 4] = mark.colour[0];
+  values[start + 5] = mark.colour[1];
+  values[start + 6] = mark.colour[2];
+  values[start + 7] = mark.alpha ?? 1;
+  values[start + 8] = mark.blend === 'smoke' ? 0 : 1;
+  values[start + 9] = mark.flat ? 1 : 0;
+  values[start + 10] = 0;
+  values[start + 11] = 0;
+}
+
+/** The puffs to draw, far to near from `eye`, as their instance floats, and the glows' halos for the light pass, in
+ *  `kept`'s arrays: good until the next call given them. */
 export function puffFloats(
   marks: readonly Mark[],
   eye: readonly number[],
+  kept: PuffScratch = new PuffScratch(),
 ): { picture: Float32Array; light: Float32Array } {
-  const away = (mark: Mark) => Math.hypot(mark.x - (eye[0] ?? 0), mark.y - (eye[1] ?? 0), mark.z - (eye[2] ?? 0));
-  const floats = (list: readonly Mark[]) => {
-    const values = new Float32Array(Math.min(list.length, MOST_PUFFS) * PUFF_FLOATS);
-    // Past the most drawn, the farthest go: the list runs far to near, so its last are kept.
-    list
-      .slice(Math.max(0, list.length - MOST_PUFFS))
-      .forEach((mark, index) =>
-        values.set(
-          [
-            mark.x,
-            mark.y,
-            mark.z,
-            mark.radius,
-            ...mark.colour,
-            mark.alpha ?? 1,
-            mark.blend === 'smoke' ? 0 : 1,
-            mark.flat ? 1 : 0,
-            0,
-            0,
-          ],
-          index * PUFF_FLOATS,
-        ),
-      );
-    return values;
-  };
-  const picture = marks
-    .filter((mark) => mark.blend === 'smoke' || mark.blend === 'glow')
-    .map((mark) => ({ mark, away: away(mark) }))
-    .sort((one, other) => other.away - one.away)
-    .map(({ mark }) => mark);
+  if (kept.order.length < marks.length) {
+    const room = 2 ** Math.ceil(Math.log2(marks.length));
+    [kept.away, kept.order] = [new Float64Array(room), new Uint32Array(room)];
+  }
+  const { away, order } = kept;
+  let [drawn, glows] = [0, 0];
+  for (let index = 0; index < marks.length; index++) {
+    const mark = marks[index] as Mark;
+    if (mark.blend === 'glow') glows += 1;
+    if (mark.blend !== 'smoke' && mark.blend !== 'glow') continue;
+    away[index] = Math.hypot(mark.x - (eye[0] ?? 0), mark.y - (eye[1] ?? 0), mark.z - (eye[2] ?? 0));
+    order[drawn] = index;
+    drawn += 1;
+  }
+  // Far to near, two as far in the order given; past the most drawn, the farthest go, so the last are kept.
+  const sorted = order.subarray(0, drawn).sort((one, other) => (away[other] ?? 0) - (away[one] ?? 0) || one - other);
+  const first = Math.max(0, drawn - MOST_PUFFS);
+  for (let nth = first; nth < drawn; nth++)
+    putPuff(kept.picture, (nth - first) * PUFF_FLOATS, marks[sorted[nth] ?? 0] as Mark);
   // shortcut: a `light` mark (a muzzle's or a fire's reach, DFO's point light on the hulls near) is not drawn: the light
   // layer halos the screen round what glows, so a 26 m reach became a banded disc over the sky and sea. Upgrade when
   // the ships' shader takes point lights.
-  return { picture: floats(picture), light: floats(marks.filter((mark) => mark.blend === 'glow')) };
+  let [glow, lit] = [0, 0];
+  for (const mark of marks) {
+    if (mark.blend !== 'glow') continue;
+    glow += 1;
+    if (glow > glows - MOST_PUFFS) putPuff(kept.light, lit++ * PUFF_FLOATS, mark);
+  }
+  return {
+    picture: kept.picture.subarray(0, (drawn - first) * PUFF_FLOATS),
+    light: kept.light.subarray(0, lit * PUFF_FLOATS),
+  };
 }
 
 export const PUFF_WGSL = /* wgsl */ `
@@ -150,6 +176,8 @@ export class PuffView {
   private readonly lightGroup: GPUBindGroup;
   private group: { depth: GPUTexture; group: GPUBindGroup } | null = null;
   private counts = { picture: 0, light: 0 };
+  private readonly kept = new PuffScratch();
+  private readonly cameraValues = new Float32Array(20);
 
   constructor(gpu: Gpu) {
     this.gpu = gpu;
@@ -194,12 +222,12 @@ export class PuffView {
 
   /** The puffs of this frame among `marks` (window metres), seen from `camera`. */
   set(marks: readonly Mark[], camera: ShipCamera): void {
-    const { picture, light } = puffFloats(marks, camera.eye);
+    const { picture, light } = puffFloats(marks, camera.eye, this.kept);
     this.counts = { picture: picture.length / PUFF_FLOATS, light: light.length / PUFF_FLOATS };
     const { queue } = this.gpu.device;
-    const values = new Float32Array(20);
+    const values = this.cameraValues;
     values.set(camera.fromEye);
-    values.set([...camera.eye, 0], 16);
+    [values[16], values[17], values[18]] = camera.eye;
     queue.writeBuffer(this.camera, 0, values);
     if (picture.length > 0) queue.writeBuffer(this.picture, 0, picture);
     if (light.length > 0) queue.writeBuffer(this.light, 0, light);

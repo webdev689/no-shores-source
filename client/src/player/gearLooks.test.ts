@@ -1,9 +1,11 @@
 import assert from 'node:assert/strict';
+import { readFile } from 'node:fs/promises';
 import { test } from 'node:test';
 import type { Outfit } from '../forge/outfit.ts';
 import type { GearItem, GearState } from '../network/gearMessages.ts';
 import type { Wardrobe } from './dressing.ts';
-import { MELEE, RANGED_SLOT } from './gear.ts';
+import { readFromRoom } from '../network/messages.ts';
+import { KINDS, MELEE, RANGED_SLOT, WORN, weaponLook } from './gear.ts';
 import { gearOutfit, spareOutfit } from './gearLooks.ts';
 import { COSMETICS } from '../forge/cosmetics.ts';
 
@@ -28,6 +30,7 @@ const item = (fields: Partial<GearItem>): GearItem => ({
   columns: [],
   price: 0,
   element: 0,
+  source: 0,
   ...fields,
 });
 const state = (items: GearItem[]): GearState => ({
@@ -127,7 +130,7 @@ test('a Rare or finer piece is an armour set; a Magic one light armour or clothe
   const dressed = gearOutfit(
     state([
       item({ id: 1, kind: 14, rarity: 2, at: 5, name: 1 }),
-      item({ id: 2, kind: 16, rarity: 3, at: 7, named: 'tithebreaker_greaves', level: 20 }),
+      item({ id: 2, kind: 16, rarity: 3, at: 7, named: 'tithebreaker_greaves', level: 20, source: 5 }),
       item({ id: 2, kind: 13, rarity: 1, at: 4 }),
       item({ id: 4, kind: 15, rarity: 1, at: 6 }),
       item({ id: 5, kind: 17, rarity: 3, at: 8 }),
@@ -152,17 +155,18 @@ test('a Rare or finer piece is an armour set; a Magic one light armour or clothe
   assert.deepEqual([light.armour.cuirass, light.garments], ['leather', []], 'one numbered for leather');
 });
 
-test('a rolled Rare piece climbs the sets with its level and spreads by its name', () => {
+test("a rolled Rare piece climbs the world's sets with its level, and any other content's spreads by its name", () => {
   const worn = (fields: Partial<GearItem>) =>
     gearOutfit(state([item({ kind: 14, rarity: 2, at: 5, ...fields })]), every, plain).armour;
-  assert.deepEqual(
-    [0, 1, 2].map((name) => worn({ name, level: 1 }).cuirass),
-    ['chain', 'iron', 'steel'],
-  );
-  assert.deepEqual(
-    [0, 1, 2].map((name) => worn({ name, level: 20 }).cuirass),
-    ['adamantium', 'ebony', 'daedric'],
-  );
+  const cuirasses = (source: number, level: number) =>
+    [0, 1, 2].map((name) => worn({ name, level, source }).cuirass).join(' ');
+  assert.deepEqual([cuirasses(0, 1), cuirasses(0, 20)], ['chain iron chain', 'steel steel steel'], 'the world');
+  // Every look of a content past the world is seen at every level it drops: the Abyss Dungeons' all drop at 20.
+  assert.deepEqual([cuirasses(2, 1), cuirasses(2, 20)], ['knights silver knights', 'knights silver knights']);
+  assert.deepEqual([cuirasses(3, 20), cuirasses(4, 20)], ['orcish mithril orcish', 'adamantium ebony adamantium']);
+  assert.deepEqual([cuirasses(5, 20), cuirasses(6, 1)], ['elven dwarven elven', 'daedric daedric daedric']);
+  const magic = (source: number) => gearOutfit(state([item({ kind: 13, rarity: 1, at: 4, source })]), every, plain);
+  assert.deepEqual([magic(0).armour.helm, magic(3).armour.helm], ['thieves', 'orcish'], "a Magic helm, its content's");
   assert.deepEqual(worn({ name: 0 }), { cuirass: 'chain' }, 'chain has no pauldrons: its cuirass alone');
   assert.deepEqual(worn({ id: 7 }), worn({ id: 8 }), 'its number does not move it');
   const named = gearOutfit(state([item({ kind: 16, rarity: 3, at: 7, named: 'tithebreaker_greaves' })]), every, plain);
@@ -207,7 +211,7 @@ test("a faction's armour is its faction's own set, each of its layers named for 
   const dressed = gearOutfit(
     state([
       item({ id: 1, kind: 14, rarity: 3, at: 5, named: 'lamplighters_vestments' }),
-      item({ id: 2, kind: 13, rarity: 3, at: 4, named: 'tithebreaker_helm' }),
+      item({ id: 2, kind: 13, rarity: 3, at: 4, named: 'tithebreaker_helm', source: 5 }),
     ]),
     guilds,
     plain,
@@ -253,4 +257,31 @@ test('the prologue’s own armour is its steel, a Normal piece though it is, as 
     boots: 'steel',
   });
   assert.deepEqual(outfit.garments, [], 'no clothes over it');
+});
+
+test("a smith's ware is drawn as the piece it becomes once bought: its set or clothes, its metal and its make", async () => {
+  // gear_wire_tests.rs writes the player's gear at the stall, then again after each of the Armorsmith's and the
+  // Weaponsmith's six wares is bought in turn, each message its length in four bytes and then itself.
+  const bytes = await readFile(new URL('../../../target/protocol/gear_vended.bin', import.meta.url)).catch(() => {
+    throw new Error('gear_vended.bin is not written: run `cargo test -p protocol`');
+  });
+  const sent: GearState[] = [];
+  for (let start = 0; start < bytes.length;) {
+    const length = bytes.readUInt32LE(start);
+    const read = readFromRoom(new Uint8Array(bytes.subarray(start + 4, start + 4 + length)));
+    if (read?.kind === 'gear') sent.push(read);
+    start += 4 + length;
+  }
+  assert.equal(sent.length, 13, 'before any is bought, and after each of twelve');
+  const looks = (piece: GearItem) => {
+    const slot = piece.bucket;
+    const wearing = state([{ ...piece, at: WORN + slot }]);
+    return { hands: weaponLook(piece), outfit: gearOutfit(wearing, every, plain, slot <= RANGED_SLOT ? slot : MELEE) };
+  };
+  for (const [place, before] of sent.slice(0, -1).entries()) {
+    const ware = before.wares[place];
+    const bought = sent[place + 1]?.items.find((each) => !before.items.some((held) => held.id === each.id));
+    assert.ok(ware && bought, `ware ${place} bought`);
+    assert.deepEqual(looks(ware), looks(bought), `ware ${place}, a ${KINDS[ware.kind]}`);
+  }
 });

@@ -62,7 +62,9 @@ to grab. The [[Test Ground]] plays it with DFO's controls ([[The Player Plays as
   to stand over it, under a floor above, is not gone over.
 - **Terrain.** The blocks stand on a terrain: any ground known by its height at a point (`Terrain`), so the rules
   need nothing of the crate that makes it. A node's room stands its bodies on the [[Land]]'s window round its node,
-  and its city's boxes as blocks ([[Server]]); the [[Test Ground]] and its rooms use open ground at 0 m. A body that
+  and its city's boxes as blocks ([[Server]]); the [[Test Ground]] and its rooms use open ground at 0 m. A dungeon's
+  room stands its bodies on the dungeon's own ground, its only blocks an Elite Dungeon's Ascents' pads, climbed as
+  any block is ([[Dungeons]], "Encounters"). A body that
   joins or respawns in a node's room stands on the ground at its spawn, or on a block's top within a step of it.
   The ground under the feet is the higher of the
   terrain and the highest block top within a step. The feet follow the terrain up and down while a tick's drop is

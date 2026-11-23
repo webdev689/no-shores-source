@@ -2,7 +2,8 @@
 // island's climate's pictures, through the city's own pipelines (lit by the sun, in its shadows and casting them).
 import { CITY_BUFFER_USAGE, type CityPipelines, cityPipelines, originInstance } from '../city/cityGpu.ts';
 import { modelBuffers } from '../city/cityModels.ts';
-import { CityPainter } from '../city/painter.ts';
+import { CityPainter, painting } from '../city/painter.ts';
+import { standIn } from '../standIns.ts';
 import { PICTURE_LAYERS } from '../city/pictures.ts';
 import type { CityClimate } from '../city/plan.ts';
 import type { Shot } from './camera.ts';
@@ -162,6 +163,7 @@ export class EntranceView implements Drawer {
   drawInto(pass: GPURenderPassEncoder, fromEye: Float32Array, shot: Shot, time: number, shadow: ShadowMap): void {
     const drawn = this.termsWritten(fromEye, shot, time);
     if (!drawn) return;
+    if (painting(drawn.painter)) standIn('entrance pictures');
     pass.setPipeline(this.pipelines.models);
     pass.setBindGroup(1, shadow.receiverGroup(this.pipelines.models));
     this.drawWith(pass, drawn);

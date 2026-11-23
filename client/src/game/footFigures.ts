@@ -67,7 +67,8 @@ export function otherCards(
     const frame = placed.frame === null ? frameAt(clock, frames, OTHERS_FPS) : Math.min(placed.frame, frames - 1);
     // A cast's spark glows in the caster's Art, as the player's own does.
     const glow = placed.anim === 'cast' ? castLookOf(fight, number) : 0;
-    const card = forge.card(placed.id, placed.dress, placed.anim, view, frame, flip, glow);
+    const feet = [placed.x, placed.y, placed.z] as const;
+    const card = forge.card(placed.id, placed.dress, placed.anim, view, frame, flip, glow, feet);
     const flash = effects.flashes.flashOf(number);
     const veiled = veiledIn(fight, number);
     const moved = feel.shift(number, feel.otherViews.get(number) ?? null);

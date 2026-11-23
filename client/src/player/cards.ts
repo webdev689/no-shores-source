@@ -14,6 +14,7 @@ import { type Dress, type Wardrobe, figureOf, layerRamps, wardrobeOf } from './d
 import { shrunk } from './iconFit.ts';
 import { onTheMove } from './playerMoves.ts';
 import type { Picture } from './picture.ts';
+import { standIn } from '../standIns.ts';
 
 /** A figure's picture as a scene draws it: its texture, its size in pixels, its feet on it, and for a weapon that
  *  glows the outline's field (GLOW_PAD larger on each side) and its element. */
@@ -65,6 +66,9 @@ export interface CardAt {
 export interface CardMaker {
   card(pixels: Uint8Array, width: number, height: number, root: readonly [number, number]): Card;
   glow(field: GlowField): GPUTexture;
+  /** Whether the figure numbered `id`, its `feet` in world metres, has its card chosen afresh this frame; a scene that
+   *  does not say chooses every figure's every frame. */
+  poseDue?(id: number, feet: readonly [number, number, number]): boolean;
 }
 
 /** The forge's cards for the figures `maker` draws, read from the forge's published renders, with the store they come
@@ -118,6 +122,8 @@ export class Cards {
   /** When each frame whose compose failed failed, oldest first: it is asked for again only RETRY_AFTER_MS after. */
   private readonly failedAt = new Map<string, number>();
   private readonly last = new Map<number, Card>();
+  /** The view and side (`view * 2`, one more mirrored) each figure placed in the world last had its card chosen in. */
+  private readonly sides = new Map<number, number>();
   private readonly queued: {
     dress: Dress;
     anim: string;
@@ -297,7 +303,7 @@ export class Cards {
   }
 
   /** A figure's frame in a move and a view, composed `haste` if it is not kept or under way, and hurried if it is
-   *  under way and now shown; the frame once composed. A move carries the props, instrument or spark the forge draws
+   *  under way and now shown; the frame once composed, or 'coming' while it is composed. A move carries the props, instrument or spark the forge draws
    *  in it; a weapon glowing in `glow` its outline, and a cast's spark recoloured to it. A frame shown before it is
    *  composed has the rest of its move's frames in that view asked for with it, in the order they play, so its loop
    *  plays through once the first comes. */
@@ -309,7 +315,7 @@ export class Cards {
     flip = false,
     glow: GlowLook = 0,
     haste: Haste = 'now',
-  ): Card | null {
+  ): Card | 'coming' | null {
     const { figure, ramps, whole, key } = this.framed(dress, anim, view, frame, flip, glow);
     const kept = this.kept.get(key);
     if (kept !== undefined) {
@@ -320,7 +326,7 @@ export class Cards {
     }
     if (this.composing.has(key)) {
       if (haste === 'now') this.composer.hurry(key);
-      return null;
+      return 'coming';
     }
     const failed = this.failedAt.get(key);
     if (failed !== undefined && performance.now() - failed < RETRY_AFTER_MS) return null;
@@ -346,11 +352,12 @@ export class Cards {
       for (let ahead = 1; ahead < frames; ahead++)
         this.ask(dress, anim, view, (frame + ahead) % frames, flip, glow, 'ahead');
     }
-    return null;
+    return 'coming';
   }
 
   /** A figure's card in a move, a view and a frame, its weapon glowing in `glow`, or the last card it showed while
-   *  this one is composed. */
+   *  this one is composed. A figure whose `feet` stand in the world (metres) keeps the card it showed on the frames the
+   *  scene does not pose it (`CardMaker.poseDue`), unless it is now seen in another view or from its other side. */
   card(
     id: number,
     dress: Dress,
@@ -359,10 +366,22 @@ export class Cards {
     frame: number,
     flip = false,
     glow: GlowLook = 0,
+    feet?: readonly [number, number, number],
   ): Card | null {
-    const card = this.ask(dress, anim, view, frame, flip, glow);
+    const last = this.last.get(id);
+    if (feet) {
+      const side = view * 2 + (flip ? 1 : 0);
+      if (last && this.sides.get(id) === side && this.scene.poseDue?.(id, feet) === false) return last;
+      this.sides.set(id, side);
+    }
+    const asked = this.ask(dress, anim, view, frame, flip, glow);
+    const card = asked === 'coming' ? null : asked;
     if (card) this.last.set(id, card);
-    return card ?? this.last.get(id) ?? null;
+    const shown = card ?? last ?? null;
+    // A figure with nothing of its own to show yet stands in for itself; one showing its last frame while the next
+    // composes does not, nor one whose frame failed.
+    if (!shown && asked === 'coming') standIn('figures');
+    return shown;
   }
 
   /** Queues every view and frame of a dress's moves to be composed ahead of need, as drawn and as mirrored, its weapon
@@ -398,6 +417,7 @@ export class Cards {
   /** Lets go of a figure that has left: the last card it showed is no longer kept for it. */
   forget(id: number): void {
     this.last.delete(id);
+    this.sides.delete(id);
   }
 
   /** Starts composing a few queued frames, while few are under way, so warming never holds up a frame. Warming fills

@@ -1,13 +1,15 @@
 // Every hull's model on the GPU, fetched from R2 the first time a ship of that hull is drawn and kept, and a frame's
-import type { ShadowMap } from '../shadow.ts';
 // ships drawn by them: each in its own hull, its side's colours and its rig, a slot of its model each. A hull still
 // coming is drawn as the Sloop, so a ship is never a footprint with nothing over it.
+import type { ShadowMap } from '../shadow.ts';
+import { sphereSeen, viewPlanes } from '../frustum.ts';
 import type { Gpu } from '../gpu.ts';
 import type { ShipLook } from './dress.ts';
 import { type HullName, hullName, hullPaint, hullSails, SLOOP_HULL } from './hulls.ts';
 import type { SailRig } from './sails.ts';
 import type { ShipCrew } from './shipCrew.ts';
 import { loadShip } from './shipMesh.ts';
+import { standIn } from '../standIns.ts';
 import { type ShipCamera, type ShipPlace, SHIP_SLOTS, ShipView } from './shipView.ts';
 
 /** A ship as a frame draws it: its hull's number, its place, its rig (none for no canvas or flag) and its look; and
@@ -68,7 +70,9 @@ export class ShipModels {
 
   /** The hull a ship is drawn as: its own once it has come, the Sloop while it is coming. */
   shown(hull: number): number {
-    return this.model(hull) ? hull : SLOOP_HULL;
+    if (this.model(hull)) return hull;
+    if (this.fetching.has(hullName(hull))) standIn('hulls');
+    return SLOOP_HULL;
   }
 
   /** A hull's model, fetched now if it has not come (a number with no model of its own is the Sloop's); its failure
@@ -112,11 +116,15 @@ export class ShipModels {
   }
 
   /** Draws a frame's ships, each by its hull's model once it has come, the ships of one hull in its slots in turn, in
-   *  the sun's shadows when a map is given. */
+   *  the sun's shadows when a map is given. A ship out of view is not drawn but keeps its slot, so every other ship
+   *  stays in the slot its shadow was cast from. */
   draw(pass: GPURenderPassEncoder, ships: readonly DrawnShip[], camera: ShipCamera, shadow?: ShadowMap): void {
-    this.each(ships, (model, ship, slot) =>
-      model.drawInto(pass, ship.place, camera, slot, ship.look, ship.rig, shadow),
-    );
+    const planes = viewPlanes(camera.fromEye);
+    this.each(ships, (model, ship, slot) => {
+      const bounds = model.boundsAt(ship.place, camera.eye, ship.rig);
+      if (!bounds || sphereSeen(planes, ...bounds))
+        model.drawInto(pass, ship.place, camera, slot, ship.look, ship.rig, shadow);
+    });
   }
 
   /** Draws a frame's ships' shadows into the cascade of the sun's map being drawn, each in the slot `draw` gives it. */

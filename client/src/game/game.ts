@@ -46,7 +46,7 @@ import { arrivalFacing } from './nodes.ts';
 import { gearScreenOpen, startGearWindow } from './gearWindow.ts';
 import { listenForControls } from './gameKeys.ts';
 import { type OpenWaters, seaWatersOf, watersOnce } from './pageWaters.ts';
-import { nodeOfRoom, seaRoomName } from './rooms.ts';
+import { nodeOfRoom, seaRoomName, startedAtSea } from './rooms.ts';
 import { Sea } from './sea.ts';
 import { sailOrTravel } from './seaTravel.ts';
 import { SeaWord } from './seaWord.ts';
@@ -89,7 +89,7 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement): Promise<vo
   // The activities: the dungeons' ways in and out (each as `goInto` goes), their screens, and the sea's word of gear.
   const { trips, screens, onFoot, heed } = startActivities(world.nodes, link, {
     foot: () => playing.foot,
-    atSea: () => (onTheSea(playing.flow) ? (playing.sea?.gear?.gear ?? null) : null),
+    atSea: () => (onTheSea(playing.flow) ? (playing.sea?.gear?.gear ?? null) : undefined),
     travel: (happening, work) => travel(happening, work),
     module: roomModule,
     intoDungeon: (...into) => goInto(() => Foot.enterDungeon(footContext, ...into)),
@@ -353,7 +353,7 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement): Promise<vo
     if (playing.flow.mode === 'foot' && playing.foot?.fallen)
       return 'You are in their company. Go to them once you respawn.';
     const where = nodeOfRoom(place);
-    const node = where && playing.landmass.nodes.find((each) => each.id === where.id);
+    const node = where && (startedAtSea(place) ? world : playing.landmass).nodes.find((each) => each.id === where.id);
     if (!where || !node)
       return place === 'sea' ? 'They are at sea: meet them where they land.' : 'They are across the sea.';
     const facing = arrivalFacing(node, playing.landmass.plan, null);
@@ -519,7 +519,7 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement): Promise<vo
 
   const respawn = () => (playing.foot ?? playing.sea?.boarding.foot)?.respawn();
 
-  hud.onMark(choose);
+  hud.onMark((id) => (screens.playlist(id) ? undefined : choose(id))); // a Playlist's mark opens its screen
   hud.onRespawn(respawn);
   hud.onPace((direction) => playing.sea?.stepPace(direction));
   hud.onVoyage(stopOrResume);
@@ -593,7 +593,7 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement): Promise<vo
       ...{ builtSloop, closeSource, waterHere, syncMenu, travel, goFoot, isleFrame, groundAt, story, arrive },
       ...{ isles: islesDrawer, eventProps: boot.eventProps },
       ...{ world, music, ambience, dungeons },
-      heed: (here) => heed(here, (why) => travel({ kind: 'shut', why }, goSea)),
+      heed: (here) => heed(here, (why) => travel({ kind: 'shut', why }, goSea), playing.flow.mode === 'foot'),
     },
     playing,
   );

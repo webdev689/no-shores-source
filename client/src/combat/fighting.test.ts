@@ -410,6 +410,7 @@ test('a foe’s two glances are as many ticks apart as the snapshots that brough
     worldStart: 0,
     spells: [],
     public: null,
+    encounter: null,
   });
   fighting.receive(snapshot(10n, 0));
   fighting.receive(snapshot(13n, 0.15));

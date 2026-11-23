@@ -81,6 +81,24 @@ test('a search sends its token once open, hears its own run found once, and says
   assert.deepEqual([stopped.closed, heard.length], [[1000, 'stopped'], 3], 'stopped by the page: nothing heard');
 });
 
+test('a playlist’s search hears a run of its own tier drawn for it, and no other', () => {
+  const heard: string[] = [];
+  const socket = new FakeSocket();
+  const told = { found: (run: string) => heard.push(run), ended: (why: string) => heard.push(why) };
+  findCompany(
+    address,
+    'playlist-abyss',
+    token,
+    told,
+    () => 0,
+    () => socket as never,
+  );
+  socket.fire('message', { data: '{"run":"node-pearl-tomb--elite--playlist-17--run-k3j4h5g6"}' });
+  socket.fire('message', { data: '{"run":"node-pearl-tomb--abyss--run-k3j4h5g6"}' });
+  socket.fire('message', { data: '{"run":"node-pearl-tomb--abyss--playlist-28--run-k3j4h5g6"}' });
+  assert.deepEqual(heard, ['node-pearl-tomb--abyss--playlist-28--run-k3j4h5g6']);
+});
+
 test('the wait reads in minutes and seconds', () => {
   assert.deepEqual(
     [

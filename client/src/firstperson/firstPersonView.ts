@@ -130,6 +130,10 @@ export class FirstPersonView {
       fragment: { module, entryPoint: 'quadFragment', targets: [{ format: gpu.format }] },
       primitive: { topology: 'triangle-list' },
     });
+    void device
+      .createRenderPipelineAsync(this.glowMade())
+      .then((pipeline) => (this.glowPipeline ??= pipeline))
+      .catch(() => undefined);
   }
 
   /** A composed picture as a texture the view can draw. */
@@ -148,12 +152,17 @@ export class FirstPersonView {
     return this.texture(field.data, field.width, field.height);
   }
 
-  /** The outlines' pipeline: blended premultiplied over what is drawn. */
+  /** The outlines' pipeline: blended premultiplied over what is drawn; made off the frame as the view is, so the first
+   *  weapon to glow never waits on it, and at once should it not have come. */
   private glowing(): GPURenderPipeline {
-    if (this.glowPipeline) return this.glowPipeline;
+    this.glowPipeline ??= this.gpu.device.createRenderPipeline(this.glowMade());
+    return this.glowPipeline;
+  }
+
+  private glowMade(): GPURenderPipelineDescriptor {
     const module = this.gpu.device.createShaderModule({ code: GLOW_SHADER });
     const premultiplied = { srcFactor: 'one', dstFactor: 'one-minus-src-alpha', operation: 'add' } as const;
-    this.glowPipeline = this.gpu.device.createRenderPipeline({
+    return {
       layout: this.gpu.device.createPipelineLayout({ bindGroupLayouts: [this.layout] }),
       vertex: { module, entryPoint: 'glowVertex' },
       fragment: {
@@ -162,8 +171,7 @@ export class FirstPersonView {
         targets: [{ format: this.gpu.format, blend: { color: premultiplied, alpha: premultiplied } }],
       },
       primitive: { topology: 'triangle-list' },
-    });
-    return this.glowPipeline;
+    };
   }
 
   /** The uniform slot of the `index`th quad drawn (of `slots`, each `bytes` long), its bind group remade only for a new

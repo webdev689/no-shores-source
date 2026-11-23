@@ -369,13 +369,9 @@ impl Room {
     pub(crate) fn step_foes(&mut self) {
         self.director.step();
         let fighters = self.fighters();
-        // A player just stood again is left be until their grace ends or they strike.
-        let clock = self.clock;
-        let noticed: Vec<(FighterId, Fighter)> = fighters
-            .iter()
-            .filter(|(id, _)| self.players.get(id).is_none_or(|found| found.graced <= clock))
-            .copied()
-            .collect();
+        self.leave_landings();
+        let noticed: Vec<(FighterId, Fighter)> =
+            fighters.iter().filter(|(id, _)| !self.left_be(*id)).copied().collect();
         let intents = self.think_foes(&noticed);
         let (mut crews, mut shouts) = (Vec::new(), Vec::new());
         for (id, (mut brain, intent)) in intents {
@@ -561,8 +557,7 @@ impl Room {
             .verdicts
             .iter()
             .filter_map(|(striker, defender, _)| Some(landed(self.fighter(*striker)?, self.fighter(*defender)?)));
-        let graced = |id: &FighterId| self.players.get(id).is_some_and(|found| found.graced > self.clock);
-        let fighters = self.fighters().into_iter().filter(|(id, _)| !graced(id));
+        let fighters = self.fighters().into_iter().filter(|(id, _)| !self.left_be(*id));
         let runners = fighters.filter_map(|(_, by)| running(&by, self.clock));
         swung.chain(shots).chain(blows).chain(runners).collect()
     }

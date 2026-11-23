@@ -331,7 +331,6 @@ export function charge(holdMs: number): () => void {
   };
 }
 
-/** Hears every press and every control reached in `root`, and plays its tick or its press. */
 /** A drawn press let go that makes no press's sound: a hold, whose own charge is its sound. */
 export function quietPress(): void {
   lastCueAt = performance.now();

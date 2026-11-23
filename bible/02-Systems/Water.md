@@ -16,6 +16,7 @@ code:
   - client/src/water/ripples.ts#RippleField
   - client/src/water/waterView.ts#WaterView
   - client/src/water/waterShader.ts#WATER_SHADER
+  - client/src/water/surfaceDisc.ts#discDraws
   - client/src/editor/landScene.ts#LandScene
   - client/src/water/hullMask.ts#hullInside
 ---
@@ -89,6 +90,19 @@ pixel, where its surface meets the ground there, so it is the land's own line ho
   along a river's channel or a lake's shore however the samples fall, even where the plain lies level with the river.
   It is drawn 5 cm under its level, so a bank at the level shows dry. Where its level would dip under the sea's, it
   is the sea's.
+
+The disc is 220 rings of 192 segments out to the far plane, each quad's vertices bearing the swell's every wave (up
+to 40) and the chop's 12, so a view draws only what it may see of it (`surfaceDisc.ts`). Its rings go in bands of 20,
+the farthest first; a band draws one arc of bearings, in sectors of 4 segments, round past the first segment where it
+must. A sector is left out when its whole wedge, from the band's inner ring to its outer, stands outside one of the
+view's planes by more than the water can move: its height from just under the sea's level to the highest lake's (the
+land's 1 km lakes, or the close-up's water), raised by the swell's waves summed at their crests where the sea stands
+highest and 5 m more for the breakers and wakes, and carried sideways by the waves' sum and 5 m more. A view holding no
+water, as one looking up from inland, draws no surface at all; its sky and haze are drawn whole first, as ever. Near
+the eye a band shows in every bearing; out at sea, looking down at the ship, about a quarter of the disc is drawn. A
+row of the draw is a ring, so within a band the far rings still draw before the near and a near crest covers a far
+one. The water's bind group is made once for the textures it reads and kept until the land, the close-up, the
+shelter or the picture's size changes them, one for each of the ripples' three textures.
 
 ## In the water
 

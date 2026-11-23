@@ -99,6 +99,12 @@ test('a name may not claim to speak for the game, whole or at its start or end',
   assert.equal(refusalOf('motto', 'Support each other.'), null, 'a motto claims no name');
 });
 
+test("a motto holds no mark that hides or turns what others read, as the chat's lines hold none", () => {
+  for (const hidden of ['\u200e', '\u200f', '\u061c', '\u202e', '\u2067', '\u200b', '\ufeff', '\u0007'])
+    assert.notEqual(refusalOf('motto', `Hold${hidden} fast`), null, JSON.stringify(hidden));
+  assert.equal(refusalOf('motto', 'Hold fast, \u{1f468}\u200d\u{1f469}'), null, 'a joiner, for emoji, is kept');
+});
+
 test('names told apart only by look-alike letters share a skeleton', () => {
   for (const name of ['Mar1ner', 'MARlNER', 'Mari_ner', 'Mariner'])
     assert.equal(skeleton(name), skeleton('Mariner'), name);

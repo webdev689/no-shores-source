@@ -273,15 +273,15 @@ pub fn sample_json(request: &[u8]) -> String {
     sampled.unwrap_or_else(|error: String| json!({ "error": error }).to_string())
 }
 
-/// What stands at a sampled point of a patch, beside its water: 3 a road, 4 a town, 5 a port, 0 none (the World
-/// Editor's marks).
+/// How near a port a sampled point of a patch is marked as the port's, metres.
 const PORT_MARK_M: f64 = 25.0;
 /// A patch sample's distance past fresh water's edge where no fresh water is near, metres.
 const FAR_FROM_FRESH_M: f32 = 1.0e6;
 
 /// The open landmass's ground over a grid: `{ "left", "top", "step", "width", "height" }` in metres and samples. A
 /// header, then each sample's height, its water's surface (0 where dry) and how far past fresh water's edge it lies
-/// (FAR_FROM_FRESH_M where none is near) as f32, then its mark as a byte.
+/// (FAR_FROM_FRESH_M where none is near) as f32, then its mark as a byte: what stands there, 3 a road, 4 a town, 5 a
+/// port, 0 none (the World Editor's marks).
 #[must_use]
 pub fn patch_view(request: &[u8]) -> Vec<u8> {
     let sampled = read(request).and_then(|request| {

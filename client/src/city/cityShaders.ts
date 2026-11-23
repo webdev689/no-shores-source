@@ -16,6 +16,17 @@ import { SOLID_TEXELS_PER_METRE } from './solidMesh.ts';
  *  distance, so its terraces win over the land's coarser rings and its pads' own ground. */
 export const PULL_M = 0.05;
 export const PULL_SHARE = 0.012;
+
+/** The pull as WGSL: a point measured from the eye, at world height `z`, moved nearer along its line from the eye,
+ *  nearer in depth only and only above the sea, so what stands under the water stays under it. The figures standing
+ *  on the city are pulled as its ground is, so a foot keeps its place on the ground it stands on. */
+export const PULL_WGSL = /* wgsl */ `
+fn pulled(offset: vec3f, z: f32) -> vec3f {
+  let distance = max(length(offset), 1e-3);
+  let pull = (${PULL_M} + ${PULL_SHARE} * distance) * smoothstep(-1.0, 1.0, z);
+  return offset * max(0.5, 1.0 - pull / distance);
+}
+`;
 /** How far under its level a plate is drawn. */
 const PLATE_DROP_M = 0.03;
 /** How dark a ruin's walls are scorched at their break: a share of their light taken. */
@@ -78,12 +89,9 @@ const TIER_HULLS = 4u;
 const TIER_CRYSTAL = 8u;
 const BAYER = array<f32, 16>(0.0, 8.0, 2.0, 10.0, 12.0, 4.0, 14.0, 6.0, 3.0, 11.0, 1.0, 9.0, 15.0, 7.0, 13.0, 5.0);
 
+${PULL_WGSL}
 fn clip_of(point: vec3f) -> vec4f {
-  let offset = point - view.eye.xyz;
-  let distance = max(length(offset), 1e-3);
-  // nearer in depth only, and only above the sea, so what stands under the water stays under it
-  let pull = (${PULL_M} + ${PULL_SHARE} * distance) * smoothstep(-1.0, 1.0, point.z);
-  return view.from_eye * vec4f(offset * max(0.5, 1.0 - pull / distance), 1.0);
+  return view.from_eye * vec4f(pulled(point - view.eye.xyz, point.z), 1.0);
 }
 
 // How far a cell has turned from whole to masses, and from masses to hulls, by the eye's distance to its middle.

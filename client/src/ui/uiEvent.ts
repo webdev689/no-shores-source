@@ -1,6 +1,7 @@
 // What the interface hears and hands back, as plain data: the page's input (`canvasEvents.ts`, or a worker's relay)
 // as events, and the field being typed in, for the page's typing.
 import type { FieldState } from './field.ts';
+import type { Laid } from './node.ts';
 import type { Box } from './quads.ts';
 
 /** A pad's button as a window hears it: the cross, A, B, the bumpers (which turn a window's tabs), Y (the right
@@ -50,6 +51,13 @@ export type UiEvent =
   | { readonly kind: 'pad'; readonly button: PadButton; readonly up?: boolean }
   | { readonly kind: 'stick'; readonly x: number; readonly y: number; readonly scroll: number };
 
+/** An event from the page in the interface's pixels, `inward` of them to a CSS pixel: where a pointer is, and how far
+ *  a wheel turned. */
+export function inwardOf(event: UiEvent, inward: number): UiEvent {
+  if (event.kind === 'wheel') return { ...event, x: event.x * inward, y: event.y * inward, dy: event.dy * inward };
+  return 'x' in event ? { ...event, x: event.x * inward, y: event.y * inward } : event;
+}
+
 /** The field being typed in, for the page's typing: its words, caret and selection, and its box in the page's CSS
  *  pixels. */
 export interface Typing {
@@ -59,4 +67,12 @@ export interface Typing {
   readonly box: Box;
   /** Typed on the keys the game draws, not the page's own typing. */
   readonly onScreen?: boolean;
+}
+
+/** Field `laid`, holding `state`, as the page's typing reads it: its box in the page's CSS pixels, `inward` the
+ *  interface's pixels a CSS pixel. */
+export function typingOf(laid: Laid, state: FieldState, inward: number, onScreen: boolean): Typing {
+  const { x, y, width, height } = laid.box;
+  const box = { x: x / inward, y: y / inward, width: width / inward, height: height / inward };
+  return { id: laid.node.id ?? '', state, secret: Boolean(laid.node.field?.secret), box, onScreen };
 }

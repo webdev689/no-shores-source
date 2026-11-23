@@ -119,7 +119,7 @@ pub fn dungeon_json(text: &[u8]) -> String {
     let glows: Vec<[f64; 4]> = laid.landmarks.iter().flat_map(|placed| placed.glows.iter().copied()).collect();
     let frames: Vec<[f64; 3]> =
         laid.frames.iter().map(|frame| [frame.cell as f64, f64::from(side_number(frame.side)), frame.height]).collect();
-    json!({
+    let layout = json!({
         "name": name,
         "style": style.key,
         "pictures": style.pictures,
@@ -153,8 +153,55 @@ pub fn dungeon_json(text: &[u8]) -> String {
         "props": props,
         "landmarks": landmarks,
         "glows": glows,
+    });
+    // An Elite Dungeon's encounters, laid by the room's own rules from the same dungeon.
+    let mut layout = layout;
+    if found.place.is_some() {
+        layout["encounters"] = encounters_json(&room::encounter_plan::plan_encounters(&laid));
+    }
+    layout.to_string()
+}
+
+/// An Elite Dungeon's encounters as JSON: each seal's kind (1 the Litany, 2 the Weighing, 3 the Ascent, 4 the
+/// Holdfast), its room, its pieces (x, y, z: runes in the order they light, plates, the seal stone or the relic), its
+/// pads (min x, min y, max x, max y, top), the cells its drowned floor covers and its doorways' middles; the Court's
+/// anchors (x, y, z); and how near a piece's middle a player stands on it, and how far round the warded Boss its slam
+/// reaches (m), as the room judges it.
+fn encounters_json(plan: &room::encounter_plan::EncounterPlan) -> Value {
+    let seals: Vec<Value> = plan
+        .seals
+        .iter()
+        .map(|seal| {
+            let pads: Vec<[f64; 5]> =
+                seal.pads.iter().map(|pad| [pad.min_x, pad.min_y, pad.max_x, pad.max_y, pad.top]).collect();
+            json!({
+                "kind": seal.kind as u8,
+                "room": seal.room,
+                "pieces": seal.pieces,
+                "pads": pads,
+                "drowned": seal.drowned,
+                "doors": seal.doors,
+            })
+        })
+        .collect();
+    json!({
+        "seals": seals,
+        "anchors": plan.anchors,
+        "reach": {
+            "rune": room::encounters::seals::RUNE_REACH_M,
+            "plate": room::encounters::seals::PLATE_REACH_M,
+            "relic": room::encounter_plan::RELIC_RING_M,
+            "anchor": room::encounters::court::ANCHOR_REACH_M,
+            "light": room::encounters::court::LIGHT_REACH_M,
+            "slam": room::encounters::court::SLAM_M,
+        },
     })
-    .to_string()
+}
+
+/// The pads an ask's dungeon's Ascents stand, the blocks a body climbs in it: an Elite Dungeon's, none for any other.
+pub(crate) fn pads_of(text: &[u8], laid: &Dungeon) -> Vec<movement::Block> {
+    let placed = serde_json::from_slice::<Asked>(text).is_ok_and(|asked| asked.place.is_some());
+    if placed { room::encounter_plan::plan_encounters(laid).pads() } else { Vec::new() }
 }
 
 /// Opens the room of a patrol's dungeon by its number, from the patrol's node file's text: its garrison at the patrol's
@@ -255,6 +302,48 @@ mod tests {
             .flat_map(|ask| dungeon_json(ask).into_bytes())
             .fold(0xcbf2_9ce4_8422_2325_u64, |hash, byte| (hash ^ u64::from(byte)).wrapping_mul(0x0100_0000_01b3));
         assert_eq!(format!("{hash:016x}"), format!("{AGREED_HASH:016x}"));
+    }
+
+    /// Every Elite Dungeon's ask, as the browser's agreement test makes them too.
+    fn elite_asks() -> Vec<String> {
+        gear::activities::elite_dungeons()
+            .map(|elite| format!(r#"{{"place":"{}","name":"{}"}}"#, elite.id, elite.id))
+            .collect()
+    }
+
+    /// The 18 answers laid natively, each with its encounters, written for the browser's agreement test
+    /// (client/src/rules/dungeonRules.test.ts), which lays them through WebAssembly and compares them field by field.
+    #[test]
+    fn every_elite_dungeon_answers_its_encounters_and_writes_them_for_the_browser() {
+        let asks = elite_asks();
+        assert_eq!(asks.len(), 18);
+        let answers: Vec<Value> =
+            asks.iter().map(|ask| serde_json::from_str(&dungeon_json(ask.as_bytes())).unwrap()).collect();
+        let folder = concat!(env!("CARGO_MANIFEST_DIR"), "/../../target/room-wasm");
+        std::fs::create_dir_all(folder).unwrap();
+        std::fs::write(format!("{folder}/elite_layouts.json"), Value::from(answers).to_string()).unwrap();
+        for ask in &asks {
+            let laid: Value = serde_json::from_str(&dungeon_json(ask.as_bytes())).unwrap();
+            let seals = laid["encounters"]["seals"].as_array().unwrap();
+            assert!((2..=3).contains(&seals.len()), "{ask}");
+            assert_eq!(laid["encounters"]["anchors"].as_array().unwrap().len(), 3);
+        }
+        let patrol: Value = serde_json::from_str(&dungeon_json(AGREED_ASKS[0])).unwrap();
+        assert!(patrol.get("encounters").is_none(), "a patrol's dungeon has none");
+    }
+
+    #[test]
+    fn an_elite_dungeons_ground_predicts_on_its_ascents_pads_and_a_patrols_on_none() {
+        let climbs = elite_asks().into_iter().find(|ask| {
+            let laid: Value = serde_json::from_str(&dungeon_json(ask.as_bytes())).unwrap();
+            laid["encounters"]["seals"].as_array().unwrap().iter().any(|seal| seal["kind"] == 3)
+        });
+        let climbs = climbs.expect("an Elite Dungeon with an Ascent");
+        assert!(crate::fighter_door::set_dungeon(climbs.as_bytes()));
+        let pads = crate::fighter_door::COURSE.with(|course| movement::Near::all(&*course.borrow()).len());
+        assert!(pads >= room::encounter_plan::ASCENT_PADS.0, "its pads: {pads}");
+        assert!(crate::fighter_door::set_dungeon(AGREED_ASKS[0]));
+        assert_eq!(crate::fighter_door::COURSE.with(|course| movement::Near::all(&*course.borrow()).len()), 0);
     }
 
     /// A JSON object's keys, in order.

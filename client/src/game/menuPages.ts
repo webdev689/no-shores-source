@@ -1,17 +1,18 @@
 // The menu's pages that need no gear, drawn by the game: Guild, still to come and saying so; the Sloop's papers as
-// Manage shows them (`shipPages.ts` puts its power and crew beside them); and Settings, which keeps the account and the
-// volumes of the interface and the world. And the parts they share with the Roster: a heading over its rule, a faint
-// hint and an answer.
+// Manage shows them (`shipPages.ts` puts its power and crew beside them); and Settings, which keeps the account, the
+// world's resolution and the volumes of the interface and the world. And the parts they share with the Roster: a
+// heading over its rule, a faint hint and an answer.
 
 import type { Child, Node } from '../ui/node.ts';
 import { PAGE, type Page } from '../ui/page.ts';
-import { slider } from '../ui/controls.ts';
+import { choice, slider } from '../ui/controls.ts';
 import type { AccountPanel } from './accountTab.ts';
 import { drawings, ruleUnder, strip } from './hudParts.ts';
 import { INK, type Sizes, words } from './gearNodes.ts';
 import type { PlainContext } from './menuPage.ts';
 import type { ShipPanel } from './shipPanel.ts';
 import { soundCredits } from '../soundSamples.ts';
+import { RESOLUTIONS, resolution, setResolution } from './renderScale.ts';
 import {
   ambienceVolume,
   interfaceVolume,
@@ -142,14 +143,43 @@ export function shipPart(heading: string, rows: readonly (readonly [string, stri
   };
 }
 
-/** The Settings page: the account, or why there is none, the players blocked, and the volumes. */
+/** The Settings page: the account, or why there is none, the players blocked, the world's resolution, and the
+ *  volumes. */
 export function settingsPage(context: PlainContext, account: AccountPanel | null, page: Page = PAGE): Node {
   return pagePanel('page-settings', context.sizes.name > 1 ? 880 : 640, [
     headingNode('Account'),
     { height: 10 },
     ...(account ? account.nodes(context) : [hintNode('Playing offline: there is no account.')]),
+    picturePanel(context),
     soundPanel(context, page),
   ]);
+}
+
+/** The resolution the world is drawn at, Auto or a share of the screen's, kept in this browser. */
+function picturePanel({ ui }: PlainContext): Node {
+  const { node, chosen } = choice(ui, 'resolution', resolution(), RESOLUTIONS);
+  if (chosen !== resolution()) setResolution(chosen);
+  const said = RESOLUTIONS.find((option) => option.value === chosen)?.words ?? chosen;
+  return {
+    width: 'grow',
+    direction: 'column',
+    padding: [18, 0, 0, 0],
+    gap: 6,
+    children: [
+      headingNode('Picture'),
+      { height: 4 },
+      {
+        width: 'grow',
+        gap: 14,
+        alignY: 'center',
+        children: [
+          { minWidth: 99, ...words('Resolution', 1, INK.word) },
+          { ...node, label: `Resolution, ${said}` },
+        ],
+      },
+      hintNode('Auto lowers the resolution while the game runs slow. The interface stays sharp.'),
+    ],
+  };
 }
 
 /** The volumes of the interface, the world, the music and the ambience, each from silent to full, kept in this

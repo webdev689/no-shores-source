@@ -5,7 +5,7 @@ import type { DungeonLayout } from './dungeonLayout.ts';
 import type { PropTable } from '../models/tables.ts';
 import { EVENT } from '../combat/cues.ts';
 import type { FightEvent } from '../network/messages.ts';
-import { dungeonPlace, Entrances, heardRun, openAlone, roomNameAt, tripAt, type Trips } from './footTrips.ts';
+import { dungeonPlace, Entrances, heardRun, openAlone, roomNameAt, takeWipe, tripAt, type Trips } from './footTrips.ts';
 import { RoomThread } from '../network/roomThread.ts';
 import { WORLD_CLOCK, roomNow } from '../sky/worldClock.ts';
 import type { NodeInfo } from './worldData.ts';
@@ -93,13 +93,16 @@ test("a point is named for the dungeon's room it stands in, and nothing in a cor
 });
 
 test('an Abyss run’s revives are heard from each snapshot, and its wipe once it names this player', () => {
-  const held = { revives: -1, wiped: false };
-  heardRun(held, { revives: 5, events: [] }, 7);
-  assert.deepEqual(held, { revives: 5, wiped: false });
-  heardRun(held, { revives: 5, events: [{ kind: EVENT.wiped, defender: 8 } as FightEvent] }, 7);
+  const held = { revives: -1, wiped: false, encounter: null };
+  heardRun(held, { revives: 5, events: [], encounter: null }, 7);
+  assert.deepEqual(held, { revives: 5, wiped: false, encounter: null });
+  heardRun(held, { revives: 5, events: [{ kind: EVENT.wiped, defender: 8 } as FightEvent], encounter: null }, 7);
   assert.equal(held.wiped, false, 'another player’s word');
-  heardRun(held, { revives: 5, events: [{ kind: EVENT.wiped, defender: 7 } as FightEvent] }, 7);
+  heardRun(held, { revives: 5, events: [{ kind: EVENT.wiped, defender: 7 } as FightEvent], encounter: null }, 7);
   assert.equal(held.wiped, true);
+  assert.equal(takeWipe(held, false), false, 'heard behind a veil, which refuses the way out: it waits');
+  assert.equal(takeWipe(held, true), true, 'taken on foot');
+  assert.equal(takeWipe(held, true), false, 'once');
 });
 
 test("a run played alone opens on the minute by the rooms' clock, not a page clock that is wrong", async () => {

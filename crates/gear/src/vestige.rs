@@ -9,6 +9,7 @@ use crate::element;
 use crate::item::{Item, NAMED_LEVEL};
 use crate::kinds::{Kind, Slot};
 use crate::rarity::Rarity;
+use crate::source::Source;
 
 /// The foe level from which a Legendary may drop, and an Atheric.
 pub const LEGENDARY_FROM: u8 = 18;
@@ -111,14 +112,14 @@ pub fn of_colours(weights: [u32; 5], foe_level: u8, dice: &Dice) -> (Rarity, Slo
 /// row and opened as a Vestige of that colour would be, for any slot, at the foe's level, numbered 0 until kept. Rolled
 /// on dice apart from the kill's Vestiges, so the two never move together.
 #[must_use]
-pub fn found_items(chance: f64, rank: u8, foe_level: u8, dice: &Dice) -> Vec<Item> {
+pub fn found_items(chance: f64, rank: u8, foe_level: u8, source: Source, dice: &Dice) -> Vec<Item> {
     let dice = Dice { seed: dice.seed ^ ITEM_STREAM, ..*dice };
     dropped(chance, rank, foe_level, &dice)
         .into_iter()
         .zip(0..)
         .filter_map(|((colour, slot, level), nth)| {
             let dice = nth_dice(&dice, nth);
-            make(0, opens_to(colour, level, &dice), slot, level, &dice)
+            make(0, opens_to(colour, level, &dice), slot, level, source, &dice)
         })
         .collect()
 }
@@ -130,17 +131,22 @@ pub fn opens_to(colour: Rarity, level: u8, dice: &Dice) -> Rarity {
     Rarity::ALL[dice.weighted(Purpose::Opens, 0, &gated(OPENS[colour as usize], level))]
 }
 
-/// The item a Vestige of this slot and level makes at this rarity, numbered `id`: a named one of its slot, chosen
-/// evenly, at level 20; or a lesser item of a kind the slot takes, its name and traits rolled. A weapon may roll an
-/// element.
+/// The item a Vestige of this slot and level from `source` makes at this rarity, numbered `id`: a named one of its
+/// slot, chosen evenly among its source's, else among every source's while its own has none, at level 20, keeping its
+/// own source; or a lesser item of a kind the slot takes, its name and traits rolled, from `source`. A weapon may roll
+/// an element.
 #[must_use]
-pub fn make(id: u32, rarity: Rarity, slot: Slot, level: u8, dice: &Dice) -> Option<Item> {
+pub fn make(id: u32, rarity: Rarity, slot: Slot, level: u8, source: Source, dice: &Dice) -> Option<Item> {
     let mut item = if rarity.named() {
-        let pool: Vec<&NamedDef> = catalogue().vestige_pool(rarity, slot).collect();
+        let every: Vec<&NamedDef> = catalogue().vestige_pool(rarity, slot).collect();
+        let own: Vec<&NamedDef> = every.iter().copied().filter(|named| named.source() == source).collect();
+        let pool = if own.is_empty() { every } else { own };
         named_item(id, pool.get(dice.pick(Purpose::Which, 0, pool.len()))?, slot)
     } else {
         let kinds: Vec<Kind> = slot.kinds().collect();
-        rolled(id, *kinds.get(dice.pick(Purpose::Which, 0, kinds.len()))?, rarity, slot, level, dice)
+        let mut item = rolled(id, *kinds.get(dice.pick(Purpose::Which, 0, kinds.len()))?, rarity, slot, level, dice);
+        item.source = source;
+        item
     };
     item.element = element::rolled(item.kind, item.rarity, dice);
     Some(item)
@@ -160,6 +166,7 @@ pub fn named_item(id: u32, named: &NamedDef, bucket: Slot) -> Item {
         .and_then(|resource| catalogue().resource_index(resource))
         .and_then(|index| u8::try_from(index).ok());
     item.breach = named.breach;
+    item.source = named.source();
     item
 }
 

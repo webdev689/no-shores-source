@@ -6,9 +6,10 @@ use crate::lore_wire::FIND_LORE;
 use crate::messages;
 use flatbuffers::{FlatBufferBuilder, WIPOffset};
 use gear::arts::ArtAsk;
-use gear::item::NONE_CHOSEN;
-use gear::{Ask, At, Item, Kind, Rarity, Slot};
+use gear::{Ask, At, Kind, Rarity, Slot};
 use room::{Asked, Drop, Dropped, Grant, PlayerId, Room};
+
+pub(crate) use crate::item_wire::{column_number, item_offset};
 
 /// The asks, by the number an input sends.
 pub const WEAR: u8 = 1;
@@ -347,71 +348,6 @@ pub fn at_number(at: At) -> u8 {
     }
 }
 
-/// A column's kind as the gear message numbers it.
-pub(crate) fn column_number(column: gear::grid::Column) -> u8 {
-    match column {
-        gear::grid::Column::Upgrade => 0,
-        gear::grid::Column::Handling(_) => 1,
-        gear::grid::Column::Finish(_) => 2,
-        gear::grid::Column::Perk(_) => 3,
-        gear::grid::Column::Signature => 4,
-    }
-}
-
-pub(crate) fn item_offset<'built>(
-    builder: &mut FlatBufferBuilder<'built>,
-    item: &Item,
-    at: At,
-    price: u32,
-) -> WIPOffset<messages::GearItem<'built>> {
-    let columns: Vec<_> = item
-        .columns()
-        .iter()
-        .enumerate()
-        .map(|(index, column)| {
-            let names: Vec<_> = item.traits_of(index).iter().map(|id| builder.create_string(id)).collect();
-            let traits = Some(builder.create_vector(&names));
-            let cost = item.cost_of(index);
-            let args = messages::GearColumnArgs {
-                kind: column_number(*column),
-                traits,
-                xp: gear::grid::column_xp(item.rarity, index),
-                aurem: cost.aurem,
-                fragments: cost.fragments,
-                essence: cost.essence,
-                resource: cost.resource,
-            };
-            messages::GearColumn::create(builder, &args)
-        })
-        .collect();
-    let columns = Some(builder.create_vector(&columns));
-    let named = item.named.as_deref().map(|named| builder.create_string(named));
-    let args = messages::GearItemArgs {
-        id: item.id,
-        kind: item.kind as u8,
-        rarity: item.rarity as u8,
-        level: item.level,
-        named,
-        name: item.name,
-        resource: item.resource.unwrap_or(NONE_CHOSEN),
-        breach: item.breach,
-        xp: item.xp,
-        xp_most: item.xp_most(),
-        bought: item.bought,
-        chosen: Some(builder.create_vector(&item.chosen)),
-        bucket: item.bucket as u8,
-        at: at_number(at),
-        attack: item.attack().unwrap_or(0),
-        defense: item.defense().unwrap_or(0),
-        prestige: item.prestige(),
-        columns,
-        price,
-        element: item.element.map_or(0, |element| element as u8),
-        story: item.story,
-    };
-    messages::GearItem::create(builder, &args)
-}
-
 /// A player's own gear, as the room sends it to them alone; none for a player the room does not hold.
 #[must_use]
 pub fn gear_bytes(room: &Room, player: PlayerId) -> Option<Vec<u8>> {
@@ -423,25 +359,6 @@ pub fn gear_bytes(room: &Room, player: PlayerId) -> Option<Vec<u8>> {
     let items: Vec<_> = character.items.values().map(|(item, at)| item_offset(&mut builder, item, *at, 0)).collect();
     let emblems: Vec<u16> = character.emblems.iter().filter_map(|id| gear::emblems::number_of(id)).collect();
     let emblems_sold = if room.in_social_space(player) { gear::emblems::sold_on(room.day()) } else { Vec::new() };
-    // In a social space, each vendor's stock in turn, the day's wares then the starter stock, each numbered by its
-    // place in its vendor's.
-    let wares: Vec<_> = if room.in_social_space(player) {
-        gear::vendor::Vendor::ALL
-            .into_iter()
-            .flat_map(|vendor| {
-                let level = if vendor.for_ship() { character.ship_level() } else { character.level() };
-                gear::vendor::stock(vendor, room.day(), level).into_iter().enumerate()
-            })
-            .map(|(place, mut ware)| {
-                ware.id = u32::try_from(place).unwrap_or_default();
-                let price = gear::vendor::price(ware.rarity);
-                item_offset(&mut builder, &ware, At::Carried, price)
-            })
-            .collect()
-    } else {
-        Vec::new()
-    };
-    let wares = Some(builder.create_vector(&wares));
     let items = Some(builder.create_vector(&items));
     let vestiges: Vec<_> = character
         .vestiges
@@ -453,6 +370,7 @@ pub fn gear_bytes(room: &Room, player: PlayerId) -> Option<Vec<u8>> {
                 slot: vestige.slot as u8,
                 level: vestige.level,
                 vaulted: *vaulted,
+                source: vestige.source as u8,
             };
             messages::GearVestige::create(&mut builder, &args)
         })
@@ -522,7 +440,7 @@ pub fn gear_bytes(room: &Room, player: PlayerId) -> Option<Vec<u8>> {
         identified: found.identified,
         answered: found.answered,
         nodes: Some(builder.create_vector(&nodes)),
-        wares,
+        wares: Some(more.wares),
         trim: Some(builder.create_vector(&found.trim.to_floats())),
         to_next,
         to_next_needs,
@@ -587,6 +505,11 @@ pub fn gear_bytes(room: &Room, player: PlayerId) -> Option<Vec<u8>> {
         lore: Some(crate::lore_wire::found_of(&mut builder, room, player)),
         lore_here: Some(crate::lore_wire::here_of(&mut builder, room, player)),
         recharge: room.recharge_times(),
+        next_id: character.id_to_take(),
+        elite_playlist_taken: today.elite_playlist,
+        abyss_playlist_taken: today.abyss_playlist,
+        elite_playlist_clears: this_week.elite_playlist,
+        abyss_playlist_clears: this_week.abyss_playlist,
     };
     let gear = messages::Gear::create(&mut builder, &args);
     let message =

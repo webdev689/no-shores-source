@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import { readFile } from 'node:fs/promises';
 import { test } from 'node:test';
 import items from '../../../content/gear/items.json' with { type: 'json' };
 import rolled from '../../../content/gear/rolled.json' with { type: 'json' };
@@ -10,6 +11,7 @@ import type { GearItem } from '../network/gearMessages.ts';
 import { item, state } from '../network/gearForTests.ts';
 import { wardrobeOf } from './dressing.ts';
 import { KINDS, MELEE, RANGED_SLOT, WORN, slotOf, writtenLook } from './gear.ts';
+import { SOURCES } from './sourceLooks.ts';
 import { gearOutfit } from './gearLooks.ts';
 
 /** Every layer of a fitted body, by the moves it is drawn in, as the page loads a body's layers. */
@@ -49,21 +51,38 @@ function held() {
     id: 1,
     name: 0,
     level: 20,
+    source: Math.max(
+      SOURCES.findIndex((source) => 'source' in each && source.key === each.source),
+      0,
+    ),
   }));
+  // A rolled piece is drawn in its content's looks, so it is rolled in every content.
   const rolls = Object.entries(rolled.names).flatMap(([kind, names]) =>
     RARITIES.flatMap((rarity, number) =>
       (names as Record<string, readonly string[]>)[rarity]!.flatMap((unused, name) =>
         NUMBERS.flatMap((id) =>
-          LEVELS.map((level) => ({ kind: KINDS.indexOf(kind as never), rarity: number, name, id, level })),
+          LEVELS.flatMap((level) =>
+            SOURCES.map((unused, source) => ({
+              kind: KINDS.indexOf(kind as never),
+              rarity: number,
+              name,
+              id,
+              level,
+              source,
+            })),
+          ),
         ),
       ),
     ),
   );
   const rarityOf = (id: string) =>
     ['normal', 'magic', 'rare', 'legendary', 'atheric'].indexOf(items.items.find((each) => each.id === id)!.rarity);
+  // The prologue's own pieces, Normal and of level 1, each kind it lends.
+  const story = KINDS.map((unused, kind) => ({ kind, rarity: 0, name: 0, id: 1, level: 1, source: 0, story: true }));
   return [
     ...named.filter((each) => each.kind > 0).map((each) => ({ ...each, rarity: rarityOf(each.named) })),
     ...rolls.filter((each) => each.kind > 0),
+    ...story.filter((each) => each.kind > 0),
   ];
 }
 
@@ -117,4 +136,70 @@ test('each named piece wears its own look and make, its shield too', () => {
       if (own) assert.ok(layer.includes(make), `${each.id}: ${layer}, ${make}`);
     }
   }
+});
+
+const ROOM = new URL('../../../target/wasm32-unknown-unknown/release/room_wasm.wasm', import.meta.url);
+const room = new WebAssembly.Instance(
+  new WebAssembly.Module(
+    await readFile(ROOM).catch(() => {
+      throw new Error('room_wasm.wasm is not built: run `npm run wasm` first');
+    }),
+  ),
+  {},
+).exports as unknown as {
+  readonly memory: WebAssembly.Memory;
+  reserve(length: number): number;
+  release(address: number, length: number): void;
+  room_dressed(address: number, length: number): bigint;
+};
+/** A dress for a figure wearing `worn`, as the room lets others see it (`gear::cosmetics::dressed`). */
+function dressedByRoom(dress: string, worn: object): string {
+  const bytes = new TextEncoder().encode(JSON.stringify({ dress, worn: [worn] }));
+  const lent = room.reserve(bytes.length);
+  new Uint8Array(room.memory.buffer, lent, bytes.length).set(bytes);
+  const packed = room.room_dressed(lent, bytes.length);
+  room.release(lent, bytes.length);
+  const [address, length] = [Number(packed >> 32n), Number(packed & 0xffff_ffffn)];
+  const answer = new TextDecoder().decode(new Uint8Array(room.memory.buffer, address, length));
+  room.release(address, length);
+  return answer;
+}
+const RARITY_KEYS = ['normal', 'magic', 'rare', 'legendary', 'atheric'];
+
+test('the room keeps every armour and weapon layer the page dresses any item in, on either body', () => {
+  const refused: string[] = [];
+  for (const [body, drawn] of Object.entries(BODIES)) {
+    wardrobe = wardrobeOf(body, drawn);
+    const asked = new Set<string>();
+    for (const fields of held()) {
+      const slot = slotOf(fields.kind);
+      const loadout = slot === RANGED_SLOT ? RANGED_SLOT : MELEE;
+      const { armour, right, left } = gearOutfit(
+        state({ items: [item({ ...fields, at: WORN + slot })] }),
+        wardrobe,
+        plain,
+        loadout,
+      );
+      const worn = {
+        kind: KINDS[fields.kind],
+        rarity: RARITY_KEYS[fields.rarity],
+        source: SOURCES[fields.source]!.key,
+        level: fields.level,
+        name: fields.name,
+        named: 'named' in fields ? fields.named : null,
+        story: 'story' in fields && fields.story,
+      };
+      const shown = { armour, right, left };
+      const key = JSON.stringify([worn, shown]);
+      if (asked.has(key)) continue;
+      asked.add(key);
+      const kept = JSON.parse(dressedByRoom(JSON.stringify({ body, outfit: shown }), worn)).outfit;
+      // The room writes the armour's pieces in its own order.
+      const same = (armour: object) => JSON.stringify(Object.entries(armour).sort());
+      if (same(kept.armour) !== same(armour) || kept.right !== right || kept.left !== left)
+        refused.push(`${body} ${key} kept as ${JSON.stringify(kept)}`);
+    }
+  }
+  wardrobe = wardrobeOf('male', layers);
+  assert.deepEqual(refused.slice(0, 10), [], `${refused.length} dresses the room refuses`);
 });

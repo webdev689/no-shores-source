@@ -2,14 +2,28 @@ import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { SLOOP_HULL } from './hulls.ts';
 import { RETRY_MS, ShipModels } from './shipModels.ts';
-import type { ShipView } from './shipView.ts';
+import { standIns } from '../standIns.ts';
+import type { ShipPlace, ShipView } from './shipView.ts';
 
-/** A model that records the slot each ship is drawn in. */
+/** A model that records the slot each ship is drawn in; its bounds a metre round its place, measured from the eye. */
 const viewOf = (slots: number[]) =>
-  ({ drawInto: (...args: unknown[]) => slots.push(args[3] as number) }) as unknown as ShipView;
+  ({
+    drawInto: (...args: unknown[]) => slots.push(args[3] as number),
+    boundsAt: (place: ShipPlace, eye: readonly number[]) => [
+      place.x - (eye[0] ?? 0),
+      place.y - (eye[1] ?? 0),
+      place.z - (eye[2] ?? 0),
+      1,
+    ],
+  }) as unknown as ShipView;
 const settled = () => new Promise((done) => setTimeout(done, 0));
-const PLACE = { x: 0, y: 0, z: 0, heading: 0, pitch: 0, roll: 0 };
-const CAMERA = { fromEye: new Float32Array(16), eye: [0, 0, 0] as const };
+/** At the eye, looking level to the north (-y), its depth reversed as the game's: 1 at 0.1 m, 0 at 1 km. Column by
+ *  column, what east, south and up add to the clip point's across, up, depth and distance ahead. */
+const CAMERA = {
+  fromEye: Float32Array.from([1, 0, 0, 0, 0, 0, 0.1 / 999.9, -1, 0, 1, 0, 0, 0, 0, 100 / 999.9, 0]),
+  eye: [0, 0, 0] as const,
+};
+const PLACE = { x: 0, y: -50, z: 0, heading: 0, pitch: 0, roll: 0 };
 
 test("each hull's model is fetched once, and a hull still coming is shown as the Sloop", async () => {
   const opened: number[] = [];
@@ -17,11 +31,14 @@ test("each hull's model is fetched once, and a hull still coming is shown as the
     opened.push(hull);
     return viewOf([]);
   });
+  standIns();
   assert.equal(models.shown(3), SLOOP_HULL, 'the Frigate is the Sloop until its own comes');
+  assert.deepEqual(standIns(), ['hulls'], 'standing in for it');
   models.model(3);
   await models.load(3);
   models.model(3);
   assert.equal(models.shown(3), 3, 'and its own once it has');
+  assert.deepEqual(standIns(), [], 'nothing in its place');
   assert.deepEqual(opened, [3]);
 });
 
@@ -40,6 +57,9 @@ test('a failed fetch is said once and tried again from a later frame, waiting lo
   );
   models.model(2);
   await settled();
+  standIns();
+  assert.equal(models.shown(2), SLOOP_HULL);
+  assert.deepEqual(standIns(), [], 'a hull that failed holds up no veil while it waits to be tried again');
   clock = RETRY_MS.first - 1;
   models.model(2);
   await settled();
@@ -91,4 +111,19 @@ test("a failure a caller of load waited on is the caller's to say, never said ag
   await assert.rejects(models.load(1));
   await settled();
   assert.equal(said.length, 0);
+});
+
+test('a ship out of view is not drawn, and the next of its hull still takes the slot after it', async () => {
+  const slots: number[] = [];
+  const models = new ShipModels(async () => viewOf(slots));
+  await models.load(0);
+  // A ship this far north of the eye, ahead of it; a negative distance puts it behind.
+  const ahead = (metres: number) => ({
+    hull: 0,
+    place: { ...PLACE, y: -metres },
+    rig: null,
+    look: { side: 'tithe' as const },
+  });
+  models.draw({} as GPURenderPassEncoder, [ahead(50), ahead(-50), ahead(80)], CAMERA);
+  assert.deepEqual(slots, [0, 2], 'the one behind the eye is left out, its slot kept');
 });

@@ -3,7 +3,7 @@ type: system
 status: live
 code:
   - client/src/heldmap/heldMap.ts#HeldMap
-  - client/src/heldmap/heldMap.ts#layoutKey
+  - client/src/heldmap/heldMapKept.ts#layoutKey
   - client/src/heldmap/heldMapAsk.ts#MapAsk
   - client/src/heldmap/heldMapAsk.ts#litCells
   - client/src/heldmap/heldMapAsk.ts#WaterJudge

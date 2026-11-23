@@ -133,8 +133,9 @@ pub fn sense(brain: &mut Brain, here: &Here<'_, '_>, board: &Board) -> Option<Si
         return Some(sight);
     }
     let mut seen = in_sight(here);
-    // One its routes cannot reach stirs it not at all, so it never searches toward ground it has no way to.
-    seen.retain(|(_, _, other, _)| reachable(brain, here, other));
+    // One on ground its routes cannot reach stirs it not at all, so it never searches toward ground it has no way to;
+    // unless its leash lets it fight them there, close by.
+    seen.retain(|(_, _, other, _)| reachable(brain, here, other) || within(brain, here, other));
     let glimpse = seen.iter().map(|(_, _, other, gain)| (*gain, feet(other))).fold(None, strongest);
     let glimpse = stirring(here).fold(glimpse, strongest);
     stir(brain, here, glimpse, &heard);
@@ -166,17 +167,20 @@ pub(crate) fn feet(fighter: &Fighter) -> [f64; 3] {
 }
 
 /// Its target kept: seen, its place noted; or hunted where it was last seen for a while (a blow from out of sight shows
-/// where it came from). Past that, or once it falls, let go, its last place kept to search.
+/// where it came from), and by a posted foe for as long as it stands within ENGAGE_RANGE, so it never searches, walks
+/// home and heals with the player it fights close by. Past that, or once it falls, let go, its last place kept to search.
 fn kept(brain: &mut Brain, here: &Here<'_, '_>) -> Option<Sight> {
     let tick = here.tick();
     let target = brain.target?;
+    let close =
+        |other: &Fighter| brain.home.is_some() && apart(here.at(), [other.body.x, other.body.y]) <= ENGAGE_RANGE;
     match here.enemy(target) {
         Some(other) if sees(here.world.blocks, here.world.terrain, &here.fighter, other) => {
             brain.last_seen = Some(feet(other));
             brain.seen_at = tick;
             Some(sight(here, target, other, true, brain.last_seen))
         }
-        Some(other) if tick <= brain.seen_at + Here::ticks(HUNT) => {
+        Some(other) if tick <= brain.seen_at + Here::ticks(HUNT) || close(other) => {
             let last = *brain.last_seen.get_or_insert_with(|| feet(other));
             Some(sight(here, target, other, false, Some(last)))
         }

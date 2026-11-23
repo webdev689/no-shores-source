@@ -19,7 +19,7 @@ import { gearScreenOpen, type GearHere } from '../gearScreen.ts';
 import { onScreen, type Shot } from '../camera.ts';
 import type { Overlay } from '../scene.ts';
 import type { Quest } from '../tasks.ts';
-import type { Beat, Tick } from './beat.ts';
+import { type Beat, SCENE, type Tick } from './beat.ts';
 import { ACTOR_IDS, type Actor } from './actors.ts';
 import type { HeardFoe, Hearing } from '../audio/music/directorLaw.ts';
 import { type FootHeard, hearFoot } from '../audio/music/hearing.ts';
@@ -44,10 +44,14 @@ const THULE_ID = ACTOR_IDS + 50;
 /** The boss's coming: the push in to him, his cry, and the camera back to the player. */
 const PUSH_S = 0.9;
 const BACK_S = 5.6;
+/** How far the push goes in, metres, never nearer Thule's head than PUSH_NEAREST_M: as far as it went when the player
+ *  met him 2.3 m off, so on a long quarterdeck it never passes the player it starts over. */
+const PUSH_M = 2.6;
+const PUSH_NEAREST_M = 4.2;
 /** The fewest seconds between two of Thule's barks of one kind. */
 const BARK_GAP_S = 9;
 /** How long the screen takes to fade out on the fight's end, seconds. */
-const END_S = 0.6;
+const END_S = SCENE.outS;
 /** What the frozen fight asks of the player, naming the key as bound now on the keys or the pad. */
 const asked = (lesson: 'parry' | 'dodge'): string =>
   lesson === 'parry' ? `Press ${askedKey('guard')} to parry` : `Press ${askedKey('dodge')} to dodge`;
@@ -219,7 +223,9 @@ export class WreckFight implements Beat {
     const thule = this.thuleAt();
     const head: Point3 = [thule[0], thule[1], thule[2] + 1.9];
     const toward = lookAt(coming.from.eye, head);
-    const near: Point3 = [head[0] - Math.sin(toward.yaw) * 4.2, head[1] + Math.cos(toward.yaw) * 4.2, head[2] - 0.2];
+    const from = Math.hypot(...[0, 1, 2].map((axis) => (coming.from.eye[axis] ?? 0) - (head[axis] ?? 0)));
+    const away = Math.max(PUSH_NEAREST_M, from - PUSH_M);
+    const near: Point3 = [head[0] - Math.sin(toward.yaw) * away, head[1] + Math.cos(toward.yaw) * away, head[2] - 0.2];
     const into = coming.since;
     const share = into < PUSH_S ? into / PUSH_S : into < BACK_S - 0.7 ? 1 : Math.max(0, (BACK_S - into) / 0.7);
     const eased = 1 - (1 - share) ** 3;

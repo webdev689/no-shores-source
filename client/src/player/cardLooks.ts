@@ -18,19 +18,41 @@ export const FLASH = { off: 0, whole: 1, outline: 2 } as const;
 /** The dissolve's look an arriving card is built in, past the four elements' (`arrivals.ts`). */
 const ARRIVING = 4;
 
+/** A flash's colour where none is given. */
+const WHITE = [1, 1, 1] as const;
+
 /** The numbers a card's look is drawn with at `time` (the status clock): Veiled, Exposed, the clock and how far it
  *  has dissolved (or is still to come, arriving); Charged, the element it dissolves in (or arriving), how far it is
  *  shaken (figure pixels) and its flash's stage; then its flash's colour. Drawn as its smear (`smear`), the tint is
  *  the smear's colour, marked so. */
 export function cardLookValues(shown: CardAt, time: number, smear = false): number[] {
+  const values = new Array<number>(CARD_LOOK_FLOATS).fill(0);
+  cardLookInto(values, 0, shown, time, smear);
+  return values;
+}
+
+/** The numbers `cardLookValues` gives, written into `out` from `start`: a scene writes every card's each frame. */
+export function cardLookInto(
+  out: { [index: number]: number },
+  start: number,
+  shown: CardAt,
+  time: number,
+  smear = false,
+): void {
   const flash = shown.flash;
-  const colour = smear && shown.smear ? shown.smear.colour : (flash?.colour ?? [1, 1, 1]);
-  const stage = smear ? FLASH.off : (flash?.stage ?? FLASH.off);
-  return [
-    ...[shown.veiled ? 1 : 0, shown.exposed ? 1 : 0, time, shown.dissolve?.share ?? shown.arrival ?? 0],
-    ...[shown.charged ? 1 : 0, shown.dissolve?.look ?? (shown.arrival ? ARRIVING : 0), shown.jitter ?? 0, stage],
-    ...[colour[0], colour[1], colour[2], smear ? 1 : 0],
-  ];
+  const colour = smear && shown.smear ? shown.smear.colour : (flash?.colour ?? WHITE);
+  out[start] = shown.veiled ? 1 : 0;
+  out[start + 1] = shown.exposed ? 1 : 0;
+  out[start + 2] = time;
+  out[start + 3] = shown.dissolve?.share ?? shown.arrival ?? 0;
+  out[start + 4] = shown.charged ? 1 : 0;
+  out[start + 5] = shown.dissolve?.look ?? (shown.arrival ? ARRIVING : 0);
+  out[start + 6] = shown.jitter ?? 0;
+  out[start + 7] = smear ? FLASH.off : (flash?.stage ?? FLASH.off);
+  out[start + 8] = colour[0];
+  out[start + 9] = colour[1];
+  out[start + 10] = colour[2];
+  out[start + 11] = smear ? 1 : 0;
 }
 
 const [VOLT, COSMIC] = [GLOW_RAMPS[2], GLOW_RAMPS[3]];

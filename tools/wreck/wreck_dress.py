@@ -35,24 +35,24 @@ def lay_heap(piece, frames, ship, box, rng, height=HEAP_M):
 
 
 # The heaps that close the way on from each zone, by the zone they close: the ship's frame they stand in and their box
-# there, or none for the quiet deck the player wakes on, whose way on is open. The last is the gate into the arena.
+# there, or none for the quiet deck the player wakes on, whose way on is open. The last is the gate into the arena, on
+# the ramp up to the Frigate's quarterdeck from the wreckage off her port quarter, a body's room short of her side. A
+# heap on a ramp is piled from the ramp under its box's middle, which stands on one of its planks, not between two.
 GATES = (
     None,
     ('wreck', (-0.6, 2.4, 1.1, 13.6)),
     ('wreck', (16.2, 5.6, 18.8, 11.8)),
     ('wreck', (23.0, -9.6, 29.0, -5.6)),
     ('frigate', (4.4, -5.6, 8.2, -4.2)),
-    ('frigate', (-2.8, -3.6, -1.7, 3.6)),
-    ('frigate', (-11.0, -4.2, -9.2, 4.2)),
+    ('wreck', (-14.5, -18.8, -11.3, -17.2)),
+    ('wreck', (-7.6, -25.5, -5.3, -22.7)),
 )
 
-# Wreckage that closes for good the ways round a zone: the Frigate's gangways either side of her burnt-out gun deck,
-# whose only way aft is down through it, heaped over her rails too.
+# Wreckage that closes for good the ways round a zone: the steps up to the Frigate's quarterdeck at its front's
+# corners, whose only way up is from the wreckage off her port quarter, heaped over her rails too.
 BLOCKERS = (
-    ('frigate', (-2.8, 3.4, -1.8, 5.9)),
-    ('frigate', (-2.8, -5.9, -1.8, -3.4)),
-    ('frigate', (-10.7, 3.4, -9.5, 5.9)),
-    ('frigate', (-10.7, -5.9, -9.5, -3.4)),
+    ('frigate', (-2.3, 3.3, -0.3, 5.9)),
+    ('frigate', (-2.3, -5.9, -0.3, -3.3)),
 )
 
 
@@ -81,8 +81,7 @@ def gates(frames, seed):
             base = frames.ground.z((box[0] + box[2]) / 2, (box[1] + box[3]) / 2) or 3.0
             heap(piece, box, base, HEAP_M, rng)
         else:
-            # The arena's heap stands below her quarterdeck's front: it is piled higher, past a jump from her deck.
-            lay_heap(piece, frames, ship, box, rng, HEAP_M + (0.8 if zone == len(GATES) - 1 else 0.0))
+            lay_heap(piece, frames, ship, box, rng)
         group = collection(f'Gate.{zone}')
         build(piece, f'Gate.{zone}.Heap', group)
         made[zone] = group
@@ -124,8 +123,8 @@ def ramps(frames, seed):
     """The ways of fallen timber between the pieces: off the Brig's stern half onto the wreckage of her waist, from her
     torn deck up onto her bow half, from her fore deck onto the raft beside her and down from it onto the Sloop's side,
     off the Sloop onto the wreckage she drifted into and up from it into the Frigate's stove-in waist; out over her
-    port bow; down into her gun deck, up out of it to her quarterdeck, and out of it onto the wreckage off her port
-    quarter. Each is ground a body walks on."""
+    port bow, across from the wreckage there onto the wreckage off her port quarter, and up from it onto her
+    quarterdeck. Each is ground a body walks on."""
     rng = seeded(seed)
     group = collection('Ramps')
     ground = frames.ground
@@ -148,9 +147,8 @@ def ramps(frames, seed):
         (sloop_top(-17.0), field('Sloop', -1.5, -4.2)),
         (field('Sloop', 2.4, 4.4), frames.on('frigate', 6.3, -3.4, 0.05)),
         (frames.on('frigate', 9.0, 3.6, 0.05), field('PortBow', 12.0, -1.4)),
-        (frames.on('frigate', -1.7, 0.0, 0.03), frames.on('frigate', -5.2, 0.0, z=frames.lower + 0.04)),
-        (frames.on('frigate', -6.8, 0.0, z=frames.lower + 0.04), frames.on('frigate', -12.3, 0.0, 0.05)),
-        (frames.on('frigate', -7.0, 2.4, z=frames.lower + 0.04), field('PortQuarter', 3.0, -4.4)),
+        (field('PortBow', 7.0, -7.4), field('PortQuarter', 8.4, 0.0)),
+        (field('PortQuarter', 5.0, -3.0), frames.on('frigate', -5.0, 4.4, 0.05)),
     )
     for index, (start, end) in enumerate(ways):
         piece = Piece()
@@ -174,7 +172,6 @@ STREWN = (
     ('brig', (2.0, 0.6, 15.0, 3.9), 12),
     ('frigate', (9.0, -4.4, 15.5, 4.4), 12),
     ('frigate', (0.5, 1.8, 9.0, 4.4), 8),
-    ('frigate', (-9.4, -3.2, -5.6, -1.6), 4),
     ('frigate', (-19.2, 2.6, -16.8, 3.9), 3),
 )
 

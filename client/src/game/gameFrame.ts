@@ -19,6 +19,8 @@ import type { DungeonDrawers } from './dungeonDrawers.ts';
 import type { FigureView } from './figureView.ts';
 import { type Flow, type Happening, next } from './flow.ts';
 import { FrameGuard } from '../frameGuard.ts';
+import { PERF, perfOn, PerfMeter } from '../perfMeter.ts';
+import { autoChosen, heardFrame } from './renderScale.ts';
 import type { Foot } from './foot.ts';
 import type { FootView } from './footView.ts';
 import type { FriendlyTraffic, FriendlyWater } from './friendlyShips.ts';
@@ -57,11 +59,14 @@ import { keeperLit } from './overheadMarks.ts';
 import { HULLS } from '../water/hullMask.ts';
 import { chatAtSea, chatOpen, holdOnPlayer, platedPlayers, socialUp } from './social/social.ts';
 import { uiScale } from '../ui/uiRenderer.ts';
+import { drawnWhole, frameDrawn, setBehindVeil, standIns } from '../standIns.ts';
 
 /** The region every island lies in. */
 const REGION = 'The Pale Expanse';
-/** The veil stays down until the exact ground round the player has come, or this long. */
-const GROUND_WAIT_S = 20;
+/** The veil stays down until everything round the player is ready, or this long; and once it is, for this many frames
+ *  more drawn whole under it, so the first frames' own work (pipelines made, pictures sent) is done unseen
+ *  ([[One Loading Screen Covers Every Trip Until the Place Is Ready]]). */
+const READY_WAIT_S = 20;
 
 /** What the frames read and change as the game goes: the flow, the mode's own pieces, the open landmass and its
  *  drawers, whether the place behind the veil is ready and how long it has waited, whether the map is wanted, and the
@@ -312,8 +317,9 @@ export function startFrames(parts: FrameParts, playing: Playing): void {
     heldHud(hud, footView, told);
     hideSeaHud(hud);
     hud.note(here.roomNote);
-    // A dungeon's floor is all there before the veil lifts; a node waits for the exact ground round the player.
-    return !!here.dungeon || scene.closeReady(body.x, body.y);
+    // A dungeon's floor is all there before the veil lifts; a node waits for the exact ground round the player and its
+    // city, built a few steps a frame, whole.
+    return !!here.dungeon || (scene.closeReady(body.x, body.y) && playing.drawers.ready());
   };
 
   const seaFrame = (here: Sea, controls: InputFrame, seconds: number, size: { width: number; height: number }) => {
@@ -439,8 +445,13 @@ export function startFrames(parts: FrameParts, playing: Playing): void {
   /** The GPU's work for the frame drawn last. */
   let inFlight = Promise.resolve();
   const guard = new FrameGuard();
+  const meter = new PerfMeter(gpu.device, perfOn(location.search));
+  PERF.current = meter;
   const frame = (now: number) => {
+    meter.start(now, autoChosen());
     guard.run(() => step(now));
+    const taken = meter.end();
+    heardFrame(taken.intervalMs, taken.gpuMs);
     // At most one frame waits on the GPU while the next is drawn, so a GPU that falls behind slows the frames.
     const previous = inFlight;
     inFlight = gpu.device.queue.onSubmittedWorkDone();
@@ -475,6 +486,8 @@ export function startFrames(parts: FrameParts, playing: Playing): void {
     const size = { width: canvas.width, height: canvas.height };
     const { flow, foot, sea, ready } = playing;
     const shown = flow.mode === 'loading' ? (ready ? flow.then : null) : flow;
+    // A trip's veil, or the black of a travel by the held map, which waits on the new waters too.
+    setBehindVeil(flow.mode === 'loading' || !!sea?.travelling?.away.veil);
     let settled = true;
     playing.shipScale = 1;
     if (shown?.mode === 'story' && parts.story) storyFrame(parts.story, controls, seconds, size);
@@ -482,10 +495,16 @@ export function startFrames(parts: FrameParts, playing: Playing): void {
     else if ((shown?.mode === 'sea' || shown?.mode === 'landing') && sea) seaFrame(sea, controls, seconds, size);
     parts.ambience.frame(seconds);
     ui.present(stack);
+    // What stood in for the place this frame, asked every frame so none is carried into the next.
+    const stoodIn = standIns();
+    frameDrawn(!!shown && settled && stoodIn.length === 0);
     if (playing.flow.mode === 'loading' && playing.ready) {
-      // Wall time, not the world's: a slow machine waits no longer for the ground than a quick one.
+      // Wall time, not the world's: a slow machine waits no longer for the place than a quick one.
       playing.waited += elapsed;
-      if (settled || playing.waited > GROUND_WAIT_S) {
+      const whole = drawnWhole();
+      if (whole || playing.waited > READY_WAIT_S) {
+        if (!whole)
+          console.warn(`The veil lifted after ${READY_WAIT_S} s, ${stoodIn.join(', ') || 'the ground'} not ready.`);
         playing.flow = next(playing.flow, { kind: 'loaded' });
         hud.veil(null);
         // Why the player is not where they went stays its whole time once the veil has lifted.
