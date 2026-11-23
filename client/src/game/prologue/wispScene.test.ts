@@ -49,3 +49,10 @@ test('its camera keeps out of the smoke as it is drawn, leaning in the fires’ 
     assert.deepEqual(one, two, `the same shot at ${seconds.toFixed(2)} s`);
   }
 });
+
+test('begun past its flash, as a page under development may begin it, it still gives the player the Storm, once', () => {
+  let given = 0;
+  const scene = new WispScene(story, layout, { feet, facing: layout.wake.facing }, theirs, () => given++, 12);
+  for (let seconds = 12; seconds < 13; seconds += 0.25) scene.frame(0.25, seconds, theirs, feet);
+  assert.equal(given, 1);
+});

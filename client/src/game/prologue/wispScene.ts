@@ -74,7 +74,9 @@ export class WispScene {
     this.ringsFrom = ringEye(this.course);
     [this.facing, this.from] = [facing, from];
     const { ambience } = story.stage.parts;
-    // Begun partway in, what came before is passed over, the crew's cries with it.
+    // Begun partway in, what came before is passed over, the crew's cries with it; but begun past the flash, the
+    // Storm is still given at once, so what follows stands as the story leaves it.
+    if (into > ENGULF_AT_S + FLASH_IN_S) give();
     const cues: [number, () => void][] = [
       [1.7, () => void story.stage.play('wisp', true)],
       [
