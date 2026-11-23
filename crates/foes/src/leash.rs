@@ -47,12 +47,10 @@ fn fall_back(brain: &mut Brain, here: &Here<'_, '_>, board: &mut Board, home: Ho
     if matches!(here.fighter.action, Action::Telegraph(_)) {
         return None;
     }
-    // A target that fell, left or is left be is no target to fight from there.
-    if brain.target.is_some_and(|target| here.enemy(target).is_none()) {
-        brain.target = None;
-    }
+    // A target that fell, left or is left be is no target to fight from there: its senses let it go as they do.
+    let fighting = brain.target.is_some_and(|target| here.enemy(target).is_some());
     let left = apart(here.at(), [home.at[0], home.at[1]]);
-    let way = (left > FALLEN_BACK && brain.target.is_some()).then(|| way_to(here, home.at)).flatten();
+    let way = (left > FALLEN_BACK && fighting).then(|| way_to(here, home.at)).flatten();
     let Some(way) = way else {
         brain.returning = None;
         return None;
