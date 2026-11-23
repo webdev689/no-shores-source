@@ -1,7 +1,7 @@
 // The land map's icon glyphs, in the game's own devices: each keeper's coin in their sign's board colour with the
 // device their sign carries (a star for the Mage, a key for the vaults, an anvil, a helm, open shears, a horseshoe, a
-// ship's wheel, candles: tools/modules/adorn.py), each faction's with its banner's emblem, and a mark for each kind of
-// site a layout holds. Each is painted about the origin in units, `GLYPH_HALF` either side.
+// ship's wheel, candles: tools/modules/adorn.py), the Postmaster's a sealed letter on the slate of his vest, each
+// faction's with its banner's emblem, and a mark for each kind of site a layout holds. Each is painted about the origin in units, `GLYPH_HALF` either side.
 import type { Point2 } from '../overworld/ground.ts';
 import { INK } from './mapKey.ts';
 import { LIGHT_INK, type Painter, PARCHMENT, ROUTE } from './mapLetters.ts';
@@ -15,6 +15,7 @@ export type KeeperGlyph =
   | 'tack'
   | 'harbourmaster'
   | 'chandler'
+  | 'mail'
   | 'stormcallers'
   | 'lamplighters'
   | 'veiled';
@@ -34,6 +35,7 @@ export const GLYPHS: readonly LandGlyph[] = [
   'lamplighters',
   'veiled',
   'harbourmaster',
+  'mail',
   'chandler',
   'landing',
   'event',
@@ -75,6 +77,8 @@ const COINS: Readonly<Record<KeeperGlyph, readonly [coin: string, device: string
   tack: [CLOTH.linen, INK],
   harbourmaster: [CLOTH.verdant, GOLD],
   chandler: ['#6e4d2c', BONE],
+  // He keeps no stall, so no sign's board: the blue of his vest (keepers.ts) a third of the way toward the ink.
+  mail: ['#3b4a5c', BONE],
   stormcallers: [CLOTH.stormcallers, BONE],
   lamplighters: [CLOTH.lamplighters, PARCHMENT],
   veiled: [CLOTH.veiled, BONE],
@@ -250,6 +254,18 @@ const KEEPER_DEVICES: Readonly<Record<KeeperGlyph, (painter: Painter, coin: stri
       ...[...angles].reverse().map((angle): Point2 => [Math.cos(angle) * 2.6, -Math.sin(angle) * 2.6 + 0.4]),
     ];
     filled(painter, band);
+  },
+  mail: (painter, coin) => {
+    filled(painter, [
+      [-4.4, -3],
+      [4.4, -3],
+      [4.4, 3],
+      [-4.4, 3],
+    ]);
+    painter.strokeStyle = coin;
+    line(painter, 0.9, [-4.4, -3], [0, 0.6], [4.4, -3]);
+    painter.fillStyle = CLOTH.crimson;
+    disc(painter, [0, 0.6], 1.4);
   },
   harbourmaster: (painter) => {
     ring(painter, [0, 0], 3.0, 1.1);

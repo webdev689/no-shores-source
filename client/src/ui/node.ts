@@ -4,6 +4,7 @@
 // whole scale. Nothing here touches a page, so the tree is built wherever the game runs.
 import type { PaintedRole, State } from './paint.ts';
 import type { Box } from './quads.ts';
+import type { Style } from './text.ts';
 import type { UiRenderer } from './uiRenderer.ts';
 
 /** How long a side is: fixed pixels, as its content needs (`fit`), all the room left (`grow`), or a share of the
@@ -20,6 +21,8 @@ export type Padding = number | readonly [number, number] | readonly [number, num
 export interface Span {
   readonly words: string;
   readonly colour?: string;
+  /** Bold, each stroke doubled, or italic, leaning; laid in its styled letters (`text.ts`). */
+  readonly style?: Style;
 }
 
 /** Words shown in the face: at `size` steps of its 11 px grid, wrapped to the box unless `wrap` is false. */

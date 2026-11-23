@@ -191,6 +191,30 @@ each part works is in its system note.
   ([[Game]], limits).
 The decisions in [[Open Questions]] are not repeated here.
 
+- **#153, a keeper with something for you lit** (branch `claude/keen-cannon-4nbe4z`), for the owner's yes to merge:
+  - A keeper's mark beats and is drawn over everything while a quest step asks to speak with them or letters wait.
+  - Their coin on the held map is ringed, and the Postmaster has a coin.
+  - Its decisions, on its branch: "The Factions Are the Baseline for Every Quest" and "A Keeper With Something for You
+    Pulses and Is Seen From Everywhere", with Claude's calls listed there.
+  - Pictured headless: a lit emblem over the Hall of the Arts, drawn through its walls, and the held map's rings.
+    Not yet seen on a real GPU, nor the beat in motion.
+- **#156, the Compendium** (branch `claude/keen-cannon-4nbe4z-audio`), for the owner's yes to merge:
+  - The tab, its Collections-style front and its Lore-style book view ([[Lore]],
+    [[The Compendium Holds the Lore Books, After Destiny's]]).
+  - The houses' three books are written, a chapter for each task of each road
+    ([[Each House's Lore Book Tells Its Art's Origin]]), for the owner to read. More books go in `content/lore/lore.json`;
+    [[Lore]], "The file", says how. A chapter is found as the story ends, as a named quest's task is done, or lying at a
+    named place in a node.
+  - The books are set out with bold, italics, documents set in and breaks
+    ([[The Lore Is Set Out, Bold and Italic Where It Helps]]); bold and italic work in any of the interface's words.
+  - The covers are redrawn after the owner's pictures of Destiny's, as posters in the game's own pixel art, one design
+    in each book's cloth and motif; a finished book turns down a gold corner, one not found is a dotted slot
+    ([[The Lore Books' Covers Are Drawn in Detail]]).
+  - Its pictures: `tools/uiShot.mjs` with `compendium/compendiumShots.ts`. Finding a chapter in a deployed room
+    waits on the first books.
+  - #153 and it both touch `Decisions.md` and `overheadMarks.ts`. The second to merge takes `main` first.
+- **A thin black vertical line across the world**, reported by the owner and not yet found: the canvas fills the
+  page, so it is not a gap in the page. The owner will send a screenshot.
 - **The public events under main's balance pass** (#141): with the fight's harm at 1.5 and 0.75, the rules' two scripted
   players still seal a heroic Fissure (5.2 minutes, 3.7 before) but run out the heroic raid's clock in its third wave;
   with the heroic task left alone, the page's scripted pair holds the raid. The events are Claude's to tune ("Claude
@@ -349,13 +373,12 @@ The decisions in [[Open Questions]] are not repeated here.
   so every deploy waits on R2 answering. Memory to measure: the figure cards'
   4000-texture budget (`player/cards.ts`), the scene's full-size targets, about 590 MB at 5120 by 2880, uncapped
   (`scene.ts`), and the item pictures' cache, uncapped (`player/itemPictures.ts`).
-- **Browser QA**: `tools/claude-toolkit/webgpu-shot.cjs` reads the page's canvas, so it pictures the Test Ground and the
-  World Editor but not the game, which draws in its worker ([[Toolkit]]); the owner: "The headless issue is due to us
-  moving away from html. So not really an issue per say." A driver that patches the worker too is on the branch
-  `ccr-130008df-u4ahst-headless` (cfd75bba), unmerged. `tools/uiShot.mjs` writes blank pictures (the read-back is only
-  the ground under SwiftShader); the game's own frame read back from its worker shows the interface whole. #124
-  fixed it (the hooks and the plan's `init` at the head of the game worker's script, each picture from the worker's own
-  texture, R2 read by the driver 8 at a time; observation 0068 logs the port lesson).
+- **Browser QA** ([[Toolkit]]):
+  - `tools/claude-toolkit/webgpu-shot.cjs` pictures the game in its worker. Run it on an idle machine: beside a
+    cargo build the world may not draw for minutes.
+  - The held map raised on foot pictures well. `?face=<degrees>` is not an address flag: patch a built copy's
+    `askedArrival` to face a way.
+  - `tools/uiShot.mjs` draws the menu whole through the real renderer (the Journal's and the Compendium's pictures).
 - **A raised shield's walk**, which the owner asked for and chose to defer: walking with the guard up shows the still
   `block` frame. It needs a `blockwalk` from the forge (the block's arms and shield over the shield march's legs, as
   `onthemove.py` lays an action over a walk, held for the stride's four frames) for every body and gear layer that
@@ -417,7 +440,8 @@ The decisions in [[Open Questions]] are not repeated here.
   within 2 km of a city's wall yet); the World Editor's 3D view without the city, woods and shadows (its worker opens a
   landmass without the RMB index); flats and lit windows in the cities (the RMB table keeps no places for flats, and
   their archives are not paintable).
-- **The held map** ([[Held Map]]): discovery kept by the server per character, quests tracked on it, the charted sea's
+- **The held map** ([[Held Map]]): discovery kept by the server per character, a quest's goals beyond the keepers it
+  names (ringed on land by #153) tracked on it, the charted sea's
   wash laid while it is up; on land, the relief past the camera's 2 km read off the worker's exact ground, and lakes,
   which only the 1 km grid holds.
 - **Touch**: no touch layer yet, so the sea fight and the wreck's fights need keys or a pad ([[Interface]], "Limits").

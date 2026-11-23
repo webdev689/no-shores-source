@@ -130,6 +130,7 @@ export class FootView {
     });
     // The marks are measured from the eye: it stands at their origin.
     this.marks.set(shown.marks, [0, 0, 0], shot.eye);
+    this.marks.setAbove(shown.lit);
     this.swings.set(shown.swings);
     const matrix = shiftedExactly(fromEye, [-eyeX, -eyeY, -eyeZ]);
     this.hud.update(
@@ -156,12 +157,13 @@ export class FootView {
     return {
       under: { drawInto: (pass) => drawn.draw(pass) },
       // The solid marks with the figures; the blows' arcs and the see-through marks over the water, so its sky and
-      // surface never cover them.
+      // surface never cover them; and the lit keepers' marks after them with no depth, so no wall hides them.
       over: {
         drawInto: (pass, eyeMatrix) => marks.drawSolid(pass, raised(eyeMatrix)),
         overWater: (encoder, target, eyeMatrix, depth) => {
           this.swings.drawOver(encoder, target, depth, own(eyeMatrix));
           marks.drawClearOver(encoder, target, depth, raised(eyeMatrix));
+          marks.drawAbove(encoder, target, raised(eyeMatrix));
         },
         ...(lit ? { lightInto } : {}),
       },

@@ -41,7 +41,8 @@ code:
 # Quests
 
 The houses' roads and the opening that leads to them ([[Each House Has Its Own Road to Its Art]],
-[[The Houses' Roads as Claude Shapes Them]]). The rules are the authority: a player's place in every road is kept in
+[[The Houses' Roads as Claude Shapes Them]]), the base every other quest is built on
+([[The Factions Are the Baseline for Every Quest]]). The rules are the authority: a player's place in every road is kept in
 their character, every goal is judged by the room the player stands in, and every reward is given there. The page only
 shows what the rules say: the tracker, the lines, the marks, and the Art's locks.
 
@@ -126,12 +127,17 @@ fragments to choose (`fragments`: how many choices). Which Art is the quest's ho
   its task's number and words; nothing from a word not on the player's own character.
 - **The tracker** shows the quest walked on foot, once the story and Maren's welcome are past: its name, its task and
   each goal's words with its count.
+- **Lore**: a chapter the lore's file gives to a task is found as the task is done ([[Lore]]). Each house's road
+  gives its house's book a chapter a task, the last as the road ends ([[Each House's Lore Book Tells Its Art's Origin]]).
 - **The lines** are the speech system's ([[Speech]]): a quest's `begin` as it is first walked, a task's `end` as it is
   done and the next task's `start` as it begins, a `talk` goal's `scene` as the keeper is spoken with. A page that loads
   mid-road says nothing it has said before.
 - **Speaking with a keeper**: within reach of a counter that a `talk` goal of the task names, the offer reads "Speak
   with" and the keeper's name; pressed, it asks 64 and the lines are said. Otherwise the counter opens as before.
 - **Marks**: `quest_at` stands a mark at its place, and the held map at sea rings the nodes the task's goals name (the land's map, raised on foot, draws no places). Both give way while the map is up.
+- **A keeper to speak with is lit**: while a `talk` goal of the task names a counter, its keeper's mark over them
+  pulses and is seen from everywhere in the social space, and their coin on the land's map pulses
+  ([[A Keeper With Something for You Pulses and Is Seen From Everywhere]]; [[Game]], "Over what a player can use").
 - **What is shown and said**: the page shows, says and marks nothing from a word not on the player's own character
   (`claimed`). A goal's `scene` is said as the room meets it, a talk goal's included (the press only asks); an
   escort's or tail's `greet` as its figure first walks, once a task; a goal's failure line and an escort's shout as they

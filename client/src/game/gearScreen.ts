@@ -23,7 +23,7 @@ import {
 import { gearKindName, gearName, moduleNode, modulePresses } from './shipGear.ts';
 
 /** The menu's tabs, in the order the header shows them. */
-export const TABS = ['character', 'inventory', 'journal', 'ship', 'social', 'guild', 'settings'] as const;
+export const TABS = ['character', 'inventory', 'journal', 'compendium', 'ship', 'social', 'guild', 'settings'] as const;
 export type Tab = (typeof TABS)[number];
 /** The screens a social space's counters open: the vault, each keeper's (npc/npcScreen.ts), the Harbourmaster's and
  *  the bounty board. */

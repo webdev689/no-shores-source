@@ -1,9 +1,10 @@
 import * as flatbuffers from 'flatbuffers';
 import { Course, FromRoom, Input } from '../../../generated/messages/ts/overlook/wire.ts';
+import { Ask } from '../../../generated/messages/ts/overlook/wire/ask.ts';
 import type { Dressed } from '../../../generated/messages/ts/overlook/wire/dressed.ts';
 import { GLANCE_FLOATS, UNTRIMMED_FLOATS } from '../rules/fighters.ts';
 import { type FleetPart, commissionOf, fleetOf, heldIn, point, whole, wholeIn } from './fleetMessages.ts';
-import { type GearAsk, type GearState, askOffset, gearOf } from './gearMessages.ts';
+import { type GearAsk, type GearState, gearOf } from './gearMessages.ts';
 import { type CastAsk, type SeenSpell, spellsOf } from './artMessages.ts';
 import { BODY_FLOATS, type Body, CONTROLS_FLOATS, bodyOf } from '../rules/movementRules.ts';
 import { unpack } from './pack.ts';
@@ -305,6 +306,23 @@ export function inputBytes(
   const carried = before.length > 0 ? Input.createEarlierVector(builder, before) : 0;
   builder.finish(inputOffset(builder, sequence, parts, carried));
   return builder.asUint8Array().slice();
+}
+
+/** An ask written into an input being built. */
+export function askOffset(builder: flatbuffers.Builder, ask: GearAsk): flatbuffers.Offset {
+  const named = ask.named === undefined ? 0 : builder.createString(ask.named);
+  Ask.startAsk(builder);
+  Ask.addKind(builder, ask.kind);
+  Ask.addItem(builder, ask.item ?? 0);
+  Ask.addSlot(builder, ask.slot ?? 0);
+  Ask.addColumn(builder, ask.column ?? 0);
+  Ask.addNode(builder, ask.node ?? 0);
+  Ask.addRarity(builder, ask.rarity ?? 0);
+  Ask.addLevel(builder, ask.level ?? 0);
+  Ask.addCount(builder, ask.count ?? 0);
+  Ask.addItemKind(builder, ask.itemKind ?? 0);
+  if (named) Ask.addNamed(builder, named);
+  return Ask.endAsk(builder);
 }
 
 function inputOffset(builder: flatbuffers.Builder, sequence: number, parts: InputParts, earlier: number): number {

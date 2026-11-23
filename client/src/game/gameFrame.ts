@@ -45,6 +45,7 @@ import { standingDrawers } from './standingDrawers.ts';
 import type { NodeInfo } from './worldData.ts';
 import type { AfterStory } from './welcome/afterStory.ts';
 import type { Quests } from './quests/quests.ts';
+import type { Lore } from './compendium/lore.ts';
 import type { StoryHost } from './prologue/host.ts';
 import { FIRST_NODE } from './gameBoot.ts';
 import { TOLD_MS } from './tripBack.ts';
@@ -52,6 +53,7 @@ import { type GateWay, gateWay } from './gates.ts';
 import { mooredShips } from './moorings.ts';
 import type { ShipPeople } from './shipPeople.ts';
 import { nodeCardsAt } from './nodeCards.ts';
+import { keeperLit } from './overheadMarks.ts';
 import { HULLS } from '../water/hullMask.ts';
 import { chatAtSea, chatOpen, holdOnPlayer, platedPlayers, socialUp } from './social/social.ts';
 import { uiScale } from '../ui/uiRenderer.ts';
@@ -74,6 +76,8 @@ export interface Playing {
   readonly after: AfterStory;
   /** The houses' roads, shown once the story and the welcome are past. */
   readonly quests: Quests;
+  /** The lore found, toasted as each chapter is. */
+  readonly lore: Lore;
   /** The way through the gate the player stands in, if any. */
   through: GateWay | null;
   seaWord: SeaWord | null;
@@ -212,6 +216,7 @@ export function startFrames(parts: FrameParts, playing: Playing): void {
       eyes: walker.inFirstPerson,
       at: [body.x, body.y],
       heading: walker.player.yaw,
+      lit: (glyph) => keeperLit(here.gear?.gear ?? null, glyph, (counter) => playing.quests.wants(counter)),
     });
     // The held map, or the player's own hands in first person, over the finished picture.
     const hands =
@@ -222,6 +227,7 @@ export function startFrames(parts: FrameParts, playing: Playing): void {
     parts.isleFrame();
     const { quests } = playing;
     quests.hear(here.gear?.gear);
+    playing.lore.hear(here.gear?.gear);
     quests.frame(seconds, playing.after.past, paused);
     // The roads' next goal on the compass, and the ward a step defends among the plates, as a companion's.
     const ward = quests.wardPlate(parts.groundAt);
@@ -284,7 +290,7 @@ export function startFrames(parts: FrameParts, playing: Playing): void {
     hud.marks(looking ? [] : quests.marks(shown.shot, viewport, [body.x, body.y], parts.groundAt, here.node.id));
     // The tracker is set once a frame, so a public event's steps stand in it unblinking, in the quest's place.
     hud.tasks.show(shown.quest ?? quests.tracked);
-    hud.toast(...toldNow(), ...quests.toasts);
+    hud.toast(...toldNow(), ...quests.toasts, ...playing.lore.toasts);
     hideSeaHud(hud);
     hud.note(here.roomNote);
     // A dungeon's floor is all there before the veil lifts; a node waits for the exact ground round the player.
@@ -321,7 +327,8 @@ export function startFrames(parts: FrameParts, playing: Playing): void {
     });
     playing.shipScale = shown.shipScale;
     playing.quests.frame(seconds, playing.after.past, paused);
-    hud.toast(...toldNow(), ...playing.quests.toasts);
+    playing.lore.hear(playing.sea?.gear?.gear);
+    hud.toast(...toldNow(), ...playing.quests.toasts, ...playing.lore.toasts);
     const herDeck = here.boarding.drawn(footView, seconds, { size, viewport });
     for (const stir of shown.stirs) scene.stir(stir);
     parts.music.atSea(here, seconds);

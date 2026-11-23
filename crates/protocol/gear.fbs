@@ -230,6 +230,10 @@ table Gear {
   bounty_aurem: uint;
   // The game's letters waiting for them at the mail counter, oldest first.
   mail: [GearLetter];
+  // The lore's chapters they have found, by their place in content/lore/lore.json, book by book; and those lying in
+  // this room's node that they have not, each its number, x and y.
+  lore: [ushort];
+  lore_here: [double];
 }
 
 // A named officer: their number, post (0 First Mate, 1 Gunner, 2 Bosun, 3 Carpenter, 4 Lookout), grade (a rarity),
