@@ -42,6 +42,8 @@ export type EventProp = {
   readonly rise: number;
   readonly lid: number;
   readonly glow: number;
+  /** A colour the prop is washed in (a ghost's: green where it may stand, red where not); none for a prop itself. */
+  readonly tint?: readonly [number, number, number];
 };
 
 /** A mark of the running event as the room sends it (protocol PublicMark): what it is, its id, where it stands, its

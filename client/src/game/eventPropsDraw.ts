@@ -28,7 +28,7 @@ const LIPS_MOST = 256;
 
 /** A prop's row in the table: where it stands from the eye and its turn; its scale, rise, lid and glow; whether it
  *  opens, its module's height, and where its lips start in the lips' list and how many stations they have; whether
- *  its canvas is grey. */
+ *  its canvas is grey, and its tint (none, a ghost's). */
 const PROP_FLOATS = 16;
 /** No lamps and nothing drawn, shared, so a place with no props makes nothing a frame. */
 const NO_LAMPS: readonly LampPlace[] = [];
@@ -222,6 +222,9 @@ fn shade(in: Out) -> vec4f {
     let glint = pow(max(dot(reflect(normalize(in.from_eye), facing), sky_state.key.xyz), 0.0), 24.0) * sun;
     colour += sky_state.key_light.rgb * glint * select(0.35, 0.9, in.material == ${id('gold')});
   }
+  // A ghost (a piece of decoration being placed) is washed in its tint.
+  let tint = props[in.prop].look.yzw;
+  if any(tint > vec3f(0.0)) { colour = mix(colour, tint * (light + 0.4), 0.6); }
   return vec4f(colour, 1.0);
 }
 
@@ -444,6 +447,7 @@ export class EventPropsDraw implements Drawer {
       rows[first + 10] = made.lips?.first ?? 0;
       rows[first + 11] = made.lips?.count ?? 0;
       rows[first + 12] = GREY_CANVAS.has(prop.module) ? 1 : 0;
+      [rows[first + 13] = 0, rows[first + 14] = 0, rows[first + 15] = 0] = prop.tint ?? [];
     });
     if (!this.table || this.table.size < rows.byteLength) {
       this.table?.destroy();

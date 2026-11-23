@@ -12,6 +12,7 @@ import type { Holds } from '../gearHold.ts';
 import { fillNode } from '../gearHold.ts';
 import { INK, label, pressNode, words } from '../gearNodes.ts';
 import { headingNode, hintNode } from '../menuPages.ts';
+import { decorateNode } from './decorateView.ts';
 import { counted } from './guildHome.ts';
 import {
   RAISE_AUREM,
@@ -197,7 +198,11 @@ function outpostNode(
         direction: 'column',
         gap: 12,
         maxWidth: 520,
-        children: [...side, builds && kindsNode(ui, outpost.plot, state.plan, face.level)],
+        children: [
+          ...side,
+          builds && kindsNode(ui, outpost.plot, state.plan, face.level),
+          builds && decorateNode(ui, outpost),
+        ],
       },
     ],
   };

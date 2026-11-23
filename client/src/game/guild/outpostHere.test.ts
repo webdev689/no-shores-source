@@ -1,12 +1,18 @@
 import assert from 'node:assert/strict';
 import { after, test } from 'node:test';
-import type { OutpostSeen } from '../../network/accounts.ts';
+import type { AccountLink, OutpostSeen } from '../../network/accounts.ts';
 import type { Block } from '../../rules/movementRules.ts';
 import { OutpostHere, useWords } from './outpostHere.ts';
-import { socketOf } from './outpostPlaces.ts';
+import { letGo, startPlacing } from './decorPlacing.ts';
+import { PLOT_M } from './outpostLaw.ts';
+import { placeOf, socketOf } from './outpostPlaces.ts';
 
 // The page's window events, which the outpost listens on, are none under Node.
-Object.assign(globalThis, { addEventListener: () => undefined, removeEventListener: () => undefined });
+Object.assign(globalThis, {
+  addEventListener: () => undefined,
+  removeEventListener: () => undefined,
+  dispatchEvent: () => true,
+});
 
 const GROUND = { plot: [1000, 2000], level: 12 } as const;
 const NODE_BOX: Block = { minX: 0, minY: 0, maxX: 1, maxY: 1, top: 1, bottom: 0 };
@@ -28,10 +34,10 @@ const made: OutpostHere[] = [];
 after(() => made.forEach((here) => here.stop()));
 
 /** An outpost on the test ground, keeping the courses it walls. */
-function outpost() {
+function outpost(link: AccountLink | null = null) {
   const courses: (readonly Block[])[] = [];
   const course = { setCourse: (blocks: readonly Block[]) => void courses.push(blocks) };
-  const here = new OutpostHere('gull-cove-outpost', GROUND, null, { boxes: [NODE_BOX], courses: [course, course] });
+  const here = new OutpostHere('gull-cove-outpost', GROUND, link, { boxes: [NODE_BOX], courses: [course, course] });
   made.push(here);
   return { here, courses };
 }
@@ -66,4 +72,32 @@ test('a raised outpost stands each structure and piece, walls them beside the no
   assert.equal(here.uses(countX, countY, () => undefined)?.words, 'Counting House');
   assert.equal(useWords(structure(3, 'horn', 12, 0, 0, 1)), 'Deliver materials', 'a scaffold takes deliveries');
   assert.equal(useWords(structure(3, 'horn', 12, 0, 1, 0)), 'Sound the War Horn');
+});
+
+test('a piece being placed stands its ghost at the feet, snapped to a quarter metre, red where the law refuses', async () => {
+  const asked: unknown[] = [];
+  const link = {
+    outpost: () => Promise.resolve('The accounts are away.'),
+    social: (path: string, body: unknown) => Promise.resolve(void asked.push([path, body]) ?? null),
+  } as unknown as AccountLink;
+  const { here } = outpost(link);
+  here.take(SEEN);
+  startPlacing('gull-cove-outpost', 'bench');
+  const corner = [GROUND.plot[0] - PLOT_M / 2, GROUND.plot[1] - PLOT_M / 2] as const;
+  const open: readonly [number, number] = [corner[0] + 3.1, corner[1] + 30.4];
+  const ghost = here.props([], open).at(-1);
+  assert.equal(ghost?.module, 'bench');
+  assert.deepEqual(ghost?.at.slice(0, 2), [corner[0] + 3, corner[1] + 30.5]);
+  assert.ok((ghost?.tint?.[1] ?? 0) > (ghost?.tint?.[0] ?? 1), 'green where it may stand');
+  assert.equal(here.uses(...open, () => undefined)?.words, 'Place the Bench');
+  const onHall = placeOf(structure(1, 'hall', 6, 6), GROUND, '').at;
+  assert.equal(here.uses(onHall[0], onHall[1], () => undefined)?.words, 'A structure stands there.');
+  assert.ok((here.props([], [onHall[0], onHall[1]]).at(-1)?.tint?.[0] ?? 0) > 0.5, 'red where it may not');
+  here.uses(...open, () => undefined)?.run();
+  await Promise.resolve();
+  assert.deepEqual(asked, [
+    ['outpost/decorate', { site: 'gull-cove-outpost', piece: 'bench', x: 3, y: 30.5, turn: 0 }],
+  ]);
+  letGo();
+  assert.equal(here.props([], open).length, 4, 'let go, the ghost is gone');
 });

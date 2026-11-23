@@ -1,6 +1,7 @@
 // The game's frames: each one steps and draws the mode the flow is in, on foot or at sea, with the friendly ships round
 // the eye, the held map over the sea while it is up, and the veil lifted once a place has loaded. `game.ts` boots the
 // pieces and keeps the travel; this draws what they hold, as `Playing` has it this frame.
+import { PLACING_HINTS, placingNow } from './guild/decorPlacing.ts';
 import type { FirstPerson } from '../firstperson/firstPerson.ts';
 import type { Gpu } from '../gpu.ts';
 import type { CardAt } from '../player/cards.ts';
@@ -206,7 +207,7 @@ export function startFrames(parts: FrameParts, playing: Playing): void {
     const listener = [walker.player.body.x, walker.player.body.y] as const;
     parts.music.onFoot(parts.world, here.node, shown.fight, seconds, { musicians: musiciansOf(here.folk), listener });
     // An outpost's structures and decoration are drawn as the events' props are.
-    parts.eventProps.set(here.outpost?.props(shown.props) ?? shown.props ?? []);
+    parts.eventProps.set(here.outpost?.props(shown.props, listener) ?? shown.props ?? []);
     parts.ambience.onFoot(here.node, playing.landmass, shown.shot, here.folk, !!here.dungeon);
     const { body } = walker.player;
     if (!here.dungeon) {
@@ -291,7 +292,8 @@ export function startFrames(parts: FrameParts, playing: Playing): void {
     hud.passageOffer(playing.through?.offer ?? null);
     // N raises the map on foot unless a menu is up, the player has fallen or is in a dungeon, as `openMap` has it.
     const mapless = paused || here.fallen || here.dungeon;
-    hud.hints(looking ? HINTS.landMap : mapless ? shown.hints : withMapKey(shown.hints));
+    const placing = placingNow() ? PLACING_HINTS : null;
+    hud.hints(looking ? HINTS.landMap : (placing ?? (mapless ? shown.hints : withMapKey(shown.hints))));
     // The quest's mark gives way to the map, as the fight's display does.
     hud.marks(looking ? [] : quests.marks(shown.shot, viewport, [body.x, body.y], parts.groundAt, here.node.id));
     // The tracker is set once a frame, so a public event's steps stand in it unblinking, in the quest's place.

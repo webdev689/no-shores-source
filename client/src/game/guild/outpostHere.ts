@@ -7,6 +7,7 @@ import { OUTPOST_CHANGED, openGearWindow } from '../gearScreen.ts';
 import { bannerFrom, bannerOfName } from './bannerLaw.ts';
 import { nodeRoom } from '../rooms.ts';
 import type { NodeInfo } from '../worldData.ts';
+import { ghostOf, letGo, placingNow } from './decorPlacing.ts';
 import { accountsHeld, guildHeld } from './guildHeld.ts';
 import { kindOf, pieceOf, type Plot, type Standing } from './outpostLaw.ts';
 import { type Ground, type Placed, decorPlaceOf, placeOf, plotBoxes, socketOf } from './outpostPlaces.ts';
@@ -22,6 +23,8 @@ import { type Ground, type Placed, decorPlaceOf, placeOf, plotBoxes, socketOf } 
 const LOOK_MS = 15_000;
 /** How near a structure's socket, or a piece of decoration, E reaches, metres. */
 const REACH_M = 2.5;
+const GHOST_GREEN = [0.25, 0.85, 0.35] as const;
+const GHOST_RED = [0.9, 0.2, 0.15] as const;
 const RAISE_WORDS = "Raise your guild's outpost here from the Guild tab.";
 /** Where the hall stands once raised (`server/accounts/outposts.ts`), the post standing at its door while bare. */
 const HALL: Standing = { id: 0, kind: 'hall', tier: 1, building: 0, x: 6, y: 6, turn: 0 };
@@ -126,9 +129,47 @@ export class OutpostHere {
     for (const course of this.course.courses) course.setCourse([...this.course.boxes, ...plot]);
   }
 
-  /** The props the outpost stands as beside `besides` (the zone's own), kept as one list while nothing changes. */
-  props(besides: readonly EventProp[] = []): readonly EventProp[] {
+  /** The props the outpost stands as beside `besides` (the zone's own), kept as one list while nothing changes, and
+   *  the ghost of a piece being placed at `feet`. */
+  props(besides: readonly EventProp[] = [], feet?: readonly [number, number]): readonly EventProp[] {
+    const ghost = feet ? this.ghost(feet) : null;
+    if (ghost) return [...besides, ...this.shown, ghost];
     return besides.length === 0 ? this.shown : [...besides, ...this.shown];
+  }
+
+  /** The piece being placed here, where the player's feet would stand it, and the law's words on it. */
+  private placing(feet: readonly [number, number]) {
+    const placing = placingNow();
+    const { seen } = this;
+    if (!placing || placing.site !== this.site || !seen) return null;
+    return { placing, ...ghostOf(placing, feet, seen.plot, this.ground) };
+  }
+
+  /** A piece being placed as its ghost: green where it may stand, red where not. */
+  private ghost(feet: readonly [number, number]): EventProp | null {
+    const placed = this.placing(feet);
+    if (!placed) return null;
+    const tint = placed.refusal === null ? GHOST_GREEN : GHOST_RED;
+    return { ...propOf(decorPlaceOf({ id: 0, ...placed.decor }, this.ground)), tint };
+  }
+
+  /** Places the piece being placed where it stands, as the accounts allow, telling the room once it is. */
+  private place(feet: readonly [number, number], ask: (asked: GearAsk) => void): Use | null {
+    const placed = this.placing(feet);
+    if (!placed || !this.link) return null;
+    const { placing, decor, refusal, name } = placed;
+    const link = this.link;
+    const run = () => {
+      if (refusal !== null) return;
+      void link.social('outpost/decorate', { site: this.site, ...decor }).then((why) => {
+        placing.said = why;
+        if (why !== null) return;
+        letGo();
+        ask({ kind: ASKS.outpostChanged });
+        dispatchEvent(new Event(OUTPOST_CHANGED));
+      });
+    };
+    return { words: refusal ?? placing.said ?? `Place the ${name}`, run };
   }
 
   /** Every prop the outpost stands as: each structure and piece of decoration, or the post while it is bare. */
@@ -148,6 +189,8 @@ export class OutpostHere {
   /** What E does at (`x`, `y`): opens the Guild tab on the structure whose socket is near, takes up a piece of
    *  decoration, or, while the outpost is bare, says how to raise it. */
   readonly uses = (x: number, y: number, ask: (asked: GearAsk) => void): Use | null => {
+    const placing = this.place([x, y], ask);
+    if (placing) return placing;
     const { seen, ground, site } = this;
     const near = ([atX, atY]: readonly [number, number] | readonly number[]) =>
       Math.hypot((atX ?? 0) - x, (atY ?? 0) - y) <= REACH_M;
@@ -178,6 +221,7 @@ export class OutpostHere {
   /** Stops reading the plot, as the player leaves. */
   stop(): void {
     clearInterval(this.timer);
+    letGo();
     removeEventListener(OUTPOST_CHANGED, this.look);
     this.asked++;
   }
