@@ -170,7 +170,7 @@ view unless a solid stands between, looking down so their feet stand 36% down th
 view where it is, her words said all the same. From her first word to her farewell the view is hers and, as in the
 story's cutscenes, Space (or the pad's jump or confirm) moves her words on a line and Escape, the menu's key and the
 pad's Start and View open the menu, the character page or the sheet, her words and their time holding still under it;
-no other game key acts (no move or look, no use, map, chat or respawn). As her first lines and her farewell begin the player is turned to face her, as she faces them. As she walks off the player is turned toward a point 3 m along her way into the town and the
+no other game key acts (no move or look, no use, map, chat or respawn). While she speaks every figure is drawn for the tour's own eye (the one last shown), not the player's camera, so each is turned and stands as that eye sees it. As her first lines and her farewell begin the player is turned to face her, as she faces them. As she walks off the player is turned toward a point 3 m along her way into the town and the
 view eases back over their shoulder, so she is seen going; the keys are theirs once it has. It is a cutscene: the HUD's
 bars, compass, tracker, marks and key strip are hidden while the keys are held, until the view is the player's again,
 the dialogue box hers. Her words wait while a menu is open over the view. A place no candidate eye sees clearly gives

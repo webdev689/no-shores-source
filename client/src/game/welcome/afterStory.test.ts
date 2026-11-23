@@ -165,3 +165,12 @@ test('the player is turned to face her as she speaks face to face, then the way 
     assert.ok(spot && spot[0] > 0 && spot[0] < VIEW.width && spot[1] > 0 && spot[1] < VIEW.height, `${seconds} s`);
   }
 });
+
+test("while she speaks the figures are drawn for the tour's own eye", async () => {
+  const { after, frame } = story();
+  assert.equal(after.seen, null, 'the player’s own eye before she speaks');
+  frame();
+  await settled();
+  const shot = after.shot(OWN, 1 / 30);
+  assert.deepEqual(after.seen, shot, "the tour's shot, the one last shown");
+});

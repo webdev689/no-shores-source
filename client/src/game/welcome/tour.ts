@@ -60,7 +60,8 @@ export class StrangerWelcome {
   private from: Shot | null = null;
   private to: Shot | null = null;
   private flown = FLY_S;
-  private last: Shot | null = null;
+  /** The view last shown. */
+  last: Shot | null = null;
   private ended = false;
 
   constructor(place: Place, voice: WelcomeVoice) {

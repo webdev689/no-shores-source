@@ -124,6 +124,12 @@ export class AfterStory {
     return this.welcome?.shot(own, seconds) ?? own;
   }
 
+  /** The tour's shot last shown while she speaks, for the figures to be drawn for its eye; null in the player's own
+   *  view. */
+  get seen(): Shot | null {
+    return this.holding ? (this.welcome?.last ?? null) : null;
+  }
+
   /** Whether the player's keys are held: while she speaks her welcome. */
   get holding(): boolean {
     return this.welcome?.holding ?? false;

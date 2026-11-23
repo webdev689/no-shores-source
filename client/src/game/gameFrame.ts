@@ -208,7 +208,9 @@ export function startFrames(parts: FrameParts, playing: Playing): void {
     // The figure kept still keeps its facing, so it is turned with the view.
     if (turned !== null) walker.player = { ...walker.player, yaw: turned, facing: turned };
     const heard = told ? IDLE : controls;
-    const own = here.frame(heard, seconds, clock, { paused, looking, hands: handsFree(heard, paused), aspect });
+    // While she speaks the figures are drawn for the tour's eye (last frame's), not the player's own camera.
+    const eye = playing.after.seen?.eye ?? null;
+    const own = here.frame(heard, seconds, clock, { paused, looking, hands: handsFree(heard, paused), aspect, eye });
     const shown = { ...own, shot: playing.after.shot(own.shot, seconds) };
     // A public event's beat is the music's moment, its props the drawer's, its steps the tracker's.
     if (shown.sting) parts.music.moment(shown.sting);
