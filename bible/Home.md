@@ -27,4 +27,4 @@ This vault is the bible: how No Shores works now, the rules we hold the code to,
 | `06-Port` | What we take from DFO Online and what we leave: [[Port]], [[Pick List]] |
 | `07-Open` | [[Open Questions]]: decisions waiting on the owner |
 | `Templates` | Note templates: System, Decision, Pick |
-| `Attachments` | Pictures for notes. The only media in git |
+| `Attachments` | Pictures for notes, once a note needs one: the only media in git but the forge's, kept as shipped |

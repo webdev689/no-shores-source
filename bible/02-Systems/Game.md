@@ -136,7 +136,7 @@ activities' word (`startActivities`: a gate that shut, a company that fell); eac
 | From | Happening | To |
 |---|---|---|
 | Arriving | The ground round the spawn is in | On foot in Overlook's social space |
-| On foot | M, then Return to ship | The room's word first: refused while fallen or within 10 s of a foe's blow, said in a toast (`toShip.ts`, [[The Audit's Leftovers Are Fixed as Claude Suggested]]); else the veil, "Returning to your ship", then at sea |
+| On foot | M, then Return to ship | The room's word first: refused while fallen or within 10 s of a foe's blow, said in a toast (`toShip.ts`, [[The Audit's Leftovers Are Fixed as Claude Suggested]]), and online no yes while the room is out of reach or has not sent the gear; else the veil, "Returning to your ship", then at sea |
 | On foot, or behind the veil to land | The room's gate shuts to the character, or it came by no way that leads there | The veil, the room's reason and "Returning to your ship", then at sea |
 | At sea | Enter, L or the offer to dock or go ashore, off a coast | Over the island's side |
 | Over the side | A mark clicked, then clicked again or Enter | The veil, "Landing at" the node, then on foot there |
@@ -492,7 +492,7 @@ through its harbour to water 4 m deep, then 600 m on. Later returns find it wher
   looking 0.5 radians down at its middle; a drag turns the view round it, the wheel brings it from 18 m to 78 m. The player
   stands at its wheel, three stand-in hands go about its deck, and a panel of the [[Interface]] shows it: its hull
   and canvas whole (the naval rules' build, read through the room's own module), its guns a side and their loads,
-  its length, beam and draught; its heading, pace and voyage; and Cargo and Crew, marked Later. B, or the panel's
+  its length, beam and draught, and its men where it has a crew; and its heading, pace and voyage. B, or the panel's
   Back to the sea, pans back up.
 - **Leave the helm** pans the view down to the player behind the ship's wheel, walking its deck as on foot (the same
   controls, first or third person), the sea room the authority on every step ([[Server]], "The sea"). Under way its
@@ -504,7 +504,7 @@ through its harbour to water 4 m deep, then 600 m on. Later returns find it wher
   on foot there, as on land, among the captain's crew and beside every other boarder, the deck riding the captain's ship on the swell; the
   place line names the ship, and once its crew has fallen it shows its minute's seconds left and its hold's take. E, or the
   minute's end, brings the view back to the fight at the player's own helm; beaten aboard, they wash up.
-- **Its hands.** Stand-ins until crew management comes: a human, a felid and a human in plain dress, each walking
+- **Its hands.** Three figures stand in for the ship's hands ([[Crew]]): a human, a felid and a human in plain dress, each walking
   between spots on the Sloop's deck at 1.3 m/s and standing at each 2 to 7 s, on a leg the deck leaves clear and away from
   its wheel; seeded, so they walk the same however the frames fall.
 - **Seen from any view** ([[The Sloop Is Sailed by Its Keys and Seen Close From Any View]]). Its hands always go

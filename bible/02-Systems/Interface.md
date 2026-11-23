@@ -1218,18 +1218,17 @@ button's corner and screen, and the Tailor's wares.
   fight has no touch controls yet.
 - The sea fight's readout writes at the face's 11 px where DFO's wrote 10, 12 and 15, and the sight's aim line at 11
   where DFO's was 13; the laid side's soft 8 px glow stands as a hard gold
-  halo round its broadside's ring; and a long ship's name on the card is cut short a little sooner, the face's
-  letters being wider than the page's.
+  halo round its broadside's ring; and a long ship's name on the card is cut short where the face's letters run
+  past it.
 - The ship's bar holds the guns as two broadsides, where DFO's battery rose also named the bow and the stern: it
   does not show the side a blow came from, which DFO's rose outlined red, nor flash a side as it comes ready.
 - The notices write at the face's 11 px, where DFO's wrote 14.
-- The place line's small words stay at the face's 11 px at the larger step, where the page wrote 16, and over the held
-  map at 11 (22 at the larger step), where it wrote 13 (20): the face has no step between, and 22 would stand them
-  level with the place's name above them.
-- The Harbourmaster's wares lay their words on one line under each tile, 6 px apart, where the page's ran together;
-  the muster stays inside the keeper's side on a view 1024 px wide, where the page's ran past it.
+- The place line's small words stay at the face's 11 px at the larger step, and over the held map at 11 (22 at the
+  larger step): the face has no step between, and 22 would stand them level with the place's name above them.
+- The Harbourmaster's wares lay their words on one line under each tile, 6 px apart; the muster stays inside the
+  keeper's side on a view 1024 px wide.
 - The World Editor's drop-downs stand a pixel shorter than a browser's. A captain's fight's readout shows over the
-  land's 3D view only; the page's stayed, still, over the 2D map. The Islands mode tells the GPU's errors only for what
+  land's 3D view only, not over the 2D map. The Islands mode tells the GPU's errors only for what
   it makes and draws itself, as the device is shared with the other modes.
 - Drawn by the game: the heads-up display, the toasts, the fight's display, the whole menu, the story's screens and
   the held map's marks. A word's soft shade past its hard outline is not drawn, as a blur has no crisp form, nor a
@@ -1240,43 +1239,39 @@ button's corner and screen, and the Tailor's wares.
   see. In Chromium its store is asked instead, through its credential manager (`SIGN_INS`): a sign-in that works is
   offered to be kept, and a kept one fills a guest's empty fields, the player choosing among several; elsewhere the
   player types them, and passkeys wait ([[Claude Makes the Four Points' Open Calls]]).
-- Settings' volumes are the kit's drawn sliders, a brass fill in a track, where the page showed the browser's own; a
+- Settings' volumes are the kit's drawn sliders, a brass fill in a track, not the browser's own; a
   credit's link opens its page in a new tab from a press, and the browser's own menu for a link (copy, open in a
   window) is not offered. A slider steps by its arrows only: Home, End and Page Up or Down do not move it.
 - A Roster row's words and a player's worn pieces keep to their line, cut short with '...' where they do not fit,
-  where the page wrapped a long status under itself. A column's arrow at its first or last page is drawn dimmed and
-  takes no press, as the page's did, and in a column of one page neither takes the focus.
-- A plate over a figure shrinks with its distance, but its words keep the face's 11 px, never smaller and never the
-  12 px a page's plate wrote; so does its alert's mark, 15 px on a page. A blow's number pops at sizes between the
-  face's steps for its first four frames, as no whole step is 1.4 times another. A ship's plate writes its name at
-  the face's 11 and 22 px, where the page wrote 12 and 18, outlined a pixel round where the page stroked it 1.5.
+  never wrapped. A column's arrow at its first or last page is drawn dimmed and takes no press, and in a column of one
+  page neither takes the focus.
+- A plate over a figure shrinks with its distance, but its words keep the face's 11 px, never smaller; so does its
+  alert's mark. A blow's number pops at sizes between the face's steps for its first four frames, as no whole step is
+  1.4 times another. A ship's plate writes its name at the face's 11 and 22 px, outlined a pixel round.
 - The small words in capitals of the fight's display and the menu (a boss's faction and phase, the poise's word,
-  the weapons' counts, the menu's headings and labels) keep the face's own spacing, not the wider spacing a page gave
-  them; the heads-up display's take theirs (`Text.tracking`).
-- The Anima's edge frame is drawn with the fight's display, under the game's own windows; on a page it stood over
-  everything.
+  the weapons' counts, the menu's headings and labels) keep the face's own spacing, not a wider one; the heads-up
+  display's take theirs (`Text.tracking`).
+- The Anima's edge frame is drawn with the fight's display, under the game's own windows, not over them.
 - The fight's display tells a screen reader nothing: its labels (each vital, status, ability and weapon) wait on the
   interface speaking what is not focused.
 - The drawn menu is not doubled past 1440p: the interface draws at one scale, so the menu there stands at 1280 by
   720's sizes rather than twice them. A tile's soft glow and a card's drop shadow are drawn as hard light and no
   shadow; a charging picture quivers but does not brighten.
-- A boss's name strikes in by fading alone: the page grew it from 1.6 times its size, which the face's whole steps
-  cannot. The tap's soft dark glow is not drawn, only its hard shadow. What each of the held
-  map's seas does, a tooltip on the page, is told only to a screen reader, in the press's label.
-- The creation's windows wear the kit's window, wells and presses, where the page's sheet had cleared the kit's frames
-  to plain light borders.
-- The tap to start shows once the face is read, a moment after the page opens; the page showed it at once.
+- A boss's name strikes in by fading alone, not growing in, which the face's whole steps cannot. The tap's soft dark
+  glow is not drawn, only its hard shadow. What each of the held map's seas does is told only to a screen reader, in
+  the press's label.
+- The tap to start shows once the face is read, a moment after the page opens.
 - A screen reader hears what the game draws only in Chromium (`ariaNotify`): a toast, a new task, a broadside run out
   at the player's ship (said once as the warning appears), the prompt for E, the menu's answers, what is gained, and each press's label as focus reaches it.
 - One look, DFO's Slate. Its other themes (Stone, Iron, Ember, Forest, Night) wait on a settings screen to choose
   them in.
 - The [[World Editor]] and the [[Test Ground]] keep their own panels' layout, in the game's face: they are tools, not
   the game's screens. The Test Ground's drop-downs, ticks and sliders wear the kit's look, not a browser's; its number
-  fields take words, not the browser's step arrows; its words in the face, not the page's monospace for the numbers
-  to copy, which cannot be selected: a press on them copies them whole (`copyText`); a name or a node's words show
-  over it, as a page's `title` did, while the pointer or the keys' focus is on it. With the mouse free, Tab or an
-  arrow moves focus into the panels, and the keys stay theirs until the view is clicked. The World Editor's panel is drawn by the game in its own look, its names over the view with a
-  halo a pixel wide where the page's stroke stood a pixel and a half out.
+  fields take words, not the browser's step arrows; its words are in the face, and the numbers to copy cannot be
+  selected: a press on them copies them whole (`copyText`); a name or a node's words show over it while the pointer
+  or the keys' focus is on it. With the mouse free, Tab or an
+  arrow moves focus into the panels, and the keys stay theirs until the view is clicked. The World Editor's panel is
+  drawn by the game in its own look, its names over the view with a halo a pixel wide.
 - The vitals always rest when whole: DFO's switch for it waits on a settings screen.
 - At sea the ship's bars stand beside the compass only on a view 908 px wide or more; on a narrower one they run under
   it, where on foot the compass's column steps down under the vitals. The sea's compass, card and tally do not double
@@ -1305,5 +1300,5 @@ button's corner and screen, and the Tailor's wares.
 - At sea the sea bar stays at the screen's foot. DFO stands its helm bar under the compass and the target's card
   under that bar, measured each frame; here a Boss ship's plate is drawn at a set place under the compass, where the
   bar would stand, and at 960 px the bar is as wide as the screen between the place's name and its right edge.
-- The compass marks only ships. DFO's marks for the player's own boats, a party, a quest, the way out, a profession's
-  nodes, Detect spells and its world's events wait on their like here ([[Pick - Enhanced Plus UI]]).
+- The compass marks ships and the public events. DFO's marks for the player's own boats, a party, a quest, the way out,
+  a profession's nodes and Detect spells wait on their like here ([[Pick - Enhanced Plus UI]]).

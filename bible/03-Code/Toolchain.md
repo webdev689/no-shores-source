@@ -18,8 +18,8 @@ code:
 - **Two configurations**: `tsconfig.json` for the client (browser types, no Node types) and `tsconfig.node.json` for
   the tests and the build configuration (with Node's types, and Vite's, since a test can reach client code that
   reads `import.meta.env`).
-- **Node 22.18 or later** runs the tests (`node --test`). `tools/testStyles.mjs` reads a `.css` a module imports as
-  an empty module; the html check refuses any in the client ([[Checks]]), so none of the tests' modules imports one.
+- **Node 22.18 or later** runs the tests (`node --test`). The html check refuses a stylesheet in the client
+  ([[Checks]]), so none of the tests' modules imports one.
 - **Vite 8** serves and builds the client from `client/` into `dist/`. CI publishes the client to GitHub Pages after
   `cargo xtask check` passes on a merge into `main` ([[The World Editor Is on GitHub Pages]]).
 - **ESLint 10** with `typescript-eslint`: spelled-out names, no `any`, type-only imports marked.
@@ -78,10 +78,10 @@ For the [[Sprite Forge]], which runs inside Blender: `pip install bpy==5.2.3` on
 
 For the ship export (`tools/ships/export_ship.py`, [[Sailing]]): `pip install bpy==5.3.0` on Python 3.13. Its
 `--dry-run` writes the mesh into the working folder, so run it from one outside the repo. It reads the objects named
-`Cannon.Port.<n>` and `Cannon.Starboard.<n>` (fore to aft) as its guns, faces in a material named `sail` as canvas
-(one box a connected piece), the faces of every other named material as its hull, and faces in an empty slot as spars
-and rigging that take no balls ([[Naval Combat]]). `tools/r2.py` holds the R2 access the publishers use. In CI each
-workflow that publishes to R2 runs two jobs. The first builds with Blender, ffmpeg or the packages it installs, and
+`Cannon.Port.<n>` and `Cannon.Starboard.<n>` (fore to aft) as its guns, and each face by its material, one of the
+five parts: `sail` as canvas (one box a connected piece), `hull` and `deck` as the hull a ball strikes, and `spar` and
+`iron` as what takes no balls; a face in an empty slot or any other material is refused ([[Naval Combat]]).
+`tools/r2.py` holds the R2 access the publishers use. In CI each workflow that publishes to R2 runs two jobs. The first builds with Blender, ffmpeg or the packages it installs, and
 holds no secret. The second installs no package, and it alone holds the repository's `CLOUDFLARE_TOKEN` secret, the
 token the deploys use ([[The Asset Workflows Publish to R2 With the Cloudflare Token]]): it uploads what the first left as an artifact
 ([[The Audit's Leftovers Are Fixed as Claude Suggested]]). The `dungeon-modules` and `island-modules` workflows'
@@ -89,8 +89,6 @@ second job runs their own publisher on the packs. In the others the first job ru
 to a folder, where `tools/r2.py` writes each upload under its key instead of sending it, and reads it back from
 there; the second sends that folder with `python3 -I tools/r2.py upload <folder>`, which refuses it whole unless each
 file is named by the SHA-256 of its bytes, under a folder a publisher writes and with an extension that folder takes.
-Only the `rooms` workflow holds `CLOUDFLARE_TOKEN`, which deploys the Workers and the accounts' database
-([[The Asset Workflows Publish to R2 With a Token for R2 Alone]]).
 
 For the modules (`tools/modules/`, [[Modules]]): on Python 3.13,
 `pip install --require-hashes --only-binary=:all: -r tools/modules/requirements.txt` (bpy 5.3.0 and what it needs, each

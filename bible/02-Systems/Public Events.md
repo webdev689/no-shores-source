@@ -262,9 +262,7 @@ sees and hears; the words are `game/publicLaw.ts`'s, worked out from the event a
   `crates/room/tests/grounds_planned.rs` holds Saltmere's three finished layouts' grounds clear of every box but the
   stores' own, and each fissure clear of its battlefield's obelisk and ruins.
 - A vault filled past its 20 by a leaver's chest shows more than its limit until its player takes some out.
-- The fissure's chasm is drawn 2 to 4% of its distance nearer the eye than the land at its mouth: land rising more
-  than that over the mouth's foot hides part of it, and anything standing that close in front of the mouth is drawn
-  behind it.
+- The fissure's chasm is drawn a little nearer the eye than the land at its mouth ([[Modules]], "Limits").
 - A chest's two minutes in the tracker run from when the page first saw it: a page come later counts the whole two.
 - A store's box covers both its whole and its plundered stack, so a body meets it as the larger of the two.
 - The fissure's spires are not in the navmesh: a Lattice foe's way may run into one.
