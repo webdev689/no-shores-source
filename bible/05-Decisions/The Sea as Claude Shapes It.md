@@ -66,6 +66,8 @@ Its rank, by the lowest level of its water's band:
 
 ### Friendly ships
 
+Their courses, number and pace are replaced by [[Friendly Ships Take Several Courses, About Five in View, Sailing Visibly]].
+
 - **Three lanes**, one between each pair of port cities, every leg more than 800 m clear of every coast.
 - **A ship** leaves each end every 1,200 s of world time at 5 m/s and is gone on arriving. Its hull comes from a hash
   of its number: a Sloop four times in ten, a Schooner three, a Brig two, a Frigate one. Arrived, it lies at the

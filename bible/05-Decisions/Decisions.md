@@ -321,3 +321,4 @@ a decision is a record. How to add one: [[Recording a Decision]].
 - [[The Rooms Deploy on Each Merge]], by [[The Rooms Deploy When Their Code Changes]]
 - [[The Seas Chosen Bring Their Weather, and a Storm Is the Mystery's]], by [[The Tiers Are Normal, Elite and Abyss]]
 - [[Private Repo overlook-source]], by [[The Game Is Named No Shores]]
+- [[Friendly Ships Take Several Courses, About Five in View, Sailing Visibly]]
