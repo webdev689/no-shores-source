@@ -145,17 +145,23 @@ the player's from there.
 of the world (the Grey Tithe's tenth, Overlook paying it nothing, three ports standing and the rest ruins grown over
 with something nobody names); then each place to visit, the camera flying to it as she names it and holding there
 while she and its keeper speak: the smiths' arcade (the Armorsmith and the Weaponsmith), the Mage, the Vault, the
-Tailor, the Tack, the Postmaster, the harbour's Harbourmaster for the Shipwright, and the Hall of the Arts with the
-three houses' chapels, Elder Maren Hale answering for the Lamplighters; then back to the player for her farewell. A
-place is framed from 11 m out over the plaza before its counters (the counter's side away from its keeper) and 7 m
-up, looking at their middle 2.5 m over the ground, through the player's own lens; a group's spread widens both (1.3 and
-0.35 times its farthest counter from the middle). Its first counter is the one of its kind nearest the player, each
-other the one of its kind nearest that. The houses' chapels stand inside the Hall of the Arts, so it is seen from 70 m
-out toward the player and 50 m up, clear of its walls.
-A flight takes 2.4 s, eased out of rest and into it, from wherever the view stands; a place the plaza lacks keeps the
+Tailor, the Tack, the Postmaster, the harbour's Harbourmaster for the Shipwright, and the Hall of the Arts, turning to
+each house's chapel as she names it (Arlo Kestrel, Sable and Elder Maren Hale answering); then her farewell face to
+face. A place's eye (`welcome/framing.ts`) is the first of a set of candidates round its counters whose lines to each
+keeper's head and each stall's front clear the node's solids (the blocks the camera's boom keeps clear of), both in
+the view: 11, 8, 14 then 5.5 m out, turned 0, 20, 40, 60 then 80 degrees either side of the counter's facing, 7, 4.5,
+10 then 3 m up, looking at the counters' middle 2.5 m over the ground through the player's own lens; a group's spread
+adds 1.3 times its farthest counter from the middle to the distance and 0.35 times to the height. Its first counter is
+the one of its kind nearest the player, each other the one of its kind nearest that. The Hall of the Arts is an
+interior: it is seen from inside, a few metres in from its door (3, 2, 5, 7 then 9 m) and up under its 14 m roof (10,
+11, 8, 12 then 7 m), down the nave toward the Lamplighters' chapel with a wider lens (1.35 radians), the first eye that
+sees all three keepers and their banners clear of the columns; as she names a house the camera turns from there to its
+chapel. Her farewell is seen from 3.2 m to the side of the pair, level with their faces, on the side nearer the player's
+view unless a solid stands between. A flight takes 2.4 s, eased out of rest and into it, from wherever the view stands; a place the plaza lacks keeps the
 view where it is, her words said all the same. From her first word to her farewell no game key acts (no move or
 look, no use, map, menu, chat, character page or respawn) and the view is hers; Space (or the pad's jump or confirm)
-moves her words on a line, and the keys and the view are given back as she finishes. It is a cutscene: the HUD's
+moves her words on a line. As she walks off the view eases back over the player's shoulder, and the keys are theirs
+once it is. It is a cutscene: the HUD's
 bars, compass, tracker, marks and key strip are hidden from her first word to her last, the dialogue box hers. As she bids
 farewell she gives the player 400 Aurem, the opening quest's first task heard ([[Quests]]); the room gives it once a
 character, so a second hearing, a rejoin or a second tab gives none. Leaving the place mid-welcome ends it at once, the

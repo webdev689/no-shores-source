@@ -89,6 +89,11 @@ export class Epilogue {
     return actorCards([stranger], this.forge, shot.eye, clock);
   }
 
+  /** Where she stands, once she has met the player. */
+  get where(): Readonly<Standing> | null {
+    return this.standing;
+  }
+
   /** Says a scene of hers, and of whoever answers her, in the dialogue box; resolved once said or hushed. */
   say(scene: string): Promise<void> {
     return this.stage.play(scene, true, { stranger: 'stranger' });

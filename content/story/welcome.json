@@ -33,9 +33,17 @@
       { "who": "stranger", "say": "Down at the harbour the Shipwright keeps a ship sound." },
       { "who": "harbourmaster", "say": "Bring your ship in, and she goes out sound." }
     ],
-    "tourHall": [
-      { "who": "stranger", "say": "The Hall of the Arts. Stormcallers, Lamplighters and the Veiled each keep a chapel." },
-      { "who": "stranger", "say": "Hear all three before you give your word to one." },
+    "tourHall": [{ "who": "stranger", "say": "The Hall of the Arts. Each of the three houses keeps a chapel here." }],
+    "tourHallStorm": [
+      { "who": "stranger", "say": "The Stormcallers keep the Storm, and keep it loud." },
+      { "who": "stormcaller", "say": "Loud is how lightning likes it." }
+    ],
+    "tourHallVeiled": [
+      { "who": "stranger", "say": "The Veiled keep the Shadow. Ask them nothing you would not want answered." },
+      { "who": "veiled", "say": "She is kinder than she sounds." }
+    ],
+    "tourHallLamps": [
+      { "who": "stranger", "say": "The Lamplighters keep the Divine. Hear all three before you choose." },
       { "who": "maren", "say": "We keep the lamps lit, whoever you choose." }
     ],
     "strangerFarewell": [

@@ -35,6 +35,8 @@ export class AfterStory {
   /** Whether her farewell has asked for her gift, and whether the room has been asked for it in this page. */
   private farewell = false;
   private gifted = false;
+  /** Where the player stood on the last frame. */
+  private you: You = { x: 0, y: 0, z: 0, facing: 0 };
 
   /** The story has ended and hands over the stranger's last moment, none where it was not played through. */
   storyEnded(epilogue: Epilogue | null): void {
@@ -52,15 +54,21 @@ export class AfterStory {
     here: Arrival,
   ): CardAt[] {
     this.gift(here);
+    this.you = you;
     const epilogue = this.epilogue;
     if (!epilogue || epilogue.done) {
       [this.epilogue, this.welcome] = [null, null];
       return [];
     }
     if (!this.welcome && here.node.kind === 'social') {
-      const welcome = new StrangerWelcome(here.node.stations ?? [], here.floor, {
+      const place = { stations: here.node.stations ?? [], groundAt: here.floor, blocks: here.blocks };
+      const welcome = new StrangerWelcome(place, {
         play: (scene) => epilogue.say(scene),
         gift: () => void (this.farewell = true),
+        faces: () => {
+          const her = epilogue.where;
+          return her && { stranger: [her.x, her.y, her.z], player: [this.you.x, this.you.y, this.you.z] };
+        },
       });
       epilogue.words = () => welcome.run();
       this.welcome = welcome;

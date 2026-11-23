@@ -1,19 +1,25 @@
 // The stranger's welcome to Overlook, said as the player arrives with her after the shore: a little of the world, then
-// each place to visit named in turn while the camera flies to it and holds there, then back to the player for her
-// farewell and her gift of Aurem. The player's keys are held from her first word to her last. No drawing and no
-// words here: the epilogue stands her figure and plays each scene this names (`epilogue.ts`, `afterStory.ts`).
-import { smooth, lookAt } from '../../cinema/rail.ts';
+// each place to visit named in turn while the camera flies to it and holds there (`framing.ts`), then her farewell
+// face to face and her gift of Aurem, the view easing back over the player's shoulder as she walks off. No game key
+// acts from her first word until the view is the player's again. No drawing and no words here: the epilogue stands
+// her figure and plays each scene this names (`epilogue.ts`, `afterStory.ts`).
+import { smooth } from '../../cinema/rail.ts';
 import { type Shot, panShot } from '../camera.ts';
-import type { StationInfo } from '../nodes.ts';
+import { type Place, counterShot, facesShot, hallShot } from './framing.ts';
+
+type Point3 = readonly [number, number, number];
 
 /** One step of her welcome: the scene she says, and the counters the camera frames meanwhile, by their station's
- *  kind (none keeps the view on the player), seen from `high` over a building that stands round them. */
+ *  kind (none keeps the view on the player); in the Hall of the Arts (`hall`), seen from inside; or the pair of them
+ *  face to face (`faces`). */
 export interface TourStep {
   readonly scene: string;
   readonly kinds: readonly string[];
-  readonly high?: boolean;
+  readonly hall?: boolean;
+  readonly faces?: boolean;
 }
 
+const HOUSES = ['stormcallers', 'veiled', 'lamplighters'];
 export const TOUR: readonly TourStep[] = [
   { scene: 'strangerHistory', kinds: [] },
   { scene: 'tourSmiths', kinds: ['armorsmith', 'weaponsmith'] },
@@ -23,72 +29,31 @@ export const TOUR: readonly TourStep[] = [
   { scene: 'tourTack', kinds: ['tack'] },
   { scene: 'tourPost', kinds: ['mail'] },
   { scene: 'tourHarbour', kinds: ['harbourmaster'] },
-  { scene: 'tourHall', kinds: ['stormcallers', 'lamplighters', 'veiled'], high: true },
-  { scene: 'strangerFarewell', kinds: [] },
+  { scene: 'tourHall', kinds: HOUSES, hall: true },
+  { scene: 'tourHallStorm', kinds: ['stormcallers'], hall: true },
+  { scene: 'tourHallVeiled', kinds: ['veiled'], hall: true },
+  { scene: 'tourHallLamps', kinds: ['lamplighters'], hall: true },
+  { scene: 'strangerFarewell', kinds: [], faces: true },
 ];
 
 /** How long the camera takes to fly from one place to the next, seconds. */
 export const FLY_S = 2.4;
-/** How far out over the plaza from a single counter the eye stands, and how high over the ground, metres; a group's
- *  spread widens both, so every counter of it stays in the view. */
-const BACK_M = 11;
-const HEIGHT_M = 7;
-/** How far out and up a place inside a building is seen from, toward the player, clear of its walls, metres. */
-const HIGH_BACK_M = 70;
-const HIGH_M = 50;
-const SPREAD_BACK = 1.3;
-const SPREAD_HEIGHT = 0.35;
-/** The height over the ground the eye looks at: over a keeper's head, so their stall's roof is in the view. */
-const LOOK_M = 2.5;
 
-/** The shot framing the counters of `kinds`, the first the one of its kind nearest the player's view (`own`), each
- *  other the one of its kind nearest that: from out over the plaza before them and up, looking at their middle,
- *  through the player's own lens. Null where one of the kinds keeps no counter here. */
-export function framing(
-  stations: readonly StationInfo[],
-  kinds: readonly string[],
-  own: Shot,
-  groundAt: (x: number, y: number) => number | null,
-  high = false,
-): Shot | null {
-  const nearest = (kind: string | undefined, [x = 0, y = 0]: readonly number[]) => {
-    const away = (station: StationInfo) => Math.hypot(station.counter[0] - x, station.counter[1] - y);
-    return stations.filter((station) => station.kind === kind).sort((one, two) => away(one) - away(two))[0];
-  };
-  const first = nearest(kinds[0], own.eye);
-  const named = kinds.map((kind) => first && nearest(kind, first.counter));
-  if (named.length === 0 || named.some((station) => !station)) return null;
-  const found = named as StationInfo[];
-  const mean = (value: (station: StationInfo) => number) =>
-    found.reduce((sum, each) => sum + value(each), 0) / found.length;
-  const [x, y] = [mean((each) => each.counter[0]), mean((each) => each.counter[1])];
-  // A counter faces the plaza from its keeper: the eye stands out that way, or, over walls round it, the player's way.
-  let [outX, outY] = high
-    ? [own.eye[0] - x, own.eye[1] - y]
-    : [mean((each) => each.counter[0] - each.keeper[0]), mean((each) => each.counter[1] - each.keeper[1])];
-  const out = Math.hypot(outX, outY) || 1;
-  [outX, outY] = [outX / out, outY / out];
-  const spread = Math.max(...found.map((each) => Math.hypot(each.counter[0] - x, each.counter[1] - y)));
-  const ground = groundAt(x, y) ?? own.eye[2];
-  const back = (high ? HIGH_BACK_M : BACK_M) + spread * SPREAD_BACK;
-  const up = (high ? HIGH_M : HEIGHT_M) + spread * SPREAD_HEIGHT;
-  const eye = [x + outX * back, y + outY * back, ground + up] as const;
-  const look = lookAt(eye, [x, y, ground + LOOK_M]);
-  return { ...own, eye, ...look };
-}
-
-/** What the welcome speaks and gives with: a scene played, resolved once said, and her gift asked of the room. */
+/** What the welcome speaks and gives with: a scene played, resolved once said, her gift asked of the room, and where
+ *  her feet and the player's stand. */
 export interface WelcomeVoice {
   readonly play: (scene: string) => Promise<void>;
   readonly gift: () => void;
+  readonly faces?: () => { readonly stranger: Point3; readonly player: Point3 } | null;
 }
 
 export class StrangerWelcome {
-  /** Whether the player's keys are held: from her first word until her farewell is said, or the player leaves. */
+  /** Whether the player's keys are held: from her first word until the view is theirs again, or the player leaves. */
   holding = false;
-  private readonly stations: readonly StationInfo[];
-  private readonly groundAt: (x: number, y: number) => number | null;
+  private readonly place: Place;
   private readonly voice: WelcomeVoice;
+  /** Whether her farewell is said and the view eases back to the player's own, their keys given back once it is. */
+  private returning = false;
   /** The step whose place the camera is asked to frame; undefined once framed. */
   private asked: TourStep | undefined;
   /** The shot a flight leaves from and the one it goes to; null is the player's own view. */
@@ -98,12 +63,8 @@ export class StrangerWelcome {
   private last: Shot | null = null;
   private ended = false;
 
-  constructor(
-    stations: readonly StationInfo[],
-    groundAt: (x: number, y: number) => number | null,
-    voice: WelcomeVoice,
-  ) {
-    [this.stations, this.groundAt, this.voice] = [stations, groundAt, voice];
+  constructor(place: Place, voice: WelcomeVoice) {
+    [this.place, this.voice] = [place, voice];
   }
 
   /** Says each step in turn, the camera flying as each begins; then gives her gift. Resolves once said, or ended. */
@@ -120,13 +81,15 @@ export class StrangerWelcome {
     }
     if (this.ended) return;
     this.voice.gift();
-    this.holding = false;
+    // She walks off: the view eases back over the player's shoulder, then the keys are theirs.
+    [this.from, this.to, this.flown, this.returning] = [this.last, null, 0, true];
   }
 
   /** The view this frame, the player's own being `own`: hers while she speaks, eased from place to place. */
   shot(own: Shot, seconds: number): Shot {
     if (this.asked) this.aim(this.asked, own);
     this.flown = Math.min(FLY_S, this.flown + seconds);
+    if (this.returning && this.flown >= FLY_S) [this.holding, this.returning] = [false, false];
     const shot = panShot(this.from ?? own, this.to ?? own, smooth(this.flown / FLY_S));
     this.last = shot;
     return this.ended ? own : shot;
@@ -134,14 +97,26 @@ export class StrangerWelcome {
 
   /** The player has left: the view is theirs again at once, with their keys, and nothing more is said or given. */
   end(): void {
-    [this.ended, this.holding, this.from, this.to, this.asked] = [true, false, null, null, undefined];
+    [this.ended, this.holding, this.from, this.to, this.asked, this.returning] = [
+      true,
+      false,
+      null,
+      null,
+      undefined,
+      false,
+    ];
   }
 
   /** Sets a flight from where the view stands to the place of a step, or to the player; a place the plaza lacks keeps
    *  the view where it is. */
-  private aim({ kinds, high }: TourStep, own: Shot): void {
+  private aim({ kinds, hall, faces }: TourStep, own: Shot): void {
     this.asked = undefined;
-    const to = kinds.length === 0 ? null : framing(this.stations, kinds, own, this.groundAt, high);
+    const pair = faces ? this.voice.faces?.() : null;
+    const to = pair
+      ? facesShot(own, pair.stranger, pair.player, this.place.blocks)
+      : kinds.length === 0
+        ? null
+        : (hall ? hallShot : counterShot)(this.place, kinds, own);
     if (kinds.length > 0 && !to) return;
     if (to === null && this.to === null) return;
     [this.from, this.to, this.flown] = [this.last, to, 0];
