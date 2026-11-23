@@ -1,5 +1,6 @@
 {
-  // The server's Cloudflare shell: strict like the client, with Cloudflare's Workers types instead of the DOM's.
+  // The server's Cloudflare shell: strict like the client, with Cloudflare's Workers types instead of the DOM's. The
+  // protocol's version is Node's, run by tools/schema.mjs, and typed with the tests that import it.
   "compilerOptions": {
     "target": "ES2023",
     "module": "ESNext",
@@ -19,5 +20,5 @@
     "noEmit": true
   },
   "include": ["*.ts", "accounts/*.ts"],
-  "exclude": ["*.test.ts", "*ForTests.ts", "accounts/*.test.ts", "accounts/*ForTests.ts"]
+  "exclude": ["*.test.ts", "*ForTests.ts", "accounts/*.test.ts", "accounts/*ForTests.ts", "protocolVersion.ts"]
 }
