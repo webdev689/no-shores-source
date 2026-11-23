@@ -10,7 +10,6 @@ import { keeperPicture } from './npc/npcMarks.ts';
 import { DOOR_PICTURE, keeperLit, markOfKind, markedHere } from './overheadMarks.ts';
 import { countersOf } from './plazaLife.ts';
 import { STATIONS } from './welcome/plazaForTests.ts';
-import { awayFromCounters } from './townsfolk.ts';
 
 const station = (kind: string, keeper: readonly [number, number]): StationInfo => ({
   kind,
@@ -164,14 +163,4 @@ test('a keeper away from their counter is not lit, on the map or over their post
     true,
     'letters wait',
   );
-  awayFromCounters.add('mail');
-  try {
-    assert.equal(
-      keeperLit(gear, 'mail', () => true),
-      false,
-      'away, whatever waits',
-    );
-  } finally {
-    awayFromCounters.delete('mail');
-  }
 });

@@ -23,7 +23,7 @@ import { rosterFor } from '../footRoom.ts';
 import { actorCards } from '../prologue/actors.ts';
 import type { Quest } from '../tasks.ts';
 import { worldOutput } from '../uiSounds.ts';
-import { COUNTERS, goalNodes, markedGoal, talkAt, trackedOf } from './questBook.ts';
+import { COUNTERS, buyAt, goalNodes, markedGoal, talkAt, trackedOf } from './questBook.ts';
 import { FIGURE_MOVES, FigureGlides, questActors, wardPlate } from './questFigures.ts';
 import { QuestWatch } from './questWatch.ts';
 
@@ -169,10 +169,16 @@ export class Quests {
     return where ? [where[0], where[1]] : null;
   }
 
-  /** Whether the keeper at the counter `counter` (a station's kind) has something for the player: a step of the
-   *  quest walked asks to speak with them, once the story and the welcome are past, as `speak` answers. */
+  /** Whether the keeper at the counter `counter` (a station's kind) has something for the player, once the story
+   *  and the welcome are past: a step of the quest walked asks to speak with them, as `speak` answers, or to buy one
+   *  of their wares. */
   wants(counter: string): boolean {
-    return this.speak(counter, () => undefined) !== null;
+    return this.speak(counter, () => undefined) !== null || (this.past && buyAt(this.gear?.quest, counter));
+  }
+
+  /** Whether the quest walked waits on the stranger's welcome, whose end asks the room for her gift. */
+  get waitsOnStranger(): boolean {
+    return talkAt(this.gear?.quest, 'stranger') !== null;
   }
 
   /** What E does at the counter of a station of kind `counter` (its offer's view), while a talk goal of the task names

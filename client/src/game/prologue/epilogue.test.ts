@@ -41,7 +41,9 @@ function epilogueOn(
     frames: () => 8,
     card: (_id: number, _dress: unknown, anim: string) => ({ anim }),
   } as unknown as Cards;
-  return { epilogue: new Epilogue(stage, forge), said, done, heads, stage: stage as unknown as FakeStage };
+  const epilogue = new Epilogue(stage, forge);
+  epilogue.words = () => epilogue.say('welcome');
+  return { epilogue, said, done, heads, stage: stage as unknown as FakeStage };
 }
 
 const settled = () => new Promise((resolve) => setImmediate(resolve));
@@ -57,7 +59,7 @@ test('the stranger waits behind the veil, and speaks once it is wholly gone, in 
     lifted += STEP_S;
   }
   assert.ok(lifted >= HUD_VEIL_S, `she spoke ${lifted.toFixed(2)} s after the veil began to fall`);
-  assert.equal(said[0]?.scene, 'arrived');
+  assert.equal(said[0]?.scene, 'welcome', 'her words');
   assert.ok(headOnView(heads.at(-1) ?? null, VIEW), 'her head is in the view');
 });
 

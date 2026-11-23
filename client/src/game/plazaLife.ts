@@ -10,7 +10,7 @@ import type { Block } from '../rules/movementRules.ts';
 import type { Opening } from './gearScreen.ts';
 import { HARBOURMASTER, KEEPERS, KEEPER_KINDS } from './keepers.ts';
 import type { StationInfo } from './nodes.ts';
-import { Townsfolk, awayFromCounters, plazaOf, shapeSpot } from './townsfolk.ts';
+import { Townsfolk, plazaOf, shapeSpot } from './townsfolk.ts';
 import type { NodeInfo } from './worldData.ts';
 
 /** How near a counter a player stands to be served, metres. */
@@ -104,11 +104,11 @@ export class PlazaLife {
   }
 
   /** Places everyone's figures where they are at world time `worldS`, seconds: Shape among them while the room's
-   *  `gear` says he is here, and a keeper away from their counter taken from it. */
+   *  `gear` says he is here. */
   frame(worldS: number, gear: GearState | null = null): void {
     const shape = shapeSpot(gear?.shape, this.visitorSpots);
     const here = new Set<number>();
-    for (const person of this.folk?.peopleAt(worldS, { away: awayFromCounters, shape }) ?? []) {
+    for (const person of this.folk?.peopleAt(worldS, { shape }) ?? []) {
       here.add(person.id);
       const placed = this.figures.get(person.id) ?? this.others.place(person.dress, person.x, person.y, person.facing);
       this.figures.set(person.id, placed);

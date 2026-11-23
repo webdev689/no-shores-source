@@ -44,6 +44,8 @@ import type { SloopBuild } from './shipPanel.ts';
 import { standingDrawers } from './standingDrawers.ts';
 import type { NodeInfo } from './worldData.ts';
 import type { AfterStory } from './welcome/afterStory.ts';
+import { ASKS } from '../network/gearMessages.ts';
+import { COUNTERS } from './quests/questBook.ts';
 import type { Quests } from './quests/quests.ts';
 import type { Lore } from './compendium/lore.ts';
 import type { StoryHost } from './prologue/host.ts';
@@ -147,6 +149,8 @@ export function startFrames(parts: FrameParts, playing: Playing): void {
   const { ui, stack, drain } = parts;
   let [last, clock] = [performance.now(), 0];
   let wasWalking = false;
+  /** Whether the stranger's gift has been asked of the room in this page. */
+  let giftAsked = false;
   /** Whether the view was in the player's eyes before the land's held map took it there; null while it has not. */
   let eyesBeforeMap: boolean | null = null;
 
@@ -195,7 +199,12 @@ export function startFrames(parts: FrameParts, playing: Playing): void {
       eyesBeforeMap = looking ? walker.player.view.firstPerson : null;
       walker.player = { ...walker.player, view: { ...walker.player.view, firstPerson } };
     }
-    const shown = here.frame(controls, seconds, clock, { paused, looking, hands: handsFree(controls, paused), aspect });
+    // While the stranger speaks her welcome the keys wait, but Space, which moves her words on, and the view is hers.
+    const told = playing.after.holding;
+    if (told && controls.pressed('jump')) playing.after.press();
+    const heard = told ? IDLE : controls;
+    const own = here.frame(heard, seconds, clock, { paused, looking, hands: handsFree(heard, paused), aspect });
+    const shown = { ...own, shot: playing.after.shot(own.shot, seconds) };
     // A public event's beat is the music's moment, its props the drawer's, its steps the tracker's.
     if (shown.sting) parts.music.moment(shown.sting);
     const listener = [walker.player.body.x, walker.player.body.y] as const;
@@ -244,17 +253,20 @@ export function startFrames(parts: FrameParts, playing: Playing): void {
     if (looking) footView.hideDisplay();
     const water = parts.waterHere();
     const fleet = traffic.onFoot(shown.shot.eye, water, seconds, clock);
-    // The story's last moment, on foot once the veil is gone: the stranger before the player, then the elder's welcome.
-    const met = playing.after.frame(
-      shown.shot,
-      viewport,
-      seconds,
-      clock,
-      walker.you,
-      flow.mode !== 'foot',
-      here,
-      paused,
-    );
+    // The story's last moment, on foot once the veil is gone: the stranger before the player, and her welcome. A
+    // character still owed her gift in a social space with no welcome to hear (a page reloaded mid-welcome, or a
+    // browser that played the story before) is given it there.
+    const gift = () => {
+      if (giftAsked || !quests.waitsOnStranger) return;
+      giftAsked = true;
+      here.gear?.ask({ kind: ASKS.speakWith, column: COUNTERS.stranger ?? 0 });
+    };
+    if (playing.after.past && here.node.kind === 'social') gift();
+    const met = playing.after.frame(shown.shot, viewport, seconds, clock, walker.you, flow.mode !== 'foot', {
+      node: here.node,
+      floor: here.floor,
+      gift,
+    });
     const carried = { left: walker.you.dress.outfit.left, feet: [body.x, body.y, body.z] as const };
     const moorings = here.node.kind === 'social' ? (playing.landmass.plan?.social.moorings ?? []) : [];
     const moored = mooredShips(moorings, clock, water);

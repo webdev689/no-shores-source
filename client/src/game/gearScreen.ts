@@ -202,8 +202,11 @@ function gearPresses(item: GearItem, state: GearState, atVault: boolean): Press[
   return presses;
 }
 
-/** A vendor's ware as its stall shows it: the item's tile and kind, and its purchase. */
+/** A vendor's ware as its stall shows it: the item, its tile and kind, its purchase, and whether it is of the starter
+ *  stock. */
 export interface Ware {
+  readonly item: GearItem;
+  readonly starter: boolean;
   readonly tile: Tile;
   readonly kind: string;
   readonly level: number;
@@ -212,17 +215,22 @@ export interface Ware {
   readonly press: Press;
 }
 
-/** The vendors by the gear crate's numbers (`Vendor::ALL`), and how many wares each sells a day (`vendor::WARES`): the
- *  message lists them vendor by vendor. */
+/** The vendors by the gear crate's numbers (`Vendor::ALL`), how many wares each sells a day (`vendor::WARES`), and how
+ *  many each stocks in all, the starter stock after the day's (`Vendor::starter_kinds`): the message lists them vendor
+ *  by vendor. */
 const VENDORS = ['The Armorsmith', 'The Weaponsmith', 'The Shipwright'] as const;
 export const WARES = 6;
+const STOCK = [WARES + 4, WARES + 2, WARES] as const;
 
-/** The vendors' stalls: the Armorsmith's, the Weaponsmith's and the Shipwright's wares of the day, each bought for its
- *  price in Aurem. */
+/** The vendors' stalls: the Armorsmith's, the Weaponsmith's and the Shipwright's wares of the day and starter stock,
+ *  each bought for its price in Aurem. */
 export function vendorsOf(state: GearState): readonly { readonly name: string; readonly wares: readonly Ware[] }[] {
+  let from = 0;
   return VENDORS.map((name, vendor) => ({
     name,
-    wares: state.wares.slice(vendor * WARES, (vendor + 1) * WARES).map((item) => ({
+    wares: state.wares.slice(from, (from += STOCK[vendor] ?? 0)).map((item, place) => ({
+      item,
+      starter: place >= WARES,
       tile: tileOf(item),
       kind: `${RARITIES[item.rarity]?.name ?? ''} ${gearKindName(item.kind)}`,
       level: item.level,

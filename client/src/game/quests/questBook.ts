@@ -11,7 +11,7 @@ import type { Quest as Tracked, Step } from '../tasks.ts';
  *  places an `escort` or a `tail` walks between (`from`, `to`) and its figure (`who` a speaker, `foe` a roster type)
  *  with the line said as it first walks (`greet`), a `defend` goal's ward, a `puzzle`'s points and their `order`, a
  *  `race`'s checkpoints, the line said as it fails (`lost`, `late`, `seen`, `noticed`, `wrong`) and an escort's
- *  `shout` as an ambush springs. The rest the rules read alone. */
+ *  `shout` as an ambush springs, and the slot a `buy` or a `wear` goal names. The rest the rules read alone. */
 export interface Goal {
   readonly kind: string;
   readonly text: string;
@@ -34,6 +34,7 @@ export interface Goal {
   readonly shout?: string;
   readonly greet?: string;
   readonly order?: readonly number[];
+  readonly slot?: string;
 }
 
 /** A task: its id, its tracker words, the scenes said as it begins and as it is done, its goals, and what it gives
@@ -71,6 +72,18 @@ export const COUNTERS: Readonly<Record<string, number>> = {
   tailor: 14,
   tack: 15,
   harbourmaster: 16,
+  mail: 17,
+  stranger: 18,
+};
+
+/** The smith who sells a slot's pieces, by their station's kind. */
+const SMITH_OF: Readonly<Record<string, string>> = {
+  melee: 'weaponsmith',
+  ranged: 'weaponsmith',
+  head: 'armorsmith',
+  torso: 'armorsmith',
+  arms: 'armorsmith',
+  legs: 'armorsmith',
 };
 
 /** How many a goal asks for. */
@@ -152,6 +165,14 @@ export function talkAt(state: QuestState | null | undefined, counter: string): G
   const open = (goal: Goal, index: number) =>
     goal.kind === 'talk' && goal.to === counter && !met(goal, now?.counts[index] ?? 0);
   return now?.task.goals.find(open) ?? null;
+}
+
+/** Whether an unmet `buy` goal of the task now asks a ware of the smith at the counter `counter`. */
+export function buyAt(state: QuestState | null | undefined, counter: string): boolean {
+  const now = walked(state);
+  const open = (goal: Goal, index: number) =>
+    goal.kind === 'buy' && SMITH_OF[goal.slot ?? ''] === counter && !met(goal, now?.counts[index] ?? 0);
+  return now?.task.goals.some(open) ?? false;
 }
 
 /** Whether a goal stands somewhere the room may mark: at a place, along a walk between two, or at checkpoints. */

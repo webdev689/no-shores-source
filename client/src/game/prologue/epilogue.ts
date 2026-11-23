@@ -1,6 +1,7 @@
 // The story's last moment, played on foot in Overlook's social space once the veil over the player's arrival has
-// lifted: the stranger who brought them stands before them and says her last words, then walks off into the town and
-// is let go once the player no longer sees her. Leaving the place ends it. The journey from here is the player's own.
+// lifted: the stranger who brought them stands before them and speaks her `words` (her welcome to Overlook,
+// `welcome/tour.ts`), then walks off into the town and is let go once the player no longer sees her. Leaving the
+// place ends it. The journey from here is the player's own.
 import type { CardAt, Cards } from '../../player/cards.ts';
 import { onScreen, type Shot } from '../camera.ts';
 import { actorCards, type Actor } from './actors.ts';
@@ -34,6 +35,8 @@ export class Epilogue {
   /** Seconds since she set off into the town. */
   private going = 0;
   done = false;
+  /** What she says once the player sees her, resolved once said: her welcome, set where she stands in Overlook. */
+  words: () => Promise<void> = () => Promise.resolve();
 
   constructor(stage: Stage, forge: Cards) {
     this.stage = stage;
@@ -61,7 +64,7 @@ export class Epilogue {
       const walkOff = () => {
         if (this.phase === 'speaking') this.phase = 'going';
       };
-      this.stage.play('arrived', true, { stranger: 'stranger' }).then(walkOff, (error: unknown) => {
+      this.words().then(walkOff, (error: unknown) => {
         console.error("the stranger's last words could not be played:", error);
         walkOff();
       });
@@ -84,6 +87,16 @@ export class Epilogue {
       ...standing,
     };
     return actorCards([stranger], this.forge, shot.eye, clock);
+  }
+
+  /** Says a scene of hers, and of whoever answers her, in the dialogue box; resolved once said or hushed. */
+  say(scene: string): Promise<void> {
+    return this.stage.play(scene, true, { stranger: 'stranger' });
+  }
+
+  /** A press: the line being said is typed whole, or the next begins. */
+  advance(): void {
+    this.stage.parts.dialogue.advance();
   }
 
   /** The place she met the player in is left, or she is out of sight: she is gone, and nothing she said stays on the

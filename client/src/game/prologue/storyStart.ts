@@ -4,6 +4,7 @@
 // story through and sees only the intro never makes it.
 import cast from '../../../../content/story/cast.json' with { type: 'json' };
 import scenes from '../../../../content/story/prologue.json' with { type: 'json' };
+import welcome from '../../../../content/story/welcome.json' with { type: 'json' };
 import ships from '../../../../content/ships/ships.json' with { type: 'json' };
 import { Ambience } from '../../cinema/ambience.ts';
 import { Birds } from '../../cinema/birds.ts';
@@ -106,7 +107,8 @@ export async function startStory(game: StoryGame, from: BeatName | null): Promis
   const wreckDrawn = onceFetched();
   // The story's own words are read, and refused if they do not hold, before it takes anything from the page.
   const readCast = castOf(cast);
-  const readScenes = scenesOf(scenes, readCast);
+  // The stranger's welcome to Overlook is said on the story's stage, as its last moment.
+  const readScenes = { ...scenesOf(scenes, readCast), ...scenesOf(welcome, readCast) };
   const [brigMesh, frigateMesh] = await Promise.all([loadShip('brig'), loadShip('frigate')]);
   // The ships' views open on the device's kit, so both are opened before the story takes them.
   const [brigView, frigateView] = await Promise.all([

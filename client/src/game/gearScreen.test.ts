@@ -111,15 +111,18 @@ test('an item’s detail lays out its nodes: bought, to buy once unlocked, and w
   assert.deepEqual(vaulted.presses[0]?.ask, { kind: ASKS.withdraw, item: legendary.id });
 });
 
-test('each vendor’s stall shows its six wares of the day, bought for their price in Aurem, the Shipwright’s last', () => {
+test('each vendor’s stall shows its six wares of the day and its starter stock, bought for their price in Aurem, the Shipwright’s last', () => {
   const six = (first: Partial<GearItem>, second: Partial<GearItem>) => [
     item({ id: 0, level: 9, price: 2_000, ...first }),
     item({ id: 1, level: 9, price: 600, ...second }),
     ...[2, 3, 4, 5].map((id) => item({ id, ...first })),
   ];
+  const plain = (kinds: number[]) => kinds.map((kind, place) => item({ id: 6 + place, kind, rarity: 0, price: 50 }));
   const wares = [
     ...six({ kind: 13, rarity: 2 }, { kind: 14, rarity: 1 }),
+    ...plain([13, 14, 15, 16]),
     ...six({ kind: 2, rarity: 2, attack: 120 }, { kind: 12, rarity: 1 }),
+    ...plain([12, 8]),
     ...six({ kind: 25, rarity: 1, bucket: 8, defense: 40 }, { kind: 24, rarity: 0, bucket: 7 }),
   ];
   const [armorsmith, weaponsmith, shipwright] = vendorsOf(state({ wares, aurem: 1_000, day: 20_400 }));
@@ -131,7 +134,12 @@ test('each vendor’s stall shows its six wares of the day, bought for their pri
       ['Magic Torso', true],
     ],
   );
-  assert.equal(armorsmith?.wares.length, 6);
+  assert.equal(armorsmith?.wares.length, 10, 'the day’s six, then four to start');
+  assert.deepEqual(
+    armorsmith?.wares.slice(6).map((ware) => [ware.starter, ware.price, ware.press.ask.node]),
+    [6, 7, 8, 9].map((node) => [true, 50, node]),
+  );
+  assert.equal(weaponsmith?.wares.length, 8);
   // Asked by the day it was shown, so the room refuses it once the day has turned.
   assert.deepEqual(weaponsmith?.wares[0]?.press.ask, { kind: ASKS.vend, column: 1, node: 0, item: 20_400 });
   assert.equal(weaponsmith?.wares[0]?.press.label, 'Hold to buy · 2,000');

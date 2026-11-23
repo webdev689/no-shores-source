@@ -11,7 +11,7 @@ import type { KeeperKind } from '../keepers.ts';
 import { KEEPERS } from '../keepers.ts';
 import { emblemOf } from '../emblemArt.ts';
 import { CRATES_MOST, type Card, cardOf } from '../gearCards.ts';
-import { WARES, vendorsOf } from '../gearScreen.ts';
+import { vendorsOf } from '../gearScreen.ts';
 import { factionRows } from './factionRows.ts';
 
 /** What a ware's tile shows: an item's own picture, a Vestige, the Ammo crate, a dye's or a coat's colours, an
@@ -206,13 +206,21 @@ function crateWare(gear: GearState): Ware {
   };
 }
 
-function smithRow(gear: GearState, vendor: number, heading: string): Row {
+/** A smith's rows: their starter stock under "To start", then the day's wares under `heading`. */
+function smithRows(gear: GearState, vendor: number, heading: string): Row[] {
   const wares = (vendorsOf(gear)[vendor]?.wares ?? []).map((ware, place) => {
-    const item = gear.wares[WARES * vendor + place];
     const price = { amount: ware.price, currency: 'aurem' as const };
-    return item ? [itemWare(`buy-${vendor}-${place}`, item, price, !ware.affordable, ware.press.ask)] : [];
+    return {
+      starter: ware.starter,
+      ware: itemWare(`buy-${vendor}-${place}`, ware.item, price, !ware.affordable, ware.press.ask),
+    };
   });
-  return { heading, wares: wares.flat(), empty: 'Sold only in a social space.' };
+  const day = { heading, wares: wares.filter((each) => !each.starter).map((each) => each.ware) };
+  const start = wares.filter((each) => each.starter).map((each) => each.ware);
+  return [
+    ...(start.length > 0 ? [{ heading: 'To start', wares: start }] : []),
+    { ...day, empty: 'Sold only in a social space.' },
+  ];
 }
 
 function mageRows(gear: GearState): Row[] {
@@ -270,10 +278,10 @@ export function rowsOf(kind: KeeperKind, gear: GearState, choosing = false): Row
     case 'mage':
       return mageRows(gear);
     case 'armorsmith':
-      return [smithRow(gear, 0, 'Armour')];
+      return smithRows(gear, 0, 'Armour');
     case 'weaponsmith':
       return [
-        smithRow(gear, 1, 'Weapons'),
+        ...smithRows(gear, 1, 'Weapons'),
         ...((gear.cratePrice ?? 0) > 0 ? [{ heading: 'Supplies', wares: [crateWare(gear)] }] : []),
       ];
     case 'tailor':
