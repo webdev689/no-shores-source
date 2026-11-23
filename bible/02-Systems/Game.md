@@ -276,7 +276,7 @@ third person, the forge's figure and the first person's hands, and the Test Grou
   (the elder on her welcome); over the bounty board in Overlook's hub its gold "!" in the keepers' diamond, over its
   gable (`countersOf`); over Shape on his spot his own; and, as the room's word on the gear names them online,
   over each chapter of the lore lying there for the player a closed book in a brass binding, 0.9 m over where it
-  lies ([[Lore]]); and over each of a patrol's dungeon entrances a door, an arched door of planks banded in iron with a brass ring, 0.2 m
+  lies ([[Lore]]); and, as the room names them online or alone, over each of a patrol's dungeon entrances a door, an arched door of planks banded in iron with a brass ring, 0.2 m
   over its door's lintel and a mark's width out from its face, once the forged props say where its door is. As DFO's, a mark's foot stands 0.2 m over the crown,
   0.32 m across, turned to the eye, never narrower on the screen than 0.017 radians
   either side so a keeper across the plaza still shows one; it bobs 6 cm once a second on a phase of its own, holding

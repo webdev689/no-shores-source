@@ -138,15 +138,16 @@ on Cloudflare.
   third every three minutes, and each player may gather each node once while it stands. Its three dungeons'
   entrances are laid out from the node's id, the same every time: inside the ring and 60 m inside its edge, 60 m from
   every spawn, 40 m from every resource place and 300 m from one another, on dry ground (above the sea, out of a river
-  or a lake) whose height varies by 3 m at most across the 12 m round it; fewer when fewer fit. Each is the entrance
+  or a lake) whose height varies by 3 m at most across the 12 m round it, 8 m from every box a body would run into;
+  fewer when fewer fit (every patrol zone and Elite Dungeon's node lays all of its own). Each is the entrance
   model its dungeon's seed draws, turned so its door faces the middle of the ring. A kill, in any node, pays by the
   room's seas ([[Gear]], "Where foes stand").
 - **A patrol's dungeon** has a room of its own ([[Dungeons]], "In the rooms"), opened from its patrol's node file:
   its floor, its one spawn at the way in, a body standing there facing into the room, and the patrol's island band
   for its garrison's levels. The Grey Tithe's dungeon garrison stands where the Forge puts foes ([[Enemies]]). Beside
   the Reeve's post stands its cache, shut while the Reeve stands; when he falls it opens, and every player then in the
-  room finds a dungeon's clear lying before it for them alone, a Vestige among it at a Miniboss's chance by the tier
-  ([[Gear]]); it shuts when he stands again.
+  room is paid a dungeon's clear, its Vestige, when one comes (at a Miniboss's chance by the tier), lying before it for
+  them alone ([[Gear]], [[Dungeons]]); it shuts when he stands again.
 - **Blows, as each defender saw them:** a player's blow on a foe is judged at once against the foe where the player's
   screen showed it, up to 24 ticks back, but guarding, dodging and staggered as it is now, so a foe's answers count the
   same at any lag; a player's ball (a pistolet's, a thunderlock's) is judged the same way.
