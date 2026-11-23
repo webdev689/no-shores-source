@@ -319,8 +319,9 @@ export class WreckFight implements Beat {
     // Until the room's Thule is shown (asked of the rooms' worker, answered a moment later), the story's stands for him.
     const waiting = !coming && this.fought && !run.boss && !run.outcome;
     const thule = coming ? this.thuleActor(tick.clock - coming.since) : waiting ? this.thuleActor(tick.clock) : null;
+    // A cutscene is watched from its own eye, never through the player's: no hands over it.
     const hands =
-      walker.inFirstPerson && !coming
+      walker.inFirstPerson && !held
         ? (encoder: GPUCommandEncoder, view: GPUTextureView, over: Overlay) => firstPerson.draw(encoder, view, over)
         : undefined;
     const heads = new Map([...run.heads(), ...(thule ? [['thule', [thule.x, thule.y, thule.z + 2.2]] as const] : [])]);

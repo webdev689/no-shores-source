@@ -234,10 +234,11 @@ export function startFrames(parts: FrameParts, playing: Playing): void {
       heading: walker.player.yaw,
       lit: (glyph) => keeperLit(here.gear?.gear ?? null, glyph, (counter) => playing.quests.wants(counter)),
     });
-    // The held map, or the player's own hands in first person, over the finished picture.
+    // The held map, or the player's own hands in first person, over the finished picture; while she speaks the view
+    // is the tour's, never through the player's eyes.
     const hands =
       mapDraw ??
-      (walker.inFirstPerson
+      (walker.inFirstPerson && !told
         ? (encoder: GPUCommandEncoder, view: GPUTextureView, over: Overlay) => firstPerson.draw(encoder, view, over)
         : undefined);
     parts.isleFrame();
