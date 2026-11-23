@@ -40,6 +40,13 @@ test('the stranger speaks of the world, then names each place in turn, and last 
   );
 });
 
+test('her first lines and her farewell are seen face to face, from the side of the pair', () => {
+  assert.deepEqual(
+    TOUR.filter((step) => step.faces).map((step) => step.scene),
+    ['strangerHistory', 'strangerFarewell'],
+  );
+});
+
 test('every scene of the welcome is one of hers, said in turn, and no other is kept', () => {
   assert.deepEqual(Object.keys(welcome.scenes).sort(), TOUR.map((step) => step.scene).sort());
 });

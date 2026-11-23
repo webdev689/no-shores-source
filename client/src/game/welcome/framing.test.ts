@@ -141,3 +141,14 @@ test("a single counter is seen from about a keeper's height first, under a stall
   const pair = counterShot(place, ['armorsmith', 'weaponsmith'], OWN);
   assert.ok(pair && pair.eye[2] > GROUND + 6, 'a group from over them');
 });
+
+test('her face stands whole above the dialogue box, the eye beyond the near dither of either figure', () => {
+  const stranger: [number, number, number] = [1001.8, 2029, GROUND];
+  const player: [number, number, number] = [1000, 2030, GROUND];
+  const shot = facesShot(OWN, stranger, player, []);
+  const crown = onScreen(shot, VIEW, [stranger[0], stranger[1], GROUND + HEAD_M + 0.2]);
+  const feet = onScreen(shot, VIEW, [stranger[0], stranger[1], GROUND]);
+  assert.ok(crown && crown[1] > 0, 'her crown in the view');
+  assert.ok(feet && feet[1] < VIEW.height * 0.62, `her figure above the box: ${feet?.[1]}`);
+  for (const [east, south] of [stranger, player]) assert.ok(Math.hypot(shot.eye[0] - east, shot.eye[1] - south) > 3);
+});
