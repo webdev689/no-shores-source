@@ -22,7 +22,7 @@ import {
   type ScreenKeys,
   screenKeysNode,
 } from './screenKeys.ts';
-import type { PadButton, Typing, UiEvent } from './uiEvent.ts';
+import { type PadButton, type Typing, type UiEvent, inwardOf } from './uiEvent.ts';
 import type { UiRenderer } from './uiRenderer.ts';
 
 export type { Typing, UiEvent } from './uiEvent.ts';
@@ -123,7 +123,7 @@ export class Interface {
       const typing = this.typing !== null;
       if (event.kind === 'stick') this.padCursor.hear(event, pad || typing, () => this.padHome());
       else if (!typing && ((event.kind === 'key' && !keys) || (event.kind === 'pad' && !pad))) continue;
-      else this.hear('x' in event ? { ...event, x: event.x * this.inward, y: event.y * this.inward } : event, free);
+      else this.hear(inwardOf(event, this.inward), free);
     }
     this.padFrame(seconds, pad || this.typing !== null);
     this.screenKeysHeard();

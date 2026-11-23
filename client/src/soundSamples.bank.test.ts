@@ -217,3 +217,21 @@ test('a recording that failed to come is asked for again only after a wait, not 
   await settled();
   assert.equal(reads, 2, 'and again once the wait has passed');
 });
+
+test('cues sharing one recording are all held from its one fetch, each heard the first time it is asked for', async () => {
+  const { asked, read } = reading({});
+  const shared = {
+    base: 'https://r2/',
+    sounds: { 'hit.blade': { key: 'hit.mp3' }, 'block.shield': { key: 'hit.mp3' } },
+  };
+  const samples = new Samples(shared, read);
+  const audio = fakeAudio();
+  samples.wake(audio as unknown as AudioContext);
+  await settled();
+  assert.deepEqual(asked, ['hit.mp3'], 'fetched once');
+  assert.equal(audio.decoded, 1, 'and decoded once');
+  const out = {} as AudioNode;
+  for (const id of ['hit.blade', 'block.shield'])
+    assert.ok(samples.play(audio as unknown as AudioContext, out, id), `${id} heard at once`);
+  assert.equal(samples.bytes, 100 * 4, 'its samples counted once');
+});

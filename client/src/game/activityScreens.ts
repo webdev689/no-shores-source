@@ -213,7 +213,11 @@ export function startActivities(
   readonly trips: ReturnType<typeof dungeonTrips>;
   readonly screens: ActivityScreens;
   readonly onFoot: Trips;
-  heed(here: { readonly shut: string | null; readonly held: { wiped: boolean } }, shut: (why: string) => void): boolean;
+  heed(
+    here: { readonly shut: string | null; readonly held: { wiped: boolean } },
+    shut: (why: string) => void,
+    onFoot: boolean,
+  ): boolean;
 } {
   const trips = dungeonTrips({ ...game, companyPlaces: () => companyPlaces(link) });
   const screens = startActivityScreens(game.module, nodes, game.foot, trips, link, PAGE_CLOCK, game.atSea);
@@ -223,9 +227,9 @@ export function startActivities(
     trips,
     screens,
     onFoot: { ...trips, enter: (number, name) => screens.card(number, name) },
-    heed: (here, shut) => {
+    heed: (here, shut, onFoot) => {
       if (here.shut) return (shut(here.shut), true);
-      if (takeWipe(here.held)) trips.fell();
+      if (takeWipe(here.held, onFoot)) trips.fell();
       return false;
     },
   };

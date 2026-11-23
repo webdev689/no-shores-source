@@ -367,7 +367,7 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement): Promise<vo
   const syncMenu = () => {
     const resume = { label: 'Resume', run: () => change({ kind: 'back' }) };
     if (playing.flow.mode === 'foot' && playing.flow.menu && playing.foot) {
-      const home = { label: 'Return to ship', run: () => returnToShip(playing.foot, toSea, tell) };
+      const home = { label: 'Return to ship', run: () => returnToShip(playing.foot, Boolean(rooms), toSea, tell) };
       hud.menu({ title: playing.foot.node.name, choices: [resume, home] });
     } else if (playing.flow.mode === 'sea' && playing.flow.menu) {
       const landfall = playing.sea?.landfall;
@@ -593,7 +593,7 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement): Promise<vo
       ...{ builtSloop, closeSource, waterHere, syncMenu, travel, goFoot, isleFrame, groundAt, story, arrive },
       ...{ isles: islesDrawer, eventProps: boot.eventProps },
       ...{ world, music, ambience, dungeons },
-      heed: (here) => heed(here, (why) => travel({ kind: 'shut', why }, goSea)),
+      heed: (here) => heed(here, (why) => travel({ kind: 'shut', why }, goSea), playing.flow.mode === 'foot'),
     },
     playing,
   );

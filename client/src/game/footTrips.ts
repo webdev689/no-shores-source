@@ -76,8 +76,10 @@ export function heardRun(
   if (snapshot.events.some((event) => event.kind === EVENT.wiped && event.defender === own)) held.wiped = true;
 }
 
-/** Whether the room said this player's company fell, taken once. */
-export function takeWipe(held: { wiped: boolean }): boolean {
+/** Whether the room said this player's company fell, taken once and only on foot (`onFoot`): a trip's veil refuses the
+ *  way out, so a fall heard behind it waits for the place. */
+export function takeWipe(held: { wiped: boolean }, onFoot: boolean): boolean {
+  if (!onFoot) return false;
   const wiped = held.wiped;
   held.wiped = false;
   return wiped;
