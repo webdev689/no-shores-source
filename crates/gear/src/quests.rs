@@ -299,17 +299,22 @@ impl Character {
         true
     }
 
-    /// Tells the quest walked of every piece worn, and of every slot a smith has sold a piece for, so a piece bought
-    /// or put on before its task was reached counts once it is.
     pub(crate) fn tell_held(&mut self) {
-        let asks = |kind| self.goals_unmet().any(|(_, goal)| goal.kind() == kind);
-        let (wear, buy) = (asks(GoalKind::Wear), asks(GoalKind::Buy));
-        for slot in Slot::VESTIGE {
-            if wear && self.worn(slot).is_some() {
-                self.tell(&Event::Worn(slot));
+        // Told again until nothing more counts: a task met here may reach one the pieces held already meet.
+        loop {
+            let asks = |kind| self.goals_unmet().any(|(_, goal)| goal.kind() == kind);
+            let (wear, buy) = (asks(GoalKind::Wear), asks(GoalKind::Buy));
+            let mut told = false;
+            for slot in Slot::VESTIGE {
+                if wear && self.worn(slot).is_some() {
+                    told |= self.tell(&Event::Worn(slot));
+                }
+                if buy && self.quests.bought.contains(&slot) {
+                    told |= self.tell(&Event::Bought(slot));
+                }
             }
-            if buy && self.quests.bought.contains(&slot) {
-                self.tell(&Event::Bought(slot));
+            if !told {
+                return;
             }
         }
     }
