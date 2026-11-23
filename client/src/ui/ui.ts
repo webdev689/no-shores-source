@@ -3,10 +3,10 @@
 // as they build this frame's tree, which is then laid out and drawn. Events are plain data, so the interface runs
 // wherever the game does; a page's events reach it through `canvasEvents.ts`.
 import { announce } from './announce.ts';
-import { edited, emptyField, type FieldState, keyed, placeNear, typed, wordAt } from './field.ts';
+import { DOUBLE, edited, emptyField, type FieldState, keyed, placeNear, typed, wordAt } from './field.ts';
 import { drawLaid } from './drawLaid.ts';
 import { ARROWS, inside, modalOf, reachable, scrollToShow, stepped, toward } from './focus.ts';
-import { hitAt, scrolledAt, targetAt } from './hit.ts';
+import { hitAt, keptIn, pressedOutside, scrolledAt, targetAt } from './hit.ts';
 import { layout } from './layout.ts';
 import type { Laid, Node } from './node.ts';
 import { PadCursor } from './padCursor.ts';
@@ -22,14 +22,10 @@ import {
   type ScreenKeys,
   screenKeysNode,
 } from './screenKeys.ts';
-import type { PadButton, Typing, UiEvent } from './uiEvent.ts';
+import { type PadButton, type Typing, type UiEvent, typingOf } from './uiEvent.ts';
 import type { UiRenderer } from './uiRenderer.ts';
 
 export type { Typing, UiEvent } from './uiEvent.ts';
-
-/** A second press this close in time (seconds) and place (pixels) to the first makes a double click. */
-const DOUBLE_SECONDS = 0.5;
-const DOUBLE_REACH = 4;
 
 export class Interface {
   readonly renderer: UiRenderer;
@@ -73,6 +69,8 @@ export class Interface {
   private readonly padCursor = new PadCursor();
   private reach = false;
   private wheel = false;
+  /** How far the pad's right stick scrolled this frame, in the interface's pixels (down positive). */
+  stickScroll = 0;
   private readonly scrolls = new Map<string, number>();
   private readonly fields = new Map<string, FieldState>();
   /** Fields whose words were asked for or set since the last draw: kept though they are not laid. */
@@ -115,7 +113,7 @@ export class Interface {
     this.dropped = null;
     this.downs.length = 0;
     this.submits.clear();
-    [this.escape, this.wheel, this.keyMoved] = [false, false, false];
+    [this.escape, this.wheel, this.keyMoved, this.stickScroll] = [false, false, false, 0];
     this.turn = 0;
     const before = this.hover;
     this.reach = false;
@@ -206,10 +204,7 @@ export class Interface {
 
   /** Whether the pointer went down this frame on something neither `id` nor inside it, as on what shuts a list. */
   pressedAway(id: string): boolean {
-    return this.downs.some((hit) => {
-      for (let each = hit; each; each = each.parent) if (each.node.id === id) return false;
-      return true;
-    });
+    return pressedOutside(this.downs, id);
   }
 
   /** Whether Escape or the pad's B was pressed this frame, with no field to take it. */
@@ -254,11 +249,7 @@ export class Interface {
   /** The field being typed in, if focus is on one. */
   get typing(): Typing | null {
     const laid = this.current;
-    if (!laid?.node.field || !this.focus) return null;
-    const secret = Boolean(laid.node.field.secret);
-    const { x, y, width, height } = laid.box;
-    const box = { x: x / this.inward, y: y / this.inward, width: width / this.inward, height: height / this.inward };
-    return { id: this.focus, state: this.fieldOf(this.focus), secret, box, onScreen: this.screen !== null };
+    return laid?.node.field && this.focus ? typingOf(laid, this.fieldOf(this.focus), this.inward, !!this.screen) : null;
   }
 
   /** What has the focus as last laid, while the keys can reach it (inside the topmost modal node, where one is). */
@@ -287,6 +278,12 @@ export class Interface {
   /** Whether the wheel turned over the interface this frame. */
   get tookWheel(): boolean {
     return this.wheel;
+  }
+
+  /** Scrolls the scrolled node `id` by `by` pixels, kept within what it holds: as the page keys scroll a card. */
+  scrollBy(id: string, by: number): void {
+    const laid = this.byId.get(id);
+    if (laid) this.scrolls.set(id, keptIn(laid, (this.scrolls.get(id) ?? 0) + by));
   }
 
   /** The pointer's look over what it is on; none while the pad's cursor is drawn instead. */
@@ -444,7 +441,7 @@ export class Interface {
     if (id && target?.node.field && this.way !== 'pointer') this.opening = id;
     const last = this.lastDown;
     const double =
-      last !== null && this.clock - last.at <= DOUBLE_SECONDS && Math.hypot(x - last.x, y - last.y) <= DOUBLE_REACH;
+      last !== null && this.clock - last.at <= DOUBLE.seconds && Math.hypot(x - last.x, y - last.y) <= DOUBLE.reach;
     this.lastDown = { x, y, at: this.clock };
     const extend = shift && id !== null && id === this.focus;
     this.focusByKeys = false;
@@ -557,6 +554,7 @@ export class Interface {
     const pulling = this.padCursor.out ? reachable(this.laid) : [];
     const { scroll, at } = this.padCursor.step(seconds, pulling, this.view, this.inward, this.padHome());
     if (this.padCursor.out) this.pointer = at;
+    this.stickScroll = scroll;
     if (scroll) this.wheel = scrolledAt(this.laid, at.x, at.y, scroll, this.scrolls) || this.wheel;
   }
 

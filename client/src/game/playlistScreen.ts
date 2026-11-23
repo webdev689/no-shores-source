@@ -10,7 +10,7 @@ import { INK, pressNode, sizesOf, words } from './gearNodes.ts';
 import { setGearScreenOpen } from './gearScreen.ts';
 import { iconNode } from './journalIcons.ts';
 import { drawChart, drawGround, spotShare } from './playlistMap.ts';
-import { type CrestLook, TILE, WORDS_WIDE, cardOf, crestOf } from './playlistParts.ts';
+import { type CrestLook, TILE, WORDS_WIDE, cardOf, crestOf, scrolledNode } from './playlistParts.ts';
 import type { PlaylistEntry, PlaylistScreenState } from './playlistWords.ts';
 import { play } from './uiSounds.ts';
 
@@ -45,6 +45,8 @@ const CREST = 104;
 /** The steps a chart's picture is drawn again at as the screen is resized, so a drag draws it a few times, not each
  *  pixel. */
 const CHART_STEP = 64;
+/** The list that scrolls: the card's column side by side, the crests and the card together stacked. */
+const SCROLLS = { besides: 'playlist-card-column', stacked: 'playlist-body' } as const;
 const stepped = (pixels: number) => Math.max(1, Math.round(pixels / CHART_STEP)) * CHART_STEP;
 
 /** The Playlist screen over the world: "Playlist" and the port it was opened beside at its head, the four entries as
@@ -60,6 +62,8 @@ export class PlaylistView {
   /** The press or crest to give the focus to once it is laid: the first crest as it opens, the chosen one as the
    *  arrows choose, and the search's press as one takes the other's place. */
   private focusNext: string | null = null;
+  /** The pages Page Up (-1) and Page Down (1) asked the list to scroll since the last frame. */
+  private paged = 0;
   private readonly presses: PlaylistPresses;
 
   constructor(presses: PlaylistPresses) {
@@ -71,12 +75,13 @@ export class PlaylistView {
         if (!this.screen) return;
         event.stopImmediatePropagation();
         const key = event.key.toLowerCase();
-        const keys = ['e', 'f', 'escape', 'arrowleft', 'arrowright', 'arrowup', 'arrowdown'];
+        const keys = ['e', 'f', 'escape', 'arrowleft', 'arrowright', 'arrowup', 'arrowdown', 'pageup', 'pagedown'];
         if (event.repeat || !keys.includes(key)) return;
         event.preventDefault();
         const entry = this.entry;
         const { finding, launching } = this.search;
         if (key === 'escape') presses.close();
+        else if (key === 'pageup' || key === 'pagedown') this.paged += key === 'pageup' ? -1 : 1;
         else if (key === 'arrowleft' || key === 'arrowright') this.choose(this.chosen + (key === 'arrowleft' ? -1 : 1));
         else if (key === 'arrowup' || key === 'arrowdown') this.choose(this.chosen ^ 2);
         else if (key === 'f' && finding !== null) {
@@ -163,6 +168,7 @@ export class PlaylistView {
     const view = ui.size;
     const size = sizesOf(view.width, view.height, 1).label;
     const besides = view.width >= SIDE_BY_SIDE;
+    this.scroll(ui, besides ? SCROLLS.besides : SCROLLS.stacked);
     const scale = Math.min(1.4, Math.max(0.7, view.height / 900));
     const cardWide = Math.min(CARD_MOST, Math.round(view.width * 0.34));
     // Stacked, two crests share a row, each its words' width, and the two rows leave the card room below.
@@ -195,46 +201,48 @@ export class PlaylistView {
               },
               children: crests,
             },
-            {
-              id: 'playlist-card-column',
-              width: cardWide,
-              height: 'grow',
-              direction: 'column',
-              padding: [8, 0],
-              scroll: true,
-              children: [cardOf(entry, screen.note, size, 'grow')],
-            },
+            scrolledNode(
+              ui,
+              SCROLLS.besides,
+              { width: cardWide, height: 'grow' },
+              { direction: 'column', padding: [8, 0] },
+              [cardOf(entry, screen.note, size, 'grow')],
+            ),
           ],
         }
       : {
-          id: 'playlist-body',
           width: 'grow',
           height: 'grow',
-          direction: 'column',
-          gap: 16,
-          padding: [0, 20, 12, 20],
-          scroll: true,
+          padding: [0, 20],
           children: [
-            {
-              id: 'playlist-chart',
-              width: 'grow',
-              direction: 'column',
-              gap: 8,
-              padding: [8, 0],
-              picture: {
-                key: `playlist ground ${stepped(view.width - 40)} ${stepped(view.height / 2)}`,
-                source: { draw: drawGround },
-              },
-              children: [0, 2].map((first) => ({
-                width: 'grow',
-                children: crests.slice(first, first + 2).map((crest) => ({
-                  width: '50%',
-                  alignX: 'center',
-                  children: [crest],
-                })),
-              })),
-            },
-            cardOf(entry, screen.note, size, 'grow'),
+            scrolledNode(
+              ui,
+              SCROLLS.stacked,
+              { width: 'grow', height: 'grow' },
+              { direction: 'column', gap: 16, padding: [0, 0, 12, 0] },
+              [
+                {
+                  id: 'playlist-chart',
+                  width: 'grow',
+                  direction: 'column',
+                  gap: 8,
+                  padding: [8, 0],
+                  picture: {
+                    key: `playlist ground ${stepped(view.width - 40)} ${stepped(view.height / 2)}`,
+                    source: { draw: drawGround },
+                  },
+                  children: [0, 2].map((first) => ({
+                    width: 'grow',
+                    children: crests.slice(first, first + 2).map((crest) => ({
+                      width: '50%',
+                      alignX: 'center',
+                      children: [crest],
+                    })),
+                  })),
+                },
+                cardOf(entry, screen.note, size, 'grow'),
+              ],
+            ),
           ],
         };
     return {
@@ -281,9 +289,25 @@ export class PlaylistView {
     };
   };
 
+  /** Scrolls list `id` a page at a time for Page Up and Page Down, and by the pad's right stick while the focus
+   *  stands outside it (inside it, the interface scrolls it under the focus itself). */
+  private scroll(ui: Interface, id: string): void {
+    const [room, focus] = [ui.boxOf(id), ui.focusedId ? ui.boxOf(ui.focusedId) : null];
+    if (!room) return;
+    if (this.paged !== 0) ui.scrollBy(id, this.paged * Math.round(room.height * 0.8));
+    this.paged = 0;
+    const within =
+      focus !== null &&
+      focus.x >= room.x &&
+      focus.x + focus.width <= room.x + room.width &&
+      focus.y >= room.y &&
+      focus.y + focus.height <= room.y + room.height;
+    if (ui.stickScroll !== 0 && !within) ui.scrollBy(id, ui.stickScroll);
+  }
+
   /** The footer: the search's word, or why the last one ended, at the left; why the entry is shut beside the resting
-   *  Launch; and the presses, Find a Company first where the entry offers it. Narrow, the word stands over the
-   *  presses, which wrap. */
+   *  Launch; and the presses, Find a Company first where the entry offers it, Launch none while a search or a launch
+   *  runs. Narrow, the word stands over the presses, which wrap. */
   private footer(entry: PlaylistEntry, size: number, narrow: boolean): Node {
     const search = this.search;
     const finding = search.finding !== null;
@@ -305,16 +329,17 @@ export class PlaylistView {
       finding
         ? !search.launching && pressNode(STOP, 'Stop finding', 'button', 'F', size)
         : findable && pressNode(FIND, 'Find a Company', 'primary', 'F', size),
-      pressNode(
-        LAUNCH,
-        search.company ? 'Go with your company' : 'Go alone',
-        findable ? 'button' : 'primary',
-        'E',
-        size,
-        {
-          disabled: entry.shut !== null || finding,
-        },
-      ),
+      // While a search or a launch runs, Launch is not offered: Stop finding or the wait stands in its place.
+      !finding &&
+        pressNode(
+          LAUNCH,
+          search.company ? 'Go with your company' : 'Go alone',
+          findable ? 'button' : 'primary',
+          'E',
+          size,
+          // Resting while the entry is shut, it is drawn dim, its key cap with it, so it reads as not to be pressed.
+          { disabled: entry.shut !== null, ...(entry.shut !== null && { opacity: 0.4 }) },
+        ),
       pressNode(CLOSE, 'Close', 'button', 'Esc', size),
     ];
     const frame = { width: 'grow', fill: 'rgba(10,12,16,0.9)' } as const;

@@ -1,6 +1,7 @@
 // The Playlist screen's parts (`playlistScreen.ts` lays them): an entry's crest on the chart, and the chosen entry's card
 // with its level, what it drops, its rules, modifiers and rewards, and why it is shut.
 import type { Child, Node, Text } from '../ui/node.ts';
+import type { Interface } from '../ui/ui.ts';
 import { INK, words } from './gearNodes.ts';
 import { iconNode } from './journalIcons.ts';
 import { modifierNode } from './journalTimers.ts';
@@ -21,12 +22,11 @@ export type CrestLook = 'chosen' | 'lit' | 'rest';
 /** A small heading over a part of the card, in capitals. */
 const heading = (said: string, size: number): Node => words(said.toUpperCase(), size, INK.brass, { tracking: 2 });
 
-/** Words that wrap only between their parts ("Elite · Levels 20 to 24 · Foes at level 22"), never inside one. */
-const keptWhole = (said: string): string =>
-  said
-    .split(' · ')
-    .map((part) => part.replaceAll(' ', '\u00a0'))
-    .join('\u00a0· ');
+/** The words under a crest, a part a line, so no separator ever ends or starts one: its level past its tier
+ *  ("Levels 20 to 24", "Foes at level 22"), its dungeon's place and level, or why it is shut ("Opens at level 24",
+ *  "You are 15"). */
+const crestLines = (entry: PlaylistEntry): string[] =>
+  (entry.lock ?? entry.about).split(' · ').filter((part) => part !== 'Elite' && part !== 'Abyss');
 
 /** A line of words, wrapping. */
 const line = (said: string, size: number, colour: string = INK.faint, more: Partial<Text> = {}): Node => ({
@@ -225,7 +225,88 @@ export function crestOf(
           { id: `${TILE}${place}-rule`, width: 'grow', height: 2, fill: chosen ? INK.brass : 'rgba(0,0,0,0)' },
         ],
       },
-      line(keptWhole(entry.lock ?? entry.about), small, INK.faint, { align: 'center', balance: true }),
+      {
+        width: 'grow',
+        direction: 'column',
+        gap: 2,
+        children: crestLines(entry).map((part) => line(part, small, INK.faint, { align: 'center', balance: true })),
+      },
+    ],
+  };
+}
+
+/** How tall the fade over a scrolled list's foot stands: about a line and a half, so a line cut there fades out. */
+const FADE = 28;
+/** The room a scrolled list keeps at its right for its bar. */
+const BAR_ROOM = 8;
+
+/** Draws the fade over a scrolled list's foot: from nothing to the card's ground. */
+function drawFade(context: OffscreenCanvasRenderingContext2D, width: number, height: number): void {
+  const fade = context.createLinearGradient(0, 0, 0, height);
+  fade.addColorStop(0, 'rgba(12,14,18,0)');
+  fade.addColorStop(1, 'rgba(12,14,18,1)');
+  context.fillStyle = fade;
+  context.fillRect(0, 0, width, height);
+}
+
+/** `children`, laid as `laying` says, in a list `id` that scrolls when taller than its room (`frame` sizes it), read
+ *  from `ui`'s last frame:
+ *  a fade over its foot while more lies below, and a thin bar at its right whose thumb stands where the list does. */
+export function scrolledNode(
+  ui: Interface,
+  id: string,
+  frame: Pick<Node, 'width' | 'height'>,
+  laying: Partial<Node>,
+  children: readonly Child[],
+): Node {
+  const [room, held] = [ui.boxOf(id), ui.boxOf(`${id}-held`)];
+  const most = room && held ? held.height - room.height : 0;
+  const share = most > 1 && room && held ? Math.min(1, Math.max(0, (room.y - held.y) / most)) : 0;
+  const shown = room && held ? Math.max(8, Math.round((room.height / held.height) * 100)) : 100;
+  return {
+    ...frame,
+    children: [
+      {
+        id,
+        width: 'grow',
+        height: 'grow',
+        scroll: true,
+        // Room at the right for the bar, so it stands beside what scrolls, never on its edge.
+        padding: [0, BAR_ROOM, 0, 0],
+        children: [{ width: 'grow', ...laying, id: `${id}-held`, children }],
+      },
+      most > 1 &&
+        share < 0.999 && {
+          id: `${id}-fade`,
+          width: '100%',
+          height: FADE,
+          through: true,
+          picture: {
+            key: `scroll fade ${Math.round(room?.width ?? 0)}`,
+            source: {
+              // Over what scrolls only, the bar's room left clear.
+              draw: (context, width, height) => drawFade(context, width * (1 - BAR_ROOM / (room?.width || 1)), height),
+            },
+          },
+          float: { to: 'parent', anchor: [0, 1], at: [0, 1] },
+        },
+      most > 1 && {
+        id: `${id}-track`,
+        width: 3,
+        height: '100%',
+        through: true,
+        fill: 'rgba(192,138,62,0.18)',
+        float: { to: 'parent', anchor: [1, 0], at: [1, 0] },
+        children: [
+          {
+            id: `${id}-thumb`,
+            width: 3,
+            height: `${shown}%`,
+            fill: INK.brass,
+            float: { to: 'parent', anchor: [0, share], at: [0, share] },
+          },
+        ],
+      },
     ],
   };
 }

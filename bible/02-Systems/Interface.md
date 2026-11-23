@@ -963,8 +963,8 @@ the Abyss Playlist (an eye of the deep) above, the Elite Dungeon of the week (cr
 Abyss Dungeon of the week (a crown over the deep) below their playlists, a fifth smaller. A crest is a shield, brass
 for Elite, violet for Abyss, grey while its entry is shut; at its shoulder a gold dot while a reward of it waits, or a
 padlock while it is shut. Under it its name in capitals (a week's dungeon's on two lines, broken before "of"), and its
-level ("Elite · Levels 15 to 19 · Foes at level 17", "From level 10" before it) or, shut, why in neutral ink ("Opens at
-level 24 · You are 15", from its gate's words), wrapped only between its parts. The chosen crest's name is lit over a
+level a part a line past its tier ("Levels 15 to 19", "Foes at level 17"; "From level 10" before it), or, shut, why in
+neutral ink ("Opens at level 24", "You are 15", from its gate's words), so no separator ends or starts a line. The chosen crest's name is lit over a
 brass rule as wide as the name, its shield drawn 8% larger with a brighter glow; a crest under the pointer or the
 focus glows a little.
 
@@ -973,7 +973,10 @@ before its edges, faint stars, two wide rings, a ring round each crest's spot an
 the other and to its week's dungeon), each shield's middle on its spot, its words wrapped to 2.2 times a playlist's
 shield; the chart's picture is drawn again only at 64-pixel steps of the screen. The chosen entry's card stands beside
 it in a column that grows to the footer and scrolls. Narrower, the crests stand two by two over the chart's ground
-(its stars and rings, no spots), each its half of a row, and the card under them, the two scrolling together.
+(its stars and rings, no spots), each its half of a row, and the card under them, the two scrolling together. A list
+taller than its room (`scrolledNode`) fades its foot into the card's ground while more lies below, so a line cut there
+fades out, and keeps a thin brass bar in a gutter at its right whose thumb stands where the list does; the wheel over
+it, Page Up and Page Down, and the pad's right stick scroll it (`Interface.scrollBy`, `Interface.stickScroll`).
 
 The card: its name on a brass band (balanced over two lines where it is long) with its level and what its runs drop
 ("Drops orcish and mithril gear" for Elite, "Drops adamantium and ebony gear" for Abyss, from
@@ -992,7 +995,8 @@ with four, or with fewer after a minute." beside it on a wide screen; "Launching
 the last ended, "The accounts did not answer. Try again." where they did not), why a shut entry is shut beside its
 resting Launch, and the presses: Find a Company (F) first and primary where the entry is matched, open and the page
 signed in, Stop finding (F) while it finds; Launch (E), "Go alone", or "Go with your company" once the Roster shows the
-player in one, primary where nothing is matched, resting while the entry is shut or a search or launch is under way;
+player in one, primary where nothing is matched, drawn dim and resting while the entry is shut, and not offered while
+a search or a launch runs;
 and Close (Esc, the pad's B). Under 1100 pixels the word stands over the presses, which wrap. As a search starts or ends
 the focus goes to the press that takes the other's place, Close where none does. Launch and a run found close the screen
 and go into the run from the sea; so does leaving the sea, the screen closing and its search stopped once the player

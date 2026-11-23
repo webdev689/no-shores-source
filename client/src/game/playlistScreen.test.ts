@@ -99,9 +99,13 @@ test('a shut entry says why in neutral ink with a padlock, on its crest and besi
   const screen = standing();
   screen.click('playlist-tile-2');
   screen.frame();
-  // The crest keeps each part of its line whole with no-break spaces.
-  const words = wordsIn(screen.built()).map((said) => said.replaceAll('\u00a0', ' '));
-  assert.ok(words.filter((said) => said === 'Opens at level 24 · You are 22').length >= 2, 'its crest and its footer');
+  const words = wordsIn(screen.built());
+  assert.ok(words.includes('Opens at level 24 · You are 22'), 'its footer');
+  assert.deepEqual(
+    wordsIn(byId(screen.built(), 'playlist-tile-2')).slice(-2),
+    ['Opens at level 24', 'You are 22'],
+    'its crest, a part a line',
+  );
   assert.ok(words.includes('This dungeon opens at level 24.'), 'its card, in its gate’s words');
   assert.ok(words.includes('Once a week: a Legendary Vestige and Essence.'), 'its reward kept on its card');
   assert.equal(byId(screen.built(), 'playlist-launch')?.disabled, true);
@@ -151,7 +155,9 @@ test('the footer and the card stay on the screen at every size, searching or not
       screen.view.show(SAMPLE_SCREEN, { ...IDLE, finding });
       screen.frame();
       screen.frame();
-      for (const id of ['playlist-launch', 'playlist-close', finding ? 'playlist-stop' : 'playlist-find']) {
+      for (const id of finding
+        ? ['playlist-stop', 'playlist-close']
+        : ['playlist-launch', 'playlist-find', 'playlist-close']) {
         const box = screen.ui.boxOf(id);
         assert.ok(box, `${id} at ${width}x${height}`);
         assert.ok(box.x >= 0 && box.x + box.width <= width, `${id} across at ${width}x${height}`);
@@ -221,4 +227,77 @@ test('a playlist’s weekly shows its three marks and “2 of 3”, and nothing 
   assert.ok(wordsIn(screen.built()).includes('2 of 3'));
   const marks = nodesOf(byId(screen.built(), 'playlist-card')).filter((node) => node.height === 6);
   assert.equal(marks.length, 3, 'three marks and nothing else six pixels tall');
+});
+
+test('no line under a crest ends or starts with a separator, at any size', () => {
+  for (const [width, height] of [
+    [1600, 900],
+    [1024, 600],
+    [390, 844],
+  ] as const) {
+    const screen = standing(width, height);
+    for (let place = 0; place < 4; place += 1)
+      for (const said of wordsIn(byId(screen.built(), `playlist-tile-${place}`)))
+        assert.ok(!/^·|·$/.test(said.trim()), `"${said}" at ${width}x${height}`);
+    assert.ok(wordsIn(screen.built()).includes('Foes at level 22'), 'a part a line');
+  }
+});
+
+test('a shut entry’s Launch is drawn dim and pressing it, by click or E, does nothing', () => {
+  const screen = standing();
+  screen.click('playlist-tile-3');
+  screen.frame();
+  const launch = byId(screen.built(), 'playlist-launch');
+  assert.equal(launch?.disabled, true);
+  assert.ok((launch?.opacity ?? 1) < 0.5, 'dim, its key cap with it');
+  assert.equal(screen.ui.stateOf('playlist-launch', true), 'disabled', 'no hover');
+  screen.click('playlist-launch');
+  screen.key('e');
+  screen.frame();
+  assert.deepEqual(screen.pressed, []);
+});
+
+test('while a search or a launch runs, Launch is not offered', () => {
+  for (const search of [
+    { ...IDLE, finding: 'Finding a company · 0:05' },
+    { ...IDLE, finding: 'Launching…', launching: true },
+  ]) {
+    const screen = standing(1600, 900, search);
+    assert.equal(byId(screen.built(), 'playlist-launch'), undefined, search.finding);
+    screen.key('e');
+    assert.deepEqual(screen.pressed, [], 'E launches nothing');
+  }
+});
+
+test('the card scrolls to its end by Page Down and the right stick, its bar’s thumb going there and its fade gone', () => {
+  for (const [width, height, list] of [
+    [390, 844, 'playlist-body'],
+    [1024, 600, 'playlist-card-column'],
+  ] as const) {
+    const screen = standing(width, height);
+    // The Abyss Dungeon of the week's card, the longest.
+    screen.click('playlist-tile-3');
+    screen.frame();
+    screen.frame();
+    const [track, thumb] = [`${list}-track`, `${list}-thumb`];
+    assert.ok(screen.ui.boxOf(`${list}-fade`), `more below at ${width}x${height}`);
+    assert.equal(screen.ui.boxOf(thumb)?.y, screen.ui.boxOf(track)?.y, 'the thumb at the top');
+    screen.frame([{ kind: 'stick', x: 0, y: 0, scroll: 1 }]);
+    screen.frame();
+    screen.frame([{ kind: 'stick', x: 0, y: 0, scroll: 0 }]);
+    const stuck = screen.ui.boxOf(thumb)?.y ?? 0;
+    assert.ok(stuck > (screen.ui.boxOf(track)?.y ?? 0), `the right stick scrolls it at ${width}x${height}`);
+    for (let page = 0; page < 12; page += 1) {
+      screen.key('PageDown');
+      screen.frame();
+    }
+    screen.frame();
+    const [end, bar] = [screen.ui.boxOf(thumb), screen.ui.boxOf(track)];
+    assert.ok(end && bar && Math.abs(end.y + end.height - (bar.y + bar.height)) <= 1, 'the thumb at the foot');
+    assert.equal(screen.ui.boxOf(`${list}-fade`), null, 'no fade with nothing below');
+    screen.key('PageUp');
+    screen.frame();
+    screen.frame();
+    assert.ok(screen.ui.boxOf(`${list}-fade`), 'a page back up, more below again');
+  }
 });
