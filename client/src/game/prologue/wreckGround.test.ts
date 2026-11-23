@@ -57,12 +57,11 @@ test('a dead end too wide to be a slip of the ground is left as it is', () => {
 
 const layout = readWreck();
 
-test("the wreck's slots at the waterline by the Sloop's side and by the gun deck are gone; every spot keeps its ground", () => {
+test("the wreck's slots at the waterline by the Sloop's side are gone; every spot keeps its ground", () => {
   const laid = wreck.course.map((block) => ({ ...block, bottom: 0 }));
   for (const [x, y] of [
     [25.15, 23.25],
     [25.15, 23.85],
-    [2.2, 29.2],
     [24.55, 10.65],
   ] as const) {
     assert.ok(topAt(laid, x, y) > 0, `laid at ${x}, ${y}`);

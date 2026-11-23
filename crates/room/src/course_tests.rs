@@ -247,3 +247,60 @@ fn the_rim_round_the_wreck_holds_its_blocks_cell_for_cell_as_the_page_s_does() {
     let held = open as f64 * course::RIM_CELL_M * course::RIM_CELL_M;
     assert!((held - area).abs() < 1.0, "the rim holds {held:.0} m2 of the blocks' {area:.0}");
 }
+
+#[test]
+fn the_frigate_s_waist_pistoleer_fights_on_at_a_player_close_by_on_ground_its_routes_do_not_reach() {
+    // 3.3 m from its post, up on the waist's clutter in its sight.
+    waist_pistoleer_against((3.0, 9.5), true);
+}
+
+#[test]
+fn the_frigate_s_waist_pistoleer_hunts_on_a_player_close_by_out_of_its_sight_and_never_walks_home_healing() {
+    // 3.4 m from its post, on the waist's deck behind its clutter.
+    waist_pistoleer_against((4.15, 8.25), false);
+}
+
+/// The waist's pistoleer, shot at by a player standing at `spot`, in its sight from its post or not (`seen`), where the
+/// routes from its post come no nearer than 1.5 m: once it turns on them it never walks home or heals.
+fn waist_pistoleer_against(spot: (f64, f64), seen: bool) {
+    let mut room = Room::over_sea(wreck_course(), (-28.9, -7.6));
+    room.story_wreck();
+    let player = room.join().expect("a room with space");
+    // Where the wreck's file stands it on the Frigate's waist, facing 180 degrees.
+    let pistoleer = room.stand_foe_at(9, 2, (1.15, 6.75), core::f64::consts::PI, 1).expect("a pistoleer");
+    assert!(room.put_player(player, spot.0, spot.1));
+    let feet = room.players[&player].fighter.body;
+    let home = room.foes[&pistoleer].brain.home().unwrap().at;
+    let near = room.nav.nearest_point_from(home, [feet.x, feet.y, feet.z]);
+    assert!(near.is_none_or(|near| combat::sight::apart([near[0], near[1]], [feet.x, feet.y]) > 1.5));
+    let (foe, found) = (&room.foes[&pistoleer].fighter, &room.players[&player].fighter);
+    assert_eq!(combat::lock::sees(&room.blocks, &room.floor, foe, found), seen, "in its sight");
+    // Wounded once it turns on the player: an idle foe at its post, yet to notice anyone behind it, is kept whole.
+    let (mut fought, mut health) = (None, 0.0);
+    for tick in 0..600 {
+        let found = &mut room.players.get_mut(&player).unwrap().fighter;
+        found.health = found.health_max;
+        if tick % 300 == 0 {
+            // The player's ball through its chest: the first starts the fight, and the wound of the second is kept as
+            // any foe fighting keeps one.
+            let body = room.foes[&pistoleer].fighter.body;
+            let from = [body.x, body.y + 1.0, body.z + combat::tuning::CHEST];
+            room.shots.push((combat::shots::loose(player, combat::Ranged::Pistolet, from, 0.0, 0.0, 1.0), None));
+        }
+        room.tick();
+        let foe = room.foes.get_mut(&pistoleer).unwrap();
+        if fought.is_none() && foe.brain.target() == Some(player) {
+            fought = Some(tick);
+            foe.fighter.health = 0.6 * foe.fighter.health_max;
+            health = foe.fighter.health;
+        }
+        if fought.is_some() {
+            assert!(!foe.brain.returning(), "tick {tick}: it gave up on the player and walked home");
+            assert!(foe.fighter.health <= health, "tick {tick}: it healed");
+            health = foe.fighter.health;
+        }
+    }
+    assert!(fought.is_some_and(|tick| tick < 300), "it turned on the player before the ball, at {fought:?}");
+    assert_eq!(room.foes[&pistoleer].brain.target(), Some(player), "and is after them still, ten seconds on");
+    assert!(health < 0.6 * room.foes[&pistoleer].fighter.health_max, "the ball struck it");
+}

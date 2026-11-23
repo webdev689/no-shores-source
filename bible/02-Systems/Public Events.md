@@ -68,7 +68,7 @@ raised by the voyage's seas), at home round the event's ground. Each but the gro
 player nearest its home as it stands, wherever they are, and fights a player within a leash of the event's reach (its
 ground's radius, or its farthest point from its middle past it: the growth's spot, the approach, where the raid's waves
 form) and 16 m more, measured from its own place (the ground's middle, or a Collector's post at its store), on ground
-the room's mesh covers; past that it gives them up and walks back. A zone's room that holds events stands 40 foes alive
+the room's mesh covers, or anywhere within 14 m of it ([[A Foe Gives Up Only When the Player Is Far Away]]); past that it gives them up and walks back. A zone's room that holds events stands 40 foes alive
 at most and keeps 16 of them for its event (the most it stands at once: a Fissure's living foes short of a wave, its
 fullest wave and its growth or Warden); its garrison stands again, calls and arrives, and a road's kill goal stands its
 group, only while the foes not of the event stay within 24, as in any other node. The growth, the Warden and Marrow

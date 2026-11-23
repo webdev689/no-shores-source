@@ -2,6 +2,7 @@ import { hudLayout } from '../combat/hudLayout.ts';
 import type { BannerTone } from '../combat/publicBanner.ts';
 import { SeaFightReadout } from '../combat/seaReadout.ts';
 import { type CameraPose, projectPoint } from '../overworld/overworldCamera.ts';
+import { loadingNode } from '../cinema/logo.ts';
 import { compassNode } from './compassNode.ts';
 import { ControlsSheet } from './controlsSheet.ts';
 import type { ShipMark } from '../plus/compass.ts';
@@ -11,7 +12,7 @@ import type { SeaFightModel } from '../plus/seaFight.ts';
 import { type ShipBar, ShipPlates } from '../ships/shipBars.ts';
 import { shipPlateNodes } from './shipPlates.ts';
 import { announce } from '../ui/announce.ts';
-import { ease, easeInOut } from '../ui/ease.ts';
+import { ease } from '../ui/ease.ts';
 import type { Child, Node, Picture } from '../ui/node.ts';
 import type { Box } from '../ui/quads.ts';
 import type { Interface } from '../ui/ui.ts';
@@ -25,7 +26,6 @@ import { capFace, Tween } from './hudParts.ts';
 import {
   type Choice,
   deathNode,
-  DIM,
   type HudView,
   hintsNode,
   menuNode,
@@ -59,10 +59,9 @@ export interface Besides {
   readonly map: boolean;
 }
 
-/** How long the edge's darkening and the veil take to change, seconds, and the veil's words' breath. */
+/** How long the edge's darkening and the veil take to change, seconds. */
 const SHADE_S = 0.4;
 export const VEIL_S = 0.7;
-const BREATH_S = 2.4;
 /** The most entries the key strip holds, the key to every control last among them. */
 const HINTS_MOST = 8;
 /** `hints` cut to the most the strip holds, those just before the last giving way. */
@@ -213,12 +212,16 @@ export class Hud {
     this.compassView = view;
   }
 
-  /** Covers the view with words while a place loads, or lifts the cover. */
-  veil(text: string | null): void {
-    if (text !== null) this.veilWords = text;
+  /** Covers the view with the loading screen and `text` (the trip's words) while a place loads, or lifts the cover;
+   *  not `loading`, the words stand alone, as a trip that failed and waits on the player. */
+  veil(text: string | null, loading = true): void {
+    // Said as it comes up, and again as its words change; a trip with the words of the last is said too.
+    if (text !== null && (!this.veilShown || text !== this.veilWords || loading !== this.veilLoading)) announce(text);
+    if (text !== null) [this.veilWords, this.veilLoading] = [text, loading];
     if ((text !== null) !== this.veilShown) this.veilShade.set(text === null ? 0 : 1, now());
     this.veilShown = text !== null;
   }
+  private veilLoading = true;
   private veilShown = true;
 
   /** Each captain's bar over its ship (world metres) as `pose` sees the picture; none out of a fight. */
@@ -407,7 +410,7 @@ export class Hud {
       standing.kind === 'dead' &&
         standing.told &&
         deathNode(ui, deathWords(standing.fell), standing.canRespawn, () => this.respawnWanted()),
-      this.veilNode(clock, still),
+      this.veilNode(width, clock, still),
       this.usePrompt.node(view),
       this.seaSight.node(),
       // The page raised each mark over the rest of the display, so they stand over it here too.
@@ -429,12 +432,11 @@ export class Hud {
     return shipPlateNodes(this.shipPlates.place(this.bars, spot, width, clock));
   }
 
-  /** The veil over the view while a place loads, its words breathing; it takes the pointer while it stands. */
-  private veilNode(clock: number, still: boolean): Node | null {
-    // Reduced motion stills the words' breath, never the veil's fade, which only shows and hides it.
+  /** The veil over the view while a place loads: the loading screen with the trip's words. It takes the pointer while
+   *  it stands. */
+  private veilNode(width: number, clock: number, still: boolean): Node | null {
     const shown = this.veilShade.value(clock);
     if (shown <= 0) return null;
-    const breath = still ? 1 : 1 - 0.55 * easeInOut(1 - Math.abs(((clock / BREATH_S) % 1) * 2 - 1));
     return {
       width: 'grow',
       height: 'grow',
@@ -445,19 +447,7 @@ export class Hud {
       through: !this.veilShown,
       alignX: 'center',
       alignY: 'center',
-      children: [
-        {
-          opacity: breath,
-          text: {
-            words: (this.veilWords ?? '').toUpperCase(),
-            size: 2,
-            colour: DIM,
-            edge: 'shadow',
-            edgeColour: '#000',
-            tracking: 5,
-          },
-        },
-      ],
+      children: [loadingNode(width, clock, still, this.veilWords ?? '', this.veilLoading)],
     };
   }
 }

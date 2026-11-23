@@ -11,6 +11,7 @@ code:
   - client/src/thread/audioAway.ts#soundAway
   - client/src/thread/audioHost.ts#AudioHost
   - client/src/game/game.ts#startGame
+  - client/src/standIns.ts#standIn
   - client/src/game/drain.ts#Drain
   - client/src/game/drain.ts#DrainView
   - client/src/combat/arrivals.ts#Arrivals
@@ -84,7 +85,8 @@ The game itself, at the site's root (`/` under `npm run dev`): the world played 
 Destiny 1 ([[Overlook Is a Shared World After Destiny 1]], [[Every Island Is Seen Whole and Reached by Nodes]]). The
 player arrives in Overlook, plays on foot in one node at a time, returns to their ship, sails the [[Overworld]]'s sea,
 views an island's side from above and lands at another node. Each way between them passes through a veil while the
-place loads, as Destiny's orbit does.
+place loads, as Destiny's orbit does: the loading screen, the logo over a breathing LOADING and the trip's words
+([[One Loading Screen Covers Every Trip Until the Place Is Ready]]).
 
 ## Threads
 
@@ -146,7 +148,19 @@ activities' word (`startActivities`: a gate that shut, a company that fell); eac
 A locked node ([[World Map]], "Seen whole, reached by nodes") is never landed at or entered: its mark and its gate
 only say it is locked.
 
-The veil lifts once the place is ready and the exact ground round the player has come, or after 20 s of wall time.
+The veil lifts once the place is ready, the exact ground round the player has come, and three frames in a row have
+drawn it whole, or 20 s of wall time after the place is ready: the trip's own work (the place opened, the room
+joined) comes first, however long it takes. A frame is whole when nothing stood in for the place round the player
+(`standIns.ts`): a figure with no frame of its own yet, ground, a city, a dungeon or an entrance still painting, a city
+or a ruin's wrecks not yet built, plants or an island's kit still loading, a hull drawn as the Sloop, a place's sound
+not yet come. A
+figure showing its last frame while its next composes stands in for nothing, nor does one that failed and waits to be
+tried again. Behind the veil no frame is seen, so the plants scatter 30 ms of each, not the 6 ms they take in play. Lifted at 20 s, the page warns what was not ready. A
+trip that failed with nowhere left to go shows its words without LOADING, waiting on the player; one with a way back
+keeps LOADING as it goes back. A travel by the held map ([[Sailing]]) shows the same screen over its black, which waits
+on the same whole frames, drawn after the room has moved the ship. Nothing puts the veil up mid-play: the
+plants' pipelines are made once per device and format, and the lit keepers' marks and the first-person glow make theirs off the
+frame as the game starts, so a continent or an island opened while sailing compiles none.
 
 A trip that fails, its room full or out of reach, puts the player back where they stood before it, joined again:
 aboard their ship, on the island's beach, in the dungeon, or in the node at its arrival spot

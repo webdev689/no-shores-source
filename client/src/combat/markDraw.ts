@@ -164,6 +164,11 @@ export class MarkDraw {
     this.view = device.createBuffer({ size: 80, usage: BUFFER_USAGE.uniform | BUFFER_USAGE.copyDestination });
     this.group = device.createBindGroup({ layout, entries: [{ binding: 0, resource: { buffer: this.view } }] });
     this.warmOver(over);
+    // The lit keepers' pipeline too, so the first keeper lit never waits on it.
+    void device
+      .createRenderPipelineAsync(this.aboveMade())
+      .then((pipeline) => (this.above ??= pipeline))
+      .catch(() => undefined);
   }
 
   /** The marks the next frame draws, measured from a point `origin` in the world (where a mark at 0 lies), seen from
@@ -251,16 +256,7 @@ export class MarkDraw {
   drawAbove(encoder: GPUCommandEncoder, target: GPUTextureView, matrix: Float32Array): void {
     const [buffer, count] = [this.aboveBuffer, this.aboveCount];
     if (!buffer || count === 0) return;
-    this.above ??= this.gpu.device.createRenderPipeline({
-      layout: this.gpu.device.createPipelineLayout({ bindGroupLayouts: [this.viewLayout] }),
-      vertex: { module: this.module, entryPoint: 'mark_vertex', buffers: [VERTEX_LAYOUT] },
-      fragment: {
-        module: this.module,
-        entryPoint: 'clear_fragment',
-        targets: [{ format: this.gpu.format, blend: { color: BLENDED, alpha: BLENDED } }],
-      },
-      primitive: { topology: 'triangle-list' },
-    });
+    this.above ??= this.gpu.device.createRenderPipeline(this.aboveMade());
     this.writeView(matrix);
     const pass = encoder.beginRenderPass({ colorAttachments: [{ view: target, loadOp: 'load', storeOp: 'store' }] });
     pass.setPipeline(this.above);
@@ -307,6 +303,20 @@ export class MarkDraw {
         module: this.module,
         entryPoint: entry,
         targets: [{ format, blend: { color: BLENDED, alpha: BLENDED } }],
+      },
+      primitive: { topology: 'triangle-list' },
+    };
+  }
+
+  /** How the pipeline over the finished picture is made, for the lit keepers' marks seen from everywhere. */
+  private aboveMade(): GPURenderPipelineDescriptor {
+    return {
+      layout: this.gpu.device.createPipelineLayout({ bindGroupLayouts: [this.viewLayout] }),
+      vertex: { module: this.module, entryPoint: 'mark_vertex', buffers: [VERTEX_LAYOUT] },
+      fragment: {
+        module: this.module,
+        entryPoint: 'clear_fragment',
+        targets: [{ format: this.gpu.format, blend: { color: BLENDED, alpha: BLENDED } }],
       },
       primitive: { topology: 'triangle-list' },
     };

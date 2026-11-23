@@ -4,10 +4,11 @@ import { PART, type Strip } from '../forge/compose.ts';
 import type { ForgeLooks } from '../forge/looks.ts';
 import type { ForgeStore } from '../forge/store.ts';
 import { type Card, type CardMaker, Cards } from './cards.ts';
-import type { ComposeJob } from './composeJob.ts';
+import type { ComposedCard, ComposeJob } from './composeJob.ts';
 import type { Haste } from './composeQueue.ts';
 import type { Composer } from './composer.ts';
 import { type Dress, plainDress } from './dressing.ts';
+import { standIns } from '../standIns.ts';
 
 // A figure one pixel wide and two tall in each of the forge's five views, holding a sword in either fist.
 const cell = { cell: [1, 2], frames: 1, root: [0, 1] } as const;
@@ -159,19 +160,44 @@ test('a frame shown now is composed ahead of every frame warmed, and asks for th
   const colours = { skins: { bodies: {} }, hair: { bodies: {} } };
   const dyes = { palette: [], clothing: {}, armour: {} };
   const forge = new Cards(maker, store, moving, colours, dyes, undefined, recording);
+  standIns();
   forge.card(1, bare, 'walk', 0, 1);
+  assert.deepEqual(standIns(), ['figures'], 'a figure with no frame of its own stands in');
   assert.deepEqual(asked, [
     { frame: 1, haste: 'now' },
     { frame: 2, haste: 'ahead' },
     { frame: 0, haste: 'ahead' },
   ]);
   forge.card(1, bare, 'walk', 0, 2);
+  assert.deepEqual(standIns(), ['figures'], 'and goes on standing in while its frame is under way');
   assert.equal(asked.length, 3, 'a frame under way is not asked for again, nor its move');
   assert.equal(hurried.length, 1, 'the next frame, shown, is hurried');
   asked.length = 0;
   forge.warm(bare, () => ['walk'], 0, 2);
   forge.pump();
   assert.ok(asked.length > 0 && asked.every((each) => each.haste === 'later'), 'warming waits for every frame shown');
+});
+
+test('a figure showing its last frame while its next composes stands in for nothing', async () => {
+  const walk = { cell: [1, 2], frames: 2, root: [0, 1] } as const;
+  const moving: ForgeLooks = { bodies: { male: { anims: { walk }, layers: { body: ['walk'] } } } };
+  const composed: ComposedCard = { width: 1, height: 1, pixels: new Uint8Array(4), root: [0, 1], field: null };
+  const firstOnly: Composer = {
+    offPage: true,
+    compose: (unused: string, job: ComposeJob) =>
+      job.frame === 0 ? Promise.resolve(composed) : new Promise(() => undefined),
+    hurry: () => undefined,
+    prefetch: () => undefined,
+  };
+  const colours = { skins: { bodies: {} }, hair: { bodies: {} } };
+  const dyes = { palette: [], clothing: {}, armour: {} };
+  const forge = new Cards(maker, store, moving, colours, dyes, undefined, firstOnly);
+  forge.card(1, bare, 'walk', 0, 0);
+  await settled();
+  standIns();
+  assert.ok(forge.card(1, bare, 'walk', 0, 0), 'its first frame');
+  assert.ok(forge.card(1, bare, 'walk', 0, 1), 'and that frame again while the next composes');
+  assert.deepEqual(standIns(), []);
 });
 
 test('a frame that failed is asked for again only after a while, not each tick with its whole move', async () => {
@@ -194,11 +220,13 @@ test('a frame that failed is asked for again only after a while, not each tick w
   assert.equal(asked, 4, 'the frame shown and the rest of its move');
   await settled();
   assert.equal(forge.failure, 'no strip');
+  standIns();
   for (let tick = 0; tick < 10; tick++) {
     forge.card(1, bare, 'walk', 0, tick % 4);
     forge.pump();
   }
   assert.equal(asked, 4, 'none asked for again within the wait');
+  assert.deepEqual(standIns(), [], 'a frame that failed holds up no veil while it waits');
 });
 
 test("warming goes at the page's pace whenever the frames are composed on it", () => {

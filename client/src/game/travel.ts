@@ -55,7 +55,7 @@ export function startTravel(game: TravelGame) {
       })
       .catch((error: unknown) => {
         const why = error instanceof Error ? error.message : String(error);
-        hud.veil(`${words} failed: ${why}. Press ${boundWord('confirm')} to try again.`);
+        hud.veil(`${words} failed: ${why}. Press ${boundWord('confirm')} to try again.`, false);
         retry = () => behindVeil(words, work, fallback);
       });
   };

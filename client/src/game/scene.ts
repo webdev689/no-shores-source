@@ -1,4 +1,6 @@
 import type { CityPainter } from '../city/painter.ts';
+import { painting } from '../city/painter.ts';
+import { standIn } from '../standIns.ts';
 import { Atmosphere, drawsNothing } from '../cinema/atmosphere.ts';
 import { CLEAR, swellGained, type Weather } from '../cinema/weather.ts';
 import { LightLayer } from '../combat/lightLayer.ts';
@@ -284,6 +286,7 @@ export class GameScene {
     const terrain = this.terrain;
     if (!terrain) return;
     const { view, drawn } = terrain;
+    if (painting(terrain.tiles)) standIn('ground pictures');
     for (const drawer of drawers) drawer.prepare?.(shot);
     const origin = [view.leftM, view.topM] as const;
     const local: Shot = { ...shot, eye: [shot.eye[0] - origin[0], shot.eye[1] - origin[1], shot.eye[2]] };

@@ -31,6 +31,9 @@ true to scale." They wrote: "#1, the playspace needs to be much larger".
   only as the player enters it, well across from where they come in.
 - To join the ships, the Frigate's port side is stove in abreast its gun deck and its port bulwark broken forward,
   where the way comes aboard from the wreckage; the Sloop floats higher, so its side stays out of the swell; the
-  Frigate's quarterdeck is cleared but for its wheel, and the arena's heap stands below its front, piled 3.7 m.
+  Frigate's quarterdeck is cleared but for its wheel, and the arena's heap stands below its front, piled 3.7 m. Her
+  side stove in abreast her gun deck, and the arena's heap below her quarterdeck's front, are replaced by
+  [[Thule Fights on a Quarterdeck Twice as Long]]: her quarterdeck runs forward over the gun deck, and the way up onto it is a ramp from the wreckage off
+  her port quarter, its heap on the ramp.
 - A rim round the wreck's blocks holds every body on it, and the sea is drawn round the hulls and rafts, not through
   them.

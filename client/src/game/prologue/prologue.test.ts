@@ -45,6 +45,12 @@ class Played implements Beat {
   }
 }
 
+/** A beat of the test's own that begins from black, ready once told. */
+class FromBlack extends Played {
+  readonly fromBlack = true;
+  ready = false;
+}
+
 /** A beat of the test's own that asks the music for the storm. */
 class Sounded extends Played {
   music(): Hearing {
@@ -71,7 +77,12 @@ function directed(made: Map<BeatName, Played>, from: BeatName) {
     hush: () => asked.push('hush'),
     draw: (shown: unknown, size: unknown, clock: number, seconds: number) => asked.push(`draw ${seconds}`),
     parts: {
-      screen: { showSkip: (share: number | null) => asked.push(`skip ${share}`), clear: () => asked.push('clear') },
+      screen: {
+        showSkip: (share: number | null) => asked.push(`skip ${share}`),
+        clear: () => asked.push('clear'),
+        fade: (opacity: number, seconds: number) => asked.push(`fade ${opacity} ${seconds}`),
+        showLoading: (shown: boolean) => asked.push(`loading ${shown}`),
+      },
       music: { frame: (hearing: Hearing) => heard.push(hearing) },
     },
   };
@@ -259,4 +270,51 @@ test("each frame hands the game's music what the beat asks, and a beat that asks
   director.frame(controls(false), 0.1, SIZE, SIZE);
   assert.equal(director.now.name, 'sighted');
   assert.deepEqual(heard.at(-1)?.story, { kind: 'silence', cut: false });
+});
+
+test('a scene from black is held behind it while it comes, the logo up past its second, drawn unseen, then faded in', () => {
+  const made = new Map<BeatName, Played>([['deep', new FromBlack('deep')]]);
+  const { director, asked } = directed(made, 'deep');
+  const deep = made.get('deep') as FromBlack;
+  for (let frame = 0; frame < 3; frame++) director.frame(controls(false), 0.25, SIZE, SIZE);
+  assert.ok(!asked.includes('loading true'), 'no logo in the black’s first second');
+  for (let frame = 0; frame < 3; frame++) director.frame(controls(false), 0.25, SIZE, SIZE);
+  assert.deepEqual(deep.heard, [], 'not played while it comes');
+  assert.ok(asked.includes('loading true'), 'the logo once the black has held its second');
+  assert.ok(!asked.includes('fade 0 2.5'), 'still black');
+  deep.ready = true;
+  for (let frame = 0; frame < 2; frame++) director.frame(controls(false), 0.25, SIZE, SIZE);
+  assert.equal(deep.heard.length, 2, 'its first frames drawn under the black');
+  assert.ok(!asked.includes('fade 0 2.5'), 'still black while they warm');
+  director.frame(controls(false), 0.25, SIZE, SIZE);
+  assert.ok(asked.includes('fade 0 2.5'), 'then faded in');
+  assert.ok(asked.lastIndexOf('loading false') > asked.indexOf('loading true'), 'the logo gone');
+});
+
+test('a scene from black that is ready at once still holds its second of black, with no logo', () => {
+  const ready = new FromBlack('shore');
+  ready.ready = true;
+  const { director, asked } = directed(new Map<BeatName, Played>([['shore', ready]]), 'shore');
+  for (let frame = 0; frame < 3; frame++) director.frame(controls(false), 0.25, SIZE, SIZE);
+  assert.deepEqual(ready.heard, [], 'held three quarters of a second');
+  director.frame(controls(false), 0.25, SIZE, SIZE);
+  assert.equal(ready.heard.length, 1, 'played at its second');
+  assert.ok(!asked.includes('loading true'), 'no logo for a scene that was ready');
+});
+
+test('a beat that fades itself in is given no fade, and one not from black begun under a held black fades in', () => {
+  const own = new FromBlack('wake', true);
+  own.ready = true;
+  Object.assign(own, { fadeInS: 0 });
+  const { director, asked } = directed(new Map<BeatName, Played>([['wake', own]]), 'wake');
+  for (let frame = 0; frame < 7; frame++) director.frame(controls(false), 0.25, SIZE, SIZE);
+  assert.ok(asked.includes('fade 0 0') && !asked.includes('fade 0 2.5'), 'its own darkening is its fade in');
+  const skipped = new FromBlack('wake', true);
+  skipped.ready = true;
+  const after = directed(new Map<BeatName, Played>([['wake', skipped]]), 'wake');
+  for (let frame = 0; frame < 4; frame++) after.director.frame(controls(false), 0.25, SIZE, SIZE);
+  skipped.skip();
+  after.director.frame(controls(false), 0.25, SIZE, SIZE);
+  assert.equal(after.director.now.name, 'wreck');
+  assert.deepEqual(after.asked.slice(-2), ['fade 1 0', 'fade 0 2.5'], 'the wreck fades in over the black left held');
 });
