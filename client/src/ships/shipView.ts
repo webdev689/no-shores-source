@@ -1,3 +1,4 @@
+import { sphereAround } from '../frustum.ts';
 import { BUFFER_USAGE, type Gpu } from '../gpu.ts';
 import { ShadowMap } from '../shadow.ts';
 import { skyUniformFor } from '../sky/skyUniform.ts';
@@ -144,6 +145,38 @@ export function mastheadOf(mesh: ShipMesh): [number, number, number] {
   return top;
 }
 
+/** Its bounding sphere in its own frame, [x, y, z, radius]: about the middle of its mesh and its sails' corners, and
+ *  twice as far as the farthest of them, so a yard braced or a boom swung any way about its mast, its canvas filled
+ *  and its flag flying (a tenth of its length from its masthead) all stay inside. */
+export function shipSphere(mesh: ShipMesh, sails: readonly SailCorners[]): [number, number, number, number] {
+  const stride = VERTEX_BYTES / 4;
+  const positions = new Float32Array(mesh.vertices, 0, mesh.vertexCount * stride);
+  const points: number[] = [];
+  for (let vertex = 0; vertex < mesh.vertexCount; vertex++)
+    points.push(...positions.subarray(vertex * stride, vertex * stride + 3));
+  for (const sail of sails)
+    for (const value of Object.values(sail)) if (typeof value !== 'string') points.push(...value);
+  const [x, y, z, radius] = sphereAround(points);
+  return [x, y, z, radius * 2];
+}
+
+/** A ship's sphere (`shipSphere`) as it lies at `place`, measured from `eye`. */
+export function sphereAt(
+  sphere: readonly number[],
+  place: ShipPlace,
+  eye: readonly [number, number, number],
+): [number, number, number, number] {
+  const axes = shipAxes(place.heading, place.pitch, place.roll);
+  const scale = place.scale ?? 1;
+  const middle = [place.x, place.y, place.z].map(
+    (along, axis) =>
+      along -
+      (eye[axis] ?? 0) +
+      scale * axes.reduce((sum, column, part) => sum + (column[axis] ?? 0) * (sphere[part] ?? 0), 0),
+  );
+  return [middle[0] ?? 0, middle[1] ?? 0, middle[2] ?? 0, (sphere[3] ?? 0) * scale];
+}
+
 /** The ships' pictures each device holds for what draws with them beside the ships' own kit (a story's wreck), and
  *  how many hold them: one upload, let go once the last of them is. */
 const SHARED_PICTURES = new WeakMap<GPUDevice, { readonly texture: GPUTexture; holders: number }>();
@@ -198,6 +231,8 @@ export class ShipView {
   private readonly paint: HullPaint;
   private readonly tags: ShipTags;
   private readonly flat: readonly Float32Array[];
+  /** Its bounding sphere in its own frame, made once (`shipSphere`). */
+  private readonly sphere: readonly number[];
 
   /** Opens a hull's view on the device, its mesh tagged (`tagShip`) and the device's kit made if it is not yet. */
   static async open(gpu: Gpu, mesh: ShipMesh, sails: readonly SailCorners[], paint: HullPaint, slots = SHIP_SLOTS) {
@@ -220,6 +255,7 @@ export class ShipView {
     this.masthead = mastheadOf(mesh);
     this.paint = paint;
     this.tags = tagShip(mesh, sails);
+    this.sphere = shipSphere(mesh, sails);
     if (this.tags.yards.length > MOST_YARDS) throw new Error(`a ship of ${this.tags.yards.length} yards is too many`);
     if (this.tags.masts.length > MOST_MASTS) throw new Error(`a ship of ${this.tags.masts.length} masts is too many`);
     this.flat = [flagFlat()];
@@ -251,6 +287,22 @@ export class ShipView {
       });
       return { uniforms, bindGroup, canvas, canvasIndices };
     });
+  }
+
+  /** Its bounds at `place` as a sphere measured from `eye` ([x, y, z, radius]), for every pass that leaves it out
+   *  when out of sight; none while a part torn or fallen from its `rig` lies off its side or drifts astern of it,
+   *  where no sphere of its own reaches. */
+  boundsAt(
+    place: ShipPlace,
+    eye: readonly [number, number, number],
+    rig: SailRig | null,
+  ): [number, number, number, number] | null {
+    if (rig) {
+      const { harm, time } = rig;
+      if (this.tags.masts.some((unused, mast) => harm.isFallen(mast))) return null;
+      if (this.sails.some((unused, sail) => harm.sailLost(sail, time) !== null)) return null;
+    }
+    return sphereAt(this.sphere, place, eye);
   }
 
   /** Draws it into a pass the land's pipelines draw into (its formats, samples and reversed depth), in its own

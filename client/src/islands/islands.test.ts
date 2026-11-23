@@ -5,7 +5,7 @@ import { startRoomDoor } from '../../../server/roomDoor.ts';
 import { FAR_STRIDE, GROUND_FLOATS, groundHeight, groundMesh } from './isleGround.ts';
 import { MODULE_NAMES, packUrl, PARTS, readKitPack, roleOf, VERTEX_BYTES } from './isleModules.ts';
 import { gridOf, type IslePlacement, readIslePlan } from './islePlan.ts';
-import { instancesOf, placedPoint } from './isleView.ts';
+import { instancesOf, isleBox, placedPoint } from './isleView.ts';
 import kits from '../../../content/islands/kits.json' with { type: 'json' };
 
 /** The room's module as `npm run wasm` copies it for the page. */
@@ -233,6 +233,39 @@ test(
     assert.ok(Math.abs(east - 1) < 1e-12 && Math.abs(south) < 1e-12);
   },
 );
+
+test("an island's box holds its whole ground and every module placed on it, however turned and scaled", () => {
+  const grid = gridOf(FLOATS);
+  const tree = MODULE_NAMES.indexOf('temperate.tree.a');
+  const placements: IslePlacement[] = [
+    [tree, 3, -1, 6, 0.7, 1.4, 1.2],
+    [MODULE_NAMES.indexOf('temperate.shore.rock.c'), -4, 2, 0.5, 2.5, 0.8, 1],
+  ];
+  const box = isleBox(grid, placements);
+  const inside = ([x, y, z]: readonly number[]) =>
+    x! >= box[0] - 1e-9 &&
+    y! >= box[1] - 1e-9 &&
+    z! >= box[2] - 1e-9 &&
+    x! <= box[3] + 1e-9 &&
+    y! <= box[4] + 1e-9 &&
+    z! <= box[5] + 1e-9;
+  const mesh = groundMesh(grid);
+  for (let vertex = 0; vertex < 8; vertex++)
+    assert.ok(inside(mesh.vertices.subarray(vertex * GROUND_FLOATS, vertex * GROUND_FLOATS + 3)), `ground ${vertex}`);
+  const contract = kits.modules as Readonly<Record<string, { readonly size: number[] }>>;
+  for (const placement of placements) {
+    const [width = 0, depth = 0, height = 0] = contract[MODULE_NAMES[placement[0]] ?? '']?.size ?? [];
+    for (let corner = 0; corner < 8; corner++) {
+      const point = [
+        corner & 1 ? width / 2 : -width / 2,
+        corner & 2 ? depth / 2 : -depth / 2,
+        corner & 4 ? height : -0.8,
+      ];
+      assert.ok(inside(placedPoint(point as [number, number, number], placement)), `${placement[0]} corner ${corner}`);
+    }
+  }
+  assert.deepEqual(isleBox(grid, []), [-3, -3, 1, 3, 3, 8], 'bare, the ground alone');
+});
 
 test('instances sort by module, a run each, the trees and cliffs marked for the middle distance', () => {
   const tree = MODULE_NAMES.indexOf('temperate.tree.a');

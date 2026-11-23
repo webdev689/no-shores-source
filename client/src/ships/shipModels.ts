@@ -2,6 +2,7 @@
 import type { ShadowMap } from '../shadow.ts';
 // ships drawn by them: each in its own hull, its side's colours and its rig, a slot of its model each. A hull still
 // coming is drawn as the Sloop, so a ship is never a footprint with nothing over it.
+import { sphereSeen, viewPlanes } from '../frustum.ts';
 import type { Gpu } from '../gpu.ts';
 import type { ShipLook } from './dress.ts';
 import { type HullName, hullName, hullPaint, hullSails, SLOOP_HULL } from './hulls.ts';
@@ -112,11 +113,15 @@ export class ShipModels {
   }
 
   /** Draws a frame's ships, each by its hull's model once it has come, the ships of one hull in its slots in turn, in
-   *  the sun's shadows when a map is given. */
+   *  the sun's shadows when a map is given. A ship out of view is not drawn but keeps its slot, so every other ship
+   *  stays in the slot its shadow was cast from. */
   draw(pass: GPURenderPassEncoder, ships: readonly DrawnShip[], camera: ShipCamera, shadow?: ShadowMap): void {
-    this.each(ships, (model, ship, slot) =>
-      model.drawInto(pass, ship.place, camera, slot, ship.look, ship.rig, shadow),
-    );
+    const planes = viewPlanes(camera.fromEye);
+    this.each(ships, (model, ship, slot) => {
+      const bounds = model.boundsAt(ship.place, camera.eye, ship.rig);
+      if (!bounds || sphereSeen(planes, ...bounds))
+        model.drawInto(pass, ship.place, camera, slot, ship.look, ship.rig, shadow);
+    });
   }
 
   /** Draws a frame's ships' shadows into the cascade of the sun's map being drawn, each in the slot `draw` gives it. */

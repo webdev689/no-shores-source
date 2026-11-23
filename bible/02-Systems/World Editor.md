@@ -33,6 +33,7 @@ code:
   - client/src/editor/layoutCity.ts#LayoutCity
   - client/src/terrain/landTexts.ts#loadLandTexts
   - client/src/terrain/terrainView.ts#TerrainView
+  - client/src/terrain/clipmap.ts#ringDraws
   - vite.config.ts#worldFiles
   - .github/workflows/ci.yml
   - .github/workflows/pages.yml
@@ -115,7 +116,13 @@ each ring's edge eases onto the next ring's grid. Every ring's vertices lie on o
 share is the same point to the bit and they meet without a crack. Each pixel reads the ground under it along the
 same Catmull-Rom splines the land crate uses, for its light, its colour and the water's edge; the mesh only places
 it. Near water the mesh lies a little under the ground, so a coarse triangle never hides the water, and the coast
-reaches the sea's level on its painted line. Every pixel is sampled four times. The 2D map reads the land along the
+reaches the sea's level on its painted line. Every pixel is sampled four times. Only what the view may see is drawn
+(`ringDraws`): each ring's 96 x 96 quads lie in 32 sectors by their bearing from its middle, the quads every coarser
+ring leaves to the finer one (47 x 47 of them) last, and a ring draws the sectors whose box, its quads' a quad further
+back where a vertex slides onto the coarser grid, from the lowest ground read to the highest (30% of their span and
+10 m more either way), reaches inside the view's planes. Rings drawing the same quads join in one instanced draw; a
+frame takes from about a tenth to a half of the 829,440 vertices the whole rings would, as the view and the land's
+heights allow. The 2D map reads the land along the
 same splines and softens every edge across a pixel.
 
 Closer than 8 km, the 3D view shows the exact ground the game uses round the camera's target: a 2 km square sampled

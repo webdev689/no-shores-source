@@ -3,6 +3,7 @@
 // distance. A Drawer the game's scene draws into its own pass.
 import { CITY_LAMPS } from '../sky/lamps.ts';
 import { skyUniformFor } from '../sky/skyUniform.ts';
+import { boxSeen, viewPlanes } from '../frustum.ts';
 import { type Gpu, TEXTURE_USAGE } from '../gpu.ts';
 import { FAR, NEAR, ShadowMap } from '../shadow.ts';
 import type { RmbBlock } from './blocks.ts';
@@ -13,7 +14,7 @@ import type { MeshData } from './mesh.ts';
 import { CityPainter, type PaintProgress } from './painter.ts';
 import { PICTURE_LAYERS } from './pictures.ts';
 import { type CityClimate, type CityPlan, glowLamps } from './plan.ts';
-import { boxReach, boxSeen, NEAR_M, tiersReached, viewPlanes } from './tiers.ts';
+import { boxReach, NEAR_M, tiersReached } from './tiers.ts';
 
 /** What the scene hands a drawer each frame: the eye in world metres, and how it looks. */
 export interface CityShot {

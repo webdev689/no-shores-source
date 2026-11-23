@@ -18,6 +18,9 @@ const CONTRACT = kits.modules as Readonly<Record<string, Contract>>;
 /** A module's role in the contract, by its number; undefined past the catalog. */
 export const roleOf = (module: number): string | undefined => CONTRACT[MODULE_NAMES[module] ?? '']?.role;
 
+/** A module's size in the contract (width, depth, height, metres), by its number; undefined past the catalog. */
+export const sizeOf = (module: number): readonly number[] | undefined => CONTRACT[MODULE_NAMES[module] ?? '']?.size;
+
 /** The kit a module belongs to: its name's first word. */
 export const kitOfModule = (name: string): string => name.slice(0, name.indexOf('.'));
 

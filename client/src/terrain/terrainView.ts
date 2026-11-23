@@ -1,10 +1,11 @@
+import { viewPlanes } from '../frustum.ts';
 import { BUFFER_USAGE, TEXTURE_USAGE, type Gpu } from '../gpu.ts';
 import { ShadowMap } from '../shadow.ts';
 import { skyUniformFor } from '../sky/skyUniform.ts';
 import { SLOW_CLOCK_S, stillLevels } from '../water/shore.ts';
 import { ANCHOR_M, wideTexels } from '../water/waterCommon.ts';
 import { SAMPLES } from '../water/waterView.ts';
-import { CLIPMAP_LEVELS, CLIPMAP_QUADS, type ClipLevel } from './clipmap.ts';
+import { CLIPMAP_LEVELS, type ClipLevel, quadOrder, ringDraws } from './clipmap.ts';
 import {
   FINE_SQUARE_M,
   type GroundPaint,
@@ -89,6 +90,14 @@ const UNIFORM_FLOATS = 68 + CLIPMAP_LEVELS * 8;
 const DEFAULT_GROUND = [0.3, 0.48, 0.22] as const;
 const DEFAULT_SNOW_M = 2300;
 
+/** The order the rings' quads are drawn in, by sector (`quadOrder`): the same for every ring and every landmass. */
+const ORDER = quadOrder();
+
+/** How far the ground may be drawn past the lowest and highest heights it is read from, as a share of their span,
+ *  and metres more: a Catmull-Rom spline overshoots its samples by up to an eighth of their rise along each axis,
+ *  some quarter of it across both, and a vertex sinks under fresh water or the swash by up to 4.5 m. */
+const HEIGHT_SLACK = { share: 0.3, metres: 10 } as const;
+
 /** Each GPU's terrain pipeline, compiled once: every landmass drawn on it shares one. */
 const pipelines = new WeakMap<GPUDevice, Map<GPUTextureFormat, GPURenderPipeline>>();
 
@@ -142,7 +151,15 @@ export class TerrainView {
   private close: { readonly data: CloseUpData; readonly textures: readonly GPUTexture[] } | null = null;
   /** The lakes' still water, as the water reads it (stillLevels); made again when the whole window changes. */
   private banked: Float32Array | null = null;
+  /** The highest the lakes' still water stands, metres, for the water to bound its surface by. */
+  private highestLake = 0;
   private bindGroup: GPUBindGroup;
+  /** The quads' order on the GPU (`ORDER`). */
+  private readonly order: GPUBuffer;
+  /** The lowest and highest any ground it reads stands (the cells, the close-up, the middle ground), metres. */
+  private heights: [number, number] = [Infinity, -Infinity];
+  /** This frame's draws of the rings (`ringDraws`), as `prepare` found them. */
+  private draws: number[] = [];
 
   constructor(gpu: Gpu, data: TerrainData) {
     this.gpu = gpu;
@@ -187,6 +204,11 @@ export class TerrainView {
       usage: BUFFER_USAGE.uniform | BUFFER_USAGE.copyDestination,
     });
     this.pipeline = pipelineFor(gpu);
+    this.order = gpu.device.createBuffer({
+      size: ORDER.quads.byteLength,
+      usage: BUFFER_USAGE.storage | BUFFER_USAGE.copyDestination,
+    });
+    gpu.device.queue.writeBuffer(this.order, 0, ORDER.quads);
     this.bindGroup = this.bind();
     this.update(data, null);
   }
@@ -212,8 +234,20 @@ export class TerrainView {
         { binding: 9, resource: this.paint.createView() },
         { binding: 10, resource: this.paintSampler },
         { binding: 11, resource: this.middle.createView() },
+        { binding: 12, resource: { buffer: this.order } },
       ],
     });
+  }
+
+  /** Widens the heights the ground may stand at by `values`' lowest and highest. */
+  private reach(values: ArrayLike<number>): void {
+    let [lowest, highest] = this.heights;
+    for (let index = 0; index < values.length; index++) {
+      const value = values[index] ?? 0;
+      if (value < lowest) lowest = value;
+      if (value > highest) highest = value;
+    }
+    this.heights = [lowest, highest];
   }
 
   /**
@@ -227,7 +261,15 @@ export class TerrainView {
     if (width <= 0 || height <= 0) return;
     const { queue } = this.gpu.device;
     const first = top * this.width + left;
-    if (!rect || !this.banked) this.banked = stillLevels(data.heights, data.lakes, null, this.width, this.height, 1);
+    // An edit only widens them, which keeps every cull safe.
+    for (let row = top; row < bottom; row++)
+      this.reach(data.heights.subarray(row * this.width + left, row * this.width + right));
+    if (!rect || !this.banked) {
+      this.banked = stillLevels(data.heights, data.lakes, null, this.width, this.height, 1);
+      this.highestLake = 0;
+      for (let sample = 0; sample < this.banked.length; sample += 2)
+        this.highestLake = Math.max(this.highestLake, this.banked[sample] ?? 0);
+    }
     const texels = wideTexels(data, { left, top, right, bottom });
     queue.writeTexture({ texture: this.wide, origin: [left, top] }, texels, { bytesPerRow: width * 16 }, [
       width,
@@ -262,6 +304,7 @@ export class TerrainView {
         return texture;
       });
       this.close = { data, textures };
+      this.reach(data.heights);
     }
     this.bindGroup = this.bind();
   }
@@ -287,6 +330,7 @@ export class TerrainView {
       ]);
     }
     this.middlePlace = middle ? { corner: middle.corner, step: middle.step } : null;
+    if (middle) this.reach(middle.heights);
     this.bindGroup = this.bind();
   }
 
@@ -307,15 +351,30 @@ export class TerrainView {
 
   /** Gives the GPU back this view's textures and buffers; the view draws nothing after. */
   destroy(): void {
-    const owned = [this.wide, this.lakes, this.marks, this.plainTiles, this.paint, this.middle, this.uniforms];
+    const owned = [
+      this.wide,
+      this.lakes,
+      this.marks,
+      this.plainTiles,
+      this.paint,
+      this.middle,
+      this.uniforms,
+      this.order,
+    ];
     for (const resource of [...owned, ...(this.close?.textures ?? [])]) {
       resource.destroy();
     }
   }
 
-  /** The cells (wide_ground's) and lake surfaces on the GPU, for the water drawn over them, and their size, metres. */
-  get cells(): { readonly wide: GPUTexture; readonly lakes: GPUTexture; readonly cellM: number } {
-    return { wide: this.wide, lakes: this.lakes, cellM: this.cellM };
+  /** The cells (wide_ground's) and lake surfaces on the GPU, for the water drawn over them, their size, metres, and
+   *  the highest the lakes stand. */
+  get cells(): {
+    readonly wide: GPUTexture;
+    readonly lakes: GPUTexture;
+    readonly cellM: number;
+    readonly highestM: number;
+  } {
+    return { wide: this.wide, lakes: this.lakes, cellM: this.cellM, highestM: this.highestLake };
   }
 
   /** Writes this view's uniforms for one frame. */
@@ -361,6 +420,13 @@ export class TerrainView {
       floats.set([...(ring.hole ?? [0, 0]), ring.hole ? 1 : 0, 0], 72 + index * 8);
     }
     this.gpu.device.queue.writeBuffer(this.uniforms, 0, floats);
+    const [lowest, highest] = this.heights;
+    const slack = Math.max(0, highest - lowest) * HEIGHT_SLACK.share + HEIGHT_SLACK.metres;
+    const drawn = [(lowest - slack) * options.exaggeration, (highest + slack) * options.exaggeration] as const;
+    // With no ground read yet nothing bounds it: every ring is drawn whole.
+    this.draws = Number.isFinite(slack)
+      ? ringDraws(viewPlanes(frame.fromEye), frame.rings, frame.eye, drawn, ORDER)
+      : [0, ORDER.quads.length, 0, CLIPMAP_LEVELS];
   }
 
   /** Draws the terrain into a pass whose uniforms `prepare` wrote, in the sun's shadows when a map is given. */
@@ -369,6 +435,10 @@ export class TerrainView {
     pass.setBindGroup(0, this.bindGroup);
     pass.setBindGroup(1, (shadow ?? ShadowMap.none(this.gpu)).receiverGroup(this.pipeline));
     skyUniformFor(this.gpu.device).bindAuto(pass, this.pipeline, [2]);
-    pass.draw(CLIPMAP_QUADS * CLIPMAP_QUADS * 6, CLIPMAP_LEVELS);
+    // Only the sectors of each ring the view may see, six vertices a quad.
+    for (let draw = 0; draw < this.draws.length; draw += 4) {
+      const [first = 0, count = 0, ring = 0, rings = 0] = this.draws.slice(draw, draw + 4);
+      pass.draw(count * 6, rings, first * 6, ring);
+    }
   }
 }
