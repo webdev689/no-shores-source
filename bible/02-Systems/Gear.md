@@ -494,7 +494,9 @@ is a horse's hide, kept as its horse ("Horses").
   the pack for each coat it kept and the one it wore worn in the Mount slot; one kept before cosmetics wore the Bay,
   so it is given the Bay Horse worn. The coats leave its cosmetics, and a room with horses marks every character's
   cosmetics (`horses`), so this is done once: a coat found beside the mark is what a room from before horses wrote
-  back as its own default, and is dropped, so a room rolled back and forward gives no horse.
+  back as its own default, and is dropped, so a room rolled back and forward gives no horse; a coat bought from the
+  older room meanwhile is dropped with it, and a character made there is read as one from before horses (the Bay
+  worn).
 
 ## Elements and shields
 

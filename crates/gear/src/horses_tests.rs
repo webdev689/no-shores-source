@@ -72,14 +72,7 @@ fn a_new_character_has_no_horse() {
 
 #[test]
 fn the_tack_sells_horses_into_the_pack_at_their_coats_prices() {
-    let day = (0..400).find(|day| {
-        sold_on(Seller::Tack, *day).iter().any(|at| cosmetics()[usize::from(*at)].kind == CosmeticKind::Coat)
-    });
-    let here = Here { day: day.expect("a day the Tack sells a horse"), ..AT_COUNTER };
-    let number = sold_on(Seller::Tack, here.day)
-        .into_iter()
-        .find(|at| cosmetics()[usize::from(*at)].kind == CosmeticKind::Coat)
-        .expect("a horse sold");
+    let (number, here) = horse_sold_today();
     let coat = &cosmetics()[usize::from(number)];
     let mut character = Character::starting();
     character.xp = crate::power::xp_for_level(20);
@@ -143,9 +136,9 @@ fn a_horse_is_not_bought_with_nine_horses_carried() {
     let (number, here) = horse_sold_today();
     let mut character = Character::starting();
     character.materials.aurem = 20_000;
-    // Nine, none in the coat sold (the Bay, which the Tack always sells).
-    for coat in ["chestnut", "dun", "grey", "black", "white", "palomino", "chestnut", "dun", "grey"] {
-        character.give_horse(coat, false);
+    // Nine Bays: none in the coat sold, one of the day's four.
+    for _ in 0..9 {
+        character.give_horse("bay", false);
     }
     let before = character.clone();
     assert_eq!(character.ask(Ask::BuyCosmetic { cosmetic: number }, here, &DICE), Err(Refusal::CarriedFull));
@@ -179,9 +172,10 @@ fn the_bay_worn_shows_others_the_bay_as_the_page_draws_it_unnamed() {
     assert!(dressed["outfit"].get("coat").is_none());
 }
 
-/// A coat the Tack sells on some day, and that day at its counter.
+/// A coat of the Tack's day's four (not the Bay it always sells) on some day, and that day at its counter.
 fn horse_sold_today() -> (u16, Here) {
-    let coat = |at: &u16| cosmetics()[usize::from(*at)].kind == CosmeticKind::Coat;
+    let bay = number_of(crate::horses::FIRST_HORSE);
+    let coat = |at: &u16| cosmetics()[usize::from(*at)].kind == CosmeticKind::Coat && Some(*at) != bay;
     let day = (0..400).find(|day| sold_on(Seller::Tack, *day).iter().any(coat)).expect("a day the Tack sells a horse");
     let number = sold_on(Seller::Tack, day).into_iter().find(|at| coat(at)).expect("a horse sold");
     (number, Here { day, ..AT_COUNTER })
@@ -234,4 +228,10 @@ fn the_tack_always_sells_the_bay_first_beside_its_four_at_the_cheapest_coats_pri
     let ask = character.ask(Ask::BuyCosmetic { cosmetic: bay }, AT_COUNTER, &DICE);
     assert_eq!(ask.map(|_| ()), Ok(()));
     assert!(character.keeps_horse("bay"), "a new player's first horse");
+}
+
+#[test]
+fn a_save_from_before_the_loadouts_rides_its_bay() {
+    let character = Character::from_json(include_str!("old_saves/sword_and_shield.json")).expect("a character");
+    assert_eq!(character.coat_worn(), Some("bay"));
 }
