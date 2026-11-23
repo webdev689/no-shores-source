@@ -62,6 +62,10 @@ export class LocalRoom implements RoomLink {
     this.minuteShift = minuteShift;
     this.keepMinute();
     this.player = player;
+    // Under `npm run dev`, `?arrival=1` plays the arrival as an account's player would: the room's character is theirs,
+    // so the stranger's gift and the opening's tracker show playing alone.
+    if (import.meta.env?.DEV && new URLSearchParams(globalThis.location?.search ?? '').get('arrival') === '1')
+      door.noneKept(player);
     const welcome = readFromRoom(door.joined(this.player));
     this.epoch = welcome?.kind === 'joined' ? welcome.epoch : 0;
     this.play = play;
