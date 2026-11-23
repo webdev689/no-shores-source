@@ -122,6 +122,16 @@ impl Mask {
 
     /// The nearest clear cell to a point that a straight leg reaches without touching land; ties to the lower cell.
     pub(super) fn start_cell(&self, land: &Land, point: Point) -> Option<usize> {
+        self.cells_near(point).into_iter().find(|&cell| land.leg_clear(point, self.point(cell)))
+    }
+
+    /// The middle of the clear cell nearest a point, however land lies between; ties to the lower cell.
+    pub(super) fn clear_near(&self, point: Point) -> Option<Point> {
+        self.cells_near(point).first().map(|&cell| self.point(cell))
+    }
+
+    /// The clear cells within START_SEARCH_CELLS of a point, nearest first, ties to the lower cell.
+    fn cells_near(&self, point: Point) -> Vec<usize> {
         let column = (point.x as f64 / MASK_CELL_M).floor() as i64;
         let row = (point.y as f64 / MASK_CELL_M).floor() as i64;
         let mut cells: Vec<(i128, usize)> = Vec::new();
@@ -136,7 +146,7 @@ impl Mask {
             }
         }
         cells.sort_unstable();
-        cells.into_iter().map(|(_, cell)| cell).find(|&cell| land.leg_clear(point, self.point(cell)))
+        cells.into_iter().map(|(_, cell)| cell).collect()
     }
 
     fn guess(&self, cell: usize, goal: usize) -> u64 {

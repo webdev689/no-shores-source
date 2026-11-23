@@ -37,8 +37,9 @@ fn world() -> &'static (Layout, Waters, Traffic) {
 fn brute_force(traffic: &Traffic, centre: [f64; 2], radius_m: f64, time_s: f64) -> Vec<u64> {
     let mut ids = Vec::new();
     for (route_index, route) in traffic.routes.iter().enumerate() {
-        let newest = (time_s / DEPARTURE_EVERY_S).floor() as u64;
-        let oldest = ((time_s - route.length_m / SPEED_M_S - DWELL_S) / DEPARTURE_EVERY_S).floor().max(0.0) as u64;
+        let since = time_s - route.start_s;
+        let newest = (since / DEPARTURE_EVERY_S).floor() as u64;
+        let oldest = ((since - route.length_m / SPEED_M_S - DWELL_S) / DEPARTURE_EVERY_S).floor().max(0.0) as u64;
         for departure in oldest..=newest {
             for direction in 0..2 {
                 let Some(ship) = traffic.ship(ship_id(route_index, direction, departure), time_s) else { continue };
@@ -58,8 +59,13 @@ fn a_route_joins_every_pair_of_the_three_port_cities() {
     let (_, _, traffic) = world();
     let ids: Vec<&str> = traffic.ports.iter().map(|port| port.id.as_str()).collect();
     assert_eq!(ids, crate::ports::MAIN_PORTS, "the desolate cities are no ports");
-    let joined: Vec<[usize; 2]> = traffic.routes.iter().map(|route| [route.from_port, route.to_port]).collect();
+    let mut joined: Vec<[usize; 2]> = traffic.routes.iter().map(|route| [route.from_port, route.to_port]).collect();
+    joined.dedup();
     assert_eq!(joined, [[0, 1], [0, 2], [1, 2]]);
+    for pair in &joined {
+        let courses = traffic.routes.iter().filter(|route| [route.from_port, route.to_port] == *pair).count();
+        assert!((2..=3).contains(&courses), "{pair:?} has {courses} courses");
+    }
     for port in 0..3 {
         let serving = joined.iter().filter(|pair| pair.contains(&port)).count();
         assert_eq!(serving, 2, "{} trades with both others", traffic.ports[port].name);
@@ -101,7 +107,7 @@ fn a_route_sails_round_an_isle_in_its_way() {
     assert_eq!(waters.water_at(centre), None, "an isle is land");
     assert!((waters.clearance([centre[0] + 25_000.0, centre[1]]) - 5_000.0).abs() < 1.0, "and has a coast");
     let rerouted = Traffic::new(&with_isle, &waters, &world_ports());
-    assert_eq!(rerouted.routes.len(), 3);
+    assert_eq!(rerouted.routes.len(), traffic.routes.len());
     assert_ne!(rerouted.routes[0].path, route.path, "the route changes for the isle");
     let land = Land::new(&with_isle);
     for leg in rerouted.routes.iter().flat_map(|route| route.path.windows(2)) {
@@ -144,7 +150,8 @@ fn a_port_with_no_clear_roadstead_inside_the_frame_is_skipped() {
     let traffic = Traffic::new(&layout, &Waters::new(&layout), &ports);
     let kept: Vec<&str> = traffic.ports.iter().map(|port| port.id.as_str()).collect();
     assert_eq!(kept, ["sunspire", "rimeholt"], "Overlook's way out leaves the frame; Goldreach is no port");
-    assert_eq!(traffic.routes.len(), 1);
+    assert!(traffic.routes.iter().all(|route| [route.from_port, route.to_port] == [0, 1]), "one pair");
+    assert_eq!(traffic.routes.len(), 3, "its courses");
 }
 
 #[test]
@@ -201,11 +208,11 @@ fn ships_near_finds_exactly_the_live_ships_in_the_radius() {
 }
 
 #[test]
-fn a_ship_sails_five_metres_a_second_lies_at_its_destination_and_is_then_gone() {
+fn a_ship_sails_sixty_metres_a_second_lies_at_its_destination_and_is_then_gone() {
     let (_, _, traffic) = world();
     let route = &traffic.routes[1];
-    let departure = 1_500_000_u64;
-    let left = departure as f64 * DEPARTURE_EVERY_S;
+    let departure = 600_000_u64;
+    let left = route.start_s + departure as f64 * DEPARTURE_EVERY_S;
     for direction in 0..2 {
         let id = ship_id(1, direction, departure);
         assert_eq!(traffic.ship(id, left - 0.5), None, "not yet left");
@@ -214,12 +221,12 @@ fn a_ship_sails_five_metres_a_second_lies_at_its_destination_and_is_then_gone() 
         let roadstead = traffic.roadsteads[start_port];
         assert_eq!(start.position, [roadstead.x as f64, roadstead.y as f64]);
         let later = traffic.ship(id, left + 100.0).unwrap();
-        assert!((later.progress_m - start.progress_m - 500.0).abs() < 1e-6);
+        assert!((later.progress_m - start.progress_m - 6_000.0).abs() < 1e-6);
         let moved = {
             let (dx, dy) = (later.position[0] - start.position[0], later.position[1] - start.position[1]);
             (dx * dx + dy * dy).sqrt()
         };
-        assert!(moved <= 500.0 + 1e-6 && moved > 0.0);
+        assert!(moved <= 6_000.0 + 1e-6 && moved > 0.0);
         let arrives = left + route.length_m / SPEED_M_S;
         let end_port = if direction == 0 { route.to_port } else { route.from_port };
         let end = traffic.roadsteads[end_port];
@@ -235,23 +242,38 @@ fn a_ship_sails_five_metres_a_second_lies_at_its_destination_and_is_then_gone() 
 }
 
 #[test]
-fn about_one_ship_lies_at_each_port_roadstead_at_any_moment() {
+fn about_five_ships_are_in_view_of_overlook_and_leave_it_on_different_headings() {
     let (_, _, traffic) = world();
-    let start = 1_795_000_000.0;
-    let samples = 240;
-    for (port, roadstead) in traffic.roadsteads.iter().enumerate() {
-        let centre = [roadstead.x as f64, roadstead.y as f64];
-        let mut lying = 0;
-        for step in 0..samples {
-            let time = start + f64::from(step) * DEPARTURE_EVERY_S / f64::from(samples);
-            let here = traffic.ships_near(centre, 1.0, time);
-            let arrived = here.iter().filter(|ship| ship.to_port == port && ship.progress_m == ship.length_m).count();
-            assert!(arrived <= 2, "port {port}: {arrived} lie there at {time}");
-            lying += arrived;
-        }
-        let mean = lying as f64 / f64::from(samples);
-        assert!((mean - 1.0).abs() < 0.05, "port {port}: {mean} ships lie there on the mean");
-    }
+    let overlook = traffic.ports.iter().position(|port| port.id == "overlook").unwrap();
+    let roadstead = traffic.roadsteads[overlook];
+    let centre = [roadstead.x as f64, roadstead.y as f64];
+    // A day's moments, each 86.4 s apart.
+    let samples = 1_000;
+    let seen: usize = (0..samples)
+        .map(|step| traffic.ships_near(centre, 60_000.0, 1_795_000_000.0 + f64::from(step) * 86.4).len())
+        .sum();
+    let mean = seen as f64 / f64::from(samples);
+    eprintln!("{mean} ships within 60 km of Overlook's roadstead on the mean");
+    assert!((4.0..=6.0).contains(&mean), "{mean} ships within 60 km on the mean");
+    // Where each course out of Overlook lies 60 km out, as a bearing from its roadstead.
+    let mut bearings: Vec<f64> = traffic
+        .routes
+        .iter()
+        .filter(|route| route.from_port == overlook || route.to_port == overlook)
+        .map(|route| {
+            let out = if route.from_port == overlook { 60_000.0 } else { route.length_m - 60_000.0 };
+            let (at, _) = route.at(out);
+            (at[0] - centre[0]).atan2(centre[1] - at[1]).to_degrees()
+        })
+        .collect();
+    bearings.sort_by(f64::total_cmp);
+    // Overlook's way out east is one narrow stretch of sea, so two of its courses to Sunspire leave on one heading.
+    let headings = 1 + bearings.windows(2).filter(|pair| pair[1] - pair[0] > 5.0).count();
+    assert!(
+        headings + 1 >= bearings.len(),
+        "{} courses leave Overlook on {headings} headings: {bearings:?}",
+        bearings.len()
+    );
 }
 
 #[test]
@@ -291,7 +313,7 @@ fn a_port_listed_twice_sails_once() {
     ports.extend(world_ports());
     let traffic = Traffic::new(layout, waters, &ports);
     assert_eq!(traffic.ports.len(), 3);
-    assert_eq!(traffic.routes.len(), 3);
+    assert_eq!(traffic.routes, world().2.routes);
 }
 
 #[test]
