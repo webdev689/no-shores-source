@@ -7,6 +7,7 @@ import type { Point2 } from '../overworld/ground.ts';
 import type { Passage } from './passage.ts';
 import type { Sea } from './sea.ts';
 import type { SeaRoom } from './seaRoom.ts';
+import { drawnWhole, WHOLE_FRAMES } from '../standIns.ts';
 
 /** The room's answers (crates/room/src/sea_travel.rs `TravelRefused::number`): taken, and too soon after a course,
  *  which is asked again. */
@@ -38,9 +39,13 @@ export class SeaTravel {
   private sentJoins: number | undefined;
   /** The end of the course sent, which the room sails the ship on to once it has taken the travel. */
   private sentEnd: Point2;
+  /** Steps since the room answered: `ready` is asked before a frame is drawn, so the waters it laid the ship in count
+   *  as ready only once frames enough have drawn them. */
+  private sinceAnswer = 0;
 
   /** Travels for `end` (until a course is sent, whose own end it then is), in the water named `water`: `ready` says
-   *  when the new waters round the ship have loaded. */
+   *  when the land of the new waters round the ship has loaded; the black waits too for frames drawn whole since the
+   *  room's answer (`standIns.ts`). */
   constructor(water: string, end: Point2, passage: Passage, ready: () => boolean) {
     [this.sentEnd, this.passage, this.ready] = [end, passage, ready];
     this.away = new SailAway(water, () => this.ask());
@@ -71,7 +76,8 @@ export class SeaTravel {
   /** `seconds` on in `room`: its answer taken, and the cinematic stepped. */
   step(seconds: number, room: SeaRoom | null): void {
     if (!this.away.answered) this.answer(seconds, room);
-    this.away.advance(seconds, this.ready());
+    else this.sinceAnswer += 1;
+    this.away.advance(seconds, this.sinceAnswer > WHOLE_FRAMES && drawnWhole() && this.ready());
   }
 
   /** The room's answer, while none has come. */

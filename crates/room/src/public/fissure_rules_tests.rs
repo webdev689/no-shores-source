@@ -272,9 +272,10 @@ fn on_saltmeres_real_grounds_the_fissure_opens_and_its_foes_hunt_a_player_by_its
 }
 
 /// A room whose garrison's mesh, baked 35 m round a point 20 m in from its spawn, ends 2 m short of the Fissure's
-/// square (its 25 m and 16 m past), a garrison foe posted on its own part, and the player standing at `at` on the
-/// square's part alone: how far the foe stands from the player before and after three seconds.
-fn garrison_beside_the_square(at: [f64; 3]) -> (f64, f64) {
+/// square (its 25 m and 16 m past), a garrison foe on its own part, posted where it stands or `post_back` metres back
+/// from it on that part, and the player standing at `at` on the square's part alone: how far the foe stands from the
+/// player before and after three seconds.
+fn garrison_beside_the_square(at: [f64; 3], post_back: f64) -> (f64, f64) {
     let section = crate::Section {
         ring: vec![[-200.0, -200.0], [200.0, -200.0], [200.0, 200.0], [-200.0, 200.0]],
         spawns: vec![[0.0, -42.0]],
@@ -291,12 +292,14 @@ fn garrison_beside_the_square(at: [f64; 3]) -> (f64, f64) {
     let placed =
         |at: [f64; 3]| room.nav.nearest_point_from(home, at).map(|near| apart([near[0], near[1]], [at[0], at[1]]));
     assert!(placed(home).is_some_and(|off| off < 1e-6), "the foe stands on the garrison's part");
+    let post = [home[0], home[1] + post_back, home[2]];
+    assert!(placed(post).is_some_and(|off| off < 1e-6), "its post on the garrison's part");
     assert!(room.nav.nearest_point(at).is_some_and(|near| apart([near[0], near[1]], [at[0], at[1]]) < 1e-6));
     assert!(placed(at).is_none_or(|off| off > 1.0), "the player stands on the ground's part alone");
     let husk = ::foes::foe_type(::foes::roster::HUSK).expect("a husk");
     let foe = room.stand_foe(husk, Rank::Major, home, 0.0, None);
-    // Posted there as a garrison's foe is, so it leashes to its place.
-    room.foes.get_mut(&foe).unwrap().brain.posted_at(home, 0.0);
+    // Posted as a garrison's foe is, so it leashes to its place.
+    room.foes.get_mut(&foe).unwrap().brain.posted_at(post, 0.0);
     place(&mut room, player, [at[0], at[1]]);
     let near = |room: &Room| {
         let body = room.foes[&foe].fighter.body;
@@ -310,9 +313,12 @@ fn garrison_beside_the_square(at: [f64; 3]) -> (f64, f64) {
 #[test]
 fn a_garrison_foe_goes_for_a_player_close_by_on_an_event_grounds_own_square_but_not_for_one_far_off() {
     // Close, 6 m off: the owner's rule, a foe gives up only on a player far away, wherever the player stands.
-    let (was, now) = garrison_beside_the_square([FISSURE_AT[0], FISSURE_AT[1] + 39.0, 0.0]);
+    let (was, now) = garrison_beside_the_square([FISSURE_AT[0], FISSURE_AT[1] + 39.0, 0.0], 0.0);
     assert!(now < was - 0.5, "it stood {was} m from a player close by and is still {now} m off");
     // Far, 25 m off, on ground its routes do not reach from its post: it lets them be.
-    let (was, now) = garrison_beside_the_square([FISSURE_AT[0], FISSURE_AT[1] + 20.0, 0.0]);
+    let (was, now) = garrison_beside_the_square([FISSURE_AT[0], FISSURE_AT[1] + 20.0, 0.0], 0.0);
     assert!(now >= was - 0.5, "it walked from {was} m to {now} m at a player far off it has no way to");
+    // Close to it but past its leash, its post 45 m back, on ground its routes do not reach: it lets them be too.
+    let (was, now) = garrison_beside_the_square([FISSURE_AT[0], FISSURE_AT[1] + 39.0, 0.0], 45.0);
+    assert!(now >= was - 0.5, "it walked from {was} m to {now} m at a player past its leash it has no way to");
 }

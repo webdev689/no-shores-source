@@ -144,7 +144,8 @@ wakes on Overlook's plaza by its first spawn instead, where her words, which nam
 well; if even that cannot be laid, the shore fails and the story ends
 played.
 
-**After the shore** the flow's `story-ended` takes the player through the veil to Overlook's social space. The story's
+**After the shore** the flow's `story-ended` takes the player through the veil to Overlook's social space, its
+loading screen ([[One Loading Screen Covers Every Trip Until the Place Is Ready]]). The story's
 black holds until the veil has risen under it (0.7 s), then goes. The stranger waits behind the veil; she stands 2.2 m ahead of the
 player and 1 m to their right (their left where the right is water), facing them, and says her last line once the
 veil has fallen, the story's black has gone and she is in the player's view. Then she walks toward the town's middle on dry ground only (she stands where the next step is water or

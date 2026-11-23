@@ -154,7 +154,7 @@ strikes ([[Public Events]]).
   m from that place, or, farther from the foe than the 14 m it engages a target it sees within, stands on the ground
   off the room's navmesh (more than 1.5 m across from the mesh's nearest point, or on no level it has), it gives its fight up once no wind-up of its own is under way: its target, its turn,
   the blow it saw coming and its answer, its hunt, its search, its awareness, and a roar its health no longer calls for.
-  A target within those 14 m it never gives up on, wherever the target stands
+  Within its leash, a target within those 14 m it never gives up on, wherever the target stands
   ([[A Foe Gives Up Only When the Player Is Far Away]]).
   It sheds its Expose and its Charge ([[Combat]], "Statuses") and walks back by the room's routes, healing each tick the
   share of what it lacks that a tick's walk is of the way left, so it is whole as it arrives (from 40 m, about 12 s),
@@ -165,9 +165,9 @@ strikes ([[Public Events]]).
   plays alone") is posted where it stands and leashes to it; a Boss stood so calls no one in its phases, so a scene that
   places its own foes keeps them as it placed them. A target in the air, hanging, climbing or going over a lip is judged
   by its distance alone, so a foe fights on at one on a wall or over a ledge. Seeing one past its leash on ground its
-  routes reach stirs it (it searches toward them) but it takes them as no target; one farther than 14 m from it on
-  ground its routes do not reach from its place, a part of the navmesh with no way to it, stirs it not at all
-  (`leash::reachable`).
+  routes reach stirs it (it searches toward them) but it takes them as no target; one on ground its routes do not reach
+  from its place, a part of the navmesh with no way to it, stirs it not at all (`leash::reachable`), unless it stands
+  within those 14 m of the foe and within its leash.
 - **Home after a search.** A garrison foe whose search finds no one (its look about ends, or its awareness bleeds back
   first) walks home the same way, healing (from 20 m, about 6 s). On this walk it heeds what it sees and hears as ever:
   they raise its awareness, and once it is alert it takes its target or searches again; short of that it walks on home,

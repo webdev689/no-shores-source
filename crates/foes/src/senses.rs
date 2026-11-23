@@ -133,9 +133,9 @@ pub fn sense(brain: &mut Brain, here: &Here<'_, '_>, board: &Board) -> Option<Si
         return Some(sight);
     }
     let mut seen = in_sight(here);
-    // One far off on ground its routes cannot reach stirs it not at all, so it never searches toward ground it has no
-    // way to; one close by does, as it never gives up on one close by.
-    seen.retain(|(_, _, other, _)| reachable(brain, here, other));
+    // One on ground its routes cannot reach stirs it not at all, so it never searches toward ground it has no way to;
+    // unless its leash lets it fight them there, close by.
+    seen.retain(|(_, _, other, _)| reachable(brain, here, other) || within(brain, here, other));
     let glimpse = seen.iter().map(|(_, _, other, gain)| (*gain, feet(other))).fold(None, strongest);
     let glimpse = stirring(here).fold(glimpse, strongest);
     stir(brain, here, glimpse, &heard);

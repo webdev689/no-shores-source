@@ -167,6 +167,24 @@ test('a trip’s veil is the loading screen: the logo, LOADING and its words; fa
   assert.ok(words(laid).some((each) => each.startsWith('LANDING AT THE SALTGRASS DOWNS FAILED')));
 });
 
+test('a trip’s veil is said to a screen reader as it comes up, once, and again for a later trip in the same words', () => {
+  const said: string[] = [];
+  const page = globalThis as { document?: unknown };
+  const before = page.document;
+  page.document = { ariaNotify: (words: string) => said.push(words) };
+  try {
+    const hud = new Hud();
+    hud.veil(null);
+    hud.veil('Returning to your ship');
+    hud.veil('Returning to your ship');
+    hud.veil(null);
+    hud.veil('Returning to your ship');
+    assert.deepEqual(said, ['Returning to your ship', 'Returning to your ship']);
+  } finally {
+    page.document = before;
+  }
+});
+
 test('while a menu is up the keys walk its choices alone, never the sea bar under it', () => {
   const [ui, hud] = [new Interface(renderer()), new Hud()];
   hud.veil(null);

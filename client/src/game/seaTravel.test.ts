@@ -5,6 +5,7 @@ import type { Passage } from './passage.ts';
 import type { SeaRoom } from './seaRoom.ts';
 import type { Sea } from './sea.ts';
 import { sailOrTravel, SeaTravel } from './seaTravel.ts';
+import { frameDrawn, WHOLE_FRAMES } from '../standIns.ts';
 
 /** A travel for a point east, its passage and room standing in: what the passage was asked, and the room's answer
  *  and its word on the ship. */
@@ -48,6 +49,28 @@ test('the travel is asked as the fade begins; taken, the ship is laid where the 
   travel.step(0.1, room);
   assert.deepEqual(asked, ['travel', 'placed 549600,150000', 'along 549000,151000'], 'along the course the room holds');
   assert.equal(travel.away.refused, null);
+});
+
+test('taken late, the black holds until frames drawn since the answer show the new waters whole', () => {
+  const { travel, room, toFade, answer } = travelling();
+  toFade();
+  travel.step(SAIL_AWAY.fadeS + SAIL_AWAY.blackLeastS + 1, room);
+  assert.equal(travel.away.step, 'black', 'waiting on the room');
+  // The old waters were drawn whole; the frames that count are those after the answer.
+  for (let frame = 0; frame < WHOLE_FRAMES; frame++) frameDrawn(true);
+  answer(0);
+  for (let frame = 0; frame <= WHOLE_FRAMES; frame++) {
+    travel.step(0.1, room);
+    frameDrawn(true);
+    assert.equal(travel.away.step, 'black', `frame ${frame} after the answer`);
+  }
+  frameDrawn(false);
+  travel.step(0.1, room);
+  assert.equal(travel.away.step, 'black', 'something of the new waters stands in');
+  for (let frame = 0; frame < WHOLE_FRAMES; frame++) frameDrawn(true);
+  travel.step(SAIL_AWAY.blackLeastS, room);
+  assert.equal(travel.away.step, 'arrive');
+  frameDrawn(false);
 });
 
 test('refused, the ship heaves to and its line says why; too soon, the travel is asked again', () => {

@@ -291,7 +291,7 @@ The game draws every screen itself, and by the owner's word no HTML is laid over
   death's words and Respawn, the key strip on its keycaps, the task tracker, the
   toasts, the status line, the compass, the marks with their rings, glyphs and arrows, the ships' plates, the sea bar
   and its offers, Manage's panel, the menu, the prompt for E, the veil (the loading screen, `loadingNode`, with the
-  trip's words) and the sheet of every control. Each stands where the page's sheet stood
+  trip's words; [[One Loading Screen Covers Every Trip Until the Place Is Ready]]) and the sheet of every control. Each stands where the page's sheet stood
   it, gives way as it did, and eases, slides and flashes as it did. Words laid over the world, and the darkened edge,
   let a click through to the world; the marks, presses and panels take it. A mark's glyph is
   drawn into a picture in the mended face (`CANVAS_FACE`), which holds the ones Pixelify lacks. It gives way to the fight's display as that says it shows, and to the

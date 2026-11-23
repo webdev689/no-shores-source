@@ -164,15 +164,16 @@ each part works is in its system note.
 
 ## Waiting on the owner
 
-- **The prologue's waking, scene changes and arena; foes that give up only when far; feet on the city's ground**
-  (#158, branch `ccr-bedea921-gq44fj`, a draft), for the owner's yes to merge, which deploys the page and the rooms.
-  Each part is in its decision:
+- **The prologue's waking, scene changes and arena; one loading screen for the game; foes that give up only when
+  far; feet on the city's ground** (#158, branch `ccr-bedea921-gq44fj`), for the owner's yes to merge, which deploys
+  the page and the rooms. Each part is in its decision:
   [[The Prologue Wakes by Darkening and Pulsing, Not Eyelids]],
   [[The Prologue's Scenes Change Slower, Behind the Logo While They Load]],
   [[Thule Fights on a Quarterdeck Twice as Long]],
+  [[One Loading Screen Covers Every Trip Until the Place Is Ready]],
   [[A Foe Gives Up Only When the Player Is Far Away]], and the hub's sunk feet fixed (a figure's lowest quarter metre takes the city's
-  pull, [[Cities]]). Audited by four read-only reviewers; every finding fixed or asked. Tested offline and pictured
-  headless; not played live.
+  pull, [[Cities]]). The prologue's work audited by four read-only reviewers, the loading screen and #155's merge by
+  three more; every finding fixed or asked. Tested offline and pictured headless; not played live.
   - **The arena is built.** The asset workflows upload with `CLOUDFLARE_TOKEN` now ([[The Asset Workflows Publish to R2 With the Cloudflare Token]]);
     the `wreck` workflow built and published the longer quarterdeck, and its `wreck-level` artifact is
     `content/prologue/wreck.json` whole (its mesh and light on R2, 31 dead-end slips). On it the waist's pistoleer
@@ -181,9 +182,10 @@ each part works is in its system note.
   - **One loading screen everywhere** ([[One Loading Screen Covers Every Trip Until the Place Is Ready]]): every
     trip's veil, the story's hand-over to the hub too, is the logo, LOADING and the trip's words, and lifts once
     nothing stands in for the place round the player (`standIns.ts`) for three frames, at most 20 s; plants scatter
-    30 ms a frame behind it. Mid-play nothing veils: the plants' pipelines are made once a device, the lit keepers'
-    marks and the first-person glow make theirs off the frame. Headless in the hub (SwiftShader, about a frame every
-    10 s) it lifted by itself at frame 54, the plants last; on a real GPU it is not yet timed.
+    30 ms a frame behind it; a travel by the held map's black waits the same way. Mid-play nothing veils: the plants'
+    pipelines are made once per device and format, the lit keepers' marks and the first-person glow make theirs off
+    the frame. Tested headless in the hub (SwiftShader, about a frame every 10 s): it lifted by itself at frame 54,
+    the plants last; on a real GPU it is not yet timed.
 - **The owner's six prologue points, the wreck's room in the worker and a full audit** (#161, branch
   `claude/gifted-knuth-lijjf2`), merged into `main` (0fadd778; its deploy not checked here), which deploys the page and
   the rooms (the naval rules and the protocol's version changed): the wreck's hitches (blood's rays, its sheet drawn while the wake's screen is dark)
@@ -297,7 +299,7 @@ The decisions in [[Open Questions]] are not repeated here.
   keeps travelling meets no hostile ship); whether the healing drink is "a heal" that Exposure halves; whether a lip
   caught off square is hung square; whether control waits a moment for a run that opens in the wake's last instant;
   the wreck scene's sunk Sloop, which wears the pirates' colours until `tools/wreck` is rendered again (a push there
-  publishes to R2), and `wreck_level.py`'s comments, which name the pirates' types; a ship the room took off its route
+  publishes to R2; #158's `wreck_level.py`, its waves now the Tithe's types as the layout has them, is one); a ship the room took off its route
   still drawn on it from land; the crystal of a ruin's buildings round its plaza, kept clear in its 110 m window.
 - **Open pull requests.** For the owner's yes once their checks pass: #125 (main's
   screens: the Harbourmaster's rows, the menu under 600 px). Drafts: #82

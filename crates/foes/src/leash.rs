@@ -65,17 +65,14 @@ fn fall_back(brain: &mut Brain, here: &Here<'_, '_>, board: &mut Board, home: Ho
 /// by. A body in the air, on a wall or over a lip is judged by its distance alone: the navmesh lies on the floor, and its
 /// leap or climb lands back on it.
 pub fn within(brain: &Brain, here: &Here<'_, '_>, other: &combat::Fighter) -> bool {
-    let near = |home: Home| apart([home.at[0], home.at[1]], [other.body.x, other.body.y]) <= brain.leash;
-    brain.home.is_none_or(near) && reachable(brain, here, other)
+    let feet = [other.body.x, other.body.y];
+    let near = |home: Home| apart([home.at[0], home.at[1]], feet) <= brain.leash;
+    brain.home.is_none_or(near) && (apart(here.at(), feet) <= ENGAGE_RANGE || reachable(brain, here, other))
 }
 
-/// Whether a garrison foe may come at a fighter, however far from its place: one close to the foe itself, within the
-/// range it engages a target it sees, wherever it stands; else one where its routes reach from its place, and always a
-/// body off the ground. Any foe with no place may.
+/// Whether a garrison foe's routes reach where a fighter stands from its place, however far: always for a body off the
+/// ground, and for any foe with no place.
 pub fn reachable(brain: &Brain, here: &Here<'_, '_>, other: &combat::Fighter) -> bool {
-    if apart(here.at(), [other.body.x, other.body.y]) <= ENGAGE_RANGE {
-        return true;
-    }
     let feet = [other.body.x, other.body.y, other.body.z];
     let grounded = other.body.mode == movement::Mode::Ground;
     brain.home.is_none_or(|home| !grounded || here.world.routes.walkable(home.at, feet))

@@ -215,7 +215,8 @@ export class Hud {
   /** Covers the view with the loading screen and `text` (the trip's words) while a place loads, or lifts the cover;
    *  not `loading`, the words stand alone, as a trip that failed and waits on the player. */
   veil(text: string | null, loading = true): void {
-    if (text !== null && (text !== this.veilWords || loading !== this.veilLoading)) announce(text);
+    // Said as it comes up, and again as its words change; a trip with the words of the last is said too.
+    if (text !== null && (!this.veilShown || text !== this.veilWords || loading !== this.veilLoading)) announce(text);
     if (text !== null) [this.veilWords, this.veilLoading] = [text, loading];
     if ((text !== null) !== this.veilShown) this.veilShade.set(text === null ? 0 : 1, now());
     this.veilShown = text !== null;

@@ -17,9 +17,11 @@ over frames). Asked whether respawns and a lost link take it, "Leave them as the
 
 ## What it settles
 
-- Every trip's cover ([[Game]], "Travel") is the loading screen of
-  [[The Prologue's Scenes Change Slower, Behind the Logo While They Load]]: the logo, LOADING, and the trip's words,
-  the story's hand-over to Overlook's hub among them.
-- The cover lifts once everything round the player is ready, after a few frames drawn under it; at most 20 s.
-- Nothing puts it up mid-play: what loads then is readied ahead and spread over frames.
+- Every trip's cover ([[Game]], "Travel"; [[Interface]]) is the loading screen of
+  [[The Prologue's Scenes Change Slower, Behind the Logo While They Load]] ([[Cinema]]): the logo, LOADING, and the
+  trip's words, the story's hand-over to Overlook's hub ([[Prologue]]) and a travel by the held map ([[Sailing]]) among
+  them.
+- The cover lifts once everything round the player is ready, after a few frames drawn under it; at most 20 s once the
+  place has come, as before.
+- Nothing puts it up mid-play: what loads then is readied ahead and spread over frames ([[Nature]]).
 - A respawn keeps its arrival and a lost link its "Reconnecting…".

@@ -9,6 +9,7 @@ import type { ShipLook } from '../ships/dress.ts';
 import { HULL_NAMES, hullPaint } from '../ships/hulls.ts';
 import { type ShipCamera, ShipView } from '../ships/shipView.ts';
 import type { Drawer } from './scene.ts';
+import { standIn } from '../standIns.ts';
 
 /** How far over its highest deck a wreck keeps anything: its masts broke off below this, metres. */
 const STUMP_OVER_DECK_M = 2;
@@ -58,12 +59,12 @@ function viewOf(gpu: Gpu, ship: Hull): Promise<ShipView> {
   return view;
 }
 
-/** A ruin's wrecks: each drawn once its ship's mesh has come. */
+/** A ruin's wrecks: each drawn once its ship's mesh has come, standing in as nothing while it comes. */
 export class Wrecks {
-  private readonly drawn: { readonly wreck: Wreck; view: ShipView | null }[];
+  private readonly drawn: { readonly wreck: Wreck; view: ShipView | null; coming: boolean }[];
 
   constructor(gpu: Gpu, wrecks: readonly Wreck[]) {
-    this.drawn = wrecks.map((wreck) => ({ wreck, view: null }));
+    this.drawn = wrecks.map((wreck) => ({ wreck, view: null, coming: true }));
     for (const each of this.drawn)
       viewOf(gpu, each.wreck.ship)
         .then((view) => {
@@ -71,12 +72,14 @@ export class Wrecks {
         })
         .catch(() => {
           // a mesh that does not come leaves it undrawn; the ruin stands without it
-        });
+        })
+        .finally(() => (each.coming = false));
   }
 
   /** Draws every wreck whose ship has come into the pass, seen as `camera` sees the world, `scale` times its size, in
    *  the sun's shadows. */
   drawInto(pass: GPURenderPassEncoder, camera: ShipCamera, scale: number, shadow: ShadowMap): void {
+    if (this.drawn.some((each) => each.coming)) standIn('wrecks');
     for (const { wreck, view } of this.drawn)
       if (view) view.drawInto(pass, placeOf(wreck, scale), camera, 0, WRECK_LOOK, null, shadow);
   }
