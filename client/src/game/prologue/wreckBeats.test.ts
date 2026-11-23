@@ -504,6 +504,7 @@ function taughtRun(state: {
   view: FighterView | null;
   action: string;
   events: FightEvent[];
+  fell?: readonly number[];
 }): {
   run: WreckRun;
   frames: { frozen?: boolean; paused: boolean }[];
@@ -558,7 +559,7 @@ function taughtRun(state: {
     },
     storm: false,
     get boarderPlace() {
-      return state.boarder === 'fallen' ? [1, 2, 3] : null;
+      return state.boarder === 'fallen' ? (state.fell ?? [1, 2, 3]) : null;
     },
     get boarder() {
       return state.boarder;
@@ -578,7 +579,12 @@ function taughtRun(state: {
 test('the teaching on the wreck: bare hands until the arms are worn, a boarder once ready, its blows frozen to teach', async () => {
   const body = { x: 0, y: 0, z: 2, vx: 0, vy: 0, vz: 0, mode: 'ground' };
   const armed = armouredDress(FIRST_LOOK);
-  const walker = { you: { dress: armed as Dress | null }, player: { body, yaw: 0, loadout: 0 }, inFirstPerson: false };
+  const walker = {
+    you: { dress: armed as Dress | null },
+    player: { body, yaw: 0, loadout: 0 },
+    inFirstPerson: false,
+    ridesIn: () => undefined,
+  };
   const { story, calls } = recorded(FOOT_VIEW, { walker }, armed);
   const state = {
     arms: 'lying',
@@ -649,6 +655,11 @@ test('the teaching on the wreck: bare hands until the arms are worn, a boarder o
   state.boarder = 'fallen';
   onFor(2);
   assert.deepEqual(dropped, [[1, 2, 3]], 'the boarder down, its bow drops where it fell, once');
+  Object.assign(state, { boarder: 'standing', fell: [4, 5, 6] });
+  step();
+  state.boarder = 'fallen';
+  onFor(1);
+  assert.deepEqual(dropped, [[1, 2, 3]], 'a boarder brought down after it drops none');
   assert.equal(waves.at(-1), true, 'the waves wait for the bow and the Storm');
   assert.deepEqual(stood, [1], 'no other boarder');
 });

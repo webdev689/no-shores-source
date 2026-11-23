@@ -206,12 +206,15 @@ test('the bow the boarder dropped is taught: taken up, equipped, drawn, an arrow
   assert.ok(tutorial.holding, 'and the waves wait for it');
 });
 
-test('a boarder that falls before both lessons, or any after the first that met them, drops no bow', () => {
+test('a boarder that falls before both lessons drops no bow, and once one has dropped it none is wanted', () => {
   const tutorial = broughtTo('duel');
   const worn = { ...STILL, arms: 'worn' } as const;
   tutorial.frame({ ...worn, boarder: 'standing', parried: true });
   tutorial.frame({ ...worn, boarder: 'fallen' });
   assert.ok(!tutorial.bowDrops, 'fallen before the dodge');
+  const met = broughtTo('bow');
+  assert.ok(met.bowDrops, 'the one that fell once both were met drops it');
+  assert.ok(!met.wantsBoarder('fallen') && !met.wantsBoarder('none'), 'and no boarder comes after it');
 });
 
 test('the wisp gives the Storm, and the next fight teaches each of its abilities in turn as each is cast', () => {
