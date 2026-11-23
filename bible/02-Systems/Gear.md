@@ -611,7 +611,8 @@ to every other player. Every garment is armour ([[Clothing Is Armour, With a War
   layers (`content/forge/drawn.json`, which `forgeDrawn.test.ts` holds to the fitted bodies). The page picks one look by
   the piece's level, name and number; the room keeps any it could pick, and drops any other from what others see. A
   page test dresses every item the game can hold on each body and passes the dress through the room module
-  (`room_dressed`), which must keep every layer (`modelsWorn.test.ts`). A light in the left hand stays. Of the colours a dress lays by
+  (`room_dressed`), which must keep every layer (`modelsWorn.test.ts`). A light in the left hand stays.
+  Of the colours a dress lays by
   layer, the room keeps a faction's only on the layers of that faction's pieces worn (a helm's, a cuirass's, its
   pauldrons' and padding, gauntlets', greaves', boots' and padding, a weapon's own), a faction's dye only on its cape
   worn, and a dye the player keeps on any (`colours_shown`, `dressed`); a page test holds the room's layer names to

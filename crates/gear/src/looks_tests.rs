@@ -1,6 +1,6 @@
 use crate::character::{At, Character};
 use crate::item::Item;
-use crate::kinds::{Kind, Slot};
+use crate::kinds::Kind;
 use crate::rarity::Rarity;
 use crate::source::Source;
 use serde_json::{Value, json};
@@ -32,6 +32,13 @@ fn a_world_rare_helm_sent_in_another_contents_set_loses_it() {
     assert_eq!(relayed(&json!({ "armour": { "helm": "chain" } }), &helm)["armour"], json!({ "helm": "chain" }));
     // A world Rare piece starts past the world's Magic leather.
     assert_eq!(relayed(&json!({ "armour": { "helm": "leather" } }), &helm)["armour"], json!({}));
+    let magic = wearing(&[(Kind::Head, Rarity::Magic, Source::World, None)]);
+    assert_eq!(relayed(&json!({ "armour": { "helm": "leather" } }), &magic)["armour"], json!({ "helm": "leather" }));
+    assert_eq!(
+        relayed(&json!({ "armour": { "helm": "chain" } }), &magic)["armour"],
+        json!({}),
+        "a Magic one's lightest"
+    );
 }
 
 #[test]
@@ -39,6 +46,12 @@ fn a_sword_sent_in_another_contents_metal_loses_it() {
     let sword = wearing(&[(Kind::Sword, Rarity::Rare, Source::World, None)]);
     assert_eq!(relayed(&json!({ "right": "sword_ebony" }), &sword)["right"], Value::Null);
     assert_eq!(relayed(&json!({ "right": "sword_steel" }), &sword)["right"], json!("sword_steel"));
+    let plain = wearing(&[(Kind::Sword, Rarity::Normal, Source::Abyss, None)]);
+    assert_eq!(relayed(&json!({ "right": "sword_ebony" }), &plain)["right"], Value::Null, "a Normal one is steel");
+    assert_eq!(relayed(&json!({ "right": "sword_steel" }), &plain)["right"], json!("sword_steel"));
+    let hushguard = wearing(&[(Kind::DaggerAndShield, Rarity::Legendary, Source::Faction, Some("hushguard"))]);
+    assert_eq!(relayed(&json!({ "right": "dagger_ebony" }), &hushguard)["right"], json!("dagger_ebony"));
+    assert_eq!(relayed(&json!({ "right": "dagger_elven" }), &hushguard)["right"], Value::Null, "another faction's");
     let abyss = wearing(&[(Kind::Sword, Rarity::Rare, Source::Abyss, None)]);
     assert_eq!(relayed(&json!({ "right": "sword_ebony" }), &abyss)["right"], json!("sword_ebony"));
 }

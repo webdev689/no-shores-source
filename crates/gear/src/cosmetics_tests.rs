@@ -157,6 +157,7 @@ fn a_dress_that_is_not_an_object_with_an_outfit_does_not_read() {
     }
 }
 
+#[test]
 fn a_dress_shows_armour_and_hands_only_of_the_pieces_worn() {
     use crate::character::At;
     use crate::kinds::Slot;

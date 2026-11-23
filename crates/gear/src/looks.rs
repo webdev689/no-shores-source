@@ -77,8 +77,7 @@ fn drawn(body: &str) -> Option<&'static Drawn> {
 }
 
 /// Each armour slot's pieces of a set.
-#[must_use]
-pub fn pieces(slot: Slot) -> &'static [&'static str] {
+fn pieces(slot: Slot) -> &'static [&'static str] {
     match slot {
         Slot::Head => &["helm"],
         Slot::Torso => &["cuirass", "pauldrons"],
@@ -162,7 +161,7 @@ fn armour_sets(item: &Item, slot: Slot, body: Option<&'static Drawn>) -> Vec<&'s
     let needed = if slot == Slot::Torso { &["cuirass"][..] } else { pieces(slot) };
     let is_drawn = |set: &str| {
         body.is_some_and(|body| {
-            needed.iter().all(|piece| body.sets.get(*piece).is_some_and(|sets| sets.iter().any(|s| s == set)))
+            needed.iter().all(|piece| body.sets.get(*piece).is_some_and(|sets| sets.iter().any(|each| each == set)))
         })
     };
     let mut sets = looks.clone();
@@ -241,7 +240,7 @@ fn held_layers(item: &Item, body: &Drawn) -> Vec<String> {
         None if item.kind == Kind::Bow => vec![Some("long"), Some("short")],
         None => vec![None],
     };
-    // A faction's metal and a Normal weapon's plain iron or steel fall along the ladder; any other first to its content's.
+    // A faction's metal and a Normal weapon's iron or steel fall along the ladder; any other first to its content's.
     let own: Vec<&str> = if faction.is_some() || normal {
         Vec::new()
     } else {
