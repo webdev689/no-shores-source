@@ -422,28 +422,28 @@ test('every word of the ram is typed out by the time the crew brace, as the stag
     while (!done()) [step(STEP_S), (seconds += STEP_S)];
     return seconds;
   };
-  let [at, typedBy, index] = [0, 0, 0];
+  let [saidS, typedBy, index] = [0, 0, 0];
   while (index < lines.length) {
     const line = lines[index] as Line;
     if (line.kind === 'bark') {
       const typing = new Typing(line.say, syllableOf(line));
       typedBy =
-        at +
+        saidS +
         secondsUntil(
           () => typing.done,
           (seconds) => typing.step(seconds),
         );
-      [at, index] = [at + BARK_GAP_S, index + 1];
+      [saidS, index] = [saidS + BARK_GAP_S, index + 1];
       continue;
     }
     const run: Line[] = [];
     while (lines[index] && lines[index]?.kind !== 'bark') run.push(lines[index++] as Line);
     const talk = new Conversation(run, cast, true);
-    at += secondsUntil(
+    saidS += secondsUntil(
       () => talk.finished,
       (seconds) => talk.step(seconds),
     );
-    typedBy = at;
+    typedBy = saidS;
   }
   assert.ok(
     typedBy <= BRACED_S,
