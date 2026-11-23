@@ -23,8 +23,11 @@ const TUNNEL_UP_M: f64 = 5.0;
 const RESTS_M: f64 = 5.0;
 /// How far inside the claim, and clear of every other floor past its cliff, a cavern lies at the least, metres.
 const INSIDE_M: f64 = 40.0;
-/// The bearings tried round an area for its cavern.
-const BEARINGS: u32 = 16;
+/// The bearings tried round an area for its cavern: the four quarters, so the chamber, turned a whole quarter at a
+/// time (`modules::stand`), faces its tunnel square.
+const BEARINGS: u32 = 4;
+/// The least a roof stands over its underside, metres, where the rock round it stands lower than its headroom and more.
+const ROOF_LEAST_M: f64 = 1.0;
 
 /// A cavern: the area it opens off, where its tunnel leaves the area's floor and the way it runs, its hollow's middle
 /// and reach, and its tunnel's length.
@@ -57,7 +60,7 @@ fn ahead(from: [f64; 2], way: [f64; 2], out: f64) -> [f64; 2] {
 /// The parts of a sculpt as carved so far: its claim, floors, climbs and raised floors.
 type Laid<'a> = (&'a [[f64; 2]], &'a [[f64; 5]], &'a [[f64; 7]], &'a [[f64; 7]]);
 
-/// Each coven's and cave's cavern, where one fits: from the first bearing (of sixteen) along which the area's floor (as
+/// Each coven's and cave's cavern, where one fits: from the first bearing (of the four quarters) along which the area's floor (as
 /// the sculpt carved so far lays it, `laid`, with its massif's height and seed) gives onto rock that holds the tunnel
 /// and the hollow well inside the claim, on dry land and clear of every other floor past a cliff's run.
 #[must_use]
@@ -143,7 +146,7 @@ pub fn build(kit: &mut Kit, cavern: &Cavern, carved: &Sculpts) {
     let side = 2.0 * (cavern.reach * (1.0 + land::sculpts::WANDER) + RESTS_M);
     let roof = [cavern.middle[0], cavern.middle[1], floor + HOLLOW_UP_M];
     let rim = lowest(kit, cavern.middle, [side / 2.0, side / 2.0]);
-    let top = if rim.is_finite() { rim } else { floor + HOLLOW_UP_M + 6.0 }.max(floor + HOLLOW_UP_M + 6.0);
+    let top = roof_top(rim, roof[2]);
     kit.solid(
         Solid::upright(Shape::CaveRoof { seed: hollow_seed }, roof, [side, side, top - roof[2]], Material::Rubble)
             .turned(turn),
@@ -155,7 +158,7 @@ pub fn build(kit: &mut Kit, cavern: &Cavern, carved: &Sculpts) {
     let over = [middle[0], middle[1], tunnel_floor + TUNNEL_UP_M];
     let wide = 2.0 * (TUNNEL_HALF_M * (1.0 + land::sculpts::WANDER) + RESTS_M);
     let rim = lowest(kit, middle, [cavern.tunnel / 2.0, wide / 2.0]);
-    let top = if rim.is_finite() { rim } else { over[2] + 6.0 }.max(over[2] + 6.0);
+    let top = roof_top(rim, over[2]);
     let size = [wide, cavern.tunnel, top - over[2]];
     kit.solid(Solid::upright(Shape::CaveRoof { seed: tunnel_seed }, over, size, Material::Rubble).turned(turn));
     // The mouth's opening, the middle 0.4 of its span (city's rock.rs), as wide as the tunnel's walked middle.
@@ -172,4 +175,65 @@ pub fn build(kit: &mut Kit, cavern: &Cavern, carved: &Sculpts) {
         .fold(floor, f64::min);
     let back = [-cavern.way[0], -cavern.way[1]];
     crate::modules::stand(kit, "cavern-chamber", [cavern.middle[0], cavern.middle[1], low], ("entry", back));
+}
+
+/// A roof's top over its underside: the lowest the rock stands round its edges (`rim`), so no roof stands over the
+/// massif, but never thinner than `ROOF_LEAST_M`; 6 m thick where no rock round it stands whole.
+fn roof_top(rim: f64, underside: f64) -> f64 {
+    if rim.is_finite() { rim.max(underside + ROOF_LEAST_M) } else { underside + 6.0 }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn a_roof_stands_no_higher_than_the_rock_round_it() {
+        assert_eq!(roof_top(30.0, 17.0), 30.0, "rock well over the headroom: the roof's top is the rock's");
+        assert_eq!(roof_top(20.0, 17.0), 20.0, "rock 3 m over the underside: no higher");
+        assert_eq!(roof_top(17.5, 17.0), 18.0, "rock under the least: the roof its least");
+        assert_eq!(roof_top(f64::INFINITY, 17.0), 23.0, "no rock stands whole round it");
+    }
+
+    #[test]
+    fn a_caverns_tunnel_runs_on_a_quarter_so_its_chamber_faces_it_square() {
+        // A coven in the middle of a wide claim, water along three quarters out from it: a slanting tunnel would reach
+        // dry rock before the open quarter, east, is tried.
+        let (columns, cell) = (100, crate::field::CELL_M);
+        let half = columns as f64 * cell / 2.0;
+        let count = columns * columns;
+        let centre =
+            |at: usize| [((at % columns) as f64 + 0.5) * cell - half, ((at / columns) as f64 + 0.5) * cell - half];
+        let water: Vec<Water> = (0..count)
+            .map(|at| {
+                let [x, y] = centre(at);
+                let wet = (x * x + y * y).sqrt() > 30.0 && (x.abs() < 12.0 || (y.abs() < 12.0 && x < 0.0));
+                if wet { Water::Lake } else { Water::Dry }
+            })
+            .collect();
+        let field = Field {
+            seaward: [0.0, -1.0],
+            west: -half,
+            north: -half,
+            columns,
+            rows: columns,
+            height: vec![5.0; count],
+            water,
+            slope: vec![0.0; count],
+            claimed: vec![true; count],
+            to_sea: vec![1e6; count],
+            to_fresh: vec![1e6; count],
+            inside: vec![1e6; count],
+        };
+        let claim = vec![[-half, -half], [half, -half], [half, half], [-half, half]];
+        let area =
+            Area { kind: AreaKind::Coven, name: "The Coven".into(), at: [0.0, 0.0], radius: 30.0, leads_to: None };
+        let floors = [[0.0, 0.0, 0.0, 0.0, 30.0]];
+        let found = find(&field, &[area], &[0.0], (&claim, &floors, &[], &[]), (28.0, 3));
+        assert_eq!(found.len(), 1, "a cavern is cut");
+        for cavern in &found {
+            let square = cavern.way[0].abs() > 0.999 || cavern.way[1].abs() > 0.999;
+            assert!(square, "the tunnel runs along {:?}", cavern.way);
+        }
+    }
 }

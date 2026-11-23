@@ -239,7 +239,8 @@ pub fn plan(
         joined: &joined,
         moduled: &moduled,
     };
-    let (mut sculpt, basins, caverns) = carve::carve(&field, claim_of(node), network, &seating, shape, rise, seed);
+    let (mut sculpt, basins, caverns, climbed_from) =
+        carve::carve(&field, claim_of(node), network, &seating, shape, rise, seed);
     // Rock in the middle of the claim that no floor or climb reaches is given a climb or a valley, before the runs are
     // found in what is left.
     let mass_climbs = masses::reach_masses(&field, &mut sculpt);
@@ -278,8 +279,21 @@ pub fn plan(
     // A module levels the ground under its floors, where it now stands.
     let module_pads: Vec<land::pads::Pad> = seating.solids.iter().flat_map(city::modules::pads).collect();
     seating.pads.extend(module_pads);
-    let cells = ring::section_cells(reach, &|x, y| carved.floor_distance(x, y), anchor, &seating.bridges);
-    let ring = ring::traced(reach, &cells);
+    // The section holds what a body walks and fights in, and none of the rock beside a run on the rock's top.
+    let walked = ring::walked(&walked_lines(&paths, &runs, &sculpt.climbs, &ledges, &caverns));
+    let tops: Vec<[f64; 7]> = runs
+        .iter()
+        .filter(|run| runs::on_top(run.kind))
+        .flat_map(|run| runs::capsules(run, runs::half_of(run.kind)))
+        .collect();
+    let top_distance = |x: f64, y: f64| {
+        tops.iter()
+            .map(|capsule| paths::off_line([x, y], [capsule[0], capsule[1]], [capsule[2], capsule[3]]) - capsule[4])
+            .fold(f64::INFINITY, f64::min)
+    };
+    let floor_distance = |x: f64, y: f64| carved.floor_distance(x, y);
+    let cells = ring::section_cells(reach, &floor_distance, &top_distance, anchor, &seating.bridges, &walked);
+    let ring = ring::traced(reach, &cells, &walked);
     let mut kit = pieces::Kit { ground, book, seed: seed ^ 0x3A11, draws: 0, into: &mut seating };
     // The works keep off the climbs' ways as off every other, though those are walked only once the works stand.
     let kept: Vec<paths::Path> = paths.iter().cloned().chain(climb_ways(&sculpt.climbs)).collect();
@@ -393,6 +407,7 @@ pub fn plan(
         areas: &areas,
         ways: &ways,
         climbs: &climbs,
+        climbed_from: &climbed_from,
         runs: &runs,
         caverns: &caverns,
         ledges: &ledges,
@@ -535,6 +550,40 @@ fn blocked_by(field: &Field, seating: &Seating) -> Blocked {
         }
     }
     Blocked(blocked)
+}
+
+/// What a body walks and fights in, as lines: every way, each run's line to 3 m short of its door and the round of each
+/// of its beats, each climb to a lookout and the lookout's round, each ledge's stair, and each cavern's tunnel and
+/// hollow's round, every round a metre in from its edge.
+fn walked_lines(
+    paths: &[Path],
+    runs: &[runs::Run],
+    climbs: &[[f64; 7]],
+    ledges: &[ledges::Ledge],
+    caverns: &[caverns::Cavern],
+) -> Vec<Vec<[f64; 2]>> {
+    let mut lines: Vec<Vec<[f64; 2]>> = paths.iter().map(|path| path.points.clone()).collect();
+    for run in runs {
+        let mut way = run.way();
+        if let [.., before, door] = way[..] {
+            let short = (1.0 - 3.0 / field::distance(before, door).max(3.0)).max(0.0);
+            let last = way.len() - 1;
+            way[last] = [before[0] + (door[0] - before[0]) * short, before[1] + (door[1] - before[1]) * short];
+        }
+        lines.push(way);
+        lines.extend(run.beats.iter().map(|beat| ring::round(beat.at, beat.radius - 1.0)));
+    }
+    for pair in carve::lookouts(climbs) {
+        let ([x1, y1, x2, y2, ..], lookout) = (pair[0], pair[1]);
+        lines.push(vec![[x1, y1], [x2, y2]]);
+        lines.push(ring::round([lookout[0], lookout[1]], lookout[4] - 1.0));
+    }
+    lines.extend(ledges.iter().map(|ledge| vec![ledge.start, ledge.edge]));
+    for cavern in caverns {
+        lines.push(vec![cavern.mouth, cavern.middle]);
+        lines.push(ring::round(cavern.middle, cavern.reach - 1.0));
+    }
+    lines
 }
 
 /// Each climb to a lookout as the footpath it is walked as, a point every 8 m or less.
