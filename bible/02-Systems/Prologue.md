@@ -163,14 +163,13 @@ while she and its keeper speak: the smiths' arcade, held on the Armorsmith's sta
 names the arcade, as no one speaks three lines in a row) and then on the Weaponsmith's, the Mage, the Vault, the
 Tailor, the Tack, the Postmaster, the harbour's Harbourmaster for the Shipwright, and the Hall of the Arts, turning to
 each house's chapel as she names it (Arlo Kestrel, Sable and Elder Maren Hale answering); then her farewell face to
-face. A place's eye (`welcome/framing.ts`) is the first of a set of candidates round its counters whose lines to each
-keeper's head and each stall's front clear the node's solids (the blocks the camera's boom keeps clear of), both in
-the view: 11, 8, 14 then 5.5 m out, turned 0, 20, 40, 60 then 80 degrees either side of the counter's facing, a group from 7, 4.5,
-10 then 3 m up and a single counter from 2.6, 4.5, 7 then 10 m (a stall's awning, drawn but no solid, hides its
-keeper from above); where none clears a keeper's head (the Vault's keeper stands behind its front wall, whose window
-is drawn but whose solid is whole), the first that sees each stall's front clear with each keeper's head in the view. Each looks at the counters' middle 2.5 m over the ground through the player's own lens; a group's spread
-adds 1.3 times its farthest counter from the middle to the distance and 0.35 times to the height. Its first counter is
-the one of its kind nearest the player, each other the one of its kind nearest that. The Hall of the Arts is an
+face. A place's eye (`welcome/framing.ts`) frames one counter, the one of its kind nearest the player: the first of a
+set of candidates round it whose lines to its keeper's head and its stall's front clear the node's solids (the blocks
+the camera's boom keeps clear of), both in the view: 11, 8, 14 then 5.5 m out, turned 0, 20, 40, 60 then 80 degrees
+either side of the counter's facing, 2.6, 4.5, 7 then 10 m up (a stall's awning, drawn but no solid, hides its keeper
+from above); where none clears the keeper's head (the Vault's keeper stands behind its front wall, whose window is
+drawn but whose solid is whole), the first that sees the stall's front clear with the keeper's head in the view. Each
+looks at the counter 2.5 m over the ground through the player's own lens. The Hall of the Arts is an
 interior: it is seen from inside, a few metres in from its door (3, 2, 5, 7 then 9 m) and up under its 14 m roof (10,
 11, 8, 12 then 7 m), down the nave toward the Lamplighters' chapel with a wider lens (1.35 radians), the first eye that
 sees all three keepers and their banners clear of the columns; as she names a house the camera comes before its chapel
