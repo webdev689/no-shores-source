@@ -211,6 +211,11 @@ impl Player {
         let mut character = if test_ground { Character::kitted() } else { Character::starting() };
         if test_ground {
             character.arts = gear::arts::WornArts::mastered();
+            // It holds no place in a quest with a `kept` task, as a character kept before: no stranger stands on the
+            // Test Ground, and its stall serves the houses.
+            for quest in gear::quests::quests().quests.iter().filter(|quest| quest.kept.is_some()) {
+                character.quests.roads.remove(&quest.id);
+            }
         }
         Player {
             fighter: Fighter { ammo: Some(u32::from(character.shots())), ..fighter },

@@ -242,10 +242,13 @@ impl Room {
             let counters = self.counters.iter().flatten().copied().chain(shape);
             counters.into_iter().any(|counter| counter.kind == wanted && near(counter.at, COUNTER_REACH))
         });
-        // The stranger is heard anywhere in a social space: she keeps no counter.
-        let stranger = *ask == Ask::Speak { keeper: gear::quests::STRANGER }
-            && self.counters.as_ref().is_some_and(|counters| !counters.is_empty());
-        let social = at_counter || stranger || self.stall.is_some_and(|stall| near(stall, STALL_REACH));
+        // The stranger is heard anywhere in a social space and nowhere else, the Test Ground's stall included: she
+        // keeps no counter.
+        let social = if *ask == (Ask::Speak { keeper: gear::quests::STRANGER }) {
+            self.counters.as_ref().is_some_and(|counters| !counters.is_empty())
+        } else {
+            at_counter || self.stall.is_some_and(|stall| near(stall, STALL_REACH))
+        };
         let (pledge, rank) = self.player(player).map_or((0, 0), |found| crate::crew::pledge_of(&found.character));
         Here { social, day: self.day(), pledge, rank, week: gear::clock::week_of(self.minute) }
     }

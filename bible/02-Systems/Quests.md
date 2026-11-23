@@ -99,7 +99,8 @@ Weaponsmith and the four armour pieces of the Armorsmith, which the starter stoc
 [[Factions]]); and **Choose a house**, the pledge. Its `begin` is the Weaponsmith calling the player over; the houses'
 task begins with Arlo's word to hear all three. A character whose log stood at the houses before keeps its place by
 its task's id, and one kept with no place in the opening reads at "Hear the three houses" (its `kept`): neither is
-walked round again, nor owed the gift.
+walked round again, nor owed the gift. The Test Ground's player reads as one kept before, on the houses, which its
+stall serves; the stranger is heard in a social space alone, never at the stall.
 
 ## In the rules
 

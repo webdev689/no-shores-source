@@ -50,3 +50,15 @@ fn the_postmaster_is_spoken_with_at_the_mail_counter() {
     stand_at(&mut room, player, [60.0, 0.0]);
     assert_eq!(speak(&mut room, player, 10), answer_code(Err(Refusal::NotHere)), "the Mage keeps no counter here");
 }
+
+#[test]
+fn the_test_grounds_player_starts_on_the_houses_and_is_never_given_the_strangers_gift() {
+    let mut room = Room::new(Vec::new(), (0.0, 0.0));
+    room.furnish(Some([0.0, 0.0]), Vec::new());
+    let player = room.join().expect("a room with space");
+    let character = &room.player(player).expect("in").character;
+    let task = character.quest_now().map(|(quest, task)| quests().quests[quest].tasks[task].id.as_str());
+    assert_eq!(task, Some("hear-three-houses"), "a task the Test Ground's stall can serve");
+    assert_eq!(speak(&mut room, player, STRANGER), answer_code(Err(Refusal::NotHere)), "at the stall too");
+    assert_eq!(aurem(&room, player), 0);
+}
