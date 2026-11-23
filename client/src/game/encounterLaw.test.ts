@@ -146,8 +146,9 @@ test('a showing rune stands under a beam, the anchors only while a ward stands, 
 });
 
 test("the Court's banner tells Fury's weight once it begins and warns of it a minute before", () => {
-  const at = [9, 1.6, 0] as const;
-  const court = (more: Partial<EncounterSeen>) => encounterBanner(layout, seen({ woken: true, boss: 7, ...more }), at);
+  const standing = [9, 1.6, 0] as const;
+  const court = (more: Partial<EncounterSeen>) =>
+    encounterBanner(layout, seen({ woken: true, boss: 7, ...more }), standing);
   assert.deepEqual(court({ fury: 4 })?.bonus, { text: 'Fury ×1.4', state: 'lost' });
   assert.deepEqual(court({ furyTicks: 60 * 60 })?.bonus, { text: 'Fury in 1:00', state: 'holds' });
   assert.deepEqual(court({ furyTicks: 42 * 60 - 30 })?.bonus, { text: 'Fury in 0:42', state: 'holds' });
@@ -189,7 +190,7 @@ test('a wrong rune flashes red, a held ring shows its relic, and the warded Boss
   const where = () => [10, 1.6, 0] as const;
   const colours = (marks: number[]) => {
     const found: string[] = [];
-    for (let at = 0; at < marks.length; at += 7) found.push(marks.slice(at + 3, at + 6).join(','));
+    for (let mark = 0; mark < marks.length; mark += 7) found.push(marks.slice(mark + 3, mark + 6).join(','));
     return found;
   };
   const wrong = encounterMarks(
@@ -232,8 +233,8 @@ test("each of a Litany's runes wears a glyph of its own, so no two read alike", 
   const half = runes.length / 2;
   const shape = (marks: number[], [x, y]: readonly number[]) => {
     const out: string[] = [];
-    for (let at = 0; at < marks.length; at += 7)
-      out.push(`${((marks[at] ?? 0) - (x ?? 0)).toFixed(3)},${((marks[at + 1] ?? 0) - (y ?? 0)).toFixed(3)}`);
+    for (let mark = 0; mark < marks.length; mark += 7)
+      out.push(`${((marks[mark] ?? 0) - (x ?? 0)).toFixed(3)},${((marks[mark + 1] ?? 0) - (y ?? 0)).toFixed(3)}`);
     return out.join(' ');
   };
   const [first, second] = layout.encounters!.seals[0]!.pieces;

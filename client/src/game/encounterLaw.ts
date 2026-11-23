@@ -78,8 +78,8 @@ function barOf(seal: SealSeen): { share: number; label: string } {
     return { share: seal.progress, label: `${stepped} of ${seal.marks.length}` };
   }
   // With nobody in its room an Ascent says how far it was held, never "0 of 0".
-  const [on = 0, living = 0] = seal.marks;
-  if (seal.kind === SEAL_KIND.ascent && living > 0) return { share: seal.progress, label: `${on} of ${living}` };
+  const [holding = 0, living = 0] = seal.marks;
+  if (seal.kind === SEAL_KIND.ascent && living > 0) return { share: seal.progress, label: `${holding} of ${living}` };
   return { share: seal.progress, label: `${Math.floor(seal.progress * 100)}%` };
 }
 
@@ -238,9 +238,9 @@ function sealMarks(
     });
   const [first] = plan.pieces;
   if (seal.kind === SEAL_KIND.ascent && first) {
-    const [on = 0, living = 0] = seal.marks;
-    const all = living > 0 && on >= living;
-    ringAt(out, first, 0.6, mix(AT_REST, LIT, living > 0 ? on / living : 0), 0.6 + 0.3 * beat, !all);
+    const [holding = 0, living = 0] = seal.marks;
+    const all = living > 0 && holding >= living;
+    ringAt(out, first, 0.6, mix(AT_REST, LIT, living > 0 ? holding / living : 0), 0.6 + 0.3 * beat, !all);
   }
   if (seal.kind === SEAL_KIND.holdfast && first) {
     const held = seal.marks[0] === 1;
