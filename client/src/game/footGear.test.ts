@@ -12,6 +12,7 @@ import {
   POINT_REACH_M,
   STOCK_MOST,
   STORY_BEHIND_ON_FOOT,
+  gearInRoom,
   questRings,
   tellsPrologue,
   useAt,
@@ -234,4 +235,12 @@ test('within reach of a chapter of the lore lying in the world, E asks the room 
   const mark = markedHere(gear, { stations: [] }, () => 2).find((each) => each.picture === LORE_PICTURE);
   assert.deepEqual(mark?.at.slice(0, 2), [40, 0], 'over where it lies');
   assert.ok((mark?.at[2] ?? 0) > 2.5 && (mark?.at[2] ?? 0) < 2 + 2, 'floating a little over the ground');
+});
+
+test('no gear is asked of off a room, as when playing alone', () => {
+  const alone = { rejoining: false } as unknown as Parameters<typeof gearInRoom>[0];
+  assert.equal(
+    gearInRoom(alone, null, () => undefined, { forge: null, dress: null }),
+    null,
+  );
 });

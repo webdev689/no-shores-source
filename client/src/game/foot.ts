@@ -31,7 +31,7 @@ import type { FoeType } from '../rules/roster.ts';
 import { WORLD_CLOCK } from '../sky/worldClock.ts';
 import { shotOfOrbit } from './camera.ts';
 import { FallWatch } from './fallWatch.ts';
-import { STORY_BEHIND_ON_FOOT, type Use, dropsLaid, questRings, tellsPrologue } from './footGear.ts';
+import { STORY_BEHIND_ON_FOOT, type Use, dropsLaid, gearInRoom, questRings, tellsPrologue } from './footGear.ts';
 import { GatherHold } from './gatherHold.ts';
 import { markedHere } from './overheadMarks.ts';
 import { nodeText, standOn } from './footGround.ts';
@@ -337,12 +337,10 @@ export class Foot {
     this.gear?.ask({ kind: ASKS.finishPrologue });
   }
 
-  /** The player's gear in their room, and the way to ask of it; null offline or once the room is lost. */
+  /** The player's gear in their room, and the way to ask of it (`gearInRoom`). */
   get gear(): GearHere | null {
-    const { link, fight } = this;
     const { forge, walker } = this.context;
-    if (!(link instanceof RoomConnection) || !link.open) return null;
-    return { gear: this.held.gear, ask: (ask) => fight.askGear(ask), forge, dress: walker.you.dress };
+    return gearInRoom(this.link, this.held.gear, (ask) => this.fight.askGear(ask), { forge, dress: walker.you.dress });
   }
 
   /** Whether the player has fallen and waits to respawn. */
