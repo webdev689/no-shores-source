@@ -1,5 +1,5 @@
 import type { Point2 } from '../overworld/ground.ts';
-import { frameSide, nearestIsland, ringCentre, sideNodes } from '../overworld/islandView.ts';
+import { frameSide, nearestIsland, ringCentre } from '../overworld/islandView.ts';
 import {
   type CameraPose,
   ceilingFor,
@@ -30,7 +30,7 @@ import type { SeaFrame, SeaInput } from './seaFrame.ts';
 import { Chase } from './seaChase.ts';
 import { Wake } from './seaWake.ts';
 import { HOSTILE_PREFIX, SeaWatch, type WaterNamed } from './seaHostiles.ts';
-import { islandMarksOf, seaMarks } from './seaMarks.ts';
+import { islandMarksOf, landfallMarks, seaMarks } from './seaMarks.ts';
 import { type SeaHull, SeaShips } from './seaShips.ts';
 import { SeaCombat } from './seaCombat.ts';
 import { SeaRoom } from './seaRoom.ts';
@@ -330,13 +330,11 @@ export class Sea {
     const landfall = this.landfall;
     if (!landfall) return false;
     this.chase.stop();
-    const nodes = this.islandMarks.filter((mark) => mark.kind !== 'port');
-    const near = sideNodes(this.position, ringCentre(this.landmass.outline), nodes);
-    const social = nodes.find((mark) => mark.kind === 'social');
-    const side = landfall.kind === 'dock' && social && !near.includes(social) ? [social, ...near] : near;
+    const centre = ringCentre(this.landmass.outline);
+    const { side, framed } = landfallMarks(this.islandMarks, this.position, centre, landfall.kind === 'dock');
     const aspect = this.viewport.width / this.viewport.height;
     this.passage.stop();
-    this.view.flyToSide(side, frameSide(this.position, side, aspect, this.landmass.heightAt));
+    this.view.flyToSide(side, frameSide(this.position, framed, aspect, this.landmass.heightAt));
     return true;
   }
 

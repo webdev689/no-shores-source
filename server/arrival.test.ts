@@ -86,6 +86,32 @@ test('a dungeon or a run is entered from its node’s room, and left back into i
   assert.equal(arrives('node-tidewall', 'node-gullwing-vale--dungeon-1', null, reach(['gullwing-vale'])), false);
 });
 
+test('a playlist’s run is launched from the sea, from beside any port, and left back to it', () => {
+  const run = 'node-krakens-grotto--elite--playlist-17--run-k3j4h5g6';
+  for (const sea of ['sea', 'sea--elite', 'sea--abyss']) assert.equal(arrives(run, sea, null, null), true, sea);
+  assert.equal(arrives(run, 'node-krakens-grotto--elite', null, null), false, 'never through the dungeon’s door');
+  assert.equal(arrives(run, 'node-overlook-social', null, null), false);
+  assert.equal(arrives(run, null, null, null), false);
+  assert.equal(arrives(run, run, null, null), true, 'a rejoin');
+  assert.equal(cameOutOf('node-krakens-grotto--elite', run, 0), false, 'it leaves to the sea, not the door');
+  assert.equal(arrives('node-krakens-grotto--elite', run, null, null), false, 'nor onto its dungeon’s island');
+  // The week's run started from the Playlist is marked so, and goes back to the sea as a playlist's does.
+  const week = 'node-saltworm-warrens--abyss--sea--run-k3j4h5g6';
+  for (const sea of ['sea', 'sea--elite', 'sea--abyss']) assert.equal(arrives(week, sea, null, null), true, sea);
+  assert.equal(arrives(week, 'node-saltworm-warrens--abyss', null, null), false, 'not by its door');
+  assert.equal(arrives('node-saltworm-warrens--abyss', week, null, reach()), false, 'nor out onto its island');
+  assert.equal(cameOutOf('node-saltworm-warrens--abyss', week, 0), false);
+  // Unmarked, the week's run is its door's: it never takes a player from the sea onto the island it leaves to.
+  assert.equal(arrives('node-saltworm-warrens--abyss--run-k3j4h5g6', 'sea', null, null), false);
+  assert.equal(arrives('node-saltworm-warrens--abyss--run-k3j4h5g6', 'sea--abyss', null, null), false);
+  assert.equal(
+    arrives('node-krakens-grotto--run-k3j4h5g6', 'sea', null, null),
+    false,
+    'not an Elite Dungeon at Normal',
+  );
+  assert.equal(arrives('node-gullwing-vale--elite--dungeon-1--run-k3j4h5g6', 'sea', null, null), false);
+});
+
 test('a player stands out of an entrance only as they come out of its dungeon or its run', () => {
   const patrol = 'node-gullwing-vale--elite';
   assert.equal(cameOutOf(patrol, 'node-gullwing-vale--elite--dungeon-2--run-k3j4h5g6', 2), true);

@@ -161,6 +161,11 @@ const MERGED: [(&str, &str); 14] = [
 pub(crate) fn unfit(character: &mut Character, mut item: Item) -> Item {
     let content = catalogue();
     let entry = item.named.as_deref().and_then(|named| content.named(named));
+    // A named piece belongs to its entry's content, whenever it was kept: one from before sources, or before its
+    // entry's content changed, reads as its entry's.
+    if let Some(entry) = entry {
+        item.source = entry.source();
+    }
     if let Some(entry) = entry.filter(|entry| entry.rarity == item.rarity) {
         item = follow(character, item, entry);
     }

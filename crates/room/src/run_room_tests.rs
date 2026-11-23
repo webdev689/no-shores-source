@@ -30,6 +30,7 @@ fn past_the_prologue() -> gear::Character {
 
 /// Fells every foe of the end post, and ticks the room once.
 fn clear_the_end(room: &mut Room) {
+    crate::encounters::encounters_tests::unseal(room);
     for id in room.garrison[0].standing.clone() {
         let found = room.foes.get_mut(&id).expect("standing");
         (found.fighter.health, found.fighter.action) = (0.0, Action::Dead { elapsed: 0 });

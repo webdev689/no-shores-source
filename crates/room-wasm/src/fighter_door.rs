@@ -46,16 +46,16 @@ pub fn set_ground(text: &[u8]) -> bool {
 }
 
 /// Keeps a dungeon's ground for predicting a fighter without a room, from the JSON ask `room_dungeon` takes (a
-/// patrol's id and name and its number, an Elite Dungeon's place, or a seed and a style), and an empty course: a
-/// dungeon's jambs and pillars are its ground's own. Answers whether the ask was a dungeon.
+/// patrol's id and name and its number, an Elite Dungeon's place, or a seed and a style), and its course: an Elite
+/// Dungeon's Ascents' pads, as its room stands them, and none in any other; a dungeon's jambs and pillars are its
+/// ground's own. Answers whether the ask was a dungeon.
 pub fn set_dungeon(text: &[u8]) -> bool {
-    let Some(floor) = crate::dungeon_door::asked(text)
-        .and_then(|(seed, style, blocks)| Floor::of_dungeon(&dungeon::Dungeon::forge_within(seed, style, blocks)))
-    else {
-        return false;
-    };
+    let Some((seed, style, blocks)) = crate::dungeon_door::asked(text) else { return false };
+    let laid = dungeon::Dungeon::forge_within(seed, style, blocks);
+    let Some(floor) = Floor::of_dungeon(&laid) else { return false };
+    let pads = crate::dungeon_door::pads_of(text, &laid);
     FLOOR.with(|kept_floor| *kept_floor.borrow_mut() = floor);
-    COURSE.with(|course| *course.borrow_mut() = movement::Blocks::default());
+    COURSE.with(|course| *course.borrow_mut() = movement::Blocks::new(pads));
     true
 }
 

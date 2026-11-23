@@ -2,7 +2,10 @@ import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { EVENT } from '../combat/cues.ts';
 import { ASKS, DROPPED, type GearAsk, type GearDrop } from '../network/gearMessages.ts';
+import { type EncounterSeen, SEAL_KIND, SEAL_STATE } from '../network/encounterMessages.ts';
+import type { FightEvent } from '../network/messages.ts';
 import { MARK, PUBLIC_KIND, type PublicEvent } from '../network/publicMessages.ts';
+import type { DungeonLayout } from './dungeonLayout.ts';
 import { type PublicBodies, PublicView } from './publicView.ts';
 
 const raid = (marks: PublicEvent['marks'], phase = 1): PublicEvent => ({
@@ -510,4 +513,51 @@ test('heroic met holds the music at its peak on the ground, whatever the time le
   const near = bodies({ feet: [50, 50, 2] });
   const met = { ...raid([]), ticksLeft: 5 * 3600, heroic: 2 };
   assert.equal(view.frame(met, [], [], near, 0, [], () => 0).shown?.mood, 'peak');
+});
+
+test("an Elite Dungeon's frame carries its Court's call and the foul water at the player's feet to the display", () => {
+  const layout = {
+    cell: 3.2,
+    columns: 4,
+    rows: 1,
+    cells: [0, 0, 1, 1],
+    rooms: [
+      { x: 0, y: 0, width: 2, depth: 1 },
+      { x: 2, y: 0, width: 2, depth: 1 },
+    ],
+    end: 1,
+    encounters: {
+      seals: [{ kind: SEAL_KIND.ascent, room: 0, pieces: [[1.6, 1.6, 0]], pads: [], drowned: [1], doors: [] }],
+      anchors: [[8, 1.6, 0]],
+      reach: { rune: 0.9, plate: 1, relic: 3, anchor: 1, light: 1.25, slam: 4 },
+    },
+  } as unknown as DungeonLayout;
+  const seen = (more: Partial<EncounterSeen> = {}): EncounterSeen => ({
+    seals: [{ kind: SEAL_KIND.ascent, state: SEAL_STATE.running, progress: 0, marks: [0, 1], relic: 1 }],
+    woken: false,
+    boss: 0,
+    ward: 0,
+    wardsBroken: 0,
+    anchors: [0],
+    reckoningTicks: 0,
+    reckoningAt: 0,
+    fury: 0,
+    furyTicks: 0,
+    slamTicks: 0,
+    ...more,
+  });
+  const shown = (events: FightEvent[], feet: readonly [number, number, number], word: EncounterSeen) =>
+    new PublicView('zone').frame(null, events, [], bodies({ feet }), 0, [], () => 0, {
+      encounter: { layout, seen: word },
+    }).shown;
+  const harm = { ...happened(EVENT.drowned, 0, 1), amount: 0.12 };
+  assert.equal(shown([harm], [4.8, 1.6, 0], seen())?.foul, 'harmed');
+  assert.equal(shown([], [4.8, 1.6, 0], seen())?.foul, 'wet');
+  const awake = seen({
+    seals: [{ ...seen().seals[0]!, state: SEAL_STATE.broken }],
+    woken: true,
+    boss: 9,
+    slamTicks: 60,
+  });
+  assert.equal(shown([], [9, 1.6, 0], awake)?.call, 'Get clear!');
 });

@@ -25,7 +25,14 @@ export function mailOf(gear: Gear, itemOf: (item: GearItemTable) => GearItem): G
       from: letter.from(),
       crowded: letter.crowded(),
       vestige: vestige
-        ? { id: vestige.id(), rarity: vestige.rarity(), slot: vestige.slot(), level: vestige.level(), vaulted: false }
+        ? {
+            id: vestige.id(),
+            rarity: vestige.rarity(),
+            slot: vestige.slot(),
+            level: vestige.level(),
+            vaulted: false,
+            source: vestige.source(),
+          }
         : null,
       item: item ? itemOf(item) : null,
     };

@@ -7,7 +7,7 @@ import { roomNow } from '../sky/worldClock.ts';
 import type { Node } from '../ui/node.ts';
 import type { Layer } from '../ui/stack.ts';
 import type { Interface } from '../ui/ui.ts';
-import type { EntranceCard, KeyedModifier, ThisWeek, WeekRow } from './activityWords.ts';
+import { type EntranceCard, type KeyedModifier, QUEUED, type ThisWeek, type WeekRow } from './activityWords.ts';
 import { EntranceCardView } from './entranceCard.ts';
 import { openGearWindow, type View } from './gearScreen.ts';
 import { sampleGear } from './gearShots.ts';
@@ -108,6 +108,7 @@ function weekOf(now: number, untilDay = 20 * HOUR + 55 * 60_000, untilWeek = 2 *
           modifiers: [BRAWLER],
           pays: 'Once a week: a Legendary Vestige and Essence.',
           rewards: ['legendary-vestige', 'essence'],
+          queued: QUEUED,
         },
         {
           ...row('saltworm-warrens', { about: 'Abyss Dungeon of the week · Level 30', ...shut }),
@@ -118,6 +119,7 @@ function weekOf(now: number, untilDay = 20 * HOUR + 55 * 60_000, untilWeek = 2 *
           modifiers: [LIGHTSWITCH, BURN, JUGGLER],
           pays: 'Once a week: a Legendary or Atheric Vestige, Essence, and the Abyss boon.',
           rewards: ['atheric-vestige', 'essence', 'boon'],
+          queued: QUEUED,
         },
       ],
       boon: 'Abyss boon: 25% more XP until the week turns.',
@@ -167,7 +169,13 @@ export const boardShot = menuShot('board');
 const LETTERS: GearState = {
   ...GEAR,
   mail: [
-    { id: 31, from: 0, crowded: false, vestige: { id: 4, rarity: 2, slot: 2, level: 12, vaulted: false }, item: null },
+    {
+      id: 31,
+      from: 0,
+      crowded: false,
+      vestige: { id: 4, rarity: 2, slot: 2, level: 12, vaulted: false, source: 0 },
+      item: null,
+    },
     { id: 32, from: 4, crowded: true, vestige: null, item: item({ id: 0, rarity: 3, kind: 25, bucket: 8, level: 6 }) },
     { id: 33, from: 1, crowded: false, vestige: null, item: item({ id: 0, rarity: 1, kind: 2, level: 11 }) },
   ],

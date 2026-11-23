@@ -92,6 +92,26 @@ test('a welcome and a snapshot the server wrote read back to the bit', async () 
     [2, 2, 11, 14, HEROIC.met, true, 1_500],
   );
   assert.deepEqual([event?.radius, event?.nextGround, event?.heroicTicks], [27.5, [140, 60, 4.5], 1_234]);
+  // An Elite Dungeon's encounters (crates/protocol/src/encounter_wire_tests.rs ENCOUNTER): its Litany broken, its
+  // Weighing running with the first of two plates held, its Ascent waiting; its Boss warded at one third.
+  assert.deepEqual(snapshot.encounter, {
+    seals: [
+      { kind: 1, state: 2, progress: 1, marks: [2, 2, 2, 2, 2], relic: 1 },
+      { kind: 2, state: 1, progress: 0.45, marks: [1, 0], relic: 1 },
+      { kind: 3, state: 0, progress: 0, marks: [0, 2], relic: 1 },
+      { kind: 4, state: 1, progress: 0.12, marks: [1], relic: 0.64 },
+    ],
+    woken: true,
+    boss: 31,
+    ward: 2,
+    wardsBroken: 1,
+    anchors: [1, 0.333, 0],
+    reckoningTicks: 300,
+    reckoningAt: 1,
+    fury: 4,
+    furyTicks: 3_600,
+    slamTicks: 90,
+  });
   assert.deepEqual(event?.marks, [
     { kind: MARK.fissure, id: 0, at: [10, -20.5, 3.25], health: 0.25, state: 0 },
     { kind: MARK.carried, id: 9, at: [12, -18, 3.5], health: 1, state: 0 },
@@ -117,6 +137,8 @@ test('a welcome and a snapshot the server wrote read back to the bit', async () 
     [
       [1233n, 3, 1, 12, 9, 0, 0, false, 0, 0],
       [1234n, 1, 8, 9, 12, 35, 3, true, 2, 14],
+      // An Elite Dungeon's moments, numbered as the room's judging numbers them (the page's `EVENT`, cues.test.ts).
+      ...[26, 27, 28, 29, 30, 31, 32, 33, 34].map((kind) => [1235n, kind, 0, 0, 9, 1, 0, false, 0, 0]),
     ],
   );
   const [arrow] = snapshot.shots;

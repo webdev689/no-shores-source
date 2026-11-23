@@ -27,6 +27,7 @@ export const COLOUR = {
   crystal: -7,
   fungus: -8,
   water: -9,
+  foulWater: -10,
 } as const;
 /** The textures' ironwork (archive 93), for the torches' brackets and the cache's bands. */
 export const IRON: Picture = [93, 0];
@@ -44,7 +45,7 @@ const CUP = { half: 0.06, low: -0.15, high: -0.07 };
 const FLAME = { half: 0.06, low: -0.07, waist: -0.01, high: 0.2 };
 
 /** A quad by its corners round its edge, facing `normal`, its UVs by its plane. */
-function face(mesh: MeshBuilder, picture: Picture, corners: readonly Point[], normal: Point, top: number): void {
+export function face(mesh: MeshBuilder, picture: Picture, corners: readonly Point[], normal: Point, top: number): void {
   mesh.quad(picture, corners, normal, corners.map(uvOf(normal, top)));
 }
 

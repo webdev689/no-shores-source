@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { project } from './hud.ts';
+import { project } from './hudPlace.ts';
 import { DITHER_M, MARK_FLOATS, type TelegraphMark, ditherCode, marksMesh } from './marks.ts';
 import { IRON } from './markSprites.ts';
 import { SHAPES } from '../rules/fighters.ts';

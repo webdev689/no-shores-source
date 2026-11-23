@@ -257,7 +257,8 @@ export class Words {
       const inside = word.at ? clampedTo(want, width, height) : want;
       // Pushed down to clear a plate, it stays down, so a plate fading out never lets it jump back up.
       const lowered = { ...inside, top: inside.top + word.drop, bottom: inside.bottom + word.drop };
-      const box = word.at ? placeWord(lowered, plates, placed) : want;
+      // Pushed past the foot, it stands at the foot again: never off the display.
+      const box = word.at ? clampedTo(placeWord(lowered, plates, placed), width, height, EDGE_PX.top) : want;
       if (word.at) word.drop = box.top - inside.top;
       placed.push(box);
       word.pose = { x: (box.left + box.right) / 2, y: box.top, scale: pose.scale, shown: pose.shown };
@@ -324,10 +325,10 @@ function widthOf(word: Word): number {
 
 /** How far inside the display's edges a word stays (CSS px): clear of its sides and the vitals at its foot. */
 const EDGE_PX = { side: 8, top: 8, foot: 140 } as const;
-/** `box` moved to stand within a display `width` by `height`. */
-function clampedTo(box: Box, width: number, height: number): Box {
+/** `box` moved to stand within a display `width` by `height`, `foot` CSS pixels clear of its foot. */
+function clampedTo(box: Box, width: number, height: number, foot: number = EDGE_PX.foot): Box {
   const [wide, high] = [box.right - box.left, box.bottom - box.top];
   const left = Math.min(Math.max(box.left, EDGE_PX.side), Math.max(EDGE_PX.side, width - EDGE_PX.side - wide));
-  const top = Math.min(Math.max(box.top, EDGE_PX.top), Math.max(EDGE_PX.top, height - EDGE_PX.foot - high));
+  const top = Math.min(Math.max(box.top, EDGE_PX.top), Math.max(EDGE_PX.top, height - foot - high));
   return { left, right: left + wide, top, bottom: top + high };
 }

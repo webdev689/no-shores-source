@@ -79,6 +79,8 @@ export const DRAWINGS: Readonly<Record<string, Drawing>> = {
   '⌂': { rows: ['..#..', '.#.#.', '#...#', '#...#', '#...#', '#####'] },
   '☠': { rows: ['..###..', '.#####.', '##.#.##', '#######', '.##.##.', '..###..', '..#.#..'] },
   '⚓': { rows: ['..###..', '..#.#..', '.#####.', '...#...', '#..#..#', '##.#.##', '.#####.'] },
+  // The Playlist's mark: three bars, as a list.
+  '☰': { rows: ['#####', '.....', '#####', '.....', '#####'], base: 1 },
   // Glyphs whose outline runs through a cell's centre, which a page reading Pixelify's cells could take either way:
   // each drawn as its outline falls at the centres, with Pixelify's own advance, so every browser draws it alike.
   '(': { rows: ['..#', '..#', '.##', '.#.', '##.', '#..', '##.', '.#.', '.#.', '..#', '..#'], base: -2, advance: 381 },

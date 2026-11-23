@@ -24,6 +24,8 @@ pub enum RunOf {
     Patrol { patrol: String, number: usize },
     /// An Elite Dungeon by its node's id: the Elite Dungeon at Normal, the week's Elite or Abyss at those.
     Elite { place: String },
+    /// A playlist's run of an Elite Dungeon by its node's id, every foe at `foes_at`, one of its bands' levels.
+    Playlist { place: String, foes_at: u8 },
     /// A sea island's, by its seed, its style's key and its continent.
     Sea { seed: u32, style: String, continent: String },
 }
@@ -63,16 +65,23 @@ impl Room {
                 room.island = Some(island.continent);
                 room
             }
-            RunOf::Elite { place } => {
+            RunOf::Elite { place } | RunOf::Playlist { place, .. } => {
                 let (elite, island) = (elite_dungeon(place)?, island_of(place)?);
                 let (seed, style) = elite_laid(place)?;
                 let laid = Dungeon::forge_within(seed, style, dungeon::ELITE_BLOCKS);
-                let (levels, run, gated) = match Weekly::of(tier) {
-                    None => {
+                let played = match of {
+                    RunOf::Playlist { foes_at, .. } => {
+                        Some(super::playlist_run::playlist_run(tier, *foes_at, (day, week), revives)?)
+                    }
+                    _ => None,
+                };
+                let (levels, run, gated) = match (played, Weekly::of(tier)) {
+                    (Some(played), _) => played,
+                    (None, None) => {
                         let run = Run { revives, ..Run::default() };
                         (island_levels(island.continent), run, Place::EliteDungeon)
                     }
-                    Some(weekly) => {
+                    (None, Some(weekly)) => {
                         if of_the_week(week, weekly).id != elite.id {
                             return None;
                         }
@@ -104,6 +113,11 @@ impl Room {
                 room
             }
         };
+        room.source = match of {
+            RunOf::Patrol { .. } => gear::Source::Dungeon,
+            RunOf::Elite { .. } | RunOf::Playlist { .. } => gear::Source::elite_at(tier),
+            RunOf::Sea { .. } => gear::Source::Sea,
+        };
         room.set_difficulty(tier);
         room.set_minute(minute);
         Some(room)
@@ -115,13 +129,16 @@ impl Room {
     /// once paid. Nothing once taken.
     pub(crate) fn pay_clear(&mut self, player: PlayerId, level: u8) {
         let Some(pays) = self.run.as_ref().map(|run| run.pays.clone()) else { return };
+        if matches!(pays, Pays::Playlist { .. }) {
+            return self.pay_playlist(player, level);
+        }
         let (day, now, tier) = (self.day(), week_of(self.minute), self.difficulty);
         let dice = self.dice(player);
         // A player playing unkept keeps nothing: their record would be marked on a character the accounts never see.
         let Some(found) = self.players.get_mut(&player).filter(|found| found.owner.is_some()) else { return };
         let character = &mut found.character;
         let vestige = match pays {
-            Pays::Nothing => None,
+            Pays::Nothing | Pays::Playlist { .. } => None,
             Pays::Today { patrol, number } => {
                 let today = island_of(&patrol).and_then(|island| dungeon_of_the_day(day, island.continent));
                 (tier == Difficulty::Normal && today == Some((patrol.as_str(), number)))
@@ -144,3 +161,7 @@ impl Room {
 #[cfg(test)]
 #[path = "run_room_tests.rs"]
 mod run_room_tests;
+
+#[cfg(test)]
+#[path = "run_source_tests.rs"]
+mod run_source_tests;

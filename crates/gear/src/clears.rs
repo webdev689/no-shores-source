@@ -8,6 +8,7 @@ use crate::character::{Character, Stuff, Vestige};
 use crate::dice::Dice;
 use crate::kinds::{Slot, Stock};
 use crate::rewards::{Foe, at_level, worth};
+use crate::source::Source;
 use crate::vestige::{colours, of_colours};
 use crate::world::Difficulty;
 
@@ -55,7 +56,7 @@ impl Character {
         self.earn_xp(xp, None);
         self.materials.add_aurem(aurem);
         let (rarity, slot, level) = of_colours(colours(BOSS), level, dice);
-        Some(Vestige::new(self.take_id(), rarity, slot, level))
+        Some(Vestige::new(self.take_id(), rarity, slot, level).from(Source::Dungeon))
     }
 
     /// The week's Elite or Abyss Dungeon's first clear this week: a Legendary Vestige (the Abyss's Atheric one in
@@ -81,7 +82,7 @@ impl Character {
             self.materials.add(Stuff::Essence(stock), weekly.essence());
         }
         let (rarity, slot, level) = of_colours(weekly.colours(), weekly.foes_at(), dice);
-        Some(Vestige::new(self.take_id(), rarity, slot, level))
+        Some(Vestige::new(self.take_id(), rarity, slot, level).from(Source::elite_at(weekly.tier())))
     }
 
     /// A quarter more of a kill's XP while the Abyss boon is held this week, to the player and to `weapon` as the

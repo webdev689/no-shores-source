@@ -158,6 +158,12 @@ test('a sea island’s dungeon is entered from the sea and left back to it, the 
     then: inside,
   });
   assert.deepEqual(next({ mode: 'sea', menu: true }, enter), { mode: 'sea', menu: true }, 'not with the menu open');
+  const overTheSide = next({ mode: 'landing', chosen: null }, enter);
+  assert.deepEqual(
+    overTheSide,
+    { mode: 'loading', words: 'Entering The Caverns of the Sea', then: inside },
+    'the Playlist',
+  );
   const surface = { kind: 'surface', name: 'The Caverns of the Sea', fell: false } as const;
   const atSea = { mode: 'sea', menu: false } as const;
   assert.deepEqual(

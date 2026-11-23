@@ -4,6 +4,7 @@ use crate::item::Item;
 use crate::kinds::{Kind, Slot};
 use crate::rarity::Rarity;
 use crate::rewards::{Clear, Foe, worth};
+use crate::source::Source;
 use crate::world::Difficulty;
 
 fn dice(seed: u64) -> Dice {
@@ -24,13 +25,13 @@ fn a_kill_pays_by_its_ranks_health_against_a_majors() {
 fn a_boss_always_leaves_an_item_and_a_vestige_and_a_harder_voyage_more() {
     for (difficulty, most) in [(Difficulty::Normal, 1), (Difficulty::Abyss, 2)] {
         let mut character = Character::starting();
-        let vestiges = character.loot_kill(5, 20, difficulty, &dice(1));
+        let vestiges = character.loot_kill(5, 20, difficulty, Source::World, &dice(1));
         assert_eq!((found(&character), vestiges.len()), (most, most), "{difficulty:?}");
     }
     let (mut items, mut vestiges) = (0, 0);
     for seed in 0..2_000 {
         let mut character = Character::starting();
-        vestiges += character.loot_kill(5, 20, Difficulty::Elite, &dice(seed)).len();
+        vestiges += character.loot_kill(5, 20, Difficulty::Elite, Source::World, &dice(seed)).len();
         items += found(&character);
     }
     assert!((2_800..3_200).contains(&items) && (2_800..3_200).contains(&vestiges), "one and a half each at Elite");
@@ -41,7 +42,7 @@ fn a_miniboss_leaves_an_item_and_a_vestige_each_about_a_third_of_the_time_and_a_
     let (mut items, mut vestiges, mut both) = (0, 0, 0);
     for seed in 0..4_000 {
         let mut character = Character::starting();
-        let left = character.loot_kill(4, 20, Difficulty::Normal, &dice(seed)).len();
+        let left = character.loot_kill(4, 20, Difficulty::Normal, Source::World, &dice(seed)).len();
         let kept = found(&character);
         (items, vestiges, both) = (items + kept, vestiges + left, both + usize::from(kept > 0 && left > 0));
     }
@@ -50,7 +51,7 @@ fn a_miniboss_leaves_an_item_and_a_vestige_each_about_a_third_of_the_time_and_a_
     for rank in 1..=3 {
         let mut character = Character::starting();
         for seed in 0..500 {
-            character.loot_kill(rank, 20, Difficulty::Abyss, &dice(seed));
+            character.loot_kill(rank, 20, Difficulty::Abyss, Source::World, &dice(seed));
         }
         assert_eq!(found(&character), 0, "rank {rank} leaves no item as itself");
     }
@@ -77,7 +78,7 @@ fn an_item_found_is_carried_then_vaulted_then_left_as_a_vestige_of_its_colour() 
 fn a_cleared_node_pays_a_mission_less_than_a_dungeon_and_a_dungeon_less_than_a_world_boss() {
     let paid = |clear: Clear, level: u8, difficulty: Difficulty| {
         let mut character = Character::starting();
-        character.reward_clear(clear, level, difficulty, &dice(2));
+        character.reward_clear(clear, level, difficulty, Source::World, &dice(2));
         (character.xp, u64::from(character.materials.aurem))
     };
     assert_eq!(paid(Clear::Mission, 20, Difficulty::Normal), (1_000, 75));
@@ -95,13 +96,13 @@ fn a_dungeons_clear_always_leaves_an_item_coloured_as_its_minibosss_and_now_and_
     let mut vestiges = 0;
     for seed in 0..2_000 {
         let mut character = Character::starting();
-        vestiges += character.reward_clear(Clear::Dungeon, 20, Difficulty::Normal, &dice(seed)).len();
+        vestiges += character.reward_clear(Clear::Dungeon, 20, Difficulty::Normal, Source::World, &dice(seed)).len();
         assert_eq!(found(&character), 1, "one item, sure");
     }
     assert!((600..800).contains(&vestiges), "a Miniboss's 35 in 100: {vestiges}");
     for clear in [Clear::Mission, Clear::WorldBoss] {
         let mut character = Character::starting();
-        assert!(character.reward_clear(clear, 20, Difficulty::Abyss, &dice(1)).is_empty());
+        assert!(character.reward_clear(clear, 20, Difficulty::Abyss, Source::World, &dice(1)).is_empty());
         assert_eq!(found(&character), 0, "{clear:?}: its pay alone; its Boss's kill leaves the loot");
     }
 }

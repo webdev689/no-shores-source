@@ -93,7 +93,21 @@ pub fn foes() -> Vec<FoeSeen> {
     vec![brute, FoeSeen { shield: None, companion: Some(companion), ..ashore }]
 }
 
-pub const EVENTS: [Event; 2] = [
+/// An Elite Dungeon's moment as the room tells it, each of the encounter kinds in turn after it.
+const TOLD: Event = Event {
+    tick: 1235,
+    kind: EventKind::SealBroken,
+    how: None,
+    striker: 0,
+    defender: 9,
+    amount: 1.0,
+    stroke: None,
+    crit: false,
+    element: 0,
+    from: None,
+};
+
+pub const EVENTS: [Event; 11] = [
     Event {
         tick: 1233,
         kind: EventKind::Parried,
@@ -118,6 +132,15 @@ pub const EVENTS: [Event; 2] = [
         element: 2,
         from: Some(14),
     },
+    TOLD,
+    Event { kind: EventKind::RuneWrong, ..TOLD },
+    Event { kind: EventKind::WardRaised, ..TOLD },
+    Event { kind: EventKind::WardBroken, ..TOLD },
+    Event { kind: EventKind::ReckoningLanded, ..TOLD },
+    Event { kind: EventKind::BossWoke, ..TOLD },
+    Event { kind: EventKind::RelicDrained, ..TOLD },
+    Event { kind: EventKind::Drowned, ..TOLD },
+    Event { kind: EventKind::BossSlammed, ..TOLD },
 ];
 
 fn shots() -> Vec<Shot> {
@@ -270,6 +293,7 @@ fn snapshot<'snapshot>(
         cache: &[],
         revives: None,
         public: Some(public),
+        encounter: Some(&crate::encounter_wire_tests::ENCOUNTER),
     }
 }
 
@@ -453,11 +477,14 @@ fn a_welcome_and_snapshots_read_back_to_the_bit() {
     assert_eq!(ashore.name(), None, "and no name of an event's");
     let events: Vec<_> =
         read.events().unwrap().iter().map(|event| (event.tick(), event.kind(), event.how(), event.amount())).collect();
-    assert_eq!(events, vec![(1233, 3, 1, 0.0), (1234, 1, 8, 35.0)]);
+    assert_eq!(events[..2], [(1233, 3, 1, 0.0), (1234, 1, 8, 35.0)]);
+    // An Elite Dungeon's moments, each kind by its number, from a seal broken to the Boss's slam.
+    let kinds: Vec<u8> = events[2..].iter().map(|event| event.1).collect();
+    assert_eq!(kinds, (26..=34).collect::<Vec<u8>>());
     let marked: Vec<_> = read.events().unwrap().iter().map(|event| (event.crit(), event.element())).collect();
-    assert_eq!(marked, vec![(false, 0), (true, 2)], "a crit and a blow's element cross");
+    assert_eq!(marked[..2], [(false, 0), (true, 2)], "a crit and a blow's element cross");
     let from: Vec<_> = read.events().unwrap().iter().map(|event| event.from()).collect();
-    assert_eq!(from, vec![0, 14], "and the foe a leap leapt from");
+    assert_eq!(from[..2], [0, 14], "and the foe a leap leapt from");
     let flying = read.shots().unwrap().get(0);
     assert_eq!((flying.owner(), flying.ranged()), (12, 1));
     assert_eq!(flying.at().unwrap().iter().collect::<Vec<_>>(), shots[0].at.to_vec());

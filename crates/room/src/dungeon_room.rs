@@ -45,9 +45,9 @@ pub(crate) struct Cache {
 /// about a third of the columns the land's 0.25 m would over the dungeon's whole rectangle.
 const NAV_CELL_M: f64 = CELL_M / 8.0;
 
-/// A dungeon room's navmesh: over the whole dungeon and its ground's jambs and pillars, kept to the floor the way in
-/// stands on, in cells of NAV_CELL_M.
-pub(crate) fn baked(floor: &Floor, first: (f64, f64), section: &Section) -> NavMesh {
+/// A dungeon room's navmesh: over the whole dungeon, its ground's jambs and pillars and its blocks (an Ascent's pads),
+/// kept to the floor the way in stands on, in cells of NAV_CELL_M.
+pub(crate) fn baked(floor: &Floor, blocks: &[Block], first: (f64, f64), section: &Section) -> NavMesh {
     let fold = |pick: fn(f64, f64) -> f64, start: f64, axis: usize| {
         section.ring.iter().fold(start, |kept, corner| pick(kept, corner[axis]))
     };
@@ -73,7 +73,9 @@ pub(crate) fn baked(floor: &Floor, first: (f64, f64), section: &Section) -> NavM
                 top: top.max(agent.height),
                 bottom: dungeon::FLOOR_M,
             };
-            let solids: Vec<Block> = ground.solids().iter().map(standing).collect();
+            let mut solids: Vec<Block> = ground.solids().iter().map(standing).collect();
+            // An Ascent's pads too, so no foe paths up their sides or off their tops.
+            solids.extend(blocks.iter().map(|pad| Block { top: pad.top.max(agent.height), ..*pad }));
             NavMesh::bake_anchored(&solids, ground.grid(), bounds, &agent, anchor)
         }
         Floor::Flat | Floor::Sea(_) | Floor::Land(_) | Floor::Deck(_) | Floor::Island(_) => {
@@ -119,13 +121,15 @@ impl Room {
         let (name, laid) = (format!("{patrol}--dungeon-{number}"), Dungeon::forge(seed, style));
         let mut room = Self::laid_dungeon(&name, &laid, levels, (REEVE, Miniboss), Some(Run::today(patrol, number)))?;
         room.place = Some(gear::gate::Place::PatrolDungeon);
+        room.source = gear::Source::Dungeon;
         room.island = gear::activities::island_of(patrol).map(|island| island.continent);
         Some(room)
     }
 
     /// The room of a laid dungeon: `name` seeds its world, `levels` is its foes' band, `end` the type and rank that
-    /// stands alone in its end room, and `run` what its run carries, known before its garrison stands. Gated by its
-    /// tier alone until its maker says what place it is. None where its floor cannot be made.
+    /// stands alone in its end room, and `run` what its run carries, known before its garrison stands. A Boss's end is
+    /// an Elite Dungeon's, which lays its encounters (`encounters.rs`). Gated by its tier alone until its maker says
+    /// what place it is. None where its floor cannot be made.
     pub(crate) fn laid_dungeon(
         name: &str,
         dungeon: &Dungeon,
@@ -134,11 +138,14 @@ impl Room {
         run: Option<Run>,
     ) -> Option<Self> {
         let floor = Floor::of_dungeon(dungeon)?;
+        // An Elite Dungeon, whose end is its Boss, lays its encounters: an Ascent's pads are the blocks a body climbs.
+        let plan = (end.1 == Rank::Boss).then(|| crate::encounter_plan::plan_encounters(dungeon));
+        let pads = plan.as_ref().map(crate::encounter_plan::EncounterPlan::pads).unwrap_or_default();
         let (width, depth) = (dungeon.columns as f64 * CELL_M, dungeon.rows as f64 * CELL_M);
         let ([x, y], [toward_x, toward_y]) = dungeon.arrival();
         let ring = vec![[0.0, 0.0], [width, 0.0], [width, depth], [0.0, depth]];
-        // Its jambs and pillars are its ground's own walls, not blocks a body could climb.
-        let mut room = Self::node(floor, Vec::new(), Section { ring, spawns: vec![[x, y]], falls_kill: false });
+        // Its jambs and pillars are its ground's own walls, not blocks a body could climb; its pads are blocks.
+        let mut room = Self::node(floor, pads, Section { ring, spawns: vec![[x, y]], falls_kill: false });
         room.facing = bearing([x, y], [x + toward_x, y + toward_y]);
         // Shut by its seas alone, as a node with no patrol is; a patrol's own dungeon is gated as its patrol.
         room.place = Some(gear::gate::Place::Node);
@@ -146,6 +153,14 @@ impl Room {
         room.foes_most = NODE_FOES_MOST;
         room.run = run;
         room.stand_dungeon_garrison(dungeon, levels, end);
+        if let Some(plan) = plan {
+            room.lay_encounters(plan, levels);
+            let end = dungeon.rooms.get(dungeon.end()).map(|end| end.cells.clone()).unwrap_or_default();
+            if let Some(encounters) = room.encounters.as_mut() {
+                encounters.court_cells = end;
+                encounters.reckoning_cells = crate::encounters::court::reckoning_reach(dungeon);
+            }
+        }
         Some(room)
     }
 
@@ -251,9 +266,9 @@ impl Room {
     /// A dungeon's clear for a player as its cache opens, at the Reeve's level, as the owner chose for a dungeon's
     /// completion: its XP and Aurem, an item as itself coloured as its Miniboss's, and now and then a Vestige.
     fn pay_cache(&mut self, player: PlayerId, cache: &Cache, level: u8) {
-        let (dice, difficulty) = (self.dice(player), self.difficulty);
+        let (dice, difficulty, source) = (self.dice(player), self.difficulty, self.source);
         let Some(found) = self.players.get_mut(&player) else { return };
-        let vestiges = found.character.reward_clear(gear::rewards::Clear::Dungeon, level, difficulty, &dice);
+        let vestiges = found.character.reward_clear(gear::rewards::Clear::Dungeon, level, difficulty, source, &dice);
         found.gear_changed = true;
         // Thrown out of the cache onto the floor before it, which `cache_by` keeps clear, as a kill throws its drops.
         for vestige in vestiges {

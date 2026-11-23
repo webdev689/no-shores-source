@@ -29,6 +29,17 @@ export const EVENT = {
   publicFailed: 23,
   storePlundered: 24,
   chestOpened: 25,
+  /** An Elite Dungeon's moments, each told to every player (crates/room/src/encounters.rs). */
+  sealBroken: 26,
+  runeWrong: 27,
+  wardRaised: 28,
+  wardBroken: 29,
+  reckoningLanded: 30,
+  bossWoke: 31,
+  relicDrained: 32,
+  /** An Ascent's drowned floor harmed the player, told to them alone; the warded Boss's slam landed. */
+  drowned: 33,
+  bossSlammed: 34,
 } as const;
 export const HOW = { riposte: 2, counter: 3, shot: 6, spell: 7, leap: 8, burst: 9, bite: 10 } as const;
 

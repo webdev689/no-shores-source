@@ -39,6 +39,7 @@ const GLYPHS: Record<MarkKind, string> = {
   dungeon: '▼',
   boss: '☠',
   port: '⚓︎',
+  playlist: '☰',
   hostile: '',
   quest: '!',
 };
@@ -53,6 +54,7 @@ const KIND_COLOURS: Record<MarkKind | 'locked', string> = {
   dungeon: '#c193e6',
   boss: '#ee7c6e',
   port: '#e8e4d6',
+  playlist: '#e0a458',
   // A hostile ship's mark wears its rank's colour, so its kind's own colour is the ink's.
   hostile: TONES.ink,
   // The houses' roads' mark, in the brass of the tracker that names its goal.

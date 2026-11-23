@@ -127,8 +127,9 @@ function weekLines(dungeon: WeekDungeon): Mark[][] {
           },
           { drawn: [icon('wipe')], words: 'A wipe starts the run over.', boxed: true },
         ];
+  const queued: Mark = { drawn: [words('Playlist', 1, INK.faint)], words: dungeon.queued, boxed: true };
   return [
-    [level, ...standingMarks(dungeon)],
+    [level, ...standingMarks(dungeon), queued],
     [...abyss, ...dungeon.modifiers.map(modifierMark), ...dungeon.rewards.map(rewardMark)],
   ];
 }
@@ -136,7 +137,7 @@ function weekLines(dungeon: WeekDungeon): Mark[][] {
 /** The words a week's dungeon stands for, in full. */
 const weekWords = (dungeon: WeekDungeon): string =>
   [dungeon.about, dungeon.state, ...dungeon.rules, ...dungeon.modifiers.map((one) => `${one.name}: ${one.words}`)]
-    .concat(dungeon.pays)
+    .concat(dungeon.pays, dungeon.queued)
     .filter(Boolean)
     .join(' ');
 

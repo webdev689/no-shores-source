@@ -23,6 +23,8 @@ mod deck_fight;
 mod drops;
 pub mod dungeon_ground;
 mod dungeon_room;
+pub mod encounter_plan;
+pub mod encounters;
 mod entrances;
 pub mod fleet;
 mod floor;
@@ -30,6 +32,7 @@ pub mod flotsam;
 mod foes;
 pub mod friendlies;
 mod garrison;
+mod happening;
 pub mod harbour;
 pub mod hostiles;
 pub mod island;
@@ -195,6 +198,9 @@ pub struct Room {
     pub(crate) landing_struck: BTreeSet<FighterId>,
     /// The island it stands on, by its continent's id, for the feats it counts (`bounties.rs`); none at sea.
     pub(crate) island: Option<&'static str>,
+    /// The content its drops come from, which their looks follow: a dungeon's, an Elite or Abyss Dungeon's or a sea
+    /// dungeon's, else the world's (`gear::Source`).
+    pub(crate) source: gear::Source,
     pub(crate) ashore: companions::Ashore,
     pub(crate) isle: Option<island::Isle>,
     /// A mission's, a dungeon's or a world boss's garrison's clear (`clears.rs`).
@@ -214,6 +220,8 @@ pub struct Room {
     pub(crate) inert_ways: BTreeMap<FighterId, navmesh::Way>,
     /// Its node and places, and the groups the houses' roads stood here (`quests.rs`).
     pub(crate) quests: quests::QuestGround,
+    /// An Elite Dungeon's seals and Court (`encounters.rs`); none in any other room.
+    pub(crate) encounters: Option<Box<encounters::Encounters>>,
 }
 
 impl Room {
@@ -274,6 +282,7 @@ impl Room {
             gathered: std::collections::BTreeMap::new(),
             entrances: Vec::new(),
             place: None,
+            source: gear::Source::World,
             run: None,
             landing_struck: BTreeSet::new(),
             island: None,
@@ -289,6 +298,7 @@ impl Room {
             inert_ways: BTreeMap::new(),
             names: BTreeMap::new(),
             quests: quests::QuestGround::default(),
+            encounters: None,
         }
     }
 
@@ -409,6 +419,7 @@ impl Room {
         self.fall_with_callers();
         self.raise_the_dead();
         self.keep_garrison();
+        self.keep_encounters();
         self.keep_public();
         self.keep_cache();
         self.keep_quests();
@@ -507,54 +518,6 @@ impl Room {
             }
         }
         self.past = past;
-    }
-
-    /// What a fighter's tick set off, among `view`, everyone as it saw them: a blow landing on whoever it reaches, a
-    /// shot leaving, a feint, a drink's heal.
-    pub(crate) fn happened(
-        &mut self,
-        id: FighterId,
-        fighter: &Fighter,
-        happening: Option<Happening>,
-        view: &[(FighterId, Fighter)],
-    ) {
-        self.struck(id, happening.as_ref());
-        match happening {
-            Some(Happening::Swung(attack)) => self.swings.push((id, attack)),
-            Some(Happening::Struck(attack)) => {
-                self.sweep = struck(id, fighter, &attack, view, &self.blocks, &self.floor);
-                for defender in self.sweep.clone() {
-                    let blow = self.empower(swing_blow(id, fighter, &attack, defender), defender);
-                    let how = how_of_swing(&attack, defender);
-                    if self.players.contains_key(&defender) {
-                        let check = Check::Swing { striker: Box::new(*fighter), attack };
-                        self.pending.push(Pending { blow, how, defender, tick: self.clock, check });
-                    } else if let Some(then) = self.as_seen(defender, view) {
-                        let loadout = self.striking(id);
-                        self.judge_now(&blow, how, defender, &then, Some(loadout));
-                    }
-                }
-                self.sweep.clear();
-            }
-            Some(Happening::Loosed(shot)) => {
-                let shot = Shot { owner: id, ..shot };
-                self.loosed.push(id);
-                self.spent_shot(id);
-                // A player's ball reaches its mark at once: judged among the foes as the player's screen showed them.
-                if self.players.contains_key(&id) && combat::shots::shot_numbers(shot.ranged).0 <= 0.0 {
-                    let stop = self.shoot_seen(&shot, view);
-                    self.lines.push(combat::shots::stopped_line(&shot, stop));
-                } else {
-                    let loosed = self
-                        .held(id, gear::Slot::Ranged)
-                        .map(|held| power::Loosed { aimed: power::aimed(&shot), ..held });
-                    self.shots.push((shot, loosed));
-                }
-            }
-            Some(Happening::Feinted(_)) => self.tell(EventKind::Feinted, None, id, id, 0.0),
-            Some(Happening::Drank(healed)) => self.tell(EventKind::Healed, None, id, id, healed),
-            _ => {}
-        }
     }
 }
 

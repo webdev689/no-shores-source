@@ -21,6 +21,7 @@ import {
   wearAsks,
 } from '../player/gear.ts';
 import { gearKindName, gearName, moduleNode, modulePresses } from './shipGear.ts';
+import { earnedFrom } from '../player/sourceLooks.ts';
 
 /** The menu's tabs, in the order the header shows them. */
 export const TABS = ['character', 'inventory', 'journal', 'compendium', 'ship', 'social', 'guild', 'settings'] as const;
@@ -155,8 +156,10 @@ export function itemDetailOf(item: GearItem, state: GearState, atVault = false):
   if (item.defense) numbers.push(['Defense', String(item.defense)]);
   if (item.prestige) numbers.push(['Prestige', String(item.prestige)]);
   numbers.push(['Level', String(item.level)]);
-  // A module is fitted in its slot and infused, and its nodes are priced in the ship's materials.
+  // A module is fitted in its slot and infused, and its nodes are priced in the ship's materials; it keeps no look of
+  // a content, as anything else does of where it was earned.
   const module = isModule(item.kind);
+  if (!module) numbers.push(['From', capital(earnedFrom(item))]);
   const nodeAt = module ? moduleNode : nodeShown;
   return {
     name: gearName(item),

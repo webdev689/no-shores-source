@@ -69,25 +69,32 @@ export function dungeonRoom(patrol: { readonly id: string }, difficulty: Difficu
 const OLD_NAMES: Readonly<Record<string, Difficulty>> = { rough: 'elite', storm: 'abyss' };
 
 /** The node and difficulty a node's room is for (`node-<id>`, `node-<id>--elite`), the patrol's dungeon it is
- *  (`--dungeon-<number>` after those, never a node's own name), and its run's instance (`--run-<instance>` last);
- *  null for any other room. */
+ *  (`--dungeon-<number>` after those, never a node's own name), a playlist's run's foes' level (`--playlist-<level>`),
+ *  and its run's instance (`--run-<instance>` last); null for any other room. */
 export function nodeOfRoom(room: string): {
   readonly id: string;
   readonly seas: Difficulty;
   readonly dungeon: number | null;
   readonly run: string | null;
+  readonly playlist: number | null;
 } | null {
   const found =
-    /^node-([a-z0-9-]+?)(?:--(elite|abyss|rough|storm))?(?:--dungeon-([0-2]))?(?:--run-([a-z0-9]{8}))?$/.exec(room);
+    /^node-([a-z0-9-]+?)(?:--(elite|abyss|rough|storm))?(?:--dungeon-([0-2]))?(?:--playlist-([1-9][0-9]?)|--(sea))?(?:--run-([a-z0-9]{8}))?$/.exec(
+      room,
+    );
   if (!found?.[1]) return null;
   const named = found[2];
   const dungeon = found[3] === undefined ? null : Number(found[3]);
   const seas = named === undefined ? 'normal' : (OLD_NAMES[named] ?? (named as Difficulty));
-  return { id: found[1], seas, dungeon, run: found[4] ?? null };
+  const playlist = found[4] === undefined ? null : Number(found[4]);
+  // A run started from the Playlist is an Elite Dungeon's alone, at Elite or Abyss, as the rooms read it.
+  const marked = playlist !== null || found[5] !== undefined;
+  if (marked && (dungeon !== null || found[6] === undefined || seas === 'normal')) return null;
+  return { id: found[1], seas, dungeon, run: found[6] ?? null, playlist };
 }
 
-// A run's instance is drawn as the server's Find a Company draws one, by one rule.
-export { runInstance } from '../../../server/roomNames.ts';
+// A run's instance is drawn as the server's Find a Company draws one, and a run started at sea read, by one rule.
+export { runInstance, startedAtSea } from '../../../server/roomNames.ts';
 
 /** A run's room: the dungeon's room's name, then its instance. */
 export function runOf(base: string, instance: string): string {
