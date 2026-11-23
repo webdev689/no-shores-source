@@ -424,6 +424,17 @@ fn a_patrol_zone_s_foes_leave_a_player_be_in_its_landing_until_they_strike_from_
     again.players.get_mut(&fallen).unwrap().graced = again.clock() + crate::players::GRACE;
     run(&mut again, crate::players::GRACE + 1);
     assert!(again.left_be(fallen), "stood again at the landing, left be once their grace ends");
+    // A spell cast from the landing is a strike from it, as a blow is.
+    let mut caster_room = node(NodeKind::Patrol, "downs");
+    let caster = caster_room.join().unwrap();
+    stand_player(&mut caster_room, caster, [0.0, 180.0]);
+    caster_room.players.get_mut(&caster).unwrap().character.arts.earned = None;
+    crate::arts::arts_tests::wearing(&mut caster_room, caster, 1, &[]);
+    run(&mut caster_room, 1);
+    assert!(caster_room.left_be(caster), "where they land, their Art worn");
+    crate::arts::arts_tests::cast(&mut caster_room, caster, 2, None, 1);
+    assert!(caster_room.player(caster).unwrap().casting.tenets[0] < 0.01, "the Tenet cast");
+    assert!(!caster_room.left_be(caster), "cast from the landing");
     let mut mission = node(NodeKind::Mission, "keep");
     let player = mission.join().unwrap();
     stand_player(&mut mission, player, [0.0, 180.0]);
