@@ -6,7 +6,7 @@
 // laid under the flames over the finished picture, where it reads the scene's depth back into the point drawn at each
 // pixel and lights it by how near it stands to the fire, so only what stands round a fire is lit, never the sky.
 import { FIRE_TEXELS_PER_METRE } from './flameParts.ts';
-import { NEAR_FADE_WGSL } from './nearFade.ts';
+import { NEAR_FADE_WGSL } from '../nearFade.ts';
 
 /** Each part's kind. */
 /** How much of its colour a fire of strength 1 adds at its middle; it falls off as the square of the way out. */

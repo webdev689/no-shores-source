@@ -4,7 +4,7 @@
 // (alpha none). They are drawn after the water, far to near, over the finished picture, hidden by hand where the
 // scene's depth stands nearer, so the water's sky and surface never cover them. Each glow also gives its stepped halo
 // through the light layer, as the land's bright things do.
-import { NEAR_FADE_WGSL } from '../cinema/nearFade.ts';
+import { NEAR_FADE_WGSL } from '../nearFade.ts';
 import { BUFFER_USAGE, type Gpu, SHADER_STAGE } from '../gpu.ts';
 import type { Mark } from './effects.ts';
 import type { ShipCamera } from './shipView.ts';

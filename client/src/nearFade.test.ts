@@ -1,8 +1,8 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { FLAMES_WGSL } from './flamesShader.ts';
+import { FLAMES_WGSL } from './cinema/flamesShader.ts';
 import { NEAR_FADE_M, NEAR_FADE_WGSL, nearFade } from './nearFade.ts';
-import { PUFF_WGSL } from '../ships/puffView.ts';
+import { PUFF_WGSL } from './ships/puffView.ts';
 
 test('a billboard fades softly to nothing as its near side comes within a couple of metres of the eye', () => {
   assert.equal(nearFade(NEAR_FADE_M[1]), 1, 'whole at its far edge');
