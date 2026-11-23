@@ -492,7 +492,7 @@ is a horse's hide, kept as its horse ("Horses").
   Chestnut Horse and so on, its name its coat's place among the coats (`content/gear/rolled.json` names them in that
   order). It is Normal, of level 1, with no stats, nodes or perks; it is never upgraded, fed or dismantled. It is
   carried with the Mount slot's nine and kept in the vault among the armour. Nothing buys an item back, so a horse is
-  kept until stored. The Test Ground's player rides the Bay Horse; its grant hands out no other horse.
+  kept until stored. The Test Ground hands out no horse.
 - **Riding** needs a horse worn in the Mount slot (`Character::may_ride`).
 - **The Tack** sells horses as it sells bardings, at its coat's price; one bought goes to the pack, one of each coat,
   refused while the Mount slot carries nine. Beside its day's four it sells the Bay Horse every day, first on its
