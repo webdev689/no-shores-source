@@ -368,6 +368,24 @@ test('the player felled by Thule is never told they will rise: the boss fight en
   assert.ok(!calls.some((call) => call.includes('Fallen')), 'no death words over the fade');
 });
 
+test("Thule's coming is watched from its own eye: the figures are placed for it, not the player's", async () => {
+  const { story } = recorded(FOOT_VIEW);
+  const run = stillRun({ dead: false }, true);
+  const asked: { eye: readonly number[] }[] = [];
+  const played = run.frame.bind(run);
+  run.frame = (controls, elapsed, clock, ask) => {
+    if (ask.cutscene) asked.push(ask.cutscene);
+    return played(controls, elapsed, clock, ask);
+  };
+  const fight = new WreckFight(story, layout, scenery, Promise.resolve(run), {
+    show: () => undefined,
+  } as unknown as Nameplate);
+  await Promise.resolve();
+  for (let since = 0; since < 1; since += 0.05) fight.frame(tick(0.05));
+  assert.ok(asked.length > 0, 'the push in holds the camera');
+  assert.notDeepEqual(asked.at(-1)?.eye, [0, 0, 5], 'from its eye, pushed in toward him');
+});
+
 test('the crew celebrating the throw overboard stand clear of what stands on its deck', () => {
   const { story } = recorded();
   const course = courseOf(layout);

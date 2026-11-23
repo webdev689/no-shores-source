@@ -16,7 +16,6 @@ import type { GearState } from '../../network/gearMessages.ts';
 import { RoomThread } from '../../network/roomThread.ts';
 import type { CardAt, Cards } from '../../player/cards.ts';
 import { crosshairPoint, shotBodies } from '../../player/crosshair.ts';
-import { CARD_NEAREST_M } from '../../player/figures.ts';
 import { handsZoom } from '../../player/playerCamera.ts';
 import type { Dress } from '../../player/dressing.ts';
 import { IDLE, type InputFrame } from '../../player/input.ts';
@@ -28,6 +27,7 @@ import type { Block, MovementRules } from '../../rules/movementRules.ts';
 import { rosterOf } from '../../rules/roster.ts';
 import { type Shot, shotOfOrbit } from '../camera.ts';
 import type { FootFight, FootFrame } from '../foot.ts';
+import { figuresEye } from '../footFigures.ts';
 import { footHints, onFoot } from '../hints.ts';
 import { worldOutput } from '../uiSounds.ts';
 import type { GearHere } from '../gearScreen.ts';
@@ -459,9 +459,9 @@ export class WreckRun {
     const sights = shown.aiming || (shown.rangedDrawn && firstPerson);
     const kicked = pushedIn(feel.camera(aimed(), fight.player, fight.own, firstPerson, sights), effects.anima.push);
     const shot = shotOfOrbit(kicked, LENS, groundAt, CAMERA_CLEARANCE_M);
-    const [eyeX, eyeY] = shot.eye;
-    // Through the player's own eyes no other figure stands so near that it fills the view.
-    const nearest = firstPerson ? CARD_NEAREST_M : 0;
+    // Every figure is placed for the eye the picture is drawn from: a cutscene's while one holds the camera.
+    const eye = figuresEye(cutscene?.eye, shot.eye, firstPerson);
+    const { x: eyeX, y: eyeY, nearest } = eye;
     const frameTicks = seconds / movement.tickSeconds;
     const shift = (id: number, view: FighterView | null): Vector => feel.shift(id, view, shot.yaw);
     const right = [Math.cos(shot.yaw), Math.sin(shot.yaw)] as const;
@@ -470,7 +470,7 @@ export class WreckRun {
     const figures: CardAt[] = [];
     const body = shownBody(walker.player);
     const ownShift = shift(fight.player, fight.own);
-    const own = walker.figure(eyeX, eyeY, effects.flashes.flashOf(fight.player), ownShift);
+    const own = walker.figure(eyeX, eyeY, effects.flashes.flashOf(fight.player), ownShift, eye.held);
     const statuses = fight.own?.statuses;
     const [charged, exposed] = [(statuses?.charge ?? 0) > 0, (statuses?.expose ?? 0) > 0];
     if (own) {
