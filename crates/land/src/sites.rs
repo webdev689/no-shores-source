@@ -1,7 +1,7 @@
 //! The places a player reaches on a landmass: its port city, and its nodes, each one section of the land a player
 //! lands in (a social space, a patrol area, a mission, a dungeon, a world boss or an outpost site). Everything else on
-//! the island is seen and never reached. Kept in the landmass's edits file with its other places, each with an id that never
-//! changes, so rooms, saves and quests can name it.
+//! the island is seen and never reached. Kept in the landmass's edits file with its other places, each with an id that
+//! never changes, so rooms, saves and quests can name it.
 
 use crate::places::distance_to_ring;
 use serde::{Deserialize, Serialize};

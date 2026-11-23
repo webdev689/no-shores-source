@@ -116,7 +116,7 @@ pub fn basin(
             platform(area, seating, paths, (half, CAMP_SHARE), draw)
         }
         AreaKind::Plot => {
-            let half = crate::areas::PLOT_HALF_M * std::f64::consts::SQRT_2 + PLATFORM_ROOM_M;
+            let half = crate::areas::PLOT_CORNER_M + PLATFORM_ROOM_M;
             platform(area, seating, paths, (half, CAMP_SHARE), draw)
         }
         _ => Vec::new(),

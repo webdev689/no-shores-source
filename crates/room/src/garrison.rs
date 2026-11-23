@@ -142,8 +142,7 @@ fn bands(draws: &mut Mulberry32, from: &[(u8, Rank)]) -> Vec<Group> {
 
 /// A node's groups by its kind, as its seed draws them: a patrol area's bands of Minors and Majors; a mission's, with
 /// an Elite Enforcer and an Elite Reeve; a dungeon's bands of Majors and Elites, and a Reeve as a Miniboss alone at the
-/// farthest post; a world boss's High Assessor Corvane with four Majors about him there. A social space
-/// or an outpost site holds none.
+/// farthest post; a world boss's High Assessor Corvane with four Majors about him. Social spaces, outposts hold none.
 fn groups(kind: NodeKind, draws: &mut Mulberry32) -> Vec<Group> {
     let alone = |members: Vec<(u8, Rank)>| Group { members, leads: true, farthest: true };
     match kind {

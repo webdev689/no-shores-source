@@ -186,11 +186,9 @@ pub fn plan(
     // A way ending at an area's middle stops at what stands there: its set piece, tower or hull; or at a plot's rim,
     // past its square's corners.
     for (area, _) in areas.iter().zip(&hubs).filter(|&(area, &hub)| distance(hub, area.at) < 1e-6) {
-        let rim = if area.kind == AreaKind::Plot {
-            areas::PLOT_HALF_M * std::f64::consts::SQRT_2 + 1.0
-        } else {
-            clearing::rim_of(&seating, area.at)
-        };
+        // A plot's rim stays inside its platform's edge, so a way crossing that edge is ramped up to it.
+        let rim =
+            if area.kind == AreaKind::Plot { areas::PLOT_CORNER_M + 1.0 } else { clearing::rim_of(&seating, area.at) };
         clearing::end_at_rim(&mut paths, area.at, rim);
     }
     clearing::round_rooms(&mut paths, &seating);

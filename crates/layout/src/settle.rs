@@ -173,11 +173,14 @@ pub fn settle(landmass: &mut Landmass, book: &Book, briefs: &Briefs) -> Vec<Layo
         let mut kit = crate::pieces::Kit { ground: &landmass.surface, book, seed, draws: 0, into: &mut layout.seating };
         crate::skyline::rim(&mut kit, &layout.ring, (&ways, &layout.sculpt.outcrops), &carved_already);
     }
-    // A plot's platform swells a little with the land's own level under it, so its square (and a little past it, its
-    // corner stones with it) is padded level at the carved ground's height at its middle.
+    // A plot's platform swells with the land's own level under it by up to some tens of centimetres, so where it
+    // stands its square (and a little past it, its corner stones with it) is padded level at its middle's height.
     for layout in &mut layouts {
         let reach = crate::areas::PLOT_HALF_M + 2.0;
-        let plots = layout.areas.iter().filter(|area| area.kind == crate::brief::AreaKind::Plot);
+        let terraced = |at: [f64; 2]| {
+            layout.basins.iter().flat_map(|basin| &basin.terraces).any(|terrace| [terrace[0], terrace[1]] == at)
+        };
+        let plots = layout.areas.iter().filter(|area| area.kind == crate::brief::AreaKind::Plot && terraced(area.at));
         let pads: Vec<Pad> = plots
             .map(|plot| {
                 let [x, y] = plot.at;
