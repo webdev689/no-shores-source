@@ -55,7 +55,8 @@ export class Epilogue {
   }
 
   /** A frame on foot: the stranger's card for the eye, her words over her head; nothing once she has gone.
-   *  `veiled` while the arrival's veil is still up: she waits behind it. */
+   *  `veiled` while the arrival's veil is still up: she waits behind it; `held` while a menu is open over the view: her
+   *  words wait for it to shut. */
   frame(
     shot: Shot,
     viewport: { readonly width: number; readonly height: number },
@@ -63,6 +64,7 @@ export class Epilogue {
     clock: number,
     you: { readonly x: number; readonly y: number; readonly z: number; readonly facing: number },
     veiled: boolean,
+    held = false,
   ): CardAt[] {
     if (this.done || veiled) return [];
     this.lifted += seconds;
@@ -70,7 +72,7 @@ export class Epilogue {
     const head = headOnView(onScreen(shot, viewport, [standing.x, standing.y, standing.z + HEAD_M]), viewport);
     // Her words begin once the veil and the story's black are wholly gone and she is in the player's sight, so every
     // line is heard. Words that cannot be played still let her go.
-    if (this.phase === 'waiting' && this.lifted >= HUD_VEIL_S && this.stage.screenOpen && head) {
+    if (this.phase === 'waiting' && this.lifted >= HUD_VEIL_S && this.stage.screenOpen && head && !held) {
       this.phase = 'speaking';
       const walkOff = () => {
         if (this.phase === 'speaking') this.phase = 'going';

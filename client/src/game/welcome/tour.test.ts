@@ -3,12 +3,16 @@ import { test } from 'node:test';
 import type { Shot } from '../camera.ts';
 import type { StationInfo } from '../nodes.ts';
 import welcome from '../../../../content/story/welcome.json' with { type: 'json' };
-import { STATIONS } from './plazaForTests.ts';
+import { HALL_STATIONS, STATIONS } from './plazaForTests.ts';
 import { counterShot, facesShot, hallShot } from './framing.ts';
 import { FLY_S, TOUR, StrangerWelcome, type TourStep } from './tour.ts';
 
 /** The plaza's stations with the Postmaster's counter in the watch court, seaward of the middle. */
-const PLAZA: StationInfo[] = [...STATIONS, { kind: 'mail', keeper: [960, 2012], counter: [961.8, 2012] }];
+const PLAZA: StationInfo[] = [
+  ...STATIONS.filter((station) => !['stormcallers', 'lamplighters', 'veiled'].includes(station.kind)),
+  { kind: 'mail', keeper: [960, 2012], counter: [961.8, 2012] },
+  ...HALL_STATIONS,
+];
 const GROUND = 30;
 const ground = () => GROUND;
 /** The player's own view, behind them on the plaza. */

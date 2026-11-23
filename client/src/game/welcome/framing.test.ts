@@ -5,7 +5,7 @@ import type { Block } from '../../rules/movementRules.ts';
 import { type Shot, frameOf, onScreen } from '../camera.ts';
 import type { StationInfo } from '../nodes.ts';
 import { HEAD_M, counterShot, facesShot, hallShot } from './framing.ts';
-import { STATIONS } from './plazaForTests.ts';
+import { HALL_STATIONS, STATIONS } from './plazaForTests.ts';
 
 const VIEW = { width: 1600, height: 900 };
 const GROUND = 30;
@@ -22,14 +22,6 @@ const box = (x: number, y: number, halfX: number, halfY: number, high: number, f
   top: GROUND + from + high,
 });
 
-/** The Hall of the Arts as the city lays it (crates/city/src/hub/hall.rs), its door at y 1900 facing the plaza (+y):
- *  68 m wide, 60 deep, 14 high; two rows of columns 16 m either side of its middle; the Stormcallers' chapel on its
- *  west wall and the Veiled's on its east, facing across its middle, the Lamplighters' at its back. */
-const HALL_STATIONS: StationInfo[] = [
-  { kind: 'stormcallers', keeper: [966.5, 1870], counter: [968.3, 1870] },
-  { kind: 'veiled', keeper: [1033.5, 1870], counter: [1031.7, 1870] },
-  { kind: 'lamplighters', keeper: [1000, 1840.5], counter: [1000, 1842.3] },
-];
 const HALL_BLOCKS: Block[] = [
   ...[1886, 1870, 1854].flatMap((y) => [box(984, y, 1.4, 1.4, 14), box(1016, y, 1.4, 1.4, 14)]),
   box(965, 1870, 1, 31, 16),
@@ -133,4 +125,10 @@ test("each place stands in the view's upper part, clear of the dialogue box over
     const spot = shot && onScreen(shot, VIEW, point);
     assert.ok(spot && spot[1] < VIEW.height * 0.42, `${name}'s keeper above the box: ${spot?.[1]}`);
   }
+});
+
+test('a place no eye sees clearly gives no shot, so the view stays where it is', () => {
+  const walled = { stations: PLAZA, groundAt: ground, blocks: [box(1000, 2000, 400, 400, 60)] };
+  assert.equal(counterShot(walled, ['tack'], OWN), null);
+  assert.equal(hallShot(walled, ['stormcallers'], OWN), null);
 });

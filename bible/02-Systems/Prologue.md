@@ -164,7 +164,9 @@ view where it is, her words said all the same. From her first word to her farewe
 look, no use, map, menu, chat, character page or respawn) and the view is hers; Space (or the pad's jump or confirm)
 moves her words on a line. As she walks off the view eases back over the player's shoulder, and the keys are theirs
 once it is. It is a cutscene: the HUD's
-bars, compass, tracker, marks and key strip are hidden from her first word to her last, the dialogue box hers. As she bids
+bars, compass, tracker, marks and key strip are hidden while the keys are held, until the view is the player's again,
+the dialogue box hers. Her words wait while a menu is open over the view. A place no candidate eye sees clearly gives
+no shot: the view stays where it was. As she bids
 farewell she gives the player 400 Aurem, the opening quest's first task heard ([[Quests]]); the room gives it once a
 character, so a second hearing, a rejoin or a second tab gives none. Leaving the place mid-welcome ends it at once, the
 view and the keys the player's again, and gives nothing then: a character still owed her gift is given it on its next

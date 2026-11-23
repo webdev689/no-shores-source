@@ -191,3 +191,11 @@ test('a parapet before the player puts her at their side, on their own floor and
   assert.equal(stranger.z, 1, "on the player's own floor, not down past the wall");
   assert.ok(stranger.y > -1.5, 'on their side of it');
 });
+
+test('she waits to speak while a menu is open over the view, and speaks once it is shut', () => {
+  const { epilogue, said } = epilogueOn();
+  for (let frames = 0; frames < 90; frames++) epilogue.frame(BEHIND, VIEW, STEP_S, 0, YOU, false, true);
+  assert.equal(said.length, 0, 'not under the menu');
+  epilogue.frame(BEHIND, VIEW, STEP_S, 0, YOU, false);
+  assert.equal(said.length, 1);
+});

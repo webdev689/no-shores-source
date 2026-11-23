@@ -80,9 +80,9 @@ const looking = (own: Shot, eye: Point3, target: Point3, fov = own.fov): Shot =>
   return { ...own, fov, eye, yaw, pitch: pitch + fov * RAISE };
 };
 
-/** The first shot that sees every point, else the first tried. */
+/** The first shot that sees every point; none where no shot does, so the view stays where it is. */
 const firstSeeing = (shots: readonly Shot[], points: readonly Point3[], blocks: readonly Block[]): Shot | null =>
-  shots.find((shot) => sees(shot, points, blocks)) ?? shots[0] ?? null;
+  shots.find((shot) => sees(shot, points, blocks)) ?? null;
 
 /** The counter of `kind` nearest a point. */
 function nearest(stations: readonly StationInfo[], kind: string | undefined, [x, y]: readonly number[]) {

@@ -261,6 +261,7 @@ export function startFrames(parts: FrameParts, playing: Playing): void {
       node: here.node,
       floor: here.floor,
       blocks: here.boxes,
+      held: paused,
       gear: here.gear?.gear ?? null,
       ask: (asked) => here.gear?.ask(asked),
     });

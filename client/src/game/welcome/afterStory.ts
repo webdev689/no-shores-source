@@ -22,6 +22,8 @@ export interface Arrival {
   readonly blocks: readonly Block[];
   readonly gear: GearState | null;
   readonly ask: (asked: GearAsk) => void;
+  /** Whether a menu or a keeper's screen is open over the view. */
+  readonly held?: boolean;
 }
 
 /** Whether a word of the room on the player's own character (`claimed`) shows the stranger's task waiting. */
@@ -75,7 +77,7 @@ export class AfterStory {
       epilogue.clear = lineClear(here.blocks);
       this.welcome = welcome;
     }
-    return epilogue.frame(shot, viewport, seconds, clock, you, veiled);
+    return epilogue.frame(shot, viewport, seconds, clock, you, veiled, here.held);
   }
 
   /** Her gift, asked of the room once in a page: after her farewell, or owed with no welcome to hear in a social space
