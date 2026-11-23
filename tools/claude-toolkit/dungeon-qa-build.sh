@@ -1,11 +1,11 @@
 #!/bin/bash
-# Builds a scratch room.wasm for picturing dungeons headless (dungeon-plan.ts writes the plan): never committed, it
-# adds `room_qa_entrance(n)`, so a land room's next join stands before entrance n, `room_qa_move(x, y)`, which
-# stands every player of the open room there, `room_qa_freeze(on)`, which holds the encounters' clock while the room
-# ticks on (a moment held for a picture), and `room_qa_encounter(what, a, b)`, which sets an Elite Dungeon's encounters to a moment
-# (`qa_encounter` below says each `what`). QA_NOFOES=1 also leaves a dungeon's garrison out but its Boss, and stands no
-# encounter's waves, which otherwise kill a headless player first. It builds from HEAD in a worktree under <out dir>,
-# which it removes again.
+# Builds a scratch room.wasm for picturing dungeons headless (dungeon-plan.ts and encounter-plan.ts write the plans):
+# never committed, it adds `room_qa_entrance(n)`, so a land room's next join stands before entrance n,
+# `room_qa_move(x, y)`, which stands every player of the open room there, `room_qa_freeze(on)`, which holds the
+# encounters' clock while the room ticks on (a moment held for a picture), and `room_qa_encounter(what, a, b)`, which
+# sets an Elite Dungeon's encounters to a moment (`QA_ENCOUNTER` below says each `what`). QA_NOFOES=1 also leaves a
+# dungeon's garrison out but its Boss, and stands no encounter's foes (waves, a wrong rune's, a ward's), which
+# otherwise kill a headless player first. It builds from HEAD in a worktree under <out dir>, which it removes again.
 #
 #     QA_NOFOES=1 bash tools/claude-toolkit/dungeon-qa-build.sh <out dir>
 set -euo pipefail
@@ -159,8 +159,8 @@ if os.environ.get('QA_NOFOES') == '1':
          '        let gone: Vec<_> = room.garrison.iter().skip(1).flat_map(|post| post.standing.clone()).collect();\n'
          '        room.send_away(&gone);\n'
          '        room.garrison.truncate(1);')
-    edit('crates/room/src/encounters.rs', '        let count = living.clamp(WAVE_FOES.0, WAVE_FOES.1);\n        self.stand_foes(encounters, seal, spots, count)',
-         '        let _ = (encounters, seal, spots, living);\n        0')
+    edit('crates/room/src/encounters.rs', '        count: usize,\n    ) -> usize {\n',
+         '        count: usize,\n    ) -> usize {\n        if count < usize::MAX {\n            let _ = (encounters, seal, spots);\n            return 0;\n        }\n')
 PY
 CARGO_TARGET_DIR="$out/target" cargo build -q -p room-wasm --target wasm32-unknown-unknown --release
 cp "$out/target/wasm32-unknown-unknown/release/room_wasm.wasm" "$out/room-qa.wasm"

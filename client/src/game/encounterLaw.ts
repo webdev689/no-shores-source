@@ -48,6 +48,8 @@ const WARD_M = 1.3;
  *  off the stone both stand (m), and how fast the brightening runs from the first pad to the last (radians a second,
  *  and between pads). */
 const PAD_EDGE = { band: 0.12, face: 0.6, off: 0.02, speed: 2.5, step: 1.1 } as const;
+/** How opaque a held plate's filled disc is inside its ring. */
+const HELD_FILL = 0.3;
 /** An anchor at rest, before or between wards: dim, so it is learnt, not called for. */
 const ANCHOR_RESTING = 0.3;
 /** The dome of light over the warded Boss: its reach round it and how many bands of light draw it. */
@@ -322,8 +324,10 @@ function sealMarks(
     });
   if (seal.kind === SEAL_KIND.weighing)
     plan.pieces.slice(0, seal.marks.length).forEach((plate, index) => {
+      // Under a beam either way, so every plate in play is found from across the room; held, gold and filled.
       const held = seal.marks[index] === 1;
-      ringAt(out, plate, reach.plate, held ? LIT : AT_REST, held ? 1 : 0.5 + 0.2 * beat, !held);
+      ringAt(out, plate, reach.plate, held ? LIT : AT_REST, held ? 1 : 0.5 + 0.2 * beat, true);
+      if (held) markRing(out, plate, 0, reach.plate - BAND_M, [...LIT, HELD_FILL]);
     });
   const [first] = plan.pieces;
   if (seal.kind === SEAL_KIND.ascent && first) {

@@ -383,3 +383,35 @@ test("the slam's inner ring fills over its two seconds: half its reach with one 
   assert.ok(Math.abs(fill(60) - 2) < 1e-9, `half of 4 m: ${fill(60)}`);
   assert.ok(Math.abs(fill(1) - 4 * (1 - 1 / 120)) < 1e-9, 'all but a tick of it at the last');
 });
+
+test("a Weighing's plates in play stand under beams, held or not, and a held one is filled gold", () => {
+  const plates = (marks: number[]) =>
+    marksOf(
+      encounterMarks(
+        layout.encounters!,
+        seen({
+          seals: [
+            { ...seen().seals[0]!, state: 2 },
+            { ...seen().seals[1]!, state: 1, marks },
+          ],
+        }),
+        0,
+        () => null,
+      ),
+    ).filter((mark) => mark.colour !== '0.78,0.55,1');
+  const near = (marks: ReturnType<typeof plates>, x: number) =>
+    marks.filter((mark) => Math.abs((mark.at[0] ?? 0) - x) < 1.1);
+  for (const marks of [
+    [0, 0],
+    [1, 0],
+  ])
+    assert.ok(
+      near(plates(marks), 8).some((mark) => (mark.at[2] ?? 0) > 3),
+      'a beam',
+    );
+  const held = near(plates([1, 0]), 8).filter((mark) => mark.colour === '1,0.84,0.42');
+  assert.ok(
+    held.some((mark) => Math.hypot((mark.at[0] ?? 0) - 8, (mark.at[1] ?? 0) - 1.6) < 0.01 && mark.at[2]! < 0.1),
+    'filled to its middle',
+  );
+});

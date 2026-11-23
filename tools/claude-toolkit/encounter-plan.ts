@@ -134,22 +134,25 @@ function floorAcross(seal: Seal, from: Point): Point {
 
 plan.seals.forEach((seal, index) => {
   const kind = KINDS[seal.kind] ?? 'seal';
-  const middle = middleOf(seal.pieces.length > 1 ? seal.pieces : [...seal.pieces, ...seal.doors]);
+  // A Weighing's lone player has its first two plates in play: the picture looks between them.
+  const shown = seal.kind === WEIGHING ? seal.pieces.slice(0, 2) : seal.pieces;
+  const middle = middleOf(shown.length > 1 ? shown : [...shown, ...seal.doors]);
   const { door, outside } = entry(seal.room);
   // Waiting, from the corridor the company comes by, looking in through the doorway.
   stand(outside);
-  picture(outside, middle, 'third,4,20', `${kind}_waiting_outside`);
-  // Waiting, from inside: the room's clock held, so standing in the room does not start it.
+  picture(outside, toward(outside, door, 8), 'third,4,15', `${kind}_waiting_outside`);
+  // Waiting, from the doorway it is entered by, where a player first sees it: the room's clock held, so standing in
+  // its room does not start it. The camera stands behind, in the corridor.
   freeze(true);
-  const inside = seal.kind === ASCENT ? door : toward(door, middle, 2);
+  const inside = door;
   stand(inside);
-  picture(inside, middle, 'third,6,35', `${kind}_waiting_inside`);
+  picture(inside, middle, 'third,5,30', `${kind}_waiting_inside`);
   freeze(false);
   const first = seal.pieces[0] ?? middle;
   if (seal.kind === LITANY) {
     pause(400);
     freeze(true);
-    picture(inside, first, 'third,6,35', 'litany_show');
+    picture(inside, first, 'third,5,30', 'litany_show');
     freeze(false);
     // A step on the second rune before the first is lit is wrong: it flashes red for a second.
     const wrong = seal.pieces[1] ?? first;
@@ -161,7 +164,7 @@ plan.seals.forEach((seal, index) => {
   if (seal.kind === WEIGHING) {
     pause(800);
     freeze(true);
-    picture(inside, middle, 'third,6,35', 'weighing_running');
+    picture(inside, middle, 'third,5,30', 'weighing_running');
     freeze(false);
     const [plate, other] = [seal.pieces[0] ?? first, seal.pieces[1] ?? first];
     stand(plate);
@@ -191,7 +194,7 @@ plan.seals.forEach((seal, index) => {
       const top = [(stone[0] + stone[2]) / 2, (stone[1] + stone[3]) / 2];
       stand(top, stone[4] + 0.05, 200);
       freeze(true);
-      picture(top, door, 'third,7,20', 'ascent_on_stone');
+      picture(top, door, 'third,3,5', 'ascent_on_stone');
       // Off the stone before the clock runs again, so the seal stays for the Court's pictures.
       stand(door);
       freeze(false);
@@ -217,7 +220,7 @@ const anchors = middleOf(plan.anchors);
 const court = entry(layout.end);
 const courtInside = toward(court.door, anchors, 2);
 stand(courtInside);
-picture(courtInside, anchors, 'third,7,35', 'court_before_wake');
+picture(courtInside, anchors, 'third,9,40', 'court_before_wake');
 const [anchor0 = anchors, anchor1 = anchors, anchor2 = anchors] = plan.anchors;
 const byAnchor = toward(anchor2, anchors, -1.5);
 stand(byAnchor);
@@ -234,21 +237,23 @@ freeze(true);
 picture(byAnchor, anchors, 'third,7,35', 'court_ward');
 encounter(5, 0, 1);
 encounter(5, 1, 0.5);
-stand(anchor1);
-picture(anchor1, anchor0, 'third,6,40', 'court_anchors_filling');
+// Beside an anchor, not on it, so its beam does not stand in the camera's way.
+const beside = toward(anchor1, anchors, -1.6);
+stand(beside);
+picture(beside, anchors, 'third,8,40', 'court_anchors_filling');
 encounter(6, 0, 50);
-picture(anchor1, anchors, 'third,8,40', 'court_slam');
+picture(beside, anchors, 'third,10,50', 'court_slam');
 encounter(6, 0, 300);
 encounter(8, 0, 45 * 60);
-picture(anchor1, anchors, 'third,7,35', 'court_fury_warning');
+picture(beside, anchors, 'third,8,40', 'court_fury_warning');
 encounter(8, 0, -31 * 60);
-picture(anchor1, anchors, 'third,7,35', 'court_fury');
+picture(beside, anchors, 'third,8,40', 'court_fury');
 freeze(false);
 for (const nth of [0, 1, 2]) encounter(5, nth, 1);
 pause(300);
 encounter(7, 0, 420);
 freeze(true);
-picture(anchor1, anchor0, 'third,8,35', 'court_reckoning');
+picture(beside, anchor0, 'third,8,15', 'court_reckoning');
 const url = `http://localhost:${port}/?at=1&spawn=&run=node-${place}--run-qaqa0001&view=third,7`;
 const anyPort = port !== '5173';
 writeFileSync(
