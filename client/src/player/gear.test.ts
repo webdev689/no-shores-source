@@ -180,26 +180,24 @@ test("a weapon's look: a named piece's as written; a rolled one climbs with its 
     [metals(0, 1), metals(0, 10), metals(0, 11)],
     ['iron iron iron', 'iron iron iron', 'steel steel steel'],
   );
-  // A finer one is made in its content's metals: the world's climbing with its level, one more by its name where one
-  // is left; any other content's by its name alone, so each of its metals is seen at every level it drops.
+  // A finer one is made in its content's metals, climbing with its level, one more by its name where one is left.
   const from = (source: number, rarity: number, level: number) =>
     [0, 1, 2].map((name) => look({ rarity, level, name, source }).metal).join(' ');
   assert.deepEqual([from(0, 1, 1), from(0, 1, 20)], ['iron steel iron', 'steel steel steel'], 'the world');
-  assert.deepEqual([from(3, 2, 1), from(3, 2, 20)], ['orcish mithril orcish', 'orcish mithril orcish'], 'Elite');
-  assert.deepEqual(from(4, 2, 20), 'adamantium ebony adamantium', 'an Abyss Dungeon, whose drops are all at 20');
+  assert.deepEqual([from(3, 2, 1), from(3, 2, 20)], ['orcish mithril orcish', 'mithril mithril mithril'], 'Elite');
+  assert.deepEqual(from(4, 2, 1), 'adamantium ebony adamantium', 'an Abyss Dungeon');
   assert.deepEqual(
     [from(2, 2, 1), from(5, 1, 1), from(6, 2, 20)],
     ['silver silver silver', 'elven dwarven elven', 'daedric daedric daedric'],
   );
-  const makes = (kind: number) => [1, 2, 3].map((name) => look({ kind, rarity: 1, name }).make).join(' ');
+  const makes = (kind: number) => [1, 2, 3].map((id) => look({ kind, rarity: 1, id }).make).join(' ');
   assert.deepEqual(
     [makes(12), makes(18), makes(21), makes(8)],
     ['round tower kite', 'round kite buckler', 'kite tower round', 'short long short'],
   );
-  // By its name, which it keeps as it is bought: a smith's ware, numbered 0, looks as it will once it is the player's.
-  assert.equal(look({ kind: 12, id: 0, name: 1 }).make, 'round');
-  assert.deepEqual(look({ kind: 12, id: 0, name: 1 }), look({ kind: 12, id: 5, name: 1 }));
-  const shields = [1, 2].map((name) => look({ kind: 12, name }).shield);
+  assert.equal(look({ kind: 12, id: 3, name: 1 }).make, 'kite', 'by its number, not its name');
+  assert.equal(look({ kind: 12, id: 0, name: 1 }).make, 'round', "a smith's ware, numbered 0, by its name");
+  const shields = [1, 2].map((id) => look({ kind: 12, id }).shield);
   assert.deepEqual([...shields, look({ kind: 12, level: 11 }).shield], ['iron', 'plain', 'steel'], 'a Normal shield');
   assert.deepEqual(
     [2, 3].map((rarity) => look({ kind: 11, rarity }).metal),

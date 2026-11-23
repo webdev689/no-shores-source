@@ -24,12 +24,9 @@ const WORLD_RARE_FROM = 2;
 /** An item's content's looks; the world's for a number past the last. */
 export const sourceLooks = (item: Pick<GearItem, 'source'>): SourceLooks => SOURCES[item.source] ?? SOURCES[WORLD]!;
 
-/** The rung a rolled item stands on among `count` looks from `from`. The world's climbs to the last over levels 1 to
- *  20, and one more by its name where one is left, so two pieces of one level need not look alike. Any other content
- *  drops at its own levels (an Abyss Dungeon's all at 20), so its rung is its name's alone: each of its looks is seen
- *  at every level it drops. */
-function climbed(item: Pick<GearItem, 'level' | 'name'>, from: number, count: number, world: boolean): number {
-  if (!world) return from + (item.name % Math.max(count - from, 1));
+/** The rung a rolled item stands on among `count` looks from `from`: climbing to the last over levels 1 to 20, and one
+ *  more by its name where one is left, so two pieces of one level and content need not look alike. */
+function climbed(item: Pick<GearItem, 'level' | 'name'>, from: number, count: number): number {
   const climb = Math.max(count - 1 - from, 0);
   const level = Math.min(Math.max(item.level, 1), 20);
   return Math.min(from + Math.round(((level - 1) * climb) / 19) + (item.name % 2), count - 1);
@@ -45,14 +42,14 @@ export function magicSets(item: Pick<GearItem, 'source'>): readonly string[] {
 /** The set a rolled Rare or finer armour piece of this content is drawn in, by its level and name. */
 export function rareSet(item: Pick<GearItem, 'source' | 'level' | 'name'>): string {
   const own = sourceLooks(item);
-  const world = own.key === SOURCES[WORLD]?.key;
-  return own.armour[climbed(item, world ? WORLD_RARE_FROM : 0, own.armour.length, world)] ?? 'steel';
+  const from = own.key === SOURCES[WORLD]?.key ? WORLD_RARE_FROM : 0;
+  return own.armour[climbed(item, from, own.armour.length)] ?? 'steel';
 }
 
 /** The metal a rolled Magic or finer weapon of this content is made in, by its level and name. */
 export function rolledMetal(item: Pick<GearItem, 'source' | 'level' | 'name'>): string {
   const own = sourceLooks(item);
-  return own.metals[climbed(item, 0, own.metals.length, own.key === SOURCES[WORLD]?.key)] ?? 'iron';
+  return own.metals[climbed(item, 0, own.metals.length)] ?? 'iron';
 }
 
 /** A content's sets nearest first from `set`, then every other set by `ladder` nearest `set` first: a set the forge
