@@ -131,7 +131,10 @@ export class WispScene {
         feet[1] - ahead[1] * WATCH.back + right[1] * WATCH.side,
         feet[2] + WATCH.up,
       ],
-      now.part === 'gone' ? chest : now.at,
+      // Between the player and the wisp, the more on the wisp: the deck and their back stay in the frame.
+      now.part === 'gone'
+        ? chest
+        : [chest[0] * 0.3 + now.at[0] * 0.7, chest[1] * 0.3 + now.at[1] * 0.7, chest[2] * 0.3 + now.at[2] * 0.7],
     );
     const ringEye: Point = [feet[0] + right[0] * RINGS.out, feet[1] + right[1] * RINGS.out, feet[2] + RINGS.up];
     const rings = aimed(ringEye, chest);

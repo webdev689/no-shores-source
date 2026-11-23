@@ -389,9 +389,12 @@ export class WreckFight implements Beat {
       walker.you.dress = unarmed(story.dress);
       return;
     }
+    const [gear, loadout] = [this.dressed.gear, this.dressed.loadout];
     dressInGear(walker, run.forge, run.gear, this.dressed);
     const { dress } = walker.you;
-    if (walker.player.loadout === MELEE) story.dress = { ...dress, outfit: { ...dress.outfit, drawn: false } };
+    const redressed = gear !== this.dressed.gear || loadout !== this.dressed.loadout;
+    if (redressed && walker.player.loadout === MELEE)
+      story.dress = { ...dress, outfit: { ...dress.outfit, drawn: false } };
   }
 
   /** The wisp's coming this frame: begun once the bow is taught, from the player's own shot, the room giving them the

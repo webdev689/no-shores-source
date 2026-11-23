@@ -157,8 +157,8 @@ export function wispAt(course: WispCourse, seconds: number): WispNow {
   return { at: chest, part: 'gone', glow: 0 };
 }
 
-/** Its core: 11 cells across, white-hot in the middle, Volt's light and body round it, its rim broken afresh at each
- *  `strike`. */
+/** Its core: 11 cells across, white-hot in the middle with flecks of it in Volt's light round it, its body broken and
+ *  its rim no more than a few cells of dark, each afresh at each `strike`, so it flickers as a flame's heart does. */
 const CORES = new Map<number, Sprite>();
 function coreSprite(strike: number): Sprite {
   const struck = ((strike % 8) + 8) % 8;
@@ -166,22 +166,27 @@ function coreSprite(strike: number): Sprite {
   if (!found) {
     found = sprite(11, 11, (across, up) => {
       const apart = Math.hypot(across, up);
-      if (apart <= 1.2) return HOT;
-      if (apart <= 2.3) return LIGHT;
-      if (apart <= 3.4) return BODY;
-      if (apart <= 4.6) return hashOf(struck, across, up) < 0.45 ? DARK : CLEAR;
+      const fleck = hashOf(struck, across, up);
+      if (apart <= 1.3) return HOT;
+      if (apart <= 2.4) return fleck < 0.3 ? HOT : LIGHT;
+      if (apart <= 3.5) return fleck < 0.2 ? LIGHT : fleck < 0.85 ? BODY : CLEAR;
+      if (apart <= 4.8) return fleck < 0.3 ? DARK : CLEAR;
       return CLEAR;
     });
     CORES.set(struck, found);
   }
   return found;
 }
-/** Its halo: a soft disc 15 cells across in Volt's body and dark, laid as light added to what is behind it. */
-const HALO: Sprite = sprite(15, 15, (across, up) => {
+/** Its halo, 19 cells across, laid as light added to what is behind it: dithered thinner band by band outward, so it
+ *  fades softly into the dark with no edge of its own. */
+const HALO: Sprite = sprite(19, 19, (across, up) => {
   const apart = Math.hypot(across, up);
-  if (apart <= 4) return LIGHT;
-  if (apart <= 5.8) return BODY;
-  return apart <= 7.4 ? DARK : CLEAR;
+  const dither = hashOf(7, across, up);
+  if (apart <= 2.6) return BODY;
+  if (apart <= 4.4) return dither < 0.7 ? BODY : DARK;
+  if (apart <= 6.5) return dither < 0.55 ? DARK : CLEAR;
+  if (apart <= 9) return dither < 0.22 ? DARK : CLEAR;
+  return CLEAR;
 });
 
 /** How long its trail of motes lasts (seconds), how many, and how far they fall away as they fade (metres). */
@@ -217,21 +222,21 @@ export function layWisp(
     const picture = (share < 0.45 ? GLINTS[stop] : MOTES[stop]) ?? STAR_MOTE;
     billboard(out, picture, VOLT, drift, eye, { opacity: 1 - share * 0.6, cell: CELL_M * 1.2 });
   }
-  billboard(out, HALO, VOLT, now.at, eye, { opacity: -0.35 - 0.35 * glow, cell: CELL_M * (1.6 + glow) });
-  billboard(out, coreSprite(strike), VOLT, now.at, eye, { cell: CELL_M * (0.7 + 0.3 * glow) });
-  // Small arcs crackling off it, two or three a strike, longer as it brightens.
-  const arcs = 2 + (hashOf(strike, 9) < glow ? 1 : 0);
+  billboard(out, HALO, VOLT, now.at, eye, { opacity: -0.25 - 0.3 * glow, cell: CELL_M * (0.9 + 0.5 * glow) });
+  billboard(out, coreSprite(strike), VOLT, now.at, eye, { cell: CELL_M * (0.6 + 0.25 * glow) });
+  // Small arcs crackling off it, two to four a strike, reaching out past its halo, longer as it brightens.
+  const arcs = 2 + (hashOf(strike, 9) < glow ? 1 : 0) + (hashOf(strike, 10) < glow - 0.5 ? 1 : 0);
   for (let arc = 0; arc < arcs; arc++) {
     const turn = hashOf(strike, arc, 1) * 2 * Math.PI;
     const lift = (hashOf(strike, arc, 2) - 0.5) * 1.4;
-    const reach = 0.25 + 0.35 * glow * hashOf(strike, arc, 3);
+    const reach = 0.3 + 0.45 * glow * (0.4 + 0.6 * hashOf(strike, arc, 3));
     const to: Point = [
       now.at[0] + Math.cos(turn) * reach,
       now.at[1] + Math.sin(turn) * reach,
       now.at[2] + lift * reach,
     ];
-    const points = jagged(now.at, to, 4, reach * 0.25, strike * 5 + arc);
-    boltLine(out, eye, points, VOLT, { core: 0.008, glow: 0.03, opacity: 0.9 });
+    const points = jagged(now.at, to, 5, reach * 0.3, strike * 5 + arc);
+    boltLine(out, eye, points, VOLT, { core: 0.011, glow: 0.035, opacity: 0.95 });
   }
 }
 const STAR_MOTE: Sprite = sprite(1, 1, () => HOT);
