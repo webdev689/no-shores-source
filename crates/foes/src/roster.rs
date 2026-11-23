@@ -50,7 +50,7 @@ const LOW: &[Rank] = &[Rank::Minor, Rank::Major];
 const HEAVY: &[Rank] = &[Rank::Major, Rank::Elite];
 const LEADER: &[Rank] = &[Rank::Elite, Rank::Miniboss];
 /// The Tithe-Mate leads at sea as an Elite or a Miniboss, and boards the prologue's wreck as a Major, the story having
-/// no Elite but its boss. Its Elite stays first, so a rank not asked for is an Elite as before.
+/// no Elite but its boss. Its Elite is first, so a Tithe-Mate asked for with no rank leads at sea.
 const MATE: &[Rank] = &[Rank::Elite, Rank::Miniboss, Rank::Major];
 
 #[expect(clippy::too_many_arguments, reason = "one row of the roster's table")]
