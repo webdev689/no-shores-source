@@ -168,8 +168,8 @@ each part works is in its system note.
 
 The decisions in [[Open Questions]] are not repeated here.
 
-- **The ship aim under the crosshair, and the ship steady in it** (#168, branch `ccr-bc9c76c9-rau31m`), for the owner's
-  yes to merge; `main` is merged in and `cargo xtask check` passes on its head. The owner: "The aim UI needs to be
+- **The ship aim under the crosshair, and the ship steady in it** (#168, branch `ccr-bc9c76c9-rau31m`), merged.
+  The owner: "The aim UI needs to be
   center on the camera and its currently offset. Ship geometry in the aim jitters" ([[Aiming a Ship Looks Square Off Its
   Side, Clear of Its Rig]], its calls). Measured offline on the rules' own swell (`seaAim.test.ts`, and a probe driving
   `SeaCombat` on the wasm rules): the volley's fall stood 90 to 100 px past the crosshair on a 1080-line screen, as the
@@ -242,8 +242,8 @@ The decisions in [[Open Questions]] are not repeated here.
     own kills share its clear; a failed trip from a beach, played alone, goes back to it; Branches and Merging says
     merge, not rebase and squash, and the `built` notes are `live` (Claude's calls).
 - **Open pull requests**, for the owner's yes once their checks pass: #162 (the game's words out to Type and back; it
-  conflicts with `main` in `Decisions.md`), #159 (the rooms' worker tests wait for what they check; it conflicts
-  with `main` in `roomThread.test.ts`) and #168 (the ship aim's fall under the crosshair, another session's). Drafts:
+  conflicts with `main` in `Decisions.md`) and #159 (the rooms' worker tests wait for what they check; it conflicts
+  with `main` in `roomThread.test.ts`). Drafts:
   #171, #173, #174 and #175 (above), #93 (the toolkit's first review) and #114 (the gear message carries the pledge
   once).
 - **Open points from merged work**, each the owner's to say:
@@ -391,11 +391,6 @@ The decisions in [[Open Questions]] are not repeated here.
   [[The Asset Workflows Publish to R2 With the Cloudflare Token]]); add `tools/install-flatc.sh` to `ROOMS_CODE` in
   `.github/workflows/rooms.yml`. A cloud session cannot deploy the rooms itself: its proxy writes the stored token
   over the upload token Cloudflare hands back.
-- **The cloud environment**: a `no-shores-source` environment is saved for this repository, allowing R2's
-  `pub-…r2.dev` host, with a setup script. A session on a Default environment cannot fetch from R2, so the ship tests
-  (`shipTags.test.ts`) fail the full check there: move onto `no-shores-source` first. In the container, Node's own
-  `fetch` reaches R2 only with `NODE_USE_ENV_PROXY=1` (the proxy's README). The Default holds no network secret; whether
-  `no-shores-source` holds the SkillsMP or Context7 key is unchecked.
 - **The forge's renders** leave `r2.dev`, which limits its rate, once `daggerfalljs.dev`'s DNS moves to Cloudflare
   ([[The Forge's Renders Will Use daggerfalljs.dev]]).
 - **Names** for the armour sets and weapons, to replace the forge's ([[Three Races]]).
