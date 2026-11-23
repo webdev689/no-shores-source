@@ -112,7 +112,7 @@ missions and by a mine that fills over time; Albion's guild islands are bought l
 | Assay House | 2 × 2 | Level 8 | Members earn 5, 10 or 15% more Aurem from kills and clears |
 
 Tier 2 opens at level 3 and tier 3 at level 6, each needing the hall at that tier. What each costs is in
-`content/guilds/structures.json`: Aurem, and Timber, Canvas, Iron, Heartwood and the island's resource, more at each
+`content/guilds/outposts.json`: Aurem, and Timber, Canvas, Iron, Heartwood and the island's resource, more at each
 tier, so a tier 3 asks for many members' stores.
 
 | Call | Chosen | Why |

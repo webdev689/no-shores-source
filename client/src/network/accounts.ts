@@ -1,5 +1,3 @@
-import type { Decor, Standing, Stuff } from '../game/guild/outpostLaw.ts';
-
 /** Where the deployed accounts are (`server/accounts`). */
 export const LIVE_ACCOUNTS = 'https://overlook-accounts.mackcothran.workers.dev';
 
@@ -74,14 +72,33 @@ export interface GuildFace {
   readonly bounties?: readonly GuildBountyShown[];
 }
 
-/** An outpost's plot as the accounts keep it: each structure with the Aurem spent on it and the materials delivered
- *  toward the tier being built, each piece of decoration with what it cost. */
+/** A material a structure is built from, as the accounts name it: the ship's four and the island's own. */
+export type StuffName = 'timber' | 'canvas' | 'iron' | 'heartwood' | 'island';
+
+/** An outpost's plot as the accounts keep it (`client/src/game/guild/outpostLaw.ts` reads its law): each structure at
+ *  its corner cell and turn, the tier built and the tier being built (0 for none), with the Aurem spent on it and the
+ *  materials delivered toward the tier being built; each piece of decoration at metres from the plot's corner, turned
+ *  in steps, with what it cost. */
 export interface KeptPlot {
-  readonly structures: readonly (Standing & {
+  readonly structures: readonly {
+    readonly id: number;
+    readonly kind: string;
+    readonly tier: number;
+    readonly building: number;
+    readonly x: number;
+    readonly y: number;
+    readonly turn: number;
     readonly spent: number;
-    readonly delivered: Readonly<Partial<Record<Stuff, number>>>;
-  })[];
-  readonly decor: readonly (Decor & { readonly paid: number })[];
+    readonly delivered: Readonly<Partial<Record<StuffName, number>>>;
+  }[];
+  readonly decor: readonly {
+    readonly id: number;
+    readonly piece: string;
+    readonly x: number;
+    readonly y: number;
+    readonly turn: number;
+    readonly paid: number;
+  }[];
 }
 
 /** One of a guild's outposts (`server/accounts/outpostStores.ts` `outpostsRead`): its site, its room, when it was
@@ -92,7 +109,7 @@ export interface OutpostFace {
   readonly raisedAt: number;
   readonly plot: KeptPlot;
   readonly strongbox: number;
-  readonly stores: Readonly<Partial<Record<Stuff, number>>>;
+  readonly stores: Readonly<Partial<Record<StuffName, number>>>;
   readonly here: boolean;
 }
 
