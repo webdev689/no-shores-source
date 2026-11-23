@@ -180,12 +180,21 @@ The decisions in [[Open Questions]] are not repeated here.
     in view near a port, 60 m/s, departures staggered across all nine courses ([[World Map]], "Traffic").
   - Tested offline only. Left: ships start and stop at 60 m/s at once, and lie on one point at a roadstead; some
     retaining walls near Overlook's plaza may be dropped whole (low confidence, the seam audit's).
-- **#163's follow-up** (#170, a draft for the owner's yes once its checks pass): the owner's solid red patrol screen
-  was the death veils piling up, a frame that threw before it presented leaving its quads under the next; each frame
-  now starts with none, and WebGPU's validation errors are logged once each. What threw is still unknown: the
-  owner's browser console names it (`FrameGuard` logs each error once). One struck from the landing who stands again
-  there has the landing's leave back, and a spell cast is a strike. Tested offline; the full check passes but for
-  `shipTags.test.ts`'s four R2 fetches, which this container's network refuses.
+- **#163's follow-up and the patrol audit** (#170, a draft for the owner's yes once its checks pass). The owner's solid
+  red patrol screen was the death veils piling up, a frame that threw before it presented leaving its quads under the
+  next; each frame now starts with none, and WebGPU's validation errors are logged once each. What threw is still
+  unknown: the owner's browser console names it (`FrameGuard` logs each error once). Then the owner's "Can you do a
+  deep audit on patrols and ensure its clean": six read-only auditors and a review of the diff, every bug fixed with a
+  test that fails without it. Fixed: the landing's leave lost to inert, fallen or stale foes, or kept from one who
+  stood again or cast; every foe told every swing in the room, the one at it crowded out; the section's dead still a
+  target; a falling-back foe's target; the tithe-taker and the growth killed by foes; a second event chest; entrances
+  on boxes (all 45 of every continent's patrols and Elite nodes still lay theirs); alone, a patrol and its dungeon at
+  Normal on a harder voyage, and no door marks. The moved pins are attributed in their commits; a lone player takes
+  the same blows a minute. Tested offline; the full check passes but `shipTags.test.ts`'s four R2 fetches, which this
+  container's network refuses and CI runs. The owner's to decide, in #170's description: officers ashore and the
+  landing; a half-fallen patrol group holding its post for good; telegraphs and bolts at others striking a left-be
+  player, and one foe opening a landed player to all; the death veil's words when no stand comes; an escort's ambush
+  after a rejoin; foes in caverns, which nothing stands; overlapping sections; the landing and the boardwalk.
 - **Looks by content, the Playlist and the matchmade dungeons' encounters** (#160), merged with the owner's yes ("Let's merge and deploy and talk about this
   after"), which deploys the page and the rooms. The owner's asks are recorded ([[Armour and Weapon Looks Belong to the Content That Gives Them]],
   [[Elite and Abyss Dungeons Are Queued From a Playlist Beside Each Port]],
@@ -401,6 +410,15 @@ The decisions in [[Open Questions]] are not repeated here.
 
 ## Next
 
+- **The patrol audit's risks left** (#170's description, each with its file in the audit): run lines against the
+  section's ring (the ways measured: 4 of some 14,800 samples outside, by 1.8 m at most) and rock beside a run inside
+  it, against [[A Run on the Rock's Top Is Held by Out of Bounds]]; `runs_everywhere` checks the wing from the ring,
+  not the claim; the map draws a run's connections straight; caverns' chambers turned by quarters, building runs off a
+  raised area, a rampart draw at a slope of 0.602, cave roofs over low rock; a kill goal's road group never sent away;
+  a rejected post dropping the points near it; a leashed foe off the navmesh walking straight home; a far-off shot
+  still filling an empty threat; the page's per-player and per-foe maps over a long stay; a trip that throws after
+  its room joined leaving the socket open; one throw every foot frame keeping the veil up. A check for wiki links that
+  span two lines (the vault check reads line by line) is the owner's to agree.
 - **Unchecked, from the encounters' headless run**: on an Elite Dungeon's node the game's worker logged a WebGPU
   validation error each frame ("Instance range ... requires a larger buffer (28) than the bound buffer size (24) of
   the vertex buffer at slot 1 with stride 28"), the city models' instances by its look; whether `main` shows it too.
