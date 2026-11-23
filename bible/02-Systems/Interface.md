@@ -551,7 +551,7 @@ The game draws every screen itself, and by the owner's word no HTML is laid over
   starts. White words three steps of the face tall on the red of the fight's own warnings, in a 2 px white edge; it
   slides in as the banner does at a beat, stands 1.8 s and fades over its last 0.4 s, and is read out. Its top stands
   16 px under the compass's column, no higher than a quarter down the view, or under the crosshair where above it
-  would cover it. Each new call shows afresh; one held on (the slam still shown) shows once.
+  would cover it. Each new call shows afresh; one held on (the slam still shown) shows once; once its mechanic ends (the slam landed) a call still standing fades at once.
 - **Foul water's edge.** While an Ascent's foul water harms the player (the room's harm told to them, and their feet
   on its floor), the view's edge turns sick green, drawn as the struck edge is: it rises over 0.25 s, is held from one
   harm to the next (1.25 s), and fades over 0.6 s from the moment they leave it. The display never stands over

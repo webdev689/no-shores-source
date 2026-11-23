@@ -26,7 +26,7 @@ import os, pathlib
 # Reckoning with b ticks left; 8 starts Fury's clock with b ticks left (b <= 0: Fury b ticks in), the room's clock run
 # on first where it is too young for that, every stamp of the encounters moved on with it; 9 sets Litany a's show b
 # ticks in (30: its first rune half shown); 10 holds every player's health whole each tick while a is not 0, so a
-# headless body outlives the awake Boss; 11 stands the Boss at (a, b).
+# headless body outlives the awake Boss; 11 stands the Boss and its post at (a, b), where a ward holds it.
 QA_ENCOUNTER = '''    pub fn qa_encounter(&mut self, what: u32, a: f64, b: f64) {
         use crate::encounters::court::{ANCHOR_TICKS, FURY_FROM, RECKONING_WARNING, SLAM_EVERY, WARDS};
         let ticks = |left: f64| left.max(0.0) as u64;
@@ -82,6 +82,9 @@ QA_ENCOUNTER = '''    pub fn qa_encounter(&mut self, what: u32, a: f64, b: f64) 
             11 => {
                 if let Some(foe) = boss.and_then(|id| self.foes.get_mut(&id)) {
                     (foe.fighter.body.x, foe.fighter.body.y) = (a, b);
+                }
+                if let Some(post) = self.garrison.first_mut() {
+                    (post.at[0], post.at[1]) = (a, b);
                 }
             }
             _ => {}

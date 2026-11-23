@@ -183,6 +183,12 @@ test('the call stands large in the middle for a moment, then goes; a new call sh
   hud.update({ ...frame, public: { ...court, call: null } }, 1 / 60);
   for (let step = 0; step < 180; step++) hud.update(light, 1 / 60);
   assert.equal(callOf(), undefined);
+  hud.update({ ...frame, public: { ...court, call: 'Get clear!' } }, 1 / 60);
+  for (let step = 0; step < 6; step++) hud.update({ ...frame, public: { ...court, call: null } }, 1 / 60);
+  const ending = callOf()?.opacity ?? 0;
+  assert.ok(ending > 0 && ending < 1, `its mechanic over, it fades (${ending})`);
+  for (let step = 0; step < 24; step++) hud.update({ ...frame, public: { ...court, call: null } }, 1 / 60);
+  assert.equal(callOf(), undefined, 'and is gone well before its moment would end');
 });
 
 test('the view’s edge is tinted sick green while the foul water harms the player, and fades once they leave it', () => {

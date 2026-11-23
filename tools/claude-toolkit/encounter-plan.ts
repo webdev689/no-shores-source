@@ -191,9 +191,9 @@ plan.seals.forEach((seal, index) => {
   if (seal.kind === ASCENT) {
     const stone = seal.pads[seal.pads.length - 1];
     const water = floorAcross(seal, door);
-    // No frame waited: a slow frame's ticks in the water could drown the body.
+    // The room ticks only as the page draws: enough frames for the floor to harm the body a time or two.
     stand(water, undefined, 300);
-    steps.push({ eval: `(async()=>{${sleep(2500)}})()` });
+    steps.push({ frames: 30 });
     freeze(true);
     picture(water, middleOf(seal.pads.map(([minX, minY, maxX, maxY]) => [(minX + maxX) / 2, (minY + maxY) / 2])), 'third,6,25', 'ascent_foul_water');
     encounter(0, 0, 0);
@@ -217,15 +217,15 @@ plan.seals.forEach((seal, index) => {
   }
   if (seal.kind === HOLDFAST) {
     // Inside the ring on the doorway's side, the camera high behind, so the body and the whole relic stand in frame.
-    const ring = toward(first, door, 2.2);
+    const ring = toward(first, door, 2.6);
     stand(ring);
     pause(800);
     freeze(true);
-    picture(ring, first, 'third,6,35', 'holdfast_held');
+    picture(ring, first, 'third,5,10', 'holdfast_held');
     encounter(2, index, 0.45);
-    picture(ring, first, 'third,6,35', 'holdfast_draining');
+    picture(ring, first, 'third,5,10', 'holdfast_draining');
     encounter(2, index, 0);
-    picture(ring, first, 'third,6,35', 'holdfast_drained');
+    picture(ring, first, 'third,5,10', 'holdfast_drained');
     encounter(2, index, 1);
     freeze(false);
   }
@@ -247,11 +247,13 @@ encounter(10, 1, 0);
 const bossAhead = (from: Point, to: Point) => {
   const [east = 0, south = 0] = toward(from, to, 4);
   encounter(11, east, south);
+  // A few frames for the page's figure to follow it there.
+  steps.push({ frames: 6 });
 };
 encounter(3, 0, 0);
 pause(1500);
-freeze(true);
 bossAhead(byAnchor, anchor0);
+freeze(true);
 picture(byAnchor, anchor0, 'third,9,50', 'court_awake');
 freeze(false);
 encounter(4, 0, 0);
@@ -269,12 +271,14 @@ bossAhead(beside, anchor1);
 picture(beside, anchor1, 'third,7,45', 'court_anchors_filling');
 encounter(6, 0, 50);
 bossAhead(beside, anchor0);
-picture(beside, anchor0, 'third,10,55', 'court_slam');
+picture(beside, anchor0, 'third,9,40', 'court_slam');
 encounter(6, 0, 300);
 encounter(8, 0, 45 * 60);
-picture(beside, anchor0, 'third,9,50', 'court_fury_warning');
+bossAhead(beside, anchor0);
+picture(beside, anchor0, 'third,9,40', 'court_fury_warning');
 encounter(8, 0, -31 * 60);
-picture(beside, anchor0, 'third,9,50', 'court_fury');
+bossAhead(beside, anchor0);
+picture(beside, anchor0, 'third,9,40', 'court_fury');
 freeze(false);
 for (const nth of [0, 1, 2]) encounter(5, nth, 1);
 pause(300);

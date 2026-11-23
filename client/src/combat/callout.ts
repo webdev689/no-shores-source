@@ -1,6 +1,6 @@
 // A raid's call over the middle of the view: a few words, large, on the red the fight's own warnings ("Dodge!") stand
 // on, sliding in as the public banner does at a beat, held a moment and faded. Each new call shows afresh and is read
-// out; the same call held on (the slam still shown) shows once.
+// out; the same call held on (the slam still shown) shows once, and one whose mechanic ends fades at once.
 import { motionReduced } from '../plus/kit.ts';
 import { announce } from '../ui/announce.ts';
 import { cubicBezier } from '../ui/ease.ts';
@@ -27,6 +27,8 @@ export class Callout {
       [this.words, this.since] = [call, 0];
       announce(call);
     }
+    // Its mechanic over (the slam landed), a call still standing fades out now.
+    if (!call) this.since = Math.max(this.since, CALL_S - FADE_S);
     this.last = call;
   }
 
