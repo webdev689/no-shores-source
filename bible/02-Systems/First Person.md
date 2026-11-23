@@ -151,6 +151,9 @@ span of light on the player's body ([[Gear]], "Cosmetics"). A faction's blade ke
 the hilt, guard and trim the forge marks, laid across the trim's span of light in the blade's first frame in hand
 (`trimOf`). Bare hands take iron's.
 
+A dagger's or a sword's blade layers, right hand and left, reach the game from a `forge` run asked for by hand with
+`firstperson` ([[Sprite Forge]], "Running it"); until a metal's are published, its blade draws as it did.
+
 ### On the screen
 
 Each picture lies on a 320 by 200 design screen, scaled to the canvas, texel for texel, with its clear texels cut out,
