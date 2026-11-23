@@ -155,3 +155,18 @@ test("the compass marks a public event's places on its foot, the heroic one blin
   );
   assert.equal(places(0.5)[0]?.opacity, 1);
 });
+
+test('a bonus that warns of harm reads in red under a filled red diamond, never struck through as a lost one is', () => {
+  const banner = new PublicBanner();
+  banner.update({ ...shown, bonus: { text: 'Foul water harms', state: 'warns' } }, 1);
+  const node = banner.node(1280, 1) as Node;
+  const line = allOf(node).find((each) =>
+    each.children?.some((child) => child && child.text?.words === 'Foul water harms'),
+  );
+  assert.equal(line?.children?.filter(Boolean).length, 1, 'not struck through');
+  assert.equal(line?.children?.find((child) => child && child.text)?.text?.colour, '#e0483c', 'in red');
+  assert.ok(
+    allOf(node).some((each) => each.picture?.key === 'diamond #e0483c #e0483c '),
+    'its diamond filled red',
+  );
+});

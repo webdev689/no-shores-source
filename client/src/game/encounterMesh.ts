@@ -13,7 +13,8 @@ import { box, COLOUR, face, lookOf, ROLE } from './dungeonMesh.ts';
  *  relic's crystal over its ring's middle (m). */
 const PAD_TRIM_M = 0.08;
 const STONE = { inset: 0.35, height: 0.06 } as const;
-const SLAB = { half: 0.6, height: 0.03 } as const;
+/** An anchor's slab: stepped, a wider foot under its top, raised over a plate so it is seen across the end room. */
+export const ANCHOR_SLAB = { half: 0.75, height: 0.08, rim: 0.12 } as const;
 /** A Weighing's plate: a slab as wide as a body standing on it is held, raised under a step. */
 export const PLATE = { half: 0.8, height: 0.06, rim: 0.1 } as const;
 const RELIC = { half: 0.18, low: 1.9, high: 2.6 } as const;
@@ -60,8 +61,11 @@ export function layEncounters(mesh: MeshBuilder, layout: DungeonLayout): void {
     }
   }
   const end = setOf(layout, layout.end);
-  for (const [x, y] of plan.anchors)
-    box(mesh, [end, ROLE.trim], [x - SLAB.half, y - SLAB.half, 0], [x + SLAB.half, y + SLAB.half, SLAB.height]);
+  for (const [x, y] of plan.anchors) {
+    const [low, high, height] = [ANCHOR_SLAB.half, ANCHOR_SLAB.half - ANCHOR_SLAB.rim, ANCHOR_SLAB.height];
+    box(mesh, [end, ROLE.trim], [x - low, y - low, 0], [x + low, y + low, height / 2]);
+    box(mesh, [end, ROLE.trim], [x - high, y - high, height / 2], [x + high, y + high, height]);
+  }
 }
 
 /** A flat face's corners at `top`, clockwise from the north-west seen from above. */

@@ -13,6 +13,10 @@ pub const LITANY_RUNES: (usize, usize) = (4, 6);
 /// The plates of a Weighing, and how far apart each two stand at the least (m): two cells, so no body holds two.
 pub const PLATES: usize = 3;
 pub const PLATES_APART_M: f64 = 2.0 * CELL_M;
+/// How far round from the way into a Weighing's room its plates stand at the most, as the cosine of the angle between
+/// the way in through its doorway and the way from the doorway to a plate: about 70 degrees either side, so a body
+/// coming in has every plate ahead of it, none behind or beside it.
+pub const PLATES_AHEAD: f64 = 0.35;
 /// An Ascent's pads: half a pad's side; the first's top, mantled from the dry doorway (within `TUNING.reach`); how
 /// much higher each next stands than the one before at the most, and how far every pad after the first stands over a
 /// mantle's reach from the floor at the least; the fewest and the most of them; the leap from each to the next, edge to edge along the line
@@ -181,6 +185,12 @@ impl<'laid> Reading<'laid> {
         dungeon.rooms[room].cells.iter().copied().filter(open).collect()
     }
 
+    /// The doorway cell of a room a company comes in by: the one nearest the way in on the walk.
+    fn entered_by(&self, room: usize) -> Option<usize> {
+        let cells = self.dungeon.rooms[room].cells.iter().copied();
+        cells.filter(|cell| self.doorways.contains(cell)).min_by_key(|&cell| (self.walks[cell], cell))
+    }
+
     /// The spots of a room a ring may lie on: each cell's middle and its four quarters' (neither the way in's cell nor
     /// the portal's, nor a doorway's unless `doorways`), each SPOT_CLEAR_M from every solid and PROP_CLEAR_M from
     /// every prop's and fixture's middle.
@@ -234,9 +244,9 @@ pub fn plan_encounters(dungeon: &Dungeon) -> EncounterPlan {
         let mut order: Vec<usize> = (0..rooms.len()).collect();
         order.sort_by_key(|&at| (at.abs_diff(target), at));
         let taken = |room: usize, seals: &[SealPlan]| seals.iter().any(|seal| seal.room == room);
-        // An Ascent first wherever a room of the stretch fits one, as the climb is the rarest fit; then any kind left
-        // in the nearest room that fits it.
-        // Never the first room of the walk where there are four or more, so the way in is not straight into a seal.
+        // An Ascent first wherever a room of the stretch fits one, as the climb is the rarest fit, never in the first
+        // room of the walk where there are four or more, so the way in is not straight into a climb; then any kind
+        // left in the nearest room that fits it, any room of the walk.
         let stretch = (nth * rooms.len() / count).max(usize::from(rooms.len() >= 4))..(nth + 1) * rooms.len() / count;
         let climbed = seals.iter().any(|seal| seal.kind == SealKind::Ascent);
         let ascent = order
@@ -265,7 +275,35 @@ fn laid(reading: &Reading, lane: &mut Lane, kind: SealKind, room: usize) -> Opti
     let spots = reading.spots(room, false);
     let (pieces, pads, drowned) = match kind {
         SealKind::Litany => (runes(lane, &spots)?, Vec::new(), Vec::new()),
-        SealKind::Weighing => (plates(&spots)?, Vec::new(), Vec::new()),
+        SealKind::Weighing => {
+            // Every plate in plain view from the doorway the room is entered by and ahead of a body coming in by it
+            // (within PLATES_AHEAD of the way from the cell before it), so the puzzle is seen on coming in.
+            let entered = reading.entered_by(room)?;
+            let before = SIDES
+                .into_iter()
+                .filter_map(|side| reading.dungeon.beside(entered, side))
+                .filter(|cell| {
+                    reading.dungeon.cells[*cell] != Cell::Rock && reading.dungeon.room_at(*cell) != Some(room)
+                })
+                .min_by_key(|&cell| (reading.walks[cell], cell))?;
+            let (door, from) = (reading.dungeon.centre(entered), reading.dungeon.centre(before));
+            let inward = [door[0] - from[0], door[1] - from[1]];
+            let ahead = |[x, y]: [f64; 2]| {
+                let toward = [x - door[0], y - door[1]];
+                let along = inward[0] * toward[0] + inward[1] * toward[1];
+                // cos >= PLATES_AHEAD, squared so no root is taken.
+                along > 0.0
+                    && along * along
+                        >= PLATES_AHEAD * PLATES_AHEAD * apart(inward, [0.0, 0.0]) * apart(toward, [0.0, 0.0])
+            };
+            let point = |[x, y]: [f64; 2]| [x, y, x, y];
+            let seen: Vec<[f64; 2]> = spots
+                .iter()
+                .copied()
+                .filter(|&spot| ahead(spot) && open_air(point(door), point(spot), &reading.boxes))
+                .collect();
+            (plates(&seen)?, Vec::new(), Vec::new())
+        }
         SealKind::Holdfast => (vec![relic(reading, room, &spots)?], Vec::new(), Vec::new()),
         SealKind::Ascent => {
             let (pads, stone) = ascent(reading, room)?;
@@ -413,9 +451,7 @@ fn ascent(reading: &Reading, room: usize) -> Option<(Vec<Block>, [f64; 3])> {
     if leapt_under < TUNING.reach + PAD_OVER_REACH_M {
         return None;
     }
-    let start = found.cells.iter().copied().filter(|cell| reading.doorways.contains(cell)).min_by_key(|&cell| {
-        (reading.walks[cell], cell) // the doorway a company comes in by
-    })?;
+    let start = reading.entered_by(room)?;
     let padded = reading.padded(room);
     let clear = |pad: Footprint| {
         reading.boxes.iter().all(|&[min_x, min_y, max_x, max_y, _]| {

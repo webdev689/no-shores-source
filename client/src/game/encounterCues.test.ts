@@ -67,12 +67,13 @@ test("the Boss's slam, a ward rising and the drowned floor's harm on the player 
   ]);
 });
 
-test('a relic falling past three tenths is refused once, and again only after it stood over them', () => {
+test('a relic falling below three tenths is refused once, and again only after it stood at them or over', () => {
   const cues = new EncounterCues();
   const relic = (strength: number) => {
     const seal = { kind: SEAL_KIND.holdfast, state: SEAL_STATE.running, progress: 0, marks: [1], relic: strength };
     return cues.frame(plan, seen({ seals: [seal] }), [], bodies(0)).ui;
   };
-  assert.deepEqual([0.5, 0.31, 0.3, 0.2, 0.1].map(relic).flat(), ['refused']);
-  assert.deepEqual([0.4, 0.29].map(relic).flat(), ['refused']);
+  assert.deepEqual([0.5, 0.31, 0.3].map(relic).flat(), [], 'at three tenths exactly, as the banner, not yet');
+  assert.deepEqual([0.29, 0.2, 0.1].map(relic).flat(), ['refused'], 'below them, once');
+  assert.deepEqual([0.3, 0.29].map(relic).flat(), ['refused'], 'again after standing at them');
 });

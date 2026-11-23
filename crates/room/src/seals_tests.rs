@@ -247,7 +247,7 @@ fn a_litany_counts_no_step_from_a_body_in_the_air() {
 
 #[test]
 fn a_weighing_holds_three_plates_together_or_two_under_three_players_and_holds_nothing_with_a_plate_empty() {
-    let mut room = elite_room("pale-undercroft");
+    let mut room = elite_room("saltworm-warrens");
     let players = [hardy(&mut room), hardy(&mut room)];
     let seal = seal_of(&room, SealKind::Weighing);
     let laid = plan(&room, seal);
@@ -261,7 +261,7 @@ fn a_weighing_holds_three_plates_together_or_two_under_three_players_and_holds_n
     assert_eq!(state(&room, seal).state, SealState::Running);
     room.tick();
     assert_eq!(state(&room, seal).state, SealState::Broken, "held twenty seconds in all");
-    let mut three = elite_room("pale-undercroft");
+    let mut three = elite_room("saltworm-warrens");
     let company = [hardy(&mut three), hardy(&mut three), hardy(&mut three)];
     put(&mut three, company[0], laid.pieces[0]);
     put(&mut three, company[1], laid.pieces[1]);
@@ -276,7 +276,7 @@ fn a_weighing_holds_three_plates_together_or_two_under_three_players_and_holds_n
 
 #[test]
 fn a_weighing_counts_only_the_living_players_in_its_room() {
-    let mut room = elite_room("pale-undercroft");
+    let mut room = elite_room("saltworm-warrens");
     let company = [hardy(&mut room), hardy(&mut room), hardy(&mut room)];
     let seal = seal_of(&room, SealKind::Weighing);
     let laid = plan(&room, seal);
@@ -297,7 +297,7 @@ fn a_weighing_counts_only_the_living_players_in_its_room() {
 
 #[test]
 fn a_plate_stays_held_after_its_player_steps_off_so_one_player_can_hold_two() {
-    let mut room = elite_room("pale-undercroft");
+    let mut room = elite_room("saltworm-warrens");
     let player = hardy(&mut room);
     let seal = seal_of(&room, SealKind::Weighing);
     let laid = plan(&room, seal);
@@ -342,7 +342,7 @@ fn one_player_holds_a_weighing_walking_between_its_two_plates() {
 
 #[test]
 fn a_seals_wave_counts_the_living_players_in_its_room_not_the_run() {
-    let mut room = elite_room("pale-undercroft");
+    let mut room = elite_room("saltworm-warrens");
     let company: Vec<PlayerId> = (0..4).map(|_| hardy(&mut room)).collect();
     let seal = seal_of(&room, SealKind::Weighing);
     let laid = plan(&room, seal);
@@ -356,7 +356,7 @@ fn a_seals_wave_counts_the_living_players_in_its_room_not_the_run() {
 
 #[test]
 fn a_weighings_first_wave_comes_three_seconds_in_and_the_next_every_twelve_from_its_doorways() {
-    let mut room = elite_room("pale-undercroft");
+    let mut room = elite_room("saltworm-warrens");
     let player = hardy(&mut room);
     let seal = seal_of(&room, SealKind::Weighing);
     let laid = plan(&room, seal);
@@ -545,4 +545,17 @@ fn a_seals_wave_stands_one_foe_for_each_living_player_two_to_four_each_hunting_t
     room.stand_foes(&mut encounters, None, &[[laid.pieces[0][0] + 1.0, laid.pieces[0][1]]], 2);
     room.encounters = Some(encounters);
     assert!(room.foes.values().all(|foe| foe.brain.target() == Some(near)), "hunting the nearest");
+}
+
+#[test]
+fn a_waves_foe_standing_in_a_waiting_seals_room_does_not_hold_it() {
+    let mut room = elite_room("krakens-grotto");
+    let player = hardy(&mut room);
+    let seal = seal_of(&room, SealKind::Litany);
+    let laid = plan(&room, seal);
+    let at = middle_of(&room, laid.cells[laid.cells.len() / 2]);
+    stand_one(&mut room, at);
+    inside(&mut room, player, &laid);
+    room.tick();
+    assert_eq!(state(&room, seal).state, SealState::Running, "a wave's foe is no garrison's: the seal runs");
 }

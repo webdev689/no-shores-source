@@ -49,7 +49,7 @@ fn every_elite_dungeon_holds_its_seals_each_in_a_room_of_its_own_and_never_two_a
             }
             let pieces = seal.pieces.len();
             match seal.kind {
-                SealKind::Litany => assert!((LITANY_RUNES.0..=LITANY_RUNES.1).contains(&pieces)),
+                SealKind::Litany => assert!((4..=6).contains(&pieces), "{place}: four to six runes"),
                 SealKind::Weighing => assert_eq!(pieces, PLATES),
                 SealKind::Holdfast | SealKind::Ascent => assert_eq!(pieces, 1),
             }
@@ -115,6 +115,50 @@ fn a_weighings_plates_stand_apart_and_its_first_two_farthest() {
 }
 
 #[test]
+fn every_plate_of_a_weighing_is_in_plain_view_ahead_of_the_doorway_its_room_is_entered_by() {
+    let mut weighings = 0;
+    for (place, laid, plan) in elite_plans() {
+        let walked = walks(&laid);
+        let doorways: Vec<usize> = laid.frames.iter().map(|frame| frame.cell).collect();
+        for seal in plan.seals.iter().filter(|seal| seal.kind == SealKind::Weighing) {
+            weighings += 1;
+            let door = seal.cells.iter().copied().filter(|cell| doorways.contains(cell));
+            let door = laid.centre(door.min_by_key(|&cell| (walked[cell], cell)).expect("a doorway"));
+            for plate in &seal.pieces {
+                // Every 5 cm along the line from the doorway's middle to the plate, no solid stands.
+                let seen = (0..=200).all(|step| {
+                    let share = f64::from(step) / 200.0;
+                    let [x, y] = [door[0] + (plate[0] - door[0]) * share, door[1] + (plate[1] - door[1]) * share];
+                    laid.boxes()
+                        .iter()
+                        .all(|&[min_x, min_y, max_x, max_y, _]| x < min_x || x > max_x || y < min_y || y > max_y)
+                });
+                assert!(seen, "{place}: a plate at {plate:?} hidden from the doorway at {door:?}");
+                // And ahead of a body coming in by the doorway from the open cell before it, within about 70 degrees
+                // either side (cosine 0.35), none behind or beside it.
+                let cell = plan.cell_at([door[0], door[1]]).expect("the doorway's cell");
+                let before = dungeon::SIDES
+                    .into_iter()
+                    .filter_map(|side| laid.beside(cell, side))
+                    .filter(|next| laid.cells[*next] != Cell::Rock && laid.room_at(*next) != Some(seal.room))
+                    .min_by_key(|&next| (walked[next], next))
+                    .expect("a way in");
+                let from = laid.centre(before);
+                let (inward, toward) =
+                    ([door[0] - from[0], door[1] - from[1]], [plate[0] - door[0], plate[1] - door[1]]);
+                let cosine = (inward[0] * toward[0] + inward[1] * toward[1])
+                    / (libm::hypot(inward[0], inward[1]) * libm::hypot(toward[0], toward[1]));
+                assert!(
+                    cosine >= 0.35 - 1e-9,
+                    "{place}: a plate at {plate:?} beside or behind the doorway at {door:?}"
+                );
+            }
+        }
+    }
+    assert!(weighings >= 4, "{weighings} Weighings among the 18");
+}
+
+#[test]
 fn an_ascents_pads_rise_under_the_ceiling_clear_of_every_solid_and_doorway() {
     for (place, laid, plan) in elite_plans() {
         let boxes = laid.boxes();
@@ -124,7 +168,7 @@ fn an_ascents_pads_rise_under_the_ceiling_clear_of_every_solid_and_doorway() {
             assert!(seal.pads[0].top <= TUNING.reach, "{place}: the first pad mantled from the floor");
             for pair in seal.pads.windows(2) {
                 let rise = pair[1].top - pair[0].top;
-                assert!((0.0..=PAD_RISE_M + 1e-12).contains(&rise), "{place}: rising tops");
+                assert!((0.0..=0.4 + 1e-12).contains(&rise), "{place}: rising tops, 0.4 m at the most");
             }
             for (at, pad) in seal.pads.iter().enumerate() {
                 if at > 0 {
@@ -285,4 +329,18 @@ fn reached(laid: &Dungeon, seal: &SealPlan, from: usize, jumps: bool) -> bool {
         body = step_body(&body, &controls, &seal.pads, &floor, TICK_SECONDS);
     }
     false
+}
+
+#[test]
+fn every_two_runes_of_a_litany_stand_two_metres_apart_at_the_least() {
+    for (place, _, plan) in elite_plans() {
+        for seal in plan.seals.iter().filter(|seal| seal.kind == SealKind::Litany) {
+            for (at, first) in seal.pieces.iter().enumerate() {
+                for second in &seal.pieces[at + 1..] {
+                    let apart = libm::hypot(first[0] - second[0], first[1] - second[1]);
+                    assert!(apart >= 2.0 - 1e-9, "{place}: runes {apart} m apart");
+                }
+            }
+        }
+    }
 }

@@ -30,7 +30,7 @@ export interface Banner {
   readonly objective: string;
   readonly bar: { readonly share: number; readonly label: string } | null;
   readonly heroic: { readonly text: string; readonly clock: string; readonly met: boolean } | null;
-  readonly bonus: { readonly text: string; readonly state: 'holds' | 'met' | 'lost' } | null;
+  readonly bonus: { readonly text: string; readonly state: 'holds' | 'met' | 'lost' | 'warns' } | null;
 }
 
 /** A beat of the event the banner slides in afresh for. */
@@ -311,9 +311,11 @@ export class PublicBanner {
   }
 }
 
-/** The bonus: a diamond in the tone, filled once met; struck through and faded once lost. */
+/** The bonus: a diamond in the tone, filled once met; struck through and faded once lost; a warning of harm in red
+ *  under a red diamond. */
 function bonusNode(bonus: NonNullable<Banner['bonus']>, tone: string, zoom: number): Node {
   const lost = bonus.state === 'lost';
+  const warns = bonus.state === 'warns';
   return {
     direction: 'row',
     gap: 8 * zoom,
@@ -321,10 +323,10 @@ function bonusNode(bonus: NonNullable<Banner['bonus']>, tone: string, zoom: numb
     padding: [3 * zoom, 0, 0, zoom],
     ...(lost ? { opacity: 0.6 } : {}),
     children: [
-      diamondNode(9 * zoom, bonus.state === 'met' ? tone : 'none', tone),
+      diamondNode(9 * zoom, warns ? URGENT : bonus.state === 'met' ? tone : 'none', warns ? URGENT : tone),
       {
         children: [
-          { text: { words: bonus.text, size: zoom, colour: TONES.wordDim, edge: 'halo' } },
+          { text: { words: bonus.text, size: zoom, colour: warns ? URGENT : TONES.wordDim, edge: 'halo' } },
           lost && {
             width: 'grow',
             height: zoom,

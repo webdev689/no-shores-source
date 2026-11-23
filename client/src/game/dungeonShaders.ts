@@ -57,10 +57,13 @@ const FUNGUS = ${DUNGEON_LAYERS.fungus}u;
 const PORTAL = ${PORTAL_FLAG}u;
 // A layer with this bit set is still water, over a bed in the picture the rest of its number names.
 const WATER = ${WATER_FLAG}u;
-// A layer with this bit set too is foul water that harms: a sickly green, its glow breathing slowly.
+// A layer with this bit set too is foul water that harms: a sickly green, its glow breathing slowly, seething with
+// bubbles that swell and burst in a brighter bile, one to each square FOUL_BUBBLE_M a side.
 const FOUL = ${FOUL_FLAG}u;
 const FOUL_TINT = vec3f(0.3, 0.4, 0.16);
-const FOUL_GLOW = vec3f(0.015, 0.04, 0.006);
+const FOUL_GLOW = vec3f(0.03, 0.07, 0.01);
+const FOUL_BUBBLE = vec3f(0.3, 0.45, 0.05);
+const FOUL_BUBBLE_M = 0.5;
 // Still water's bed seen through it: a wet floor is darker, and water takes the red first.
 const WATER_TINT = vec3f(0.45, 0.55, 0.6);
 // How much of the light on it the room round still water gives back, to be mirrored in it: stone's.
@@ -173,6 +176,22 @@ fn water_at(point: vec3f, normal: vec3f, time: f32, mood: vec3f, bed: vec3f) -> 
   return mix(through, mirrored, mirrors) + gleam * mirrors;
 }
 
+// How much of a foul water's bubble shows at a point: about half the squares of the grid rise a bubble at a time, each
+// from its own spot and to its own size, a ring swelling and bursting on its own beat, then still a while, so the
+// water seethes unevenly and never reads as a pattern laid on the floor.
+fn foul_bubbles(point: vec2f, time: f32) -> f32 {
+  let grid = point / FOUL_BUBBLE_M;
+  let square = floor(grid);
+  let seed = fract(sin(dot(square, vec2f(12.9898, 78.233))) * 43758.547);
+  let other = fract(seed * 7.13);
+  let beat = time * (0.3 + 0.3 * other) + seed * 5.0;
+  let age = fract(beat) * 2.0;
+  let rises = fract(sin(floor(beat) * 91.7 + seed * 13.0) * 4375.85) < 0.5;
+  let spot = square + 0.5 + 0.7 * (vec2f(seed, other) - 0.5);
+  let edge = abs(length(grid - spot) - (0.04 + (0.12 + 0.2 * other) * age));
+  return select(0.0, (1.0 - smoothstep(0.0, 0.06, edge)) * (1.0 - age), rises && age < 1.0);
+}
+
 // How much of a flame shows along a line whose cosine to it is \`cosine\`, \`distance\` from it: all on its line,
 // falling to 1/e at its own angular radius, so a far flame is a small image, as bright as a near one.
 fn flame_image(cosine: f32, distance: f32) -> f32 {
@@ -242,7 +261,8 @@ fn dungeon_fragment(surface: Surface) -> @location(0) vec4f {
   let mood = mood_at(surface.point, normal);
   if water && foul {
     let breath = 0.6 + 0.4 * sin(time * 1.7 + phase);
-    return vec4f(water_at(surface.point, normal, time, mood, sampled) * FOUL_TINT + FOUL_GLOW * breath, 1.0);
+    let seething = FOUL_BUBBLE * foul_bubbles(surface.point.xy, time);
+    return vec4f(water_at(surface.point, normal, time, mood, sampled) * FOUL_TINT + FOUL_GLOW * breath + seething, 1.0);
   }
   if water {
     return vec4f(water_at(surface.point, normal, time, mood, sampled), 1.0);

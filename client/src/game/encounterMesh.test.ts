@@ -3,7 +3,7 @@ import { test } from 'node:test';
 import { meshBuilder } from '../models/model.ts';
 import { SEAL_KIND, SEAL_STATE } from '../network/encounterMessages.ts';
 import type { DungeonLayout } from './dungeonLayout.ts';
-import { drownedNow, layEncounters, PLATE, waterMesh } from './encounterMesh.ts';
+import { ANCHOR_SLAB, drownedNow, layEncounters, PLATE, waterMesh } from './encounterMesh.ts';
 import { COLOUR, ROLE } from './dungeonMesh.ts';
 
 /** An Ascent of two pads over a room of two cells, and a Court of one anchor. */
@@ -42,9 +42,16 @@ test("an Ascent's pads stand to their tops in the room's stone, the last with it
   const heights = Array.from({ length: model.positions.length / 3 }, (unused, index) => model.positions[index * 3 + 2]);
   const reaches = (top: number) => heights.some((height) => Math.abs((height ?? 0) - top) < 1e-6);
   assert.ok(reaches(0.4) && reaches(0.8), 'each pad to its own top');
-  assert.ok(
-    model.parts.some((part) => part.archive === COLOUR.crystal),
-    'the seal stone glows',
+  // The seal stone: the crystal part, standing on the last pad's top (0.8 m), STONE's 6 cm high, never the first's.
+  const crystal = model.parts.find((part) => part.archive === COLOUR.crystal);
+  assert.ok(crystal, 'the seal stone glows');
+  const tops = Array.from({ length: crystal.count }, (unused, nth) => {
+    const vertex = model.indices[crystal.start + nth] ?? 0;
+    return model.positions[vertex * 3 + 2] ?? 0;
+  });
+  assert.deepEqual(
+    [Math.min(...tops), Math.max(...tops)].map((height) => height.toFixed(3)),
+    ['0.800', '0.860'],
   );
   assert.ok(
     model.parts.some((part) => part.archive === 123),
@@ -94,4 +101,21 @@ test("a plate is all of its room's trim, never the floor's own picture, so it st
   layEncounters(mesh, { ...layout, encounters: { ...layout.encounters!, seals: [seal], anchors: [] } });
   const records = new Set(mesh.model().parts.map((part) => part.record));
   assert.deepEqual([...records], [ROLE.trim]);
+});
+
+test("each of the Court's anchors stands on a stepped slab of the end room's trim, raised to be seen across the room", () => {
+  const mesh = meshBuilder();
+  layEncounters(mesh, { ...layout, encounters: { ...layout.encounters!, seals: [] } });
+  const model = mesh.model();
+  const heights = Array.from({ length: model.positions.length / 3 }, (unused, index) => model.positions[index * 3 + 2]);
+  assert.ok(
+    heights.some((height) => Math.abs((height ?? 0) - ANCHOR_SLAB.height) < 1e-6),
+    'raised to its height',
+  );
+  assert.ok(
+    heights.some((height) => Math.abs((height ?? 0) - ANCHOR_SLAB.height / 2) < 1e-6),
+    'stepped: a wider foot under its top',
+  );
+  assert.ok(ANCHOR_SLAB.height >= PLATE.height, 'no lower than a plate');
+  assert.deepEqual([...new Set(model.parts.map((part) => part.record))], [ROLE.trim]);
 });

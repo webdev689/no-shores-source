@@ -361,3 +361,32 @@ fn the_reckoning_reaches_the_end_room_and_the_rooms_sharing_a_doorway_with_it_an
     assert!(room.players[&near].fighter.health < before[0], "reached in a room beside the Court");
     assert_eq!(room.players[&far].fighter.health, before[1], "not reached beyond it");
 }
+
+#[test]
+fn on_the_tick_its_ward_rises_the_boss_slams_no_one_its_two_second_warning_comes_first() {
+    let (mut room, player, boss) = court();
+    let most = room.foes[&boss].fighter.health_max;
+    strike(&mut room, player, boss, most);
+    let at = room.foes[&boss].fighter.body;
+    put(&mut room, player, [at.x + 1.0, at.y, at.z]);
+    let before = room.players[&player].fighter.health;
+    room.take_events();
+    room.tick();
+    let events = room.take_events();
+    assert_eq!(told(&events, EventKind::WardRaised), 1, "the ward rises this tick");
+    assert_eq!(told(&events, EventKind::BossSlammed), 0, "and slams no one as it does");
+    assert!(room.players[&player].fighter.health >= before, "unharmed by a slam");
+}
+
+#[test]
+fn the_ward_rises_at_exactly_two_thirds_of_the_bosss_health_and_not_above() {
+    let (mut room, _, boss) = court();
+    let fighter = room.foes[&boss].fighter.clone();
+    let held = fighter.health_max * WARDS[0];
+    let above = room.warded(boss, Fighter { health: held + 1e-6, ..fighter.clone() });
+    assert!(!room.encounters.as_ref().expect("encounters").court.ward_up, "a hair above: no ward");
+    assert_eq!(above.health, held + 1e-6);
+    let at = room.warded(boss, Fighter { health: held, ..fighter });
+    assert!(room.encounters.as_ref().expect("encounters").court.ward_up, "at two thirds exactly: warded");
+    assert_eq!(at.health, held);
+}
