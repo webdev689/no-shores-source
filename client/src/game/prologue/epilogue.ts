@@ -46,6 +46,9 @@ export class Epilogue {
   done = false;
   /** Whether a line between two points is clear of the place's solids: set where she stands in Overlook. */
   clear: (from: readonly [number, number, number], to: readonly [number, number, number]) => boolean = () => true;
+  /** The floor a figure stands on over dry ground (a paved walk, a pier): set where she stands in Overlook; the
+   *  ground's own height where none is set. */
+  floor: ((x: number, y: number) => number) | null = null;
   /** What she says once the player sees her, resolved once said: her welcome, set where she stands in Overlook. */
   words: () => Promise<void> = () => Promise.resolve();
 
@@ -141,7 +144,7 @@ export class Epilogue {
     const spots = SPOTS.map(([ahead, side]) => {
       const x = you.x + Math.sin(you.facing) * ahead + Math.sin(right) * side;
       const y = you.y - Math.cos(you.facing) * ahead - Math.cos(right) * side;
-      return { x, y, ground: this.stage.parts.scene.groundAt(x, y) };
+      return { x, y, ground: this.standOn(x, y) };
     });
     const head = (x: number, y: number, z: number) => [x, y, z + HEAD_M * 0.8] as const;
     const dry = spots.filter((spot) => spot.ground !== null && spot.ground >= 0);
@@ -164,10 +167,16 @@ export class Epilogue {
     standing.facing = Math.atan2(toX - standing.x, standing.y - toY);
     const step = Math.min(far, WALK_M_S * seconds) / far;
     const [x, y] = [standing.x + (toX - standing.x) * step, standing.y + (toY - standing.y) * step];
-    const ground = this.stage.parts.scene.groundAt(x, y);
+    const ground = this.standOn(x, y);
     if (ground === null || ground < 0) return false;
     Object.assign(standing, { x, y, z: ground });
     return true;
+  }
+
+  /** The height she stands at over a point: the floor there over dry ground; water or unknown as the ground says. */
+  private standOn(x: number, y: number): number | null {
+    const ground = this.stage.parts.scene.groundAt(x, y);
+    return ground === null || ground < 0 ? ground : (this.floor?.(x, y) ?? ground);
   }
 }
 

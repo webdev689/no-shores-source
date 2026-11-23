@@ -193,6 +193,21 @@ test('a parapet before the player puts her at their side, on their own floor and
   assert.ok(stranger.y > -1.5, 'on their side of it');
 });
 
+test('she stands and walks on the floor a figure stands on, a paved walk over the ground, not sunk to the ground', async () => {
+  const { epilogue, said } = epilogueOn();
+  // A walk paved 0.9 m over the ground, as Overlook's parapet walk is, and the player on it.
+  epilogue.floor = (_east, y) => (y > 40 ? 1 : 1.9);
+  const onWalk = { ...YOU, z: 1.9 };
+  const [stranger] = epilogue.frame(BEHIND, VIEW, STEP_S, 0, onWalk, false);
+  assert.equal(stranger?.z, 1.9, 'on the walk');
+  epilogue.frame(BEHIND, VIEW, HUD_VEIL_S, 0, onWalk, false);
+  said[0]?.finish();
+  await settled();
+  epilogue.frame(BEHIND, VIEW, STEP_S, 0, onWalk, false);
+  const [walking] = epilogue.frame(BEHIND, VIEW, STEP_S, 0, onWalk, false);
+  assert.equal(walking?.z, 1.9, 'walking along it');
+});
+
 test('she waits to speak while a menu is open over the view, and speaks once it is shut', () => {
   const { epilogue, said } = epilogueOn();
   for (let frames = 0; frames < 90; frames++) epilogue.frame(BEHIND, VIEW, STEP_S, 0, YOU, false, true);

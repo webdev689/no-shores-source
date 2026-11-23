@@ -83,6 +83,7 @@ export class AfterStory {
       });
       epilogue.words = () => welcome.run();
       epilogue.clear = lineClear(here.blocks);
+      epilogue.floor = here.floor;
       this.welcome = welcome;
     }
     return epilogue.frame(shot, viewport, seconds, clock, you, veiled, here.held);

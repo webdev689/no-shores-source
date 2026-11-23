@@ -135,7 +135,8 @@ played.
 black holds until the veil has risen under it (0.7 s), then goes. The stranger waits behind the veil; she stands before the
 player, facing them: 2.2 m ahead and 1 m to their right, else to their left, else nearer and more to the side (1.2 m
 ahead and 1.6 m out, then 0.3 m and 2 m), the first spot on the player's own floor (within 1 m of it) whose line to
-them clears the place's solids, so never past a parapet or a wall; where none is, the first on dry ground, and begins her welcome
+them clears the place's solids, so never past a parapet or a wall; where none is, the first on dry ground. Over dry ground
+she stands, and walks, on the floor a figure stands on there (a paved walk, a pier), never sunk to the ground under it. She begins her welcome
 once the veil has fallen, the story's black has gone and she is in the player's view. Then she walks toward the town's
 middle on dry ground only (she stands where the next step is water or unknown), and is let go once none of her, feet
 to head, is on the player's view, or a minute after she set off if she still stands in sight, held at the water or at
