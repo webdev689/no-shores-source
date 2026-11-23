@@ -12,8 +12,9 @@ export const USERNAME = /^[A-Za-z][A-Za-z0-9_]{2,19}$/;
 const GUILD_NAME = /^(?=.{3,24}$)[A-Za-z][A-Za-z0-9]*(?:[' -][A-Za-z0-9]+)*$/;
 const TAG = /^[A-Za-z0-9]{2,4}$/;
 const MOTTO_MOST = 80;
-/** Control characters and the marks that turn text's direction, which could hide or reorder what others read. */
-const HIDDEN = /[\p{Cc}‪-‮⁦-⁩]/u;
+/** Control characters, the marks that turn text's direction, and other format marks, which could hide or reorder what
+ *  others read, as the chat's lines hold none (`chatLaw.ts`); a joiner is kept, for emoji. */
+const HIDDEN = /(?!\u200d)[\p{Cc}\p{Cf}]/u;
 const NOT_ALLOWED = 'That name is not allowed. Choose another.';
 
 /** What a kind may be, what its player is told when it is not, and whether it is a name, which may not claim to speak
