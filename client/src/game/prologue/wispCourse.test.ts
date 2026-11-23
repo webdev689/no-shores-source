@@ -38,6 +38,26 @@ function standing(): { feet: readonly [number, number, number]; facing: number }
   return places.flatMap(([x, y]) => facings.map((facing) => ({ feet: [x, y, topAt(course, x, y)] as const, facing })));
 }
 const PLACES = standing();
+/** How far from a wall a player's body keeps them, metres, and the highest step they stand beside (combat's tuning). */
+const [BODY_M, STEP_M] = [0.35, 0.5];
+/** Every place on the quiet deck a player's body fits, half a metre apart: hard against its rails and the wheel too. */
+const STANDABLE = (() => {
+  const places: (readonly [number, number, number])[] = [];
+  for (let x = quiet[0]; x <= quiet[2]; x += 0.5)
+    for (let y = quiet[1]; y <= quiet[3]; y += 0.5) {
+      const deck = topAt(course, x, y);
+      const walled = course.some(
+        (block) =>
+          block.top > deck + STEP_M &&
+          x > block.minX - BODY_M &&
+          x < block.maxX + BODY_M &&
+          y > block.minY - BODY_M &&
+          y < block.maxY + BODY_M,
+      );
+      if (deck > 0 && !walled) places.push([x, y, deck]);
+    }
+  return places;
+})();
 /** How far below level an eye at `eye` looks toward `look`, radians. */
 const pitchOf = (eye: readonly number[], look: readonly number[]) =>
   Math.atan2(
@@ -198,7 +218,8 @@ function rings(flown: ReturnType<typeof wispCourse>, feet: readonly [number, num
 }
 
 test('its rings come down round the body: after the first, between waist and shoulder, clear, never widening', () => {
-  for (const { feet, facing } of PLACES) {
+  assert.ok(STANDABLE.length > 40, `${STANDABLE.length} places a body fits`);
+  for (const { feet, facing } of [...PLACES, ...STANDABLE.map((feet) => ({ feet, facing: 0 }))]) {
     const flown = wispCourse(feet, facing, layout);
     const moments = rings(flown, feet);
     assert.ok((moments.at(-1)?.round ?? 0) > 4 * Math.PI, 'more than two rings');
@@ -218,7 +239,8 @@ test('its rings come down round the body: after the first, between waist and sho
 });
 
 test('down at the chest, its light falls on the deck under the player through the rings', () => {
-  for (const { feet, facing } of PLACES.filter((unused, index) => index % 5 === 0)) {
+  const hard = STANDABLE.filter((unused, index) => index % 3 === 0).map((feet) => ({ feet, facing: 0 }));
+  for (const { feet, facing } of [...PLACES.filter((unused, index) => index % 5 === 0), ...hard]) {
     const flown = wispCourse(feet, facing, layout);
     for (const { seconds, round } of rings(flown, feet)) {
       if (round < 2 * Math.PI) continue;

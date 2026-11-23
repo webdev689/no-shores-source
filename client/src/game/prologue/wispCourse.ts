@@ -206,8 +206,10 @@ export function wispCourse(feet: Point, facing: number, layout: WreckLayout): Wi
   return { samples, feet, facing, blocks: near };
 }
 
-/** How fast its way may widen or close in as it joins its rings, metres a sixtieth of a second. */
+/** How fast its way may widen or close in as it joins its rings, metres a sixtieth of a second; and how far apart
+ *  the rings' room is looked at, metres. */
 const WIDEN_M = 0.08;
+const SCAN_M = 0.05;
 
 /** Its rings from sample `from` on, closed in toward the player where a solid stands within them at their height, so
  *  they keep round the player's chest rather than rising over a wall or the wheel; once joined they never widen, and
@@ -216,14 +218,14 @@ function closedIn(points: readonly Point[], blocks: readonly CourseBlock[], feet
   const radii = points.map(([x, y, z], index) => {
     const out = Math.hypot(x - feet[0], y - feet[1]);
     if (index < from) return out;
-    // Out from the player to the first solid at its height: every ring nearer than that is clear too.
+    // Out from the player's own room to the first solid at its height: every ring nearer than that is clear too, and
+    // by a post close beside them even its last rings close in under their usual half metre.
     const [east, south] = [(x - feet[0]) / (out || 1), (y - feet[1]) / (out || 1)];
-    let radius = RING_M[1];
-    while (
-      radius + 0.05 <= out &&
-      clearOver(blocks, feet, feet[0] + east * (radius + 0.05), feet[1] + south * (radius + 0.05), RING_CLEAR_M) <= z
-    )
-      radius += 0.05;
+    // Looked at a step apart, each a step clearer than the rings keep, so any ring between two looked at is clear.
+    const clear = (radius: number) =>
+      clearOver(blocks, feet, feet[0] + east * radius, feet[1] + south * radius, RING_CLEAR_M + SCAN_M) <= z;
+    let radius = OWN_M - SCAN_M;
+    while (radius + SCAN_M <= out && clear(radius + SCAN_M)) radius += SCAN_M;
     return Math.min(out, radius);
   });
   // Once joined, the rings only tighten: a solid that closes them in keeps them as close after it.
