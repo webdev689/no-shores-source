@@ -281,7 +281,7 @@ out past its edge.
   level ground. A climbing run ends at 0.55 so the face
   behind its door rises in ledges too steep to climb. A run past the edge has a wing that carries the claim out round
   it, and the section takes the run in. Its way is walked as a footpath, painted on the ground but not bedded as a
-  road. Its beats are marked as foes' sites, which no room stands foes at yet; its end arena is an objective's site and its door a door's.
+  road. Its beats are marked as foes' sites, where its room stands a group as a player first comes near ([[Enemies]], "Caverns and runs"); its end arena is an objective's site and its door a door's.
 - **What stands in it** (`run_kits`, `run_halls`, `halls`): its mouth marked so the zone sees where it goes (a fallen
   arch of rock, two standing stones, a broken gateway of towers, a gatehouse, a head-frame and its spoil, a ruined
   chapel); cover on every beat no more than 10 m from any point of its floor (rock, broken masonry, crates, stone
@@ -423,6 +423,8 @@ the rock round it, which stands whole right beside a roofed floor ([[Land]]), an
 stands round its edges, so no roof stands over the massif; the tunnel's roof starts 4 m in, where the cliff the
 tunnel opens in stands whole, and a tunnel mouth of rock frames the opening at the floor. The
 map takes the cavern as a roofed space joined to its area by a tunnel. In the Vale the Hollow Coven opens into one.
+Every coven's and cave's area marks a foes' site at its middle, where its room stands a group ([[Enemies]],
+"Caverns and runs").
 
 ## The map
 

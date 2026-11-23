@@ -183,6 +183,10 @@ pub struct Room {
     pub counters: Option<Vec<asks::Counter>>,
     pub(crate) stall: Option<[f64; 2]>,
     pub(crate) resource_nodes: Vec<ResourceNode>,
+    /// A patrol's foes' sites, each with whether its group has stood there yet (`stands.rs`).
+    pub(crate) foe_sites: Vec<([f64; 2], bool)>,
+    /// Since when no player has come near each half-fallen patrol group, by its first foe as it stood (`stands.rs`).
+    pub(crate) unvisited: BTreeMap<FighterId, u64>,
     pub(crate) drops: Vec<Drop>,
     pub(crate) spells: spells::Spells,
     /// The difficulty its voyage set out at; whether it is a patrol, whose nodes take turns (`patrol.rs`); and the
@@ -280,6 +284,8 @@ impl Room {
             counters: None,
             stall: None,
             resource_nodes: Vec::new(),
+            foe_sites: Vec::new(),
+            unvisited: BTreeMap::new(),
             drops: Vec::new(),
             spells: spells::Spells::default(),
             difficulty: gear::Difficulty::Normal,
