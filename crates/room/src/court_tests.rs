@@ -381,9 +381,9 @@ fn on_the_tick_its_ward_rises_the_boss_slams_no_one_its_two_second_warning_comes
 #[test]
 fn the_ward_rises_at_exactly_two_thirds_of_the_bosss_health_and_not_above() {
     let (mut room, _, boss) = court();
-    let fighter = room.foes[&boss].fighter.clone();
+    let fighter = room.foes[&boss].fighter;
     let held = fighter.health_max * WARDS[0];
-    let above = room.warded(boss, Fighter { health: held + 1e-6, ..fighter.clone() });
+    let above = room.warded(boss, Fighter { health: held + 1e-6, ..fighter });
     assert!(!room.encounters.as_ref().expect("encounters").court.ward_up, "a hair above: no ward");
     assert_eq!(above.health, held + 1e-6);
     let at = room.warded(boss, Fighter { health: held, ..fighter });
