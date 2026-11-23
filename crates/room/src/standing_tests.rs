@@ -525,3 +525,23 @@ fn a_dress_sent_while_held_is_shown_once_let_go() {
     }
     assert!(room.dresses().any(|(id, _)| id == player), "the dress sent while held is kept");
 }
+
+#[test]
+fn every_keeper_spoken_with_but_the_stranger_stands_at_a_counter_of_its_own() {
+    use gear::vendor::Vendor;
+    let counter = |key: &str| {
+        let number = gear::quests::KEEPERS.iter().find(|(_, found)| *found == key).map(|(number, _)| *number);
+        super::keeper_counter(number.expect("a keeper"))
+    };
+    assert_eq!(counter("mage"), Some(CounterKind::Mage));
+    assert_eq!(counter("vault"), Some(CounterKind::Vault));
+    assert_eq!(counter("armorsmith"), Some(CounterKind::Vendor(Vendor::Armorsmith)));
+    assert_eq!(counter("weaponsmith"), Some(CounterKind::Vendor(Vendor::Weaponsmith)));
+    assert_eq!(counter("tailor"), Some(CounterKind::Tailor));
+    assert_eq!(counter("tack"), Some(CounterKind::Tack));
+    assert_eq!(counter("harbourmaster"), Some(CounterKind::Vendor(Vendor::Shipwright)));
+    assert_eq!(counter("mail"), Some(CounterKind::Mail));
+    assert_eq!(counter("stranger"), None, "heard anywhere");
+    let house = gear::factions::factions().factions.first().expect("a house");
+    assert_eq!(super::keeper_counter(house.id), Some(CounterKind::Faction(house.id)));
+}

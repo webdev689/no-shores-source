@@ -112,13 +112,12 @@ fn the_strangers_gift_is_given_once_however_often_she_is_heard() {
     assert_eq!(character.ask(Ask::Speak { keeper: keeper("stranger") }, AFIELD, &DICE), Err(Refusal::NotHere));
     let mut character = welcomed();
     assert_eq!(character.materials.aurem, 400);
-    // A second hearing, from a rejoin or a second tab, finds her task done.
+    // A second hearing finds her task done.
     let again = character.ask(Ask::Speak { keeper: keeper("stranger") }, SOCIAL, &DICE);
     assert_eq!(again, Err(Refusal::NothingToSay));
     assert_eq!(character.materials.aurem, 400);
-    // Kept and read back, the gift stays given.
-    let kept: Character = serde_json::from_value(serde_json::to_value(&character).expect("kept")).expect("read");
-    let mut kept = kept;
+    // Kept and read back as a room reads a character that joins, the gift stays given.
+    let mut kept = Character::from_json(&character.to_json()).expect("read");
     assert_eq!(kept.ask(Ask::Speak { keeper: keeper("stranger") }, SOCIAL, &DICE), Err(Refusal::NothingToSay));
 }
 
@@ -162,11 +161,23 @@ fn a_character_already_on_the_houses_is_not_walked_round_again() {
     let opening = quests().quests.iter().position(|quest| quest.faction == 0).expect("the opening");
     let houses = quests().quests[opening].tasks.iter().position(|task| task.id == "hear-three-houses").expect("there");
     character.quests.set_task(opening, houses);
-    let kept: Character = serde_json::from_value(serde_json::to_value(&character).expect("kept")).expect("read");
+    let mut kept = Character::from_json(&character.to_json()).expect("read");
     assert_eq!(kept.quest_now(), Some((opening, houses)));
-    let mut kept = kept;
     assert_eq!(kept.ask(Ask::Speak { keeper: keeper("stranger") }, SOCIAL, &DICE), Err(Refusal::NothingToSay));
     assert_eq!(kept.materials.aurem, 0, "no gift past her task");
+}
+
+#[test]
+fn a_paid_character_kept_on_an_opening_task_this_room_does_not_know_is_not_given_the_gift_again() {
+    // As a later room might keep it, then a room of this build read it: a task past the stranger's it never had.
+    let mut kept = serde_json::to_value(welcomed()).expect("kept");
+    let opening = quests().quests.iter().find(|quest| quest.faction == 0).expect("the opening");
+    kept["quests"]["roads"][&opening.id]["task"] = serde_json::json!("a-later-task");
+    let mut read = Character::from_json(&kept.to_string()).expect("read");
+    let task = read.quest_now().map(|(quest, task)| quests().quests[quest].tasks[task].id.as_str());
+    assert_eq!(task, Some("hear-three-houses"), "read as one kept before the round");
+    assert_eq!(read.ask(Ask::Speak { keeper: keeper("stranger") }, SOCIAL, &DICE), Err(Refusal::NothingToSay));
+    assert_eq!(read.materials.aurem, 400, "paid once");
 }
 
 #[test]
@@ -187,6 +198,34 @@ fn starter_gear_bought_during_the_round_counts_once_its_task_is_reached() {
     let task = character.quest_now().map(|(quest, task)| quests().quests[quest].tasks[task].id.as_str());
     assert_eq!(task, Some("wear-them"), "the pieces already owned arm the player: nothing more to buy");
     assert_eq!(character.materials.aurem, 400 - 5 * 50);
+    // Carried, not worn: another answered ask leaves every piece still to put on.
+    buy(&mut character, Vendor::Weaponsmith, Kind::Bow);
+    let task = character.quest_now().map(|(quest, task)| quests().quests[quest].tasks[task].id.as_str());
+    assert_eq!(task, Some("wear-them"));
+    assert_eq!(character.quest_counts(), vec![0; 5]);
+}
+
+#[test]
+fn starter_gear_bought_and_worn_during_the_round_dresses_the_player_as_its_last_keeper_is_heard() {
+    let mut character = welcomed();
+    let level = character.level();
+    let buy = |character: &mut Character, vendor, kind| {
+        let ware = starter(vendor, kind, level);
+        assert!(character.ask(Ask::Vend { vendor, ware, day: 4 }, SOCIAL, &DICE).is_ok());
+    };
+    buy(&mut character, Vendor::Weaponsmith, Kind::SwordAndShield);
+    for kind in [Kind::Head, Kind::Torso, Kind::Arms, Kind::Legs] {
+        buy(&mut character, Vendor::Armorsmith, kind);
+    }
+    let pieces: Vec<(u32, Slot)> = character.items.values().map(|(item, _)| (item.id, item.kind.slot())).collect();
+    for (item, slot) in pieces {
+        assert!(character.ask(Ask::Wear { item, slot }, SOCIAL, &DICE).is_ok());
+    }
+    for key in ["weaponsmith", "armorsmith", "mage", "vault", "tailor", "tack", "mail", "harbourmaster"] {
+        assert!(character.ask(Ask::Speak { keeper: keeper(key) }, SOCIAL, &DICE).is_ok(), "{key}");
+    }
+    let task = character.quest_now().map(|(quest, task)| quests().quests[quest].tasks[task].id.as_str());
+    assert_eq!(task, Some("hear-three-houses"), "armed and dressed by the pieces already worn");
 }
 
 #[test]
@@ -226,7 +265,7 @@ fn a_character_kept_before_the_quest_log_reads_on_the_houses_with_no_gift_and_a_
             Some(log) => object.insert("quests".to_owned(), log),
             None => object.remove("quests"),
         };
-        let mut read: Character = serde_json::from_value(kept).expect("read");
+        let mut read = Character::from_json(&kept.to_string()).expect("read as a room reads it");
         assert_eq!(task(&read).as_deref(), Some("hear-three-houses"), "kept before: {:?}", object_keys(&read));
         let refused = read.ask(Ask::Speak { keeper: keeper("stranger") }, SOCIAL, &DICE);
         assert_eq!(refused, Err(Refusal::NothingToSay));

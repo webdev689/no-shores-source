@@ -9,8 +9,8 @@ use crate::item::Item;
 use crate::kinds::{Kind, Slot};
 use crate::rarity::Rarity;
 
-/// The horse a new player's first is, which the Tack sells every day at the cheapest coat's price, after the tutorial
-/// ([[Horses Are Items Worn in a Mount Slot]]: "Later, not in the tutorial").
+/// The horse a new player's first is: the tutorial gives none, so the Tack sells it every day at the cheapest coat's
+/// price, always in reach once the tutorial is over.
 pub const FIRST_HORSE: &str = "bay";
 
 /// Every coat, in the order a horse's name counts them.

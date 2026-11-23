@@ -10,10 +10,10 @@ const reading =
     readFileSync(each, 'utf8') + (each === path ? changed : '');
 
 test("the protocol's version moves when what the wire numbers by place changes, and a page left open is told", () => {
-  // A smith's stock is asked by its place, the opening's tasks are counted by theirs, and an item's kind and slot
-  // (a horse's among them) cross the wire as numbers.
+  // A smith's stock is asked by its place, the opening's tasks are counted by theirs, a speaker's look by its place
+  // in the cast, and an item's kind and slot (a horse's among them) cross the wire as numbers.
   const placed = ['crates/gear/src/vendor.rs', 'content/quests/quests.json', 'crates/gear/src/quest_defs.rs'];
-  for (const path of [...placed, 'crates/gear/src/kinds.rs']) {
+  for (const path of [...placed, 'content/story/cast.json', 'crates/gear/src/kinds.rs']) {
     assert.ok(PROTOCOL_PATHS.includes(path), `${path} is hashed`);
     assert.notEqual(protocolOf(reading(path, '\n')), protocolOf(reading()), `${path} moves it`);
   }

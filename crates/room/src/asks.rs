@@ -199,21 +199,22 @@ pub fn counter_for(ask: &Ask) -> Option<CounterKind> {
     }
 }
 
-/// The counter a keeper stands at, by the number ask 64 sends: a house's by its faction's, else the Mage's (10), the
-/// vault's, the Armorsmith's, the Weaponsmith's, the Tailor's, the Tack's, the Harbourmaster's and the Postmaster's
-/// (17); the stranger keeps none.
+/// The counter a keeper stands at, by the number ask 64 sends: a house's by its faction's, else the one its key
+/// (`gear::quests::KEEPERS`) names; the stranger keeps none.
 fn keeper_counter(keeper: u8) -> Option<CounterKind> {
-    Some(match keeper {
-        10 => CounterKind::Mage,
-        11 => CounterKind::Vault,
-        12 => CounterKind::Vendor(Vendor::Armorsmith),
-        13 => CounterKind::Vendor(Vendor::Weaponsmith),
-        14 => CounterKind::Tailor,
-        15 => CounterKind::Tack,
-        16 => CounterKind::Vendor(Vendor::Shipwright),
-        17 => CounterKind::Mail,
-        gear::quests::STRANGER => return None,
-        house => CounterKind::Faction(gear::factions::factions().faction(house)?.id),
+    if let Some(house) = gear::factions::factions().faction(keeper) {
+        return Some(CounterKind::Faction(house.id));
+    }
+    Some(match gear::quests::keeper_key(keeper)? {
+        "mage" => CounterKind::Mage,
+        "vault" => CounterKind::Vault,
+        "armorsmith" => CounterKind::Vendor(Vendor::Armorsmith),
+        "weaponsmith" => CounterKind::Vendor(Vendor::Weaponsmith),
+        "tailor" => CounterKind::Tailor,
+        "tack" => CounterKind::Tack,
+        "harbourmaster" => CounterKind::Vendor(Vendor::Shipwright),
+        "mail" => CounterKind::Mail,
+        _ => return None,
     })
 }
 

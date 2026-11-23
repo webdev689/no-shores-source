@@ -44,7 +44,10 @@ fn on_the_wreck_a_player_wears_the_story_s_steel_from_the_first_but_no_helm_once
     let mut room = wreck();
     let early = room.join().expect("a room with space");
     room.story_wreck();
+    let held = |room: &Room| room.players[&early].character.items.keys().copied().collect::<Vec<u32>>();
+    let dressed = held(&room);
     room.story_wreck();
+    assert_eq!(held(&room), dressed, "told again, the same pieces stay: none stripped and given anew");
     let late = room.join().expect("a room with space");
     for player in [early, late] {
         let character = &room.players[&player].character;
