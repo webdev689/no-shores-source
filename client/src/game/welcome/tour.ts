@@ -7,7 +7,7 @@ import { type Shot, panShot } from '../camera.ts';
 import type { StationInfo } from '../nodes.ts';
 
 /** One step of her welcome: the scene she says, and the counters the camera frames meanwhile, by their station's
- *  kind (none keeps the view on the player), seen from `high` over a building or walls that stand round them. */
+ *  kind (none keeps the view on the player), seen from `high` over a building that stands round them. */
 export interface TourStep {
   readonly scene: string;
   readonly kinds: readonly string[];
@@ -20,7 +20,7 @@ export const TOUR: readonly TourStep[] = [
   { scene: 'tourMage', kinds: ['mage'] },
   { scene: 'tourVault', kinds: ['vault'] },
   { scene: 'tourTailor', kinds: ['tailor'] },
-  { scene: 'tourTack', kinds: ['tack'], high: true },
+  { scene: 'tourTack', kinds: ['tack'] },
   { scene: 'tourPost', kinds: ['mail'] },
   { scene: 'tourHarbour', kinds: ['harbourmaster'] },
   { scene: 'tourHall', kinds: ['stormcallers', 'lamplighters', 'veiled'], high: true },
@@ -33,8 +33,7 @@ export const FLY_S = 2.4;
  *  spread widens both, so every counter of it stays in the view. */
 const BACK_M = 11;
 const HEIGHT_M = 7;
-/** How far out and up a place inside a building or a walled court is seen from, toward the player, clear of its
- *  walls, metres. */
+/** How far out and up a place inside a building is seen from, toward the player, clear of its walls, metres. */
 const HIGH_BACK_M = 70;
 const HIGH_M = 50;
 const SPREAD_BACK = 1.3;
