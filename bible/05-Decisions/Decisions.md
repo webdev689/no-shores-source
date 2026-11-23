@@ -299,6 +299,7 @@ a decision is a record. How to add one: [[Recording a Decision]].
 - [[Each House's Lore Book Tells Its Art's Origin]]
 - [[The Lore Is Set Out, Bold and Italic Where It Helps]]
 - [[The Lore Books' Covers Are Drawn in Detail]]
+- [[The Game's Words Go Out to Type and Come Back]]
 
 ## Replaced
 

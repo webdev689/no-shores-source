@@ -22,7 +22,7 @@ This vault is the bible: how No Shores works now, the rules we hold the code to,
 | `01-Game` | [[No Shores]]: the owner's words on what the game is |
 | `02-Systems` | One note per system, how it works now. Listed in [[Systems]] |
 | `03-Code` | [[Code Map]], [[Toolchain]], [[Toolkit]], [[Checks]], [[Testing]], [[Platform Research]], [[RMB Blocks]] |
-| `04-Procedures` | [[Making a Change]], [[Branches and Merging]], [[Porting from DFO]], [[Writing Notes]], [[Recording a Decision]] |
+| `04-Procedures` | [[Making a Change]], [[Branches and Merging]], [[Porting from DFO]], [[Writing Notes]], [[Recording a Decision]], [[Editing the Words in a Writing Tool]] |
 | `05-Decisions` | The owner's decisions, one note each, in the owner's words. Listed in [[Decisions]] |
 | `06-Port` | What we take from DFO Online and what we leave: [[Port]], [[Pick List]] |
 | `07-Open` | [[Open Questions]]: decisions waiting on the owner |

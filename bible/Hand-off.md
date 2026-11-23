@@ -330,6 +330,9 @@ The decisions in [[Open Questions]] are not repeated here.
 
 ## Next
 
+- **The words through Type**: `tools/words.mjs` writes every spoken line, quest and lore chapter out under tags and
+  reads them back ([[Editing the Words in a Writing Tool]]). The owner has the export; bring their edited text in
+  with `import --dry` first. Words written in the code are not in it.
 - **The public events' last pictures**, left for later by the owner: the raid's waves marching, a store
   plundered, Marrow, the Tithe giving up and a failed raid; the Fissure's growth sinking, the Warden, the last minute,
   the seal and a failed Fissure; the chest, the result and the reward feed; night; the banner at 1280x720, 1000x600,
