@@ -46,8 +46,8 @@ code:
   - crates/foes/src/tuning.rs#MELEE_TOKENS
   - crates/foes/src/tuning.rs#POST_SEEK
   - crates/room/src/foes.rs#step_foes
-  - crates/room/src/foes.rs#tell_brains
-  - crates/room/src/foes.rs#noises
+  - crates/room/src/told.rs#tell_brains
+  - crates/room/src/told.rs#noises
   - crates/room/src/foes.rs#shout
   - crates/room/src/judging.rs#settle
 ---

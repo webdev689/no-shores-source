@@ -383,10 +383,8 @@ impl Room {
                 let part = running.parts.entry(who.clone()).or_default();
                 (part.present, part.did) = (part.present + before.present, part.did || before.did);
             }
-            if running.chested.contains(&Who::Player(player)) {
-                running.chested.insert(who.clone());
-            }
-            let laid = running.chested.contains(&who);
+            let under_number = running.chested.contains(&Who::Player(player));
+            let laid = running.chested.contains(&who) || (under_number && running.chested.insert(who.clone()));
             let earned = running.phase == Phase::Won && !laid && running.parts.get(&who).is_some_and(took_part);
             earned.then(|| {
                 running.chested.insert(who);
@@ -415,8 +413,7 @@ impl Room {
     }
 
     /// Stands one of an event's foes of a type and rank at a place, at the event's level, at home round `home` and
-    /// hunting the nearest player on its ground if it `hunts` (the growth and the tithe-taker, which the room moves itself,
-    /// do not); none while the room has no room for it.
+    /// hunting the nearest player on its ground if it `hunts` (not the foes the room moves); none while it has no room.
     pub(crate) fn stand_event_foe(
         &mut self,
         running: &mut Running,

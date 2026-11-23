@@ -199,8 +199,8 @@ The decisions in [[Open Questions]] are not repeated here.
   module's does not (Claude's call in the merge, the owner's to change).
 - **The ship aim under the crosshair, and the ship steady in it** (#168), merged; `cargo xtask check`
   passed on its head. The owner: "The aim UI needs to be
-  center on the camera and its currently offset. Ship geometry in the aim jitters" ([[Aiming a Ship Looks Square Off Its
-  Side, Clear of Its Rig]], its calls). Measured offline on the rules' own swell (`seaAim.test.ts`, and a probe driving
+  center on the camera and its currently offset. Ship geometry in the aim jitters"
+  ([[Aiming a Ship Looks Square Off Its Side, Clear of Its Rig]], its calls). Measured offline on the rules' own swell (`seaAim.test.ts`, and a probe driving
   `SeaCombat` on the wasm rules): the volley's fall stood 90 to 100 px past the crosshair on a 1080-line screen, as the
   rules laid for a sea at rest at the ship's heave; it now stands within about 4 px settled, the rules laying where the
   look's ray meets the swell (`on_water`), the view held at the guns' real nearest (`laidNearest`) and turned over the
