@@ -455,6 +455,10 @@ function place(
     const [anchorX, anchorY] = float.anchor ?? [0, 0];
     kid.x = Math.round(target.x + atX * target.width - anchorX * kid.w + (float.x ?? 0));
     kid.y = Math.round(target.y + atY * target.height - anchorY * kid.h + (float.y ?? 0));
+    if (float.kept) {
+      kid.x = Math.max(view.x, Math.min(kid.x, view.x + view.width - kid.w));
+      kid.y = Math.max(view.y, Math.min(kid.y, view.y + view.height - kid.h));
+    }
     place(kid, context, view, float.clipped ? within : view, float.z ?? z + 1, laid, out);
   }
 }

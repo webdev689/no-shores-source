@@ -162,19 +162,26 @@ function flyoutNode(context: MenuContext, slot: number, end: boolean, low: boole
       x: end ? 10 : -10,
       y: low ? 8 : -8,
       z: 26,
+      kept: true,
     },
     children: [
       label(`${name} · ${filled} of ${cells.length} carried`, context.sizes.label),
       filled === 0 && words('Nothing carried for this slot yet.', 1, INK.faint),
       {
-        direction: 'column',
-        gap: 6,
-        children: [0, 1, 2].map((row) => ({
-          gap: 6,
-          children: cells.slice(row * 3, row * 3 + 3).map((item) => cellNode(context, item, worn)),
-        })),
+        // The Mount's bardings stand beside its horses, so its flyout is no taller than a gear slot's.
+        gap: 16,
+        children: [
+          {
+            direction: 'column',
+            gap: 6,
+            children: [0, 1, 2].map((row) => ({
+              gap: 6,
+              children: cells.slice(row * 3, row * 3 + 3).map((item) => cellNode(context, item, worn)),
+            })),
+          },
+          slot === MOUNT_SLOT && bardingRow(context, CELL_TILE),
+        ],
       },
-      slot === MOUNT_SLOT && bardingRow(context, CELL_TILE),
     ],
   };
 }

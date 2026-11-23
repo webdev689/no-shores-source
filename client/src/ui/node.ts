@@ -79,6 +79,8 @@ export interface Float {
   readonly z?: number;
   /** Clipped as its parent's children are; otherwise it shows past them, as a tooltip does. */
   readonly clipped?: boolean;
+  /** Kept whole on the screen: moved back inside it where it would run off an edge, as a menu's flyout is. */
+  readonly kept?: boolean;
 }
 
 /** A text field: what shows while it is empty, and whether its words are hidden. */
