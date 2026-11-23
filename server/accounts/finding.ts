@@ -106,21 +106,32 @@ export class Queue {
   }
 }
 
-/** A session's account, the level its room last kept (1 for none yet), and whom it blocks or is blocked by, by id;
- *  null for a token that is no live session. */
-export async function seekerOf(
-  database: Db,
-  token: string,
-  now: number,
-): Promise<{ account: string; level: number; apart: string[] } | null> {
+/** A session's account, the level its room last kept (1 for none yet), whether it played the prologue, and whom it
+ *  blocks or is blocked by, by id; null for a token that is no live session. */
+export async function seekerOf(database: Db, token: string, now: number): Promise<Seeking | null> {
   const account = await liveAccount(database, token, now);
   if (account === null) return null;
   const kept = await database
-    .prepare(`SELECT json_extract(body, '$.shown.level') AS level FROM characters WHERE account_id = ?1`)
+    .prepare(
+      `SELECT json_extract(body, '$.shown.level') AS level, json_extract(body, '$.story.prologue') AS prologue
+       FROM characters WHERE account_id = ?1`,
+    )
     .bind(account)
-    .first<{ level: number | null }>();
-  return { account, level: Number(kept?.level ?? 1) || 1, apart: await apartFrom(database, account) };
+    .first<{ level: number | null; prologue: number | null }>();
+  const [level, prologue] = [Number(kept?.level ?? 1) || 1, Boolean(kept?.prologue)];
+  return { account, level, prologue, apart: await apartFrom(database, account) };
 }
+
+/** A seeker as the accounts read them for the finder. */
+export interface Seeking {
+  readonly account: string;
+  readonly level: number;
+  readonly prologue: boolean;
+  readonly apart: readonly string[];
+}
+
+/** Why one who has not played the prologue finds no company: the gate's own words (`gear::gate`). */
+export const AFTER_PROLOGUE = 'This place opens after the prologue.';
 
 /** A seeker's socket, as the finder speaks to it. */
 export interface FinderSocket {
@@ -131,7 +142,7 @@ export interface FinderSocket {
 /** What a finder needs: who a token's seeker is, a way to keep whom a run was found for, a clock, an instance, and
  *  for a playlist a draw of one of a count (the server's randomness when none is given). */
 export interface FinderDeps {
-  seeker(token: string): Promise<{ account: string; level: number; apart: readonly string[] } | null>;
+  seeker(token: string): Promise<Seeking | null>;
   found(run: string, accounts: readonly string[]): Promise<boolean>;
   readonly now: () => number;
   readonly instance: () => string;
@@ -180,6 +191,8 @@ export class Finder {
     if (found === null) return this.letGo(socket, 4003, 'Sign in to find a company.');
     const { account, level, apart } = found;
     if (this.starting.has(account)) return this.letGo(socket, 4003, ANOTHER_TAB);
+    // Every run a finder starts opens after the prologue, so a seeker before it would be matched only to be refused.
+    if (!found.prologue) return this.letGo(socket, 4003, AFTER_PROLOGUE);
     const playlist = playlistOf(this.base);
     const band = playlist === null ? bandOf(level) : playlistBand(playlist, level);
     if (playlist !== null && band === null) return this.letGo(socket, 4003, playlistShut(playlist));

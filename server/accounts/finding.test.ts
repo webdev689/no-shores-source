@@ -41,8 +41,8 @@ class FakeSocket implements FinderSocket {
   }
 }
 
-/** Named players, each one's token and account, kept at `level` as their room last saved them. */
-async function world(names: readonly string[], level = 5) {
+/** Named players, each one's token and account, kept at `level` past the prologue as their room last saved them. */
+async function world(names: readonly string[], level = 5, prologue = true) {
   const made = accounts();
   const kept = characters(
     made.deps.database,
@@ -54,7 +54,7 @@ async function world(names: readonly string[], level = 5) {
     const token = (await made.ask('POST', '/v1/guest')).body['token'] as string;
     await made.ask('POST', '/v1/register', { username: name, password: 'long enough' }, token);
     const claimed = await kept.claim(token, `room:${name}`);
-    await kept.save(claimed?.account ?? '', `room:${name}`, JSON.stringify({ shown: { level } }));
+    await kept.save(claimed?.account ?? '', `room:${name}`, JSON.stringify({ shown: { level }, story: { prologue } }));
     [tokens[name], ids[name]] = [token, claimed?.account ?? ''];
   }
   const finderOf = (base: string) =>
@@ -182,10 +182,22 @@ test('a seeker is their session’s account, the level their room last kept, and
   assert.deepEqual(await seekerOf(database, tokens['Ada'] ?? '', made.clock.now), {
     account: ids['Ada'],
     level: 24,
+    prologue: true,
     apart: [ids['Ben'], ids['Cal']].sort(),
   });
-  assert.equal((await seekerOf(database, fresh, made.clock.now))?.level, 1, 'no character kept yet');
+  const kept = await seekerOf(database, fresh, made.clock.now);
+  assert.deepEqual([kept?.level, kept?.prologue], [1, false], 'no character kept yet');
   assert.equal(await seekerOf(database, '0'.repeat(64), made.clock.now), null);
+});
+
+test('one who has not played the prologue finds no company, as no run a finder starts lets them in', async () => {
+  const { tokens, finderOf } = await world(['Ada'], 12, false);
+  for (const base of ['node-krakens-grotto', 'playlist-elite']) {
+    const finder = finderOf(base);
+    const socket = await seeking(finder, tokens['Ada'] ?? '');
+    assert.deepEqual(socket.closed, [4003, 'This place opens after the prologue.'], base);
+    assert.equal(finder.waiting, 0, 'in no queue');
+  }
 });
 
 test('four seekers of a band are sent into one run, which their room lets them into together', async () => {

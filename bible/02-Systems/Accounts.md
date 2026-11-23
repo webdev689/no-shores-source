@@ -203,6 +203,8 @@ each playlist, never the Abyss Dungeon of the week, whose company forms it.
   (`playlistBand`, `playlists.ts`): the Elite's 10 to 14 up to 30 alone, the Abyss's 20 to 24 up to 30 alone; a
   seeker below it is closed with 4003 and "The Elite Playlist opens at level 10." (or the Abyss's at 20). Its levels
   and the 18 Elite Dungeons are the rules' own, which a test holds to the room module's word (`playlists.test.ts`).
+  A seeker whose kept character has not played the prologue (`story.prologue`, none for one never kept) is closed
+  with 4003 and the gate's "This place opens after the prologue.", as every run a finder starts opens after it.
 - **Launch** (`?launch` on a playlist's address, `opened(socket, alone)`): the seeker's run is started at the next
   look, alone, its Elite Dungeon drawn and kept for them as a found run is; no other seeker joins it, and it joins no
   group. Only a playlist launches: on an Elite Dungeon's base a launch waits as any search does.
@@ -218,8 +220,8 @@ each playlist, never the Abyss Dungeon of the week, whose company forms it.
   server's own randomness (`playlistRun`) and its foes' level its band's, and kept for those found (`found_runs`: it admits them for a day
   after it was found, and rows older than that are cleared as later runs are found), so its room lets them in
   together, for that run alone; no one's company changes. Each is sent `{"run":"<name>"}` and their socket closed.
-  The finder judges no gate and keeps no clock: the room is the authority, and the page offers Find a Company only
-  where the gate is open.
+  Beyond the level and the prologue the finder judges no gate and keeps no clock: the room is the authority, and the
+  page offers Find a Company only where the gate is open.
 - **The page's side** (`findCompany`): it opens `AccountLink.finderAt(base)`, the accounts' own address by `ws://`
   or `wss://`, sends the session's token once open, and takes only a run of the base it asked for (for a playlist,
   a playlist's run at its tier). Offline, or with
