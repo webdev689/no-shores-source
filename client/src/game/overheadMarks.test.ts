@@ -155,7 +155,7 @@ test("near, the hub's twelve marks are laid in layers, in under half the vertice
   assert.ok(layered < flat / 2, `${layered} numbers a frame against ${flat}`);
 });
 
-test('a keeper away from their counter is not lit, on the map or over their post', () => {
+test("the Postmaster is lit while letters wait for the player, whether or not a quest step asks for him", () => {
   const letter = { id: 9, from: 0, crowded: false, vestige: null, item: null };
   const gear = { mail: [letter] } as unknown as GearState;
   assert.equal(

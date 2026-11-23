@@ -1,4 +1,4 @@
-// The houses' roads in the browser: once the story and Elder Maren Hale's welcome are past, the tracker shows the
+// The houses' roads in the browser: once the story and the stranger's welcome are past, the tracker shows the
 // quest walked; its lines are said in the dialogue box one scene after another (questWatch.ts); a counter that a talk
 // goal of the task names offers to speak with its keeper; the HUD marks where the task's next goal stands and the
 // held map the nodes its goals name; a varied step's figures and ward stand in the world (questFigures.ts); and what

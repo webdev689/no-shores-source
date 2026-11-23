@@ -74,7 +74,7 @@ export interface Playing {
   sea: Sea | null;
   /** The held map at the helm, made when it is first asked for. */
   readonly helmMap: HelmMap;
-  /** The story's last moment, played on foot once it has ended, and the elder's welcome after it. */
+  /** The story's last moment, played on foot once it has ended: the stranger's welcome to Overlook. */
   readonly after: AfterStory;
   /** The houses' roads, shown once the story and the welcome are past. */
   readonly quests: Quests;
