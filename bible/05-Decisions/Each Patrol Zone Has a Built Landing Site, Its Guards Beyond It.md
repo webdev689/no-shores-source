@@ -27,3 +27,7 @@ status: in force
 |---|---|---|
 | The site | The landing each layout already lays where a player arrives (its boardwalk, lanterns, stores and beached boat, [[Layouts]]), with no foe in reach of it | A landing zone is a safe place to arrive and nothing more, as the owner answered |
 | Beyond it | No guard stands or walks its beat within 25 m of a spawn, as before, beyond the landing's boardwalk, lanterns, stores and signpost (within about 12 m of where a player lands); and no foe starts a fight with a player standing within 15 m of a spawn, past the built site and short of every guard, until that player strikes from there; a fight brought into it goes on, a spell cast is a strike, and its leave comes back once they have left it and come back, or have stood again | Guards stand 25 to 55 m off and shooters reach 51.2 m, so a landing out of reach needs no foe to start a fight into it; one that ended every fight brought in would be a place to hide. A room bakes 70 m of navmesh by the landing, so guards kept past a shooter's reach would leave shallow or bent zones few groups, a square's corner nearer, and ground off the navmesh to shoot guards from unanswered |
+
+Refined by [[The Patrol Audit's Leftovers Are Fixed as the Owner Chose]]: a fight brought into the landing goes on with
+the foes that brought it, no other joining; officers ashore there are left be; a player left be is struck by no blow
+aimed at another.
