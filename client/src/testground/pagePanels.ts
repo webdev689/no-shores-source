@@ -8,6 +8,7 @@ import { CanvasEvents } from '../ui/canvasEvents.ts';
 import { gauntletOver } from '../ui/gauntlet.ts';
 import { Stack } from '../ui/stack.ts';
 import type { Face } from '../ui/text.ts';
+import { seen } from '../ui/seen.ts';
 import { Interface } from '../ui/ui.ts';
 import { UiRenderer, uiScale } from '../ui/uiRenderer.ts';
 
@@ -29,7 +30,7 @@ export class PagePanels {
     this.locked = locked;
     this.events = new CanvasEvents(canvas);
     canvas.addEventListener('pointerdown', (event) => (this.downOnPanel = this.takes(event.offsetX, event.offsetY)));
-    face.then((read) => (this.ui = new Interface(new UiRenderer(gpu, read)))).catch(() => undefined);
+    face.then((read) => (this.ui = seen(new Interface(new UiRenderer(gpu, read))))).catch(() => undefined);
   }
 
   /** Whether the keys and the pad are the panels': words are typed in a field, or the pointer is free and a control

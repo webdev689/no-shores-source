@@ -45,6 +45,9 @@ code:
   - client/src/game/dungeonLight.ts#lightAt
   - client/src/game/dungeonLight.ts#LIGHT_KINDS
   - client/src/game/dungeonLight.ts#MOODS
+  - client/src/game/dungeonLight.ts#NearestLights
+  - client/src/game/dungeonClusters.ts#LightClusters
+  - client/src/game/dungeonPipelines.ts#dungeonPipelines
   - client/src/game/dungeonCeilings.ts#ceilingHeights
   - client/src/game/dungeonCaveWall.ts#caveWall
   - client/src/game/dungeonFixtures.ts#fixtureMesh
@@ -343,10 +346,21 @@ as standing none (`readDungeon`).
   flicker (`LIGHT_KINDS`): a torch to `torchReach`, a brazier, candles, crystals, a lantern, a hearth and fungus, and a
   glow's spirit, daylight, water and rune. Each look has its own faint light,
   its mood (`MOODS`), enough that a room past every light's reach still shows its walls. The shader takes the 32
-  lights nearest the eye, and the figures are lit by the same 32, so the walls and the figures sum the same light
-  (`lightAt`). Each channel of the sum
+  lights that reach farthest past the eye (`NearestLights`), and the figures are lit by the same 32, so the walls and
+  the figures sum the same light (`lightAt`). Each channel of the sum
   stays as it is up to 0.8 and past that eases toward 1.4 (`shoulder`), so a room lit by many lights at once keeps
   its walls' colour and pictures rather than clipping to flat.
+- **What its light costs.** Each frame the page cuts the view into clusters (`LightClusters`): 16 tiles across the
+  screen by 9 up it by 24 slices of depth, each slice the same factor deeper than the last from 0.25 m to 256 m
+  (nearer is the first slice, farther the last). Each cluster lists the lights whose reach, taken 1 cm wider, touches
+  it, and a lit surface sums only its own cluster's list (`reaching`). A light adds nothing past its reach, so the
+  light is the same as summing all 32. Over six dungeons of the six styles, a surface in view sums 2.9 lights on
+  average and at most 9, where 1.3 reach it. A frame whose lists would hold more than 65,536 entries lights every
+  surface by all 32. Still water mirrors every one of the 32 flames, whatever its reach.
+- **Drawn depth first** (`dungeonPipelines`): the floor and the cache are drawn twice in the scene's pass, first
+  their depth alone, then lit where a face's depth equals the depth laid or is nearer, writing none. Both draws share
+  one vertex stage with its position invariant, so each lays a face's depth alike; each covered sample is lit once
+  however many faces lie behind it.
 - **Its fixtures** (`dungeonFixtures.ts`): a brazier on three legs with embers and flames, a cluster of three to five
   candles, five to eight glowing crystals, a lantern on its chain, a hearth's fire, and six to ten fungi, each a pale
   stalk under a glowing cap. Each is shaped by where it
@@ -380,6 +394,8 @@ as standing none (`readDungeon`).
 - One floor: [[Movement]] and the [[Navmesh]] stand one floor at a point, so the Forge's storeys and stairs stay
   behind.
 - A room ringed by corridors would have no wall for a torch and stand unlit; no dungeon the tests lay has one.
+- The clusters take the eye's matrix to be a centred perspective, as `fromEyeMatrix` makes it; a lens shifted off
+  centre would leave their bounds short on one side.
 - A room can lay no props where nothing of its purpose fits: over 2,000 dungeons, 31 end rooms and 28 of 20,037 other
   rooms lay none; over the 27 patrols' 81 dungeons, 1 end room and 1 other room.
 - No fountain or cart is laid: each is wider than a cell.

@@ -264,7 +264,7 @@ export class FoeFigures {
         });
       else this.lattice.delete(kept.id);
       if (dissolve && dissolve.share >= 1) continue;
-      const card = forge.card(placed.id, drawnDress, move.anim, side, frameShown, flip);
+      const card = forge.card(placed.id, drawnDress, move.anim, side, frameShown, flip, 0, drawnAt);
       const stand = cardStand(drawnAt[0], drawnAt[1], eye.x, eye.y, eye.nearest);
       if (card)
         cards.push({

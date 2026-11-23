@@ -165,7 +165,11 @@ length of grain, its canvas 0.8 m cloths over a faint weave, its guns mottled ir
 Every hull of [[Hulls]] is one model, fetched from R2 by its manifest entry the first time a ship of that hull is drawn
 and kept (`ShipModels`), and dressed in its side's colours as it is drawn (`dress.ts`). Every hull's view on a
 device shares one pipeline, built off the frame, and one set of pictures and sampler (`shipKit`). While its model is
-still coming a ship is drawn as the Sloop, its footprint, foam and plate the Sloop's too. A fetch that fails is said
+still coming a ship is drawn as the Sloop, its footprint, foam and plate the Sloop's too. A ship out of view is not
+drawn in the picture, though it keeps its slot: its bounds are a sphere made once from its model (`shipSphere`), about
+the middle of its mesh and its sails' corners and twice as far as the farthest of them, so its yards braced, its booms
+swung and its flag flying stay inside; while a sail torn away or a mast fallen lies off its side or astern it is
+always drawn. A fetch that fails is said
 once and tried again from a frame 5 s later, the wait doubling each time to 60 s. A colour is laid over the
 picture's grain, the picture's lightness about its mean kept:
 

@@ -222,7 +222,7 @@ export const WARES = 6;
 export function vendorsOf(state: GearState): readonly { readonly name: string; readonly wares: readonly Ware[] }[] {
   return VENDORS.map((name, vendor) => ({
     name,
-    wares: state.wares.slice(vendor * WARES, (vendor + 1) * WARES).map((item) => ({
+    wares: state.wares.slice(vendor * WARES, (vendor + 1) * WARES).map((item, place) => ({
       tile: tileOf(item),
       kind: `${RARITIES[item.rarity]?.name ?? ''} ${gearKindName(item.kind)}`,
       level: item.level,
@@ -230,7 +230,7 @@ export function vendorsOf(state: GearState): readonly { readonly name: string; r
       affordable: state.aurem >= item.price,
       press: {
         label: `Hold to buy · ${item.price.toLocaleString()}`,
-        ask: { kind: ASKS.vend, column: vendor, node: item.id, ...(state.day !== undefined && { item: state.day }) },
+        ask: { kind: ASKS.vend, column: vendor, node: place, ...(state.day !== undefined && { item: state.day }) },
         role: 'button',
         held: true,
       },

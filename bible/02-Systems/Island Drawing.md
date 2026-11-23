@@ -12,6 +12,7 @@ code:
   - client/src/islands/isleGround.ts#groundHeight
   - client/src/islands/isleView.ts#IslesView
   - client/src/islands/isleView.ts#placedPoint
+  - client/src/islands/isleView.ts#isleBox
   - client/src/islands/isleShader.ts#pipelinesOf
   - client/src/islands/isleShader.ts#partColours
   - client/src/editor/isleEditor.ts#startIsleEditor
@@ -50,7 +51,10 @@ modules are made in Blender (`tools/islands`); this note is only the drawing.
   placements one instance buffer sorted by module, one draw a module the island wears, each part in the climate's
   colour (the biome kit's own stone and growth, `partColours` in `isleShader.ts`, which holds the shaders). Within 1.5 km of its coast an island draws its fine
   ground and every module, and casts shadows; to 6 km its coarse ground with its trees, cliffs and stacks; to 20 km
-  its coarse ground alone. `groundAt(x, y)` is the nearest shown island's height there, null off every island.
+  its coarse ground alone. An island out of view is not drawn at all: its box, made once (`isleBox`), holds its
+  whole ground and every module placed on it at the contract's size, however turned. Its offset from the eye is
+  written to the GPU once the eye moves, not once a pass. `groundAt(x, y)` is the nearest shown island's height
+  there, null off every island.
 - **The plants.** In the game an island's trees, shrubs and grass are not its modules but the land's own plants
   ([[Nature]]): `game/isleNature.ts` plants each where the island placed it, on its own foot, turned and scaled as
   placed, a tree as one of its climate's cast's trees and a shrub or grass as one of its low plants, each kind as often
@@ -70,5 +74,4 @@ wears, some 40, however many it places.
 ## Limits
 
 - The parts wear colours, not the textures layer's pictures.
-- No island is culled by the view's frustum, only by its distance: one behind the eye within 20 km still draws its
-  coarse ground.
+- An island is culled whole or not at all: one whose box reaches the view draws all of its ground and modules.

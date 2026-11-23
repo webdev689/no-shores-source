@@ -60,6 +60,8 @@ struct View {
 @group(0) @binding(9) var ground_paint: texture_2d<f32>;
 @group(0) @binding(10) var paint_sampler: sampler;
 @group(0) @binding(11) var middle_heights: texture_2d<f32>;
+// Each quad's number (row times QUADS, plus column) in the order a ring draws them (clipmap.ts quadOrder).
+@group(0) @binding(12) var<storage, read> quad_order: array<u32>;
 
 struct Surface {
   @builtin(position) clip: vec4f,
@@ -112,7 +114,8 @@ fn vertex_main(@builtin(vertex_index) index: u32, @builtin(instance_index) ring:
   let hole = view.rings[ring * 2u + 1u];
   let spacing = first.z * view.lattice.z;
   let corner = view.lattice.xy + first.xy * view.lattice.z;
-  let quad = vec2u((index / 6u) % QUADS, (index / 6u) / QUADS);
+  let number = quad_order[index / 6u];
+  let quad = vec2u(number % QUADS, number / QUADS);
   let finer = vec2f(quad) - hole.xy;
   if (hole.z > 0.5 && all(finer >= vec2f(0.0)) && all(finer < vec2f(f32(QUADS / 2u)))) {
     surface.clip = NOWHERE;

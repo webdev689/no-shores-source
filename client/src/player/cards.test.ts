@@ -332,3 +332,44 @@ test('a dye worn reaches the composer with the armour it covers whole', () => {
   forge.card(2, { ...dyed, outfit: { ...dyed.outfit, dye: null } }, 'idle', 0, 0);
   assert.deepEqual(jobs[1]?.whole, [], 'own colours cover nothing');
 });
+
+test("a figure placed in the world keeps its card between the frames its scene poses it on, its move's clock running", async () => {
+  const walk = { cell: [1, 2], frames: 6, root: [0, 1] } as const;
+  const moving: ForgeLooks = { bodies: { male: { anims: { walk }, layers: { body: ['walk'] } } } };
+  // Each frame composed as wide as its view and frame tell: ten a view, one more a frame.
+  const telling: Composer = {
+    offPage: false,
+    compose: (_key: string, job: ComposeJob) => {
+      const width = 10 * job.view + job.frame + 1;
+      return Promise.resolve({ width, height: 1, root: [0, 0], pixels: new Uint8Array(width * 4), field: null });
+    },
+    hurry: () => undefined,
+    prefetch: () => undefined,
+  };
+  let frame = 0;
+  // Posed every third frame at 40 m, every frame near, each figure by its number.
+  const posing: CardMaker = {
+    ...maker,
+    poseDue: (id, feet) => (frame + id) % (Math.hypot(feet[0], feet[1]) > 25 ? 3 : 1) === 0,
+  };
+  const colours = { skins: { bodies: {} }, hair: { bodies: {} } };
+  const dyes = { palette: [], clothing: {}, armour: {} };
+  const forge = new Cards(posing, store, moving, colours, dyes, undefined, telling);
+  for (const view of [0, 1]) for (let each = 0; each < 6; each++) forge.card(9, bare, 'walk', view, each);
+  await settled();
+  const far = [40, 0, 0] as const;
+  const shown = (id: number, view: number, feet?: readonly [number, number, number]) =>
+    (forge.card(id, bare, 'walk', view, frame % 6, false, 0, feet)?.width ?? 0) - 10 * view - 1;
+  forge.card(1, bare, 'walk', 0, 5, false, 0, far);
+  const seen: number[] = [];
+  for (frame = 0; frame < 9; frame++) seen.push(shown(1, 0, far));
+  assert.deepEqual(seen, [5, 5, 2, 2, 2, 5, 5, 5, 2], 'posed on frames 2, 5 and 8, each showing the clock then');
+  frame = 9;
+  assert.equal(shown(1, 1, far), 3, 'seen in another view, posed at once');
+  const near: number[] = [];
+  for (frame = 0; frame < 4; frame++) near.push(shown(2, 0, [5, 0, 0]));
+  assert.deepEqual(near, [0, 1, 2, 3], 'near: every frame');
+  const unplaced: number[] = [];
+  for (frame = 0; frame < 4; frame++) unplaced.push(shown(3, 0));
+  assert.deepEqual(unplaced, [0, 1, 2, 3], 'one not placed in the world: every frame');
+});

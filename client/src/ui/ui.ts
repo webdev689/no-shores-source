@@ -35,7 +35,7 @@ export class Interface {
   readonly renderer: UiRenderer;
   /** What a screen reader is told as focus moves; the page's own announcement unless said. */
   speak: (words: string) => void = announce;
-  private laid: Laid[] = [];
+  laid: readonly Laid[] = [];
   /** The laid by id, the first of each. */
   private byId = new Map<string, Laid>();
   private pointer: { x: number; y: number } | null = null;
@@ -85,7 +85,7 @@ export class Interface {
   private clock = 0;
   private scale = 1;
   /** The interface's pixels a CSS pixel of the page: its ratio over the interface's whole scale. */
-  private inward = 1;
+  inward = 1;
   private view = { width: 0, height: 0 };
 
   constructor(renderer: UiRenderer) {

@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import type { GroundPatch, LandView } from '../rules/landRules.ts';
-import { landSampler, wideGround } from './ground.ts';
+import { landSampler, patchArea, wideGround } from './ground.ts';
 
 const [LEFT, TOP, CELLS, CELL] = [3_000_000, 1_000_000, 12, 1000];
 const CENTRE = [LEFT + 6000, TOP + 6000] as const;
@@ -96,4 +96,16 @@ test('the close patch gives the exact ground, its marks and its fresh water wher
   assert.equal(stream.water, 'river');
   assert.ok((stream.freshM ?? Infinity) < 0);
   assert.equal(sample(left - 400, top - 400).mark, 0, 'past the patch, no marks');
+  // Past the patch's area the ground is the 1 km land's alone, as if there were no patch.
+  const [west, north, east, south] = patchArea(patch);
+  assert.deepEqual([west, north, east, south], [left, top, left + 320, top + 320]);
+  const wide = landSampler(island(), null);
+  for (const [x, y] of [
+    [west - 0.01, north + 100],
+    [east + 0.01, north + 100],
+    [west + 100, north - 0.01],
+    [west + 100, south + 0.01],
+  ] as const)
+    assert.deepEqual(sample(x, y), wide(x, y), `${x - left}, ${y - top}`);
+  assert.notDeepEqual(sample(west + 100, north + 100), wide(west + 100, north + 100), 'inside, the patch is read');
 });

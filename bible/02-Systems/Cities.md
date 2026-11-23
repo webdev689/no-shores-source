@@ -38,6 +38,8 @@ code:
   - crates/land/src/sites.rs#City
   - client/src/city/cityView.ts#CityView
   - client/src/city/cityBuild.ts#buildCity
+  - client/src/city/cityBuild.ts#cityBuildSteps
+  - client/src/city/steps.ts#stepWithin
   - client/src/city/plan.ts#cityClimate
   - client/src/city/blocks.ts#placed
   - client/src/city/tiers.ts#tierFades
@@ -216,10 +218,18 @@ layout's own boxes (`crates/layout/src/collide.rs`) do not yet read them.
 ## How it is drawn
 
 `CityView` is a drawer for the game's scene, drawn into the scene's own pass. It is handed a plan, the continent's
-climate (`cityClimate` of its biome), the RMB blocks the plan names and the forged tables (`setCity`); `drawInto`
+climate (`cityClimate` of its biome), the RMB blocks the plan names and the forged tables; `drawInto`
 draws a frame; `cleared(x, y)` is true on the pads and under every solid's footprint, the quays and piers among
 them, for nature to keep off. Every position is measured from the city's middle, so the GPU's floats keep their
 precision 3 km out.
+
+**Built a few steps a frame.** The game hands a city over with `beginCity`: its drawing is worked out in small steps
+(`cityBuildSteps`: a cell's pieces, a model forged, a piece's masses and its crystal, a solid, 4,096 vertices laid) and put on the
+GPU a buffer a step, and before each frame is recorded (`prepare`) the build takes steps for 2 ms while an older city
+stands drawn, 24 ms while none does (behind the veil, which waits on it). The city drawn before is drawn, lit and kept clear until the new one is whole,
+then the new one in its place, so nothing half-built shows. A landmass's city is built so once it opens, and its
+layouts' city again whenever the layouts within 4 km change ([[Layouts]]). A city begun again before it is whole is
+let go. The [[World Editor]] builds in one go (`setCity`); either way the same city is made, to the byte.
 
 | Biome | Climate set |
 |---|---|
@@ -290,7 +300,9 @@ whose shadow at the far map's 1.2 m texels is the same; every face and plate is 
 Winter takes each picture's snowed turn where its set has one, unlightened.
 
 **What it costs.** Cells are grouped by 4 x 4 into chunks, culled against the view; consecutive chunks are one draw
-call. Overlook builds in about 1 s and paints its 157 pictures in about 5 s on three workers. In headless
+call. Overlook's build is about 0.8 to 1 s of work in Node, some 118,000 steps: about 500 frames at 2 ms, 40 at
+24 ms. Most steps take microseconds; a model's forging is one step, the largest about 10 ms in Node. Its 157
+pictures are painted in about 5 s on three workers. In headless
 SwiftShader at 1280 x 720:
 
 | From | Triangles | Draw calls |

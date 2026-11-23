@@ -119,6 +119,8 @@ export class MarkDraw {
   private counts = { solid: 0, clear: 0 };
   private aboveBuffer: GPUBuffer | null = null;
   private aboveCount = 0;
+  /** The marks over everything as last laid, kept from frame to frame and grown to the most yet. */
+  private aboveLaid = new Float32Array(0);
   private origin: [number, number, number, number] = [0, 0, 0, 0];
   private readonly values = new Float32Array(20);
 
@@ -182,11 +184,13 @@ export class MarkDraw {
 
   /** The marks the next frame draws over everything (`drawAbove`), measured from the eye, in the order given. */
   setAbove(vertices: ArrayLike<number>): void {
-    const laid = Float32Array.from(vertices);
-    this.aboveCount = laid.length / MARK_FLOATS;
-    if (laid.length === 0) return;
-    this.aboveBuffer = this.grown(this.aboveBuffer, laid.byteLength);
-    this.gpu.device.queue.writeBuffer(this.aboveBuffer, 0, laid);
+    this.aboveCount = Math.floor(vertices.length / MARK_FLOATS);
+    if (this.aboveCount === 0) return;
+    const count = this.aboveCount * MARK_FLOATS;
+    if (this.aboveLaid.length < count) this.aboveLaid = new Float32Array(2 ** Math.ceil(Math.log2(count)));
+    for (let value = 0; value < count; value++) this.aboveLaid[value] = vertices[value] ?? 0;
+    this.aboveBuffer = this.grown(this.aboveBuffer, count * 4);
+    this.gpu.device.queue.writeBuffer(this.aboveBuffer, 0, this.aboveLaid, 0, count);
   }
 
   /** `buffer`, or a new one in its place when it holds fewer than `bytes`: a power of two, 4 KB at least. */

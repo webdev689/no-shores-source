@@ -1,10 +1,11 @@
+import { sphereSeen, viewPlanes } from '../frustum.ts';
 import type { Group, Packed } from './field.ts';
 import { TILE_M } from './scatter.ts';
 
 /**
- * Which packed tiles the camera may see: each tile's bounding sphere against the view's four sides and its near
- * plane, read from the view-projection of points measured from the eye. `anchorFromEye` is the packing's anchor
- * from the eye (metres east, south, and the eye's drawn height negated); heights are drawn times `exaggeration`.
+ * Which packed tiles the camera may see: each tile's bounding sphere against the view's planes, read from the
+ * view-projection of points measured from the eye. `anchorFromEye` is the packing's anchor from the eye (metres east,
+ * south, and the eye's drawn height negated); heights are drawn times `exaggeration`.
  */
 export function tilesInView(
   packed: Packed,
@@ -13,38 +14,16 @@ export function tilesInView(
   exaggeration: number,
   out: Uint8Array = new Uint8Array(packed.tiles.length / 4),
 ): Uint8Array {
-  const row = (index: number) => [0, 4, 8, 12].map((column) => fromEye[column + index] ?? 0);
-  const [first, second, , last] = [row(0), row(1), row(2), row(3)];
-  const depth = row(2);
-  const planes = [
-    last.map((value, index) => value + (first[index] ?? 0)),
-    last.map((value, index) => value - (first[index] ?? 0)),
-    last.map((value, index) => value + (second[index] ?? 0)),
-    last.map((value, index) => value - (second[index] ?? 0)),
-    last.map((value, index) => value - (depth[index] ?? 0)),
-  ].map(([a = 0, b = 0, third = 0, fourth = 0]) => {
-    const length = Math.hypot(a, b, third) || 1;
-    return [a / length, b / length, third / length, fourth / length] as const;
-  });
-  // Every tile every frame, thousands of them: each plane's four numbers read by index, nothing made a tile.
-  const sides = Float64Array.from(planes.flat());
+  const planes = viewPlanes(fromEye);
   const { tiles } = packed;
   const across = TILE_M * Math.SQRT1_2 + packed.spread;
-  /** Whether a sphere about (x, y, z) clears none of the sides. */
-  const sphereSeen = (centreX: number, centreY: number, centreZ: number, radius: number): number => {
-    for (let side = 0; side < sides.length; side += 4) {
-      const reach = sides[side]! * centreX + sides[side + 1]! * centreY + sides[side + 2]! * centreZ + sides[side + 3]!;
-      if (!(reach >= -radius)) return 0;
-    }
-    return 1;
-  };
   const tileSeen = (tile: number): number => {
     const [lowest, highest] = [tiles[tile * 4 + 2] ?? 0, tiles[tile * 4 + 3] ?? 0];
     const centreX = (tiles[tile * 4] ?? 0) + anchorFromEye[0];
     const centreY = (tiles[tile * 4 + 1] ?? 0) + anchorFromEye[1];
     const centreZ = ((lowest + highest) / 2) * exaggeration + anchorFromEye[2];
     const rise = ((highest - lowest) / 2) * exaggeration;
-    return sphereSeen(centreX, centreY, centreZ, Math.sqrt(across * across + rise * rise));
+    return sphereSeen(planes, centreX, centreY, centreZ, Math.sqrt(across * across + rise * rise)) ? 1 : 0;
   };
   const { blocks } = packed;
   if (!blocks) {
@@ -59,7 +38,7 @@ export function tilesInView(
     const radius = Math.hypot((east - west) / 2, (south - north) / 2) + across + ((high - low) / 2) * exaggeration + 1;
     const centreX = (west + east) / 2 + anchorFromEye[0];
     const centreY = (north + south) / 2 + anchorFromEye[1];
-    if (!sphereSeen(centreX, centreY, ((low + high) / 2) * exaggeration + anchorFromEye[2], radius)) return;
+    if (!sphereSeen(planes, centreX, centreY, ((low + high) / 2) * exaggeration + anchorFromEye[2], radius)) return;
     for (let member = first; member < last; member++) {
       const tile = blocks.members[member] ?? 0;
       out[tile] = tileSeen(tile);

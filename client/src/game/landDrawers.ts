@@ -8,7 +8,8 @@ import { cityClimate } from '../city/plan.ts';
 import { layoutFollower, type NodeLayout } from '../layout/layouts.ts';
 import { planOfLayouts, plantedOf } from '../layout/layoutPlan.ts';
 import { paintOfLayouts } from './groundPaint.ts';
-import { landSampler } from '../nature/ground.ts';
+import { landSampler, patchArea } from '../nature/ground.ts';
+import { GroundChanges } from '../nature/groundChanges.ts';
 import { NatureView } from '../nature/natureView.ts';
 import { worldText } from '../terrain/landTexts.ts';
 import { type Planted, TILE_M } from '../nature/scatter.ts';
@@ -32,6 +33,8 @@ export interface LandDrawers {
   readonly city: Drawer | null;
   readonly layouts: Drawer | null;
   readonly nature: Drawer | null;
+  /** Whether the landmass's city stands whole, or it has none, or none could be built: the veil waits on it. */
+  ready(): boolean;
   release(): void;
 }
 
@@ -43,8 +46,9 @@ const LAYOUT_REGATHER_M = 1500;
 const PAINT_REACH_M = 2500;
 
 /** Draws the layouts near the eye with the city layer, followed before each frame: the ground under them is painted
- *  again each time the eye has moved on (`painted`), and the city built again when the layouts near the eye change
- *  and its tables have come (`rebuilt`), when what they planted is handed to nature (`planted`) too. */
+ *  again each time the eye has moved on (`painted`), and the city built again, a few steps a frame, when the layouts
+ *  near the eye change and its tables have come; once it is whole (`rebuilt`), what they planted is handed to nature
+ *  (`planted`) too, the old layouts drawn and planted until then. */
 function layoutDrawer(
   gpu: Gpu,
   layouts: readonly NodeLayout[],
@@ -64,36 +68,30 @@ function layoutDrawer(
   void assets.then((loaded) => (tables = loaded?.tables ?? null)).finally(() => (coming = false));
   const follow = layoutFollower(layouts, LAYOUT_REACH_M, LAYOUT_REGATHER_M, painted, (near) => {
     const plan = planOfLayouts(near);
-    if (plan && tables) view.setCity(plan, cityClimate(biome ?? undefined), new Map(), tables);
-    else view.clear();
-    planted = plantedOf(near, TILE_M);
-    rebuilt();
+    const whole = () => {
+      planted = plantedOf(near, TILE_M);
+      rebuilt();
+    };
+    if (plan && tables) view.beginCity(plan, cityClimate(biome ?? undefined), new Map(), tables, whole);
+    else {
+      view.clear();
+      whole();
+    }
   });
   return {
     view,
     planted: (tileX, tileY) => planted(tileX, tileY),
     drawer: {
       prepare: (shot) => {
-        // Its tables still coming, the layouts near the eye are not built yet.
-        if (coming) standIn('city');
         follow([shot.eye[0], shot.eye[1]], tables !== null);
+        view.prepare();
+        // Its tables still coming, or the city of the layouts near the eye still being built: not drawn yet.
+        if (coming || view.underWay) standIn('city');
       },
       castInto: (pass, fromEye, shot, time, shadow) => view.castInto(pass, fromEye, shot, time, shadow),
       drawInto: (pass, fromEye, shot, time, shadow) => view.drawInto(pass, fromEye, shot, time, shadow),
     },
     release: () => view.clear(),
-  };
-}
-
-/** `drawer`, standing in as nothing each frame while it is `building`. */
-function whileBuilding(drawer: Drawer, building: () => boolean): Drawer {
-  return {
-    prepare: (shot) => {
-      if (building()) standIn('city');
-      drawer.prepare?.(shot);
-    },
-    castInto: (pass, fromEye, shot, time, shadow) => drawer.castInto?.(pass, fromEye, shot, time, shadow),
-    drawInto: (pass, fromEye, shot, time, shadow) => drawer.drawInto(pass, fromEye, shot, time, shadow),
   };
 }
 
@@ -151,25 +149,30 @@ export function landDrawers(
   shipScale: () => number,
 ): LandDrawers {
   const plan = landmass.drawnPlan;
-  let [version, patch, sample] = [0, scene.closePatch(), landSampler(landmass.view, scene.closePatch())];
+  let [patch, sample] = [scene.closePatch(), landSampler(landmass.view, scene.closePatch())];
+  const changes = new GroundChanges();
   const city = plan ? new CityView(gpu, shipScale) : null;
   let released = false;
-  // While the city's blocks come it is not built, and stands in as nothing.
-  let building = !!(plan && city);
+  let cityStands = !plan;
   if (plan && city) {
     const names = plan.cells.flatMap((cell) => (cell.use === 'block' && cell.block ? [cell.block] : []));
     assets
       .then(async (loaded) => {
-        if (!loaded) return;
+        if (!loaded) return void (cityStands = true);
         const blocks = await blocksOf(base, loaded, names);
         // A landmass let go while its blocks came is drawn no more: its city is never built.
         if (released) return;
-        city.setCity(plan, cityClimate(biome ?? undefined), blocks, loaded.tables);
-        // The nature already scattered knew only the pads; it is scattered again round the city's solids too.
-        version += 1;
+        // The nature already scattered knew only the pads; once the city stands, it is scattered again round the
+        // city's solids too.
+        city.beginCity(plan, cityClimate(biome ?? undefined), blocks, loaded.tables, () => {
+          cityStands = true;
+          changes.change(null);
+        });
       })
-      .catch((error: unknown) => console.error(`${landmass.id}'s city could not be drawn:`, error))
-      .finally(() => (building = false));
+      .catch((error: unknown) => {
+        cityStands = true;
+        console.error(`${landmass.id}'s city could not be drawn:`, error);
+      });
   }
   const laid = landmass.layouts.length
     ? layoutDrawer(
@@ -179,7 +182,7 @@ export function landDrawers(
         assets,
         (near, eye) =>
           scene.paintGround(paintOfLayouts(near, eye, PAINT_REACH_M, [landmass.view.leftM, landmass.view.topM])),
-        () => (version += 1),
+        () => changes.change(null),
       )
     : null;
   // The pads are kept clear from the first frame; the city's and the layouts' solids and yards too once built.
@@ -193,12 +196,17 @@ export function landDrawers(
     if (updatedFor === fromEye) return;
     updatedFor = fromEye;
     const now = scene.closePatch();
-    if (now !== patch) [patch, sample, version] = [now, landSampler(landmass.view, now), version + 1];
+    if (now !== patch) {
+      // The ground read changes only where the old patch or the new one reaches: past both, the 1 km land alone.
+      changes.change([patch, now].flatMap((each) => (each ? [patchArea(each)] : [])));
+      [patch, sample] = [now, landSampler(landmass.view, now)];
+    }
     const land = landmass.view;
     const ground = {
       biome: biome ?? '',
       snowM: land.snowM ?? 2300,
-      version,
+      version: changes.version,
+      unchanged: changes.unchanged,
       sample,
       cleared,
       planted: (tileX: number, tileY: number) => [...(laid?.planted(tileX, tileY) ?? []), ...cityPlanted(tileX, tileY)],
@@ -217,9 +225,10 @@ export function landDrawers(
     },
   };
   return {
-    city: plan && city && whileBuilding(withWrecks(gpu, city, plan, shipScale), () => building),
+    city: plan && city && withWrecks(gpu, city, plan, shipScale),
     layouts: laid?.drawer ?? null,
     nature: natureDrawer,
+    ready: () => cityStands,
     release: () => {
       released = true;
       city?.clear();

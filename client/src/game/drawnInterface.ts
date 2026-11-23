@@ -6,6 +6,7 @@ import { eventsOn, type PageEvents } from '../ui/canvasEvents.ts';
 import { readFace } from '../ui/faceReader.ts';
 import { gauntletOver } from '../ui/gauntlet.ts';
 import type { Stack } from '../ui/stack.ts';
+import { seen } from '../ui/seen.ts';
 import { Interface } from '../ui/ui.ts';
 import { UiRenderer, uiScale } from '../ui/uiRenderer.ts';
 import { FrameGuard } from '../frameGuard.ts';
@@ -29,7 +30,7 @@ export class DrawnInterface {
     this.events = eventsOn(canvas);
     if (stack) this.alone(stack, performance.now());
     readFace()
-      .then((face) => (this.ui = new Interface(new UiRenderer(gpu, face))))
+      .then((face) => (this.ui = seen(new Interface(new UiRenderer(gpu, face)))))
       .catch((error: unknown) => console.error('the face could not be read:', error));
   }
 

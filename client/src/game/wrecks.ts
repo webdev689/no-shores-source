@@ -110,6 +110,7 @@ export function withWrecks(gpu: Gpu, city: Drawer, plan: CityPlan, shipScale: ()
   if (!plan.wrecks?.length) return city;
   const wrecks = new Wrecks(gpu, plan.wrecks);
   return {
+    prepare: (shot) => city.prepare?.(shot),
     castInto: (pass, fromEye, shot, time, shadow) => {
       city.castInto?.(pass, fromEye, shot, time, shadow);
       wrecks.castInto(pass, { fromEye, eye: shot.eye }, shipScale(), shadow);

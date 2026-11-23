@@ -142,8 +142,14 @@ each part works is in its system note.
   session's git proxy answers only at `github.com/Lattymoy/overlook-source`, which GitHub redirects: keep that remote.
   Merged as `c0db6fc7` and deployed (CI run 45068542964's second attempt, after the first was cancelled at its last
   step): the page live at `lattymoy.github.io/no-shores-source/` with the logo, the rooms and the accounts answering.
-- **Not yet seen or heard.** Sessions test offline and picture headless, and headless Chromium in a cloud session now
-  loses the game's WebGPU device about 2 s in, so these wait on a real GPU, an ear or a hand:
+- **The picture driver reads the drawn interface** (#165, merged on the owner's "Yes"): `__ui()` lists what the
+  game's interface shows, the driver's `waitFor`, `clickText` and `press` read it, and a plan's `"noGpu": true` runs
+  the game at full speed with nothing drawn ([[Toolkit]], Browser QA). Tested offline: the title, the story's skip and
+  its "begin" driven with no GPU. Proposed next, not yet asked for: a cloud environment whose setup script installs and
+  builds, and a CI check that boots the game and finds its HUD.
+- **Not yet seen or heard.** Sessions test offline and picture headless. Headless Chromium has lost the game's WebGPU
+  device about 2 s in when other jobs shared the cores; on an idle container at b81f0c40 the title and the social
+  space kept it 80 s. SwiftShader is too slow to show the world, so these wait on a real GPU, an ear or a hand:
   - Timed on a real GPU: the game in and out of its worker, the hub with some 125 figures, the wreck with every fire,
     the light layer of the attack visuals (0.4 to 0.5 ms is an estimate), ships and marks under the lamps.
   - Heard in the game: the music, the ambience, the world's, sea's and menu's sounds and their levels, the
@@ -186,6 +192,11 @@ each part works is in its system note.
     pipelines are made once per device and format, the lit keepers' marks and the first-person glow make theirs off
     the frame. Tested headless in the hub (SwiftShader, about a frame every 10 s): it lifted by itself at frame 54,
     the plants last; on a real GPU it is not yet timed.
+- **#164, a smith's ware drawn as the piece it becomes** (branch `claude/vigilant-wozniak-lu9pm3`), merged with the
+  owner's yes ("Yes"), which deploys the page and the rooms: the gear message sends `next_id`, the page draws each smith's
+  ware by it and asks for it by its place ([[Gear]], "Looks"). Tested offline: a test buys each of the day's twelve
+  armour and weapon wares and holds each to its look in the shop (it failed before, on a Magic torso). Open for the
+  owner: a purchase moves the number on, so the other wares still shown may redraw.
 - **The owner's six prologue points, the wreck's room in the worker and a full audit** (#161, branch
   `claude/gifted-knuth-lijjf2`), merged into `main` (0fadd778; its deploy not checked here), which deploys the page and
   the rooms (the naval rules and the protocol's version changed): the wreck's hitches (blood's rays, its sheet drawn while the wake's screen is dark)
@@ -422,14 +433,15 @@ The decisions in [[Open Questions]] are not repeated here.
 - **Hitching in the prologue, left by #161**: the aim's view (`AimView`) is made again for every sea fight; the shore's
   return to Saltmere rebuilds its city in one go. A fleet room's lagging player has their held lay begun again by the
   room's standing orders while their page keeps counting.
-- **Hitching, after the areas' chunks** ([[Areas Load in Chunks With Proper Caching]]): playing alone, no veil when
-  a voyage's difficulty changes; a city is built in one go after each landmass switch and every 1.5 km (`landDrawers.ts`,
-  `cityView.ts`); flora is decoded and its mips made again on every switch; a landmass cannot be prepared before it
-  opens, as the land's worker holds one. R2's own `Cache-Control` waits on a test upload (the owner's yes, a write to
-  R2). Then the hitching measured on a real GPU. `client/src/ships/shipTags.test.ts` fetches ship meshes from `r2.dev`,
-  so every deploy waits on R2 answering. Memory to measure: the figure cards'
-  4000-texture budget (`player/cards.ts`), the scene's full-size targets, about 590 MB at 5120 by 2880, uncapped
-  (`scene.ts`), and the item pictures' cache, uncapped (`player/itemPictures.ts`).
+- **Hitching, after DFO's performance work** ([[DFO's Performance Work Comes Over, Measured First]]): the city is
+  built a few steps a frame, the veil waiting on its first; nature re-scatters only where the ground changed; flora is
+  kept between landmasses; rooms run in their worker, but for the Test Ground's. Still open: a landmass cannot be
+  prepared before it opens, as the land's worker holds one; the main city and the layouts' city may build at once, up
+  to 48 ms a frame behind the veil; a layouts rebuild re-scatters every tile. R2's own `Cache-Control` waits on a test
+  upload (the owner's yes, a write to R2). `client/src/ships/shipTags.test.ts` fetches ship meshes from `r2.dev`, so
+  every deploy waits on R2 answering. Memory to measure: the figure cards' 4000-texture budget (`player/cards.ts`) and
+  the item pictures' cache, uncapped (`player/itemPictures.ts`); the scene's targets are capped at 3840 by 2160's
+  worth. Everything in it measured on a real GPU with `?perf`.
 - **Browser QA** ([[Toolkit]]):
   - `tools/claude-toolkit/webgpu-shot.cjs` pictures the game in its worker. Run it on an idle machine: beside a
     cargo build the world may not draw for minutes.
