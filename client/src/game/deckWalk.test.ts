@@ -146,6 +146,7 @@ test("off the helm the page waits on the room's word: with none in 2 s it takes 
     walk: () => undefined,
     leaveHelm: () => asked.push('leave'),
     takeHelm: () => asked.push('take'),
+    gearSent: null,
   };
   const walker = { player: { view: 'third' }, frame: () => undefined } as unknown as Walker;
   const aboard = new Aboard({ movement: rules, walker, forge: {} as Cards }, SLOOP_DECK);

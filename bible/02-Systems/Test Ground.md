@@ -81,7 +81,7 @@ Click the view to play; Escape frees the mouse. The body moves by the [[Movement
 | Left click, held | Guard; pressed just as a blow lands, parry. With a bow, a crossbow or a gun drawn: fire, a quick shot at the locked foe, or the aimed shot onto the crosshair; holding fires again as it reloads |
 | `V` or Mouse5 | Dodge the way you move, or straight back |
 | `R`, `Q`, `G` | Cast the worn Art's Anima, first Tenet and second Tenet, each once ready ([[Arts]]). Shadow's Dusk Daggers aims while `Q` is held, a ring on the ground at the crosshair, and casts as it is let go |
-| `,` | Mount or dismount: 6 m/s, galloping at 12 with `Shift` |
+| `,` | Mount or dismount, with a horse worn in the Mount slot ([[Gear]]); the Test Ground gives none: 6 m/s, galloping at 12 with `Shift` |
 | Wheel, Mouse4 | Pull back into third person and further, or come back into first person; Mouse4 switches straight |
 
 Third person starts 2 m behind the head and 0.5 m up, and each wheel notch moves it 0.2 m, up to 10 m. Nearer than
@@ -108,7 +108,7 @@ the player's fight (`PlayerFight`), the foes' figures (`FoeFigures`), the fight'
 - **Sounds.** The world's sounds play here as on foot ([[Interface]], "World sounds"), from the first click into the
   view, at full volume: the course's crate is wood underfoot, its other blocks stone. A cue not yet picked is silent.
 - **Foes.** The panel picks a faction, then one of its types (marked land or deck), then one of the ranks that type
-  comes in, the level it stands at (0 for none, which fights by combat's own numbers) and a Blaze, Volt or Cosmic
+  comes in, plainest first (a type asked for with no rank takes the roster's first, the Tithe-Mate's Elite), the level it stands at (0 for none, which fights by combat's own numbers) and a Blaze, Volt or Cosmic
   shield if one is picked ([[Gear]], "Elements and shields"); Spawn stands it 5 m ahead of where the player looks,
   facing them, at most twelve, and Clear sends every foe away; a foe asked for while the forge still loads is not asked
   for. Names, factions and hands come from the rules' roster through WebAssembly. Each fights by its brain ([[Foes]])

@@ -67,6 +67,7 @@ fn a_players_swing_lands_on_a_foe_in_reach_and_everyone_is_told() {
 fn nothing_is_fought_from_the_saddle() {
     let mut room = room();
     let player = room.join().expect("a room with space");
+    crate::gear_tests::horsed(&mut room, player);
     let held = [
         CombatInput { attack: Some(Stroke::Down), ..CombatInput::default() },
         CombatInput { guard: true, ..CombatInput::default() },

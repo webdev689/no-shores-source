@@ -1,4 +1,4 @@
-// The houses' roads in the browser: once the story and Elder Maren Hale's welcome are past, the tracker shows the
+// The houses' roads in the browser: once the story and the stranger's welcome are past, the tracker shows the
 // quest walked; its lines are said in the dialogue box one scene after another (questWatch.ts); a counter that a talk
 // goal of the task names offers to speak with its keeper; the HUD marks where the task's next goal stands and the
 // held map the nodes its goals name; a varied step's figures and ward stand in the world (questFigures.ts); and what
@@ -23,7 +23,7 @@ import { rosterFor } from '../footRoom.ts';
 import { actorCards } from '../prologue/actors.ts';
 import type { Quest } from '../tasks.ts';
 import { worldOutput } from '../uiSounds.ts';
-import { COUNTERS, goalNodes, markedGoal, talkAt, trackedOf } from './questBook.ts';
+import { COUNTERS, buyAt, goalNodes, markedGoal, talkAt, trackedOf } from './questBook.ts';
 import { FIGURE_MOVES, FigureGlides, questActors, wardPlate } from './questFigures.ts';
 import { QuestWatch } from './questWatch.ts';
 
@@ -169,10 +169,11 @@ export class Quests {
     return where ? [where[0], where[1]] : null;
   }
 
-  /** Whether the keeper at the counter `counter` (a station's kind) has something for the player: a step of the
-   *  quest walked asks to speak with them, once the story and the welcome are past, as `speak` answers. */
+  /** Whether the keeper at the counter `counter` (a station's kind) has something for the player, once the story
+   *  and the welcome are past: a step of the quest walked asks to speak with them, as `speak` answers, or to buy one
+   *  of their wares. */
   wants(counter: string): boolean {
-    return this.speak(counter, () => undefined) !== null;
+    return this.speak(counter, () => undefined) !== null || (this.past && buyAt(this.gear?.quest, counter));
   }
 
   /** What E does at the counter of a station of kind `counter` (its offer's view), while a talk goal of the task names

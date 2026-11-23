@@ -16,7 +16,7 @@ import { ASKS, DROPPED, type GearState } from '../network/gearMessages.ts';
 import { RoomConnection, type RoomLink, type Snapshot } from '../network/roomConnection.ts';
 import type { CardAt } from '../player/cards.ts';
 import { crosshairPoint, shotBodies } from '../player/crosshair.ts';
-import { CARD_NEAREST_M, type Placed } from '../player/figures.ts';
+import type { Placed } from '../player/figures.ts';
 import { Glides } from '../player/glide.ts';
 import { IDLE, type InputFrame } from '../player/input.ts';
 import { cameraFollowed, playerCamera, shownBody } from '../player/player.ts';
@@ -31,7 +31,7 @@ import type { FoeType } from '../rules/roster.ts';
 import { WORLD_CLOCK } from '../sky/worldClock.ts';
 import { shotOfOrbit } from './camera.ts';
 import { FallWatch } from './fallWatch.ts';
-import { STORY_BEHIND_ON_FOOT, type Use, dropsLaid, questRings, tellsPrologue } from './footGear.ts';
+import { STORY_BEHIND_ON_FOOT, type Use, dropsLaid, gearInRoom, questRings, tellsPrologue } from './footGear.ts';
 import { GatherHold } from './gatherHold.ts';
 import { markedHere } from './overheadMarks.ts';
 import { nodeText, standOn } from './footGround.ts';
@@ -57,8 +57,8 @@ import { cacheOf } from './dungeonChest.ts';
 import { ceilingAt, type DungeonAsk, type DungeonLayout, openAt, seenBlocks } from './dungeonLayout.ts';
 import { worldOutput } from './uiSounds.ts';
 import type { UsePrompt } from './usePrompt.ts';
-import { type Dressed, dressInGear, figureWhere, otherCards, ownCard, strikersOf } from './footFigures.ts';
-import type { AtEntrance, FootContext, FootFight, FootFrame, Heard, Held, Opened, Uses } from './footPlace.ts';
+import { type Dressed, dressInGear, figureWhere, figuresEye, otherCards, ownCard, strikersOf } from './footFigures.ts';
+import type { AtEntrance, FootAsk, FootContext, FootFight, FootFrame, Heard, Held, Opened, Uses } from './footPlace.ts';
 import { stand } from './footPlace.ts';
 import { hearing, nextOtherId, roomNote, rulesOf } from './footRoom.ts';
 
@@ -125,6 +125,8 @@ export class Foot {
   readonly folk: Placed[];
   private readonly prompt: UsePrompt;
   private using: Use | null = null;
+  /** The player's own figure as last drawn; null while it is not. */
+  ownFigure: CardAt | null = null;
   /** The zone's public events as the page plays them. */
   private readonly publicView: PublicView;
   /** A node being gathered while E is held. */
@@ -335,12 +337,10 @@ export class Foot {
     this.gear?.ask({ kind: ASKS.finishPrologue });
   }
 
-  /** The player's gear in their room, and the way to ask of it; null offline or once the room is lost. */
+  /** The player's gear in their room, and the way to ask of it (`gearInRoom`). */
   get gear(): GearHere | null {
-    const { link, fight } = this;
     const { forge, walker } = this.context;
-    if (!(link instanceof RoomConnection) || !link.open) return null;
-    return { gear: this.held.gear, ask: (ask) => fight.askGear(ask), forge, dress: walker.you.dress };
+    return gearInRoom(this.link, this.held.gear, (ask) => this.fight.askGear(ask), { forge, dress: walker.you.dress });
   }
 
   /** Whether the player has fallen and waits to respawn. */
@@ -382,7 +382,7 @@ export class Foot {
     controls: InputFrame,
     seconds: number,
     clock: number,
-    { paused, looking = false, hands, aspect }: { paused: boolean; looking?: boolean; hands: boolean; aspect: number },
+    { paused, looking = false, hands, aspect, eye: cutscene = null }: FootAsk,
   ): FootFrame {
     const still = paused || looking;
     const { walker, movement, forge } = this.context;
@@ -425,9 +425,8 @@ export class Foot {
       [fallX, fallY, fallZ],
       seconds,
     );
-    const [eyeX, eyeY] = shot.eye;
-    // Through the player's own eyes no other figure stands so near that it fills the view.
-    const nearest = firstPerson ? CARD_NEAREST_M : 0;
+    const eye = figuresEye(cutscene, shot.eye, firstPerson);
+    const { x: eyeX, y: eyeY, nearest } = eye;
     const frameTicks = seconds / movement.tickSeconds;
     // Each figure drawn off where it stands by the attack feel, and kept as drawn, which its blow's arc follows.
     const shift = (id: number, view: FighterView | null): Vector => feel.shift(id, view, shot.yaw);
@@ -439,14 +438,13 @@ export class Foot {
     const figures: CardAt[] = [];
     const body = shownBody(walker.player);
     const arrival = this.arrivals.ownShareOf(fight.player, clock);
-    const own = ownCard(walker, fight, effects.flashes, arrival, [eyeX, eyeY], { shift, smear, drawnAt });
-    if (own) figures.push(own);
+    this.ownFigure = ownCard(walker, fight, effects.flashes, arrival, eye, { shift, smear, drawnAt });
+    if (this.ownFigure) figures.push(this.ownFigure);
     const { tickSeconds } = movement;
     const { otherPlayers, otherGlides, folk, folkLoops, arrivals } = this;
     const people = { forge, fight, effects, otherPlayers, otherGlides, folk, folkLoops, tickSeconds, arrivals };
     figures.push(...otherCards(people, [eyeX, eyeY], clock, frameTicks, { shift, drawnAt, otherViews, nearest }));
     const foeFeel = { held: (id: number, view: FighterView) => feel.held(id, view), shift, drawn: drawnAt, smear };
-    const eye = { x: eyeX, y: eyeY, nearest };
     figures.push(...foes.cards(fight, forge, eye, clock, frameTicks, tickSeconds, effects.flashes, foeFeel));
     // The player's own shots leave the weapon as drawn: the first person's muzzle, or the figure's along its shot.
     const [muzzle, gearNow, floor, doors] = [walker.muzzle, this.gear?.gear ?? null, this.floor, this.held.entrances];
@@ -547,6 +545,7 @@ export class Foot {
       firstPerson,
       pressed: shown.pressed,
       parryOpen: fight.parryOpen,
+      parryWindow: fight.parryWindow,
       abilities: fight.abilities,
       // The shots left stand beside the crosshair, wherever it shows.
       ammo: sights ? (ownView?.ammo ?? null) : null,

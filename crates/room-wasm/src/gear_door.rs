@@ -210,6 +210,13 @@ pub extern "C" fn room_character(player: PlayerId) -> u64 {
     hand_over(character(player))
 }
 
+/// A new character wearing a plain sword and armour (`Character::kitted`), as JSON's bytes packed as `hand_over`
+/// packs: what scripted players start from, a new player arriving with nothing.
+#[unsafe(no_mangle)]
+pub extern "C" fn room_kitted() -> u64 {
+    hand_over(gear::Character::kitted().to_json().into_bytes())
+}
+
 /// What still lies for a player goes to their mail (`Room::mail_lying`), at sea from the captain's deck they stand on.
 /// A host calls it as the player leaves, before it reads their character for its last save; a fleet keeps none.
 #[unsafe(no_mangle)]

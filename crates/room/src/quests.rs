@@ -217,6 +217,8 @@ impl Room {
                     | Goal::Land(_)
                     | Goal::Scavenge(_)
                     | Goal::Enter(_)
+                    | Goal::Buy(_)
+                    | Goal::Wear(_)
                     | Goal::Escort(_)
                     | Goal::Tail(_)
                     | Goal::Defend(_)
@@ -338,3 +340,7 @@ pub(crate) mod quests_tests;
 #[cfg(test)]
 #[path = "quest_grounds_tests.rs"]
 pub(crate) mod quest_grounds_tests;
+
+#[cfg(test)]
+#[path = "welcome_tests.rs"]
+mod welcome_tests;

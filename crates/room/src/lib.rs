@@ -48,6 +48,7 @@ mod power;
 pub mod public;
 mod quests;
 mod recharge;
+mod riding;
 mod routes;
 mod run;
 pub mod sea;
@@ -451,12 +452,8 @@ impl Room {
             while taken < CATCH_UP {
                 let Some((mut input, seen)) = self.next_input(id) else { break };
                 taken += 1;
-                // The room says who rides: a player with a horse, never aboard a ship's deck, whatever the page says.
-                let on_deck = matches!(self.floor, Floor::Deck(_));
-                if let Some(found) = self.players.get_mut(&id) {
-                    input.intent.controls.mounted &= found.character.may_ride() && !on_deck;
-                    found.mounted = input.intent.controls.mounted;
-                }
+                // The room says who rides and who shows a horse, whatever the page says (`riding.rs`).
+                riding::ride(self.players.get_mut(&id), &mut input, matches!(self.floor, Floor::Deck(_)));
                 if let Some(asked) = input.ask.take() {
                     self.take_ask(id, asked);
                 }

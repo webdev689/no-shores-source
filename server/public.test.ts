@@ -103,8 +103,7 @@ async function play(minute: number): Promise<{ hash: string; ended: readonly num
   assert.equal(room.minute(minute), true);
   const players = [room.join(), room.join()];
   // Raised as the page raises its bots (`&bots=`), so the fingerprints prove its bots are the rules' players.
-  for (const player of players)
-    assert.equal(room.restoreCharacter(player, seasoned(room.character(player) ?? '')), true);
+  for (const player of players) assert.equal(room.restoreCharacter(player, seasoned(room.kitted())), true);
   let hash = 0x811c_9dc5;
   let last: Read | null = null;
   let ended: { tick: number; event: number[]; at: number[] } | null = null;
@@ -139,10 +138,10 @@ test('two scripted players seal a heroic Fissure to the same fingerprint through
   assert.equal(hash, FISSURE_HASH);
 });
 
-test('two scripted players meet a raid’s heroic task but lose its stores, to the same fingerprint in WebAssembly as natively', async () => {
+test('two scripted players meet a raid’s heroic task and hold its stores, to the same fingerprint in WebAssembly as natively', async () => {
   const { hash, ended, at } = await play(RAID_MINUTE);
-  assert.deepEqual(ended, [2, 3, 2], 'the raid failed, its heroic task met');
-  assert.deepEqual(at, doorNumbers('RAID_ENDED'), 'the tick its stores fell at, its wave and the stores left');
+  assert.deepEqual(ended, [2, 2, 2], 'the raid won, its heroic task met');
+  assert.deepEqual(at, doorNumbers('RAID_ENDED'), 'the tick it was won at, its wave and the stores left');
   assert.equal(hash, RAID_HASH);
 });
 
@@ -175,7 +174,7 @@ function playInPage(minute: number, heroic: boolean): readonly number[] {
 test("a dev page's bots play its own room's events through, the heroic task taken or left alone", () => {
   assert.deepEqual(playInPage(FISSURE_MINUTE, true), [1, 2, 2], 'the Fissure won, heroic');
   assert.deepEqual(playInPage(FISSURE_MINUTE, false), [1, 2, 3], 'the Fissure won, its heroic task missed');
-  assert.deepEqual(playInPage(RAID_MINUTE, true), [2, 3, 2], 'the raid failed, its heroic task met');
+  assert.deepEqual(playInPage(RAID_MINUTE, true), [2, 2, 2], 'the raid held, its heroic task met');
   assert.deepEqual(playInPage(RAID_MINUTE, false), [2, 2, 3], 'the raid held, its heroic task missed');
 });
 

@@ -33,7 +33,9 @@ export type Opening =
 /** What the story asks of the wreck's room (`LocalRoom`'s story calls), each answered in turn with a number: a foe's,
  *  1 for one done or given, 0 for one refused, or for none to give. */
 export type StoryAsk =
-  | { readonly ask: 'wreck' | 'clear' | 'arms' }
+  | { readonly ask: 'wreck' | 'clear' | 'storm' }
+  /** The story's sword and shield or its bow, by the gear's kind number, taken up. */
+  | { readonly ask: 'take'; readonly kind: number }
   | {
       readonly ask: 'stand';
       readonly type: number;
@@ -60,8 +62,10 @@ export function storyOn(room: LocalRoom, story: StoryAsk): number {
     }
     case 'post':
       return done(room.storyPost(story.crew, story.x, story.y, story.facing));
-    case 'arms':
-      return done(room.storyTakeArms());
+    case 'take':
+      return done(room.storyTake(story.kind));
+    case 'storm':
+      return done(room.storyStorm());
     case 'wreck':
       room.storyWreck();
       return 1;

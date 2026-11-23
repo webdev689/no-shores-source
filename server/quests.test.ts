@@ -138,7 +138,7 @@ class Walker {
       this.sequence += 1;
       const swing = swingEvery > 0 && this.sequence % swingEvery === 0 ? 1 : 0;
       const intent = new Float64Array([0, 0, yaw, 0, 0, 0, 0, swing, 0, 0, 0, 0, 0, NaN, NaN, NaN, 0]);
-      // The hands hold the loadout their gear allows, as a page takes it up: the sword they start with.
+      // The hands hold the loadout their gear allows, as a page takes it up: the kitted character's sword.
       const arms = this.quests?.arms.find((code) => code !== 0) ?? 0;
       const parts = { intent, look: { anim: '', frame: 0, facing: 0 }, arms, seen: BigInt(this.sequence - 1) };
       const bytes = inputBytes(this.sequence, tick === 0 && ask ? { ...parts, ask } : parts);
@@ -168,7 +168,7 @@ test('the opening is walked by speaking with each keeper and pledging, and the r
   assert.deepEqual(walker.quests, {
     quest: 1,
     task: 0,
-    counts: [0, 0, 0],
+    counts: [0],
     done: [0, 0, 0, 0],
     earned: [0, 0, 0],
     at: [],
@@ -176,11 +176,19 @@ test('the opening is walked by speaking with each keeper and pledging, and the r
     answer: 0,
     arms: walker.quests?.arms ?? [],
   });
+  // The stranger is heard anywhere in the social space; her task done, the round of the counters begins.
+  const welcomed = walker.standAt(60, 150, { kind: SPEAK, column: 18 });
+  assert.deepEqual([welcomed.answer, welcomed.task], [0, 1]);
+  // A character armed and on the houses, as one who walked the round and bought their gear stands.
+  const kit = JSON.parse(hall.kitted()) as { quests: object };
+  kit.quests = { roads: { house: { task: 'hear-three-houses' } } };
+  assert.equal(hall.restoreCharacter(walker.player, JSON.stringify(kit)), true);
   assert.equal(walker.standAt(60, 150, { kind: SPEAK, column: 1 }).answer, 9, 'away from the counter: not here');
   assert.deepEqual(walker.standAt(10, 151, { kind: SPEAK, column: 1 }).counts, [1, 0, 0]);
   assert.deepEqual(walker.standAt(20, 151, { kind: SPEAK, column: 2 }).counts, [1, 1, 0]);
   const heard = walker.standAt(30, 151, { kind: SPEAK, column: 3 });
-  assert.deepEqual([heard.quest, heard.task, heard.counts], [1, 1, [0]], 'the next task at once');
+  const choose = book.quests[0]?.tasks.findIndex((task) => task.id === 'choose-house');
+  assert.deepEqual([heard.quest, heard.task, heard.counts], [1, choose, [0]], 'the next task at once');
   const pledged = walker.standAt(10, 151, { kind: ASKS.pledge, column: 1 });
   assert.deepEqual([pledged.quest, pledged.task, pledged.done], [2, 0, [1, 0, 0, 0]], "the Stormcallers' road");
   // On foot the page tells its room the story is behind it, which a patrol's gate asks.

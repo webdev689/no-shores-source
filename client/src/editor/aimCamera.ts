@@ -6,13 +6,13 @@ import type { FightLook } from '../rules/fightRules.ts';
 import { hullBox } from '../ships/hulls.ts';
 import { shipAxes } from '../ships/shipAxes.ts';
 import { lookPitch, lookReach } from './aim.ts';
-import { aimStation, batteryOf } from './aimStation.ts';
+import { aimStation, batteryOf, LOWEST_ELEVATION } from './aimStation.ts';
 import { clearAround, sweptBoxes } from './shipClear.ts';
 
 /** How long the eye takes to ease in or out, and from one battery to the other: its time constant, seconds. */
 export const AIM_CAM_TAU = 0.22;
-/** The landing zone's drift along the keel (the ship's own way carried by the balls) is followed this slowly,
- *  seconds, so a late answer from the rules never jerks the view. */
+/** The view's turn along the keel to stand over the volley's fall (`laidAlong`) is followed this slowly, seconds, so a
+ *  late answer from the rules never jerks the view. */
 const DRIFT_TAU = 0.25;
 /** Taken again on the other side, the view goes out there once it has eased this near home. */
 const SWAP_SHARE = 0.05;
@@ -60,11 +60,12 @@ export interface AimFrame extends AimView {
 export const AIM_ZOOM = 0.15;
 
 /** A lay as the aim follows it, the sea's or a fleet room's: its side, each gun's launch (its mouth, then its
- *  velocity), where each stops, and its guns' longest throw from where they leave. */
+ *  velocity), where each stops, its elevation (radians), and its guns' longest throw from where they leave. */
 export interface Laid {
   readonly side: 'port' | 'starboard';
   readonly launches: readonly (readonly number[])[];
   readonly ends: readonly ({ readonly point: readonly number[] } | null)[];
+  readonly elevation: number;
   readonly reach: number;
 }
 
@@ -97,17 +98,27 @@ function toLocal(ship: AimShip, point: Point): Point {
   return [onto(bow), onto(starboard), onto(up)];
 }
 
-/** How far along its keel a lay's balls fall from where they leave (metres): the ship's own way they carry, and their
- *  ripple; none where it lays nothing on that side or nothing falls. */
-export function laidDrift(lay: Laid | null, side: 1 | -1, heading: number): number {
-  if (!lay || (lay.side === 'starboard' ? 1 : -1) !== side) return 0;
-  const [east, south] = [Math.sin(heading), -Math.cos(heading)];
-  const along = (point: readonly number[]) => (point[0] ?? 0) * east + (point[1] ?? 0) * south;
-  const fell = lay.ends.flatMap((end) => (end ? [along(end.point)] : []));
-  if (!fell.length) return 0;
-  const left = lay.launches.map(along);
-  const mean = (values: readonly number[]) => values.reduce((sum, value) => sum + value, 0) / values.length;
-  return mean(fell) - mean(left);
+/** Where along its keel (metres from its middle) the view's middle should meet the water `range` out so that, seen
+ *  from `eye`, it stands over the volley's fall: the ship's own way the balls carry and their ripple, and a look that
+ *  grazes the swell meeting a crest short of `range`, its balls falling there. None where nothing of a lay on that
+ *  side falls. */
+export function laidAlong(lay: Laid | null, side: 1 | -1, ship: AimShip, eye: Point, range: number): number | null {
+  if (!lay || (lay.side === 'starboard' ? 1 : -1) !== side) return null;
+  const fell = lay.ends.flatMap((end) => (end ? [end.point] : []));
+  if (!fell.length) return null;
+  const [bow, out] = [
+    [Math.sin(ship.heading), -Math.cos(ship.heading)],
+    [Math.cos(ship.heading) * side, Math.sin(ship.heading) * side],
+  ] as const;
+  const flat = (point: readonly number[]) => {
+    const [east, south] = [(point[0] ?? 0) - ship.x, (point[1] ?? 0) - ship.y];
+    return [east * bow[0] + south * bow[1], east * out[0] + south * out[1]] as const;
+  };
+  const placed = fell.map(flat);
+  const fallAlong = placed.reduce((sum, [along]) => sum + along, 0) / placed.length;
+  const fallOut = placed.reduce((sum, [, out]) => sum + out, 0) / placed.length;
+  const [eyeAlong, eyeOut] = flat(eye);
+  return eyeAlong + ((fallAlong - eyeAlong) * (range - eyeOut)) / Math.max(1, fallOut - eyeOut);
 }
 
 /** The farthest out from its middle a lay reaches on the water, metres: its guns' longest throw from where they
@@ -117,6 +128,18 @@ export function laidReach(lay: Laid | null, side: 1 | -1, ship: { x: number; y: 
   const [east, south] = [Math.cos(ship.heading) * side, Math.sin(ship.heading) * side];
   const out = lay.launches.map((launch) => ((launch[0] ?? 0) - ship.x) * east + ((launch[1] ?? 0) - ship.y) * south);
   return out.reduce((sum, value) => sum + value, 0) / out.length + lay.reach;
+}
+
+/** How far out from its middle a lay's balls fall while its guns stand at their lowest, metres: the nearest they lay
+ *  as the ship lies on the swell now, which a crest under it or a trough out there carries farther than at rest; none
+ *  while they could go lower, or without a lay on that side. */
+export function laidNearest(lay: Laid | null, side: 1 | -1, ship: { x: number; y: number; heading: number }) {
+  if (!lay || (lay.side === 'starboard' ? 1 : -1) !== side || lay.elevation > 1e-6 - LOWEST_ELEVATION) return 0;
+  const [east, south] = [Math.cos(ship.heading) * side, Math.sin(ship.heading) * side];
+  const out = lay.ends.flatMap((end) =>
+    end ? [((end.point[0] ?? 0) - ship.x) * east + ((end.point[1] ?? 0) - ship.y) * south] : [],
+  );
+  return out.length ? out.reduce((sum, value) => sum + value, 0) / out.length : 0;
 }
 
 /** What the aim is given each frame: the view it eases from, the side wanted (1 starboard, -1 port, null to ease
@@ -138,7 +161,7 @@ export class AimCamera {
   private side: 1 | -1 | null = null;
   /** The side the aim held now was taken on, kept until it is let go. */
   private held: 1 | -1 | null = null;
-  /** The landing zone's drift along the keel, eased. */
+  /** How far along the keel past its battery's middle the view's middle meets the water, eased (`laidAlong`). */
   private drift = 0;
 
   /** The frame `seconds` on. */
@@ -157,14 +180,17 @@ export class AimCamera {
     const station = aimStation(ship.hull);
     const local = [station.eye[0], station.eye[1] * side, station.eye[2]] as const;
     const eye = toWorld(ship, local);
-    const driftStep = 1 - Math.exp(-Math.max(0, seconds) / DRIFT_TAU);
-    this.drift += (laidDrift(ask.lay, side, ship.heading) - this.drift) * driftStep;
     const height = station.eye[2];
     const asked = station.eye[1] + lookReach(-ask.pitch, height);
-    const { nearestM } = batteryOf(ship.guns ?? ship.hull);
-    const range = Math.min(laidReach(ask.lay, side, ship), Math.max(nearestM, asked));
+    // No nearer than the guns lay at rest, nor than where they fall at their lowest as the ship lies now: the marks
+    // then stand under the sight however the swell lifts the ship.
+    const nearest = Math.max(batteryOf(ship.guns ?? ship.hull).nearestM, laidNearest(ask.lay, side, ship));
+    const range = Math.min(laidReach(ask.lay, side, ship), Math.max(nearest, asked));
     const heldPitch = range === asked ? ask.pitch : -lookPitch(range - station.eye[1], height);
-    // The point laid on the water, square off the battery's middle and on along the keel as far as the balls drift.
+    // The point laid on the water, square off the battery's middle and on along the keel to stand over the fall.
+    const driftStep = 1 - Math.exp(-Math.max(0, seconds) / DRIFT_TAU);
+    const over = (laidAlong(ask.lay, side, ship, eye, range) ?? station.ports[0]) - station.ports[0];
+    this.drift += (over - this.drift) * driftStep;
     const along = station.ports[0] + this.drift;
     const out = range * side;
     const target = [

@@ -1,4 +1,4 @@
-//! An item as the gear message carries it: its kind, rarity, level, name, nodes and the content it came from, and
+//! An item as the gear message carries it: its kind, rarity, level, name, nodes, the content it came from and whether it is the prologue's, and
 //! each column of its nodes with what a node costs. The gear, the mail, a faction's wares and the ship's officers all
 //! write theirs here.
 
@@ -71,6 +71,7 @@ pub(crate) fn item_offset<'built>(
         price,
         element: item.element.map_or(0, |element| element as u8),
         source: item.source as u8,
+        story: item.story,
     };
     messages::GearItem::create(builder, &args)
 }

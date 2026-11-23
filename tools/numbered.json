@@ -1,5 +1,5 @@
 {
-  "about": "The content whose entries cross the wire by their place in its lists: cosmetics, emblems, factions, items, island resources, rolled names, Arts and the lore's chapters. The protocol's version hashes them (tools/schema.mjs), and the rooms deploy when they change (server/roomsDeploy.test.ts holds them to the rooms' code).",
+  "about": "The content whose entries cross the wire by their place in its lists: cosmetics, emblems, factions, items, island resources, rolled names, Arts, the lore's chapters, the quests' tasks and the keepers spoken with, the cast's speakers, the smiths' stock, and the items' kinds and slots. The protocol's version hashes them (tools/schema.mjs), and the rooms deploy when they change (server/roomsDeploy.test.ts holds them to the rooms' code).",
   "paths": [
     "content/gear/cosmetics.json",
     "content/gear/emblems.json",
@@ -8,6 +8,11 @@
     "content/gear/resources.json",
     "content/gear/rolled.json",
     "content/arts/arts.json",
-    "content/lore/lore.json"
+    "content/lore/lore.json",
+    "content/quests/quests.json",
+    "content/story/cast.json",
+    "crates/gear/src/kinds.rs",
+    "crates/gear/src/quest_defs.rs",
+    "crates/gear/src/vendor.rs"
   ]
 }

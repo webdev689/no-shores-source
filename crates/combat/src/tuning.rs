@@ -1,6 +1,6 @@
 //! Every number a fight turns on, in one place: seconds as ticks of 1/60 s, distances in metres, angles in radians.
 
-use crate::arms::{OffHand, SWING_PACE};
+use crate::arms::OffHand;
 
 const DEGREES: f64 = core::f64::consts::PI / 180.0;
 
@@ -47,16 +47,18 @@ pub const AIM_TURN: f64 = 540.0 * DEGREES / 60.0;
 /// The soft lock steers a blow at its target when the target is within the weapon's reach and this.
 pub const STEER_REACH: f64 = 2.5;
 
-/// The guard: a player's press opens a parry window this long (a foe's, `parry_window`); a press this soon after an
-/// unused window opens none.
-pub const PARRY_WINDOW: u32 = 12;
+/// The guard: a player's press opens a parry window this long, a quarter of a second (a foe's, `FOE_PARRY_WINDOW`); a
+/// press this soon after an unused window opens none.
+pub const PARRY_WINDOW: u32 = 15;
+/// A foe's press opens a shorter window: it reads a swing at the fight's pace, and the lead its raised guard needs to
+/// block a blow rather than parry it is short with it.
+pub const FOE_PARRY_WINDOW: u32 = 9;
 pub const PARRY_RUSHED: u32 = 30;
 
-/// The parry window a side's press opens. A foe's is the swings' share of a player's (`SWING_PACE`): it reads a swing
-/// at the fight's pace, and the lead its raised guard needs to block a blow rather than parry it comes down with it.
+/// The parry window a side's press opens.
 #[must_use]
 pub fn parry_window(player: bool) -> u32 {
-    if player { PARRY_WINDOW } else { (f64::from(PARRY_WINDOW) * SWING_PACE + 0.5) as u32 }
+    if player { PARRY_WINDOW } else { FOE_PARRY_WINDOW }
 }
 /// The guard's arc either side of its aim, by what the left hand holds, and how fast it turns.
 pub const GUARD_ARC: f64 = 60.0 * DEGREES;

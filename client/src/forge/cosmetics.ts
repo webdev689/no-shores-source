@@ -133,11 +133,11 @@ export function bardingLayer(id: string | null | undefined): string | null {
 /** A barding layer's look as the ride's pictures name it (`horse_warhorse` is `warhorse`). */
 export const bardingLook = (layer: string): string => layer.replace(/^horse_/, '');
 
-/** The id of the cosmetic of `kind` worn by its wire number, or null for the start piece (its own colours), another
- *  kind's number or none. */
+/** The id of the cosmetic of `kind` worn by its wire number, or null for one that changes nothing drawn (a start
+ *  piece's own colours, the Bay's own hide), another kind's number or none. */
 export function wornCosmetic(number: number | undefined, kind: CosmeticKind): string | null {
   const found = number === undefined ? undefined : COSMETICS[number];
-  return found?.kind === kind && found.source.kind !== 'start' ? found.id : null;
+  return found?.kind === kind && found.look.length > 0 ? found.id : null;
 }
 
 /** Which texels of a horse picture are the hide a coat takes, by their hue in degrees and their light, and the hide's

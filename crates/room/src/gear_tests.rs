@@ -648,10 +648,48 @@ fn a_page_saying_its_player_is_mounted_rides_only_with_a_horse_and_never_on_a_bo
     };
     let mut room = room();
     let player = room.join().expect("a room with space");
-    assert!(ask_mounted(&mut room, player, 1), "on the horse every rider starts with");
-    room.players.get_mut(&player).expect("in").character.cosmetics.coat.clear();
-    assert!(!ask_mounted(&mut room, player, 2), "without one, on foot");
+    assert!(!ask_mounted(&mut room, player, 1), "a new rider has no horse, so stays on foot");
+    horsed(&mut room, player);
+    assert!(ask_mounted(&mut room, player, 2), "with a horse worn in the Mount slot, mounted");
     let mut deck = Room::deck(&crate::deck::test_deck(), 1, ::foes::Rank::Minor, 1);
     let boarder = deck.join().expect("a deck with space");
     assert!(!ask_mounted(&mut deck, boarder, 1), "no horse comes aboard");
+}
+
+/// Gives a player a horse worn in the Mount slot, which a new character has none of.
+pub(crate) fn horsed(room: &mut Room, player: PlayerId) {
+    let character = &mut room.players.get_mut(&player).expect("in").character;
+    let id = character.take_id();
+    let horse = gear::horses::horse(id, "dun").expect("a coat");
+    character.items.insert(id, (horse, gear::character::At::Worn(gear::kinds::Slot::Mount)));
+}
+
+#[test]
+fn the_test_grounds_hands_give_no_horse() {
+    use crate::asks::Grant;
+    let mut room = room();
+    let player = room.join().expect("a room with space");
+    room.answer(player, Asked::Grant(Grant::Item { kind: gear::Kind::Horse, rarity: Rarity::Rare, level: 20 }));
+    let character = &room.player(player).expect("in").character;
+    assert!(character.items.values().all(|(item, _)| item.kind != gear::Kind::Horse), "a horse is bought, not granted");
+}
+
+#[test]
+fn a_player_on_foot_shows_others_no_horse_whatever_the_page_sends() {
+    let mut room = room();
+    let player = room.join().expect("a room with space");
+    let mut input = asking(1, &room, CombatInput::default());
+    input.intent.controls.mounted = true;
+    input.shown = crate::players::Shown { anim: "horsegallop".to_owned(), frame: 2, facing: 0.5 };
+    room.input(player, input).unwrap();
+    room.tick();
+    let shown = &room.player(player).expect("in").shown;
+    assert_eq!((shown.anim.as_str(), shown.facing), ("idle", 0.5), "no horse worn: the body stands");
+    horsed(&mut room, player);
+    let mut riding = asking(2, &room, CombatInput::default());
+    riding.intent.controls.mounted = true;
+    riding.shown = crate::players::Shown { anim: "horsegallop".to_owned(), frame: 2, facing: 0.5 };
+    room.input(player, riding).unwrap();
+    room.tick();
+    assert_eq!(room.player(player).expect("in").shown.anim, "horsegallop", "with one, the horse shows");
 }

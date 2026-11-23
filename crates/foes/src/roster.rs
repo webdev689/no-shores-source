@@ -49,6 +49,9 @@ pub struct FoeType {
 const LOW: &[Rank] = &[Rank::Minor, Rank::Major];
 const HEAVY: &[Rank] = &[Rank::Major, Rank::Elite];
 const LEADER: &[Rank] = &[Rank::Elite, Rank::Miniboss];
+/// The Tithe-Mate leads at sea as an Elite or a Miniboss, and boards the prologue's wreck as a Major, the story having
+/// no Elite but its boss. Its Elite is first, so a Tithe-Mate asked for with no rank leads at sea.
+const MATE: &[Rank] = &[Rank::Elite, Rank::Miniboss, Rank::Major];
 
 #[expect(clippy::too_many_arguments, reason = "one row of the roster's table")]
 const fn row(
@@ -103,7 +106,7 @@ pub const ROSTER: [FoeType; 45] = [
     row(8, GREY_TITHE, Deck, "Hookman", Swordsman, "axe_iron", "", LOW),
     row(9, GREY_TITHE, Deck, "Pistoleer", Archer, "pistolet", "", LOW),
     row(10, GREY_TITHE, Deck, "Bosun", Brute, "warhammer_iron", "", HEAVY),
-    row(11, GREY_TITHE, Deck, "Tithe-Mate", Captain, "sword_steel", "", LEADER),
+    row(11, GREY_TITHE, Deck, "Tithe-Mate", Captain, "sword_steel", "", MATE),
     FoeType {
         boss_phases: &THULE,
         ..row(12, GREY_TITHE, Deck, "Captain Brannoc Thule", Captain, "sword_ebony", "", &[Rank::Boss])
