@@ -320,3 +320,57 @@ test('the right stick scrolls the list once a frame, under the focus, never agai
   assert.ok(stuck > 0 && moved > 0, 'it scrolled');
   assert.ok(Math.abs(moved - stuck) <= 1, `moved ${moved} for a stick of ${stuck}`);
 });
+
+test('up and down go between a playlist and the week’s dungeon under it', () => {
+  const screen = standing();
+  screen.key('ArrowDown');
+  screen.frame();
+  assert.equal(screen.view.entry?.kind, 'week-elite');
+  screen.key('ArrowRight');
+  screen.frame();
+  screen.key('ArrowUp');
+  screen.frame();
+  assert.equal(screen.view.entry?.kind, 'abyss');
+});
+
+test('a shut entry’s crest wears its padlock and no dot, though its reward waits', () => {
+  const screen = standing();
+  const shut = SAMPLE_SCREEN.entries[2];
+  assert.ok(shut?.shut && shut.rewards.some((reward) => reward.taken === false), 'shut, its reward waiting');
+  const keys = nodesOf(byId(screen.built(), 'playlist-tile-2')).map((node) => node.picture?.key ?? '');
+  assert.ok(keys.some((key) => key.includes('locked')));
+  assert.ok(!keys.some((key) => key.startsWith('playlist waiting')));
+  const open = nodesOf(byId(screen.built(), 'playlist-tile-1')).map((node) => node.picture?.key ?? '');
+  assert.ok(
+    open.some((key) => key.startsWith('playlist waiting')),
+    'an open one’s waiting reward shows its dot',
+  );
+});
+
+test('only the chosen crest’s rule is drawn', () => {
+  const screen = standing();
+  const fill = (place: number) => byId(screen.built(), `playlist-tile-${place}-rule`)?.fill;
+  assert.notEqual(fill(0), 'rgba(0,0,0,0)');
+  for (const place of [1, 2, 3]) assert.equal(fill(place), 'rgba(0,0,0,0)', `crest ${place}`);
+});
+
+test('Page Down scrolls the card most of a view, and the thumb is as tall as the share it shows', () => {
+  const screen = standing(390, 480);
+  screen.click('playlist-tile-3');
+  screen.frame();
+  screen.frame();
+  const list = 'playlist-body';
+  const [room, held] = [screen.ui.boxOf(list), screen.ui.boxOf(`${list}-held`)];
+  const [thumb, track] = [screen.ui.boxOf(`${list}-thumb`), screen.ui.boxOf(`${list}-track`)];
+  assert.ok(room && held && thumb && track);
+  const share = (thumb.height / track.height) * 100;
+  assert.ok(Math.abs(share - (room.height / held.height) * 100) <= 1, `${share}% shown`);
+  const before = held.y;
+  screen.key('PageDown');
+  screen.frame();
+  screen.frame();
+  const moved = before - (screen.ui.boxOf(`${list}-held`)?.y ?? before);
+  const step = Math.round(room.height * 0.8);
+  assert.ok(held.height - room.height > step, `${held.height - room.height} px below, more than a page's ${step}`);
+  assert.equal(moved, step);
+});

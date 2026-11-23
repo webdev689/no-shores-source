@@ -70,6 +70,10 @@ test('a card names the item and its kind, its main number, its chosen traits, an
   assert.deepEqual(abyss.rows.at(-1), ['From', 'An Abyss Dungeon'], 'where it was earned, which its look says');
   const faction = cardOf(item({ id: 10, rarity: 3, level: 20, named: 'veiled_cape', source: 1 }));
   assert.deepEqual(faction.rows.at(-1), ['From', 'The Veiled'], 'a faction’s piece names its faction');
+  const helm = cardOf(item({ id: 11, kind: 13, rarity: 3, level: 20, named: 'stormcallers_helm', source: 1 }));
+  assert.deepEqual(helm.rows.at(-1), ['From', 'The Stormcallers'], 'its faction named whole, with its article');
+  const module = cardOf(item({ id: 12, kind: 25, rarity: 2, level: 20, bucket: 8, source: 4 }));
+  assert.ok(!module.rows.some(([label]) => label === 'From'), 'a ship’s module keeps no look of a content');
   assert.equal(card.traits.length, 1, 'its chosen trait');
   assert.deepEqual(card.compare, { replaces: 'Harbourwarden', rows: [{ label: 'Attack', from: 248, to: 260 }] });
   assert.equal(cardOf(worn, worn).compare, null, 'no comparing a piece with itself');

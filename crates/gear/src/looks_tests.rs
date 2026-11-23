@@ -87,3 +87,29 @@ fn a_figure_of_no_body_the_forge_draws_holds_nothing() {
         serde_json::from_str(&crate::cosmetics::dressed(&sent, &sword).expect("reads")).expect("a dress");
     assert_eq!(dress["outfit"]["right"], Value::Null);
 }
+
+#[test]
+fn a_gun_a_normal_blade_and_a_normal_shield_keep_only_their_own_rungs() {
+    let rare_gun = wearing(&[(Kind::Pistolet, Rarity::Rare, Source::World, None)]);
+    assert_eq!(
+        relayed(&json!({ "right": "pistolet_gilded" }), &rare_gun)["right"],
+        Value::Null,
+        "gilded from Legendary"
+    );
+    assert_eq!(relayed(&json!({ "right": "pistolet" }), &rare_gun)["right"], json!("pistolet"));
+    let legendary_gun = wearing(&[(Kind::Pistolet, Rarity::Legendary, Source::World, None)]);
+    assert_eq!(relayed(&json!({ "right": "pistolet_gilded" }), &legendary_gun)["right"], json!("pistolet_gilded"));
+    // A Normal sword is iron to level 10 and steel past it; worn here at 20.
+    let plain = wearing(&[(Kind::Sword, Rarity::Normal, Source::World, None)]);
+    assert_eq!(relayed(&json!({ "right": "sword_iron" }), &plain)["right"], Value::Null, "iron only to level 10");
+    // A Normal shield is plain or iron to level 10, its weapon's metal past it.
+    let mut shielded = wearing(&[(Kind::SwordAndShield, Rarity::Normal, Source::World, None)]);
+    for (item, _) in shielded.items.values_mut() {
+        item.level = 15;
+    }
+    assert_eq!(relayed(&json!({ "left": "shield_kite_plain" }), &shielded)["left"], Value::Null, "plain only to 10");
+    for (item, _) in shielded.items.values_mut() {
+        item.level = 8;
+    }
+    assert_eq!(relayed(&json!({ "left": "shield_kite_plain" }), &shielded)["left"], json!("shield_kite_plain"));
+}
