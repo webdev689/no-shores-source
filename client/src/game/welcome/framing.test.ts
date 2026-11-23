@@ -127,24 +127,20 @@ test("each place stands in the view's upper part, clear of the dialogue box over
   }
 });
 
-test("a keeper behind a window, the counter's front walled below its sill, is seen through the window", () => {
-  // The Vault's keeper stands inside a stone house, seen through a window 1.3 to 2.3 m up; its counter is the sill.
-  const vault = { kind: 'vault', keeper: [1000, 1990] as const, counter: [1000, 1991.2] as const };
-  const walls = [
-    box(1000, 1991.2, 3, 0.25, 1.3),
-    box(1000, 1991.2, 3, 0.25, 2, 2.3),
-    box(997.6, 1991.2, 0.6, 0.25, 1, 1.3),
-    box(1002.4, 1991.2, 0.6, 0.25, 1, 1.3),
-  ];
+test("a keeper behind a house's front wall, its window drawn but the wall solid whole, is framed by the counter", () => {
+  // As the Vault stands in Overlook: its keeper 0.6 m behind a front wall solid to 4.6 m, its counter 2.1 m out.
+  const vault = { kind: 'vault', keeper: [1000, 1990] as const, counter: [1000, 1987.9] as const };
+  const walls = [box(1000, 1989.2, 3.5, 0.3, 4.6), box(1000, 1992.5, 3.5, 3.5, 0.8, 4.6)];
   const shot = counterShot({ stations: [vault], groundAt: ground, blocks: walls }, ['vault'], OWN);
   assert.ok(shot, 'a shot of the vault');
-  const keeper: readonly [number, number, number] = [...vault.keeper, GROUND + HEAD_M];
-  assert.ok(seen(shot, keeper), 'its keeper in the view');
+  const front: readonly [number, number, number] = [...vault.counter, GROUND + 1];
   assert.ok(
-    blockReach(shot.eye, keeper, walls, 0.05) >=
-      Math.hypot(...keeper.map((each, axis) => each - (shot.eye[axis] ?? 0))) - 1e-6,
-    'through the window',
+    blockReach(shot.eye, front, walls, 0.05) >=
+      Math.hypot(...front.map((each, axis) => each - (shot.eye[axis] ?? 0))) - 1e-6,
+    'its counter seen clear',
   );
+  assert.ok(seen(shot, front), 'its counter in the view');
+  assert.ok(seen(shot, [...vault.keeper, GROUND + HEAD_M]), 'its keeper where the window is drawn, in the view');
 });
 
 test('a place no eye sees clearly gives no shot, so the view stays where it is', () => {

@@ -71,14 +71,16 @@ export const lineClear =
   (from: Point3, to: Point3): boolean =>
     blockReach(from, to, blocks, CLEAR_M) >= Math.hypot(to[0] - from[0], to[1] - from[1], to[2] - from[2]) - 1e-6;
 
+/** Whether a point is on a shot's view. */
+function inView(shot: Shot, point: Point3): boolean {
+  const spot = onScreen(shot, CHECKED, point);
+  return spot !== null && spot[0] > 0 && spot[0] < CHECKED.width && spot[1] > 0 && spot[1] < CHECKED.height;
+}
+
 /** Whether a shot sees every point, each by a line clear of the solids and on its view. */
 function sees(shot: Shot, points: readonly Point3[], blocks: readonly Block[]): boolean {
   if (inBlock(shot.eye, blocks)) return false;
-  return points.every((point) => {
-    const spot = onScreen(shot, CHECKED, point);
-    const shown = spot !== null && spot[0] > 0 && spot[0] < CHECKED.width && spot[1] > 0 && spot[1] < CHECKED.height;
-    return shown && lineClear(blocks)(shot.eye, point);
-  });
+  return points.every((point) => inView(shot, point) && lineClear(blocks)(shot.eye, point));
 }
 
 /** A shot from `eye` looking at `target` through the player's lens, or `fov`. */
@@ -133,8 +135,13 @@ export function counterShot(place: Place, kinds: readonly string[], own: Shot): 
   const floor = (station: StationInfo) => place.groundAt(...station.keeper) ?? ground;
   const heads = found.map((station): Point3 => [...station.keeper, floor(station) + HEAD_M]);
   const fronts = found.map((station): Point3 => [...station.counter, floor(station) + FRONT_M]);
-  // A keeper behind a window (the Vault's) has a counter walled below its sill: their head alone is seen then.
-  return firstSeeing(shots, [...heads, ...fronts], place.blocks) ?? firstSeeing(shots, heads, place.blocks);
+  // A keeper behind a house's front wall (the Vault's: its window is drawn, the wall solid whole) is framed by the
+  // counter before it, seen clear, the keeper in the view where the window shows them.
+  return (
+    firstSeeing(shots, [...heads, ...fronts], place.blocks) ??
+    shots.find((shot) => sees(shot, fronts, place.blocks) && heads.every((head) => inView(shot, head))) ??
+    null
+  );
 }
 
 /** The Hall of the Arts seen from inside: from up under its roof a few metres in from its door, down the nave to all
