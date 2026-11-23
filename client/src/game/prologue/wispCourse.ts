@@ -178,7 +178,8 @@ export function wispCourse(feet: Point, facing: number, layout: WreckLayout): Wi
       block.maxY > quiet[1] - FROM_M - 5 &&
       block.minY < quiet[3] + FROM_M + 5,
   );
-  const points = Array.from({ length: count }, (unused, index) => planned(index / SAMPLE_HZ));
+  const plannedAll = Array.from({ length: count }, (unused, index) => planned(index / SAMPLE_HZ));
+  const points = closedIn(plannedAll, near, feet, Math.round((drift + wandering) * SAMPLE_HZ));
   // Lifted over every solid, then eased: it climbs to clear one before it, and sinks again only as fast as it climbs.
   const heights = points.map(([x, y, z]) => Math.max(z, clearOver(near, feet, x, y)));
   for (let index = 1; index < count; index++)
@@ -187,6 +188,41 @@ export function wispCourse(feet: Point, facing: number, layout: WreckLayout): Wi
     heights[index] = Math.max(heights[index] ?? 0, (heights[index + 1] ?? 0) - CLIMB_M);
   const samples = points.map(([x, y], index): Point => [x, y, heights[index] ?? 0]);
   return { samples, feet, facing, blocks: near };
+}
+
+/** How fast its rings may widen again once a solid has closed them in, metres a sixtieth of a second. */
+const WIDEN_M = 0.08;
+
+/** Its rings from sample `from` on, closed in toward the player where a solid stands within them at their height, so
+ *  they keep low round the player's chest rather than rising over a rail or the wheel; eased, so they widen again no
+ *  faster than `WIDEN_M`. */
+function closedIn(points: readonly Point[], blocks: readonly CourseBlock[], feet: Point, from: number): Point[] {
+  const radii = points.map(([x, y, z], index) => {
+    const out = Math.hypot(x - feet[0], y - feet[1]);
+    if (index < from) return out;
+    let radius = out;
+    const [east, south] = [(x - feet[0]) / (out || 1), (y - feet[1]) / (out || 1)];
+    while (radius > RING_M[1] && clearOver(blocks, feet, feet[0] + east * radius, feet[1] + south * radius) > z)
+      radius -= 0.1;
+    return radius;
+  });
+  for (let index = from + 1; index < radii.length; index++)
+    radii[index] = Math.min(radii[index] ?? 0, (radii[index - 1] ?? 0) + WIDEN_M);
+  for (let index = radii.length - 2; index >= from; index--)
+    radii[index] = Math.min(radii[index] ?? 0, (radii[index + 1] ?? 0) + WIDEN_M);
+  const closed = points.map(([x, y, z], index): Point => {
+    const out = Math.hypot(x - feet[0], y - feet[1]) || 1;
+    const share = Math.min(1, (radii[index] ?? out) / out);
+    return [feet[0] + (x - feet[0]) * share, feet[1] + (y - feet[1]) * share, z];
+  });
+  // Its wander's last second eased onto where the closed ring begins, so it comes in without a jump.
+  const [first = feet, planned = feet] = [closed[from], points[from]];
+  for (let index = Math.max(0, from - SAMPLE_HZ); index < from; index++) {
+    const share = eased((index - (from - SAMPLE_HZ)) / SAMPLE_HZ);
+    const [x, y, z] = closed[index] ?? feet;
+    closed[index] = [x + (first[0] - planned[0]) * share, y + (first[1] - planned[1]) * share, z];
+  }
+  return closed;
 }
 
 /** The wisp `seconds` into its coming on `course`: where it is, which part of it, and how bright (0 to 1). */
@@ -208,49 +244,53 @@ export function wispAt(course: WispCourse, seconds: number): WispNow {
   return { at: [x, y, z + CHEST_M], part: 'gone', glow: 0 };
 }
 
-/** How far behind it the following camera stands along its way (metres) and over it; and how far its look leans
+/** How far behind it the following camera stands along its level way (metres) and over it; and how far its look leans
  *  from the wisp toward the player's chest, a share of the camera's distance from it, so the wreck before it stands
  *  in the frame with the wisp near its middle. */
 const CHASE_BACK_M = 3.2;
 const CHASE_UP_M = 1.1;
 const CHASE_LEAN = 0.25;
 
-/** The following camera `seconds` in: behind the wisp along the way it came, a little over it, clear of the wreck,
- *  looking on past it to the player. */
+/** The following camera `seconds` in: behind the wisp along the level way it has come over the last second (or
+ *  will go, as it sets out), a little over it, clear of the wreck, looking on past it to the player. */
 export function chaseShot(course: WispCourse, seconds: number): { readonly eye: Point; readonly look: Point } {
   const now = wispAt(course, seconds).at;
-  let behind = now;
-  let walked = 0;
-  for (let back = Math.floor(seconds * SAMPLE_HZ); back > 0 && walked < CHASE_BACK_M; back--) {
-    const earlier = course.samples[back - 1] ?? behind;
-    walked += Math.hypot(earlier[0] - behind[0], earlier[1] - behind[1], earlier[2] - behind[2]);
-    behind = earlier;
-  }
-  // Where its way does not yet reach back so far, the camera stands on back along its first leg, over the sea.
-  if (walked < CHASE_BACK_M) {
-    const [first = now, later = now] = [course.samples[0], course.samples[SAMPLE_HZ]];
-    const leg = Math.hypot(later[0] - first[0], later[1] - first[1], later[2] - first[2]) || 1;
-    const short = (CHASE_BACK_M - walked) / leg;
-    behind = [
-      behind[0] - (later[0] - first[0]) * short,
-      behind[1] - (later[1] - first[1]) * short,
-      behind[2] - (later[2] - first[2]) * short,
-    ];
-  }
-  const lifted = (z: number) => Math.max(z, clearOver(course.blocks, course.feet, behind[0], behind[1]) + 0.3);
-  let eye: Point = [behind[0], behind[1], lifted(behind[2] + CHASE_UP_M)];
-  // Brought nearer where the wreck stands between, as the camera on foot keeps clear of what is drawn.
-  while (!clearBetween(course.blocks, eye, now) && Math.hypot(eye[0] - now[0], eye[1] - now[1]) > 1.6)
-    eye = mix(eye, [now[0], now[1], eye[2]], 0.2);
   const [x, y, z] = course.feet;
+  const index = Math.min(course.samples.length - 1, Math.floor(seconds * SAMPLE_HZ));
+  const level = (from: Point | undefined, to: Point | undefined): readonly [number, number] =>
+    from && to ? [to[0] - from[0], to[1] - from[1]] : [0, 0];
+  // Its way over the last second, or the next as it sets out; still, as it rises or sinks, from the player to it.
+  const ways = [
+    level(course.samples[Math.max(0, index - SAMPLE_HZ)], now),
+    level(now, course.samples[Math.min(course.samples.length - 1, index + SAMPLE_HZ)]),
+    level([x, y, z], now),
+  ];
+  const [wayX, wayY] = ways.find(([east, south]) => Math.hypot(east, south) > 0.5) ?? [0, 1];
+  const length = Math.hypot(wayX, wayY) || 1;
+  // The nearest of a few places back along it and up that sees it clear; else where it was a second ago.
+  const places = [CHASE_BACK_M, 2.6, 2].flatMap((back) =>
+    [CHASE_UP_M, 1.8, 2.6].map((up): Point => {
+      const [east, south] = [now[0] - (wayX / length) * back, now[1] - (wayY / length) * back];
+      return [east, south, Math.max(now[2] + up, clearOver(course.blocks, course.feet, east, south) + 0.3)];
+    }),
+  );
+  const earlier = course.samples[Math.max(0, index - SAMPLE_HZ)] ?? now;
+  const eye =
+    places.find((place) => !solidAt(course.blocks, place) && clearBetween(course.blocks, place, now)) ??
+    ([earlier[0], earlier[1], earlier[2] + 0.3] as Point);
   const lean = CHASE_LEAN * Math.hypot(now[0] - eye[0], now[1] - eye[1], now[2] - eye[2]);
   const apart = Math.hypot(x - now[0], y - now[1], z + CHEST_M - now[2]);
   return { eye, look: mix(now, [x, y, z + CHEST_M], Math.min(1, lean / Math.max(apart, 0.001))) };
 }
 
-/** The camera that watches the rings: of the places round the player, nearest first to 5.6 m out to their right and
- *  2.5 m up, the first from which the player's chest and the wisp at every moment of its rings and engulfing are seen
- *  in one frame with nothing of the wreck between. */
+/** The camera that watches the rings, a cutscene's shot and not a map's: of the places round the player 2.6 to 5.4 m
+ *  out and 1 to 2.9 m over their deck (nearest first to 4.2 m out to their right and 1.8 m up), the first from which
+ *  the player's chest and the wisp at every moment of its rings and engulfing are seen in one frame, looking a little
+ *  down, with nothing of the wreck between the chest and it (the wisp at `SEEN_SHARE` of its moments). Near so, the
+ *  player stands a third of the frame's height or more. */
+/** The share of the wisp's moments in its rings the ring camera must see it clear. */
+export const SEEN_SHARE = 0.95;
+
 export function ringEye(course: WispCourse): Point {
   const [x, y, z] = course.feet;
   const chest: Point = [x, y, z + CHEST_M];
@@ -258,30 +298,42 @@ export function ringEye(course: WispCourse): Point {
   const from = Math.round((WISP_S.drift + WISP_S.wander) * SAMPLE_HZ);
   for (let index = from; index < course.samples.length; index += 3) seen.push(course.samples[index] ?? chest);
   const candidates: { eye: Point; cost: number }[] = [];
-  for (const out of [5.6, 4.8, 6.6, 4, 3.2, 8]) {
-    for (const up of [2.5, 3.2, 1.9, 4, 5.5, 7]) {
-      for (let step = 0; step < 24; step++) {
-        const bearing = (step / 24) * 2 * Math.PI;
+  for (const out of [4.2, 3.6, 4.8, 3.2, 5.4, 2.6]) {
+    for (const up of [1.8, 2.4, 1.4, 2.9, 1]) {
+      for (let step = 0; step < 36; step++) {
+        const bearing = (step / 36) * 2 * Math.PI;
         const eye: Point = [x + Math.sin(bearing) * out, y - Math.cos(bearing) * out, z + up];
         const off = bearing - course.facing - Math.PI / 2;
         const side = Math.abs(Math.atan2(Math.sin(off), Math.cos(off)));
-        candidates.push({ eye, cost: Math.abs(out - 5.6) + Math.abs(up - 2.5) + side });
+        candidates.push({ eye, cost: Math.abs(out - 4.2) + Math.abs(up - 1.8) + side });
       }
     }
   }
   candidates.sort((first, second) => first.cost - second.cost);
-  // Both in one frame: the wisp never more than 0.75 rad from the chest as the camera sees them.
-  const apartSeen = (eye: Point, point: Point) => {
-    const [first, second] = [chest, point].map((each) => [each[0] - eye[0], each[1] - eye[1], each[2] - eye[2]]);
-    const [one = [0, 0, 1], two = [0, 0, 1]] = [first, second];
-    const dot = (one[0] ?? 0) * (two[0] ?? 0) + (one[1] ?? 0) * (two[1] ?? 0) + (one[2] ?? 0) * (two[2] ?? 0);
-    return Math.acos(Math.min(1, dot / (Math.hypot(...one) * Math.hypot(...two))));
+  const unit = (eye: Point, point: Point): Point => {
+    const along: Point = [point[0] - eye[0], point[1] - eye[1], point[2] - eye[2]];
+    const length = Math.hypot(...along) || 1;
+    return [along[0] / length, along[1] / length, along[2] / length];
   };
+  // Both in one frame (never more than 0.75 rad apart as it sees them), and the look between them a little down.
+  const framed = (eye: Point, point: Point) => {
+    const [one, two] = [unit(eye, chest), unit(eye, point)];
+    const apart = Math.acos(Math.min(1, one[0] * two[0] + one[1] * two[1] + one[2] * two[2]));
+    const look = [one[0] + two[0], one[1] + two[1], one[2] + two[2]] as const;
+    const down = Math.atan2(-look[2], Math.hypot(look[0], look[1]));
+    return apart < 0.75 && down > -0.15 && down < 0.5;
+  };
+  // The chest always seen clear, and the wisp at all but a twentieth of its moments: the course stands a rail or the
+  // wheel as a wall 3.2 m over the deck, higher than either is, so a low camera loses it behind one a moment.
   const clear = (eye: Point) =>
     !solidAt(course.blocks, eye) &&
-    seen.every((point) => apartSeen(eye, point) < 0.75) &&
-    [chest, ...seen].every((point) => clearBetween(course.blocks, eye, point));
-  return (candidates.find(({ eye }) => clear(eye)) ?? candidates[0] ?? { eye: [x + 5.6, y, z + 2.5] }).eye;
+    clearBetween(course.blocks, eye, chest) &&
+    seen.filter((point) => clearBetween(course.blocks, eye, point)).length >= seen.length * SEEN_SHARE;
+  // Where no place frames them so, the nearest from which both are at least seen clear.
+  const found =
+    candidates.find(({ eye }) => seen.every((point) => framed(eye, point)) && clear(eye)) ??
+    candidates.find(({ eye }) => clear(eye));
+  return (found ?? candidates[0] ?? { eye: [x + 4.2, y, z + 1.8] }).eye;
 }
 
 /** Where the ring camera at `eye` looks `seconds` in: between the player's chest and the wisp as it sees them, the
@@ -297,26 +349,28 @@ export function ringLook(course: WispCourse, seconds: number, eye: Point): Point
   return [eye[0] + chest[0] + wisp[0], eye[1] + chest[1] + wisp[1], eye[2] + chest[2] + wisp[2]];
 }
 
-/** How high a camera going from one place to another rises at the middle of its way (metres), over what stands
- *  between. */
-const SWING_UP_M = 4;
+/** How high a camera going from one shot to the next may rise at the middle of its way (metres), to pass over what
+ *  stands between, and the steepest it may look down on the way. */
+const RISES_M = [0, 1.5] as const;
+const STEEPEST = Math.PI / 3;
 
-/** A camera `share` of its way from `from` to `to` among `blocks`: along an arc rising over the wreck between; should
- *  even the arc pass through it, a cut at the middle of its time instead. */
-export function swingTo(blocks: readonly CourseBlock[], from: Point, to: Point, share: number): Point {
-  if (swingBlocked(blocks, from, to)) return share < 0.5 ? from : to;
-  return swungAt(from, to, share);
-}
+type Seen = { readonly eye: Point; readonly look: Point };
 
-/** The arc from `from` to `to`, `share` of the way. */
-const swungAt = (from: Point, to: Point, share: number): Point => {
-  const [x, y, z] = mix(from, to, share);
-  return [x, y, z + SWING_UP_M * Math.sin(Math.PI * share)];
-};
-
-/** Whether the arc from `from` to `to` meets one of `blocks`, so the camera cuts rather than swings. */
-export function swingBlocked(blocks: readonly CourseBlock[], from: Point, to: Point): boolean {
-  return Array.from({ length: 41 }, (unused, step) => swungAt(from, to, step / 40)).some((point) =>
-    solidAt(blocks, point),
-  );
+/** The camera `share` of its way from the shot `from` to the shot `to` among `blocks`: its eye straight along, or
+ *  rising a little over the wreck between, and its look eased between theirs, never through the wreck nor looking
+ *  more than 60 degrees down; where neither way is so, a cut at the middle of its time. */
+export function moveTo(blocks: readonly CourseBlock[], from: Seen, to: Seen, share: number): Seen {
+  const along = (rise: number, part: number): Seen => {
+    const [x, y, z] = mix(from.eye, to.eye, part);
+    return { eye: [x, y, z + rise * Math.sin(Math.PI * part)], look: mix(from.look, to.look, part) };
+  };
+  const fits = (rise: number) =>
+    Array.from({ length: 41 }, (unused, step) => along(rise, step / 40)).every(
+      ({ eye, look }) =>
+        !solidAt(blocks, eye) &&
+        Math.atan2(eye[2] - look[2], Math.hypot(look[0] - eye[0], look[1] - eye[1])) <= STEEPEST,
+    );
+  const rise = RISES_M.find(fits);
+  if (rise === undefined) return share < 0.5 ? from : to;
+  return along(rise, share);
 }

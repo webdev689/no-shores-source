@@ -1,14 +1,15 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
+import { FIELD_OF_VIEW } from '../../editor/orbit.ts';
 import { ENGULF_AT_S, FLASH_IN_S, WISP_LENGTH_S, WISP_S } from './wisp.ts';
 import {
   chaseShot,
   clearBetween,
+  moveTo,
   ringEye,
   ringLook,
+  SEEN_SHARE,
   solidAt,
-  swingBlocked,
-  swingTo,
   wispAt,
   wispCourse,
 } from './wispCourse.ts';
@@ -37,6 +38,12 @@ function standing(): { feet: readonly [number, number, number]; facing: number }
   return places.flatMap(([x, y]) => facings.map((facing) => ({ feet: [x, y, topAt(course, x, y)] as const, facing })));
 }
 const PLACES = standing();
+/** How far below level an eye at `eye` looks toward `look`, radians. */
+const pitchOf = (eye: readonly number[], look: readonly number[]) =>
+  Math.atan2(
+    (eye[2] ?? 0) - (look[2] ?? 0),
+    Math.hypot((look[0] ?? 0) - (eye[0] ?? 0), (look[1] ?? 0) - (eye[1] ?? 0)),
+  );
 const nearAny = (x: number, y: number, metres: number) =>
   course.some(
     (block) => x > block.minX - metres && x < block.maxX + metres && y > block.minY - metres && y < block.maxY + metres,
@@ -93,7 +100,7 @@ test('it never passes through a solid of the wreck, nor jumps from frame to fram
   }
 });
 
-test('the ring camera sees the player and the wisp clear of the wreck throughout the rings and the engulfing', () => {
+test('the ring camera stands low and near, the player and the wisp in one frame and clear of the wreck', () => {
   for (const { feet, facing } of PLACES) {
     const flown = wispCourse(feet, facing, layout);
     const eye = ringEye(flown);
@@ -107,12 +114,21 @@ test('the ring camera sees the player and the wisp clear of the wreck throughout
       const dot = toLook.reduce((sum, value, axis) => sum + value * (toPoint[axis] ?? 0), 0);
       return dot / (Math.hypot(...toLook) * Math.hypot(...toPoint));
     };
+    let [moments, seenClear] = [0, 0];
     for (let seconds = WISP_S.drift + WISP_S.wander; seconds < ENGULF_AT_S + WISP_S.engulf; seconds += 0.05) {
       const { at } = wispAt(flown, seconds);
-      assert.ok(clearBetween(course, eye, at), `the wisp seen at ${seconds.toFixed(2)} s`);
+      moments++;
+      if (clearBetween(course, eye, at)) seenClear++;
       const look = ringLook(flown, seconds, eye);
       assert.ok(cone(look, at) > Math.cos(0.4) && cone(look, chest) > Math.cos(0.4), 'both in the frame');
+      const down = pitchOf(eye, look);
+      assert.ok(down > -0.15 && down < 0.5, `looking a little down, not ${down.toFixed(2)} rad`);
     }
+    assert.ok(seenClear >= moments * SEEN_SHARE, `the wisp seen clear at ${seenClear} of ${moments} moments`);
+    assert.ok(eye[2] - feet[2] <= 3, `low: ${(eye[2] - feet[2]).toFixed(1)} m over the deck`);
+    const middle = Math.hypot(eye[0] - feet[0], eye[1] - feet[1], eye[2] - feet[2] - 0.95);
+    const share = (2 * Math.atan(0.95 / middle)) / FIELD_OF_VIEW;
+    assert.ok(share >= 1 / 3, `the player ${share.toFixed(2)} of the frame's height`);
   }
 });
 
@@ -123,10 +139,7 @@ test('as it comes the camera follows it close, the wreck before it in the frame,
       const { at } = wispAt(flown, seconds);
       const { eye, look } = chaseShot(flown, seconds);
       const apart = Math.hypot(at[0] - eye[0], at[1] - eye[1], at[2] - eye[2]);
-      assert.ok(
-        apart > (seconds < WISP_S.drift ? 2.5 : 1) && apart < 5,
-        `${apart.toFixed(2)} m from it at ${seconds.toFixed(1)} s`,
-      );
+      assert.ok(apart > 1.5 && apart < 5, `${apart.toFixed(2)} m from it at ${seconds.toFixed(1)} s`);
       assert.ok(!solidAt(course, eye) && clearBetween(course, eye, at), 'seen clear');
       const toward = [look[0] - eye[0], look[1] - eye[1], look[2] - eye[2]] as const;
       const length = Math.hypot(...toward);
@@ -150,17 +163,17 @@ test('its whole coming is as long as before', () => {
   assert.equal(wispAt(wispCourse(PLACES[0]?.feet ?? [0, 0, 0], 0, layout), WISP_LENGTH_S).part, 'gone');
 });
 
-test('the camera goes from following the wisp to watching the rings over the wreck, never through it', () => {
-  let arcs = 0;
+test('the camera eases from following the wisp to watching the rings, never through the wreck nor steeply down', () => {
   for (const { feet, facing } of PLACES.filter((unused, index) => index % 3 === 0)) {
     const flown = wispCourse(feet, facing, layout);
-    const from = chaseShot(flown, WISP_S.drift + WISP_S.wander).eye;
+    const circleAt = WISP_S.drift + WISP_S.wander;
+    const chase = chaseShot(flown, circleAt);
     const to = ringEye(flown);
-    if (!swingBlocked(course, from, to)) arcs++;
+    const looked = ringLook(flown, circleAt, to);
     for (let share = 0; share <= 1; share += 0.02) {
-      const eye = swingTo(course, from, to, share);
+      const { eye, look } = moveTo(course, chase, { eye: to, look: looked }, share);
       assert.ok(!solidAt(course, eye), `inside the wreck ${share.toFixed(2)} of the way`);
+      assert.ok(pitchOf(eye, look) <= Math.PI / 3, `never above 60 degrees down, ${share.toFixed(2)} of the way`);
     }
   }
-  assert.ok(arcs > 0, 'its moves arcs where the wreck allows, not only cuts');
 });

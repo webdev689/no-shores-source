@@ -457,13 +457,16 @@ the cutscenes, the camera's moves, the nameplate, the fires and the lines are th
     Bosun ("Don't touch it!") crying out; then circles them in rings tightening from 2.6 m to under half a metre,
     faster and brighter (3.4 s). Every point of it is lifted 0.35 m clear of the wreck's solids beside or under it
     (none counts within 0.4 m of the player's feet) and eased up and down at 7 m/s at most, so it goes over a rail or
-    the wheel and never through one. As it comes the camera follows 3.2 m behind it along its way and 1.1 m over it,
-    drawn nearer where the wreck stands between, looking on past it toward the player so the wreck stands in the
-    frame; for the rings it stands where, of the places round the player 3.2 to 8 m out and 1.9 to 7 m up (nearest
-    first to 5.6 m out to their right and 2.5 m up), the player's chest and the wisp at every moment of the rings and
-    the engulfing are seen in one frame (never more than 0.75 rad apart) with nothing of the wreck between
-    (`ringEye`), looking between the two (`ringLook`); the camera goes from one place to the next along an arc rising
-    4 m over the wreck, or cuts where even that would meet it (`swingTo`). It and engulfs them (1.4 s): arcs wrap the figure from feet to head, a flash, a ring of Volt
+    the wheel and never through one; its rings instead close in toward the player where a solid stands within them at
+    their height (widening again at 4.8 m/s at most), so they keep low round the chest. As it comes the camera stands
+    back 2 to 3.2 m along its level heading over the last second and 1.1 to 2.6 m over it, the first such place that
+    sees it clear, looking on past it toward the player so the wreck stands in the frame; for the rings it stands low
+    and near, a cutscene's shot (`ringEye`): of the places round the player 2.6 to 5.4 m out and 1 to 2.9 m over their
+    deck (nearest first to 4.2 m out to their right and 1.8 m up), the first from which the chest is seen clear, the
+    wisp at 95% of its moments, the two in one frame (never more than 0.75 rad apart), looking a little down between
+    them (`ringLook`); the player stands a third of the frame's height or more. The camera goes from one shot to the
+    next eased (`moveTo`): its eye straight along, or rising 1.5 m over the wreck between, its look never more than 60
+    degrees down; a cut where neither is clear. It and engulfs them (1.4 s): arcs wrap the figure from feet to head, a flash, a ring of Volt
     pushing out 7 m over the deck, a thunderclap; and the camera eases back over the shoulder (1.2 s). With the flash
     the room gives the player the Storm (`Room::story_storm`; [[Arts]]): worn, its Anima and both Tenets earned and
     charged full, the ability bar shown, for the rest of the prologue. Under `npm run dev`, `?prologue=wreck&wisp=1`
