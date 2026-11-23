@@ -3,7 +3,7 @@ import { test } from 'node:test';
 import type { AbilityState } from '../../combat/abilityBar.ts';
 import type { FighterView } from '../../rules/fighters.ts';
 import { teachable } from './stormTeaching.ts';
-import { devStart, lashBoarder } from './wreckDevStart.ts';
+import { beginAt, devStart, lashBoarder } from './wreckDevStart.ts';
 
 const READY: AbilityState = { art: 1, animaShare: 1, tenets: [1, 1], earned: 0b111, recharge: 1 };
 const view = (fields: Partial<FighterView>): FighterView =>
@@ -35,4 +35,18 @@ test('a start at the Storm stands the boarder in Arc Lash’s reach and cone, fa
   const boarder = view({ x: at[0], y: at[1], side: 'foes', facing });
   assert.ok(teachable('arcLash', player, [boarder], READY));
   assert.ok(Math.abs(Math.cos(facing - Math.atan2(2 - at[0], -(3 - at[1])))) > 0.99, 'facing them');
+});
+
+test('a start at the bow lays it before the player on their own deck, where they see it', async () => {
+  const { readWreck, topAt, courseOf } = await import('./wreckLayout.ts');
+  const layout = readWreck();
+  const [x, y] = layout.wake.at;
+  const dropped: (readonly number[])[] = [];
+  const run = { storyArms: { dropBow: (fell: readonly number[]) => dropped.push(fell) } } as never;
+  beginAt({ stage: 'bow', wispInto: 0 }, run, layout, { x, y, facing: layout.wake.facing });
+  const [fell = []] = dropped;
+  const deck = topAt(courseOf(layout), x, y);
+  assert.ok(Math.abs((fell[2] ?? 0) - deck) < 0.3, `on their deck: ${fell[2]} against ${deck}`);
+  const apart = Math.hypot((fell[0] ?? 0) - x, (fell[1] ?? 0) - y);
+  assert.ok(apart >= 2 && apart <= 3, `${apart.toFixed(1)} m before them`);
 });

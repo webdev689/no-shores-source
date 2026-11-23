@@ -25,7 +25,8 @@ export function devStart(search: string): DevStart | null {
 export const pageDevStart = (): DevStart | null =>
   import.meta.env?.DEV && typeof location !== 'undefined' ? devStart(location.search) : null;
 
-/** How far before the player the bow lies for a start at the bow, metres: where a boarder met there would fall. */
+/** How far before the player the bow lies for a start at the bow, metres, on their own deck: where a boarder met
+ *  there would fall. */
 const BOW_AHEAD_M = 3;
 
 /** How far before the player the boarder stands for a start at the Storm: in Arc Lash's reach and cone. */
@@ -47,7 +48,16 @@ export function beginAt(
   player: { readonly x: number; readonly y: number; readonly facing: number },
 ): void {
   if (start.stage === 'bow') {
-    const [x, y] = [player.x + Math.sin(player.facing) * BOW_AHEAD_M, player.y - Math.cos(player.facing) * BOW_AHEAD_M];
+    // Ahead, or a little to either side, on the player's own deck, where they see it.
+    const deck = topAt(layout.course, player.x, player.y);
+    const places = [0, -0.5, 0.5, -1, 1].flatMap((turn) =>
+      [BOW_AHEAD_M, 2].map((ahead): [number, number] => [
+        player.x + Math.sin(player.facing + turn) * ahead,
+        player.y - Math.cos(player.facing + turn) * ahead,
+      ]),
+    );
+    const [x, y] = places.find(([east, south]) => Math.abs(topAt(layout.course, east, south) - deck) < 0.3) ??
+      places[0] ?? [0, 0];
     run.storyArms.dropBow([x, y, topAt(layout.course, x, y)]);
   }
   if (start.stage === 'storm') {
