@@ -114,7 +114,7 @@ test('where a player stands crosses as the server wrote it, away from Shape and 
   });
   assert.deepEqual(here.cosmetics, [23, 24, 14, 0], 'Ember Plate bought and the Lamplighters’ gold earned');
   assert.deepEqual(here.worn, { dye: 0, coat: 0, barding: 24 });
-  assert.equal(here.cosmeticsSold?.length, 8, 'four the Tailor’s, four the Tack’s');
+  assert.equal(here.cosmeticsSold?.length, 9, 'four the Tailor’s, four the Tack’s and its Bay Horse');
   assert.equal(here.shapes, 9);
   assert.equal(here.shape?.place, 6);
   assert.deepEqual(

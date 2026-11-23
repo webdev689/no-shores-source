@@ -150,3 +150,11 @@ function wordsOf(node: unknown): string[] {
   const own = text && typeof text.words === 'string' ? [text.words] : [];
   return [...own, ...(children ?? []).flatMap(wordsOf)];
 }
+
+test('the Tack shows the Bay Horse first, at the cheapest horse price, from level 1', () => {
+  const [row] = rowsOf('tack', state({ aurem: 2_000, level: 1, cosmeticsSold: [numberOf('bay'), numberOf('grey')] }));
+  const [bay] = row?.wares ?? [];
+  assert.equal(bay?.name, 'Bay Horse');
+  assert.deepEqual(bay?.price, { amount: 1500, currency: 'aurem' });
+  assert.deepEqual(bay?.ask, { kind: ASKS.buyCosmetic, item: numberOf('bay') });
+});
