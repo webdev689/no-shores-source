@@ -214,3 +214,22 @@ test('a wrong rune flashes red, a held ring shows its relic, and the warded Boss
   const flashed = encounterMarks(layout.encounters!, court, 0, where, { at: 1, share: 0.5 });
   assert.ok(flashed.length > 0, "a landed Reckoning's flash");
 });
+
+test("each of a Litany's runes wears a glyph of its own, so no two read alike", () => {
+  const where = () => null;
+  const runes = encounterMarks(
+    layout.encounters!,
+    seen({ seals: [{ ...seen().seals[0]!, marks: [0, 0] }, seen().seals[1]!] }),
+    0,
+    where,
+  );
+  const half = runes.length / 2;
+  const shape = (marks: number[], [x, y]: readonly number[]) => {
+    const out: string[] = [];
+    for (let at = 0; at < marks.length; at += 7)
+      out.push(`${((marks[at] ?? 0) - (x ?? 0)).toFixed(3)},${((marks[at + 1] ?? 0) - (y ?? 0)).toFixed(3)}`);
+    return out.join(' ');
+  };
+  const [first, second] = layout.encounters!.seals[0]!.pieces;
+  assert.notEqual(shape(runes.slice(0, half), first!), shape(runes.slice(half), second!));
+});

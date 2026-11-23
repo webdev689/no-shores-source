@@ -3,7 +3,7 @@ import { test } from 'node:test';
 import { meshBuilder } from '../models/model.ts';
 import { SEAL_KIND, SEAL_STATE } from '../network/encounterMessages.ts';
 import type { DungeonLayout } from './dungeonLayout.ts';
-import { drownedNow, layEncounters, waterMesh } from './encounterMesh.ts';
+import { drownedNow, layEncounters, PLATE, waterMesh } from './encounterMesh.ts';
 import { COLOUR } from './dungeonMesh.ts';
 
 /** An Ascent of two pads over a room of two cells, and a Court of one anchor. */
@@ -64,4 +64,19 @@ test("the drowned floor's foul water lies while its seal holds and is gone once 
   );
   assert.equal(water?.indices.length, 12, 'one face over each drowned cell');
   assert.equal(waterMesh(layout, []), null);
+});
+
+test("a Weighing's plates stand as raised slabs of its room's stone, and a Litany's runes lay none", () => {
+  const plates = (kind: number) => {
+    const seal = { kind, room: 0, pieces: [[1.6, 1.6, 0]], pads: [], drowned: [], doors: [] };
+    const mesh = meshBuilder();
+    layEncounters(mesh, { ...layout, encounters: { ...layout.encounters!, seals: [seal], anchors: [] } });
+    const model = mesh.model();
+    return Array.from({ length: model.positions.length / 3 }, (unused, index) => model.positions[index * 3 + 2]);
+  };
+  assert.ok(
+    plates(SEAL_KIND.weighing).some((height) => Math.abs((height ?? 0) - PLATE.height) < 1e-6),
+    'raised to its height',
+  );
+  assert.equal(plates(SEAL_KIND.litany).length, 0, 'a rune is only its mark on the floor');
 });

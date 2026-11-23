@@ -186,6 +186,17 @@ const mix = (from: Colour, to: Colour, share: number): Colour => [
   from[2] + (to[2] - from[2]) * share,
 ];
 
+/** A rune's glyph inside its ring: three strokes round its middle, turned a ninth of a turn more for each rune in
+ *  turn, so no two runes of a Litany read alike, and a dot at its heart. */
+function glyphAt(out: number[], middle: Point, reach: number, colour: Colour, alpha: number, nth: number): void {
+  const turn = (nth * 2 * Math.PI) / 9;
+  for (let stroke = 0; stroke < 3; stroke += 1) {
+    const from = turn + (stroke * 2 * Math.PI) / 3;
+    markRing(out, middle, reach * 0.45, reach * 0.62, [...colour, alpha], [from, from + Math.PI / 3]);
+  }
+  markRing(out, middle, 0, reach * 0.14, [...colour, alpha]);
+}
+
 /** A ring `reach` round a piece on the floor, a beam over it while `beam`, in `colour` at `alpha`. */
 function ringAt(out: number[], middle: Point, reach: number, colour: Colour, alpha: number, beam = false): void {
   markRing(out, middle, Math.max(0, reach - BAND_M), reach, [...colour, alpha]);
@@ -207,10 +218,17 @@ function sealMarks(
   if (seal.kind === SEAL_KIND.litany)
     plan.pieces.forEach((rune, index) => {
       const mark = seal.marks[index] ?? RUNE.dark;
-      if (mark === RUNE.wrong) ringAt(out, rune, reach.rune, DRAINED, 1, true);
-      else if (mark === RUNE.showing) ringAt(out, rune, reach.rune, LIT, 1, true);
-      else if (mark === RUNE.stepped) ringAt(out, rune, reach.rune, DONE, 0.95);
-      else ringAt(out, rune, reach.rune, AT_REST, 0.35 + 0.1 * beat);
+      const [colour, alpha, beam]: [Colour, number, boolean] =
+        mark === RUNE.wrong
+          ? [DRAINED, 1, true]
+          : mark === RUNE.showing
+            ? [LIT, 1, true]
+            : mark === RUNE.stepped
+              ? [DONE, 0.95, false]
+              : [AT_REST, 0.35 + 0.1 * beat, false];
+      markRing(out, rune, reach.rune - BAND_M, reach.rune, [...colour, alpha]);
+      if (beam) markBeam(out, rune, BEAM, [...colour, alpha]);
+      glyphAt(out, rune, reach.rune, colour, alpha, index);
     });
   if (seal.kind === SEAL_KIND.weighing)
     plan.pieces.slice(0, seal.marks.length).forEach((plate, index) => {

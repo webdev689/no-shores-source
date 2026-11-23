@@ -216,8 +216,10 @@ export class PublicBanner {
             !!banner.elsewhere && line({ words: banner.elsewhere, colour: TONES.wordDim }),
           ];
     return {
-      // Short, its two lines take the whole share of the view, so neither wraps.
-      width: Math.round((short && !next ? WIDTH.share * room : Math.min(WIDTH.most, WIDTH.share * room)) * zoom),
+      // Short, its two lines take the whole share of the view, so neither wraps. The line between events (or between
+      // an Elite Dungeon's seals) is as wide as its words, no wider than the banner.
+      width: next ? 'fit' : Math.round((short ? WIDTH.share * room : Math.min(WIDTH.most, WIDTH.share * room)) * zoom),
+      maxWidth: Math.round(Math.min(WIDTH.most, WIDTH.share * room) * zoom),
       direction: 'column',
       padding: next || short ? [4 * zoom, 12 * zoom, 4 * zoom, 10 * zoom] : [6 * zoom, 12 * zoom, 7 * zoom, 14 * zoom],
       outline: { width: zoom, colour: this.flare(tone, since, still) ?? TONES.outline },

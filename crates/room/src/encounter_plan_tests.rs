@@ -41,6 +41,10 @@ fn every_elite_dungeon_holds_its_seals_each_in_a_room_of_its_own_and_never_two_a
                 });
                 if seal.kind != SealKind::Ascent {
                     assert!(clear, "{place}: a piece clear of every solid");
+                    let furnished = (laid.props.iter().map(|prop| prop.at))
+                        .chain(laid.fixtures.iter().map(|fixture| fixture.at))
+                        .all(|at| libm::hypot(at[0] - piece[0], at[1] - piece[1]) >= PROP_CLEAR_M - 1e-9);
+                    assert!(furnished, "{place}: no prop or fixture on a piece");
                 }
             }
             let pieces = seal.pieces.len();

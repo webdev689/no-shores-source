@@ -30,9 +30,11 @@ pub const JUMP_ROOM_M: f64 = 0.6;
 /// The Court's anchors round the end foe's post, and how far from the post each stands at the least (m).
 pub const ANCHORS: usize = 3;
 pub const ANCHOR_FROM_POST_M: f64 = 2.4;
-/// How far a piece's spot keeps from every solid, how far apart two runes stand at the least, and the reach of a
-/// Holdfast's ring round its relic (m).
+/// How far a piece's spot keeps from every solid, and from the middle of every prop and fixture (a brazier, candles),
+/// so none stands on a piece, how far apart two runes stand at the least, and the reach of a Holdfast's ring round
+/// its relic (m).
 pub const SPOT_CLEAR_M: f64 = 0.9;
+pub const PROP_CLEAR_M: f64 = 1.4;
 pub const RUNES_APART_M: f64 = 2.0;
 pub const RELIC_RING_M: f64 = 3.0;
 /// A quarter of a cell: a spot's offset from its cell's middle toward a corner.
@@ -134,14 +136,15 @@ fn walks(dungeon: &Dungeon) -> Vec<u32> {
     steps
 }
 
-/// What the plan reads of a dungeon: its cells' walks, the cells framed as doorways, those torches hang in, and every
-/// solid (`Dungeon::boxes`).
+/// What the plan reads of a dungeon: its cells' walks, the cells framed as doorways, those torches hang in, every
+/// solid (`Dungeon::boxes`), and where every prop and fixture stands.
 struct Reading<'laid> {
     dungeon: &'laid Dungeon,
     walks: Vec<u32>,
     doorways: Vec<usize>,
     torched: Vec<usize>,
     boxes: Vec<[f64; 5]>,
+    furnished: Vec<[f64; 2]>,
 }
 
 /// Squared distance between two points on the floor: compared squared, so no root is taken.
@@ -162,6 +165,9 @@ impl<'laid> Reading<'laid> {
             doorways: dungeon.frames.iter().map(|frame| frame.cell).collect(),
             torched: dungeon.torches.iter().map(|torch| cell_of([torch.at[0], torch.at[1]])).collect(),
             boxes: dungeon.boxes(),
+            furnished: (dungeon.props.iter().map(|prop| [prop.at[0], prop.at[1]]))
+                .chain(dungeon.fixtures.iter().map(|fixture| [fixture.at[0], fixture.at[1]]))
+                .collect(),
         }
     }
 
@@ -176,7 +182,8 @@ impl<'laid> Reading<'laid> {
     }
 
     /// The spots of a room a ring may lie on: each cell's middle and its four quarters' (neither the way in's cell nor
-    /// the portal's, nor a doorway's unless `doorways`), each SPOT_CLEAR_M from every solid.
+    /// the portal's, nor a doorway's unless `doorways`), each SPOT_CLEAR_M from every solid and PROP_CLEAR_M from
+    /// every prop's and fixture's middle.
     fn spots(&self, room: usize, doorways: bool) -> Vec<[f64; 2]> {
         let (dungeon, door, portal) = (self.dungeon, self.dungeon.way_in.cell, self.dungeon.portal.cell);
         let clear = |[x, y]: [f64; 2]| {
@@ -199,6 +206,7 @@ impl<'laid> Reading<'laid> {
             quarters.map(|(east, south)| [x + east, y + south])
         })
         .filter(|spot| clear(*spot))
+        .filter(|spot| self.furnished.iter().all(|at| apart(*at, *spot) >= PROP_CLEAR_M * PROP_CLEAR_M))
         .collect()
     }
 }
