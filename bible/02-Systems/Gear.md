@@ -3,6 +3,9 @@ type: system
 status: live
 code:
   - crates/gear/src/emblems.rs#emblems
+  - crates/gear/src/looks.rs#shown
+  - crates/gear/src/cosmetics.rs#dressed
+  - content/forge/drawn.json
   - crates/gear/src/emblems.rs#sold_on
   - crates/gear/src/cosmetics.rs#cosmetics
   - crates/gear/src/cosmetics.rs#sold_on
@@ -599,8 +602,16 @@ to every other player. Every garment is armour ([[Clothing Is Armour, With a War
   hidden, and in the riding view its own published strip. Own Colours, Bay and Bare change nothing. The room puts the
   worn dye, coat and barding into each dress it relays, so others see only what a player keeps and wears; another
   player's dress naming one that is not of its kind is refused as any broken dress is. A dress's armour and the things
-  in its hands keep only the pieces of the slots worn, by the same layer names (`layers_of`), and a light in the left
-  hand. Of the colours a dress lays by
+  in its hands keep only the looks the page could draw the pieces worn in on the dress's body (`looks::shown`,
+  [[The Room Keeps Only Looks of a Piece's Own Content]]): an armour piece's faction's set, the set written on a named
+  piece, or else its content's by its rarity (a Magic piece's lightest, a world Rare piece's chain to steel, none for a
+  Normal piece's clothes); a weapon and its shield in its faction's metal, its written metal and make, or else its
+  content's metals (a Normal one's iron or steel, a gun's plain or gilded) with any of its shield's or bow's makes; and
+  for each look the forge does not draw for the body, the one the page falls to, read from the forge's table of drawn
+  layers (`content/forge/drawn.json`, which `forgeDrawn.test.ts` holds to the fitted bodies). The page picks one look by
+  the piece's level, name and number; the room keeps any it could pick, and drops any other from what others see. A
+  page test dresses every item the game can hold on each body and passes the dress through the room module
+  (`room_dressed`), which must keep every layer (`modelsWorn.test.ts`). A light in the left hand stays. Of the colours a dress lays by
   layer, the room keeps a faction's only on the layers of that faction's pieces worn (a helm's, a cuirass's, its
   pauldrons' and padding, gauntlets', greaves', boots' and padding, a weapon's own), a faction's dye only on its cape
   worn, and a dye the player keeps on any (`colours_shown`, `dressed`); a page test holds the room's layer names to

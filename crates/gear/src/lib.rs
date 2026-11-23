@@ -28,6 +28,7 @@ pub mod gate;
 pub mod grid;
 pub mod item;
 pub mod kinds;
+pub mod looks;
 pub mod left;
 pub mod mail;
 pub mod objectives;
@@ -76,6 +77,8 @@ mod bounties_tests;
 mod clock_tests;
 #[cfg(test)]
 mod cosmetics_tests;
+#[cfg(test)]
+mod looks_tests;
 #[cfg(test)]
 mod emblems_tests;
 #[cfg(test)]
