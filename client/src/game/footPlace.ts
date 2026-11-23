@@ -105,13 +105,15 @@ export type FootFight = Omit<HudFrame, 'matrix' | 'width' | 'height' | 'lost' | 
 
 /** What one frame on foot shows: the shot, every figure, where the player stands with the section's edge, the
  *  fight (its marks on the ground and in the air, measured from the eye, with the marks over what the player can use
- *  and the nodes' beams; the arcs of its blows, in world metres; and what its display shows), the keys listed, and the
- *  zone's public event: its props, the tracker's quest and the music's moment for a beat this frame. */
+ *  and the nodes' beams; the lit keepers' marks, measured alike, drawn over everything; the arcs of its blows, in
+ *  world metres; and what its display shows), the keys listed, and the zone's public event: its props, the tracker's
+ *  quest and the music's moment for a beat this frame. */
 export interface FootFrame {
   readonly shot: Shot;
   readonly figures: readonly CardAt[];
   readonly standing: Standing;
   readonly marks: Float32Array;
+  readonly lit: readonly number[];
   readonly swings: Float32Array;
   readonly fight: FootFight;
   readonly hints: readonly StripHint[];

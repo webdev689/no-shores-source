@@ -10,6 +10,10 @@ import { HATCHES, WASH_STRENGTH, type WatersWash } from './watersWash.ts';
 
 /** The most points of a route the map inks: every pixel of the parchment measures itself against each. */
 export const ROUTE_POINTS = 128;
+/** The most keepers' coins the map rings at once, lit as their marks over them are (a social space's every keeper). */
+export const MOST_PULSES = 16;
+/** How often a lit coin's ring goes out, a second: as the lit marks over the keepers beat (combat/marksOver.ts). */
+const PULSE_HZ = 0.75;
 
 export const INK_SHADER = /* wgsl */ `
 struct Ink {
@@ -24,6 +28,10 @@ struct Ink {
   known: vec4u,
   // The parchment's rectangle, screen pixels: the pass covers it, the map's ink only within the map.
   sheet: vec4f,
+  // The lit coins: how many, the map's clock, seconds, and 1 while motion is reduced; then each coin's middle and
+  // radius, screen pixels.
+  pulse: vec4f,
+  pulses: array<vec4f, ${MOST_PULSES}>,
 };
 @group(0) @binding(0) var<uniform> ink: Ink;
 @group(0) @binding(1) var distances: texture_2d<f32>;
@@ -43,6 +51,7 @@ struct Ink {
 const INK_RGB = vec3f(58.0, 40.0, 22.0) / 255.0;
 const ROUTE_RGB = vec3f(120.0, 28.0, 20.0) / 255.0;
 const NO_ISLAND = 255u;
+const PULSE_HZ = ${PULSE_HZ.toFixed(3)};
 // How strong the waters' wash is; the contested's diagonal hatching and the Grey Tithe's level hatching, each its
 // strength, colour and lines' spacing, device pixels (watersWash.ts).
 const WASH_ALPHA = ${WASH_STRENGTH.toFixed(3)};
@@ -77,6 +86,23 @@ fn corners_at(base: vec2i, last: vec2i) -> vec4f {
   let c = textureLoad(distances, clamp(base + vec2i(0, 1), vec2i(0), last), 0).r;
   let d = textureLoad(distances, clamp(base + vec2i(1, 1), vec2i(0), last), 0).r;
   return vec4f(a, b, c, d);
+}
+
+// How strongly a lit coin's rings are inked at a point a pixel: one held round it, so it reads in a still frame, and
+// one going out from it once a beat and fading as it goes, unless motion is reduced.
+fn pulse_at(at: vec2f) -> f32 {
+  var strongest = 0.0;
+  let beat = fract(ink.pulse.y * PULSE_HZ);
+  let moving = 1.0 - ink.pulse.z;
+  for (var index = 0u; index < u32(ink.pulse.x); index++) {
+    let coin = ink.pulses[index];
+    let away = length(at - coin.xy);
+    let width = max(1.4, coin.z * 0.14);
+    let held = 1.0 - smoothstep(width * 0.5, width, abs(away - coin.z * 1.25));
+    let going = moving * (1.0 - beat) * (1.0 - smoothstep(width * 0.5, width, abs(away - coin.z * (1.25 + 0.75 * beat))));
+    strongest = max(strongest, max(0.9 * held, 0.8 * going));
+  }
+  return strongest;
 }
 
 // How strongly the route is inked at a point a pixel, dashed along its length.
@@ -134,7 +160,8 @@ fn route_at(world: vec2f) -> f32 {
   let tinted = WASH_ALPHA * tint.a * sea;
   let under = hatched + tinted * (1.0 - hatched);
   let underRgb = hatchedRgb + tint.rgb / max(tint.a, 1e-4) * tinted * (1.0 - hatched);
-  let course = select(0.0, route_at(world), onMap);
+  // The route and a lit coin's rings in the route's red-brown, as the sea's map rings a place a quest names.
+  let course = select(0.0, max(route_at(world), pulse_at(at.xy)), onMap);
   let over = max(alpha, 0.9 * course);
   let colour = mix(INK_RGB, ROUTE_RGB, step(alpha, course));
   let shown = over + under * (1.0 - over);
@@ -161,6 +188,9 @@ export interface HeldMapFrame {
   readonly knownIslands: number;
   /** The route's points: where each lies, metres, and how far along the route, four floats a point. */
   readonly route: Float32Array;
+  /** The keepers' coins lit, their middles and radii, screen pixels, three floats each; the map's clock, seconds; and
+   *  whether motion is reduced, so their rings hold still. */
+  readonly pulses: { readonly coins: Float32Array; readonly seconds: number; readonly held: boolean };
   /** The parchment where it is in its rise, and its picture of words, marks and key, as large. */
   readonly parchment: Rect;
   readonly lettering: OffscreenCanvas;
@@ -168,7 +198,7 @@ export interface HeldMapFrame {
   readonly letteringChanged: boolean;
 }
 
-const INK_BYTES = 96;
+const INK_BYTES = 112 + MOST_PULSES * 16;
 
 export class HeldMapView {
   private readonly gpu: Gpu;
@@ -363,6 +393,11 @@ export class HeldMapView {
     new Uint32Array(uniforms, 64, 4).set([frame.knownIslands >>> 0, 0, 0, 0]);
     const { parchment } = frame;
     new Float32Array(uniforms, 80, 4).set([parchment.x, parchment.y, parchment.width, parchment.height]);
+    const { coins, seconds, held } = frame.pulses;
+    const lit = Math.min(MOST_PULSES, Math.floor(coins.length / 3));
+    new Float32Array(uniforms, 96, 4).set([lit, seconds, held ? 1 : 0, 0]);
+    const pulses = new Float32Array(uniforms, 112, MOST_PULSES * 4);
+    for (let coin = 0; coin < lit; coin++) pulses.set(coins.subarray(coin * 3, coin * 3 + 3), coin * 4);
     const letters = this.lettersOf(frame.lettering, frame.letteringChanged);
     device.queue.writeBuffer(this.inkUniforms, 0, uniforms);
     this.sheetDrawer.draw(encoder, target, screen.width, screen.height, [sheetQuad]);

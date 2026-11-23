@@ -3,6 +3,8 @@ import { test } from 'node:test';
 import { Stack } from '../ui/stack.ts';
 import { fakeInterface, wordsIn } from '../ui/uiForTests.ts';
 import { HeldMap, Kept, layoutKey } from './heldMap.ts';
+import { GLYPH_HALF } from './landGlyphs.ts';
+import { letterScale } from './mapLayout.ts';
 
 const view = { left: 10, top: 20, scale: 0.5 };
 const stage = { ink: { x: 1, y: 2, width: 1313, height: 844 }, sprite: { x: 0, y: 0, width: 1500, height: 1000 } };
@@ -110,4 +112,36 @@ test("the card's ground lets a click through to the map", () => {
   const card = ui.boxOf('held-card');
   assert.ok(card);
   assert.equal(ui.takes(card.x + 3, card.y + 3), false, "the card's edge");
+});
+
+test("on land, a lit keeper's coin is ringed where it is painted, as large; an unlit one and the sea's map ring none", () => {
+  const map = Object.create(HeldMap.prototype) as HeldMap;
+  const marks = [
+    { glyph: 'mail', at: [30, 40], word: 'The Postmaster' },
+    { glyph: 'mage', at: [50, 60], word: 'The Mage' },
+  ];
+  Object.assign(map, { land: { marks }, ink: { x: 0, y: 0, width: 800, height: 450 }, mapView: view });
+  const coins = (lit: (glyph: string) => boolean, dpr = 2) => [
+    ...(map as unknown as { litCoins: (...args: unknown[]) => Float32Array }).litCoins(
+      { ...scene, lit },
+      { x: 100, y: 50, width: 1600, height: 900 },
+      dpr,
+    ),
+  ];
+  const [x, y, radius] = coins((glyph) => glyph === 'mail');
+  // Where landLetters paints it: the sheet's metres less the view's corner, its pixels a metre, a device pixel apart.
+  assert.deepEqual([x, y], [100 + (30 - view.left) * view.scale * 2, 50 + (40 - view.top) * view.scale * 2]);
+  assert.equal(radius, GLYPH_HALF * letterScale({ height: 450 }) * 2, "as wide as its coin's");
+  assert.equal(coins(() => true).length, 6, 'each lit one');
+  assert.deepEqual(
+    coins(() => false),
+    [],
+    'none lit',
+  );
+  Object.assign(map, { land: null });
+  assert.deepEqual(
+    coins(() => true),
+    [],
+    'none at sea',
+  );
 });

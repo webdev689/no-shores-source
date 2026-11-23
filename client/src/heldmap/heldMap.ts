@@ -28,6 +28,7 @@ import {
 } from './heldMapLaw.ts';
 import { heldCardNode } from './heldMapCard.ts';
 import { type HeldMapFrame, HeldMapView, ROUTE_POINTS } from './heldMapView.ts';
+import { GLYPH_HALF } from './landGlyphs.ts';
 import { paintLand } from './landLetters.ts';
 import type { LandSheet } from './landSheet.ts';
 import { HeldMapWaters, onOwnSea, ruinedPlaces } from './heldMapWaters.ts';
@@ -35,6 +36,7 @@ import { type KeyPlace, keySize, landUnder } from './mapKey.ts';
 import { handsCover, layOut, type Lettering, letterScale } from './mapLayout.ts';
 import { fontOf, type IsleInk, ISLE_HALF, paintLettering } from './mapLetters.ts';
 import type { MapWaters } from './watersWash.ts';
+import { motionReduced } from '../plus/kit.ts';
 import type { Child } from '../ui/node.ts';
 import type { Stack } from '../ui/stack.ts';
 import type { Interface } from '../ui/ui.ts';
@@ -77,7 +79,8 @@ export type Course =
   { readonly ok: true; readonly points: readonly Point2[] } | { readonly ok: false; readonly why: string };
 
 /** What the map is asked each frame: where the ship lies and heads (on land, the player, in the world), what is
- *  discovered, the course sailed now, and the places the quest walked names, which it rings. */
+ *  discovered, the course sailed now, and the places the quest walked names, which it rings; on land, whether a
+ *  keeper's coin is lit (`lit`, by its glyph): its keeper has something for the player, so its rings pulse. */
 export interface HeldMapScene {
   readonly ship: Point2;
   readonly heading: number;
@@ -85,6 +88,7 @@ export interface HeldMapScene {
   readonly knownIslands: number;
   readonly course: readonly Point2[];
   readonly quest?: readonly string[];
+  readonly lit?: (glyph: string) => boolean;
 }
 
 type Phase =
@@ -370,18 +374,35 @@ export class HeldMap {
     // Painted and sent to the device only when what is lettered, where, or its face's loading has changed.
     const letteringChanged = this.letter(reads, scene, stage.sprite, { width, height, inkAt, dpr });
     const land = this.land !== null;
+    const ink = scaled(stage.ink, drop);
     return {
+      pulses: { coins: this.litCoins(scene, ink, dpr), seconds: this.clock, held: motionReduced() },
       parchment: picture,
       lettering: this.lettering,
       letteringChanged,
       screen: { width: viewport.width * dpr, height: viewport.height * dpr },
       sprite: scaled(stage.sprite, drop),
-      ink: scaled(stage.ink, drop),
+      ink,
       view: land ? OFF_WORLD : { left: this.mapView.left, top: this.mapView.top, scale: this.mapView.scale * dpr },
       handsFrame: this.fidget(),
       knownIslands: land ? 0 : scene.knownIslands,
       route: routeOf(this.choice?.course.ok ? this.choice.course.points : land ? [] : scene.course, ROUTE_POINTS),
     };
+  }
+
+  /** The lit keepers' coins on the land's sheet, `scene.lit` saying which, as the view rings them: each one's middle
+   *  and radius, screen pixels, the map's ink at `ink` (device pixels, `dpr` a CSS pixel); none at sea. */
+  private litCoins(scene: HeldMapScene, ink: Rect, dpr: number): Float32Array {
+    const { land, mapView } = this;
+    const lit = land && scene.lit ? land.marks.filter((mark) => scene.lit?.(mark.glyph)) : [];
+    const radius = GLYPH_HALF * letterScale(this.ink) * dpr;
+    return new Float32Array(
+      lit.flatMap(({ at }) => [
+        ink.x + (at[0] - mapView.left) * mapView.scale * dpr,
+        ink.y + (at[1] - mapView.top) * mapView.scale * dpr,
+        radius,
+      ]),
+    );
   }
 
   /** Paints the parchment's picture, `size` device pixels with the map's top-left at `inkAt` in it, if what `reads`
