@@ -3,6 +3,7 @@ import { test } from 'node:test';
 import type { Shot } from '../camera.ts';
 import type { Story } from './story.ts';
 import { wispAt, wispCourse } from './wispCourse.ts';
+import { ENGULF_AT_S, FLASH_IN_S, WISP_LENGTH_S } from './wisp.ts';
 import { WispScene } from './wispScene.ts';
 import { courseOf, readWreck, topAt } from './wreckLayout.ts';
 
@@ -55,4 +56,22 @@ test('begun past its flash, as a page under development may begin it, it still g
   const scene = new WispScene(story, layout, { feet, facing: layout.wake.facing }, theirs, () => given++, 12);
   for (let seconds = 12; seconds < 13; seconds += 0.25) scene.frame(0.25, seconds, theirs, feet);
   assert.equal(given, 1);
+});
+
+test('played from its start, the Storm is given as the flash comes, never before it', () => {
+  const given: number[] = [];
+  let seconds = 0;
+  const scene = new WispScene(story, layout, { feet, facing: layout.wake.facing }, theirs, () => given.push(seconds));
+  const flashAt = ENGULF_AT_S + FLASH_IN_S;
+  let flashed = 0;
+  for (; seconds < WISP_LENGTH_S; seconds += 0.05) {
+    const { flash } = scene.frame(0.05, seconds, theirs, feet);
+    if (flash > 0 && flashed === 0) flashed = seconds;
+  }
+  assert.equal(given.length, 1, 'given once');
+  assert.ok(
+    Math.abs((given[0] ?? 0) - flashAt) < 0.06,
+    `given at ${given[0]?.toFixed(2)} s, the flash at ${flashAt} s`,
+  );
+  assert.equal(given[0], flashed, 'on the frame the flash comes');
 });
