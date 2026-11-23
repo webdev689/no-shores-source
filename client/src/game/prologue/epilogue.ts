@@ -56,7 +56,7 @@ export class Epilogue {
 
   /** A frame on foot: the stranger's card for the eye, her words over her head; nothing once she has gone.
    *  `veiled` while the arrival's veil is still up: she waits behind it; `held` while a menu is open over the view: her
-   *  words wait for it to shut. */
+   *  words wait for it to shut, and hold still under it. */
   frame(
     shot: Shot,
     viewport: { readonly width: number; readonly height: number },
@@ -90,9 +90,11 @@ export class Epilogue {
       }
     }
     const walking = this.phase === 'going' && this.walk(standing, seconds);
-    this.stage.tick(seconds);
-    this.stage.parts.overheads.frame(seconds, new Map([['stranger', head]]));
-    this.stage.parts.dialogue.frame(seconds);
+    // Under an open menu her words and their time hold still, as a cutscene's do.
+    const passed = held ? 0 : seconds;
+    this.stage.tick(passed);
+    this.stage.parts.overheads.frame(passed, new Map([['stranger', head]]));
+    this.stage.parts.dialogue.frame(passed);
     const stranger: Actor = {
       id: STRANGER_ID,
       dress: STRANGER_DRESS,

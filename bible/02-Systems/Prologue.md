@@ -161,9 +161,10 @@ interior: it is seen from inside, a few metres in from its door (3, 2, 5, 7 then
 sees all three keepers and their banners clear of the columns; as she names a house the camera turns from there to its
 chapel. Her farewell is seen from 4.5 m to the side of the pair, level with their faces, on the side nearer the player's
 view unless a solid stands between. Each view looks a fifth of its lens below its target, so what it frames stands in its upper part, clear of the dialogue box over its lower middle. A flight takes 2.4 s, eased out of rest and into it, from wherever the view stands; a place the plaza lacks keeps the
-view where it is, her words said all the same. From her first word to her farewell no game key acts (no move or
-look, no use, map, menu, chat, character page or respawn) and the view is hers; Space (or the pad's jump or confirm)
-moves her words on a line. As she walks off the view eases back over the player's shoulder, and the keys are theirs
+view where it is, her words said all the same. From her first word to her farewell the view is hers and, as in the
+story's cutscenes, Space (or the pad's jump or confirm) moves her words on a line and Escape, the menu's key and the
+pad's Start and View open the menu, the character page or the sheet, her words and their time holding still under it;
+no other game key acts (no move or look, no use, map, chat or respawn). As she walks off the view eases back over the player's shoulder, and the keys are theirs
 once it is. It is a cutscene: the HUD's
 bars, compass, tracker, marks and key strip are hidden while the keys are held, until the view is the player's again,
 the dialogue box hers. Her words wait while a menu is open over the view. A place no candidate eye sees clearly gives

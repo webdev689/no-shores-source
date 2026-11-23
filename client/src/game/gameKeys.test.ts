@@ -86,9 +86,10 @@ test("the pad's Start opens the Character page in the story as the key does, for
   assert.deepEqual(opened, [{ view: 'character', toggle: true }]);
 });
 
-test('while the stranger speaks her welcome no game key acts but Space, which moves her words on', () => {
+test('while the stranger speaks her welcome the menu opens as in the story; no other game key acts but Space', () => {
   const { window } = fakePage();
   const changes: unknown[] = [];
+  const opened: unknown[] = [];
   let pressed = 0;
   const after = { holding: true, press: () => void (pressed += 1) };
   const playing = {
@@ -104,28 +105,31 @@ test('while the stranger speaks her welcome no game key acts but Space, which mo
     playing,
     input: { onPad: (heard: (pressed: Set<string>, buttons: Set<string>) => void) => pads.push(heard) },
     ui: { typing: false },
-    hud: { controls: { rebinding: {}, open: false } },
+    hud: { controls: { rebinding: {}, open: false, toggle: () => changes.push('sheet') }, keysOffered: true },
     story: null,
     retry: () => null,
     change: (asked: unknown) => changes.push(asked),
     openMap: () => changes.push('map'),
     respawn: () => changes.push('respawn'),
   } as unknown as Controlled);
+  window.addEventListener(OPEN_AT, (event) => opened.push((event as unknown as CustomEvent).detail));
   const key = (name: string, code: string) => window.dispatchEvent(new FakeEvent('keydown', { key: name, code }));
   for (const [name, code] of [
-    ['Escape', 'Escape'],
-    ['m', 'KeyM'],
     ['e', 'KeyE'],
     ['n', 'KeyN'],
     ['Enter', 'Enter'],
   ])
     key(name, code);
-  pads[0]?.(new Set(['menu', 'use', 'map']), new Set());
-  assert.deepEqual(changes, [], 'no menu, map, chat, use or respawn');
+  pads[0]?.(new Set(['use', 'map']), new Set());
+  assert.deepEqual([changes, opened], [[], []], 'no map, chat, use or respawn');
+  key('Escape', 'Escape');
+  key('m', 'KeyM');
+  pads[0]?.(new Set(['menu']), new Set());
+  pads[0]?.(new Set(['character']), new Set());
+  pads[0]?.(new Set(['controls']), new Set());
+  assert.deepEqual(changes, [{ kind: 'back' }, { kind: 'menu' }, { kind: 'menu' }, 'sheet'], 'the menu and the sheet');
+  assert.deepEqual(opened, [{ view: 'character', toggle: true }], 'the character page, which refuses where it must');
   key(' ', 'Space');
   pads[0]?.(new Set(['jump']), new Set());
   assert.equal(pressed, 2, 'her words move on');
-  after.holding = false;
-  key('m', 'KeyM');
-  assert.deepEqual(changes, [{ kind: 'menu' }], 'the keys are the player’s again');
 });

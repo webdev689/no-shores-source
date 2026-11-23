@@ -23,13 +23,14 @@ function epilogueOn(
   const said: { scene: string; finish: () => void }[] = [];
   const done: string[] = [];
   const heads: (readonly [number, number] | null)[] = [];
+  const typed: number[] = [];
   const stage = {
     parts: {
       overheads: {
         frame: (_seconds: number, map: Map<string, readonly [number, number] | null>) =>
           void heads.push(map.get('stranger') ?? null),
       },
-      dialogue: { frame: () => undefined },
+      dialogue: { frame: (seconds: number) => void typed.push(seconds) },
       scene: { groundAt },
       landmass: () => ({ plan: { centre: [0, 60] }, nodes: [] }),
     },
@@ -44,7 +45,7 @@ function epilogueOn(
   } as unknown as Cards;
   const epilogue = new Epilogue(stage, forge);
   epilogue.words = () => epilogue.say('welcome');
-  return { epilogue, said, done, heads, stage: stage as unknown as FakeStage };
+  return { epilogue, said, done, heads, typed, stage: stage as unknown as FakeStage };
 }
 
 const settled = () => new Promise((resolve) => setImmediate(resolve));
@@ -198,4 +199,17 @@ test('she waits to speak while a menu is open over the view, and speaks once it 
   assert.equal(said.length, 0, 'not under the menu');
   epilogue.frame(BEHIND, VIEW, STEP_S, 0, YOU, false);
   assert.equal(said.length, 1);
+});
+
+test('her words hold still under an open menu once she speaks, and go on once it is shut', () => {
+  const { epilogue, said, typed } = epilogueOn();
+  while (said.length === 0) epilogue.frame(BEHIND, VIEW, STEP_S, 0, YOU, false);
+  typed.length = 0;
+  for (let frames = 0; frames < 10; frames++) epilogue.frame(BEHIND, VIEW, STEP_S, 0, YOU, false, true);
+  assert.ok(
+    typed.every((seconds) => seconds === 0),
+    'no time passes for her words under the menu',
+  );
+  epilogue.frame(BEHIND, VIEW, STEP_S, 0, YOU, false);
+  assert.equal(typed.at(-1), STEP_S);
 });
