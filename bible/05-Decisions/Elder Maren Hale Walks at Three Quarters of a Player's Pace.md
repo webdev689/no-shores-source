@@ -22,3 +22,5 @@ slowly.
 | Call | Chosen | Why |
 |---|---|---|
 | Her walk's frames | Paced to her speed as a walker's are, a frame lasting as much longer than a full walk's as she is slower | At the deck's fixed six frames a second her feet slid along the ground |
+
+Replaced in part by [[The Stranger Welcomes the Player, and a Quest Walks Them Round Overlook]]: she no longer walks the player round the plaza.
