@@ -448,12 +448,12 @@ the cutscenes, the camera's moves, the nameplate, the fires and the lines are th
     trembling and a crackle now and then following it. It drifts in from over the water off the player's left
     (2.6 s), wanders the quiet deck at a mast's height and round behind them (4.8 s), the camera behind the player
     following it, the Lookout ("What is that?") and the Bosun ("Don't touch it!") crying out; then, the camera standing
-    off to the player's right, it circles them in rings tightening from 3.2 m to under half a metre, faster and
+    off to the player's right, it circles them in rings tightening from 2.6 m to under half a metre, faster and
     brighter (3.4 s), and engulfs them (1.4 s): arcs wrap the figure from feet to head, a flash, a ring of Volt
     pushing out 7 m over the deck, a thunderclap; and the camera eases back over the shoulder (1.2 s). With the flash
     the room gives the player the Storm (`Room::story_storm`; [[Arts]]): worn, its Anima and both Tenets earned and
     charged full, the ability bar shown, for the rest of the prologue. Under `npm run dev`, `?prologue=wreck&wisp=1`
-    begins the wreck at its coming.
+    begins the wreck at its coming, and `&wisp=<n>` n - 1 seconds into it.
   - "Call the Storm": until the Storm is given, the waves wait; from then the next zone's wave comes, and its fight
     teaches each ability as the parry is (`CastFreeze`): the fight frozen with its prompt breathing until its key is
     pressed, each once: "Press G to cast Arc Lash" once a foe stands in its cone and reach (7 m), then "Press Q to cast

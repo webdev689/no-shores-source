@@ -60,10 +60,13 @@ export function heardOnWreck(
   return { ...heard, dead: beaten, foes: thuleHeard ? [...foes, thule] : foes };
 }
 
-/** Whether a page under development asks to begin the wreck at the wisp's coming (`?prologue=wreck&wisp=1`), to
- *  picture it. */
-const wispAsked = (): boolean =>
-  !!import.meta.env?.DEV && typeof location !== 'undefined' && new URLSearchParams(location.search).get('wisp') === '1';
+/** How far into the wisp's coming a page under development asks to begin the wreck, to picture it: `&wisp=1` at its
+ *  start, `&wisp=<n>` n - 1 seconds into it; null for none. */
+const wispAsked = (): number | null => {
+  if (!import.meta.env?.DEV || typeof location === 'undefined') return null;
+  const asked = Number(new URLSearchParams(location.search).get('wisp') ?? NaN);
+  return asked >= 1 ? asked - 1 : null;
+};
 
 /** While the fight is frozen the world drains this far toward grey under the interface, easing there and back over
  *  this long, so the stop reads as time held. */
@@ -85,7 +88,7 @@ export class WreckFight implements Beat {
   private fought = false;
   private barked = { struck: -Infinity, strikes: -Infinity };
   /** The teaching on the wreck's quiet deck, then the fight's own task; and the fight frozen on a blow to teach. */
-  private readonly tutorial = new Tutorial(wispAsked() ? 'wisp' : 'find');
+  private readonly tutorial = new Tutorial(wispAsked() === null ? 'find' : 'wisp');
   private readonly freeze = new Freeze();
   private readonly castFreeze = new CastFreeze();
   /** The wisp's coming, while it plays; the bar of the Storm's abilities and the shots left last frame, for what was
@@ -405,7 +408,15 @@ export class WreckFight implements Beat {
     if (!this.wispCame && this.tutorial.wantsWisp && !this.coming) {
       this.wispCame = true;
       const { body, facing } = this.story.walker.player;
-      this.wisp = new WispScene(this.story, [body.x, body.y, body.z], facing, run.restingShot(), () => run.giveStorm());
+      const give = () => run.giveStorm();
+      this.wisp = new WispScene(
+        this.story,
+        [body.x, body.y, body.z],
+        facing,
+        run.restingShot(),
+        give,
+        wispAsked() ?? 0,
+      );
     }
     const shown = this.wisp?.frame(seconds, clock, run.restingShot()) ?? null;
     if (shown?.done) this.wisp = null;

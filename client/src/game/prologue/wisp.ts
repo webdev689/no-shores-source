@@ -37,7 +37,7 @@ export const FLASH_IN_S = 0.45;
 const FROM_M = 34;
 const FROM_UP_M = 9;
 const MAST_UP_M = 5.5;
-const RING_M = [3.2, 0.45] as const;
+const RING_M = [2.6, 0.45] as const;
 const TURN = [1.6, 9] as const;
 /** The height of a chest over the feet (metres), where its rings close; a figure's height and its girth, for the
  *  arcs that wrap it; and how far the ring of Volt pushes out over the deck. */

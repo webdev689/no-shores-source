@@ -29,7 +29,7 @@ type Point = readonly [number, number, number];
  *  it watches the wisp from, and how far out and up it stands to watch the rings. */
 const LEAVE_S = 1.1;
 const WATCH = { back: 3.4, up: 2.6, side: 1.2 } as const;
-const RINGS = { out: 5.2, up: 2.2 } as const;
+const RINGS = { out: 7.6, up: 3.4 } as const;
 /** How far back the trail is kept, seconds, and how often a point of it is kept. */
 const TRAIL_KEPT_S = 1;
 const TRAIL_EVERY_S = 1 / 30;
@@ -63,8 +63,9 @@ export class WispScene {
   private readonly hum = new Hum();
 
   /** The wisp comes for the player standing at `feet` facing `facing`, the camera leaving `from`; `give` gives them
-   *  the Storm as it engulfs them. */
-  constructor(story: Story, feet: Point, facing: number, from: Shot, give: () => void) {
+   *  the Storm as it engulfs them. A page under development may begin it `into` seconds on, to picture it. */
+  constructor(story: Story, feet: Point, facing: number, from: Shot, give: () => void, into = 0) {
+    this.seconds = into;
     this.course = wispCourse(feet, facing);
     [this.facing, this.from] = [facing, from];
     const { ambience } = story.stage.parts;
@@ -131,10 +132,10 @@ export class WispScene {
         feet[1] - ahead[1] * WATCH.back + right[1] * WATCH.side,
         feet[2] + WATCH.up,
       ],
-      // Between the player and the wisp, the more on the wisp: the deck and their back stay in the frame.
+      // Between the player and the wisp: the deck and their back stay in the frame.
       now.part === 'gone'
         ? chest
-        : [chest[0] * 0.3 + now.at[0] * 0.7, chest[1] * 0.3 + now.at[1] * 0.7, chest[2] * 0.3 + now.at[2] * 0.7],
+        : [chest[0] * 0.55 + now.at[0] * 0.45, chest[1] * 0.55 + now.at[1] * 0.45, chest[2] * 0.55 + now.at[2] * 0.45],
     );
     const ringEye: Point = [feet[0] + right[0] * RINGS.out, feet[1] + right[1] * RINGS.out, feet[2] + RINGS.up];
     const rings = aimed(ringEye, chest);
