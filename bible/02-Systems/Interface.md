@@ -770,7 +770,7 @@ never while a press is held. Each press is an ask the room answers.
   horse's head and chest wearing it, cut from 4 to 16 texels over the bare horse's ears so a crest shows and the head
   stays in. Hovering or focusing a dye shows it on the display before it is worn; after the pointer leaves, a piece
   keeps its preview only if the keys focused it. The display keeps the figure's pictures without coat or barding, and
-  the horse's without the dyes, 96 at most, letting go of the least lately shown. Escape goes back to the button. On a screen 800 px tall or less the tiles are 52 px, so every row shows at 1280 by 720.
+  the barding tiles' horse pictures without the dyes, 96 at most, letting go of the least lately shown. Escape goes back to the button. On a screen 800 px tall or less the tiles are 52 px, so every row shows at 1280 by 720.
 - **The card.** An item's name on its rarity's band, its kind, pips and element, its picture, its main number large,
   its level, its chosen traits, its words, and what it changes over the piece it would replace, each number's meter
   with the gain or loss in green or red. Along its foot what its presses do. Where the menu is wide, every card's words

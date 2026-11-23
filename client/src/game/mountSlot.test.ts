@@ -6,7 +6,10 @@ import { ASKS } from '../network/gearMessages.ts';
 import { plainDress } from '../player/dressing.ts';
 import { HORSE, MOUNT_SLOT, WORN, coatOfHorse, itemName, slotOf, wearAsks } from '../player/gear.ts';
 import { mountAsked } from '../player/walker.ts';
+import type { Cards } from '../player/cards.ts';
+import type { Walker } from '../player/walker.ts';
 import { appearanceRows, previewDress } from './appearance/appearanceModel.ts';
+import { dressInGear } from './footFigures.ts';
 import { cardOf } from './gearCards.ts';
 import { rowsOf } from './npc/npcWares.ts';
 
@@ -70,4 +73,18 @@ test('the mount key mounts only with a horse worn; without one it does nothing a
   assert.equal(mountAsked(pressed, true, false).refused, false, 'a rider gets down whatever is worn');
   assert.equal(mountAsked({ pressed: () => false }, false, false).refused, false, 'no press, no word');
   assert.equal(WORN + MOUNT_SLOT, 13, 'worn in the Mount slot on the wire');
+});
+
+test('the gear says whether a horse is worn; one taken off under its rider sets them on foot', () => {
+  const walker = {
+    player: { mounted: true },
+    you: { dress: plainDress('human', 0.3) },
+    rides: true,
+  } as unknown as Walker;
+  const forge = { wardrobe: () => null } as unknown as Cards;
+  const horse = item({ id: 7, kind: HORSE, name: 1, bucket: MOUNT_SLOT, at: WORN + MOUNT_SLOT });
+  dressInGear(walker, forge, state({ items: [horse] }), { gear: null, loadout: 0 });
+  assert.deepEqual([walker.rides, walker.player.mounted], [true, true]);
+  dressInGear(walker, forge, state({ items: [] }), { gear: null, loadout: 0 });
+  assert.deepEqual([walker.rides, walker.player.mounted], [false, false]);
 });

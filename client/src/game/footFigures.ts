@@ -174,5 +174,7 @@ export function dressInGear(walker: Walker, forge: Cards, gear: GearState | null
   }
   walker.glow = heldElements(gear, loadout);
   walker.rides = worn(gear, MOUNT_SLOT) !== undefined;
+  // A horse taken off under its rider leaves them on foot, as the room has them.
+  if (!walker.rides && walker.player.mounted) walker.player = { ...walker.player, mounted: false };
   walker.spareGlow = heldElements(gear, otherLoadout(loadout))[0];
 }

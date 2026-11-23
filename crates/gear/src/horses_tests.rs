@@ -137,3 +137,51 @@ fn others_see_the_coat_of_the_horse_worn() {
     character.ask(Ask::Wear { item: id, slot: Slot::Mount }, Here::default(), &DICE).expect("worn");
     assert_eq!(coat(&character), Some(serde_json::json!("black")));
 }
+
+#[test]
+fn a_horse_is_not_bought_with_nine_horses_carried() {
+    let (number, here) = horse_sold_today();
+    let mut character = Character::starting();
+    character.materials.aurem = 20_000;
+    for coat in ["bay", "dun", "grey", "black", "white", "palomino", "bay", "dun", "grey"] {
+        character.give_horse(coat, false);
+    }
+    let before = character.clone();
+    assert_eq!(character.ask(Ask::BuyCosmetic { cosmetic: number }, here, &DICE), Err(Refusal::CarriedFull));
+    assert_eq!(character, before, "nothing paid, nothing given");
+}
+
+#[test]
+fn a_worn_coat_never_kept_still_becomes_the_horse_worn_and_a_horse_worn_already_stays() {
+    let mut kept: serde_json::Value = serde_json::from_str(&Character::starting().to_json()).expect("json");
+    kept["cosmetics"]["kept"] = serde_json::json!(["bay"]);
+    kept["cosmetics"]["coat"] = serde_json::json!("grey");
+    let character = Character::from_json(&kept.to_string()).expect("a character");
+    assert_eq!(character.coat_worn(), Some("grey"));
+    assert!(character.keeps_horse("bay"));
+    let mut riding = Character::starting();
+    riding.give_horse("dun", true);
+    let mut kept: serde_json::Value = serde_json::from_str(&riding.to_json()).expect("json");
+    kept["cosmetics"]["coat"] = serde_json::json!("black");
+    let read = Character::from_json(&kept.to_string()).expect("a character");
+    assert_eq!(read.coat_worn(), Some("dun"), "the horse worn keeps the saddle");
+    assert!(read.keeps_horse("black"), "the old coat's horse is carried");
+}
+
+#[test]
+fn the_bay_worn_shows_others_the_bay_as_the_page_draws_it_unnamed() {
+    let sent = r#"{"outfit":{"armour":{},"right":null,"left":null,"dyes":{}}}"#;
+    let (mut character, id) = carrying("bay");
+    character.ask(Ask::Wear { item: id, slot: Slot::Mount }, Here::default(), &DICE).expect("worn");
+    let dressed: serde_json::Value =
+        serde_json::from_str(&crate::cosmetics::dressed(sent, &character).expect("dressed")).expect("json");
+    assert!(dressed["outfit"].get("coat").is_none());
+}
+
+/// A coat the Tack sells on some day, and that day at its counter.
+fn horse_sold_today() -> (u16, Here) {
+    let coat = |at: &u16| cosmetics()[usize::from(*at)].kind == CosmeticKind::Coat;
+    let day = (0..400).find(|day| sold_on(Seller::Tack, *day).iter().any(coat)).expect("a day the Tack sells a horse");
+    let number = sold_on(Seller::Tack, day).into_iter().find(|at| coat(at)).expect("a horse sold");
+    (number, Here { day, ..AT_COUNTER })
+}

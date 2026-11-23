@@ -1,7 +1,8 @@
-//! Cosmetics after Destiny's shaders and Sparrows, kept and worn as emblems are: a dye that colours the armour worn,
-//! a coat for the horse and a barding worn over it. Each comes from the start, a faction's rank, or a vendor who sells
-//! a few each day: the Tailor the dyes, the Tack the coats and bardings. What each looks like is the page's; here are
-//! what they are and how they are had (`content/gear/cosmetics.json`).
+//! Cosmetics after Destiny's shaders and Sparrows: a dye that colours the armour worn and a barding worn over the
+//! horse, kept and worn as emblems are; and a coat, a horse's hide, kept as its horse (`horses.rs`). Each comes from
+//! the start, a faction's rank, or a vendor who sells a few each day: the Tailor the dyes, the Tack the horses and
+//! bardings. What each looks like is the page's; here are what they are and how they are had
+//! (`content/gear/cosmetics.json`).
 
 use crate::asks::{Done, Here, Refusal};
 use crate::character::Character;
@@ -361,8 +362,9 @@ impl Character {
         self.materials.aurem -= aurem;
         if horse {
             self.give_horse(&found.id, false);
+        } else {
+            self.keep_cosmetic(&found.id);
         }
-        self.keep_cosmetic(&found.id);
         Ok(None)
     }
 }

@@ -141,7 +141,7 @@ pub enum Ask {
         art: u8,
         fragment: u8,
     },
-    /// Wears a dye, coat or barding the player keeps, by its number in the catalogue.
+    /// Wears a dye or barding the player keeps, by its number in the catalogue.
     WearCosmetic {
         cosmetic: u16,
     },

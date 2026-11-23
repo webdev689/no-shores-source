@@ -195,7 +195,7 @@ pub struct Character {
     /// The faction pledged to, and the reputation earned with each (`factions.rs`).
     #[serde(default)]
     pub allegiance: crate::factions::Allegiance,
-    /// The dyes, coats and bardings kept, and the one of each worn (`cosmetics.rs`).
+    /// The dyes and bardings kept, and the one of each worn (`cosmetics.rs`).
     #[serde(default)]
     pub cosmetics: crate::cosmetics::Cosmetics,
     /// Their place in every quest, and the fragment choices their roads gave (`quests.rs`).
