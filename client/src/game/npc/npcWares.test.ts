@@ -58,7 +58,11 @@ test('the smiths sell their starter stock under To start, then six of the day’
     [6, 7].map((node) => ({ kind: ASKS.vend, column: 1, node })),
   );
   assert.deepEqual(weapons?.wares[0]?.ask, { kind: ASKS.vend, column: 1, node: 0 });
-  assert.equal(supplies?.wares[0]?.note, 'You carry five', 'five crates is as many as are carried');
+  assert.equal(
+    supplies?.wares[0]?.note,
+    'All five',
+    'five crates is as many as are carried, said in a line its tile holds',
+  );
   assert.equal(supplies?.wares[0]?.ask, null);
 });
 
@@ -109,7 +113,7 @@ test('a ware that cannot be asked for says why under its price, not "Not enough"
   const poor = state({ aurem: 0, cratePrice: 300, crates: 5, cosmeticsSold: [6], level: 1 });
   const crate = rowsOf('weaponsmith', poor).find((row) => row.heading === 'Supplies')?.wares[0];
   const low = rowsOf('tailor', poor)[0]?.wares[0];
-  assert.deepEqual(crate && priceWord(crate), { words: 'You carry five', short: false });
+  assert.deepEqual(crate && priceWord(crate), { words: 'All five', short: false });
   assert.deepEqual(low && priceWord(low), { words: 'From level 5', short: false });
   const able = rowsOf('weaponsmith', state({ aurem: 0, cratePrice: 300, crates: 1 })).find(
     (row) => row.heading === 'Supplies',

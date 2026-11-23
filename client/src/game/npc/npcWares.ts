@@ -244,7 +244,7 @@ function crateWare(gear: GearState): Ware {
     words: "Fills your Ranged weapon's ammunition.",
     price: { amount: price, currency: 'aurem' },
     short,
-    note: room ? '' : 'You carry five',
+    note: room ? '' : 'All five',
     ask: room ? { kind: ASKS.buyCrate } : null,
   };
 }
