@@ -1,8 +1,8 @@
 //! The basin an area is carved round, shaped by what the area is: a farm's a long field, a hamlet's a bowl with a lobe
-//! toward each of its blocks, a graveyard's a bowl with raised shelves its graves stand on, a keep's or a camp's a bowl
-//! with a raised platform reached by ramps, the wilds' a cluster of bowls of different sizes, a ruin's a bowl broken by
-//! spurs of rock, a mill's long along its water, and the rest a round bowl. Every basin holds its area's reach, and
-//! room round its buildings; its shelves and platforms are level capsules of the land crate's climbs.
+//! toward each of its blocks, a graveyard's a bowl with raised shelves its graves stand on, a keep's, a camp's or a
+//! plot's a bowl with a raised platform reached by ramps, the wilds' a cluster of bowls of different sizes, a ruin's a
+//! bowl broken by spurs of rock, a mill's long along its water, and the rest a round bowl. Every basin holds its area's
+//! reach, and room round its buildings; its shelves and platforms are level capsules of the land crate's climbs.
 
 use crate::areas::Area;
 use crate::brief::AreaKind;
@@ -113,6 +113,10 @@ pub fn basin(
         }
         AreaKind::Camp => {
             let half = crate::pieces::palisade_radius(area) + PLATFORM_ROOM_M;
+            platform(area, seating, paths, (half, CAMP_SHARE), draw)
+        }
+        AreaKind::Plot => {
+            let half = crate::areas::PLOT_HALF_M * std::f64::consts::SQRT_2 + PLATFORM_ROOM_M;
             platform(area, seating, paths, (half, CAMP_SHARE), draw)
         }
         _ => Vec::new(),
