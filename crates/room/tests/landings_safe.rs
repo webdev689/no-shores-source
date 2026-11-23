@@ -55,7 +55,7 @@ fn a_patrol_zone_s_dungeon_entrances_stand_clear_of_every_box_with_room_to_come_
             let near = blocks.iter().find(|block| {
                 let east = (block.min_x - entrance.at[0]).max(entrance.at[0] - block.max_x).max(0.0);
                 let south = (block.min_y - entrance.at[1]).max(entrance.at[1] - block.max_y).max(0.0);
-                east.hypot(south) <= 8.0 && block.top > ground + 0.5 && block.bottom < ground + 2.5
+                east * east + south * south <= 64.0 && block.top > ground + 0.5 && block.bottom < ground + 2.5
             });
             assert!(near.is_none(), "{}: entrance {number} stands at {:?} by a box {near:?}", node.id, entrance.at);
         }

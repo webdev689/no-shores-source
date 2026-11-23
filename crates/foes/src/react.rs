@@ -102,7 +102,7 @@ fn weigh(here: &Here<'_, '_>, threat: &Threat) -> Option<Defence> {
     let distance = apart(from, at);
     let facing = off(striker.aim, bearing(from, at));
     let lands = match threat.lands {
-        Some(lands) => swung_at(&striker, here.me, at).then_some(lands)?,
+        Some(lands) => swung_at(striker, here.me, at).then_some(lands)?,
         None => {
             let ranged = striker.arms.ranged?;
             // An aimed shot flies faster than its weapon's plain one: the room's word on its speed comes first.
