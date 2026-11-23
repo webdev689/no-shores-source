@@ -49,7 +49,7 @@ fn every_elite_dungeon_holds_its_seals_each_in_a_room_of_its_own_and_never_two_a
             }
             let pieces = seal.pieces.len();
             match seal.kind {
-                SealKind::Litany => assert!((LITANY_RUNES.0..=LITANY_RUNES.1).contains(&pieces)),
+                SealKind::Litany => assert!((4..=6).contains(&pieces), "{place}: four to six runes"),
                 SealKind::Weighing => assert_eq!(pieces, PLATES),
                 SealKind::Holdfast | SealKind::Ascent => assert_eq!(pieces, 1),
             }
@@ -150,7 +150,7 @@ fn an_ascents_pads_rise_under_the_ceiling_clear_of_every_solid_and_doorway() {
             assert!(seal.pads[0].top <= TUNING.reach, "{place}: the first pad mantled from the floor");
             for pair in seal.pads.windows(2) {
                 let rise = pair[1].top - pair[0].top;
-                assert!((0.0..=PAD_RISE_M + 1e-12).contains(&rise), "{place}: rising tops");
+                assert!((0.0..=0.4 + 1e-12).contains(&rise), "{place}: rising tops, 0.4 m at the most");
             }
             for (at, pad) in seal.pads.iter().enumerate() {
                 if at > 0 {
@@ -311,4 +311,18 @@ fn reached(laid: &Dungeon, seal: &SealPlan, from: usize, jumps: bool) -> bool {
         body = step_body(&body, &controls, &seal.pads, &floor, TICK_SECONDS);
     }
     false
+}
+
+#[test]
+fn every_two_runes_of_a_litany_stand_two_metres_apart_at_the_least() {
+    for (place, _, plan) in elite_plans() {
+        for seal in plan.seals.iter().filter(|seal| seal.kind == SealKind::Litany) {
+            for (at, first) in seal.pieces.iter().enumerate() {
+                for second in &seal.pieces[at + 1..] {
+                    let apart = libm::hypot(first[0] - second[0], first[1] - second[1]);
+                    assert!(apart >= 2.0 - 1e-9, "{place}: runes {apart} m apart");
+                }
+            }
+        }
+    }
 }

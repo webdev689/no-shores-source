@@ -42,9 +42,16 @@ test("an Ascent's pads stand to their tops in the room's stone, the last with it
   const heights = Array.from({ length: model.positions.length / 3 }, (unused, index) => model.positions[index * 3 + 2]);
   const reaches = (top: number) => heights.some((height) => Math.abs((height ?? 0) - top) < 1e-6);
   assert.ok(reaches(0.4) && reaches(0.8), 'each pad to its own top');
-  assert.ok(
-    model.parts.some((part) => part.archive === COLOUR.crystal),
-    'the seal stone glows',
+  // The seal stone: the crystal part, standing on the last pad's top (0.8 m), STONE's 6 cm high, never the first's.
+  const crystal = model.parts.find((part) => part.archive === COLOUR.crystal);
+  assert.ok(crystal, 'the seal stone glows');
+  const tops = Array.from({ length: crystal.count }, (unused, nth) => {
+    const vertex = model.indices[crystal.start + nth] ?? 0;
+    return model.positions[vertex * 3 + 2] ?? 0;
+  });
+  assert.deepEqual(
+    [Math.min(...tops), Math.max(...tops)].map((height) => height.toFixed(3)),
+    ['0.800', '0.860'],
   );
   assert.ok(
     model.parts.some((part) => part.archive === 123),

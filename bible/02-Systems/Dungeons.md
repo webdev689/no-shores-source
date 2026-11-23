@@ -374,7 +374,7 @@ lays them where its end foe is a Boss (`laid_dungeon`); no patrol's or sea islan
 - **The Court** (`court.rs`). The Boss is held back off its post, its post never counted cleared, until every seal is
   broken; then it stands (`BossWoke`), and its health is made a match for the living players then, half again for each
   beyond the first, as a public event's great foes are (`toughen`). At two thirds of its health, and again at one
-  third, a blow that would take it past is held there and the Boss is warded (`WardRaised`): a wave of the dungeon's
+  third, a blow that would take it to that share or past is held there and the Boss is warded (`WardRaised`): a wave of the dungeon's
   foes for each living player, two to four, stands at its anchors, and another 15 s on while the ward still stands.
   While warded the Boss runs back to its post and stands there (`hold_ward`), striking where it stands, and every 8 s
   from the ward rising it slams: a ring 4 m round it shown 2 s, then 30% of their health from every living player
@@ -523,7 +523,7 @@ or glows, and is read as standing none (`readDungeon`).
   in the Court, and the Boss's score plays its part by the wards broken (its last stand still by its health). A ward
   rising rings its own sound at the Boss; a Reckoning's last three seconds tick and it lands with thunder at its light;
   the slam thuds at the Boss; the foul floor's harm sounds on the player it harms. A wrong rune, a drained relic and a
-  relic falling past three tenths (once each time) play the refused sound. The page's fighter predicts on the pads
+  relic falling below three tenths (once each time, as the banner reddens) play the refused sound. The page's fighter predicts on the pads
   (`fighter_dungeon`).
 - **The return portal** (`layout.portal`): an arch of the end room's trim round a face, dark while the cache is shut
   and glowing, lighting the room, while it is open; E "Leave" within 2.5 m while it is open.

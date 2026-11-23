@@ -546,3 +546,16 @@ fn a_seals_wave_stands_one_foe_for_each_living_player_two_to_four_each_hunting_t
     room.encounters = Some(encounters);
     assert!(room.foes.values().all(|foe| foe.brain.target() == Some(near)), "hunting the nearest");
 }
+
+#[test]
+fn a_waves_foe_standing_in_a_waiting_seals_room_does_not_hold_it() {
+    let mut room = elite_room("krakens-grotto");
+    let player = hardy(&mut room);
+    let seal = seal_of(&room, SealKind::Litany);
+    let laid = plan(&room, seal);
+    let at = middle_of(&room, laid.cells[laid.cells.len() / 2]);
+    stand_one(&mut room, at);
+    inside(&mut room, player, &laid);
+    room.tick();
+    assert_eq!(state(&room, seal).state, SealState::Running, "a wave's foe is no garrison's: the seal runs");
+}

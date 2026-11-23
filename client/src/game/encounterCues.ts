@@ -73,11 +73,12 @@ export class EncounterCues {
       if (event.kind === EVENT.drowned && event.defender === player)
         sounds.push({ cue: ENCOUNTER_SOUNDS.drowned, at: feet });
     }
-    // A relic falling past three tenths is refused once, and again only once it has stood over them.
+    // A relic falling below three tenths, as the banner reddens, is refused once, and again only once it has stood at
+    // them or over.
     seen.seals.forEach((seal, index) => {
       if (seal.kind !== SEAL_KIND.holdfast) return;
       const before = this.relics.get(index) ?? 1;
-      if (before > RELIC_WARNED && seal.relic <= RELIC_WARNED) ui.push('refused');
+      if (before >= RELIC_WARNED && seal.relic < RELIC_WARNED) ui.push('refused');
       this.relics.set(index, seal.relic);
     });
     const since = this.landed ? seconds - this.landed.seconds : Infinity;

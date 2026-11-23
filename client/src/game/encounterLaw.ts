@@ -214,15 +214,17 @@ const mix = (from: Colour, to: Colour, share: number): Colour => [
   from[2] + (to[2] - from[2]) * share,
 ];
 
-/** A rune's glyph inside its ring: three strokes round its middle, turned a ninth of a turn more for each rune in
- *  turn, so no two runes of a Litany read alike, and a dot at its heart. */
+/** A rune's glyph inside its ring, one of its own for each of a Litany's six runes at the most: one, two or three
+ *  strokes spaced evenly round its middle, about a dot (the first three) or a small ring (the last three), so no two
+ *  runes of a Litany read alike whichever way they are seen. */
 function glyphAt(out: number[], middle: Point, reach: number, colour: Colour, alpha: number, nth: number): void {
-  const turn = (nth * 2 * Math.PI) / 9;
-  for (let stroke = 0; stroke < 3; stroke += 1) {
-    const from = turn + (stroke * 2 * Math.PI) / 3;
+  const strokes = (nth % 3) + 1;
+  for (let stroke = 0; stroke < strokes; stroke += 1) {
+    const from = (stroke * 2 * Math.PI) / strokes - Math.PI / 6;
     markRing(out, middle, reach * 0.45, reach * 0.62, [...colour, alpha], [from, from + Math.PI / 3]);
   }
-  markRing(out, middle, 0, reach * 0.14, [...colour, alpha]);
+  const heart = nth % 6 < 3 ? [0, reach * 0.14] : [reach * 0.2, reach * 0.3];
+  markRing(out, middle, heart[0] ?? 0, heart[1] ?? 0, [...colour, alpha]);
 }
 
 /** A ring `reach` round a piece on the floor, a beam over it while `beam`, in `colour` at `alpha`. */

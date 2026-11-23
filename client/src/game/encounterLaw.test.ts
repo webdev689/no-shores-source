@@ -246,23 +246,24 @@ test('a wrong rune flashes red, a held ring shows its relic, and the warded Boss
   assert.ok(flashed.length > 0, "a landed Reckoning's flash");
 });
 
-test("each of a Litany's runes wears a glyph of its own, so no two read alike", () => {
-  const where = () => null;
-  const runes = encounterMarks(
-    layout.encounters!,
-    seen({ seals: [{ ...seen().seals[0]!, marks: [0, 0] }, seen().seals[1]!] }),
-    0,
-    where,
-  );
-  const half = runes.length / 2;
-  const shape = (marks: number[], [x, y]: readonly number[]) => {
-    const out: string[] = [];
-    for (let mark = 0; mark < marks.length; mark += 7)
-      out.push(`${((marks[mark] ?? 0) - (x ?? 0)).toFixed(3)},${((marks[mark + 1] ?? 0) - (y ?? 0)).toFixed(3)}`);
-    return out.join(' ');
-  };
-  const [first, second] = layout.encounters!.seals[0]!.pieces;
-  assert.notEqual(shape(runes.slice(0, half), first!), shape(runes.slice(half), second!));
+test("each of a six-rune Litany's runes wears a glyph of its own, so no two read alike however turned", () => {
+  const pieces = [0, 1, 2, 3, 4, 5].map((nth) => [nth * 10, 0, 0] as const);
+  const litany = { kind: SEAL_KIND.litany, room: 0, pieces, pads: [], drowned: [], doors: [] };
+  const plan = { ...layout.encounters!, seals: [litany], anchors: [] };
+  const state = { kind: SEAL_KIND.litany, state: SEAL_STATE.running, progress: 0, marks: [0, 0, 0, 0, 0, 0], relic: 1 };
+  const runes = marksOf(encounterMarks(plan as never, seen({ seals: [state] }), 0, () => null));
+  // Each rune's glyph as its vertices' distances from its middle, sorted: the same under any turn, so a glyph that is
+  // another's turned reads alike here as it would on the floor. Its ring (the outermost band) is left out.
+  const signature = (nth: number) =>
+    runes
+      .map((mark) => Math.hypot((mark.at[0] ?? 0) - nth * 10, mark.at[1] ?? 0))
+      .filter((reach) => reach < 0.7)
+      .map((reach) => reach.toFixed(3))
+      .sort()
+      .join(' ');
+  for (let first = 0; first < 6; first += 1)
+    for (let second = first + 1; second < 6; second += 1)
+      assert.notEqual(signature(first), signature(second), `runes ${first} and ${second} read alike`);
 });
 
 /** The marks' colours, one a vertex, as "r,g,b" strings, and their places. */
@@ -340,4 +341,45 @@ test("an Ascent's banner warns that its foul water harms", () => {
   const ascent = { kind: SEAL_KIND.ascent, state: SEAL_STATE.running, progress: 0, marks: [0, 1], relic: 1 };
   const banner = encounterBanner(layout, seen({ seals: [ascent, seen().seals[1]!] }), [2, 1.6, 0]);
   assert.deepEqual(banner?.bonus, { text: 'Foul water harms', state: 'warns' });
+});
+
+test("a broken seal's room is not the banner's: standing in it, the banner names the next unbroken seal", () => {
+  const states = seen().seals;
+  const after = seen({
+    seals: [
+      { ...states[0]!, state: SEAL_STATE.broken },
+      { ...states[1]!, state: 1 },
+    ],
+  });
+  assert.equal(encounterBanner(layout, after, [2, 1.6, 0])?.title, 'The Weighing');
+});
+
+test("an Ascent's stone stands under its beam while nobody is in its room", () => {
+  const pads = [[6.4, 0.4, 8, 2, 2]] as const;
+  const plan = {
+    ...layout.encounters!,
+    seals: [{ kind: SEAL_KIND.ascent, room: 0, pieces: [[7.2, 1.2, 2]], pads, drowned: [], doors: [] }],
+    anchors: [],
+  };
+  const nobody = seen({
+    seals: [{ kind: SEAL_KIND.ascent, state: SEAL_STATE.running, progress: 0, marks: [0, 0], relic: 1 }],
+  });
+  const marks = marksOf(encounterMarks(plan as never, nobody, 0, () => null));
+  assert.ok(
+    marks.some((mark) => (mark.at[2] ?? 0) > 2 + 3),
+    'a beam over the stone',
+  );
+});
+
+test("the slam's inner ring fills over its two seconds: half its reach with one second left", () => {
+  const broken = seen({ seals: seen().seals.map((each) => ({ ...each, state: SEAL_STATE.broken })) });
+  const court = { ...broken, woken: true, boss: 7, ward: 1 };
+  const where = () => [100, 100, 0] as const;
+  const fill = (slamTicks: number) => {
+    const marks = marksOf(encounterMarks(layout.encounters!, { ...court, slamTicks }, 0, where));
+    const inner = marks.filter((mark) => mark.colour === '1,0.22,0.16' && Math.abs(mark.alpha - 0.25) < 1e-9);
+    return Math.max(...inner.map((mark) => Math.hypot((mark.at[0] ?? 0) - 100, (mark.at[1] ?? 0) - 100)));
+  };
+  assert.ok(Math.abs(fill(60) - 2) < 1e-9, `half of 4 m: ${fill(60)}`);
+  assert.ok(Math.abs(fill(1) - 4 * (1 - 1 / 120)) < 1e-9, 'all but a tick of it at the last');
 });

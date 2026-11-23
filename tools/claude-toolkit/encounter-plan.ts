@@ -38,7 +38,7 @@ const init =
   "const script=new Blob([head+'\\nimport '+JSON.stringify(href)+';'],{type:'text/javascript'});" +
   'return new Started(URL.createObjectURL(script),options);};})();';
 const steps: object[] = [{ wait: 150 }, { frames: 2 }, { shot: `${out}/00_arrived.png` }];
-const sleep = (ms: number) => `await new Promise((done)=>setTimeout(done,${ms}));`;
+const sleep = (millis: number) => `await new Promise((done)=>setTimeout(done,${millis}));`;
 const bearing = ([fromX = 0, fromY = 0]: Point, [toX = 0, toY = 0]: Point) =>
   (Math.atan2(toX - fromX, -(toY - fromY)) * 180) / Math.PI;
 const middleOf = (points: readonly Point[]): Point => [
@@ -56,9 +56,9 @@ const call = (name: string, ...args: number[]) =>
   steps.push({
     eval: `(async()=>{new BroadcastChannel('qa').postMessage({call:'${name}',args:${JSON.stringify(args)}});${sleep(300)}})()`,
   });
-const freeze = (on: boolean) => call('room_qa_freeze', on ? 1 : 0);
+const freeze = (held: boolean) => call('room_qa_freeze', held ? 1 : 0);
 const encounter = (what: number, first: number, second: number) => call('room_qa_encounter', what, first, second);
-const pause = (ms: number) => steps.push({ eval: `(async()=>{${sleep(ms)}})()` });
+const pause = (millis: number) => steps.push({ eval: `(async()=>{${sleep(millis)}})()` });
 /** Stands the body at `point` (on a pad's top at `lift`), asked again every `every` ms until the page's own body
  *  stands there; the run fails if it never does. */
 const stand = ([east = 0, south = 0]: Point, lift?: number, every = 1000) =>
