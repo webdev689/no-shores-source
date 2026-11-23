@@ -52,6 +52,9 @@ const COATS = COSMETICS.filter((each) => each.kind === 'coat');
 /** The coat a horse wears, by its id; null for an item that is no horse. */
 export const coatOfHorse = (item: Pick<GearItem, 'kind' | 'name'>): string | null =>
   item.kind === HORSE ? (COATS[item.name]?.id ?? null) : null;
+/** Whether a piece may be dismantled: one carried, never a horse. */
+export const dismantlable = (item: Pick<GearItem, 'at' | 'kind'>): boolean =>
+  item.at === CARRIED && item.kind !== HORSE;
 /** A slot's name as the screens show it. */
 export const slotName = (slot: number): string => (slot === MOUNT_SLOT ? 'Mount' : capital(SLOTS[slot] ?? ''));
 /** `word` with its first letter a capital. */
