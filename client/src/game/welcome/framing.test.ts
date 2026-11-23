@@ -60,26 +60,24 @@ const inside = (shot: Shot) =>
       shot.eye[2] < block.top,
   );
 
-test("every stop's eye has a clear line to each keeper's head and stall front, both in the view", () => {
-  const stops = [['armorsmith', 'weaponsmith'], ['mage'], ['vault'], ['tailor'], ['tack'], ['mail'], ['harbourmaster']];
-  for (const kinds of stops) {
-    const shot = counterShot({ stations: PLAZA, groundAt: ground, blocks: BLOCKS }, kinds, OWN);
-    assert.ok(shot && !inside(shot), `${kinds}: an eye in the open`);
-    for (const kind of kinds) {
-      const station = PLAZA.filter((each) => each.kind === kind).sort(
-        (one, two) =>
-          Math.hypot(one.counter[0] - shot.eye[0], one.counter[1] - shot.eye[1]) -
-          Math.hypot(two.counter[0] - shot.eye[0], two.counter[1] - shot.eye[1]),
-      )[0] as StationInfo;
-      assert.ok(clear(shot, head(station)) && seen(shot, head(station)), `${kind}'s keeper seen`);
-      const front: readonly [number, number, number] = [...station.counter, GROUND + 1];
-      assert.ok(clear(shot, front) && seen(shot, front), `${kind}'s stall front seen`);
-    }
+test("every stop's eye has a clear line to its keeper's head and stall front, both in the view", () => {
+  const stops = ['armorsmith', 'weaponsmith', 'mage', 'vault', 'tailor', 'tack', 'mail', 'harbourmaster'];
+  for (const kind of stops) {
+    const shot = counterShot({ stations: PLAZA, groundAt: ground, blocks: BLOCKS }, kind, OWN);
+    assert.ok(shot && !inside(shot), `${kind}: an eye in the open`);
+    const station = PLAZA.filter((each) => each.kind === kind).sort(
+      (one, two) =>
+        Math.hypot(one.counter[0] - shot.eye[0], one.counter[1] - shot.eye[1]) -
+        Math.hypot(two.counter[0] - shot.eye[0], two.counter[1] - shot.eye[1]),
+    )[0] as StationInfo;
+    assert.ok(clear(shot, head(station)) && seen(shot, head(station)), `${kind}'s keeper seen`);
+    const front: readonly [number, number, number] = [...station.counter, GROUND + 1];
+    assert.ok(clear(shot, front) && seen(shot, front), `${kind}'s stall front seen`);
   }
-  const tack = counterShot({ stations: PLAZA, groundAt: ground, blocks: BLOCKS }, ['tack'], OWN);
-  const plain = counterShot({ stations: PLAZA, groundAt: ground, blocks: [] }, ['tack'], OWN);
+  const tack = counterShot({ stations: PLAZA, groundAt: ground, blocks: BLOCKS }, 'tack', OWN);
+  const plain = counterShot({ stations: PLAZA, groundAt: ground, blocks: [] }, 'tack', OWN);
   assert.notDeepEqual(tack?.eye, plain?.eye, 'the court wall moves the eye off its first place');
-  assert.equal(counterShot({ stations: PLAZA, groundAt: ground, blocks: [] }, ['nobody'], OWN), null);
+  assert.equal(counterShot({ stations: PLAZA, groundAt: ground, blocks: [] }, 'nobody', OWN), null);
 });
 
 test('the Hall is seen from inside, up under its roof by its door, down the nave to all three chapels', () => {
@@ -118,7 +116,7 @@ test('her farewell is seen from the side, both faces in the view', () => {
 test("each place stands in the view's upper part, clear of the dialogue box over its lower middle", () => {
   const place = { stations: PLAZA, groundAt: ground, blocks: BLOCKS };
   const shots: [string, Shot | null, readonly [number, number, number]][] = [
-    ['tack', counterShot(place, ['tack'], OWN), head(TACK)],
+    ['tack', counterShot(place, 'tack', OWN), head(TACK)],
     ['storm', hallShot(place, ['stormcallers'], OWN), head(HALL_STATIONS[0] as StationInfo)],
   ];
   for (const [name, shot, point] of shots) {
@@ -131,7 +129,7 @@ test("a keeper behind a house's front wall, its window drawn but the wall solid 
   // As the Vault stands in Overlook: its keeper 0.6 m behind a front wall solid to 4.6 m, its counter 2.1 m out.
   const vault = { kind: 'vault', keeper: [1000, 1990] as const, counter: [1000, 1987.9] as const };
   const walls = [box(1000, 1989.2, 3.5, 0.3, 4.6), box(1000, 1992.5, 3.5, 3.5, 0.8, 4.6)];
-  const shot = counterShot({ stations: [vault], groundAt: ground, blocks: walls }, ['vault'], OWN);
+  const shot = counterShot({ stations: [vault], groundAt: ground, blocks: walls }, 'vault', OWN);
   assert.ok(shot, 'a shot of the vault');
   const front: readonly [number, number, number] = [...vault.counter, GROUND + 1];
   assert.ok(
@@ -161,17 +159,15 @@ test("a house's turn is seen from before a column standing on its chapel's axis,
 
 test('a place no eye sees clearly gives no shot, so the view stays where it is', () => {
   const walled = { stations: PLAZA, groundAt: ground, blocks: [box(1000, 2000, 400, 400, 60)] };
-  assert.equal(counterShot(walled, ['tack'], OWN), null);
+  assert.equal(counterShot(walled, 'tack', OWN), null);
   assert.equal(hallShot(walled, ['stormcallers'], OWN), null);
 });
 
 test("a single counter is seen from about a keeper's height first, under a stall's awning", () => {
   // A stall's awning is drawn, not one of the solids the lines are tested against, so the order alone keeps it clear.
   const place = { stations: PLAZA, groundAt: ground, blocks: [] };
-  const shot = counterShot(place, ['tack'], OWN);
+  const shot = counterShot(place, 'tack', OWN);
   assert.ok(shot && shot.eye[2] < GROUND + 3.5, `low enough to see under it: ${shot && shot.eye[2] - GROUND}`);
-  const pair = counterShot(place, ['armorsmith', 'weaponsmith'], OWN);
-  assert.ok(pair && pair.eye[2] > GROUND + 6, 'a group from over them');
 });
 
 test('her face stands whole above the dialogue box, the eye beyond the near dither of either figure', () => {

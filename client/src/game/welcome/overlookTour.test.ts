@@ -56,7 +56,7 @@ test("on Overlook's own counters and solids every stop of the tour sees its keep
   };
   const place = { stations, groundAt, blocks };
   for (const step of TOUR.filter((each) => each.kinds.length > 0)) {
-    const shot = (step.hall ? hallShot : counterShot)(place, step.kinds, own);
+    const shot = step.hall ? hallShot(place, step.kinds, own) : counterShot(place, step.kinds[0] ?? '', own);
     assert.ok(shot, `${step.scene}: a shot`);
     for (const kind of step.kinds) {
       const away = (station: (typeof stations)[number]) =>
