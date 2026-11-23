@@ -374,17 +374,20 @@ building's place to the centimetre in the page, the same on every machine.
   - a vein's two shards 1.1 m apart up a wall; a doorway's 4 to 6 shards 0.8 to 2.2 m; a window's 3, 0.4 to 1 m; a
     patch's 4 to 7 shards 0.4 to 1.6 m leaning every way; and a heap's heart, 3 to 5 spires 1.5 to 4.5 m and 4 to 7
     shards.
-- **A broken building** (`buildingGrowth`, standing buildings only, not props): 12 % are untouched, 33 % heavily
-  overtaken, the rest lightly.
-  - Heavily: 2 to 3 heavy break clusters at the break, leaning out from the wall tops, each the standing wall's
-    height over 3.5 times its own (0.9 to 2); a mass over the middle of the break, as large as the smaller half of
-    its footprint over 2.5 (0.6 to 2.2), so the building is mostly crystal over its break; 2 to 4 sheets over its
-    walls from the ground up, the wall's height over 3 times their own (0.6 to 2); windows' shards at 1.8 m on each
-    long side; 1 to 2 patches through the paving 1.5 to 4 m out from its walls.
+- **A broken building** (`buildingGrowth`, standing buildings only, not props) grows from its kept masses (its
+  wings, each broken off at the break), never from the box round them: 12 % are untouched, 33 % heavily overtaken,
+  the rest lightly.
+  - Heavily: 2 to 3 heavy break clusters on its wings' wall tops, leaning out, each the wing's standing height over
+    3.5 times its own (0.9 to 2); a mass rooted on the floor of its largest wing's open shell, rising well over the
+    break (the larger of that wing's smaller half over 2.5 and its standing height over 4, 0.6 to 2.5 times its own),
+    so the building is mostly crystal over its break; 2 to 4 sheets over its wings' walls from the ground up, the
+    wing's height over 3 times their own (0.6 to 2); windows' shards at 1.8 m on each long side of its largest wing;
+    1 to 2 patches through the paving 1.5 to 4 m out from that wing's walls, none where another wing stands.
   - Lightly: 1 to 2 light break clusters, and a sheet one time in two.
   - Both: veins climbing from the ground toward the break, a formation every 2.2 m, one in five missing, at every
-    corner and at a seam of each long side heavily, at about half its corners lightly; a doorway's formation at the
-    foot of a long side.
+    outer corner of every wing (none at a corner standing inside another wing) heavily and at about half of them
+    lightly, and heavily at a seam of each long side of its largest wing; a doorway's formation at the foot of a
+    long side of its largest wing.
 - **A fallen building's heap** (`heapGrowth`): but for the untouched share, a heap's formation rises from its heart,
   half way up the heap, the heap's height over 2 times its size (0.8 to 1.6).
 - **The great formations** stand across the city, drawn at every distance, so the skyline seen from the water is
@@ -392,9 +395,10 @@ building's place to the centimetre in the page, the same on every machine.
   - on every tower and gatehouse tower of the wall, on its broken top, 1 to 1.6 times their size; in every breach,
     0.9 to 1.3; at the broken end of every pier, 0.8 to 1.1; along the quay, at three in five places 60 m apart, 0.7
     to 1 (`worksGrowth`);
-  - over the break of a heavily overtaken building, the wall's height over 4 (0.8 to 1.8), and out of a fallen heap
-    of 150 m² or more, the root of its area over 14 (0.8 to 1.6), each by a chance that grows from 3 % at the grid's
-    edge to 45 % at its middle with the square of the nearness (`GREAT_CHANCE`): the overtaking spread from the heart.
+  - rooted with a heavily overtaken building's mass, the largest wing's standing height over 4 (0.8 to 1.8), and
+    out of a fallen heap of 150 m² or more, the root of its area over 14 (0.8 to 1.6), each by a chance that grows
+    from 3 % at the grid's edge to 45 % at its middle with the square of the nearness (`GREAT_CHANCE`): the
+    overtaking spread from the heart.
 - **The harbour's wrecks** (`wreckCrust`) are crusted at the waterline: patches round the hull as long and broad as
   its ship's, one about every 3 m, three in ten missing, set out as large as the wreck is drawn (the ships' size: at
   sea larger, true size on foot), drawn at every distance.

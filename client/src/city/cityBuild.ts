@@ -518,17 +518,19 @@ function buildingMassesOf(
         continue;
       }
       const cut = piece.ruin.cut;
+      const wings: Mass[] = [];
       for (const mass of shapes.kept) {
         const broken = brokenMass(mass, cut);
-        if (broken) byChunk[piece.chunk].masses.push([broken, piece]);
+        if (broken) wings.push(broken);
       }
+      for (const wing of wings) byChunk[piece.chunk].masses.push([wing, piece]);
       const hull = brokenMass(shapes.hull, cut);
       if (hull) {
         byChunk[piece.chunk].hulls.push([hull, piece]);
         if (building)
           overtake(
             buildingGrowth(
-              massShape(hull, place, plan.centre),
+              wings.map((wing) => massShape(wing, place, plan.centre)),
               plan.centre,
               [place.east, place.south],
               heartOf(place.east, place.south),
