@@ -470,7 +470,9 @@ impl Room {
         let near: Vec<FighterId> = self
             .players
             .iter()
-            .filter(|(_, player)| player.fighter.side != foe.side && !player.fighter.dead())
+            .filter(|(player, found)| {
+                found.fighter.side != foe.side && !found.fighter.dead() && !self.spares(id, **player)
+            })
             .filter(|(_, player)| {
                 combat::sight::apart(
                     [player.fighter.body.x, player.fighter.body.y],

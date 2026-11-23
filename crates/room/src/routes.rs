@@ -60,6 +60,8 @@ impl Room {
             .collect();
         let spots: Vec<MeshSpots<'_>> = meshes.iter().map(|mesh| MeshSpots { mesh }).collect();
         let mut intents = Vec::with_capacity(on.len());
+        // Each foe sees those landed in a patrol zone's landing as `seen_by` says; with none landed, all see alike.
+        let landed = self.in_landings();
         for &(id, mesh) in &on {
             let Some(foe) = self.foes.get(&id) else { continue };
             // A ward thinks nothing: it stands where it was stood.
@@ -70,10 +72,17 @@ impl Room {
                 intents.push((id, (brain, combat::Intent::default())));
                 continue;
             }
+            let own;
+            let fighters = if landed.is_empty() {
+                noticed
+            } else {
+                own = self.seen_by(id, noticed, &landed);
+                &own[..]
+            };
             let world = World {
                 tick: self.clock,
                 seed: self.world_seed,
-                fighters: noticed,
+                fighters,
                 blocks: &self.blocks,
                 terrain: &self.floor,
                 routes: &routes[mesh],

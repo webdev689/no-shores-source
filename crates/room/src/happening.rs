@@ -18,7 +18,9 @@ impl Room {
             Some(Happening::Swung(attack)) => self.swings.push((id, attack)),
             Some(Happening::Struck(attack)) => {
                 self.sweep = struck(id, fighter, &attack, view, &self.blocks, &self.floor);
-                for defender in self.sweep.clone() {
+                // A player the foes leave be is struck by no sweep aimed at another.
+                let swept: Vec<FighterId> = self.sweep.iter().copied().filter(|on| !self.spares(id, *on)).collect();
+                for defender in swept {
                     let blow = self.empower(swing_blow(id, fighter, &attack, defender), defender);
                     let how = how_of_swing(&attack, defender);
                     if self.players.contains_key(&defender) {

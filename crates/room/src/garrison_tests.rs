@@ -475,6 +475,49 @@ fn only_a_living_thinking_foe_that_fights_a_landed_player_takes_the_landing_s_le
 }
 
 #[test]
+fn in_the_landing_only_a_foe_already_fighting_a_player_fights_them_and_no_other_joins() {
+    let mut room = node(NodeKind::Patrol, "downs");
+    let player = room.join().unwrap();
+    stand_player(&mut room, player, [0.0, 180.0]);
+    run(&mut room, 1);
+    // One foe brought its fight into the landing; another, 8 m off and facing the player, has none.
+    let brought = crate::arts::arts_tests::stand_foe(&mut room, 0.0, 174.0, 100.0);
+    let clock = room.clock();
+    room.foes.get_mut(&brought).unwrap().brain.hunt(player, [0.0, 180.0, 0.0], clock);
+    let other = crate::arts::arts_tests::stand_foe(&mut room, 3.0, 188.0, 100.0);
+    for _ in 0..180 {
+        run(&mut room, 1);
+        assert_ne!(room.foes[&other].brain.fights(), Some(player), "no other foe joins a fight brought in");
+    }
+    assert_eq!(room.foes[&brought].brain.fights(), Some(player), "the fight brought in goes on");
+}
+
+#[test]
+fn an_officer_standing_in_the_landing_is_left_be_and_starts_no_fight_from_it() {
+    let mut room = node(NodeKind::Patrol, "downs");
+    let player = room.join().unwrap();
+    let character = &mut room.players.get_mut(&player).unwrap().character;
+    let mut officer = gear::crew::Officer::new(0, gear::crew::Post::FirstMate, gear::Rarity::Magic, 6);
+    (officer.given, officer.family) = (3, 7);
+    let id = character.sign_on(officer).expect("room in the crew");
+    character.crew.officers.get_mut(&id).unwrap().duty = gear::crew::Duty::Ashore;
+    stand_player(&mut room, player, [0.0, 180.0]);
+    run(&mut room, 30);
+    let ashore = room.foes.keys().copied().find(|foe| room.companion(*foe).is_some()).expect("the officer ashore");
+    // A foe of the Tithe's 9 m off, facing the landing, sees the officer standing in it.
+    let foe = crate::arts::arts_tests::stand_foe(&mut room, 0.0, 165.0, 100.0);
+    let mut faced = room.foes[&foe].fighter;
+    (faced.aim, faced.body.facing) = (core::f64::consts::PI, core::f64::consts::PI);
+    room.foes.get_mut(&foe).unwrap().fighter = faced;
+    for _ in 0..600 {
+        run(&mut room, 1);
+        stand_player(&mut room, player, [0.0, 180.0]);
+        assert_ne!(room.foes[&foe].brain.fights(), Some(ashore), "the officer in the landing is left be");
+        assert_ne!(room.foes[&ashore].brain.fights(), Some(foe), "and starts no fight from it");
+    }
+}
+
+#[test]
 fn a_quests_group_arriving_leaves_the_last_stand_its_leader_and_its_break() {
     let mut room = crate::quests::quests_tests::node_room("node-test", &[("glade", [0.0, 0.0], 48.0)]);
     let leader = room.next_id();

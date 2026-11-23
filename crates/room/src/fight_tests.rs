@@ -293,3 +293,47 @@ fn a_foe_lets_go_of_a_player_the_section_killed() {
     room.tick();
     assert_eq!(room.foes[&foe].brain.fights(), None, "let go once the section killed them");
 }
+
+#[test]
+fn a_player_the_foes_leave_be_is_struck_by_no_sweep_or_shot_aimed_at_another() {
+    let mut room = room();
+    let (fought, spared) = (room.join().unwrap(), room.join().unwrap());
+    // A brute 1.5 m north of the origin facing south, fighting the player at the origin; beside them, the other just
+    // stood again.
+    let foe = stand_foe(&mut room);
+    let clock = room.clock();
+    room.foes.get_mut(&foe).unwrap().brain.hunt(fought, [0.0, 0.0, 0.0], clock);
+    for (player, x) in [(fought, 0.0), (spared, 0.4)] {
+        let mut stood = *room.fighter(player).unwrap();
+        stood.body = standing(x, 0.0);
+        room.set_fighter(player, stood);
+    }
+    room.players.get_mut(&spared).unwrap().graced = room.clock() + crate::players::GRACE;
+    let brute = *room.fighter(foe).unwrap();
+    let attack = combat::fighter::Attack {
+        stroke: Stroke::Left,
+        elapsed: 0,
+        strike: 1,
+        end: 30,
+        swing: combat::fighter::Swing::Plain,
+        left_hand: false,
+    };
+    let view = room.fighters();
+    room.happened(foe, &brute, Some(combat::Happening::Struck(attack)), &view);
+    let struck: Vec<FighterId> = room.pending.iter().map(|pending| pending.defender).collect();
+    assert!(struck.contains(&fought), "the one it fights is struck: {struck:?}");
+    assert!(!struck.contains(&spared), "the one left be is not");
+    // A bolt at the one it fights passes by the one left be standing on its line, in front of them.
+    room.pending.clear();
+    let mut ahead = *room.fighter(spared).unwrap();
+    ahead.body = standing(0.0, -0.7);
+    room.set_fighter(spared, ahead);
+    let shot = ::foes::aimed_shot(foe, &brute, core::f64::consts::PI, 3.0);
+    room.shots.push((shot, None));
+    for _ in 0..30 {
+        room.fly_shots();
+    }
+    let shot_at: Vec<FighterId> = room.pending.iter().map(|pending| pending.defender).collect();
+    assert!(shot_at.contains(&fought), "the bolt struck the one it was loosed at: {shot_at:?}");
+    assert!(!shot_at.contains(&spared), "and passed the one left be by");
+}
