@@ -1,18 +1,18 @@
 // What the wreck's teaching stands on its deck: the player's sword and shield where the ram threw them, a way along the
-// quiet deck, drawn as the item itself, as the Character page shows it, and moving as a drop of loot does: popped up
-// from the deck, bouncing to rest, then hovering and bobbing under its rarity's line, until the player walks over
-// them; and where the Tithe boarder the player meets one on one comes from.
+// quiet deck, and the bow where the boarder fell, each drawn as the item itself, as the Character page shows it, and
+// moving as a drop of loot does: popped up from the deck, bouncing to rest, then hovering and bobbing under its
+// rarity's line, until the player walks over it; and where the Tithe boarder the player meets one on one comes from.
 import { CRYSTAL_FEEL, inReach, markDropLine, motionAt, RISE_S } from '../../combat/drops.ts';
 import type { GearItem, GearState } from '../../network/gearMessages.ts';
 import type { Card, CardAt, Cards } from '../../player/cards.ts';
 import type { Dress } from '../../player/dressing.ts';
-import { CARRIED, gearHands, KINDS, MELEE, WORN } from '../../player/gear.ts';
+import { CARRIED, KINDS, MELEE, RANGED_SLOT, VAULTED, WORN } from '../../player/gear.ts';
 import { PX_PER_M } from '../../player/figures.ts';
 import { ItemPictures } from '../../player/itemPictures.ts';
 import type { Arms } from './tutorial.ts';
 import { pointAlong, topAt, type WreckLayout } from './wreckLayout.ts';
 
-type Point = readonly [number, number, number];
+export type Point = readonly [number, number, number];
 
 /** How far along the path from where the player wakes their arms lie, metres: out on the quiet deck, past the step
  *  down from where they woke. */
@@ -48,7 +48,14 @@ export const ARMS_ITEM: GearItem = {
   columns: [],
   price: 0,
   element: 0,
+  story: true,
 };
+/** The gear crate's number for a Bow, and the bow the boarder drops as the room gives it (`Room::story_take`): a
+ *  Normal Bow of level 1, for its picture. */
+export const BOW = KINDS.indexOf('bow');
+export const BOW_ITEM: GearItem = { ...ARMS_ITEM, kind: BOW, bucket: RANGED_SLOT };
+/** The Storm's number among the Arts, which the wisp gives (`Room::story_storm`). */
+export const STORM = 1;
 /** The forge draws a weapon's picture this many times as many pixels a metre as a figure's (weaponart.py `SIZE`): a
  *  card of it at this share stands true to size. */
 const TRUE_SIZE = 1 / 4;
@@ -61,20 +68,12 @@ export function armsAt(layout: WreckLayout): Point {
   return [x, y, topAt(layout.course, x, y)];
 }
 
-/** Where the player's sword and shield are, by their gear as the room last sent it: none in it, they lie on the deck. */
-export function armsOf(gear: GearState | null): Arms {
-  const held = gear?.items.find((item) => item.kind === SWORD_AND_SHIELD);
+/** Where the player's sword and shield, or the story's item of `kind`, are, by their gear as the room last sent it:
+ *  none in it, it lies on the deck. */
+export function armsOf(gear: GearState | null, kind = SWORD_AND_SHIELD): Arms {
+  const held = gear?.items.find((item) => item.kind === kind && item.at !== VAULTED);
   if (!held) return 'lying';
-  return held.at >= WORN ? 'worn' : held.at === CARRIED ? 'carried' : 'lying';
-}
-
-/** `dress` holding the Melee arms the player wears, as their gear has them and the Character page shows them; as it
- *  is with none worn, or where the forge has no wardrobe for its body. */
-export function holdingArms(dress: Dress, gear: GearState | null, forge: Pick<Cards, 'wardrobe'>): Dress {
-  const wardrobe = forge.wardrobe(dress.body);
-  if (!gear || !wardrobe) return dress;
-  const { right, left, grip } = gearHands(gear, wardrobe, MELEE);
-  return right ? { ...dress, outfit: { ...dress.outfit, right, left, grip } } : dress;
+  return held.at >= WORN ? 'worn' : 'carried';
 }
 
 /** Where the boarder stands, and the way it faces: toward the player at (`x`, `y`). */
@@ -85,10 +84,11 @@ export function boarderAt(layout: WreckLayout, x: number, y: number): { at: [num
   return { at: [standX, standY], facing: Math.atan2(x - standX, -(y - standY)) };
 }
 
-/** The arms on the deck as the player sees them: the item's own picture, once the forge has drawn it, upright and
- *  turned to the eye at its true size, popped up from where they lie the first time it is drawn and moving as a
- *  Vestige's crystal does (`motionAt`), under a Normal drop's line once they rest. */
+/** The story's item on the deck as the player sees it, the sword and shield or the bow: the item's own picture, once
+ *  the forge has drawn it, upright and turned to the eye at its true size, popped up from where it lies the first time
+ *  it is drawn and moving as a Vestige's crystal does (`motionAt`), under a Normal drop's line once it rests. */
 export class LyingArms {
+  private readonly item: GearItem;
   private readonly place: Point;
   private readonly forge: Cards;
   private readonly pictures: ItemPictures;
@@ -99,8 +99,9 @@ export class LyingArms {
   private top: Point | null = null;
   private rested = 0;
 
-  constructor(layout: WreckLayout, forge: Cards) {
-    this.place = armsAt(layout);
+  constructor(item: GearItem, place: Point, forge: Cards) {
+    this.item = item;
+    this.place = place;
     this.forge = forge;
     this.pictures = new ItemPictures(forge);
   }
@@ -109,7 +110,7 @@ export class LyingArms {
    *  page draws them; none until the forge has drawn their picture. */
   figure(body: Dress, clock: number): CardAt | null {
     if (!this.card) {
-      const picture = this.pictures.pictureOf(ARMS_ITEM, body, () => undefined);
+      const picture = this.pictures.pictureOf(this.item, body, () => undefined);
       if (picture) this.card = this.forge.cardOf(picture);
     }
     if (!this.card) return null;
@@ -133,7 +134,7 @@ export class LyingArms {
   mark(out: number[], clock: number, eye: Point): void {
     if (!this.top || this.rested <= 0) return;
     const rise = Math.min(1, this.rested / RISE_S);
-    markDropLine(out, { place: this.top, rarity: ARMS_ITEM.rarity, over: 0, share: rise }, clock, eye);
+    markDropLine(out, { place: this.top, rarity: this.item.rarity, over: 0, share: rise }, clock, eye);
   }
 
   /** Whether feet at `feet` stand over them, near enough to take them up. */

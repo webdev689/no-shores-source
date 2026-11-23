@@ -27,7 +27,13 @@ code:
   - client/src/game/prologue/tutorial.ts#Tutorial
   - client/src/game/prologue/tutorial.ts#Freeze
   - client/src/game/prologue/wreckTeaching.ts#LyingArms
-  - crates/room/src/story.rs#story_take_arms
+  - client/src/game/prologue/storyArms.ts#StoryArms
+  - client/src/game/prologue/wisp.ts#wispAt
+  - client/src/game/prologue/wispScene.ts#WispScene
+  - client/src/game/prologue/stormTeaching.ts#CastFreeze
+  - crates/room/src/story.rs#story_take
+  - crates/room/src/story.rs#story_storm
+  - crates/gear/src/story.rs#story_item
   - crates/room/src/story.rs#story_hunt
   - client/src/game/prologue/nameplate.ts#Nameplate
   - client/src/game/prologue/overboard.ts#Overboard
@@ -111,7 +117,7 @@ player wears the look the game gave them. The player then arrives at Overlook.
 | `calm` | The wind drops, the rain eases, the camera eases down from the fight's to its deck; the beaten ships lie where and as the fight left them, each in its own settle, trim and list, and its sails furling on from where the fight left them; struck ones lie still, sinking ones go on under as the rules sink them and are gone once under; the crew talk, the camera looking out over the lookout's shoulder to the nearest wreck as he asks about them (whichever shoulder leaves it the more room from the foremast and its shrouds), then pushing in on it until it reads however far off it lies, until he cuts the mate off | shown |
 | `ram` | The lookout cries out on the deck the calm left, the wrecks still lying round it; the camera turns with him, then pulls sharply out as a larger ship comes out of the storm at its side at 6 m/s (about 12 knots), lightning striking past it at 2.3 s and 4.8 s so its masts and sails stand against it: Captain Brannoc Thule's Frigate at its own size, under sail, lighter than a captain's ship in the fight and darker than the Brig; the crash comes as the head of its stem first touches the Brig's side where its hull is broadest (each hull's box in the ships manifest); the crew brace; the impact; black | shown |
 | `wake` | First person on the deck: the eyes blinking open as an almond under shaped lids, the fires' light red through them, the view swimming and clearing a step with each beat of the heart, the ringing; up on the feet, looking round; the camera eases out of the eyes to over the player's shoulder, the shot the run's camera takes as the camera leaves the eyes (a run that opens later is eased to from wherever the camera then is), their hands empty and their figure drawn once the camera stands a metre out of the eyes, where play begins 15.5 s in ([[The Wreck Opens by Teaching the Player]]) | shown |
-| `wreck` | Taught on the quiet deck: the sword and shield found and equipped, the feet found, the player readied, a boarder met one on one; then fought on foot through the wreck, each heap across the way clearing as its wave falls; at its end the push in to Captain Brannoc Thule, his nameplate and his cry; the fight one on one that cannot be won; a fade out | played |
+| `wreck` | Taught on the quiet deck: the sword and shield found and equipped, the feet found, the player readied, a boarder met one on one, its bow taken up and taught; a wisp out of the storm that engulfs the player and gives them the Storm; the next fight teaching each of its abilities; then fought on foot through the wreck, each heap across the way clearing as its wave falls; at its end the push in to Captain Brannoc Thule, his nameplate and his cry; the fight one on one that cannot be won; a fade out | played |
 | `overboard` | In from black on the body thrown over the rail, Thule and his crew crying out and leaping on the drawn wreck, turned from the rail most of the way toward the camera; skipped, the screen is black at once, so the deep comes in from black | shown |
 | `deep` | Sinking past the fallen crew beside the wreck, its hulls and fires above the surface; the eyes; a flash; a voice; black | shown |
 | `shore` | First person on Saltmere's shore; a stranger comes down the beach, kneels beside the player and speaks; the player takes her hand; up, and up the shore together | played |
@@ -248,9 +254,13 @@ and never higher than 2.5 m over the deck, under the spanker's boom; it rides th
 
 **The player** is dressed for the story in steel with no helm, a steel sword sheathed at the hip and a kite shield
 slung on the back (`armouredDress`; [[The Player's Sword and Shield Are Holstered]]): they stand at the helm with
-their hands free. The ram throws the sword and shield from them: they wake on the wreck without them (`unarmed`), and
-once they equip the story's there they hold the item as their gear has it and the Character page shows it, a Normal
-Sword & Shield drawn in iron (`holdingArms`), for the rest of the story; a swing draws them, as the game's does. Their look is kept in the browser (`noshores.look`) and dresses them in the game afterwards.
+their hands free. The ram throws the sword and shield from them: they wake on the wreck without them (`unarmed`), in
+the story's steel, which is real gear from then on: the story's own Normal torso, arms and legs of level 1, worn in
+their slots and shown on the Character page and in the pack ("Steel Cuirass", "Steel Gauntlets", "Steel Greaves"),
+drawn in steel from the gear as the game's gear is drawn (`gearOutfit`, `STORY_SET`). On the wreck the figure is
+dressed from their gear as on foot (`dressInGear`): once they equip the story's sword and shield they hold the item as
+their gear has it, a Normal Sword & Shield drawn in iron, and once they equip its bow it is their other loadout; the
+Melee loadout put away is their dress for the rest of the story; a swing draws it, as the game's does. Their look is kept in the browser (`noshores.look`) and dresses them in the game afterwards.
 
 ## The wreck
 
@@ -304,10 +314,10 @@ the cutscenes, the camera's moves, the nameplate, the fires and the lines are th
   its port bow, its gun deck and the wreckage off its port quarter, and its quarterdeck. Each is an area with a
   checkpoint; entered, its checkpoint is where the next respawn stands the player. The first, where the player
   wakes, is quiet: no wave, nothing across its way on, room for the teaching. Each between it and the arena
-  holds a wave of the Grey Tithe's deck crew (Deckhands, Hookmen, Pistoleers and Bosuns), Minor and Major, and the
-  Tithe-Mates that come only as Elites, all boarding against the player and the Brig's crew
-  ([[The Wreck's Boarders Are One Side]], [[Pirates Are Replaced by the Grey Tithe]]),
-  each below Thule as hard to bring down as a Major ([[The Prologue's Elites Are as Hard to Bring Down as a Major]]),
+  holds a wave of the Grey Tithe's deck crew (Deckhands, Hookmen, Pistoleers and Bosuns), Minors and Majors only, at
+  their own rank's strength: no Elite but Thule, the boss
+  ([[The Prologue Is Reworked With Real Armour, a Bow, the Storm and No Elites]]), all boarding against the player and
+  the Brig's crew ([[The Wreck's Boarders Are One Side]], [[Pirates Are Replaced by the Grey Tithe]]),
   stood as the player enters the zone and standing well across it from where they come in, so no foe of a zone fights before the player
   reaches it; and three spots near the wave on open deck where the Brig's crew stand (`crew`). At most 6 of the
   wreck's foes are alive at once.
@@ -405,7 +415,7 @@ the cutscenes, the camera's moves, the nameplate, the fires and the lines are th
     to rest, then hovering and bobbing as a Vestige's crystal does, with no shade under it, its Normal drop's line of
     light rising over it once it rests.
     Walked over, the room puts them in the pack
-    (`Room::story_take_arms`). Should they leave the pack (dismantled), they lie on the deck again.
+    (`Room::story_take`). Should they leave the pack (dismantled), they lie on the deck again.
   - "Equip your sword and shield": Open your Character page (I; ticked by the menu open once the arms are taken),
     Equip them from the Melee slot, Close it (Esc).
   - "Find your feet": Move (W A S D, 2 m walked from where they woke or last rose), Look round (Mouse, a radian
@@ -426,19 +436,47 @@ the cutscenes, the camera's moves, the nameplate, the fires and the lines are th
     again of the next. Once both are made, whichever came last, "F parries a blow as it lands; V dodges it" shows for 6
     s and the fight runs as any. A boarder brought down before both are made is followed by another. Steps: Parry a blow
     (F), Dodge a blow (V), Bring the boarder down.
-  - "Fight your way through the wreck", counting the hostile foes standing while any do. Until it, the zones' waves
-    wait: a zone reached keeps its wave waiting and its way on shut (`WreckProgress.held`).
+  - "Arm yourself with the bow": the boarder brought down once both lessons are made drops a bow where it fell, the
+    story's own Normal Bow of level 1, lying as the sword and shield lay (`LyingArms`: popped up, bouncing, hovering,
+    its line of light) until walked over, when the room puts it in the pack (`Room::story_take`); a boarder brought
+    down before then drops nothing, and none comes after. Steps: Take up the bow, Equip it (I, the Character page's
+    Ranged slot), Draw it (2), Loose an arrow (Left button or F, an arrow gone from the bow), Back to your sword (1).
+  - The wisp ([[The Game Shows the Mystery and Explains Almost None of It]]): once the bow is taught, one of the
+    Stormcallers' hounds ("The Six Hounds") comes out of the storm, shown and never explained (`WispScene`), the
+    fight held and the tracker hidden: an apple's size of white-blue light in Volt's colours, a white-hot core in
+    steps, a soft halo laid as light, a trail of motes falling away and small arcs crackling off it, a low hum
+    trembling and a crackle now and then following it. It drifts in from over the water off the player's left
+    (2.6 s), wanders the quiet deck at a mast's height and round behind them (4.8 s), the camera behind the player
+    following it, the Lookout ("What is that?") and the Bosun ("Don't touch it!") crying out; then, the camera standing
+    off to the player's right, it circles them in rings tightening from 3.2 m to under half a metre, faster and
+    brighter (3.4 s), and engulfs them (1.4 s): arcs wrap the figure from feet to head, a flash, a ring of Volt
+    pushing out 7 m over the deck, a thunderclap; and the camera eases back over the shoulder (1.2 s). With the flash
+    the room gives the player the Storm (`Room::story_storm`; [[Arts]]): worn, its Anima and both Tenets earned and
+    charged full, the ability bar shown, for the rest of the prologue. Under `npm run dev`, `?prologue=wreck&wisp=1`
+    begins the wreck at its coming.
+  - "Call the Storm": until the Storm is given, the waves wait; from then the next zone's wave comes, and its fight
+    teaches each ability as the parry is (`CastFreeze`): the fight frozen with its prompt breathing until its key is
+    pressed, each once: "Press G to cast Arc Lash" once a foe stands in its cone and reach (7 m), then "Press Q to cast
+    Quicken" and "Press R to release Tempest" once a foe stands within 12 m, each with its charge full. Each step is
+    ticked once cast, read from its charge spent: Cast Arc Lash (G), Cast Quicken (Q), Release Tempest (R); then the
+    fight runs as any.
+  - "Fight your way through the wreck", counting the hostile foes standing while any do. Until the Storm is given,
+    the zones' waves wait: a zone reached keeps its wave waiting and its way on shut (`WreckProgress.held`).
   - The boss fight's task is "Face Captain Brannoc Thule", whatever stands before. The tracker hides while a cutscene
     holds the fight.
-- **The story's room.** Its room is told to play the story (`Room::story_wreck`): the player has no Art
-  ([[The Player Has No Art in the Prologue]]), so no ability bar shows and no cast is taken; every player wakes there,
-  or joins, with no Melee weapon carried or worn (the vault's kept) and at 55% of their health at most, the ram's
-  harm (`WOKE_HEALTH`), once, however often the story is told; the story's sword and shield, a Normal Sword & Shield
-  of level 1, is put in a player's pack when they take it up, while none is carried or worn, and worn by the gear's
-  own ask; a boarder is sent at a player (`Room::story_hunt`) only alive, on the boarders' side, at a player alive;
-  and every boarder the page stands fights on
-  the Grey Tithe's side, held below Thule to a Major's health, poise and defence (`Brain::held_to`), its own rank's
-  look and blows kept. The Brig's crew stay on the players' side.
+- **The story's room.** Its room is told to play the story (`Room::story_wreck`): the player has no Art until the
+  wisp gives them the Storm (`Room::story_storm`), so until then no ability bar shows and no cast is taken; every
+  player wakes there, or joins, with no Melee weapon or armour carried or worn (the vault's kept), wearing the story's
+  steel (torso, arms and legs, no helm), and at 55% of their health at most, the ram's harm (`WOKE_HEALTH`), once,
+  however often the story is told; the story's sword and shield, a Normal Sword & Shield of level 1, and its bow, a
+  Normal Bow of level 1, are each put in a player's pack when they take it up, while none of its kind is carried or
+  worn, and worn by the gear's own ask; a boarder is sent at a player (`Room::story_hunt`) only alive, on the
+  boarders' side, at a player alive; and every boarder the page stands fights on the Grey Tithe's side at its own
+  rank's strength. The Brig's crew stay on the players' side. Everything the story lends is its own
+  (`gear::story::story_item`, marked so on the item and on the wire): when a room is told the prologue is done
+  (`Ask::FinishPrologue`) it takes every story item back, worn, carried or in the vault, and the Storm, unearned and
+  unworn, from a character that had not finished it, so the player arrives in Overlook with nothing of the
+  prologue's; one that finished it before keeps what it has.
 - **Drawn** by `WreckScenery` with `WreckView`, shown by the wake, the fight, the throw overboard and, from below,
   the deep: the one mesh built in Blender, each face in its part's picture as a ship's. Its fires' light is baked into
   it there (`light_wreck.py`), with its shadows and what the timber throws back, flickering through space and time as

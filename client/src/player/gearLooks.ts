@@ -1,8 +1,9 @@
 // What the player's worn gear looks like on their figure: every garment is armour, so a Normal piece is drawn as
-// clothes, a Magic one as clothes or light armour and a Rare or finer one as an armour set, finer as it climbs; the
-// cloak is a cloak, a faction's cape the formal cloak in its faction's dye; a faction's armour and weapons are its own
-// set and metal in its own colour; the hands hold what the gear wears; the dye, coat and barding worn ride along. A
-// named item wears the look written on it; a rolled one keeps its own by its level, name and number.
+// clothes (but the prologue's own, its steel), a Magic one as clothes or light armour and a Rare or finer one as an
+// armour set, finer as it climbs; the cloak is a cloak, a faction's cape the formal cloak in its faction's dye; a
+// faction's armour and weapons are its own set and metal in its own colour; the hands hold what the gear wears; the
+// dye, coat and barding worn ride along. A named item wears the look written on it; a rolled one keeps its own by its
+// level, name and number.
 
 import factions from '../../../content/gear/factions.json' with { type: 'json' };
 import items from '../../../content/gear/items.json' with { type: 'json' };
@@ -15,6 +16,8 @@ import { MELEE, RANGED_SLOT, gearHands, nearest, numberOf, rung, worn, writtenLo
 const [HEAD, TORSO, ARMS, LEGS, CLOAK] = [2, 3, 4, 5, 6];
 const MAGIC = 1;
 const RARE = 2;
+/** The set the prologue's own armour is drawn in, Normal though it is: the steel the story dresses the player in. */
+export const STORY_SET = 'steel';
 
 /** The forge's armour sets by their worth, the guilds' lighter ones among them: a rolled Rare piece climbs it from
  *  chain, nine rungs over its level and up to two more by its name (`rung`), and a set the forge does not draw falls
@@ -102,7 +105,7 @@ function setOf(item: GearItem, slot: number, wardrobe: Wardrobe): string | null 
   const magic = choices[numberOf(item) % choices.length];
   // A Magic torso or legs piece numbered for clothes wears no set.
   if (magic === null) return null;
-  const own = factionLook(item)?.armour ?? writtenLook(item)?.look ?? magic;
+  const own = item.story ? STORY_SET : (factionLook(item)?.armour ?? writtenLook(item)?.look ?? magic);
   if (own && drawn(own)) return own;
   // A look the forge does not draw for this body falls to the nearest it does, as a rolled piece's rung does.
   const ownRung = own ? SETS.indexOf(own) : -1;
@@ -124,7 +127,7 @@ export function gearOutfit(state: GearState, wardrobe: Wardrobe, outfit: Outfit,
   for (const slot of [TORSO, LEGS, HEAD, ARMS]) {
     const item = worn(state, slot);
     if (!item) continue;
-    const set = item.rarity >= MAGIC ? setOf(item, slot, wardrobe) : null;
+    const set = item.rarity >= MAGIC || item.story ? setOf(item, slot, wardrobe) : null;
     if (set) {
       const own = factionLook(item)?.key;
       for (const piece of (PIECES[slot] ?? []).filter((each) => wardrobe.sets[each].includes(set))) {

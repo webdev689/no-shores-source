@@ -133,7 +133,7 @@ function fightIn(right: string) {
 test('a guard or a swing tapped between two ticks still reaches the rules', () => {
   const guarded = fightIn('sword_iron');
   guarded.tick({ guardPressed: true });
-  assert.deepEqual(guarded.fighting.own?.action, { kind: 'guard', elapsed: 0, window: 12 });
+  assert.deepEqual(guarded.fighting.own?.action, { kind: 'guard', elapsed: 0, window: 15 });
   const swung = fightIn('sword_iron');
   swung.tick({ swingPressed: true });
   assert.equal(swung.fighting.own?.action.kind, 'attack');
@@ -147,7 +147,7 @@ test('the other guard binding pressed while one is held opens a fresh parry wind
   assert.equal(fighting.own?.action.kind === 'guard' && fighting.own.action.elapsed, 60);
   tick({ guard: true, guardPressed: true });
   tick({ guard: true });
-  assert.deepEqual(fighting.own?.action, { kind: 'guard', elapsed: 0, window: 12 });
+  assert.deepEqual(fighting.own?.action, { kind: 'guard', elapsed: 0, window: 15 });
 });
 
 test('the Test Ground’s hands take up a crossbow through the gear, so the room fights with it and spends its bolts', () => {

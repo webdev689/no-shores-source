@@ -3,7 +3,9 @@ import { readFileSync } from 'node:fs';
 import { readFile } from 'node:fs/promises';
 import { test } from 'node:test';
 import { EVENT } from '../../combat/cues.ts';
+import type { GearState } from '../../network/gearMessages.ts';
 import type { FightEvent } from '../../network/messages.ts';
+import { WORN } from '../../player/gear.ts';
 import type { Dress } from '../../player/dressing.ts';
 import type { InputFrame } from '../../player/input.ts';
 import type { FighterView } from '../../rules/fighters.ts';
@@ -25,6 +27,7 @@ import { courseOf, readWreck, topAt } from './wreckLayout.ts';
 import type { WreckRun } from './wreckRun.ts';
 import { WreckFight } from './wreckFight.ts';
 import type { WreckScenery } from './wreckScenery.ts';
+import { ARMS_ITEM } from './wreckTeaching.ts';
 
 const layout = readWreck();
 const SIZE = { width: 960, height: 540 };
@@ -329,10 +332,12 @@ function stillRun(
     heads: () => new Map(boss ? [['thule', boss.head]] : []),
     beginBoss: () => undefined,
     fight: { player: 1, parryOpen: true },
-    armedDress: (dress: Dress) => dress,
-    arms: 'worn',
+    gear: null,
+    storyArms: { arms: 'worn', bow: 'none', dropBow: () => undefined },
+    storm: false,
     boarder: 'none',
     boarderView: null,
+    boarderPlace: null,
     standBoarder: () => undefined,
     holdWaves: () => undefined,
   } as unknown as WreckRun;
@@ -499,8 +504,18 @@ function taughtRun(state: {
   view: FighterView | null;
   action: string;
   events: FightEvent[];
-}): { run: WreckRun; frames: { frozen?: boolean; paused: boolean }[]; stood: number[]; waves: boolean[] } {
+}): {
+  run: WreckRun;
+  frames: { frozen?: boolean; paused: boolean }[];
+  stood: number[];
+  waves: boolean[];
+  dropped: (readonly number[])[];
+} {
   const [frames, stood, waves] = [[] as { frozen?: boolean; paused: boolean }[], [] as number[], [] as boolean[]];
+  const dropped: (readonly number[])[] = [];
+  /** A forge that draws the iron sword and shield and no armour, as gear dresses a figure. */
+  const sets = { helm: [], pauldrons: [], cuirass: [], gauntlets: [], greaves: [], boots: [] };
+  const wardrobe = { sets, garments: [], right: ['sword_iron'], left: ['shield_kite_iron'], hairStyles: [] };
   const shot = { eye: [0, 0, 5], yaw: 0, pitch: 0, fov: 1, near: 0.1, far: 500 } as unknown as Shot;
   const run = {
     frame: (controls: unknown, seconds: number, clock: number, options: { frozen?: boolean; paused: boolean }) => {
@@ -526,12 +541,24 @@ function taughtRun(state: {
       parryOpen: true,
       own: { action: { kind: 'idle' }, mode: 'ground', health: 50, stamina: 50, x: 0, y: 0, facing: 0, aim: 0 },
     },
-    armedDress: (dress: Dress) => ({
-      ...dress,
-      outfit: { ...dress.outfit, right: 'sword_iron', left: 'shield_kite_iron' },
-    }),
-    get arms() {
-      return state.arms;
+    get gear() {
+      const where = state.arms === 'worn' ? WORN : 0;
+      return { items: state.arms === 'lying' ? [] : [{ ...ARMS_ITEM, at: where }] } as unknown as GearState;
+    },
+    forge: { wardrobe: () => wardrobe },
+    storyArms: {
+      get arms() {
+        return state.arms;
+      },
+      bow: 'none',
+      dropBow(fell: readonly number[]) {
+        dropped.push(fell);
+        this.bow = 'lying';
+      },
+    },
+    storm: false,
+    get boarderPlace() {
+      return state.boarder === 'fallen' ? [1, 2, 3] : null;
     },
     get boarder() {
       return state.boarder;
@@ -545,13 +572,13 @@ function taughtRun(state: {
     },
     holdWaves: (held: boolean) => waves.push(held),
   } as unknown as WreckRun;
-  return { run, frames, stood, waves };
+  return { run, frames, stood, waves, dropped };
 }
 
 test('the teaching on the wreck: bare hands until the arms are worn, a boarder once ready, its blows frozen to teach', async () => {
   const body = { x: 0, y: 0, z: 2, vx: 0, vy: 0, vz: 0, mode: 'ground' };
-  const walker = { you: { dress: null as Dress | null }, player: { body, yaw: 0 }, inFirstPerson: false };
   const armed = armouredDress(FIRST_LOOK);
+  const walker = { you: { dress: armed as Dress | null }, player: { body, yaw: 0, loadout: 0 }, inFirstPerson: false };
   const { story, calls } = recorded(FOOT_VIEW, { walker }, armed);
   const state = {
     arms: 'lying',
@@ -560,7 +587,7 @@ test('the teaching on the wreck: bare hands until the arms are worn, a boarder o
     action: 'idle',
     events: [] as FightEvent[],
   };
-  const { run, frames, stood, waves } = taughtRun(state);
+  const { run, frames, stood, waves, dropped } = taughtRun(state);
   const fight = new WreckFight(story, layout, scenery, Promise.resolve(run), {} as Nameplate);
   await Promise.resolve();
   const step = (seconds = 0.1, controls: Partial<InputFrame> = {}) =>
@@ -621,6 +648,7 @@ test('the teaching on the wreck: bare hands until the arms are worn, a boarder o
   assert.ok(calls.includes(`stage.parts.hud.toast(${reminder()})`), 'then the reminder');
   state.boarder = 'fallen';
   onFor(2);
-  assert.equal(waves.at(-1), false, 'the boarder down, the waves come');
+  assert.deepEqual(dropped, [[1, 2, 3]], 'the boarder down, its bow drops where it fell, once');
+  assert.equal(waves.at(-1), true, 'the waves wait for the bow and the Storm');
   assert.deepEqual(stood, [1], 'no other boarder');
 });

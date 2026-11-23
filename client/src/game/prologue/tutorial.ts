@@ -1,8 +1,10 @@
 // The prologue's teaching on the wreck. The player wakes without their sword and shield, finds them
 // on the deck and equips them from the Character page; finds their feet (move, look round, run, jump), then readies
 // themselves (swing, guard, drink a healing charge); then meets a Tithe boarder one on one, whose first blow the fight
-// freezes on until they parry and whose next until they dodge. Each step is ticked once it is done, read from what
-// their body and their fight did, and steps done early stay done. The wreck's waves wait until the boarder falls.
+// freezes on until they parry and whose next until they dodge. The boarder drops a bow, which they take up, equip,
+// draw, loose and put away; a wisp gives them the Storm, and the next fight teaches each of its abilities. Each step
+// is ticked once it is done, read from what their body and their fight did, and steps done early stay done. The
+// wreck's waves wait until the Storm is given.
 import type { BindId } from '../../player/binds.ts';
 import { BINDS } from '../../player/input.ts';
 import { RUNNING } from '../../player/others.ts';
@@ -28,10 +30,16 @@ const REMIND_S = 6;
 export type Arms = 'lying' | 'carried' | 'worn';
 /** The boarder met one on one: not yet come, standing, or fallen. */
 export type Boarder = 'none' | 'standing' | 'fallen';
+/** Where the boarder's bow is: not yet dropped, or as the arms are. */
+export type Bow = 'none' | Arms;
+/** The Storm's abilities as the teaching names them: its Second Tenet, its First, and its Anima. */
+export type Spell = 'arcLash' | 'quicken' | 'tempest';
+export const SPELLS: readonly Spell[] = ['arcLash', 'quicken', 'tempest'];
 
 /** What the player did this frame, as the teaching reads it: the frame's length, where they stand and look, their
  *  pace across the deck and whether they rise in a jump, what their fight is doing, where their arms are, whether the
- *  menu is open, whether they drank, parried or dodged, the boarder, the hostile foes alive, and the boss fight. */
+ *  menu is open, whether they drank, parried or dodged, the boarder, the hostile foes alive, the boss fight, where
+ *  the bow is, whether it is drawn and an arrow left it, whether the Storm is given, and the spells cast. */
 export interface Done {
   readonly seconds: number;
   readonly x: number;
@@ -48,10 +56,15 @@ export interface Done {
   readonly boarder: Boarder;
   readonly foes: number;
   readonly boss: boolean;
+  readonly bow: Bow;
+  readonly ranged: boolean;
+  readonly loosed: boolean;
+  readonly storm: boolean;
+  readonly cast: readonly Spell[];
 }
 
 /** The teaching's stages in order; the boss fight's task stands over any of them. */
-export const STAGES = ['find', 'equip', 'feet', 'ready', 'duel', 'fight'] as const;
+export const STAGES = ['find', 'equip', 'feet', 'ready', 'duel', 'bow', 'wisp', 'storm', 'fight'] as const;
 export type Stage = (typeof STAGES)[number];
 
 /** Every step taught, each with its words and what does it: the controls it names (as the key strip names them,
@@ -76,6 +89,14 @@ const STEPS = {
   parry: { text: 'Parry a blow', asks: 'guard' },
   dodge: { text: 'Dodge a blow', asks: 'dodge' },
   fell: { text: 'Bring the boarder down' },
+  takeBow: { text: 'Take up the bow' },
+  equipBow: { text: 'Equip it', keys: 'character' },
+  draw: { text: 'Draw it', keys: 'ranged' },
+  loose: { text: 'Loose an arrow', keys: 'guard' },
+  sheathe: { text: 'Back to your sword', keys: 'melee' },
+  arcLash: { text: 'Cast Arc Lash', keys: 'tenetTwo' },
+  quicken: { text: 'Cast Quicken', keys: 'tenetOne' },
+  tempest: { text: 'Release Tempest', keys: 'anima' },
 } as const satisfies Record<string, Taught>;
 type Learned = keyof typeof STEPS;
 
@@ -87,14 +108,17 @@ function stepOf(learned: Learned, done: boolean): Step {
 }
 
 /** Each stage's task and its steps. */
-const TASKS: Readonly<Record<Exclude<Stage, 'fight'>, { readonly task: string; readonly steps: readonly Learned[] }>> =
-  {
-    find: { task: 'Find your sword and shield', steps: ['take'] },
-    equip: { task: 'Equip your sword and shield', steps: ['open', 'equip', 'close'] },
-    feet: { task: 'Find your feet', steps: ['move', 'look', 'run', 'jump'] },
-    ready: { task: 'Ready yourself', steps: ['swing', 'guard', 'drink'] },
-    duel: { task: 'Face the Tithe boarder', steps: ['parry', 'dodge', 'fell'] },
-  };
+const TASKS: Readonly<
+  Record<Exclude<Stage, 'wisp' | 'fight'>, { readonly task: string; readonly steps: readonly Learned[] }>
+> = {
+  find: { task: 'Find your sword and shield', steps: ['take'] },
+  equip: { task: 'Equip your sword and shield', steps: ['open', 'equip', 'close'] },
+  feet: { task: 'Find your feet', steps: ['move', 'look', 'run', 'jump'] },
+  ready: { task: 'Ready yourself', steps: ['swing', 'guard', 'drink'] },
+  duel: { task: 'Face the Tithe boarder', steps: ['parry', 'dodge', 'fell'] },
+  bow: { task: 'Arm yourself with the bow', steps: ['takeBow', 'equipBow', 'draw', 'loose', 'sheathe'] },
+  storm: { task: 'Call the Storm', steps: SPELLS },
+};
 const GUARDS = new Set(['guard', 'parry']);
 
 export class Tutorial {
@@ -103,8 +127,13 @@ export class Tutorial {
   private turned = 0;
   private readonly learned = new Set<Learned>();
   private metFor = 0;
-  private reached = 0;
+  private reached: number;
   private remindFor = 0;
+
+  /** A teaching begun at `from`, every stage before it passed over: a page under development pictures one so. */
+  constructor(from: Stage = 'find') {
+    this.reached = STAGES.indexOf(from);
+  }
 
   /** The stage the teaching stands at. */
   get stage(): Stage {
@@ -122,15 +151,31 @@ export class Tutorial {
     return this.remindFor > 0 ? reminder() : null;
   }
 
+  /** The Storm's ability the next fight freezes on to teach, in turn; none once each is cast. */
+  get spell(): Spell | null {
+    if (this.stage !== 'storm') return null;
+    return SPELLS.find((spell) => !this.learned.has(spell)) ?? null;
+  }
+
+  /** Whether the boarder that fell drops the bow: it fell once both lessons were learned. */
+  get bowDrops(): boolean {
+    return this.learned.has('fell');
+  }
+
+  /** Whether the wisp comes now: once the bow is taught, until the Storm is given. */
+  get wantsWisp(): boolean {
+    return this.stage === 'wisp';
+  }
+
   /** Whether a boarder should stand now: as the duel begins, and again should one fall before both lessons are
    *  learned. */
   wantsBoarder(boarder: Boarder): boolean {
     return this.stage === 'duel' && boarder !== 'standing' && this.lesson !== null;
   }
 
-  /** Whether the wreck's waves wait: until the duel is won. */
+  /** Whether the wreck's waves wait: until the Storm is given. */
   get holding(): boolean {
-    return this.reached < STAGES.indexOf('fight');
+    return this.reached < STAGES.indexOf('storm');
   }
 
   /** The tasks as they stand after `done`. */
@@ -140,7 +185,8 @@ export class Tutorial {
     this.remindFor = lesson !== null && this.lesson === null ? REMIND_S : Math.max(0, this.remindFor - done.seconds);
     if (done.boss) return { name: QUEST, task: 'Face Captain Brannoc Thule', steps: [] };
     const stage = this.stage;
-    if (stage === 'fight') {
+    if (stage === 'wisp' && done.storm) this.reached += 1;
+    if (stage === 'fight' || stage === 'wisp') {
       const steps: Step[] = done.foes > 0 ? [{ text: 'Foes standing', count: done.foes }] : [];
       return { name: QUEST, task: 'Fight your way through the wreck', steps };
     }
@@ -175,6 +221,14 @@ export class Tutorial {
       parry: done.parried && this.stage === 'duel',
       dodge: done.dodged && this.stage === 'duel',
       fell: done.boarder === 'fallen' && this.lesson === null,
+      takeBow: done.bow === 'carried' || done.bow === 'worn',
+      equipBow: done.bow === 'worn',
+      draw: done.bow === 'worn' && done.ranged,
+      loose: this.learned.has('draw') && done.loosed,
+      sheathe: this.learned.has('loose') && !done.ranged,
+      arcLash: done.cast.includes('arcLash'),
+      quicken: done.cast.includes('quicken'),
+      tempest: done.cast.includes('tempest'),
     };
     for (const [step, met] of Object.entries(now) as [Learned, boolean][]) if (met) this.learned.add(step);
   }

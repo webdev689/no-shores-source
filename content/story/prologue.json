@@ -27,6 +27,10 @@
       { "who": "crew", "say": "Cut them down!", "kind": "bark", "emote": "anger" }
     ],
     "survivor": [{ "who": "tithe", "say": "Survivor! Get that one!", "kind": "bark", "emote": "alert" }],
+    "wisp": [
+      { "who": "lookout", "say": "What is that?", "emote": "question" },
+      { "who": "bosun", "say": "Don't touch it!", "emote": "fear" }
+    ],
     "warCry": [{ "who": "thule", "say": "The Tithe is owed!", "kind": "bark", "emote": "anger" }],
     "bossStruck": [{ "who": "thule", "say": "Your debt grows.", "kind": "bark" }],
     "bossStrikes": [{ "who": "thule", "say": "Kneel.", "kind": "bark", "emote": "anger" }],

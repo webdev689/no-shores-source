@@ -58,7 +58,8 @@ A fighter's side is the players' or a faction's, by its number. Fighters of diff
 factions fight each other as they fight players, and never their own side. The Brig's crew (number 0 for a faction)
 fight on the players' side: foes of every faction fight them, and no player strikes them, nor they a player; so do
 the crew's own five types (13 to 17), the types a companion fights as. On the prologue's wreck every boarder is the
-Grey Tithe's ([[The Wreck's Boarders Are One Side]], [[Pirates Are Replaced by the Grey Tithe]]).
+Grey Tithe's ([[The Wreck's Boarders Are One Side]], [[Pirates Are Replaced by the Grey Tithe]]), each a Minor or a
+Major at its own rank's strength but Thule, the boss ([[Prologue]]).
 
 | Number | Faction | Present | On land | On deck | Ships |
 |---|---|---|---|---|---|

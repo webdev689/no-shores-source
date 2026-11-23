@@ -237,3 +237,20 @@ test("a faction's weapon is drawn in its faction's metal, its shield too, and ea
   const squall = gearOutfit(state([item({ id: 1, kind: 12, rarity: 3, at: 2, named: 'squallbreak' })]), guilds, plain);
   assert.deepEqual([squall.left, squall.dyes['shield_kite_elven']], ['shield_kite_elven', 'stormcallers']);
 });
+
+test('the prologue’s own armour is its steel, a Normal piece though it is, as the story dressed the player', () => {
+  const steel = state([
+    item({ id: 1, kind: 14, at: 5, story: true }),
+    item({ id: 2, kind: 15, at: 6, story: true }),
+    item({ id: 3, kind: 16, at: 7, story: true }),
+  ]);
+  const outfit = gearOutfit(steel, every, plain);
+  assert.deepEqual(outfit.armour, {
+    cuirass: 'steel',
+    pauldrons: 'steel',
+    gauntlets: 'steel',
+    greaves: 'steel',
+    boots: 'steel',
+  });
+  assert.deepEqual(outfit.garments, [], 'no clothes over it');
+});

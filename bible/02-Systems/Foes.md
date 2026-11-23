@@ -303,7 +303,7 @@ is not seen coming), it waits its reaction time (13 to 22 ticks by its role and 
 swings' pace: every swing takes three quarters of its old time ([[Combat]]), and so does reading one, 10 to 17 ticks, so
 a foe answers a swing about as often as it did. Then it decides once, by its own shares and what it is doing. A parry
 presses the guard 2 to 14 ticks before the blow lands, by the dice, as a person's timing wanders: within 9 (a foe's
-parry window, three quarters of a player's) the window spans the landing, earlier it has closed and the guard only
+parry window, shorter than a player's 15) the window spans the landing, earlier it has closed and the guard only
 blocks; never later than 2 ticks before. A block raises the guard only if its window will have closed before the blow
 lands (raised later it would parry, which a block is not), or keeps one already held; too late for that, it takes the
 blow. A dodge hops aside and a little back, still facing the blow, pressed 2 to 14 ticks before the landing. Mid-swing

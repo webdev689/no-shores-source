@@ -1,13 +1,18 @@
 // The owner's ninth and tenth beats, played: the player is taught on the wreck's quiet deck (tutorial.ts), the fight
-// frozen on a boarder's blows until they parry and dodge, then fights through the wreck's foes on foot, as on any node,
+// frozen on a boarder's blows until they parry and dodge; the boarder's bow is taught, a wisp gives them the Storm
+// (wispScene.ts) and the next fight freezes to teach each of its abilities (stormTeaching.ts); then they fight through
+// the wreck's foes on foot, as on any node,
 // each heap across the way clearing as the wave holding it falls; at its end the camera drives forward to Captain
 // Brannoc Thule, his nameplate struck in as he cries out, and the arena closes on a fight one on one that cannot be
 // won. It ends as the run says, the player felled or overpowered, and the screen fades out on it.
 import { Cues } from '../../cinema/cues.ts';
+import type { AbilityState } from '../../combat/abilityBar.ts';
 import { EVENT } from '../../combat/cues.ts';
 import { lookAt, type Point3 } from '../../cinema/rail.ts';
 import { foeDress } from '../../player/foeDress.ts';
+import { MELEE, RANGED_SLOT } from '../../player/gear.ts';
 import { handsFree, type InputFrame } from '../../player/input.ts';
+import { type Dressed, dressInGear } from '../footFigures.ts';
 import { askedKey } from '../controls.ts';
 import type { FootFight } from '../foot.ts';
 import { gearScreenOpen, type GearHere } from '../gearScreen.ts';
@@ -23,7 +28,9 @@ import type { Nameplate } from './nameplate.ts';
 import { unarmed } from './look.ts';
 import { headOnView, type StoryFrame } from './stage.ts';
 import type { Story } from './story.ts';
+import { castBetween, CastFreeze, castPrompt, teachable } from './stormTeaching.ts';
 import { type Done, Freeze, Tutorial } from './tutorial.ts';
+import { WispScene } from './wispScene.ts';
 import { topAt, type WreckLayout } from './wreckLayout.ts';
 import type { WreckRun } from './wreckRun.ts';
 import { setAblaze, type WreckScenery } from './wreckScenery.ts';
@@ -53,6 +60,11 @@ export function heardOnWreck(
   return { ...heard, dead: beaten, foes: thuleHeard ? [...foes, thule] : foes };
 }
 
+/** Whether a page under development asks to begin the wreck at the wisp's coming (`?prologue=wreck&wisp=1`), to
+ *  picture it. */
+const wispAsked = (): boolean =>
+  !!import.meta.env?.DEV && typeof location !== 'undefined' && new URLSearchParams(location.search).get('wisp') === '1';
+
 /** While the fight is frozen the world drains this far toward grey under the interface, easing there and back over
  *  this long, so the stop reads as time held. */
 const FROZEN_DRAIN = 0.55;
@@ -73,15 +85,21 @@ export class WreckFight implements Beat {
   private fought = false;
   private barked = { struck: -Infinity, strikes: -Infinity };
   /** The teaching on the wreck's quiet deck, then the fight's own task; and the fight frozen on a blow to teach. */
-  private readonly tutorial = new Tutorial();
+  private readonly tutorial = new Tutorial(wispAsked() ? 'wisp' : 'find');
   private readonly freeze = new Freeze();
+  private readonly castFreeze = new CastFreeze();
+  /** The wisp's coming, while it plays; the bar of the Storm's abilities and the shots left last frame, for what was
+   *  cast and loosed since. */
+  private wisp: WispScene | null = null;
+  private abilities: AbilityState | null = null;
+  private ammo: number | null = null;
   /** The prompt the frozen fight shows, and how long the reminder after both lessons has left, seconds. */
   private prompting: string | null = null;
   /** How far the world is drained toward grey now, easing toward `FROZEN_DRAIN` while frozen and back after. */
   private drained = 0;
-  /** The run's own clock, held while the fight is frozen; and whether the player is dressed with their arms. */
+  /** The run's own clock, held while the fight is frozen; and the gear and loadout the player was last dressed in. */
   private playClock: number | null = null;
-  private dressedArmed: boolean | null = null;
+  private readonly dressed: Dressed = { gear: null, loadout: MELEE };
   /** Whether a Tithe hand and one of the Brig's crew have cried out at each other, seen together. */
   private cried = false;
   /** Whether the player has struck Thule since he last told them to kneel: he says it again only then. */
@@ -241,17 +259,18 @@ export class WreckFight implements Beat {
     this.drained = frozen ? Math.min(FROZEN_DRAIN, this.drained + easing) : Math.max(0, this.drained - easing);
     this.playClock = this.playClock === null ? tick.clock : this.playClock + seconds;
     this.dress(run);
+    const wisp = this.wispFrame(run, tick.seconds, tick.clock);
     // No storm's strikes on the wreck; its one is the strike behind Thule as he cries out.
     const [wakeX, wakeY] = this.layout.wake.at;
     const strike = story.lightning.step(seconds, [wakeX, wakeY]);
-    stage.stepWeather(seconds, strike.flash, strike.bolt);
+    stage.stepWeather(seconds, Math.max(strike.flash, wisp?.flash ?? 0), strike.bolt);
     if (this.coming) {
       this.coming.since += tick.seconds;
       this.coming.cues.step(this.coming.since);
     }
     // Read after its cues: the last of them begins the fight, and the push in is over.
     const coming = this.coming;
-    const held = !!coming || this.ending !== null;
+    const held = !!coming || !!wisp || this.ending !== null;
     const aspect = tick.size.width / Math.max(1, tick.size.height);
     // Over the menu the player's presses rest, though the room runs on, so what they equip is worn at once.
     const paused = held || gearScreenOpen();
@@ -261,6 +280,7 @@ export class WreckFight implements Beat {
       aspect,
       held,
       frozen,
+      ...(wisp && { more: wisp.marks }),
     });
     if (run.arena && !this.fought && !coming) this.bossComes(shown.shot);
     const [thuleX, thuleY] = this.layout.arena.thule;
@@ -287,7 +307,7 @@ export class WreckFight implements Beat {
         ? (encoder: GPUCommandEncoder, view: GPUTextureView, over: Overlay) => firstPerson.draw(encoder, view, over)
         : undefined;
     const heads = new Map([...run.heads(), ...(thule ? [['thule', [thule.x, thule.y, thule.z + 2.2]] as const] : [])]);
-    const shot = coming ? this.comingShot() : shown.shot;
+    const shot = coming ? this.comingShot() : (wisp?.shot ?? shown.shot);
     const thuleHead = heads.get('thule');
     this.barks(
       shown.fight.own?.health ?? 0,
@@ -337,16 +357,21 @@ export class WreckFight implements Beat {
    *  answers it, with the pointer the game's, lets the blow play on, the press the fight's own; a pointer let go
    *  leaves it frozen until it is taken again. */
   private frozen(run: WreckRun, controls: InputFrame): boolean {
-    const lesson = this.tutorial.lesson;
-    const held = !!this.coming || this.ending !== null;
-    const { player, parryOpen, own } = run.fight;
+    const { lesson, spell } = this.tutorial;
+    const held = !!this.coming || !!this.wisp || this.ending !== null;
+    const { player, parryOpen, own, abilities } = run.fight;
     const answer = () => ({
       locked: controls.locked,
       guard: controls.pressed('guard'),
       dodge: controls.pressed('dodge'),
     });
-    const frozen = !held && this.freeze.frame(run.boarderView, { player, own, lesson, parryOpen }, answer);
-    const prompt = frozen && lesson ? asked(lesson) : null;
+    const parrying = !held && this.freeze.frame(run.boarderView, { player, own, lesson, parryOpen }, answer);
+    const foes = () => [...run.fight.foes.values()].map((kept) => kept.view);
+    const teaches = !!spell && teachable(spell, own, foes(), abilities);
+    const pressed = () => ({ locked: controls.locked, pressed: controls.pressed });
+    const casting = !held && !parrying && this.castFreeze.frame(spell, teaches, pressed);
+    const frozen = parrying || casting;
+    const prompt = parrying && lesson ? asked(lesson) : casting && spell ? castPrompt(spell) : null;
     if (prompt !== this.prompting) {
       this.prompting = prompt;
       this.story.stage.parts.screen.showPrompt(prompt);
@@ -354,15 +379,31 @@ export class WreckFight implements Beat {
     return frozen;
   }
 
-  /** Dresses the player as their arms are: without them until worn, then holding them as their gear has them, the
-   *  story's dress after the wreck too. */
+  /** Dresses the player in their gear as the room last sent it, as the game's gear is drawn: the story's steel, the
+   *  arms in hand once worn and the bow the other loadout; before its first word, without the arms the ram threw. The
+   *  Melee loadout's dress, put away, is the story's dress after the wreck. */
   private dress(run: WreckRun): void {
-    const armed = run.arms === 'worn';
-    if (armed === this.dressedArmed) return;
-    this.dressedArmed = armed;
     const { story } = this;
-    if (armed) story.dress = run.armedDress(story.dress);
-    story.walker.you.dress = armed ? story.dress : unarmed(story.dress);
+    const { walker } = story;
+    if (!run.gear) {
+      walker.you.dress = unarmed(story.dress);
+      return;
+    }
+    dressInGear(walker, run.forge, run.gear, this.dressed);
+    const { dress } = walker.you;
+    if (walker.player.loadout === MELEE) story.dress = { ...dress, outfit: { ...dress.outfit, drawn: false } };
+  }
+
+  /** The wisp's coming this frame: begun once the bow is taught, from the player's own shot, the room giving them the
+   *  Storm as it engulfs them; none once it is over. */
+  private wispFrame(run: WreckRun, seconds: number, clock: number): ReturnType<WispScene['frame']> | null {
+    if (!this.wisp && this.tutorial.wantsWisp && !this.coming && !run.storm) {
+      const { body, facing } = this.story.walker.player;
+      this.wisp = new WispScene(this.story, [body.x, body.y, body.z], facing, run.restingShot(), () => run.giveStorm());
+    }
+    const shown = this.wisp?.frame(seconds, clock, run.restingShot()) ?? null;
+    if (shown?.done) this.wisp = null;
+    return shown;
   }
 
   /** The teaching this frame: what the player did read, the boarder stood when one is wanted, and the waves held
@@ -370,6 +411,8 @@ export class WreckFight implements Beat {
   private teach(run: WreckRun, fight: FootFight, seconds: number): Quest {
     const quest = this.tutorial.frame(this.didNow(run, fight, seconds));
     if (this.tutorial.wantsBoarder(run.boarder)) run.standBoarder();
+    const fell = run.boarderPlace;
+    if (this.tutorial.bowDrops && fell && run.storyArms.bow === 'none') run.storyArms.dropBow(fell);
     run.holdWaves(this.tutorial.holding);
     return quest;
   }
@@ -387,6 +430,11 @@ export class WreckFight implements Beat {
     const drank = fight.events.some(
       (event) => event.kind === EVENT.healed && (event.striker === player || event.defender === player),
     );
+    // An arrow loosed is a shot gone from the bow; a spell cast is its charge spent.
+    const ammo = fight.own?.ammo ?? null;
+    const loosed = this.ammo !== null && ammo !== null && ammo < this.ammo;
+    const abilities = this.abilities;
+    [this.ammo, this.abilities] = [ammo, fight.abilities ?? null];
     return {
       seconds,
       x: body.x,
@@ -395,7 +443,7 @@ export class WreckFight implements Beat {
       speed: Math.hypot(body.vx, body.vy),
       rising: body.mode === 'air' && body.vz > 0,
       action: fight.own?.action.kind,
-      arms: run.arms,
+      arms: run.storyArms.arms,
       menu: gearScreenOpen(),
       healed: drank,
       parried: befell([EVENT.parried]),
@@ -403,6 +451,11 @@ export class WreckFight implements Beat {
       boarder: run.boarder,
       foes: hostile.length,
       boss: this.fought || run.arena,
+      bow: run.storyArms.bow,
+      ranged: this.story.walker.player.loadout === RANGED_SLOT,
+      loosed,
+      storm: run.storm,
+      cast: castBetween(abilities, fight.abilities ?? null),
     };
   }
 
@@ -461,6 +514,8 @@ export class WreckFight implements Beat {
     hud.tasks.show(null);
     hud.toast();
     screen.bars(false);
+    this.wisp?.leave();
+    this.wisp = null;
     if (typeof document !== 'undefined' && document.pointerLockElement) document.exitPointerLock();
     this.run?.leave();
     this.run = null;
