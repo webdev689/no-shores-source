@@ -77,6 +77,29 @@ test("a layout's places are its areas at their reach and its runs at their mouth
   assert.equal(laidNodes([{ ...drawn, id: 'unlaid' }], [laid])[0]?.places, undefined, 'a node not laid names none');
 });
 
+test("a laid node's foes' sites are its caverns' and its runs' beats, as the bake writes them for its room", () => {
+  const foes = (at: readonly [number, number], holds?: string) => ({ kind: 'foes' as const, at, radius: 10, holds });
+  const laid: NodeLayout = {
+    ...square('saltgrass-downs', 0, 0),
+    spawns: [[0, 0]],
+    areas: [
+      { kind: 'coven', name: 'The Hollow', at: [10, -20], radius: 30 },
+      { kind: 'camp', name: 'The Camp', at: [50, 50], radius: 30 },
+    ],
+    sites: [
+      foes([10, -20], 'The Hollow'),
+      foes([50, 50], 'The Camp'),
+      foes([70, 5]),
+      { kind: 'objective', at: [90, 5], radius: 20, holds: 'The Chalk Adit' },
+    ],
+  };
+  const drawn: Parameters<typeof laidNodes>[0][number] = { id: 'saltgrass-downs', ring: [], spawns: [], centre: [0, 0] };
+  assert.deepEqual(laidNodes([drawn], [laid])[0]?.foes, [
+    [10, -20],
+    [70, 5],
+  ]);
+});
+
 test('a run whose name an area has already is left to the area, as the bake leaves it (Moorhold is both)', () => {
   const moors: NodeLayout = {
     ...square('driftwood-moors', 0, 0),

@@ -215,12 +215,23 @@ WebAssembly, so names, factions and weapons are read in one place.
   any foe's does ([[Gear]], "In the rooms").
 - **The posts** are on a 5 m lattice over the room's navmesh, 10 m inside the section's edge and 5 m inside the
   mesh's square, 20 m apart. Each group draws its post from those left; a Reeve alone and Corvane take the one
-  farthest from the nearest spawn. Every foe stands at least 25 m from every spawn, inside the section, idle.
+  farthest from the nearest spawn. A point its group cannot stand at is passed over, and only a post that stands
+  clears the points within 20 m of it. Every foe stands at least 25 m from every spawn, inside the section, idle.
 - **A patrol zone's landing** is a safe place to arrive: no foe starts a fight with a player standing within 15 m of a
   spawn there, past its boardwalk, stores and signpost and short of every guard, until that player strikes from it; a
   fight brought into it goes on, so it is somewhere to arrive, not to hide. A spell cast is a strike. Its leave comes
   back once the player has left it and come back, or has stood again (`Room::left_be`,
   [[Each Patrol Zone Has a Built Landing Site, Its Guards Beyond It]]).
+- **Caverns and runs**: a patrol zone's layout marks foes' sites, and its room stands a group of the Grey Tithe at
+  each in its caverns (a coven's or a cave's area, at the area's middle) and on its runs' beats short of their end
+  arenas, which hold their objective's site ([[Layouts]], "Runs"); one in the garrison's own square stands none, its
+  ground held already. A site's group stands the first time a player comes within 150 m of it and the room's
+  living foes leave room for all of it, on a navmesh baked round the site then as a quest's
+  place's is, so a room opens as quickly as before. It is drawn as a
+  patrol's other groups are (two to four Runners, Collectors and Crossbowmen, Minor or Major, at the island's levels,
+  raised by the seas, a shield drawn as any foe's), from the room's seed and where the site is, so every machine
+  stands the same; it stands round the site's middle, or the nearest point of the lattice within 20 m where its foes
+  have room, walks a beat over the lattice round it, and stands again as any cleared group does. A mission's, a dungeon's or a boss's node stands none.
 - **The beats**: every group patrols a beat from its post but a Boss's or a Miniboss's, which holds its post, the
   fight a player seeks out at the node's far end, its phases calling foes about it in a known place. A beat is the
   post and up to three more points of the lattice, each 12 to 30 m from the one before and 10 m from every other,
@@ -228,7 +239,9 @@ WebAssembly, so names, factions and weapons are read in one place.
   post. The way between points is the navmesh's, and each metre of it stays inside the section, 2.5 m inside its
   edge, and 27.5 m from every spawn; a point with no such way is given up, and a group with no second point holds
   its post. The group walks its beat at a stroll, 0.35 of a walk, its first foe leading on the way and the rest on a
-  half ring 2.5 m behind it, each finding its way to its place by the room's routes. It pauses 4 s at each point,
+  half ring 2.5 m behind it, each finding its way to its place by the room's routes; a place is the navmesh's point
+  nearest it on the ground's level, else on its leader's, so beside a leader on a ledge or a ramp a foe keeps a place
+  of its own there. It pauses 4 s at each point,
   its foes facing out from their leader and the leader the way on, then walks to the next, and from the last back to
   its post and round again. It halts while any of its foes is stirred, fights or walks back to its place, and waits
   for one more than 4 m from its place. A group that holds its post stands 2.5 m round it, each foe facing outward,
@@ -254,7 +267,9 @@ WebAssembly, so names, factions and weapons are read in one place.
   until it stands again: its places gather back at its post (at its fallback point or the last stand while its garrison
   gives ground there), its foes fighting elsewhere fall back to them, each fighter hand to hand holds near its place,
   coming for a target that stands near it a while, and its shooters hide longer between their looks out ([[Foes]], "Its
-  group").
+  group"). In a patrol zone, as a Destiny patrol area resets once no one is near, it is made whole once no player has
+  come within 40 m of its post for 120 s, its living foes are idle and the living foes leave room for its fallen: they stand at their places,
+  it is led afresh, defends no more and walks its beat again.
 - **The Grey Tithe's tactic**, its shield front: its shield-bearers hold the line before their target, and a leader that
   fights hand to hand, under a Miniboss, is screened by its lower ranks that fight hand to hand. While one of them that
   is not broken fights at its target, within its range and neither falling back nor holding ground away from it, the

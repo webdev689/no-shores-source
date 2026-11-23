@@ -119,11 +119,13 @@ interface Placed {
   readonly spawns: readonly Point[];
   readonly centre: Point;
   readonly resources?: readonly { readonly at: Point; readonly holds?: string }[];
+  readonly foes?: readonly Point[];
   readonly places?: readonly NodePlace[];
 }
 
-/** The drawn nodes with each laid node's section, spawns and places in place of the ring it was drawn with, and its
- *  resource places, where its room's nodes stand, in the layout's order (as the bake writes them). */
+/** The drawn nodes with each laid node's section, spawns and places in place of the ring it was drawn with, its
+ *  resource places, where its room's nodes stand, and its foes' sites in its caverns (a coven's or a cave's area) and
+ *  on its runs' beats, where its room stands groups, each in the layout's order (as the bake writes them). */
 export function laidNodes<Node extends Placed>(drawn: readonly Node[], layouts: readonly NodeLayout[]): Node[] {
   const byId = new Map(layouts.map((layout) => [layout.id, layout]));
   return drawn.map((node) => {
@@ -136,7 +138,12 @@ export function laidNodes<Node extends Placed>(drawn: readonly Node[], layouts: 
     const resources = laid.sites.flatMap(({ kind, node, holds }) =>
       kind === 'resource' && node ? [{ at: node, holds }] : [],
     );
-    return { ...node, ring: laid.ring, spawns: laid.spawns, centre, resources, places: placesOf(laid) };
+    const cavern = (name: string) =>
+      laid.areas.some((area) => area.name === name && (area.kind === 'coven' || area.kind === 'cave'));
+    const foes = laid.sites.flatMap(({ kind, at, holds }) =>
+      kind === 'foes' && (holds === undefined || cavern(holds)) ? [at] : [],
+    );
+    return { ...node, ring: laid.ring, spawns: laid.spawns, centre, resources, foes, places: placesOf(laid) };
   });
 }
 

@@ -135,3 +135,28 @@ fn two_players_against_a_node_s_garrison_fight_to_the_same_fingerprint_natively_
     assert!(struck.iter().all(|blows| *blows > 0), "the garrison fights both players: {struck:?}");
     assert_eq!(format!("{hash:08x}"), GARRISON_PAIR_HASH);
 }
+
+#[test]
+fn a_patrol_s_node_file_names_its_foes_sites_and_its_room_stands_a_group_at_one_as_a_player_comes_near() {
+    let site = [-120.0, -150.0];
+    let patrol = GARRISON_NODE.replacen(r#""kind": "mission""#, r#""kind": "patrol""#, 1);
+    let patrol = patrol.replacen(r#""bounds""#, &format!(r#""foes": [[{}, {}]], "bounds""#, site[0], site[1]), 1);
+    assert!(open_node(patrol.as_bytes()));
+    let near = || {
+        with_open(|opened| {
+            let Opened::Land { room, .. } = opened else { panic!("a node's room") };
+            let feet = |foe: &room::FoeSeen| combat::sight::apart([foe.fighter.body.x, foe.fighter.body.y], site);
+            room.foes_seen().filter(|foe| feet(foe) <= 5.0).count()
+        })
+        .unwrap()
+    };
+    let player = room_join();
+    room_tick();
+    assert_eq!(near(), 0, "none stands while the player is far");
+    with_open(|opened| {
+        let Opened::Land { room, .. } = opened else { panic!("a node's room") };
+        assert!(room.put_player(player, site[0], site[1] + 100.0));
+    });
+    room_tick();
+    assert!(near() >= 2, "its group stands round it");
+}

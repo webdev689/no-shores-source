@@ -587,3 +587,40 @@ fn a_last_stand_walled_into_a_corridor_still_gives_every_foe_a_place_of_its_own(
         }
     }
 }
+
+#[test]
+fn a_half_fallen_patrol_group_is_made_whole_once_no_player_has_come_within_40_m_of_its_post_for_two_minutes() {
+    // Patrol "glade": its first group, four foes walking a beat.
+    let mut room = node(NodeKind::Patrol, "glade");
+    let player = room.join().unwrap();
+    provoke(&mut room, 0, player);
+    let followers: Vec<FighterId> =
+        living(&room, 0).into_iter().filter(|id| Some(*id) != room.garrison[0].leader).collect();
+    kill(&mut room, followers[0]);
+    kill(&mut room, followers[1]);
+    run(&mut room, 1);
+    assert!(room.garrison[0].defending, "two of four fallen, it defends");
+    stand_player(&mut room, player, [-190.0, -190.0]);
+    run(&mut room, STAND_AGAIN - 60);
+    let at = room.garrison[0].at;
+    stand_player(&mut room, player, [at[0] + CLEAR_AROUND - 1.0, at[1]]);
+    run(&mut room, 1);
+    stand_player(&mut room, player, [-190.0, -190.0]);
+    run(&mut room, STAND_AGAIN - 1);
+    assert_eq!(living(&room, 0).len(), 2, "a player within 40 m begins its wait again");
+    run(&mut room, 3);
+    let post = &room.garrison[0];
+    assert!(!post.defending && post.anchor.is_none(), "whole again, it defends no more");
+    assert_eq!(living(&room, 0).len(), 4, "its fallen stand at their places again");
+    for id in living(&room, 0) {
+        assert!(!room.foes[&id].brain.orders().defend);
+    }
+    let homes: Vec<[f64; 3]> = living(&room, 0).iter().map(|id| room.foes[id].brain.home().unwrap().at).collect();
+    assert!(room.garrison[0].beat.is_some(), "it walks a beat");
+    run(&mut room, 900);
+    let moved = living(&room, 0).iter().zip(&homes).any(|(id, was)| {
+        let now = room.foes[id].brain.home().unwrap().at;
+        apart([now[0], now[1]], [was[0], was[1]]) > 1.0
+    });
+    assert!(moved, "and walks its beat again");
+}
