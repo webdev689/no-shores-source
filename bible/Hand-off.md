@@ -167,8 +167,12 @@ each part works is in its system note.
     `content/prologue/wreck.json` whole (its mesh and light on R2, 31 dead-end slips). On it the waist's pistoleer
     lost a player close behind its clutter, searched, and walked home healing; it now hunts a target within 14 m on
     rather than search ([[A Foe Gives Up Only When the Player Is Far Away]]).
-  - **Open for the owner**: whether the story's hand-over to the plaza (the game's own veil, 0.7 s, shared with all
-    travel) also takes the longer change and the logo.
+  - **One loading screen everywhere** ([[One Loading Screen Covers Every Trip Until the Place Is Ready]]): every
+    trip's veil, the story's hand-over to the hub too, is the logo, LOADING and the trip's words, and lifts once
+    nothing stands in for the place round the player (`standIns.ts`) for three frames, at most 20 s; plants scatter
+    30 ms a frame behind it. Mid-play nothing veils: the plants' pipelines are made once a device, the lit keepers'
+    marks and the first-person glow make theirs off the frame. Headless in the hub (SwiftShader, about a frame every
+    10 s) it lifted by itself at frame 54, the plants last; on a real GPU it is not yet timed.
 - **The owner's six prologue points, the wreck's room in the worker and a full audit** (#161, branch
   `claude/gifted-knuth-lijjf2`), merged into `main` (0fadd778; its deploy not checked here), which deploys the page and
   the rooms (the naval rules and the protocol's version changed): the wreck's hitches (blood's rays, its sheet drawn while the wake's screen is dark)
