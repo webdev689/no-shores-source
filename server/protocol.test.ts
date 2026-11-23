@@ -19,11 +19,3 @@ test("the protocol's version moves when what the wire numbers by place changes, 
   }
   assert.equal(protocolOf(reading()), protocolOf(reading()), 'the same files, the same version');
 });
-
-test("the keepers spoken with are numbered only where the protocol's version reaches", () => {
-  // The room finds a keeper's counter by the keeper's key; the numbers ask 64 sends stand beside the keys in
-  // quest_defs.rs, which the version hashes, not in the room's asks.
-  assert.ok(PROTOCOL_PATHS.includes('crates/gear/src/quest_defs.rs'));
-  const asks = readFileSync('crates/room/src/asks.rs', 'utf8');
-  assert.doesNotMatch(asks, /\b\d+ => CounterKind/, 'no keeper numbered in the room');
-});

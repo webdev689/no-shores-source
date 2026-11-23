@@ -302,6 +302,8 @@ impl Character {
         true
     }
 
+    /// Tells the quest walked of every piece worn, and of every slot a smith has sold a piece for, so a piece bought
+    /// or put on before its task was reached counts once it is.
     pub(crate) fn tell_held(&mut self) {
         // Told again until nothing more counts: a task met here may reach one the pieces held already meet.
         loop {

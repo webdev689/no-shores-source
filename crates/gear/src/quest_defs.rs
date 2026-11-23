@@ -249,11 +249,12 @@ impl GoalDef {
             Goal::Unseen(unseen) => (!(unseen.within > 0.0 && unseen.within <= PLACE_SQUARE)).then_some("within"),
             Goal::Race(race) => raced(race),
         };
-        let stepped = self.kind().stepped();
+        // A piece held is told again on every ask (`tell_held`), so one piece would meet a count above one.
+        let once = self.kind().stepped() || matches!(self.goal, Goal::Buy(_) | Goal::Wear(_));
         if let Some(field) = wrong.or((!ranks).then_some("rank")) {
             Some(format!("{text}: {field} holds a value none of its own"))
-        } else if self.count == 0 || stepped && self.count != 1 {
-            Some(format!("{text}: count must be 1 on a step, and 1 or more on any goal"))
+        } else if self.count == 0 || once && self.count != 1 {
+            Some(format!("{text}: count must be 1 on a step or a piece bought or worn, and 1 or more on any goal"))
         } else {
             None
         }

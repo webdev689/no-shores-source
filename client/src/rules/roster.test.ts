@@ -5,7 +5,7 @@ import { type FoeType, rankChoices } from './roster.ts';
 test("a type's ranks are offered plainest first by rank, whatever order the roster lists them in", () => {
   // The Tithe-Mate's: an Elite first in the roster (its rank when none is asked for), a Miniboss, and a Major.
   const mate: FoeType = {
-    type: 4,
+    type: 11,
     name: 'Tithe-Mate',
     faction: 1,
     factionName: 'The Grey Tithe',
