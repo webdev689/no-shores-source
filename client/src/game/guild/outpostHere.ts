@@ -1,10 +1,12 @@
 import type { EventProp } from '../../city/eventProps.ts';
+import { moduleNumber, moduleSocket } from '../../city/modules.ts';
 import type { AccountLink, OutpostSeen } from '../../network/accounts.ts';
 import { ASKS, type GearAsk } from '../../network/gearMessages.ts';
 import type { Block } from '../../rules/movementRules.ts';
 import type { Use } from '../footGear.ts';
 import { OUTPOST_CHANGED, openGearWindow } from '../gearScreen.ts';
-import { bannerFrom, bannerOfName } from './bannerLaw.ts';
+import type { Hung } from './bannerCloth.ts';
+import { type Banner, bannerFrom, bannerOfName } from './bannerLaw.ts';
 import { nodeRoom } from '../rooms.ts';
 import type { NodeInfo } from '../worldData.ts';
 import { ghostOf, letGo, placingNow } from './decorPlacing.ts';
@@ -54,14 +56,17 @@ export function useWords(standing: Standing): string {
 /** A placed module as a prop standing whole. */
 const propOf = (placed: Placed): EventProp => ({ ...placed, scale: 1, rise: 1, lid: 0, glow: 1 });
 
-/** The staff a guild's banner hangs from, as kept. */
-function staffOf(seen: OutpostSeen): string {
+/** A guild's banner, as kept. */
+function bannerOf(seen: OutpostSeen): Banner {
   try {
-    return (bannerFrom(JSON.parse(seen.banner)) ?? bannerOfName(seen.name)).staff;
+    return bannerFrom(JSON.parse(seen.banner)) ?? bannerOfName(seen.name);
   } catch {
-    return bannerOfName(seen.name).staff;
+    return bannerOfName(seen.name);
   }
 }
+
+/** The staff a guild's banner hangs from. */
+const staffOf = (seen: OutpostSeen): string => bannerOf(seen).staff;
 
 /** Whatever keeps a course of blocks for bodies to run into: the page's movement, its fight. */
 interface Course {
@@ -127,6 +132,18 @@ export class OutpostHere {
     this.shown = this.standing();
     const plot = seen ? plotBoxes(seen.plot, this.ground, staffOf(seen)) : [];
     for (const course of this.course.courses) course.setCourse([...this.course.boxes, ...plot]);
+  }
+
+  /** The guild's banner cloth, hung from its standard's `cloth` socket; none before the standard stands. */
+  cloth(): Hung | null {
+    const { seen, ground } = this;
+    const standard = seen?.plot.structures.find((standing) => standing.kind === 'standard' && standing.building === 0);
+    if (!seen || !standard) return null;
+    const placed = placeOf(standard, ground, staffOf(seen));
+    const [x, y, z] = moduleSocket(moduleNumber(placed.module), 'cloth');
+    const [cos, sin] = [Math.cos(placed.turn), Math.sin(placed.turn)];
+    const top = [placed.at[0] + x * cos - y * sin, placed.at[1] + x * sin + y * cos, placed.at[2] + z] as const;
+    return { at: top, turn: placed.turn, banner: bannerOf(seen) };
   }
 
   /** The props the outpost stands as beside `besides` (the zone's own), kept as one list while nothing changes, and

@@ -208,6 +208,7 @@ export function startFrames(parts: FrameParts, playing: Playing): void {
     parts.music.onFoot(parts.world, here.node, shown.fight, seconds, { musicians: musiciansOf(here.folk), listener });
     // An outpost's structures and decoration are drawn as the events' props are.
     parts.eventProps.set(here.outpost?.props(shown.props, listener) ?? shown.props ?? []);
+    parts.eventProps.hang(here.outpost?.cloth() ?? null);
     parts.ambience.onFoot(here.node, playing.landmass, shown.shot, here.folk, !!here.dungeon);
     const { body } = walker.player;
     if (!here.dungeon) {
@@ -314,6 +315,7 @@ export function startFrames(parts: FrameParts, playing: Playing): void {
     // The sea by weather round the ship, reaching as far as the view last looked; the land's swell until it opens.
     const swell = parts.seaWeather()?.follow(here.position, parts.seaView.reachM, seconds) ?? scene.land?.swell;
     parts.eventProps.set([]);
+    parts.eventProps.hang(null);
     // The helm's controls while the sea's own view is up: the map's and the deck's are their own, and a fight's its.
     if (!paused && !helmMap.shown) {
       const steer = axis(controls, 'steerLeft', 'steerRight');

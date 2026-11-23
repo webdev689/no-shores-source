@@ -101,3 +101,17 @@ test('a piece being placed stands its ghost at the feet, snapped to a quarter me
   letGo();
   assert.equal(here.props([], open).length, 4, 'let go, the ghost is gone');
 });
+
+test("the guild's banner hangs from its standard's cloth socket, turned as the standard is", () => {
+  const { here } = outpost();
+  assert.equal(here.cloth(), null, 'no standard, no cloth');
+  const standard = { ...structure(4, 'standard', 7, 11), turn: 1 };
+  here.take({ ...SEEN, plot: { ...SEEN.plot, structures: [...SEEN.plot.structures, standard] } });
+  const placed = placeOf(standard, GROUND, 'driftwood');
+  const hung = here.cloth();
+  assert.equal(hung?.turn, Math.PI / 2);
+  assert.equal(hung?.banner.staff, 'driftwood', "the guild's banner, its name's while it keeps none");
+  // The socket stands 0.15 m before the pole and 5.35 m up: turned a quarter, before it is to the west.
+  assert.ok(Math.abs((hung?.at[0] ?? 0) - (placed.at[0] - 0.15)) < 1e-9);
+  assert.ok(Math.abs((hung?.at[2] ?? 0) - (GROUND.level + 5.35)) < 1e-9);
+});

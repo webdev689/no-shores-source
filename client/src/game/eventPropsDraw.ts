@@ -16,6 +16,7 @@ import { SAMPLES } from '../water/waterView.ts';
 import { CRYSTAL_HOT, CRYSTAL_WGSL } from '../city/crystal.ts';
 import { type EventProp, OPENS, type PropModule, propLamps } from '../city/eventProps.ts';
 import { loadModules, moduleNumber, moduleShape } from '../city/modules.ts';
+import { BannerCloth, type Hung } from './guild/bannerCloth.ts';
 import { MATERIALS, type Material, STRIDE, packLips, packModule } from './eventPropsPack.ts';
 
 /** A material's number in the shader, as WGSL. */
@@ -290,11 +291,13 @@ export class EventPropsDraw implements Drawer {
   private readonly opening: [EventProp, Made, number][] = [];
   private readonly plain: [EventProp, Made, number][] = [];
   private ready = false;
+  private readonly cloth: BannerCloth;
   /** The frame the table was last written for, and the props it holds, each with its row. */
   private written: { fromEye: Float32Array | null; props: readonly EventProp[] } = { fromEye: null, props: [] };
 
   constructor(gpu: Gpu) {
     this.gpu = gpu;
+    this.cloth = new BannerCloth(gpu);
     const { device } = gpu;
     const viewLayout = device.createBindGroupLayout({
       entries: [{ binding: 0, visibility: SHADER_STAGE.vertex | SHADER_STAGE.fragment, buffer: {} }],
@@ -373,6 +376,11 @@ export class EventPropsDraw implements Drawer {
     });
     this.pipes = { draw, chasm, cast, light };
     return this.pipes;
+  }
+
+  /** A guild's banner cloth the next frames hang with the props (an outpost's standard's), or none. */
+  hang(hung: Hung | null): void {
+    this.cloth.set(hung);
   }
 
   /** The props the next frames draw (eventProps.ts), and the lamps their crystal lights. */
@@ -500,11 +508,12 @@ export class EventPropsDraw implements Drawer {
     pass: GPURenderPassEncoder,
     fromEye: Float32Array,
     shot: { eye: readonly [number, number, number] },
-    _time: number,
+    time: number,
     shadow: ShadowMap,
   ): void {
     const drawn = this.prepared(fromEye, shot.eye);
     if (drawn.length === 0 || !this.tableGroup) return;
+    this.cloth.drawInto(pass, fromEye, shot.eye, time);
     pass.setBindGroup(0, this.viewGroup);
     pass.setBindGroup(2, this.tableGroup);
     skyUniformFor(this.gpu.device).bindShared(pass);
