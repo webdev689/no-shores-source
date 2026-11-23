@@ -9,7 +9,7 @@ use serde_json::json;
 fn member(aurem: u32) -> u32 {
     let spawn: Vec<u8> = [0.0_f64, 0.0].iter().flat_map(|value| value.to_le_bytes()).collect();
     assert!(crate::open(&spawn));
-    assert!(outpost(json!({ "key": "abcdef01", "muster": [20.0, 0.0] }).to_string().as_bytes()));
+    assert!(outpost(json!({ "key": "abcdef010000", "muster": [20.0, 0.0] }).to_string().as_bytes()));
     let player = room_join();
     assert!(gear_door::own(player, b"salt"));
     let told = json!({ "id": "ABCDEF01-0000", "done": [false, false, false, false], "beforeTheWeek": true });
@@ -60,4 +60,14 @@ fn a_delivery_names_its_structure_and_material_and_the_plot_stood_is_counted() {
     assert_eq!(room_outpost_stood(), 1);
     assert_eq!(on_land(|room| room.outpost_plot()), Some(1));
     assert!(!outpost(b"not an outpost"));
+}
+
+#[test]
+fn one_out_of_the_guild_dungeon_joins_before_the_delve_gate_the_host_stood() {
+    member(0);
+    assert_eq!(crate::dungeon_door::room_join_at(0), 0, "no gate stood yet");
+    assert_eq!(room_outpost_gate(4.0, 6.0, 0.0), 1);
+    assert_ne!(crate::dungeon_door::room_join_at(0), 0, "before it");
+    assert_eq!(room_outpost_gate(f64::NAN, 0.0, 0.0), 1);
+    assert_eq!(crate::dungeon_door::room_join_at(0), 0, "taken down");
 }

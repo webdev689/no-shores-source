@@ -19,7 +19,8 @@ const SEA_STARTED = /--sea--run-[a-z0-9]{8}$/;
  *  room at Normal and only a run at Elite or Abyss. A playlist's run of an Elite Dungeon at Elite or Abyss names its
  *  foes' level before its instance, `--playlist-<level>`, and the week's run started from the Playlist `--sea`. Null
  *  for any other spelling, so no one opens a fresh copy of a shared room to gather or loot again, nor a shared copy of
- *  a private run. A guild's outpost's room is a bare node's with `--guild-<key>` last, and `guild` its key. */
+ *  a private run. A guild's outpost's room is a bare node's with `--guild-<key>` last, and `guild` its key; its guild
+ *  dungeon's run that with its tier at Elite or Abyss after it, then `--run-<instance>` (`delveRoom.ts`). */
 export function nodeRoom(name: string): {
   readonly id: string;
   readonly seas: number;
@@ -31,11 +32,16 @@ export function nodeRoom(name: string): {
   const parts = name.split('--');
   // A run's and a dungeon's endings only after `--`: a node may itself be called `dungeon-0`.
   const last = parts.length > 1 ? (parts.at(-1) ?? '') : '';
-  if (last.startsWith('guild-')) {
-    const key = GUILD.exec(last)?.[1];
-    // Only on a bare node: no difficulty, dungeon, run or playlist with it.
-    if (key === undefined || parts.length !== 2 || parts[0] === '') return null;
-    return { id: parts[0] ?? '', seas: 0, dungeon: null, run: null, playlist: null, guild: key };
+  const guilded = parts[1]?.startsWith('guild-') === true;
+  if (guilded || last.startsWith('guild-')) {
+    const [id = '', guild = '', ...after] = parts;
+    const key = GUILD.exec(guild)?.[1];
+    const run = RUN.exec(after.at(-1) ?? '')?.[1] ?? null;
+    const tier = after.length === 2 ? SEAS.indexOf(after[0] ?? '') : 0;
+    // On a bare node alone; its run names only its tier at Elite or Abyss and its instance after it.
+    const fits = after.length === 0 || (run !== null && (after.length === 1 || (after.length === 2 && tier > 0)));
+    if (key === undefined || id === '' || !fits) return null;
+    return { id, seas: tier, dungeon: null, run, playlist: null, guild: key };
   }
   if (last.startsWith('run-') && !RUN.test(last)) return null;
   const run = RUN.exec(last)?.[1] ?? null;
@@ -89,7 +95,8 @@ export function seaDungeonRoom(name: string): {
 }
 
 /** The ask `open_run` opens a dungeon's room from, by its name and the Unix minute it opens: null for a name that is
- *  no run or sea island's dungeon (a patrol's shared Normal dungeon opens from its patrol's file). */
+ *  no run or sea island's dungeon (a patrol's shared Normal dungeon opens from its patrol's file), and for a guild
+ *  dungeon's run, whose ask needs its outpost read first (`delveHost.ts`). */
 export function runAsk(room: string, minute: number): string | null {
   const sea = seaDungeonRoom(room);
   if (sea) {
@@ -97,7 +104,7 @@ export function runAsk(room: string, minute: number): string | null {
     return JSON.stringify({ dungeon: { seed, style, continent }, tier: sea.seas, minute });
   }
   const named = room.startsWith('node-') ? nodeRoom(room.slice('node-'.length)) : null;
-  if (!named || named.run === null) return null;
+  if (!named || named.run === null || named.guild !== null) return null;
   const dungeon = named.dungeon === null ? { place: named.id } : { patrol: named.id, number: named.dungeon };
   const playlist = named.playlist === null ? {} : { playlist: named.playlist };
   return JSON.stringify({ dungeon, tier: named.seas, minute, ...playlist });

@@ -1,8 +1,8 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import type { Box } from '../client/src/game/guild/outpostPlaces.ts';
-import { plotBoxes } from '../client/src/game/guild/outpostPlaces.ts';
-import { type OutpostAccounts, OutpostHost, outpostGround } from './outpostHost.ts';
+import { placeOf, plotBoxes, socketOf } from '../client/src/game/guild/outpostPlaces.ts';
+import { type OutpostAccounts, OutpostHost, gateDoor, outpostGround } from './outpostHost.ts';
 import type { Errand } from './roomDoor.ts';
 
 const ROOM = 'node-oakfast-landing--guild-0a1b2c3d4e5f60718293a4b5c6d7e8f9';
@@ -17,6 +17,8 @@ function doorOf() {
     waiting: [] as Errand[],
     answered: [] as [number, number | null][],
     stood: 0,
+    gates: [] as (readonly number[] | null)[],
+    outpostGate: (gate: readonly [number, number, number] | null) => door.gates.push(gate) > 0,
     outpostErrands: () => door.waiting.splice(0),
     outpostAnswered: (id: number, answer: number | null) => door.answered.push([id, answer]) > 0,
     outpostStood: () => ++door.stood > 0,
@@ -179,4 +181,22 @@ test('a plot changed is read again, and a leaving player’s last save waits for
   let gave = false;
   await host.settled(9, () => new Promise(() => undefined)).then(() => (gave = true));
   assert.ok(gave, 'a player with none in flight leaves at once');
+});
+
+test('one out of the guild dungeon stands at the foot of the Delve Gate’s steps, where a gate stands at a tier', async () => {
+  const gate = (tier: number, turn: number, building = 0) => ({ id: 2, kind: 'gate', tier, building, x: 2, y: 2, turn });
+  const withGate = (standing: ReturnType<typeof gate>) => ({ structures: [hall(1), standing], decor: [] });
+  const south = gateDoor(withGate(gate(1, 0)), GROUND, 'driftwood');
+  const middle = placeOf(gate(1, 0), GROUND, 'driftwood').at;
+  assert.deepEqual(south?.slice(0, 2), socketOf(gate(1, 0), GROUND, 'driftwood', 'door'));
+  assert.ok(south && south[1] < middle[1], 'the steps’ foot lies north of its middle');
+  assert.ok(south && Math.abs(south[2] - Math.PI) < 1e-9, 'unturned, up the steps out to the south');
+  const west = gateDoor(withGate(gate(2, 1)), GROUND, 'driftwood');
+  assert.ok(west && Math.abs(west[2] - (3 * Math.PI) / 2) < 1e-9, 'a quarter turned clockwise, out to the west');
+  assert.equal(gateDoor(withGate(gate(0, 0, 1)), GROUND, 'driftwood'), null, 'first being built');
+  assert.equal(gateDoor(plotOf(1), GROUND, 'driftwood'), null, 'none placed');
+  const door = doorOf();
+  const { accounts } = accountsOf({ plot: () => ({ ...withGate(gate(3, 0)), structures: [{ ...gate(3, 0), spent: 0, delivered: {} }] }) });
+  await new OutpostHost(door, accounts, ROOM, GROUND, guarded).read();
+  assert.deepEqual(door.gates, [south], 'the host tells the room');
 });

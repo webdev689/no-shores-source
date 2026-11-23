@@ -72,12 +72,13 @@ pub struct Errand {
 
 /// A guild's outpost as its room holds it: the guild's key, its muster ground, how many plots the host has stood, the
 /// errands not yet taken and those with the accounts, when its plot was last read again on a player's word, and the
-/// War Horn's foe.
+/// War Horn's foe; and the foot of its Delve Gate's steps and the way out from it, where one stands.
 #[derive(Debug, Default)]
 pub(crate) struct Outpost {
     pub key: String,
     pub muster: [f64; 2],
     pub plot: u32,
+    pub gate: Option<([f64; 2], f64)>,
     next: u32,
     waiting: Vec<Errand>,
     out: BTreeMap<u32, Errand>,
@@ -85,10 +86,11 @@ pub(crate) struct Outpost {
     pub boss: crate::outpost_boss::HornFoe,
 }
 
-/// A guild's id's short key, as its outposts' rooms are named: its first eight hexadecimal digits.
+/// A guild's id's key, as its outposts' rooms are named (`outpostStores.ts` `guildKey`): its whole id without its
+/// hyphens, in lowercase.
 #[must_use]
 pub fn guild_key(guild: &str) -> String {
-    guild.chars().filter(|each| *each != '-').take(8).collect::<String>().to_lowercase()
+    guild.chars().filter(|each| *each != '-').collect::<String>().to_lowercase()
 }
 
 /// How much of a material is held, to take from or give to.
@@ -129,6 +131,13 @@ impl Room {
     pub fn outpost_stood(&mut self) {
         if let Some(outpost) = self.outpost.as_mut() {
             outpost.plot = outpost.plot.wrapping_add(1).max(1);
+        }
+    }
+
+    /// The host stood the plot's Delve Gate: the foot of its steps and the way out from it, or none where it is gone.
+    pub fn outpost_gate(&mut self, gate: Option<([f64; 2], f64)>) {
+        if let Some(outpost) = self.outpost.as_mut() {
+            outpost.gate = gate;
         }
     }
 

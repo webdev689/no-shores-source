@@ -29,6 +29,9 @@ pub enum Pays {
     Week { weekly: Weekly, week: u64 },
     /// A playlist's, by the day and the week its run was opened in (`playlist_run`).
     Playlist { playlist: gear::playlist::Playlist, day: u64, week: u64 },
+    /// A guild dungeon's, by its guild's key: a guild package to each member at their first clear in the week the run
+    /// was opened for.
+    Guild { key: String, week: u64 },
 }
 
 /// A dungeon's run: what it pays, its modifiers, the revives left at Abyss, and the level every foe stands at in the

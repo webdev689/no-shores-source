@@ -34,9 +34,9 @@ fn ask(room: &mut Room, player: PlayerId, ask: OutpostAsk) -> u8 {
 }
 
 #[test]
-fn a_guild_s_key_is_its_id_s_first_eight_hexadecimal_digits_in_lowercase() {
-    assert_eq!(guild_key(GUILD), "5a1t0000");
-    assert_eq!(guild_key("ab-cd-ef01-2345"), "abcdef01");
+fn a_guild_s_key_is_its_whole_id_without_its_hyphens_in_lowercase_as_its_outposts_rooms_are_named() {
+    assert_eq!(guild_key(GUILD), "5a1t0000111122223333444455556666");
+    assert_eq!(guild_key("AB-cd-ef01-2345"), "abcdef012345");
 }
 
 #[test]
@@ -146,4 +146,19 @@ fn the_horn_is_refused_when_the_accounts_say_it_may_not_sound() {
     room.outpost_answered(errand.id, Some(0));
     assert_eq!(room.players[&player].answer, answer_code(Err(Refusal::HornSounded)));
     assert!(!room.horn_foe_up());
+}
+
+#[test]
+fn one_out_of_the_guild_dungeon_stands_before_the_delve_gate_facing_away_and_only_while_it_stands() {
+    let (mut room, _) = outpost();
+    assert_eq!(room.join_at(0), None, "no gate stood yet");
+    room.outpost_gate(Some(([10.0, 20.0], core::f64::consts::PI)));
+    let player = room.join_at(0).expect("before the gate");
+    let body = room.players[&player].fighter.body;
+    assert!((body.x - 10.0).abs() < 1e-9 && (body.y - (20.0 + crate::entrances::BEFORE_DOOR_M)).abs() < 1e-9);
+    assert!((body.facing - core::f64::consts::PI).abs() < 1e-9, "facing out, south");
+    assert_eq!(room.join_at(1), None, "the gate is its one way in");
+    room.outpost_gate(None);
+    assert_eq!(room.join_at(0), None, "taken down");
+    assert_eq!(Room::new(Vec::new(), (0.0, 0.0)).join_at(0), None, "a room that is no outpost has none");
 }

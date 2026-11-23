@@ -3,7 +3,7 @@
  * never by its page. Overlook's social space, where every session begins, takes anyone. Any other node's room takes a
  * character that rejoins it, lands from the sea with its ship lying off the node's island, comes through a gate from
  * a node whose gate leads there, or comes out of the node's own dungeon; a dungeon's room or a run takes one from its
- * node's room. A join to one of the company playing in the room is the keeper's to judge (`keeping.ts`).
+ * node's room, and a guild dungeon's run from its guild's outpost alone. A join to one of the company playing in the room is the keeper's to judge (`keeping.ts`).
  */
 
 import { nodeRoom, seaRoom, startedAtSea } from './roomNames.ts';
@@ -77,6 +77,9 @@ export function arrives(room: string, from: string | null, ship: Point | null, r
   if (!to) return false;
   // A run started from the Playlist, beside any port, is entered from the sea alone.
   if (startedAtSea(room)) return from !== null && seaRoom(from) !== null;
+  // A guild dungeon's run is entered from its guild's outpost alone and left back to it, at whatever tier it runs.
+  if ((to.guild !== null && inside(to)) || (was?.guild != null && inside(was)))
+    return was?.id === to.id && was.guild === to.guild && inside(was) !== inside(to);
   if (was && was.id === to.id) {
     // An outpost site's wild ground and a guild's plot on it are one place at Normal: a player walks between them.
     const plot = to.guild !== null || was.guild !== null;
@@ -113,9 +116,12 @@ export function toCoast([x, y]: Point, ring: readonly Point[]): number {
 
 /** Whether a character that came from `from` comes out of the dungeon behind entrance `number` of the node's room
  *  `room`: that patrol's dungeon of the number or a run of it, or by its one entrance an Elite Dungeon's run, at the
- *  room's seas. */
+ *  room's seas; or by the Delve Gate, its guild dungeon's run at any tier. */
 export function cameOutOf(room: string, from: string | null, number: number): boolean {
   const [to, was] = [nodeOf(room), nodeOf(from)];
-  if (!to || !was || inside(to) || was.id !== to.id || was.seas !== to.seas || startedAtSea(from ?? '')) return false;
+  if (!to || !was || inside(to) || was.id !== to.id || startedAtSea(from ?? '')) return false;
+  // Out of a guild dungeon's run, at any tier, before its outpost's Delve Gate, entrance 0.
+  if (to.guild !== null || was.guild !== null) return was.guild === to.guild && was.run !== null && number === 0;
+  if (was.seas !== to.seas) return false;
   return was.dungeon === number || (was.dungeon === null && was.run !== null && number === 0);
 }

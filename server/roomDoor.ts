@@ -207,6 +207,9 @@ export interface RoomDoor {
   outpostAnswered(id: number, answer: number | null): boolean;
   /** Says the host stood the outpost's plot anew, which the snapshot counts. */
   outpostStood(): boolean;
+  /** Says where the plot's Delve Gate stands, as x east, y south and the way out from it (radians clockwise from
+   *  north), or null for none: one out of the guild dungeon joins before it as entrance 0 (`joinAt`). */
+  outpostGate(gate: readonly [number, number, number] | null): boolean;
 }
 
 /** An errand an outpost's room holds for its host, as `room-wasm`'s outpost door writes it. */
@@ -293,6 +296,7 @@ interface RoomExports {
   room_outpost_errands(): bigint;
   room_outpost_answered(id: number, answer: number): number;
   room_outpost_stood(): number;
+  room_outpost_gate(x: number, y: number, facing: number): number;
 }
 
 /** A seed's low and high 32 bits, from its decimal string. */
@@ -474,5 +478,6 @@ export function startRoomDoor(module: WebAssembly.Module): RoomDoor {
     outpostAnswered: (id, answer) =>
       exports.room_outpost_answered(id >>> 0, answer === null ? -1 : Math.min(answer, 0x7fff_ffff)) === 1,
     outpostStood: () => exports.room_outpost_stood() === 1,
+    outpostGate: (gate) => exports.room_outpost_gate(...(gate ?? [Number.NaN, 0, 0])) === 1,
   };
 }

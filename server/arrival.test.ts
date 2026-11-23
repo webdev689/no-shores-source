@@ -221,3 +221,23 @@ test('a player walks between an outpost site’s wild ground and a guild’s plo
   assert.equal(arrives(plot, 'node-tidewall', null, reach()), false, 'from another node');
   assert.equal(arrives(plot, 'node-oakfast-landing--elite', null, reach()), false, 'from another tier');
 });
+
+test('a guild dungeon’s run is entered from its guild’s outpost alone, and left back to it at the gate', () => {
+  const key = '0a1b2c3d4e5f60718293a4b5c6d7e8f9';
+  const plot = `node-oakfast-landing--guild-${key}`;
+  for (const run of [`${plot}--run-a1b2c3d4`, `${plot}--elite--run-a1b2c3d4`, `${plot}--abyss--run-a1b2c3d4`]) {
+    assert.equal(arrives(run, plot, null, reach()), true, `into ${run}`);
+    assert.equal(arrives(plot, run, null, reach()), true, `out of ${run}`);
+    assert.equal(cameOutOf(plot, run, 0), true, `before the gate out of ${run}`);
+    assert.equal(cameOutOf(plot, run, 1), false, 'by no other entrance');
+    assert.equal(arrives(run, 'node-oakfast-landing', null, reach()), false, 'never from the wild site');
+    assert.equal(arrives('node-oakfast-landing', run, null, reach()), false, 'nor out onto it');
+    const other = `node-oakfast-landing--guild-${'9'.repeat(32)}`;
+    assert.equal(arrives(run, other, null, reach()), false, 'nor from another guild’s outpost');
+    assert.equal(arrives(other, run, null, reach()), false, 'nor out to it');
+    assert.equal(cameOutOf(other, run, 0), false);
+    assert.equal(arrives(run, 'node-oakfast-landing--elite', null, reach()), false, 'nor from the site at a tier');
+    assert.equal(arrives(run, 'sea', OFF_COAST, reach()), false, 'nor from the sea');
+  }
+  assert.equal(cameOutOf(plot, plot, 0), false, 'the outpost itself is no run');
+});

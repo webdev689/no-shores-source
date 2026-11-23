@@ -359,9 +359,14 @@ test('a guild’s outpost’s room is a bare node’s with its guild’s key las
     'oakfast-landing--guild-0a1b2c3d4e5f60718293a4b5c6d7e8f',
     'oakfast-landing--guild-0a1b2c3d4e5f60718293a4b5c6d7e8f94',
     'oakfast-landing--elite--guild-0a1b2c3d4e5f60718293a4b5c6d7e8f9',
-    'oakfast-landing--guild-0a1b2c3d4e5f60718293a4b5c6d7e8f9--run-a1b2c3d4',
     'oakfast-landing--dungeon-0--guild-0a1b2c3d4e5f60718293a4b5c6d7e8f9',
     'oakfast-landing--guild-0a1b2c3d4e5f60718293a4b5c6d7e8f9--elite',
+    'oakfast-landing--guild-0a1b2c3d4e5f60718293a4b5c6d7e8f9--normal--run-a1b2c3d4',
+    'oakfast-landing--guild-0a1b2c3d4e5f60718293a4b5c6d7e8f9--storm--run-a1b2c3d4',
+    'oakfast-landing--guild-0a1b2c3d4e5f60718293a4b5c6d7e8f9--run-a1b2c3d',
+    'oakfast-landing--guild-0a1b2c3d4e5f60718293a4b5c6d7e8f9--elite--run-a1b2c3d4--run-a1b2c3d4',
+    'oakfast-landing--guild-0a1b2c3d4e5f60718293a4b5c6d7e8f9--dungeon-0--run-a1b2c3d4',
+    'oakfast-landing--guild-0a1b2c3d4e5f60718293a4b5c6d7e8f9--playlist-12--run-a1b2c3d4',
     '--guild-0a1b2c3d4e5f60718293a4b5c6d7e8f9',
   ])
     assert.equal(nodeRoom(name), null, name);
