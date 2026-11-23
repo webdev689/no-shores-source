@@ -75,3 +75,15 @@ test('played from its start, the Storm is given as the flash comes, never before
   );
   assert.equal(given[0], flashed, 'on the frame the flash comes');
 });
+
+test('held while its course plays, a drift of a few centimetres underfoot never lays it again: its shots stand', () => {
+  const [held, drifting] = [0, 1].map(
+    () => new WispScene(story, layout, { feet, facing: layout.wake.facing }, theirs, () => undefined),
+  );
+  for (let seconds = 0; seconds < WISP_LENGTH_S; seconds += 0.1) {
+    const drift = [feet[0] + 0.06 * Math.sin(seconds), feet[1] + 0.06 * Math.cos(seconds), feet[2]] as const;
+    const one = held?.frame(0.1, seconds, theirs, feet).shot.eye;
+    const two = drifting?.frame(0.1, seconds, theirs, drift).shot.eye;
+    assert.deepEqual(two, one, `${seconds.toFixed(1)} s`);
+  }
+});
