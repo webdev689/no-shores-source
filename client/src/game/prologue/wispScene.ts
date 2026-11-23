@@ -69,7 +69,8 @@ export class WispScene {
     this.course = wispCourse(feet, facing);
     [this.facing, this.from] = [facing, from];
     const { ambience } = story.stage.parts;
-    this.cues = new Cues([
+    // Begun partway in, what came before is passed over, the crew's cries with it.
+    const cues: [number, () => void][] = [
       [1.7, () => void story.stage.play('wisp', true)],
       [
         ENGULF_AT_S + FLASH_IN_S,
@@ -80,7 +81,8 @@ export class WispScene {
           ambience.thunder(0.05);
         },
       ],
-    ]);
+    ];
+    this.cues = new Cues(cues.filter(([when]) => when >= into));
   }
 
   /** One frame `seconds` long at `clock` on the page's clock, the player standing at `feet` (the room may stand them
