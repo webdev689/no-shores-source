@@ -47,7 +47,16 @@ export function detailsNode(
   const columns = Math.max(1, Math.floor((inner + 16) / (PIECE_PX + 16)));
   const pieceWidth = Math.floor((inner - 16 * (columns - 1)) / columns);
   const pieces = (found.shown?.worn ?? []).map((piece, index): Node => {
-    const item = { named: piece.named ?? null, kind: piece.kind, rarity: piece.rarity, name: piece.name };
+    const { kind, rarity, name, level } = piece;
+    const item = {
+      named: piece.named ?? null,
+      kind,
+      rarity,
+      name,
+      level,
+      id: piece.id ?? 0,
+      source: piece.source ?? 0,
+    };
     // A piece the page cannot name still shows, by its slot.
     const pieceName = itemName(item) || capital(SLOTS[piece.slot] ?? 'Piece');
     const element = elementNode(piece.element, 16);

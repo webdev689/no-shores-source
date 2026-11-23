@@ -5,7 +5,7 @@ import traits from '../../../content/gear/traits.json' with { type: 'json' };
 import type { GlowLook } from '../elementGlow.ts';
 import { ASKS, type GearAsk, type GearItem, type GearState } from '../network/gearMessages.ts';
 import type { Wardrobe } from './dressing.ts';
-import { rolledMetal, sourceLooks } from './sourceLooks.ts';
+import { numberOf, rolledArmourSet, rolledMetal, setName, sourceLooks } from './sourceLooks.ts';
 
 /** The kinds of item, by the gear crate's numbers: the Melee and Ranged loadouts, the armour and the cloak. */
 export const KINDS = [
@@ -153,13 +153,23 @@ export function answerText(answer: number): string {
   return answer === 0 || answer === 107 ? '' : (REFUSALS[answer] ?? `Refused (${answer}).`);
 }
 
-/** An item's name: a named item's own, or a rolled one's among its kind's for its rarity. */
-export function itemName(item: Pick<GearItem, 'named' | 'kind' | 'rarity' | 'name'>): string {
+/** Each armour and weapon kind's word, said after its set's name ("Portwatch Helm"). */
+const KIND_WORDS: Readonly<Record<string, string | undefined>> = rolled.kinds;
+
+/** An item's name: a named item's own (a faction's piece's is its set's); a rolled armour piece or weapon its set's
+ *  and its kind's word, by the look it is drawn in; anything else (the cloak) its kind's. Ship modules are named by
+ *  `gearName`. */
+export function itemName(
+  item: Pick<GearItem, 'named' | 'kind' | 'rarity' | 'name' | 'id' | 'level' | 'source'>,
+): string {
   if (item.named) return items.items.find((found) => found.id === item.named)?.name ?? item.named;
   const kind = KINDS[item.kind] ?? '';
-  const names = (rolled.names as Record<string, Record<string, readonly string[]> | undefined>)[kind];
-  const rarity = (RARITIES[item.rarity]?.name ?? '').toLowerCase();
-  return names?.[rarity]?.[item.name] ?? kind;
+  const word = KIND_WORDS[kind];
+  if (!word) return kind;
+  const armour = ARMOUR_SLOTS[kind] !== undefined;
+  const look =
+    item.rarity === 0 ? null : armour ? rolledArmourSet(item, kind === 'torso' || kind === 'legs') : rolledMetal(item);
+  return `${setName(item, look)} ${word}`;
 }
 
 /** A named item's words, if it has any. */
@@ -313,9 +323,7 @@ const WRITTEN: ReadonlyMap<string, { readonly look?: string; readonly make?: str
 export const rung = (item: GearItem, start: number, climb: number, spread: number): number =>
   start + Math.round(((Math.min(Math.max(item.level, 1), 20) - 1) * climb) / 19) + (item.name % spread);
 
-/** The item's own number for a choice its name does not make: its id (a smith's ware comes with the one it takes once
- *  bought), its name while it has none, and a named piece's name, so a faction's piece always shows one make. */
-export const numberOf = (item: GearItem): number => (item.named ? item.name : item.id || item.name);
+export { numberOf };
 
 /** The ladder sorted nearest first from rung `from`, the lesser first at one distance. */
 export const nearest = (ladder: readonly string[], from: number): readonly string[] =>

@@ -191,6 +191,9 @@ these are Claude's numbers for them.
 
 Replaced in part by [[Factions and Vendors as Claude Shapes Them]]: Vestiges open at the Mage's counter.
 
+Replaced in part by [[Every Drop Wears Its Content's Set, With Random Perks]]: a Legendary Vestige opens to a rolled
+piece in its content's set look ("Set names and drops in their set", below).
+
 Replaced in part by [[The Balance Pass Goes Halfway Back, and Loot Follows Destiny 1's Order]] and [[Bosses and Dungeons Drop Items, Clears Pay, and Shapes Come From the Week's Abyss]]: a Vestige's chance and colour go by the foe's rank in Destiny 1's
 order, it opens to its own colour three times in four, and a Miniboss, a Boss and a dungeon's clear leave items as
 themselves too ([[Gear]], "Vestiges").
@@ -226,6 +229,29 @@ its kind and rank, and a dismantled Atheric gives 3 Essence ([[Gear]], "A kill's
 Replaced in part by [[The Perk Pass as Claude Shapes It]]: a named piece wears its own look, and a rolled one climbs the metals' and sets' ladders with its rarity and level, so every model the forge draws is worn.
 
 Replaced in part by [[Factions and Vendors as Claude Shapes Them]]: each faction's cape is a cloak that belongs to it ([[Factions]]).
+
+### Set names and drops in their set
+
+The owner's calls are [[Everything Carries a Set Name, and Perks Roll by Pool]] and [[Every Drop Wears Its Content's
+Set, With Random Perks]]; the set names are [[Set Names and Faction Perks as Claude Drafts Them]]. These are Claude's
+for what they leave open ([[Claude Finishes the Gear Calls on Its Own Word]]).
+
+| Choice | Chosen | Why |
+|---|---|---|
+| Where the set names live | In `content/gear/looks.json`, each content's looks with the name each carries; a faction's by its faction's key; a Normal piece's at its head | One place the rules and the page both read, beside the looks they name |
+| A piece's name | Its set's name and its kind's word, the set the one its look is drawn in before the forge falls back: "Portwatch Helm", "Wreckborn Sword and Shield" | The owner: "Destiny has names for everythibg"; the forge's fallback is a matter of which body wears it, not of the piece |
+| A kind's word | A weapon's as the game already said its plain one ("Sword and Shield", "Twin Daggers", "Brace of Pistolets"); armour Helm, Hauberk, Gauntlets, Greaves, as the Stormcallers' armour was already named | Words the game already used, one for each kind |
+| A gun | Its content's metal's set ("Wreckborn Pistolet"), though the forge draws every gun plain or gilded | A finish is no set; its name still says where it was earned |
+| A Normal piece, and a Magic one drawn as clothes | Homespun | Clothes are no armour set; the draft names a Normal piece Homespun |
+| A faction's pieces | Renamed in `items.json` by its faction's set ("Stormcaller Bow", "Veiled Dagger and Shield"), whatever metal they are drawn in | The draft: a faction's pieces take its set; written once, so no rule computes it beside the entry |
+| A Breach's pieces | The Lattice, for daedric | The Lattice's armour takes daedric's place ([[The Lattice's Armour and Weapons Take Daedric's Place]]) |
+| A rolled Legendary | Made as a rolled Rare is, at Legendary and level 20: its look climbs its content's sets and metals, its traits roll from the shared pools, its nodes ask for an island's resource rolled among the catalogue's | The owner: "Set look, random perks"; a Legendary's nodes already asked for a resource |
+| A Breach's rolled Legendary armour | Climbs to 30 Prestige, as a Breach's named armour was to | The owner: the Breaches give the "Highest prestige drops" |
+| An Atheric Vestige, and a ship's Legendary module | Still a named piece, of its own content where it has one, else any content's | "Atherics remain unique"; ship modules are no armour or weapon |
+| The named Legendaries that are no faction's | Left out of every drop; kept in `items.json`, so a kept one reads and is named as it was; Shape still sells them | The owner's calls speak of drops; Shape is a vendor, and his week is the one place such a piece is still had |
+| A rolled piece's `name` byte | Kept, as the roll its look is chosen and its clothes dyed by: one roll for a Normal piece, three past it, as its names were | A piece kept from before keeps its look; no save changes |
+| The Test Ground's rolled item | Any rarity but Atheric | A rolled Legendary works everywhere a rolled Rare does |
+| No metal word | A test reads every string in `content/` but the forge's looks, and every string in the client's code but the forge's own, for elven, dwarven, orcish, mithril, adamantium, ebony and daedric | The owner: "Everything players read"; the forge's layer names stay inside the code |
 
 ### Names
 

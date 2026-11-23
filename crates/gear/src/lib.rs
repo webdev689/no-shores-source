@@ -113,6 +113,8 @@ mod refusals_tests;
 #[cfg(test)]
 mod rewards_tests;
 #[cfg(test)]
+mod set_tests;
+#[cfg(test)]
 mod shape_tests;
 #[cfg(test)]
 mod source_tests;

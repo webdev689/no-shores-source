@@ -82,17 +82,16 @@ fn every_named_piece_wears_a_look_of_its_own_source() {
 }
 
 #[test]
-fn a_vestige_opens_to_its_own_sources_named_piece_where_it_has_one() {
+fn an_atheric_vestige_opens_to_its_own_sources_named_piece_where_it_has_one() {
     let from = |source: Source, seed: u64| {
-        make(1, Rarity::Legendary, Slot::Torso, 20, source, &dice(seed)).expect("a Legendary torso").named
+        make(1, Rarity::Atheric, Slot::Torso, 20, source, &dice(seed)).expect("an Atheric torso").named
     };
     for seed in 0..40 {
-        assert_eq!(from(Source::Sea, seed).as_deref(), Some("tithebreaker_plate"));
-        assert_eq!(from(Source::Elite, seed).as_deref(), Some("saltwind_jerkin"));
+        assert_eq!(from(Source::Elite, seed).as_deref(), Some("wreckhide"));
     }
-    // The world has no Legendary torso of its own, so its Vestige opens to another source's, which keeps its own.
+    // The world has no Atheric torso of its own, so its Vestige opens to another source's, which keeps its own.
     let opened: Vec<Item> =
-        (0..40).filter_map(|seed| make(1, Rarity::Legendary, Slot::Torso, 20, Source::World, &dice(seed))).collect();
+        (0..40).filter_map(|seed| make(1, Rarity::Atheric, Slot::Torso, 20, Source::World, &dice(seed))).collect();
     assert!(opened.iter().all(|item| item.named.is_some() && item.source != Source::World));
 }
 

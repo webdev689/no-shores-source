@@ -26,7 +26,8 @@ pub struct Item {
     pub level: u8,
     /// The named item it is, or none for a rolled one.
     pub named: Option<String>,
-    /// A rolled item's name, among its kind's for its rarity.
+    /// A rolled armour piece's or weapon's look roll, which the page climbs its content's sets and dyes by (its name is
+    /// its set's, `itemName`); a ship's rolled module's name among its kind's for its rarity.
     pub name: u8,
     /// The traits each of its trait columns offers, in order.
     pub layout: Vec<Vec<String>>,

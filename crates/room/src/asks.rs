@@ -444,7 +444,7 @@ impl Room {
                 return carry(character, item);
             }
             Grant::Item { kind, rarity, level } => {
-                if rarity.named() || kind == Kind::Cloak {
+                if rarity == Rarity::Atheric || kind == Kind::Cloak || (kind.module() && rarity == Rarity::Legendary) {
                     return answer_code(Err(Refusal::NoSuchItem));
                 }
                 let mut item = gear::vestige::rolled(character.take_id(), kind, rarity, kind.slot(), level, &dice);

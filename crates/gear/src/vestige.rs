@@ -1,6 +1,6 @@
 //! Vestiges, the sealed drops: whether a kill leaves one for a player, the colour it shows and the slot it holds an
 //! item for; and, once identified in a social space, the colour it opens to (at, above or below its own) and the item
-//! that comes out: a named Legendary or Atheric of its slot, or a lesser item of its kind with rolled traits. A
+//! that comes out: a named Atheric of its slot, or an item of its kind in its content's set with rolled traits. A
 //! Miniboss's or a Boss's kill may also leave an item as itself, made as an opened Vestige's is.
 
 use crate::catalogue::{NamedDef, catalogue};
@@ -132,13 +132,14 @@ pub fn opens_to(colour: Rarity, level: u8, dice: &Dice) -> Rarity {
     Rarity::ALL[dice.weighted(Purpose::Opens, 0, &gated(OPENS[colour as usize], level))]
 }
 
-/// The item a Vestige of this slot and level from `source` makes at this rarity, numbered `id`: a named one of its
-/// slot, chosen evenly among its source's, else among every source's while its own has none, at level 20, keeping its
-/// own source; or a lesser item of a kind the slot takes, its name and traits rolled, from `source`. A weapon may roll
-/// an element.
+/// The item a Vestige of this slot and level from `source` makes at this rarity, numbered `id`: an Atheric (or a
+/// ship's Legendary module) is a named one of its slot, chosen evenly among its source's, else among every source's
+/// while its own has none, at level 20, keeping its own source; anything else an item of a kind the slot takes, its
+/// look and traits rolled, from `source`. A weapon may roll an element.
 #[must_use]
 pub fn make(id: u32, rarity: Rarity, slot: Slot, level: u8, source: Source, dice: &Dice) -> Option<Item> {
-    let mut item = if rarity.named() {
+    let named = rarity == Rarity::Atheric || (rarity == Rarity::Legendary && Slot::SHIP.contains(&slot));
+    let mut item = if named {
         let every: Vec<&NamedDef> = catalogue().vestige_pool(rarity, slot).collect();
         let own: Vec<&NamedDef> = every.iter().copied().filter(|named| named.source() == source).collect();
         let pool = if own.is_empty() { every } else { own };
@@ -147,6 +148,8 @@ pub fn make(id: u32, rarity: Rarity, slot: Slot, level: u8, source: Source, dice
         let kinds: Vec<Kind> = slot.kinds().collect();
         let mut item = rolled(id, *kinds.get(dice.pick(Purpose::Which, 0, kinds.len()))?, rarity, slot, level, dice);
         item.source = source;
+        // A Breach's Legendary armour climbs further in Prestige.
+        item.breach = source == Source::Breach && rarity == Rarity::Legendary && item.kind.armour();
         item
     };
     item.element = element::rolled(item.kind, item.rarity, dice);
@@ -172,15 +175,27 @@ pub fn named_item(id: u32, named: &NamedDef, bucket: Slot) -> Item {
     item
 }
 
-/// A lesser item of a kind, its name and its traits rolled from the kind's pools, never one trait twice.
+/// A rolled item of a kind, its traits rolled from the kind's pools, never one trait twice. Its `name` is a ship
+/// module's name among its kind's, or an armour piece's or weapon's look, which the page climbs its content's sets
+/// and dyes by. A Legendary is level 20, its nodes asking for an island's resource rolled among the catalogue's.
 #[must_use]
 pub fn rolled(id: u32, kind: Kind, rarity: Rarity, bucket: Slot, level: u8, dice: &Dice) -> Item {
     let content = catalogue();
-    let mut item = Item::new(id, kind, rarity, level, bucket);
-    let names = content.names_of(kind, rarity);
-    item.name = u8::try_from(dice.pick(Purpose::Name, 0, names.len())).unwrap_or_default();
+    let legendary = rarity == Rarity::Legendary;
+    let mut item = Item::new(id, kind, rarity, if legendary { NAMED_LEVEL } else { level }, bucket);
+    let looks = if kind.module() { content.names_of(kind, rarity).len() } else { look_rolls(rarity) };
+    item.name = u8::try_from(dice.pick(Purpose::Name, 0, looks)).unwrap_or_default();
+    if legendary {
+        item.resource = u8::try_from(dice.pick(Purpose::Name, 1, content.resources.len())).ok();
+    }
     item.layout = rolled_layout(&item, None, dice);
     item
+}
+
+/// How many looks a rolled armour piece or weapon of a rarity rolls among: a Normal piece's one, for its plain dye;
+/// three past it, which a content's two or three sets and its dyes are counted off.
+fn look_rolls(rarity: Rarity) -> usize {
+    if rarity == Rarity::Normal { 1 } else { 3 }
 }
 
 /// The traits an item's columns offer, each column's rolled from its kind's pool, never one trait twice; with a

@@ -78,6 +78,11 @@ code:
   - client/src/player/foeDress.ts#officerDress
   - crates/gear/src/source.rs#Source
   - content/gear/looks.json
+  - content/gear/rolled.json
+  - client/src/player/gear.ts#itemName
+  - client/src/player/sourceLooks.ts#setName
+  - client/src/player/sourceLooks.ts#rolledArmourSet
+  - crates/gear/src/vestige.rs#rolled
   - client/src/player/sourceLooks.ts#rareSet
   - client/src/player/sourceLooks.ts#rolledMetal
   - crates/room/src/run_room.rs#dungeon_run
@@ -93,10 +98,10 @@ number is one of [[Gear as Claude Shapes It]].
 
 - **One crate for every machine.** The `gear` crate holds the rules, with no clock or platform, so the server and any
   browser agree. Its content is authored in `content/gear/` and built into it: the traits, the named items, the
-  islands' resources and rolled items' names. The catalogue is checked whole by a test: every trait a named item
+  islands' resources, each armour and weapon kind's word and a ship's rolled modules' names. The catalogue is checked whole by a test: every trait a named item
   offers exists, sits in the right kind of column and fits the item; no item offers a trait twice; each signature
-  and each intrinsic belongs to one Atheric, and every Atheric weapon has an intrinsic; every kind of loadout has a Legendary; every slot has a Legendary and an Atheric a Vestige
-  can open to; every rolled pool holds enough traits; every faction perk is a perk of a faction the factions' file
+  and each intrinsic belongs to one Atheric, and every Atheric weapon has an intrinsic; every kind of loadout has a named Legendary; every slot has a named Legendary and an Atheric; every armour and weapon
+  kind has its word; every rolled pool holds enough traits for a Legendary; every faction perk is a perk of a faction the factions' file
   holds, and each faction's armour piece and weapon writes no traits and has one of its faction's perks that fits it.
 - **An item** is a kind (a Melee or a Ranged loadout, four armour pieces, the cloak, or one of a ship's four modules,
   [[Ship Power]]), a rarity, a level (1 to 20; a
@@ -149,10 +154,24 @@ number is one of [[Gear as Claude Shapes It]].
   129, 64, 32); a colour too good for the foe's level (Legendary below 18, Atheric below 20) is struck out, the rest
   keeping their order. A player carries ten. Identified in a social space, it opens to its
   own colour three times in four, one colour below one time in five and one above one time in twenty (a Normal opens
-  Normal 95 in 100, an Atheric Atheric 80), never above what its level could drop, and to a named item of its slot (a
-  Breach's excepted) or a lesser one of a kind the slot takes, its name and traits rolled, never a trait twice. Its
-  named item is one of its own content's ("Where it came from", below) where that content has one of its slot and
-  colour, else any content's.
+  Normal 95 in 100, an Atheric Atheric 80), never above what its level could drop. An Atheric is a named Atheric of
+  its slot, one of its own content's ("Where it came from", below) where that content has one of its slot, else any
+  content's. Any other colour, a Legendary too, is a piece of a kind the slot takes in its content's set look, its look
+  and traits rolled, never a trait twice ([[Every Drop Wears Its Content's Set, With Random Perks]]); a Legendary is
+  level 20, its Prestige a Legendary's, its nodes asking for an island's resource rolled among the catalogue's, and a
+  Breach's Legendary armour climbs to 30 Prestige. A ship's Legendary module is a named one ([[Ship Power]]).
+- **Names** ([[Everything Carries a Set Name, and Perks Roll by Pool]]). Every rolled armour piece and weapon is named
+  by its set and its kind's word: "Portwatch Helm", "Wreckborn Sword and Shield" (`itemName`). Its set is the one its
+  look is drawn in, before the forge's fallbacks: each look of each content carries its set's name in
+  `content/gear/looks.json` (an armour set and the weapon metal of one look share it, the Breach's daedric is the
+  Lattice); a Normal piece, and a Magic one drawn as clothes, is Homespun. Each kind's word is in
+  `content/gear/rolled.json` (a weapon's as the game words its kind, "Twin Daggers", "Brace of Pistolets"; armour
+  Helm, Hauberk, Gauntlets, Greaves). A faction's pieces are named in `content/gear/items.json` by its faction's set:
+  Stormcaller, Lamplighter, Veiled. An Atheric keeps its own name, and so does any other named piece. The named
+  Legendaries that are no faction's leave every drop: no Vestige, kill, clear or package gives one. They are kept-only
+  but for Shape's week, and one a player keeps stays as it is, its name its own. A rolled piece's `name` byte is its
+  look roll. A gun is named by its content's metal, though drawn plain or gilded, so it says where it was earned. A
+  ship's module keeps its rolled name.
 - **Items as themselves.** A Boss's kill always leaves each player who struck it an item, not sealed, and a Miniboss's
   35 times in 100, each beside its Vestige and by a roll of its own, raised by the tier as the Vestige is
   (`vestige::found_items`, `loot_kill`). It is made as a Vestige of its rank's colours, opened, would make it, for any
@@ -461,7 +480,8 @@ the factions' counters are in [[Factions]].
 - A day runs from 09:00 UTC to 09:00 UTC (`gear::clock`): the smiths' wares, the Tailor's and the Tack's turn then.
 - **Shape** comes to Overlook from Friday 09:00 to Sunday 21:00 UTC and stands at one of eight places on the plaza,
   the week's (`gear::shape`, in the clock's weeks from Tuesday 09:00 UTC). He sells six pieces for the week, four
-  Legendary and two Atheric, each a named item at level 20 for a slot of the week's dice, for 7 and 15 Shapes, sold
+  Legendary and two Atheric, each a named item at level 20 (no drop gives a named Legendary, "Names" above), for a
+  slot of the week's dice, for 7 and 15 Shapes, sold
   from level 20 as a faction's are (his screen dims them "From level 20" below it). **Shapes** come only from the
   week's Abyss content ([[Bosses and Dungeons Drop Items, Clears Pay, and Shapes Come From the Week's Abyss]]): the
   week's Abyss Dungeon's first clear pays 15 (`gear::clears`, [[Activities]]), and no kill gives any. A player holds
@@ -557,10 +577,9 @@ Vestige's line says it too ("For the head, level 20, from an Abyss Dungeon.").
   room's content; the dungeon of the day's first clear a dungeon's, the week's two an Elite's and an Abyss's
   (`gear::clears`), and each playlist's daily and weekly its tier's (`gear::playlist`); the smiths' wares, a faction's packages, the public events' chests and the Test Ground's the
   world's; a faction's ware the faction's; Shape's each its own.
-- **A Vestige opened** makes its item from its own content: a rolled one keeps it; a named one is drawn among its
-  content's named items of its slot and colour (`source` in `content/gear/items.json`, by the content its look
-  belongs to; a faction's piece the faction's, a Breach's the Breach's), else among every content's, and keeps its own
-  (`vestige::make`). A kill's or a clear's item laid back as a Vestige for want of room is of the content it dropped
+- **A Vestige opened** makes its item from its own content: a rolled one, Legendary included, keeps it; an Atheric is
+  drawn among its content's Atherics of its slot (`source` in `content/gear/items.json`, by the content its look
+  belongs to), else among every content's, and keeps its own (`vestige::make`). A kill's or a clear's item laid back as a Vestige for want of room is of the content it dropped
   in; one found elsewhere keeps its item's.
 - **Kept with the character**: written only when not the world's, so a save without it reads as the world's; a named
   piece reads as its entry's content whenever it was kept (`old_hands::unfit`).
@@ -588,8 +607,9 @@ to every other player. Every garment is armour ([[Clothing Is Armour, With a War
   the next item the player gets takes), so the shop shows the piece the player gets: its set or clothes, its shield
   and its make. A test buys each of the day's wares in turn and holds each to its look in the shop.
 - **Rare and finer** pieces are armour sets of the forge. A rolled Rare piece of the world climbs its sets over levels 1
-  to 20, chain to steel, and one more by its name where one is left (`rareSet`); another content's drops at its own
-  levels (an Abyss Dungeon's all at 20), so its set is chosen by its name alone, and each of its sets is seen at every
+  to 20, chain to steel, and one more by its look roll where one is left (`rareSet`); a rolled Legendary climbs as a
+  Rare does; another content's drops at its own
+  levels (an Abyss Dungeon's all at 20), so its set is chosen by its look roll alone, and each of its sets is seen at every
   level it drops. A named piece wears the set written on it in `content/gear/items.json` (`look`), one of
   its own content's (a test holds every one to it). Daedric's
   armour and weapons are to give way to the Lattice's own, on hold for now
@@ -602,8 +622,8 @@ to every other player. Every garment is armour ([[Clothing Is Armour, With a War
   cloak in its faction's rank-2 dye whatever its rarity, laid on its greys as any garment dye is.
 - **The hands** hold the loadout drawn in its look (`weaponLook`). A rolled Normal weapon is iron to level 10 and steel
   past it from any content, as Normal armour is clothes; a Magic or finer one is made in its content's metals: the
-  world's climbing them over levels 1 to 20 and one more by its name where one is left, another content's chosen by its
-  name alone (`rolledMetal`). Its make is chosen by its own
+  world's climbing them over levels 1 to 20 and one more by its look roll where one is left, another content's chosen
+  by its look roll alone (`rolledMetal`). Its make is chosen by its own
   number: a Sword & Shield's shield kite, round or tower, a Dagger & Shield's buckler, round or kite, a Mace & Shield's
   round, kite or tower, a bow long or short. A Normal shield is plain or iron to level 10 by its number and its weapon's
   metal past it; a finer one its weapon's metal. A rolled pistolet, double pistolet or thunderlock is plain, gilded from Legendary up. A named
@@ -650,7 +670,7 @@ to every other player. Every garment is armour ([[Clothing Is Armour, With a War
   pauldrons' and padding, gauntlets', greaves', boots' and padding, a weapon's own), a faction's dye only on its cape
   worn, and a dye the player keeps on any (`colours_shown`, `dressed`); a page test holds the room's layer names to
   the page's (`dressLayers.test.ts`).
-- Each rolled item keeps its own look by its name; a named item takes its rarity's first.
+- Each rolled item keeps its own look by its look roll; a named item takes its rarity's first.
 
 ## Companions
 

@@ -78,10 +78,40 @@ const WARDROBE: Wardrobe = {
   hairStyles: [],
 };
 
+test('every rolled piece is named by the set it is drawn in, and its kind', () => {
+  const [sword, bow, head, torso, legs] = [2, 8, 13, 14, 16];
+  assert.equal(itemName(item({ kind: sword, rarity: 0 })), 'Homespun Sword', 'a Normal weapon is plain');
+  assert.equal(itemName(item({ kind: torso, rarity: 0, level: 20 })), 'Homespun Hauberk', 'Normal armour is clothes');
+  // The world's Rare armour climbs chain to steel; its weapons iron to steel.
+  assert.equal(itemName(item({ kind: head, rarity: 2, level: 1, name: 0 })), 'Shoreguard Helm');
+  assert.equal(itemName(item({ kind: head, rarity: 2, level: 20, name: 0 })), 'Wayfarer Helm');
+  assert.equal(itemName(item({ kind: sword, rarity: 2, level: 1, name: 0 })), 'Portwatch Sword');
+  // Each other content's Legendary in its own sets, by its look roll.
+  const legendary = (kind: number, source: number, name: number) =>
+    itemName(item({ kind, rarity: 3, level: 20, source, name }));
+  assert.equal(legendary(sword, 3, 0), 'Wreckborn Sword');
+  assert.equal(legendary(sword, 3, 1), 'Brightwater Sword');
+  assert.equal(legendary(head, 4, 0), 'Deepwarden Helm');
+  assert.equal(legendary(legs, 4, 1), 'Blackwater Greaves');
+  assert.equal(legendary(bow, 5, 1), 'Brassbound Bow');
+  assert.equal(legendary(head, 2, 0), 'Barrowknight Helm');
+  assert.equal(legendary(sword, 2, 2), 'Gravewarden Sword');
+  assert.equal(legendary(torso, 6, 0), 'Lattice Hauberk');
+  // A Magic torso numbered for clothes is Homespun; one in its content's lightest set is that set's.
+  assert.equal(itemName(item({ kind: torso, rarity: 1, id: 3 })), 'Homespun Hauberk');
+  assert.equal(itemName(item({ kind: torso, rarity: 1, id: 4 })), 'Deckhand Hauberk');
+  // A faction's piece is its faction's set, whatever metal it is drawn in.
+  assert.equal(itemName(item({ kind: 12, rarity: 3, named: 'squallbreak' })), 'Stormcaller Sword and Shield');
+  assert.equal(itemName(item({ kind: bow, rarity: 3, named: 'nightpin' })), 'Veiled Bow');
+});
+
 test('an item is named as the catalogue names it', () => {
-  assert.equal(itemName(item({ named: 'harbourwarden', rarity: 3 })), 'Harbourwarden');
-  assert.equal(itemName(item({ kind: 2, rarity: 0 })), 'Sword');
-  assert.equal(itemName(item({ kind: 8, rarity: 2, name: 1 })), 'Skua');
+  assert.equal(
+    itemName(item({ named: 'harbourwarden', rarity: 3 })),
+    'Harbourwarden',
+    'a named Legendary keeps its own',
+  );
+  assert.equal(itemName(item({ named: 'the_drowned_oath', rarity: 4, source: 4 })), 'The Drowned Oath');
   assert.equal(traitOf('ebb').name, 'Ebb');
   assert.equal(answerText(0), '');
   assert.equal(answerText(15), 'You do not have enough for it.');

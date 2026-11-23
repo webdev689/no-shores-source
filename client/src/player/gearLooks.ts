@@ -11,8 +11,8 @@ import { wornCosmetic } from '../forge/cosmetics.ts';
 import type { GearItem, GearState } from '../network/gearMessages.ts';
 import type { ArmourPiece, Outfit } from '../forge/outfit.ts';
 import type { Wardrobe } from './dressing.ts';
-import { MELEE, RANGED_SLOT, gearHands, nearest, numberOf, rung, worn, writtenLook } from './gear.ts';
-import { magicSets, nearestOwnFirst, rareSet } from './sourceLooks.ts';
+import { MELEE, RANGED_SLOT, gearHands, nearest, rung, worn, writtenLook } from './gear.ts';
+import { nearestOwnFirst, rareSet, rolledArmourSet } from './sourceLooks.ts';
 
 const [HEAD, TORSO, ARMS, LEGS, CLOAK] = [2, 3, 4, 5, 6];
 const MAGIC = 1;
@@ -36,10 +36,6 @@ const SETS = [
   'ebony',
   'daedric',
 ];
-/** A Magic piece's set by its number: its content's lightest sets on the head and arms (the world's leather or the
- *  thieves'), and on the torso and legs clothes (none) besides. */
-const magicChoices = (item: GearItem, slot: number): readonly (string | null)[] =>
-  slot === HEAD || slot === ARMS ? magicSets(item) : slot === TORSO || slot === LEGS ? [null, ...magicSets(item)] : [];
 /** Each armour slot's pieces of a set. */
 const PIECES: Readonly<Record<number, readonly ArmourPiece[]>> = {
   [HEAD]: ['helm'],
@@ -95,12 +91,11 @@ const pick = <T>(choices: readonly T[], item: GearItem): T | undefined => choice
 function setOf(item: GearItem, slot: number, wardrobe: Wardrobe): string | null {
   const needed = slot === TORSO ? ['cuirass' as const] : (PIECES[slot] ?? []);
   const drawn = (set: string) => needed.every((piece) => wardrobe.sets[piece].includes(set));
-  const choices = item.rarity === MAGIC ? magicChoices(item, slot) : [];
-  const magic = choices[numberOf(item) % choices.length];
   // A Magic torso or legs piece numbered for clothes wears no set.
-  if (magic === null) return null;
+  const rolled = rolledArmourSet(item, slot === TORSO || slot === LEGS);
+  if (item.rarity === MAGIC && rolled === null) return null;
   const faction = factionLook(item)?.armour;
-  const own = faction ?? writtenLook(item)?.look ?? magic ?? rareSet(item);
+  const own = faction ?? writtenLook(item)?.look ?? rolled ?? rareSet(item);
   if (drawn(own)) return own;
   // A look the forge does not draw for this body falls to the nearest it does: a faction's on the ladder from its
   // rarity's rung, any other among its own content's first, so it says where it was earned wherever the forge allows.

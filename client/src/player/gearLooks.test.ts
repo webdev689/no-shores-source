@@ -5,7 +5,8 @@ import type { Outfit } from '../forge/outfit.ts';
 import type { GearItem, GearState } from '../network/gearMessages.ts';
 import type { Wardrobe } from './dressing.ts';
 import { readFromRoom } from '../network/messages.ts';
-import { KINDS, MELEE, RANGED_SLOT, WORN, weaponLook } from './gear.ts';
+import { KINDS, MELEE, RANGED_SLOT, WORN, itemName, weaponLook } from './gear.ts';
+import { SOURCES } from './sourceLooks.ts';
 import { gearOutfit, spareOutfit } from './gearLooks.ts';
 import { COSMETICS } from '../forge/cosmetics.ts';
 
@@ -171,6 +172,22 @@ test("a rolled Rare piece climbs the world's sets with its level, and any other 
   assert.deepEqual(worn({ id: 7 }), worn({ id: 8 }), 'its number does not move it');
   const named = gearOutfit(state([item({ kind: 16, rarity: 3, at: 7, named: 'tithebreaker_greaves' })]), every, plain);
   assert.deepEqual([named.armour.greaves, named.armour.boots], ['dwarven', 'dwarven'], 'its own look, dwarven');
+});
+
+test("a rolled Legendary is drawn in its content's sets and metals and named by the one it wears", () => {
+  for (const [source, own] of SOURCES.entries()) {
+    if (own.key === 'faction') continue;
+    for (const name of [0, 1, 2]) {
+      const torso = item({ kind: 14, rarity: 3, level: 20, at: 5, name, source });
+      const cuirass = gearOutfit(state([torso]), every, plain).armour.cuirass ?? '';
+      assert.ok(own.armour.includes(cuirass), `${own.key}: ${cuirass}`);
+      assert.equal(itemName(torso), `${own.sets[cuirass]} Hauberk`);
+      const sword = item({ kind: 2, rarity: 3, level: 20, at: 0, name, source });
+      const { metal } = weaponLook(sword);
+      assert.ok(own.metals.includes(metal), `${own.key}: ${metal}`);
+      assert.equal(itemName(sword), `${own.sets[metal]} Sword`);
+    }
+  }
 });
 
 test('the dye, coat and barding worn ride the outfit; the start pieces are none', () => {

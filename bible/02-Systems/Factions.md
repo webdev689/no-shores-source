@@ -95,5 +95,5 @@ keeps a counter in Overlook's plaza ([[Cities]]), and a lore book its road gives
 
 - Reputation comes from kills and clears alone: no bounties or activities give it yet, as there are none.
 - A faction's weapons take its colour only where the forge dyes a weapon: a sword's or a dagger's blade keeps its
-  metal, so Squallbreak and Hushguard show it on their shields.
+  metal, so the Stormcaller Sword and Shield and the Veiled Dagger and Shield show it on their shields.
 - Destiny 1's rank 25 quest and its exotic class item have no like here.
