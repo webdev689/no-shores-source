@@ -481,6 +481,9 @@ export class EventPropsDraw implements Drawer {
   ): void {
     const drawn = this.prepared(fromEye, shot.eye);
     if (drawn.length === 0 || !this.tableGroup) return;
+    // Where each stands and how far it has risen or opened, which its draws do not show, for the far shadow map.
+    for (const [prop] of drawn)
+      shadow.tally(prop.at[0], prop.at[1], prop.at[2], prop.turn, prop.scale, prop.rise, prop.lid);
     const { cast } = this.pipelines();
     pass.setPipeline(cast);
     pass.setBindGroup(0, this.viewGroup);

@@ -322,7 +322,7 @@ export class ShipView {
   }
 
   /** Draws its shadow, as `drawInto` would draw it (in its `look`, as the picture lays its canvas), into the cascade
-   *  of the sun's map `shadow` is drawing. */
+   *  of the sun's map `shadow` is drawing, if it may cast there: wherever it is in view or out of it. */
   castInto(
     pass: GPURenderPassEncoder,
     place: ShipPlace,
@@ -332,6 +332,13 @@ export class ShipView {
     shadow: ShadowMap,
     look: ShipLook = PLAYER_LOOK,
   ): void {
+    // The sphere the main pass culls it by, wide enough for a mast falling flat about its foot.
+    const [middleX, middleY, middleZ, radius] = sphereAt(this.sphere, place, camera.eye);
+    if (!shadow.sphereReaches([middleX, middleY, middleZ], radius)) return;
+    // Where it lies and how its canvas is set, which its draws do not show: a far map it casts into is drawn again
+    // when they change.
+    const { x, y, z, heading, pitch, roll, scale = 1 } = place;
+    shadow.tally(x, y, z, heading, pitch, roll, scale, rig?.changes ?? -1, rig?.harm.changes ?? -1, rig?.time ?? -1);
     const canvas = this.prepare(place, camera, slot, look, rig);
     if (canvas !== null) this.encode(pass, slot, canvas, this.kit.cast, shadow.casterGroup(this.kit.cast));
   }

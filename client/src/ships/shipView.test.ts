@@ -53,6 +53,32 @@ test("its masthead is its spars' highest point, whatever else stands higher", ()
   near(top, [1, 0.2, 14]);
 });
 
+test('its sphere holds a mast fallen flat about its foot, so its shadow is cast as it falls', () => {
+  // A bow, a stern and a mast 30 m tall stepped 12 m forward of its middle.
+  const points = [
+    [-20, 0, 0],
+    [25, 3, 0],
+    [12, 0, 0],
+    [12, 0, 30],
+  ] as const;
+  const vertices = new ArrayBuffer(points.length * VERTEX_BYTES);
+  const view = new DataView(vertices);
+  points.forEach((point, vertex) =>
+    point.forEach((value, axis) => view.setFloat32(vertex * VERTEX_BYTES + axis * 4, value, true)),
+  );
+  const waterline = { lengthM: 45, beamM: 6, draughtM: 2 };
+  const [x, y, z, radius] = shipSphere(
+    { name: 'test', vertexCount: points.length, vertices, indices: new Uint32Array(0), waterline },
+    [],
+  );
+  // The masthead laid flat 30 m from its foot, any way round.
+  for (let bearing = 0; bearing < 360; bearing += 15) {
+    const turn = (bearing * Math.PI) / 180;
+    const top = [12 + 30 * Math.cos(turn), 30 * Math.sin(turn), 0];
+    assert.ok(Math.hypot(top[0] - x, top[1] - y, top[2] - z) <= radius, `fallen at ${bearing} degrees`);
+  }
+});
+
 test("its canvas wears the sail's picture, and its flag the layer it is given", () => {
   const grid = new Float32Array(SAIL_COLUMNS * SAIL_ROWS * 3);
   const bytes = canvasVertices([grid, grid], [grid, grid], [SHIP_PARTS.indexOf('sail'), 7]);
