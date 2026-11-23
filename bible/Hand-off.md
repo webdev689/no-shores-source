@@ -161,8 +161,10 @@ each part works is in its system note.
     refuses a seeker before the prologue or under the week's level, and silent sockets never fill it.
   - Encounters ([[Dungeons]], "Encounters"): two or three seals a run (the Litany, the Weighing, the Ascent's real
     climb in nine of the 18, the Holdfast), the Court's wards, anchors, slam and Reckoning, Fury from the end room;
-    living players counted, encounter foes dropping nothing, compass marks, the Boss scaled to the company; each moment
-    pictured in three dungeons (`tools/claude-toolkit/encounter-plan.ts`).
+    living players counted, encounter foes dropping nothing, compass marks, the Boss scaled to the company; the Court's
+    display kept clear at every size, a centre call for the slam ("Get clear!") and the Reckoning ("Into the light!"),
+    foul water's green edge, beams fading beside the camera; each moment pictured in three dungeons
+    (`tools/claude-toolkit/encounter-plan.ts`).
   - Tested offline: `cargo xtask check` on each pushed head (058f83e3 last); three rounds of read-only audits (rules,
     page, design, bible, looks, and two mutation audits of the tests), every finding fixed with a test or recorded.
     Not yet: played by hand, or in a deployed room.
