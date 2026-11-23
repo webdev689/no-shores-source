@@ -341,7 +341,7 @@ test("a ruin is overtaken: great formations drawn far, the buildings' crystal in
   );
   assert.ok(formations(overtaken).length > 3 * 17, `${formations(overtaken).length} formations near`);
   // The great formations (the tower's among them) at every distance, each lighting the night; the middle distance's
-  // only within the masses' reach.
+  // only within MIDDLE_M of the eye.
   const greats = overtaken.crystal.great.reduce((sum, draw) => sum + draw.count, 0);
   assert.ok(greats >= 1 && overtaken.lamps.length >= greats, `${greats} great`);
   const [first] = overtaken.chunks;

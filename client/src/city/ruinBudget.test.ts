@@ -46,7 +46,7 @@ test("a ruined city's crystal stays within the city's budgets, and builds in abo
     return { data, ms: performance.now() - started };
   };
   // Warmed once each, then measured: the ruin builds in about the time its plan does with its buildings whole (on
-  // this machine 1.1 s against 0.8 s), well under twice it.
+  // this machine 1.1 to 1.4 s against 0.8 s), well under twice it.
   built(true);
   built(false);
   const [ruin, whole] = [built(true), built(false)];
@@ -54,7 +54,7 @@ test("a ruined city's crystal stays within the city's budgets, and builds in abo
   const data = ruin.data;
   const solids = data.chunks.reduce((sum, chunk) => sum + chunk.solids.count / 3, 0);
   // Drawn at every distance: the solids (Mistfall's 135 406 triangles, its crown and fallen heaps among them) and the
-  // great formations (1 092 of them, 253 692 triangles), each lighting a lamp.
+  // great formations (1 394 of them, 340 962 triangles), each lighting a lamp.
   const formationTriangles = data.models.triangles.slice(data.firstFormation);
   const greats = data.crystal.great.reduce((sum, draw) => sum + draw.count, 0);
   const greatTriangles = data.crystal.great.reduce(
@@ -62,7 +62,7 @@ test("a ruined city's crystal stays within the city's budgets, and builds in abo
     0,
   );
   assert.ok(solids < 160_000, `${solids} solids`);
-  assert.ok(greats > 600 && greatTriangles < 350_000, `${greats} great, ${greatTriangles} triangles`);
+  assert.ok(greats > 600 && greatTriangles < 400_000, `${greats} great, ${greatTriangles} triangles`);
   assert.ok(data.lamps.length >= greats && data.lamps.length < 1500, `${data.lamps.length} lamps`);
   assert.ok(
     formationTriangles.every((count) => count < 350),
@@ -70,8 +70,8 @@ test("a ruined city's crystal stays within the city's budgets, and builds in abo
   );
   // Drawn near only: the crust's solids, a chunk's at most a few thousand.
   assert.ok(Math.max(...data.chunks.map((chunk) => chunk.detail.count / 3)) < 4000);
-  // From the landmark, before the view's culling: the middle distance's crystal (861 752 triangles) and the near
-  // cells' formations (498 558) under a million and a half together.
+  // From the landmark, before the view's culling: the middle distance's crystal (861 484 triangles) and the near
+  // cells' formations (498 328) under a million and a half together.
   const eye = [0, -150, 60];
   const middle = middleDraws(data.chunks, data.crystal.middle, eye, data.firstFormation).reduce(
     (sum, draw) => sum + draw.count * formationTriangles[draw.model - data.firstFormation],

@@ -345,7 +345,7 @@ shows no port icon over its harbour and offers no docking there; its island's ot
 
 Every ruin is overtaken by the Lattice's red crystal, the ruined port's people turned to it where they stood
 ([[The Ruined Cities' Waters Are the Lattice's, and Their Ruins Are Overtaken]]); a port city has none. The crystal is
-drawn in its own material (`crystal.ts`): red in the sun, purple in its shadows, its core half alight. Every piece is a
+drawn in its own material (`crystal.ts`): red in the sun, purple in its shadows, its core glowing. Every piece is a
 six-sided spire, a body three quarters of its height tapering to 0.8 of its width, then a point (`spire`, laid alike by
 the crate and the page), or a shard, one six-sided point two sevenths as wide as it is high; leaned out from what
 it grows from, rolled a little, its six faces cut flat. All of it is seeded, by the city in the crate and by each
@@ -390,7 +390,7 @@ building's place to the centimetre in the page, the same on every machine.
     to 1 (`worksGrowth`);
   - over the break of a heavily overtaken building, the wall's height over 4 (0.8 to 1.8), and out of a fallen heap
     of 150 m² or more, the root of its area over 14 (0.8 to 1.6), each by a chance that grows from 3 % at the grid's
-    edge to 60 % at its middle with the square of the nearness (`GREAT_CHANCE`): the overtaking spread from the heart.
+    edge to 45 % at its middle with the square of the nearness (`GREAT_CHANCE`): the overtaking spread from the heart.
 - **The harbour's wrecks** (`wreckCrust`) are crusted at the waterline: patches round the hull as long and broad as
   its ship's, one about every 3 m, three in ten missing, set out as large as the wreck is drawn (the ships' size: at
   sea larger, true size on foot), drawn at every distance.
@@ -407,9 +407,9 @@ building's place to the centimetre in the page, the same on every machine.
   light (`CRYSTAL_LAMP`) a third of the way up it, reaching 6 m more than it stands tall, at most 30 m; with the
   crown's three, the sky's nearest lamps are chosen from them as from any city's.
 - **Its cost**, Mistfall's (`ruinBudget.test.ts` holds it under its limits): 135 406 triangles of solids at every
-  distance (the crown, the heaps, the works); 1 092 great formations, 253 692 triangles, and as many lamps; from the
-  landmark, before the view's culling, 861 752 triangles of the middle distance's crystal and 498 558 of the near
-  cells'; the city built in 1.1 s where its buildings whole take 0.8 s.
+  distance (the crown, the heaps, the works); 1 394 great formations, 340 962 triangles, and as many lamps; from the
+  landmark, before the view's culling, 861 484 triangles of the middle distance's crystal and 498 328 of the near
+  cells'; the city built in 1.1 to 1.4 s where its buildings whole take 0.8 s.
 
 ## Limits
 

@@ -28,7 +28,7 @@ import { solidTurn } from './solidMesh.ts';
 export const OVERTAKEN = { untouched: 0.12, heavy: 0.33 } as const;
 /** The chance a heavily overtaken building or a large heap bears a great formation: at the city's edge, and at its
  *  heart (the landmark), growing as the square of the nearness. */
-export const GREAT_CHANCE = { edge: 0.03, heart: 0.6 } as const;
+export const GREAT_CHANCE = { edge: 0.03, heart: 0.45 } as const;
 /** A heap this large across (square metres) is large enough to bear a great formation. */
 const LARGE_HEAP_M2 = 150;
 /** The window round the plaza no crystal of the page's lies in (crates/city/src/ruins.rs PLAZA_CLEAR_M). */

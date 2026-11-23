@@ -245,7 +245,11 @@ export function buildCity(
   const chunkAt = (point: readonly number[]) =>
     chunkOf(Math.floor((point[0] - plan.grid.west) / CELL_M), Math.floor((point[1] - plan.grid.north) / CELL_M));
   const works = plan.ruined ? worksGrowth(plan.works).filter((place) => clearOfPlaza(place, plan)) : [];
-  const placedCrystal = [...crystal, ...works.map((place) => ({ cell: -1, place }))];
+  // the works' formations are all great ones, standing in no building's cell
+  const placedCrystal = [
+    ...crystal,
+    ...works.map((place) => ({ cell: -1, place: { ...place, reach: 'great' as const } })),
+  ];
   for (const { cell, place } of placedCrystal) {
     if (place.reach !== 'near') continue;
     const list = near.get(cell) ?? [];
@@ -488,7 +492,7 @@ function buildingMassesOf(
     for (const place of grown) if (clearOfPlaza(place, plan)) crystal.push({ cell, place });
   };
   // How near the city's heart a place stands: 1 at its middle, 0 at the grid's edge.
-  const reachM = (Math.sqrt(plan.cells.length) * CELL_M) / 2;
+  const reachM = (sideOf(plan) * CELL_M) / 2;
   const heartOf = (east: number, south: number) =>
     Math.max(0, 1 - Math.hypot(east - plan.centre[0], south - plan.centre[1]) / reachM);
   const placeOf = (piece: Placed) => ({
