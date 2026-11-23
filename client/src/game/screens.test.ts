@@ -1,6 +1,8 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
+import { COSMETICS } from '../forge/cosmetics.ts';
 import { ASKS, type GearAsk, type GearState } from '../network/gearMessages.ts';
+import { HORSE, MOUNT_SLOT, WORN } from '../player/gear.ts';
 import { glyphDrawn } from '../ui/glyphs.ts';
 import type { Child, Node } from '../ui/node.ts';
 import { QuadList } from '../ui/quads.ts';
@@ -37,12 +39,12 @@ function renderer(): UiRenderer {
 }
 
 /** The menu on a fake page with `gear`, a frame at a time, the keys pressed on the page, and every ask it made. */
-function menu(gear: GearState) {
+function menu(gear: GearState, view = VIEW) {
   const { window } = fakePage();
   Object.assign(globalThis, {
     devicePixelRatio: 1,
-    innerWidth: VIEW.width,
-    innerHeight: VIEW.height,
+    innerWidth: view.width,
+    innerHeight: view.height,
     setInterval: () => 0,
     requestAnimationFrame: () => 0,
   });
@@ -63,7 +65,7 @@ function menu(gear: GearState) {
   ui.speak = () => undefined;
   let drawn: Node | null = null;
   const frame = (events: UiEvent[] = []) => {
-    ui.frame(VIEW, events, 1 / 60);
+    ui.frame(view, events, 1 / 60);
     drawn = stack.node(ui);
     ui.draw(drawn);
   };
@@ -317,4 +319,80 @@ test("with no Art worn, the Character page says a house's road gives one, and th
   }
   click('art-1');
   assert.deepEqual(asked, [], 'none may be worn');
+});
+
+test('in the story, before the Storm is given, the Character page says nothing of pledging to a house', () => {
+  const sample = sampleGear();
+  const steel = sampleItem({ id: 60, kind: 2, name: 1, level: 1, at: 0, story: true });
+  const gear = { ...sample, items: [...sample.items, steel], arts: { ...sample.arts!, art: 0, earned: [0, 0, 0] } };
+  const { open, labelOf } = menu(gear);
+  open('character');
+  assert.equal(labelOf('art-diamond'), 'Art: none.');
+});
+
+test('the Mount slot stands with the gear: empty with a horse glyph, then the horse worn; its flyout wears a horse and a barding', () => {
+  const sample = sampleGear();
+  const empty = menu(sample);
+  empty.open('character');
+  assert.equal(empty.labelOf('slot-11'), 'Mount: empty');
+  const numberOf = (id: string) => COSMETICS.findIndex((each) => each.id === id);
+  const carried = sampleItem({ id: 40, kind: HORSE, name: 3, level: 1, at: 0, bucket: MOUNT_SLOT });
+  const worn = sampleItem({ id: 41, kind: HORSE, name: 1, level: 1, at: WORN + MOUNT_SLOT, bucket: MOUNT_SLOT });
+  const gear = {
+    ...sample,
+    items: [...sample.items, carried, worn],
+    cosmetics: [numberOf('dawnfire')],
+    worn: { dye: 0, coat: numberOf('chestnut'), barding: numberOf('bare') },
+  };
+  const { ui, click, open, asked, labelOf } = menu(gear);
+  open('character');
+  assert.equal(labelOf('slot-11'), 'Mount: Chestnut Horse, Normal');
+  click('slot-11');
+  assert.ok(ui.boxOf('flyout'), 'it opens as a gear slot does');
+  click('item-40');
+  assert.deepEqual(asked, [{ kind: ASKS.wear, item: 40, slot: MOUNT_SLOT }], 'a horse kept is worn by a click');
+  click('barding-ember_plate');
+  assert.equal(asked.length, 1, 'a barding not kept asks nothing');
+  click('barding-dawnfire');
+  assert.deepEqual(asked[1], { kind: ASKS.wearCosmetic, item: numberOf('dawnfire') }, 'a barding kept is worn over it');
+});
+
+test('every slot’s flyout on the Character page stands whole on the screen, the Mount’s too, at every size', () => {
+  const sample = sampleGear();
+  const horses = [1, 2, 3].map((name) =>
+    sampleItem({ id: 50 + name, kind: HORSE, name, level: 1, at: 0, bucket: MOUNT_SLOT }),
+  );
+  const gear = { ...sample, items: [...sample.items, ...horses] };
+  const sizes = [
+    { width: 960, height: 540 },
+    { width: 1280, height: 720 },
+    { width: 1600, height: 900 },
+    { width: 1920, height: 1080 },
+    { width: 844, height: 390 },
+  ];
+  const off: string[] = [];
+  for (const size of sizes) {
+    for (const slot of [0, 1, 6, 2, 3, 4, 5, MOUNT_SLOT]) {
+      const { ui, click, open, frame, middle } = menu(gear, { ...size, scale: 1 });
+      open('character');
+      // A slot below the page's fold is scrolled to first, as a player does.
+      for (let turn = 0; turn < 8 && middle(`slot-${slot}`).y > size.height / 2; turn++) {
+        frame([
+          { kind: 'wheel', x: size.width / 2, y: size.height / 2, dy: middle(`slot-${slot}`).y - size.height / 2 },
+        ]);
+        frame();
+      }
+      click(`slot-${slot}`);
+      const box = ui.boxOf('flyout');
+      if (!box) {
+        off.push(
+          `slot ${slot} at ${size.width} by ${size.height} does not open: ${JSON.stringify(ui.boxOf(`slot-${slot}`))}`,
+        );
+        continue;
+      }
+      const inside = box.x >= 0 && box.y >= 0 && box.x + box.width <= size.width && box.y + box.height <= size.height;
+      if (!inside) off.push(`slot ${slot} at ${size.width} by ${size.height}: ${JSON.stringify(box)}`);
+    }
+  }
+  assert.deepEqual(off, []);
 });

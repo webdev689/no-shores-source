@@ -456,9 +456,10 @@ puffs (`Effects`, after DFO's `navalEffects.js`), harm kept on the ship it struc
 sounds and, on the player's own ship, jars of the eye. Smoke, spray and foam are soft round puffs blended over what
 is behind them, smoke swelling as it thins and carried by a 4 m/s wind; flash, flame, embers and glints are light
 added unlit; splinters, shreds and planks are solid and lit. The puffs are drawn after the water, far to near, hidden
-where the scene stands nearer (`puffView.ts`), at most 2,048 a frame, the nearest kept; their floats are written each
-frame into arrays the view keeps (`PuffScratch`), so laying them makes nothing new. Each glow gives its stepped halo through the light layer, as the
-land's bright things do. DFO's lights on the hulls round a flash (26 m for 0.12 s) or a burning ship (16 m, three at
+where the scene stands nearer (`puffView.ts`), at most 2,048 a frame, the nearest kept, and fading softly to nothing
+over the last 2.5 to 0.3 m to the eye (`nearFade.ts`), as the fires' smoke does; their floats are written each frame
+into arrays the view keeps (`PuffScratch`), so laying them makes nothing new. Each glow gives its stepped halo through
+the light layer, as the land's bright things do. DFO's lights on the hulls round a flash (26 m for 0.12 s) or a burning ship (16 m, three at
 most) are kept as the effects' `light` marks but not drawn: the ships' shader takes no point lights yet, and the
 light layer drew their whole reach as a disc over the sky and sea. At most 900 puffs
 live at once; past that, spray, foam and glints go first, then splinters, shreds and embers, then flashes and planks,

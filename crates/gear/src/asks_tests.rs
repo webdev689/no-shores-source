@@ -17,21 +17,17 @@ fn give(character: &mut Character, kind: Kind, rarity: Rarity, level: u8, bucket
 }
 
 fn at_level_20() -> Character {
-    let mut character = Character::starting();
+    let mut character = Character::kitted();
     character.xp = xp_for_level(20);
     character
 }
 
 #[test]
-fn a_new_player_starts_as_destiny_1s_guardians_did() {
+fn a_new_player_starts_at_level_1_with_nothing_worn_and_no_aurem() {
     let character = Character::starting();
     assert_eq!(character.level(), 1);
-    let sword = character.worn(Slot::Melee).expect("a sword for Melee");
-    assert_eq!((sword.kind, sword.rarity, sword.level), (Kind::Sword, Rarity::Normal, 1));
-    for slot in [Slot::Head, Slot::Torso, Slot::Arms, Slot::Legs] {
-        assert!(character.worn(slot).is_some_and(|item| item.rarity == Rarity::Normal), "{slot:?}");
-    }
-    assert!(character.worn(Slot::Ranged).is_none() && character.worn(Slot::Cloak).is_none());
+    assert!(Slot::VESTIGE.iter().chain([&Slot::Cloak]).all(|slot| character.worn(*slot).is_none()));
+    assert!(character.items.values().all(|(item, _)| item.kind.module()), "nothing carried but the ship's");
     assert_eq!(character.prestige(), 0);
     assert_eq!(character.materials.aurem, 0);
 }
@@ -68,7 +64,7 @@ fn wearing_keeps_loadouts_levels_and_one_atheric_to_each_of_loadouts_and_armour(
 
 #[test]
 fn a_slot_carries_nine_beside_the_one_worn() {
-    let mut character = Character::starting();
+    let mut character = Character::kitted();
     for _ in 0..CARRIED_MOST {
         give(&mut character, Kind::DoubleDaggers, Rarity::Normal, 1, Slot::Melee);
     }
@@ -203,7 +199,7 @@ fn fruit_of_dagon_grows_past_level_20_and_feeds_an_item() {
 
 #[test]
 fn a_kill_teaches_the_weapon_that_struck_and_every_armour_piece() {
-    let mut character = Character::starting();
+    let mut character = Character::kitted();
     give(&mut character, Kind::DoubleDaggers, Rarity::Normal, 1, Slot::Melee);
     character.earn_xp(400, Some(Slot::Melee));
     let xp = |slot| character.worn(slot).map(|item| item.xp);

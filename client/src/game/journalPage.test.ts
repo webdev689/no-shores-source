@@ -106,7 +106,7 @@ test('the Journal shows the houses’ roads: the opening at its task before the 
   for (const words of [opening.name, '1', opening.tasks[0]?.task ?? ''])
     assert.ok(card.includes(words), `${words} on its card`);
   assert.ok(
-    card.includes('Hear all three houses before you choose. Start with the loudest.'),
+    card.includes('You, fresh off the shore. Every counter here has something for you.'),
     'a line of its tale: the opening line its first scene says',
   );
   const banner = nodesOf(byId(before.tree(), `quest-${opening.id}`)).find((node) => node.picture)?.picture;

@@ -180,7 +180,11 @@ number is one of [[Gear as Claude Shapes It]].
 
 ## In the rooms
 
-- **Each player's gear** is held by the room they are in ([[Server]]), the starting kit as they join, and sent to
+- **A new character** arrives with no weapon and no armour, only their ship's first modules
+  ([[The Stranger Welcomes the Player, and a Quest Walks Them Round Overlook]]); the Test Ground's player, and the
+  scripted players that try the public events, wear a level 1 Normal sword and level 1 Normal armour
+  (`Character::kitted`). A character kept before keeps its gear.
+- **Each player's gear** is held by the room they are in ([[Server]]), a new character's as they join, and sent to
   them alone whenever it changes, every column of every item spelled out so the browser draws it without the rules.
 - **Hands.** A player holds only what a loadout they wear puts in their hands, the fists with no Melee worn, or a
   torch beside a loadout that leaves the left hand free; the browser draws the hands from the loadout drawn, in a
@@ -435,12 +439,16 @@ the factions' counters are in [[Factions]].
   Ranged, and an Ammo crate, in a social space's arcades ([[Cities]]). Each shows six wares a day, three Rare and three
   Magic, made at the buyer's level (at most 20), the same for everyone that day and new the next (`gear::vendor`). The
   slots turn with the day, so over four days the Armorsmith sells each armour piece at each rarity.
-- A ware costs Aurem only: 2,000 for Rare, 600 for Magic. It is bought only at its smith's counter, and carried with
-  its slot's nine. The smiths sell no Legendary or Atheric gear: it is earned, had from Shape, or a faction's own
+- **The starter stock.** Beside the day's wares each smith always sells plain pieces to start with, Normal at the
+  buyer's level (at most 20), 50 Aurem each: the Armorsmith a head, a torso, arms and legs; the Weaponsmith a Sword &
+  Shield (Melee) and a bow (Ranged). Their screens show them first, under "To start". A smith's stock is numbered the
+  day's six first, then the starter stock (`gear::vendor::stock`).
+- A ware costs Aurem only: 2,000 for Rare, 600 for Magic, 50 for a starter piece. It is bought only at its smith's
+  counter, and carried with its slot's nine; the quest walked hears of it by its slot ([[Quests]]). The smiths sell no Legendary or Atheric gear: it is earned, had from Shape, or a faction's own
   bought at its counter by rank ([[Factions]]).
 - **The Mage** identifies Vestiges, free.
-- **The Tailor** sells six emblems a day ("Emblems") and four dyes; **the Tack** four horse pieces a day
-  ("Cosmetics").
+- **The Tailor** sells six emblems a day ("Emblems") and four dyes; **the Tack** four a day of horses and bardings
+  ("Horses", "Cosmetics").
 - A day runs from 09:00 UTC to 09:00 UTC (`gear::clock`): the smiths' wares, the Tailor's and the Tack's turn then.
 - **Shape** comes to Overlook from Friday 09:00 to Sunday 21:00 UTC and stands at one of eight places on the plaza,
   the week's (`gear::shape`, in the clock's weeks from Tuesday 09:00 UTC). He sells six pieces for the week, four
@@ -452,7 +460,7 @@ the factions' counters are in [[Factions]].
   200 at most.
 - The room keeps the minute, set by its host before its first tick and each second after (and by the page as its own
   room steps, playing alone), whose day (`gear::clock`, from 09:00 UTC) sets every daily list and whose week (from
-  Tuesday 09:00 UTC) sets Shape. It sends the day's wares, the Tailor's emblems and dyes, the Tack's pieces and, while he is here, Shape's place and his
+  Tuesday 09:00 UTC) sets Shape. It sends each smith's stock and the Shipwright's in turn, the Tailor's emblems and dyes, the Tack's pieces and, while he is here, Shape's place and his
   wares (none twice in a week) with a player's gear while they stand in a social space, sends them again as the
   day turns or Shape comes, goes or moves, and a purchase is an ask like any other: 12 a smith's ware (its place in
   `node` and the day it was shown, which the gear message carries, so one shown before the day turned is refused as
@@ -482,16 +490,43 @@ and its art (`gear::emblems`).
 ## Cosmetics
 
 Dyes, coats and bardings, after Destiny's shaders and Sparrows: `content/gear/cosmetics.json`, numbered by its order
-on the wire, each with a kind, a name, a rarity, words, where it comes from and its look (`gear::cosmetics`).
+on the wire, each with a kind, a name, a rarity, words, where it comes from and its look (`gear::cosmetics`). A coat
+is a horse's hide, kept as its horse ("Horses").
 
-- **Kept and worn** as emblems are: a character keeps every one they have had and wears one dye, one coat and one
-  barding. A new one keeps and wears the starts: Own Colours, Bay and Bare. One worn that is not kept, or of another
-  kind, is the start again as the character is read.
+- **Kept and worn** as emblems are: a character keeps every dye and barding they have had and wears one of each. A
+  new one keeps and wears the starts: Own Colours and Bare. One worn that is not kept, or of another kind, is the
+  start again as the character is read.
 - **Where each comes from**: the start; a faction's second rank (its dye, [[Factions]]); and the Tailor (dyes) and the
-  Tack (coats and bardings), each showing four a day of those they sell, the same for everyone that day, for Aurem,
+  Tack (horses and bardings), each showing four a day of those they sell, the same for everyone that day, for Aurem,
   some from a level.
-- **Asks**: wearing one kept, anywhere (55, its number in `item`); buying one of the day's at its seller's counter
-  (56). The gear message carries those kept, the three worn, and in a social space those sold today.
+- **Asks**: wearing a dye or barding kept, anywhere (55, its number in `item`); buying one of the day's at its
+  seller's counter (56), a coat's number buying its horse. The gear message carries those kept, the dye and barding
+  worn and the worn horse's coat, and in a social space those sold today.
+
+## Horses
+
+[[Horses Are Items Worn in a Mount Slot]] (`gear::horses`; Claude's calls in
+[[The Prologue, Horses and the Welcome to Overlook as Claude Builds Them]]).
+
+- **A horse is an item** of its own kind (28), worn in the Mount slot (11), one to each coat: the Bay Horse, the
+  Chestnut Horse and so on, its name its coat's place among the coats (`content/gear/rolled.json` names them in that
+  order). It is Normal, of level 1, with no stats, nodes or perks; it is never upgraded, fed or dismantled. It is
+  carried with the Mount slot's nine and kept in the vault among the armour. Nothing buys an item back, so a horse is
+  kept until stored. The Test Ground hands out no horse.
+- **Riding** needs a horse worn in the Mount slot (`Character::may_ride`).
+- **The Tack** sells horses as it sells bardings, at its coat's price; one bought goes to the pack, one of each coat,
+  refused while the Mount slot carries nine. Beside its day's four it sells the Bay Horse every day, first on its
+  screen, at the cheapest coat's price (1,500 Aurem, from level 1): a new player's first horse, had there after the
+  tutorial ("Later, not in the tutorial", `horses::FIRST_HORSE`).
+- **A new character has no horse.** A character kept while coats were cosmetics is given, as it is read, a horse in
+  the pack for each coat it kept and the one it wore worn in the Mount slot; one kept before cosmetics wore the Bay,
+  so it is given the Bay Horse worn. The coats leave its cosmetics, and a room with horses marks every character's
+  cosmetics (`horses`), so this is done once: a coat found beside the mark is what a room from before horses wrote
+  back as its own default, and is dropped, so a room rolled back and forward gives no horse; a coat bought from the
+  older room meanwhile is dropped with it, and a character made there is read as one from before horses (the Bay
+  worn). A room rolled back past the welcome to Overlook resets an opening task it does not know to its own first, so a
+  new character rolled back and forward reads on "Hear the three houses": the stranger's 400 Aurem and the round of the
+  counters are lost to it.
 
 ## Elements and shields
 
@@ -557,7 +592,8 @@ The figure wears its gear (`gearOutfit`), redressed whenever what it wears chang
 to every other player. Every garment is armour ([[Clothing Is Armour, With a Wardrobe Later]]):
 
 - **Normal** pieces are clothes: a shirt, breeches, trousers or a skirt, and shoes, dyed in the rarity's plain dyes;
-  a Normal head or arms piece shows nothing.
+  a Normal head or arms piece shows nothing. The prologue's own armour is the one Normal set: its steel
+  ([[Prologue]]).
 - **Each content's sets and metals** (`content/gear/looks.json`, in `Source`'s order); by worth, each of the world, a
   dungeon, an Elite Dungeon and an Abyss Dungeon is wholly above the one before, a sea dungeon's apart: the world leather, the thieves', chain, iron and steel, in iron and steel; a dungeon
   the knights' and silver, in silver; a sea dungeon elven and dwarven, in elven and dwarven; an Elite Dungeon orcish
@@ -620,8 +656,8 @@ to every other player. Every garment is armour ([[Clothing Is Armour, With a War
   worn dye, coat and barding into each dress it relays, so others see only what a player keeps and wears; another
   player's dress naming one that is not of its kind is refused as any broken dress is. A dress's armour and the things
   in its hands keep only the looks the page could draw the pieces worn in on the dress's body (`looks::shown`,
-  [[The Room Keeps Only Looks of a Piece's Own Content]]): an armour piece's faction's set, the set written on a named
-  piece, or else its content's by its rarity (a Magic piece's lightest, a world Rare piece's chain to steel, none for a
+  [[The Room Keeps Only Looks of a Piece's Own Content]]): the prologue's own armour's steel, an armour piece's
+  faction's set, the set written on a named piece, or else its content's by its rarity (a Magic piece's lightest, a world Rare piece's chain to steel, none for a
   Normal piece's clothes); a weapon and its shield in its faction's metal, its written metal and make, or else its
   content's metals (a Normal one's iron or steel, a gun's plain or gilded) with any of its shield's or bow's makes; and
   for each look the forge does not draw for the body, the one the page falls to, read from the forge's table of drawn

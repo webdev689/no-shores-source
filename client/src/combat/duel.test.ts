@@ -30,7 +30,7 @@ const ANSWER_BEFORE = 5;
 
 /** Whether the parry ring over a foe is gold for `player`: a press now would parry its blow. */
 function gold(view: FighterView, player: number, open: boolean): boolean {
-  const cue = parryCue(view, player, open);
+  const cue = parryCue(view, player, startCombatRules(compiled).parryWindow(true), open);
   return cue !== null && cue !== 'iron' && cue.now;
 }
 

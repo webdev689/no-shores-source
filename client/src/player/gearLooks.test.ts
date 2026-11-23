@@ -242,9 +242,27 @@ test("a faction's weapon is drawn in its faction's metal, its shield too, and ea
   assert.deepEqual([squall.left, squall.dyes['shield_kite_elven']], ['shield_kite_elven', 'stormcallers']);
 });
 
+test('the prologue’s own armour is its steel, a Normal piece though it is, as the story dressed the player', () => {
+  const steel = state([
+    item({ id: 1, kind: 14, at: 5, story: true }),
+    item({ id: 2, kind: 15, at: 6, story: true }),
+    item({ id: 3, kind: 16, at: 7, story: true }),
+  ]);
+  const outfit = gearOutfit(steel, every, plain);
+  assert.deepEqual(outfit.armour, {
+    cuirass: 'steel',
+    pauldrons: 'steel',
+    gauntlets: 'steel',
+    greaves: 'steel',
+    boots: 'steel',
+  });
+  assert.deepEqual(outfit.garments, [], 'no clothes over it');
+});
+
 test("a smith's ware is drawn as the piece it becomes once bought: its set or clothes, its metal and its make", async () => {
   // gear_wire_tests.rs writes the player's gear at the stall, then again after each of the Armorsmith's and the
-  // Weaponsmith's six wares is bought in turn, each message its length in four bytes and then itself.
+  // Weaponsmith's wares, the day's six then the starter stock, is bought in turn, each message its length in four bytes
+  // and then itself; the smiths' stocks come first among the wares, so the ware bought is the one at its place.
   const bytes = await readFile(new URL('../../../target/protocol/gear_vended.bin', import.meta.url)).catch(() => {
     throw new Error('gear_vended.bin is not written: run `cargo test -p protocol`');
   });
@@ -255,7 +273,7 @@ test("a smith's ware is drawn as the piece it becomes once bought: its set or cl
     if (read?.kind === 'gear') sent.push(read);
     start += 4 + length;
   }
-  assert.equal(sent.length, 13, 'before any is bought, and after each of twelve');
+  assert.equal(sent.length, 19, 'before any is bought, and after each of the ten and the eight');
   const looks = (piece: GearItem) => {
     const slot = piece.bucket;
     const wearing = state([{ ...piece, at: WORN + slot }]);

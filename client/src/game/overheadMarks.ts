@@ -18,7 +18,7 @@ import { keeperOf } from './keepers.ts';
 import { factionOf } from './npc/factionRows.ts';
 import { keeperPicture } from './npc/npcMarks.ts';
 import { offerAt } from './plazaLife.ts';
-import { awayFromCounters, shapeSpot } from './townsfolk.ts';
+import { shapeSpot } from './townsfolk.ts';
 import type { NodeInfo } from './worldData.ts';
 import { LORE_PICTURE } from './compendium/loreArt.ts';
 
@@ -104,7 +104,7 @@ export function markOfKind(kind: string): PixelPicture | null {
 /** Whether the keeper at a counter of `kind` has something for the player, so their mark is lit: a quest step asks
  *  to speak with them (`waits`), or, the Postmaster's, letters wait in `gear`. The held map lights their coin alike. */
 export const keeperLit = (gear: GearState | null, kind: string, waits: (counter: string) => boolean): boolean =>
-  !awayFromCounters.has(kind) && ((kind === 'mail' && (gear?.mail?.length ?? 0) > 0) || waits(kind));
+  (kind === 'mail' && (gear?.mail?.length ?? 0) > 0) || waits(kind);
 
 /** What wears a mark where a player stands, on `floor`'s height, read once each: each station that deals with them
  *  over its keeper's crown while the keeper stands there (the bounty board over its gable), lit while `speak` says a
@@ -123,8 +123,7 @@ export function markedHere(
   const marked: Marked[] = [];
   const crown = (x: number, y: number, top = BODY_HEIGHT): Point => [x, y, floor(x, y) + top + OVER_HEAD_M];
   for (const station of here.stations ?? []) {
-    // A keeper away from their post (the elder on her welcome) leaves it unmarked until they are back.
-    const there = !awayFromCounters.has(station.kind) && offerAt([station], ...station.counter);
+    const there = offerAt([station], ...station.counter);
     const picture = there ? markOfKind(station.kind) : null;
     const top = station.kind === 'board' ? BOARD_TOP_M : BODY_HEIGHT;
     if (picture) marked.push({ picture, at: crown(...station.keeper, top), lit: keeperLit(gear, station.kind, waits) });

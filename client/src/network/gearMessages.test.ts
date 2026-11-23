@@ -109,8 +109,8 @@ test('where a player stands crosses as the server wrote it, away from Shape and 
   assert.ok(away?.kind === 'gear' && here?.kind === 'gear');
   const fresh = { pledge: 0, reputation: [0, 0, 0], packages: [0, 0, 0], artLevels: [5, 5, 5], artXp: [0, 0, 0] };
   assert.deepEqual(away.standing, { ...fresh, artOwned: [0b11_1111, 0b11_1111, 0b11_1111] }, 'every fragment owned');
-  assert.deepEqual(away.cosmetics, [23, 16, 0], 'the start pieces: bare, bay, own colours');
-  assert.deepEqual(away.worn, { dye: 0, coat: 16, barding: 23 });
+  assert.deepEqual(away.cosmetics, [23, 0], 'the start pieces: bare, own colours');
+  assert.deepEqual(away.worn, { dye: 0, coat: 0, barding: 23 }, 'no horse worn, so no coat');
   assert.deepEqual([away.shapes, away.shape], [0, null], 'he is away');
   assert.deepEqual(here.standing, {
     pledge: 2,
@@ -120,9 +120,9 @@ test('where a player stands crosses as the server wrote it, away from Shape and 
     artXp: [700, 0, 0],
     artOwned: [0b101, 0, 0b11_1111],
   });
-  assert.deepEqual(here.cosmetics, [23, 16, 24, 14, 0], 'Ember Plate bought and the Lamplighters’ gold earned');
-  assert.deepEqual(here.worn, { dye: 0, coat: 16, barding: 24 });
-  assert.equal(here.cosmeticsSold?.length, 8, 'four the Tailor’s, four the Tack’s');
+  assert.deepEqual(here.cosmetics, [23, 24, 14, 0], 'Ember Plate bought and the Lamplighters’ gold earned');
+  assert.deepEqual(here.worn, { dye: 0, coat: 0, barding: 24 });
+  assert.equal(here.cosmeticsSold?.length, 9, 'four the Tailor’s, four the Tack’s and its Bay Horse');
   assert.equal(here.shapes, 9);
   assert.equal(here.shape?.place, 6);
   assert.deepEqual(

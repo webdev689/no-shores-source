@@ -25,6 +25,7 @@
     "guns": { "normal": ["Guns"], "magic": ["Tempered Guns", "Sound Guns", "Brass Guns"], "rare": ["Harbour Battery", "Salt-Cast Guns", "Gullroar Battery"] },
     "hull": { "normal": ["Hull"], "magic": ["Tarred Hull", "Sound Hull", "Caulked Hull"], "rare": ["Breakwater Hull", "Reefwalker Hull", "Saltoak Hull"] },
     "sails": { "normal": ["Sails"], "magic": ["Patched Sails", "Sound Sails", "Tanned Sails"], "rare": ["Gullwing Sails", "Spray Sails", "Dawnwind Sails"] },
-    "rigging": { "normal": ["Rigging"], "magic": ["Tarred Rigging", "Sound Rigging", "Hempen Rigging"], "rare": ["Ropewalk Rigging", "Seagrass Rigging", "Brineline Rigging"] }
+    "rigging": { "normal": ["Rigging"], "magic": ["Tarred Rigging", "Sound Rigging", "Hempen Rigging"], "rare": ["Ropewalk Rigging", "Seagrass Rigging", "Brineline Rigging"] },
+    "horse": { "normal": ["Bay Horse", "Chestnut Horse", "Dun Horse", "Grey Horse", "Black Horse", "White Horse", "Palomino Horse"], "magic": [], "rare": [] }
   }
 }

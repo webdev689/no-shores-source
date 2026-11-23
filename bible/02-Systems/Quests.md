@@ -52,12 +52,12 @@ shows what the rules say: the tracker, the lines, the marks, and the Art's locks
 file. A quest has an `id`, a `name`, a `faction` (0 for the opening, else the house's number in
 `content/gear/factions.json`), the scene played as it begins (`begin`) and its `tasks`. A task has the words the tracker
 shows (`task`), its scenes (`start`, played as it begins; `end`, played as it is done), its `goals`, all met before the
-next task begins, and its `reward`, given as it is done. Any goal may name a `scene`, said as the room meets it. A quest may name the quests it comes `after` (by id); a house may have several. The quest walked is the first in the file of the pledged house's (the opening's, unpledged) not done whose `after` are all done. A task may list the ids it had (`was`); a save at one reads as that task, its counts at nothing. A goal has its tracker words (`text`), a `count` (1 when left
+next task begins, and its `reward`, given as it is done. Any goal may name a `scene`, said as the room meets it. A quest may name the quests it comes `after` (by id); a house may have several. A quest may name the task a character kept before it held any place in it reads at (`kept`). The quest walked is the first in the file of the pledged house's (the opening's, unpledged) not done whose `after` are all done. A task may list the ids it had (`was`); a save at one reads as that task, its counts at nothing. A goal has its tracker words (`text`), a `count` (1 when left
 out) and its kind:
 
 | Kind | Met by | Its fields |
 |---|---|---|
-| `talk` | Speaking with a keeper within reach of their counter; its `scene` is said then | `to`: a counter's key: a house's (`stormcallers`, `lamplighters`, `veiled`), or `mage`, `vault`, `armorsmith`, `weaponsmith`, `tailor`, `tack`, `harbourmaster` |
+| `talk` | Speaking with a keeper within reach of their counter; its `scene` is said then | `to`: a counter's key: a house's (`stormcallers`, `lamplighters`, `veiled`), or `mage`, `vault`, `armorsmith`, `weaponsmith`, `tailor`, `tack`, `harbourmaster`, `mail` (the Postmaster); or `stranger`, heard anywhere in a social space |
 | `pledge` | A pledge at any house's chapel | |
 | `reach` | Standing within a place's reach in a node | `node`, `place`: a name its layout gives an area or a run |
 | `kill` | Foes falling that the player struck, as a kill's reward is shared | `node`, `place` (within its reach and 40 m past it), `types` (the roster's names), `rank` (this or higher), `island` (`cove` or `isle`), `spawn` (below) |
@@ -72,6 +72,8 @@ out) and its kind:
 | `defend` | A ward standing at a place through its waves of foes, one after another; if it falls, the waves leave and it is tried again after a wait | `node`, `place`, `ward` (its name) or `who`, `waves` (lists of `[type, rank]`), `lost` (its line) |
 | `puzzle` | Points round a place used in the right order, or in any order when it gives none (a point lit already does nothing); a wrong one puts them all out and stops uses for 2 s, then 4, then 8 (ask 66 answers 103 meanwhile) | `node`, `place`, `points` (each a `name`, a `bearing` in degrees from north and `at` metres out), `order` (any order when left out), `wrong` (its line) |
 | `unseen` | Standing within `within` m of a place's middle with no foe turned alert on the player; seen, it waits until no foe has been on them for 10 s. Its watch stands idle on a ring `within` m round the middle as the step begins, each facing outward; only a foe within 60 m of the middle counts as seeing | `node`, `place`, `seen` (its line), `spawn` (`[type, rank]`s), `within` (metres, 8 when left out, at most 35) |
+| `buy` | A smith's ware bought, of the day's or the starter stock: the character keeps each slot a smith has sold it a piece for (`bought`), so one bought before its task counts as the task begins; a piece looted or given never does; the slots are let go once a task with a buy goal is met, so a later one counts only its own purchases | `slot`: `melee`, `ranged`, `head`, `torso`, `arms` or `legs` |
+| `wear` | A piece worn in a slot; one worn already counts as its task begins (the room hears every piece worn after each ask) | `slot`, as `buy`'s |
 | `race` | Passing checkpoints in order before the clock runs out; the clock starts as the player leaves the first's reach; late, it starts again from the first. A race is run over the ground, not along the paths | `node`, `checkpoints` (places, two or more), `seconds`, `late` (its line) |
 
 A `kill` goal with a `spawn` stands its foes at its place: a list of `[type, rank]`, each the roster's name and a rank
@@ -82,25 +84,46 @@ who struck it. The room bakes a navmesh square round each such place the first t
 group holds its
 place, fights there and walks back to its post as a garrison's group does.
 
-A reward gives the Art (`art`, its Anima with it, worn at once), a Tenet (`tenet`: 1 or 2, in the Art's order), or
-fragments to choose (`fragments`: how many choices). Which Art is the quest's house's. Beside it, every task that sends
-the player out (any goal but `talk` and `pledge`) pays a mission's clear at their level, 400 XP and 30 Aurem at level
-5 raised as a kill is, as Destiny 1 paid each mission done ([[Gear]], "A clear";
-[[The Balance and Economy Pass as Claude Shapes It]]).
+A reward gives Aurem (`aurem`, any quest's), the Art (`art`, its Anima with it, worn at once), a Tenet (`tenet`: 1 or
+2, in the Art's order), or fragments to choose (`fragments`: how many choices). Which Art is the quest's house's.
+Beside it, every task that sends the player out (any goal but `talk`, `pledge`, `buy` and `wear`) pays a mission's
+clear at their level, 400 XP and 30 Aurem at level 5 raised as a kill is, as Destiny 1 paid each mission done
+([[Gear]], "A clear"; [[The Balance and Economy Pass as Claude Shapes It]]).
+
+## The opening
+
+"A House of Your Own" walks a new player round Overlook, then to a house
+([[The Stranger Welcomes the Player, and a Quest Walks Them Round Overlook]]; Claude's calls in
+[[The Prologue, Horses and the Welcome to Overlook as Claude Builds Them]]): **Hear the stranger out** (her welcome,
+[[Prologue]]; its reward the 400 Aurem she gives); **Find your way round Overlook**, speaking at each counter in turn
+(the Weaponsmith, the Armorsmith, the Mage, the Vault, the Tailor, the Tack, the Postmaster, and the Harbourmaster for
+the Shipwright), each keeper saying what their counter is for; **Arm yourself**, a Melee weapon bought of the
+Weaponsmith and the four armour pieces of the Armorsmith, which the starter stock sells for 50 Aurem each ([[Gear]]);
+**Wear them**. Both are told of the pieces held after every answered ask, again until nothing more counts, so pieces
+bought and worn during the round meet both as the last keeper is heard; a buy or wear goal names a weapon's or
+armour's slot and a count of 1; **Hear the three houses** (Arlo Kestrel, Elder Maren Hale and Sable each introducing their house,
+[[Factions]]); and **Choose a house**, the pledge. Its `begin` is the Weaponsmith calling the player over; the houses'
+task begins with Arlo's word to hear all three. A character whose log stood at the houses before keeps its place by
+its task's id, and one kept with no place in the opening reads at "Hear the three houses" (its `kept`): neither is
+walked round again, nor owed the gift. The Test Ground's player reads as one kept before, on the houses, which its
+stall serves; the stranger is heard in a social space alone, never at the stall.
 
 ## In the rules
 
 - **Kept in the character** (`gear`, `quests.rs`), **by id**: for each quest by its `id`, the task reached by its task's `id` (so a quest or task added anywhere in the file keeps every save's place), each of that
-  task's goals' counts, and whether it is done; and for each Art, the fragment choices waiting. A character kept before
-  quests reads every quest unbegun.
-- **Read leniently**: a quest log of a shape this room cannot read reads as unbegun and is written back as it was. A
+  task's goals' counts, and whether it is done; and for each Art, the fragment choices waiting. A new character begins
+  every quest at its first task; one that holds no place in a quest (kept before it was laid out) reads at the
+  quest's `kept` task, else its first; and one kept on a task this room does not hold (a task renamed keeps its old
+  id in `was`) reads at the quest's `kept` task too, else its first, so the opening's gift, before `kept`, is never
+  paid twice.
+- **Read leniently**: a quest log of a shape this room cannot read reads as one kept before (above) and is written back as it was. A
   fragment choice waiting for an Art none of whose fragments is left to own is paid at its price as soon as the room
   answers any ask.
 - **The quest walked**: with no pledge, the opening, until it is done; pledged, the pledged house's road, until it is
   done; else none. A switch walks the new house's road from where it was left; every road keeps its place.
 - **Goals are judged by events** the rooms tell the character's quest log: a counter spoken at, a pledge, a place
   reached, a foe's kill, a resource gathered, a spell cast, a ship beaten, an island landed on, a wreck searched, a
-  node entered. Only the quest walked takes them, and only its task now. A goal stops counting at its count. When
+  node entered, a smith's ware bought, a piece worn. Only the quest walked takes them, and only its task now. A goal stops counting at its count. When
   every goal of the task is met its reward is given and the next task begins at once, its counts at nothing.
 - **The Arts earned** (`gear`, `arts.rs`): for each Art, whether the Art, its first Tenet and its second are earned,
   one bit each. A character made before keeps all three of every Art. A new character has none, and wears none: the
@@ -111,7 +134,8 @@ the player out (any goal but `talk` and `pledge`) pays a mission's clear at thei
 ## On the wire
 
 - **Asks**: 66 uses a puzzle's point (`column`: its place among the goal's points), answered within 3 m of it. 64 speaks with a keeper (`column`: a house's number, or 10 the Mage, 11 the vault, 12 the Armorsmith, 13
-  the Weaponsmith, 14 the Tailor, 15 the Tack, 16 the Harbourmaster), answered only within reach of that counter;
+  the Weaponsmith, 14 the Tailor, 15 the Tack, 16 the Harbourmaster, 17 the Postmaster), answered only within reach of
+  that counter; 18 the stranger, answered anywhere in a social space;
   65 chooses a fragment (`column`: the Art's number, `node`: the fragment's place in its Art's list).
 - **Whose word**: the gear message says whether its character is the player's own as their account keeps it
   (`claimed`). A player who sends an input before any token keeps no character, so the one the room holds is theirs
@@ -128,7 +152,7 @@ the player out (any goal but `talk` and `pledge`) pays a mission's clear at thei
   [[The Journal Holds the Quests, the Bounties at Its Side and the Timers at Its Top]]): a card for the quest walked,
   at its task, and one for each quest done, in the file's order, each its name, the first line its `begin` says, and
   its task's number and words; nothing from a word not on the player's own character.
-- **The tracker** shows the quest walked on foot, once the story and Maren's welcome are past: its name, its task and
+- **The tracker** shows the quest walked on foot, once the story and the stranger's welcome are past: its name, its task and
   each goal's words with its count.
 - **Lore**: a chapter the lore's file gives to a task is found as the task is done ([[Lore]]). Each house's road
   gives its house's book a chapter a task, the last as the road ends ([[Each House's Lore Book Tells Its Art's Origin]]).
@@ -139,7 +163,9 @@ the player out (any goal but `talk` and `pledge`) pays a mission's clear at thei
   with" and the keeper's name; pressed, it asks 64 and the lines are said. Otherwise the counter opens as before.
 - **Marks**: `quest_at` stands a mark at its place, and the held map at sea rings the nodes the task's goals name (the land's map, raised on foot, draws no places). Both give way while the map is up.
 - **A keeper to speak with is lit**: while a `talk` goal of the task names a counter, its keeper's mark over them
-  pulses and is seen from everywhere in the social space, and their coin on the land's map pulses
+  pulses and is seen from everywhere in the social space, and their coin on the land's map pulses; so does a smith's
+  while a `buy` goal of the task asks one of their wares (the Weaponsmith's for `melee` and `ranged`, the
+  Armorsmith's for the armour)
   ([[A Keeper With Something for You Pulses and Is Seen From Everywhere]]; [[Game]], "Over what a player can use").
 - **What is shown and said**: the page shows, says and marks nothing from a word not on the player's own character
   (`claimed`). A goal's `scene` is said as the room meets it, a talk goal's included (the press only asks); an escort's
@@ -150,7 +176,7 @@ the player out (any goal but `talk` and `pledge`) pays a mission's clear at thei
   aloud as a clock starts, at each half minute and in its last 10 s, and as a ward's health passes each quarter. The
   HUD's mark is named for the task's first unmet goal in the player's node. Figures glide between the room's words, a
   quarry walking back when it noticed and one arrived standing where it is; the ward's plate stays in view as a fought
-  foe's; a lit point offers no Use. With no Art worn the Character page says "Pledge to a house; its road gives its
+  foe's; a lit point offers no Use. With no Art worn (and while the story is told, which says nothing of houses) the Character page says "Pledge to a house; its road gives its
   Art.", and the Arts' screen shows all three locked.
 - **The varied steps**: the page draws the quest figures (`quest_figures`) as the cast's figures or the roster's, the
   ward (`quest_ward`) at its place with its health, and the puzzle's points (`quest_points`), each lit or not, with

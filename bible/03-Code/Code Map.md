@@ -34,6 +34,11 @@ decision, made in the same change as its entry here.
 | `client/src/soundMeasure.ts` | How loud a recording is, measured once where it is decoded: its level, its rush and its loudness over each window the game asks |
 | `client/src/contentCache.ts` | R2's files and ranges of them, kept in the browser's own storage within 1 GB, since a file named by its hash never changes |
 | `client/src/seeded.ts` | A seeded stream of numbers in [0, 1), the same in every engine, which any layer draws from |
+| `client/src/nearFade.ts` | How a billboard (a puff of smoke, a sea fight's puff) fades softly to nothing as the eye comes within a couple of metres of it, the same in the shaders |
+| `client/src/frameGuard.ts` | A frame's work kept from stopping the frames: what one part throws is reported once and the next frame is still drawn |
+| `client/src/gameWorker.ts` | The game in a thread of its own, WebGPU on the canvas the page hands it, with stand-ins for what the page keeps ([[Game]]) |
+| `client/src/gpuForTests.ts` | A GPU for tests that draws nothing and counts what is made and not destroyed |
+| `client/src/listener.ts` | The page's one audio listener, round which the world's sounds and the ambience place theirs in one frame |
 | `client/src/keptNames.ts` | Moves what a browser kept under the game's former name (`overlook.`) to `noshores.`, once, before any page reads it ([[The Game Is Named No Shores]]) |
 | `client/src/elementGlow.ts` | The [[Weapon Glow]]'s colours, outline field, shader and bursts, which the figures, the first person and the fight's effects draw with |
 | `client/editor/`, `client/src/editor/` | The [[World Editor]]: its page, and the layer that paints the continents and shapes the land, in 2D, in 3D and close up, and sails the Sloop alone or, through what its page offers, in a fleet room |
@@ -79,9 +84,9 @@ decision, made in the same change as its entry here.
 | `client/src/game/npc/` | The keepers' screen every counter of a social space opens, and Shape's: the keeper drawn in their dress with their words and band, the rows of wares each keeper sells, a faction's rows (`factionRows.ts`), the stock's clock ([[Interface]], [[Factions]]) |
 | `client/src/game/gearHints.ts` | What the menu's footer says each view's presses and keys do, the bounty board's and the Journal's among them ([[Interface]]) |
 | `client/src/game/stationView.ts`, `client/src/game/shipPages.ts` | A station's screen in the menu and its title: a keeper's, the pledged faction's with its muster of officers (`musterAt`), or the Harbourmaster's stall of the Shipwright's modules (`harbourPage`), and the bounty board's title (its screen is `bountyBoard.ts`); and the ship's tab ([[Interface]], [[Crew]], [[Ship Power]], [[Activities]]) |
-| `client/src/game/appearance/` | The Appearance screen the Character page's button opens: the figure and horse on display, and the emblems, dyes, coats and bardings to wear ([[Interface]], [[Gear]]) |
+| `client/src/game/appearance/` | The Appearance screen the Character page's button opens: the figure on display and the emblems and dyes to wear; and the horse's picture and the barding tiles the Mount slot shows ([[Interface]], [[Gear]]) |
 | `client/src/game/social/` | Other players as one meets them ([[Interface]], "Players", [[Chat]]): holding Use on a player, their menu and Inspect, and the chat's link to the hall, its kept lines and its band |
-| `client/src/game/welcome/` | Elder Maren Hale's welcome after the story: her walk round the plaza's counters and what she and the keepers say at each ([[Prologue]]) |
+| `client/src/game/welcome/` | The stranger's welcome to Overlook after the story: her words, the camera's flight to each place she names with the player's keys held, and her gift asked of the room ([[Prologue]]) |
 | `server/` | The [[Server]]'s Cloudflare shell ([[The Server's Shell Is in server]]): the Worker and its Durable Object, which keep each room in WebAssembly, Cloudflare's settings (`wrangler.jsonc`) and the shell's TypeScript settings, and the keeper that keeps each player's character with the accounts while they play |
 | `server/accounts/` | The [[Accounts]]' own Worker over D1: guests, usernames and passwords, Discord sign-in, sessions, the judge of the [[Names]] players set for others to read, the Roster (friends, companies, guilds, blocks, mutes, reports, where each player is), the chat's hall and its law, the characters the rooms hold, Find a Company's queues, and the database's migrations |
 | `crates/` | Every Rust crate, one folder each, named after its crate |

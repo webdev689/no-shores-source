@@ -1,19 +1,24 @@
-//! The prologue's wreck, played in a page's own room laid over the sea (`Room::over_sea`): the player has no Art yet,
-//! wakes hurt from the ram with no weapon, and takes the story's sword and shield from the deck into their pack to
-//! equip; every boarder is the Grey Tithe's, fighting them and the Brig's crew, none but Thule harder to bring down
-//! than a Major.
+//! The prologue's wreck, played in a page's own room laid over the sea (`Room::over_sea`): the player has no Art until
+//! the wisp gives them the Storm, wakes hurt from the ram in the story's steel with no weapon, takes the story's sword
+//! and shield, and later its bow, from the deck into their pack to equip; every boarder is the Grey Tithe's, fighting
+//! them and the Brig's crew. What the story lends is its own (`gear::story::story_item`), which its end takes back.
 
 use crate::{PlayerId, Room};
-use ::foes::Rank;
 use combat::fighter::FighterId;
-use gear::{At, Item, Kind, Rarity, Slot};
+use gear::arts::{ALL_EARNED, STORM};
+use gear::story::story_item;
+use gear::{At, Kind, Slot};
 
 /// How much of their health a player wakes on the wreck with, the ram's harm: short enough for a drink to heal.
 pub const WOKE_HEALTH: f64 = 0.55;
+/// The story's steel the player wakes in: no helm, so the face shows.
+const ARMOUR: [Kind; 3] = [Kind::Torso, Kind::Arms, Kind::Legs];
+/// The slots the ram strips before the story dresses them: the Melee loadout and every armour piece.
+const STRIPPED: [Slot; 5] = [Slot::Melee, Slot::Head, Slot::Torso, Slot::Arms, Slot::Legs];
 
 impl Room {
-    /// Plays the prologue's wreck from now on: no Art (`forbid_arts`), every player waking with no weapon and hurt
-    /// (`wake_for_story`), and every foe the page stands (`stand_foe_at`) a boarder (`as_boarder`).
+    /// Plays the prologue's wreck from now on: no Art (`forbid_arts`) until the Storm is given (`story_storm`), and
+    /// every player waking in the story's steel with no weapon and hurt (`wake_for_story`), once.
     pub fn story_wreck(&mut self) {
         if self.story {
             return;
@@ -25,19 +30,42 @@ impl Room {
         }
     }
 
-    /// The story's sword and shield taken from the deck into `player`'s pack, unworn, for them to equip; answers
-    /// whether it was given: not while one is carried or worn, nor to a player with no room in their pack for a Melee
-    /// piece. One dismantled lies on the deck to be taken again.
-    pub fn story_take_arms(&mut self, player: PlayerId) -> bool {
+    /// The story's sword and shield, or its bow (`kind`), taken from the deck into `player`'s pack, unworn, for them
+    /// to equip; answers whether it was given: not while one is carried or worn, nor to a player with no room in
+    /// their pack for it. One dismantled lies on the deck to be taken again.
+    pub fn story_take(&mut self, player: PlayerId, kind: Kind) -> bool {
+        if !matches!(kind, Kind::SwordAndShield | Kind::Bow) {
+            return false;
+        }
         let Some(found) = self.players.get_mut(&player).filter(|_| self.story) else { return false };
         let character = &mut found.character;
-        let held = character.items.values().any(|(item, at)| item.kind == Kind::SwordAndShield && *at != At::Vault);
-        if held || character.carried_in(Slot::Melee) >= gear::character::CARRIED_MOST {
+        let held = character.items.values().any(|(item, at)| item.kind == kind && *at != At::Vault);
+        if held || character.carried_in(kind.slot()) >= gear::character::CARRIED_MOST {
             return false;
         }
         let id = character.take_id();
-        character.items.insert(id, (Item::new(id, Kind::SwordAndShield, Rarity::Normal, 1, Slot::Melee), At::Carried));
+        character.items.insert(id, (story_item(id, kind), At::Carried));
         found.gear_changed = true;
+        true
+    }
+
+    /// On the wreck, the wisp gives `player` the Storm for the rest of the prologue: the room's Arts work again, and
+    /// the Storm is worn, its Anima and both Tenets earned and charged full. False outside the story or for no such
+    /// player.
+    pub fn story_storm(&mut self, player: PlayerId) -> bool {
+        let Some(found) = self.players.get_mut(&player).filter(|_| self.story) else { return false };
+        let arts = &mut found.character.arts;
+        let earned = arts.earned.get_or_insert_with(Vec::new);
+        let at = usize::from(STORM) - 1;
+        if earned.len() <= at {
+            earned.resize(at + 1, 0);
+        }
+        earned[at] = ALL_EARNED;
+        arts.worn = STORM;
+        found.casting = crate::arts::Casting { anima: 1.0, tenets: [1.0, 1.0], ..found.casting };
+        found.gear_changed = true;
+        found.gear_urgent = true;
+        self.arts = true;
         true
     }
 
@@ -71,34 +99,16 @@ impl Room {
         let found = self.foes.get_mut(&crew).filter(|found| !found.fighter.dead() && found.fighter.side.is_players());
         found.map(|found| found.brain.keep_to([x, y, top.z], facing, false)).is_some()
     }
-
-    /// A foe the page stood in the story's wreck: below a Boss held to a Major's health, poise and defence, its own
-    /// rank's look and blows kept. The Brig's crew, on the players' side, are left as they are.
-    pub(crate) fn as_boarder(&mut self, id: FighterId) {
-        let story = self.story;
-        let Some(foe) = self.foes.get_mut(&id).filter(|foe| story && !foe.fighter.side.is_players()) else { return };
-        if foe.brain.rank < Rank::Boss {
-            foe.brain.held_to(Rank::Major);
-        }
-        let numbers = foe.brain.numbers();
-        foe.fighter.health = numbers.health;
-        foe.fighter.health_max = numbers.health;
-        foe.fighter.poise_max = numbers.poise;
-    }
 }
 
-/// A player as the wreck wakes them: no weapon (the sword a new player starts with gone; the story's lies on the deck)
-/// and `WOKE_HEALTH` of their health, the ram's harm.
+/// A player as the wreck wakes them: no weapon (the story's sword and shield lie on the deck), dressed in the story's
+/// steel in place of what they wore, and `WOKE_HEALTH` of their health, the ram's harm.
 pub(crate) fn wake_for_story(player: &mut crate::players::Player) {
-    let melee: Vec<u32> = player
-        .character
-        .items
-        .iter()
-        .filter(|(_, (item, at))| item.bucket == Slot::Melee && *at != At::Vault)
-        .map(|(id, _)| *id)
-        .collect();
-    for id in melee {
-        player.character.items.remove(&id);
+    let character = &mut player.character;
+    character.items.retain(|_, (item, at)| *at == At::Vault || !STRIPPED.contains(&item.bucket));
+    for kind in ARMOUR {
+        let id = character.take_id();
+        character.items.insert(id, (story_item(id, kind), At::Worn(kind.slot())));
     }
     let fighter = &mut player.fighter;
     fighter.health = fighter.health.min(fighter.health_max * WOKE_HEALTH);

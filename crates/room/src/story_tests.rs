@@ -24,8 +24,8 @@ fn on_the_wreck_a_player_wakes_hurt_and_bare_handed_then_takes_the_story_s_arms_
         assert!((fighter.health - fighter.health_max * WOKE_HEALTH).abs() < 1e-9, "and hurt by the ram");
     }
     assert!(!room.arts_on(), "and no Art");
-    assert!(room.story_take_arms(early));
-    assert!(!room.story_take_arms(early), "taken once");
+    assert!(room.story_take(early, Kind::SwordAndShield));
+    assert!(!room.story_take(early, Kind::SwordAndShield), "taken once");
     let character = &mut room.players.get_mut(&early).expect("joined").character;
     let (&id, (_, at)) =
         character.items.iter().find(|(_, (item, _))| item.kind == Kind::SwordAndShield).expect("in the pack");
@@ -35,6 +35,69 @@ fn on_the_wreck_a_player_wakes_hurt_and_bare_handed_then_takes_the_story_s_arms_
     let dice = gear::dice::Dice { seed: 0, tick: 0, player: early };
     assert!(character.ask(Ask::Wear { item: id, slot: Slot::Melee }, gear::Here::default(), &dice).is_ok());
     assert!(arms_allowed(character).contains(&shield), "the sword and shield drawn");
+    let held = character.items.values().filter(|(item, at)| !item.kind.module() && *at != At::Vault);
+    assert!(held.clone().all(|(item, _)| item.story), "every piece but the ship's the story's own");
+}
+
+#[test]
+fn on_the_wreck_a_player_wears_the_story_s_steel_from_the_first_but_no_helm_once_however_often_it_is_told() {
+    let mut room = wreck();
+    let early = room.join().expect("a room with space");
+    room.story_wreck();
+    let held = |room: &Room| room.players[&early].character.items.keys().copied().collect::<Vec<u32>>();
+    let dressed = held(&room);
+    room.story_wreck();
+    assert_eq!(held(&room), dressed, "told again, the same pieces stay: none stripped and given anew");
+    let late = room.join().expect("a room with space");
+    for player in [early, late] {
+        let character = &room.players[&player].character;
+        for slot in [Slot::Torso, Slot::Arms, Slot::Legs] {
+            let (item, _) = character.items.values().find(|(_, at)| *at == At::Worn(slot)).expect("worn");
+            assert!(item.story && item.rarity == Rarity::Normal && item.level == 1, "the story's own in {slot:?}");
+        }
+        assert!(character.worn(Slot::Head).is_none(), "no helm: the face shows");
+        let armour = character.items.values().filter(|(item, _)| item.kind.armour()).count();
+        assert_eq!(armour, 3, "player {player} given it once");
+    }
+}
+
+#[test]
+fn on_the_wreck_the_story_s_bow_is_taken_once_into_the_pack_and_worn_in_the_ranged_slot() {
+    let mut room = wreck();
+    let player = room.join().expect("a room with space");
+    assert!(!room.story_take(player, Kind::Bow), "outside the story, nothing is given");
+    room.story_wreck();
+    assert!(!room.story_take(player, Kind::Mace), "only the story's arms and bow are given");
+    assert!(room.story_take(player, Kind::Bow));
+    assert!(!room.story_take(player, Kind::Bow), "taken once");
+    let character = &mut room.players.get_mut(&player).expect("joined").character;
+    let (&id, (bow, at)) = character.items.iter().find(|(_, (item, _))| item.kind == Kind::Bow).expect("in the pack");
+    assert!(bow.story && bow.rarity == Rarity::Normal && bow.level == 1 && *at == At::Carried);
+    let dice = gear::dice::Dice { seed: 0, tick: 0, player };
+    assert!(character.ask(Ask::Wear { item: id, slot: Slot::Ranged }, gear::Here::default(), &dice).is_ok());
+    assert!(character.worn(Slot::Ranged).is_some());
+}
+
+#[test]
+fn on_the_wreck_the_storm_is_given_worn_earned_and_charged_and_its_abilities_cast() {
+    let mut room = wreck();
+    let player = room.join().expect("a room with space");
+    assert!(!room.story_storm(player), "outside the story, no Art is given");
+    room.story_wreck();
+    assert!(!room.arts_on());
+    assert!(!room.story_storm(player + 99), "no such player");
+    assert!(room.story_storm(player));
+    assert!(room.arts_on(), "the Art works again");
+    let found = &room.players[&player];
+    assert_eq!(found.character.worn_art().map(|art| art.id), Some(gear::arts::STORM));
+    assert_eq!(found.character.earned(gear::arts::STORM), gear::arts::ALL_EARNED, "its Anima and both Tenets");
+    assert_eq!((found.casting.anima, found.casting.tenets), (1.0, [1.0, 1.0]), "charged full");
+    for ability in 0..3 {
+        let cast = crate::arts::Cast { spell: ability + 1, aim: Some([0.0, -3.0, 2.3]) };
+        assert!(found.character.ability_earned(cast.art(), cast.ability()), "ability {ability} castable");
+    }
+    room.ask_cast(player, Some(crate::arts::Cast { spell: 2, aim: Some([0.0, -3.0, 2.3]) }));
+    assert!(room.players[&player].casting.releasing.is_some(), "a cast is taken");
 }
 
 #[test]
@@ -50,26 +113,17 @@ fn the_wreck_s_boarders_are_the_grey_tithe_s_and_the_brig_s_crew_still_the_playe
 }
 
 #[test]
-fn an_elite_boarder_keeps_its_rank_but_is_brought_down_as_a_major_and_thule_is_not() {
+fn a_foe_stood_on_the_wreck_fights_at_its_own_rank_s_strength_as_anywhere() {
     let (mut story, mut plain) = (wreck(), wreck());
     story.story_wreck();
-    for (mate, rank) in [(11, Rank::Elite), (6, Rank::Elite)] {
-        let held = story.stand_foe_at(mate, 1, (0.0, 0.0), 0.0, 1).expect("an elite");
-        let elite = plain.stand_foe_at(mate, 1, (0.0, 0.0), 0.0, 1).expect("an elite");
-        let major = &::foes::foe_type(mate).expect("a type").numbers(Rank::Major, 1);
-        let (foe, full) = (&story.foes[&held], &plain.foes[&elite]);
-        assert_eq!(foe.brain.rank, rank, "type {mate} still stands as an Elite");
-        assert!(foe.brain.numbers().elite, "with an elite's look and blows");
-        let times = full.fighter.health_max / full.brain.numbers().health;
-        assert_eq!(foe.fighter.health_max, major.health * times, "type {mate} at a Major's health, at its level");
-        assert_eq!(foe.fighter.poise_max, major.poise);
-        let numbers = foe.brain.numbers();
-        assert_eq!([numbers.parry, numbers.block, numbers.dodge], [major.parry, major.block, major.dodge]);
-        assert!(foe.fighter.health_max < full.fighter.health_max / 2.0, "type {mate} well under an elite's");
+    for (number, rank) in [(11, 1), (8, 2), (12, 5)] {
+        let on_wreck = story.stand_foe_at(number, rank, (0.0, 0.0), 0.0, 1).expect("a foe");
+        let anywhere = plain.stand_foe_at(number, rank, (0.0, 0.0), 0.0, 1).expect("a foe");
+        let (foe, same) = (&story.foes[&on_wreck], &plain.foes[&anywhere]);
+        assert_eq!(foe.brain.rank, same.brain.rank);
+        assert_eq!(foe.fighter.health_max, same.fighter.health_max, "type {number} at its own health");
+        assert_eq!(foe.fighter.poise_max, same.fighter.poise_max);
     }
-    let thule = story.stand_foe_at(12, 5, (0.0, 0.0), 0.0, 4).expect("Thule");
-    let boss = plain.stand_foe_at(12, 5, (0.0, 0.0), 0.0, 4).expect("Thule");
-    assert_eq!(story.foes[&thule].fighter.health_max, plain.foes[&boss].fighter.health_max, "Thule as he was");
 }
 
 #[test]
@@ -97,7 +151,7 @@ fn on_the_wreck_a_boarder_is_sent_at_a_player_though_it_never_saw_them_but_never
 fn the_wreck_takes_only_the_melee_a_player_carries_or_wears_once_and_its_arms_are_the_story_s_alone() {
     let mut room = wreck();
     let player = room.join().expect("a room with space");
-    assert!(!room.story_take_arms(player), "outside the story, nothing is given");
+    assert!(!room.story_take(player, Kind::SwordAndShield), "outside the story, nothing is given");
     let character = &mut room.players.get_mut(&player).expect("joined").character;
     let vaulted = character.take_id();
     character.items.insert(vaulted, (Item::new(vaulted, Kind::Mace, Rarity::Normal, 1, Slot::Melee), At::Vault));
@@ -107,7 +161,7 @@ fn the_wreck_takes_only_the_melee_a_player_carries_or_wears_once_and_its_arms_ar
     let items = &room.players[&player].character.items;
     assert!(items.contains_key(&vaulted), "the vault's kept");
     assert!(!items.contains_key(&carried), "what was carried is gone with the ram");
-    assert!(room.story_take_arms(player));
+    assert!(room.story_take(player, Kind::SwordAndShield));
     let character = &mut room.players.get_mut(&player).expect("joined").character;
     let (&id, _) = character.items.iter().find(|(_, (item, _))| item.kind == Kind::SwordAndShield).expect("given");
     let dice = gear::dice::Dice { seed: 0, tick: 0, player };
@@ -137,4 +191,37 @@ fn on_the_wreck_one_of_the_crew_posted_on_walks_there_but_never_a_boarder() {
     }
     let body = room.foes[&crew].fighter.body;
     assert!((body.x - 12.0).abs() < 1.5 && body.y.abs() < 1.5, "he walked there: {}, {}", body.x, body.y);
+}
+
+#[test]
+fn every_boarder_the_wreck_s_waves_stand_is_a_minor_or_a_major() {
+    let file: serde_json::Value =
+        serde_json::from_str(include_str!("../../../content/prologue/wreck.json")).expect("the wreck's file");
+    let mut boarders = 0;
+    for zone in file["zones"].as_array().expect("its zones") {
+        for foe in zone["wave"].as_array().into_iter().flatten() {
+            let number = |key: &str| u8::try_from(foe[key].as_u64().expect("a number")).expect("a small number");
+            let found = ::foes::foe_type(number("type")).expect("a type the roster knows");
+            let rank = found.rank_or_first(Rank::from_number(number("rank")));
+            assert!(rank <= Rank::Major, "a {} stands as a {}", found.name, rank.name());
+            boarders += 1;
+        }
+    }
+    assert!(boarders > 20, "the waves are read: {boarders}");
+}
+
+#[test]
+fn a_tithe_mate_brought_in_at_major_rank_is_a_major_in_every_way_the_rules_read() {
+    let mut room = wreck();
+    room.story_wreck();
+    let mate = room.stand_foe_at(11, 2, (0.0, 0.0), 0.0, 1).expect("a Tithe-Mate");
+    let major = ::foes::foe_type(11).expect("a type").numbers(Rank::Major, 1);
+    let foe = &room.foes[&mate];
+    assert_eq!(foe.brain.rank, Rank::Major, "its rank, which its plate, its name's colour and its loot read");
+    let numbers = foe.brain.numbers();
+    assert!(!numbers.elite && !numbers.feints, "no elite's look or blows");
+    assert_eq!(numbers.shapes, major.shapes, "a Major's blows");
+    assert_eq!(foe.fighter.poise_max, major.poise);
+    let elite = ::foes::foe_type(11).expect("a type").numbers(Rank::Elite, 1);
+    assert!(major.health < elite.health, "a Major's health, under an elite's");
 }

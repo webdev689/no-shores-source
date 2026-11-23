@@ -6,6 +6,7 @@ import { TONES } from '../plus/tones.ts';
 import { announce } from '../ui/announce.ts';
 import { cubicBezier } from '../ui/ease.ts';
 import type { Node } from '../ui/node.ts';
+import type { Box } from '../ui/quads.ts';
 import { edged } from '../combat/barDraw.ts';
 import { header, keycap } from './hudParts.ts';
 
@@ -101,6 +102,9 @@ export class TaskTracker {
   private freshAt = Number.NEGATIVE_INFINITY;
   private metAt = Number.NEGATIVE_INFINITY;
   private met: number[] = [];
+  /** Whether the task and its next step stay in sight over the menu while it is open, in the middle of its foot:
+   *  the story's lessons, which go on as the menu is used. */
+  inMenu = false;
 
   /** Shows `quest`, or hides the tracker for none. Called every frame, it takes note only when the quest's words
    *  change; a new task slides in, and a step just met flashes as its box is ticked. */
@@ -134,10 +138,16 @@ export class TaskTracker {
 
   /** The tracker in a view `width` by `height` CSS pixels at `now` (seconds): at the right, under the place's name,
    *  its words a step larger where the view is 1500 by 900 or more; still when `still`. */
-  node(view: { readonly width: number; readonly height: number }, now: number, still: boolean): Node | null {
+  node(
+    view: { readonly width: number; readonly height: number },
+    now: number,
+    still: boolean,
+    menuFoot: Box | null = null,
+  ): Node | null {
     const quest = this.shown;
     if (!quest) return null;
     const big = view.width >= 1500 && view.height >= 900;
+    if (this.inMenu && menuFoot) return inFoot(quest, menuFoot, big ? 2 : 1);
     const narrow = view.width <= 900;
     const size = big ? 2 : 1;
     const width = big ? 396 : narrow ? Math.min(264, view.width - 56) : 264;
@@ -204,6 +214,44 @@ function stepNode(step: Step, size: number, flash: number): Node {
       leftOf(step) !== undefined && { width: 'grow' },
       leftOf(step) !== undefined && {
         text: { words: leftOf(step) ?? '', size: 2, colour: TONES.brassHi, wrap: false },
+      },
+    ],
+  };
+}
+
+/** Over the menu, the page's own windows' height and above. */
+const OVER_MENU_Z = 21;
+/** How much of the menu's foot the step may take, centred: the foot's hints stand at its left, Close at its right. */
+const FOOT_SHARE = 0.44;
+
+/** The task over its next step (its keys and what is left of it beside), centred in the menu's foot `foot`, laid
+ *  last frame: two short lines, so the longest lesson stays between the foot's hints and Close. */
+function inFoot(quest: Quest, foot: Box, size: number): Node {
+  const next = quest.steps.find((step) => !step.done);
+  const left = next && leftOf(next);
+  return {
+    through: true,
+    direction: 'column',
+    alignX: 'center',
+    gap: 3,
+    maxWidth: Math.round(foot.width * FOOT_SHARE),
+    float: {
+      to: 'screen',
+      anchor: [0.5, 0.5],
+      x: foot.x + foot.width / 2,
+      y: foot.y + foot.height / 2,
+      z: OVER_MENU_Z,
+    },
+    children: [
+      { text: { words: quest.task, size, colour: TONES.brassHi, wrap: false } },
+      next && {
+        gap: 6,
+        alignY: 'center',
+        children: [
+          { text: { words: next.text, size, colour: '#fbf8f0', wrap: false } },
+          ...(next.keys ?? []).map((key) => keycap(key, size)),
+          left !== undefined && { text: { words: left, size, colour: TONES.brassHi, wrap: false } },
+        ],
       },
     ],
   };

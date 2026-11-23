@@ -55,9 +55,9 @@ Decisions waiting on the owner. None is in force until the owner decides it and 
   another time or another zone's ([[Gear]], "Vendors").
 - **The Tack's wares.** The horse has the four bardings the forge draws and six coats laid on its colours; more
   looks need the forge to draw them ([[Gear]], "Cosmetics").
-- **The welcome's mark.** The story and Elder Maren Hale's welcome are marked played in the browser, so a second
-  account on one browser never sees them and one account on a new browser sees them again; whether they should be
-  kept with the character in its room ([[Prologue]]).
+- **The welcome's mark.** The story, and the stranger's welcome at its end, are marked played in the browser, so a
+  second account on one browser never sees them (her gift is given it all the same, as it arrives) and one account on
+  a new browser sees them again; whether they should be kept with the character in its room ([[Prologue]]).
 - **What others see.** The room puts the cosmetics and faction colours a player has earned into the dress others see,
   and keeps a worn set or metal only of its piece's own content ([[The Room Keeps Only Looks of a Piece's Own
   Content]]); the garments drawn are still each page's own word ([[Server]]).

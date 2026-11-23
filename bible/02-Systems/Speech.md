@@ -51,8 +51,8 @@ types each line as it is heard, and short barks over a speaker's head, their wor
 
 - **Overlook's people.** The keepers speak on their screens: a greeting as it opens, thanks after a ware bought and a
   line for a player short of the price, each a one-line scene of `content/story/keepers.json` said in turn
-  ([[Interface]], "The social space's counters"). Elder Maren Hale's welcome is `content/story/welcome.json`
-  ([[Prologue]], "The elder's welcome").
+  ([[Interface]], "The social space's counters"). The stranger's welcome to Overlook is `content/story/welcome.json`
+  ([[Prologue]], "The stranger's welcome").
 
 ## Limits
 

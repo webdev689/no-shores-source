@@ -1,6 +1,6 @@
-// Pictures of the Journal, the bounty board, the Postmaster's letters and a dungeon's entrance card, headless
-// (`tools/uiShot.mjs`): the menu drawn whole as the game draws it, over sample gear, the day's and week's word and an
-// entrance's card. The game never imports it.
+// Pictures of the Journal, the bounty board, the Postmaster's letters, the smiths' stock and a dungeon's entrance
+// card, headless (`tools/uiShot.mjs`): the menu drawn whole as the game draws it, over sample gear, the day's and
+// week's word and an entrance's card. The game never imports it.
 import type { GearBounty, GearState } from '../network/gearMessages.ts';
 import { item, state } from '../network/gearForTests.ts';
 import { roomNow } from '../sky/worldClock.ts';
@@ -189,6 +189,43 @@ const LETTERS: GearState = {
 };
 /** The Postmaster's screen, his three letters waiting. */
 export const postmasterShot = menuShot('mail', undefined, LETTERS);
+
+/** A new arrival at the smiths with the stranger's 400 Aurem: each smith's stock, the day's six then the starter
+ *  pieces at 50 (`gear::vendor::stock`), the Armorsmith's armour, the Weaponsmith's Sword & Shield and bow. */
+const day = (kinds: readonly number[], bucket = 2) =>
+  kinds.map((kind, place) =>
+    item({ id: place, kind, bucket, rarity: place < 3 ? 2 : 1, level: 1, price: place < 3 ? 2_000 : 600 }),
+  );
+const plain = (kinds: readonly (readonly [number, number])[]) =>
+  kinds.map(([kind, bucket], place) => item({ id: 6 + place, kind, bucket, rarity: 0, level: 1, price: 50 }));
+const ARRIVED: GearState = {
+  ...GEAR,
+  level: 1,
+  defense: 0,
+  aurem: 400,
+  cratePrice: 300,
+  crates: 0,
+  wares: [
+    ...day([13, 14, 15, 16, 13, 14]),
+    ...plain([
+      [13, 2],
+      [14, 3],
+      [15, 4],
+      [16, 5],
+    ]),
+    ...day([12, 2, 1, 3, 7, 10], 0),
+    ...plain([
+      [12, 0],
+      [8, 1],
+    ]),
+  ],
+};
+/** The Armorsmith's screen, its starter stock first. */
+export const armorsmithShot = menuShot('armorsmith', undefined, ARRIVED);
+/** The Weaponsmith's screen, its starter stock first. */
+export const weaponsmithShot = menuShot('weaponsmith', undefined, ARRIVED);
+/** The Weaponsmith's screen for one who carries all five Ammo crates, which the supplies' row says. */
+export const weaponsmithFullShot = menuShot('weaponsmith', undefined, { ...ARRIVED, crates: 5 });
 
 /** The Abyss Dungeon of the week's card at its entrance: its rules, its three modifiers and what it pays. */
 const ABYSS_CARD: EntranceCard = {

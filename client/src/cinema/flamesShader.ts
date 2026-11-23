@@ -3,12 +3,15 @@
 // is a solid of revolution round its leaning axis, drawn as the outline of that solid seen from the eye, so from
 // beside, above or below it keeps its body. Smoke is a rolling ball, lit orange from below while young; a wisp is a
 // torn-off bit of flame; an ember is a spark one or two texels square; a glow is the light a fire throws round it,
-// drawn only into the light layer, where it reads the scene's depth back into the point drawn at each pixel and lights
-// it by how near it stands to the fire, so only what stands round a fire is lit, never the sea or the sky past it.
-import { LIGHT } from '../combat/lightLayer.ts';
+// laid under the flames over the finished picture, where it reads the scene's depth back into the point drawn at each
+// pixel and lights it by how near it stands to the fire, so only what stands round a fire is lit, never the sky.
 import { FIRE_TEXELS_PER_METRE } from './flameParts.ts';
+import { NEAR_FADE_WGSL } from '../nearFade.ts';
 
 /** Each part's kind. */
+/** How much of its colour a fire of strength 1 adds at its middle; it falls off as the square of the way out. */
+export const GLOW_GAIN = 0.5;
+
 export const PART = { smoke: 0, tongue: 1, ember: 2, glow: 3, wisp: 4 } as const;
 /** The instance's fourth float carries its kind plus this many times its noise seed, one of `NOISE_SEEDS`. */
 export const PART_KINDS = 8;
@@ -16,6 +19,7 @@ export const NOISE_SEEDS = 997;
 
 export const FLAMES_WGSL = /* wgsl */ `
 struct View { from_eye: mat4x4f, to_eye: mat4x4f, time: vec4f }
+${NEAR_FADE_WGSL}
 @group(0) @binding(0) var<uniform> view: View;
 
 struct Part {
@@ -29,7 +33,7 @@ struct Out {
   @location(1) colour: vec4f,
   @location(2) @interpolate(flat) kind_seed: vec2f,
   @location(3) @interpolate(flat) light: vec4f, // a glow's fire, from the eye, then its reach
-  @location(4) @interpolate(flat) form: vec4f,  // a tongue's width, height, seen length and end-on share; smoke's ups
+  @location(4) @interpolate(flat) form: vec4f,  // a tongue's width, height, seen length and end-on share; smoke's ups, near fade
 }
 
 const CORNERS = array<vec2f, 6>(vec2f(-1.0, -1.0), vec2f(1.0, -1.0), vec2f(1.0, 1.0),
@@ -118,7 +122,8 @@ fn light_rect(centre: vec3f, reach: f32) -> vec4f {
     // A spark never shrinks below about a pixel and a half, so one far off still shows.
     half = vec2f(max(part.shape.x, length(middle) * 0.0007));
   } else if (kind == ${PART.smoke}u) {
-    out.form = vec4f(right.z, up.z, -normalize(middle).z, 0.0);
+    // Last, how much of it shows as the eye comes to it, so a camera in a column never sees a sheet of it.
+    out.form = vec4f(right.z, up.z, -normalize(middle).z, near_fade(length(middle) - half.x));
   }
   let world = middle + (across * corner.x * half.x + upward * corner.y * half.y);
   out.position = matrix * vec4f(world, 1.0);
@@ -197,7 +202,7 @@ fn shaded(in: Out) -> vec4f {
   let rolled = mat2x2f(cos(turn), sin(turn), -sin(turn), cos(turn)) * across;
   let edge = 0.68 + 0.32 * noise2(rolled * 2.4 + vec2f(seed * 1.7, 0.0), seed);
   let reach = length(across) / edge;
-  let cover = floor(in.colour.b * 3.0 + 0.5) / 3.0;
+  let cover = floor(in.colour.b * 3.0 + 0.5) / 3.0 * in.form.w;
   if (reach >= 1.0 || cover <= 0.0) { return vec4f(0.0); }
   let facing = sqrt(max(0.0, 1.0 - reach * reach));
   let normal = across / edge;
@@ -221,18 +226,17 @@ fn shaded(in: Out) -> vec4f {
   return colour;
 }
 
-// The light pass is a quarter of the picture each way: each of its pixels reads the scene's depth at its block's
-// middle, as the light layer's own depth does.
-@fragment fn light_fragment(in: Out) -> @location(0) vec4f {
-  let size = vec2i(textureDimensions(depths));
-  let pixel = min(vec2i(in.position.xy) * ${LIGHT.scale} + ${LIGHT.scale / 2}, size - 1);
-  let depth = textureLoad(depths, pixel, 0).r;
+// A fire's glow over the finished picture, at its own size: each pixel reads the scene's depth back into the point
+// drawn there and adds the fire's light by how near it stands, falling off as the square of the way out (fireLit).
+@fragment fn glow_fragment(in: Out) -> @location(0) vec4f {
+  let size = vec2f(textureDimensions(depths));
+  let depth = textureLoad(depths, vec2i(in.position.xy), 0).r;
   if (depth <= 0.0) { discard; }
-  let ndc = (vec2f(pixel) + 0.5) / vec2f(size) * vec2f(2.0, -2.0) + vec2f(-1.0, 1.0);
+  let ndc = in.position.xy / size * vec2f(2.0, -2.0) + vec2f(-1.0, 1.0);
   let seen = view.to_eye * vec4f(ndc, depth, 1.0);
   let near = length(seen.xyz / seen.w - in.light.xyz) / in.light.w;
   if (near >= 1.0) { discard; }
-  // A fire's glow is light itself, so it is added as it is rather than only where its colour passes white-hot.
-  return vec4f(in.colour.rgb * (1.0 - near) * in.colour.a, 0.0);
+  let fall = (1.0 - near) * (1.0 - near);
+  return vec4f(in.colour.rgb * in.colour.a * ${GLOW_GAIN.toFixed(3)} * fall, 0.0);
 }
 `;

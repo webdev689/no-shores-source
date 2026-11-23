@@ -45,6 +45,8 @@ test('the cosmetic worn of a kind, by its wire number: none for the start piece,
   assert.equal(wornCosmetic(dye, 'dye'), 'coral');
   assert.equal(wornCosmetic(coat, 'coat'), 'grey');
   assert.equal(wornCosmetic(start, 'dye'), null);
+  const bay = COSMETICS.findIndex((each) => each.id === 'bay');
+  assert.equal(wornCosmetic(bay, 'coat'), null, "the Bay's own hide changes nothing drawn");
   assert.equal(wornCosmetic(dye, 'coat'), null);
   assert.equal(wornCosmetic(9999, 'dye'), null);
   assert.equal(wornCosmetic(undefined, 'dye'), null);

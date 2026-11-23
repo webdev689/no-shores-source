@@ -82,8 +82,9 @@ A player's weapon reaches a tenth further than the table's reach; a foe's reache
   target first, then the nearest.
 - **Stamina.** 100. It comes back at 45 a second once it has rested half a second since it was last spent, slower
   behind a guard. A fighter with none cannot swing or dodge; spending never takes it below none.
-- **The guard and the parry.** Holding the guard raises it; pressing it opens a parry window of a fifth of a second (12
-  ticks; a foe's three quarters of that, 9, as it reads a swing at the fight's pace, [[Foes]]), which stays open for its
+- **The guard and the parry.** Holding the guard raises it; pressing it opens a parry window of a quarter of a second (15
+  ticks, [[The Prologue Is Reworked With Real Armour, a Bow, the Storm and No Elites]]; a foe's 9, as it reads a swing
+  at the fight's pace, [[Foes]]), which stays open for its
   whole length even if the button is let go at once, so a tap parries. A blow that lands in the window, from within the
   guard's arc, is parried: it does nothing, its striker staggers for 54 ticks, the parrier's lock turns on it, and the
   parrier's next swing at it within that time is a riposte, twice as hard, which no guard stops (it does not also count
@@ -307,9 +308,9 @@ The timings are set against shipped games and what a person can do, measured or 
 
 | Ours | Set beside | Why |
 |---|---|---|
-| Parry window 12 ticks (200 ms) from the press, kept if let go | Sekiro's deflect 200 ms; Lies of P 155 ms; Stellar Blade 150 ms | A tight read of the blow, as those games ask; a tap counts, as theirs does |
+| Parry window 15 ticks (250 ms) from the press, kept if let go | Sekiro's deflect 200 ms; Lies of P 155 ms; Stellar Blade 150 ms | A read of the blow a little kinder than those games', as the owner asked; a tap counts, as theirs does |
 | No window for 30 ticks after one unused | Sekiro and Lies of P reset after 500 ms | Mashing does not parry; the guard still blocks |
-| Dodge safe 1 to 18 ticks (300 ms), perfect within 12 (200 ms) | A backstep or quickstep's 230 to 300 ms; Stellar Blade's perfect dodge 150 ms, more with upgrades | A short hop; the perfect stretch matches the parry window, so the two reads feel alike |
+| Dodge safe 1 to 18 ticks (300 ms), perfect within 12 (200 ms) | A backstep or quickstep's 230 to 300 ms; Stellar Blade's perfect dodge 150 ms, more with upgrades | A short hop; the perfect stretch a little inside the parry window, so the two reads feel alike |
 | Stamina back at 45 a second after 0.5 s; a dodge 22 of 100 | The Souls games' 37 to 45 a second | Four dodges from full, back in about two seconds |
 | A sword's blow 18 ticks (300 ms) after the press | For Honor's quickest light, 400 ms, "reactable" | A foe's swing can be answered by a person who watches for it |
 | A press kept 8 ticks | Fighting games' 5 to 10 frame buffers | A press a moment early is not lost |

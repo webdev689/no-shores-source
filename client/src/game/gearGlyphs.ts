@@ -1,7 +1,8 @@
 // The gear screens' glyphs, pixel pictures to sit with the forge's pixel figures and Enhanced Plus's carved frames:
-// drawn by hand, Aurem, the fragments and Essence, the Fruit of Dagon and an empty place; baked, each island's
-// resource, a Vestige's crystal, an Ammo box and an Ammo crate (the pictures drops stand as on the ground). Enhanced
-// Plus has no icons of its own for these, and the classic item art stays behind, so they are ours.
+// drawn by hand, Aurem, the fragments and Essence, the Fruit of Dagon, an empty place and an empty Mount slot's horse;
+// baked, each island's resource, a Vestige's crystal, an Ammo box and an Ammo crate (the pictures drops stand as on
+// the ground). Enhanced Plus has no icons of its own for these, and the classic item art stays behind, so they are
+// ours.
 
 import { AMMO_BOX, AMMO_CRATE, OUTLINE, resourcePicture } from '../combat/dropPictures.ts';
 import { crystalStill } from '../combat/vestigeCrystal.ts';
@@ -113,6 +114,21 @@ const MAPS: Readonly<Record<Exclude<Glyph, 'item' | 'resource' | 'vestige'>, rea
   ],
   'ammo-box': AMMO_BOX.rows,
   'ammo-crate': AMMO_CRATE.rows,
+  // An empty Mount slot: a horse's head, ears up, looking left.
+  horse: [
+    '.......a.a..',
+    '......aaaa..',
+    '.....a...a..',
+    '....a.....a.',
+    '...a.......a',
+    '..a...a....a',
+    '.a.........a',
+    'a....aa....a',
+    'a...a..a...a',
+    '.aaa....a..a',
+    '.........a.a',
+    '.........aaa',
+  ],
   empty: [
     '............',
     '.....aa.....',
@@ -142,6 +158,7 @@ const PALETTES: Readonly<Record<string, readonly string[]>> = {
   'ammo-box': AMMO_BOX.colours,
   'ammo-crate': AMMO_CRATE.colours,
   empty: ['#6b665c'],
+  horse: ['#6b665c'],
 };
 /** A glyph as an SVG picture; a material past the catalogue's end shows an empty place. */
 export function glyphSvg(glyph: Exclude<Glyph, 'item'>, rarity = 0, tint = 0, drawnAt = 36): string {

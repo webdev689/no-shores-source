@@ -160,6 +160,11 @@ ability bar on the HUD), how the rules cast each spell, how the browser asks for
 - **A room without Arts.** A room told to forbid them (`Room::forbid_arts`), as the prologue's wreck's is (`Room::story_wreck`), takes no
   cast and charges nothing, a kill's share included; no fragment of a Core works; a blow in an Art's element is no
   more than another; and the player's gear says Art 0, its Anima and Tenets empty.
+- **The story's Storm.** On the wreck, once the wisp engulfs the player, the room gives them the Storm
+  (`Room::story_storm`): its Arts work again, and the Storm is worn, its Anima (Tempest) and both Tenets (Quicken,
+  Arc Lash) earned and charged full, so its bar shows and each is cast as anywhere ([[Prologue]], "The teaching"). The
+  prologue's end (`Ask::FinishPrologue`) takes it back from a character that had not finished it, unearned and
+  unworn ([[The Prologue Is Reworked With Real Armour, a Bow, the Storm and No Elites]]).
 - **Asks.** The room answers `wearArt` and `setCore` as it does the gear's asks, in turn with the player's inputs.
   An unknown Art is refused (answer 110), a slot outside 0 to 2 (111), a fragment outside 0 to 5 (112), one set
   already in another slot of that Art (113), and one not owned (114). Only the worn Art's Core changes its spells.

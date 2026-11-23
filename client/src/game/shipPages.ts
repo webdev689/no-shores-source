@@ -24,7 +24,7 @@ import {
   tileNode,
   words,
 } from './gearNodes.ts';
-import { WARES, tileOf, vendorsOf } from './gearScreen.ts';
+import { tileOf, vendorsOf } from './gearScreen.ts';
 import { shelvesNode } from './inventoryPage.ts';
 import { bar, nodeGrid } from './itemPage.ts';
 import type { MenuContext } from './menuPage.ts';
@@ -522,9 +522,8 @@ export function harbourPage(context: MenuContext): Node {
   const { ui, holds, gear, sizes } = context;
   const stall = vendorsOf(gear)[SHIPWRIGHT];
   const wares = (stall?.wares ?? []).map((ware, place): Node => {
-    const nth = SHIPWRIGHT * WARES + place;
-    const item = gear.wares[nth];
-    const id = `buy-${nth}`;
+    const item = ware.item;
+    const id = `buy-${SHIPWRIGHT}-${place}`;
     const rgb = rarityRgb(item?.rarity ?? null);
     // One the player cannot pay for says so, and cannot be held; its picture charges as it is held.
     const charged = ware.affordable ? holds.press(ui, id, () => context.ask(ware.press.ask), { rgb }) : 0;

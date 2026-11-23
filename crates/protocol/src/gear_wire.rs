@@ -468,7 +468,7 @@ pub fn gear_bytes(room: &Room, player: PlayerId) -> Option<Vec<u8>> {
         art_owned: Some(more.art_owned),
         cosmetics: Some(more.cosmetics),
         dye: crate::standing_wire::number_of_worn(&character.cosmetics.dye),
-        coat: crate::standing_wire::number_of_worn(&character.cosmetics.coat),
+        coat: crate::standing_wire::number_of_worn(character.coat_worn().unwrap_or_default()),
         barding: crate::standing_wire::number_of_worn(&character.cosmetics.barding),
         cosmetics_sold: Some(more.cosmetics_sold),
         shapes: held.shapes,
