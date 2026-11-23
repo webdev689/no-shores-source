@@ -261,7 +261,8 @@ test('the prologue’s own armour is its steel, a Normal piece though it is, as 
 
 test("a smith's ware is drawn as the piece it becomes once bought: its set or clothes, its metal and its make", async () => {
   // gear_wire_tests.rs writes the player's gear at the stall, then again after each of the Armorsmith's and the
-  // Weaponsmith's six wares is bought in turn, each message its length in four bytes and then itself.
+  // Weaponsmith's wares, the day's six then the starter stock, is bought in turn, each message its length in four bytes
+  // and then itself; the smiths' stocks come first among the wares, so the ware bought is the one at its place.
   const bytes = await readFile(new URL('../../../target/protocol/gear_vended.bin', import.meta.url)).catch(() => {
     throw new Error('gear_vended.bin is not written: run `cargo test -p protocol`');
   });
@@ -272,7 +273,7 @@ test("a smith's ware is drawn as the piece it becomes once bought: its set or cl
     if (read?.kind === 'gear') sent.push(read);
     start += 4 + length;
   }
-  assert.equal(sent.length, 13, 'before any is bought, and after each of twelve');
+  assert.equal(sent.length, 19, 'before any is bought, and after each of the ten and the eight');
   const looks = (piece: GearItem) => {
     const slot = piece.bucket;
     const wearing = state([{ ...piece, at: WORN + slot }]);

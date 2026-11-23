@@ -366,10 +366,10 @@ fn the_gear_for_the_clients_test_is_written() {
     std::fs::write(format!("{folder}/gear_shape.bin"), gear_bytes(&room, player).expect("written")).expect("written");
 }
 
-/// Each of the Armorsmith's and the Weaponsmith's wares bought in turn at the stall takes the number the gear message
-/// before it said the next item takes. The page's test (`client/src/player/gearLooks.test.ts`) reads the messages,
-/// the first before any is bought and one after each, each its length in four bytes (little-endian) and then itself,
-/// to check that each ware is drawn as the piece it becomes.
+/// Each of the Armorsmith's and the Weaponsmith's wares, the day's then the starter stock, bought in turn at the stall
+/// takes the number the gear message before it said the next item takes. The page's test
+/// (`client/src/player/gearLooks.test.ts`) reads the messages, the first before any is bought and one after each, each
+/// its length in four bytes (little-endian) and then itself, to check that each ware is drawn as the piece it becomes.
 #[test]
 fn each_smiths_ware_bought_takes_the_number_sent_and_the_gear_for_the_clients_test_is_written() {
     use gear::vendor::{Vendor, WARES};
@@ -393,12 +393,13 @@ fn each_smiths_ware_bought_takes_the_number_sent_and_the_gear_for_the_clients_te
         written.extend(u32::try_from(bytes.len()).expect("a length").to_le_bytes());
         written.extend(&bytes);
         let gear = flatbuffers::root::<messages::FromRoom>(&bytes).expect("a message").gear().expect("the gear");
-        assert_eq!(gear.wares().map(|wares| wares.len()), Some(3 * WARES), "at the stall");
+        let stocked: usize = Vendor::ALL.into_iter().map(|vendor| WARES + vendor.starter_kinds().len()).sum();
+        assert_eq!(gear.wares().map(|wares| wares.len()), Some(stocked), "every smith's whole stock at the stall");
         gear.next_id()
     };
     let mut next = sent(&room);
     for vendor in [Vendor::Armorsmith, Vendor::Weaponsmith] {
-        for ware in 0..WARES {
+        for ware in 0..WARES + vendor.starter_kinds().len() {
             let held: Vec<u32> = room.player(player).expect("in").character.items.keys().copied().collect();
             let ware = u8::try_from(ware).expect("a place");
             assert_eq!(ask(&mut room, Asked::Gear(Ask::Vend { vendor, ware, day })), 0, "{vendor:?}'s {ware} bought");
