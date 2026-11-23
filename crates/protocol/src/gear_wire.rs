@@ -386,7 +386,6 @@ pub(crate) fn item_offset<'built>(
         .collect();
     let columns = Some(builder.create_vector(&columns));
     let named = item.named.as_deref().map(|named| builder.create_string(named));
-    let chosen = Some(builder.create_vector(&item.chosen));
     let args = messages::GearItemArgs {
         id: item.id,
         kind: item.kind as u8,
@@ -399,7 +398,7 @@ pub(crate) fn item_offset<'built>(
         xp: item.xp,
         xp_most: item.xp_most(),
         bought: item.bought,
-        chosen,
+        chosen: Some(builder.create_vector(&item.chosen)),
         bucket: item.bucket as u8,
         at: at_number(at),
         attack: item.attack().unwrap_or(0),
