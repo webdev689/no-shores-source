@@ -360,7 +360,7 @@ the cutscenes, the camera's moves, the nameplate, the fires and the lines are th
   dead ends (`withoutDeadEnds`): every square from which no body can walk back to the path, a step (0.5 m) up at most
   from one square to the next and any drop down, and that a body coming from the path can step, jump, vault or drop
   into, is left out, so the rim holds bodies at its edge there too. A wall is no ground a body comes from: no body
-  stands on one, so a wall stays, in a dead end too, and stops shots. They are 30 slips of ground at most 60 squares
+  stands on one, so a wall stays, in a dead end too, and stops shots. They are 31 slips of ground at most 60 squares
   across: slots at the waterline beside the Sloop's side, ledges outboard of the Frigate's quarterdeck rails, and
   others. Foes never jump, so a ledge they
   cannot step out of would hold them in the sea. A foe found off it is stood again at its post. A player in the sea (lower than 1.5 m over it, with no block of the wreck under them) is brought

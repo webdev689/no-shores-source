@@ -14,7 +14,8 @@ fix the close case only; a foe gives up only when the player is well past its ra
 ## What it settles
 
 - A posted foe never gives up on a player close to it, wherever the player stands, so it no longer walks home, heals
-  and turns away while the player is near ([[Foes]]).
+  and turns away while the player is near ([[Foes]]). Out of its sight, it hunts them on while they are near rather
+  than search, let go and walk home.
 - It still gives up on a player past its leash from its post, as before, and on one far from it on ground its routes
   do not reach. Where close ends is Claude's call: 14 m, the range a foe engages a target it sees.
 - It narrows "off the room's navmesh" in [[Foes Leash to Their Posts and Fall With Their Boss]], and the two rows of

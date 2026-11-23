@@ -105,7 +105,7 @@ strikes ([[Public Events]]).
   place, and takes the nearest it sees (or another, sharing out: below), or the one that strikes it (a blow alerts at
   once). Seen farther off than its range, a target is pursued, not fought; a shooter pursuing one walks on until it
   stands 6 m inside its range. Out of sight, its target is hunted where it was last seen for 5 s, its turn kept 1.5 s
-  (DFO's stale lease); then it **searches**: walks to within 1.4 m of the place, sweeps its gaze at 2.2 radians a second
+  (DFO's stale lease), and by a garrison foe for as long as the target stands within 14 m of it; then it **searches**: walks to within 1.4 m of the place, sweeps its gaze at 2.2 radians a second
   out and back for 2.6 s, then lets go, and its level bleeds back to idle. Suspicious, hunting or searching, it stops
   short of the place behind an ally that already stands nearer it, within 1.2 m. The foe's soft lock holds its target,
   but while it answers a blow, the striker. A player just stood again is left be for 3 s, unless they strike first, and

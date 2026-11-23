@@ -162,15 +162,13 @@ each part works is in its system note.
   [[A Foe Gives Up Only When the Player Is Far Away]], and the hub's sunk feet fixed (a figure's lowest quarter metre takes the city's
   pull, [[Cities]]). Audited by four read-only reviewers; every finding fixed or asked. Tested offline and pictured
   headless; not played live.
-  - **The arena waits on the wreck's run.** The asset workflows upload with `CLOUDFLARE_TOKEN` now ([[The Asset Workflows Publish to R2 With the Cloudflare Token]]);
-    `R2_TOKEN` had read empty on every run. Once the `wreck` workflow has built and published the longer quarterdeck,
-    its `wreck-level` artifact is committed whole as `content/prologue/wreck.json` with the client test updates the
-    arena's build was checked with (they and the comments that still say "gun deck" in `wreckGround.ts` and
-    `wreckProgress.ts` go with it); then the note's count of dead-end slips is checked against it.
+  - **The arena is built.** The asset workflows upload with `CLOUDFLARE_TOKEN` now ([[The Asset Workflows Publish to R2 With the Cloudflare Token]]);
+    the `wreck` workflow built and published the longer quarterdeck, and its `wreck-level` artifact is
+    `content/prologue/wreck.json` whole (its mesh and light on R2, 31 dead-end slips). On it the waist's pistoleer
+    lost a player close behind its clutter, searched, and walked home healing; it now hunts a target within 14 m on
+    rather than search ([[A Foe Gives Up Only When the Player Is Far Away]]).
   - **Open for the owner**: whether the story's hand-over to the plaza (the game's own veil, 0.7 s, shared with all
-    travel) also takes the longer change and the logo; whether a foe whose search finds no one may walk home and heal
-    while the player stands close but unseen ([[Foes Leash to Their Posts and Fall With Their Boss]]'s "walk home after
-    a search").
+    travel) also takes the longer change and the logo.
 - **Nameplates, the player menu and chat** (#154, branch `claude/player-nameplates-interaction-3b6cwr`), merged into
   `main` (bc896f8b; its deploy not checked here); as it went to the owner's yes to merge, which deploys the page, the rooms and the accounts (a new Durable Object, the chat's hall, and
   two migrations: `presence.water` and `mutes`): [[Other Players Wear a Nameplate, Their Level or Prestige in a
