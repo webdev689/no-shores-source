@@ -285,7 +285,7 @@ export class WreckFight implements Beat {
       aspect,
       held,
       frozen,
-      ...(wisp && { more: wisp.marks }),
+      ...(wisp && { cutscene: { eye: wisp.shot.eye, marks: wisp.marks } }),
     });
     if (run.arena && !this.fought && !coming) this.bossComes(shown.shot);
     const [thuleX, thuleY] = this.layout.arena.thule;

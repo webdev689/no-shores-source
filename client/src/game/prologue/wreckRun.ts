@@ -406,7 +406,8 @@ export class WreckRun {
   /** One frame: the player plays and fights (nothing pressed while `paused`, the fight's buttons only while
    *  `hands`), or while `held` everything stands still for a cutscene; the camera follows; every figure and mark is
    *  placed for an eye there. While `frozen` the fight stands as it was, its room's clock, the player's body and every
-   *  figure stopped, `clock` held by the caller. A cutscene's own marks (`more`) are laid with the fight's. */
+   *  figure stopped, `clock` held by the caller. A cutscene's own marks are laid with the fight's, all measured from
+   *  its eye (`cutscene`), the one the picture is drawn from. */
   frame(
     controls: InputFrame,
     elapsed: number,
@@ -417,8 +418,15 @@ export class WreckRun {
       aspect,
       held,
       frozen = false,
-      more = [],
-    }: { paused: boolean; hands: boolean; aspect: number; held: boolean; frozen?: boolean; more?: readonly number[] },
+      cutscene,
+    }: {
+      paused: boolean;
+      hands: boolean;
+      aspect: number;
+      held: boolean;
+      frozen?: boolean;
+      cutscene?: { readonly eye: readonly [number, number, number]; readonly marks: readonly number[] };
+    },
   ): FootFrame {
     const { walker, movement, forge, groundAt } = this.context;
     const { fight, foes, effects, feel } = this;
@@ -490,16 +498,17 @@ export class WreckRun {
     );
     figures.push(...this.storyArms.figures(walker.you.dress, clock));
     const muzzle = walker.muzzle;
+    const seen = cutscene?.eye ?? shot.eye;
     const marks = effects.marks(fight, seconds, {
-      eye: shot.eye,
+      eye: seen,
       blocks: this.course,
       bodies,
       muzzleOf: () =>
         muzzle ? screenMuzzle(kicked, aspect, muzzle) : figureMuzzle([body.x, body.y, body.z], walker.you.facing),
-      origin: shot.eye,
+      origin: seen,
       groundAt,
       drawn: { foes: foes.placed, others: new Map() },
-      more: [...this.storyArms.marks(foes.overheads(shot.eye, clock), clock, shot.eye), ...more],
+      more: [...this.storyArms.marks(foes.overheads(seen, clock), clock, seen), ...(cutscene?.marks ?? [])],
     });
     this.sounds.frame({
       seconds,
