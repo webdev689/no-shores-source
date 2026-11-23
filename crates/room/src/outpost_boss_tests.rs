@@ -56,7 +56,8 @@ fn one_horn_foe_at_a_time() {
 fn felled_the_horn_s_foe_pays_who_fought_it_and_its_guild_s_package_once_a_week() {
     let (mut room, player) = sounded(1);
     let ids: Vec<_> = room.foes.keys().copied().collect();
-    room.fought_horn(player);
+    room.foes.get_mut(&ids[0]).expect("the boss").struck_by.insert(player, (0, gear::Slot::Melee));
+    room.tick();
     for id in ids {
         room.foes.remove(&id);
     }
@@ -67,4 +68,18 @@ fn felled_the_horn_s_foe_pays_who_fought_it_and_its_guild_s_package_once_a_week(
     assert!(character.guild.horn, "the guild's package taken");
     assert_eq!(character.vestiges.len(), 1);
     assert!(!room.horn_foe_up(), "and the horn may call another");
+}
+
+#[test]
+fn a_player_who_struck_none_of_the_horn_s_foes_is_not_paid() {
+    let (mut room, player) = sounded(1);
+    let ids: Vec<_> = room.foes.keys().copied().collect();
+    for id in ids {
+        room.foes.remove(&id);
+    }
+    let aurem = room.players[&player].character.materials.aurem;
+    room.tick();
+    assert_eq!(room.players[&player].character.materials.aurem, aurem);
+    assert!(!room.players[&player].character.guild.horn);
+    assert!(!room.horn_foe_up(), "felled all the same");
 }

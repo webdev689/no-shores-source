@@ -46,13 +46,6 @@ impl Room {
         }
     }
 
-    /// Notes a player who shared a kill of the horn's foes.
-    pub(crate) fn fought_horn(&mut self, player: PlayerId) {
-        if let Some(outpost) = self.outpost.as_mut().filter(|outpost| !outpost.boss.standing.is_empty()) {
-            outpost.boss.fought.insert(player);
-        }
-    }
-
     /// Each tick: stands the horn's foe once it is called, and pays its felling once all of it has fallen.
     pub(crate) fn keep_outpost(&mut self) {
         let Some(outpost) = self.outpost.as_ref() else { return };
@@ -60,8 +53,16 @@ impl Room {
             self.stand_horn_foe(tier);
             return;
         }
+        // Whoever struck one of the horn's foes fought it.
+        let standing = &outpost.boss.standing;
+        let struck: Vec<PlayerId> =
+            standing.iter().filter_map(|id| self.foes.get(id)).flat_map(|foe| foe.struck_by.keys().copied()).collect();
         let fallen = |id: &FighterId| self.foes.get(id).is_none_or(|foe| foe.fighter.dead());
-        if !outpost.boss.standing.is_empty() && outpost.boss.standing.iter().all(fallen) {
+        let down = !standing.is_empty() && standing.iter().all(fallen);
+        if let Some(outpost) = self.outpost.as_mut() {
+            outpost.boss.fought.extend(struck);
+        }
+        if down {
             self.pay_horn_foe();
         }
     }

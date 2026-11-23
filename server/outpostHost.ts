@@ -20,8 +20,8 @@ type OutpostDoor = Pick<RoomDoor, 'outpostErrands' | 'outpostAnswered' | 'outpos
 
 /** The staff a banner with none hangs from. */
 const DRIFTWOOD = 'driftwood';
-/** How many times a deposit the accounts threw on is asked, under its one id. */
-const DEPOSIT_TRIES = 3;
+/** How long a deposit the accounts threw on waits before each try again, under its one id. */
+const DEPOSIT_WAITS_MS = [250, 1_000];
 /** How long a leaving player's last save waits for their errands at most: past it, it is made all the same. */
 export const SETTLE_MOST_MS = 30_000;
 
@@ -139,19 +139,21 @@ export class OutpostHost {
 
   /** A deposit, asked again under its one id while the accounts throw: all of it moved, or none. */
   private async deposit(account: string, amount: number, rid: string): Promise<number | null> {
-    for (let tried = 1; ; tried++) {
-      try {
-        return (await this.accounts.deposit(account, amount, rid)) === 'refused' ? 0 : amount;
-      } catch (error) {
-        if (tried >= DEPOSIT_TRIES) throw error;
-      }
+    for (const millis of [0, ...DEPOSIT_WAITS_MS]) {
+      if (millis > 0) await new Promise((done) => setTimeout(done, millis));
+      const moved = await this.accounts.deposit(account, amount, rid).catch(() => null);
+      if (moved !== null) return moved === 'refused' ? 0 : amount;
     }
+    return null;
   }
 
-  /** Once a leaving player's errands are answered (those the room still holds taken first), or SETTLE_MOST_MS on. */
+  /** Once a leaving player's errands are answered, those the room holds meanwhile taken too, or SETTLE_MOST_MS on. */
   async settled(player: number, wait = (millis: number) => new Promise((done) => setTimeout(done, millis))) {
-    this.tick();
-    const flying = [...(this.flying.get(player) ?? [])];
-    if (flying.length > 0) await Promise.race([Promise.all(flying), wait(SETTLE_MOST_MS)]);
+    const late = wait(SETTLE_MOST_MS).then(() => true);
+    for (;;) {
+      this.tick();
+      const flying = [...(this.flying.get(player) ?? [])];
+      if (flying.length === 0 || (await Promise.race([Promise.all(flying).then(() => false), late]))) return;
+    }
   }
 }

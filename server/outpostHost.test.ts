@@ -111,12 +111,9 @@ test('a deposit is asked again under its one id while the accounts throw, and gi
   });
   const host = new OutpostHost(door, accounts, ROOM, GROUND, guarded, 77);
   door.waiting.push(errand(1, 'deposit', { amount: 40 }));
-  host.tick();
-  await settle();
+  await host.settled(3);
   door.waiting.push(errand(2, 'deposit', { amount: 30 }), errand(3, 'deposit', { amount: 20 }));
-  host.tick();
-  await settle();
-  await settle();
+  await host.settled(3);
   assert.deepEqual(door.answered, [
     [1, 40],
     [2, 0],
