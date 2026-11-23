@@ -10,7 +10,13 @@ import type { RmbBlock } from './blocks.ts';
 import { buildCity, type Chunk, type CityData, type CityTables, detailRuns, type Range, runs } from './cityBuild.ts';
 import { drawsByFormation, type InstancedDraw, middleDraws, writeInstances } from './crystalInstances.ts';
 import { wreckCrustAt } from './overtaken.ts';
-import { CITY_BUFFER_USAGE, type CityPipelines, cityPipelines, MODEL_INSTANCE_BYTES } from './cityGpu.ts';
+import {
+  CITY_BUFFER_USAGE,
+  type CityPipelines,
+  cityPipelines,
+  MODEL_INSTANCE_BYTES,
+  originInstance,
+} from './cityGpu.ts';
 import { MODEL_FLOATS } from './cityModels.ts';
 import type { MeshData } from './mesh.ts';
 import { CityPainter, type PaintProgress } from './painter.ts';
@@ -163,7 +169,7 @@ export class CityView implements CityDrawer {
         { binding: 5, resource: tiles.createView() },
       ],
     });
-    const origin = new ArrayBuffer(MODEL_INSTANCE_BYTES);
+    const origin = originInstance();
     this.drawn = {
       data,
       painter,

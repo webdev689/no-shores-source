@@ -29,6 +29,21 @@ export type CityPipelines = {
  *  many times its size it is drawn. */
 export const MODEL_INSTANCE_BYTES = 32;
 
+/** The models' instance as the pipeline reads it: where it stands and its yaw, its cell and tier, its break, its size. */
+export const MODEL_INSTANCE_LAYOUT = {
+  arrayStride: MODEL_INSTANCE_BYTES,
+  stepMode: 'instance',
+  attributes: [
+    { shaderLocation: 4, offset: 0, format: 'float32x4' },
+    { shaderLocation: 5, offset: 16, format: 'uint32x2' },
+    { shaderLocation: 6, offset: 24, format: 'float32' },
+    { shaderLocation: 7, offset: 28, format: 'float32' },
+  ],
+} as const satisfies GPUVertexBufferLayout;
+
+/** One instance standing at the origin, whole: what a view draws its solids, laid already in place, with. */
+export const originInstance = (): ArrayBuffer => new ArrayBuffer(MODEL_INSTANCE_BYTES);
+
 const made = new WeakMap<GPUDevice, Map<GPUTextureFormat, CityPipelines>>();
 
 export function cityPipelines(gpu: Gpu): CityPipelines {
@@ -75,16 +90,7 @@ export function cityPipelines(gpu: Gpu): CityPipelines {
         { shaderLocation: 3, offset: 32, format: 'uint32' },
       ],
     },
-    {
-      arrayStride: MODEL_INSTANCE_BYTES,
-      stepMode: 'instance',
-      attributes: [
-        { shaderLocation: 4, offset: 0, format: 'float32x4' },
-        { shaderLocation: 5, offset: 16, format: 'uint32x2' },
-        { shaderLocation: 6, offset: 24, format: 'float32' },
-        { shaderLocation: 7, offset: 28, format: 'float32' },
-      ],
-    },
+    MODEL_INSTANCE_LAYOUT,
   ];
   const massBuffers: GPUVertexBufferLayout[] = [
     {
