@@ -33,6 +33,9 @@ be; the calls below are the work after it. Claude's choices for [[Armour and Wea
 | A named item | Keeps its own look, and belongs to the content its look belongs to (`source` in `content/gear/items.json`); a named gun or cloak to the world | A named piece is one thing, worn by everyone alike |
 | The three daedric Atherics | Saltfang and the Ninth Wave take ebony, the Crown of the Drowned adamantium, and all three the Abyss Dungeons | Daedric waits for the Breaches, and a Breach's piece drops nowhere else, so leaving them daedric would take three Atherics out of the game |
 | A Vestige whose content has no named piece of its slot and colour | Opens to another content's named piece, which keeps its own content | Until every content has named pieces of every slot, a Legendary must still open to one |
+| A rolled piece's look past the world | Its set and metal by its name alone, as its content drops at its own levels; the world's climb with its level | Each content's every look is seen at every level it drops |
+| From | On an item's card and page and a Vestige's line, capitalised; a faction's piece names its faction ("The Veiled") | Where it was earned, said wherever the piece is |
+| The room's look check | The room keeps any look the page could pick for the piece (any of its content's sets for its rarity, any make, its written look, its faction's, the forge's nearest where it draws none), not only the one it would pick; a body the forge does not draw holds no weapon and keeps no fallback; a pauldrons layer stays with its cuirass's set where the forge draws none | The owner's "Yes, server checks looks", with no legitimate look ever dropped |
 
 ### The Playlist
 
