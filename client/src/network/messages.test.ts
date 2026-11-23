@@ -4,7 +4,6 @@ import { test } from 'node:test';
 import * as flatbuffers from 'flatbuffers';
 import { Course, Input } from '../../../generated/messages/ts/overlook/wire.ts';
 import { PROTOCOL } from '../../../generated/messages/ts/version.ts';
-import { EVENT } from '../combat/cues.ts';
 import type { FightOrders } from '../rules/fightRules.ts';
 import { fighterView, glanceView, statusesOf } from '../rules/fighters.ts';
 import { floatsOf, startMovementRules } from '../rules/movementRules.ts';
@@ -138,17 +137,8 @@ test('a welcome and a snapshot the server wrote read back to the bit', async () 
     [
       [1233n, 3, 1, 12, 9, 0, 0, false, 0, 0],
       [1234n, 1, 8, 9, 12, 35, 3, true, 2, 14],
-      ...[
-        EVENT.sealBroken,
-        EVENT.runeWrong,
-        EVENT.wardRaised,
-        EVENT.wardBroken,
-        EVENT.reckoningLanded,
-        EVENT.bossWoke,
-        EVENT.relicDrained,
-        EVENT.drowned,
-        EVENT.bossSlammed,
-      ].map((kind) => [1235n, kind, 0, 0, 9, 1, 0, false, 0, 0]),
+      // An Elite Dungeon's moments, numbered as the room's judging numbers them (the page's `EVENT`, cues.test.ts).
+      ...[26, 27, 28, 29, 30, 31, 32, 33, 34].map((kind) => [1235n, kind, 0, 0, 9, 1, 0, false, 0, 0]),
     ],
   );
   const [arrow] = snapshot.shots;
