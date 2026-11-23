@@ -1,6 +1,6 @@
-import type { FightLay, FightLook } from '../rules/fightRules.ts';
-import { AimView } from '../ships/aimView.ts';
-import type { FleetLay } from '../rules/fleetRules.ts';
+import type { FightLay } from '../rules/fightRules.ts';
+import { type AimView, aimViewOf } from '../ships/aimView.ts';
+import type { FleetLay, FleetLook } from '../rules/fleetRules.ts';
 import type { LandView } from '../rules/landRules.ts';
 import type { Mark, Splash } from '../ships/effects.ts';
 import { type FeelShip, FightFeel } from '../ships/fightFeel.ts';
@@ -13,7 +13,7 @@ import type { ShipCamera, ShipPlace } from '../ships/shipView.ts';
 import type { HullMask } from '../water/hullMask.ts';
 import type { FleetInput, FleetVessel } from './fleetLink.ts';
 import type { FleetSloop } from './fleetPlay.ts';
-import { AimCamera, aimHullOf } from './aimCamera.ts';
+import { AimCamera } from './aimCamera.ts';
 import { aimOf, easedAimOf, type MarkDrawer, SHIP_RUNG } from './naval.ts';
 import type { Orbit } from './orbit.ts';
 import { SAILS_RUNG } from './sailing.ts';
@@ -28,8 +28,8 @@ const BALL = [0.12, 0.12, 0.12] as const;
 function aimLay(lay: FleetLay | null): FightLay | null {
   if (!lay) return null;
   const ends = lay.ends.map((end) => end && { ...end });
-  const { side, launches, elevation, reach, radius, onTarget } = lay;
-  return { side, launches, elevation, reach, ends, radius, on_target: onTarget };
+  const { side, launches, elevation, reach, radius, spread, onTarget } = lay;
+  return { side, launches, elevation, reach, ends, radius, spread, on_target: onTarget };
 }
 
 /** Where a ship the room shows is drawn in the window, its height scaled as the land is drawn. */
@@ -55,12 +55,12 @@ export class FleetScene {
   private readonly aimView: AimView | null;
   private readonly aimEye = new AimCamera();
   /** The look the aim laid at its last frame, while it lays one. */
-  private aimed: FightLook | null = null;
+  private aimed: FleetLook | null = null;
 
   constructor(play: FleetSloop, marks: MarkDrawer, shown: (hull: number) => number = (hull) => hull) {
     this.play = play;
     this.marks = marks;
-    this.aimView = marks.gpu ? new AimView(marks.gpu) : null;
+    this.aimView = marks.gpu ? aimViewOf(marks.gpu) : null;
     this.shown = shown;
   }
 
@@ -70,19 +70,15 @@ export class FleetScene {
   }
 
   /** The look the aim camera laid at its last frame (`aimCamera`), while it lays one. */
-  look(): FightLook | null {
+  look(): FleetLook | null {
     return this.aimed;
   }
 
-  /** The camera `seconds` on: eased out to its battery while `aiming` and its guns can speak, short of every other
-   *  ship afloat, and home again; the look it lays is kept for the next step (`look`). */
+  /** The camera `seconds` on: eased to its battery while `aiming` and its guns can speak, and home again; the look it
+   *  lays is kept for the next step (`look`). */
   aimCamera(orbit: Orbit, view: LandView, shown: number, aiming: boolean, seconds: number): Orbit {
-    const alongside = this.play
-      .others()
-      .filter((vessel) => vessel.state !== 'sunk')
-      .map((vessel) => aimHullOf([...vessel.ship], vessel.pose[0] ?? 0, this.hullOf(vessel)));
     const speaks = aiming && this.play.session.own()?.state === 'afloat';
-    const how = { shown, aiming: speaks, alongside };
+    const how = { shown, aiming: speaks };
     const aimed = easedAimOf(this.aimEye, orbit, this.play, view, how, this.lay, seconds);
     this.aimed = aimed.look;
     return aimed.orbit;

@@ -6,6 +6,8 @@ import type { Happening } from './flow.ts';
 import type { Difficulty } from '../heldmap/heldMap.ts';
 import type { NodeInfo } from './worldData.ts';
 import { BEFORE_DOOR_M } from './entrances.ts';
+import { activitiesAt } from './activities.ts';
+import { WORLD_CLOCK, roomNow } from '../sky/worldClock.ts';
 
 const bytes = await readFile(
   new URL('../../../target/wasm32-unknown-unknown/release/room_wasm.wasm', import.meta.url),
@@ -16,8 +18,8 @@ const module = WebAssembly.compile(bytes);
 const patrol = { id: 'saltgrass-downs', name: 'The Saltgrass Downs', kind: 'patrol' } as NodeInfo;
 
 /** A game whose trips are written down rather than taken, the player standing where `here` says and their company
- *  playing in `places`; a run's instance and minute pinned. */
-function recorded(here: { foot: object | null }, places: readonly (string | null)[] = []) {
+ *  playing in `places`; a run's instance and minute pinned unless `pinned` is false. */
+function recorded(here: { foot: object | null }, places: readonly (string | null)[] = [], pinned = true) {
   const [happenings, ways, travels] = [[] as Happening[], [] as unknown[][], [] as Promise<void>[]];
   const shown: unknown[] = [];
   const game: TripGame = {
@@ -45,7 +47,9 @@ function recorded(here: { foot: object | null }, places: readonly (string | null
     await new Promise((done) => setImmediate(done));
     await Promise.all(travels);
   };
-  const trips = dungeonTrips(game, { instance: () => 'k3j4h5g6', minute: () => 29_919_420 });
+  const trips = pinned
+    ? dungeonTrips(game, { instance: () => 'k3j4h5g6', minute: () => 29_919_420 })
+    : dungeonTrips(game);
   return { trips, happenings, ways, shown, settled };
 }
 
@@ -167,6 +171,26 @@ test('an Elite Dungeon is entered from its node as its run, the week’s where i
     node: 'saltworm-warrens--dungeon',
     name: 'Saltworm Warrens, the Abyss Dungeon of the week',
   });
+});
+
+test("the week's Elite Dungeon is the week's by the rooms' clock, not a page clock that is wrong", async () => {
+  const rules = await module;
+  const minute = (moment: number) => Math.floor(moment / 60_000);
+  // The rooms say it is a week (or more) later than the page thinks, so the week's Elite Dungeon differs.
+  let weeks = 0;
+  while (weeks < 20) {
+    weeks++;
+    WORLD_CLOCK.heard(WORLD_CLOCK.seconds() + 7 * 86_400);
+    const [rooms, page] = [activitiesAt(rules, minute(roomNow())), activitiesAt(rules, minute(Date.now()))];
+    if (rooms.weekElite.place !== page.weekElite.place) break;
+  }
+  const place = activitiesAt(rules, minute(roomNow())).weekElite.place;
+  assert.notEqual(place, activitiesAt(rules, minute(Date.now())).weekElite.place, 'the two clocks disagree');
+  const run = recorded({ foot: standing(elite(place, 'The Week’s'), 'elite') }, [], false);
+  run.trips.enter(0, 'The Week’s');
+  await run.settled();
+  WORLD_CLOCK.heard(WORLD_CLOCK.seconds() - weeks * 7 * 86_400);
+  assert.equal(run.ways[0]?.[4], 'elite', "entered as the rooms' week's Elite Dungeon");
 });
 
 test('a sea island’s dungeon is entered by its name and left back onto the island at its door', async () => {

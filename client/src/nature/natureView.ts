@@ -8,6 +8,7 @@ import { runsInView, tilesCasting, tilesInView } from './cull.ts';
 import { NatureField, type NatureGround, type Packed } from './field.ts';
 import { FLORA, type LoadedFlora, loadFlora, MESH_VERTEX_BYTES } from './flora.ts';
 import { FORM_BLOCK_BYTES, FORM_FLOATS, type FormBuffers, formBuffers, type Part } from './forms.ts';
+import { Kept } from './kept.ts';
 import { type Cast, TREE } from './kinds.ts';
 import { FRAME_FLOATS, NATURE_CAST_SHADER, NATURE_SHADER, SHADE_SEGMENTS } from './natureShader.ts';
 
@@ -67,6 +68,35 @@ interface Grown {
   buffer: GPUBuffer | null;
 }
 
+/** A biome's flora on the GPU: its meshes, their terms and its pictures. */
+interface Meshes {
+  readonly cast: Cast;
+  readonly forms: FormBuffers;
+  readonly vertices: GPUBuffer;
+  readonly blocks: GPUBuffer;
+  readonly albedo: GPUTexture;
+  readonly normal: GPUTexture;
+}
+
+/** Biomes' flora kept on the GPU once made, by device, shared by every view drawing the biome. A biome's is about
+ *  60 MB (five or six 1024-pixel layers with their mips, albedo and normal), so of the biomes no view draws only the
+ *  last left is kept: a landmass sailed back to reads, decodes and copies none of its flora again. A machine that says
+ *  it has under 8 GB (`navigator.deviceMemory`, its most) keeps none, as those 60 MB cost it more than the wait. */
+const FLORA_KEPT = new WeakMap<GPUDevice, Kept<Cast, Meshes>>();
+const floraIdle = (): number =>
+  ((globalThis.navigator as { readonly deviceMemory?: number } | undefined)?.deviceMemory ?? 8) >= 8 ? 1 : 0;
+
+function floraKept(device: GPUDevice): Kept<Cast, Meshes> {
+  let kept = FLORA_KEPT.get(device);
+  if (!kept) {
+    kept = new Kept(floraIdle(), (meshes) => {
+      for (const owned of [meshes.vertices, meshes.blocks, meshes.albedo, meshes.normal]) owned.destroy();
+    });
+    FLORA_KEPT.set(device, kept);
+  }
+  return kept;
+}
+
 /**
  * The trees, plants and rocks round the eye, drawn with WebGPU into the land's pass, after the land and before the
  * water, which hazes them with the rest. Each frame: `update` with the camera and the ground, then `drawInto` the
@@ -86,14 +116,7 @@ export class NatureView {
     readonly cast: GPURenderPipeline;
   };
   private readonly frameBuffer: GPUBuffer;
-  private meshes: {
-    cast: Cast;
-    forms: FormBuffers;
-    vertices: GPUBuffer;
-    blocks: GPUBuffer;
-    albedo: GPUTexture;
-    normal: GPUTexture;
-  } | null = null;
+  private meshes: Meshes | null = null;
   /** The biome whose flora is loading or loaded, and what came of it: null while it loads or if it failed. */
   private loading: { cast: Cast; loaded: LoadedFlora | null; failed: boolean } | null = null;
   private readonly sampler: GPUSampler;
@@ -313,7 +336,7 @@ export class NatureView {
     }
   }
 
-  /** Gives the GPU back this view's buffers and pictures; it draws nothing after. */
+  /** Gives the GPU back this view's buffers and lets go of its biome's flora (`floraKept`); it draws nothing after. */
   destroy(): void {
     this.frameBuffer.destroy();
     this.dropMeshes();
@@ -321,10 +344,17 @@ export class NatureView {
     [this.bind, this.draws, this.loading] = [null, [], null];
   }
 
-  /** The biome's baked meshes, terms and pictures on the GPU, loaded when the biome changes. Answers whether they
-   *  are ready to draw. */
+  /** The biome's baked meshes, terms and pictures on the GPU, taken from those kept or loaded when the biome changes.
+   *  Answers whether they are ready to draw. */
   private keepMeshes(cast: Cast, biome: string): boolean {
     if (this.meshes?.cast === cast) return true;
+    const kept = floraKept(this.gpu.device);
+    const taken = kept.take(cast);
+    if (taken) {
+      this.dropMeshes();
+      [this.meshes, this.loading, this.bind] = [taken, null, null];
+      return true;
+    }
     if (this.loading?.cast !== cast) {
       const loading: { cast: Cast; loaded: LoadedFlora | null; failed: boolean } = {
         cast,
@@ -333,7 +363,13 @@ export class NatureView {
       };
       this.loading = loading;
       loadFlora(cast, biome).then(
-        (loaded) => ([loading.loaded, loading.failed] = [loaded, !loaded]),
+        (loaded) => {
+          [loading.loaded, loading.failed] = [loaded, !loaded];
+          // Come for a view that has moved on or been let go: its pictures are never uploaded, so let them go now.
+          if (this.loading !== loading)
+            for (const layer of loaded?.layers ?? [])
+              [layer.albedo, layer.normal].forEach((picture) => picture.close());
+        },
         (error: unknown) => {
           loading.failed = true;
           console.warn(`the ${biome} flora did not load`, error);
@@ -358,6 +394,7 @@ export class NatureView {
     const albedo = this.pictureArray(loaded.layers.map((layer) => layer.albedo));
     const normal = this.pictureArray(loaded.layers.map((layer) => layer.normal));
     this.meshes = { cast, forms, vertices, blocks, albedo, normal };
+    kept.keep(cast, this.meshes);
     // Its pictures are on the GPU now: the decoded copies are let go.
     this.loading.loaded = null;
     this.bind = null;
@@ -388,9 +425,9 @@ export class NatureView {
     return texture;
   }
 
+  /** Lets go of this view's hold on its biome's flora, kept for another view or dropped (`floraKept`). */
   private dropMeshes(): void {
-    for (const owned of [this.meshes?.vertices, this.meshes?.blocks, this.meshes?.albedo, this.meshes?.normal])
-      owned?.destroy();
+    if (this.meshes) floraKept(this.gpu.device).give(this.meshes.cast);
     this.meshes = null;
   }
 

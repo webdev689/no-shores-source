@@ -2,8 +2,8 @@
 // defends. The marks over what they can use are `combat/marksOver.ts`'s, the drops lying for them their own pictures
 // (`combat/drops.ts`), and each resource node the forge's picture of its resource standing on the ground with no mark
 // or beam (`nodeCards.ts`). And what E does where they stand: a station's or Shape's offer opened (or its keeper spoken
-// with, while a quest asks it), a puzzle's point used, or a node within reach gathered while E is held. The room judges
-// every use; the rings and beams only show where.
+// with, while a quest asks it), a puzzle's point used, a chapter of the lore lying there found, or a node within reach
+// gathered while E is held. The room judges every use; the rings and beams only show where.
 
 import type { DropsShown } from '../combat/drops.ts';
 import { markRing } from '../combat/marks.ts';
@@ -15,6 +15,7 @@ import { KEEPERS } from './keepers.ts';
 import { goalOf, puzzlePoints } from './quests/questBook.ts';
 import { shapeSpot } from './townsfolk.ts';
 import { chime } from './uiSounds.ts';
+import { chapterAt } from './compendium/loreBook.ts';
 import type { NodeInfo } from './worldData.ts';
 
 /** How near a resource node a player stands to gather it, and a puzzle's point to use it; how long E is held to gather
@@ -22,6 +23,8 @@ import type { NodeInfo } from './worldData.ts';
  *  carries, as the gear crate has it (`character.rs`): a node of one they are full of is not offered. */
 export const NODE_REACH_M = 2.5;
 export const POINT_REACH_M = 3;
+/** How near a chapter of the lore lying in the world a player stands to find it, as the room has it (`lore.rs`). */
+export const LORE_REACH_M = 2.5;
 export const GATHER_S = 2;
 export const GATHER_STIR_M = 0.3;
 export const STOCK_MOST = 200;
@@ -74,6 +77,12 @@ export function useAt(
   if (point) {
     const named = point.name.replace(/^The /, 'the ');
     return { words: `Use ${named}`, run: () => ask({ kind: ASKS.usePoint, column: point.index }) };
+  }
+  const lying = gear?.loreHere?.find((each) => Math.hypot(each.at[0] - x, each.at[1] - y) <= LORE_REACH_M);
+  if (lying) {
+    // Its book named, where this page's lore holds the chapter the room numbers.
+    const words = `Read ${chapterAt(lying.chapter)?.book.name ?? 'the lore'}`;
+    return { words, run: () => ask({ kind: ASKS.findLore, item: lying.chapter }) };
   }
   const node = gear?.nodes.find((each) => Math.hypot(each.x - x, each.y - y) <= NODE_REACH_M);
   if (!node || mounted || (gear?.resources[node.resource] ?? 0) >= STOCK_MOST) return null;

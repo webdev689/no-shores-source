@@ -9,11 +9,12 @@ import { foeGlints } from './glints.ts';
 import { aimRingMesh } from './casting.ts';
 import { Impacts, warmImpactPictures } from './impacts.ts';
 import { KillLooks, warmKillPictures } from './killLooks.ts';
-import { type TelegraphMark, marksMesh } from './marks.ts';
+import { MARK_FLOATS, type TelegraphMark, marksMesh } from './marks.ts';
 import { Sparks } from './sparks.ts';
 import type { AnimaScreen } from './animaMoment.ts';
 import { type Drawn, SpellLooks, castLookOf } from './spellLooks.ts';
 import { IMPACT_SPARKS, type Struck, Tracers, othersArrows } from './tracers.ts';
+import { shotBodies } from '../player/crosshair.ts';
 
 type Point = readonly [number, number, number];
 
@@ -36,6 +37,8 @@ export class FightEffects {
   private clock = 0;
   /** The marks beyond the fight's own laid each frame, kept from frame to frame so none is made afresh. */
   private readonly more: number[] = [];
+  /** Every mark as last laid, measured from its origin, grown to the most yet: what `marks` hands back. */
+  private mesh = new Float32Array(0);
   /** What the shots did as the marks were last laid: the player's own let go, and where any stopped. */
   shotsHeard: { readonly fired: readonly Fired[]; readonly struck: readonly Struck[] } = { fired: [], struck: [] };
 
@@ -81,7 +84,7 @@ export class FightEffects {
    * tracers run on by `seconds` (none while the fight waits), a shot stopped by `blocks`, the ground or one of
    * `bodies` (their feet) throwing sparks where it comes to rest; Dusk Daggers' ring while it is aimed; and every
    * spell in the room, with the statuses that show on the world, laid at the figures where `drawn` has them; and
-   * where blows land and kills fall.
+   * where blows land and kills fall. The marks are handed back in the effects' own array, good until the next frame's.
    */
   marks(
     fight: Fighting,
@@ -105,7 +108,9 @@ export class FightEffects {
     const fired = fight.fired.splice(0);
     this.tracers.fired(fired, muzzleOf);
     this.tracers.seen(fight.takeShots(), fight.player);
-    for (const impact of this.tracers.update(seconds, blocks, bodies, groundAt))
+    // The player's own arrows fly as the room flies them: past the dead and their own side.
+    const targets = drawn ? shotBodies(drawn.foes, fight.foes) : bodies;
+    for (const impact of this.tracers.update(seconds, blocks, bodies, groundAt, targets))
       this.sparks.burst(impact.at, impact.back, IMPACT_SPARKS);
     this.shotsHeard = { fired, struck: this.tracers.struck };
     const look = this.ownLook;
@@ -115,11 +120,21 @@ export class FightEffects {
     const ring = fight.aimRing ? aimRingMesh(fight.aimRing) : [];
     const spells = this.spellLooks.marks(fight, eye, seconds, this.clock, drawn);
     const glints = foeGlints(fight.foes.values(), eye);
+    // Written over from the front and cut to its count: emptied, a list lets its room go and grows again each frame.
     const laid = this.more;
-    laid.length = 0;
-    for (const part of [traced, ring, spells, more, glints]) for (const value of part) laid.push(value);
+    let count = 0;
+    for (const part of [traced, ring, spells, more, glints]) for (const value of part) laid[count++] = value;
+    if (laid.length !== count) laid.length = count;
     this.impacts.lay(laid, eye);
     this.kills.lay(laid, eye);
-    return marksMesh(telegraphs, arrows, this.sparks.flying, laid, origin);
+    const own = marksMesh(telegraphs, arrows, this.sparks.flying, [], origin);
+    const total = own.length + laid.length;
+    if (this.mesh.length < total) this.mesh = new Float32Array(2 ** Math.ceil(Math.log2(total)));
+    this.mesh.set(own);
+    for (let value = 0; value < laid.length; value++) {
+      const axis = value % MARK_FLOATS;
+      this.mesh[own.length + value] = (laid[value] ?? 0) - (axis < 3 ? (origin?.[axis] ?? 0) : 0);
+    }
+    return this.mesh.subarray(0, total);
   }
 }

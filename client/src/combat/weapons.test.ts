@@ -101,6 +101,14 @@ test('the count is the fighter’s own, so a shot takes one at once; few read lo
   assert.equal(weaponsOf(arms(1, true, gear([item('sword', 0)])), null).hand, null, 'no Ranged worn');
 });
 
+test("each row's key is the one bound now: another key, or the pad's button", () => {
+  const { hand, next } = weaponsOf(arms(1), 7, ['3', 'pad:Right']);
+  assert.deepEqual([hand?.key, next?.key], ['pad:Right', '3']);
+  assert.ok(next);
+  assert.equal(weaponWords(next, false, true), `Press 3 to draw: ${next.name}`);
+  assert.equal(weaponWords({ ...next, key: 'pad:Left' }, false, true), `Press Left to draw: ${next.name}`);
+});
+
 test('a row tells a screen reader what it holds, where, and its shots', () => {
   const { hand, next } = weaponsOf(arms(1), 7);
   assert.ok(hand && next);

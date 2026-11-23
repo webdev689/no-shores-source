@@ -27,6 +27,10 @@ function joinedPort(): void {
   });
 }
 const settled = () => new Promise((done) => setTimeout(done, 5));
+/** Until `done` holds, or a second has passed: a thread's words arrive tasks later, later still on a busy machine. */
+async function until(done: () => boolean): Promise<void> {
+  for (let waited = 0; !done() && waited < 1000; waited += 5) await settled();
+}
 
 test('a sea in the rooms’ worker sends the same snapshots as the same sea in the page', async (context) => {
   context.mock.method(Date, 'now', () => Date.UTC(2026, 10, 21, 12, 0, 0));
@@ -57,6 +61,7 @@ test('a sea in the rooms’ worker sends the same snapshots as the same sea in t
     worker.pump(0.05);
     await settled();
   }
+  await until(() => there.length >= here.length && gearedThere.length >= geared.length);
   assert.ok(here.length > 0, 'the sea ticked');
   assert.deepEqual(there, here, 'tick for tick');
   assert.deepEqual(gearedThere, geared, 'and each word on the gear, if it says any');
@@ -143,4 +148,13 @@ test('a rooms worker that fails loses every room and refuses every opening still
   const opening = RoomThread.openNode(compiled, glade(), () => undefined);
   fail('the worker could not start');
   await assert.rejects(opening, /the worker could not start/);
+});
+
+test('a rooms worker that failed refuses every later opening at once, saying why', async () => {
+  let fail: (reason: string) => void = () => undefined;
+  roomPort({ post: () => undefined, hear: () => undefined, fail: (failed) => (fail = failed) });
+  fail('the worker could not start');
+  const late = RoomThread.openNode(compiled, glade(), () => undefined);
+  const hung = new Promise((unused, reject) => setTimeout(() => reject(new Error('still waiting')), 50));
+  await assert.rejects(Promise.race([late, hung]), /the worker could not start/);
 });

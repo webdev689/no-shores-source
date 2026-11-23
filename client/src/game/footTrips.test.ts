@@ -5,7 +5,9 @@ import type { DungeonLayout } from './dungeonLayout.ts';
 import type { PropTable } from '../models/tables.ts';
 import { EVENT } from '../combat/cues.ts';
 import type { FightEvent } from '../network/messages.ts';
-import { dungeonPlace, Entrances, heardRun, roomNameAt, tripAt, type Trips } from './footTrips.ts';
+import { dungeonPlace, Entrances, heardRun, openAlone, roomNameAt, tripAt, type Trips } from './footTrips.ts';
+import { RoomThread } from '../network/roomThread.ts';
+import { WORLD_CLOCK, roomNow } from '../sky/worldClock.ts';
 import type { NodeInfo } from './worldData.ts';
 
 const patrol: NodeInfo = {
@@ -98,4 +100,24 @@ test('an Abyss run’s revives are heard from each snapshot, and its wipe once i
   assert.equal(held.wiped, false, 'another player’s word');
   heardRun(held, { revives: 5, events: [{ kind: EVENT.wiped, defender: 7 } as FightEvent], encounter: null }, 7);
   assert.equal(held.wiped, true);
+});
+
+test("a run played alone opens on the minute by the rooms' clock, not a page clock that is wrong", async () => {
+  // The rooms say it is a day and a quarter-hour later than the page thinks.
+  WORLD_CLOCK.heard(WORLD_CLOCK.seconds() + 86_400 + 900);
+  const openRun = RoomThread.openRun.bind(RoomThread);
+  let asked = '';
+  RoomThread.openRun = (module, ask) => ((asked = ask), Promise.resolve(null as unknown as RoomThread));
+  try {
+    const room = 'sea-dungeon-continent-4-caverns-0a1b2c3d--elite--run-k3j4h5g6';
+    const heard = {} as Parameters<typeof openAlone>[3];
+    await openAlone({} as WebAssembly.Module, '', { number: 0, room }, heard);
+  } finally {
+    RoomThread.openRun = openRun;
+  }
+  const { minute } = JSON.parse(asked) as { minute: number };
+  // A minute may turn between two readings.
+  assert.ok(Math.abs(minute - Math.floor(roomNow() / 60_000)) <= 1, `${minute} by the rooms`);
+  assert.ok(Math.abs(minute - Math.floor(Date.now() / 60_000)) >= 1000, 'not by the page');
+  WORLD_CLOCK.heard(WORLD_CLOCK.seconds() - 86_400 - 900);
 });

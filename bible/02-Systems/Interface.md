@@ -44,10 +44,11 @@ code:
   - client/src/game/journalTimers.ts#timersNode
   - client/src/game/journalWords.ts#questCardsOf
   - client/src/plus/journalArt.ts#bannerSvg
-  - client/src/plus/journalArt.ts#bannerFor
   - client/src/game/bountyGlyphs.ts#bountyGlyphSvg
   - client/src/game/bountyTiles.ts#bountyTileNode
   - client/src/game/journalIcons.ts#iconSvg
+  - client/src/game/compendium/compendiumPage.ts#Compendium
+  - client/src/game/compendium/loreArt.ts#coverPixels
   - client/src/game/entranceCard.ts#EntranceCardView
   - client/src/plus/barLayout.ts#BarLayout
   - client/src/plus/barLayout.ts#PLATES
@@ -89,8 +90,8 @@ code:
   - client/src/plus/compass.ts#markPlace
   - client/src/game/seaHud.ts#seaShipMarks
   - client/src/game/seaHostiles.ts#hostileLook
-  - client/src/combat/hud.ts#veilOf
-  - client/src/combat/hud.ts#clearOf
+  - client/src/combat/hudPlace.ts#veilOf
+  - client/src/combat/hudPlace.ts#clearOf
   - client/src/combat/callout.ts#Callout
   - client/src/combat/vitals.ts#Vitals
   - client/src/combat/vitals.ts#chargesShown
@@ -213,7 +214,9 @@ The game draws every screen itself, and by the owner's word no HTML is laid over
   The interface lays itself in pixels of its own, each drawn as the screen's ratio rounded to whole device pixels
   (`uiScale`), so at a ratio of 1.5 each is 2 device pixels.
 - **The pointer and the ratio.** The page hears the pointer and the wheel in its CSS pixels. Each frame is told the
-  screen's ratio (the game, the World Editor and the Test Ground pass `devicePixelRatio`), and the interface turns each
+  screen's ratio (the Test Ground passes `devicePixelRatio`; the game and the World Editor the ratio their canvas is
+  drawn at, less than the screen's where the canvas is shrunk to the GPU's largest texture, [[Game]]), and the
+  interface turns each
   position into its own pixels, the ratio over `uiScale`; `takes`, which a page's handler asks with CSS pixels, does
   the same. The box of the field being typed in goes back to the page in CSS pixels, for the browser's typing to place
   its composition by. At a whole ratio the two are the same. The World Editor's view starts at the panel's drawn edge
@@ -231,7 +234,7 @@ The game draws every screen itself, and by the owner's word no HTML is laid over
 - **A tree of the game's own.** Each frame the interface is built afresh as plain nodes (`Node`): a box that is a
   fixed size, fits its content, grows into the room left or takes a share of its parent; lays its children in a row,
   a column or wrapping lines, with padding, gaps and alignment; and shows a role's paint, a fill, an outline, words
-  (spans in their own colours, wrapped at spaces with a paragraph's leading spaces kept and the spaces at a break
+  (spans in their own colours, bold or italic, wrapped at spaces with a paragraph's leading spaces kept and the spaces at a break
   dropped, or kept to one line and cut short with '...', a newline a space there; with a hard shadow or a halo), a picture, or its own
   drawing. A node can float over the rest, against its parent or the screen, clip or scroll its children, and be
   drawn moved or faded. `layout` lays it out after Clay's model, every length in whole CSS pixels.
@@ -242,21 +245,24 @@ The game draws every screen itself, and by the owner's word no HTML is laid over
   than a layer (2047 device pixels a side) is laid scaled down to fit and stretched back over its box; one whose own
   texels are given (pixel art, raw pixels) cannot be, and is said once in the console and not drawn. One laid at no
   size, as a page's is on its first frame before its room is known, is not drawn.
-- **Pressed, focused, typed.** What the input did is read against the last frame's boxes (`Interface`): what the
-  pointer is over and pressed, held or let go; focus walked by Tab, moved by the arrows to the nearest press that
-  way, or by the pad's cross, whose up and down always move focus and whose left and right step a slider; A presses,
-  and B goes back; the wheel scrolling the list under it, and focus by keys scrolling every list that holds it into
-  sight. A press held as its node goes is let go. A field takes the mouse as a page's does: a drag selects, Shift
-  with a click extends, a double click takes a word. A hidden field is typed through keys and paste only, never handed
-  to the browser's typing, and its words go the frame its field does; what the interface keeps by id (scrolls, a
-  field's words unless asked for that frame) goes with the id. A field takes words through the browser's `EditContext` where it has one (Chromium), so
+- **Pressed, focused, typed.** What the input did is read against the last frame's boxes (`Interface`): what the pointer
+  is over and pressed, held or let go; focus walked by Tab, moved by the arrows to the nearest press that way, or by the
+  pad's cross, whose up and down always move focus and whose left and right step a slider; A presses, and B goes back;
+  the wheel scrolling the list under it, and focus by keys scrolling every list that holds it into sight. A press held
+  as its node goes is let go. A field takes the mouse as a page's does: a drag selects, Shift with a click extends, a
+  double click takes a word. A hidden field is typed through keys and paste only, never handed to the browser's typing,
+  and its words go the frame its field does; what the interface keeps by id (scrolls, a field's words unless asked for
+  that frame) goes with the id. A field takes words through the browser's `EditContext` where it has one (Chromium), so
   composition works on the canvas, and through keys and paste elsewhere; copy and cut take its selection. A field
   reached by a touch or the pad opens the keys the game draws (`screenKeys.ts`): ten across in even columns, the digits
-  over the letters, Shift for one capital, Back, a wide Space and Done (Enter), at the view's foot or its head where the field stands
-  low; the pad's cross walks them, A types the one it stands on and B puts them away, the field keeping the focus.
-  While they are open the browser's own typing and keyboard stay away; a keyboard's key, or the focus leaving the
-  field, sends them away. A on a field the pad reached opens them again once B has put them away. The page's side is `CanvasEvents`; the interface hears plain events, and with the game in its worker
-  ([[Game]], "Threads") hears them as the page sends them (`eventsOn`), what it types in sent back to the page. Outside a menu the keys stay the game's, and the pointer locked to look round presses nothing.
+  over the letters, Shift for one capital, Back, a wide Space and Done (Enter), at the view's foot or its head where the
+  field stands low; the pad's cross walks them, A types the one it stands on and B puts them away, the field keeping the
+  focus. While they are open the browser's own typing and keyboard stay away; a keyboard's key, or the focus leaving the
+  field, sends them away. A on a field the pad reached opens them again once B has put them away. The page's side is
+  `CanvasEvents`, which sends a held Enter or Space once, never its repeats, so it presses once as the pad's A does; the
+  interface hears plain events, and with the game in its worker ([[Game]], "Threads") hears them as the page sends them
+  (`eventsOn`), what it types in sent back to the page. Outside a menu the keys stay the game's, and the pointer locked
+  to look round presses nothing.
 - **The pad's cursor** (`padCursor.ts`, [[Pick - Pad Cursor and Gauntlet]]). Wherever the interface takes the pad (a
   window, the sheet, the creation, a field being typed in, the Test Ground's panels while a control there has focus), the left stick thrown from rest past its 0.2 lean brings
   out a cursor, the gauntlet drawn over everything: at the focus's middle, else where the mouse last was, else the
@@ -339,6 +345,10 @@ The game draws every screen itself, and by the owner's word no HTML is laid over
   `game/social/socialShots.ts` draws the plates over players, a player's menu, and the chat open and shut. A shot may
   hear its events on a later frame (`at`), once a screen has put its focus where it wants it, and take more frames (`frames`) for many pictures
   to come; the page asks for reduced motion, so a screen stands settled.
+- **Read and driven headless.** The interfaces that hear a page's canvas (the game's, the World Editor's, the Test
+  Ground's panels) are listed by `__ui()`, on the page or in the game's worker (`ui/seen.ts`): each node shown with an
+  id, words or a label, its box clipped to what shows, in the page's CSS pixels, and whether it presses, is disabled or
+  has focus. The picture driver finds words and ids through it, as it once read the page's HTML ([[Toolkit]]).
 
 ## How it works
 
@@ -360,7 +370,7 @@ The game draws every screen itself, and by the owner's word no HTML is laid over
 - **The palette** names each tone for what it is: the stone from lit to dark, the brass from lit to dark, the grounds
   and the words; and each bar's fill (`FILLS`): red, orange and yellow by rank, and the three vitals.
 - **Emblems and marks** are our own pictures, drawn pixel for pixel in the palette and shown at whole multiples: the
-  Grey Tithe's balance in grey stone and the pirates' skull in bone over crossed brass bones, by faction number, on
+  Grey Tithe's balance in grey stone, by faction number (a friendly ship's plate bears none), on
   ships' plates (a foe's plate shows its level there instead); an Elite's brass chevron and a Miniboss's two.
 - **A hostile ship's mark at sea** is a port's mark in its own dress (`hostileLook`): the ship's faction's emblem in the
   ring, the ring and its arrow in the ship's rank's colour (red Minor, orange Major, yellow Elite and Miniboss), a Miniboss's
@@ -414,6 +424,8 @@ The game draws every screen itself, and by the owner's word no HTML is laid over
   [[The Display as Claude Lays It Out]]). Its bars do what DFO's Enhanced UI Plus does with them
   ([[Pick - Enhanced Plus UI]]). It takes a larger step where the view is 1500 by 900 or more, and stands at twice
   its first size past 1440p (2400 by 1300), as the rest of the display does (`combat/hudLayout.ts`).
+  In a new room, or shown again after hiding, it forgets every foe it kept (the target, the plates, the wind-ups
+  told), as each room numbers its foes afresh (`Hud.forget`).
 - **The compass** is a strip 18 px down the top's middle, 520 px wide (60% of a narrower view) and 26 px tall over a 2
   px rule, showing a quarter of the circle. Its eight points (N, NE, E, SE, S, SW, W, NW, the four cardinals at 22 px
   and the others at 11, on the face's grid) stand by the bearing the view looks at, the shortest way round; one off the
@@ -460,8 +472,8 @@ The game draws every screen itself, and by the owner's word no HTML is laid over
   most of its size. A Ranged weapon's shots stand large
   over its capacity ("18 / 24"; at none a large 0 in the loss colour with "No ammo" small beside it); a Melee one's
   name is in its rarity's colour, and a weapon whose picture has not come (still drawing, or none to be had) says its
-  name instead. Under it stands the other loadout's weapon, in an 80 by 22 px box (112 by 32), with its key (1 or 2)
-  and its own shots. A weapon with an element bears its glyph just past its picture's top right, in the row's
+  name instead. Under it stands the other loadout's weapon, in an 80 by 22 px box (112 by 32), with its key as bound now
+  (1 or 2 at first; the pad's button, drawn on the cap, while the pad was played last) and its own shots. A weapon with an element bears its glyph just past its picture's top right, in the row's
   margin clear of a blade's point, as a gear tile bears it in its corner, 16 px in hand and 12 under it (22 and 16 at the larger step), and its row's words name the element. The rows
   change weapons as the fight's rules take them up, only at rest: one pressed, or put
   away, during a swing, a guard, a draw or a reload waits with the hands until it ends. A swap trades the two rows over
@@ -650,28 +662,30 @@ The game draws every screen itself, and by the owner's word no HTML is laid over
   look or to sail there, a drag, the wheel), Tab, Escape, the arrows on the menu's tabs, the pad's sticks and their
   ways and the pad's buttons in a window (the cross and left stick, A, B, the bumpers) are written, not bound, and
   never given in a swap. What the player binds is kept with their account ([[Accounts]], "Binds").
-- **The pad** (`pad.ts`, `Input`) is read each frame through the browser's Gamepad API, the first pad with the
-  standard mapping: a stick at rest inside a 0.2 lean is still, and leant past it moves as far as it leans (the walk,
-  the helm, the look); a trigger is pressed past 0.3; a stick's way counts as pressed past half its lean. Its layout is
-  Destiny's as the owner chose it ([[Every Control Can Be Rebound, and the Pad Plays as Destiny's]]): on foot the left
-  stick moves and its click runs until the stick comes to rest, the right stick turns and looks, RT swings and LT
-  guards or parries (a ranged weapon drawn, RT fires and LT aims, in every fight on foot: ashore, on a boarded deck
-  and in the story), A jumps, B tapped dodges and held crouches, X uses,
-  Y draws or sheathes, LB and RB cast the Tenets and both together the Anima, the cross's left and right draw the
-  loadouts, its down drinks and its up mounts, the right stick's click changes the view, Start opens the menu at
-  Character, View the sheet and View held the game's menu; dead, A respawns. At the helm the left stick steers, sails on
-  and heaves to; A sets sail, lands or docks, X stops or resumes, the cross's left and right slow and speed, its up
-  opens the map and its down repairs (walking the ship's own deck too), Y manages the ship, B leaves the helm, and at the map or a landing B steps back.
-  In a sea fight the left stick steers and sets the sails, its click bursts, LT aims, RT fires, LT let go unfired holds
-  fire, the cross's left and right change the shot, B braces as it goes down and while it is held, X boards, and the
-  right stick turns the view; a tap presses and lets go in one frame. A button with a hold bound where the player is
-  (on foot, B's crouch) waits to be told a tap from a hold, and one of two bound together waits 0.12 s for the
-  other, so one press never does both. In a window (the menu, the game's menu, the sheet, the story's creation) the
-  pad's buttons are the window's: the cross steps the focus, the left stick moves the pad's cursor, A presses (at
-  the cursor while it is out), B steps back, Y and X press at the cursor, the right stick scrolls, LB and RB turn the
-  menu's tabs; a button held as a window opens or closes is stale until it is let go, so the press that
-  changed it acts on nothing more, and what it held is let go at once, as is a stick let go under the window, so
-  nothing stays held once it closes. The story's tap to start takes any of the pad's buttons, and A takes the stranger's hand.
+- **The pad** (`pad.ts`, `Input`) is read each frame through the browser's Gamepad API, the first pad with the standard
+  mapping: a stick at rest inside a 0.2 lean is still, and leant past it moves as far as it leans (the walk, the helm,
+  the look); a trigger is pressed past 0.3; a stick's way counts as pressed past half its lean. Its layout is Destiny's
+  as the owner chose it ([[Every Control Can Be Rebound, and the Pad Plays as Destiny's]]): on foot the left stick moves
+  and its click runs until the stick comes to rest, the right stick turns and looks, RT swings and LT guards or parries
+  (a ranged weapon drawn, RT fires and LT aims, in every fight on foot: ashore, on a boarded deck and in the story), A
+  jumps, B tapped dodges and held crouches, X uses, Y draws or sheathes, LB and RB cast the Tenets and both together the
+  Anima, the cross's left and right draw the loadouts, its down drinks and its up mounts, the right stick's click
+  changes the view, Start opens the menu at Character, View the sheet and View held the game's menu; dead, A respawns.
+  While the pad was played last and no menu is up, its presses fight on foot whether or not the pointer is locked
+  (`handsFree`), as a pad cannot lock it; a click on a free pointer only locks it. At the helm the left stick steers,
+  sails on and heaves to; A sets sail, lands or docks, X stops or resumes, the cross's left and right slow and speed,
+  its up opens the map and its down repairs (walking the ship's own deck too), Y manages the ship, B leaves the helm,
+  and at the map or a landing B steps back. In a sea fight the left stick steers and sets the sails, its click bursts,
+  LT aims, RT fires, LT let go unfired holds fire, the cross's left and right change the shot, B braces as it goes down
+  and while it is held, X boards, and the right stick turns the view; a tap presses and lets go in one frame. A button
+  with a hold bound where the player is (on foot, B's crouch) waits to be told a tap from a hold, and one of two bound
+  together waits 0.12 s for the other, so one press never does both. In a window (the menu, the game's menu, the sheet,
+  the story's creation) the pad's buttons are the window's: the cross steps the focus, the left stick moves the pad's
+  cursor, A presses (at the cursor while it is out), B steps back, Y and X press at the cursor, the right stick scrolls,
+  LB and RB turn the menu's tabs; a button held as a window opens or closes is stale until it is let go, so the press
+  that changed it acts on nothing more, and what it held is let go at once, as is a stick let go under the window, so
+  nothing stays held once it closes. The story's tap to start takes any of the pad's buttons, and A takes the stranger's
+  hand.
 
 - **Manage's panel** is a window at the right under a header naming the ship. Each part's heading is a rule; Back to
   the sea stands on its footer. It is built again only when what it
@@ -698,11 +712,13 @@ font made where the face is read (`useMendedFace`, `trueType.ts`), first in its 
 ## The menu
 
 A screen over the game, after Destiny's ([[The Menu Follows Destiny, the Vault and Vendors in the Social Space]]):
-the tabs Character (I), Inventory (O), Journal, Ship, Social, Guild and Settings fill the top of its header, each a
-whole number of pixels wide, their words at the names' size (the words' under 1100 px, where they would not fit);
+the tabs Character (I), Inventory (O), Journal, Compendium, Ship, Social, Guild and Settings fill the top of its header, each a
+whole number of pixels wide, their words at the names' size (the words' under 1100 px, or wherever one would not fit
+its tab at the names' size);
 keys on keycaps where the menu is wide enough; Guild
-marked Later, a page saying what it will hold. The chosen tab is a lit brass press; the arrow keys move
-between tabs. At the top line's right stands the account's mark, after DFO's
+marked Later, a page saying what it will hold. The chosen tab is a lit brass press; a tab with something new on it
+(the Compendium, while a chapter found waits unread) wears Destiny's small diamond at its top right, and its name is
+read with ", new"; the arrow keys move between tabs. At the top line's right stands the account's mark, after DFO's
 ([[The HUD Drops Its Room Line, and the Account Mark Comes From DFO]]): a round well rimmed in brass with the player's
 face in it, a hooded silhouette until their figure is drawn, and a gem on its rim, filled for an account kept with a
 username or Discord and hollow for a guest's; pressed, it opens Settings. On the Journal its place is DFO's timer
@@ -808,7 +824,7 @@ never while a press is held. Each press is an ask the room answers.
   longer the rarer it is: 0.6 seconds for Normal up to 1.8 for Atheric. Once it acts, a dismantled piece breaks
   into shards of its rarity and a fed one gives off a ring; let go early, nothing happens. F dismantles the carried
   piece last pointed at or focused; with Ctrl, Cmd or Alt it is the browser's key. Moving the pointer off the piece,
-  or leaving the window, lets go.
+  the focus leaving a press held by Enter or Space, or leaving the window, lets go.
 - **Acquired.** What the player gains shows at the right of the screen, in play and over the menu alike, as Destiny
   shows a pickup: a row each, its picture in a well of its rarity, its name and how many; every dye, coat or barding
   newly kept among them. Rows slide in, stay four
@@ -884,6 +900,35 @@ never while a press is held. Each press is an ask the room answers.
     hourglass, and it goes up as the Journal is left; the page under it rests, dimmed and out of the keys' and the
     pointer's reach.
   - It reads the rules and the last word of the character a room sent, so it reads the same at sea.
+- **Compendium** ([[Lore]], [[The Compendium Holds the Lore Books, After Destiny's]]): the lore books, laid as Destiny's
+  Collections and Lore screens.
+  - **Its front**: "LORE" with how many of its chapters are found of all ("3/6"), then a tile for each category, in rows
+    that fit the menu (176 by 168 px, 224 by 208 where the names are larger): its motif in brass, 64 px (80 px), dim
+    stone while nothing of it is found; its name; how many of its chapters are found, in lit brass once all are; and a
+    bar of that share in brass. Pressed, it opens the category. With no lore in the game it says "No lore has been
+    found. The lore books you find in the world, on quests and in the story are kept here." under three faint stone
+    covers. `compendium/compendiumShots.ts` pictures it over sample lore (`loreForTests.ts`) with `tools/uiShot.mjs`.
+  - **A category open**: "‹ LORE" (a press back to the front, as Escape steps), the category's name in capitals and how
+    much of it is found; then, side by side: its books, covers in rows of three (48 px wide, 96 px larger), each found
+    one a press edged in brass while chosen, one not found an empty slot outlined in dots that does nothing; the book chosen, its
+    cover large (144 px, 192 px) in a column 48 px wider, its name whole on as many lines as it takes (or
+    "Undiscovered"), how much of it is found and a bar of it (under 900 px it is named on a line over its chapter
+    instead, so everything stays in view); and the chapter chosen in a panel as tall as the book beside it, its title in
+    lit brass at the names' larger size and its words block by block at the names' size (bold and italic as the file marks them, a document set in on a darker
+    ground, a break a short brass rule), scrolled within the page's room, with the
+    book's chapters numbered under it (the panel takes the keys' focus, so a screen reader reads the chapter whole), each found one a press (the
+    one shown a lit brass press), one not found dim, its title and words never shown. A category opens at its first
+    book with a chapter unread, else its first found, and a book at its first chapter unread, else its first found; the
+    focus goes to that book, or to "‹ LORE" while nothing of the category is found.
+  - **Covers** are printed as posters and bound, one design for every book in its cloth and with its motif
+    ([[The Lore Books' Covers Are Drawn in Detail]], `coverPixels`), drawn from shapes at the size each stands, a pixel a
+    CSS pixel under 96 and two from there: a spine and the pages' edge under the board; a face banded light to dark
+    with a sunburst and a print's grain; a thin brass frame with corner brackets, diamonds, a chevron and studs; rings
+    about a dark disc rimmed in brass, the motif raised large in its middle. A book whose every chapter is found turns
+    down a gold corner; one not yet found is an empty slot outlined in dots (`slotPixels`).
+  - **New**: Destiny's small diamond in lit brass marks each chapter found and unread, its book's cover and its
+    category's tile, and goes as the chapter is shown, which keeps it read ([[Lore]], "In the browser").
+  - It reads the last word of the character a room sent, as the Journal does, so it reads the same at sea.
 - **Ship.** Two parts on the inventory's shelf tabs ([[Ship Power]], [[Crew]]). Manage: the ship's papers as Manage
   shows them at sea (its hull, canvas, guns, loads and measure, its voyage while it is at sea), its materials and its
   hands, beside its power (its level, a meter to the next, its numbers) and its modules fitted and carried, each a
@@ -908,7 +953,9 @@ never while a press is held. Each press is an ask the room answers.
   and an invite waiting; it stands over the veil, so the company shows while the player travels.
 - **Settings** holds the account ([[Accounts]]): whether the player is a guest, signed in, or linked with Discord; a
   username and password to keep a guest by or sign in with; Discord; and signing out, here or everywhere, each held.
-  Under it, the players blocked, each with a press to unblock them; then the volumes of the interface, the world
+  Under it, the players blocked, each with a press to unblock them; then the resolution the world is drawn at
+  ("Resolution": Auto, the first, or 100%, 85%, 75%, 67% or 50%, kept in this browser; [[Game]], "Drawing"), the
+  interface staying at the screen's own; then the volumes of the interface, the world
   ("World sounds"), the music ("Music") and the [[Ambience]] ("Ambience"), each kept in this browser, and the recorded
   sounds' credits: each one's name, author, licence and source, and what was changed.
 - **Motion** runs in steps, as Enhanced Plus's sigils breathe. With less motion asked for, only a hold's fill and
@@ -937,7 +984,7 @@ plays any but the one it played last. The Duskraven plays its raven with a fire 
   its weapon (a braced pair fires twice), a crossbow wound, a gun loaded, and a click when the player fires a gun with
   no shot left. Where a shot stops: a ball on stone, an arrow in the ground, any shot in water; on a body, the blow.
 - **Moving.** A footstep each 2.5 m walked, in time with the first person's bob, never mounted: on wood (the Test
-  Ground's crate), on a block (the city's stone), in water (land below the sea) or on the ground. A jump as a body
+  Ground's crate, and the prologue's wreck, timber throughout), on a block (the city's stone), in water (land below the sea) or on the ground. A jump as a body
   rises, a landing after a fall of 0.6 m or more, and a dodge's roll.
 - **The Arts.** The player's own Anima gathering as it is cast; each spell as it first appears, an Anima with its
   Art's release, once a cast; a Tempest orb bursting on what it sought; each Duskraven bolt; Linked and Veiled as
@@ -1037,7 +1084,12 @@ to come leaves another held to play meanwhile, never the one played last, so a b
 two chunks at most. A file or chunk that fails to come is asked for again only after 30 s. The page
 decodes each and keeps it; the worker holds only its shape and how it measures, its level and its loudness over each
 window the game asks (`soundMeasure.ts`). What is held is kept within 192 MB, the ambience and story recordings
-played least lately let go first, never one played in the last two minutes nor a sound of play. Every file and chunk
+played least lately let go first, never one played in the last two minutes, a sound of play nor the story's one-shots
+while it plays; a sound let go is no longer kept as the one played last either, so its samples are let go too.
+The story's one-shots (thunder, the whoosh, the crash, the splash, the thud, the ringing, the heart and the flash) are
+fetched as its sound wakes (`Samples.prefetch`) and held until it stops (`release`): each is first heard too soon after
+it is asked for to fetch then, the crash and the splash only once. A gull's cry, heard again and again, is not.
+Every file and chunk
 fetched is kept in the browser's own storage under its address (`contentCache.ts`): named by its hash, it never
 changes, so one let go comes back from the disk. The storage holds every file the game reads from R2, within 1 GB, the
 files kept longest ago let go first.
@@ -1137,7 +1189,8 @@ serves each ask only at its own counter ([[Gear]], "In the rooms"; [[Factions]])
   cannot be asked for says why under its price (a level not reached, a pack full), and "Not enough" is only for one the
   room would sell. At the foot "Stock refresh" and the time to the next daily reset, 09:00 UTC, for the smiths, the
   Tailor and the Tack, or "Leaves in" and the time left for Shape, to Sunday 21:00 UTC: both counted in minutes by the
-  room module's rules (`activitiesAt`, its `untilDay` and `untilShapeGoes`), the page taking off the seconds gone. The
+  room module's rules (`activitiesAt`, its `untilDay` and `untilShapeGoes`) at the rooms' clock (`roomNow`), the page
+  taking off the seconds gone. The
   footer: Hold (Buy; Open at the Mage's), the Character key as bound (Open Character), Esc (Dismiss); while a fragment
   is chosen it says Esc (Back) and offers Back, which steps back as Escape does. Arrow keys move among the tiles, Enter
   presses, Escape steps back, and the focus goes back where it came from. In a room narrower than 600 px, as on a phone,

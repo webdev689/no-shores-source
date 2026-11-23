@@ -26,15 +26,19 @@ import {
   wheelFactor,
   zoomAt,
 } from './heldMapLaw.ts';
+import { askLines, MapAsk, paintHover, paintTravelAsk, type HoverSaid } from './heldMapAsk.ts';
 import { heldCardNode } from './heldMapCard.ts';
+import { Kept, layoutKey } from './heldMapKept.ts';
 import { type HeldMapFrame, HeldMapView, ROUTE_POINTS } from './heldMapView.ts';
+import { GLYPH_HALF } from './landGlyphs.ts';
 import { paintLand } from './landLetters.ts';
 import type { LandSheet } from './landSheet.ts';
 import { HeldMapWaters, onOwnSea, ruinedPlaces } from './heldMapWaters.ts';
 import { type KeyPlace, keySize, landUnder } from './mapKey.ts';
 import { handsCover, layOut, type Lettering, letterScale } from './mapLayout.ts';
 import { fontOf, type IsleInk, ISLE_HALF, paintLettering } from './mapLetters.ts';
-import type { MapWaters } from './watersWash.ts';
+import type { MapWater, MapWaters } from './watersWash.ts';
+import { motionReduced } from '../plus/kit.ts';
 import type { Child } from '../ui/node.ts';
 import type { Stack } from '../ui/stack.ts';
 import type { Interface } from '../ui/ui.ts';
@@ -77,7 +81,8 @@ export type Course =
   { readonly ok: true; readonly points: readonly Point2[] } | { readonly ok: false; readonly why: string };
 
 /** What the map is asked each frame: where the ship lies and heads (on land, the player, in the world), what is
- *  discovered, the course sailed now, and the places the quest walked names, which it rings. */
+ *  discovered, the course sailed now, and the places the quest walked names, which it rings; on land, whether a
+ *  keeper's coin is lit (`lit`, by its glyph): its keeper has something for the player, so its rings pulse. */
 export interface HeldMapScene {
   readonly ship: Point2;
   readonly heading: number;
@@ -85,13 +90,20 @@ export interface HeldMapScene {
   readonly knownIslands: number;
   readonly course: readonly Point2[];
   readonly quest?: readonly string[];
+  readonly lit?: (glyph: string) => boolean;
 }
 
 type Phase =
   | { readonly kind: 'closed' }
   | { readonly kind: 'opening'; readonly t: number }
   | { readonly kind: 'open' }
-  | { readonly kind: 'closing'; readonly t: number; readonly from: number; readonly sail: Point2 | null };
+  | {
+      readonly kind: 'closing';
+      readonly t: number;
+      readonly from: number;
+      readonly sail: Point2 | null;
+      readonly travel: MapWater | null;
+    };
 
 type Choice = { readonly at: Point2; readonly name: string; readonly course: Course; readonly place: string | null };
 
@@ -127,6 +139,8 @@ export class HeldMap {
   private choice: Choice | null = null;
   /** The key that sets sail, as bound now, which its press names. */
   sailKey: () => string = () => 'Enter';
+  /** The key or button that answers the prompt no, as the last device used names it. */
+  noKey: () => string = () => 'Escape';
   /** The difficulty the voyage set out at: what the card showed when the player set sail. */
   difficulty: Difficulty = 'normal';
   /** The difficulty chosen on the card, kept only once the player sets sail with it. */
@@ -136,7 +150,10 @@ export class HeldMap {
   private placed: { readonly place: MapPlace; readonly x: number; readonly y: number }[] = [];
   private gauntlets: string | null | undefined = undefined;
   private clock = 0;
-  private lowered: (sail: Point2 | null) => void = () => undefined;
+  private lowered: (sail: Point2 | null, travel: MapWater | null) => void = () => undefined;
+  /** The water lit under the pointer, and the prompt a course into another water raises; and where the ship lay. */
+  private readonly ask = new MapAsk();
+  private shipAt: Point2 = [0, 0];
   /** The waters once they are open: their wash, letters and key, and which cities are ports. */
   private waters: HeldMapWaters | null = null;
   private charted: Uint8Array | null = null;
@@ -156,9 +173,13 @@ export class HeldMap {
     this.painter = painter;
   }
 
-  /** The waters, opened once a page: the map tints, letters and keys them from now on, and marks the ruins. */
-  setWaters(waters: MapWaters): void {
-    this.waters = new HeldMapWaters(waters);
+  /** The waters, opened once a page: the map tints, letters and keys them from now on, and marks the ruins; the
+   *  water a point lies in is judged by their rules, the room's. */
+  setWaters(open: {
+    readonly map: MapWaters;
+    readonly rules: { waterAt(point: Point2): { readonly continent: number } | null };
+  }): void {
+    this.waters = new HeldMapWaters(open.map, (point) => open.rules.waterAt(point)?.continent ?? null);
     this.chartings++;
     if (this.charted) this.view.setWash(this.waters.chart(this.charted));
   }
@@ -173,8 +194,9 @@ export class HeldMap {
     return this.phase.kind !== 'closed';
   }
 
-  /** What happens once the map is lowered: the ship sets sail for its destination, or none was chosen. */
-  onLowered(then: (sail: Point2 | null) => void): void {
+  /** What happens once the map is lowered: the ship sets sail for its destination, travels to the water `travel`
+   *  (the prompt's, answered yes), or none was chosen. */
+  onLowered(then: (sail: Point2 | null, travel: MapWater | null) => void): void {
     this.lowered = then;
   }
 
@@ -221,16 +243,17 @@ export class HeldMap {
     if (gauntlets !== this.gauntlets) this.load(gauntlets);
     this.ink = stageOf(viewport).ink;
     this.mapView = viewed(this.ink);
-    this.choice = null;
+    [this.choice, this.ask.asking] = [null, null];
     this.phase = { kind: 'opening', t: 0 };
   }
 
-  /** Lowers the map from wherever it is in its rise; `sail` is the destination set, or null. */
-  close(sail: Point2 | null = null): void {
+  /** Lowers the map from wherever it is in its rise; `sail` is the destination set, or null, travelled to in the
+   *  water `travel` the prompt asked of. */
+  close(sail: Point2 | null = null, travel: MapWater | null = null): void {
     const phase = this.phase;
     if (phase.kind === 'closed' || phase.kind === 'closing') return;
     const from = phase.kind === 'opening' ? raised(phase.t / OPEN_S) : 1;
-    this.phase = { kind: 'closing', t: 0, from, sail };
+    this.phase = { kind: 'closing', t: 0, from, sail, travel };
   }
 
   /** Puts the map away at once, with no destination: where the player is taken from where it was raised. */
@@ -270,6 +293,7 @@ export class HeldMap {
   }
 
   pointerMove(x: number, y: number): void {
+    this.ask.pointer = { x, y };
     const press = this.press;
     if (!press) return;
     if (!press.panning && Math.abs(x - press.x) + Math.abs(y - press.y) <= PAN_PX) return;
@@ -297,6 +321,7 @@ export class HeldMap {
       course: this.plan(point),
       place: mark?.place.id ?? null,
     };
+    if (this.waters) this.ask.choose(this.waters.waters, this.waters.judge, this.choice.course, this.shipAt);
   }
 
   /** The wheel at a point on the screen: the map zooms about it. */
@@ -307,15 +332,17 @@ export class HeldMap {
   }
 
   /** Sets sail for the destination chosen, if it has a course, at the hardest difficulty open up to the one picked: a
-   *  shut one never sails, as the sea's room would refuse it. */
+   *  shut one never sails, as the sea's room would refuse it. While the prompt asks, travels there: its yes. */
   setSail(): void {
     if (!this.choice?.course.ok) return;
     this.difficulty = seasChoices(this.picked, this.shut).picked;
-    this.close(this.choice.at);
+    this.close(this.choice.at, this.ask.asking);
   }
 
-  /** Escape: the choice is let go first, with the seas picked on its card, then the map lowered. */
+  /** Escape: the prompt answered no first, its course kept; then the choice let go, with the seas picked on its
+   *  card; then the map lowered. */
   escape(): void {
+    if (this.ask.answerNo()) return;
     if (this.choice) {
       this.choice = null;
       this.picked = this.difficulty;
@@ -341,6 +368,10 @@ export class HeldMap {
       this.mapView = zoomAt(this.mapView, 0, 0, 1, stage.ink, this.extent);
     const drop = (1 - lift) * stage.sprite.height;
     this.ink = stage.ink;
+    this.shipAt = scene.ship;
+    const waters = this.land || this.press?.panning ? null : this.waters;
+    const hovered = waters && this.ask.hover(waters.waters, waters.judge, this.mapView, this.ink, scene.ship);
+    if (hovered?.cells) this.view.setLit(hovered.cells);
     const scaled = (rect: Rect, down: number): Rect => ({
       x: rect.x * dpr,
       y: (rect.y + down) * dpr,
@@ -368,20 +399,38 @@ export class HeldMap {
     }
     const reads = layoutKey(this.mapView, stage, fonts, this.chartings, scene, this.choice?.place ?? null);
     // Painted and sent to the device only when what is lettered, where, or its face's loading has changed.
-    const letteringChanged = this.letter(reads, scene, stage.sprite, { width, height, inkAt, dpr });
+    const size = { width, height, inkAt, dpr };
+    const letteringChanged = this.letter(reads, scene, stage.sprite, size, hovered?.said ?? null);
     const land = this.land !== null;
+    const ink = scaled(stage.ink, drop);
     return {
+      pulses: { coins: this.litCoins(scene, ink, dpr), seconds: this.clock, held: motionReduced() },
       parchment: picture,
       lettering: this.lettering,
       letteringChanged,
       screen: { width: viewport.width * dpr, height: viewport.height * dpr },
       sprite: scaled(stage.sprite, drop),
-      ink: scaled(stage.ink, drop),
+      ink,
       view: land ? OFF_WORLD : { left: this.mapView.left, top: this.mapView.top, scale: this.mapView.scale * dpr },
       handsFrame: this.fidget(),
       knownIslands: land ? 0 : scene.knownIslands,
       route: routeOf(this.choice?.course.ok ? this.choice.course.points : land ? [] : scene.course, ROUTE_POINTS),
     };
+  }
+
+  /** The lit keepers' coins on the land's sheet, `scene.lit` saying which, as the view rings them: each one's middle
+   *  and radius, screen pixels, the map's ink at `ink` (device pixels, `dpr` a CSS pixel); none at sea. */
+  private litCoins(scene: HeldMapScene, ink: Rect, dpr: number): Float32Array {
+    const { land, mapView } = this;
+    const lit = land && scene.lit ? land.marks.filter((mark) => scene.lit?.(mark.glyph)) : [];
+    const radius = GLYPH_HALF * letterScale(this.ink) * dpr;
+    return new Float32Array(
+      lit.flatMap(({ at }) => [
+        ink.x + (at[0] - mapView.left) * mapView.scale * dpr,
+        ink.y + (at[1] - mapView.top) * mapView.scale * dpr,
+        radius,
+      ]),
+    );
   }
 
   /** Paints the parchment's picture, `size` device pixels with the map's top-left at `inkAt` in it, if what `reads`
@@ -392,16 +441,23 @@ export class HeldMap {
     scene: HeldMapScene,
     sprite: Rect,
     size: { width: number; height: number; inkAt: { x: number; y: number }; dpr: number },
+    said: HoverSaid | null,
   ): boolean {
     const { width, height, inkAt, dpr } = size;
     const land = this.land;
     const lettering = land ? null : this.laidOut.made(reads, () => this.layout(scene, sprite));
     const isles = lettering ? this.isleInks(lettering.scale) : [];
-    const shape = JSON.stringify([width, height, inkAt, dpr, land ? reads : [this.measuredFonts, lettering, isles]]);
+    const asked = this.ask.asking && askLines(this.ask.asking, this.sailKey(), this.noKey());
+    const sea = [this.measuredFonts, lettering, isles, said, asked];
+    const shape = JSON.stringify([width, height, inkAt, dpr, land ? reads : sea]);
     if (shape === this.letteredShape) return false;
     this.letteredShape = shape;
-    if (lettering) paintLettering(this.painter, this.lettering, inkAt, dpr, lettering, isles);
-    else if (land) {
+    if (lettering) {
+      paintLettering(this.painter, this.lettering, inkAt, dpr, lettering, isles);
+      // While the prompt asks, it says what the pointer's words would.
+      if (said && !asked) paintHover(this.painter, said.line, said.x, said.y, this.ink, lettering.scale);
+      if (asked) paintTravelAsk(this.painter, this.ink, lettering.scale, asked);
+    } else if (land) {
       const player = {
         at: [scene.ship[0] - land.origin[0], scene.ship[1] - land.origin[1]] as const,
         heading: scene.heading,
@@ -431,7 +487,7 @@ export class HeldMap {
     if (t >= CLOSE_S) {
       this.phase = { kind: 'closed' };
       this.press = null;
-      this.lowered(phase.sail);
+      this.lowered(phase.sail, phase.travel);
       return null;
     }
     this.phase = { ...phase, t };
@@ -521,7 +577,11 @@ export class HeldMap {
     const ok = choice.course.ok;
     const card = {
       ...{ words: ok ? `Set a course for ${choice.name}` : choice.course.why, ok, picked: this.picked },
-      ...{ shut: this.shut, lift: shown.lift, sail: ['Set sail', this.sailKey()].filter(Boolean).join('  ') },
+      ...{
+        shut: this.shut,
+        lift: shown.lift,
+        sail: [this.ask.asking ? 'Travel' : 'Set sail', this.sailKey()].filter(Boolean).join('  '),
+      },
       at: [this.ink.x + this.ink.width / 2, this.ink.y + shown.drop - 12] as const,
     };
     return heldCardNode(
@@ -530,31 +590,5 @@ export class HeldMap {
       (seas) => (this.picked = seas),
       () => this.setSail(),
     );
-  }
-}
-
-/** What the map's layout reads, as one string: the map's view, the stage's ink and hands, the face's loading, how often
- *  the charted sea was set, the ship's point and heading, the places and islands known, the choice and the quest's. */
-export function layoutKey(
-  view: View,
-  stage: { readonly ink: Rect; readonly sprite: Rect },
-  fonts: string,
-  chartings: number,
-  scene: HeldMapScene,
-  chosen: string | null,
-): string {
-  const { ship, heading, places, knownIslands, quest } = scene;
-  const read = [ship, heading, places, knownIslands, chosen, quest];
-  return JSON.stringify([view, stage.ink, stage.sprite, fonts, chartings, ...read]);
-}
-
-/** A value made again only when its key changes: the held map's layout, keyed by `layoutKey`. */
-export class Kept<Value> {
-  private key: string | null = null;
-  private value: Value | undefined;
-
-  made(key: string, make: () => Value): Value {
-    if (key !== this.key || this.value === undefined) [this.value, this.key] = [make(), key];
-    return this.value;
   }
 }

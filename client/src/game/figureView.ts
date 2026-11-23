@@ -1,16 +1,31 @@
 import type { GlowField } from '../elementGlow.ts';
 import { BUFFER_USAGE, SHADER_STAGE, TEXTURE_USAGE, type Gpu } from '../gpu.ts';
 import { REVERSED_DEPTH } from '../editor/orbit.ts';
+import { boxSeen, type Planes, sphereSeen, viewPlanes } from '../frustum.ts';
 import { PX_PER_M } from '../player/figures.ts';
-import { CARD_LOOK_FLOATS, STATUS_WGSL, cardLookValues, statusClock } from '../player/cardLooks.ts';
+import { CARD_LOOK_FLOATS, STATUS_WGSL, cardLookInto, statusClock } from '../player/cardLooks.ts';
 import type { Card, CardAt, CardMaker } from '../player/cards.ts';
 import { GlowCards } from '../player/glowCards.ts';
-import { NEAR, SHADOW_CAST_WGSL, SHADOW_WGSL, ShadowMap, shadowLayouts } from '../shadow.ts';
+import { NEAR, SHADOW_CAST_WGSL, SHADOW_WGSL, ShadowMap, shadowLayouts, sunAxes } from '../shadow.ts';
 import { SKY_WGSL, skyUniformFor } from '../sky/skyUniform.ts';
 import { SAMPLES } from '../water/waterView.ts';
+import {
+  FIGURE_REACH_M,
+  UNSEEN_EVERY,
+  cadenceDue,
+  cardReach,
+  leadMargin,
+  poseEvery,
+  sphereBox,
+  turnBetween,
+} from './figureCull.ts';
 
 const VIEW_BYTES = 80;
 const CARD_BYTES = 64 + CARD_LOOK_FLOATS * 4;
+/** The cards the slots hold before they first grow. */
+const MOST_FIGURES_AT_FIRST = 64;
+/** A card lit by the sun, not by a light the page found. */
+const NO_LIGHT = [0, 0, 0] as const;
 
 /** The light at a point, red, green and blue. */
 type Light = (point: readonly [number, number, number]) => readonly [number, number, number];
@@ -174,11 +189,56 @@ struct Shadowed { @builtin(position) position: vec4f, @location(0) corner: vec2f
 }
 `;
 
-/** Draws the forge's figures into the scene's pass, after the land and before the water, and their shadows into the
- *  sun's near map before that. */
-/** A figure that throws no shadow and has no contact shade: a Veiled one, all but unseen, or one still arriving. */
-const unshaded = (figure: CardAt | undefined) => !!figure?.veiled || !!figure?.arrival;
+/** A figure that throws no shadow and has no contact shade: a Veiled one, all but unseen, one still arriving, or a
+ *  thing hovering over the ground as a drop does. */
+const unshaded = (figure: CardAt | undefined) => !!figure?.veiled || !!figure?.arrival || !!figure?.hovers;
 
+/** Every card's terms in one buffer, a slot apart, and each composed picture's group, made once a picture and read at
+ *  a card's slot: a figure's frame changing finds its picture's group made. The groups go with their pictures. */
+interface CardSlots {
+  readonly buffer: GPUBuffer;
+  readonly values: Float32Array;
+  readonly offsets: Uint32Array;
+  readonly groups: WeakMap<GPUTexture, GPUBindGroup>;
+}
+
+/** The frame's cards: each figure's, then each smear's; each card's group, and whether the view sees it and whether
+ *  it casts into the near map. Kept from frame to frame, its lists rewritten by count. */
+interface Shown {
+  fromEye: Float32Array | null;
+  figures: readonly CardAt[] | null;
+  count: number;
+  readonly cards: CardAt[];
+  readonly groups: (GPUBindGroup | null)[];
+  seen: Uint8Array;
+  casts: Uint8Array;
+}
+
+/** What the last frame saw, for the next frame's poses (`poseDue`): its view's planes, its eye, its yaw and how far it
+ *  turned, and how many frames have been drawn. */
+interface Sight {
+  readonly fromEye: Float32Array;
+  readonly planes: Planes;
+  readonly eye: readonly [number, number, number];
+  readonly yaw: number;
+  readonly turn: number;
+  readonly frame: number;
+}
+
+const low: [number, number, number] = [0, 0, 0];
+const high: [number, number, number] = [0, 0, 0];
+
+/** Four numbers into `values` from `start`, one at a time: every card's each frame, so no list is made for them. */
+function putFour(values: Float32Array, start: number, first: number, second: number, third: number, fourth: number) {
+  values[start] = first;
+  values[start + 1] = second;
+  values[start + 2] = third;
+  values[start + 3] = fourth;
+}
+
+/** Draws the forge's figures into the scene's pass, after the land and before the water, and their shadows into the
+ *  sun's near map before that: only those the view sees, and of those casting only those whose shadow may reach the
+ *  map's square. */
 export class FigureView implements CardMaker {
   private readonly gpu: Gpu;
   private readonly pipeline: GPURenderPipeline;
@@ -187,14 +247,27 @@ export class FigureView implements CardMaker {
   private readonly cardLayout: GPUBindGroupLayout;
   private readonly viewBuffer: GPUBuffer;
   private readonly viewGroup: GPUBindGroup;
-  private readonly slots: { buffer: GPUBuffer; texture: GPUTexture | null; group: GPUBindGroup | null }[] = [];
+  private readonly viewValues = new Float32Array(VIEW_BYTES / 4);
+  /** A card's slot in the cards' buffer, in bytes: a card's terms, rounded up to the device's step for an offset. */
+  private readonly slotBytes: number;
+  private slots: CardSlots | null = null;
+  private readonly shown: Shown = {
+    fromEye: null,
+    figures: null,
+    count: 0,
+    cards: [],
+    groups: [],
+    seen: new Uint8Array(0),
+    casts: new Uint8Array(0),
+  };
+  private sight: Sight | null = null;
   private readonly glows: GlowCards;
-  /** The frame the cards' uniforms were last written for, and their groups. */
-  private written: { fromEye: Float32Array; figures: readonly CardAt[]; groups: GPUBindGroup[] } | null = null;
 
   constructor(gpu: Gpu) {
     this.gpu = gpu;
     const { device } = gpu;
+    const step = device.limits.minUniformBufferOffsetAlignment;
+    this.slotBytes = Math.ceil(CARD_BYTES / step) * step;
     const module = device.createShaderModule({ code: SHADER });
     const castModule = device.createShaderModule({ code: CAST_SHADER });
     const viewLayout = device.createBindGroupLayout({
@@ -202,7 +275,7 @@ export class FigureView implements CardMaker {
     });
     this.cardLayout = device.createBindGroupLayout({
       entries: [
-        { binding: 0, visibility: SHADER_STAGE.vertex | SHADER_STAGE.fragment, buffer: {} },
+        { binding: 0, visibility: SHADER_STAGE.vertex | SHADER_STAGE.fragment, buffer: { hasDynamicOffset: true } },
         { binding: 1, visibility: SHADER_STAGE.fragment, texture: {} },
       ],
     });
@@ -267,66 +340,119 @@ export class FigureView implements CardMaker {
     return this.card(field.data, field.width, field.height, [0, 0]).texture;
   }
 
-  private slot(index: number, texture: GPUTexture): { buffer: GPUBuffer; group: GPUBindGroup } {
-    let slot = this.slots[index];
-    if (!slot) {
-      const buffer = this.gpu.device.createBuffer({
-        size: CARD_BYTES,
-        usage: BUFFER_USAGE.uniform | BUFFER_USAGE.copyDestination,
-      });
-      slot = { buffer, texture: null, group: null };
-      this.slots[index] = slot;
-    }
-    if (slot.texture !== texture || !slot.group) {
-      slot.texture = texture;
-      slot.group = this.gpu.device.createBindGroup({
+  /** Whether the figure numbered `id`, its `feet` in world metres, is posed this frame: by its distance along the
+   *  ground from the last frame's eye (`poseEvery`), or as one far off where that frame's view, led by its turn, did
+   *  not see it; each on frames of its own. Every frame before the first is drawn. */
+  poseDue(id: number, feet: readonly [number, number, number]): boolean {
+    const sight = this.sight;
+    if (!sight) return true;
+    const [x, y, z] = [feet[0] - sight.eye[0], feet[1] - sight.eye[1], feet[2] - sight.eye[2]];
+    const distance = Math.hypot(x, y);
+    const seen = sphereSeen(sight.planes, x, y, z, FIGURE_REACH_M + leadMargin(distance, sight.turn));
+    return cadenceDue(sight.frame, id, seen ? poseEvery(distance) : UNSEEN_EVERY);
+  }
+
+  /** The cards' slots for at least `count` cards: grown to a power of two when they hold fewer, which makes every
+   *  picture's group again. */
+  private slotsFor(count: number): CardSlots {
+    if (this.slots && this.slots.offsets.length >= count) return this.slots;
+    const room = Math.max(MOST_FIGURES_AT_FIRST, 2 ** Math.ceil(Math.log2(Math.max(1, count))));
+    this.slots?.buffer.destroy();
+    const buffer = this.gpu.device.createBuffer({
+      size: room * this.slotBytes,
+      usage: BUFFER_USAGE.uniform | BUFFER_USAGE.copyDestination,
+    });
+    const offsets = Uint32Array.from({ length: room }, (unused, slot) => slot * this.slotBytes);
+    this.slots = { buffer, values: new Float32Array((room * this.slotBytes) / 4), offsets, groups: new WeakMap() };
+    [this.shown.seen, this.shown.casts] = [new Uint8Array(room), new Uint8Array(room)];
+    return this.slots;
+  }
+
+  /** A picture's group, made the first time it is drawn. */
+  private groupOf(slots: CardSlots, texture: GPUTexture): GPUBindGroup {
+    let group = slots.groups.get(texture);
+    if (!group) {
+      group = this.gpu.device.createBindGroup({
         layout: this.cardLayout,
         entries: [
-          { binding: 0, resource: { buffer: slot.buffer } },
+          { binding: 0, resource: { buffer: slots.buffer, size: CARD_BYTES } },
           { binding: 1, resource: texture.createView() },
         ],
       });
+      slots.groups.set(texture, group);
     }
-    return { buffer: slot.buffer, group: slot.group };
+    return group;
   }
 
-  /** Writes the view's and each card's terms once a frame, for its shadow's pass and its own, and answers each card's
-   *  group; `light` lights each figure in place of the sun. */
-  private groupsFor(
+  /** Finds once a frame which cards the view sees and which cast into the near map (`shadow` on), and writes the
+   *  view's terms and each of those cards' for its shadow's pass and its own; `light` lights each figure in place of
+   *  the sun. */
+  private prepare(
     fromEye: Float32Array,
     eye: readonly [number, number, number],
     yaw: number,
     figures: readonly CardAt[],
+    shadow?: ShadowMap,
     light?: Light,
-  ): GPUBindGroup[] {
-    if (this.written?.fromEye === fromEye && this.written.figures === figures) return this.written.groups;
-    const values = new Float32Array(VIEW_BYTES / 4);
-    values.set(fromEye);
-    values.set([Math.cos(yaw), Math.sin(yaw), 0, 0], 16);
-    this.gpu.device.queue.writeBuffer(this.viewBuffer, 0, values);
-    const time = statusClock();
+  ): Shown {
+    const shown = this.shown;
+    if (shown.fromEye === fromEye && shown.figures === figures) return shown;
+    [shown.fromEye, shown.figures] = [fromEye, figures];
+    const { queue } = this.gpu.device;
+    this.viewValues.set(fromEye);
+    [this.viewValues[16], this.viewValues[17]] = [Math.cos(yaw), Math.sin(yaw)];
+    queue.writeBuffer(this.viewBuffer, 0, this.viewValues);
     // Each card, then again as its smear where its own swing leaves one: its shape above the hips, shifted back
     // along the stroke and standing behind it.
-    const smeared = figures.filter((shown) => shown.smear);
-    const groups = [...figures, ...smeared].map((shown, index) => {
-      const { card, x, y, z, flip, scale = 1 } = shown;
-      const { buffer, group } = this.slot(index, card.texture);
+    let count = 0;
+    for (const figure of figures) shown.cards[count++] = figure;
+    for (const figure of figures) if (figure.smear) shown.cards[count++] = figure;
+    if (shown.cards.length !== count) shown.cards.length = count;
+    shown.count = count;
+    const slots = this.slotsFor(count);
+    const { sight } = this;
+    const again = sight?.fromEye === fromEye;
+    const turn = !sight ? 0 : again ? sight.turn : turnBetween(sight.yaw, yaw);
+    const planes = viewPlanes(fromEye);
+    const { along } = sunAxes();
+    const lean = Math.hypot(along[0], along[1]) / Math.max(Math.abs(along[2]), 1e-3);
+    const casting = shadow?.active === true;
+    const time = statusClock();
+    const floats = this.slotBytes / 4;
+    for (let index = 0; index < count; index++) {
+      const shownCard = shown.cards[index] as CardAt;
+      const { card, x, y, z, flip, scale = 1 } = shownCard;
       const metres = scale / PX_PER_M;
-      const smear = index >= figures.length ? shown.smear : null;
+      const smear = index >= figures.length ? shownCard.smear : null;
       const [across, up] = smear ? [smear.across * metres, smear.up * metres] : [0, 0];
+      const feetX = x - eye[0] + Math.cos(yaw) * across;
+      const feetY = y - eye[1] + Math.sin(yaw) * across;
+      const feetZ = z - eye[2] + up;
       const rootX = (flip ? card.width - card.root[0] : card.root[0]) * metres;
-      const cardValues = new Float32Array([
-        ...[x - eye[0] + Math.cos(yaw) * across, y - eye[1] + Math.sin(yaw) * across, z - eye[2] + up, flip ? 1 : 0],
-        ...[card.width * metres, card.height * metres, shown.facesEye ? 1 : 0, shown.crystal ? 1 : 0],
-        ...[rootX, card.root[1] * metres, 0, 0],
-        ...cardLookValues(shown, time, !!smear),
-        ...(light ? [...light([x, y, z + LIT_AT_M]), 1] : [0, 0, 0, 0]),
-      ]);
-      this.gpu.device.queue.writeBuffer(buffer, 0, cardValues);
-      return group;
-    });
-    this.written = { fromEye, figures, groups };
-    return groups;
+      const [width, height, rootY] = [card.width * metres, card.height * metres, card.root[1] * metres];
+      const reach = cardReach(width, height, rootX, rootY, lean) + leadMargin(Math.hypot(feetX, feetY), turn);
+      sphereBox(low, high, feetX, feetY, feetZ, reach);
+      const seen = boxSeen(planes, low, high);
+      const casts = casting && !smear && !unshaded(shownCard) && shadow.reaches(low, high, NEAR);
+      shown.seen[index] = seen ? 1 : 0;
+      shown.casts[index] = casts ? 1 : 0;
+      shown.groups[index] = seen || casts ? this.groupOf(slots, card.texture) : null;
+      if (!seen && !casts) continue;
+      const { values } = slots;
+      const start = index * floats;
+      putFour(values, start, feetX, feetY, feetZ, flip ? 1 : 0);
+      putFour(values, start + 4, width, height, shownCard.facesEye ? 1 : 0, shownCard.crystal ? 1 : 0);
+      putFour(values, start + 8, rootX, rootY, 0, 0);
+      cardLookInto(values, start + 12, shownCard, time, !!smear);
+      const [red, green, blue] = light ? light([x, y, z + LIT_AT_M]) : NO_LIGHT;
+      putFour(values, start + 12 + CARD_LOOK_FLOATS, red, green, blue, light ? 1 : 0);
+    }
+    shown.groups.length = count;
+    if (count > 0) queue.writeBuffer(slots.buffer, 0, slots.values, 0, count * floats);
+    // A frame that draws a second list of figures from the same eye counts once.
+    if (!again)
+      this.sight = { fromEye, planes, eye: [eye[0], eye[1], eye[2]], yaw, turn, frame: (sight?.frame ?? 0) + 1 };
+    return shown;
   }
 
   /** Draws the figures' shadows into the sun's near map (they are near the eye; far off their contact shades stand
@@ -340,16 +466,18 @@ export class FigureView implements CardMaker {
     shadow: ShadowMap,
   ): void {
     if (figures.length === 0 || shadow.cascade !== NEAR) return;
-    const groups = this.groupsFor(fromEye, eye, yaw, figures);
+    const shown = this.prepare(fromEye, eye, yaw, figures, shadow);
+    const { offsets } = this.slotsFor(shown.count);
     pass.setPipeline(this.cast);
     pass.setBindGroup(0, this.viewGroup);
     skyUniformFor(this.gpu.device).bindShared(pass);
     pass.setBindGroup(1, shadow.casterGroup(this.cast));
-    groups.forEach((group, index) => {
-      if (index >= figures.length || unshaded(figures[index])) return;
-      pass.setBindGroup(2, group);
+    for (let index = 0; index < figures.length; index++) {
+      const group = shown.groups[index];
+      if (!shown.casts[index] || !group) continue;
+      pass.setBindGroup(2, group, offsets, index, 1);
       pass.draw(6);
-    });
+    }
   }
 
   /** Draws the figures from an eye at `eye` (world metres), with the camera's view-projection measured from the eye
@@ -365,23 +493,29 @@ export class FigureView implements CardMaker {
     light?: Light,
   ): void {
     if (figures.length === 0) return;
-    const groups = this.groupsFor(fromEye, eye, yaw, figures, light);
+    const shown = this.prepare(fromEye, eye, yaw, figures, shadow, light);
+    const { offsets } = this.slotsFor(shown.count);
     pass.setBindGroup(0, this.viewGroup);
     skyUniformFor(this.gpu.device).bindShared(pass);
     pass.setBindGroup(1, (shadow ?? ShadowMap.none(this.gpu)).receiverGroup(this.pipeline));
     pass.setPipeline(this.shade);
-    groups.forEach((group, index) => {
-      if (index >= figures.length || unshaded(figures[index])) return;
-      pass.setBindGroup(2, group);
+    for (let index = 0; index < figures.length; index++) {
+      const group = shown.groups[index];
+      if (!shown.seen[index] || !group || unshaded(figures[index])) continue;
+      pass.setBindGroup(2, group, offsets, index, 1);
       pass.draw(36);
-    });
+    }
     pass.setPipeline(this.pipeline);
-    for (const group of groups) {
-      pass.setBindGroup(2, group);
+    for (let index = 0; index < shown.count; index++) {
+      const group = shown.groups[index];
+      if (!shown.seen[index] || !group) continue;
+      pass.setBindGroup(2, group, offsets, index, 1);
       pass.draw(6);
     }
     // A Veiled figure's weapon shows no outline, as it is all but unseen; nor does one still arriving.
-    const glowing = figures.filter(({ card, veiled, arrival }) => card.glow && !veiled && !arrival);
+    const glowing = figures.filter(
+      ({ card, veiled, arrival }, index) => card.glow && !veiled && !arrival && shown.seen[index] === 1,
+    );
     this.glows.draw(
       pass,
       fromEye,

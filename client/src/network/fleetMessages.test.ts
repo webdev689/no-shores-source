@@ -141,7 +141,7 @@ test('orders never wrap a number past its field: its number, load and call are r
   assert.throws(() => ordersBytes(1, { ...calling, captain: { faction: 1, rank: 2, shipLevel: 31 } }), RangeError);
 });
 
-test('an older room’s captain, sent with no faction or rank, reads as a Major of the pirates', () => {
-  assert.deepEqual(commissionOf(0, 0), { faction: 2, rank: 2 });
+test('an older room’s captain, sent with no faction or rank, reads as a Major of the Grey Tithe', () => {
+  assert.deepEqual(commissionOf(0, 0), { faction: 1, rank: 2 });
   assert.deepEqual(commissionOf(1, 3), { faction: 1, rank: 3 });
 });

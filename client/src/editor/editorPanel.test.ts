@@ -206,11 +206,11 @@ test('sailing, the captain F calls is chosen by its faction, rank and level, and
   laid = frame(ui, build);
   laid = frame(ui, build, click(...middleOf(laid, 'captain-ship-level')));
   frame(ui, build, click(...middleOf(laid, 'captain-ship-level:0')));
-  assert.deepEqual(chosenCaptain(), { faction: 2, rank: 2, level: 3, shipLevel: 0 });
+  assert.deepEqual(chosenCaptain(), { faction: 1, rank: 2, level: 3, shipLevel: 0 });
   laid = frame(ui, build);
   laid = frame(ui, build, click(...middleOf(laid, 'captain-ship-level')));
   frame(ui, build, click(...middleOf(laid, 'captain-ship-level:5')));
-  assert.deepEqual(chosenCaptain(), { faction: 2, rank: 2, level: 3, shipLevel: 5 });
+  assert.deepEqual(chosenCaptain(), { faction: 1, rank: 2, level: 3, shipLevel: 5 });
 });
 
 const isles: IslePanelView = {

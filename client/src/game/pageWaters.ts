@@ -4,7 +4,6 @@ import { CHART_CELL_M } from '../overworld/discovery.ts';
 import type { MapWaters } from '../heldmap/watersWash.ts';
 import {
   LAND_CELL,
-  SEAM_BIT,
   startWatersRules,
   type WatersGrid,
   type SeaFacts,
@@ -23,12 +22,11 @@ export interface OpenWaters {
   readonly map: MapWaters;
 }
 
-/** The waters' table and grid in the held map's terms: each cell's water by index, -1 on land, and the seam apart. */
+/** The waters' table and grid in the held map's terms: each cell's water by index, -1 on land. */
 export function mapWatersOf(table: WatersTable, grid: WatersGrid): MapWaters {
-  const water = Int16Array.from(grid.cells, (cell) => (cell === LAND_CELL ? -1 : cell & ~SEAM_BIT));
-  const seam = Uint8Array.from(grid.cells, (cell) => (cell !== LAND_CELL && (cell & SEAM_BIT) !== 0 ? 1 : 0));
+  const water = Int16Array.from(grid.cells, (cell) => (cell === LAND_CELL ? -1 : cell));
   const { columns, rows, cellM } = grid;
-  return { columns, rows, cellM, water, seam, waters: table.waters, mainPorts: table.mainPorts };
+  return { columns, rows, cellM, water, waters: table.waters, mainPorts: table.mainPorts };
 }
 
 /** Opens the waters on the room's module with the world's layout and every city as a port it may sail from. */

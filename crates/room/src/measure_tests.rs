@@ -31,9 +31,8 @@ pub(crate) fn world() -> (world::layout::Layout, Vec<Port>) {
 fn kind_of(holder: Holder) -> &'static str {
     match holder {
         Holder::Home => "home",
-        Holder::Contested => "contested",
         Holder::GreyTithe => "grey tithe",
-        Holder::Pirates => "pirates",
+        Holder::Lattice => "lattice",
     }
 }
 
@@ -121,8 +120,8 @@ fn measure(way: Way) {
             let stretch = held.entry(*player).or_default();
             stretch.0 = if ship.pace == 60 && ship.rate < 60 { stretch.0 + 1 } else { 0 };
             stretch.1 = stretch.1.max(stretch.0);
-            let quarry = sea.pirates().into_iter().filter(|pirate| pirate.sees(at)).min_by(|one, other| {
-                let off = |pirate: &crate::pirates::Pirate| (pirate.x - at[0]).abs() + (pirate.y - at[1]).abs();
+            let quarry = sea.hostiles().into_iter().filter(|hostile| hostile.sees(at)).min_by(|one, other| {
+                let off = |hostile: &crate::hostiles::Hostile| (hostile.x - at[0]).abs() + (hostile.y - at[1]).abs();
                 off(one).total_cmp(&off(other))
             });
             if sea.fights().any(|(fighting, _)| fighting == *player) {
@@ -132,12 +131,12 @@ fn measure(way: Way) {
                 }
                 fought.entry(*player).or_insert(tick);
             } else if tick % 30 == 0 {
-                let coming = sea.pirates().into_iter().find(|pirate| pirate.quarry == Some(*player));
+                let coming = sea.hostiles().into_iter().find(|hostile| hostile.quarry == Some(*player));
                 if coming.is_some() {
                     come_for.insert(*player);
                 }
-                let away = coming.filter(|_| way == Way::Evade).map(|pirate| {
-                    let (east, south) = (at[0] - pirate.x, at[1] - pirate.y);
+                let away = coming.filter(|_| way == Way::Evade).map(|hostile| {
+                    let (east, south) = (at[0] - hostile.x, at[1] - hostile.y);
                     let apart = (east * east + south * south).sqrt().max(1.0);
                     [at[0] + east / apart * 100_000.0, at[1] + south / apart * 100_000.0]
                 });
@@ -146,10 +145,10 @@ fn measure(way: Way) {
                         chasing.insert(*player);
                         let _ = sea.course(*player, &[away.unwrap_or(at)], 60);
                     }
-                    Some(pirate) => {
+                    Some(hostile) => {
                         chasing.insert(*player);
-                        sea.chase(*player, Some(pirate.id));
-                        let _ = sea.course(*player, &[[pirate.x, pirate.y]], 60);
+                        sea.chase(*player, Some(hostile.id));
+                        let _ = sea.course(*player, &[[hostile.x, hostile.y]], 60);
                     }
                     None if ship.pace == 0 || chasing.remove(player) => {
                         let _ = sea.course(*player, course, 60);
@@ -157,17 +156,17 @@ fn measure(way: Way) {
                     None => {}
                 }
             }
-            for pirate in sea.pirates() {
-                if pirate.sees([ship.x, ship.y]) {
+            for hostile in sea.hostiles() {
+                if hostile.sees([ship.x, ship.y]) {
                     first_sighted.entry(*player).or_insert(tick);
-                    in_sight.entry(pirate.id).or_insert((0, kind)).0 += 1;
+                    in_sight.entry(hostile.id).or_insert((0, kind)).0 += 1;
                 }
             }
         }
     }
     let seconds = |ticks: usize| ticks as f64 / TICKS_A_SECOND as f64;
     eprintln!("{way:?}; sight at x60: {:.0} m; players by water: {counts:?}", sight_for(60.0));
-    for kind in ["home", "contested", "grey tithe", "pirates"] {
+    for kind in ["home", "grey tithe", "lattice"] {
         let of_kind: Vec<PlayerId> = players.iter().filter(|each| each.1 == kind).map(|each| each.0).collect();
         let total = of_kind.len().max(1) as f64;
         let mut firsts: Vec<f64> =

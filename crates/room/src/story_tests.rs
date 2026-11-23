@@ -38,45 +38,22 @@ fn on_the_wreck_a_player_wakes_hurt_and_bare_handed_then_takes_the_story_s_arms_
 }
 
 #[test]
-fn the_wreck_s_boarders_are_one_side_the_brig_s_crew_still_the_players() {
+fn the_wreck_s_boarders_are_the_grey_tithe_s_and_the_brig_s_crew_still_the_players() {
     let mut room = wreck();
     room.story_wreck();
-    let tithe = room.stand_foe_at(7, 1, (-2.0, 0.0), 0.0, 1).expect("a Tithe deckhand");
-    let pirate = room.stand_foe_at(13, 1, (2.0, 0.0), 0.0, 1).expect("a pirate");
+    let deckhand = room.stand_foe_at(7, 1, (-2.0, 0.0), 0.0, 1).expect("a Tithe deckhand");
+    let pistoleer = room.stand_foe_at(9, 1, (2.0, 0.0), 0.0, 1).expect("a Tithe pistoleer");
     let crew = room.stand_foe_at(19, 1, (0.0, 3.0), 0.0, 1).expect("a hand of the Brig's");
     let side = |id| room.foes[&id].fighter.side;
-    assert_eq!(side(tithe), side(pirate));
-    assert_eq!(room.foes[&pirate].brain.side(), side(tithe), "and thinks as one");
-    assert!(side(crew).is_players() && !side(pirate).is_players());
-}
-
-#[test]
-fn a_tithe_hand_and_a_pirate_side_by_side_on_the_wreck_never_come_to_blows() {
-    let mut room = wreck();
-    room.story_wreck();
-    let tithe = room.stand_foe_at(7, 1, (-1.0, 0.0), 0.0, 1).expect("a Tithe deckhand");
-    let pirate = room.stand_foe_at(13, 1, (1.0, 0.0), 0.0, 1).expect("a pirate");
-    for _ in 0..600 {
-        room.tick();
-    }
-    for id in [tithe, pirate] {
-        let fighter = &room.foes[&id].fighter;
-        assert_eq!(fighter.health, fighter.health_max, "foe {id} unharmed");
-    }
-    // Off the story, the two crews fight each other.
-    let mut plain = wreck();
-    let foes = [(7, -1.0), (13, 1.0)].map(|(kind, x)| plain.stand_foe_at(kind, 1, (x, 0.0), 0.0, 1).expect("a foe"));
-    for _ in 0..600 {
-        plain.tick();
-    }
-    assert!(foes.iter().any(|id| plain.foes.get(id).is_none_or(|foe| foe.fighter.health < foe.fighter.health_max)));
+    assert_eq!([side(deckhand), side(pistoleer)], [combat::fighter::Side::Faction(1); 2]);
+    assert!(side(crew).is_players());
 }
 
 #[test]
 fn an_elite_boarder_keeps_its_rank_but_is_brought_down_as_a_major_and_thule_is_not() {
     let (mut story, mut plain) = (wreck(), wreck());
     story.story_wreck();
-    for (mate, rank) in [(11, Rank::Elite), (17, Rank::Elite)] {
+    for (mate, rank) in [(11, Rank::Elite), (6, Rank::Elite)] {
         let held = story.stand_foe_at(mate, 1, (0.0, 0.0), 0.0, 1).expect("an elite");
         let elite = plain.stand_foe_at(mate, 1, (0.0, 0.0), 0.0, 1).expect("an elite");
         let major = &::foes::foe_type(mate).expect("a type").numbers(Rank::Major, 1);

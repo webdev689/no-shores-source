@@ -87,8 +87,9 @@ export function pathBetween(graph: WayGraph, from: Post, to: Post): Path | null 
   return pathThrough([from.at, ...route.map((index) => graph.points[index] as Point), to.at]);
 }
 
-/** One person walking a round's posts in turn, working a while at each, and back to the first. */
-export function roundOf(graph: WayGraph, posts: readonly Post[], random: () => number): Routine {
+/** One person walking a round's posts in turn, working a while at each, and back to the first to stay there until a
+ *  whole number of `loopS` is up. */
+export function roundOf(graph: WayGraph, posts: readonly Post[], random: () => number, loopS: number): Routine {
   const legs: Leg[] = [];
   let time = 0;
   posts.forEach((post, nth) => {
@@ -101,5 +102,8 @@ export function roundOf(graph: WayGraph, posts: readonly Post[], random: () => n
     legs.push({ start: time, end: time + walk, path });
     time += walk;
   });
-  return { loop: Math.max(time, 1), offset: 0, legs };
+  // A whole number of the walkers' loops, so their walks are booked clear of its walks, however long the clock runs.
+  const loop = Math.max(1, Math.ceil(time / loopS)) * loopS;
+  if (loop > time && posts[0]) legs.push({ start: time, end: loop, post: posts[0] });
+  return { loop, offset: 0, legs };
 }

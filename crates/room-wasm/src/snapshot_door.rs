@@ -26,7 +26,7 @@ pub const PLAYERS_SEEN_M: f64 = 60_000.0;
 struct SeaParts {
     tick: u64,
     ships: Vec<(PlayerId, room::sea::Ship)>,
-    pirates: Vec<room::pirates::Pirate>,
+    hostiles: Vec<room::hostiles::Hostile>,
     fights: Vec<room::battle::FightSeen>,
     /// The players in each fight.
     crews: Vec<Vec<PlayerId>>,
@@ -44,7 +44,7 @@ struct SeaParts {
 impl SeaParts {
     fn bytes(
         &self,
-        (ships, pirates): (&[(PlayerId, room::sea::Ship)], &[room::pirates::Pirate]),
+        (ships, hostiles): (&[(PlayerId, room::sea::Ship)], &[room::hostiles::Hostile]),
         fights: &[room::battle::FightSeen],
         harbour: &protocol::SeaHarbour,
     ) -> Vec<u8> {
@@ -55,11 +55,11 @@ impl SeaParts {
             .filter(|(walker, _, _)| ships.iter().any(|(owner, _)| owner == walker))
             .copied()
             .collect();
-        protocol::sea_snapshot_bytes(self.tick, ships, pirates, fights, &aboard, harbour)
+        protocol::sea_snapshot_bytes(self.tick, ships, hostiles, fights, &aboard, harbour)
     }
 
     /// The ships and hostile ships `player` is sent: none but their own before their ship is at sea.
-    fn near(&self, player: PlayerId) -> (Vec<(PlayerId, room::sea::Ship)>, Vec<room::pirates::Pirate>) {
+    fn near(&self, player: PlayerId) -> (Vec<(PlayerId, room::sea::Ship)>, Vec<room::hostiles::Hostile>) {
         let own = self.ships.iter().find(|(each, _)| *each == player).map(|(_, ship)| [ship.x, ship.y]);
         let crew = self.crews.iter().find(|crew| crew.contains(&player));
         let seen = |(other, ship): &&(PlayerId, room::sea::Ship)| {
@@ -73,10 +73,17 @@ impl SeaParts {
         let ships = self.ships.iter().filter(seen).copied().collect();
         // A Lookout sights each ship from farther off: its sight, as this player is sent it, is that much longer.
         let lookout = self.lookouts.iter().find(|(each, _)| *each == player).map_or(1.0, |(_, times)| *times);
-        let sighted =
-            self.pirates.iter().map(|pirate| room::pirates::Pirate { sight_m: pirate.sight_m * lookout, ..*pirate });
-        let pirates = sighted.filter(|pirate| own.is_some_and(|at| pirate.kept_by(at))).collect();
-        (ships, pirates)
+        let sighted = self
+            .hostiles
+            .iter()
+            .map(|hostile| room::hostiles::Hostile { sight_m: hostile.sight_m * lookout, ..*hostile });
+        let hostiles = sighted.filter(|hostile| own.is_some_and(|at| hostile.kept_by(at))).collect();
+        (ships, hostiles)
+    }
+
+    /// Where `player`'s ship lies, once it is at sea.
+    fn own(&self, player: PlayerId) -> Option<[f64; 2]> {
+        self.ships.iter().find(|(each, _)| *each == player).map(|(_, ship)| [ship.x, ship.y])
     }
 
     /// The islands `player` is told of: those in sight of their ship, and those they have found, wherever they lie.
@@ -108,6 +115,7 @@ pub fn prepare() {
         }
         Opened::Sea(sea) => {
             let fights = sea.fight_views();
+            sea.fights_sent();
             let aboard = sea.aboard().map(|(player, walking)| (player, walking.acknowledged, walking.body)).collect();
             let kind = |piece: naval::fight::Piece| piece as u8;
             let flotsam = sea.flotsam().iter().map(|piece| (piece.player, piece.id, piece.at, kind(piece.kind)));
@@ -121,7 +129,7 @@ pub fn prepare() {
                 .map(|(deck, hold)| {
                     let aboard: Vec<_> = deck.aboard.iter().map(|(player, boarder)| (*player, *boarder)).collect();
                     let views = whole_for_each(&mut deck.room, &aboard);
-                    ((aboard, deck.pirate.commission.hull().number(), Vec::new(), hold), views)
+                    ((aboard, deck.hostile.commission.hull().number(), Vec::new(), hold), views)
                 })
                 .unzip();
             let crews = sea.fights().map(|(_, fought)| fought.crews.keys().copied().collect()).collect();
@@ -145,11 +153,19 @@ pub fn prepare() {
             Prepared::Sea(Box::new(SeaParts {
                 tick: sea.clock(),
                 ships: sea.ships().collect(),
-                pirates: sea.pirates(),
+                hostiles: sea.hostiles(),
                 fights,
                 crews,
                 aboard,
-                harbour: protocol::SeaHarbour { flotsam, kept, told, decks, islands: Vec::new() },
+                harbour: protocol::SeaHarbour {
+                    flotsam,
+                    kept,
+                    told,
+                    decks,
+                    islands: Vec::new(),
+                    taken: sea.taken(),
+                    friendlies: sea.friendlies(),
+                },
                 deck_views,
                 islands,
                 lookouts: sea.ships().map(|(player, _)| (player, sea.lookout(player))).collect(),
@@ -192,11 +208,13 @@ pub fn snapshot_for(player: PlayerId) -> Vec<u8> {
                     })
                     .collect(),
                 islands: parts.islands(player),
+                taken: all.taken.clone(),
+                friendlies: friendlies_seen(parts.own(player), &all.friendlies),
             };
             // Each player's fight view is theirs alone too.
             let fights: Vec<_> = parts.fights.iter().filter(|fight| fight.player == player).cloned().collect();
-            let (ships, pirates) = parts.near(player);
-            parts.bytes((&ships, &pirates), &fights, &harbour)
+            let (ships, hostiles) = parts.near(player);
+            parts.bytes((&ships, &hostiles), &fights, &harbour)
         }
     })
 }
@@ -252,4 +270,35 @@ fn whole_for_each(room: &mut Room, aboard: &[(PlayerId, PlayerId)]) -> Vec<(Play
             (at_sea, protocol::snapshot_bytes(&snapshot))
         })
         .collect()
+}
+
+/// The friendly ships the room keeps that a player's ship at `own` keeps in sight, as a hostile ship is kept; none before
+/// it is at sea.
+fn friendlies_seen(own: Option<[f64; 2]>, all: &[room::friendlies::Friendly]) -> Vec<room::friendlies::Friendly> {
+    all.iter().filter(|friend| own.is_some_and(|at| friend.kept_by(at))).copied().collect()
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn a_player_is_sent_only_the_friendly_ships_their_ship_keeps_in_sight() {
+        let friend = |traffic, x| room::friendlies::Friendly {
+            traffic,
+            hull: sailing::HullKind::Sloop,
+            seed: 0,
+            level: 0,
+            sight_m: 5_000.0,
+            x,
+            y: 0.0,
+            heading: 0.0,
+            to: [0.0; 2],
+            lane: None,
+        };
+        let all = [friend(1, 4_000.0), friend(2, 40_000.0)];
+        let seen = |own| friendlies_seen(own, &all).iter().map(|ship| ship.traffic).collect::<Vec<_>>();
+        assert_eq!(seen(Some([0.0, 0.0])), [1], "within 1.1 times its sight");
+        assert!(seen(None).is_empty(), "none before their ship is at sea");
+    }
 }

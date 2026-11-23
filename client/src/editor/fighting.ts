@@ -102,7 +102,7 @@ export class Fighting {
     );
   }
 
-  /** Calls a pirate captain onto the ring round the player's `ship`, or says why none comes. The rules decide where. */
+  /** Calls a Grey Tithe captain onto the ring round the player's `ship`, or says why none comes. The rules decide where. */
   static async begin(
     source: FightSource,
     id: string,

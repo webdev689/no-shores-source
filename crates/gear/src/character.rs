@@ -214,6 +214,9 @@ pub struct Character {
     /// The game's letters waiting at the mail counter, oldest first (`mail.rs`).
     #[serde(default)]
     pub mail: Vec<crate::mail::Letter>,
+    /// The lore's chapters found, by their keys (`lore.rs`), in the order found; one the file no longer holds kept.
+    #[serde(default)]
+    pub lore: Vec<String>,
     /// The body as it last left a room, given back on a return (`left.rs`); none before it first leaves one.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub left: Option<crate::left::Left>,
@@ -282,6 +285,7 @@ impl Character {
             cosmetics: crate::cosmetics::Cosmetics::default(),
             quests: crate::quests::QuestLog::default().kept(),
             mail: Vec::new(),
+            lore: Vec::new(),
             left: None,
             unknown: UnknownKeys::new(),
         };
@@ -378,29 +382,37 @@ impl Character {
         character.allegiance = std::mem::take(&mut character.allegiance).kept();
         character.quests = std::mem::take(&mut character.quests).kept();
         character.materials.shapes = character.materials.shapes.min(STOCK_MOST);
+        let mut seen = std::collections::BTreeSet::new();
+        character.lore.retain(|key| seen.insert(key.clone()));
         character.earn_due();
         Some(character)
     }
 
     /// A fresh number for an item, Vestige or letter, never one it already holds.
     pub fn take_id(&mut self) -> u32 {
-        loop {
-            let id = self.next_id;
-            self.next_id = self.next_id.wrapping_add(1).max(1);
-            if !self.items.contains_key(&id)
-                && !self.vestiges.contains_key(&id)
-                && !self.crew.officers.contains_key(&id)
-                && !self.mail.iter().any(|letter| letter.id == id)
-            {
-                return id;
-            }
+        let id = self.id_to_take();
+        self.next_id = id.wrapping_add(1).max(1);
+        id
+    }
+
+    /// The number `take_id` gives next: a smith's ware is drawn by it before it is bought.
+    #[must_use]
+    pub fn id_to_take(&self) -> u32 {
+        let mut id = self.next_id;
+        while self.items.contains_key(&id)
+            || self.vestiges.contains_key(&id)
+            || self.crew.officers.contains_key(&id)
+            || self.mail.iter().any(|letter| letter.id == id)
+        {
+            id = id.wrapping_add(1).max(1);
         }
+        id
     }
 
     /// Whether the next number taken would be clear of these.
     #[cfg(test)]
     pub(crate) fn take_id_clear_of(&self, ids: &[u32]) -> bool {
-        !ids.contains(&self.clone().take_id())
+        !ids.contains(&self.id_to_take())
     }
 
     #[must_use]

@@ -50,13 +50,14 @@ pub(crate) struct QuestGround {
     pub square: Option<navmesh::Bounds>,
     pub grounds: Vec<QuestMesh>,
     pub way_on: BTreeMap<FighterId, usize>,
+    /// The lore read for what lies in its node (`lore.rs`): the file's, unless a test gives its own.
+    pub lore: Option<&'static gear::lore::LoreDef>,
 }
 
 /// The side of the sea a hostile ship sails for, by its faction (the foes crate's), as a goal names it.
 pub(crate) fn side_of(faction: u8) -> Option<&'static str> {
     match faction {
         ::foes::factions::GREY_TITHE => Some("tithe"),
-        ::foes::factions::PIRATES => Some("pirates"),
         _ => None,
     }
 }
@@ -301,7 +302,12 @@ impl Room {
         }
         self.garrison.push(post);
         let stood = self.garrison.len() - 1;
+        // An arrival is no group of the garrison's: the last stand keeps its leader and its break.
+        let last_stand = self.encounter.as_ref().map(|encounter| (encounter.leader, encounter.broken));
         self.stand_post(stood);
+        if let (Some(encounter), Some(kept)) = (self.encounter.as_mut(), last_stand) {
+            (encounter.leader, encounter.broken) = kept;
+        }
         Some(self.garrison[stood].standing.clone())
     }
 

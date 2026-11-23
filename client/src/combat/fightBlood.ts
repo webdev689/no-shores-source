@@ -56,27 +56,38 @@ export function surfacesOf(blocks: readonly Block[], groundAt?: (x: number, y: n
     const land = groundAt && landHit(groundAt, from, direction, reach);
     if (land) keep(land.distance, land.normal);
     else if (!groundAt && direction[2] < 0 && from[2] >= 0) keep(from[2] / -direction[2], [0, 0, 1]);
-    for (const block of blocks) {
-      const low = [block.minX, block.minY, block.bottom];
-      const high = [block.maxX, block.maxY, block.top];
-      let enter = -Infinity;
-      let leave = Infinity;
-      let axisEntered = -1;
-      for (let axis = 0; axis < 3; axis++) {
-        const start = from[axis] ?? 0;
-        const step = direction[axis] ?? 0;
-        const [lowEdge, highEdge] = [low[axis] ?? 0, high[axis] ?? 0];
-        if (Math.abs(step) < 1e-12) {
-          if (start < lowEdge || start > highEdge) leave = -Infinity;
-          continue;
-        }
-        const [near, far] = [(lowEdge - start) / step, (highEdge - start) / step].sort((a, b) => a - b) as [
-          number,
-          number,
-        ];
-        if (near > enter) [enter, axisEntered] = [near, axis];
-        leave = Math.min(leave, far);
+    const [fromX, fromY, fromZ] = [from[0] ?? 0, from[1] ?? 0, from[2] ?? 0];
+    const [stepX, stepY, stepZ] = [direction[0] ?? 0, direction[1] ?? 0, direction[2] ?? 0];
+    // The box the ray sweeps within its reach: a block wholly outside it is never met, and is passed over at once.
+    const [toX, toY, toZ] = [fromX + stepX * reach, fromY + stepY * reach, fromZ + stepZ * reach];
+    const [westmost, eastmost] = [Math.min(fromX, toX), Math.max(fromX, toX)];
+    const [northmost, southmost] = [Math.min(fromY, toY), Math.max(fromY, toY)];
+    const [lowest, highest] = [Math.min(fromZ, toZ), Math.max(fromZ, toZ)];
+    let [enter, leave, axisEntered] = [0, 0, -1];
+    // One axis's slab: where the ray enters and leaves it, kept as the latest entry and earliest exit.
+    const slab = (start: number, step: number, lowEdge: number, highEdge: number, axis: number) => {
+      if (Math.abs(step) < 1e-12) {
+        if (start < lowEdge || start > highEdge) leave = -Infinity;
+        return;
       }
+      const one = (lowEdge - start) / step;
+      const other = (highEdge - start) / step;
+      const near = Math.min(one, other);
+      if (near > enter) {
+        enter = near;
+        axisEntered = axis;
+      }
+      leave = Math.min(leave, Math.max(one, other));
+    };
+    for (const block of blocks) {
+      if (block.maxX < westmost || block.minX > eastmost || block.maxY < northmost || block.minY > southmost) continue;
+      if (block.top < lowest || block.bottom > highest) continue;
+      enter = -Infinity;
+      leave = Infinity;
+      axisEntered = -1;
+      slab(fromX, stepX, block.minX, block.maxX, 0);
+      slab(fromY, stepY, block.minY, block.maxY, 1);
+      slab(fromZ, stepZ, block.bottom, block.top, 2);
       if (axisEntered < 0 || enter > leave || enter < 0) continue;
       const normal: [number, number, number] = [0, 0, 0];
       normal[axisEntered] = (direction[axisEntered] ?? 0) > 0 ? -1 : 1;

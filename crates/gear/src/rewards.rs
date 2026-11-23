@@ -4,7 +4,7 @@
 
 use crate::character::{At, CARRIED_MOST, Character, Stuff, VAULT_MOST, Vestige};
 use crate::dice::Dice;
-use crate::item::Item;
+use crate::item::{Item, NAMED_LEVEL};
 use crate::kinds::Slot;
 use crate::source::Source;
 use crate::vestige;
@@ -178,20 +178,21 @@ impl Character {
             .collect();
         // An item there is no room for is laid as a Vestige of the content it dropped in, as a kill's own are.
         for item in vestige::found_items(items, rank, level, source, dice) {
-            laid.extend(self.keep_found(item).map(|vestige| vestige.from(source)));
+            laid.extend(self.keep_found(item, level.clamp(1, NAMED_LEVEL)).map(|vestige| vestige.from(source)));
         }
         laid
     }
 
     /// Keeps an item found as itself, numbered as it is taken: carried with its slot's, else in the vault. With both
-    /// full it comes back as a Vestige of its colour, slot and level to be laid, so nothing found is lost.
-    pub fn keep_found(&mut self, item: Item) -> Option<Vestige> {
+    /// full it comes back as a Vestige of its colour and slot at `level`, its foe's, to be laid, so nothing found is
+    /// lost and none opens above what that foe could drop (a named item stands at 20, a cloak at 1, whatever its foe).
+    pub fn keep_found(&mut self, item: Item, level: u8) -> Option<Vestige> {
         let at = if self.carried_in(item.bucket) < CARRIED_MOST {
             At::Carried
         } else if self.vaulted(item.kind.stock()) < VAULT_MOST {
             At::Vault
         } else {
-            return Some(Vestige::new(self.take_id(), item.rarity, item.bucket, item.level).from(item.source));
+            return Some(Vestige::new(self.take_id(), item.rarity, item.bucket, level).from(item.source));
         };
         let id = self.take_id();
         self.items.insert(id, (Item { id, ..item }, at));

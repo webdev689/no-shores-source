@@ -259,7 +259,8 @@ test("the ship's part of the gear message reads back: its power, materials, hand
 });
 
 test("the ship's, crew's, story's and bounties' asks carry the numbers the protocol reads them by", async () => {
-  const wire = await readFile(new URL('../../../crates/protocol/src/gear_wire.rs', import.meta.url), 'utf8');
+  const read = (file: string) => readFile(new URL(`../../../crates/protocol/src/${file}`, import.meta.url), 'utf8');
+  const wire = (await read('gear_wire.rs')) + (await read('lore_wire.rs'));
   const number = (name: string) => Number(new RegExp(`pub const ${name}: u8 = (\\d+);`).exec(wire)?.[1]);
   assert.deepEqual(
     [
@@ -277,10 +278,12 @@ test("the ship's, crew's, story's and bounties' asks carry the numbers the proto
       ASKS.turnInBounty,
       ASKS.takeLetter,
       ASKS.takeAllLetters,
+      ASKS.findLore,
     ],
     [
       ...['INFUSE', 'RECRUIT', 'STATION', 'DISMISS', 'TRAIN', 'CHOOSE_OFFICER', 'GRANT_OFFICERS', 'SCAVENGE'],
       ...['STOP_GATHER', 'FINISH_PROLOGUE', 'TAKE_BOUNTY', 'TURN_IN_BOUNTY', 'TAKE_LETTER', 'TAKE_ALL_LETTERS'],
+      'FIND_LORE',
     ].map(number),
   );
   const numbers = Object.values(ASKS);
@@ -391,4 +394,25 @@ test("the roads' asks carry the numbers the protocol reads them by, with the kee
   });
   const ask = Input.getRootAsInput(new flatbuffers.ByteBuffer(bytes)).ask();
   assert.deepEqual([ask?.kind(), ask?.column(), ask?.node()], [65, 2, 5]);
+});
+
+test('the lore found and lying in the node read back: each found by its number, each lying by its number and place', () => {
+  const builder = new flatbuffers.Builder(64);
+  const found = Gear.createLoreVector(builder, [4, 0, 2]);
+  const lying = Gear.createLoreHereVector(builder, [1, 120.5, -40, 3, 7, 8.25]);
+  Gear.startGear(builder);
+  Gear.addLore(builder, found);
+  Gear.addLoreHere(builder, lying);
+  builder.finish(Gear.endGear(builder));
+  const read = gearOf(Gear.getRootAsGear(new flatbuffers.ByteBuffer(builder.asUint8Array())));
+  assert.deepEqual(read.lore, [4, 0, 2], 'in the order found');
+  assert.deepEqual(read.loreHere, [
+    { chapter: 1, at: [120.5, -40] },
+    { chapter: 3, at: [7, 8.25] },
+  ]);
+  const bare = new flatbuffers.Builder(16);
+  Gear.startGear(bare);
+  bare.finish(Gear.endGear(bare));
+  const none = gearOf(Gear.getRootAsGear(new flatbuffers.ByteBuffer(bare.asUint8Array())));
+  assert.deepEqual([none.lore, none.loreHere], [[], []], 'a room that sends none');
 });

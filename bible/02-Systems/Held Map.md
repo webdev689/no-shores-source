@@ -4,6 +4,9 @@ status: live
 code:
   - client/src/heldmap/heldMap.ts#HeldMap
   - client/src/heldmap/heldMap.ts#layoutKey
+  - client/src/heldmap/heldMapAsk.ts#MapAsk
+  - client/src/heldmap/heldMapAsk.ts#litCells
+  - client/src/heldmap/heldMapAsk.ts#WaterJudge
   - client/src/game/helmMap.ts#HelmMap
   - client/src/heldmap/heldMapLaw.ts#stageOf
   - client/src/heldmap/heldMapLaw.ts#clampView
@@ -61,13 +64,13 @@ on ([[The Held Map Comes to the Social Spaces and Every Land Area]]).
 - **The waters** ([[The Waters Come From the Islands]]). The game opens the waters once, just after its first frame
   (about 0.6 s in WebAssembly, `pageWaters.ts`), and takes their grid at the coast field's own 4.8 km cell
   ([[World Map]], "Waters"). Under the ink, on the charted sea only, lies a faint wash in each water's holder's colour,
-  at 0.26: Home green `#3f7f6f`, the Grey Tithe slate `#6b7785` (its ships' slate), the pirates red `#d95c5c`,
-  Contested amber `#b8862f`. None darkens the parchment by more than 6 in lightness; two washes closer than 10 apart in
+  at 0.26: Home green `#3f7f6f`, the Grey Tithe slate `#6b7785` (its ships' slate), the Lattice its crystal's red
+  lit a third again `#de3d49` (`CRYSTAL.red`). None darkens the parchment by more than 6 in lightness; two washes closer than 10 apart in
   CIEDE2000 are told apart by their hatching.
   Each cell blends the charted sea within a cell of it (`washOf`), and the map samples between cells, so a border is
-  soft over a cell or two and never stepped. The contested waters and the seam are hatched over their wash with fine
-  diagonal lines in a dark amber (`#6b4a12` at 0.3), the Grey Tithe's with level lines in a dark slate (`#4a5563` at
-  0.3), each 7 device pixels apart (`HATCHES`). The wash is laid for the sea charted when the map is raised, so fog
+  soft over a cell or two and never stepped. The Lattice's waters are hatched over their wash with fine level lines in
+  a dark crystal red (`#60141c` at 0.3), the Grey Tithe's with level lines in a dark slate (`#4a5563` at 0.3), each 7
+  device pixels apart (`HATCHES`). The wash is laid for the sea charted when the map is raised, so fog
   of war hides what it hides from the rest of the map.
 - **The waters' names.** Each water is lettered with its name and level band ("The Fen Deeps, 22-26") at its label
   point, the name and a ring round it inked in the band's colour on the difficulty ramp
@@ -79,9 +82,9 @@ on ([[The Held Map Comes to the Social Spaces and Every Land Area]]).
   (`labelPoints`, chamfer distances in cells), then at every point of a grid 10 px apart over the map that lies on its
   sea, nearest the middle of its sea in view first (`HeldMapWaters.letters`); on one line, then on two, its name over
   its band, in a ring as tall.
-- **The key** is one framed panel, a double rule of ink round a fill of the parchment's colour: "Held by" over the four
-  holders' swatches and words in two columns, then "Levels" and the difficulty ramp from "1" to "30". Each swatch is
-  its wash as the map shows it, over the map's parchment (`washedOver`), with the contested's and the Tithe's
+- **The key** is one framed panel, a double rule of ink round a fill of the parchment's colour: "Held by" over the three
+  holders' swatches (Home, Grey Tithe, The Lattice) and words in two columns, then "Levels" and the difficulty ramp from "1" to "30". Each swatch is
+  its wash as the map shows it, over the map's parchment (`washedOver`), with the Tithe's and the Lattice's
   hatching. It stands in a
   corner of the map whose box covers no discovered land (the coast field asked every 4 px across it), no name, no mark
   and no hand: the corner it stands in while that stays clear, else the first clear one, lower left, lower right, upper
@@ -109,7 +112,7 @@ on ([[The Held Map Comes to the Social Spaces and Every Land Area]]).
     1280 × 720, never below 1), so at 1920 × 1080 the words are 20 px and 23 px.
   - *Hierarchy.* Ports strongest: the larger size, the darkest ink and a filled ring. Waters' names in their rings in
     their difficulty's colour. Ruins (a dashed diamond) and nodes (a ring) in a lighter brown, `#5c4631`. The place
-    chosen is named in the route's red-brown. Every word is haloed in the parchment's colour, 3 px, so it reads at
+    chosen is named in the route's red-brown, and a place a step of the quest walked names is ringed in it. Every word is haloed in the parchment's colour, 3 px, so it reads at
     least 4.5 : 1 over the coasts' lines and the washes.
   - *Alignment.* A place's name stands right of its mark, its middle on the mark's, 5 px from it; where the right is
     taken or off the map, the same on the left; where the ship's arrow stands on the mark and both are taken, the same
@@ -135,6 +138,22 @@ on ([[The Held Map Comes to the Social Spaces and Every Land Area]]).
 - **Choosing.** A click picks the discovered place within 16 px of it, or else the point of the sea under it; a node
   is sailed for at its island's coast nearest it, a port at its city. The way there round the land is planned at once ([[Game]], "Sailing") and inked, and a card over the parchment offers Set
   sail (named with its key as bound, Enter or the pad's A), or says why no way leads there. Escape lets the choice go, then lowers the map.
+- **Other waters** ([[The Held Map Takes the Ship to Other Waters, Seen Sailing Away]]). At sea, the water under the
+  pointer, when it is not the one the ship is in, is lit (the pad's cursor stands only in the interface's windows, so the pad lights none): its sea brightened a little with the
+  parchment's light and its edge with the other waters softly lined in the ink, where its cells' share crosses a half
+  (`litCells`, on the page's grid of the waters, the world crate's rule judged once a 4.8 km cell). Its name, holder
+  and level band are written small where the pointer came into it, kept inside the map ("The Elmwater · Grey Tithe ·
+  levels 8-14"), and painted again only as another water is lit, never at each move within one (they stand anew once the map is panned, zoomed or resized); they give way to the
+  prompt while it asks. The ship's own water
+  and land light nothing. Which water the ship and a course's end lie in is the exact rule's, the room's own
+  (`WaterJudge`), never the grid's, which reads a coast's sea as land a cell from it. A course chosen whose planned end
+  lies in another water than the ship asks, and one whose end or ship's water is unknown asks nothing: on a card of parchment ringed in ink a quarter of the
+  way down the map and in its letters: "Travel to <water>?", its holder and level band, and "Yes <key> No <key>", each as the last device used names it (Enter and Escape, or the pad's A
+  and B)
+  (`MapAsk`). Yes (the confirm key, the pad's A, or the card's press, which reads Travel while it asks) lowers the map
+  and the ship travels to the water the prompt named, for the place chosen (a port or a node sailed for at its own
+  point) ([[Sailing]], "Travel by the held map"); No (Escape, the pad's B) lets the prompt go and
+  keeps the course inked, to be sailed the long way with Set sail. A course within the ship's own water asks nothing.
 - **The difficulty.** Beside Set sail the card offers the voyage's difficulty, Normal, Elite or Abyss
   ([[Voyages Choose a Difficulty, Overlook Lives Like the Tower]]): the island's foes as they are, or two or three
   levels higher, paying half again or twice the XP, Aurem and Vestiges. The difficulty picked is the voyage's only once
@@ -180,12 +199,19 @@ The map on land speaks in icon glyphs, with little text, and a table on it says 
     the Arts, the Stair Yard and the Quay).
   - **The glyphs.** Each keeper is a coin in their sign's board colour carrying their sign's device: a star for the
     Mage, a key for the vaults, an anvil for the Weaponsmith, a helm for the Armorsmith, open shears for the Tailor, a
-    horseshoe for the Tack, a ship's wheel for the Harbourmaster, candles for the chandler; each faction's coin in its
+    horseshoe for the Tack, a ship's wheel for the Harbourmaster, candles for the chandler, and the Postmaster, who
+    keeps no stall, a sealed letter on a slate coin, the blue of his vest toward the ink; each faction's coin in its
     cloth with its banner's emblem (the Stormcallers' bolt, the Lamplighters' flame over a lamp, the Veiled's crescent
     and star). Each site: a landing's chevrons, a public event's red-brown diamond, a gate's open arch and a sealed
     door's barred one, an objective's target, foes' crossed blades, a beacon's tower, and a resource node's small ring with
     a cut stone, named in the table for the island's resource ("Brineglass"; [[Material Nodes Stand Where They Are Dressed, Worked by Holding E]]). The player's red-brown arrow points
     where they look.
+  - **A lit coin.** A keeper's coin is lit as their mark over them is ([[Game]], "Over what a player can use";
+    [[A Keeper With Something for You Pulses and Is Seen From Everywhere]]): a quest step asks to speak with them, or
+    letters wait at the Postmaster. It is ringed in the route's red-brown, a quarter wider than the coin, and a second
+    ring goes out from it to twice its width and fades, once every 1.3 s; under reduced motion only the first. The
+    rings are inked by the map's own pass each frame (`pulse_at`, at most 16 coins), so the parchment's picture is
+    never painted again for them, and the gauntlets cover them as they cover the coin.
   - **The table**, framed as the sea's key is, in the corner clear of the gauntlets over the fewest glyphs and names
     (keeping its corner while it can): the land's name at its head; then each glyph the land holds, once, beside what
     it is ("The Mage", "Public event"), in columns of at most seven, and the player's arrow, "You"; under them a bar
@@ -214,7 +240,7 @@ The player starts with the island they arrive on, its port, the place they arriv
   softened.
 - The charted sea's wash is laid when the map is raised: what the ship charts while it is up shows the next time.
 - The route is inked through at most 128 of its points.
-- Quests are not tracked on the map yet.
+- On land, the map marks a keeper a quest step names, not the place of a quest's other goals.
 - The waters' wash is laid when the map is raised, as the charted sea's is. A water's sea is judged a 4.8 km cell at a
   time, so its words may stand over an isle smaller than a cell.
 - A place's mark under a gauntlet's thumb stays there, under it; only its name keeps clear.

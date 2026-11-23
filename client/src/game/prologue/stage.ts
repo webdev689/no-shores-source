@@ -292,7 +292,7 @@ export class Stage {
             ship.place,
             camera,
             slot,
-            { side: ship.hull === 'brig' ? 'player' : 'pirate', shade: ship.shade },
+            { side: ship.hull === 'brig' ? 'player' : 'tithe', shade: ship.shade },
             ship.rig,
           );
       }

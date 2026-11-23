@@ -1,5 +1,5 @@
 use super::*;
-use crate::arms::{LARGE_BOAT, PIRATE_SLOOP};
+use crate::arms::{LARGE_BOAT, TITHE_SLOOP};
 use crate::damage::{Hurt, State};
 
 /// A hull 4 m half long and 1 m half wide, upright at the origin, its bow north.
@@ -49,7 +49,7 @@ fn a_rams_blow_is_a_share_of_the_lesser_hull_by_its_pace_and_face_half_again_dfo
 
 /// A ship of `whole` hull points with `hull` of it left.
 fn worn(whole: f64, hull: f64) -> Damage {
-    let mut damage = Damage::new(&PIRATE_SLOOP, false);
+    let mut damage = Damage::new(&TITHE_SLOOP, false);
     damage.max_hull = whole;
     damage.hull = hull;
     damage
@@ -77,7 +77,7 @@ fn a_ram_is_as_hard_as_the_rammer_can_pay_for_and_takes_men_by_its_blow() {
 
 #[test]
 fn rams_into_its_side_from_whole_bring_it_to_strike_at_its_line_on_the_fourth() {
-    let (mut other, mut mine) = (Damage::new(&PIRATE_SLOOP, false), Damage::new(&LARGE_BOAT, true));
+    let (mut other, mut mine) = (Damage::new(&TITHE_SLOOP, false), Damage::new(&LARGE_BOAT, true));
     let mut rams = 0;
     while other.state == State::Afloat {
         let blow = ram_paid(ram_blow(8.0, true, mine.max_hull, other.max_hull), recoil_room(&mine), RECOIL_SHARE);

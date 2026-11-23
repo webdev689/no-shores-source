@@ -1,14 +1,14 @@
 //! Losing and leaving: what a player who leaves a fight is kept as, what floats for whom across a rejoin, who takes a
 //! ship's lot and its hold, and a captain's ship that goes down after its last player left its fight.
-use super::tests::{met, vessel_mut};
+use super::tests::{floating_for, met, vessel_mut};
 use super::*;
 use crate::battle::Sank;
 use crate::harbour::JOINED;
-use crate::pirates::Pirate;
+use crate::hostiles::Hostile;
 use crate::sea::decks::HOLD_TICKS;
 use naval::damage::Hurt;
 use naval::fight::{CAPTAIN, PLAYER, Sailor};
-use naval::ranks::{Commission, PIRATES, Rank};
+use naval::ranks::{Commission, GREY_TITHE, Rank};
 
 fn kept(sea: &Sea, player: PlayerId) -> gear::Character {
     gear::Character::from_json(&sea.kept_character(player).unwrap()).unwrap()
@@ -56,13 +56,13 @@ fn lost_over(sea: &mut Sea, count: usize) -> Vec<Sank> {
 #[test]
 fn a_ship_joining_a_fight_is_told_with_its_hull() {
     let (mut sea, player) = met(700.0, Rank::Minor);
-    let commission = Commission { faction: PIRATES, rank: Rank::Elite };
-    sea.pirates.sailing.push(Pirate::standing(2, 9, commission, [50_000.0, 50_400.0], 0.0, false));
+    let commission = Commission { faction: GREY_TITHE, rank: Rank::Elite };
+    sea.hostiles.sailing.push(Hostile::standing(2, 9, commission, [50_000.0, 50_400.0], 0.0, false));
     let _ = sea.take_told();
     sea.tick();
     let joined = sea.take_told().into_iter().find(|(to, numbers)| *to == player && numbers[0] == JOINED);
     let numbers = joined.expect("told who joined").1;
-    assert_eq!(numbers[2..], [0.0, f64::from(PIRATES), 3.0, 1.0], "a pirate Elite, in its Schooner");
+    assert_eq!(numbers[2..], [0.0, f64::from(GREY_TITHE), 3.0, 1.0], "a hostile Elite, in its Schooner");
 }
 
 #[test]
@@ -89,10 +89,10 @@ fn what_floats_for_a_player_waits_for_their_account_though_they_drop_and_rejoin(
     sea.leave(player);
     let stranger = sea.join();
     assert!(sea.own(stranger, "account-2"));
-    assert_eq!(sea.flotsam_for(stranger).count(), 0, "another account's pieces are not theirs");
+    assert_eq!(floating_for(&sea, stranger).count(), 0, "another account's pieces are not theirs");
     let back = sea.join();
     assert!(sea.own(back, "account-1"));
-    assert_eq!(sea.flotsam_for(back).count(), 3, "what floats waits for their account");
+    assert_eq!(floating_for(&sea, back).count(), 3, "what floats waits for their account");
 }
 
 #[test]
@@ -122,7 +122,7 @@ fn a_captain_whose_last_player_left_its_fight_still_goes_down() {
     let lost = lost_over(&mut sea, 60 * 60);
     assert_eq!(lost.len(), 1, "its last player sunk first: {lost:?}");
     assert_eq!(
-        (lost[0].pirate.commission.rank, lost[0].pirate.level, &lost[0].players),
+        (lost[0].hostile.commission.rank, lost[0].hostile.level, &lost[0].players),
         (Rank::Minor, 9, &vec![player])
     );
 

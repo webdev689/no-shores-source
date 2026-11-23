@@ -26,7 +26,7 @@ pub const KEEPERS: [(u8, &str); 7] = [
 /// equal), within which a puzzle's points stand.
 pub const PLACE_SQUARE: f64 = 35.0;
 const ISLANDS: [&str; 2] = ["cove", "isle"];
-const SIDES: [&str; 2] = ["tithe", "pirates"];
+const SIDES: [&str; 1] = ["tithe"];
 const HOWS: [&str; 3] = ["sink", "strike", "board"];
 
 /// What a task gives as it is done: its house's Art, a Tenet (1 or 2, 0 none), and fragments to choose.

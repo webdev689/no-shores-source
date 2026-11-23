@@ -24,7 +24,7 @@ import { gearKindName, gearName, moduleNode, modulePresses } from './shipGear.ts
 import { earnedFrom } from '../player/sourceLooks.ts';
 
 /** The menu's tabs, in the order the header shows them. */
-export const TABS = ['character', 'inventory', 'journal', 'ship', 'social', 'guild', 'settings'] as const;
+export const TABS = ['character', 'inventory', 'journal', 'compendium', 'ship', 'social', 'guild', 'settings'] as const;
 export type Tab = (typeof TABS)[number];
 /** The screens a social space's counters open: the vault, each keeper's (npc/npcScreen.ts), the Harbourmaster's and
  *  the bounty board. */
@@ -225,7 +225,7 @@ export const WARES = 6;
 export function vendorsOf(state: GearState): readonly { readonly name: string; readonly wares: readonly Ware[] }[] {
   return VENDORS.map((name, vendor) => ({
     name,
-    wares: state.wares.slice(vendor * WARES, (vendor + 1) * WARES).map((item) => ({
+    wares: state.wares.slice(vendor * WARES, (vendor + 1) * WARES).map((item, place) => ({
       tile: tileOf(item),
       kind: `${RARITIES[item.rarity]?.name ?? ''} ${gearKindName(item.kind)}`,
       level: item.level,
@@ -233,7 +233,7 @@ export function vendorsOf(state: GearState): readonly { readonly name: string; r
       affordable: state.aurem >= item.price,
       press: {
         label: `Hold to buy · ${item.price.toLocaleString()}`,
-        ask: { kind: ASKS.vend, column: vendor, node: item.id, ...(state.day !== undefined && { item: state.day }) },
+        ask: { kind: ASKS.vend, column: vendor, node: place, ...(state.day !== undefined && { item: state.day }) },
         role: 'button',
         held: true,
       },

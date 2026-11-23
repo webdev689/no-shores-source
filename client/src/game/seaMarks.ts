@@ -3,7 +3,7 @@
 // the picture, a crowd of ports thinned to the nearest (a hostile ship's mark is never thinned away), and each named
 // where its name fits. A locked node's mark still shows, so the player sees what lies ahead, but a click on it never
 // lands.
-import type { SeenPirate } from '../network/messages.ts';
+import type { SeenHostile } from '../network/messages.ts';
 import type { CameraPose, Viewport } from '../overworld/overworldCamera.ts';
 import { type Mark, type PlacedMark, placeMarks } from '../overworld/overworldMarks.ts';
 import type { Point2, Vec3 } from '../overworld/ground.ts';
@@ -112,7 +112,7 @@ export function seaMarks(
   pose: CameraPose,
   viewport: Viewport,
   chosen: string | null,
-  hostiles: readonly SeenPirate[] = [],
+  hostiles: readonly SeenHostile[] = [],
 ): { readonly placed: PlacedMark[]; readonly shown: ScreenMark[] } {
   const away = (spot: readonly number[]) => Math.hypot((spot[0] ?? 0) - ship[0], (spot[1] ?? 0) - ship[1]);
   const marks =
@@ -139,10 +139,10 @@ export function seaMarks(
   const named = namesShown(placed);
   const shown = placed.map((each): ScreenMark => {
     const marked = { ...each, chosen: each.id === chosen, named: named.has(each.id) || each.id === chosen };
-    const pirate = hostiles.find((one) => `${HOSTILE_PREFIX}${one.id}` === each.id);
-    if (pirate) {
-      const note = hostileNote(pirate, away([pirate.x, pirate.y]));
-      return { ...marked, kind: 'hostile', note, hostile: hostileLook(pirate), locked: false };
+    const hostile = hostiles.find((one) => `${HOSTILE_PREFIX}${one.id}` === each.id);
+    if (hostile) {
+      const note = hostileNote(hostile, away([hostile.x, hostile.y]));
+      return { ...marked, kind: 'hostile', note, hostile: hostileLook(hostile), locked: false };
     }
     const mark = marks.find((one) => one.id === each.id);
     return {

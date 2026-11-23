@@ -8,6 +8,7 @@ import { CanvasEvents } from '../ui/canvasEvents.ts';
 import { gauntletOver } from '../ui/gauntlet.ts';
 import { Stack } from '../ui/stack.ts';
 import type { Face } from '../ui/text.ts';
+import { seen } from '../ui/seen.ts';
 import { Interface } from '../ui/ui.ts';
 import { UiRenderer, uiScale } from '../ui/uiRenderer.ts';
 
@@ -29,7 +30,7 @@ export class PagePanels {
     this.locked = locked;
     this.events = new CanvasEvents(canvas);
     canvas.addEventListener('pointerdown', (event) => (this.downOnPanel = this.takes(event.offsetX, event.offsetY)));
-    face.then((read) => (this.ui = new Interface(new UiRenderer(gpu, read)))).catch(() => undefined);
+    face.then((read) => (this.ui = seen(new Interface(new UiRenderer(gpu, read))))).catch(() => undefined);
   }
 
   /** Whether the keys and the pad are the panels': words are typed in a field, or the pointer is free and a control
@@ -55,9 +56,10 @@ export class PagePanels {
     this.seconds = Math.min(0.1, (now - this.heardAt) / 1000);
     this.heardAt = now;
     const size = canvasSize(canvas.clientWidth, canvas.clientHeight, window.devicePixelRatio);
-    if (canvas.width !== size.width || canvas.height !== size.height) Object.assign(canvas, size);
+    if (canvas.width !== size.width || canvas.height !== size.height)
+      [canvas.width, canvas.height] = [size.width, size.height];
     const free = !this.locked();
-    const ratio = devicePixelRatio;
+    const ratio = size.ratio;
     const view = { width: canvas.width, height: canvas.height, scale: uiScale(ratio), ratio };
     this.ui?.frame(view, this.events.take(), this.seconds, free, free, this.takesKeys);
     return Boolean(this.ui?.tookWheel);

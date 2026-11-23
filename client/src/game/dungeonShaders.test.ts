@@ -66,10 +66,15 @@ test('no facet of a crystal or a lantern clips, so its brightest still differs f
 });
 
 test('still water tints its bed, mirrors by Fresnel, and shows no gleam of its own glow', () => {
+  // Each written after another, as a frame writes its lights.
   const floats = (burning: (typeof LIGHT_KINDS)[keyof typeof LIGHT_KINDS]) =>
-    lightFloats({ at: [1, 2, 0.4], number: 3, burning });
-  assert.equal(floats(LIGHT_KINDS.water).length, LIGHT_FLOATS);
-  assert.deepEqual(floats(LIGHT_KINDS.water).slice(0, 8), [1, 2, 0.4, 3, ...LIGHT_KINDS.water.colour, 5]);
+    lightFloats({ at: [1, 2, 0.4], number: 3, burning }, new Float32Array(LIGHT_FLOATS * 2), LIGHT_FLOATS).subarray(
+      LIGHT_FLOATS,
+    );
+  assert.deepEqual(
+    [...floats(LIGHT_KINDS.water).subarray(0, 8)],
+    [1, 2, 0.4, 3, ...LIGHT_KINDS.water.colour, 5].map(Math.fround),
+  );
   // Its third shape float is how much of a gleam still water shows of it: the water's own glow lies on it.
   assert.equal(floats(LIGHT_KINDS.water)[10], 0);
   for (const burning of [LIGHT_KINDS.torch, LIGHT_KINDS.brazier, LIGHT_KINDS.crystals, LIGHT_KINDS.rune])

@@ -75,8 +75,8 @@ test('a welcome and a snapshot the server wrote read back to the bit', async () 
     [foe?.id, foe?.kind, brute.health, brute.healthMax, brute.target, brute.side],
     [12, 3, 90, 130, 9, 'foes'],
   );
-  // A pirate brute of the Elite rank in its first phase, alert.
-  assert.deepEqual([foe?.type, foe?.rank, foe?.faction, foe?.phase, foe?.alert], [15, 3, 2, 1, 2]);
+  // A hostile brute of the Elite rank in its first phase, alert.
+  assert.deepEqual([foe?.type, foe?.rank, foe?.faction, foe?.phase, foe?.alert], [4, 3, 1, 1, 2]);
   assert.deepEqual(brute.action, { kind: 'staggered', left: 30, cause: 'parried' });
   // The brute Exposed for 200 ticks and immune to a Charge for 90; the second player Veiled for 150 and Hasted for 30.
   assert.deepEqual(foe?.statuses, { expose: 200, charge: 0, chargeImmune: 90 });
@@ -157,7 +157,15 @@ test('a welcome and a snapshot the server wrote read back to the bit', async () 
   assert.ok(ball?.muzzle);
 });
 
-test('the sea’s snapshot the server wrote reads back as its ships, its pirates, its fights and its walkers on deck', async () => {
+test('the sea’s snapshot the server wrote reads back the traffic ids its room took and the friendly ships it keeps', async () => {
+  const sea = readFromRoom(await written('sea.bin'));
+  assert.equal(sea?.kind, 'snapshot');
+  if (sea?.kind !== 'snapshot') return;
+  assert.deepEqual(sea.taken, [2_605, 777]);
+  assert.deepEqual(sea.friendlies, [{ traffic: 2_605, x: 1_500.5, y: 2_200.25, heading: 0.75, hull: 1 }]);
+});
+
+test('the sea’s snapshot the server wrote reads back as its ships, its hostiles, its fights and its walkers on deck', async () => {
   const sea = readFromRoom(await written('sea.bin'));
   const walker = sea?.kind === 'snapshot' ? sea.players[0] : undefined;
   assert.deepEqual(
@@ -168,12 +176,12 @@ test('the sea’s snapshot the server wrote reads back as its ships, its pirates
   assert.deepEqual(sea?.kind === 'snapshot' ? [sea.tick, sea.ships] : null, [
     77n,
     [
-      // The pace it sailed at, held down near a pirate: 5 where 60 was asked.
+      // The pace it sailed at, held down near a hostile: 5 where 60 was asked.
       { player: 3, x: 50_000, y: 149_880.25, heading: 0, pace: 5 },
       { player: 4, x: 61_000, y: 149_000, heading: Math.PI / 2, pace: 0 },
     ],
   ]);
-  assert.deepEqual(sea?.kind === 'snapshot' ? sea.pirates : null, [
+  assert.deepEqual(sea?.kind === 'snapshot' ? sea.hostiles : null, [
     {
       id: 4,
       x: 1_000.5,
@@ -193,7 +201,7 @@ test('the sea’s snapshot the server wrote reads back as its ships, its pirates
   const named = { name: 'Tithe Sloop', faction: fights[0]?.faction ?? 0, rank: fights[0]?.rank ?? 0 };
   const fight = fightViewOf(fights[0]?.view ?? [], named);
   assert.deepEqual([fight.captain.name, fight.captain.faction, fight.captain.rank], ['Tithe Sloop', 1, 4]);
-  assert.equal(fightViewOf(fights[0]?.view ?? []).captain.name, 'Pirate Sloop', 'unnamed, a Major of the pirates');
+  assert.equal(fightViewOf(fights[0]?.view ?? []).captain.name, 'Tithe Sloop', 'unnamed, a Major of the Grey Tithe');
   assert.deepEqual(
     [fight.clock, fight.over, fight.player.ship.slice(0, 3), fight.captain.ship.slice(0, 3)],
     [0, null, [0, 0, 0], [0, -700, 3]],
@@ -202,8 +210,8 @@ test('the sea’s snapshot the server wrote reads back as its ships, its pirates
   const other = fightViewOf(fights[0]?.view ?? [], named, (faction) => `of ${faction}`).others?.[0];
   assert.deepEqual(
     [other?.name, other?.faction, other?.rank, other?.ship.slice(0, 3), other?.mode],
-    ['of 2', 2, 3, [400, -700, 0.5], 'cruise'],
-    'a pirates’ Elite fights too',
+    ['of 0', 0, 2, [400, -700, 0.5], 'cruise'],
+    'a friendly Major fights too, beside the player',
   );
   // The same fight without it, as a room from before other captains sends any fight: no others, the rest alike.
   const alone = fightViewOf(fights[1]?.view ?? [], named);

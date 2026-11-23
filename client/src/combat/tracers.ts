@@ -330,13 +330,15 @@ export class Tracers {
   }
 
   /** Runs every tracer on by `seconds`: the player's own arrows fly a tick at a time until a block, the ground
-   *  (`groundAt`'s, else level at 0), the sea or one of `bodies` (feet) stops them. What each shot struck keeps its
-   *  look; answers where one struck stone this time, and the way back it came, for the sparks it throws there. */
+   *  (`groundAt`'s, else level at 0), the sea or one of `targets` (feet; `bodies` unless given) stops them. What each
+   *  shot struck, among `bodies`, keeps its look; answers where one struck stone this time, and the way back it came,
+   *  for the sparks it throws there. */
   update(
     seconds: number,
     blocks: readonly Block[],
     bodies: readonly Point[],
     groundAt?: (x: number, y: number) => number | null,
+    targets: readonly Point[] = bodies,
   ): Impact[] {
     const impacts: Impact[] = [];
     this.struck = [];
@@ -373,7 +375,7 @@ export class Tracers {
         const step = Math.min(TICK, left);
         const velocity: Point = [flight.velocity[0], flight.velocity[1], flight.velocity[2] - FALL * step];
         const along: Point = [velocity[0] * step, velocity[1] * step, velocity[2] * step];
-        const { share, met } = firstMet(flight.at, along, blocks, bodies, groundAt);
+        const { share, met } = firstMet(flight.at, along, blocks, targets, groundAt);
         flight.at = add(flight.at, along, share);
         flight.velocity = velocity;
         flight.flown += step * share;

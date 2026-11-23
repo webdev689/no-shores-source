@@ -4,7 +4,7 @@ status: live
 code:
   - content/quests/quests.json
   - content/story/houses.json
-  - crates/gear/src/quests.rs#QuestsDef
+  - crates/gear/src/quest_defs.rs#QuestsDef
   - crates/gear/src/quests.rs#QuestLog
   - crates/gear/src/quests.rs#Event
   - crates/gear/src/arts.rs#WornArts
@@ -12,7 +12,7 @@ code:
   - crates/room/src/quests.rs#set_places
   - crates/room/src/quests.rs#ground_of
   - crates/room/src/quests.rs#held_near
-  - crates/gear/src/quest_defs.rs#GoalDef
+  - crates/gear/src/quest_goals.rs#GoalDef
   - crates/gear/src/quest_defs.rs#speaker_place
   - crates/room/src/steps.rs#Step
   - crates/room/src/steps.rs#way_between
@@ -41,7 +41,8 @@ code:
 # Quests
 
 The houses' roads and the opening that leads to them ([[Each House Has Its Own Road to Its Art]],
-[[The Houses' Roads as Claude Shapes Them]]). The rules are the authority: a player's place in every road is kept in
+[[The Houses' Roads as Claude Shapes Them]]), the base every other quest is built on
+([[The Factions Are the Baseline for Every Quest]]). The rules are the authority: a player's place in every road is kept in
 their character, every goal is judged by the room the player stands in, and every reward is given there. The page only
 shows what the rules say: the tracker, the lines, the marks, and the Art's locks.
 
@@ -62,7 +63,7 @@ out) and its kind:
 | `kill` | Foes falling that the player struck, as a kill's reward is shared | `node`, `place` (within its reach and 40 m past it), `types` (the roster's names), `rank` (this or higher), `island` (`cove` or `isle`), `spawn` (below) |
 | `gather` | A resource node gathered, anywhere | |
 | `cast` | A spell cast | `spell`: its name in `content/arts/arts.json` |
-| `sea` | A hostile ship beaten at sea: sunk, struck or its deck taken | `side` (`tithe` or `pirates`), `how` (`sink`, `strike` or `board`) |
+| `sea` | A hostile ship beaten at sea: sunk, struck or its deck taken | `side` (`tithe`, the Grey Tithe's), `how` (`sink`, `strike` or `board`) |
 | `land` | Landing on a sea island | `island` (`cove` or `isle`) |
 | `scavenge` | A wreck searched on a sea island | |
 | `enter` | Arriving in a node | `node` |
@@ -126,22 +127,28 @@ fragments to choose (`fragments`: how many choices). Which Art is the quest's ho
   its task's number and words; nothing from a word not on the player's own character.
 - **The tracker** shows the quest walked on foot, once the story and Maren's welcome are past: its name, its task and
   each goal's words with its count.
+- **Lore**: a chapter the lore's file gives to a task is found as the task is done ([[Lore]]). Each house's road
+  gives its house's book a chapter a task, the last as the road ends ([[Each House's Lore Book Tells Its Art's Origin]]).
 - **The lines** are the speech system's ([[Speech]]): a quest's `begin` as it is first walked, a task's `end` as it is
   done and the next task's `start` as it begins, a `talk` goal's `scene` as the keeper is spoken with. A page that loads
   mid-road says nothing it has said before.
 - **Speaking with a keeper**: within reach of a counter that a `talk` goal of the task names, the offer reads "Speak
   with" and the keeper's name; pressed, it asks 64 and the lines are said. Otherwise the counter opens as before.
 - **Marks**: `quest_at` stands a mark at its place, and the held map at sea rings the nodes the task's goals name (the land's map, raised on foot, draws no places). Both give way while the map is up.
+- **A keeper to speak with is lit**: while a `talk` goal of the task names a counter, its keeper's mark over them
+  pulses and is seen from everywhere in the social space, and their coin on the land's map pulses
+  ([[A Keeper With Something for You Pulses and Is Seen From Everywhere]]; [[Game]], "Over what a player can use").
 - **What is shown and said**: the page shows, says and marks nothing from a word not on the player's own character
-  (`claimed`). A goal's `scene` is said as the room meets it, a talk goal's included (the press only asks); an
-  escort's or tail's `greet` as its figure first walks, once a task; a goal's failure line and an escort's shout as they
-  happen, once while one waits or is said, and not at all while the story or the welcome holds the screen. Everything
-  else waits for the welcome to pass. The tracker runs the clock as m:ss for a race, a defence, a tail and an unseen
-  step, shows a defended ward's health as a percentage, and is read aloud as a clock starts, at each half minute and in
-  its last 10 s, and as a ward's health passes each quarter. The HUD's mark is named for the task's first unmet goal in
-  the player's node. Figures glide between the room's words, a quarry walking back when it noticed and one arrived
-  standing where it is; the ward's plate stays in view as a fought foe's; a lit point offers no Use. With no Art worn
-  the Character page says "Pledge to a house; its road gives its Art.", and the Arts' screen shows all three locked.
+  (`claimed`). A goal's `scene` is said as the room meets it, a talk goal's included (the press only asks); an escort's
+  or tail's `greet` as its figure first walks, once a task; a goal's failure line and an escort's shout as they happen,
+  once while one waits or is said, and not at all while the story or the welcome holds the screen. Everything else waits
+  for the welcome to pass. The tracker runs the clock as m:ss for a race, a defence, a tail and an unseen step (down
+  from the room's last word on it, which sets it afresh), shows a defended ward's health as a percentage, and is read
+  aloud as a clock starts, at each half minute and in its last 10 s, and as a ward's health passes each quarter. The
+  HUD's mark is named for the task's first unmet goal in the player's node. Figures glide between the room's words, a
+  quarry walking back when it noticed and one arrived standing where it is; the ward's plate stays in view as a fought
+  foe's; a lit point offers no Use. With no Art worn the Character page says "Pledge to a house; its road gives its
+  Art.", and the Arts' screen shows all three locked.
 - **The varied steps**: the page draws the quest figures (`quest_figures`) as the cast's figures or the roster's, the
   ward (`quest_ward`) at its place with its health, and the puzzle's points (`quest_points`), each lit or not, with
   "Use" and its name within reach; the tracker shows the running clock (`quest_clock`); and a goal's line is said as

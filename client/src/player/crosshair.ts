@@ -1,5 +1,6 @@
 import { type Orbit, rayAt } from '../editor/orbit.ts';
 import { rayHit } from './playerCamera.ts';
+import type { FighterView } from '../rules/fighters.ts';
 import type { Block } from '../rules/movementRules.ts';
 
 type Point = readonly [number, number, number];
@@ -67,4 +68,18 @@ export function crosshairPoint(
   else if (along[2] < 0 && origin[2] > 0) share = Math.min(share, origin[2] / -along[2]);
   for (const feet of bodies) share = Math.min(share, bodyHit(origin, along, feet) ?? 1);
   return [origin[0] + along[0] * share, origin[1] + along[1] * share, origin[2] + along[2] * share];
+}
+
+/** The feet of each body drawn (`drawn`, by the room's number) that a player's aimed shot would stop on, as the room
+ *  flies it: a living foe, never a dead one nor one of the players' side (`foes`, the fight's). */
+export function shotBodies(
+  drawn: ReadonlyMap<number, { readonly x: number; readonly y: number; readonly z: number }>,
+  foes: ReadonlyMap<number, { readonly view: Pick<FighterView, 'side' | 'action'> }>,
+): Point[] {
+  return [...drawn]
+    .filter(([id]) => {
+      const view = foes.get(id)?.view;
+      return view !== undefined && view.side !== 'players' && view.action.kind !== 'dead';
+    })
+    .map(([, { x, y, z }]) => [x, y, z] as const);
 }

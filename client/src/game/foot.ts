@@ -2,7 +2,7 @@ import { QUIET, pushedIn, showAnimaEdge } from '../combat/animaMoment.ts';
 import { Arrivals } from '../combat/arrivals.ts';
 import { AttackFeel, type DrawnFigure } from '../combat/attackFeel.ts';
 import { DropsShown } from '../combat/drops.ts';
-import { marksSeen } from '../combat/marksOver.ts';
+import { litMarksSeen, marksHidden, marksSeen } from '../combat/marksOver.ts';
 import { FightEffects } from '../combat/fightEffects.ts';
 import { Fighting } from '../combat/fighting.ts';
 import { FoeFigures } from '../combat/foeFigures.ts';
@@ -15,7 +15,7 @@ import type { Difficulty } from '../heldmap/heldMap.ts';
 import { ASKS, DROPPED, type GearState } from '../network/gearMessages.ts';
 import { RoomConnection, type RoomLink, type Snapshot } from '../network/roomConnection.ts';
 import type { CardAt } from '../player/cards.ts';
-import { crosshairPoint } from '../player/crosshair.ts';
+import { crosshairPoint, shotBodies } from '../player/crosshair.ts';
 import { CARD_NEAREST_M, type Placed } from '../player/figures.ts';
 import { Glides } from '../player/glide.ts';
 import { IDLE, type InputFrame } from '../player/input.ts';
@@ -39,7 +39,7 @@ import { ACCOUNT_CHANGED, type GearHere } from './gearScreen.ts';
 import { keysShown, onFoot } from './hints.ts';
 import { type Standing, standingOf } from './hudLaw.ts';
 import { windowRect } from './nodes.ts';
-import { PlazaLife, countersOf } from './plazaLife.ts';
+import { PlazaLife, countersOf, floorOver } from './plazaLife.ts';
 import { PublicView } from './publicView.ts';
 import { openNodeAlone } from './footNode.ts';
 import { nodeRoom } from './rooms.ts';
@@ -91,6 +91,8 @@ export class Foot {
   readonly seas: Difficulty;
   /** The ground's height under a world point as drawn: the land's, or a dungeon's floor. */
   readonly groundAt: (x: number, y: number) => number | null;
+  /** The floor a placed figure stands on: in a social space on a pier, a podium or a landing (`floorOver`). */
+  readonly floor: (x: number, y: number) => number;
   /** The ceiling over a world point in a dungeon, which the camera stays under; none on a node's land. */
   private readonly roof: ((x: number, y: number) => number | null) | null;
   private readonly module: WebAssembly.Module;
@@ -160,7 +162,7 @@ export class Foot {
     this.foes = new FoeFigures(parts.roster);
     this.feel = new AttackFeel(parts.combat, context.movement.tickSeconds);
     this.prompt = context.usePrompt;
-    const floor = (x: number, y: number) => context.movement.standing(x, y).z;
+    this.floor = floorOver(node.kind === 'social' ? opened.boxes : [], (x, y) => context.movement.standing(x, y).z);
     const placing: Others = {
       place: (dress, x, y, facing) => {
         const one = { id: nextOtherId(), x, y, z: 0, facing, dress, anim: 'idle', frame: null, spin: false };
@@ -172,7 +174,7 @@ export class Foot {
         context.forge.forget(one.id);
       },
     };
-    this.plaza = node.kind === 'social' ? new PlazaLife(node, placing, floor) : null;
+    this.plaza = node.kind === 'social' ? new PlazaLife(node, placing, this.floor) : null;
     this.publicView = new PublicView(node.id, this.feel, {
       boxes: opened.boxes,
       courses: [context.movement, parts.combat],
@@ -389,8 +391,8 @@ export class Foot {
     dressInGear(walker, forge, this.held.gear, this.dressed);
     this.tellPrologue();
     this.plaza?.frame(WORLD_CLOCK.seconds(), this.gear?.gear ?? null);
-    const standing = [...foes.placed.values(), ...this.otherPlayers.placed.values()];
-    const bodies = standing.map((placed) => [placed.x, placed.y, placed.z] as const);
+    const near = [...foes.placed.values(), ...this.otherPlayers.placed.values()];
+    const bodies = near.map((placed) => [placed.x, placed.y, placed.z] as const);
     const { feel } = this;
     // The tumble starts the way the figure was last drawn facing (the aim, while aiming).
     walker.fall = this.falling.figure(fight.standing, walker.player.body, walker.you.facing);
@@ -400,7 +402,7 @@ export class Foot {
     const shown = this.player.frame(still ? IDLE : { ...controls, locked: true }, this.steps, seconds, clock, {
       running: true,
       hands: hands && !still,
-      markOf: () => crosshairPoint(camera(), aspect, this.boxes, bodies, groundAt),
+      markOf: () => crosshairPoint(camera(), aspect, this.boxes, shotBodies(foes.placed, fight.foes), groundAt),
       zoomOf: () => handsZoom(camera(), walker.player.view),
       handsSeconds: feel.shownSeconds(fight.player, seconds),
     });
@@ -447,9 +449,10 @@ export class Foot {
     const eye = { x: eyeX, y: eyeY, nearest };
     figures.push(...foes.cards(fight, forge, eye, clock, frameTicks, tickSeconds, effects.flashes, foeFeel));
     // The player's own shots leave the weapon as drawn: the first person's muzzle, or the figure's along its shot.
-    const muzzle = walker.muzzle;
-    const [gearNow, floor] = [this.gear?.gear ?? null, (x: number, y: number) => movement.standing(x, y).z];
-    const marked = markedHere(gearNow, countersOf(this.node), floor, this.context.trips.props());
+    const [muzzle, gearNow, floor] = [walker.muzzle, this.gear?.gear ?? null, this.floor];
+    const marked = markedHere(gearNow, countersOf(this.node), floor, this.context.trips.props(), this.context.speak);
+    const lit = litMarksSeen(marked, shot.eye, clock);
+    const hidden = marksHidden(marked, shot.eye, clock);
     const laid = (gearNow?.drops ?? []).filter((drop) => drop.kind !== DROPPED.chest);
     const dropped = dropsLaid(this.drops, laid, clock, shot.eye, [
       ...questRings(gearNow, floor, clock),
@@ -558,11 +561,11 @@ export class Foot {
       },
       public: shownPublic.shown,
     };
-    const edge = this.standing;
-    const hints = keysShown(edge, onFoot(walker, shown, fight, !controls.locked && !paused));
+    const standing = this.standing;
+    const hints = keysShown(standing, onFoot(walker, shown, fight, !controls.locked && !paused));
     const dark = arrivals.darkOf(fight.player, clock);
     const { props, quest, sting } = shownPublic;
-    return { shot, figures, standing: edge, marks, swings, fight: fought, hints, dark, props, quest, sting };
+    return { shot, figures, standing, marks, lit, hidden, swings, fight: fought, hints, dark, props, quest, sting };
   }
 
   /** Where the player stands with the section's edge, as the room said. */

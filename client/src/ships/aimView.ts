@@ -332,3 +332,13 @@ export class AimView {
     pass.end();
   }
 }
+
+/** The aim views made, one a GPU: its shader, pipelines and buffers are made once, never again with each fight. */
+const AIM_VIEWS = new WeakMap<Gpu, AimView>();
+
+/** The one AimView `gpu` draws the aim with, made the first time it is asked for. */
+export function aimViewOf(gpu: Gpu): AimView {
+  const kept = AIM_VIEWS.get(gpu) ?? new AimView(gpu);
+  AIM_VIEWS.set(gpu, kept);
+  return kept;
+}

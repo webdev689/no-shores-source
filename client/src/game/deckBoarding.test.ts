@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import type { SeenDeck, SeenFlotsam } from '../network/seaHarbour.ts';
-import type { InputFrame } from '../player/input.ts';
+import { BINDS, IDLE, type InputFrame } from '../player/input.ts';
 import type { FightCaptain, FightVessel, FightView } from '../rules/fightRules.ts';
 import { deckToWorld } from '../ships/deck.ts';
 import { deckCameraBlocks } from '../ships/spars.ts';
@@ -20,7 +20,7 @@ const vessel = (x: number, state: FightVessel['state']): FightVessel =>
 const fight = (state: FightVessel['state']): FightView =>
   ({
     player: vessel(0, 'afloat'),
-    captain: { ...vessel(20, state), name: 'Pirate Sloop' } as FightCaptain,
+    captain: { ...vessel(20, state), name: 'Tithe Sloop' } as FightCaptain,
     others: [],
   }) as unknown as FightView;
 
@@ -48,6 +48,7 @@ const FRAME = {
   figures: [{ card: {}, x: 0, y: -2, z: 0.9, flip: false }],
   standing: { kind: 'inside' },
   marks: new Float32Array(),
+  lit: [],
   swings: new Float32Array(),
   fight: {},
   hints: [['Mouse', 'Swing']],
@@ -56,13 +57,25 @@ const FRAME = {
 
 /** The fight on foot stood on its deck, as the land's is, its frames counted, its arrivals and its leaving. */
 function standOnFoot() {
-  const kept = { frames: 0, arrived: 0, left: 0, grid: 0, camera: 0, stand: null as unknown as StandOnDeck };
+  const kept = {
+    frames: 0,
+    arrived: 0,
+    left: 0,
+    grid: 0,
+    camera: 0,
+    hands: false,
+    stand: null as unknown as StandOnDeck,
+  };
   kept.stand = (context, _node, grid, open) => {
     kept.grid = grid.length;
     kept.camera = context.cameraBlocks?.length ?? 0;
     open(() => undefined);
     const foot = {
-      frame: () => ((kept.frames += 1), FRAME),
+      frame: (_controls: unknown, _seconds: number, _time: number, how: { hands: boolean }) => (
+        (kept.frames += 1),
+        (kept.hands = how.hands),
+        FRAME
+      ),
       arrive: () => void (kept.arrived += 1),
       leave: () => void (kept.left += 1),
     };
@@ -105,7 +118,7 @@ test('a struck captain alongside is boarded with E: the boarder stands on its de
   assert.deepEqual([shown.figures[0]?.x, shown.figures[0]?.y], deckToWorld(lying, 0, -2, 0.9).slice(0, 2));
   assert.deepEqual(
     [boarding.words?.place, boarding.words?.line],
-    ['Pirate Sloop', 'Aboard: its crew stands to meet you'],
+    ['Tithe Sloop', 'Aboard: its crew stands to meet you'],
   );
   assert.equal(fightAsk(atSea), null, 'E asks nothing while its crew fights');
   boarding.frame(sea, struck, INPUT);
@@ -245,4 +258,26 @@ test('a hold won while its deck stands up is still told apart from what floated 
   await settle();
   boarding.frame(sea, fight('struck'), INPUT);
   assert.match(boarding.words?.line ?? '', /^Its hold: a chest$/);
+});
+
+test('with the pad played last, the boarder fights on its deck with the pointer free, as on land', async () => {
+  const foot = standOnFoot();
+  const { sea } = seaRoom();
+  const boarding = new Boarding(CONTEXT, foot.stand);
+  const struck = fight('struck');
+  sea.deck = { aboard: [[1, 4]], hull: 0, snapshot: new Uint8Array(), holdLeft: null };
+  const free = { ...INPUT, controls: { ...IDLE, locked: false } };
+  boarding.frame(sea, struck, free);
+  await settle();
+  const device = BINDS.device;
+  try {
+    BINDS.device = 'pad';
+    boarding.frame(sea, struck, free);
+    assert.equal(foot.hands, true, 'the pad fights with the pointer free');
+    BINDS.device = 'keys';
+    boarding.frame(sea, struck, free);
+    assert.equal(foot.hands, false, 'keys and mouse fight only once the pointer is locked');
+  } finally {
+    BINDS.device = device;
+  }
 });

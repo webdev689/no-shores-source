@@ -2,6 +2,7 @@
 //! player's own gear, written for them alone whenever it changes, with every column of every item's nodes spelled out
 //! so a browser draws them without the rules.
 
+use crate::lore_wire::FIND_LORE;
 use crate::messages;
 use flatbuffers::{FlatBufferBuilder, WIPOffset};
 use gear::arts::ArtAsk;
@@ -194,6 +195,7 @@ pub fn asked_of(ask: &messages::Ask<'_>) -> Option<Asked> {
         SPEAK => Asked::Gear(Ask::Speak { keeper: column }),
         CHOOSE_FRAGMENT => Asked::Gear(Ask::ChooseFragment { art: column, fragment: node }),
         USE_POINT => Asked::UsePoint { point: column },
+        FIND_LORE => Asked::FindLore { chapter: u16::try_from(item).ok()? },
         TO_SHIP => Asked::ToShip,
         _ => return None,
     })
@@ -283,6 +285,7 @@ pub fn ask_offset<'built>(builder: &mut FlatBufferBuilder<'built>, asked: &Asked
         Asked::Scavenge { wreck } => args = messages::AskArgs { kind: SCAVENGE, node: *wreck, ..args },
         Asked::StopGather => args = messages::AskArgs { kind: STOP_GATHER, ..args },
         Asked::UsePoint { point } => args = messages::AskArgs { kind: USE_POINT, column: *point, ..args },
+        Asked::FindLore { chapter } => args = messages::AskArgs { kind: FIND_LORE, item: u32::from(*chapter), ..args },
         Asked::ToShip => args = messages::AskArgs { kind: TO_SHIP, ..args },
         Asked::Grant(Grant::Vestige { rarity, slot, level }) => {
             args = messages::AskArgs {
@@ -355,27 +358,7 @@ pub fn gear_bytes(room: &Room, player: PlayerId) -> Option<Vec<u8>> {
     let scavenged = builder.create_vector(&room.scavenged(player));
     let items: Vec<_> = character.items.values().map(|(item, at)| item_offset(&mut builder, item, *at, 0)).collect();
     let emblems: Vec<u16> = character.emblems.iter().filter_map(|id| gear::emblems::number_of(id)).collect();
-    // In a social space, the emblems the Tailor sells that day.
     let emblems_sold = if room.in_social_space(player) { gear::emblems::sold_on(room.day()) } else { Vec::new() };
-    // In a social space, the day's wares, each numbered by its place among its vendor's.
-    let wares: Vec<_> = if room.in_social_space(player) {
-        gear::vendor::Vendor::ALL
-            .into_iter()
-            .flat_map(|vendor| {
-                let level = if vendor.for_ship() { character.ship_level() } else { character.level() };
-                gear::vendor::wares(vendor, room.day(), level)
-            })
-            .enumerate()
-            .map(|(place, mut ware)| {
-                ware.id = u32::try_from(place % gear::vendor::WARES).unwrap_or_default();
-                let price = gear::vendor::price(ware.rarity);
-                item_offset(&mut builder, &ware, At::Carried, price)
-            })
-            .collect()
-    } else {
-        Vec::new()
-    };
-    let wares = Some(builder.create_vector(&wares));
     let items = Some(builder.create_vector(&items));
     let vestiges: Vec<_> = character
         .vestiges
@@ -457,7 +440,7 @@ pub fn gear_bytes(room: &Room, player: PlayerId) -> Option<Vec<u8>> {
         identified: found.identified,
         answered: found.answered,
         nodes: Some(builder.create_vector(&nodes)),
-        wares,
+        wares: Some(more.wares),
         trim: Some(builder.create_vector(&found.trim.to_floats())),
         to_next,
         to_next_needs,
@@ -519,6 +502,10 @@ pub fn gear_bytes(room: &Room, player: PlayerId) -> Option<Vec<u8>> {
         bounty_xp,
         bounty_aurem,
         mail: Some(crate::mail_wire::mail_offset(&mut builder, character)),
+        lore: Some(crate::lore_wire::found_of(&mut builder, room, player)),
+        lore_here: Some(crate::lore_wire::here_of(&mut builder, room, player)),
+        recharge: room.recharge_times(),
+        next_id: character.id_to_take(),
         elite_playlist_taken: today.elite_playlist,
         abyss_playlist_taken: today.abyss_playlist,
         elite_playlist_clears: this_week.elite_playlist,

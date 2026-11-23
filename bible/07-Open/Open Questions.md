@@ -9,9 +9,9 @@ Decisions waiting on the owner. None is in force until the owner decides it and 
   ([[Enemy Factions Start With the Grey Tithe]]).
 - **Being the pirate.** Whether a player may attack merchantmen for their cargo, and what notoriety it brings
   ([[The Sea Is a Patrol Zone, and the Ship Is Gear]]).
-- **The opening voyage.** The prologue's first attackers at sea are pirates, its own call; the lore has the opening's
-  ships the Grey Tithe's, unknown under grey sails. The chart that disagrees with the coast is not in it yet
-  ([[The Game Shows the Mystery and Explains Almost None of It]]).
+- **The opening voyage.** The prologue's first attackers at sea are the Grey Tithe's
+  ([[Pirates Are Replaced by the Grey Tithe]]), as the lore has them, unknown under grey sails. The chart that disagrees
+  with the coast is not in it yet ([[The Game Shows the Mystery and Explains Almost None of It]]).
 - **Friendly ships' port factions.** Which port faction each friendly ship belongs to
   ([[The Waters Come From the Islands]]).
 - **Ship materials.** Which materials there are, what each upgrade costs, and the small islands' wreckage: built as

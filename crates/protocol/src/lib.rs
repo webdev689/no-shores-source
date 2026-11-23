@@ -39,6 +39,7 @@ pub mod fleet;
 pub mod gear_wire;
 mod item_wire;
 pub mod land;
+mod lore_wire;
 mod mail_wire;
 pub mod pack;
 pub mod plates_wire;
@@ -214,6 +215,8 @@ pub fn read_course(bytes: &[u8]) -> Result<(Vec<[f64; 2]>, u16), String> {
 #[derive(Clone, Debug, PartialEq)]
 pub enum SeaInput {
     Course(Vec<[f64; 2]>, u16),
+    /// A course into other waters, travelled by the held map.
+    Travel(Vec<[f64; 2]>, u16),
     /// No points and one heading: the ship comes to rest turned to it.
     Face(f64),
     Orders(Orders),
@@ -268,7 +271,9 @@ pub fn read_sea_input(bytes: &[u8]) -> Result<SeaInput, String> {
             _ => Err("a course's legs turn it: a facing comes with no points".to_owned()),
         };
     }
-    read_course(bytes).map(|(points, pace)| SeaInput::Course(points, pace))
+    let travel = course.travel();
+    read_course(bytes)
+        .map(|(points, pace)| if travel { SeaInput::Travel(points, pace) } else { SeaInput::Course(points, pace) })
 }
 
 /// Orders as their bytes: what a browser sends the sea room in a fight, written from Rust for tests.
@@ -344,6 +349,18 @@ pub fn course_bytes(points: &[[f64; 2]], pace: u16) -> Vec<u8> {
         &mut builder,
         &messages::CourseArgs { points, pace, ..messages::CourseArgs::default() },
     );
+    builder.finish(course, None);
+    builder.finished_data().to_vec()
+}
+
+/// A course to travel by as its bytes: what a browser sends the sea room from the held map, written from Rust for tests.
+#[must_use]
+pub fn travel_bytes(points: &[[f64; 2]], pace: u16) -> Vec<u8> {
+    let mut builder = flatbuffers::FlatBufferBuilder::new();
+    let numbers: Vec<f64> = points.iter().flatten().copied().collect();
+    let points = Some(builder.create_vector(&numbers));
+    let args = messages::CourseArgs { points, pace, travel: true, ..messages::CourseArgs::default() };
+    let course = messages::Course::create(&mut builder, &args);
     builder.finish(course, None);
     builder.finished_data().to_vec()
 }

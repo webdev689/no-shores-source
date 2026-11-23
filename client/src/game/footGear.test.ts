@@ -7,6 +7,7 @@ import type { QuestState } from '../network/questMessages.ts';
 import {
   GATHER_S,
   GATHER_STIR_M,
+  LORE_REACH_M,
   NODE_REACH_M,
   POINT_REACH_M,
   STOCK_MOST,
@@ -16,6 +17,7 @@ import {
   useAt,
 } from './footGear.ts';
 import { markedHere } from './overheadMarks.ts';
+import { LORE_PICTURE } from './compendium/loreArt.ts';
 import { QUESTS } from './quests/questBook.ts';
 import { OPEN_AT } from './gearScreen.ts';
 import { SERVED_M, countersOf } from './plazaLife.ts';
@@ -236,4 +238,18 @@ test('a ward a quest defends by name is ringed under a beam where it stands', ()
     [],
     'not in this room',
   );
+});
+
+test('within reach of a chapter of the lore lying in the world, E asks the room to find it; it wears a book over it', () => {
+  const asked: GearAsk[] = [];
+  const gear = { ...lying, loreHere: [{ chapter: 7, at: [40, 0] as const }] } as unknown as GearState;
+  const ask = (each: GearAsk) => asked.push(each);
+  assert.equal(useAt(40 + LORE_REACH_M + 0.2, 0, { stations: [] }, gear, ask), null, 'out of reach');
+  const read = useAt(40 + LORE_REACH_M - 0.1, 0, { stations: [] }, gear, ask);
+  assert.match(read?.words ?? '', /^Read /);
+  read?.run();
+  assert.deepEqual(asked, [{ kind: ASKS.findLore, item: 7 }]);
+  const mark = markedHere(gear, { stations: [] }, () => 2).find((each) => each.picture === LORE_PICTURE);
+  assert.deepEqual(mark?.at.slice(0, 2), [40, 0], 'over where it lies');
+  assert.ok((mark?.at[2] ?? 0) > 2.5 && (mark?.at[2] ?? 0) < 2 + 2, 'floating a little over the ground');
 });

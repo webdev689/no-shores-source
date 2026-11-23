@@ -6,6 +6,7 @@ import { groundTiles, type RmbBlock, TILES } from './blocks.ts';
 import { addPolygon, type MeshData } from './mesh.ts';
 import { CELL_M, type CityPlan, type PlanCell, type Solid, solidReach } from './plan.ts';
 import { SOLID_TEXELS_PER_METRE } from './solidMesh.ts';
+import { finished } from './steps.ts';
 
 /** How far a plate's skirt reaches under it where nothing built stands beside it. */
 const SKIRT_M = 30;
@@ -62,6 +63,16 @@ export function groundPlates(
   groundLayers: readonly number[],
   paving: number,
 ): { tops: Float32Array; tiles: Uint8Array; width: number } {
+  return finished(groundPlateSteps(plan, blocks, groundLayers, paving));
+}
+
+/** The plates as `groundPlates` lays them, a cell a step (`steps.ts`). */
+export function* groundPlateSteps(
+  plan: CityPlan,
+  blocks: ReadonlyMap<string, RmbBlock>,
+  groundLayers: readonly number[],
+  paving: number,
+): Generator<void, { tops: Float32Array; tiles: Uint8Array; width: number }> {
   const side = sideOf(plan);
   const byPlace = platedCells(plan);
   // A plan of placed pieces alone (a layout's) has no plates: its tile texture is one texel, not the grid's whole
@@ -76,7 +87,7 @@ export function groundPlates(
     const use = byPlace.get(cellIndex(side, column, row))?.use;
     return use === 'avenue' || use === 'landmark';
   };
-  levelled.forEach((cell) => {
+  for (const cell of levelled) {
     const [west, north] = [
       cell.column * CELL_M + plan.grid.west - plan.centre[0],
       cell.row * CELL_M + plan.grid.north - plan.centre[1],
@@ -109,7 +120,8 @@ export function groundPlates(
         tiles[slot] = tile ? (groundLayers[tile.record] ?? 0) : paving;
         tiles[slot + 1] = tile ? tile.turns : PAVED_TILE;
       }
-  });
+    yield;
+  }
   return { tops: new Float32Array(tops), tiles, width };
 }
 
@@ -155,6 +167,16 @@ export function plateSkirts(
   picture: { width: number; height: number },
   into: (cell: PlanCell) => MeshData,
 ): void {
+  finished(plateSkirtSteps(plan, layer, picture, into));
+}
+
+/** The skirts as `plateSkirts` lays them, a cell a step (`steps.ts`). */
+export function* plateSkirtSteps(
+  plan: CityPlan,
+  layer: number,
+  picture: { width: number; height: number },
+  into: (cell: PlanCell) => MeshData,
+): Generator<void, void> {
   const side = sideOf(plan);
   const levelled = platedCells(plan);
   const [scaleU, scaleV] = [SOLID_TEXELS_PER_METRE / picture.width, SOLID_TEXELS_PER_METRE / picture.height];
@@ -201,6 +223,7 @@ export function plateSkirts(
           out,
         );
     }
+    yield;
   }
 }
 
@@ -226,6 +249,14 @@ const BUCKET_M = 64;
 
 /** Whether a world point lies on the city's pads or under any of its solids, for nature to keep off. */
 export function clearedGround(plan: CityPlan): (x: number, y: number) => boolean {
+  return finished(clearedGroundSteps(plan));
+}
+
+/** Solids bucketed a step (`steps.ts`). */
+const CLEARED_STEP = 256;
+
+/** The clear ground as `clearedGround` finds it, its solids bucketed a few hundred a step. */
+export function* clearedGroundSteps(plan: CityPlan): Generator<void, (x: number, y: number) => boolean> {
   const rects: (readonly [number, number, number, number])[] = plan.pads.map((pad) => pad.bounds);
   const solids: Solid[] = [...plan.works, ...plan.landmark, ...plan.social.solids];
   type Entry = { rects: number[]; solids: number[]; clearings: number[] };
@@ -242,14 +273,16 @@ export function clearedGround(plan: CityPlan): (x: number, y: number) => boolean
         add(bucket(column, row));
   };
   rects.forEach((rect, k) => spread(rect, (entry) => entry.rects.push(k)));
+  yield;
   const clearings = plan.clearings ?? [];
   const reaches = solids.map(solidReach);
-  solids.forEach((solid, k) =>
+  for (const [k, solid] of solids.entries()) {
     spread(
       [solid.at[0] - reaches[k], solid.at[1] - reaches[k], solid.at[0] + reaches[k], solid.at[1] + reaches[k]],
       (entry) => entry.solids.push(k),
-    ),
-  );
+    );
+    if (k % CLEARED_STEP === CLEARED_STEP - 1) yield;
+  }
   clearings.forEach(({ at, radius }, k) =>
     spread([at[0] - radius, at[1] - radius, at[0] + radius, at[1] + radius], (entry) => entry.clearings.push(k)),
   );

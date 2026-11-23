@@ -1,7 +1,8 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { GLOW_RAMPS } from '../elementGlow.ts';
-import { LIGHT, LIGHT_WGSL, lightLevel, lightOf, lightSize } from './lightLayer.ts';
+import { countingGpu } from '../gpuForTests.ts';
+import { LIGHT, LIGHT_WGSL, LightLayer, lightLevel, lightOf, lightSize } from './lightLayer.ts';
 import { RAMP, swingRampColour } from './swingLook.ts';
 
 const brightest = (colour: readonly number[]) => Math.max(...colour);
@@ -32,4 +33,17 @@ test('the light is a quarter of the picture each way, every pixel of it covered'
   assert.deepEqual(lightSize(1920, 1080), [480, 270]);
   assert.deepEqual(lightSize(1281, 721), [321, 181]);
   assert.ok(!/NaN|undefined|\$\{/.test(LIGHT_WGSL));
+});
+
+test('a frame no emitter gives light in makes none of the layer’s passes; one that does makes all four', () => {
+  const layer = new LightLayer(countingGpu().gpu, 'float');
+  const begun: string[] = [];
+  const pass = { setPipeline() {}, setBindGroup() {}, setViewport() {}, draw: () => begun.push('draw'), end() {} };
+  const encoder = { beginRenderPass: () => (begun.push('pass'), pass) } as unknown as GPUCommandEncoder;
+  const depth = { width: 64, height: 32, createView: () => ({}) } as unknown as GPUTexture;
+  layer.encode(encoder, {} as GPUTextureView, depth, () => undefined);
+  assert.deepEqual(begun, []);
+  layer.encode(encoder, {} as GPUTextureView, depth, (light) => light.draw(6));
+  assert.equal(begun.filter((each) => each === 'pass').length, 4);
+  assert.deepEqual(begun.slice(0, 3), ['pass', 'draw', 'draw'], 'the depth primed, then the emitter drawn');
 });

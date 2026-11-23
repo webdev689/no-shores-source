@@ -6,6 +6,7 @@
 
 use crate::Layout;
 use crate::book::Book;
+use crate::seat::Seating;
 use city::solids::{Material, Shape, Solid};
 
 /// A box a body runs into: west, north, east, south, top and bottom, metres, as the city's.
@@ -13,6 +14,9 @@ pub use city::collision::Box2 as Box3;
 
 /// Props and solids lower than this over their foot are stepped over, metres.
 const STEPPED_OVER_M: f64 = 0.45;
+/// How far a body's head stands over its feet, and how far from a box its middle keeps, metres.
+const HEAD_M: f64 = 1.8;
+const BODY_CLEAR_M: f64 = 0.5;
 /// An arch's opening is this share of its width, as the browser draws it (client/src/city/solidMesh.ts).
 const ARCH_OPENING_WIDTH: f64 = 0.8;
 
@@ -136,18 +140,33 @@ pub fn within(boxes: &[Box3], bounds: [f64; 4]) -> impl Iterator<Item = Box3> + 
     })
 }
 
-/// Every box of a layout.
+/// Every box of a layout, to the centimetre.
 #[must_use]
 pub fn boxes_of(layout: &Layout, book: &Book) -> Vec<Box3> {
+    // To the centimetre, grown out to it so no box shrinks: thousands of them are written into each node's file.
+    seated_boxes(&layout.seating, &layout.ring, book)
+        .into_iter()
+        .map(|found| {
+            let [west, north, east, south, top, bottom] = found;
+            let (down, up) =
+                (|value: f64| (value * 100.0).floor() / 100.0, |value: f64| (value * 100.0).ceil() / 100.0);
+            [down(west), down(north), up(east), up(south), up(top), down(bottom)]
+        })
+        .collect()
+}
+
+/// Every box of what is seated in a section's ring.
+#[must_use]
+pub fn seated_boxes(seating: &Seating, ring: &[[f64; 2]], book: &Book) -> Vec<Box3> {
     let mut boxes = Vec::new();
-    let section = Section::of(&layout.ring);
-    boxes.extend(layout.seating.walls.iter().copied());
-    for building in layout.seating.buildings.iter().filter(|building| !building.open) {
+    let section = Section::of(ring);
+    boxes.extend(seating.walls.iter().copied());
+    for building in seating.buildings.iter().filter(|building| !building.open) {
         let Some(measure) = book.measure(building.model, true) else { continue };
         let [west, north, east, south] = building.footprint;
         boxes.push([west, north, east, south, building.at[2] + measure.max[1], building.at[2] + measure.min[1]]);
     }
-    for prop in &layout.seating.props {
+    for prop in &seating.props {
         let Some(measure) = book.measure(prop.model, false) else { continue };
         if measure.max[1] - measure.min[1] < STEPPED_OVER_M || !section.reaches(prop.footprint) {
             continue;
@@ -155,7 +174,7 @@ pub fn boxes_of(layout: &Layout, book: &Book) -> Vec<Box3> {
         let [west, north, east, south] = prop.footprint;
         boxes.push([west, north, east, south, prop.at[2] + measure.max[1], prop.at[2] + measure.min[1]]);
     }
-    for solid in &layout.seating.solids {
+    for solid in &seating.solids {
         if matches!(solid.material, Material::Paving | Material::Path | Material::Lawn | Material::Earth)
             || solid.size[2] < STEPPED_OVER_M
         {
@@ -173,16 +192,22 @@ pub fn boxes_of(layout: &Layout, book: &Book) -> Vec<Box3> {
             _ => boxes.push([west, north, east, south, top, bottom]),
         }
     }
-    // To the centimetre, grown out to it so no box shrinks: thousands of them are written into each node's file.
     boxes
-        .into_iter()
-        .map(|found| {
-            let [west, north, east, south, top, bottom] = found;
-            let (down, up) =
-                (|value: f64| (value * 100.0).floor() / 100.0, |value: f64| (value * 100.0).ceil() / 100.0);
-            [down(west), down(north), up(east), up(south), up(top), down(bottom)]
-        })
-        .collect()
+}
+
+/// Whether a body standing at `at` on a floor `floor` metres high stands clear of every box: none taller than a
+/// step over its feet and under its head reaches within a body's width of it.
+#[must_use]
+pub fn stands_clear(boxes: &[Box3], at: [f64; 2], floor: f64) -> bool {
+    !boxes.iter().any(|&[west, north, east, south, top, bottom]| {
+        let [x, y] = at;
+        x > west - BODY_CLEAR_M
+            && x < east + BODY_CLEAR_M
+            && y > north - BODY_CLEAR_M
+            && y < south + BODY_CLEAR_M
+            && bottom < floor + HEAD_M
+            && top > floor + STEPPED_OVER_M
+    })
 }
 
 #[cfg(test)]

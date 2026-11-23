@@ -32,7 +32,62 @@ export interface Laid {
   readonly index: number;
 }
 
-const glyphOf = (face: Face, char: string): Glyph | null => face.glyph(char.codePointAt(0) ?? 0) ?? face.glyph(MISSING);
+/** Where a style's letters stand past the face's own: a bold letter at its code point this far on, an italic one that
+ *  far, in Unicode's private planes, so styled words are laid, measured and wrapped as any words are. */
+const STYLED = { bold: 0xf0000, italic: 0x100000 } as const;
+export type Style = keyof typeof STYLED;
+
+/** `words` in `style`: each letter of the face's plane at its styled code point; a space or a newline stays itself. */
+export const styled = (words: string, style: Style): string =>
+  Array.from(words, (char) => {
+    const code = char.codePointAt(0) ?? 0;
+    return char === ' ' || char === '\n' || code > 0xffff ? char : String.fromCodePoint(code + STYLED[style]);
+  }).join('');
+
+/** A bold glyph: each cell doubled into the next column, so a stroke stands two cells wide; the pen a column further. */
+function emboldened(glyph: Glyph): Glyph {
+  const { width, height, cells } = glyph;
+  const wide = width + 1;
+  const bold = new Uint8Array(wide * height);
+  for (let row = 0; row < height; row++)
+    for (let column = 0; column < width; column++)
+      if (cells[row * width + column]) bold.fill(1, row * wide + column, row * wide + column + 2);
+  return { ...glyph, advance: glyph.advance + 90, width: width > 0 ? wide : 0, cells: width > 0 ? bold : cells };
+}
+
+/** Rows over the baseline an italic letter leans a column right for. */
+const LEAN_ROWS = 3;
+
+/** An italic glyph: each row moved a whole column right for every `LEAN_ROWS` over the baseline, left under it, so
+ *  it leans and stays on the face's cells; the pen where it was. */
+function leaned(glyph: Glyph): Glyph {
+  const { width, height, cells, bottom } = glyph;
+  if (width === 0) return glyph;
+  const shifts = Array.from({ length: height }, (unused, row) => Math.floor((bottom + height - row) / LEAN_ROWS));
+  const least = Math.min(...shifts);
+  const wide = width + Math.max(...shifts) - least;
+  const leaning = new Uint8Array(wide * height);
+  for (let row = 0; row < height; row++)
+    for (let column = 0; column < width; column++)
+      leaning[row * wide + column + (shifts[row] ?? 0) - least] = cells[row * width + column] ?? 0;
+  return { ...glyph, left: glyph.left + least, width: wide, cells: leaning };
+}
+
+/** Styled glyphs made from the face's own, once each, so the atlas lays each once. */
+const madeGlyphs = { bold: new WeakMap<Glyph, Glyph>(), italic: new WeakMap<Glyph, Glyph>() };
+const MAKE = { bold: emboldened, italic: leaned } as const;
+
+function glyphOf(face: Face, char: string): Glyph | null {
+  const code = char.codePointAt(0) ?? 0;
+  const style: Style | null = code >= STYLED.italic ? 'italic' : code >= STYLED.bold ? 'bold' : null;
+  const plain = (point: number) => face.glyph(point) ?? face.glyph(MISSING);
+  if (!style) return plain(code);
+  const glyph = plain(code - STYLED[style]);
+  if (!glyph) return null;
+  const made = madeGlyphs[style].get(glyph) ?? MAKE[style](glyph);
+  madeGlyphs[style].set(glyph, made);
+  return made;
+}
 
 /** How far the pen moves past `char`, `glyph` in the face, at `size`, in units: the glyph's advance and the sheet's
  *  spacing after it; nothing for a glyph the face does not hold. */

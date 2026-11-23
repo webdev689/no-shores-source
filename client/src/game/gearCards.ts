@@ -94,11 +94,6 @@ export function ownOf(item: Pick<GearItem, 'columns' | 'chosen'>): Trait | null 
   };
 }
 
-/** The traits an item gives now: each column's chosen one, once bought. */
-export function chosenTraits(item: GearItem): string[] {
-  return traitsOf(item).map(({ id }) => id);
-}
-
 /** Each chosen trait's id and its column's kind. */
 function traitsOf(item: Pick<GearItem, 'columns' | 'chosen'>): { readonly id: string; readonly kind: number }[] {
   return item.columns.flatMap((column, index) => {

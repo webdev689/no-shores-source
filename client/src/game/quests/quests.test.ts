@@ -108,6 +108,22 @@ test('within reach of a counter a talk goal names, E asks the room to speak with
   assert.deepEqual(said, [opening(goals[0]?.scene)], 'met: its scene');
 });
 
+test('a keeper a talk goal names has something for the player, once the story and the welcome are past', async () => {
+  const { quests, frame } = roads();
+  quests.hear(gear(1, 0, { counts: [0, 1, 0] }));
+  await frame(false);
+  assert.equal(quests.wants('stormcallers'), false, 'not before the welcome is past');
+  await frame();
+  assert.deepEqual(
+    ['stormcallers', 'veiled', 'lamplighters', 'mage', 'mail'].map((counter) => quests.wants(counter)),
+    [true, true, false, false, false],
+    'the two still to speak with; not one heard already, nor one no goal names',
+  );
+  quests.hear(gear(1, 0, { counts: [1, 1, 1] }));
+  await frame();
+  assert.equal(quests.wants('stormcallers'), false, 'spoken with');
+});
+
 test('the talk offer stands where the counter would open; elsewhere the counter opens as before', () => {
   const { quests } = roads();
   quests.hear(gear(1, 0));
@@ -285,4 +301,21 @@ test("a step's ward stands in the room the player is in, its plate held in view"
     quests.wardPlate(() => 0),
     null,
   );
+});
+
+test('the tracker runs a step’s clock down between the room’s words, and each word sets it again', async () => {
+  const { quests, frame, clock } = roads();
+  const { task, goal } = stepOf(STORM, 'race');
+  const index = QUESTS[STORM - 1]?.tasks[task]?.goals.findIndex((each) => each === goal) ?? -1;
+  const shown = () => quests.tracked?.steps[index]?.clock;
+  clock(1_000);
+  quests.hear(gear(STORM, task, { pledge: STORM, clock: 270 }));
+  await frame();
+  assert.equal(shown(), 270);
+  clock(61_000);
+  assert.equal(shown(), 210, 'a minute on, a minute less, with no word between');
+  quests.hear(gear(STORM, task, { pledge: STORM, clock: 205 }));
+  assert.equal(shown(), 205, 'the room’s word sets it');
+  clock(1_000_000);
+  assert.equal(shown(), 0, 'never below none');
 });

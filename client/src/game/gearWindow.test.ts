@@ -131,6 +131,32 @@ test('the tabs open their pages; the arrows on a tab move to the next and open i
   assert.equal(ui.boxOf('shelf-materials'), null, 'the Journal is shown');
 });
 
+test('two arrows on a tab in one frame move two tabs on, never closing the menu', () => {
+  const { ui, frame, open } = menu();
+  open('character');
+  ui.focusOn('tab-character');
+  frame([
+    { kind: 'key', key: 'ArrowRight' },
+    { kind: 'key', key: 'ArrowRight' },
+  ]);
+  frame();
+  frame();
+  assert.ok(ui.boxOf('gear-screen'), 'the menu stays open');
+  assert.equal(ui.focusedId, 'tab-journal');
+  // From a tab walked to but not shown, the arrow steps from it; onto the tab shown, it only takes the focus.
+  ui.focusOn('tab-social');
+  frame([{ kind: 'key', key: 'ArrowRight' }]);
+  frame();
+  frame();
+  assert.equal(ui.focusedId, 'tab-guild');
+  ui.focusOn('tab-social');
+  frame([{ kind: 'key', key: 'ArrowRight' }]);
+  frame();
+  frame();
+  assert.ok(ui.boxOf('gear-screen'), 'onto the tab shown, the menu stays open');
+  assert.equal(ui.focusedId, 'tab-guild');
+});
+
 test("the pad's bumpers turn the menu's tabs, round from the last to the first, and a toggling ask shuts it", () => {
   const { ui, frame, open, window } = menu();
   open('character');

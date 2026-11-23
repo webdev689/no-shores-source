@@ -117,9 +117,9 @@ test('an item’s detail lays out its nodes: bought, to buy once unlocked, and w
 
 test('each vendor’s stall shows its six wares of the day, bought for their price in Aurem, the Shipwright’s last', () => {
   const six = (first: Partial<GearItem>, second: Partial<GearItem>) => [
-    item({ id: 0, level: 9, price: 2_000, ...first }),
-    item({ id: 1, level: 9, price: 600, ...second }),
-    ...[2, 3, 4, 5].map((id) => item({ id, ...first })),
+    item({ id: 40, level: 9, price: 2_000, ...first }),
+    item({ id: 40, level: 9, price: 600, ...second }),
+    ...[2, 3, 4, 5].map(() => item({ id: 40, ...first })),
   ];
   const wares = [
     ...six({ kind: 13, rarity: 2 }, { kind: 14, rarity: 1 }),
@@ -136,7 +136,8 @@ test('each vendor’s stall shows its six wares of the day, bought for their pri
     ],
   );
   assert.equal(armorsmith?.wares.length, 6);
-  // Asked by the day it was shown, so the room refuses it once the day has turned.
+  // Asked by its place, not the number it takes once bought, and by the day it was shown, so the room refuses it once
+  // the day has turned.
   assert.deepEqual(weaponsmith?.wares[0]?.press.ask, { kind: ASKS.vend, column: 1, node: 0, item: 20_400 });
   assert.equal(weaponsmith?.wares[0]?.press.label, 'Hold to buy · 2,000');
   assert.equal(shipwright?.name, 'The Shipwright');

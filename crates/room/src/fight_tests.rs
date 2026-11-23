@@ -24,12 +24,12 @@ fn stand(room: &mut Room, number: u8, x: f64, y: f64) -> FighterId {
 
 /// A brute 1.5 m north of the origin: it never guards, parries or dodges.
 fn stand_foe(room: &mut Room) -> FighterId {
-    stand(room, 15, 0.0, -1.5)
+    stand(room, 4, 0.0, -1.5)
 }
 
 /// A swordsman far out of sight, and a copy of it as though it stood 1.5 m north of the origin, to strike from.
 fn far_foe(room: &mut Room) -> (FighterId, Fighter) {
-    let id = stand(room, 14, 0.0, -60.0);
+    let id = stand(room, 2, 0.0, -60.0);
     let mut near = *room.fighter(id).unwrap();
     near.body = standing(0.0, -1.5);
     near.aim = core::f64::consts::PI;

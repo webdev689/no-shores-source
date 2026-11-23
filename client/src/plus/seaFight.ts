@@ -48,7 +48,7 @@ export interface SeaFightModel {
     readonly state: 'afloat' | 'struck' | 'sinking';
     readonly hostile: boolean;
     readonly boardKey: string | null;
-    /** The captain's faction (1 the Grey Tithe, 2 pirates), whose emblem the card frames. */
+    /** The captain's faction (1 the Grey Tithe), whose emblem the card frames. */
     readonly faction: number;
     /** The colour its bar is in, as a foe's plate's: its rank's band, or an ally's. */
     readonly band: string;

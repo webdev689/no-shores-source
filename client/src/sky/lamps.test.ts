@@ -70,6 +70,26 @@ test('a great fire farther off is lit before a nearer lantern whose light falls 
   );
 });
 
+test('of a city full of lamps, the nearest lit are those a full sort finds, in its order, two the same in turn', () => {
+  let seed = 7;
+  const next = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
+  // Some lamps the same distance off, so the order where they tie counts.
+  const places = Array.from({ length: 900 }, (_unused, index) =>
+    index % 5 === 0 ? place(30, index) : place(next() * 600 - 300, index),
+  );
+  const ranked = places
+    .map((one) => ({ one, away: Math.hypot(one.at[0], one.at[1], one.at[2] - 1) - one.reachM }))
+    .sort((first, second) => first.away - second.away);
+  const lamps = lampsRound([0, 0, 1], places, null, 0, 0);
+  assert.deepEqual(
+    lamps.map((lamp) => lamp.light[0]),
+    ranked.slice(0, LAMPS_MOST).map(({ one, away }) => {
+      const cut = ranked[LAMPS_MOST]?.away ?? Infinity;
+      return one.light[0] * flicker(one.seed, 0) * Math.min(1, (cut - away) / 10);
+    }),
+  );
+});
+
 test("the eye's place goes to the uniform wrapped, marked known; without it, unknown", () => {
   const known = skyNumbers(AFTERNOON, [], [WRAP_M + 5, -3, 420]);
   const row = 14 * 4;
@@ -100,5 +120,30 @@ test("a landmass's city and its layouts light their own lamps: one view set or c
   assert.deepEqual(
     lamps.current.map((lamp) => lamp.at[0]),
     [4],
+  );
+});
+
+test("of a ruin's thousand lamps the nearest are lit, nearest first, however the list runs", () => {
+  const places: LampPlace[] = Array.from({ length: 1400 }, (_unused, k) => ({
+    at: [(k * 137.3) % 3000, (k * 71.9) % 3000, 10],
+    reachM: 5 + (k % 7),
+    light: [1, 0.2, 0.1],
+    seed: k,
+  }));
+  const eye = [1500, 1500, 40] as const;
+  const lit = lampsRound(eye, places, null, 0, 0).map((lamp) => lamp.fromEye.join());
+  const nearest = [...places]
+    .sort(
+      (a, b) =>
+        Math.hypot(a.at[0] - 1500, a.at[1] - 1500, a.at[2] - 40) -
+        a.reachM -
+        (Math.hypot(b.at[0] - 1500, b.at[1] - 1500, b.at[2] - 40) - b.reachM),
+    )
+    .slice(0, LAMPS_MOST)
+    .map((place) => [place.at[0] - 1500, place.at[1] - 1500, place.at[2] - 40].join());
+  assert.deepEqual(lit, nearest);
+  assert.deepEqual(
+    lampsRound(eye, [...places].reverse(), null, 0, 0).map((lamp) => lamp.fromEye.join()),
+    nearest,
   );
 });

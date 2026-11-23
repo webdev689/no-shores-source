@@ -15,7 +15,6 @@ code:
   - client/src/cinema/weather.ts#Weather
   - client/src/cinema/weather.ts#mixWeather
   - client/src/cinema/weather.ts#swellGained
-  - client/src/cinema/weather.ts#strikeAt
   - client/src/cinema/atmosphere.ts#Atmosphere
   - client/src/cinema/atmosphereShader.ts#ATMOSPHERE_WGSL
   - client/src/cinema/birds.ts#Birds
@@ -95,8 +94,7 @@ A `Weather` is a handful of numbers: how overcast the sky is, how hard it rains 
 layer of cloud to fly through, the wind, lightning's flash and its bolt, how deep under the sea the eye is, fire's
 glow from above, and how many times its height the swell is drawn. `CLEAR` is none of it. A director eases from one
 weather to the next with `mixWeather`; a bolt belongs to whichever end is nearer, and clouds or a glow thin to nothing
-rather than snap. `strikeAt` gives a storm's lightning: a stroke every few seconds, flickering twice over a third of a
-second, its bolt somewhere round a point. `WEATHERS` holds one of each kind to start from.
+rather than snap. A storm's flash and bolt come from `Lightning`, above.
 
 A weather may carry an hour of a story's day. A weather with one is told to the game's sky ([[Sky]]): the sky draws
 its light at that hour, its cloud, rain, snow, fog and lightning, and the atmosphere pass keeps only what the sky

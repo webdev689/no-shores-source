@@ -54,8 +54,8 @@ export function deckCrew(roster: readonly FoeType[], faction: number, rank: numb
 }
 
 /** The type a captain of `faction` at `rank` stands at the wheel as: a Boss its faction's own Boss (Captain Brannoc
- *  Thule for the Grey Tithe), every other rank, and a Boss whose faction has none, its faction's mate (the Tithe-Mate,
- *  the pirates' Captain); none for a faction with no deck. */
+ *  Thule for the Grey Tithe), every other rank, and a Boss whose faction has none, its faction's mate (the
+ *  Tithe-Mate); none for a faction with no deck. */
 export function captainType(roster: readonly FoeType[], faction: number, rank: number): FoeType | null {
   const deck = deckOf(roster, faction);
   return (rank >= BOSS ? deck?.boss : null) ?? deck?.mate ?? null;

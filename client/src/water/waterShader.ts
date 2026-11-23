@@ -129,14 +129,15 @@ fn ring_radius(ring: u32) -> f32 {
   return frame.grid.x * pow(ring_growth(), f32(ring) - 1.0);
 }
 
+// A row of the draw is a ring of quads, the farthest first, and its quads run round it from any segment, on past
+// the last into the first (surfaceDisc.ts), so a draw is an arc of rings.
 @vertex
-fn surface_vertex(@builtin(vertex_index) index: u32) -> Surface {
+fn surface_vertex(@builtin(vertex_index) index: u32, @builtin(instance_index) row: u32) -> Surface {
   let rings = u32(frame.grid.z);
   let segments = u32(frame.grid.w);
-  let quad = index / 6u;
   let corner = CORNERS[index % 6u];
-  let ring = rings - 1u - quad / segments + corner.y;
-  let segment = quad % segments + corner.x;
+  let ring = rings - 1u - row + corner.y;
+  let segment = (index / 6u + corner.x) % segments;
   let radius = ring_radius(ring);
   let angle = f32(segment) / f32(segments) * TAU;
   let offset = vec2f(cos(angle), sin(angle)) * radius;

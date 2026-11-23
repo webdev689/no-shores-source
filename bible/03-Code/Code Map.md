@@ -26,11 +26,14 @@ decision, made in the same change as its entry here.
 | `client/src/game/audio/ambience/dsp.ts` | The seeded die and the filters a place's room is cut from |
 | `client/src/player/` | The player layer: the [[Player]] as the Test Ground and the game both play it, with DFO's keys and Destiny's pad as the player binds them, the forge's figure and its frames; the fight's buttons and the moves a fight holds a figure to, the foes' dresses and figures, the crosshair, and the [[Arts]]' pictures |
 | `client/src/gpu.ts` | Starts WebGPU, or tells the player why it cannot ([[WebGPU Only]]) |
+| `client/src/perfMeter.ts`, `gpuTimer.ts` | What the game's frames cost: the time between them, the script's, each pass's on the GPU, and the `?perf` readout ([[Game]], "Drawing") |
 | `client/src/face.ts`, `trueType.ts` | The glyphs Pixelify Sans misreads or lacks, drawn in code on its grid for the interface to draw, and made into a font for the held map's lettering ([[Interface]], "The face") |
+| `client/src/frustum.ts` | What a view sees: a view-projection's six planes, and whether a box, a sphere or a set of points reaches inside them, for every drawer that leaves out what is out of view |
 | `client/src/shadow.ts` | The sun's shadow map round the eye, which every drawer of the [[Game]]'s scene casts into and reads |
 | `client/src/soundSamples.ts` | The recorded sounds the owner picked from Freesound, fetched as they are wanted (long ones a chunk at a time), held within a budget, levelled and played for the [[Interface]]'s cues and the world's, with their credits |
 | `client/src/soundMeasure.ts` | How loud a recording is, measured once where it is decoded: its level, its rush and its loudness over each window the game asks |
 | `client/src/contentCache.ts` | R2's files and ranges of them, kept in the browser's own storage within 1 GB, since a file named by its hash never changes |
+| `client/src/seeded.ts` | A seeded stream of numbers in [0, 1), the same in every engine, which any layer draws from |
 | `client/src/keptNames.ts` | Moves what a browser kept under the game's former name (`overlook.`) to `noshores.`, once, before any page reads it ([[The Game Is Named No Shores]]) |
 | `client/src/elementGlow.ts` | The [[Weapon Glow]]'s colours, outline field, shader and bursts, which the figures, the first person and the fight's effects draw with |
 | `client/editor/`, `client/src/editor/` | The [[World Editor]]: its page, and the layer that paints the continents and shapes the land, in 2D, in 3D and close up, and sails the Sloop alone or, through what its page offers, in a fleet room |
@@ -61,7 +64,7 @@ decision, made in the same change as its entry here.
 | `client/src/ruinedName.ts` | A ruined city's name as the city crate names it, for the held map and arriving ([[Cities]], "Ruins") |
 | `client/src/rules/feelEvents.ts` | What a sea room tells of its fights beside the World Editor's events, and the one mapping that hands each to the fight's feel ([[Naval Combat]]) |
 | `server/seaPorts.ts` | The ports the sea room is opened with, each continent's city read from its land file as the game reads it ([[Server]]) |
-| `client/src/editor/aimCamera.ts`, `client/src/editor/aimStation.ts`, `client/src/editor/shipClear.ts`, `client/src/ships/aimView.ts`, `client/src/game/seaSight.ts` | The sea fight's aim: the eye eased out to its battery's station, clear of the hull, the guns and every sail's swing, looking square off the side and short of a ship alongside, the lay drawn as screen-wide dashed ribbons, rings, posts and strike marks in three tones, and the crosshair and aim line ([[Naval Combat]], "The aim, as DFO's") |
+| `client/src/editor/aimCamera.ts`, `client/src/editor/aimStation.ts`, `client/src/editor/shipClear.ts`, `client/src/ships/aimView.ts`, `client/src/game/seaSight.ts` | The sea fight's aim: the eye eased round the ship and in over its rail to its battery's station aboard, in a gap of its rig, looking off the side at the lay, the lay drawn as screen-wide dashed ribbons fanned by its spread, rings, posts and strike marks in three tones, and the crosshair and aim line ([[Naval Combat]], "The aim, as DFO's") |
 | `client/src/overworld/` | The overworld layer: the [[Overworld]]'s camera, pick, sea routes, voyages, marks and bird's-eye view of an island's side, pure, with no page or drawing |
 | `client/src/textures/` | The textures layer: the [[Procedural Textures]], every picture the forged world wears and the ground's sets, painted in code |
 | `client/src/models/`, `content/forged/` | The models layer, which imports nothing: the [[Forged Models]], DFO's town buildings, props and room kit built from the three measured tables in `content/forged/` |
@@ -83,7 +86,7 @@ decision, made in the same change as its entry here.
 | `server/accounts/` | The [[Accounts]]' own Worker over D1: guests, usernames and passwords, Discord sign-in, sessions, the judge of the [[Names]] players set for others to read, the Roster (friends, companies, guilds, blocks, mutes, reports, where each player is), the chat's hall and its law, the characters the rooms hold, Find a Company's queues, and the database's migrations |
 | `crates/` | Every Rust crate, one folder each, named after its crate |
 | `crates/world` | The world's structure: the layout of continents and isles, its rules and exact geometry ([[World Map]]) |
-| `crates/world/src/waters.rs`, `traffic.rs`, `traffic_routes.rs`, `ports.rs` | The sea's nine waters, their holders, names, borders and seam; the three port cities; and the friendly traffic's routes and ships ([[World Map]], "Waters" and "Traffic") |
+| `crates/world/src/waters.rs`, `traffic.rs`, `traffic_routes.rs`, `ports.rs` | The sea's nine waters, their holders, names and borders; the three port cities; and the friendly traffic's routes and ships ([[World Map]], "Waters" and "Traffic") |
 | `crates/world/src/weather.rs` | The weather over the whole world from world time and place: the wind, the sea state and the shelter of the open water upwind and of a roadstead ([[World Map]], "Weather and travel"; [[Water]]) |
 | `crates/world-wasm` | The world rules for the browser: a door crate, text in and text out |
 | `crates/land` | The [[Land]]: relief, erosion and water from the painted coasts, the owner's edits and places, and the ground anywhere to the metre |
@@ -154,18 +157,18 @@ Node's modules (tests may) and never uses WebGL. As the code arrives, the layers
 - **The network** speaks to the server and knows nothing of drawing.
 - **The entry points** wire them together. They wire; they do not implement ([[Small Files]]).
 
-Declared so far: `rules`, `forge`, `textures`, `models` and `overworld` (each imports nothing), `network` and `water`
-(each imports `rules`), `terrain` (imports `rules` and `water`), `nature` (imports `rules` and `water`), `ships`
-(imports `rules`, the water's sun and samples, `textures` and `plus`), `editor` (imports `rules`, `water`, `terrain`,
-`ships`, `islands`, `city`, `layout` and `ui`, which draws its panel and the names over its views),
-`combat` (imports `rules`, `network`, `plus`, `player`, the editor's camera and `ui`, whose nodes its display builds),
-`player` (imports `rules`, `network`, `forge`, `firstperson` and the editor's camera), `testground` (imports what
-`player` does, `player` itself, `combat`, the editor's panel helpers and `ui`, which draws the fight's display there),
-`firstperson` (imports `forge`), `city` (imports `models`, `textures`, `rules` and `water`), `heldmap` (imports
-`forge`, `overworld`, `plus`, the first person's picture drawer and `ui`),
-`plus` (imports nothing), `ui` (imports `plus`), `thread` (imports `ui`), `islands` (imports `rules`, `water`,
-`textures`, `models` and `sky`), `speech` (imports `plus` and `ui`), `cinema` (imports `water`, `combat`, `plus` and
-`ui`) and `game` (imports the layers it wires, `combat`, `cinema` and `speech` among them;
+Declared so far: `rules`, `sky`, `forge`, `textures`, `models`, `overworld` and `plus` (each imports nothing),
+`network` and `water` (each imports `rules` and `sky`), `terrain` and `nature` (each imports `rules`, `water` and
+`sky`), `ships` (imports `rules`, the water's sun and samples, `textures`, `plus` and `sky`), `editor` (imports
+`rules`, `water`, `terrain`, `ships`, `islands`, `city`, `layout`, `sky` and `ui`, which draws its panel and the names
+over its views), `combat` (imports `rules`, `network`, `plus`, `player`, the editor's camera, `sky` and `ui`, whose
+nodes its display builds), `player` (imports `rules`, `network`, `forge`, `firstperson` and the editor's camera),
+`testground` (imports what `player` does, `player` itself, `combat`, the editor's panel helpers and `ui`, which draws
+the fight's display there), `firstperson` (imports `forge`), `city` (imports `models`, `textures`, `rules`, `water`
+and `sky`), `layout` (imports `city`), `heldmap` (imports `forge`, `overworld`, `plus`, the first person's picture
+drawer and `ui`), `ui` (imports `plus`), `thread` (imports `ui`), `islands` (imports `rules`, `water`, `textures`,
+`models` and `sky`), `speech` (imports `plus` and `ui`), `cinema` (imports `water`, `combat`, `plus` and `ui`) and
+`game` (imports the layers it wires, `combat`, `cinema` and `speech` among them;
 [[The Bars and the Fight Wear the Plus Kit]]). The code `flatc` makes, in `generated/`, is groundwork any layer may
 import.
 

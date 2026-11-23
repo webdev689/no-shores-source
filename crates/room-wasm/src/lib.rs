@@ -12,6 +12,7 @@ use protocol::SeaInput;
 use room::asks::{Counter, CounterKind};
 use room::deck::WalkRefused;
 use room::fleet::Fleet;
+use room::sea::travel::TravelRefused;
 use room::sea::{CourseRefused, HelmRefused, Sea};
 use room::winds::epoch_of;
 use room::{Floor, NodeKind, PlayerId, Refused, Room, Section};
@@ -209,7 +210,7 @@ struct SeaRequest {
     ports: Vec<world::traffic::Port>,
 }
 
-/// Opens the sea round the continents of a layout, its pirates' chances drawn from `seed`: the text is a layout file,
+/// Opens the sea round the continents of a layout, its hostile ships' chances drawn from `seed`: the text is a layout file,
 /// or a layout with its ports (`SeaRequest`), whose lanes the Grey Tithe patrols. Answers whether the text was either.
 pub fn open_sea(text: &[u8], seed: u32) -> bool {
     let Ok(text) = std::str::from_utf8(text) else { return false };
@@ -304,6 +305,13 @@ pub fn input(player: PlayerId, bytes: &[u8]) -> i32 {
                 Err(_) => return NOT_AN_INPUT,
                 Ok(SeaInput::Course(points, pace)) => sea.course(player, &points, pace),
                 Ok(SeaInput::Face(heading)) => sea.face(player, heading),
+                Ok(SeaInput::Travel(points, pace)) => {
+                    return match sea.travel(player, &points, pace) {
+                        Ok(()) => TAKEN,
+                        Err(TravelRefused::Course(CourseRefused::TooSoon)) => TOO_SOON,
+                        Err(_) => REFUSED,
+                    };
+                }
                 Ok(SeaInput::Orders(orders)) => sea.orders(player, orders),
                 Ok(SeaInput::Chase(ship)) => {
                     sea.chase(player, ship);
@@ -422,7 +430,7 @@ pub unsafe extern "C" fn room_open_node(address: *const u8, length: usize) -> u3
     u32::from(open_node(unsafe { std::slice::from_raw_parts(address, length) }))
 }
 
-/// Opens the sea round the layout file's text written at `address`, `length` bytes long, its pirates drawn from
+/// Opens the sea round the layout file's text written at `address`, `length` bytes long, its hostiles drawn from
 /// `seed`; 1 if it opened, 0 if not.
 ///
 /// # Safety

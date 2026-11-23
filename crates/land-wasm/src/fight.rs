@@ -1,4 +1,4 @@
-//! A fight over the open landmass: the player's Sloop and one pirate captain in its rank's hull, or the captains a
+//! A fight over the open landmass: the player's Sloop and one hostile captain in its rank's hull, or the captains a
 //! begin request sets upon it (the naval crate's `Fight`). It stays here between calls, as the open landmass does; a
 //! request begins one, steps it, or ends it. Requests and answers are JSON: the fight's own numbers never cross, so a
 //! request carries only the player's orders.
@@ -180,6 +180,7 @@ fn lay_json(fight: &Fight, aim: Option<&Aim>, waters: &impl Waters, time: f64) -
             "time": stop.time, "point": stop.point, "water": stop.water, "strike": stop.strike,
         }))).collect::<Vec<_>>(),
         "radius": shown.radius,
+        "spread": shown.spread,
         "on_target": shown.on_target,
     })
 }

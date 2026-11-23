@@ -30,6 +30,7 @@ pub mod item;
 pub mod kinds;
 pub mod left;
 pub mod looks;
+pub mod lore;
 pub mod mail;
 pub mod objectives;
 mod old_hands;
@@ -89,6 +90,8 @@ mod item_tests;
 mod keep_tests;
 #[cfg(test)]
 mod looks_tests;
+#[cfg(test)]
+mod lore_tests;
 #[cfg(test)]
 mod mail_tests;
 #[cfg(test)]

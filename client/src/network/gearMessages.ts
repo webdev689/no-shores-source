@@ -1,5 +1,3 @@
-import type * as flatbuffers from 'flatbuffers';
-import { Ask } from '../../../generated/messages/ts/overlook/wire/ask.ts';
 import type { Gear } from '../../../generated/messages/ts/overlook/wire/gear.ts';
 import type { GearItem as GearItemTable } from '../../../generated/messages/ts/overlook/wire/gear-item.ts';
 import type { GearOfficer as GearOfficerTable } from '../../../generated/messages/ts/overlook/wire/gear-officer.ts';
@@ -7,6 +5,7 @@ import { type ActivityRecord, activityOf } from './activityRecord.ts';
 import { type ArtState, artsOf } from './artMessages.ts';
 import { type GearLetter, mailOf } from './mailMessages.ts';
 import { type QuestState, questOf } from './questMessages.ts';
+import { LORE_ASKS, type LoreState, loreOf } from './loreMessages.ts';
 import { type GearShip, shipOf } from './shipMessages.ts';
 
 export type { GearOfficer, GearShip } from './shipMessages.ts';
@@ -99,6 +98,7 @@ export const ASKS = {
   /** A letter's Vestige or item taken from the mail, the letter by its number in `item`; every letter with room. */
   takeLetter: 71,
   takeAllLetters: 72,
+  ...LORE_ASKS,
   /** A return to the player's ship, which the room answers (107 yes, or 105 fallen, 106 struck in the last ten
    *  seconds) before the page leaves for the sea. */
   toShip: 73,
@@ -203,7 +203,7 @@ export interface GearNode {
 /** A player's own gear, as the room sends it to them alone when it changes. `stocks` holds their Weapon and Armor
  *  Fragments, Weapon and Armor Essence and Fruit of Dagon; `answer` is their last ask's (0 done), `identified` the
  *  item a Vestige last opened to, `answered` how many asks have been answered. */
-export interface GearState {
+export interface GearState extends LoreState {
   readonly xp: bigint;
   readonly level: number;
   readonly prestige: number;
@@ -223,8 +223,8 @@ export interface GearState {
   readonly identified: number;
   readonly answered: number;
   readonly nodes: readonly GearNode[];
-  /** In a social space, the smiths' wares of the day: the Armorsmith's, then the Weaponsmith's, each numbered by
-   *  its place among its vendor's. */
+  /** In a social space, the smiths' wares of the day: the Armorsmith's, the Weaponsmith's, then the Shipwright's, six
+   *  each, each with the number it takes once bought. */
   readonly wares: readonly GearItem[];
   /** What the player's worn gear trims of the fight's numbers, which their browser predicts them by. */
   readonly trim?: readonly number[];
@@ -371,7 +371,12 @@ export function gearOf(gear: Gear): GearState {
       return itemOf(item);
     });
   const items = listed(gear.itemsLength(), (index) => gear.items(index), 'gear item');
-  const wares = listed(gear.waresLength(), (index) => gear.wares(index), 'ware');
+  // Each ware carries the number it takes once bought, so it is drawn as the piece it becomes; it is asked for by its
+  // place (`vendorsOf`).
+  const wares = listed(gear.waresLength(), (index) => gear.wares(index), 'ware').map((ware) => ({
+    ...ware,
+    id: gear.nextId(),
+  }));
   const vestiges = Array.from({ length: gear.vestigesLength() }, (unused, index) => {
     const vestige = gear.vestiges(index);
     if (!vestige) throw new Error(`gear Vestige ${index} is missing`);
@@ -471,6 +476,7 @@ export function gearOf(gear: Gear): GearState {
     bountyXp: gear.bountyXp(),
     bountyAurem: gear.bountyAurem(),
     mail: mailOf(gear, itemOf),
+    ...loreOf(gear),
   };
 }
 
@@ -482,21 +488,4 @@ function nodesOf(numbers: readonly number[]): GearNode[] {
     nodes.push({ index, x, y, resource });
   }
   return nodes;
-}
-
-/** An ask written into an input being built. */
-export function askOffset(builder: flatbuffers.Builder, ask: GearAsk): flatbuffers.Offset {
-  const named = ask.named === undefined ? 0 : builder.createString(ask.named);
-  Ask.startAsk(builder);
-  Ask.addKind(builder, ask.kind);
-  Ask.addItem(builder, ask.item ?? 0);
-  Ask.addSlot(builder, ask.slot ?? 0);
-  Ask.addColumn(builder, ask.column ?? 0);
-  Ask.addNode(builder, ask.node ?? 0);
-  Ask.addRarity(builder, ask.rarity ?? 0);
-  Ask.addLevel(builder, ask.level ?? 0);
-  Ask.addCount(builder, ask.count ?? 0);
-  Ask.addItemKind(builder, ask.itemKind ?? 0);
-  if (named) Ask.addNamed(builder, named);
-  return Ask.endAsk(builder);
 }

@@ -101,16 +101,16 @@ cost rather than its leg across. The search keeps its buffers from one path to t
 visits, not the whole mesh.
 
 **Obstacles** are circles that can be laid over the mesh, such as a big foe's body; no room lays any yet, so they are
-held by the crate's own tests alone. Each blocks every poly it
-touches. A path goes round them where it can, and through them where it must: they steer a path, they never sever
-it. A foe asking for a path walks through its own obstacle, and a foe standing in one walks out. Each change bumps
-the mesh's epoch, so a foe knows its path may be stale.
+held by the crate's own tests alone. Each blocks every poly it touches. A path goes round them where it can, and through
+them where it must: they steer a path, they never sever it. A foe asking for a path walks through its own obstacle, and
+a foe standing in one walks out. Each change bumps the mesh's epoch, so a foe knows its path may be stale.
 
 **What a walk reaches** floods the polys joined to a start once, across shared edges and along links, then answers for
-any point: on one of them, and
-within 1 m of its surface. **The nearest point** answers where a path to a body off the mesh should end: the point
-itself on the mesh, else the nearest point of a poly on its level within 1.5 m, else within 4 m. It reads only the
-polys filed near the point.
+any point: on one of them, and within 1 m of its surface. No room asks it, so it too is held by the crate's own tests
+alone.
+
+**The nearest point** answers where a path to a body off the mesh should end: the point itself on the mesh, else the
+nearest point of a poly on its level within 1.5 m, else within 4 m. It reads only the polys filed near the point.
 
 **A foe's way** is the room's ([[Foes]]). A foe walks for the first corner of its path farther off than a tick's run
 (about 0.13 m), so a corner underfoot never holds it against a block's corner, heading for a goal behind the block.

@@ -29,17 +29,6 @@ export function thunderShape(distanceKm: number): {
   };
 }
 
-/** A small seeded random source (mulberry32), so spot sounds fall at the same times on every run of a test. */
-export function seededRandom(seed: number): () => number {
-  let state = seed >>> 0;
-  return () => {
-    state = (state + 0x6d2b79f5) >>> 0;
-    let mixed = Math.imul(state ^ (state >>> 15), 1 | state);
-    mixed = (mixed + Math.imul(mixed ^ (mixed >>> 7), 61 | mixed)) ^ mixed;
-    return ((mixed ^ (mixed >>> 14)) >>> 0) / 4294967296;
-  };
-}
-
 /** Seconds to the next spot sound at its bed's full level: random as rain on a roof, exponential gaps averaging
  *  `meanGapS`. The caller counts them down slower as the bed quietens. */
 export const nextGapS = (meanGapS: number, roll: number): number =>

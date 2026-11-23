@@ -4,6 +4,7 @@
 // at Elite or Abyss and every Elite Dungeon is a run: the company's where a member is in one.
 import { seaDungeonRoom } from '../../../server/roomNames.ts';
 import { activitiesAt, eliteRun } from './activities.ts';
+import { roomNow } from '../sky/worldClock.ts';
 import { askLayout, type DungeonAsk, type DungeonLayout, type StyleKey } from './dungeonLayout.ts';
 import { BEFORE_DOOR_M, beforeDoor, type Entrance } from './entrances.ts';
 import type { AtEntrance } from './footPlace.ts';
@@ -55,8 +56,8 @@ export interface TripGame {
   };
 }
 
-/** A new run's instance and the Unix minute it opens: the page's own, unless a test pins them. */
-const CHANCE = { instance: () => runInstance(), minute: () => Math.floor(Date.now() / 60_000) };
+/** A new run's instance and the Unix minute it opens, by the rooms' clock, unless a test pins them. */
+const CHANCE = { instance: () => runInstance(), minute: () => Math.floor(roomNow() / 60_000) };
 
 /** A sea island's dungeon's name, its tier after it at Elite or Abyss. */
 const SEA_TIER = /^(.*?)(?:--(elite|abyss))?$/;

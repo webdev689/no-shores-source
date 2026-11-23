@@ -26,8 +26,6 @@ fn each_dungeons_room_gives_from_its_own_content() {
     assert_eq!(run(sea.clone(), Difficulty::Normal), Source::Sea);
     assert_eq!(run(sea, Difficulty::Elite), Source::Sea);
     assert_eq!(Room::dungeon("saltgrass-downs", 0, None).expect("shared").source, Source::Dungeon);
-    let style = dungeon::style_of("crypt").expect("a style");
-    assert_eq!(Room::dungeon_of("sea-dungeon-x", 7, style, None).expect("a sea island's").source, Source::Sea);
 }
 
 #[test]

@@ -1,5 +1,4 @@
 import type { FightEvent } from '../network/messages.ts';
-import { rayHit } from '../player/playerCamera.ts';
 import type { FighterView } from '../rules/fighters.ts';
 import type { Block } from '../rules/movementRules.ts';
 import { PLATES } from '../plus/barLayout.ts';
@@ -7,7 +6,7 @@ import { COMPASS, headingOf, type PlaceMark } from '../plus/compass.ts';
 import { compassNode } from './compassNode.ts';
 import type { Child, Node } from '../ui/node.ts';
 import type { Interface } from '../ui/ui.ts';
-import { AbilityBar, type AbilityState, type ArtPictures } from './abilityBar.ts';
+import { ABILITY_KEYS, AbilityBar, type AbilityState, type ArtPictures } from './abilityBar.ts';
 import { ammoNode } from './ammoCounter.ts';
 import { animaEdgeNode } from './animaMoment.ts';
 import { EVENT, edgeArrow, parryCue, threatens } from './cues.ts';
@@ -16,10 +15,10 @@ import { FoePlate } from './foePlate.ts';
 import { FoeTarget } from './foeTarget.ts';
 import { type Box, type Said, Words, wordsOf } from './hitWords.ts';
 import { RING, arrowNode, hurtNode, lockMarkNode, parryNode, veilNode } from './hudCues.ts';
-import { CALL_REACH, Callout, callTop } from './callout.ts';
+import { Callout, callTop } from './callout.ts';
 import { contactOf, strokeTravel } from './impacts.ts';
 import { type BannerTone, PublicBanner, type PublicShown, StoreBars } from './publicBanner.ts';
-import { cameraOf, landBlocks, PLATE_OVER_M, SIGHT_SKIN_M } from './plateSight.ts';
+import { cameraOf, landBlocks, PLATE_OVER_M } from './plateSight.ts';
 import { CARD_NEAREST_M, cardStand } from '../player/figures.ts';
 import type { Cards } from '../player/cards.ts';
 import { ItemPictures } from '../player/itemPictures.ts';
@@ -28,8 +27,10 @@ import { CORNER } from '../plus/barFrame.ts';
 import { type HudLayout, hudLayout } from './hudLayout.ts';
 import { Crosshair, type CrosshairFrame } from './reticle.ts';
 import { Vitals } from './vitals.ts';
+import { blockedBy, clearOf, clipOf, meets, project, sidesOf, spanOf, veilOf } from './hudPlace.ts';
 import { type PlatedPlayer, PlayerPlates } from './playerPlates.ts';
-import { type ArmsShown, WeaponRows } from './weapons.ts';
+import { type ArmsShown, LOADOUT_KEYS, WeaponRows } from './weapons.ts';
+import type { CapFace } from './shipAbilityBar.ts';
 
 /** What the display is drawn from each frame: the player's fighter, the foes, every fighter's place by number, how the
  *  camera projects a point, the canvas's size in CSS pixels, the fight's events since the last frame, whether the view
@@ -76,10 +77,18 @@ export interface HudFrame {
   readonly players?: readonly PlatedPlayer[];
 }
 
+/** The keycaps of the Art's abilities (the Anima's, then each Tenet's) and of the two loadouts: a key's name, or a
+ *  pad's button with `pad:` before it. */
+export interface HudKeys {
+  readonly arts: readonly [string, string, string];
+  readonly loadouts: readonly [string, string];
+}
+
+/** The keys the game binds at first, for a display given none. */
+const FIRST_KEYS: HudKeys = { arts: ABILITY_KEYS, loadouts: LOADOUT_KEYS };
+
 /** A foe winding up an iron blow this near is told to be dodged. */
 const IRON_NEAR_M = 12;
-/** How long the dead lie before standing again, in ticks (crates/combat/src/tuning.rs RESPAWN). */
-const RESPAWN_TICKS = 240;
 /** How long the stamina bar flashes for a swing or a dodge asked with none, and the screen's edge for a blow taken. */
 const FLASH_SECONDS = 0.45;
 /** A view shorter than this (CSS pixels at its zoom) takes the public banner short, clear of the crosshair. */
@@ -104,8 +113,6 @@ const AMMO_FULL = 'Ammo full';
 const FOUL = { colour: [96, 150, 24], heldS: 1.5, riseS: 0.25, fadeS: 0.6 } as const;
 /** How far under the banner the boss bar stands, past the column's own gap, CSS pixels at the first zoom. */
 const BOSS_CLEAR = 6;
-/** How tall a Boss's figure stands, metres, for the span of the view the call keeps clear of. */
-const BOSS_TALL_M = 2.6;
 /** A plate over a figure at its largest, CSS pixels, for one not yet laid; and how near the top's pieces it may stand
  *  before it is hidden, so it never reads as one of them. */
 const PLATE_MOST = { width: 220, height: 48 } as const;
@@ -113,98 +120,21 @@ const PLATE_CLEAR = 12;
 /** The ids of the top's pieces. */
 const TOPS = ['fight-compass', 'fight-banner', 'fight-boss', 'fight-target'] as const;
 
-/** A point's clip coordinates through the camera: x, y up, and w (0 or less behind it). */
-function clipOf(matrix: ArrayLike<number>, point: readonly [number, number, number]): [number, number, number] {
-  const [x, y, z] = point;
-  const component = (row: number) =>
-    (matrix[row] ?? 0) * x + (matrix[4 + row] ?? 0) * y + (matrix[8 + row] ?? 0) * z + (matrix[12 + row] ?? 0);
-  return [component(0), component(1), component(3)];
-}
-
-/** Where a point falls on the canvas in CSS pixels, or null behind the camera. */
-export function project(
-  matrix: ArrayLike<number>,
-  point: readonly [number, number, number],
-  width: number,
-  height: number,
-) {
-  const [clipX, clipY, clipW] = clipOf(matrix, point);
-  if (clipW <= 1e-6) return null;
-  return { x: ((clipX / clipW + 1) / 2) * width, y: ((1 - clipY / clipW) / 2) * height };
-}
-
-/** A spot on the screen's edge moved along the edge to stand `gap` above `box` (CSS pixels from the display's corner),
- *  or below it when `below`, where it would fall within `gap` of it; elsewhere as it is. */
-export function clearOf<Spot extends { readonly x: number; readonly y: number }>(
-  spot: Spot,
-  box: { readonly left: number; readonly top: number; readonly right: number; readonly bottom: number },
-  gap: number,
-  below = false,
-): Spot {
-  const near = (value: number, from: number, to: number) => value >= from - gap && value <= to + gap;
-  if (!near(spot.x, box.left, box.right) || !near(spot.y, box.top, box.bottom)) return spot;
-  return { ...spot, y: below ? box.bottom + gap : box.top - gap };
-}
-
-/** The veil over the display, by what holds the player: joining the room again, the room lost (and why), or their
- *  death (the ticks they have lain); a link's veil is plain, death's is blood. Null while none of these holds. */
-export function veilOf(
-  frame: Pick<HudFrame, 'own' | 'lost' | 'rejoining'>,
-): { readonly words: string; readonly link: boolean } | null {
-  if (frame.rejoining) return { words: 'Reconnecting…', link: true };
-  if (frame.lost !== null) return { words: `The link to the room was lost: ${frame.lost}.`, link: true };
-  const dead = frame.own?.action.kind === 'dead' ? frame.own.action : null;
-  if (!dead) return null;
-  const seconds = Math.ceil(Math.max(0, RESPAWN_TICKS - dead.elapsed) / 60);
-  return { words: `You fell. Standing again in ${seconds} s`, link: false };
-}
-
-/** The span down the view a figure standing at `view` fills, where it stands within the call's reach (at `zoom`) of
- *  the view's middle across (CSS pixels); none off it or behind the eye. */
-export function spanOf(
-  frame: HudFrame,
-  view: FighterView,
-  zoom: number,
-): { readonly top: number; readonly bottom: number } | null {
-  const feet = project(frame.matrix, [view.x, view.y, view.z], frame.width, frame.height);
-  const head = project(frame.matrix, [view.x, view.y, view.z + BOSS_TALL_M], frame.width, frame.height);
-  if (!feet || !head || Math.abs(feet.x - frame.width / 2) > CALL_REACH * zoom) return null;
-  return { top: head.y, bottom: feet.y };
-}
-
-/** A laid box by its sides, none for none or an empty one. */
-const sidesOf = (box: { x: number; y: number; width: number; height: number } | null): Box | null =>
-  box && box.width + box.height > 0
-    ? { left: box.x, top: box.y, right: box.x + box.width, bottom: box.y + box.height }
-    : null;
-
-/** Whether two boxes overlap. */
-const meets = (one: Box, two: Box): boolean =>
-  one.left < two.right && two.left < one.right && one.top < two.bottom && two.top < one.bottom;
-
-/** Whether the line from `from` to `to` meets one of `blocks` short of its last `SIGHT_SKIN_M`. */
-export function blockedBy(
-  blocks: readonly Block[],
-  from: readonly [number, number, number],
-  to: readonly [number, number, number],
-): boolean {
-  const length = Math.hypot(to[0] - from[0], to[1] - from[1], to[2] - from[2]);
-  return length > SIGHT_SKIN_M && rayHit(from, to, blocks) < 1 - SIGHT_SKIN_M / length;
-}
-
 /** The fight's display over the view, kept each frame from a `HudFrame` and drawn as a layer of the interface. */
 export class Hud {
   private readonly vitals = new Vitals();
-  private readonly target = new FoePlate({ poise: true, remembers: 'whole' });
-  private readonly foeBars = new FoeBars();
+  private target = new FoePlate({ poise: true, remembers: 'whole' });
+  private foeBars = new FoeBars();
   /** The plates over other players, and the one the crosshair rests on within reach. */
   readonly playerPlates = new PlayerPlates();
   private readonly crosshair = new Crosshair();
-  private readonly foeTarget = new FoeTarget();
+  private foeTarget = new FoeTarget();
   private readonly words = new Words();
   /** The side the next number with no stroke to follow is thrown to. */
   private nextSide = 1;
   private readonly abilities: AbilityBar | null;
+  /** The Arts' and the loadouts' keycaps, as bound now. */
+  private readonly caps: () => HudKeys;
   private readonly weapons: WeaponRows;
   private layout: HudLayout = hudLayout(0, 0);
   /** The page's own pieces beside the display (the game's hints), in its CSS pixels, which the arrows keep clear of. */
@@ -253,15 +183,29 @@ export class Hud {
 
   /** With `pictures`, the game's pictures of an Art (`abilityPictures`), the Art's abilities stand at the bottom left;
    *  with `forge`, the weapons beside them are drawn as its pictures. The page's own pieces `beside` answers (the game's
-   *  hints, CSS pixels) are kept clear of as the display's corners are. */
+   *  hints, CSS pixels) are kept clear of as the display's corners are. With `keys`, the Arts' and the loadouts' keycaps
+   *  show the keys `caps` answers each frame, a pad's button drawn on its cap by `face`. */
   constructor(
     pictures: ((art: number) => ArtPictures | null) | null = null,
     forge: Cards | null = null,
     beside: () => readonly Box[] = () => [],
+    keys: { readonly caps: () => HudKeys; readonly face: CapFace } | null = null,
   ) {
     this.beside = beside;
-    this.abilities = pictures && new AbilityBar(pictures);
-    this.weapons = new WeaponRows(forge && new ItemPictures(forge));
+    this.caps = keys?.caps ?? (() => FIRST_KEYS);
+    this.abilities = pictures && new AbilityBar(pictures, keys?.face);
+    this.weapons = new WeaponRows(forge && new ItemPictures(forge), keys?.face);
+  }
+
+  /** Forgets every foe the display kept (its target, plates and wind-ups told): a room left, its foes' numbers mean
+   *  other foes in the next. */
+  forget(): void {
+    [this.target, this.foeBars, this.foeTarget] = [
+      new FoePlate({ poise: true, remembers: 'whole' }),
+      new FoeBars(),
+      new FoeTarget(),
+    ];
+    this.ironTold.clear();
   }
 
   /** The tone the public event's banner shows in under the compass, none while it shows none. */
@@ -318,9 +262,12 @@ export class Hud {
     this.crosshair.update(frame.crosshair ?? null, own, under, frame.events, frame.player, seconds);
     this.markTarget(frame, chosen, boss, seconds);
     this.vitals.update(own, seconds, this.staminaFlash > 0, !!chosen || !!boss);
-    if (frame.abilities) this.abilities?.update(frame.abilities, seconds, UNABLE.has(own?.action.kind ?? ''));
+    const caps = this.caps();
+    if (frame.abilities)
+      this.abilities?.update(frame.abilities, seconds, UNABLE.has(own?.action.kind ?? ''), caps.arts);
     else this.abilities?.hide();
-    this.weapons.update(frame.arms ?? { gear: null, loadout: 0, drawn: false, dress: null }, own, seconds);
+    const arms = frame.arms ?? { gear: null, loadout: 0, drawn: false, dress: null };
+    this.weapons.update(arms, own, seconds, caps.loadouts);
     this.edges = this.threats(frame);
     this.rings = this.parries(frame);
     this.floatWords(frame, seconds);

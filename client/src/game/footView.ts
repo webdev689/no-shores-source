@@ -5,6 +5,8 @@ import { Hud } from '../combat/hud.ts';
 import type { BannerTone } from '../combat/publicBanner.ts';
 import type { Box as Laid } from '../ui/quads.ts';
 import { abilityPictures } from './artsCards.ts';
+import { hudKeys } from './controls.ts';
+import { capFace } from './hudParts.ts';
 import { MarkDraw } from '../combat/markDraw.ts';
 import type { Gpu } from '../gpu.ts';
 import type { Stack } from '../ui/stack.ts';
@@ -39,6 +41,8 @@ const OVER_THE_LAND_M = 0.12;
 export class FootView {
   private readonly gpu: Gpu;
   private readonly marks: MarkDraw;
+  /** The marks over what the player can use, again: faded where something hides them. */
+  private readonly hidden: MarkDraw;
   private readonly swings: SwingView;
   private readonly hud: Hud;
   /** Whether the fight's display shows: on foot only. */
@@ -50,16 +54,21 @@ export class FootView {
   constructor(gpu: Gpu, stack: Stack, forge: Cards, beside: (ui: Interface) => readonly Laid[] = () => []) {
     this.gpu = gpu;
     this.marks = new MarkDraw(gpu, SAMPLES);
+    this.hidden = new MarkDraw(gpu, SAMPLES, 'hidden_fragment');
     this.swings = new SwingView(gpu);
     // Where the game's own pieces stand, as the interface last laid them.
     let laidBy: Interface | null = null;
-    this.hud = new Hud(abilityPictures, forge, () =>
-      (laidBy ? beside(laidBy) : []).map((box) => ({
-        left: box.x,
-        top: box.y,
-        right: box.x + box.width,
-        bottom: box.y + box.height,
-      })),
+    this.hud = new Hud(
+      abilityPictures,
+      forge,
+      () =>
+        (laidBy ? beside(laidBy) : []).map((box) => ({
+          left: box.x,
+          top: box.y,
+          right: box.x + box.width,
+          bottom: box.y + box.height,
+        })),
+      { caps: () => hudKeys(), face: capFace },
     );
     stack.under((ui) => {
       laidBy = ui;
@@ -81,6 +90,8 @@ export class FootView {
   private bloodOf(foot: FootShown, groundAt: (x: number, y: number) => number | null) {
     if (this.blood?.foot === foot) return this.blood;
     this.blood?.drawn.destroy();
+    // A new room numbers its foes from 1 again: the display forgets the last room's.
+    this.hud.forget();
     const [x, y] = foot.node.spawns[0] ?? foot.node.centre;
     const origin: Point = [x, y, 0];
     const surfaces = surfacesOf(foot.boxes, (east, south) => groundAt(east, south) ?? 0);
@@ -130,6 +141,8 @@ export class FootView {
     });
     // The marks are measured from the eye: it stands at their origin.
     this.marks.set(shown.marks, [0, 0, 0], shot.eye);
+    this.hidden.set(shown.hidden ?? [], [0, 0, 0], shot.eye);
+    this.marks.setAbove(shown.lit);
     this.swings.set(shown.swings);
     const matrix = shiftedExactly(fromEye, [-eyeX, -eyeY, -eyeZ]);
     this.hud.update(
@@ -146,7 +159,7 @@ export class FootView {
       seconds,
     );
     const drawn = blood.drawn;
-    const marks = this.marks;
+    const { marks, hidden } = this;
     const raised = (eyeMatrix: Float32Array) => shifted(own(eyeMatrix), [0, 0, OVER_THE_LAND_M]);
     const lit = FEEL.light && (shown.marks.length > 0 || shown.swings.length > 0);
     const lightInto = (pass: GPURenderPassEncoder, eyeMatrix: Float32Array) => {
@@ -156,12 +169,14 @@ export class FootView {
     return {
       under: { drawInto: (pass) => drawn.draw(pass) },
       // The solid marks with the figures; the blows' arcs and the see-through marks over the water, so its sky and
-      // surface never cover them.
+      // surface never cover them; and the lit keepers' marks after them with no depth, so no wall hides them.
       over: {
         drawInto: (pass, eyeMatrix) => marks.drawSolid(pass, raised(eyeMatrix)),
         overWater: (encoder, target, eyeMatrix, depth) => {
           this.swings.drawOver(encoder, target, depth, own(eyeMatrix));
           marks.drawClearOver(encoder, target, depth, raised(eyeMatrix));
+          hidden.drawHiddenOver(encoder, target, depth, raised(eyeMatrix));
+          marks.drawAbove(encoder, target, raised(eyeMatrix));
         },
         ...(lit ? { lightInto } : {}),
       },
