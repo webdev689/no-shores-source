@@ -94,6 +94,7 @@ export class CityView implements CityDrawer {
   /** Lists a pass's crystal draws are laid into, kept from pass to pass. */
   private readonly draws: InstancedDraw[] = [];
   private readonly middleChunks: Chunk[] = [];
+  private readonly detail: Range[] = [];
   /** The size a ruin's wrecks are drawn at now (the ships': larger at sea, true size on foot), its crust's too. */
   private readonly wreckScale: () => number;
 
@@ -362,7 +363,7 @@ export class CityView implements CityDrawer {
     for (const run of runs(chunks.map((chunk) => chunk.solids))) pass.drawIndexed(run.count, 1, run.first, 0, 0);
     const { origin } = drawn.data;
     const eye = [shot.eye[0] - origin[0], shot.eye[1] - origin[1], shot.eye[2]] as const;
-    if (!far) for (const run of detailRuns(chunks, eye)) pass.drawIndexed(run.count, 1, run.first, 0, 0);
+    if (!far) for (const run of detailRuns(chunks, eye, this.detail)) pass.drawIndexed(run.count, 1, run.first, 0, 0);
     this.drawCrystal(pass, drawn, chunks, eye);
     if (!far) return;
     pass.setPipeline(this.pipelines.massesCast);
@@ -398,7 +399,7 @@ export class CityView implements CityDrawer {
     pass.setVertexBuffer(0, drawn.solidVertices);
     pass.setVertexBuffer(1, drawn.origin);
     pass.setIndexBuffer(drawn.solidIndices, 'uint32');
-    for (const run of [...runs(chunks.map((chunk) => chunk.solids)), ...detailRuns(chunks, eye)]) {
+    for (const run of [...runs(chunks.map((chunk) => chunk.solids)), ...detailRuns(chunks, eye, this.detail)]) {
       pass.drawIndexed(run.count, 1, run.first, 0, 0);
       frame.draws++;
       frame.triangles += run.count / 3;

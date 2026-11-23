@@ -416,15 +416,20 @@ export function buildCity(
 }
 
 /** The ranges of the crystal's small detail to draw: those of the chunks within the whole tier's reach of the eye
- *  (measured from the city's middle). */
-export function detailRuns(chunks: readonly Chunk[], eye: readonly number[]): Range[] {
-  const near = chunks.filter((chunk) => {
-    const low = [0, 1, 2].map((axis) => chunk.middlesLow[axis] - eye[axis]);
-    const high = [0, 1, 2].map((axis) => chunk.middlesHigh[axis] - eye[axis]);
-    const middles = boxReach(low, high);
-    return tiersReached(middles.nearest, middles.farthest).has('whole');
-  });
-  return runs(near.map((chunk) => chunk.detail));
+ *  (measured from the city's middle), joined where they meet, laid into `into` (emptied first). */
+export function detailRuns(chunks: readonly Chunk[], eye: readonly number[], into: Range[] = []): Range[] {
+  into.length = 0;
+  for (const chunk of chunks) {
+    const middles = boxReach(
+      [chunk.middlesLow[0] - eye[0], chunk.middlesLow[1] - eye[1], chunk.middlesLow[2] - eye[2]],
+      [chunk.middlesHigh[0] - eye[0], chunk.middlesHigh[1] - eye[1], chunk.middlesHigh[2] - eye[2]],
+    );
+    if (!chunk.detail.count || !tiersReached(middles.nearest, middles.farthest).has('whole')) continue;
+    const last = into[into.length - 1];
+    if (last && last.first + last.count === chunk.detail.first) last.count += chunk.detail.count;
+    else into.push({ first: chunk.detail.first, count: chunk.detail.count });
+  }
+  return into;
 }
 
 /** Whether a solid is a terrace's retaining wall: a stone block a cell long (or a length of one a ramp cuts) and
