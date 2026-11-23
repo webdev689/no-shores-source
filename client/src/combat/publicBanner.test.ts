@@ -164,7 +164,8 @@ test('a bonus that warns of harm reads in red under a filled red diamond, never 
     each.children?.some((child) => child && child.text?.words === 'Foul water harms'),
   );
   assert.equal(line?.children?.filter(Boolean).length, 1, 'not struck through');
-  assert.equal(line?.children?.find((child) => child && child.text)?.text?.colour, '#e0483c', 'in red');
+  const words = line?.children?.find((child): child is Node => !!child && !!child.text);
+  assert.equal(words?.text?.colour, '#e0483c', 'in red');
   assert.ok(
     allOf(node).some((each) => each.picture?.key === 'diamond #e0483c #e0483c '),
     'its diamond filled red',
