@@ -115,6 +115,32 @@ fn a_weighings_plates_stand_apart_and_its_first_two_farthest() {
 }
 
 #[test]
+fn every_plate_of_a_weighing_is_in_plain_view_from_the_doorway_its_room_is_entered_by() {
+    let mut weighings = 0;
+    for (place, laid, plan) in elite_plans() {
+        let walked = walks(&laid);
+        let doorways: Vec<usize> = laid.frames.iter().map(|frame| frame.cell).collect();
+        for seal in plan.seals.iter().filter(|seal| seal.kind == SealKind::Weighing) {
+            weighings += 1;
+            let door = seal.cells.iter().copied().filter(|cell| doorways.contains(cell));
+            let door = laid.centre(door.min_by_key(|&cell| (walked[cell], cell)).expect("a doorway"));
+            for plate in &seal.pieces {
+                // Every 5 cm along the line from the doorway's middle to the plate, no solid stands.
+                let seen = (0..=200).all(|step| {
+                    let share = f64::from(step) / 200.0;
+                    let [x, y] = [door[0] + (plate[0] - door[0]) * share, door[1] + (plate[1] - door[1]) * share];
+                    laid.boxes()
+                        .iter()
+                        .all(|&[min_x, min_y, max_x, max_y, _]| x < min_x || x > max_x || y < min_y || y > max_y)
+                });
+                assert!(seen, "{place}: a plate at {plate:?} hidden from the doorway at {door:?}");
+            }
+        }
+    }
+    assert!(weighings >= 4, "{weighings} Weighings among the 18");
+}
+
+#[test]
 fn an_ascents_pads_rise_under_the_ceiling_clear_of_every_solid_and_doorway() {
     for (place, laid, plan) in elite_plans() {
         let boxes = laid.boxes();

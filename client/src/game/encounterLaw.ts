@@ -44,6 +44,12 @@ const LIGHT_BEAM = { height: 12, half: 0.9 } as const;
 /** How wide a ring's band is (m), and how far round the Boss its ward's ring stands. */
 const BAND_M = 0.12;
 const WARD_M = 1.3;
+/** An Ascent's pads lit as its way: the band along each top's edge, how far down each face its glow reaches, how far
+ *  off the stone both stand (m), and how fast the brightening runs from the first pad to the last (radians a second,
+ *  and between pads). */
+const PAD_EDGE = { band: 0.1, face: 0.45, off: 0.02, speed: 2.5, step: 1.1 } as const;
+/** An anchor at rest, before or between wards: dim, so it is learnt, not called for. */
+const ANCHOR_RESTING = 0.3;
 /** The dome of light over the warded Boss: its reach round it and how many bands of light draw it. */
 const DOME = { reach: 2.2, bands: 6 } as const;
 /** How long before Fury begins the banner warns of it (seconds), and how long a landed Reckoning's flash burns. */
@@ -58,16 +64,32 @@ export function taskOf(kind: number, plates: number): string {
   return "Hold the relic's ring";
 }
 
-/** The seal the banner speaks of: the one whose room the player stands in, else the first running, else none. */
-function sealHere(layout: DungeonLayout, plan: EncounterLayout, seen: EncounterSeen, feet: Point): number | null {
+/** The seal the banner speaks of: the unbroken one whose room the player stands in, else the unbroken one whose room's
+ *  middle is nearest, else none; `inside` whether the player stands in its room. */
+function sealHere(
+  layout: DungeonLayout,
+  plan: EncounterLayout,
+  seen: EncounterSeen,
+  feet: Point,
+): { index: number; inside: boolean } | null {
   const [column, row] = [Math.floor(feet[0] / layout.cell), Math.floor(feet[1] / layout.cell)];
   const room = column >= 0 && row >= 0 && column < layout.columns ? layout.cells[row * layout.columns + column] : -2;
-  const inside = plan.seals.findIndex(
-    (seal, index) => seal.room === room && seen.seals[index]?.state !== SEAL_STATE.broken,
+  const unbroken = plan.seals.flatMap((seal, index) =>
+    seen.seals[index] && seen.seals[index].state !== SEAL_STATE.broken ? [{ seal, index }] : [],
   );
-  if (inside >= 0) return inside;
-  const running = seen.seals.findIndex((seal) => seal.state === SEAL_STATE.running);
-  return running >= 0 ? running : null;
+  const inside = unbroken.find(({ seal }) => seal.room === room);
+  if (inside) return { index: inside.index, inside: true };
+  const away = ({ seal }: (typeof unbroken)[number]) => {
+    const found = layout.rooms[seal.room];
+    if (!found) return Infinity;
+    const middle = [(found.x + found.width / 2) * layout.cell, (found.y + found.depth / 2) * layout.cell] as const;
+    return Math.hypot(middle[0] - feet[0], middle[1] - feet[1]);
+  };
+  const nearest = unbroken.reduce<(typeof unbroken)[number] | null>(
+    (best, each) => (best === null || away(each) < away(best) ? each : best),
+    null,
+  );
+  return nearest ? { index: nearest.index, inside: false } : null;
 }
 
 /** The banner's bar under a seal's task: a Litany's runes stepped of how many, an Ascent's players on its stone of
@@ -93,8 +115,8 @@ function furyOf(seen: EncounterSeen): Banner['bonus'] {
   return seen.furyTicks > 0 && left <= FURY_WARNED_S ? { text: `Fury in ${minutes(left)}`, state: 'holds' } : null;
 }
 
-/** The banner for an Elite Dungeon at the player's feet: while a seal runs or the player stands in a seal's room,
- *  that seal; once every seal is broken, the Court; between seals, the count alone. */
+/** The banner for an Elite Dungeon at the player's feet: the seal whose room the player stands in, else the nearest
+ *  unbroken seal as the next to go to; once the Boss wakes, the Court; with no seal left unbroken, the count alone. */
 export function encounterBanner(layout: DungeonLayout, seen: EncounterSeen, feet: Point): Banner | null {
   const plan = layout.encounters;
   if (!plan) return null;
@@ -123,7 +145,7 @@ export function encounterBanner(layout: DungeonLayout, seen: EncounterSeen, feet
     return { ...plain, tone, kicker, title: COURT, clock, urgent: warned, objective, bar, bonus: furyOf(seen) };
   }
   const here = sealHere(layout, plan, seen, feet);
-  const seal = here === null ? null : seen.seals[here];
+  const seal = here === null ? null : seen.seals[here.index];
   if (!seal)
     return {
       ...plain,
@@ -138,13 +160,18 @@ export function encounterBanner(layout: DungeonLayout, seen: EncounterSeen, feet
   const relic = Math.round(seal.relic * 100);
   return {
     ...plain,
-    tone: 'running',
+    tone: here?.inside ? 'running' : 'next',
     kicker,
     title: SEAL_NAMES[seal.kind] ?? '',
     clock: '',
     objective: taskOf(seal.kind, plates),
     bar: barOf(seal),
-    bonus: seal.kind === SEAL_KIND.holdfast ? { text: `Relic ${relic}%`, state: relic < 30 ? 'lost' : 'holds' } : null,
+    bonus:
+      seal.kind === SEAL_KIND.holdfast
+        ? { text: `Relic ${relic}%`, state: relic < 30 ? 'lost' : 'holds' }
+        : seal.kind === SEAL_KIND.ascent
+          ? { text: 'Foul water harms', state: 'lost' }
+          : null,
   };
 }
 
@@ -205,6 +232,64 @@ function ringAt(out: number[], middle: Point, reach: number, colour: Colour, alp
   if (beam) markBeam(out, middle, BEAM, [...colour, alpha]);
 }
 
+/** Two triangles of one colour from four corners in turn, each corner's opacity its own. */
+function quad(out: number[], corners: readonly (readonly number[])[], colour: Colour, alphas: readonly number[]): void {
+  for (const corner of [0, 1, 2, 0, 2, 3]) out.push(...(corners[corner] ?? []), ...colour, alphas[corner] ?? 0);
+}
+
+/** An Ascent's pads lit as the way up while its seal holds: a band of the seal's colour along each top's edge and a
+ *  glow fading down each face under it, brightening pad by pad from the first to the last in a slow wave, so the way
+ *  reads in its order; the last pad, the stone's, in gold. */
+function padMarks(out: number[], pads: SealLayout['pads'], seconds: number): void {
+  const { band, face, off, speed, step } = PAD_EDGE;
+  pads.forEach(([minX, minY, maxX, maxY, top], index) => {
+    const colour = index === pads.length - 1 ? LIT : AT_REST;
+    const alpha = 0.45 + 0.45 * (0.5 + 0.5 * Math.cos(seconds * speed - index * step));
+    const z = top + off;
+    // Each side's outer and inner edge on the top, then its face's foot and head just off the stone.
+    const sides = [
+      [
+        [minX, minY],
+        [maxX, minY],
+        [0, -1],
+      ],
+      [
+        [maxX, minY],
+        [maxX, maxY],
+        [1, 0],
+      ],
+      [
+        [maxX, maxY],
+        [minX, maxY],
+        [0, 1],
+      ],
+      [
+        [minX, maxY],
+        [minX, minY],
+        [-1, 0],
+      ],
+    ] as const;
+    for (const [[fromX, fromY], [toX, toY], [outX, outY]] of sides) {
+      const [inX, inY] = [-outX * band, -outY * band];
+      const top4 = [
+        [fromX, fromY, z],
+        [toX, toY, z],
+        [toX + inX, toY + inY, z],
+        [fromX + inX, fromY + inY, z],
+      ];
+      quad(out, top4, colour, [alpha, alpha, alpha, alpha]);
+      const [startX, startY, endX, endY] = [fromX + outX * off, fromY + outY * off, toX + outX * off, toY + outY * off];
+      const sideways = [
+        [startX, startY, top],
+        [endX, endY, top],
+        [endX, endY, top - face],
+        [startX, startY, top - face],
+      ];
+      quad(out, sideways, colour, [alpha * 0.8, alpha * 0.8, 0, 0]);
+    }
+  });
+}
+
 /** One seal's marks: a Litany's runes dark, showing under a beam, lit or flashing wrong; a Weighing's plates in play
  *  dim or held; an Ascent's stone ringed on its top pad, lighting as its players stand on it; a Holdfast's ring,
  *  reddening as its relic drains, held or not, and the relic's strength as an arc inside it. None once broken. */
@@ -214,8 +299,10 @@ function sealMarks(
   seal: SealSeen,
   reach: EncounterLayout['reach'],
   beat: number,
+  seconds: number,
 ): void {
   if (seal.state === SEAL_STATE.broken) return;
+  if (seal.kind === SEAL_KIND.ascent) padMarks(out, plan.pads, seconds);
   if (seal.kind === SEAL_KIND.litany)
     plan.pieces.forEach((rune, index) => {
       const mark = seal.marks[index] ?? RUNE.dark;
@@ -265,8 +352,12 @@ export function encounterMarks(
   const beat = 0.5 + 0.5 * Math.sin(seconds * 4);
   plan.seals.forEach((seal, index) => {
     const state = seen.seals[index];
-    if (state) sealMarks(out, seal, state, plan.reach, beat);
+    if (state) sealMarks(out, seal, state, plan.reach, beat, seconds);
   });
+  // Every anchor shows while the Boss stands, dim at rest so the company learns where they are before a ward.
+  const fallen = seen.woken && !seen.boss;
+  if (!fallen && seen.ward === 0)
+    plan.anchors.forEach((anchor) => ringAt(out, anchor, plan.reach.anchor, ANCHOR, ANCHOR_RESTING));
   if (seen.ward > 0)
     plan.anchors.forEach((anchor, index) => {
       const held = seen.anchors[index] ?? 0;
