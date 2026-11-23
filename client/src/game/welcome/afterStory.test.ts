@@ -184,12 +184,14 @@ test("while she speaks the figures are drawn for the tour's own eye, and none st
 
 test('while she speaks a soft warm lamp hangs over the pair, as a lantern of the town, gone once the welcome ends', async () => {
   const { after, frame, finish, epilogue } = story();
-  assert.deepEqual(epilogue.lamps, [], 'none before she speaks');
+  // Read through a call: an assertion on the list itself would narrow its type for the rest of the test.
+  const lit = (): readonly LampPlace[] => epilogue.lamps;
+  assert.deepEqual(lit(), [], 'none before she speaks');
   frame();
   await settled();
   frame();
-  const [lamp] = epilogue.lamps;
-  assert.ok(lamp && epilogue.lamps.length === 1, 'one lamp while she speaks');
+  const [lamp] = lit();
+  assert.ok(lamp && lit().length === 1, 'one lamp while she speaks');
   // Her feet (1001.8, 2029, 30) and the player's (1000, 2030, 30): over their middle, a lantern's height.
   assert.deepEqual(lamp.at, [1000.9, 2029.5, 32.6]);
   assert.equal(lamp.reachM, 8);
@@ -203,5 +205,5 @@ test('while she speaks a soft warm lamp hangs over the pair, as a lantern of the
   }
   for (let flown = 0; flown < FLY_S + 0.2; flown += 1 / 30) after.shot(OWN, 1 / 30);
   frame();
-  assert.deepEqual(epilogue.lamps, [], 'gone once the keys are the player’s again');
+  assert.deepEqual(lit(), [], 'gone once the keys are the player’s again');
 });
