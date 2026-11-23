@@ -394,6 +394,14 @@ fn the_tithe_taker_killed_by_no_player_leaves_the_heroic_task_to_them() {
     killed_by_a_foe(&mut room, found, foe);
     room.tick();
     assert_ne!(running(&room).heroic, Heroic::Met, "a foe met no task of the players'");
+    // His round is over: missed, his body no longer walked, and taken up as any fallen foe's.
+    assert_eq!(running(&room).heroic, Heroic::Missed, "no player can kill him now");
+    assert!(taker(&room).is_none(), "he walks no round dead");
+    assert!(!room.inert.contains(&found), "his body falls as any foe's");
+    for _ in 0..combat::tuning::FOE_GONE + 2 {
+        room.tick();
+    }
+    assert!(!room.foes.contains_key(&found), "his body taken up");
 }
 
 #[test]

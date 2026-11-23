@@ -141,7 +141,14 @@ impl Room {
         let Play::Raid(mut raid) = core::mem::replace(&mut running.play, Play::Aside) else { return };
         for (killer, foe, _) in self.killed_now(running) {
             let offered = running.heroic == Heroic::Offered && self.by_players(killer);
-            if raid.taker.as_ref().is_some_and(|taker| taker.foe == foe) && offered {
+            let taken = raid.taker.as_ref().is_some_and(|taker| taker.foe == foe);
+            // Killed by no player, his round is over and the task missed: his body falls as any foe's does.
+            if taken && !offered {
+                raid.taker = None;
+                self.inert.remove(&foe);
+                self.close_heroic(running);
+            }
+            if taken && offered {
                 raid.taker = None;
                 self.inert.remove(&foe);
                 (running.heroic, running.heroic_ticks) = (Heroic::Met, 0);

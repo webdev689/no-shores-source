@@ -571,6 +571,23 @@ fn a_player_back_while_its_result_shows_is_laid_the_chest_their_account_earned_a
 }
 
 #[test]
+fn a_player_chested_before_their_account_was_told_is_laid_no_second_chest_coming_back() {
+    let (mut room, players) = room_at(FISSURE_MINUTE, 1);
+    room.tick();
+    while running(&room).phase == Phase::Running {
+        seal_one(&mut room, players[0]);
+    }
+    assert_eq!(running(&room).phase, Phase::Won);
+    assert_eq!(chests(&room, players[0]).len(), 1, "chested under their number");
+    assert!(room.own(players[0], "told-late"));
+    assert_eq!(chests(&room, players[0]).len(), 1, "the one chest, their account's now");
+    room.leave(players[0]);
+    let back = room.join().expect("room to come back");
+    assert!(room.own(back, "told-late"));
+    assert!(chests(&room, back).is_empty(), "their account's chest was laid already");
+}
+
+#[test]
 fn the_growth_broken_by_no_player_leaves_the_heroic_task_to_them() {
     let (mut room, players) = room_at(FISSURE_MINUTE, 1);
     room.tick();

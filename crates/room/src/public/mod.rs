@@ -372,9 +372,9 @@ impl Room {
         self.foes_most.saturating_sub(EVENT_ROOM) + event.min(EVENT_ROOM)
     }
 
-    /// A player's account told: the part they took under their number until then is their account's. Told while a
-    /// won event's result shows, they are laid the chest their account earned if neither it nor their number was laid
-    /// one: a player back under a new number as it was won had none.
+    /// A player's account told: the part they took under their number until then is their account's, and so is a chest
+    /// laid under it. Told while a won event's result shows, they are laid the chest their account earned if it was laid
+    /// none: a player back under a new number as it was won had none.
     pub(crate) fn own_part(&mut self, player: PlayerId) {
         let who = self.who(player);
         let Some(mut public) = self.public.take() else { return };
@@ -383,7 +383,10 @@ impl Room {
                 let part = running.parts.entry(who.clone()).or_default();
                 (part.present, part.did) = (part.present + before.present, part.did || before.did);
             }
-            let laid = running.chested.contains(&who) || running.chested.contains(&Who::Player(player));
+            if running.chested.contains(&Who::Player(player)) {
+                running.chested.insert(who.clone());
+            }
+            let laid = running.chested.contains(&who);
             let earned = running.phase == Phase::Won && !laid && running.parts.get(&who).is_some_and(took_part);
             earned.then(|| {
                 running.chested.insert(who);
