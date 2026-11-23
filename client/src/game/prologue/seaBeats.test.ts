@@ -5,7 +5,7 @@ import castJson from '../../../../content/story/cast.json' with { type: 'json' }
 import ships from '../../../../content/ships/ships.json' with { type: 'json' };
 import type { CaptainAt } from '../../rules/fightRules.ts';
 import type { LandWorker } from '../../terrain/landClient.ts';
-import { castOf, type Line } from '../../speech/cast.ts';
+import { castOf, scenesOf, type Line } from '../../speech/cast.ts';
 import { Conversation } from '../../speech/conversation.ts';
 import { Typing } from '../../speech/typing.ts';
 import { onScreen } from '../camera.ts';
@@ -415,7 +415,7 @@ test('a wreck the fight left far off still reads as the lookout speaks of it', (
 
 test('every word of the ram is typed out by the time the crew brace, as the stage plays its lines', () => {
   const cast = castOf(castJson);
-  const lines: readonly Line[] = scenes.scenes.ram;
+  const lines = scenesOf(scenes, cast).ram ?? [];
   const syllableOf = (line: Line) => cast.voices[cast.speakers[line.who]?.voice ?? '']?.syllableS ?? 0.1;
   const secondsUntil = (done: () => boolean, step: (seconds: number) => void) => {
     let seconds = 0;
