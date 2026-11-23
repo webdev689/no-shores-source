@@ -107,7 +107,7 @@ impl Room {
     fn stand_ambush(&mut self, player: PlayerId, goal: &'static GoalDef, at: [f64; 3]) {
         let Goal::Escort(escort) = &goal.goal else { return };
         let members = foes_of(escort.ambush.iter());
-        if self.living_foes() + members.len() > self.foes_most {
+        if self.living_foes() + members.len() > self.others_most() {
             return;
         }
         let place = Place { name: format!("{} ambush", goal.text), at: [at[0], at[1]], radius: AMBUSH_REACH };
@@ -142,7 +142,7 @@ impl Room {
         let fallen = |id: &FighterId| self.foes.get(id).is_none_or(|foe| foe.fighter.dead());
         let Some(ward) = ward else {
             let first = defend.waves.first().map_or(0, |wave| wave.len());
-            let room = self.living_foes() + first <= self.foes_most;
+            let room = self.living_foes() + first <= self.others_most();
             if retry.is_some_and(|tick| clock < tick) || !place.holds(at, 0.0) || !room {
                 return;
             }
@@ -242,7 +242,7 @@ impl Room {
         let Some(members) = defend.waves.get(wave).map(|list| foes_of(list.iter())) else { return Stood::Nobody };
         let mix = (key[0] << 16 | key[1] << 8 | key[2] | wave << 24) as u64 ^ u64::from(player) << 32;
         let seed = self.world_seed ^ WAVE_STREAM ^ mix;
-        if self.living_foes() + members.len() > self.foes_most {
+        if self.living_foes() + members.len() > self.others_most() {
             return Stood::Waits;
         }
         let Some(ground) = self.ground_of(place, WAVE_OUT + WAVE_REACH) else { return Stood::Waits };
@@ -295,8 +295,9 @@ impl Room {
         );
         if waiting && !unseen.spawn.is_empty() {
             let members = foes_of(unseen.spawn.iter());
-            let Some(ground) =
-                self.ground_of(&place, place.radius).filter(|_| self.living_foes() + members.len() <= self.foes_most)
+            let Some(ground) = self
+                .ground_of(&place, place.radius)
+                .filter(|_| self.living_foes() + members.len() <= self.others_most())
             else {
                 return;
             };

@@ -13,7 +13,7 @@ use room::sea_weather::open_sea_at;
 use sailing::HullKind;
 use sailing::floats::{HELM_FLOATS, POSE_FLOATS, SHIP_FLOATS};
 use sailing::pose::{Pose, pose_of};
-use sailing::ship::{Helm, Ship};
+use sailing::ship::{Helm, SAILS_SET, Ship};
 use sailing::waters::OpenSea;
 use std::cell::RefCell;
 
@@ -37,7 +37,7 @@ fn with_weather<T>(use_weather: impl FnOnce(&Swell, [f64; 2]) -> T) -> T {
 
 fn ship_of(numbers: &[f64]) -> Option<Ship> {
     let [x, y, heading, ahead, abeam, turn, sail_way, rung] = numbers[..] else { return None };
-    let rung = (rung == rung.trunc() && (-1.0..=2.0).contains(&rung)).then_some(rung as i8)?;
+    let rung = (rung == rung.trunc() && (-1.0..=f64::from(SAILS_SET)).contains(&rung)).then_some(rung as i8)?;
     Some(Ship { x, y, heading, ahead, abeam, turn, sail_way, rung })
 }
 
@@ -106,7 +106,7 @@ fn sighted_of(numbers: &[f64]) -> Option<Sighted> {
 /// room's time, the seconds the look has been held, then every other ship they see. Answers 0 for no side bearing;
 /// else 1, its side (0 port, 1 starboard), the elevation, the reach, the landing zone's radius, its spread over its
 /// gun's own, 1 if on target, and for each gun its launch's six numbers and where it stops: 1, the seconds, the point,
-/// 1 in the water, and 1 and a strike's point (or 0 and three zeros); or 0 and eight zeros, still aloft.
+/// 1 in the water, and 1 and a strike's point (or 0 and three zeros); or 0 and nine zeros, still aloft.
 #[must_use]
 pub fn lay(numbers: &[f64]) -> Vec<f64> {
     lay_numbers(numbers).unwrap_or_default()

@@ -4,7 +4,6 @@
 use crate::bounties::board;
 use crate::character::Character;
 use crate::world::Difficulty;
-use serde::Deserialize;
 
 /// The faction and ranks the board names, as `foes` and `naval` number them.
 pub const GREY_TITHE: u8 = 1;
@@ -13,33 +12,12 @@ pub const MINIBOSS_RANK: u8 = 4;
 
 /// What an objective counts: one each time the room sees its feat. Each none is any; a rank counts it and every rank
 /// above. Read from the board's table, never kept with a character.
-#[derive(Clone, Debug, PartialEq, Eq, Deserialize)]
-#[serde(rename_all = "snake_case")]
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub enum Objective {
-    Fell {
-        #[serde(default)]
-        faction: Option<u8>,
-        #[serde(default)]
-        rank: Option<u8>,
-        #[serde(default)]
-        island: Option<String>,
-    },
-    Gather {
-        #[serde(default)]
-        resource: Option<u8>,
-    },
-    Sink {
-        #[serde(default)]
-        water: Option<String>,
-        #[serde(default)]
-        rank: Option<u8>,
-    },
-    Clear {
-        #[serde(default)]
-        island: Option<String>,
-        #[serde(default)]
-        tier: Option<Difficulty>,
-    },
+    Fell { faction: Option<u8>, rank: Option<u8>, island: Option<String> },
+    Gather { resource: Option<u8> },
+    Sink { water: Option<String>, rank: Option<u8> },
+    Clear { island: Option<String>, tier: Option<Difficulty> },
 }
 
 /// What a room saw happen: a foe felled, by each player who shares its kill, by its faction, rank and island (a

@@ -64,8 +64,7 @@ pub fn shelter_bytes(x: f64, y: f64, cell_m: f64, columns: u32, rows: u32, time_
 /// fingerprinted (`land::sea::weather_sea_hash`).
 #[must_use]
 pub fn sea_hash(points: &[u8], time_s: f64) -> u64 {
-    let numbers: Vec<f64> =
-        points.chunks_exact(8).map(|bytes| f64::from_le_bytes(bytes.try_into().unwrap_or_default())).collect();
+    let numbers = crate::floats_of(points);
     let pairs: Vec<(f64, f64)> = numbers.chunks_exact(2).map(|pair| (pair[0], pair[1])).collect();
     with_waters(|waters, traffic| weather_sea_hash(waters, &traffic.roadsteads, &pairs, time_s)).unwrap_or_else(|| {
         let empty = world::waters::Waters::new(&world::layout::Layout::default());

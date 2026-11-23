@@ -35,7 +35,7 @@ pub const RAID_MINUTE: u32 = 15_015;
 const MOST_TICKS: u32 = 9 * 3_600;
 /// Both tests hold these values; a change to the events, the foes or the fight changes them in both, on purpose.
 pub const FISSURE_HASH: &str = "14ea429c";
-pub const RAID_HASH: &str = "cafd3593";
+pub const RAID_HASH: &str = "c2d0eb42";
 /// Where each stood as its result first showed, which a change to the fingerprint must account for: the tick, its
 /// stage (the Warden's; Marrow's wave) and its progress (the shards set; the stores' health left, per mille). The
 /// players' swings take the room's chain whatever stroke is asked (`room::chain`).
