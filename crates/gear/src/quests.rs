@@ -274,14 +274,17 @@ impl Character {
         true
     }
 
-    /// Tells the quest walked of every piece worn, so a piece put on before its task was reached counts once it is.
-    pub(crate) fn tell_worn(&mut self) {
-        if !self.goals_unmet().any(|(_, goal)| goal.kind() == GoalKind::Wear) {
-            return;
-        }
+    /// Tells the quest walked of every piece worn, and of every slot a piece is held for, so a piece bought or put on
+    /// before its task was reached counts once it is.
+    pub(crate) fn tell_held(&mut self) {
+        let asks = |kind| self.goals_unmet().any(|(_, goal)| goal.kind() == kind);
+        let (wear, buy) = (asks(GoalKind::Wear), asks(GoalKind::Buy));
         for slot in Slot::VESTIGE {
-            if self.worn(slot).is_some() {
+            if wear && self.worn(slot).is_some() {
                 self.tell(&Event::Worn(slot));
+            }
+            if buy && self.items.values().any(|(item, _)| item.kind.slot() == slot) {
+                self.tell(&Event::Bought(slot));
             }
         }
     }

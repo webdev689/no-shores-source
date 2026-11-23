@@ -1,7 +1,8 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { ASKS, type GearItem, type GearState } from '../network/gearMessages.ts';
-import { characterOf, itemDetailOf, vendorsOf } from './gearScreen.ts';
+import { readFile } from 'node:fs/promises';
+import { STOCK, WARES, characterOf, itemDetailOf, vendorsOf } from './gearScreen.ts';
 
 const item = (fields: Partial<GearItem>): GearItem => ({
   id: 1,
@@ -167,4 +168,18 @@ test("a module's page fits it in its own slot, never feeds it, and prices its no
     'no Fruit of Dagon for a module',
   );
   assert.equal(detail.columns[0]?.nodes[0]?.cost, 'Costs 200 Aurem, 4 Canvas, 2 Timber.');
+});
+
+test("each vendor's stock is the rules' own: the day's wares, then its starter pieces", async () => {
+  const vendor = await readFile(new URL('../../../crates/gear/src/vendor.rs', import.meta.url), 'utf8');
+  const starter = vendor.slice(vendor.indexOf('fn starter_kinds'));
+  const pieces = ['Armorsmith', 'Weaponsmith', 'Shipwright'].map(
+    (name) =>
+      (new RegExp(`Vendor::${name} => &\\[([^\\]]*)\\]`).exec(starter)?.[1] ?? '').match(/Kind::/g)?.length ?? 0,
+  );
+  assert.deepEqual(
+    STOCK,
+    pieces.map((count) => WARES + count),
+  );
+  assert.equal(Number(/pub const WARES: usize = (\d+);/.exec(vendor)?.[1]), WARES);
 });

@@ -168,3 +168,23 @@ fn a_character_already_on_the_houses_is_not_walked_round_again() {
     assert_eq!(kept.ask(Ask::Speak { keeper: keeper("stranger") }, SOCIAL, &DICE), Err(Refusal::NothingToSay));
     assert_eq!(kept.materials.aurem, 0, "no gift past her task");
 }
+
+#[test]
+fn starter_gear_bought_during_the_round_counts_once_its_task_is_reached() {
+    let mut character = welcomed();
+    let level = character.level();
+    let buy = |character: &mut Character, vendor, kind| {
+        let ware = starter(vendor, kind, level);
+        assert!(character.ask(Ask::Vend { vendor, ware, day: 4 }, SOCIAL, &DICE).is_ok());
+    };
+    buy(&mut character, Vendor::Weaponsmith, Kind::SwordAndShield);
+    for kind in [Kind::Head, Kind::Torso, Kind::Arms, Kind::Legs] {
+        buy(&mut character, Vendor::Armorsmith, kind);
+    }
+    for key in ["weaponsmith", "armorsmith", "mage", "vault", "tailor", "tack", "mail", "harbourmaster"] {
+        assert!(character.ask(Ask::Speak { keeper: keeper(key) }, SOCIAL, &DICE).is_ok(), "{key}");
+    }
+    let task = character.quest_now().map(|(quest, task)| quests().quests[quest].tasks[task].id.as_str());
+    assert_eq!(task, Some("wear-them"), "the pieces already owned arm the player: nothing more to buy");
+    assert_eq!(character.materials.aurem, 400 - 5 * 50);
+}

@@ -327,10 +327,10 @@ impl Character {
         }
         .map(|done| {
             // A level reached or a piece fully upgraded earns its emblem as it happens; a fragment choice left with
-            // nothing to own is paid; a piece worn counts for the quest walked.
+            // nothing to own is paid; a piece held or worn counts for the quest walked.
             self.earn_due();
             self.settle_choices();
-            self.tell_worn();
+            self.tell_held();
             done.unwrap_or(Done::Done)
         })
     }

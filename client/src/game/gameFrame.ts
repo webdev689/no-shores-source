@@ -257,9 +257,9 @@ export function startFrames(parts: FrameParts, playing: Playing): void {
     // character still owed her gift in a social space with no welcome to hear (a page reloaded mid-welcome, or a
     // browser that played the story before) is given it there.
     const gift = () => {
-      if (giftAsked || !quests.waitsOnStranger) return;
+      if (giftAsked || !quests.waitsOnStranger || !here.gear) return;
       giftAsked = true;
-      here.gear?.ask({ kind: ASKS.speakWith, column: COUNTERS.stranger ?? 0 });
+      here.gear.ask({ kind: ASKS.speakWith, column: COUNTERS.stranger ?? 0 });
     };
     if (playing.after.past && here.node.kind === 'social') gift();
     const met = playing.after.frame(shown.shot, viewport, seconds, clock, walker.you, flow.mode !== 'foot', {
