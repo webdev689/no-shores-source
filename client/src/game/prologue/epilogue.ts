@@ -3,6 +3,7 @@
 // `welcome/tour.ts`), then walks off into the town and is let go once the player no longer sees her. Leaving the
 // place ends it. The journey from here is the player's own.
 import type { CardAt, Cards } from '../../player/cards.ts';
+import type { LampPlace } from '../../sky/lamps.ts';
 import { onScreen, type Shot } from '../camera.ts';
 import { actorCards, type Actor } from './actors.ts';
 import { OVER_HEAD_M, STRANGER_DRESS, STRANGER_HEAD, STRANGER_ID } from './shore.ts';
@@ -122,6 +123,11 @@ export class Epilogue {
   /** Says a scene of hers, and of whoever answers her, in the dialogue box; resolved once said or hushed. */
   say(scene: string): Promise<void> {
     return this.stage.play(scene, true, { stranger: 'stranger' });
+  }
+
+  /** Lights `lamps` in the scene she stands in, in place of the last she lit; none puts them out. */
+  light(lamps: readonly LampPlace[]): void {
+    this.stage.parts.scene.lamps = lamps;
   }
 
   /** A press: the line being said is typed whole, or the next begins. */

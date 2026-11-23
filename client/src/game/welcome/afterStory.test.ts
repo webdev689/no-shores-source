@@ -5,6 +5,7 @@ import type { QuestState } from '../../network/questMessages.ts';
 import { type Shot, onScreen } from '../camera.ts';
 import type { Epilogue } from '../prologue/epilogue.ts';
 import type { CardAt } from '../../player/cards.ts';
+import { FIRELIGHT, type LampPlace } from '../../sky/lamps.ts';
 import { AfterStory, clearOfEye, heldHud } from './afterStory.ts';
 import { SOCIAL } from './plazaForTests.ts';
 import { FLY_S, TOUR } from './tour.ts';
@@ -35,6 +36,8 @@ function story(gear: { now: GearState | null } = { now: gearOf(true) }) {
     words: () => Promise.resolve(),
     say: (scene: string) => new Promise<void>((finish) => (said.push(scene), finishes.push(finish))),
     advance: () => void (pressed += 1),
+    lamps: [] as readonly LampPlace[],
+    light: (lamps: readonly LampPlace[]) => void (epilogue.lamps = lamps),
     leave: () => void (epilogue.done = true),
     frame: () => {
       if (!speaking) {
@@ -50,7 +53,7 @@ function story(gear: { now: GearState | null } = { now: gearOf(true) }) {
   const ask = (asked: GearAsk) => void gifts.push(`${asked.kind}:${asked.column ?? ''}`);
   const frame = (node = SOCIAL) =>
     after.frame(OWN, VIEW, 1 / 30, 0, YOU, false, { node, floor: () => 30, gear: gear.now, ask, blocks: [] });
-  return { after, said, gifts, frame, finish: () => finishes.shift()?.(), pressed: () => pressed };
+  return { after, said, gifts, frame, finish: () => finishes.shift()?.(), pressed: () => pressed, epilogue };
 }
 
 test('on arriving in Overlook the stranger says her welcome, the keys held and the view hers, then gives her gift', async () => {
@@ -177,4 +180,28 @@ test("while she speaks the figures are drawn for the tour's own eye, and none st
   const card = (x: number, y: number) => ({ x, y, z: 30 }) as unknown as CardAt;
   const [near, far] = [card(shot.eye[0] + 3, shot.eye[1]), card(shot.eye[0] + 6, shot.eye[1])];
   assert.deepEqual(clearOfEye([near, far], shot.eye), [far], 'a walker 3 m from the eye is not drawn; one 6 m off is');
+});
+
+test('while she speaks a soft warm lamp hangs over the pair, as a lantern of the town, gone once the welcome ends', async () => {
+  const { after, frame, finish, epilogue } = story();
+  assert.deepEqual(epilogue.lamps, [], 'none before she speaks');
+  frame();
+  await settled();
+  frame();
+  const [lamp] = epilogue.lamps;
+  assert.ok(lamp && epilogue.lamps.length === 1, 'one lamp while she speaks');
+  // Her feet (1001.8, 2029, 30) and the player's (1000, 2030, 30): over their middle, a lantern's height.
+  assert.deepEqual(lamp.at, [1000.9, 2029.5, 32.6]);
+  assert.equal(lamp.reachM, 8);
+  assert.deepEqual(
+    lamp.light,
+    FIRELIGHT.map((part) => part * 0.7),
+  );
+  for (let step = 0; step < TOUR.length; step++) {
+    finish();
+    await settled();
+  }
+  for (let flown = 0; flown < FLY_S + 0.2; flown += 1 / 30) after.shot(OWN, 1 / 30);
+  frame();
+  assert.deepEqual(epilogue.lamps, [], 'gone once the keys are the player’s again');
 });

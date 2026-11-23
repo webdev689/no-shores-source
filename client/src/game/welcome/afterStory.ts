@@ -5,6 +5,7 @@
 import { ASKS, type GearAsk, type GearState } from '../../network/gearMessages.ts';
 import type { CardAt } from '../../player/cards.ts';
 import type { Block } from '../../rules/movementRules.ts';
+import { FIRELIGHT, type LampPlace } from '../../sky/lamps.ts';
 import type { Shot } from '../camera.ts';
 import type { StationInfo } from '../nodes.ts';
 import type { Epilogue } from '../prologue/epilogue.ts';
@@ -17,6 +18,23 @@ const AHEAD_M = 3;
 /** While she speaks no figure is drawn nearer the tour's eye than this, metres: a townsman walking past the camera
  *  would fill the view. Her pair stands 6 m off it and a keeper at least 5.5 m (`framing.ts`). */
 export const TOUR_CLEAR_M = 4;
+
+/** The soft warm light over the pair while she speaks: a lantern of the town's (`glowLamps`), dimmer, hung over the
+ *  middle of the two of them, so they are seen at any hour; the sky's lamps light it only as the daylight fades. */
+const PAIR_LAMP = { upM: 2.6, reachM: 8, strength: 0.7, seed: 0.5 } as const;
+
+/** The lamp over the pair, her feet and the player's. */
+export function pairLamp(
+  her: { readonly x: number; readonly y: number; readonly z: number },
+  you: { readonly x: number; readonly y: number; readonly z: number },
+): LampPlace {
+  return {
+    at: [(her.x + you.x) / 2, (her.y + you.y) / 2, Math.max(her.z, you.z) + PAIR_LAMP.upM],
+    reachM: PAIR_LAMP.reachM,
+    light: [FIRELIGHT[0] * PAIR_LAMP.strength, FIRELIGHT[1] * PAIR_LAMP.strength, FIRELIGHT[2] * PAIR_LAMP.strength],
+    seed: PAIR_LAMP.seed,
+  };
+}
 
 /** The figures a tour's eye sees, all but those nearer it than `TOUR_CLEAR_M`. */
 export function clearOfEye<Card extends { readonly x: number; readonly y: number }>(
@@ -54,6 +72,8 @@ export class AfterStory {
   /** The bearing to turn the player to as she walks off, until the frame takes it. */
   private turn: number | null = null;
   private gifted = false;
+  /** Whether the lamp over the pair is lit. */
+  private lit = false;
   /** Where the player stood on the last frame. */
   private you: You = { x: 0, y: 0, z: 0, facing: 0 };
 
@@ -76,7 +96,8 @@ export class AfterStory {
     this.you = you;
     const epilogue = this.epilogue;
     if (!epilogue || epilogue.done) {
-      [this.epilogue, this.welcome] = [null, null];
+      if (this.lit) epilogue?.light([]);
+      [this.epilogue, this.welcome, this.lit] = [null, null, false];
       return [];
     }
     if (!this.welcome && here.node.kind === 'social') {
@@ -100,7 +121,12 @@ export class AfterStory {
       epilogue.floor = here.floor;
       this.welcome = welcome;
     }
-    return epilogue.frame(shot, viewport, seconds, clock, you, veiled, here.held);
+    const cards = epilogue.frame(shot, viewport, seconds, clock, you, veiled, here.held);
+    const her = epilogue.where;
+    const lamps = this.holding && her ? [pairLamp(her, you)] : [];
+    if (lamps.length > 0 || this.lit) epilogue.light(lamps);
+    this.lit = lamps.length > 0;
+    return cards;
   }
 
   /** Her gift, asked of the room once in a page: after her farewell, or owed with no welcome to hear in a social space
