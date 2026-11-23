@@ -83,7 +83,8 @@ pub(crate) fn standing_of<'built>(
             .into_iter()
             .enumerate()
             .map(|(place, mut ware)| {
-                ware.id = u32::try_from(place).unwrap_or_default();
+                // The number a page asks for it by, so a room whose week drew another there refuses it.
+                ware.id = gear::shape::shown(week, u8::try_from(place).unwrap_or(u8::MAX));
                 let price = u32::from(gear::shape::price(ware.rarity));
                 crate::gear_wire::item_offset(builder, &ware, At::Carried, price)
             })

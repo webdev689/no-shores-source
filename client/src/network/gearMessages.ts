@@ -80,7 +80,7 @@ export const ASKS = {
   /** A dye, coat or barding worn, or bought from the Tailor or the Tack, by its number in `item`. */
   wearCosmetic: 55,
   buyCosmetic: 56,
-  /** One of Shape's wares of the week, by its place in `node`. */
+  /** One of Shape's wares of the week, by its place in `node` and in `item` the number the room sent as its `id`. */
   buyFromShape: 57,
   /** The houses' roads: a keeper spoken with (`column` a house's number, or 10 the Mage, 11 the vault, 12 the
    *  Armorsmith, 13 the Weaponsmith, 14 the Tailor, 15 the Tack, 16 the Harbourmaster), and a fragment chosen
@@ -259,7 +259,7 @@ export interface GearState extends LoreState {
   readonly worn?: { readonly dye: number; readonly coat: number; readonly barding: number };
   readonly cosmeticsSold?: readonly number[];
   /** Their Shapes; and while Shape is in their social space, his place among its spots and his wares of the
-   *  week priced in Shapes. */
+   *  week priced in Shapes, each numbered (`id`) as a page asks for it. */
   readonly shapes?: number;
   readonly shape?: { readonly place: number; readonly wares: readonly GearItem[] } | null;
   /** In a social space, every faction's wares, each numbered by its place among its faction's and priced in Aurem. */

@@ -168,10 +168,10 @@ number is one of [[Gear as Claude Shapes It]].
   `content/gear/rolled.json` (a weapon's as the game words its kind, "Twin Daggers", "Brace of Pistolets"; armour
   Helm, Hauberk, Gauntlets, Greaves). A faction's pieces are named in `content/gear/items.json` by its faction's set:
   Stormcaller, Lamplighter, Veiled. An Atheric keeps its own name, and so does any other named piece. The named
-  Legendaries that are no faction's leave every drop: no Vestige, kill, clear or package gives one. They are kept-only
-  but for Shape's week, and one a player keeps stays as it is, its name its own. A rolled piece's `name` byte is its
-  look roll. A gun is named by its content's metal, though drawn plain or gilded, so it says where it was earned. A
-  ship's module keeps its rolled name.
+  Legendaries that are no faction's leave every drop, Vestige and vendor: no Vestige, kill, clear, package or Shape
+  gives one. They are kept-only, and one a player keeps stays as it is, its name its own. A rolled piece's `name`
+  byte is its look roll. A gun is named by its content's metal, though drawn plain or gilded, so it says where it was
+  earned. A ship's module keeps its rolled name.
 - **Items as themselves.** A Boss's kill always leaves each player who struck it an item, not sealed, and a Miniboss's
   35 times in 100, each beside its Vestige and by a roll of its own, raised by the tier as the Vestige is
   (`vestige::found_items`, `loot_kill`). It is made as a Vestige of its rank's colours, opened, would make it, for any
@@ -480,8 +480,13 @@ the factions' counters are in [[Factions]].
 - A day runs from 09:00 UTC to 09:00 UTC (`gear::clock`): the smiths' wares, the Tailor's and the Tack's turn then.
 - **Shape** comes to Overlook from Friday 09:00 to Sunday 21:00 UTC and stands at one of eight places on the plaza,
   the week's (`gear::shape`, in the clock's weeks from Tuesday 09:00 UTC). He sells six pieces for the week, four
-  Legendary and two Atheric, each a named item at level 20 (no drop gives a named Legendary, "Names" above), for a
-  slot of the week's dice, for 7 and 15 Shapes, sold
+  Legendary and two Atheric, at level 20, for 7 and 15 Shapes. Each Legendary is rolled for one of four Vestige slots
+  the week's dice draw, as a Vestige makes one (`vestige::make`), in a content the week's dice draw among the world,
+  a dungeon, a sea dungeon, an Elite Dungeon and an Abyss Dungeon (never a faction's or a Breach's): it wears that
+  content's set look and set name and rolls its traits, like every other Legendary ("Names" above). The Atherics are
+  named, as every Atheric is. Why: the owner's "Everything recieves set names" and "Atherics remain unique" leave
+  only Atherics their own names, so a vendor's Legendary is rolled as a drop's is (Claude's call, in
+  [[Gear as Claude Shapes It]]). They are sold
   from level 20 as a faction's are (his screen dims them "From level 20" below it). **Shapes** come only from the
   week's Abyss content ([[Bosses and Dungeons Drop Items, Clears Pay, and Shapes Come From the Week's Abyss]]): the
   week's Abyss Dungeon's first clear pays 15 (`gear::clears`, [[Activities]]), and no kill gives any. A player holds
@@ -493,8 +498,9 @@ the factions' counters are in [[Factions]].
   day turns or Shape comes, goes or moves, and a purchase is an ask like any other: 12 a smith's ware (its place in
   `node` and the day it was shown, which the gear message carries, so one shown before the day turned is refused as
   "It is not sold here today"), 16 an Ammo crate, 56 a cosmetic (its number in `item`), 57 a piece of Shape's (its
-  place in `node` and the piece shown there, its place in the catalogue's items, in `item`, so a page shown another
-  piece than his week now draws there is told it is not sold here).
+  place in `node` and in `item` the number the room sent with it as its `id`, `gear::shape::shown`: an Atheric's
+  place in the catalogue's items, a rolled Legendary's a hash of the piece, so a page shown another piece than his
+  week now draws there, another week's or one drawn again as the catalogue grew, is told it is not sold here).
 
 ## Emblems
 
@@ -576,7 +582,8 @@ Vestige's line says it too ("For the head, level 20, from an Abyss Dungeon.").
 - **What carries it**: a kill's Vestiges and items, a clear's and a cache's (`loot_kill`, `reward_clear`), from the
   room's content; the dungeon of the day's first clear a dungeon's, the week's two an Elite's and an Abyss's
   (`gear::clears`), and each playlist's daily and weekly its tier's (`gear::playlist`); the smiths' wares, a faction's packages, the public events' chests and the Test Ground's the
-  world's; a faction's ware the faction's; Shape's each its own.
+  world's; a faction's ware the faction's; Shape's Legendaries the content the week drew for each, his Atherics each
+  its own.
 - **A Vestige opened** makes its item from its own content: a rolled one, Legendary included, keeps it; an Atheric is
   drawn among its content's Atherics of its slot (`source` in `content/gear/items.json`, by the content its look
   belongs to), else among every content's, and keeps its own (`vestige::make`). A kill's or a clear's item laid back as a Vestige for want of room is of the content it dropped
