@@ -24,6 +24,7 @@ code:
   - crates/naval/src/fight_step.rs
   - crates/naval/src/fight_focus.rs#spread_after
   - crates/naval/src/laying.rs#preview
+  - crates/naval/src/laying.rs#on_water
   - crates/naval/src/ram.rs#ram_blow
   - crates/naval/src/ram.rs#overlap
   - crates/naval/src/fight_ram.rs
@@ -34,6 +35,8 @@ code:
   - client/src/editor/aimCamera.ts#AimCamera
   - client/src/editor/aimStation.ts#aimStation
   - client/src/editor/aimCamera.ts#wayAboard
+  - client/src/editor/aimCamera.ts#laidNearest
+  - client/src/editor/aimCamera.ts#laidAlong
   - client/src/editor/shipClear.ts#orbitClearance
   - client/src/editor/shipClear.ts#swingOf
   - client/src/editor/naval.ts#aimOf
@@ -122,10 +125,16 @@ sea's soundscape ([[Ambience]]).
   out to the laid gun's longest throw and 60 m, the nearest entry taken.
   The side is laid on that point, its range out along the fire and its own height. A look on the ship's canvas lays chain
   for that very point and every other load for its hull's middle. The point is led along the fire by the ship's way over the
-  ball's flight there. A look that meets no part of the ship lays for the water's range, and so does a ray from an eye
+  ball's flight there. A look that meets no part of the ship lays for where its ray meets the water (`on_water`; the
+  ground where it is dry), the swell felt as a ball laid there would come down on it (DFO's own flight time out to it),
+  so the balls come down under the sight whatever the swell: the ray is felt on toward the water in steps no swell
+  rising 0.4 m a metre could meet, until it stands within a centimetre of it, 64 steps at most, out to the laid gun's
+  longest throw and 60 m. A look level or over the horizon, one past that, and a look with no ray lay for the water's
+  range on a sea at rest at the ship's heave; so does a ray from an eye
   more than 100 m from the player's own ship (`LOOK_EYE_M`: the fight camera's 75 m out from 6 m over it, and the way
   the ship makes meanwhile), so no page lays on a ship by looking from beside it ([[The Server Is the Authority Over Everything]]). Whatever the ray meets, the side fires
-  square to the hull, its elevation within its guns' carriage. A release fires that same lay.
+  square to the hull, its elevation within its guns' carriage. A release fires that same lay, felt on the water of
+  that tick.
 - **A held lay narrows**, as Black Flag's broadside does ([[Aiming a Ship Follows Black Flag, From Its Deck]];
   `fight_focus.rs`): a player's volley fired the moment its lay is taken scatters twice as wide as its guns' own,
   settling evenly to theirs over 1.5 s of holding. The rules count it by the player's orders, a tick an order holding a
@@ -676,16 +685,22 @@ DFO's `aimCamera.js`, `navalRender.js`, `navalHud.js`, `navalLoads.js` and `seaZ
   1.8 m out; the Schooner's under its main boom; the Brig's on its quarterdeck, aft of its main course; the Frigate's on
   its centreline between its mizzen and its main. A hull whose rig left no such gap would keep an eye 1.5 m out past its
   side, clear of its sails' swing. It rides the ship as drawn, its heave, pitch and heel (the story's Brig on the story's
-  swell); the view itself stays level, and narrows 15% as it eases in (`AIM_ZOOM`) in the sea's fights and the
+  swell), from the same answer of the rules the frame draws the ship from, so the ship holds still in the view however
+  unevenly the answers come; the view itself stays level, and narrows 15% as it eases in (`AIM_ZOOM`) in the sea's fights and the
   story's. Once it is there, no way round is looked for again, however the ship heels. A sinking ship's guns are silent:
   its eye never moves.
 - **Where it looks**: off the side, at the water its guns are laid on square off its battery's middle, so the crosshair at the view's middle
   stands on the landing zone. A drag left or right does nothing while the aim is held; a drag up or down lays the
   guns farther or nearer, the range read from the drag as DFO's lookReach reads a look from the eye's height (where
   it meets the water, then on at 30 m a degree past the dip, up to 0.15 rad over the horizon), and the view pitched
-  down to that point. The range is held between the guns' nearest (their lowest elevation, -10°, from their mouths)
-  and their longest throw from where they leave. The view follows the landing zone's drift along the keel, the
-  ship's own way the balls carry (read from the lay's ends, eased over 0.25 s so a late answer never jerks it). The
+  down to that point. The range is held between the guns' nearest (their lowest elevation, -10°, from their mouths,
+  or, while the rules answer that the guns stand there, where their balls fall as the ship lies now, which a crest
+  under it carries farther: `laidNearest`) and their longest throw from where they leave. The rules lay where the
+  view's middle meets the water, so the landing zone stands under the crosshair. The view turns along the keel so
+  its middle stands over the volley's fall (`laidAlong`): the ship's own way the balls carry, and a look grazing the
+  swell that meets a crest short of the range asked (read from the lay's ends, eased over 0.25 s so a late answer
+  never jerks it). Measured on the rules' swell, the fall stands within a few pixels of the crosshair on a 1080-line
+  screen, settled (`seaAim.test.ts`). The
   look's ray runs from the eye along the view's middle, so a ship under the crosshair is laid on. Let go, the camera
   goes on round the ship looking the way the aim looked, so it eases home without a swing; out of the aim the orbit
   keeps its own clamp, 0.05 to 1.2 rad down.

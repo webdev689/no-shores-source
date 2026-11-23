@@ -1,8 +1,10 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
+import { aimStation } from '../editor/aimStation.ts';
 import type { MarkDrawer } from '../editor/naval.ts';
 import { sweptBoxes } from '../editor/shipClear.ts';
 import { SLOOP_HULL } from '../ships/hulls.ts';
+import { shipAxes } from '../ships/shipAxes.ts';
 import { eyeFor, FIELD_OF_VIEW, HEIGHT } from '../overworld/overworldCamera.ts';
 import type { FightCaptain, FightOrders, FightVessel, FightView } from '../rules/fightRules.ts';
 import { BAR_OVER_M } from '../ships/shipBars.ts';
@@ -227,6 +229,34 @@ test('pressing aim eases the eye out to its battery, not a cut from the orbit in
   const last = shots.at(-1);
   const [x = 0, y = 0] = vessel.ship;
   assert.ok(last && Math.hypot(last.eye[0] - x, last.eye[1] - y) < 8, "a second on it stands by the ship's side");
+});
+
+test('aiming, the eye rides the ship as the frame draws it: each answer the room brings moves both at once', async () => {
+  let answers = 0;
+  // Under way and rolling, a new answer each frame, as the room sends them.
+  const room = {
+    orders: () => undefined,
+    takeFight: (): FightView => {
+      answers += 1;
+      const ship = [5000 + 0.2 * answers, 6000, 0.4, 12, 0, 0, 0, 2];
+      return { ...FIRST, player: { ...vessel, ship, pose: [0.4 * Math.sin(answers), 0, 0.06 * Math.sin(answers), 0] } };
+    },
+  } as unknown as SeaRoom;
+  const fight = new SeaCombat(room, FIRST, MARKS, 0);
+  const station = aimStation(SLOOP_HULL).eye;
+  fight.aim(true);
+  for (let frame = 0; frame < 90; frame++) {
+    const shot = fight.frame(1 / 30, frame / 30, 1000, (error) => assert.fail(String(error)));
+    await new Promise((settled) => setImmediate(settled));
+    const drawn = fight.ownAt(1);
+    // Eased in by two seconds on.
+    if (frame < 60 || !drawn) continue;
+    const axes = shipAxes(drawn.heading, drawn.pitch, drawn.roll);
+    const off = [shot.eye[0] - drawn.x, shot.eye[1] - drawn.y, shot.eye[2] - drawn.heave];
+    const local = axes.map((axis) => off.reduce((sum, value, index) => sum + value * (axis[index] ?? 0), 0));
+    const apart = Math.hypot(...local.map((value, axis) => value - (station[axis] ?? 0)));
+    assert.ok(apart < 1e-3, `frame ${frame}: the eye stands ${apart} m off its station on the ship drawn`);
+  }
 });
 
 test("a sinking ship's guns are silent: aiming never moves its eye", async () => {

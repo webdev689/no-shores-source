@@ -354,6 +354,8 @@ export class SeaCombat {
    *  which the view pans down to from the sea's by `share`. */
   frame(seconds: number, time: number, far: number, fail: (error: unknown) => void, swell?: ShelteredSwell): Shot {
     [this.swell, this.waterTime] = [swell, time];
+    // The answer that came since the last frame first: the ship is drawn from it, so the eye riding it rides it too.
+    this.last = this.naval.view ?? this.last;
     const aimed = this.aimAt(this.orbitAt(seconds), seconds);
     this.aimed = aimed;
     // The guns laid no nearer than their lowest and no farther than their longest, the look's pitch held there.
