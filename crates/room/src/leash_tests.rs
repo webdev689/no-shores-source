@@ -77,9 +77,8 @@ pub(super) fn alert(room: &Room, id: FighterId) -> u8 {
 #[test]
 fn a_garrison_foe_chased_50_m_from_its_post_walks_back_healing_heeds_no_one_and_stands_idle_there_again() {
     for kind in [NodeKind::Patrol, NodeKind::Boss] {
-        // At the pass: its first group's beat leaves its post along a 28 m leg, its walk on watched along it.
         // At an island's highest levels at Abyss, every foe of the group shielded, it keeps its leash as any does.
-        let mut room = levelled(kind, "pass", (26, 30));
+        let mut room = levelled(kind, "glade", (26, 30));
         room.set_difficulty(gear::Difficulty::Abyss);
         for id in room.garrison[0].standing.clone() {
             let found = room.foes.get_mut(&id).unwrap();

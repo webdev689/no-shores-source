@@ -78,8 +78,7 @@ fn lightswitch_doubles_a_foes_telegraphed_blow_on_a_player_and_never_a_players_o
 /// The shields a patrol's garrison stands with, its run's modifiers known before it stands.
 fn shields(id: &str, run: Option<Run>) -> Vec<Option<gear::Element>> {
     let ring = vec![[-300.0, -300.0], [300.0, -300.0], [300.0, 300.0], [-300.0, 300.0]];
-    // Its spawn by the ring's southern edge, the garrison's square inland of it.
-    let mut room = Room::node(Floor::Flat, Vec::new(), Section { ring, spawns: vec![[0.0, 250.0]], falls_kill: false });
+    let mut room = Room::node(Floor::Flat, Vec::new(), Section { ring, spawns: vec![[0.0, 0.0]], falls_kill: false });
     room.world_seed = crate::garrison::node_seed(id);
     room.foes_most = crate::NODE_FOES_MOST;
     room.run = run;

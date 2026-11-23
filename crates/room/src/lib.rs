@@ -515,8 +515,8 @@ impl Room {
         if matches!(happening, Some(Happening::Swung(_) | Happening::Loosed(_)))
             && let Some(found) = self.players.get_mut(&id)
         {
-            // Striking first ends the grace a player stood again with.
-            found.graced = 0;
+            // Striking first ends the grace a player stood again with, and the landing's.
+            (found.graced, found.struck_landed) = (0, true);
         }
         match happening {
             Some(Happening::Swung(attack)) => self.swings.push((id, attack)),

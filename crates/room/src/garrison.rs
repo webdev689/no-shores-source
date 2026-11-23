@@ -4,9 +4,8 @@
 //! foe's level from its island's band and its shield, and each beat, so every machine stands the same; the seas raise
 //! the levels once the host sets them. A cleared group stands again STAND_AGAIN later (a Miniboss's or a Boss's,
 //! GREAT_STAND_AGAIN), once no player is within CLEAR_AROUND of its post and the living foes leave it room.
-//! The baked square stands inland past the spawn's clear ground rather than round the spawn, so the landing is a safe
-//! place to arrive, out of every foe's reach, and the square holds the garrison beyond it without growing: a bake's
-//! cost grows far faster than its area.
+//! The baked square reaches inland from the spawn rather than round it, so it holds the garrison past the spawn's
+//! clear ground without growing: a bake's cost grows far faster than its area.
 
 use crate::{Floor, NODE_FOES_MOST, NodeKind, Room, SEED};
 use ::foes::Alertness;
@@ -23,11 +22,12 @@ use naval::random::Mulberry32;
 use navmesh::NavMesh;
 use reach::{Section, distance_to_ring, inside, respawn_point};
 
-/// How far a node's room bakes its navmesh each way from the square's middle.
+/// How far a node's room bakes its navmesh each way from the square's middle, and how far inside the square's edge its
+/// first spawn stands, toward the middle of its section's ring.
 pub(crate) const NODE_AROUND: f64 = 35.0;
-/// No garrison foe stands nearer a player's spawn than this, nor walks nearer the first spawn, the square's near edge
-/// standing this far inland: past a shooter's reach, so a player lands out of every foe's fight.
-pub(crate) const SPAWN_CLEAR: f64 = ::foes::tuning::SHOOT_RANGE + 10.0;
+const SPAWN_INSET: f64 = 15.0;
+/// No garrison foe stands nearer a player's spawn than this.
+pub(crate) const SPAWN_CLEAR: f64 = 25.0;
 /// A cleared group stands again this many ticks (120 s) after its last foe fell, once no player stands within
 /// CLEAR_AROUND metres of its post.
 pub(crate) const STAND_AGAIN: u64 = 120 * 60;
@@ -266,7 +266,7 @@ fn ground_around(blocks: &[Block], spawn: (f64, f64), around: f64) -> navmesh::B
     }
 }
 
-/// The middle of the square a node's room bakes: its near edge SPAWN_CLEAR from the first spawn, toward the middle of
+/// The middle of the square a node's room bakes: SPAWN_INSET inside its edge from the first spawn, toward the middle of
 /// the section's ring (its corners' average); the spawn itself where the two meet.
 pub(crate) fn ground_middle(section: &Section, first: (f64, f64)) -> (f64, f64) {
     let corners = section.ring.len().max(1) as f64;
@@ -276,7 +276,7 @@ pub(crate) fn ground_middle(section: &Section, first: (f64, f64)) -> (f64, f64) 
     if length <= 0.0 {
         return first;
     }
-    let shift = SPAWN_CLEAR + NODE_AROUND;
+    let shift = NODE_AROUND - SPAWN_INSET;
     (first.0 + toward_x / length * shift, first.1 + toward_y / length * shift)
 }
 
@@ -332,6 +332,37 @@ impl Room {
     /// Stands a node's garrison as its room opens: each group in turn at a post drawn from those open (the farthest
     /// from the spawns for one that stands there), every post at least POSTS_APART from the others. A group whose foes
     /// the mesh or the section cannot hold tries the next; when no post is left, the rest stand nowhere.
+    /// Whether the foes leave a player be: one just stood again, until their grace ends or they strike, and one
+    /// standing in a patrol zone's landing, within SPAWN_CLEAR of a spawn where no foe stands, until they strike from
+    /// it.
+    pub(crate) fn left_be(&self, id: FighterId) -> bool {
+        self.players.get(&id).is_some_and(|found| {
+            found.graced > self.clock || (!found.struck_landed && self.in_landing(&found.fighter.body))
+        })
+    }
+
+    /// A player out of the landing has the landing's leave again once they come back to it.
+    pub(crate) fn leave_landings(&mut self) {
+        let out: Vec<FighterId> = (self.players.iter())
+            .filter(|(_, found)| found.struck_landed && !self.in_landing(&found.fighter.body))
+            .map(|(id, _)| *id)
+            .collect();
+        for id in out {
+            if let Some(found) = self.players.get_mut(&id) {
+                found.struck_landed = false;
+            }
+        }
+    }
+
+    /// Whether a body stands in a patrol zone's landing: within SPAWN_CLEAR of one of its spawns.
+    fn in_landing(&self, body: &movement::Body) -> bool {
+        self.place == Some(gear::gate::Place::Patrol)
+            && self
+                .section
+                .as_ref()
+                .is_some_and(|section| section.spawns.iter().any(|&spawn| apart([body.x, body.y], spawn) < SPAWN_CLEAR))
+    }
+
     pub(crate) fn stand_garrison(&mut self, kind: NodeKind, levels: Option<(u8, u8)>) {
         let Some(section) = self.section.clone() else { return };
         let mut draws = draws_of(self.world_seed);

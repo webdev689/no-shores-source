@@ -354,13 +354,14 @@ fn corvane_s_called_foes_fall_with_him_in_his_node_and_he_calls_them_all_anew_wh
 fn a_node_s_mesh_keeps_its_layout_s_wall_a_body_s_radius_off_and_bakes_no_box_past_its_square() {
     let (floor, section) = (sloped(), section());
     let first = (section.spawns[0][0], section.spawns[0][1]);
-    let ground = floor.height_at(0.0, 80.0);
+    let ground = floor.height_at(0.0, 150.0);
     // A wall 20 m long across the baked square's middle, from below the ground to 10 m over it; a far box elsewhere.
-    let wall = Block { min_x: -10.0, min_y: 80.0, max_x: 10.0, max_y: 81.0, top: ground + 10.0, bottom: ground - 10.0 };
+    let wall =
+        Block { min_x: -10.0, min_y: 150.0, max_x: 10.0, max_y: 151.0, top: ground + 10.0, bottom: ground - 10.0 };
     let far = Block { min_x: -150.0, min_y: -150.0, max_x: -140.0, max_y: -140.0, top: 900.0, bottom: 0.0 };
     let nav = baked(&floor, &[wall, far], first, Some(&section));
     let at = |x: f64, y: f64| [x, y, floor.height_at(x, y)];
-    let route = nav.find_path(at(0.0, 75.0), at(0.0, 86.0)).expect("a way round the wall");
+    let route = nav.find_path(at(0.0, 145.0), at(0.0, 156.0)).expect("a way round the wall");
     let clear = route.windows(2).all(|pair| {
         (0..=20).all(|step| {
             let t = f64::from(step) / 20.0;
@@ -372,4 +373,33 @@ fn a_node_s_mesh_keeps_its_layout_s_wall_a_body_s_radius_off_and_bakes_no_box_pa
     });
     assert!(route.len() > 2 && clear, "round the wall's end: {route:?}");
     assert_eq!(nav, baked(&floor, &[wall], first, Some(&section)), "a box off the square bakes nothing");
+}
+
+#[test]
+fn a_patrol_zone_s_foes_leave_a_player_be_in_its_landing_until_they_strike_from_it() {
+    let swing = |room: &Room, sequence: u32| {
+        let combat = combat::CombatInput { attack: Some(combat::Stroke::Down), ..combat::CombatInput::default() };
+        let intent = combat::Intent { controls: movement::Controls::default(), combat };
+        Input { sequence, intent, seen: room.clock(), ..Input::default() }
+    };
+    let mut room = node(NodeKind::Patrol, "downs");
+    let player = room.join().unwrap();
+    stand_player(&mut room, player, [0.0, 180.0]);
+    run(&mut room, 1);
+    assert!(room.left_be(player), "where they land");
+    let input = swing(&room, 1);
+    room.input(player, input).unwrap();
+    run(&mut room, 2);
+    assert!(!room.left_be(player), "struck from the landing");
+    stand_player(&mut room, player, [0.0, 120.0]);
+    run(&mut room, 1);
+    assert!(!room.left_be(player), "out of the landing");
+    stand_player(&mut room, player, [0.0, 175.0]);
+    run(&mut room, 1);
+    assert!(room.left_be(player), "back in the landing, the landing's leave again");
+    let mut mission = node(NodeKind::Mission, "keep");
+    let player = mission.join().unwrap();
+    stand_player(&mut mission, player, [0.0, 180.0]);
+    run(&mut mission, 1);
+    assert!(!mission.left_be(player), "a mission has no landing");
 }
