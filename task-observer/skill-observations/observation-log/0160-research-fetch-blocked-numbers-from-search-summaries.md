@@ -1,5 +1,5 @@
 ---
-id: 155
+id: 160
 title: "A web-research worker could open no page (wikis, bungie.net and the Wayback Machine all failed) and built every number from WebSearch's summaries; the brief had not asked it to say which numbers it read and which it was told"
 status: open
 type: open-source

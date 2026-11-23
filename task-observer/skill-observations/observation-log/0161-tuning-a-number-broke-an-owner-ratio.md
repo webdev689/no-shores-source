@@ -1,5 +1,5 @@
 ---
-id: 156
+id: 161
 title: "A balance change kept the number an owner decision names (a foe's arrow at 18) but broke a ratio the same decision sets (aimed 1.5 times quick); found only while writing the decision note's 'replaced in part' line"
 status: open
 type: open-source
