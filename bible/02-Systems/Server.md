@@ -108,7 +108,8 @@ on Cloudflare.
 - **Riding:** a player rides wherever they walk, in a node's room, a dungeon, a run or on an island, on the room's
   word: it takes a page's mounted input only from a character with a horse worn in the Mount slot (`may_ride`,
   [[Horses Are Items Worn in a Mount Slot]]); on a deck, the ship's own or one boarded, the
-  room walks every body on foot. Nothing is fought from the saddle, as the page
+  room walks every body on foot (`riding.rs`). A player on foot shows others no horse: a horse move their page sends
+  is relayed as the body's own, walking while it moves, else standing. Nothing is fought from the saddle, as the page
   asks nothing there: a mounted input's swing, guard, shot and aim are dropped, and its cast refused.
 - **Foes:** on a course, a player may ask for a foe by its type and rank, at a level and with a shield (the
   [[Test Ground]]'s panel), one with each input; the room stands it 5 m along the player's aim, which follows their
