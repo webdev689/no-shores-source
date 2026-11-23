@@ -78,7 +78,10 @@ test('a piece being placed stands its ghost at the feet, snapped to a quarter me
   const asked: unknown[] = [];
   const link = {
     outpost: () => Promise.resolve('The accounts are away.'),
-    social: (path: string, body: unknown) => Promise.resolve(void asked.push([path, body]) ?? null),
+    social: (path: string, body: unknown) => {
+      asked.push([path, body]);
+      return Promise.resolve(null);
+    },
   } as unknown as AccountLink;
   const { here } = outpost(link);
   here.take(SEEN);
