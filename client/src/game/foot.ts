@@ -217,7 +217,7 @@ export class Foot {
         throw error;
       }
       const text = nodeText(node, rect, ground, boxes, await context.land.grounds(node.id));
-      const link = connection ?? (await openNodeAlone(module, node.id, text, heard, arriving?.number, seas));
+      const link = connection ?? (await openNodeAlone(module, node, text, heard, arriving?.number, seas));
       return { link, boxes, text, dungeon: null, seas };
     });
   }
@@ -241,7 +241,7 @@ export class Foot {
     return Foot.start(context, dungeonPlace(outside.node, layout), rules, async (heard, session) => ({
       link: address
         ? await RoomConnection.open(address, heard.snapshot, heard.gear, session)
-        : await openAlone(module, outside.text, into, heard),
+        : await openAlone(module, outside.text, into, heard, seas),
       boxes: seenBlocks(layout),
       text: outside.text,
       dungeon,

@@ -128,10 +128,12 @@ function patrol(): string {
   return JSON.stringify({ ...node, id: 'downs', kind: 'patrol', continent: 'continent-1', ring, spawns });
 }
 
+/** The levels of the foes in the first snapshot that holds any. */
+const levels = (snapshots: readonly Snapshot[]) =>
+  (snapshots.find((snapshot) => snapshot.foes.length > 0)?.foes ?? []).map((foe) => foe.level);
+
 test("a patrol played alone stands its garrison at the voyage's seas, as the server's room does", async () => {
   joinedPort();
-  const levels = (snapshots: readonly Snapshot[]) =>
-    (snapshots.find((snapshot) => snapshot.foes.length > 0)?.foes ?? []).map((foe) => foe.level);
   const [normal, elite, worker]: Snapshot[][] = [[], [], []];
   const plain = LocalRoom.openNode(compiled, patrol(), (snapshot) => normal.push(snapshot));
   const raised = LocalRoom.openNode(compiled, patrol(), (snapshot) => elite.push(snapshot), false, { seas: 1 });
@@ -151,6 +153,24 @@ test("a patrol played alone stands its garrison at the voyage's seas, as the ser
   assert.ok(raisedEach && levels(elite).length === plainLevels.length, 'each foe raised at the elite seas');
   assert.deepEqual(levels(worker), levels(elite), "the worker's room as the page's");
   thread.close();
+});
+
+test("a patrol's dungeon played alone stands at the voyage's seas too, as the server's room does", async () => {
+  joinedPort();
+  const [normal, elite]: Snapshot[][] = [[], []];
+  const plain = LocalRoom.openDungeon(compiled, patrol(), 0, (snapshot) => normal.push(snapshot));
+  const raised = await RoomThread.openDungeon(compiled, patrol(), 0, (snapshot) => elite.push(snapshot), undefined, 1);
+  for (let frame = 0; frame < 4; frame++) {
+    plain.pump(0.05);
+    raised.pump(0.05);
+    await settled();
+  }
+  await until(() => levels(elite).length > 0);
+  const plainLevels = levels(normal);
+  assert.ok(plainLevels.length > 0, "the dungeon's garrison stands");
+  const raisedEach = levels(elite).every((level, index) => level > (plainLevels[index] ?? level));
+  assert.ok(raisedEach && levels(elite).length === plainLevels.length, 'each foe raised at the elite seas');
+  raised.close();
 });
 
 test('a room that cannot open says why, and the game hears it as a failed opening', async () => {

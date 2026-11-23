@@ -143,8 +143,9 @@ export class RoomThread implements RoomLink {
     number: number,
     snapshot: (snapshot: Snapshot) => void,
     gear?: (gear: GearMessage) => void,
+    seas = 0,
   ): Promise<RoomThread> {
-    return RoomThread.open(module, { how: 'dungeon', patrolText, number }, snapshot, gear);
+    return RoomThread.open(module, { how: 'dungeon', patrolText, number, seas }, snapshot, gear);
   }
 
   /** A dungeon's run from its ask, on a patrol's node file's text, as `LocalRoom.openRun`. */

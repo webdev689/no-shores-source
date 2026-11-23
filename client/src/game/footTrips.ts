@@ -2,11 +2,13 @@
 // dungeon's exit door, and the place a dungeon is played as.
 import { runAsk } from '../../../server/roomNames.ts';
 import { EVENT } from '../combat/cues.ts';
+import type { Difficulty } from '../heldmap/heldMap.ts';
 import { roomNow } from '../sky/worldClock.ts';
 import type { GearAsk } from '../network/gearMessages.ts';
 import { RoomThread } from '../network/roomThread.ts';
 import type { FightEvent } from '../network/messages.ts';
 import type { EncounterSeen } from '../network/encounterMessages.ts';
+import { TIERS } from './activityWords.ts';
 import { askDungeon, type DungeonAsk, type DungeonLayout } from './dungeonLayout.ts';
 import { DOOR_REACH_M, type Entrance, entranceAt, entrancesOf } from './entrances.ts';
 import type { PropTable } from '../models/tables.ts';
@@ -92,18 +94,20 @@ export function takeWipe(held: { wiped: boolean }, onFoot: boolean): boolean {
   return wiped;
 }
 
-/** A dungeon's room played alone, in the rooms' worker: a patrol's shared dungeon from the patrol's node file, any
- *  other room (a run, a sea island's dungeon) from its name, a patrol's run with the patrol's file too, as the servers
- *  open them (`runAsk`). */
+/** A dungeon's room played alone, in the rooms' worker: a patrol's shared dungeon from the patrol's node file at the
+ *  voyage's `seas`, any other room (a run, a sea island's dungeon) from its name, which carries its tier, a patrol's run
+ *  with the patrol's file too, as the servers open them (`runAsk`). */
 export function openAlone(
   module: WebAssembly.Module,
   outsideText: string,
   into: { readonly number: number; readonly room: string },
   heard: Heard,
+  seas: Difficulty = 'normal',
 ): Promise<RoomThread> {
   const ask = runAsk(into.room, Math.floor(roomNow() / 60_000));
+  const tier = Math.max(0, TIERS.indexOf(seas));
   return ask === null
-    ? RoomThread.openDungeon(module, outsideText, into.number, heard.snapshot, heard.gear)
+    ? RoomThread.openDungeon(module, outsideText, into.number, heard.snapshot, heard.gear, tier)
     : RoomThread.openRun(module, ask, outsideText, heard.snapshot, heard.gear);
 }
 

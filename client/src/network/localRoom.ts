@@ -141,16 +141,19 @@ export class LocalRoom implements RoomLink {
   }
 
   /** Opens dungeon `number` of a patrol from the patrol's node file's text, from the compiled `room-wasm` module, its
-   *  player joined at its way in; the player's own gear goes to `gear`. */
+   *  player joined at its way in, its garrison at the voyage's `seas` as the patrol's; the player's own gear goes to
+   *  `gear`. */
   static openDungeon(
     module: WebAssembly.Module,
     patrolText: string,
     number: number,
     snapshot: (snapshot: Snapshot) => void,
     gear: (gear: GearMessage) => void = () => undefined,
+    seas = 0,
   ): LocalRoom {
     const door = startRoomDoor(module);
-    if (!door.openDungeon(patrolText, number)) throw new Error('the dungeon is not one a room can stand in');
+    const opened = door.openDungeon(patrolText, number) && door.difficulty(seas);
+    if (!opened) throw new Error('the dungeon is not one a room can stand in');
     return new LocalRoom(door, snapshot, gear);
   }
 
