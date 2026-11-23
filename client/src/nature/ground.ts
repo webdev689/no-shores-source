@@ -225,6 +225,16 @@ function lakeAt(view: LandView, x: number, y: number): number | null {
   return level > FRESH_LEVEL_M && surface > 0 ? surface : null;
 }
 
+/** Where a close patch reaches (west, north, east, south, metres): past it `landSampler` reads the 1 km land alone. */
+export function patchArea(patch: GroundPatch): readonly [number, number, number, number] {
+  return [
+    patch.left,
+    patch.top,
+    patch.left + (patch.width - 1) * patch.step,
+    patch.top + (patch.height - 1) * patch.step,
+  ];
+}
+
 /** A shore's rise over run, for how far a point above a lake lies from its water: a gentle bank's. */
 const SHORE_RISE = 0.04;
 

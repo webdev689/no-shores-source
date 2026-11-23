@@ -1,5 +1,6 @@
 // Triangles gathered for the GPU: positions in metres from the city's middle, normals, picture-counting UVs (u across,
 // v down from the picture's top row, tiling) and each vertex's layer in the city's pictures.
+import { MODEL_FLOATS } from './cityModels.ts';
 
 export type Vector = readonly [number, number, number];
 
@@ -55,13 +56,48 @@ export function addPolygon(
   }
 }
 
-/** Appends one mesh to another. */
-export function appendMesh(into: MeshData, from: MeshData): void {
-  const base = into.positions.length / 3;
-  // one push per value: a spread of a whole city's arrays would overflow the call stack
-  for (const value of from.positions) into.positions.push(value);
-  for (const value of from.normals) into.normals.push(value);
-  for (const value of from.uvs) into.uvs.push(value);
-  for (const value of from.layers) into.layers.push(value);
-  for (const index of from.indices) into.indices.push(index + base);
+/** Meshes laid end to end as the GPU reads them: each vertex MODEL_FLOATS (position, normal, UV, then its layer as a
+ *  whole number), each mesh's indices counted on past the vertices before it, and where each mesh's indices begin and
+ *  how many. */
+export type LaidMeshes = {
+  readonly vertices: ArrayBuffer;
+  readonly indices: Uint32Array;
+  readonly ranges: readonly { readonly first: number; readonly count: number }[];
+};
+
+/** Vertices laid a step (`steps.ts`), and twice as many indices: a city's largest chunk holds tens of thousands. */
+const LAID_STEP = 4096;
+
+/** Lays meshes end to end as the GPU reads them, a step at a time, into arrays made once at their whole size. */
+export function* laidMeshSteps(meshes: readonly MeshData[]): Generator<void, LaidMeshes> {
+  const vertexCount = meshes.reduce((sum, mesh) => sum + mesh.positions.length / 3, 0);
+  const vertices = new ArrayBuffer(vertexCount * MODEL_FLOATS * 4);
+  const [floats, whole] = [new Float32Array(vertices), new Uint32Array(vertices)];
+  const indices = new Uint32Array(meshes.reduce((sum, mesh) => sum + mesh.indices.length, 0));
+  const ranges: { first: number; count: number }[] = [];
+  let [vertexAt, indexAt] = [0, 0];
+  for (const { positions, normals, uvs, layers, indices: own } of meshes) {
+    const count = positions.length / 3;
+    for (let first = 0; first < count; first += LAID_STEP) {
+      for (let vertex = first; vertex < Math.min(count, first + LAID_STEP); vertex++) {
+        const [laid, three, two] = [(vertexAt + vertex) * MODEL_FLOATS, vertex * 3, vertex * 2];
+        for (let axis = 0; axis < 3; axis++) {
+          floats[laid + axis] = positions[three + axis] ?? 0;
+          floats[laid + 3 + axis] = normals[three + axis] ?? 0;
+        }
+        floats[laid + 6] = uvs[two] ?? 0;
+        floats[laid + 7] = uvs[two + 1] ?? 0;
+        whole[laid + 8] = layers[vertex] ?? 0;
+      }
+      yield;
+    }
+    ranges.push({ first: indexAt, count: own.length });
+    for (let first = 0; first < own.length; first += LAID_STEP * 2) {
+      for (let index = first; index < Math.min(own.length, first + LAID_STEP * 2); index++)
+        indices[indexAt + index] = own[index] + vertexAt;
+      yield;
+    }
+    [vertexAt, indexAt] = [vertexAt + count, indexAt + own.length];
+  }
+  return { vertices, indices, ranges };
 }

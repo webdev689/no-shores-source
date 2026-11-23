@@ -7,6 +7,8 @@ code:
   - client/src/nature/forms.ts#formBuffers
   - client/src/nature/impostor.ts#framesFor
   - client/src/nature/field.ts#NatureField
+  - client/src/nature/groundChanges.ts#GroundChanges
+  - client/src/nature/kept.ts#Kept
   - client/src/nature/scatter.ts#scatterTile
   - client/src/nature/ground.ts#landSampler
   - client/src/nature/cast.ts#castOf
@@ -94,10 +96,16 @@ width, and from the exact close patch where it reaches, eased in over its outer 
   no others; it is scattered whole again when the eye comes within 3 km. When the eye crosses into another tile, or
   newly scattered tiles arrive (at most four times a second while some still wait), only the list of which slots to
   draw is made again, and each tile's corner. A changed ground is scattered again tile by tile, the old plants drawn
-  until their tile's turn. From more than 8 km above the ground nothing is drawn or scattered.
+  until their tile's turn, but only where it changed (`GroundChanges`): a new close patch changes the tiles under the
+  old patch or the new one, the 2 km squares the sampler reads, about 1,300 of the 28,000 tiles within 6 km, and every
+  other tile keeps its plants. A city or a layout built anew changes every tile. A tile scattered more than 32 changes
+  ago is scattered again wherever it lies. From more than 8 km above the ground nothing is drawn or scattered.
 - **Loading.** A biome's baked meshes and pictures (`content/nature/flora.json`) are fetched from R2 the first time
   a landmass of it is drawn; until they have come its plants are not drawn. Its pictures are two texture arrays,
-  albedo with coverage and normal with leaf share, 1024 px layers with six mip levels.
+  albedo with coverage and normal with leaf share, 1024 px layers with six mip levels, about 60 MB a biome. Once on
+  the GPU they are shared by every view drawing the biome, and the last biome no view draws is kept besides
+  (`Kept`), so a landmass sailed back to fetches, decodes and copies none of its flora again; on a machine that says
+  it has under 8 GB (`navigator.deviceMemory`), none is kept besides, as its 60 MB cost more than the wait.
 - **Detail.** Near, a plant is its baked mesh: trunks and limbs as rings wearing the bark picture, which repeats round
   and along them, and foliage as crossed cards cut out by their pictures' coverage, an edge smoothed across the
   pixel's samples. Its normal map bends the light across each card and up each furrow, and the ambient occlusion
@@ -174,7 +182,9 @@ box their frames fill and read two frames, not four.
 - Low plants keep off the feet of the tall ones in their own tile only: within a couple of metres of a tile's edge,
   grass can grow into a neighbouring tile's boulder or trunk.
 - Beyond the close patch the sampler knows no roads, towns or ports: the caller's cleared ground must cover them.
-- A new close patch, every 400 m of travel, has every tile scattered again, which takes a few seconds of budget.
+- A new close patch, every 400 m of travel, has the 1,300 or so tiles under the old patch and the new one scattered
+  again, the squares' overlap included.
+- A layout's city built anew, as the layouts within 4 km change, has every tile scattered again.
 - A teleport fills the view from the eye outward over about a second.
 - A step into another tile lists every drawn slot again: in the densest biomes (about 230,000 within 3 km) that
   takes some 10 to 15 ms of the frame it happens in, and sends under a megabyte to the GPU.

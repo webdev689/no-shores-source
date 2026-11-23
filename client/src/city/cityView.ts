@@ -4,10 +4,19 @@
 // into its own pass.
 import { CITY_LAMPS } from '../sky/lamps.ts';
 import { skyUniformFor } from '../sky/skyUniform.ts';
+import { boxSeen, viewPlanes } from '../frustum.ts';
 import { type Gpu, TEXTURE_USAGE } from '../gpu.ts';
 import { FAR, NEAR, ShadowMap } from '../shadow.ts';
 import type { RmbBlock } from './blocks.ts';
-import { buildCity, type Chunk, type CityData, type CityTables, detailRuns, type Range, runs } from './cityBuild.ts';
+import {
+  type Chunk,
+  cityBuildSteps,
+  type CityData,
+  type CityTables,
+  detailRuns,
+  type Range,
+  runs,
+} from './cityBuild.ts';
 import { chunkDraws, crustMoved, type InstancedDraw, withinMiddle, WreckCrust } from './crystalInstances.ts';
 import {
   CITY_BUFFER_USAGE,
@@ -16,12 +25,11 @@ import {
   MODEL_INSTANCE_BYTES,
   originInstance,
 } from './cityGpu.ts';
-import { MODEL_FLOATS } from './cityModels.ts';
-import type { MeshData } from './mesh.ts';
 import { CityPainter, type PaintProgress } from './painter.ts';
 import { PICTURE_LAYERS } from './pictures.ts';
 import { type CityClimate, type CityPlan, glowLamps } from './plan.ts';
-import { boxReach, boxSeen, NEAR_M, tiersReached, viewPlanes } from './tiers.ts';
+import { stepWithin } from './steps.ts';
+import { boxReach, NEAR_M, tiersReached } from './tiers.ts';
 
 /** What the scene hands a drawer each frame: the eye in world metres, and how it looks. */
 export interface CityShot {
@@ -57,14 +65,22 @@ export type CityFrame = { triangles: number; draws: number; nearCells: number; b
 
 const TIER_WHOLE = 1;
 const VIEW_BYTES = 96;
+/** How long a frame may spend building a city while an older one stands drawn, milliseconds: the old is drawn until
+ *  the new is whole, so no one waits on it. Overlook's takes about a second of steps, so about 500 frames. */
+export const CITY_SLICE_MS = 2;
+/** How long a frame may spend building a city while none stands: the player waits on this one behind the veil, which
+ *  shows nothing it would cost, so Overlook's stands in about 40 frames while the veil keeps moving. */
+export const CITY_FIRST_SLICE_MS = 24;
+
+/** Whatever of the GPU's a city makes, let go with it. */
+type Owned = { destroy(): void };
 
 type Drawn = {
-  /** The city's drawing less its solids' vertices, which are let go once on the GPU. */
+  /** The city's drawing less its solids, which are let go once on the GPU. */
   readonly data: Omit<CityData, 'solids'>;
   readonly painter: CityPainter;
   readonly group: GPUBindGroup;
-  readonly buffers: GPUBuffer[];
-  readonly tiles: GPUTexture;
+  readonly owned: Owned[];
   readonly view: GPUBuffer;
   readonly modelVertices: GPUBuffer;
   readonly modelIndices: GPUBuffer;
@@ -81,12 +97,23 @@ type Drawn = {
   readonly wreckCrust: { readonly buffer: GPUBuffer; readonly crust: WreckCrust } | null;
 };
 
+/** A city being built a few steps a frame: its steps, what of the GPU's they have made so far, its lamps, the time
+ *  its steps have taken, and who is told once it stands. */
+type Building = {
+  readonly steps: Generator<void, Drawn>;
+  readonly owned: Owned[];
+  readonly lamps: ReturnType<typeof glowLamps>;
+  spentMs: number;
+  readonly whole: () => void;
+};
+
 export class CityView implements CityDrawer {
   /** What the last frame drew, for a page to read. */
   readonly frame: CityFrame = { triangles: 0, draws: 0, nearCells: 0, buildMs: 0 };
   private readonly gpu: Gpu;
   private readonly pipelines: CityPipelines;
   private drawn: Drawn | null = null;
+  private building: Building | null = null;
   private seen: Seen | null = null;
   private onPainted: () => void = () => {};
 
@@ -113,16 +140,90 @@ export class CityView implements CityDrawer {
     return this.drawn?.painter.progress ?? null;
   }
 
-  /** Draws this city from now on, in its climate's pictures; the blocks by name, the forged tables parsed. */
+  /** Draws this city from now on, in its climate's pictures; the blocks by name, the forged tables parsed. Built in
+   *  one go: a build that fails throws. */
   setCity(plan: CityPlan, climate: CityClimate, blocks: ReadonlyMap<string, RmbBlock>, tables: CityTables): void {
-    this.clear();
-    CITY_LAMPS.set(this, glowLamps(plan));
+    this.beginCity(plan, climate, blocks, tables);
+    this.keepBuilding(Infinity);
+  }
+
+  /** Builds this city a few steps a frame (`prepare`), the city drawn before drawn until this one is whole, then
+   *  this one in its place, and `whole` told. A city begun and not yet whole is let go if another is begun. */
+  beginCity(
+    plan: CityPlan,
+    climate: CityClimate,
+    blocks: ReadonlyMap<string, RmbBlock>,
+    tables: CityTables,
+    whole: () => void = () => undefined,
+  ): void {
+    this.dropBuilding();
+    const owned: Owned[] = [];
+    const steps = this.drawnSteps(cityBuildSteps(plan, climate, blocks, tables), owned);
+    this.building = { steps, owned, lamps: glowLamps(plan), spentMs: 0, whole };
+  }
+
+  /** Whether a city is being built and is not yet whole. */
+  get underWay(): boolean {
+    return this.building !== null;
+  }
+
+  /** Carries a build on before a frame is recorded, within the frame's share. A build that fails is let go, the city
+   *  drawn before still standing. */
+  prepare(): void {
+    try {
+      this.keepBuilding(this.drawn ? CITY_SLICE_MS : CITY_FIRST_SLICE_MS);
+    } catch (error) {
+      console.error('the city could not be built:', error);
+    }
+  }
+
+  /** Carries a build on for `budgetMs` (a step at least); once it is whole, its city is drawn in place of the old.
+   *  A build that fails is let go, and throws. */
+  keepBuilding(budgetMs: number): void {
+    const building = this.building;
+    if (!building) return;
     const started = performance.now();
-    const { solids, ...data } = buildCity(plan, climate, blocks, tables);
-    this.frame.buildMs = performance.now() - started;
-    CITY_LAMPS.set(this, [...glowLamps(plan), ...data.lamps]);
+    let built: { readonly made: Drawn } | null;
+    try {
+      built = stepWithin(building.steps, budgetMs);
+    } catch (error) {
+      this.dropBuilding();
+      throw error;
+    } finally {
+      building.spentMs += performance.now() - started;
+    }
+    if (!built) return;
+    this.building = null;
+    this.clear();
+    this.drawn = built.made;
+    CITY_LAMPS.set(this, [...building.lamps, ...built.made.data.lamps]);
+    this.frame.buildMs = building.spentMs;
+    building.whole();
+  }
+
+  /** Stops drawing any city and frees its buffers; a city still being built is let go too. */
+  clear(): void {
+    this.dropBuilding();
+    CITY_LAMPS.set(this, []);
+    this.seen = null;
+    const drawn = this.drawn;
+    if (!drawn) return;
+    for (const owned of [...drawn.owned, ...Object.values(drawn.instances).map((held) => held.buffer)])
+      owned?.destroy();
+    this.drawn = null;
+  }
+
+  /** Lets go of a city still being built, and what of the GPU's its steps have made. */
+  private dropBuilding(): void {
+    for (const owned of this.building?.owned ?? []) owned.destroy();
+    this.building = null;
+  }
+
+  /** The city's drawing put on the GPU once its build's steps are done, a step a large buffer; whatever is made goes
+   *  into `owned`, to be let go if the build is. */
+  private *drawnSteps(building: Generator<void, CityData>, owned: Owned[]): Generator<void, Drawn> {
+    const { solids, ...data } = yield* building;
     const { device } = this.gpu;
-    const buffers: GPUBuffer[] = [];
     const buffer = (contents: ArrayBufferView | ArrayBuffer, usage: number, least = 16): GPUBuffer => {
       const bytes =
         contents instanceof ArrayBuffer
@@ -132,23 +233,26 @@ export class CityView implements CityDrawer {
         size: Math.max(least, Math.ceil(bytes.byteLength / 4) * 4),
         usage: usage | CITY_BUFFER_USAGE.copyDestination,
       });
+      owned.push(made);
       if (bytes.byteLength) device.queue.writeBuffer(made, 0, bytes, 0, bytes.byteLength - (bytes.byteLength % 4));
-      buffers.push(made);
       return made;
     };
     const sizes = new Float32Array(PICTURE_LAYERS * 4).fill(64);
     data.book.pictures.forEach((picture, layer) => sizes.set([picture.width, picture.height], layer * 4));
-    const solidVertices = interleaved(solids);
     const tiles = device.createTexture({
       size: [data.plates.width, data.plates.width],
       format: 'rg8uint',
       usage: TEXTURE_USAGE.textureBinding | TEXTURE_USAGE.copyDestination,
     });
+    owned.push(tiles);
     device.queue.writeTexture({ texture: tiles }, data.plates.tiles, { bytesPerRow: data.plates.width * 2 }, [
       data.plates.width,
       data.plates.width,
     ]);
+    yield;
     const painter = new CityPainter(this.gpu, data.book, () => this.onPainted());
+    owned.push(painter);
+    yield;
     const view = buffer(new ArrayBuffer(VIEW_BYTES), CITY_BUFFER_USAGE.uniform);
     const cellTable = buffer(data.cells, CITY_BUFFER_USAGE.storage);
     const layerSizes = buffer(sizes, CITY_BUFFER_USAGE.storage);
@@ -172,20 +276,28 @@ export class CityView implements CityDrawer {
         { binding: 5, resource: tiles.createView() },
       ],
     });
-    const origin = originInstance();
-    this.drawn = {
+    const modelVertices = buffer(data.models.vertices, CITY_BUFFER_USAGE.vertex);
+    yield;
+    const modelIndices = buffer(data.models.indices, CITY_BUFFER_USAGE.index);
+    yield;
+    const solidVertices = buffer(solids.vertices, CITY_BUFFER_USAGE.vertex);
+    yield;
+    const solidIndices = buffer(solids.indices, CITY_BUFFER_USAGE.index);
+    yield;
+    const masses = buffer(data.masses, CITY_BUFFER_USAGE.vertex);
+    yield;
+    return {
       data,
       painter,
       group,
-      buffers,
-      tiles,
+      owned,
       view,
-      modelVertices: buffer(data.models.vertices, CITY_BUFFER_USAGE.vertex),
-      modelIndices: buffer(data.models.indices, CITY_BUFFER_USAGE.index),
-      solidVertices: buffer(solidVertices, CITY_BUFFER_USAGE.vertex),
-      solidIndices: buffer(new Uint32Array(solids.indices), CITY_BUFFER_USAGE.index),
-      origin: buffer(origin, CITY_BUFFER_USAGE.vertex),
-      masses: buffer(data.masses, CITY_BUFFER_USAGE.vertex),
+      modelVertices,
+      modelIndices,
+      solidVertices,
+      solidIndices,
+      origin: buffer(originInstance(), CITY_BUFFER_USAGE.vertex),
+      masses,
       plates: buffer(data.plates.tops, CITY_BUFFER_USAGE.vertex),
       plateVertices: data.plates.tops.length / 3,
       instances: {
@@ -241,19 +353,6 @@ export class CityView implements CityDrawer {
       draw(wrecks.crust.draws);
     }
     return drew;
-  }
-
-  /** Stops drawing any city and frees its buffers. */
-  clear(): void {
-    // Its lamps go even when no city stands: a build that failed lit them first.
-    CITY_LAMPS.set(this, []);
-    const drawn = this.drawn;
-    if (!drawn) return;
-    drawn.painter.destroy();
-    drawn.tiles.destroy();
-    for (const buffer of [...drawn.buffers, ...Object.values(drawn.instances).map((held) => held.buffer)])
-      buffer?.destroy();
-    this.drawn = null;
   }
 
   /** Whether a world point lies on the city's pads, quays or any of its solids: ground nature keeps off. */
@@ -470,24 +569,4 @@ export class CityView implements CityDrawer {
     }
     return drew;
   }
-}
-
-/** A mesh's vertices as the GPU reads them, MODEL_FLOATS each: position, normal, UV, then the layer as a whole number.
- *  Copied a number at a time: a city has hundreds of thousands, and slicing each would make as many arrays a rebuild. */
-export function interleaved(solids: MeshData): ArrayBuffer {
-  const count = solids.positions.length / 3;
-  const bytes = new ArrayBuffer(count * MODEL_FLOATS * 4);
-  const [floats, whole] = [new Float32Array(bytes), new Uint32Array(bytes)];
-  const { positions, normals, uvs, layers } = solids;
-  for (let vertex = 0; vertex < count; vertex++) {
-    const [laid, three, two] = [vertex * MODEL_FLOATS, vertex * 3, vertex * 2];
-    for (let axis = 0; axis < 3; axis++) {
-      floats[laid + axis] = positions[three + axis] ?? 0;
-      floats[laid + 3 + axis] = normals[three + axis] ?? 0;
-    }
-    floats[laid + 6] = uvs[two] ?? 0;
-    floats[laid + 7] = uvs[two + 1] ?? 0;
-    whole[laid + 8] = layers[vertex] ?? 0;
-  }
-  return bytes;
 }

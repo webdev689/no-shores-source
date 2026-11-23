@@ -3,6 +3,7 @@
 // coarse ground alone; past 20 km nothing. The modules are instanced: each kit's pack is one vertex buffer, and an
 // island's placements one instance buffer sorted by module, so a draw is one module's every placement on the island.
 // A drawer of the same shape as the game's scene takes (client/src/game/scene.ts `Drawer`), by structure.
+import { boxSeen, viewPlanes } from '../frustum.ts';
 import { BUFFER_USAGE, type Gpu } from '../gpu.ts';
 import type { ShadowMap } from '../shadow.ts';
 import { skyUniformFor } from '../sky/skyUniform.ts';
@@ -17,6 +18,7 @@ import {
   packUrl,
   PARTS,
   roleOf,
+  sizeOf,
 } from './isleModules.ts';
 import { INSTANCE_FLOATS, ISLE_FLOATS, partColours, type Pipelines, pipelinesOf } from './isleShader.ts';
 import { gridOf, type IsleGrid, type IslePlacement, type IsleShown } from './islePlan.ts';
@@ -48,6 +50,41 @@ export function placedPoint(
   return [atX + (x * cosine - y * sine) * scale, atY + (x * sine + y * cosine) * scale, atZ + z * scale * lift];
 }
 
+/** How far below its foot a module's skirt reaches, a share of its height's scale (Island Modules' 0.8 m). */
+const SKIRT_M = 0.8;
+
+/** The box round everything an island draws, in its own frame (west, north, low, then east, south, high): its whole
+ *  ground and every module placed on it, each its contract's size about its place, however it is turned. Made once
+ *  an island, for every view that culls it. */
+export function isleBox(
+  grid: IsleGrid,
+  placements: readonly IslePlacement[],
+): [number, number, number, number, number, number] {
+  const box = [
+    grid.west,
+    grid.north,
+    Infinity,
+    grid.west + grid.columns * grid.cell,
+    grid.north + grid.rows * grid.cell,
+    -Infinity,
+  ];
+  for (const height of grid.heights)
+    if (Number.isFinite(height)) [box[2], box[5]] = [Math.min(box[2] ?? 0, height), Math.max(box[5] ?? 0, height)];
+  for (const [module, x, y, z, , scale, lift] of placements) {
+    const [width = 0, depth = 0, height = 0] = sizeOf(module) ?? [];
+    const reach = (Math.hypot(width, depth) / 2) * scale;
+    const [foot, top] = [z - SKIRT_M * scale * lift, z + height * scale * lift];
+    box[0] = Math.min(box[0] ?? 0, x - reach);
+    box[1] = Math.min(box[1] ?? 0, y - reach);
+    box[2] = Math.min(box[2] ?? 0, foot, top);
+    box[3] = Math.max(box[3] ?? 0, x + reach);
+    box[4] = Math.max(box[4] ?? 0, y + reach);
+    box[5] = Math.max(box[5] ?? 0, foot, top);
+  }
+  if (box[2] === Infinity) [box[2], box[5]] = [0, 0];
+  return [box[0] ?? 0, box[1] ?? 0, box[2] ?? 0, box[3] ?? 0, box[4] ?? 0, box[5] ?? 0];
+}
+
 /** One module's every placement on an island: its run in the island's instances. */
 interface Run {
   readonly name: string;
@@ -74,6 +111,10 @@ interface Drawn {
   readonly uniform: GPUBuffer;
   readonly group: GPUBindGroup;
   readonly kits: readonly string[];
+  /** Its box in its own frame (`isleBox`). */
+  readonly box: readonly number[];
+  /** The offset from the eye its uniform holds, written again only once the eye has moved. */
+  readonly written: Float64Array;
 }
 
 /** A kit's pack on the GPU. */
@@ -213,9 +254,11 @@ export class IslesView {
     const { ground, modules } = this.pipelines;
     // The sky lights both, at its own group; a gap below it holds nothing.
     skyUniformFor(this.gpu.device).bindShared(pass, [2]);
+    const planes = viewPlanes(fromEye);
     for (const drawn of this.drawn) {
       const distance = this.distanceOf(drawn, shot);
       if (distance >= FARTHEST_M) continue;
+      if (!boxSeen(planes, ...this.boxFromEye(drawn, shot))) continue;
       const near = distance < NEAR_M;
       if (near) frame.near++;
       else if (distance < MIDDLE_M) frame.middle++;
@@ -260,10 +303,21 @@ export class IslesView {
     return { offset, reach: drawn.shown.plan.reach + 60 };
   }
 
-  /** Writes each island's offset from the eye, worked out in doubles so the GPU's floats keep their centimetres. */
+  /** An island's box (`isleBox`) where it stands from the eye: its low corner, then its high. */
+  private boxFromEye(drawn: Drawn, shot: IsleShot): [number[], number[]] {
+    const { offset } = this.placeOf(drawn, shot);
+    const corner = (first: number) => offset.map((along, axis) => along + (drawn.box[first + axis] ?? 0));
+    return [corner(0), corner(3)];
+  }
+
+  /** Writes each island's offset from the eye, worked out in doubles so the GPU's floats keep their centimetres:
+   *  once the eye moves, not once a pass, as the sun's casts and the picture share it. */
   private prepareShot(shot: IsleShot): void {
     for (const drawn of this.drawn) {
       const { offset } = this.placeOf(drawn, shot);
+      const { written } = drawn;
+      if (offset.every((along, axis) => along === written[axis])) continue;
+      written.set(offset);
       this.offset.set([...offset, 0]);
       this.gpu.device.queue.writeBuffer(drawn.uniform, 0, this.offset);
     }
@@ -384,6 +438,8 @@ export class IslesView {
       uniform,
       group,
       kits: [...new Set([...(biome ? [biome] : []), ...runs.map((run) => run.kit)])],
+      box: isleBox(grid, shown.plan.placements),
+      written: new Float64Array(3).fill(Number.NaN),
     };
   }
 }

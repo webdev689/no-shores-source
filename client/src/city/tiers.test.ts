@@ -1,17 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import {
-  boxReach,
-  boxSeen,
-  FAR_BAND_M,
-  FAR_M,
-  keeps,
-  NEAR_BAND_M,
-  NEAR_M,
-  tiersAt,
-  tiersReached,
-  viewPlanes,
-} from './tiers.ts';
+import { boxReach, FAR_BAND_M, FAR_M, keeps, NEAR_BAND_M, NEAR_M, tiersAt, tiersReached } from './tiers.ts';
 
 test('a cell near the eye is drawn whole, further out as masses, far off as hulls', () => {
   assert.deepEqual(tiersAt(100), ['whole']);
@@ -51,15 +40,6 @@ test('the share of pixels a tier keeps grows smoothly across its band, never in 
 test('a group of cells spanning from near to far needs every tier between', () => {
   assert.deepEqual([...tiersReached(200, FAR_M + 100)].sort(), ['hulls', 'masses', 'whole']);
   assert.deepEqual([...tiersReached(FAR_M + 10, FAR_M + 400)], ['hulls']);
-});
-
-test('a box behind the eye or off to its side is not seen; one ahead is', () => {
-  // looking north (-y) with a square view: the matrix rows are right, up, the depth row and forward
-  const matrix = new Float32Array([1, 0, 0, 0, 0, 0, 0, -1, 0, 1, 0, 0, 0, 0, 0.1, 0]);
-  const planes = viewPlanes(matrix);
-  assert.ok(boxSeen(planes, [-1, -100, -1], [1, -90, 1]));
-  assert.ok(!boxSeen(planes, [-1, 90, -1], [1, 100, 1]), 'behind');
-  assert.ok(!boxSeen(planes, [200, -100, -1], [210, -90, 1]), 'off to the east');
 });
 
 test("a box's reach is its nearest and farthest point from the eye", () => {

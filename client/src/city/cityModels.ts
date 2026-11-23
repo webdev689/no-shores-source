@@ -5,6 +5,7 @@ import type { ForgedModel } from '../models/model.ts';
 import { propModel } from '../models/props.ts';
 import type { BuildingTable, PropTable } from '../models/tables.ts';
 import type { MeshData } from './mesh.ts';
+import { finished } from './steps.ts';
 
 /** Numbers a model vertex takes: position, normal, UV, and its layer as a whole number. */
 export const MODEL_FLOATS = 9;
@@ -49,6 +50,15 @@ export function modelBuffers(
   layerOf: (archive: number, record: number) => number,
   meshes: readonly MeshData[] = [],
 ): ModelBuffers {
+  return finished(modelBufferSteps(models, layerOf, meshes));
+}
+
+/** The buffers as `modelBuffers` lays them, a model or a mesh a step (`steps.ts`). */
+export function* modelBufferSteps(
+  models: readonly (ForgedModel | null)[],
+  layerOf: (archive: number, record: number) => number,
+  meshes: readonly MeshData[] = [],
+): Generator<void, ModelBuffers> {
   const vertexCount =
     models.reduce((sum, model) => sum + (model ? model.positions.length / 3 : 0), 0) +
     meshes.reduce((sum, mesh) => sum + mesh.positions.length / 3, 0);
@@ -84,6 +94,7 @@ export function modelBuffers(
     triangles.push(model.indices.length / 3);
     vertexAt += count;
     indexAt += model.indices.length;
+    yield;
   }
   for (const mesh of meshes) {
     const count = mesh.positions.length / 3;
@@ -99,6 +110,7 @@ export function modelBuffers(
     triangles.push(mesh.indices.length / 3);
     vertexAt += count;
     indexAt += mesh.indices.length;
+    yield;
   }
   return { vertices, indices, entries, triangles };
 }

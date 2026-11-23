@@ -1,42 +1,29 @@
 // Everything a city's drawing needs, worked out once when the city is set: its pictures, the models its blocks stand
 // and where, every building's masses and hull, its solids and ground, grouped by chunks of cells so the view culls
 // and picks tiers a chunk at a time. All positions are metres from the city's middle, so the GPU's floats keep
-// their precision.
-import { buildingMasses, type Mass } from '../models/buildingPlan.ts';
+// their precision. The work goes a step at a time (`cityBuildSteps`), so a frame can take a few and leave the rest.
 import type { BuildingTable, KitTable, PropTable } from '../models/tables.ts';
 import { type ForgedTables, pictureUses, type PictureUse } from '../textures/picture.ts';
 import { type RmbBlock, groundTiles, placed } from './blocks.ts';
-import { cellIndex, clearedGround, groundPlates, levelledCells, plateSkirts, sideOf } from './cityGround.ts';
+import { buildingMassesOf, type Placed } from './cityBuildings.ts';
 import {
-  boxMass,
-  hullOf,
-  keptMasses,
-  MASS_FLOATS,
-  MASS_RUIN,
-  MASS_TIER_HULLS,
-  MASS_TIER_MASSES,
-  massShape,
-  writeMass,
-} from './cityMasses.ts';
-import { forgedModel, type ModelBuffers, modelBuffers, type ModelKey, modelKeyOf } from './cityModels.ts';
-import { addPolygon, appendMesh, emptyMesh, type MeshData } from './mesh.ts';
+  cellIndex,
+  clearedGroundSteps,
+  groundPlateSteps,
+  levelledCells,
+  plateSkirtSteps,
+  sideOf,
+} from './cityGround.ts';
+import { forgedModel, type ModelBuffers, modelBufferSteps, modelKeyOf } from './cityModels.ts';
+import { addPolygon, emptyMesh, laidMeshSteps } from './mesh.ts';
 import { pictureBook, type PictureBook, type PictureWant } from './pictures.ts';
 import { CELL_M, cellCorner, type CityClimate, type CityPlan, type Solid, solidReach, type Wreck } from './plan.ts';
 import type { LampPlace } from '../sky/lamps.ts';
 import { FORMATION_HEIGHT, FORMATION_REACH, FORMATIONS, formationMeshes } from './crystalFormations.ts';
 import { type CrystalInstances, crystalInstances } from './crystalInstances.ts';
-import {
-  buildingGrowth,
-  clearOfPlaza,
-  type CrystalPlace,
-  crystalLamps,
-  greatLamp,
-  heapGrowth,
-  worksGrowth,
-  wreckCrust,
-} from './overtaken.ts';
-import { brokenMass, buildingRuin, type BuildingRuin, fallenHeap } from './ruins.ts';
+import { clearOfPlaza, type CrystalPlace, crystalLamps, greatLamp, worksGrowth, wreckCrust } from './overtaken.ts';
 import { meshSolid } from './solidMesh.ts';
+import { finished } from './steps.ts';
 import { boxReach, tiersReached } from './tiers.ts';
 
 /** Cells a side of a chunk: about 400 m, a few hundred buildings. */
@@ -102,7 +89,9 @@ export type CityData = {
   readonly near: ReadonlyMap<number, readonly NearInstance[]>;
   readonly masses: ArrayBuffer;
   readonly chunks: readonly Chunk[];
-  readonly solids: MeshData;
+  /** Every chunk's solids, then every chunk's detail, laid end to end as the GPU reads them (`laidMeshSteps`), each
+   *  chunk's `solids` and `detail` its runs. */
+  readonly solids: { readonly vertices: ArrayBuffer; readonly indices: Uint32Array };
   readonly plates: { readonly tops: Float32Array; readonly tiles: Uint8Array; readonly width: number };
   readonly cleared: (x: number, y: number) => boolean;
   /** Whether the city is a ruin, its broken buildings open to the sky. */
@@ -117,23 +106,24 @@ export type CityData = {
   readonly wrecks: readonly { readonly wreck: Wreck; readonly crust: readonly CrystalPlace[] }[];
 };
 
-type Placed = {
-  cell: number;
-  chunk: number;
-  key: ModelKey;
-  at: [number, number, number, number];
-  row: readonly number[];
-  /** In a ruin, how a building stands. */
-  ruin?: BuildingRuin;
-};
-
-/** Works out a city's drawing from its plan, climate, blocks and the forged tables. */
+/** Works out a city's drawing from its plan, climate, blocks and the forged tables, in one go. */
 export function buildCity(
   plan: CityPlan,
   climate: CityClimate,
   blocks: ReadonlyMap<string, RmbBlock>,
   tables: CityTables,
 ): CityData {
+  return finished(cityBuildSteps(plan, climate, blocks, tables));
+}
+
+/** Works out a city's drawing as `buildCity` does, a step at a time (`steps.ts`): a cell's pieces, a model, a piece's
+ *  masses, a solid, a run of vertices. */
+export function* cityBuildSteps(
+  plan: CityPlan,
+  climate: CityClimate,
+  blocks: ReadonlyMap<string, RmbBlock>,
+  tables: CityTables,
+): Generator<void, CityData> {
   const origin = plan.centre;
   const side = sideOf(plan);
   const chunkSide = Math.ceil(side / CHUNK_CELLS);
@@ -170,6 +160,7 @@ export function buildCity(
           row,
         });
       }
+    yield;
   }
 
   // models a layout placed in the world stand in the cell under them, at their own height and yaw
@@ -193,9 +184,14 @@ export function buildCity(
 
   const keys = [...new Set(placedPieces.map((piece) => piece.key))].sort();
   const modelIndex = new Map(keys.map((key, k) => [key, k]));
-  const models = keys.map((key) => forgedModel(tables, key));
+  const models: ReturnType<typeof forgedModel>[] = [];
+  for (const key of keys) {
+    models.push(forgedModel(tables, key));
+    yield;
+  }
   const wants = new Map<string, PictureWant>();
   for (const piece of placedPieces) {
+    yield;
     const model = models[modelIndex.get(piece.key) ?? 0];
     for (const part of model?.parts ?? []) {
       const key = `${part.archive}.${part.record}`;
@@ -216,6 +212,7 @@ export function buildCity(
     roomkit: tables.roomkit ?? {},
   } as unknown as ForgedTables;
   const uses = pictureUses(forged);
+  yield;
   const chalky = [...plan.landmark, ...plan.works, ...plan.social.solids].some((solid) => solid.material === 'chalk');
   const book = pictureBook(
     climate,
@@ -226,7 +223,8 @@ export function buildCity(
   );
 
   const chunkCount = chunkSide * chunkSide;
-  const { masses, massRanges, hullRanges, tops, heaps, crystal } = buildingMassesOf(
+  yield;
+  const { masses, massRanges, hullRanges, tops, heaps, crystal } = yield* buildingMassesOf(
     plan,
     placedPieces,
     tables,
@@ -235,6 +233,7 @@ export function buildCity(
   );
   const near = new Map<number, NearInstance[]>();
   for (const piece of placedPieces) {
+    yield;
     if (piece.ruin?.fallen) continue;
     const list = near.get(piece.cell) ?? [];
     list.push({ model: modelIndex.get(piece.key) ?? 0, at: piece.at, cut: piece.ruin?.cut ?? 0, scale: 1 });
@@ -245,6 +244,7 @@ export function buildCity(
   const chunkAt = (point: readonly number[]) =>
     chunkOf(Math.floor((point[0] - plan.grid.west) / CELL_M), Math.floor((point[1] - plan.grid.north) / CELL_M));
   const works = plan.ruined ? worksGrowth(plan.works).filter((place) => clearOfPlaza(place, plan)) : [];
+  yield;
   // the works' formations are all great ones, standing in no building's cell
   const placedCrystal = [
     ...crystal,
@@ -258,6 +258,7 @@ export function buildCity(
     near.set(cell, list);
   }
   for (const list of near.values()) list.sort((a, b) => a.model - b.model);
+  yield;
   const inChunks = (reach: CrystalPlace['reach']) =>
     placedCrystal.flatMap(({ place }) => (place.reach === reach ? [{ chunk: chunkAt(place.at), place }] : []));
   const [great, middle] = [inChunks('great'), inChunks('middle')];
@@ -304,6 +305,7 @@ export function buildCity(
     box[3] = Math.max(box[3], reached[3]);
     box[4] = Math.max(box[4], reached[4]);
     box[5] = Math.max(box[5], solid.at[2] + solid.size[2] + reach);
+    yield;
   }
   // A chunk's box holds its crystal too, as far as each formation reaches and stands at its size.
   for (const { chunk, place } of [...great, ...middle]) {
@@ -314,6 +316,7 @@ export function buildCity(
     for (let axis = 0; axis < 3; axis++) box[axis] = Math.min(box[axis], reached[axis]);
     for (let axis = 3; axis < 6; axis++) box[axis] = Math.max(box[axis], reached[axis]);
   }
+  yield;
   for (const decal of plan.decals ?? []) {
     const middle = decal.corners.reduce((sum, corner) => [sum[0] + corner[0] / 4, sum[1] + corner[1] / 4], [0, 0]);
     const chunk = chunkOf(
@@ -333,17 +336,12 @@ export function buildCity(
       box[4] = Math.max(box[4], corner[1]);
       box[5] = Math.max(box[5], corner[2]);
     }
+    yield;
   }
   const terracePicture = book.pictures[book.terrace] ?? { width: 64, height: 128 };
-  plateSkirts(plan, book.terrace, terracePicture, (cell) => chunkMeshes[chunkOf(cell.column, cell.row)]);
-  const allSolids = emptyMesh();
-  const appended = (mesh: MeshData): Range => {
-    const first = allSolids.indices.length;
-    appendMesh(allSolids, mesh);
-    return { first, count: mesh.indices.length };
-  };
-  const solidRanges = chunkMeshes.map(appended);
-  const detailRanges = detailMeshes.map(appended);
+  yield* plateSkirtSteps(plan, book.terrace, terracePicture, (cell) => chunkMeshes[chunkOf(cell.column, cell.row)]);
+  const laid = yield* laidMeshSteps([...chunkMeshes, ...detailMeshes]);
+  const [solidRanges, detailRanges] = [laid.ranges.slice(0, chunkCount), laid.ranges.slice(chunkCount)];
 
   const chunks: Chunk[] = [];
   for (let chunk = 0; chunk < chunkCount; chunk++) {
@@ -386,21 +384,29 @@ export function buildCity(
       solids: solidRanges[chunk],
       detail: detailRanges[chunk],
     });
+    yield;
   }
 
+  const formations = plan.ruined ? formationMeshes(book.materials.crystal) : [];
+  yield;
+  const modelData = yield* modelBufferSteps(models, book.layerOf, formations);
+  const plates = yield* groundPlateSteps(plan, blocks, book.ground, book.materials.paving);
+  const cleared = yield* clearedGroundSteps(plan);
+  const crystalDrawn = crystalInstances(great, middle, origin, FORMATIONS.length, chunkCount);
+  yield;
   return {
     origin,
     grid: [plan.grid.west - origin[0], plan.grid.north - origin[1]],
     side,
     book,
     cells,
-    models: modelBuffers(models, book.layerOf, plan.ruined ? formationMeshes(book.materials.crystal) : []),
+    models: modelData,
     near,
     masses,
     chunks,
-    solids: allSolids,
-    plates: groundPlates(plan, blocks, book.ground, book.materials.paving),
-    cleared: clearedGround(plan),
+    solids: { vertices: laid.vertices, indices: laid.indices },
+    plates,
+    cleared,
     ruined: plan.ruined === true,
     lamps: [
       ...crystalLamps(
@@ -409,7 +415,7 @@ export function buildCity(
       ),
       ...great.map(({ place }, index) => greatLamp(place, index)),
     ],
-    crystal: crystalInstances(great, middle, origin, FORMATIONS.length, chunkCount),
+    crystal: crystalDrawn,
     firstFormation: models.length,
     wrecks: (plan.ruined ? (plan.wrecks ?? []) : []).map((wreck) => ({ wreck, crust: wreckCrust(wreck) })),
   };
@@ -459,120 +465,6 @@ export function rampWall(plan: CityPlan): (solid: Solid) => boolean {
       ({ bounds: [west, north, east, south] }) =>
         solid.at[0] > west && solid.at[0] < east && solid.at[1] > north && solid.at[1] < south,
     );
-}
-
-/** Every building's masses (for the middle distance) and hull (for far off), grouped by chunk: all the masses in
- *  chunk order, then all the hulls. In a ruin each building is broken (`ruins.ts`): a fallen one leaves a heap
- *  among the solids instead, a broken one's masses and hull end at its break, roofless; and the Lattice's crystal
- *  grows through each (`overtaken.ts`), none in the plaza's window, each great formation lighting a lamp. */
-function buildingMassesOf(
-  plan: CityPlan,
-  pieces: readonly Placed[],
-  tables: CityTables,
-  book: PictureBook,
-  chunkCount: number,
-): {
-  masses: ArrayBuffer;
-  massRanges: Range[];
-  hullRanges: Range[];
-  tops: Float32Array;
-  heaps: Solid[];
-  crystal: { cell: number; place: CrystalPlace }[];
-} {
-  const known = new Map<number, { kept: Mass[]; hull: Mass | null; wall: number; roof: number }>();
-  const shapesOf = (id: number) => {
-    const found = known.get(id);
-    if (found) return found;
-    const measure = tables.buildings[id];
-    const prop = tables.props[id];
-    const all = measure ? buildingMasses(tables.buildings, id) : prop ? [boxMass(prop)] : [];
-    const wallLook = measure?.walls[0] ?? measure?.looks[0] ?? prop?.looks[0];
-    const roofLook = measure?.roofs[0] ?? measure?.walls[1] ?? wallLook;
-    const wall = wallLook ? book.layerOf(wallLook[0], wallLook[1]) : 0;
-    const roof = roofLook ? book.layerOf(roofLook[0], roofLook[1]) : wall;
-    const made = { kept: all.length ? keptMasses(all) : [], hull: hullOf(all), wall, roof };
-    known.set(id, made);
-    return made;
-  };
-  const byChunk: { masses: [Mass, Placed][]; hulls: [Mass, Placed][] }[] = Array.from({ length: chunkCount }, () => ({
-    masses: [],
-    hulls: [],
-  }));
-  const tops = new Float32Array(chunkCount).fill(-Infinity);
-  const heaps: Solid[] = [];
-  const crystal: { cell: number; place: CrystalPlace }[] = [];
-  const overtake = (grown: readonly CrystalPlace[], cell: number) => {
-    for (const place of grown) if (clearOfPlaza(place, plan)) crystal.push({ cell, place });
-  };
-  // How near the city's heart a place stands: 1 at its middle, 0 at the grid's edge.
-  const reachM = (sideOf(plan) * CELL_M) / 2;
-  const heartOf = (east: number, south: number) =>
-    Math.max(0, 1 - Math.hypot(east - plan.centre[0], south - plan.centre[1]) / reachM);
-  const placeOf = (piece: Placed) => ({
-    east: piece.at[0] + plan.centre[0],
-    south: piece.at[1] + plan.centre[1],
-    up: piece.at[2],
-    yaw: piece.at[3],
-  });
-  for (const piece of pieces) {
-    const building = piece.key.startsWith('building:') || piece.key.startsWith('open:');
-    if (!building && !(piece.row.length === 7 && tables.props[piece.row[0]])) continue;
-    const shapes = shapesOf(piece.row[0]);
-    if (plan.ruined && shapes.hull) {
-      const place = placeOf(piece);
-      // broken under its lowest wing's eaves, so no wing keeps its roof
-      const eaves = Math.min(...shapes.kept.map((mass) => mass.eaves));
-      piece.ruin = buildingRuin(place.east, place.south, { ...shapes.hull, eaves });
-      if (piece.ruin.fallen) {
-        const heap = fallenHeap(massShape(shapes.hull, place, plan.centre), plan.centre);
-        heaps.push(heap);
-        const heart = heartOf(place.east, place.south);
-        if (building) overtake(heapGrowth(heap, [place.east, place.south], heart), piece.cell);
-        continue;
-      }
-      const cut = piece.ruin.cut;
-      const wings: Mass[] = [];
-      for (const mass of shapes.kept) {
-        const broken = brokenMass(mass, cut);
-        if (broken) wings.push(broken);
-      }
-      for (const wing of wings) byChunk[piece.chunk].masses.push([wing, piece]);
-      const hull = brokenMass(shapes.hull, cut);
-      if (hull) {
-        byChunk[piece.chunk].hulls.push([hull, piece]);
-        if (building)
-          overtake(
-            buildingGrowth(
-              wings.map((wing) => massShape(wing, place, plan.centre)),
-              plan.centre,
-              [place.east, place.south],
-              heartOf(place.east, place.south),
-            ),
-            piece.cell,
-          );
-      }
-      continue;
-    }
-    for (const mass of shapes.kept) byChunk[piece.chunk].masses.push([mass, piece]);
-    if (shapes.hull) byChunk[piece.chunk].hulls.push([shapes.hull, piece]);
-  }
-  const total = byChunk.reduce((sum, chunk) => sum + chunk.masses.length + chunk.hulls.length, 0);
-  const masses = new ArrayBuffer(total * MASS_FLOATS * 4);
-  const [floats, whole] = [new Float32Array(masses), new Uint32Array(masses)];
-  let next = 0;
-  const scorched = plan.ruined ? MASS_RUIN : 0;
-  const lay = (list: [Mass, Placed][], tier: number, chunk: number): Range => {
-    const first = next;
-    for (const [mass, piece] of list) {
-      const shape = massShape(mass, placeOf(piece), plan.centre);
-      tops[chunk] = Math.max(tops[chunk], shape.base + shape.wall + shape.rise);
-      writeMass(floats, whole, next++, shape, shapesOf(piece.row[0]), piece.cell, tier | scorched);
-    }
-    return { first, count: next - first };
-  };
-  const massRanges = byChunk.map((chunk, k) => lay(chunk.masses, MASS_TIER_MASSES, k));
-  const hullRanges = byChunk.map((chunk, k) => lay(chunk.hulls, MASS_TIER_HULLS, k));
-  return { masses, massRanges, hullRanges, tops, heaps, crystal };
 }
 
 /** Ranges laid end to end in one buffer, joined where one starts as the last ends, so a run of chunks is one draw. */

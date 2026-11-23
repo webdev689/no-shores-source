@@ -65,6 +65,9 @@ export interface CardAt {
 export interface CardMaker {
   card(pixels: Uint8Array, width: number, height: number, root: readonly [number, number]): Card;
   glow(field: GlowField): GPUTexture;
+  /** Whether the figure numbered `id`, its `feet` in world metres, has its card chosen afresh this frame; a scene that
+   *  does not say chooses every figure's every frame. */
+  poseDue?(id: number, feet: readonly [number, number, number]): boolean;
 }
 
 /** The forge's cards for the figures `maker` draws, read from the forge's published renders, with the store they come
@@ -118,6 +121,8 @@ export class Cards {
   /** When each frame whose compose failed failed, oldest first: it is asked for again only RETRY_AFTER_MS after. */
   private readonly failedAt = new Map<string, number>();
   private readonly last = new Map<number, Card>();
+  /** The view and side (`view * 2`, one more mirrored) each figure placed in the world last had its card chosen in. */
+  private readonly sides = new Map<number, number>();
   private readonly queued: {
     dress: Dress;
     anim: string;
@@ -350,7 +355,8 @@ export class Cards {
   }
 
   /** A figure's card in a move, a view and a frame, its weapon glowing in `glow`, or the last card it showed while
-   *  this one is composed. */
+   *  this one is composed. A figure whose `feet` stand in the world (metres) keeps the card it showed on the frames the
+   *  scene does not pose it (`CardMaker.poseDue`), unless it is now seen in another view or from its other side. */
   card(
     id: number,
     dress: Dress,
@@ -359,10 +365,17 @@ export class Cards {
     frame: number,
     flip = false,
     glow: GlowLook = 0,
+    feet?: readonly [number, number, number],
   ): Card | null {
+    const shown = this.last.get(id);
+    if (feet) {
+      const side = view * 2 + (flip ? 1 : 0);
+      if (shown && this.sides.get(id) === side && this.scene.poseDue?.(id, feet) === false) return shown;
+      this.sides.set(id, side);
+    }
     const card = this.ask(dress, anim, view, frame, flip, glow);
     if (card) this.last.set(id, card);
-    return card ?? this.last.get(id) ?? null;
+    return card ?? shown ?? null;
   }
 
   /** Queues every view and frame of a dress's moves to be composed ahead of need, as drawn and as mirrored, its weapon
@@ -398,6 +411,7 @@ export class Cards {
   /** Lets go of a figure that has left: the last card it showed is no longer kept for it. */
   forget(id: number): void {
     this.last.delete(id);
+    this.sides.delete(id);
   }
 
   /** Starts composing a few queued frames, while few are under way, so warming never holds up a frame. Warming fills

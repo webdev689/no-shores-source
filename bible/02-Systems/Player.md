@@ -51,6 +51,8 @@ moves and figure are DFO's ([[The Player Plays as in DFO]]); the Test Ground's n
   camera to arrive with, as for a spawn: `&view=first` or `&view=third,<metres>`.
 - **The figure** is composed from the [[Sprite Forge]]'s strips and kept as cards (`Cards`). Whatever draws the
   scene makes the cards (`CardMaker`): the Test Ground's scene, or the game's figures, drawn into its scene's pass.
+  The game's also says on which frames a figure standing in the world has its card chosen afresh (`poseDue`; [[Game]],
+  "The figures each frame"); between them it keeps the card it showed.
   Each figure's likeliest moves are queued once for each dress it wears (`Cards.warm`, asked each frame but working
   out the moves only for a new dress), and again once one of them is let go before it was asked for ([[Test Ground]],
   "Limits"). The figure holds the weapon the fight's rules hold: one changed while they are
