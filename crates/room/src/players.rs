@@ -154,9 +154,6 @@ pub struct Player {
     pub shown_tick: u64,
     /// The room tick until which the foes leave the player be, having just stood again.
     pub graced: u64,
-    /// Whether the player has struck since they last stood outside a patrol zone's landing: the foes no longer leave
-    /// them be there (`Room::left_be`).
-    pub struck_landed: bool,
     /// A dress waiting its turn, and the room tick the dress last changed (none before the first).
     pub dress_next: Option<String>,
     pub dressed_at: Option<u64>,
@@ -235,7 +232,6 @@ impl Player {
             history: VecDeque::new(),
             shown_tick: 0,
             graced: 0,
-            struck_landed: false,
             dress_next: None,
             dressed_at: None,
             character,

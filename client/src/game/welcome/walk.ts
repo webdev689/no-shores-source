@@ -1,12 +1,9 @@
-// Where Elder Maren Hale walks in her welcome, and when she speaks. She starts at a point of the townsfolk's ways a
-// way off from the player, out of their view where she can, and comes to them by the ways, calling her greeting from
-// the ways where they stand off them, again on each arrival of a walk taken up; then she leads them to the plaza's
-// counters by the shortest way to each counter's way point, the nearest stop first each time, waiting at each for the
-// player to come within reach before she says its lines. The HUD bids them follow only once she has greeted them. A
-// player who leaves her far behind for a minute ends the walk, and she goes back behind her counter, as she does once
-// every stop is said. She keeps to the middle of the ways (`life/ways.ts`), which keep clear of every
-// solid and of Shape, and goes round her counter's end clear of the arcade's columns. No drawing and no words here:
-// the welcome (`welcome.ts`) draws her where this says and plays the scene it names.
+// Where Elder Maren Hale walks in her welcome, and when she speaks: out of the player's view, she comes to them by the
+// townsfolk's ways, calling her greeting from them on every arrival, and leads them to the counters, the nearest stop
+// first, waiting at each for them to come within reach; the HUD bids them follow only once she has greeted them. Left
+// behind a minute, or every stop said, she goes home behind her counter. She keeps to the middle of the ways
+// (`life/ways.ts`), clear of every solid and of Shape, and round her counter's end clear of the arcade's columns. No
+// drawing and no words here: the welcome (`welcome.ts`) draws her where this says and plays the scene it names.
 import { FULL_WALK } from '../../player/playerMoves.ts';
 import type { WayGraph } from '../life/ways.ts';
 import { type StationInfo, bearingTo } from '../nodes.ts';

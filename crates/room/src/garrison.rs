@@ -28,9 +28,6 @@ pub(crate) const NODE_AROUND: f64 = 35.0;
 const SPAWN_INSET: f64 = 15.0;
 /// No garrison foe stands nearer a player's spawn than this.
 pub(crate) const SPAWN_CLEAR: f64 = 25.0;
-/// A patrol zone's landing reaches this far from a spawn, metres: past its boardwalk, lanterns, stores and signpost,
-/// within about 12 m, and short of every guard, SPAWN_CLEAR off.
-const LANDING_M: f64 = 15.0;
 /// A cleared group stands again this many ticks (120 s) after its last foe fell, once no player stands within
 /// CLEAR_AROUND metres of its post.
 pub(crate) const STAND_AGAIN: u64 = 120 * 60;
@@ -330,38 +327,6 @@ impl Room {
         room.place = Some(place_of(kind));
         room.stand_garrison(kind, levels);
         room
-    }
-
-    /// Whether the foes leave a player be: one just stood again, until their grace ends or they strike, and one
-    /// standing in a patrol zone's landing, within LANDING_M of a spawn, whom no foe fights yet, until they strike from
-    /// it: no fight starts there, but one brought into it goes on.
-    pub(crate) fn left_be(&self, id: FighterId) -> bool {
-        self.players.get(&id).is_some_and(|found| {
-            let landed = !found.struck_landed && self.in_landing(&found.fighter.body);
-            found.graced > self.clock || (landed && self.foes.values().all(|foe| foe.brain.target() != Some(id)))
-        })
-    }
-
-    /// A player out of the landing has the landing's leave again once they come back to it.
-    pub(crate) fn leave_landings(&mut self) {
-        let out: Vec<FighterId> = (self.players.iter())
-            .filter(|(_, found)| found.struck_landed && !self.in_landing(&found.fighter.body))
-            .map(|(id, _)| *id)
-            .collect();
-        for id in out {
-            if let Some(found) = self.players.get_mut(&id) {
-                found.struck_landed = false;
-            }
-        }
-    }
-
-    /// Whether a body stands in a patrol zone's landing: within LANDING_M of one of its spawns.
-    fn in_landing(&self, body: &movement::Body) -> bool {
-        self.place == Some(gear::gate::Place::Patrol)
-            && self
-                .section
-                .as_ref()
-                .is_some_and(|section| section.spawns.iter().any(|&spawn| apart([body.x, body.y], spawn) < LANDING_M))
     }
 
     /// Stands a node's garrison as its room opens: each group in turn at a post drawn from those open (the farthest
