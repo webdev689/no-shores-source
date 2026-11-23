@@ -787,7 +787,8 @@ never while a press is held. Each press is an ask the room answers.
   sunk while locked, a ring inside it lit as far as the item has grown toward it; glowing when it can be bought; its
   glyph brass once bought; set in brass when chosen. A node is bought by holding it and one bought is chosen by a
   click. To the right, the item drawn large on a lit floor. Its presses go to the footer: wear it, take it off, put
-  it in the vault or take it out (at the vault's counter), and, held, feed it a Fruit of Dagon or dismantle it.
+  it in the vault or take it out (at the vault's counter), and, held, feed it a Fruit of Dagon or dismantle it (never a
+  horse, on its page, its vault cell or its flyout).
 - **Inventory.** Aurem and the Shapes held along the top, each named under its count; under it the Vestiges carried, "Vestiges 3/10" over ten places
   in two rows of five, as Destiny 2's engrams stand, an empty place a dark Vestige, a click opening one at the Mage;
   then shelves, each counting what it holds: Consumables, and Materials, the Weapon and Armor Fragments and Essence
@@ -921,7 +922,7 @@ never while a press is held. Each press is an ask the room answers.
   panel beside it, or over it near the page's foot: who and where, then all that may be done with them, what cannot
   be undone held and saying so ("Hold to …"), blocking and reporting apart under a rule. A member of the company
   playing elsewhere can be gone to. Details shows another player's nameplate, guild, power and
-  worn pieces. A join goes to them if they are on foot on this landmass, unless the player is in a fight at sea or
+  worn pieces, each under its slot's name (a horse under MOUNT, with its rarity and no power). A join goes to them if they are on foot on this landmass, unless the player is in a fight at sea or
   has fallen; then they go to them once it is over. The Roster is asked for again every 15
   seconds while it is seen.
 - **The company on the heads-up display**: each other member's nameplate under the place's name, with where they are,
