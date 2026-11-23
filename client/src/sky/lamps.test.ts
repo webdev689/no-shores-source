@@ -70,6 +70,26 @@ test('a great fire farther off is lit before a nearer lantern whose light falls 
   );
 });
 
+test('of a city full of lamps, the nearest lit are those a full sort finds, in its order, two the same in turn', () => {
+  let seed = 7;
+  const next = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
+  // Some lamps the same distance off, so the order where they tie counts.
+  const places = Array.from({ length: 900 }, (_unused, index) =>
+    index % 5 === 0 ? place(30, index) : place(next() * 600 - 300, index),
+  );
+  const ranked = places
+    .map((one) => ({ one, away: Math.hypot(one.at[0], one.at[1], one.at[2] - 1) - one.reachM }))
+    .sort((first, second) => first.away - second.away);
+  const lamps = lampsRound([0, 0, 1], places, null, 0, 0);
+  assert.deepEqual(
+    lamps.map((lamp) => lamp.light[0]),
+    ranked.slice(0, LAMPS_MOST).map(({ one, away }) => {
+      const cut = ranked[LAMPS_MOST]?.away ?? Infinity;
+      return one.light[0] * flicker(one.seed, 0) * Math.min(1, (cut - away) / 10);
+    }),
+  );
+});
+
 test("the eye's place goes to the uniform wrapped, marked known; without it, unknown", () => {
   const known = skyNumbers(AFTERNOON, [], [WRAP_M + 5, -3, 420]);
   const row = 14 * 4;

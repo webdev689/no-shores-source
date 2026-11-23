@@ -52,6 +52,7 @@ code:
   - client/src/shadow.ts#ShadowMap
   - client/src/shadowCache.ts#CastRecording
   - client/src/game/figureView.ts#FigureView
+  - client/src/game/figureCull.ts#poseEvery
   - client/src/combat/flashes.ts#Flashes
   - client/src/combat/foeFigures.ts#dissolveFoe
   - client/src/combat/overheads.ts#overheadMarks
@@ -257,7 +258,8 @@ third person, the forge's figure and the first person's hands, and the Test Grou
   over its door's lintel and a mark's width out from its face, once the forged props say where its door is. As DFO's, a mark's foot stands 0.2 m over the crown,
   0.32 m across, turned to the eye and hidden by what stands before it, never narrower on the screen than 0.017 radians
   either side so a keeper across the plaza still shows one; it bobs 6 cm once a second on a phase of its own, holding
-  still under reduced motion, and fades out over the last fifth of its 30 m, the nearest twelve laid. A keeper's mark
+  still under reduced motion, and fades out over the last fifth of its 30 m, the nearest twelve laid (each mark weighed
+  once against the twelve kept, `Nearest`, none sorted). A keeper's mark
   is lit while the keeper has something for the player (`keeperLit`;
   [[A Keeper With Something for You Pulses and Is Seen From Everywhere]]): a step of the quest walked asks to speak with them, once the story and the welcome are
   past (`Quests.wants`), or, the Postmaster's sealed letter, letters wait. A lit mark is laid apart (`litMarksSeen`):
@@ -720,6 +722,26 @@ the picture kept the way round the eye sees it; it is drawn into the near map on
 through the maps, each of its points asked of them from past that turned card, so a figure is darkened in another's
 shadow or a wall's and never by its own. Its contact shade stays under its feet where its own shadow is drawn, and
 past the near square leans the way the sun throws one, standing in for it.
+
+**The figures each frame** (`figureView.ts`, `figureCull.ts`). A figure is drawn only where a sphere about its feet
+meets the view: it holds the card however it turns, the shade however far a low sun leans it, and 0.5 m more for a
+shake, an outline or a smear; and it grows for a turning eye by three frames of the last frame's turn (at most
+1.2 radians) at the figure's distance. It casts into the near map only where that sphere's box may reach the map's
+square, as the city's solids are found. Every card's terms go to one buffer each frame, a slot apart, read at its
+slot's offset, and each composed picture has one group, made the first time it is drawn and let go with it, so a
+figure stepping to its next frame makes nothing. A figure in the world is posed (its frame chosen and its card
+asked of the forge) by its distance along the ground from the eye:
+
+| Distance | Posed |
+|---|---|
+| Within 10 m | every frame |
+| To 25 m | every 2nd frame |
+| Beyond, or out of the last frame's view | every 3rd frame |
+
+Each figure is posed on frames of its own (its number sets them apart), so a crowd on one cadence spreads over the
+frames; its move's clock runs every frame, so the frame shown when it is posed is the one due then. Between, it keeps
+the card it showed, unless it is seen in another view or from its other side, when it is posed at once. The player's
+own figure, the people aboard ships and the prologue's actors are posed every frame.
 
 At sea the footprints of the player's ship and the 47 ships nearest it (other players', pirates, friendly ships and
 a fight's captains) are handed to the water at the size each is drawn; it keeps out of each hull and foams round each bow under
