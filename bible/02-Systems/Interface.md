@@ -337,6 +337,10 @@ The game draws every screen itself, and by the owner's word no HTML is laid over
   `game/social/socialShots.ts` draws the plates over players, a player's menu, and the chat open and shut. A shot may
   hear its events on a later frame (`at`), once a screen has put its focus where it wants it, and take more frames (`frames`) for many pictures
   to come; the page asks for reduced motion, so a screen stands settled.
+- **Read and driven headless.** The interfaces that hear a page's canvas (the game's, the World Editor's, the Test
+  Ground's panels) are listed by `__ui()`, on the page or in the game's worker (`ui/seen.ts`): each node shown with an
+  id, words or a label, its box clipped to what shows, in the page's CSS pixels, and whether it presses, is disabled or
+  has focus. The picture driver finds words and ids through it, as it once read the page's HTML ([[Toolkit]]).
 
 ## How it works
 

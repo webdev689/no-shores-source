@@ -14,9 +14,15 @@
 //
 // steps.json: { "url": "...", "size": [w, h], "routes": { "<url part>": "<local file>" }, "anyPort": true, "init": "js
 // run before the page's own, e.g. a shifted Date.now for the world's hour", "steps": [ ... ] }, each step one of
-// { "wait": seconds }, { "waitFor": "text on the page" }, { "key": "Escape" }, { "click": [x, y] },
+// { "wait": seconds }, { "waitFor": "words shown" }, { "key": "Escape" }, { "click": [x, y] },
 // { "wheel": [x, y, deltaY, notches] }, { "hold": ["ArrowLeft", seconds] }, { "clickText": "Return to ship" },
-// { "eval": "js" }, { "shot": "out.png" }. A held key acts at the page's slow headless frames: an arrow turns the
+// { "press": "<node id>" }, { "ui": "out.json" }, { "eval": "js" }, { "shot": "out.png" }. The page has no HTML to
+// read, so `waitFor`, `clickText` and `press` read the game's own interface (`ui/seen.ts`: `__ui()`, in the worker or
+// on the page): the words match without case, the topmost node holding them is clicked at its middle, and each waits
+// until it shows (`timeout` seconds, 180 unless said); `ui` writes every node shown, its id, words and box in the
+// page's CSS pixels. With "noGpu": true in the plan, nothing is given to the GPU: the game's JavaScript runs every
+// frame at full speed, its interface still laid, for a check of what it does rather than how it looks; it takes no
+// picture. A held key acts at the page's slow headless frames: an arrow turns the
 // player about 0.03 rad a second. { "frames": n } waits until the page has drawn n more frames: read what a frame
 // writes (a panel, a note) only after one has drawn. Every frame is paced from the first: the page's next animation
 // frame waits until the GPU has done the last one's work, so SwiftShader never builds a backlog that a picture then
@@ -33,6 +39,11 @@
 // refused and skipped.
 const { chromium } = require('playwright');
 const { mkdirSync, readFileSync, writeFileSync } = require('node:fs');
+
+// Nothing reaches the GPU: put before OWN_TEXTURE, so its count of frames wraps the dropping submit.
+const DROP_SUBMITS = () => {
+  GPUQueue.prototype.submit = () => undefined;
+};
 
 const SHADER_ERRORS = () => {
   if (typeof GPUAdapter === 'undefined') return;
@@ -148,6 +159,7 @@ const OWN_TEXTURE = () => {
 
 async function main() {
   const plan = JSON.parse(readFileSync(process.argv[2], 'utf8'));
+  if (plan.noGpu && plan.steps.some((step) => step.shot || step.views)) throw new Error('noGpu draws nothing to picture');
   const browser = await chromium.launch({
     channel: 'chromium',
     args: ['--enable-unsafe-webgpu', '--enable-unsafe-swiftshader', '--use-angle=swiftshader'],
@@ -196,10 +208,10 @@ async function main() {
       await route.fulfill({ response, headers: { ...response.headers(), ...open } });
     },
   );
-  await page.addInitScript(OWN_TEXTURE);
-  await page.addInitScript(SHADER_ERRORS);
+  const patches = [...(plan.noGpu ? [DROP_SUBMITS] : []), OWN_TEXTURE, SHADER_ERRORS];
+  for (const patch of patches) await page.addInitScript(patch);
   if (plan.init) await page.addInitScript({ content: plan.init });
-  const head = `(${OWN_TEXTURE})();\n(${SHADER_ERRORS})();\n${plan.init ?? ''}\n`;
+  const head = `${patches.map((patch) => `(${patch})();`).join('\n')}\n${plan.init ?? ''}\n`;
   await page.route(/\/gameWorker[^/]*\.[jt]s(\?|$)/, async (route) => {
     const response = await route.fetch();
     await route.fulfill({ response, body: head + (await response.text()) });
@@ -231,13 +243,34 @@ async function main() {
     await page.screenshot({ path });
     await page.evaluate(() => document.getElementById('__shot')?.remove());
   };
+  // The topmost node shown that `wanted` picks, once one shows.
+  const shown = async (wanted, what, seconds = 180) => {
+    const until = Date.now() + seconds * 1000;
+    for (;;) {
+      // Until the game's interface is up (its face read), there is no `__ui` yet.
+      const all = await driven().evaluate(() => self.__ui?.() ?? null);
+      const found = all?.findLast(wanted);
+      if (found) return found;
+      if (Date.now() > until) throw new Error(`${what} did not show in ${seconds} s${all ? '' : ': no __ui'}`);
+      await page.waitForTimeout(250);
+    }
+  };
+  const holding = (words) => (node) => node.words?.toLowerCase().includes(words.toLowerCase());
+  // Clicks a node's middle, the canvas's corner being where the page put it.
+  const clickOn = async (node) => {
+    const [left, top] = await page.evaluate(() => {
+      const box = document.querySelector('canvas')?.getBoundingClientRect();
+      return [box?.left ?? 0, box?.top ?? 0];
+    });
+    await page.mouse.click(left + node.x + node.width / 2, top + node.y + node.height / 2);
+  };
   await page.goto(plan.url);
   // The game's page starts its worker at once; a page with none (the World Editor) is driven itself.
   if (!game) await page.waitForEvent('worker', { predicate: (worker) => worker.url().includes('gameWorker'), timeout: 30_000 }).catch(() => null);
   for (const step of plan.steps) {
     const started = Date.now();
     if (step.wait) await page.waitForTimeout(step.wait * 1000);
-    else if (step.waitFor) await page.getByText(step.waitFor).first().waitFor({ timeout: (step.timeout ?? 180) * 1000 });
+    else if (step.waitFor) await shown(holding(step.waitFor), `"${step.waitFor}"`, step.timeout);
     else if (step.key) await page.keyboard.press(step.key);
     else if (step.hold) {
       await page.keyboard.down(step.hold[0]);
@@ -252,7 +285,9 @@ async function main() {
         await page.waitForTimeout(100);
       }
     }
-    else if (step.clickText) await page.getByText(step.clickText).first().click();
+    else if (step.clickText) await clickOn(await shown(holding(step.clickText), `"${step.clickText}"`, step.timeout));
+    else if (step.press) await clickOn(await shown((node) => node.id === step.press, `#${step.press}`, step.timeout));
+    else if (step.ui) writeFileSync(step.ui, JSON.stringify(await driven().evaluate(() => self.__ui?.() ?? null), null, 1));
     else if (step.frames) await framesOn(step.frames);
     else if (step.eval) console.log('eval:', JSON.stringify(await driven().evaluate(step.eval)));
     else if (step.views) {
@@ -286,9 +321,13 @@ async function main() {
 }
 
 // The stall probe (webgpu-stall.cjs) puts the same patches in the game's worker.
-module.exports = { OWN_TEXTURE, SHADER_ERRORS };
+module.exports = { DROP_SUBMITS, OWN_TEXTURE, SHADER_ERRORS };
 if (require.main === module)
-  main().catch((error) => {
-    console.error(error);
-    process.exit(1);
-  });
+  // Exits once done: R2's reads still asked again, with their pauses, would keep it running minutes after the close.
+  main().then(
+    () => process.exit(0),
+    (error) => {
+      console.error(error);
+      process.exit(1);
+    },
+  );
