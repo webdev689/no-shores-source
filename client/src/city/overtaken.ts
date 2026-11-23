@@ -67,11 +67,11 @@ const drawsAt = (place: readonly number[]): Draw => {
 const bearsGreat = (draw: Draw, heart: number) =>
   draw() < GREAT_CHANCE.edge + (GREAT_CHANCE.heart - GREAT_CHANCE.edge) * heart * heart;
 
-/** The crystal grown through a broken building, its hull (from the city's middle, `origin` away) ending at the
- *  break, by its place in the world (east, south): none, light or heavy, by the place's seed; `heart` how near the
- *  city's heart it stands (1 at the landmark, 0 at the edge). */
+/** The crystal grown through a broken building, its kept masses (its wings, largest first, from the city's middle,
+ *  `origin` away) ending at the break, by its place in the world (east, south): none, light or heavy, by the place's
+ *  seed; `heart` how near the city's heart it stands (1 at the landmark, 0 at the edge). */
 export function buildingGrowth(
-  hull: MassShape,
+  masses: readonly MassShape[],
   origin: readonly number[],
   place: readonly number[],
   heart: number,
@@ -79,18 +79,79 @@ export function buildingGrowth(
   const placed: CrystalPlace[] = [];
   const draw = drawsAt(place);
   const kind = draw();
-  if (kind < OVERTAKEN.untouched) return placed;
+  if (kind < OVERTAKEN.untouched || !masses.length) return placed;
   const heavy = kind >= 1 - OVERTAKEN.heavy;
-  const along = [Math.cos(hull.turn), Math.sin(hull.turn)];
-  const across = [-Math.sin(hull.turn), Math.cos(hull.turn)];
-  const [half, wall, base] = [[hull.halfAlong, hull.halfAcross], hull.wall, hull.base];
-  const top = base + wall - 0.2;
+  const shapes = masses.map((mass) => massGeometry(mass, origin));
+  const [largest] = shapes;
+  const any = () => shapes[Math.floor(draw() * shapes.length)];
+  const lay = (name: KindName, foot: Point, out: readonly number[], reach: Reach, scale = 1) =>
+    placed.push({ formation: formationOf(name, draw), at: foot, yaw: yawOut(out), scale, reach });
+  // Out of the break, from the wall tops of its masses.
+  const clusters = heavy ? countOf(draw, 2, 3) : countOf(draw, 1, 2);
+  for (let cluster = 0; cluster < clusters; cluster++) {
+    const mass = any();
+    const which = Math.floor(draw() * 4);
+    const foot = mass.onSide(which, between(draw, -0.85, 0.85), mass.top);
+    if (heavy) lay('breakHeavy', foot, mass.sides[which].out, 'middle', clamp(mass.wall / 3.5, 0.9, 2));
+    else lay('breakLight', foot, mass.sides[which].out, 'near');
+  }
+  // Heavily, a mass of spires rooted on the floor of its largest wing's open shell, rising well over the break, and
+  // by the heart's chance a great formation beside it.
+  if (heavy) {
+    const { half, wall, base } = largest;
+    const size = clamp(Math.max(Math.min(half[0], half[1]) / 2.5, (wall * 1.5) / 6), 0.6, 2.5);
+    lay('mass', largest.point(0, 0, base), largest.along, 'middle', size);
+    if (bearsGreat(draw, heart))
+      lay('great', largest.point(0, 0, base), largest.along, 'great', clamp(wall / 4, 0.8, 1.8));
+  }
+  // Sheets of short shards over its walls' faces, from the ground up.
+  for (let sheet = 0, sheets = heavy ? countOf(draw, 2, 4) : countOf(draw, 0, 1); sheet < sheets; sheet++) {
+    const mass = any();
+    const which = Math.floor(draw() * 4);
+    const foot = mass.onSide(which, between(draw, -0.6, 0.6), mass.base + 0.2);
+    lay('sheet', foot, mass.sides[which].out, 'near', clamp(mass.wall / 3, 0.6, 2));
+  }
+  // Veins up its outer corners (a wing's corner inside another wing is none), and heavily up a seam of each long side
+  // of its largest wing, from the ground toward the break.
+  const inside = (point: Point) => shapes.some((shape) => shape.holds(point));
+  for (const mass of shapes) {
+    const corners = mass.corners.filter((corner) => !inside(corner.at) && (heavy || draw() < 0.5));
+    const seams = heavy && mass === largest ? mass.seams(between(draw, -0.6, 0.6)) : [];
+    for (const vein of [...corners, ...seams])
+      for (let up = mass.base + 0.3; up < mass.base + mass.wall - 1.2; up += 2 * VEIN_STEP_M)
+        if (draw() >= 0.2) lay('vein', [vein.at[0], vein.at[1], up], vein.out, 'near');
+  }
+  // Where a doorway is, at the foot of its largest wing's long side, and heavily, where windows are.
+  const door = 2 + Math.floor(draw() * 2);
+  lay('doorway', largest.onSide(door, between(draw, -0.5, 0.5), largest.base, 0.15), largest.sides[door].out, 'near');
+  if (heavy && largest.wall >= 3)
+    for (const which of [2, 3]) {
+      const sill = largest.onSide(which, between(draw, -0.5, 0.5), largest.base + 1.8, 0.1);
+      lay('sill', sill, largest.sides[which].out, 'near');
+    }
+  // Heavy, it breaks through the paving round its foot, where no wing stands.
+  if (heavy)
+    for (let patch = 0, patches = countOf(draw, 1, 2); patch < patches; patch++) {
+      const which = Math.floor(draw() * 4);
+      const foot = largest.onSide(which, between(draw, -0.8, 0.8), largest.base - 0.15, between(draw, 1.5, 4));
+      if (!inside(foot)) lay('patch', foot, largest.sides[which].out, 'near');
+    }
+  return placed;
+}
+
+/** A wing of a building, broken off at its break, as the crystal grows on it: where a point of its own frame (ahead
+ *  along its length, aside across it) stands, its four sides (each's outward direction, its run, where its middle
+ *  lies and half its length), its corners and the seams of its long sides, and whether it holds a point. */
+function massGeometry(mass: MassShape, origin: readonly number[]) {
+  const along = [Math.cos(mass.turn), Math.sin(mass.turn)];
+  const across = [-Math.sin(mass.turn), Math.cos(mass.turn)];
+  const half = [mass.halfAlong, mass.halfAcross];
+  const middle = [mass.east + origin[0], mass.south + origin[1]];
   const point = (ahead: number, aside: number, up: number): Point => [
-    hull.east + origin[0] + along[0] * ahead + across[0] * aside,
-    hull.south + origin[1] + along[1] * ahead + across[1] * aside,
+    middle[0] + along[0] * ahead + across[0] * aside,
+    middle[1] + along[1] * ahead + across[1] * aside,
     up,
   ];
-  // the four sides: their outward direction, the direction along them, where their middle lies and half their run
   const sides = [
     { out: along, side: across, at: [half[0], 0], run: half[1] },
     { out: [-along[0], -along[1]], side: across, at: [-half[0], 0], run: half[1] },
@@ -100,71 +161,36 @@ export function buildingGrowth(
   /** A point on a side, `share` of the way along it from its middle toward its end, `out` metres out from it. */
   const onSide = (which: number, share: number, up: number, out = 0): Point => {
     const { at, side, run, out: outward } = sides[which];
-    const middle = point(at[0], at[1], up);
+    const centre = point(at[0], at[1], up);
     return [
-      middle[0] + side[0] * share * run + outward[0] * out,
-      middle[1] + side[1] * share * run + outward[1] * out,
+      centre[0] + side[0] * share * run + outward[0] * out,
+      centre[1] + side[1] * share * run + outward[1] * out,
       up,
     ];
   };
-  const lay = (name: KindName, foot: Point, out: readonly number[], reach: Reach, scale = 1) =>
-    placed.push({ formation: formationOf(name, draw), at: foot, yaw: yawOut(out), scale, reach });
-  // Out of the break, and heavily a mass of spires over the whole of it, sized to the building.
-  const clusters = heavy ? countOf(draw, 2, 3) : countOf(draw, 1, 2);
-  for (let cluster = 0; cluster < clusters; cluster++) {
-    const which = Math.floor(draw() * 4);
-    const foot = onSide(which, between(draw, -0.85, 0.85), top);
-    if (heavy) lay('breakHeavy', foot, sides[which].out, 'middle', clamp(wall / 3.5, 0.9, 2));
-    else lay('breakLight', foot, sides[which].out, 'near');
-  }
-  if (heavy) {
-    lay('mass', point(0, 0, top), along, 'middle', clamp(Math.min(half[0], half[1]) / 2.5, 0.6, 2.2));
-    if (bearsGreat(draw, heart)) lay('great', point(0, 0, top), along, 'great', clamp(wall / 4, 0.8, 1.8));
-  }
-  // Sheets of short shards over its walls' faces, from the ground up.
-  for (let sheet = 0, sheets = heavy ? countOf(draw, 2, 4) : countOf(draw, 0, 1); sheet < sheets; sheet++) {
-    const which = Math.floor(draw() * 4);
-    lay(
-      'sheet',
-      onSide(which, between(draw, -0.6, 0.6), base + 0.2),
-      sides[which].out,
-      'near',
-      clamp(wall / 3, 0.6, 2),
-    );
-  }
-  // Veins up the corners (and heavy, up a seam of each long side), from the ground toward the break.
   const corners = [
     [1, 1],
     [1, -1],
     [-1, 1],
     [-1, -1],
-  ];
-  const veins = (heavy ? corners : corners.filter(() => draw() < 0.5)).map(([ahead, aside]) => ({
-    at: [ahead * half[0], aside * half[1]],
+  ].map(([ahead, aside]) => ({
+    at: point(ahead * half[0], aside * half[1], 0),
     out: [along[0] * ahead + across[0] * aside, along[1] * ahead + across[1] * aside],
   }));
-  if (heavy)
-    for (const aside of [1, -1]) {
-      const ahead = between(draw, -0.6, 0.6) * half[0];
-      veins.push({ at: [ahead, aside * half[1]], out: [across[0] * aside, across[1] * aside] });
-    }
-  for (const vein of veins)
-    for (let up = base + 0.3; up < base + wall - 1.2; up += 2 * VEIN_STEP_M)
-      if (draw() >= 0.2) lay('vein', point(vein.at[0], vein.at[1], up), vein.out, 'near');
-  // Where a doorway is, at the foot of a long side, and heavy, where windows are.
-  const door = 2 + Math.floor(draw() * 2);
-  lay('doorway', onSide(door, between(draw, -0.5, 0.5), base, 0.15), sides[door].out, 'near');
-  if (heavy && wall >= 3)
-    for (const which of [2, 3])
-      lay('sill', onSide(which, between(draw, -0.5, 0.5), base + 1.8, 0.1), sides[which].out, 'near');
-  // Heavy, it breaks through the paving round its foot.
-  if (heavy)
-    for (let patch = 0, patches = countOf(draw, 1, 2); patch < patches; patch++) {
-      const which = Math.floor(draw() * 4);
-      const foot = onSide(which, between(draw, -0.8, 0.8), base - 0.15, between(draw, 1.5, 4));
-      lay('patch', foot, sides[which].out, 'near');
-    }
-  return placed;
+  const seams = (share: number) =>
+    [1, -1].map((aside) => ({
+      at: point(share * half[0], aside * half[1], 0),
+      out: [across[0] * aside, across[1] * aside],
+    }));
+  /** Whether a point (east, south) stands inside it, short of its walls. */
+  const holds = ([east, south]: readonly number[]) => {
+    const [x, y] = [east - middle[0], south - middle[1]];
+    const ahead = x * along[0] + y * along[1];
+    const aside = x * across[0] + y * across[1];
+    return Math.abs(ahead) < half[0] - 0.05 && Math.abs(aside) < half[1] - 0.05;
+  };
+  const top = mass.base + mass.wall - 0.2;
+  return { along, half, point, sides, onSide, corners, seams, holds, wall: mass.wall, base: mass.base, top };
 }
 
 /** Spires rising through a fallen building's heap, a formation at its heart, by its place in the world (east,
@@ -246,15 +272,6 @@ export function wreckCrust(wreck: Wreck): CrystalPlace[] {
     });
   }
   return crust;
-}
-
-/** A wreck's crust set out round it as large as the wreck is drawn (`scale` times its true size). */
-export function wreckCrustAt(wreck: Wreck, crust: readonly CrystalPlace[], scale: number): CrystalPlace[] {
-  return crust.map((each) => ({
-    ...each,
-    at: [wreck.at[0] + each.at[0] * scale, wreck.at[1] + each.at[1] * scale, each.at[2] * scale],
-    scale: each.scale * scale,
-  }));
 }
 
 /** The night's lamps the crown's crystal lights: at the `most` tallest of its spires, half way up each body. */

@@ -1,6 +1,6 @@
 // A patrol's dungeon entrances drawn with the land: each its forged model, lifted and turned where it stands, in the
 // island's climate's pictures, through the city's own pipelines (lit by the sun, in its shadows and casting them).
-import { CITY_BUFFER_USAGE, type CityPipelines, cityPipelines } from '../city/cityGpu.ts';
+import { CITY_BUFFER_USAGE, type CityPipelines, cityPipelines, originInstance } from '../city/cityGpu.ts';
 import { modelBuffers } from '../city/cityModels.ts';
 import { CityPainter } from '../city/painter.ts';
 import { PICTURE_LAYERS } from '../city/pictures.ts';
@@ -126,7 +126,7 @@ export class EntranceView implements Drawer {
       // Laid as the city lays its solids: already in place, one instance at the origin, always drawn.
       vertices: buffer(packed.vertices, CITY_BUFFER_USAGE.vertex),
       indices: buffer(packed.indices, CITY_BUFFER_USAGE.index),
-      place: buffer(new ArrayBuffer(24), CITY_BUFFER_USAGE.vertex),
+      place: buffer(originInstance(), CITY_BUFFER_USAGE.vertex),
       count: packed.indices.length,
       origin,
     };

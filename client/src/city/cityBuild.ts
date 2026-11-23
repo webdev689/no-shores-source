@@ -23,7 +23,7 @@ import { addPolygon, appendMesh, emptyMesh, type MeshData } from './mesh.ts';
 import { pictureBook, type PictureBook, type PictureWant } from './pictures.ts';
 import { CELL_M, cellCorner, type CityClimate, type CityPlan, type Solid, solidReach, type Wreck } from './plan.ts';
 import type { LampPlace } from '../sky/lamps.ts';
-import { FORMATIONS, formationMeshes } from './crystalFormations.ts';
+import { FORMATION_HEIGHT, FORMATION_REACH, FORMATIONS, formationMeshes } from './crystalFormations.ts';
 import { type CrystalInstances, crystalInstances } from './crystalInstances.ts';
 import {
   buildingGrowth,
@@ -258,10 +258,9 @@ export function buildCity(
     near.set(cell, list);
   }
   for (const list of near.values()) list.sort((a, b) => a.model - b.model);
-  const great = placedCrystal.flatMap(({ place }) => (place.reach === 'great' ? [place] : []));
-  const middle = placedCrystal.flatMap(({ place }) =>
-    place.reach === 'middle' ? [{ chunk: chunkAt(place.at), place }] : [],
-  );
+  const inChunks = (reach: CrystalPlace['reach']) =>
+    placedCrystal.flatMap(({ place }) => (place.reach === reach ? [{ chunk: chunkAt(place.at), place }] : []));
+  const [great, middle] = [inChunks('great'), inChunks('middle')];
 
   const chunkMeshes = Array.from({ length: chunkCount }, emptyMesh);
   const detailMeshes = Array.from({ length: chunkCount }, emptyMesh);
@@ -305,6 +304,15 @@ export function buildCity(
     box[3] = Math.max(box[3], reached[3]);
     box[4] = Math.max(box[4], reached[4]);
     box[5] = Math.max(box[5], solid.at[2] + solid.size[2] + reach);
+  }
+  // A chunk's box holds its crystal too, as far as each formation reaches and stands at its size.
+  for (const { chunk, place } of [...great, ...middle]) {
+    const box = solidBoxes[chunk];
+    const [reach, height] = [FORMATION_REACH, FORMATION_HEIGHT].map((each) => each[place.formation] * place.scale);
+    const [east, south] = [place.at[0] - origin[0], place.at[1] - origin[1]];
+    const reached = [east - reach, south - reach, place.at[2], east + reach, south + reach, place.at[2] + height];
+    for (let axis = 0; axis < 3; axis++) box[axis] = Math.min(box[axis], reached[axis]);
+    for (let axis = 3; axis < 6; axis++) box[axis] = Math.max(box[axis], reached[axis]);
   }
   for (const decal of plan.decals ?? []) {
     const middle = decal.corners.reduce((sum, corner) => [sum[0] + corner[0] / 4, sum[1] + corner[1] / 4], [0, 0]);
@@ -353,7 +361,7 @@ export function buildCity(
         lowest = Math.min(lowest, cell.level);
         highest = Math.max(highest, cell.level);
       }
-    const hasSolids = solidRanges[chunk].count + detailRanges[chunk].count > 0;
+    const hasSolids = solidRanges[chunk].count + detailRanges[chunk].count > 0 || Number.isFinite(solidBoxes[chunk][0]);
     if (!members.length && !hasSolids) continue;
     const box = solidBoxes[chunk];
     const [cellLow, cellHigh] = members.length
@@ -399,24 +407,29 @@ export function buildCity(
         plan.landmark.filter((solid) => solid.material === 'crystal'),
         CROWN_LAMPS,
       ),
-      ...great.map(greatLamp),
+      ...great.map(({ place }, index) => greatLamp(place, index)),
     ],
-    crystal: crystalInstances(great, middle, origin, models.length, FORMATIONS.length, chunkCount),
+    crystal: crystalInstances(great, middle, origin, FORMATIONS.length, chunkCount),
     firstFormation: models.length,
     wrecks: (plan.ruined ? (plan.wrecks ?? []) : []).map((wreck) => ({ wreck, crust: wreckCrust(wreck) })),
   };
 }
 
 /** The ranges of the crystal's small detail to draw: those of the chunks within the whole tier's reach of the eye
- *  (measured from the city's middle). */
-export function detailRuns(chunks: readonly Chunk[], eye: readonly number[]): Range[] {
-  const near = chunks.filter((chunk) => {
-    const low = [0, 1, 2].map((axis) => chunk.middlesLow[axis] - eye[axis]);
-    const high = [0, 1, 2].map((axis) => chunk.middlesHigh[axis] - eye[axis]);
-    const middles = boxReach(low, high);
-    return tiersReached(middles.nearest, middles.farthest).has('whole');
-  });
-  return runs(near.map((chunk) => chunk.detail));
+ *  (measured from the city's middle), joined where they meet, laid into `into` (emptied first). */
+export function detailRuns(chunks: readonly Chunk[], eye: readonly number[], into: Range[] = []): Range[] {
+  into.length = 0;
+  for (const chunk of chunks) {
+    const middles = boxReach(
+      [chunk.middlesLow[0] - eye[0], chunk.middlesLow[1] - eye[1], chunk.middlesLow[2] - eye[2]],
+      [chunk.middlesHigh[0] - eye[0], chunk.middlesHigh[1] - eye[1], chunk.middlesHigh[2] - eye[2]],
+    );
+    if (!chunk.detail.count || !tiersReached(middles.nearest, middles.farthest).has('whole')) continue;
+    const last = into[into.length - 1];
+    if (last && last.first + last.count === chunk.detail.first) last.count += chunk.detail.count;
+    else into.push({ first: chunk.detail.first, count: chunk.detail.count });
+  }
+  return into;
 }
 
 /** Whether a solid is a terrace's retaining wall: a stone block a cell long (or a length of one a ramp cuts) and
@@ -518,17 +531,19 @@ function buildingMassesOf(
         continue;
       }
       const cut = piece.ruin.cut;
+      const wings: Mass[] = [];
       for (const mass of shapes.kept) {
         const broken = brokenMass(mass, cut);
-        if (broken) byChunk[piece.chunk].masses.push([broken, piece]);
+        if (broken) wings.push(broken);
       }
+      for (const wing of wings) byChunk[piece.chunk].masses.push([wing, piece]);
       const hull = brokenMass(shapes.hull, cut);
       if (hull) {
         byChunk[piece.chunk].hulls.push([hull, piece]);
         if (building)
           overtake(
             buildingGrowth(
-              massShape(hull, place, plan.centre),
+              wings.map((wing) => massShape(wing, place, plan.centre)),
               plan.centre,
               [place.east, place.south],
               heartOf(place.east, place.south),

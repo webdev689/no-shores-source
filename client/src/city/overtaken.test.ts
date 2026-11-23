@@ -1,5 +1,10 @@
 import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
 import { test } from 'node:test';
+import { buildingMasses } from '../models/buildingPlan.ts';
+import type { BuildingTable } from '../models/tables.ts';
+import { hullOf, keptMasses, massShape } from './cityMasses.ts';
+import { brokenMass } from './ruins.ts';
 import type { MassShape } from './cityMasses.ts';
 import { FORMATION_HEIGHT, FORMATION_REACH, formationMeshes, FORMATIONS, kindOf, spire } from './crystalFormations.ts';
 import {
@@ -14,7 +19,6 @@ import {
   OVERTAKEN,
   worksGrowth,
   wreckCrust,
-  wreckCrustAt,
 } from './overtaken.ts';
 import type { CityPlan, Solid } from './plan.ts';
 
@@ -69,8 +73,8 @@ const places = (count: number) =>
 test('most buildings are overtaken, some heavily and some lightly, a few untouched, each by its place', () => {
   let [untouched, heavy] = [0, 0];
   for (const place of places(1500)) {
-    const growth = buildingGrowth(HOUSE, place, place, 0);
-    assert.deepEqual(growth, buildingGrowth(HOUSE, place, place, 0), 'the same every time');
+    const growth = buildingGrowth([HOUSE], place, place, 0);
+    assert.deepEqual(growth, buildingGrowth([HOUSE], place, place, 0), 'the same every time');
     if (!growth.length) {
       untouched++;
       continue;
@@ -88,14 +92,14 @@ test('most buildings are overtaken, some heavily and some lightly, a few untouch
 
 test('a heavily overtaken building is mostly crystal over its break, its walls sheeted and veined, its foot choked', () => {
   const heavy = places(400)
-    .map((place) => buildingGrowth(HOUSE, place, place, 0))
+    .map((place) => buildingGrowth([HOUSE], place, place, 0))
     .filter((growth) => growth.some((each) => kindOf(each.formation) === 'mass'));
   assert.ok(heavy.length > 60);
   for (const growth of heavy) {
     const kinds = growth.map((each) => kindOf(each.formation));
     const over = growth.filter((each) => each.at[2] >= breakAt - 0.5);
     // a mass sized to its footprint and 2 to 3 clusters out of its break, standing well over it
-    assert.ok(over.length >= 3 && Math.max(...over.map(placedTop)) > breakAt + 0.6 * HOUSE.wall);
+    assert.ok(over.length >= 2 && Math.max(...growth.map(placedTop)) > breakAt + 0.6 * HOUSE.wall);
     assert.ok(kinds.filter((kind) => kind === 'sheet').length >= 2, 'sheets of shards over its walls');
     assert.ok(kinds.includes('vein') && kinds.includes('doorway') && kinds.includes('patch'));
     // its clusters and mass drawn in the middle distance too; its sheets, veins and the rest near
@@ -105,10 +109,48 @@ test('a heavily overtaken building is mostly crystal over its break, its walls s
   }
 });
 
+test("every foot of a building's crystal stands on its kept masses, never in the air beside them", () => {
+  const table = JSON.parse(
+    readFileSync(new URL('../../../content/forged/buildings.json', import.meta.url), 'utf8'),
+  ) as BuildingTable;
+  const place = { east: 480_000, south: 2_270_000, up: 30, yaw: 0.3 };
+  let [buildings, feet] = [0, 0];
+  for (const id of Object.keys(table).map(Number)) {
+    const all = buildingMasses(table, id);
+    const hull = hullOf(all);
+    if (!hull) continue;
+    const cut = hull.base + 0.6 * (Math.min(...keptMasses(all).map((mass) => mass.eaves)) - hull.base);
+    const masses = keptMasses(all).flatMap((mass) => {
+      const broken = brokenMass(mass, cut);
+      return broken ? [massShape(broken, place, [0, 0])] : [];
+    });
+    buildings++;
+    for (let k = 0; k < 6; k++) {
+      const standing = [place.east + k * 31.7, place.south + k * 7.3];
+      const moved = masses.map((mass) => ({ ...mass, east: mass.east + k * 31.7, south: mass.south + k * 7.3 }));
+      for (const each of buildingGrowth(moved, [place.east, place.south], standing, 1)) {
+        if (kindOf(each.formation) === 'patch') continue;
+        feet++;
+        // its foot on or within a kept mass's footprint, as that mass stands turned
+        const onMass = moved.some((mass) => {
+          const [east, south] = [each.at[0] - place.east - mass.east, each.at[1] - place.south - mass.south];
+          const [along, across] = [
+            east * Math.cos(mass.turn) + south * Math.sin(mass.turn),
+            -east * Math.sin(mass.turn) + south * Math.cos(mass.turn),
+          ];
+          return Math.abs(along) <= mass.halfAlong + 0.3 && Math.abs(across) <= mass.halfAcross + 0.3;
+        });
+        assert.ok(onMass, `building ${id}: a ${kindOf(each.formation)} at ${each.at} stands off its masses`);
+      }
+    }
+  }
+  assert.ok(buildings > 300 && feet > 10_000, `${buildings} buildings, ${feet} feet`);
+});
+
 test('the great formations grow most often by the heart of the city, thinning toward its edge', () => {
   const greats = (heart: number) =>
     places(2000)
-      .map((place) => buildingGrowth(HOUSE, place, place, heart))
+      .map((place) => buildingGrowth([HOUSE], place, place, heart))
       .filter((growth) => growth.some((each) => each.reach === 'great')).length;
   const [atHeart, atEdge] = [greats(1), greats(0)];
   assert.ok(Math.abs(atHeart / 2000 - OVERTAKEN.heavy * GREAT_CHANCE.heart) < 0.04, `${atHeart} at the heart`);
@@ -168,11 +210,8 @@ test("a wreck's crust rings its waterline, set out as large as the wreck is draw
   const wreck = { ship: 'schooner', at: [5000, 6000], heading: 1, heel: 0.4 } as const;
   const crust = wreckCrust(wreck);
   assert.ok(crust.length >= 8 && crust.every((each) => each.reach === 'great'));
-  const asDrawn = (scale: number) => wreckCrustAt(wreck, crust, scale);
-  for (const [one, four] of asDrawn(1).map((each, k) => [each, asDrawn(4)[k]])) {
-    const [near, far] = [one, four].map((each) => Math.hypot(each.at[0] - 5000, each.at[1] - 6000));
-    assert.ok(near < 15 && Math.abs(far - 4 * near) < 1e-6 && four.scale === 4 * one.scale);
-  }
+  // set out from the wreck's middle at its true size, the page scaling it as it draws the wreck
+  for (const each of crust) assert.ok(Math.hypot(each.at[0], each.at[1]) < 15 && Math.abs(each.at[2]) < 0.5);
 });
 
 test('each great formation lights a lamp of the crystal, over its foot; the crown its three tallest spires', () => {

@@ -9,7 +9,7 @@ import { MASS_FLOATS, MASS_RUIN } from './cityMasses.ts';
 import { emptyMesh } from './mesh.ts';
 import { PICTURE_LAYERS } from './pictures.ts';
 import { FORMATIONS } from './crystalFormations.ts';
-import { middleDraws } from './crystalInstances.ts';
+import { chunkDraws, withinMiddle } from './crystalInstances.ts';
 import { CELL_M, type CityPlan, type PlanCell, type Solid } from './plan.ts';
 
 const content = (path: string): string => readFileSync(new URL(`../../../content/${path}`, import.meta.url), 'utf8');
@@ -342,14 +342,28 @@ test("a ruin is overtaken: great formations drawn far, the buildings' crystal in
   assert.ok(formations(overtaken).length > 3 * 17, `${formations(overtaken).length} formations near`);
   // The great formations (the tower's among them) at every distance, each lighting the night; the middle distance's
   // only within MIDDLE_M of the eye.
-  const greats = overtaken.crystal.great.reduce((sum, draw) => sum + draw.count, 0);
+  const greats = overtaken.crystal.great.flat().reduce((sum, range) => sum + range.count, 0);
   assert.ok(greats >= 1 && overtaken.lamps.length >= greats, `${greats} great`);
   const [first] = overtaken.chunks;
   const eyeAt = (away: number) => [first.middlesLow[0] + away, first.middlesLow[1], 50];
   const middle = (away: number) =>
-    middleDraws(overtaken.chunks, overtaken.crystal.middle, eyeAt(away), overtaken.firstFormation).length;
+    chunkDraws(
+      overtaken.chunks.filter((chunk) => withinMiddle(chunk, eyeAt(away))),
+      overtaken.crystal.middle,
+      overtaken.firstFormation,
+      [],
+    ).length;
+  // Each draw runs over the instances of the chunks it was asked for, whichever chunks of the grid those are.
+  for (const chunk of overtaken.chunks) {
+    const runs = chunkDraws([chunk], overtaken.crystal.great, overtaken.firstFormation, []);
+    const counted = runs.reduce((sum, run) => sum + run.count, 0);
+    assert.equal(
+      counted,
+      overtaken.crystal.great[chunk.index].reduce((sum, range) => sum + range.count, 0),
+    );
+  }
   assert.ok(middle(0) > 0 && middle(9000) === 0, `${middle(0)} near, ${middle(9000)} far`);
-  assert.equal(port.crystal.great.length + port.crystal.middle.flat().filter((range) => range.count).length, 0);
+  assert.equal([...port.crystal.great, ...port.crystal.middle].flat().filter((range) => range.count).length, 0);
   // The crust's chunk draws it near, not far.
   const chunk = overtaken.chunks.find((each) => each.detail.count > 0);
   assert.ok(chunk);

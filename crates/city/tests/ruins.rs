@@ -126,12 +126,12 @@ fn a_ruin_keeps_its_site_and_breaks_what_stands_on_it() {
     assert!(ruin.works.iter().all(|solid| !matches!(solid.shape, Shape::Arch { .. })), "every gate breached");
     // The same every time, and pinned, so every machine lays the same ruin.
     assert_eq!(ruin, plan_as(&city, &landmass.surface, &blocks, true).expect("the ruin plans again"));
-    assert_eq!(fingerprint(&ruin), "41427f4134e6ac32");
     // Less its crystal, the ruin's plan is pinned apart: the crystal is all the Lattice adds to it.
     let mut bare = ruin.clone();
     bare.landmark.retain(|solid| solid.material != Material::Crystal);
     bare.works.retain(|solid| solid.material != Material::Crystal);
     assert_eq!(fingerprint(&bare), "0aa79975fce0e825");
+    assert_eq!(fingerprint(&ruin), "8796736ff57b82ff");
 }
 
 #[test]
@@ -171,4 +171,44 @@ fn a_ruin_is_overtaken_by_the_lattices_crystal_and_its_plaza_kept_clear() {
             shard.at
         );
     }
+}
+
+#[test]
+fn every_ruins_crown_stands_on_what_its_landmark_kept() {
+    let layout = world::layout::parse(&read("layout.json")).expect("the layout parses");
+    for continent in &layout.continents {
+        let edits = land::edits::parse(&read(&format!("land/{}.json", continent.id))).expect("the edits parse");
+        let Some(city) = edits.city.clone() else { continue };
+        if !city::ruins::is_ruined(&city.id) {
+            continue;
+        }
+        let landmass = land::landmass::generate(continent, edits).expect("the continent generates");
+        let ruin = plan_as(&city, &landmass.surface, &city::rmb::Blocks::default(), true).expect("the ruin plans");
+        let (crystal, kept): (Vec<&city::solids::Solid>, Vec<&city::solids::Solid>) =
+            ruin.landmark.iter().partition(|solid| solid.material == Material::Crystal);
+        let bodies: Vec<_> =
+            crystal.iter().filter(|solid| matches!(solid.shape, Shape::Column { top, .. } if top > 0.0)).collect();
+        assert!(bodies.len() >= 15, "{}: {} spires", city.id, bodies.len());
+        for body in bodies {
+            // its foot within a kept solid's top, in that solid's own frame as it stands turned and leaning
+            let on = kept.iter().any(|solid| {
+                let own = own_point(solid, body.at);
+                own[0].abs() <= solid.size[0] / 2.0 + 1e-6
+                    && own[1].abs() <= solid.size[1] / 2.0 + 1e-6
+                    && (own[2] - solid.size[2]).abs() < 0.01
+            });
+            assert!(on, "{}: a spire's foot at {:?} stands on nothing kept", city.id, body.at);
+        }
+    }
+}
+
+/// A world point in a solid's own frame: the inverse of `Solid::place` (turned, leaned toward its +y, rolled).
+fn own_point(solid: &city::solids::Solid, point: [f64; 3]) -> [f64; 3] {
+    let (east, south, up) = (point[0] - solid.at[0], point[1] - solid.at[1], point[2] - solid.at[2]);
+    let (sine, cosine) = (libm::sin(solid.turn), libm::cos(solid.turn));
+    let (x, y) = (east * cosine + south * sine, -east * sine + south * cosine);
+    let (lean_sine, lean_cosine) = (libm::sin(solid.lean), libm::cos(solid.lean));
+    let (y, z) = (y * lean_cosine - up * lean_sine, y * lean_sine + up * lean_cosine);
+    let (roll_sine, roll_cosine) = (libm::sin(solid.roll), libm::cos(solid.roll));
+    [x * roll_cosine - z * roll_sine, y, x * roll_sine + z * roll_cosine]
 }

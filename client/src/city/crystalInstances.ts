@@ -1,14 +1,11 @@
-// A ruin's crystal formations laid out as model instances, the way the city's GPU draws them: the great ones in one
-// run a formation, drawn at every distance; the middle distance's a formation at a time and a chunk at a time, so the
-// view draws only the chunks within `MIDDLE_M`, each formation's chunks joined into as few draws as run.
-import { type Chunk, type Range, runs as runsOf } from './cityBuild.ts';
+// A ruin's crystal formations laid out as model instances, the way the city's GPU draws them: a formation at a time
+// and a chunk at a time, so the view draws only the chunks it sees (the great ones at every distance, the middle
+// distance's within `MIDDLE_M`), each formation's chunks joined into as few draws as run.
+import type { Chunk, Range } from './cityBuild.ts';
 import { MODEL_INSTANCE_BYTES } from './cityGpu.ts';
 import type { CrystalPlace } from './overtaken.ts';
-import { boxReach } from './tiers.ts';
-
-/** How far from the eye a chunk's middle-distance crystal is drawn, metres: past the near cells, to where a heavily
- *  overtaken building's crystal is a few pixels. */
-export const MIDDLE_M = 1200;
+import type { Wreck } from './plan.ts';
+import { boxReach, MIDDLE_M } from './tiers.ts';
 
 /** The tier the city's shaders keep a crystal formation in: never dithered (cityShaders.ts TIER_CRYSTAL). */
 export const TIER_CRYSTAL = 8;
@@ -16,11 +13,11 @@ export const TIER_CRYSTAL = 8;
 /** A model drawn by instance: which, and its instances' run in the buffer. */
 export type InstancedDraw = { readonly model: number; readonly first: number; readonly count: number };
 
-/** The crystal's instances: their bytes, the great formations' draws, and each chunk's middle-distance runs (by
- *  formation, as `middle[chunk][formation]`). */
+/** The crystal's instances: their bytes, and each chunk's runs of them by formation, as `great[chunk][formation]`
+ *  (drawn wherever the chunk is seen) and `middle[chunk][formation]` (within `MIDDLE_M` of the eye). */
 export type CrystalInstances = {
   readonly bytes: ArrayBuffer;
-  readonly great: readonly InstancedDraw[];
+  readonly great: readonly (readonly Range[])[];
   readonly middle: readonly (readonly Range[])[];
 };
 
@@ -37,7 +34,8 @@ export function writeInstances(
   places.forEach((place, index) => {
     const slot = (first + index) * stride;
     floats.set([place.at[0] - origin[0], place.at[1] - origin[1], place.at[2], place.yaw], slot);
-    whole[slot + 4] = 0;
+    // a middle-distance formation's shader fades it by its distance (its "cell" marks it so); a great one never
+    whole[slot + 4] = place.reach === 'middle' ? 1 : 0;
     whole[slot + 5] = TIER_CRYSTAL;
     floats[slot + 6] = 0;
     floats[slot + 7] = place.scale;
@@ -57,56 +55,119 @@ export function drawsByFormation(sorted: readonly CrystalPlace[], firstModel: nu
   return draws;
 }
 
-/** Lays the great and middle-distance formations out: the great by formation, the middle by formation then chunk. */
+/** A formation placed in a chunk. */
+type InChunk = { readonly chunk: number; readonly place: CrystalPlace };
+
+/** Lays the great and the middle-distance formations out, each a formation then a chunk at a time, and their runs. */
 export function crystalInstances(
-  great: readonly CrystalPlace[],
-  middle: readonly { readonly chunk: number; readonly place: CrystalPlace }[],
+  great: readonly InChunk[],
+  middle: readonly InChunk[],
   origin: readonly number[],
-  firstModel: number,
   formations: number,
   chunkCount: number,
 ): CrystalInstances {
-  const greatSorted = [...great].sort((a, b) => a.formation - b.formation);
-  const middleSorted = [...middle].sort((a, b) => a.place.formation - b.place.formation || a.chunk - b.chunk);
-  const bytes = new ArrayBuffer(Math.max(1, greatSorted.length + middleSorted.length) * MODEL_INSTANCE_BYTES);
-  writeInstances(greatSorted, origin, bytes);
+  const byFormation = (a: InChunk, b: InChunk) => a.place.formation - b.place.formation || a.chunk - b.chunk;
+  const sorted = [...great].sort(byFormation).concat([...middle].sort(byFormation));
+  const bytes = new ArrayBuffer(Math.max(1, sorted.length) * MODEL_INSTANCE_BYTES);
   writeInstances(
-    middleSorted.map((each) => each.place),
+    sorted.map((each) => each.place),
     origin,
     bytes,
-    greatSorted.length,
   );
-  const draws = drawsByFormation(greatSorted, firstModel);
-  const ranges = Array.from({ length: chunkCount }, () =>
-    Array.from({ length: formations }, (): Range => ({ first: 0, count: 0 })),
-  );
-  middleSorted.forEach(({ chunk, place }, index) => {
-    const range = ranges[chunk][place.formation];
-    if (range.count === 0) range.first = greatSorted.length + index;
+  const ranges = () =>
+    Array.from({ length: chunkCount }, () => Array.from({ length: formations }, (): Range => ({ first: 0, count: 0 })));
+  const [greatRanges, middleRanges] = [ranges(), ranges()];
+  sorted.forEach(({ chunk, place }, index) => {
+    const range = (index < great.length ? greatRanges : middleRanges)[chunk][place.formation];
+    if (range.count === 0) range.first = index;
     range.count++;
   });
-  return { bytes, great: draws, middle: ranges };
+  return { bytes, great: greatRanges, middle: middleRanges };
 }
 
-/** The middle distance's instance runs to draw for some chunks seen from `eye` (from the city's middle): those of
- *  the chunks within `MIDDLE_M`, a formation's chunks joined where their runs meet. */
-export function middleDraws(
-  chunks: readonly Chunk[],
-  middle: readonly (readonly Range[])[],
-  eye: readonly number[],
-  firstModel: number,
-): InstancedDraw[] {
-  const near = chunks.filter((chunk) => {
-    const low = [0, 1, 2].map((axis) => chunk.middlesLow[axis] - eye[axis]);
-    const high = [0, 1, 2].map((axis) => chunk.middlesHigh[axis] - eye[axis]);
-    return boxReach(low, high).nearest < MIDDLE_M;
-  });
+/** Whether a chunk's middle-distance crystal is drawn from `eye` (from the city's middle): within `MIDDLE_M`. */
+export const withinMiddle = (chunk: Chunk, eye: readonly number[]): boolean =>
+  boxReach(
+    [chunk.middlesLow[0] - eye[0], chunk.middlesLow[1] - eye[1], chunk.middlesLow[2] - eye[2]],
+    [chunk.middlesHigh[0] - eye[0], chunk.middlesHigh[1] - eye[1], chunk.middlesHigh[2] - eye[2]],
+  ).nearest < MIDDLE_M;
 
-  const draws: InstancedDraw[] = [];
-  const formations = middle[0]?.length ?? 0;
+/** The instance runs to draw of some chunks' crystal (`byChunk[chunk][formation]`), a formation's chunks joined
+ *  where their runs meet, laid into `into` (emptied first, so a view keeps one list a pass). */
+export function chunkDraws(
+  chunks: readonly Chunk[],
+  byChunk: readonly (readonly Range[])[],
+  firstModel: number,
+  into: InstancedDraw[],
+): InstancedDraw[] {
+  into.length = 0;
+  const formations = byChunk[0]?.length ?? 0;
   for (let formation = 0; formation < formations; formation++) {
-    const runs = runsOf(near.map((chunk) => middle[chunk.index]?.[formation] ?? { first: 0, count: 0 }));
-    for (const run of runs) draws.push({ model: firstModel + formation, first: run.first, count: run.count });
+    let [first, count] = [0, 0];
+    for (const chunk of chunks) {
+      const range = byChunk[chunk.index]?.[formation];
+      if (!range?.count) continue;
+      if (count && first + count === range.first) count += range.count;
+      else {
+        if (count) into.push({ model: firstModel + formation, first, count });
+        [first, count] = [range.first, range.count];
+      }
+    }
+    if (count) into.push({ model: firstModel + formation, first, count });
   }
-  return draws;
+  return into;
+}
+
+/** How far the ships' size may move before a wreck's crust is written again: a fiftieth of it. */
+const CRUST_STEP = 0.02;
+
+/** Whether a wreck's crust written at the ships' size `written` (0 never) wants writing again at `now`, the size
+ *  having been `last` the frame before: once it has moved a step, or once it has settled anywhere but where written. */
+export const crustMoved = (written: number, now: number, last: number): boolean =>
+  written <= 0 || Math.abs(now / written - 1) > CRUST_STEP || (now === last && now !== written);
+
+/** A ruin's wrecks' crusts as instances: sorted by formation once, their draws fixed, written into the same bytes
+ *  whenever the ships' size has moved a step, as large as the wrecks are drawn. */
+export class WreckCrust {
+  readonly bytes: ArrayBuffer;
+  readonly draws: readonly InstancedDraw[];
+  /** The ships' size the crust was last written at (0 before its first), and the size the view drew it at last frame. */
+  written = 0;
+  lastFrame = 0;
+  private readonly sorted: readonly { readonly wreck: Wreck; readonly place: CrystalPlace }[];
+  private readonly origin: readonly number[];
+
+  constructor(
+    wrecks: readonly { readonly wreck: Wreck; readonly crust: readonly CrystalPlace[] }[],
+    origin: readonly number[],
+    firstModel: number,
+  ) {
+    this.sorted = wrecks
+      .flatMap(({ wreck, crust }) => crust.map((place) => ({ wreck, place })))
+      .sort((a, b) => a.place.formation - b.place.formation);
+    this.origin = origin;
+    this.bytes = new ArrayBuffer(Math.max(1, this.sorted.length) * MODEL_INSTANCE_BYTES);
+    this.draws = drawsByFormation(
+      this.sorted.map((each) => each.place),
+      firstModel,
+    );
+  }
+
+  /** Writes every patch as large as the wrecks are drawn at `scale`, set out round its wreck as far. */
+  write(scale: number): void {
+    const [floats, whole] = [new Float32Array(this.bytes), new Uint32Array(this.bytes)];
+    const stride = MODEL_INSTANCE_BYTES / 4;
+    this.sorted.forEach(({ wreck, place }, index) => {
+      const slot = index * stride;
+      floats[slot] = wreck.at[0] + place.at[0] * scale - this.origin[0];
+      floats[slot + 1] = wreck.at[1] + place.at[1] * scale - this.origin[1];
+      floats[slot + 2] = place.at[2] * scale;
+      floats[slot + 3] = place.yaw;
+      whole[slot + 4] = 0;
+      whole[slot + 5] = TIER_CRYSTAL;
+      floats[slot + 6] = 0;
+      floats[slot + 7] = place.scale * scale;
+    });
+    this.written = scale;
+  }
 }
