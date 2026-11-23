@@ -39,7 +39,7 @@ import { WreckCrew } from './wreckCrew.ts';
 import { courseOf, topAt, type WreckLayout } from './wreckLayout.ts';
 import { type Outcome, type Standing, WreckProgress } from './wreckProgress.ts';
 import type { WreckDrawn, WreckScenery } from './wreckScenery.ts';
-import { BOARDER, boarderAt, type Point, STORM } from './wreckTeaching.ts';
+import { BOARDER, boarderAt, type Point } from './wreckTeaching.ts';
 
 /** What the wreck needs of the game: the movement rules, the walker, the forge's cards, the room's compiled module,
  *  the ground as the scene draws it, the GPU, and the wreck's mesh and baked light, fetched the first time they are
@@ -269,11 +269,6 @@ export class WreckRun {
   /** The wisp gives the player the Storm, for the rest of the prologue. */
   giveStorm(): void {
     void this.openRoom.story({ ask: 'storm' });
-  }
-
-  /** Whether the player holds the Storm, as the room last sent their gear. */
-  get storm(): boolean {
-    return this.gearHeld.value?.arts?.art === STORM;
   }
 
   /** Holds the wreck's waves back, or lets them come. */

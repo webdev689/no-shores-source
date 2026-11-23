@@ -334,7 +334,6 @@ function stillRun(
     fight: { player: 1, parryOpen: true },
     gear: null,
     storyArms: { arms: 'worn', bow: 'none', dropBow: () => undefined },
-    storm: false,
     boarder: 'none',
     boarderView: null,
     boarderPlace: null,
@@ -573,7 +572,6 @@ function taughtRun(state: {
         this.bow = 'lying';
       },
     },
-    storm: false,
     get boarderPlace() {
       return state.boarder === 'fallen' ? (state.fell ?? [1, 2, 3]) : null;
     },

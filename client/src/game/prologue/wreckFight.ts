@@ -30,6 +30,7 @@ import { headOnView, type StoryFrame } from './stage.ts';
 import type { Story } from './story.ts';
 import { castBetween, CastFreeze, castPrompt, teachable } from './stormTeaching.ts';
 import { beginAt, pageDevStart } from './wreckDevStart.ts';
+import { STORM } from './wreckTeaching.ts';
 import { type Done, Freeze, Tutorial } from './tutorial.ts';
 import { WispScene } from './wispScene.ts';
 import { topAt, type WreckLayout } from './wreckLayout.ts';
@@ -60,6 +61,9 @@ export function heardOnWreck(
   const foes = heard.foes.filter((foe) => foe.rank < thule.rank);
   return { ...heard, dead: beaten, foes: thuleHeard ? [...foes, thule] : foes };
 }
+
+/** Whether the player holds the Storm, as the room last sent their gear. */
+const holdsStorm = (run: WreckRun): boolean => run.gear?.arts?.art === STORM;
 
 /** While the fight is frozen the world drains this far toward grey under the interface, easing there and back over
  *  this long, so the stop reads as time held. */
@@ -482,7 +486,7 @@ export class WreckFight implements Beat {
       bow: run.storyArms.bow,
       ranged: this.story.walker.player.loadout === RANGED_SLOT,
       loosed,
-      storm: run.storm,
+      storm: holdsStorm(run),
       cast: castBetween(abilities, fight.abilities ?? null),
     };
   }
