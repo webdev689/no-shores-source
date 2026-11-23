@@ -1,5 +1,5 @@
 ---
-id: 155
+id: 159
 title: "A writing pass over game content couples to code: camera cues on a line's speaker, tests pinning exact lines, and hashed content that changes the protocol version"
 status: open
 type: open-source
