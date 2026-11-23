@@ -178,3 +178,16 @@ fn from_the_dark_crits_the_blow_or_shot_loosed_while_veiled() {
     let shot = blow(player, BlowKind::Shot(Ranged::Bow));
     assert!(room.empower_as(shot, foe, loosed).crit, "loosed veiled, it lands a crit after the veil has gone");
 }
+
+#[test]
+fn a_faction_piece_the_test_ground_hands_out_rolls_one_of_its_factions_perks() {
+    let mut room = Room::new(Vec::new(), (0.0, 0.0));
+    let player = room.join().expect("a room with space");
+    assert_eq!(room.grant(player, crate::asks::Grant::Named("squallbreak".to_owned())), 0);
+    let held = &room.player(player).expect("in").character;
+    let (blade, _) = held.items.values().find(|(item, _)| item.named.as_deref() == Some("squallbreak")).expect("it");
+    let own = blade.layout.iter().flatten().filter(|id| {
+        gear::catalogue::catalogue().trait_def(id).is_some_and(|found| found.faction.as_deref() == Some("stormcallers"))
+    });
+    assert_eq!(own.count(), 1, "{:?}", blade.layout);
+}

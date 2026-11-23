@@ -172,6 +172,8 @@ pub fn named_item(id: u32, named: &NamedDef, bucket: Slot) -> Item {
     item
 }
 
+/// A lesser item of a kind, its name and its traits rolled from the kind's pools, never one trait twice.
+#[must_use]
 pub fn rolled(id: u32, kind: Kind, rarity: Rarity, bucket: Slot, level: u8, dice: &Dice) -> Item {
     let content = catalogue();
     let mut item = Item::new(id, kind, rarity, level, bucket);

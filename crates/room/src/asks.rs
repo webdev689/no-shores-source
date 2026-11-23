@@ -416,7 +416,7 @@ impl Room {
         }
     }
 
-    fn grant(&mut self, player: PlayerId, grant: Grant) -> u8 {
+    pub(crate) fn grant(&mut self, player: PlayerId, grant: Grant) -> u8 {
         if let Grant::Status { status, on_foes, ticks } = grant {
             self.grant_status(player, status, on_foes, ticks);
             return 0;

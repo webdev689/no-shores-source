@@ -253,7 +253,7 @@ impl Catalogue {
             }
             let faction_known = |key: &str| crate::factions::factions().factions.iter().any(|each| each.key == key);
             if found.faction.as_deref().is_some_and(|key| !faction_known(key) || found.column != TraitColumn::Perk) {
-                problems.push(format!("trait {} is a perk of a faction the factions' file holds, or none's", found.id));
+                problems.push(format!("trait {} names no faction the factions' file holds, or is no perk", found.id));
             }
         }
         for item in &self.items {

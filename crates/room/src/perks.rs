@@ -304,7 +304,7 @@ impl Room {
         let Some(found) = self.players.get_mut(&blow.striker) else { return };
         let landed = matches!(verdict, Verdict::Hit { .. } | Verdict::Blocked { .. } | Verdict::GuardBroken { .. });
         let mut given = Vec::new();
-        let mut own = Vec::new();
+        let mut to_players = Vec::new();
         match blow.kind {
             BlowKind::Swing(_) => {
                 // Thousand Cuts and Gathering Storm count the same rows, the one's blows struck harder by their place.
@@ -319,7 +319,7 @@ impl Room {
                     given.push(Status::Charge);
                 }
                 if nightfall && landed && blow.riposte() {
-                    own.push((blow.striker, Status::Veiled, NIGHTFALL_S));
+                    to_players.push((blow.striker, Status::Veiled, NIGHTFALL_S));
                 }
             }
             BlowKind::Shot(_) => {
@@ -337,15 +337,15 @@ impl Room {
             _ => {}
         }
         if killed && keen {
-            own.push((blow.striker, Status::Crit, KEEN_EYE_S));
+            to_players.push((blow.striker, Status::Crit, KEEN_EYE_S));
         }
         if killed && kindling {
-            own.push((blow.striker, Status::Linked, KINDLING_S));
+            to_players.push((blow.striker, Status::Linked, KINDLING_S));
             if let Some(ally) = self.nearest_ally(blow.striker) {
-                own.push((ally, Status::Linked, KINDLING_S));
+                to_players.push((ally, Status::Linked, KINDLING_S));
             }
         }
-        for (fighter, status, seconds) in own {
+        for (fighter, status, seconds) in to_players {
             self.give(fighter, status, Some(ticks(seconds)), Some(blow.striker));
         }
         for status in given {
