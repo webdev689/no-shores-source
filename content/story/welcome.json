@@ -22,8 +22,8 @@
       { "who": "tailor", "say": "Nobody should meet the Tithe looking drab." }
     ],
     "tourTack": [
-      { "who": "stranger", "say": "The Tack fits out a horse." },
-      { "who": "tack", "say": "Coats and barding, for when you ride." }
+      { "who": "stranger", "say": "The Tack sells horses, and the barding to dress them." },
+      { "who": "tack", "say": "The Bay is always in my stable. The others come and go." }
     ],
     "tourPost": [
       { "who": "stranger", "say": "Letters written to you wait with the Postmaster." },

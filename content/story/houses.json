@@ -22,7 +22,7 @@
       { "who": "tailor", "say": "Dyes and emblems. Nobody should meet the Tithe looking drab." }
     ],
     "roundTack": [
-      { "who": "tack", "say": "Coats and barding, for when you ride." }
+      { "who": "tack", "say": "Four horses a day, and the Bay always. Barding too, once you ride." }
     ],
     "roundMail": [
       { "who": "postmaster", "say": "Letters for you wait here until you take them." }
