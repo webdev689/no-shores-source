@@ -1,79 +1,33 @@
 // A dungeon drawn on WebGPU: its floor's mesh, dressed in its styles' pieces and landmarks, and its cache in its
-// pictures, painted by the city's painter, lit by the lights nearest the eye. A Drawer the dungeon's scene draws into
-// its pass.
+// pictures, painted by the city's painter, lit by the lights nearest the eye, each fragment by those its cluster lists.
+// A Drawer the dungeon's scene draws into its pass, its depth first and then lit.
 import { CITY_BUFFER_USAGE } from '../city/cityGpu.ts';
 import { modelBuffers } from '../city/cityModels.ts';
 import { CityPainter } from '../city/painter.ts';
 import { MATERIALS } from '../city/pictures.ts';
 import type { CityClimate } from '../city/plan.ts';
-import { REVERSED_DEPTH } from '../editor/orbit.ts';
-import { type Gpu, SHADER_STAGE } from '../gpu.ts';
+import type { Gpu } from '../gpu.ts';
 import type { ForgedModel } from '../models/model.ts';
-import { SAMPLES } from '../water/waterView.ts';
 import { dungeonBook, type SmallBook } from './dungeonBook.ts';
 import { propPlans } from './dungeonCells.ts';
+import { CLUSTER_COUNT, LightClusters, MOST_LISTED } from './dungeonClusters.ts';
 import { type Cache, chestMesh } from './dungeonChest.ts';
 import { type DungeonLayout, SIDE_STEPS, type StyleKey } from './dungeonLayout.ts';
 import { dressingOf } from './dungeonDressing.ts';
-import { burningOf, cellWords, LIGHT_KINDS, type Light, lightAt, MOODS } from './dungeonLight.ts';
+import { burningOf, cellWords, LIGHT_KINDS, type Light, lightAt, MOODS, NearestLights } from './dungeonLight.ts';
 import { dungeonMesh } from './dungeonMesh.ts';
 import type { ModulePack } from './dungeonModules.ts';
+import { type DungeonPipelines, dungeonPipelines } from './dungeonPipelines.ts';
 import { bedOf, fixtureMesh } from './dungeonFixtures.ts';
 import { layModel } from './entrances.ts';
 import { propModel } from '../models/props.ts';
 import type { PropTable } from '../models/tables.ts';
-import { DUNGEON_SHADER, LIGHT_FLOATS, lightFloats, MOST_LIGHTS, MOST_LOOKS, VIEW_FLOATS } from './dungeonShaders.ts';
+import { LIGHT_FLOATS, lightFloats, MOST_LIGHTS, MOST_LOOKS, VIEW_FLOATS } from './dungeonShaders.ts';
 
 /** How far out from its face the open portal's light stands, metres. */
 const PORTAL_OUT_M = 0.6;
 
 type Buffers = { vertices: GPUBuffer; indices: GPUBuffer; count: number };
-
-const pipelines = new WeakMap<GPUDevice, Map<GPUTextureFormat, GPURenderPipeline>>();
-
-/** The dungeon's pipeline, made once a GPU and format: drawn into the dungeon scene's pass (4x MSAA, depth reversed),
- *  each face wound as the city winds its solids. */
-function pipelineOf(gpu: Gpu): GPURenderPipeline {
-  const byFormat = pipelines.get(gpu.device) ?? new Map<GPUTextureFormat, GPURenderPipeline>();
-  pipelines.set(gpu.device, byFormat);
-  const known = byFormat.get(gpu.format);
-  if (known) return known;
-  const both = SHADER_STAGE.vertex | SHADER_STAGE.fragment;
-  const layout = gpu.device.createBindGroupLayout({
-    entries: [
-      { binding: 0, visibility: both, buffer: { type: 'uniform' } },
-      { binding: 1, visibility: SHADER_STAGE.fragment, buffer: { type: 'read-only-storage' } },
-      { binding: 2, visibility: SHADER_STAGE.fragment, texture: { sampleType: 'float', viewDimension: '2d-array' } },
-      { binding: 3, visibility: SHADER_STAGE.fragment, sampler: { type: 'filtering' } },
-      { binding: 4, visibility: SHADER_STAGE.fragment, buffer: { type: 'read-only-storage' } },
-    ],
-  });
-  const module = gpu.device.createShaderModule({ code: DUNGEON_SHADER });
-  const made = gpu.device.createRenderPipeline({
-    layout: gpu.device.createPipelineLayout({ bindGroupLayouts: [layout] }),
-    vertex: {
-      module,
-      entryPoint: 'dungeon_vertex',
-      buffers: [
-        {
-          arrayStride: 36,
-          attributes: [
-            { shaderLocation: 0, offset: 0, format: 'float32x3' },
-            { shaderLocation: 1, offset: 12, format: 'float32x3' },
-            { shaderLocation: 2, offset: 24, format: 'float32x2' },
-            { shaderLocation: 3, offset: 32, format: 'uint32' },
-          ],
-        },
-      ],
-    },
-    fragment: { module, entryPoint: 'dungeon_fragment', targets: [{ format: gpu.format }] },
-    primitive: { topology: 'triangle-list', cullMode: 'back', frontFace: 'cw' },
-    depthStencil: { format: REVERSED_DEPTH.format, depthWriteEnabled: true, depthCompare: REVERSED_DEPTH.compare },
-    multisample: { count: SAMPLES },
-  });
-  byFormat.set(gpu.format, made);
-  return made;
-}
 
 /** What one dungeon draws with, made when it is set. */
 type Drawn = {
@@ -82,12 +36,15 @@ type Drawn = {
   readonly burning: readonly Light[];
   /** The open portal's light, half way up its face and a little out from it. */
   readonly portalLight: Light;
+  /** Picks the lights each frame is lit by. */
+  readonly picker: NearestLights;
   readonly book: SmallBook;
   readonly wood: readonly [number, number];
   readonly painter: CityPainter;
   readonly view: GPUBuffer;
   readonly lights: GPUBuffer;
   readonly cellLooks: GPUBuffer;
+  readonly clusters: GPUBuffer;
   readonly group: GPUBindGroup;
   readonly floor: Buffers;
   chest: Buffers | null;
@@ -98,12 +55,16 @@ type Drawn = {
 
 export class DungeonView {
   private readonly gpu: Gpu;
-  private readonly pipeline: GPURenderPipeline;
+  private readonly pipelines: DungeonPipelines;
   private drawn: Drawn | null = null;
+  /** What a frame writes, kept from frame to frame: the view's parts before its grid, the lights, the clusters. */
+  private readonly frame = new Float32Array(VIEW_FLOATS.grid);
+  private readonly burningFloats = new Float32Array(MOST_LIGHTS * LIGHT_FLOATS);
+  private readonly clusters = new LightClusters(MOST_LIGHTS);
 
   constructor(gpu: Gpu) {
     this.gpu = gpu;
-    this.pipeline = pipelineOf(gpu);
+    this.pipelines = dungeonPipelines(gpu);
   }
 
   /** Lays a model into a vertex and an index buffer, each vertex wearing its picture's layer. */
@@ -170,6 +131,17 @@ export class DungeonView {
       usage: CITY_BUFFER_USAGE.storage | CITY_BUFFER_USAGE.copyDestination,
     });
     device.queue.writeBuffer(cellLooks, 0, looks);
+    const clusters = device.createBuffer({
+      size: (CLUSTER_COUNT + MOST_LISTED) * 4,
+      usage: CITY_BUFFER_USAGE.storage | CITY_BUFFER_USAGE.copyDestination,
+    });
+    // The grid and the looks' moods hold for the dungeon; a frame writes the view's parts before them.
+    const fixed = new Float32Array(VIEW_FLOATS.all - VIEW_FLOATS.grid);
+    fixed.set([layout.cell, layout.columns, layout.rows, 0]);
+    layout.looks
+      .slice(0, MOST_LOOKS)
+      .forEach((look, index) => fixed.set([...MOODS[look.style], 0], VIEW_FLOATS.moods - VIEW_FLOATS.grid + index * 4));
+    device.queue.writeBuffer(view, VIEW_FLOATS.grid * 4, fixed);
     const sampler = device.createSampler({
       addressModeU: 'repeat',
       addressModeV: 'repeat',
@@ -178,13 +150,14 @@ export class DungeonView {
       mipmapFilter: 'linear',
     });
     const group = device.createBindGroup({
-      layout: this.pipeline.getBindGroupLayout(0),
+      layout: this.pipelines.layout,
       entries: [
         { binding: 0, resource: { buffer: view } },
         { binding: 1, resource: { buffer: lights } },
         { binding: 2, resource: painter.view },
         { binding: 3, resource: sampler },
         { binding: 4, resource: { buffer: cellLooks } },
+        { binding: 5, resource: { buffer: clusters } },
       ],
     });
     const burning = burningOf(layout);
@@ -200,12 +173,14 @@ export class DungeonView {
       layout,
       burning,
       portalLight,
+      picker: new NearestLights(burning, portalLight),
       book,
       wood,
       painter,
       view,
       lights,
       cellLooks,
+      clusters,
       group,
       floor,
       chest: null,
@@ -244,7 +219,8 @@ export class DungeonView {
     return drawn.shown?.open ? [...drawn.burning, drawn.portalLight] : drawn.burning;
   }
 
-  /** Draws the dungeon from an eye at `eye` (the dungeon's metres), lit by the torches nearest it. */
+  /** Draws the dungeon from an eye at `eye` (the dungeon's metres), lit by the torches nearest it: its depth first,
+   *  then lit where its depth is the one laid. */
   drawInto(
     pass: GPURenderPassEncoder,
     fromEye: Float32Array,
@@ -254,25 +230,33 @@ export class DungeonView {
     const drawn = this.drawn;
     if (!drawn) return;
     const { device } = this.gpu;
-    // Nearest by how far each reaches past the eye, so a brazier's wide light outranks a candle's at one distance.
-    const away = ({ at: [x, y, z], burning }: Light) => Math.hypot(x - eye[0], y - eye[1], z - eye[2]) - burning.reach;
-    const nearest = [...this.lights(drawn)].sort((a, b) => away(a) - away(b)).slice(0, MOST_LIGHTS);
+    const { frame, burningFloats, clusters } = this;
+    const open = drawn.shown?.open === true;
+    const nearest = drawn.picker.nearest(eye, open, MOST_LIGHTS);
     drawn.nearest = nearest;
-    const lights = new Float32Array(MOST_LIGHTS * LIGHT_FLOATS);
-    nearest.forEach((light, index) => lights.set(lightFloats(light), index * LIGHT_FLOATS));
-    device.queue.writeBuffer(drawn.lights, 0, lights);
-    const { layout } = drawn;
-    const view = new Float32Array(VIEW_FLOATS.all);
-    view.set(fromEye, VIEW_FLOATS.fromEye);
-    view.set([...eye, time], VIEW_FLOATS.eye);
-    view.set([nearest.length, drawn.shown?.open ? 1 : 0, 0, 0], VIEW_FLOATS.lights);
-    view.set([layout.cell, layout.columns, layout.rows, 0], VIEW_FLOATS.grid);
-    layout.looks
-      .slice(0, MOST_LOOKS)
-      .forEach((look, index) => view.set([...MOODS[look.style], 0], VIEW_FLOATS.moods + index * 4));
-    device.queue.writeBuffer(drawn.view, 0, view);
-    pass.setPipeline(this.pipeline);
+    for (let index = 0; index < nearest.length; index++)
+      lightFloats(nearest[index], burningFloats, index * LIGHT_FLOATS);
+    device.queue.writeBuffer(drawn.lights, 0, burningFloats);
+    const listed = clusters.build(nearest, fromEye, eye);
+    if (listed) device.queue.writeBuffer(drawn.clusters, 0, clusters.words, 0, CLUSTER_COUNT + clusters.listed);
+    frame.set(fromEye, VIEW_FLOATS.fromEye);
+    frame[VIEW_FLOATS.eye] = eye[0];
+    frame[VIEW_FLOATS.eye + 1] = eye[1];
+    frame[VIEW_FLOATS.eye + 2] = eye[2];
+    frame[VIEW_FLOATS.eye + 3] = time;
+    frame[VIEW_FLOATS.lights] = nearest.length;
+    frame[VIEW_FLOATS.lights + 1] = open ? 1 : 0;
+    frame[VIEW_FLOATS.lights + 2] = listed ? 1 : 0;
+    device.queue.writeBuffer(drawn.view, 0, frame);
     pass.setBindGroup(0, drawn.group);
+    pass.setPipeline(this.pipelines.depth);
+    this.drawMeshes(pass, drawn);
+    pass.setPipeline(this.pipelines.lit);
+    this.drawMeshes(pass, drawn);
+  }
+
+  /** Draws the floor and the cache's chest with the pipeline set. */
+  private drawMeshes(pass: GPURenderPassEncoder, drawn: Drawn): void {
     for (const buffers of [drawn.floor, drawn.chest]) {
       if (!buffers) continue;
       pass.setVertexBuffer(0, buffers.vertices);
@@ -290,6 +274,7 @@ export class DungeonView {
       drawn.view,
       drawn.lights,
       drawn.cellLooks,
+      drawn.clusters,
       drawn.floor.vertices,
       drawn.floor.indices,
       drawn.chest?.vertices,
