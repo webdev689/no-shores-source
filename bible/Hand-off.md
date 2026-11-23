@@ -144,6 +144,13 @@ each part works is in its system note.
 
 ## Waiting on the owner
 
+- **The owner's two bugs** (#163, branch `claude/zen-ritchie-u40hax`), for the owner's yes to merge, which deploys the
+  page and the rooms: Elder Maren Hale greets the player again when a walk is taken up after a reload (she came from
+  out of view and led off without a word, so "Follow" could not be followed and the house quests stayed hidden); and a
+  pad seam higher than a step no longer blends ([[Cities]]), so the floor beside the plaza's and the Walks' parapets no
+  longer dips and carries a body over them to fall. Tested offline (the full check, a hub test from every spawn into
+  the seaward parapet, the walk replayed on the real hub); not played by hand or in a deployed room. Left: the Walks'
+  parapet still stands 0.4 m off the raised cells' edge; walking into the plaza's west-end parapet still climbs it.
 - **Nameplates, the player menu and chat** (#154, branch `claude/player-nameplates-interaction-3b6cwr`), for the
   owner's yes to merge, which deploys the page, the rooms and the accounts (a new Durable Object, the chat's hall, and
   two migrations: `presence.water` and `mutes`): [[Other Players Wear a Nameplate, Their Level or Prestige in a
