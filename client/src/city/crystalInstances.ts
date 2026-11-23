@@ -4,6 +4,7 @@
 import type { Chunk, Range } from './cityBuild.ts';
 import { MODEL_INSTANCE_BYTES } from './cityGpu.ts';
 import type { CrystalPlace } from './overtaken.ts';
+import type { Wreck } from './plan.ts';
 import { boxReach } from './tiers.ts';
 
 /** How far from the eye a chunk's middle-distance crystal is drawn, metres: past the near cells, to where a heavily
@@ -118,4 +119,56 @@ export function chunkDraws(
     if (count) into.push({ model: firstModel + formation, first, count });
   }
   return into;
+}
+
+/** How far the ships' size may move before a wreck's crust is written again: a fiftieth of it. */
+const CRUST_STEP = 0.02;
+
+/** Whether a wreck's crust written at the ships' size `written` (0 never) wants writing again at `now`. */
+export const crustMoved = (written: number, now: number): boolean =>
+  written <= 0 || Math.abs(now / written - 1) > CRUST_STEP;
+
+/** A ruin's wrecks' crusts as instances: sorted by formation once, their draws fixed, written into the same bytes
+ *  whenever the ships' size has moved a step, as large as the wrecks are drawn. */
+export class WreckCrust {
+  readonly bytes: ArrayBuffer;
+  readonly draws: readonly InstancedDraw[];
+  /** The ships' size the crust was last written at; 0 before its first. */
+  written = 0;
+  private readonly sorted: readonly { readonly wreck: Wreck; readonly place: CrystalPlace }[];
+  private readonly origin: readonly number[];
+
+  constructor(
+    wrecks: readonly { readonly wreck: Wreck; readonly crust: readonly CrystalPlace[] }[],
+    origin: readonly number[],
+    firstModel: number,
+  ) {
+    this.sorted = wrecks
+      .flatMap(({ wreck, crust }) => crust.map((place) => ({ wreck, place })))
+      .sort((a, b) => a.place.formation - b.place.formation);
+    this.origin = origin;
+    this.bytes = new ArrayBuffer(Math.max(1, this.sorted.length) * MODEL_INSTANCE_BYTES);
+    this.draws = drawsByFormation(
+      this.sorted.map((each) => each.place),
+      firstModel,
+    );
+  }
+
+  /** Writes every patch as large as the wrecks are drawn at `scale`, set out round its wreck as far. */
+  write(scale: number): void {
+    const [floats, whole] = [new Float32Array(this.bytes), new Uint32Array(this.bytes)];
+    const stride = MODEL_INSTANCE_BYTES / 4;
+    this.sorted.forEach(({ wreck, place }, index) => {
+      const slot = index * stride;
+      floats[slot] = wreck.at[0] + place.at[0] * scale - this.origin[0];
+      floats[slot + 1] = wreck.at[1] + place.at[1] * scale - this.origin[1];
+      floats[slot + 2] = place.at[2] * scale;
+      floats[slot + 3] = place.yaw;
+      whole[slot + 4] = 0;
+      whole[slot + 5] = TIER_CRYSTAL;
+      floats[slot + 6] = 0;
+      floats[slot + 7] = place.scale * scale;
+    });
+    this.written = scale;
+  }
 }

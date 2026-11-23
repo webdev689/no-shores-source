@@ -8,8 +8,7 @@ import { type Gpu, TEXTURE_USAGE } from '../gpu.ts';
 import { FAR, NEAR, ShadowMap } from '../shadow.ts';
 import type { RmbBlock } from './blocks.ts';
 import { buildCity, type Chunk, type CityData, type CityTables, detailRuns, type Range, runs } from './cityBuild.ts';
-import { chunkDraws, drawsByFormation, type InstancedDraw, withinMiddle, writeInstances } from './crystalInstances.ts';
-import { wreckCrustAt } from './overtaken.ts';
+import { chunkDraws, crustMoved, type InstancedDraw, withinMiddle, WreckCrust } from './crystalInstances.ts';
 import {
   CITY_BUFFER_USAGE,
   type CityPipelines,
@@ -79,7 +78,7 @@ type Drawn = {
   /** A ruin's crystal formations past the near cells, by instance. */
   readonly crystal: GPUBuffer;
   /** Its wrecks' crusts by instance, written again whenever the size the wrecks are drawn at changes. */
-  readonly wreckCrust: { readonly buffer: GPUBuffer; scale: number; draws: InstancedDraw[] } | null;
+  readonly wreckCrust: { readonly buffer: GPUBuffer; readonly crust: WreckCrust } | null;
 };
 
 export class CityView implements CityDrawer {
@@ -195,14 +194,10 @@ export class CityView implements CityDrawer {
       },
       crystal: buffer(data.crystal.bytes, CITY_BUFFER_USAGE.vertex),
       wreckCrust: data.wrecks.length
-        ? {
-            buffer: buffer(
-              new ArrayBuffer(data.wrecks.reduce((sum, each) => sum + each.crust.length, 0) * MODEL_INSTANCE_BYTES),
-              CITY_BUFFER_USAGE.vertex,
-            ),
-            scale: 0,
-            draws: [],
-          }
+        ? (() => {
+            const crust = new WreckCrust(data.wrecks, data.origin, data.firstFormation);
+            return { buffer: buffer(crust.bytes, CITY_BUFFER_USAGE.vertex), crust };
+          })()
         : null,
     };
   }
@@ -235,21 +230,15 @@ export class CityView implements CityDrawer {
     this.middleChunks.length = 0;
     for (const chunk of chunks) if (withinMiddle(chunk, eye)) this.middleChunks.push(chunk);
     draw(chunkDraws(this.middleChunks, data.crystal.middle, data.firstFormation, this.draws));
-    const crust = drawn.wreckCrust;
-    if (crust) {
+    const wrecks = drawn.wreckCrust;
+    if (wrecks) {
       const scale = this.wreckScale();
-      if (scale !== crust.scale) {
-        const places = data.wrecks
-          .flatMap(({ wreck, crust: each }) => wreckCrustAt(wreck, each, scale))
-          .sort((a, b) => a.formation - b.formation);
-        const bytes = new ArrayBuffer(places.length * MODEL_INSTANCE_BYTES);
-        writeInstances(places, data.origin, bytes);
-        this.gpu.device.queue.writeBuffer(crust.buffer, 0, bytes);
-        crust.draws = drawsByFormation(places, data.firstFormation);
-        crust.scale = scale;
+      if (crustMoved(wrecks.crust.written, scale)) {
+        wrecks.crust.write(scale);
+        this.gpu.device.queue.writeBuffer(wrecks.buffer, 0, wrecks.crust.bytes);
       }
-      pass.setVertexBuffer(1, crust.buffer);
-      draw(crust.draws);
+      pass.setVertexBuffer(1, wrecks.buffer);
+      draw(wrecks.crust.draws);
     }
     return drew;
   }

@@ -274,15 +274,6 @@ export function wreckCrust(wreck: Wreck): CrystalPlace[] {
   return crust;
 }
 
-/** A wreck's crust set out round it as large as the wreck is drawn (`scale` times its true size). */
-export function wreckCrustAt(wreck: Wreck, crust: readonly CrystalPlace[], scale: number): CrystalPlace[] {
-  return crust.map((each) => ({
-    ...each,
-    at: [wreck.at[0] + each.at[0] * scale, wreck.at[1] + each.at[1] * scale, each.at[2] * scale],
-    scale: each.scale * scale,
-  }));
-}
-
 /** The night's lamps the crown's crystal lights: at the `most` tallest of its spires, half way up each body. */
 export function crystalLamps(great: readonly Solid[], most: number): LampPlace[] {
   return great

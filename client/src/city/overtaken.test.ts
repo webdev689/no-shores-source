@@ -19,7 +19,6 @@ import {
   OVERTAKEN,
   worksGrowth,
   wreckCrust,
-  wreckCrustAt,
 } from './overtaken.ts';
 import type { CityPlan, Solid } from './plan.ts';
 
@@ -211,11 +210,8 @@ test("a wreck's crust rings its waterline, set out as large as the wreck is draw
   const wreck = { ship: 'schooner', at: [5000, 6000], heading: 1, heel: 0.4 } as const;
   const crust = wreckCrust(wreck);
   assert.ok(crust.length >= 8 && crust.every((each) => each.reach === 'great'));
-  const asDrawn = (scale: number) => wreckCrustAt(wreck, crust, scale);
-  for (const [one, four] of asDrawn(1).map((each, k) => [each, asDrawn(4)[k]])) {
-    const [near, far] = [one, four].map((each) => Math.hypot(each.at[0] - 5000, each.at[1] - 6000));
-    assert.ok(near < 15 && Math.abs(far - 4 * near) < 1e-6 && four.scale === 4 * one.scale);
-  }
+  // set out from the wreck's middle at its true size, the page scaling it as it draws the wreck
+  for (const each of crust) assert.ok(Math.hypot(each.at[0], each.at[1]) < 15 && Math.abs(each.at[2]) < 0.5);
 });
 
 test('each great formation lights a lamp of the crystal, over its foot; the crown its three tallest spires', () => {

@@ -58,6 +58,7 @@ code:
   - client/src/city/overtaken.ts#worksGrowth
   - client/src/city/crystalFormations.ts#FORMATIONS
   - client/src/city/crystalInstances.ts#crystalInstances
+  - client/src/city/crystalInstances.ts#WreckCrust
   - client/src/city/cityBuild.ts#detailRuns
   - client/src/game/wrecks.ts#withWrecks
 ---
@@ -401,7 +402,8 @@ building's place to the centimetre in the page, the same on every machine.
     overtaking spread from the heart.
 - **The harbour's wrecks** (`wreckCrust`) are crusted at the waterline: patches round the hull as long and broad as
   its ship's, one about every 3 m, three in ten missing, set out as large as the wreck is drawn (the ships' size: at
-  sea larger, true size on foot), drawn at every distance.
+  sea larger, true size on foot), drawn at every distance. It is written again only once the ships' size has moved
+  by more than a fiftieth since it was last written (`WreckCrust`), into the same instances.
 - **The plaza stays clear:** nothing the page lays reaches into the 110 m window round the plaza, as no rubble lies
   there; only the crown on the landmark stands within it.
 - **Near and far.** Each formation is laid by chunk (`crystalInstances.ts`), and a pass draws only the chunks it
