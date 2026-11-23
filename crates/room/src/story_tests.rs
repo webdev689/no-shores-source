@@ -206,3 +206,19 @@ fn every_boarder_the_wreck_s_waves_stand_is_a_minor_or_a_major() {
     }
     assert!(boarders > 20, "the waves are read: {boarders}");
 }
+
+#[test]
+fn a_tithe_mate_brought_in_at_major_rank_is_a_major_in_every_way_the_rules_read() {
+    let mut room = wreck();
+    room.story_wreck();
+    let mate = room.stand_foe_at(11, 2, (0.0, 0.0), 0.0, 1).expect("a Tithe-Mate");
+    let major = ::foes::foe_type(11).expect("a type").numbers(Rank::Major, 1);
+    let foe = &room.foes[&mate];
+    assert_eq!(foe.brain.rank, Rank::Major, "its rank, which its plate, its name's colour and its loot read");
+    let numbers = foe.brain.numbers();
+    assert!(!numbers.elite && !numbers.feints, "no elite's look or blows");
+    assert_eq!(numbers.shapes, major.shapes, "a Major's blows");
+    assert_eq!(foe.fighter.poise_max, major.poise);
+    let elite = ::foes::foe_type(11).expect("a type").numbers(Rank::Elite, 1);
+    assert!(major.health < elite.health, "a Major's health, under an elite's");
+}

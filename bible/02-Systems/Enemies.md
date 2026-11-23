@@ -90,7 +90,7 @@ out among them ([[Foes]]).
 | 8 | Hookman | Swordsman | `axe_iron` (two hands) | | Minor, Major |
 | 9 | Pistoleer | Archer | `pistolet` | | Minor, Major |
 | 10 | Bosun | Brute | `warhammer_iron` | | Major, Elite |
-| 11 | Tithe-Mate | Captain | `sword_steel` | | Elite, Miniboss |
+| 11 | Tithe-Mate | Captain | `sword_steel` | | Elite, Miniboss, Major (the prologue's wreck alone stands it so) |
 | 12 | Captain Brannoc Thule | Captain | `sword_ebony` | | Boss |
 | 13 | Skirmisher (the crew's) | Skirmisher | `dagger_iron` | `dagger_iron_l` | Minor, Major |
 | 14 | Swordsman (the crew's) | Swordsman | `sword_steel` | `shield_kite_steel` | Minor, Major |

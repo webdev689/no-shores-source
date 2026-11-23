@@ -149,8 +149,8 @@ test('the zones follow the path, each checkpoint on the ground in its own zone, 
   const seen = new Set(layout.zones.flatMap((zone) => zone.wave.map((foe) => foe.type)));
   assert.deepEqual(
     [...seen].sort((one, other) => one - other),
-    [7, 8, 9, 10],
-    'every boarder of the Grey Tithe’s deck crew but the Tithe-Mate, which comes only as an Elite',
+    [7, 8, 9, 10, 11],
+    'every boarder of the Grey Tithe’s deck crew, each role among them',
   );
 });
 

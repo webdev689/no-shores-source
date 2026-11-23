@@ -314,8 +314,8 @@ the cutscenes, the camera's moves, the nameplate, the fires and the lines are th
   its port bow, its gun deck and the wreckage off its port quarter, and its quarterdeck. Each is an area with a
   checkpoint; entered, its checkpoint is where the next respawn stands the player. The first, where the player
   wakes, is quiet: no wave, nothing across its way on, room for the teaching. Each between it and the arena
-  holds a wave of the Grey Tithe's deck crew (Deckhands, Hookmen, Pistoleers and Bosuns), Minors and Majors only, at
-  their own rank's strength: no Elite but Thule, the boss
+  holds a wave of the Grey Tithe's deck crew (Deckhands, Hookmen, Pistoleers, Bosuns and Tithe-Mates), Minors and
+  Majors only, at their own rank's strength, the Tithe-Mates as Majors: no Elite but Thule, the boss
   ([[The Prologue Is Reworked With Real Armour, a Bow, the Storm and No Elites]]), all boarding against the player and
   the Brig's crew ([[The Wreck's Boarders Are One Side]], [[Pirates Are Replaced by the Grey Tithe]]),
   stood as the player enters the zone and standing well across it from where they come in, so no foe of a zone fights before the player
