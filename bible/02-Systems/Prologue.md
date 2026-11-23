@@ -28,7 +28,9 @@ code:
   - client/src/game/prologue/tutorial.ts#Freeze
   - client/src/game/prologue/wreckTeaching.ts#LyingArms
   - client/src/game/prologue/storyArms.ts#StoryArms
-  - client/src/game/prologue/wisp.ts#wispAt
+  - client/src/game/prologue/wispCourse.ts#wispCourse
+  - client/src/game/prologue/wisp.ts#wispLight
+  - client/src/game/prologue/wreckDevStart.ts#devStart
   - client/src/game/prologue/wispScene.ts#WispScene
   - client/src/game/prologue/stormTeaching.ts#CastFreeze
   - crates/room/src/story.rs#story_take
