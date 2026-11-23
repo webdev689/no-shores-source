@@ -1,6 +1,8 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
+import { COSMETICS } from '../forge/cosmetics.ts';
 import { ASKS, type GearAsk, type GearState } from '../network/gearMessages.ts';
+import { HORSE, MOUNT_SLOT, WORN } from '../player/gear.ts';
 import { glyphDrawn } from '../ui/glyphs.ts';
 import type { Child, Node } from '../ui/node.ts';
 import { QuadList } from '../ui/quads.ts';
@@ -317,4 +319,31 @@ test("with no Art worn, the Character page says a house's road gives one, and th
   }
   click('art-1');
   assert.deepEqual(asked, [], 'none may be worn');
+});
+
+test('the Mount slot stands with the gear: empty with a horse glyph, then the horse worn; its flyout wears a horse and a barding', () => {
+  const sample = sampleGear();
+  const empty = menu(sample);
+  empty.open('character');
+  assert.equal(empty.labelOf('slot-11'), 'Mount: empty');
+  const numberOf = (id: string) => COSMETICS.findIndex((each) => each.id === id);
+  const carried = sampleItem({ id: 40, kind: HORSE, name: 3, level: 1, at: 0, bucket: MOUNT_SLOT });
+  const worn = sampleItem({ id: 41, kind: HORSE, name: 1, level: 1, at: WORN + MOUNT_SLOT, bucket: MOUNT_SLOT });
+  const gear = {
+    ...sample,
+    items: [...sample.items, carried, worn],
+    cosmetics: [numberOf('dawnfire')],
+    worn: { dye: 0, coat: numberOf('chestnut'), barding: numberOf('bare') },
+  };
+  const { ui, click, open, asked, labelOf } = menu(gear);
+  open('character');
+  assert.equal(labelOf('slot-11'), 'Mount: Chestnut Horse, Normal');
+  click('slot-11');
+  assert.ok(ui.boxOf('flyout'), 'it opens as a gear slot does');
+  click('item-40');
+  assert.deepEqual(asked, [{ kind: ASKS.wear, item: 40, slot: MOUNT_SLOT }], 'a horse kept is worn by a click');
+  click('barding-ember_plate');
+  assert.equal(asked.length, 1, 'a barding not kept asks nothing');
+  click('barding-dawnfire');
+  assert.deepEqual(asked[1], { kind: ASKS.wearCosmetic, item: numberOf('dawnfire') }, 'a barding kept is worn over it');
 });

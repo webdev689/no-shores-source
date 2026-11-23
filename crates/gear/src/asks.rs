@@ -141,7 +141,7 @@ pub enum Ask {
         art: u8,
         fragment: u8,
     },
-    /// Wears a dye, coat or barding the player keeps, by its number in the catalogue.
+    /// Wears a dye or barding the player keeps, by its number in the catalogue.
     WearCosmetic {
         cosmetic: u16,
     },
@@ -499,6 +499,9 @@ impl Character {
             Some(_) => return Err(Refusal::WrongPlace),
             None => return Err(Refusal::NoSuchItem),
         };
+        if item.kind == crate::kinds::Kind::Horse {
+            return Err(Refusal::DoesNotFit);
+        }
         self.items.remove(&id);
         self.salvage(&item, dice);
         Ok(None)

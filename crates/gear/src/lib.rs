@@ -26,6 +26,7 @@ pub mod emblems;
 pub mod factions;
 pub mod gate;
 pub mod grid;
+pub mod horses;
 pub mod item;
 pub mod kinds;
 pub mod left;
@@ -80,6 +81,8 @@ mod emblems_tests;
 mod factions_tests;
 #[cfg(test)]
 mod gate_tests;
+#[cfg(test)]
+mod horses_tests;
 #[cfg(test)]
 mod item_tests;
 #[cfg(test)]

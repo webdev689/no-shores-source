@@ -10,8 +10,8 @@ const AT_COUNTER: Here = Here { social: true, day: 20_400, pledge: 0, rank: 0, w
 const DICE: Dice = Dice { seed: 1, tick: 1, player: 1 };
 
 #[test]
-fn the_catalogue_reads_whole_with_one_start_of_each_kind() {
-    for kind in [CosmeticKind::Dye, CosmeticKind::Coat, CosmeticKind::Barding] {
+fn the_catalogue_reads_whole_with_one_start_dye_and_barding() {
+    for kind in [CosmeticKind::Dye, CosmeticKind::Barding] {
         let starts = cosmetics().iter().filter(|found| found.kind == kind && found.source == Source::Start).count();
         assert_eq!(starts, 1, "{kind:?}");
     }
@@ -25,15 +25,16 @@ fn the_catalogue_reads_whole_with_one_start_of_each_kind() {
 fn a_new_player_keeps_and_wears_the_starts() {
     let character = Character::starting();
     let worn = &character.cosmetics;
-    assert_eq!((worn.dye.as_str(), worn.coat.as_str(), worn.barding.as_str()), ("own_colours", "bay", "bare"));
-    assert!(character.keeps_cosmetic("bay") && !character.keeps_cosmetic("ember_plate"));
+    assert_eq!((worn.dye.as_str(), worn.barding.as_str()), ("own_colours", "bare"));
+    assert!(character.keeps_cosmetic("bare") && !character.keeps_cosmetic("ember_plate"));
 }
 
 #[test]
 fn each_seller_shows_a_few_of_its_own_the_same_all_day() {
     for seller in [Seller::Tailor, Seller::Tack] {
         let today = sold_on(seller, 20_400);
-        assert_eq!(today.len(), SOLD_A_DAY);
+        // The Tack sells the Bay Horse beside its four (`horses_tests.rs`).
+        assert_eq!(today.len(), SOLD_A_DAY + usize::from(seller == Seller::Tack));
         assert_eq!(today, sold_on(seller, 20_400));
         for number in &today {
             let found = &cosmetics()[usize::from(*number)];
@@ -49,12 +50,12 @@ fn each_seller_shows_a_few_of_its_own_the_same_all_day() {
 fn a_cosmetic_is_bought_at_its_counter_once_and_worn_in_its_kind() {
     let mut character = Character::starting();
     character.materials.aurem = 25_000;
-    let sold = sold_on(Seller::Tack, AT_COUNTER.day);
+    let sold = sold_on(Seller::Tailor, AT_COUNTER.day);
     let cheap = sold
         .iter()
         .copied()
         .find(|number| matches!(cosmetics()[usize::from(*number)].source, Source::Sold { level: 1, .. }));
-    let number = cheap.expect("a mount piece for any level that day");
+    let number = cheap.expect("a dye for any level that day");
     let found = &cosmetics()[usize::from(number)];
     assert_eq!(character.ask(Ask::WearCosmetic { cosmetic: number }, AT_COUNTER, &DICE), Err(Refusal::NotKept));
     let afield = Here { social: false, ..AT_COUNTER };
@@ -75,9 +76,9 @@ fn a_cosmetic_is_bought_at_its_counter_once_and_worn_in_its_kind() {
 fn a_worn_cosmetic_not_kept_or_of_the_wrong_kind_is_the_start_once_read() {
     let mut character = Character::starting();
     character.cosmetics.dye = "ember_plate".to_owned();
-    character.cosmetics.coat = "palomino".to_owned();
+    character.cosmetics.barding = "palomino".to_owned();
     let back = Character::from_json(&character.to_json()).expect("a character");
-    assert_eq!((back.cosmetics.dye.as_str(), back.cosmetics.coat.as_str()), ("own_colours", "bay"));
+    assert_eq!((back.cosmetics.dye.as_str(), back.cosmetics.barding.as_str()), ("own_colours", "bare"));
     assert_eq!(number_of("own_colours"), Some(0));
 }
 

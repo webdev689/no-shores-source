@@ -2,18 +2,23 @@
 // without it, and what the item adds is kept, cropped round it. A piece in hand is its own layer, drawn by itself in
 // the pose that holds it, so the hand over its grip takes nothing from it. A loadout is the forge's large picture of
 // what its hands hold where it publishes one: the right hand's level, the left's behind it. The same picture is a
-// slot's icon and an item page's large drawing. Drawn once each, on the player's own body, from the front.
+// slot's icon and an item page's large drawing. Drawn once each, on the player's own body, from the front; a horse is
+// its own layer in its coat, from the side, as the Appearance screen's barding tiles draw it.
 
 import type { GearItem, GearState } from '../network/gearMessages.ts';
 import type { Cards } from './cards.ts';
 import type { Dress } from './dressing.ts';
-import { isModule, KINDS, MELEE, WORN } from './gear.ts';
+import { HORSE_LAYER } from '../forge/looks.ts';
+import { coatOfHorse, isModule, KINDS, MELEE, WORN } from './gear.ts';
 import { gearOutfit } from './gearLooks.ts';
 import { type Picture, SECOND_SHARE, addedBy, overlapped } from './picture.ts';
 
 /** The view an item is drawn in, from the front; and the move each loadout is held up in, a melee one on guard, a
  *  pair on its own guard. Armour is drawn standing. */
 const VIEW = 0;
+/** A horse's view and pose: from the side, standing. */
+const HORSE_VIEW = 2;
+const HORSE_STANDS = 'horseidle';
 const HELD_IN: Readonly<Record<string, string>> = {
   bow: 'idle_bow',
   staff: 'idle_staff',
@@ -59,7 +64,16 @@ export class ItemPictures {
   /** Each item's dresses and pose, worked out once for the gear message it came in and the body it is worn on. */
   private readonly looks = new WeakMap<
     GearItem,
-    { body: Dress; key: string; worn: Dress; bare: Dress; anim: string; onePiece: boolean; alone: string | null }
+    {
+      body: Dress;
+      key: string;
+      worn: Dress;
+      bare: Dress;
+      anim: string;
+      view: number;
+      onePiece: boolean;
+      alone: string | null;
+    }
   >();
 
   constructor(forge: Cards) {
@@ -73,7 +87,7 @@ export class ItemPictures {
     if (isModule(item.kind)) return null;
     const look = this.lookOf(item, body);
     if (!look) return null;
-    const { key, worn, bare, anim, onePiece, alone } = look;
+    const { key, worn, bare, anim, view, onePiece, alone } = look;
     if (this.kept.has(key)) {
       // Asked for again, it is kept the longest of all.
       const picture = this.kept.get(key) ?? null;
@@ -85,7 +99,7 @@ export class ItemPictures {
       this.asked.add(key);
       const cutOut = () =>
         alone
-          ? this.forge.picture(worn, anim, VIEW, 0, alone).then((piece) => piece && addedBy(piece, NOTHING, onePiece))
+          ? this.forge.picture(worn, anim, view, 0, alone).then((piece) => piece && addedBy(piece, NOTHING, onePiece))
           : Promise.all([this.forge.picture(worn, anim, VIEW), this.forge.picture(bare, anim, VIEW)]).then(
               ([withIt, without]) => (withIt && without ? addedBy(withIt, without, onePiece) : null),
             );
@@ -125,9 +139,34 @@ export class ItemPictures {
   private lookOf(
     item: GearItem,
     body: Dress,
-  ): { key: string; worn: Dress; bare: Dress; anim: string; onePiece: boolean; alone: string | null } | null {
+  ): {
+    key: string;
+    worn: Dress;
+    bare: Dress;
+    anim: string;
+    view: number;
+    onePiece: boolean;
+    alone: string | null;
+  } | null {
     const known = this.looks.get(item);
     if (known && known.body === body) return known;
+    const coat = coatOfHorse(item);
+    if (coat !== null) {
+      const worn = { ...body, outfit: { ...body.outfit, coat, barding: null } };
+      const key = JSON.stringify([worn, HORSE_STANDS, HORSE_VIEW]);
+      const look = {
+        body,
+        key,
+        worn,
+        bare: worn,
+        anim: HORSE_STANDS,
+        view: HORSE_VIEW,
+        onePiece: false,
+        alone: HORSE_LAYER,
+      };
+      this.looks.set(item, look);
+      return look;
+    }
     const wardrobe = this.forge.wardrobe(body.body);
     if (!wardrobe) return null;
     const slot = item.at >= WORN ? item.at - WORN : item.bucket;
@@ -147,7 +186,7 @@ export class ItemPictures {
     const alone = held && this.forge.draws(body.body, anim, held) ? held : null;
     // A loadout is one piece: anything else the figure shows with it (a sheath at the hip) is not it.
     const key = JSON.stringify([worn, bare, anim, alone]);
-    const look = { body, key, worn, bare, anim, onePiece: slot <= 1, alone };
+    const look = { body, key, worn, bare, anim, view: VIEW, onePiece: slot <= 1, alone };
     this.looks.set(item, look);
     return look;
   }

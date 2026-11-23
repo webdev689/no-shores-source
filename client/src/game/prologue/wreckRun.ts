@@ -175,7 +175,10 @@ export class WreckRun {
       { x, y },
       course,
       (snapshot) => fight?.receive(snapshot),
-      (sent) => (gear.value = sent),
+      (sent) => {
+        gear.value = sent;
+        walker.ridesIn(sent);
+      },
     );
     // The prologue's player has no Art yet (one comes after it, with the factions), wakes hurt without the sword and
     // shield the story dressed them in, and meets the boarders as one side: asked before the room's first tick.

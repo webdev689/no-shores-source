@@ -6,7 +6,17 @@ import items from '../../../../content/gear/items.json' with { type: 'json' };
 import { cosmeticRamp } from '../../forge/cosmetics.ts';
 import { GAME_PALETTE } from '../appearance/gamePalette.ts';
 import { ASKS, type GearAsk, type GearItem, type GearState } from '../../network/gearMessages.ts';
-import { RARITIES, SLOTS, STOCK_NAMES, itemName, kindName } from '../../player/gear.ts';
+import {
+  CARRIED,
+  HORSE,
+  MOUNT_SLOT,
+  RARITIES,
+  SLOTS,
+  STOCK_NAMES,
+  coatOfHorse,
+  itemName,
+  kindName,
+} from '../../player/gear.ts';
 import type { KeeperKind } from '../keepers.ts';
 import { KEEPERS } from '../keepers.ts';
 import { emblemOf } from '../emblemArt.ts';
@@ -14,7 +24,7 @@ import { CRATES_MOST, type Card, cardOf } from '../gearCards.ts';
 import { vendorsOf } from '../gearScreen.ts';
 import { factionRows } from './factionRows.ts';
 
-/** What a ware's tile shows: an item's own picture, a Vestige, the Ammo crate, a dye's or a coat's colours, an
+/** What a ware's tile shows: an item's own picture (a horse's too), a Vestige, the Ammo crate, a dye's colours, an
  *  emblem, a barding's mark, an Art or one of its fragments, a faction's package, or a piece not yet drawn. */
 export type WarePicture =
   | { readonly kind: 'item'; readonly item: GearItem }
@@ -140,14 +150,47 @@ export function itemWare(key: string, item: GearItem, price: Price, short: boole
   };
 }
 
+/** A coat sold as its horse, an item to the pack (`horses.rs`): kept once a horse in that coat is held. */
+function horseWare(gear: GearState, coat: Cosmetic, number: number): Ware {
+  const name = COSMETICS.filter((each) => each.kind === 'coat').indexOf(coat);
+  const horse: GearItem = {
+    id: 0,
+    kind: HORSE,
+    rarity: 0,
+    level: 1,
+    named: null,
+    name,
+    resource: null,
+    breach: false,
+    xp: 0,
+    xpMost: 0,
+    bought: 0,
+    chosen: [],
+    bucket: MOUNT_SLOT,
+    at: CARRIED,
+    attack: 0,
+    defense: 0,
+    prestige: 0,
+    columns: [],
+    price: 0,
+    element: 0,
+  };
+  const kept = gear.items.some((item) => coatOfHorse(item) === coat.id);
+  const { aurem = 0, level = 1 } = coat.source;
+  const sold = soldOnce(gear, aurem, level, kept, { kind: ASKS.buyCosmetic, item: number });
+  const ware = itemWare(`cosmetic-${number}`, horse, { amount: aurem, currency: 'aurem' }, false, null);
+  return { ...ware, about: `${RARITIES[0]?.name ?? ''} ${kindName(HORSE)}`, words: coat.words, ...sold };
+}
+
 function cosmeticWares(gear: GearState, kinds: readonly string[]): Ware[] {
   const kept = new Set(gear.cosmetics ?? []);
   return (gear.cosmeticsSold ?? []).flatMap((number) => {
     const cosmetic = COSMETICS[number];
     if (!cosmetic || !kinds.includes(cosmetic.kind)) return [];
+    if (cosmetic.kind === 'coat') return [horseWare(gear, cosmetic, number)];
     const { aurem = 0, level = 1 } = cosmetic.source;
     const sold = soldOnce(gear, aurem, level, kept.has(number), { kind: ASKS.buyCosmetic, item: number });
-    const swatch = cosmetic.kind !== 'barding';
+    const swatch = cosmetic.kind === 'dye';
     return [
       {
         key: `cosmetic-${number}`,
@@ -162,7 +205,7 @@ function cosmeticWares(gear: GearState, kinds: readonly string[]): Ware[] {
                 .map((rgb) => `rgb(${rgb.join(' ')})`),
             }
           : { kind: 'barding', barding: cosmetic.id },
-        about: `${RARITIES[rarityNamed(cosmetic.rarity)]?.name ?? ''} ${cosmetic.kind === 'dye' ? 'Dye' : cosmetic.kind === 'coat' ? 'Coat' : 'Barding'}`,
+        about: `${RARITIES[rarityNamed(cosmetic.rarity)]?.name ?? ''} ${swatch ? 'Dye' : 'Barding'}`,
         words: cosmetic.words,
         ...sold,
       },

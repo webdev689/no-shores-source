@@ -434,8 +434,8 @@ fn where_a_player_stands_with_factions_arts_cosmetics_and_shape_crosses_whole() 
     assert!(gear.cosmetics().is_some_and(|kept| kept.iter().any(|number| number == barding)));
     assert_eq!(
         gear.cosmetics_sold().map(|sold| sold.len()),
-        Some(2 * gear::cosmetics::SOLD_A_DAY),
-        "the Tailor's, the Tack's"
+        Some(2 * gear::cosmetics::SOLD_A_DAY + 1),
+        "the Tailor's, the Tack's and its Bay Horse"
     );
     assert_eq!(gear.shapes(), 9);
     let week = gear::clock::week_of(friday);

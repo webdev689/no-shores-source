@@ -182,8 +182,14 @@ export function startFrames(parts: FrameParts, playing: Playing): void {
     if (dead && !wasDead) document.exitPointerLock();
     drain.toward(dead);
   };
-  /** The words that tell why the player is not where they went, while they stand. */
-  const toldNow = () => (playing.told && performance.now() < playing.told.until ? [playing.told.words] : []);
+  /** What the mount key says with no horse worn in the Mount slot ([[Horses Are Items Worn in a Mount Slot]]). */
+  const NO_HORSE = 'You have no horse.';
+  /** The words that tell why the player is not where they went, or that the mount key found no horse, while they
+   *  stand: said by the frame the key was pressed in, ashore or at sea. */
+  const toldNow = () => {
+    if (walker.takeNoHorse()) playing.told = { words: NO_HORSE, until: performance.now() + TOLD_MS };
+    return playing.told && performance.now() < playing.told.until ? [playing.told.words] : [];
+  };
 
   const footFrame = (here: Foot, controls: InputFrame, seconds: number, size: { width: number; height: number }) => {
     if (parts.heed(here)) return true;
@@ -418,6 +424,8 @@ export function startFrames(parts: FrameParts, playing: Playing): void {
   ) => {
     host.padFrame(input.padAlone, seconds);
     const left = host.frame(controls, seconds, size);
+    // The story's player rides no horse and is told nothing of one: a press there is dropped with nothing said.
+    walker.takeNoHorse();
     if (!left) return;
     playing.after.storyEnded(left.epilogue);
     walker.you.dress = left.dress;

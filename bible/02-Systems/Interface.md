@@ -743,28 +743,34 @@ never while a press is held. Each press is an ask the room answers.
   the Melee and Ranged loadouts' Attack and Defense ([[The Character Tab Shows No Fruit of Dagon]]). The Melee and
   Ranged loadouts, the cloak and the Appearance button stand to its left, under the worn Art's diamond, the armour to
   its right, each slot its item's picture with its names, the worn Art's diamond first, then the Weapons heading ([[The
-  Weapons Heading Stands Under the Art]]) level with the Armour heading across, under room as tall as the Art's row, so
-  each row stands level with the armour's across from it; under the Ranged slot's, the ammunition left of its capacity
+  Weapons Heading Stands Under the Art]]) level with the Armour heading across, under the Mount slot, in the Art's
+  row, so each row stands level with the armour's across from it; under the Ranged slot's, the ammunition left of its capacity
   ("Ammo 18 of 24"), or "No ammo" in the loss colour, at 22 where the menu is wide. A kind is named as the screens name
   it: Sword & Shield, Double Daggers, Great Axe. A slot's card shows as the pointer moves over it or the keys bring the
   focus to it; a click opens its flyout of the nine it may carry, toward the figure, upward from each side's two lowest
   slots; a click there wears one, and F held over one dismantles it. A flyout closes once the mouse is off its slot and
   itself, a strip over the gap between them keeping it while the mouse crosses, or on a click or Escape; a key's focus
   in it goes back to its slot.
+- **The Mount slot** ([[Horses Are Items Worn in a Mount Slot]]): the horse worn, its picture the horse in its coat
+  from the side as the forge draws it, or a horse's head in grey while none is worn. Its flyout lists the horses
+  carried, worn with a click and never dismantled (their cards offer no hold), and under them BARDING, counting those
+  kept: every barding, three a row, worn over the horse with a click when kept, each tile the horse worn in it (the
+  bay's hide with none worn), its card and brass corner as the Appearance screen's. A horse's card names it and its
+  kind (Normal Horse), with its coat's words and no level.
 - **Appearance** ([[The Character Page Opens Appearance From an Icon Button]]). Among the slots stands the
   Appearance button: a wardrobe mark (a coat on a brass hanger) with the worn emblem's sign in its corner. It opens the
   Appearance screen in the page's place, as the Art's diamond opens the Art's screen, the focus on the worn emblem. At
-  its left the display: the player's figure turning a view every 1.2 s through the forge's five views and their
-  mirrors (still with less motion asked for), in the dye worn, and under it their horse from the side in its coat and
-  barding. At its right, under engraved headings counting what is kept, EMBLEM (five a row) and DYE, COAT and BARDING
-  (eight a row), every one of the catalogues: kept pieces lit and worn with a click or Enter, the rest dim, each card
-  saying how it is had ("Sold by the Tailor.", "Reach the Lamplighters' second rank."); the worn one of each kind in
-  brass with a brass corner. A dye's tile is its ramp over a cuirass, a coat's a swatch, a barding's the horse's head
-  and chest wearing it, cut from 4 to 16 texels over the bare horse's ears so a crest shows and the head stays in;
-  the Tack's barding tiles are drawn the same way. Hovering or focusing a dye, coat or barding shows it on the display before it is worn; after the pointer leaves,
-  a piece keeps its preview only if the keys focused it. The display keeps the figure's pictures without coat or
-  barding and the horse's without the dyes, 96 at most, letting go of the least lately shown. Escape
-  goes back to the button. On a screen 800 px tall or less the tiles are 52 px, so every row shows at 1280 by 720.
+  its left the display: the player's figure alone, its whole height, turning a view every 1.2 s through the forge's
+  five views and their mirrors (still with less motion asked for), in the dye worn; no horse, which is the Mount
+  slot's. The Character page's card for the button says so: "Emblem, Dye", and "Your horse and its barding are worn
+  in the Mount slot." At its right, under engraved headings counting what is kept, EMBLEM (five a row) and DYE (eight
+  a row), every one of the catalogues: kept pieces lit and worn with a click or Enter, the rest dim, each card saying
+  how it is had ("Sold by the Tailor.", "Reach the Lamplighters' second rank."); the worn one of each kind in brass
+  with a brass corner. A dye's tile is its ramp over a cuirass; a barding's (the Mount slot's and the Tack's) the
+  horse's head and chest wearing it, cut from 4 to 16 texels over the bare horse's ears so a crest shows and the head
+  stays in. Hovering or focusing a dye shows it on the display before it is worn; after the pointer leaves, a piece
+  keeps its preview only if the keys focused it. The display keeps the figure's pictures without coat or barding, and
+  the barding tiles' horse pictures without the dyes, 96 at most, letting go of the least lately shown. Escape goes back to the button. On a screen 800 px tall or less the tiles are 52 px, so every row shows at 1280 by 720.
 - **The card.** An item's name on its rarity's band, its kind, pips and element, its picture, its main number large,
   its level, its chosen traits, its words, and what it changes over the piece it would replace, each number's meter
   with the gain or loss in green or red. Along its foot what its presses do. Where the menu is wide, every card's words
@@ -781,7 +787,8 @@ never while a press is held. Each press is an ask the room answers.
   sunk while locked, a ring inside it lit as far as the item has grown toward it; glowing when it can be bought; its
   glyph brass once bought; set in brass when chosen. A node is bought by holding it and one bought is chosen by a
   click. To the right, the item drawn large on a lit floor. Its presses go to the footer: wear it, take it off, put
-  it in the vault or take it out (at the vault's counter), and, held, feed it a Fruit of Dagon or dismantle it.
+  it in the vault or take it out (at the vault's counter), and, held, feed it a Fruit of Dagon or dismantle it (never a
+  horse, on its page, its vault cell or its flyout).
 - **Inventory.** Aurem and the Shapes held along the top, each named under its count; under it the Vestiges carried, "Vestiges 3/10" over ten places
   in two rows of five, as Destiny 2's engrams stand, an empty place a dark Vestige, a click opening one at the Mage;
   then shelves, each counting what it holds: Consumables, and Materials, the Weapon and Armor Fragments and Essence
@@ -796,8 +803,8 @@ never while a press is held. Each press is an ask the room answers.
   piece last pointed at or focused; with Ctrl, Cmd or Alt it is the browser's key. Moving the pointer off the piece,
   the focus leaving a press held by Enter or Space, or leaving the window, lets go.
 - **Acquired.** What the player gains shows at the right of the screen, in play and over the menu alike, as Destiny
-  shows a pickup: a row each, its picture in a well of its rarity, its name and how many; every dye, coat or barding
-  newly kept among them. Rows slide in, stay four
+  shows a pickup: a row each, its picture in a well of its rarity, its name and how many; every dye or barding
+  newly kept among them, and a horse as any item. Rows slide in, stay four
   and a half seconds and fade; a gain like one still shown adds to its row; six stand at most. Each batch chimes
   once, for its rarest gain. Over the menu the rows stand low, above its footer and under a hover card. A room's first
   word on the gear is not a gain, nor what changes in the ten seconds after it, while the player's own character is
@@ -915,7 +922,7 @@ never while a press is held. Each press is an ask the room answers.
   panel beside it, or over it near the page's foot: who and where, then all that may be done with them, what cannot
   be undone held and saying so ("Hold to …"), blocking and reporting apart under a rule. A member of the company
   playing elsewhere can be gone to. Details shows another player's nameplate, guild, power and
-  worn pieces. A join goes to them if they are on foot on this landmass, unless the player is in a fight at sea or
+  worn pieces, each under its slot's name (a horse under MOUNT, with its rarity and no power). A join goes to them if they are on foot on this landmass, unless the player is in a fight at sea or
   has fallen; then they go to them once it is over. The Roster is asked for again every 15
   seconds while it is seen.
 - **The company on the heads-up display**: each other member's nameplate under the place's name, with where they are,
@@ -1116,7 +1123,8 @@ serves each ask only at its own counter ([[Gear]], "In the rooms"; [[Factions]])
   The Armorsmith: TO START, the four starter pieces, then ARMOUR, the day's six. The Weaponsmith: TO START, the sword
   and shield and the bow, then WEAPONS, the day's six, and SUPPLIES, the Ammo crate with how
   many of the five are carried. The Tailor: DYES, the day's four, each a swatch of its ramp, then EMBLEMS, the day's
-  six. The Tack: MOUNT, the day's four coats and bardings. A piece kept says so.
+  six. The Tack: MOUNT, the day's four horses and bardings, a horse as any item ware is, its picture, its card and
+  "Normal Horse", kept once a horse in its coat is held. A piece kept says so.
 - **A faction's rows** (`factionRows`), the faction's own services first and its wares after, so a short screen scrolls
   to its armour: REPUTATION (the rank, the meter, what the next ranks keep, and each package waiting held to collect),
   PLEDGE (a press, priced when it is a switch, or "Pledged"), CAPE (the faction's cape, a Legendary cloak worn at any

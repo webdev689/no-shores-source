@@ -2,6 +2,7 @@
 //! the same: each trait and what it fits, the named Legendaries, Atherics and cloaks with their nodes' traits, each
 //! island's resource, and the names a rolled item may take. `problems` lists anything in it the rules cannot keep.
 
+use crate::cosmetics::CosmeticKind;
 use crate::grid::{Column, columns};
 use crate::kinds::{Kind, Slot};
 use crate::rarity::Rarity;
@@ -231,8 +232,14 @@ impl Catalogue {
                 problems.push(format!("intrinsic {} must be carried by {} alone", intrinsic.id, intrinsic.fits));
             }
         }
-        for kind in Kind::ALL.into_iter().filter(|kind| *kind != Kind::Cloak) {
+        for kind in Kind::ALL.into_iter().filter(|kind| !matches!(kind, Kind::Cloak | Kind::Horse)) {
             self.kind_problems(kind, &mut problems);
+        }
+        // A horse's name is its coat's place among the coats (`horses.rs`): one name to each, in their order.
+        let coats = crate::cosmetics::cosmetics().iter().filter(|found| found.kind == CosmeticKind::Coat);
+        let wanted: Vec<String> = coats.map(|found| format!("{} Horse", found.name)).collect();
+        if self.names_of(Kind::Horse, Rarity::Normal) != wanted.as_slice() {
+            problems.push(format!("a horse's names are its coats', in their order: {}", wanted.join(", ")));
         }
         for kind in Kind::ALL.into_iter().filter(|kind| kind.weapon()) {
             // A faction's piece is sold at its counter alone, so it is no Legendary a Vestige, Shape or package gives.

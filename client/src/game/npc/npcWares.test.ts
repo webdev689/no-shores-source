@@ -77,13 +77,13 @@ test('the Tailor sells the day’s dyes as swatches, then emblems; the kept say 
   assert.deepEqual(able?.price, { amount: 2_500, currency: 'aurem' });
 });
 
-test('the Tack sells the day’s coats and bardings', () => {
+test('the Tack sells the day’s horses and bardings', () => {
   const [mount] = rowsOf('tack', state({ cosmeticsSold: [3, 17, 24], aurem: 1_000 }));
   assert.equal(mount?.heading, 'Mount');
   assert.deepEqual(
     mount?.wares.map((ware) => [ware.picture.kind, ware.short]),
     [
-      ['swatch', true],
+      ['item', true],
       ['barding', true],
     ],
   );

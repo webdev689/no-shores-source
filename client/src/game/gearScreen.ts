@@ -9,6 +9,7 @@ import type { Cards } from '../player/cards.ts';
 import type { Dress } from '../player/dressing.ts';
 import {
   CARRIED,
+  dismantlable,
   type NodeShown,
   RARITIES,
   SLOTS,
@@ -181,13 +182,14 @@ function gearPresses(item: GearItem, state: GearState, atVault: boolean): Press[
   if (item.at === CARRIED) {
     for (const wear of wearAsks(item)) presses.push({ ...wear, role: 'primary' });
     if (atVault) presses.push({ label: 'Put in the vault', ask: { kind: ASKS.store, item: item.id }, role: 'button' });
-    presses.push({
-      label: 'Hold to dismantle',
-      ask: { kind: ASKS.dismantle, item: item.id },
-      role: 'warn',
-      held: true,
-      burst: 'shatter',
-    });
+    if (dismantlable(item))
+      presses.push({
+        label: 'Hold to dismantle',
+        ask: { kind: ASKS.dismantle, item: item.id },
+        role: 'warn',
+        held: true,
+        burst: 'shatter',
+      });
   }
   if (item.at === VAULTED && atVault)
     presses.push({ label: 'Take out of the vault', ask: { kind: ASKS.withdraw, item: item.id }, role: 'button' });
