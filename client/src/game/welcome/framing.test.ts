@@ -208,5 +208,8 @@ test("each house's turn makes its chapel and keeper the picture, near, the hung 
       rings.every((point) => !seen(shot, point)),
       `${station.kind}: no ring of light at the frame's edge`,
     );
+    // At 960x540 the dialogue box's top is 43% down the view: the keeper stands whole above it.
+    const feet = onScreen(shot, { width: 960, height: 540 }, [station.keeper[0], station.keeper[1], GROUND]);
+    assert.ok(feet && feet[1] < 540 * 0.4, `${station.kind}'s keeper whole above the box: ${feet && feet[1] / 540}`);
   }
 });

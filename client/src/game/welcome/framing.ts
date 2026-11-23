@@ -41,15 +41,18 @@ const HALL_UPS_M = [10, 11, 8, 12, 7];
 const HALL_LENS = 1.35;
 const DOOR_SHARE = 1.08;
 const BANNER_M = 5;
-/** How far before a chapel, and how high, the eye stands as she names its house, metres: under the rings' height;
- *  the nearest stand before a column on the chapel's axis (Overlook's stand 8 to 10 m out from the side chapels). */
-const CHAPEL_BACKS_M = [11, 13, 9, 15, 7, 5.5];
-const CHAPEL_UPS_M = [3.5, 4.5, 2.6];
+/** How far before a chapel, and how high, the eye stands as she names its house, metres: under the rings' height, far
+ *  enough that its keeper stands whole above the dialogue box with its banner in the view. */
+const CHAPEL_BACKS_M = [15, 13, 17, 11];
+const CHAPEL_UPS_M = [2.6, 3.5, 4.5];
+/** The eye's turns off a chapel's facing, degrees: off its axis, it sees between the columns before it (Overlook's
+ *  stand 8 to 10 m out from each side chapel, straight before it). */
+const CHAPEL_TURNS = [0, 25, -25, 35, -35];
 /** How far below its target the view looks, a share of its lens: what it frames stands in the view's upper part,
  *  clear of the dialogue box over its lower middle. */
 const RAISE = 0.2;
-/** How far from the pair the face-to-face eye stands, and how far down the view the pair's feet stand (a share of
- *  its height): above the dialogue box, whose top is 43% down at 960x540, their crowns still in. */
+/** How far from the pair the face-to-face eye stands, and how far down the view the feet of whoever it frames stand
+ *  (a share of its height; the pair, or a house's keeper): above the dialogue box, whose top is 43% down at 960x540. */
 const FACES_M = 6;
 const FEET_SHARE = 0.36;
 /** The view a framing is checked against: the widest screen the game is laid out for. */
@@ -88,6 +91,13 @@ function sees(shot: Shot, points: readonly Point3[], blocks: readonly Block[]): 
 const looking = (own: Shot, eye: Point3, target: Point3, fov = own.fov): Shot => {
   const { yaw, pitch } = lookAt(eye, target);
   return { ...own, fov, eye, yaw, pitch: pitch + fov * RAISE };
+};
+
+/** A shot from `eye` through the player's lens looking below `feet`, so whoever stands there stands `FEET_SHARE`
+ *  down the view, whole above the dialogue box. */
+const standing = (own: Shot, eye: Point3, feet: Point3): Shot => {
+  const { yaw, pitch } = lookAt(eye, feet);
+  return { ...own, eye, yaw, pitch: pitch + Math.atan((1 - 2 * FEET_SHARE) * Math.tan(own.fov / 2)) };
 };
 
 /** The first shot that sees every point; none where no shot does, so the view stays where it is. */
@@ -176,16 +186,19 @@ export function hallShot(place: Place, kinds: readonly string[], own: Shot): Sho
   const its: Point3 = [...house.keeper, floor(house) + HEAD_M];
   const banner: Point3 = [house.keeper[0], house.keeper[1], floor(house) + BANNER_M];
   const [outX, outY] = [house.counter[0] - house.keeper[0], house.counter[1] - house.keeper[1]];
-  const out = Math.hypot(outX, outY) || 1;
-  const near = CHAPEL_BACKS_M.flatMap((back) =>
-    CHAPEL_UPS_M.map((up): Shot => {
-      const eye: Point3 = [
-        house.counter[0] + (outX / out) * back,
-        house.counter[1] + (outY / out) * back,
-        floor(house) + up,
-      ];
-      return looking(own, eye, [its[0], its[1], its[2] + 1]);
-    }),
+  const facing = Math.atan2(outY, outX);
+  const near = CHAPEL_TURNS.flatMap((turn) =>
+    CHAPEL_BACKS_M.flatMap((back) =>
+      CHAPEL_UPS_M.map((up): Shot => {
+        const bearing = facing + (turn * Math.PI) / 180;
+        const eye: Point3 = [
+          house.counter[0] + Math.cos(bearing) * back,
+          house.counter[1] + Math.sin(bearing) * back,
+          floor(house) + up,
+        ];
+        return standing(own, eye, [its[0], its[1], floor(house)]);
+      }),
+    ),
   );
   return firstSeeing(near, [its, banner], place.blocks);
 }
@@ -204,11 +217,6 @@ export function facesShot(own: Shot, stranger: Point3, player: Point3, blocks: r
   const toOwn = (eye: Point3) => Math.hypot(eye[0] - own.eye[0], eye[1] - own.eye[1]);
   sides.sort((one, two) => toOwn(one) - toOwn(two));
   const faces = [stranger, player].map((feet): Point3 => [feet[0], feet[1], feet[2] + HEAD_M]);
-  // The view looks below the pair's feet, so they stand at `FEET_SHARE` down it.
-  const below = Math.atan((1 - 2 * FEET_SHARE) * Math.tan(own.fov / 2));
-  const shots = sides.map((eye): Shot => {
-    const { yaw, pitch } = lookAt(eye, middle);
-    return { ...own, eye, yaw, pitch: pitch + below };
-  });
+  const shots = sides.map((eye) => standing(own, eye, middle));
   return firstSeeing(shots, faces, blocks) ?? (shots[0] as Shot);
 }
