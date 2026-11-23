@@ -8,7 +8,7 @@ code:
   - client/src/game/gearCards.ts#cardOf
   - client/src/game/gearScreen.ts#itemDetailOf
   - crates/gear/src/cosmetics.rs#dressed
-  - content/forge/drawn.json
+  - content/gear/drawn.json
   - crates/gear/src/emblems.rs#sold_on
   - crates/gear/src/cosmetics.rs#cosmetics
   - crates/gear/src/cosmetics.rs#sold_on
@@ -613,7 +613,7 @@ to every other player. Every garment is armour ([[Clothing Is Armour, With a War
   Normal piece's clothes); a weapon and its shield in its faction's metal, its written metal and make, or else its
   content's metals (a Normal one's iron or steel, a gun's plain or gilded) with any of its shield's or bow's makes; and
   for each look the forge does not draw for the body, the one the page falls to, read from the forge's table of drawn
-  layers (`content/forge/drawn.json`, which `forgeDrawn.test.ts` holds to the fitted bodies). The page picks one look by
+  layers (`content/gear/drawn.json`, which `forgeDrawn.test.ts` holds to the fitted bodies). The page picks one look by
   the piece's level, name and number; the room keeps any it could pick, and drops any other from what others see. A
   page test dresses every item the game can hold on each body and passes the dress through the room module
   (`room_dressed`), which must keep every layer (`modelsWorn.test.ts`). A light in the left hand stays.

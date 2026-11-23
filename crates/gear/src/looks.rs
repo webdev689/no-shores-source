@@ -1,6 +1,6 @@
 //! What a worn piece may show others, as the room's word: the armour sets and the weapon and shield layers the page
 //! could draw it in. A look is its content's (`content/gear/looks.json`, by the item's `Source`), the one written on a
-//! named piece, or its faction's; where the forge does not draw it for the body (`content/forge/drawn.json`), the
+//! named piece, or its faction's; where the forge does not draw it for the body (`content/gear/drawn.json`), the
 //! page's fallback, the nearest of its own content's and then the nearest by worth, which the room lets stand. The page
 //! chooses one of these by the piece's level, name and number (`gearLooks.ts`, `gear.ts`); the room keeps any of them.
 
@@ -70,8 +70,8 @@ fn content(source: Source) -> &'static ContentLooks {
 fn drawn(body: &str) -> Option<&'static Drawn> {
     static READ: OnceLock<BTreeMap<String, Drawn>> = OnceLock::new();
     READ.get_or_init(|| {
-        serde_json::from_str(include_str!("../../../content/forge/drawn.json"))
-            .expect("content/forge/drawn.json reads: its test says so")
+        serde_json::from_str(include_str!("../../../content/gear/drawn.json"))
+            .expect("content/gear/drawn.json reads: its test says so")
     })
     .get(body)
 }
