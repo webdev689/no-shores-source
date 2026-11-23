@@ -1,9 +1,9 @@
 // Where the wisp flies over the wreck, laid on its layout: in from over the sea, clear of the wreck, wandering the
-// quiet deck round its mast, then circling the player and closing on their chest. Its course is worked out once for
-// where the player stands, frame by frame of the room's ticks, every point lifted clear of the wreck's solids (the
-// course's blocks, rails and wheel among them) and eased, so it goes over them and never through them. Its cameras
-// too: one following close behind it as it comes, looking on to the wreck before it, and one standing off to watch it
-// close on the player with nothing of the wreck between.
+// quiet deck round its mast, then circling the player, down at their chest by its second ring, and engulfing them. Its
+// course is worked out once for where the player stands, frame by frame of the room's ticks: its rings closed in where
+// a solid stands near the player at their height, and every point lifted clear of the rest, eased, never through one.
+// Its cameras too: one following close behind it as it comes, looking on to the wreck before it, and one standing off
+// to watch it close on the player with nothing of the wreck between.
 import type { CourseBlock } from '../../../../server/roomDoor.ts';
 import { ENGULF_AT_S, FLASH_IN_S, WISP_S, type WispNow } from './wisp.ts';
 import { topAt, type WreckLayout } from './wreckLayout.ts';
@@ -30,9 +30,21 @@ const ROUND_MAST = { out: 2.4, ups: [3.6, 4.6, 3.2, 4.2] } as const;
 const CHEST_M = 1.15;
 const RING_M = [2.6, 0.45] as const;
 const TURN = [1.6, 9] as const;
-/** How clear of a solid it keeps (metres, beside and over it), how far round the player's own feet no solid counts
- *  (the player stands there), and how fast it rises or sinks to keep clear (metres a sixtieth of a second, 7 m/s). */
+/** When its first ring is round, seconds into the circling: where the turn above has reached a whole turn. */
+const FIRST_RING_S = (() => {
+  const growth = (TURN[1] - TURN[0]) / (2 * WISP_S.circle);
+  return (-TURN[0] + Math.sqrt(TURN[0] ** 2 + 4 * growth * 2 * Math.PI)) / (2 * growth);
+})();
+/** How far up and down it sways at the chest (metres) and how often (a second). */
+const SWAY_M = 0.08;
+const SWAY_HZ = 0.8;
+/** How long it takes to join its first ring from where the wander left it, seconds. */
+const JOIN_S = 0.6;
+/** How clear of a solid it keeps (metres, beside and over it), and in its rings (so a ring at the chest passes over a
+ *  rail and round a wall close by); how far round the player's own feet no solid counts (the player stands there);
+ *  and how fast it rises or sinks to keep clear (metres a sixtieth of a second, 7 m/s). */
 const CLEAR_M = 0.35;
+const RING_CLEAR_M = 0.05;
 const OWN_M = 0.4;
 const CLIMB_M = 0.12;
 
@@ -66,13 +78,13 @@ export function clearBetween(blocks: readonly CourseBlock[], from: Point, to: Po
   return true;
 }
 
-/** The lowest a point at (x, y) may fly to keep clear of every solid beside or under it: none round `feet`. */
-function clearOver(blocks: readonly CourseBlock[], feet: Point, x: number, y: number): number {
+/** The lowest a point at (x, y) may fly to keep `clear` of every solid beside or under it: none round `feet`. */
+function clearOver(blocks: readonly CourseBlock[], feet: Point, x: number, y: number, clear = CLEAR_M): number {
   if (Math.hypot(x - feet[0], y - feet[1]) < OWN_M) return feet[2];
   let top = -Infinity;
   for (const block of blocks)
-    if (x > block.minX - CLEAR_M && x < block.maxX + CLEAR_M && y > block.minY - CLEAR_M && y < block.maxY + CLEAR_M)
-      top = Math.max(top, block.top + CLEAR_M);
+    if (x > block.minX - clear && x < block.maxX + clear && y > block.minY - clear && y < block.maxY + clear)
+      top = Math.max(top, block.top + clear);
   return top;
 }
 
@@ -150,11 +162,12 @@ export function wispCourse(feet: Point, facing: number, layout: WreckLayout): Wi
     const share = Math.min(1, into / circle);
     const turned = TURN[0] * into + ((TURN[1] - TURN[0]) * Math.min(into, circle) ** 2) / (2 * circle);
     const radius = RING_M[0] + (RING_M[1] - RING_M[0]) * eased(share);
-    const rise = (1 - share) * (last[2] - chest[2]);
+    // Down from where the wander left it to the chest by the end of its first ring, then swaying a little there.
+    const rise = (1 - eased(into / FIRST_RING_S)) * (last[2] - chest[2]);
     return [
       chest[0] + Math.cos(start + turned) * radius,
       chest[1] + Math.sin(start + turned) * radius,
-      chest[2] + rise,
+      chest[2] + rise + Math.sin(into * SWAY_HZ * 2 * Math.PI) * SWAY_M,
     ];
   };
   const planned = (seconds: number): Point => {
@@ -167,7 +180,7 @@ export function wispCourse(feet: Point, facing: number, layout: WreckLayout): Wi
     if (seconds < drift) return plus(mix(from, wander[0] ?? toward, eased(seconds / drift)));
     if (seconds < drift + wandering) return plus(along(wander, (seconds - drift) / wandering));
     const into = seconds - drift - wandering;
-    if (into < circle) return mix(last, ringAt(into), eased(into / 0.6));
+    if (into < circle) return mix(last, ringAt(into), eased(into / JOIN_S));
     return mix(ringAt(circle), chest, eased((into - circle) / FLASH_IN_S));
   };
   const count = Math.ceil((ENGULF_AT_S + WISP_S.engulf) * SAMPLE_HZ) + 1;
@@ -179,9 +192,12 @@ export function wispCourse(feet: Point, facing: number, layout: WreckLayout): Wi
       block.minY < quiet[3] + FROM_M + 5,
   );
   const plannedAll = Array.from({ length: count }, (unused, index) => planned(index / SAMPLE_HZ));
-  const points = closedIn(plannedAll, near, feet, Math.round((drift + wandering) * SAMPLE_HZ));
+  const ringsFrom = Math.round((drift + wandering) * SAMPLE_HZ);
+  const points = closedIn(plannedAll, near, feet, ringsFrom);
   // Lifted over every solid, then eased: it climbs to clear one before it, and sinks again only as fast as it climbs.
-  const heights = points.map(([x, y, z]) => Math.max(z, clearOver(near, feet, x, y)));
+  const heights = points.map(([x, y, z], index) =>
+    Math.max(z, clearOver(near, feet, x, y, index >= ringsFrom ? RING_CLEAR_M : CLEAR_M)),
+  );
   for (let index = 1; index < count; index++)
     heights[index] = Math.max(heights[index] ?? 0, (heights[index - 1] ?? 0) - CLIMB_M);
   for (let index = count - 2; index >= 0; index--)
@@ -190,24 +206,30 @@ export function wispCourse(feet: Point, facing: number, layout: WreckLayout): Wi
   return { samples, feet, facing, blocks: near };
 }
 
-/** How fast its rings may widen again once a solid has closed them in, metres a sixtieth of a second. */
+/** How fast its way may widen or close in as it joins its rings, metres a sixtieth of a second. */
 const WIDEN_M = 0.08;
 
 /** Its rings from sample `from` on, closed in toward the player where a solid stands within them at their height, so
- *  they keep low round the player's chest rather than rising over a rail or the wheel; eased, so they widen again no
- *  faster than `WIDEN_M`. */
+ *  they keep round the player's chest rather than rising over a wall or the wheel; once joined they never widen, and
+ *  they close in no faster than `WIDEN_M`. */
 function closedIn(points: readonly Point[], blocks: readonly CourseBlock[], feet: Point, from: number): Point[] {
   const radii = points.map(([x, y, z], index) => {
     const out = Math.hypot(x - feet[0], y - feet[1]);
     if (index < from) return out;
-    let radius = out;
+    // Out from the player to the first solid at its height: every ring nearer than that is clear too.
     const [east, south] = [(x - feet[0]) / (out || 1), (y - feet[1]) / (out || 1)];
-    while (radius > RING_M[1] && clearOver(blocks, feet, feet[0] + east * radius, feet[1] + south * radius) > z)
-      radius -= 0.1;
-    return radius;
+    let radius = RING_M[1];
+    while (
+      radius + 0.05 <= out &&
+      clearOver(blocks, feet, feet[0] + east * (radius + 0.05), feet[1] + south * (radius + 0.05), RING_CLEAR_M) <= z
+    )
+      radius += 0.05;
+    return Math.min(out, radius);
   });
+  // Once joined, the rings only tighten: a solid that closes them in keeps them as close after it.
+  const joined = from + Math.round(JOIN_S * SAMPLE_HZ);
   for (let index = from + 1; index < radii.length; index++)
-    radii[index] = Math.min(radii[index] ?? 0, (radii[index - 1] ?? 0) + WIDEN_M);
+    radii[index] = Math.min(radii[index] ?? 0, (radii[index - 1] ?? 0) + (index > joined ? 0 : WIDEN_M));
   for (let index = radii.length - 2; index >= from; index--)
     radii[index] = Math.min(radii[index] ?? 0, (radii[index + 1] ?? 0) + WIDEN_M);
   const closed = points.map(([x, y, z], index): Point => {

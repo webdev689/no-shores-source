@@ -456,10 +456,12 @@ the cutscenes, the camera's moves, the nameplate, the fires and the lines are th
     quiet deck (4.8 s) round its mast (the layout's `masts`: the Brig's mainmast, snapped to a stump in the fallen
     waist), 2.4 m out and 3.2 to 4.6 m over its deck, then toward the player, the Lookout ("What is that?") and the
     Bosun ("Don't touch it!") crying out; then circles them in rings tightening from 2.6 m to under half a metre,
-    faster and brighter (3.4 s). Every point of it is lifted 0.35 m clear of the wreck's solids beside or under it
-    (none counts within 0.4 m of the player's feet) and eased up and down at 7 m/s at most, so it goes over a rail or
-    the wheel and never through one; its rings instead close in toward the player where a solid stands within them at
-    their height (widening again at 4.8 m/s at most), so they keep low round the chest. As it comes the camera cuts from the player's shot to stand
+    faster and brighter (3.4 s), coming down as they tighten from where the wander left it to the chest (1.15 m) by
+    the end of the first ring, and swaying 0.08 m there to the engulfing. Every point of it is lifted 0.35 m clear of
+    the wreck's solids beside or under it (in its rings 0.05 m; none counts within 0.4 m of the player's feet) and
+    eased up and down at 7 m/s at most, so it goes over a rail or the wheel and never through one; its rings instead
+    close in to the first solid out from the player at their height, so they keep round the chest, and once joined
+    they never widen. Down at the chest, its light's pool falls on the deck round the player. As it comes the camera cuts from the player's shot to stand
     back 2 to 3.2 m along its level heading over the last second and 1.1 to 2.6 m over it, the first such place that
     sees it clear, looking on past it toward the player so the wreck stands in the frame; for the rings it stands low
     and near, a cutscene's shot (`ringEye`): of the places round the player 2.6 to 5.4 m out and 1 to 2.9 m over their

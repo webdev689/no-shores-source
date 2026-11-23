@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { FIELD_OF_VIEW } from '../../editor/orbit.ts';
-import { ENGULF_AT_S, FLASH_IN_S, WISP_LENGTH_S, WISP_S } from './wisp.ts';
+import { ENGULF_AT_S, FLASH_IN_S, WISP_LENGTH_S, WISP_S, wispLight } from './wisp.ts';
 import {
   chaseShot,
   clearBetween,
@@ -174,6 +174,62 @@ test('the camera eases from following the wisp to watching the rings, never thro
       const { eye, look } = moveTo(course, chase, { eye: to, look: looked }, share);
       assert.ok(!solidAt(course, eye), `inside the wreck ${share.toFixed(2)} of the way`);
       assert.ok(pitchOf(eye, look) <= Math.PI / 3, `never above 60 degrees down, ${share.toFixed(2)} of the way`);
+    }
+  }
+});
+
+/** Waist and shoulder heights over the feet, metres: the band the rings ride in once down. */
+const [WAIST_M, SHOULDER_M] = [0.9, 1.45];
+
+/** The wisp's moments through its circling, a sixtieth of a second apart, with how far round the player it has gone
+ *  since the circling began (radians) and how far out from them it is (metres). */
+function rings(flown: ReturnType<typeof wispCourse>, feet: readonly [number, number, number]) {
+  const circleAt = WISP_S.drift + WISP_S.wander;
+  const moments: { seconds: number; at: readonly [number, number, number]; round: number; out: number }[] = [];
+  let [round, before] = [0, NaN];
+  for (let seconds = circleAt; seconds < ENGULF_AT_S; seconds += STEP) {
+    const { at } = wispAt(flown, seconds);
+    const bearing = Math.atan2(at[1] - feet[1], at[0] - feet[0]);
+    if (!Number.isNaN(before)) round += Math.abs(Math.atan2(Math.sin(bearing - before), Math.cos(bearing - before)));
+    before = bearing;
+    moments.push({ seconds, at, round, out: Math.hypot(at[0] - feet[0], at[1] - feet[1]) });
+  }
+  return moments;
+}
+
+test('its rings come down round the body: after the first, between waist and shoulder, clear, never widening', () => {
+  for (const { feet, facing } of PLACES) {
+    const flown = wispCourse(feet, facing, layout);
+    const moments = rings(flown, feet);
+    assert.ok((moments.at(-1)?.round ?? 0) > 4 * Math.PI, 'more than two rings');
+    let widest = Infinity;
+    for (const { seconds, at, round, out } of moments) {
+      const where = `at ${seconds.toFixed(2)} s for feet ${feet.map((value) => value.toFixed(3))} facing ${facing.toFixed(2)}`;
+      if (seconds >= WISP_S.drift + WISP_S.wander + 0.6) {
+        assert.ok(out <= widest + 1e-6, `widening to ${out.toFixed(2)} m ${where}`);
+        widest = out;
+      }
+      if (round < 2 * Math.PI) continue;
+      const up = at[2] - feet[2];
+      assert.ok(up >= WAIST_M && up <= SHOULDER_M, `${up.toFixed(2)} m over the feet ${where}`);
+      assert.ok(!solidAt(course, at), `in a solid ${where}`);
+    }
+  }
+});
+
+test('down at the chest, its light falls on the deck under the player through the rings', () => {
+  for (const { feet, facing } of PLACES.filter((unused, index) => index % 5 === 0)) {
+    const flown = wispCourse(feet, facing, layout);
+    for (const { seconds, round } of rings(flown, feet)) {
+      if (round < 2 * Math.PI) continue;
+      const now = wispAt(flown, seconds);
+      const light = wispLight(now, 0);
+      assert.ok(light, 'it shines');
+      const reach = Math.hypot(now.at[0] - feet[0], now.at[1] - feet[1], now.at[2] - feet[2]);
+      assert.ok(
+        reach < light.reachM,
+        `the deck under them ${reach.toFixed(2)} m off, reach ${light.reachM.toFixed(2)}`,
+      );
     }
   }
 });
