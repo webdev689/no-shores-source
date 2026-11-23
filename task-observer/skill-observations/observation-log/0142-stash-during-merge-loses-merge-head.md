@@ -1,5 +1,5 @@
 ---
-id: 137
+id: 142
 title: "git stash during a merge in progress drops MERGE_HEAD: a commit then would lose the merge's second parent"
 status: open
 type: internal
