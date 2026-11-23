@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { Laid } from '../../combat/spellPixels.ts';
-import { FLASH_IN_S, layEngulf, layWisp, WISP_LENGTH_S, WISP_S } from './wisp.ts';
+import { FLASH_IN_S, layEngulf, layWisp, WISP_LENGTH_S, WISP_S, wispLight } from './wisp.ts';
 import { wispAt, wispCourse } from './wispCourse.ts';
 import { courseOf, readWreck, topAt } from './wreckLayout.ts';
 
@@ -74,4 +74,30 @@ test('up close its halo falls off smoothly, band on band of light finer than a c
     return opacities.size;
   };
   assert.ok(halo([0, 1.2, 3]) >= 5, `near: ${halo([0, 1.2, 3])} bands of light`);
+});
+
+test('it lights what is near it in Volt’s blue, brighter as its rings tighten, and its flash lights the deck white', () => {
+  const place = [1, 2, 3] as const;
+  const wandering = wispLight({ at: place, part: 'wander', glow: 0.6 }, 0);
+  const closing = wispLight({ at: place, part: 'circle', glow: 0.95 }, 0);
+  const flashing = wispLight({ at: place, part: 'engulf', glow: 1 }, 1);
+  assert.ok(wandering && closing && flashing);
+  assert.deepEqual(wandering.at, place, 'from its place');
+  assert.ok(wandering.reachM >= 2 && wandering.reachM <= 6, `a few metres: ${wandering.reachM}`);
+  const strength = (light: { light: readonly number[] }) => light.light.reduce((sum, part) => sum + part, 0);
+  assert.ok(strength(closing) > strength(wandering), 'brighter as the rings tighten');
+  const [red, green, blue] = wandering.light;
+  assert.ok(blue > green && green > red, `Volt's blue: ${wandering.light.join(', ')}`);
+  assert.ok(
+    strength(flashing) > 2 * strength(closing) && flashing.reachM > closing.reachM,
+    'the flash brighter, wider',
+  );
+  const [flashRed = 0, , flashBlue = 0] = flashing.light;
+  assert.ok(flashRed / flashBlue > red / blue, 'and whiter');
+  assert.equal(
+    wispLight({ at: place, part: 'gone', glow: 0 }, 0),
+    null,
+    'none once it is gone and the flash has faded',
+  );
+  assert.ok(wispLight({ at: place, part: 'gone', glow: 0 }, 0.5), 'the flash still lighting as it fades');
 });

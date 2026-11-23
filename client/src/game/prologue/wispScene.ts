@@ -10,7 +10,7 @@ import { playSample } from '../../soundSamples.ts';
 import { panShot, type Shot } from '../camera.ts';
 import { worldOutput } from '../uiSounds.ts';
 import type { Story } from './story.ts';
-import { ENGULF_AT_S, FLASH_IN_S, layEngulf, layWisp, WISP_LENGTH_S, WISP_S, type WispNow } from './wisp.ts';
+import { ENGULF_AT_S, FLASH_IN_S, layEngulf, layWisp, WISP_LENGTH_S, WISP_S, wispLight, type WispNow } from './wisp.ts';
 import { chaseShot, ringEye, wispAt, wispCourse, type WispCourse } from './wispCourse.ts';
 import type { WreckLayout } from './wreckLayout.ts';
 
@@ -35,6 +35,7 @@ export interface WispFrame {
   readonly shot: Shot;
   readonly marks: readonly number[];
   readonly flash: number;
+  readonly light: ReturnType<typeof wispLight>;
   readonly done: boolean;
 }
 
@@ -105,7 +106,7 @@ export class WispScene {
     layEngulf(this.laid, this.course.feet, shot.eye, this.seconds - ENGULF_AT_S);
     const done = this.seconds >= WISP_LENGTH_S;
     this.hum.frame(now, seconds, done);
-    return { shot, marks: this.laid.laid(), flash: this.flash, done };
+    return { shot, marks: this.laid.laid(), flash: this.flash, light: wispLight(now, this.flash), done };
   }
 
   /** Lets the hum go, the scene left before its end. */

@@ -4,6 +4,7 @@
 // drawn: a white-blue core, a soft halo, a trail of motes and small arcs crackling off it; and, as it engulfs them,
 // arcs wrapping the figure and a ring of Volt pushing out over the deck.
 import { boltLine, colourOf, jagged, lineRibbon } from '../../combat/spellLines.ts';
+import { GLOW_RAMPS } from '../../elementGlow.ts';
 import { STRIKE_HZ, VOLT } from '../../combat/spellPlaces.ts';
 import {
   BODY,
@@ -44,6 +45,29 @@ export interface WispNow {
   readonly at: Point;
   readonly part: WispPart;
   readonly glow: number;
+}
+
+/** Its light on what is near it: Volt's body, reaching a few metres and strengthening as it brightens; and the
+ *  engulfing's flash, near white, wider and far stronger, fading as the flash does. */
+const LIGHT_REACH_M = [2.5, 5] as const;
+const LIGHT_STRENGTH = [0.5, 1.6] as const;
+const FLASH_REACH_M = 9;
+const FLASH_STRENGTH = 4;
+
+/** The light the wisp throws now, `flash` (0 to 1) the engulfing's flash as it fades: from where it is, how far it
+ *  reaches (metres) and its colour, already as strong as it shines; none once it is gone and the flash has faded. */
+export function wispLight(
+  now: WispNow,
+  flash: number,
+): { readonly at: Point; readonly reachM: number; readonly light: readonly [number, number, number] } | null {
+  const glow = now.part === 'gone' ? 0 : now.glow;
+  if (glow <= 0 && flash <= 0) return null;
+  const [body, white] = [GLOW_RAMPS[VOLT][1], GLOW_RAMPS[VOLT][3]];
+  const strength = (LIGHT_STRENGTH[0] + (LIGHT_STRENGTH[1] - LIGHT_STRENGTH[0]) * glow) * (glow > 0 ? 1 : 0);
+  const lit = (axis: 0 | 1 | 2) => body[axis] * strength + white[axis] * FLASH_STRENGTH * flash;
+  const light = [lit(0), lit(1), lit(2)] as const;
+  const reachM = LIGHT_REACH_M[0] + (LIGHT_REACH_M[1] - LIGHT_REACH_M[0]) * glow + FLASH_REACH_M * flash;
+  return { at: now.at, reachM, light };
 }
 
 /** Its core: 11 cells across, white-hot in the middle with flecks of it in Volt's light round it, its body broken and

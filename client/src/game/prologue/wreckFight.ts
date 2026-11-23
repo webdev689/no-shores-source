@@ -33,7 +33,7 @@ import { type Done, Freeze, Tutorial } from './tutorial.ts';
 import { WispScene } from './wispScene.ts';
 import { topAt, type WreckLayout } from './wreckLayout.ts';
 import type { WreckRun } from './wreckRun.ts';
-import { setAblaze, type WreckScenery } from './wreckScenery.ts';
+import { fireLamps, setAblaze, type WreckScenery } from './wreckScenery.ts';
 
 /** Captain Brannoc Thule's type in the roster, and his faction's. */
 const THULE = 12;
@@ -423,6 +423,13 @@ export class WreckFight implements Beat {
     const { body } = this.story.walker.player;
     const shown = this.wisp?.frame(seconds, clock, run.restingShot(), [body.x, body.y, body.z]) ?? null;
     if (shown?.done) this.wisp = null;
+    // Its light on the wreck, and as a lamp of the night on the figures and the sea round it.
+    const light = shown?.light ?? null;
+    if (light !== this.scenery.near) {
+      this.scenery.near = light;
+      const lamp = light && { at: light.at, reachM: light.reachM, light: light.light, seed: 0 };
+      this.story.stage.parts.scene.lamps = [...fireLamps(this.layout), ...(lamp ? [lamp] : [])];
+    }
     return shown;
   }
 
