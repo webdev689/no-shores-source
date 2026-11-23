@@ -320,8 +320,8 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement): Promise<vo
   installQaViews(window, location.search, !rooms, {
     node: () => playing.foot?.node ?? null,
     arrive: goFoot,
-    walker,
-    dead,
+    sea: () => travel({ kind: 'return-to-ship' }, goSea),
+    ...{ walker, dead, game: playing },
   });
   const landAt = (id: string) => {
     discovered.nodes([id]);
