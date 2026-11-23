@@ -208,11 +208,12 @@ export function wispAt(course: WispCourse, seconds: number): WispNow {
   return { at: [x, y, z + CHEST_M], part: 'gone', glow: 0 };
 }
 
-/** How far behind it the following camera stands along its way (metres) and over it; and how much its look leans
- *  from the wisp to the player's chest, so the wreck before it stands in the frame. */
+/** How far behind it the following camera stands along its way (metres) and over it; and how far its look leans
+ *  from the wisp toward the player's chest, a share of the camera's distance from it, so the wreck before it stands
+ *  in the frame with the wisp near its middle. */
 const CHASE_BACK_M = 3.2;
 const CHASE_UP_M = 1.1;
-const CHASE_LEAN = 0.3;
+const CHASE_LEAN = 0.25;
 
 /** The following camera `seconds` in: behind the wisp along the way it came, a little over it, clear of the wreck,
  *  looking on past it to the player. */
@@ -231,7 +232,9 @@ export function chaseShot(course: WispCourse, seconds: number): { readonly eye: 
   while (!clearBetween(course.blocks, eye, now) && Math.hypot(eye[0] - now[0], eye[1] - now[1]) > 1.6)
     eye = mix(eye, [now[0], now[1], eye[2]], 0.2);
   const [x, y, z] = course.feet;
-  return { eye, look: mix(now, [x, y, z + CHEST_M], CHASE_LEAN) };
+  const lean = CHASE_LEAN * Math.hypot(now[0] - eye[0], now[1] - eye[1], now[2] - eye[2]);
+  const apart = Math.hypot(x - now[0], y - now[1], z + CHEST_M - now[2]);
+  return { eye, look: mix(now, [x, y, z + CHEST_M], Math.min(1, lean / Math.max(apart, 0.001))) };
 }
 
 /** The camera that watches the rings: of the places round the player, nearest first to 5.6 m out to their right and

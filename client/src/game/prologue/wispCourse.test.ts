@@ -112,6 +112,10 @@ test('as it comes the camera follows it close, the wreck before it in the frame,
         return cos > Math.cos(0.4);
       });
       assert.ok(inView, `the wreck in the frame at ${seconds.toFixed(1)} s`);
+      const toWisp = [at[0] - eye[0], at[1] - eye[1], at[2] - eye[2]] as const;
+      const onIt =
+        (toWisp[0] * toward[0] + toWisp[1] * toward[1] + toWisp[2] * toward[2]) / (Math.hypot(...toWisp) * length);
+      assert.ok(onIt > Math.cos(0.3), `the wisp near the middle of the frame at ${seconds.toFixed(1)} s`);
       assert.ok(look[2] <= eye[2] + 0.5, 'looking level or down, never up into the sky');
     }
   }
