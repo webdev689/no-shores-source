@@ -405,6 +405,24 @@ The decisions in [[Open Questions]] are not repeated here.
   owner's to say.
 - **Whether players may harm one another** ([[Combat]]); and **isles**: how many, how big and how placed
   ([[World Map]]).
+- **The balance and economy pass** (#178, branch `ccr-2fa9295d-99y63m`), for the owner's yes to merge, on the owner's
+  "comprehensive balance pass and economy pass on the entire game ecosystem so far ... Destiny 1 vanilla as a
+  reference ... autonomy" ([[The Balance and Economy Pass Is Claude's, After Destiny 1 Vanilla]]; every call, its
+  reason and its Destiny 1 source in [[The Balance and Economy Pass as Claude Shapes It]]). The owner's own decisions
+  stand. Changed: an Atheric's upgrades 8 Essence and its own node dearer, so no Atheric finishes cheaper than a
+  Legendary; a Breach's armour 7; every piece's Prestige by equal steps (a ship's guns no longer 33 and 36); a faction
+  rank every 100,000 reputation (rank 2 near level 20), packages 2,500 Aurem and Legendary one time in two, the cape
+  500, a faction weapon 12,000; Shape's Atheric armour 13 and weapon 23, the week's Abyss 10 Shapes; a chest's Essence
+  only from the day's first heroic one; bounties in three tiers (the tier on the wire, `GearBounty.tier`); every
+  deed's XP to the Art and the faction (`earn_play_xp`); a road's task paying a mission's clear; a sinking paying
+  twelve kills to the ship and now the player (XP and Aurem); no fire from a harmless ball; a player's bow two thirds
+  (12 quick, 18 drawn); the greatsword 21 and lighter; captains' defence under the cap so each rank defends more;
+  Exploit ×1.25, no crit; companions with the land's ease. Measured with `economy_tests.rs` (six pace tests and the
+  ledger), `balance_tests.rs` (`measure_ranks`), `measure_blows` and `measure_fights_by_rank`. Destiny 1's numbers
+  came from search summaries; the proxy refused every page, so they are unchecked against the pages. Tested offline:
+  `cargo xtask check` on its tree (5b9a2b87); not played. The page's two scripted sword players now hold the heroic
+  raid, whose last waves' Reeves defend less; whether a pair should stays the owner's. Its other open points are in
+  [[Open Questions]], "The balance pass's open points".
 
 ## Next
 
