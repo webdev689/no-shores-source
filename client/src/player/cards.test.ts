@@ -4,7 +4,7 @@ import { PART, type Strip } from '../forge/compose.ts';
 import type { ForgeLooks } from '../forge/looks.ts';
 import type { ForgeStore } from '../forge/store.ts';
 import { type Card, type CardMaker, Cards } from './cards.ts';
-import type { ComposeJob } from './composeJob.ts';
+import type { ComposedCard, ComposeJob } from './composeJob.ts';
 import type { Haste } from './composeQueue.ts';
 import type { Composer } from './composer.ts';
 import { type Dress, plainDress } from './dressing.ts';
@@ -176,6 +176,28 @@ test('a frame shown now is composed ahead of every frame warmed, and asks for th
   forge.warm(bare, () => ['walk'], 0, 2);
   forge.pump();
   assert.ok(asked.length > 0 && asked.every((each) => each.haste === 'later'), 'warming waits for every frame shown');
+});
+
+test('a figure showing its last frame while its next composes stands in for nothing', async () => {
+  const walk = { cell: [1, 2], frames: 2, root: [0, 1] } as const;
+  const moving: ForgeLooks = { bodies: { male: { anims: { walk }, layers: { body: ['walk'] } } } };
+  const composed: ComposedCard = { width: 1, height: 1, pixels: new Uint8Array(4), root: [0, 1], field: null };
+  const firstOnly: Composer = {
+    offPage: true,
+    compose: (unused: string, job: ComposeJob) =>
+      job.frame === 0 ? Promise.resolve(composed) : new Promise(() => undefined),
+    hurry: () => undefined,
+    prefetch: () => undefined,
+  };
+  const colours = { skins: { bodies: {} }, hair: { bodies: {} } };
+  const dyes = { palette: [], clothing: {}, armour: {} };
+  const forge = new Cards(maker, store, moving, colours, dyes, undefined, firstOnly);
+  forge.card(1, bare, 'walk', 0, 0);
+  await settled();
+  standIns();
+  assert.ok(forge.card(1, bare, 'walk', 0, 0), 'its first frame');
+  assert.ok(forge.card(1, bare, 'walk', 0, 1), 'and that frame again while the next composes');
+  assert.deepEqual(standIns(), []);
 });
 
 test('a frame that failed is asked for again only after a while, not each tick with its whole move', async () => {
