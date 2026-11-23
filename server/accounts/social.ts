@@ -8,7 +8,7 @@ import type { Db } from './database.ts';
 import { done, friendAsk, said, type Answer } from './friends.ts';
 import { guildAsk, guildOf, guildRead } from './guilds.ts';
 import { outpostAsk } from './outposts.ts';
-import { outpostsRead } from './outpostStores.ts';
+import { outpostFor, outpostsRead } from './outpostStores.ts';
 import { levelOf } from '../../client/src/game/guild/guildLaw.ts';
 import { outpostsAllowed } from '../../client/src/game/guild/outpostLaw.ts';
 import { companyAsk } from './companies.ts';
@@ -113,6 +113,9 @@ export async function socialRead(database: Db, own: string, path: string, now: n
     if (!guild) return said(404, 'You are in no guild.');
     return { status: 200, body: await outpostsRead(database, own, guild.id, outpostsAllowed(levelOf(guild.xp)), now) };
   }
+  // An outpost's plot by its room, for anyone standing in it to draw: members and their company alike.
+  const room = /^outposts\/(node-[a-z0-9-]+)$/.exec(path)?.[1];
+  if (room) return { status: 200, body: { outpost: await outpostFor(database, room) } };
   const name = /^players\/([A-Za-z0-9_]{1,20})$/.exec(path)?.[1];
   const details = name ? await detailsOf(database, own, name, now) : null;
   return details ? { status: 200, body: details } : said(404, 'No one by that name is there.');

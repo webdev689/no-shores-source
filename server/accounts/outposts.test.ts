@@ -39,8 +39,9 @@ async function world() {
   const fund = async (amount: number) =>
     kept.deposit(await accountOf('Ada'), amount, `fund-${amount}-${Math.random()}`);
   const read = async (name: string) => (await made.ask('GET', '/v1/outposts', undefined, tokens[name])).body;
+  const get = async (name: string, path: string) => (await made.ask('GET', path, undefined, tokens[name])).body;
   const raiseXp = (amount: number) => made.deps.database.prepare('UPDATE guilds SET xp = ?1').bind(amount).run();
-  return { ...made, ask, kept, accountOf, guild, standAt, fund, read, raiseXp };
+  return { ...made, ask, kept, accountOf, guild, standAt, fund, read, get, raiseXp };
 }
 
 test('an outpost is raised at its site by the founder or an admin for its Aurem, its hall and standard standing', async () => {
@@ -197,4 +198,19 @@ test('a deposit a room makes twice by the same id moves the Aurem once', async (
   assert.equal(await kept.deposit(ada, 500, 'room-1'), 'already');
   assert.equal((await guild()).treasury, 500);
   assert.equal(await kept.deposit(ada, 2_000_000, 'room-2'), 'refused', 'past the most a treasury holds');
+});
+
+test("anyone signed in reads an outpost's plot and banner by its room, and none for a room with none", async () => {
+  const { ask, standAt, fund, guild, get } = await world();
+  await standAt('Ada');
+  await fund(6_000);
+  await ask('Ada', 'outpost/raise', { site: SITE, turn: 0 });
+  const room = outpostRoom(SITE, (await guild()).id);
+  const outpost = (await get('Ben', `/v1/outposts/${room}`))['outpost'] as {
+    name: string;
+    plot: { structures: unknown[] };
+  } | null;
+  assert.equal(outpost?.name, 'Salt Kings');
+  assert.equal(outpost?.plot.structures.length, 2, 'its hall and standard');
+  assert.equal((await get('Ben', '/v1/outposts/node-other-outpost--guild-00000000'))['outpost'], null);
 });
