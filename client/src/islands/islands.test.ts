@@ -242,7 +242,7 @@ test("an island's box holds its whole ground and every module placed on it, howe
     [MODULE_NAMES.indexOf('temperate.shore.rock.c'), -4, 2, 0.5, 2.5, 0.8, 1],
   ];
   const box = isleBox(grid, placements);
-  const inside = ([x, y, z]: readonly number[]) =>
+  const inside = ([x, y, z]: ArrayLike<number> & Iterable<number>) =>
     x! >= box[0] - 1e-9 &&
     y! >= box[1] - 1e-9 &&
     z! >= box[2] - 1e-9 &&

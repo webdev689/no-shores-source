@@ -13,6 +13,7 @@ renderer can key it as `archive_record`.
 | Folder / module | What it is (<=12 words) | Kind | Verdict | Lands as | Seam or reason (<=25 words) | Effort | Evidence |
 |---|---|---|---|---|---|---|---|
 | **src/render** | | | | | | | |
+| **Performance**: approved, [[Pick - Performance]] | | | | | | | |
 | `render/renderer.js` | WebGL2 core: caches, mesh, character, billboard, terrain, water, decal draws | Engine | Cut | WebGPU rewrite | Material key is DF `archive_record`; tile arrays per DF ground archive; alpha-0 palette cutouts; `TextureFile.isSpectralArchive`. Needs its own material ids. | L | src/render/renderer.js:uploadTexture |
 | `render/glProgram, glRelease, renderTarget, bootPrograms, playPrograms, mountPrograms, warmPrograms, idleTurn, cloudsArrival` | Compile/link, async program start queues, FBOs, GL leak release | Engine | Clean | WebGPU rewrite | Pure GL plumbing. The rule (start at load, never stall a frame) maps to async pipeline creation. | M | src/render/glProgram.js:startPrograms |
 | `render/perfMeter, gpuTrail` | GPU timer readout; GPU trail kept beside a crash | Engine | Clean | WebGPU rewrite | Timer queries become WebGPU timestamp queries. | S | src/render/perfMeter.js |

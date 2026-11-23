@@ -1,7 +1,7 @@
 import type { GlowField } from '../elementGlow.ts';
 import { BUFFER_USAGE, SHADER_STAGE, TEXTURE_USAGE, type Gpu } from '../gpu.ts';
 import { REVERSED_DEPTH } from '../editor/orbit.ts';
-import { boxSeen, viewPlanes } from '../city/tiers.ts';
+import { boxSeen, type Planes, sphereSeen, viewPlanes } from '../frustum.ts';
 import { PX_PER_M } from '../player/figures.ts';
 import { CARD_LOOK_FLOATS, STATUS_WGSL, cardLookInto, statusClock } from '../player/cardLooks.ts';
 import type { Card, CardAt, CardMaker } from '../player/cards.ts';
@@ -17,7 +17,6 @@ import {
   leadMargin,
   poseEvery,
   sphereBox,
-  sphereSeen,
   turnBetween,
 } from './figureCull.ts';
 
@@ -218,7 +217,7 @@ interface Shown {
  *  turned, and how many frames have been drawn. */
 interface Sight {
   readonly fromEye: Float32Array;
-  readonly planes: number[][];
+  readonly planes: Planes;
   readonly eye: readonly [number, number, number];
   readonly yaw: number;
   readonly turn: number;

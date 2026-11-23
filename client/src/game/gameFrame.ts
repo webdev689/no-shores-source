@@ -295,8 +295,9 @@ export function startFrames(parts: FrameParts, playing: Playing): void {
     hud.toast(...toldNow(), ...quests.toasts, ...playing.lore.toasts);
     hideSeaHud(hud);
     hud.note(here.roomNote);
-    // A dungeon's floor is all there before the veil lifts; a node waits for the exact ground round the player.
-    return !!here.dungeon || scene.closeReady(body.x, body.y);
+    // A dungeon's floor is all there before the veil lifts; a node waits for the exact ground round the player and its
+    // city, built a few steps a frame, whole.
+    return !!here.dungeon || (scene.closeReady(body.x, body.y) && playing.drawers.ready());
   };
 
   const seaFrame = (here: Sea, controls: InputFrame, seconds: number, size: { width: number; height: number }) => {

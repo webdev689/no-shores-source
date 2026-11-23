@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { viewPlanes } from '../city/tiers.ts';
+import { sphereSeen, viewPlanes } from '../frustum.ts';
 import {
   CULL_MARGIN_M,
   POSE_CADENCE,
@@ -9,7 +9,6 @@ import {
   cardReach,
   leadMargin,
   poseEvery,
-  sphereSeen,
   turnBetween,
 } from './figureCull.ts';
 

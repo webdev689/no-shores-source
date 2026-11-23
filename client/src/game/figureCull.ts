@@ -1,7 +1,6 @@
 // Which figures a frame draws and how often each is posed: a card is drawn only where a sphere about its feet meets the
 // view, casts into the near shadow map only where that sphere's box may reach the map's square, and is posed (its move's
 // frame chosen and its card asked of the forge) every frame near the eye, less often farther off or out of sight.
-import { boxSeen } from '../city/tiers.ts';
 
 /** How far past its card a figure's sphere is taken, metres: a shake, a weapon's outline and a smear stand a little
  *  outside the card. */
@@ -70,13 +69,4 @@ export function sphereBox(
   high[0] = x + radius;
   high[1] = y + radius;
   high[2] = z + radius;
-}
-
-const low: [number, number, number] = [0, 0, 0];
-const high: [number, number, number] = [0, 0, 0];
-
-/** Whether a sphere about a point measured from the eye meets the view between `planes` (`viewPlanes`). */
-export function sphereSeen(planes: readonly number[][], x: number, y: number, z: number, radius: number): boolean {
-  sphereBox(low, high, x, y, z, radius);
-  return boxSeen(planes, low, high);
 }

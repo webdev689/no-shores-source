@@ -32,6 +32,8 @@ export interface LandDrawers {
   readonly city: Drawer | null;
   readonly layouts: Drawer | null;
   readonly nature: Drawer | null;
+  /** Whether the landmass's city stands whole, or it has none, or none could be built: the veil waits on it. */
+  ready(): boolean;
   release(): void;
 }
 
@@ -148,19 +150,26 @@ export function landDrawers(
   const changes = new GroundChanges();
   const city = plan ? new CityView(gpu) : null;
   let released = false;
+  let cityStands = !plan;
   if (plan && city) {
     const names = plan.cells.flatMap((cell) => (cell.use === 'block' && cell.block ? [cell.block] : []));
     assets
       .then(async (loaded) => {
-        if (!loaded) return;
+        if (!loaded) return void (cityStands = true);
         const blocks = await blocksOf(base, loaded, names);
         // A landmass let go while its blocks came is drawn no more: its city is never built.
         if (released) return;
         // The nature already scattered knew only the pads; once the city stands, it is scattered again round the
         // city's solids too.
-        city.beginCity(plan, cityClimate(biome ?? undefined), blocks, loaded.tables, () => changes.change(null));
+        city.beginCity(plan, cityClimate(biome ?? undefined), blocks, loaded.tables, () => {
+          cityStands = true;
+          changes.change(null);
+        });
       })
-      .catch((error: unknown) => console.error(`${landmass.id}'s city could not be drawn:`, error));
+      .catch((error: unknown) => {
+        cityStands = true;
+        console.error(`${landmass.id}'s city could not be drawn:`, error);
+      });
   }
   const laid = landmass.layouts.length
     ? layoutDrawer(
@@ -216,6 +225,7 @@ export function landDrawers(
     city: plan && city && withWrecks(gpu, city, plan, shipScale),
     layouts: laid?.drawer ?? null,
     nature: natureDrawer,
+    ready: () => cityStands,
     release: () => {
       released = true;
       city?.clear();
