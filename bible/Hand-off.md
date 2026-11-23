@@ -201,8 +201,9 @@ The decisions in [[Open Questions]] are not repeated here.
   An independent read's findings are fixed, each checked first (six task seams where one speaker said three lines
   in a row, stock phrases, contradictions in the books). Tested offline: every scene held to the Dialogue rule's
   numbers, the seams too, the lore's markup checked, `cargo xtask check` on the head. Not yet read or heard in the
-  game. For the owner: the Pearl Tomb's brief (`briefs.json`, never shown) has dunes where the lore has cliffs; and
-  a proposed dialogue check across a task's end and the next task's start.
+  game. For the owner: the Pearl Tomb's brief (`briefs.json`, never shown) has dunes where the lore has cliffs. The
+  dialogue check now holds two lines a turn across a quest's seams, with the owner's yes
+  ([[The Dialogue Check Holds Two Lines a Turn Across a Quest's Seams]]).
 - **The wreck's R2 tools after #172**, which no session may edit: `tools/wreck/wreck_level.py`'s waves still list the
   Tithe-Mates and Bosuns at rank 1; to match `content/prologue/wreck.json` each `(11, 1, ...)` becomes `(11, 2, ...)`
   and each `(10, 1, ...)` `(10, 2, ...)`, and `export_wreck.py` should write the quiet deck's `masts` (added to

@@ -1,5 +1,6 @@
 use super::Problem;
 use serde_json::{Map, Value};
+use std::collections::BTreeMap;
 
 /// Where the story's lines live: the cast (each speaker's name and voice) and every mission's scenes beside it.
 pub const STORY_ROOT: &str = "content/story/";
@@ -180,7 +181,7 @@ pub fn check(files: &[(String, String)]) -> Vec<Problem> {
         }
         None => Vec::new(),
     };
-    let mut named = std::collections::BTreeSet::new();
+    let mut named = BTreeMap::new();
     for (path, value) in &parsed {
         let value = match value {
             Ok(value) => value,
@@ -204,12 +205,15 @@ pub fn check(files: &[(String, String)]) -> Vec<Problem> {
         }
         for (scene, lines) in scenes.iter().filter(|(scene, _)| *scene != PROTOTYPE_KEY) {
             found.extend(check_scene(path, scene, lines, &speakers));
-            named.insert(scene.clone());
+            named.insert(scene.clone(), lines);
         }
     }
     if let Some((_, text)) = files.iter().find(|(path, _)| path == QUESTS) {
         match serde_json::from_str::<Value>(text) {
-            Ok(quests) => found.extend(check_quests(&quests, &named, &speakers)),
+            Ok(quests) => {
+                found.extend(check_quests(&quests, &named, &speakers));
+                found.extend(check_seams(&quests, &named));
+            }
             Err(why) => found.push(problem(QUESTS, format!("not JSON the check can read: {why}"))),
         }
     }
@@ -219,7 +223,7 @@ pub fn check(files: &[(String, String)]) -> Vec<Problem> {
 /// The quests' lines, as the story holds them: every scene a quest, task or goal names is one of the story's, so the
 /// lines it speaks are the lines checked above; every speaker it names is in the cast; and every word it shows on the
 /// screen keeps the rule's marks out.
-fn check_quests(value: &Value, scenes: &std::collections::BTreeSet<String>, speakers: &[String]) -> Vec<Problem> {
+fn check_quests(value: &Value, scenes: &BTreeMap<String, &Value>, speakers: &[String]) -> Vec<Problem> {
     let mut found = Vec::new();
     let mut walk = vec![value];
     while let Some(value) = walk.pop() {
@@ -231,7 +235,7 @@ fn check_quests(value: &Value, scenes: &std::collections::BTreeSet<String>, spea
                         walk.push(field);
                         continue;
                     };
-                    if SCENE_FIELDS.contains(&key.as_str()) && !scenes.contains(said) {
+                    if SCENE_FIELDS.contains(&key.as_str()) && !scenes.contains_key(said) {
                         found.push(problem(
                             QUESTS,
                             format!("\"{key}\" names the scene \"{said}\", which no story holds"),
@@ -248,6 +252,42 @@ fn check_quests(value: &Value, scenes: &std::collections::BTreeSet<String>, spea
                 }
             }
             _ => {}
+        }
+    }
+    found
+}
+
+/// The lines heard in a row across a quest's seams, a quest's `begin` then its first task's `start` and each task's
+/// `end` then the next task's `start`: one speaker says at most two in a row there too.
+fn check_seams(value: &Value, scenes: &BTreeMap<String, &Value>) -> Vec<Problem> {
+    let speakers = |scene: &str| -> Vec<&str> {
+        let lines = scenes.get(scene).and_then(|lines| lines.as_array()).map(Vec::as_slice).unwrap_or_default();
+        lines.iter().map(|line| line.get("who").and_then(Value::as_str).unwrap_or_default()).collect()
+    };
+    fn named(field: Option<&Value>) -> &str {
+        field.and_then(Value::as_str).unwrap_or_default()
+    }
+    let mut found = Vec::new();
+    for quest in value.get("quests").and_then(Value::as_array).into_iter().flatten() {
+        let tasks = quest.get("tasks").and_then(Value::as_array).map(Vec::as_slice).unwrap_or_default();
+        let mut seams = vec![(named(quest.get("begin")), named(tasks.first().and_then(|task| task.get("start"))))];
+        seams.extend(tasks.windows(2).map(|pair| {
+            (
+                named(pair.first().and_then(|task| task.get("end"))),
+                named(pair.last().and_then(|task| task.get("start"))),
+            )
+        }));
+        for (before, after) in seams {
+            let (said, then) = (speakers(before), speakers(after));
+            let Some(&who) = said.last() else { continue };
+            let leading = then.iter().take_while(|speaker| **speaker == who).count();
+            let run = said.iter().rev().take_while(|speaker| **speaker == who).count() + leading;
+            if leading > 0 && run > TURN_LINES {
+                found.push(problem(
+                    QUESTS,
+                    format!("\"{who}\" says {run} lines in a row across \"{before}\" and \"{after}\""),
+                ));
+            }
         }
     }
     found
@@ -313,6 +353,20 @@ mod tests {
                 "\"who\" names \"stranger\", who is not in the cast",
             ]
         );
+    }
+
+    #[test]
+    fn one_speaker_saying_more_than_two_lines_across_a_quests_seam_is_refused() {
+        let story = r#"{"scenes": {"one": [{"who": "mate", "say": "Go."}],
+            "two": [{"who": "mate", "say": "Up."}, {"who": "mate", "say": "Now."}]}}"#;
+        let quests = r#"{"quests": [{"begin": "one", "tasks": [{"start": "one", "end": "two"}, {"start": "one"}]}]}"#;
+        let files = vec![
+            (CAST.to_owned(), cast_text()),
+            ("content/story/one.json".to_owned(), story.to_owned()),
+            (QUESTS.to_owned(), quests.to_owned()),
+        ];
+        let found: Vec<String> = check(&files).into_iter().map(|found| found.message).collect();
+        assert_eq!(found, ["\"mate\" says 3 lines in a row across \"two\" and \"one\""], "the begin's seam holds two");
     }
 
     #[test]
