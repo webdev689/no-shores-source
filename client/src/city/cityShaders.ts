@@ -37,7 +37,7 @@ struct View {
   from_eye: mat4x4f,
   // the eye from the city's middle, and the time
   eye: vec4f,
-  // the ground's tiles: the grid's north-west corner from the city's middle, and the tiles a row
+  // the ground's tiles: the grid's north-west corner from the city's middle, and the tiles a row; and 1 in a ruin
   grid: vec4f,
 };
 @group(0) @binding(0) var<uniform> view: View;
@@ -62,8 +62,10 @@ const IRON = ${COLOUR_LAYERS.iron}u;
 const BONE = ${COLOUR_LAYERS.bone}u;
 const GLOW = ${COLOUR_LAYERS.glow}u;
 const CRYSTAL = ${COLOUR_LAYERS.crystal}u;
-// A module's crystal in the city carries no glow of its own a vertex: its core is drawn half alight.
+// A module's crystal in the city carries no glow of its own a vertex: its core is drawn half alight; a ruin's
+// overtaking crystal (all of it in a ruin) burns brighter, so a ruin is a scatter of red at night.
 const CITY_CRYSTAL_GLOW = 0.45;
+const RUIN_CRYSTAL_GLOW = 0.8;
 const WATER = ${COLOUR_LAYERS.water}u;
 // A plain colour's texels to its uv: the size of the picture it would be (cityBuild lays a plain one as 64 square).
 const PLAIN_TEXELS = 64.0;
@@ -72,6 +74,8 @@ const TIER_ALWAYS = 0u;
 const TIER_WHOLE = 1u;
 const TIER_MASSES = 2u;
 const TIER_HULLS = 4u;
+// The Lattice's crystal formations in a ruin, placed by instance: never dithered between tiers.
+const TIER_CRYSTAL = 8u;
 const BAYER = array<f32, 16>(0.0, 8.0, 2.0, 10.0, 12.0, 4.0, 14.0, 6.0, 3.0, 11.0, 1.0, 9.0, 15.0, 7.0, 13.0, 5.0);
 
 fn clip_of(point: vec3f) -> vec4f {
@@ -166,6 +170,9 @@ ${CLOTH_CASES}
 // drawn by its own light (crystal.ts).
 ${CRYSTAL_WGSL}
 
+// How far alight the crystal's core is: a module's, or a ruin's formation's (set by the surface drawing it).
+var<private> crystal_glow: f32 = CITY_CRYSTAL_GLOW;
+
 fn lit(layer: u32, albedo: vec3f, normal: vec3f, from_eye: vec3f) -> vec3f {
   if layer == GLOW {
     // Each flame flickers on its own, a few times a second, by where it burns: all of one fire together.
@@ -179,7 +186,7 @@ fn lit(layer: u32, albedo: vec3f, normal: vec3f, from_eye: vec3f) -> vec3f {
   let direct = max(dot(facing, sky_state.key.xyz), 0.0);
   let sun = select(1.0, sunlit(from_eye, facing), direct > 0.0) * sky_dapple(from_eye);
   if layer == CRYSTAL {
-    return crystal_colour(facing, from_eye, CITY_CRYSTAL_GLOW, sun);
+    return crystal_colour(facing, from_eye, crystal_glow, sun);
   }
   // Fresh snow lies on the flat stone as on the ground round it, the city standing on the eye's own ground. Flat stone
   // (the plaza, a flat roof) holds puddles where no snow lies; walls and sloping roofs are only darkened and sheened.
@@ -217,6 +224,8 @@ fn jagged(point: vec3f) -> f32 {
 
 @fragment
 fn surface_fragment(surface: Surface, @builtin(front_facing) facing: bool) -> @location(0) vec4f {
+  // all a ruin's crystal is the Lattice's overtaking: its crown, its crust and its formations
+  crystal_glow = select(CITY_CRYSTAL_GLOW, RUIN_CRYSTAL_GLOW, view.grid.w > 0.5);
   let sampled = textureSample(pictures, picture_sampler, surface.uv, min(surface.layer, LAST_PICTURE)).rgb;
   // a ruin's open shell is drawn from inside too, lit from the side seen
   let normal = select(-surface.normal, surface.normal, facing);
@@ -253,6 +262,8 @@ struct Vertex {
   @location(5) about: vec2u,
   // in a ruin, the height over its origin it is broken off at; 0 standing whole
   @location(6) cut: f32,
+  // how many times its size it is drawn (a crystal formation's; 1 for every other model)
+  @location(7) scale: f32,
 };
 
 // A model's x right and z forward, turned by its yaw clockwise from north, into the world's east and south.
@@ -264,7 +275,7 @@ fn turned(point: vec3f, yaw: f32) -> vec3f {
 
 fn placed(vertex: Vertex) -> vec3f {
   let solid = vertex.about.y == 0u;
-  return select(turned(vertex.position, vertex.place.w), vertex.position, solid) + vertex.place.xyz;
+  return select(turned(vertex.position * vertex.scale, vertex.place.w), vertex.position, solid) + vertex.place.xyz;
 }
 
 // Placed as drawn, but a broken model's corners above its break brought down to it, so its shadow is the ruin's.
@@ -291,7 +302,7 @@ fn model_vertex(vertex: Vertex) -> Surface {
   surface.uv = vertex.uv;
   surface.layer = vertex.layer;
   surface.tier = vertex.about.y;
-  surface.fades = select(fades_of(vertex.about.x), vec2f(0.0), solid);
+  surface.fades = select(fades_of(vertex.about.x), vec2f(0.0), solid || vertex.about.y == TIER_CRYSTAL);
   surface.ruin = select(vec2f(0.0), vec2f(vertex.position.y, vertex.cut), vertex.cut > 0.0);
   return surface;
 }

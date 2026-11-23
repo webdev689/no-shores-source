@@ -1,6 +1,7 @@
 import { strict as assert } from 'node:assert';
 import { test } from 'node:test';
 import { type Player } from '../player/player.ts';
+import { shotOfOrbit } from './camera.ts';
 import { installQaViews, qaLook, type QaView } from './qaViews.ts';
 import type { NodeInfo } from './worldData.ts';
 
@@ -56,4 +57,18 @@ test('a view arrives in the node with its point as the only spawn, and sets the 
   assert.equal(walker.player.pitch, (40 * Math.PI) / 180);
   assert.equal(await target.__qaView?.([400, 60, 0, 'first']), false);
   assert.equal(arrivals.length, 1);
+});
+
+test('a QA eye stands the camera anywhere, off the node too (on the water), until it is let go', () => {
+  const { target } = hooked('?spawn=1,2', true);
+  const hook = target as { __qaEye?: (eye: readonly number[] | null) => boolean };
+  assert.equal(hook.__qaEye?.([5000, -600, 12, 180, 2]), true);
+  const lens = { fov: 1, near: 0.1, far: 9000 };
+  const orbit = { targetX: 0, targetY: 0, targetZ: 0, yaw: 0, pitch: 0, distance: 5 };
+  const shot = shotOfOrbit(orbit, lens, () => null, 0);
+  assert.deepEqual(shot.eye, [5000, -600, 12]);
+  assert.ok(Math.abs(shot.yaw - Math.PI) < 1e-12 && Math.abs(shot.pitch - (2 * Math.PI) / 180) < 1e-12);
+  hook.__qaEye?.(null);
+  assert.deepEqual(shotOfOrbit(orbit, lens, () => null, 0).eye.map(Math.round), [0, 5, 0]);
+  assert.equal(hooked('?spawn=1,2', false).target.hasOwnProperty('__qaEye'), false);
 });

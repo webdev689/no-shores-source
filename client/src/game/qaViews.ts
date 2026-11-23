@@ -3,6 +3,7 @@
 import { insideRing, type Spot } from '../editor/placeDrawing.ts';
 import type { Player } from '../player/player.ts';
 import { FIRST_PERSON, type ViewMode } from '../player/playerCamera.ts';
+import { QA_EYE } from './camera.ts';
 import type { NodeInfo } from './worldData.ts';
 
 /** East and south in metres, the bearing in degrees, and the camera: `first`, or `third,<m>[,<degrees looking
@@ -59,6 +60,16 @@ export function installQaViews(target: object, search: string, offline: boolean,
       host.walker.player = { ...host.walker.player, yaw: look.yaw, view: look.view, pitch: look.pitch };
       return true;
     };
+  // Stands the camera at any point (east, south, up), looking along a bearing and down so many degrees, off the
+  // node too, as from a boat on the water; null lets it go back to the player's.
+  (target as { __qaEye?: (eye: readonly number[] | null) => boolean }).__qaEye = (eye) => {
+    QA_EYE.shot = eye && {
+      eye: [eye[0], eye[1], eye[2]],
+      yaw: ((eye[3] ?? 0) * Math.PI) / 180,
+      pitch: ((eye[4] ?? 0) * Math.PI) / 180,
+    };
+    return true;
+  };
   hook.__qaWhere = () => {
     const { body } = host.walker.player;
     return { x: body.x, y: body.y, dead: host.dead?.() ?? false };
