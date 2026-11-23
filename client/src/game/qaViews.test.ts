@@ -72,3 +72,21 @@ test('a QA eye stands the camera anywhere, off the node too (on the water), unti
   assert.deepEqual(shotOfOrbit(orbit, lens, () => null, 0).eye.map(Math.round), [0, 5, 0]);
   assert.equal(hooked('?spawn=1,2', false).target.hasOwnProperty('__qaEye'), false);
 });
+
+test('a development page lends the picture driver the way to sea and the game it plays; a production one never', () => {
+  const lend = (dev: boolean) => {
+    const target: { __qaSea?: () => void; __qaGame?: object } = {};
+    const game = { flow: 'foot' };
+    let sailed = 0;
+    const host = { node: () => node, arrive: async () => undefined, walker: { player: {} as Player } };
+    installQaViews(target, '?at=n&spawn=', true, { ...host, sea: () => void (sailed += 1), game }, dev);
+    target.__qaSea?.();
+    return { target, sailed, game };
+  };
+  const dev = lend(true);
+  assert.equal(dev.sailed, 1);
+  assert.equal(dev.target.__qaGame, dev.game);
+  const production = lend(false);
+  assert.equal(production.target.__qaSea, undefined);
+  assert.equal(production.target.__qaGame, undefined);
+});
