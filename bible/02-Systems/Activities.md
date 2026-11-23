@@ -164,7 +164,7 @@ Claude's, recorded in [[The Playlist and Its Dungeons as Claude Shapes Them]].
   Company"); the server draws the Elite Dungeon as the company is found. Launch asks the same finder for a run at
   once, alone, which the player's company joins by the Roster; the server draws its Elite Dungeon too, as the owner
   chose ([[A Playlist's Launch Is Drawn by the Server]]), and a playlist's room lets in first only an account the server
-  drew it for ([[Server]], "A run keeps to its company"). The Elite Dungeon of the week is found or launched; the Abyss Dungeon
+  drew it for, or one of its company ([[Server]], "A run keeps to its company"). The Elite Dungeon of the week is found or launched; the Abyss Dungeon
   of the week is launched only, never matched, each the week's own dungeon, which the room checks. Offline, where
   nothing is kept, the page draws a playlist's Launch.
 - **Going and coming back.** A run found or launched is gone into from the sea or over the island's side, through a
@@ -198,8 +198,8 @@ the owner approved ([[Where You Go and the Seas You Choose Set the Difficulty]])
   its cache shuts, and its players stand whole at the way in. The page takes them out by the way they came in, the veil
   saying "Your company fell. Leaving" the dungeon, and the place line shows the revives left ("3 revives left", "No
   revives left"). An Elite Dungeon keeps its broken seals through a wipe, the rest waiting again, and starts its Court
-  over ([[Dungeons]], "Encounters"). A run once won is never wiped, though its end post stands again later and shuts
-  its cache, so a cleared run keeps what it paid; and a room no one is in is never wiped.
+  over ([[Dungeons]], "Encounters"). A run once won is never wiped, though its end post (but an Elite Dungeon's Boss) stands again later and
+  shuts its cache, so a cleared run keeps what it paid; and a room no one is in is never wiped.
 - **Modifiers** are drawn from a set, each one hook in the rules (`room::run`), read only in a room whose run
   carries it. Each says what it does in a line of its own (`Modifier::words`), which the screens show:
   - Burn: one Art's spells deal twice, and a player wearing it takes twice from foes. "Shadow spells deal double

@@ -211,8 +211,8 @@ each playlist, never the Abyss Dungeon of the week, whose company forms it.
   under the week's Elite Dungeon's level, on its bases, with "This dungeon opens at level 24." (`WEEK_ELITE_OPENS`).
 - **Launch** (`?launch` on a playlist's address, `opened(socket, alone)`): the seeker's run is started at the next
   look, alone, its Elite Dungeon drawn and kept for them as a found run is; no other seeker joins it, and it joins no
-  group. Only a playlist launches: on an Elite Dungeon's base a launch waits as any search does. A room of a run
-  launched or found lets in first one it was kept for, or one of their company (`launchedFor`), as it would let them
+  group. Only a playlist launches: on an Elite Dungeon's base a launch waits as any search does. A playlist's run
+  lets in first one it was found or launched for, or one of their company (`launchedFor`), as it would let them
   in after them: a member back first, the room forgotten while empty, is not shut out.
 - **Matching** (`Queue`): within a band, the one waiting longest first, then each next longest still free who blocks
   none of those taken and is blocked by none of them. A run starts with four as soon as there are four, or with as

@@ -4,6 +4,9 @@ status: live
 code:
   - crates/gear/src/emblems.rs#emblems
   - crates/gear/src/looks.rs#shown
+  - client/src/player/sourceLooks.ts#earnedFrom
+  - client/src/game/gearCards.ts#cardOf
+  - client/src/game/gearScreen.ts#itemDetailOf
   - crates/gear/src/cosmetics.rs#dressed
   - content/forge/drawn.json
   - crates/gear/src/emblems.rs#sold_on
@@ -534,7 +537,7 @@ Vestige's line says it too ("For the head, level 20, from an Abyss Dungeon.").
   belongs to; a faction's piece the faction's, a Breach's the Breach's), else among every content's, and keeps its own
   (`vestige::make`). A kill's or a clear's item laid back as a Vestige for want of room is of the content it dropped
   in; one found elsewhere keeps its item's.
-- **Kept with the character**: written only when not the world's, so a save from before reads as the world's; a named
+- **Kept with the character**: written only when not the world's, so a save without it reads as the world's; a named
   piece reads as its entry's content whenever it was kept (`old_hands::unfit`).
 - **On the wire**: `source` at the end of `GearItem` and `GearVestige`, by `Source`'s numbers (0 the world to 6 a
   Breach).
@@ -546,8 +549,8 @@ to every other player. Every garment is armour ([[Clothing Is Armour, With a War
 
 - **Normal** pieces are clothes: a shirt, breeches, trousers or a skirt, and shoes, dyed in the rarity's plain dyes;
   a Normal head or arms piece shows nothing.
-- **Each content's sets and metals** (`content/gear/looks.json`, in `Source`'s order), each wholly above the one
-  before on the ladders by worth: the world leather, the thieves', chain, iron and steel, in iron and steel; a dungeon
+- **Each content's sets and metals** (`content/gear/looks.json`, in `Source`'s order); by worth, each of the world, a
+  dungeon, an Elite Dungeon and an Abyss Dungeon is wholly above the one before, a sea dungeon's apart: the world leather, the thieves', chain, iron and steel, in iron and steel; a dungeon
   the knights' and silver, in silver; a sea dungeon elven and dwarven, in elven and dwarven; an Elite Dungeon orcish
   and mithril, in orcish and mithril; an Abyss Dungeon adamantium and ebony, in adamantium and ebony; a Breach
   daedric, in daedric; a faction its guild set. No armour set is two contents'; a faction's weapons share a metal with
@@ -575,7 +578,7 @@ to every other player. Every garment is armour ([[Clothing Is Armour, With a War
   name alone (`rolledMetal`). Its make is chosen by its own
   number: a Sword & Shield's shield kite, round or tower, a Dagger & Shield's buckler, round or kite, a Mace & Shield's
   round, kite or tower, a bow long or short. A Normal shield is plain or iron to level 10 by its number and its weapon's
-  metal past it; a finer one its weapon's metal. A rolled pistolet, double pistolet or thunderlock is plain. A named
+  metal past it; a finer one its weapon's metal. A rolled pistolet, double pistolet or thunderlock is plain, gilded from Legendary up. A named
   weapon wears the metal (or a gun's `gilded` or `plain`) and make (a shield's kind, a bow's, `short` for a short sword)
   written on it; a faction's weapon its faction's metal and colour, its shield and bow their make by its name. A metal
   the forge does not draw for a kind (a crossbow past mithril) falls to the nearest of its content's that it does, then

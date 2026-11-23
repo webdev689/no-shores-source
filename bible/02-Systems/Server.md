@@ -51,6 +51,8 @@ code:
   - crates/room-wasm/src/run_door.rs#activities_json
   - server/roomNames.ts#nodeRoom
   - server/roomNames.ts#runAsk
+  - server/roomNames.ts#startedAtSea
+  - server/accounts/companies.ts#launchedFor
   - server/keeping.ts#forCompany
   - server/keeping.ts#judgingArrivals
   - server/keeping.ts#rename
@@ -491,7 +493,7 @@ so every decision is Rust and the shell only carries bytes and time.
   player joins, and a patrol's dungeon's run is given its patrol's node file too, so it keeps the patrol's lock. One
   no rule lays, or whose patrol's file is missing, answers 404.
 - **A playlist's run is the server's**: its first character is given only to an account the server found or launched
-  it for within a day (`launched(account, room)`, `found_runs`), so its Elite Dungeon is always the server's draw
+  it for within a day, or one of that account's company, (`launched(account, room)`, `found_runs`), so its Elite Dungeon is always the server's draw
   ([[A Playlist's Launch Is Drawn by the Server]]); any other first is let go untouched, closed with 4003 and "Start
   this run from the Playlist.". Then it keeps to its company as any run does.
 - **A run keeps to its company** (`Keeper.forCompany`): a character is given to the first to come, then only to one

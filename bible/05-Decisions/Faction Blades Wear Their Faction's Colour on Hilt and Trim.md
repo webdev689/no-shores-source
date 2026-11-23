@@ -17,4 +17,4 @@ a Veiled dagger as an Abyss Dungeon's ebony one, the owner chose:
 - **A faction's weapon reads apart from a content's** of the same metal
   ([[Armour and Weapon Looks Belong to the Content That Gives Them]]).
 
-How it works: [[Gear]], "Looks".
+Built on the branch `wt/fblade` and held by the owner, its art not published: [[Open Questions]].

@@ -15,6 +15,6 @@ Find a Company's was drawn by the server.
 - **A playlist's Launch is the server's**: its Elite Dungeon is drawn and its run kept by the server, as Find a
   Company's are ([[The Server Is the Authority Over Everything]]).
 - **A playlist's run is only one the server started**: its room lets in first only an account the server drew it for,
-  then that account's company.
+  or one of that account's company.
 
 How it works: [[Activities]], "The Playlist"; [[Accounts]], "Find a Company".
