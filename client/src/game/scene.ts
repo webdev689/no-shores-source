@@ -3,6 +3,7 @@ import { Atmosphere, drawsNothing } from '../cinema/atmosphere.ts';
 import { CLEAR, swellGained, type Weather } from '../cinema/weather.ts';
 import { LightLayer } from '../combat/lightLayer.ts';
 import { type Gpu, TEXTURE_USAGE } from '../gpu.ts';
+import { perfZone, PERF, timedEncoder } from '../perfMeter.ts';
 import { motionReduced } from '../plus/kit.ts';
 import { ShadowMap } from '../shadow.ts';
 import { BoltView } from '../sky/bolts.ts';
@@ -26,6 +27,8 @@ import { BlurView } from './blur.ts';
 import { DepthCopy } from './depthCopy.ts';
 import { DrainView } from './drain.ts';
 import { groundTiles } from './groundTiles.ts';
+import { sceneScale, sceneSize } from './renderScale.ts';
+import { Upscale } from './upscale.ts';
 
 /** Anything else drawn with the land, into the same pass: a city, its nature, the figures. Its points are measured
  *  from the eye, which it is handed in world metres. One that casts shadows draws them first, into the sun's map
@@ -92,6 +95,7 @@ export class GameScene {
   private readonly blur: BlurView;
   private readonly light: LightLayer;
   private readonly atmosphere: Atmosphere;
+  private readonly upscale: Upscale;
   /** What the story's sky and sea are doing, read each frame: the water drawn on its gained swell, its weather laid
    *  over the finished picture before the first person's hands. Clear draws the picture exactly as without it. */
   weather: Weather = CLEAR;
@@ -109,8 +113,14 @@ export class GameScene {
   private middle: { readonly centre: readonly [number, number]; pending: boolean } | null = null;
   private shownClose: CloseUp | null = null;
   private pending = false;
-  private targets: { colour: GPUTexture; depth: GPUTexture; multisampled: GPUTexture; multidepth: GPUTexture } | null =
-    null;
+  /** The scene's targets at the size it draws at, and the picture it draws into when that is not the canvas's. */
+  private targets: {
+    colour: GPUTexture;
+    depth: GPUTexture;
+    multisampled: GPUTexture;
+    multidepth: GPUTexture;
+    picture: GPUTexture | null;
+  } | null = null;
 
   constructor(gpu: Gpu) {
     this.gpu = gpu;
@@ -127,6 +137,7 @@ export class GameScene {
     this.copy = new DepthCopy(gpu);
     this.drain = new DrainView(gpu);
     this.blur = new BlurView(gpu);
+    this.upscale = new Upscale(gpu);
   }
 
   /** Draws this landmass from now on, wearing its biome's ground tiles. */
@@ -242,12 +253,13 @@ export class GameScene {
     if (view) this.water.stir(stir.x - view.leftM, stir.y - view.topM, stir.radiusM, stir.strength);
   }
 
-  /** Draws one frame from `shot` into the canvas, with the drawers drawn with the land; `after` may draw over the
-   *  finished picture (the first person's hands) before it is shown, `hulls` are the ships on the water (world
-   *  metres), which it keeps out of and foams round, and the water's ripples follow `focus` (world metres; the eye
-   *  unless said). The sky is the weather's over the eye, in the open sea's air `atSea`, else the landmass's. Last,
-   *  the whole picture blurs by a deviation of `blur` device pixels, drains toward grey by `drain` and darkens by
-   *  `dark` (each 0 to 1), under whatever the interface draws over it. */
+  /** Draws one frame from `shot` into the canvas, at the resolution chosen (`renderScale.ts`) and stretched over it,
+   *  with the drawers drawn with the land; `after` may draw over the finished picture at the canvas's own size (the
+   *  first person's hands) before it is shown, `hulls` are the ships on the water (world metres), which it keeps out
+   *  of and foams round, and the water's ripples follow `focus` (world metres; the eye unless said). The sky is the
+   *  weather's over the eye, in the open sea's air `atSea`, else the landmass's. Last, the whole picture blurs by a
+   *  deviation of `blur` device pixels, drains toward grey by `drain` and darkens by `dark` (each 0 to 1), under
+   *  whatever the interface draws over it. */
   draw(
     shot: Shot,
     size: { width: number; height: number },
@@ -275,7 +287,9 @@ export class GameScene {
     for (const drawer of drawers) drawer.prepare?.(shot);
     const origin = [view.leftM, view.topM] as const;
     const local: Shot = { ...shot, eye: [shot.eye[0] - origin[0], shot.eye[1] - origin[1], shot.eye[2]] };
-    const fromEye = fromEyeMatrix(shot, size.width / size.height);
+    const drawnAt = sceneSize(size, sceneScale());
+    PERF.current?.scene(drawnAt.width, drawnAt.height, drawnAt.width / size.width);
+    const fromEye = fromEyeMatrix(shot, drawnAt.width / drawnAt.height);
     const ground = this.groundAt(shot.eye[0], shot.eye[1]) ?? 0;
     const above = Math.max(1, shot.eye[2] - Math.max(0, ground));
     const near = above < CLOSE_RANGE_M ? this.close : null;
@@ -284,13 +298,14 @@ export class GameScene {
       this.shownClose = near;
     }
     const rings = clipmapLevels(local.eye[0], local.eye[1], finestSpacing(above));
-    const pixelAngle = (2 * Math.tan(shot.fov / 2)) / size.height;
+    const pixelAngle = (2 * Math.tan(shot.fov / 2)) / drawnAt.height;
     drawn.prepare(
       { fromEye, eye: local.eye, time, rings, far: shot.far, pixelAngle },
       { exaggeration: 1, brush: null },
     );
-    const targets = this.targetsOf(size.width, size.height);
-    const encoder = this.gpu.device.createCommandEncoder();
+    const scaled = drawnAt.width !== size.width || drawnAt.height !== size.height;
+    const targets = this.targetsOf(drawnAt.width, drawnAt.height, scaled);
+    const encoder = timedEncoder(this.gpu.device);
     // The lamps follow the daylight the sky last showed: a frame behind, which no eye can tell.
     const light = carriedLight(more.carried?.left);
     const lamps = lampsRound(
@@ -303,9 +318,11 @@ export class GameScene {
     const { look } = this.sky.frame(shot.eye, more.atSea ? 'sea' : (view.climate ?? 'sea'), lamps, ground);
     // The sun's shadows first: what casts draws its depth along the sun into each cascade, for everything after to read.
     this.shadow.update(shot.eye, shot.yaw, above, look.key);
+    perfZone('shadows');
     this.shadow.cast(encoder, (cast) => {
       for (const drawer of drawers) drawer.castInto?.(cast, fromEye, shot, time, this.shadow);
     });
+    perfZone('main');
     const pass = encoder.beginRenderPass({
       colorAttachments: [
         {
@@ -329,13 +346,14 @@ export class GameScene {
     this.copy.encode(encoder, targets.multidepth, targets.depth);
     const camera = frameOf(local);
     const canvas = this.gpu.context.getCurrentTexture();
-    const target = canvas.createView();
+    const target = (targets.picture ?? canvas).createView();
     const eyeWater = this.waterAt(shot.eye[0], shot.eye[1], time);
     // The weather's fog thickens the haze: their densities add.
     const air = { clearM: 1 / (1 / Math.max(25_000, above * 60) + look.fogDensity), fogDensity: look.fogDensity };
+    perfZone('water');
     this.water.encode(encoder, {
       camera: { ...camera, fromEye, tanHalfView: Math.tan(shot.fov / 2) },
-      size: [size.width, size.height],
+      size: [drawnAt.width, drawnAt.height],
       time,
       seconds,
       exaggeration: 1,
@@ -353,31 +371,42 @@ export class GameScene {
       drawn: targets,
       target,
     });
+    perfZone('over water');
     for (const drawer of drawers) drawer.overWater?.(encoder, target, fromEye, targets.depth);
     // The weather over all of it: what falls round the eye, and lightning's bolts while they flash.
-    const over = { target, depth: targets.depth, size: [size.width, size.height] as const };
+    perfZone('weather');
+    const over = { target, depth: targets.depth, size: [drawnAt.width, drawnAt.height] as const };
     this.fall.encode(encoder, over, { fromEye, eye: shot.eye, aboveM: above }, look, time);
     const { strikes, worldS, reading } = SKY_NOW.current;
     const groundAt = (x: number, y: number) => this.groundAt(x, y);
     // The bolts leave the deck the Overworld's camera stays under; under thin cover, where half cover's base would be.
     const baseM = cloudBaseOf(reading && { ...reading, cloud: Math.max(reading.cloud, 0.5) }) ?? 0;
     this.bolts.encode(encoder, over, { fromEye, eye: shot.eye }, { list: strikes, worldS, baseM, groundAt, air });
+    perfZone('light');
     if (drawers.some((drawer) => drawer.lightInto))
       this.light.encode(encoder, target, targets.depth, (light) => {
         for (const drawer of drawers) drawer.lightInto?.(light, fromEye, targets.depth);
       });
     // The story's weather over the game's; clear, as it stands outside the story, lays nothing and makes no pass.
+    perfZone('atmosphere');
     if (!drawsNothing(this.weather))
       this.atmosphere.encode(encoder, target, targets.depth, {
         weather: this.weather,
         camera: { ...camera, eye: shot.eye },
         tanHalfView: Math.tan(shot.fov / 2),
-        size: [size.width, size.height],
+        size: [drawnAt.width, drawnAt.height],
         time,
         motionReduced: motionReduced(),
         light: cloudLight(look),
       });
-    more.after?.(encoder, target, { width: size.width, height: size.height, light: SKY_NOW.current.held });
+    const shown = targets.picture ? canvas.createView() : target;
+    if (targets.picture) {
+      perfZone('upscale');
+      this.upscale.encode(encoder, targets.picture, shown);
+    }
+    perfZone('hands');
+    more.after?.(encoder, shown, { width: size.width, height: size.height, light: SKY_NOW.current.held });
+    perfZone('blur and drain');
     this.blur.encode(encoder, canvas, more.blur ?? 0);
     this.drain.encode(encoder, canvas, more.drain ?? 0, more.dark ?? 0);
     this.gpu.device.queue.submit([encoder.finish()]);
@@ -398,9 +427,11 @@ export class GameScene {
     return view.swell && swellGained(view.swell, this.weather.seaGain);
   }
 
-  private targetsOf(width: number, height: number) {
-    if (this.targets?.colour.width === width && this.targets.colour.height === height) return this.targets;
-    for (const texture of Object.values(this.targets ?? {})) texture.destroy();
+  /** The targets at `width` by `height`, with a picture of their own to draw into when `scaled` from the canvas's. */
+  private targetsOf(width: number, height: number, scaled: boolean) {
+    const kept = this.targets;
+    if (kept?.colour.width === width && kept.colour.height === height && !!kept.picture === scaled) return kept;
+    for (const texture of Object.values(kept ?? {})) texture?.destroy();
     const usage = TEXTURE_USAGE.renderAttachment | TEXTURE_USAGE.textureBinding;
     const { device, format } = this.gpu;
     const size = [width, height];
@@ -409,6 +440,7 @@ export class GameScene {
       depth: device.createTexture({ size, format: 'r32float', usage }),
       multisampled: device.createTexture({ size, format, usage: TEXTURE_USAGE.renderAttachment, sampleCount: SAMPLES }),
       multidepth: device.createTexture({ size, format: 'depth32float', usage, sampleCount: SAMPLES }),
+      picture: scaled ? device.createTexture({ size, format, usage }) : null,
     };
     return this.targets;
   }

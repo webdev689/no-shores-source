@@ -1,5 +1,5 @@
 // A dungeon's scene: no land, sky, sea or sun, only what is handed in, drawn into one pass and shown, then what draws
-// over the finished picture and what gives light, as the game's scene draws them.
+// over the finished picture and what gives light, as the game's scene draws them, at the resolution it draws at.
 import { LightLayer } from '../combat/lightLayer.ts';
 import { REVERSED_DEPTH } from '../editor/orbit.ts';
 import { fromEyeMatrix, type Shot } from './camera.ts';
@@ -7,6 +7,9 @@ import { DepthCopy } from './depthCopy.ts';
 import { DrainView } from './drain.ts';
 import type { Drawer } from './scene.ts';
 import { type Gpu, TEXTURE_USAGE } from '../gpu.ts';
+import { perfZone, PERF, timedEncoder } from '../perfMeter.ts';
+import { sceneScale, sceneSize } from './renderScale.ts';
+import { Upscale } from './upscale.ts';
 import { ShadowMap } from '../shadow.ts';
 import { SAMPLES } from '../water/waterView.ts';
 
@@ -18,13 +21,20 @@ export class DungeonScene {
   private readonly copy: DepthCopy;
   private readonly light: LightLayer;
   private readonly drain: DrainView;
-  private targets: { colour: GPUTexture; multidepth: GPUTexture; depth: GPUTexture } | null = null;
+  private readonly upscale: Upscale;
+  private targets: {
+    colour: GPUTexture;
+    multidepth: GPUTexture;
+    depth: GPUTexture;
+    picture: GPUTexture | null;
+  } | null = null;
 
   constructor(gpu: Gpu) {
     this.gpu = gpu;
     this.copy = new DepthCopy(gpu);
     this.light = new LightLayer(gpu, 'float');
     this.drain = new DrainView(gpu);
+    this.upscale = new Upscale(gpu);
   }
 
   /** Draws one frame from `shot` into the canvas: each drawer into one pass, measured from the eye as the game's
@@ -40,11 +50,15 @@ export class DungeonScene {
     drain = 0,
   ): void {
     const { device } = this.gpu;
-    const fromEye = fromEyeMatrix(shot, size.width / Math.max(1, size.height));
-    const targets = this.targetsOf(size.width, size.height);
+    const drawnAt = sceneSize(size, sceneScale());
+    PERF.current?.scene(drawnAt.width, drawnAt.height, drawnAt.width / size.width);
+    const fromEye = fromEyeMatrix(shot, drawnAt.width / drawnAt.height);
+    const scaled = drawnAt.width !== size.width || drawnAt.height !== size.height;
+    const targets = this.targetsOf(drawnAt.width, drawnAt.height, scaled);
     const canvas = this.gpu.context.getCurrentTexture();
-    const target = canvas.createView();
-    const encoder = device.createCommandEncoder();
+    const target = (targets.picture ?? canvas).createView();
+    const encoder = timedEncoder(device);
+    perfZone('main');
     const pass = encoder.beginRenderPass({
       colorAttachments: [
         {
@@ -65,26 +79,40 @@ export class DungeonScene {
     const none = ShadowMap.none(this.gpu);
     for (const drawer of drawers) drawer.drawInto(pass, fromEye, shot, time, none);
     pass.end();
-    this.copy.encode(encoder, targets.multidepth, targets.depth);
-    for (const drawer of drawers) drawer.overWater?.(encoder, target, fromEye, targets.depth);
-    if (drawers.some((drawer) => drawer.lightInto))
-      this.light.encode(encoder, target, targets.depth, (light) => {
-        for (const drawer of drawers) drawer.lightInto?.(light, fromEye, targets.depth);
-      });
-    after?.(encoder, target);
-    this.drain.encode(encoder, canvas, drain);
-    device.queue.submit([encoder.finish()]);
+    // The depth is copied only on a frame that something over the picture or its light reads it.
+    const later = timedEncoder(device);
+    this.copy.encodeIfRead(encoder, later, { from: targets.multidepth, into: targets.depth }, () => {
+      perfZone('over');
+      for (const drawer of drawers) drawer.overWater?.(later, target, fromEye, targets.depth);
+      perfZone('light');
+      if (drawers.some((drawer) => drawer.lightInto))
+        this.light.encode(later, target, targets.depth, (light) => {
+          for (const drawer of drawers) drawer.lightInto?.(light, fromEye, targets.depth);
+        });
+    });
+    const shown = targets.picture ? canvas.createView() : target;
+    if (targets.picture) {
+      perfZone('upscale');
+      this.upscale.encode(later, targets.picture, shown);
+    }
+    perfZone('hands');
+    after?.(later, shown);
+    perfZone('drain');
+    this.drain.encode(later, canvas, drain);
+    device.queue.submit([encoder.finish(), later.finish()]);
   }
 
   /** Lets go of the targets and the light layer's, made again on the next frame drawn. */
   release(): void {
-    for (const texture of Object.values(this.targets ?? {})) texture.destroy();
+    for (const texture of Object.values(this.targets ?? {})) texture?.destroy();
     this.targets = null;
     this.light.destroy();
   }
 
-  private targetsOf(width: number, height: number) {
-    if (this.targets?.colour.width === width && this.targets.colour.height === height) return this.targets;
+  /** The targets at `width` by `height`, with a picture of their own to draw into when `scaled` from the canvas's. */
+  private targetsOf(width: number, height: number, scaled: boolean) {
+    const kept = this.targets;
+    if (kept?.colour.width === width && kept.colour.height === height && !!kept.picture === scaled) return kept;
     this.release();
     const { device, format } = this.gpu;
     const [size, attachment] = [[width, height], TEXTURE_USAGE.renderAttachment];
@@ -93,6 +121,7 @@ export class DungeonScene {
       colour: device.createTexture({ size, format, usage: attachment, sampleCount: SAMPLES }),
       multidepth: device.createTexture({ size, format: REVERSED_DEPTH.format, usage: sampled, sampleCount: SAMPLES }),
       depth: device.createTexture({ size, format: 'r32float', usage: sampled }),
+      picture: scaled ? device.createTexture({ size, format, usage: sampled }) : null,
     };
     return this.targets;
   }

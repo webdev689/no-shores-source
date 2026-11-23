@@ -13,6 +13,7 @@ import { Holds } from './gearHold.ts';
 import { sizesOf } from './gearNodes.ts';
 import type { PlainContext } from './menuPage.ts';
 import { laterPage, settingsPage, shipPage } from './menuPages.ts';
+import { resolution } from './renderScale.ts';
 import { RosterPage, socialPage } from './rosterTab.ts';
 
 const block = glyphDrawn({ rows: ['##', '##'], advance: 600 });
@@ -178,11 +179,24 @@ test('a page to come says so, and the Ship lists its papers or says it is loadin
   assert.equal(loading.shows(), 'Loading your ship…');
 });
 
-test('Settings offline says there is no account, and still has the volumes and the credits', () => {
+test('Settings offline says there is no account, and still has the resolution, the volumes and the credits', () => {
   const page = drawn((context) => settingsPage(context, null));
   page.frame();
-  assert.match(page.shows(), /Playing offline: there is no account\. \| SOUND \| Interface sounds/);
+  assert.match(page.shows(), /Playing offline: there is no account\. \| PICTURE \| Resolution \| Auto/);
+  assert.match(page.shows(), /The interface stays sharp\. \| SOUND \| Interface sounds/);
   assert.ok(page.ui.boxOf('volume-music'), 'the music slider is laid');
+});
+
+test('the resolution chosen from its list is the one drawn at, and shown', () => {
+  const page = drawn((context) => settingsPage(context, null));
+  page.frame();
+  page.click('resolution');
+  page.click('resolution:0.75');
+  assert.equal(resolution(), '0.75');
+  assert.match(page.shows(), /Resolution \| 75%/);
+  page.click('resolution');
+  page.click('resolution:auto');
+  assert.equal(resolution(), 'auto');
 });
 
 test('a credit’s link opens its page in a new tab', () => {
