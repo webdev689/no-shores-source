@@ -91,6 +91,8 @@ export class WreckFight implements Beat {
   /** The wisp's coming, while it plays; the bar of the Storm's abilities and the shots left last frame, for what was
    *  cast and loosed since. */
   private wisp: WispScene | null = null;
+  /** Whether the wisp has come, so it comes once however late the room's word of the Storm is. */
+  private wispCame = false;
   private abilities: AbilityState | null = null;
   private ammo: number | null = null;
   /** The prompt the frozen fight shows, and how long the reminder after both lessons has left, seconds. */
@@ -400,7 +402,8 @@ export class WreckFight implements Beat {
   /** The wisp's coming this frame: begun once the bow is taught, from the player's own shot, the room giving them the
    *  Storm as it engulfs them; none once it is over. */
   private wispFrame(run: WreckRun, seconds: number, clock: number): ReturnType<WispScene['frame']> | null {
-    if (!this.wisp && this.tutorial.wantsWisp && !this.coming && !run.storm) {
+    if (!this.wispCame && this.tutorial.wantsWisp && !this.coming) {
+      this.wispCame = true;
       const { body, facing } = this.story.walker.player;
       this.wisp = new WispScene(this.story, [body.x, body.y, body.z], facing, run.restingShot(), () => run.giveStorm());
     }
@@ -416,7 +419,8 @@ export class WreckFight implements Beat {
     if (this.tutorial.wantsBoarder(run.boarder)) run.standBoarder();
     const fell = run.boarderPlace;
     if (this.tutorial.bowDrops && fell && run.storyArms.bow === 'none') run.storyArms.dropBow(fell);
-    run.holdWaves(this.tutorial.holding);
+    // The wisp's coming holds them too: the room's word of the Storm comes before its end.
+    run.holdWaves(this.tutorial.holding || !!this.wisp);
     return quest;
   }
 

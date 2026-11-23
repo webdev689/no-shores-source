@@ -19,6 +19,8 @@ fn in_the_prologue() -> (Character, u32) {
     let own = character.take_id();
     character.items.insert(own, (Item::new(own, Kind::Mace, Rarity::Normal, 1, Slot::Melee), At::Carried));
     character.arts.worn = STORM;
+    let at = usize::from(STORM) - 1;
+    (character.arts.levels[at], character.arts.xp[at], character.arts.cores[at][0]) = (2, 40, Some(1));
     character.arts.earned.get_or_insert_with(Vec::new).resize(usize::from(STORM), 0);
     if let Some(bits) = character.arts.earned.as_mut().and_then(|earned| earned.get_mut(usize::from(STORM) - 1)) {
         *bits = ALL_EARNED;
@@ -48,6 +50,9 @@ fn the_prologue_s_end_takes_back_every_story_item_wherever_it_lies_and_the_storm
     assert!(character.items.contains_key(&own));
     assert_eq!(character.earned(STORM), 0, "the Storm unearned");
     assert!(character.worn_art().is_none(), "and unworn");
+    let at = usize::from(STORM) - 1;
+    assert_eq!((character.arts.levels[at], character.arts.xp[at]), (1, 0), "nothing it grew kept");
+    assert!(character.arts.cores[at].iter().all(Option::is_none));
 }
 
 #[test]

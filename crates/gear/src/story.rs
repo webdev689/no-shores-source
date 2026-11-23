@@ -52,6 +52,17 @@ impl Character {
             if self.arts.worn == STORM {
                 self.arts.worn = 0;
             }
+            // Nothing it grew in the prologue stays with it: its level, its XP and its Core as a new player's.
+            let at = usize::from(STORM) - 1;
+            if let Some(level) = self.arts.levels.get_mut(at) {
+                *level = 1;
+            }
+            if let Some(xp) = self.arts.xp.get_mut(at) {
+                *xp = 0;
+            }
+            if let Some(core) = self.arts.cores.get_mut(at) {
+                *core = Default::default();
+            }
         }
         self.story.prologue = true;
         Ok(None)

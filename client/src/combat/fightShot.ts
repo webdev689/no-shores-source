@@ -175,6 +175,8 @@ export function fightScene(width: number, height: number, dead = false): { frame
       height,
       events,
       player: PLAYER,
+      // A player's parry window (crates/combat/src/tuning.rs PARRY_WINDOW): its rings show as in the game.
+      parryWindow: 15,
       firstPerson: false,
       pressed: true,
       lost: null,
