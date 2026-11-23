@@ -11,7 +11,7 @@ const [x, y] = layout.wake.at;
 const feet = [x, y, topAt(courseOf(layout), x, y)] as const;
 const story = {
   stage: {
-    parts: { ambience: { flash: () => undefined, thunder: () => undefined } },
+    parts: { ambience: { flash: () => undefined, thunder: () => undefined }, flames: { wind: [0, 0] } },
     play: async () => undefined,
     wind: () => [0, 0],
   },
@@ -29,5 +29,23 @@ test('the wisp is seen near from its first moment, out over the sea: the camera 
     const { at } = wispAt(course, seconds);
     const apart = Math.hypot(at[0] - shot.eye[0], at[1] - shot.eye[1], at[2] - shot.eye[2]);
     assert.ok(apart < 5, `${apart.toFixed(1)} m from it at ${seconds} s`);
+  }
+});
+
+test('its camera keeps out of the smoke as it is drawn, leaning in the fires’ own wind, not the weather’s', () => {
+  const told = (weather: readonly [number, number], smoke: readonly [number, number]) =>
+    ({
+      stage: {
+        parts: { ambience: { flash: () => undefined, thunder: () => undefined }, flames: { wind: smoke } },
+        play: async () => undefined,
+        wind: () => weather,
+      },
+    }) as unknown as Story;
+  const [stormy, calm] = [told([14, 6], [0, 0]), told([0, 0], [0, 0])].map(
+    (each) => new WispScene(each, layout, { feet, facing: layout.wake.facing }, theirs, () => undefined, 5),
+  );
+  for (let seconds = 5; seconds < 10; seconds += 0.25) {
+    const [one, two] = [stormy, calm].map((scene) => scene?.frame(0.25, seconds, theirs, feet).shot.eye);
+    assert.deepEqual(one, two, `the same shot at ${seconds.toFixed(2)} s`);
   }
 });

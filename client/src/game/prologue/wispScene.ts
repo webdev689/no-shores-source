@@ -68,8 +68,8 @@ export class WispScene {
   ) {
     this.seconds = into;
     this.layout = layout;
-    // The fires' smoke leaning in the storm's wind as the wisp comes, which its camera keeps out of.
-    this.wind = story.stage.wind();
+    // The fires' smoke as it is drawn, leaning in their own wind (not the weather's), which its camera keeps out of.
+    this.wind = story.stage.parts.flames.wind;
     this.course = wispCourse(feet, facing, layout, this.wind);
     this.ringsFrom = ringEye(this.course);
     [this.facing, this.from] = [facing, from];

@@ -470,7 +470,7 @@ the cutscenes, the camera's moves, the nameplate, the fires and the lines are th
     them (`ringLook`); the player stands a third of the frame's height or more. The camera goes from one shot to the
     next eased (`moveTo`): its eye straight along, or rising 1.5 m over the wreck between, its look never more than 60
     degrees down; a cut where neither is clear. Every shot and move keeps out of the fires' smoke columns (`inSmoke`,
-    the room each fire's puffs roll through in the storm's wind, and 0.6 m more) where a place or way out of them
+    the room each fire's puffs roll through in the wind they are drawn leaning in, and 0.6 m more) where a place or way out of them
     exists: following the wisp it takes the nearest of its places out of the smoke, and a move begun in smoke with no
     clear way out cuts at once. Where the wisp itself flies through a column, the smoke near the eye fades away. It and engulfs them (1.4 s): arcs wrap the figure from feet to head, a flash, a ring of Volt
     pushing out 7 m over the deck, a thunderclap; and the camera eases back over the shoulder (1.2 s). With the flash
