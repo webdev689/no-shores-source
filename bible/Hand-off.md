@@ -170,6 +170,21 @@ each part works is in its system note.
 
 ## Waiting on the owner
 
+- **The owner's bugs from two rounds of play** (#163, branch `claude/zen-ritchie-u40hax`), for the owner's yes to
+  merge, which deploys the page and the rooms. Each fix was audited read-only, and every finding fixed with a test
+  that fails without it. Elder Maren Hale's welcome is left to another session, which reworks it; its reload bug
+  (no greeting, "Follow" before it, a left-behind walk hiding the houses' roads) is that session's:
+  - A pad seam blends toward a level at most a step off ([[Cities]]), so the floor beside the plaza's parapets no
+    longer dips and carries a body over them, and no ledge runs along a ramp's side.
+  - [[Each Patrol Zone Has a Built Landing Site, Its Guards Beyond It]]: no foe starts a fight with a player within
+    15 m of a patrol zone's spawn until they strike from there; a fight brought in goes on; the guards stand where
+    they stood, 25 m or more off (`crates/room/src/landing.rs`, [[Enemies]]).
+  - [[Friendly Ships Take Several Courses, About Five in View, Sailing Visibly]]: three courses a pair, about five
+    in view near a port, 60 m/s, departures staggered across all nine courses ([[World Map]], "Traffic").
+  - Tested offline only. Unexplained, waiting on the owner's browser console: in the owner's patrol screenshot the
+    world stopped being drawn while the death veils stacked. Left: ships start and stop at 60 m/s at once, and lie on
+    one point at a roadstead; some retaining walls near Overlook's plaza may be dropped whole (low confidence, the
+    seam audit's).
 - **Looks by content, the Playlist and the matchmade dungeons' encounters** (#160, branch
   `claude/bible-dungeon-matchmaking-5421wl`), merged with the owner's yes ("Let's merge and deploy and talk about this
   after"), which deploys the page and the rooms. The owner's asks are recorded ([[Armour and Weapon Looks Belong to the Content That Gives Them]],

@@ -43,9 +43,16 @@ test('the table names the nine waters and the three port cities, and plans a rou
     table.routes.map((route) => [route.fromPort, route.toPort]),
     [
       [0, 1],
+      [0, 1],
+      [0, 1],
+      [0, 2],
+      [0, 2],
       [0, 2],
       [1, 2],
+      [1, 2],
+      [1, 2],
     ],
+    'three courses between each pair of the port cities',
   );
   for (const route of table.routes) {
     assert.deepEqual(route.path[0], table.ports[route.fromPort]?.roadstead);

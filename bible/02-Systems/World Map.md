@@ -149,20 +149,28 @@ The numbers are Claude's, under the owner's "Friendly ships should dynamically t
 - **Roadstead.** Where a port's ships come and go: the nearest point of its own coast to the city's centre, 3 km out
   to sea away from the centre, then on outward in 500 m steps until it is at least 1 km clear of every coast and isle,
   in whole metres. A port whose way out leaves the frame first gets none, and no ships.
-- **Routes.** One between every pair of the port cities, first with second, first with third, second with third, so
-  each port trades with both others and the lanes cross the most waters. Each is planned round land: A* over a mask
-  of 5 km cells whose middles are at least 3 km clear of every coast and isle (eight neighbours, no corner cut past an
-  unclear cell, ties to the lower cell), from each roadstead's nearest clear cell it reaches by a clear leg; then
-  string-pulled, each leg running as far ahead as it can while it stays more than 800 m from every coast edge and isle,
-  checked exactly in whole metres (no edge met, and each end of either segment clear of the other), so a hull drawn on
-  it stays off the land. Today: Overlook to Sunspire 1,402 km, Overlook to Rimeholt 1,601 km, Sunspire to Rimeholt
-  2,950 km across the open sea. Opening the waters and planning them takes about 0.5 s in WebAssembly.
-- **Schedule.** On each route a ship leaves each end every 1,200 s of world time, departure n at n × 1,200 s, and sails
-  at 5 m/s to the other end. There it lies at the roadstead 600 s (`DWELL_S`), heading as it came in, and is then
-  gone: with a ship arriving at each end of a route every 1,200 s, about one lies at each port city's roadstead at any
-  moment. World time is seconds since the Unix epoch, passed in, so every machine computes the same ships for the same
-  time. The waters' table the door returns carries the pace (`friendly_speed_m_s`), so the page reckons ships on
-  between answers at the rules' own pace.
+- **Routes.** Between every pair of the port cities, first with second, first with third, second with third, so
+  each port trades with both others and the lanes cross the most waters; each pair sails up to three courses ([[Friendly Ships Take Several Courses, About Five in View, Sailing Visibly]]).
+  The shortest is planned round land: A* over a mask of 5 km cells whose middles are at least 3 km clear of every
+  coast and isle (eight neighbours, no corner cut past an unclear cell, ties to the lower cell), from each roadstead's
+  nearest clear cell it reaches by a clear leg; then string-pulled, each leg running as far ahead as it can while it
+  stays more than 800 m from every coast edge and isle, checked exactly in whole metres (no edge met, and each end of
+  either segment clear of the other), so a hull drawn on it stays off the land. The other two leave each port 30
+  degrees either side of the shortest's first heading, to the clear cell nearest the point 100 km out, one
+  way leaving and the other arriving so each keeps to one side, every stretch planned as the shortest is; a side no
+  clear water makes, or more than 1.3 times the shortest's length, is left out. Today all nine courses sail: Overlook
+  to Sunspire 1,402, 1,421 and 1,468 km, Overlook to Rimeholt 1,601, 1,611 and 1,681 km, Sunspire to Rimeholt 2,950,
+  2,959 and 3,032 km. Out of Overlook they leave on five headings, two of its Sunspire courses sharing the narrow sea
+  east of it; out of Sunspire and Rimeholt on three each. Planning them takes about 0.2 s natively, twice the one
+  course each; a sea room's harbours take the ports' roadsteads alone (`Traffic::roadsteads`), planning no course.
+- **Schedule.** On each course a ship leaves each end every 3,000 s of world time, departure n at its course's start
+  plus n × 3,000 s, the nine courses' starts a ninth of that apart, so two courses that share a stretch out of a port
+  (each of Sunspire's and Rimeholt's ways out carries a course to each of the other two ports) never send ships out
+  together; each sails at 60 m/s, the pace dial's slowest step, to the other end. There it lies at the roadstead 600 s
+  (`DWELL_S`), heading as it came in, and is then gone. About five ships are within 60 km of Overlook's roadstead at
+  any moment, counting those lying there (5.2 on a day's mean). World time is seconds since the Unix epoch, passed in,
+  so every machine computes the same ships for the same time. The waters' table the door returns carries the pace
+  (`friendly_speed_m_s`), so the page reckons ships on between answers at the rules' own pace.
 - **A ship.** Its id is `n << 8 | route << 1 | direction` (direction 0 from the route's first port). Its hull comes
   from a fixed hash of its id: a sloop 4 times in 10, a schooner 3, a brig 2, a frigate 1. It carries its position,
   the unit way it sails along its leg, the metres sailed and its route's length.

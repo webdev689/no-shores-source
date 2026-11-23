@@ -380,6 +380,47 @@ fn a_node_s_mesh_keeps_its_layout_s_wall_a_body_s_radius_off_and_bakes_no_box_pa
 }
 
 #[test]
+fn a_patrol_zone_s_foes_leave_a_player_be_in_its_landing_until_they_strike_from_it() {
+    let swing = |room: &Room, sequence: u32| {
+        let combat = combat::CombatInput { attack: Some(combat::Stroke::Down), ..combat::CombatInput::default() };
+        let intent = combat::Intent { controls: movement::Controls::default(), combat };
+        Input { sequence, intent, seen: room.clock(), ..Input::default() }
+    };
+    let mut room = node(NodeKind::Patrol, "downs");
+    let player = room.join().unwrap();
+    stand_player(&mut room, player, [0.0, 180.0]);
+    run(&mut room, 1);
+    assert!(room.left_be(player), "where they land");
+    let input = swing(&room, 1);
+    room.input(player, input).unwrap();
+    run(&mut room, 2);
+    assert!(!room.left_be(player), "struck from the landing");
+    stand_player(&mut room, player, [0.0, 120.0]);
+    run(&mut room, 1);
+    assert!(!room.left_be(player), "out of the landing");
+    stand_player(&mut room, player, [0.0, 175.0]);
+    run(&mut room, 1);
+    assert!(room.left_be(player), "back in the landing, the landing's leave again");
+    // A fight brought into the landing goes on: the landing is somewhere to arrive, not to hide.
+    let (_, _, place, facing) = room.garrison[0].members[0];
+    stand_player(&mut room, player, [place[0] + libm::sin(facing) * 6.0, place[1] - libm::cos(facing) * 6.0]);
+    for _ in 0..600 {
+        if room.foes.values().any(|foe| foe.brain.target() == Some(player)) {
+            break;
+        }
+        run(&mut room, 1);
+    }
+    stand_player(&mut room, player, [0.0, 175.0]);
+    run(&mut room, 1);
+    assert!(!room.left_be(player), "fought, then come back into the landing");
+    let mut mission = node(NodeKind::Mission, "keep");
+    let player = mission.join().unwrap();
+    stand_player(&mut mission, player, [0.0, 180.0]);
+    run(&mut mission, 1);
+    assert!(!mission.left_be(player), "a mission has no landing");
+}
+
+#[test]
 fn a_quests_group_arriving_leaves_the_last_stand_its_leader_and_its_break() {
     let mut room = crate::quests::quests_tests::node_room("node-test", &[("glade", [0.0, 0.0], 48.0)]);
     let leader = room.next_id();

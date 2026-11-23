@@ -445,9 +445,13 @@ impl Ground {
     #[must_use]
     pub fn height_at(&self, x: f64, y: f64) -> f64 {
         if let Some(level) = self.pads.level_at(x, y) {
-            // Where another pad meets this one, each blends to their middle at the seam, so it is no lip.
+            // Where another pad meets this one, each blends to their middle at the seam, so it is no lip; toward a
+            // level at most BLEND_MOST_M away, so beside a higher seam, its wall's, the floor never sinks, and along a
+            // ramp's side, where the levels part little by little, the ground runs on without a ledge.
+            let most = crate::pads::BLEND_MOST_M;
             return self.pads.seam_near(x, y).map_or(level, |(other, off)| {
-                level + (other - level) * 0.5 * (1.0 - smooth(0.0, crate::pads::EDGE_M, off))
+                let toward = other.clamp(level - most, level + most);
+                level + (toward - level) * 0.5 * (1.0 - smooth(0.0, crate::pads::EDGE_M, off))
             });
         }
         let mut ground = self.padded(x, y);
