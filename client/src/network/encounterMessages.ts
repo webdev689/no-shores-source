@@ -4,12 +4,12 @@ import type { Snapshot } from '../../../generated/messages/ts/overlook/wire/snap
  *  SealState). */
 export const SEAL_KIND = { litany: 1, weighing: 2, ascent: 3, holdfast: 4 } as const;
 export const SEAL_STATE = { waiting: 0, running: 1, broken: 2 } as const;
-/** A Litany's rune: dark, showing in the show, or stepped in order. */
-export const RUNE = { dark: 0, showing: 1, stepped: 2 } as const;
+/** A Litany's rune: dark, showing in the show, stepped in order, or stepped wrong a moment ago. */
+export const RUNE = { dark: 0, showing: 1, stepped: 2, wrong: 3 } as const;
 
 /** One seal as a snapshot carries it: its kind, its state, its progress 0 to 1, its pieces' marks (a Litany's runes
- *  `RUNE`; a Weighing's plates in play, an Ascent's stone and a Holdfast's ring 1 while stood on) and its relic's
- *  strength 0 to 1. */
+ *  `RUNE`; a Weighing's plates in play and a Holdfast's ring 1 while stood on; an Ascent's players on its stone and
+ *  the living players in its room) and its relic's strength 0 to 1. */
 export interface SealSeen {
   readonly kind: number;
   readonly state: number;
@@ -20,8 +20,9 @@ export interface SealSeen {
 
 /** An Elite Dungeon's encounters as a snapshot carries them: each seal; whether the Boss woke, and its number while
  *  it stands (0 for none); the ward up (0 none, 1 at two thirds, 2 at one third) and how many are broken; each
- *  anchor's progress 0 to 1; the ticks until a Reckoning lands (0 while none is shown) and its anchor; and Fury's
- *  step. */
+ *  anchor's progress 0 to 1; the ticks until a Reckoning lands (0 while none is shown) and its anchor; Fury's step;
+ *  the ticks until Fury begins while its clock runs (0 before and after); and the ticks until the warded Boss's slam
+ *  lands (0 while none is shown). */
 export interface EncounterSeen {
   readonly seals: readonly SealSeen[];
   readonly woken: boolean;
@@ -32,6 +33,8 @@ export interface EncounterSeen {
   readonly reckoningTicks: number;
   readonly reckoningAt: number;
   readonly fury: number;
+  readonly furyTicks: number;
+  readonly slamTicks: number;
 }
 
 /** A snapshot's encounters; null in a room with none. */
@@ -59,5 +62,7 @@ export function encounterOf(snapshot: Snapshot): EncounterSeen | null {
     reckoningTicks: read.reckoningTicks(),
     reckoningAt: read.reckoningAt(),
     fury: read.fury(),
+    furyTicks: read.furyTicks(),
+    slamTicks: read.slamTicks(),
   };
 }

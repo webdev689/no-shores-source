@@ -44,6 +44,12 @@ pub(crate) fn middle_of(room: &Room, cell: usize) -> [f64; 2] {
     [((cell % columns) as f64 + 0.5) * dungeon::CELL_M, ((cell / columns) as f64 + 0.5) * dungeon::CELL_M]
 }
 
+/// An Elite Dungeon as its run lays it.
+pub(crate) fn laid_dungeon(place: &str) -> dungeon::Dungeon {
+    let (seed, style) = crate::elite_laid(place).expect("an Elite Dungeon's seed and style");
+    dungeon::Dungeon::forge_within(seed, style, dungeon::ELITE_BLOCKS)
+}
+
 pub(crate) fn told(events: &[Event], kind: EventKind) -> usize {
     events.iter().filter(|event| event.kind == kind).count()
 }

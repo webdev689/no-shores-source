@@ -3,7 +3,7 @@
 // cap glowing in its own colour, a crystal's and a lantern's glass by their facets, and still water over its bed,
 // mirroring the lit room and catching the lights.
 import { COLOUR_LAYERS } from '../city/pictures.ts';
-import { DUNGEON_LAYERS, PORTAL_FLAG, WATER_FLAG } from './dungeonBook.ts';
+import { DUNGEON_LAYERS, FOUL_FLAG, PORTAL_FLAG, WATER_FLAG } from './dungeonBook.ts';
 import { CAVE_BULGE_M } from './dungeonCeilings.ts';
 import { CELL_ROCK, type Light, LIGHT_WGSL } from './dungeonLight.ts';
 
@@ -57,6 +57,10 @@ const FUNGUS = ${DUNGEON_LAYERS.fungus}u;
 const PORTAL = ${PORTAL_FLAG}u;
 // A layer with this bit set is still water, over a bed in the picture the rest of its number names.
 const WATER = ${WATER_FLAG}u;
+// A layer with this bit set too is foul water that harms: a sickly green, its glow breathing slowly.
+const FOUL = ${FOUL_FLAG}u;
+const FOUL_TINT = vec3f(0.42, 0.62, 0.2);
+const FOUL_GLOW = vec3f(0.1, 0.24, 0.03);
 // Still water's bed seen through it: a wet floor is darker, and water takes the red first.
 const WATER_TINT = vec3f(0.45, 0.55, 0.6);
 // How much of the light on it the room round still water gives back, to be mirrored in it: stone's.
@@ -198,7 +202,8 @@ fn dungeon_fragment(surface: Surface) -> @location(0) vec4f {
   let last = textureNumLayers(pictures) - 1u;
   let portal = (surface.layer & PORTAL) != 0u;
   let water = (surface.layer & WATER) != 0u;
-  let layer = surface.layer & ~(PORTAL | WATER);
+  let foul = (surface.layer & FOUL) != 0u;
+  let layer = surface.layer & ~(PORTAL | WATER | FOUL);
   let sampled = textureSample(pictures, picture_sampler, surface.uv, min(layer, last)).rgb;
   // The triangle's own normal, turned to the eye: a piece's smooth normals would round a crystal's facets away.
   // Derivatives are taken here, before any branch, as they must be.
@@ -235,6 +240,10 @@ fn dungeon_fragment(surface: Surface) -> @location(0) vec4f {
   }
   let normal = normalize(surface.normal);
   let mood = mood_at(surface.point, normal);
+  if water && foul {
+    let breath = 0.6 + 0.4 * sin(time * 1.7 + phase);
+    return vec4f(water_at(surface.point, normal, time, mood, sampled) * FOUL_TINT + FOUL_GLOW * breath, 1.0);
+  }
   if water {
     return vec4f(water_at(surface.point, normal, time, mood, sampled), 1.0);
   }

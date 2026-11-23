@@ -23,7 +23,8 @@ import { CHEST_LIES_S, bannerOf, chestQuestOf, compassOf, elsewhereOf, questOf, 
 import { type Moments, PublicMoments } from './publicMoments.ts';
 import { SpireCourse } from './fissureSpires.ts';
 import type { DungeonLayout } from './dungeonLayout.ts';
-import { encounterBanner, encounterBeat, encounterMarks } from './encounterLaw.ts';
+import { EncounterCues, type EncounterHeard } from './encounterCues.ts';
+import { encounterBanner, encounterBeat, encounterMarks, encounterPlaces } from './encounterLaw.ts';
 import { type EncounterSeen, SEAL_STATE } from '../network/encounterMessages.ts';
 import type { Block } from '../rules/movementRules.ts';
 import type { Shot } from './camera.ts';
@@ -118,27 +119,32 @@ export interface EncounterHere {
   readonly seen: EncounterSeen | null;
 }
 
-/** An Elite Dungeon's frame: its marks laid into `marks`, its banner with the beat it slides in for, the music's mood
- *  (its Court at its peak, a seal running tense), and the sting a moment plays (a seal broken or a ward won, a
- *  cadence as the Boss wakes or a ward rises). None outside one. */
+/** An Elite Dungeon's frame: its marks laid into `marks`, its banner with the beat it slides in for and the places
+ *  the compass marks, the music's mood (its Court at its peak, its Boss's part by the wards broken, a seal running
+ *  tense), the sting a moment plays (a seal broken or a ward won, a cadence as the Boss wakes), and what `cues` hears
+ *  of it (a ward rising rings its own). None outside one. */
 function encounterFrame(
   { layout, seen }: EncounterHere,
   events: readonly FightEvent[],
   bodies: PublicBodies,
   clock: number,
   marks: number[],
-): { shown: PublicShown | null; sting: 'cadence' | 'victory' | null } | null {
+  cues: EncounterCues,
+): ({ shown: PublicShown | null; sting: 'cadence' | 'victory' | null } & EncounterHeard) | null {
   const plan = layout?.encounters;
   if (!layout || !plan || !seen) return null;
-  marks.push(...encounterMarks(plan, seen, clock, bodies.where));
+  const heard = cues.frame(plan, seen, events, { ...bodies, seconds: clock });
+  marks.push(...encounterMarks(plan, seen, clock, bodies.where, heard.flash));
   const banner = encounterBanner(layout, seen, bodies.feet);
   const beat = encounterBeat(events);
   const running = seen.seals.some((seal) => seal.state === SEAL_STATE.running);
   const mood = seen.woken ? 'peak' : running ? 'tension' : null;
-  const shown: PublicShown | null = banner && { banner, beat, places: [], stores: [], mood };
+  const part = seen.woken ? Math.min(3, seen.wardsBroken + 1) : undefined;
+  const places = encounterPlaces(layout, seen);
+  const shown: PublicShown | null = banner && { banner, beat, places, stores: [], mood, part };
   const won = events.some((each) => each.kind === EVENT.sealBroken || each.kind === EVENT.wardBroken);
-  const rose = events.some((each) => each.kind === EVENT.bossWoke || each.kind === EVENT.wardRaised);
-  return { shown, sting: won ? 'victory' : rose ? 'cadence' : null };
+  const rose = events.some((each) => each.kind === EVENT.bossWoke);
+  return { ...heard, shown, sting: won ? 'victory' : rose ? 'cadence' : null };
 }
 
 /** A point `forward` along and `left` across the way `yaw` looks (x east, y south: yaw 0 looks north). */
@@ -191,6 +197,7 @@ export class PublicView {
   /** The page's own moments round the event; the room's word on the next event's start, and when it came, so its
    *  last minute is counted on to the second; the last event's kind, for the chest it leaves. */
   private readonly moments = new PublicMoments();
+  private readonly heard = new EncounterCues();
   private nextWord: { readonly ticks: number; readonly at: number } | null = null;
   private lastKind: number = PUBLIC_KIND.none;
   /** What shakes the player's view (0 to 1) as the ground trembles; the course the fissure's spires stand in. */
@@ -299,12 +306,13 @@ export class PublicView {
       mood: moodOf(event, bodies.feet),
     };
     const left = Math.min(...waiting.map((chest) => moments.chestsLeft.get(chest.id) ?? CHEST_LIES_S));
-    const sealed = encounter && encounterFrame(encounter, events, bodies, clock, marks);
+    const sealed = encounter && encounterFrame(encounter, stale ? [] : events, bodies, clock, marks, this.heard);
+    if (loud) sealed?.ui.forEach(play);
     return {
       shown: shown ?? sealed?.shown ?? null,
       quest: questOf(event, this.zone) ?? (waiting.length > 0 ? chestQuestOf(left, this.zone, this.lastKind) : null),
       props,
-      sounds,
+      sounds: sealed && !stale ? [...sounds, ...sealed.sounds] : sounds,
       sting: stale ? null : ((beat && STINGS[beat]) ?? sealed?.sting ?? null),
       chime,
     };

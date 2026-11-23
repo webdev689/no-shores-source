@@ -20,7 +20,7 @@ export interface FootHeard {
   readonly events: readonly FightEvent[];
   readonly foes: readonly MarkedFoe[];
   /** The zone's public event as shown: the least mood it holds the player to, on its ground while it runs. */
-  readonly public?: { readonly mood?: Mood | null } | null;
+  readonly public?: { readonly mood?: Mood | null; readonly part?: number } | null;
 }
 
 /** The sea, as far as the music reads it: where the ship lies, the hostile ships round it, its fight, and the
@@ -76,6 +76,7 @@ export function hearFoot(place: Place, fight: FootHeard): Hearing {
     sea: null,
     sky: null,
     ...(fight.public?.mood && { least: fight.public.mood }),
+    ...(fight.public?.part && { part: fight.public.part }),
   };
 }
 

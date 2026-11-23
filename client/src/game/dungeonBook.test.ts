@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { COLOUR_LAYERS } from '../city/pictures.ts';
-import { PORTAL_FLAG, smallBook, WATER_FLAG } from './dungeonBook.ts';
+import { FOUL_FLAG, PORTAL_FLAG, smallBook, WATER_FLAG } from './dungeonBook.ts';
 import { COLOUR, ROLE } from './dungeonMesh.ts';
 
 test("a dungeon set's pictures turn to the island's climate, each once, and a flame keeps the city's glow", () => {
@@ -35,6 +35,8 @@ test("still water is drawn over its bed, the floor of the set it lies in, by a f
     [123, ROLE.floor, 'floor'],
   ]);
   assert.equal(book.layerOf(COLOUR.water, 123), WATER_FLAG | 1);
+  assert.equal(book.layerOf(COLOUR.foulWater, 123), FOUL_FLAG | WATER_FLAG | 1, 'foul water over the same bed');
+  assert.equal(FOUL_FLAG & (WATER_FLAG | PORTAL_FLAG), 0);
   assert.equal(WATER_FLAG & PORTAL_FLAG, 0);
   assert.ok(WATER_FLAG > PORTAL_FLAG);
 });

@@ -1,10 +1,13 @@
 // An Elite Dungeon's encounters as the page shows them, from the room's word alone: the banner under the compass (the
-// seals broken of how many, the encounter's name and its one-line task, its progress, and a Reckoning's countdown
-// written large), and the marks on the floor (runes and plates that light and dim, the seal stone's ring, the relic's
-// ring, the anchors, the Reckoning's light and the Boss's ward). The room judges everything; this only shows it.
+// seals broken of how many, the encounter's name and its one-line task, its progress, a relic's strength, Fury and a
+// Reckoning's countdown written large), the compass's places (each unbroken seal's room, then the Court), and the marks
+// on the floor (runes and plates that light, dim or flash wrong, the seal stone's ring, the relic's ring and its
+// strength, the anchors, the Reckoning's light, the Boss's ward and its dome, its slam and its Fury). The room judges
+// everything; this only shows it.
 import { EVENT } from '../combat/cues.ts';
 import { markRing } from '../combat/marks.ts';
 import type { Banner, BannerBeat, BannerTone } from '../combat/publicBanner.ts';
+import type { PlaceMark } from '../plus/compass.ts';
 import { type EncounterSeen, RUNE, SEAL_KIND, SEAL_STATE, type SealSeen } from '../network/encounterMessages.ts';
 import type { FightEvent } from '../network/messages.ts';
 import type { DungeonLayout, EncounterLayout, SealLayout } from './dungeonLayout.ts';
@@ -33,6 +36,7 @@ const DRAINED: Colour = [0.95, 0.3, 0.25];
 const ANCHOR: Colour = [0.78, 0.55, 1];
 const LIGHT: Colour = [1, 0.95, 0.75];
 const WARD: Colour = [0.72, 0.5, 1];
+const FURY: Colour = [1, 0.22, 0.16];
 /** A beam over a piece that wants the company now: how tall, and half its width (m). */
 const BEAM = { height: 6, half: 0.35 } as const;
 /** The Reckoning's beam: taller and wider, seen from anywhere in the end room. */
@@ -40,12 +44,17 @@ const LIGHT_BEAM = { height: 12, half: 0.9 } as const;
 /** How wide a ring's band is (m), and how far round the Boss its ward's ring stands. */
 const BAND_M = 0.12;
 const WARD_M = 1.3;
+/** The dome of light over the warded Boss: its reach round it and how many bands of light draw it. */
+const DOME = { reach: 2.2, bands: 6 } as const;
+/** How long before Fury begins the banner warns of it (seconds), and how long a landed Reckoning's flash burns. */
+const FURY_WARNED_S = 60;
+export const FLASH_S = 0.6;
 
 /** The task a seal or the Court sets, in a line: `plates` the Weighing's plates in play. */
 export function taskOf(kind: number, plates: number): string {
   if (kind === SEAL_KIND.litany) return 'Step on the runes in the order they light';
   if (kind === SEAL_KIND.weighing) return plates >= 3 ? 'Hold all three plates together' : 'Hold both plates together';
-  if (kind === SEAL_KIND.ascent) return 'Climb to the seal stone';
+  if (kind === SEAL_KIND.ascent) return 'Climb to the seal stone together';
   return "Hold the relic's ring";
 }
 
@@ -61,13 +70,26 @@ function sealHere(layout: DungeonLayout, plan: EncounterLayout, seen: EncounterS
   return running >= 0 ? running : null;
 }
 
-/** The banner's bar under a seal's task: a Litany's runes stepped of how many, any other's share held. */
+/** The banner's bar under a seal's task: a Litany's runes stepped of how many, an Ascent's players on its stone of
+ *  those in its room, any other's share held. */
 function barOf(seal: SealSeen): { share: number; label: string } {
   if (seal.kind === SEAL_KIND.litany) {
     const stepped = seal.marks.filter((mark) => mark === RUNE.stepped).length;
     return { share: seal.progress, label: `${stepped} of ${seal.marks.length}` };
   }
+  if (seal.kind === SEAL_KIND.ascent)
+    return { share: seal.progress, label: `${seal.marks[0] ?? 0} of ${seal.marks[1] ?? 0}` };
   return { share: seal.progress, label: `${Math.floor(seal.progress * 100)}%` };
+}
+
+/** A count of seconds as minutes and seconds, 1:00. */
+const minutes = (seconds: number): string => `${Math.floor(seconds / 60)}:${String(seconds % 60).padStart(2, '0')}`;
+
+/** The Court's Fury in the banner's bonus line: its weight once it has begun, its countdown in its last minute. */
+function furyOf(seen: EncounterSeen): Banner['bonus'] {
+  if (seen.fury > 0) return { text: `Fury ×${(1 + seen.fury / 10).toFixed(1)}`, state: 'lost' };
+  const left = Math.ceil(seen.furyTicks / TICKS_PER_SECOND);
+  return seen.furyTicks > 0 && left <= FURY_WARNED_S ? { text: `Fury in ${minutes(left)}`, state: 'holds' } : null;
 }
 
 /** The banner for an Elite Dungeon at the player's feet: while a seal runs or the player stands in a seal's room,
@@ -82,7 +104,14 @@ export function encounterBanner(layout: DungeonLayout, seen: EncounterSeen, feet
   if (seen.woken && !seen.boss) return null;
   if (seen.woken) {
     const warned = seen.reckoningTicks > 0;
-    const objective = warned ? 'Stand in the light' : seen.ward > 0 ? 'Break the anchors' : 'Defeat the Boss';
+    const slammed = seen.slamTicks > 0;
+    const objective = warned
+      ? 'Stand in the light'
+      : slammed
+        ? 'Get clear of the Boss'
+        : seen.ward > 0
+          ? 'Break the anchors'
+          : 'Defeat the Boss';
     const anchors = seen.anchors.filter((held) => held >= 1).length;
     const bar =
       seen.ward > 0
@@ -90,7 +119,7 @@ export function encounterBanner(layout: DungeonLayout, seen: EncounterSeen, feet
         : null;
     const clock = warned ? `${Math.ceil(seen.reckoningTicks / TICKS_PER_SECOND)}` : '';
     const tone: BannerTone = warned ? 'heroic' : 'running';
-    return { ...plain, tone, kicker, title: COURT, clock, urgent: warned, objective, bar };
+    return { ...plain, tone, kicker, title: COURT, clock, urgent: warned, objective, bar, bonus: furyOf(seen) };
   }
   const here = sealHere(layout, plan, seen, feet);
   const seal = here === null ? null : seen.seals[here];
@@ -105,6 +134,7 @@ export function encounterBanner(layout: DungeonLayout, seen: EncounterSeen, feet
       bar: null,
     };
   const plates = seal.kind === SEAL_KIND.weighing ? seal.marks.length : 0;
+  const relic = Math.round(seal.relic * 100);
   return {
     ...plain,
     tone: 'running',
@@ -113,7 +143,29 @@ export function encounterBanner(layout: DungeonLayout, seen: EncounterSeen, feet
     clock: '',
     objective: taskOf(seal.kind, plates),
     bar: barOf(seal),
+    bonus: seal.kind === SEAL_KIND.holdfast ? { text: `Relic ${relic}%`, state: relic < 30 ? 'lost' : 'holds' } : null,
   };
+}
+
+/** The places the compass marks: the middle of each unbroken seal's room, then the end room's once the Boss wakes,
+ *  until it falls. */
+export function encounterPlaces(layout: DungeonLayout, seen: EncounterSeen): PlaceMark[] {
+  const plan = layout.encounters;
+  if (!plan) return [];
+  const middle = (room: number): PlaceMark | null => {
+    const found = layout.rooms[room];
+    if (!found) return null;
+    return {
+      x: (found.x + found.width / 2) * layout.cell,
+      y: (found.y + found.depth / 2) * layout.cell,
+      kind: 'event',
+    };
+  };
+  if (seen.woken) return seen.boss ? [middle(layout.end)].filter((place) => place !== null) : [];
+  return plan.seals
+    .filter((seal, index) => seen.seals[index] && seen.seals[index].state !== SEAL_STATE.broken)
+    .map((seal) => middle(seal.room))
+    .filter((place) => place !== null);
 }
 
 /** The banner's beat for the room's events this frame: the Boss woken, a seal broken, a ward raised or broken. */
@@ -141,8 +193,9 @@ function ringAt(out: number[], middle: Point, reach: number, colour: Colour, alp
   if (beam) markBeam(out, middle, BEAM, [...colour, alpha]);
 }
 
-/** One seal's marks: a Litany's runes dark, showing under a beam or lit; a Weighing's plates in play dim or held; an
- *  Ascent's stone ringed on its top pad; a Holdfast's ring, reddening as its relic drains. None once broken. */
+/** One seal's marks: a Litany's runes dark, showing under a beam, lit or flashing wrong; a Weighing's plates in play
+ *  dim or held; an Ascent's stone ringed on its top pad, lighting as its players stand on it; a Holdfast's ring,
+ *  reddening as its relic drains, held or not, and the relic's strength as an arc inside it. None once broken. */
 function sealMarks(
   out: number[],
   plan: SealLayout,
@@ -154,7 +207,8 @@ function sealMarks(
   if (seal.kind === SEAL_KIND.litany)
     plan.pieces.forEach((rune, index) => {
       const mark = seal.marks[index] ?? RUNE.dark;
-      if (mark === RUNE.showing) ringAt(out, rune, reach.rune, LIT, 1, true);
+      if (mark === RUNE.wrong) ringAt(out, rune, reach.rune, DRAINED, 1, true);
+      else if (mark === RUNE.showing) ringAt(out, rune, reach.rune, LIT, 1, true);
       else if (mark === RUNE.stepped) ringAt(out, rune, reach.rune, DONE, 0.95);
       else ringAt(out, rune, reach.rune, AT_REST, 0.35 + 0.1 * beat);
     });
@@ -164,22 +218,29 @@ function sealMarks(
       ringAt(out, plate, reach.plate, held ? LIT : AT_REST, held ? 1 : 0.5 + 0.2 * beat, !held);
     });
   const [first] = plan.pieces;
-  if (seal.kind === SEAL_KIND.ascent && first)
-    ringAt(out, first, 0.6, seal.marks[0] === 1 ? LIT : AT_REST, 0.6 + 0.3 * beat, seal.marks[0] !== 1);
+  if (seal.kind === SEAL_KIND.ascent && first) {
+    const [on = 0, living = 0] = seal.marks;
+    const all = living > 0 && on >= living;
+    ringAt(out, first, 0.6, mix(AT_REST, LIT, living > 0 ? on / living : 0), 0.6 + 0.3 * beat, !all);
+  }
   if (seal.kind === SEAL_KIND.holdfast && first) {
-    const colour = mix(DRAINED, AT_REST, seal.relic);
-    ringAt(out, first, reach.relic, seal.marks[0] === 1 ? LIT : colour, 0.7, seal.marks[0] !== 1);
+    const held = seal.marks[0] === 1;
+    const colour = mix(DRAINED, held ? LIT : AT_REST, seal.relic);
+    ringAt(out, first, reach.relic, colour, held ? 0.9 : 0.7, !held);
+    markRing(out, first, reach.relic - 0.3, reach.relic - 0.15, [...colour, 1], [0, 2 * Math.PI * seal.relic]);
   }
 }
 
 /** Every mark of the encounters this frame at `seconds` of the page's clock: each seal's pieces, then while a ward
- *  stands each anchor ringed and filling, a Reckoning's light while one is shown, and the Boss's ward round it where
- *  `where` finds it. */
+ *  stands each anchor ringed and filling, a Reckoning's light while one is shown and its flash as it lands (`flash`:
+ *  its anchor and the share of its flash left), and round the Boss where `where` finds it its ward and dome, its slam
+ *  filling as it comes and its Fury. */
 export function encounterMarks(
   plan: EncounterLayout,
   seen: EncounterSeen,
   seconds: number,
   where: (id: number) => Point | null,
+  flash: { readonly at: number; readonly share: number } | null = null,
 ): number[] {
   const out: number[] = [];
   const beat = 0.5 + 0.5 * Math.sin(seconds * 4);
@@ -199,7 +260,26 @@ export function encounterMarks(
     markRing(out, light, plan.reach.light - BAND_M * 2, plan.reach.light, [...LIGHT, 0.7 + 0.3 * beat]);
     markBeam(out, light, LIGHT_BEAM, [...LIGHT, 0.55 + 0.35 * beat]);
   }
-  const boss = seen.ward > 0 && seen.boss ? where(seen.boss) : null;
-  if (boss) markRing(out, boss, WARD_M - 0.2, WARD_M, [...WARD, 0.6 + 0.4 * beat]);
+  const landed = flash && flash.share > 0 ? plan.anchors[flash.at] : undefined;
+  if (landed && flash) {
+    const { share } = flash;
+    markBeam(out, landed, { height: LIGHT_BEAM.height, half: LIGHT_BEAM.half * (1 + share * 2) }, [...LIGHT, share]);
+    markRing(out, landed, 0, plan.reach.light * (1 + (1 - share) * 4), [...LIGHT, share * 0.8]);
+  }
+  const boss = seen.boss ? where(seen.boss) : null;
+  if (boss && seen.ward > 0) {
+    markRing(out, boss, WARD_M - 0.2, WARD_M, [...WARD, 0.6 + 0.4 * beat]);
+    for (let band = 1; band <= DOME.bands; band += 1) {
+      const angle = (band / (DOME.bands + 1)) * (Math.PI / 2);
+      const [reach, up] = [DOME.reach * Math.cos(angle), DOME.reach * Math.sin(angle)];
+      markRing(out, [boss[0], boss[1], boss[2] + up], reach - BAND_M, reach, [...WARD, 0.35 + 0.2 * beat]);
+    }
+  }
+  if (boss && seen.slamTicks > 0) {
+    const coming = 1 - seen.slamTicks / (2 * TICKS_PER_SECOND);
+    markRing(out, boss, plan.reach.slam - BAND_M * 2, plan.reach.slam, [...FURY, 0.6 + 0.4 * beat]);
+    markRing(out, boss, 0, plan.reach.slam * Math.max(0, Math.min(1, coming)), [...FURY, 0.25]);
+  }
+  if (boss && seen.fury > 0) markRing(out, boss, WARD_M + 0.1, WARD_M + 0.3, [...FURY, 0.7 + 0.3 * beat]);
   return out;
 }

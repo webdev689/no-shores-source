@@ -63,6 +63,35 @@ fn every_elite_dungeon_holds_its_seals_each_in_a_room_of_its_own_and_never_two_a
 }
 
 #[test]
+fn a_dungeon_of_four_blocks_holds_two_seals_and_one_of_five_three() {
+    assert_eq!((seals_for(4), seals_for(5)), (2, 3));
+}
+
+#[test]
+fn each_seal_is_laid_nearest_the_middle_of_its_stretch_of_the_walk_not_at_its_start() {
+    for (place, laid, plan) in elite_plans() {
+        let end = laid.end();
+        let landmarked: Vec<usize> = laid.landmarks.iter().map(|placed| placed.room).collect();
+        let mut rooms: Vec<usize> = (0..laid.rooms.len())
+            .filter(|room| *room != end && *room != laid.way_in.room && !landmarked.contains(room))
+            .collect();
+        rooms.sort_by_key(|&room| (laid.rooms[room].walk, room));
+        if rooms.len() >= 4 {
+            assert_ne!(plan.seals[0].room, rooms[0], "{place}: the first seal is not the first room on the walk");
+        }
+    }
+}
+
+#[test]
+fn at_least_nine_of_the_eighteen_lay_an_ascent() {
+    let ascents = elite_plans()
+        .iter()
+        .filter(|(_, _, plan)| plan.seals.iter().any(|seal| seal.kind == SealKind::Ascent))
+        .count();
+    assert!(ascents >= 9, "{ascents} of 18 lay an Ascent");
+}
+
+#[test]
 fn a_plan_is_the_same_every_time_it_is_laid() {
     for (place, laid, plan) in elite_plans() {
         assert_eq!(plan_encounters(&laid), plan, "{place}");
@@ -90,9 +119,17 @@ fn an_ascents_pads_rise_under_the_ceiling_clear_of_every_solid_and_doorway() {
         for seal in plan.seals.iter().filter(|seal| seal.kind == SealKind::Ascent) {
             assert!((ASCENT_PADS.0..=ASCENT_PADS.1).contains(&seal.pads.len()), "{place}: its pads");
             let lowest = seal.cells.iter().map(|&cell| laid.ceilings[cell]).fold(f64::INFINITY, f64::min);
-            for (nth, pad) in seal.pads.iter().enumerate() {
-                assert!((pad.top - (nth + 1) as f64 * PAD_RISE_M).abs() < 1e-12, "{place}: rising tops");
-                assert!(pad.top + TUNING.height + HEAD_ROOM_M <= lowest, "{place}: under the ceiling");
+            assert!(seal.pads[0].top <= TUNING.reach, "{place}: the first pad mantled from the floor");
+            for pair in seal.pads.windows(2) {
+                let rise = pair[1].top - pair[0].top;
+                assert!((0.0..=PAD_RISE_M + 1e-12).contains(&rise), "{place}: rising tops");
+            }
+            for (at, pad) in seal.pads.iter().enumerate() {
+                if at > 0 {
+                    assert!(pad.top > TUNING.reach, "{place}: pad {at} over a mantle's reach from the floor");
+                }
+                let room = if at + 1 == seal.pads.len() { HEAD_ROOM_M } else { JUMP_ROOM_M };
+                assert!(pad.top + TUNING.height + room <= lowest + 1e-9, "{place}: under the ceiling");
                 for corner in [[pad.min_x, pad.min_y], [pad.max_x, pad.max_y]] {
                     let cell = plan.cell_at(corner).expect("a pad in the dungeon");
                     assert_eq!(laid.cells[cell], Cell::Room(u16::try_from(seal.room).unwrap()), "{place}: no rock");
@@ -106,6 +143,13 @@ fn an_ascents_pads_rise_under_the_ceiling_clear_of_every_solid_and_doorway() {
                 });
                 assert!(clear, "{place}: a pad meets no solid");
             }
+            for (at, pad) in seal.pads.iter().enumerate() {
+                for other in &seal.pads[at + 1..] {
+                    let east = (pad.min_x - other.max_x).max(other.min_x - pad.max_x).max(0.0);
+                    let south = (pad.min_y - other.max_y).max(other.min_y - pad.max_y).max(0.0);
+                    assert!(libm::hypot(east, south) >= LEAP_M.0 - 1e-9, "{place}: every two pads a leap apart");
+                }
+            }
             assert_eq!(seal.pieces[0][2], seal.pads.last().expect("a top pad").top, "{place}: the stone on top");
             assert!(seal.drowned.iter().all(|cell| !laid.frames.iter().any(|frame| frame.cell == *cell)));
         }
@@ -113,9 +157,9 @@ fn an_ascents_pads_rise_under_the_ceiling_clear_of_every_solid_and_doorway() {
 }
 
 /// A body run from the Ascent's doorway pad to pad as a player would: facing the next pad, running, jumping at the
-/// edge of what it stands on. Answers whether it stood on the top pad by the stone, and never once on the floor
-/// after it first left it.
-fn climbed(laid: &Dungeon, seal: &SealPlan) -> bool {
+/// edge of what it stands on. Answers whether it stood on the top pad by the stone, never once on a drowned cell's
+/// floor.
+fn climbed(laid: &Dungeon, plan: &EncounterPlan, seal: &SealPlan) -> bool {
     let floor = Floor::of_dungeon(laid).expect("its ground");
     let pads = seal.pads.clone();
     let first = &pads[0];
@@ -136,10 +180,10 @@ fn climbed(laid: &Dungeon, seal: &SealPlan) -> bool {
     let [x, y] = laid.centre(start_cell);
     let mut body = Body { x, y, ..movement::standing(x, y) };
     let mut target = 0;
-    let mut left_floor = false;
+    // Standing on the pad before the target at its run-up spot, ready to take the leap.
+    let mut set = false;
     for _ in 0..(30.0 / TICK_SECONDS) as usize {
         let pad = &pads[target];
-        let (mid_x, mid_y) = ((pad.min_x + pad.max_x) / 2.0, (pad.min_y + pad.max_y) / 2.0);
         let on = |pad: &Block| {
             body.mode == Mode::Ground
                 && (body.z - pad.top).abs() < 1e-6
@@ -153,25 +197,51 @@ fn climbed(laid: &Dungeon, seal: &SealPlan) -> bool {
                     return true;
                 }
             } else {
-                target += 1;
+                (target, set) = (target + 1, false);
                 continue;
             }
         }
-        left_floor |= body.z > 0.1;
-        if left_floor && body.mode == Mode::Ground && body.z < 0.05 {
+        let wet = plan.cell_at([body.x, body.y]).is_some_and(|cell| seal.drowned.contains(&cell));
+        if wet && body.z < 0.05 {
             return false;
         }
-        let yaw = libm::atan2(mid_x - body.x, -(mid_y - body.y));
+        let [aim_x, aim_y] = if target > 0 && !set { run_up(&pads, target - 1) } else { middle(pad) };
+        if target > 0 && !set && libm::hypot(aim_x - body.x, aim_y - body.y) < 0.15 {
+            set = true;
+            continue;
+        }
+        let yaw = libm::atan2(aim_x - body.x, -(aim_y - body.y));
         let ahead = |reach: f64| {
             ground_at(&pads, &floor, body.x + libm::sin(yaw) * reach, body.y - libm::cos(yaw) * reach, body.z)
         };
-        let edge = body.mode == Mode::Ground && body.z > 0.1 && ahead(0.45) < body.z - 0.05;
-        let near = libm::hypot(mid_x - body.x, mid_y - body.y);
-        let forward = if target + 1 == pads.len() && near < 0.6 { 0.0 } else { 1.0 };
-        let controls = Controls { forward, yaw, run: true, jump: edge, ..Controls::default() };
+        // At the edge of a pad, or before the first pad's side, mantled from the floor.
+        let (front_x, front_y) = (body.x + libm::sin(yaw) * 0.6, body.y - libm::cos(yaw) * 0.6);
+        let side = pads.iter().any(|pad| {
+            let over = (pad.min_x..=pad.max_x).contains(&front_x) && (pad.min_y..=pad.max_y).contains(&front_y);
+            over && pad.top > body.z + 0.5
+        });
+        let ready = target == 0 || set;
+        let edge = ready && body.mode == Mode::Ground && (ahead(0.45) < body.z - 0.05 || side);
+        let near = libm::hypot(aim_x - body.x, aim_y - body.y);
+        let forward = if ready && target + 1 == pads.len() && near < 0.6 { 0.0 } else { 1.0 };
+        let controls = Controls { forward, yaw, run: ready, jump: edge, ..Controls::default() };
         body = step_body(&body, &controls, &pads, &floor, TICK_SECONDS);
     }
     false
+}
+
+/// A pad's middle.
+fn middle(pad: &Block) -> [f64; 2] {
+    [(pad.min_x + pad.max_x) / 2.0, (pad.min_y + pad.max_y) / 2.0]
+}
+
+/// Where a player takes a run at the leap from pad `from` to the next: on its side away from the next.
+fn run_up(pads: &[Block], from: usize) -> [f64; 2] {
+    let ([x, y], [to_x, to_y]) = (middle(&pads[from]), middle(&pads[from + 1]));
+    let yaw = libm::atan2(to_x - x, -(to_y - y));
+    let pad = pads[from];
+    let (half_x, half_y) = ((pad.max_x - pad.min_x) / 2.0, (pad.max_y - pad.min_y) / 2.0);
+    [x - half_x * 0.7 * libm::sin(yaw), y + half_y * 0.7 * libm::cos(yaw)]
 }
 
 #[test]
@@ -180,8 +250,36 @@ fn every_ascent_is_climbed_by_a_body_running_and_jumping_pad_to_pad() {
     for (place, laid, plan) in elite_plans() {
         for seal in plan.seals.iter().filter(|seal| seal.kind == SealKind::Ascent) {
             ascents += 1;
-            assert!(climbed(&laid, seal), "{place}: its Ascent is climbed");
+            assert!(climbed(&laid, &plan, seal), "{place}: its Ascent is climbed");
+            for from in 0..seal.pads.len() - 1 {
+                assert!(reached(&laid, seal, from, true), "{place}: pad {} reached by a running jump", from + 1);
+                assert!(!reached(&laid, seal, from, false), "{place}: pad {} reached with no jump", from + 1);
+            }
         }
     }
     assert!(ascents > 0, "some Elite Dungeon has an Ascent");
+}
+
+/// A body standing on the middle of pad `from`, running at the next and, if `jumps`, jumping at the edge: whether it
+/// ever stands on the next pad's top, never once touching the drowned floor.
+fn reached(laid: &Dungeon, seal: &SealPlan, from: usize, jumps: bool) -> bool {
+    let floor = Floor::of_dungeon(laid).expect("its ground");
+    let ([x, y], [to_x, to_y]) = (run_up(&seal.pads, from), middle(&seal.pads[from + 1]));
+    let yaw = libm::atan2(to_x - x, -(to_y - y));
+    let next = seal.pads[from + 1];
+    let mut body = Body { z: seal.pads[from].top, ..movement::standing(x, y) };
+    for _ in 0..(4.0 / TICK_SECONDS) as usize {
+        let on = (next.min_x..=next.max_x).contains(&body.x) && (next.min_y..=next.max_y).contains(&body.y);
+        if body.mode == Mode::Ground && (body.z - next.top).abs() < 1e-6 && on {
+            return true;
+        }
+        if body.z < 0.05 {
+            return false;
+        }
+        let ahead = ground_at(&seal.pads, &floor, body.x + libm::sin(yaw) * 0.45, body.y - libm::cos(yaw) * 0.45, body.z);
+        let edge = jumps && body.mode == Mode::Ground && body.z > 0.1 && ahead < body.z - 0.05;
+        let controls = Controls { forward: 1.0, yaw, run: true, jump: edge, ..Controls::default() };
+        body = step_body(&body, &controls, &seal.pads, &floor, TICK_SECONDS);
+    }
+    false
 }

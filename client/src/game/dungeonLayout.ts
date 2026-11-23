@@ -96,7 +96,8 @@ export interface SealLayout {
 }
 
 /** An Elite Dungeon's encounters as `room_dungeon` answers them: its seals in walk order, the Court's anchors, and
- *  how near a piece's middle a player stands on it (m), as the room judges. */
+ *  how near a piece's middle a player stands on it, and how far round the warded Boss its slam reaches (m), as the
+ *  room judges. */
 export interface EncounterLayout {
   readonly seals: readonly SealLayout[];
   readonly anchors: readonly Triple[];
@@ -106,6 +107,7 @@ export interface EncounterLayout {
     readonly relic: number;
     readonly anchor: number;
     readonly light: number;
+    readonly slam: number;
   };
 }
 

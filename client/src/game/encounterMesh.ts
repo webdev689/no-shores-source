@@ -1,6 +1,7 @@
 // An Elite Dungeon's encounters as stone and water: each Ascent's pads in its room's own dressed stone, a band of trim
 // round each top and the seal stone glowing on the last; a slab under each of the Court's anchors and a crystal over
-// each Holdfast's relic; and, while an Ascent's seal holds, the dungeon's still water over its drowned floor. The
+// each Holdfast's relic; and, while an Ascent's seal holds, foul water over its drowned floor, tinted apart from the
+// dungeon's plain still water as the floor that harms. The
 // pads are the blocks the room's bodies climb, laid where the room lays them (`room_dungeon`).
 import { type ForgedModel, type MeshBuilder, meshBuilder } from '../models/model.ts';
 import { type EncounterSeen, SEAL_KIND, SEAL_STATE } from '../network/encounterMessages.ts';
@@ -71,7 +72,7 @@ export function drownedNow(layout: DungeonLayout, seen: EncounterSeen | null): n
   );
 }
 
-/** The still water over the drowned floors of `drowned` (`drownedNow`), each cell its own face over its room's set's
+/** The foul water over the drowned floors of `drowned` (`drownedNow`), each cell its own face over its room's set's
  *  floor; null for none. */
 export function waterMesh(layout: DungeonLayout, drowned: readonly number[]): ForgedModel | null {
   const seals = layout.encounters?.seals ?? [];
@@ -83,7 +84,7 @@ export function waterMesh(layout: DungeonLayout, drowned: readonly number[]): Fo
     const set = setOf(layout, seal.room);
     for (const cell of seal.drowned) {
       const [x, y] = [(cell % layout.columns) * layout.cell, Math.floor(cell / layout.columns) * layout.cell];
-      face(mesh, [COLOUR.water, set], cornersAt(x, y, x + layout.cell, y + layout.cell, WATER_M), [0, 0, 1], WATER_M);
+      face(mesh, [COLOUR.foulWater, set], cornersAt(x, y, x + layout.cell, y + layout.cell, WATER_M), [0, 0, 1], WATER_M);
     }
   }
   return mesh.model();

@@ -37,8 +37,8 @@ export interface Banner {
 export type BannerBeat = 'begun' | 'stage' | 'heroic' | 'missed' | 'won' | 'failed' | 'chance' | 'soon';
 
 /** What the display shows of the zone's public event this frame: its banner and the beat it slides in for, the
- *  places the compass marks, each store's health over it while a raid runs (struck: under attack), and the least
- *  mood it holds the music to. */
+ *  places the compass marks, each store's health over it while a raid runs (struck: under attack), the least mood it
+ *  holds the music to, and an Elite Dungeon's Court the part its Boss's score plays (by its wards broken). */
 export interface PublicShown {
   readonly banner: Banner | null;
   readonly beat: BannerBeat | null;
@@ -49,6 +49,7 @@ export interface PublicShown {
     readonly struck?: boolean;
   }[];
   readonly mood?: 'tension' | 'peak' | null;
+  readonly part?: number;
 }
 
 /** How high over a store's foot its bar stands, metres: over its stack and tarp (1.6 m), as a plate over a head. */

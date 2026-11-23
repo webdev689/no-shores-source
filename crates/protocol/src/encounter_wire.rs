@@ -37,6 +37,8 @@ pub(crate) fn encounter_offset<'built>(
         reckoning_ticks: seen.reckoning_ticks,
         reckoning_at: seen.reckoning_at,
         fury: seen.fury,
+        fury_ticks: seen.fury_ticks,
+        slam_ticks: seen.slam_ticks,
     };
     messages::EncounterSeen::create(builder, &args)
 }
@@ -70,5 +72,7 @@ pub fn encounter_of(snapshot: &messages::Snapshot<'_>) -> Option<EncounterSeen> 
         reckoning_ticks: read.reckoning_ticks(),
         reckoning_at: read.reckoning_at(),
         fury: read.fury(),
+        fury_ticks: read.fury_ticks(),
+        slam_ticks: read.slam_ticks(),
     })
 }

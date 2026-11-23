@@ -318,9 +318,10 @@ node's entrances, and a sea island's from its door at sea, each through the Game
   player went in by, online its address with `?entrance=<number>`, alone the node's room opened again in the page and
   joined with `room_join_at`. The player stands 1.5 m before the entrance's door, facing away from it; online the
   room keeps them there once it keeps their character as come out of that dungeon, else it stands them at a spawn.
-- **An Elite Dungeon's encounters.** Its seals, its pads and drowned floors, the Court's anchors and the Reckoning's
-  light are drawn and its banner shown as [[Dungeons]] says ("Encounters", "In the Game"), from the layout's plan and
-  each snapshot's `encounter`, held with the cache (`heardRun`).
+- **An Elite Dungeon's encounters.** Its seals, its pads and foul floors, the Court's anchors, the Boss's ward, slam
+  and Fury and the Reckoning's light are drawn, its banner and compass marks shown and its moments heard as [[Dungeons]]
+  says ("Encounters", "In the Game"), from the layout's plan and each snapshot's `encounter`, held with the cache
+  (`heardRun`).
 - **An Abyss run.** The place line ends with the revives the company has left, from each snapshot ("5 revives
   left", "1 revive left", "No revives left"). When the room says this player's company fell (`Wiped`, `heardRun`),
   the page takes them out by the way they came in, even with the menu open, the veil saying "Your company fell.

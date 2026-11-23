@@ -4,6 +4,7 @@ import { test } from 'node:test';
 import * as flatbuffers from 'flatbuffers';
 import { Course, Input } from '../../../generated/messages/ts/overlook/wire.ts';
 import { PROTOCOL } from '../../../generated/messages/ts/version.ts';
+import { EVENT } from '../combat/cues.ts';
 import type { FightOrders } from '../rules/fightRules.ts';
 import { fighterView, glanceView, statusesOf } from '../rules/fighters.ts';
 import { floatsOf, startMovementRules } from '../rules/movementRules.ts';
@@ -98,7 +99,8 @@ test('a welcome and a snapshot the server wrote read back to the bit', async () 
     seals: [
       { kind: 1, state: 2, progress: 1, marks: [2, 2, 2, 2, 2], relic: 1 },
       { kind: 2, state: 1, progress: 0.45, marks: [1, 0], relic: 1 },
-      { kind: 3, state: 0, progress: 0, marks: [0], relic: 1 },
+      { kind: 3, state: 0, progress: 0, marks: [0, 2], relic: 1 },
+      { kind: 4, state: 1, progress: 0.12, marks: [1], relic: 0.64 },
     ],
     woken: true,
     boss: 31,
@@ -106,8 +108,10 @@ test('a welcome and a snapshot the server wrote read back to the bit', async () 
     wardsBroken: 1,
     anchors: [1, 0.333, 0],
     reckoningTicks: 300,
-    reckoningAt: 2,
+    reckoningAt: 1,
     fury: 4,
+    furyTicks: 3_600,
+    slamTicks: 90,
   });
   assert.deepEqual(event?.marks, [
     { kind: MARK.fissure, id: 0, at: [10, -20.5, 3.25], health: 0.25, state: 0 },
@@ -134,6 +138,17 @@ test('a welcome and a snapshot the server wrote read back to the bit', async () 
     [
       [1233n, 3, 1, 12, 9, 0, 0, false, 0, 0],
       [1234n, 1, 8, 9, 12, 35, 3, true, 2, 14],
+      ...[
+        EVENT.sealBroken,
+        EVENT.runeWrong,
+        EVENT.wardRaised,
+        EVENT.wardBroken,
+        EVENT.reckoningLanded,
+        EVENT.bossWoke,
+        EVENT.relicDrained,
+        EVENT.drowned,
+        EVENT.bossSlammed,
+      ].map((kind) => [1235n, kind, 0, 0, 9, 1, 0, false, 0, 0]),
     ],
   );
   const [arrow] = snapshot.shots;

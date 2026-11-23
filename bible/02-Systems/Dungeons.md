@@ -61,11 +61,15 @@ code:
   - crates/room/src/seals.rs#keep_seal
   - crates/room/src/court.rs#keep_court
   - crates/room/src/court.rs#warded
+  - crates/room/src/court.rs#reckoning_reach
+  - crates/room/src/court.rs#hold_ward
   - crates/protocol/src/encounter_wire.rs#encounter_offset
   - crates/room-wasm/src/dungeon_door.rs#encounters_json
   - client/src/network/encounterMessages.ts#encounterOf
   - client/src/game/encounterLaw.ts#encounterBanner
   - client/src/game/encounterLaw.ts#encounterMarks
+  - client/src/game/encounterLaw.ts#encounterPlaces
+  - client/src/game/encounterCues.ts#EncounterCues
   - client/src/game/encounterMesh.ts#layEncounters
   - client/src/game/encounterMesh.ts#waterMesh
 ---
@@ -310,63 +314,92 @@ lays them where its end foe is a Boss (`laid_dungeon`); no patrol's or sea islan
 - **The plan** (`plan_encounters`) is laid from the dungeon alone, so the room and the page lay the same: its draws on
   a lane of its own, named for the dungeon's cells, its way in and its portal (`encounters:<hash>:<way in>:<portal>`),
   its maths + - * / and comparisons. A dungeon of four blocks holds two seals and one of five three, each in its own
-  room, never two of a kind. The rooms past the way in's, but the end and every landmark's, are taken in walk order;
-  each seal is tried in the room nearest the middle of its stretch of the walk, then outward, with each kind not yet
-  laid in an order drawn once, and the first that fits is laid there. A room too small or too cluttered for a kind is
-  passed over. Every one of the 18 lays its full count; most hold a Litany, and five an Ascent.
+  room, never two of a kind. The rooms past the way in's, but the end and every landmark's, are taken in walk order
+  and split into as many stretches as there are seals. For each, while no Ascent is laid, an Ascent is tried first in
+  every room of its stretch (never the first room of the walk where there are four or more), nearest the stretch's
+  middle first; else each kind not yet laid, in an order drawn once, in the room nearest the middle, then outward, and
+  the first that fits is laid there. A room too small, too low or too cluttered for a kind is passed over. Every one
+  of the 18 lays its full count; nine lay an Ascent, and a test holds it to nine or more.
 - **Where pieces stand.** A piece stands on a spot of its room: a cell's middle or one of its four quarters' (0.8 m
   each way toward a corner), never on the way in's or the portal's cell, nor a doorway's (but an anchor), each 0.9 m from
   every solid. Runes stand 2 m apart at the least, plates 6.4 m (two cells).
-- **The Litany** (a puzzle): four to six runes, drawn, on its floor. While no rune is lit, they show in turn, each a
-  second, then a two second pause, and again. A living player stepping within 0.9 m of the next rune in order lights
-  it; one stepping on any rune further on darkens them all, starts the show again two seconds on and stands two of the
-  dungeon's foes at its doorways (`RuneWrong`). It never harms anyone itself. Every rune lit breaks it.
-- **The Weighing** (split up): three plates as far apart as the room allows, or the two farthest in a run of fewer
-  than three players. A plate stood on by a living player within 1 m stays held 3 s after the last steps off, and in a
-  run of one player the walk between its two plates besides (`plate_linger`), so a lone player walking, not only
-  sprinting, can hold both. It is held each tick every plate in play is, and broken once held 6 s in all; while it runs a
-  wave comes every 15 s at its doorways.
-- **The Ascent** (a climb): the longest line of free cells one beside the next from the doorway a company comes in by,
-  three to six, a pad on each: 1.6 m square, the first 0.4 m high and reaching back to the doorway's cell, each 0.4 m
-  over the one before, the top one under the room's lowest ceiling less a body's height and 0.3 m. Clear of rock,
-  solids, doorways, torches' cells, the way in and the portal. Its pads are blocks a body stands on, jumps between and
-  climbs ([[Movement]]), and walls on the navmesh. Its floor (its room's cells but its doorways') is drowned while the
-  seal holds: once a second it takes 8% of their health from every living player standing on it. The seal stone on
-  the top pad's middle, stood on for 2 s in all, breaks it. Every Ascent of the 18 is proven climbable: a body run by
-  the movement crate from the doorway, running and jumping at each pad's edge, reaches the stone without touching the
-  floor again.
+- **Counted by the living in the room.** Every seal counts the living players standing in its room's cells: one down
+  or away is not counted, for plates, waves or the stone.
+- **The Litany** (a puzzle): four to six runes, drawn, on its floor. While it runs they show in turn, each a second,
+  then a two second pause, and again, the show going on past the runes already lit, which show lit. A step is a living
+  player's body on the ground within 0.9 m of a rune (a dodge or a jump across one is none). The next rune in order
+  lights; a lit one stepped again is ignored; any rune further on is wrong: it shows red for a second, every rune goes
+  dark, the show starts again two seconds on, two of the dungeon's foes stand at its doorways (`RuneWrong`), and no step
+  counts until the show starts again. After the first rune each next is stepped within 3 s, or every rune goes dark
+  with no foes. It never harms anyone itself. Every rune lit breaks it.
+- **The Weighing** (split up): three plates as far apart as the room allows, or the two farthest while fewer than three
+  living players stand in its room. A plate stood on by a living player within 1 m stays held 3 s after the last steps
+  off, and for a lone player the walk between its two plates besides (`plate_linger`), so a lone player walking, not
+  only sprinting, can hold both. It is held each tick every plate in play is, and broken once held 20 s in all; a wave
+  comes at its doorways 3 s after it starts, then every 12 s.
+- **The Ascent** (a climb): four to six pads, each 1.6 m square. The first stands on a cell beside the doorway a
+  company comes in by, reaching back to that doorway's cell, 1.6 m high, mantled from the dry doorway. Each next stands
+  a leap from the one before, 4.4 m to 5.2 m edge to edge along the line between their middles, through open air (no
+  solid within a body's width and a hand of that line, as the dungeon's solids are walls to a body however high it
+  leaps), and every two pads stand 4.4 m apart edge to edge at the least: a run off the edge falls short and only a
+  running jump crosses. Each rises 0.4 m over the one before, at most to the room's lowest ceiling less a body's height
+  and 0.6 m (a jump's rise and a margin), the last 0.3 m; every pad after the first stands 1.9 m or more, over a
+  mantle's reach (1.8 m) from the floor, so a room lower than 4.4 m lays none. The pads' middles are searched on a
+  0.8 m grid over the room's cells but its doorways', torches', the way in's and the portal's, clear of every solid,
+  the longest run kept. Its pads are blocks a body stands on, jumps between and climbs ([[Movement]]), and walls on the
+  navmesh. Its floor (its room's cells but its doorways') is foul water while the seal holds: while it runs, once a
+  second it takes 12% of their health from every living player standing on it (`Drowned`, told to that player). Every
+  living player in its room standing on the seal stone, on the top pad's middle, together for 2 s in all breaks it.
+  Every Ascent of the 18 is proven: a body run by the movement crate from the doorway, taking its run at each leap from
+  the far side of its pad and jumping at the edge, reaches the stone without touching the foul floor; and from each pad
+  the next is reached by a running jump and never by a run with no jump without touching the floor.
 - **The Holdfast** (a defence): a relic over the spot nearest its room's middle whose ring, 3 m round, lies on the
   room's floor all four ways. It is held each tick a living player stands in the ring, and broken once held 45 s in
-  all. A wave comes every 12 s at its doorways. Each living foe in the ring drains a twentieth of the relic a second;
-  a drained relic halves what was held and stands whole again (`RelicDrained`).
-- **Seals' rules** (`seals.rs`): a seal waits until a living player stands in its room, then runs until broken
-  (`SealBroken`, told to every player with how many are broken). A wave is one of the dungeon's own Major or Elite
-  foes for each player in the run, two to four, drawn from its garrison's table at its foes' levels, standing at the
-  room's doorways and hunting the nearest player; a seal's waves stand no more while eight of them live, nor past the
-  room's most foes.
+  all. A wave comes at its doorways 2 s after it starts, then every 12 s. Each living foe in the ring drains a twentieth
+  of the relic a second, and while none stands in it the relic regains a fortieth a second, to whole; a drained relic
+  halves what was held and stands whole again (`RelicDrained`).
+- **Seals' rules** (`seals.rs`): a seal waits until a living player stands in its room and no living foe of the
+  garrison does (a wave's foes do not hold it), then runs until broken (`SealBroken`, told to every player with how
+  many are broken). A wave is one of the dungeon's own Major or Elite foes for each living player in its room, two to
+  four, drawn from its garrison's table at its foes' levels, standing at the room's doorways and hunting the nearest
+  living player; a seal's waves stand no more while eight of them live, nor past the room's most foes.
+- **Spoilless.** Every foe an encounter stands (its waves, a wrong rune's, a ward's) drops nothing when killed, as a
+  defence tried again stands foes that drop nothing (`quests.spoilless`): kills there pay their experience, and the
+  seal's breaking and the cache stay the reward. An unfinished seal's waves keep coming, so they could otherwise be
+  farmed.
 - **The Court** (`court.rs`). The Boss is held back off its post, its post never counted cleared, until every seal is
-  broken; then it stands (`BossWoke`). At two thirds of its health, and again at one third, a blow that would take it
-  past is held there and the Boss is warded (`WardRaised`), two of the dungeon's foes standing at its anchors. Its
-  three anchors stand in the end room 2.4 m or more from its post, each the spot farthest from the post and those taken
-  before. A living player within 1 m of an anchor fills it; each filled for 3 s, the ward breaks (`WardBroken`). A
-  fallen Boss never stands again in its run, though the other posts do, so its Court is fought once a run
-  (`stands_again`).
-- **The Reckoning.** From the second ward on, while the Boss stands, every 50 s: a ring of light 2.5 m wide at one
-  anchor, in turn, shown 12 s, then 70% of their health from every living player in the end room outside it, a blow
-  from the Boss (`ReckoningLanded`); a player elsewhere in the dungeon, as one standing again at the way in, is not
-  reached.
-- **Fury.** From 8 minutes after the Boss woke, every foe's blow on a player weighs a tenth more, one more tenth every
-  30 s, to three times (`modded_blow`).
-- **Harm** from the drowned floor and the Reckoning is settled as a foe's blow is (`settle`), unguarded and
+  broken; then it stands (`BossWoke`), and its health is made a match for the living players then, half again for each
+  beyond the first, as a public event's great foes are (`toughen`). At two thirds of its health, and again at one
+  third, a blow that would take it past is held there and the Boss is warded (`WardRaised`): a wave of the dungeon's
+  foes for each living player, two to four, stands at its anchors, and another 15 s on while the ward still stands.
+  While warded the Boss runs back to its post and stands there (`hold_ward`), striking where it stands, and every 8 s
+  from the ward rising it slams: a ring 4 m round it shown 2 s, then 30% of their health from every living player
+  inside it (`BossSlammed`). Its three anchors stand in the end room 2.4 m or more from its post, each the spot
+  farthest from the post and those taken before. A living player within 1 m of an anchor fills it; each filled for
+  3 s, the ward breaks (`WardBroken`). With three or more living players, an anchor left empties 6 s after its last
+  player leaves unless all three are filled; with one or two it keeps what it holds. A fallen Boss never stands again
+  in its run, though the other posts do, so its Court is fought once a run (`stands_again`).
+- **The Reckoning.** From the first ward broken, while the Boss stands, every 40 s: a ring of light 2.5 m wide at one
+  anchor, in turn, shown 10 s, then 70% of their health from every living player it reaches outside it, a blow from
+  the Boss (`ReckoningLanded`). It reaches the end room and every corridor its doorways open onto and the rooms those
+  reach, as far as the next room's doorway (`reckoning_reach`); a player farther off, as one standing again at the way
+  in, is not reached.
+- **Fury.** Its clock starts when a living player first stands in the end room after the Boss wakes, not as it wakes,
+  so the walk from the last seal costs nothing. From 8 minutes on, every foe's blow on a player weighs a tenth more, one
+  more tenth every 30 s, to three times (`modded_blow`). It ends with the Boss.
+- **Harm** from the foul floor, the slam and the Reckoning is settled as a foe's blow is (`settle`), unguarded and
   undodged: shields, deaths, revives and the plates' displays treat it as any harm.
 - **A wipe at Abyss** keeps every broken seal; the rest wait again, every wave is gone before the posts stand again
   (any dungeon's, as a wave never stands again), and the Court starts over, its Boss held back again unless every seal
   is broken. Leaving and coming back keeps everything: it is the room's.
-- **On the wire.** Each snapshot carries the encounters whole (`EncounterSeen`, about 190 bytes): each seal's kind,
-  state, progress, its pieces' marks and its relic's strength; whether the Boss woke and its number; the ward up and
-  those broken; each anchor's progress; the ticks until a Reckoning lands and its anchor; and Fury's step. Where the
-  pieces stand comes once with the layout (`room_dungeon`'s `encounters`). The 18 Elite Dungeons' layouts, their
-  encounters with them, are pinned by one hash, natively and through WebAssembly.
+- **On the wire.** Each snapshot carries the encounters whole (`EncounterSeen`, about 240 bytes): each seal's kind,
+  state, progress, its pieces' marks (a Litany's runes dark, showing, lit or wrong; a Weighing's plates in play and a
+  Holdfast's ring stood on; an Ascent's players on its stone and the living in its room) and its relic's strength;
+  whether the Boss woke and its number; the ward up and those broken; each anchor's progress; the ticks until a
+  Reckoning lands and its anchor; Fury's step; the ticks until Fury begins in its last count; and the ticks until the
+  slam lands. Where the pieces stand comes once with the layout (`room_dungeon`'s `encounters`, with the slam's
+  reach). The 18 Elite Dungeons' layouts, their encounters with them, are written natively for the page's test, which
+  lays them through WebAssembly and compares them field by field.
 
 ## In the Game
 
@@ -458,22 +491,31 @@ or glows, and is read as standing none (`readDungeon`).
   table says, turned by the room's yaw; E reaches a door within 2.5 m of its quad's middle.
 - **The ground inside**: the fight's door predicts on the dungeon's own ground (`fighter_dungeon`), as the room
   judges bodies; the jambs are drawn from the same `boxes`.
-- **The encounters** (`encounterMesh.ts`, `encounterLaw.ts`), from the layout's plan and each snapshot's word:
-  each Ascent's pads in its room's stone, its wall picture under a band of trim and its floor on top, the last with
-  the seal stone glowing; the drowned floor as the dungeon's still water over its cells while the seal holds, gone as
-  it breaks; a slab of the end room's trim under each anchor and a crystal over each relic. On the floor, rings: runes
-  dim, lit gold under a beam while showing and green once stepped; plates dim under a beam, gold while held; the seal
-  stone's ring; the relic's ring, reddening as it drains; while a ward stands, each anchor ringed under a beam and
-  filling as it is stood on, and a ring round the Boss; a Reckoning's ring of light under a tall beam while it is
-  shown. Under the compass the public event's banner shows the seals broken of how many, the seal the player stands in
-  (or the one running) with its task in a line ("Step on the runes in the order they light", "Hold all three plates
-  together" or "Hold both plates together", "Climb to the seal stone", "Hold the relic's ring") and its progress; once
-  the Boss wakes, the Court ("Defeat the Boss", "Break the anchors" while warded, "Stand in the light" with the
-  Reckoning's seconds left in the banner's large clock, red and pulsing); between seals only the count; none once
-  the Boss has fallen. It slides in
-  afresh as the Boss wakes, a seal breaks or a ward rises or breaks; the music stings as one breaks or rises, and its
-  mood holds tense while a seal runs and at its peak in the Court. A wrong rune and a drained relic play the refused
-  sound. The page's fighter predicts on the pads (`fighter_dungeon`).
+- **The encounters** (`encounterMesh.ts`, `encounterLaw.ts`, `encounterCues.ts`), from the layout's plan and each
+  snapshot's word: each Ascent's pads in its room's stone, its wall picture under a band of trim and its floor on top,
+  the last with the seal stone glowing; the drowned floor as foul water over its cells while the seal holds, a sickly
+  green over its bed whose glow breathes slowly (`FOUL_FLAG`), apart from the dungeon's plain still water, gone as it
+  breaks; a slab of the end room's trim under each anchor and a crystal over each relic. On the floor, rings: runes
+  dim, lit gold under a beam while showing, green once stepped and red under a beam for a second when stepped wrong;
+  plates dim under a beam, gold while held; the seal stone's ring, lighting as its players stand on it; the relic's
+  ring coloured by its strength, held or not, and its strength as an arc inside it; while a ward stands, each anchor
+  ringed under a beam and filling as it is stood on, a ring round the Boss and a dome of light over it; the slam's ring
+  4 m round the Boss, filling as it comes; a red ring round the Boss through Fury; a Reckoning's ring of light under a
+  tall beam while it is shown, and a flash from the light as it lands. Under the compass the public event's banner
+  shows the seals broken of how many, the seal the player stands in (or the one running) with its task in a line
+  ("Step on the runes in the order they light", "Hold all three plates together" or "Hold both plates together",
+  "Climb to the seal stone together", "Hold the relic's ring") and its progress (an Ascent's "2 of 4" on the stone, a
+  Holdfast's "Relic 40%"); once the Boss wakes, the Court ("Defeat the Boss", "Break the anchors" while warded, "Get
+  clear of the Boss" while its slam is shown, "Stand in the light" with the Reckoning's seconds left in the banner's
+  large clock, red and pulsing), "Fury in 1:00" in its last minute and "Fury ×1.4" once it begins; between seals only
+  the count; none once the Boss has fallen. The compass marks each unbroken seal's room, then the end room once the Boss
+  wakes, until it falls. It slides in afresh as the Boss wakes, a seal breaks or a ward rises or breaks; the music
+  stings as a seal breaks or a ward is won and as the Boss wakes, its mood holds tense while a seal runs and at its peak
+  in the Court, and the Boss's score plays its part by the wards broken (its last stand still by its health). A ward
+  rising rings its own sound at the Boss; a Reckoning's last three seconds tick and it lands with thunder at its light;
+  the slam thuds at the Boss; the foul floor's harm sounds on the player it harms. A wrong rune, a drained relic and a
+  relic falling past three tenths (once each time) play the refused sound. The page's fighter predicts on the pads
+  (`fighter_dungeon`).
 - **The return portal** (`layout.portal`): an arch of the end room's trim round a face, dark while the cache is shut
   and glowing, lighting the room, while it is open; E "Leave" within 2.5 m while it is open.
 
@@ -487,8 +529,10 @@ or glows, and is read as standing none (`readDungeon`).
 - No fountain or cart is laid: each is wider than a cell.
 - A caverns wall set spans most of its wall and its whole height, so wherever one stands, at most every third cell
   along a cave room's straight walls, that wall is drawn as flat rock.
-- Movement has no ceilings: a dungeon's are never reached because only an Ascent's pads are climbed, kept a body's
-  height and 0.3 m under the ceiling, and a jump rises about half a metre.
+- Movement has no ceilings: a dungeon's are never reached because only an Ascent's pads are climbed, each leapt from
+  kept a body's height and 0.6 m under the ceiling (a jump rises about half a metre), the last 0.3 m.
+- An Ascent's pads can still be climbed from the foul floor, as any block too high to mantle can: it costs a second or
+  two in the water, 12% of their health a second.
 - The page's movement rules find only the floor in a dungeon, so a mark or a drop over a pad lies on the floor under
   it; the seal stone's ring is laid at its pad's top by the plan.
 - A Boss that walks home to its post and heals keeps the ward that stood and the wards it broke.

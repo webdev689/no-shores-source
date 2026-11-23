@@ -14,6 +14,7 @@ import {
   TENSION_HOLD_S,
   type Verdict,
   bossPart,
+  courtPart,
   hear,
   seaSongFor,
 } from './directorLaw.ts';
@@ -112,6 +113,11 @@ test('death is a moment: the defeat sting in the score that played, then silence
 
 test('a Boss engaged plays its own score, its phase by its health, the last stand in its last tenth', () => {
   assert.deepEqual([1, 0.7, 0.66, 0.4, 0.3, 0.1, 0.05].map(bossPart), [1, 1, 2, 2, 3, 'last', 'last']);
+  // An Elite Dungeon's Court: its part by its wards broken, held at two thirds and one third, its last stand by health.
+  assert.deepEqual(
+    [courtPart(2, 1), courtPart(2, 2), courtPart(1, 3), courtPart('last', 1), courtPart(3, undefined)],
+    [1, 2, 3, 'last', 3],
+  );
   const thule = (health: number, more: Partial<HeardFoe> = {}) =>
     foe({ id: 9, name: 'Captain Brannoc Thule', rank: 5, alert: 2, engaged: true, health, ...more });
   const woke = run([{ ...calm, foes: [thule(1)] }]);

@@ -6,13 +6,16 @@ use crate::wire::overlook::wire as messages;
 use room::encounters::{EncounterSeen, SealSeen};
 
 /// The encounters the client's test expects: a Litany broken, a Weighing running two plates with the first held, an
-/// Ascent waiting; the Boss, number 31, warded at one third with one ward broken, its anchors part stood on; a
-/// Reckoning 300 ticks off at the third anchor; Fury at its fourth step.
+/// Ascent waiting with none of two on its stone and a Holdfast's relic part drained; the Boss, number 31, warded at
+/// one third with one ward broken, its anchors part stood on; a Reckoning 300 ticks off at the second anchor; Fury at
+/// its fourth step, 3,600 ticks once to its start; its slam 90 ticks off. Every field differs from its neighbours, so a
+/// swap shows.
 pub(crate) static ENCOUNTER: std::sync::LazyLock<EncounterSeen> = std::sync::LazyLock::new(|| EncounterSeen {
     seals: vec![
         SealSeen { kind: 1, state: 2, progress: 1000, marks: vec![2, 2, 2, 2, 2], relic: 1000 },
         SealSeen { kind: 2, state: 1, progress: 450, marks: vec![1, 0], relic: 1000 },
-        SealSeen { kind: 3, state: 0, progress: 0, marks: vec![0], relic: 1000 },
+        SealSeen { kind: 3, state: 0, progress: 0, marks: vec![0, 2], relic: 1000 },
+        SealSeen { kind: 4, state: 1, progress: 120, marks: vec![1], relic: 640 },
     ],
     woken: true,
     boss: 31,
@@ -20,8 +23,10 @@ pub(crate) static ENCOUNTER: std::sync::LazyLock<EncounterSeen> = std::sync::Laz
     wards_broken: 1,
     anchors: vec![1000, 333, 0],
     reckoning_ticks: 300,
-    reckoning_at: 2,
+    reckoning_at: 1,
     fury: 4,
+    fury_ticks: 3_600,
+    slam_ticks: 90,
 });
 
 fn bare() -> Snapshot<'static> {
@@ -59,8 +64,8 @@ fn an_elite_dungeons_encounters_cross_whole_and_a_room_without_them_sends_none()
     let read = flatbuffers::root::<messages::FromRoom>(&none).unwrap().snapshot().unwrap();
     assert_eq!(encounter_of(&read), None);
     let added = bytes.len() - none.len();
-    // Measured: 192.
-    assert!(added <= 200, "{added} bytes");
+    // Measured: 240.
+    assert!(added <= 248, "{added} bytes");
 }
 
 #[test]
