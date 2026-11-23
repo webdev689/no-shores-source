@@ -53,7 +53,16 @@ export function standingDrawers(
       castInto: (pass, fromEye, shot, _time, shadow) =>
         parts.figureView.castInto(pass, fromEye, shot.eye, shot.yaw, figures, shadow),
       drawInto: (pass, fromEye, shot, _time, shadow) =>
-        parts.figureView.drawInto(pass, fromEye, shot.eye, shot.yaw, figures, shadow),
+        parts.figureView.drawInto(
+          pass,
+          fromEye,
+          shot.eye,
+          shot.yaw,
+          figures,
+          shadow,
+          undefined,
+          !!(parts.city || parts.layouts),
+        ),
     },
     fight?.over,
   ];

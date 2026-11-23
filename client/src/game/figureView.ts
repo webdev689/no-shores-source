@@ -21,7 +21,7 @@ const LIT_AT_M = 1.2;
 /** A figure's card stands upright on its feet, measured from the eye as the land is; the forge's pixels are drawn
  *  texel for texel and anything clear is cut away. Shared by the figures' pass and their shadow's. */
 const CARD = /* wgsl */ `
-// 'right' holds the eye's world height in z, for the pull.
+// 'right' holds the eye's world height in z and, in w, 1 where the figures stand on a city's ground, which is pulled.
 struct View { from_eye: mat4x4f, right: vec4f }
 @group(0) @binding(0) var<uniform> view: View;
 struct Card { feet: vec4f, size: vec4f, root: vec4f, status: vec4f, look: vec4f, tint: vec4f, light: vec4f }
@@ -80,8 +80,7 @@ struct Out { @builtin(position) position: vec4f, @location(0) corner: vec2f, @lo
   let corner = CORNERS[index];
   let offset = card_point(corner, view.right.xy, card_up(view.right.xy));
   var out: Out;
-  // Pulled nearer as the city's ground is drawn, so its slabs never cut off the feet standing on them.
-  out.position = view.from_eye * vec4f(pulled(offset, offset.z + view.right.z), 1.0);
+  out.position = view.from_eye * vec4f(offset, 1.0);
   // A smear stands a hair behind its figure (depth is reversed), so the figure is drawn over it.
   if (card.tint.w > 0.5) { out.position.z = out.position.z * 0.999; }
   out.corner = corner;
@@ -95,7 +94,12 @@ const SHADED = 0.55;
 // The least light a Lattice figure's crystal shows at.
 const CRYSTAL_FLOOR = 0.8;
 
-@fragment fn card_fragment(in: Out) -> @location(0) vec4f {
+// How far up from its feet a figure on a city's ground is pulled nearer as that ground is, fading to none: its soles win
+// over the slabs under them, and nothing at its body's height (a hit's star, a weapon's glow) moves in depth.
+const FEET_BAND_M = 0.25;
+struct Drawn { @location(0) colour: vec4f, @builtin(frag_depth) depth: f32 }
+
+@fragment fn card_fragment(in: Out) -> Drawn {
   let root = root_texel();
   let at = card_texel(card.status, card.look, texel_at(in.corner), vec2i(textureDimensions(picture)), root);
   if (at.x < 0) { discard; }
@@ -124,7 +128,11 @@ const CRYSTAL_FLOOR = 0.8;
   // What befalls the figure shows in its own pixels, unshaded: a flash, its statuses, its death.
   let shown = card_shade(card.status, card.look, card.tint, picture, at, lit, root);
   if (shown.a < 0.5) { discard; }
-  return vec4f(shown.rgb, 1.0);
+  let near_feet = view.right.w * (1.0 - smoothstep(0.0, FEET_BAND_M, in.from_eye.z - card.feet.z));
+  let clip = view.from_eye * vec4f(pulled(in.from_eye, in.from_eye.z + view.right.z), 1.0);
+  // A smear keeps standing a hair behind its figure, as its vertices put it.
+  let feet_depth = select(clip.z / clip.w, clip.z / clip.w * 0.999, card.tint.w > 0.5);
+  return Drawn(vec4f(shown.rgb, 1.0), mix(in.position.z, feet_depth, near_feet));
 }
 
 // A figure's contact shade: a soft dark disc on the ground at its feet. Where the near shadow map holds the figure's
@@ -143,7 +151,8 @@ struct Shade { @builtin(position) position: vec4f, @location(0) rim: f32, @locat
   let radius = vec2f(0.45, 0.45) * rim * select(1.0, 0.75, own);
   let offset = vec3f(card.feet.xy + lean * 0.5 * rim + vec2f(cos(angle), sin(angle)) * radius, card.feet.z + 0.03);
   var out: Shade;
-  out.position = view.from_eye * vec4f(pulled(offset, offset.z + view.right.z), 1.0);
+  // On a city's ground, pulled as that ground is, so the shade shows over the slab it lies on.
+  out.position = view.from_eye * vec4f(select(offset, pulled(offset, offset.z + view.right.z), view.right.w > 0.5), 1.0);
   out.rim = rim;
   out.darkness = select(0.42, 0.3, own);
   return out;
@@ -302,12 +311,14 @@ export class FigureView implements CardMaker {
     yaw: number,
     figures: readonly CardAt[],
     light?: Light,
+    onCity = false,
   ): GPUBindGroup[] {
-    if (this.written?.fromEye === fromEye && this.written.figures === figures) return this.written.groups;
+    // The view is written each call, so the draw's word on the city's ground is the one its pass reads.
     const values = new Float32Array(VIEW_BYTES / 4);
     values.set(fromEye);
-    values.set([Math.cos(yaw), Math.sin(yaw), eye[2], 0], 16);
+    values.set([Math.cos(yaw), Math.sin(yaw), eye[2], onCity ? 1 : 0], 16);
     this.gpu.device.queue.writeBuffer(this.viewBuffer, 0, values);
+    if (this.written?.fromEye === fromEye && this.written.figures === figures) return this.written.groups;
     const time = statusClock();
     // Each card, then again as its smear where its own swing leaves one: its shape above the hips, shifted back
     // along the stroke and standing behind it.
@@ -358,7 +369,8 @@ export class FigureView implements CardMaker {
 
   /** Draws the figures from an eye at `eye` (world metres), with the camera's view-projection measured from the eye
    *  and its yaw (radians clockwise from north), in the sun's shadows when a map is given, or lit by `light` where
-   *  no sun shines; then the outlines of the weapons that glow. */
+   *  no sun shines; then the outlines of the weapons that glow. `onCity`: they stand where a city's ground is drawn,
+   *  nearer in depth than it stands, and their feet are drawn so too. */
   drawInto(
     pass: GPURenderPassEncoder,
     fromEye: Float32Array,
@@ -367,9 +379,10 @@ export class FigureView implements CardMaker {
     figures: readonly CardAt[],
     shadow?: ShadowMap,
     light?: Light,
+    onCity = false,
   ): void {
     if (figures.length === 0) return;
-    const groups = this.groupsFor(fromEye, eye, yaw, figures, light);
+    const groups = this.groupsFor(fromEye, eye, yaw, figures, light, onCity);
     pass.setBindGroup(0, this.viewGroup);
     skyUniformFor(this.gpu.device).bindShared(pass);
     pass.setBindGroup(1, (shadow ?? ShadowMap.none(this.gpu)).receiverGroup(this.pipeline));
