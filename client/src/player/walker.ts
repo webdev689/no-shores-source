@@ -10,6 +10,8 @@ import type { Action, FighterView } from '../rules/fighters.ts';
 import type { Body, MovementRules } from '../rules/movementRules.ts';
 import type { CardAt, Cards } from './cards.ts';
 import type { Dress } from './dressing.ts';
+import type { GearState } from '../network/gearMessages.ts';
+import { MOUNT_SLOT, worn } from './gear.ts';
 import type { Outfit } from '../forge/outfit.ts';
 import { FIGHT_TICKS, dodgeFacing, fightOf } from './fightMoves.ts';
 import { cardStand, type Placed, viewOf } from './figures.ts';
@@ -137,8 +139,8 @@ export class Walker {
   spareGlow: GlowLook = 0;
   /** The element the last cast glows in: its Art's. */
   castGlow: GlowLook = 0;
-  /** Whether a horse is worn in the Mount slot, as the page reads it from the gear; with no room, the page rides. */
-  rides = true;
+  /** Whether a horse is worn in the Mount slot, as the page reads it from the gear the room sends (`ridesIn`). */
+  rides = false;
   /** Set when the mount key was pressed with no horse to ride, until the page has said so. */
   noHorse = false;
   /** What the figure showed last frame, and its dress as text, as a room is told with each tick. */
@@ -223,6 +225,20 @@ export class Walker {
     this.surge = surge;
     this.firstPerson.surge = surge;
     if (contact) this.firstPerson.contact(contact);
+  }
+
+  /** Reads from the gear whether a horse is worn in the Mount slot; one taken off under its rider sets them on foot,
+   *  as the room has them. */
+  ridesIn(gear: GearState): void {
+    this.rides = worn(gear, MOUNT_SLOT) !== undefined;
+    if (!this.rides && this.player.mounted) this.player = { ...this.player, mounted: false };
+  }
+
+  /** Whether the mount key was pressed with no horse since last asked; asking clears it, so it is said once. */
+  takeNoHorse(): boolean {
+    const refused = this.noHorse;
+    this.noHorse = false;
+    return refused;
   }
 
   /** Plays a cast in `glow`, its Art's element: the figure's cast move, its spark in that colour, and the first

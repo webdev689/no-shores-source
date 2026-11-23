@@ -12,7 +12,7 @@ import type { Smear, Vector } from '../combat/swingArcs.ts';
 import type { CardAt, Cards } from '../player/cards.ts';
 import type { Dress } from '../player/dressing.ts';
 import type { GlowLook } from '../elementGlow.ts';
-import { MOUNT_SLOT, heldElements, worn } from '../player/gear.ts';
+import { heldElements } from '../player/gear.ts';
 import { gearOutfit, otherLoadout, spareOutfit } from '../player/gearLooks.ts';
 import { cardStand, frameAt, type Placed, viewOf } from '../player/figures.ts';
 import type { Glides } from '../player/glide.ts';
@@ -173,8 +173,6 @@ export function dressInGear(walker: Walker, forge: Cards, gear: GearState | null
     walker.spare = spareOutfit(gear, wardrobe, outfit, loadout);
   }
   walker.glow = heldElements(gear, loadout);
-  walker.rides = worn(gear, MOUNT_SLOT) !== undefined;
-  // A horse taken off under its rider leaves them on foot, as the room has them.
-  if (!walker.rides && walker.player.mounted) walker.player = { ...walker.player, mounted: false };
+  walker.ridesIn(gear);
   walker.spareGlow = heldElements(gear, otherLoadout(loadout))[0];
 }

@@ -42,9 +42,10 @@ moves and figure are DFO's ([[The Player Plays as in DFO]]); the Test Ground's n
   buttons pressed before the step and what the fight holds the player to shown after it (`PlayerFight`), on the Test
   Ground and in the game's nodes alike. A page may set the walker's player: a move played from a panel.
 - **Riding** ([[Horses Are Items Worn in a Mount Slot]]): the mount key mounts only with a horse worn in the Mount
-  slot, as the room allows (`mountAsked`); the walker reads whether one is worn from the gear the room sends, and with
-  no room, rides. With none, a press does nothing and the page says "You have no horse." once for it. Getting down is
-  never refused.
+  slot, as the room allows (`mountAsked`). The walker rides only once the gear the room sends says a horse is worn
+  (`ridesIn`, on foot, in the prologue's wreck and on the Test Ground alike); one taken off under its rider sets them
+  on foot. With none, a press does nothing and the frame it was pressed in says "You have no horse." once for it,
+  ashore or at sea; the story says nothing. Getting down is never refused.
 - **The camera** sits in the head, or behind it and up in third person on a boom (`cameraOrbit`). Through the
   head it sees 65° tall where third person sees the lens's 50°, widening as the camera comes in past third person's
   nearest, 0.6 m;

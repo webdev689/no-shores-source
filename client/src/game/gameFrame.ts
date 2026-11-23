@@ -180,8 +180,12 @@ export function startFrames(parts: FrameParts, playing: Playing): void {
   };
   /** What the mount key says with no horse worn in the Mount slot ([[Horses Are Items Worn in a Mount Slot]]). */
   const NO_HORSE = 'You have no horse.';
-  /** The words that tell why the player is not where they went, while they stand. */
-  const toldNow = () => (playing.told && performance.now() < playing.told.until ? [playing.told.words] : []);
+  /** The words that tell why the player is not where they went, or that the mount key found no horse, while they
+   *  stand: said by the frame the key was pressed in, ashore or at sea. */
+  const toldNow = () => {
+    if (walker.takeNoHorse()) playing.told = { words: NO_HORSE, until: performance.now() + TOLD_MS };
+    return playing.told && performance.now() < playing.told.until ? [playing.told.words] : [];
+  };
 
   const footFrame = (here: Foot, controls: InputFrame, seconds: number, size: { width: number; height: number }) => {
     if (parts.heed(here)) return true;
@@ -292,8 +296,6 @@ export function startFrames(parts: FrameParts, playing: Playing): void {
     hud.marks(looking ? [] : quests.marks(shown.shot, viewport, [body.x, body.y], parts.groundAt, here.node.id));
     // The tracker is set once a frame, so a public event's steps stand in it unblinking, in the quest's place.
     hud.tasks.show(shown.quest ?? quests.tracked);
-    if (walker.noHorse)
-      [walker.noHorse, playing.told] = [false, { words: NO_HORSE, until: performance.now() + TOLD_MS }];
     hud.toast(...toldNow(), ...quests.toasts, ...playing.lore.toasts);
     hideSeaHud(hud);
     hud.note(here.roomNote);
@@ -410,6 +412,8 @@ export function startFrames(parts: FrameParts, playing: Playing): void {
   ) => {
     host.padFrame(input.padAlone, seconds);
     const left = host.frame(controls, seconds, size);
+    // The story's player rides no horse and is told nothing of one: a press there is dropped with nothing said.
+    walker.takeNoHorse();
     if (!left) return;
     playing.after.storyEnded(left.epilogue);
     walker.you.dress = left.dress;

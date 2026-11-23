@@ -289,6 +289,7 @@ async function start(): Promise<void> {
   };
   const gearReceived = (message: GearMessage) => {
     gear = message;
+    walker?.ridesIn(message);
   };
   const link = roomUrl
     ? await RoomConnection.open(roomUrl, received, gearReceived)
