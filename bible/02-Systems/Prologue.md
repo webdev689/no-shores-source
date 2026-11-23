@@ -145,11 +145,13 @@ the player's from there.
 of the world (the Grey Tithe's tenth, Overlook paying it nothing, three ports standing and the rest ruins grown over
 with something nobody names); then each place to visit, the camera flying to it as she names it and holding there
 while she and its keeper speak: the smiths' arcade (the Armorsmith and the Weaponsmith), the Mage, the Vault, the
-Tailor and the Tack, the Postmaster, the harbour's Harbourmaster for the Shipwright, and the Hall of the Arts with the
+Tailor, the Tack, the Postmaster, the harbour's Harbourmaster for the Shipwright, and the Hall of the Arts with the
 three houses' chapels, Elder Maren Hale answering for the Lamplighters; then back to the player for her farewell. A
-place is framed from 14 m out over the plaza before its counters (the counter's side away from its keeper) and 9 m
-up, looking at their middle 1.5 m over the ground, through the player's own lens; a group's spread widens both (1.3
-and 0.5 times its farthest counter from the middle), and each counter named is the one of its kind nearest the player.
+place is framed from 11 m out over the plaza before its counters (the counter's side away from its keeper) and 7 m
+up, looking at their middle 2.5 m over the ground, through the player's own lens; a group's spread widens both (1 and
+0.35 times its farthest counter from the middle). Its first counter is the one of its kind nearest the player, each
+other the one of its kind nearest that. The houses' chapels stand inside the Hall of the Arts, so it is seen from 40 m
+out and 30 m up, clear of its roof.
 A flight takes 2.4 s, eased out of rest and into it, from wherever the view stands; a place the plaza lacks keeps the
 view where it is, her words said all the same. From her first word to her farewell the player's keys are held and the
 view is hers; Space moves her words on a line, and the keys and the view are given back as she finishes. As she bids

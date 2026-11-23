@@ -7,10 +7,11 @@ import { type Shot, panShot } from '../camera.ts';
 import type { StationInfo } from '../nodes.ts';
 
 /** One step of her welcome: the scene she says, and the counters the camera frames meanwhile, by their station's
- *  kind; none keeps the view on the player. */
+ *  kind (none keeps the view on the player), seen from `high` over a building that stands round them. */
 export interface TourStep {
   readonly scene: string;
   readonly kinds: readonly string[];
+  readonly high?: boolean;
 }
 
 export const TOUR: readonly TourStep[] = [
@@ -18,10 +19,11 @@ export const TOUR: readonly TourStep[] = [
   { scene: 'tourSmiths', kinds: ['armorsmith', 'weaponsmith'] },
   { scene: 'tourMage', kinds: ['mage'] },
   { scene: 'tourVault', kinds: ['vault'] },
-  { scene: 'tourTailorTack', kinds: ['tailor', 'tack'] },
+  { scene: 'tourTailor', kinds: ['tailor'] },
+  { scene: 'tourTack', kinds: ['tack'] },
   { scene: 'tourPost', kinds: ['mail'] },
   { scene: 'tourHarbour', kinds: ['harbourmaster'] },
-  { scene: 'tourHall', kinds: ['stormcallers', 'lamplighters', 'veiled'] },
+  { scene: 'tourHall', kinds: ['stormcallers', 'lamplighters', 'veiled'], high: true },
   { scene: 'strangerFarewell', kinds: [] },
 ];
 
@@ -29,26 +31,32 @@ export const TOUR: readonly TourStep[] = [
 export const FLY_S = 2.4;
 /** How far out over the plaza from a single counter the eye stands, and how high over the ground, metres; a group's
  *  spread widens both, so every counter of it stays in the view. */
-const BACK_M = 14;
-const HEIGHT_M = 9;
-const SPREAD_BACK = 1.3;
-const SPREAD_HEIGHT = 0.5;
-/** The height over the ground the eye looks at: a keeper's chest. */
-const LOOK_M = 1.5;
+const BACK_M = 11;
+const HEIGHT_M = 7;
+/** How far out and up a place inside a building is seen from, clear of its roof, metres. */
+const HIGH_BACK_M = 40;
+const HIGH_M = 30;
+const SPREAD_BACK = 1;
+const SPREAD_HEIGHT = 0.35;
+/** The height over the ground the eye looks at: over a keeper's head, so their stall's roof is in the view. */
+const LOOK_M = 2.5;
 
-/** The shot framing the counters of `kinds`, each the one of its kind nearest the player's view (`own`): from out
- *  over the plaza before them and up, looking at their middle, through the player's own lens. Null where one of the
- *  kinds keeps no counter here. */
+/** The shot framing the counters of `kinds`, the first the one of its kind nearest the player's view (`own`), each
+ *  other the one of its kind nearest that: from out over the plaza before them and up, looking at their middle,
+ *  through the player's own lens. Null where one of the kinds keeps no counter here. */
 export function framing(
   stations: readonly StationInfo[],
   kinds: readonly string[],
   own: Shot,
   groundAt: (x: number, y: number) => number | null,
+  high = false,
 ): Shot | null {
-  const away = (station: StationInfo) => Math.hypot(station.counter[0] - own.eye[0], station.counter[1] - own.eye[1]);
-  const named = kinds.map(
-    (kind) => stations.filter((station) => station.kind === kind).sort((one, two) => away(one) - away(two))[0],
-  );
+  const nearest = (kind: string | undefined, [x = 0, y = 0]: readonly number[]) => {
+    const away = (station: StationInfo) => Math.hypot(station.counter[0] - x, station.counter[1] - y);
+    return stations.filter((station) => station.kind === kind).sort((one, two) => away(one) - away(two))[0];
+  };
+  const first = nearest(kinds[0], own.eye);
+  const named = kinds.map((kind) => first && nearest(kind, first.counter));
   if (named.length === 0 || named.some((station) => !station)) return null;
   const found = named as StationInfo[];
   const mean = (value: (station: StationInfo) => number) =>
@@ -63,8 +71,9 @@ export function framing(
   [outX, outY] = [outX / out, outY / out];
   const spread = Math.max(...found.map((each) => Math.hypot(each.counter[0] - x, each.counter[1] - y)));
   const ground = groundAt(x, y) ?? own.eye[2];
-  const back = BACK_M + spread * SPREAD_BACK;
-  const eye = [x + outX * back, y + outY * back, ground + HEIGHT_M + spread * SPREAD_HEIGHT] as const;
+  const back = (high ? HIGH_BACK_M : BACK_M) + spread * SPREAD_BACK;
+  const up = (high ? HIGH_M : HEIGHT_M) + spread * SPREAD_HEIGHT;
+  const eye = [x + outX * back, y + outY * back, ground + up] as const;
   const look = lookAt(eye, [x, y, ground + LOOK_M]);
   return { ...own, eye, ...look };
 }
@@ -81,8 +90,8 @@ export class StrangerWelcome {
   private readonly stations: readonly StationInfo[];
   private readonly groundAt: (x: number, y: number) => number | null;
   private readonly voice: WelcomeVoice;
-  /** The kinds the camera is asked to frame; undefined once framed. */
-  private asked: readonly string[] | undefined;
+  /** The step whose place the camera is asked to frame; undefined once framed. */
+  private asked: TourStep | undefined;
   /** The shot a flight leaves from and the one it goes to; null is the player's own view. */
   private from: Shot | null = null;
   private to: Shot | null = null;
@@ -103,7 +112,7 @@ export class StrangerWelcome {
     this.holding = !this.ended;
     for (const step of TOUR) {
       if (this.ended) return;
-      this.asked = step.kinds;
+      this.asked = step;
       try {
         await this.voice.play(step.scene);
       } catch (error) {
@@ -129,11 +138,11 @@ export class StrangerWelcome {
     [this.ended, this.holding, this.from, this.to, this.asked] = [true, false, null, null, undefined];
   }
 
-  /** Sets a flight from where the view stands to the place of `kinds`, or to the player; a place the plaza lacks keeps
+  /** Sets a flight from where the view stands to the place of a step, or to the player; a place the plaza lacks keeps
    *  the view where it is. */
-  private aim(kinds: readonly string[], own: Shot): void {
+  private aim({ kinds, high }: TourStep, own: Shot): void {
     this.asked = undefined;
-    const to = kinds.length === 0 ? null : framing(this.stations, kinds, own, this.groundAt);
+    const to = kinds.length === 0 ? null : framing(this.stations, kinds, own, this.groundAt, high);
     if (kinds.length > 0 && !to) return;
     if (to === null && this.to === null) return;
     [this.from, this.to, this.flown] = [this.last, to, 0];

@@ -23,7 +23,8 @@ test('the stranger speaks of the world, then names each place in turn, and last 
       ['tourSmiths', ['armorsmith', 'weaponsmith']],
       ['tourMage', ['mage']],
       ['tourVault', ['vault']],
-      ['tourTailorTack', ['tailor', 'tack']],
+      ['tourTailor', ['tailor']],
+      ['tourTack', ['tack']],
       ['tourPost', ['mail']],
       ['tourHarbour', ['harbourmaster']],
       ['tourHall', ['stormcallers', 'lamplighters', 'veiled']],
@@ -38,7 +39,7 @@ test('every scene of the welcome is one of hers, said in turn, and no other is k
 
 test("each place is framed from above, on the plaza's side of its counters, every one of them in the view", () => {
   for (const step of TOUR.filter((each) => each.kinds.length > 0)) {
-    const shot = framing(PLAZA, step.kinds, OWN, ground);
+    const shot = framing(PLAZA, step.kinds, OWN, ground, step.high);
     assert.ok(shot, step.scene);
     assert.ok(shot.eye[2] >= GROUND + 6, `${step.scene} seen from a height`);
     assert.ok(shot.pitch > 0.2 && shot.pitch < 0.8, `${step.scene} looks down at its counters`);
@@ -52,6 +53,15 @@ test("each place is framed from above, on the plaza's side of its counters, ever
     }
   }
   assert.equal(framing(PLAZA, ['chapel of nobody'], OWN, ground), null, 'none where no counter stands');
+  // The houses' chapels stand inside the Hall of the Arts: it is seen from high over its roof.
+  const hall = TOUR.find((step) => step.scene === 'tourHall');
+  assert.equal(hall?.high, true);
+  const over = framing(PLAZA, hall?.kinds ?? [], OWN, ground, true);
+  assert.ok(over && over.eye[2] >= GROUND + 30, 'high over the Hall');
+  // A group is framed round its first counter: another of a kind nearer the player but far from it is passed over.
+  const far: StationInfo = { kind: 'weaponsmith', keeper: [1000, 2040], counter: [1000, 2038] };
+  const pair = framing([...PLAZA, far], ['armorsmith', 'weaponsmith'], OWN, ground);
+  assert.deepEqual(pair, framing(PLAZA, ['armorsmith', 'weaponsmith'], OWN, ground));
 });
 
 /** A welcome over the plaza, each scene it says written down and finished at once, unless `hold` keeps them. */
@@ -76,7 +86,7 @@ test("the camera flies to each place as she names it, holds there while she spea
   await settled();
   for (const step of TOUR) {
     assert.equal(said.at(-1), step.scene);
-    const framed = step.kinds.length > 0 ? framing(PLAZA, step.kinds, OWN, ground) : null;
+    const framed = step.kinds.length > 0 ? framing(PLAZA, step.kinds, OWN, ground, step.high) : null;
     let shot = welcome.shot(OWN, STEP_S);
     for (let flown = 0; flown < FLY_S + 0.2; flown += STEP_S) shot = welcome.shot(OWN, STEP_S);
     assert.ok(near(shot, framed ?? OWN), `${step.scene}: the view held on ${framed ? 'its place' : 'the player'}`);

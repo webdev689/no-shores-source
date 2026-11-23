@@ -17,9 +17,13 @@
       { "who": "stranger", "say": "The Vault keeps what you cannot carry while you sail." },
       { "who": "vaultkeeper", "say": "Nothing leaves my vault but with the one who left it." }
     ],
-    "tourTailorTack": [
-      { "who": "stranger", "say": "Dyes from the Tailor. The Tack fits out a horse." },
+    "tourTailor": [
+      { "who": "stranger", "say": "The Tailor dyes what you wear." },
       { "who": "tailor", "say": "Nobody should meet the Tithe looking drab." }
+    ],
+    "tourTack": [
+      { "who": "stranger", "say": "The Tack fits out a horse." },
+      { "who": "tack", "say": "Coats and barding, for when you ride." }
     ],
     "tourPost": [
       { "who": "stranger", "say": "Letters written to you wait with the Postmaster." },
