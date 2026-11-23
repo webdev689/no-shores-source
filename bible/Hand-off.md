@@ -155,6 +155,11 @@ each part works is in its system note.
 
 ## Waiting on the owner
 
+- **#164, a smith's ware drawn as the piece it becomes** (branch `claude/vigilant-wozniak-lu9pm3`), merged with the
+  owner's yes ("Yes"), which deploys the page and the rooms: the gear message sends `next_id`, the page draws each smith's
+  ware by it and asks for it by its place ([[Gear]], "Looks"). Tested offline: a test buys each of the day's twelve
+  armour and weapon wares and holds each to its look in the shop (it failed before, on a Magic torso). Open for the
+  owner: a purchase moves the number on, so the other wares still shown may redraw.
 - **The owner's six prologue points, the wreck's room in the worker and a full audit** (#161, branch
   `claude/gifted-knuth-lijjf2`), for the owner's yes to merge, which deploys the page and the rooms (the naval rules
   and the protocol's version changed): the wreck's hitches (blood's rays, its sheet drawn behind the wake's shut lids)

@@ -513,10 +513,12 @@ to every other player. Every garment is armour ([[Clothing Is Armour, With a War
 
 - **Normal** pieces are clothes: a shirt, breeches, trousers or a skirt, and shoes, dyed in the rarity's plain dyes;
   a Normal head or arms piece shows nothing.
-- **Magic** pieces are light armour or clothes by the item's own number (its name while it has none, a smith's ware
-  before it is bought): the head and arms leather or the thieves' set, the torso and legs clothes (a shirt with a tunic
-  or vest over it, breeches, trousers or a skirt, and tall boots or shoes, in brighter dyes), leather or the thieves'
-  set.
+- **Magic** pieces are light armour or clothes by the item's own number (its name while it has none): the head and
+  arms leather or the thieves' set, the torso and legs clothes (a shirt with a tunic or vest over it, breeches,
+  trousers or a skirt, and tall boots or shoes, in brighter dyes), leather or the thieves' set.
+- **A smith's ware** is drawn by the number it takes once bought, which the gear message sends (`next_id`, the number
+  the next item the player gets takes), so the shop shows the piece the player gets: its set or clothes, its shield
+  and its make. A test buys each of the day's wares in turn and holds each to its look in the shop.
 - **Rare and finer** pieces are armour sets of the forge. A rolled Rare piece climbs the sets' ladder (leather, the
   thieves', chain, iron, steel, the knights', silver, elven, dwarven, orcish, mithril, adamantium, ebony, daedric) from
   chain, nine rungs over levels 1 to 20 and up to two more by its name: chain, iron or steel at level 1, adamantium,
