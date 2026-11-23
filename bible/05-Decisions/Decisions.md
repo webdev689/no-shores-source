@@ -278,6 +278,7 @@ a decision is a record. How to add one: [[Recording a Decision]].
 - [[The Prologue Is Reworked With Real Armour, a Bow, the Storm and No Elites]]
 - [[Horses Are Items Worn in a Mount Slot]]
 - [[The Stranger Welcomes the Player, and a Quest Walks Them Round Overlook]]
+- [[The Prologue, Horses and the Welcome to Overlook as Claude Builds Them]]
 - [[The Game Is Named No Shores]]
 - [[Elder Maren Hale Walks at Three Quarters of a Player's Pace]]
 - [[A Mark Over What a Player Can Use Is Seen Through Walls]]
