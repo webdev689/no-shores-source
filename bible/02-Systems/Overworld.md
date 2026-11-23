@@ -79,7 +79,8 @@ corner.
 ## Marks
 
 `overworldMarks.ts` lays the nodes on the picture: social spaces, patrol areas, missions, dungeons, world bosses,
-outpost sites (a small flag on a pole, '⚑' drawn in the game's face, in teal), ports and the Playlist. A mark is 24 m tall with the eye 260 m over it and grows with the eye's height from there, so it reads at one
+outpost sites (a small flag on a pole, '⚑' drawn in the game's face, in teal; a site where the player's guild holds
+an outpost in its banner's cloth round its device's colour), ports and the Playlist. A mark is 24 m tall with the eye 260 m over it and grows with the eye's height from there, so it reads at one
 size from the sea camera and from the bird's-eye view. On the screen it is held between 20 and 96 px. A mark that asks
 to be held stays at the picture's edge when off it, with an arrow pointing to it. Marks are laid farthest first, so a
 pointer picks the nearest.

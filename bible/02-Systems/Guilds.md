@@ -95,6 +95,12 @@ ranks are the Roster's as well ([[Accounts]], "The Roster").
   another" draws a banner afresh. Only the founder and admins keep one; a member sees the editor without the press.
 - **Details**: the founder and admins set the motto and description and invite a player by name; a member reads them.
   Anyone may hold to leave.
+- **At an outpost site** a member joins their guild's room for it, named by the guild's key that `GET /v1/guild`
+  gives; a player in no guild joins the wild site. The page stands the outpost as the accounts keep it, read on
+  arriving, when the player changes it and every 15 s: each structure and piece of decoration where the plot's
+  reckoning stands it, walled for the page's own body as the room walls it, and the banner's cloth stirring on the
+  standard. E at a structure opens the Outposts page on it; a bare site has a post where the hall would stand,
+  saying the outpost is raised from the Guild tab.
 - **In no guild**, the tab founds one: its name, its tag and the banner made for it before it exists, with the
   invites waiting, each joined or declined.
 
