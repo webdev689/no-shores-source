@@ -247,18 +247,21 @@ export function layEngulf(out: Laid, feet: Point, eye: Point, seconds: number): 
   if (seconds < 0 || seconds > WISP_S.engulf) return;
   const strike = Math.floor(seconds * STRIKE_HZ * 1.5);
   const fading = seconds < FLASH_IN_S ? 1 : 1 - (seconds - FLASH_IN_S) / (WISP_S.engulf - FLASH_IN_S);
-  for (let wrap = 0; wrap < 5; wrap++) {
+  // Arcs, not a cage: each wraps part of the figure from its own height, thrown about afresh at each strike.
+  for (let wrap = 0; wrap < 4; wrap++) {
     const points: Point[] = [];
-    const spin = seconds * 9 + (wrap * 2 * Math.PI) / 5;
+    const spin = seconds * 9 + hashOf(strike, wrap, 3) * 2 * Math.PI;
+    const from = hashOf(strike, wrap, 4) * 0.5;
+    const span = 0.35 + 0.5 * hashOf(strike, wrap, 5);
     const girth = GIRTH_M * (0.75 + 0.5 * fading);
-    for (let joint = 0; joint <= 12; joint++) {
-      const share = joint / 12;
-      const angle = spin + share * 2.6 * Math.PI;
-      const jitter = (hashOf(strike, wrap, joint) - 0.5) * 0.12;
+    for (let joint = 0; joint <= 9; joint++) {
+      const share = from + (joint / 9) * span;
+      const angle = spin + (joint / 9) * 1.6 * Math.PI;
+      const jitter = (hashOf(strike, wrap, joint) - 0.5) * 0.3;
       points.push([
         feet[0] + Math.cos(angle) * (girth + jitter),
         feet[1] + Math.sin(angle) * (girth + jitter),
-        feet[2] + 0.05 + share * (HEIGHT_M + 0.15),
+        feet[2] + 0.05 + share * (HEIGHT_M + 0.15) + jitter * 0.4,
       ]);
     }
     boltLine(out, eye, points, VOLT, { core: 0.014, glow: 0.05, opacity: fading });
