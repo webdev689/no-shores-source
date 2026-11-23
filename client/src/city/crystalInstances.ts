@@ -121,17 +121,19 @@ export function chunkDraws(
 /** How far the ships' size may move before a wreck's crust is written again: a fiftieth of it. */
 const CRUST_STEP = 0.02;
 
-/** Whether a wreck's crust written at the ships' size `written` (0 never) wants writing again at `now`. */
-export const crustMoved = (written: number, now: number): boolean =>
-  written <= 0 || Math.abs(now / written - 1) > CRUST_STEP;
+/** Whether a wreck's crust written at the ships' size `written` (0 never) wants writing again at `now`, the size
+ *  having been `last` the frame before: once it has moved a step, or once it has settled anywhere but where written. */
+export const crustMoved = (written: number, now: number, last: number): boolean =>
+  written <= 0 || Math.abs(now / written - 1) > CRUST_STEP || (now === last && now !== written);
 
 /** A ruin's wrecks' crusts as instances: sorted by formation once, their draws fixed, written into the same bytes
  *  whenever the ships' size has moved a step, as large as the wrecks are drawn. */
 export class WreckCrust {
   readonly bytes: ArrayBuffer;
   readonly draws: readonly InstancedDraw[];
-  /** The ships' size the crust was last written at; 0 before its first. */
+  /** The ships' size the crust was last written at (0 before its first), and the size the view drew it at last frame. */
   written = 0;
+  lastFrame = 0;
   private readonly sorted: readonly { readonly wreck: Wreck; readonly place: CrystalPlace }[];
   private readonly origin: readonly number[];
 

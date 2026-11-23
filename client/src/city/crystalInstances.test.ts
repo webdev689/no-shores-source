@@ -8,13 +8,16 @@ import { wreckCrust } from './overtaken.ts';
 const WRECK = { ship: 'schooner', at: [5000, 6000], heading: 1, heel: 0.4 } as const;
 
 test("a wreck's crust is written again only once the ships' size has moved a step", () => {
-  assert.equal(crustMoved(0, 4), true, 'never written');
-  assert.equal(crustMoved(4, 4.05), false);
-  assert.equal(crustMoved(4, 4.1), true);
-  assert.equal(crustMoved(1, 0.97), true);
+  assert.equal(crustMoved(0, 4, 4), true, 'never written');
+  assert.equal(crustMoved(4, 4.05, 4.02), false, 'still moving, within a step');
+  assert.equal(crustMoved(4, 4.1, 4.05), true);
+  assert.equal(crustMoved(1, 0.97, 0.99), true);
+  // settled within a step of where it was written, it is written once more where it rests
+  assert.equal(crustMoved(1.015, 1, 1), true);
+  assert.equal(crustMoved(1, 1, 1), false);
 });
 
-test("a wreck's crust is written where wreckCrustAt sets it out, into bytes kept from write to write", () => {
+test("a wreck's crust is written set out round its wreck as large as it is drawn, into bytes kept from write to write", () => {
   const crust = new WreckCrust([{ wreck: WRECK, crust: wreckCrust(WRECK) }], [4000, 5000], 7);
   const bytes = crust.bytes;
   for (const scale of [1, 4]) {

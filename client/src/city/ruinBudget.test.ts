@@ -71,8 +71,8 @@ test("every ruined city's crystal stays within the city's budgets, and builds in
     return { data, ms: performance.now() - started };
   };
   for (const plan of plans) {
-    // Warmed once each, then the middle of three builds of each, interleaved: the ruin builds in well under twice
-    // the time its plan does with its buildings whole (1.3 to 1.8 times, quiet or loaded, on this machine).
+    // Warmed once each, then the middle of three builds of each, interleaved: the ruin builds in under two and a half
+    // times the time its plan does with its buildings whole (1.5 to 2.1 times on this machine).
     build(plan, true);
     build(plan, false);
     const runs = [0, 1, 2].map(() => [build(plan, true).ms, build(plan, false).ms]);
@@ -115,7 +115,9 @@ test("every ruined city's crystal stays within the city's budgets, and builds in
     assert.ok(middle + near < 1_600_000, `${plan.id}: ${middle} middle, ${near} near`);
     // The great formations drawn only in the chunks a view sees: from the plaza looking at the landmark, a part.
     const plaza = plan.social.bounds;
-    const fromPlaza = seenFrom(data, [(plaza[0] + plaza[2]) / 2, (plaza[1] + plaza[3]) / 2, plan.social.level + 2], 0);
+    const standing = [(plaza[0] + plaza[2]) / 2, (plaza[1] + plaza[3]) / 2, plan.social.level + 2];
+    const towardLandmark = Math.atan2(plan.centre[0] - standing[0], standing[1] - plan.centre[1]);
+    const fromPlaza = seenFrom(data, standing, towardLandmark);
     const seen = drawn(data, chunkDraws(fromPlaza, data.crystal.great, data.firstFormation, []));
     assert.ok(seen < 0.8 * greatTriangles, `${plan.id}: ${seen} of ${greatTriangles} seen from the plaza`);
   }

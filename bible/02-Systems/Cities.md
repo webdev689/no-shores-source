@@ -359,7 +359,7 @@ building's place to the centimetre in the page, the same on every machine.
   great spires round it, a quarter to two thirds as tall, leaning 11 to 34 degrees out; 14 to 20 small ones round
   the top's rim, leaning out 29 to 63 degrees; every foot on that top, within 0.9 of its half breadth. Every other
   kept top at the same height (a span's piers, a ring of columns) bears a lesser crown: a spire from its middle a
-  fifth to a third as tall as the great one's, at most 12 times the top's breadth, and 2 to 4 round its rim. It is
+  fifth to a third as tall as the great one's, at most 5.4 times its top's width, and 2 to 4 round its rim. It is
   among the landmark's solids, so the room's boxes hold it. Its three tallest spires light the night.
 - **The rubble** of the ways and the breaches is crusted (`crusted`): 2 to 5 shards on each heap's upper slopes, 0.5
   to 1.6 m high, 3 more on a breach's fall, 1 to 2.8 m. They are among the works, which the page draws; no room
@@ -408,25 +408,25 @@ building's place to the centimetre in the page, the same on every machine.
   by more than a fiftieth since it was last written (`WreckCrust`), into the same instances.
 - **The plaza stays clear:** nothing the page lays reaches into the 110 m window round the plaza, as no rubble lies
   there; only the crown on the landmark stands within it.
-- **Near and far.** Each formation is laid by chunk (`crystalInstances.ts`), and a pass draws only the chunks it
-  sees (the view's, or a shadow cascade's), each formation's chunks joined into as few draws as run. The great
-  formations are drawn at every distance; a heavy building's clusters and mass in the middle distance, the chunks
-  within 1 200 m of the eye (`MIDDLE_M`), each formation fading out by its own distance over the 300 m short of
-  that, dithered as the buildings' tiers are (`middleFade`), so none pops. A port city draws no crystal pass at
-  all. Everything else the page grows is drawn in the near cells with the forged models, dithered as they are. The
-  rubble's crust is drawn in the chunks within the near tier's reach (`detailRuns`). All of it casts into
-  both shadows but the near cells' and the crust, which cast into the near one. A spire's body has no top meshed:
-  its tip stands on it.
+- **Near and far.** Each formation is laid by chunk (`crystalInstances.ts`), and a pass draws only the chunks it sees
+  (the view's, or a shadow cascade's), each formation's chunks joined into as few draws as run. The great formations are
+  drawn at every distance; a heavy building's clusters and mass in the middle distance, the chunks within 1 200 m of the
+  eye (`MIDDLE_M`), each formation fading out by its own distance over the 300 m short of that, dithered as the
+  buildings' tiers are (`middleFade`), so none pops; its shadow is not faded, and stops with the chunk at `MIDDLE_M`. A
+  port city draws no crystal pass at all. Everything else the page grows is drawn in the near cells with the forged
+  models, dithered as they are. The rubble's crust is drawn in the chunks within the near tier's reach (`detailRuns`).
+  All of it casts into both shadows but the near cells' and the crust, which cast into the near one. A spire's body has
+  no top meshed: its tip stands on it.
 - **At night** a ruin's crystal glows brighter than any other crystal a city draws (its core 0.8 alight, against
   0.45), so a ruin is a scatter of red on a dark coast; each great formation lights a lamp of the crystal's
   light (`CRYSTAL_LAMP`) a third of the way up it, reaching 6 m more than it stands tall, at most 30 m; with the
   crown's three, the sky's nearest lamps are chosen from them as from any city's.
-- **Its cost**, over the six ruins (`ruinBudget.test.ts` holds each under its limits): 101 276 to 157 326 triangles
-  of solids (the crown, the heaps, the works); 1 172 to 1 439 great formations, 287 120 to 352 356 triangles, and as
-  many lamps, of which a view sees a part (Mistfall's from its plaza looking at the landmark 25 700, from the sea
-  600 m off its harbour 297 860); from the landmark, before the view's culling, 861 980 to 1 001 722 triangles of the
-  middle distance's crystal and 483 380 to 586 910 of the near cells'; each city built in 0.96 to 1.24 s where its
-  buildings whole take 0.48 to 0.68 s.
+- **Its cost**, over the six ruins (`ruinBudget.test.ts` holds each under its limits): 101 276 to 157 326 triangles of
+  solids (the crown, the heaps, the works); 1 172 to 1 439 great formations, 287 120 to 352 356 triangles, and as many
+  lamps, of which a view sees a part (from each plaza looking at its landmark 161 844 to 182 240; measured once from the
+  sea 600 m off Mistfall's harbour, 297 860); from the landmark, before the view's culling, 861 980 to 1 001 722
+  triangles of the middle distance's crystal and 483 380 to 586 910 of the near cells'; each city built in 0.96 to 1.24
+  s where its buildings whole take 0.48 to 0.68 s.
 
 ## Limits
 

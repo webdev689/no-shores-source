@@ -233,7 +233,7 @@ export class CityView implements CityDrawer {
     const wrecks = drawn.wreckCrust;
     if (wrecks) {
       const scale = this.wreckScale();
-      if (crustMoved(wrecks.crust.written, scale)) {
+      if (crustMoved(wrecks.crust.written, scale, wrecks.crust.lastFrame)) {
         wrecks.crust.write(scale);
         this.gpu.device.queue.writeBuffer(wrecks.buffer, 0, wrecks.crust.bytes);
       }
@@ -394,6 +394,8 @@ export class CityView implements CityDrawer {
       frame.triangles += run.count / 3;
     }
     const crystal = this.drawCrystal(pass, drawn, chunks, eye);
+    // the view draws once a frame: the size its wrecks stood at, for the next frame to tell whether it has settled
+    if (drawn.wreckCrust) drawn.wreckCrust.crust.lastFrame = this.wreckScale();
     frame.draws += crystal.draws;
     frame.triangles += crystal.triangles;
 
