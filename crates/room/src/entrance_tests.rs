@@ -102,7 +102,7 @@ fn an_entrance_stands_on_dry_level_ground() {
     let dungeons: Vec<_> =
         (0..dungeon::PER_PATROL).map(|number| dungeon::of_patrol("saltgrass-downs", number)).collect();
     let dry = |x, y| floor.height_at(x, y) >= 0.0;
-    let entrances = laid("saltgrass-downs", &dungeons, &floor, &dry, &ring(), &SPAWNS, &[]);
+    let entrances = laid("saltgrass-downs", &dungeons, &floor, &dry, &[], &ring(), &SPAWNS, &[]);
     assert!(!entrances.is_empty(), "the dry land takes some");
     for entrance in &entrances {
         let [x, y, z] = entrance.at;

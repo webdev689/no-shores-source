@@ -23,7 +23,7 @@ impl Room {
         let dungeons: Vec<(u32, dungeon::Style)> =
             (0..dungeon::PER_PATROL).map(|number| dungeon::of_patrol(node, number)).collect();
         let (ring, spawns) = (&section.ring, &section.spawns);
-        self.entrances = crate::entrances::laid(node, &dungeons, &self.floor, &dry, ring, spawns, places);
+        self.entrances = crate::entrances::laid(node, &dungeons, &self.floor, &dry, &self.blocks, ring, spawns, places);
     }
 
     /// Sets the difficulty the room's voyage set out at, and raises the garrison standing to it.
