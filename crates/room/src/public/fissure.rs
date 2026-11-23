@@ -190,6 +190,10 @@ impl Room {
                     running.stages = 2;
                     fissure.heroic_more = fissure.needed().saturating_sub(fissure.set) / 2;
                     self.tell(EventKind::HeroicMet, None, killer, foe, f64::from(running.kind as u8));
+                } else {
+                    // Broken by no player, it is broken for good: the task missed, nothing left to mark.
+                    fissure.growth = None;
+                    self.close_heroic(running);
                 }
                 continue;
             }

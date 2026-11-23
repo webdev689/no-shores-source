@@ -588,7 +588,7 @@ fn a_player_chested_before_their_account_was_told_is_laid_no_second_chest_coming
 }
 
 #[test]
-fn the_growth_broken_by_no_player_leaves_the_heroic_task_to_them() {
+fn the_growth_broken_by_no_player_misses_the_heroic_task_and_leaves_no_mark() {
     let (mut room, players) = room_at(FISSURE_MINUTE, 1);
     room.tick();
     while running(&room).heroic == Heroic::NotYet {
@@ -599,6 +599,10 @@ fn the_growth_broken_by_no_player_leaves_the_heroic_task_to_them() {
     killed_by_a_foe(&mut room, growth, foe);
     room.tick();
     assert_ne!(running(&room).heroic, Heroic::Met, "a foe met no task of the players'");
+    assert_eq!(running(&room).heroic, Heroic::Missed, "no player can break it now");
+    assert!(fissure(&room).growth.is_none(), "no growth left to mark");
+    let marks = room.public_seen().unwrap().marks;
+    assert!(marks.iter().all(|mark| mark.kind != super::seen::GROWTH), "its mark gone");
 }
 
 #[test]

@@ -384,7 +384,7 @@ fn the_tithe_taker_staggered_comes_out_of_it_though_the_room_moves_him_himself()
 }
 
 #[test]
-fn the_tithe_taker_killed_by_no_player_leaves_the_heroic_task_to_them() {
+fn the_tithe_taker_killed_by_no_player_misses_the_heroic_task_and_his_round_ends() {
     let (mut room, players) = room_at(RAID_MINUTE, 1);
     place(&mut room, players[0], [100.0, 0.0]);
     room.tick();
