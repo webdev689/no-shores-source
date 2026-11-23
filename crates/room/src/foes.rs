@@ -370,8 +370,10 @@ impl Room {
         self.director.step();
         let fighters = self.fighters();
         self.leave_landings();
+        // A player the section killed lies dead though their fighter keeps its health: the foes let them go.
+        let fallen = |id: &FighterId| self.players.get(id).is_some_and(|found| !found.living());
         let noticed: Vec<(FighterId, Fighter)> =
-            fighters.iter().filter(|(id, _)| !self.left_be(*id)).copied().collect();
+            fighters.iter().filter(|(id, _)| !self.left_be(*id) && !fallen(id)).copied().collect();
         let intents = self.think_foes(&noticed);
         let (mut crews, mut shouts) = (Vec::new(), Vec::new());
         for (id, (mut brain, intent)) in intents {
@@ -510,8 +512,8 @@ impl Room {
         let (swings, loosed) = (std::mem::take(&mut self.swings), std::mem::take(&mut self.loosed));
         let noises = self.noises(&swings, &loosed);
         let side = |id: &FighterId| self.fighter(*id).map(|fighter| fighter.side);
-        let swings: Vec<(FighterId, combat::fighter::Attack, Option<Side>)> =
-            swings.into_iter().map(|(by, attack)| (by, attack, side(&by))).collect();
+        let swings: Vec<(FighterId, combat::fighter::Attack, Option<Fighter>)> =
+            swings.into_iter().map(|(by, attack)| (by, attack, self.fighter(by).copied())).collect();
         // Each shot's speed as it flies, the newest of its shooter's: a ball that reaches its mark at once flies none.
         let speed = |by: FighterId| {
             let shot = self.shots.iter().rev().map(|(shot, _)| shot).find(|shot| shot.owner == by);
@@ -523,9 +525,14 @@ impl Room {
         let ended = std::mem::take(&mut self.ended_telegraphs);
         let tick = self.clock;
         for (id, Foe { fighter, brain, .. }) in &mut self.foes {
-            // Only a blow from another side is a threat to answer: an ally's would only crowd it out.
+            // Only a blow from another side is a threat to answer: an ally's would only crowd it out, and so would a
+            // swing begun at another, which is not a swing begun at it.
             let hostile = |by: &Option<Side>| by.is_some_and(|by| by != fighter.side);
-            for (by, attack, _) in swings.iter().filter(|(_, _, by)| hostile(by)) {
+            let at = [fighter.body.x, fighter.body.y];
+            let swung_at = |striker: &Option<Fighter>| {
+                striker.is_some_and(|striker| striker.side != fighter.side && ::foes::swung_at(&striker, *id, at))
+            };
+            for (by, attack, _) in swings.iter().filter(|(_, _, striker)| swung_at(striker)) {
                 notice(brain, *id, &Seen::Swung { by: *by, attack: *attack }, tick);
             }
             for (by, _, speed) in loosed.iter().filter(|(_, by, _)| hostile(by)) {

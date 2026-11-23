@@ -13,15 +13,20 @@ const LANDING_M: f64 = 15.0;
 
 impl Room {
     /// Whether the foes leave a player be: one just stood again, until their grace ends or they strike, and one
-    /// standing in a patrol zone's landing whom no foe fights yet, until they strike from it.
+    /// standing in a patrol zone's landing whom no foe fights yet, until they strike from it. Only a foe standing that
+    /// thinks fights: an event's inert growth or tithe-taker, or a fallen foe lying with its target kept, does not.
     pub(crate) fn left_be(&self, id: FighterId) -> bool {
         self.players.get(&id).is_some_and(|found| {
             let landed = !self.landing_struck.contains(&id) && self.in_landing(&found.fighter.body);
-            found.graced > self.clock || (landed && self.foes.values().all(|foe| foe.brain.target() != Some(id)))
+            let fights = |(foe_id, foe): (&FighterId, &crate::foes::Foe)| {
+                !foe.fighter.dead() && !self.inert.contains(foe_id) && foe.brain.fights() == Some(id)
+            };
+            found.graced > self.clock || (landed && !self.foes.iter().any(fights))
         })
     }
 
-    /// A player's blow or shot ends the grace they stood again with, and the landing's leave until they have left it.
+    /// A player's blow or shot ends the grace they stood again with, and the landing's leave until they have left it
+    /// or stood again.
     pub(crate) fn struck(&mut self, id: FighterId, happening: Option<&Happening>) {
         if matches!(happening, Some(Happening::Swung(_) | Happening::Loosed(_)))
             && let Some(found) = self.players.get_mut(&id)

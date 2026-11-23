@@ -47,6 +47,10 @@ fn fall_back(brain: &mut Brain, here: &Here<'_, '_>, board: &mut Board, home: Ho
     if matches!(here.fighter.action, Action::Telegraph(_)) {
         return None;
     }
+    // A target that fell, left or is left be is no target to fight from there.
+    if brain.target.is_some_and(|target| here.enemy(target).is_none()) {
+        brain.target = None;
+    }
     let left = apart(here.at(), [home.at[0], home.at[1]]);
     let way = (left > FALLEN_BACK && brain.target.is_some()).then(|| way_to(here, home.at)).flatten();
     let Some(way) = way else {
@@ -164,3 +168,7 @@ fn walk_home(brain: &mut Brain, here: &Here<'_, '_>, home: Home) -> Ask {
     // A body turns only as it moves: a step of a hair along the way it was posted squares it there.
     Ask { unspaced: true, ..Ask::stepping(home.facing, SQUARING_PACE, home.facing) }
 }
+
+#[cfg(test)]
+#[path = "leash_tests.rs"]
+mod leash_tests;

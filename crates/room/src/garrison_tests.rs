@@ -401,6 +401,15 @@ fn a_patrol_zone_s_foes_leave_a_player_be_in_its_landing_until_they_strike_from_
     stand_player(&mut room, player, [0.0, 175.0]);
     run(&mut room, 1);
     assert!(room.left_be(player), "back in the landing, the landing's leave again");
+    // The landing reaches 15 m round each spawn, the second's too.
+    stand_player(&mut room, player, [15.0 + 14.9, 185.0]);
+    run(&mut room, 1);
+    assert!(room.left_be(player), "14.9 m from the second spawn");
+    stand_player(&mut room, player, [15.0 + 15.1, 185.0]);
+    run(&mut room, 1);
+    assert!(!room.left_be(player), "15.1 m from it, past the landing");
+    stand_player(&mut room, player, [0.0, 175.0]);
+    run(&mut room, 1);
     // A fight brought into the landing goes on: the landing is somewhere to arrive, not to hide.
     let (_, _, place, facing) = room.garrison[0].members[0];
     stand_player(&mut room, player, [place[0] + libm::sin(facing) * 6.0, place[1] - libm::cos(facing) * 6.0]);
@@ -440,6 +449,29 @@ fn a_patrol_zone_s_foes_leave_a_player_be_in_its_landing_until_they_strike_from_
     stand_player(&mut mission, player, [0.0, 180.0]);
     run(&mut mission, 1);
     assert!(!mission.left_be(player), "a mission has no landing");
+}
+
+#[test]
+fn only_a_living_thinking_foe_that_fights_a_landed_player_takes_the_landing_s_leave() {
+    let mut room = node(NodeKind::Patrol, "downs");
+    let player = room.join().unwrap();
+    stand_player(&mut room, player, [0.0, 180.0]);
+    run(&mut room, 1);
+    let hunter = crate::arts::arts_tests::stand_foe(&mut room, 0.0, 120.0, 100.0);
+    let at = [0.0, 180.0, 0.0];
+    let hunt = |room: &mut Room| {
+        let clock = room.clock();
+        room.foes.get_mut(&hunter).unwrap().brain.hunt(player, at, clock);
+    };
+    // An event's growth or tithe-taker stands inert: it never thinks, so it fights no one.
+    hunt(&mut room);
+    room.inert.insert(hunter);
+    assert!(room.left_be(player), "held by an inert foe");
+    room.inert.remove(&hunter);
+    assert!(!room.left_be(player), "fought by a foe that thinks, a fight brought in");
+    // A fallen foe lies a while with its target kept: it fights no more.
+    room.foes.get_mut(&hunter).unwrap().fighter.action = Action::Dead { elapsed: 0 };
+    assert!(room.left_be(player), "held by a fallen foe");
 }
 
 #[test]

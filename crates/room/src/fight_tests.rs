@@ -245,3 +245,50 @@ fn the_room_keeps_the_swings_chain_side_cut_overhead_thrust_whatever_stroke_the_
     }
     assert_eq!(swing(&mut room, &mut sequence, Stroke::Up), Stroke::Left, "a second's rest starts it over");
 }
+
+#[test]
+fn a_foe_holds_the_swing_begun_at_it_though_a_quicker_one_begins_far_off() {
+    let mut room = room();
+    let (near, far) = (room.join().unwrap(), room.join().unwrap());
+    let foe = stand(&mut room, ::foes::roster::COLLECTOR, 0.0, -2.0);
+    let swing = |strike: u32| combat::fighter::Attack {
+        stroke: Stroke::Down,
+        elapsed: 0,
+        strike,
+        end: 60,
+        swing: combat::fighter::Swing::Plain,
+        left_hand: false,
+    };
+    // Two metres south of the foe, facing it, a slow swing begun at it.
+    let mut striker = *room.fighter(near).unwrap();
+    (striker.body, striker.aim, striker.target) = (standing(0.0, 0.0), 0.0, Some(foe));
+    striker.action = Action::Attack(swing(30));
+    room.set_fighter(near, striker);
+    // Fifteen metres south, facing away, a quicker swing at no one near it.
+    let mut other = *room.fighter(far).unwrap();
+    (other.body, other.aim, other.action) = (standing(0.0, 15.0), core::f64::consts::PI, Action::Attack(swing(10)));
+    room.set_fighter(far, other);
+    let clock = room.clock();
+    room.foes.get_mut(&foe).unwrap().brain.hunt(near, [0.0, 0.0, 0.0], clock);
+    room.swings.push((near, swing(30)));
+    room.tell_brains();
+    assert_eq!(room.foes[&foe].brain.seen_coming(), Some(near), "the swing at it");
+    room.swings.push((far, swing(10)));
+    room.tell_brains();
+    assert_eq!(room.foes[&foe].brain.seen_coming(), Some(near), "still the swing at it, not the quicker one far off");
+}
+
+#[test]
+fn a_foe_lets_go_of_a_player_the_section_killed() {
+    let mut room = room();
+    let player = room.join().unwrap();
+    let foe = stand(&mut room, ::foes::roster::COLLECTOR, 0.0, -3.0);
+    let clock = room.clock();
+    room.foes.get_mut(&foe).unwrap().brain.hunt(player, [0.0, 0.0, 0.0], clock);
+    room.tick();
+    assert_eq!(room.foes[&foe].brain.fights(), Some(player), "fighting them");
+    // Killed by the section, as past its edge: their fighter keeps its health, but they lie dead until they respawn.
+    room.players.get_mut(&player).unwrap().standing = crate::Standing::Dead { ticks: 0, fell: false };
+    room.tick();
+    assert_eq!(room.foes[&foe].brain.fights(), None, "let go once the section killed them");
+}
