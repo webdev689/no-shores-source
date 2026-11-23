@@ -170,6 +170,17 @@ each part works is in its system note.
 
 ## Waiting on the owner
 
+- **The ship aim under the crosshair, and the ship steady in it** (branch `ccr-bc9c76c9-rau31m`), for the owner's
+  yes to merge. The owner: "The aim UI needs to be center on the camera and its currently offset. Ship geometry in
+  the aim jitters" ([[Aiming a Ship Looks Square Off Its Side, Clear of Its Rig]], its calls). Measured offline on
+  the rules' own swell (`seaAim.test.ts`, and a probe driving `SeaCombat` on the wasm rules): the volley's fall stood
+  90 to 100 px past the crosshair on a 1080-line screen, as the rules laid for a sea at rest at the ship's heave; it
+  now stands within about 4 px settled, the rules laying where the look's ray meets the swell (`on_water`), the view
+  held at the guns' real nearest (`laidNearest`) and turned over the fall (`laidAlong`). The eye stood 0 to 13 cm off
+  its place on the drawn ship from frame to frame when answers came unevenly, placed from the answer before the one
+  the ship was drawn from; it now stands on it. Not yet seen on a real GPU: how the aim feels and looks in the game.
+  Left: answers that come unevenly still move the ship and the eye together in uneven steps against the sea.
+
 - **Looks by content, the Playlist and the matchmade dungeons' encounters** (#160, branch
   `claude/bible-dungeon-matchmaking-5421wl`), merged with the owner's yes ("Let's merge and deploy and talk about this
   after"), which deploys the page and the rooms. The owner's asks are recorded ([[Armour and Weapon Looks Belong to the Content That Gives Them]],

@@ -28,7 +28,7 @@ const SWING_CLEAR_M = 1;
 /** The farthest out an eye past its side goes for a rig that swings wide, metres. */
 const OUT_MOST_M = 12;
 /** The rules' guns depress to this, radians: the swivel's lowest elevation. */
-const LOWEST_ELEVATION = (10 * Math.PI) / 180;
+export const LOWEST_ELEVATION = (10 * Math.PI) / 180;
 
 /** A square yard is braced at most this far round its mast (`squareBrace`), radians. */
 const BRACED_MOST = Math.PI / 4;
