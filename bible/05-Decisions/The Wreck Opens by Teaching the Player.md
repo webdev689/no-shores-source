@@ -29,7 +29,8 @@ flyover: Go straight from waking into the gear and lessons; the wreck is seen as
 ## What it settles
 
 - Waking, the eyes are curved, soft-edged lids that close unevenly, with a fringe of lashes, warm red light through
-  them when shut, and the blur clearing in pulses with the heartbeat.
+  them when shut, and the blur clearing in pulses with the heartbeat. The lids, their light and their lashes are
+  replaced by [[The Prologue Wakes by Darkening and Pulsing, Not Eyelids]]: the view darkens and pulses instead; the blur's pulses stand.
 - The flight over the wreck is dropped: from waking the player goes straight into the gear and the lessons.
 - The player is prompted to find their dropped sword and shield and equip them, teaching them the inventory.
 - Then the basic movement and combat are taught, and the healing charges.
@@ -41,9 +42,9 @@ flyover: Go straight from waking into the gear and lessons; the wreck is seen as
 
 | Call | Chosen | Why |
 |---|---|---|
-| The lids' shape | Each edge curves away from the eye's middle, so the opening is an almond, widest a little off the middle and closing from the corners; shut, each lid stands past its own edge, so no crack is left | An eye's opening as it is seen; the first shape left the view open at the sides shut |
-| The light through them | Warm red, more toward the eye than at the brow, from the fires, swelling a little with each beat | Light comes through the thin of the lid |
-| The lashes | An uneven fringe, some longer, some fainter, a few gaps, gone as the lids meet | A regular row read as a ruler |
+| The lids' shape | Replaced by [[The Prologue Wakes by Darkening and Pulsing, Not Eyelids]]. Each edge curves away from the eye's middle, so the opening is an almond, widest a little off the middle and closing from the corners; shut, each lid stands past its own edge, so no crack is left | An eye's opening as it is seen; the first shape left the view open at the sides shut |
+| The light through them | Replaced by [[The Prologue Wakes by Darkening and Pulsing, Not Eyelids]]. Warm red, more toward the eye than at the brow, from the fires, swelling a little with each beat | Light comes through the thin of the lid |
+| The lashes | Replaced by [[The Prologue Wakes by Darkening and Pulsing, Not Eyelids]]. An uneven fringe, some longer, some fainter, a few gaps, gone as the lids meet | A regular row read as a ruler |
 | The blur's pulses | A step just after each beat, held between beats, a beat behind the heart; clear a second after the eyes open | Clearing with the heart, not smoothly |
 | Out of the eyes | The camera eases out of the eyes to over the player's shoulder in 2.5 s, their hands empty | Play begins from the shot the run's own camera takes, without a cut |
 | Where the arms lie | 3 m along the path ahead of where the player wakes, below the step down from it | Just ahead as play begins |

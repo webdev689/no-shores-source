@@ -59,6 +59,6 @@ A build stamps its folder (`built.json`) with the hash of each pack and the `.bl
 `islands/` through `tools/r2.py`, checks each comes back, writes `content/islands/modules.json` (`base`, `parts`,
 `kits`, `source`) and ends its log with it on one line; `--dry-run` shows the manifest without sending. The
 `island-modules` workflow runs all of it whenever `tools/islands/` or the contract changes, keeps the sheets (even
-when a module is refused) and the packs as artifacts, and publishes with the repository's `R2_TOKEN` when it
+when a module is refused) and the packs as artifacts, and publishes with the repository's `CLOUDFLARE_TOKEN` when it
 is set, from any branch ([[Model Packs Upload From Any Branch]]). Its machine is thrown away with the manifest it wrote, so a commit takes the manifest from its log, and the
 run warns while the committed one is behind; until then the page draws the packs the committed manifest names.

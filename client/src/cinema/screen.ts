@@ -1,18 +1,18 @@
-// What a cutscene lays over the picture: a fade to black or white, the letterbox's bars, a flash, eyelids for waking,
-// the game's title and a prompt that breathes, drawn by the game as a layer of its interface over every other; and a
-// blur on the view, which the scene draws into its own picture under the interface (game/blur.ts). Each eases by its
-// own time as the page's transitions eased, but the eyelids and the blur, which the story drives frame by frame.
+// What a cutscene lays over the picture: a fade to black or white, the letterbox's bars, a flash, a darkening for
+// waking, the game's title and a prompt that breathes, drawn by the game as a layer of its interface over every other;
+// and a blur on the view, which the scene draws into its own picture under the interface (game/blur.ts). Each eases by
+// its own time as the page's transitions eased, but the darkening and the blur, which the story drives frame by frame.
 // While it stands, a touch on the view is the story's alone: no drag pans the page or pulls it to reload, so a held
 // touch is never cut short.
 import { motionReduced } from '../plus/kit.ts';
+import { announce } from '../ui/announce.ts';
 import type { Child, Node } from '../ui/node.ts';
 import { touchesHeld } from '../ui/page.ts';
 import type { Layer, Stack } from '../ui/stack.ts';
 import type { Interface } from '../ui/ui.ts';
 import { ease } from '../ui/ease.ts';
 import { breath, dropped, Eased, pageClock, ruleOf } from './cinemaParts.ts';
-import { lidDrop, lidOf, lidShut } from './eyelids.ts';
-import { logoNode, logoScale } from './logo.ts';
+import { loadingNode, logoNode, logoScale } from './logo.ts';
 
 /** The title as the screen shows it. */
 export const TITLE = 'No Shores';
@@ -40,8 +40,8 @@ export class Screen {
   private readonly titled = new Eased(0);
   private readonly prompted = new Eased(0);
   private readonly skipShown = new Eased(0, ease);
-  private shut = 0;
-  private lidLight = 0;
+  private readonly loading = new Eased(0);
+  private dark = 0;
   private blurred = 0;
   private prompt = '';
   private skipShare = 0;
@@ -76,10 +76,9 @@ export class Screen {
     this.barred.set(shown ? 1 : 0, motionReduced() ? 0 : 1.2, this.clock());
   }
 
-  /** The eyelids, 0 open to 1 shut, with `light` (0 none to 1 a lit place) seen warm through them as they shut. */
-  lids(shut: number, light = 0): void {
-    this.shut = Math.min(1, Math.max(0, shut));
-    this.lidLight = Math.min(1, Math.max(0, light));
+  /** The view darkened, 0 clear to 1 black, as the story sets it each frame for a waking: under the fades. */
+  darken(dark: number): void {
+    this.dark = Math.min(1, Math.max(0, dark));
   }
 
   /** The view blurred by `pixels`, as eyes that cannot yet focus see it. */
@@ -111,16 +110,26 @@ export class Screen {
     this.skipShown.set(share === null ? 0 : share > 0 ? 0.9 : 0.45, 0.4, this.clock(), 0);
   }
 
+  /** The logo and a breathing "Loading" over the black, while the next scene is still coming, or not. */
+  showLoading(shown: boolean): void {
+    const target = shown ? 1 : 0;
+    if (this.loading.target === target) return;
+    this.loading.set(target, 0.4, this.clock());
+    // Drawn, not written into the page: a screen reader is told as it shows.
+    if (shown) announce('Loading');
+  }
+
   /** Lets every layer go: the view back as it was. */
   clear(): void {
     this.fade(0, 0.6);
     this.fade(0, 0.6, 'white');
     this.bars(false);
-    this.lids(0);
+    this.darken(0);
     this.blur(0);
     this.showTitle(false);
     this.showPrompt(null);
     this.showSkip(null);
+    this.showLoading(false);
   }
 
   /** Takes the screen away, giving the canvas back its own touches. */
@@ -137,23 +146,6 @@ export class Screen {
     const still = motionReduced();
     const barTall = Math.round(height * 0.11);
     const barred = this.barred.value(now);
-    const lidTall = Math.round(height * 0.52);
-    const lidWide = Math.round(width * 1.1);
-    const lid = (top: boolean): Node => {
-      const shut = lidShut(this.shut)[top ? 'top' : 'bottom'];
-      return {
-        id: `cinema-lid-${top ? 'top' : 'bottom'}`,
-        width: lidWide,
-        height: lidTall,
-        draw: lidOf(top, shut, this.lidLight),
-        float: {
-          to: 'screen',
-          anchor: [0.5, top ? 0 : 1],
-          at: [0.5, top ? 0 : 1],
-          y: Math.round(lidDrop(top, shut, lidTall)),
-        },
-      };
-    };
     const bar = (top: boolean): Child =>
       barred > 0 && {
         width,
@@ -179,14 +171,29 @@ export class Screen {
       children: [
         bar(true),
         bar(false),
-        this.shut > 0 && lid(true),
-        this.shut > 0 && lid(false),
+        this.dark > 0 && { id: 'cinema-dark', width, height, fill: BLACK, opacity: this.dark, float: { to: 'screen' } },
         this.titleNode(width, height, now),
         this.promptNode(width, height, now, still),
         this.skipNode(now),
         veil(this.white, WHITE),
         veil(this.black, BLACK),
+        this.loadingNode(width, height, now, still),
       ],
+    };
+  }
+
+  private loadingNode(width: number, height: number, now: number, still: boolean): Child {
+    const shown = this.loading.value(now);
+    if (shown <= 0) return null;
+    return {
+      width,
+      height,
+      alignX: 'center',
+      alignY: 'center',
+      opacity: shown,
+      label: 'Loading',
+      float: { to: 'screen' },
+      children: [loadingNode(width, now, still)],
     };
   }
 

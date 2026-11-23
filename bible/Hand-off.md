@@ -133,6 +133,15 @@ each part works is in its system note.
   ruins grown through with crystal) and [[The Held Map Takes the Ship to Other Waters, Seen Sailing Away]]; Claude's
   calls in [[The Grey Tithe's Sea, Travel and the Overtaken Ruins as Claude Builds Them]]. Each feature reviewed on its
   own and its findings fixed; tested offline, the ruins pictured headless; the travel's cinematic not pictured.
+- **The game is No Shores** (#157, merged on the owner's "Merge and deploy"; [[The Game Is Named No Shores]]): the
+  title, the bible and the game's note with the owner's premise; Overlook stays the port city. The owner's logo is
+  the title on the tap to start and the intro, a pixel picture written from the owner's PNG by `tools/logo/write.py`
+  (the PNG stays out of git with its C2PA credentials; [[Cinema]]). The repository and page are `no-shores-source`;
+  the browser's keys move once from `overlook.` to `noshores.` (`keptNames.ts`); No Shores is a reserved name. The
+  Workers, the D1 database, the R2 bucket, the code's own names and the download cache keep Overlook's. This
+  session's git proxy answers only at `github.com/Lattymoy/overlook-source`, which GitHub redirects: keep that remote.
+  Merged as `c0db6fc7` and deployed (CI run 45068542964's second attempt, after the first was cancelled at its last
+  step): the page live at `lattymoy.github.io/no-shores-source/` with the logo, the rooms and the accounts answering.
 - **The picture driver reads the drawn interface** (#165, merged on the owner's "Yes"): `__ui()` lists what the
   game's interface shows, the driver's `waitFor`, `clickText` and `press` read it, and a plan's `"noGpu": true` runs
   the game at full speed with nothing drawn ([[Toolkit]], Browser QA). Tested offline: the title, the story's skip and
@@ -162,8 +171,8 @@ each part works is in its system note.
 ## Waiting on the owner
 
 - **Looks by content, the Playlist and the matchmade dungeons' encounters** (#160, branch
-  `claude/bible-dungeon-matchmaking-5421wl`), for the owner's yes to merge, which deploys the page and the rooms. The
-  owner's asks are recorded ([[Armour and Weapon Looks Belong to the Content That Gives Them]],
+  `claude/bible-dungeon-matchmaking-5421wl`), merged with the owner's yes ("Let's merge and deploy and talk about this
+  after"), which deploys the page and the rooms. The owner's asks are recorded ([[Armour and Weapon Looks Belong to the Content That Gives Them]],
   [[Elite and Abyss Dungeons Are Queued From a Playlist Beside Each Port]],
   [[Matchmade Dungeons Gain Encounters, Puzzles, Climbs and Raid Mechanics]], [[A Playlist's Launch Is Drawn by the
   Server]], [[The Room Keeps Only Looks of a Piece's Own Content]], [[Faction Blades Wear Their Faction's Colour on
@@ -189,14 +198,36 @@ each part works is in its system note.
     Dungeons' crossbow art ("Not now").
   - To talk through with the owner: the named-piece gaps (36 of 60 contents, colours and slots have no named piece of
     their own), and the Veiled's colour on a blade ([[Open Questions]]).
+- **The prologue's waking, scene changes and arena; one loading screen for the game; foes that give up only when
+  far; feet on the city's ground** (#158, branch `ccr-bedea921-gq44fj`), for the owner's yes to merge, which deploys
+  the page and the rooms. Each part is in its decision:
+  [[The Prologue Wakes by Darkening and Pulsing, Not Eyelids]],
+  [[The Prologue's Scenes Change Slower, Behind the Logo While They Load]],
+  [[Thule Fights on a Quarterdeck Twice as Long]],
+  [[One Loading Screen Covers Every Trip Until the Place Is Ready]],
+  [[A Foe Gives Up Only When the Player Is Far Away]], and the hub's sunk feet fixed (a figure's lowest quarter metre takes the city's
+  pull, [[Cities]]). The prologue's work audited by four read-only reviewers, the loading screen and #155's merge by
+  three more; every finding fixed or asked. Tested offline and pictured headless; not played live.
+  - **The arena is built.** The asset workflows upload with `CLOUDFLARE_TOKEN` now ([[The Asset Workflows Publish to R2 With the Cloudflare Token]]);
+    the `wreck` workflow built and published the longer quarterdeck, and its `wreck-level` artifact is
+    `content/prologue/wreck.json` whole (its mesh and light on R2, 31 dead-end slips). On it the waist's pistoleer
+    lost a player close behind its clutter, searched, and walked home healing; it now hunts a target within 14 m on
+    rather than search ([[A Foe Gives Up Only When the Player Is Far Away]]).
+  - **One loading screen everywhere** ([[One Loading Screen Covers Every Trip Until the Place Is Ready]]): every
+    trip's veil, the story's hand-over to the hub too, is the logo, LOADING and the trip's words, and lifts once
+    nothing stands in for the place round the player (`standIns.ts`) for three frames, at most 20 s; plants scatter
+    30 ms a frame behind it; a travel by the held map's black waits the same way. Mid-play nothing veils: the plants'
+    pipelines are made once per device and format, the lit keepers' marks and the first-person glow make theirs off
+    the frame. Tested headless in the hub (SwiftShader, about a frame every 10 s): it lifted by itself at frame 54,
+    the plants last; on a real GPU it is not yet timed.
 - **#164, a smith's ware drawn as the piece it becomes** (branch `claude/vigilant-wozniak-lu9pm3`), merged with the
   owner's yes ("Yes"), which deploys the page and the rooms: the gear message sends `next_id`, the page draws each smith's
   ware by it and asks for it by its place ([[Gear]], "Looks"). Tested offline: a test buys each of the day's twelve
   armour and weapon wares and holds each to its look in the shop (it failed before, on a Magic torso). Open for the
   owner: a purchase moves the number on, so the other wares still shown may redraw.
 - **The owner's six prologue points, the wreck's room in the worker and a full audit** (#161, branch
-  `claude/gifted-knuth-lijjf2`), for the owner's yes to merge, which deploys the page and the rooms (the naval rules
-  and the protocol's version changed): the wreck's hitches (blood's rays, its sheet drawn behind the wake's shut lids)
+  `claude/gifted-knuth-lijjf2`), merged into `main` (0fadd778; its deploy not checked here), which deploys the page and
+  the rooms (the naval rules and the protocol's version changed): the wreck's hitches (blood's rays, its sheet drawn while the wake's screen is dark)
   and its room opened and ticked in the rooms' worker ([[The Wreck's Room Runs in the Rooms' Worker Too]]); the
   ship's aim after Black Flag from its own deck with a lay that narrows as it is held
   ([[Aiming a Ship Follows Black Flag, From Its Deck]]); the wreck's arms 8 m out as a loot drop
@@ -212,8 +243,8 @@ each part works is in its system note.
   framing on each hull, the faded marks, the arms' pop and the sounds are not yet seen on a real GPU, heard or played.
   Open for the owner: whether each hull's eye frames well (the Brig's stands on its quarterdeck, aft of its battery;
   the Schooner's under its main boom), and the narrowing's 2x and 1.5 s.
-- **Nameplates, the player menu and chat** (#154, branch `claude/player-nameplates-interaction-3b6cwr`), for the
-  owner's yes to merge, which deploys the page, the rooms and the accounts (a new Durable Object, the chat's hall, and
+- **Nameplates, the player menu and chat** (#154, branch `claude/player-nameplates-interaction-3b6cwr`), merged into
+  `main` (bc896f8b; its deploy not checked here); as it went to the owner's yes to merge, which deploys the page, the rooms and the accounts (a new Durable Object, the chat's hall, and
   two migrations: `presence.water` and `mutes`): [[Other Players Wear a Nameplate, Their Level or Prestige in a
   Square]] (level, 21 to 30 in gold, three dots in a menu, green company, blue others;
   [[A Player's Square Shows Their Level, Gold Past 20]]),
@@ -307,7 +338,7 @@ The decisions in [[Open Questions]] are not repeated here.
   keeps travelling meets no hostile ship); whether the healing drink is "a heal" that Exposure halves; whether a lip
   caught off square is hung square; whether control waits a moment for a run that opens in the wake's last instant;
   the wreck scene's sunk Sloop, which wears the pirates' colours until `tools/wreck` is rendered again (a push there
-  publishes to R2), and `wreck_level.py`'s comments, which name the pirates' types; a ship the room took off its route
+  publishes to R2; #158's `wreck_level.py`, its waves now the Tithe's types as the layout has them, is one); a ship the room took off its route
   still drawn on it from land; the crystal of a ruin's buildings round its plaza, kept clear in its 110 m window.
 - **Open pull requests.** For the owner's yes once their checks pass: #125 (main's
   screens: the Harbourmaster's rows, the menu under 600 px). Drafts: #82
@@ -373,7 +404,8 @@ The decisions in [[Open Questions]] are not repeated here.
 - **The ships** ([[The Ships as Claude Shapes Them]]): the owner asked for the Frigate as one more model "and call its
   there", so the Tithe Ram and the Fluyt wait until asked; splitting ships into parts for upgrades, and the cabin's
   decoration from DFO's `decor/`, are set aside by the owner for now.
-- **The lore**: nothing in the prologue names the Cube or a crystal, and the voice in the deep has no name.
+- **The lore**: nothing in the prologue names the Cube or a crystal, and the voice in the deep has no name. The
+  owner's premise ([[No Shores]]) is for later in the game: "This is for later".
   Elder Maren Hale says the Grey Tithe take a tenth and Overlook pays nothing, the owner's decision
   ("The Grey Tithe Take a Tenth, and Overlook Does Not Pay").
 - **Accounts and hosting** ([[The Audit's Calls Are Claude's]]): the Workers plan (a password sign-in takes about
@@ -382,12 +414,12 @@ The decisions in [[Open Questions]] are not repeated here.
   over the deploy jobs; the Discord app's redirect (`/v1/discord/callback` on `overlook-accounts`) and its secrets
   `DISCORD_CLIENT_ID` and `DISCORD_CLIENT_SECRET`; the Cloudflare token's leave to edit D1; whether the page plays
   online by default (without `?room=` it has no accounts).
-- **Keys and workflows**: rotate the Cloudflare token the owner gave in the chat (the `rooms` workflow alone reads
-  the Actions secret `CLOUDFLARE_TOKEN`; the workflows that publish to R2 read `R2_TOKEN`,
-  [[The Asset Workflows Publish to R2 With a Token for R2 Alone]]); add `tools/install-flatc.sh` to `ROOMS_CODE` in
+- **Keys and workflows**: rotate the Cloudflare token the owner gave in the chat (the Actions secret
+  `CLOUDFLARE_TOKEN`, which the `rooms` workflow and every workflow that publishes to R2 read,
+  [[The Asset Workflows Publish to R2 With the Cloudflare Token]]); add `tools/install-flatc.sh` to `ROOMS_CODE` in
   `.github/workflows/rooms.yml`. A cloud session cannot deploy the rooms itself: its proxy writes the stored token
   over the upload token Cloudflare hands back.
-- **The cloud environment**: two environments named Default are listed and no `overlook-source` one; which one
+- **The cloud environment**: two environments named Default are listed and none for this repository; which one
   sessions should run on, and which holds the SkillsMP key, is unchecked. A Context7 key, if wanted, goes on it the
   same way.
 - **The forge's renders** leave `r2.dev`, which limits its rate, once `daggerfalljs.dev`'s DNS moves to Cloudflare

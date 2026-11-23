@@ -13,6 +13,7 @@ import { figureOf } from '../../player/dressing.ts';
 import type { Actor } from './actors.ts';
 import { armouredDress, FIRST_LOOK } from './look.ts';
 import { onScreen, type Shot } from '../camera.ts';
+import type { Beat } from './beat.ts';
 import { Deep } from './deep.ts';
 import { YOU_ID } from './helm.ts';
 import type { Nameplate } from './nameplate.ts';
@@ -103,13 +104,13 @@ test('a wreck run that opens after its beat was left is let go at once, its edge
   assert.equal(fight.playing, false);
 });
 
-test('the throw overboard begins black, as the fight faded out, and only then fades in', () => {
+test('the throw overboard begins black, as the fight faded out, and leaves its fading in to the director', () => {
   const { story, calls } = recorded();
   const beat = new Overboard(story, layout, scenery);
+  assert.ok(beat.fromBlack);
   assert.ok(calls.includes('stage.parts.screen.fade(1, 0)'));
-  assert.ok(!calls.includes('stage.parts.screen.fade(0, 0.9)'), 'not yet');
   const shown = beat.frame(tick(0.4));
-  assert.ok(calls.includes('stage.parts.screen.fade(0, 0.9)'));
+  assert.ok(!calls.some((call) => call.startsWith('stage.parts.screen.fade(0')), 'no fade in of its own');
   assert.ok(shown.drawers?.includes(scenery.drawer), 'the wreck is drawn');
 });
 
@@ -296,8 +297,37 @@ test('the wake cut short leaves the eyes open, though the director frames it onc
   beat.frame(tick(2));
   beat.skip();
   beat.frame(tick(0.016));
-  const lids = calls.filter((call) => call.startsWith('stage.parts.screen.lids')).at(-1);
-  assert.match(lids ?? '', /^stage\.parts\.screen\.lids\(0[,)]/, `${lids}`);
+  const dark = calls.filter((call) => call.startsWith('stage.parts.screen.darken')).at(-1);
+  assert.match(dark ?? '', /^stage\.parts\.screen\.darken\(0\)/, `${dark}`);
+});
+
+test('the beats from black wait for the wreck, and the wake and the shore fade in by their own darkening', () => {
+  const coming = { ...scenery, coming: true } as unknown as WreckScenery;
+  const { story } = recorded();
+  const wake = new Wake(story, layout, coming, new Promise(() => undefined));
+  const overboard = new Overboard(story, layout, coming);
+  const deep = new Deep(story, layout, coming);
+  for (const beat of [wake, overboard, deep]) {
+    assert.ok(beat.fromBlack, beat.name);
+    assert.equal(beat.ready, false, `${beat.name} waits while the wreck comes`);
+  }
+  assert.ok(new Wake(story, layout, scenery, new Promise(() => undefined)).ready, 'ready once it is drawn');
+  assert.equal(wake.fadeInS, 0, 'the wake darkens itself awake');
+  assert.equal((overboard as Beat).fadeInS, undefined, 'the throw is faded in as every scene is');
+});
+
+test('the heart begins with the wake’s first frame, so its sound and the pulse keep time; the deep lays no fade in', () => {
+  const { story, calls } = recorded();
+  const wake = new Wake(story, layout, scenery, new Promise(() => undefined));
+  assert.ok(!calls.includes('stage.parts.ambience.heartbeat(true)'), 'not while the director holds the black');
+  wake.frame(tick(0.016));
+  assert.ok(calls.includes('stage.parts.ambience.heartbeat(true)'));
+  const deep = recorded();
+  const beat = new Deep(deep.story, layout, scenery);
+  assert.ok(!deep.calls.includes('stage.parts.ambience.heartbeat(true)'));
+  beat.frame(tick(0.5));
+  assert.ok(deep.calls.includes('stage.parts.ambience.heartbeat(true)'));
+  assert.ok(!deep.calls.some((call) => call.startsWith('stage.parts.screen.fade(0')), 'the director fades it in');
 });
 
 /** A run of the wreck that plays nothing: the player alive or dead as `own` says (their health as it holds), in the
@@ -362,6 +392,22 @@ test('the player felled by Thule is never told they will rise: the boss fight en
   own.dead = true;
   fight.frame(tick(0.016));
   assert.ok(!calls.some((call) => call.includes('Fallen')), 'no death words over the fade');
+});
+
+test('the push in to Thule goes 2.6 m in at most, so on the long quarterdeck it never passes the player', async () => {
+  const { story } = recorded(FOOT_VIEW);
+  const plate = { show: () => undefined, hide: () => undefined } as unknown as Nameplate;
+  const fight = new WreckFight(story, layout, scenery, Promise.resolve(stillRun({ dead: false }, true)), plate);
+  await Promise.resolve();
+  const [x, y] = layout.arena.thule;
+  const head = [x, y, topAt(courseOf(layout), x, y) + 1.9];
+  const away = (eye: readonly number[]) => Math.hypot(...head.map((part, axis) => part - (eye[axis] ?? 0)));
+  const eyeAt = (seconds: number) => fight.frame(tick(seconds))?.shot.eye ?? [Infinity, Infinity, Infinity];
+  const start = away(eyeAt(0.016));
+  let nearest = start;
+  for (let since = 0; since < 2; since += 0.05) nearest = Math.min(nearest, away(eyeAt(0.05)));
+  assert.ok(nearest < start - 2, `it pushed in: from ${start} m to ${nearest} m`);
+  assert.ok(nearest > start - 2.6 - 0.05, `no farther than 2.6 m: from ${start} m to ${nearest} m`);
 });
 
 test('the crew celebrating the throw overboard stand clear of what stands on its deck', () => {

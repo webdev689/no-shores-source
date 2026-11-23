@@ -105,7 +105,8 @@ strikes ([[Public Events]]).
   allies within 12 m toward that place, and takes the nearest it sees that its leash lets it fight (or another, sharing
   out: below), or the one that strikes it (a blow alerts at once). Seen farther off than its range, a target is pursued,
   not fought; a shooter pursuing one walks on until it stands 6 m inside its range. Out of sight, its target is hunted
-  where it was last seen for 5 s, its turn kept 1.5 s (DFO's stale lease); then it **searches**: walks to within 1.4 m
+  where it was last seen for 5 s, its turn kept 1.5 s (DFO's stale lease), and by a garrison foe for as long as
+  the target stands within 14 m of it; then it **searches**: walks to within 1.4 m
   of the place, sweeps its gaze at 2.2 radians a second out and back for 2.6 s, then lets go, and its level bleeds back
   to idle. Suspicious, hunting or searching, it stops short of the place behind an ally that already stands nearer it,
   within 1.2 m. The foe's soft lock holds its target, but while it answers a blow, the striker. A player just stood
@@ -150,9 +151,11 @@ strikes ([[Public Events]]).
   as far as the walk to it, so a foe beneath a ledge goes up to it rather than swing at it from below.
 - **The leash.** A garrison foe ([[Enemies]]) is leashed to its place in its group, at its post or on its beat, which
   holds still while the group fights ([[Foes Leash to Their Posts and Fall With Their Boss]]). Once its target stands 50
-  m from that place, or stands on the ground off the room's navmesh (more than 1.5 m across from the mesh's nearest
-  point, or on no level it has), it gives its fight up once no wind-up of its own is under way: its target, its turn,
+  m from that place, or, farther from the foe than the 14 m it engages a target it sees within, stands on the ground
+  off the room's navmesh (more than 1.5 m across from the mesh's nearest point, or on no level it has), it gives its fight up once no wind-up of its own is under way: its target, its turn,
   the blow it saw coming and its answer, its hunt, its search, its awareness, and a roar its health no longer calls for.
+  Within its leash, a target within those 14 m it never gives up on, wherever the target stands
+  ([[A Foe Gives Up Only When the Player Is Far Away]]).
   It sheds its Expose and its Charge ([[Combat]], "Statuses") and walks back by the room's routes, healing each tick the
   share of what it lacks that a tick's walk is of the way left, so it is whole as it arrives (from 40 m, about 12 s),
   then turns to face as its place does and stands idle. Walking back it heeds nothing it sees or hears and shows as
@@ -163,7 +166,8 @@ strikes ([[Public Events]]).
   places its own foes keeps them as it placed them. A target in the air, hanging, climbing or going over a lip is judged
   by its distance alone, so a foe fights on at one on a wall or over a ledge. Seeing one past its leash on ground its
   routes reach stirs it (it searches toward them) but it takes them as no target; one on ground its routes do not reach
-  from its place, a part of the navmesh with no way to it, stirs it not at all (`leash::reachable`).
+  from its place, a part of the navmesh with no way to it, stirs it not at all (`leash::reachable`), unless it stands
+  within those 14 m of the foe and within its leash.
 - **Home after a search.** A garrison foe whose search finds no one (its look about ends, or its awareness bleeds back
   first) walks home the same way, healing (from 20 m, about 6 s). On this walk it heeds what it sees and hears as ever:
   they raise its awareness, and once it is alert it takes its target or searches again; short of that it walks on home,

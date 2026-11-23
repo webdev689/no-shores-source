@@ -294,7 +294,8 @@ The game draws every screen itself, and by the owner's word no HTML is laid over
 - **The heads-up display** is a layer of its own (`Hud`): the place's name, the edge's warning and its darkening,
   death's words and Respawn, the key strip on its keycaps, the task tracker, the
   toasts, the status line, the compass, the marks with their rings, glyphs and arrows, the ships' plates, the sea bar
-  and its offers, Manage's panel, the menu, the prompt for E, the veil and the sheet of every control. Each stands where the page's sheet stood
+  and its offers, Manage's panel, the menu, the prompt for E, the veil (the loading screen, `loadingNode`, with the
+  trip's words; [[One Loading Screen Covers Every Trip Until the Place Is Ready]]) and the sheet of every control. Each stands where the page's sheet stood
   it, gives way as it did, and eases, slides and flashes as it did. Words laid over the world, and the darkened edge,
   let a click through to the world; the marks, presses and panels take it. A mark's glyph is
   drawn into a picture in the mended face (`CANVAS_FACE`), which holds the ones Pixelify lacks. It gives way to the fight's display as that says it shows, and to the
@@ -318,7 +319,7 @@ The game draws every screen itself, and by the owner's word no HTML is laid over
   copied, a file saved or opened from the player's chooser, a yes or no asked in the browser's dialog; each borrows the
   page for a moment, and nothing of them is drawn interface.
 - **The story's screens** are layers of their own, each where the page stood it: the tap to start over everything,
-  the cinema's screen (its veils, bars, eyelids, flash, title, prompt and skip) over the HUD and the menu, a boss's
+  the cinema's screen (its veils, bars, darkening, flash, title, prompt, skip and loading screen) over the HUD and the menu, a boss's
   nameplate and the objective under it, the dialogue box and the barks over heads under every other layer, and the
   creation's two windows at the helm, whose fields are typed through the interface and whose keys are the
   interface's while either is up (`creationOpen`); each window, and the pause menu, is modal while up. Words over the world and the veils let the pointer through to the

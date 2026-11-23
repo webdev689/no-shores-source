@@ -235,8 +235,8 @@ WebAssembly, so names, factions and weapons are read in one place.
   along the walk from the way in to the end. A dungeon has no lattice to draw beats from, so its bands hold their
   posts. Its levels, shields, leash and standing again are any garrison's, at its patrol's island band.
 - **The leash**: a garrison foe, Corvane and his escort too, gives its fight up once its target stands 50 m from its
-  place in its group or stands on the ground off the room's navmesh, and walks back there, healing as it goes, to
-  stand idle again; one whose search finds no one walks back the same way ([[Foes]]). Its group halts where its fight
+  place in its group or, farther than 14 m from the foe, stands on the ground off the room's navmesh
+  ([[A Foe Gives Up Only When the Player Is Far Away]]), and walks back there, healing as it goes, to stand idle again; one whose search finds no one walks back the same way ([[Foes]]). Its group halts where its fight
   began, so it walks back to its place round that spot, and the group walks its beat on once all its foes are idle in
   their places. It is still its group's: a walk home never clears a group or stands it again.
 - **Its leader** is its highest rank, a Captain first among equals, else the first of them. When it falls, every other

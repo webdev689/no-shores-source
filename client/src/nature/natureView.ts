@@ -11,6 +11,7 @@ import { FORM_BLOCK_BYTES, FORM_FLOATS, type FormBuffers, formBuffers, type Part
 import { Kept } from './kept.ts';
 import { type Cast, TREE } from './kinds.ts';
 import { FRAME_FLOATS, NATURE_CAST_SHADER, NATURE_SHADER, SHADE_SEGMENTS } from './natureShader.ts';
+import { standIn } from '../standIns.ts';
 
 /** The camera a frame is drawn from. */
 export interface NatureFrame {
@@ -68,6 +69,102 @@ interface Grown {
   buffer: GPUBuffer | null;
 }
 
+/** The plants' layout and pipelines, made once a device and format: a landmass opened or an island's climate come into
+ *  sight while sailing compiles none again. */
+type NaturePipelines = {
+  readonly layout: GPUBindGroupLayout;
+  /** The near meshes, both sides of every face: cards are seen from either. */
+  readonly plants: GPURenderPipeline;
+  /** The far quads. */
+  readonly sprites: GPURenderPipeline;
+  readonly shade: GPURenderPipeline;
+  /** The near plants' depth along the sun, into the shadow map. */
+  readonly cast: GPURenderPipeline;
+};
+
+const made = new WeakMap<GPUDevice, Map<GPUTextureFormat, NaturePipelines>>();
+
+function naturePipelines(gpu: Gpu): NaturePipelines {
+  const { device } = gpu;
+  const byFormat = made.get(device) ?? new Map<GPUTextureFormat, NaturePipelines>();
+  made.set(device, byFormat);
+  const known = byFormat.get(gpu.format);
+  if (known) return known;
+  const seen = SHADER_STAGE.vertex | SHADER_STAGE.fragment;
+  const stored = { type: 'read-only-storage' } as const;
+  const layout = device.createBindGroupLayout({
+    entries: [
+      { binding: 0, visibility: seen, buffer: { type: 'uniform' } },
+      {
+        binding: 1,
+        visibility: seen,
+        buffer: { type: 'uniform', hasDynamicOffset: true, minBindingSize: FORM_FLOATS * 4 },
+      },
+      { binding: 2, visibility: SHADER_STAGE.vertex, buffer: stored },
+      { binding: 3, visibility: SHADER_STAGE.vertex, buffer: stored },
+      { binding: 4, visibility: SHADER_STAGE.vertex, buffer: stored },
+      { binding: 5, visibility: SHADER_STAGE.fragment, texture: { viewDimension: '2d-array' } },
+      { binding: 6, visibility: SHADER_STAGE.fragment, texture: { viewDimension: '2d-array' } },
+      { binding: 7, visibility: SHADER_STAGE.fragment, sampler: {} },
+      { binding: 8, visibility: SHADER_STAGE.fragment, sampler: {} },
+    ],
+  });
+  const module = device.createShaderModule({ code: NATURE_SHADER });
+  const shadows = shadowLayouts(device);
+  const sky = skyUniformFor(device);
+  const drawnLayout = device.createPipelineLayout({
+    bindGroupLayouts: [layout, shadows.receiver, sky.empty, sky.layout],
+  });
+  const mesh: GPUVertexBufferLayout = {
+    arrayStride: MESH_VERTEX_BYTES,
+    attributes: [
+      { shaderLocation: 0, offset: 0, format: 'float32x3' },
+      { shaderLocation: 1, offset: 12, format: 'snorm8x4' },
+      { shaderLocation: 2, offset: 16, format: 'snorm8x4' },
+      { shaderLocation: 3, offset: 20, format: 'float32x2' },
+      { shaderLocation: 4, offset: 28, format: 'unorm8x4' },
+      { shaderLocation: 5, offset: 32, format: 'unorm8x4' },
+    ],
+  };
+  const drawn = (vertex: string, fragment: string, buffers: GPUVertexBufferLayout[]) =>
+    device.createRenderPipeline({
+      layout: drawnLayout,
+      vertex: { module, entryPoint: vertex, buffers },
+      fragment: { module, entryPoint: fragment, targets: [{ format: gpu.format }] },
+      primitive: { topology: 'triangle-list', cullMode: 'none' },
+      depthStencil: { format: 'depth32float', depthWriteEnabled: true, depthCompare: 'greater' },
+      multisample: { count: SAMPLES },
+    });
+  // The shade only darkens what is under it: the colour drawn is kept by the share its alpha leaves.
+  const castModule = device.createShaderModule({ code: NATURE_CAST_SHADER });
+  const darken: GPUBlendState = {
+    color: { srcFactor: 'zero', dstFactor: 'one-minus-src-alpha', operation: 'add' },
+    alpha: { srcFactor: 'zero', dstFactor: 'one', operation: 'add' },
+  };
+  const pipelines: NaturePipelines = {
+    layout,
+    plants: drawn('plant_vertex', 'plant_fragment', [mesh]),
+    sprites: drawn('sprite_vertex', 'sprite_fragment', []),
+    shade: device.createRenderPipeline({
+      layout: drawnLayout,
+      vertex: { module, entryPoint: 'shade_vertex' },
+      fragment: { module, entryPoint: 'shade_fragment', targets: [{ format: gpu.format, blend: darken }] },
+      primitive: { topology: 'triangle-list', cullMode: 'none' },
+      depthStencil: { format: 'depth32float', depthWriteEnabled: false, depthCompare: 'greater' },
+      multisample: { count: SAMPLES },
+    }),
+    cast: device.createRenderPipeline({
+      layout: device.createPipelineLayout({ bindGroupLayouts: [layout, shadows.caster] }),
+      vertex: { module: castModule, entryPoint: 'plant_cast', buffers: [mesh] },
+      fragment: { module: castModule, entryPoint: 'plant_cast_fragment', targets: [] },
+      primitive: { topology: 'triangle-list', cullMode: 'none' },
+      depthStencil: { format: 'depth32float', depthWriteEnabled: true, depthCompare: 'less' },
+    }),
+  };
+  byFormat.set(gpu.format, pipelines);
+  return pipelines;
+}
+
 /** A biome's flora on the GPU: its meshes, their terms and its pictures. */
 interface Meshes {
   readonly cast: Cast;
@@ -106,15 +203,7 @@ export class NatureView {
   private readonly gpu: Gpu;
   private readonly field: NatureField;
   private readonly layout: GPUBindGroupLayout;
-  private readonly pipelines: {
-    /** The near meshes, both sides of every face: cards are seen from either. */
-    readonly plants: GPURenderPipeline;
-    /** The far quads. */
-    readonly sprites: GPURenderPipeline;
-    readonly shade: GPURenderPipeline;
-    /** The near plants' depth along the sun, into the shadow map. */
-    readonly cast: GPURenderPipeline;
-  };
+  private readonly pipelines: NaturePipelines;
   private readonly frameBuffer: GPUBuffer;
   private meshes: Meshes | null = null;
   /** The biome whose flora is loading or loaded, and what came of it: null while it loads or if it failed. */
@@ -136,25 +225,6 @@ export class NatureView {
     this.gpu = gpu;
     this.field = new NatureField(budgetMs);
     const { device } = gpu;
-    const seen = SHADER_STAGE.vertex | SHADER_STAGE.fragment;
-    const stored = { type: 'read-only-storage' } as const;
-    this.layout = device.createBindGroupLayout({
-      entries: [
-        { binding: 0, visibility: seen, buffer: { type: 'uniform' } },
-        {
-          binding: 1,
-          visibility: seen,
-          buffer: { type: 'uniform', hasDynamicOffset: true, minBindingSize: FORM_FLOATS * 4 },
-        },
-        { binding: 2, visibility: SHADER_STAGE.vertex, buffer: stored },
-        { binding: 3, visibility: SHADER_STAGE.vertex, buffer: stored },
-        { binding: 4, visibility: SHADER_STAGE.vertex, buffer: stored },
-        { binding: 5, visibility: SHADER_STAGE.fragment, texture: { viewDimension: '2d-array' } },
-        { binding: 6, visibility: SHADER_STAGE.fragment, texture: { viewDimension: '2d-array' } },
-        { binding: 7, visibility: SHADER_STAGE.fragment, sampler: {} },
-        { binding: 8, visibility: SHADER_STAGE.fragment, sampler: {} },
-      ],
-    });
     this.sampler = device.createSampler({
       magFilter: 'linear',
       minFilter: 'linear',
@@ -163,57 +233,8 @@ export class NatureView {
     // The near meshes' cards read their leaves from one mip: most of a card's pixels are tested and cut away, and on
     // a CPU renderer that read is what a forest's frame costs. An alpha-cut edge hides the step.
     this.cutSampler = device.createSampler({ magFilter: 'linear', minFilter: 'linear', mipmapFilter: 'nearest' });
-    const module = device.createShaderModule({ code: NATURE_SHADER });
-    const shadows = shadowLayouts(device);
-    const sky = skyUniformFor(device);
-    const layout = device.createPipelineLayout({
-      bindGroupLayouts: [this.layout, shadows.receiver, sky.empty, sky.layout],
-    });
-    const mesh: GPUVertexBufferLayout = {
-      arrayStride: MESH_VERTEX_BYTES,
-      attributes: [
-        { shaderLocation: 0, offset: 0, format: 'float32x3' },
-        { shaderLocation: 1, offset: 12, format: 'snorm8x4' },
-        { shaderLocation: 2, offset: 16, format: 'snorm8x4' },
-        { shaderLocation: 3, offset: 20, format: 'float32x2' },
-        { shaderLocation: 4, offset: 28, format: 'unorm8x4' },
-        { shaderLocation: 5, offset: 32, format: 'unorm8x4' },
-      ],
-    };
-    const drawn = (vertex: string, fragment: string, buffers: GPUVertexBufferLayout[]) =>
-      device.createRenderPipeline({
-        layout,
-        vertex: { module, entryPoint: vertex, buffers },
-        fragment: { module, entryPoint: fragment, targets: [{ format: gpu.format }] },
-        primitive: { topology: 'triangle-list', cullMode: 'none' },
-        depthStencil: { format: 'depth32float', depthWriteEnabled: true, depthCompare: 'greater' },
-        multisample: { count: SAMPLES },
-      });
-    // The shade only darkens what is under it: the colour drawn is kept by the share its alpha leaves.
-    const castModule = device.createShaderModule({ code: NATURE_CAST_SHADER });
-    const darken: GPUBlendState = {
-      color: { srcFactor: 'zero', dstFactor: 'one-minus-src-alpha', operation: 'add' },
-      alpha: { srcFactor: 'zero', dstFactor: 'one', operation: 'add' },
-    };
-    this.pipelines = {
-      plants: drawn('plant_vertex', 'plant_fragment', [mesh]),
-      sprites: drawn('sprite_vertex', 'sprite_fragment', []),
-      shade: device.createRenderPipeline({
-        layout,
-        vertex: { module, entryPoint: 'shade_vertex' },
-        fragment: { module, entryPoint: 'shade_fragment', targets: [{ format: gpu.format, blend: darken }] },
-        primitive: { topology: 'triangle-list', cullMode: 'none' },
-        depthStencil: { format: 'depth32float', depthWriteEnabled: false, depthCompare: 'greater' },
-        multisample: { count: SAMPLES },
-      }),
-      cast: device.createRenderPipeline({
-        layout: device.createPipelineLayout({ bindGroupLayouts: [this.layout, shadows.caster] }),
-        vertex: { module: castModule, entryPoint: 'plant_cast', buffers: [mesh] },
-        fragment: { module: castModule, entryPoint: 'plant_cast_fragment', targets: [] },
-        primitive: { topology: 'triangle-list', cullMode: 'none' },
-        depthStencil: { format: 'depth32float', depthWriteEnabled: true, depthCompare: 'less' },
-      }),
-    };
+    this.pipelines = naturePipelines(gpu);
+    this.layout = this.pipelines.layout;
     this.frameBuffer = device.createBuffer({
       size: FRAME_FLOATS * 4,
       usage: BUFFER_USAGE.uniform | BUFFER_USAGE.copyDestination,
@@ -235,6 +256,7 @@ export class NatureView {
     // Until the biome's flora has loaded, its plants are not drawn; the page is asked to draw again meanwhile.
     if (!this.keepMeshes(this.field.drawnCast, ground.biome)) {
       [this.draws, this.casts] = [[], []];
+      if (!this.loading?.failed) standIn('plants');
       return !this.loading?.failed;
     }
     this.sendStore();
@@ -285,6 +307,7 @@ export class NatureView {
         }
       }
     }
+    if (waiting) standIn('plants');
     return waiting;
   }
 

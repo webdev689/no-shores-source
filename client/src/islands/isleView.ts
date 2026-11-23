@@ -22,6 +22,7 @@ import {
 } from './isleModules.ts';
 import { INSTANCE_FLOATS, ISLE_FLOATS, partColours, type Pipelines, pipelinesOf } from './isleShader.ts';
 import { gridOf, type IsleGrid, type IslePlacement, type IsleShown } from './islePlan.ts';
+import { standIn } from '../standIns.ts';
 
 /** Where the eye is, world metres; the rest of a shot (yaw, pitch, field of view) is the scene's. */
 export interface IsleShot {
@@ -339,6 +340,7 @@ export class IslesView {
     for (const run of drawn.runs) {
       if (middleOnly && !run.middle) continue;
       const pack = this.packs.get(run.kit);
+      if (!pack && this.asked.get(run.kit) === Infinity) standIn('island kits');
       const entry = pack?.pack.modules.get(run.name);
       if (!pack || !entry || entry.indexCount === 0) continue;
       if (pack !== bound) {

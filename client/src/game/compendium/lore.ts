@@ -5,7 +5,7 @@ import type { GearState } from '../../network/gearMessages.ts';
 import { type CategoryShown, LORE, type LoreFile, chapterAt, keyOf, shelfOf } from './loreBook.ts';
 
 /** The browser's key for an account's chapters read. */
-export const READ_KEY = 'overlook.lore.read';
+export const READ_KEY = 'noshores.lore.read';
 /** How long a chapter found is toasted, milliseconds. */
 const TOAST_MS = 6000;
 

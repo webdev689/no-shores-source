@@ -4,7 +4,8 @@
 // draws into its pass, its depth first and then lit.
 import { CITY_BUFFER_USAGE } from '../city/cityGpu.ts';
 import { modelBuffers } from '../city/cityModels.ts';
-import { CityPainter } from '../city/painter.ts';
+import { CityPainter, painting } from '../city/painter.ts';
+import { standIn } from '../standIns.ts';
 import { MATERIALS } from '../city/pictures.ts';
 import type { CityClimate } from '../city/plan.ts';
 import type { Gpu } from '../gpu.ts';
@@ -252,6 +253,7 @@ export class DungeonView {
   ): void {
     const drawn = this.drawn;
     if (!drawn) return;
+    if (painting(drawn.painter)) standIn('dungeon pictures');
     const { device } = this.gpu;
     const { frame, burningFloats, clusters } = this;
     const open = drawn.shown?.open === true;

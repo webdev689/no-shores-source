@@ -309,15 +309,16 @@ player elsewhere (the company's Go to them waits); a travel left behind any othe
 
 1. The map lowers and the camera leaves the helm on an eased rail out to the ship's aft starboard quarter, 70 m off and
    28 m up, carried along with the ship as it gets under way on the course at the world's own pace, 3 s.
-2. The camera holds there, looking at the ship as it sails off, while the picture fades to black over 2 s; the veil's
-   words, "Sailing for <water>", come up in its last 0.7 s. The travel is asked of the sea room as the fade begins
+2. The camera holds there, looking at the ship as it sails off, while the picture fades to black over 2 s; the veil, the
+   loading screen with "Sailing for <water>" ([[One Loading Screen Covers Every Trip Until the Place Is Ready]]), comes up in its last 0.7 s. The travel is asked of the sea room as the fade begins
    ([[Server]], "The sea"): a course into other waters with the travel flag, sent in its turn as any course is, and no
    other course sent in its place until the room answers. Too soon after a course, it is asked again; a room joined
    since, or the same link joined again (which drops what it was sent), is asked again, once it has the ship at sea (a tier's room just joined puts it there when its keeper has
    answered); one that gives no answer in 10 s, or whose room never shows the ship, is given up, and courses are sent again. A yes in a fight
    sails the course as Set sail does.
-3. Black for at least 1.5 s, and longer until the room has answered and no continent near the ship's new place is
-   still to open (`Charting.waiting`), the land waited on 15 s at most; the sea, its islands and the sky come with the room's word and the land.
+3. Black for at least 1.5 s, and longer until the room has answered, no continent near the ship's new place is
+   still to open (`Charting.waiting`), and frames drawn since the answer have shown the new waters whole (nothing
+   standing in, [[Game]]), the plants scattering at the veil's pace meanwhile; all waited on 15 s at most; the sea, its islands and the sky come with the room's word and the land.
    Taken, the ship is laid where the room put it, 400 m short of the course's end on its last leg, with no easing
    across the jump, and sails on to the end of the course the room was sent; the view over it snaps there too, and the old waters' islands, flotsam
    and marks go with the room's next word.

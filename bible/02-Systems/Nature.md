@@ -90,7 +90,8 @@ width, and from the exact close patch where it reaches, eased in over its outer 
 ## Drawing
 
 - **Round the eye.** Tiles are kept round the eye: the tall layer out to 6 km, the low one to 0.9 km. A tile is
-  scattered once, nearest first, a few milliseconds' worth a frame. Its plants go into slots of a store on the GPU
+  scattered once, nearest first, a few milliseconds' worth a frame (6 ms; 30 ms behind a trip's veil, whose frames no
+  one sees, [[One Loading Screen Covers Every Trip Until the Place Is Ready]]). Its plants go into slots of a store on the GPU
   that stay put while the tile is kept, a page of sixteen at a time, and leave when it is let go. A tile whose nearest
   point lies past 3 km keeps only the trees drawn that far and only those the thinning leaves, its ground read for
   no others; it is scattered whole again when the eye comes within 3 km. When the eye crosses into another tile, or

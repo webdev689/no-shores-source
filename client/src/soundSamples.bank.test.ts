@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import type { Fetched } from './contentCache.ts';
 import { CHUNK_BYTES, fetchedAtWake, Samples } from './soundSamples.ts';
+import { standIns } from './standIns.ts';
 
 /** A context whose decoded buffers hold a second of mono samples per decoded byte, its clock moved by hand. */
 function fakeAudio() {
@@ -62,7 +63,9 @@ test("the sound's waking fetches the short sounds of play, and the ambience and 
   assert.deepEqual(asked.sort(), ['hit.mp3', 'step1.mp3', 'step2.mp3']);
   assert.ok(fetchedAtWake('ui.press') && !fetchedAtWake('amb.sea.rain') && !fetchedAtWake('story.wind'));
   const out = {} as AudioNode;
+  standIns();
   assert.equal(samples.play(audio as unknown as AudioContext, out, 'amb.land.breeze'), null, 'silent until it comes');
+  assert.deepEqual(standIns(), ['sounds'], 'standing in for it meanwhile');
   await settled();
   assert.deepEqual(asked.slice(3), ['breeze.mp3']);
   assert.ok(samples.play(audio as unknown as AudioContext, out, 'amb.land.breeze'), 'played once it has come');
@@ -206,6 +209,9 @@ test('a recording that failed to come is asked for again only after a wait, not 
     await settled();
   }
   assert.equal(reads, 1, 'asked once in two seconds');
+  standIns();
+  samples.play(audio as unknown as AudioContext, out, 'amb.land.breeze');
+  assert.deepEqual(standIns(), [], 'a recording that failed holds up no veil while it waits');
   audio.currentTime += 31;
   samples.play(audio as unknown as AudioContext, out, 'amb.land.breeze');
   await settled();
