@@ -373,10 +373,12 @@ export class Fighting {
     const arms = !allowed || allowed.length === 0 || allowed.includes(this.arms) ? this.arms : 0;
     const asked: Asked = { intent, view, arms, fired: null };
     const sequence = this.prediction.next(asked);
-    const spawned = this.spawnsQueued.shift();
-    const gear = this.gearQueued.shift();
-    const cast = this.castQueued;
-    this.castQueued = null;
+    // Rejoining, the link sends nothing: what is asked then waits for the first input the new room takes.
+    const holding = this.link.rejoining === true;
+    const spawned = holding ? undefined : this.spawnsQueued.shift();
+    const gear = holding ? undefined : this.gearQueued.shift();
+    const cast = holding ? null : this.castQueued;
+    if (!holding) this.castQueued = null;
     const parts = {
       intent,
       look: this.look,
@@ -384,12 +386,12 @@ export class Fighting {
       seen: this.seen,
       spawn: spawned?.foe,
       spawnLevel: spawned?.level ?? 0,
-      respawn: this.respawnAsked,
+      respawn: this.respawnAsked && !holding,
       menu: this.menuOpen,
       ...(gear === undefined ? {} : { ask: gear }),
       ...(cast === null ? {} : { cast }),
     };
-    this.respawnAsked = false;
+    if (!holding) this.respawnAsked = false;
     const sent = { sequence, parts: dress === undefined ? parts : { ...parts, dress } };
     this.link.send(inputBytes(sent.sequence, sent.parts, this.sentLately));
     this.link.inputSent?.(sequence);

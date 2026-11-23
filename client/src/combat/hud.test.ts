@@ -59,6 +59,13 @@ test('the veil is blood for a death, plain for a link joining again or lost, and
   assert.equal(veilOf({ own: standing, lost: null }), null);
   assert.deepEqual(veilOf({ own: dead, lost: null }), { words: 'You fell. Standing again in 3 s', link: false });
   assert.deepEqual(veilOf({ own: dead, lost: null, rejoining: true }), { words: 'Reconnecting…', link: true });
+  // No stand coming: with no revive left it promises none, and the section's own veil offers Respawn instead.
+  assert.deepEqual(veilOf({ own: dead, lost: null, revivesLeft: 0 }), { words: 'You fell.', link: false });
+  assert.deepEqual(veilOf({ own: dead, lost: null, revivesLeft: 2 }), {
+    words: 'You fell. Standing again in 3 s',
+    link: false,
+  });
+  assert.equal(veilOf({ own: dead, lost: null, sectionDead: true }), null);
   assert.deepEqual(veilOf({ own: standing, lost: 'the room closed' }), {
     words: 'The link to the room was lost: the room closed.',
     link: true,

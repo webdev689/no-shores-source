@@ -218,3 +218,21 @@ fn an_elite_dungeons_node_lays_one_entrance_of_its_style_and_is_joined_before_it
     patrol_land.lay_elite_entrance("saltgrass-downs");
     assert!(patrol_land.entrances().is_empty(), "a patrol is no Elite Dungeon");
 }
+
+#[test]
+fn each_entrance_models_door_is_the_forged_props_own_as_the_page_reads_it() {
+    let root = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
+    let text = std::fs::read_to_string(root.join("content/forged/props.json")).expect("the forged props");
+    let props: serde_json::Value = serde_json::from_str(&text).expect("they parse");
+    let point = |value: &serde_json::Value| -> [f64; 3] {
+        let at = |index: usize| value[index].as_f64().expect("a number");
+        [at(0), at(1), at(2)]
+    };
+    for model in &super::MODELS {
+        let door = &props[model.id.to_string()]["doors"][0];
+        assert!(!door.is_null(), "{}: the props hold its door", model.id);
+        // The page stands a body before the door from its first and third corners and its way out (`beforeDoor`).
+        assert_eq!([point(&door["a"]), point(&door["b"]), point(&door["c"])], model.door, "{}: its quad", model.id);
+        assert_eq!(point(&door["n"]), model.normal, "{}: the way it faces", model.id);
+    }
+}

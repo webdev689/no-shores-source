@@ -31,9 +31,13 @@ test('work that does not throw is run and reports nothing', () => {
   const reported: unknown[] = [];
   const guard = new FrameGuard((error) => reported.push(error));
   let ran = false;
-  guard.run(() => {
+  const done = guard.run(() => {
     ran = true;
   });
-  assert.ok(ran);
+  assert.ok(ran && done, 'run, and said to have run whole');
   assert.deepEqual(reported, []);
+  const failed = guard.run(() => {
+    throw new Error('a place that failed');
+  });
+  assert.equal(failed, false, 'work that threw says so, so its frame is not taken as settled');
 });
