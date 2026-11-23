@@ -153,6 +153,20 @@ test('a menu’s choices run, and the veil stands over all and takes the pointer
   assert.equal(ran, 1);
 });
 
+test('a trip’s veil is the loading screen: the logo, LOADING and its words; failed, its words alone', () => {
+  const [ui, hud] = [new Interface(renderer()), new Hud()];
+  hud.veil('Landing at The Saltgrass Downs');
+  let laid = frame(ui, hud);
+  const logo = laid.some((each) => each.node.picture?.key === 'logo');
+  assert.ok(logo, 'the logo');
+  assert.ok(words(laid).includes('LOADING'));
+  assert.ok(words(laid).includes('LANDING AT THE SALTGRASS DOWNS'));
+  hud.veil('Landing at The Saltgrass Downs failed: the room is full. Press Enter to try again.', false);
+  laid = frame(ui, hud);
+  assert.ok(!words(laid).includes('LOADING'), 'nothing loads while the trip waits on the player');
+  assert.ok(words(laid).some((each) => each.startsWith('LANDING AT THE SALTGRASS DOWNS FAILED')));
+});
+
 test('while a menu is up the keys walk its choices alone, never the sea bar under it', () => {
   const [ui, hud] = [new Interface(renderer()), new Hud()];
   hud.veil(null);

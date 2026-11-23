@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { SLOOP_HULL } from './hulls.ts';
 import { RETRY_MS, ShipModels } from './shipModels.ts';
+import { standIns } from '../standIns.ts';
 import type { ShipView } from './shipView.ts';
 
 /** A model that records the slot each ship is drawn in. */
@@ -17,11 +18,14 @@ test("each hull's model is fetched once, and a hull still coming is shown as the
     opened.push(hull);
     return viewOf([]);
   });
+  standIns();
   assert.equal(models.shown(3), SLOOP_HULL, 'the Frigate is the Sloop until its own comes');
+  assert.deepEqual(standIns(), ['hulls'], 'standing in for it');
   models.model(3);
   await models.load(3);
   models.model(3);
   assert.equal(models.shown(3), 3, 'and its own once it has');
+  assert.deepEqual(standIns(), [], 'nothing in its place');
   assert.deepEqual(opened, [3]);
 });
 
@@ -40,6 +44,9 @@ test('a failed fetch is said once and tried again from a later frame, waiting lo
   );
   models.model(2);
   await settled();
+  standIns();
+  assert.equal(models.shown(2), SLOOP_HULL);
+  assert.deepEqual(standIns(), [], 'a hull that failed holds up no veil while it waits to be tried again');
   clock = RETRY_MS.first - 1;
   models.model(2);
   await settled();

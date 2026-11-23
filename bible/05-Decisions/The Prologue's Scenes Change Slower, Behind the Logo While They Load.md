@@ -17,3 +17,4 @@ line under it).
 - A change of scene through black fades out over 2 s, holds black at least a second, and fades in over 2.5 s
   ([[Prologue]], "Between scenes").
 - While the next scene is still coming, the logo and LOADING stand over the black.
+- The game's trips take the same screen: [[One Loading Screen Covers Every Trip Until the Place Is Ready]].

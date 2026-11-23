@@ -284,6 +284,7 @@ a decision is a record. How to add one: [[Recording a Decision]].
 - [[Thule Fights on a Quarterdeck Twice as Long]]
 - [[A Foe Gives Up Only When the Player Is Far Away]]
 - [[The Asset Workflows Publish to R2 With the Cloudflare Token]]
+- [[One Loading Screen Covers Every Trip Until the Place Is Ready]]
 
 - [[Overlook Is Our Own Game]]
 - [[The Owner Sets the Vision]]

@@ -12,7 +12,7 @@ import type { Layer, Stack } from '../ui/stack.ts';
 import type { Interface } from '../ui/ui.ts';
 import { ease } from '../ui/ease.ts';
 import { breath, dropped, Eased, pageClock, ruleOf } from './cinemaParts.ts';
-import { logoNode, logoScale } from './logo.ts';
+import { loadingNode, logoNode, logoScale } from './logo.ts';
 
 /** The title as the screen shows it. */
 export const TITLE = 'No Shores';
@@ -188,21 +188,12 @@ export class Screen {
     return {
       width,
       height,
-      direction: 'column',
       alignX: 'center',
       alignY: 'center',
-      gap: 33,
       opacity: shown,
       label: 'Loading',
       float: { to: 'screen' },
-      children: [
-        // As the tap to start lays it: across 45% of the view at most, twice its cells at most.
-        logoNode(logoScale(width * 0.45, 2)),
-        {
-          opacity: still ? 1 : breath(now),
-          children: [dropped({ words: 'LOADING', size: 2, colour: '#efe6cf', tracking: 5, wrap: false }, '#000', 1)],
-        },
-      ],
+      children: [loadingNode(width, now, still)],
     };
   }
 

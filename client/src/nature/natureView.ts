@@ -10,6 +10,7 @@ import { FLORA, type LoadedFlora, loadFlora, MESH_VERTEX_BYTES } from './flora.t
 import { FORM_BLOCK_BYTES, FORM_FLOATS, type FormBuffers, formBuffers, type Part } from './forms.ts';
 import { type Cast, TREE } from './kinds.ts';
 import { FRAME_FLOATS, NATURE_CAST_SHADER, NATURE_SHADER, SHADE_SEGMENTS } from './natureShader.ts';
+import { standIn } from '../standIns.ts';
 
 /** The camera a frame is drawn from. */
 export interface NatureFrame {
@@ -212,6 +213,7 @@ export class NatureView {
     // Until the biome's flora has loaded, its plants are not drawn; the page is asked to draw again meanwhile.
     if (!this.keepMeshes(this.field.drawnCast, ground.biome)) {
       [this.draws, this.casts] = [[], []];
+      if (!this.loading?.failed) standIn('plants');
       return !this.loading?.failed;
     }
     this.sendStore();
@@ -262,6 +264,7 @@ export class NatureView {
         }
       }
     }
+    if (waiting) standIn('plants');
     return waiting;
   }
 

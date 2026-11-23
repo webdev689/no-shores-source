@@ -8,6 +8,7 @@ import { type HullName, hullName, hullPaint, hullSails, SLOOP_HULL } from './hul
 import type { SailRig } from './sails.ts';
 import type { ShipCrew } from './shipCrew.ts';
 import { loadShip } from './shipMesh.ts';
+import { standIn } from '../standIns.ts';
 import { type ShipCamera, type ShipPlace, SHIP_SLOTS, ShipView } from './shipView.ts';
 
 /** A ship as a frame draws it: its hull's number, its place, its rig (none for no canvas or flag) and its look; and
@@ -68,7 +69,9 @@ export class ShipModels {
 
   /** The hull a ship is drawn as: its own once it has come, the Sloop while it is coming. */
   shown(hull: number): number {
-    return this.model(hull) ? hull : SLOOP_HULL;
+    if (this.model(hull)) return hull;
+    if (this.fetching.has(hullName(hull))) standIn('hulls');
+    return SLOOP_HULL;
   }
 
   /** A hull's model, fetched now if it has not come (a number with no model of its own is the Sloop's); its failure

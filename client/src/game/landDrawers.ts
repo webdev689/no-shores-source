@@ -1,6 +1,7 @@
 import type { Gpu } from '../gpu.ts';
 import { blockFiles, parseBlockFile, type RmbBlock } from '../city/blocks.ts';
 import type { CityTables } from '../city/cityBuild.ts';
+import { standIn } from '../standIns.ts';
 import { CityView } from '../city/cityView.ts';
 import { loadModules } from '../city/modules.ts';
 import { cityClimate } from '../city/plan.ts';
@@ -58,9 +59,9 @@ function layoutDrawer(
   release(): void;
 } {
   const view = new CityView(gpu);
-  let tables: CityTables | null = null;
+  let [tables, coming] = [null as CityTables | null, true];
   let planted = plantedOf([], TILE_M);
-  void assets.then((loaded) => (tables = loaded?.tables ?? null));
+  void assets.then((loaded) => (tables = loaded?.tables ?? null)).finally(() => (coming = false));
   const follow = layoutFollower(layouts, LAYOUT_REACH_M, LAYOUT_REGATHER_M, painted, (near) => {
     const plan = planOfLayouts(near);
     if (plan && tables) view.setCity(plan, cityClimate(biome ?? undefined), new Map(), tables);
@@ -72,11 +73,27 @@ function layoutDrawer(
     view,
     planted: (tileX, tileY) => planted(tileX, tileY),
     drawer: {
-      prepare: (shot) => follow([shot.eye[0], shot.eye[1]], tables !== null),
+      prepare: (shot) => {
+        // Its tables still coming, the layouts near the eye are not built yet.
+        if (coming) standIn('city');
+        follow([shot.eye[0], shot.eye[1]], tables !== null);
+      },
       castInto: (pass, fromEye, shot, time, shadow) => view.castInto(pass, fromEye, shot, time, shadow),
       drawInto: (pass, fromEye, shot, time, shadow) => view.drawInto(pass, fromEye, shot, time, shadow),
     },
     release: () => view.clear(),
+  };
+}
+
+/** `drawer`, standing in as nothing each frame while it is `building`. */
+function whileBuilding(drawer: Drawer, building: () => boolean): Drawer {
+  return {
+    prepare: (shot) => {
+      if (building()) standIn('city');
+      drawer.prepare?.(shot);
+    },
+    castInto: (pass, fromEye, shot, time, shadow) => drawer.castInto?.(pass, fromEye, shot, time, shadow),
+    drawInto: (pass, fromEye, shot, time, shadow) => drawer.drawInto(pass, fromEye, shot, time, shadow),
   };
 }
 
@@ -137,6 +154,8 @@ export function landDrawers(
   let [version, patch, sample] = [0, scene.closePatch(), landSampler(landmass.view, scene.closePatch())];
   const city = plan ? new CityView(gpu) : null;
   let released = false;
+  // While the city's blocks come it is not built, and stands in as nothing.
+  let building = !!(plan && city);
   if (plan && city) {
     const names = plan.cells.flatMap((cell) => (cell.use === 'block' && cell.block ? [cell.block] : []));
     assets
@@ -149,7 +168,8 @@ export function landDrawers(
         // The nature already scattered knew only the pads; it is scattered again round the city's solids too.
         version += 1;
       })
-      .catch((error: unknown) => console.error(`${landmass.id}'s city could not be drawn:`, error));
+      .catch((error: unknown) => console.error(`${landmass.id}'s city could not be drawn:`, error))
+      .finally(() => (building = false));
   }
   const laid = landmass.layouts.length
     ? layoutDrawer(
@@ -197,7 +217,7 @@ export function landDrawers(
     },
   };
   return {
-    city: plan && city && withWrecks(gpu, city, plan, shipScale),
+    city: plan && city && whileBuilding(withWrecks(gpu, city, plan, shipScale), () => building),
     layouts: laid?.drawer ?? null,
     nature: natureDrawer,
     release: () => {

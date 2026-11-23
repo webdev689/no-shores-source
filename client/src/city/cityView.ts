@@ -10,7 +10,8 @@ import { buildCity, type Chunk, type CityData, type CityTables, type Range, runs
 import { CITY_BUFFER_USAGE, type CityPipelines, cityPipelines, MODEL_INSTANCE_BYTES } from './cityGpu.ts';
 import { MODEL_FLOATS } from './cityModels.ts';
 import type { MeshData } from './mesh.ts';
-import { CityPainter, type PaintProgress } from './painter.ts';
+import { CityPainter, type PaintProgress, painting } from './painter.ts';
+import { standIn } from '../standIns.ts';
 import { PICTURE_LAYERS } from './pictures.ts';
 import { type CityClimate, type CityPlan, glowLamps } from './plan.ts';
 import { boxReach, boxSeen, NEAR_M, tiersReached, viewPlanes } from './tiers.ts';
@@ -197,6 +198,7 @@ export class CityView implements CityDrawer {
     const drawn = this.drawn;
     if (!drawn) return null;
     if (this.seen?.fromEye === fromEye) return this.seen;
+    if (painting(drawn.painter)) standIn('city pictures');
     const { data } = drawn;
     const eye: [number, number, number] = [shot.eye[0] - data.origin[0], shot.eye[1] - data.origin[1], shot.eye[2]];
     const uniforms = new Float32Array(VIEW_BYTES / 4);

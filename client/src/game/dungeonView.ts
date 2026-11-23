@@ -3,7 +3,8 @@
 // its pass.
 import { CITY_BUFFER_USAGE } from '../city/cityGpu.ts';
 import { modelBuffers } from '../city/cityModels.ts';
-import { CityPainter } from '../city/painter.ts';
+import { CityPainter, painting } from '../city/painter.ts';
+import { standIn } from '../standIns.ts';
 import { MATERIALS } from '../city/pictures.ts';
 import type { CityClimate } from '../city/plan.ts';
 import { REVERSED_DEPTH } from '../editor/orbit.ts';
@@ -253,6 +254,7 @@ export class DungeonView {
   ): void {
     const drawn = this.drawn;
     if (!drawn) return;
+    if (painting(drawn.painter)) standIn('dungeon pictures');
     const { device } = this.gpu;
     // Nearest by how far each reaches past the eye, so a brazier's wide light outranks a candle's at one distance.
     const away = ({ at: [x, y, z], burning }: Light) => Math.hypot(x - eye[0], y - eye[1], z - eye[2]) - burning.reach;

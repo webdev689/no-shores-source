@@ -14,6 +14,7 @@ import { type Dress, type Wardrobe, figureOf, layerRamps, wardrobeOf } from './d
 import { shrunk } from './iconFit.ts';
 import { onTheMove } from './playerMoves.ts';
 import type { Picture } from './picture.ts';
+import { standIn } from '../standIns.ts';
 
 /** A figure's picture as a scene draws it: its texture, its size in pixels, its feet on it, and for a weapon that
  *  glows the outline's field (GLOW_PAD larger on each side) and its element. */
@@ -319,7 +320,10 @@ export class Cards {
       return kept;
     }
     if (this.composing.has(key)) {
-      if (haste === 'now') this.composer.hurry(key);
+      if (haste === 'now') {
+        this.composer.hurry(key);
+        standIn('figures');
+      }
       return null;
     }
     const failed = this.failedAt.get(key);
@@ -342,6 +346,7 @@ export class Cards {
       })
       .finally(() => this.composing.delete(key));
     if (haste === 'now') {
+      standIn('figures');
       const frames = this.frames(dress.body, anim);
       for (let ahead = 1; ahead < frames; ahead++)
         this.ask(dress, anim, view, (frame + ahead) % frames, flip, glow, 'ahead');
