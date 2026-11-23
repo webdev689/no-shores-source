@@ -17,7 +17,7 @@ export function inspectedGear(found: Details): GearState | null {
   const shown = found.shown;
   if (!shown) return null;
   const items = shown.worn.map((piece, index): GearItem => ({
-    id: piece.id ?? index + 1,
+    id: index + 1,
     kind: piece.kind,
     rarity: piece.rarity,
     level: piece.level,

@@ -1176,7 +1176,7 @@ serves each ask only at its own counter ([[Gear]], "In the rooms"; [[Factions]])
   the menu shows the player's own: their emblem's banner across its head, their name and guild's tag, level, Prestige
   and Defense over it, and under it the Character tab: their figure in the dress they wear here, each piece they wear in
   its slot with its card, their level and Prestige, their power and the Art they wear, from what their room kept for
-  others to see. Each piece keeps its own id there, so its pictures make the look's choices its figure makes. Nothing on it can be asked or changed: no hints, no XP meter and no Appearance. Back or Escape goes
+  others to see. Its pieces' pictures make the look's choices its figure makes, as each is keyed to its name. Nothing on it can be asked or changed: no hints, no XP meter and no Appearance. Back or Escape goes
   back to their menu.
 - **Settings** lists the muted under the blocked, each with Unmute.
 

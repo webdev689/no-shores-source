@@ -146,23 +146,25 @@ test('a Rare or finer piece is an armour set; a Magic one light armour or clothe
   });
   assert.deepEqual(dressed.garments, ['formal_cloak']);
   assert.equal(dressed.dyes['formal_cloak'], 'Red');
-  const magic = gearOutfit(state([item({ id: 3, kind: 14, rarity: 1, at: 5, name: 1 })]), wardrobe, plain);
+  const magic = gearOutfit(state([item({ id: 3, kind: 14, rarity: 1, at: 5, name: 3 })]), wardrobe, plain);
   assert.deepEqual(magic.garments, ['shirt_long_v', 'vest'], 'a Magic torso numbered for clothes');
-  assert.equal(magic.dyes['vest'], 'Aquamarine', 'each item keeps its own look by its name');
-  const light = gearOutfit(state([item({ id: 4, kind: 14, rarity: 1, at: 5 })]), wardrobe, plain);
+  assert.equal(magic.dyes['vest'], 'Purple', 'each item keeps its own look by its name');
+  const light = gearOutfit(state([item({ id: 4, kind: 14, rarity: 1, at: 5, name: 1 })]), wardrobe, plain);
   assert.deepEqual([light.armour.cuirass, light.garments], ['leather', []], 'one numbered for leather');
 });
 
-test("a rolled Rare piece climbs its content's sets with its level and spreads by its name", () => {
+test("a rolled Rare piece climbs the world's sets with its level, and any other content's spreads by its name", () => {
   const worn = (fields: Partial<GearItem>) =>
     gearOutfit(state([item({ kind: 14, rarity: 2, at: 5, ...fields })]), every, plain).armour;
   const cuirasses = (source: number, level: number) =>
     [0, 1, 2].map((name) => worn({ name, level, source }).cuirass).join(' ');
   assert.deepEqual([cuirasses(0, 1), cuirasses(0, 20)], ['chain iron chain', 'steel steel steel'], 'the world');
-  assert.deepEqual([cuirasses(2, 1), cuirasses(2, 20)], ['knights silver knights', 'silver silver silver']);
-  assert.deepEqual([cuirasses(3, 1), cuirasses(4, 1)], ['orcish mithril orcish', 'adamantium ebony adamantium']);
-  assert.deepEqual([cuirasses(5, 20), cuirasses(6, 1)], ['dwarven dwarven dwarven', 'daedric daedric daedric']);
-  const magic = (source: number) => gearOutfit(state([item({ kind: 13, rarity: 1, at: 4, source })]), every, plain);
+  // Every look of a content past the world is seen at every level it drops: the Abyss Dungeons' all drop at 20.
+  assert.deepEqual([cuirasses(2, 1), cuirasses(2, 20)], ['knights silver knights', 'knights silver knights']);
+  assert.deepEqual([cuirasses(3, 20), cuirasses(4, 20)], ['orcish mithril orcish', 'adamantium ebony adamantium']);
+  assert.deepEqual([cuirasses(5, 20), cuirasses(6, 1)], ['elven dwarven elven', 'daedric daedric daedric']);
+  const magic = (source: number) =>
+    gearOutfit(state([item({ kind: 13, rarity: 1, at: 4, source, name: 1 })]), every, plain);
   assert.deepEqual([magic(0).armour.helm, magic(3).armour.helm], ['thieves', 'orcish'], "a Magic helm, its content's");
   assert.deepEqual(worn({ name: 0 }), { cuirass: 'chain' }, 'chain has no pauldrons: its cuirass alone');
   assert.deepEqual(worn({ id: 7 }), worn({ id: 8 }), 'its number does not move it');

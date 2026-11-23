@@ -217,5 +217,4 @@ fn what_others_see_of_a_worn_piece_carries_its_content() {
     let shown = character.shown();
     let piece = shown.worn.iter().find(|piece| piece.slot == Slot::Head as u8).expect("the helm worn");
     assert_eq!(piece.source, Source::Abyss as u8, "the inspect screen draws it in the Abyss Dungeons' sets");
-    assert_eq!(piece.id, id, "and makes its look's choices by its own id, as on the player's figure");
 }
