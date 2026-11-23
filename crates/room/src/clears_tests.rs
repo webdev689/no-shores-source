@@ -73,6 +73,11 @@ fn a_minibosss_or_a_bosss_group_stands_again_after_ten_minutes_and_the_rest_afte
         "the Miniboss waits"
     );
     assert!(room.garrison.iter().filter(|post| !great(post)).all(|post| post.cleared_at.is_none()), "the rest stand");
+    assert!(room.garrison.iter().any(great), "the dungeon holds a Miniboss's group");
+    for _ in STAND_AGAIN..=GREAT_STAND_AGAIN {
+        room.tick();
+    }
+    assert!(room.garrison.iter().all(|post| post.cleared_at.is_none()), "the Miniboss's group stands at ten minutes");
 }
 
 #[test]
