@@ -239,16 +239,16 @@ test('ended, she stops where she is; a plaza without her counter has no welcome'
 });
 
 test('coming to a player anywhere on the plaza, she bids them follow only once she has greeted them', () => {
-  for (const at of [place(-58, 4), place(0, 40), place(-50, 4), ...SPAWNS]) {
-    const walk = WelcomeWalk.round(STATIONS, FRAME, GRAPH, at, [MET_SCENE]) as WelcomeWalk;
+  for (const start of [place(-58, 4), place(0, 40), place(-50, 4), ...SPAWNS]) {
+    const walk = WelcomeWalk.round(STATIONS, FRAME, GRAPH, start, [MET_SCENE]) as WelcomeWalk;
     // The player stands where they are until she has greeted them, then walks in from under the portico.
-    let player = at;
+    let player = start;
     for (let tick = 0; tick < 3000 && walk.phase === 'coming'; tick++) {
       const { lagging } = walk.step(0.1, player);
-      assert.equal(lagging, false, `no Follow before her greeting, for a player at ${at}`);
+      assert.equal(lagging, false, `no Follow before her greeting, for a player at ${start}`);
       if (tick > 600) player = [player[0], player[1] + (inPlaza(FRAME, player).toward < -45 ? 0.1 : 0)];
     }
-    assert.equal(walk.phase, 'speaking', `she greets a player at ${at}`);
+    assert.equal(walk.phase, 'speaking', `she greets a player at ${start}`);
   }
 });
 
