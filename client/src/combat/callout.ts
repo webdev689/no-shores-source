@@ -8,6 +8,11 @@ import type { Node } from '../ui/node.ts';
 
 /** How tall a call stands at the first zoom, CSS pixels: its words three steps of the face, its padding and edge. */
 export const CALL_TALL = 3 * 11 + 2 * 6 + 2 * 2;
+/** How far under the compass's column a call stands and how far clear of the crosshair, CSS pixels at the first
+ *  zoom; and how far either side of the view's middle a figure stands in its way. */
+const CALL_CLEAR = 16;
+const CROSSHAIR_CLEAR = 28;
+export const CALL_REACH = 200;
 /** How long a call stands in all, how long it takes to slide in and to fade out, seconds. */
 const CALL_S = 1.8;
 const SLIDE_S = 0.25;
@@ -58,4 +63,21 @@ export class Callout {
       children: [{ text: { words: this.words, size: (short ? 2 : 3) * zoom, colour: EDGE, wrap: false } }],
     };
   }
+}
+
+/** Where a call's top stands in a view `height` tall at `zoom`: under the compass's column (its foot `under`), no higher
+ *  than a quarter down the view, above the crosshair where it fits there; else under the crosshair, and under it too
+ *  where above it would cover the Boss's figure (`boss`, the span down the view it stands in) and under it would not. */
+export function callTop(
+  height: number,
+  under: number,
+  zoom: number,
+  boss: { readonly top: number; readonly bottom: number } | null,
+): number {
+  const tall = CALL_TALL * zoom;
+  const above = Math.max(under + CALL_CLEAR * zoom, Math.round(height / 4));
+  const below = Math.max(under + CALL_CLEAR * zoom, height / 2 + CROSSHAIR_CLEAR * zoom);
+  const covers = (top: number) => !!boss && top < boss.bottom && boss.top < top + tall;
+  const fits = above + tall <= height / 2 - CROSSHAIR_CLEAR * zoom;
+  return fits && (!covers(above) || covers(below)) ? above : below;
 }

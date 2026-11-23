@@ -16,7 +16,7 @@ import { FoePlate } from './foePlate.ts';
 import { FoeTarget } from './foeTarget.ts';
 import { type Box, type Said, Words, wordsOf } from './hitWords.ts';
 import { RING, arrowNode, hurtNode, lockMarkNode, parryNode, veilNode } from './hudCues.ts';
-import { CALL_TALL, Callout } from './callout.ts';
+import { CALL_REACH, Callout, callTop } from './callout.ts';
 import { contactOf, strokeTravel } from './impacts.ts';
 import { type BannerTone, PublicBanner, type PublicShown, StoreBars } from './publicBanner.ts';
 import { cameraOf, landBlocks, PLATE_OVER_M, SIGHT_SKIN_M } from './plateSight.ts';
@@ -102,11 +102,10 @@ const AMMO_FULL = 'Ammo full';
 /** Foul water's edge: its sick green, how long one harm holds it (the floor harms once a second, seals.rs
  *  DROWNED_EVERY), and how long it takes to rise and to fade, seconds. */
 const FOUL = { colour: [96, 150, 24], heldS: 1.25, riseS: 0.25, fadeS: 0.6 } as const;
-/** How far under the banner the boss bar stands, past the column's own gap, and the call under the column, CSS
- *  pixels at the first zoom; how far the call keeps clear of the crosshair. */
+/** How far under the banner the boss bar stands, past the column's own gap, CSS pixels at the first zoom. */
 const BOSS_CLEAR = 6;
-const CALL_CLEAR = 16;
-const CROSSHAIR_CLEAR = 28;
+/** How tall a Boss's figure stands, metres, for the span of the view the call keeps clear of. */
+const BOSS_TALL_M = 2.6;
 /** A plate over a figure at its largest, CSS pixels, for one not yet laid; and how near the top's pieces it may stand
  *  before it is hidden, so it never reads as one of them. */
 const PLATE_MOST = { width: 220, height: 48 } as const;
@@ -158,6 +157,15 @@ export function veilOf(
   if (!dead) return null;
   const seconds = Math.ceil(Math.max(0, RESPAWN_TICKS - dead.elapsed) / 60);
   return { words: `You fell. Standing again in ${seconds} s`, link: false };
+}
+
+/** The span down the view a figure standing at `view` fills, where it stands within the call's reach of the view's
+ *  middle across (CSS pixels); none off it or behind the eye. */
+function spanOf(frame: HudFrame, view: FighterView): { readonly top: number; readonly bottom: number } | null {
+  const feet = project(frame.matrix, [view.x, view.y, view.z], frame.width, frame.height);
+  const head = project(frame.matrix, [view.x, view.y, view.z + BOSS_TALL_M], frame.width, frame.height);
+  if (!feet || !head || Math.abs(feet.x - frame.width / 2) > CALL_REACH) return null;
+  return { top: head.y, bottom: feet.y };
 }
 
 /** A laid box by its sides, none for none or an empty one. */
@@ -236,6 +244,8 @@ export class Hud {
   /** Where the top's pieces (the compass, the banner, the boss bar, the target's plate, the call) were last laid, which
    *  the words keep under and no plate over a figure shows through. */
   private tops: readonly Box[] = [];
+  /** The span down the view the Boss's figure stands in, where it stands across the view's middle; none for none. */
+  private bossSpan: { readonly top: number; readonly bottom: number } | null = null;
 
   /** With `pictures`, the game's pictures of an Art (`abilityPictures`), the Art's abilities stand at the bottom left;
    *  with `forge`, the weapons beside them are drawn as its pictures. The page's own pieces `beside` answers (the game's
@@ -297,6 +307,7 @@ export class Hud {
     );
     this.quest = frame.questAt && own ? { at: frame.questAt, from: [own.x, own.y] } : null;
     const boss = this.foeBars.update(frame.foes, own, overHead, viewing, seconds);
+    this.bossSpan = boss && spanOf(frame, boss.view);
     const feet = own && ([own.x, own.y, own.z] as const);
     this.playerPlates.update(frame.players ?? [], { ...viewing, spot, own: feet }, seconds);
     const under = frame.foes.find((foe) => foe.id === this.foeBars.under)?.view ?? null;
@@ -524,23 +535,15 @@ export class Hud {
         this.crosshair.node(),
         ammoNode(this.ammo.ammo, this.ammo.most),
         top,
-        !inColumn && this.callout.node(this.callTop(column, zoom), zoom),
+        !inColumn &&
+          this.callout.node(
+            callTop(this.view.height, Math.max(0, ...column.map((piece) => piece.bottom)), zoom, this.bossSpan),
+            zoom,
+          ),
         this.veil && veilNode(this.veil),
         animaEdgeNode(),
       ],
     };
-  }
-
-  /** Where the call's top stands: a little under the top's pieces last laid (`column`) and no higher than a quarter down the
-   *  view, else under the crosshair where above it would cover it. */
-  private callTop(column: readonly Box[], zoom: number): number {
-    const { height } = this.view;
-    const under = Math.max(0, ...column.map((top) => top.bottom));
-    const tall = CALL_TALL * zoom;
-    const above = Math.max(under + CALL_CLEAR * zoom, Math.round(height / 4));
-    return above + tall <= height / 2 - CROSSHAIR_CLEAR * zoom
-      ? above
-      : Math.max(under + CALL_CLEAR * zoom, height / 2 + CROSSHAIR_CLEAR * zoom);
   }
 
   private targetNode(room: number, zoom: number): Child {
