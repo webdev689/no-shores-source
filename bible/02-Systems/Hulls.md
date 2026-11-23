@@ -84,7 +84,7 @@ where a player stands on coming down, and `Cabin.Exit` the foot of the stairs, w
    guns, boxes, sails and deck, its helm where the model's empty named `Helm` stands, and publishes it to R2 with its
    entry in `content/ships/ships.json`. The `ships` workflow does this for every ship built, from any branch
    ([[Model Packs Upload From Any Branch]]), in a job that holds no secret and stages what it makes; a second job
-   uploads it with the repository's `R2_TOKEN` ([[Toolchain]]).
+   uploads it with the repository's `CLOUDFLARE_TOKEN` ([[Toolchain]]).
    A square sail is measured by its four corners, each named by its side.
 
 ## What the code needs

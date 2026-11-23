@@ -263,7 +263,6 @@ a decision is a record. How to add one: [[Recording a Decision]].
 - [[Bosses and Dungeons Drop Items, Clears Pay, and Shapes Come From the Week's Abyss]]
 - [[The Server Is the Authority Over Everything]]
 - [[A Mail Vendor Keeps Lost Items and the Game's Mail]]
-- [[The Asset Workflows Publish to R2 With a Token for R2 Alone]]
 - [[Vestiges Are project-final's Crystals, and Physical Pictures Are Baked]]
 - [[Players Arrive as Destiny's Transmat Does, Unexplained]]
 - [[First Person Widens and Its Weapon Sways, and the Parry Ring Reads Bolder]]
@@ -279,6 +278,7 @@ a decision is a record. How to add one: [[Recording a Decision]].
 - [[The Prologue's Scenes Change Slower, Behind the Logo While They Load]]
 - [[Thule Fights on a Quarterdeck Twice as Long]]
 - [[A Foe Gives Up Only When the Player Is Far Away]]
+- [[The Asset Workflows Publish to R2 With the Cloudflare Token]]
 
 - [[Overlook Is Our Own Game]]
 - [[The Owner Sets the Vision]]
@@ -320,3 +320,4 @@ a decision is a record. How to add one: [[Recording a Decision]].
 - [[The Rooms Deploy on Each Merge]], by [[The Rooms Deploy When Their Code Changes]]
 - [[The Seas Chosen Bring Their Weather, and a Storm Is the Mystery's]], by [[The Tiers Are Normal, Elite and Abyss]]
 - [[Private Repo overlook-source]], by [[The Game Is Named No Shores]]
+- [[The Asset Workflows Publish to R2 With a Token for R2 Alone]], by [[The Asset Workflows Publish to R2 With the Cloudflare Token]]

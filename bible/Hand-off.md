@@ -162,11 +162,10 @@ each part works is in its system note.
   [[A Foe Gives Up Only When the Player Is Far Away]], and the hub's sunk feet fixed (a figure's lowest quarter metre takes the city's
   pull, [[Cities]]). Audited by four read-only reviewers; every finding fixed or asked. Tested offline and pictured
   headless; not played live.
-  - **The arena waits on `R2_TOKEN`.** The wreck workflow built the longer quarterdeck (run 45086092013) but published
-    nothing: every asset workflow, `main`'s too, reads `R2_TOKEN` as empty, though
-    [[The Asset Workflows Publish to R2 With a Token for R2 Alone]] says it is set. Once the repository's Actions secret is there, the run is run again,
-    and its `wreck-level` artifact is committed whole as `content/prologue/wreck.json` with the client test updates
-    the arena's build was checked with (they and the comments that still say "gun deck" in `wreckGround.ts` and
+  - **The arena waits on the wreck's run.** The asset workflows upload with `CLOUDFLARE_TOKEN` now ([[The Asset Workflows Publish to R2 With the Cloudflare Token]]);
+    `R2_TOKEN` had read empty on every run. Once the `wreck` workflow has built and published the longer quarterdeck,
+    its `wreck-level` artifact is committed whole as `content/prologue/wreck.json` with the client test updates the
+    arena's build was checked with (they and the comments that still say "gun deck" in `wreckGround.ts` and
     `wreckProgress.ts` go with it); then the note's count of dead-end slips is checked against it.
   - **Open for the owner**: whether the story's hand-over to the plaza (the game's own veil, 0.7 s, shared with all
     travel) also takes the longer change and the logo; whether a foe whose search finds no one may walk home and heal
@@ -337,9 +336,9 @@ The decisions in [[Open Questions]] are not repeated here.
   over the deploy jobs; the Discord app's redirect (`/v1/discord/callback` on `overlook-accounts`) and its secrets
   `DISCORD_CLIENT_ID` and `DISCORD_CLIENT_SECRET`; the Cloudflare token's leave to edit D1; whether the page plays
   online by default (without `?room=` it has no accounts).
-- **Keys and workflows**: rotate the Cloudflare token the owner gave in the chat (the `rooms` workflow alone reads
-  the Actions secret `CLOUDFLARE_TOKEN`; the workflows that publish to R2 read `R2_TOKEN`,
-  [[The Asset Workflows Publish to R2 With a Token for R2 Alone]]); add `tools/install-flatc.sh` to `ROOMS_CODE` in
+- **Keys and workflows**: rotate the Cloudflare token the owner gave in the chat (the Actions secret
+  `CLOUDFLARE_TOKEN`, which the `rooms` workflow and every workflow that publishes to R2 read,
+  [[The Asset Workflows Publish to R2 With the Cloudflare Token]]); add `tools/install-flatc.sh` to `ROOMS_CODE` in
   `.github/workflows/rooms.yml`. A cloud session cannot deploy the rooms itself: its proxy writes the stored token
   over the upload token Cloudflare hands back.
 - **The cloud environment**: two environments named Default are listed and none for this repository; which one
