@@ -40,6 +40,10 @@ pub struct TraitDef {
     /// A faction's own perk, by the faction's key: no shared pool offers it, and it fits only that faction's pieces.
     #[serde(default)]
     pub faction: Option<String>,
+    /// A Breach's own perk: no shared pool offers it, and it fits only a Breach's pieces, whose perk columns roll from
+    /// these alone (`Catalogue::breach_perks`).
+    #[serde(default)]
+    pub breach: bool,
 }
 
 /// A named item: a Legendary, an Atheric or a cloak. Its layout is the traits each of its trait columns offers, in
@@ -183,12 +187,12 @@ impl Catalogue {
         self.traits.iter().find(|found| found.id == id)
     }
 
-    /// Whether a trait fits an item of this kind, the named one it is if any: what a roll offers it and what a worn
-    /// piece gives by the same rule.
+    /// Whether a trait fits an item of this kind, the named one it is if any, and a Breach's piece or not (`breach`):
+    /// what a roll offers it and what a worn piece gives by the same rule.
     #[must_use]
-    pub fn trait_fits(&self, id: &str, kind: Kind, named: Option<&str>) -> bool {
+    pub fn trait_fits(&self, id: &str, kind: Kind, named: Option<&str>, breach: bool) -> bool {
         let faction = named.and_then(|named| self.named(named)).and_then(|entry| entry.faction.as_deref());
-        self.trait_def(id).is_some_and(|found| fits(found, kind, named, faction))
+        self.trait_def(id).is_some_and(|found| fits(found, kind, named, faction, breach))
     }
 
     #[must_use]
@@ -230,14 +234,21 @@ impl Catalogue {
             Column::Perk(_) => TraitColumn::Perk,
             Column::Upgrade | Column::Signature => return Vec::new(),
         };
-        self.traits.iter().filter(|found| found.column == wanted && fits(found, kind, None, None)).collect()
+        self.traits.iter().filter(|found| found.column == wanted && fits(found, kind, None, None, false)).collect()
     }
 
     /// A faction's own perks, by its key, that fit a piece of this kind.
     #[must_use]
     pub fn faction_perks(&self, faction: &str, kind: Kind) -> Vec<&TraitDef> {
         let own = |found: &&TraitDef| found.faction.as_deref() == Some(faction);
-        self.traits.iter().filter(own).filter(|found| fits(found, kind, None, Some(faction))).collect()
+        self.traits.iter().filter(own).filter(|found| fits(found, kind, None, Some(faction), false)).collect()
+    }
+
+    /// The Breaches' own perks that fit a piece of this kind, which every node of a Breach piece's perk columns is
+    /// drawn among.
+    #[must_use]
+    pub fn breach_perks(&self, kind: Kind) -> Vec<&TraitDef> {
+        self.traits.iter().filter(|found| found.breach && fits(found, kind, None, None, true)).collect()
     }
 
     /// The named items of this rarity and slot that a Vestige's Atheric or ship's module, or Shape's ware, is drawn
@@ -268,6 +279,17 @@ impl Catalogue {
             let faction_known = |key: &str| crate::factions::factions().factions.iter().any(|each| each.key == key);
             if found.faction.as_deref().is_some_and(|key| !faction_known(key) || found.column != TraitColumn::Perk) {
                 problems.push(format!("trait {} names no faction the factions' file holds, or is no perk", found.id));
+            }
+            if found.breach && (found.faction.is_some() || found.column != TraitColumn::Perk) {
+                problems.push(format!("trait {} is a Breach's, so it is a perk and no faction's", found.id));
+            }
+        }
+        // A Breach piece's perk columns roll from the Breaches' pool alone, never one trait twice in a column.
+        for kind in Kind::ALL.into_iter().filter(|kind| kind.armour() || kind.weapon()) {
+            let widest = Rarity::ALL.iter().flat_map(|rarity| columns(*rarity, kind.weapon_grid()));
+            let widest = widest.filter(|column| matches!(column, Column::Perk(_))).map(|column| column.nodes()).max();
+            if self.breach_perks(kind).len() < usize::from(widest.unwrap_or(0)) {
+                problems.push(format!("a Breach {kind:?} needs {} Breach perks to fill a column", widest.unwrap_or(0)));
             }
         }
         for item in &self.items {
@@ -339,7 +361,9 @@ impl Catalogue {
         match item.intrinsic.as_deref().map(|found| self.trait_def(found)) {
             Some(_) if !atheric => problems.push(format!("{id}: only an Atheric weapon or module has an intrinsic")),
             Some(None) => problems.push(format!("{id}: no trait {}", item.intrinsic.as_deref().unwrap_or(""))),
-            Some(Some(found)) if found.column != TraitColumn::Intrinsic || !fits(found, item.kind, Some(id), None) => {
+            Some(Some(found))
+                if found.column != TraitColumn::Intrinsic || !fits(found, item.kind, Some(id), None, false) =>
+            {
                 problems.push(format!("{id}: {} is no intrinsic of its own", found.id));
             }
             _ => {}
@@ -375,7 +399,8 @@ impl Catalogue {
                 }
                 match self.trait_def(trait_id) {
                     Some(found)
-                        if column_kind(column) == Some(found.column) && fits(found, item.kind, Some(id), None) => {}
+                        if column_kind(column) == Some(found.column)
+                            && fits(found, item.kind, Some(id), None, false) => {}
                     Some(_) => problems.push(format!("{id}: {trait_id} does not belong in a {column:?} column")),
                     None => problems.push(format!("{id}: no trait {trait_id}")),
                 }
@@ -405,8 +430,11 @@ impl Catalogue {
                 }
             }
             for (found, count) in needed {
-                let pooled =
-                    self.traits.iter().filter(|each| each.column == found && fits(each, kind, None, None)).count();
+                let pooled = self
+                    .traits
+                    .iter()
+                    .filter(|each| each.column == found && fits(each, kind, None, None, false))
+                    .count();
                 if pooled < count {
                     problems.push(format!("a {rarity:?} {kind:?} needs {count} {found:?} traits, there are {pooled}"));
                 }
@@ -426,9 +454,10 @@ fn column_kind(column: Column) -> Option<TraitColumn> {
 }
 
 /// Whether a trait fits an item of this kind; a signature or an intrinsic fits only the named item it belongs to, and a
-/// faction's perk only a piece of that faction (`faction`, the piece's entry's).
-fn fits(found: &TraitDef, kind: Kind, named: Option<&str>, faction: Option<&str>) -> bool {
-    if found.faction.is_some() && found.faction.as_deref() != faction {
+/// faction's perk only a piece of that faction (`faction`, the piece's entry's), and a Breach's perk only a Breach's
+/// piece (`breach`).
+fn fits(found: &TraitDef, kind: Kind, named: Option<&str>, faction: Option<&str>, breach: bool) -> bool {
+    if (found.faction.is_some() && found.faction.as_deref() != faction) || (found.breach && !breach) {
         return false;
     }
     match found.fits.as_str() {

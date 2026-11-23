@@ -143,6 +143,27 @@ them ([[Gear]], "Verbs"; [[Factions]]):
 | Nightfall | On a riposte that lands | A verb gives its status as a blow lands |
 | Squall Step, Shade Step, Lightbearer | The armour's, whatever loadout is drawn; Shade Step and Lightbearer are trims, so a browser predicts them | Armour perks are the armour's alone |
 
+### The Breaches' perks
+
+The Breaches' own pool ([[Breaches Roll From a Perk Pool of Their Own]]), Claude's under the owner's "stop depending on
+me" ([[Claude Finishes the Gear Calls on Its Own Word]]), as the rules carry it ([[Gear]], "Verbs"). The Lattice overtakes
+what it touches, so its pool Exposes, spreads and hardens; each perk uses a status and a hook the fight already has.
+
+| Choice | Chosen | Why |
+|---|---|---|
+| What a Breach perk is | A perk-column trait marked `breach`; no shared pool and no faction offers it, and it fits only a Breach's piece | The factions' perks' mechanism, so the page shows its words from `traits.json` as any other's |
+| What a Breach piece is | An armour piece or weapon made from a Breach (`vestige::make`, `Source::Breach`), marked `breach`; its Legendary armour climbs to 30 Prestige, a Breach's Legendary's range | One mark says both what it rolls and how far it climbs |
+| How it rolls | Handling and finish from the shared pools, as any piece; every node of its perk columns from the Breaches' perks that fit it, never one twice in a column, those not yet offered first, then any not in the column | The owner: "its own unique perk pool". Three or four fit a kind, fewer than a Legendary's perk nodes, so a later column may offer one an earlier one does |
+| A kept Breach piece | Keeps what it rolled, checked against its columns' pools and the Breaches' perks; a Breach perk gone gives way to another Breach perk | A piece a player earned never changes under them, as a faction's piece |
+| Shatterpoint (melee) | A blow that breaks a foe's guard Exposes it | Breaking is the Lattice cracking a foe open; Thunderclap's hook, with Expose |
+| Vein Strike (weapon) | Blows and shots on an Exposed foe strike 15% harder | The pool's payoff for its own Exposes; Thunderhead's number |
+| Bloom (weapon) | A kill with it Exposes every other living foe within 4 m of the slain | The Lattice spreads from what it takes; 4 m is a knot of foes, not a room |
+| Crystal Sight (ranged) | A shot that lands on a foe 20 m or more from the shooter, as it lands, Exposes it | Long Shot's and Vigil's 20 m; measured shooter to foe as it lands, so no shot's flight need be carried to it |
+| Crystal Skin (armour) | While above three quarters of the wearer's health, blows hit 10% softer, a blocked blow's chip too; a trim (`hale_taken`), so a browser predicts it | Hardening while whole; Hardy's number, and a trim as Barnacle's and Hardy's are |
+| Regrowth (armour) | A kill of a foe gives back 5% of the most health through the room's heal, a spell's kill too; a player already fallen takes none | The Lattice regrows; armour is no loadout, so any kill counts |
+| Resonance (armour) | A perfect dodge Exposes the foe whose blow was dodged | Squall Step's hook, turned on the foe |
+| Lattice Wall (shield) | Blocking a blow, with the shield's loadout drawn, Exposes its striker | Bulwark's and Coral Guard's hook; the shield is the loadout's |
+
 ### Islands, seas and patrols
 
 | Choice | Chosen | Why |

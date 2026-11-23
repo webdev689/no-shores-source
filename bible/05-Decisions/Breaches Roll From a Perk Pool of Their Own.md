@@ -13,3 +13,10 @@ status: in force
   ([[Every Drop Wears Its Content's Set, With Random Perks]]).
 - **Its perks roll from a pool of the Breaches' own**, made with the Breaches
   ([[Breaches Drop the Best, at Sea Too, for a Fleet of Eight]]).
+
+## How it works
+
+- The pool is eight perks marked `breach` in `content/gear/traits.json`; a Breach's armour or weapon made by a Vestige
+  rolls every node of its perk columns from them and its other columns from the shared pools, and keeps what it rolled
+  ([[Gear]], "Verbs", "The Breaches' perks"; the calls in [[Gear as Claude Shapes It]], "The Breaches' perks"). No
+  Breach is built yet, so nothing drops one.

@@ -77,11 +77,11 @@ fn the_shared_pools_never_offer_a_faction_perk() {
 fn a_faction_perk_fits_only_its_own_factions_pieces() {
     for perk in faction_perks() {
         for kind in Kind::ALL {
-            assert!(!catalogue().trait_fits(&perk.id, kind, None), "{} on a rolled {kind:?}", perk.id);
+            assert!(!catalogue().trait_fits(&perk.id, kind, None, false), "{} on a rolled {kind:?}", perk.id);
         }
         for named in &catalogue().items {
             let own = named.faction == perk.faction;
-            let fits = catalogue().trait_fits(&perk.id, named.kind, Some(&named.id));
+            let fits = catalogue().trait_fits(&perk.id, named.kind, Some(&named.id), false);
             let shaped = match perk.fits.as_str() {
                 "armour" => named.kind.armour(),
                 "melee" => named.kind.weapon() && !named.kind.ranged(),
@@ -109,7 +109,12 @@ fn a_bought_faction_piece_always_offers_one_of_its_factions_perks_beside_the_sha
                 assert_eq!(own.len(), 1, "one faction perk on {}: {offered:?}", named.id);
                 let perk = catalogue().trait_def(own[0]).expect("a trait");
                 assert_eq!(perk.faction.as_deref(), Some(faction.key.as_str()), "{}", named.id);
-                assert!(catalogue().trait_fits(&perk.id, item.kind, Some(&named.id)), "{} fits {}", perk.id, named.id);
+                assert!(
+                    catalogue().trait_fits(&perk.id, item.kind, Some(&named.id), false),
+                    "{} fits {}",
+                    perk.id,
+                    named.id
+                );
                 let mut unique = offered.clone();
                 unique.sort();
                 unique.dedup();

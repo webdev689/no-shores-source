@@ -150,6 +150,31 @@ fn blows_land_softer_from_behind_or_telegraphed_and_a_tolling_stagger_lasts_long
 }
 
 #[test]
+fn blows_land_softer_on_a_fighter_above_three_quarters_of_its_health_with_crystal_skin() {
+    let skin = Trim { hale_taken: 0.9, ..Trim::PLAIN };
+    let struck = |health: f64| {
+        let fighter = Fighter { health, health_max: 100.0, trim: skin, ..player_at(0.0, 0.0) };
+        match judge(&blow(BlowKind::Swing(Stroke::Down)), &fighter) {
+            Verdict::Hit { damage, .. } => damage,
+            other => panic!("a hit, not {other:?}"),
+        }
+    };
+    assert!((struck(80.0) - 9.0).abs() < 1e-9, "above three quarters");
+    assert!((struck(75.0) - 10.0).abs() < 1e-9, "at three quarters, no longer");
+    let mut guarded = armed(skin);
+    let mut plain_guard = armed(Trim::PLAIN);
+    for _ in 0..20 {
+        guarded = step_fighter(&guarded, &guarding(0.0), &AROUND).0;
+        plain_guard = step_fighter(&plain_guard, &guarding(0.0), &AROUND).0;
+    }
+    let chip = |fighter: &Fighter| match judge(&blow(BlowKind::Swing(Stroke::Down)), fighter) {
+        Verdict::Blocked { damage, .. } => damage,
+        other => panic!("blocked, not {other:?}"),
+    };
+    assert!((chip(&guarded) - chip(&plain_guard) * 0.9).abs() < 1e-9, "through a guard too");
+}
+
+#[test]
 fn unshaken_and_steady_fill_poise_less() {
     let open = Fighter { arms: SWORD, poise_max: 100.0, ..player_at(0.0, 0.0) };
     let filled = |trim: Trim, arms: Arms| {

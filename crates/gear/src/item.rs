@@ -33,7 +33,8 @@ pub struct Item {
     pub layout: Vec<Vec<String>>,
     /// The island resource its nodes ask for, as its place in the catalogue's list.
     pub resource: Option<u8>,
-    /// A Breach's Legendary armour, whose upgrades climb further in Prestige.
+    /// A Breach's armour piece or weapon: its perk columns roll from the Breaches' own perks, and a Legendary armour
+    /// piece's upgrades climb further in Prestige.
     pub breach: bool,
     pub xp: u32,
     /// The nodes bought, one bit each, column after column.
@@ -184,7 +185,7 @@ impl Item {
             (node != NONE_CHOSEN && self.has(column, node))
                 .then(|| self.traits_of(column).get(usize::from(node)).map(String::as_str))
                 .flatten()
-                .filter(|id| content.trait_fits(id, self.kind, self.named.as_deref()))
+                .filter(|id| content.trait_fits(id, self.kind, self.named.as_deref(), self.breach))
         });
         intrinsic.into_iter().chain(chosen)
     }

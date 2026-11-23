@@ -75,6 +75,8 @@ mod asks_tests;
 #[cfg(test)]
 mod bounties_tests;
 #[cfg(test)]
+mod breach_perks_tests;
+#[cfg(test)]
 mod clock_tests;
 #[cfg(test)]
 mod cosmetics_tests;
