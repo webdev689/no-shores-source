@@ -5,7 +5,7 @@
 
 import { DurableObject } from 'cloudflare:workers';
 import { hallDeps } from './chatDeps.ts';
-import { addressKey } from './accounts.ts';
+import { addressKey } from '../address.ts';
 import { Hall } from './chatHall.ts';
 
 /** How often the hall lets go the sockets that sent no token. */
