@@ -1,5 +1,5 @@
 ---
-id: 156
+id: 170
 title: "A TypeScript test edited by script went to the full check without its own lint and type check, so two full runs stopped at one-line faults"
 status: open
 type: open-source
