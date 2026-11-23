@@ -3,6 +3,7 @@ import { test } from 'node:test';
 import { castOf } from './cast.ts';
 import { keptAt, NatureField, type NatureGround } from './field.ts';
 import type { GroundAt } from './ground.ts';
+import { GroundChanges } from './groundChanges.ts';
 import { TILE_M } from './scatter.ts';
 import { SLOT_FLOATS } from './slots.ts';
 
@@ -89,6 +90,54 @@ test('a changed ground is scattered again over several updates, the old plants d
   assert.equal(field.packed.list.length, before, 'the old plants still drawn');
   while (field.update(EYE[0], EYE[1], counted('savanna', 2).ground));
   assert.equal(field.packed.list.length, before, 'the same ground grows the same plants');
+});
+
+test('a ground changed within an area scatters only the tiles there again; the rest keep their plants', () => {
+  const field = new NatureField(Infinity);
+  const changes = new GroundChanges();
+  let height = 40;
+  const asked = { count: 0 };
+  const ground = (): NatureGround => ({
+    biome: 'woodland',
+    snowM: 2500,
+    version: changes.version,
+    unchanged: changes.unchanged,
+    sample: () => {
+      asked.count += 1;
+      return { ...FLAT, height };
+    },
+    cleared: () => false,
+  });
+  field.update(EYE[0], EYE[1], ground());
+  const feet = () => {
+    const found = new Map<string, number>();
+    for (let index = 0; index < field.packed.list.length; index++) {
+      const [x, y, z] = footOf(field, index);
+      found.set(`${x.toFixed(2)},${y.toFixed(2)}`, z);
+    }
+    return found;
+  };
+  const before = feet();
+  const [first, askedFirst] = [field.scattered, asked.count];
+  // A patch of ground 1 km a side north-east of the eye rises a metre.
+  const area = [EYE[0] + 200, EYE[1] - 1200, EYE[0] + 1200, EYE[1] - 200] as const;
+  changes.change([area]);
+  height = 41;
+  field.update(EYE[0], EYE[1], ground());
+  const again = field.scattered - first;
+  assert.ok(again > 0 && again < first / 20, `${again} of ${first} tile layers scattered again`);
+  assert.ok(asked.count - askedFirst < askedFirst / 20, 'the ground read again only there');
+  let [risen, kept] = [0, 0];
+  for (const [place, z] of feet()) {
+    const [x, y] = place.split(',').map(Number);
+    const inside = x >= area[0] - TILE_M && x <= area[2] + TILE_M && y >= area[1] - TILE_M && y <= area[3] + TILE_M;
+    if (inside) risen += Number(Math.abs(z - (before.get(place) ?? NaN) - 1) < 1e-3);
+    else {
+      assert.equal(z, before.get(place), 'a plant outside the area stands where it stood');
+      kept += 1;
+    }
+  }
+  assert.ok(risen > 0 && kept > risen * 10, `${risen} plants risen with their ground, ${kept} kept`);
 });
 
 test('far plants thin out toward the reach, and none thin within the thinning start', () => {
