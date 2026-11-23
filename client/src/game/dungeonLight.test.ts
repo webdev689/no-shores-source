@@ -10,7 +10,9 @@ import {
   flicker,
   GLOW_KINDS,
   LIGHT_KINDS,
+  type Light,
   lightAt,
+  NearestLights,
   cellWords,
   CELL_ROCK,
   MOODS,
@@ -19,6 +21,7 @@ import {
   LIGHT_WGSL,
 } from './dungeonLight.ts';
 import { type DungeonLayout, FIXTURE } from './dungeonLayout.ts';
+import { seededRandom } from '../cinema/ambienceShapes.ts';
 
 test('a light is all there where it burns and gone at its reach', () => {
   assert.equal(falloff(0, 8), 1);
@@ -175,4 +178,35 @@ test('summed light keeps its value up to 0.8 and eases toward 1.4 past it, in th
       `${light}: the shader's ${shaded}, the figures' ${shoulder(light)}`,
     );
   }
+});
+
+test('a frame is lit by the lights reaching farthest past the eye, the portal among them only while it is open', () => {
+  const random = seededRandom(3);
+  const kinds = [LIGHT_KINDS.torch, LIGHT_KINDS.candles, LIGHT_KINDS.brazier, LIGHT_KINDS.daylight];
+  const burning: Light[] = Array.from({ length: 60 }, (_unused, number) => ({
+    at: [random() * 80, random() * 80, 2],
+    number,
+    burning: kinds[number % kinds.length] ?? LIGHT_KINDS.torch,
+  }));
+  const portal: Light = { at: [40, 40, 1.5], number: burning.length, burning: LIGHT_KINDS.portal };
+  const picker = new NearestLights(burning, portal);
+  const past = (eye: readonly [number, number, number]) => (light: Light) =>
+    Math.hypot(light.at[0] - eye[0], light.at[1] - eye[1], light.at[2] - eye[2]) - light.burning.reach;
+  const numbers = (lights: readonly Light[]) => lights.map((light) => light.number);
+  let last: readonly Light[] | null = null;
+  // The eye walks across the dungeon, so each frame's order starts from the last's.
+  for (let step = 0; step < 40; step++) {
+    const eye = [step * 2, 40 + 10 * Math.sin(step / 5), 1.6] as const;
+    const open = step % 3 === 0;
+    const all = open ? [...burning, portal] : burning;
+    const expected = [...all].sort((first, second) => past(eye)(first) - past(eye)(second)).slice(0, 32);
+    const nearest = picker.nearest(eye, open, 32);
+    assert.deepEqual(numbers(nearest), numbers(expected), `step ${step}`);
+    assert.equal(nearest.includes(portal), open && expected.includes(portal));
+    if (last) assert.equal(nearest, last, 'the same array every frame');
+    last = nearest;
+  }
+  const few = new NearestLights(burning.slice(0, 3), { ...portal, number: 3 });
+  assert.equal(few.nearest([0, 0, 0], false, 32).length, 3, 'fewer lights than the most: all of them, no portal');
+  assert.equal(few.nearest([0, 0, 0], true, 32).length, 4);
 });
