@@ -218,23 +218,23 @@ The decisions in [[Open Questions]] are not repeated here.
   is put away at sea; the wheel scrolls in the interface's pixels; flora that failed to come is asked for again; the
   island door, `identify`'s number, the bake's panics, the chat hall's sizes, mottos' hidden marks and the World
   Editor's keys; dead code and some 25 stale docs out; the Code Map, Toolchain, Testing and other notes made true.
-  Tested offline (the full check at its head, `main` merged in); not played. What it left for the owner:
-  - The `modules` workflow's publish uploads `"$RUNNER_TEMP/stage"`, a folder nothing writes, so it uploads nothing and
-    passes; the next change to a module would name meshes R2 does not hold. A one-line fix (`"$RUNNER_TEMP/modules"`)
-    and a guard in `tools/r2.py`, held back because pushing either starts the asset workflows with the Cloudflare
-    token.
-  - One address can hold all 64 of the sea's places with sockets that never sign in, each let go after 5 s and opened
-    again: a per-address cap like the chat hall's is a new security limit, the owner's to approve. The roster's and a
-    player's reads have no rate limit.
-  - Any kill pays a dungeon node's clear as fighting its garrison (`room/src/power.rs`); a failed trip from an offline
-    island's beach goes to Overlook, though [[Game]] says the beach; the procedure says rebase and squash where
-    practice merges; `built` is a status Writing Notes does not list; two repo-check gaps (the vault check passes a
-    `code:` symbol any word of its file names; the html check excuses `.append(` on a name made with `new` anywhere and
-    misses `insertNode`, `importNode` and `new Text(`).
+  Tested offline (the full check at its head, `main` merged in); not played. What it left is in four drafts, each
+  on the owner's yes, each passing the full check at its head:
+  - #171: the `modules` workflow uploads the folder its bake fills, and `r2.py upload` refuses a missing one. Tested
+    live on its push: the publish ended "491 staged files on R2" (it had said 0).
+  - #173: a room holds eight sockets unsigned from one address at most (`UNSIGNED_FROM_ONE`); every room, not only
+    the sea, which the owner may narrow. The roster's and a player's reads still have no rate limit.
+  - #174: the vault check wants a `code:` symbol defined in its file, not only named; the html check refuses
+    `insertNode`, `importNode` and `new Text(`, and excuses `.append(` only on a name given nothing but `new`.
+  - #175: the owner's answers,
+    [[Only the Garrison's Own Kills Share Its Clear, and a Failed Trip Goes Back to the Beach]]: only the garrison's
+    own kills share its clear; a failed trip from a beach, played alone, goes back to it; Branches and Merging says
+    merge, not rebase and squash, and the `built` notes are `live` (Claude's calls).
 - **Open pull requests**, for the owner's yes once their checks pass: #162 (the game's words out to Type and back; it
-  conflicts with `main` in `Decisions.md`) and #159 (the rooms' worker tests wait for what they check; it conflicts
-  with `main` in `roomThread.test.ts`). Drafts: #93 (the toolkit's first
-  review) and #114 (the gear message carries the pledge once).
+  conflicts with `main` in `Decisions.md`), #159 (the rooms' worker tests wait for what they check; it conflicts
+  with `main` in `roomThread.test.ts`) and #168 (the ship aim's fall under the crosshair, another session's). Drafts:
+  #171, #173, #174 and #175 (above), #93 (the toolkit's first review) and #114 (the gear message carries the pledge
+  once).
 - **Open points from merged work**, each the owner's to say:
   - #158 (the prologue's waking, scenes and arena, one loading screen, foes that give up only when far, feet on the
     city's ground; [[One Loading Screen Covers Every Trip Until the Place Is Ready]] and the decisions it names): the
@@ -380,9 +380,11 @@ The decisions in [[Open Questions]] are not repeated here.
   [[The Asset Workflows Publish to R2 With the Cloudflare Token]]); add `tools/install-flatc.sh` to `ROOMS_CODE` in
   `.github/workflows/rooms.yml`. A cloud session cannot deploy the rooms itself: its proxy writes the stored token
   over the upload token Cloudflare hands back.
-- **The cloud environment**: two environments named Default are listed and none for this repository; which one
-  sessions should run on, and which holds the SkillsMP key, is unchecked. A Context7 key, if wanted, goes on it the
-  same way.
+- **The cloud environment**: a `no-shores-source` environment is saved for this repository, allowing R2's
+  `pub-…r2.dev` host, with a setup script. A session on a Default environment cannot fetch from R2, so the ship tests
+  (`shipTags.test.ts`) fail the full check there: move onto `no-shores-source` first. In the container, Node's own
+  `fetch` reaches R2 only with `NODE_USE_ENV_PROXY=1` (the proxy's README). The Default holds no network secret; whether
+  `no-shores-source` holds the SkillsMP or Context7 key is unchecked.
 - **The forge's renders** leave `r2.dev`, which limits its rate, once `daggerfalljs.dev`'s DNS moves to Cloudflare
   ([[The Forge's Renders Will Use daggerfalljs.dev]]).
 - **Names** for the armour sets and weapons, to replace the forge's ([[Three Races]]).
