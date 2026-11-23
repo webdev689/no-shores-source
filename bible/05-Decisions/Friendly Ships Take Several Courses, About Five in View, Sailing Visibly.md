@@ -33,5 +33,5 @@ status: in force
 | Call | Chosen | Why |
 |---|---|---|
 | The courses | Three a pair: the shortest, and two leaving each port 30 degrees either side of its heading to the clear water 100 km out, each stretch planned and checked round land as the shortest is; one no clear water makes, or more than 1.3 times the shortest's length, is left out | Ships out of a port fan out (Overlook's Rimeholt courses about 30 degrees apart), every course keeps the lanes' clearance of coasts and isles, and none detours far: a course turned aside only at the route's middle ran 2,985 km against the shortest's 1,402 |
-| The schedule | Each course has its own departures every 3,000 s, the courses of a pair starting a third of that apart | 5.2 ships within 60 km of Overlook's roadstead on a day's mean, counting those lying there: the owner's five |
+| The schedule | Each course has its own departures every 3,000 s, the nine courses' starts a ninth of that apart | 5.2 ships within 60 km of Overlook's roadstead on a day's mean, counting those lying there: the owner's five; courses that share a stretch out of a port send no two ships out together |
 | Lying at a roadstead | 600 s, as before | Unchanged by the decision |

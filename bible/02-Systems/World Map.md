@@ -154,15 +154,17 @@ The numbers are Claude's, under the owner's "Friendly ships should dynamically t
   nearest clear cell it reaches by a clear leg; then string-pulled, each leg running as far ahead as it can while it
   stays more than 800 m from every coast edge and isle, checked exactly in whole metres (no edge met, and each end of
   either segment clear of the other), so a hull drawn on it stays off the land. The other two leave each port 30
-  degrees (0.52 rad) either side of the shortest's first heading, to the clear cell nearest the point 100 km out, one
+  degrees either side of the shortest's first heading, to the clear cell nearest the point 100 km out, one
   way leaving and the other arriving so each keeps to one side, every stretch planned as the shortest is; a side no
   clear water makes, or more than 1.3 times the shortest's length, is left out. Today all nine courses sail: Overlook
   to Sunspire 1,402, 1,421 and 1,468 km, Overlook to Rimeholt 1,601, 1,611 and 1,681 km, Sunspire to Rimeholt 2,950,
   2,959 and 3,032 km. Out of Overlook they leave on five headings, two of its Sunspire courses sharing the narrow sea
-  east of it. Planning them takes about 0.2 s natively, twice the one course each.
+  east of it; out of Sunspire and Rimeholt on three each. Planning them takes about 0.2 s natively, twice the one
+  course each; a sea room's harbours take the ports' roadsteads alone (`Traffic::roadsteads`), planning no course.
 - **Schedule.** On each course a ship leaves each end every 3,000 s of world time, departure n at its course's start
-  plus n × 3,000 s, the courses of a pair starting a third of that apart, so a port's ships leave on its courses in
-  turn; each sails at 60 m/s, the pace dial's slowest step, to the other end. There it lies at the roadstead 600 s
+  plus n × 3,000 s, the nine courses' starts a ninth of that apart, so two courses that share a stretch out of a port
+  (each of Sunspire's and Rimeholt's ways out carries a course to each of the other two ports) never send ships out
+  together; each sails at 60 m/s, the pace dial's slowest step, to the other end. There it lies at the roadstead 600 s
   (`DWELL_S`), heading as it came in, and is then gone. About five ships are within 60 km of Overlook's roadstead at
   any moment, counting those lying there (5.2 on a day's mean). World time is seconds since the Unix epoch, passed in,
   so every machine computes the same ships for the same time. The waters' table the door returns carries the pace

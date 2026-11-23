@@ -255,25 +255,52 @@ fn about_five_ships_are_in_view_of_overlook_and_leave_it_on_different_headings()
     let mean = seen as f64 / f64::from(samples);
     eprintln!("{mean} ships within 60 km of Overlook's roadstead on the mean");
     assert!((4.0..=6.0).contains(&mean), "{mean} ships within 60 km on the mean");
-    // Where each course out of Overlook lies 60 km out, as a bearing from its roadstead.
-    let mut bearings: Vec<f64> = traffic
+    // The way from Overlook's roadstead to where each of its courses lies 60 km out.
+    let ways: Vec<[f64; 2]> = traffic
         .routes
         .iter()
         .filter(|route| route.from_port == overlook || route.to_port == overlook)
         .map(|route| {
             let out = if route.from_port == overlook { 60_000.0 } else { route.length_m - 60_000.0 };
             let (at, _) = route.at(out);
-            (at[0] - centre[0]).atan2(centre[1] - at[1]).to_degrees()
+            let (x, y) = (at[0] - centre[0], at[1] - centre[1]);
+            let length = (x * x + y * y).sqrt();
+            [x / length, y / length]
         })
         .collect();
-    bearings.sort_by(f64::total_cmp);
-    // Overlook's way out east is one narrow stretch of sea, so two of its courses to Sunspire leave on one heading.
-    let headings = 1 + bearings.windows(2).filter(|pair| pair[1] - pair[0] > 5.0).count();
-    assert!(
-        headings + 1 >= bearings.len(),
-        "{} courses leave Overlook on {headings} headings: {bearings:?}",
-        bearings.len()
-    );
+    // Two ways within 5 degrees of each other: their cosine over 0.9962. Overlook's way out east is one narrow stretch
+    // of sea, so two of its courses to Sunspire leave on one heading; no other two do.
+    let mut alike = 0;
+    for (index, one) in ways.iter().enumerate() {
+        alike += ways[index + 1..].iter().filter(|two| one[0] * two[0] + one[1] * two[1] > 0.9962).count();
+    }
+    assert!(alike <= 1, "{alike} pairs of Overlook's {} courses leave on one heading: {ways:?}", ways.len());
+}
+
+#[test]
+fn no_two_ships_sail_together_near_a_port() {
+    let (_, _, traffic) = world();
+    for (port, roadstead) in traffic.roadsteads.iter().enumerate() {
+        let centre = [roadstead.x as f64, roadstead.y as f64];
+        for step in 0..1_000 {
+            let time = 1_795_000_000.0 + f64::from(step) * 86.4;
+            let sailing: Vec<TrafficShip> = traffic
+                .ships_near(centre, 60_000.0, time)
+                .into_iter()
+                .filter(|ship| ship.progress_m < ship.length_m)
+                .collect();
+            // Two ships sailing one way within 2 km of each other sail together: every course meets at the roadstead,
+            // so ships coming and going pass nearer.
+            for (index, one) in sailing.iter().enumerate() {
+                for two in &sailing[index + 1..] {
+                    let (dx, dy) = (one.position[0] - two.position[0], one.position[1] - two.position[1]);
+                    let one_way = one.direction[0] * two.direction[0] + one.direction[1] * two.direction[1] > 0.9962;
+                    let together = one_way && dx * dx + dy * dy < 2_000.0 * 2_000.0;
+                    assert!(!together, "port {port}: {} and {} sail together at {time}", one.id, two.id);
+                }
+            }
+        }
+    }
 }
 
 #[test]
