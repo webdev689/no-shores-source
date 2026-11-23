@@ -37,6 +37,8 @@ export interface Opening {
   readonly shelf?: string;
   /** Shuts the menu where it already stands at the view, as its key does. */
   readonly toggle?: boolean;
+  /** The Guild tab's Outposts page, on the outpost at a site and one of its structures, as using it asks. */
+  readonly outpost?: { readonly site: string; readonly structure?: number };
 }
 /** The page event that opens the menu at a view, as a station's counter does. */
 export const OPEN_AT = 'overlook:gear';

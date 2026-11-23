@@ -8,6 +8,7 @@ import { BINDS, keyNameOf } from '../player/input.ts';
 import { motionReduced } from '../plus/kit.ts';
 import { announce } from '../ui/announce.ts';
 import type { Child, Node } from '../ui/node.ts';
+import { besideOf, pressesIn } from './gearFocus.ts';
 import type { Layer } from '../ui/stack.ts';
 import type { Interface } from '../ui/ui.ts';
 import { uiScale } from '../ui/uiRenderer.ts';
@@ -490,7 +491,8 @@ export function startGearWindow(
 
   addEventListener(OPEN_AT, (event) => {
     if (resting()) return;
-    const { view: wanted, shelf: onShelf, toggle } = (event as CustomEvent<Opening>).detail;
+    const { view: wanted, shelf: onShelf, toggle, outpost } = (event as CustomEvent<Opening>).detail;
+    if (outpost && link) (guild ??= new GuildPage({ link, here })).open('outposts', outpost);
     if (view !== wanted || onShelf !== undefined || toggle) open(wanted, onShelf);
   });
   addEventListener(
@@ -563,38 +565,4 @@ export function cardFloat(
     float: { to: 'screen', x: Math.max(gap, left), y: Math.max(gap, top), z: 40 },
     children: [card.content()],
   };
-}
-
-/** The ids of what takes the focus under `node`, as the interface walks them: presses, fields and the focusable. */
-function pressesIn(node: Child): string[] {
-  if (!node) return [];
-  const own = (node.press || node.field || node.focusable) && !node.disabled && node.id ? [node.id] : [];
-  return [...own, ...(node.children ?? []).flatMap(pressesIn)];
-}
-
-/** The nodes from `node` down to the one named `id`, or null where it holds none. */
-function pathTo(node: Node, id: string): Node[] | null {
-  if (node.id === id) return [node];
-  for (const child of node.children ?? []) {
-    const below = child ? pathTo(child, id) : null;
-    if (below) return [node, ...below];
-  }
-  return null;
-}
-
-/** The presses to take the focus should `id` go, nearest first: the next and the last before it among what holds
- *  it, then among what holds that, and so on out to the menu's body. A keeper's tile, held with its price, so finds
- *  the tiles beside it, then the next row's first and the last row's last. */
-function besideOf(root: Node, id: string): string[] {
-  const path = pathTo(root, id) ?? [];
-  const found: string[] = [];
-  for (let level = path.length - 1; level > 0 && path[level]?.id !== 'gear-body'; level--) {
-    const [holder, held] = [path[level - 1], path[level]];
-    const children = holder?.children ?? [];
-    const place = children.indexOf(held);
-    const [after] = children.slice(place + 1).flatMap(pressesIn);
-    const before = children.slice(0, place).flatMap(pressesIn).at(-1);
-    found.push(...[after, before].filter((each): each is string => each !== undefined));
-  }
-  return found;
 }

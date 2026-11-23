@@ -18,7 +18,8 @@ import { detailsNode, FIELDS, foundNode } from './guildDetails.ts';
 import { EDGE, edgeId, homeNode, type Home, type RosterTurn } from './guildHome.ts';
 import { bountiesNode, contributionNode } from './guildWeek.ts';
 import { tierName, kindOf } from './outpostLaw.ts';
-import { type OutpostsState, type SiteOf, outpostsNode, siteNamed } from './outpostsView.ts';
+import { type OutpostsState, type SiteOf, outpostsNode } from './outpostsView.ts';
+import { sitesKept } from './siteNames.ts';
 import { treasuryNode } from './treasuryView.ts';
 
 /** How often the guild is asked for again while it is seen, in milliseconds. */
@@ -71,7 +72,7 @@ export class GuildPage {
     this.here = given.here ?? (() => null);
     this.now = given.now ?? Date.now;
     this.hidden = given.hidden ?? (() => false);
-    this.siteOf = given.siteOf ?? ((site) => ({ name: siteNamed(site), island: 'island goods' }));
+    this.siteOf = given.siteOf ?? sitesKept;
     this.look();
   }
 

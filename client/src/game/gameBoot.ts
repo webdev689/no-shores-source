@@ -26,6 +26,7 @@ import { type Landmass, openLandmass, terrainOf } from './landmass.ts';
 import { accountOf, roomsFrom } from './rooms.ts';
 import { keepBinds } from './bindsKept.ts';
 import { keepGuild } from './guild/guildHeld.ts';
+import { keepSites, siteOfWorld } from './guild/siteNames.ts';
 import { GameScene } from './scene.ts';
 import { roomModuleFrom } from './shipPanel.ts';
 import { arrivalAt, loadWorld } from './worldData.ts';
@@ -86,6 +87,7 @@ export async function bootGame(gpu: Gpu, canvas: HTMLCanvasElement, shipScale: (
   // keys it hears after them.
   startSocial(stack, link, session, () => forge);
   const { continents } = world;
+  keepSites(siteOfWorld(world.nodes));
   // The sea by weather, the swell the sea is drawn with, and how far the view last reached.
   const [seaWeather, seaView] = [seaWeatherOn(roomModule, world.layoutText, world.cities), { reachM: 0 }];
   const cityAssets = loadCityAssets(base);
