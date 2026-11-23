@@ -247,7 +247,7 @@ test("a smith's ware is drawn as the piece it becomes once bought: its set or cl
     throw new Error('gear_vended.bin is not written: run `cargo test -p protocol`');
   });
   const sent: GearState[] = [];
-  for (let at = 0; at < bytes.length; ) {
+  for (let at = 0; at < bytes.length;) {
     const length = bytes.readUInt32LE(at);
     const read = readFromRoom(new Uint8Array(bytes.subarray(at + 4, at + 4 + length)));
     if (read?.kind === 'gear') sent.push(read);
