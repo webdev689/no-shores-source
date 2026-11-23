@@ -335,7 +335,8 @@ lays them where its end foe is a Boss (`laid_dungeon`); no patrol's or sea islan
   with no foes. It never harms anyone itself. Every rune lit breaks it.
 - **The Weighing** (split up): three plates as far apart as the room allows among the spots in plain view from the
   doorway its room is entered by (the one nearest the way in on the walk: no solid on the line from that doorway's
-  middle, a body's width and a hand wide), so the puzzle is seen on coming in; or the two farthest while fewer than
+  middle, a body's width and a hand wide) and ahead of a body coming in by it, within about 70 degrees either side of
+  the way in from the open cell before it (`PLATES_AHEAD`, a cosine of 0.35), so the puzzle is seen on coming in; or the two farthest while fewer than
   three living players stand in its room. A plate stood on by a living player within 1 m stays held 3 s after the last steps
   off, and for a lone player the walk between its two plates besides (`plate_linger`), so a lone player walking, not
   only sprinting, can hold both. It is held each tick every plate in play is, and broken once held 20 s in all; a wave

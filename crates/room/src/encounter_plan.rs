@@ -13,6 +13,10 @@ pub const LITANY_RUNES: (usize, usize) = (4, 6);
 /// The plates of a Weighing, and how far apart each two stand at the least (m): two cells, so no body holds two.
 pub const PLATES: usize = 3;
 pub const PLATES_APART_M: f64 = 2.0 * CELL_M;
+/// How far round from the way into a Weighing's room its plates stand at the most, as the cosine of the angle between
+/// the way in through its doorway and the way from the doorway to a plate: about 70 degrees either side, so a body
+/// coming in has every plate ahead of it, none behind or beside it.
+pub const PLATES_AHEAD: f64 = 0.35;
 /// An Ascent's pads: half a pad's side; the first's top, mantled from the dry doorway (within `TUNING.reach`); how
 /// much higher each next stands than the one before at the most, and how far every pad after the first stands over a
 /// mantle's reach from the floor at the least; the fewest and the most of them; the leap from each to the next, edge to edge along the line
@@ -272,11 +276,32 @@ fn laid(reading: &Reading, lane: &mut Lane, kind: SealKind, room: usize) -> Opti
     let (pieces, pads, drowned) = match kind {
         SealKind::Litany => (runes(lane, &spots)?, Vec::new(), Vec::new()),
         SealKind::Weighing => {
-            // Every plate in plain view from the doorway the room is entered by, so the puzzle is seen on coming in.
-            let door = reading.dungeon.centre(reading.entered_by(room)?);
+            // Every plate in plain view from the doorway the room is entered by and ahead of a body coming in by it
+            // (within PLATES_AHEAD of the way from the cell before it), so the puzzle is seen on coming in.
+            let entered = reading.entered_by(room)?;
+            let before = SIDES
+                .into_iter()
+                .filter_map(|side| reading.dungeon.beside(entered, side))
+                .filter(|cell| {
+                    reading.dungeon.cells[*cell] != Cell::Rock && reading.dungeon.room_at(*cell) != Some(room)
+                })
+                .min_by_key(|&cell| (reading.walks[cell], cell))?;
+            let (door, from) = (reading.dungeon.centre(entered), reading.dungeon.centre(before));
+            let inward = [door[0] - from[0], door[1] - from[1]];
+            let ahead = |[x, y]: [f64; 2]| {
+                let toward = [x - door[0], y - door[1]];
+                let along = inward[0] * toward[0] + inward[1] * toward[1];
+                // cos >= PLATES_AHEAD, squared so no root is taken.
+                along > 0.0
+                    && along * along
+                        >= PLATES_AHEAD * PLATES_AHEAD * apart(inward, [0.0, 0.0]) * apart(toward, [0.0, 0.0])
+            };
             let point = |[x, y]: [f64; 2]| [x, y, x, y];
-            let seen: Vec<[f64; 2]> =
-                spots.iter().copied().filter(|&spot| open_air(point(door), point(spot), &reading.boxes)).collect();
+            let seen: Vec<[f64; 2]> = spots
+                .iter()
+                .copied()
+                .filter(|&spot| ahead(spot) && open_air(point(door), point(spot), &reading.boxes))
+                .collect();
             (plates(&seen)?, Vec::new(), Vec::new())
         }
         SealKind::Holdfast => (vec![relic(reading, room, &spots)?], Vec::new(), Vec::new()),

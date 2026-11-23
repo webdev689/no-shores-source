@@ -115,7 +115,7 @@ fn a_weighings_plates_stand_apart_and_its_first_two_farthest() {
 }
 
 #[test]
-fn every_plate_of_a_weighing_is_in_plain_view_from_the_doorway_its_room_is_entered_by() {
+fn every_plate_of_a_weighing_is_in_plain_view_ahead_of_the_doorway_its_room_is_entered_by() {
     let mut weighings = 0;
     for (place, laid, plan) in elite_plans() {
         let walked = walks(&laid);
@@ -134,6 +134,24 @@ fn every_plate_of_a_weighing_is_in_plain_view_from_the_doorway_its_room_is_enter
                         .all(|&[min_x, min_y, max_x, max_y, _]| x < min_x || x > max_x || y < min_y || y > max_y)
                 });
                 assert!(seen, "{place}: a plate at {plate:?} hidden from the doorway at {door:?}");
+                // And ahead of a body coming in by the doorway from the open cell before it, within about 70 degrees
+                // either side (cosine 0.35), none behind or beside it.
+                let cell = plan.cell_at([door[0], door[1]]).expect("the doorway's cell");
+                let before = dungeon::SIDES
+                    .into_iter()
+                    .filter_map(|side| laid.beside(cell, side))
+                    .filter(|next| laid.cells[*next] != Cell::Rock && laid.room_at(*next) != Some(seal.room))
+                    .min_by_key(|&next| (walked[next], next))
+                    .expect("a way in");
+                let from = laid.centre(before);
+                let (inward, toward) =
+                    ([door[0] - from[0], door[1] - from[1]], [plate[0] - door[0], plate[1] - door[1]]);
+                let cosine = (inward[0] * toward[0] + inward[1] * toward[1])
+                    / (libm::hypot(inward[0], inward[1]) * libm::hypot(toward[0], toward[1]));
+                assert!(
+                    cosine >= 0.35 - 1e-9,
+                    "{place}: a plate at {plate:?} beside or behind the doorway at {door:?}"
+                );
             }
         }
     }

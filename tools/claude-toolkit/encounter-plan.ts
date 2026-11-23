@@ -150,7 +150,9 @@ plan.seals.forEach((seal, index) => {
   freeze(false);
   const first = seal.pieces[0] ?? middle;
   if (seal.kind === LITANY) {
+    // The show's first rune half shown: the rooms' worker may run many ticks at once, so the moment is set, not waited.
     freeze(true);
+    encounter(9, index, 30);
     picture(inside, first, 'first,0,20', 'litany_show');
     freeze(false);
     // A step on the second rune before the first is lit is wrong: it flashes red for a second.
