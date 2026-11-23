@@ -1,12 +1,19 @@
 // Everything a city's drawing needs, worked out once when the city is set: its pictures, the models its blocks stand
 // and where, every building's masses and hull, its solids and ground, grouped by chunks of cells so the view culls
 // and picks tiers a chunk at a time. All positions are metres from the city's middle, so the GPU's floats keep
-// their precision.
+// their precision. The work goes a step at a time (`cityBuildSteps`), so a frame can take a few and leave the rest.
 import { buildingMasses, type Mass } from '../models/buildingPlan.ts';
 import type { BuildingTable, KitTable, PropTable } from '../models/tables.ts';
 import { type ForgedTables, pictureUses, type PictureUse } from '../textures/picture.ts';
 import { type RmbBlock, groundTiles, placed } from './blocks.ts';
-import { cellIndex, clearedGround, groundPlates, levelledCells, plateSkirts, sideOf } from './cityGround.ts';
+import {
+  cellIndex,
+  clearedGroundSteps,
+  groundPlateSteps,
+  levelledCells,
+  plateSkirtSteps,
+  sideOf,
+} from './cityGround.ts';
 import {
   boxMass,
   hullOf,
@@ -18,12 +25,13 @@ import {
   massShape,
   writeMass,
 } from './cityMasses.ts';
-import { forgedModel, type ModelBuffers, modelBuffers, type ModelKey, modelKeyOf } from './cityModels.ts';
-import { addPolygon, appendMesh, emptyMesh, type MeshData } from './mesh.ts';
+import { forgedModel, type ModelBuffers, modelBufferSteps, type ModelKey, modelKeyOf } from './cityModels.ts';
+import { addPolygon, emptyMesh, laidMeshSteps } from './mesh.ts';
 import { pictureBook, type PictureBook, type PictureWant } from './pictures.ts';
 import { CELL_M, cellCorner, type CityClimate, type CityPlan, type Solid, solidReach } from './plan.ts';
 import { brokenMass, buildingRuin, type BuildingRuin, fallenHeap } from './ruins.ts';
 import { meshSolid } from './solidMesh.ts';
+import { finished } from './steps.ts';
 
 /** Cells a side of a chunk: about 400 m, a few hundred buildings. */
 export const CHUNK_CELLS = 4;
@@ -80,7 +88,8 @@ export type CityData = {
   readonly near: ReadonlyMap<number, readonly NearInstance[]>;
   readonly masses: ArrayBuffer;
   readonly chunks: readonly Chunk[];
-  readonly solids: MeshData;
+  /** Every chunk's solids laid end to end as the GPU reads them (`laidMeshSteps`), each chunk's `solids` its run. */
+  readonly solids: { readonly vertices: ArrayBuffer; readonly indices: Uint32Array };
   readonly plates: { readonly tops: Float32Array; readonly tiles: Uint8Array; readonly width: number };
   readonly cleared: (x: number, y: number) => boolean;
   /** Whether the city is a ruin, its broken buildings open to the sky. */
@@ -97,13 +106,24 @@ type Placed = {
   ruin?: BuildingRuin;
 };
 
-/** Works out a city's drawing from its plan, climate, blocks and the forged tables. */
+/** Works out a city's drawing from its plan, climate, blocks and the forged tables, in one go. */
 export function buildCity(
   plan: CityPlan,
   climate: CityClimate,
   blocks: ReadonlyMap<string, RmbBlock>,
   tables: CityTables,
 ): CityData {
+  return finished(cityBuildSteps(plan, climate, blocks, tables));
+}
+
+/** Works out a city's drawing as `buildCity` does, a step at a time (`steps.ts`): a cell's pieces, a model, a piece's
+ *  masses, a solid, a run of vertices. */
+export function* cityBuildSteps(
+  plan: CityPlan,
+  climate: CityClimate,
+  blocks: ReadonlyMap<string, RmbBlock>,
+  tables: CityTables,
+): Generator<void, CityData> {
   const origin = plan.centre;
   const side = sideOf(plan);
   const chunkSide = Math.ceil(side / CHUNK_CELLS);
@@ -140,6 +160,7 @@ export function buildCity(
           row,
         });
       }
+    yield;
   }
 
   // models a layout placed in the world stand in the cell under them, at their own height and yaw
@@ -163,9 +184,14 @@ export function buildCity(
 
   const keys = [...new Set(placedPieces.map((piece) => piece.key))].sort();
   const modelIndex = new Map(keys.map((key, k) => [key, k]));
-  const models = keys.map((key) => forgedModel(tables, key));
+  const models: ReturnType<typeof forgedModel>[] = [];
+  for (const key of keys) {
+    models.push(forgedModel(tables, key));
+    yield;
+  }
   const wants = new Map<string, PictureWant>();
   for (const piece of placedPieces) {
+    yield;
     const model = models[modelIndex.get(piece.key) ?? 0];
     for (const part of model?.parts ?? []) {
       const key = `${part.archive}.${part.record}`;
@@ -186,6 +212,7 @@ export function buildCity(
     roomkit: tables.roomkit ?? {},
   } as unknown as ForgedTables;
   const uses = pictureUses(forged);
+  yield;
   const chalky = [...plan.landmark, ...plan.works, ...plan.social.solids].some((solid) => solid.material === 'chalk');
   const book = pictureBook(
     climate,
@@ -196,7 +223,8 @@ export function buildCity(
   );
 
   const chunkCount = chunkSide * chunkSide;
-  const { masses, massRanges, hullRanges, tops, heaps } = buildingMassesOf(
+  yield;
+  const { masses, massRanges, hullRanges, tops, heaps } = yield* buildingMassesOf(
     plan,
     placedPieces,
     tables,
@@ -205,6 +233,7 @@ export function buildCity(
   );
   const near = new Map<number, NearInstance[]>();
   for (const piece of placedPieces) {
+    yield;
     if (piece.ruin?.fallen) continue;
     const list = near.get(piece.cell) ?? [];
     list.push({ model: modelIndex.get(piece.key) ?? 0, at: piece.at, cut: piece.ruin?.cut ?? 0 });
@@ -242,6 +271,7 @@ export function buildCity(
     box[3] = Math.max(box[3], reached[3]);
     box[4] = Math.max(box[4], reached[4]);
     box[5] = Math.max(box[5], solid.at[2] + solid.size[2] + reach);
+    yield;
   }
   for (const decal of plan.decals ?? []) {
     const middle = decal.corners.reduce((sum, corner) => [sum[0] + corner[0] / 4, sum[1] + corner[1] / 4], [0, 0]);
@@ -262,15 +292,11 @@ export function buildCity(
       box[4] = Math.max(box[4], corner[1]);
       box[5] = Math.max(box[5], corner[2]);
     }
+    yield;
   }
   const terracePicture = book.pictures[book.terrace] ?? { width: 64, height: 128 };
-  plateSkirts(plan, book.terrace, terracePicture, (cell) => chunkMeshes[chunkOf(cell.column, cell.row)]);
-  const allSolids = emptyMesh();
-  const solidRanges: Range[] = chunkMeshes.map((mesh) => {
-    const first = allSolids.indices.length;
-    appendMesh(allSolids, mesh);
-    return { first, count: mesh.indices.length };
-  });
+  yield* plateSkirtSteps(plan, book.terrace, terracePicture, (cell) => chunkMeshes[chunkOf(cell.column, cell.row)]);
+  const laid = yield* laidMeshSteps(chunkMeshes);
 
   const chunks: Chunk[] = [];
   for (let chunk = 0; chunk < chunkCount; chunk++) {
@@ -288,7 +314,7 @@ export function buildCity(
         lowest = Math.min(lowest, cell.level);
         highest = Math.max(highest, cell.level);
       }
-    const hasSolids = solidRanges[chunk].count > 0;
+    const hasSolids = laid.ranges[chunk].count > 0;
     if (!members.length && !hasSolids) continue;
     const box = solidBoxes[chunk];
     const [cellLow, cellHigh] = members.length
@@ -309,23 +335,27 @@ export function buildCity(
       cells: members.filter((member) => near.has(member)),
       masses: massRanges[chunk],
       hulls: hullRanges[chunk],
-      solids: solidRanges[chunk],
+      solids: laid.ranges[chunk],
     });
+    yield;
   }
 
+  const modelData = yield* modelBufferSteps(models, book.layerOf);
+  const plates = yield* groundPlateSteps(plan, blocks, book.ground, book.materials.paving);
+  const cleared = yield* clearedGroundSteps(plan);
   return {
     origin,
     grid: [plan.grid.west - origin[0], plan.grid.north - origin[1]],
     side,
     book,
     cells,
-    models: modelBuffers(models, book.layerOf),
+    models: modelData,
     near,
     masses,
     chunks,
-    solids: allSolids,
-    plates: groundPlates(plan, blocks, book.ground, book.materials.paving),
-    cleared: clearedGround(plan),
+    solids: { vertices: laid.vertices, indices: laid.indices },
+    plates,
+    cleared,
     ruined: plan.ruined === true,
   };
 }
@@ -362,13 +392,16 @@ export function rampWall(plan: CityPlan): (solid: Solid) => boolean {
 /** Every building's masses (for the middle distance) and hull (for far off), grouped by chunk: all the masses in
  *  chunk order, then all the hulls. In a ruin each building is broken (`ruins.ts`): a fallen one leaves a heap
  *  among the solids instead, a broken one's masses and hull end at its break, roofless. */
-function buildingMassesOf(
+function* buildingMassesOf(
   plan: CityPlan,
   pieces: readonly Placed[],
   tables: CityTables,
   book: PictureBook,
   chunkCount: number,
-): { masses: ArrayBuffer; massRanges: Range[]; hullRanges: Range[]; tops: Float32Array; heaps: Solid[] } {
+): Generator<
+  void,
+  { masses: ArrayBuffer; massRanges: Range[]; hullRanges: Range[]; tops: Float32Array; heaps: Solid[] }
+> {
   const known = new Map<number, { kept: Mass[]; hull: Mass | null; wall: number; roof: number }>();
   const shapesOf = (id: number) => {
     const found = known.get(id);
@@ -397,6 +430,7 @@ function buildingMassesOf(
     yaw: piece.at[3],
   });
   for (const piece of pieces) {
+    yield;
     const building = piece.key.startsWith('building:') || piece.key.startsWith('open:');
     if (!building && !(piece.row.length === 7 && tables.props[piece.row[0]])) continue;
     const shapes = shapesOf(piece.row[0]);
@@ -435,8 +469,15 @@ function buildingMassesOf(
     }
     return { first, count: next - first };
   };
-  const massRanges = byChunk.map((chunk, k) => lay(chunk.masses, MASS_TIER_MASSES, k));
-  const hullRanges = byChunk.map((chunk, k) => lay(chunk.hulls, MASS_TIER_HULLS, k));
+  const [massRanges, hullRanges]: Range[][] = [[], []];
+  for (const [k, chunk] of byChunk.entries()) {
+    massRanges.push(lay(chunk.masses, MASS_TIER_MASSES, k));
+    yield;
+  }
+  for (const [k, chunk] of byChunk.entries()) {
+    hullRanges.push(lay(chunk.hulls, MASS_TIER_HULLS, k));
+    yield;
+  }
   return { masses, massRanges, hullRanges, tops, heaps };
 }
 

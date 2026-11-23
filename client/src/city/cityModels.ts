@@ -4,6 +4,7 @@ import { buildingModel } from '../models/buildings.ts';
 import type { ForgedModel } from '../models/model.ts';
 import { propModel } from '../models/props.ts';
 import type { BuildingTable, PropTable } from '../models/tables.ts';
+import { finished } from './steps.ts';
 
 /** Numbers a model vertex takes: position, normal, UV, and its layer as a whole number. */
 export const MODEL_FLOATS = 9;
@@ -46,6 +47,14 @@ export function modelBuffers(
   models: readonly (ForgedModel | null)[],
   layerOf: (archive: number, record: number) => number,
 ): ModelBuffers {
+  return finished(modelBufferSteps(models, layerOf));
+}
+
+/** The buffers as `modelBuffers` lays them, a model a step (`steps.ts`). */
+export function* modelBufferSteps(
+  models: readonly (ForgedModel | null)[],
+  layerOf: (archive: number, record: number) => number,
+): Generator<void, ModelBuffers> {
   const vertexCount = models.reduce((sum, model) => sum + (model ? model.positions.length / 3 : 0), 0);
   const indexCount = models.reduce((sum, model) => sum + (model ? model.indices.length : 0), 0);
   const vertices = new ArrayBuffer(vertexCount * MODEL_FLOATS * 4);
@@ -77,6 +86,7 @@ export function modelBuffers(
     triangles.push(model.indices.length / 3);
     vertexAt += count;
     indexAt += model.indices.length;
+    yield;
   }
   return { vertices, indices, entries, triangles };
 }
