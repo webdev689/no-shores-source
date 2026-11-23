@@ -13,7 +13,7 @@
       { "who": "bosun", "say": "Three of them beaten, Captain, and every one of us still standing.", "emote": "cheer" },
       { "who": "lookout", "say": "Do we board what's left? Could be coin in those holds.", "emote": "question" },
       { "who": "mate", "say": "Leave them. Whatever they're carrying, it isn't worth one of us.", "emote": "silence" },
-      { "who": "gunner", "say": "Don't get comfortable. This storm's not done with us.", "emote": "fear" }
+      { "who": "gunner", "say": "Don't get comfortable. The wind's backing, and that means worse.", "emote": "fear" }
     ],
     "calmCutOff": [{ "who": "mate", "say": "Patch her up. We raise Overlook by first light." }],
     "ram": [
@@ -44,7 +44,7 @@
       { "who": "voice", "say": "Wake." }
     ],
     "shore": [
-      { "who": "stranger", "say": "Easy. You're breathing. That's the hard part done.", "emote": "alert" },
+      { "who": "stranger", "say": "Easy. You're breathing. Keep doing that.", "emote": "alert" },
       { "who": "stranger", "say": "Can you stand? Take my hand. Slowly.", "emote": "question" }
     ],
     "standing": [{ "who": "stranger", "say": "There. Lean on me until your legs remember." }]

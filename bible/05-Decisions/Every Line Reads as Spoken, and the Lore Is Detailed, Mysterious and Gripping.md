@@ -31,13 +31,13 @@ Each the owner's to change:
   read as speech are kept: the voice in the deep, Thule's cries, Corvane's last words, Tobin's, most of the Veiled's
   road.
 - **What each scene does is kept.** Every scene keeps its speakers in the order the camera follows them (the calm
-  turns to the wrecks on the lookout's line), every puzzle's order is still said, the shore's lines still name
+  turns to the wrecks on the lookout's line), no one says three lines in a row across a task's end and the next
+  task's start, nor across the welcome's scenes, every puzzle's order is still said, the shore's lines still name
   neither the sea nor the shore, and each lore chapter still ends on the line its road's scene says.
 - **The round.** Each keeper says what their counter is for in their own words; the Harbourmaster sells the
   Shipwright's "fittings", not modules. The task "Wear them" is "Put them on".
-- **The stranger.** Her history ends "nobody agrees what grew there", as Overlook's people disagree about how the
-  ports fell; her farewell is "Stay out of the Tithe's books, if you can", which the Veiled's road shows is already
-  too late.
+- **The stranger.** Her history ends "nobody agrees how they fell", as Overlook's people disagree about it; her
+  farewell is "Stay out of the Tithe's books, if you can", which the Veiled's road shows is already too late.
 - **The keepers.** Each keeper with greetings has a fourth, and the Mage a third thanks, said in turn as the others
   are. Maren's fourth is the Beacon's four names.
 - **The Keeper's Hours call the player "the castaway"**, so Maren's words are never taken for the stranger who found

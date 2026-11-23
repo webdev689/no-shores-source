@@ -79,7 +79,7 @@
     "shapeThanks2": [{ "who": "shape", "say": "Carry it carefully." }],
     "shapeShort1": [{ "who": "shape", "say": "Not enough Shapes. Not yet." }],
 
-    "postmasterHello1": [{ "who": "postmaster", "say": "Whatever you leave lying out there ends up here. I sort it." }],
+    "postmasterHello1": [{ "who": "postmaster", "say": "Whatever you leave lying about ends up here. I sort it." }],
     "postmasterHello2": [{ "who": "postmaster", "say": "The sea gives back what you drop. To me, mostly." }],
     "postmasterHello3": [{ "who": "postmaster", "say": "Nothing posted here goes missing. I would know." }],
     "postmasterHello4": [{ "who": "postmaster", "say": "Mind the parcels. Half of them are still damp." }],

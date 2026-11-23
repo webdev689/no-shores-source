@@ -172,7 +172,7 @@ the player's from there.
 **The stranger's welcome** ([[The Stranger Welcomes the Player, and a Quest Walks Them Round Overlook]]). Her words
 (`content/story/welcome.json`, said on the story's stage in the dialogue box, `welcome/tour.ts`) go in turn: a little
 of the world (the Grey Tithe's tenth, Overlook paying it nothing, three ports standing and the rest ruins, nobody
-agreeing what grew there); then each place to visit, the camera flying to it as she names it and holding there
+agreeing how they fell); then each place to visit, the camera flying to it as she names it and holding there
 while she and its keeper speak: the smiths' arcade, held on the Armorsmith's stall (whose keeper calls out before she
 names the arcade, as no one speaks three lines in a row) and then on the Weaponsmith's, the Mage, the Vault, the
 Tailor, the Tack, the Postmaster, the harbour's Harbourmaster for the Shipwright, and the Hall of the Arts, turning to

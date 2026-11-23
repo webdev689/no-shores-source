@@ -56,7 +56,7 @@ writes the quiet deck's `masts`.
 | Choice | Chosen | Why |
 |---|---|---|
 | Who speaks | The stranger who found the player on the shore, where she waits after it, as soon as the veil lifts | "the noc who found you should begin talking to you as soon as you arrive" |
-| Her history | The Grey Tithe and its tenth, Overlook that pays none, three ports standing and the rest ruins, "and nobody agrees what grew there" | "a little history pertaining to lore"; the crystal only hinted |
+| Her history | The Grey Tithe and its tenth, Overlook that pays none, three ports standing and the rest ruins, "and nobody agrees how they fell" | "a little history pertaining to lore"; the crystal only hinted |
 | The places, in order | The smiths' arcade, held on the Armorsmith's stall and then the Weaponsmith's, the Mage, the Vault, the Tailor, the Tack, the Postmaster, the harbour and its Shipwright, the Hall of the Arts from inside, turning to each house's chapel as she names it; then back to the player | "the places to visit in overlook ... the camera should navigate to each" |
 | The keepers | Each answers her in their own voice as the camera holds on them | The dialogue's rule: no speaker more than two lines in a row |
 | The tour's camera | Eased flights of 2.4 s; each place seen from where clear lines reach its keepers; her first lines and her farewell seen from the pair's side; at the end the view eases back over the player's shoulder, turned the way she walks off | A cutscene that shows each place and keeper whole |
