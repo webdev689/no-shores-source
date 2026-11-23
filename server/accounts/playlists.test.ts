@@ -10,6 +10,7 @@ import {
   playlistOf,
   playlistRun,
   playlistShut,
+  WEEK_ELITE_OPENS,
 } from './playlists.ts';
 
 const wasm = await readFile(
@@ -21,10 +22,12 @@ const door = startRoomDoor(new WebAssembly.Module(wasm));
 const drawn = JSON.parse(door.activities(29_919_420)) as {
   playlists: { key: string; opens: number; bands: [number, number, number][] }[];
   elites: string[];
+  weekElite: { opens: number };
 };
 
 test('the finder’s playlists agree with the rules: their levels, their bands and the 18 Elite Dungeons', () => {
   assert.deepEqual([...ELITE_DUNGEONS], drawn.elites);
+  assert.equal(WEEK_ELITE_OPENS, drawn.weekElite.opens, 'the week’s Elite Dungeon’s level, as its finder holds it');
   for (const { key, opens, bands } of drawn.playlists) {
     const playlist = playlistOf(`playlist-${key}`);
     assert.ok(playlist !== null, key);

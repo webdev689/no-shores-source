@@ -12,6 +12,11 @@ export const PLAYLISTS = {
 } as const;
 export type PlaylistKey = keyof typeof PLAYLISTS;
 
+/** The level the Elite Dungeon of the week opens at (`gear::activities::Weekly::opens_at`), which its finder's
+ *  seekers need, as the room would refuse one under it: its words are the gate's. */
+export const WEEK_ELITE_OPENS = 24;
+export const WEEK_ELITE_SHUT = `This dungeon opens at level ${WEEK_ELITE_OPENS}.`;
+
 /** The levels a band spans, the highest level, and the highest any foe stands at. */
 const BAND_LEVELS = 5;
 const LEVEL_MOST = 30;

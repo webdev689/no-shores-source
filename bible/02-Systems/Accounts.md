@@ -207,10 +207,13 @@ each playlist, never the Abyss Dungeon of the week, whose company forms it.
   seeker below it is closed with 4003 and "The Elite Playlist opens at level 10." (or the Abyss's at 20). Its levels
   and the 18 Elite Dungeons are the rules' own, which a test holds to the room module's word (`playlists.test.ts`).
   A seeker whose kept character has not played the prologue (`story.prologue`, none for one never kept) is closed
-  with 4003 and the gate's "This place opens after the prologue.", as every run a finder starts opens after it.
+  with 4003 and the gate's "This place opens after the prologue.", as every run a finder starts opens after it; one
+  under the week's Elite Dungeon's level, on its bases, with "This dungeon opens at level 24." (`WEEK_ELITE_OPENS`).
 - **Launch** (`?launch` on a playlist's address, `opened(socket, alone)`): the seeker's run is started at the next
   look, alone, its Elite Dungeon drawn and kept for them as a found run is; no other seeker joins it, and it joins no
-  group. Only a playlist launches: on an Elite Dungeon's base a launch waits as any search does.
+  group. Only a playlist launches: on an Elite Dungeon's base a launch waits as any search does. A room of a run
+  launched or found lets in first one it was kept for, or one of their company (`launchedFor`), as it would let them
+  in after them: a member back first, the room forgotten while empty, is not shut out.
 - **Matching** (`Queue`): within a band, the one waiting longest first, then each next longest still free who blocks
   none of those taken and is blocked by none of them. A run starts with four as soon as there are four, or with as
   many as there are once its first has waited a minute (`FIND_WAIT_MS`). It looks each second while it holds a

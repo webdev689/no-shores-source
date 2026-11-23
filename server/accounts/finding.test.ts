@@ -194,6 +194,18 @@ test('a seeker is their session’s account, the level their room last kept, and
   assert.equal(await seekerOf(database, '0'.repeat(64), made.clock.now), null);
 });
 
+test('a seeker under the week’s Elite Dungeon’s level finds no company for it, as its room would refuse them', async () => {
+  const { tokens, finderOf } = await world(['Ada', 'Ben'], 23);
+  for (const base of ['node-forsaken-cistern--elite', 'node-forsaken-cistern--elite--sea']) {
+    const finder = finderOf(base);
+    assert.deepEqual((await seeking(finder, tokens['Ada'] ?? '')).closed, [4003, 'This dungeon opens at level 24.']);
+  }
+  const { tokens: older, finderOf: at24 } = await world(['Cal'], 24);
+  const finder = at24('node-forsaken-cistern--elite');
+  await seeking(finder, older['Cal'] ?? '');
+  assert.equal(finder.waiting, 1, 'at its level, in the queue');
+});
+
 test('one who has not played the prologue finds no company, as no run a finder starts lets them in', async () => {
   const { tokens, finderOf } = await world(['Ada'], 12, false);
   for (const base of ['node-krakens-grotto', 'playlist-elite']) {
@@ -418,6 +430,10 @@ test('a playlist’s Launch is started at once, for its seeker alone, its Elite 
   assert.deepEqual(ben.sent, [], 'a seeker of Find a Company waits on, never put into a launch');
   assert.equal(await launchedFor(database, ids['Ada'] ?? '', run, made.clock.now), true, 'kept for its seeker');
   assert.equal(await launchedFor(database, ids['Ben'] ?? '', run, made.clock.now), false);
+  // One of the launcher's company may be the first back into it, as the run would let them in after the launcher.
+  await made.ask('POST', '/v1/social/company/invite', { name: 'Ben' }, tokens['Ada']);
+  assert.equal((await made.ask('POST', '/v1/social/company/accept', { name: 'Ada' }, tokens['Ben'])).status, 200);
+  assert.equal(await launchedFor(database, ids['Ben'] ?? '', run, made.clock.now), true, 'a member of its company');
   const elsewhere = new Finder('node-pearl-tomb', {
     seeker: (token) => seekerOf(database, token, made.clock.now),
     found: (found, accounts) => foundRun(database, found, accounts, made.clock.now),

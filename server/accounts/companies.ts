@@ -54,10 +54,15 @@ export async function companionsOf(database: Db, account: string, room: string, 
   return [...new Set([...company, ...results.map((row) => row.account_id)])];
 }
 
-/** Whether `room` was found or launched for the account by the server within FOUND_KEPT_MS. */
+/** Whether `room` was found or launched by the server within FOUND_KEPT_MS for the account or one of its company,
+ *  whom the run would let in after them all the same: so a member back first, its room forgotten, is not shut out. */
 export async function launchedFor(database: Db, account: string, room: string, now: number): Promise<boolean> {
   const row = await database
-    .prepare('SELECT 1 AS found FROM found_runs WHERE room = ?1 AND account_id = ?2 AND found_at >= ?3')
+    .prepare(
+      `SELECT 1 AS found FROM found_runs WHERE room = ?1 AND found_at >= ?3 AND (account_id = ?2 OR account_id IN
+       (SELECT account_id FROM company_members WHERE company_id =
+         (SELECT company_id FROM company_members WHERE account_id = ?2)))`,
+    )
     .bind(room, account, now - FOUND_KEPT_MS)
     .first<{ found: number }>();
   return row !== null;

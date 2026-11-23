@@ -13,7 +13,15 @@ import { FOUND_KEPT_MS } from './companies.ts';
 import type { Db } from './database.ts';
 import { apartFrom } from './people.ts';
 import { TOKEN, TOKEN_WAIT_MS } from '../keeping.ts';
-import { drawnOf, playlistBand, playlistOf, playlistRun, playlistShut } from './playlists.ts';
+import {
+  WEEK_ELITE_OPENS,
+  WEEK_ELITE_SHUT,
+  drawnOf,
+  playlistBand,
+  playlistOf,
+  playlistRun,
+  playlistShut,
+} from './playlists.ts';
 
 /** How long the first seeker of a band waits before a run starts with fewer than four: the design's minute. */
 export const FIND_WAIT_MS = 60_000;
@@ -30,6 +38,9 @@ const BASE_MOST = 50;
 /** An Elite Dungeon's base at Normal, the week's at Elite (`--sea` after it from the Playlist, whose run is started
  *  at sea), or a playlist's, as Find a Company is asked for it by WebSocket. */
 const FINDING = /^\/v1\/find\/(node-[a-z0-9]+(?:-[a-z0-9]+)*(?:--elite(?:--sea)?)?|playlist-(?:elite|abyss))$/;
+
+/** The week's Elite Dungeon's bases, from its door or from the Playlist. */
+const WEEK = /--elite(?:--sea)?$/;
 
 /** The band a level is matched in: 1 to 10 the first, 11 to 20 the second, 21 to 30 the third. */
 export function bandOf(level: number): number {
@@ -199,6 +210,8 @@ export class Finder {
     const playlist = playlistOf(this.base);
     const band = playlist === null ? bandOf(level) : playlistBand(playlist, level);
     if (playlist !== null && band === null) return this.letGo(socket, 4003, playlistShut(playlist));
+    // The week's Elite Dungeon opens at its own level, which its room would hold a seeker to after they were matched.
+    if (WEEK.test(this.base) && level < WEEK_ELITE_OPENS) return this.letGo(socket, 4003, WEEK_ELITE_SHUT);
     // Only a playlist's run is launched alone: an Elite Dungeon's and the week's start from their entrances.
     const alone = held.alone && playlist !== null;
     const replaced = this.queue.join({ socket, account, band: band ?? 0, since: this.deps.now(), apart, alone });
