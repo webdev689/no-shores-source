@@ -133,7 +133,8 @@ export function playlistScreenOf(
         place: given.place,
         seas,
         playlist: null,
-        finds: seas === 'elite' && shut === null ? `node-${given.place}--elite` : null,
+        // Found from the Playlist, the week's run is one started at sea (`--sea`), so its queue is the Playlist's own.
+        finds: seas === 'elite' && shut === null ? `node-${given.place}--elite--sea` : null,
       },
     };
   };

@@ -10,6 +10,7 @@ import type { ActivityRecord, GearState } from '../network/gearMessages.ts';
 import { gearScreenOpen } from './gearScreen.ts';
 import { FakeEvent, fakePage } from './pageForTests.ts';
 import { launchRoom, playlistScreenOf } from './playlistWords.ts';
+import { startedAtSea } from './rooms.ts';
 import type { NodeInfo } from './worldData.ts';
 
 const bytes = await readFile(
@@ -70,8 +71,10 @@ test('the Playlist says each entry’s level, rules, modifiers, rewards and gate
   const later = playlistScreenOf('Beside Overlook', drawn, gatesAt(await module, 30, true), record, 30, named, NOW);
   assert.deepEqual(
     later.entries.map((entry) => entry.launch.finds),
-    ['playlist-elite', 'playlist-abyss', 'node-forsaken-cistern--elite', null],
+    ['playlist-elite', 'playlist-abyss', 'node-forsaken-cistern--elite--sea', null],
   );
+  // The week's run found from the Playlist is one the rooms let in from the sea, and send back to it.
+  assert.ok(startedAtSea(`${later.entries[2]?.launch.finds ?? ''}--run-k3j4h5g6`));
   assert.equal(later.entries[1]?.about, 'Abyss · Level 30 · Foes at level 32');
   const yesterday = { ...record, day: 20_777, week: 2_967 };
   const stale = playlistScreenOf('Beside Overlook', drawn, gates, yesterday, 17, named, NOW).entries[0];

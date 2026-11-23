@@ -27,9 +27,9 @@ export const FINDING_MOST = 64;
 const ANOTHER_TAB = 'You are finding a company in another tab.';
 /** The longest base a run is found for, so its run's name (`--run-` and eight more) fits a room's 64. */
 const BASE_MOST = 50;
-/** An Elite Dungeon's base at Normal, the week's at Elite, or a playlist's, as Find a Company is asked for it by
- *  WebSocket. */
-const FINDING = /^\/v1\/find\/(node-[a-z0-9]+(?:-[a-z0-9]+)*(?:--elite)?|playlist-(?:elite|abyss))$/;
+/** An Elite Dungeon's base at Normal, the week's at Elite (`--sea` after it from the Playlist, whose run is started
+ *  at sea), or a playlist's, as Find a Company is asked for it by WebSocket. */
+const FINDING = /^\/v1\/find\/(node-[a-z0-9]+(?:-[a-z0-9]+)*(?:--elite(?:--sea)?)?|playlist-(?:elite|abyss))$/;
 
 /** The band a level is matched in: 1 to 10 the first, 11 to 20 the second, 21 to 30 the third. */
 export function bandOf(level: number): number {
@@ -37,7 +37,7 @@ export function bandOf(level: number): number {
 }
 
 /** The run's base a Find a Company request is for, `/v1/find/<base>` by WebSocket: an Elite Dungeon at Normal
- *  (`node-<id>`), the week's at Elite (`node-<id>--elite`) or a playlist (`playlist-elite`, `playlist-abyss`), short
+ *  (`node-<id>`), the week's at Elite (`node-<id>--elite`, or `node-<id>--elite--sea` from the Playlist) or a playlist (`playlist-elite`, `playlist-abyss`), short
  *  enough that its run's name fits 64; never the Abyss Dungeon of the week, a patrol's dungeon or a run. Null for any
  *  other request. */
 export function findingAt(request: Request): string | null {
@@ -173,6 +173,9 @@ export class Finder {
 
   /** Holds a new seeker's socket; `alone` for a playlist's Launch, whose run is drawn and kept here at once. */
   opened(socket: FinderSocket, alone = false): number {
+    // Sockets that never sign in let their oldest go, so a flood of them never shuts out those that do.
+    const silent = [...this.sockets].filter(([, held]) => !held.heard);
+    if (silent.length >= FINDING_MOST && silent[0]) this.letGo(silent[0][0], 4003, 'Sign in to find a company.');
     const number = this.next++;
     this.sockets.set(number, { socket, since: this.deps.now(), heard: false, alone });
     return number;
@@ -245,10 +248,9 @@ export class Finder {
     return this.sockets.size;
   }
 
-  /** Whether it holds as many sockets with a token as it takes, or as many sockets in all. */
+  /** Whether it holds as many sockets with a token as it takes: silent ones make room as new ones come. */
   get full(): boolean {
-    const heard = [...this.sockets.values()].filter((held) => held.heard).length;
-    return heard >= FINDING_MOST || this.sockets.size >= FINDING_MOST * 2;
+    return [...this.sockets.values()].filter((held) => held.heard).length >= FINDING_MOST;
   }
 
   /** Closes a socket, taking it out of the queue first, once it is sent `last` if given. */

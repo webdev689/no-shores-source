@@ -135,6 +135,7 @@ test('bands are tens of levels, and an instance is eight of a-z0-9', () => {
 test('Find a Company is reached by WebSocket for an Elite Dungeon or the week’s at Elite, not the Abyss’s', () => {
   assert.equal(asked('/v1/find/node-krakens-grotto'), 'node-krakens-grotto');
   assert.equal(asked('/v1/find/node-forsaken-cistern--elite'), 'node-forsaken-cistern--elite');
+  assert.equal(asked('/v1/find/node-forsaken-cistern--elite--sea'), 'node-forsaken-cistern--elite--sea');
   for (const path of [
     '/v1/find/node-saltworm-warrens--abyss',
     '/v1/find/node-saltgrass-downs--dungeon-1',
@@ -144,6 +145,9 @@ test('Find a Company is reached by WebSocket for an Elite Dungeon or the week’
     `/v1/find/node-${'a'.repeat(46)}`,
     '/v1/find/node-krakens-grotto/',
     '/v1/find/playlist-normal',
+    '/v1/find/node-forsaken-cistern--sea',
+    '/v1/find/node-forsaken-cistern--abyss--sea',
+    '/v1/find/node-forsaken-cistern--elite--sea--sea',
     '/v1/find/playlist-elite--run-k3j4h5g6',
   ])
     assert.equal(asked(path), null, path);
@@ -280,16 +284,22 @@ test('a socket that sends no token in time is let go, and only those with a toke
   assert.equal(finder.waiting, 1, 'a seeker with a token gets in');
 });
 
-test('a finder takes twice its most of sockets in all, silent ones too, till the silent are let go', async () => {
-  const { made, finderOf } = await world([]);
-  const finder = finderOf('node-krakens-grotto');
-  for (let opened = 0; opened < FINDING_MOST * 2 - 1; opened++) finder.opened(new FakeSocket());
-  assert.equal(finder.full, false);
-  finder.opened(new FakeSocket());
-  assert.equal(finder.full, true, 'silent sockets, within the wait');
-  made.clock.now += TOKEN_WAIT_MS;
-  await finder.tick();
-  assert.deepEqual([finder.open, finder.full], [0, false]);
+test('silent sockets never fill a finder: past its most, the oldest silent one is let go for each new one', async () => {
+  const { tokens, finderOf } = await world(['Ada'], 12);
+  const finder = finderOf('playlist-elite');
+  const flood = Array.from({ length: FINDING_MOST * 3 }, () => new FakeSocket());
+  for (const socket of flood) finder.opened(socket);
+  assert.deepEqual([finder.open, finder.full], [FINDING_MOST, false]);
+  assert.ok(
+    flood.slice(0, FINDING_MOST * 2).every((socket) => socket.closed[0] === 4003),
+    'the oldest let go',
+  );
+  assert.ok(
+    flood.slice(FINDING_MOST * 2).every((socket) => socket.closed.length === 0),
+    'the newest kept',
+  );
+  await seeking(finder, tokens['Ada'] ?? '');
+  assert.equal(finder.waiting, 1, 'a seeker with a token still gets in');
 });
 
 test('a second tab that searches while its account’s run is being started joins no second group', async () => {
