@@ -226,6 +226,17 @@ export function chaseShot(course: WispCourse, seconds: number): { readonly eye: 
     walked += Math.hypot(earlier[0] - behind[0], earlier[1] - behind[1], earlier[2] - behind[2]);
     behind = earlier;
   }
+  // Where its way does not yet reach back so far, the camera stands on back along its first leg, over the sea.
+  if (walked < CHASE_BACK_M) {
+    const [first = now, later = now] = [course.samples[0], course.samples[SAMPLE_HZ]];
+    const leg = Math.hypot(later[0] - first[0], later[1] - first[1], later[2] - first[2]) || 1;
+    const short = (CHASE_BACK_M - walked) / leg;
+    behind = [
+      behind[0] - (later[0] - first[0]) * short,
+      behind[1] - (later[1] - first[1]) * short,
+      behind[2] - (later[2] - first[2]) * short,
+    ];
+  }
   const lifted = (z: number) => Math.max(z, clearOver(course.blocks, course.feet, behind[0], behind[1]) + 0.3);
   let eye: Point = [behind[0], behind[1], lifted(behind[2] + CHASE_UP_M)];
   // Brought nearer where the wreck stands between, as the camera on foot keeps clear of what is drawn.

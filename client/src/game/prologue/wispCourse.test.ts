@@ -108,11 +108,11 @@ test('the ring camera sees the player and the wisp clear of the wreck throughout
 test('as it comes the camera follows it close, the wreck before it in the frame, never empty sky', () => {
   for (const { feet, facing } of PLACES.filter((unused, index) => index % 5 === 0)) {
     const flown = wispCourse(feet, facing, layout);
-    for (let seconds = 0.5; seconds < WISP_S.drift + WISP_S.wander; seconds += 0.1) {
+    for (let seconds = 0; seconds < WISP_S.drift + WISP_S.wander; seconds += 0.1) {
       const { at } = wispAt(flown, seconds);
       const { eye, look } = chaseShot(flown, seconds);
       const apart = Math.hypot(at[0] - eye[0], at[1] - eye[1], at[2] - eye[2]);
-      assert.ok(apart > 1 && apart < 5, `${apart.toFixed(2)} m from it at ${seconds.toFixed(1)} s`);
+      assert.ok(apart > (seconds < WISP_S.drift ? 2.5 : 1) && apart < 5, `${apart.toFixed(2)} m from it at ${seconds.toFixed(1)} s`);
       assert.ok(!solidAt(course, eye) && clearBetween(course, eye, at), 'seen clear');
       const toward = [look[0] - eye[0], look[1] - eye[1], look[2] - eye[2]] as const;
       const length = Math.hypot(...toward);
