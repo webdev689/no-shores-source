@@ -100,7 +100,7 @@ fn the_tack_sells_horses_into_the_pack_at_their_coats_prices() {
 
 #[test]
 fn a_character_kept_before_horses_keeps_a_horse_for_each_coat_and_rides_the_one_it_wore() {
-    let mut kept: serde_json::Value = serde_json::from_str(&Character::starting().to_json()).expect("json");
+    let mut kept = kept_before_horses(&Character::starting());
     kept["cosmetics"]["kept"] = serde_json::json!(["bare", "bay", "chestnut", "own_colours", "palomino"]);
     kept["cosmetics"]["coat"] = serde_json::json!("chestnut");
     let character = Character::from_json(&kept.to_string()).expect("a character");
@@ -143,7 +143,8 @@ fn a_horse_is_not_bought_with_nine_horses_carried() {
     let (number, here) = horse_sold_today();
     let mut character = Character::starting();
     character.materials.aurem = 20_000;
-    for coat in ["bay", "dun", "grey", "black", "white", "palomino", "bay", "dun", "grey"] {
+    // Nine, none in the coat sold (the Bay, which the Tack always sells).
+    for coat in ["chestnut", "dun", "grey", "black", "white", "palomino", "chestnut", "dun", "grey"] {
         character.give_horse(coat, false);
     }
     let before = character.clone();
@@ -153,7 +154,7 @@ fn a_horse_is_not_bought_with_nine_horses_carried() {
 
 #[test]
 fn a_worn_coat_never_kept_still_becomes_the_horse_worn_and_a_horse_worn_already_stays() {
-    let mut kept: serde_json::Value = serde_json::from_str(&Character::starting().to_json()).expect("json");
+    let mut kept = kept_before_horses(&Character::starting());
     kept["cosmetics"]["kept"] = serde_json::json!(["bay"]);
     kept["cosmetics"]["coat"] = serde_json::json!("grey");
     let character = Character::from_json(&kept.to_string()).expect("a character");
@@ -161,7 +162,7 @@ fn a_worn_coat_never_kept_still_becomes_the_horse_worn_and_a_horse_worn_already_
     assert!(character.keeps_horse("bay"));
     let mut riding = Character::starting();
     riding.give_horse("dun", true);
-    let mut kept: serde_json::Value = serde_json::from_str(&riding.to_json()).expect("json");
+    let mut kept = kept_before_horses(&riding);
     kept["cosmetics"]["coat"] = serde_json::json!("black");
     let read = Character::from_json(&kept.to_string()).expect("a character");
     assert_eq!(read.coat_worn(), Some("dun"), "the horse worn keeps the saddle");
@@ -184,4 +185,53 @@ fn horse_sold_today() -> (u16, Here) {
     let day = (0..400).find(|day| sold_on(Seller::Tack, *day).iter().any(coat)).expect("a day the Tack sells a horse");
     let number = sold_on(Seller::Tack, day).into_iter().find(|at| coat(at)).expect("a horse sold");
     (number, Here { day, ..AT_COUNTER })
+}
+
+/// A character as a room from before horses kept it: its cosmetics without the mark a room with horses writes.
+fn kept_before_horses(character: &Character) -> serde_json::Value {
+    let mut kept: serde_json::Value = serde_json::from_str(&character.to_json()).expect("json");
+    kept["cosmetics"].as_object_mut().expect("cosmetics").remove("horses");
+    kept
+}
+
+#[test]
+fn a_save_from_before_cosmetics_rides_the_bay_it_was_read_as_wearing() {
+    let mut kept: serde_json::Value = serde_json::from_str(&Character::starting().to_json()).expect("json");
+    kept.as_object_mut().expect("a character").remove("cosmetics");
+    let character = Character::from_json(&kept.to_string()).expect("a character");
+    assert_eq!(character.coat_worn(), Some("bay"));
+}
+
+#[test]
+fn a_room_rolled_back_and_forward_gives_a_horseless_character_no_bay() {
+    let written: serde_json::Value = serde_json::from_str(&Character::starting().to_json()).expect("json");
+    assert_eq!(written["cosmetics"]["horses"], serde_json::json!(true), "a room with horses marks its saves");
+    // A room from before horses reads the mark as a key it does not know, keeps it, and writes its own Bay worn.
+    let mut rolled_back = written;
+    rolled_back["cosmetics"]["coat"] = serde_json::json!("bay");
+    rolled_back["cosmetics"]["kept"] = serde_json::json!(["bare", "bay", "own_colours"]);
+    let character = Character::from_json(&rolled_back.to_string()).expect("a character");
+    assert!(!character.may_ride() && !character.keeps_horse("bay"), "no horse from the older room's default");
+    assert!(!character.keeps_cosmetic("bay") && character.cosmetics.unknown.get("coat").is_none());
+}
+
+#[test]
+fn the_tack_always_sells_the_bay_first_beside_its_four_at_the_cheapest_coats_price() {
+    let bay = number_of("bay").expect("the bay");
+    for day in 0..60 {
+        let sold = sold_on(Seller::Tack, day);
+        assert_eq!((sold.len(), sold.first()), (crate::cosmetics::SOLD_A_DAY + 1, Some(&bay)), "day {day}");
+    }
+    let price = |found: &crate::cosmetics::CosmeticDef| match found.source {
+        crate::emblems::Source::Sold { aurem, level } => Some((aurem, level)),
+        _ => None,
+    };
+    let coats = cosmetics().iter().filter(|found| found.kind == CosmeticKind::Coat && found.id != "bay");
+    let cheapest = coats.filter_map(|found| price(found).map(|(aurem, _)| aurem)).min();
+    assert_eq!(price(&cosmetics()[usize::from(bay)]), cheapest.map(|aurem| (aurem, 1)));
+    let mut character = Character::starting();
+    character.materials.aurem = 5_000;
+    let ask = character.ask(Ask::BuyCosmetic { cosmetic: bay }, AT_COUNTER, &DICE);
+    assert_eq!(ask.map(|_| ()), Ok(()));
+    assert!(character.keeps_horse("bay"), "a new player's first horse");
 }

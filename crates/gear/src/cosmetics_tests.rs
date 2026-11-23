@@ -10,8 +10,8 @@ const AT_COUNTER: Here = Here { social: true, day: 20_400, pledge: 0, rank: 0, w
 const DICE: Dice = Dice { seed: 1, tick: 1, player: 1 };
 
 #[test]
-fn the_catalogue_reads_whole_with_one_start_of_each_kind() {
-    for kind in [CosmeticKind::Dye, CosmeticKind::Coat, CosmeticKind::Barding] {
+fn the_catalogue_reads_whole_with_one_start_dye_and_barding() {
+    for kind in [CosmeticKind::Dye, CosmeticKind::Barding] {
         let starts = cosmetics().iter().filter(|found| found.kind == kind && found.source == Source::Start).count();
         assert_eq!(starts, 1, "{kind:?}");
     }
@@ -33,7 +33,8 @@ fn a_new_player_keeps_and_wears_the_starts() {
 fn each_seller_shows_a_few_of_its_own_the_same_all_day() {
     for seller in [Seller::Tailor, Seller::Tack] {
         let today = sold_on(seller, 20_400);
-        assert_eq!(today.len(), SOLD_A_DAY);
+        // The Tack sells the Bay Horse beside its four (`horses_tests.rs`).
+        assert_eq!(today.len(), SOLD_A_DAY + usize::from(seller == Seller::Tack));
         assert_eq!(today, sold_on(seller, 20_400));
         for number in &today {
             let found = &cosmetics()[usize::from(*number)];

@@ -484,13 +484,17 @@ is a horse's hide, kept as its horse ("Horses").
   Chestnut Horse and so on, its name its coat's place among the coats (`content/gear/rolled.json` names them in that
   order). It is Normal, of level 1, with no stats, nodes or perks; it is never upgraded, fed or dismantled. It is
   carried with the Mount slot's nine and kept in the vault among the armour. Nothing buys an item back, so a horse is
-  kept until stored.
+  kept until stored. The Test Ground hands out no horse.
 - **Riding** needs a horse worn in the Mount slot (`Character::may_ride`).
 - **The Tack** sells horses as it sells bardings, at its coat's price; one bought goes to the pack, one of each coat,
-  refused while the Mount slot carries nine.
-- **A new character has no horse**; Bay is sold by no one. A character kept while coats were cosmetics is given, as it
-  is read, a horse in the pack for each coat it kept and the one it wore worn in the Mount slot; the coats leave its
-  cosmetics, so it is done once.
+  refused while the Mount slot carries nine. Beside its day's four it sells the Bay Horse every day, first on its
+  screen, at the cheapest coat's price (1,500 Aurem, from level 1): a new player's first horse, had there after the
+  tutorial ("Later, not in the tutorial", `horses::FIRST_HORSE`).
+- **A new character has no horse.** A character kept while coats were cosmetics is given, as it is read, a horse in
+  the pack for each coat it kept and the one it wore worn in the Mount slot; one kept before cosmetics wore the Bay,
+  so it is given the Bay Horse worn. The coats leave its cosmetics, and a room with horses marks every character's
+  cosmetics (`horses`), so this is done once: a coat found beside the mark is what a room from before horses wrote
+  back as its own default, and is dropped, so a room rolled back and forward gives no horse.
 
 ## Elements and shields
 

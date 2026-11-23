@@ -318,6 +318,8 @@ impl Character {
         // What others see is made again from the gear on each write (`to_json`), never kept as an unknown key.
         if let Some(object) = kept.as_object_mut() {
             object.remove("shown");
+            // One kept before cosmetics was read wearing the Bay, which is its horse now.
+            object.entry("cosmetics").or_insert_with(|| serde_json::json!({ "coat": crate::horses::FIRST_HORSE }));
         }
         let mut character: Self = serde_json::from_value(kept).ok()?;
         let resources = catalogue().resources.len();

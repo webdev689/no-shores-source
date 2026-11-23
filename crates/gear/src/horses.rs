@@ -9,6 +9,10 @@ use crate::item::Item;
 use crate::kinds::{Kind, Slot};
 use crate::rarity::Rarity;
 
+/// The horse a new player's first is, which the Tack sells every day at the cheapest coat's price, after the tutorial
+/// ([[Horses Are Items Worn in a Mount Slot]]: "Later, not in the tutorial").
+pub const FIRST_HORSE: &str = "bay";
+
 /// Every coat, in the order a horse's name counts them.
 fn coats() -> impl Iterator<Item = &'static CosmeticDef> {
     cosmetics().iter().filter(|found| found.kind == CosmeticKind::Coat)
@@ -57,9 +61,12 @@ impl Character {
     }
 
     /// A character kept while coats were cosmetics: each coat it kept becomes a horse in the pack, and the coat it
-    /// wore its horse in the Mount slot. The coats leave its cosmetics as they are read, so this is done once.
+    /// wore its horse in the Mount slot. The coats leave its cosmetics as they are read, and its cosmetics are marked
+    /// as a room with horses keeps them, so this is done once; beside that mark, a coat is what a room from before
+    /// horses wrote back as its own default, and is dropped.
     pub(crate) fn horses_from_coats(&mut self) {
         let worn = self.cosmetics.unknown.remove("coat");
+        let marked = std::mem::replace(&mut self.cosmetics.horses, true);
         let worn = worn.as_ref().and_then(serde_json::Value::as_str).unwrap_or_default();
         let is_coat = |id: &str| coats().any(|found| found.id == id);
         let mut kept: Vec<String> = self.cosmetics.kept.iter().filter(|id| is_coat(id)).cloned().collect();
@@ -67,6 +74,9 @@ impl Character {
             kept.push(worn.to_owned());
         }
         self.cosmetics.kept.retain(|id| !is_coat(id));
+        if marked {
+            return;
+        }
         for coat in kept {
             if !self.keeps_horse(&coat) {
                 self.give_horse(&coat, coat == worn && !self.may_ride());

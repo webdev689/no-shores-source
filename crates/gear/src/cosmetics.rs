@@ -89,7 +89,8 @@ pub fn sold_on(seller: Seller, day: u64) -> Vec<u16> {
     let mut sold: Vec<u16> = (0..cosmetics().len())
         .filter(|&at| {
             let found = &cosmetics()[at];
-            found.kind.seller() == seller && matches!(found.source, Source::Sold { .. })
+            let first = found.id == crate::horses::FIRST_HORSE;
+            found.kind.seller() == seller && matches!(found.source, Source::Sold { .. }) && !first
         })
         .filter_map(|at| u16::try_from(at).ok())
         .collect();
@@ -100,6 +101,8 @@ pub fn sold_on(seller: Seller, day: u64) -> Vec<u16> {
         sold.swap(at, dice.pick(Purpose::Cosmetic, nth, at + 1));
     }
     sold.truncate(SOLD_A_DAY);
+    // The Tack sells the first horse every day, beside its four.
+    sold.extend(number_of(crate::horses::FIRST_HORSE).filter(|_| seller == Seller::Tack));
     sold.sort_unstable();
     sold
 }
@@ -228,7 +231,9 @@ pub fn dressed(sent: &str, character: &Character) -> Option<String> {
         } else {
             character.cosmetics.worn(kind)
         };
-        if piece.is_empty() || piece == starting(kind) {
+        // The Bay's hide is the horse as the forge draws it, so it is named no more than a start piece is.
+        let plain = if kind == CosmeticKind::Coat { crate::horses::FIRST_HORSE.to_owned() } else { starting(kind) };
+        if piece.is_empty() || piece == plain {
             outfit.remove(key);
         } else {
             outfit.insert(key.to_owned(), serde_json::Value::String(piece.to_owned()));
@@ -245,6 +250,10 @@ pub struct Cosmetics {
     pub kept: Vec<String>,
     pub dye: String,
     pub barding: String,
+    /// Written by every room with horses, so a coat a room from before them writes back beside it is no horse
+    /// (`horses.rs`); a save without it is read as one from before horses.
+    #[serde(default)]
+    pub horses: bool,
     /// Keys this room does not know, from a later room's save, written back as read, so a room rolled back to
     /// this one or later keeps them.
     #[serde(flatten)]
@@ -257,6 +266,7 @@ impl Default for Cosmetics {
             kept: Vec::new(),
             dye: starting(CosmeticKind::Dye),
             barding: starting(CosmeticKind::Barding),
+            horses: true,
             unknown: crate::character::UnknownKeys::new(),
         }
     }
