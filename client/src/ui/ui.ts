@@ -280,10 +280,10 @@ export class Interface {
     return this.wheel;
   }
 
-  /** Scrolls the scrolled node `id` by `by` pixels, kept within what it holds: as the page keys scroll a card. */
-  scrollBy(id: string, by: number): void {
+  /** Scrolls the scrolled node `id` by `pixels`, kept within what it holds: as the page keys scroll a card. */
+  scrollBy(id: string, pixels: number): void {
     const laid = this.byId.get(id);
-    if (laid) this.scrolls.set(id, keptIn(laid, (this.scrolls.get(id) ?? 0) + by));
+    if (laid) this.scrolls.set(id, keptIn(laid, (this.scrolls.get(id) ?? 0) + pixels));
   }
 
   /** The pointer's look over what it is on; none while the pad's cursor is drawn instead. */
