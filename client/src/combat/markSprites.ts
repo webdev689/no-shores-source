@@ -158,6 +158,3 @@ export function quadOut(
     );
   }
 }
-
-/** A cell (metres) at least `least` radians of the eye's view at `distance`, so a picture far off keeps its pixels. */
-export const cellAt = (cell: number, distance: number, least: number): number => Math.max(cell, distance * least);

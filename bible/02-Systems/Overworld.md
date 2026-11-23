@@ -118,7 +118,7 @@ the climb reads as one steady zoom.
 
 ## Limits
 
-- A voyage runs in the client. The server does not check it until sailing comes into the rules ([[Agree to the Bit]]).
+- The sea room judges a voyage's course: it refuses one that crosses a continent's coast ([[Server]], "The sea").
 - The bird's-eye view stands far above any cloud deck; only the sea camera keeps under it.
 - The mask is coarse: where a route hugs the coast it can run within a cell of real land.
 - The tuning numbers are Claude's choices, set by playing ([[The World as Claude Shapes It]]).

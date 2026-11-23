@@ -345,6 +345,6 @@ and wake behind, from the yes until it has arrived.
 - Its helm stands under the gaff, as the model has it: at the helm the canvas swings close by.
 - Alone, the editor steps it; in a fleet room the [[Server]] does, on the open sea, which has no coast or shallows;
   in the sea room's fights, the room steps it by its orders.
-- No current or cargo yet, and no crew but the stand-ins aboard ([[Game]]). Hulls are kept apart only in a fight
+- No current or cargo yet; three figures stand in for the ship's hands on its deck ([[Crew]], [[Game]]). Hulls are kept apart only in a fight
   ([[Naval Combat]]), as every fleet room is.
 - It waits while the land worker makes a close-up (about every 400 m), then catches up.

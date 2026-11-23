@@ -1,7 +1,6 @@
 // The story made from the game's own parts once they have loaded: the stage's drawers, voices, sounds and screen, the
-// Brig's and Thule's Frigate's models beside the Sloop's, the storm's place off Saltmere, the player's look as kept, and the director that runs it all from the beat asked for. Thule's Frigate is
-// drawn only from the sea fight on, so its view is made the first time a beat draws it: a player who has played the
-// story through and sees only the intro never makes it.
+// Brig's and Thule's Frigate's models beside the Sloop's, the storm's place off Saltmere, the player's look as kept,
+// and the director that runs it all from the beat asked for.
 import cast from '../../../../content/story/cast.json' with { type: 'json' };
 import scenes from '../../../../content/story/prologue.json' with { type: 'json' };
 import ships from '../../../../content/ships/ships.json' with { type: 'json' };
@@ -108,11 +107,16 @@ export async function startStory(game: StoryGame, from: BeatName | null): Promis
   const readCast = castOf(cast);
   const readScenes = scenesOf(scenes, readCast);
   const [brigMesh, frigateMesh] = await Promise.all([loadShip('brig'), loadShip('frigate')]);
-  // The ships' views open on the device's kit, so both are opened before the story takes them.
-  const [brigView, frigateView] = await Promise.all([
+  // The ships' views open on the device's kit, so both are opened before the story takes them; one that opened is let
+  // go if the other did not.
+  const opening = [
     ShipView.open(gpu, brigMesh, shipSails('brig'), hullPaint(HULL_NAMES.indexOf('brig'))),
     ShipView.open(gpu, frigateMesh, shipSails('frigate'), hullPaint(HULL_NAMES.indexOf('frigate'))),
-  ]);
+  ];
+  const [brigView, frigateView] = await Promise.all(opening).catch(async (error: unknown) => {
+    for (const opened of await Promise.allSettled(opening)) if (opened.status === 'fulfilled') opened.value.destroy();
+    throw error;
+  });
   return takeOrGiveBack((took) => {
     took(() => {
       for (const view of [brigView, frigateView]) view.destroy();

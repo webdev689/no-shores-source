@@ -277,6 +277,26 @@ test('the pointer is where it last moved while free, and nowhere once it leaves 
   assert.equal(ui.pointerAt, null);
 });
 
+test("the wheel scrolls as far as the page turned it, in the interface's pixels, as the pointer is placed", () => {
+  const rows = Array.from({ length: 10 }, (_unused, index): Node => ({
+    id: `row${index}`,
+    press: true,
+    width: 50,
+    height: 20,
+  }));
+  const list: Node = { id: 'list', direction: 'column', scroll: true, height: 60, children: rows };
+  const ui = new Interface(renderer());
+  // Two device pixels a CSS pixel, one an interface pixel: each CSS pixel is two of the interface's.
+  const frame = (events: UiEvent[] = []) => {
+    ui.frame({ ...VIEW, scale: 1, ratio: 2 }, events, 1 / 60);
+    ui.draw(list);
+  };
+  frame();
+  frame([{ kind: 'wheel', x: 5, y: 5, dy: 20 }]);
+  frame([{ kind: 'pointer', x: 5, y: 2 }]);
+  assert.equal(ui.hovered('row2'), true, 'twenty CSS pixels down: two rows of twenty of its own');
+});
+
 test('the interface as last laid answers whether it takes the pointer at a point, for a click heard before a frame', () => {
   const ui = new Interface(renderer());
   step(ui, presses());

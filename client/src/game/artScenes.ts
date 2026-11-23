@@ -279,11 +279,11 @@ const divine: Make = (cols, rows, [focusX, focusY], size) => {
   };
 };
 
-/** Shadow: stars and a dusky nebula round a crescent, the rest of its disc faint, a raven's eye glowing in its hollow
- *  that looks about and blinks; stars light in crosses one after another. */
 /** The step the raven's eye begins to blink at. */
 const BLINK = 31;
 
+/** Shadow: stars and a dusky nebula round a crescent, the rest of its disc faint, a raven's eye glowing in its hollow
+ *  that looks about and blinks; stars light in crosses one after another. */
 const shadow: Make = (cols, rows, [focusX, focusY], size) => {
   const radius = size * 0.66;
   const hollow: Point = [focusX + radius * 0.38, focusY - radius * 0.2];

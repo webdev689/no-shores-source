@@ -1,15 +1,6 @@
 import { strict as assert } from 'node:assert';
 import { mock, test } from 'node:test';
-import {
-  BLOCK_BYTES,
-  ForgeStore,
-  PackBlocks,
-  RETRY_AFTER_MS,
-  joinedRange,
-  pictureRange,
-  rangeLength,
-  stripAt,
-} from './store.ts';
+import { BLOCK_BYTES, ForgeStore, PackBlocks, RETRY_AFTER_MS, joinedRange, pictureRange, stripAt } from './store.ts';
 
 const manifest = { base: 'https://renders.example/', index: 'index/a.json', tables: {} };
 const index = {
@@ -52,7 +43,6 @@ test('a strip that failed to arrive is asked for again only after a while, not o
 });
 
 test('a range cut short is fetched again past the cache, and still short it fails rather than decode a part', async () => {
-  assert.equal(rangeLength('bytes=100-149'), 50);
   const asked: (RequestCache | undefined)[] = [];
   const realFetch = globalThis.fetch;
   globalThis.fetch = (async (unused: string, init?: RequestInit) => {

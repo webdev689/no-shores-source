@@ -147,6 +147,11 @@ export class HelmMap {
     helm: { readonly free: boolean; readonly viewport: Viewport; readonly dpr: number; readonly hands: string | null },
     discovered: Discovered,
   ): MapDraw | undefined {
+    // The land's map up or wanted at sea (a room's gate shut on the player as they looked) is put away at once.
+    if (this.onLand) {
+      this.landWanted = null;
+      if (this.map?.shown) this.map.drop();
+    }
     if (this.wanted && here.view.atHelm && helm.free) {
       this.wanted = false;
       this.made.open(helm.viewport, here.position, helm.hands, discovered.discovery.charted, this.context.shut());

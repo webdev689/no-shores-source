@@ -275,12 +275,12 @@ export class Sea {
     if (ahead && !heaveTo) this.passage.straightOn();
   }
 
-  /** Plans a voyage from the ship to a point and sets sail; a voyage that cannot be planned says why. */
   /** Sails a course already planned, through each of its points in turn: the way in to an island's anchorage. */
   sailAlong(points: readonly Point2[]): void {
     this.passage.sailAlong(points);
   }
 
+  /** Plans a voyage from the ship to a point and sets sail; a voyage that cannot be planned says why. */
   sailTo(point: Point2): void {
     this.chase.stop();
     this.passage.sailTo(point);

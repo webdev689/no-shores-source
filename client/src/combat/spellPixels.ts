@@ -547,9 +547,6 @@ export const STAR: Sprite = sprite(5, 5, (across, up) => {
   return [HOT, LIGHT, BODY][Math.abs(across) + Math.abs(up)] ?? CLEAR;
 });
 
-/** A mote: one cell at each stop. */
-export const MOTES: readonly Sprite[] = [DARK, BODY, LIGHT, HOT].map((stop) => sprite(1, 1, () => stop));
-
 /** A glint: a cross of five cells, its middle at each stop and its arms a stop darker. */
 export const GLINTS: readonly Sprite[] = [DARK, BODY, LIGHT, HOT].map((stop) =>
   sprite(3, 3, (across, up) => {

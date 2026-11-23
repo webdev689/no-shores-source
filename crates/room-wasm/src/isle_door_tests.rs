@@ -24,6 +24,10 @@ fn the_page_is_given_the_islands_plan_and_the_ground_its_room_stands_on() {
     let ground = movement::Heights::from_floats(&floats).expect("a grid");
     assert_eq!(ground, plan.ground_at(at), "the page predicts on the room's own ground");
     assert!(plan_json(seed, "temperate-coast").is_empty() && heights_bytes(seed, "moon", at).is_empty());
+    for nowhere in [[f64::NAN, 0.0], [0.0, f64::INFINITY]] {
+        assert!(heights_bytes(seed, "tundra", nowhere).is_empty(), "no ground for a middle no number names");
+    }
+    assert!(!heights_bytes(seed, "tundra", at).is_empty(), "and the door answers on");
 }
 
 #[test]

@@ -16,7 +16,7 @@ pub enum Purpose {
     Which = 5,
     /// A rolled item's name.
     Name = 6,
-    /// A rolled item's traits, column by column (the column added to the purpose's number).
+    /// A rolled item's traits, column by column (the column times 8 and the node added to the purpose's number).
     Traits = 16,
     /// The Essence a dismantled Legendary gives back.
     Essence = 7,
@@ -32,7 +32,7 @@ pub enum Purpose {
     Cosmetic = 12,
     /// A faction's package: whether its Vestige is Legendary, and its slot.
     Package = 40,
-    /// Where Shape stands in a week, the slots of his wares, and the Shapes a kill gives.
+    /// Where Shape stands in a week, and the order his wares are shuffled in.
     Shape = 44,
     /// Where a patrol stands a foe, what kind and its level (the try added to the purpose's number).
     Patrol = 64,
@@ -40,7 +40,7 @@ pub enum Purpose {
     ShipModule = 1_000,
     /// How much of each ship material salvage holds (the material added).
     ShipMaterial = 1_010,
-    /// A port's officers of the day: post, name and traits (the officer's place, times 16, added).
+    /// A port's officers of the day: post, name and traits (each offer on a dice of its own, its place the tick).
     Recruit = 1_100,
     /// Whether a boarded deck's officer joins the winner, and who it is.
     Taken = 1_900,
