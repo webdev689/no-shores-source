@@ -144,6 +144,11 @@ each part works is in its system note.
 
 ## Waiting on the owner
 
+- **#164, a smith's ware drawn as the piece it becomes** (branch `claude/vigilant-wozniak-lu9pm3`), for the owner's
+  yes to merge, which deploys the page and the rooms: the gear message sends `next_id`, the page draws each smith's
+  ware by it and asks for it by its place ([[Gear]], "Looks"). Tested offline: a test buys each of the day's twelve
+  armour and weapon wares and holds each to its look in the shop (it failed before, on a Magic torso). Open for the
+  owner: a purchase moves the number on, so the other wares still shown may redraw.
 - **Nameplates, the player menu and chat** (#154, branch `claude/player-nameplates-interaction-3b6cwr`), for the
   owner's yes to merge, which deploys the page, the rooms and the accounts (a new Durable Object, the chat's hall, and
   two migrations: `presence.water` and `mutes`): [[Other Players Wear a Nameplate, Their Level or Prestige in a
