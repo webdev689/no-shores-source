@@ -1049,8 +1049,8 @@ fades out, and keeps a thin brass bar in a gutter at its right whose thumb stand
 it, Page Up and Page Down, and the pad's right stick scroll it (`Interface.scrollBy`, `Interface.stickScroll`).
 
 The card: its name on a brass band (balanced over two lines where it is long) with its level and what its runs drop
-("Drops orcish and mithril gear" for Elite, "Drops adamantium and ebony gear" for Abyss, from
-`content/gear/looks.json`); why it is shut, led by a padlock in neutral ink (red is kept for a refusal); its rules
+by its content's name, never a metal's ("Drops Elite Dungeon gear", "Drops Abyss Dungeon gear", from
+`content/gear/looks.json`; [[No Elder Scrolls Metal Names Reach the Player]]); why it is shut, led by a padlock in neutral ink (red is kept for a refusal); its rules
 (the Abyss Playlist's "One of the 18 Elite Dungeons, at Abyss, drawn as each run starts."); its modifiers, each led by
 its icon with what it does; its rewards, kept while it is shut, each its words ("a Vestige in a Boss's colours"),
 then "Taken" (with the timers' tick) or "Not taken", a playlist's weekly as three marks filling with its clears ("2 of

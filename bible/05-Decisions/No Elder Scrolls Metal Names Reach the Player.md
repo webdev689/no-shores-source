@@ -17,3 +17,5 @@ Asked how far the names should go, the owner chose:
   item's words. Gear names its content instead ("Drops Elite Dungeon gear").
 - **The forge's own names for its art stay** inside the code for now, as renaming them means rendering and publishing
   all weapon and armour art again.
+
+How it works: [[Interface]] (the Playlist's card).
