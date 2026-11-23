@@ -119,8 +119,8 @@ export function cardOf(item: GearItem, worn: GearItem | null = null): Card {
   // A horse has no level, as it has no stats.
   const rows: [string, string][] = item.kind === HORSE ? [] : [['Level', String(item.level)]];
   if (item.prestige) rows.push(['Prestige', String(item.prestige)]);
-  // Where it was earned, which its look says too; a ship's module keeps no look of a content.
-  if (!isModule(item.kind)) rows.push(['From', capital(earnedFrom(item))]);
+  // Where it was earned, which its look says too; a ship's module and a horse, its coat its look, keep none of a content.
+  if (!isModule(item.kind) && item.kind !== HORSE) rows.push(['From', capital(earnedFrom(item))]);
   const changes = (['attack', 'defense', 'prestige'] as const)
     .map((stat) => ({ label: capital(stat), from: worn?.[stat] ?? 0, to: item[stat] }))
     .filter((change) => change.from !== 0 || change.to !== 0);
