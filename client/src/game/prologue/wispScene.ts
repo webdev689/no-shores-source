@@ -11,10 +11,16 @@ import { panShot, type Shot } from '../camera.ts';
 import { worldOutput } from '../uiSounds.ts';
 import type { Story } from './story.ts';
 import { ENGULF_AT_S, FLASH_IN_S, layEngulf, layWisp, WISP_LENGTH_S, WISP_S, wispLight, type WispNow } from './wisp.ts';
-import { chaseShot, ringEye, wispAt, wispCourse, type WispCourse } from './wispCourse.ts';
+import { chaseShot, ringEye, ringLook, swingTo, wispAt, wispCourse, type WispCourse } from './wispCourse.ts';
 import type { WreckLayout } from './wreckLayout.ts';
 
 type Point = readonly [number, number, number];
+
+const mix3 = (from: Point, to: Point, share: number): Point => [
+  from[0] + (to[0] - from[0]) * share,
+  from[1] + (to[1] - from[1]) * share,
+  from[2] + (to[2] - from[2]) * share,
+];
 
 /** How long the camera takes to leave one shot for the next, seconds. */
 const LEAVE_S = 1.1;
@@ -127,22 +133,26 @@ export class WispScene {
   /** The camera: from the player's shot round to follow the wisp close as it comes and wanders; off to watch its
    *  rings close on them, nothing of the wreck between; and back over their shoulder once it has engulfed them. */
   private shotOf(back: Shot): Shot {
-    const [x, y, z] = this.course.feet;
-    const chest: Point = [x, y, z + 1.15];
     const aimed = (eye: Point, target: Point): Shot => ({ ...this.from, eye, ...lookAt(eye, target) });
     const into = this.seconds;
     const circleAt = WISP_S.drift + WISP_S.wander;
     const chase = chaseShot(this.course, Math.min(into, circleAt));
-    const following = aimed(chase.eye, chase.look);
-    const rings = aimed(this.ringsFrom, chest);
     const ease = (share: number) => {
       const clamped = Math.min(1, Math.max(0, share));
       return clamped * clamped * (3 - 2 * clamped);
     };
-    if (into < circleAt) return panShot(this.from, following, ease(into / LEAVE_S));
+    const { blocks } = this.course;
+    if (into < circleAt) return panShot(this.from, aimed(chase.eye, chase.look), ease(into / LEAVE_S));
     const end = ENGULF_AT_S + WISP_S.engulf;
-    if (into < end) return panShot(following, rings, ease((into - circleAt) / LEAVE_S));
-    return panShot(rings, back, ease((into - end) / WISP_S.back));
+    const look = ringLook(this.course, Math.min(into, end), this.ringsFrom);
+    if (into < end) {
+      // Over the wreck from following it to watching its rings: an arc, or a cut should even that meet the wreck.
+      const share = ease((into - circleAt) / LEAVE_S);
+      return aimed(swingTo(blocks, chase.eye, this.ringsFrom, share), mix3(chase.look, look, share));
+    }
+    const share = ease((into - end) / WISP_S.back);
+    const turned = panShot(aimed(this.ringsFrom, look), back, share);
+    return { ...turned, eye: swingTo(blocks, this.ringsFrom, back.eye, share) };
   }
 }
 

@@ -459,7 +459,9 @@ the cutscenes, the camera's moves, the nameplate, the fires and the lines are th
     drawn nearer where the wreck stands between, looking on past it toward the player so the wreck stands in the
     frame; for the rings it stands where, of the places round the player 3.2 to 8 m out and 1.9 to 7 m up (nearest
     first to 5.6 m out to their right and 2.5 m up), the player's chest and the wisp at every moment of the rings and
-    the engulfing are seen with nothing of the wreck between (`ringEye`). It and engulfs them (1.4 s): arcs wrap the figure from feet to head, a flash, a ring of Volt
+    the engulfing are seen in one frame (never more than 0.75 rad apart) with nothing of the wreck between
+    (`ringEye`), looking between the two (`ringLook`); the camera goes from one place to the next along an arc rising
+    4 m over the wreck, or cuts where even that would meet it (`swingTo`). It and engulfs them (1.4 s): arcs wrap the figure from feet to head, a flash, a ring of Volt
     pushing out 7 m over the deck, a thunderclap; and the camera eases back over the shoulder (1.2 s). With the flash
     the room gives the player the Storm (`Room::story_storm`; [[Arts]]): worn, its Anima and both Tenets earned and
     charged full, the ability bar shown, for the rest of the prologue. Under `npm run dev`, `?prologue=wreck&wisp=1`

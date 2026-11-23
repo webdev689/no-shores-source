@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { ENGULF_AT_S, FLASH_IN_S, WISP_LENGTH_S, WISP_S } from './wisp.ts';
-import { chaseShot, clearBetween, ringEye, solidAt, wispAt, wispCourse } from './wispCourse.ts';
+import { chaseShot, clearBetween, ringEye, ringLook, solidAt, swingTo, wispAt, wispCourse } from './wispCourse.ts';
 import { courseOf, inArea, readWreck, topAt } from './wreckLayout.ts';
 
 const layout = readWreck();
@@ -89,8 +89,19 @@ test('the ring camera sees the player and the wisp clear of the wreck throughout
     const chest = [feet[0], feet[1], feet[2] + 1.15] as const;
     assert.ok(!solidAt(course, eye), 'not inside the wreck');
     assert.ok(clearBetween(course, eye, chest), `the player seen from ${eye.map((value) => value.toFixed(1))}`);
-    for (let seconds = WISP_S.drift + WISP_S.wander; seconds < ENGULF_AT_S + WISP_S.engulf; seconds += 0.05)
-      assert.ok(clearBetween(course, eye, wispAt(flown, seconds).at), `the wisp seen at ${seconds.toFixed(2)} s`);
+    const cone = (look: readonly number[], point: readonly number[]) => {
+      const [toLook, toPoint] = [0, 1].map((which) =>
+        [0, 1, 2].map((axis) => ((which ? point : look)[axis] ?? 0) - (eye[axis] ?? 0)),
+      ) as [number[], number[]];
+      const dot = toLook.reduce((sum, value, axis) => sum + value * (toPoint[axis] ?? 0), 0);
+      return dot / (Math.hypot(...toLook) * Math.hypot(...toPoint));
+    };
+    for (let seconds = WISP_S.drift + WISP_S.wander; seconds < ENGULF_AT_S + WISP_S.engulf; seconds += 0.05) {
+      const { at } = wispAt(flown, seconds);
+      assert.ok(clearBetween(course, eye, at), `the wisp seen at ${seconds.toFixed(2)} s`);
+      const look = ringLook(flown, seconds, eye);
+      assert.ok(cone(look, at) > Math.cos(0.4) && cone(look, chest) > Math.cos(0.4), 'both in the frame');
+    }
   }
 });
 
@@ -123,4 +134,16 @@ test('as it comes the camera follows it close, the wreck before it in the frame,
 
 test('its whole coming is as long as before', () => {
   assert.equal(wispAt(wispCourse(PLACES[0]?.feet ?? [0, 0, 0], 0, layout), WISP_LENGTH_S).part, 'gone');
+});
+
+test('the camera goes from following the wisp to watching the rings over the wreck, never through it', () => {
+  for (const { feet, facing } of PLACES.filter((unused, index) => index % 3 === 0)) {
+    const flown = wispCourse(feet, facing, layout);
+    const from = chaseShot(flown, WISP_S.drift + WISP_S.wander).eye;
+    const to = ringEye(flown);
+    for (let share = 0; share <= 1; share += 0.02) {
+      const eye = swingTo(course, from, to, share);
+      assert.ok(!solidAt(course, eye), `inside the wreck ${share.toFixed(2)} of the way`);
+    }
+  }
 });
