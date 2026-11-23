@@ -280,6 +280,8 @@ a decision is a record. How to add one: [[Recording a Decision]].
 - [[Matchmade Dungeons Gain Encounters, Puzzles, Climbs and Raid Mechanics]]
 - [[The Playlist and Its Dungeons as Claude Shapes Them]]
 - [[A Playlist's Launch Is Drawn by the Server]]
+- [[Faction Blades Wear Their Faction's Colour on Hilt and Trim]]
+- [[The Room Keeps Only Looks of a Piece's Own Content]]
 
 - [[Overlook Is Our Own Game]]
 - [[The Owner Sets the Vision]]
