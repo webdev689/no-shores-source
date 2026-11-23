@@ -166,10 +166,11 @@ is here, he stands at his week's place, facing the plaza's middle, his mark over
 `city::settle` lays the plan's levels on the land as pads, rectangles of ground set to a level that the ground reads
 before its own relief (`land::pads`): the terraces, the plaza and the landmark's ground. So the city's ground is the
 same to the bit wherever it is sampled, and a window cut round the social space keeps it ([[Land]]). Past a pad's
-edge the land blends into its level within a metre, and where the pad on top changes by a step or less (0.5 m,
-`BLEND_MOST_M`) each side blends to their middle, so a lip a body would step is a slope it walks; a terrace standing
-higher keeps its level to its edge, where its wall stands: a blend there would sink the floor beside the wall, and a
-body walked into the dip would be carried up and over it.
+edge the land blends into its level within a metre, and where the pad on top changes each side blends to their
+middle, toward a level at most a step (0.5 m, `BLEND_MOST_M`) off its own, so a lip a body would step is a slope it
+walks, the ground runs on without a ledge along a ramp's side, and a terrace standing higher sinks at most a quarter
+of a metre at its edge, where its wall stands: blended all the way, the floor beside the wall would sink, and a body
+walked into the dip would be carried up and over it.
 A seam hidden under a later pad (the cells under the plaza) shows nothing (`Pads::seam_near`), and at a pad's
 corner, where one edge borders the land and the next an earlier pad, each edge blends on its own side. A window
 keeps every pad whose seam reaches into it.

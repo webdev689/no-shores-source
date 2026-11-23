@@ -132,6 +132,12 @@ fn a_body_walked_or_run_into_the_seaward_parapet_stays_on_the_plaza() {
     }
 }
 
+/// The pads blend a seam toward another level at most a body's step, so no floor sinks past what a body steps.
+#[test]
+fn a_seam_blends_at_most_a_body_s_step() {
+    assert_eq!(land::pads::BLEND_MOST_M, movement::TUNING.step);
+}
+
 /// The courts set as scenes: the ways laid as flagstone walks, and each court's own pieces standing, each with a place
 /// for the walkers.
 #[test]
