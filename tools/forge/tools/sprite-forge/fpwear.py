@@ -375,6 +375,7 @@ def layer(eye, spec, mats, out, stem, records=None):
         if records is not None and r not in records:
             continue
         rec = spec['records'][r]
+        fpforge.aim(spec, r)
         for f, scr in enumerate(frames):
             pic = fpforge.cut(scr, fpforge.out_rect(rec))
             save(os.path.join(out, f"{spec['archive']}_{r}-{f}_{stem}.png"), pic, **fpforge.marks(spec, rec))

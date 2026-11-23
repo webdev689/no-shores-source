@@ -2,7 +2,8 @@ name: forge
 
 # Renders the forge's pictures that the game draws as they are, beside the published figures (the Arts' birds, the
 # weapons drawn large and the material nodes), and publishes them to R2 whenever their tools change on main or a run
-# is asked for on a branch; a run asked for may also draw figure strips for both bodies (`figures`). The job that
+# is asked for on a branch; a run asked for may also draw figure strips for both bodies (`figures`) and the first
+# person's dagger and sword frames for both hands (`firstperson`). The job that
 # renders holds no secret and stages them, and a second job, which only uploads them, holds the repository's R2 token.
 # R2's objects are named by their hashes, so a run changes nothing already published; the render's log ends with the
 # forge's manifest on one line, which a commit takes into content/forge/renders.json once the run has published.
@@ -25,6 +26,10 @@ on:
         description: "Figure strips to draw first, both bodies: runs split by ';', each 'anims|layers', empty for all"
         required: false
         default: ''
+      firstperson:
+        description: "First-person frames to draw, both hands: runs split by ';', each 'weapon|metals' (dagger or sword; metals empty for all)"
+        required: false
+        default: ''
 
 permissions:
   contents: read
@@ -38,8 +43,9 @@ jobs:
   # Installs others' code (pip), so it holds no secret: what it stages for R2 goes on as an artifact.
   build:
     runs-on: ubuntu-latest
-    # A run drawing figure strips takes hours on four cores; the birds and the weapons, minutes.
-    timeout-minutes: ${{ inputs.figures && 300 || 20 }}
+    # On four cores a run drawing figure strips takes hours; every make's first-person frames, both weapons and both
+    # hands, reckoned at about 40 minutes (a blade's, a few); the birds and the weapons, minutes.
+    timeout-minutes: ${{ inputs.figures && 300 || inputs.firstperson && 90 || 20 }}
     outputs:
       staged: ${{ steps.staged.outputs.staged }}
     steps:
@@ -78,13 +84,33 @@ jobs:
                 ${layers:+--layers "$layers"} --out public/art/studio/forge/layers)
             done
           done
+      # A held weapon's layers (fplayers.py): the weapon alone in each metal asked for, the right hand's and the left's
+      # twin, into the folder of the archive the game reads them from. The hands stay as published.
+      - name: Draw the first-person frames asked for
+        if: inputs.firstperson
+        env:
+          FIGURES: ${{ inputs.figures }}
+          FIRSTPERSON: ${{ inputs.firstperson }}
+        run: |
+          [ -n "$FIGURES" ] || python -I tools/forge_publish.py pull
+          IFS=';' read -ra runs <<< "$FIRSTPERSON"
+          for run in "${runs[@]}"; do
+            weapon=${run%%|*}; metals=${run#*|}
+            case $weapon in dagger) archive=WEAPON02 ;; sword) archive=WEAPON04 ;;
+              *) echo "::error::no first-person weapon '$weapon'"; exit 1 ;; esac
+            for hand in '' --left; do
+              (cd tools/forge && python -I tools/sprite-forge/fplayers.py --weapon "$weapon" --sets '' $hand \
+                ${metals:+--metals "$metals"} --out "public/art/studio/forge/$archive/layers")
+            done
+          done
       # The published tables first (kept as the figures left them), then the new pictures beside what is published.
       - name: Stage them
         env:
           R2_STAGE: ${{ runner.temp }}/stage
           FIGURES: ${{ inputs.figures }}
+          FIRSTPERSON: ${{ inputs.firstperson }}
         run: |
-          [ -n "$FIGURES" ] || python -I tools/forge_publish.py pull
+          [ -n "$FIGURES$FIRSTPERSON" ] || python -I tools/forge_publish.py pull
           python -I tools/forge_publish.py add
           node -p "JSON.stringify(require('./content/forge/renders.json'))"
       - name: Say whether anything is staged

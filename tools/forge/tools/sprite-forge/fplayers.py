@@ -7,6 +7,7 @@ sleeve.
     python -I tools/sprite-forge/fplayers.py --out public/art/studio/forge/WEAPON02/layers [--sets Iron,Chain]
         [--metals Steel,Daedric] [--samples 256]
     python -I tools/sprite-forge/fplayers.py --weapon sword --out public/art/studio/forge/WEAPON04/layers
+    python -I tools/sprite-forge/fplayers.py --check   # every record cut from its own canvas, nothing rendered
 
 Writes `<FILE>_<record>-<frame>_hand[_<Set>].png` (`_hand` the bare hand, in the glove and sleeve every picture
 wears) and `..._weapon[_<Metal>].png` (`_weapon` steel's), each with its depth beside it
@@ -187,6 +188,7 @@ def write(spec, screens, out_dir, stem, records=None):
         if records is not None and r not in records:
             continue
         rec = spec['records'][r]
+        fpforge.aim(spec, r)
         for f, (scr, depth, trim) in enumerate(frames):
             pic = fpforge.cut(scr, fpforge.out_rect(rec))
             hit = fpforge.cut(depth[..., None], fpforge.out_rect(rec))[..., 0]
@@ -224,9 +226,28 @@ def undesign(weapon, saved):
     fpforge.GRADE_AS.clear()
 
 
+def check(out_dir):
+    """Every record of both weapons, all in one run, cut and written from a blank screen of the canvas it is rendered
+    on: a record cut on another record's canvas fails `past the canvas`. Renders nothing."""
+    for weapon, spec_path in sorted(SPEC.items()):
+        spec = fpforge.load(spec_path)
+        screens = {}
+        for r, rec in enumerate(spec['records']):
+            fpforge.aim(spec, r)
+            blank = np.zeros((fpstage.RH, fpstage.RW))
+            screens[r] = [(np.zeros(blank.shape + (4,), np.uint8), blank, blank > 0)] * rec['frames']
+        n = write(spec, screens, out_dir, 'check')
+        assert n == sum(rec['frames'] for rec in spec['records']), (weapon, n)
+        print(f'fplayers: every {weapon} record cuts from its own canvas ({n} frames)')
+
+
 def main():
     import bpy  # noqa: F401  (armour.py reads mathutils, which Blender brings)
     import armour
+    if '--check' in sys.argv:
+        import tempfile
+        with tempfile.TemporaryDirectory() as out_dir:
+            return check(out_dir)
     ap = argparse.ArgumentParser()
     ap.add_argument('--out', required=True)
     ap.add_argument('--weapon', default='dagger', choices=sorted(SPEC))
