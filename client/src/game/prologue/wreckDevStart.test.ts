@@ -3,7 +3,9 @@ import { test } from 'node:test';
 import type { AbilityState } from '../../combat/abilityBar.ts';
 import type { FighterView } from '../../rules/fighters.ts';
 import { teachable } from './stormTeaching.ts';
-import { beginAt, devStart, lashBoarder } from './wreckDevStart.ts';
+import { slotOf } from '../../player/gear.ts';
+import { Arming, beginAt, devStart, lashBoarder } from './wreckDevStart.ts';
+import { BOW, SWORD_AND_SHIELD } from './wreckTeaching.ts';
 
 const READY: AbilityState = { art: 1, animaShare: 1, tenets: [1, 1], earned: 0b111, recharge: 1 };
 const view = (fields: Partial<FighterView>): FighterView =>
@@ -49,4 +51,36 @@ test('a start at the bow lays it before the player on their own deck, where they
   assert.ok(Math.abs((fell[2] ?? 0) - deck) < 0.3, `on their deck: ${fell[2]} against ${deck}`);
   const apart = Math.hypot((fell[0] ?? 0) - x, (fell[1] ?? 0) - y);
   assert.ok(apart >= 2 && apart <= 3, `${apart.toFixed(1)} m before them`);
+});
+
+test('a start armed takes up the sword and shield and the bow and wears each as it comes, asking once', () => {
+  assert.deepEqual(devStart('?prologue=wreck&armed=1'), { stage: 'bow', wispInto: 0, armed: true });
+  const taken: number[] = [];
+  const worn: { item?: number; slot?: number }[] = [];
+  const run = {
+    gear: null as { items: { id: number; kind: number; at: number }[] } | null,
+    openRoom: { story: (ask: { kind: number }) => (taken.push(ask.kind), Promise.resolve(1)) },
+    fight: { askGear: (ask: { item?: number; slot?: number }) => worn.push(ask) },
+  };
+  const arming = new Arming();
+  arming.step(run as never);
+  arming.step(run as never);
+  assert.deepEqual(taken, [SWORD_AND_SHIELD, BOW], 'each taken up once');
+  run.gear = {
+    items: [
+      { id: 7, kind: SWORD_AND_SHIELD, at: 0 },
+      { id: 8, kind: BOW, at: 0 },
+    ],
+  };
+  arming.step(run as never);
+  arming.step(run as never);
+  assert.deepEqual(
+    worn.map((ask) => [ask.item, ask.slot]),
+    [
+      [7, slotOf(SWORD_AND_SHIELD)],
+      [8, slotOf(BOW)],
+    ],
+    'each worn once, in its own slot',
+  );
+  assert.equal(taken.length, 2);
 });

@@ -188,7 +188,7 @@ export class WreckRun {
   }
 
   /** The room, while the run is played. */
-  private get openRoom(): RoomThread {
+  get openRoom(): RoomThread {
     if (!this.room) throw new Error('the wreck has been left');
     // Lost in the rooms' worker, nothing is left to fight on: the story goes on past it, as past any beat that fails.
     if (this.room.lost) throw new Error(`the wreck's room was lost: ${this.room.lost}`);

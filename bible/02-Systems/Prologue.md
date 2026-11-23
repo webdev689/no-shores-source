@@ -472,7 +472,8 @@ the cutscenes, the camera's moves, the nameplate, the fires and the lines are th
     the room gives the player the Storm (`Room::story_storm`; [[Arts]]): worn, its Anima and both Tenets earned and
     charged full, the ability bar shown, for the rest of the prologue. Under `npm run dev`, `?prologue=wreck&wisp=1`
     begins the wreck at its coming, `&wisp=<n>` n - 1 seconds into it, `&bow=1` with the bow lying 2 to 3 m before the player on their own deck,
-    and `&lash=1` with the Storm given and the boarder stood 4 m before the player, in Arc Lash's cone and reach
+    `&armed=1` the same with the sword and shield and the bow taken up and worn (asked of the room as the player's
+    own walking and the menu ask them), and `&lash=1` with the Storm given and the boarder stood 4 m before the player, in Arc Lash's cone and reach
     (`wreckDevStart.ts`).
   - "Call the Storm": until the Storm is given, the waves wait; from then the next zone's wave comes, and its fight
     teaches each ability as the parry is (`CastFreeze`): the fight frozen with its prompt breathing until its key is

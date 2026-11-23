@@ -29,7 +29,7 @@ import { unarmed } from './look.ts';
 import { headOnView, type StoryFrame } from './stage.ts';
 import type { Story } from './story.ts';
 import { castBetween, CastFreeze, castPrompt, teachable } from './stormTeaching.ts';
-import { beginAt, pageDevStart } from './wreckDevStart.ts';
+import { Arming, beginAt, pageDevStart } from './wreckDevStart.ts';
 import { STORM } from './wreckTeaching.ts';
 import { type Done, Freeze, Tutorial } from './tutorial.ts';
 import { WispScene } from './wispScene.ts';
@@ -86,6 +86,7 @@ export class WreckFight implements Beat {
   private barked = { struck: -Infinity, strikes: -Infinity };
   /** Where a page under development asked to begin, and whether it has; none in a built game. */
   private readonly devStart = pageDevStart();
+  private readonly arming = this.devStart?.armed ? new Arming() : null;
   private devBegun = false;
   /** The teaching on the wreck's quiet deck, then the fight's own task; and the fight frozen on a blow to teach. */
   private readonly tutorial = new Tutorial(this.devStart?.stage ?? 'find');
@@ -259,6 +260,7 @@ export class WreckFight implements Beat {
       const { body, facing } = this.story.walker.player;
       beginAt(this.devStart, run, this.layout, { x: body.x, y: body.y, facing });
     }
+    this.arming?.step(run);
     const { story } = this;
     const { stage, walker, firstPerson } = story;
     this.clock += tick.seconds;
