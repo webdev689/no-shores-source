@@ -3,6 +3,7 @@ import resources from '../../../content/gear/resources.json' with { type: 'json'
 import rolled from '../../../content/gear/rolled.json' with { type: 'json' };
 import traits from '../../../content/gear/traits.json' with { type: 'json' };
 import type { GlowLook } from '../elementGlow.ts';
+import { COSMETICS } from '../forge/cosmetics.ts';
 import { ASKS, type GearAsk, type GearItem, type GearState } from '../network/gearMessages.ts';
 import type { Wardrobe } from './dressing.ts';
 
@@ -35,17 +36,32 @@ export const KINDS = [
 ] as const;
 /** The Ranged loadouts; every other kind but the armour and the cloak is a Melee one (the gear crate's `Kind::slot`). */
 const RANGED: ReadonlySet<string> = new Set(['bow', 'crossbow', 'pistolet', 'double_pistolet', 'thunderlock']);
-const ARMOUR_SLOTS: Readonly<Record<string, number>> = { head: 2, torso: 3, arms: 4, legs: 5, cloak: 6 };
+const OWN_SLOTS: Readonly<Record<string, number>> = { head: 2, torso: 3, arms: 4, legs: 5, cloak: 6, horse: 11 };
+/** A horse's kind and the Mount slot it is worn in, by the gear crate's numbers (`horses.rs`). */
+export const HORSE = 28;
+export const MOUNT_SLOT = 11;
+/** A kind's key: its name in the catalogues (`rolled.json`). */
+const kindKey = (kind: number): string => (kind === HORSE ? 'horse' : (KINDS[kind] ?? ''));
 /** The slot a kind is worn in: 0 Melee, 1 Ranged, or its own. */
 export function slotOf(kind: number): number {
-  const name = KINDS[kind] ?? '';
-  return ARMOUR_SLOTS[name] ?? (RANGED.has(name) ? 1 : 0);
+  const name = kindKey(kind);
+  return OWN_SLOTS[name] ?? (RANGED.has(name) ? 1 : 0);
 }
+/** The coats, in the order a horse's name counts them. */
+const COATS = COSMETICS.filter((each) => each.kind === 'coat');
+/** The coat a horse wears, by its id; null for an item that is no horse. */
+export const coatOfHorse = (item: Pick<GearItem, 'kind' | 'name'>): string | null =>
+  item.kind === HORSE ? (COATS[item.name]?.id ?? null) : null;
+/** Whether a piece may be dismantled: one carried, never a horse. */
+export const dismantlable = (item: Pick<GearItem, 'at' | 'kind'>): boolean =>
+  item.at === CARRIED && item.kind !== HORSE;
+/** A slot's name as the screens show it. */
+export const slotName = (slot: number): string => (slot === MOUNT_SLOT ? 'Mount' : capital(SLOTS[slot] ?? ''));
 /** `word` with its first letter a capital. */
 export const capital = (word: string): string => word.charAt(0).toUpperCase() + word.slice(1);
 /** A kind's name as the screens show it: Sword & Shield, Double Daggers, Great Axe. */
 export function kindName(kind: number): string {
-  const words = (KINDS[kind] ?? '').split('_').filter(Boolean);
+  const words = kindKey(kind).split('_').filter(Boolean);
   return words.map((word) => (word === 'and' ? '&' : capital(word))).join(' ');
 }
 /** The elements by the gear crate's numbers (0 is none): each one's name, its colour, and its glyph's outline, body
@@ -165,14 +181,16 @@ export function itemName(item: Pick<GearItem, 'named' | 'kind' | 'rarity' | 'nam
   if (item.named) return items.items.find((found) => found.id === item.named)?.name ?? item.named;
   const story = item.story ? STORY_NAMES[item.kind] : undefined;
   if (story) return story;
-  const kind = KINDS[item.kind] ?? '';
+  const kind = kindKey(item.kind);
   const names = (rolled.names as Record<string, Record<string, readonly string[]> | undefined>)[kind];
   const rarity = (RARITIES[item.rarity]?.name ?? '').toLowerCase();
   return names?.[rarity]?.[item.name] ?? kind;
 }
 
-/** A named item's words, if it has any. */
-export function itemWords(item: Pick<GearItem, 'named'>): string {
+/** A named item's words, or a horse's, its coat's; else none. */
+export function itemWords(item: Pick<GearItem, 'named' | 'kind' | 'name'>): string {
+  const coat = coatOfHorse(item);
+  if (coat) return COSMETICS.find((each) => each.id === coat)?.words ?? '';
   return item.named ? (items.items.find((found) => found.id === item.named)?.words ?? '') : '';
 }
 

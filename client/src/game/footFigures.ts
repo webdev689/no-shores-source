@@ -161,7 +161,7 @@ export interface Dressed {
 }
 
 /** Dresses the player's figure in their gear as their room last sent it, its hands the loadout drawn, once either
- *  changes from what it was `dressed` in, its weapons glowing in their element. */
+ *  changes from what it was `dressed` in, its weapons glowing in their element; and says whether a horse is worn. */
 export function dressInGear(walker: Walker, forge: Cards, gear: GearState | null, dressed: Dressed): void {
   const { loadout } = walker.player;
   if (!gear || (gear === dressed.gear && loadout === dressed.loadout)) return;
@@ -173,5 +173,6 @@ export function dressInGear(walker: Walker, forge: Cards, gear: GearState | null
     walker.spare = spareOutfit(gear, wardrobe, outfit, loadout);
   }
   walker.glow = heldElements(gear, loadout);
+  walker.ridesIn(gear);
   walker.spareGlow = heldElements(gear, otherLoadout(loadout))[0];
 }

@@ -109,10 +109,10 @@ impl Item {
         self
     }
 
-    /// Its columns of nodes; a cloak has none.
+    /// Its columns of nodes; a cloak and a horse have none.
     #[must_use]
     pub fn columns(&self) -> &'static [Column] {
-        if self.kind == Kind::Cloak { &[] } else { columns(self.rarity, self.kind.weapon_grid()) }
+        if matches!(self.kind, Kind::Cloak | Kind::Horse) { &[] } else { columns(self.rarity, self.kind.weapon_grid()) }
     }
 
     /// The XP that unlocks its last column; it earns no more.

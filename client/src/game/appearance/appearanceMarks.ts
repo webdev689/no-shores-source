@@ -1,6 +1,6 @@
 // The Appearance screen's marks, drawn pixel by pixel as the gear's and the Arts' glyphs are: the wardrobe mark on the
-// Character page's button (a coat on a hanger), a dye's tile (its ramp over a cuirass's silhouette) and a coat's (a
-// swatch of its ramp, lit from the top left). Each is an SVG of whole pixels, crisp at any whole multiple.
+// Character page's button (a coat on a hanger) and a dye's tile (its ramp over a cuirass's silhouette). Each is an SVG
+// of whole pixels, crisp at any whole multiple.
 
 import { OUTLINE } from '../../combat/dropPictures.ts';
 import { rampOf } from '../../forge/cosmetics.ts';
@@ -74,8 +74,6 @@ export const CUIRASS_ROWS = [
 const CUIRASS_STEPS = [3, 7, 11, 14];
 /** Own Colours' tile: steel, which the sets mostly wear. */
 const OWN_LOOK = ['#1c1f24', '#4a5058', '#8f979f', '#e3e7ea'];
-/** Bay's tile: the bay's own hide, as the forge drew it. */
-const BAY_LOOK = ['#1e140b', '#4b3420', '#80603c', '#c09a68'];
 
 const hex = ([red, green, blue]: Rgb): string =>
   `#${[red, green, blue].map((channel) => channel.toString(16).padStart(2, '0')).join('')}`;
@@ -84,19 +82,4 @@ const hex = ([red, green, blue]: Rgb): string =>
 export function dyeSvg(ramp: readonly Rgb[] | null): string {
   const steps = ramp ?? rampOf(OWN_LOOK);
   return pixelSvg(CUIRASS_ROWS, [OUTLINE, ...CUIRASS_STEPS.map((step) => hex(steps[step] ?? [0, 0, 0]))]);
-}
-
-/** A coat's tile: a swatch of its ramp 12 × 12 in an outline, lit from the top left across a step a pixel, or the
- *  bay's own for none. */
-export function coatSvg(ramp: readonly Rgb[] | null): string {
-  const steps = ramp ?? rampOf(BAY_LOOK);
-  const side = 12;
-  const rows = Array.from({ length: side }, (_unused, row) =>
-    Array.from({ length: side }, (_unused2, column) => {
-      if (row === 0 || column === 0 || row === side - 1 || column === side - 1) return 'a';
-      return LETTERS.charAt(1 + Math.min(6, Math.floor((side * 2 - 4 - row - column) / 3)));
-    }).join(''),
-  );
-  const shades = [2, 4, 6, 8, 10, 12, 14].map((step) => hex(steps[step] ?? [0, 0, 0]));
-  return pixelSvg(rows, [OUTLINE, ...shades]);
 }

@@ -10,10 +10,12 @@ import type { Action, FighterView } from '../rules/fighters.ts';
 import type { Body, MovementRules } from '../rules/movementRules.ts';
 import type { CardAt, Cards } from './cards.ts';
 import type { Dress } from './dressing.ts';
+import type { GearState } from '../network/gearMessages.ts';
+import { MOUNT_SLOT, worn } from './gear.ts';
 import type { Outfit } from '../forge/outfit.ts';
 import { FIGHT_TICKS, dodgeFacing, fightOf } from './fightMoves.ts';
 import { cardStand, type Placed, viewOf } from './figures.ts';
-import type { InputFrame } from './input.ts';
+import type { Action as Control, InputFrame } from './input.ts';
 import { RUNNING } from './others.ts';
 import { CAST_SECONDS, type Player, shownBody, updatePlayer } from './player.ts';
 import { likelyMoves, Loop, type Shown, shownMove, steadyMoves } from './playerMoves.ts';
@@ -137,6 +139,10 @@ export class Walker {
   spareGlow: GlowLook = 0;
   /** The element the last cast glows in: its Art's. */
   castGlow: GlowLook = 0;
+  /** Whether a horse is worn in the Mount slot, as the page reads it from the gear the room sends (`ridesIn`). */
+  rides = false;
+  /** Set when the mount key was pressed with no horse to ride, until the page has said so. */
+  noHorse = false;
   /** What the figure showed last frame, and its dress as text, as a room is told with each tick. */
   look: Look = { anim: 'idle', frame: 0, facing: 0 };
   /** A fall the player died of, as the figure shows it: tumbling down or lying where it landed, facing `facing`; null
@@ -221,6 +227,20 @@ export class Walker {
     if (contact) this.firstPerson.contact(contact);
   }
 
+  /** Reads from the gear whether a horse is worn in the Mount slot; one taken off under its rider sets them on foot,
+   *  as the room has them. */
+  ridesIn(gear: GearState): void {
+    this.rides = worn(gear, MOUNT_SLOT) !== undefined;
+    if (!this.rides && this.player.mounted) this.player = { ...this.player, mounted: false };
+  }
+
+  /** Whether the mount key was pressed with no horse since last asked; asking clears it, so it is said once. */
+  takeNoHorse(): boolean {
+    const refused = this.noHorse;
+    this.noHorse = false;
+    return refused;
+  }
+
   /** Plays a cast in `glow`, its Art's element: the figure's cast move, its spark in that colour, and the first
    *  person's casting hands, lit by the Art's light. None on horseback, or while one plays. */
   beginCast(glow: GlowLook): void {
@@ -251,7 +271,10 @@ export class Walker {
     this.tickSeconds = rules.tickSeconds;
     if (!controls.locked) return;
     const swinging = firstPerson.swing !== null;
-    this.player = updatePlayer({ ...this.player, drawn: wasDrawn }, controls, rules, seconds, swinging, toward, aiming);
+    const mount = mountAsked(controls, this.player.mounted, this.rides);
+    if (mount.refused) this.noHorse = true;
+    const asked = mount.controls;
+    this.player = updatePlayer({ ...this.player, drawn: wasDrawn }, asked, rules, seconds, swinging, toward, aiming);
     if (this.player.drawn !== wasDrawn)
       you.dress = { ...you.dress, outfit: { ...you.dress.outfit, drawn: this.player.drawn } };
   }
@@ -427,4 +450,18 @@ export class Walker {
     const card = this.forge.card(you.id, this.dress, this.look.anim, view, this.look.frame, flip, glow);
     return card && { card, ...cardStand(x, y, eyeX, eyeY), z, flip, surge: this.surge, ...(flash ? { flash } : {}) };
   }
+}
+
+/** The controls with the mount key's press dropped while there is no horse to ride (`rides`), as the room drops it
+ *  (`may_ride`); `refused` says a press was dropped, which the page tells. Getting down is never refused. */
+export function mountAsked<Controls extends { pressed(action: Control): boolean }>(
+  controls: Controls,
+  mounted: boolean,
+  rides: boolean,
+): { readonly controls: Controls; readonly refused: boolean } {
+  if (mounted || rides || !controls.pressed('mount')) return { controls, refused: false };
+  return {
+    controls: { ...controls, pressed: (action: Control) => action !== 'mount' && controls.pressed(action) },
+    refused: true,
+  };
 }
