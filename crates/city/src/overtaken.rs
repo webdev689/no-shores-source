@@ -68,10 +68,11 @@ fn leaning_toward(bearing: f64) -> f64 {
     libm::atan2(-sine, -cosine)
 }
 
-/// A point `reach` metres from `from` along a bearing (radians clockwise from north; east, south).
-fn out_along(from: [f64; 3], bearing: f64, reach: f64) -> [f64; 3] {
+/// A point on a solid's top, `reach` metres from its middle along a bearing in its own frame (radians clockwise
+/// from its own north), where the solid stands, leaning or turned.
+fn on_top(solid: &Solid, bearing: f64, reach: f64) -> [f64; 3] {
     let (sine, cosine) = sin_cos(bearing);
-    [from[0] + reach * sine, from[1] - reach * cosine, from[2]]
+    solid.place([reach * sine, -reach * cosine, solid.size[2]])
 }
 
 /// A count between a least and a most from a draw.
@@ -79,28 +80,32 @@ fn count(range: [f64; 2], draw: f64) -> usize {
     (range[0] + (range[1] - range[0] + 1.0) * draw).floor().min(range[1]) as usize
 }
 
-/// The great formation crowning a broken landmark: from the middle of its break a tallest spire reaching back toward
-/// the height `whole` had, great spires round it and small ones leaning out round the break's rim. `whole` is the
-/// landmark before it broke, `cut` the height it broke at.
+/// The great formation crowning a broken landmark, standing on what it kept: on the broadest top of its highest kept
+/// solids (those broken off at the break, or else its highest), a tallest spire from the middle of that top reaching
+/// back toward `lost_to` (the height the whole landmark had), great spires round it and small ones leaning out round
+/// the top's rim, every foot on that top.
 #[must_use]
-pub fn crown(whole: &[Solid], cut: f64, seed: u32) -> Vec<Solid> {
-    let top = whole.iter().map(|solid| solid.at[2] + solid.size[2]).fold(cut, f64::max);
-    // The break is what reached through the cut; with nothing through it, the crown stands on the whole's middle.
-    let through: Vec<_> = whole.iter().filter(|solid| solid.at[2] < cut && solid.at[2] + solid.size[2] > cut).collect();
-    let spread = if through.is_empty() { whole.iter().collect() } else { through };
-    let mut low = [f64::INFINITY; 2];
-    let mut high = [f64::NEG_INFINITY; 2];
-    for solid in spread {
-        let bounds = solid.bounds();
-        low = [low[0].min(bounds[0]), low[1].min(bounds[1])];
-        high = [high[0].max(bounds[2]), high[1].max(bounds[3])];
-    }
-    if !low[0].is_finite() {
+pub fn crown(kept: &[Solid], lost_to: f64, seed: u32) -> Vec<Solid> {
+    let top_of = |solid: &Solid| solid.at[2] + solid.size[2];
+    let highest = kept.iter().map(top_of).fold(f64::NEG_INFINITY, f64::max);
+    // How much of its base a solid's top keeps across: a tapered one its taper, a shape with no flat top none.
+    let top_share = |solid: &Solid| match solid.shape {
+        Shape::Block => 1.0,
+        Shape::Column { top, .. } | Shape::Pyramid { top } => top,
+        _ => 0.0,
+    };
+    let breadth = |solid: &Solid| 0.5 * solid.size[0].min(solid.size[1]) * top_share(solid);
+    let Some(seat) = kept
+        .iter()
+        .filter(|solid| top_of(solid) > highest - 1e-6 && breadth(solid) > 0.0)
+        .max_by(|a, b| breadth(a).total_cmp(&breadth(b)))
+    else {
         return Vec::new();
-    }
-    let heart = [f64::midpoint(low[0], high[0]), f64::midpoint(low[1], high[1]), cut];
-    let radius = 0.5 * (high[0] - low[0]).min(high[1] - low[1]);
-    let tallest = CROWN_REACH * (top - cut);
+    };
+    let heart = on_top(seat, 0.0, 0.0);
+    // the feet keep within the top, a little in from its rim
+    let radius = 0.9 * breadth(seat);
+    let tallest = CROWN_REACH * (lost_to - heart[2]);
     let draw = |at: i64, salt: i64| rand01(seed, &[41, at, salt]);
     let mut crystal = Vec::new();
     let tallest_lean = 0.06 + 0.06 * draw(0, 0);
@@ -115,18 +120,18 @@ pub fn crown(whole: &[Solid], cut: f64, seed: u32) -> Vec<Solid> {
     for at in 0..great {
         let at = at as i64 + 1;
         let bearing = (at as f64 + 0.6 * draw(at, 0)) * core::f64::consts::TAU / great as f64;
-        let foot = out_along(heart, bearing, radius * (0.3 + 0.45 * draw(at, 1)));
+        let foot = on_top(seat, bearing, radius * (0.3 + 0.45 * draw(at, 1)));
         let height = tallest * (0.25 + 0.4 * draw(at, 2));
-        let turns = [leaning_toward(bearing), 0.2 + 0.4 * draw(at, 3), 0.3 * (draw(at, 4) - 0.5)];
+        let turns = [leaning_toward(bearing + seat.turn), 0.2 + 0.4 * draw(at, 3), 0.3 * (draw(at, 4) - 0.5)];
         crystal.extend(spire(foot, height, (height / 6.0).min(radius * 0.4), turns));
     }
     let small = count(CROWN_SMALL, draw(0, 3));
     for at in 0..small {
         let at = at as i64 + 100;
         let bearing = draw(at, 0) * core::f64::consts::TAU;
-        let foot = out_along(heart, bearing, radius * (0.7 + 0.25 * draw(at, 1)));
+        let foot = on_top(seat, bearing, radius * (0.7 + 0.3 * draw(at, 1)));
         let height = tallest * (0.05 + 0.12 * draw(at, 2));
-        let turns = [leaning_toward(bearing), 0.5 + 0.6 * draw(at, 3), 0.4 * (draw(at, 4) - 0.5)];
+        let turns = [leaning_toward(bearing + seat.turn), 0.5 + 0.6 * draw(at, 3), 0.4 * (draw(at, 4) - 0.5)];
         crystal.extend(spire(foot, height, height / 4.5, turns));
     }
     crystal
@@ -193,14 +198,21 @@ mod tests {
 
     #[test]
     fn a_crown_rises_from_the_break_toward_the_height_the_landmark_had() {
+        // a shaft 120 m tall broken off 40 m up, its top 0.8 of its base across there
         let shaft = Solid::upright(
-            Shape::Column { sides: 24, top: 0.4 },
+            Shape::Column { sides: 24, top: 0.8 },
             [0.0, 0.0, 40.0],
-            [20.0, 20.0, 120.0],
+            [20.0, 20.0, 40.0],
             Material::Stone,
         );
-        let crown = crown(&[shaft], 80.0, 7);
-        assert_eq!(crown, super::crown(&[shaft], 80.0, 7), "the same every time");
+        let crown = crown(&[shaft], 160.0, 7);
+        assert_eq!(crown, super::crown(&[shaft], 160.0, 7), "the same every time");
+        let bodies = crown.iter().filter(|solid| matches!(solid.shape, Shape::Column { top, .. } if top > 0.0));
+        assert!(
+            bodies
+                .clone()
+                .all(|body| (body.at[2] - 80.0).abs() < 1e-9 && libm::hypot(body.at[0], body.at[1]) <= 8.0 + 1e-9)
+        );
         let top = crown.iter().map(|solid| solid.bounds()[5]).fold(f64::MIN, f64::max);
         assert!((80.0 + 0.8 * 80.0..=160.0).contains(&top), "{top}");
         assert!(crown.iter().all(|solid| solid.material == Material::Crystal && solid.at[2] >= 80.0 - 1e-9));

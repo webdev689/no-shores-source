@@ -351,10 +351,12 @@ the crate and the page), or a shard, one six-sided point two sevenths as wide as
 it grows from, rolled a little, its six faces cut flat. All of it is seeded, by the city in the crate and by each
 building's place to the centimetre in the page, the same on every machine.
 
-- **The landmark** is crowned from its break (`crown`): from the middle of what reached through the break a spire 85 %
-  of the height the landmark lost, leaning 3 to 7 degrees; 5 to 8 great spires round it, a quarter to two thirds as
-  tall, leaning 11 to 34 degrees out; 14 to 20 small ones round the break's rim, leaning out 29 to 63 degrees. It is
-  among the landmark's solids, so the room's boxes hold it. Its three tallest spires light the night.
+- **The landmark** is crowned on what it kept (`crown`): on the broadest flat top among its highest kept solids (a
+  block, or a column or frustum broken off at the break, its top as tapered there), as that solid stands, turned or
+  leaning. From the middle of that top a spire 85 % of the height the landmark lost, leaning 3 to 7 degrees; 5 to 8
+  great spires round it, a quarter to two thirds as tall, leaning 11 to 34 degrees out; 14 to 20 small ones round
+  the top's rim, leaning out 29 to 63 degrees; every foot on that top, within 0.9 of its half breadth. It is among
+  the landmark's solids, so the room's boxes hold it. Its three tallest spires light the night.
 - **The rubble** of the ways and the breaches is crusted (`crusted`): 2 to 5 shards on each heap's upper slopes, 0.5
   to 1.6 m high, 3 more on a breach's fall, 1 to 2.8 m. They are among the works, so the room holds them too.
 - **The formations.** The page's crystal is 40 formations made once, the same on every load (`FORMATIONS`), four of
