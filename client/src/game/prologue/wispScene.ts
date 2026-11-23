@@ -51,7 +51,7 @@ export interface WispFrame {
 }
 
 export class WispScene {
-  private readonly course: WispCourse;
+  private course: WispCourse;
   private readonly facing: number;
   private readonly from: Shot;
   private readonly cues: Cues;
@@ -83,10 +83,11 @@ export class WispScene {
     ]);
   }
 
-  /** One frame `seconds` long at `clock` on the page's clock; `back` is the shot over the player's shoulder it eases
-   *  back to at its end. */
-  frame(seconds: number, clock: number, back: Shot): WispFrame {
+  /** One frame `seconds` long at `clock` on the page's clock, the player standing at `feet` (the room may stand them
+   *  a moment after the wisp begins); `back` is the shot over their shoulder it eases back to at its end. */
+  frame(seconds: number, clock: number, back: Shot, feet: Point): WispFrame {
     this.seconds += seconds;
+    this.course = wispCourse(feet, this.facing);
     this.cues.step(this.seconds);
     this.flash = Math.max(0, this.flash - seconds * FLASH_FADE);
     const now = wispAt(this.course, this.seconds);

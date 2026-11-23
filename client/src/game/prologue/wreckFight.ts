@@ -418,7 +418,8 @@ export class WreckFight implements Beat {
         wispAsked() ?? 0,
       );
     }
-    const shown = this.wisp?.frame(seconds, clock, run.restingShot()) ?? null;
+    const { body } = this.story.walker.player;
+    const shown = this.wisp?.frame(seconds, clock, run.restingShot(), [body.x, body.y, body.z]) ?? null;
     if (shown?.done) this.wisp = null;
     return shown;
   }
