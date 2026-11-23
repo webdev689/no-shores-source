@@ -112,7 +112,7 @@ fn a_rolled_legendary_is_bought_by_its_weeks_number_and_last_weeks_page_is_refus
     assert_eq!(bought, Some(&sold), "the piece shown, rolled as the week rolled it");
 }
 
-/// The named piece Shape shows at a place in the tests' week, as a page names it.
+/// The number of the piece Shape shows at a place in the tests' week, as a page names it.
 fn shown(ware: u8) -> u32 {
     crate::shape::shown(5_000, ware)
 }

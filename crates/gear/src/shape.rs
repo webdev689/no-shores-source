@@ -57,7 +57,9 @@ pub fn shown(week: u64, ware: u8) -> u32 {
     wares(week).get(usize::from(ware)).map_or(u32::MAX, number_of)
 }
 
-fn number_of(item: &Item) -> u32 {
+/// The number a page names one of his wares by (`shown`), for a ware as `wares` makes it.
+#[must_use]
+pub fn number_of(item: &Item) -> u32 {
     let Some(named) = &item.named else {
         let mut hasher = std::hash::DefaultHasher::new();
         std::hash::Hash::hash(&serde_json::to_string(item).unwrap_or_default(), &mut hasher);
@@ -119,7 +121,8 @@ impl Character {
 
     /// Buys one of Shape's pieces of the week, at his place, for Shapes, carried with its slot's: each made at its own
     /// level, as a faction's are, and sold to none who could not wear it yet. A page shown another piece at that place
-    /// (his wares drawn again since, as the catalogue grew) is told it is not sold here, as a smith's ware of another day.
+    /// (another week's, or his wares drawn again as the catalogue grew) is told it is not sold here, as a smith's ware
+    /// of another day.
     pub(crate) fn buy_from_shape(&mut self, ware: u8, shown: u32, here: Here) -> Result<Option<Done>, Refusal> {
         if !here.social {
             return Err(Refusal::NotHere);
