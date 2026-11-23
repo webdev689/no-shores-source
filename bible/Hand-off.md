@@ -144,32 +144,32 @@ each part works is in its system note.
 
 ## Waiting on the owner
 
-- **Looks by content, the Playlist and the matchmade dungeons' encounters** (branch
-  `claude/bible-dungeon-matchmaking-5421wl`, one pull request), for the owner's yes to merge, which deploys the page
-  and the rooms. The owner's three asks and "take autonomy" are recorded
-  ([[Armour and Weapon Looks Belong to the Content That Gives Them]],
+- **Looks by content, the Playlist and the matchmade dungeons' encounters** (#160, branch
+  `claude/bible-dungeon-matchmaking-5421wl`), for the owner's yes to merge, which deploys the page and the rooms. The
+  owner's asks are recorded ([[Armour and Weapon Looks Belong to the Content That Gives Them]],
   [[Elite and Abyss Dungeons Are Queued From a Playlist Beside Each Port]],
-  [[Matchmade Dungeons Gain Encounters, Puzzles, Climbs and Raid Mechanics]]), every call of Claude's in
-  [[The Playlist and Its Dungeons as Claude Shapes Them]].
-  - Looks ([[Gear]], "Where it came from"): every item and Vestige keeps its content (`gear::Source`); each armour set
-    and metal belongs to one content (`content/gear/looks.json`); rooms stamp their loot; a Vestige opens to its own
-    content's named piece where there is one; the item card says "From …". The three daedric Atherics moved to ebony
-    and adamantium (the Abyss Dungeons), daedric kept for the Breaches.
-  - The Playlist ([[Activities]], "The Playlist"; [[Interface]], "The Playlist"): a mark beside Overlook's, Sunspire's
-    and Rimeholt's harbours opens it; the Elite and the Abyss Playlist (bands of five levels, the day's modifiers, a
-    daily and a weekly at three clears), the week's two beside them; Find a Company over one pool, Launch alone or
-    for a company; runs entered from the sea and left back to it. The owner found the first screen ("really bad");
-    it is now crests on a chart and one card, after the owner's Vanguard reference.
-  - Encounters ([[Dungeons]], "Encounters"): every Elite Dungeon run lays two or three seals (the Litany, the Weighing,
-    the Ascent's climb over a drowned floor, the Holdfast), the Boss waking only once they break; the Court's wards
-    and anchors, the Reckoning and Fury; a wipe at Abyss keeps broken seals.
-  - Tested offline: `cargo xtask check` on the branch's head (it names the commit last); two read-only reviews and an
-    audit, every finding fixed with a test. Not yet: played by hand or in a deployed room; a dungeon's encounters
-    pictured (the dungeon picture driver waits for an HTML "Enter" prompt the game now draws in its worker, so it
-    never lands); the Playlist screen pictured only as an interface layer, not over the game.
-  - Open for the owner: named pieces for each content ([[Open Questions]]); Launch's Elite Dungeon is drawn by the
-    page, so a modified page could always pick one (Find a Company draws on the server); the Playlist's tiles of words
-    are gone, but its look is the owner's to judge.
+  [[Matchmade Dungeons Gain Encounters, Puzzles, Climbs and Raid Mechanics]], [[A Playlist's Launch Is Drawn by the
+  Server]], [[The Room Keeps Only Looks of a Piece's Own Content]], [[Faction Blades Wear Their Faction's Colour on
+  Hilt and Trim]]), every call of Claude's in [[The Playlist and Its Dungeons as Claude Shapes Them]].
+  - Looks ([[Gear]], "Where it came from" and "Looks"): every item and Vestige keeps its content; each armour set and
+    metal is one content's; past the world a piece's set and metal follow its name, so each content's every look is
+    seen where it drops; "From" on the card, the page and a Vestige's line, a faction's piece naming its faction; the
+    room keeps only looks of a worn piece's own content (`gear::looks`, `content/gear/drawn.json`).
+  - The Playlist ([[Activities]], [[Accounts]], [[Interface]]): crests on a chart and one card, after the owner's
+    Vanguard reference, pictured clean at six sizes; Find a Company over one pool, Launch drawn by the server; runs
+    started from it (a playlist's, and the week's marked `--sea`) entered from the sea and left back to it; the finder
+    refuses a seeker before the prologue or under the week's level, and silent sockets never fill it.
+  - Encounters ([[Dungeons]], "Encounters"): two or three seals a run (the Litany, the Weighing, the Ascent's real
+    climb in nine of the 18, the Holdfast), the Court's wards, anchors, slam and Reckoning, Fury from the end room;
+    living players counted, encounter foes dropping nothing, compass marks, the Boss scaled to the company; each moment
+    pictured in three dungeons (`tools/claude-toolkit/encounter-plan.ts`).
+  - Tested offline: `cargo xtask check` on each pushed head (058f83e3 last); three rounds of read-only audits (rules,
+    page, design, bible, looks, and two mutation audits of the tests), every finding fixed with a test or recorded.
+    Not yet: played by hand, or in a deployed room.
+  - Held by the owner: faction blades (built on `wt/fblade`, the forge's trim; its art unpublished); the Abyss
+    Dungeons' crossbow art ("Not now").
+  - To talk through with the owner: the named-piece gaps (36 of 60 contents, colours and slots have no named piece of
+    their own), and the Veiled's colour on a blade ([[Open Questions]]).
 - **Nameplates, the player menu and chat** (#154, branch `claude/player-nameplates-interaction-3b6cwr`), merged on
   `main`, which deploys the page, the rooms and the accounts (a new Durable Object, the chat's hall, and
   two migrations: `presence.water` and `mutes`): [[Other Players Wear a Nameplate, Their Level or Prestige in a
