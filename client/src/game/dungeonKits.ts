@@ -434,8 +434,8 @@ function floorPiece(site: Site, cell: number, piece: string, [x, y]: readonly [n
 
 /** The floor pieces: slabs on one quiet room cell in four, a runner (`floor.a`) unbroken along the straight
  *  corridors, and its medallion (`floor.b`) a room; a drain a room and a circle in a room of 3 by 3 or more, each of
- *  these on the clear cell nearest its room's middle, but in an Elite Dungeon's seal's room, where a ring on the floor
- *  would read as one of its pieces; scree on one cell in five, and rails along the straight corridors. */
+ *  these on the clear cell nearest its room's middle, and none in an Elite Dungeon's seal's room, where a ring on the
+ *  floor would read as one of its pieces; scree on one cell in five, and rails along the straight corridors. */
 function floors(site: Site): void {
   const { layout } = site;
   const size = layout.cell;

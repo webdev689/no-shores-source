@@ -1,14 +1,9 @@
-// Writes a webgpu-shot plan that pictures one Elite Dungeon's encounters: each seal from its doorway and from its first
-// piece, and the Court's anchors. For a room module dungeon-qa-build.sh built (QA_NOFOES=1 keeps a headless player
-// alive), served by a development page (`npx vite --port 5173` in a worktree of its own, so edits do not reload it):
-// its address goes into the run with `&run=` (runAsked.ts) and `&spawn=` opens the QA hooks (qaViews.ts). A headless
-// frame takes some 20 s, so each picture waits three, and the first comes after the 150 s the run takes to load.
+// Writes a webgpu-shot plan picturing one Elite Dungeon's encounters: each seal from inside its doorway and beside its
+// first piece (an Ascent from across its room), and the Court's anchors, for a room module dungeon-qa-build.sh built
+// (QA_NOFOES=1), served by Vite in a worktree of its own; a port other than 5173 gives the plan "anyPort". Each move is
+// asked again until the page's own body (`__qaWhere`) stands there, or the run fails. The run loads in 150 s.
 //
 //     node tools/claude-toolkit/encounter-plan.ts <room-qa.wasm> <elite place> <out dir> <plan.json> [port]
-//
-// A port other than 5173 (where another checkout's Vite holds it) gives the plan "anyPort". Each move is asked again
-// until the page's own body (`__qaWhere`) stands within a metre of its point, and fails the run if it never does, so a
-// picture never shows where the body was before.
 import { readFileSync, writeFileSync } from 'node:fs';
 import { askLayout } from '../../client/src/game/dungeonLayout.ts';
 
@@ -59,11 +54,13 @@ const picture = (stand: Point, facing: Point, camera: string, name: string) => {
   );
 };
 const KINDS = ['', 'litany', 'weighing', 'ascent', 'holdfast'];
-/** The middle of the seal's room's cell clear of its pads by a metre that stands farthest from its first doorway. */
+const ASCENT = KINDS.indexOf('ascent');
+/** The middle of the seal's room's cell clear of its pads and every solid by a metre that stands farthest from its
+ *  first doorway. */
 function floorAcross(seal: NonNullable<typeof plan>['seals'][number]): Point | null {
   const [doorX = 0, doorY = 0] = seal.doors[0] ?? [];
   const clear = ([x, y]: Point) =>
-    seal.pads.every(
+    [...seal.pads, ...layout.boxes].every(
       ([minX, minY, maxX, maxY]) =>
         (x ?? 0) < minX - 1 || (x ?? 0) > maxX + 1 || (y ?? 0) < minY - 1 || (y ?? 0) > maxY + 1,
     );
@@ -83,7 +80,7 @@ for (const seal of plan.seals) {
   const inward = Math.hypot((middle[0] ?? 0) - (door[0] ?? 0), (middle[1] ?? 0) - (door[1] ?? 0)) || 1;
   // An Ascent's first pad reaches back to its doorway, so it is seen from the doorway itself and from across the room;
   // any other's, two metres in unless that is on a piece (a rune stepped there would count).
-  const step = seal.kind === 3 ? 0 : Math.min(2, inward / 2) / inward;
+  const step = seal.kind === ASCENT ? 0 : Math.min(2, inward / 2) / inward;
   const inside = [
     (door[0] ?? 0) + ((middle[0] ?? 0) - (door[0] ?? 0)) * step,
     (door[1] ?? 0) + ((middle[1] ?? 0) - (door[1] ?? 0)) * step,
@@ -93,7 +90,7 @@ for (const seal of plan.seals) {
   const first = seal.pieces[0];
   // An Ascent's one piece is the stone on its top pad, which a move on the floor never reaches: the climb is seen
   // instead from the floor across the room, from the cell of its room clear of every pad farthest from its doorway.
-  const across = seal.kind === 3 ? floorAcross(seal) : null;
+  const across = seal.kind === ASCENT ? floorAcross(seal) : null;
   if (across) picture(across, middle, 'third,5,15', `${kind}_across`);
   // Beside its first piece, a step and a half back toward its doorway, looking over it toward the rest.
   else if (first) {

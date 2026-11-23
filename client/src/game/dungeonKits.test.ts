@@ -423,7 +423,7 @@ test('floor pieces lie off every solid, the arrival’s cell, the end room and e
 });
 
 test("no floor piece of a room's own lies in an Elite Dungeon's seal's room, where it would read as a piece", () => {
-  let seals = 0;
+  let [seals, ringed] = [0, 0];
   for (const place of ['pale-undercroft', 'saltworm-warrens', 'silt-barrows', 'krakens-grotto']) {
     const layout = askLayout(module, { place, name: place });
     const sealed = new Set(layout.encounters?.seals.map((seal) => seal.room) ?? []);
@@ -437,8 +437,15 @@ test("no floor piece of a room's own lies in an Elite Dungeon's seal's room, whe
       own.every((piece) => !sealed.has(layout.cells[piece.cell] ?? -1)),
       place,
     );
+    const styleOfRoom = (room: number) => layout.looks[layout.rooms[room]?.look ?? 0]?.style;
+    const ringing = (room: number) => {
+      const style = styleOfRoom(room);
+      return !!style && ['drain', 'circle', 'runner'].includes(kits.styles[style].floor);
+    };
+    ringed += [...sealed].filter(ringing).length;
   }
   assert.ok(seals >= 10);
+  assert.ok(ringed > 0, 'some seal room is of a style that would lay a ring on its floor');
 });
 
 test('a sconce at every torch holds its flame, and the arches stand on the portal’s and the exit’s walls', () => {
