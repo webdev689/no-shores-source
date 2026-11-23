@@ -208,15 +208,7 @@ impl Player {
     /// A player joining at `joined`, on the Test Ground if `test_ground`, where every spell is tried as written.
     #[must_use]
     pub fn new(fighter: Fighter, joined: u64, test_ground: bool) -> Self {
-        let mut character = if test_ground { Character::kitted() } else { Character::starting() };
-        if test_ground {
-            character.arts = gear::arts::WornArts::mastered();
-            // It holds no place in a quest with a `kept` task, as a character kept before: no stranger stands on the
-            // Test Ground, and its stall serves the houses.
-            for quest in gear::quests::quests().quests.iter().filter(|quest| quest.kept.is_some()) {
-                character.quests.roads.remove(&quest.id);
-            }
-        }
+        let character = if test_ground { Character::test_grounds() } else { Character::starting() };
         Player {
             fighter: Fighter { ammo: Some(u32::from(character.shots())), ..fighter },
             standing: Standing::Inside,

@@ -262,6 +262,18 @@ impl Character {
         Self::new_player(true)
     }
 
+    /// The Test Ground's player: kitted, every Art mastered, and holding no place in a quest with a `kept` task, as a
+    /// character kept before: no stranger stands on the Test Ground, and its stall serves the houses.
+    #[must_use]
+    pub fn test_grounds() -> Self {
+        let mut character = Self::kitted();
+        character.arts = crate::arts::WornArts::mastered();
+        for quest in crate::quests::quests().quests.iter().filter(|quest| quest.kept.is_some()) {
+            character.quests.roads.remove(&quest.id);
+        }
+        character
+    }
+
     /// A new player, `kit` wearing the sword and armour, numbered before the ship's modules.
     fn new_player(kit: bool) -> Self {
         let mut character = Self {
