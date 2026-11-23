@@ -8,10 +8,16 @@ status: in force
 > "Aiming with a ship doesnt properly center the aiming UI on the screen and your screen clips with ship geometry.
 > This needs a nice detailed overhaul"
 
+And again, once the eye stood aboard:
+
+> "I need you to focus on improving the ship aim. Its been through many iterations and its still not where I want it
+> to be. The aim UI needs to be center on the camera and its currently offset. Ship geometry in the aim jitters"
+
 ## What it settles
 
 - While a broadside is aimed, the aim's marks stand at the middle of the screen, under the crosshair.
 - No part of the player's ship comes into the camera while aiming, nor in the fight's own camera, in the game.
+- The player's ship holds still in the aim's view: no jitter.
 
 ## Claude's calls
 
@@ -28,6 +34,9 @@ status: in force
 | The way out and round | One distance clear of the hull and every sail's swing, and 0.6 m over and under each, kept all the way round, felt every 5° and at each part's corners | A distance felt at each bearing stepped in and out as the eye passed a sail's edge, metres in a frame |
 | The World Editor | Keeps its own camera: no clearance for its fight's orbit, its drag unheld past the range's ends | It is the owner's tool, not the game |
 | The story's fight | Shows the crosshair and the aim line, as the sea's fights do | It showed only the marks on the water, with nothing at the middle to read them by |
+| Where the guns lay | Where the look's ray meets the water under the crosshair, the swell felt as a ball would come down on it; a look on a ship still lays on its point | Laid for a sea at rest at the ship's own heave, the balls came down on the swell up to 9 m past the crosshair, some 100 px on a 1080-line screen |
+| The guns' nearest | Where their balls fall at their lowest elevation as the ship lies now, while the rules answer that they stand there | A crest under the ship carries its lowest lay past its nearest at rest, and the ring stood past the crosshair |
+| The eye's ship | The answer the frame draws the ship from | Placed from the answer before, the eye stood up to 30 cm off its place on the ship when answers came unevenly, and the ship jittered in the view |
 
 Links: [[Naval Combat]], [[The Sea Fight Looks and Aims as DFO's Does]].
 

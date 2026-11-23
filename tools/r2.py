@@ -106,6 +106,9 @@ def upload(stage):
     file is a key a publisher writes, `<folder>/<the SHA-256 of its bytes>.<kind>`, nothing is uploaded."""
     if os.environ.get('R2_STAGE'):
         sys.exit('an upload sends a stage to R2: run it without R2_STAGE')
+    # A folder that is not there would otherwise upload nothing and pass.
+    if not os.path.isdir(stage):
+        sys.exit(f'{stage} is not a folder: nothing is uploaded')
     found = []
     for root, _folders, names in os.walk(stage):
         for name in names:

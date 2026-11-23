@@ -209,6 +209,17 @@ The decisions in [[Open Questions]] are not repeated here.
   and each `(10, 1, ...)` `(10, 2, ...)`, and `export_wreck.py` should write the quiet deck's `masts` (added to
   wreck.json by hand), or the next export drops them. A horse's card names no content it came from, as a ship's
   module's does not (Claude's call in the merge, the owner's to change).
+- **The ship aim under the crosshair, and the ship steady in it** (#168), merged; `cargo xtask check`
+  passed on its head. The owner: "The aim UI needs to be
+  center on the camera and its currently offset. Ship geometry in the aim jitters" ([[Aiming a Ship Looks Square Off Its
+  Side, Clear of Its Rig]], its calls). Measured offline on the rules' own swell (`seaAim.test.ts`, and a probe driving
+  `SeaCombat` on the wasm rules): the volley's fall stood 90 to 100 px past the crosshair on a 1080-line screen, as the
+  rules laid for a sea at rest at the ship's heave; it now stands within about 4 px settled, the rules laying where the
+  look's ray meets the swell (`on_water`), the view held at the guns' real nearest (`laidNearest`) and turned over the
+  fall (`laidAlong`). The eye stood 0 to 13 cm off its place on the drawn ship from frame to frame when answers came
+  unevenly, placed from the answer before the one the ship was drawn from; it now stands on it. Not yet seen on a real
+  GPU: how the aim feels and looks in the game. Left: answers that come unevenly still move the ship and the eye
+  together in uneven steps against the sea.
 - **The owner's bugs from two rounds of play** (#163), merged, which deploys the page and the rooms. Each fix was audited read-only, and every finding fixed with a test
   that fails without it. Elder Maren Hale's welcome was left to the session reworking it (#172, where her walk is
   gone):
@@ -421,10 +432,6 @@ The decisions in [[Open Questions]] are not repeated here.
   [[The Asset Workflows Publish to R2 With the Cloudflare Token]]); add `tools/install-flatc.sh` to `ROOMS_CODE` in
   `.github/workflows/rooms.yml`. A cloud session cannot deploy the rooms itself: its proxy writes the stored token
   over the upload token Cloudflare hands back.
-- **The cloud environment**: a `no-shores-source` environment is saved for this repository and allows the ships' R2
-  bucket, which `shipTags.test.ts` fetches from; a session started on a Default one cannot reach it, so the full check
-  fails there until the session moves onto `no-shores-source` (#172's did). Which environment holds the SkillsMP key
-  is unchecked; none of them has a Context7 key.
 - **The forge's renders** leave `r2.dev`, which limits its rate, once `daggerfalljs.dev`'s DNS moves to Cloudflare
   ([[The Forge's Renders Will Use daggerfalljs.dev]]).
 - **Names** for the armour sets and weapons, to replace the forge's ([[Three Races]]).
@@ -447,6 +454,11 @@ The decisions in [[Open Questions]] are not repeated here.
   the wreck's ability bar just after the engulfing (pictured in the Storm's lesson), the shore and the deep in plain
   clothes (the shore's taking of her hand does not advance headless; a dev start past it would), and the Mount
   flyout at 960x540 (measured by the screens' layout harness; the offline page has no gear).
+- **A cloud session runs on the `no-shores-source` environment** (personal, set up with the owner's approval): its
+  network allows R2's public bucket (`ships.base`), which `client/src/ships/shipTags.test.ts` fetches meshes from, and
+  its setup script runs `npm ci`. Run the check there as `NODE_USE_ENV_PROXY=1 cargo xtask check`: Node's `fetch`
+  ignores `HTTPS_PROXY` without it. On the Default environment those four tests fail with "fetch failed" and xtask
+  stops before the build, the bundle and the repo checks. The Context7 and SkillsMP keys are on neither environment.
 - **Unchecked, from the encounters' headless run**: on an Elite Dungeon's node the game's worker logged a WebGPU
   validation error each frame ("Instance range ... requires a larger buffer (28) than the bound buffer size (24) of
   the vertex buffer at slot 1 with stride 28"), the city models' instances by its look; whether `main` shows it too.
