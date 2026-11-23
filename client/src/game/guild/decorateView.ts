@@ -5,7 +5,7 @@
 import type { OutpostFace } from '../../network/accounts.ts';
 import type { Node } from '../../ui/node.ts';
 import type { Interface } from '../../ui/ui.ts';
-import { INK, pressNode, words } from '../gearNodes.ts';
+import { INK, label, pressNode, words } from '../gearNodes.ts';
 import { openGearWindow } from '../gearScreen.ts';
 import { hintNode } from '../menuPages.ts';
 import { counted } from './guildHome.ts';
@@ -29,7 +29,7 @@ export function decorateNode(ui: Interface, outpost: OutpostFace): Node {
     direction: 'column',
     gap: 8,
     children: [
-      words('Decorate', 1, INK.word),
+      label('Decorate'),
       words(`${outpost.plot.decor.length} of ${cap} pieces the hall holds`, 1, INK.faint),
       {
         gap: 6,

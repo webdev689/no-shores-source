@@ -11,6 +11,7 @@ import { openGearWindow } from '../gearScreen.ts';
 import { startGearWindow } from '../gearWindow.ts';
 import { BannerEditor } from './bannerEditor.ts';
 import type { Banner } from './bannerLaw.ts';
+import { siteOfWorld } from './siteNames.ts';
 import { GuildPage, guildPage } from './guildPage.ts';
 
 const BANNER: Banner = {
@@ -173,6 +174,11 @@ export function editorShot(ui: Interface): Node {
 }
 
 const HOUR_MS = 3_600_000;
+/** The world's names for the shots' sites, as the page's world gives them. */
+const SITES = siteOfWorld([
+  { id: 'gull-cove-outpost', name: 'Gull Cove', continent: 'continent-1' },
+  { id: 'salt-hythe-outpost', name: 'Salt Hythe', continent: 'continent-2' },
+]);
 const built = (id: number, kind: string, x: number, y: number, tier: number, turn = 0) => ({
   id,
   kind,
@@ -237,7 +243,7 @@ function outpostsShotOf(view: 'outposts' | 'treasury', chosen?: number): (ui: In
   return (ui) => {
     let page = pages.get(ui);
     if (!page) {
-      page = new GuildPage({ link: linkOf(FACE), here: () => null });
+      page = new GuildPage({ link: linkOf(FACE), here: () => null, siteOf: SITES });
       page.open(view, { site: 'gull-cove-outpost', ...(chosen === undefined ? {} : { structure: chosen }) });
       pages.set(ui, page);
     }
