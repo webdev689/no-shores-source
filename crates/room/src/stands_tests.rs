@@ -68,6 +68,20 @@ fn a_patrol_s_foes_site_stands_its_group_the_first_time_a_player_comes_within_15
 }
 
 #[test]
+fn a_site_s_group_never_stands_beside_a_player_but_waits_till_none_is_within_40_m() {
+    let mut room = node(NodeKind::Patrol, "glade");
+    room.set_foe_sites(&[SITE]);
+    let posts = room.garrison.len();
+    let player = room.join().unwrap();
+    stand_player(&mut room, player, [SITE[0], SITE[1] + CLEAR_AROUND - 5.0]);
+    run(&mut room, 3);
+    assert_eq!(room.garrison.len(), posts, "none stands within sight of a player beside it");
+    stand_player(&mut room, player, [SITE[0], SITE[1] + CLEAR_AROUND + 5.0]);
+    run(&mut room, 3);
+    assert_eq!(room.garrison.len(), posts + 1, "it stands once the player is past 40 m");
+}
+
+#[test]
 fn the_same_site_stands_the_same_group_on_every_machine_and_only_in_a_patrol() {
     let stood = |kind: NodeKind| {
         let mut room = node(kind, "glade");

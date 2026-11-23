@@ -103,9 +103,13 @@ impl Room {
     /// The places of the node this room is, as its file names them, and its own square, which comes before theirs.
     pub fn set_places(&mut self, places: Vec<Place>) {
         self.quests.places = places;
-        let Some(section) = self.section.as_ref() else { return };
+        self.quests.square = self.own_square().or(self.quests.square);
+    }
+
+    /// The node's own square round its section's middle, which the meshes baked round places are told from.
+    pub(crate) fn own_square(&self) -> Option<navmesh::Bounds> {
         let first = self.spawn_points.first().copied().unwrap_or_default();
-        self.quests.square = Some(square_of(&[], ground_middle(section, first)).0);
+        self.section.as_ref().map(|section| square_of(&[], ground_middle(section, first)).0)
     }
 
     /// The mesh round a place, by its number among the room's (`routes.rs`): the node's own (0) where its square holds

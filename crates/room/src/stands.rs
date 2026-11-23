@@ -6,7 +6,7 @@
 
 use super::{
     BEAT_STREAM, CLEAR_AROUND, FROM_SQUARE, Group, NODE_AROUND, PATROL, POSTS_APART, STAND_AGAIN, draws_of, foe_type,
-    gird_of, ground_middle, index, open_points, square_of,
+    gird_of, index, open_points,
 };
 use crate::Room;
 use combat::fighter::FighterId;
@@ -49,27 +49,26 @@ impl Room {
     /// garrison holds already; none stand yet. Any other room's garrison is drawn as one (a mission's or a dungeon's
     /// gives ground as one encounter), so it takes none.
     pub fn set_foe_sites(&mut self, sites: &[[f64; 2]]) {
-        let Some(section) = self.section.as_ref().filter(|_| self.place == Some(gear::gate::Place::Patrol)) else {
-            return;
-        };
-        // The node's own square, which the meshes baked round places are told from (`routes.rs`).
-        let first = self.spawn_points.first().copied().unwrap_or_default();
-        let square = *self.quests.square.get_or_insert(square_of(&[], ground_middle(section, first)).0);
+        let Some(square) = self.own_square().filter(|_| self.place == Some(gear::gate::Place::Patrol)) else { return };
+        self.quests.square = Some(square);
         let held = |&[x, y]: &[f64; 2]| {
             (square.min_x..=square.max_x).contains(&x) && (square.min_y..=square.max_y).contains(&y)
         };
         self.foe_sites = sites.iter().filter(|site| !held(site)).map(|&at| (at, false)).collect();
     }
 
-    /// Stands each site's group the first time a player comes within SITE_NEAR of it and the living foes leave it
-    /// room: drawn as a patrol's other groups are, at the site's middle or the lattice point nearest it within
+    /// Stands each site's group the first time a player comes within SITE_NEAR of it, none within CLEAR_AROUND, and
+    /// the living foes leave it room: drawn as a patrol's other groups are, at the site's middle or the lattice point nearest it within
     /// POSTS_APART that holds it, its beat over the lattice its mesh holds; given up where none does. One mesh is baked
     /// a tick, so a site may wait a tick for its own.
     pub(super) fn stand_sites(&mut self) {
         for site in 0..self.foe_sites.len() {
             let (at, stood) = self.foe_sites[site];
-            let near = |player: &crate::Player| apart([player.fighter.body.x, player.fighter.body.y], at) <= SITE_NEAR;
-            if stood || !self.players.values().any(near) {
+            let within = |reach: f64| {
+                self.players.values().any(|player| apart([player.fighter.body.x, player.fighter.body.y], at) <= reach)
+            };
+            // One within CLEAR_AROUND would see it stand beside them, as a cleared group waits for none to be.
+            if stood || !within(SITE_NEAR) || within(CLEAR_AROUND) {
                 continue;
             }
             // Mixed by odd numbers so the stream's fold to 32 bits keeps both halves of each of the two.
