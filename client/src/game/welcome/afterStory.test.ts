@@ -4,7 +4,8 @@ import type { GearAsk, GearState } from '../../network/gearMessages.ts';
 import type { QuestState } from '../../network/questMessages.ts';
 import { type Shot, onScreen } from '../camera.ts';
 import type { Epilogue } from '../prologue/epilogue.ts';
-import { AfterStory, heldHud } from './afterStory.ts';
+import type { CardAt } from '../../player/cards.ts';
+import { AfterStory, clearOfEye, heldHud } from './afterStory.ts';
 import { SOCIAL } from './plazaForTests.ts';
 import { FLY_S, TOUR } from './tour.ts';
 
@@ -166,11 +167,14 @@ test('the player is turned to face her as she speaks face to face, then the way 
   }
 });
 
-test("while she speaks the figures are drawn for the tour's own eye", async () => {
+test("while she speaks the figures are drawn for the tour's own eye, and none stands within reach of it", async () => {
   const { after, frame } = story();
   assert.equal(after.seen, null, 'the player’s own eye before she speaks');
   frame();
   await settled();
   const shot = after.shot(OWN, 1 / 30);
   assert.deepEqual(after.seen, shot, "the tour's shot, the one last shown");
+  const card = (x: number, y: number) => ({ x, y, z: 30 }) as unknown as CardAt;
+  const [near, far] = [card(shot.eye[0] + 3, shot.eye[1]), card(shot.eye[0] + 6, shot.eye[1])];
+  assert.deepEqual(clearOfEye([near, far], shot.eye), [far], 'a walker 3 m from the eye is not drawn; one 6 m off is');
 });

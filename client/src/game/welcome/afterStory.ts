@@ -14,6 +14,17 @@ import { StrangerWelcome } from './tour.ts';
 
 /** How far along her way the player is turned to look as she walks off, metres. */
 const AHEAD_M = 3;
+/** While she speaks no figure is drawn nearer the tour's eye than this, metres: a townsman walking past the camera
+ *  would fill the view. Her pair stands 6 m off it and a keeper at least 5.5 m (`framing.ts`). */
+export const TOUR_CLEAR_M = 4;
+
+/** The figures a tour's eye sees, all but those nearer it than `TOUR_CLEAR_M`. */
+export function clearOfEye<Card extends { readonly x: number; readonly y: number }>(
+  cards: readonly Card[],
+  eye: readonly [number, number, number],
+): Card[] {
+  return cards.filter((card) => Math.hypot(card.x - eye[0], card.y - eye[1]) >= TOUR_CLEAR_M);
+}
 
 type You = { readonly x: number; readonly y: number; readonly z: number; readonly facing: number };
 

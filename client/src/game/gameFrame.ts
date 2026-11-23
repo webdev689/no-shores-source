@@ -43,7 +43,7 @@ import type { SeaShip } from './seaShips.ts';
 import type { SloopBuild } from './shipPanel.ts';
 import { standingDrawers } from './standingDrawers.ts';
 import type { NodeInfo } from './worldData.ts';
-import { type AfterStory, heldHud } from './welcome/afterStory.ts';
+import { type AfterStory, clearOfEye, heldHud } from './welcome/afterStory.ts';
 import type { Quests } from './quests/quests.ts';
 import type { Lore } from './compendium/lore.ts';
 import type { StoryHost } from './prologue/host.ts';
@@ -289,7 +289,9 @@ export function startFrames(parts: FrameParts, playing: Playing): void {
     );
     const walking = quests.cards(shown.shot.eye, clock, parts.groundAt);
     const crews = parts.crews.cards(ships, shown.shot, viewport.height, seconds, clock);
-    const cards = [...shown.figures, ...met, ...nodes, ...walking, ...crews];
+    // While she speaks, none but her stands within reach of the tour's eye.
+    const near = [...shown.figures, ...nodes, ...walking, ...crews];
+    const cards = [...(eye ? clearOfEye(near, eye) : near), ...met];
     if (here.dungeon) parts.dungeons.draw(here, shown, size, clock, fight, hands, more.drain);
     else scene.draw(shown.shot, size, clock, seconds, standing(ships, cards, fight), more);
     showStanding(shown.standing);
