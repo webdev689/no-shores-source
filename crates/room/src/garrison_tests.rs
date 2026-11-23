@@ -413,6 +413,17 @@ fn a_patrol_zone_s_foes_leave_a_player_be_in_its_landing_until_they_strike_from_
     stand_player(&mut room, player, [0.0, 175.0]);
     run(&mut room, 1);
     assert!(!room.left_be(player), "fought, then come back into the landing");
+    // Struck from the landing and stood again there, as a fallen player is: the landing's leave is theirs again.
+    let mut again = node(NodeKind::Patrol, "downs");
+    let fallen = again.join().unwrap();
+    stand_player(&mut again, fallen, [0.0, 180.0]);
+    let input = swing(&again, 1);
+    again.input(fallen, input).unwrap();
+    run(&mut again, 2);
+    assert!(!again.left_be(fallen), "struck from the landing");
+    again.players.get_mut(&fallen).unwrap().graced = again.clock() + crate::players::GRACE;
+    run(&mut again, crate::players::GRACE + 1);
+    assert!(again.left_be(fallen), "stood again at the landing, left be once their grace ends");
     let mut mission = node(NodeKind::Mission, "keep");
     let player = mission.join().unwrap();
     stand_player(&mut mission, player, [0.0, 180.0]);

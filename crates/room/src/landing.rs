@@ -31,10 +31,13 @@ impl Room {
         }
     }
 
-    /// A player out of the landing, or gone, has the landing's leave again once they come back to it.
+    /// A player out of the landing, or gone, has the landing's leave again once they come back to it, and one stood
+    /// again, in their grace, has it at once: standing again at the landing they struck from does not leave it.
     pub(crate) fn leave_landings(&mut self) {
-        let players = &self.players;
-        let landed = |id: &FighterId| players.get(id).is_some_and(|found| self.in_landing(&found.fighter.body));
+        let (players, clock) = (&self.players, self.clock);
+        let landed = |id: &FighterId| {
+            players.get(id).is_some_and(|found| found.graced <= clock && self.in_landing(&found.fighter.body))
+        };
         let kept: std::collections::BTreeSet<FighterId> = self.landing_struck.iter().copied().filter(landed).collect();
         self.landing_struck = kept;
     }
