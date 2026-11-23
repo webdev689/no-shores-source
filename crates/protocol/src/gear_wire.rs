@@ -424,25 +424,6 @@ pub fn gear_bytes(room: &Room, player: PlayerId) -> Option<Vec<u8>> {
     let emblems: Vec<u16> = character.emblems.iter().filter_map(|id| gear::emblems::number_of(id)).collect();
     // In a social space, the emblems the Tailor sells that day.
     let emblems_sold = if room.in_social_space(player) { gear::emblems::sold_on(room.day()) } else { Vec::new() };
-    // In a social space, the day's wares, each numbered by its place among its vendor's.
-    let wares: Vec<_> = if room.in_social_space(player) {
-        gear::vendor::Vendor::ALL
-            .into_iter()
-            .flat_map(|vendor| {
-                let level = if vendor.for_ship() { character.ship_level() } else { character.level() };
-                gear::vendor::wares(vendor, room.day(), level)
-            })
-            .enumerate()
-            .map(|(place, mut ware)| {
-                ware.id = u32::try_from(place % gear::vendor::WARES).unwrap_or_default();
-                let price = gear::vendor::price(ware.rarity);
-                item_offset(&mut builder, &ware, At::Carried, price)
-            })
-            .collect()
-    } else {
-        Vec::new()
-    };
-    let wares = Some(builder.create_vector(&wares));
     let items = Some(builder.create_vector(&items));
     let vestiges: Vec<_> = character
         .vestiges
@@ -523,7 +504,7 @@ pub fn gear_bytes(room: &Room, player: PlayerId) -> Option<Vec<u8>> {
         identified: found.identified,
         answered: found.answered,
         nodes: Some(builder.create_vector(&nodes)),
-        wares,
+        wares: Some(more.wares),
         trim: Some(builder.create_vector(&found.trim.to_floats())),
         to_next,
         to_next_needs,
