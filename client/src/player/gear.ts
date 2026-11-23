@@ -150,6 +150,13 @@ const REFUSALS: Readonly<Record<number, string>> = {
   153: 'You have claimed that this week.',
   154: 'Members who joined before the week turned claim it.',
   155: 'You are in no guild.',
+  156: 'Do that at your guild’s outpost.',
+  157: 'The treasury holds no more.',
+  158: 'Nothing here needs that.',
+  159: 'The stores hold none of that for you today.',
+  160: 'The War Horn has sounded this week.',
+  161: 'The guild’s books could not be reached. Try again.',
+  162: 'The War Horn’s foe still stands.',
 };
 
 /** What a room's answer to an ask says: nothing for done. */

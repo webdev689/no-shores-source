@@ -266,6 +266,7 @@ fn whole_for_each(room: &mut Room, aboard: &[(PlayerId, PlayerId)]) -> Vec<(Play
                 revives: None,
                 public: public.as_ref(),
                 encounter: None,
+                outpost: 0,
             };
             (at_sea, protocol::snapshot_bytes(&snapshot))
         })

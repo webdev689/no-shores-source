@@ -31,6 +31,7 @@ pub(crate) fn clearing_of(kind: NodeKind) -> Option<Clearing> {
 impl Room {
     /// Notes that a player shared a kill of the room's garrison, so its clear pays them.
     pub(crate) fn fought_garrison(&mut self, player: PlayerId) {
+        self.fought_horn(player);
         let owner = self.players.get(&player).and_then(|found| found.owner.clone());
         if let Some(clearing) = self.clearing.as_mut() {
             clearing.fought.insert(player);

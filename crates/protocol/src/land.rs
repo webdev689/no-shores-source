@@ -46,6 +46,8 @@ pub struct Snapshot<'snapshot> {
     pub public: Option<&'snapshot room::public::PublicSeen>,
     /// In an Elite Dungeon's room, its encounters (`Room::encounter_seen`); none in any other room.
     pub encounter: Option<&'snapshot room::encounters::EncounterSeen>,
+    /// At a guild's outpost, how many plots its room has stood (`Room::outpost_plot`); 0 in any other room.
+    pub outpost: u32,
 }
 
 /// How many numbers a foe crosses as, packed: its glance, then its role, type, rank, faction, phase, alertness and
@@ -218,6 +220,7 @@ pub fn snapshot_bytes(snapshot: &Snapshot<'_>) -> Vec<u8> {
         public_event,
         plates,
         encounter,
+        outpost: snapshot.outpost,
         ..messages::SnapshotArgs::default()
     };
     finish_snapshot(builder, &args)

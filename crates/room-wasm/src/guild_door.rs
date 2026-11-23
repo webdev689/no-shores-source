@@ -54,3 +54,7 @@ pub unsafe extern "C" fn room_guild(player: PlayerId, address: *const u8, length
     // SAFETY: the caller gives `length` readable bytes at `address`.
     u32::from(guild(player, unsafe { std::slice::from_raw_parts(address, length) }))
 }
+
+#[cfg(test)]
+#[path = "guild_door_tests.rs"]
+mod tests;

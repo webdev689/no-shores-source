@@ -592,6 +592,23 @@ so every decision is Rust and the shell only carries bytes and time.
 - Each second, and before its first tick, the host gives the room the Unix minute; the rules read the day and the week
   from it (`gear::clock`).
 
+## An outpost's room
+
+- **Its name**: `node-<site>--guild-<key>`, `<key>` the guild id's first eight lowercase hex digits (`guildKey`),
+  only on a bare node (`nodeRoom`'s `guild`). It opens only on a node whose baked file has an `outpost` part; the bare
+  `node-<site>` is the wild site, nobody's plot. Both keep characters, and a player walks between them at Normal.
+- **Who comes in** (`Keeper.forGuild`): the guild's members, and anyone in a company with a member playing there;
+  anyone else closes with 4003 and "This outpost is another guild's.". It keeps no one unkept, as a run.
+- **The plot stands** (`outpostHost.ts`): the host reads `outpost(room)` and stands `plotBoxes` as blocks, taking
+  those it stood before, at open, on the ask `OUTPOST_CHANGED` (at most once a second a room) and after every
+  delivery the accounts used. The snapshot's `outpost` counts each plot stood, so the page reads the outpost again.
+- **The asks** (76 to 80): the room takes what an ask gives and holds it as an errand; each tick the host takes the
+  errands (`room_outpost_errands`), asks the accounts (`deposit`, `deliver`, `takeStores`, `soundHorn`) and gives the
+  answer back (`room_outpost_answered`): what was not moved or used goes back, what the stores gave is given, and the
+  player is answered (156 to 162 beside the gear's). An errand the accounts throw on goes back whole; a deposit is
+  asked again first under its one id (`<room>:<host start>:<player>:<errand>`), so one that went through is never also
+  given back. A leaving player's last save waits for their errands in flight, 30 s at most.
+
 ## The browser's side
 
 - `RoomConnection` joins a room, keeps its welcome's node, sends its session's token once welcomed when the page holds

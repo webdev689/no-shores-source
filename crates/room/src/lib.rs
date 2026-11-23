@@ -42,6 +42,8 @@ mod judging;
 mod landing;
 mod left;
 pub mod lore;
+mod outpost;
+mod outpost_boss;
 pub mod patrol;
 mod perks;
 mod plates;
@@ -73,6 +75,7 @@ pub use floor::{Floor, standing_on};
 pub use foes::{CLEAR_FOES, FOES_MOST, FoeSeen, NODE_FOES_MOST, SHIELD_SHIFT};
 pub use guild_book::{GuildSeen, Guilds};
 pub use judging::{Event, EventKind, How};
+pub use outpost::{Errand, Material, OutpostAsk, PENDING, What, guild_key};
 pub use perks::trim_of;
 pub use plates::Plate;
 pub use players::{
@@ -227,6 +230,8 @@ pub struct Room {
     pub(crate) quests: quests::QuestGround,
     /// An Elite Dungeon's seals and Court (`encounters.rs`); none in any other room.
     pub(crate) encounters: Option<Box<encounters::Encounters>>,
+    /// A guild's outpost's errands, plot and War Horn's foe (`outpost.rs`); none in any other room.
+    pub(crate) outpost: Option<Box<outpost::Outpost>>,
 }
 
 impl Room {
@@ -305,6 +310,7 @@ impl Room {
             quests: quests::QuestGround::default(),
             guilds: guild_book::Guilds::default(),
             encounters: None,
+            outpost: None,
         }
     }
 
@@ -425,6 +431,7 @@ impl Room {
         self.fall_with_callers();
         self.raise_the_dead();
         self.keep_garrison();
+        self.keep_outpost();
         self.keep_encounters();
         self.keep_public();
         self.keep_cache();

@@ -10,6 +10,7 @@
  */
 
 import type { Claimed, Characters as Kept } from './accounts/characters.ts';
+import { guildKey } from './accounts/outpostStores.ts';
 import { NO_WAY_HERE } from './arrival.ts';
 import { nodeRoom, runFull } from './roomNames.ts';
 
@@ -18,6 +19,8 @@ type Characters = Pick<Kept, 'look' | 'claim' | 'save' | 'release' | 'companions
 
 /** Why a run's room sends a player away who is in no company of those kept in it. */
 export const ANOTHER_COMPANY = "This run is another company's.";
+/** Why a guild's outpost's room sends away a player in neither its guild nor a company with a member in it. */
+export const ANOTHER_GUILD = "This outpost is another guild's.";
 /** Why a playlist's run sends away a first player the server never started it for: its dungeon is the server's draw. */
 export const FROM_THE_PLAYLIST = 'Start this run from the Playlist.';
 /** Why a room sends away a player it cannot keep: their token is no session, or none came in time. */
@@ -93,6 +96,9 @@ export class Keeper {
   private arrives: ((from: string | null, body: string | null) => boolean) | null = null;
   /** The accounts a run has let in, for as long as it lives: one back after the rest left a while finds it theirs. */
   private readonly admitted = new Set<string>();
+  /** At a guild's outpost, its guild's key, and the accounts found to be its members. */
+  private guild: string | null = null;
+  private readonly members = new Set<string>();
 
   constructor(
     characters: Characters | null,
@@ -113,6 +119,12 @@ export class Keeper {
    *  player it cannot keep is sent away too, since one unkept could play in it unseen by the company's check. */
   forCompany(): this {
     this.company = true;
+    return this;
+  }
+
+  /** Keeps this room to a guild's members, by its key, and those in a company with a member playing here. */
+  forGuild(key: string): this {
+    this.guild = key;
     return this;
   }
 
@@ -152,7 +164,7 @@ export class Keeper {
     const judgedFirst = looked ? await this.judged(player, looked, here) : looked === null ? this.unsigned : undefined;
     // Outside a run, accounts that do not answer leave the player to play unkept, as a claim unanswered does, and
     // claim nothing: a claim judged after them could take the character from the room that plays it.
-    if (judgedFirst === undefined && !this.company) return false;
+    if (judgedFirst === undefined && !this.closed) return false;
     if (judgedFirst !== '') {
       const trouble = judgedFirst === undefined;
       if (here()) this.lost(player, judgedFirst ?? ACCOUNTS_TROUBLE, trouble);
@@ -163,7 +175,7 @@ export class Keeper {
       // A claim the accounts never answered (undefined) may be answered on a join again, and outside a run the player
       // plays on unkept meanwhile; no session never is.
       const passing = claimed === undefined;
-      if ((this.company || !passing) && here()) this.lost(player, passing ? ACCOUNTS_TROUBLE : this.unsigned, passing);
+      if ((this.closed || !passing) && here()) this.lost(player, passing ? ACCOUNTS_TROUBLE : this.unsigned, passing);
       return false;
     }
     const shut = await this.judged(player, claimed, here);
@@ -187,7 +199,7 @@ export class Keeper {
       // Gone already, or kept as nothing this room can read: let it go untouched rather than save over it.
       await characters.release(claimed.account, holder, null).catch(() => false);
       // A run keeps no one unkept, and joining again would find the same body.
-      if (this.company && !given && here()) this.lost(player, ACCOUNTS_TROUBLE, false);
+      if (this.closed && !given && here()) this.lost(player, ACCOUNTS_TROUBLE, false);
       return false;
     }
     // One account plays one player here: its older socket (a rejoin the room has not seen close, or a second tab) goes
@@ -243,16 +255,36 @@ export class Keeper {
         ? await this.tried(() => characters.launched(account, this.name), here)
         : true;
     if (drawn === undefined) return undefined;
+    const outsider = await this.outsider(account, here);
+    if (outsider === undefined) return undefined;
     const shut =
       this.room.shut(player, body) ||
       (full ?? (companions && !this.admits(companions) ? ANOTHER_COMPANY : '')) ||
-      (drawn ? '' : FROM_THE_PLAYLIST);
+      (drawn ? '' : FROM_THE_PLAYLIST) ||
+      (outsider ? ANOTHER_GUILD : '');
     if (shut !== '' || !characters || !this.arrives || this.arrives(from, body)) return shut;
     // Come by no way that leads here, a player may still join one of their company who plays here.
     const company = companions ?? (await this.tried(() => characters.companions(account, this.name), here));
     if (company === undefined) return undefined;
     const playing = new Set([...this.held.values()].map((held) => held.account));
     return company.some((one) => one !== account && playing.has(one)) ? '' : NO_WAY_HERE;
+  }
+
+  /** At a guild's outpost, whether an account is neither in its guild nor in a company with a member playing here;
+   *  false anywhere else, and undefined when the accounts cannot say. */
+  private async outsider(account: string, here: () => boolean): Promise<boolean | undefined> {
+    const characters = this.characters;
+    if (this.guild === null || !characters) return false;
+    const told = await this.tried(() => characters.guild(account), here);
+    if (told === undefined) return undefined;
+    if (told !== null && guildKey(told.id) === this.guild) {
+      this.members.add(account);
+      return false;
+    }
+    const company = await this.tried(() => characters.companions(account, this.name), here);
+    if (company === undefined) return undefined;
+    const playing = new Set([...this.held.values()].map((held) => held.account));
+    return !company.some((one) => one !== account && playing.has(one) && this.members.has(one));
   }
 
   /** What `ask` answers, asked again after each of a claim's waits while the accounts do not answer and the player is
@@ -273,6 +305,11 @@ export class Keeper {
     if (!this.characters) return;
     await this.wait(TOKEN_WAIT_MS);
     if (here() && !signed()) this.lost(player, this.unsigned, false);
+  }
+
+  /** Whether this room keeps no one it has not judged: a run, or a guild's outpost. */
+  private get closed(): boolean {
+    return this.company || this.guild !== null;
   }
 
   /** Why this room sends away a player it cannot keep. */

@@ -145,6 +145,9 @@ pub struct GuildWeek {
     pub given: u32,
     pub counts: [u32; SLOTS],
     pub claimed: [bool; SLOTS],
+    /// Whether they took the guild package the War Horn's foe gives this week.
+    #[serde(default)]
+    pub horn: bool,
     /// What a later build kept here, kept as it was through a rollback.
     #[serde(flatten)]
     pub unknown: UnknownKeys,
@@ -229,6 +232,19 @@ impl Character {
         }
         self.give_package(Purpose::GuildPackage, dice)?;
         self.guild.claimed[slot] = true;
+        Ok(())
+    }
+
+    /// Takes the guild package the War Horn's foe gives a member who fought it, once a week.
+    ///
+    /// # Errors
+    /// Taken already this week, or ten Vestiges carried.
+    pub fn claim_horn_package(&mut self, week: u64, dice: &Dice) -> Result<(), Refusal> {
+        if self.guild_week(week).horn {
+            return Err(Refusal::GuildBountyClaimed);
+        }
+        self.give_package(Purpose::GuildPackage, dice)?;
+        self.guild.horn = true;
         Ok(())
     }
 }
