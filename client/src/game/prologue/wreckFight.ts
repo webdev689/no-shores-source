@@ -84,10 +84,10 @@ export class WreckFight implements Beat {
   private coming: { since: number; cues: Cues; from: Shot } | null = null;
   private fought = false;
   private barked = { struck: -Infinity, strikes: -Infinity };
-  /** The teaching on the wreck's quiet deck, then the fight's own task; and the fight frozen on a blow to teach. */
   /** Where a page under development asked to begin, and whether it has; none in a built game. */
   private readonly devStart = pageDevStart();
   private devBegun = false;
+  /** The teaching on the wreck's quiet deck, then the fight's own task; and the fight frozen on a blow to teach. */
   private readonly tutorial = new Tutorial(this.devStart?.stage ?? 'find');
   private readonly freeze = new Freeze();
   private readonly castFreeze = new CastFreeze();
@@ -548,6 +548,9 @@ export class WreckFight implements Beat {
     screen.bars(false);
     this.wisp?.leave();
     this.wisp = null;
+    // Its light goes with it, should the fight be left as it shines.
+    this.scenery.near = null;
+    this.story.stage.parts.scene.lamps = fireLamps(this.layout);
     if (typeof document !== 'undefined' && document.pointerLockElement) document.exitPointerLock();
     this.run?.leave();
     this.run = null;

@@ -62,18 +62,22 @@ test('it is drawn as a core, a halo, a trail of motes and arcs, never a plain do
   assert.ok(wraps.length > 0 && ringed.length > wraps.length * 0.5, 'arcs, then the ring as well');
 });
 
-test('up close its halo falls off smoothly, band on band of light finer than a cell, with no dither', () => {
-  const halo = (eye: readonly [number, number, number]) => {
+test('up close its halo falls off smoothly, band on band of light, its heart as bright as from afar', () => {
+  const opacities = (eye: readonly [number, number, number]) => {
     const laid = new Laid();
     layWisp(laid, { at: [0, 0, 3], part: 'wander', glow: 0.7 }, [], eye, 0);
-    const opacities = new Set<number>();
+    const found = new Set<number>();
     for (let index = 6; index < laid.length; index += 7) {
       const opacity = laid.values[index] ?? 0;
-      if (opacity < 0) opacities.add(Math.round(opacity * 1000));
+      if (opacity < 0) found.add(Math.round(opacity * 1e6) / 1e6);
     }
-    return opacities.size;
+    return [...found];
   };
-  assert.ok(halo([0, 1.2, 3]) >= 5, `near: ${halo([0, 1.2, 3])} bands of light`);
+  const [near, far] = [opacities([0, 1.2, 3]), opacities([0, 8, 3])];
+  assert.ok(near.length >= 5, `near: ${near.length} bands of light`);
+  assert.equal(far.length, 1, 'far: one dithered halo');
+  const sum = near.reduce((total, opacity) => total + opacity, 0);
+  assert.ok(Math.abs(sum - (far[0] ?? 0)) < 1e-4, `the heart's light near ${sum} as far ${far[0]}`);
 });
 
 test('it lights what is near it in Volt’s blue, brighter as its rings tighten, and its flash lights the deck white', () => {

@@ -112,7 +112,7 @@ function layoutOf(file: WreckFile): WreckLayout {
       const along = 'along' in fire ? fire.along : null;
       return { at: [x, y, z], size: fire.size, along: along ? [along[0] ?? 0, along[1] ?? 0, along[2] ?? 0] : null };
     }),
-    masts: file.masts.map(pointOf),
+    masts: 'masts' in file ? file.masts.map(pointOf) : [],
     dry: dryFitted(
       file.dry.map(([x = 0, y = 0, heading = 0, halfLength = 0, halfBeam = 0]) => ({
         x,

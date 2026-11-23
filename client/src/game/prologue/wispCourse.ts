@@ -304,13 +304,19 @@ const SWING_UP_M = 4;
 /** A camera `share` of its way from `from` to `to` among `blocks`: along an arc rising over the wreck between; should
  *  even the arc pass through it, a cut at the middle of its time instead. */
 export function swingTo(blocks: readonly CourseBlock[], from: Point, to: Point, share: number): Point {
-  const along = (part: number): Point => {
-    const [x, y, z] = mix(from, to, part);
-    return [x, y, z + SWING_UP_M * Math.sin(Math.PI * part)];
-  };
-  const blocked = Array.from({ length: 41 }, (unused, step) => along(step / 40)).some((point) =>
+  if (swingBlocked(blocks, from, to)) return share < 0.5 ? from : to;
+  return swungAt(from, to, share);
+}
+
+/** The arc from `from` to `to`, `share` of the way. */
+const swungAt = (from: Point, to: Point, share: number): Point => {
+  const [x, y, z] = mix(from, to, share);
+  return [x, y, z + SWING_UP_M * Math.sin(Math.PI * share)];
+};
+
+/** Whether the arc from `from` to `to` meets one of `blocks`, so the camera cuts rather than swings. */
+export function swingBlocked(blocks: readonly CourseBlock[], from: Point, to: Point): boolean {
+  return Array.from({ length: 41 }, (unused, step) => swungAt(from, to, step / 40)).some((point) =>
     solidAt(blocks, point),
   );
-  if (blocked) return share < 0.5 ? from : to;
-  return along(share);
 }

@@ -11,7 +11,16 @@ import { panShot, type Shot } from '../camera.ts';
 import { worldOutput } from '../uiSounds.ts';
 import type { Story } from './story.ts';
 import { ENGULF_AT_S, FLASH_IN_S, layEngulf, layWisp, WISP_LENGTH_S, WISP_S, wispLight, type WispNow } from './wisp.ts';
-import { chaseShot, ringEye, ringLook, swingTo, wispAt, wispCourse, type WispCourse } from './wispCourse.ts';
+import {
+  chaseShot,
+  ringEye,
+  ringLook,
+  swingBlocked,
+  swingTo,
+  wispAt,
+  wispCourse,
+  type WispCourse,
+} from './wispCourse.ts';
 import type { WreckLayout } from './wreckLayout.ts';
 
 type Point = readonly [number, number, number];
@@ -48,8 +57,11 @@ export interface WispFrame {
 export class WispScene {
   private readonly layout: WreckLayout;
   private course: WispCourse;
-  /** Where the ring camera stands for the course, worked out with it. */
+  /** Where the ring camera stands for the course, worked out with it; whether each move to and from it cuts, decided
+   *  once as it begins; and the shot it goes back to. */
   private ringsFrom: Point;
+  private cuts: { rings?: boolean; back?: boolean } = {};
+  private backTo: Shot | null = null;
   private readonly facing: number;
   private readonly from: Shot;
   private readonly cues: Cues;
@@ -101,6 +113,7 @@ export class WispScene {
     if (Math.hypot(feet[0] - x, feet[1] - y, feet[2] - z) > 0.05) {
       this.course = wispCourse(feet, this.facing, this.layout);
       this.ringsFrom = ringEye(this.course);
+      this.cuts = {};
     }
     this.cues.step(this.seconds);
     this.flash = Math.max(0, this.flash - seconds * FLASH_FADE);
@@ -145,14 +158,20 @@ export class WispScene {
     if (into < circleAt) return panShot(this.from, aimed(chase.eye, chase.look), ease(into / LEAVE_S));
     const end = ENGULF_AT_S + WISP_S.engulf;
     const look = ringLook(this.course, Math.min(into, end), this.ringsFrom);
+    const rings = aimed(this.ringsFrom, look);
     if (into < end) {
       // Over the wreck from following it to watching its rings: an arc, or a cut should even that meet the wreck.
       const share = ease((into - circleAt) / LEAVE_S);
+      this.cuts.rings ??= swingBlocked(blocks, chase.eye, this.ringsFrom);
+      if (this.cuts.rings) return share < 0.5 ? aimed(chase.eye, chase.look) : rings;
       return aimed(swingTo(blocks, chase.eye, this.ringsFrom, share), mix3(chase.look, look, share));
     }
+    // Back over the shoulder as the shot stood as it began: the player stands held, so it holds.
+    this.backTo ??= back;
     const share = ease((into - end) / WISP_S.back);
-    const turned = panShot(aimed(this.ringsFrom, look), back, share);
-    return { ...turned, eye: swingTo(blocks, this.ringsFrom, back.eye, share) };
+    this.cuts.back ??= swingBlocked(blocks, this.ringsFrom, this.backTo.eye);
+    if (this.cuts.back) return share < 0.5 ? rings : this.backTo;
+    return { ...panShot(rings, this.backTo, share), eye: swingTo(blocks, this.ringsFrom, this.backTo.eye, share) };
   }
 }
 

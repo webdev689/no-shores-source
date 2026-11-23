@@ -106,6 +106,9 @@ const HALO: Sprite = sprite(19, 19, (across, up) => {
 const NEAR_HALO_M = 4;
 /** Its halo near: six discs half a cell fine, the inner in Volt's body, the outer in its dark, so the light added
  *  falls off in fine steps from its heart to the halo's edge. */
+/** Each disc's share of the halo's light, fainter outward and summing to one, so the heart is no brighter near than
+ *  far. */
+const DISC_SHARES = [0.55, 0.49, 0.43, 0.37, 0.31, 0.25].map((weight) => weight / 2.4);
 const HALO_DISCS: readonly Sprite[] = [5, 8, 11, 13.5, 16, 18].map((radius, index) =>
   sprite(37, 37, (across, up) => (Math.hypot(across, up) <= radius ? (index < 3 ? BODY : DARK) : CLEAR)),
 );
@@ -150,7 +153,7 @@ export function layWisp(
   // Near, where a dithered cell would show as a block, discs of light half a cell fine, each adding less outward.
   else
     HALO_DISCS.forEach((disc, index) =>
-      billboard(out, disc, VOLT, now.at, eye, { opacity: opacity * (0.55 - index * 0.06), cell: cell / 2 }),
+      billboard(out, disc, VOLT, now.at, eye, { opacity: opacity * (DISC_SHARES[index] ?? 0), cell: cell / 2 }),
     );
   billboard(out, coreSprite(strike), VOLT, now.at, eye, { cell: CELL_M * (0.6 + 0.25 * glow) });
   // Small arcs crackling off it, two to four a strike, reaching out past its halo, longer as it brightens.
