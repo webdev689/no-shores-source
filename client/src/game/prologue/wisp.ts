@@ -50,7 +50,7 @@ export interface WispNow {
 /** Its light on what is near it: Volt's body, reaching a few metres and strengthening as it brightens; and the
  *  engulfing's flash, near white, wider and far stronger, fading as the flash does. */
 const LIGHT_REACH_M = [3.5, 6] as const;
-const LIGHT_STRENGTH = [1.2, 3.2] as const;
+const LIGHT_STRENGTH = [2.5, 6] as const;
 const FLASH_REACH_M = 9;
 const FLASH_STRENGTH = 4;
 
