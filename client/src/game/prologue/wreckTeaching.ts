@@ -59,6 +59,8 @@ export const STORM = 1;
 /** The forge draws a weapon's picture this many times as many pixels a metre as a figure's (weaponart.py `SIZE`): a
  *  card of it at this share stands true to size. */
 const TRUE_SIZE = 1 / 4;
+/** The bow, a thin line at its true size, is drawn half again as large so it reads where it fell, metres off. */
+const BOW_SIZE = TRUE_SIZE * 1.5;
 /** The seed of their pop and first turn, as a drop's is drawn from its number. */
 const SEED = 7;
 
@@ -121,12 +123,13 @@ export class LyingArms {
     const motion = motionAt(CRYSTAL_FEEL, from, this.place, SEED, clock - this.began);
     const [x, y, middle] = motion.middle;
     // The card's foot stands where a crystal's foot would, its picture's root being where the forge put it.
-    const metres = TRUE_SIZE / PX_PER_M;
+    const size = this.item.kind === BOW ? BOW_SIZE : TRUE_SIZE;
+    const metres = size / PX_PER_M;
     const bottom = middle - CRYSTAL_FEEL.low;
     const z = bottom - (this.card.root[1] - this.card.height) * metres;
     this.top = [x, y, z + this.card.root[1] * metres];
     this.rested = motion.settled ? motion.since : 0;
-    return { card: this.card, x, y, z, flip: false, scale: TRUE_SIZE, hovers: true };
+    return { card: this.card, x, y, z, flip: false, scale: size, hovers: true };
   }
 
   /** Lays the line of light over them into `out` once they rest, rising as a drop's does, for an eye at `eye`,

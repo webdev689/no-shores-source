@@ -440,7 +440,7 @@ the cutscenes, the camera's moves, the nameplate, the fires and the lines are th
     (F), Dodge a blow (V), Bring the boarder down.
   - "Arm yourself with the bow": the boarder brought down once both lessons are made drops a bow where it fell, the
     story's own Normal Bow of level 1, lying as the sword and shield lay (`LyingArms`: popped up, bouncing, hovering,
-    its line of light) until walked over, when the room puts it in the pack (`Room::story_take`); a boarder brought
+    its line of light), drawn half again its true size so the thin bow reads where it fell until walked over, when the room puts it in the pack (`Room::story_take`); a boarder brought
     down before then drops nothing, and none comes after. Steps: Take up the bow, Equip it (I, the Character page's
     Ranged slot), Draw it (2), Loose an arrow (Left button or F, an arrow gone from the bow), Back to your sword (1).
   - The wisp ([[The Game Shows the Mystery and Explains Almost None of It]]): once the bow is taught, one of the

@@ -272,3 +272,21 @@ test("frozen on the boarder's blow, a guard pressed parries it; frozen on the ne
   assert.deepEqual(lessons, [], `the events on the player: ${told.join(', ')}`);
   assert.deepEqual(answers, ['parry', 'dodge'], 'each met at its first freeze');
 });
+
+test('the bow lying shows its line of light as the sword and shield do, and is drawn larger to be seen', async () => {
+  const { forge } = forged();
+  const at = armsAt(layout);
+  const [sword, bow] = [new LyingArms(ARMS_ITEM, at, forge), new LyingArms(BOW_ITEM, at, forge)];
+  const body = armouredDress(FIRST_LOOK);
+  for (const lying of [sword, bow]) lying.figure(body, 0);
+  await new Promise((resolve) => setTimeout(resolve, 0));
+  const [swordCard, bowCard] = [sword.figure(body, 10), bow.figure(body, 10)];
+  for (const lying of [sword, bow]) lying.figure(body, 13);
+  const eye = [at[0], at[1] - 6, at[2] + 1.6] as const;
+  const [swordLine, bowLine]: number[][] = [[], []];
+  sword.mark(swordLine, 13, eye);
+  bow.mark(bowLine, 13, eye);
+  assert.ok(bowLine.length > 0, 'the bow has its line of light');
+  assert.equal(bowLine.length, swordLine.length, 'as the sword and shield have');
+  assert.equal(bowCard?.scale, (swordCard?.scale ?? 0) * 1.5, 'the thin bow half again its size, to read far off');
+});
