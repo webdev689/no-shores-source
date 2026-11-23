@@ -6,7 +6,7 @@ import type { Node } from '../ui/node.ts';
 import type { Box } from '../ui/quads.ts';
 import { EVENT } from './cues.ts';
 import { callTop } from './callout.ts';
-import { Hud, type HudFrame } from './hud.ts';
+import { Hud, type HudFrame, project, spanOf } from './hud.ts';
 import { cameraOf } from './plateSight.ts';
 import { allOf, fakeInterface, laidOf, wordsIn } from './nodes.test.ts';
 import type { PublicShown } from './publicBanner.ts';
@@ -293,4 +293,36 @@ test("the call stands above the crosshair, and under it where above it would cov
   assert.equal(callTop(720, 247, 1, { top: 250, bottom: 370 }), 388, 'the Boss stands where it would');
   assert.equal(callTop(720, 247, 1, { top: 250, bottom: 500 }), 263, 'covering both, it keeps above');
   assert.equal(callTop(600, 247, 1, null), 328, 'no room above the crosshair: under it');
+});
+
+test('foul water’s edge holds through a late harm, 1.4 s after the last', () => {
+  const hud = new Hud();
+  const frame = { ...courtFrame(1280, 720), foes: [] };
+  const tint = () => allOf(hud.node(fakeInterface())).find((node) => node.id === 'fight-foul')?.opacity ?? 0;
+  const wet = (harmed: boolean) => ({
+    ...frame,
+    public: { ...court, foul: harmed ? ('harmed' as const) : ('wet' as const) },
+  });
+  hud.update(wet(true), 1 / 60);
+  for (let step = 0; step < 84; step++) hud.update(wet(false), 1 / 60);
+  assert.ok(tint() > 0.9, `a late harm's gap held (${tint()})`);
+});
+
+test("the Boss's figure keeps the call from it as far from the view's middle at twice the zoom as twice the pixels", () => {
+  const frame = courtFrame(2560, 1440);
+  const boss = frame.foes[0]!.view;
+  const camera = cameraOf(frame.matrix);
+  assert.ok(camera);
+  // Step the Boss aside along the view until it stands 300 px off the middle.
+  const aside = (metres: number) => ({
+    ...boss,
+    x: boss.x - camera.forward[1] * metres,
+    y: boss.y + camera.forward[0] * metres,
+  });
+  const off = (metres: number) =>
+    Math.abs((project(frame.matrix, [aside(metres).x, aside(metres).y, 0], 2560, 1440)?.x ?? 0) - 1280);
+  let metres = 0;
+  while (off(metres) < 300) metres += 0.01;
+  assert.equal(spanOf(frame, aside(metres), 1), null, '300 px aside at zoom 1: clear of the call');
+  assert.ok(spanOf(frame, aside(metres), 2), '300 px aside at zoom 2: in its way');
 });

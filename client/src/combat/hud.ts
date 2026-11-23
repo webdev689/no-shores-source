@@ -161,7 +161,7 @@ export function veilOf(
 
 /** The span down the view a figure standing at `view` fills, where it stands within the call's reach (at `zoom`) of
  *  the view's middle across (CSS pixels); none off it or behind the eye. */
-function spanOf(
+export function spanOf(
   frame: HudFrame,
   view: FighterView,
   zoom: number,
