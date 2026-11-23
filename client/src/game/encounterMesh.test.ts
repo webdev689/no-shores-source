@@ -68,7 +68,7 @@ test("the drowned floor's foul water lies while its seal holds and is gone once 
 
 test("a Weighing's plates stand as raised slabs of its room's stone, and a Litany's runes lay none", () => {
   const plates = (kind: number) => {
-    const seal = { kind, room: 0, pieces: [[1.6, 1.6, 0]], pads: [], drowned: [], doors: [] };
+    const seal = { kind, room: 0, pieces: [[1.6, 1.6, 0] as const], pads: [], drowned: [], doors: [] };
     const mesh = meshBuilder();
     layEncounters(mesh, { ...layout, encounters: { ...layout.encounters!, seals: [seal], anchors: [] } });
     const model = mesh.model();
@@ -82,7 +82,14 @@ test("a Weighing's plates stand as raised slabs of its room's stone, and a Litan
 });
 
 test("a plate is all of its room's trim, never the floor's own picture, so it stands apart from the floor", () => {
-  const seal = { kind: SEAL_KIND.weighing, room: 0, pieces: [[1.6, 1.6, 0]], pads: [], drowned: [], doors: [] };
+  const seal = {
+    kind: SEAL_KIND.weighing,
+    room: 0,
+    pieces: [[1.6, 1.6, 0] as const],
+    pads: [],
+    drowned: [],
+    doors: [],
+  };
   const mesh = meshBuilder();
   layEncounters(mesh, { ...layout, encounters: { ...layout.encounters!, seals: [seal], anchors: [] } });
   const records = new Set(mesh.model().parts.map((part) => part.record));
