@@ -76,7 +76,7 @@ ability bar on the HUD), how the rules cast each spell, how the browser asks for
   counting what is set and owned ("Core · 1 of 3 · 2 owned") and its rule as long as the line above. Under the
   Core, each fragment set is written out: its name in the element's light, what it does after it.
 - **The level** ([[Factions]]): the worn Art's name carries five pips lit to its level, read aloud as "Level n". Under
-  the three Arts' diamonds (each with its own small pips, so they never move) its bar fills with the XP its kills
+  the three Arts' diamonds (each with its own small pips, so they never move) its bar fills with the XP its deeds
   earn: "3,200 of 8,000", then, full, "Ready to rise at the Stormcallers' counter", or "Highest level", in brass when
   full or at level 5, with the faction's emblem small at its end, its card naming the faction and what its counter
   does. The element's line says the share the spells hold ("Spells at 70%"). Spell and fragment cards give their

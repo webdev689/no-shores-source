@@ -114,7 +114,7 @@ test('where a player stands crosses as the server wrote it, away from Shape and 
   assert.deepEqual([away.shapes, away.shape], [0, null], 'he is away');
   assert.deepEqual(here.standing, {
     pledge: 2,
-    reputation: [5, 35_000, 0],
+    reputation: [5, 350_000, 0],
     packages: [0, 1, 0],
     artLevels: [3, 1, 5],
     artXp: [700, 0, 0],
@@ -127,8 +127,8 @@ test('where a player stands crosses as the server wrote it, away from Shape and 
   assert.equal(here.shape?.place, 6);
   assert.deepEqual(
     here.shape?.wares.map((ware) => [ware.id, ware.rarity, ware.price, ware.level]),
-    [0, 1, 2, 3, 4, 5].map((id) => [id, id < 4 ? 3 : 4, id < 4 ? 7 : 15, 20]),
-    'four Legendary, then two Atheric, numbered by place and priced in Shapes',
+    [0, 1, 2, 3, 4, 5].map((id) => [id, id < 4 ? 3 : 4, id < 4 ? 7 : 23, 20]),
+    'four Legendary, then two Atheric (this week both weapons, 23), numbered by place and priced in Shapes',
   );
   const sold = here.factionWares ?? [];
   assert.equal(sold.length, 21, 'seven pieces of each faction’s');

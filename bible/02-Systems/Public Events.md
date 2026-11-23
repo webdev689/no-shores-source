@@ -132,7 +132,9 @@ a leaver's chests (`room_parting`) before it keeps their character. A chest is o
 and its XP and Aurem are the seas' reward times as much, as a kill's are. It holds, by tier: 1,500, 2,200, 3,200 and
 4,500 XP and 120, 180, 260 and 360 Aurem at level 5, each growing with the event's level as a kill's worth does, the
 XP growing the worn Art and the faction pledged while its cape is worn as a kill's XP does; 2, 3, 5 and 7 of each
-Fragment, Essence from the heroic tiers (1, 2) and 3, 4, 6 and 8 of the island's resource, the same at any level;
+Fragment and 3, 4, 6 and 8 of the island's resource, the same at any level; one Essence of each stock from the first
+heroic chest a player opens each day, at any level, and none from any other, as Destiny 1's first gold event of the
+day sent an Ascendant material (`FIRST_HEROIC_ESSENCE`, kept with the day's record);
 and a Vestige always, of the event's level, a foe's colours from a plain chest (a Major's) and a Boss's from a heroic
 one ([[Gear]]'s colours by rank), the bonus's tier rolling twice and keeping the better. A Vestige with no room in the
 ten goes to the vault, and with no room there either lies on the ground where the chest stood, as any drop does; a

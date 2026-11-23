@@ -77,9 +77,16 @@ pub struct Cost {
     pub resource: u16,
 }
 
+/// The Essence each of a Legendary's last three upgrades asks, an Atheric's, and a Breach's Legendary armour's: as
+/// Destiny 1's legendary, exotic and raid gear asked 6, 8 and 7 Ascendant materials a node.
+pub const LAST_ESSENCE: u16 = 6;
+pub const ATHERIC_LAST_ESSENCE: u16 = 8;
+pub const BREACH_LAST_ESSENCE: u16 = 7;
+
 /// What the node of `column` costs among `layout`, an item's columns: lesser items' nodes cost Aurem and their
 /// upgrades fragments; a Legendary's or Atheric's ask for its island's resource, and its last three upgrades for
-/// Essence, as Destiny 1's last three nodes asked for Ascendant materials.
+/// Essence, as Destiny 1's last three nodes asked for Ascendant materials. An Atheric's own node asks for all four,
+/// so an Atheric never costs less of anything to finish than a Legendary of its kind.
 #[must_use]
 pub fn cost(rarity: Rarity, layout: &[Column], column: usize) -> Cost {
     let Some(&kind) = layout.get(column) else { return Cost::default() };
@@ -90,13 +97,15 @@ pub fn cost(rarity: Rarity, layout: &[Column], column: usize) -> Cost {
         (Rarity::Magic, _) => aurem(200),
         (Rarity::Rare, Upgrade) => Cost { fragments: 3, ..aurem(600) },
         (Rarity::Rare, _) => Cost { fragments: 1, ..aurem(400) },
-        (_, Signature) => Cost { essence: 1, ..aurem(1_000) },
+        (_, Signature) => Cost { fragments: 4, essence: 1, resource: 10, ..aurem(2_500) },
         (_, Upgrade) => {
             let later = layout[column + 1..].iter().filter(|later| **later == Upgrade).count();
-            if later < 3 {
-                Cost { essence: 6, ..aurem(1_500) }
-            } else {
+            if later >= 3 {
                 Cost { fragments: 5, resource: 10, ..aurem(1_000) }
+            } else if rarity == Rarity::Atheric {
+                Cost { essence: ATHERIC_LAST_ESSENCE, ..aurem(1_500) }
+            } else {
+                Cost { essence: LAST_ESSENCE, ..aurem(1_500) }
             }
         }
         (_, Handling(_) | Finish(_) | Perk(_)) => Cost { fragments: 2, resource: 5, ..aurem(800) },

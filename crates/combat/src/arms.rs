@@ -62,7 +62,9 @@ pub struct Weapon {
     pub two_handed: bool,
 }
 
-/// Each class's numbers. Weights are DFO's poise weights by class, two-handed ones a further 1.15.
+/// Each class's numbers. Weights are DFO's poise weights by class, two-handed ones a further 1.15. The greatsword,
+/// our own, trades the great axe's blow and weight for reach and the warhammer's for more again, so none of the three
+/// outdoes another at everything.
 #[must_use]
 pub const fn weapon(class: WeaponClass) -> Weapon {
     let (reach, damage, weight, stamina, handling, two_handed) = match class {
@@ -74,7 +76,7 @@ pub const fn weapon(class: WeaponClass) -> Weapon {
         WeaponClass::Axe => (2.0, 22.0, 1.25 * 1.15, 20.0, 1.05, true),
         WeaponClass::Warhammer => (2.0, 24.0, 1.5 * 1.15, 22.0, 1.06, true),
         WeaponClass::Staff => (2.2, 13.0, 1.15, 14.0, 0.97, true),
-        WeaponClass::Greatsword => (2.3, 24.0, 1.3 * 1.15, 21.0, 1.06, true),
+        WeaponClass::Greatsword => (2.3, 21.0, 1.2 * 1.15, 21.0, 1.06, true),
     };
     Weapon { reach, damage, weight, stamina, handling, two_handed }
 }

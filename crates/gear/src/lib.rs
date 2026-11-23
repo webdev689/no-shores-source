@@ -79,6 +79,8 @@ mod clock_tests;
 #[cfg(test)]
 mod cosmetics_tests;
 #[cfg(test)]
+mod economy_tests;
+#[cfg(test)]
 mod emblems_tests;
 #[cfg(test)]
 mod factions_tests;

@@ -264,6 +264,13 @@ impl Character {
             }
             None => road.done = true,
         }
+        // A task that sent the player out, not one of words with a keeper, pays as a mission's clear does, at their
+        // level: Destiny 1 paid each mission done.
+        let errand = goals.iter().all(|goal| matches!(goal.goal.kind(), GoalKind::Talk | GoalKind::Pledge));
+        if !errand {
+            let level = self.level();
+            self.pay(crate::rewards::Clear::Mission.worth(), level, None, crate::world::Difficulty::Normal);
+        }
         self.reward(def.faction, def.tasks[task].reward);
         self.find_lore_due(crate::lore::lore());
         true

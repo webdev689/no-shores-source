@@ -73,3 +73,21 @@ Decisions waiting on the owner. None is in force until the owner decides it and 
   Atheric but two guns; a dungeon has no Atheric; an Elite Dungeon's Legendaries are three Melee pieces. Where a content
   has none, its Vestige opens to any content's: 36 of the 60 contents, colours and slots have none of their own. The
   owner: "Let's talk about this more when we finish everything".
+- **The balance pass's open points** ([[The Balance and Economy Pass as Claude Shapes It]]), each needing more than a
+  number or touching how the fight feels:
+  - A swing or a dodge needs only some stamina left, and spending stops at none, so stamina never stops held swings and
+    the perks that change a swing's stamina do little; whether a swing should need its whole cost.
+  - The pairs (Double Daggers, Double Swords, Double Mace) strike as their lone weapon with nothing in the off hand, so
+    an "& Shield" or a lone weapon with a torch is always as good or better; whether a pair swings faster, or more.
+  - Travelling between waters resets the hostile roll to 30 s, so a player who keeps travelling meets more ships, and
+    now sinkings pay; a cove holds two or three wrecks, more in all than a Minor ship spills; a fire burns a flat 21
+    hull whatever the ships' levels.
+  - A ship reaches level 29 at most with Legendary and Atheric modules, as a player does without Breach armour; level
+    30 at sea waits on Breach modules ([[Breaches Drop the Best, at Sea Too, for a Fleet of Eight]]).
+  - The Bulwark carries a shield but, as a brute, never raises it; whether it blocks from the front.
+  - An Elite Marksman's aimed shots fell a level-matched player in two; whether Majors' and higher's accuracy meets the
+    owner's "insane accuracy" without that.
+  - Conduit (Deepwatch) brings a Tenet back about every 27 s against 105; the Arts' supers deal as a few seconds of a
+    sword's blows on one foe, more across a group.
+  - Faction gear has no weekly limit, as Destiny 1's 100 Marks a week gave it; the rank, the Aurem and each piece's
+    Essence gate it.

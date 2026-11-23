@@ -61,7 +61,7 @@ Players and foes fight by the same rules, which the [[Server]] decides and each 
 | Axe (two hands) | 2.0 | 22 | 1.44 | 20 | 20 / 50 |
 | Warhammer (two hands) | 2.0 | 24 | 1.73 | 22 | 20 / 50 |
 | Staff (two hands) | 2.2 | 13 | 1.15 | 14 | 18 / 46 |
-| Greatsword (two hands) | 2.3 | 24 | 1.50 | 21 | 20 / 50 |
+| Greatsword (two hands) | 2.3 | 21 | 1.38 | 21 | 20 / 50 |
 
 A player's weapon reaches a tenth further than the table's reach; a foe's reaches as far as it says. Bare fists reach
 1.0 m for everyone ([[A Player's Melee Weapon Reaches a Tenth Further]]).
@@ -194,8 +194,10 @@ A bow, a crossbow or a gun raises no guard: the guard's button fires it ([[Range
   crosshair, an arrow laid for its fall; with no mark, along the look, and with one inside the fighter's own
   round across the ground (looking straight down at its feet), down onto it along the look's bearing. An aimed shot
   strikes half again as hard as a quick one: a crossbow's or a gun's at once, a bow's by its draw, from a quick shot's
-  power at none to half again at a full second; a foe's drawn shot strikes as a quick one, times its might. Letting
-  the aim go lowers the weapon unfired.
+  power at none to half again at a full second; a foe's drawn shot strikes the weapon's whole damage, never half
+  again, times its might. A player's bow strikes two thirds of the bow's damage, quick or aimed (`PLAYER_BOW`): its
+  quick shots come every 0.6 s and would otherwise outstrike every blade. Letting the aim go lowers the weapon
+  unfired.
 - **In flight.** An arrow flies at 45 m/s and a bolt at 55, each falling 6 m/s² as it flies, until a block, the
   ground the room stands bodies on (a node's land, its hills included), a dungeon's wall where it first enters one,
   or a body stops it; a pistolet's or
@@ -216,7 +218,7 @@ A bow, a crossbow or a gun raises no guard: the guard's button fires it ([[Range
 
 | Weapon | Quick shot | Aimed in full |
 |---|---|---|
-| Bow | 18 | 27, after a second's draw |
+| Bow (a foe's arrow 18) | 12 | 18, after a second's draw |
 | Crossbow | 26 | 39 |
 | Pistolet | 30 | 45 |
 | Double pistolet, each shot | 25.5 | 38.25 |
@@ -254,8 +256,8 @@ gives every one through one door, `Room::give`, for the status's own time unless
   the weapons' verbs and the Atherics' perks ([[Gear]], "Verbs" and "Atherics").
 - **The weapons' perks** give them through it too, as a player's blow lands on a foe or the foe falls ([[Gear]],
   "Verbs"): Expose from Exposing Strikes and Marked Shot, Charge from Thunderclap and Shocking Rounds, Crit from Keen
-  Eye; Exploit marks a swing on an Exposed foe a crit. Each is the perk of the loadout the blow came from, never of a
-  spell. None is in the trim: a browser sees them only as the room sends its player's statuses.
+  Eye; Exploit makes a swing on an Exposed foe strike 25% harder. Each is the perk of the loadout the blow came from,
+  never of a spell. None is in the trim: a browser sees them only as the room sends its player's statuses.
 - **On the wire.** A player's statuses travel in their fighter's numbers, after its action's: their browser predicts
   its own from them, and another browser reads a player's veil there. A foe's Expose, its Charge and the immunity after
   it cross with the foe ([[Server]]). Foes' plates and the player's vitals show them ([[Interface]]), and the

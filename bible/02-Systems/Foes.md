@@ -83,7 +83,10 @@ strikes ([[Public Events]]).
 | Swordsman | 70 | 35 | medium | 1.0 | 16 | 15% / 35% / 10% | sweep, lunge |
 | Brute | 130 | 70 | heavy | 1.1 | - | - / - / - | slam (iron), sweep |
 | Archer | 50 | 18 | light | 1.0 | 18 | - / - / 25% | aimed shot |
-| Captain | 160 | 60 | heavy | 1.2 | 14 | 25% / 30% / 15% | sweep, lunge, charge, leap |
+| Captain | 160 | 60 | heavy | 1.2 | 14 | 20% / 22% / 13% | sweep, lunge, charge, leap |
+
+  A captain fights only as an Elite, a Miniboss or a Boss, so its shares sit low enough that each of those ranks
+  defends more than the one below, under the ranks' cap of 85% ([[The Balance and Economy Pass as Claude Shapes It]]).
 
   A foe may have a level: its health is its rank's times 1.07 for each, and its blows on a player and theirs on it
   are made with the power of [[Gear]], its rank's might and its phase's on top. A player's blows on it strike half

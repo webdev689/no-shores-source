@@ -17,17 +17,24 @@ const HOUR = 3_600_000;
 const DAY = 24 * HOUR;
 const BOARD_DAY = 20_778;
 
-const bounty = (name: string, words: string, pool: number, target: number, count = 0, held = false, paid = false) =>
-  ({ name, words, pool, target, count, held, paid }) satisfies GearBounty;
+const bounty = (
+  [name, tier]: readonly [string, number],
+  words: string,
+  pool: number,
+  target: number,
+  count = 0,
+  held = false,
+  paid = false,
+) => ({ name, tier, words, pool, target, count, held, paid }) satisfies GearBounty;
 
 /** The day's six: two on land, two at sea, two in dungeons; four taken, one of them done and one turned in. */
 const BOARD: readonly GearBounty[] = [
-  bounty('Tithe Collector', 'Defeat 30 Grey Tithe foes.', 0, 30, 12, true),
-  bounty('Honest Work', 'Gather 6 resource nodes.', 0, 6, 6, true),
-  bounty('Broadside', 'Sink or take 3 ships.', 1, 3),
-  bounty('Sea Wolf', 'Sink or take 6 ships.', 1, 6, 6, true, true),
-  bounty('Into the Dark', 'Clear a dungeon.', 2, 1, 0, true),
-  bounty('Deep Delver', 'Clear 3 dungeons.', 2, 3),
+  bounty(['Tithe Collector', 2], 'Defeat 30 Grey Tithe foes.', 0, 30, 12, true),
+  bounty(['Honest Work', 1], 'Gather 6 resource nodes.', 0, 6, 6, true),
+  bounty(['Broadside', 1], 'Sink or take 3 ships.', 1, 3),
+  bounty(['Sea Wolf', 3], 'Sink or take 6 ships.', 1, 6, 6, true, true),
+  bounty(['Into the Dark', 1], 'Clear a dungeon.', 2, 1, 0, true),
+  bounty(['Deep Delver', 3], 'Clear 3 dungeons.', 2, 3),
 ];
 
 /** A level 12 character two roads done (the house's and the Stormcallers') and walking the Lamplighters' at its fifth

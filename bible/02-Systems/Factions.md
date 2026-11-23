@@ -42,18 +42,20 @@ keeps a counter in Overlook's plaza ([[Cities]]), and a lore book its road gives
   switch costs 2,500 Aurem, the faction already pledged is refused. A pledge begins that house's road ([[Quests]]), on which its Art, its two Tenets and three
   of its fragments are earned. Reputation with every faction is kept across a
   switch. A saved character from before the factions reads pledged to none, and a broken one is made whole.
-- **Reputation.** Each kill's XP and each clear's ([[Gear]], "A clear"), as the room pays it after the seas' share,
-  goes as reputation to the faction pledged, but only while the player wears that faction's cape (`earn_reputation`),
-  and a kill's a quarter more while they hold the Abyss boon ([[Activities]]). A rank is every 10,000 reputation,
-  without end.
+- **Reputation.** Every deed's XP, as the room pays it after the seas' share (a kill, a clear, a chest, a sinking, a
+  bounty, the day's and the week's clears and a road's task; [[Gear]], "XP"), goes as reputation to the faction
+  pledged, but only while the player wears that faction's cape (`earn_reputation`), and a kill's a quarter more while
+  they hold the Abyss boon ([[Activities]]). A rank is every 100,000 reputation, without end, so a player nears rank 2
+  as they reach level 20 (190,000 XP), as Destiny 1's ranks fell
+  ([[The Balance and Economy Pass as Claude Shapes It]]).
 - **What a rank earns.** Rank 1 keeps the faction's emblem and rank 2 its dye, as a level keeps its emblem
   (`earn_due`). From rank 3, every rank leaves a package: collected at the counter, it gives a Vestige at the player's
-  level for a slot of the dice's (Rare, or Legendary one time in four from level 18) and 1,000 Aurem, and is refused
+  level for a slot of the dice's (Rare, or Legendary one time in two from level 18) and 2,500 Aurem, and is refused
   while ten Vestiges are carried.
 - **The faction's wares.** Each faction sells seven named Legendary pieces (`content/gear/items.json`, with its
-  faction's key; `wares` lists them in that file's order, the cape first): its cape, level 1, for 2,500 Aurem, only to a
+  faction's key; `wares` lists them in that file's order, the cape first): its cape, level 1, for 500 Aurem, only to a
   player pledged to it, one kept at a time; a full armour set from rank 2 for 6,000 Aurem a piece; and a Melee and a
-  Ranged weapon from rank 3 for 9,000 (`terms`). Armour and weapons need the rank alone, pledged or not, and are made
+  Ranged weapon from rank 3 for 12,000 (`terms`). Armour and weapons need the rank alone, pledged or not, and are made
   and sold at level 20, refused below it; a weapon rolls its element as it is bought, as every weapon made does. One
   ask buys any of them (`buy_faction_ware`, by its place among the faction's), refused for a slot that
   carries nine. No Vestige, package or Shape offers a faction's piece (`vestige_pool`), and one dismantled gives back as
@@ -66,7 +68,7 @@ keeps a counter in Overlook's plaza ([[Cities]]), and a lore book its road gives
   sword's or a dagger's blade keeps its metal. A faction's cape wears its faction's dye. The dress carries it, so other players see it;
   first person lays it on the gauntlets, boots, bow, staff and shield.
 - **An Art's level.** Each Art keeps a level (1 to 5), XP toward the next and the fragments it owns, one bit each
-  (`WornArts`). Every kill's XP fills the worn Art's bar (`content/arts/arts.json` `levels.xp`: 8,000, 16,000, 32,000
+  (`WornArts`). Every deed's XP fills the worn Art's bar ([[Gear]], "XP"; `content/arts/arts.json` `levels.xp`: 8,000, 16,000, 32,000
   and 64,000) and stops when it is full. At the Art's faction's counter a full bar rises a level for its price
   (`levels.rise`), and the ask names one fragment not owned, which becomes the player's; one who owns all six,
   bought before rising, rises taking none. The bar starts again.

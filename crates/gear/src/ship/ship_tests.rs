@@ -173,7 +173,7 @@ fn salvage_taken_fills_its_stocks_to_their_most_and_carries_its_module() {
 }
 
 #[test]
-fn the_shipwright_sells_modules_at_its_level_and_a_sinking_pays_its_experience() {
+fn the_shipwright_sells_modules_at_its_level_and_a_sinking_pays_the_ship_and_its_player_as_twelve_kills() {
     let mut character = Character::starting();
     character.earn_ship_xp(u32::try_from(power::xp_for_level(9)).expect("fits"));
     let wares = vendor::wares(Vendor::Shipwright, 3, character.ship_level());
@@ -182,11 +182,15 @@ fn the_shipwright_sells_modules_at_its_level_and_a_sinking_pays_its_experience()
     character.materials.aurem = 5_000;
     let social = Here { social: true, day: 3, pledge: 0, rank: 0, week: 0 };
     character.ask(Ask::Vend { vendor: Vendor::Shipwright, ware: 0, day: 3 }, social, &dice(0)).expect("sold");
-    let before = character.ship_xp;
+    let (before, aurem) = (character.ship_xp, character.materials.aurem);
     let earned = character.reward_sinking(Foe::Brute, 2, 10, Difficulty::Normal);
-    assert_eq!(earned, 165, "a Major brute's 110 at level 10");
-    assert_eq!(character.ship_xp - before, 165);
-    assert_eq!(character.xp, 0, "the player earns nothing from its sinking a ship");
+    assert_eq!(earned, 1_980, "twelve of a Major brute's 110 XP, at level 10");
+    assert_eq!(character.ship_xp - before, 1_980);
+    assert_eq!(character.xp, 1_980, "the player earns the same, as twelve kills");
+    assert_eq!(character.materials.aurem - aurem, 144, "and twelve of its 8 Aurem, at level 10");
+    let (ship_xp, xp) = (character.ship_xp, character.xp);
+    assert_eq!(character.reward_sinking(Foe::Brute, 2, 13, Difficulty::Normal), 0, "a level 9 ship, four below");
+    assert_eq!((character.ship_xp, character.xp), (ship_xp, xp), "nothing from a ship it could not harm");
 }
 
 #[test]

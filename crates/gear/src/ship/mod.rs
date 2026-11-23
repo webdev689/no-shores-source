@@ -50,6 +50,12 @@ impl ShipPower {
     }
 }
 
+/// How many land kills of its rank a sinking pays as. A sea fight runs three and a half to four and a half minutes
+/// from 700 m (`measure_fights_by_rank`) and a ship is sighted every four to six, against some 25 s a kill on foot;
+/// with the sea's higher ranks, twelve puts a ship's climb and a player's pay at sea about level with a patrol's in
+/// the middle waters, a little under in the first and over in the last, whose fights are hardest.
+pub const SINKING_KILLS: u32 = 12;
+
 impl Character {
     /// The module fitted in one of the ship's slots.
     #[must_use]
@@ -118,13 +124,19 @@ impl Character {
         }
     }
 
-    /// Pays it for a ship of a rank (1 Minor to 5 Boss) it fought sinking or striking, as a kill pays a player: the
-    /// foe's own XP at its rank and level, more on a harder voyage; what it earned.
+    /// Pays a ship of a rank (1 Minor to 5 Boss) its player fought sinking or striking: `SINKING_KILLS` land kills of
+    /// the foe its rank fights as, at its level and more on a harder voyage, in XP to the ship and its modules and, as
+    /// a kill pays them, in XP and Aurem to the player, their worn Art and their faction; what the ship earned. A ship
+    /// whose guns could do it no harm (four levels or more below it) earns nothing from it, as a player's blows on a
+    /// foe so far above share no kill.
     pub fn reward_sinking(&mut self, foe: Foe, rank: u8, foe_level: u8, difficulty: Difficulty) -> u32 {
-        let worth = crate::rewards::worth(foe, rank).xp * (5 + u32::from(foe_level)) / 10;
-        let xp = u32::try_from(libm::round(f64::from(worth) * difficulty.reward()) as u64).unwrap_or(u32::MAX);
-        self.earn_ship_xp(xp);
-        xp
+        if self.ship_power().harm_dealt(foe_level) <= 0.0 {
+            return 0;
+        }
+        let worth = crate::rewards::worth(foe, rank);
+        let paid = self.pay((worth.xp * SINKING_KILLS, worth.aurem * SINKING_KILLS), foe_level, None, difficulty);
+        self.earn_ship_xp(paid.xp);
+        paid.xp
     }
 
     /// Fits a ship that has never been fitted with the plain modules every ship is built with: level 1 and Normal, as

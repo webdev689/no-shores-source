@@ -57,17 +57,23 @@ fn spot_checks_of_the_ranks_multipliers_and_caps() {
     assert!((minor.might - 0.9).abs() < CLOSE && minor.reaction == 20);
     assert!((minor.parry - 0.075).abs() < CLOSE && (minor.block - 0.175).abs() < CLOSE);
     assert!((minor.dodge - 0.05).abs() < CLOSE && !minor.elite && !minor.feints);
-    // The crew's captain as an Elite: its shares, 0.875 together, scaled down evenly to 0.85; its reaction floored.
+    // The crew's captain as an Elite: its shares, 0.55 together, a quarter more; its reaction floored.
     let elite = numbers(17, Rank::Elite);
     assert!((elite.health - 352.0).abs() < CLOSE && (elite.poise - 96.0).abs() < CLOSE);
     assert!((elite.might - 1.38).abs() < CLOSE && elite.reaction == 13);
-    assert!((elite.parry - 0.25 * 1.25 * 0.85 / 0.875).abs() < CLOSE);
-    assert!((elite.parry + elite.block + elite.dodge - 0.85).abs() < CLOSE && elite.elite && !elite.feints);
-    // The Reeve is a captain of the Grey Tithe, as the crew's captain is; the Boss seven captains, its shares capped.
+    assert!((elite.parry - 0.2 * 1.25).abs() < CLOSE);
+    assert!((elite.parry + elite.block + elite.dodge - 0.55 * 1.25).abs() < CLOSE && elite.elite && !elite.feints);
+    // The Reeve is a captain of the Grey Tithe, as the crew's captain is; the Boss seven captains.
     assert_eq!(numbers(6, Rank::Elite), foes::roles::Numbers { right: "mace_iron", left: "shield_kite_iron", ..elite });
     let boss = numbers(12, Rank::Boss);
     assert!((boss.health - 1120.0).abs() < CLOSE && boss.reaction == 13 && boss.feints && boss.phases == 3);
-    assert!((boss.parry + boss.block + boss.dodge - 0.85).abs() < CLOSE);
+    // Each of a captain's ranks defends more than the one below, every one under the cap.
+    let defends = |rank: Rank| {
+        let found = numbers(17, rank);
+        found.parry + found.block + found.dodge
+    };
+    let (miniboss, boss_defends) = (defends(Rank::Miniboss), boss.parry + boss.block + boss.dodge);
+    assert!(defends(Rank::Elite) < miniboss && miniboss < boss_defends && boss_defends < 0.85, "{boss_defends}");
     assert_eq!(numbers(17, Rank::Miniboss).phases, 2);
     // A brute never defends at any rank.
     let bosun = numbers(10, Rank::Elite);

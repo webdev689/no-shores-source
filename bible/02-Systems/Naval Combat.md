@@ -158,7 +158,8 @@ sea's soundscape ([[Ambience]]).
   men left. Any ship, the player's Sloop too, goes down over 20 s at none (`Sinking`, then gone), listing and trimming
   by its seed (a player's by none) and settling slowly, then fast; going down, its guns are silent and its helm takes
   no orders. The rest of the volley that made a captain strike cannot sink their ship. A player's Sloop never strikes. Fires
-  (three at most) burn hull, canvas and men for 15 s. Bare poles leave 35% of a ship's way. Braced, a ship takes half the harm
+  (three at most) burn hull, canvas and men for 15 s; a ball that does its target no harm, its ship four levels or
+  more below, sets none. Bare poles leave 35% of a ship's way. Braced, a ship takes half the harm
   to hull and canvas, but its guns are silent and do not load. Unhurt for 15 s, with no hostile ship within 700 m that
   would take it (a friendly captain never would), its hands mend it to half of its hull and of the canvas its standing sails hold.
 - **Its rig** (`rigging.rs`). Each sail's share of a ship's canvas is the pull it gives at its crest over the ship's whole canvas's

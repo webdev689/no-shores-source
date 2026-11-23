@@ -9,7 +9,7 @@ mod common;
 use combat::arms::{Arms, OffHand, Ranged, WeaponClass};
 use combat::fighter::{Action, Side};
 use combat::floats::{FIGHTER_FLOATS, INTENT_FLOATS};
-use combat::shots::{AIMED_POWER, DRAW_FULL, Flight, fly, loose};
+use combat::shots::{AIMED_POWER, DRAW_FULL, Flight, PLAYER_BOW, fly, loose};
 use combat::{CombatInput, Fighter, Happening, Intent, Stroke, player_tick};
 use common::{asking, foe_at, guarding, idle, player_at, run};
 use core::f64::consts::PI;
@@ -49,7 +49,7 @@ fn a_bow_not_aimed_fires_a_quick_shot_at_once_and_again_as_it_reloads() {
     let (fired, happenings) = run(archer(), asking(0.0, TRIGGER), 1, None);
     let (tick, arrow) = only_shot(&happenings);
     assert_eq!(tick, 0, "no charging");
-    assert!((arrow.damage - 18.0).abs() < 1e-9 && arrow.velocity[1] < -44.0, "a quick shot's power, north");
+    assert!((arrow.damage - 12.0).abs() < 1e-9 && arrow.velocity[1] < -44.0, "two thirds of the bow's 18, north");
     assert!(matches!(fired.action, Action::Reload { .. }));
     let (_, held) = run(archer(), asking(0.0, TRIGGER), 40, None);
     assert_eq!(held.len(), 2, "holding the trigger shoots again once reloaded");
@@ -61,10 +61,11 @@ fn an_aimed_bow_charges_to_half_again_over_a_second_and_fires_on_a_pull() {
     assert!(none.is_empty(), "aiming alone fires nothing");
     assert!(matches!(drawn.action, Action::Draw { elapsed } if elapsed == DRAW_FULL));
     let (_, happenings) = run(drawn, asking(0.0, CombatInput { shoot: true, ..AIMING }), 1, None);
-    assert!((only_shot(&happenings).1.damage - 18.0 * AIMED_POWER).abs() < 1e-9);
+    assert!((only_shot(&happenings).1.damage - 12.0 * AIMED_POWER).abs() < 1e-9, "half again a quick shot's 12");
     let (half, _) = run(archer(), asking(0.0, AIMING), DRAW_FULL / 2 + 1, None);
     let (_, happenings) = run(half, asking(0.0, CombatInput { shoot: true, ..AIMING }), 1, None);
-    assert!((only_shot(&happenings).1.damage - 18.0 * (1.0 + (AIMED_POWER - 1.0) / 2.0)).abs() < 1e-9);
+    let halfway = 18.0 * PLAYER_BOW * (1.0 + (AIMED_POWER - 1.0) / 2.0);
+    assert!((only_shot(&happenings).1.damage - halfway).abs() < 1e-9, "from a quick shot's to half again");
 }
 
 #[test]
@@ -74,7 +75,7 @@ fn a_foe_archers_drawn_arrow_strikes_as_a_quick_shot() {
     let (drawn, _) = run(foe, asking(0.0, AIMING), 61, None);
     assert!(matches!(drawn.action, Action::Draw { elapsed } if elapsed == DRAW_FULL), "{:?}", drawn.action);
     let (_, happenings) = run(drawn, asking(0.0, CombatInput { shoot: true, ..AIMING }), 1, None);
-    assert!((only_shot(&happenings).1.damage - 18.0).abs() < 1e-9, "a quick shot's 18, never half again");
+    assert!((only_shot(&happenings).1.damage - 18.0).abs() < 1e-9, "the bow's 18, never half again");
     let mighty = Fighter { might: 1.5, ..drawn };
     let (_, happenings) = run(mighty, asking(0.0, CombatInput { shoot: true, ..AIMING }), 1, None);
     assert!((only_shot(&happenings).1.damage - 27.0).abs() < 1e-9, "times its might, as its blows are");
@@ -373,7 +374,8 @@ fn a_trimmed_bow_draws_sooner_strikes_harder_aimed_and_reloads_faster() {
     };
     let (half, _) = run(trimmed, asking(0.0, AIMING), DRAW_FULL / 2 + 1, None);
     let (fired, happenings) = run(half, asking(0.0, CombatInput { shoot: true, ..AIMING }), 1, None);
-    assert!((only_shot(&happenings).1.damage - 18.0 * AIMED_POWER * 1.1).abs() < 1e-9, "Updraft and Steady Draw");
+    let drawn = 18.0 * PLAYER_BOW * AIMED_POWER * 1.1;
+    assert!((only_shot(&happenings).1.damage - drawn).abs() < 1e-9, "Updraft and Steady Draw");
     let (_, plain) = run(archer(), asking(0.0, TRIGGER), 1, None);
     let (plain_fired, _) = run(archer(), asking(0.0, TRIGGER), 1, None);
     let (Action::Reload { left: quick }, Action::Reload { left: slow }) = (fired.action, plain_fired.action) else {

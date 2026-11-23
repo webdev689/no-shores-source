@@ -175,7 +175,9 @@ function playInPage(minute: number, heroic: boolean): readonly number[] {
 test("a dev page's bots play its own room's events through, the heroic task taken or left alone", () => {
   assert.deepEqual(playInPage(FISSURE_MINUTE, true), [1, 2, 2], 'the Fissure won, heroic');
   assert.deepEqual(playInPage(FISSURE_MINUTE, false), [1, 2, 3], 'the Fissure won, its heroic task missed');
-  assert.deepEqual(playInPage(RAID_MINUTE, true), [2, 3, 2], 'the raid failed, its heroic task met');
+  // Its third and fourth waves are led by Reeves, captains, who defend less at Elite and Miniboss than they did when
+  // every captain's rank stood at the cap, so the pair holds the heroic raid too.
+  assert.deepEqual(playInPage(RAID_MINUTE, true), [2, 2, 2], 'the raid held, its heroic task met');
   assert.deepEqual(playInPage(RAID_MINUTE, false), [2, 2, 3], 'the raid held, its heroic task missed');
 });
 

@@ -143,12 +143,12 @@ fn dismantling_gives_back_fragments_essence_and_a_third_of_what_was_spent() {
     for column in [1, 3, 5] {
         item.bought |= item.node_bit(column, 0).expect("an upgrade");
     }
-    assert_eq!(item.essence_spent(), 18);
+    assert_eq!(item.essence_spent(), 24, "an Atheric's last three upgrades ask eight each");
     assert_eq!(character.ask(Ask::Dismantle { item: atheric }, AFIELD, &DICE), Ok(Done::Done));
     assert_eq!(
         character.materials.armor_essence,
-        3 + 6,
-        "three, never less than a Legendary's, and a third of the 18 spent"
+        3 + 8,
+        "three, never less than a Legendary's, and a third of the 24 spent"
     );
     assert_eq!(character.materials.armor_fragments, 5);
 }

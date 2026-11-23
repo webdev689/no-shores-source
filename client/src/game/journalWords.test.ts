@@ -15,6 +15,7 @@ const bounty = (words: string, target: number, count = 0, held = false, paid = f
   paid,
   pool,
   name: 'Sample',
+  tier: 1,
 });
 const BOARD = [
   bounty('Defeat 30 Grey Tithe foes.', 30),

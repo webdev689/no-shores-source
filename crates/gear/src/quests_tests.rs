@@ -7,6 +7,7 @@ use crate::asks::{Ask, Here, Refusal};
 use crate::character::Character;
 use crate::dice::Dice;
 use crate::quests::{Event, Goal, GoalDef, GoalKind, Kill, Place, keeper_key, quests};
+use crate::rewards::Clear;
 
 const AT_COUNTER: Here = Here { social: true, day: 0, pledge: 0, rank: 0, week: 0 };
 const AFIELD: Here = Here { social: false, day: 0, pledge: 0, rank: 0, week: 0 };
@@ -318,13 +319,17 @@ fn a_fragment_the_art_has_none_left_to_give_is_its_counters_price_in_aurem() {
     let mut character = Character::starting();
     assert!(character.ask(Ask::Pledge { faction: 1 }, AT_COUNTER, &DICE).is_ok());
     character.arts.owned = Some(vec![0b01_1111, 0, 0]);
-    let mut given = 0;
+    let (mut given, mut missions) = (0, 0);
     while let Some((quest, task)) = character.quest_now() {
-        given += quests().quests[quest].tasks[task].reward.fragments;
+        let task = &quests().quests[quest].tasks[task];
+        given += task.reward.fragments;
+        if !task.goals.iter().all(|goal| matches!(goal.goal.kind(), GoalKind::Talk | GoalKind::Pledge)) {
+            missions += crate::rewards::at_level(Clear::Mission.worth().1, character.level());
+        }
         meet_task(&mut character, &places);
     }
     assert!(given >= 2, "the road gives two fragments or more");
-    let paid = u32::from(given - 1) * price;
+    let paid = u32::from(given - 1) * price + missions;
     assert_eq!((character.fragment_choices(1), character.materials.aurem), (1, paid), "one left to own: a choice");
 }
 

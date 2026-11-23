@@ -63,14 +63,14 @@ fn packages_at(level: u8, count: u64) -> Vec<Rarity> {
 }
 
 #[test]
-fn a_package_is_rare_below_level_18_and_legendary_one_time_in_four_from_it() {
+fn a_package_is_rare_below_level_18_and_legendary_one_time_in_two_from_it() {
     let numbers = factions();
     let below = packages_at(numbers.package_legendary_from_level - 1, 400);
     assert!(below.iter().all(|rarity| *rarity == Rarity::Rare), "only Rare below its level");
     let from = packages_at(numbers.package_legendary_from_level, 400);
     assert!(from.iter().all(|rarity| matches!(rarity, Rarity::Rare | Rarity::Legendary)));
     let legendary = from.iter().filter(|rarity| **rarity == Rarity::Legendary).count();
-    assert!((70..130).contains(&legendary), "{legendary} Legendary in 400, about one in four");
+    assert!((160..240).contains(&legendary), "{legendary} Legendary in 400, about one in two");
 }
 
 #[test]

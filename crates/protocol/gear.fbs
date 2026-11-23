@@ -94,6 +94,8 @@ table GearBounty {
   pool: ubyte;
   // Its short name, as its card heads it.
   name: string;
+  // Its tier, 1 to 3: it pays the gear's bounty pay (its first tier's), half again or twice that, rounded down.
+  tier: ubyte;
 }
 
 // A player's own gear, sent to them alone whenever it changes: their XP, level, Prestige and Defense; their Aurem,
@@ -226,7 +228,7 @@ table Gear {
   week_abyss: bool;
   boon: bool;
   // The day's six bounties on the board, in its order, as they stand for them (none held from another day); and what
-  // each pays them when turned in, at their level.
+  // a first tier's pays them when turned in, at their level (each bounty's tier raises it).
   bounties: [GearBounty];
   bounty_xp: uint;
   bounty_aurem: uint;

@@ -449,7 +449,7 @@ fn standing() -> (Room, PlayerId, u64) {
     let kept = room.kept_character(player).expect("a player of the room");
     let mut character = gear::Character::from_json(&kept).expect("a character");
     character.allegiance.pledge = 2;
-    character.allegiance.reputation = vec![5, 35_000, 0];
+    character.allegiance.reputation = vec![5, 350_000, 0];
     character.arts.levels = vec![3, 1, 5];
     character.arts.xp = vec![700, 0, 0];
     character.arts.owned = Some(vec![0b101, 0, 0b11_1111]);
@@ -471,7 +471,7 @@ fn where_a_player_stands_with_factions_arts_cosmetics_and_shape_crosses_whole() 
     let bytes = gear_bytes(&room, player).expect("a player of the room");
     let gear = flatbuffers::root::<messages::FromRoom>(&bytes).expect("a message").gear().expect("the gear");
     assert_eq!(gear.pledge(), 2);
-    assert_eq!(gear.reputation().map(|each| each.iter().collect::<Vec<_>>()), Some(vec![5, 35_000, 0]));
+    assert_eq!(gear.reputation().map(|each| each.iter().collect::<Vec<_>>()), Some(vec![5, 350_000, 0]));
     assert_eq!(gear.packages().map(|each| each.iter().collect::<Vec<_>>()), Some(vec![0, 1, 0]), "rank 3");
     assert_eq!(gear.art_levels().map(|each| each.iter().collect::<Vec<_>>()), Some(vec![3, 1, 5]));
     assert_eq!(gear.art_xp().map(|each| each.iter().collect::<Vec<_>>()), Some(vec![700, 0, 0]));
@@ -489,7 +489,9 @@ fn where_a_player_stands_with_factions_arts_cosmetics_and_shape_crosses_whole() 
     assert_eq!(usize::from(gear.shape_place()), gear::shape::place(week));
     let wares: Vec<_> = gear.shape_wares().expect("his wares").iter().collect();
     assert_eq!(wares.len(), gear::shape::WARES);
-    assert_eq!((wares[0].price(), wares[5].price()), (7, 15), "Legendary, then Atheric, in Shapes");
+    let atheric = u32::from(gear::shape::price(&gear::shape::wares(week)[5]));
+    assert!(atheric == 13 || atheric == 23, "an Atheric's armour or weapon: {atheric}");
+    assert_eq!((wares[0].price(), wares[5].price()), (7, atheric), "Legendary, then Atheric, in Shapes");
     let sold: Vec<_> = gear.faction_wares().expect("the factions' wares").iter().collect();
     let each: usize =
         gear::factions::factions().factions.iter().map(|faction| gear::factions::wares(faction.id).len()).sum();
@@ -582,6 +584,17 @@ fn a_players_gear_carries_its_day_and_board_and_no_bounty_held_from_another_day(
             .collect();
         (gear.day(), rows, gear.bounty_xp(), gear.bounty_aurem())
     };
+    let bytes = gear_bytes(&room, player).expect("a player of the room");
+    let tiers: Vec<u8> = messages::root_as_from_room(&bytes)
+        .expect("read")
+        .gear()
+        .expect("gear")
+        .bounties()
+        .expect("the board")
+        .iter()
+        .map(|bounty| bounty.tier())
+        .collect();
+    assert_eq!(tiers, gear::bounties::board(20_778).map(|bounty| bounty.tier).to_vec(), "each bounty's tier crosses");
     let (day, rows, xp, aurem) = read(&room);
     assert_eq!((day, rows.len()), (20_778, 6));
     assert_eq!(rows[2], ("Sink or take 3 ships.".to_owned(), 3, 0, true, false));

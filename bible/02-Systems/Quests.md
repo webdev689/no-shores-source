@@ -83,7 +83,10 @@ group holds its
 place, fights there and walks back to its post as a garrison's group does.
 
 A reward gives the Art (`art`, its Anima with it, worn at once), a Tenet (`tenet`: 1 or 2, in the Art's order), or
-fragments to choose (`fragments`: how many choices). Which Art is the quest's house's.
+fragments to choose (`fragments`: how many choices). Which Art is the quest's house's. Beside it, every task that sends
+the player out (any goal but `talk` and `pledge`) pays a mission's clear at their level, 400 XP and 30 Aurem at level
+5 raised as a kill is, as Destiny 1 paid each mission done ([[Gear]], "A clear";
+[[The Balance and Economy Pass as Claude Shapes It]]).
 
 ## In the rules
 

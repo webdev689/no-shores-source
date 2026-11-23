@@ -281,7 +281,8 @@ impl Fight {
         };
         let roll = self.draws.draw();
         let mut hurt = shot_harm(&gun, zone, braced, roll, tough / men);
-        let burns = zone == Zone::Hull || (zone == Zone::Rig && rig_fire(shot));
+        // A ball whose shooter can do its target no harm (four levels or more below it) sets no fire either.
+        let burns = (zone == Zone::Hull || (zone == Zone::Rig && rig_fire(shot))) && gun.hull > 0.0;
         // A ball of a side of many guns takes its share of a Sloop's ball's harm and of its chance to set it alight.
         hurt.fire = burns && self.draws.draw() < fire_chance(shot) * gun.share;
         let hurt = vessel.damage.shared(hurt, gun.share);

@@ -84,7 +84,7 @@ pub(crate) fn standing_of<'built>(
             .enumerate()
             .map(|(place, mut ware)| {
                 ware.id = u32::try_from(place).unwrap_or_default();
-                let price = u32::from(gear::shape::price(ware.rarity));
+                let price = u32::from(gear::shape::price(&ware));
                 crate::gear_wire::item_offset(builder, &ware, At::Carried, price)
             })
             .collect()
