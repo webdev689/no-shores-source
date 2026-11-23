@@ -53,12 +53,15 @@ export const lightOf = (rgb: ArrayLike<number>): number =>
   Math.round(0.299 * (rgb[0] ?? 0) + 0.587 * (rgb[1] ?? 0) + 0.114 * (rgb[2] ?? 0));
 
 /** Each strip's span of light, kept, of all it draws and of its trim alone: a published strip never changes. */
-const SPANS = [false, true].map(() => new WeakMap<Strip, readonly [number, number] | null>());
+const SPANS = {
+  all: new WeakMap<Strip, readonly [number, number] | null>(),
+  trim: new WeakMap<Strip, readonly [number, number] | null>(),
+};
 
 /** A strip's span of light: its darkest and brightest drawn texels (its marked trim's, with `trim`), leaving out the
  *  fiftieth at each end; none for a strip with nothing drawn. */
 function spanOf(strip: Strip, trim = false): readonly [number, number] | null {
-  const spans = SPANS[trim ? 1 : 0] as WeakMap<Strip, readonly [number, number] | null>;
+  const spans = trim ? SPANS.trim : SPANS.all;
   const kept = spans.get(strip);
   if (kept !== undefined) return kept;
   const counts = new Uint32Array(256);

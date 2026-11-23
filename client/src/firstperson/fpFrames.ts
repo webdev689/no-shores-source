@@ -429,8 +429,8 @@ async function bowPicture(
 
 /**
  * The picture `wielded` shows at `record` and `frame`, dyed and placed, or null where the forge drew none. `left`
- * asks for the left hand's twin where the forge lit one; the caller draws it mirrored either way. A flail's sway is
- * its record 7.
+ * asks for the left hand's twin where the forge lit one; the caller draws it mirrored either way. `leftHand` says
+ * the left hand holds it, whose faction's colour a blade's trim takes, mirrored or not. A flail's sway is its record 7.
  */
 export async function weaponPicture(
   source: FrameSource,
@@ -439,6 +439,7 @@ export async function weaponPicture(
   record: number,
   frame: number,
   left: boolean,
+  leftHand = left,
 ): Promise<Picture | null> {
   const archive = ARCHIVE_OF[wielded.kind];
   const shown = [record, frame] as const;
@@ -452,14 +453,16 @@ export async function weaponPicture(
   // A faction's staff is covered whole by its colour, as the figure's is; a blade, a head or a haft keeps its metal.
   const own = wielded.kind === 'staff' ? source.own?.right : null;
   const ramp = own ?? metalRamp(source.dyes, wielded.metal);
-  if (wielded.kind === 'dagger' || wielded.kind === 'sword') {
-    const laid = await layered(source, archive, shown, wielded, worn.hands, left);
+  const blade = wielded.kind === 'dagger' || wielded.kind === 'sword';
+  if (blade) {
+    const laid = await layered(source, archive, shown, wielded, worn.hands, left, leftHand);
     if (laid) return laid;
   }
   const staff = wielded.metal ? `staff_${wielded.metal.toLowerCase()}` : 'staff';
   const covers = own ? await pieceCover(source, staff) : null;
-  // A faction's blade, head or haft keeps its metal, its faction's colour on its marked hilt, guard and trim.
-  const trim = own ? null : await trimOf(source, wielded, left);
+  // A faction's blade keeps its metal, its faction's colour on its marked hilt, guard and trim: the forge marks the
+  // first person's sword and dagger alone.
+  const trim = blade ? await trimOf(source, wielded, leftHand) : null;
   const paint = (strip: Strip) => source.painter.paint(strip, ramp, covers, trim);
   return whole(source, archive, shown, wielded.metal, paint, left);
 }

@@ -346,21 +346,37 @@ test("a faction's blade in hand keeps its metal and wears its colour on its mark
 });
 
 test("a faction's blade in hand is laid across its trim's light in its first frame, as one shade in every swing", async () => {
-  const at = (record: number, layer: 'hand' | 'weapon', look: string | null, depth = false) =>
+  const pathOf = (record: number, layer: 'hand' | 'weapon', look: string | null, depth = false) =>
     layerPath('WEAPON04', record, 0, layer, look, depth);
   const flat = strip([[0, 5, 0]]);
   // Its first frame's trim from a dark grip (30) to a guard at 150; a swing's guard lit brighter, past it.
   const first = { width: 2, height: 1, data: Uint8Array.of(150, 150, 150, 254, 30, 30, 30, 254) };
   const swing = { width: 1, height: 1, data: Uint8Array.of(171, 171, 171, 254) };
   const strips = {
-    [at(0, 'weapon', 'Iron')]: first,
-    [at(1, 'hand', 'Daedric')]: strip([null]),
-    [at(1, 'hand', 'Daedric', true)]: strip([null]),
-    [at(1, 'weapon', 'Iron')]: swing,
-    [at(1, 'weapon', 'Iron', true)]: flat,
+    [pathOf(0, 'weapon', 'Iron')]: first,
+    [pathOf(1, 'hand', 'Daedric')]: strip([null]),
+    [pathOf(1, 'hand', 'Daedric', true)]: strip([null]),
+    [pathOf(1, 'weapon', 'Iron')]: swing,
+    [pathOf(1, 'weapon', 'Iron', true)]: flat,
   };
-  const source = { ...sourceOf(strips, [at(1, 'hand', 'Daedric'), at(1, 'weapon', 'Iron')]) };
+  const source = { ...sourceOf(strips, [pathOf(1, 'hand', 'Daedric'), pathOf(1, 'weapon', 'Iron')]) };
   const own = { ...source, own: { right: dyes.armour.Ebony ?? null } };
   const picture = await weaponPicture(own, wield('sword_iron'), { hands: 'Daedric', feet: null }, 1, 0, false);
   assert.deepEqual(pixelAt(picture?.pixels ?? new Uint8Array(4), 0), [...(dyes.armour.Ebony?.[15] ?? []), 255]);
+});
+
+test("a lone left hand's faction blade keeps its colour on a swing drawn unmirrored, from the right's frames", async () => {
+  const pathOf = (layer: 'hand' | 'weapon', look: string | null, depth = false) =>
+    layerPath('WEAPON04', 0, 0, layer, look, depth);
+  const strips = {
+    [pathOf('hand', 'Daedric')]: strip([null]),
+    [pathOf('hand', 'Daedric', true)]: strip([null]),
+    [pathOf('weapon', 'Iron')]: { width: 1, height: 1, data: Uint8Array.of(212, 170, 70, 254) },
+    [pathOf('weapon', 'Iron', true)]: strip([[0, 5, 0]]),
+  };
+  const source = sourceOf(strips, [pathOf('hand', 'Daedric'), pathOf('weapon', 'Iron')]);
+  const own = { ...source, own: { left: dyes.armour.Ebony ?? null } };
+  const hands = { hands: 'Daedric', feet: null };
+  const picture = await weaponPicture(own, wield('sword_iron'), hands, 0, 0, false, true);
+  assert.deepEqual(pixelAt(picture?.pixels ?? new Uint8Array(4), 0), [...(dyes.armour.Ebony?.[10] ?? []), 255]);
 });

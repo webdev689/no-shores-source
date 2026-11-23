@@ -1125,8 +1125,6 @@ def render(layer, anim, frame, view, per, tmp, names):
         work = dyeable(work, ids, names, dyed, banded=not RAW['cloth'])
         if own:   # and its lone glints taken out as the dyed metal's are
             work = despeck(work, ids, names, own)
-    if trim.any():   # where a faction's colour lies on a faction's weapon
-        work = stage.mark_trim(work, trim)
     on = work[..., 3] > 0
     if not on.any():
         return None
@@ -1141,6 +1139,9 @@ def render(layer, anim, frame, view, per, tmp, names):
         # the horse's strands lie along its cards, unrastered: each takes the depth of the card nearest it, however far
         near = hole & (dist <= (np.inf if layer.name in riding.LAYERS else 3))
         zs, part = np.where(near, zs[iy, ix], zs), np.where(near, part[iy, ix], part)
+        trim = np.where(near, trim[iy, ix], trim)   # and its trim, so a guard's rim is marked as the guard
+    if trim.any():   # where a faction's colour lies on a faction's weapon
+        work = stage.mark_trim(work, trim)
     part = np.where(on & np.isinf(zs), fit.WEAPON_PIECE, part)
     if layer.dye == 'hair':   # a part of its own: no order weighs between it and the head or the armour it lies on
         part = np.where(on, fit.HAIR_PIECE, part)

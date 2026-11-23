@@ -41,7 +41,7 @@ DEPTH = 10000.0   # depth's units a metre: tenths of a millimetre, sixteen bits 
 TRIM_MATS = ('sword_fit', 'sword_grip', 'hilt', 'pommel', 'dagger_grip', 'dagger_fit', 'dagger_accent')
 
 
-def is_trim(name):
+def is_part_trim(name):
     """Whether the part's material `name` is the held weapon's hilt, guard or trim (`TRIM_MATS`)."""
     return name in TRIM_MATS or (name.startswith('sword:') and 'glow' not in name)
 
@@ -156,7 +156,7 @@ def layers(eye, spec, which, records=None, weapon='dagger'):
     own = own_of(weapon)
     only = hand if which == 'hand' else own
     ids = [i for i, n in enumerate(names) if n in only]
-    trim_ids = [i for i in ids if which == 'weapon' and is_trim(names[i])]
+    trim_ids = [i for i in ids if which == 'weapon' and is_part_trim(names[i])]
     out = {}
 
     def of(r):
@@ -188,8 +188,11 @@ def write(spec, screens, out_dir, stem, records=None):
             continue
         rec = spec['records'][r]
         for f, (scr, depth, trim) in enumerate(frames):
-            pic = stage.mark_trim(fpforge.cut(scr, fpforge.out_rect(rec)), fpforge.cut(trim, fpforge.out_rect(rec)))
-            z = depth_picture(pic, fpforge.cut(depth[..., None], fpforge.out_rect(rec))[..., 0])
+            pic = fpforge.cut(scr, fpforge.out_rect(rec))
+            hit = fpforge.cut(depth[..., None], fpforge.out_rect(rec))[..., 0]
+            trim = stage.edged_trim(fpforge.cut(trim, fpforge.out_rect(rec)), hit > 0, pic[..., 3] > 127)
+            pic = stage.mark_trim(pic, trim)
+            z = depth_picture(pic, hit)
             name = f"{spec['archive']}_{r}-{f}_{stem}"
             at = fpforge.marks(spec, rec)
             stage.write_png(os.path.join(out_dir, f'{name}.png'), pic, **at)

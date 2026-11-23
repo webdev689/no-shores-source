@@ -208,7 +208,7 @@ def render(layer, kind, metal, palette, pixels_a_metre, tmp):
     trim, ids = ids < 0, np.abs(ids)   # its hilt, guard and trim, marked as the figure's layer marks them
     work = graded(work, ids, names, layer, kind in DYED)
     if trim.any():
-        work = stage.mark_trim(work, trim)
+        work = stage.mark_trim(work, stage.edged_trim(trim, ids > 0, work[..., 3] > 0))
     for ob in obs:
         bpy.data.objects.remove(ob, do_unlink=True)
     rows, columns = np.nonzero(work[..., 3])
