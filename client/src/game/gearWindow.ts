@@ -208,7 +208,7 @@ export function startGearWindow(
     const later = isTab(shown) ? TAB_PRESSES[shown].later : undefined;
     if (later !== undefined) return laterPage(TAB_PRESSES[shown as Tab].label, later);
     if (shown === 'social') return socialPage(plain, link ? (roster ??= new RosterPage({ link, travel })) : null);
-    if (shown === 'guild') return guildPage(plain, link ? (guild ??= new GuildPage({ link })) : null);
+    if (shown === 'guild') return guildPage(plain, link ? (guild ??= new GuildPage({ link, here })) : null);
     return settingsPage(plain, link ? (accountPanel ??= new AccountPanel(link)) : null);
   };
 

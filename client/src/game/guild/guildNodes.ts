@@ -53,8 +53,8 @@ const DIAMOND_SVG =
 const DIAMOND_PX = [40, 52] as const;
 
 /** A guild's level as its tab heads its week: the diamond with the level in it, riding a rule filled as far as the XP
- *  has brought it toward the next, "GUILD LEVEL" over its far end and the XP under it. */
-export function levelNode(level: number, share: number, xpWords: string, size: number): Node {
+ *  has brought it toward the next, "GUILD LEVEL" and the XP over its far end, and `under` beneath it. */
+export function levelNode(level: number, share: number, xpWords: string, size: number, under: Child = null): Node {
   const filled = Math.round(Math.max(0, Math.min(1, share)) * 100);
   const diamond = DIAMOND_PX[size > 1 ? 1 : 0];
   return {
@@ -63,7 +63,12 @@ export function levelNode(level: number, share: number, xpWords: string, size: n
     gap: 4,
     label: `Guild level ${level}, ${xpWords}`,
     children: [
-      { width: 'grow', alignX: 'end', children: [words('GUILD LEVEL', size, INK.faint, { tracking: 2 })] },
+      {
+        width: 'grow',
+        alignX: 'end',
+        gap: 16,
+        children: [words('GUILD LEVEL', size, INK.faint, { tracking: 2 }), words(xpWords, size, INK.word)],
+      },
       {
         width: 'grow',
         alignY: 'center',
@@ -85,7 +90,7 @@ export function levelNode(level: number, share: number, xpWords: string, size: n
           },
         ],
       },
-      { width: 'grow', alignX: 'end', children: [words(xpWords, size, INK.faint)] },
+      under,
     ],
   };
 }

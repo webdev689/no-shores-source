@@ -89,6 +89,11 @@ test('a room welcomes players, takes the inputs a browser writes in order, and i
   assert.equal(room.name(second, 'not a name'), false);
   assert.equal(room.tag(first, 'SALT'), true);
   assert.equal(room.tag(second, 'not a tag'), false);
+  const told = { id: 'guild-salt', done: [true, false, false, false], beforeTheWeek: true };
+  assert.equal(room.guild(first, JSON.stringify(told)), true, "the guild's word is taken");
+  assert.equal(room.guild(first, ''), true, 'and none, for a player who left it');
+  assert.equal(room.guild(first, '{"id":3}'), false, 'but not a word that is no guild');
+  assert.equal(room.guild(99, ''), false, 'nor for a player not there');
   const busy = inputBytes(32, { intent: walk, look: walking, arms: 0, seen: snapshot.tick, menu: true });
   assert.equal(room.input(first, busy), 'taken');
   room.tick();

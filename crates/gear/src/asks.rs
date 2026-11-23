@@ -257,6 +257,13 @@ pub enum Refusal {
     NoChoice = 137,
     /// No letter of that number waits in the mail, or none at all: answered as 141.
     NoSuchLetter = 140,
+    /// The guild's asks: no such guild bounty this week, one the guild has not finished, one claimed already this
+    /// week, a member who joined since the week turned, and a player in no guild (the room's).
+    NoSuchGuildBounty = 150,
+    GuildBountyNotDone = 151,
+    GuildBountyClaimed = 152,
+    JoinedThisWeek = 153,
+    NotInGuild = 154,
 }
 
 /// What an ask did, when it did more than its ask says.

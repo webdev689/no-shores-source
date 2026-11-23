@@ -4,6 +4,7 @@
 // the player's plate wears the new tag.
 
 import type { AccountLink, GuildFace, Roster } from '../../network/accounts.ts';
+import { ASKS, type GearAsk } from '../../network/gearMessages.ts';
 import { announce } from '../../ui/announce.ts';
 import type { Node } from '../../ui/node.ts';
 import { GUILD_CHANGED } from '../gearScreen.ts';
@@ -14,9 +15,12 @@ import { BannerEditor } from './bannerEditor.ts';
 import { type Banner, bannerFrom, bannerOfName } from './bannerLaw.ts';
 import { detailsNode, FIELDS, foundNode } from './guildDetails.ts';
 import { EDGE, edgeId, homeNode, type Home, type RosterTurn } from './guildHome.ts';
+import { bountiesNode, contributionNode } from './guildWeek.ts';
 
 /** How often the guild is asked for again while it is seen, in milliseconds. */
 const LOOK_MS = 15_000;
+/** How long after a claim the guild is asked for again: once the room has saved the claim. */
+const CLAIM_SAVED_MS = 2_500;
 /** What the tab shows: its home, the banner editor, or the guild's details. */
 type View = 'home' | 'banner' | 'details';
 /** The asks that change which guild a player is in, after which the room reads their tag again. */
@@ -26,6 +30,8 @@ export const AGAIN_ID = 'guild-again';
 /** The page's services, given by the menu. */
 export interface GuildWith {
   readonly link: AccountLink;
+  /** The room the player is in, asked as the menu's presses ask it; none offline. */
+  readonly here?: () => { ask(ask: GearAsk): void } | null;
   readonly now?: () => number;
   /** Whether the page is out of sight (its tab hidden), when the guild is not asked again. */
   readonly hidden?: () => boolean;
@@ -47,11 +53,13 @@ export class GuildPage {
   private founding: Banner | null = null;
   private readonly turn: RosterTurn = { page: 0 };
   private readonly link: AccountLink;
+  private readonly here: () => { ask(ask: GearAsk): void } | null;
   private readonly now: () => number;
   private readonly hidden: () => boolean;
 
   constructor(given: GuildWith) {
     this.link = given.link;
+    this.here = given.here ?? (() => null);
     this.now = given.now ?? Date.now;
     this.hidden = given.hidden ?? (() => false);
     this.look();
@@ -166,17 +174,25 @@ export class GuildPage {
         if (icon === 'banner') this.openEditor(this.bannerOf(face), face.name, face.rank <= 1);
         if (icon === 'details') this.view = 'details';
       }
-    return homeNode(context, this.home(face), this.turn);
+    return homeNode(context, this.home(ui, face, context.sizes.label), this.turn);
+  }
+
+  /** Claims a guild bounty through the room, which pays it; the guild is asked for again once the room has saved. */
+  private claim(slot: number): void {
+    this.here()?.ask({ kind: ASKS.claimGuildBounty, column: slot });
+    setTimeout(() => this.look(), CLAIM_SAVED_MS);
   }
 
   /** What the home page shows of the guild. */
-  private home(face: GuildFace): Home {
+  private home(ui: PlainContext['ui'], face: GuildFace, size: number): Home {
     return {
       face,
       banner: this.bannerOf(face),
       members: this.roster?.guild?.members ?? [],
       now: this.now(),
       said: this.said,
+      week: contributionNode(face, size),
+      bounties: face.bounties ? bountiesNode(ui, face, size, (slot) => this.claim(slot)) : undefined,
       closed: new Set(['outposts', 'treasury']),
     };
   }

@@ -149,6 +149,8 @@ pub struct Harbour {
     pub repairs: Repairs,
     pub flotsam: crate::flotsam::Flotsam,
     pub characters: BTreeMap<PlayerId, gear::Character>,
+    /// Each kept player's guild, as the host told it (`guild_book.rs`).
+    pub guilds: crate::guild_book::Guilds,
     pub told: Vec<(PlayerId, Vec<f64>)>,
     /// In a sea that keeps characters, each player the keeper has not yet answered for, with the last course they
     /// asked meanwhile; none in a sea that keeps none.

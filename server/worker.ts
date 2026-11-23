@@ -230,6 +230,7 @@ export class RoomHost extends DurableObject<Env> {
       shut: (player: number, kept: string | null) => this.guarded(() => this.room.shut(player, kept), ''),
       name: (player: number, name: string) => this.guarded(() => this.room.name(player, name), false),
       tag: (player: number, tag: string) => this.guarded(() => this.room.tag(player, tag), false),
+      guild: (player: number, told: string) => this.guarded(() => this.room.guild(player, told), false),
     };
     const characters = {
       look: (token: string) => accounts.look(token),
@@ -238,6 +239,7 @@ export class RoomHost extends DurableObject<Env> {
       release: (account: string, holder: string, body: string | null) => accounts.release(account, holder, body),
       companions: (account: string, room: string) => accounts.companions(account, room),
       launched: (account: string, room: string) => accounts.launched(account, room),
+      guild: (account: string) => accounts.guild(account),
     };
     // The game's nodes, dungeons, islands and the sea keep characters (at sea, with their ship's hurts): the Test
     // Ground grants gear to try it, and a fleet room is the World Editor's.

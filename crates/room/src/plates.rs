@@ -36,7 +36,8 @@ fn named(name: &str) -> bool {
 /// Whether a tag is one a guild's may be: 2 to `TAG_MOST` capital letters or digits, or none.
 fn tagged(tag: &str) -> bool {
     tag.is_empty()
-        || ((2..=TAG_MOST).contains(&tag.len()) && tag.bytes().all(|byte| byte.is_ascii_uppercase() || byte.is_ascii_digit()))
+        || ((2..=TAG_MOST).contains(&tag.len())
+            && tag.bytes().all(|byte| byte.is_ascii_uppercase() || byte.is_ascii_digit()))
 }
 
 fn plate_of(found: &Player) -> Plate {

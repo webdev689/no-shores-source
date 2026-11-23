@@ -100,6 +100,8 @@ pub const CHOOSE_FRAGMENT: u8 = 65;
 pub const USE_POINT: u8 = 66;
 /// A return to the player's ship asked, which the room answers before the page leaves for the sea.
 pub const TO_SHIP: u8 = 73;
+/// A guild bounty claimed, by its slot among the week's four in `column`.
+pub const CLAIM_GUILD_BOUNTY: u8 = 75;
 /// Shape's place on the gear message while he is away.
 pub const SHAPE_AWAY: u8 = 255;
 
@@ -197,6 +199,7 @@ pub fn asked_of(ask: &messages::Ask<'_>) -> Option<Asked> {
         USE_POINT => Asked::UsePoint { point: column },
         FIND_LORE => Asked::FindLore { chapter: u16::try_from(item).ok()? },
         TO_SHIP => Asked::ToShip,
+        CLAIM_GUILD_BOUNTY => Asked::ClaimGuild { slot: column },
         _ => return None,
     })
 }
@@ -287,6 +290,7 @@ pub fn ask_offset<'built>(builder: &mut FlatBufferBuilder<'built>, asked: &Asked
         Asked::UsePoint { point } => args = messages::AskArgs { kind: USE_POINT, column: *point, ..args },
         Asked::FindLore { chapter } => args = messages::AskArgs { kind: FIND_LORE, item: u32::from(*chapter), ..args },
         Asked::ToShip => args = messages::AskArgs { kind: TO_SHIP, ..args },
+        Asked::ClaimGuild { slot } => args = messages::AskArgs { kind: CLAIM_GUILD_BOUNTY, column: *slot, ..args },
         Asked::Grant(Grant::Vestige { rarity, slot, level }) => {
             args = messages::AskArgs {
                 kind: GRANT_VESTIGE,

@@ -376,6 +376,7 @@ impl Sea {
             sail(sailing, f64::from(sailing.ship.rate) * SHIP_SPEED_M_S * TICK_SECONDS * berth.kept[1].max(0.5));
         }
         self.tick_harbour();
+        self.give_guilds();
         self.tick_islands();
         self.fights.fit(&self.harbour.characters);
         let (outcomes, sank) = self.fights.step(&self.coasts, time);
@@ -541,6 +542,8 @@ pub mod decks;
 #[cfg(test)]
 #[path = "fight_measure_tests.rs"]
 pub(crate) mod fight_measure_tests;
+#[path = "sea_guilds.rs"]
+mod guilds;
 #[path = "sea_islands.rs"]
 pub mod islands;
 #[path = "sea_ports.rs"]

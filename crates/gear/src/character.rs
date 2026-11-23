@@ -217,6 +217,9 @@ pub struct Character {
     /// The lore's chapters found, by their keys (`lore.rs`), in the order found; one the file no longer holds kept.
     #[serde(default)]
     pub lore: Vec<String>,
+    /// Their part in their guild's week (`guild.rs`).
+    #[serde(default)]
+    pub guild: crate::guild::GuildWeek,
     /// The body as it last left a room, given back on a return (`left.rs`); none before it first leaves one.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub left: Option<crate::left::Left>,
@@ -286,6 +289,7 @@ impl Character {
             quests: crate::quests::QuestLog::default().kept(),
             mail: Vec::new(),
             lore: Vec::new(),
+            guild: crate::guild::GuildWeek::default(),
             left: None,
             unknown: UnknownKeys::new(),
         };

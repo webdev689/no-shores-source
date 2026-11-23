@@ -74,6 +74,10 @@ pub enum Asked {
     OpenChest {
         chest: u32,
     },
+    /// Claims a guild bounty one's guild finished this week, by its slot among the week's four (`guild_room.rs`).
+    ClaimGuild {
+        slot: u8,
+    },
 }
 
 /// Gear the Test Ground hands out, to try the loop without playing it through.
@@ -361,6 +365,7 @@ impl Room {
             Asked::FindLore { chapter } => self.find_lore(player, chapter),
             Asked::ToShip => self.to_ship(player),
             Asked::OpenChest { chest } => self.open_chest(player, chest),
+            Asked::ClaimGuild { slot } => self.claim_guild(player, slot),
         };
         if let Some(found) = self.players.get_mut(&player) {
             found.answer = code;

@@ -145,6 +145,11 @@ const REFUSALS: Readonly<Record<number, string>> = {
   137: 'They have nothing more to say to you now.',
   138: 'No fragment of that Art waits to be chosen.',
   141: 'There is no such letter.',
+  151: 'There is no such guild bounty this week.',
+  152: 'Your guild has not finished that bounty yet.',
+  153: 'You have claimed that this week.',
+  154: 'Members who joined before the week turned claim it.',
+  155: 'You are in no guild.',
 };
 
 /** What a room's answer to an ask says: nothing for done. */

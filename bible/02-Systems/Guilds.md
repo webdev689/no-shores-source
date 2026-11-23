@@ -20,6 +20,17 @@ code:
   - content/guilds/banners.json
   - content/guilds/guilds.json
   - crates/room/src/plates.rs#tag_player
+  - crates/gear/src/guild.rs#bounties_of
+  - crates/gear/src/guild.rs#GuildWeek
+  - crates/room/src/guild_book.rs#Guilds
+  - crates/room/src/guild_room.rs#claim_guild
+  - crates/room/src/sea_guilds.rs#guild_sunk
+  - crates/room-wasm/src/guild_door.rs#room_guild
+  - server/accounts/guildWeeks.ts#creditGuild
+  - server/accounts/guildWeeks.ts#guildTold
+  - server/accounts/migrations/20261123205159_guild_weeks.sql
+  - server/keeping.ts#GUILD_EVERY_MS
+  - client/src/game/guild/guildWeek.ts#bountiesNode
 ---
 # Guilds
 
@@ -50,9 +61,31 @@ ranks are the Roster's as well ([[Accounts]], "The Roster").
   `Ada [SALT]`, the tag a shade fainter ([[Interface]], "Players").
 - **Levels.** A guild's level comes from its XP: ten levels, from 15,000 for level 2 to 800,000 for level 10
   (`content/guilds/guilds.json`, `guildLaw.ts`). A level reached is never lost.
+- **The week.** Each week (from Tuesday 09:00 UTC, the game's one clock) draws four guild bounties of twelve, the same
+  for every guild: the rules (`gear::guild::bounties_of`) and the page (`bountiesOf`) shuffle the list by the same
+  32-bit sum, held to the same table by a test on each side. Each asks for felling, gathering, sinking or clearing, as
+  the day's bounties count them ([[Activities]]); some count a feat only with another member of the guild in the same
+  room.
+- **What a member gives.** A character keeps its part in its guild's week (`GuildWeek`: the XP given, its counts
+  toward the four bounties, its claims). A room told the player's guild (`Guilds`, on land and at sea) gives the
+  guild a tenth of the XP they gain, at most 5,000 a week, measured from a mark it keeps: XP of a character given back
+  in place of the starting one, or a jump past any one tick's pay, is measured afresh, never given. A player in no
+  guild gives nothing.
+- **What the guild gets.** As a room saves a member's character, the accounts add what their record gained since it
+  was last counted to the guild: its XP to the guild's and its counts to the guild's week (`guildWeeks.ts`), in one
+  write that a save counted twice adds nothing to. A count reaching its bounty's target marks the bounty done, and
+  the guild gains 2,500 XP for it once. Joining counts the record as it stands, so nothing done before joining goes to
+  the guild.
+- **Claiming.** The keeper tells each room which of the week's bounties a player's guild has done, and whether they
+  joined before the week turned, as it keeps them and every 30 s after, and at once when their guild changes. On the
+  tab a done bounty offers Claim, asked of the room the player is in (ask 75): it pays a guild package, as a faction's
+  (a Vestige at their level, Rare or now and then Legendary, and 1,000 Aurem), once a week each, to a member who was
+  in the guild before the week turned. A guild bounty is claimed ashore.
 - **The Guild tab** (`client/src/game/guild/`), drawn as the owner's picture of Destiny 2's clan screen: the standard
   at the left at whole multiples of its cells; the name and tag, its members, its motto and description; the week
-  with when it turns; the level as a diamond on a rule filled toward the next, with the XP; the guild's details; the
+  with when it turns; the level as a diamond on a rule filled toward the next, with the XP, and the player's weekly
+  contribution under it, its square filled at the week's most; the week's bounties as a checklist with the guild's
+  counts and a Claim on each one done; the
   roster at the right, those playing first, with page arrows; and four presses down the edge: Banner, Details,
   Outposts and Treasury. The page asks the accounts for the guild (`GET /v1/guild`) and the Roster, again every 15 s
   while it is seen. Escape steps back to its home from any of its other pages.
@@ -68,4 +101,4 @@ ranks are the Roster's as well ([[Accounts]], "The Roster").
 ## Limits
 
 - A guild's name and tag are kept as founded; a rename is the owner's, by hand ([[Names]]).
-- The week is drawn and shown; what a guild earns in it comes with the guild bounties.
+- A claim made at sea is not answered: the sea counts and gives, but claims are a land room's.

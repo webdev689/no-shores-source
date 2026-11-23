@@ -1,11 +1,13 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import type { AccountLink, GuildFace, Roster } from '../../network/accounts.ts';
+import type { AccountLink, GuildBountyShown, GuildFace, Roster } from '../../network/accounts.ts';
+import type { GearAsk } from '../../network/gearMessages.ts';
 import { drawn } from '../menuForTests.ts';
 import { SAVE_ID, choiceId, partId } from './bannerEditor.ts';
 import { type Banner, bannerOfName } from './bannerLaw.ts';
 import { FIELDS, FOUND_BANNER_ID, FOUND_ID, joinId, sendId } from './guildDetails.ts';
 import { edgeId } from './guildHome.ts';
+import { claimId } from './guildWeek.ts';
 import { GuildPage, guildPage } from './guildPage.ts';
 
 // What the page dispatches to the page around it: heard and counted, never acted on.
@@ -89,10 +91,11 @@ function fakeLink(guild: GuildFace | null, rostered: Roster = roster()) {
   return { link: link as unknown as AccountLink, asked };
 }
 
-/** The Guild tab drawn through the interface, its first answers heard. */
+/** The Guild tab drawn through the interface, its first answers heard; what it asks of the room kept too. */
 async function tab(guild: GuildFace | null, rostered?: Roster) {
   const { link, asked } = fakeLink(guild, rostered);
-  const page = new GuildPage({ link, now: () => Date.UTC(2026, 10, 21, 9) });
+  const here = { ask: (ask: GearAsk) => void asked.push(`room ${JSON.stringify(ask)}`) };
+  const page = new GuildPage({ link, here: () => here, now: () => Date.UTC(2026, 10, 21, 9) });
   const drawing = drawn((context) => guildPage(context, page));
   await settle();
   drawing.frame();
@@ -105,8 +108,10 @@ test("the Guild tab stands the guild as Destiny 2's clan screen: its name, membe
     assert.ok(shows().includes(part), `shows ${part}`);
   }
   assert.ok(shows().includes('Turns in 3 days'), 'the week turns on Tuesday');
-  assert.ok(shows().includes('GUILD LEVEL | 2 |'), 'the level in its diamond');
-  assert.ok(shows().includes('5,000 / 25,000 XP'), 'the XP brought toward the next level');
+  assert.ok(
+    shows().includes('GUILD LEVEL | 5,000 / 25,000 XP | 2'),
+    'the XP toward the next level, the level in its diamond',
+  );
   assert.ok(shows().includes('GUILD ROSTER | Page 1 / 1 | Ada | Founder · Overlook'), 'those playing first');
 });
 
@@ -179,4 +184,40 @@ test('Escape steps back from the editor or the details to the guild, and no furt
   click(edgeId('details'));
   assert.equal(page.back(), true);
   assert.equal(page.back(), false, 'at home it leaves Escape to the menu');
+});
+
+const bounty = (
+  name: string,
+  count: number,
+  target: number,
+  more: Partial<GuildBountyShown> = {},
+): GuildBountyShown => ({
+  name,
+  words: `${name}'s words.`,
+  target,
+  together: false,
+  count,
+  done: count >= target,
+  claimed: false,
+  ...more,
+});
+
+test("the week shows the player's contribution and the four guild bounties, and a done one is claimed through the room", async () => {
+  const week = {
+    contribution: 1_200,
+    given: 9_000,
+    bounties: [
+      bounty('The Long Cull', 412, 1_500),
+      bounty('Full Stores', 120, 120),
+      bounty('Into the Abyss', 1, 1, { together: true, claimed: true }),
+      bounty('Broadsides', 0, 50),
+    ],
+  };
+  const { shows, click, ui, asked } = await tab(face(week));
+  assert.ok(shows().includes('Weekly Personal Contribution | 1,200 / 5,000'));
+  assert.ok(shows().includes('The Long Cull | 412 / 1,500'));
+  assert.ok(shows().includes('Into the Abyss | Claimed'));
+  assert.equal(ui.boxOf(claimId(0)), null, 'one not done has no claim');
+  click(claimId(1));
+  assert.deepEqual(asked, ['room {"kind":75,"column":1}']);
 });

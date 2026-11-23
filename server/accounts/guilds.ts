@@ -9,6 +9,7 @@ import { bannerFrom, bannerOfName, bannerRefusal } from '../../client/src/game/g
 import type { Db } from './database.ts';
 import { type Answer, done, said } from './friends.ts';
 import { faceAsk, guildPage, type KeptGuild } from './guildFace.ts';
+import { countFromJoining, weekRead } from './guildWeeks.ts';
 import { refusalOf, skeleton } from './names.ts';
 import { accountNamed, blocks } from './people.ts';
 
@@ -63,6 +64,7 @@ async function found(database: Db, own: string, given: Record<string, unknown> |
     return said(409, 'Leave your guild first.');
   }
   await database.prepare('DELETE FROM guild_invites WHERE account_id = ?1').bind(own).run();
+  await countFromJoining(database, own);
   return done;
 }
 
@@ -93,6 +95,7 @@ async function answer(database: Db, own: string, tag: unknown, accept: boolean, 
     .run();
   if (joined.meta.changes !== 1) return said(409, 'That guild is full.');
   await database.prepare('DELETE FROM guild_invites WHERE account_id = ?1').bind(own).run();
+  await countFromJoining(database, own);
   return done;
 }
 
@@ -201,5 +204,5 @@ export async function guildRead(database: Db, own: string, now: number) {
     .prepare('SELECT COUNT(*) AS count FROM guild_members WHERE guild_id = ?1')
     .bind(mine.id)
     .first<{ count: number }>();
-  return { guild: guildPage(mine, counted?.count ?? 1, now) };
+  return { guild: { ...guildPage(mine, counted?.count ?? 1, now), ...(await weekRead(database, mine.id, own, now)) } };
 }

@@ -8,6 +8,7 @@
 
 import { companionsOf, launchedFor } from './companies.ts';
 import { type Db, SESSION_IDLE_MS } from './database.ts';
+import { creditGuild, guildTold } from './guildWeeks.ts';
 import { guildTagOf, present, usernameOf } from './people.ts';
 import { hashOf } from './secrets.ts';
 
@@ -52,6 +53,8 @@ export interface Characters {
   present(token: string, room: string | null, water?: string | null): Promise<boolean>;
   companions(account: string, room: string): Promise<string[]>;
   launched(account: string, room: string): Promise<boolean>;
+  /** What a room is told of a player's guild (`guildWeeks.ts`), null in none. */
+  guild(account: string): ReturnType<typeof guildTold>;
 }
 
 /** The characters on a database, with a clock and a way to wait. */
@@ -77,6 +80,7 @@ export function characters(database: Db, now: () => number, wait: (millis: numbe
     companions: (account, room) => companionsOf(database, account, room, now()),
     /** Whether the server found or launched `room` for the account within FOUND_KEPT_MS (`finding.ts`). */
     launched: (account, room) => launchedFor(database, account, room, now()),
+    guild: (account) => guildTold(database, account, now()),
     /** Notes that a session's player is in a room that keeps no character, at sea in which water, or with none that
      *  they left it; false when the token is no live session. */
     async present(token, room, water = null) {
@@ -117,7 +121,10 @@ export function characters(database: Db, now: () => number, wait: (millis: numbe
         )
         .bind(body, now() + HOLD_MS, now(), account, holder)
         .run();
-      return saved.meta.changes === 1;
+      if (saved.meta.changes !== 1) return false;
+      // What the save added to the member's guild week goes to their guild; a failure there loses no save.
+      await creditGuild(database, account, body).catch((error: unknown) => console.error('guild credit:', error));
+      return true;
     },
     /** Lets a character go, saving it last if the room has it to give; false if another had already taken it. Let go
      *  with nothing (the room turned it away, or never gave it), it was never there: the room before still held it
@@ -137,7 +144,10 @@ export function characters(database: Db, now: () => number, wait: (millis: numbe
                  WHERE account_id = ?1 AND holder = ?2`,
               )
               .bind(account, holder, body, now());
-      return (await statement.run()).meta.changes === 1;
+      if ((await statement.run()).meta.changes !== 1) return false;
+      if (body !== null && body.length <= BODY_MOST)
+        await creditGuild(database, account, body).catch((error: unknown) => console.error('guild credit:', error));
+      return true;
     },
   };
 }

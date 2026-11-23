@@ -65,6 +65,22 @@ export interface GuildFace {
   readonly nextXp: number | null;
   readonly week: number;
   readonly weekEnds: number;
+  /** The XP the guild's members gave it this week, and the player's own part, at most `most` (Destiny's 5,000). */
+  readonly given?: number;
+  readonly contribution?: number;
+  /** The week's four guild bounties, each with the guild's count, whether it is done and whether the player claimed it. */
+  readonly bounties?: readonly GuildBountyShown[];
+}
+
+/** A guild bounty of the week as its tab shows it. */
+export interface GuildBountyShown {
+  readonly name: string;
+  readonly words: string;
+  readonly target: number;
+  readonly together: boolean;
+  readonly count: number;
+  readonly done: boolean;
+  readonly claimed: boolean;
 }
 
 /** A worn piece as others see it, numbered as the gear message numbers it. */

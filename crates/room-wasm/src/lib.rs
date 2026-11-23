@@ -29,6 +29,7 @@ mod dress_door;
 mod fighter_door;
 mod fleet_door;
 mod gear_door;
+mod guild_door;
 mod isle_door;
 mod plate_door;
 mod public_door;

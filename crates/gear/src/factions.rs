@@ -262,21 +262,31 @@ impl Character {
         if self.packages(faction) == 0 {
             return Err(Refusal::NoPackage);
         }
+        self.give_package(Purpose::Package, dice)?;
+        self.allegiance = std::mem::take(&mut self.allegiance).kept();
+        self.allegiance.collected[at] += 1;
+        Ok(None)
+    }
+
+    /// Gives a package, a faction's or a guild's, rolled by `purpose`: a Vestige at the player's level for a random
+    /// slot, Rare or now and then Legendary from a level, and its Aurem.
+    ///
+    /// # Errors
+    /// When ten Vestiges are carried already.
+    pub(crate) fn give_package(&mut self, purpose: Purpose, dice: &Dice) -> Result<(), Refusal> {
         if self.vestiges_held(false) >= VESTIGES_MOST {
             return Err(Refusal::VestigesFull);
         }
         let numbers = factions();
         let level = self.level().clamp(1, NAMED_LEVEL);
-        let legendary = level >= numbers.package_legendary_from_level
-            && dice.roll(Purpose::Package, 0) < numbers.package_legendary_share;
+        let legendary =
+            level >= numbers.package_legendary_from_level && dice.roll(purpose, 0) < numbers.package_legendary_share;
         let rarity = if legendary { Rarity::Legendary } else { Rarity::Rare };
-        let slot = Slot::VESTIGE[dice.pick(Purpose::Package, 1, Slot::VESTIGE.len())];
+        let slot = Slot::VESTIGE[dice.pick(purpose, 1, Slot::VESTIGE.len())];
         let id = self.take_id();
         self.vestiges.insert(id, (Vestige::new(id, rarity, slot, level), false));
         self.materials.add_aurem(numbers.package_aurem);
-        self.allegiance = std::mem::take(&mut self.allegiance).kept();
-        self.allegiance.collected[at] += 1;
-        Ok(None)
+        Ok(())
     }
 }
 

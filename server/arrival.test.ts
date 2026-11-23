@@ -154,6 +154,7 @@ function roomOf(): KeptRoom & { readonly held: Map<number, string> } {
     own: (player) => held.has(player),
     name: (player) => held.has(player),
     tag: (player) => held.has(player),
+    guild: (player) => held.has(player),
     shut: () => '',
   };
 }

@@ -32,6 +32,8 @@ pub mod flotsam;
 mod foes;
 pub mod friendlies;
 mod garrison;
+mod guild_book;
+mod guild_room;
 mod happening;
 pub mod harbour;
 pub mod hostiles;
@@ -69,6 +71,7 @@ pub use drops::{AMMO_REST_TICKS, DROP_TICKS, Drop, Dropped, VESTIGE_REST_TICKS};
 pub use entrances::Entrance;
 pub use floor::{Floor, standing_on};
 pub use foes::{CLEAR_FOES, FOES_MOST, FoeSeen, NODE_FOES_MOST, SHIELD_SHIFT};
+pub use guild_book::{GuildSeen, Guilds};
 pub use judging::{Event, EventKind, How};
 pub use perks::trim_of;
 pub use plates::Plate;
@@ -131,6 +134,8 @@ pub struct Room {
     /// How many players have joined: the next stands at the spawn this many turns on.
     joins: usize,
     pub(crate) players: BTreeMap<PlayerId, Player>,
+    /// Each player's guild, as its host told it (`guild_book.rs`).
+    pub(crate) guilds: guild_book::Guilds,
     pub(crate) foes: BTreeMap<FighterId, Foe>,
     /// The foes a page stood itself, whose phases call no one (`course.rs`).
     pub(crate) quiet: BTreeSet<FighterId>,
@@ -298,6 +303,7 @@ impl Room {
             inert_ways: BTreeMap::new(),
             names: BTreeMap::new(),
             quests: quests::QuestGround::default(),
+            guilds: guild_book::Guilds::default(),
             encounters: None,
         }
     }
@@ -423,6 +429,7 @@ impl Room {
         self.keep_public();
         self.keep_cache();
         self.keep_quests();
+        self.give_guilds();
         self.keep_steps();
         self.pick_up_drops();
         self.past.push_back((self.clock, self.fighters()));

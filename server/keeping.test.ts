@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { NO_WAY_HERE } from './arrival.ts';
-import { Keeper, partFrom, SAVE_AFTER_CHANGE_MS, SAVE_UNCHANGED_MS } from './keeping.ts';
+import { GUILD_EVERY_MS, Keeper, partFrom, SAVE_AFTER_CHANGE_MS, SAVE_UNCHANGED_MS } from './keeping.ts';
 import { roomOf, world } from './keepingForTests.ts';
 
 test('a signed-in player plays their kept character, saved after a change and kept while they play', async () => {
@@ -478,7 +478,9 @@ test("a kept player wears their guild's tag from their claim, and a guild joined
   const account = (await database.prepare('SELECT id FROM accounts').first<{ id: string }>())?.id ?? '';
   const join = async (tag: string) => {
     await database
-      .prepare("INSERT INTO guilds (id, name, name_key, tag, tag_key, created_at) VALUES (?1, ?1, ?1, ?2, lower(?2), 0)")
+      .prepare(
+        'INSERT INTO guilds (id, name, name_key, tag, tag_key, created_at) VALUES (?1, ?1, ?1, ?2, lower(?2), 0)',
+      )
       .bind(`guild-${tag}`, tag)
       .run();
     await database
@@ -503,6 +505,43 @@ test("a kept player wears their guild's tag from their claim, and a guild joined
   await join('BW');
   await keeper.rename(1, token);
   assert.equal(room.tagged.get(1), 'BW');
+});
+
+test("a kept player's room is told their guild as it keeps them, again now and then, and at once after a rename", async () => {
+  const { clock, database, kept, token } = await world();
+  const room = roomOf();
+  room.held.set(1, '{"starting":true}');
+  const keeper = new Keeper(kept, room, 'node-overlook', () => undefined);
+  await keeper.signIn(
+    1,
+    token,
+    () => clock.now,
+    () => true,
+  );
+  await keeper.due(clock.now);
+  await new Promise((done) => setTimeout(done, 0));
+  assert.equal(room.guilds.get(1), '', 'in no guild');
+  const account = (await database.prepare('SELECT id FROM accounts').first<{ id: string }>())?.id ?? '';
+  await database
+    .prepare("INSERT INTO guilds (id, name, name_key, tag, tag_key, created_at) VALUES ('g', 'G', 'g', 'GG', 'gg', 0)")
+    .run();
+  await database
+    .prepare("INSERT INTO guild_members (account_id, guild_id, rank, joined_at) VALUES (?1, 'g', 0, -1e12)")
+    .bind(account)
+    .run();
+  await keeper.due(clock.now + 1_000);
+  await new Promise((done) => setTimeout(done, 0));
+  assert.equal(room.guilds.get(1), '', 'not told again so soon');
+  await keeper.rename(1, token);
+  assert.deepEqual(JSON.parse(room.guilds.get(1) ?? 'null'), {
+    id: 'g',
+    done: [false, false, false, false],
+    beforeTheWeek: true,
+  });
+  await database.prepare('DELETE FROM guild_members').run();
+  await keeper.due(clock.now + GUILD_EVERY_MS);
+  await new Promise((done) => setTimeout(done, 0));
+  assert.equal(room.guilds.get(1), '', 'a guild left is told at the next turn');
 });
 
 test('a room whose gate shuts on an arrival judges before it claims, so the room playing the character keeps it', async () => {

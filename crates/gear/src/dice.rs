@@ -32,6 +32,8 @@ pub enum Purpose {
     Cosmetic = 12,
     /// A faction's package: whether its Vestige is Legendary, and its slot.
     Package = 40,
+    /// A guild package, as a faction's: whether its Vestige is Legendary, and its slot.
+    GuildPackage = 48,
     /// Where Shape stands in a week, and the order his wares are shuffled in.
     Shape = 44,
     /// Where a patrol stands a foe, what kind and its level (the try added to the purpose's number).

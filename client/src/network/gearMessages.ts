@@ -102,6 +102,8 @@ export const ASKS = {
   /** A return to the player's ship, which the room answers (107 yes, or 105 fallen, 106 struck in the last ten
    *  seconds) before the page leaves for the sea. */
   toShip: 73,
+  /** A guild bounty claimed, by its slot among the week's four in `column` (`gear::guild`). */
+  claimGuildBounty: 75,
 } as const;
 
 /** Shape's place while he is away. */

@@ -26,6 +26,7 @@ pub mod emblems;
 pub mod factions;
 pub mod gate;
 pub mod grid;
+pub mod guild;
 pub mod item;
 pub mod kinds;
 pub mod left;

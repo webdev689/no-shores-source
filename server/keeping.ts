@@ -14,7 +14,7 @@ import { NO_WAY_HERE } from './arrival.ts';
 import { nodeRoom, runFull } from './roomNames.ts';
 
 /** What a room keeps characters with: claiming, saving and letting go, and a player's companions. */
-type Characters = Pick<Kept, 'look' | 'claim' | 'save' | 'release' | 'companions' | 'launched'>;
+type Characters = Pick<Kept, 'look' | 'claim' | 'save' | 'release' | 'companions' | 'launched' | 'guild'>;
 
 /** Why a run's room sends a player away who is in no company of those kept in it. */
 export const ANOTHER_COMPANY = "This run is another company's.";
@@ -36,6 +36,8 @@ export interface KeptRoom {
   name(player: number, name: string): boolean;
   /** Gives a player their guild's tag, read after their name; '' for none. */
   tag(player: number, tag: string): boolean;
+  /** Tells the room a player's guild as the accounts tell it, as text; '' for none. */
+  guild(player: number, told: string): boolean;
   /** Why the room's gate shuts to a player's kept character, or to a new one (null), with the story the player already
    *  holds in the room carried forward; empty when it may enter. */
   shut(player: number, kept: string | null): string;
@@ -69,7 +71,12 @@ interface Held {
   saved: string | null;
   /** The save under way, which a leaving player's last save waits for so it is never overtaken by an older one. */
   inFlight: Promise<unknown> | null;
+  /** When the room was last told the player's guild. */
+  guildAt: number;
 }
+
+/** How often a room is told each kept player's guild again: which of the week's bounties it has done. */
+export const GUILD_EVERY_MS = 30_000;
 
 export class Keeper {
   private readonly characters: Characters | null;
@@ -129,6 +136,7 @@ export class Keeper {
     if (!held || !looked || looked.account !== held.account) return;
     if (looked.name !== null) this.room.name(player, looked.name);
     this.room.tag(player, looked.tag ?? '');
+    await this.tellGuild(player, held);
   }
 
   /** Claims a player's character with their session's token and gives it to them; whether it is now kept. `here`
@@ -202,8 +210,16 @@ export class Keeper {
       saving: false,
       saved: claimed.body,
       inFlight: null,
+      guildAt: 0,
     });
     return true;
+  }
+
+  /** Tells the room a kept player's guild as the accounts tell it now; nothing if they cannot be reached. */
+  private async tellGuild(player: number, held: Held): Promise<void> {
+    const told = await this.characters?.guild(held.account).catch(() => undefined);
+    if (told === undefined || this.held.get(player) !== held) return;
+    this.room.guild(player, told === null ? '' : JSON.stringify(told));
   }
 
   /** Why this room turns a character away ('' when it lets it in): its gate, in a run its four accounts and its
@@ -279,6 +295,11 @@ export class Keeper {
   async due(now: number): Promise<void> {
     const characters = this.characters;
     if (!characters) return;
+    for (const [player, held] of this.held)
+      if (now - held.guildAt >= GUILD_EVERY_MS) {
+        held.guildAt = now;
+        void this.tellGuild(player, held);
+      }
     const saves = [...this.held].map(async ([player, held]) => {
       const waited = now - held.savedAt;
       if (held.saving || (waited < SAVE_UNCHANGED_MS && !(held.changed && waited >= SAVE_AFTER_CHANGE_MS))) return;

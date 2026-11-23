@@ -90,7 +90,7 @@ function middleNode(home: Home, size: number, named: number): Node {
   return {
     width: 'grow',
     direction: 'column',
-    gap: 12 + 4 * size,
+    gap: 10,
     children: [
       {
         direction: 'column',
@@ -109,13 +109,12 @@ function middleNode(home: Home, size: number, named: number): Node {
           face.description !== '' && {
             width: 'grow',
             maxWidth: 900,
-            text: { words: face.description, size, colour: INK.word, wrap: true },
+            text: { words: face.description, colour: INK.word, wrap: true },
           },
         ],
       },
       headingNode('This week', words(untilWords(home.now, face.weekEnds), size, INK.faint), size),
-      levelNode(face.level, share, xpWords, size),
-      home.week,
+      levelNode(face.level, share, xpWords, size, home.week),
       headingNode('Guild details', null, size),
       {
         width: 'grow',

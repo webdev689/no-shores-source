@@ -73,4 +73,3 @@ export function drawn(page: (context: PlainContext) => Node) {
   const shows = () => wordsOf(last).join(' | ');
   return { ui, frame, click, type, middle, shows };
 }
-
