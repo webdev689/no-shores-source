@@ -178,7 +178,7 @@ export function startFrames(parts: FrameParts, playing: Playing): void {
     if (dead && !wasDead) document.exitPointerLock();
     drain.toward(dead);
   };
-  /** What the mount key says with no horse worn in the Mount slot ([[Horses Are Items Worn in a Mount Slot]]). */
+  /** What the mount key says with no horse worn in the Mount slot. */
   const NO_HORSE = 'You have no horse.';
   /** The words that tell why the player is not where they went, or that the mount key found no horse, while they
    *  stand: said by the frame the key was pressed in, ashore or at sea. */
