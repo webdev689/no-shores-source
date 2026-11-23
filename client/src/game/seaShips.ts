@@ -238,7 +238,8 @@ export class SeaShips {
       const [halfLength, halfBeam] = [(lengthM / 2) * scale, (beamM / 2) * scale];
       const spray = this.rides.get(who)?.spray ?? 0;
       const line = this.lines.line(hull);
-      return { x, y, heading, halfLength, halfBeam, way: lies.underWay ? UNDER_WAY : 0, line, scale, spray };
+      const way = lies.underWay ? UNDER_WAY : 0;
+      return { id: who, x, y, heading, halfLength, halfBeam, way, line, scale, spray };
     };
     const near = round(others, hostiles, this.shown, friendlies).map((ship) =>
       footprint(ship.who, ship.lies, ship.hull),
