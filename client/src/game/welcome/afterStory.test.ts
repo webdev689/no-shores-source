@@ -137,11 +137,14 @@ test('while she speaks the HUD of the player’s own play is hidden, the dialogu
   assert.deepEqual(shown.sort(), ['bars and compass hidden', 'hints 0', 'marks 0', 'tracker null']);
 });
 
-test('as she walks off the player is turned the way she goes, her first seconds of walk in the view over their shoulder', async () => {
+test('the player is turned to face her as she speaks face to face, then the way she goes as she walks off, her first seconds of walk in the view over their shoulder', async () => {
   const { after, frame, finish } = story();
   frame();
   await settled();
-  assert.equal(after.takeTurn(), null, 'not while she speaks');
+  after.shot(OWN, 1 / 30);
+  const her = after.takeTurn();
+  assert.ok(her !== null && Math.abs(her - Math.atan2(1001.8 - YOU.x, YOU.y - 2029)) < 1e-9, 'turned to face her');
+  assert.equal(after.takeTurn(), null, 'once as her first lines begin');
   for (let step = 0; step < TOUR.length; step++) {
     finish();
     await settled();

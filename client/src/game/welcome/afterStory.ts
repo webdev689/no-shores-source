@@ -78,7 +78,10 @@ export class AfterStory {
         },
         faces: () => {
           const her = epilogue.where;
-          return her && { stranger: [her.x, her.y, her.z], player: [this.you.x, this.you.y, this.you.z] };
+          if (!her) return null;
+          // Face to face: the player is turned toward her, as she stands facing them.
+          this.turn = Math.atan2(her.x - this.you.x, this.you.y - her.y);
+          return { stranger: [her.x, her.y, her.z], player: [this.you.x, this.you.y, this.you.z] };
         },
       });
       epilogue.words = () => welcome.run();
