@@ -2,7 +2,7 @@
 // seconds into the wisp's coming, `&bow=1` with the boarder's bow lying before the player, `&lash=1` with the Storm
 // given and a boarder coming for them, to be frozen on for Arc Lash. A built game never reads it.
 import type { Stage } from './tutorial.ts';
-import { pointAlong, topAt, type WreckLayout } from './wreckLayout.ts';
+import { topAt, type WreckLayout } from './wreckLayout.ts';
 import type { WreckRun } from './wreckRun.ts';
 
 export interface DevStart {
@@ -25,8 +25,8 @@ export function devStart(search: string): DevStart | null {
 export const pageDevStart = (): DevStart | null =>
   import.meta.env?.DEV && typeof location !== 'undefined' ? devStart(location.search) : null;
 
-/** How far along the path from where the player wakes the bow lies for a start at the bow, metres. */
-const BOW_ALONG_M = 4;
+/** How far before the player the bow lies for a start at the bow, metres: where a boarder met there would fall. */
+const BOW_AHEAD_M = 3;
 
 /** How far before the player the boarder stands for a start at the Storm: in Arc Lash's reach and cone. */
 const LASH_AHEAD_M = 4;
@@ -47,7 +47,7 @@ export function beginAt(
   player: { readonly x: number; readonly y: number; readonly facing: number },
 ): void {
   if (start.stage === 'bow') {
-    const [x, y] = pointAlong(layout.path, BOW_ALONG_M);
+    const [x, y] = [player.x + Math.sin(player.facing) * BOW_AHEAD_M, player.y - Math.cos(player.facing) * BOW_AHEAD_M];
     run.storyArms.dropBow([x, y, topAt(layout.course, x, y)]);
   }
   if (start.stage === 'storm') {
