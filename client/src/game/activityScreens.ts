@@ -74,9 +74,10 @@ export function startActivityScreens(
   nodes: readonly NodeInfo[],
   foot: () => ScreensFoot | null,
   trips: { enter(number: number, name: string, run?: string): void; intoRun?(node: NodeInfo, run: string): void },
-  link: Pick<AccountLink, 'token' | 'finderAt'> | null,
+  link: (Pick<AccountLink, 'token' | 'finderAt'> & Partial<Pick<AccountLink, 'roster'>>) | null,
   clock: ScreensClock = PAGE_CLOCK,
   atSea: () => GearState | null = () => null,
+  onSea: () => boolean = () => true,
 ): ActivityScreens {
   let compiled: WebAssembly.Module | null = null;
   void module.then((read) => (compiled = read)).catch(() => undefined);
@@ -166,6 +167,7 @@ export function startActivityScreens(
     kept: () => kept,
     intoRun: (node, run) => trips.intoRun?.(node, run),
     link,
+    atSea: onSea,
     now: clock.now,
     ...(clock.open && { open: clock.open }),
   });
@@ -221,8 +223,9 @@ export function startActivities(
   link: AccountLink | null,
   game: Omit<TripGame, 'foot' | 'companyPlaces'> & {
     readonly foot: () => (TripFoot & ScreensFoot) | null;
-    /** The sea's last word of the character while the player is at sea, none on foot. */
-    readonly atSea?: () => GearState | null;
+    /** The sea's last word of the character while the player is at sea or over an island's side (null before one),
+     *  undefined anywhere else: the Playlist closes once the player is not there. */
+    readonly atSea?: () => GearState | null | undefined;
   },
 ): {
   readonly trips: ReturnType<typeof dungeonTrips>;
@@ -231,7 +234,17 @@ export function startActivities(
   heed(here: { readonly shut: string | null; readonly held: { wiped: boolean } }, shut: (why: string) => void): boolean;
 } {
   const trips = dungeonTrips({ ...game, companyPlaces: () => companyPlaces(link) });
-  const screens = startActivityScreens(game.module, nodes, game.foot, trips, link, PAGE_CLOCK, game.atSea);
+  const atSea = game.atSea;
+  const screens = startActivityScreens(
+    game.module,
+    nodes,
+    game.foot,
+    trips,
+    link,
+    PAGE_CLOCK,
+    () => atSea?.() ?? null,
+    () => atSea === undefined || atSea() !== undefined,
+  );
   // The keepers' countdowns turn on the same clock, so they read the same rules.
   countBy(game.module);
   if (import.meta.env.DEV) {

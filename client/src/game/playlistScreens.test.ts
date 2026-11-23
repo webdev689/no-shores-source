@@ -49,6 +49,25 @@ test('the Playlist says each entry’s level, rules, modifiers, rewards and gate
     ['Burn (Shadow)', 'Trickle'],
   );
   assert.ok(abyss?.rules.includes('5 revives for the company. A wipe starts the run over.'));
+  assert.equal(abyss?.rules[0], 'One of the 18 Elite Dungeons, at Abyss, drawn as each run starts.');
+  assert.deepEqual(
+    screen.entries.map((entry) => entry.drops),
+    [
+      'Drops orcish and mithril gear',
+      'Drops adamantium and ebony gear',
+      'Drops orcish and mithril gear',
+      'Drops adamantium and ebony gear',
+    ],
+    'what each tier’s content drops, by its looks',
+  );
+  assert.equal(
+    elite?.rewards[0]?.words,
+    "Daily, the first clear: a Boss's worth of XP and Aurem, and a Vestige in a Boss's colours.",
+  );
+  assert.deepEqual(
+    [elite?.lock, abyss?.lock, weekElite?.lock],
+    [null, 'Opens at level 20 · You are 17', 'Opens at level 24 · You are 17'],
+  );
   assert.deepEqual(
     elite?.rewards.map(({ taken, clears, resets }) => [taken, clears, resets]),
     [
@@ -56,8 +75,14 @@ test('the Playlist says each entry’s level, rules, modifiers, rewards and gate
       [false, [true, true, false], 'Resets in 4d 00h'],
     ],
   );
-  assert.equal(elite?.rewards[1]?.words, 'Weekly, at 3 clears: 2 Essence of each stock and a Vestige.');
-  assert.equal(abyss?.rewards[1]?.words, 'Weekly, at 3 clears: 3 Essence of each stock and 2 Vestiges.');
+  assert.equal(
+    elite?.rewards[1]?.words,
+    "Weekly, at 3 clears: 2 Essence of each stock and a Vestige in a Boss's colours.",
+  );
+  assert.equal(
+    abyss?.rewards[1]?.words,
+    "Weekly, at 3 clears: 3 Essence of each stock and 2 Vestiges in a Boss's colours.",
+  );
   assert.equal(abyss?.rewards[1]?.taken, true, 'paid at its third clear');
   assert.equal(abyss?.shut, 'The Abyss Playlist opens at level 20.');
   assert.equal(weekElite?.about, 'Forsaken Cistern · Elite · Level 26');
@@ -125,12 +150,13 @@ const places = [...activitiesAt(await module, FRIDAY_NINE).elites, 'overlook-soc
 const link = { token: 'a'.repeat(64), finderAt: (base: string) => `ws://finder.test/v1/find/${base}` };
 
 /** The screens at sea for a character of `level`, the Playlist's layer drawn on a page, every run gone into kept. */
-async function atSea(level: number, signedIn = true) {
+async function atSea(level: number, signedIn = true, members = 1, roster?: () => Promise<unknown>) {
   const { window } = fakePage();
   const [sockets, into] = [[] as FinderSocket[], [] as string[]];
   let look = () => undefined as void;
+  const world = { now: NOW, onSea: true };
   const clock = {
-    now: () => NOW,
+    now: () => world.now,
     every: (run: () => void) => void (look = run),
     open: (address: string) => sockets[sockets.push(new FinderSocket(address)) - 1] as never,
   };
@@ -139,18 +165,20 @@ async function atSea(level: number, signedIn = true) {
     intoRun: (node: NodeInfo, run: string) => void into.push(`${node.id} ${run}`),
   };
   const gear = { level, prologueDone: true, activity: record } as GearState;
+  const company = async () => ({ company: { leader: null, members: Array.from({ length: members }, () => ({})) } });
   const screens = startActivityScreens(
     module,
     places,
     () => null,
     trips,
-    signedIn ? link : null,
+    signedIn ? { ...link, roster: (roster ?? company) as never } : null,
     clock,
     () => gear,
+    () => world.onSea,
   );
   await module;
   look();
-  return { screens, window, sockets, into, root: drawn(screens) };
+  return { screens, window, sockets, into, root: drawn(screens), world, look: () => look() };
 }
 
 function drawn(screens: ActivityScreens) {
@@ -219,4 +247,54 @@ test('playing alone, Launch goes into a run of an Elite Dungeon the page draws, 
   assert.ok(root.click('playlist-launch'));
   assert.equal(sockets.length, 0, 'no server to ask');
   assert.match(into[0] ?? '', /^([a-z-]+) node-\1--elite--playlist-17--run-[a-z0-9]{8}$/);
+});
+
+test('the screen counts down each second it stands, and closes, its search stopped, once the player leaves the sea', async () => {
+  const { screens, sockets, root, world, look } = await atSea(17);
+  screens.playlist('overlook-playlist');
+  assert.ok(root.find('Resets in 1d 00h'));
+  world.now = NOW + 1_000;
+  look();
+  assert.ok(root.find('Resets in 23:59:59'), 'built again within the minute');
+  assert.ok(root.click('playlist-find'));
+  world.onSea = false;
+  look();
+  assert.equal(gearScreenOpen(), false, 'closed as the player went ashore');
+  assert.deepEqual(sockets[0]?.closed, [1000, 'stopped'], 'its search stopped');
+});
+
+test('while Launch asks the server the screen says Launching…; an unanswered ask says the accounts did not answer', async () => {
+  const { screens, sockets, root } = await atSea(17);
+  screens.playlist('overlook-playlist');
+  assert.ok(root.click('playlist-launch'));
+  assert.ok(root.find('Launching…'));
+  assert.ok(!root.find('Finding a company · 0:00'));
+  sockets[0]?.fire('close', { code: 1006, reason: '' });
+  assert.ok(root.find('The accounts did not answer. Try again.'));
+});
+
+test('Launch reads Go with your company once the Roster shows one, else Go alone', async () => {
+  const alone = await atSea(17, true, 1);
+  alone.screens.playlist('overlook-playlist');
+  await new Promise((done) => setTimeout(done, 0));
+  assert.ok(alone.root.find('Go alone'));
+  const together = await atSea(17, true, 3);
+  together.screens.playlist('overlook-playlist');
+  await new Promise((done) => setTimeout(done, 0));
+  assert.ok(together.root.find('Go with your company'));
+});
+
+test('a Roster answer to an earlier opening is not taken for the screen opened again', async () => {
+  const answers: ((roster: unknown) => void)[] = [];
+  const asked = () => new Promise<unknown>((answer) => answers.push(answer));
+  const { screens, root, window } = await atSea(17, true, 1, asked);
+  screens.playlist('overlook-playlist');
+  window.dispatchEvent(new FakeEvent('keydown', { key: 'Escape' }));
+  screens.playlist('sunspire-playlist');
+  // This opening's answer comes first; the earlier one's, late, must not overturn it.
+  answers[1]?.({ company: null });
+  await new Promise((done) => setTimeout(done, 0));
+  answers[0]?.({ company: { leader: null, members: [{}, {}] } });
+  await new Promise((done) => setTimeout(done, 0));
+  assert.ok(root.find('Go alone'), 'the first opening’s company is not this one’s');
 });

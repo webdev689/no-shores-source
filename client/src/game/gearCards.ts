@@ -123,7 +123,7 @@ export function cardOf(item: GearItem, worn: GearItem | null = null): Card {
   const rows: [string, string][] = [['Level', String(item.level)]];
   if (item.prestige) rows.push(['Prestige', String(item.prestige)]);
   // Where it was earned, which its look says too; a ship's module keeps no look of a content.
-  if (!isModule(item.kind)) rows.push(['From', sourceLooks(item).name]);
+  if (!isModule(item.kind)) rows.push(['From', capital(sourceLooks(item).name)]);
   const changes = (['attack', 'defense', 'prestige'] as const)
     .map((stat) => ({ label: capital(stat), from: worn?.[stat] ?? 0, to: item[stat] }))
     .filter((change) => change.from !== 0 || change.to !== 0);

@@ -5,6 +5,7 @@ code:
   - client/src/ui/paint.ts#PaintedRole
   - client/src/game/playlistScreen.ts#PlaylistView
   - client/src/game/playlistMap.ts#drawCrest
+  - client/src/game/playlistParts.ts#crestOf
   - client/src/cinema/screen.ts#Screen
   - client/src/speech/dialogue.ts#DialogueBox
   - client/src/speech/overheads.ts#Overheads
@@ -955,30 +956,52 @@ gone into, and the card says "The week turned. Try again.".
 ## The Playlist
 
 A Playlist mark beside a port's harbour ([[Overworld]], "Marks") opens the Playlist screen ([[Activities]], "The
-Playlist"), drawn after the owner's reference, Destiny's Vanguard screen (`PlaylistView`, in the entrance card's
-layer, over a dark scrim): "PLAYLIST" at its head and the port it was opened beside ("Beside Overlook") over a brass
-rule; then a chart (`playlistMap.ts`, drawn once for its size: a lit middle fading to nothing before its edges, faint
-stars, two wide rings, a ring round each crest's spot and dotted lines from each playlist to the other and to its
-week's dungeon) with the four entries as crests on it: the Elite Playlist (three chevrons) and the Abyss Playlist (an
-eye of the deep) above, the Elite Dungeon of the week (crossed blades under a star) and the Abyss Dungeon of the week
-(a crown over the deep) below their playlists, a fifth smaller. A crest is a shield, brass for Elite, violet for
-Abyss, grey while its entry is shut, with a gold dot at its shoulder while a reward of it waits; under it its name in
-capitals and its level ("Elite · Levels 15 to 19 · Foes at level 17", "From level 10" before it), or why it is shut in
-its gate's words. The chosen crest's name is lit over a brass rule.
+Playlist"), drawn after the owner's reference, Destiny's Vanguard screen (`PlaylistView`, its parts in
+`playlistParts.ts`, in the entrance card's layer, over a dark scrim): "PLAYLIST" at its head and the port it was opened
+beside ("Beside Overlook") over a brass rule; then the four entries as crests, the Elite Playlist (three chevrons) and
+the Abyss Playlist (an eye of the deep) above, the Elite Dungeon of the week (crossed blades under a star) and the
+Abyss Dungeon of the week (a crown over the deep) below their playlists, a fifth smaller. A crest is a shield, brass
+for Elite, violet for Abyss, grey while its entry is shut; at its shoulder a gold dot while a reward of it waits, or a
+padlock while it is shut. Under it its name in capitals (a week's dungeon's on two lines, broken before "of"), and its
+level a part a line past its tier ("Levels 15 to 19", "Foes at level 17"; "From level 10" before it), or, shut, why in
+neutral ink ("Opens at level 24", "You are 15", from its gate's words), so no separator ends or starts a line. The chosen crest's name is lit over a
+brass rule as wide as the name, its shield drawn 8% larger with a brighter glow; a crest under the pointer or the
+focus glows a little.
 
-Beside the chart (under it on a screen narrower than 1000 pixels, scrolled) stands the chosen entry's card: its name
-on a brass band with its level; then its rules; its modifiers, each led by its icon with what it does; its rewards,
-each its words, then "Taken" (with the timers' tick) or "Not taken", and a playlist's weekly a bar and three marks
-filling with its clears ("2 of 3", then "Paid"), each with the time to its reset at the right; why it is shut; and
-"Every clear pays its kills and its cache, as any run does." Words come from `playlistScreenOf`
-(`playlistWords.ts`), built again as the minute or the character's word changes.
+On a screen 1000 pixels wide or more the crests stand on a chart (`playlistMap.ts`: a lit middle fading to nothing
+before its edges, faint stars, two wide rings, a ring round each crest's spot and dotted lines from each playlist to
+the other and to its week's dungeon), each shield's middle on its spot, its words wrapped to 2.2 times a playlist's
+shield; the chart's picture is drawn again only at 64-pixel steps of the screen. The chosen entry's card stands beside
+it in a column that grows to the footer and scrolls. Narrower, the crests stand two by two over the chart's ground
+(its stars and rings, no spots), each its half of a row, and the card under them, the two scrolling together. A list
+taller than its room (`scrolledNode`) fades its foot into the card's ground while more lies below, so a line cut there
+fades out, and keeps a thin brass bar in a gutter at its right whose thumb stands where the list does; the wheel over
+it, Page Up and Page Down, and the pad's right stick scroll it (`Interface.scrollBy`, `Interface.stickScroll`).
 
-The arrows, a click or the pointer over a crest choose another; up and down go between a playlist and its week's
-dungeon. A footer bar holds the search's word at the left and Launch (E), resting while the entry is shut or a search
-is under way; Find a Company (F) where the entry is matched, open and the page signed in, Stop finding (F) while it
-finds, with the wait and "A run starts with four, or with fewer after a minute."; and Close (Esc). Launch and a run
-found close the screen and go into the run from the sea. While it stands the pointer is free and no key of the game's
-or the menu's acts behind it.
+The card: its name on a brass band (balanced over two lines where it is long) with its level and what its runs drop
+("Drops orcish and mithril gear" for Elite, "Drops adamantium and ebony gear" for Abyss, from
+`content/gear/looks.json`); why it is shut, led by a padlock in neutral ink (red is kept for a refusal); its rules
+(the Abyss Playlist's "One of the 18 Elite Dungeons, at Abyss, drawn as each run starts."); its modifiers, each led by
+its icon with what it does; its rewards, kept while it is shut, each its words ("a Vestige in a Boss's colours"),
+then "Taken" (with the timers' tick) or "Not taken", a playlist's weekly as three marks filling with its clears ("2 of
+3", then "Paid"), each with the time to its reset at the right; and "Every clear pays its kills and its cache, as any
+run does." Words come from `playlistScreenOf` (`playlistWords.ts`), built again each second it stands (its countdowns)
+and as the character's word changes.
+
+The pointer over a crest only lights it; a click, Enter, Space or the pad's A on it chooses it. The arrows choose the
+next (up and down between a playlist and its week's dungeon), and the card follows the focus as the pad's cross moves
+it over the crests. The footer bar holds the search's word at the left ("Finding a company · 0:23" with "A run starts
+with four, or with fewer after a minute." beside it on a wide screen; "Launching…" while Launch asks the server; or why
+the last ended, "The accounts did not answer. Try again." where they did not), why a shut entry is shut beside its
+resting Launch, and the presses: Find a Company (F) first and primary where the entry is matched, open and the page
+signed in, Stop finding (F) while it finds; Launch (E), "Go alone", or "Go with your company" once the Roster shows the
+player in one, primary where nothing is matched, drawn dim and resting while the entry is shut, and not offered while
+a search or a launch runs;
+and Close (Esc, the pad's B). Under 1100 pixels the word stands over the presses, which wrap. As a search starts or ends
+the focus goes to the press that takes the other's place, Close where none does. Launch and a run found close the screen
+and go into the run from the sea; so does leaving the sea, the screen closing and its search stopped once the player
+is no longer at sea or over an island's side. While it stands the pointer is free and no key of the game's or the
+menu's acts behind it.
 
 ## How recordings load
 

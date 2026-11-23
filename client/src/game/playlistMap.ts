@@ -44,9 +44,9 @@ function seeded(seed: number): number {
   return turned - Math.floor(turned);
 }
 
-/** Draws the chart `width` by `height` pixels: its ground lit toward the middle, a field of faint stars, a ring round
- *  each crest's spot and the lines between them, and wide rings round the middle as a chart's compass. */
-export function drawChart(context: OffscreenCanvasRenderingContext2D, width: number, height: number): void {
+/** Draws the chart's ground `width` by `height` pixels: lit toward the middle, a field of faint stars, and wide rings
+ *  round the middle as a chart's compass; the stacked screen lays its crests in a grid over it. */
+export function drawGround(context: OffscreenCanvasRenderingContext2D, width: number, height: number): void {
   const middle = context.createRadialGradient(
     width / 2,
     height / 2,
@@ -74,6 +74,13 @@ export function drawChart(context: OffscreenCanvasRenderingContext2D, width: num
     context.arc(width / 2, height / 2, radius * unit, 0, Math.PI * 2);
     context.stroke();
   }
+}
+
+/** Draws the chart `width` by `height` pixels: its ground, then a ring round each crest's spot and the dotted lines
+ *  between them. */
+export function drawChart(context: OffscreenCanvasRenderingContext2D, width: number, height: number): void {
+  drawGround(context, width, height);
+  const unit = Math.min(width, height);
   context.strokeStyle = CHART.line;
   context.setLineDash([4, 6]);
   for (const [from, to] of LINKS) {
@@ -106,6 +113,15 @@ interface CrestInks {
 const LIT: CrestInks = { field: '#14171d', rim: '#c08a3e', device: '#efe8d6', glow: 'rgba(243,207,134,0.35)' };
 const DEEP: CrestInks = { field: '#120f1a', rim: '#8f6fc4', device: '#d9c8f5', glow: 'rgba(155,120,220,0.4)' };
 const SHUT: CrestInks = { field: '#101114', rim: '#4a4640', device: '#6f6a60', glow: 'rgba(0,0,0,0)' };
+
+/** How much larger the chosen crest's shield is drawn than the rest. */
+export const CHOSEN_SCALE = 1.08;
+
+/** A crest's glow ink at rest (0), lit under the pointer or the focus (1), and chosen (2): its alpha raised. */
+function glowOf(ink: string, lit: 0 | 1 | 2): string {
+  const times = [1, 1.6, 2.4][lit] ?? 1;
+  return ink.replace(/[\d.]+\)$/, (alpha) => `${Math.min(1, parseFloat(alpha) * times)})`);
+}
 
 /** The shield every crest is cut as, `side` pixels square: a flat top, its sides curving to a point. */
 function shield(context: OffscreenCanvasRenderingContext2D, side: number): void {
@@ -210,16 +226,20 @@ export function drawWaiting(context: OffscreenCanvasRenderingContext2D, side: nu
   context.stroke();
 }
 
-/** Draws an entry's crest `side` pixels square: its glow, its shield's field and rim, and its device; grey where it
- *  is shut. */
-export function drawCrest(kind: PlaylistKind, shut: boolean) {
+/** Draws an entry's crest in a square: its glow, its shield's field and rim, and its device; grey where it is shut.
+ *  `lit` 1 (under the pointer or the focus) brightens its glow; 2 (chosen) more, its shield filling the square. */
+export function drawCrest(kind: PlaylistKind, shut: boolean, lit: 0 | 1 | 2 = 0) {
   const inks = shut ? SHUT : kind === 'abyss' || kind === 'week-abyss' ? DEEP : LIT;
-  return (context: OffscreenCanvasRenderingContext2D, side: number): void => {
-    const glow = context.createRadialGradient(side / 2, side / 2, 0, side / 2, side / 2, side / 2);
-    glow.addColorStop(0, inks.glow);
+  // At rest the shield stands a step inside its square, so the chosen one is drawn larger in the same room.
+  const shrink = lit === 2 ? 1 : 1 / CHOSEN_SCALE;
+  return (context: OffscreenCanvasRenderingContext2D, drawn: number): void => {
+    const glow = context.createRadialGradient(drawn / 2, drawn / 2, 0, drawn / 2, drawn / 2, drawn / 2);
+    glow.addColorStop(0, glowOf(inks.glow, shut ? 0 : lit));
     glow.addColorStop(1, 'rgba(0,0,0,0)');
     context.fillStyle = glow;
-    context.fillRect(0, 0, side, side);
+    context.fillRect(0, 0, drawn, drawn);
+    const side = drawn * shrink;
+    context.translate((drawn - side) / 2, (drawn - side) / 2);
     shield(context, side);
     context.fillStyle = inks.field;
     context.fill();

@@ -62,12 +62,12 @@ test('a card names the item and its kind, its main number, its chosen traits, an
     card.rows,
     [
       ['Level', '20'],
-      ['From', 'the world'],
+      ['From', 'The world'],
     ],
     'its growth is the icon’s gauge, not XP',
   );
   const abyss = cardOf(item({ id: 9, rarity: 2, level: 20, source: 4 }));
-  assert.deepEqual(abyss.rows.at(-1), ['From', 'an Abyss Dungeon'], 'where it was earned, which its look says');
+  assert.deepEqual(abyss.rows.at(-1), ['From', 'An Abyss Dungeon'], 'where it was earned, which its look says');
   assert.equal(card.traits.length, 1, 'its chosen trait');
   assert.deepEqual(card.compare, { replaces: 'Harbourwarden', rows: [{ label: 'Attack', from: 248, to: 260 }] });
   assert.equal(cardOf(worn, worn).compare, null, 'no comparing a piece with itself');
