@@ -294,6 +294,7 @@ fn snapshot<'snapshot>(
         revives: None,
         public: Some(public),
         encounter: Some(&crate::encounter_wire_tests::ENCOUNTER),
+        outpost: 0,
     }
 }
 
@@ -721,4 +722,27 @@ fn a_sea_snapshot_carries_the_traffic_ids_the_room_took_and_the_friendly_ships_i
     let bytes = sea_snapshot_bytes(1, &[], &[], &[], &[], &SeaHarbour::default());
     let sea = flatbuffers::root::<messages::FromRoom>(&bytes).unwrap().snapshot().unwrap();
     assert!(sea.taken().is_none() && sea.friendlies().is_none(), "none when there are none: the bytes as before");
+}
+
+#[test]
+fn an_outposts_asks_read_back_as_sent_and_its_plot_count_crosses_in_the_snapshot() {
+    use room::OutpostAsk;
+    let plain = input(1, Controls::default());
+    for ask in [
+        OutpostAsk::Deposit { count: 250 },
+        OutpostAsk::Deliver { structure: 9, slot: 4, count: 12 },
+        OutpostAsk::Take { slot: 2, count: 3 },
+        OutpostAsk::Horn,
+        OutpostAsk::Changed,
+    ] {
+        let sent = Input { ask: Some(room::Asked::Outpost(ask)), ..plain.clone() };
+        assert_eq!(read_input(&input_bytes(&sent)).unwrap(), sent);
+    }
+    let none = crate::public_wire_tests::public();
+    let bare = Snapshot { public: None, ..snapshot(&[], &[], (&[], &[], &[]), &none) };
+    let read = |snapshot: &Snapshot<'_>| {
+        let bytes = snapshot_bytes(snapshot);
+        flatbuffers::root::<messages::FromRoom>(&bytes).expect("a message").snapshot().expect("a snapshot").outpost()
+    };
+    assert_eq!((read(&bare), read(&Snapshot { outpost: 3, ..bare })), (0, 3));
 }

@@ -541,6 +541,9 @@ table Snapshot {
   friendlies: [Friendly];
   // In an Elite Dungeon's room, its encounters, sent whole in each snapshot; none in any other room.
   encounter: EncounterSeen;
+  // At a guild's outpost, how many plots its room has stood: the page reads the outpost again when it changes. 0 in
+  // any other room.
+  outpost: uint;
 }
 
 // What a room sends: exactly one of these is present.

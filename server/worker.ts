@@ -6,6 +6,7 @@ import type { CharacterKeeper } from './accounts/worker.ts';
 import { type Listed, arrives, cameOutOf, reachOf, shipOf } from './arrival.ts';
 import { type Count, counted } from './budget.ts';
 import { Keeper, partFrom, TOKEN, TOKEN_WAIT_MS } from './keeping.ts';
+import { OutpostHost, outpostGround } from './outpostHost.ts';
 import {
   canonicalRoom,
   isleRoom,
@@ -124,6 +125,8 @@ export class RoomHost extends DurableObject<Env> {
   private island: { readonly id: number; readonly seed: string; readonly sea: string; told: number } | null = null;
   /** In a sea island's dungeon, the players the sea says are landed on its island: no one else's inputs are played. */
   private readonly ashore = new Set<number>();
+  /** At a guild's outpost, what stands its plot and runs its players' errands with the accounts. */
+  private outpost: OutpostHost | null = null;
 
   /** The sea's word on its island `id`, for that island's room: empty unless this is the open sea and it stands. */
   async islandWord(id: number): Promise<string> {
@@ -188,7 +191,7 @@ export class RoomHost extends DurableObject<Env> {
     if (held.door !== null) setTimeout(() => !held.signed && this.outOfDoor(server), TOKEN_WAIT_MS);
     // In a run no one plays before the room keeps their character, nor in a sea island's dungeon before the sea says
     // they are landed on its island: their inputs are taken in their order and stand still until then.
-    if (privateRun(this.name) || this.name.startsWith('sea-dungeon-'))
+    if (privateRun(this.name) || this.name.startsWith('sea-dungeon-') || this.outpost)
       this.guarded(() => this.room.hold(player, true), false);
     // A sea island's dungeon whose sea never says the player landed sends them off to join again, rather than hold them.
     if (this.name.startsWith('sea-dungeon-'))
@@ -254,6 +257,7 @@ export class RoomHost extends DurableObject<Env> {
     if (privateRun(name)) this.keeper.forCompany();
     // A node's room, its dungeons' and its runs' judge where each kept character comes from.
     const reached = name.startsWith('node-') ? nodeRoom(name.slice('node-'.length)) : null;
+    if (reached?.guild) this.keeper.forGuild(reached.guild);
     if (reached) {
       const reach = await this.reachOf(reached.id);
       this.keeper.judgingArrivals((from, body) => arrives(name, from, shipOf(body), reach));
@@ -296,8 +300,17 @@ export class RoomHost extends DurableObject<Env> {
     const named = nodeRoom(node);
     if (!named) return false;
     const text = await this.nodeText(named.id);
+    // A guild's outpost opens only on a node whose file has an outpost's ground; the bare node is the wild site.
+    const ground = named.guild !== null && text !== null ? outpostGround(text) : null;
+    if (named.guild !== null && !ground) return false;
     const ready =
       text !== null && (named.dungeon === null ? this.room.openNode(text) : this.room.openDungeon(text, named.dungeon));
+    if (ready && ground && named.guild !== null && this.room.outpost(named.guild, ground.muster)) {
+      this.outpost = new OutpostHost(this.room, this.env.ACCOUNTS, name, ground, (call, fallback) =>
+        this.guarded(call, fallback),
+      );
+      void this.outpost.read();
+    }
     const opened = ready && this.room.difficulty(named.seas);
     return opened && this.room.reseed(seeds) && this.room.minute(Math.floor(Date.now() / MINUTE_MS));
   }
@@ -463,7 +476,10 @@ export class RoomHost extends DurableObject<Env> {
     // After any word on the water still in flight, so leaving is the last the accounts hear.
     if (token)
       void (held.presenting ?? Promise.resolve()).then(() => this.env.ACCOUNTS.present(token, null)).catch(() => false);
-    partFrom(this.room, this.keeper, held.player, (call) => this.guarded(call, undefined));
+    const part = () => partFrom(this.room, this.keeper, held.player, (call) => this.guarded(call, undefined));
+    // At an outpost, the last save waits for what the player's errands give back.
+    if (this.outpost) void this.outpost.settled(held.player).then(part);
+    else part();
     const others = this.open().filter((each) => each !== socket);
     if (others.length === 0 && this.ticking) {
       clearInterval(this.ticking);
@@ -511,6 +527,7 @@ export class RoomHost extends DurableObject<Env> {
         this.guarded(() => this.room.tick(), undefined);
         this.ticks++;
       }
+      this.outpost?.tick();
       // Taken once, then cut for each player: on land what changed since the snapshot their screen last showed, and at
       // sea what the sea tells one goes to them alone.
       this.guarded(() => this.room.snapshotPrepare(), undefined);

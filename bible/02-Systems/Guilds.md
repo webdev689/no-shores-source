@@ -98,6 +98,15 @@ ranks are the Roster's as well ([[Accounts]], "The Roster").
 - **In no guild**, the tab founds one: its name, its tag and the banner made for it before it exists, with the
   invites waiting, each joined or declined.
 
+## An outpost's room
+
+At the guild's outpost (`node-<site>--guild-<key>`, [[Server]]) a member puts Aurem into the treasury, delivers
+materials to a structure being built, takes from the stores and sounds the War Horn; the room asks the accounts for
+each and gives back what they did not take. The horn calls a High Assessor with four Majors to the muster ground, at
+the level of the highest member there raised by the horn's tier (1 Normal, 2 Elite, 3 Abyss), one at a time. Felled,
+each player who fought it is paid as a world boss's clear pays, and each member among them takes a guild package,
+once a week (`GuildWeek.horn`).
+
 ## Limits
 
 - A guild's name and tag are kept as founded; a rename is the owner's, by hand ([[Names]]).
