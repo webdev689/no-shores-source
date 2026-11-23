@@ -65,9 +65,6 @@ function bannerOf(seen: OutpostSeen): Banner {
   }
 }
 
-/** The staff a guild's banner hangs from. */
-const staffOf = (seen: OutpostSeen): string => bannerOf(seen).staff;
-
 /** Whatever keeps a course of blocks for bodies to run into: the page's movement, its fight. */
 interface Course {
   setCourse(blocks: readonly Block[]): void;
@@ -77,8 +74,17 @@ export class OutpostHere {
   private seen: OutpostSeen | null = null;
   private asked = 0;
   private shown: readonly EventProp[];
+  /** The outpost's banner and the cloth hung from its standard, worked out once a read. */
+  private banner: Banner | null = null;
+  private hung: Hung | null = null;
+  /** The zone's own props and the list they were last joined into, kept while neither changes. */
+  private joined: { besides: readonly EventProp[]; shown: readonly EventProp[]; all: readonly EventProp[] } | null =
+    null;
+  /** The room this page joined here, named by the guild's key as it stood on arriving. */
+  private readonly room: Promise<string>;
   /** The plot's boxes as last read, which the camera keeps clear of too. */
   walls: readonly Block[] = [];
+  private takenUp: { readonly id: number; readonly why: string } | null = null;
   private readonly timer: ReturnType<typeof setInterval>;
 
   readonly site: string;
@@ -93,6 +99,7 @@ export class OutpostHere {
     course: { readonly boxes: readonly Block[]; readonly courses: readonly Course[] },
   ) {
     [this.site, this.ground, this.link, this.course] = [site, ground, link, course];
+    this.room = guildHeld().then((guild) => nodeRoom({ id: site, kind: 'outpost' }, 'normal', guild?.key ?? null));
     this.shown = this.standing();
     this.look();
     this.timer = setInterval(this.look, LOOK_MS);
@@ -119,8 +126,8 @@ export class OutpostHere {
     const asked = ++this.asked;
     const link = this.link;
     if (!link) return;
-    void guildHeld()
-      .then((guild) => link.outpost(nodeRoom({ id: this.site, kind: 'outpost' }, 'normal', guild?.key ?? null)))
+    void this.room
+      .then((room) => link.outpost(room))
       .then((answer) => {
         if (asked !== this.asked || typeof answer === 'string') return;
         this.take(answer.outpost);
@@ -131,21 +138,32 @@ export class OutpostHere {
   /** Stands an outpost as read (null for none raised). */
   take(seen: OutpostSeen | null): void {
     this.seen = seen;
+    this.banner = seen ? bannerOf(seen) : null;
     this.shown = this.standing();
-    this.walls = seen ? plotBoxes(seen.plot, this.ground, staffOf(seen)) : [];
+    this.hung = this.hangs();
+    this.walls = seen ? plotBoxes(seen.plot, this.ground, this.staff) : [];
     for (const course of this.course.courses) course.setCourse([...this.course.boxes, ...this.walls]);
+  }
+
+  /** The staff the outpost's banner hangs from. */
+  private get staff(): string {
+    return this.banner?.staff ?? '';
   }
 
   /** The guild's banner cloth, hung from its standard's `cloth` socket; none before the standard stands. */
   cloth(): Hung | null {
-    const { seen, ground } = this;
+    return this.hung;
+  }
+
+  private hangs(): Hung | null {
+    const { seen, ground, banner } = this;
     const standard = seen?.plot.structures.find((standing) => standing.kind === 'standard' && standing.building === 0);
-    if (!seen || !standard) return null;
-    const placed = placeOf(standard, ground, staffOf(seen));
+    if (!seen || !standard || !banner) return null;
+    const placed = placeOf(standard, ground, banner.staff);
     const [x, y, z] = moduleSocket(moduleNumber(placed.module), 'cloth');
     const [cos, sin] = [Math.cos(placed.turn), Math.sin(placed.turn)];
     const top = [placed.at[0] + x * cos - y * sin, placed.at[1] + x * sin + y * cos, placed.at[2] + z] as const;
-    return { at: top, turn: placed.turn, banner: bannerOf(seen) };
+    return { at: top, turn: placed.turn, banner };
   }
 
   /** The props the outpost stands as beside `besides` (the zone's own), kept as one list while nothing changes, and
@@ -153,7 +171,11 @@ export class OutpostHere {
   props(besides: readonly EventProp[] = [], feet?: readonly [number, number]): readonly EventProp[] {
     const ghost = feet ? this.ghost(feet) : null;
     if (ghost) return [...besides, ...this.shown, ghost];
-    return besides.length === 0 ? this.shown : [...besides, ...this.shown];
+    if (besides.length === 0) return this.shown;
+    const { joined, shown } = this;
+    if (joined?.besides !== besides || joined.shown !== shown)
+      this.joined = { besides, shown, all: [...besides, ...shown] };
+    return this.joined?.all ?? shown;
   }
 
   /** The piece being placed here, where the player's feet would stand it, and the law's words on it. */
@@ -178,10 +200,15 @@ export class OutpostHere {
     if (!placed || !this.link) return null;
     const { placing, decor, refusal, name } = placed;
     const link = this.link;
+    const spot = `${decor.x},${decor.y},${decor.turn}`;
+    // The accounts' last refusal shows only while the piece stands where it was refused.
+    if (placing.said !== null && placing.saidAt !== spot) placing.said = null;
     const run = () => {
-      if (refusal !== null) return;
+      if (refusal !== null || placing.sending) return;
+      placing.sending = true;
       void link.social('outpost/decorate', { site: this.site, ...decor }).then((why) => {
-        placing.said = why;
+        placing.sending = false;
+        [placing.said, placing.saidAt] = [why, spot];
         if (why !== null) return;
         letGo();
         ask({ kind: ASKS.outpostChanged });
@@ -198,7 +225,7 @@ export class OutpostHere {
       const [x, y] = socketOf(HALL, ground, '', 'use');
       return [propOf({ module: 'lamp-post', at: [x, y, ground.level], turn: 0 })];
     }
-    const staff = staffOf(seen);
+    const { staff } = this;
     return [
       ...seen.plot.structures.map((standing) => propOf(placeOf(standing, ground, staff))),
       ...seen.plot.decor.map((decor) => propOf(decorPlaceOf(decor, ground))),
@@ -219,7 +246,7 @@ export class OutpostHere {
         ? { words: RAISE_WORDS, run: () => openGearWindow({ view: 'guild', outpost: { site } }) }
         : null;
     }
-    const staff = staffOf(seen);
+    const { staff } = this;
     for (const standing of seen.plot.structures) {
       if (!near(socketOf(standing, ground, staff, socketNameOf(standing.kind)))) continue;
       const outpost = { site, structure: standing.id };
@@ -230,11 +257,14 @@ export class OutpostHere {
     const link = this.link;
     const run = () =>
       void link.social('outpost/undecorate', { site, id: piece.id }).then((why) => {
+        this.takenUp = why === null ? null : { id: piece.id, why };
         if (why !== null) return;
         ask({ kind: ASKS.outpostChanged });
         dispatchEvent(new Event(OUTPOST_CHANGED));
       });
-    return { words: `Take up the ${pieceOf(piece.piece)?.name ?? 'decoration'}`, run };
+    // A refusal (a member below admin) is said where the piece stands, as the use prompt's words.
+    const refused = this.takenUp?.id === piece.id ? this.takenUp.why : null;
+    return { words: refused ?? `Take up the ${pieceOf(piece.piece)?.name ?? 'decoration'}`, run };
   };
 
   /** Stops reading the plot, as the player leaves. */

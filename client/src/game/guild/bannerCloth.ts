@@ -16,6 +16,9 @@ export interface Hung {
 
 /** The cloth's width, metres: its height keeps the picture's shape. */
 const WIDTH_M = 1.1;
+/** How often the wave comes round, seconds (its phase runs 1.6 a second): the shader's clock wraps at a whole number
+ *  of them, so the cloth never jumps. */
+const WAVE_PERIOD_S = ((2 * Math.PI) / 1.6) * 256;
 /** Its grid's cells across and down. */
 const [ACROSS, DOWN] = [6, 12];
 
@@ -123,7 +126,7 @@ export class BannerCloth {
     if (!hung) return;
     numbers.set(fromEye.subarray(0, 16));
     numbers.set([hung.at[0] - (eye[0] ?? 0), hung.at[1] - (eye[1] ?? 0), hung.at[2] - (eye[2] ?? 0), hung.turn], 16);
-    numbers.set([WIDTH_M, (WIDTH_M * CLOTH_HEIGHT) / CLOTH_WIDTH, time % 1000, 0], 20);
+    numbers.set([WIDTH_M, (WIDTH_M * CLOTH_HEIGHT) / CLOTH_WIDTH, time % WAVE_PERIOD_S, 0], 20);
     this.gpu.device.queue.writeBuffer(this.view, 0, numbers);
     const { pipeline, group } = this.made();
     pass.setPipeline(pipeline);

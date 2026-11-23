@@ -96,7 +96,9 @@ test('a piece being placed stands its ghost at the feet, snapped to a quarter me
   const onHall = placeOf(structure(1, 'hall', 6, 6), GROUND, '').at;
   assert.equal(here.uses(onHall[0], onHall[1], () => undefined)?.words, 'A structure stands there.');
   assert.ok((here.props([], [onHall[0], onHall[1]]).at(-1)?.tint?.[0] ?? 0) > 0.5, 'red where it may not');
-  here.uses(...open, () => undefined)?.run();
+  const place = here.uses(...open, () => undefined);
+  place?.run();
+  place?.run();
   await Promise.resolve();
   assert.deepEqual(asked, [
     ['outpost/decorate', { site: 'gull-cove-outpost', piece: 'bench', x: 3, y: 30.5, turn: 0 }],

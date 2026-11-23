@@ -16,7 +16,7 @@ export interface Held {
 let held: Promise<Held | null> = Promise.resolve(null);
 let accounts: AccountLink | null = null;
 let landed: Held | null = null;
-const heard = new Set<() => void>();
+let reads = 0;
 
 /** Reads the guild once from the accounts: null in none, or when the accounts do not answer. */
 async function readGuild(link: AccountLink): Promise<Held | null> {
@@ -32,10 +32,10 @@ async function readGuild(link: AccountLink): Promise<Held | null> {
 export function keepGuild(link: AccountLink): void {
   accounts = link;
   const read = () => {
+    const number = ++reads;
     held = readGuild(link).catch(() => null);
     void held.then((guild) => {
-      landed = guild;
-      heard.forEach((listener) => listener());
+      if (number === reads) landed = guild;
     });
   };
   read();
@@ -54,9 +54,4 @@ export function ownOutpostColours(site: string): { readonly cloth: string; reado
   if (!landed?.sites.includes(site)) return null;
   const banner = bannerFrom(landed.banner);
   return banner ? { cloth: hexOf(banner.cloth), device: hexOf(banner.deviceColour) } : null;
-}
-
-/** Calls `listener` each time a read of the guild lands. */
-export function onGuildHeld(listener: () => void): void {
-  heard.add(listener);
 }

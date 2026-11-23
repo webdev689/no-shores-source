@@ -15,6 +15,9 @@ export interface Placing {
   readonly piece: string;
   turn: number;
   said: string | null;
+  /** The spot the accounts last refused it at, and whether a placing is on its way to them. */
+  saidAt: string;
+  sending: boolean;
 }
 
 /** The keys shown on the hint strip while a piece is placed. */
@@ -39,7 +42,7 @@ function heard(event: KeyboardEvent): void {
 /** Begins placing a piece at a site. */
 export function startPlacing(site: string, piece: string): void {
   if (!placing) addEventListener('keydown', heard);
-  placing = { site, piece, turn: 0, said: null };
+  placing = { site, piece, turn: 0, said: null, saidAt: '', sending: false };
 }
 
 /** Lets the piece go. */
