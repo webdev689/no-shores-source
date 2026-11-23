@@ -62,6 +62,7 @@ Decisions waiting on the owner. None is in force until the owner decides it and 
   and keeps a worn set or metal only of its piece's own content ([[The Room Keeps Only Looks of a Piece's Own
   Content]]); the garments drawn are still each page's own word ([[Server]]).
 - **Set names** ([[Everything Carries a Set Name, and Perks Roll by Pool]]): Claude's draft of each set's name
-  ([[Set Names and Faction Perks as Claude Drafts Them]]) waits on the owner's yes (the owner: "Not yet").
+  ([[Set Names and Faction Perks as Claude Drafts Them]]) is built as drafted so it can be seen in the game, and waits
+  on the owner's yes at #169's merge (the owner: "Not yet"; [[Claude Finishes the Gear Calls on Its Own Word]]).
 - **The Abyss Dungeons' crossbows.** The forge draws no adamantium or ebony crossbow, so they show the nearest metal it
   draws (mithril); their own art waits (the owner: "Not now").
