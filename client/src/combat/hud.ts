@@ -107,6 +107,8 @@ const FOUL = { colour: [96, 150, 24], heldS: 1.25, riseS: 0.25, fadeS: 0.6 } as 
 const BOSS_CLEAR = 6;
 const CALL_CLEAR = 16;
 const CROSSHAIR_CLEAR = 28;
+/** A plate over a figure at its largest, CSS pixels, for one not yet laid. */
+const PLATE_MOST = { width: 220, height: 48 } as const;
 /** The ids of the top's pieces. */
 const TOPS = ['fight-compass', 'fight-banner', 'fight-boss', 'fight-target'] as const;
 
@@ -285,7 +287,7 @@ export class Hud {
     this.places = { from: [own?.x ?? 0, own?.y ?? 0], marks: shown?.places ?? [] };
     this.banner.update(shown?.banner ?? null, seconds, shown?.beat ?? null);
     this.callout.update(shown?.call ?? null, seconds);
-    this.foul(frame, !!shown?.foul, seconds);
+    this.foul(shown?.foul ?? null, seconds);
     this.stores.update(
       shown?.stores ?? [],
       (point) => project(frame.matrix, point, frame.width, frame.height),
@@ -351,11 +353,10 @@ export class Hud {
     this.hurtFlash = Math.max(0, this.hurtFlash - seconds);
   }
 
-  /** The view's edge turns sick green as foul water harms the player (`wet`: they stand in it), held from one harm to
-   *  the next, and fades the moment they leave it. */
-  private foul(frame: HudFrame, wet: boolean, seconds: number): void {
-    const harmed = frame.events.some((event) => event.kind === EVENT.drowned && event.defender === frame.player);
-    this.foulHeld = !wet ? 0 : harmed ? FOUL.heldS : Math.max(0, this.foulHeld - seconds);
+  /** The view's edge turns sick green as foul water harms the player, held from one harm to the next while they
+   *  stand in it, and fades the moment they leave it. */
+  private foul(foul: PublicShown['foul'], seconds: number): void {
+    this.foulHeld = !foul ? 0 : foul === 'harmed' ? FOUL.heldS : Math.max(0, this.foulHeld - seconds);
     this.foulShown =
       this.foulHeld > 0
         ? Math.min(1, this.foulShown + seconds / FOUL.riseS)
@@ -456,10 +457,12 @@ export class Hud {
     const arms = this.armsNode();
     const column = TOPS.flatMap((id) => sidesOf(ui.boxOf(id)) ?? []);
     this.tops = [...column, ...[sidesOf(ui.boxOf('fight-call'))].flatMap((box) => box ?? [])];
-    // A plate over a figure that stood under the top's pieces is laid unseen, so it never shows through them.
-    const hidden = (id: string) => {
-      const box = sidesOf(ui.boxOf(id));
-      return !!box && this.tops.some((top) => meets(box, top));
+    // A plate over a figure standing under the top's pieces is laid unseen, so it never shows through them: its box
+    // at its foot this frame, as large as it was last laid (a plate first shown, as large as a plate is at most).
+    const hidden = (id: string, x: number, y: number) => {
+      const { width, height } = ui.boxOf(id) ?? PLATE_MOST;
+      const box = { left: x - width / 2, right: x + width / 2, top: y - height, bottom: y };
+      return this.tops.some((top) => meets(box, top));
     };
     const banner = this.banner.node(room, zoom, this.view.height / zoom < SHORT_VIEW);
     const boss = this.foeBars.bossNode(Math.round(Math.min(PLATES.boss.width, PLATES.boss.share * room) * zoom), zoom);

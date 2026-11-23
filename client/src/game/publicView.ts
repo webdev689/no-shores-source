@@ -30,7 +30,7 @@ import {
   encounterCall,
   encounterMarks,
   encounterPlaces,
-  inFoulWater,
+  foulOf,
 } from './encounterLaw.ts';
 import { type EncounterSeen, SEAL_STATE } from '../network/encounterMessages.ts';
 import type { Block } from '../rules/movementRules.ts';
@@ -149,7 +149,7 @@ function encounterFrame(
   const part = seen.woken ? Math.min(3, seen.wardsBroken + 1) : undefined;
   const places = encounterPlaces(layout, seen);
   const call = encounterCall(seen);
-  const foul = inFoulWater(layout, seen, bodies.feet);
+  const foul = foulOf(layout, seen, bodies.feet, events, bodies.player);
   const shown: PublicShown | null = banner && { banner, beat, places, stores: [], mood, part, call, foul };
   const won = events.some((each) => each.kind === EVENT.sealBroken || each.kind === EVENT.wardBroken);
   const rose = events.some((each) => each.kind === EVENT.bossWoke);

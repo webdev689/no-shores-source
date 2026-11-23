@@ -11,6 +11,7 @@ import {
   encounterCall,
   encounterMarks,
   encounterPlaces,
+  foulOf,
   inFoulWater,
   SEAL_NAMES,
   taskOf,
@@ -462,4 +463,10 @@ test("the player stands in foul water only on a running Ascent's drowned floor, 
   assert.equal(inFoulWater(drowned, running, [4.8, 1.6, 0.4]), false, 'on a pad over it');
   for (const state of [SEAL_STATE.waiting, SEAL_STATE.broken])
     assert.equal(inFoulWater(drowned, seen({ seals: [ascent(state), seen().seals[1]!] }), [4.8, 1.6, 0]), false);
+  // The room tells its harm among the encounters' events, to the player it harmed alone.
+  const harm = (defender: number) => [{ kind: EVENT.drowned, defender, amount: 0.12 }] as unknown as FightEvent[];
+  assert.equal(foulOf(drowned, running, [4.8, 1.6, 0], harm(7), 7), 'harmed');
+  assert.equal(foulOf(drowned, running, [4.8, 1.6, 0], harm(8), 7), 'wet', "another's harm");
+  assert.equal(foulOf(drowned, running, [4.8, 1.6, 0], [], 7), 'wet');
+  assert.equal(foulOf(drowned, running, [1.6, 1.6, 0], harm(7), 7), null, 'out of it');
 });

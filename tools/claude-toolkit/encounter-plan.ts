@@ -216,16 +216,42 @@ plan.seals.forEach((seal, index) => {
     }
   }
   if (seal.kind === HOLDFAST) {
-    // Inside the ring on the doorway's side, the camera high behind, so the body and the whole relic stand in frame.
-    const ring = toward(first, door, 2.6);
+    // Inside the ring on the side whose camera, 4 m behind the body, stands deepest in the room's open floor, so neither
+    // a wall nor a pillar comes between it and the body and the whole relic.
+    const room = layout.rooms[seal.room];
+    const inRoom = ([x = 0, y = 0]: Point) =>
+      room
+        ? Math.min(
+            x - room.x * layout.cell,
+            (room.x + room.width) * layout.cell - x,
+            y - room.y * layout.cell,
+            (room.y + room.depth) * layout.cell - y,
+          )
+        : 0;
+    const roomy = (point: Point) =>
+      Math.min(
+        inRoom(point),
+        ...layout.boxes.map(([minX, minY, maxX, maxY]) =>
+          Math.max(minX - (point[0] ?? 0), (point[0] ?? 0) - maxX, minY - (point[1] ?? 0), (point[1] ?? 0) - maxY),
+        ),
+      );
+    const sides = [0, 1, 2, 3, 4, 5, 6, 7].map((eighth) => {
+      const turn = (eighth * Math.PI) / 4;
+      const out = (metres: number): Point => [
+        (first[0] ?? 0) + Math.sin(turn) * metres,
+        (first[1] ?? 0) - Math.cos(turn) * metres,
+      ];
+      return { ring: out(2.4), room: Math.min(roomy(out(2.4)), roomy(out(4.4)), roomy(out(6.4))) };
+    });
+    const ring = sides.reduce((best, side) => (side.room > best.room ? side : best)).ring;
     stand(ring);
     pause(800);
     freeze(true);
-    picture(ring, first, 'third,5,10', 'holdfast_held');
+    picture(ring, first, 'third,4,20', 'holdfast_held');
     encounter(2, index, 0.45);
-    picture(ring, first, 'third,5,10', 'holdfast_draining');
+    picture(ring, first, 'third,4,20', 'holdfast_draining');
     encounter(2, index, 0);
-    picture(ring, first, 'third,5,10', 'holdfast_drained');
+    picture(ring, first, 'third,4,20', 'holdfast_drained');
     encounter(2, index, 1);
     freeze(false);
   }
@@ -242,7 +268,8 @@ const byAnchor = toward(anchor2, anchors, 1.8);
 stand(byAnchor);
 picture(byAnchor, anchor2, 'third,6,45', 'court_anchors_resting');
 // Awake, the Boss strikes: the body's health is held whole from here, so no death hides a moment. Before each picture
-// the Boss is stood a few metres ahead on the camera's line, so it stands in frame.
+// the Boss (and its post, where a ward holds it) is stood a few metres ahead on the camera's line, and the camera
+// looks low enough that it stands in the middle of the frame, never behind the banner.
 encounter(10, 1, 0);
 const bossAhead = (from: Point, to: Point) => {
   const [east = 0, south = 0] = toward(from, to, 4);
@@ -254,14 +281,14 @@ encounter(3, 0, 0);
 pause(1500);
 bossAhead(byAnchor, anchor0);
 freeze(true);
-picture(byAnchor, anchor0, 'third,9,50', 'court_awake');
+picture(byAnchor, anchor0, 'third,8,30', 'court_awake');
 freeze(false);
 encounter(4, 0, 0);
 pause(2500);
 encounter(0, 0, 0);
 freeze(true);
 bossAhead(byAnchor, anchor0);
-picture(byAnchor, anchor0, 'third,9,50', 'court_ward');
+picture(byAnchor, anchor0, 'third,8,30', 'court_ward');
 encounter(5, 0, 1);
 encounter(5, 1, 0.5);
 // Beside an anchor, not on it, so its beam does not stand in the camera's way.
@@ -271,14 +298,14 @@ bossAhead(beside, anchor1);
 picture(beside, anchor1, 'third,7,45', 'court_anchors_filling');
 encounter(6, 0, 50);
 bossAhead(beside, anchor0);
-picture(beside, anchor0, 'third,9,40', 'court_slam');
+picture(beside, anchor0, 'third,8,30', 'court_slam');
 encounter(6, 0, 300);
 encounter(8, 0, 45 * 60);
 bossAhead(beside, anchor0);
-picture(beside, anchor0, 'third,9,40', 'court_fury_warning');
+picture(beside, anchor0, 'third,8,30', 'court_fury_warning');
 encounter(8, 0, -31 * 60);
 bossAhead(beside, anchor0);
-picture(beside, anchor0, 'third,9,40', 'court_fury');
+picture(beside, anchor0, 'third,8,30', 'court_fury');
 freeze(false);
 for (const nth of [0, 1, 2]) encounter(5, nth, 1);
 pause(300);

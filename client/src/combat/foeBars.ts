@@ -231,8 +231,8 @@ export class FoeBars {
   }
 
   /** The plates over figures, each with its foot just over its foe's head, the nearest drawn over the farther; those
-   *  `hidden` says are laid unseen, so where they stand is still known. */
-  overheadNodes(hidden: (id: string) => boolean = () => false): Node[] {
+   *  `hidden` says are laid unseen (asked by each one's id and the spot its foot stands at). */
+  overheadNodes(hidden: (id: string, x: number, y: number) => boolean = () => false): Node[] {
     const order = [...this.drawn].sort((one, two) => two.front - one.front);
     return order.flatMap(({ id, plate, x, y, cone, scale }) => {
       const made = plate.node({ kind: 'overhead', width: 0, scale });
@@ -242,7 +242,7 @@ export class FoeBars {
             {
               ...made,
               id: named,
-              ...(hidden(named) ? { opacity: 0 } : cone < 1 ? { opacity: cone } : {}),
+              ...(hidden(named, x, y - 4) ? { opacity: 0 } : cone < 1 ? { opacity: cone } : {}),
               float: { to: 'screen', anchor: [0.5, 1], x, y: y - 4, z: 1 },
             } satisfies Node,
           ]

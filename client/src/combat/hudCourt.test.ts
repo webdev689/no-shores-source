@@ -4,7 +4,6 @@ import { viewProjection } from '../editor/orbit.ts';
 import type { Action, FighterView } from '../rules/fighters.ts';
 import type { Node } from '../ui/node.ts';
 import type { Box } from '../ui/quads.ts';
-import { EVENT } from './cues.ts';
 import { Hud, type HudFrame } from './hud.ts';
 import { cameraOf } from './plateSight.ts';
 import { allOf, fakeInterface, laidOf, wordsIn } from './nodes.test.ts';
@@ -194,22 +193,42 @@ test('the call stands large in the middle for a moment, then goes; a new call sh
 test('the view’s edge is tinted sick green while the foul water harms the player, and fades once they leave it', () => {
   const hud = new Hud();
   const frame = { ...courtFrame(1280, 720), foes: [] };
-  const harmed = [{ kind: EVENT.drowned, attacker: 0, defender: 1, amount: 0.12 }] as unknown as HudFrame['events'];
   const tint = () => allOf(hud.node(fakeInterface())).find((node) => node.id === 'fight-foul')?.opacity ?? 0;
-  const wet = (events: HudFrame['events'] = []) => ({ ...frame, events, public: { ...court, foul: true } });
+  const wet = (harmed = false) => ({
+    ...frame,
+    public: { ...court, foul: harmed ? ('harmed' as const) : ('wet' as const) },
+  });
   hud.update(wet(), 1 / 60);
   assert.equal(tint(), 0, 'standing in it before it harms: none');
-  hud.update(wet(harmed), 1 / 60);
+  hud.update(wet(true), 1 / 60);
   for (let step = 0; step < 30; step++) hud.update(wet(), 1 / 60);
   assert.ok(tint() > 0.9, `harmed and still in it: shown (${tint()})`);
-  for (let step = 0; step < 50; step++) hud.update(wet(step % 60 === 30 ? harmed : []), 1 / 60);
+  for (let step = 0; step < 50; step++) hud.update(wet(step === 30), 1 / 60);
   assert.ok(tint() > 0.9, 'held between one harm and the next');
-  hud.update({ ...frame, public: { ...court, foul: false } }, 1 / 60);
+  hud.update({ ...frame, public: { ...court, foul: null } }, 1 / 60);
   const leaving = tint();
   assert.ok(leaving > 0 && leaving < 1, `fading as the body leaves it (${leaving})`);
-  for (let step = 0; step < 60; step++) hud.update({ ...frame, public: { ...court, foul: false } }, 1 / 60);
+  for (let step = 0; step < 60; step++) hud.update({ ...frame, public: { ...court, foul: null } }, 1 / 60);
   assert.equal(tint(), 0, 'gone');
   hud.update(wet(), 1 / 60);
   for (let step = 0; step < 90; step++) hud.update(wet(), 1 / 60);
   assert.equal(tint(), 0, 'back in it, none until it harms again');
+});
+
+test('a plate first shown under the banner is hidden on the frame it first shows', () => {
+  const [width, height] = [1280, 720];
+  const hud = new Hud();
+  const ui = fakeInterface(width, height);
+  const frame = courtFrame(width, height);
+  const alone = { ...frame, foes: frame.foes.filter((foe) => foe.id !== 3) };
+  for (let step = 0; step < 6; step++) {
+    hud.update(alone, 1 / 60);
+    ui.draw(hud.node(ui));
+  }
+  hud.update(frame, 1 / 60);
+  const plate = allOf(hud.node(ui)).find(
+    (node) => node.float?.anchor?.[1] === 1 && wordsIn(node).includes('Crossbowman'),
+  );
+  assert.ok(plate, 'shown');
+  assert.equal(plate.opacity, 0, 'and unseen under the banner');
 });
