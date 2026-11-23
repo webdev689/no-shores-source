@@ -748,12 +748,12 @@ never while a press is held. Each press is an ask the room answers.
   ("Ammo 18 of 24"), or "No ammo" in the loss colour, at 22 where the menu is wide. A kind is named as the screens name
   it: Sword & Shield, Double Daggers, Great Axe. A slot's card shows as the pointer moves over it or the keys bring the
   focus to it; a click opens its flyout of the nine it may carry, toward the figure, upward from each side's two lowest
-  slots; a click there wears one, and F held over one dismantles it. A flyout closes once the mouse is off its slot and
+  slots, moved back inside the screen wherever it would run off it, at every size; a click there wears one, and F held over one dismantles it. A flyout closes once the mouse is off its slot and
   itself, a strip over the gap between them keeping it while the mouse crosses, or on a click or Escape; a key's focus
   in it goes back to its slot.
 - **The Mount slot** ([[Horses Are Items Worn in a Mount Slot]]): the horse worn, its picture the horse in its coat
   from the side as the forge draws it, or a horse's head in grey while none is worn. Its flyout lists the horses
-  carried, worn with a click and never dismantled (their cards offer no hold), and under them BARDING, counting those
+  carried, worn with a click and never dismantled (their cards offer no hold), and beside them BARDING, counting those
   kept: every barding, three a row, worn over the horse with a click when kept, each tile the horse worn in it (the
   bay's hide with none worn), its card and brass corner as the Appearance screen's. A horse's card names it and its
   kind (Normal Horse), with its coat's words and no level.

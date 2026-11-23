@@ -125,7 +125,7 @@ player wears the look the game gave them. The player then arrives at Overlook.
 | `wake` | First person on the deck: the eyes blinking open as an almond under shaped lids, the fires' light red through them, the view swimming and clearing a step with each beat of the heart, the ringing; up on the feet, looking round; the camera eases out of the eyes to over the player's shoulder, the shot the run's camera takes as the camera leaves the eyes (a run that opens later is eased to from wherever the camera then is), their hands empty and their figure drawn once the camera stands a metre out of the eyes, where play begins 15.5 s in ([[The Wreck Opens by Teaching the Player]]) | shown |
 | `wreck` | Taught on the quiet deck: the sword and shield found and equipped, the feet found, the player readied, a boarder met one on one, its bow taken up and taught; a wisp out of the storm that engulfs the player and gives them the Storm; the next fight teaching each of its abilities; then fought on foot through the wreck, each heap across the way clearing as its wave falls; at its end the push in to Captain Brannoc Thule, his nameplate and his cry; the fight one on one that cannot be won; a fade out | played |
 | `overboard` | In from black on the body thrown over the rail, Thule and his crew crying out and leaping on the drawn wreck, turned from the rail most of the way toward the camera; skipped, the screen is black at once, so the deep comes in from black | shown |
-| `deep` | Sinking past the fallen crew beside the wreck, its hulls and fires above the surface; the eyes; a flash; a voice; black | shown |
+| `deep` | Sinking past the fallen crew beside the wreck, its hulls and fires above the surface, the sea taking the story's steel and arms: from here on the player is drawn in the plain clothes a player with nothing wears in Overlook, nothing in hand or at the hip (`seaTakenDress`); the eyes; a flash; a voice; black | shown |
 | `shore` | First person on Saltmere's shore; a stranger comes down the beach, kneels beside the player and speaks; the player takes her hand; up, and up the shore together | played |
 
 **The shore.** The player wakes lying on the strand, looking up at the sky while the eyes blink open. The stranger
@@ -159,7 +159,8 @@ the player's from there.
 (`content/story/welcome.json`, said on the story's stage in the dialogue box, `welcome/tour.ts`) go in turn: a little
 of the world (the Grey Tithe's tenth, Overlook paying it nothing, three ports standing and the rest ruins grown over
 with something nobody names); then each place to visit, the camera flying to it as she names it and holding there
-while she and its keeper speak: the smiths' arcade (the Armorsmith and the Weaponsmith), the Mage, the Vault, the
+while she and its keeper speak: the smiths' arcade, held on the Armorsmith's stall (whose keeper calls out before she
+names the arcade, as no one speaks three lines in a row) and then on the Weaponsmith's, the Mage, the Vault, the
 Tailor, the Tack, the Postmaster, the harbour's Harbourmaster for the Shipwright, and the Hall of the Arts, turning to
 each house's chapel as she names it (Arlo Kestrel, Sable and Elder Maren Hale answering); then her farewell face to
 face. A place's eye (`welcome/framing.ts`) is the first of a set of candidates round its counters whose lines to each
@@ -182,13 +183,13 @@ view unless a solid stands between, looking down so their feet stand 36% down th
 view where it is, her words said all the same. From her first word to her farewell the view is hers and, as in the
 story's cutscenes, Space (or the pad's jump or confirm) moves her words on a line and Escape, the menu's key and the
 pad's Start and View open the menu, the character page or the sheet, her words and their time holding still under it;
-no other game key acts (no move or look, no use, map, chat or respawn). While she speaks every figure is drawn for the tour's own eye (the one last shown), not the player's camera, so each is turned and stands as that eye sees it; none but her is drawn within 4 m of that eye (a townsman walking past the camera would fill the view; her pair stands 6 m off it, a keeper at least 5.5 m). While she speaks a soft warm lamp hangs 2.6 m over the middle of the pair, a lantern of the town's at seven tenths of its light, reaching 8 m: lit as the city's lamps are, only as the daylight fades, so the two of them are seen at any hour, and put out once the welcome ends. As her first lines and her farewell begin the player is turned to face her, as she faces them. As she walks off the player is turned toward a point 3 m along her way into the town and the
+no other game key acts (no move or look, no use, map, chat or respawn). While she speaks every figure is drawn for the tour's own eye (the one last shown), not the player's camera, so each is turned and stands as that eye sees it; no townsman is drawn within 4 m of that eye (one walking past the camera would fill the view), the player and she always are (the pair stands 6 m off it, a keeper at least 5.5 m). While she speaks a soft warm lamp hangs 2.6 m over the middle of the pair, a lantern of the town's at seven tenths of its light, reaching 8 m: lit as the city's lamps are, only as the daylight fades, so the two of them are seen at any hour, and put out once the welcome ends. As her first lines and her farewell begin the player is turned to face her, as she faces them. As she walks off the player is turned toward a point 3 m along her way into the town and the
 view eases back over their shoulder, so she is seen going; the keys are theirs once it has. It is a cutscene: the HUD's
-bars, compass, tracker, marks and key strip are hidden while the keys are held, until the view is the player's again,
+bars, compass, tracker, marks and key strip, the use prompt, the toasts and a gate's offer are hidden while the keys are held, until the view is the player's again,
 the dialogue box hers. Her words wait while a menu is open over the view. A place no candidate eye sees clearly gives
 no shot: the view stays where it was. As she bids
 farewell she gives the player 400 Aurem, the opening quest's first task heard ([[Quests]]); the room gives it once a
-character, so a second hearing, a rejoin or a second tab gives none. Leaving the place mid-welcome ends it at once, the
+character, so a second hearing, a rejoin or a second tab gives none. Leaving the place mid-welcome ends it at once, its lamp put out, the
 view and the keys the player's again, and gives nothing then: a character still owed her gift is given it on its next
 frame in a social space with no welcome to hear (a reload, or a browser that played the story before). Either way the
 room is asked once a page, and only once its word on the player's own character (not a room's starting one) shows her
@@ -463,11 +464,11 @@ the cutscenes, the camera's moves, the nameplate, the fires and the lines are th
     story's own Normal Bow of level 1, lying as the sword and shield lay (`LyingArms`: popped up, bouncing, hovering,
     its line of light), drawn half again its true size so the thin bow reads where it fell until walked over, when the room puts it in the pack (`Room::story_take`); a boarder brought
     down before then drops nothing, and none comes after. Steps: Take up the bow, Equip it (I, the Character page's
-    Ranged slot), Draw it (2), Loose an arrow (Left button or F, an arrow gone from the bow), Back to your sword (1).
+    Ranged slot), Switch to the bow (2), Loose an arrow (Left button or F, an arrow gone from the bow), Back to your sword (1).
   - The wisp ([[The Game Shows the Mystery and Explains Almost None of It]]): once the bow is taught, one of the
     Stormcallers' hounds ("The Six Hounds") comes out of the storm, shown and never explained (`WispScene`), the
     fight held and the tracker hidden: an apple's size of white-blue light in Volt's colours, a white-hot core in
-    steps, a soft halo laid as light (dithered far off, as six finer discs within 4 m), a trail of motes falling away and small arcs crackling off it, its light a pool of Volt's white-blue on the wreck (`WreckLook.near`, part
+    steps, a soft halo laid as light (dithered far off, as six finer discs within 4 m), a trail of motes falling away (a mote near the eye laid no larger than it shows from 4 m) and small arcs crackling off it, its light a pool of Volt's white-blue on the wreck (`WreckLook.near`, part
     of it added whole so orange timber goes pale rather than green) and as a lamp of the night on the figures and the
     sea round it, reaching 2.5 to 3.5 m, falling softly to nothing, and brighter as its rings tighten; the flash lights
     all within 9 m near white for an instant (`wispLight`), a low hum
@@ -500,7 +501,7 @@ the cutscenes, the camera's moves, the nameplate, the fires and the lines are th
     begins the wreck at its coming, `&wisp=<n>` n - 1 seconds into it (past its flash, with the Storm given), `&bow=1` with the bow lying 2 to 3 m before the player on their own deck,
     `&armed=1` the same with the sword and shield and the bow taken up and worn (asked of the room as the player's
     own walking and the menu ask them), and `&lash=1` with the Storm given and the boarder stood 4 m before the player, in Arc Lash's cone and reach
-    (`wreckDevStart.ts`).
+    (`wreckDevStart.ts`); `&view=first` begins any of them with the camera in the player's head.
   - "Call the Storm": until the Storm is given, the waves wait; from then the next zone's wave comes, and its fight
     teaches each ability as the parry is (`CastFreeze`): the fight frozen with its prompt breathing until its key is
     pressed, and again at the next chance a second on should the press cast nothing, until it is cast: "Press G to cast Arc Lash" once a foe stands in its cone and reach (7 m), then "Press Q to cast
@@ -511,7 +512,9 @@ the cutscenes, the camera's moves, the nameplate, the fires and the lines are th
     the zones' waves wait: a zone reached keeps its wave waiting and its way on shut (`WreckProgress.held`).
   - The boss fight's task is "Face Captain Brannoc Thule", whatever stands before. The tracker hides while a cutscene
     holds the fight, and so do the fight's display (its bars and compass) and the key strip, the dialogue box
-    staying; all come back as play does.
+    staying; all come back as play does. While a cutscene with its own eye holds the camera (the wisp, Thule's
+    coming) every figure, the player's own too, is drawn for that eye whatever the player's own view, and in first
+    person no hands show over it; the ending, which keeps the player's own camera, shows neither in first person.
   - With the menu open the lesson goes on: the task over its next step (its keys and count beside) stand in the middle
     of the menu's foot, over the menu and clear of its tiles and labels (`TaskTracker.inMenu`). The rest of the
     display stays under the menu, as on foot.
