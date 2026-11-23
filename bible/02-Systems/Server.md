@@ -609,6 +609,14 @@ so every decision is Rust and the shell only carries bytes and time.
   (`<room>:<host start>:<player>:<errand>`), under which the accounts keep their answer in the same write as the
   errand; one they throw on is asked again under it, so one that went through answers as it did and is never done or
   given back twice. Only one they throw on every time goes back whole. A leaving player's last save waits for their errands in flight, 30 s at most.
+- **Its guild dungeon's run**: `node-<site>--guild-<key>--run-<i>` at Normal, `--elite--run-<i>` or
+  `--abyss--run-<i>` after the key at the harder two (`delveRoom.ts`, read by `nodeRoom`). It keeps to the guild as
+  the outpost does and to one company as any run does. The host opens it (`delveAsk`) only on an outpost's site while
+  `outpost(room)` of its outpost says the Delve Gate stands at the run's tier or higher, as a sea island's dungeon in
+  the site's continent, its seed and style drawn from the key and the week, with the key in the ask (`guild`). It is
+  entered from its guild's outpost alone and left back to it at any tier; the host tells the room where the gate's
+  `door` socket lies and the way it faces (`room_outpost_gate`), and one who joins the outpost at entrance 0 coming
+  out of the run stands there.
 
 ## The browser's side
 

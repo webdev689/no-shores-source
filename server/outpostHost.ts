@@ -48,8 +48,7 @@ export function gateDoor(plot: Plot, ground: Ground, staff: string): readonly [n
   if (!gate) return null;
   const placed = placeOf(gate, ground, staff);
   const listed = manifest.modules.find((module) => module.name === placed.module) as
-    | { readonly sockets?: readonly { readonly name: string; readonly facing?: readonly number[] }[] }
-    | undefined;
+    { readonly sockets?: readonly { readonly name: string; readonly facing?: readonly number[] }[] } | undefined;
   const [east = 0, south = 1] = listed?.sockets?.find((socket) => socket.name === 'door')?.facing ?? [];
   const [x, y] = socketOf(gate, ground, staff, 'door');
   return [x, y, Math.atan2(east, -south) + placed.turn];

@@ -5,6 +5,7 @@ import roomModule from '../target/wasm32-unknown-unknown/release/room_wasm.wasm'
 import type { CharacterKeeper } from './accounts/worker.ts';
 import { type Listed, arrives, cameOutOf, reachOf, shipOf } from './arrival.ts';
 import { type Count, counted } from './budget.ts';
+import { delveAsk } from './delveHost.ts';
 import { Keeper, partFrom, TOKEN, TOKEN_WAIT_MS } from './keeping.ts';
 import { OutpostHost, outpostGround } from './outpostHost.ts';
 import {
@@ -282,6 +283,17 @@ export class RoomHost extends DurableObject<Env> {
     const isle = /^isle-(.+)$/.exec(name)?.[1];
     if (isle !== undefined) return this.openIsland(isle);
     const node = /^node-(.+)$/.exec(name)?.[1];
+    // A guild dungeon's run opens only while its guild's Delve Gate stands at its tier (`delveHost.ts`).
+    if (reached?.guild && reached.run !== null) {
+      const minute = Math.floor(Date.now() / MINUTE_MS);
+      const delve = await delveAsk(
+        name,
+        minute,
+        (room) => this.env.ACCOUNTS.outpost(room),
+        (id) => this.nodeText(id),
+      );
+      return delve !== null && this.room.openRun(delve) && this.room.reseed(seeds);
+    }
     const ask = runAsk(name, Math.floor(Date.now() / MINUTE_MS));
     if (ask !== null || name.startsWith('sea-dungeon-')) {
       if (name.startsWith('sea-dungeon-') && !(await this.behindDoor(name))) return false;

@@ -31,7 +31,7 @@ test("the dungeon is the same all week for a guild, another the next week, and l
   assert.deepEqual(delveLaid(KEY, week), delveLaid(KEY, week));
   assert.notDeepEqual(delveLaid(KEY, week), delveLaid(KEY, week + 1));
   assert.notDeepEqual(delveLaid(KEY, week), delveLaid('f'.repeat(32), week));
-  const styles = new Set(Array.from({ length: 60 }, (_, nth) => delveLaid(KEY, nth).style));
+  const styles = new Set(Array.from({ length: 60 }, (_unused, nth) => delveLaid(KEY, nth).style));
   assert.deepEqual([...styles].sort(), [...DELVE_STYLES].sort(), 'every style comes up');
   for (let nth = 0; nth < 60; nth += 1) {
     const { seed } = delveLaid(KEY, nth);

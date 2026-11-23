@@ -247,6 +247,7 @@ The patrol areas' dungeons: three in each patrol, each laid by DFO's Forge from 
 | An Elite Dungeon at Elite or Abyss, only this week's of that tier | the same | every foe at 26 or 30 | its Boss | the week's | the week's | the week's dungeon |
 | A playlist's run of any Elite Dungeon, at Elite or Abyss | the same | every foe at one of its bands' levels | its Boss | the playlist's daily, and a clear toward its weekly, once a run | the day's (and at Abyss one more) | the playlist's band |
 | A sea island's (its style known, its continent of a band) | `sea-dungeon-<continent>-<style>-<seed 8 hex>` | its continent's band | the Reeve, a Miniboss | nothing more | none | by its tier alone |
+| A guild dungeon, behind an outpost's Delve Gate | as a sea island's, its seed and style the guild's week's | its continent's band | the Reeve, a Miniboss | a guild package to each member, once a week | none | by its tier, up to the gate's |
 
 - **An Elite Dungeon's room** lays its dungeon from its place (`elite_laid`: the seed `elite:<place>` and the style
   `gear::activities` names) in four or five blocks, its Boss alone on the end post. The week's two hold every foe

@@ -184,7 +184,15 @@ test('a plot changed is read again, and a leaving player’s last save waits for
 });
 
 test('one out of the guild dungeon stands at the foot of the Delve Gate’s steps, where a gate stands at a tier', async () => {
-  const gate = (tier: number, turn: number, building = 0) => ({ id: 2, kind: 'gate', tier, building, x: 2, y: 2, turn });
+  const gate = (tier: number, turn: number, building = 0) => ({
+    id: 2,
+    kind: 'gate',
+    tier,
+    building,
+    x: 2,
+    y: 2,
+    turn,
+  });
   const withGate = (standing: ReturnType<typeof gate>) => ({ structures: [hall(1), standing], decor: [] });
   const south = gateDoor(withGate(gate(1, 0)), GROUND, 'driftwood');
   const middle = placeOf(gate(1, 0), GROUND, 'driftwood').at;
@@ -196,7 +204,9 @@ test('one out of the guild dungeon stands at the foot of the Delve Gate’s step
   assert.equal(gateDoor(withGate(gate(0, 0, 1)), GROUND, 'driftwood'), null, 'first being built');
   assert.equal(gateDoor(plotOf(1), GROUND, 'driftwood'), null, 'none placed');
   const door = doorOf();
-  const { accounts } = accountsOf({ plot: () => ({ ...withGate(gate(3, 0)), structures: [{ ...gate(3, 0), spent: 0, delivered: {} }] }) });
+  const { accounts } = accountsOf({
+    plot: () => ({ ...withGate(gate(3, 0)), structures: [{ ...gate(3, 0), spent: 0, delivered: {} }] }),
+  });
   await new OutpostHost(door, accounts, ROOM, GROUND, guarded).read();
   assert.deepEqual(door.gates, [south], 'the host tells the room');
 });

@@ -78,7 +78,7 @@ export function arrives(room: string, from: string | null, ship: Point | null, r
   // A run started from the Playlist, beside any port, is entered from the sea alone.
   if (startedAtSea(room)) return from !== null && seaRoom(from) !== null;
   // A guild dungeon's run is entered from its guild's outpost alone and left back to it, at whatever tier it runs.
-  if ((to.guild !== null && inside(to)) || (was?.guild != null && inside(was)))
+  if ((to.guild !== null && inside(to)) || (was !== null && was.guild !== null && inside(was)))
     return was?.id === to.id && was.guild === to.guild && inside(was) !== inside(to);
   if (was && was.id === to.id) {
     // An outpost site's wild ground and a guild's plot on it are one place at Normal: a player walks between them.
