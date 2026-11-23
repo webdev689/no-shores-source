@@ -307,6 +307,7 @@ a decision is a record. How to add one: [[Recording a Decision]].
 - [[The Factions Are the Baseline for Every Quest]]
 - [[A Keeper With Something for You Pulses and Is Seen From Everywhere]]
 - [[Friendly Ships Take Several Courses, About Five in View, Sailing Visibly]]
+- [[Each Patrol Zone Has a Built Landing Site, Its Guards Beyond It]]
 
 ## Replaced
 
