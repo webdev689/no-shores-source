@@ -397,6 +397,18 @@ fn a_patrol_zone_s_foes_leave_a_player_be_in_its_landing_until_they_strike_from_
     stand_player(&mut room, player, [0.0, 175.0]);
     run(&mut room, 1);
     assert!(room.left_be(player), "back in the landing, the landing's leave again");
+    // A fight brought into the landing goes on: the landing is somewhere to arrive, not to hide.
+    let (_, _, place, facing) = room.garrison[0].members[0];
+    stand_player(&mut room, player, [place[0] + libm::sin(facing) * 6.0, place[1] - libm::cos(facing) * 6.0]);
+    for _ in 0..600 {
+        if room.foes.values().any(|foe| foe.brain.target() == Some(player)) {
+            break;
+        }
+        run(&mut room, 1);
+    }
+    stand_player(&mut room, player, [0.0, 175.0]);
+    run(&mut room, 1);
+    assert!(!room.left_be(player), "fought, then come back into the landing");
     let mut mission = node(NodeKind::Mission, "keep");
     let player = mission.join().unwrap();
     stand_player(&mut mission, player, [0.0, 180.0]);

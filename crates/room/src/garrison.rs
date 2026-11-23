@@ -28,6 +28,9 @@ pub(crate) const NODE_AROUND: f64 = 35.0;
 const SPAWN_INSET: f64 = 15.0;
 /// No garrison foe stands nearer a player's spawn than this.
 pub(crate) const SPAWN_CLEAR: f64 = 25.0;
+/// A patrol zone's landing reaches this far from a spawn, metres: past its boardwalk, lanterns, stores and signpost,
+/// within about 12 m, and short of every guard, SPAWN_CLEAR off.
+const LANDING_M: f64 = 15.0;
 /// A cleared group stands again this many ticks (120 s) after its last foe fell, once no player stands within
 /// CLEAR_AROUND metres of its post.
 pub(crate) const STAND_AGAIN: u64 = 120 * 60;
@@ -329,15 +332,13 @@ impl Room {
         room
     }
 
-    /// Stands a node's garrison as its room opens: each group in turn at a post drawn from those open (the farthest
-    /// from the spawns for one that stands there), every post at least POSTS_APART from the others. A group whose foes
-    /// the mesh or the section cannot hold tries the next; when no post is left, the rest stand nowhere.
     /// Whether the foes leave a player be: one just stood again, until their grace ends or they strike, and one
-    /// standing in a patrol zone's landing, within SPAWN_CLEAR of a spawn where no foe stands, until they strike from
-    /// it.
+    /// standing in a patrol zone's landing, within LANDING_M of a spawn, whom no foe fights yet, until they strike from
+    /// it: no fight starts there, but one brought into it goes on.
     pub(crate) fn left_be(&self, id: FighterId) -> bool {
         self.players.get(&id).is_some_and(|found| {
-            found.graced > self.clock || (!found.struck_landed && self.in_landing(&found.fighter.body))
+            let landed = !found.struck_landed && self.in_landing(&found.fighter.body);
+            found.graced > self.clock || (landed && self.foes.values().all(|foe| foe.brain.target() != Some(id)))
         })
     }
 
@@ -354,15 +355,18 @@ impl Room {
         }
     }
 
-    /// Whether a body stands in a patrol zone's landing: within SPAWN_CLEAR of one of its spawns.
+    /// Whether a body stands in a patrol zone's landing: within LANDING_M of one of its spawns.
     fn in_landing(&self, body: &movement::Body) -> bool {
         self.place == Some(gear::gate::Place::Patrol)
             && self
                 .section
                 .as_ref()
-                .is_some_and(|section| section.spawns.iter().any(|&spawn| apart([body.x, body.y], spawn) < SPAWN_CLEAR))
+                .is_some_and(|section| section.spawns.iter().any(|&spawn| apart([body.x, body.y], spawn) < LANDING_M))
     }
 
+    /// Stands a node's garrison as its room opens: each group in turn at a post drawn from those open (the farthest
+    /// from the spawns for one that stands there), every post at least POSTS_APART from the others. A group whose foes
+    /// the mesh or the section cannot hold tries the next; when no post is left, the rest stand nowhere.
     pub(crate) fn stand_garrison(&mut self, kind: NodeKind, levels: Option<(u8, u8)>) {
         let Some(section) = self.section.clone() else { return };
         let mut draws = draws_of(self.world_seed);
