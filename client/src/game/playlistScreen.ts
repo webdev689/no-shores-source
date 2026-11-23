@@ -150,7 +150,7 @@ export class PlaylistView {
     // The pad's cross moves the focus over the crests: the card follows it.
     const focused = ui.focusedId;
     const onCrest = focused?.startsWith(TILE) ? Number(focused.slice(TILE.length)) : null;
-    if (this.focusNext === null && onCrest !== null && onCrest !== this.chosen) this.choose(onCrest);
+    if (ui.keyFocused && this.focusNext === null && onCrest !== null && onCrest !== this.chosen) this.choose(onCrest);
     const entry = this.entry;
     const idle = this.search.finding === null;
     if (ui.clicked(CLOSE)) this.presses.close();

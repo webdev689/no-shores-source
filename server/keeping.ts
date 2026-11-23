@@ -220,7 +220,7 @@ export class Keeper {
     const full = this.company ? runFull(this.name, others.size + 1) : null;
     // A playlist's run is the server's: its first player must be one the server drew it for (`finding.ts`).
     const drawn =
-      this.admitted.size === 0 && characters && nodeRoom(this.name.slice('node-'.length))?.playlist != null
+      this.admitted.size === 0 && characters && (nodeRoom(this.name.slice('node-'.length))?.playlist ?? null) !== null
         ? await this.tried(() => characters.launched(account, this.name), here)
         : true;
     if (drawn === undefined) return undefined;

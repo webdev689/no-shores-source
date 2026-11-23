@@ -248,7 +248,7 @@ export function startActivities(
   // The keepers' countdowns turn on the same clock, so they read the same rules.
   countBy(game.module);
   if (import.meta.env.DEV) {
-    const inside = () => (game.foot() ? game.foot()?.dungeon != null : null);
+    const inside = () => (game.foot() ? (game.foot()?.dungeon ?? null) !== null : null);
     enterAskedRun(location.search, nodes, inside, trips.intoRun);
   }
   return {

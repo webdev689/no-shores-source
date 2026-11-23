@@ -147,7 +147,7 @@ const places = [...activitiesAt(await module, FRIDAY_NINE).elites, 'overlook-soc
 const link = { token: 'a'.repeat(64), finderAt: (base: string) => `ws://finder.test/v1/find/${base}` };
 
 /** The screens at sea for a character of `level`, the Playlist's layer drawn on a page, every run gone into kept. */
-async function atSea(level: number, signedIn = true, members = 1) {
+async function atSea(level: number, signedIn = true, members = 1, roster?: () => Promise<unknown>) {
   const { window } = fakePage();
   const [sockets, into] = [[] as FinderSocket[], [] as string[]];
   let look = () => undefined as void;
@@ -162,13 +162,13 @@ async function atSea(level: number, signedIn = true, members = 1) {
     intoRun: (node: NodeInfo, run: string) => void into.push(`${node.id} ${run}`),
   };
   const gear = { level, prologueDone: true, activity: record } as GearState;
-  const roster = async () => ({ company: { leader: null, members: Array.from({ length: members }, () => ({})) } });
+  const company = async () => ({ company: { leader: null, members: Array.from({ length: members }, () => ({})) } });
   const screens = startActivityScreens(
     module,
     places,
     () => null,
     trips,
-    signedIn ? { ...link, roster: roster as never } : null,
+    signedIn ? { ...link, roster: (roster ?? company) as never } : null,
     clock,
     () => gear,
     () => world.onSea,
@@ -279,4 +279,19 @@ test('Launch reads Go with your company once the Roster shows one, else Go alone
   together.screens.playlist('overlook-playlist');
   await new Promise((done) => setTimeout(done, 0));
   assert.ok(together.root.find('Go with your company'));
+});
+
+test('a Roster answer to an earlier opening is not taken for the screen opened again', async () => {
+  const answers: ((roster: unknown) => void)[] = [];
+  const asked = () => new Promise<unknown>((answer) => answers.push(answer));
+  const { screens, root, window } = await atSea(17, true, 1, asked);
+  screens.playlist('overlook-playlist');
+  window.dispatchEvent(new FakeEvent('keydown', { key: 'Escape' }));
+  screens.playlist('sunspire-playlist');
+  // This opening's answer comes first; the earlier one's, late, must not overturn it.
+  answers[1]?.({ company: null });
+  await new Promise((done) => setTimeout(done, 0));
+  answers[0]?.({ company: { leader: null, members: [{}, {}] } });
+  await new Promise((done) => setTimeout(done, 0));
+  assert.ok(root.find('Go alone'), 'the first opening’s company is not this one’s');
 });

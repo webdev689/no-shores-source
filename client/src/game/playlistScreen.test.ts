@@ -62,10 +62,13 @@ test('the pointer over a crest only lights it; a click, or Enter on it, chooses 
   screen.click('playlist-tile-3');
   screen.frame();
   assert.equal(screen.view.entry?.kind, 'week-abyss', 'a click chooses');
-  screen.key('ArrowLeft');
+  // The focus given to a crest by no key (as a screen reader or a click elsewhere leaves it) chooses nothing until
+  // Enter presses it.
+  screen.ui.focusOn('playlist-tile-1');
   screen.frame();
+  assert.equal(screen.view.entry?.kind, 'week-abyss');
   screen.frame([{ kind: 'key', key: 'Enter' }]);
-  assert.equal(screen.view.entry?.kind, 'week-elite', 'Enter on the focused crest keeps it chosen');
+  assert.equal(screen.view.entry?.kind, 'abyss', 'Enter on the focused crest chooses it');
 });
 
 test('the pad: its cross moves the focus over the crests and the card follows; B closes', () => {
@@ -212,8 +215,8 @@ test('the chart is drawn again only at 64-pixel steps of the screen, not each pi
   assert.notEqual(keyAt(1600, 900), keyAt(1700, 900));
 });
 
-test('a playlist’s weekly shows its three marks and “2 of 3”, with no bar to say it again', () => {
-  // At 1280 by 720 the card's words are at their first size: a mark is six pixels tall, as the bar was.
+test('a playlist’s weekly shows its three marks and “2 of 3”, and nothing else beside them', () => {
+  // At 1280 by 720 the card's words are at their first size, where a mark is six pixels tall.
   const screen = standing(1280, 720);
   assert.ok(wordsIn(screen.built()).includes('2 of 3'));
   const marks = nodesOf(byId(screen.built(), 'playlist-card')).filter((node) => node.height === 6);
