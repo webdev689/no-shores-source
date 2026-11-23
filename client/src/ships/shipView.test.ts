@@ -3,7 +3,7 @@ import { test } from 'node:test';
 import { SHIP_PARTS } from '../textures/shipPictures.ts';
 import { SAIL_COLUMNS, SAIL_ROWS } from './sails.ts';
 import { VERTEX_BYTES } from './shipMesh.ts';
-import { canvasVertices, mastheadOf, shipTurn } from './shipView.ts';
+import { canvasVertices, castReach, mastheadOf, shipTurn } from './shipView.ts';
 
 /** Where the turn takes a vector of its own frame, in the world's (east, south, up). */
 function turned(turn: Float32Array, vector: readonly [number, number, number]): number[] {
@@ -50,6 +50,31 @@ test("its masthead is its spars' highest point, whatever else stands higher", ()
   const mesh = { name: 'test', vertexCount: points.length, vertices, indices: new Uint32Array(0) };
   const top = mastheadOf({ ...mesh, waterline: { lengthM: 1, beamM: 1, draughtM: 1 } });
   near(top, [1, 0.2, 14]);
+});
+
+test('it casts from within twice its farthest point, as far as a mast falling flat about its foot reaches', () => {
+  // A bow, a stern and a mast 30 m tall stepped 12 m forward of its middle.
+  const points = [
+    [-20, 0, 0],
+    [25, 3, 0],
+    [12, 0, 0],
+    [12, 0, 30],
+  ] as const;
+  const vertices = new ArrayBuffer(points.length * VERTEX_BYTES);
+  const view = new DataView(vertices);
+  points.forEach((point, vertex) =>
+    point.forEach((value, axis) => view.setFloat32(vertex * VERTEX_BYTES + axis * 4, value, true)),
+  );
+  const waterline = { lengthM: 45, beamM: 6, draughtM: 2 };
+  const reach = castReach({
+    name: 'test',
+    vertexCount: points.length,
+    vertices,
+    indices: new Uint32Array(0),
+    waterline,
+  });
+  assert.ok(Math.abs(reach - 2 * Math.hypot(12, 30)) < 1e-4, `${reach}`);
+  assert.ok(reach > 12 + 30, 'the mast fallen flat over its bow');
 });
 
 test("its canvas wears the sail's picture, and its flag the layer it is given", () => {

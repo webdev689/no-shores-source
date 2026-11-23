@@ -44,6 +44,7 @@ code:
   - client/src/terrain/groundColour.ts#GROUND_COLOUR_WGSL
   - client/src/combat/lightLayer.ts#LightLayer
   - client/src/shadow.ts#ShadowMap
+  - client/src/shadowCache.ts#CastRecording
   - client/src/game/figureView.ts#FigureView
   - client/src/combat/flashes.ts#Flashes
   - client/src/combat/foeFigures.ts#dissolveFoe
@@ -644,18 +645,29 @@ drawn from. Arriving waits for it as for the exact ground.
 **The sun's shadows.** Before the pass, what casts draws its depth along the sun into two maps (`shadow.ts`), 2048
 texels a side each, every square ahead of the camera and snapped to its own texels so the edges hold still:
 
-| Map | Its square | A texel | What casts into it |
-|---|---|---|---|
-| Near | 300 m across, centred 75 m ahead | 0.15 m | The city's solids and near models, the near plants, the figures and the ships |
-| Far | 2.4 km across, centred 900 m ahead | 1.2 m | The city's solids, and each building's masses, or its hull past where the masses are drawn; the ships |
+| Map | Its square | A texel | What casts into it | Drawn |
+|---|---|---|---|---|
+| Near | 300 m across, centred 75 m ahead | 0.15 m | The city's solids and near models, the near plants, the figures and the ships | Every frame |
+| Far | 2.4 km across, centred 900 m ahead | 1.2 m | The city's solids, and each building's masses, or its hull past where the masses are drawn; the ships | When what it would hold changes |
 
 What casts is found by whether, seen along the sun, its box overlaps a square, those behind the camera and far below
-the eye too, so the city under the plaza casts; the few ships in a frame all cast into both. The land, the city, the
+the eye too, so the city under the plaza casts; a ship's is a ball about its middle twice as wide as its farthest point,
+for its yards braced round and a mast falling, so a ship out of view still throws its shadow into the view. A caster
+whose half-diagonal is under two of a map's texels casts nothing into that map: under 0.3 m in the near one, 2.3 m in
+the far, where a crate's shadow would be a texel. The land, the city, the
 plants, the figures and the ships (the wrecks too) are then lit through both, softened over eight taps, a ship with the
 land's light thrown back onto its sides: the near map's sharp shadows hold inside its square and give way to the far
 map's toward its rim, and those fade out toward the far square's own, about 2 km ahead. So from the plaza the city below is
 shadowed as far as its masses stand. From more than 400 m over the ground, at sea or over an island's side, no
 shadows are drawn.
+
+**The far map is kept** from frame to frame (`shadowCache.ts`). Its square stays where it was drawn until where the eye
+would set it is 37.5 m off (32 of its texels: a walk of that far, or a turn of some 2.4 degrees), and its sun until the
+sun has turned a texel at the square's corner, 0.04 degrees; only the square's rim, where its shadows have faded out,
+moves with them. Its casters draw into a pass that draws nothing, which keeps their calls and signs them: every draw
+with what it reads, and what no draw shows, where a ship lies and how far an event's prop has risen. The map is drawn
+from those calls when the signature or the view changes, and at least once in 60 frames whatever holds still. A still
+city costs no far pass; a ship moving in the far square draws it every frame.
 
 **The figures' shadows.** A figure's card casts turned square to the sun about its feet, its clear texels cut away,
 the picture kept the way round the eye sees it; it is drawn into the near map only. The card the eye sees is lit

@@ -144,6 +144,20 @@ export function mastheadOf(mesh: ShipMesh): [number, number, number] {
   return top;
 }
 
+/** How far from its middle a ship of this mesh may cast a shadow from, metres at its own size: twice its mesh's
+ *  farthest point, room for its yards braced round, a mast falling about its foot, and its canvas and flag, which its
+ *  mesh does not hold. */
+export function castReach(mesh: ShipMesh): number {
+  const view = new DataView(mesh.vertices);
+  let farthest = 0;
+  for (let vertex = 0; vertex < mesh.vertexCount; vertex++) {
+    const byte = vertex * VERTEX_BYTES;
+    const [x, y, z] = [view.getFloat32(byte, true), view.getFloat32(byte + 4, true), view.getFloat32(byte + 8, true)];
+    farthest = Math.max(farthest, Math.sqrt(x * x + y * y + z * z));
+  }
+  return 2 * farthest;
+}
+
 /** The ships' pictures each device holds for what draws with them beside the ships' own kit (a story's wreck), and
  *  how many hold them: one upload, let go once the last of them is. */
 const SHARED_PICTURES = new WeakMap<GPUDevice, { readonly texture: GPUTexture; holders: number }>();
@@ -198,6 +212,8 @@ export class ShipView {
   private readonly paint: HullPaint;
   private readonly tags: ShipTags;
   private readonly flat: readonly Float32Array[];
+  /** How far from its middle it may cast a shadow from, at its own size (`castReach`). */
+  private readonly castReachM: number;
 
   /** Opens a hull's view on the device, its mesh tagged (`tagShip`) and the device's kit made if it is not yet. */
   static async open(gpu: Gpu, mesh: ShipMesh, sails: readonly SailCorners[], paint: HullPaint, slots = SHIP_SLOTS) {
@@ -218,6 +234,7 @@ export class ShipView {
     this.waterline = mesh.waterline;
     this.sails = sails;
     this.masthead = mastheadOf(mesh);
+    this.castReachM = castReach(mesh);
     this.paint = paint;
     this.tags = tagShip(mesh, sails);
     if (this.tags.yards.length > MOST_YARDS) throw new Error(`a ship of ${this.tags.yards.length} yards is too many`);
@@ -270,7 +287,7 @@ export class ShipView {
   }
 
   /** Draws its shadow, as `drawInto` would draw it (in its `look`, as the picture lays its canvas), into the cascade
-   *  of the sun's map `shadow` is drawing. */
+   *  of the sun's map `shadow` is drawing, if it may cast there: wherever it is in view or out of it. */
   castInto(
     pass: GPURenderPassEncoder,
     place: ShipPlace,
@@ -280,6 +297,12 @@ export class ShipView {
     shadow: ShadowMap,
     look: ShipLook = PLAYER_LOOK,
   ): void {
+    const middle = [place.x - camera.eye[0], place.y - camera.eye[1], place.z - camera.eye[2]] as const;
+    if (!shadow.sphereReaches(middle, this.castReachM * (place.scale ?? 1))) return;
+    // Where it lies and how its canvas is set, which its draws do not show: a far map it casts into is drawn again
+    // when they change.
+    const { x, y, z, heading, pitch, roll, scale = 1 } = place;
+    shadow.tally(x, y, z, heading, pitch, roll, scale, rig?.changes ?? -1, rig?.harm.changes ?? -1, rig?.time ?? -1);
     const canvas = this.prepare(place, camera, slot, look, rig);
     if (canvas !== null) this.encode(pass, slot, canvas, this.kit.cast, shadow.casterGroup(this.kit.cast));
   }
