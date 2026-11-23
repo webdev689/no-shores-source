@@ -206,8 +206,9 @@ function crateWare(gear: GearState): Ware {
   };
 }
 
-/** A smith's rows: their starter stock under "To start", then the day's wares under `heading`. */
-function smithRows(gear: GearState, vendor: number, heading: string): Row[] {
+/** A smith's rows: their starter stock under "To start", the short rows `beside` it, then the day's wares under
+ *  `heading`. Short rows stand side by side (`rowsNode`), so the day's six keep in view. */
+function smithRows(gear: GearState, vendor: number, heading: string, beside: readonly Row[] = []): Row[] {
   const wares = (vendorsOf(gear)[vendor]?.wares ?? []).map((ware, place) => {
     const price = { amount: ware.price, currency: 'aurem' as const };
     return {
@@ -219,6 +220,7 @@ function smithRows(gear: GearState, vendor: number, heading: string): Row[] {
   const start = wares.filter((each) => each.starter).map((each) => each.ware);
   return [
     ...(start.length > 0 ? [{ heading: 'To start', wares: start }] : []),
+    ...beside,
     { ...day, empty: 'Sold only in a social space.' },
   ];
 }
@@ -280,10 +282,12 @@ export function rowsOf(kind: KeeperKind, gear: GearState, choosing = false): Row
     case 'armorsmith':
       return smithRows(gear, 0, 'Armour');
     case 'weaponsmith':
-      return [
-        ...smithRows(gear, 1, 'Weapons'),
-        ...((gear.cratePrice ?? 0) > 0 ? [{ heading: 'Supplies', wares: [crateWare(gear)] }] : []),
-      ];
+      return smithRows(
+        gear,
+        1,
+        'Weapons',
+        (gear.cratePrice ?? 0) > 0 ? [{ heading: 'Supplies', wares: [crateWare(gear)] }] : [],
+      );
     case 'tailor':
       return [
         { heading: 'Dyes', wares: cosmeticWares(gear, ['dye']), empty: 'Sold only in a social space.' },

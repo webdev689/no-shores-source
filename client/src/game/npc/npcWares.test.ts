@@ -50,8 +50,9 @@ test('the smiths sell their starter stock under To start, then six of the day’
     [true, { kind: ASKS.vend, column: 0, node: 0 }],
     'a short ware is still held, for the room to refuse and its keeper to answer',
   );
-  const [first, weapons, supplies] = rowsOf('weaponsmith', gear);
-  assert.deepEqual([first?.heading, weapons?.heading, supplies?.heading], ['To start', 'Weapons', 'Supplies']);
+  // The short rows first, side by side, so the day's six stay in view.
+  const [first, supplies, weapons] = rowsOf('weaponsmith', gear);
+  assert.deepEqual([first?.heading, supplies?.heading, weapons?.heading], ['To start', 'Supplies', 'Weapons']);
   assert.deepEqual(
     first?.wares.map((ware) => ware.ask),
     [6, 7].map((node) => ({ kind: ASKS.vend, column: 1, node })),
@@ -106,10 +107,12 @@ test('Shape sells his week’s wares for Shapes while here, and is gone while aw
 
 test('a ware that cannot be asked for says why under its price, not "Not enough"; one that can is red when short', () => {
   const poor = state({ aurem: 0, cratePrice: 300, crates: 5, cosmeticsSold: [6], level: 1 });
-  const crate = rowsOf('weaponsmith', poor)[1]?.wares[0];
+  const crate = rowsOf('weaponsmith', poor).find((row) => row.heading === 'Supplies')?.wares[0];
   const low = rowsOf('tailor', poor)[0]?.wares[0];
   assert.deepEqual(crate && priceWord(crate), { words: 'You carry five', short: false });
   assert.deepEqual(low && priceWord(low), { words: 'From level 5', short: false });
-  const able = rowsOf('weaponsmith', state({ aurem: 0, cratePrice: 300, crates: 1 }))[1]?.wares[0];
+  const able = rowsOf('weaponsmith', state({ aurem: 0, cratePrice: 300, crates: 1 })).find(
+    (row) => row.heading === 'Supplies',
+  )?.wares[0];
   assert.deepEqual(able && priceWord(able), { words: 'Not enough', short: true });
 });
