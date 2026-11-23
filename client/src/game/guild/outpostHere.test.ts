@@ -20,7 +20,7 @@ const structure = (id: number, kind: string, x: number, y: number, tier = 1, bui
   ...{ id, kind, tier, building, x, y, turn: 0, spent: 0, delivered: {} },
 });
 const SEEN: OutpostSeen = {
-  guild: 'a1b2c3d4-0000',
+  guild: '0a1b2c3d-4e5f-6071-8293-a4b5c6d7e8f9',
   name: 'Salt Kings',
   banner: '{}',
   site: 'gull-cove-outpost',

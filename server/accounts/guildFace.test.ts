@@ -59,7 +59,7 @@ test('a guild founded without a banner hangs the one its name draws, and its tab
   assert.equal(guild?.['level'], 1);
   assert.equal(guild?.['members'], 3);
   assert.equal(guild?.['nextXp'], 15_000, 'level 2 is 15,000 XP away');
-  assert.match(String(guild?.['key']), /^[0-9a-f]{8}$/, "its key names its outposts' rooms");
+  assert.match(String(guild?.['key']), /^[0-9a-f]{32}$/, "its key names its outposts' rooms");
 });
 
 test('a guild founded with its own banner keeps it, and one breaking the banner law is not founded', async () => {

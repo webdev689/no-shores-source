@@ -10,12 +10,12 @@ test("the guild kept from the accounts names its rooms' key and flies its banner
   const banner = { cut: 'swallowtail', cloth: 'navy', device: 'halves', deviceColour: 'gold', sign: 'anchor' };
   const full = { ...banner, signColour: 'salt', ground: 'roundel', groundColour: 'crimson', staff: 'driftwood' };
   const link = {
-    guild: () => Promise.resolve({ guild: { key: 'a1b2c3d4', banner: full } }),
+    guild: () => Promise.resolve({ guild: { key: '0a1b2c3d4e5f60718293a4b5c6d7e8f9', banner: full } }),
     outposts: () => Promise.resolve({ outposts: [{ site: 'gull-cove-outpost' }] }),
   } as unknown as AccountLink;
   assert.equal(ownOutpostColours('gull-cove-outpost'), null, 'before the guild is read');
   keepGuild(link);
-  assert.equal((await guildHeld())?.key, 'a1b2c3d4');
+  assert.equal((await guildHeld())?.key, '0a1b2c3d4e5f60718293a4b5c6d7e8f9');
   await Promise.resolve();
   assert.deepEqual(ownOutpostColours('gull-cove-outpost'), { cloth: hexOf('navy'), device: hexOf('gold') });
   assert.equal(ownOutpostColours('far-rocks-outpost'), null, "another guild's site, or none, as it is");

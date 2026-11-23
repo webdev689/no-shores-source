@@ -86,7 +86,7 @@ export function nodeOfRoom(room: string): {
   readonly playlist: number | null;
 } | null {
   const found =
-    /^node-([a-z0-9-]+?)(?:--(elite|abyss|rough|storm)|--guild-[0-9a-f]{8})?(?:--dungeon-([0-2]))?(?:--playlist-([1-9][0-9]?)|--(sea))?(?:--run-([a-z0-9]{8}))?$/.exec(
+    /^node-([a-z0-9-]+?)(?:--(elite|abyss|rough|storm)|--guild-[0-9a-f]{32})?(?:--dungeon-([0-2]))?(?:--playlist-([1-9][0-9]?)|--(sea))?(?:--run-([a-z0-9]{8}))?$/.exec(
       room,
     );
   if (!found?.[1]) return null;

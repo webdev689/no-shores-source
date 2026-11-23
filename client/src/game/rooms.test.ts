@@ -55,12 +55,18 @@ test('a harder voyage to a patrol is a room of its own; a social space is one fo
 
 test("an outpost site is its guild's own room for a member, the wild site for anyone else, at any difficulty", () => {
   const site = { id: 'brine-reach-outpost', kind: 'outpost' };
-  assert.equal(nodeRoom(site, 'elite', 'a1b2c3d4'), 'node-brine-reach-outpost--guild-a1b2c3d4');
+  assert.equal(
+    nodeRoom(site, 'elite', '0a1b2c3d4e5f60718293a4b5c6d7e8f9'),
+    'node-brine-reach-outpost--guild-0a1b2c3d4e5f60718293a4b5c6d7e8f9',
+  );
   assert.equal(nodeRoom(site, 'abyss', null), 'node-brine-reach-outpost');
-  assert.equal(nodeRoom({ id: 'saltgrass-downs', kind: 'patrol' }, 'normal', 'a1b2c3d4'), 'node-saltgrass-downs');
+  assert.equal(
+    nodeRoom({ id: 'saltgrass-downs', kind: 'patrol' }, 'normal', '0a1b2c3d4e5f60718293a4b5c6d7e8f9'),
+    'node-saltgrass-downs',
+  );
   const kept = { id: 'brine-reach-outpost', seas: 'normal', dungeon: null, run: null, playlist: null };
   assert.deepEqual(
-    nodeOfRoom('node-brine-reach-outpost--guild-a1b2c3d4'),
+    nodeOfRoom('node-brine-reach-outpost--guild-0a1b2c3d4e5f60718293a4b5c6d7e8f9'),
     kept,
     'a kept place there reads as the site',
   );
