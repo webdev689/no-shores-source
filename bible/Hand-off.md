@@ -153,8 +153,27 @@ each part works is in its system note.
 
 ## Waiting on the owner
 
-- **Nameplates, the player menu and chat** (#154, branch `claude/player-nameplates-interaction-3b6cwr`), for the
-  owner's yes to merge, which deploys the page, the rooms and the accounts (a new Durable Object, the chat's hall, and
+- **The prologue's waking, scene changes and arena; foes that give up only when far; feet on the city's ground**
+  (#158, branch `ccr-bedea921-gq44fj`, a draft), for the owner's yes to merge, which deploys the page and the rooms.
+  Each part is in its decision:
+  [[The Prologue Wakes by Darkening and Pulsing, Not Eyelids]],
+  [[The Prologue's Scenes Change Slower, Behind the Logo While They Load]],
+  [[Thule Fights on a Quarterdeck Twice as Long]],
+  [[A Foe Gives Up Only When the Player Is Far Away]], and the hub's sunk feet fixed (a figure's lowest quarter metre takes the city's
+  pull, [[Cities]]). Audited by four read-only reviewers; every finding fixed or asked. Tested offline and pictured
+  headless; not played live.
+  - **The arena waits on `R2_TOKEN`.** The wreck workflow built the longer quarterdeck (run 45086092013) but published
+    nothing: every asset workflow, `main`'s too, reads `R2_TOKEN` as empty, though
+    [[The Asset Workflows Publish to R2 With a Token for R2 Alone]] says it is set. Once the repository's Actions secret is there, the run is run again,
+    and its `wreck-level` artifact is committed whole as `content/prologue/wreck.json` with the client test updates
+    the arena's build was checked with (they and the comments that still say "gun deck" in `wreckGround.ts` and
+    `wreckProgress.ts` go with it); then the note's count of dead-end slips is checked against it.
+  - **Open for the owner**: whether the story's hand-over to the plaza (the game's own veil, 0.7 s, shared with all
+    travel) also takes the longer change and the logo; whether a foe whose search finds no one may walk home and heal
+    while the player stands close but unseen ([[Foes Leash to Their Posts and Fall With Their Boss]]'s "walk home after
+    a search").
+- **Nameplates, the player menu and chat** (#154, branch `claude/player-nameplates-interaction-3b6cwr`), merged into
+  `main` (bc896f8b; its deploy not checked here); as it went to the owner's yes to merge, which deploys the page, the rooms and the accounts (a new Durable Object, the chat's hall, and
   two migrations: `presence.water` and `mutes`): [[Other Players Wear a Nameplate, Their Level or Prestige in a
   Square]] (level, 21 to 30 in gold, three dots in a menu, green company, blue others;
   [[A Player's Square Shows Their Level, Gold Past 20]]),
@@ -308,8 +327,6 @@ The decisions in [[Open Questions]] are not repeated here.
 - **The ships** ([[The Ships as Claude Shapes Them]]): the owner asked for the Frigate as one more model "and call its
   there", so the Tithe Ram and the Fluyt wait until asked; splitting ships into parts for upgrades, and the cabin's
   decoration from DFO's `decor/`, are set aside by the owner for now.
-- **A timing test**: `roomThread.test.ts`'s "a room that fails in the worker is lost" waits 5 ms for the worker and
-  failed once under the full check's load (passing alone); fixing it is offered as a task of its own.
 - **The lore**: nothing in the prologue names the Cube or a crystal, and the voice in the deep has no name. The
   owner's premise ([[No Shores]]) is for later in the game: "This is for later".
   Elder Maren Hale says the Grey Tithe take a tenth and Overlook pays nothing, the owner's decision
