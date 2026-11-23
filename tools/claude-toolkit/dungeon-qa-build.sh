@@ -24,13 +24,17 @@ import os, pathlib
 # slam with b ticks left (b at most SLAM_EVERY, on a room older than that); 7 shows the
 # Reckoning with b ticks left; 8 starts Fury's clock with b ticks left (b <= 0: Fury b ticks in), the room's clock run
 # on first where it is too young for that, every stamp of the encounters moved on with it; 9 sets Litany a's show b
-# ticks in (30: its first rune half shown); 10 holds every player's health whole each tick while a is not 0, so a
-# headless body outlives the awake Boss; 11 stands the Boss and its post at (a, b), where a ward holds it.
+# ticks in (30: its first rune half shown); 10 makes every player's health twenty times as deep and holds it whole
+# each tick while a is not 0, so a headless body outlives the awake Boss's blows; 11 stands the Boss and its post at (a, b), where a ward holds it.
 QA_ENCOUNTER = '''    pub fn qa_encounter(&mut self, what: u32, a: f64, b: f64) {
         use crate::encounters::court::{ANCHOR_TICKS, FURY_FROM, RECKONING_WARNING, SLAM_EVERY, WARDS};
         let ticks = |left: f64| left.max(0.0) as u64;
         if what == 10 {
             crate::QA_HEALTH.store(a != 0.0, core::sync::atomic::Ordering::Relaxed);
+            for found in self.players.values_mut().filter(|_| a != 0.0) {
+                found.fighter.health_max *= 20.0;
+                found.fighter.health = found.fighter.health_max;
+            }
             return;
         }
         if what <= 1 {

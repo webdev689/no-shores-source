@@ -265,57 +265,53 @@ const anchors = middleOf(plan.anchors);
 const court = entry(layout.end);
 stand(court.door);
 picture(court.door, anchors, 'first,0,10', 'court_before_wake');
-const [anchor0 = anchors, anchor1 = anchors, anchor2 = anchors] = plan.anchors;
+const [, anchor1 = anchors, anchor2 = anchors] = plan.anchors;
 // From the anchors' middle side of each, never its wall side, so the camera behind stands in the open room.
 const byAnchor = toward(anchor2, anchors, 1.8);
 stand(byAnchor);
 picture(byAnchor, anchor2, 'third,6,45', 'court_anchors_resting');
-// Awake, the Boss strikes: the body's health is held whole from here, so no death hides a moment. Before each picture
-// the Boss (and its post, where a ward holds it) is stood 6.5 m ahead on the camera's line, past a warded Boss's reach
-// of the body, and the camera looks low enough that it stands in the middle of the frame, never behind the banner.
+// Awake, the Boss strikes: the body's health is held whole and deep from here, so no death hides a moment. Before
+// each picture of it the Boss (and its post, where a ward holds it) is stood at the anchors' middle, open floor in
+// every end room, and the camera looks there.
 encounter(10, 1, 0);
-const bossAhead = (from: Point, to: Point, metres: number) => {
-  const [east = 0, south = 0] = toward(from, to, metres);
+const bossAt = ([east = 0, south = 0]: Point) => {
   encounter(11, east, south);
   // Frames enough for the page's figure to follow it there after a long move.
   steps.push({ frames: 20 });
 };
 encounter(3, 0, 0);
 pause(1500);
-bossAhead(byAnchor, anchor0, 6.5);
+bossAt(anchors);
 freeze(true);
-picture(byAnchor, anchor0, 'third,9,22', 'court_awake');
+picture(byAnchor, anchors, 'third,8,25', 'court_awake');
 freeze(false);
 encounter(4, 0, 0);
 pause(2500);
 encounter(0, 0, 0);
 freeze(true);
-bossAhead(byAnchor, anchor0, 6.5);
-picture(byAnchor, anchor0, 'third,9,22', 'court_ward');
+bossAt(anchors);
+picture(byAnchor, anchors, 'third,8,25', 'court_ward');
 encounter(5, 0, 1);
 encounter(5, 1, 0.5);
 // Beside an anchor, not on it, so its beam does not stand in the camera's way.
 const beside = toward(anchor1, anchors, 1.8);
 stand(beside);
-// The Boss stays where the slam and Fury pictures want it; the filling anchor is this picture's own.
-bossAhead(beside, anchor0, 6.5);
 picture(beside, anchor1, 'third,7,45', 'court_anchors_filling');
 encounter(6, 0, 50);
-picture(beside, anchor0, 'third,9,22', 'court_slam');
+picture(beside, anchors, 'third,8,25', 'court_slam');
 encounter(6, 0, 300);
 encounter(8, 0, 45 * 60);
-bossAhead(beside, anchor0, 6.5);
-picture(beside, anchor0, 'third,9,22', 'court_fury_warning');
+picture(beside, anchors, 'third,8,18', 'court_fury_warning');
 encounter(8, 0, -31 * 60);
-bossAhead(beside, anchor0, 6.5);
-picture(beside, anchor0, 'third,9,22', 'court_fury');
+picture(beside, anchors, 'third,8,18', 'court_fury');
 freeze(false);
 for (const nth of [0, 1, 2]) encounter(5, nth, 1);
 pause(300);
+// The Boss stood first: its frames would outlast the call, which shows for a moment as the warning starts.
+bossAt(anchors);
 encounter(7, 0, 420);
 freeze(true);
-bossAhead(beside, anchor0, 6.5);
-picture(beside, anchor0, 'third,8,25', 'court_reckoning');
+picture(beside, anchors, 'third,8,25', 'court_reckoning');
 const url = `http://localhost:${port}/?at=1&spawn=&run=node-${place}--run-qaqa0001&view=third,7`;
 const anyPort = port !== '5173';
 writeFileSync(
