@@ -557,6 +557,7 @@ export class WreckRun {
       firstPerson,
       pressed: shown.pressed,
       parryOpen: fight.parryOpen,
+      parryWindow: fight.parryWindow,
       abilities: fight.abilities,
       ammo: sights ? (ownView?.ammo ?? null) : null,
       ammoMost: null,

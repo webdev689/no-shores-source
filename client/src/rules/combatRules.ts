@@ -67,6 +67,8 @@ export interface CombatRules {
   strokeReach(arms: number, stroke: number, player: boolean): number;
   /** The half-width in radians of the arc a stroke (1 to 6) sweeps either side of its aim; 0 for no stroke. */
   strokeArc(stroke: number): number;
+  /** How many ticks the parry window a press of the guard opens stays open, a player's or a foe's. */
+  parryWindow(player: boolean): number;
 }
 
 interface FightExports {
@@ -83,6 +85,7 @@ interface FightExports {
   fighter_sizes(): number;
   fighter_reach(arms: number, stroke: number, player: number): number;
   fighter_stroke_arc(stroke: number): number;
+  fighter_parry_window(player: number): number;
 }
 
 /** The page's own count of the numbers in a fighter, an intent and a glance (`fighters.ts`). */
@@ -173,5 +176,6 @@ export function startCombatRules(module: WebAssembly.Module): CombatRules {
     },
     strokeReach: (arms, stroke, player) => exports.fighter_reach(arms, stroke, player ? 1 : 0),
     strokeArc: (stroke) => exports.fighter_stroke_arc(stroke),
+    parryWindow: (player) => exports.fighter_parry_window(player ? 1 : 0),
   };
 }

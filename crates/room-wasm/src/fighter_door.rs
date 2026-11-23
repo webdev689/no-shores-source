@@ -239,6 +239,12 @@ pub extern "C" fn fighter_reach(arms: u32, stroke: u32, player: u32) -> f64 {
         .map_or(0.0, |stroke| combat::strike::stroke_reach(melee, stroke, player == 1))
 }
 
+/// The parry window, in ticks, a press of the guard opens: a player's when `player` is 1, else a foe's.
+#[unsafe(no_mangle)]
+pub extern "C" fn fighter_parry_window(player: u32) -> u32 {
+    combat::tuning::parry_window(player == 1)
+}
+
 /// The half-width in radians of the arc stroke `stroke` (1 to 6) sweeps either side of its aim; 0 for no stroke.
 #[unsafe(no_mangle)]
 pub extern "C" fn fighter_stroke_arc(stroke: u32) -> f64 {
