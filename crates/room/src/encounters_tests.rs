@@ -130,6 +130,7 @@ fn a_wipe_at_abyss_keeps_the_broken_seals_and_starts_the_court_over() {
         encounters.seals[0].state = SealState::Broken;
         (encounters.seals[1].state, encounters.seals[1].held) = (SealState::Running, 90);
         (encounters.court.wards_broken, encounters.court.reckoning_from) = (1, Some(5));
+        (encounters.court.fury_from, encounters.court.ward_up, encounters.court.matched) = (Some(5), true, true);
     }
     for player in players {
         let found = room.players.get_mut(&player).expect("in");
@@ -141,6 +142,7 @@ fn a_wipe_at_abyss_keeps_the_broken_seals_and_starts_the_court_over() {
     assert_eq!((encounters.seals[1].state, encounters.seals[1].held), (SealState::Waiting, 0), "the rest wait again");
     assert_eq!(encounters.court.wards_broken, 0, "the Court starts over");
     assert_eq!(encounters.court.reckoning_from, None);
+    assert_eq!((encounters.court.fury_from, encounters.court.ward_up, encounters.court.matched), (None, false, false));
     assert!(room.garrison[0].standing.is_empty(), "its Boss held back again while a seal holds");
     assert!(room.garrison.iter().all(|post| !post.arrival), "no wave stands again");
     assert!(!room.foes.contains_key(&wave), "its foes gone");

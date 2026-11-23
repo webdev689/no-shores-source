@@ -322,7 +322,7 @@ lays them where its end foe is a Boss (`laid_dungeon`); no patrol's or sea islan
   of the 18 lays its full count; nine lay an Ascent, and a test holds it to nine or more.
 - **Where pieces stand.** A piece stands on a spot of its room: a cell's middle or one of its four quarters' (0.8 m
   each way toward a corner), never on the way in's or the portal's cell, nor a doorway's (but an anchor), each 0.9 m from
-  every solid. Runes stand 2 m apart at the least, plates 6.4 m (two cells).
+  every solid and 1.4 m from every prop's and fixture's middle, so no brazier or candle stands on a piece. Runes stand 2 m apart at the least, plates 6.4 m (two cells).
 - **Counted by the living in the room.** Every seal counts the living players standing in its room's cells: one down
   or away is not counted, for plates, waves or the stone.
 - **The Litany** (a puzzle): four to six runes, drawn, on its floor. While it runs they show in turn, each a second,
@@ -344,7 +344,8 @@ lays them where its end foe is a Boss (`laid_dungeon`); no patrol's or sea islan
   leaps), and every two pads stand 4.4 m apart edge to edge at the least: a run off the edge falls short and only a
   running jump crosses. Each rises 0.4 m over the one before, at most to the room's lowest ceiling less a body's height
   and 0.6 m (a jump's rise and a margin), the last 0.3 m; every pad after the first stands 1.9 m or more, over a
-  mantle's reach (1.8 m) from the floor, so a room lower than 4.4 m lays none. The pads' middles are searched on a
+  mantle's reach (1.8 m) from the floor, so a room whose ceiling is under 4.3 m lays none (ceilings come in 0.4 m
+  steps, so 4.4 m at the least). The pads' middles are searched on a
   0.8 m grid over the room's cells but its doorways', torches', the way in's and the portal's, clear of every solid,
   the longest run kept. Its pads are blocks a body stands on, jumps between and climbs ([[Movement]]), and walls on the
   navmesh. Its floor (its room's cells but its doorways') is foul water while the seal holds: while it runs, once a

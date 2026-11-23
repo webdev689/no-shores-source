@@ -309,10 +309,8 @@ impl Room {
             SealKind::Litany => {
                 let running = seal.state == SealState::Running;
                 let showing = running.then(|| showing(self.clock, seal.shown_from, plan.pieces.len())).flatten();
-                let wrong = seal
-                    .wrong
-                    .filter(|&(_, at)| running && self.clock - at < WRONG_SHOWN_TICKS)
-                    .map(|(rune, _)| rune);
+                let wrong =
+                    seal.wrong.filter(|&(_, at)| running && self.clock - at < WRONG_SHOWN_TICKS).map(|(rune, _)| rune);
                 (0..plan.pieces.len())
                     .map(|rune| match () {
                         () if wrong == Some(rune) => 3,

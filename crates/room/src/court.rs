@@ -107,7 +107,8 @@ impl Room {
             encounters.court.matched = true;
             self.toughen(boss, living);
         }
-        if encounters.court.fury_from.is_none() && !self.players_in(&encounters.plan, &encounters.court_cells).is_empty()
+        if encounters.court.fury_from.is_none()
+            && !self.players_in(&encounters.plan, &encounters.court_cells).is_empty()
         {
             encounters.court.fury_from = Some(self.clock);
         }
@@ -143,12 +144,12 @@ impl Room {
             .map(|found| [found.fighter.body.x, found.fighter.body.y])
             .collect();
         let court = &mut encounters.court;
-        let all_filled = court.anchors.iter().all(|held| *held >= ANCHOR_TICKS);
+        // All three filled break the ward this tick, so an anchor never empties while the other two are filled.
         for ((held, left), anchor) in court.anchors.iter_mut().zip(&mut court.anchors_left).zip(&anchors) {
             let stood = standing.iter().any(|at| libm::hypot(at[0] - anchor[0], at[1] - anchor[1]) <= ANCHOR_REACH_M);
             if stood {
                 (*held, *left) = ((*held + 1).min(ANCHOR_TICKS), clock);
-            } else if living >= ANCHORS_EMPTY_FROM && !all_filled && clock - *left > ANCHOR_EMPTIES_TICKS {
+            } else if living >= ANCHORS_EMPTY_FROM && *held > 0 && clock - *left > ANCHOR_EMPTIES_TICKS {
                 *held = 0;
             }
         }
@@ -206,13 +207,15 @@ impl Room {
         let (east, south) = (post.at[0] - foe.fighter.body.x, post.at[1] - foe.fighter.body.y);
         let controls = &mut intent.controls;
         if libm::hypot(east, south) > AT_POST_M {
-            (controls.yaw, controls.forward, controls.sideways, controls.run) = (libm::atan2(east, -south), 1.0, 0.0, true);
+            (controls.yaw, controls.forward, controls.sideways, controls.run) =
+                (libm::atan2(east, -south), 1.0, 0.0, true);
         } else {
             (controls.forward, controls.sideways) = (0.0, 0.0);
         }
     }
 
-    /// How far into its round the Reckoning is, in ticks, and the anchor this round's stands at; none before the\n    /// first ward is broken or once the Boss has fallen.
+    /// How far into its round the Reckoning is, in ticks, and the anchor this round's stands at; none before the
+    /// first ward is broken or once the Boss has fallen.
     fn reckoning_round(&self) -> Option<(u64, u8)> {
         let encounters = self.encounters.as_ref()?;
         let since = self.clock.checked_sub(encounters.court.reckoning_from?)?;
@@ -234,8 +237,9 @@ impl Room {
         let Some(boss) = self.boss() else { return };
         let Some(encounters) = self.encounters.as_ref() else { return };
         let Some(light) = encounters.plan.anchors.get(usize::from(at)).copied() else { return };
-        let in_court =
-            |x: f64, y: f64| encounters.plan.cell_at([x, y]).is_some_and(|cell| encounters.reckoning_cells.contains(&cell));
+        let in_court = |x: f64, y: f64| {
+            encounters.plan.cell_at([x, y]).is_some_and(|cell| encounters.reckoning_cells.contains(&cell))
+        };
         let outside: Vec<crate::PlayerId> = self
             .players
             .iter()

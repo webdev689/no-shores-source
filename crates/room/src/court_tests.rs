@@ -265,6 +265,23 @@ fn with_three_living_players_a_filled_anchor_empties_six_seconds_after_it_is_lef
 }
 
 #[test]
+fn with_one_or_two_living_players_a_left_anchor_keeps_what_it_holds() {
+    let (mut room, player, boss) = court();
+    let _other = hardy(&mut room);
+    let most = room.foes[&boss].fighter.health_max;
+    strike(&mut room, player, boss, most);
+    room.tick();
+    let laid = anchors(&room);
+    for _ in 0..ANCHOR_TICKS {
+        put(&mut room, player, laid[0]);
+        room.tick();
+    }
+    put(&mut room, player, laid[1]);
+    ticks(&mut room, ANCHOR_EMPTIES_TICKS * 2);
+    assert_eq!(room.encounters.as_ref().expect("encounters").court.anchors[0], ANCHOR_TICKS, "kept");
+}
+
+#[test]
 fn the_warded_boss_slams_round_it_every_eight_seconds_shown_two_seconds_first() {
     let (mut room, player, boss) = court();
     let most = room.foes[&boss].fighter.health_max;

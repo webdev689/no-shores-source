@@ -59,8 +59,8 @@ const PORTAL = ${PORTAL_FLAG}u;
 const WATER = ${WATER_FLAG}u;
 // A layer with this bit set too is foul water that harms: a sickly green, its glow breathing slowly.
 const FOUL = ${FOUL_FLAG}u;
-const FOUL_TINT = vec3f(0.42, 0.62, 0.2);
-const FOUL_GLOW = vec3f(0.1, 0.24, 0.03);
+const FOUL_TINT = vec3f(0.3, 0.4, 0.16);
+const FOUL_GLOW = vec3f(0.015, 0.04, 0.006);
 // Still water's bed seen through it: a wet floor is darker, and water takes the red first.
 const WATER_TINT = vec3f(0.45, 0.55, 0.6);
 // How much of the light on it the room round still water gives back, to be mirrored in it: stone's.

@@ -88,10 +88,8 @@ fn each_seal_is_laid_nearest_the_middle_of_its_stretch_of_the_walk_not_at_its_st
 
 #[test]
 fn at_least_nine_of_the_eighteen_lay_an_ascent() {
-    let ascents = elite_plans()
-        .iter()
-        .filter(|(_, _, plan)| plan.seals.iter().any(|seal| seal.kind == SealKind::Ascent))
-        .count();
+    let ascents =
+        elite_plans().iter().filter(|(_, _, plan)| plan.seals.iter().any(|seal| seal.kind == SealKind::Ascent)).count();
     assert!(ascents >= 9, "{ascents} of 18 lay an Ascent");
 }
 
@@ -280,7 +278,8 @@ fn reached(laid: &Dungeon, seal: &SealPlan, from: usize, jumps: bool) -> bool {
         if body.z < 0.05 {
             return false;
         }
-        let ahead = ground_at(&seal.pads, &floor, body.x + libm::sin(yaw) * 0.45, body.y - libm::cos(yaw) * 0.45, body.z);
+        let ahead =
+            ground_at(&seal.pads, &floor, body.x + libm::sin(yaw) * 0.45, body.y - libm::cos(yaw) * 0.45, body.z);
         let edge = jumps && body.mode == Mode::Ground && body.z > 0.1 && ahead < body.z - 0.05;
         let controls = Controls { forward: 1.0, yaw, run: true, jump: edge, ..Controls::default() };
         body = step_body(&body, &controls, &seal.pads, &floor, TICK_SECONDS);

@@ -61,7 +61,9 @@ fn a_seal_waits_while_a_foe_of_the_garrison_stands_in_its_room_and_its_drowned_f
     let guard = guard(&mut room, &laid);
     let wet = laid.drowned.iter().copied().find(|&cell| {
         let [x, y] = middle_of(&room, cell);
-        laid.pads.iter().all(|pad| x < pad.min_x - 0.5 || x > pad.max_x + 0.5 || y < pad.min_y - 0.5 || y > pad.max_y + 0.5)
+        laid.pads
+            .iter()
+            .all(|pad| x < pad.min_x - 0.5 || x > pad.max_x + 0.5 || y < pad.min_y - 0.5 || y > pad.max_y + 0.5)
     });
     let [x, y] = middle_of(&room, wet.expect("a wet cell"));
     room.take_events();
@@ -215,7 +217,12 @@ fn a_litanys_show_loops_while_it_runs_and_a_step_too_slow_starts_it_over_with_no
     assert_eq!(marks(&room)[..2], [2, 1], "the show goes on past the stepped rune");
     let (foes, events) = (room.foes.len(), room.take_events());
     assert_eq!(told(&events, EventKind::RuneWrong), 0);
-    ticks(&mut room, RUNE_STEP_TICKS);
+    let stepped = state(&room, seal).last_step;
+    while room.clock < stepped + RUNE_STEP_TICKS {
+        room.tick();
+    }
+    assert_eq!(state(&room, seal).held, 1, "three seconds to step the next");
+    room.tick();
     assert_eq!(state(&room, seal).held, 0, "out of time, it starts over");
     assert_eq!(room.foes.len(), foes, "with no foes");
     assert_eq!(state(&room, seal).state, SealState::Running);
@@ -334,6 +341,20 @@ fn one_player_holds_a_weighing_walking_between_its_two_plates() {
 }
 
 #[test]
+fn a_seals_wave_counts_the_living_players_in_its_room_not_the_run() {
+    let mut room = elite_room("pale-undercroft");
+    let company: Vec<PlayerId> = (0..4).map(|_| hardy(&mut room)).collect();
+    let seal = seal_of(&room, SealKind::Weighing);
+    let laid = plan(&room, seal);
+    let ([x, y], others) = (middle_of(&room, laid.cells[0]), &company[1..]);
+    for (nth, player) in others.iter().enumerate() {
+        put(&mut room, *player, [x + nth as f64 * 0.5, y, 0.0]);
+    }
+    ticks(&mut room, WEIGHING_FIRST_WAVE_TICKS + 2);
+    assert_eq!(room.foes.len(), 3, "one for each of the three in its room, the fourth away");
+}
+
+#[test]
 fn a_weighings_first_wave_comes_three_seconds_in_and_the_next_every_twelve_from_its_doorways() {
     let mut room = elite_room("pale-undercroft");
     let player = hardy(&mut room);
@@ -403,7 +424,9 @@ fn a_holdfast_is_held_in_its_ring_and_a_relic_drained_by_foes_halves_the_hold() 
     room.tick();
     let two = crate::encounters::WAVE_FOES.0;
     let mut counts = Vec::new();
-    for at in [HOLDFAST_FIRST_WAVE_TICKS - 1, HOLDFAST_FIRST_WAVE_TICKS, HOLDFAST_FIRST_WAVE_TICKS + HOLDFAST_WAVE_TICKS] {
+    for at in
+        [HOLDFAST_FIRST_WAVE_TICKS - 1, HOLDFAST_FIRST_WAVE_TICKS, HOLDFAST_FIRST_WAVE_TICKS + HOLDFAST_WAVE_TICKS]
+    {
         while room.clock() < at + state(&room, seal).shown_from {
             put(&mut room, player, laid.pieces[0]);
             room.tick();
