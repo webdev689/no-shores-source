@@ -109,9 +109,10 @@ fn a_group_walks_its_beat_round_at_a_stroll_round_its_leader_pausing_at_each_poi
     }
 }
 
-/// A patrol's first group, walked on until its leader is `out` metres from its post, still walking.
+/// A patrol's first group at the pass, two Runners that both chase a player and walk back together, walked on until its
+/// leader is `out` metres from its post, still walking.
 fn walked_out(out: f64) -> Room {
-    let mut room = node(NodeKind::Patrol, "glade");
+    let mut room = node(NodeKind::Patrol, "pass");
     let leader = room.garrison[0].standing[0];
     let post = room.garrison[0].at;
     while apart(feet(&room, leader), flat(post)) < out {

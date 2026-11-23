@@ -245,11 +245,12 @@ fn on_saltmeres_real_grounds_the_fissure_opens_and_its_foes_hunt_a_player_by_its
 
 #[test]
 fn a_garrison_foe_never_chases_a_player_standing_on_an_event_grounds_own_square_of_navmesh() {
-    // A room whose garrison's mesh, baked 35 m round a point 20 m in from its spawn, ends 2 m short of the Fissure's
-    // square (its 25 m and 16 m past).
+    // A room whose garrison's mesh, baked 35 m round a point SPAWN_CLEAR and 35 m in from its spawn, ends 2 m short of
+    // the Fissure's square (its 25 m and 16 m past).
+    let inland = crate::garrison::SPAWN_CLEAR + crate::garrison::NODE_AROUND;
     let section = crate::Section {
         ring: vec![[-200.0, -200.0], [200.0, -200.0], [200.0, 200.0], [-200.0, 200.0]],
-        spawns: vec![[0.0, -42.0]],
+        spawns: vec![[0.0, inland - 22.0]],
         falls_kill: false,
     };
     let mut room = Room::node(crate::Floor::Flat, Vec::new(), section);
