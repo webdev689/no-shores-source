@@ -125,8 +125,9 @@ each part works is in its system note.
   merged a third time before the merge: the events' fight events 16 to 25 (main's Wiped is 15), the Tithe-Taker 45 after
   main's wardens (21 to 38), the chest's Vestige drawn on main's rank colours (Major plain, Boss heroic), and the
   Lattice laid into main's forge tables again by `lattice.yml`'s run 45048576675.
-- **Not yet seen or heard.** Sessions test offline and picture headless, and headless Chromium in a cloud session now
-  loses the game's WebGPU device about 2 s in, so these wait on a real GPU, an ear or a hand:
+- **Not yet seen or heard.** Sessions test offline and picture headless. Headless Chromium has lost the game's WebGPU
+  device about 2 s in when other jobs shared the cores; on an idle container at b81f0c40 the title and the social
+  space kept it 80 s. SwiftShader is too slow to show the world, so these wait on a real GPU, an ear or a hand:
   - Timed on a real GPU: the game in and out of its worker, the hub with some 125 figures, the wreck with every fire,
     the light layer of the attack visuals (0.4 to 0.5 ms is an estimate), ships and marks under the lamps.
   - Heard in the game: the music, the ambience, the world's, sea's and menu's sounds and their levels, the
@@ -144,6 +145,11 @@ each part works is in its system note.
 
 ## Waiting on the owner
 
+- **#165, the picture driver reads the drawn interface** (branch `ccr-e371333e-z5ngw9`), for the owner's yes to merge:
+  `__ui()` lists what the game's interface shows, the driver's `waitFor`, `clickText` and new `press` read it, and a
+  plan's `"noGpu": true` runs the game at full speed with nothing drawn ([[Toolkit]], Browser QA). Tested offline:
+  the title, the story's skip and its "begin" driven with no GPU. Proposed next, not yet asked for: a cloud environment
+  whose setup script installs and builds, and a CI check that boots the game and finds its HUD.
 - **Nameplates, the player menu and chat** (#154, branch `claude/player-nameplates-interaction-3b6cwr`), for the
   owner's yes to merge, which deploys the page, the rooms and the accounts (a new Durable Object, the chat's hall, and
   two migrations: `presence.water` and `mutes`): [[Other Players Wear a Nameplate, Their Level or Prestige in a
