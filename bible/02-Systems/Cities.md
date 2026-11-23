@@ -362,7 +362,8 @@ building's place to the centimetre in the page, the same on every machine.
   fifth to a third as tall as the great one's, at most 12 times the top's breadth, and 2 to 4 round its rim. It is
   among the landmark's solids, so the room's boxes hold it. Its three tallest spires light the night.
 - **The rubble** of the ways and the breaches is crusted (`crusted`): 2 to 5 shards on each heap's upper slopes, 0.5
-  to 1.6 m high, 3 more on a breach's fall, 1 to 2.8 m. They are among the works, so the room holds them too.
+  to 1.6 m high, 3 more on a breach's fall, 1 to 2.8 m. They are among the works, which the page draws; no room
+  holds them, as every heap lies outside the plaza's window and no other node's window reaches the city.
 - **The formations.** The page's crystal is 40 formations made once, the same on every load (`FORMATIONS`), four of
   each of ten kinds, each meshed as a forged model is and placed by instance, turned and sized there. Each grows out
   along its own east from its foot:
@@ -411,8 +412,9 @@ building's place to the centimetre in the page, the same on every machine.
   sees (the view's, or a shadow cascade's), each formation's chunks joined into as few draws as run. The great
   formations are drawn at every distance; a heavy building's clusters and mass in the middle distance, the chunks
   within 1 200 m of the eye (`MIDDLE_M`), each formation fading out by its own distance over the 300 m short of
-  that, dithered as the buildings' tiers are (`middleFade`), so none pops. A port city draws no crystal pass at all. Everything else the page grows is drawn in the near cells with the forged models, dithered as they
-  are. The rubble's crust is drawn in the chunks within the near tier's reach (`detailRuns`). All of it casts into
+  that, dithered as the buildings' tiers are (`middleFade`), so none pops. A port city draws no crystal pass at
+  all. Everything else the page grows is drawn in the near cells with the forged models, dithered as they are. The
+  rubble's crust is drawn in the chunks within the near tier's reach (`detailRuns`). All of it casts into
   both shadows but the near cells' and the crust, which cast into the near one. A spire's body has no top meshed:
   its tip stands on it.
 - **At night** a ruin's crystal glows brighter than any other crystal a city draws (its core 0.8 alight, against

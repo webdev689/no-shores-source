@@ -1,14 +1,13 @@
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import { test } from 'node:test';
-import { fromEyeMatrix } from '../game/camera.ts';
 import type { BuildingTable, PropTable } from '../models/tables.ts';
 import { startLand } from '../rules/landRules.ts';
 import { parseBlockFile, type RmbBlock } from './blocks.ts';
 import { buildCity, type Chunk, type CityData } from './cityBuild.ts';
 import { chunkDraws, withinMiddle } from './crystalInstances.ts';
 import type { CityPlan } from './plan.ts';
-import { boxSeen, NEAR_M, viewPlanes } from './tiers.ts';
+import { NEAR_M } from './tiers.ts';
 
 const content = (path: string) => readFile(new URL(`../../../content/${path}`, import.meta.url), 'utf8');
 const LAND_WASM = new URL('../../../target/wasm32-unknown-unknown/release/land_wasm.wasm', import.meta.url);
@@ -48,24 +47,17 @@ async function ruinsForBudget(): Promise<{ plans: CityPlan[]; blocks: Map<string
 const drawn = (data: CityData, draws: readonly { model: number; count: number }[]) =>
   draws.reduce((sum, draw) => sum + draw.count * (data.models.triangles[draw.model] ?? 0), 0);
 
-/** The chunks a camera at `eye` (world) looking along `bearing` (radians clockwise from north) sees, as the view
- *  culls them. */
+/** The chunks a camera at `eye` (world) looking along `bearing` (radians clockwise from north) sees across, a view
+ *  1 radian high at 16:9: those with a corner of their box within its width either way. */
 function seenFrom(data: CityData, eye: readonly number[], bearing: number): Chunk[] {
-  const shot = {
-    eye: [eye[0], eye[1], eye[2]] as [number, number, number],
-    yaw: bearing,
-    pitch: 0.05,
-    fov: 1,
-    near: 0.5,
-    far: 30_000,
-  };
-  const planes = viewPlanes(fromEyeMatrix(shot, 16 / 9));
-  const fromMiddle = [eye[0] - data.origin[0], eye[1] - data.origin[1], eye[2]];
+  const halfWidth = Math.atan(Math.tan(0.5) * (16 / 9));
+  const [east, south] = [eye[0] - data.origin[0], eye[1] - data.origin[1]];
   return data.chunks.filter((chunk) =>
-    boxSeen(
-      planes,
-      chunk.low.map((value, axis) => value - fromMiddle[axis]),
-      chunk.high.map((value, axis) => value - fromMiddle[axis]),
+    [chunk.low[0], chunk.high[0]].some((x) =>
+      [chunk.low[1], chunk.high[1]].some((y) => {
+        const turned = Math.atan2(x - east, -(y - south)) - bearing;
+        return Math.abs(Math.atan2(Math.sin(turned), Math.cos(turned))) < halfWidth;
+      }),
     ),
   );
 }
