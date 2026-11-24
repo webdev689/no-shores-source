@@ -418,14 +418,13 @@ export function hear(memory: Memory, hearing: Hearing, seconds: number, songs: S
   else if (seaSong) cue = { kind: 'sea', song: seaSong };
   else if (roam.roaming) cue = roam.roaming.cue;
   else if (playing && story?.score) cue = { kind: 'boss', boss: story.score, part: 1 };
-  else if (playing && breach?.boss)
-    // A great foe awake but not engaged by the player still plays its own score, its part held as last heard.
-    cue = {
-      kind: 'boss',
-      boss: breach.boss,
-      part: memory.cue.kind === 'boss' && memory.cue.boss === breach.boss ? memory.cue.part : 1,
-    };
-  else if (playing && breach?.song) cue = { kind: 'breach', song: breach.song };
+  else if (playing && breach?.boss) {
+    // A great foe awake but not engaged by the player still plays its own score, its part by its health where it is
+    // seen, else as last heard.
+    const great = foes.find((foe) => BOSS_SCORES[foe.name] === breach.boss && alive(foe));
+    const held = memory.cue.kind === 'boss' && memory.cue.boss === breach.boss ? memory.cue.part : 1;
+    cue = { kind: 'boss', boss: breach.boss, part: great ? bossPart(great.health) : held };
+  } else if (playing && breach?.song) cue = { kind: 'breach', song: breach.song };
   else if (playing && place.kind !== 'sea') cue = { kind: 'family', family: FAMILY_OF[place.climate] };
   // A boss part holds while the boss is out of sight a moment: its health is not heard then.
   if (boss && !bossFoe && memory.cue.kind === 'boss') cue = memory.cue;

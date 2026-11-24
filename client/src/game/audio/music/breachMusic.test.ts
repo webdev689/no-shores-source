@@ -125,6 +125,9 @@ test('the Scrivener and the Steward play their own scores, the Steward even befo
   assert.deepEqual(scrivener.stings, ['wake']);
   const court = run(times(5, inRun({ song: 'shores', boss: 'steward' }, { least: 'peak' })));
   assert.deepEqual(court.cue, { kind: 'boss', boss: 'steward', part: 1 });
+  const steward = foe({ id: 9, name: 'The Steward', rank: 5, health: 0.5, alert: 2 });
+  const later = run(times(5, inRun({ song: 'shores', boss: 'steward' }, { least: 'peak', foes: [steward] })));
+  assert.deepEqual(later.cue, { kind: 'boss', boss: 'steward', part: 2 }, 'its phase by its health, unengaged');
   const scores = overlookScores();
   assert.equal(songOf(scores, { kind: 'boss', boss: 'steward', part: 'last' })?.name, 'vale-steward-last');
   assert.equal(stingOf(scores, { kind: 'fallen', boss: 'steward' })?.name, 'vale-steward-cleared');
