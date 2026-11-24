@@ -60,7 +60,7 @@ def descent(module):
 def mending(module):
     """The drowned green: a square of the old hamlet walled by its houses' backs, three seams in it, cottages for cover,
     a well, and four street mouths the overtaken come out of."""
-    bk.floor(module, -30.0, -30.0, 30.0, 30.0, material='turf')
+    bk.floor(module, -30.0, -30.0, 30.0, 30.0, material='rubble')
     for west, south, east, north in ((-34.0, -34.0, -30.0, 34.0), (30.0, -34.0, 34.0, 34.0),
                                      (-30.0, -34.0, -3.0, -30.0), (3.0, -34.0, 30.0, -30.0),
                                      (-30.0, 30.0, -3.0, 34.0), (3.0, 30.0, 30.0, 34.0)):

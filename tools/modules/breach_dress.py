@@ -70,7 +70,8 @@ def pillar(module, at, radius, height, material='trim'):
 
 def hanging(module, west, south, east, north, top, deep):
     """The rock a piece hung over the dark was torn from, under it from `top` down some `deep` metres: split stone
-    narrowing as it hangs, its last shards pointing down."""
+    narrowing as it hangs, its last shards pointing down. Its first layer reaches at most half a metre over `top`, so
+    a floor 1.2 m deep hides where it is torn."""
     long, wide = east - west, north - south
     middle = ((west + east) / 2, (south + north) / 2)
     z, scale = top, 1.0
@@ -81,7 +82,7 @@ def hanging(module, west, south, east, north, top, deep):
         for _ in range(pieces):
             share = 0.75 if pieces > 1 else 1.0
             spot = (middle[0] + module.draw(-0.3, 0.3) * long * scale, middle[1] + module.draw(-0.3, 0.3) * wide * scale,
-                    z - tall)
+                    z - tall * 1.15 + min(tall * 0.15, 0.5))
             bk.facet_rock(module, spot, (long * scale * module.draw(0.5, 0.8) * share,
                                          wide * scale * module.draw(0.5, 0.8) * share, tall * 1.15), 'rubble',
                           points=14, turn=module.draw(-0.3, 0.3))
@@ -160,6 +161,13 @@ def descent(module):
                   part=False).rotation_euler = (tilt, 0.0, angle)
     for centre in ((0.0, -24.0, 0.0), (0.0, 9.0, -3.0), (0.0, 20.0, -6.0), (0.0, 34.0, -10.0)):
         rubble(module, centre[:2], 3.0, 5, top=centre[2])
+    # The race torn from the vale's rock, hung under each run of its floor and the line's ledge, the gaps between
+    # them left open; where a floor steps up its fall, the rock fills under it to the next run's foot.
+    for south, north, bottom in ((-36.0, -18.0, -1.2), (-18.0, -6.0, -4.2), (6.0, 24.0, -7.2), (26.4, 40.0, -11.2)):
+        hanging(module, -4.5, south + 1.5, 4.5, north - 1.5, bottom + 0.2, 9.0)
+    hanging(module, 4.6, -1.6, 7.6, 3.6, -4.0, 3.0)
+    bk.facet_rock(module, (0.0, 9.3, -7.4), (8.6, 6.8, 3.4), 'rubble', points=16)
+    bk.facet_rock(module, (0.0, 28.2, -11.4), (8.6, 3.8, 3.9), 'rubble', points=16)
 
 
 def mending(module):
@@ -193,6 +201,9 @@ def mending(module):
     for at, long, along_x in (((-15.0, 14.0), 5.0, True), ((15.0, 14.0), 5.0, True), ((-26.0, 0.0), 6.0, False)):
         bk.dry_wall(module, at, long, along_x, 0.8)
     rubble(module, (0.0, 0.0), 22.0, 14)
+    # The green's turf laid over the rock it was torn from, which hangs under it.
+    kit.block(module, (0.0, 0.0, -0.04), (60.0, 60.0, 0.05), 'turf', bevel=0.0, wear=0.0, part=False)
+    hanging(module, -26.0, -26.0, 26.0, 26.0, -1.2, 18.0)
 
 
 def timbered(module, west, south, east, north, toward):
@@ -278,6 +289,8 @@ def choir(module):
     bk.drowned_floor(module, 11.0, -31.0, 15.0, 20.0)
     rubble(module, (-12.0, 16.0), 3.0, 5)
     rubble(module, (12.0, -18.0), 3.0, 5)
+    hanging(module, -15.0, -30.0, 15.0, 30.0, -1.2, 18.0)
+    hanging(module, 17.5, -25.4, 34.0, -20.6, -1.2, 5.0)
 
 
 def ways(module, cells, half, house):
@@ -300,6 +313,7 @@ def ways(module, cells, half, house):
         for row in range(1, 6):
             spot = (-half + 12.0 * column, -half + 12.0 * row, -0.04)
             kit.block(module, spot, (3.6, 3.6, 0.08), 'paving', turn=math.pi / 4, bevel=0.0, wear=0.0, part=False)
+    hanging(module, -30.0, -30.0, 30.0, 30.0, -1.2, 18.0)
 
 
 def stair(module, landings, size, steady):
@@ -343,6 +357,7 @@ def hall(module):
     bk.shaft(module, (0.0, 0.0, 0.0), bk.SEAM_M, 9.5, lesser=6)
     rubble(module, (-15.0, -20.0), 3.0, 6)
     rubble(module, (15.0, 20.0), 3.0, 6)
+    hanging(module, -17.0, -23.0, 17.0, 23.0, -1.2, 16.0)
 
 
 def shore(module, was):
@@ -374,6 +389,7 @@ def shore(module, was):
     else:
         table.rotation_euler = (0.0, 0.25, 0.08)
         rubble(module, (0.0, 0.0), 11.0, 16)
+    hanging(module, -13.0, -13.0, 13.0, 13.0, -1.2, 10.0)
 
 
 def court(module, radius):
