@@ -17,3 +17,5 @@ reference:
 commands_verified: "cargo xtask check (three failing runs, then a pass on 9f519e1c); cargo xtask repo; npx prettier --check; npx eslint"
 proposal: "Toolkit.md: before the full check, run `npx prettier --check` and `npx eslint` on the changed TypeScript files and `cargo xtask repo`, then the full check once."
 ---
+
+**Instance (2026-11-24, worker words):** `npm run lint` does not run Prettier on new untracked files, so a new content file's formatting is caught only by the full check's format step or by a hand-run `npx prettier --check`.
