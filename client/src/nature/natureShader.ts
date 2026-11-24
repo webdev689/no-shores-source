@@ -77,10 +77,6 @@ struct Vertex {
 };
 
 const NOWHERE = vec4f(2.0, 2.0, 2.0, 1.0);
-const SNOW = vec3f(0.94, 0.95, 0.97);
-// The ambient's tint from below (light bounced off the ground) and from above (the sky).
-const BOUNCE = vec3f(0.95, 0.9, 0.76);
-const SKYLIGHT = vec3f(1.0, 1.02, 1.08);
 // How far a gust travels in a second, as a phase a metre and a second.
 const GUST_PER_M = 0.035;
 const GUST_PER_S = 1.4;
@@ -185,10 +181,16 @@ fn picture_of(uv: vec2f, wraps: f32) -> Picture {
 }
 `;
 
-/** Lighting, as the land is lit by the sky: its ambient bounced warm from the ground under a crown and cool from the
- *  sky over it, the sun as the shadow map and the sky's dapple let it through, a little light through the leaves, the
- *  lamps, snow settling on what faces up, and rain darkening bark and making leaves glisten. */
-const LIGHT = /* wgsl */ `
+/** Lighting, as the land is lit by the sky, shared by the plants and the meadow: its ambient bounced warm from the
+ *  ground under a crown and cool from the sky over it, the sun as the shadow map and the sky's dapple let it through,
+ *  a little light through the leaves, the lamps, snow settling on what faces up, and rain darkening bark and making
+ *  leaves glisten; and the samples of a pixel a fade leaves drawn. */
+export const PLANT_LIGHT_WGSL = /* wgsl */ `
+const SNOW = vec3f(0.94, 0.95, 0.97);
+// The ambient's tint from below (light bounced off the ground) and from above (the sky).
+const BOUNCE = vec3f(0.95, 0.9, 0.76);
+const SKYLIGHT = vec3f(1.0, 1.02, 1.08);
+
 fn lit(base: vec3f, normal: vec3f, leaf: f32, occlusion: f32, from_eye: vec3f, snow: f32) -> vec3f {
   let sun = sunlit(from_eye, normal) * sky_dapple(from_eye);
   let direct = sky_direct(normal, sun);
@@ -205,15 +207,6 @@ fn lit(base: vec3f, normal: vec3f, leaf: f32, occlusion: f32, from_eye: vec3f, s
   return sky_soaked(colour, wet * (1.0 - leaf) * 0.6) + sky_sheen(normal, from_eye, wet * leaf);
 }
 
-// The instance's tint turns foliage warmer and yellower one way, deeper and cooler the other; bark only lightens or
-// darkens. Far off, a plant's colour leans toward the biome's ground, so a far forest sits in its land.
-fn tinted(albedo: vec3f, tint: f32, leaf: f32, distance: f32) -> vec3f {
-  let hue = select(vec3f(0.9, 0.98, 1.05), vec3f(1.12, 1.05, 0.8), tint > 0.0);
-  let own = albedo * mix(vec3f(1.0), hue, abs(tint) * leaf) * (1.0 + 0.08 * tint * (1.0 - leaf));
-  let lean = select(0.0, 0.35 * smoothstep(900.0, form.ranges.y, distance), frame.ground.w > 0.5);
-  return mix(own, frame.ground.rgb * 0.85, lean);
-}
-
 // The samples a share of a pixel covers: 'share' of four, dithered over two pixels, starting at a sample that turns
 // with the pixel, so neighbouring pixels leave different samples open.
 fn coverage(share: f32, pixel: vec2u, turn: u32) -> u32 {
@@ -222,6 +215,19 @@ fn coverage(share: f32, pixel: vec2u, turn: u32) -> u32 {
   let run = (1u << count) - 1u;
   let start = (pixel.x + 3u * pixel.y + turn) & 3u;
   return ((run << start) | (run >> (4u - start))) & 15u;
+}
+`;
+
+/** The plants' own light: the shared light and their tint, their alpha-cut edges and what they draw. */
+const LIGHT = /* wgsl */ `
+${PLANT_LIGHT_WGSL}
+// The instance's tint turns foliage warmer and yellower one way, deeper and cooler the other; bark only lightens or
+// darkens. Far off, a plant's colour leans toward the biome's ground, so a far forest sits in its land.
+fn tinted(albedo: vec3f, tint: f32, leaf: f32, distance: f32) -> vec3f {
+  let hue = select(vec3f(0.9, 0.98, 1.05), vec3f(1.12, 1.05, 0.8), tint > 0.0);
+  let own = albedo * mix(vec3f(1.0), hue, abs(tint) * leaf) * (1.0 + 0.08 * tint * (1.0 - leaf));
+  let lean = select(0.0, 0.35 * smoothstep(900.0, form.ranges.y, distance), frame.ground.w > 0.5);
+  return mix(own, frame.ground.rgb * 0.85, lean);
 }
 
 // An alpha-cut edge as a share of the pixel, so a leaf's edge is smoothed by the samples rather than stepped.

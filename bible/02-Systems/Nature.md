@@ -25,7 +25,8 @@ The trees, plants and rocks that dress each continent's [[Land]], one cast for i
 ([[Each Continent Is One Biome]], [[The Continents' Biomes]]). Every plant is grown in Blender as a detailed model and
 baked into a textured near mesh and sprites for far away ([[Flora]], [[Flora Is Baked From Detailed Models]]), all
 of it by our own code ([[Own Work]]), drawn with WebGPU ([[WebGPU Only]]). The same ground grows the same plants for
-every player. The casts are Claude's choices ([[The World Is Claude's to Mold]]).
+every player. The casts are Claude's choices ([[The World Is Claude's to Mold]]). Over their grass the owner's
+hand-drawn [[Meadow]] grows from the same ground, drawn after them.
 
 ## The casts
 
