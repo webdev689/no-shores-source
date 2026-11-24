@@ -148,6 +148,9 @@ pub struct GuildWeek {
     /// Whether they took the guild package the War Horn's foe gives this week.
     #[serde(default)]
     pub horn: bool,
+    /// Whether they took the guild package their guild dungeon's first clear gives this week.
+    #[serde(default)]
+    pub delve: bool,
     /// What a later build kept here, kept as it was through a rollback.
     #[serde(flatten)]
     pub unknown: UnknownKeys,
@@ -245,6 +248,19 @@ impl Character {
         }
         self.give_package(Purpose::GuildPackage, dice)?;
         self.guild.horn = true;
+        Ok(())
+    }
+
+    /// Takes the guild package a member's first clear of their guild dungeon gives, once a week.
+    ///
+    /// # Errors
+    /// Taken already this week, or ten Vestiges carried.
+    pub fn claim_delve_package(&mut self, week: u64, dice: &Dice) -> Result<(), Refusal> {
+        if self.guild_week(week).delve {
+            return Err(Refusal::GuildBountyClaimed);
+        }
+        self.give_package(Purpose::GuildPackage, dice)?;
+        self.guild.delve = true;
         Ok(())
     }
 }

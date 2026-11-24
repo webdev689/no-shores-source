@@ -6,6 +6,7 @@ import type { CharacterKeeper } from './accounts/worker.ts';
 import { type Listed, arrives, cameOutOf, reachOf, shipOf } from './arrival.ts';
 import { addressKey } from './address.ts';
 import { type Count, admitsFrom, counted } from './budget.ts';
+import { delveAsk } from './delveHost.ts';
 import { Keeper, partFrom, TOKEN, TOKEN_WAIT_MS } from './keeping.ts';
 import { OutpostHost, outpostGround } from './outpostHost.ts';
 import {
@@ -245,21 +246,12 @@ export class RoomHost extends DurableObject<Env> {
       tag: (player: number, tag: string) => this.guarded(() => this.room.tag(player, tag), false),
       guild: (player: number, told: string) => this.guarded(() => this.room.guild(player, told), false),
     };
-    const characters = {
-      look: (token: string) => accounts.look(token),
-      claim: (token: string, holder: string) => accounts.claim(token, holder),
-      save: (account: string, holder: string, body: string) => accounts.save(account, holder, body),
-      release: (account: string, holder: string, body: string | null) => accounts.release(account, holder, body),
-      companions: (account: string, room: string) => accounts.companions(account, room),
-      launched: (account: string, room: string) => accounts.launched(account, room),
-      guild: (account: string) => accounts.guild(account),
-    };
     // The game's nodes, dungeons, islands and the sea keep characters (at sea, with their ship's hurts): the Test
     // Ground grants gear to try it, and a fleet room is the World Editor's.
     const seas = seaRoom(name);
     const keeps =
       name.startsWith('node-') || name.startsWith('sea-dungeon-') || name.startsWith('isle-') || seas !== null;
-    this.keeper = new Keeper(keeps ? characters : null, room, name, (player, why, rejoinable) => {
+    this.keeper = new Keeper(keeps ? accounts : null, room, name, (player, why, rejoinable) => {
       const socket = [...this.players].find(([, held]) => held.player === player)?.[0];
       const code = why === undefined ? ELSEWHERE : rejoinable ? AGAIN : SHUT;
       if (socket) this.dismiss(socket, code, why ?? 'your character joined another room');
@@ -292,6 +284,17 @@ export class RoomHost extends DurableObject<Env> {
     const isle = /^isle-(.+)$/.exec(name)?.[1];
     if (isle !== undefined) return this.openIsland(isle);
     const node = /^node-(.+)$/.exec(name)?.[1];
+    // A guild dungeon's run opens only while its guild's Delve Gate stands at its tier (`delveHost.ts`).
+    if (reached?.guild && reached.run !== null) {
+      const minute = Math.floor(Date.now() / MINUTE_MS);
+      const delve = await delveAsk(
+        name,
+        minute,
+        (room) => this.env.ACCOUNTS.outpost(room),
+        (id) => this.nodeText(id),
+      );
+      return delve !== null && this.room.openRun(delve) && this.room.reseed(seeds);
+    }
     const ask = runAsk(name, Math.floor(Date.now() / MINUTE_MS));
     if (ask !== null || name.startsWith('sea-dungeon-')) {
       if (name.startsWith('sea-dungeon-') && !(await this.behindDoor(name))) return false;

@@ -9,15 +9,21 @@
  * whole. A leaving player's last save waits for their errands in flight (`settled`).
  */
 
+import manifest from '../content/modules/modules.json' with { type: 'json' };
 import type { Characters } from './accounts/characters.ts';
 import { bannerFrom } from '../client/src/game/guild/bannerLaw.ts';
 import type { Stuff } from '../client/src/game/guild/outpostLaw.ts';
-import { type Box, type Ground, plotBoxes } from '../client/src/game/guild/outpostPlaces.ts';
+import { gateOf, gateTier } from '../client/src/game/guild/delveRoom.ts';
+import type { Plot } from '../client/src/game/guild/outpostLaw.ts';
+import { type Box, type Ground, placeOf, plotBoxes, socketOf } from '../client/src/game/guild/outpostPlaces.ts';
 import type { Errand, RoomDoor } from './roomDoor.ts';
 
 /** What the host asks the accounts for an outpost. */
 export type OutpostAccounts = Pick<Characters, 'outpost' | 'deposit' | 'deliver' | 'takeStores' | 'soundHorn'>;
-type OutpostDoor = Pick<RoomDoor, 'outpostErrands' | 'outpostAnswered' | 'outpostStood' | 'standBlock' | 'takeBlock'>;
+type OutpostDoor = Pick<
+  RoomDoor,
+  'outpostErrands' | 'outpostAnswered' | 'outpostStood' | 'outpostGate' | 'standBlock' | 'takeBlock'
+>;
 
 /** The staff a banner with none hangs from. */
 const DRIFTWOOD = 'driftwood';
@@ -32,6 +38,20 @@ export function outpostGround(nodeText: string): (Ground & { readonly muster: re
     JSON.parse(nodeText) as { outpost?: { plot: [number, number]; level: number; muster: [number, number] } }
   ).outpost;
   return part ? { plot: part.plot, level: part.level, muster: part.muster } : null;
+}
+
+/** Where one out of the guild dungeon stands: the foot of the Delve Gate's steps, its module's `door` socket, and the
+ *  way that socket faces turned with the gate, x east and y south, radians clockwise from north; null where no gate
+ *  stands at a tier. */
+export function gateDoor(plot: Plot, ground: Ground, staff: string): readonly [number, number, number] | null {
+  const gate = gateTier(plot) === null ? null : gateOf(plot);
+  if (!gate) return null;
+  const placed = placeOf(gate, ground, staff);
+  const listed = manifest.modules.find((module) => module.name === placed.module) as
+    { readonly sockets?: readonly { readonly name: string; readonly facing?: readonly number[] }[] } | undefined;
+  const [east = 0, south = 1] = listed?.sockets?.find((socket) => socket.name === 'door')?.facing ?? [];
+  const [x, y] = socketOf(gate, ground, staff, 'door');
+  return [x, y, Math.atan2(east, -south) + placed.turn];
 }
 
 export class OutpostHost {
@@ -92,6 +112,8 @@ export class OutpostHost {
     for (const box of this.stood) this.guarded(() => this.door.takeBlock(box), false);
     for (const box of boxes) this.guarded(() => this.door.standBlock(box), false);
     this.stood = boxes;
+    const gate = outpost ? gateDoor(outpost.plot, this.ground, staff) : null;
+    this.guarded(() => this.door.outpostGate(gate), false);
     this.guarded(() => this.door.outpostStood(), false);
   }
 

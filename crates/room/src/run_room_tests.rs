@@ -253,3 +253,46 @@ fn a_first_clears_vestige_with_the_carried_ten_and_the_vault_full_goes_to_the_ma
     assert_eq!(kept.mail.len(), 1, "the day's in the mail");
     assert!(kept.mail[0].vestige.is_some());
 }
+
+#[test]
+fn a_guild_dungeon_pays_a_sea_islands_clear_and_each_member_a_guild_package_at_their_first_clear_that_week() {
+    use crate::guild_book::GuildSeen;
+    use gear::guild::{Boons, Standing};
+    let guild = "c0ffee00-0000-0000-0000-000000000000";
+    let key = crate::outpost::guild_key(guild);
+    let opened = |minute| {
+        let of = RunOf::Sea { seed: 4_242, style: "caverns".into(), continent: "continent-4".into() };
+        let mut room = Room::dungeon_run(&of, gear::Difficulty::Normal, minute).expect("a sea island's run");
+        assert!(room.delve_for(&key));
+        room
+    };
+    let seen = || Some(GuildSeen { id: guild.to_owned(), standing: Standing::default(), boons: Boons::default() });
+    let mut first = opened(FRIDAY_NINE);
+    let member = kept_in(&mut first, &past_the_prologue());
+    let outsider = first.join().expect("a room with space");
+    assert!(first.restore_character(outsider, &past_the_prologue().to_json()) && first.own(outsider, "another"));
+    first.guild_player(member, seen());
+    clear_the_end(&mut first);
+    let paid = &first.players[&member].character;
+    assert!(paid.guild.delve, "the member's package is taken");
+    assert!(paid.xp > past_the_prologue().xp, "and the clear paid as a sea island's");
+    assert!(!first.players[&outsider].character.guild.delve, "none to one of no guild");
+    let carried = paid.vestiges.len();
+    let mut again = opened(FRIDAY_NINE + 60);
+    let back = kept_in(&mut again, paid);
+    again.guild_player(back, seen());
+    clear_the_end(&mut again);
+    assert_eq!(again.players[&back].character.vestiges.len(), carried, "no second package that week");
+    let mut next = opened(FRIDAY_NINE + gear::clock::WEEK_MINUTES);
+    let later = kept_in(&mut next, &again.players[&back].character);
+    next.guild_player(later, seen());
+    clear_the_end(&mut next);
+    assert!(next.players[&later].character.vestiges.len() > carried, "another the next week");
+    let mut late = opened(FRIDAY_NINE + gear::clock::WEEK_MINUTES * 2);
+    let past = kept_in(&mut late, &past_the_prologue());
+    late.guild_player(past, seen());
+    late.minute += gear::clock::WEEK_MINUTES;
+    clear_the_end(&mut late);
+    assert!(!late.players[&past].character.guild.delve, "a run cleared after the week it opened for pays none");
+    assert!(!Room::new(Vec::new(), (0.0, 0.0)).delve_for(&key), "no run, no guild dungeon");
+}

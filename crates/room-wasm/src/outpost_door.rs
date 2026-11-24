@@ -84,6 +84,14 @@ pub extern "C" fn room_outpost_stood() -> u32 {
     u32::from(on_land(Room::outpost_stood).is_some())
 }
 
+/// The host stood the plot's Delve Gate: the foot of its steps, x east and y south, and the way out from it in radians
+/// clockwise from north; x not a number where no gate stands. 1 in a room on land, 0 elsewhere.
+#[unsafe(no_mangle)]
+pub extern "C" fn room_outpost_gate(x: f64, y: f64, facing: f64) -> u32 {
+    let gate = [x, y, facing].iter().all(|each| each.is_finite()).then_some(([x, y], facing));
+    u32::from(on_land(|room| room.outpost_gate(gate)).is_some())
+}
+
 #[cfg(test)]
 #[path = "outpost_door_tests.rs"]
 mod tests;
