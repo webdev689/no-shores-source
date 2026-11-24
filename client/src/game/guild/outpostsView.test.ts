@@ -7,7 +7,7 @@ import { edgeId } from './guildHome.ts';
 import { GuildPage, guildPage } from './guildPage.ts';
 import { RAISE_AUREM, kindOf } from './outpostLaw.ts';
 import { cellId, costWords, kindId } from './outpostPlan.ts';
-import { COLLECT_ID, RAISE_ID, delveId, deliverId, outpostTabId, takeId } from './outpostsView.ts';
+import { AWAY_WORDS, COLLECT_ID, RAISE_ID, delveId, deliverId, outpostTabId, takeId } from './outpostsView.ts';
 import { OUTPOST_DELVE } from '../gearScreen.ts';
 import { DEPOSIT_FIELD, DEPOSIT_ID, agoWords, ledgerWords } from './treasuryView.ts';
 
@@ -160,7 +160,7 @@ test('a member away from the outpost sees its plan but no press to build, delive
   const { ui, shows } = await opened(0, away);
   assert.equal(ui.boxOf(kindId('war-table')), null);
   assert.equal(ui.boxOf(COLLECT_ID), null);
-  assert.ok(shows().includes('Stand at the outpost to build, deliver or collect.'));
+  assert.ok(shows().includes(AWAY_WORDS));
 });
 
 test('standing at a site the guild has not raised, a founder raises an outpost there for its Aurem', async () => {
@@ -199,11 +199,11 @@ test('the Treasury page reads the ledger in words, and a member at an outpost pu
 test('ledger lines and times read plainly', () => {
   assert.equal(ledgerWords('begin camp'), 'Began the Island Camp');
   assert.equal(ledgerWords('build war-table'), 'Built the War Table');
-  assert.equal(ledgerWords('take down well'), 'Took down the Well');
+  assert.equal(ledgerWords('take down well'), 'Took up the Well');
   assert.equal(ledgerWords('take down counting'), 'Took down the Counting House');
-  assert.equal(ledgerWords('raise hall'), 'Raised the Hall a tier');
+  assert.equal(ledgerWords('raise hall'), "Began the Hall's next tier");
   assert.equal(ledgerWords('raise'), 'Raised an outpost');
-  assert.equal(ledgerWords('decorate well'), 'Set a Well');
+  assert.equal(ledgerWords('decorate well'), 'Placed the Well');
   assert.equal(agoWords(NOW, NOW - 50 * 3_600_000), '2 days ago');
 });
 

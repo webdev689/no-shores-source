@@ -136,6 +136,8 @@ export interface OutpostsFace {
   readonly outposts: readonly OutpostFace[];
   /** How much of each material the player has taken from any outpost's stores today; none from older accounts. */
   readonly taken?: Readonly<Partial<Record<StuffName, number>>>;
+  /** Whether the guild's War Horn has sounded this week; missing from older accounts, read as not. */
+  readonly hornSounded?: boolean;
 }
 
 /** An outpost as anyone standing in its room reads it: its guild's id, name and banner, its site and its plot. */

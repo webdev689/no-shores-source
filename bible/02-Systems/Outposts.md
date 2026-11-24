@@ -84,11 +84,16 @@ outpost there plays it in a room of its own, `node-<site>--guild-<key>`, apart f
   rooms with the player's guild (`boonsOf`); the room gives them to the character each tick, never kept
   (`gear::guild::Boons`), and the central payout adds them.
 - **The Guild tab.** The Outposts page shows each outpost by its site: its plan from above, each structure a block in
-  its colour (a blueprint while built), its strongbox and stores, and what it gives. Standing there a member delivers,
-  takes and empties; a founder or admin builds on the plan (the footprint's ghost green where the law lets it stand, red
-  with the law's words where not), raises tiers, takes down and sounds the War Horn; the founder alone abandons. A
-  change to a plot tells the room, and says so on the window. The Treasury page reads the ledger in words and lets a
-  member at an outpost put Aurem in ([[Interface]]).
+  its colour with its tier and a bar on its front (a blueprint while built, banded while a tier rises), the decoration
+  as small marks and a key beneath; its strongbox and stores, and what it gives. It opens on the outpost the player
+  stands at. Standing there a member delivers (greyed for a material they carry none of), takes and empties; a
+  founder or admin builds on the plan (the footprint's ghost green where the law and the treasury let it stand, red
+  with the law's or the accounts' words where not), raises tiers, takes down (the hold saying how much comes
+  back) and sounds the War Horn, or reads that it has sounded this week; the founder alone abandons. A structure's own panel holds its own
+  presses: a Counting House its strongbox, a Camp or Dockyard the stores, the War Horn its sounding. A change to a plot
+  tells the outpost's room, when the player stands in it, and says so on the window. The plan is one stop for Tab, its
+  arrows moving a cursor. The Treasury page reads the ledger in the world's words (placed, took up) under its column
+  heads, and lets a member at an outpost put Aurem in, saying why when the treasury cannot hold it ([[Interface]]).
 - **The room.** Each guild plays its outpost at a site in a room of its own, `node-<site>--guild-<key>`, the key its
   whole id; the bare site is nobody's ([[Server]], "An outpost's room"). Its members come in, and anyone in a company
   with a member there. The host stands the plot's boxes as the room's blocks (`outpostHost.ts`), and stands them anew

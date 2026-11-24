@@ -5,7 +5,7 @@
 // the room too, which stands it again.
 
 import type { AccountLink, GuildFace, OutpostsFace, Roster } from '../../network/accounts.ts';
-import { ASKS, type GearAsk } from '../../network/gearMessages.ts';
+import { ASKS, type GearAsk, type GearState } from '../../network/gearMessages.ts';
 import { announce } from '../../ui/announce.ts';
 import type { Node } from '../../ui/node.ts';
 import { GUILD_CHANGED, OUTPOST_CHANGED } from '../gearScreen.ts';
@@ -33,11 +33,15 @@ type View = 'home' | 'banner' | 'details' | 'outposts' | 'treasury';
 const MOVES = /^guild\/(found|accept|leave)$/;
 export const AGAIN_ID = 'guild-again';
 
+/** The room the player is in, as the page asks it. */
+type Here = { ask(ask: GearAsk): void; readonly gear?: GearState | null };
+
 /** The page's services, given by the menu. */
 export interface GuildWith {
   readonly link: AccountLink;
-  /** The room the player is in, asked as the menu's presses ask it; none offline. */
-  readonly here?: () => { ask(ask: GearAsk): void } | null;
+  /** The room the player is in, asked as the menu's presses ask it, and its word on their gear (none at sea); no room
+   *  offline. */
+  readonly here?: () => Here | null;
   readonly now?: () => number;
   /** Whether the page is out of sight (its tab hidden), when the guild is not asked again. */
   readonly hidden?: () => boolean;
@@ -52,6 +56,8 @@ export class GuildPage {
   private readonly outpostsState: OutpostsState = { shown: null, plan: { choosing: null, turn: 0, chosen: null } };
   private roster: Roster | null = null;
   private failure: string | null = null;
+  /** Why the outposts were not heard on the last read, offered again with a press. */
+  private outpostsFailure: string | null = null;
   private looked = false;
   private lookedAt = Number.NEGATIVE_INFINITY;
   private asked = 0;
@@ -63,7 +69,7 @@ export class GuildPage {
   private founding: Banner | null = null;
   private readonly turn: RosterTurn = { page: 0 };
   private readonly link: AccountLink;
-  private readonly here: () => { ask(ask: GearAsk): void } | null;
+  private readonly here: () => Here | null;
   private readonly now: () => number;
   private readonly hidden: () => boolean;
   private readonly siteOf: SiteOf;
@@ -89,13 +95,16 @@ export class GuildPage {
         if (typeof guild !== 'string') this.face = guild.guild;
         if (typeof roster !== 'string') this.roster = roster;
         // A player in no guild has no outposts; the accounts say so as a refusal.
-        this.outposts = typeof outposts === 'string' || this.face === null ? null : outposts;
+        // A refused read keeps the last outposts heard, so a busy moment does not blank a page in use.
+        if (this.face === null) this.outposts = null;
+        else if (typeof outposts !== 'string') this.outposts = outposts;
+        this.outpostsFailure = typeof outposts === 'string' && this.face !== null ? outposts : null;
       },
     );
   }
 
   /** Opens the Outposts page, on a structure of the outpost at a site where one is given (as a player at it asks),
-   *  or the Treasury page. */
+   *  or the Treasury page; the outposts are read again, so the page knows where the player stands now. */
   open(view: 'outposts' | 'treasury', onto?: { readonly site: string; readonly structure?: number }): void {
     this.view = view;
     if (onto) {
@@ -103,6 +112,7 @@ export class GuildPage {
       this.outpostsState.plan.chosen = onto.structure ?? null;
       this.outpostsState.plan.choosing = null;
     }
+    this.look();
   }
 
   /** Escape's step on this tab: back to its home from another of its pages; false when it is home already. */
@@ -144,7 +154,8 @@ export class GuildPage {
         }
         if (path === 'guild/banner') this.back();
         if (changes) {
-          this.here()?.ask({ kind: ASKS.outpostChanged });
+          // Only the outpost's own room stands its plot; any other answers that the player is not there.
+          if (this.outposts?.at === body['site']) this.here()?.ask({ kind: ASKS.outpostChanged });
           dispatchEvent(new Event(OUTPOST_CHANGED));
         }
         for (const [id] of Object.values(FIELDS)) this.clearField(id);
@@ -169,7 +180,7 @@ export class GuildPage {
   node(context: PlainContext): Node {
     const { ui } = context;
     this.ui = ui;
-    if (this.now() - this.lookedAt >= LOOK_MS && !this.hidden() && this.view === 'home') this.look();
+    if (this.now() - this.lookedAt >= LOOK_MS && !this.hidden()) this.look();
     if (!this.looked) return { width: 'grow', padding: 24, children: [words('Asking for your guild…', 1, INK.faint)] };
     if (this.failure !== null && this.face === null)
       return {
@@ -222,7 +233,17 @@ export class GuildPage {
   private outpostsPage(context: PlainContext, face: GuildFace): Node {
     const { ui, holds, room, sizes } = context;
     const outposts = this.outposts;
-    if (!outposts) return { width: 'grow', padding: 24, children: [words('Asking for your outposts…', 1, INK.faint)] };
+    if (!outposts)
+      return {
+        width: 'grow',
+        direction: 'column',
+        gap: 12,
+        padding: 24,
+        children:
+          this.outpostsFailure === null
+            ? [words('Asking for your outposts…', 1, INK.faint)]
+            : [hintNode(this.outpostsFailure), pressNode(AGAIN_ID, 'Try again')],
+      };
     const acts = {
       social: this.ask.bind(this),
       room: (ask: GearAsk) => {
@@ -237,7 +258,16 @@ export class GuildPage {
         : outpostsNode(
             ui,
             holds,
-            { face, outposts, state: this.outpostsState, siteOf: this.siteOf, cellPx, size: sizes.label },
+            {
+              face,
+              outposts,
+              state: this.outpostsState,
+              siteOf: this.siteOf,
+              cellPx,
+              size: sizes.label,
+              width: room.width,
+              gear: this.here()?.gear,
+            },
             acts,
           );
     return {
@@ -264,6 +294,12 @@ export class GuildPage {
     };
   }
 
+  /** Whether the player is at sea, where no room answers a claim: no room at all, or one with no word on their gear. */
+  private atSea(): boolean {
+    const room = this.here();
+    return room === null || room.gear === null;
+  }
+
   /** Claims a guild bounty through the room, which pays it; the guild is asked for again once the room has saved. */
   private claim(slot: number): void {
     this.here()?.ask({ kind: ASKS.claimGuildBounty, column: slot });
@@ -279,7 +315,7 @@ export class GuildPage {
       now: this.now(),
       said: this.said,
       week: contributionNode(face, size),
-      bounties: face.bounties ? bountiesNode(ui, face, size, (slot) => this.claim(slot)) : undefined,
+      bounties: face.bounties ? bountiesNode(ui, face, size, (slot) => this.claim(slot), this.atSea()) : undefined,
       outposts: this.outpostsSummary(size),
     };
   }
