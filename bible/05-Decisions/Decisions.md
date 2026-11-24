@@ -363,6 +363,11 @@ a decision is a record. How to add one: [[Recording a Decision]].
 - [[The Lattice Is Shaded Darker, With Detailed Attacks and Projectile Tracers]]
 - [[Ships at Sea Wear Their Guild's Tag]]
 - [[CI Is the Check Before a Merge]]
+- [[Every Objective Has a Waypoint on the Compass, on Land and at Sea]]
+- [[Waypoints as Claude Builds Them]]
+- [[What a Body Meets Keeps to What Is Drawn]]
+- [[The Owner's Handcrafted Meadow Grows Over the Grass]]
+- [[The Meadow Art Is the Owner's, Its Tables Stay in Git, and the Grass Takes the Trees' Rain]]
 
 ## Replaced
 

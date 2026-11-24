@@ -406,8 +406,8 @@ Overlook's ([[Only Overlook's Social Space Opens for Now]]); and its gates: the 
 lead to, each with a layout of its own, as the [[Game]]'s passages go. The index lists each node's id, kind, name,
 continent, rect and gates, which the host reads to judge arrivals. A locked node's room opens but takes no player, and so does
 each dungeon's room of a locked patrol, its runs among them, which open only with the patrol's file. The bake takes
-about 17 s for the nine continents' 99 nodes, a few at a time, and writes about 15.2 MB in all, a patrol area's file
-the largest at about 0.59 MB (the Saltgrass Downs', its rooms' and rock's boxes). `server`, `server:bundle` and
+about 18 s for the nine continents' 99 nodes, a few at a time, and writes about 50 MB in all, a patrol area's file
+the largest at about 1.6 MB (the Gullwing Vale's, its boxes keeping to what is drawn, [[Layouts]], "Boxes"). `server`, `server:bundle` and
 `server:deploy` run it first. It fails, writing nothing, when two nodes of the world share an id, when one is called
 `index`, or when an id is too long for its rooms' longest name, `node-<id>--abyss--dungeon-2--run-00000000`, of at
 most 64 characters.

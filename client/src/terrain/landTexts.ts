@@ -34,13 +34,15 @@ export async function loadLandTexts(base: string): Promise<LandTexts> {
   try {
     const index = JSON.parse(rmbText) as { blocks: readonly (readonly [string, string, ...unknown[]])[] };
     const files = [...new Set(index.blocks.map((row) => row[1]))].sort();
-    const [blockFiles, buildings, props, briefs] = await Promise.all([
+    const [blockFiles, buildings, props, parts, briefs] = await Promise.all([
       Promise.all(files.map((file) => read(`rmb/${file}`))),
       read('forged/buildings.json'),
       read('forged/props.json'),
+      read('forged/parts.json'),
       read('briefs.json'),
     ]);
-    const buildersText = `"rmbBlocks":[${blockFiles.join(',')}],"forged":{"buildings":${buildings},"props":${props}},"briefs":${briefs}`;
+    const forged = `{"buildings":${buildings},"props":${props},"parts":${parts}}`;
+    const buildersText = `"rmbBlocks":[${blockFiles.join(',')}],"forged":${forged},"briefs":${briefs}`;
     return { rmbText, buildersText };
   } catch (error) {
     console.error('the layouts cannot be built:', error);

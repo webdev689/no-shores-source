@@ -74,15 +74,6 @@ export const KIND_WORDS = {
 
 export type MarkKind = keyof typeof KIND_WORDS;
 
-/** A distance as a mark shows it: metres near, kilometres past one. */
-export function distanceText(metres: number): string {
-  // Rounded before the unit is chosen, so 996 m reads 1.0 km, never 1000 m.
-  const tens = Math.round(metres / 10) * 10;
-  if (tens < 1000) return `${tens} m`;
-  const tenths = Math.round(metres / 100) / 10;
-  return tenths < 20 ? `${tenths.toFixed(1)} km` : `${Math.round(metres / 1000)} km`;
-}
-
 /** The islands' names the owner has given, by continent. */
 export const ISLANDS: Readonly<Record<string, string>> = { 'continent-1': 'Saltmere' };
 

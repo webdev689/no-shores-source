@@ -145,7 +145,7 @@ export function isleWords(seen: SeenIsle): string {
  *  rolled it. */
 export function isleNode(
   seen: SeenIsle,
-  { ring, spawns, nodes }: Pick<IslePlan, 'ring' | 'spawns' | 'nodes'>,
+  { ring, spawns, nodes, wrecks }: Pick<IslePlan, 'ring' | 'spawns' | 'nodes' | 'wrecks'>,
   { continent, seas }: { readonly continent: string; readonly seas: Difficulty },
 ): NodeInfo {
   const place = ([x, y]: Point2): Point2 => [x + seen.at[0], y + seen.at[1]];
@@ -160,6 +160,8 @@ export function isleNode(
     spawns: spawns.map(place),
     centre: seen.at,
     resources: holds ? nodes.map((spot) => ({ at: place(spot), holds })) : [],
+    isle: seen.kind,
+    wrecks: wrecks.map(([x, y]) => place([x, y])),
   };
 }
 
