@@ -17,7 +17,7 @@ import {
   type StandOnDeck,
 } from './deckFight.ts';
 import type { FootContext, FootFrame } from './foot.ts';
-import { type Strip, withoutLeave } from './hints.ts';
+import { type Strip, type StripHint, withoutLeave } from './hints.ts';
 import type { FootView } from './footView.ts';
 import type { Drawer } from './scene.ts';
 
@@ -157,13 +157,12 @@ export class Boarding {
     const take = fight.take;
     const hints = withoutLeave(frame.hints);
     if (left === null) return { place: captain.name, line: 'Aboard: its crew stands to meet you', hints };
-    // The take on one line under its name, as the place's line holds it; the minute left with the key that ends it.
+    // The take on one line under its name, as the place's line holds it; the minute left with the key that ends it,
+    // which a fallen boarder cannot press.
     const line = take ? `Its hold: ${holdWords(take)}` : 'Its hold is open';
-    return {
-      place: 'Its deck is yours',
-      line,
-      hints: { ...hints, hints: [['use', `Back aboard your ship · ${left} s left`], ...hints.hints] },
-    };
+    const back: StripHint = ['use', `Back aboard your ship · ${left} s left`];
+    const fallen = frame.standing.kind === 'dead';
+    return { place: 'Its deck is yours', line, hints: fallen ? hints : { ...hints, hints: [back, ...hints.hints] } };
   }
 
   /** The fight on foot on its deck while the player plays there, for the display's respawn. */

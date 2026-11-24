@@ -29,6 +29,7 @@ import { gearScreenOpen } from './gearWindow.ts';
 import { stripOf, withMapKey } from './hints.ts';
 import { FALLEN, refusedWords } from './toShip.ts';
 import { binding } from './rebinding.ts';
+import { leaveOffered } from './leaveHold.ts';
 import { gearTakesKeys } from './gearScreen.ts';
 import type { Drain } from './drain.ts';
 import type { DrawnInterface } from './drawnInterface.ts';
@@ -312,10 +313,10 @@ export function startFrames(parts: FrameParts, playing: Playing): void {
     // N raises the map on foot unless a menu is up, the player has fallen or is in a dungeon, as `openMap` has it.
     const mapless = paused || here.fallen || here.dungeon;
     hud.strip(looking ? stripOf('landMap') : mapless ? shown.hints : withMapKey(shown.hints));
-    // The leave held through takes the player to their ship: not under a window, the sheet or the held map, nor while
-    // she speaks; fallen, it says why not.
+    // The leave held through takes the player to their ship: not under a window, the sheet, the held map or the chat,
+    // nor while she speaks; fallen, it says why not.
     const fallen = here.fallen ? refusedWords(FALLEN) : null;
-    const leaving = !paused && !told && !looking && !hud.controls.open;
+    const leaving = leaveOffered({ paused, sheet: hud.controls.open, map: looking, chat: chatOpen(), speaking: told });
     if (hud.leaving.frame(controls.held('leave'), leaving, fallen, seconds)) parts.leave();
     // The quest's mark gives way to the map, as the fight's display does.
     hud.marks(looking ? [] : quests.marks(shown.shot, viewport, [body.x, body.y], parts.groundAt, here.node.id));

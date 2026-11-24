@@ -199,15 +199,19 @@ The decisions in [[Open Questions]] are not repeated here.
 - **The key strip, the leave held and Settings in tabs** (#181, branch `ccr-cb6f70a9-3mm7g6`), for the owner's yes to
   merge, which deploys the page (the rooms' code is untouched). The owner's three asks
   ([[The Key Strip Is a Compact Panel, a Held Key Leaves, and Settings Has Tabs]], Claude's calls listed there): the
-  key strip a compact panel at the bottom right under the moment's name, 11 px to 1440p; the M menu gone, M or the
-  pad's View held 1.5 s on foot returning the player to their ship, Escape opening Settings; Settings in tabs down a
-  rail (Graphics, Audio, Controls, Account), Exit to Menu and Exit to Desktop held at its foot, the sound credits behind
-  a press, Controls binding as the sheet K opens does ([[Interface]], "The key strip", "The leave held", "Settings").
-  Tested offline: the full check on the head, driven headless in the real game (`noGpu`: Escape, every tab, the
+  key strip a compact panel at the bottom right under the moment's name, its words at 11 px, fitting under the
+  Acquired feed and the tracker; the M menu gone, M or the pad's View held 1.5 s on foot returning the player to their
+  ship, Escape opening Settings; Settings in tabs down a rail (Graphics, Audio, Controls, Account; stacked on a phone),
+  Exit to Menu and Exit to Desktop held at its foot, the sound credits behind a press, Controls binding as the sheet K
+  opens does ([[Interface]], "The key strip", "The leave held", "Settings"). Before the deploy, on the owner's "Please
+  do an audit on this before we deploy", four read-only audits (input and flow, Settings, the strip's layout, tests and
+  the notes), each finding checked against the code and fixed, the code's with a test that fails without its fix.
+  Tested offline: the full check on its head (the commit named in the pull request), driven headless in the real game (`noGpu`: Escape, every tab, the
   credits, a short and a full hold of M to the sea) and pictured through the real renderer. Not yet: a real GPU, a
-  hand, a real pad's View held, and Exit to Desktop in a desktop app (there is none yet). For the owner: whether
-  Graphics gains settings of its own (it holds the resolution alone, none invented), and whether the strip's 11 px
-  reads well enough on the owner's own screen.
+  hand, a real pad's View held, and Exit to Desktop in a desktop app (there is none yet). Unchecked in a browser:
+  whether the Escape that frees a locked mouse also reaches the game. For the owner: whether Graphics gains settings
+  of its own (it holds the resolution alone, none invented), and whether the strip's 11 px reads well enough on the
+  owner's own screen.
 - **The wreck's R2 tools after #172**, which no session may edit: `tools/wreck/wreck_level.py`'s waves still list the
   Tithe-Mates and Bosuns at rank 1; to match `content/prologue/wreck.json` each `(11, 1, ...)` becomes `(11, 2, ...)`
   and each `(10, 1, ...)` `(10, 2, ...)`, and `export_wreck.py` should write the quiet deck's `masts` (added to

@@ -12,6 +12,20 @@ import { PROMPT_ID, promptChip } from './usePrompt.ts';
 export const LEAVE_S = 1.5;
 const DRAIN_S = 0.3;
 
+/** What stands over the play on foot that the leave waits under: a window (`paused`), the sheet of every control, the
+ *  held map, the chat, or the stranger's welcome while she speaks. */
+export interface Over {
+  readonly paused: boolean;
+  readonly sheet: boolean;
+  readonly map: boolean;
+  readonly chat: boolean;
+  readonly speaking: boolean;
+}
+
+/** Whether the leave is offered on foot: with nothing over the play. */
+export const leaveOffered = (over: Over): boolean =>
+  !over.paused && !over.sheet && !over.map && !over.chat && !over.speaking;
+
 export class LeaveHold {
   /** How far it is held, 0 to 1. */
   private share = 0;

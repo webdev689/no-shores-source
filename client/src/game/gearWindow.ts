@@ -180,6 +180,7 @@ export function startGearWindow(
     fresh ||= opening;
     if (wanted !== 'journal') journal.up();
     if (wanted !== 'compendium') compendium.reset();
+    if (wanted === 'settings' && view !== 'settings') settings.show(settings.tab);
     [view, slot, inspecting, roster, accountPanel] = [wanted, null, null, null, null];
     [arts, artSlot, appearance] = [false, null, false];
     shelf = onShelf ?? FIRST_SHELF;
@@ -218,7 +219,9 @@ export function startGearWindow(
     const later = isTab(shown) ? TAB_PRESSES[shown].later : undefined;
     if (later !== undefined) return laterPage(TAB_PRESSES[shown as Tab].label, later);
     if (shown === 'social') return socialPage(plain, link ? (roster ??= new RosterPage({ link, travel })) : null);
-    return settings.node(plain);
+    const page = settings.node(plain);
+    focusNext = settings.takeFocus() ?? focusNext;
+    return page;
   };
 
   /** The figure, drawn once a dress, for the Character page and the account's mark. */
@@ -399,7 +402,7 @@ export function startGearWindow(
     const actions: Child[] = item
       ? [...item.presses]
       : [
-          slot !== null || aside
+          slot !== null || aside || (shown === 'settings' && settings.deeper)
             ? pressNode('press-step', 'Back', 'button', 'Esc', sizes.label)
             : pressNode('press-close', 'Close', 'button', 'Esc', sizes.label),
         ];

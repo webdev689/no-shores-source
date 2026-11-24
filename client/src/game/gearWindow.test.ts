@@ -343,6 +343,39 @@ test("the account's mark opens Settings at Account, and from Settings shows Acco
   assert.equal(ui.boxOf('resolution'), null, 'at Account again');
 });
 
+test('Settings shut and opened again keeps its tab with the credits put away; while they show the footer says Back', () => {
+  const { ui, click, open, window, frame } = menu();
+  open('settings');
+  click('settings-audio');
+  click('settings-credits');
+  assert.ok(ui.boxOf('press-step') && !ui.boxOf('press-close'), 'Back, as Escape steps back to Audio');
+  window.dispatchEvent(new FakeEvent(OPEN_AT, { detail: { view: 'settings', toggle: true } }));
+  frame();
+  assert.equal(ui.boxOf('gear-screen'), null, 'shut');
+  open('settings');
+  assert.ok(ui.boxOf('volume-music') && !ui.boxOf('settings-credits-back'), 'at Audio, the credits put away');
+  assert.ok(ui.boxOf('press-close'));
+  click('settings-credits');
+  open('character');
+  open('settings');
+  assert.ok(ui.boxOf('volume-music'), 'another tab and back puts them away too');
+});
+
+test('the keys’ focus goes to the way back as the credits show, and to their press as Escape puts them away', () => {
+  const { ui, click, key, frame, open } = menu();
+  open('settings');
+  click('settings-audio');
+  ui.focusOn('settings-credits');
+  frame([{ kind: 'key', key: 'Enter' }]);
+  frame();
+  frame();
+  assert.equal(ui.focusedId, 'settings-credits-back');
+  key('Escape');
+  key('Escape', 'keyup');
+  frame();
+  assert.equal(ui.focusedId, 'settings-credits', 'never an exit');
+});
+
 test('Escape steps back from the sound credits to Audio before it closes the menu', () => {
   const { ui, click, key, open } = menu();
   open('settings');

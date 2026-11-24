@@ -149,7 +149,7 @@ test('every control acts somewhere, the menus and the sheet everywhere, and the 
   for (const id of BIND_IDS) assert.ok(CONTROLS[id].where.length > 0, id);
   for (const id of ['character', 'controls'] as const) assert.equal(CONTROLS[id].where.length, 5, id);
   assert.deepEqual(CONTROLS.leave.where, ['foot', 'dead'], 'on foot, fallen saying why not; nothing to leave at sea');
-  assert.deepEqual(CONTROLS.leave.pad, ['View hold'], "the pad's View held, as the menu was");
+  assert.deepEqual(CONTROLS.leave.pad, ['View hold'], "the pad's View held");
 });
 
 /** Every two controls that act somewhere alike and share a key or button: none may. */
@@ -237,4 +237,12 @@ test('binds kept by another build keep what still reads; a kept key a default no
     [['x'], ['x'], ['v', 'mouse4'], ['e']],
   );
   assert.deepEqual(withOverrides({ crouch: { keys: [' '] } }).crouch.keys, ['c'], "Space is Jump's, on its default");
+});
+
+test('a bind kept under the menu that M opened is read as the leave held, so a key swapped with it stays swapped', () => {
+  const kept = readOverrides({ inventory: { keys: ['m'] }, menu: { keys: ['o'] } });
+  assert.deepEqual(kept, { inventory: { keys: ['m'] }, leave: { keys: ['o'] } });
+  const binds = withOverrides(kept ?? {});
+  assert.deepEqual([binds.inventory.keys, binds.leave.keys], [['m'], ['o']], 'neither lost to a clash');
+  assert.deepEqual(readOverrides({ menu: { keys: ['o'] }, leave: { keys: ['p'] } }), { leave: { keys: ['p'] } });
 });

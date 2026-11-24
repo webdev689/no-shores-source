@@ -221,7 +221,8 @@ third person, the forge's figure and the first person's hands, and the Test Grou
   key strip"). Every key hint, on foot and at sea, is a key on its keycap, or its mouse button drawn, and its
   action, with no colon. The strip is a compact panel at the bottom right under the moment's name, its words at the
   face's 11 px as the place line's small words under its name are (22 over the held map at the larger step;
-  [[Interface]], "Limits"). Escape opens Settings wherever nothing else is over the game.
+  [[Interface]], "Limits"). Escape opens Settings wherever nothing else is over the game
+  ([[The Key Strip Is a Compact Panel, a Held Key Leaves, and Settings Has Tabs]]).
 - **The foes.** Every foe the room holds stands as a figure in its type's dress ([[Enemies]]), with the Test Ground's
   display: the compass at the top with the boss bar and the target's plate under it, the vitals at the top left, the
   Arts and weapons at the bottom left, each foe's name and bar, the parry rings, the words, the arrows to foes out of

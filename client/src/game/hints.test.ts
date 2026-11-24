@@ -15,6 +15,7 @@ import {
   seaStrip,
   stripOf,
   withMapKey,
+  withoutLeave,
 } from './hints.ts';
 import { standingOf } from './hudLaw.ts';
 
@@ -242,6 +243,17 @@ test("the strip shows the pad's buttons while the pad was played last, a stick f
   assert.ok(words(HINTS.fight).includes('A / D Steer'), 'the first key of each control');
   const swapped = rebind(DEFAULTS, { id: 'jump', device: 'keys', place: 0 }, 'c').binds;
   assert.deepEqual(words(footHints(AT_REST), 'keys', swapped).slice(2, 4), ['C Jump', 'Space Crouch']);
+});
+
+test('where there is nothing to leave (the story, a struck deck at sea) the strip lists no leave, and the rest as it was', () => {
+  const strip = footStrip(AT_REST);
+  const without = withoutLeave(strip);
+  assert.ok(strip.hints.some(([names]) => names === 'leave'));
+  assert.deepEqual(
+    without.hints,
+    strip.hints.filter(([names]) => names !== 'leave'),
+  );
+  assert.equal(without.title, strip.title);
 });
 
 test("the land's held map names its way to close on the keys and on the pad, which has no button for the map", () => {

@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { type Controlled, contextOf, listenForControls } from './gameKeys.ts';
-import { OPEN_AT } from './gearScreen.ts';
+import { OPEN_AT, setGearScreenOpen } from './gearScreen.ts';
 import { FakeEvent, fakePage } from './pageForTests.ts';
 
 type Playing = Parameters<typeof contextOf>[0];
@@ -145,7 +145,7 @@ test('Escape opens Settings with nothing else over the game, and steps back from
     flow: { mode: 'foot' } as object,
     sea: { ...afloat(), view: { backToSea: () => void (backed += 1) } },
     foot: { standing: { kind: 'inside' } },
-    helmMap: { key: (key: string) => key === 'escape' && playing.mapUp },
+    helmMap: { key: (key: string) => key === 'escape' && playing.mapUp, busy: false },
     mapUp: false,
     through: null,
     after: { holding: false },
@@ -173,4 +173,14 @@ test('Escape opens Settings with nothing else over the game, and steps back from
   playing.flow = { mode: 'sea' };
   escape();
   assert.deepEqual(opened, [{ view: 'settings' }, { view: 'settings' }], 'at sea');
+  playing.helmMap.busy = true;
+  escape();
+  playing.helmMap.busy = false;
+  playing.flow = { mode: 'loading', words: 'Returning to your ship', then: { mode: 'sea' } };
+  escape();
+  playing.flow = { mode: 'foot' };
+  setGearScreenOpen(true);
+  escape();
+  setGearScreenOpen(false);
+  assert.equal(opened.length, 2, 'not on the way to the helm’s map, behind the veil, nor over a window');
 });

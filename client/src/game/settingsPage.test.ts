@@ -4,15 +4,20 @@ import { BINDS } from '../player/input.ts';
 import { AccountPanel } from './accountTab.ts';
 import { drawn, fakeLink, fakePage, heard, settle } from './menuPagesForTests.ts';
 import { Rebinding } from './rebinding.ts';
-import { resolution } from './renderScale.ts';
+import { resolution, setResolution } from './renderScale.ts';
 import { SETTINGS_TABS, Settings, type SettingsTab, titleAddress } from './settingsPage.ts';
 
-/** Settings drawn at `tab`, its account `account` (none offline), leaving or closing `page`. */
-function settingsAt(tab: SettingsTab, account: AccountPanel | null = null, page = fakePage().page) {
+/** Settings drawn at `tab`, its account `account` (none offline), leaving or closing `page`, in `room`. */
+function settingsAt(
+  tab: SettingsTab,
+  account: AccountPanel | null = null,
+  page = fakePage().page,
+  room?: { width: number; height: number },
+) {
   const rebinding = new Rebinding();
   const settings = new Settings(() => account, page, rebinding);
   settings.show(tab);
-  return { settings, rebinding, ...drawn((context) => settings.node(context)) };
+  return { settings, rebinding, ...drawn((context) => settings.node(context), room) };
 }
 
 /** A press `id` held down for `seconds` in sixtieths, then let go. */
@@ -44,13 +49,17 @@ test('Settings stands in tabs, Graphics, Audio, Controls and Account, each a pre
 test('the resolution chosen from its list is the one drawn at, and shown', () => {
   const page = settingsAt('graphics');
   page.frame();
-  page.click('resolution');
-  page.click('resolution:0.75');
-  assert.equal(resolution(), '0.75');
-  assert.match(page.shows(), /Resolution \| 75%/);
-  page.click('resolution');
-  page.click('resolution:auto');
-  assert.equal(resolution(), 'auto');
+  try {
+    page.click('resolution');
+    page.click('resolution:0.75');
+    assert.equal(resolution(), '0.75');
+    assert.match(page.shows(), /Resolution \| 75%/);
+    page.click('resolution');
+    page.click('resolution:auto');
+    assert.equal(resolution(), 'auto');
+  } finally {
+    setResolution('auto');
+  }
 });
 
 test('the sound credits stand behind a press of their own in Audio; their links open, and Escape steps back', () => {
@@ -74,25 +83,30 @@ test('the sound credits stand behind a press of their own in Audio; their links 
 });
 
 test('Controls lists every control as the sheet does; a key chosen waits for its new one, and another tab gives it up', () => {
-  const page = settingsAt('controls');
-  page.frame();
-  assert.match(page.shows(), /CONTROLS \| Reset to defaults \| Choose a key or button, then press its new one\./);
-  for (const group of ['MOVE', 'FIGHT', 'ARTS', 'CAMERA', 'MENUS', 'SEA', 'SEA FIGHT'])
-    assert.ok(page.shows().includes(group), group);
-  assert.ok(page.shows().includes('Hold to leave'));
-  page.click('controls:jump:keys:0');
-  assert.deepEqual(page.rebinding.slot, { id: 'jump', device: 'keys', place: 0 });
-  page.frame();
-  assert.match(page.shows(), /Press a key or button · Esc cancels/);
-  page.settings.show('audio');
-  assert.equal(page.rebinding.slot, null, 'given up as the tab changes');
-  page.settings.show('controls');
-  page.frame();
-  page.click('controls:jump:keys:0');
-  page.rebinding.key('j');
-  assert.deepEqual(BINDS.now.jump.keys, ['j']);
-  page.click('settings-reset');
-  assert.deepEqual(BINDS.now.jump.keys, [' '], 'reset to defaults');
+  const before = BINDS.now;
+  try {
+    const page = settingsAt('controls');
+    page.frame();
+    assert.match(page.shows(), /CONTROLS \| Reset to defaults \| Choose a key or button, then press its new one\./);
+    for (const group of ['MOVE', 'FIGHT', 'ARTS', 'CAMERA', 'MENUS', 'SEA', 'SEA FIGHT'])
+      assert.ok(page.shows().includes(group), group);
+    assert.ok(page.shows().includes('Hold to leave'));
+    page.click('controls:jump:keys:0');
+    assert.deepEqual(page.rebinding.slot, { id: 'jump', device: 'keys', place: 0 });
+    page.frame();
+    assert.match(page.shows(), /Press a key or button · Esc cancels/);
+    page.settings.show('audio');
+    assert.equal(page.rebinding.slot, null, 'given up as the tab changes');
+    page.settings.show('controls');
+    page.frame();
+    page.click('controls:jump:keys:0');
+    page.rebinding.key('j');
+    assert.deepEqual(BINDS.now.jump.keys, ['j']);
+    page.click('settings-reset');
+    assert.deepEqual(BINDS.now.jump.keys, [' '], 'reset to defaults');
+  } finally {
+    BINDS.set(before);
+  }
 });
 
 test('Exit to Menu and Exit to Desktop act only once held; the menu is the title, the desktop the window closed', async () => {
@@ -123,6 +137,7 @@ test('Exit to Menu and Exit to Desktop act only once held; the menu is the title
 test('the title’s address keeps the rooms asked for and drops what goes past the title', () => {
   assert.equal(titleAddress('https://game/'), 'https://game/');
   assert.equal(titleAddress('https://game/?room=wss://rooms'), 'https://game/?room=wss://rooms', 'as it was');
+  assert.equal(titleAddress('https://game/?wisp=1#discord=done'), 'https://game/', 'a story start and a fragment');
   assert.equal(
     titleAddress('https://game/no-shores-source/?at=x&spawn=1,2&view=first&arrival=1&prologue=wreck&run=2&perf'),
     'https://game/no-shores-source/?perf=',
@@ -218,4 +233,57 @@ test('a muted player is listed under the blocked and unmuted from Settings', asy
     settings.shows(),
     /MUTED PLAYERS \| None\. Mute a player from their menu, or with \/mute in the chat\. \| Wren is unmuted\./,
   );
+});
+
+test('on a narrow page the tabs stand over the panel and the exits under it, the panel the width across', () => {
+  const page = settingsAt('controls', null, fakePage().page, { width: 300, height: 600 });
+  page.frame();
+  page.frame();
+  const [panel, tab, exit] = ['settings-list', 'settings-graphics', 'settings-exit-desktop'].map((id) =>
+    page.ui.boxOf(id),
+  );
+  assert.ok(panel && tab && exit);
+  assert.ok(panel.width >= 280, `the panel across the page: ${panel.width}`);
+  assert.ok(tab.y + tab.height <= panel.y && exit.y >= panel.y + panel.height, 'tabs over, exits under');
+  const jump = page.ui.boxOf('controls:jump:keys:0');
+  assert.ok(jump && jump.x + jump.width <= panel.x + panel.width, 'every key within the panel');
+});
+
+test('on a short page the rail keeps its exits whole, the page standing taller than the room for the body to scroll', () => {
+  const page = settingsAt('graphics', null, fakePage().page, { width: 1180, height: 150 });
+  page.frame();
+  page.frame();
+  const [settings, exit] = [page.ui.boxOf('page-settings'), page.ui.boxOf('settings-exit-desktop')];
+  assert.ok(settings && exit);
+  assert.ok(exit.y + exit.height <= settings.y + settings.height, 'Exit to Desktop within the page');
+});
+
+test('the focus goes to the way back as the credits show, and to their press as they go; a list left open is shut', () => {
+  const page = settingsAt('audio');
+  page.frame();
+  page.click('settings-credits');
+  assert.equal(page.settings.takeFocus(), 'settings-credits-back');
+  assert.equal(page.settings.back(), true);
+  assert.equal(page.settings.takeFocus(), 'settings-credits');
+  page.settings.show('graphics');
+  page.frame();
+  page.click('resolution');
+  assert.ok(page.ui.boxOf('resolution:list'), 'the list is open');
+  page.settings.show('graphics');
+  page.frame();
+  page.frame();
+  assert.equal(page.ui.boxOf('resolution:list'), null, 'shown anew, its list is shut');
+});
+
+test("Settings shown anew drops the binding's last words; Exit to Menu loads the page again where nothing skips the title", () => {
+  const { page: browser, done } = fakePage('https://game/?room=wss://rooms');
+  const page = settingsAt('controls', null, browser);
+  page.rebinding.reset();
+  page.frame();
+  assert.match(page.shows(), /Defaults/);
+  page.settings.show('controls');
+  page.frame();
+  assert.ok(!page.shows().includes('Defaults'));
+  hold(page, 'settings-exit-menu', 2);
+  assert.deepEqual(done, ['reload']);
 });

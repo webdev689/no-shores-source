@@ -3,6 +3,7 @@
 // anew there as in the sheet K opens) and Account (the account and the players blocked or muted), down a rail with
 // Exit to Menu and Exit to Desktop at its foot, each held. The resolution and the volumes are kept in this browser,
 // the binds with the account.
+import { announce } from '../ui/announce.ts';
 import type { Child, Node } from '../ui/node.ts';
 import { PAGE, type Page } from '../ui/page.ts';
 import { button, choice, slider } from '../ui/controls.ts';
@@ -36,8 +37,9 @@ export const SETTINGS_TABS = [
 ] as const;
 export type SettingsTab = (typeof SETTINGS_TABS)[number]['id'];
 
-/** The address's asks that take the page past the title as it loads: the place to arrive at and how. */
-const PAST_THE_TITLE = ['at', 'spawn', 'view', 'arrival', 'prologue', 'run'];
+/** The address's asks that take the page past the title as it loads: the place to arrive at and how, and where the
+ *  story starts. */
+const PAST_THE_TITLE = ['at', 'spawn', 'view', 'arrival', 'prologue', 'run', 'wisp', 'bow', 'armed', 'lash'];
 /** How long the page waits for its window to close before it says the browser kept it open, milliseconds. */
 const CLOSE_WAIT_MS = 500;
 /** How wide a tab's parts stand at most in its panel, CSS pixels, and at the larger words; Controls takes the panel's
@@ -46,14 +48,26 @@ const PANEL_MOST = 640;
 const PANEL_MOST_WIDE = 880;
 const RAIL = 200;
 const RAIL_WIDE = 280;
+/** Under this much room across, the tabs and the exits stand in rows over and under the panel instead. A press's
+ *  height on the rail, and at the larger words, which with its gaps the page keeps room for, so a short view scrolls
+ *  the menu's body rather than cut the exits off. */
+const STACK_BELOW = 600;
+const PRESS = 34;
+const PRESS_WIDE = 54;
+const PANEL_LEAST = 200;
 /** The tab's panel, which scrolls beside the rail. */
 const LIST = 'settings-list';
+/** The credits' press in Audio and their way back. */
+const CREDITS = 'settings-credits';
+const CREDITS_BACK = 'settings-credits-back';
 
-/** `href` with the asks that skip the title taken off, so loaded it opens on the title, as the game first does. */
+/** `href` with the asks that skip the title taken off, and any fragment, so loaded it opens on the title, as the game
+ *  first does. */
 export function titleAddress(href: string): string {
   const url = new URL(href);
-  if (!PAST_THE_TITLE.some((ask) => url.searchParams.has(ask))) return href;
-  for (const ask of PAST_THE_TITLE) url.searchParams.delete(ask);
+  url.hash = '';
+  if (PAST_THE_TITLE.some((ask) => url.searchParams.has(ask)))
+    for (const ask of PAST_THE_TITLE) url.searchParams.delete(ask);
   return url.href;
 }
 
@@ -67,8 +81,12 @@ export class Settings {
   /** How many times a tab has been shown: a window that stayed open is told of only while the tab it was asked from
    *  still shows. */
   private shownTimes = 0;
-  /** Whether the menu's body goes back to its top as the page is next drawn: a tab or the credits newly shown. */
+  /** Whether the panel goes back to its top, its list of resolutions shut, as the page is next drawn: a tab or the
+   *  credits newly shown. */
   private toTop = false;
+  /** The press to give the focus to, for the menu to take: the way back as the credits show, the credits' press as
+   *  they go, so the focus never falls to a press it did not choose. */
+  private focus: string | null = null;
   private readonly account: () => AccountPanel | null;
   private readonly page: Page;
   private readonly rebinding: Rebinding;
@@ -78,35 +96,92 @@ export class Settings {
     [this.account, this.page, this.rebinding] = [account, page, rebinding];
   }
 
-  /** Shows `tab`, the credits put away and a binding under way given up. */
+  /** Shows `tab` anew: the credits put away, a binding under way given up and its last words gone. */
   show(tab: SettingsTab): void {
     [this.tab, this.credits, this.said, this.toTop] = [tab, false, '', true];
     this.shownTimes += 1;
     this.rebinding.cancel();
+    this.rebinding.said = '';
+  }
+
+  /** Whether the credits stand in Audio's place, a step in from the tab. */
+  get deeper(): boolean {
+    return this.credits;
   }
 
   /** Escape's step on the page: the credits put away. Answers whether it took one. */
   back(): boolean {
     const took = this.credits;
-    [this.credits, this.toTop] = [false, this.toTop || took];
+    if (took) this.toCredits(false);
     return took;
   }
 
+  /** The press the focus is to go to, taken once. */
+  takeFocus(): string | null {
+    const focus = this.focus;
+    this.focus = null;
+    return focus;
+  }
+
+  private toCredits(shown: boolean): void {
+    [this.credits, this.toTop, this.focus] = [shown, true, shown ? CREDITS_BACK : CREDITS];
+  }
+
   /** The page this frame: the tabs down a rail at its left, the exits at the rail's foot, and the tab's panel beside
-   *  it, scrolling on its own. */
+   *  it, scrolling on its own; where the room across is narrow, the tabs over the panel and the exits under it. */
   node(context: PlainContext): Node {
-    const wide = context.sizes.name > 1;
-    // What is newly shown stands from its top.
-    if (this.toTop) context.ui.scrollBy(LIST, -Number.MAX_SAFE_INTEGER);
+    const { ui, room, sizes } = context;
+    const wide = sizes.name > 1;
+    if (this.toTop) {
+      ui.scrollBy(LIST, -Number.MAX_SAFE_INTEGER);
+      ui.store.set('resolution', false);
+    }
     this.toTop = false;
-    const toCredits = (shown: boolean) => ([this.credits, this.toTop] = [shown, true]);
     const body = this.credits
-      ? creditsNode(context, this.page, () => toCredits(false))
-      : this.tabNode(context, toCredits);
+      ? creditsNode(context, this.page, () => this.toCredits(false))
+      : this.tabNode(context, () => this.toCredits(true));
+    const stacked = room.width < STACK_BELOW;
+    const tabs = SETTINGS_TABS.map(({ id, name }) =>
+      tabPress(context, `settings-${id}`, name, id === this.tab, stacked, () => this.show(id)),
+    );
+    const said: Child = this.said !== '' && { width: 'grow', padding: [0, 0, 6, 0], children: [answerNode(this.said)] };
+    const exits = this.exits(context, stacked);
+    const panel: Node = {
+      id: LIST,
+      role: 'panel',
+      width: 'grow',
+      height: 'grow',
+      minHeight: stacked ? PANEL_LEAST : 0,
+      scroll: true,
+      direction: 'column',
+      padding: stacked ? [14, 14] : [20, 24],
+      children: [
+        {
+          width: 'grow',
+          maxWidth: this.tab === 'controls' ? undefined : wide ? PANEL_MOST_WIDE : PANEL_MOST,
+          children: [body],
+        },
+      ],
+    };
+    const rail = 6 * ((wide ? PRESS_WIDE : PRESS) + 6) + 12;
+    if (stacked)
+      return {
+        id: 'page-settings',
+        width: 'grow',
+        height: Math.max(room.height, 2 * rail),
+        direction: 'column',
+        gap: 10,
+        children: [
+          { width: 'grow', gap: 6, wrap: true, children: tabs },
+          panel,
+          said,
+          { gap: 6, wrap: true, children: exits },
+        ],
+      };
     return {
       id: 'page-settings',
       width: 'grow',
-      height: context.room.height,
+      height: Math.max(room.height, rail),
       gap: wide ? 20 : 14,
       children: [
         {
@@ -114,31 +189,9 @@ export class Settings {
           height: 'grow',
           direction: 'column',
           gap: 6,
-          children: [
-            ...SETTINGS_TABS.map(({ id, name }) =>
-              tabPress(context, `settings-${id}`, name, id === this.tab, () => this.show(id)),
-            ),
-            { height: 'grow' },
-            this.said !== '' && { width: 'grow', padding: [0, 0, 6, 0], children: [answerNode(this.said)] },
-            ...this.exits(context),
-          ],
+          children: [...tabs, { height: 'grow' }, said, ...exits],
         },
-        {
-          id: LIST,
-          role: 'panel',
-          width: 'grow',
-          height: 'grow',
-          scroll: true,
-          direction: 'column',
-          padding: [20, 24],
-          children: [
-            {
-              width: 'grow',
-              maxWidth: this.tab === 'controls' ? undefined : wide ? PANEL_MOST_WIDE : PANEL_MOST,
-              children: [body],
-            },
-          ],
-        },
+        panel,
       ],
     };
   }
@@ -155,20 +208,26 @@ export class Settings {
     ]);
   }
 
-  /** Exit to Menu and Exit to Desktop, each held, as what cannot be undone is. */
-  private exits(context: PlainContext): Node[] {
-    const toTitle = () => this.page.assign(titleAddress(this.page.address()));
+  /** Exit to Menu and Exit to Desktop, each held, as what cannot be undone is: across the rail, or side by side. */
+  private exits(context: PlainContext, stacked: boolean): Node[] {
+    const toTitle = () => {
+      const [here, title] = [this.page.address(), titleAddress(this.page.address())];
+      if (title === here) this.page.reload();
+      else this.page.assign(title);
+    };
     const toDesktop = () => {
       const asked = this.shownTimes;
       this.page.close();
       // A browser's tab the player opened is theirs to close: still here, the page says so.
       setTimeout(() => {
-        if (this.shownTimes === asked) this.said = 'Your browser keeps this tab open. Close it to leave the game.';
+        if (this.shownTimes !== asked) return;
+        this.said = 'Your browser keeps this tab open. Close it to leave the game.';
+        announce(this.said);
       }, CLOSE_WAIT_MS);
     };
     return [
-      held(context, 'settings-exit-menu', 'Exit to Menu', toTitle),
-      held(context, 'settings-exit-desktop', 'Exit to Desktop', toDesktop),
+      held(context, 'settings-exit-menu', 'Exit to Menu', 'Hold to exit to the menu', stacked, toTitle),
+      held(context, 'settings-exit-desktop', 'Exit to Desktop', 'Hold to exit to the desktop', stacked, toDesktop),
     ];
   }
 }
@@ -176,16 +235,23 @@ export class Settings {
 /** A column of a tab's parts. */
 const column = (children: readonly Child[], gap = 6): Node => ({ width: 'grow', direction: 'column', gap, children });
 
-/** A tab on the rail: its name in capitals, the one shown a lit brass press edged with a brass bar at its left, as the
- *  menu's own tabs mark theirs. */
-function tabPress({ ui, sizes }: PlainContext, id: string, name: string, chosen: boolean, show: () => void): Node {
+/** A tab on the rail (across it, or as wide as its name where `stacked`): its name in capitals, the one shown a lit
+ *  brass press edged with a brass bar at its left, as the menu's own tabs mark theirs. */
+function tabPress(
+  { ui, sizes }: PlainContext,
+  id: string,
+  name: string,
+  chosen: boolean,
+  stacked: boolean,
+  show: () => void,
+): Node {
   if (ui.clicked(id) && !chosen) show();
   return {
     id,
     press: true,
     role: chosen ? 'primary' : 'button',
     label: chosen ? `${name}, shown` : name,
-    width: 'grow',
+    width: stacked ? undefined : 'grow',
     padding: sizes.name > 1 ? [14, 20] : [10, 16],
     alignY: 'center',
     children: [
@@ -203,15 +269,23 @@ const settingRow = (name: string, ...children: Child[]): Node => ({
   children: [{ minWidth: 120, ...words(name, 1, INK.word) }, ...children],
 });
 
-/** A press held to act across the rail, in the warn role, its fill showing how long is left, said as held. */
-function held({ ui, holds, sizes }: PlainContext, id: string, said: string, act: () => void): Node {
+/** A press held to act, across the rail or as wide as its words where `stacked`, in the warn role, its fill showing
+ *  how long is left, read as `label`. */
+function held(
+  { ui, holds, sizes }: PlainContext,
+  id: string,
+  said: string,
+  label: string,
+  stacked: boolean,
+  act: () => void,
+): Node {
   const charged = holds.press(ui, id, act);
   return {
     id,
     press: true,
     role: 'warn',
-    label: `${said}, held`,
-    width: 'grow',
+    label,
+    width: stacked ? undefined : 'grow',
     padding: sizes.name > 1 ? [14, 20] : [10, 16],
     alignY: 'center',
     children: [words(said.toUpperCase(), sizes.name, INK.word, { tracking: 3 }), fillNode(charged, true)],
@@ -244,7 +318,7 @@ function audioNode(context: PlainContext, toCredits: () => void): Node {
     { height: 14 },
     headingNode('Credits'),
     { height: 4 },
-    settingRow('Sound credits', button(context.ui, 'settings-credits', 'View', toCredits, { padding: PRESS_PADDING })),
+    settingRow('Sound credits', button(context.ui, CREDITS, 'View', toCredits, { padding: PRESS_PADDING })),
   ]);
 }
 
@@ -318,7 +392,7 @@ function creditsNode(context: PlainContext, page: Page, back: () => void): Node 
       gap: 12,
       alignY: 'center',
       children: [
-        button(context.ui, 'settings-credits-back', '‹ Audio', back, { padding: PRESS_PADDING }),
+        button(context.ui, CREDITS_BACK, '‹ Audio', back, { padding: PRESS_PADDING }),
         { width: 'grow', ...words('SOUND CREDITS', 1, INK.faint, { tracking: 3 }) },
       ],
     },

@@ -51,6 +51,8 @@ export function listenForControls(game: Controlled): void {
   const { playing, input, ui, hud, story, change } = game;
   /** What the controls `pressed` do here, Escape among them for a key: the helm's map first, a struck deck's asks, a
    *  retry once a travel failed, the chat, then the sea's and the foot's own. */
+  /** Whether a window or the chat stands over the game. */
+  const overGame = () => gearScreenOpen() || socialUp() || chatOpen();
   const act = (pressed: (id: BindId) => boolean, escape: boolean) => {
     const here = contextOf(playing);
     const acts = (id: BindId) => pressed(id) && CONTROLS[id].where.includes(here);
@@ -66,8 +68,9 @@ export function listenForControls(game: Controlled): void {
     else if (escape && flow.mode === 'landing') {
       sea?.view.backToSea();
       change({ kind: 'back' });
-      // With nothing else over the game, Escape opens Settings, as other games' own menus open on it.
-    } else if (escape && !gearScreenOpen() && !socialUp() && !chatOpen()) openGearWindow({ view: 'settings' });
+      // With nothing else over the game, on foot or at sea, Escape opens Settings, as other games' own menus open on it.
+    } else if (escape && (flow.mode === 'foot' || flow.mode === 'sea') && !playing.helmMap.busy && !overGame())
+      openGearWindow({ view: 'settings' });
     else if (acts('confirm') && sailing && sea?.chaseChosen()) return;
     else if (acts('ashore') || (acts('confirm') && sailing)) game.goAshore();
     else if (acts('voyage') && flow.mode === 'sea') game.stopOrResume();

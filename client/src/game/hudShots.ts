@@ -1,6 +1,6 @@
 // Pictures of the key strip and the leave held, headless (`tools/uiShot.mjs`), over a plain dusk in place of the
-// world: on foot at rest with the leave half held, a melee weapon drawn, sailing over the sea bar, and the pad's
-// buttons. The game never imports it.
+// world: on foot at rest with the leave half held, a melee weapon drawn, sailing over the sea bar, the pad's buttons,
+// and under a quest's tracker. The game never imports it.
 import { BINDS } from '../player/input.ts';
 import type { Node } from '../ui/node.ts';
 import type { Interface } from '../ui/ui.ts';
@@ -73,4 +73,16 @@ export function stripPadShot(ui: Interface): Node {
   } finally {
     BINDS.device = device;
   }
+}
+
+/** At rest on foot under a quest's tracker, as a narrow view stands the tracker across from the strip. */
+export function stripTrackedShot(ui: Interface): Node {
+  return hudOver(ui, 'tracked', (hud) => {
+    hud.strip(withMapKey(footStrip(REST)));
+    hud.tasks.show({
+      name: 'The Opening',
+      task: 'Meet the houses',
+      steps: [{ text: 'Hear the three houses' }, { text: 'Visit the Quartermaster' }, { text: 'Find the Tack' }],
+    });
+  });
 }

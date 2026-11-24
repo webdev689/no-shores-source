@@ -19,7 +19,8 @@ import type { Interface } from '../ui/ui.ts';
 import { BINDS } from '../player/input.ts';
 import { boundWord } from './controls.ts';
 import { type Strip, type StripRow, hintsFor } from './hints.ts';
-import { stripFoot, stripNode } from './keyStrip.ts';
+import { stripFit, stripFoot, stripNode } from './keyStrip.ts';
+import { FEED_RISE } from './acquiredFeed.ts';
 import { LeaveHold } from './leaveHold.ts';
 import { countdownText, deathWords, type Standing, vignette, WARNING_SECONDS } from './hudLaw.ts';
 import { markNodes, type ScreenMark } from './hudMarks.ts';
@@ -40,7 +41,7 @@ import { type Landfall, landfallWords } from './seaLaw.ts';
 import { SeaSight, type Sight } from './seaSight.ts';
 import type { ShipPanel } from './shipPanel.ts';
 import { gearScreenOpen } from './gearScreen.ts';
-import { TaskTracker } from './tasks.ts';
+import { TRACKER_ID, TaskTracker } from './tasks.ts';
 import { drawToasts, keptToasts, layToasts, type Toast } from './toasts.ts';
 import { PROMPT_ID, UsePrompt } from './usePrompt.ts';
 
@@ -62,9 +63,9 @@ const SHADE_S = 0.4;
 export const VEIL_S = 0.7;
 /** The most entries the key strip holds, the key to every control last among them. */
 const HINTS_MOST = 8;
-/** `rows` cut to the most the strip holds, those just before the last giving way. */
-const atMost = (rows: readonly StripRow[]): readonly StripRow[] =>
-  rows.length > HINTS_MOST ? [...rows.slice(0, HINTS_MOST - 1), ...rows.slice(-1)] : rows;
+/** `rows` cut to `most`, those just before the last giving way. */
+const atMost = (rows: readonly StripRow[], most: number): readonly StripRow[] =>
+  rows.length > most ? [...rows.slice(0, most - 1), ...rows.slice(-1)] : rows;
 /** What stands at the view's foot that the key strip stands over where it would cover it, by id: the prompt in the
  *  middle only on a view narrow enough for the two to meet. */
 const UNDER_STRIP = ['fight-arms', 'sea:bar', 'sea:landfall', 'hud:wheel', 'hud:passage', PROMPT_ID];
@@ -419,13 +420,21 @@ export class Hud {
     const strip = this.stripShown;
     if (!strip || view.speaking) return null;
     const zoom = view.doubled ? 2 : 1;
-    const rows = atMost(hintsFor(strip.hints, BINDS.device, BINDS.now));
+    const shown = atMost(hintsFor(strip.hints, BINDS.device, BINDS.now), HINTS_MOST);
     const reach = this.fight.reach;
     const shipBar = reach && { x: 0, y: view.height - reach.up, width: reach.right, height: reach.up };
-    const under = [...UNDER_STRIP.map((id) => ui.boxOf(id)), shipBar];
-    const foot = stripFoot(view, ui.boxOf('hud:hints'), under, zoom);
+    const was = ui.boxOf('hud:hints');
+    const foot = stripFoot(view, was, [...UNDER_STRIP.map((id) => ui.boxOf(id)), shipBar], zoom);
+    // Over it the Acquired feed's foot, where gains come in (so the strip keeps under it whether or not they show),
+    // and the tracker where it stands across from it.
+    const tracker = ui.boxOf(TRACKER_ID);
+    const left = was?.x ?? view.width;
+    const across = tracker && tracker.x + tracker.width > left ? tracker.y + tracker.height : 0;
+    const ceiling = Math.max(view.height - Math.round(view.height * FEED_RISE), across) + 8 * zoom;
+    const fit = stripFit(shown.length, view.height - foot - ceiling, zoom);
+    const rows = atMost(shown, fit.most);
     const held = { names: 'leave', share: this.leaving.held };
-    return stripNode({ title: strip.title, rows, held, zoom }, foot);
+    return stripNode({ title: fit.titled ? strip.title : '', rows, held, zoom }, foot);
   }
 
   /** The ships' plates over their ships as the picture is seen now. */

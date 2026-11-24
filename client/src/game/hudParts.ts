@@ -52,15 +52,15 @@ export const said = (words: string, more: Omit<Text, 'words'> = {}): Node => ({
   text: { words, colour: TONES.ink, edge: 'shadow', edgeColour: '#000', ...more },
 });
 
-/** The pad's button `name` drawn (`padIcons.ts`): two pressed together side by side with a plus between them, one
- *  held with the word after it. */
-function padCap(name: string, size: number): Node {
+/** The pad's button `name` drawn (`padIcons.ts`), its icon at `icon` (`padIconNode`'s size) beside words at `size`:
+ *  two pressed together side by side with a plus between them, one held with the word after it. */
+export function padCap(name: string, size: number, icon = size): Node {
   const held = name.endsWith(' hold');
   const button = held ? name.slice(0, -' hold'.length) : name;
   const words = (text: string): Node => ({ text: { words: text, size, colour: TONES.ink, edge: 'halo', wrap: false } });
   const parts = button
     .split('+')
-    .flatMap((one, place) => [...(place > 0 ? [words('+')] : []), padIconNode(one, size) ?? words(one)]);
+    .flatMap((one, place) => [...(place > 0 ? [words('+')] : []), padIconNode(one, icon) ?? words(one)]);
   if (parts.length === 1 && !held) return parts[0] ?? words(button);
   return { gap: 2 * size, alignY: 'center', children: [...parts, ...(held ? [words('hold')] : [])] };
 }

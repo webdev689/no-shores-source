@@ -156,6 +156,15 @@ test('its deck won holds the boarder a minute, its time left and its hold’s ta
   assert.equal(boarding.words?.line, 'Its hold: 2 crates, a chest');
   assert.deepEqual(boarding.words?.hints.hints[0], ['use', 'Back aboard your ship · 60 s left']);
   assert.ok(!boarding.words?.hints.hints.some(([names]) => names === 'leave'), 'nothing to leave at sea');
+  // Fallen there, Use does nothing, so the way back is not offered until they stand again.
+  Object.assign(FRAME, { standing: { kind: 'dead' } });
+  try {
+    boarding.frame(sea, view, INPUT);
+    assert.ok(!boarding.words?.hints.hints.some(([names]) => names === 'use'), 'no Use while fallen');
+  } finally {
+    Object.assign(FRAME, { standing: { kind: 'inside' } });
+  }
+  boarding.frame(sea, view, INPUT);
   assert.equal(fightAsk({ boarding, sighted: sea }), 'leave-deck');
   assert.deepEqual(asked, ['leave-deck']);
   // The room has the boarder back aboard their own ship: the view is the sea's fight's again, at their helm.

@@ -324,7 +324,7 @@ The game draws every screen itself, and by the owner's word no HTML is laid over
   the cinema's screen (its veils, bars, darkening, flash, title, prompt, skip and loading screen) over the HUD and the menu, a boss's
   nameplate and the objective under it, the dialogue box and the barks over heads under every other layer, and the
   creation's two windows at the helm, whose fields are typed through the interface and whose keys are the
-  interface's while either is up (`creationOpen`); each window, and the pause menu, is modal while up. Words over the world and the veils let the pointer through to the
+  interface's while either is up (`creationOpen`); each window is modal while up. Words over the world and the veils let the pointer through to the
   view; the tap to start and the windows take it. The tap's own wake of the browser's sound is still heard from the
   page's pointer and keys.
 - **The held map's** names, the ship's arrow and the card to set sail are a layer over the parchment the GPU draws,
@@ -415,7 +415,8 @@ The game draws every screen itself, and by the owner's word no HTML is laid over
   and in a sea fight in the top right corner, off the sky the aim looks at. On foot the company stands under the
   vitals, and the prompt for E stands over the Arts and weapons. The key strip stands at the bottom right, under the
   dialogue box's foot, 8 px over whatever stood under it at the view's foot the frame before (the Arts and weapons,
-  the sea bar, the offer to dock or go ashore, the ship's bar in a sea fight, the prompt for E or the leave held),
+  the sea bar, the offers to dock or go ashore, take the helm or go through a gate, the ship's bar in a sea fight, the
+  prompt for E or the leave held),
   which on a wide view is nothing. The task tracker stands
   at the right under the place's name, above the Acquired feed, and under the compass's column in a view 900 px wide
   or less, and gives way to a public event's banner in a view under 1024 px wide; the toasts in the middle over the
@@ -625,8 +626,12 @@ The game draws every screen itself, and by the owner's word no HTML is laid over
   While the pad was the last thing played, the strip shows the pad's buttons drawn instead (`padIcons.ts`), a stick's
   ways as the stick with those ways lit, and the pad's own words where they differ (a ranged weapon's RT fires, LT
   aims; View held, Leave); a mouse's gesture the pad has no way for is left out, a drag is the right stick, Escape is
-  B. The leave's cap is ringed, traced round as far as it is held. Its words stand at the face's 11 px at every size
-  to 1440p, a row 19 px tall, and doubled past it as the rest of the display is. The moment's names: on foot, On
+  B. The leave's cap is ringed, on the keys and the pad, traced round as far as it is held. Its words stand at the
+  face's 11 px, a row 18 px tall, doubled where the view is 2400 by 1300 or more, as the rest of the display is. It
+  fits under what stands over it: the Acquired feed's foot, where gains come in (whether or not they show, so the
+  strip keeps its size as they come), and the task tracker where it stands across from it, 8 px clear of each; with
+  too little room it gives up its head first, then its rows, those just before All controls first, never All
+  controls. A last row that is not All controls is drawn as the others are. The moment's names: on foot, On
   foot, Melee, Ranged, Aiming, Dusk Daggers, Ledge, Climbing, Riding, Fallen and Map (the land's held map); at sea,
   Sailing, Manage, On deck, Sea fight, Guns laid, Chart (the helm's map) and Landing; on a boarded deck, the stance's,
   its keys less the leave held.
@@ -657,8 +662,9 @@ The game draws every screen itself, and by the owner's word no HTML is laid over
   the veil comes up, "Returning to your ship", unless the player has gone elsewhere on foot while the room answered.
   Fallen, the prompt says so while the key is held, on the keys and the pad alike, and fills nothing. On the pad the
   hold counts from the 0.3 s that tells View held from a tap. It is not offered under a window, the sheet of every
-  control or the held map, behind a veil, in the story or while the stranger speaks, and at sea there is nothing to
-  leave, so a struck ship's deck lists no leave either.
+  control, the held map or the chat, behind a veil, in the story or while the stranger speaks (`leaveOffered`), and
+  at sea there is nothing to leave, so a struck ship's deck lists no leave either; a boarder fallen there is not
+  offered the way back aboard, which Use, unheard while fallen, would take.
 - **The sheet of every control** (`ControlsSheet`) opens with its key (K, or the pad's View) wherever the key strip
   shows, except over the menu's gear screen, and its key, Escape, the pad's B or its Close press shuts it. It is a
   window of the kit over a dimmed view, over every layer the game draws but the screen's keyboard: ALL CONTROLS on its
@@ -677,8 +683,8 @@ The game draws every screen itself, and by the owner's word no HTML is laid over
   menu. Settings' Controls lays the same list (`bindingColumns`), bound the same way.
 - **Binding a control** (`rebinding.ts`): a key chosen in the sheet or in Settings' Controls (a click, Enter or the
   pad's A) is lit and waits; one waits at a time (`REBINDING`), and the sheet hears the keys for it wherever it was
-  chosen. While it waits, and until the key or mouse button that bound it has come up, the drawn interface hears
-  neither the keys nor the pointer, so the press that binds presses nothing behind it;
+  chosen. While it waits, the frame the key that bound it comes in, and until the mouse button that bound it has come
+  up, the drawn interface hears neither the keys nor the pointer, so the press that binds presses nothing behind it;
   on a key's side the next key or mouse button binds it, on the pad's the next button, held past 0.3 s for its hold,
   or with another within 0.12 s for the two together. Escape cancels, as does six seconds with nothing pressed. A
   mouse button binds only a control that hears one: the menus, the sheet, Use, Respawn and the helm's controls act on
@@ -992,12 +998,18 @@ never while a press is held. Each press is an ask the room answers.
   set out in tabs, as other games set theirs out: Graphics, Audio, Controls and Account down a rail at its left, each
   its name in capitals at the names' size, the one shown a lit brass press edged with a brass bar, as the menu's own
   tabs are. Beside the rail the tab's panel scrolls on its own, so the rail stands still; a tab newly shown stands
-  from its top, its words at the face's 11 px, and the one last shown is kept while the page is open. At the rail's
-  foot stand Exit to Menu and Exit to Desktop, each held, in the warn role; the account's mark shows Account, from
-  Settings too: Exit to Menu loads the page at its title,
-  the tap to start, keeping the rooms asked for in its address (`titleAddress`); Exit to Desktop closes the window
-  where the browser lets a page close its own (the desktop app's, [[Browser and Desktop From the Start]]), and where
-  it does not (a browser's tab the player opened), Settings says to close the tab. Escape opens Settings wherever nothing else is over the game, on foot or at sea.
+  from its top, its list of resolutions shut, its words at the face's 11 px, and the one last shown is kept while the
+  page is open, the credits put away and a binding under way given up each time it is opened. The page keeps room
+  for the whole rail, so on a short view the menu's body scrolls to the exits rather than cut them off; under 600 px
+  across, the tabs stand in a row over the panel and the exits under it. At the rail's foot stand Exit to Menu and
+  Exit to Desktop, each held ("Hold to exit to the menu"), in the warn role; the account's mark shows Account, from
+  Settings too. Exit to Menu loads the page at its title, the tap to start, keeping the rooms asked for in its
+  address, the place, the story's start and any fragment taken off (`titleAddress`), and where nothing is taken off,
+  loads it again. Exit to Desktop closes the window where the browser lets a page close its own (the desktop app's,
+  [[Browser and Desktop From the Start]]), and where it does not (a browser's tab the player opened), Settings says,
+  and reads aloud, to close the tab. Escape opens Settings wherever nothing else is over the game, on foot or at sea:
+  not behind a veil, nor as the view goes down to the helm's map. While the credits show the footer says Back, and
+  showing them or putting them away gives the focus to their way back or to their press, never an exit.
   - **Graphics**: under Display, the resolution the world is drawn at ("Resolution": Auto, the first, or 100%, 85%,
     75%, 67% or 50%, kept in this browser; [[Game]], "Drawing"), the interface staying at the screen's own.
   - **Audio**: under Volume, the volumes of the interface, the world ("World sounds"), the music ("Music") and the
@@ -1300,7 +1312,7 @@ serves each ask only at its own counter ([[Gear]], "In the rooms"; [[Factions]])
 - **A plate over each other player's head** ([[Other Players Wear a Nameplate, Their Level or Prestige in a Square]],
   [[A Player's Square Shows Their Level, Gold Past 20]]): a square and their username beside it, after the owner's
   pictures of Destiny's. The square shows their level, 21 to 30, the levels Prestige raises, in gold (`levelInk`,
-  `TONES.brassHi`); while a menu is open on their screen (the pause menu, the menu's window, a player's menu or Inspect)
+  `TONES.brassHi`); while a menu is open on their screen (the menu's window, a player's menu or Inspect)
   a speech bubble's three dots stand in its place. Square and name are the company's green (`FILLS.green`,
   `TONES.company`) for a member of the viewer's company, by the Roster the company's display last heard, and the
   players' blue (`FILLS.ally`, `TONES.ally`) for anyone else; a guest shows the square alone. The room sends each plate

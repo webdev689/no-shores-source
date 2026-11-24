@@ -296,6 +296,59 @@ test('the key strip stands clear of the prompt in the middle where a narrow view
   }
 });
 
+test('the key strip fits under the tracker and the feed of gains: its head goes first, then rows, never All controls', () => {
+  const quest = { name: 'The Opening', task: 'Meet the houses', steps: [{ text: 'Hear the three houses' }] };
+  const strip = withMapKey(footStrip(REST));
+  for (const [width, height, tracked] of [
+    [1280, 720, false],
+    [1280, 720, true],
+    [800, 600, false],
+    [800, 600, true],
+    [1366, 650, false],
+    [844, 390, true],
+  ] as const) {
+    const [ui, hud] = [new Interface(renderer()), new Hud()];
+    hud.veil(null);
+    hud.strip(strip);
+    hud.tasks.show(tracked ? quest : null);
+    laidAt(ui, hud, width, height);
+    const laid = laidAt(ui, hud, width, height);
+    const box = boxOf(laid, 'hud:hints');
+    assert.ok(box, `${width} by ${height}: shown`);
+    const said = stripWords(laid);
+    assert.equal(said.at(-1), 'All controls', `${width} by ${height}: the way to the rest kept`);
+    const tracker = boxOf(laid, 'hud:tracker');
+    const feedFoot = height - Math.round(height * 0.3);
+    if (width === 1280 && height === 720) assert.equal(said[0], 'ON FOOT', 'room for all of it at 720 lines');
+    if (height >= 600) assert.ok(box.y >= feedFoot + 8, `${width} by ${height}: under the feed's foot`);
+    if (tracker && tracker.x + tracker.width > box.x && height >= 600)
+      assert.ok(box.y >= tracker.y + tracker.height + 8, `${width} by ${height}: under the tracker`);
+  }
+});
+
+test('the key strip stands over the offers and the Arts and weapons where they would meet', () => {
+  const [ui, hud] = [new Interface(renderer()), new Hud()];
+  hud.veil(null);
+  hud.strip(footStrip(REST));
+  hud.passageOffer('Enter the Burned Mill  E');
+  hud.wheelOffer(true);
+  for (const [width, height] of [
+    [1280, 720],
+    [480, 800],
+  ] as const) {
+    laidAt(ui, hud, width, height);
+    const laid = laidAt(ui, hud, width, height);
+    const strip = boxOf(laid, 'hud:hints');
+    assert.ok(strip);
+    for (const id of ['hud:wheel', 'hud:passage']) {
+      const offer = boxOf(laid, id);
+      assert.ok(offer, id);
+      const apart = strip.x >= offer.x + offer.width || strip.y + strip.height <= offer.y;
+      assert.ok(apart, `${width}: ${id} ${JSON.stringify([strip, offer])}`);
+    }
+  }
+});
+
 test('the key strip as shown holds eight entries at most, the key to every control last', () => {
   const [ui, hud] = [new Interface(renderer()), new Hud()];
   hud.veil(null);
@@ -356,6 +409,22 @@ test('the leave’s cap in the strip is ringed as far as it is held', () => {
   // Not held, only the head's diamond is lit brass; the ring is faint all round.
   const [none, part, more] = [brass(0), brass(0.25), brass(0.75)];
   assert.ok(part > none && more > part, `traced as far as held: ${[none, part, more].join(' < ')}`);
+  BINDS.device = 'pad';
+  try {
+    const [padNone, padMore] = [brass(0), brass(0.75)];
+    assert.ok(padMore > padNone, "the pad's View held is ringed too");
+  } finally {
+    BINDS.device = 'keys';
+  }
+});
+
+test('a strip whose last row is not the key to every control draws it as any other, with no rule over it', () => {
+  const [ui, hud] = [new Interface(renderer()), new Hud()];
+  hud.veil(null);
+  hud.strip({ title: '', hints: [['use', 'Back aboard your ship']] });
+  const laid = frame(ui, hud);
+  const said = laid.find((each) => each.node.text?.words === 'Back aboard your ship');
+  assert.equal(said?.node.text?.colour, '#f2efe6', "in the strip's ink, not the faint of All controls");
 });
 
 test('the sheet of every control is offered only while the key strip shows', () => {
