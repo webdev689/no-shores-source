@@ -7,27 +7,9 @@
 import type { BossScore } from './director.ts';
 import { lay } from './score.ts';
 import { CHORDS, line } from './valeParts.ts';
-import { sting, valeStings } from './valeScore.ts';
+import { defeatOf, fightSections, sting } from './valeScore.ts';
 import { type SectionSpec, type ValeSong, valeSong } from './valeTakes.ts';
 
-/** A phase's sections: the march to open on, the theme, the strain over turned chords, and the drums stopped to the
- *  ostinato and the heartbeat under the theme's head. */
-const phaseSections = (march: string, down: string): Readonly<Record<string, SectionSpec>> => ({
-  march: { harmony: march, next: ['theme', 'strain'], opens: true, lead: 'none' },
-  theme: {
-    harmony: 'i | iv | bII | i | III | bVI | bVII | i',
-    turn: 'i | bII | iv | i | bVI | bII | bVII | i',
-    next: ['strain', 'down', 'march'],
-    lead: 'theme',
-  },
-  strain: {
-    harmony: 'v | bII | bVI | v | bVII | iv | bII | i',
-    turn: 'bII | bVI | i | V | III | bII | iv | i',
-    next: ['theme', 'down'],
-    lead: 'strain',
-  },
-  down: { harmony: down, next: ['theme', 'march', 'strain'], opens: true, lead: 'head', thin: true },
-});
 /** The last stand: counting on the flat second, the theme at its height, and hammered. */
 const LAST: Readonly<Record<string, SectionSpec>> = {
   count: { harmony: 'i | bII | i | bII | i | bII | i | bII', next: ['height', 'hammer'], opens: true, lead: 'none' },
@@ -78,9 +60,9 @@ function bossScore(boss: Boss, fallen: (song: ValeSong) => ReturnType<typeof sti
     }) as const;
   const [one, two, three, last] = boss.tempos;
   const phases = [
-    song('1', one, boss.key, 1, phaseSections(boss.march, boss.down)),
-    song('2', two, boss.key, 2, phaseSections(boss.march, boss.down)),
-    song('3', three, boss.key + 1, 2, phaseSections(boss.march, boss.down)),
+    song('1', one, boss.key, 1, fightSections(boss.march, boss.down)),
+    song('2', two, boss.key, 2, fightSections(boss.march, boss.down)),
+    song('3', three, boss.key + 1, 2, fightSections(boss.march, boss.down)),
   ];
   const final = song('last', last, boss.key + 1, 2, LAST);
   // The wake: the boom under a riser and the choir's swell on the tonic, two bars, straight into the first phase.
@@ -95,7 +77,7 @@ function bossScore(boss: Boss, fallen: (song: ValeSong) => ReturnType<typeof sti
     last: valeSong(final),
     wake,
     fallen: fallen({ ...(phases[2] ?? final), name: boss.name }),
-    defeat: valeStings({ ...(phases[0] ?? final), name: boss.name }).defeat,
+    defeat: defeatOf({ ...(phases[0] ?? final), name: boss.name }),
   };
 }
 

@@ -3,7 +3,7 @@
 // low, each song set in its own key by a shift; and the raid's one theme. The fights' takes are written over these
 // (valeTakes.ts), the songs in valeScore.ts, the bosses in valeBosses.ts.
 
-import { type Held, measured, progression } from './craft.ts';
+import { type Held, keys, measured, progression } from './craft.ts';
 import { type Edge, type Press, type TrackSpec, type Tune, type Writer, midiNote } from './score.ts';
 
 export const TRACKS = {
@@ -108,6 +108,8 @@ export type Track = keyof typeof TRACKS;
 
 /** The skins and swells: taiko and frame drums for the fights, the taiko low as the heartbeat, a boom on the
  *  downbeats, struck metal, a bowed cymbal's swell and a riser of noise into the bar line, never a pitched sweep. */
+/** How long the riser swells from its hit to the bar line it lands on, seconds. */
+const RISER_S = 1.6;
 export const KIT = {
   volume: 100,
   role: 'combat',
@@ -119,9 +121,10 @@ export const KIT = {
     tap: { hz: 180, decay: 0.08, gain: 0.5, click: 0.35 },
     heart: { hz: 52, decay: 0.5, gain: 1.1, drop: 0.75, click: 0.12 },
     boom: { hz: 38, decay: 1.4, gain: 1.2, drop: 0.6, click: 0.1 },
-    metal: { hz: 3200, q: 0.7, decay: 0.9, gain: 0.45 },
-    bowed: { hz: 2400, q: 0.5, attack: 2.4, decay: 0.6, gain: 0.35 },
-    riser: { hz: 2600, q: 0.6, attack: 1.6, decay: 0.12, gain: 0.55 },
+    // The high ones' tails are cut a tenth of a second after their peak, so a recording of struck metal never rings.
+    metal: { hz: 3200, q: 0.7, decay: 0.1, gain: 0.5 },
+    bowed: { hz: 2400, q: 0.5, attack: 2.4, decay: 0.1, gain: 0.35 },
+    riser: { hz: 2600, q: 0.6, attack: RISER_S, decay: 0.1, gain: 0.55 },
   },
   samples: {
     taiko: { cue: 'music.taiko' },
@@ -131,7 +134,7 @@ export const KIT = {
     boom: { cue: 'music.boom' },
     metal: { cue: 'music.metal', gain: 0.6 },
     bowed: { cue: 'music.bowed', gain: 0.6 },
-    riser: { cue: 'music.riser', gain: 0.7 },
+    riser: { cue: 'music.riser', gain: 0.7, lands: RISER_S },
   },
 } as const;
 export type Drum = keyof typeof KIT.keys;
@@ -149,13 +152,12 @@ export interface Chord {
   readonly timp: number;
 }
 const chord = (bass: string, pad: string, choir: string, bell: string, glass: string, root: string, timp: string) => {
-  const notes = (text: string) => text.split(' ').map(midiNote);
   return {
     bass: midiNote(bass),
-    pad: notes(pad),
-    choir: notes(choir),
-    bell: notes(bell),
-    glass: notes(glass),
+    pad: keys(pad),
+    choir: keys(choir),
+    bell: keys(bell),
+    glass: keys(glass),
     root: midiNote(root),
     timp: midiNote(timp),
   };
@@ -181,10 +183,10 @@ export const line = (text: string): Tune => measured(text, BEATS);
 
 /** The Vale's theme, the raid's one: D rising through the Phrygian E flat to G and falling home, then lifting to B
  *  flat and falling through the whole mode. Low, for the choir and the organ. */
-export const THEME = line(
+export const THEME_TEXT =
   'D3:2 Eb3:1 F3:1 | G3:3 F3:1 | Eb3:1.5 D3:.5 C3:1 Eb3:1 | D3:4' +
-    ' | F3:2 G3:1 A3:1 | Bb3:2 A3:1 G3:1 | F3:1 Eb3:1 D3:1 C3:1 | D3:4',
-);
+  ' | F3:2 G3:1 A3:1 | Bb3:2 A3:1 G3:1 | F3:1 Eb3:1 D3:1 C3:1 | D3:4';
+export const THEME = line(THEME_TEXT);
 /** Its second strain, the cello's or the horn's: the theme's head turned upward and answered. */
 export const STRAIN = line(
   'A3:3 G3:1 | F3:2 Eb3:2 | D3:1 F3:1 A3:1 Bb3:1 | A3:4' +

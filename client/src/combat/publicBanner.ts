@@ -48,6 +48,8 @@ export interface HeardBreach {
   readonly piece: number;
   /** The least mood it holds the player to: the Ways' peak while a Watcher has seen the company. */
   readonly least?: 'peak';
+  /** The encounter this frame's moment (begun, won, wiped) is of, by its number, or the Breach cleared. */
+  readonly moment?: number | 'cleared';
 }
 
 /** What the display shows of the zone's public event this frame: its banner and the beat it slides in for, the

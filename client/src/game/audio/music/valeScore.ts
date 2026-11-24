@@ -11,8 +11,9 @@ import { type Song, lay, makeSong } from './score.ts';
 import { CHORDS, KIT, LEVEL, ONCE, PRESS, TRACKS, type Write, harmony, line } from './valeParts.ts';
 import { type SectionSpec, type ValeSong, valeSong } from './valeTakes.ts';
 
-/** A fight's four sections: a vamp to open on, the theme, its strain and a breakdown, each harmony its own. */
-const fightSections = (vamp: string, down: string): Readonly<Record<string, SectionSpec>> => ({
+/** A fight's or a boss's phase's four sections: a vamp (a march) to open on, the theme, its strain and a breakdown,
+ *  each harmony its own. */
+export const fightSections = (vamp: string, down: string): Readonly<Record<string, SectionSpec>> => ({
   vamp: { harmony: vamp, next: ['theme', 'strain'], opens: true, lead: 'none' },
   theme: {
     harmony: 'i | iv | bII | i | III | bVI | bVII | i',
@@ -134,14 +135,20 @@ export function valeStings(song: ValeSong): Required<Omit<FightScore, 'song'>> {
     w.hit('boom', 2, 0, 112);
     w.hit('metal', 2, 0, 90);
   });
-  const defeat = sting(song, 'defeat', 'i | bII | i', (w) => {
-    lay(w, 'cello', 0, line('D3:2 Eb3:1 F3:1 | Eb3:2 D3:1 C3:1 | D3:4'), 76, { map, accent: 0 });
+  return { cadence, victory, defeat: defeatOf(song) };
+}
+
+/** A song's defeat: the theme's head falling on the low cello over a slowing heart. */
+export const defeatOf = (song: ValeSong): Song =>
+  sting(song, 'defeat', 'i | bII | i', (w) => {
+    lay(w, 'cello', 0, line('D3:2 Eb3:1 F3:1 | Eb3:2 D3:1 C3:1 | D3:4'), 76, {
+      map: (note) => note + song.key,
+      accent: 0,
+    });
     w.hit('heart', 0, 0, 90);
     w.hit('heart', 1, 0, 70);
     w.hit('heart', 2, 0, 52);
   });
-  return { cadence, victory, defeat };
-}
 
 /** Each of the Drowned Vale's fights, its song in takes and its moments. */
 export function valeFights(): Readonly<Record<BreachSong, Required<FightScore>>> {

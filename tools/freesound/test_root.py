@@ -57,6 +57,13 @@ class Root(unittest.TestCase):
                 file.writeframes(samples.tobytes())
             self.assertEqual(root.note_of(root.fundamental(root.decoded(path)))[0], 'A2')
 
+    def test_a_root_is_written_with_its_cents(self):
+        self.assertEqual(root.root_text('C3', 0), 'C3')
+        self.assertEqual(root.root_text('C3', -38), 'C3-38')
+        self.assertEqual(root.root_text('F#2', 12), 'F#2+12')
+        for text in ['C3', 'C3-38', 'F#2+12', 'C-1-5']:
+            self.assertRegex(text, root.ROOT)
+
     def test_noise_has_no_steady_pitch(self):
         self.assertIsNone(root.fundamental(0.3 * NOISE.standard_normal(root.RATE * 2)))
 

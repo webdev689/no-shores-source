@@ -20,6 +20,9 @@ TOOLS = os.path.dirname(HERE)
 sys.path.insert(0, TOOLS)
 from r2 import PUBLIC, put  # noqa: E402
 
+sys.path.insert(0, HERE)
+from root import ROOT  # noqa: E402
+
 REPO = os.path.dirname(TOOLS)
 MANIFEST = os.path.join(REPO, 'content', 'audio', 'sounds.json')
 WANTED = os.path.join(REPO, 'content', 'audio', 'freesound.json')
@@ -108,6 +111,16 @@ def changes_of(cue, entry):
     return ' '.join(part for part in said if part) or CHANGES
 
 
+def root_of(cue, entry):
+    """A music cue's measured root (root.py), carried onto its sound for the song player; nothing where it has none."""
+    root = entry.get('root')
+    if root is None:
+        return {}
+    if not cue.startswith('music.') or not isinstance(root, str) or not ROOT.fullmatch(root):
+        sys.exit(f'{cue}: its root {root!r} is not a music cue\'s note, as root.py writes it')
+    return {'root': root}
+
+
 def kept_key(before, cue, pick, entry):
     """The file a pick already has on R2, the same sound cut the same way (or whole as it was): ffmpeg's bytes differ
     from one version to the next, so cut again it would go up anew under another hash and the game would fetch the
@@ -156,6 +169,7 @@ def main():
             'licenceUrl': licence['url'],
             'page': pick['page'],
             'changes': changes_of(cue, entry),
+            **root_of(cue, entry),
         }
     # DFO's own sounds the owner picked are put in by own.py, not by a download: kept, unless the cue now has a pick.
     sounds.update({cue: sound for cue, sound in before.items() if 'freesound' not in sound and cue not in sounds})

@@ -1,10 +1,12 @@
 """Finds the root of a pitched pick for the music's sampled voices: decodes its preview (ffmpeg), finds its fundamental
-by YIN over its steady middle and prints the nearest note and its cents off it, the `root` its cue in
-content/audio/freesound.json is given ("C3"), from which the song player plays every other note.
+by YIN over its steady middle and prints the nearest note and its cents off it as the `root` its cue in
+content/audio/freesound.json is given ("C3-38", 38 cents flat of C3), from which the song player plays every other
+note; publish.py copies it onto the pick's entry in content/audio/sounds.json.
 
     python3 -I tools/freesound/root.py <preview.mp3>...
 
 It decodes a stranger's audio, so it runs where no key is held."""
+import re
 import shutil
 import subprocess
 import sys
@@ -12,6 +14,8 @@ import sys
 import numpy
 
 RATE = 44100
+# A root as written: a note ("C3", "F#2", "Bb1") and, where it is off it, its cents (the game's rootNote reads it).
+ROOT = re.compile(r'[A-G](#|b)?-?\d([+-]\d{1,2})?')
 NAMES = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B']
 # The lowest and highest fundamentals looked for, hertz: C1 to B5, the scores' whole range.
 LOWEST_HZ = 32.0
@@ -83,6 +87,11 @@ def note_of(hertz):
     return f'{NAMES[nearest % 12]}{nearest // 12 - 1}', round(100 * (midi - nearest))
 
 
+def root_text(name, cents):
+    """A root as freesound.json writes it: the note, and its cents off it where it is off ("C3", "C3-38")."""
+    return f'{name}{cents:+d}' if cents else name
+
+
 def main():
     paths = sys.argv[1:]
     if not paths:
@@ -93,7 +102,7 @@ def main():
             print(f'{path}: no steady pitch (a percussive or textural pick plays from its home)')
             continue
         name, cents = note_of(hertz)
-        print(f'{path}: {name} {cents:+d} cents ({hertz:.1f} Hz)')
+        print(f'{path}: root "{root_text(name, cents)}" ({hertz:.1f} Hz)')
 
 
 if __name__ == '__main__':

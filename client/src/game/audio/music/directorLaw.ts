@@ -242,10 +242,15 @@ function pieceFor(
   breach: HeardBreach | null,
 ): Cue | null {
   if (where === 'sea') return { kind: 'sea', song: voyageSongFor(sky) };
-  if (where === 'breach')
-    return breach && breach.piece < songs.pieces('breach') ? { kind: 'vale', piece: breach.piece } : null;
   const count = songs.pieces(where);
+  if (where === 'breach' && breach && breach.piece < count) {
+    const own: Cue = { kind: 'vale', piece: breach.piece };
+    // The space's own, unless it was the one begun last: then another, by the die.
+    if (!last || !sameCue(last, own) || count < 2) return own;
+    return { kind: 'vale', piece: (breach.piece + 1 + Math.floor(songs.random() * (count - 1))) % count };
+  }
   if (count < 1) return null;
+  if (where === 'breach') return null;
   const cue = (piece: number): Cue =>
     where === 'social' ? { kind: 'social', piece } : { kind: 'roam', family: where, piece };
   const first = Math.min(count - 1, Math.floor(songs.random() * count));

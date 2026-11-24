@@ -376,7 +376,7 @@ test('no drum rings: a struck tone over 1.5 kHz dies within a tenth of a second,
     ...Object.values(scores.bosses).flatMap((boss) => [...boss.phases, boss.wake, boss.last, boss.fallen, boss.defeat]),
     ...Object.values(scores.story),
   ].filter((song): song is Song => !!song);
-  for (const song of songs)
+  for (const song of songs) {
     for (const note of song.notes.filter((each) => each.channel === PERCUSSION_CHANNEL)) {
       const drum = { ...drumOf(note.note), ...song.kit.drums.get(note.note) };
       assert.ok(
@@ -384,6 +384,13 @@ test('no drum rings: a struck tone over 1.5 kHz dies within a tenth of a second,
         `${song.name}: key ${note.note}`,
       );
     }
+    // A recording a drum plays lasts no longer than its kit's drum, which may be a tone: past a low skin's, nothing
+    // rings past a tenth of a second after its peak.
+    for (const [key, sample] of song.kit.samples ?? []) {
+      const drum = { ...drumOf(key), ...song.kit.drums.get(key) };
+      assert.ok(drum.hz < RINGING_HZ || drum.decay <= RINGING_S, `${song.name}: ${sample.cue} rings ${drum.decay} s`);
+    }
+  }
 });
 
 test('no family fight sweeps a pitched swell: its risers and gusts are noise', () => {

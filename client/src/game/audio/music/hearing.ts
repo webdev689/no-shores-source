@@ -5,14 +5,13 @@
 
 import { EVENT } from '../../../combat/cues.ts';
 import type { MarkedFoe } from '../../../combat/foePlate.ts';
-import type { BreachSeen } from '../../../network/breachMessages.ts';
 import type { FightEvent, SeenHostile } from '../../../network/messages.ts';
 import type { FightCaptain, FightVessel } from '../../../rules/fightRules.ts';
 import type { FighterView } from '../../../rules/fighters.ts';
 import type { SkyReading } from '../../../sky/skyLaw.ts';
 import type { Landfall } from '../../seaLaw.ts';
 import { type Place, placeOf } from '../place.ts';
-import type { BreachSong, HeardBreach, HeardFoe, HeardSky, Hearing, Mood } from './directorLaw.ts';
+import type { HeardBreach, HeardFoe, HeardSky, Hearing, Mood } from './directorLaw.ts';
 
 /** The fight a frame on foot showed, as far as the music reads it. */
 export interface FootHeard {
@@ -84,43 +83,6 @@ export function hearFoot(place: Place, fight: FootHeard): Hearing {
     ...(fight.public?.mood && { least: fight.public.mood }),
     ...(fight.public?.part && { part: fight.public.part }),
     ...(fight.public?.breach && { breach: fight.public.breach }),
-  };
-}
-
-/** Each encounter's song by its number in a Breach (the Waking first, `ENCOUNTER`): the Steward's court, before or
- *  after the Steward, plays the Two Shores'. */
-const ENCOUNTER_SONGS: readonly BreachSong[] = ['waking', 'mending', 'choir', 'ways', 'shores', 'shores'];
-const CHOIR = 2;
-const WAYS = 3;
-const STEWARD = 5;
-/** The calm piece each quiet space plays: the Descent's there, the Broken Stair's on its slabs, After the Bells in
- *  every space an encounter was fought in. */
-const PIECES: Readonly<Record<string, number>> = { descent: 0, stair: 1 };
-const AFTER_BELLS = 2;
-
-/** A Breach as the music hears it, from what the room shows of it: in its run, the encounter under way (else the one
- *  fought in `space`, the space the player stands over), its great foe awake and the Ways' Watchers having seen; at
- *  its gate, the Waking while `holding` (the player's company holds it), else nothing. */
-export function hearBreach(
-  seen: Pick<BreachSeen, 'gate' | 'encounter' | 'boss' | 'seen' | 'heldBy' | 'woken'>,
-  plan: { readonly encounters: readonly { readonly space: string | null }[] },
-  space: string | null,
-  holding: boolean,
-): HeardBreach | null {
-  if (seen.gate)
-    return holding && seen.heldBy && !seen.woken
-      ? { run: false, song: 'waking', boss: null, piece: AFTER_BELLS }
-      : null;
-  const running = seen.encounter;
-  const index =
-    running > 0 ? running : plan.encounters.findIndex((encounter) => space !== null && encounter.space === space);
-  const boss = running === CHOIR && seen.boss > 0 ? 'scrivener' : running === STEWARD ? 'steward' : null;
-  return {
-    run: true,
-    song: ENCOUNTER_SONGS[index] ?? 'waking',
-    boss,
-    piece: PIECES[space ?? ''] ?? AFTER_BELLS,
-    ...(running === WAYS && seen.seen && { least: 'peak' as const }),
   };
 }
 

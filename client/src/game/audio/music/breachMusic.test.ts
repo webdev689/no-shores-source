@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { overlookScores, songOf, stingOf } from './director.ts';
+import { askedSting, overlookScores, songOf, stingOf } from './director.ts';
 import {
   type HeardBreach,
   type HeardFoe,
@@ -10,7 +10,8 @@ import {
   type Verdict,
   hear,
 } from './directorLaw.ts';
-import { hearBreach } from './hearing.ts';
+import { BREACH_EVENT } from '../../../network/breachMessages.ts';
+import { hearBreach, momentOf } from './breachHearing.ts';
 
 /** A Breach's run as the page hears it: the Gullwing Vale's climate, no sky underground. */
 const RUN: Hearing = {
@@ -85,9 +86,9 @@ test("the run hears its encounter's song: the one under way, else the one fought
 test('at the Sunken Gate the Waking is heard only by the company holding it, until the Spire wakes', () => {
   const gate = { ...SEEN, gate: true, heldBy: true };
   assert.deepEqual(hearBreach(gate, PLAN, null, true), { run: false, song: 'waking', boss: null, piece: 2 });
-  assert.equal(hearBreach(gate, PLAN, null, false), null, 'another company holds it');
-  assert.equal(hearBreach({ ...gate, woken: true }, PLAN, null, true), null, 'the Spire woken');
-  assert.equal(hearBreach({ ...gate, heldBy: false }, PLAN, null, true), null, 'no one holds it');
+  assert.equal(hearBreach(gate, PLAN, null, false).song, null, 'another company holds it');
+  assert.equal(hearBreach({ ...gate, woken: true }, PLAN, null, true).song, null, 'the Spire woken');
+  assert.equal(hearBreach({ ...gate, heldBy: false }, PLAN, null, true).song, null, 'no one holds it');
 });
 
 test("an encounter's foes bring its own song's layers, not the island family's, and the run's moments are its own", () => {
@@ -147,4 +148,50 @@ test("between encounters the run's own calm piece comes, its space's, after a re
   const island = run(times(250, RUN));
   assert.equal(island.cue.kind, 'none', "an island's first piece waits two minutes");
   assert.equal(songOf(overlookScores(), { kind: 'vale', piece: 1 })?.name, 'vale-stair');
+});
+
+const told = (kind: number, amount: number) => ({ kind, amount });
+
+test("a Breach's moment plays the sting of the encounter it is of, not of where the player stands", () => {
+  assert.equal(momentOf([told(BREACH_EVENT.won, 3)]), 3);
+  assert.equal(momentOf([told(BREACH_EVENT.won, 5), told(BREACH_EVENT.cleared, 0)]), 'cleared');
+  assert.equal(momentOf([told(BREACH_EVENT.rewritten, 2)]), null, 'no encounter in it');
+  const gate = { ...RUN, place: { kind: 'island', climate: 'temperate-coast', node: 'node-gullwing-vale' } } as const;
+  // The Spire woken, or the holders gone, on the very frame the room tells the Waking won or wiped.
+  const won = hearBreach({ ...SEEN, gate: true, heldBy: true, woken: true }, PLAN, null, true, [
+    told(BREACH_EVENT.won, 0),
+  ]);
+  assert.deepEqual(askedSting('victory', { ...gate, breach: won }), {
+    kind: 'victory',
+    cue: { kind: 'breach', song: 'waking' },
+  });
+  const wiped = hearBreach({ ...SEEN, gate: true }, PLAN, null, true, [told(BREACH_EVENT.wiped, 0)]);
+  assert.deepEqual(askedSting('defeat', { ...gate, breach: wiped }), {
+    kind: 'defeat',
+    cue: { kind: 'breach', song: 'waking' },
+  });
+  // The Ways won with every living player on the Stair.
+  const ways = hearBreach(SEEN, PLAN, 'stair', true, [told(BREACH_EVENT.won, 3)]);
+  assert.deepEqual(askedSting('victory', inRun({}, { breach: ways })), {
+    kind: 'victory',
+    cue: { kind: 'breach', song: 'ways' },
+  });
+  const cleared = hearBreach(SEEN, PLAN, 'court', true, [told(BREACH_EVENT.won, 5), told(BREACH_EVENT.cleared, 0)]);
+  assert.deepEqual(askedSting('victory', inRun({}, { breach: cleared })), { kind: 'fallen', boss: 'steward' });
+  assert.equal(stingOf(overlookScores(), { kind: 'fallen', boss: 'steward' })?.name, 'vale-steward-cleared');
+  // A public event's moment in the hollow, while the company holds the Waking, is the island's.
+  const holding = hearBreach({ ...SEEN, gate: true, heldBy: true }, PLAN, null, true);
+  assert.deepEqual(askedSting('victory', { ...gate, breach: holding }), {
+    kind: 'victory',
+    cue: { kind: 'family', family: 'green' },
+  });
+});
+
+test('lingering in one space, the next calm piece is another than the one begun last', () => {
+  const descent = inRun({ song: 'waking', piece: 0 });
+  const first = run(times(250, descent));
+  assert.deepEqual(first.cue, { kind: 'vale', piece: 0 });
+  const next = run(times(1900, descent), first.memory);
+  assert.equal(next.cue.kind, 'vale', 'a second piece after its rest');
+  assert.notDeepEqual(next.cue, { kind: 'vale', piece: 0 }, 'not the Descent again');
 });

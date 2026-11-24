@@ -5,7 +5,7 @@
 
 import { type CalmKit, DRUMS, INSTRUMENTS, calmPiece, inRole } from './calm.ts';
 import type { Sample, Song, TrackSpec } from './score.ts';
-import { TRACKS } from './valeParts.ts';
+import { THEME_TEXT, TRACKS } from './valeParts.ts';
 
 const played = (track: TrackSpec, sample: Sample): TrackSpec => ({ ...track, sample });
 const pad = played(INSTRUMENTS.pad, { cue: 'music.bowl', attack: 1.2, release: 2.2, gain: 0.6 });
@@ -39,7 +39,7 @@ function descent(): Song {
       {
         bars: 'Dm | Gm | Eb | Dm | Bb | Gm | Eb | Dm',
         parts: ['pad', 'arp', 'bass', 'lead'],
-        lead: 'D3:2 Eb3:1 F3:1 | G3:3 F3:1 | Eb3:1.5 D3:.5 C3:1 Eb3:1 | D3:4 | F3:2 G3:1 A3:1 | Bb3:2 A3:1 G3:1 | F3:1 Eb3:1 D3:1 C3:1 | D3:4',
+        lead: THEME_TEXT,
       },
       {
         bars: 'Bb | C | Dm | A | Bb | Gm | Eb | Dm',

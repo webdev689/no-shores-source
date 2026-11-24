@@ -231,7 +231,7 @@ function leads(w: Write, lead: Lead, nth: number, { key, full = false }: ValeSon
 }
 
 /** The seconds a riser swells before the bar line it lands on, in beats at `bpm`. */
-const riserBeats = (bpm: number): number => ((KIT.drums.riser.attack ?? 1.6) * bpm) / 60;
+const riserBeats = (bpm: number): number => (KIT.drums.riser.attack * bpm) / 60;
 
 /** One take: `section`'s harmony (or its turn) in feel `nth`, eight bars. */
 function take(w: Write, song: ValeSong, section: SectionSpec, nth: number): void {
