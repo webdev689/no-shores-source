@@ -1,12 +1,12 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { type Controlled, contextOf, listenForControls } from './gameKeys.ts';
+import { type Controlled, contextOf, listenForControls, withoutTaken } from './gameKeys.ts';
 import { OPEN_AT, setGearScreenOpen } from './gearScreen.ts';
 import { FakeEvent, fakePage } from './pageForTests.ts';
 import { PLACING_STRIP, placingNow, startPlacing } from './guild/decorPlacing.ts';
 import { keysOf } from './hints.ts';
 import { padName } from './controls.ts';
-import { BINDS } from '../player/input.ts';
+import { BINDS, type InputFrame } from '../player/input.ts';
 
 type Playing = Parameters<typeof contextOf>[0];
 const dead = { standing: { kind: 'dead' } };
@@ -218,6 +218,10 @@ test('Escape or B while a piece of decoration is placed lets it go first and ope
   startPlacing('gull-cove-outpost', 'bench');
   pads[0]?.(new Set(['dodge']), new Set(['B']));
   assert.equal(placingNow(), null, 'B lets go on the pad');
+  const frame = { pressed: (action: string) => action === 'dodge' || action === 'heal' } as unknown as InputFrame;
+  const fought = withoutTaken(frame);
+  assert.deepEqual([fought.pressed('dodge'), fought.pressed('heal')], [false, true], 'and the fight does not dodge');
+  assert.equal(withoutTaken(frame).pressed('dodge'), true, 'that frame alone');
   assert.deepEqual([opened, used], [[], []]);
   assert.deepEqual(
     keysOf(PLACING_STRIP.hints.at(-1)?.[0] ?? '', 'pad', BINDS.now),

@@ -528,7 +528,7 @@ export class Foot {
     // Use let go, as bound (a key, the pad's button, or the page's focus lost): a gather under way is let go of.
     if (!controls.held('use')) this.hold.release();
     const share = this.using?.held ?? this.hold.share(clock, able && !mounted, gear?.gear ?? null);
-    this.prompt.show(this.using?.words ?? null, share);
+    this.prompt.show(this.using?.words ?? null, share, this.using?.idle === true);
     const held = gear?.gear;
     // The room leaves an Ammo box lying while the ammunition is full, whether a Ranged weapon is worn or not.
     const full = (held?.ammoShare ?? 1) >= 1;

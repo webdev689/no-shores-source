@@ -93,6 +93,27 @@ function lockAt(
   context.stroke();
 }
 
+/** A flag round `middle`, 8 cells of `cell` pixels wide and 9 high, for the guild's own outposts: its pole and its
+ *  cloth in `cloth` with a band of `device` along its foot, edged in light so a dark cloth still reads on the ring.
+ *  Drawn, since the face's flag glyph reads as a "P" at a mark's size and shows its colour only as a line. */
+function flagAt(
+  context: OffscreenCanvasRenderingContext2D,
+  middle: readonly [number, number],
+  cell: number,
+  cloth: string,
+  device: string,
+): void {
+  const [x, y] = middle;
+  const box = (fill: string, left: number, top: number, wide: number, high: number) => {
+    context.fillStyle = fill;
+    context.fillRect(x + left * cell, y + top * cell, wide * cell, high * cell);
+  };
+  box(TONES.ink, -4, -4.5, 1, 9);
+  box(TONES.ink, -3, -4.5, 7, 5.5);
+  box(cloth, -3, -4, 6.5, 4.5);
+  box(device, -3, -1.5, 6.5, 2);
+}
+
 /** The ring and its glyph (in `ink`, the ring's colour unless given), the glyph in the mended face, which holds the ones Pixelify lacks. */
 function ring(
   glyph: string,
@@ -118,7 +139,7 @@ function ring(
         context.lineWidth = 2 * unit;
         context.strokeStyle = edge;
         context.stroke();
-        // An outlined ring (the guild's own, in its banner's colours) is edged in light, its glyph too, so a dark or
+        // An outlined ring (the guild's own, in its banner's colours) is edged in light, its flag too, so a dark or
         // sea-coloured cloth still reads against the sea.
         if (outlined) {
           context.beginPath();
@@ -127,16 +148,13 @@ function ring(
           context.strokeStyle = TONES.ink;
           context.stroke();
         }
+        const cell = (glyphPx(size) * unit) / 11;
+        if (outlined) return flagAt(context, middle, (size * unit) / 16, colour, ink);
         context.fillStyle = ink;
-        if (glyph === LOCK_GLYPH) return lockAt(context, middle, (glyphPx(size) * unit) / 11, ink);
+        if (glyph === LOCK_GLYPH) return lockAt(context, middle, cell, ink);
         context.font = `${glyphPx(size) * unit}px ${CANVAS_FACE}`;
         context.textAlign = 'center';
         context.textBaseline = 'middle';
-        if (outlined) {
-          context.lineWidth = unit;
-          context.strokeStyle = TONES.ink;
-          context.strokeText(glyph, middle[0], middle[1]);
-        }
         context.fillText(glyph, middle[0], middle[1]);
       },
     },

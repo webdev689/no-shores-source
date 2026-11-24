@@ -3,7 +3,7 @@
 // acts only where its control does (`binds.ts`), so a key bound at the helm and on foot alike does each in its place.
 // The story hears its keys itself.
 import { type BindId, CONTROLS, type Context } from '../player/binds.ts';
-import { BINDS, type Input, keyNameOf } from '../player/input.ts';
+import { type Action, BINDS, type Input, type InputFrame, keyNameOf } from '../player/input.ts';
 import type { DrawnInterface } from './drawnInterface.ts';
 import type { Happening } from './flow.ts';
 import type { Playing } from './gameFrame.ts';
@@ -45,6 +45,18 @@ export function contextOf(playing: Pick<Playing, 'flow' | 'sea' | 'foot'>): Cont
   if (sea?.boarding.onDeck) return sea.boarding.foot?.standing.kind === 'dead' ? 'dead' : 'foot';
   if (sea?.aboard.walking) return 'foot';
   return sea?.fight ? 'fight' : 'helm';
+}
+
+/** What the pad's B pressed as it let go of a piece being placed, taken from the next frame's controls. */
+let taken: ReadonlySet<Action> = new Set();
+
+/** The frame's controls without the presses the pad's B made as it let go of a piece: the letting go takes the press,
+ *  so the player does not dodge as well. */
+export function withoutTaken(frame: InputFrame): InputFrame {
+  const took = taken;
+  if (took.size === 0) return frame;
+  taken = new Set();
+  return { ...frame, pressed: (action) => !took.has(action) && frame.pressed(action) };
 }
 
 /** Hears the keys and the pad's presses for what `game` does with them. */
@@ -117,6 +129,7 @@ export function listenForControls(game: Controlled): void {
     if (welcome && (pressed.has('jump') || pressed.has('confirm'))) playing.after.press();
     const covered = gearScreenOpen() || hud.controls.open || socialUp() || chatOpen();
     const escape = buttons.has('B') && (playing.helmMap.busy || playing.flow.mode === 'landing' || !!placingNow());
+    if (escape && placingNow()) taken = new Set([...pressed].filter((id) => BINDS.now[id].pad.includes('B')));
     if (playing.flow.mode === 'story' && (pressed.has('jump') || pressed.has('confirm'))) story?.press();
     else if (playing.flow.mode !== 'story' && !covered)
       act((id) => !escape && !welcome && pressed.has(id), escape && !welcome);

@@ -760,7 +760,8 @@ its words beside the plan; the grid one Tab stop walked by the arrows, which spe
 the outpost's rows, its cells shrinking before that column would pass the room, and the building in a third column
 where wide; the page scrolls with a More below chip, every word at the label step; for a founder or admin standing there, a Decorate
 part listing each piece with its price and what the hall holds, whose choice closes the menu and stands the piece's
-ghost a metre past its own reach before the player, green or red, turned with [ and ], placed with the use key) and
+ghost a metre past its own reach before the player, green or red, turned with [ and ], placed with the use key, let go
+with Escape or the pad's B, which then does nothing else) and
 its Treasury page (the ledger in words in four columns, each as wide as its words), both headed and framed as the Journal is ([[Outposts]]). The chosen tab is a lit brass press; a tab with something new on it
 (the Compendium, while a chapter found waits unread) wears Destiny's small diamond at its top right, and its name is
 read with ", new"; the arrow keys move between tabs. At the top line's right stands the account's mark, after DFO's
