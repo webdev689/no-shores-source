@@ -1,6 +1,6 @@
 ---
 type: system
-status: built
+status: live
 code:
   - crates/dungeon/src/lib.rs#of_patrol
   - crates/room/src/playlist_run.rs#playlist_run

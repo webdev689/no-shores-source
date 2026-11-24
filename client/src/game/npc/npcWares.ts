@@ -5,15 +5,25 @@ import cosmetics from '../../../../content/gear/cosmetics.json' with { type: 'js
 import { cosmeticRamp } from '../../forge/cosmetics.ts';
 import { GAME_PALETTE } from '../appearance/gamePalette.ts';
 import { ASKS, type GearAsk, type GearItem, type GearState } from '../../network/gearMessages.ts';
-import { RARITIES, SLOTS, STOCK_NAMES, itemName, kindName } from '../../player/gear.ts';
+import {
+  CARRIED,
+  HORSE,
+  MOUNT_SLOT,
+  RARITIES,
+  SLOTS,
+  STOCK_NAMES,
+  coatOfHorse,
+  itemName,
+  kindName,
+} from '../../player/gear.ts';
 import type { KeeperKind } from '../keepers.ts';
 import { KEEPERS } from '../keepers.ts';
 import { emblemOf } from '../emblemArt.ts';
 import { CRATES_MOST, type Card, cardOf } from '../gearCards.ts';
-import { WARES, vendorsOf } from '../gearScreen.ts';
+import { vendorsOf } from '../gearScreen.ts';
 import { factionRows } from './factionRows.ts';
 
-/** What a ware's tile shows: an item's own picture, a Vestige, the Ammo crate, a dye's or a coat's colours, an
+/** What a ware's tile shows: an item's own picture (a horse's too), a Vestige, the Ammo crate, a dye's colours, an
  *  emblem, a barding's mark, an Art or one of its fragments, a faction's package, or a piece not yet drawn. */
 export type WarePicture =
   | { readonly kind: 'item'; readonly item: GearItem }
@@ -139,14 +149,48 @@ export function itemWare(key: string, item: GearItem, price: Price, short: boole
   };
 }
 
+/** A coat sold as its horse, an item to the pack (`horses.rs`): kept once a horse in that coat is held. */
+function horseWare(gear: GearState, coat: Cosmetic, number: number): Ware {
+  const name = COSMETICS.filter((each) => each.kind === 'coat').indexOf(coat);
+  const horse: GearItem = {
+    id: 0,
+    kind: HORSE,
+    rarity: 0,
+    level: 1,
+    named: null,
+    name,
+    resource: null,
+    breach: false,
+    xp: 0,
+    xpMost: 0,
+    bought: 0,
+    chosen: [],
+    bucket: MOUNT_SLOT,
+    at: CARRIED,
+    attack: 0,
+    defense: 0,
+    prestige: 0,
+    columns: [],
+    price: 0,
+    element: 0,
+    source: 0,
+  };
+  const kept = gear.items.some((item) => coatOfHorse(item) === coat.id);
+  const { aurem = 0, level = 1 } = coat.source;
+  const sold = soldOnce(gear, aurem, level, kept, { kind: ASKS.buyCosmetic, item: number });
+  const ware = itemWare(`cosmetic-${number}`, horse, { amount: aurem, currency: 'aurem' }, false, null);
+  return { ...ware, about: `${RARITIES[0]?.name ?? ''} ${kindName(HORSE)}`, words: coat.words, ...sold };
+}
+
 function cosmeticWares(gear: GearState, kinds: readonly string[]): Ware[] {
   const kept = new Set(gear.cosmetics ?? []);
   return (gear.cosmeticsSold ?? []).flatMap((number) => {
     const cosmetic = COSMETICS[number];
     if (!cosmetic || !kinds.includes(cosmetic.kind)) return [];
+    if (cosmetic.kind === 'coat') return [horseWare(gear, cosmetic, number)];
     const { aurem = 0, level = 1 } = cosmetic.source;
     const sold = soldOnce(gear, aurem, level, kept.has(number), { kind: ASKS.buyCosmetic, item: number });
-    const swatch = cosmetic.kind !== 'barding';
+    const swatch = cosmetic.kind === 'dye';
     return [
       {
         key: `cosmetic-${number}`,
@@ -161,7 +205,7 @@ function cosmeticWares(gear: GearState, kinds: readonly string[]): Ware[] {
                 .map((rgb) => `rgb(${rgb.join(' ')})`),
             }
           : { kind: 'barding', barding: cosmetic.id },
-        about: `${RARITIES[rarityNamed(cosmetic.rarity)]?.name ?? ''} ${cosmetic.kind === 'dye' ? 'Dye' : cosmetic.kind === 'coat' ? 'Coat' : 'Barding'}`,
+        about: `${RARITIES[rarityNamed(cosmetic.rarity)]?.name ?? ''} ${swatch ? 'Dye' : 'Barding'}`,
         words: cosmetic.words,
         ...sold,
       },
@@ -200,18 +244,28 @@ function crateWare(gear: GearState): Ware {
     words: "Fills your Ranged weapon's ammunition.",
     price: { amount: price, currency: 'aurem' },
     short,
-    note: room ? '' : 'You carry five',
+    note: room ? '' : 'All five',
     ask: room ? { kind: ASKS.buyCrate } : null,
   };
 }
 
-function smithRow(gear: GearState, vendor: number, heading: string): Row {
+/** A smith's rows: their starter stock under "To start", the short rows `beside` it, then the day's wares under
+ *  `heading`. Short rows stand side by side (`rowsNode`), so the day's six keep in view. */
+function smithRows(gear: GearState, vendor: number, heading: string, beside: readonly Row[] = []): Row[] {
   const wares = (vendorsOf(gear)[vendor]?.wares ?? []).map((ware, place) => {
-    const item = gear.wares[WARES * vendor + place];
     const price = { amount: ware.price, currency: 'aurem' as const };
-    return item ? [itemWare(`buy-${vendor}-${place}`, item, price, !ware.affordable, ware.press.ask)] : [];
+    return {
+      starter: ware.starter,
+      ware: itemWare(`buy-${vendor}-${place}`, ware.item, price, !ware.affordable, ware.press.ask),
+    };
   });
-  return { heading, wares: wares.flat(), empty: 'Sold only in a social space.' };
+  const day = { heading, wares: wares.filter((each) => !each.starter).map((each) => each.ware) };
+  const start = wares.filter((each) => each.starter).map((each) => each.ware);
+  return [
+    ...(start.length > 0 ? [{ heading: 'To start', wares: start }] : []),
+    ...beside,
+    { ...day, empty: 'Sold only in a social space.' },
+  ];
 }
 
 function mageRows(gear: GearState): Row[] {
@@ -268,12 +322,14 @@ export function rowsOf(kind: KeeperKind, gear: GearState, choosing = false): Row
     case 'mage':
       return mageRows(gear);
     case 'armorsmith':
-      return [smithRow(gear, 0, 'Armour')];
+      return smithRows(gear, 0, 'Armour');
     case 'weaponsmith':
-      return [
-        smithRow(gear, 1, 'Weapons'),
-        ...((gear.cratePrice ?? 0) > 0 ? [{ heading: 'Supplies', wares: [crateWare(gear)] }] : []),
-      ];
+      return smithRows(
+        gear,
+        1,
+        'Weapons',
+        (gear.cratePrice ?? 0) > 0 ? [{ heading: 'Supplies', wares: [crateWare(gear)] }] : [],
+      );
     case 'tailor':
       return [
         { heading: 'Dyes', wares: cosmeticWares(gear, ['dye']), empty: 'Sold only in a social space.' },

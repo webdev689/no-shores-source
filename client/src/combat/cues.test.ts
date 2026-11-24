@@ -60,21 +60,30 @@ const foe = (action: Action, target: number | null): FighterView => ({
   action,
 });
 
+/** The player's parry window as the rules give it (crates/combat/src/tuning.rs PARRY_WINDOW). */
+const WINDOW = 15;
+
 test("a parry ring closes as a foe's blow at the player comes down, iron and shots show none to time", () => {
   const swing: Action = { kind: 'attack', stroke: 1, elapsed: 6, strike: 24, end: 60, swing: 'plain', leftHand: false };
-  assert.deepEqual(parryCue(foe(swing, PLAYER), PLAYER), { share: 0.75, now: false, window: 0.5 });
-  assert.deepEqual(parryCue(foe({ ...swing, elapsed: 13 }, PLAYER), PLAYER), {
+  assert.deepEqual(parryCue(foe(swing, PLAYER), PLAYER, WINDOW), { share: 0.75, now: false, window: 15 / 24 });
+  assert.equal((parryCue(foe({ ...swing, elapsed: 9 }, PLAYER), PLAYER, WINDOW) as { now: boolean }).now, false);
+  assert.equal(
+    (parryCue(foe({ ...swing, elapsed: 10 }, PLAYER), PLAYER, WINDOW) as { now: boolean }).now,
+    true,
+    'gold once fewer ticks are left than the window the rules give',
+  );
+  assert.deepEqual(parryCue(foe({ ...swing, elapsed: 13 }, PLAYER), PLAYER, WINDOW), {
     share: 11 / 24,
     now: true,
-    window: 0.5,
+    window: 15 / 24,
   });
   assert.deepEqual(
-    parryCue(foe({ ...swing, elapsed: 13 }, PLAYER), PLAYER, false),
+    parryCue(foe({ ...swing, elapsed: 13 }, PLAYER), PLAYER, WINDOW, false),
     { share: 11 / 24, now: false, window: 0 },
     'a guard that could open no window is never told a press now would parry',
   );
-  assert.equal(parryCue(foe({ ...swing, elapsed: 24 }, PLAYER), PLAYER), null, 'landed');
-  assert.equal(parryCue(foe(swing, OTHER), PLAYER), null, 'at another');
+  assert.equal(parryCue(foe({ ...swing, elapsed: 24 }, PLAYER), PLAYER, WINDOW), null, 'landed');
+  assert.equal(parryCue(foe(swing, OTHER), PLAYER, WINDOW), null, 'at another');
   const windup = {
     kind: 'telegraph',
     shape: 'sweep',
@@ -86,9 +95,9 @@ test("a parry ring closes as a foe's blow at the player comes down, iron and sho
     iron: false,
     feintAt: null,
   } as const;
-  assert.deepEqual(parryCue(foe(windup, PLAYER), PLAYER), { share: 0.5, now: false, window: 0.2 });
-  assert.equal(parryCue(foe({ ...windup, iron: true }, PLAYER), PLAYER), 'iron');
-  assert.equal(parryCue(foe({ ...windup, shape: 'aimed' }, PLAYER), PLAYER), null, 'a shot is never parried');
+  assert.deepEqual(parryCue(foe(windup, PLAYER), PLAYER, WINDOW), { share: 0.5, now: false, window: 0.25 });
+  assert.equal(parryCue(foe({ ...windup, iron: true }, PLAYER), PLAYER, WINDOW), 'iron');
+  assert.equal(parryCue(foe({ ...windup, shape: 'aimed' }, PLAYER), PLAYER, WINDOW), null, 'a shot is never parried');
 });
 
 test('a foe threatens the player while it swings, winds up or draws with the player its target', () => {

@@ -532,7 +532,7 @@ test('a parry ring stands round the head of the foe swinging at the player, kept
   };
   const ringOf = (foe: ReturnType<typeof swinging>) => {
     const hud = new Hud();
-    hud.update(bare({ matrix, foes: [foe] }), 1 / 60);
+    hud.update(bare({ matrix, foes: [foe], parryWindow: 12 }), 1 / 60);
     return allOf(drawn(hud)).find((node) => node.picture?.key.startsWith('parry'));
   };
   const seen = ringOf(swinging(6));
@@ -559,7 +559,12 @@ test('a parry ring for a head off the screen stands at the edge the way it lies,
     const foe = foeAt(2, 'Runner', ahead, aside);
     const hud = new Hud();
     hud.update(
-      bare({ matrix, firstPerson, foes: [{ ...foe, view: { ...foe.view, target: 1, action: swing } }] }),
+      bare({
+        matrix,
+        firstPerson,
+        parryWindow: 12,
+        foes: [{ ...foe, view: { ...foe.view, target: 1, action: swing } }],
+      }),
       1 / 60,
     );
     const ring = allOf(drawn(hud)).find((node) => node.picture?.key.startsWith('parry'));

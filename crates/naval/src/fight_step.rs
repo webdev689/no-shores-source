@@ -57,10 +57,10 @@ impl Fight {
             self.captain_fires(id, wind_at, &mut events);
         }
         for (id, order) in orders.iter().filter(|(_, order)| order.fire) {
-            self.player_fires(*id, order, &mut events);
+            self.player_fires(*id, order, (waters, time), &mut events);
         }
         for (id, order) in orders {
-            self.gunner_fires(*id, order);
+            self.gunner_fires(*id, order, (waters, time));
         }
         let targets = self.targets();
         let mut balls = std::mem::take(&mut self.balls);
@@ -216,8 +216,8 @@ impl Fight {
     }
 
     /// A player's release: their lay fired, or why their guns would not.
-    fn player_fires(&mut self, id: ShipId, order: &Orders, events: &mut Vec<Event>) {
-        match self.fire_order(id, order.aim.as_ref()) {
+    fn player_fires(&mut self, id: ShipId, order: &Orders, sea: (&impl Waters, f64), events: &mut Vec<Event>) {
+        match self.fire_order(id, order.aim.as_ref(), sea) {
             Ok(laid) => self.player_volley(id, laid, self.spread_of(id)),
             Err(refusal) => events.push(Event::Refused { ship: id, refusal }),
         }
@@ -244,8 +244,8 @@ impl Fight {
     }
 
     /// Its Gunner's broadside, when he has one to fire: the side its own lay this tick does not take.
-    fn gunner_fires(&mut self, id: ShipId, order: &Orders) {
-        let own = order.aim.as_ref().and_then(|aim| self.laid(id, aim)).map(|laid| laid.side);
+    fn gunner_fires(&mut self, id: ShipId, order: &Orders, (waters, time): (&impl Waters, f64)) {
+        let own = order.aim.as_ref().and_then(|aim| self.laid(id, aim, waters, time)).map(|laid| laid.side);
         let afloat = self.ships.get(&id).is_some_and(|vessel| vessel.damage.fighting() && !vessel.guns.braced);
         if let Some(laid) = self.gunners_lay(id, own).filter(|_| afloat) {
             // A Gunner's lay is his own, laid as he fires it: it scatters as the gun's own.

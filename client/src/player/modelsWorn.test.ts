@@ -79,9 +79,12 @@ function held() {
   );
   const rarityOf = (id: string) =>
     ['normal', 'magic', 'rare', 'legendary', 'atheric'].indexOf(items.items.find((each) => each.id === id)!.rarity);
+  // The prologue's own pieces, Normal and of level 1, each kind it lends.
+  const story = KINDS.map((unused, kind) => ({ kind, rarity: 0, name: 0, id: 1, level: 1, source: 0, story: true }));
   return [
     ...named.filter((each) => each.kind > 0).map((each) => ({ ...each, rarity: rarityOf(each.named) })),
     ...rolls.filter((each) => each.kind > 0),
+    ...story.filter((each) => each.kind > 0),
   ];
 }
 
@@ -186,6 +189,7 @@ test('the room keeps every armour and weapon layer the page dresses any item in,
         level: fields.level,
         name: fields.name,
         named: 'named' in fields ? fields.named : null,
+        story: 'story' in fields && fields.story,
       };
       const shown = { armour, right, left };
       const key = JSON.stringify([worn, shown]);

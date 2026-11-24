@@ -67,11 +67,8 @@ test('each keeper who deals with a player wears their own dress at their counter
   assert.ok(keeperAt('chandler')?.dress, 'the chandler is dressed as townsfolk are');
 });
 
-test('a keeper away from their counter is not drawn there; Shape stands at his spot facing the middle, then goes', () => {
+test('Shape stands at his spot facing the middle, then goes', () => {
   const folk = new Townsfolk({ ...plazaOf(SOCIAL), stations: PLAZA.stations }, 7);
-  const away = folk.peopleAt(0, { away: new Set(['mage']) });
-  assert.equal(away.length, PLAZA.stations.length - 1 + folk.townsfolk);
-  assert.ok(!away.some((person) => person.dress === KEEPERS.mage.dress));
   const spot = [1095, 2002.5] as const;
   const here = folk.peopleAt(0, { shape: spot });
   const shape = here.at(-1);

@@ -20,7 +20,8 @@ table GearColumn {
 // its island resource (255 for none), whether a Breach's, its XP and the most it earns, the nodes bought (a bit each)
 // and the one chosen in each column (255 none), the slot it is carried with, where it is (0 carried, 1 the vault, 2
 // and on worn in the slot that many less 2), its Attack, Defense and Prestige, its columns, its price at a vendor,
-// a weapon's element (the gear crate's numbers, 0 for none), and the content it came from (`gear::Source`'s numbers).
+// a weapon's element (the gear crate's numbers, 0 for none), the content it came from (`gear::Source`'s numbers),
+// and whether it is one of the prologue's own.
 table GearItem {
   id: uint;
   kind: ubyte;
@@ -43,6 +44,7 @@ table GearItem {
   price: uint;
   element: ubyte;
   source: ubyte;
+  story: bool;
 }
 
 // A Vestige a player holds: their number for it, its colour, the slot it holds an item for, that item's level,
@@ -162,8 +164,9 @@ table Gear {
   art_levels: [ubyte];
   art_xp: [uint];
   art_owned: [ubyte];
-  // The cosmetics they keep and the dye, coat and barding they wear, by their place in content/gear/cosmetics.json;
-  // and in a social space, those the Tailor and the Tack sell that day.
+  // The cosmetics they keep, the dye and barding they wear and the coat of the horse they ride (0, no coat, with none
+  // worn), by their place in content/gear/cosmetics.json; and in a social space, those the Tailor and the Tack sell
+  // that day.
   cosmetics: [ushort];
   dye: ushort;
   coat: ushort;

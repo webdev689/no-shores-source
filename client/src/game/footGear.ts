@@ -8,8 +8,9 @@
 import type { DropsShown } from '../combat/drops.ts';
 import { markRing } from '../combat/marks.ts';
 import { ASKS, type GearAsk, type GearState } from '../network/gearMessages.ts';
+import { RoomConnection, type RoomLink } from '../network/roomConnection.ts';
 import { resourceName } from '../player/gear.ts';
-import { openGearWindow } from './gearScreen.ts';
+import { type GearHere, openGearWindow } from './gearScreen.ts';
 import { SERVED_M, offerAt } from './plazaLife.ts';
 import { KEEPERS } from './keepers.ts';
 import { goalOf, puzzlePoints } from './quests/questBook.ts';
@@ -164,4 +165,16 @@ export const STORY_BEHIND_ON_FOOT = true;
  *  gear that says it is not kept, so a kept character claimed after the first word is told again. */
 export function tellsPrologue(gear: GearState | null, played: boolean, told: GearState | null): boolean {
   return played && gear !== null && gear !== told && gear.prologueDone === false;
+}
+
+/** The player's gear in their room, asked of through `ask`, with what draws it for the screens (`shown`); null offline
+ *  or once the room is lost. */
+export function gearInRoom(
+  link: RoomLink,
+  gear: GearState | null,
+  ask: (asked: GearAsk) => void,
+  shown: Pick<GearHere, 'forge' | 'dress'>,
+): GearHere | null {
+  if (!(link instanceof RoomConnection) || !link.open) return null;
+  return { gear, ask, ...shown };
 }

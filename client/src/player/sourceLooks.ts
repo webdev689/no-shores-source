@@ -62,6 +62,9 @@ export function rolledMetal(item: Pick<GearItem, 'source' | 'level' | 'name'>): 
   return own.metals[climbed(item, 0, own.metals.length, own.key === SOURCES[WORLD]?.key)] ?? 'iron';
 }
 
+/** The set the prologue's own armour is drawn in, Normal though it is: the steel the story dresses the player in. */
+export const STORY_SET = 'steel';
+
 /** The item's own number for a choice of make, shield or Magic set: its look roll's sixths (`name`, rolled as it was
  *  made, `vestige::LOOK_ROLLS`), apart from the remainders its metal and set climb by, so each pairs with each and a
  *  smith's or Shape's ware shows the look it keeps once bought. */

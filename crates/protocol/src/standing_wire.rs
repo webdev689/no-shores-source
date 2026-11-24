@@ -55,17 +55,16 @@ pub(crate) fn standing_of<'built>(
     } else {
         Vec::new()
     };
-    // The smiths' wares of the day, each numbered by its place among its vendor's.
+    // Each smith's stock in turn, the day's wares then the starter stock, each numbered by its place in its vendor's.
     let smiths: Vec<_> = if social {
         gear::vendor::Vendor::ALL
             .into_iter()
             .flat_map(|vendor| {
                 let level = if vendor.for_ship() { character.ship_level() } else { character.level() };
-                gear::vendor::wares(vendor, room.day(), level)
+                gear::vendor::stock(vendor, room.day(), level).into_iter().enumerate()
             })
-            .enumerate()
             .map(|(place, mut ware)| {
-                ware.id = u32::try_from(place % gear::vendor::WARES).unwrap_or_default();
+                ware.id = u32::try_from(place).unwrap_or_default();
                 let price = gear::vendor::price(ware.rarity);
                 crate::gear_wire::item_offset(builder, &ware, At::Carried, price)
             })

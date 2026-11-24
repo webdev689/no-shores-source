@@ -1,5 +1,5 @@
 import type { Details } from '../network/accounts.ts';
-import { RARITIES, SLOTS, capital, itemName } from '../player/gear.ts';
+import { HORSE, RARITIES, itemName, slotName } from '../player/gear.ts';
 import type { Node } from '../ui/node.ts';
 import { emblemOf } from './emblemArt.ts';
 import {
@@ -58,9 +58,10 @@ export function detailsNode(
       source: piece.source ?? 0,
     };
     // A piece the page cannot name still shows, by its slot.
-    const pieceName = itemName(item) || capital(SLOTS[piece.slot] ?? 'Piece');
+    const pieceName = itemName(item) || slotName(piece.slot) || 'Piece';
     const element = elementNode(piece.element, 16);
-    const power = piece.attack ? `${piece.attack} Attack` : `${piece.defense} Defense`;
+    // A horse carries no power.
+    const power = piece.kind === HORSE ? null : piece.attack ? `${piece.attack} Attack` : `${piece.defense} Defense`;
     const id = `worn-${index}`;
     return {
       width: pieceWidth,
@@ -88,9 +89,11 @@ export function detailsNode(
           direction: 'column',
           gap: 2,
           children: [
-            words(capital(SLOTS[piece.slot] ?? '').toUpperCase(), 1, INK.faint, { tracking: 3 }),
+            words(slotName(piece.slot).toUpperCase(), 1, INK.faint, { tracking: 3 }),
             words(pieceName, 1, INK.word, { ellipsis: true }),
-            words(`${RARITIES[piece.rarity]?.name ?? ''} · ${power}`, 1, INK.faint, { ellipsis: true }),
+            words([RARITIES[piece.rarity]?.name ?? '', power].filter(Boolean).join(' · '), 1, INK.faint, {
+              ellipsis: true,
+            }),
           ],
         },
       ],

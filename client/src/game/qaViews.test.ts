@@ -90,3 +90,17 @@ test('a development page lends the picture driver the way to sea and the game it
   assert.equal(production.target.__qaSea, undefined);
   assert.equal(production.target.__qaGame, undefined);
 });
+
+test('a development page lends the picture driver the game it plays online too, as a live room plays it', () => {
+  const lend = (dev: boolean) => {
+    const target: { __qaGame?: object; __qaView?: unknown } = {};
+    const game = { flow: 'foot' };
+    const host = { node: () => node, arrive: async () => undefined, walker: { player: {} as Player } };
+    installQaViews(target, '?room=ws://127.0.0.1:8787', false, { ...host, sea: () => undefined, game }, dev);
+    return { target, game };
+  };
+  const dev = lend(true);
+  assert.equal(dev.target.__qaGame, dev.game);
+  assert.equal(dev.target.__qaView, undefined, 'no arriving anywhere in a live room');
+  assert.equal(lend(false).target.__qaGame, undefined);
+});

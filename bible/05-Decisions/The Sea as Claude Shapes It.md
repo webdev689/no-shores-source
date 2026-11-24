@@ -115,7 +115,13 @@ Their courses, number and pace are replaced by [[Friendly Ships Take Several Cou
 - **A ship on it** rides through a lag of 0.02 s a metre of its length. It slams when the crest at its stem closes
   faster than 1 m/s and throws spray.
 - **Its wake**: Kelvin arms at 19.5 degrees, 0.7 m wide at its stern and widening 0.03 m a metre aft; a bow wave 1.2 of
-  its lengths long; its track's wash gone in 20 s. The water carries up to 48 ships' footprints, the player's first.
+  its lengths long; its track's wash gone in 20 s. Its arms and wash lie along the track its stern sailed (its drawn
+  stern, so a ship drawn larger than its turn leaves its wake from where its stern swung): a point kept each time it
+  runs a 128th of its wake's run, 2 m at least, as far back as its wake runs, and read by the water at 8 points from its
+  stern, each 1.6 times farther aft than the last, so they lie close where a turn shows and far apart where the wake has
+  faded. A track within 5 cm of a line straight aft (at its true size) is read as that line, at the old cost. A ship at
+  rest, or moved more than 200 m at once, begins its track again; one going astern lays none over where it backs. Its
+  bow wave and spray lie on its hull as it heads now. The water carries up to 48 ships' footprints, the player's first.
 
 ### The held map
 

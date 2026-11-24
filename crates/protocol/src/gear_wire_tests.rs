@@ -134,7 +134,7 @@ fn the_gear_message_carries_the_quest_walked_its_counts_what_is_earned_and_where
     let gear = flatbuffers::root::<messages::FromRoom>(&bytes).expect("a message").gear().expect("the gear");
     let list = |vector: Option<flatbuffers::Vector<'_, u8>>| vector.map(|found| found.iter().collect::<Vec<_>>());
     assert_eq!((gear.quest(), gear.quest_task(), gear.art()), (1, 0, 0), "the opening, no Art worn");
-    assert_eq!(gear.quest_counts().map(|counts| counts.iter().collect::<Vec<_>>()), Some(vec![0, 0, 0]));
+    assert_eq!(gear.quest_counts().map(|counts| counts.iter().collect::<Vec<_>>()), Some(vec![0]), "the stranger");
     assert_eq!((list(gear.quests_done()), list(gear.arts_earned())), (Some(vec![0; 4]), Some(vec![0; 3])));
     assert_eq!(gear.quest_at().map(|at| at.len()), Some(0), "no place of the opening's is here");
     let mut pledged = gear::Character::starting();
@@ -366,10 +366,10 @@ fn the_gear_for_the_clients_test_is_written() {
     std::fs::write(format!("{folder}/gear_shape.bin"), gear_bytes(&room, player).expect("written")).expect("written");
 }
 
-/// Each of the Armorsmith's and the Weaponsmith's wares bought in turn at the stall takes the number the gear message
-/// before it said the next item takes. The page's test (`client/src/player/gearLooks.test.ts`) reads the messages,
-/// the first before any is bought and one after each, each its length in four bytes (little-endian) and then itself,
-/// to check that each ware is drawn as the piece it becomes.
+/// Each of the Armorsmith's and the Weaponsmith's wares, the day's then the starter stock, bought in turn at the stall
+/// takes the number the gear message before it said the next item takes. The page's test
+/// (`client/src/player/gearLooks.test.ts`) reads the messages, the first before any is bought and one after each, each
+/// its length in four bytes (little-endian) and then itself, to check that each ware is drawn as the piece it becomes.
 #[test]
 fn each_smiths_ware_bought_takes_the_number_sent_and_the_gear_for_the_clients_test_is_written() {
     use gear::vendor::{Vendor, WARES};
@@ -393,12 +393,13 @@ fn each_smiths_ware_bought_takes_the_number_sent_and_the_gear_for_the_clients_te
         written.extend(u32::try_from(bytes.len()).expect("a length").to_le_bytes());
         written.extend(&bytes);
         let gear = flatbuffers::root::<messages::FromRoom>(&bytes).expect("a message").gear().expect("the gear");
-        assert_eq!(gear.wares().map(|wares| wares.len()), Some(3 * WARES), "at the stall");
+        let stocked: usize = Vendor::ALL.into_iter().map(|vendor| WARES + vendor.starter_kinds().len()).sum();
+        assert_eq!(gear.wares().map(|wares| wares.len()), Some(stocked), "every smith's whole stock at the stall");
         gear.next_id()
     };
     let mut next = sent(&room);
     for vendor in [Vendor::Armorsmith, Vendor::Weaponsmith] {
-        for ware in 0..WARES {
+        for ware in 0..WARES + vendor.starter_kinds().len() {
             let held: Vec<u32> = room.player(player).expect("in").character.items.keys().copied().collect();
             let ware = u8::try_from(ware).expect("a place");
             assert_eq!(ask(&mut room, Asked::Gear(Ask::Vend { vendor, ware, day })), 0, "{vendor:?}'s {ware} bought");
@@ -481,8 +482,8 @@ fn where_a_player_stands_with_factions_arts_cosmetics_and_shape_crosses_whole() 
     assert!(gear.cosmetics().is_some_and(|kept| kept.iter().any(|number| number == barding)));
     assert_eq!(
         gear.cosmetics_sold().map(|sold| sold.len()),
-        Some(2 * gear::cosmetics::SOLD_A_DAY),
-        "the Tailor's, the Tack's"
+        Some(2 * gear::cosmetics::SOLD_A_DAY + 1),
+        "the Tailor's, the Tack's and its Bay Horse"
     );
     assert_eq!(gear.shapes(), 9);
     let week = gear::clock::week_of(friday);
@@ -622,7 +623,7 @@ fn every_daily_list_a_player_is_sent_turns_at_nine_utc_and_not_at_midnight() {
             .into_iter()
             .flat_map(|vendor| {
                 let level = if vendor.for_ship() { character.ship_level() } else { character.level() };
-                gear::vendor::wares(vendor, day, level)
+                gear::vendor::stock(vendor, day, level)
             })
             .map(|ware| (ware.kind as u8, ware.rarity as u8))
             .collect();

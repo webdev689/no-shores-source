@@ -6,7 +6,7 @@ import type { Drawer } from '../scene.ts';
 import { WRECK } from './skies.ts';
 import type { Story } from './story.ts';
 import type { WreckLayout } from './wreckLayout.ts';
-import { type WreckMesh, WreckView } from './wreckView.ts';
+import { type WreckLook, type WreckMesh, WreckView } from './wreckView.ts';
 
 /** The wreck's sounds: its fires, the rain and wind, the sea against the hulls and their timbers working. */
 const WRECK_SOUNDS = { fire: 0.8, rain: 0.65, wind: 0.5, waves: 0.8, creak: 0.9, deep: 0, gulls: 0 } as const;
@@ -99,12 +99,16 @@ export class WreckScenery {
     return this.state === 'coming';
   }
 
+  /** A light near the wreck, the wisp's, while it shines. */
+  near: WreckLook['near'] = null;
+
   /** The drawer the scene draws it with. */
   get drawer(): Drawer {
     return {
       drawInto: (pass, fromEye, shot, time) => {
+        const look = { fire: FIRE_SHARE, time, near: this.near };
         // A heap is its zone's run of the mesh: piece z + 1 for the heap closing zone z.
-        this.view?.drawInto(pass, this.origin, { fromEye, eye: shot.eye }, { fire: FIRE_SHARE, time }, (piece) =>
+        this.view?.drawInto(pass, this.origin, { fromEye, eye: shot.eye }, look, (piece) =>
           this.standing.has(piece - 1),
         );
       },

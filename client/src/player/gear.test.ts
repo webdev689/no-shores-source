@@ -243,3 +243,13 @@ test("a weapon's look: a named piece's as written; a rolled one climbs with its 
   );
   assert.equal(look({ named: 'signal_pair', kind: 23, rarity: 3 }).metal, 'plain', 'unless it names its own');
 });
+
+test('the prologue’s own armour is named for its steel’s set; its sword and shield and its bow as any piece', () => {
+  const story = { named: null, rarity: 0, name: 0, story: true, id: 1, level: 1, source: 0 };
+  assert.deepEqual(
+    [14, 15, 16].map((kind) => itemName({ ...story, kind })),
+    ['Wayfarer Hauberk', 'Wayfarer Gauntlets', 'Wayfarer Greaves'],
+  );
+  assert.equal(itemName({ ...story, kind: 12 }), itemName({ ...story, kind: 12, story: false }));
+  assert.equal(itemName({ ...story, kind: 14, story: false }), 'Homespun Hauberk', 'a plain piece its own');
+});

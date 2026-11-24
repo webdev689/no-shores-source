@@ -199,18 +199,22 @@ pub fn counter_for(ask: &Ask) -> Option<CounterKind> {
     }
 }
 
-/// The counter a keeper stands at, by the number ask 64 sends: a house's by its faction's, else the Mage's (10), the
-/// vault's, the Armorsmith's, the Weaponsmith's, the Tailor's, the Tack's and the Harbourmaster's (16).
+/// The counter a keeper stands at, by the number ask 64 sends: a house's by its faction's, else the one its key
+/// (`gear::quests::KEEPERS`) names; the stranger keeps none.
 fn keeper_counter(keeper: u8) -> Option<CounterKind> {
-    Some(match keeper {
-        10 => CounterKind::Mage,
-        11 => CounterKind::Vault,
-        12 => CounterKind::Vendor(Vendor::Armorsmith),
-        13 => CounterKind::Vendor(Vendor::Weaponsmith),
-        14 => CounterKind::Tailor,
-        15 => CounterKind::Tack,
-        16 => CounterKind::Vendor(Vendor::Shipwright),
-        house => CounterKind::Faction(gear::factions::factions().faction(house)?.id),
+    if let Some(house) = gear::factions::factions().faction(keeper) {
+        return Some(CounterKind::Faction(house.id));
+    }
+    Some(match gear::quests::keeper_key(keeper)? {
+        "mage" => CounterKind::Mage,
+        "vault" => CounterKind::Vault,
+        "armorsmith" => CounterKind::Vendor(Vendor::Armorsmith),
+        "weaponsmith" => CounterKind::Vendor(Vendor::Weaponsmith),
+        "tailor" => CounterKind::Tailor,
+        "tack" => CounterKind::Tack,
+        "harbourmaster" => CounterKind::Vendor(Vendor::Shipwright),
+        "mail" => CounterKind::Mail,
+        _ => return None,
     })
 }
 
@@ -239,7 +243,13 @@ impl Room {
             let counters = self.counters.iter().flatten().copied().chain(shape);
             counters.into_iter().any(|counter| counter.kind == wanted && near(counter.at, COUNTER_REACH))
         });
-        let social = at_counter || self.stall.is_some_and(|stall| near(stall, STALL_REACH));
+        // The stranger is heard anywhere in a social space and nowhere else, the Test Ground's stall included: she
+        // keeps no counter.
+        let social = if *ask == (Ask::Speak { keeper: gear::quests::STRANGER }) {
+            self.counters.as_ref().is_some_and(|counters| !counters.is_empty())
+        } else {
+            at_counter || self.stall.is_some_and(|stall| near(stall, STALL_REACH))
+        };
         let (pledge, rank) = self.player(player).map_or((0, 0), |found| crate::crew::pledge_of(&found.character));
         Here { social, day: self.day(), pledge, rank, week: gear::clock::week_of(self.minute) }
     }
@@ -444,7 +454,12 @@ impl Room {
                 return carry(character, item);
             }
             Grant::Item { kind, rarity, level } => {
-                if rarity == Rarity::Atheric || kind == Kind::Cloak || (kind.module() && rarity == Rarity::Legendary) {
+                // A horse is bought at the Tack, Normal and of its coat (`gear::horses`), never handed out.
+                if rarity == Rarity::Atheric
+                    || kind == Kind::Cloak
+                    || kind == Kind::Horse
+                    || (kind.module() && rarity == Rarity::Legendary)
+                {
                     return answer_code(Err(Refusal::NoSuchItem));
                 }
                 let mut item = gear::vestige::rolled(character.take_id(), kind, rarity, kind.slot(), level, &dice);

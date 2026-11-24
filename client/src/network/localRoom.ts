@@ -222,16 +222,21 @@ export class LocalRoom implements RoomLink {
     this.door.clearFoes();
   }
 
-  /** Plays the prologue's wreck (`RoomDoor.storyWreck`): no Art, the player waking hurt with no weapon, and every
-   *  boarder on one side, held to a Major. */
+  /** Plays the prologue's wreck (`RoomDoor.storyWreck`): no Art, the player waking hurt in the story's steel with no
+   *  weapon, and every boarder on one side. */
   storyWreck(): void {
     this.door.storyWreck();
   }
 
-  /** The story's sword and shield taken from the deck into the player's pack (`RoomDoor.storyTakeArms`): whether
-   *  they were given. */
-  storyTakeArms(): boolean {
-    return this.door.storyTakeArms(this.player);
+  /** The story's sword and shield or its bow (`kind`, the gear's number) taken from the deck into the player's pack
+   *  (`RoomDoor.storyTake`): whether it was given. */
+  storyTake(kind: number): boolean {
+    return this.door.storyTake(this.player, kind);
+  }
+
+  /** The wisp gives the player the Storm (`RoomDoor.storyStorm`): whether it did. */
+  storyStorm(): boolean {
+    return this.door.storyStorm(this.player);
   }
 
   /** On the wreck, moves one of the Brig's crew's post to (`x`, `y`), facing `facing` (`RoomDoor.storyPost`): whether

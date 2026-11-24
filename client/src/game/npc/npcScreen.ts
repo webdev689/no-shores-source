@@ -358,8 +358,16 @@ export function npcPage(context: MenuContext, kind: KeeperKind, more: readonly C
         gap: 11,
         padding: [11, 22],
         children: [
-          { width: most, text: { words: keeper.words, size: look.text, colour: INK.faint } },
-          purseNode(context, kind, look),
+          // The keeper's words and what the player holds share a line, so the rows of wares have the most room.
+          {
+            width: 'grow',
+            gap: 22,
+            alignY: 'center',
+            children: [
+              { width: 'grow', text: { words: keeper.words, size: look.text, colour: INK.faint, wrap: true } },
+              purseNode(context, kind, look),
+            ],
+          },
           speechBand(kind, look.glow, look.text, most),
           {
             id: ROWS,

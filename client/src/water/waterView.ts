@@ -5,11 +5,12 @@ import type { Swell } from '../rules/landRules.ts';
 import { skyUniformFor } from '../sky/skyUniform.ts';
 import { RippleField } from './ripples.ts';
 import { FRESH_SINK_M, GRAVITY, SHORE, type ShoreField, SLOW_CLOCK_S } from './shore.ts';
-import { type HullMask, hullValues } from './hullMask.ts';
+import { HULLS, type HullMask, hullValues } from './hullMask.ts';
 import type { SeaGrid, SeaSwell } from './seaWeather.ts';
 import { type Disc, discDraws } from './surfaceDisc.ts';
 import { ANCHOR_M, CHOP_WAVES, MOST_WAVES } from './waterCommon.ts';
 import { WATER_SHADER } from './waterShader.ts';
+import { trackOf, WakeTracks, wakeValues } from './wakes.ts';
 
 type Vector = readonly [number, number, number];
 
@@ -82,7 +83,7 @@ export interface WaterScene {
 /** Where the waves begin in the frame's floats, after the camera's, the eye's and the sea by weather's. */
 const WAVES_AT = 72;
 const HULLS_AT = WAVES_AT + MOST_WAVES * 8 + CHOP_WAVES * 8;
-const FRAME_FLOATS = HULLS_AT + hullValues([], [0, 0]).length;
+const FRAME_FLOATS = HULLS_AT + hullValues([], [0, 0], []).length;
 /** Samples taken of each pixel by the land and the water, so every edge between them is smooth. */
 export const SAMPLES = 4;
 /** The disc of water round the eye: rings out to the far plane, each this share wider than the last, and segments. */
@@ -161,6 +162,8 @@ export class WaterView {
   private readonly ripples: RippleField;
   private readonly empty: { readonly flat: GPUTexture; readonly shore: GPUTexture };
   private chop: ChopFade | null = null;
+  /** Where each ship has sailed, for its wake. */
+  private readonly wakes = new WakeTracks();
   /** The shelter grid last sent to the GPU, its texture, and its largest share. */
   private shelter: { readonly grid: SeaGrid; readonly texture: GPUTexture; readonly most: number } | null = null;
   /** The bind groups made for the textures last drawn from, one for each of the ripples' three textures in turn:
@@ -375,7 +378,10 @@ export class WaterView {
     values[46] = chopShare(chop, scene.time);
     values.set(CHOPS[chop.bearing] ?? [], WAVES_AT + MOST_WAVES * 8);
     values.set(CHOPS[chop.before] ?? [], WAVES_AT + MOST_WAVES * 8 + CHOP_WAVES * 4);
-    values.set(hullValues(scene.hulls, [eyeX, eyeY]), HULLS_AT);
+    const hulls = scene.hulls.slice(0, HULLS);
+    const tracks = this.wakes.tracks(hulls, scene.world);
+    const wakes = hulls.map((hull, index) => wakeValues(hull, tracks[index] ?? trackOf(hull), [eyeX, eyeY]));
+    values.set(hullValues(hulls, [eyeX, eyeY], wakes), HULLS_AT);
     return values;
   }
 

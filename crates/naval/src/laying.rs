@@ -59,14 +59,24 @@ impl Sighted {
 }
 
 /// The side `shooter`'s look lays with `load`, as its guns would fire it now, if a side bears there: on the point
-/// of a ship of another flag the look's ray meets, else `range_m` out along its fire from its middle, so from its
-/// guns' middle less the way they stand out from it.
+/// of a ship of another flag the look's ray meets, else where it meets the water (`on_water`, so the balls come down
+/// under the look whatever the swell), else `range_m` out along its fire from its middle, so from its guns' middle
+/// less the way they stand out from it.
 #[must_use]
-pub fn lay_for(shooter: &Sighted, load: Shot, aim: &Aim, ships: &[Sighted]) -> Option<Lay> {
+pub fn lay_for(
+    shooter: &Sighted,
+    load: Shot,
+    aim: &Aim,
+    ships: &[Sighted],
+    (waters, time): (&impl Waters, f64),
+) -> Option<Lay> {
     let side = side_for_bearing(aim.bearing_deg)?;
     let (ship, pose, arms) = (&shooter.ship, &shooter.pose, arms_of(shooter.hull));
     let square = lay(ship, pose, arms, side, load, 0.0, None);
-    if let Some(point) = aim.ray.and_then(|ray| look_on(shooter, &square, ray, ships)) {
+    let met = aim.ray.and_then(|ray| {
+        look_on(shooter, &square, ray, ships).or_else(|| on_water(shooter, &square, ray, (waters, time)))
+    });
+    if let Some(point) = met {
         return Some(lay_on(ship, pose, arms, side, load, point));
     }
     let out = (square.centre[0] - ship.x) * square.dir[0] + (square.centre[1] - ship.y) * square.dir[1];
@@ -106,6 +116,48 @@ fn look_on(shooter: &Sighted, square: &Lay, [eye, look]: [[f64; 3]; 2], ships: &
     let flown = libm::hypot(point[0] - from.x, point[1] - from.y) / (square.gun.speed * 0.97).max(1.0);
     let along = (way[0] * fire[0] + way[1] * fire[1]) * flown;
     Some([point[0] + fire[0] * along, point[1] + fire[1] * along, point[2]])
+}
+
+/// The steepest a swell's face rises across the water, metres a metre: past a rough sea's sum of waves.
+const STEEPEST_SWELL: f64 = 0.4;
+/// The look has met the water once it stands this near it, metres; it is felt at most this many times.
+const MET_WITHIN_M: f64 = 0.01;
+const MOST_FEELS: usize = 64;
+
+/// Where the look's ray first meets the water (or the ground where it is dry), within the square lay's longest throw
+/// and `LOOK_REACH_PAD_M`, the swell felt as a ball laid there would come down on it (DFO's own flight time out to
+/// it). Each step on goes only as far as the swell, at its steepest, could not rise to meet the look, so a look
+/// grazing a crest is met on its near face, never past it. None for a look level or over the horizon, or from an eye
+/// past `LOOK_EYE_M`.
+fn on_water(
+    shooter: &Sighted,
+    square: &Lay,
+    [eye, look]: [[f64; 3]; 2],
+    (waters, time): (&impl Waters, f64),
+) -> Option<[f64; 3]> {
+    let length = (look[0] * look[0] + look[1] * look[1] + look[2] * look[2]).sqrt();
+    let off = [eye[0] - shooter.ship.x, eye[1] - shooter.ship.y, eye[2] - shooter.pose.heave];
+    if length <= 0.0 || look[2] >= 0.0 || (off[0] * off[0] + off[1] * off[1] + off[2] * off[2]).sqrt() > LOOK_EYE_M {
+        return None;
+    }
+    let (down, across) = (-look[2] / length, libm::hypot(look[0], look[1]) / length);
+    let at = |along: f64| [0, 1, 2].map(|axis| eye[axis] + look[axis] / length * along);
+    let (from, most) = (&shooter.ship, square.reach + LOOK_REACH_PAD_M);
+    let mut along = 0.0;
+    for _ in 0..MOST_FEELS {
+        let point = at(along);
+        let flown = libm::hypot(point[0] - from.x, point[1] - from.y) / (square.gun.speed * 0.97).max(1.0);
+        let spot = waters.at(point[0], point[1], time + flown);
+        let over = point[2] - spot.surface.unwrap_or(spot.bed);
+        if over < MET_WITHIN_M {
+            break;
+        }
+        along += over / (down + STEEPEST_SWELL * across);
+        if along > most {
+            return None;
+        }
+    }
+    (along > 0.0).then(|| at(along))
 }
 
 /// Where each gun of `shooter`'s lay stops, its ball unscattered and flown by the law every ball flies by, with
@@ -166,7 +218,7 @@ pub fn preview(
     (waters, time): (&impl Waters, f64),
     spread: f64,
 ) -> Option<Preview> {
-    let laid = lay_for(shooter, load, aim, ships)?;
+    let laid = lay_for(shooter, load, aim, ships, (waters, time))?;
     let ends = ends_of(shooter, &laid, ships, waters, time);
     let splashes: Vec<f64> = ends
         .iter()
@@ -217,16 +269,22 @@ impl Fight {
         self.sighted().iter().map(Sighted::target).collect()
     }
 
-    /// The side a player's look lays, as their guns would fire it now; none for a ship not theirs or no side bearing.
+    /// The side a player's look lays, as their guns would fire it now on `waters` at `time`; none for a ship not
+    /// theirs or no side bearing.
     #[must_use]
-    pub fn laid(&self, shooter: ShipId, aim: &Aim) -> Option<Lay> {
+    pub fn laid(&self, shooter: ShipId, aim: &Aim, waters: &impl Waters, time: f64) -> Option<Lay> {
         let vessel = self.vessel(shooter)?;
-        lay_for(&Sighted::of(shooter, vessel), vessel.guns.load, aim, &self.sighted())
+        lay_for(&Sighted::of(shooter, vessel), vessel.guns.load, aim, &self.sighted(), (waters, time))
     }
 
-    /// A player's lay, or why their guns will not fire it.
-    pub(crate) fn fire_order(&self, shooter: ShipId, aim: Option<&Aim>) -> Result<Lay, Refusal> {
-        let lay = aim.and_then(|aim| self.laid(shooter, aim)).ok_or(Refusal::NoGuns)?;
+    /// A player's lay on `waters` at `time`, or why their guns will not fire it.
+    pub(crate) fn fire_order(
+        &self,
+        shooter: ShipId,
+        aim: Option<&Aim>,
+        (waters, time): (&impl Waters, f64),
+    ) -> Result<Lay, Refusal> {
+        let lay = aim.and_then(|aim| self.laid(shooter, aim, waters, time)).ok_or(Refusal::NoGuns)?;
         let player = self.vessel(shooter).ok_or(Refusal::NoGuns)?;
         if matches!(player.damage.state, State::Sinking | State::Sunk) {
             return Err(Refusal::Silent);
