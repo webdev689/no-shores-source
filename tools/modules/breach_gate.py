@@ -56,6 +56,8 @@ def ground(module):
     kit.block(module, (0.0, CLIFF_SOUTH + DOOR_DEEP / 2, DOOR_HIGH), (DOOR_HALF * 2 + 1.2, DOOR_DEEP, CLIFF_TOP - DOOR_HIGH),
               'rubble', bevel=0.0, wear=0.0)
     bk.floor(module, -DOOR_HALF, CLIFF_SOUTH - 0.5, DOOR_HALF, CLIFF_SOUTH + DOOR_DEEP, top=0.05, material='paving')
+    # The doorway shut from the seal's face back: the Breach is entered by asking at the gate, never walked into.
+    bk.solid(module, -DOOR_HALF - 0.6, CLIFF_SOUTH + 0.5, DOOR_HALF + 0.6, CLIFF_SOUTH + DOOR_DEEP, 0.05, DOOR_HIGH)
     # The dais in three tiers, each a step up from the one round it.
     for side, top in TIERS:
         kit.block(module, (*DAIS, 0.0), (side, side, top), 'trim', bevel=0.05, wear=0.02)
