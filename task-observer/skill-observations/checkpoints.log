@@ -81,3 +81,7 @@
 2026-11-23 21:50 [no-shores-source] session-start scan: files=133 parsed=125 principles=0
 2026-11-23 21:48 [no-shores-source] session-start scan: files=132 parsed=124 principles=0
 2026-11-24 00:32 [no-shores-source] session-start scan: files=144 parsed=135 principles=0
+2026-11-24 00:07 [no-shores-source] session-start scan: files=144 parsed=135 principles=0
+2026-11-24 00:08 [skill-observations] session-start scan: files=144 parsed=135 principles=0
+2026-11-24 no-shores audit session: checkpoint after 8 fixes, no observations beyond 0171
+2026-11-24 no-shores audit session: checkpoint after 3 completed todos (verify, fix), no observations beyond 0171
