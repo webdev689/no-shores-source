@@ -299,29 +299,6 @@ def choir(module):
     hanging(module, 17.5, -25.4, 34.0, -20.6, -1.2, 5.0)
 
 
-def ways(module, cells, half, house):
-    """The Unlit Ways' houses: each roofed in a ridge of two pitches with a chimney, its doors bricked under arches and
-    its windows shuttered; the streets cobbled at their crossings; the barricades braced."""
-    for x, y in cells:
-        for pitch in (-1, 1):
-            roof = kit.block(module, (x, y + pitch * house / 4, 5.4), (house + 0.6, house / 2 + 0.5, 0.18), 'roof',
-                             bevel=0.0, wear=0.0, part=False)
-            roof.rotation_euler = (-pitch * 0.5, 0.0, 0.0)
-        kit.block(module, (x + house / 4, y + house / 4, 5.6), (0.8, 0.8, 2.0), 'stone', bevel=0.03, wear=0.05,
-                  part=False)
-        for door in range(2):
-            spot = (x + (door - 0.5) * 3.0, y - house / 2 - 0.12, 2.2)
-            bk.arch(module, spot, 0.6, 0.2, 0.22, stones=5)
-        for side in (-1, 1):
-            kit.block(module, (x + side * (house / 2 + 0.05), y, 2.6), (0.12, 1.1, 1.2), 'timber', bevel=0.0, wear=0.0,
-                      part=False)
-    for column in range(1, 6):
-        for row in range(1, 6):
-            spot = (-half + 12.0 * column, -half + 12.0 * row, -0.04)
-            kit.block(module, spot, (3.6, 3.6, 0.08), 'paving', turn=math.pi / 4, bevel=0.0, wear=0.0, part=False)
-    hanging(module, -30.0, -30.0, 30.0, 30.0, -1.2, 18.0)
-
-
 def stair(module, landings, size, steady):
     """The Broken Stair's rock hanging under each landing and steady slab, the stumps of a balustrade along the
     landings' edges, and chains hanging from them into the dark."""

@@ -8,6 +8,7 @@ import math
 import breach_dress
 import breach_kit as bk
 import breach_lore
+import breach_town
 import kit
 import latticekit
 
@@ -31,7 +32,7 @@ def ways(module):
     for west, south, east, north in ((-half - 4, -half - 4, -half, -2.0), (-half - 4, 2.0, -half, half + 4),
                                      (half, -half - 4, half + 4, -2.0), (half, 2.0, half + 4, half + 4),
                                      (-half, -half - 4, half, -half), (-half, half, half, half + 4)):
-        bk.wall(module, west, south, east, north, high=6.0, material='plaster')
+        bk.wall(module, west, south, east, north, high=6.0, material='stone')
     bk.floor(module, -half - 6, -2.0, -half, 2.0)
     bk.floor(module, half, -2.0, half + 6, 2.0)
     shut = []
@@ -43,12 +44,9 @@ def ways(module):
             if (column, row) == HEART_CELL:
                 bk.cottage(module, (x, y, 0.0), HOUSE, HOUSE, 0, high=5.0, broken=0.0)
                 continue
-            kit.block(module, (x, y, 0.0), (HOUSE, HOUSE, 5.2), 'plaster', bevel=0.05, wear=0.04)
-            kit.block(module, (x, y, 5.2), (HOUSE + 0.4, HOUSE + 0.4, 0.4), 'roof', bevel=0.02, wear=0.0, part=False)
+            # Each house's part; breach_town draws the house over it.
+            bk.solid(module, x - HOUSE / 2, y - HOUSE / 2, x + HOUSE / 2, y + HOUSE / 2, 0.0, breach_town.EAVE_M)
             shut.append((x, y))
-            for door in range(2):
-                face = (x + (door - 0.5) * 3.0, y - HOUSE / 2 - 0.05, 0.0)
-                kit.block(module, face, (1.2, 0.14, 2.2), 'stone', bevel=0.02, wear=0.06, part=False)
     for x, y, along_x in BARS:
         kit.block(module, (x, y, 0.0), (4.2, 0.9, 2.4) if not along_x else (0.9, 4.2, 2.4), 'timber', bevel=0.03,
                   wear=0.05)
@@ -66,7 +64,7 @@ def ways(module):
     pick = latticekit.picker(module.random.randrange(1 << 30))
     for x, y, _ in WATCHERS:
         bk.crust(module, pick, (x, y, 0.02), 1.8, dim=0.5)
-    breach_dress.ways(module, shut, half, HOUSE)
+    breach_town.ways(module, shut, half, HOUSE, WATCHERS)
     breach_lore.heart(module, heart, HOUSE)
 
 
