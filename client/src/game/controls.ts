@@ -67,6 +67,7 @@ export const CONTROL_GROUPS: readonly ControlGroup[] = [
       row('Crouch; let go', 'crouch'),
       row('Mount or dismount', 'mount'),
       row('Use', 'use'),
+      row('Hold to leave', 'leave'),
     ],
   },
   {
@@ -103,7 +104,6 @@ export const CONTROL_GROUPS: readonly ControlGroup[] = [
   {
     name: 'Menus',
     controls: [
-      row('Menu', 'menu'),
       row('Map', 'landMap'),
       row('Character', 'character'),
       row('Inventory', 'inventory'),

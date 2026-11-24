@@ -1,6 +1,6 @@
+// Where the menu's focus goes when the press holding it goes (dismantled, worn, sold, moved): to the press beside it
+// in what holds it, read off the tree the menu built this frame.
 import type { Child, Node } from '../ui/node.ts';
-
-/** How the menu walks its presses to keep the focus: what takes it, and where it goes should the focused press go. */
 
 /** The ids of what takes the focus under `node`, as the interface walks them: presses, fields and the focusable. */
 export function pressesIn(node: Child): string[] {

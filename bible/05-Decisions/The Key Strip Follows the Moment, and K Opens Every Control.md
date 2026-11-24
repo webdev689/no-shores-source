@@ -46,4 +46,7 @@ These calls take the place of the key strip's calls in [[Quests Get a Task Track
 (the click to look round always shown) and [[Three Healing Charges, Refilled by Blows and Kills]] ("3 Heal" after
 "1 / 2 Loadout").
 
+Replaced in part by [[The Key Strip Is a Compact Panel, a Held Key Leaves, and Settings Has Tabs]]: the strip is a
+compact panel at the bottom right under the moment's name, and the leave held stands where the menu's key stood.
+
 Links: [[Interface]], [[Game]].

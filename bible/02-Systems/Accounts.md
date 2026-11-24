@@ -255,7 +255,9 @@ table holds one row an account: what differs from the game's defaults, as JSON, 
   reads it (`readOverrides`, which the Worker imports from the page's code): a known control's keys and its pad
   buttons, each a list of at most three different names the game knows (a key, a mouse button for a control that
   hears one, a pad button, a button held or two together; a stick's ways only where the control is on them). What
-  does not read, as a page of another build may send, is left out and the rest kept. A body past 8 KB, or one that is
+  does not read, as a page of another build may send, is left out and the rest kept; a control kept under the name
+  `menu` is read as the leave held, its key held now where it was pressed
+  ([[The Key Strip Is a Compact Panel, a Held Key Leaves, and Settings Has Tabs]]). A body past 8 KB, or one that is
   no object of controls, is refused and nothing changes. 120 reads and saves together an hour an account.
 - **The page** reads them once the account is known and binds them, and reads again when another account signs in
   (that account's, or the defaults where it kept none); each change is sent a moment and a half after the last

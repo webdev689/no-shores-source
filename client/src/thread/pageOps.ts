@@ -128,7 +128,7 @@ export type ToPage =
     }
   | {
       readonly kind: 'go';
-      readonly how: 'reload' | 'assign' | 'replace' | 'open' | 'replaceState' | 'pushState';
+      readonly how: 'reload' | 'assign' | 'replace' | 'open' | 'close' | 'replaceState' | 'pushState';
       readonly url: string;
     }
   | { readonly kind: 'lock'; readonly locked: boolean }

@@ -2,7 +2,6 @@
 // `ui/paint.ts` leaves to the parts that draw them), a key on its keycap, words over the world, a press of the display,
 // and a value that eases to each new one it is set to, as a CSS transition does.
 import { edged } from '../combat/barDraw.ts';
-import type { Hint } from './gearNodes.ts';
 import { iconNode, isMouse } from './keyIcons.ts';
 import { padIconNode } from './padIcons.ts';
 import { TONES } from '../plus/tones.ts';
@@ -53,15 +52,15 @@ export const said = (words: string, more: Omit<Text, 'words'> = {}): Node => ({
   text: { words, colour: TONES.ink, edge: 'shadow', edgeColour: '#000', ...more },
 });
 
-/** The pad's button `name` drawn (`padIcons.ts`): two pressed together side by side with a plus between them, one
- *  held with the word after it. */
-function padCap(name: string, size: number): Node {
+/** The pad's button `name` drawn (`padIcons.ts`), its icon at `icon` (`padIconNode`'s size) beside words at `size`:
+ *  two pressed together side by side with a plus between them, one held with the word after it. */
+export function padCap(name: string, size: number, icon = size): Node {
   const held = name.endsWith(' hold');
   const button = held ? name.slice(0, -' hold'.length) : name;
   const words = (text: string): Node => ({ text: { words: text, size, colour: TONES.ink, edge: 'halo', wrap: false } });
   const parts = button
     .split('+')
-    .flatMap((one, place) => [...(place > 0 ? [words('+')] : []), padIconNode(one, size) ?? words(one)]);
+    .flatMap((one, place) => [...(place > 0 ? [words('+')] : []), padIconNode(one, icon) ?? words(one)]);
   if (parts.length === 1 && !held) return parts[0] ?? words(button);
   return { gap: 2 * size, alignY: 'center', children: [...parts, ...(held ? [words('hold')] : [])] };
 }
@@ -89,18 +88,6 @@ export function keycap(key: string, size = 1): Node {
 export function capFace(key: string, texel: number): Node | null {
   if (key.startsWith('pad:')) return padIconNode(key.slice('pad:'.length), texel, true);
   return iconNode(key, texel, true);
-}
-
-/** A line of what keys do, each key on its keycap (keys doing the same joined, each on its own) and its words. */
-export function hintRow(hints: readonly Hint[], size = 1): Node[] {
-  return hints.map(([key, words]) => ({
-    gap: 4,
-    alignY: 'center',
-    children: [
-      ...key.split(' / ').map((one) => keycap(one, size)),
-      { text: { words, size, colour: TONES.ink, edge: 'halo', wrap: false } },
-    ],
-  }));
 }
 
 /** A press of the display, in its role, its words at `size`: once pressed it lets go of focus, so Space or Enter, which

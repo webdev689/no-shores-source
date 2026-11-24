@@ -6,7 +6,7 @@ import { headingOf, type ShipMark } from '../plus/compass.ts';
 import type { FightCaptain } from '../rules/fightRules.ts';
 import { runOutAt } from '../ships/fightDisplay.ts';
 import type { Waterline } from '../ships/shipMesh.ts';
-import { seaHints } from './hints.ts';
+import { seaStrip } from './hints.ts';
 import { sightOf } from './seaHostiles.ts';
 import type { Hud } from './hud.ts';
 import type { Sea } from './sea.ts';
@@ -103,10 +103,10 @@ export function showSeaHud(hud: Hud, here: Sea, shown: SeaFrame, state: SeaHudSt
   const { fight } = here;
   // In a fight the hints are its keys alone, as on foot; the sea's word and the fight's messages stand as DFO's
   // notices, and what the card, the plates, the sight and its warning show is not said again.
-  hud.hints(
+  hud.strip(
     deck
       ? deck.hints
-      : seaHints({
+      : seaStrip({
           fighting: fight !== null,
           aiming: fight?.aimingNow ?? false,
           landing: state.landing,

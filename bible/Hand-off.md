@@ -209,6 +209,22 @@ The decisions in [[Open Questions]] are not repeated here.
   guild boss is lost if everyone leaves its room before it falls.
 - **The Discord bot**: porting DFO Online's unmerged bot work (#1662 to #1680 there, reverted by #1682) and redesigning
   it around No Shores, which the owner raised and set aside: "Lets come back to this later."
+- **The key strip, the leave held and Settings in tabs** (#181), merged on the owner's "Merge and deploy", which
+  deploys the page (the rooms' code is untouched). The owner's three asks
+  ([[The Key Strip Is a Compact Panel, a Held Key Leaves, and Settings Has Tabs]], Claude's calls listed there): the
+  key strip a compact panel at the bottom right under the moment's name, its words at 11 px, fitting under the
+  Acquired feed and the tracker; the M menu gone, M or the pad's View held 1.5 s on foot returning the player to their
+  ship, Escape opening Settings; Settings in tabs down a rail (Graphics, Audio, Controls, Account; stacked on a phone),
+  Exit to Menu and Exit to Desktop held at its foot, the sound credits behind a press, Controls binding as the sheet K
+  opens does ([[Interface]], "The key strip", "The leave held", "Settings"). Before the deploy, on the owner's "Please
+  do an audit on this before we deploy", four read-only audits (input and flow, Settings, the strip's layout, tests and
+  the notes), each finding checked against the code and fixed, the code's with a test that fails without its fix.
+  Tested offline: the full check on its head with `main` merged in (the commit named in the pull request), driven
+  headless in the real game (`noGpu`: Escape, every tab, the credits, a short and a full hold of M to the sea) and
+  pictured through the real renderer. Not yet: a real GPU, a hand, a real pad's View held, and Exit to Desktop in a
+  desktop app (there is none yet). Unchecked in a browser: whether the Escape that frees a locked mouse also reaches
+  the game. For the owner: whether Graphics gains settings of its own (it holds the resolution alone, none invented),
+  and whether the strip's 11 px reads well enough on the owner's own screen.
 - **The fourth whole-codebase audit** (#180), merged on the owner's "Merge and depkoy", which deploys the page and the
   rooms: twelve read-only auditors by area and a reviewer of the diff, each finding read against the code first and each
   fix but two with a test that failed before it. High: the dungeon entrances bound no sky groups, so every frame on a

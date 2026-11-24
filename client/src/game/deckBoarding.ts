@@ -17,7 +17,7 @@ import {
   type StandOnDeck,
 } from './deckFight.ts';
 import type { FootContext, FootFrame } from './foot.ts';
-import type { StripHint } from './hints.ts';
+import { type Strip, type StripHint, withoutLeave } from './hints.ts';
 import type { FootView } from './footView.ts';
 import type { Drawer } from './scene.ts';
 
@@ -147,21 +147,22 @@ export class Boarding {
     return view.frame(shown.fight.foot, shown.frame, seconds, { ...drawnOn, groundAt, onBoarded });
   }
 
-  /** What the display says on its deck: where the player is, the line under it, and the keys listed. */
-  get words(): { readonly place: string; readonly line: string; readonly hints: readonly StripHint[] } | null {
+  /** What the display says on its deck: where the player is, the line under it, and the keys listed, the leave held
+   *  not among them, as at sea there is nothing to leave. */
+  get words(): { readonly place: string; readonly line: string; readonly hints: Strip } | null {
     const shown = this.shown;
     if (!shown) return null;
     const { fight, captain, frame } = shown;
     const left = fight.holdLeft;
     const take = fight.take;
-    if (left === null) return { place: captain.name, line: 'Aboard: its crew stands to meet you', hints: frame.hints };
-    // The take on one line under its name, as the place's line holds it; the minute left with the key that ends it.
+    const hints = withoutLeave(frame.hints);
+    if (left === null) return { place: captain.name, line: 'Aboard: its crew stands to meet you', hints };
+    // The take on one line under its name, as the place's line holds it; the minute left with the key that ends it,
+    // which a fallen boarder cannot press.
     const line = take ? `Its hold: ${holdWords(take)}` : 'Its hold is open';
-    return {
-      place: 'Its deck is yours',
-      line,
-      hints: [['use', `Back aboard your ship · ${left} s left`], ...frame.hints],
-    };
+    const back: StripHint = ['use', `Back aboard your ship · ${left} s left`];
+    const fallen = frame.standing.kind === 'dead';
+    return { place: 'Its deck is yours', line, hints: fallen ? hints : { ...hints, hints: [back, ...hints.hints] } };
   }
 
   /** The fight on foot on its deck while the player plays there, for the display's respawn. */

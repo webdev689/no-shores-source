@@ -333,6 +333,7 @@ a decision is a record. How to add one: [[Recording a Decision]].
 - [[Guilds Gain Banners, Levels, Bounties and Outposts]]
 - [[Guilds and Outposts as Claude Shapes Them]]
 - [[The Patrol Audit's Leftovers Are Fixed as the Owner Chose]]
+- [[The Key Strip Is a Compact Panel, a Held Key Leaves, and Settings Has Tabs]]
 
 ## Replaced
 

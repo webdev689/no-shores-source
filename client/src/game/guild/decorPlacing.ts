@@ -1,7 +1,7 @@
 import { DECOR_TURNS, type Plot, decorRefusal, pieceOf } from './outpostLaw.ts';
 import { PLOT_M } from './outpostLaw.ts';
 import type { Ground } from './outpostPlaces.ts';
-import type { StripHint } from '../hints.ts';
+import type { Strip } from '../hints.ts';
 import { gearScreenOpen } from '../gearScreen.ts';
 import { chatOpen } from '../social/social.ts';
 
@@ -23,12 +23,15 @@ export interface Placing {
   sending: boolean;
 }
 
-/** The keys shown on the hint strip while a piece is placed. */
-export const PLACING_HINTS: readonly StripHint[] = [
-  ['[ ]', 'Turn'],
-  ['use', 'Place'],
-  ['Escape', 'Let go'],
-];
+/** The strip while a piece is placed: its keys under the moment's name. */
+export const PLACING_STRIP: Strip = {
+  title: 'Decorating',
+  hints: [
+    ['[ ]', 'Turn'],
+    ['use', 'Place'],
+    ['Escape', 'Let go'],
+  ],
+};
 
 let placing: Placing | null = null;
 

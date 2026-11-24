@@ -36,13 +36,13 @@ export function wordsOf(node: Child): string[] {
   return [...own, ...(node.children ?? []).flatMap(wordsOf)];
 }
 
-/** A page drawn frame by frame through the interface, with the clock `now` for its holds. */
-export function drawn(page: (context: PlainContext) => Node) {
+/** A page drawn frame by frame through the interface, with the clock `now` for its holds, in `room`. */
+export function drawn(page: (context: PlainContext) => Node, room: { width: number; height: number } = ROOM) {
   let now = 0;
   const ui = new Interface(renderer());
   ui.speak = () => undefined;
   const holds = new Holds(() => now);
-  const context: PlainContext = { ui, room: ROOM, sizes: sizesOf(VIEW.width, VIEW.height, 1), holds };
+  const context: PlainContext = { ui, room, sizes: sizesOf(VIEW.width, VIEW.height, 1), holds };
   let last: Node = { children: [] };
   const frame = (events: UiEvent[] = [], seconds = 1 / 60) => {
     now += seconds * 1000;

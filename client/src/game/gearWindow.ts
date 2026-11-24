@@ -8,7 +8,6 @@ import { BINDS, keyNameOf } from '../player/input.ts';
 import { motionReduced } from '../plus/kit.ts';
 import { announce } from '../ui/announce.ts';
 import type { Child, Node } from '../ui/node.ts';
-import { besideOf, pressesIn } from './gearFocus.ts';
 import type { Layer } from '../ui/stack.ts';
 import type { Interface } from '../ui/ui.ts';
 import { uiScale } from '../ui/uiRenderer.ts';
@@ -45,7 +44,9 @@ import { HOURGLASS, Journal, type JournalSource } from './journalPage.ts';
 import { Compendium } from './compendium/compendiumPage.ts';
 import type { Lore } from './compendium/lore.ts';
 import type { MenuContext, PlainContext } from './menuPage.ts';
-import { laterPage, settingsPage, shipPage } from './menuPages.ts';
+import { laterPage, shipPage } from './menuPages.ts';
+import { Settings } from './settingsPage.ts';
+import { besideOf, pressesIn } from './menuFocus.ts';
 import { hush } from './npc/npcSpeech.ts';
 import { isKeeperView, npcChoosing, npcHints, npcOpened, npcStepBack } from './npc/npcScreen.ts';
 import { RosterPage, socialPage } from './rosterTab.ts';
@@ -114,6 +115,8 @@ export function startGearWindow(
   let said = '';
   /** The press to give the focus to on the next frame: a tab as the menu opens, a tile as a page over it closes. */
   let focusNext: string | null = null;
+  /** Whether the menu opened since its last frame: the Escape that opened Settings is not its step back. */
+  let fresh = false;
   /** The tile to give the focus back to once an item's page closes. */
   let returnTo: string | null = null;
   /** The press the menu last built with the focus, and the presses beside it, nearest first. */
@@ -121,6 +124,7 @@ export function startGearWindow(
   /** The Roster and the account, asked of the accounts as Social or Settings opens and kept while it shows. */
   let [roster, guild]: [RosterPage | null, GuildPage | null] = [null, null];
   let accountPanel: AccountPanel | null = null;
+  const settings = new Settings(() => (link ? (accountPanel ??= new AccountPanel(link)) : null));
   let figure: { key: string; picture: Picture | null } = { key: '', picture: null };
   /** The player's name and account, once the accounts give them; and the gear the banner last showed. */
   let named: string | null = null;
@@ -144,6 +148,7 @@ export function startGearWindow(
     setGearScreenOpen(false);
     // The pages go with the menu, so nothing on them, a list asked for again among them, runs while it is shut.
     [roster, accountPanel] = [null, null];
+    settings.show(settings.tab);
     ui?.focusOn(null);
   };
   /** Escape's one step back: the item's page, then the flyout, then the Art's screen, then the menu. With no gear
@@ -162,7 +167,7 @@ export function startGearWindow(
     } else if (artSlot !== null) [artSlot, focusNext] = [null, `core-${artSlot}`];
     else if (npcStepBack()) return play('back');
     else if (view === 'journal' && journal.up()) focusNext = HOURGLASS;
-    else if (view === 'compendium' && compendium.back()) focusNext = null;
+    else if ((view === 'compendium' && compendium.back()) || (view === 'settings' && settings.back())) focusNext = null;
     else if (arts) [arts, focusNext] = [false, ART_DIAMOND_KEY];
     else if (appearance) [appearance, focusNext] = [false, APPEARANCE_KEY];
     else return shut();
@@ -173,8 +178,10 @@ export function startGearWindow(
     // A hold under way on the page left behind does not act on it unseen, nor does its card stay.
     holds.letGo();
     const opening = view === null;
+    fresh ||= opening;
     if (wanted !== 'journal') journal.up();
     if (wanted !== 'compendium') compendium.reset();
+    if (wanted === 'settings' && view !== 'settings') settings.show(settings.tab);
     [view, slot, inspecting, roster, accountPanel] = [wanted, null, null, null, null];
     [arts, artSlot, appearance] = [false, null, false];
     shelf = onShelf ?? FIRST_SHELF;
@@ -185,6 +192,11 @@ export function startGearWindow(
     document.exitPointerLock();
     // Opened, or moved to a station: the tab, or the station's first press.
     focusNext = isTab(wanted) ? tabId(wanted) : null;
+  };
+  /** The account's mark: Settings at its Account tab, from Settings too, where opening it again would shut it. */
+  const toAccount = () => {
+    settings.show('account');
+    if (view !== 'settings') open('settings');
   };
   /** The page shown takes the step first when it has one of its own (a panel, a player's details, a keeper's choice);
    *  either way the hold under way is let go, so a step back never buys what was being held. */
@@ -210,7 +222,9 @@ export function startGearWindow(
     if (later !== undefined) return laterPage(TAB_PRESSES[shown as Tab].label, later);
     if (shown === 'social') return socialPage(plain, link ? (roster ??= new RosterPage({ link, travel })) : null);
     if (shown === 'guild') return guildPage(plain, link ? (guild ??= new GuildPage({ link, here })) : null);
-    return settingsPage(plain, link ? (accountPanel ??= new AccountPanel(link)) : null);
+    const page = settings.node(plain);
+    focusNext = settings.takeFocus() ?? focusNext;
+    return page;
   };
 
   /** The figure, drawn once a dress, for the Character page and the account's mark. */
@@ -391,7 +405,7 @@ export function startGearWindow(
     const actions: Child[] = item
       ? [...item.presses]
       : [
-          slot !== null || aside
+          slot !== null || aside || (shown === 'settings' && settings.deeper)
             ? pressNode('press-step', 'Back', 'button', 'Esc', sizes.label)
             : pressNode('press-close', 'Close', 'button', 'Esc', sizes.label),
         ];
@@ -418,7 +432,7 @@ export function startGearWindow(
         // On the Journal DFO's hourglass stands in the account mark's place.
         shown === 'journal'
           ? journal.hourglass(frame)
-          : accountMark(frame, account, figure.picture, () => open('settings'), sizes.ratio),
+          : accountMark(frame, account, figure.picture, toAccount, sizes.ratio),
       ),
       // On a short screen an item's page takes the banner's height back for its nodes.
       (named !== null || bannerGear !== null) &&
@@ -470,7 +484,8 @@ export function startGearWindow(
     // keeps the keys from what plays after it.
     if (view !== null && resting()) shut();
     // Escape, or the pad's B, steps back once, letting go of a hold under way before it could act.
-    if (view !== null && frame.escaped) stepOnce();
+    if (view !== null && frame.escaped && !fresh) stepOnce();
+    fresh = false;
     holds.frame(frame);
     const box = frame.boxOf(LAYER) ?? { width: innerWidth, height: innerHeight };
     if (focusNext && view !== null && frame.boxOf(focusNext)) [focusNext] = [null, frame.focusOn(focusNext)];
