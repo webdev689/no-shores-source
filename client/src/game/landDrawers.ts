@@ -10,6 +10,8 @@ import { planOfLayouts, plantedOf } from '../layout/layoutPlan.ts';
 import { paintOfLayouts } from './groundPaint.ts';
 import { landSampler, patchArea } from '../nature/ground.ts';
 import { GroundChanges } from '../nature/groundChanges.ts';
+import { MeadowView } from '../nature/meadowView.ts';
+import { MEADOW_BIOMES } from '../nature/meadowField.ts';
 import { NatureView } from '../nature/natureView.ts';
 import { worldText } from '../terrain/landTexts.ts';
 import { type Planted, TILE_M } from '../nature/scatter.ts';
@@ -189,6 +191,7 @@ export function landDrawers(
   const cleared = (x: number, y: number) =>
     landmass.cleared(x, y) || (city?.cleared(x, y) ?? false) || (laid?.view.cleared(x, y) ?? false);
   const nature = biome ? new NatureView(gpu) : null;
+  const meadow = biome && MEADOW_BIOMES.has(biome) ? new MeadowView(gpu) : null;
   const cityPlanted = cityPlantings(plan?.social.plants ?? [], biome ?? '');
   // Nature is updated once a frame, for its shadow's pass and its own alike.
   let updatedFor: Float32Array | null = null;
@@ -213,6 +216,7 @@ export function landDrawers(
       groundColour: land.ground,
     };
     view.update({ fromEye, eye: shot.eye, exaggeration: 1, time }, ground, shadow);
+    meadow?.update({ fromEye, eye: shot.eye, exaggeration: 1, time }, ground);
   };
   const natureDrawer: Drawer | null = nature && {
     castInto: (pass, fromEye, shot, time, shadow) => {
@@ -222,6 +226,7 @@ export function landDrawers(
     drawInto: (pass, fromEye, shot, time, shadow) => {
       keepNature(nature, fromEye, shot, time, shadow);
       nature.drawInto(pass, shadow);
+      meadow?.drawInto(pass, shadow);
     },
   };
   return {
@@ -234,6 +239,7 @@ export function landDrawers(
       city?.clear();
       laid?.release();
       nature?.destroy();
+      meadow?.destroy();
     },
   };
 }

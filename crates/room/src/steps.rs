@@ -6,7 +6,7 @@
 //! fights no one, kept out of every snapshot, which the waves' foes come at. What met counts on the player's quest log;
 //! what failed counts in the room, for the page to say its line.
 
-use crate::quests::held_near;
+use crate::quests::{held_near, reached_near};
 use crate::{PlayerId, Room};
 use combat::fighter::FighterId;
 use gear::quests::{Escort, Event, Goal, GoalDef, Place, Tail, speaker_place};
@@ -28,7 +28,8 @@ pub const POINT_REACH: f64 = 3.0;
 pub const WARD_HEALTH: f64 = 700.0;
 /// How far from an unseen step's place a foe alert on the player counts as seeing them, metres.
 pub const WATCHED_WITHIN: f64 = 60.0;
-/// How far a puzzle's point is looked for round where it is meant to stand when a box stands there, metres.
+/// How far round where a puzzle's point is meant to stand ground a walk reaches from its place is looked for, metres,
+/// when a box or a bank stands there: this at the least, and as far as the place's middle if that lies further.
 const POINT_NUDGE: f64 = 6.0;
 /// How near one path's point another's is for a figure to walk from one to the other, metres.
 const JOIN: f64 = 6.0;
@@ -297,9 +298,15 @@ impl Room {
                 let reach = puzzle.points.iter().map(|point| point.at + POINT_NUDGE).fold(0.0, f64::max);
                 let Some(ground) = self.ground_of(&middle, reach) else { return false };
                 let mesh = self.mesh_by(ground);
+                let from = held_near(mesh, &self.floor, middle.at, middle.radius);
                 let points = puzzle.points.iter().map(|point| {
                     let [x, y] = ahead(middle.at, point.bearing.to_radians(), point.at);
-                    held_near(mesh, &self.floor, [x, y], POINT_NUDGE).unwrap_or([x, y, self.floor.height_at(x, y)])
+                    // As far out as its place's middle, near where the walk starts.
+                    let reach = POINT_NUDGE.max(point.at);
+                    let reached = from.and_then(|from| reached_near(mesh, &self.floor, from, [x, y], reach));
+                    // A place whose middle the mesh does not hold still puts its points on the mesh near them.
+                    let held = reached.or_else(|| held_near(mesh, &self.floor, [x, y], POINT_NUDGE));
+                    held.unwrap_or([x, y, self.floor.height_at(x, y)])
                 });
                 Stepping::Puzzle(Lit { points: points.collect(), ..Lit::default() })
             }

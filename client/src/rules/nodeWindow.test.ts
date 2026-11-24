@@ -22,7 +22,7 @@ const content = (path: string) => readFile(new URL(`../../../content/world/${pat
 
 /** The room crate's agreement test holds the same fingerprint, nodes, rects, starts and scripts
  *  (crates/room/tests/agree_node.rs). */
-const NODE_RUN_HASH = 'a8b9da8a678f8686';
+const NODE_RUN_HASH = 'b39c55dc0f1f3fe8';
 
 /** Ticks, then forward, sideways, yaw, run, and jump on the first tick only. */
 type Phase = readonly [number, number, number, number, boolean, boolean];
@@ -88,13 +88,15 @@ async function builders(): Promise<{ rmbText: string; buildersText: string }> {
   const index = JSON.parse(rmbText) as { blocks: readonly (readonly [string, string, ...unknown[]])[] };
   const files = [...new Set(index.blocks.map((row) => row[1]))].sort();
   const forged = (name: string) => readFile(new URL(`../../../content/forged/${name}`, import.meta.url), 'utf8');
-  const [blockFiles, buildings, props, briefs] = await Promise.all([
+  const [blockFiles, buildings, props, parts, briefs] = await Promise.all([
     Promise.all(files.map((file) => content(`rmb/${file}`))),
     forged('buildings.json'),
     forged('props.json'),
+    forged('parts.json'),
     content('briefs.json'),
   ]);
-  const buildersText = `"rmbBlocks":[${blockFiles.join(',')}],"forged":{"buildings":${buildings},"props":${props}},"briefs":${briefs}`;
+  const tables = `{"buildings":${buildings},"props":${props},"parts":${parts}}`;
+  const buildersText = `"rmbBlocks":[${blockFiles.join(',')}],"forged":${tables},"briefs":${briefs}`;
   return { rmbText, buildersText };
 }
 

@@ -145,6 +145,17 @@ impl Solid {
         self.placed(point, self.turns())
     }
 
+    /// A point in the world in the solid's own frame: `place` undone.
+    #[must_use]
+    pub fn own(&self, [east, south, up]: [f64; 3]) -> [f64; 3] {
+        let [(roll_sine, roll_cosine), (lean_sine, lean_cosine), (sine, cosine)] = self.turns();
+        let (east, south, z) = (east - self.at[0], south - self.at[1], up - self.at[2]);
+        let (x, y) = (east * cosine + south * sine, -east * sine + south * cosine);
+        let (y, z) = (y * lean_cosine - z * lean_sine, y * lean_sine + z * lean_cosine);
+        let (x, z) = (x * roll_cosine - z * roll_sine, x * roll_sine + z * roll_cosine);
+        [x, y, z]
+    }
+
     /// The sines and cosines of its roll, lean and turn, worked once for every point a caller places.
     fn turns(&self) -> [(f64, f64); 3] {
         [sin_cos(self.roll), sin_cos(self.lean), sin_cos(self.turn)]

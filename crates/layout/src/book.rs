@@ -1,6 +1,7 @@
 //! What a layout builds with: the RMB blocks' contents (`content/world/rmb/*.json`), each building's and prop's place
-//! in its block, and the forged models' boxes (`content/forged/buildings.json`, `props.json`), which say how much
-//! ground each one stands on. The browser hands the same texts to its worker, so both read the same numbers.
+//! in its block, the forged models' boxes (`content/forged/buildings.json`, `props.json`), which say how much ground
+//! each one stands on, and the boxes each prop's drawn shape fills (`parts.json`). The browser hands the same texts
+//! to its worker, so both read the same numbers.
 
 use serde::Deserialize;
 use std::collections::BTreeMap;
@@ -65,6 +66,9 @@ pub struct Book {
     pub blocks: BTreeMap<String, RmbBlock>,
     pub buildings: BTreeMap<u32, Measure>,
     pub props: BTreeMap<u32, Measure>,
+    /// The boxes of its own frame (low x, y, z, then high) a prop's drawn shape fills, for each prop its box alone
+    /// does not keep to.
+    pub parts: BTreeMap<u32, Vec<[f64; 6]>>,
 }
 
 impl Book {
@@ -85,6 +89,16 @@ impl Book {
         table
             .into_iter()
             .map(|(id, measure)| id.parse::<u32>().map(|id| (id, measure)).map_err(|_| format!("a model id {id}")))
+            .collect()
+    }
+
+    /// Reads the props' parts (`parts.json`): each prop's list of boxes, by model id.
+    pub fn parts(text: &str) -> Result<BTreeMap<u32, Vec<[f64; 6]>>, String> {
+        let table: BTreeMap<String, Vec<[f64; 6]>> =
+            serde_json::from_str(text).map_err(|error| format!("the props' parts: {error}"))?;
+        table
+            .into_iter()
+            .map(|(id, parts)| id.parse::<u32>().map(|id| (id, parts)).map_err(|_| format!("a model id {id}")))
             .collect()
     }
 

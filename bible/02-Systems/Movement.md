@@ -116,7 +116,7 @@ to grab. The [[Test Ground]] plays it with DFO's controls ([[The Player Plays as
 | Air | Falls under gravity. Pressed into a wall with the lip within reach (1.95 m in the air), it hangs, or goes over a low lip |
 | Hang | Sideways shimmies along the lip; forward goes over; crouch lets go |
 | Climb | Forward climbs and sideways moves along the wall; a jump kicks off it; at 1.8 m below the lip, it hangs. The
-lip of a face built of blocks stacked flush is the top of the stack, so a seam is climbed past, and a hold caught at a seam climbs on. A block on the wall's top is stacked on it only where its face is as near as the wall's and it runs along the wall where the body holds it: one set back on the top, or a post beside the hold, is not |
+lip of a face built of blocks stacked flush is the top of the stack, so a seam is climbed past, and a hold caught at a seam climbs on. A block on the wall's top is stacked on it only where its face is as near as the wall's, it reaches back over the wall's face, and it runs along the wall where the body holds it: one set back on the top, one standing wholly out past the face, or a post beside the hold, is not |
 | Mantle | Rises first, then goes over onto the lip |
 | Vault | Arcs over a lip up to 1.2 m on a block up to 0.8 m deep, landing 0.2 m past it, met head on or slantwise |
 
@@ -146,10 +146,11 @@ browser's (`client/src/rules/nodeWindow.test.ts`) generates the continent and se
 cuts the same windows there, and steps them through the movement door. Both hold the same value.
 
 A tick's cost among a patrol area's boxes: bodies run 600 ticks each from the Saltgrass Downs' spawns and from
-every fiftieth of its 7,465 boxes (153 runs), turning, running, jumping and crouching among its buildings. Natively
-(`cargo test --release -p room --test near_blocks -- --ignored --nocapture`) a tick takes 37 µs over the whole list
-and 2.9 µs through the grid (tested offline, on an idle machine). The same test steps every run over the list and
-over the grid and holds them equal at every tick.
+every fiftieth of its 21,971 boxes, turning, running, jumping and crouching among its buildings. Natively
+(`cargo test --release -p room --test near_blocks -- --ignored --nocapture`) a tick takes 238 µs over the whole list
+and 8.0 µs through the grid (tested offline, on an idle machine); its boxes keep to what is drawn ([[Layouts]],
+"Boxes", [[What a Body Meets Keeps to What Is Drawn]]). The same test steps every run over the list and over the grid
+and holds them equal at every tick.
 
 ## Limits
 
