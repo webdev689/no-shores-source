@@ -477,3 +477,17 @@ fn a_posted_shooter_takes_no_target_past_its_leash_though_within_its_range() {
         assert_eq!(room.foes[&foe].brain.target(), None);
     }
 }
+
+#[test]
+fn a_foe_off_the_navmesh_with_no_way_from_where_it_stands_makes_back_for_the_mesh_not_straight_for_its_goal() {
+    use ::foes::Routes;
+    let room = node(NodeKind::Patrol, "glade");
+    let first = group(&room)[0].0;
+    let place = place_of(&room, first);
+    let [x, y] = point_at(&room, place, LEASH - 10.0, false);
+    let off = [x, y, room.floor.height_at(x, y)];
+    let routes = crate::foes::MeshRoutes::new(&room.nav, &room.floor, &room.blocks, std::collections::BTreeMap::new());
+    let next = routes.next_point(off, place).expect("somewhere to go");
+    let mesh_near = room.nav.nearest_point_within(off, 80.0).expect("a mesh within 80 m");
+    assert!(apart(flat(next), flat(mesh_near)) < 1.0, "back for the mesh's nearest point: {next:?} {mesh_near:?}");
+}

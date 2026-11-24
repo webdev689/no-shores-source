@@ -116,6 +116,17 @@ impl NavMesh {
         self.parts().filter_map(near).reduce(|best, found| if apart(&found) < apart(&best) { found } else { best })
     }
 
+    /// The point of the mesh nearest `point` within `reach` across, on its level: for a body far off the mesh making
+    /// back for it, where `nearest_point` reaches only 4 m.
+    #[must_use]
+    pub fn nearest_point_within(&self, point: [f64; 3], reach: f64) -> Option<[f64; 3]> {
+        let apart = |found: &[f64; 3]| {
+            (0..3).map(|axis| (found[axis] - point[axis]) * (found[axis] - point[axis])).sum::<f64>()
+        };
+        let found = self.parts().filter_map(|part| part.mesh_point_near(point, reach));
+        found.reduce(|best, found| if apart(&found) < apart(&best) { found } else { best })
+    }
+
     /// The point nearest `point` of the part a body at `from` stands on (the part with a point nearest it), as
     /// `nearest_point` places it: none when that part places no point there. A joined mesh walks no way between its
     /// parts, so a point another part places is no ground the body reaches. A body no part places (a companion beside

@@ -1,13 +1,13 @@
 ---
 type: decision
 date: 2026-11-23
-status: draft, for the owner's yes
+status: in force
 ---
 # Set Names and Faction Perks as Claude Drafts Them
 
-Claude's drafts for [[Everything Carries a Set Name, and Perks Roll by Pool]] and [[Faction Weapons Wear Their Colour
-and Roll Their Faction's Perks]], each the owner's to change. The faction perks are approved; the set names are not in
-force until the owner says yes.
+Claude's drafts for [[Everything Carries a Set Name, and Perks Roll by Pool]] and
+[[Faction Weapons Wear Their Colour and Roll Their Faction's Perks]], each the owner's to change. The faction perks
+are approved, and the set names too ([[The Set Names Stand as Claude Drafted Them]]).
 
 ## Set names
 

@@ -565,3 +565,19 @@ test("the pad's bumpers turn a window's tabs for the frame they are heard, while
   ui.frame({ width: 1280, height: 720, scale: 1 }, [{ kind: 'pad', button: 'next' }], 1 / 60, true, false);
   assert.equal(ui.turned, 0, 'no window, no tabs');
 });
+
+test('a frame that threw before it presented leaves none of its quads under the next', () => {
+  const { ui, step } = fakeInterface();
+  const veil: Node = { width: 'grow', height: 'grow', fill: 'rgba(51,0,0,0.667)', float: { to: 'screen', z: 1 } };
+  const thrower: Node = {
+    width: 10,
+    height: 10,
+    float: { to: 'screen', z: 3 },
+    draw: () => {
+      throw new Error('a draw that throws');
+    },
+  };
+  for (let frame = 0; frame < 6; frame++) assert.throws(() => step({ children: [veil, thrower] }));
+  step({ children: [veil] });
+  assert.equal(ui.renderer.quads.count, 1, 'the one veil this frame drew');
+});

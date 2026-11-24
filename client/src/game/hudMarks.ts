@@ -43,8 +43,9 @@ const GLYPHS: Record<MarkKind, string> = {
   hostile: '',
   quest: '!',
 };
-/** A locked node's glyph, in the place of its kind's. */
-const LOCK_GLYPH = '🔒︎';
+/** A locked node's glyph, in the place of its kind's: drawn as a padlock (`lockAt`), since no face the page loads holds
+ *  one and a system's would come in its own colours. */
+const LOCK_GLYPH = 'lock';
 
 /** Each kind's colour, and a locked node's. */
 const KIND_COLOURS: Record<MarkKind | 'locked', string> = {
@@ -73,6 +74,22 @@ const glyphPx = (size: number): number => Math.max(11, Math.floor(size / 2 / 11)
  *  the ship nears it reuses a few pictures rather than laying a new one in the atlas at every pixel it grows. */
 const texels = (size: number) => Math.ceil(size / 8) * 16;
 
+/** A padlock round `middle` in `colour`, on the face's 11-cell grid of `cell` pixels: its body and its shackle. */
+function lockAt(
+  context: OffscreenCanvasRenderingContext2D,
+  middle: readonly [number, number],
+  cell: number,
+  colour: string,
+): void {
+  const [x, y] = middle;
+  context.fillRect(x - 3.5 * cell, y - 0.5 * cell, 7 * cell, 5 * cell);
+  context.beginPath();
+  context.arc(x, y - 0.5 * cell, 2.25 * cell, Math.PI, 0);
+  context.lineWidth = 1.5 * cell;
+  context.strokeStyle = colour;
+  context.stroke();
+}
+
 /** The ring and its glyph, the glyph in the mended face, which holds the ones Pixelify lacks. */
 function ring(glyph: string, colour: string, size: number, hovered: boolean, chosen: boolean): Picture {
   const edge = chosen ? GOLD : colour;
@@ -92,6 +109,7 @@ function ring(glyph: string, colour: string, size: number, hovered: boolean, cho
         context.strokeStyle = edge;
         context.stroke();
         context.fillStyle = colour;
+        if (glyph === LOCK_GLYPH) return lockAt(context, middle, (glyphPx(size) * unit) / 11, colour);
         context.font = `${glyphPx(size) * unit}px ${CANVAS_FACE}`;
         context.textAlign = 'center';
         context.textBaseline = 'middle';

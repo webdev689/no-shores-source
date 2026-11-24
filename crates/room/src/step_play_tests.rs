@@ -291,6 +291,11 @@ fn a_places_mesh_is_the_nodes_own_where_its_square_holds_it_else_baked_one_a_tic
     run(&mut room, 1);
     assert_eq!((room.ground_of(&east, 30.0), room.ground_of(&home, 40.0)), (Some(2), Some(1)), "the next tick; kept");
     assert_eq!(room.place_grounds(), 2);
+    // A place named as another but standing elsewhere is not stood on the other's mesh.
+    let twin = place("East", [-150.0, 0.0]);
+    assert_eq!(room.ground_of(&twin, 30.0), None, "its own, baked the next tick");
+    run(&mut room, 1);
+    assert_eq!(room.ground_of(&twin, 30.0), Some(3), "a mesh round it, not East's");
 }
 
 #[test]
@@ -319,4 +324,32 @@ fn a_defence_rejoined_stands_the_waves_already_fought_dropping_nothing_and_the_r
         let next = wave(&room, back);
         assert!(next.iter().all(|id| !room.quests.spoilless.contains(id)), "a wave not fought before drops as any");
     }
+}
+
+#[test]
+fn an_escorts_ambush_fought_before_a_rejoin_drops_nothing_again_as_a_defences_wave() {
+    let (key, goal) =
+        step_of(GoalKind::Escort, |goal| matches!(goal, Goal::Escort(escort) if !escort.ambush.is_empty()));
+    let Goal::Escort(escort) = &goal.goal else { unreachable!("an escort") };
+    let places = [(escort.from.as_str(), [0.0, 10.0], 20.0), (escort.to.as_str(), [0.0, -10.0], 20.0)];
+    let mut room = node_room(&escort.node, &places);
+    let player = joined(&mut room, &on_goal(key), [0.0, 12.0]);
+    let ambush = |room: &mut Room| {
+        for _ in 0..1200 {
+            if !living(room).is_empty() {
+                break;
+            }
+            run(room, 1);
+        }
+        living(room)
+    };
+    let first = ambush(&mut room);
+    assert!(!first.is_empty() && first.iter().all(|id| !room.quests.spoilless.contains(id)), "its first ambush drops");
+    let kept = gear::Character::from_json(&room.kept_character(player).expect("kept")).expect("a character");
+    room.leave(player);
+    run(&mut room, 2);
+    let back = joined(&mut room, &kept, [0.0, 12.0]);
+    let again = ambush(&mut room);
+    assert!(!again.is_empty() && again.iter().all(|id| room.quests.spoilless.contains(id)), "fought before: nothing");
+    assert!(room.player(back).is_some());
 }

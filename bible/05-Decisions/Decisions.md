@@ -303,6 +303,7 @@ a decision is a record. How to add one: [[Recording a Decision]].
 - [[Set Names and Faction Perks as Claude Drafts Them]]
 - [[Every Perk Stands, the Factions' Nine With Them]]
 - [[Claude Finishes the Gear Calls on Its Own Word]]
+- [[The Set Names Stand as Claude Drafted Them]]
 - [[The Prologue Wakes by Darkening and Pulsing, Not Eyelids]]
 - [[The Prologue's Scenes Change Slower, Behind the Logo While They Load]]
 - [[Thule Fights on a Quarterdeck Twice as Long]]
@@ -338,6 +339,7 @@ a decision is a record. How to add one: [[Recording a Decision]].
 - [[A Keeper With Something for You Pulses and Is Seen From Everywhere]]
 - [[Friendly Ships Take Several Courses, About Five in View, Sailing Visibly]]
 - [[Each Patrol Zone Has a Built Landing Site, Its Guards Beyond It]]
+- [[The Patrol Audit's Leftovers Are Fixed as the Owner Chose]]
 
 ## Replaced
 

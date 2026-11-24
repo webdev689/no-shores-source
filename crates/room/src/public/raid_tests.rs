@@ -308,7 +308,9 @@ fn a_zone_whose_garrison_fills_its_own_places_still_stands_its_events_fullest_wa
     let mut running = room.public.as_mut().unwrap().running.take().unwrap();
     let member = (::foes::roster::RUNNER, ::foes::Rank::Minor);
     let more = (0..super::EVENT_ROOM)
-        .map_while(|_| room.stand_event_foe(&mut running, member, ([100.0, -30.0, 0.0], 0.0), ([100.0, 0.0, 0.0], 0)))
+        .map_while(|_| {
+            room.stand_event_foe(&mut running, member, ([100.0, -30.0, 0.0], 0.0), ([100.0, 0.0, 0.0], 0), true)
+        })
         .count();
     assert_eq!(5 + 3 + more, super::EVENT_ROOM, "the event has every place it keeps, and no more");
 }
@@ -384,16 +386,25 @@ fn the_tithe_taker_staggered_comes_out_of_it_though_the_room_moves_him_himself()
 }
 
 #[test]
-fn the_tithe_taker_killed_by_no_player_leaves_the_heroic_task_to_them() {
+fn the_tithe_taker_killed_by_no_player_misses_the_heroic_task_and_his_round_ends() {
     let (mut room, players) = room_at(RAID_MINUTE, 1);
     place(&mut room, players[0], [100.0, 0.0]);
     room.tick();
     break_wave(&mut room, players[0]);
     let found = taker(&room).expect("the tithe-taker came with the second wave");
+    assert_eq!(room.foes[&found].brain.fights(), None, "the tithe-taker, the room moves himself, hunts no one");
     let foe = standing(&room).into_iter().find(|id| *id != found).expect("a raider standing");
     killed_by_a_foe(&mut room, found, foe);
     room.tick();
     assert_ne!(running(&room).heroic, Heroic::Met, "a foe met no task of the players'");
+    // His round is over: missed, his body no longer walked, and taken up as any fallen foe's.
+    assert_eq!(running(&room).heroic, Heroic::Missed, "no player can kill him now");
+    assert!(taker(&room).is_none(), "he walks no round dead");
+    assert!(!room.inert.contains(&found), "his body falls as any foe's");
+    for _ in 0..combat::tuning::FOE_GONE + 2 {
+        room.tick();
+    }
+    assert!(!room.foes.contains_key(&found), "his body taken up");
 }
 
 #[test]

@@ -162,3 +162,12 @@ fn opened_in_person_with_their_ten_full_its_vestige_goes_to_the_vault_and_with_t
         room.drops_for(player).filter(|drop| matches!(drop.what, Dropped::Vestige(_))).map(|drop| drop.at).collect();
     assert_eq!(lying, [at], "laid on the ground where the chest stood");
 }
+
+#[test]
+fn a_chest_still_lying_as_its_players_drops_go_to_their_mail_is_opened_for_them_never_lost() {
+    let (mut room, player, _) = chested();
+    let before = room.players[&player].character.xp;
+    room.mail_lying(player);
+    assert!(chest_at(&room, player).is_none(), "off the ground");
+    assert!(room.players[&player].character.xp > before, "and paid, whatever its host called first");
+}

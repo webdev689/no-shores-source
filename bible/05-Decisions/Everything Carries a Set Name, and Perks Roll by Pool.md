@@ -28,8 +28,9 @@ set, "In its name (Recommended)".
 - **Vestiges drop and open as they do**; a Legendary opens to a piece of its content's set
   ([[Every Drop Wears Its Content's Set, With Random Perks]]).
 - **One perk pool for the world, the dungeons, the sea, the Elite and the Abyss Dungeons**, weapons and armour alike;
-  **a faction's pieces roll it and their faction's own perks** ([[Faction Weapons Wear Their Colour and Roll Their
-  Faction's Perks]]); **a Breach's, a pool of its own** ([[Breaches Roll From a Perk Pool of Their Own]]).
+  **a faction's pieces roll it and their faction's own perks**
+  ([[Faction Weapons Wear Their Colour and Roll Their Faction's Perks]]); **a Breach's, a pool of its own**
+  ([[Breaches Roll From a Perk Pool of Their Own]]).
 - **Atherics stay unique**: each the named piece it is, with its own signature.
 - **Every piece is named by its set**, as Destiny names every piece: its set's name and its kind ("Portwatch Helm").
   Claude drafts each set's name for the owner's yes ([[Set Names and Faction Perks as Claude Drafts Them]]).

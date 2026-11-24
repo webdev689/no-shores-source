@@ -28,6 +28,8 @@ fn a_player_standing_where_they_land_in_a_patrol_zone_is_never_struck() {
         let floor = Floor::Land(Box::new(node.ground.clone()));
         let mut room = Room::garrisoned(floor, blocks, section, node.kind, (&node.id, levels));
         room.set_island(&node.continent);
+        // Its caverns' and runs' groups too, any within reach of the landing standing as the player lands.
+        room.set_foe_sites(&node.foes);
         assert!(room.foes_seen().count() > 0, "{}'s garrison stands", node.id);
         let player = room.join().expect("a player joins");
         for tick in 0..60 * 60 {
@@ -37,6 +39,27 @@ fn a_player_standing_where_they_land_in_a_patrol_zone_is_never_struck() {
                 .into_iter()
                 .find(|event| event.defender == player && matches!(event.kind, EventKind::Hit | EventKind::Killed));
             assert!(struck.is_none(), "{}: struck where they landed at tick {tick}: {struck:?}", node.id);
+        }
+    }
+}
+
+#[test]
+fn a_patrol_zone_s_dungeon_entrances_stand_clear_of_every_box_with_room_to_come_out_before_each_door() {
+    for node in nodes().iter().filter(|node| node.kind == NodeKind::Patrol) {
+        let blocks: Vec<Block> = node.boxes.iter().map(Block::from_floats).collect();
+        let section = Section { ring: node.ring.clone(), spawns: node.spawns.clone(), falls_kill: false };
+        let floor = Floor::Land(Box::new(node.ground.clone()));
+        let mut room = Room::garrisoned(floor, blocks.clone(), section, node.kind, (&node.id, None));
+        room.start_patrol(&node.id, 0, &node.resources);
+        assert_eq!(room.entrances().len(), dungeon::PER_PATROL, "{}: each dungeon its entrance", node.id);
+        for (number, entrance) in room.entrances().iter().enumerate() {
+            let ground = node.ground.height_at(entrance.at[0], entrance.at[1]);
+            let near = blocks.iter().find(|block| {
+                let east = (block.min_x - entrance.at[0]).max(entrance.at[0] - block.max_x).max(0.0);
+                let south = (block.min_y - entrance.at[1]).max(entrance.at[1] - block.max_y).max(0.0);
+                east * east + south * south <= 64.0 && block.top > ground + 0.5 && block.bottom < ground + 2.5
+            });
+            assert!(near.is_none(), "{}: entrance {number} stands at {:?} by a box {near:?}", node.id, entrance.at);
         }
     }
 }

@@ -1,5 +1,6 @@
 //! Which navmesh the room's foes find their way on, its routes and its firing spots (`foes.rs`). A node's room has its
-//! own mesh by its first spawn and one more round each place the houses' roads stand a group at (`quests.rs`); each
+//! own mesh by its first spawn and one more round each place a quest's step stands foes at that its own square does
+//! not hold: a road's group, a defence's waves, a puzzle's or an ambush's (`quests.rs`); each
 //! foe thinks on the mesh that holds its post, or else the one whose square holds where it stands, and on the node's
 //! own otherwise.
 
@@ -59,6 +60,8 @@ impl Room {
             .collect();
         let spots: Vec<MeshSpots<'_>> = meshes.iter().map(|mesh| MeshSpots { mesh }).collect();
         let mut intents = Vec::with_capacity(on.len());
+        // Each foe sees those landed in a patrol zone's landing as `seen_by` says; with none landed, all see alike.
+        let landed = self.in_landings();
         for &(id, mesh) in &on {
             let Some(foe) = self.foes.get(&id) else { continue };
             // A ward thinks nothing: it stands where it was stood.
@@ -69,10 +72,17 @@ impl Room {
                 intents.push((id, (brain, combat::Intent::default())));
                 continue;
             }
+            let own;
+            let fighters = if landed.is_empty() {
+                noticed
+            } else {
+                own = self.seen_by(id, noticed, &landed);
+                &own[..]
+            };
             let world = World {
                 tick: self.clock,
                 seed: self.world_seed,
-                fighters: noticed,
+                fighters,
                 blocks: &self.blocks,
                 terrain: &self.floor,
                 routes: &routes[mesh],

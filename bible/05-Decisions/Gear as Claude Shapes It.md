@@ -258,8 +258,9 @@ Replaced in part by [[Factions and Vendors as Claude Shapes Them]]: each faction
 
 ### Set names and drops in their set
 
-The owner's calls are [[Everything Carries a Set Name, and Perks Roll by Pool]] and [[Every Drop Wears Its Content's
-Set, With Random Perks]]; the set names are [[Set Names and Faction Perks as Claude Drafts Them]]. These are Claude's
+The owner's calls are [[Everything Carries a Set Name, and Perks Roll by Pool]] and
+[[Every Drop Wears Its Content's Set, With Random Perks]]; the set names are
+[[Set Names and Faction Perks as Claude Drafts Them]]. These are Claude's
 for what they leave open ([[Claude Finishes the Gear Calls on Its Own Word]]).
 
 | Choice | Chosen | Why |
@@ -288,9 +289,9 @@ Overlook's own, read from the sea and the Pale Expanse; none is Destiny's.
 
 ### The faction blades' colour
 
-The calls [[Faction Blades Wear Their Faction's Colour on Hilt and Trim]] and [[Faction Weapons Wear Their Colour and
-Roll Their Faction's Perks]] leave open, made on the owner's word that Claude finishes them
-([[Claude Finishes the Gear Calls on Its Own Word]]).
+The calls [[Faction Blades Wear Their Faction's Colour on Hilt and Trim]] and
+[[Faction Weapons Wear Their Colour and Roll Their Faction's Perks]] leave open, made on the owner's word that Claude
+finishes them ([[Claude Finishes the Gear Calls on Its Own Word]]).
 
 | Choice | Chosen | Why |
 |---|---|---|

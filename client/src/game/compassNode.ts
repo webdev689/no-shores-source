@@ -16,7 +16,8 @@ import { TONES } from '../plus/tones.ts';
 /** How much of the strip at each end a point fades across, so marks come and go softly at its ends. */
 const FADE_SHARE = 0.08;
 
-/** A ship's mark in `colour`: a bow 8 pixels wide and 5 tall, edged dark so it reads over the sky. */
+/** A ship's mark in `colour`: a bow pointing up, filling the node (10 pixels wide and 6 tall where it is laid), its
+ *  colour inside a dark edge a pixel wide so it reads over the sky. */
 const bow = (colour: string): Node['picture'] => ({
   key: `compass bow ${colour}`,
   source: {
