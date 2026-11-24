@@ -124,7 +124,8 @@ fn linked_heals_each_second_and_foes_statuses_run_down_as_they_step() {
     for _ in 0..120 {
         room.tick();
     }
-    assert_eq!(room.fighter(player).expect("in").health, 60.0, "two seconds, ten health");
+    let healed = 50.0 + 2.0 * combat::status::LINKED_HEAL;
+    assert_eq!(room.fighter(player).expect("in").health, healed, "two seconds, two heals");
     let (mut room, _, foe) = room_with_foe(Rank::Major);
     room.give(foe, Status::Expose, Some(100), None);
     for _ in 0..30 {

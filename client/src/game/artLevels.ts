@@ -135,7 +135,7 @@ export function folded(key: string, wanted: string, value: number, held: readonl
 
 /** The healing each second a spell gives through Linked, as combat's status.rs holds it (LINKED_HEAL), weighed by
  *  the level's power as the room weighs the Sunwell's. */
-export const HEALS_A_SECOND: Readonly<Record<string, number>> = { sunwell: 5 };
+export const HEALS_A_SECOND: Readonly<Record<string, number>> = { sunwell: 8 };
 
 /** A spell's or fragment's number `field` at `level`, as the room uses it, to a tenth. */
 export function scaled(key: string, field: string, value: number, level: number): number {

@@ -298,6 +298,13 @@ impl Character {
         if goals.iter().any(|goal| goal.kind() == GoalKind::Buy) {
             self.quests.bought.clear();
         }
+        // A task that sent the player out, not one of words, purchases or dress at a keeper's, pays as a mission's
+        // clear does, at their level: Destiny 1 paid each mission done.
+        let errand = |kind| matches!(kind, GoalKind::Talk | GoalKind::Pledge | GoalKind::Buy | GoalKind::Wear);
+        if !goals.iter().all(|goal| errand(goal.kind())) {
+            let level = self.level();
+            self.pay(crate::rewards::Clear::Mission.worth(), level, None, crate::world::Difficulty::Normal);
+        }
         self.reward(def.faction, def.tasks[task].reward);
         self.find_lore_due(crate::lore::lore());
         true

@@ -231,9 +231,10 @@ impl Damage {
         !self.player && self.max_crew > 0.0 && self.crew <= 0.0
     }
 
-    /// A fire set, three at most: past that it takes the place of the one with the least harm left, if it has more.
-    fn ignite(&mut self) {
-        let fire = Fire { bite: FIRE_HP, left: FIRE_SECONDS };
+    /// A fire set, burning `bite` hull a second, three at most: past that it takes the place of the one with the least
+    /// harm left, if it has more.
+    fn ignite(&mut self, bite: f64) {
+        let fire = Fire { bite, left: FIRE_SECONDS };
         if self.fires.len() < FIRE_STACK {
             self.fires.push(fire);
             return;
@@ -254,6 +255,12 @@ impl Damage {
     /// A blow at `now`: its hull not taken under `floor` (the rest of a volley that made it strike). Answers the
     /// state it brought, if it changed.
     pub fn apply(&mut self, hurt: Hurt, now: f64, floor: f64) -> Option<State> {
+        self.apply_burning(hurt, now, floor, FIRE_HP)
+    }
+
+    /// A blow as `apply` takes it, a fire it sets burning `bite` hull a second: a ball's fire is as strong against its
+    /// ship as the ball, by its shooter's level and the two ships' power.
+    pub fn apply_burning(&mut self, hurt: Hurt, now: f64, floor: f64, bite: f64) -> Option<State> {
         if self.state == State::Sunk {
             return None;
         }
@@ -262,7 +269,7 @@ impl Damage {
         self.sail = (self.sail - hurt.sail.trunc().max(0.0)).max(0.0);
         self.crew = (self.crew - hurt.crew.trunc().max(0.0)).max(0.0);
         if hurt.fire && !(floor > 0.0 && self.state == State::Struck) {
-            self.ignite();
+            self.ignite(bite);
         }
         self.settle()
     }

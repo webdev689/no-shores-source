@@ -2,7 +2,7 @@
 //! opens a riposte; a guard takes the blow at a cost in stamina, or breaks; a dodge lets it pass, and a perfect one
 //! earns a counter; anything else lands, filling poise until the fighter staggers.
 
-use crate::arms::{OffHand, Ranged, Stroke, stroke_shape, weapon};
+use crate::arms::{OffHand, PAIR_DAMAGE, Ranged, Stroke, stroke_shape, weapon};
 use crate::fighter::{Action, Attack, Cause, Fighter, FighterId, Swing};
 use crate::shapes::{Shape, Telegraph, numbers};
 use crate::sight::{bearing, off};
@@ -73,7 +73,8 @@ pub fn swing_blow(striker_id: FighterId, striker: &Fighter, attack: &Attack, def
     let shape = stroke_shape(attack.stroke);
     let riposte = attack.swing == Swing::Riposte(defender);
     let counter = attack.swing == Swing::Counter;
-    let damage = held.damage * shape.damage * striker.might;
+    let pair = if striker.swings_a_pair() { PAIR_DAMAGE } else { 1.0 };
+    let damage = held.damage * shape.damage * striker.might * pair;
     let weight = held.weight * POISE_PER_WEIGHT;
     let trim = &striker.trim;
     Blow {
