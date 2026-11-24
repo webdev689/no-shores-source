@@ -230,11 +230,12 @@ The decisions in [[Open Questions]] are not repeated here.
   - The meadow ([[Meadow]], [[Pick - Meadow Grass]]): the owner's five sprites written from DFO's PNGs by
     `tools/meadow/write.py` (pixel for pixel DFO's bake), DFO's atlas, chain, pick, sizes and colour law, 16 m cells
     of 576 tufts drawn by the GPU to 160 m over the grass of every grass biome.
-  - The owner's answers ([[The Meadow Art Is the Owner's, Its Tables Stay in Git, and the Grass Takes the Trees' Rain]]): the sprites are the owner's own; `parts.json` and `meadowArt.ts` stay in git by
-    exception; the boxes' budget stands; and the meadow takes the trees' rain fix (no sky's glare in rain, the plants'
-    slower sway), brought over as the trees' unmerged branch (`ccr-3a567ab9-nzyr44`) has it, so whichever merges
-    second meets the same light and the same `SWAY`. Still the owner's: whether the plants' baked grass stays under
-    the meadow, and whether Graphics gains a grass setting.
+  - The owner's answers
+    ([[The Meadow Art Is the Owner's, Its Tables Stay in Git, and the Grass Takes the Trees' Rain]]): the sprites
+    are the owner's own; `parts.json` and `meadowArt.ts` stay in git by exception; the boxes' budget stands; and the
+    meadow takes the trees' rain fix (#185: no sky's glare in rain, the plants' slower `SWAY`), sharing the plants'
+    light in `natureShader.ts`. Still the owner's: whether the plants' baked grass stays under the meadow, and whether
+    Graphics gains a grass setting.
   - Tested offline: the full check on the head (the commit named in the pull request), `main` merged in; the meadow pictured headless through the real
     renderer in the Saltgrass Downs. Not seen on a real GPU or played: the meadow's cost there is unmeasured (some
     180,000 tufts on open grass), and so is the boxing's in WebAssembly.
