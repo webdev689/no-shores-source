@@ -70,6 +70,10 @@ fn against_a_company_of_eight_the_scrivener_lasts_ninety_seconds_and_the_steward
     let (mut room, players) = won_to(Tier::Normal, 8, STEWARD);
     begin_at(&mut room, &players, "court", "chest");
     let boss = breach(&room).fights.steward.boss.expect("the Steward stands");
+    // Never laid bare, it outlasts its last toll: the company must use the Lodestone to win.
+    let last_toll = (steward::FIRST_TAKING + steward::TAKING_EVERY.0 * u64::from(steward::TAKINGS_MOST)) as f64 / 60.0;
+    let harm = COMPANY_HARM * gear::power::foe_health_times(Tier::Normal.foes_at());
+    assert!(room.foes[&boss].fighter.health_max > harm * last_toll, "beaten before its last toll, never laid bare");
     let mut seconds = 0;
     while breach(&room).fights.steward.takings < 3 {
         let takings = breach(&room).fights.steward.takings;
