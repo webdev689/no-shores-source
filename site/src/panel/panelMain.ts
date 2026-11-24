@@ -321,6 +321,8 @@ async function modulePage(guildId: string, moduleId: string): Promise<void> {
   unsaved = () => !disabled && stateNow() !== savedState;
   mayLeave = () => !unsaved?.() || window.confirm('This page has changes that are not saved. Leave it?');
   const save = button('Save', async () => {
+    // one save at a time: a second press would carry the same revision and be refused as stale
+    save.disabled = true;
     status.textContent = 'Saving...';
     const sent = stateNow();
     const body = { config: form.read(), enabled: shape.alwaysOn ? true : enabled.checked, rev };
@@ -335,6 +337,7 @@ async function modulePage(guildId: string, moduleId: string): Promise<void> {
         form.refresh();
       }
     }
+    save.disabled = false;
     status.textContent = saveWords(result, form.mark);
   });
   save.disabled = disabled;
@@ -422,6 +425,8 @@ export function startPanel(target: HTMLElement | null): void {
   window.addEventListener('beforeunload', (event) => {
     if (!unsaved?.()) return;
     event.preventDefault();
+    // older browsers ask only when this is set
+    event.returnValue = '';
   });
   void route();
 }

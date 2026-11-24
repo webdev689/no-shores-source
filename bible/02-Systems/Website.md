@@ -31,10 +31,10 @@ Online's ([[The Website Is at noshores.online, After DFO's]], [[Pick - Website]]
 
 ## How it works
 
-- **Pages.** Home (`/`), The World (`/world/`), The Game (`/game/`) and the Discord bot (`/panel/`), one folder each under `site/` with its
-  `index.html`. The site map lists them; a new page is one entry there, its folder and its words. `npm run site`
-  serves them on port 5174; `npm run site:build` builds them into `target/site/`, and `cargo xtask check` builds them
-  too ([[Checks]]).
+- **Pages.** Home (`/`), The World (`/world/`), The Game (`/game/`) and the Discord bot (`/panel/`), one folder each
+  under `site/` with its `index.html`. The site map lists them; a new page is one entry there, its folder and its
+  words. `npm run site` serves them on port 5174; `npm run site:build` builds them into `target/site/`, and
+  `cargo xtask check` builds them too ([[Checks]]).
 - **Words by name.** A page never spells a sentence. It names its words (`data-t="world.title"`, or
   `data-t-alt` for a picture's alt text) and the build fills them in from one table. The premise is the owner's
   ([[No Shores]]), split into passages and never reworded; Home and The World say it. Every other line comes from a
@@ -45,7 +45,8 @@ Online's ([[The Website Is at noshores.online, After DFO's]], [[Pick - Website]]
   Play, the game at its current address, and the Discord, empty until the owner has an invite. A place with no
   address yet has its links left out of the page, so no Discord button shows.
 - **The frame.** Every page gets the same bar (the logo, The World, The Game, Play), a skip link, and a foot (the
-  pages by name, the Discord bot's among them, the Discord once it has an address, and "© Vestige Studios", [[Copyright Held by Vestige Studios]]).
+  pages by name, the Discord bot's among them, the Discord once it has an address, and "© Vestige Studios",
+  [[Copyright Held by Vestige Studios]]).
 - **Pictures drawn by code.** Every picture is drawn at build time in Node, each from a fixed seed, so it is the same
   at every build, and written as a small paletted PNG into the build, never into git
   ([[Generated Files Stay Out of Git]]). The scenes, in a palette of night sea blues and greys, lantern gold and the
@@ -65,8 +66,8 @@ Online's ([[The Website Is at noshores.online, After DFO's]], [[Pick - Website]]
 ## The Discord bot's panel
 
 `/panel/` is where a server's managers set up the [[Discord Bot]]
-([[DFO's Discord Bot Comes Over, Its Panel on the Website]]). The page is framed like the others, under a ship's bell on Overlook's quay, and its one script
-(`site/src/panel/`) draws everything inside it from the bot's answers.
+([[DFO's Discord Bot Comes Over, Its Panel on the Website]]). The page is framed like the others, under a ship's bell
+on Overlook's quay, and its one script (`site/src/panel/`) draws everything inside it from the bot's answers.
 
 - **Sign-in.** "Sign in with Discord" goes to the bot's `/v1/auth/discord`, asking to come back to this page. Discord
   sends the person back through the bot with a one-use ticket in the address's hash. Only the tab that pressed Sign in
@@ -75,8 +76,8 @@ Online's ([[The Website Is at noshores.online, After DFO's]], [[Pick - Website]]
   again at the next load.
 - **Pages by hash.** `#` lists the person's servers; `#g=<id>` a server's connection, audit log, pictures and its
   modules by group; `&m=<module>` a module's settings, acts and tables; `&audit` and `&pictures`; `#lb=<id>` a public
-  leaderboard. An answer that comes back after the person moved on draws nothing. Leaving a page with changes not
-  saved asks first.
+  leaderboard, once the levels module serves it. An answer that comes back after the person moved on draws nothing.
+  Leaving a page with changes not saved asks first.
 - **Forms from the law.** Each module's form is drawn from its shape in `server/bot/law/`, imported, never copied, so
   the page and the bot hold a setting to the same rules; the bot's refusals land beside their fields.
 - **The composer.** A message setting is a composer: words, up to ten embeds, link buttons, placeholders, mentions,

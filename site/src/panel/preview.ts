@@ -10,8 +10,8 @@ import { element } from './dom.ts';
 export const BOT_NAME = 'No Shores bot';
 
 /** The samples the preview fills placeholders with: this server and the person signed in. */
-export function previewVars(ctx: FormContext): Record<string, string> {
-  const preview = ctx.preview ?? {};
+export function previewVars(context: FormContext): Record<string, string> {
+  const preview = context.preview ?? {};
   return {
     user: '<@0>',
     name: preview.me?.name || 'Member',
@@ -70,10 +70,10 @@ export function stampWords(unix: number, style: string, nowMs: number): string {
 }
 
 /** The one inline mark a match found, put into `into` as nodes. */
-function markInto(into: HTMLElement, found: Readonly<Record<string, string | undefined>>, ctx: FormContext): void {
+function markInto(into: HTMLElement, found: Readonly<Record<string, string | undefined>>, context: FormContext): void {
   const wrapped = (tag: 'span' | 'strong' | 'u' | 's' | 'em', inner: string, attributes = {}): HTMLElement => {
     const node = element(tag, attributes);
-    inlineInto(node, inner, ctx);
+    inlineInto(node, inner, context);
     into.append(node);
     return node;
   };
@@ -89,19 +89,19 @@ function markInto(into: HTMLElement, found: Readonly<Record<string, string | und
   else if (found.em2 !== undefined) wrapped('em', found.em2);
   else if (found.label !== undefined) {
     const label = element('span');
-    inlineInto(label, found.label, ctx);
+    inlineInto(label, found.label, context);
     const href = found.href ?? '';
     into.append(href.startsWith('https://') ? outLink(href, [label]) : label);
   } else if (found.angle !== undefined) into.append(outLink(found.angle, [found.angle]));
   else if (found.bare !== undefined) into.append(outLink(found.bare, [found.bare]));
   else if (found.user !== undefined) {
-    const name = found.user === '0' ? previewVars(ctx).name : 'member';
+    const name = found.user === '0' ? previewVars(context).name : 'member';
     into.append(element('span', { class: 'dmention' }, [`@${name}`]));
   } else if (found.role !== undefined) {
-    const role = ctx.roles.find((known) => known.id === found.role);
+    const role = context.roles.find((known) => known.id === found.role);
     into.append(element('span', { class: 'dmention' }, [`@${role?.name ?? 'role'}`]));
   } else if (found.channel !== undefined) {
-    const channel = ctx.channels.find((known) => known.id === found.channel);
+    const channel = context.channels.find((known) => known.id === found.channel);
     into.append(element('span', { class: 'dmention' }, [`#${channel?.name ?? 'channel'}`]));
   } else if (found.eid !== undefined) into.append(emojiPicture(found.eid, !!found.anim, found.ename ?? ''));
   else if (found.stamp !== undefined) {
@@ -112,13 +112,13 @@ function markInto(into: HTMLElement, found: Readonly<Record<string, string | und
 }
 
 /** Discord's inline markdown put into `into` as nodes. Nothing is read as markup. */
-export function inlineInto(into: HTMLElement, text: string, ctx: FormContext): void {
+export function inlineInto(into: HTMLElement, text: string, context: FormContext): void {
   let offset = 0;
   for (const match of text.matchAll(INLINE)) {
     const index = match.index ?? 0;
     if (index > offset) into.append(text.slice(offset, index));
     offset = index + match[0].length;
-    markInto(into, match.groups ?? {}, ctx);
+    markInto(into, match.groups ?? {}, context);
   }
   if (offset < text.length) into.append(text.slice(offset));
 }
@@ -131,7 +131,7 @@ interface ListItem {
 }
 
 /** A run of list lines as nested lists, two spaces a level, as Discord nests them. */
-function listNode(items: readonly ListItem[], ctx: FormContext): HTMLElement {
+function listNode(items: readonly ListItem[], context: FormContext): HTMLElement {
   const listFor = (item: ListItem): HTMLElement => {
     const list = element(item.ordered ? 'ol' : 'ul', { class: 'dmd-list' });
     if (item.ordered && item.start !== 1) list.setAttribute('start', String(item.start));
@@ -150,7 +150,7 @@ function listNode(items: readonly ListItem[], ctx: FormContext): HTMLElement {
       stack.push(top);
     }
     const entry = element('li');
-    inlineInto(entry, item.text, ctx);
+    inlineInto(entry, item.text, context);
     top.list.append(entry);
     top.last = entry;
   }
@@ -158,14 +158,14 @@ function listNode(items: readonly ListItem[], ctx: FormContext): HTMLElement {
 }
 
 /** A block of one class holding a line's inline marks. */
-function lineBlock(className: string, text: string, ctx: FormContext): HTMLElement {
+function lineBlock(className: string, text: string, context: FormContext): HTMLElement {
   const block = element('div', { class: className });
-  inlineInto(block, text, ctx);
+  inlineInto(block, text, context);
   return block;
 }
 
 /** Lines of Discord's block markdown: headings, subtext, quotes (`>` a line, `>>>` the rest), lists and plain lines. */
-function linesInto(into: HTMLElement, text: string, ctx: FormContext, quotes: boolean): void {
+function linesInto(into: HTMLElement, text: string, context: FormContext, quotes: boolean): void {
   const lines = text.split('\n');
   let plain: string[] = [];
   const flush = (): void => {
@@ -173,7 +173,7 @@ function linesInto(into: HTMLElement, text: string, ctx: FormContext, quotes: bo
     const block = element('div', { class: 'dmd-p' });
     plain.forEach((line, i) => {
       if (i) block.append(element('br'));
-      inlineInto(block, line, ctx);
+      inlineInto(block, line, context);
     });
     into.append(block);
     plain = [];
@@ -183,7 +183,7 @@ function linesInto(into: HTMLElement, text: string, ctx: FormContext, quotes: bo
     if (quotes && line.startsWith('>>> ')) {
       flush();
       const quote = element('blockquote', { class: 'dmd-quote' });
-      linesInto(quote, [line.slice(4), ...lines.slice(i + 1)].join('\n'), ctx, false);
+      linesInto(quote, [line.slice(4), ...lines.slice(i + 1)].join('\n'), context, false);
       into.append(quote);
       return;
     }
@@ -192,7 +192,7 @@ function linesInto(into: HTMLElement, text: string, ctx: FormContext, quotes: bo
       const held: string[] = [];
       while (i < lines.length && (lines[i] ?? '').startsWith('> ')) held.push((lines[i++] ?? '').slice(2));
       const quote = element('blockquote', { class: 'dmd-quote' });
-      linesInto(quote, held.join('\n'), ctx, false);
+      linesInto(quote, held.join('\n'), context, false);
       into.append(quote);
       continue;
     }
@@ -200,8 +200,8 @@ function linesInto(into: HTMLElement, text: string, ctx: FormContext, quotes: bo
     const subtext = /^-# (\S.*)$/.exec(line);
     if (heading || subtext) {
       flush();
-      if (heading) into.append(lineBlock(`dmd-h${heading[1]?.length ?? 1}`, heading[2] ?? '', ctx));
-      else into.append(lineBlock('dmd-sub', subtext?.[1] ?? '', ctx));
+      if (heading) into.append(lineBlock(`dmd-h${heading[1]?.length ?? 1}`, heading[2] ?? '', context));
+      else into.append(lineBlock('dmd-sub', subtext?.[1] ?? '', context));
       i++;
       continue;
     }
@@ -222,7 +222,7 @@ function linesInto(into: HTMLElement, text: string, ctx: FormContext, quotes: bo
         });
         i++;
       }
-      into.append(listNode(items, ctx));
+      into.append(listNode(items, context));
       continue;
     }
     plain.push(line);
@@ -235,20 +235,20 @@ function linesInto(into: HTMLElement, text: string, ctx: FormContext, quotes: bo
  * Discord's markdown put into `into` as nodes: code blocks first, then each run of lines between them.
  * `blocks: false` reads the inline marks alone, as Discord does in titles and field names.
  */
-export function markdownInto(into: HTMLElement, text: string, ctx: FormContext, { blocks = true } = {}): void {
+export function markdownInto(into: HTMLElement, text: string, context: FormContext, { blocks = true } = {}): void {
   if (!blocks) {
-    inlineInto(into, text, ctx);
+    inlineInto(into, text, context);
     return;
   }
   let offset = 0;
   for (const match of text.matchAll(/```(?:([\w+-]{1,20})\n)?([\s\S]*?)```/g)) {
     const index = match.index ?? 0;
-    if (index > offset) linesInto(into, text.slice(offset, index).replace(/\n$/, ''), ctx, true);
+    if (index > offset) linesInto(into, text.slice(offset, index).replace(/\n$/, ''), context, true);
     const code = (match[2] ?? '').replace(/^\n|\n$/g, '');
     into.append(element('pre', { class: 'dmd-pre' }, [element('code', {}, [code])]));
     offset = index + match[0].length;
   }
-  if (offset < text.length) linesInto(into, text.slice(offset).replace(/^\n/, ''), ctx, true);
+  if (offset < text.length) linesInto(into, text.slice(offset).replace(/^\n/, ''), context, true);
 }
 
 /** A picture the preview shows; the message law has already kept only https addresses. */
@@ -270,7 +270,7 @@ const timeToday = (moment: Date): string =>
   `Today at ${moment.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })}`;
 
 /** One embed as Discord draws it. */
-function embedNode(embed: BuiltEmbed, ctx: FormContext): HTMLElement {
+function embedNode(embed: BuiltEmbed, context: FormContext): HTMLElement {
   const box = element('div', { class: 'dembed' });
   box.style.borderLeftColor = `#${embed.color.toString(16).padStart(6, '0')}`;
   const main = element('div', { class: 'dembed-main' });
@@ -284,13 +284,13 @@ function embedNode(embed: BuiltEmbed, ctx: FormContext): HTMLElement {
   if (embed.title) {
     const title = element('div', { class: 'dembed-title' });
     const into = embed.url ? outLink(embed.url, []) : title;
-    markdownInto(into, embed.title, ctx, { blocks: false });
+    markdownInto(into, embed.title, context, { blocks: false });
     if (into !== title) title.append(into);
     main.append(title);
   }
   if (embed.description) {
     const description = element('div', { class: 'dembed-description' });
-    markdownInto(description, embed.description, ctx);
+    markdownInto(description, embed.description, context);
     main.append(description);
   }
   if (embed.fields) {
@@ -300,8 +300,8 @@ function embedNode(embed: BuiltEmbed, ctx: FormContext): HTMLElement {
       for (const field of row) {
         const name = element('div', { class: 'dembed-field-name' });
         const value = element('div', { class: 'dembed-field-value' });
-        markdownInto(name, field.name, ctx, { blocks: false });
-        markdownInto(value, field.value, ctx);
+        markdownInto(name, field.name, context, { blocks: false });
+        markdownInto(value, field.value, context);
         line.append(element('div', { class: 'dembed-field' }, [name, value]));
       }
       fields.append(line);
@@ -341,7 +341,7 @@ function buttonsNode(rows: readonly ButtonRow[]): HTMLElement {
 }
 
 /** The preview: the bot's message as Discord draws it, from what Discord would be sent. */
-export function previewNode(payload: Payload, ctx: FormContext): HTMLElement {
+export function previewNode(payload: Payload, context: FormContext): HTMLElement {
   const body = element('div', { class: 'dmsg-body' }, [
     element('div', { class: 'dmsg-head' }, [
       element('span', { class: 'dmsg-name' }, [BOT_NAME]),
@@ -351,10 +351,10 @@ export function previewNode(payload: Payload, ctx: FormContext): HTMLElement {
   ]);
   if (payload.content) {
     const content = element('div', { class: 'dmsg-content' });
-    markdownInto(content, payload.content, ctx);
+    markdownInto(content, payload.content, context);
     body.append(content);
   }
-  for (const embed of payload.embeds) body.append(embedNode(embed, ctx));
+  for (const embed of payload.embeds) body.append(embedNode(embed, context));
   if (payload.components?.length) body.append(buttonsNode(payload.components));
   if (!payload.content && !payload.embeds.length && !payload.components?.length)
     body.append(element('p', { class: 'dmsg-empty' }, ['Nothing is posted while this is empty.']));

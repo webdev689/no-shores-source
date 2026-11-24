@@ -44,7 +44,7 @@ function select(id: string, options: readonly Option[], current: string, disable
 }
 
 /** Draw one field. */
-export function bindField(field: Field, value: unknown, ctx: FormContext, path: string): Bound {
+export function bindField(field: Field, value: unknown, context: FormContext, path: string): Bound {
   const id = nextId();
   const note = element('p', { class: 'field-error', role: 'alert' });
   const wrap = (input: HTMLElement, readValue: () => unknown): Bound => {
@@ -65,13 +65,13 @@ export function bindField(field: Field, value: unknown, ctx: FormContext, path: 
     case 'bool': {
       const box = element('input', { id, type: 'checkbox' });
       box.checked = value === true;
-      box.disabled = ctx.disabled;
+      box.disabled = context.disabled;
       return wrap(box, () => box.checked);
     }
     case 'int': {
       const box = element('input', { id, type: 'number', min: String(field.min), max: String(field.max), step: '1' });
       box.value = String(value ?? field.default);
-      box.disabled = ctx.disabled;
+      box.disabled = context.disabled;
       return wrap(box, () => (box.value === '' ? field.default : Number(box.value)));
     }
     case 'text': {
@@ -82,29 +82,29 @@ export function bindField(field: Field, value: unknown, ctx: FormContext, path: 
       };
       const box = field.multiline ? element('textarea', attributes) : element('input', attributes);
       box.value = text;
-      box.disabled = ctx.disabled;
+      box.disabled = context.disabled;
       return wrap(box, () => box.value);
     }
     case 'channel': {
-      const options = [{ value: '', label: 'None' }, ...channelOptions(ctx.channels, field.kinds)];
-      const box = select(id, options, text, ctx.disabled);
+      const options = [{ value: '', label: 'None' }, ...channelOptions(context.channels, field.kinds)];
+      const box = select(id, options, text, context.disabled);
       return wrap(box, () => box.value);
     }
     case 'role': {
-      const roles = [...ctx.roles]
+      const roles = [...context.roles]
         .sort((a, b) => b.position - a.position)
         .map((role) => ({ value: role.id, label: `@${role.name}` }));
-      const box = select(id, [{ value: '', label: 'None' }, ...roles], text, ctx.disabled);
+      const box = select(id, [{ value: '', label: 'None' }, ...roles], text, context.disabled);
       return wrap(box, () => box.value);
     }
     case 'enum': {
-      const box = select(id, field.values, text, ctx.disabled);
+      const box = select(id, field.values, text, context.disabled);
       return wrap(box, () => box.value);
     }
     case 'group': {
       const held = recordOf(value);
       const parts = Object.entries(field.fields).map(
-        ([key, sub]) => [key, bindField(sub, held[key], ctx, `${path}.${key}`)] as const,
+        ([key, sub]) => [key, bindField(sub, held[key], context, `${path}.${key}`)] as const,
       );
       return {
         element: element('fieldset', { class: 'group' }, [
@@ -116,28 +116,28 @@ export function bindField(field: Field, value: unknown, ctx: FormContext, path: 
       };
     }
     case 'list':
-      return bindList(field, Array.isArray(value) ? value : [], ctx, path, note);
+      return bindList(field, Array.isArray(value) ? value : [], context, path, note);
     case 'message':
-      return bindMessage(field, value, ctx, path);
+      return bindMessage(field, value, context, path);
   }
 }
 
 function bindList(
   field: ListField,
   value: readonly unknown[],
-  ctx: FormContext,
+  context: FormContext,
   path: string,
   note: HTMLElement,
 ): Bound {
   let items: Bound[] = [];
   const rows = element('div', { class: 'list-rows' });
   const add = element('button', { type: 'button', class: 'button button-small' }, ['Add']);
-  const make = (itemValue: unknown): Bound => bindField(field.of, itemValue, ctx, `${path}[${items.length}]`);
+  const make = (itemValue: unknown): Bound => bindField(field.of, itemValue, context, `${path}[${items.length}]`);
   const draw = (): void => {
     rows.replaceChildren();
     items.forEach((bound, index) => {
       const remove = element('button', { type: 'button', class: 'button button-small' }, ['Remove']);
-      remove.disabled = ctx.disabled;
+      remove.disabled = context.disabled;
       remove.addEventListener('click', () => {
         // rebuilt from their values, so each row's path names its place again for the bot's error marks
         const kept = items.filter((_row, spot) => spot !== index).map((row) => row.read());
@@ -147,7 +147,7 @@ function bindList(
       });
       rows.append(element('div', { class: 'list-row' }, [bound.element, remove]));
     });
-    add.disabled = ctx.disabled || items.length >= field.max;
+    add.disabled = context.disabled || items.length >= field.max;
   };
   for (const itemValue of value) items.push(make(itemValue));
   add.addEventListener('click', () => {
@@ -183,8 +183,10 @@ export interface BoundForm {
 }
 
 /** The whole form for a schema. */
-export function bindForm(schema: Schema, value: Readonly<Record<string, unknown>>, ctx: FormContext): BoundForm {
-  const parts = Object.entries(schema).map(([key, field]) => [key, bindField(field, value[key], ctx, key)] as const);
+export function bindForm(schema: Schema, value: Readonly<Record<string, unknown>>, context: FormContext): BoundForm {
+  const parts = Object.entries(schema).map(
+    ([key, field]) => [key, bindField(field, value[key], context, key)] as const,
+  );
   const formBox = element(
     'div',
     { class: 'form' },

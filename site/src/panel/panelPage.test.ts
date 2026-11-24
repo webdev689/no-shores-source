@@ -243,3 +243,55 @@ test("a module's page saves its settings with their revision, and the bot's refu
     assert.deepEqual(errors, ['Use a # and six hex digits.']);
   }, world.globals);
 });
+
+test('a sign-in that came back refused says why in words and clears the address', async () => {
+  const world = browser('#error=denied', () => ({}));
+  await withDocument(async () => {
+    const root = new FakeElement('div');
+    startPanel(root as unknown as HTMLElement);
+    await settle();
+    assert.equal(root.find((node) => node.attrs.role === 'alert')?.textContent, 'Discord sign-in was cancelled.');
+    assert.equal(world.globals.location.hash, '');
+    world.move('#error=<b>made-up</b>');
+    await settle();
+    assert.equal(root.find((node) => node.attrs.role === 'alert')?.textContent, 'Sign-in did not finish. Try again.');
+  }, world.globals);
+});
+
+test("a save the bot refuses for any other reason shows the bot's own words", async () => {
+  const overview = {
+    guild: { id: SERVER_A, name: 'Saltmere', icon: null, memberCount: 12 },
+    level: 'owner',
+    modules: [],
+    channels: [],
+    roles: [],
+  };
+  const saved = {
+    config: { panelGrants: [], problemsChannel: '', accent: '#8a5a2b' },
+    enabled: true,
+    rev: 4,
+    canEdit: true,
+  };
+  const world = browser(
+    `#g=${SERVER_A}&m=core`,
+    (path, init) => {
+      if (path === '/v1/panel/me') return { user: { username: 'ann' }, guilds: [] };
+      if (path === `/v1/panel/g/${SERVER_A}`) return overview;
+      if (init.method === 'PUT')
+        return new Response(JSON.stringify({ error: 'stale', message: 'Someone saved this first.' }), { status: 409 });
+      return saved;
+    },
+    'panel-token',
+  );
+  await withDocument(async () => {
+    const root = new FakeElement('div');
+    startPanel(root as unknown as HTMLElement);
+    await settle(10);
+    const save = buttonsNamed(root, 'Save')[0];
+    save?.click();
+    assert.equal(save?.disabled, true, 'one save at a time');
+    await settle();
+    assert.equal(save?.disabled, false);
+    assert.ok(root.find((node) => node.attrs.role === 'status' && node.textContent === 'Someone saved this first.'));
+  }, world.globals);
+});

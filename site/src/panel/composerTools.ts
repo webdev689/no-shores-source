@@ -11,7 +11,7 @@ let toolCount = 0;
 
 /** What a tool may ask of the composer it serves. */
 export interface Composer {
-  readonly ctx: FormContext;
+  readonly context: FormContext;
   readonly field: MessageField;
   readonly current: () => unknown;
   readonly replace: (message: unknown) => void;
@@ -54,8 +54,12 @@ function chooser(
 }
 
 /** The insert row: placeholder buttons, then mention, emoji and time pickers. */
-export function insertTools(ctx: FormContext, vars: readonly string[], insert: (text: string) => void): HTMLElement {
-  const off = ctx.disabled;
+export function insertTools(
+  context: FormContext,
+  vars: readonly string[],
+  insert: (text: string) => void,
+): HTMLElement {
+  const off = context.disabled;
   const chips = vars.map((name) => {
     const chip = small(`{${name}}`, { title: `Put {${name}} where you were typing` });
     chip.disabled = off;
@@ -64,11 +68,11 @@ export function insertTools(ctx: FormContext, vars: readonly string[], insert: (
     chip.addEventListener('click', () => insert(`{${name}}`));
     return chip;
   });
-  const channels = ctx.channels
+  const channels = context.channels
     .filter((channel) => channel.type !== 4)
     .map((channel): [string, string] => [channel.id, `#${channel.name}`]);
-  const roles = ctx.roles.map((role): [string, string] => [role.id, `@${role.name}`]);
-  const emojis = (ctx.emojis ?? []).map((emoji): [string, string] => [
+  const roles = context.roles.map((role): [string, string] => [role.id, `@${role.name}`]);
+  const emojis = (context.emojis ?? []).map((emoji): [string, string] => [
     `<${emoji.animated ? 'a' : ''}:${emoji.name}:${emoji.id}>`,
     `:${emoji.name}:`,
   ]);
@@ -109,8 +113,8 @@ export function insertTools(ctx: FormContext, vars: readonly string[], insert: (
 }
 
 /** The message row: starting designs and a test sent through the bot. */
-export function messageTools({ ctx, field, current, replace, say }: Composer): HTMLElement {
-  const off = ctx.disabled;
+export function messageTools({ context, field, current, replace, say }: Composer): HTMLElement {
+  const off = context.disabled;
   const templates = templatesFor(field.vars);
   const start = chooser(
     'Start from a template',
@@ -124,11 +128,11 @@ export function messageTools({ ctx, field, current, replace, say }: Composer): H
     off,
   );
   const tools: HTMLElement[] = [start];
-  const sendTest = ctx.tools?.sendTest;
+  const sendTest = context.tools?.sendTest;
   if (sendTest) {
     const places: Array<[string, string]> = [
       ['me', 'To me, by direct message'],
-      ...ctx.channels
+      ...context.channels
         .filter((channel) => channel.type === 0 || channel.type === 5)
         .map((channel): [string, string] => [channel.id, `In #${channel.name}`]),
     ];
@@ -156,7 +160,7 @@ export function messageTools({ ctx, field, current, replace, say }: Composer): H
  * Discord's JSON for the message: copied out with its placeholders, or brought in from Discohook or Discord and held
  * to the settings, as one step the person can undo.
  */
-export function jsonTools({ ctx, field, current, replace, say }: Composer): HTMLElement {
+export function jsonTools({ context, field, current, replace, say }: Composer): HTMLElement {
   const id = `t${++toolCount}-json`;
   const text = element('textarea', { id, rows: '6', spellcheck: 'false' });
   const inBox = 'The words are in the box: copy them from there.';
@@ -171,9 +175,9 @@ export function jsonTools({ ctx, field, current, replace, say }: Composer): HTML
     );
   });
   const into = small('Bring in');
-  into.disabled = ctx.disabled;
+  into.disabled = context.disabled;
   // a viewer may copy a design out, but bring none in
-  text.readOnly = ctx.disabled;
+  text.readOnly = context.disabled;
   into.addEventListener('click', () => {
     const read = messageFromJson(text.value);
     if (!read) {

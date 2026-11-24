@@ -63,8 +63,8 @@ function move(list: unknown[], from: number, step: number): void {
 }
 
 /** Draw a message setting as a composer with its live preview. */
-export function bindMessage(field: MessageField, value: unknown, ctx: FormContext, path: string): Bound {
-  const uid = `m${++composerCount}`;
+export function bindMessage(field: MessageField, value: unknown, context: FormContext, path: string): Bound {
+  const composerId = `m${++composerCount}`;
   const model = modelOf(value);
   /** Each input's note for the bot's refusals, by the path the bot names. */
   const notes = new Map<string, HTMLElement>();
@@ -88,7 +88,7 @@ export function bindMessage(field: MessageField, value: unknown, ctx: FormContex
   };
 
   const redrawPreview = (): void => {
-    previewBox.replaceChildren(previewNode(messagePayload(model, previewVars(ctx)), ctx));
+    previewBox.replaceChildren(previewNode(messagePayload(model, previewVars(context)), context));
     const size = messageSize(model);
     total.textContent = `Embeds: ${size.toLocaleString('en')} of ${LIMITS.total.toLocaleString('en')} characters.`;
     total.classList.toggle('over', size > LIMITS.total);
@@ -99,8 +99,8 @@ export function bindMessage(field: MessageField, value: unknown, ctx: FormContex
   const undoButton = element('button', { type: 'button', class: 'button button-small' }, ['Undo']);
   const redoButton = element('button', { type: 'button', class: 'button button-small' }, ['Redo']);
   const showHistory = (): void => {
-    undoButton.disabled = ctx.disabled || !past.length;
-    redoButton.disabled = ctx.disabled || !future.length;
+    undoButton.disabled = context.disabled || !past.length;
+    redoButton.disabled = context.disabled || !future.length;
   };
   /** Keep the message as it is now as a step back, before a change. */
   const remember = (): void => {
@@ -150,7 +150,7 @@ export function bindMessage(field: MessageField, value: unknown, ctx: FormContex
 
   /** One text input bound to a part of the model (`owner[key]`): its label, its counter where the bound is long. */
   const textBox = (label: string, spot: string, owner: Part, key: string, options: TextOptions): HTMLElement => {
-    const id = `${uid}-${notes.size}`;
+    const id = `${composerId}-${notes.size}`;
     const attributes = {
       id,
       maxlength: String(options.max),
@@ -158,7 +158,7 @@ export function bindMessage(field: MessageField, value: unknown, ctx: FormContex
     };
     const box = options.multiline ? element('textarea', attributes) : element('input', attributes);
     box.value = String(owner[key] ?? '');
-    box.disabled = ctx.disabled;
+    box.disabled = context.disabled;
     const owned = boxes.get(owner) ?? new Map();
     boxes.set(owner, owned.set(key, box));
     const count = element('span', { class: 'field-help count' });
@@ -180,10 +180,10 @@ export function bindMessage(field: MessageField, value: unknown, ctx: FormContex
     return element('div', { class: 'field' }, [element('label', { for: id }, [label, ' ', count]), box, fieldNote]);
   };
   const checkBox = (label: string, owner: Part, key: string): HTMLElement => {
-    const id = `${uid}-c${++checkCount}`;
+    const id = `${composerId}-c${++checkCount}`;
     const box = element('input', { id, type: 'checkbox' });
     box.checked = owner[key] === true;
-    box.disabled = ctx.disabled;
+    box.disabled = context.disabled;
     box.addEventListener('change', () => {
       remember();
       owner[key] = box.checked;
@@ -194,7 +194,7 @@ export function bindMessage(field: MessageField, value: unknown, ctx: FormContex
   /** A small button that changes the message as one step, then draws it again. */
   const small = (label: string, act: () => void, off = false): HTMLButtonElement => {
     const node = element('button', { type: 'button', class: 'button button-small' }, [label]);
-    node.disabled = ctx.disabled || off;
+    node.disabled = context.disabled || off;
     node.addEventListener('click', () => {
       remember();
       act();
@@ -205,8 +205,8 @@ export function bindMessage(field: MessageField, value: unknown, ctx: FormContex
   };
   /** An Upload button beside a picture's link: the file goes to the bot, and its address into the link. */
   const uploader = (owner: Part, key: string): HTMLElement | null => {
-    const upload = ctx.tools?.upload;
-    if (!upload || ctx.disabled) return null;
+    const upload = context.tools?.upload;
+    if (!upload || context.disabled) return null;
     const picker = element('input', { type: 'file', accept: PICTURE_TYPES, class: 'visually-hidden', tabindex: '-1' });
     const press = element('button', { type: 'button', class: 'button button-small' }, ['Upload']);
     press.addEventListener('click', () => picker.click());
@@ -241,11 +241,11 @@ export function bindMessage(field: MessageField, value: unknown, ctx: FormContex
       if (upload) box.append(upload);
       return box;
     };
-    const colourId = `${uid}-colour-${i}`;
+    const colourId = `${composerId}-colour-${i}`;
     const colour = element('input', { id: colourId, type: 'color' });
     const held = String(embed.color ?? '');
     colour.value = /^#[0-9a-fA-F]{6}$/.test(held) ? held : '#8a5a2b';
-    colour.disabled = ctx.disabled;
+    colour.disabled = context.disabled;
     colour.addEventListener('input', () => {
       typed(embed, 'color');
       embed.color = colour.value;
@@ -368,12 +368,12 @@ export function bindMessage(field: MessageField, value: unknown, ctx: FormContex
     box.focus();
   };
 
-  const composer: Composer = { ctx, field, current, replace, say };
+  const composer: Composer = { context, field, current, replace, say };
   function drawEditor(): void {
     notes.clear();
     boxes = new Map();
     editor.replaceChildren(
-      insertTools(ctx, field.vars, insert),
+      insertTools(context, field.vars, insert),
       textBox('Message', `${path}.content`, model, 'content', { max: LIMITS.content, multiline: true }),
       ...model.embeds.map(embedCard),
       element('div', { class: 'acts' }, [
