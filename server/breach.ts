@@ -12,6 +12,9 @@ import type { RoomDoor } from './roomDoor.ts';
 
 /** How often a run tells its gate's zone how far its company has come; the zone forgets one silent for a minute. */
 const INSIDE_EVERY_MS = 10_000;
+/** How long a run trusts its zone's word that its gate opened before it asks again, as the gate shuts once its company
+ *  clears the Breach or its day is out. */
+const GATE_TRUSTED_MS = 60_000;
 /** How long after its launch a run's company may come to its gate from anywhere, as the Launch takes them there. */
 export const LAUNCH_ARRIVES_MS = 30 * 60_000;
 /** The name a company is shown by in its zone when no player of it has a username yet. */
@@ -47,7 +50,9 @@ export class Breach {
   private readonly deps: BreachDeps;
   private readonly run: ReturnType<typeof breachRun>;
   private opened = false;
+  private openedAsked = -Infinity;
   private told = 0;
+  private toldEncounter: number | null = null;
   /** In a zone, each player's run until the accounts answer; in a run, each player's name as the keeper gives it. */
   private readonly asked = new Map<number, string>();
   private readonly names = new Map<number, string>();
@@ -60,9 +65,13 @@ export class Breach {
     this.run = breachRun(name);
   }
 
-  /** In a run: whether its gate has opened, asked of its zone until it says so once. */
-  async gateOpen(): Promise<boolean> {
-    if (this.run && !this.opened) this.opened = await this.deps.zone(this.run.zone).breachWord('opened', this.name);
+  /** In a run: whether its gate has opened, asked of its zone until it says so, and again once its word is
+   *  GATE_TRUSTED_MS old, as the gate shuts on a clear or at its day's end. */
+  async gateOpen(now = Date.now()): Promise<boolean> {
+    if (this.run && (!this.opened || now - this.openedAsked >= GATE_TRUSTED_MS)) {
+      this.opened = await this.deps.zone(this.run.zone).breachWord('opened', this.name);
+      this.openedAsked = now;
+    }
     return this.opened;
   }
 
@@ -114,14 +123,15 @@ export class Breach {
     this.launched.delete(player);
   }
 
-  /** Each second's look: in a run whose gate opened, its progress told to its zone every INSIDE_EVERY_MS, by the name
-   *  of its first player in, or NAMELESS; a run no one was let into tells its zone nothing. */
+  /** Each second's look: in a run whose gate opened, its progress told to its zone every INSIDE_EVERY_MS, and at once
+   *  as its company reaches a new encounter or clears the Breach, so a company that leaves at once is still heard; by
+   *  the name of its first player in, or NAMELESS; a run no one was let into tells its zone nothing. */
   tick(now: number): void {
-    if (!this.run || !this.opened || now - this.told < INSIDE_EVERY_MS) return;
+    if (!this.run || !this.opened) return;
     const progress = JSON.parse(this.deps.room.breachProgress()) as { tier: number; encounter: number } | null;
+    if (!progress || (progress.encounter === this.toldEncounter && now - this.told < INSIDE_EVERY_MS)) return;
     const name = [...this.names.entries()].sort(([one], [other]) => one - other)[0]?.[1] ?? NAMELESS;
-    if (!progress) return;
-    this.told = now;
+    [this.told, this.toldEncounter] = [now, progress.encounter];
     const word = JSON.stringify({ run: this.name, tier: progress.tier, name, encounter: progress.encounter });
     void this.deps
       .zone(this.run.zone)

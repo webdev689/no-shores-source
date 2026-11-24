@@ -82,6 +82,26 @@ test('a run asks its zone whether its gate opened until it says so once, and tel
   assert.deepEqual(said.inside, [word('A company'), word('Ossery')], 'by its first player in');
 });
 
+test('a run tells its zone at once as its company moves on or clears, and asks its gate again once its word is old', async () => {
+  const { said, deps } = host(true);
+  let encounter = 3;
+  deps.room.breachProgress = () => JSON.stringify({ tier: 1, encounter });
+  const run = new Breach(RUN, deps);
+  assert.equal(await run.gateOpen(0), true);
+  run.tick(20_000);
+  encounter = 6;
+  run.tick(21_000);
+  assert.deepEqual(
+    said.inside.map((text) => (JSON.parse(text) as { encounter: number }).encounter),
+    [3, 6],
+    'the clear told at once, though ten seconds have not passed',
+  );
+  await run.gateOpen(30_000);
+  assert.equal(said.asked.length, 1, 'its gate trusted a while');
+  await run.gateOpen(61_000);
+  assert.equal(said.asked.length, 2, 'then asked again, as a gate shuts on a clear or at its day’s end');
+});
+
 test('in its zone a launched player arrives from anywhere within the arrival window, and is held in the company for the day, asked twice', async () => {
   const asked: (number | undefined)[] = [];
   let blips = 1;
