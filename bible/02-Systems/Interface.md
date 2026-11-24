@@ -826,7 +826,8 @@ never while a press is held. Each press is an ask the room answers.
   first, then the islands' resources. Each shelf is a grid as Destiny's is: each thing a stack in a cell with its count,
   shown only while one is held, then empty places to the end of its row of ten. Consumables holds the Fruit of Dagon and
   the Ammo crate; the crate is held ("Hold to fill your ammo") to fill the Ranged weapon's ammunition, and offers
-  nothing at full. The gear is on the Character page alone.
+  nothing at full, nor with no Ranged weapon worn, when it says to wear one first. The gear is on the Character page
+  alone.
 - **Holds.** What cannot be undone is held. As a press is held, what it acts on charges: a wash of its rarity rises
   through a tile, and its picture brightens and quivers toward the end, as Destiny's dismantle does. A piece is held
   longer the rarer it is: 0.6 seconds for Normal up to 1.8 for Atheric. Once it acts, a dismantled piece breaks

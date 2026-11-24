@@ -113,6 +113,30 @@ test('the keys move among its controls, the interface hearing them only while it
   assert.equal(ui.focusedId, keys('right'));
 });
 
+test('Tab reaches every press on the sheet once round, a control shown in several rows among them', () => {
+  const sheet = new ControlsSheet();
+  const { ui } = fakeInterface(390, 844);
+  const view = { width: 390, height: 844, big: false };
+  const step = (events: UiEvent[] = []) => {
+    ui.frame({ width: 390, height: 844, scale: 1 }, events, 1 / 60, true, sheet.takesKeys);
+    ui.draw({ width: 'grow', height: 'grow', children: [sheet.node(ui, view)] });
+  };
+  sheet.toggle();
+  step();
+  step();
+  const root = sheet.node(ui, view);
+  assert.ok(root);
+  const laid = layout(root, { x: 0, y: 0, width: 390, height: 844 }, { face: FAKE_FACE, scrollOf: () => 0 });
+  const presses = laid.flatMap((each) => (each.node.press && each.node.id ? [each.node.id] : []));
+  assert.equal(new Set(presses).size, presses.length, 'each press its own id');
+  const reached = new Set<string>();
+  for (let tab = 0; tab < presses.length; tab++) {
+    reached.add(ui.focusedId ?? '');
+    step([{ kind: 'key', key: 'Tab' }]);
+  }
+  assert.deepEqual([...reached].sort(), [...presses].sort());
+});
+
 test('a screen reader hears a sign key by its name', () => {
   assert.equal(spokenKeys(','), 'Comma');
   assert.equal(spokenKeys('[ / ]'), 'Left bracket or Right bracket');

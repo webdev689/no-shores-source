@@ -71,7 +71,8 @@ impl Room {
     /// A sea island's room from its plan, its middle at `at` in the world, where every body, block and post of it
     /// stands, as a node's do. An isle's guards are the Grey Tithe's, standing where `guards` names a faction, at its
     /// water's `levels`; with none, or on a cove, none stand. Its nodes are of `resource`, the island's whose water it
-    /// lies in, all standing, each gathered once by each account while the room is open; with none, none stand.
+    /// lies in, all standing, each gathered once by each account until the day turns, kept with its character; with
+    /// none, none stand.
     #[must_use]
     pub fn island(
         plan: &Plan,
@@ -161,7 +162,9 @@ impl Room {
 
     /// The sea's word that an account's ship lies at this island's anchorage, by its landing's number: its players may
     /// scavenge and gather, and their quest logs are told they landed. A landing of another number than the one before
-    /// is a new visit: the nodes the account gathered stand for it again. Whether this is an island's room.
+    /// is a new visit: what the room held gathered for the account is let go, and what its character gathered here
+    /// today is spent again (`spent_today`), so a node stands again only once the day turns. Whether this is an
+    /// island's room.
     pub fn land(&mut self, account: &str, landing: u32) -> bool {
         let Some(isle) = self.isle.as_mut() else { return false };
         let before = isle.landed.as_mut().and_then(|landed| landed.insert(account.to_owned(), landing));

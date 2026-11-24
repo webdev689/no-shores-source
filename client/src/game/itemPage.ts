@@ -8,7 +8,7 @@
 
 import { edged } from '../combat/barDraw.ts';
 import type { GearItem } from '../network/gearMessages.ts';
-import { CARRIED, type NodeShown, RARITIES, WORN } from '../player/gear.ts';
+import { CARRIED, HORSE, type NodeShown, RARITIES, WORN } from '../player/gear.ts';
 import { LARGE_CAP } from '../player/iconFit.ts';
 import type { Child, Node } from '../ui/node.ts';
 import { cardFrame, cardName, compareNode, kindLine, rarityTone, traitNode } from './gearCard.ts';
@@ -306,9 +306,16 @@ export function itemPage(
           {
             padding: [6, 0, 0, 0],
             children: [
-              kindLine(detail.kind, item.rarity, item.element, size, [
-                { role: 'chip', padding: [1, 8], children: [words(`Level ${item.level}`, 1, INK.word)] },
-              ]),
+              // A horse has no level, as its card says none: it has no stats.
+              kindLine(
+                detail.kind,
+                item.rarity,
+                item.element,
+                size,
+                item.kind === HORSE
+                  ? []
+                  : [{ role: 'chip', padding: [1, 8], children: [words(`Level ${item.level}`, 1, INK.word)] }],
+              ),
             ],
           },
         ],

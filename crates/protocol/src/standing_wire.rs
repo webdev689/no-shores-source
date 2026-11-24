@@ -22,8 +22,9 @@ pub(crate) struct Standing<'built> {
     pub faction_wares: WIPOffset<Vector<'built, flatbuffers::ForwardsUOffset<messages::GearItem<'built>>>>,
 }
 
-/// A worn cosmetic's number; a worn id the catalogue does not hold never reaches here, as the character is made whole
-/// when read (`earn_cosmetics_due`), so 0 is only a guard.
+/// A worn cosmetic's number, 0 for none worn (a coat with no horse ridden), which the page reads as none by its kind; a
+/// worn id the catalogue does not hold never reaches here, as the character is made whole when read
+/// (`earn_cosmetics_due`).
 pub(crate) fn number_of_worn(id: &str) -> u16 {
     gear::cosmetics::number_of(id).unwrap_or_default()
 }

@@ -57,6 +57,24 @@ export function columnsOf(groups: readonly ControlGroup[], count: number): Contr
 
 /** The id of a slot's key or button on the sheet. */
 export const slotId = (slot: Slot): string => `controls:${slot.id}:${slot.device}:${slot.place}`;
+/** How many rows before each show the same controls: a control in several rows (Use, at the helm and boarding) has a
+ *  key there for each, and each its own id, so the focus can step through every one. */
+const REPEATS: ReadonlyMap<Row, number> = (() => {
+  const seen = new Map<string, number>();
+  return new Map(
+    CONTROL_GROUPS.flatMap((group) => group.controls).map((control) => {
+      const key = control.binds.join(' ');
+      const before = control.binds.length > 0 ? (seen.get(key) ?? 0) : 0;
+      seen.set(key, before + 1);
+      return [control, before];
+    }),
+  );
+})();
+/** The id of a slot's key or button in `control`'s row. */
+const cellId = (control: Row, slot: Slot): string => {
+  const before = REPEATS.get(control) ?? 0;
+  return before > 0 ? `${slotId(slot)}:${before + 1}` : slotId(slot);
+};
 const sameSlot = (one: Slot | null, other: Slot | null) =>
   one !== null && other !== null && slotId(one) === slotId(other);
 
@@ -147,7 +165,7 @@ export class ControlsSheet {
     }
     const sheet: SheetNow = { ui, size, width: column, device, waiting: this.rebinding.slot };
     if (heard && !sheet.waiting)
-      for (const slot of everySlot()) if (ui.clicked(slotId(slot))) this.rebinding.start(slot, this.padDown);
+      for (const { id, slot } of everyCell()) if (ui.clicked(id)) this.rebinding.start(slot, this.padDown);
     const close = `Close  ${boundWord('controls')}`;
     return {
       width: 'grow',
@@ -228,16 +246,17 @@ interface SheetNow {
 
 /** The first key or button of `device` the sheet's focus is given as it opens. */
 function firstCell(device: Device): string | null {
-  const first = everySlot().find((slot) => slot.device === device);
-  return first ? slotId(first) : null;
+  return everyCell().find(({ slot }) => slot.device === device)?.id ?? null;
 }
 
-/** Every slot the sheet shows, for the keys and the pad. */
-function everySlot(): Slot[] {
+/** Every key and button the sheet shows that can be bound, for the keys and the pad, by its id and its slot. */
+function everyCell(): { readonly id: string; readonly slot: Slot }[] {
   return CONTROL_GROUPS.flatMap((group) =>
     group.controls.flatMap((control) =>
       (['keys', 'pad'] as const).flatMap((device) =>
-        cellsOf(control, device, BINDS.now).flatMap((cell) => (cell.slot ? [cell.slot] : [])),
+        cellsOf(control, device, BINDS.now).flatMap((cell) =>
+          cell.slot ? [{ id: cellId(control, cell.slot), slot: cell.slot }] : [],
+        ),
       ),
     ),
   );
@@ -293,7 +312,7 @@ function rowNode(sheet: SheetNow, control: Row): Node {
 function cellNode(sheet: SheetNow, control: Row, cell: Cell): Node {
   const { ui, size } = sheet;
   if (!cell.slot) return keycap(cell.name, size);
-  const id = slotId(cell.slot);
+  const id = cellId(control, cell.slot);
   const waiting = sameSlot(sheet.waiting, cell.slot);
   const lit = waiting || ui.focused(id);
   return {
