@@ -1,5 +1,5 @@
 ---
-id: 203
+id: 212
 title: "claude-mem recorded nothing in a whole session (0 sessions, 0 observations), and claude-mem-save.sh only writes inside the container, so the end-of-session save carries nothing forward"
 status: open
 type: open-source

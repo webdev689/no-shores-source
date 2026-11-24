@@ -1,5 +1,5 @@
 ---
-id: 202
+id: 211
 title: "Offline the page holds no gear (`foot.gear` is null without a socket), and `__qaView` stands the body clear of what stands, metres off the asked point"
 status: open
 type: open-source

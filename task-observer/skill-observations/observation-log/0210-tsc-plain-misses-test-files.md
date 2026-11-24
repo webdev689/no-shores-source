@@ -1,5 +1,5 @@
 ---
-id: 201
+id: 210
 title: "A bare `npx tsc --noEmit -p .` misses the test files; `npm run -s types` (three tsconfigs) is the check xtask runs"
 status: open
 type: open-source
