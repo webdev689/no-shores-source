@@ -1,6 +1,6 @@
 ---
 id: 34
-title: "A fresh worktree or container: types, tests and npm run wasm fail until npm run -s schema has made generated/messages"
+title: "Generated files go stale: a fresh worktree needs npm run -s schema; after a schema change the client suite needs npm run wasm and cargo test -p protocol (its .bin fixtures)"
 status: open
 type: internal
 skill: []
@@ -9,7 +9,7 @@ target_file: ["tools/claude-toolkit/workers/brief-common-template.md", "bible/03
 siblings_checked: "family: worktree setup steps. npm ci (done by the controller), wasm copies (done), the schema (missing). No other step found missing in three workers' reports."
 area: "workers, worktree setup"
 date: "2026-11-19"
-session_context: "Ship aim session 2026-11-23: in a fresh cloud container after install-all.sh, npm run wasm failed on protocol and tsc on 40 missing imports until node tools/schema.mjs ran. Earlier: four workers in ~/wt/{opening,sea,wreck,ending} fixing the prologue; three reported the same friction."
+session_context: "First Breach audit 2026-11-24: after BreachSeen.holders was added, a page worker saw 3 standing failures (protocol hash, fleetBerth joins) from a stale room.wasm and called them pre-existing; with the wasm rebuilt, messages.test still failed on joined.bin until cargo test -p protocol rewrote it. Stale fixtures hide real failures in the count. Ship aim session 2026-11-23: in a fresh cloud container after install-all.sh, npm run wasm failed on protocol and tsc on 40 missing imports until node tools/schema.mjs ran. Earlier: four workers in ~/wt/{opening,sea,wreck,ending} fixing the prologue; three reported the same friction."
 commands_verified: "NOT RUN by the controller in a fresh worktree; three workers each report npm run -s types and node --test prologue.test.ts failing until npm run -s schema ran."
 ---
 
@@ -23,3 +23,6 @@ template's "Hard rules" say to run `npm run -s schema` once in a fresh worktree,
 2026-11-24, a bisect worktree (`git worktree add --detach`) for the room's WebAssembly: `cargo build -p room-wasm`
 failed on the missing `generated/messages/rust/messages_generated.rs`; copying `generated/` from the main tree and
 linking `node_modules` made a 20 s rebuild per step, which attributed a moved pin in three builds.
+- 2026-11-24: the same family after a schema change, not only in a fresh tree: `npm run -s wasm` and `cargo test -p
+  protocol` (which writes the `.bin` fixtures messages.test reads) both have to run before the client suite means
+  anything. A brief that says "use the wasm already built" should say which failures that leaves.
