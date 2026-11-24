@@ -30,8 +30,13 @@ fn a_greatsword_is_a_sword_held_on_its_hilt_with_its_own_numbers() {
     assert_eq!(arms, Arms { melee: WeaponClass::Greatsword, ranged: None, off_hand: OffHand::Empty });
     assert_eq!(Arms::from_code(arms.code()), arms, "it crosses whole");
     let held = weapon(WeaponClass::Greatsword);
-    assert_eq!((held.reach, held.damage, held.stamina, held.handling), (2.3, 24.0, 21.0, 1.06));
-    assert!((held.weight - 1.3 * 1.15).abs() < 1e-12 && held.two_handed);
+    assert_eq!((held.reach, held.damage, held.stamina, held.handling), (2.3, 21.0, 21.0, 1.06));
+    assert!((held.weight - 1.2 * 1.15).abs() < 1e-12 && held.two_handed);
+    // Against the great axe and the warhammer: the longest reach, the lightest blow and the least weight of the three.
+    let (axe, hammer) = (weapon(WeaponClass::Axe), weapon(WeaponClass::Warhammer));
+    assert!(held.reach > axe.reach && held.reach > hammer.reach);
+    assert!(held.damage < axe.damage && axe.damage < hammer.damage);
+    assert!(held.weight < axe.weight && axe.weight < hammer.weight);
     assert!(swing_ticks(WeaponClass::Greatsword).1 > swing_ticks(WeaponClass::Sword).1, "it comes round slower");
     assert_eq!(arms_of("sword_steel", "", true).melee, WeaponClass::Sword, "one hand, a sword");
     assert_eq!(arms_of("mace_iron", HILT, true).melee, WeaponClass::Mace, "only a sword is held on its hilt");

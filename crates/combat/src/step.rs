@@ -2,10 +2,10 @@
 //! still), what it is doing carried on or ended, a new swing, guard, dodge, shot or telegraphed blow begun, its body
 //! moved by the movement rules as that allows (faster Hasted), and its aim turned. What it does to others is the host's: a blow that lands now is said, and the host judges it.
 
-use crate::arms::{Ranged, swing_ticks, weapon};
+use crate::arms::{Ranged, weapon};
 use crate::fighter::{Action, Attack, CombatInput, Fighter, Held, Intent, Kept, Swing};
 use crate::shapes::Telegraph;
-use crate::shots::{BRACE_GAP, DRAW_FULL, Shot, aimed_power, by_foe, loose, shot_numbers, toward};
+use crate::shots::{BRACE_GAP, DRAW_FULL, Shot, aimed_power, by_foe, loose, player_power, shot_numbers, toward};
 use crate::sight::{apart, bearing, off, turned, wrap};
 use crate::strike::reach_of;
 use crate::tuning::{
@@ -360,7 +360,8 @@ fn begin<B: Near + ?Sized>(next: &mut Fighter, intent: &Intent, around: &Surroun
         let ahead = |at: &[f64; 3]| off(yaw, bearing([chest[0], chest[1]], [at[0], at[1]])) <= LOCK_ARC;
         let (heading, pitch) =
             around.target_at.filter(ahead).map_or((yaw, input.pitch), |target| toward(ranged, chest, target));
-        return Some(shoot(next, loose(0, ranged, chest, heading, pitch, 1.0)));
+        let power = if next.is_player() { player_power(ranged) } else { 1.0 };
+        return Some(shoot(next, loose(0, ranged, chest, heading, pitch, power)));
     }
     swing(next, intent)
 }
@@ -380,7 +381,7 @@ fn swing(next: &mut Fighter, intent: &Intent) -> Option<Happening> {
         return None;
     }
     let stroke = intent.combat.attack.or(next.kept.stroke.filter(|_| next.kept.attack > 0))?;
-    let (strike, end) = swing_ticks(next.arms.melee);
+    let (strike, end) = next.swing_ticks();
     let swing = if let Some((foe, _)) = next.riposte.take() {
         Swing::Riposte(foe)
     } else if next.counter > 0 {

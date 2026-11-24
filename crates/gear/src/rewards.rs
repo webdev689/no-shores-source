@@ -148,9 +148,14 @@ impl Character {
         self.loot((vestige::chance(MINIBOSS) * raised, raised), MINIBOSS, level, source, dice)
     }
 
-    /// Pays XP and Aurem worth so much at level 5, at `level` and the voyage's tier: the worn Art and the faction
-    /// pledged grow by the XP before Scholar's share, which is the gear's.
-    fn pay(&mut self, (xp, aurem): (u32, u32), level: u8, weapon: Option<Slot>, difficulty: Difficulty) -> Reward {
+    /// Pays XP and Aurem worth so much at level 5, at `level` and the voyage's tier, as `earn_play_xp` takes XP.
+    pub(crate) fn pay(
+        &mut self,
+        (xp, aurem): (u32, u32),
+        level: u8,
+        weapon: Option<Slot>,
+        difficulty: Difficulty,
+    ) -> Reward {
         let times = |amount: u32| {
             let raised = libm::round(f64::from(at_level(amount, level)) * difficulty.reward());
             u32::try_from(raised as u64).unwrap_or(u32::MAX)
@@ -158,11 +163,21 @@ impl Character {
         let (base, aurem) = (times(xp), times(aurem));
         let boons = self.boons;
         let (xp, aurem) = (Boons::more(base, boons.xp), Boons::more(aurem, boons.aurem));
+        // Reputation grows by the XP before the guild's XP boon: its own boon is applied as it is earned.
         self.earn_art_xp(xp);
         self.earn_reputation(base);
         self.earn_xp(xp, weapon);
         self.materials.add_aurem(aurem);
         Reward { xp, aurem }
+    }
+
+    /// XP earned by play, from a kill, a clear, a chest, a sinking or a bounty: the worn Art and the faction pledged
+    /// (while its cape is worn) grow by it before Scholar's share, which is the gear's; then the character, their
+    /// armour and `weapon`, as Destiny 1's every activity paid its reputation beside its XP.
+    pub fn earn_play_xp(&mut self, xp: u32, weapon: Option<Slot>) {
+        self.earn_art_xp(xp);
+        self.earn_reputation(xp);
+        self.earn_xp(xp, weapon);
     }
 
     /// Vestiges and items by their chances, coloured by `rank` at `level`, from `source`: the items kept, the

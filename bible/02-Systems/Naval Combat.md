@@ -158,7 +158,10 @@ sea's soundscape ([[Ambience]]).
   men left. Any ship, the player's Sloop too, goes down over 20 s at none (`Sinking`, then gone), listing and trimming
   by its seed (a player's by none) and settling slowly, then fast; going down, its guns are silent and its helm takes
   no orders. The rest of the volley that made a captain strike cannot sink their ship. A player's Sloop never strikes. Fires
-  (three at most) burn hull, canvas and men for 15 s. Bare poles leave 35% of a ship's way. Braced, a ship takes half the harm
+  (three at most) burn hull, canvas and men for 15 s, each as strong against its ship as the ball that set it: 1.4
+  hull a second times the shooter's level strength (a captain's) and what both ships' fittings made of the ball
+  (`apply_burning`), so a fire keeps its worth as levels rise; a ball that does its target no harm, its ship four
+  levels or more below, sets none. Bare poles leave 35% of a ship's way. Braced, a ship takes half the harm
   to hull and canvas, but its guns are silent and do not load. Unhurt for 15 s, with no hostile ship within 700 m that
   would take it (a friendly captain never would), its hands mend it to half of its hull and of the canvas its standing sails hold.
 - **Its rig** (`rigging.rs`). Each sail's share of a ship's canvas is the pull it gives at its crest over the ship's whole canvas's
@@ -556,7 +559,8 @@ The sea room ([[Server]]) sails hostile ships among the players' on the [[Overwo
 the Grey Tithe's ships alone ([[Pirates Are Replaced by the Grey Tithe]]).
 
 - **Who comes.** Each player at sea rolls half a minute after reaching the water and then every 60 to 140 s; a roll that
-  falls due while they fight comes as the fight ends. While fewer than three hostile ships sail within their sight of
+  falls due while they fight comes as the fight ends. A travel to other waters waits the next roll at least half a
+  minute, never sooner than it would have come, so travelling on brings no more ships than sailing. While fewer than three hostile ships sail within their sight of
   them, a roll brings a hostile ship by the band of the water the player is in, so their water sets how many come
   (`hostile_chance`): 0.18 in the first island's band (1 to 4), rising evenly by 0.0225 a band to 0.36 in the last (26
   to 30); a water with no band rolls as the first. (DFO's open sea brought one 0.24 of the time in every water.)

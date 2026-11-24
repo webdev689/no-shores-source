@@ -513,6 +513,34 @@ The decisions in [[Open Questions]] are not repeated here.
   owner's to say.
 - **Whether players may harm one another** ([[Combat]]); and **isles**: how many, how big and how placed
   ([[World Map]]).
+- **The balance and economy pass** (#178, branch `ccr-2fa9295d-99y63m`), for the owner's yes to merge, on the owner's
+  "comprehensive balance pass and economy pass on the entire game ecosystem so far ... Destiny 1 vanilla as a
+  reference ... autonomy" ([[The Balance and Economy Pass Is Claude's, After Destiny 1 Vanilla]]; every call, its
+  reason and its Destiny 1 source in [[The Balance and Economy Pass as Claude Shapes It]]). The owner's own decisions
+  stand. Changed: an Atheric's upgrades 8 Essence and its own node dearer, so no Atheric finishes cheaper than a
+  Legendary; a Breach's armour 7; every piece's Prestige by equal steps (a ship's guns no longer 33 and 36); a faction
+  rank every 100,000 reputation (rank 2 near level 20), packages 2,500 Aurem and Legendary one time in two, the cape
+  500, a faction weapon 12,000; Shape's Atheric armour 13 and weapon 23, the week's Abyss 10 Shapes; a chest's Essence
+  only from the day's first heroic one; bounties in three tiers (the tier on the wire, `GearBounty.tier`); every
+  deed's XP to the Art and the faction (`earn_play_xp`); a road's task paying a mission's clear; a sinking paying
+  twelve kills to the ship and now the player (XP and Aurem); no fire from a harmless ball; a player's bow two thirds
+  (12 quick, 18 drawn); the greatsword 21 and lighter; captains' defence under the cap so each rank defends more;
+  Exploit ×1.25, no crit; companions with the land's ease. On the owner's answers
+  ([[The Bulwark Blocks, Supers Are Powerful, the Sea's Gaps Close and Level 30 Takes Breach Gear]]): the Bulwark
+  blocks as a swordsman until its change (`roster::standing`); Tempest 48 an orb, Duskraven 16 a bolt, Linked 8 a
+  second and ×1.3; a travel never brings the next hostile roll sooner; a cove's wreck one material of 1 or 2,
+  Heartwood 1.5%, a module 3%; a fire's bite scales with the shooter's level strength and the ball. With the
+  Bulwark blocking, the rules' scripted pair and the dev page's bots still win the heroic Fissure, the pair 32 s later
+  than on `main`. On the owner's "Go ahead with your proposals except the stamina change"
+  ([[Pairs Swing Faster, Foes' Guns Strike Two Thirds and Faction Gear Has No Weekly Limit]]): a player's pair comes
+  round in 0.8 of its lone weapon's time at 0.9 of its blow (a foe's pair as its lone weapon, for faster paired daggers
+  set a crowd of skirmishers turning about); a foe's ball strikes two thirds (`FOE_GUN`, its aimed shot too), so an
+  Elite Marksman fells a matched player in three aimed shots, not two; no weekly limit on faction gear; stamina as it
+  was. Measured with `economy_tests.rs` (six pace tests and the
+  ledger), `balance_tests.rs` (`measure_ranks`), `measure_blows` and `measure_fights_by_rank`. Destiny 1's numbers
+  came from search summaries; the proxy refused every page, so they are unchecked against the pages. Tested offline:
+  `cargo xtask check` on its head; not played. The rules' two scripted sword players run out the heroic raid's clock
+  in its fourth wave; with `main`'s captains, before this pass's, they hold it. The owner keeps it as it is for now. Its one open point, Conduit, is in [[Open Questions]].
 
 ## Next
 

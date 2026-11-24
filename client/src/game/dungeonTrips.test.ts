@@ -400,7 +400,7 @@ test("a companion joining a guild dungeon's run lays the run's own week and come
   const key = '0a1b2c3d4e5f60718293a4b5c6d7e8f9';
   const outpost = { id: 'tern-strand-outpost', name: 'Tern Strand', kind: 'outpost', centre: [100, 200] };
   const node = { ...outpost, spawns: [[5, 5]] } as unknown as NodeInfo;
-  const gate = { id: 2, kind: 'gate', tier: 1, building: 0, x: 6, y: 12, turn: 0 };
+  const gate = { id: 2, kind: 'gate', tier: 1, building: 0, x: 6, y: 12, turn: 0, spent: 0, delivered: {} };
   const seen = { guild: key, name: 'Salt Kings', banner: '{}', site: node.id, plot: { structures: [gate], decor: [] } };
   const read: string[] = [];
   keepGuild({

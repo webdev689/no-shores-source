@@ -199,7 +199,7 @@ fn a_guilds_outposts_raise_what_a_kill_pays_each_boon_by_its_own_share() {
 fn the_reputation_boon_raises_a_chest_s_and_the_abyss_boon_s_reputation_too() {
     let mut member = caped(1);
     member.boons = crate::guild::Boons { xp: 0, aurem: 0, reputation: 20 };
-    let chest = member.open_chest(2, (5, Difficulty::Normal), None, &DICE).expect("a chest of tier 2");
+    let chest = member.open_chest(2, (5, Difficulty::Normal, 0), None, &DICE).expect("a chest of tier 2");
     assert_eq!(member.reputation(1), u64::from(chest.xp + chest.xp / 5), "a chest's");
     let before = member.reputation(1);
     member.activity.this_week(0).boon = true;

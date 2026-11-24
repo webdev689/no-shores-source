@@ -57,7 +57,7 @@ test('each Art has its three spells and six fragments, named and worded as the A
 test('a spell’s card lists its numbers with their units, and each spell its key', () => {
   const art = storm();
   assert.deepEqual(spellNumbers(art.anima), [
-    ['Damage', '18'],
+    ['Damage', '48'],
     ['Orbs', '6'],
     ['Reach', '30 m'],
     ['Speed', '14 m/s'],

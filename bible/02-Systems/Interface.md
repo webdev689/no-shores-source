@@ -925,7 +925,7 @@ never while a press is held. Each press is an ask the room answers.
     door): a gauge of its count while held, a gilded edge once done, its glyph dimmed with a drawn tick once turned in. A
     slot not taken is an empty frame. The hovered, focused or pressed tile, ringed white just outside its edge, has its
     card under the grid: its name, cut short where too long, its kind by its mark, its words, its count, and what it
-    pays, XP and Aurem each by its glyph. Bounties are taken and turned in at the board alone. The column stands at the
+    pays by its tier, XP and Aurem each by its glyph. Bounties are taken and turned in at the board alone. The column stands at the
     right wherever it fits beside the quests, as wide as its head; on a phone (under 600 px) it stands under them.
   - **The timers** lead with icons, drawn in the gear glyphs' style (`journalIcons.ts`), and write nothing twice.
     Today's head carries the rising sun and the one countdown to the daily reset, with its moment in the player's own
@@ -1308,7 +1308,7 @@ serves each ask only at its own counter ([[Gear]], "In the rooms"; [[Factions]])
   menu's words are large), showing its state with no words, the chosen one ringed white; under them the rising sun
   and the time to the next board, over a bar filling as the day goes; and beside them, or under them on a phone, the
   chosen tile's card: its name, its kind by its mark, its words, a gauge with its count, what it pays
-  the player now (XP and Aurem each by its glyph, resting once paid), and its press, Take on one not held or Turn in on
+  the player now by its tier (`payOf`; XP and Aurem each by its glyph, resting once paid), and its press, Take on one not held or Turn in on
   one done, with E on its keycap, each asked with the day of the board shown. The arrows move between tiles; E or a
   click takes or turns one in. Before the prologue the tiles, the time and its bar rest grey, and the card holds the
   padlock and "The bounty board opens after the prologue."

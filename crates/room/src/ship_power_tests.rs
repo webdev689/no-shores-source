@@ -130,19 +130,30 @@ fn an_atheric_modules_intrinsic_fits_it_and_its_own_once_bought_and_chosen() {
 }
 
 #[test]
-fn a_sinking_pays_its_and_its_officers_aboard_and_a_won_deck_now_and_then_gives_an_officer() {
+fn a_sinking_pays_its_player_their_ship_and_officers_aboard_and_a_won_deck_now_and_then_gives_an_officer() {
     let (hostile, _) = hostile();
-    let mut characters: BTreeMap<PlayerId, Character> = [(3, Character::starting()), (4, Character::starting())].into();
+    // A ship of the hostile's level, so its guns can harm it; a new one, four levels or more below, earns nothing.
+    let matched = || {
+        let mut character = Character::starting();
+        character.earn_ship_xp(u32::try_from(gear::power::xp_for_level(LEVEL)).expect("fits"));
+        character
+    };
+    let mut characters: BTreeMap<PlayerId, Character> =
+        [(3, matched()), (4, Character::starting()), (5, Character::starting())].into();
     let id =
         characters.get_mut(&3).and_then(|character| character.sign_on(Officer::new(0, Post::Bosun, Rarity::Magic, 1)));
-    let sank = Sank { hostile, at: [0.0, 0.0], players: vec![3, 9], wind: [0.0, 0.0], struck: false };
+    let sank = Sank { hostile, at: [0.0, 0.0], players: vec![3, 9, 5], wind: [0.0, 0.0], struck: false };
+    let before = characters[&3].ship_xp;
     let paid = pay_sinking(&sank, gear::Difficulty::Normal, &mut characters);
-    assert_eq!(paid, vec![3], "a player the sea holds no character for is passed by");
+    assert_eq!(paid, vec![3], "a player the sea holds no character for, or whose ship could not harm it, is passed by");
+    assert_eq!((characters[&5].xp, characters[&5].ship_xp), (0, 0), "a new ship, far below");
     let paid = &characters[&3];
-    assert!(paid.ship_xp > 0 && paid.xp == 0);
-    let mut abyss: BTreeMap<PlayerId, Character> = [(3, Character::starting())].into();
+    let earned = paid.ship_xp - before;
+    assert!(earned > 0 && paid.xp == earned, "the player earns what their ship does");
+    assert!(paid.materials.aurem > Character::starting().materials.aurem, "and its Aurem, as a kill pays");
+    let mut abyss: BTreeMap<PlayerId, Character> = [(3, matched())].into();
     pay_sinking(&sank, gear::Difficulty::Abyss, &mut abyss);
-    assert_eq!(abyss[&3].ship_xp, paid.ship_xp * 2, "an Abyss sea pays a sinking twice, as it pays a kill");
+    assert_eq!(abyss[&3].ship_xp - before, earned * 2, "an Abyss sea pays a sinking twice, as it pays a kill");
     assert!(paid.crew.officers[&id.expect("signed on")].trained > 0);
     let boss = Hostile { commission: Commission { rank: Rank::Boss, ..hostile.commission }, ..hostile };
     let won = Sank { hostile: boss, players: vec![4], ..sank };
