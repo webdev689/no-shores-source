@@ -56,8 +56,16 @@ const HOME = {
     'Overlook at night: lit windows climbing the rock of Saltmere, lanterns on the quay, ships at anchor.',
   'home.discord': 'Join the Discord',
   'home.worldLead': 'See The World',
-  'home.gameText': 'Sail your own ship from Overlook into a shared world.',
   'home.gameLead': 'See The Game',
+  'home.numbersHead': 'At a glance',
+  // The numbers band: each number and its label from the premise or a decision, the number in the page beside it.
+  // The premise: "a vast ocean stretching between nine continents"; "Great port cities ... Today, only three remain."
+  'home.numberContinents': 'continents',
+  'home.numberPorts': 'port cities remain',
+  // Arts Are Overlook's Subclasses and Three Factions Keep the Arts, After Destiny 1: the three Arts, each kept by a
+  // faction.
+  'home.numberArts': 'Arts',
+  'home.numberFactions': 'factions',
 } as const;
 
 const WORLD = {

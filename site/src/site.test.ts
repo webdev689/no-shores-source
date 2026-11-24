@@ -86,6 +86,16 @@ test('a place with no address shows no link, and one with an address shows its l
   assert.match(filled, /href="https:\/\/noshores\.online\/play\/" rel="noopener">Play</, 'the game under the site');
 });
 
+test('a section that needs a place with no address is left out whole, and kept once the place has one', () => {
+  const needs = (name: string) =>
+    `<section data-needs="${name}"><h2 data-t="shell.navDiscord"></h2></section><p data-t="home.title"></p>`;
+  assert.equal(OUTSIDE.discord, '');
+  assert.equal(fillKeys(needs('discord')), '<p>No Shores</p>');
+  assert.equal(fillKeys(needs('play')), '<section><h2>Discord</h2></section><p>No Shores</p>');
+  assert.throws(() => fillKeys(needs('nowhere')), /nowhere/);
+  assert.throws(() => fillKeys('<section data-needs="play"><section></section></section>'), /section of its own/);
+});
+
 test('each picture is the same at every build and under 64 KB', () => {
   for (const [name, draw] of Object.entries(PICTURES)) {
     const first = pngOf(draw());

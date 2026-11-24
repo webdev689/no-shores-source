@@ -21,6 +21,11 @@ code:
   - site/src/art/pictures.ts#PICTURES
   - site/src/art/scenes.ts#SCENES
   - site/src/art/sheet.ts#pngOf
+  - site/src/art/sheet.ts#halo
+  - site/src/art/light.ts#LIGHTS
+  - site/src/art/ships.ts#ship
+  - site/src/art/places.ts#town
+  - site/src/art/heroScene.ts#heroLayers
   - site/src/art/logo.ts#iconSheet
   - site/src/site.css
   - site/wrangler.jsonc
@@ -46,18 +51,29 @@ Online's ([[The Website Is at noshores.online, After DFO's]], [[Pick - Website]]
 - **Links by name.** A link names a page or an outside place (`data-to="play"`). The outside places are named once:
   Play, the game at `noshores.online/play/`, and the Discord, empty until the owner has an invite. A place with no
   address yet has its links left out of the page, so no Discord button shows.
-- **The frame.** Every page gets the same bar (the logo, The World, The Game, Play), a skip link, and a foot (the
-  pages by name, the Discord bot's among them, the Discord once it has an address, and "© Vestige Studios",
-  [[Copyright Held by Vestige Studios]]).
+- **The frame.** Every page gets the same bar (the logo, The World, The Game, Play), a skip link, and a foot in
+  columns: the logo and "© Vestige Studios" ([[Copyright Held by Vestige Studios]]), the pages by name, the Discord
+  bot's among them, then Play and the Discord once it has an address.
 - **Pictures drawn by code.** Every picture is drawn at build time in Node, each from a fixed seed, so it is the same
   at every build, and written as a small paletted PNG into the build, never into git
-  ([[Generated Files Stay Out of Git]]). The scenes, in a palette of night sea blues and greys, lantern gold and the
-  Lattice's red and purple crystal: Overlook by night on Saltmere's rock with ships at anchor (Home's scene, its
-  lanterns on a layer of their own that flickers), the Pale Expanse with a burned port, the Grey Tithe's grey sails
-  closing on a lone ship, Thule's flagship by a captain's broken ship, the captain sinking toward a faint light, the
-  ruined port overtaken by crystal, waking on Saltmere's shore, a ship under sail, the three Arts' flames and gear
-  under a lantern, a ship's bell on the quay. The logo is drawn cell for cell from the game's own picture of it,
-  shown at whole-number scale; the tab's icon is its first letter.
+  ([[Generated Files Stay Out of Git]]). They are drawn the way DFO's are: skies dithered band into band through an
+  8 by 8 pattern, land in ranges that pale with distance, light in rings round a moon, a lantern or a fire, and every
+  scene in one light of its own (`light.ts`): Overlook's night, fire at dusk, the Tithe's mist, the crystal's purple,
+  the first grey of morning. Ships (`ships.ts`) have a sprung hull with its wale and gunports, a stern castle, sails
+  that belly, jibs, a spanker and their rigging, a wake and a double on the water, the small parts dropping away on a
+  far ship; places (`places.ts`) are rock that rises to a hill, a town stepping up it in terraces with a switchback
+  road to a beacon, a quay with lanterns, ruins and faceted crystal. The scenes: Overlook by night (Home's, 640 by
+  300, its town to the right so the words stand over sky, its windows, lanterns and beacon on a layer of their own
+  that flickers), the Pale Expanse with a burned port, the Grey Tithe's grey sails closing out of the mist on a lone
+  ship, Thule's flagship over a captain's broken, burning ship at a red dusk, the captain sinking toward a faint
+  light, a ruined port overtaken by crystal, Saltmere's shore at first light, a ship under full sail, the three Arts'
+  flames in braziers on the quay, gear under a lantern, a ship's bell on the quay. The logo is drawn cell for cell from
+  the game's own picture of it, shown at whole-number scale; the tab's icon is its first letter.
+- **Home, after DFO's.** The scene with the logo, the premise's first line and Play; the premise's opening passages;
+  four numbered rows of what a player does, each a picture beside The Game's own lines (Overlook, the ship, the Arts
+  and the factions, gear), in turn left and right; a band of numbers, each from the premise or a decision (nine
+  continents, three port cities remain, three Arts, three factions); The World's lead; a call to the Discord, shown
+  only once it has an address (a section's `data-needs`); and the premise's last lines with Play.
 - **Nothing from another site.** The face is Pixelify Sans, bundled from its package ([[Pixelify Sans Is Overlook's Font]]);
   the copyright sign alone takes the device's own sans, since Pixelify draws it as a speck. A built page carries a
   content policy that lets it load only its own styles, fonts and pictures, and runs no script. The panel's page is

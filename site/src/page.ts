@@ -46,17 +46,27 @@ export function siteTop(page: SitePage): string {
   </header>`;
 }
 
-/** The foot of every page: its links by name, the Discord's once it has an address, and the copyright. */
+/** The foot of every page, in columns: the logo and the copyright, the pages by name, then Play and the Discord once
+ *  it has an address. */
 export function siteFoot(page: SitePage): string {
-  const names = [...SITE_PAGES.map((each) => each.id), ...Object.keys(OUTSIDE)];
-  const items = names
+  const items = SITE_PAGES.map((each) => `<li>${link(each.id, wordKeyOf(each.id), each === page)}</li>`);
+  const places = Object.keys(OUTSIDE)
     .filter((name) => siteHref(name)?.href)
-    .map((name) => `<li>${link(name, wordKeyOf(name), name === page.id)}</li>`);
+    .map((name) => link(name, wordKeyOf(name), false, name === 'play' ? 'button button-gold' : 'button'));
   return `<footer class="foot">
-    <nav data-t-aria-label="shell.footLabel"><ul>
-      ${items.join('\n      ')}
-    </ul></nav>
-    <p data-t="shell.copyright"></p>
+    <div class="foot-brand">
+      <a data-to="home" data-t-aria-label="shell.brand"><img data-art="logo" alt="" /></a>
+      <p data-t="shell.copyright"></p>
+    </div>
+    <nav aria-labelledby="foot-pages">
+      <h2 id="foot-pages" data-t="shell.footLabel"></h2>
+      <ul>
+        ${items.join('\n        ')}
+      </ul>
+    </nav>
+    <p class="buttons">
+      ${places.join('\n      ')}
+    </p>
   </footer>`;
 }
 
@@ -85,12 +95,27 @@ function fillTag(tag: string): string {
   return next;
 }
 
+/** Whether a place a page needs (`data-needs="discord"`) has no address yet; a name nobody has stops the build. */
+function closed(name: string): boolean {
+  const place = siteHref(name);
+  if (!place) throw new Error(`site: nowhere is named "${name}"`);
+  return place.href === '';
+}
+
 /**
  * Fill a page's keys. A link to a place with no address yet is taken out whole, so an empty Discord invite shows no
- * button. Words go only into an element that holds nothing, or the build stops.
+ * button, and so is a section that needs that place (`data-needs`), which may hold no section of its own. Words go
+ * only into an element that holds nothing, or the build stops.
  */
 export function fillKeys(html: string): string {
-  let out = html.replace(/<a\b[^>]*\sdata-to="([^"]*)"[^>]*>[\s\S]*?<\/a>\s*/g, (whole, to: string) =>
+  let out = html.replace(
+    /<section\b[^>]*\sdata-needs="([^"]*)"[^>]*>([\s\S]*?)<\/section>\s*/g,
+    (whole, name: string, inner: string) => {
+      if (/<section\b/.test(inner)) throw new Error('site: a section that needs a place holds a section of its own');
+      return closed(name) ? '' : whole;
+    },
+  );
+  out = out.replace(/<a\b[^>]*\sdata-to="([^"]*)"[^>]*>[\s\S]*?<\/a>\s*/g, (whole, to: string) =>
     siteHref(to)?.href === '' ? '' : whole,
   );
   out = out.replace(/<[a-zA-Z][^>]*\sdata-(?:to|art|t-[a-z-]+)="[^"]*"[^>]*>/g, fillTag);
@@ -105,7 +130,7 @@ export function fillKeys(html: string): string {
   );
   if (filled !== named) throw new Error('site: words are named on an element that is not empty');
   // the keys have done their work; the page ships without them
-  return out.replace(/\sdata-(?:t|to|art|t-[a-z-]+)="[^"]*"/g, '');
+  return out.replace(/\sdata-(?:t|to|art|needs|t-[a-z-]+)="[^"]*"/g, '');
 }
 
 /** What every page's head holds beside its own: the tab's icon and the night the browser's own frame takes. */

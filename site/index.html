@@ -32,24 +32,76 @@
         <p class="beat" data-t="premise.ruin"></p>
       </section>
 
-      <div class="leads">
-        <article class="card">
-          <img class="frame" data-art="ruined-port" data-t-alt="world.ruinsAlt" loading="lazy" />
-          <h2 data-t="shell.navWorld"></h2>
-          <p data-t="premise.history"></p>
-          <a class="button" data-to="world" data-t="home.worldLead"></a>
+      <section class="features" aria-labelledby="features-title">
+        <h2 class="section-title" id="features-title" data-t="shell.navGame"></h2>
+        <article class="feature">
+          <img class="frame" data-art="bell" data-t-alt="panel.bellAlt" loading="lazy" />
+          <div>
+            <span class="numeral" aria-hidden="true">I</span>
+            <h3 data-t="game.overlookHead"></h3>
+            <p data-t="game.overlookSetOut"></p>
+            <p data-t="game.overlookDo"></p>
+          </div>
         </article>
-        <article class="card">
+        <article class="feature">
           <img class="frame" data-art="under-sail" data-t-alt="game.shipAlt" loading="lazy" />
-          <h2 data-t="shell.navGame"></h2>
-          <p data-t="home.gameText"></p>
-          <a class="button" data-to="game" data-t="home.gameLead"></a>
+          <div>
+            <span class="numeral" aria-hidden="true">II</span>
+            <h3 data-t="game.shipHead"></h3>
+            <p data-t="game.shipOwn"></p>
+            <p data-t="game.shipGear"></p>
+          </div>
         </article>
-      </div>
+        <article class="feature">
+          <img class="frame" data-art="arts" data-t-alt="game.artsAlt" loading="lazy" />
+          <div>
+            <span class="numeral" aria-hidden="true">III</span>
+            <h3 data-t="game.artsHead"></h3>
+            <p data-t="game.artsThree"></p>
+            <p data-t="game.artsKept"></p>
+          </div>
+        </article>
+        <article class="feature">
+          <img class="frame" data-art="gear" data-t-alt="game.gearAlt" loading="lazy" />
+          <div>
+            <span class="numeral" aria-hidden="true">IV</span>
+            <h3 data-t="game.gearHead"></h3>
+            <p data-t="game.gearPower"></p>
+            <p data-t="game.gearEarn"></p>
+          </div>
+        </article>
+        <p class="buttons"><a class="button" data-to="game" data-t="home.gameLead"></a></p>
+      </section>
+
+      <section class="band" aria-labelledby="numbers-title">
+        <h2 class="hidden" id="numbers-title" data-t="home.numbersHead"></h2>
+        <ul class="numbers">
+          <li><b>9</b><span data-t="home.numberContinents"></span></li>
+          <li><b>3</b><span data-t="home.numberPorts"></span></li>
+          <li><b>3</b><span data-t="home.numberArts"></span></li>
+          <li><b>3</b><span data-t="home.numberFactions"></span></li>
+        </ul>
+      </section>
+
+      <section class="feature lead" aria-labelledby="world-title">
+        <img class="frame" data-art="ruined-port" data-t-alt="world.ruinsAlt" loading="lazy" />
+        <div>
+          <h2 id="world-title" data-t="shell.navWorld"></h2>
+          <p data-t="premise.history"></p>
+          <p data-t="premise.stranger"></p>
+          <p class="buttons"><a class="button" data-to="world" data-t="home.worldLead"></a></p>
+        </div>
+      </section>
+
+      <section class="call" aria-labelledby="discord-title" data-needs="discord">
+        <h2 id="discord-title" data-t="shell.navDiscord"></h2>
+        <p class="buttons"><a class="button button-big" data-to="discord" data-t="home.discord"></a></p>
+      </section>
 
       <section class="passage closing">
         <p data-t="premise.countless"></p>
         <p class="beat" data-t="premise.safety"></p>
+        <p class="buttons"><a class="button button-gold button-big" data-to="play" data-t="shell.navPlay"></a></p>
       </section>
     </main>
     <!--site:foot-->

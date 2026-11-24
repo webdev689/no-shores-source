@@ -19,17 +19,23 @@ export const makeSheet = (width: number, height: number): Sheet => ({
   cells: new Array<Ink>(width * height).fill(''),
 });
 
-// The 4 by 4 ordered pattern: a cell takes the second ink when the share asked for passes its threshold.
-const BAYER = [
-  [0, 8, 2, 10],
-  [12, 4, 14, 6],
-  [3, 11, 1, 9],
-  [15, 7, 13, 5],
-];
+// The 8 by 8 ordered pattern, built from the 2 by 2 one: a cell takes the second ink when the share asked for passes
+// its threshold. Sixty-four steps make a sky's bands melt into each other rather than stripe.
+const BAYER: readonly (readonly number[])[] = Array.from({ length: 8 }, (_row, y) =>
+  Array.from({ length: 8 }, (_column, x) => {
+    let value = 0;
+    for (let bit = 0; bit < 3; bit++) {
+      const across = (x >> bit) & 1;
+      const down = (y >> bit) & 1;
+      value |= ((across ^ down) << (5 - bit * 2)) | (down << (4 - bit * 2));
+    }
+    return value;
+  }),
+);
 
 /** Whether the pattern picks the second ink at `x, y` for a share of 0..1. */
 export const patternOn = (x: number, y: number, share: number): boolean =>
-  share * 16 > (BAYER[y & 3]?.[x & 3] ?? 0) + 0.5;
+  share * 64 > (BAYER[y & 7]?.[x & 7] ?? 0) + 0.5;
 
 export function dot(sheet: Sheet, x: number, y: number, ink: Ink): void {
   const column = Math.round(x);
@@ -77,6 +83,21 @@ export function glow(sheet: Sheet, centreX: number, centreY: number, reach: numb
       if (away < 1 && patternOn(centreX + column, centreY + row, strength * (1 - away) ** 2))
         dot(sheet, centreX + column, centreY + row, ink);
     }
+}
+
+/** Light in rings round a point, DFO's way: each ink a ring nearer the middle, dithered into the one outside it. */
+export function halo(sheet: Sheet, centreX: number, centreY: number, reach: number, inks: readonly Ink[]): void {
+  inks.forEach((ink, ring) => {
+    const outer = reach * (1 - ring / inks.length);
+    const inner = reach * (1 - (ring + 1) / inks.length);
+    for (let row = -Math.ceil(outer); row <= outer; row++)
+      for (let column = -Math.ceil(outer); column <= outer; column++) {
+        const away = Math.hypot(column, row);
+        if (away > outer) continue;
+        const share = away <= inner ? 1 : (outer - away) / (outer - inner);
+        if (patternOn(centreX + column, centreY + row, share)) dot(sheet, centreX + column, centreY + row, ink);
+      }
+  });
 }
 
 /** Light that only falls on cells already inked, so a lit wall stays inside its wall. */
