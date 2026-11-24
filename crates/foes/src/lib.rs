@@ -182,7 +182,7 @@ pub fn think(me: FighterId, brain: &Brain, board: &mut Board, world: &World<'_>)
         me,
         fighter,
         world,
-        numbers: brain.numbers(),
+        numbers: roster::standing(brain, &fighter),
         dice: Dice { seed: world.seed, tick: world.tick, foe: me },
     };
     let ask = tactics::decide(&mut next, &here, board);

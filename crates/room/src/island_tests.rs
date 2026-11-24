@@ -174,7 +174,7 @@ fn a_wrecks_salvage_is_paid_into_the_scavengers_ship_materials() {
     let gained: u16 =
         gear::ship::materials::ShipMaterial::ALL.iter().map(|&each| after.of(each) - before.of(each)).sum();
     let told: u16 = gear::ship::materials::ShipMaterial::ALL.iter().map(|&each| taken.materials.of(each)).sum();
-    assert!(gained >= 4, "a cove's wreck pays two materials of two or more: {gained}");
+    assert!(gained >= 1, "a cove's wreck pays a material: {gained}");
     assert_eq!(gained, told, "what is told is what was paid in");
 }
 

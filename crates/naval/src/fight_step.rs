@@ -9,7 +9,7 @@ use super::{
 use crate::arms::{LARGE_BOAT, Side, arms_of, unposed};
 use crate::captain::course::distance;
 use crate::captain::{CHASE_GIVE_UP_S, Mode};
-use crate::damage::{PLAYER_CREW_TOUGHNESS, SHIP_TOUGHNESS, State, Zone, founder, shot_harm};
+use crate::damage::{FIRE_HP, PLAYER_CREW_TOUGHNESS, SHIP_TOUGHNESS, State, Zone, founder, shot_harm};
 use crate::gunnery::{Lay, RELOAD_SINGLEHANDED, lay, volley};
 use crate::guns::{fire_chance, rig_fire, shot_reach};
 use crate::rigging::Torn;
@@ -269,6 +269,11 @@ impl Fight {
         // fitting scales the gun's men: so many fewer, or more, as a tougher, or softer, crew would lose.
         let men = if zone == Zone::Rig && loaded.crew > 0.0 { gun.crew / loaded.crew } else { 1.0 };
         let clock = self.clock;
+        // Its fire burns by the ball's own scale: the shooter's level strength (a captain's raised guns; a player's 1),
+        // times what both ships' fittings made of the ball.
+        let strength =
+            self.ships.get(&shooter).and_then(|vessel| vessel.command()).map_or(1.0, |command| command.mind.strength);
+        let bite = FIRE_HP * strength * if loaded.hull > 0.0 { gun.hull / loaded.hull } else { 1.0 };
         // A ball strikes only another flag, so whoever fired it, a player or another faction's captain, is a foe.
         let shooter_in_fight = self.ships.contains_key(&shooter);
         let Some(vessel) = self.ships.get_mut(&target) else { return };
@@ -293,7 +298,7 @@ impl Fight {
             }
             None => (floor, false),
         };
-        let state = vessel.damage.apply(hurt, clock, floor);
+        let state = vessel.damage.apply_burning(hurt, clock, floor, bite);
         // A ball it stood through (Hard to Kill) took nothing for its Carpenter to patch.
         if let Some(fitted) = self.fittings.get_mut(&target).filter(|_| !stood) {
             fitted.owe(&hurt);

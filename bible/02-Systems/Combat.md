@@ -238,7 +238,7 @@ gives every one through one door, `Room::give`, for the status's own time unless
 | Expose | Its fighter takes 1.15 times from everyone | 6 s |
 | Charge | Cuts what its fighter was doing, as a stagger of its own cause, and holds it still: no action, no step. It counts as staggered, so it takes a quarter more. Given while its fighter is staggered by another cause, down, overreached or reloading, it waits, still, for that to end, then holds for its whole time. None begins while one holds, or for 3 s after it has held | By rank: Minor 2 s, Major 1.5, Elite 1, Miniboss 0.6, Boss 0.4; a player's as a Minor's |
 | Haste | Its fighter moves 1.3 times as fast on the ground | 6 s |
-| Linked | Heals 5 health at each second of the room's clock, and its fighter deals 1.2 times | 3 s |
+| Linked | Heals 8 health at each second of the room's clock, and its fighter deals 1.3 times | 3 s |
 | Veiled | Foes do not notice it, take it as a target or aim at it, and a foe fighting it lets it go; a wind-up already under way still lands. Its swing landing within 60 degrees of a fighter's back is a crit. Its own blow or shot ends it, and so does casting any spell but Vanish: the veil holds through the tick that blow lands or that spell is cast, and is gone the next | 4 s |
 
 - **Weighing a blow.** The room weighs a blow's damage as it settles it, whatever struck it: a crit's 1.5, its

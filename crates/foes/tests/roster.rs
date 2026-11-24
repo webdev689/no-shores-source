@@ -3,7 +3,7 @@
 //! each rank throws its own set of telegraphed blows; roles, ranks and factions read back by number.
 
 use combat::arms::{OffHand, Ranged, WeaponClass};
-use combat::fighter::{Side, Weight};
+use combat::fighter::{Fighter, Side, Weight};
 use combat::shapes::Shape;
 use foes::ranks::{CORVANE, DEFENCE_MOST, Phase, REACTION_LEAST, THULE, shapes};
 use foes::roster::{COLLECTOR, CROSSBOWMAN, DECKHAND, Domain, HIGH_ASSESSOR, REEVE};
@@ -39,7 +39,8 @@ fn every_type_spawns_at_each_of_its_ranks_on_its_factions_side_with_its_numbers_
             assert_eq!(fighter.arms, combat::arms_of(foe.right, foe.left, true), "{}", foe.name);
             let shares = [numbers.parry, numbers.block, numbers.dodge];
             let total: f64 = shares.iter().sum();
-            let wanted = (role.parry + role.block + role.dodge) * defence;
+            let base = foe.base();
+            let wanted = (base.parry + base.block + base.dodge) * defence;
             assert!(total <= DEFENCE_MOST + CLOSE && (total - wanted.min(DEFENCE_MOST)).abs() < CLOSE);
             assert!(numbers.reaction >= REACTION_LEAST);
             assert_eq!((fighter.body.x, fighter.body.y, fighter.body.facing, fighter.aim), (3.0, -4.0, 1.0, 1.0));
@@ -215,4 +216,22 @@ fn each_elite_dungeon_has_a_boss_of_its_own_of_its_garrisons_faction_fighting_co
         (foe_type(21).unwrap().name, foe_type(38).unwrap().name),
         ("Wreck-Reeve Oswin Tarr", "Catacomb-Reeve Silas Brine")
     );
+}
+
+#[test]
+fn the_bulwark_raises_its_shield_as_a_swordsman_does_until_its_change_drops_it() {
+    let bulwark = foe_type(foes::roster::BULWARK).expect("the Bulwark");
+    let (fighter, brain) = spawn(bulwark, Rank::Elite, 0.0, 0.0, 0.0);
+    let swordsman = foes::roles::numbers(Role::Swordsman).block;
+    let shielded = foes::roster::standing(&brain, &fighter);
+    assert!((shielded.block - swordsman * 1.25).abs() < CLOSE, "an Elite's share of a swordsman's block");
+    assert_eq!(
+        foes::roster::standing(&brain, &Fighter { health: fighter.health_max * 0.6, ..fighter }).block,
+        shielded.block
+    );
+    let changed = Fighter { health: fighter.health_max / 2.0, ..fighter };
+    assert_eq!(foes::roster::standing(&brain, &changed).block, 0.0, "at half its health its shield is gone");
+    // Another brute keeps its role's never-guarding way.
+    let (fighter, brain) = spawn(foe_type(4).expect("the Enforcer"), Rank::Major, 0.0, 0.0, 0.0);
+    assert_eq!(foes::roster::standing(&brain, &fighter).block, 0.0);
 }

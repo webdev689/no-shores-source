@@ -443,12 +443,15 @@ The decisions in [[Open Questions]] are not repeated here.
   deed's XP to the Art and the faction (`earn_play_xp`); a road's task paying a mission's clear; a sinking paying
   twelve kills to the ship and now the player (XP and Aurem); no fire from a harmless ball; a player's bow two thirds
   (12 quick, 18 drawn); the greatsword 21 and lighter; captains' defence under the cap so each rank defends more;
-  Exploit ×1.25, no crit; companions with the land's ease. Measured with `economy_tests.rs` (six pace tests and the
+  Exploit ×1.25, no crit; companions with the land's ease. On the owner's answers
+  ([[The Bulwark Blocks, Supers Are Powerful, the Sea's Gaps Close and Level 30 Takes Breach Gear]]): the Bulwark
+  blocks as a swordsman until its change (`roster::standing`); Tempest 48 an orb, Duskraven 16 a bolt, Linked 8 a
+  second and ×1.3; a travel never brings the next hostile roll sooner; a cove's wreck one material of 1 or 2,
+  Heartwood 1.5%, a module 3%; a fire's bite scales with the shooter's level strength and the ball. Measured with `economy_tests.rs` (six pace tests and the
   ledger), `balance_tests.rs` (`measure_ranks`), `measure_blows` and `measure_fights_by_rank`. Destiny 1's numbers
   came from search summaries; the proxy refused every page, so they are unchecked against the pages. Tested offline:
   `cargo xtask check` on its head; not played. The page's two scripted sword players stand near the line of holding
-  the heroic raid (they held it before `main`'s later events work, and fail it after); whether a pair should stays the
-  owner's. Its other open points are in [[Open Questions]], "The balance pass's open points".
+  the heroic raid; the owner keeps it as it is for now. Its other open points are in [[Open Questions]], "The balance pass's open points".
 
 ## Next
 

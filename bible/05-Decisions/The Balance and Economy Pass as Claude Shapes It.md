@@ -77,6 +77,14 @@ What finishing a piece takes now, every node and one node a column (Aurem, fragm
 | The week's Abyss | 10 Shapes (was 15) | A Legendary a week, an Atheric's armour in about a week and a half, its weapon in about two and a half, near Destiny 1's weekly coins |
 | A week's Essence | Unchanged: the Elite and Abyss Dungeons of the week 3 and 5 of each stock, the two playlists' weekly 2 and 3, and a heroic chest's 1 a day (below): about 20 of each a week | A Legendary piece's upgrades take 18, as Destiny 1's took about a week of Ascendant materials |
 
+### The Arts' supers
+
+| Call | Chosen | Why |
+|---|---|---|
+| Tempest | 48 an orb (was 18): 72 on a foe of the player's level, felling a Major skirmisher, swordsman or archer; its six orbs 432 | The owner's "The art itself is a super and should be powerful". Its six orbs struck 162 in all on a matched foe, under six seconds of a sword's 28.5 a second |
+| Duskraven | 16 a bolt (was 7): 24 on a matched foe every 0.8 s, 360 over its 12 s, half of it healed | As Tempest; it struck 13 a second on a matched foe, under half a sword's; now 30 |
+| Linked (the Sunwell) | Heals 8 a second (was 5) and deals 1.3 times (was 1.2) | As Tempest; its 12 s and 3 s after now heal 120, a whole player, a support super's worth |
+
 ### Public events
 
 | Call | Chosen | Why |
@@ -99,6 +107,10 @@ What finishing a piece takes now, every node and one node a column (Aurem, fragm
 |---|---|---|
 | A sinking's pay | Twelve land kills of its rank at its level, raised by the tier (`SINKING_KILLS`): in XP to the ship, its modules and its officers aboard, and in XP and Aurem to the player, their Art and their faction (was one kill's XP, to the ship alone); nothing to a player whose ship is four levels or more below it, as a kill on land shares nothing so far below | A sea fight runs 3.5 to 4.5 minutes from 700 m and a ship is sighted every 4 to 6, against some 25 s a kill on foot. Before, a ship took over a hundred hours of sea fights to reach level 20, and the sea paid a player no Aurem |
 | Fire | A ball that does its target no harm (its ship four levels or more below) sets no fire | Before, a ship far below a captain still burned it with heated shot though its balls did nothing |
+| A fire's bite | 1.4 hull a second times the shooter's level strength (a captain's raised guns, a player's 1) and what both ships' fittings made of the ball (`apply_burning`) | The owner's yes. A fire burned a flat 21 hull whatever the levels, so it was worth most at level 1 and nothing at 30 |
+| Travel and the hostile roll | A travel to other waters waits the next roll at least its first half minute, never sooner than it would have come (`wait_first`) | The owner's yes. A travel set the wait back to half a minute, so a player who kept travelling met a ship every half minute against sailing's 60 to 140 s |
+| A cove's wreck | One common material of 1 or 2, Heartwood 1.5 times in a hundred, a module 3 (was two of 1 to 3, 5 and 8); an isle's unchanged | The owner's yes, and their earlier "less than a Minor ship's whole lot": a cove's two or three wrecks held 4 to 18 materials against a Minor ship's 3 to 9. Now 2 to 6 |
+| Level 30 | Waits on a Breach module, as a player's on Breach armour | The owner's "Yes. Same for player gear. Thats always been the goal"; already so, unchanged |
 
 ### The fight on foot
 
@@ -110,6 +122,7 @@ What finishing a piece takes now, every node and one node a column (Aurem, fragm
 | Exploit | A swing on an Exposed foe strikes 25% harder (was a crit, half again) | With Exposing Strikes keeping a foe Exposed it made every swing a crit, 1.72 times with Exposed's own share, against Honed's 1.05; now a quarter, as Riposte Master's |
 | A drawn shot | The room tells a player's shot loosed from the draw by its damage against a player's quick shot's (`power::aimed`) | Gullwing's leap is for aimed shots alone; told against the bow's whole 18, every quick shot at 12 would have leapt |
 | Companions and boarding hands | Their blows on foes take the land's ×1.5 and foes' blows on them ×0.75 | They fight "as a player matched to their level", and the fight's heat already took the ease off what they dealt and took |
+| The Bulwark | Blocks as a swordsman does, 35% as a Major, until its change (its second phase or half its health) drops the shield for its maul (`roster::standing`); any brute bearing a shield the same | The owner's yes ([[The Bulwark Blocks, Supers Are Powerful, the Sea's Gaps Close and Level 30 Takes Breach Gear]]). As a brute it carried a shield but never raised it |
 
 Measured, a level 1 player with the starting sword swinging once a second and never guarding (`measure_blows`):
 
@@ -125,7 +138,7 @@ Measured, a level 1 player with the starting sword swinging once a second and ne
 The Miniboss's and the Boss's times move by a few seconds from run to run as the dice fall; each is one fight. The
 page's two scripted sword players still run out the heroic raid's clock (`server/public.test.ts`), though its last
 waves' Reeves defend less; on the branch before `main`'s later events work came in they held it, so the pair stands
-near the line. Whether a pair should hold it stays the owner's.
+near the line. The owner keeps it so for now.
 
 ## Left as it was
 

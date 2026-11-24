@@ -104,8 +104,9 @@ The sea room holds its islands (`sea_islands.rs`):
 - **Wreckage.** A landed player within 4 m of a wreck's heap scavenges it once. Their character keeps the wrecks they
   scavenged by each island's seed (the latest 16 islands), so neither a rejoin nor the island's room opened again pays
   them twice, and every character has its own lot. Its salvage is the ship's own law ([[Ship Power]],
-  `gear::ship::found`): a cove's wreck two common ship materials (Timber, Canvas or Iron) of one to three each,
-  Heartwood 5 times in a hundred and a module 8 (less than a Minor ship's whole lot, as the owner chose); an isle's
+  `gear::ship::found`): a cove's wreck one common ship material (Timber, Canvas or Iron) of one or two, Heartwood 1.5
+  times in a hundred and a module 3, so its two or three wrecks together hold less than a Minor ship's whole lot, as
+  the owner chose; an isle's
   three of three to six, Heartwood 15 times in a hundred and a module one time in five; each chance raised by the
   room's tier. It is rolled at the middle of the island's water's band raised by the room's seas, and paid
   straight into the player's ship materials, a module carried as any item. The wrecks spent for them are told them in

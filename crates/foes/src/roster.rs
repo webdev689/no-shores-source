@@ -183,11 +183,14 @@ impl FoeType {
         faction(self.faction).map_or(Side::from_number(self.faction), |faction| faction.side())
     }
 
-    /// Its numbers as a Major: its role's, in its hands, with its own changes.
+    /// Its numbers as a Major: its role's, in its hands, with its own changes. A brute that bears a shield (the
+    /// Bulwark) raises it as a swordsman does, where its role never guards.
     #[must_use]
     pub fn base(&self) -> Numbers {
         let role = numbers(self.role);
-        Numbers { right: self.right, left: self.left, standoff: self.standoff, ..role }
+        let shielded = role.block == 0.0 && self.left.starts_with("shield");
+        let block = if shielded { numbers(Swordsman).block } else { role.block };
+        Numbers { right: self.right, left: self.left, standoff: self.standoff, block, ..role }
     }
 
     /// Its numbers at a rank, in phase `phase_number` (1 and up).
@@ -224,4 +227,13 @@ pub fn spawn(foe_type: &'static FoeType, rank: Rank, x: f64, y: f64, facing: f64
     fighter.might = numbers.might;
     fighter.ally = fighter.side.is_players();
     (fighter, Brain::new(foe_type, rank, facing))
+}
+
+/// A foe's numbers as it stands now: its type's at its rank and phase, but a Bulwark that has changed (its second
+/// phase, or at half its health, as the page draws its shield dropped for its maul) blocks no more.
+#[must_use]
+pub fn standing(brain: &Brain, fighter: &Fighter) -> Numbers {
+    let numbers = brain.numbers();
+    let changed = brain.tells.phase >= 2 || fighter.health <= fighter.health_max / 2.0;
+    if brain.foe_type.number == BULWARK && changed { Numbers { block: 0.0, ..numbers } } else { numbers }
 }

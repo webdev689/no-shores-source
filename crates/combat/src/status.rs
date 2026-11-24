@@ -20,9 +20,9 @@ pub const CHARGE_IMMUNE: u32 = 180;
 pub const HASTE_TIMES: f64 = 1.3;
 pub const HASTE_TICKS: u32 = 360;
 /// A Linked fighter heals this much each second and deals this much; Linked lingers this long once its source stops
-/// giving it.
-pub const LINKED_HEAL: f64 = 5.0;
-pub const LINKED_TIMES: f64 = 1.2;
+/// giving it. The Sunwell's twelve seconds heal nearly a whole player, as a support super should.
+pub const LINKED_HEAL: f64 = 8.0;
+pub const LINKED_TIMES: f64 = 1.3;
 pub const LINKED_TICKS: u32 = 180;
 /// The veil lasts this long; a blow landing within this of its target's back while its striker is Veiled crits.
 pub const VEILED_TICKS: u32 = 240;

@@ -87,6 +87,9 @@ strikes ([[Public Events]]).
 
   A captain fights only as an Elite, a Miniboss or a Boss, so its shares sit low enough that each of those ranks
   defends more than the one below, under the ranks' cap of 85% ([[The Balance and Economy Pass as Claude Shapes It]]).
+  A brute that bears a shield, the Bulwark, blocks as a swordsman does (35% as a Major), until its change, its second
+  phase or half its health, drops the shield for its maul (`roster::standing`); its guard is drawn as its stance, the
+  shield held across its front.
 
   A foe may have a level: its health is its rank's times 1.07 for each, and its blows on a player and theirs on it
   are made with the power of [[Gear]], its rank's might and its phase's on top. A player's blows on it strike half
