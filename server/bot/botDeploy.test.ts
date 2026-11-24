@@ -1,26 +1,10 @@
 import assert from 'node:assert/strict';
 import { existsSync, readFileSync } from 'node:fs';
-import { dirname, join, normalize } from 'node:path';
 import { test } from 'node:test';
-import { REPO, codeOf, decided, refused, underCode, workflowText } from '../deployReadyForTests.ts';
+import { REPO, codeOf, decided, importedFrom, refused, underCode, workflowText } from '../deployReadyForTests.ts';
 
 /** The paths the bot is built from, as its workflow lists them. */
 const botCode = codeOf(workflowText('bot.yml'));
-
-/** Every file a module imports by a relative path, and what those import in turn, from the repository's root. */
-function importedFrom(roots: readonly string[]): string[] {
-  const found = new Set<string>();
-  const visit = (path: string) => {
-    if (found.has(path)) return;
-    found.add(path);
-    if (!path.endsWith('.ts')) return;
-    const text = readFileSync(new URL(path, REPO), 'utf8');
-    for (const [, file] of text.matchAll(/(?:from|import) '(\.[^']+)'/g))
-      visit(normalize(join(dirname(path), file ?? '')));
-  };
-  roots.forEach(visit);
-  return [...found].sort();
-}
 
 test('every file the bot’s Worker and its command writer are built from lies under the bot’s code', () => {
   const files = importedFrom(['server/bot/worker.ts', 'tools/botCommands.ts']);

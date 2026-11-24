@@ -75,6 +75,10 @@ jobs:
       !cancelled() && needs.check.result == 'success' && github.ref == 'refs/heads/main' &&
       (github.event_name == 'push' || github.event_name == 'workflow_dispatch') &&
       (needs.rooms.outputs.deploy == 'no' || needs.rooms.outputs.deployed == 'yes')
+    # A called workflow's jobs get at most what its caller grants: the site's deploy reads checks when run by hand.
+    permissions:
+      contents: read
+      checks: read
     uses: ./.github/workflows/site.yml
     secrets: inherit
 

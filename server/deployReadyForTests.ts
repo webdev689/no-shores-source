@@ -4,16 +4,34 @@
 import { execFileSync } from 'node:child_process';
 import { chmodSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
-import { dirname, join } from 'node:path';
+import { dirname, join, normalize } from 'node:path';
 
 export const REPO = new URL('../', import.meta.url);
 
 /** A workflow's text, by its file name under `.github/workflows/`. */
 export const workflowText = (name: string): string => readFileSync(new URL(`.github/workflows/${name}`, REPO), 'utf8');
 
-/** The paths a workflow's `CODE: >-` lists, a `:!path` among them leaving that one out. */
-export const codeOf = (workflow: string): string[] =>
-  (/CODE: >-\n((?: {12}\S.*\n)+)/.exec(workflow)?.[1] ?? '').trim().split(/\s+/);
+/** The paths a workflow's step lists in its `CODE: >-`, the step named by its id, a `:!path` leaving that one out. */
+export function codeOf(workflow: string, step = 'ready'): string[] {
+  const from = workflow.indexOf(`- id: ${step}\n`);
+  if (from < 0) return [];
+  return (/CODE: >-\n((?: {12}\S.*\n)+)/.exec(workflow.slice(from))?.[1] ?? '').trim().split(/\s+/);
+}
+
+/** Every file a module imports by a relative path, and what those import in turn, from the repository's root. */
+export function importedFrom(roots: readonly string[]): string[] {
+  const found = new Set<string>();
+  const visit = (path: string) => {
+    if (found.has(path)) return;
+    found.add(path);
+    if (!path.endsWith('.ts')) return;
+    const text = readFileSync(new URL(path, REPO), 'utf8');
+    for (const [, file] of text.matchAll(/(?:from|import) '(\.[^']+)'/g))
+      visit(normalize(join(dirname(path), file ?? '')));
+  };
+  roots.forEach(visit);
+  return [...found].sort();
+}
 
 /** Whether a path from the repository's root lies under the code, and under none it leaves out. */
 export function underCode(code: readonly string[], path: string): boolean {

@@ -50,7 +50,9 @@ export function siteTop(page: SitePage): string {
 /** The foot of every page, in columns: the logo and the copyright, the pages by name, then Play and the Discord once
  *  it has an address. */
 export function siteFoot(page: SitePage): string {
-  const items = SITE_PAGES.map((each) => `<li>${link(each.id, wordKeyOf(each.id), each === page)}</li>`);
+  const items = SITE_PAGES.filter((each) => each.inFoot).map(
+    (each) => `<li>${link(each.id, wordKeyOf(each.id), each === page)}</li>`,
+  );
   const places = Object.keys(OUTSIDE)
     .filter((name) => siteHref(name)?.href)
     .map((name) => link(name, wordKeyOf(name), false, name === 'play' ? 'button button-gold' : 'button'));

@@ -4,10 +4,10 @@ name: rooms
 # over its D1 database (made if it is not there, its migrations applied first, the Discord app's keys handed over when
 # the repository has them), then the rooms (built first without the token, then deployed with it alone), whose
 # service binding reaches the accounts. ci.yml calls it from main once the same commit has passed the check, before it
-# publishes the page, and it deploys only when what the rooms are built from has changed since their last deploy; it
-# also runs by hand from main, deploying whether anything changed or not, but only a commit whose own CI check passed:
-# a run on one that has not ends red and deploys nothing. It tells ci.yml whether the rooms had nothing to deploy,
-# deployed, or could not, so the page is published only in the first two cases.
+# publishes the page. Each deploys only when what it is built from has changed since its own last deploy, the accounts
+# and the rooms apart; it also runs by hand from main, deploying both whether anything changed or not, but only a
+# commit whose own CI check passed: a run on one that has not ends red and deploys nothing. It tells ci.yml whether the
+# rooms had nothing to deploy, deployed, or could not, so the page is published only in the first two cases.
 on:
   workflow_call:
     outputs:
@@ -35,6 +35,7 @@ jobs:
       checks: read
     outputs:
       deploy: ${{ steps.ready.outputs.deploy }}
+      accounts: ${{ steps.accounts.outputs.deploy }}
     steps:
       # The history without its files' contents, to compare the rooms' code with that of their last deploy.
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
@@ -65,18 +66,35 @@ jobs:
         # The rooms cannot deploy without the token, so the page waits too: none is published on a protocol no room
         # speaks.
         run: bash .github/deploy-ready.sh rooms "the rooms"
+      # The accounts keep a deploy record of their own, so an accounts deploy that failed is tried again at the next
+      # merge, even when the rooms deployed: their code reads as deployed only once the accounts themselves were.
+      - id: accounts
+        env:
+          GH_TOKEN: ${{ github.token }}
+          HAS_TOKEN: ${{ secrets.CLOUDFLARE_TOKEN != '' }}
+          BY_HAND: ${{ github.event_name == 'workflow_dispatch' }}
+          # What the accounts' Worker is built from: its folder, the room files and the page's laws it imports, the
+          # content those read, the locks and the scripts that deploy, and this workflow.
+          CODE: >-
+            server/accounts server/address.ts server/arrival.ts server/keeping.ts server/outpostHost.ts
+            server/roomDoor.ts server/roomNames.ts client/src/game/guild client/src/player/binds.ts
+            content/gear/factions.json content/guilds content/modules/modules.json package.json package-lock.json
+            .github/workflows/rooms.yml .github/deploy-ready.sh
+        run: bash .github/deploy-ready.sh accounts "the accounts"
 
   # One deploy at a time; a newer merge's deploy replaces one waiting. The database's id never enters the repository:
   # it is looked up, or the database made, and written into this runner's copy of the config. The Cloudflare token
   # reaches only the steps that run wrangler, never `npm ci` and the packages it installs.
   accounts:
     needs: ready
-    if: needs.ready.outputs.deploy == 'yes'
+    if: needs.ready.outputs.accounts == 'yes'
     runs-on: ubuntu-latest
     timeout-minutes: 15
     concurrency:
       group: accounts
       cancel-in-progress: false
+    # Each deploy is recorded against the commit it came from, which the next run compares with.
+    environment: accounts
     env:
       CLOUDFLARE_ACCOUNT_ID: a27adccb38c8e8b82fa32e5736274a94
       CONFIG: server/accounts/wrangler.jsonc

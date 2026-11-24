@@ -11,13 +11,17 @@ export interface SitePage {
   readonly folder: string;
   /** Whether the top bar names it. */
   readonly inBar: boolean;
+  /** Whether the foot names it: every page but the one shown for an address with no page. */
+  readonly inFoot: boolean;
 }
 
 export const SITE_PAGES: readonly SitePage[] = [
-  { id: 'home', folder: '', inBar: false },
-  { id: 'world', folder: 'world', inBar: true },
-  { id: 'game', folder: 'game', inBar: true },
-  { id: 'panel', folder: 'panel', inBar: false },
+  { id: 'home', folder: '', inBar: false, inFoot: true },
+  { id: 'world', folder: 'world', inBar: true, inFoot: true },
+  { id: 'game', folder: 'game', inBar: true, inFoot: true },
+  { id: 'panel', folder: 'panel', inBar: false, inFoot: true },
+  // served for any address with no page of its own, as `404.html` beside the pages (site.yml)
+  { id: 'lost', folder: 'lost', inBar: false, inFoot: false },
 ];
 
 /**

@@ -1,0 +1,10 @@
+// The Worker answering www.noshores.online, which only redirects to the bare domain (worker.ts). site.yml deploys it
+// to that one domain, so it has no workers.dev address.
+{
+  "name": "noshores-www",
+  "main": "worker.ts",
+  "compatibility_date": "2026-11-01",
+  "send_metrics": false,
+  "workers_dev": false,
+  "preview_urls": false,
+}

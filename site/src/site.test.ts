@@ -180,6 +180,13 @@ test('no page has a timer, a clock, a countdown, a staff link, an account area o
     assert.doesNotMatch(key.startsWith('panel.') ? text.replace(signsIn, '') : text, banned, key);
 });
 
+test('the page for an address with no page is built, kept out of the foot and out of search', () => {
+  const lost = made.find(({ page }) => page.id === 'lost');
+  assert.ok(lost, 'built');
+  assert.match(lost.html, /<meta name="robots" content="noindex"/);
+  for (const { html } of made) assert.doesNotMatch(html, /href="\/lost\/"/, 'no page links to it');
+});
+
 test('the foot holds the copyright of Vestige Studios on every page', () => {
   for (const { page, html } of made) assert.match(html, /© Vestige Studios/, page.id);
 });

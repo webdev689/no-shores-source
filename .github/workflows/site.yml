@@ -1,14 +1,16 @@
 name: site
 
 # Serves the website and the game at noshores.online from Cloudflare: the Worker noshores-site, whose static files are
-# the site's pages at the root and the game's client under /play/. Only ci.yml calls it, from main once the same commit
-# has passed the check and the rooms have deployed or had nothing to, as it publishes the page, so no game is served on
-# a protocol no room speaks. The game's R2 bucket is first made to answer the domain wherever it answers the page.
+# the site's pages at the root and the game's client under /play/, and noshores-www, which sends www.noshores.online to
+# the bare domain. ci.yml calls it from main once the same commit has passed the check and the rooms have deployed or
+# had nothing to, as it publishes the page, so no game is served on a protocol no room speaks. It also runs by hand
+# from main, to try a deploy again, but only for a commit whose own CI check passed. The game's R2 bucket is first made to answer the domain wherever it answers the page.
 # Until noshores.online is a zone of the Cloudflare account (its nameservers moved from Porkbun), nothing is served and
 # the run says so. The token then needs Zone: Read and Workers Routes: Edit on that zone, beside the account's Workers
 # R2 Storage: Edit it publishes with, which the bucket's rules need too.
 on:
   workflow_call:
+  workflow_dispatch:
 
 permissions:
   contents: read
@@ -16,6 +18,7 @@ permissions:
 jobs:
   # Installs others' code and builds, so it holds no secret: what it builds goes on as an artifact.
   build:
+    if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
@@ -37,6 +40,8 @@ jobs:
           mkdir -p target/served
           cp -R target/site/. target/served/
           cp -R dist target/served/play
+          cp target/site/lost/index.html target/served/404.html
+          cp site/_headers target/served/_headers
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
           name: served
@@ -49,6 +54,9 @@ jobs:
     needs: build
     runs-on: ubuntu-latest
     timeout-minutes: 20
+    permissions:
+      contents: read
+      checks: read
     concurrency:
       group: site
       cancel-in-progress: false
@@ -63,9 +71,20 @@ jobs:
       - id: head
         env:
           GH_TOKEN: ${{ github.token }}
-        # Asked apart from the comparison, so a failed ask fails the step rather than skipping the deploy unseen.
+          BY_HAND: ${{ github.event_name == 'workflow_dispatch' }}
+        # Asked apart from the comparison, so a failed ask fails the step rather than skipping the deploy unseen. By
+        # hand, only a commit whose CI check passed is served.
         run: |
+          set -euo pipefail
           sha=$(gh api "repos/${{ github.repository }}/commits/main" --jq .sha)
+          if [ "$BY_HAND" = "true" ]; then
+            passed=$(gh api "repos/${{ github.repository }}/commits/${{ github.sha }}/check-runs?check_name=check" \
+              --jq 'any(.check_runs[]; .app.slug == "github-actions" and .conclusion == "success")')
+            if [ "$passed" != true ]; then
+              echo "::error::a run by hand serves only a commit that passed the CI check, and this one has not"
+              exit 1
+            fi
+          fi
           echo "sha=$sha" >> "$GITHUB_OUTPUT"
       - id: zone
         if: steps.head.outputs.sha == github.sha
@@ -130,7 +149,10 @@ jobs:
         if: steps.zone.outputs.served == 'yes'
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_TOKEN }}
-        run: npx wrangler deploy --config site/wrangler.jsonc --domain "$ZONE" --domain "www.$ZONE"
+        run: |
+          set -euo pipefail
+          npx wrangler deploy --config site/wrangler.jsonc --domain "$ZONE"
+          npx wrangler deploy --config site/www/wrangler.jsonc --domain "www.$ZONE"
       # A domain new to the Worker waits on its certificate, which can take minutes: each address is asked for up to
       # about ten.
       - name: Check the site and the game answer
@@ -145,3 +167,12 @@ jobs:
             echo "::error::https://$ZONE$path did not answer"
             exit 1
           done
+          status=$(curl -sS -o /dev/null -w '%{http_code}' --max-time 15 "https://$ZONE/no-such-page/")
+          test "$status" = 404 || { echo "::error::an address with no page answered $status, not 404"; exit 1; }
+          for attempt in $(seq 24); do
+            moved=$(curl -sS -o /dev/null -w '%{http_code} %{redirect_url}' --max-time 15 "https://www.$ZONE/game/") || moved=""
+            if [ "$moved" = "301 https://$ZONE/game/" ]; then exit 0; fi
+            sleep 10
+          done
+          echo "::error::www.$ZONE did not send /game/ to https://$ZONE/game/ (answered: $moved)"
+          exit 1

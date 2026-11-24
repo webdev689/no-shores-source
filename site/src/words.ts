@@ -228,6 +228,14 @@ const GAME = {
     'Start as a guest at once. Add a username, or link your Discord account, to keep your captain on any device.',
 } as const;
 
+// The page for an address with no page of its own.
+const LOST = {
+  'lost.title': 'Page not found',
+  'lost.description': 'There is no page at this address.',
+  'lost.text': 'There is no page at this address. The link may be wrong, or the page may have moved.',
+  'lost.home': 'Back to the home page',
+} as const;
+
 const PANEL = {
   'panel.title': 'Discord bot',
   'panel.description':
@@ -239,4 +247,12 @@ const PANEL = {
   'panel.english': 'The panel is in English for now.',
 } as const;
 
-export const WORDS: Readonly<Record<string, string>> = { ...PREMISE, ...SHELL, ...HOME, ...WORLD, ...GAME, ...PANEL };
+export const WORDS: Readonly<Record<string, string>> = {
+  ...PREMISE,
+  ...SHELL,
+  ...HOME,
+  ...WORLD,
+  ...GAME,
+  ...LOST,
+  ...PANEL,
+};
