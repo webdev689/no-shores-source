@@ -524,7 +524,8 @@ The decisions in [[Open Questions]] are not repeated here.
   owner's to say.
 - **Whether players may harm one another** ([[Combat]]); and **isles**: how many, how big and how placed
   ([[World Map]]).
-- **The balance and economy pass** (#178, branch `ccr-2fa9295d-99y63m`), for the owner's yes to merge, on the owner's
+- **The balance and economy pass** (#178), merged on the owner's "Merge and deploy", which deployed the rooms and the
+  page; on the owner's
   "comprehensive balance pass and economy pass on the entire game ecosystem so far ... Destiny 1 vanilla as a
   reference ... autonomy" ([[The Balance and Economy Pass Is Claude's, After Destiny 1 Vanilla]]; every call, its
   reason and its Destiny 1 source in [[The Balance and Economy Pass as Claude Shapes It]]). The owner's own decisions
@@ -552,6 +553,8 @@ The decisions in [[Open Questions]] are not repeated here.
   came from search summaries; the proxy refused every page, so they are unchecked against the pages. Tested offline:
   `cargo xtask check` on its head; not played. The rules' two scripted sword players run out the heroic raid's clock
   in its fourth wave; with `main`'s captains, before this pass's, they hold it. The owner keeps it as it is for now. Its one open point, Conduit, is in [[Open Questions]].
+  Not yet seen in the deployed game: a pair's quicker swings, the Bulwark's shield and its drop, the supers' numbers,
+  a Marksman's three aimed shots, a sinking's pay, a bounty card's own pay and the heroic raid with players.
 
 ## Next
 
