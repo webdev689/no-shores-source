@@ -14,21 +14,21 @@ pub(crate) fn chests_of<'built>(
     player: PlayerId,
 ) -> WIPOffset<Vector<'built, f64>> {
     let chests = room.chests_for(player).into_iter();
-    let numbers: Vec<f64> = chests.flat_map(|(number, [x, y, z, facing])| [f64::from(number), x, y, z, facing]).collect();
+    let numbers: Vec<f64> =
+        chests.flat_map(|(number, [x, y, z, facing])| [f64::from(number), x, y, z, facing]).collect();
     builder.create_vector(&numbers)
 }
 
 /// The containers searchable that a player has not searched: each its number, its box across (west, north, east,
-/// south), its foot and its top.
+/// south), its foot, its top and its model.
 pub(crate) fn searchables_of<'built>(
     builder: &mut FlatBufferBuilder<'built>,
     room: &Room,
     player: PlayerId,
 ) -> WIPOffset<Vector<'built, f64>> {
     let held = room.searchables_for(player).into_iter();
-    let numbers: Vec<f64> = held
-        .flat_map(|(number, [west, north, east, south, foot, top])| [f64::from(number), west, north, east, south, foot, top])
-        .collect();
+    let numbers: Vec<f64> =
+        held.flat_map(|(number, holder)| std::iter::once(f64::from(number)).chain(holder)).collect();
     builder.create_vector(&numbers)
 }
 

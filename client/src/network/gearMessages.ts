@@ -5,6 +5,7 @@ import { type ActivityRecord, activityOf } from './activityRecord.ts';
 import { type ArtState, artsOf } from './artMessages.ts';
 import { type GearLetter, mailOf } from './mailMessages.ts';
 import { type QuestState, questOf } from './questMessages.ts';
+import { FIND_ASKS, type FindState, findsOf } from './findMessages.ts';
 import { LORE_ASKS, type LoreState, loreOf } from './loreMessages.ts';
 import { type GearShip, shipOf } from './shipMessages.ts';
 
@@ -100,6 +101,7 @@ export const ASKS = {
   takeLetter: 71,
   takeAllLetters: 72,
   ...LORE_ASKS,
+  ...FIND_ASKS,
   /** A return to the player's ship, which the room answers (107 yes, or 105 fallen, 106 struck in the last ten
    *  seconds) before the page leaves for the sea. */
   toShip: 73,
@@ -206,7 +208,7 @@ export interface GearNode {
 /** A player's own gear, as the room sends it to them alone when it changes. `stocks` holds their Weapon and Armor
  *  Fragments, Weapon and Armor Essence and Fruit of Dagon; `answer` is their last ask's (0 done), `identified` the
  *  item a Vestige last opened to, `answered` how many asks have been answered. */
-export interface GearState extends LoreState {
+export interface GearState extends LoreState, FindState {
   readonly xp: bigint;
   readonly level: number;
   readonly prestige: number;
@@ -485,6 +487,7 @@ export function gearOf(gear: Gear): GearState {
     bountyAurem: gear.bountyAurem(),
     mail: mailOf(gear, itemOf),
     ...loreOf(gear),
+    ...findsOf(gear),
   };
 }
 

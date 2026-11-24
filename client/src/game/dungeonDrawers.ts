@@ -93,6 +93,7 @@ export class DungeonDrawers {
     drain = 0,
   ): void {
     this.view.setCache(foot.held.cache);
+    this.view.setFinds(foot.finds.drawn);
     this.view.setEncounter(foot.held.encounter);
     const { figures } = shown;
     const light = (point: readonly [number, number, number]) => this.view.lightAt(point, time);

@@ -22,8 +22,9 @@ const PATROL_CHESTS: [usize; 2] = [2, 4];
 const PATROL_SHARE: usize = 6;
 const DUNGEON_SHARE: usize = 4;
 pub const SEARCHABLE_MOST: usize = 16;
-/// A dungeon's chest: how far its back stands off the wall it is against, half its depth and half its width, metres.
-const OFF_WALL_M: f64 = 0.25;
+/// A dungeon's chest (the cache's, `dungeonChest.ts`): how far its back stands off the wall it is against, past the
+/// 0.3 its lid swings back as it opens; half its depth and half its width, metres.
+const OFF_WALL_M: f64 = 0.35;
 /// How far a second chest in a dungeon's room stands from every other, metres: two cells.
 const SECOND_APART_M: f64 = 2.0 * CELL_M;
 pub const CHEST_HALF_DEEP_M: f64 = 0.25;
@@ -33,8 +34,8 @@ const FINDS_STREAM: u64 = 0x0F1D_5000_C4E5_7000;
 
 /// A place a chest may stand: x, y, z and the way its front faces, radians clockwise from north.
 pub type ChestPlace = [f64; 4];
-/// A prop that holds things: its box across (west, north, east, south), its foot and its top, metres.
-pub type Holder = [f64; 6];
+/// A prop that holds things: its box across (west, north, east, south), its foot and its top, metres, and its model.
+pub type Holder = [f64; 7];
 
 /// A chest standing: its place among the room's, its number, and the tick it moves on (never, in a dungeon).
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -95,7 +96,10 @@ impl Finds {
             .props
             .iter()
             .filter(|prop| dungeon::models::holder(prop.model).is_some())
-            .filter_map(|prop| prop.solid.map(|[west, north, east, south, top]| [west, north, east, south, 0.0, top]))
+            .filter_map(|prop| {
+                let model = f64::from(prop.model);
+                prop.solid.map(|[west, north, east, south, top]| [west, north, east, south, 0.0, top, model])
+            })
             .collect();
         let count = dungeon.squares.len().min(places.len());
         Finds { places, groups, holders, patrol: false, count, ..Finds::default() }
@@ -314,8 +318,14 @@ impl Room {
             .collect()
     }
 
-    /// Makes this patrol's room stand chests at its layout's chest places and make its holders searchable.
-    pub fn lay_finds(&mut self, places: &[[f64; 3]], holders: Vec<Holder>) {
+    /// Makes this patrol's room stand chests at its layout's chest places and make its holders searchable, those
+    /// whose middle its section holds.
+    pub fn lay_finds(&mut self, places: &[[f64; 3]], mut holders: Vec<Holder>) {
+        if let Some(section) = &self.section {
+            holders.retain(|held| {
+                reach::inside(&section.ring, f64::midpoint(held[0], held[2]), f64::midpoint(held[1], held[3]))
+            });
+        }
         let floor = |x: f64, y: f64| self.floor.height_at(x, y);
         self.finds = Finds::of_patrol(places, holders, &floor);
     }

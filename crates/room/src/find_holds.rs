@@ -126,7 +126,7 @@ impl Room {
                 let before = [x + libm::sin(facing) * VESTIGE_BEFORE_M, y - libm::cos(facing) * VESTIGE_BEFORE_M, z];
                 (before, [x, y, z + crate::finds::CHEST_HALF_DEEP_M])
             }
-            Standing::Holder([west, north, east, south, _, top]) => {
+            Standing::Holder([west, north, east, south, _, top, _]) => {
                 (body, [(west + east) / 2.0, (north + south) / 2.0, top])
             }
         };

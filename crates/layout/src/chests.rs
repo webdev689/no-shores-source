@@ -11,9 +11,9 @@ use crate::seat::Seated;
 use crate::sites::{Site, SiteKind};
 use land::exact::rand01;
 
-/// How far a chest's middle stands out from the face it is tucked against, metres: its half depth (0.25) and a hand,
-/// so its lid opens clear of the face.
-const OUT_M: f64 = 0.45;
+/// How far a chest's middle stands out from the face it is tucked against, metres: its half depth (0.29, the event
+/// chest's, `tools/modules/chest.py`) and the 0.4 its lid swings back past its back as it opens, and a hand.
+pub const OUT_M: f64 = 0.75;
 /// Half its width along the face and half its depth, with a hand's room round it, metres.
 const HALF_WIDE_M: f64 = 0.55;
 const HALF_DEEP_M: f64 = 0.4;

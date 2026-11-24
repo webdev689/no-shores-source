@@ -13,7 +13,8 @@ import type { ForgedModel } from '../models/model.ts';
 import { dungeonBook, type SmallBook } from './dungeonBook.ts';
 import { propPlans } from './dungeonCells.ts';
 import { CLUSTER_COUNT, LightClusters, MOST_LISTED } from './dungeonClusters.ts';
-import { type Cache, chestMesh } from './dungeonChest.ts';
+import { type Cache, chestMesh, chestsMesh } from './dungeonChest.ts';
+import type { ChestDrawn } from './finds.ts';
 import { type DungeonLayout, SIDE_STEPS, type StyleKey } from './dungeonLayout.ts';
 import { dressingOf } from './dungeonDressing.ts';
 import { burningOf, cellWords, LIGHT_KINDS, type Light, lightAt, MOODS, NearestLights } from './dungeonLight.ts';
@@ -27,6 +28,13 @@ import { layModel } from './entrances.ts';
 import { propModel } from '../models/props.ts';
 import type { PropTable } from '../models/tables.ts';
 import { LIGHT_FLOATS, lightFloats, MOST_LIGHTS, MOST_LOOKS, VIEW_FLOATS } from './dungeonShaders.ts';
+
+/** How long a found chest's lid takes to swing back, seconds, and how far, radians: just short of upright, so standing
+ *  0.35 m off its wall (crates/room finds.rs) the open lid stays clear of every kit piece, none more than 0.3 m proud
+ *  of a wall (tools/dungeon/envelope.py); and half the chest's depth, metres (`dungeonChest.ts`). */
+const LID_OPEN_S = 0.6;
+const LID_RAD = 1.35;
+const HALF_DEEP_M = 0.25;
 
 /** How far out from its face the open portal's light stands, metres. */
 const PORTAL_OUT_M = 0.6;
@@ -53,6 +61,9 @@ type Drawn = {
   readonly floor: Buffers;
   chest: Buffers | null;
   shown: Cache | null;
+  /** The chests the dungeon stands for the player to find, and what they were last built from. */
+  finds: Buffers | null;
+  findsShown: string;
   /** The still water over the Ascents' floors whose seals hold, and which those are, as last built. */
   water: Buffers | null;
   drowned: string;
@@ -193,6 +204,8 @@ export class DungeonView {
       floor,
       chest: null,
       shown: null,
+      finds: null,
+      findsShown: '',
       water: null,
       drowned: '',
       nearest: null,
@@ -210,6 +223,25 @@ export class DungeonView {
     drawn.shown = cache;
     for (const buffer of [drawn.chest?.vertices, drawn.chest?.indices]) buffer?.destroy();
     drawn.chest = cache ? this.buffersOf(chestMesh(cache, drawn.wood), drawn.book) : null;
+  }
+
+  /** The chests standing for the player to find (finds.ts), each centred where the room stands it, its lid swung
+   *  back as the player opens it; built again only as one stands, goes or swings. */
+  setFinds(chests: readonly ChestDrawn[]): void {
+    const drawn = this.drawn;
+    if (!drawn) return;
+    const shown = chests.map((chest) => {
+      const lid = chest.opened === null ? 0 : Math.min(1, chest.opened / LID_OPEN_S) * LID_RAD;
+      // The chest is built from its front's middle, half its depth before its middle.
+      const [x, y, z] = chest.at;
+      const front = { x: x + Math.sin(chest.facing) * HALF_DEEP_M, y: y - Math.cos(chest.facing) * HALF_DEEP_M };
+      return { ...front, z, bearing: chest.facing, open: chest.opened !== null, lid };
+    });
+    const key = shown.map((chest) => `${chest.x},${chest.y},${chest.lid.toFixed(2)}`).join(';');
+    if (key === drawn.findsShown) return;
+    drawn.findsShown = key;
+    for (const buffer of [drawn.finds?.vertices, drawn.finds?.indices]) buffer?.destroy();
+    drawn.finds = shown.length > 0 ? this.buffersOf(chestsMesh(shown, drawn.wood), drawn.book) : null;
   }
 
   /** An Elite Dungeon's encounters as the room last said: its drowned floors' water built again only as a seal over
@@ -280,9 +312,9 @@ export class DungeonView {
     this.drawMeshes(pass, drawn);
   }
 
-  /** Draws the floor, the cache's chest and the drowned floors' water with the pipeline set. */
+  /** Draws the floor, the cache's chest, the chests to find and the drowned floors' water with the pipeline set. */
   private drawMeshes(pass: GPURenderPassEncoder, drawn: Drawn): void {
-    for (const buffers of [drawn.floor, drawn.chest, drawn.water]) {
+    for (const buffers of [drawn.floor, drawn.chest, drawn.finds, drawn.water]) {
       if (!buffers) continue;
       pass.setVertexBuffer(0, buffers.vertices);
       pass.setIndexBuffer(buffers.indices, 'uint32');
@@ -304,6 +336,8 @@ export class DungeonView {
       drawn.floor.indices,
       drawn.chest?.vertices,
       drawn.chest?.indices,
+      drawn.finds?.vertices,
+      drawn.finds?.indices,
       drawn.water?.vertices,
       drawn.water?.indices,
     ])

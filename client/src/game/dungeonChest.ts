@@ -1,16 +1,18 @@
 // The dungeon's cache: a chest of wooden boxes bound in iron, its lid shut or thrown back, where the room says it
-// stands and the way it faces.
+// stands and the way it faces; and the chests the dungeon stands for the player to find (finds.ts), the same chest,
+// each lid as far open as it has swung.
 import { type ForgedModel, meshBuilder } from '../models/model.ts';
 import { box, IRON } from './dungeonMesh.ts';
 
 /** The cache as a room's snapshot gives it: where it stands, the way it faces (radians clockwise from north), and
- *  whether it stands open. */
+ *  whether it stands open; or how far its lid has swung back (radians), for a chest opening. */
 export interface Cache {
   readonly x: number;
   readonly y: number;
   readonly z: number;
   readonly bearing: number;
   readonly open: boolean;
+  readonly lid?: number;
 }
 
 /** The chest's body, its lid, its iron bands and how far its lid is thrown back open, metres and radians. */
@@ -30,6 +32,18 @@ export function cacheOf(numbers: readonly number[]): Cache | null {
 
 /** The chest built from boxes, wood in `wood` and bands of iron, placed where the cache stands. */
 export function chestMesh(cache: Cache, wood: readonly [number, number]): ForgedModel {
+  return chestsMesh([cache], wood);
+}
+
+/** Every chest of `chests` built so, as one mesh. */
+export function chestsMesh(chests: readonly Cache[], wood: readonly [number, number]): ForgedModel {
+  const joined = meshBuilder();
+  for (const cache of chests) addChest(joined, cache, wood);
+  return joined.model();
+}
+
+/** Adds one chest to `joined`. */
+function addChest(joined: ReturnType<typeof meshBuilder>, cache: Cache, wood: readonly [number, number]): void {
   // Built with x to its right, y to its back and z up, its front's middle at its foot at the origin.
   const body = meshBuilder();
   const lid = meshBuilder();
@@ -43,7 +57,7 @@ export function chestMesh(cache: Cache, wood: readonly [number, number]): Forged
     box(lid, iron, [left, -BAND.proud, BODY.height], [right, back + BAND.proud, BODY.height + LID + BAND.proud]);
   }
   box(lid, iron, [-LOCK.half, -BAND.proud * 2, LOCK.low], [LOCK.half, 0, LOCK.high]);
-  const lidTurn = cache.open ? OPENED : 0;
+  const lidTurn = cache.lid ?? (cache.open ? OPENED : 0);
   const hinge = [back, BODY.height] as const;
   const [cosine, sine] = [Math.cos(cache.bearing), Math.sin(cache.bearing)];
   // Its right and its back in the world; with z up the turn keeps every face wound as it was.
@@ -60,7 +74,6 @@ export function chestMesh(cache: Cache, wood: readonly [number, number]): Forged
       hinge[1] - along * Math.sin(lidTurn) + up * Math.cos(lidTurn),
     ];
   };
-  const joined = meshBuilder();
   for (const [built, turn] of [
     [body.model(), (point: readonly number[]) => [...point]],
     [lid.model(), opened],
@@ -83,5 +96,4 @@ export function chestMesh(cache: Cache, wood: readonly [number, number]): Forged
         joined.tri([part.archive, part.record], corners, normal, mapping);
       }
   }
-  return joined.model();
 }

@@ -2,9 +2,10 @@
 // sign in its brass diamond, or a faction's emblem in the diamond edged in its Art's colour, as their screen shows them
 // (npc/npcMarks.ts), lit while the keeper has something for the player (a quest step to speak with them, or the
 // Postmaster's letters waiting), so it pulses and is seen from everywhere; over the bounty board its gold "!";
-// over Shape on his week's spot his own; over each dungeon entrance's door a door; and over each chapter of the lore
-// lying there for the player a closed book (compendium/loreArt.ts). A resource node wears none: its
-// own picture stands on the ground (nodeCards.ts).
+// over Shape on his week's spot his own; over each dungeon entrance's door a door; over each chapter of the lore
+// lying there for the player a closed book (compendium/loreArt.ts); and over each chest standing for them a chest,
+// over each container they may search a glass (finds.ts). A resource node wears none: its own picture stands on the
+// ground (nodeCards.ts).
 
 import type { PixelPicture } from '../combat/dropPictures.ts';
 import { type Marked, OVER_HEAD_M, WIDTH_M } from '../combat/marksOver.ts';
@@ -89,6 +90,49 @@ export const DOOR_PICTURE: PixelPicture = {
   colours: [OUTLINE, '#3a2a18', '#6e4a22', '#b07a40', '#4a4a52', BRASS],
 };
 
+/** A chest's mark: a chest of wood under an arched lid, banded in iron, its lock brass, 12 × 12 as the door's. */
+export const CHEST_PICTURE: PixelPicture = {
+  rows: [
+    '............',
+    '..aaaaaaaa..',
+    '.abdbbbbdba.',
+    'abcdccccdcba',
+    'aaaaaeeaaaaa',
+    'abcdceecdcba',
+    'abcdcaacdcba',
+    'abcdccccdcba',
+    'abbdbbbbdbba',
+    'abbdbbbbdbba',
+    'aaaaaaaaaaaa',
+    '.a........a.',
+  ],
+  colours: [OUTLINE, '#6e4a22', '#b07a40', '#4a4a52', BRASS],
+};
+
+/** A searchable container's mark: a glass in a brass rim, its glass catching the light, on a wooden handle. */
+export const SEARCH_PICTURE: PixelPicture = {
+  rows: [
+    '..aaaaa.....',
+    '.abbbbba....',
+    'abcccccba...',
+    'abcdcccba...',
+    'abcccccba...',
+    'abcccccba...',
+    '.abbbbbaa...',
+    '..aaaaaeea..',
+    '.......aeea.',
+    '........aeea',
+    '.........aaa',
+    '............',
+  ],
+  colours: [OUTLINE, '#c08a3e', '#9fc4d8', '#ffffff', '#6e4a22'],
+};
+
+/** How high a chest's lid stands over its foot, metres (the event chest's, tools/modules/chest.py), its mark over it;
+ *  and how far over a container's top its mark stands. */
+const CHEST_TOP_M = 0.66;
+const OVER_TOP_M = 0.15;
+
 const faction = new Map<number, PixelPicture>();
 /** The mark of the keeper at a station of `kind`: their sign, else their faction's emblem; none for a kind with none. */
 export function markOfKind(kind: string): PixelPicture | null {
@@ -109,9 +153,11 @@ export const keeperLit = (gear: GearState | null, kind: string, waits: (counter:
 /** What wears a mark where a player stands, on `floor`'s height, read once each: each station that deals with them
  *  over its keeper's crown while the keeper stands there (the bounty board over its gable), lit while `speak` says a
  *  quest step asks to speak with its keeper or, the Postmaster's, while letters wait; Shape over his while he is here;
- *  each chapter of the lore lying here for them (its gear's `loreHere`) as a book floating over where it lies; and
- *  each of a patrol's dungeon entrances over its door's lintel, once `props` gives its model's door: `entrances`, the
- *  room's word on them, which comes alone too, where the page holds no gear; else its gear's `dungeons`. */
+ *  each chapter of the lore lying here for them (its gear's `loreHere`) as a book floating over where it lies; each
+ *  chest standing for them over its lid and each container to search over its top (its gear's `chests` and
+ *  `searchables`); and each of a patrol's dungeon entrances over its door's lintel, once `props` gives its model's
+ *  door: `entrances`, the room's word on them, which comes alone too, where the page holds no gear; else its gear's
+ *  `dungeons`. */
 export function markedHere(
   gear: GearState | null,
   here: Pick<NodeInfo, 'stations' | 'visitorSpots'>,
@@ -134,6 +180,12 @@ export function markedHere(
   if (shape && own) marked.push({ picture: own, at: crown(...shape) });
   // A chapter lying in the world is the book itself, floating at a crown's height over where it lies.
   for (const { at } of gear?.loreHere ?? []) marked.push({ picture: LORE_PICTURE, at: crown(...at, LORE_TOP_M) });
+  for (const { at } of gear?.chests ?? [])
+    marked.push({ picture: CHEST_PICTURE, at: [at[0], at[1], at[2] + CHEST_TOP_M + OVER_HEAD_M] });
+  for (const { box, top } of gear?.searchables ?? []) {
+    const middle = [((box[0] ?? 0) + (box[2] ?? 0)) / 2, ((box[1] ?? 0) + (box[3] ?? 0)) / 2] as const;
+    marked.push({ picture: SEARCH_PICTURE, at: [middle[0], middle[1], top + OVER_TOP_M + OVER_HEAD_M] });
+  }
   for (const entrance of entrances) {
     const door = props && doorOf(entrance, props);
     if (!door) continue;

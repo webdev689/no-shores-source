@@ -3,7 +3,7 @@
 //! of what grows, and tucked with its back to something taller than a chest.
 
 use layout::Layout;
-use layout::chests::PLACES_MOST;
+use layout::chests::{OUT_M, PLACES_MOST};
 use layout::field::{distance, ring_holds};
 use layout::sites::{Site, SiteKind};
 use std::path::Path;
@@ -95,7 +95,7 @@ fn each_chest_place_stands_in_bounds_off_the_ways_clear_of_what_stands_and_tucke
             let planted = laid.plantings.iter().flat_map(|planting| &planting.points);
             assert!(planted.into_iter().all(|&point| distance(point, place.at) >= 1.0), "{id}: planted over");
             // Just behind its back, where it is tucked, stands a box taller than a chest.
-            let behind = [x - libm::sin(facing) * 0.55, y + libm::cos(facing) * 0.55];
+            let behind = [x - libm::sin(facing) * (OUT_M + 0.1), y + libm::cos(facing) * (OUT_M + 0.1)];
             let tucked = laid.boxes.iter().any(|&[west, north, east, south, top, bottom]| {
                 behind[0] >= west - 0.1
                     && behind[0] <= east + 0.1

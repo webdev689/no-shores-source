@@ -10,7 +10,10 @@ fn room_with_finds() -> (room::Room, room::PlayerId) {
     let section = room::Section { ring, spawns: vec![[0.0, 0.0]], falls_kill: false };
     let mut room = room::Room::node(room::Floor::Flat, Vec::new(), section);
     let places = [[10.0, 0.0, 0.0], [60.0, 0.0, 1.5], [110.0, 0.0, 3.0]];
-    room.lay_finds(&places, vec![[0.0, 20.0, 1.0, 21.0, 0.0, 0.8], [5.0, 20.0, 6.0, 21.0, 0.0, 0.8]]);
+    room.lay_finds(
+        &places,
+        vec![[0.0, 20.0, 1.0, 21.0, 0.0, 0.8, 41_816.0], [5.0, 20.0, 6.0, 21.0, 0.0, 0.8, 41_003.0]],
+    );
     let player = room.join().expect("a room with space");
     room.tick();
     (room, player)
@@ -21,7 +24,7 @@ fn floats(numbers: Option<flatbuffers::Vector<'_, f64>>) -> Vec<f64> {
 }
 
 #[test]
-fn the_gear_message_carries_each_chest_in_five_numbers_and_each_container_in_seven() {
+fn the_gear_message_carries_each_chest_in_five_numbers_and_each_container_in_eight() {
     let (room, player) = room_with_finds();
     let bytes = gear_bytes(&room, player).expect("a player of the room");
     let gear = messages::root_as_from_room(&bytes).expect("read").gear().expect("gear");
@@ -34,8 +37,8 @@ fn the_gear_message_carries_each_chest_in_five_numbers_and_each_container_in_sev
     let searchables = floats(gear.searchables());
     let held = room.searchables_for(player);
     assert_eq!(held.len(), 1, "one of two in six, at least one");
-    let [west, north, east, south, foot, top] = held[0].1;
-    assert_eq!(searchables, [f64::from(held[0].0), west, north, east, south, foot, top]);
+    let [west, north, east, south, foot, top, model] = held[0].1;
+    assert_eq!(searchables, [f64::from(held[0].0), west, north, east, south, foot, top, model]);
 }
 
 #[test]

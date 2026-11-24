@@ -189,12 +189,25 @@ const prop = (module: PropModule, foot: Point, turn: number, more: Partial<Event
 /** A chest and its lid, the lid at the chest's hinge swung open as far as the seconds since it was opened say. */
 function chestProps(chest: ChestLike): EventProp[] {
   const heroic = chest.tier >= 3;
-  const body = prop(heroic ? 'event-chest-heroic' : 'event-chest', chest.at, turnOf(chest.id));
-  const lidModule = heroic ? 'event-chest-heroic-lid' : 'event-chest-lid';
-  const swung = chest.opened === null ? 0 : ease(chest.opened / MOTION.lidOpenS) * MOTION.lidOpenRad;
-  const hinge = propPoint(body, moduleSocket(moduleNumber(body.module), 'hinge'));
-  const glow = chest.opened === null ? 0.8 : 1.4;
-  return [{ ...body, glow }, prop(lidModule, hinge, body.turn, { lid: swung, glow })];
+  const [body, lid] = heroic ? (['event-chest-heroic', 'event-chest-heroic-lid'] as const) : PLAIN_CHEST;
+  return chestPair(body, lid, chest.at, turnOf(chest.id), chest.opened);
+}
+
+const PLAIN_CHEST = ['event-chest', 'event-chest-lid'] as const;
+
+/** A chest's body at its foot turned `turn`, and its lid at its hinge swung open as far as `opened` seconds say. */
+function chestPair(body: PropModule, lid: PropModule, foot: Point, turn: number, opened: number | null): EventProp[] {
+  const standing = prop(body, foot, turn);
+  const swung = opened === null ? 0 : ease(opened / MOTION.lidOpenS) * MOTION.lidOpenRad;
+  const hinge = propPoint(standing, moduleSocket(moduleNumber(body), 'hinge'));
+  const glow = opened === null ? 0.8 : 1.4;
+  return [{ ...standing, glow }, prop(lid, hinge, turn, { lid: swung, glow })];
+}
+
+/** A chest a patrol stands (game/finds.ts) as a public event's plain chest and its lid: its front, the module's -y,
+ *  the way its place faces, its lid swinging back as the player opens it. */
+export function foundChestProps(chest: { at: Point; facing: number; opened: number | null }): EventProp[] {
+  return chestPair(PLAIN_CHEST[0], PLAIN_CHEST[1], chest.at, chest.facing, chest.opened);
 }
 
 /**

@@ -1,6 +1,7 @@
 // A landmass's node layouts as the layout crate serialises them (the land worker hands them over as JSON), and what
 // the game reads off them: each node's section and spawns, and which layouts stand near a point.
 import type { Pad, Solid } from '../city/plan.ts';
+import { PROP_ROLES } from '../models/propRoles.ts';
 
 type Point = readonly [number, number];
 
@@ -44,12 +45,14 @@ export interface LayoutArea {
 /** A site a layout marks (the layout crate's `Site`): what it is for, where, how much ground it takes, and what it
  *  holds or leads to. */
 export interface LaidSite {
-  readonly kind: 'landing' | 'gate' | 'event' | 'beacon' | 'resource' | 'foes' | 'objective' | 'door';
+  readonly kind: 'landing' | 'gate' | 'event' | 'beacon' | 'resource' | 'foes' | 'objective' | 'door' | 'chest';
   readonly at: Point;
   readonly radius: number;
   readonly holds?: string;
   /** Where a resource's node stands: before its dressing, toward its path; none off the section's floor. */
   readonly node?: Point;
+  /** Which way a chest's place faces, radians clockwise from north. */
+  readonly facing?: number;
 }
 
 /** A run breaking off a patrol area, as the layout crate writes it: its kind, its mouth, its line and its beats. */
@@ -121,6 +124,9 @@ interface Placed {
   readonly resources?: readonly { readonly at: Point; readonly holds?: string }[];
   readonly foes?: readonly Point[];
   readonly places?: readonly NodePlace[];
+  /** A patrol's chest places (x, y, facing) and its props that may hold things (model, box across, origin's height). */
+  readonly chests?: readonly (readonly [number, number, number])[];
+  readonly holderProps?: readonly (readonly [number, number, number, number, number, number])[];
 }
 
 /** The drawn nodes with each laid node's section, spawns and places in place of the ring it was drawn with, its
@@ -143,8 +149,34 @@ export function laidNodes<Node extends Placed>(drawn: readonly Node[], layouts: 
     const foes = laid.sites.flatMap(({ kind, at, holds }) =>
       kind === 'foes' && (holds === undefined || cavern(holds)) ? [at] : [],
     );
-    return { ...node, ring: laid.ring, spawns: laid.spawns, centre, resources, foes, places: placesOf(laid) };
+    const finds = laid.kind === 'patrol' ? findsOf(laid) : {};
+    return { ...node, ring: laid.ring, spawns: laid.spawns, centre, resources, foes, places: placesOf(laid), ...finds };
   });
+}
+
+/** The families whose pieces may hold things (models/propRoles.ts), of which the room takes those its rules' own
+ *  families hold (crates/dungeon models.rs `HOLDERS`). */
+const HOLDING = new Set([
+  'cabinet',
+  'crate',
+  'cupboard',
+  'dresser',
+  'sarcophagus',
+  'shelf',
+  'stepShelf',
+  'tomb',
+  'wardrobe',
+]);
+
+/** A patrol's chest places, each x, y and the way it faces, and its props that may hold things, each its model, its
+ *  box across and its origin's height, as a room playing alone takes them (the bake writes them for the server). */
+export function findsOf(laid: Pick<NodeLayout, 'sites' | 'props'>): Pick<Placed, 'chests' | 'holderProps'> {
+  const chests = laid.sites.flatMap(({ kind, at, facing }) =>
+    kind === 'chest' ? [[at[0], at[1], facing ?? 0] as const] : [],
+  );
+  const held = laid.props.filter((prop) => HOLDING.has(PROP_ROLES.get(prop.model) ?? ''));
+  const holderProps = held.map(({ model, footprint, at }) => [model, ...footprint, at[2]] as const);
+  return { chests, holderProps };
 }
 
 /** A layout's bounds: its ring's, west, north, east and south. */

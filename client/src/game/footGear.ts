@@ -17,6 +17,7 @@ import { goalOf, puzzlePoints } from './quests/questBook.ts';
 import { shapeSpot } from './townsfolk.ts';
 import { chime } from './uiSounds.ts';
 import { chapterAt } from './compendium/loreBook.ts';
+import { findUse } from './finds.ts';
 import type { NodeInfo } from './worldData.ts';
 
 /** How near a resource node a player stands to gather it, and a puzzle's point to use it; how long E is held to gather
@@ -45,20 +46,29 @@ const SHAPE_OFFER = { words: KEEPERS.shape.title, opens: { view: 'shape' } } as 
 /** The stations of the place a player stands in, and where Shape may stand there. */
 type Here = Pick<NodeInfo, 'stations' | 'visitorSpots'>;
 
-/** What E does where a player stands: its deed in words, and the doing; and for a node, which, as E is held there. */
+/** What E held does: a node gathered, or a chest opened or a container searched (`finds.ts`), by its number in the
+ *  room, held so many seconds. */
+export interface HeldUse {
+  readonly kind: 'node' | 'find';
+  readonly index: number;
+  readonly seconds: number;
+}
+
+/** What E does where a player stands: its deed in words, and the doing; and what it does held there, if anything. */
 export interface Use {
   readonly words: string;
   readonly run: () => void;
-  readonly gather?: number;
+  readonly held?: HeldUse;
 }
 
 /** What E does at a counter of a kind (its offer's view) besides opening it: speaking with its keeper, while a quest
  *  asks it (quests/quests.ts). */
 export type Speak = (counter: string, ask: (asked: GearAsk) => void) => Use | null;
 
-/** The use within reach of a player at (x, y): a station's offer (its keeper spoken with where `speak` says so), then
- *  Shape's, before a node, so a counter is never lost to one. A node is not offered on horseback (`mounted`), nor one
- *  whose resource the player is full of. */
+/** The use within reach of a player at (x, y), their feet `z` high: a station's offer (its keeper spoken with where
+ *  `speak` says so), then Shape's, a puzzle's point, a chapter of the lore, a chest or a container to search
+ *  (`finds.ts`), and last a node, so a counter is never lost to one. Neither a find nor a node is offered on horseback
+ *  (`mounted`), nor a node whose resource the player is full of. */
 export function useAt(
   x: number,
   y: number,
@@ -67,6 +77,7 @@ export function useAt(
   ask: (asked: GearAsk) => void,
   speak: Speak = () => null,
   mounted = false,
+  z: number | null = null,
 ): Use | null {
   const shape = shapeSpot(gear?.shape, here.visitorSpots ?? []);
   const near = shape && Math.hypot(shape[0] - x, shape[1] - y) <= SERVED_M;
@@ -85,12 +96,14 @@ export function useAt(
     const words = `Read ${chapterAt(lying.chapter)?.book.name ?? 'the lore'}`;
     return { words, run: () => ask({ kind: ASKS.findLore, item: lying.chapter }) };
   }
+  const found = findUse([x, y, z], gear, ask, mounted);
+  if (found) return found;
   const node = gear?.nodes.find((each) => Math.hypot(each.x - x, each.y - y) <= NODE_REACH_M);
   if (!node || mounted || (gear?.resources[node.resource] ?? 0) >= STOCK_MOST) return null;
   return {
     words: `Hold to gather ${resourceName(node.resource)}`,
     run: () => ask({ kind: ASKS.gather, node: node.index }),
-    gather: node.index,
+    held: { kind: 'node', index: node.index, seconds: GATHER_S },
   };
 }
 

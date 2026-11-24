@@ -14,7 +14,7 @@ fn places() -> Vec<[f64; 3]> {
 }
 
 fn holders() -> Vec<Holder> {
-    (0..12).map(|at| [f64::from(at) * 10.0, 100.0, f64::from(at) * 10.0 + 0.8, 100.8, 0.0, 0.8]).collect()
+    (0..12).map(|at| [f64::from(at) * 10.0, 100.0, f64::from(at) * 10.0 + 0.8, 100.8, 0.0, 0.8, 41_816.0]).collect()
 }
 
 fn patrol() -> (Room, PlayerId) {

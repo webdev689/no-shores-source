@@ -22,7 +22,7 @@ import { IDLE, type InputFrame } from '../player/input.ts';
 import { cameraFollowed, playerCamera, shownBody } from '../player/player.ts';
 import { AIM, handsZoom } from '../player/playerCamera.ts';
 import type { PlacedLoop } from '../player/playerMoves.ts';
-import type { OtherPlayers, Others } from '../player/others.ts';
+import type { OtherPlayers } from '../player/others.ts';
 import type { CombatRules } from '../rules/combatRules.ts';
 import { crosshairOf } from '../combat/reticle.ts';
 import { type FighterView, fighterView } from '../rules/fighters.ts';
@@ -33,6 +33,7 @@ import { shotOfOrbit } from './camera.ts';
 import { FallWatch } from './fallWatch.ts';
 import { STORY_BEHIND_ON_FOOT, type Use, dropsLaid, gearInRoom, questRings, tellsPrologue } from './footGear.ts';
 import { GatherHold } from './gatherHold.ts';
+import { FootFinds } from './finds.ts';
 import { markedHere } from './overheadMarks.ts';
 import { nodeText, standOn } from './footGround.ts';
 import { ACCOUNT_CHANGED, type GearHere } from './gearScreen.ts';
@@ -60,7 +61,7 @@ import type { UsePrompt } from './usePrompt.ts';
 import { type Dressed, dressInGear, figureWhere, figuresEye, otherCards, ownCard, strikersOf } from './footFigures.ts';
 import type { AtEntrance, FootAsk, FootContext, FootFight, FootFrame, Heard, Held, Opened, Uses } from './footPlace.ts';
 import { closedIfThrown, stand } from './footPlace.ts';
-import { hearing, nextOtherId, roomNote, rulesOf } from './footRoom.ts';
+import { hearing, placingFolk, roomNote, rulesOf } from './footRoom.ts';
 
 export type { AtEntrance, FootContext, FootFight, FootFrame, Uses } from './footPlace.ts';
 import type { NodeInfo } from './worldData.ts';
@@ -129,7 +130,9 @@ export class Foot {
   ownFigure: CardAt | null = null;
   /** The zone's public events as the page plays them. */
   private readonly publicView: PublicView;
-  /** A node being gathered while E is held. */
+  /** The chests and containers the room stands for the player (`finds.ts`). */
+  readonly finds = new FootFinds();
+  /** A node being gathered, or a find opened, while E is held. */
   readonly hold = new GatherHold(
     () => this.gear?.ask({ kind: ASKS.stopGather }),
     () => ({
@@ -166,17 +169,7 @@ export class Foot {
     this.feel = new AttackFeel(parts.combat, context.movement.tickSeconds);
     this.prompt = context.usePrompt;
     this.floor = floorOver(node.kind === 'social' ? opened.boxes : [], (x, y) => context.movement.standing(x, y).z);
-    const placing: Others = {
-      place: (dress, x, y, facing) => {
-        const one = { id: nextOtherId(), x, y, z: 0, facing, dress, anim: 'idle', frame: null, spin: false };
-        this.folk.push(one);
-        return one;
-      },
-      remove: (one) => {
-        this.folk.splice(this.folk.indexOf(one) >>> 0, 1);
-        context.forge.forget(one.id);
-      },
-    };
+    const placing = placingFolk(this.folk, (id) => context.forge.forget(id));
     this.plaza = node.kind === 'social' ? new PlazaLife(node, placing, this.floor) : null;
     this.publicView = new PublicView(node.id, this.feel, {
       boxes: opened.boxes,
@@ -348,7 +341,8 @@ export class Foot {
    *  held. */
   use(): void {
     this.using?.run();
-    this.hold.begin(this.using?.gather, this.gear?.gear ?? null);
+    this.finds.asked(this.using?.held);
+    this.hold.begin(this.using?.held, this.gear?.gear ?? null);
   }
 
   /** The name of the dungeon's room the player stands in, or null in a corridor or on a node's land. */
@@ -460,6 +454,7 @@ export class Foot {
     const where = figureWhere(fight, foes.placed, this.otherPlayers.placed);
     const [feet, others] = [[body.x, body.y, body.z] as const, this.otherPlayers.placed];
     const seen = { player: fight.player, shot, firstPerson, feet, yaw: walker.player.facing, where, others };
+    const found = this.finds.frame(gearNow, clock, !!this.dungeon, paused);
     const shownPublic = this.publicView.frame(fight.public, publicEvents, chests, seen, clock, dropped.marks, floor, {
       quiet: paused,
       held: fight.publicHeld,
@@ -497,7 +492,7 @@ export class Foot {
       ground: { blocks: this.boxes, groundAt },
       landed: dropped.landed,
       crates: this.held.gear?.crates ?? null,
-      heard: shownPublic.sounds,
+      heard: [...shownPublic.sounds, ...found.sounds],
     });
     const { fall } = walker;
     const playerFall = { id: fight.player, feet: [body.x, body.y, body.z] as const, tumbling: !!fall?.tumbling };
@@ -524,7 +519,8 @@ export class Foot {
     const { mounted } = walker.player;
     const counters = countersOf(this.node);
     const chest = this.publicView.use(chests, feet, (asked) => fight.askGear(asked), clock);
-    this.using = able ? (chest ?? useOnFoot(x, y, placeUse, counters, gear, here, trips, speak, mounted)) : null;
+    const z = walker.player.body.z;
+    this.using = able ? (chest ?? useOnFoot(x, y, placeUse, counters, gear, here, trips, speak, mounted, z)) : null;
     // Use let go, as bound (a key, the pad's button, or the page's focus lost): a gather under way is let go of.
     if (!controls.held('use')) this.hold.release();
     this.prompt.show(this.using?.words ?? null, this.hold.share(clock, able && !mounted, gear?.gear ?? null));
@@ -559,7 +555,8 @@ export class Foot {
     const standing = this.standing;
     const hints = keysShown(standing, onFoot(walker, shown, fight, !controls.locked && !paused));
     const dark = arrivals.darkOf(fight.player, clock);
-    const { props, quest, sting } = shownPublic;
+    const { quest, sting } = shownPublic;
+    const props = [...(shownPublic.props ?? []), ...found.props];
     return { shot, figures, standing, marks, lit, hidden, swings, fight: fought, hints, dark, props, quest, sting };
   }
 

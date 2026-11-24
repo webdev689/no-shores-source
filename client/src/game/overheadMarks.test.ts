@@ -8,7 +8,7 @@ import { BODY_HEIGHT } from '../player/crosshair.ts';
 import type { StationInfo } from './nodes.ts';
 import { keeperPicture } from './npc/npcMarks.ts';
 import { entrancesOf } from './entrances.ts';
-import { DOOR_PICTURE, keeperLit, markOfKind, markedHere } from './overheadMarks.ts';
+import { CHEST_PICTURE, DOOR_PICTURE, SEARCH_PICTURE, keeperLit, markOfKind, markedHere } from './overheadMarks.ts';
 import { countersOf } from './plazaLife.ts';
 import { STATIONS } from './welcome/plazaForTests.ts';
 
@@ -180,4 +180,26 @@ test('the Postmaster is lit while letters wait for the player, whether or not a 
     true,
     'letters wait',
   );
+});
+
+test('each chest standing for the player wears a chest over its lid, and each container to search a glass over its top', () => {
+  const gear = {
+    chests: [{ number: 7, at: [10, 0, 2], facing: 0 }],
+    searchables: [{ number: 9, box: [0, 20, 1, 22], foot: 0, top: 1.8, model: 41003 }],
+  } as unknown as GearState;
+  const marked = markedHere(gear, { stations: [] }, () => 0);
+  assert.equal(marked.length, 2);
+  assert.equal(marked[0]?.picture, CHEST_PICTURE);
+  assert.ok((marked[0]?.at[2] ?? 0) > 2.6 && marked[0]?.at[0] === 10, 'over the chest, standing on its own ground');
+  assert.equal(marked[1]?.picture, SEARCH_PICTURE);
+  assert.deepEqual(marked[1]?.at.slice(0, 2), [0.5, 21], "over its box's middle");
+  assert.ok((marked[1]?.at[2] ?? 0) > 1.8, 'over its top');
+  for (const picture of [CHEST_PICTURE, SEARCH_PICTURE]) {
+    assert.ok(picture.rows.length === 12 && picture.rows.every((row) => row.length === 12), 'twelve by twelve');
+    const letters = new Set(picture.rows.join('').replaceAll('.', ''));
+    assert.ok(
+      [...letters].every((letter) => 'abcde'.indexOf(letter) < picture.colours.length),
+      'every cell coloured',
+    );
+  }
 });

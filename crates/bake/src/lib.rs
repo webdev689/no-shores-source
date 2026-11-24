@@ -56,8 +56,8 @@ pub struct NodeFile {
     /// north), where its room stands a few chests at a time, in the layout's order.
     pub chests: Vec<[f64; 3]>,
     /// In a patrol area, its layout's props that hold things (`dungeon::models::HOLDERS`), each its box across
-    /// (west, north, east, south), its foot and its top, which its room makes searchable now and then.
-    pub holders: Vec<[f64; 6]>,
+    /// (west, north, east, south), its foot, its top and its model, which its room makes searchable now and then.
+    pub holders: Vec<[f64; 7]>,
     /// In a patrol area, its layout's foes' sites in its caverns (a coven's or a cave's area) and on its runs' beats
     /// short of their end arenas, in the layout's order: where its room stands a group as a player first comes near.
     pub foes: Vec<[f64; 2]>,
@@ -97,14 +97,13 @@ pub fn chests_of(layout: &layout::Layout) -> Vec<[f64; 3]> {
     places.map(|site| [site.at[0], site.at[1], site.facing.unwrap_or_default()]).collect()
 }
 
-/// A patrol's props that hold things, inside its ring: each its box across, its foot and its top.
+/// A patrol's props that hold things, inside its ring: each its box across, its foot, its top and its model.
 #[must_use]
-pub fn holders_of(layout: &layout::Layout) -> Vec<[f64; 6]> {
+pub fn holders_of(layout: &layout::Layout) -> Vec<[f64; 7]> {
     let held = layout.seating.props.iter().filter_map(|prop| {
-        let model = dungeon::models::holder(prop.model)?;
         let [west, north, east, south] = prop.footprint;
         let inside = layout::field::ring_holds(&layout.ring, (west + east) / 2.0, (north + south) / 2.0);
-        inside.then_some([west, north, east, south, prop.at[2] + model.min[1], prop.at[2] + model.max[1]])
+        inside.then(|| dungeon::models::held_by(prop.model, prop.footprint, prop.at[2])).flatten()
     });
     held.collect()
 }
@@ -421,6 +420,7 @@ mod tests {
         let held = holders_of(&glade);
         assert_eq!(held.len(), 1, "the crate alone");
         assert_eq!([held[0][4], held[0][5]], foot_and_top, "its foot and top as it stands");
+        assert_eq!(held[0][6], 41_816.0, "and its model, which the page names it by");
     }
 
     #[test]
