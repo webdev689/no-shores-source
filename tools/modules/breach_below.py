@@ -85,6 +85,8 @@ def mending(module):
     module.socket('mender', (0.0, 4.0, 0.0), (0.0, -1.0))
     module.socket('chest', (5.0, -2.0, 0.0), (0.0, -1.0))
     module.socket('exit', (0.0, 36.0, 0.0), (0.0, 1.0))
+    # The seal across the way on stands in the doorway, through its walls' thickness.
+    module.socket('seal', (0.0, 32.0, 0.0), (0.0, 1.0))
     pick = latticekit.picker(module.random.randrange(1 << 30))
     for x, y in ((0.0, 18.0), (-18.0, -4.0), (18.0, -4.0)):
         bk.crust(module, pick, (x, y, 0.02), 2.4)
@@ -141,6 +143,7 @@ def choir(module):
     module.socket('chest', (-7.5, 23.0, 0.0), (0.0, -1.0))
     module.socket('chest-page', (5.0, 32.0, 1.2), (0.0, -1.0))
     module.socket('exit', (SIDE_DOOR_M, -23.0, 0.0), (1.0, 0.0))
+    module.socket('seal', (18.0, -23.0, 0.0), (1.0, 0.0))
     pick = latticekit.picker(module.random.randrange(1 << 30))
     for base in ((-15.0, 30.0, 1.2), (15.0, 30.0, 1.2), (-15.4, -30.0, 0.0), (15.4, -10.0, 0.0)):
         bk.crystal(module, pick, base, count=6, length=2.8, radius=0.5)

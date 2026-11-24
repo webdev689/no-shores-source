@@ -17,16 +17,19 @@ HOUSE = 8.0
 # The houses of the Ways left standing, by cell (column, row from the south-west, 0 to 5): the rest are open squares.
 OPEN_CELLS = {(2, 2), (3, 2), (2, 3)}
 HEART_CELL = (3, 3)
-# Where the streets are barred to make the way through a maze: (x, y, along x).
-BARS = ((-12.0, 0.0, False), (12.0, -12.0, True), (0.0, 12.0, True), (-24.0, 12.0, False), (24.0, 0.0, False),
-        (-12.0, -24.0, True), (12.0, 24.0, True), (0.0, -24.0, False))
+# Where the streets are barred to make the way through a maze: each bar across its street halfway between two
+# crossings (or a crossing and the lane inside the town's wall), so a body must go round by the next street, as
+# (x, y, the street running along x).
+BARS = ((-12.0, 6.0, False), (18.0, -12.0, True), (6.0, 12.0, True), (-24.0, 18.0, False), (24.0, -6.0, False),
+        (-30.0, -24.0, True), (30.0, 24.0, True), (0.0, -30.0, False))
 WATCHERS = ((-24.0, 0.0, (1.0, 0.0)), (0.0, -12.0, (0.0, 1.0)), (12.0, 0.0, (-1.0, 0.0)), (0.0, 24.0, (0.0, -1.0)),
             (24.0, -24.0, (-1.0, 0.0)), (24.0, 24.0, (0.0, -1.0)))
 
 
 def ways(module):
     """A grid of the old town's houses, bricked shut, between streets 4 m wide; three cells open as squares, the house
-    at the heart left open with its chest, barricades across some streets, and the Watchers' posts at the crossings."""
+    at the heart left open with its chest, barricades across some streets between their crossings, and the Watchers'
+    posts at the crossings."""
     half = 3 * CELL
     bk.floor(module, -half, -half, half, half, material='paving')
     for west, south, east, north in ((-half - 4, -half - 4, -half, -2.0), (-half - 4, 2.0, -half, half + 4),
@@ -47,9 +50,11 @@ def ways(module):
             # Each house's part; breach_town draws the house over it.
             bk.solid(module, x - HOUSE / 2, y - HOUSE / 2, x + HOUSE / 2, y + HOUSE / 2, 0.0, breach_town.EAVE_M)
             shut.append((x, y))
-    for x, y, along_x in BARS:
+    for number, (x, y, along_x) in enumerate(BARS, start=1):
         kit.block(module, (x, y, 0.0), (4.2, 0.9, 2.4) if not along_x else (0.9, 4.2, 2.4), 'timber', bevel=0.03,
                   wear=0.05)
+        # Its socket on its top, facing along the street it cuts, for the rules' tests to find it by.
+        module.socket(f'bar-{number}', (x, y, 2.4), (1.0, 0.0) if along_x else (0.0, 1.0))
     for number, (x, y, facing) in enumerate(WATCHERS, start=1):
         kit.column(module, (x, y, 0.0), 0.9, 0.5, 'stone', sides=12)
         module.socket(f'watcher-{number}', (x, y, 0.5), facing)
@@ -158,6 +163,7 @@ def hall(module):
     module.socket('checkpoint', (0.0, -24.0, 0.0), (0.0, 1.0))
     module.socket('chest', (6.0, -18.0, 0.0), (0.0, -1.0))
     module.socket('exit', (0.0, 32.0, 0.0), (0.0, 1.0))
+    module.socket('seal', (0.0, 28.0, 0.0), (0.0, 1.0))
     for number, at in enumerate(((-16.0, -22.0), (16.0, -22.0), (-16.0, 22.0), (16.0, 22.0)), start=1):
         module.socket(f'mouth-{number}', (*at, 0.0), (0.0, 1.0))
     pick = latticekit.picker(module.random.randrange(1 << 30))
@@ -207,7 +213,7 @@ COURT = 26.0
 def court(module):
     """The Steward's court: a round floor over the dark, stepped out of squares so every piece is square to the frame,
     reached by a bridge from the hall's door; the Steward's throne on a dais at its head, a rift's arch at each side
-    with a mooring stone inside it, and four growths at its rim the Lattice comes out of."""
+    with a mooring stone inside it and a wall behind it, and four growths at its rim the Lattice comes out of."""
     for step in range(8):
         across = COURT * math.cos(math.asin((step + 0.5) / 8))
         for sign in (-1, 1):
@@ -219,6 +225,11 @@ def court(module):
     kit.block(module, (0.0, 22.5, 2.0), (3.2, 2.0, 3.6), 'stone', bevel=0.08, wear=0.03)
     bk.rift(module, 'rift-was', (-COURT + 2.0, 0.0, 0.0), (1.0, 0.0))
     bk.rift(module, 'rift-is', (COURT - 2.0, 0.0, 0.0), (-1.0, 0.0))
+    # A wall behind each rift's arch from its jambs' backs to the floor's edge, as the shores and the hall have, so
+    # its opening shows no edge and a body walked into it shut stands on the floor.
+    for sign in (-1, 1):
+        west, east = sorted((sign * (COURT - 1.2), sign * (COURT - 0.1)))
+        bk.wall(module, west, -4.0, east, 4.0, bottom=-3.0, high=9.0)
     bk.mooring(module, 'mooring-was', (-17.0, 0.0, 0.0))
     bk.mooring(module, 'mooring-is', (17.0, 0.0, 0.0))
     module.socket('glyphs-was', (-17.0, 0.0, 4.0), (1.0, 0.0))

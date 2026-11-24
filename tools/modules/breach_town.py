@@ -1,8 +1,9 @@
 """The Unlit Ways' town as it is drawn: each house bricked shut a house of its own, in plaster, stone, chalk or rubble,
 some a storey higher under a jettied upper floor, some with their roofs fallen in to the rafters, ridges either way;
-its doors bricked in porches deep enough to wait in, the Lattice's crystal grown through some, a hand of water lying
-in its streets, the old lamp-stands where the Watchers keep their posts and dead lamps at the other crossings. Drawn
-only: each house's part is the box its builder lays (breach_above.ways), the town's own over it.
+its doors bricked in porches deep enough to wait in and its windows bricked up, the Lattice's crystal grown through
+some, a hand of water lying in its streets, the old lamp-stands where the Watchers keep their posts and dead lamps at
+other crossings. Drawn only but for its porches' jambs: each house's part is the box its builder lays
+(breach_above.ways), the town's own over it.
 """
 import math
 
@@ -16,7 +17,7 @@ import shapes
 WALLS = ('plaster', 'stone', 'chalk', 'rubble')
 # A house's walls stand as high as its part; its roof starts there.
 EAVE_M = 5.2
-# The crossings no Watcher, barricade or mouth stands at, where a dead lamp still stands at a corner.
+# Crossings no Watcher or mouth stands at, where a dead lamp still stands at a corner.
 LAMPS = ((-24.0, -12.0), (-12.0, -12.0), (-12.0, 12.0), (0.0, 0.0), (12.0, -24.0), (12.0, 12.0), (24.0, 12.0))
 # Streets and a square where the water lies a hand deep: (west, south, east, north).
 POOLS = ((-10.0, -26.0, 10.0, -22.0), (-11.0, -11.0, -3.0, -3.0), (14.0, 10.0, 34.0, 14.0), (22.0, -22.0, 26.0, -14.0),
@@ -50,13 +51,36 @@ def roof(module, at, half, eave, rise, along_x, ends, fallen=False):
                       turn=(0.0, 0.0, math.pi / 2) if along_x else (0.0, 0.0, 0.0))
 
 
+# How far a porch's jambs stand out from its house's front: a body (0.35 m round) stands between them hidden from
+# down the street, the jamb nearer a Watcher cutting its sight, which reads the parts.
+PORCH_M = 1.0
+
+
 def porch(module, at, front):
-    """A bricked door in a porch of dressed stone standing half a metre out from the house's front at `front`."""
+    """A bricked door in a porch of dressed stone standing PORCH_M out from the house's front at `front`, its jambs
+    parts."""
     x, y = at, front
     kit.block(module, (x, y - 0.05, 0.0), (1.2, 0.14, 2.2), 'stone', bevel=0.02, wear=0.06, part=False)
     for side in (-1, 1):
-        kit.block(module, (x + side * 0.78, y - 0.25, 0.0), (0.3, 0.5, 2.6), 'trim', bevel=0.0, wear=0.0, part=False)
-    kit.block(module, (x, y - 0.3, 2.6), (1.9, 0.6, 0.25), 'trim', bevel=0.0, wear=0.0, part=False)
+        kit.block(module, (x + side * 0.78, y - PORCH_M / 2, 0.0), (0.3, PORCH_M, 2.6), 'trim', bevel=0.0, wear=0.0)
+    kit.block(module, (x, y - PORCH_M / 2, 2.6), (1.9, PORCH_M, 0.25), 'trim', bevel=0.0, wear=0.0, part=False)
+
+
+def window(module, at, facing, z):
+    """A window bricked up flush with the wall whose face is at `at` (x, y), `facing` out of it along x or y: a dark
+    infill under a lintel, over a sill. Drawn only."""
+    x, y = at
+    across_x = facing[1] != 0.0
+
+    def size(long, out, tall):
+        return (long, out, tall) if across_x else (out, long, tall)
+
+    def spot(out, rise):
+        return (x + facing[0] * out, y + facing[1] * out, z + rise)
+
+    kit.block(module, spot(0.03, 0.0), size(0.9, 0.06, 1.2), 'rubble', bevel=0.0, wear=0.0, part=False)
+    kit.block(module, spot(0.08, 1.2), size(1.3, 0.16, 0.22), 'trim', bevel=0.0, wear=0.0, part=False)
+    kit.block(module, spot(0.1, -0.12), size(1.2, 0.2, 0.12), 'trim', bevel=0.0, wear=0.0, part=False)
 
 
 def house(module, at, size, pick):
@@ -70,9 +94,11 @@ def house(module, at, size, pick):
     kit.block(module, (x, y, 0.0), (size, size, EAVE_M), walls, bevel=0.05, wear=0.04, part=False)
     for door in (-1.5, 1.5):
         porch(module, x + door, y - half)
+        # A window bricked up over each door, and two in its back.
+        window(module, (x + door, y - half), (0.0, -1.0), 3.3)
+        window(module, (x + door, y + half), (0.0, 1.0), 2.0)
     for side in (-1, 1):
-        kit.block(module, (x + side * (half + 0.05), y, 2.6), (0.12, 1.1, 1.2), 'timber', bevel=0.0, wear=0.0,
-                  part=False)
+        window(module, (x + side * half, y), (side, 0.0), 2.0)
     eave = EAVE_M
     if 0.3 <= kind < 0.55:
         # A storey more, its timber-framed upper floor jettied out over the street.

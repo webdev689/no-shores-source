@@ -49,3 +49,22 @@ Claude's choices for the first Breach, built in full and recorded in [[Breaches]
 | The gate | Open to its company until the Breach is cleared or a day passes; a Waking lost when the Spire stands empty a minute; its waves sized to the company; one refused told why | A company can always come back through its gate, and one or two players cannot hold it from everyone else |
 | Leaving and coming back | Down if they left down, their mark and its time, and their shore kept by account | Leaving and rejoining undoes nothing the Breach laid on a player |
 | Teaching and telling | A teaching line as each encounter begins and a won line as it ends; a wipe named by its cause; each bell its own note; warning rings dashed; the Spire's fill a light the zone sees | Every mechanic taught before it kills, readable without colour, loud for the company and seen by onlookers |
+
+## Its pieces
+
+The modules' shapes are Claude's, as the owner's "a detailed design pass on everything ... an overall push to make the
+fidelity of this insanely impressive" asked. The owner can change any of them.
+
+| Call | Chosen | Why |
+|---|---|---|
+| The court's rim | No kerb or balustrade; flags cracked along its edge, some tipped over it, and teeth of the torn rock round it under the floor's top | A rail bodies pass through promises what the edge does not keep; a broken edge reads as the drop it is |
+| The court's set pieces | Its broken columns on square bases, the walls' stubs by its rifts and the throne's arms and back are parts | What looks solid on a fight floor stops a body |
+| The court's rifts | A wall behind each arch, from its jambs' backs to the floor's edge, 9 m high | As the hall and the shores have: the opening shows a wall, and a body walked into it shut stands on the floor |
+| The Ways' barricades | Each halfway along a street it was across, between two crossings or a crossing and the lane inside the town's wall, its socket `bar-1` to `bar-8` on its top; two set toward the lane so every Watcher's post and mouth is still walked to straight down some street | At a crossing a bar left the street round it open; between crossings it cuts the street, so the way through is a maze |
+| The Ways' porches | Jambs standing 1 m out, parts | A body stands between them out of the sight of a Watcher down the street, which reads the parts |
+| The Ways' windows | Bricked up, one over each door, two in each house's back and one in each side: a dark infill under a lintel over a sill | The houses read as homes shut up, within the module's triangles |
+| The seals | A `seal` socket in each doorway, inside its walls' thickness, the plan's seals stood there; the crystal grown from the jambs, the foot and the head, no wider than its 6.4 m part | It stands where it shuts, and nothing of it hangs over the walls it is set in |
+| The Mending's pieces | Its field walls parts, the two north ones moved out to the cottages, clear of the ways between the seams; the cart squared and the barrels set against the west cottage, each the part of its box; the well's posts and the chimneys parts | Cover that is cover, off the lines walkers and players run |
+| The Choir's fallen beams | Laid square on the floor, each a part, the first clear of the nave's middle | Cover in the nave that never stands between the door and the font |
+| The gate's ledges | A faced rock's outer row kept inside its box | Its rock stood 0.7 m past the ledge's solid face |
+| Stained glass | A material of its own, `glass`, in the Choir's rose and the shore's lancets | The windows read as glass, not lamps |

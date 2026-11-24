@@ -95,9 +95,9 @@ fn no_two_spaces_share_ground_and_each_spaces_mouths_lie_in_it_alone() {
 }
 
 /// The sockets no body or piece stands at: a slab's (it comes and goes), the Steward's order shown over the court,
-/// and the Seam's, inside its crystal.
+/// the Seam's, inside its crystal, and a barricade's, on its top.
 fn stood_at(name: &str) -> bool {
-    !name.starts_with("slab-") && !name.starts_with("glyphs-") && name != "seam"
+    !name.starts_with("slab-") && !name.starts_with("glyphs-") && !name.starts_with("bar-") && name != "seam"
 }
 
 #[test]
@@ -163,10 +163,30 @@ fn the_builds_tables_hold_each_module_as_the_manifest_does() {
 fn its_seals_stand_across_their_doors_and_its_slabs_come_and_go_on_their_measure() {
     let plan = drowned_vale();
     assert_eq!(plan.seals.len(), 3);
+    let standing = plan.standing();
     for seal in &plan.seals {
-        assert!(!plan.seal_blocks(seal).is_empty(), "the seal at {}'s {}", seal.space, seal.socket);
+        let blocks = plan.seal_blocks(seal);
+        assert!(!blocks.is_empty(), "the seal at {}'s {}", seal.space, seal.socket);
         assert!(gear::breach::DROWNED_VALE.encounters.iter().any(|encounter| encounter.key == seal.opens));
+        // Set into its doorway's walls: each end of it inside a wall's thickness, a body's height up.
+        let jambs = standing
+            .iter()
+            .filter(|wall| {
+                blocks.iter().any(|block| {
+                    block.min_x < wall.max_x
+                        && wall.min_x < block.max_x
+                        && block.min_y < wall.max_y
+                        && wall.min_y < block.max_y
+                        && wall.top > block.bottom + 2.0
+                })
+            })
+            .count();
+        assert!(jambs >= 2, "the seal at {}'s {} meets {jambs} of its doorway's walls", seal.space, seal.socket);
     }
+    // Its crystal drawn no wider than its part, so it hangs over no wall it is set in.
+    let seal = module("breach-seal").expect("the seal");
+    let wide = seal.parts.iter().map(|part| part[3] - part[0]).fold(0.0, f64::max);
+    assert!(seal.size[0] <= wide + 1e-3, "the seal drawn {:.2} m wide over its part's {wide:.2}", seal.size[0]);
     assert_eq!(plan.slabs.len(), 6);
     for slab in &plan.slabs {
         assert!(plan.slab_block(slab).is_some());
@@ -263,8 +283,9 @@ fn a_body_walks_each_encounters_floor_from_its_way_in_to_its_pieces() {
     }
 }
 
-/// The highest a body stood at `from` gets in `seconds` pressing at bearing `yaw`, jumping as it goes if `jump`.
-fn highest_pressing(blocks: &Blocks, from: [f64; 3], yaw: f64, jump: bool, seconds: f64) -> f64 {
+/// Where a body stood at `from` ends after `seconds` pressing at bearing `yaw`, jumping as it goes if `jump`, and the
+/// highest it got.
+fn pressed(blocks: &Blocks, from: [f64; 3], yaw: f64, jump: bool, seconds: f64) -> (Body, f64) {
     let mut body = Body { z: from[2], ..standing(from[0], from[1]) };
     let mut highest = body.z;
     for _ in 0..(seconds / TICK_SECONDS) as usize {
@@ -272,7 +293,19 @@ fn highest_pressing(blocks: &Blocks, from: [f64; 3], yaw: f64, jump: bool, secon
         body = step_body(&body, &controls, blocks, &Floor::Dark, TICK_SECONDS);
         highest = highest.max(body.z);
     }
-    highest
+    (body, highest)
+}
+
+/// The bearing a body presses at to go `[east, south]`.
+fn bearing_of([east, south]: [f64; 2]) -> f64 {
+    libm::atan2(east, -south)
+}
+
+/// The Ways' barricades by their sockets on their tops: where each stands on the street, and the way the street runs.
+fn bars(plan: &Plan) -> Vec<([f64; 3], [f64; 2])> {
+    let bars = plan.numbered("ways", "bar");
+    assert_eq!(bars.len(), 8, "the Ways' barricades");
+    bars.into_iter().map(|(at, along)| ([at[0], at[1], at[2] - 2.4], along)).collect()
 }
 
 #[test]
@@ -280,12 +313,92 @@ fn a_body_pressing_or_jumping_into_the_ways_barricades_and_walls_never_gets_up_t
     let plan = drowned_vale();
     let blocks: Blocks = plan.standing().into();
     let (stage, _) = plan.socket("ways", "checkpoint").expect("its stage");
-    // East from the stage, over the first Watcher's post into the barricade across the street; north into the wall.
-    for (yaw, what) in [(std::f64::consts::FRAC_PI_2, "the barricade"), (0.0, "the west wall")] {
+    // Into each barricade along its street from 3 m short of it; north from the stage into the west wall.
+    let mut pressings: Vec<([f64; 3], f64, String)> = bars(plan)
+        .into_iter()
+        .enumerate()
+        .map(|(nth, (at, along))| {
+            ([at[0] - along[0] * 3.0, at[1] - along[1] * 3.0, at[2]], bearing_of(along), format!("bar-{}", nth + 1))
+        })
+        .collect();
+    pressings.push((stage, 0.0, "the west wall".into()));
+    for (from, yaw, what) in pressings {
         for jump in [false, true] {
-            let highest = highest_pressing(&blocks, stage, yaw, jump, 8.0);
-            assert!(highest < stage[2] + 2.0, "{what}, jumping {jump}: up to {:.2} m", highest - stage[2]);
+            let (_, highest) = pressed(&blocks, from, yaw, jump, 8.0);
+            assert!(highest < from[2] + 2.0, "{what}, jumping {jump}: up to {:.2} m", highest - from[2]);
         }
+    }
+}
+
+#[test]
+fn each_of_the_ways_barricades_cuts_its_street_between_two_crossings() {
+    let plan = drowned_vale();
+    let blocks: Blocks = plan.standing().into();
+    for (nth, (at, along)) in bars(plan).into_iter().enumerate() {
+        // Its street's crossings 6 m either way, or the lane inside the town's wall, stopped short of their middles.
+        let crossing = |sign: f64| [at[0] + along[0] * sign * 5.5, at[1] + along[1] * sign * 5.5, at[2]];
+        for (from, to) in [(crossing(-1.0), crossing(1.0)), (crossing(1.0), crossing(-1.0))] {
+            assert!(!walks_to(&blocks, from, to, 0.8), "bar-{} lets a body down its street from {from:?}", nth + 1);
+        }
+    }
+}
+
+/// A point of a space's module as Blender builds it (x east, y north, z up), in the run's frame.
+fn in_space(plan: &Plan, key: &str, [east, north, up]: [f64; 3]) -> [f64; 3] {
+    let space = plan.space(key).expect("its space");
+    let at = turned([east, -north, up], space.turn);
+    [space.at[0] + at[0], space.at[1] + at[1], space.at[2] + at[2]]
+}
+
+#[test]
+fn every_set_piece_a_body_meets_on_a_fight_floor_is_a_part() {
+    let plan = drowned_vale();
+    let standing = plan.standing();
+    // Each piece by its space, a point inside it in its module's frame, and how high over the floor its part rises.
+    let mut pieces: Vec<(&str, [f64; 2], f64)> = vec![
+        ("court", [-24.0, 6.2], 3.0),
+        ("court", [-24.0, -6.2], 3.0),
+        ("court", [24.0, 6.2], 3.0),
+        ("court", [24.0, -6.2], 3.0),
+        ("court", [-2.8, 22.3], 7.0),
+        ("court", [2.8, 22.3], 7.0),
+        ("court", [0.0, 23.5], 13.0),
+        ("mending", [-21.0, 14.0], 0.7),
+        ("mending", [21.0, 14.0], 0.7),
+        ("mending", [-26.0, 0.0], 0.7),
+        ("mending", [14.0, -12.0], 1.0),
+        ("mending", [-23.3, -11.6], 0.8),
+        ("choir", [-3.6, -23.5], 0.45),
+        ("choir", [4.0, -10.5], 0.45),
+        ("choir", [-3.5, 15.0], 0.45),
+    ];
+    // The court's broken columns, 22.6 m out from its middle.
+    for degrees in [30.0_f64, 60.0, 120.0, 150.0, 210.0, 240.0, 300.0, 330.0] {
+        let angle = degrees.to_radians();
+        pieces.push(("court", [22.6 * libm::cos(angle), 22.6 * libm::sin(angle)], 2.0));
+    }
+    for (space, [east, north], over) in pieces {
+        let at = in_space(plan, space, [east, north, 0.0]);
+        let rising = standing.iter().any(|block| {
+            block.min_x <= at[0]
+                && at[0] <= block.max_x
+                && block.min_y <= at[1]
+                && at[1] <= block.max_y
+                && block.top >= at[2] + over
+        });
+        assert!(rising, "{space}'s piece at {east}, {north} stands {over} m high as a part");
+    }
+}
+
+#[test]
+fn a_body_walked_out_through_a_courts_shut_rift_stands_on_its_floor() {
+    let plan = drowned_vale();
+    let blocks: Blocks = plan.standing().into();
+    for rift in ["rift-was", "rift-is"] {
+        let (at, facing) = plan.socket("court", rift).expect("its rift");
+        let (body, _) = pressed(&blocks, at, bearing_of([-facing[0], -facing[1]]), false, 4.0);
+        let stood = body.mode == movement::Mode::Ground && (body.z - at[2]).abs() < 0.3;
+        assert!(stood, "out through the court's {rift}: at {:.1}, {:.1}, {:.1}", body.x, body.y, body.z);
     }
 }
 

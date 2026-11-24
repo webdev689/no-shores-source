@@ -81,6 +81,8 @@ pub enum Material {
     /// The Lattice's red crystal, drawn by code: graded purple in its shadows, its facets catching the sun, its core
     /// glowing as much as its vertices say.
     Crystal,
+    /// A window's stained glass: the Choir's rose, the shore's lancets.
+    Glass,
 }
 
 /// One solid: its shape, the middle of its base in world metres (z up), its size (width, depth, height), its turn
@@ -184,6 +186,7 @@ mod tests {
             ("canvas", Material::Canvas),
             ("gold", Material::Gold),
             ("crystal", Material::Crystal),
+            ("glass", Material::Glass),
         ] {
             assert_eq!(serde_json::from_str::<Material>(&format!("\"{name}\"")).ok(), Some(material));
         }
