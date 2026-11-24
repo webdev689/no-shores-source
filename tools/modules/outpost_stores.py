@@ -35,8 +35,8 @@ def drying_rack(module, west, east, y, high=2.1):
         shell.pole(module, (west, y + out, z), (east, y + out, z), 0.035)
     span = east - west
     for hide in range(3):
-        x0 = west + 0.2 + hide * span / 3
-        shapes.drape(module, (x0, y, high - 0.05), (x0 + span / 3 - 0.4, y, high - 0.05), 1.1,
+        start = west + 0.2 + hide * span / 3
+        shapes.drape(module, (start, y, high - 0.05), (start + span / 3 - 0.4, y, high - 0.05), 1.1,
                      ('canvas', 'linen', 'straw')[hide], folds=2, depth=0.05, hem=0.12)
     for bundle in range(7):
         x = west + 0.3 + bundle * (span - 0.6) / 6
@@ -83,16 +83,14 @@ def shelves(module, west, east, y, high=2.0, rows=3):
 
 def camp_shed(module):
     west, east, front, back, wall = -2.6, 2.6, -1.4, 2.2, 2.6
-    shell.run(module, 'boards', (west, back), (east, back), wall)
-    for x in (west, east):
-        shell.run(module, 'boards', (x, front + 0.3), (x, back), wall)
+    shell.walls(module, 'boards', west, east, front, back, wall, open_front=True, sides_from=front + 0.3)
     for x in (west, -0.9, 0.9, east):
         fittings.post(module, (x, front, 0.0), wall, side=0.24)
     shapes.slab(module, (0.0, front, wall - 0.12), (east - west + 0.3, 0.26, 0.26), 'timber', bevel=0.01)
     shell.shingles(module, west - 0.1, east + 0.1, front - 0.1, back + 0.1, wall + 0.02, wall + 1.4)
     shelves(module, west + 0.35, east - 0.35, back - 0.4)
     for x, fill in ((-1.5, 'rubble'), (0.0, 'straw'), (1.5, 'verdant')):
-        furnish.bin(module, (x, 0.2, 0.0), (1.2, 0.9, 0.75), fill)
+        furnish.heaped_bin(module, (x, 0.2, 0.0), (1.2, 0.9, 0.75), fill)
     for x in (-2.0, 2.0):
         for y in (-2.0, -2.6):
             fittings.sack(module, (x + module.draw(-0.1, 0.1), y, 0.0), size=0.5, material='canvas')
@@ -132,9 +130,9 @@ def camp_workshop(module):
     shell.barge_horns(module, front - 0.45, east + 0.4, eave, ridge, out=-1.0)
     hoist(module, front - 0.4, ridge - 0.7)
     for x, fill in ((-1.6, 'rubble'), (-0.4, 'straw')):
-        furnish.bin(module, (x, back - 0.8, 0.0), (1.0, 0.9, 0.8), fill)
+        furnish.heaped_bin(module, (x, back - 0.8, 0.0), (1.0, 0.9, 0.8), fill)
     for x, fill in ((1.3, 'verdant'),):
-        furnish.bin(module, (x, back - 0.8, 0.0), (1.2, 0.9, 0.8), fill)
+        furnish.heaped_bin(module, (x, back - 0.8, 0.0), (1.2, 0.9, 0.8), fill)
     top = furnish.trestle(module, (-1.6, 0.0, 0.0), 1.4, 0.7, high=0.9)
     for k in range(3):
         shapes.slab(module, (-2.0 + k * 0.35, 0.05, top + 0.03), (0.08, 0.5, 0.06), 'iron', turn=(0.0, 0.0, 0.2 * k))
@@ -228,8 +226,8 @@ def rib_cage(module, keel_z, start, end, beam, depth):
         points = [(math.sin(math.pi / 2 * k / 5) * wide, keel_z + 0.2 + depth * (1 - math.cos(math.pi / 2 * k / 5))
                    * (0.85 + 0.15 * share)) for k in range(6)]
         for side in (-1, 1):
-            for (x0, z0), (x1, z1) in zip(points, points[1:]):
-                shapes.rod(module, (side * x0, y, z0), (side * x1, y, z1), 0.07, 'timber', sides=4)
+            for (low_x, low_z), (high_x, high_z) in zip(points, points[1:]):
+                shapes.rod(module, (side * low_x, y, low_z), (side * high_x, y, high_z), 0.07, 'timber', sides=4)
             tops[side].append((side * points[-1][0], y, points[-1][1]))
     for side in (-1, 1):
         for a, b in zip(tops[side], tops[side][1:]):
@@ -318,32 +316,33 @@ def rope_walk(module, x, south, north):
 
 
 def dock_works(module):
-    west, east, front, back, wall = -3.2, 3.2, 0.4, 5.2, 3.6
+    # The shed runs along the yard's length, as the Dockyard II's does: its stone back wall on the west, short end
+    # walls, its east side open on piers; the crane and the rope walk in the open east of it and before it.
+    west, east, front, back, wall = -3.2, 0.6, -0.8, 5.2, 3.6
+    shell.run(module, 'stone', (west, front), (west, back), wall)
     shell.run(module, 'stone', (west, back), (east, back), wall)
-    for x in (west, east):
-        shell.run(module, 'stone', (x, back - 1.6), (x, back), wall)
-        for y in (front, front + 1.6):
-            kit.block(module, (x, y, 0.0), (0.6, 0.6, wall), 'stone', bevel=0.05, wear=0.03, cuts=1)
-    for y in (front, front + 1.6):
-        shapes.slab(module, (0.0, y, wall + 0.12), (east - west + 0.4, 0.3, 0.26), 'timber', bevel=0.01)
-    shell.shingles(module, west - 0.1, east + 0.1, front - 0.2, back + 0.1, wall + 0.25, wall + 2.4)
+    shell.run(module, 'stone', (west, front), (west + 1.6, front), wall)
+    for y in (front, 1.2, 3.2):
+        kit.block(module, (east, y, 0.0), (0.6, 0.6, wall), 'stone', bevel=0.05, wear=0.03, cuts=1)
+    shapes.slab(module, (east, (front + back) / 2, wall + 0.12), (0.3, back - front + 0.4, 0.26), 'timber', bevel=0.01)
+    shell.shingles(module, west - 0.1, east + 0.2, front - 0.1, back + 0.1, wall + 0.25, wall + 2.4, along_y=True)
     # The forge for fittings under the shed's back wall, its chimney through the roof.
     kit.block(module, (-1.6, back - 0.9, 0.0), (1.8, 1.2, 0.8), 'stone', bevel=0.05, wear=0.03, cuts=1)
     kit.block(module, (-1.6, back - 1.0, 0.8), (1.2, 0.7, 0.06), 'glow', bevel=0.0, wear=0.0, part=False)
-    for coal in range(8):
+    for _ in range(8):
         shapes.ball(module, (-1.6 + module.draw(-0.5, 0.5), back - 1.0 + module.draw(-0.25, 0.25), 0.88),
                     module.draw(0.06, 0.1), 'black', detail=0)
     shapes.pyramid(module, (-1.6, back - 0.6, 2.0), 0.95, 0.65, 1.2, 'stone', eave=0.2, top=(0.4, 0.4))
     kit.block(module, (-1.6, back - 0.4, 3.2), (0.8, 0.8, 3.6), 'stone', bevel=0.04, wear=0.03, cuts=1)
     module.part((-2.5, back - 1.5, 2.0), (-0.7, back, 3.2))
-    stall_weaponsmith.anvil(module, (-0.1, back - 2.1, 0.0), turn=0.2)
+    stall_weaponsmith.anvil(module, (-1.4, 2.4, 0.0), turn=0.2)
     for k in range(5):
-        shapes.slab(module, (0.9 + k * 0.12, back - 0.35, 1.2 + (k % 2) * 0.2), (0.08, 0.04, 0.5), 'iron')
-    crane(module, -2.3, -2.0)
-    rope_walk(module, 2.3, -4.6, 2.2)
-    iron_pallet(module, (-0.4, -1.4, 0.0))
+        shapes.slab(module, (-0.2 + k * 0.12, back - 0.35, 1.2 + (k % 2) * 0.2), (0.08, 0.04, 0.5), 'iron')
+    crane(module, -2.3, -2.4)
+    rope_walk(module, 2.3, -4.6, 4.4)
+    iron_pallet(module, (-0.2, -3.0, 0.0))
     for k in range(3):
-        stall_tailor.bolt(module, (0.6 + k * 0.42, back - 1.3, 0.2), 1.2, 0.2, 'linen', along_x=False)
-    module.part((0.35, back - 1.95, 0.0), (1.7, back - 0.65, 0.4))
+        stall_tailor.bolt(module, (-2.65 + k * 0.42, 0.4, 0.2), 1.2, 0.2, 'linen', along_x=False)
+    module.part((-2.9, -0.25, 0.0), (-1.6, 1.05, 0.4))
     stores_at(module, -5.4)
     shell.fits(module, 2, 3)

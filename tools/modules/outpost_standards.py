@@ -1,9 +1,9 @@
 """The Banner Standard (`outpost-standard-driftwood`, `-oak`, `-iron`, `-brass`, `-whalebone`, `-gilded`), 1 x 1 cell:
 a T-shaped staff about 6 m tall on a weighted stone foot, a crossbar 1.8 m wide near its head standing just in front
-of its pole and a finial over it. The page hangs the guild's banner from the crossbar, at `cloth`, so no cloth is
-modelled. And the scaffolds (`outpost-scaffold-1`, `-2`, `-2x3`, `-3`, `-4`) the page stands over a structure being
-built, each filling its footprint: poles and planks in lifts, braces, a ladder, a gin wheel, stacked timber and a tarp
-over sacks inside a footing of laid stones.
+of its pole and a finial over it. The page hangs the guild's banner from the crossbar, at `cloth` on the bar's top,
+so no cloth is modelled. And the scaffolds (`outpost-scaffold-1`, `-2`, `-2x3`, `-3`, `-4`) the page stands over a
+structure being built, each filling its footprint: poles and planks in lifts, braces, a ladder, a gin wheel, stacked
+timber and a tarp over sacks inside a footing of laid stones.
 """
 import math
 
@@ -28,7 +28,7 @@ def weighted_foot(module, material='stone', trim='trim'):
 
 def crossbar(module, radius, material, ends=None, end_radius=0.07):
     """The crossbar along x just in front of the pole, its ends capped in `ends` when given, and the `cloth` socket
-    under its middle, facing out of its front."""
+    on top of its middle, facing out of its front: the cloth hangs from there, so its loops wrap the bar."""
     y = -radius - 0.06
     shapes.rod(module, (-BAR_M / 2, y, BAR_Z), (BAR_M / 2, y, BAR_Z), 0.05, material, sides=8)
     shapes.slab(module, (0.0, y / 2, BAR_Z), (0.16, -y + 0.06, 0.14), material)
@@ -36,7 +36,7 @@ def crossbar(module, radius, material, ends=None, end_radius=0.07):
         for side in (-1, 1):
             shapes.lathe(module, (side * (BAR_M / 2 - 0.1), y, BAR_Z), [(0.06, 0.0), (end_radius, 0.03),
                          (end_radius, 0.07), (0.0, 0.1)], ends, sides=8, turn=(0.0, side * math.pi / 2, 0.0))
-    module.socket('cloth', (0.0, y, BAR_Z - 0.05), (0, -1))
+    module.socket('cloth', (0.0, y, BAR_Z + 0.05), (0, -1))
     return y
 
 
@@ -139,7 +139,8 @@ def standard_whalebone(module):
         x = -0.6 + k * 0.2
         shapes.cutout(module, [(-0.03, 0.0), (0.03, 0.0), (0.0, -0.08)], 0.05, 'bone',
                       (x, y, BAR_Z + 0.03 - 0.04 * math.cos(x / 0.9 * math.pi / 2)))
-    module.socket('cloth', (0.0, y, BAR_Z - 0.12), (0, -1))
+    # Within the jaw over the cloth's width, so its loops wrap the bone.
+    module.socket('cloth', (0.0, y, BAR_Z + 0.15), (0, -1))
     shapes.lathe(module, (0.0, 0.0, TOP_M - 0.2), [(0.07, 0.0), (0.1, 0.12), (0.07, 0.3), (0.02, 0.62), (0.0, 0.65)],
                  'bone', sides=8)
     pole_part(module, 0.12)
@@ -188,15 +189,15 @@ def scaffold(module, wide, deep):
 
     def ring_points(half_x, half_y):
         steps_x, steps_y = max(1, round(2 * half_x / 2.2)), max(1, round(2 * half_y / 2.2))
-        xs = [-half_x + 2 * half_x * k / steps_x for k in range(steps_x + 1)]
-        ys = [-half_y + 2 * half_y * k / steps_y for k in range(steps_y + 1)]
-        return xs, ys
+        columns = [-half_x + 2 * half_x * k / steps_x for k in range(steps_x + 1)]
+        rows = [-half_y + 2 * half_y * k / steps_y for k in range(steps_y + 1)]
+        return columns, rows
 
     for half_x, half_y in rings:
-        xs, ys = ring_points(half_x, half_y)
-        for i, x in enumerate(xs):
-            for j, y in enumerate(ys):
-                if i in (0, len(xs) - 1) or j in (0, len(ys) - 1):
+        columns, rows = ring_points(half_x, half_y)
+        for i, x in enumerate(columns):
+            for j, y in enumerate(rows):
+                if i in (0, len(columns) - 1) or j in (0, len(rows) - 1):
                     shell.pole(module, (x, y, 0.0), (x, y, top), 0.05)
                     shapes.slab(module, (x, y, 0.03), (0.3, 0.3, 0.06), 'timber')
         for lift in range(1, lifts + 1):
@@ -222,23 +223,24 @@ def scaffold(module, wide, deep):
         for x in (-half_x, half_x):
             module.part((min(x, x - band if x > 0 else x + band), -half_y + band, z - 0.06),
                         (max(x, x - band if x > 0 else x + band), half_y - band, z + 0.1))
-    xs, ys = ring_points(half_x, half_y)
+    columns, rows = ring_points(half_x, half_y)
     for lift in range(lifts):
-        for a, b in zip(xs, xs[1:]):
+        for a, b in zip(columns, columns[1:]):
             for y in (-half_y - 0.07, half_y + 0.07):
                 low, high = (a, b) if lift % 2 else (b, a)
                 shapes.rod(module, (low, y, lift * 2.0 + 0.1), (high, y, lift * 2.0 + 1.9), 0.03, 'timber', sides=5)
-        for a, b in zip(ys, ys[1:]):
+        for a, b in zip(rows, rows[1:]):
             for x in (-half_x - 0.07, half_x + 0.07):
                 shapes.rod(module, (x, a, lift * 2.0 + 0.1), (x, b, lift * 2.0 + 1.9), 0.03, 'timber', sides=5)
     # A ladder up the front to the first lift, a gin wheel out from the top at a corner with its rope and bucket.
-    lx = half_x - 0.7
+    ladder_x = half_x - 0.7
     for side in (-0.22, 0.22):
-        shapes.rod(module, (lx + side, -half_y - 0.15, 0.0), (lx + side, -half_y - 0.15, 3.0), 0.03, 'timber', sides=5)
+        shapes.rod(module, (ladder_x + side, -half_y - 0.15, 0.0), (ladder_x + side, -half_y - 0.15, 3.0), 0.03,
+                   'timber', sides=5)
     for rung in range(10):
         height = 0.25 + rung * 0.28
-        shapes.rod(module, (lx - 0.22, -half_y - 0.15, height), (lx + 0.22, -half_y - 0.15, height), 0.018, 'timber',
-                   sides=4)
+        shapes.rod(module, (ladder_x - 0.22, -half_y - 0.15, height), (ladder_x + 0.22, -half_y - 0.15, height), 0.018,
+                   'timber', sides=4)
     corner = (-half_x + 0.1, -half_y + 0.1)
     shapes.slab(module, (corner[0], corner[1] + 0.25, top - 0.15), (0.1, 0.7, 0.1), 'timber')
     shapes.ring(module, (corner[0], corner[1] + 0.5, top - 0.35), 0.15, 0.04, 'iron', turn=(0.0, math.pi / 2, 0.0),
@@ -250,15 +252,19 @@ def scaffold(module, wide, deep):
     # Inside: a course of laid stones round the footing, timber stacked, sacks under a tarp.
     inner = (half_x - band - 0.25, half_y - band - 0.25)
     if min(inner) > 1.2:
-        for x0, y0, x1, y1 in ((-inner[0], -inner[1], inner[0], -inner[1]), (-inner[0], inner[1], inner[0], inner[1]),
-                               (-inner[0], -inner[1], -inner[0], inner[1]), (inner[0], -inner[1], inner[0], inner[1])):
-            kit.block(module, ((x0 + x1) / 2, (y0 + y1) / 2, 0.0), (abs(x1 - x0) + 0.4, abs(y1 - y0) + 0.4, 0.35),
+        for start_x, start_y, end_x, end_y in ((-inner[0], -inner[1], inner[0], -inner[1]),
+                                               (-inner[0], inner[1], inner[0], inner[1]),
+                                               (-inner[0], -inner[1], -inner[0], inner[1]),
+                                               (inner[0], -inner[1], inner[0], inner[1])):
+            kit.block(module, ((start_x + end_x) / 2, (start_y + end_y) / 2, 0.0),
+                      (abs(end_x - start_x) + 0.4, abs(end_y - start_y) + 0.4, 0.35),
                       'stone', bevel=0.04, wear=0.04, cuts=1)
     room = min(inner)
     if room > 1.8:
         furnish.timber_stack(module, (-inner[0] / 2, 0.0, 0.0), min(3.0, inner[0]), layers=3, count=4,
                              along_x=False)
-        sacks = [(inner[0] / 2 + dx, dy) for dx, dy in ((-0.35, -0.3), (0.3, -0.25), (0.0, 0.3), (-0.4, 0.35))]
+        sacks = [(inner[0] / 2 + along, across) for along, across in ((-0.35, -0.3), (0.3, -0.25), (0.0, 0.3),
+                                                                       (-0.4, 0.35))]
     else:
         for k in range(3):
             shapes.slab(module, (0.0, -0.4 + k * 0.05, 0.08 + k * 0.1), (1.6, 0.25, 0.08), 'timber')

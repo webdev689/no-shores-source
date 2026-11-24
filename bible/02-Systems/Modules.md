@@ -136,26 +136,27 @@ are written with paving last, since the first group carries the parts and paving
 ## The outposts' structures
 
 What a guild raises on its outpost's plot ([[Guilds and Outposts as Claude Shapes Them]]), drawn by the page on the
-plot's 4 m cells (`OUTPOST` in the catalogue, their seeds from 201 on). Each stands with its origin at the middle of
-its foot, its front toward -y, inside its footprint less 0.2 m on every side (`fits` fails the bake past that), and is
-turned by the page a quarter at a time. Each structure has three tiers that read apart at a glance: tier 1 a frontier
-camp of canvas, rope and rough poles (tents and flies creased and guyed out to pegs); tier 2 boarded timber on a stone
-sill under a roof of staggered shingle courses; tier 3 cut stone below and timber above, with iron-bound doors, arrow
-slits, gilt and flags. Their shells are `outpost_kit.py` (tents, flies, walls with openings, doors, slits, the roof)
-and their furniture `outpost_props.py` (fire pit, braziers, strongbox, balance, racks, timber stacks).
+plot's 4 m cells (`OUTPOST` in the catalogue, their seeds from 201 on). Each stands with its origin at the middle of its
+foot, its front toward Blender's -y (the game's south, its +y), inside its footprint less 0.2 m on every side (`fits`
+fails the bake past that), and is turned by the page a quarter at a time. Each structure has three tiers that read apart
+at a glance: tier 1 a frontier camp of canvas, rope and rough poles (tents and flies creased and guyed out to pegs);
+tier 2 boarded timber on a stone sill under a roof of staggered shingle courses; tier 3 cut stone below and timber
+above, with iron-bound doors, arrow slits, gilt and flags. Their shells are `outpost_kit.py` (tents, flies, walls with
+openings, doors, slits, the roof) and their furniture `outpost_props.py` (fire pit, braziers, strongbox, balance, racks,
+timber stacks).
 
 | Modules | Cells | Tier 1, 2, 3 | Sockets |
 |---|---|---|---|
-| `outpost-hall-1` to `-3` | 4 x 4 | The Camp: a command tent, its flaps tied back on a map table, three tents round a fire pit, stores and a rack of arms. The Longhouse: a boarded hall on a stone sill, its carved front gable run out over a porch, a smoke louvre. The Stronghold: stone below a boarded storey, a tower at its back corner with slits, merlons and two flagstaffs, an iron-bound door between braziers | `door`, `use` |
+| `outpost-hall-1` to `-3` | 4 x 4 | The Command Tent (the Camp, being renamed so in `content/guilds`): a command tent filling the plot's middle, its flaps tied back on a map table, three tents round a fire pit, stores and a rack of arms. The Longhouse: a boarded hall on a stone sill, its carved front gable run out over a porch, shields on the porch's posts, iron-strapped doors, a smoke louvre. The Stronghold: stone below a boarded storey, a tower at its back corner with slits, merlons and two flagstaffs, an iron-bound door between braziers | `door`, `use` |
 | `outpost-counting-1` to `-3` | 2 x 2 | A lean-to over a strongbox, a balance and a ledger on a trestle; a shed with a counter window, its shutter propped as a hood; a stone house with a barred window, an iron door and a gilt coin sign | `use` at the strongbox |
 | `outpost-war-table-1` to `-3` | 2 x 2 | A trestle under an awning, its chart weighted with stones; an open pavilion over a carved table and a rack of standards; stone columns on a stepped platform under a gabled timber roof with gilt suns, braziers and an inlaid table | `use` |
 | `outpost-camp-1` to `-3` | 2 x 2 | A drying rack hung with hides and herbs, baskets, sacks and a rack of picks and sickles; an open shed of shelves and bins; a workshop of stone and timber framing with a hoist out of its gable, bins and a handcart | `stores` |
-| `outpost-dock-1` to `-3` | 2 x 3 | Timber on chocks, sailcloth under a tarp, iron bars on a pallet and a shear-leg derrick; a long open shed over a slipway with a ship's ribs on it; a stone and timber shed with a crane, a rope walk and a forge | `stores` |
-| `outpost-gate-1` to `-3` | 3 x 3 | A platform climbed at its front, a well in it with steps down to a dark doorway (the land is not cut): an earthen mound shored with timber under a headframe; cut stone under an arch, the door's leaves hung open; a carved arch hung with chains, braziers and statues by the flight | `door` at the foot of the steps |
+| `outpost-dock-1` to `-3` | 2 x 3 | Timber on chocks, sailcloth under a tarp, iron bars on a pallet and a shear-leg derrick; a long open shed over a slipway with a ship's ribs on it; a stone and timber shed run along the yard's length as the long shed's is, a crane before it, a rope walk beside it and a forge in it | `stores` |
+| `outpost-gate-1` to `-3` | 3 x 3 | A platform climbed at its front, a well in it with steps down to a dark doorway (the land is not cut): an earthen mound shored with timber under a headframe, a mine's timber portal over the head of the steps down; cut stone under an arch, the door's leaves hung open; a carved arch hung with chains, braziers and statues by the flight | `door` at the foot of the steps |
 | `outpost-lodge-1` to `-3` | 2 x 2 | A tent with a ship's wheel by its door and a chest of charts; a boarded lodge with a carved figurehead over its door and an anchor; a stone lodge with a lantern, two flags and a bell | `use` |
 | `outpost-horn-1` to `-3` | 2 x 2 | A great horn of bone bound in iron on timber A-frames; on a railed timber platform up a flight, a brazier by it; atop a stone tower 7 m tall between braziers | `use` at its foot |
 | `outpost-assay-1` to `-3` | 2 x 2 | A crucible on a hearth under an awning, a balance and ingot moulds; a boarded smithy with its chimney and quench trough; a stone assay house with a tall chimney and a gilt balance sign | `use` |
-| `outpost-standard-driftwood`, `-oak`, `-iron`, `-brass`, `-whalebone`, `-gilded` | 1 x 1 | A staff 6 m tall on a weighted foot, a crossbar 1.8 m wide just in front of its pole near its head and a finial; the page hangs the guild's cloth, so none is modelled | `cloth` under the crossbar's middle |
+| `outpost-standard-driftwood`, `-oak`, `-iron`, `-brass`, `-whalebone`, `-gilded` | 1 x 1 | A staff 6 m tall on a weighted foot, a crossbar 1.8 m wide just in front of its pole near its head and a finial; the page hangs the guild's cloth, so none is modelled | `cloth` on top of the crossbar's middle, so the cloth's loops wrap the bar |
 | `outpost-scaffold-1`, `-2`, `-2x3`, `-3`, `-4` | as named | A structure being built: poles and planks in lifts of 2 m, braces, a ladder, a gin wheel, a footing of laid stones, timber and a tarp over sacks | none |
 
 Their parts are the solids a body must not walk through: walls, doors, posts and piers, tables, stacks, steps (each a
