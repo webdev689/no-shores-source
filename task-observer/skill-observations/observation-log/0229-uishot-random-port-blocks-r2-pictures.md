@@ -1,5 +1,5 @@
 ---
-id: 222
+id: 229
 title: "uiShot served Vite on a random port, so R2 refused the forge's pictures (CORS) and menu shots had no item art; and its events could only aim at coordinates"
 status: open
 type: internal

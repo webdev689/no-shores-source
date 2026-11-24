@@ -1,5 +1,5 @@
 ---
-id: 223
+id: 230
 title: "Tests that restated the stats' own formulas let a one-tick fire-rate error through; stepping a real fighter caught it at once"
 status: open
 type: open-source
