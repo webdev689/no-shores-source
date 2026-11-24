@@ -335,9 +335,9 @@ fn a_waking_whose_spire_stands_empty_a_minute_is_lost_and_the_gate_freed() {
 
 /// The gate opened to each of these runs now, as their Spires woke.
 fn opened(room: &mut Room, runs: &[&str]) {
-    let clock = room.clock;
+    let minute = room.minute;
     let gate = room.breach_gate.as_mut().expect("gate");
-    gate.opened.extend(runs.iter().map(|run| ((*run).to_owned(), clock)));
+    gate.opened.extend(runs.iter().map(|run| ((*run).to_owned(), minute)));
 }
 
 #[test]
@@ -353,11 +353,15 @@ fn the_gate_stays_open_to_its_company_a_day_or_until_it_clears_and_one_too_far_f
     stand(&mut room, players[0], [door[0], door[1] + 20.0, door[2]]);
     assert_eq!(room.ask_enter_breach(players[0]), crate::asks::OUT_OF_REACH, "too far to go in");
     stand(&mut room, players[0], door);
-    room.clock += 23 * 60 * 60 * 60;
-    room.tick();
+    // Hours of play on, the room's ticks and the world's clock going on together.
+    let on = |room: &mut Room, hours: u64| {
+        room.clock += hours * 60 * 60 * 60;
+        room.set_minute(room.minute + hours * 60);
+        room.tick();
+    };
+    on(&mut room, 23);
     assert_eq!(room.ask_enter_breach(players[0]), crate::asks::INTO_BREACH, "open hours on, its company silent");
-    room.clock += 60 * 60 * 60;
-    room.tick();
+    on(&mut room, 1);
     assert_eq!(room.ask_enter_breach(players[0]), gate::GATE_SHUT, "shut a day on");
     opened(&mut room, &["run-a"]);
     room.breach_inside("run-a", "Ada", Tier::Normal, 6);
@@ -500,7 +504,8 @@ fn no_company_whose_gate_opened_takes_it_again_once_it_cleared_or_its_day_is_pas
         if cleared {
             room.breach_inside("run-a", "Wenna", Tier::Normal, 6);
         } else {
-            room.clock += gate::OPENED_TICKS;
+            // A day by the world's clock, though the zone stood empty and its room ticked none of it.
+            room.set_minute(room.minute + gate::OPENED_MINUTES);
         }
         room.tick();
         assert!(!room.breach_opened("run-a"), "shut to it again");

@@ -22,12 +22,13 @@ pub const EBB_EVERY: (u64, u64) = (4, 2);
 /// How near a mooring a body holds it, metres.
 pub const MOORING_REACH_M: f64 = 1.7;
 /// How often a wave comes, ticks; how long the company that woke the gate holds it before the next may take it, ticks;
-/// how long the gate stays open to that company unless it clears the Breach first, ticks: a day, so its company can
-/// always come back in; how long a word from a company inside lasts, ticks: a minute, as its host tells the gate every
-/// ten seconds and forgets a run silent for a minute.
+/// how long the gate stays open to that company unless it clears the Breach first, minutes of the world's clock: a
+/// day, so its company can always come back in, counted while the zone stands empty too; how long a word from a
+/// company inside lasts, ticks: a minute, as its host tells the gate every ten seconds and forgets a run silent for a
+/// minute.
 pub const WAVE_EVERY: u64 = 14 * 60;
 pub const OPEN_TICKS: u64 = 3 * 60 * 60;
-pub const OPENED_TICKS: u64 = 24 * 60 * 60 * 60;
+pub const OPENED_MINUTES: u64 = 24 * 60;
 pub const INSIDE_LASTS: u64 = 60 * 60;
 /// The moorings by their sockets.
 pub const MOORINGS: [&str; 3] = ["mooring-west", "mooring-south", "mooring-east"];
@@ -88,7 +89,7 @@ pub struct Gate {
     /// The last tick a living player of the holding company stood in the hollow, and since when the Spire is empty.
     pub last_near: u64,
     pub empty_since: Option<u64>,
-    /// The runs whose gate has opened, by the tick it opened; and the companies inside runs, by run.
+    /// The runs whose gate has opened, by the world's minute it opened; and the companies inside runs, by run.
     pub opened: BTreeMap<String, u64>,
     pub inside: BTreeMap<String, Inside>,
     /// The runs whose gate opened and has shut again, cleared or its day past: none of them takes the gate again.
@@ -208,7 +209,7 @@ impl Room {
         let past: Vec<String> = gate
             .opened
             .iter()
-            .filter(|(_, opened)| clock >= **opened + OPENED_TICKS)
+            .filter(|(_, opened)| self.minute >= **opened + OPENED_MINUTES)
             .map(|(run, _)| run.clone())
             .collect();
         for run in past {
@@ -341,7 +342,7 @@ impl Room {
         gate.down_since = None;
         if gate.fill >= SPIRE_TICKS {
             gate.woken = Some(clock);
-            gate.opened.insert(run, clock);
+            gate.opened.insert(run, self.minute);
             gate.left_down.clear();
             for id in std::mem::take(&mut gate.foes) {
                 if self.foes.get(&id).is_some_and(|foe| !foe.fighter.dead()) {
