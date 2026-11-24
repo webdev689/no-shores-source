@@ -9,7 +9,7 @@ target_file: ["crates/xtask"]
 siblings_checked: "none: the target is the repo's checks, not a skill"
 area: "repo checks: line width of comments and notes"
 date: 2026-11-19
-session_context: "Hulls worker's reviewer flagged long comment and note lines that cargo xtask check passed."
+session_context: "Hulls worker's reviewer flagged long comment and note lines that cargo xtask check passed. Again 2026-11-24 (revives branch, #184): a docs auditor found five added note lines past 120 after cargo xtask repo passed, and counted 559 prose lines in bible/02-Systems already past it; Prettier's printWidth does not cover Markdown."
 parked_until:
 resolved:
 resolution:
@@ -25,3 +25,6 @@ passed; a whole commit went to rewrapping them.
 
 **Principle:** A style limit enforced only by review costs a round every time; enforce it in the gate or stop asking for
 it.
+
+**Second instance:** on #184 a docs auditor found added note lines past 120 after `cargo xtask repo` had passed. About
+559 lines in `bible/02-Systems` were already past it, so the limit is unenforced across the vault, not just missed once.
