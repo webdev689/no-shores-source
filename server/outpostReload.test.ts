@@ -6,7 +6,7 @@ import { inputBytes } from '../client/src/network/messages.ts';
 import { flush, outpostWorld } from './outpostReloadForTests.ts';
 
 const SITE = 'gull-cove-outpost';
-const still = new Float64Array([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, Number.NaN, Number.NaN, Number.NaN, 0]);
+const still = new Float64Array([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, Number.NaN, Number.NaN, Number.NaN, 0]);
 const look = { anim: 'walk', frame: 2, facing: 0 };
 const sequences = new Map<number, number>();
 /** An input carrying an ask, in the player's own sequence. */
@@ -175,12 +175,8 @@ async function walk(seed: number, steps: number) {
     await flush(10);
   }
   const end = await totals();
-  console.log(
-    'carried',
-    JSON.stringify((await world.keptBody('Ada')).errand),
-    JSON.stringify((await world.keptBody('Cyra')).errand),
-  );
-  return { start, end: { ...end, aurem: end.aurem - shifted }, log };
+  const kept = await database.prepare('SELECT COUNT(*) AS count FROM outpost_errands').first<{ count: number }>();
+  return { start, end: { ...end, aurem: end.aurem - shifted }, log, errands: kept?.count ?? 0 };
 }
 
 test(
@@ -188,11 +184,15 @@ test(
   { timeout: 600_000 },
   async () => {
     const bad: string[] = [];
+    let asked = 0;
     for (let seed = 1; seed <= Number(process.env['SEEDS'] ?? 12); seed++) {
-      const { start, end, log } = await walk(seed, 30);
+      const { start, end, log, errands } = await walk(seed, 30);
+      asked += errands;
       if (start.aurem !== end.aurem || start.timber !== end.timber)
         bad.push(`seed ${seed}: ${JSON.stringify(start)} -> ${JSON.stringify(end)}\n${log.join('\n')}`);
     }
     assert.deepEqual(bad, []);
+    // A run whose inputs the room cannot read asks nothing, and would pass the totals above unseen.
+    assert.ok(asked > 0, 'the errands of the run reached the accounts');
   },
 );
