@@ -110,6 +110,7 @@ impl Room {
         let dice = self.dice(player);
         let Some(found) = self.players.get_mut(&player) else { return };
         self.finds.by_player.entry(player).or_default().push(number);
+        self.finds.last_paid.insert(player, number);
         if let Some(owner) = &found.owner {
             self.finds.opened.entry(owner.clone()).or_default().push(number);
         }

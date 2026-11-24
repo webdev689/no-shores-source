@@ -515,6 +515,7 @@ pub fn gear_bytes(room: &Room, player: PlayerId) -> Option<Vec<u8>> {
         abyss_playlist_clears: this_week.abyss_playlist,
         chests: Some(crate::finds_wire::chests_of(&mut builder, room, player)),
         searchables: Some(crate::finds_wire::searchables_of(&mut builder, room, player)),
+        opened: room.last_opened(player),
     };
     let gear = messages::Gear::create(&mut builder, &args);
     let message =

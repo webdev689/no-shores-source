@@ -92,7 +92,7 @@ test('each container is named by its family, a container where the page knows no
   ]);
 });
 
-test('a chest the player opened stays drawn open a while; one that moved on goes at once', () => {
+test('a chest the room paid the player for stays drawn open a while; one that moved on goes at once', () => {
   const seen = new ChestsSeen();
   const other = { number: 8, at: [50, 0, 0] as const, facing: 0 };
   const standing = state({ chests: [CHEST, other] });
@@ -103,18 +103,28 @@ test('a chest the player opened stays drawn open a while; one that moved on goes
       [8, null],
     ],
   );
-  seen.ask(7, 0.5);
-  const opened = seen.frame(state({ chests: [] }), 1.5);
-  assert.deepEqual(opened.justOpened, [7], 'the one asked of, opened');
+  const opened = seen.frame(state({ chests: [], opened: 7 }), 1.5);
+  assert.deepEqual(opened.justOpened, [7], 'the one the room names');
   assert.deepEqual(
     opened.drawn.map((each) => [each.number, each.opened]),
     [[7, 0]],
     'the other moved on and is gone; the opened one stands open',
   );
-  const later = seen.frame(state({ chests: [] }), 1.5 + OPENED_KEPT_S / 2);
+  const later = seen.frame(state({ chests: [], opened: 7 }), 1.5 + OPENED_KEPT_S / 2);
   assert.deepEqual(later.justOpened, [], 'told once');
   assert.equal(later.drawn[0]?.opened, OPENED_KEPT_S / 2);
-  assert.deepEqual(seen.frame(state({ chests: [] }), 2 + OPENED_KEPT_S).drawn, [], 'then gone');
+  assert.deepEqual(seen.frame(state({ chests: [], opened: 7 }), 2 + OPENED_KEPT_S).drawn, [], 'then gone');
+});
+
+test('a chest that moves on just after an ask the room refused is not drawn opened', () => {
+  const seen = new ChestsSeen();
+  seen.frame(gear, 0);
+  const moved = seen.frame(state({ chests: [{ ...CHEST, number: 11 }] }), 0.5);
+  assert.deepEqual(moved.justOpened, []);
+  assert.deepEqual(
+    moved.drawn.map((each) => [each.number, each.opened]),
+    [[11, null]],
+  );
 });
 
 test("a patrol's chests stand as the event chest and its lid, which swings back as one opens; a dungeon draws its own", () => {
@@ -126,10 +136,9 @@ test("a patrol's chests stand as the event chest and its lid, which swings back 
   );
   assert.equal(shut.props[0]?.turn, CHEST.facing, 'turned the way its place faces');
   assert.equal(shut.props[1]?.lid, 0, 'shut');
-  finds.asked({ kind: 'find', index: 7, seconds: OPEN_S });
-  const opening = finds.frame(state({ chests: [] }), 0.2, false, true);
+  const opening = finds.frame(state({ chests: [], opened: 7 }), 0.2, false, true);
   assert.equal(opening.sounds.length, 0, 'quiet while paused');
-  const swung = finds.frame(state({ chests: [] }), 0.8, false, false);
+  const swung = finds.frame(state({ chests: [], opened: 7 }), 0.8, false, false);
   assert.ok((swung.props[1]?.lid ?? 0) > 1, 'its lid thrown back');
   const below = new FootFinds();
   assert.deepEqual(below.frame(gear, 0, true, false).props, [], 'in a dungeon its view draws them');
@@ -139,10 +148,9 @@ test("a patrol's chests stand as the event chest and its lid, which swings back 
 test('the lid of a chest just opened clunks where it stands', () => {
   const finds = new FootFinds();
   finds.frame(gear, 0, false, false);
-  finds.asked({ kind: 'find', index: 7, seconds: OPEN_S });
-  const opened = finds.frame(state({ chests: [] }), 0.1, false, false);
+  const opened = finds.frame(state({ chests: [], opened: 7 }), 0.1, false, false);
   assert.deepEqual(opened.sounds, [{ cue: 'ship.ready', at: CHEST.at }]);
-  assert.deepEqual(finds.frame(state({ chests: [] }), 0.2, false, false).sounds, [], 'once');
+  assert.deepEqual(finds.frame(state({ chests: [], opened: 7 }), 0.2, false, false).sounds, [], 'once');
 });
 
 test('each chest standing for the player wears a chest over its lid, and each container to search a glass over its top', () => {

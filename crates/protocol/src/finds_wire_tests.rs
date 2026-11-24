@@ -61,4 +61,5 @@ fn a_chest_opened_is_left_out_of_its_players_gear() {
     let chests = floats(gear.chests());
     assert_eq!(chests.len(), 5, "one chest left of two");
     assert!((chests[0] - f64::from(number)).abs() > 0.5, "the one opened is gone");
+    assert_eq!(gear.opened(), number, "and named as the last it paid");
 }

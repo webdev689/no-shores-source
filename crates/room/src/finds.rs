@@ -22,9 +22,10 @@ const PATROL_CHESTS: [usize; 2] = [2, 4];
 const PATROL_SHARE: usize = 6;
 const DUNGEON_SHARE: usize = 4;
 pub const SEARCHABLE_MOST: usize = 16;
-/// A dungeon's chest (the cache's, `dungeonChest.ts`): how far its back stands off the wall it is against, past the
-/// 0.3 its lid swings back as it opens; half its depth and half its width, metres.
-const OFF_WALL_M: f64 = 0.35;
+/// A dungeon's chest (the cache's, `dungeonChest.ts`): how far its back stands off the wall it is against, so its lid
+/// swinging back as it opens (up to 0.15 m behind it) keeps clear of the 0.3 m a kit piece stands proud of a wall;
+/// half its depth and half its width, metres.
+const OFF_WALL_M: f64 = 0.5;
 /// How far a second chest in a dungeon's room stands from every other, metres: two cells.
 const SECOND_APART_M: f64 = 2.0 * CELL_M;
 pub const CHEST_HALF_DEEP_M: f64 = 0.25;
@@ -68,6 +69,8 @@ pub(crate) struct Finds {
     pub opened: BTreeMap<String, Vec<u32>>,
     pub by_player: BTreeMap<PlayerId, Vec<u32>>,
     pub opening: BTreeMap<PlayerId, crate::find_holds::Opening>,
+    /// The last find each player was paid for, which their page tells them of.
+    pub last_paid: BTreeMap<PlayerId, u32>,
 }
 
 impl Finds {
@@ -80,7 +83,7 @@ impl Finds {
     }
 
     /// A dungeon's: a chest in a room of each block (as many as have room for one), against a wall of a room past the
-    /// way in's but the end, never in a room of `kept` (a seal's); and its props that hold things.
+    /// way in's but the end, never in a room of `kept` (a seal's); and its props that hold things, but in those rooms.
     pub(crate) fn of_dungeon(dungeon: &Dungeon, ground: &crate::dungeon_ground::DungeonGround, kept: &[usize]) -> Self {
         let mut places = Vec::new();
         let mut groups = Vec::new();
@@ -96,10 +99,15 @@ impl Finds {
                 }
             }
         }
+        // A seal's room's containers are none of them searchable either: its floor is the seal's.
+        let in_kept = |[x, y]: [f64; 2]| {
+            let cell = (y / CELL_M) as usize * dungeon.columns + (x / CELL_M) as usize;
+            dungeon.room_at(cell).is_some_and(|room| kept.contains(&room))
+        };
         let holders = dungeon
             .props
             .iter()
-            .filter(|prop| dungeon::models::holder(prop.model).is_some())
+            .filter(|prop| dungeon::models::holder(prop.model).is_some() && !in_kept([prop.at[0], prop.at[1]]))
             .filter_map(|prop| {
                 let model = f64::from(prop.model);
                 prop.solid.map(|[west, north, east, south, top]| [west, north, east, south, 0.0, top, model])
@@ -209,6 +217,7 @@ impl Room {
         let players = &self.players;
         self.finds.by_player.retain(|player, _| players.contains_key(player));
         self.finds.opening.retain(|player, _| players.contains_key(player));
+        self.finds.last_paid.retain(|player, _| players.contains_key(player));
     }
 
     /// The finds an account opened here are opened again for the player it is now.
@@ -216,6 +225,12 @@ impl Room {
         let kept = self.finds.opened.get(owner).cloned().unwrap_or_default();
         let opened = self.finds.by_player.entry(player).or_default();
         opened.extend(kept.into_iter().filter(|number| !opened.contains(number)).collect::<Vec<_>>());
+    }
+
+    /// The number of the last find a player was paid for here, 0 for none.
+    #[must_use]
+    pub fn last_opened(&self, player: PlayerId) -> u32 {
+        self.finds.last_paid.get(&player).copied().unwrap_or(0)
     }
 
     /// The finds a player has opened while they stand here.

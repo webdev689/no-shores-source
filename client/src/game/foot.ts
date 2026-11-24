@@ -330,7 +330,6 @@ export class Foot {
    *  held. */
   use(): void {
     this.using?.run();
-    this.finds.asked(this.using?.held);
     this.hold.begin(this.using?.held, this.held.gear ?? this.held.alone);
   }
 

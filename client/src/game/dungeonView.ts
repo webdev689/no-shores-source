@@ -13,7 +13,7 @@ import type { ForgedModel } from '../models/model.ts';
 import { dungeonBook, type SmallBook } from './dungeonBook.ts';
 import { propPlans } from './dungeonCells.ts';
 import { CLUSTER_COUNT, LightClusters, MOST_LISTED } from './dungeonClusters.ts';
-import { type Cache, chestMesh, chestsMesh } from './dungeonChest.ts';
+import { type Cache, chestMesh, chestsMesh, foundChest } from './dungeonChest.ts';
 import type { ChestDrawn } from './finds.ts';
 import { type DungeonLayout, SIDE_STEPS, type StyleKey } from './dungeonLayout.ts';
 import { dressingOf } from './dungeonDressing.ts';
@@ -28,13 +28,6 @@ import { layModel } from './entrances.ts';
 import { propModel } from '../models/props.ts';
 import type { PropTable } from '../models/tables.ts';
 import { LIGHT_FLOATS, lightFloats, MOST_LIGHTS, MOST_LOOKS, VIEW_FLOATS } from './dungeonShaders.ts';
-
-/** How long a found chest's lid takes to swing back, seconds, and how far, radians: just short of upright, so standing
- *  0.35 m off its wall (crates/room finds.rs) the open lid stays clear of every kit piece, none more than 0.3 m proud
- *  of a wall (tools/dungeon/envelope.py); and half the chest's depth, metres (`dungeonChest.ts`). */
-const LID_OPEN_S = 0.6;
-const LID_RAD = 1.35;
-const HALF_DEEP_M = 0.25;
 
 /** How far out from its face the open portal's light stands, metres. */
 const PORTAL_OUT_M = 0.6;
@@ -230,14 +223,8 @@ export class DungeonView {
   setFinds(chests: readonly ChestDrawn[]): void {
     const drawn = this.drawn;
     if (!drawn) return;
-    const shown = chests.map((chest) => {
-      const lid = chest.opened === null ? 0 : Math.min(1, chest.opened / LID_OPEN_S) * LID_RAD;
-      // The chest is built from its front's middle, half its depth before its middle.
-      const [x, y, z] = chest.at;
-      const front = { x: x + Math.sin(chest.facing) * HALF_DEEP_M, y: y - Math.cos(chest.facing) * HALF_DEEP_M };
-      return { ...front, z, bearing: chest.facing, open: chest.opened !== null, lid };
-    });
-    const key = shown.map((chest) => `${chest.x},${chest.y},${chest.lid.toFixed(2)}`).join(';');
+    const shown = chests.map(foundChest);
+    const key = shown.map((chest) => `${chest.x},${chest.y},${(chest.lid ?? 0).toFixed(2)}`).join(';');
     if (key === drawn.findsShown) return;
     drawn.findsShown = key;
     for (const buffer of [drawn.finds?.vertices, drawn.finds?.indices]) buffer?.destroy();

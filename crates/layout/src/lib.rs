@@ -411,7 +411,7 @@ pub fn plan(
         let rounds = chests::rounds_of(&areas, &sculpt.climbs, &runs);
         let (boxes, buildings, props) = (&seated, &seating.buildings, &seating.props);
         let standing =
-            chests::Standing { boxes, buildings, props, plantings: &plantings, paths: &paths, spawns: &spawns };
+            chests::Standing { boxes, buildings, props, plantings: &plantings, paths: &ways, spawns: &spawns };
         sites.extend(chests::mark(&rounds, &field, &ring, standing, (&sites, &carved_height), seed));
     }
     let ways: Vec<(Path, [usize; 2])> = paths.iter().cloned().zip(joined.iter().copied()).collect();

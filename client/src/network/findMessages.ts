@@ -24,10 +24,12 @@ export interface GearSearchable {
   readonly model: number;
 }
 
-/** The finds standing for a player, as their gear carries them. */
+/** The finds standing for a player, as their gear carries them, and the number of the last the room paid them for (0
+ *  none). */
 export interface FindState {
   readonly chests?: readonly GearChest[];
   readonly searchables?: readonly GearSearchable[];
+  readonly opened?: number;
 }
 
 /** Each run of `size` numbers of a list. */
@@ -53,5 +55,5 @@ export function findsOf(gear: Gear): Required<FindState> {
       model,
     }),
   );
-  return { chests, searchables };
+  return { chests, searchables, opened: gear.opened() };
 }

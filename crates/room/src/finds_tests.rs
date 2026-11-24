@@ -72,6 +72,7 @@ fn a_patrol_stands_a_chest_for_every_five_places_each_at_a_place_of_its_own_and_
     let mut numbers: Vec<u32> = chests.iter().map(|(number, _)| *number).collect();
     numbers.extend(room.searchables_for(player).into_iter().map(|(number, _)| number));
     let count = numbers.len();
+    numbers.sort_unstable();
     numbers.dedup();
     assert_eq!(numbers.len(), count, "each its own number");
     // Two places stand two, the least, and one stands one.
@@ -120,6 +121,7 @@ fn a_chest_held_open_a_second_within_reach_pays_its_player_and_stays_for_another
     assert!(resource >= 2, "two to four of the island's resource");
     assert!(room.chests_for(player).iter().all(|(each, _)| *each != number), "gone for them");
     assert!(room.chests_for(other).iter().any(|(each, _)| *each == number), "still standing for another");
+    assert_eq!((room.last_opened(player), room.last_opened(other)), (number, 0), "named as theirs alone");
     assert_eq!(hold(&mut room, player, number, OPEN_TICKS + 1), OUT_OF_REACH, "never twice");
 }
 
@@ -282,6 +284,12 @@ fn every_elite_dungeons_chests_keep_out_of_its_seals_rooms() {
         let plan = crate::encounter_plan::plan_encounters(&dungeon);
         let seals: Vec<usize> = plan.seals.iter().map(|seal| seal.room).collect();
         assert!(!room.finds.chests.is_empty(), "{}: chests", elite.id);
+        for &[west, north, east, south, ..] in &room.finds.holders {
+            let [x, y] = [f64::midpoint(west, east), f64::midpoint(north, south)];
+            let cell = (y / CELL_M) as usize * dungeon.columns + (x / CELL_M) as usize;
+            let held = dungeon.room_at(cell);
+            assert!(held.is_none_or(|room| !seals.contains(&room)), "{}: a container in a seal's room", elite.id);
+        }
         for chest in &room.finds.chests {
             let [x, y, ..] = room.finds.places[chest.place];
             let cell = (y / CELL_M) as usize * dungeon.columns + (x / CELL_M) as usize;

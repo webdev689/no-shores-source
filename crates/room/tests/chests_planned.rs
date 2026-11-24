@@ -9,8 +9,9 @@ use layout::sites::{Site, SiteKind};
 use std::path::Path;
 use std::sync::OnceLock;
 
-fn continent_one() -> &'static [Layout] {
-    static LAID: OnceLock<Vec<Layout>> = OnceLock::new();
+/// Continent 1's layouts as the bake settles them, and its ground as they leave it.
+fn laid_one() -> &'static (Vec<Layout>, land::ground::Ground) {
+    static LAID: OnceLock<(Vec<Layout>, land::ground::Ground)> = OnceLock::new();
     LAID.get_or_init(|| {
         let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
         let read = |path: &str| std::fs::read_to_string(root.join(path)).expect("the world's files are here");
@@ -21,8 +22,13 @@ fn continent_one() -> &'static [Layout] {
         let city = city::rmb::Blocks::from_index(&read("content/world/rmb/index.json")).expect("the RMB index reads");
         let mut landmass = land::landmass::generate(&continent, edits).expect("the continent generates");
         city::settle(&mut landmass, &city).expect("its city settles");
-        layout::settle::settle(&mut landmass, &builders.book, &builders.briefs)
+        let layouts = layout::settle::settle(&mut landmass, &builders.book, &builders.briefs);
+        (layouts, landmass.surface)
     })
+}
+
+fn continent_one() -> &'static [Layout] {
+    &laid_one().0
 }
 
 fn patrols() -> impl Iterator<Item = &'static Layout> {
@@ -104,6 +110,65 @@ fn each_chest_place_stands_in_bounds_off_the_ways_clear_of_what_stands_and_tucke
                     && top - bottom >= 1.0
             });
             assert!(tucked, "{id}: chest {:?} facing {facing} has nothing behind it", place.at);
+        }
+    }
+}
+
+/// A chest place's whole room as it opens: its box across and, toward what it is tucked against, the band its lid
+/// swings back into, short of the face by a hand (west, north, east, south).
+fn swing_of(place: &Site) -> [f64; 4] {
+    let [x, y] = place.at;
+    let facing = place.facing.expect("a chest's place faces a way");
+    let (back_x, back_y) = (-libm::sin(facing), libm::cos(facing));
+    let (across, deep, behind) = (0.55, 0.4, OUT_M - 0.05);
+    let corners = [(-across, -deep), (across, -deep), (-across, behind), (across, behind)]
+        .map(|(side, along)| [x + back_y * side + back_x * along, y - back_x * side + back_y * along]);
+    corners.iter().fold([f64::INFINITY, f64::INFINITY, f64::NEG_INFINITY, f64::NEG_INFINITY], |[w, n, e, s], p| {
+        [w.min(p[0]), n.min(p[1]), e.max(p[0]), s.max(p[1])]
+    })
+}
+
+#[test]
+fn a_chest_and_its_lids_swing_hold_nothing_that_stands_and_keep_off_a_runs_way_to_its_door_and_the_events_sites() {
+    for laid in patrols() {
+        let id = &laid.id;
+        for place in chests(laid) {
+            let [west, north, east, south] = swing_of(place);
+            let overlaps = |[other_west, other_north, other_east, other_south]: [f64; 4]| {
+                other_west < east && other_east > west && other_north < south && other_south > north
+            };
+            for prop in &laid.seating.props {
+                assert!(!overlaps(prop.footprint), "{id}: chest {:?} opens into prop {}", place.at, prop.model);
+            }
+            // Every box a body meets as laid, a store's among them, keeps out of its room as high as it opens.
+            let ground = laid_one().1.height_at(place.at[0], place.at[1]);
+            for &[box_west, box_north, box_east, box_south, top, bottom] in &laid.boxes {
+                let beside = bottom < ground + 1.0 && top > ground + 0.05;
+                if beside && overlaps([box_west, box_north, box_east, box_south]) {
+                    let swing = swing_of(place);
+                    panic!(
+                        "{id}: chest {:?} facing {:?} swing {swing:?} opens into a box {:?}",
+                        place.at,
+                        place.facing,
+                        [box_west, box_north, box_east, box_south, top, bottom]
+                    );
+                }
+            }
+            for run in &laid.runs {
+                let Some(&end) = run.line.last() else { continue };
+                let off = layout::paths::off_line(place.at, end, run.door);
+                assert!(off >= 1.3 / 2.0 + 1.5, "{id}: chest {:?} on the way to {}'s door", place.at, run.name);
+            }
+            let events = laid.sites.iter().filter(|site| {
+                matches!(
+                    site.kind,
+                    SiteKind::Fissure | SiteKind::Growth | SiteKind::Store | SiteKind::Banner | SiteKind::Approach
+                )
+            });
+            for site in events {
+                let apart = distance(place.at, site.at);
+                assert!(apart >= site.radius + 3.0, "{id}: chest {:?} on a {:?} site", place.at, site.kind);
+            }
         }
     }
 }

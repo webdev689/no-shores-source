@@ -15,6 +15,26 @@ export interface Cache {
   readonly lid?: number;
 }
 
+/** How long a found chest's lid takes to swing back, seconds, and how far, radians: short of upright, so standing off
+ *  its wall as the room stands it (crates/room finds.rs) the open lid stays clear of every kit piece, none more than
+ *  0.3 m proud of a wall (tools/dungeon/envelope.py). */
+const LID_OPEN_S = 0.6;
+const LID_RAD = 1.35;
+
+/** A chest the dungeon stands for the player to find (finds.ts) as the cache's chest is built: from its front's
+ *  middle, half its depth before the middle the room stands it at, its lid swung back as far as it has opened. */
+export function foundChest(chest: {
+  readonly at: readonly [number, number, number];
+  readonly facing: number;
+  readonly opened: number | null;
+}): Cache {
+  const lid = chest.opened === null ? 0 : Math.min(1, chest.opened / LID_OPEN_S) * LID_RAD;
+  const [x, y, z] = chest.at;
+  const half = BODY.depth / 2;
+  const front = { x: x + Math.sin(chest.facing) * half, y: y - Math.cos(chest.facing) * half };
+  return { ...front, z, bearing: chest.facing, open: chest.opened !== null, lid };
+}
+
 /** The chest's body, its lid, its iron bands and how far its lid is thrown back open, metres and radians. */
 const BODY = { half: 0.45, depth: 0.5, height: 0.42 };
 const LID = 0.14;

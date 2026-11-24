@@ -6,7 +6,7 @@ import { type Marked, OVER_HEAD_M } from '../combat/marksOver.ts';
 import type { GearChest } from '../network/findMessages.ts';
 import { ASKS, type GearAsk, type GearState } from '../network/gearMessages.ts';
 import { PROP_ROLES } from '../models/propRoles.ts';
-import type { HeldUse, Use } from './footGear.ts';
+import type { Use } from './footGear.ts';
 import { CHEST_PICTURE, SEARCH_PICTURE } from './overheadMarks.ts';
 import { play } from './uiSounds.ts';
 
@@ -17,10 +17,8 @@ export const SEARCH_REACH_M = 1.5;
 export const FIND_HEIGHT_M = 2;
 export const OPEN_S = 1;
 export const SEARCH_S = 1.5;
-/** How long a chest the player opened stays drawn, open, before it goes, seconds; and how long after an ask to open
- *  one its going is taken as opened, not moved on. */
+/** How long a chest the player opened stays drawn, open, before it goes, seconds. */
 export const OPENED_KEPT_S = 4;
-const ASKED_FOR_S = 4;
 
 /** A container's name by its family (models/propRoles.ts), as the words that search it say it. */
 const NAMES: Readonly<Record<string, string>> = {
@@ -94,35 +92,27 @@ export interface ChestDrawn {
   readonly opened: number | null;
 }
 
-/** The chests a player sees, from each word on their gear: those standing, and each they opened lately, kept open
- *  OPENED_KEPT_S; one that went without their opening it moved on, and goes at once. */
+/** The chests a player sees, from each word on their gear: those standing, and each the room says it paid them for
+ *  (`opened`), kept open OPENED_KEPT_S where it stood; one that went unpaid moved on, and goes at once. */
 export class ChestsSeen {
   private standing: readonly GearChest[] = [];
-  private readonly asked = new Map<number, number>();
+  private told = 0;
   private readonly opened = new Map<number, { chest: GearChest; at: number }>();
 
-  /** An ask to open a find, at `clock` seconds: if its chest goes soon after, the player opened it. */
-  ask(number: number, clock: number): void {
-    this.asked.set(number, clock);
-  }
-
-  /** The chests to draw at `clock` seconds, with the gear as it stands now; and the numbers of those just opened. */
+  /** The chests to draw at `clock` seconds, with the gear as it stands now; and the number of one just opened. */
   frame(gear: GearState | null, clock: number): { drawn: ChestDrawn[]; justOpened: number[] } {
     const now = gear?.chests ?? [];
+    const paid = gear?.opened ?? 0;
     const justOpened: number[] = [];
-    for (const chest of this.standing) {
-      const asked = this.asked.get(chest.number);
-      const gone = !now.some((each) => each.number === chest.number);
-      if (gone && asked !== undefined && clock - asked <= ASKED_FOR_S) {
-        this.opened.set(chest.number, { chest, at: clock });
-        justOpened.push(chest.number);
-      }
+    const chest = paid !== this.told ? this.standing.find((each) => each.number === paid) : undefined;
+    if (chest) {
+      this.opened.set(chest.number, { chest, at: clock });
+      justOpened.push(chest.number);
     }
-    this.standing = now;
-    for (const [number, asked] of this.asked) if (clock - asked > ASKED_FOR_S) this.asked.delete(number);
+    [this.standing, this.told] = [now, paid];
     for (const [number, { at }] of this.opened) if (clock - at > OPENED_KEPT_S) this.opened.delete(number);
-    const shut = now.map((chest) => ({ ...chest, opened: null }));
-    const open = [...this.opened.values()].map(({ chest, at }) => ({ ...chest, opened: clock - at }));
+    const shut = now.map((each) => ({ ...each, opened: null }));
+    const open = [...this.opened.values()].map(({ chest: each, at }) => ({ ...each, opened: clock - at }));
     return { drawn: [...shut, ...open], justOpened };
   }
 }
@@ -158,17 +148,10 @@ export interface FindsShown {
  *  chest drawn for each), each opened one's sound, and in a patrol each as a prop. */
 export class FootFinds {
   private readonly seen = new ChestsSeen();
-  private clock = 0;
   drawn: ChestDrawn[] = [];
-
-  /** E pressed where it does `held`: an ask to open a find, kept so its chest's going is seen as opened. */
-  asked(held: HeldUse | undefined): void {
-    if (held?.kind === 'find') this.seen.ask(held.index, this.clock);
-  }
 
   /** One frame at `clock` seconds with the gear as it stands, in a dungeon or not; quiet while the game is paused. */
   frame(gear: GearState | null, clock: number, dungeon: boolean, quiet: boolean): FindsShown {
-    this.clock = clock;
     const { drawn, justOpened } = this.seen.frame(gear, clock);
     this.drawn = drawn;
     const opened = drawn.filter((chest) => justOpened.includes(chest.number));

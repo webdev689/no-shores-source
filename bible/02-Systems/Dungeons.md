@@ -303,11 +303,11 @@ The patrol areas' dungeons: three in each patrol, each laid by DFO's Forge from 
 - **Its chests and containers** ([[Patrols and Dungeons Hold Chests, and Their Containers May Be Searched]]; Claude's
   calls in [[Chests and Searchable Containers as Claude Builds Them]]): every dungeon's room, whatever runs it, lays
   the places a chest may stand (`of_dungeon`): against each rock wall of each cell of every room past the way in's but
-  the end, and never an Elite Dungeon's seal's room, its back 0.35 m off the wall and facing into the room, its box
+  the end, and never an Elite Dungeon's seal's room, its back 0.5 m off the wall and facing into the room, its box
   (0.9 by 0.5 m) clear of rock and every solid; none on a doorway's cell, the way in's or the portal's, one holding a
   prop, a fixture or a landmark, or under a torch (`against_walls`). It stands a chest for each block, each in a room
   of its own drawn on the room's loot seed, and where rooms run short a room holds a second, two cells from every
-  other; and one of its props of the holding families in four searchable, 16 at most. All are drawn again as the
+  other; and one of its props of the holding families in four searchable, 16 at most, none in a seal's room. All are drawn again as the
   cache shuts, when the end foe stands again, never at an Abyss wipe. Each player opens each once, as a patrol's
   ([[Server]], "Chests and containers").
 - **The entrances**: a patrol's room lays its three dungeons' entrances as it starts ([[Server]], "A patrol"), from
@@ -532,8 +532,8 @@ as standing none (`readDungeon`).
 - **The cache** (`chestMesh`): a chest of wood and iron at the room's `Snapshot.cache`, its lid shut or thrown back.
 - **The chests to find** (`chestsMesh`, `finds.ts`): the cache's chest at each the room stands for the player, centred
   where it stands, built in one mesh, lit by the torches; one the player opens swings its lid back over 0.6 s to 1.35
-  rad, just short of upright, so it stays clear of the kits on the wall behind it, none more than 0.3 m proud, and
-  stands open 4 seconds before it goes.
+  rad, just short of upright, coming no nearer the wall behind it than 0.4 m, clear of the kits there, none more than
+  0.3 m proud (`foundChest`), and stands open 4 seconds before it goes.
 - **The props** (`layout.props`): each forged prop laid by `layModel` as the city lays one, lit by the torches; the
   `boxes` past the jambs and pillars are their solids, which the camera keeps short of and nothing draws.
 - **Its pictures**, every one painted by the procedural textures: each look's sets (records 0 to 4, each turned by

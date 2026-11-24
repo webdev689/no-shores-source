@@ -146,17 +146,16 @@ function chestGains(before: GearState, after: GearState): Gain[] {
   return chest ? [gain(`chest-${chest.id}`, chest.tier >= 3 ? 'Heroic chest' : 'Chest', 1, { pips: chest.tier })] : [];
 }
 
-/** A chest or a container opened between two words (standing for the player in `before`, gone in `after` as the
- *  Aurem it always holds came), named as its mark shows it; what it gave is told as any gain is. */
+/** A chest or a container the room paid the player for between two words (`opened`, standing for them in
+ *  `before`), named as its mark shows it; what it gave is told as any gain is. */
 function findGains(before: GearState, after: GearState): Gain[] {
-  if (after.aurem <= before.aurem) return [];
-  const gone = <Find extends { readonly number: number }>(was: readonly Find[] = [], now: readonly Find[] = []) =>
-    was.find((find) => !now.some((left) => left.number === find.number));
-  const chest = gone(before.chests, after.chests);
-  if (chest) return [gain(`find-${chest.number}`, 'Chest', 1, { icon: CHEST_SVG, bare: true })];
-  const held = gone(before.searchables, after.searchables);
+  const opened = after.opened ?? 0;
+  if (opened === 0 || opened === before.opened) return [];
+  const chest = before.chests?.find((find) => find.number === opened);
+  if (chest) return [gain(`find-${opened}`, 'Chest', 1, { icon: CHEST_SVG, bare: true })];
+  const held = before.searchables?.find((find) => find.number === opened);
   const searched = held && `Searched the ${holderName(held.model)}`;
-  return held && searched ? [gain(`find-${held.number}`, searched, 1, { icon: SEARCH_SVG, bare: true })] : [];
+  return searched ? [gain(`find-${opened}`, searched, 1, { icon: SEARCH_SVG, bare: true })] : [];
 }
 
 const CHEST_SVG = markSvg(CHEST_PICTURE.rows, CHEST_PICTURE.colours);

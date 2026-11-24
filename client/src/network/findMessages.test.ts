@@ -11,6 +11,7 @@ test('the gear message reads back each chest from five numbers and each containe
   Gear.startGear(builder);
   Gear.addChests(builder, chests);
   Gear.addSearchables(builder, searchables);
+  Gear.addOpened(builder, 7);
   builder.finish(Gear.endGear(builder));
   const read = findsOf(Gear.getRootAsGear(new flatbuffers.ByteBuffer(builder.asUint8Array())));
   assert.deepEqual(read.chests, [
@@ -18,6 +19,7 @@ test('the gear message reads back each chest from five numbers and each containe
     { number: 8, at: [30, 40, 0], facing: 0 },
   ]);
   assert.deepEqual(read.searchables, [{ number: 9, box: [0, 20, 1, 21], foot: 0, top: 1.8, model: 41003 }]);
+  assert.equal(read.opened, 7, 'the last paid for');
 });
 
 test('a gear message with no finds reads as none', () => {
@@ -25,5 +27,5 @@ test('a gear message with no finds reads as none', () => {
   Gear.startGear(builder);
   builder.finish(Gear.endGear(builder));
   const read = findsOf(Gear.getRootAsGear(new flatbuffers.ByteBuffer(builder.asUint8Array())));
-  assert.deepEqual(read, { chests: [], searchables: [] });
+  assert.deepEqual(read, { chests: [], searchables: [], opened: 0 });
 });
