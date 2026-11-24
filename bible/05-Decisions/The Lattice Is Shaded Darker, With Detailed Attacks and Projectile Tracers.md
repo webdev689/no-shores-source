@@ -15,3 +15,17 @@ After a playtest, the owner:
 - The public event's elements are seen again ([[Public Events]]).
 - The Lattice gets a proper shading pass: they read too bright ([[Lattice]]).
 - The Lattice's attacks get more detail, and their projectiles tracers ([[Lattice]], [[Combat]]).
+
+## Claude's calls
+
+| Call | Chosen | Why |
+|---|---|---|
+| Where the shading is fixed | In the game's drawing of the pictures (`game/latticeShade.ts`), not by rendering the forge's pictures again | The renders are published; the game's light is where the Lattice stood out, and a change there needs no new render |
+| What read too bright | The glow test lit any bright, warm texel at no less than 0.8: about two fifths of the skin, four fifths of the Ravager's mantle and three quarters of the Idol's emitter, day and night | Measured on the published idle pictures |
+| How dark | The whole figure at 0.78 of a man's light | Darker than the Grey Tithe beside it, still read at night |
+| What still glows | A texel brighter than 0.72 with more than 0.4 between its strongest and weakest channel, never below 0.7 | Only the shards' tips and veins pass; the skin and the mantle do not |
+| What a blow shows | A star of crystal growing where it comes from through the tell (the first 0.35 of the move, where the rules hold it), a cut or a rush's streak to 0.55, then a ring of shards breaking up on the ground to 0.8 | Wind-up, strike and landing, each readable, drawn from the move's frames alone |
+| Each foe's cut | The Flicker's slashes on the diagonals and its overhead upright; the Ravager's maul on a diagonal; the Bulwark's sweep flat and its slam upright; the Heart's slam upright and sweep flat; the Husk's lunge and gore and the Heart's stomp a streak | Each as its move swings in Lattice.md |
+| The Idol's beam | A burst where it lands, and its shadow lingering two frames after, thinning | A tracer that reads after the beam is gone |
+| The Ravager's shards | A thread of the crystal's shadow from the hand to each shard in flight | A tracer that shows where it came from |
+| The Idol's shots | Its shots (an archer's in the rules) trail 0.6 s, twice an arrow's, in its crystal's body and white-hot, a glint at the head and no steel arrow | A crystal foe's shot reads as its crystal |

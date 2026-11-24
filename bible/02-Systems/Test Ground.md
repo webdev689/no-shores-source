@@ -150,7 +150,8 @@ the player's fight (`PlayerFight`), the foes' figures (`FoeFigures`), the fight'
   flashes a star of fire at its muzzle, then tongues of flame along the barrel, then sparks, lighting the ground under
   it for two frames, and leaves five puffs of smoke that rise, drift the shot's way and thin out over 1.2 s; its
   sizes are held to a share of the view, so first person's flash stays small. An arrow or a bolt trails the last
-  0.3 s of its falling flight, its tail broken up. The player's own shots draw at once from the
+  0.3 s of its falling flight, its tail broken up; a Lattice foe's (the Idol's) trails 0.6 s in its crystal, its head
+  a glint and no arrow under it ([[Lattice]], "Its shots"). The player's own shots draw at once from the
   weapon as drawn, the first person's muzzle in its firing frame or the figure's gun as it faces, joining the shot's
   true flight within 0.15 s; one the room's word makes an input fire that it had not first predicted draws as that word
   comes. Others' come from the room's word, each ball's line from the one snapshot that carries it; a foe's ball, which

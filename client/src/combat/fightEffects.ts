@@ -8,6 +8,8 @@ import { Flashes } from './flashes.ts';
 import { foeGlints } from './glints.ts';
 import { aimRingMesh } from './casting.ts';
 import { Impacts, warmImpactPictures } from './impacts.ts';
+import { LATTICE } from './lattice.ts';
+import { CRYSTAL } from './latticeLooks.ts';
 import { KillLooks, warmKillPictures } from './killLooks.ts';
 import { MARK_FLOATS, type TelegraphMark, marksMesh } from './marks.ts';
 import { Sparks } from './sparks.ts';
@@ -115,8 +117,12 @@ export class FightEffects {
     this.shotsHeard = { fired, struck: this.tracers.struck };
     const look = this.ownLook;
     if (look) for (const head of this.tracers.ownHeads) this.sparks.trail(head, look, seconds);
-    const traced = this.tracers.mesh(eye, fight.shots, fight.player, look, this.clock);
-    const arrows = othersArrows(fight.shots, fight.player);
+    const latticeOf = (owner: number) => {
+      const kind = LATTICE[fight.foes.get(owner)?.type ?? -1];
+      return kind ? CRYSTAL[kind.strain] : null;
+    };
+    const traced = this.tracers.mesh(eye, fight.shots, fight.player, look, this.clock, latticeOf);
+    const arrows = othersArrows(fight.shots, fight.player, latticeOf);
     const ring = fight.aimRing ? aimRingMesh(fight.aimRing) : [];
     const spells = this.spellLooks.marks(fight, eye, seconds, this.clock, drawn);
     const glints = foeGlints(fight.foes.values(), eye);

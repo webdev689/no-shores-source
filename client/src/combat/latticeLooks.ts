@@ -6,6 +6,7 @@
 import { type Texels, spriteOfTexels } from './forgedBirds.ts';
 import { cached, layLine, layUpright, ringSprite } from './impactPixels.ts';
 import { HURL_FIRST_THROW, type Strain } from './lattice.ts';
+import { layLatticeStrike } from './latticeStrikes.ts';
 import { type Ramp, rampOf } from './markSprites.ts';
 import { BODY, CELL_M, CLEAR, DARK, HOT, LIGHT, type Sprite, sprite } from './spellPixels.ts';
 
@@ -154,14 +155,15 @@ function orb(radius: number): Sprite {
 }
 
 /** The Idol's beam and the Bulwark's flare reach this far when nothing is aimed at (metres); a beam is this wide, its
- *  glow and its core; a thrown shard's streak is this long and flies over this many frames. */
-const LOOKS = { reach: 14, beam: [0.22, 0.08] as const, shard: 0.35, flight: 4 };
+ *  glow and its core; a thrown shard's streak is this long and flies over this many frames, its tracer this wide. */
+const LOOKS = { reach: 14, beam: [0.22, 0.08] as const, shard: 0.35, flight: 4, trace: 0.025 };
 /** Where on a man-sized Lattice foe each thing it draws lies, forward of its feet and up (metres, scaled to it): the
  *  Idol's lens at the end of its emitter, the Bulwark's core on its shield thrust out, the Ravager's throwing hand. */
 const SPOTS = { lens: [0.62, 1.34], core: [0.7, 1.24], hand: [0.4, 1.45] } as const;
-/** The frames of each move its look is drawn in: the Idol's beam's first frames, the Bulwark's flare held through the
- *  discharge's tell, then its burst; the Ravager's six throws, two frames each, from the hurl's fifth. */
-const FRAMES = { beam: 3, flare: [2, 6], burst: 7, throws: [HURL_FIRST_THROW, 6] } as const;
+/** The frames of each move its look is drawn in: the Idol's beam's first frames, then its tracer's; the Bulwark's
+ *  flare held through the discharge's tell, then its burst; the Ravager's six throws, two frames each, from the
+ *  hurl's fifth. */
+const FRAMES = { beam: 3, tracer: 2, flare: [2, 6], burst: 7, throws: [HURL_FIRST_THROW, 6] } as const;
 
 /** What a Lattice foe's move draws over it in its frame, seen from `eye`. */
 export function layLatticeLooks(out: number[], shown: LatticeShown, eye: Point): void {
@@ -185,6 +187,20 @@ export function layLatticeLooks(out: number[], shown: LatticeShown, eye: Point):
     layLine(out, eye, from, to, LOOKS.beam[0] * (frame === FRAMES.beam - 1 ? 0.5 : 1), ramp[BODY]);
     if (frame < FRAMES.beam - 1) layLine(out, eye, from, to, LOOKS.beam[1], ramp[HOT]);
     layUpright(out, orb(3 - frame), ramp, from, eye, cell);
+    // Where it lands, a burst widening as the beam thins.
+    layUpright(
+      out,
+      ringSprite(2 + 2 * frame, frame === 0 ? HOT : LIGHT, 1, frame / FRAMES.beam, 3),
+      ramp,
+      to,
+      eye,
+      cell,
+    );
+  } else if (shown.anim === 'idol_fire' && frame < FRAMES.beam + FRAMES.tracer) {
+    // The beam's tracer: a thin line of its shadow lingering where it was, thinning to nothing.
+    const from = place(SPOTS.lens);
+    const left = 1 - (frame - FRAMES.beam) / FRAMES.tracer;
+    layLine(out, eye, from, aimed(from), LOOKS.beam[1] * left, ramp[DARK]);
   } else if (shown.anim === 'bulwark_discharge') {
     const core = place(SPOTS.core);
     if (frame >= FRAMES.flare[0] && frame <= FRAMES.flare[1])
@@ -216,8 +232,11 @@ export function layLatticeLooks(out: number[], shown: LatticeShown, eye: Point):
         head[1] - (alongY / length) * LOOKS.shard,
         head[2] - (alongZ / length) * LOOKS.shard,
       ];
+      // Its tracer, a thread of its crystal's shadow back to the hand that threw it.
+      layLine(out, eye, hand, tail, LOOKS.trace, ramp[DARK]);
       layLine(out, eye, tail, head, 0.07, ramp[DARK]);
       layLine(out, eye, tail, head, 0.035, ramp[LIGHT]);
     }
   }
+  layLatticeStrike(out, shown.anim, [frame, shown.frames], (spot) => place(spot), { scale, ramp, eye });
 }

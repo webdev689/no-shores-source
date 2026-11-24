@@ -28,6 +28,9 @@ code:
   - client/src/combat/latticeLooks.ts#LatticeWaves
   - client/src/combat/latticeLooks.ts#layLatticeLooks
   - client/src/combat/latticeLooks.ts#sealWave
+  - client/src/combat/latticeStrikes.ts#layLatticeStrike
+  - client/src/combat/tracers.ts#LatticeOf
+  - client/src/game/latticeShade.ts#latticeLit
   - client/src/player/foeDress.ts#CLOTHES
 ---
 # Lattice
@@ -105,14 +108,27 @@ workflow renders every move of every foe and the wave this way, a job a move, an
   the Idol never walk: the rules' dodge is a blink, out through their landing backwards and in through it.
 - **Its parts.** `latticeHidden` takes away the Ravager's shards from its first throw to its hurl's end, the
   Bulwark's maul until it changes and its shield from then, and the Heart's torn one but from its grip to its fling.
-- **What the game draws over the pictures** (`latticeLooks.ts`): the Idol's lens glowing through its charge and its
-  beam to the chest it aims at; the Bulwark's core flaring through its discharge's tell, then its burst; each shard
-  the Ravager throws, from alternate hands; and the blink's dissolve, in the purple.
+- **What the game draws over the pictures** (`latticeLooks.ts`): the Idol's lens glowing through its charge, its
+  beam to the chest it aims at with a burst where it lands, and the beam's shadow lingering two frames after, thinning;
+  the Bulwark's core flaring through its discharge's tell, then its burst; each shard the Ravager throws, from
+  alternate hands, a thread of its crystal's shadow trailing back to the hand; and the blink's dissolve, in the
+  purple.
+- **Its blows** (`latticeStrikes.ts`), each in the foe's crystal and at its size, by the share of the move played:
+  through the tell (its first 0.35) a star of crystal grows where the blow comes from; the strike (to 0.55) is a cut
+  across it (the Flicker's slashes left and right and its overhead, the Ravager's maul, the Bulwark's sweep and slam,
+  the Heart's slam and sweep) or a rush's streak behind it (the Husk's lunge and gore, the Heart's stomp); then (to
+  0.8) a ring of shards on the ground where it lands, widening and breaking up, a flash at its heart.
+- **Its shots** (`tracers.ts`): the Idol's shots, an archer's in the rules, fly as its crystal, not as steel arrows: a
+  trail twice an arrow's in its crystal's body and white-hot, its head a glint (`FightEffects` asks each shooter's
+  type).
 - **The death wave.** A Lattice foe killed bursts at once in its wave, tinted in its crystal (red graded purple, or
   the purple) and scaled to its size, as its figure fades; `sealWave` bursts the same wave four times a man's size
   for the Fissure to call where it is sealed.
-- **At night** a Lattice figure's crystal, its bright and strongly hued texels, glows of itself: never lit below 0.8
-  (`game/figureView.ts`).
+- **Shaded darker** ([[The Lattice Is Shaded Darker, With Detailed Attacks and Projectile Tracers]]): a Lattice
+  figure takes 0.78 of the light a man's picture takes, day and night, its skin, cloth, gore and mantle sitting in the
+  light round them; only its crystal's bright points (a texel brighter than 0.72 and more than 0.4 between its
+  strongest and weakest channel: the shards' tips and the veins) glow of themselves, never lit below 0.7
+  (`game/latticeShade.ts`, drawn by `game/figureView.ts`).
 - **The ruined cities** are overtaken by its crystal, drawn by code in the city's crystal material: the landmark
   crowned, the buildings, heaps, rubble and wrecks grown through ([[Cities]], "Overtaken by the Lattice").
 - **Before the pictures are published** a Lattice foe is drawn as a plain man in grey and brown at its size, and dies

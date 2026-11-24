@@ -5,7 +5,8 @@ import { GLOW_RAMPS } from '../elementGlow.ts';
 import type { Block } from '../rules/movementRules.ts';
 import { MARK_FLOATS } from './marks.ts';
 import { POWDER, SMOKE } from './markSprites.ts';
-import { Tracers, before, figureMuzzle, keptShare, piecesAlong, ribbon } from './tracers.ts';
+import { CRYSTAL } from './latticeLooks.ts';
+import { Tracers, before, figureMuzzle, keptShare, othersArrows, piecesAlong, ribbon } from './tracers.ts';
 
 const TICK = 1 / 60;
 const eye = [0, 10, 1.5] as const;
@@ -327,4 +328,25 @@ test("the player's own trail takes its element, another's keeps its own", () => 
   const others = new Tracers();
   others.seen([theirs], 1);
   assert.deepEqual(others.mesh(eye, [], 1, 2, 0.5), others.mesh(eye, [], 1));
+});
+
+test("a Lattice foe's shot flies as crystal: a longer trail in its crystal's colours, with no steel arrow drawn", () => {
+  const crystal = CRYSTAL.purple;
+  const shot: FlyingShot = {
+    owner: 7,
+    ranged: 1,
+    at: [0, 0, 1.5],
+    velocity: [0, -45, 1],
+    age: 40,
+    muzzle: null,
+    stopped: 0n,
+  };
+  const tracers = new Tracers();
+  const latticeOf = (owner: number) => (owner === 7 ? crystal : null);
+  const [plain, crystalline] = [tracers.mesh(eye, [shot], 1), tracers.mesh(eye, [shot], 1, 0, 0, latticeOf)];
+  assert.ok(has(crystalline, [...crystal[3], 1]) && has(crystalline, [...crystal[1], 1]), 'its core and its glow');
+  assert.ok(!has(plain, [...crystal[3], 1]), "another's arrow keeps its steel");
+  assert.ok(crystalline.length > plain.length, 'its trail drawn longer, its head a glint');
+  assert.deepEqual(othersArrows([shot], 1, latticeOf), [], 'no arrow under it');
+  assert.equal(othersArrows([shot], 1).length, 1);
 });
