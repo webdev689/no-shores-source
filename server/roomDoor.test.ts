@@ -10,10 +10,10 @@ import {
   type FightEvent,
   type Look,
   type SeenPlayer,
-  courseBytes,
   inputBytes,
   readFromRoom,
 } from '../client/src/network/messages.ts';
+import { courseBytes } from '../client/src/network/courseMessages.ts';
 import { type FleetOrders, ordersBytes } from '../client/src/network/fleetMessages.ts';
 import { ASKS } from '../client/src/network/gearMessages.ts';
 import { SnapshotKeeper } from '../client/src/network/snapshots.ts';
@@ -255,7 +255,10 @@ test('a node’s room warns a player past its edge, kills them 60 m out, and res
   assert.ok(lies.x >= before.x && lies.x < before.x + 3 && lies.vx === 0, `at rest near where it died: ${lies.x}`);
   seen = play(room, second, ++sequence, east, true);
   assert.deepEqual(seen.standing, { kind: 'inside' });
-  assert.deepEqual(floatsOf(seen.body), floatsOf(movement.standing(30, -40)), 'back at the spawn nearest its death');
+  // Back at the spawn nearest its death: in a patrol zone, facing where it fell, due east (crates/room/src/respawns.rs).
+  const back = { ...movement.standing(30, -40), facing: Math.PI / 2 };
+  assert.equal(lies.y, -40, 'it fell due east of the spawn');
+  assert.deepEqual(floatsOf(seen.body), floatsOf(back), 'back at the spawn nearest its death');
 });
 
 test('a locked node’s room takes no player and says why, so the host turns every join away; any other takes them', () => {
@@ -705,4 +708,26 @@ test('a wounded player’s drink through the room heals them, and the page reads
   const after = step();
   assert.equal(fighterView(after.fighter).health, before.health + gave);
   assert.equal(chargesOf(after.fighter).charges, CHARGES_MOST - 1);
+});
+
+test('logging back in, a social room stands the player where their kept character left it, and only then', () => {
+  const { text } = nodeFile();
+  const room = startRoomDoor(compiled);
+  assert.equal(room.openNode(JSON.stringify({ ...(JSON.parse(text) as object), id: 'quay', kind: 'social' })), true);
+  const player = room.join();
+  room.tick();
+  const character = JSON.parse(room.character(player) ?? 'null') as object;
+  const last = { kind: 'social', node: 'quay', at: [3000, 2000, 1000], facing: 1500 };
+  assert.equal(room.restoreCharacter(player, JSON.stringify({ ...character, last })), true);
+  const feet = () => {
+    room.tick();
+    const seen = readFromRoom(room.snapshot(player));
+    const body = seen?.kind === 'snapshot' ? seen.players.find((each) => each.player === player)?.body : undefined;
+    return body ? [Math.round(body.x), Math.round(body.y), Math.round(body.facing * 1000)] : null;
+  };
+  assert.deepEqual(feet(), [0, 0, 3142], 'a claim alone stands no one elsewhere: at the spawn');
+  assert.equal(room.standWhereLeft(player), true);
+  assert.deepEqual(feet(), [30, 20, 1500], 'where it left the quay, facing as it did');
+  assert.equal(room.restoreCharacter(player, JSON.stringify({ ...character, last: { kind: 'sea' } })), true);
+  assert.equal(room.standWhereLeft(player), false, 'last at sea');
 });

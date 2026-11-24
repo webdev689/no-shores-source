@@ -123,6 +123,7 @@ interface Placed {
   readonly resources?: readonly { readonly at: Point; readonly holds?: string }[];
   readonly foes?: readonly Point[];
   readonly places?: readonly NodePlace[];
+  readonly paths?: readonly (readonly Point[])[];
   /** A patrol's chest places (x, y, facing) and its props (model, box across, origin's height), of which a room
    *  playing alone keeps those that hold things. */
   readonly chests?: readonly (readonly [number, number, number])[];
@@ -149,8 +150,10 @@ export function laidNodes<Node extends Placed>(drawn: readonly Node[], layouts: 
     const foes = laid.sites.flatMap(({ kind, at, holds }) =>
       kind === 'foes' && (holds === undefined || cavern(holds)) ? [at] : [],
     );
+    const paths = laid.paths.map((path) => path.points);
     const finds = laid.kind === 'patrol' ? findsOf(laid) : {};
-    return { ...node, ring: laid.ring, spawns: laid.spawns, centre, resources, foes, places: placesOf(laid), ...finds };
+    const places = placesOf(laid);
+    return { ...node, ring: laid.ring, spawns: laid.spawns, centre, resources, foes, places, paths, ...finds };
   });
 }
 

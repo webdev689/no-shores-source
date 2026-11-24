@@ -14,10 +14,11 @@ fn abyss_run() -> Room {
     Room::dungeon_run(&of, gear::Difficulty::Abyss, FRIDAY_NINE).expect("an Abyss run")
 }
 
-/// A player fallen long enough to stand again at the next tick, if the run lets them.
+/// A player fallen long enough to stand again at the next tick, who asks to, if the run lets them.
 fn fallen(room: &mut Room, player: PlayerId) {
     let found = room.players.get_mut(&player).expect("in the room");
     (found.fighter.health, found.fighter.action) = (0.0, Action::Dead { elapsed: combat::tuning::RESPAWN });
+    found.respawn_asked = true;
 }
 
 fn wiped(events: &[Event]) -> Vec<PlayerId> {
@@ -192,7 +193,10 @@ fn a_player_who_leaves_a_run_down_comes_back_down_and_one_wounded_comes_back_wou
     room.leave(ada);
     let ada = back(&mut room, "ada");
     room.tick();
-    assert!(!room.players[&ada].fighter.dead(), "stands at the next raising");
+    assert!(room.players[&ada].fighter.dead(), "back down: lies until she asks");
+    room.players.get_mut(&ada).expect("in").respawn_asked = true;
+    room.tick();
+    assert!(!room.players[&ada].fighter.dead(), "stands once she asks");
     assert_eq!(room.revives(), Some(1), "and spends one");
     let found = room.players.get_mut(&ada).expect("in");
     found.fighter.health = found.fighter.health_max / 3.0;

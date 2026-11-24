@@ -172,7 +172,7 @@ impl Room {
     }
 
     /// The Boss stands on its post, and every player is told.
-    fn wake_boss(&mut self) {
+    pub(crate) fn wake_boss(&mut self) {
         if self.garrison.is_empty() {
             return;
         }
@@ -184,9 +184,10 @@ impl Room {
         self.tell_all(EventKind::BossWoke, 0.0);
     }
 
-    /// Whether a fallen garrison post may stand again: never an Elite Dungeon's Boss, whose Court is fought once a run.
+    /// Whether a fallen garrison post may stand again: never an Elite Dungeon's Boss, whose Court is fought once a run,
+    /// nor a group holding the ground its fall won while anyone is in the room (`checkpoints.rs`).
     pub(crate) fn stands_again(&self, post: usize) -> bool {
-        post != 0 || self.encounters.is_none()
+        (post != 0 || self.encounters.is_none()) && !self.holds_ground(post)
     }
 
     /// Whether a garrison post is held back: an Elite Dungeon's Boss's while a seal holds.
@@ -369,6 +370,16 @@ impl Room {
         } else {
             self.hold_boss();
         }
+    }
+
+    /// A company fallen together in the Court's darkness: its fight starts over, its waves gone, its ward, anchors and
+    /// Fury as they first were, and its Boss stood again whole at its post, awake (`revive.rs`).
+    pub(crate) fn court_start_over(&mut self) {
+        self.drop_waves();
+        let Some(encounters) = self.encounters.as_mut() else { return };
+        encounters.court = Court::of(encounters.plan.anchors.len());
+        self.hold_boss();
+        self.wake_boss();
     }
 
     /// The encounters as a snapshot carries them; none in a room with no encounters.

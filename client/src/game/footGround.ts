@@ -33,9 +33,9 @@ export function nodeText(
   grounds = 'null',
 ): string {
   const box = boxes.map((block) => [block.minX, block.minY, block.maxX, block.maxY, block.top, block.bottom]);
-  const { id, kind, continent, ring, spawns, places = [], foes = [], chests = [], holderProps = [] } = node;
+  const { id, kind, continent, ring, spawns, places = [], foes = [], paths = [], chests = [], holderProps = [] } = node;
   const resources = (node.resources ?? []).map((site) => site.at);
   const fought = grounds === 'null' ? '' : `,"grounds":${grounds}`;
   const finds = `"chests":${JSON.stringify(chests)},"props":${JSON.stringify(holderProps)}`;
-  return `{"id":${JSON.stringify(id)},"kind":${JSON.stringify(kind)},"continent":${JSON.stringify(continent)},"ring":${JSON.stringify(ring)},"spawns":${JSON.stringify(spawns)},"resources":${JSON.stringify(resources)},"foes":${JSON.stringify(foes)},${finds},"bounds":${JSON.stringify(rect)},"boxes":${JSON.stringify(box)},"places":${JSON.stringify(places)},"ground":${ground}${fought}}`;
+  return `{"id":${JSON.stringify(id)},"kind":${JSON.stringify(kind)},"continent":${JSON.stringify(continent)},"ring":${JSON.stringify(ring)},"spawns":${JSON.stringify(spawns)},"resources":${JSON.stringify(resources)},"foes":${JSON.stringify(foes)},${finds},"bounds":${JSON.stringify(rect)},"boxes":${JSON.stringify(box)},"places":${JSON.stringify(places)},"paths":${JSON.stringify(paths)},"ground":${ground}${fought}}`;
 }

@@ -53,11 +53,13 @@ export interface HeldUse {
   readonly seconds: number;
 }
 
-/** What E does where a player stands: its deed in words, and the doing; and what it does held there, if anything. */
+/** What E does where a player stands: its deed in words, and the doing; and what it does held there, if anything, or
+ *  the fallen ally it revives (`footRevive.ts`). */
 export interface Use {
   readonly words: string;
   readonly run: () => void;
   readonly held?: HeldUse;
+  readonly revive?: number;
 }
 
 /** What E does at a counter of a kind (its offer's view) besides opening it: speaking with its keeper, while a quest

@@ -75,6 +75,22 @@ test("a layout's places are its areas at their reach and its runs at their mouth
   };
   assert.deepEqual(laidNodes([drawn], [laid])[0]?.places, places);
   assert.equal(laidNodes([{ ...drawn, id: 'unlaid' }], [laid])[0]?.places, undefined, 'a node not laid names none');
+  // Its ways too, each its points, where its room lays the fallen's respawns as the bake's file gives them.
+  const way = {
+    tier: 'track',
+    points: [
+      [0, 0],
+      [60, 0],
+    ],
+    heights: [0, 0],
+    crossings: [],
+  } as const;
+  assert.deepEqual(laidNodes([drawn], [{ ...laid, paths: [way] }])[0]?.paths, [
+    [
+      [0, 0],
+      [60, 0],
+    ],
+  ]);
 });
 
 test("a laid node's foes' sites are its caverns' and its runs' beats, as the bake writes them for its room", () => {

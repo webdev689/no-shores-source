@@ -223,6 +223,7 @@ fn look_of(who: Option<&str>, foe: Option<&str>) -> u16 {
 impl Room {
     /// The paths of the node this room is, as its layout lays them, that a figure walks.
     pub fn set_paths(&mut self, paths: Vec<Vec<[f64; 2]>>) {
+        self.lay_near(&paths);
         self.quests.paths = paths;
     }
 

@@ -27,6 +27,10 @@ test('the controls act where the player is: a window, dead, on foot, at the helm
   const boarded = (foot: object) => afloat({ fight: {}, boarding: { onDeck: true, foot } });
   assert.equal(contextOf(game({ mode: 'sea' }, boarded(alive))), 'foot', "on a struck ship's deck");
   assert.equal(contextOf(game({ mode: 'sea' }, boarded(dead))), 'dead');
+  // Fallen in a fight, the section's standing inside: Respawn's key and the pad's A act there too.
+  const fell = { standing: { kind: 'inside' }, fell: { offered: true, canRespawn: false, line: '' } };
+  assert.equal(contextOf(game({ mode: 'foot' }, null, fell)), 'dead', 'fallen on foot');
+  assert.equal(contextOf(game({ mode: 'sea' }, boarded(fell))), 'dead', 'fallen on a boarded deck');
 });
 
 test('the repair key repairs at the helm and walking its own deck, never in a fight', () => {

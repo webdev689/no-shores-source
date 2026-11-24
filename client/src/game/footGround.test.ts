@@ -46,3 +46,21 @@ test("a page playing alone writes its node's foes' sites into the node's file, a
   ]);
   assert.deepEqual(JSON.parse(nodeText(NODE, [0, 0, 1, 1], '{}', [])).foes, [], 'a node not laid has none');
 });
+
+test("a page playing alone writes its node's ways into the node's file, where its room lays respawns near a fall", () => {
+  const paths = [
+    [[0, 0] as const, [60, 0] as const],
+    [[5, 5] as const, [5, 40] as const],
+  ];
+  assert.deepEqual(JSON.parse(nodeText({ ...NODE, paths }, [0, 0, 100, 100], '{}', [])).paths, [
+    [
+      [0, 0],
+      [60, 0],
+    ],
+    [
+      [5, 5],
+      [5, 40],
+    ],
+  ]);
+  assert.deepEqual(JSON.parse(nodeText(NODE, [0, 0, 1, 1], '{}', [])).paths, [], 'a node not laid has none');
+});
