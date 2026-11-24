@@ -44,6 +44,8 @@ pub struct Trim {
     pub drink_heal: f64,
     /// Blows on it while it is above three quarters of its health.
     pub hale_taken: f64,
+    /// Blows on it while it is below a quarter of its health.
+    pub low_taken: f64,
     /// Stamina given back by a kill, a parry and a block; and whether a kill reloads its weapon at once.
     pub kill_stamina: f64,
     pub parry_stamina: f64,
@@ -52,7 +54,7 @@ pub struct Trim {
 }
 
 /// How many numbers a trim crosses as.
-pub const TRIM_FLOATS: usize = 32;
+pub const TRIM_FLOATS: usize = 33;
 
 impl Default for Trim {
     fn default() -> Self {
@@ -91,6 +93,7 @@ impl Trim {
         veiled_dodge_stamina: 1.0,
         drink_heal: 1.0,
         hale_taken: 1.0,
+        low_taken: 1.0,
         kill_stamina: 0.0,
         parry_stamina: 0.0,
         block_stamina: 0.0,
@@ -129,6 +132,7 @@ impl Trim {
             self.veiled_dodge_stamina,
             self.drink_heal,
             self.hale_taken,
+            self.low_taken,
             self.kill_stamina,
             self.parry_stamina,
             self.block_stamina,
@@ -171,10 +175,11 @@ impl Trim {
             veiled_dodge_stamina: factor(25),
             drink_heal: factor(26),
             hale_taken: factor(27),
-            kill_stamina: given(28),
-            parry_stamina: given(29),
-            block_stamina: given(30),
-            kill_reload: numbers[31] == 1.0,
+            low_taken: factor(28),
+            kill_stamina: given(29),
+            parry_stamina: given(30),
+            block_stamina: given(31),
+            kill_reload: numbers[32] == 1.0,
         }
     }
 }
