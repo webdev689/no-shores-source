@@ -288,5 +288,11 @@ fn a_guild_dungeon_pays_a_sea_islands_clear_and_each_member_a_guild_package_at_t
     next.guild_player(later, seen());
     clear_the_end(&mut next);
     assert!(next.players[&later].character.vestiges.len() > carried, "another the next week");
+    let mut late = opened(FRIDAY_NINE + gear::clock::WEEK_MINUTES * 2);
+    let past = kept_in(&mut late, &past_the_prologue());
+    late.guild_player(past, seen());
+    late.minute += gear::clock::WEEK_MINUTES;
+    clear_the_end(&mut late);
+    assert!(!late.players[&past].character.guild.delve, "a run cleared after the week it opened for pays none");
     assert!(!Room::new(Vec::new(), (0.0, 0.0)).delve_for(&key), "no run, no guild dungeon");
 }

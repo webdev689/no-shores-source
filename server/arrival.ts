@@ -3,7 +3,8 @@
  * never by its page. Overlook's social space, where every session begins, takes anyone. Any other node's room takes a
  * character that rejoins it, lands from the sea with its ship lying off the node's island, comes through a gate from
  * a node whose gate leads there, or comes out of the node's own dungeon; a dungeon's room or a run takes one from its
- * node's room, and a guild dungeon's run from its guild's outpost alone. A join to one of the company playing in the room is the keeper's to judge (`keeping.ts`).
+ * node's room, and a guild dungeon's run from its guild's outpost alone. A join to one of the company playing in the
+ * room is the keeper's to judge (`keeping.ts`).
  */
 
 import { nodeRoom, seaRoom, startedAtSea } from './roomNames.ts';

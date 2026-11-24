@@ -243,7 +243,8 @@ mod tests {
     #[test]
     fn a_guild_dungeons_run_opens_from_a_sea_islands_ask_with_its_guilds_key() {
         let sea = json!({ "seed": 4_242, "style": "mines", "continent": "continent-4" });
-        let delve = |dungeon: &Value| json!({ "dungeon": dungeon, "tier": 1, "minute": 29_919_420_u64, "guild": "c0ffee" });
+        let delve =
+            |dungeon: &Value| json!({ "dungeon": dungeon, "tier": 1, "minute": 29_919_420_u64, "guild": "c0ffee" });
         assert!(open_run(delve(&sea).to_string().as_bytes(), b""));
         assert_ne!(crate::room_join(), 0);
         let elsewhere = delve(&json!({ "seed": 4_242, "style": "mines", "continent": "continent-0" }));
