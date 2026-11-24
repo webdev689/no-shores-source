@@ -38,7 +38,8 @@ owner can change any of them.
 | Opening | E held 1 second for a chest, 1.5 seconds to search, on the gather's hold, ring and charge sound; within 2.5 m of a chest's middle or 1.5 m of a container's sides, and 2 m of its foot up or down; moving, being hurt, mounting or the find going stops it | The nodes' feel ([[Material Nodes Stand Where They Are Dressed, Worked by Holding E]]), quicker, as a chest is a find |
 | Not on horseback | Neither offered nor taken mounted | As a node is not |
 | The use's words | "Hold to open the chest"; "Hold to search the crate" (the cabinet, cupboard, dresser, shelves, wardrobe, sarcophagus or tomb) | The container named, so the player knows what they search |
-| Before a node | A chest or container within reach is offered before a node, after a counter, a puzzle's point and a chapter of the lore | A find is rarer than a node |
+| Before the other uses | A chest or container within reach is offered before every use but a public event's chest: a counter, a point, a chapter, a node or a door | No counter stands in a patrol or a dungeon, and a find is rarer than a node; a chest is never on a doorway's or the way in's cell |
+| Playing alone | The finds read the room's word on the gear online or alone, as a public event's chests do | A page playing alone shows and opens them as a live room's |
 | A patrol's chest's look | The public events' plain chest and its lid (`tools/modules/chest.py`), its lid swinging back as it opens | The game's own chest, made in the Blender pipeline |
 | A dungeon's chest's look | The cache's chest (`dungeonChest.ts`), lit by the torches, its lid swinging to 1.35 rad, just short of upright | The dungeon's scene draws its own; short of upright, the lid stays clear of the kits on the wall behind |
 | Opened | The lid swings open over 0.6 s and the chest stands open 4 seconds, then goes; one that moved on goes at once | Seen to open; Destiny 1's chests vanished once looted |

@@ -33,7 +33,7 @@ import { shotOfOrbit } from './camera.ts';
 import { FallWatch } from './fallWatch.ts';
 import { STORY_BEHIND_ON_FOOT, type Use, dropsLaid, gearInRoom, questRings, tellsPrologue } from './footGear.ts';
 import { GatherHold } from './gatherHold.ts';
-import { FootFinds } from './finds.ts';
+import { FootFinds, findUse } from './finds.ts';
 import { markedHere } from './overheadMarks.ts';
 import { nodeText, standOn } from './footGround.ts';
 import { ACCOUNT_CHANGED, type GearHere } from './gearScreen.ts';
@@ -342,7 +342,7 @@ export class Foot {
   use(): void {
     this.using?.run();
     this.finds.asked(this.using?.held);
-    this.hold.begin(this.using?.held, this.gear?.gear ?? null);
+    this.hold.begin(this.using?.held, this.held.gear ?? this.held.alone);
   }
 
   /** The name of the dungeon's room the player stands in, or null in a corridor or on a node's land. */
@@ -439,7 +439,11 @@ export class Foot {
     // The player's own shots leave the weapon as drawn: the first person's muzzle, or the figure's along its shot.
     const [muzzle, gearNow, floor, doors] = [walker.muzzle, this.gear?.gear ?? null, this.floor, this.held.entrances];
     const { trips, speak } = this.context;
+    // The finds stand alone too, as a public event's chests do: the room's word on the gear, online or alone.
+    const gearHeard = this.held.gear ?? this.held.alone;
+    const found = this.finds.frame(gearHeard, clock, !!this.dungeon, paused);
     const marked = markedHere(gearNow, countersOf(this.node), floor, trips.props(), speak, doors.entrances);
+    marked.push(...found.marks);
     const lit = litMarksSeen(marked, shot.eye, clock);
     const hidden = marksHidden(marked, shot.eye, clock);
     const laid = (gearNow?.drops ?? []).filter((drop) => drop.kind !== DROPPED.chest);
@@ -454,7 +458,6 @@ export class Foot {
     const where = figureWhere(fight, foes.placed, this.otherPlayers.placed);
     const [feet, others] = [[body.x, body.y, body.z] as const, this.otherPlayers.placed];
     const seen = { player: fight.player, shot, firstPerson, feet, yaw: walker.player.facing, where, others };
-    const found = this.finds.frame(gearNow, clock, !!this.dungeon, paused);
     const shownPublic = this.publicView.frame(fight.public, publicEvents, chests, seen, clock, dropped.marks, floor, {
       quiet: paused,
       held: fight.publicHeld,
@@ -519,11 +522,13 @@ export class Foot {
     const { mounted } = walker.player;
     const counters = countersOf(this.node);
     const chest = this.publicView.use(chests, feet, (asked) => fight.askGear(asked), clock);
-    const z = walker.player.body.z;
-    this.using = able ? (chest ?? useOnFoot(x, y, placeUse, counters, gear, here, trips, speak, mounted, z)) : null;
+    const find = findUse([x, y, walker.player.body.z], gearHeard, (asked) => fight.askGear(asked), mounted);
+    this.using = able
+      ? (chest ?? find ?? useOnFoot(x, y, placeUse, counters, gear, here, trips, speak, mounted))
+      : null;
     // Use let go, as bound (a key, the pad's button, or the page's focus lost): a gather under way is let go of.
     if (!controls.held('use')) this.hold.release();
-    this.prompt.show(this.using?.words ?? null, this.hold.share(clock, able && !mounted, gear?.gear ?? null));
+    this.prompt.show(this.using?.words ?? null, this.hold.share(clock, able && !mounted, gearHeard));
     const held = gear?.gear;
     // The room leaves an Ammo box lying while the ammunition is full, whether a Ranged weapon is worn or not.
     const full = (held?.ammoShare ?? 1) >= 1;

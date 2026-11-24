@@ -201,10 +201,9 @@ export function useOnFoot(
   trips: Trips,
   speak?: Speak,
   mounted = false,
-  z: number | null = null,
 ): Use | null {
   const ask = (asked: GearAsk) => gear?.ask(asked);
-  return place ?? useAt(x, y, counters, gear?.gear ?? null, ask, speak, mounted, z) ?? tripAt(x, y, here, trips);
+  return place ?? useAt(x, y, counters, gear?.gear ?? null, ask, speak, mounted) ?? tripAt(x, y, here, trips);
 }
 
 /** What a room has said of a place before it says anything: no entrances, no cache, no run, no encounters. */

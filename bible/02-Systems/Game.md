@@ -319,8 +319,9 @@ third person, the forge's figure and the first person's hands, and the Test Grou
   are offered and drawn as a patrol's ([[Islands]]). Within 2.5 m of a chest it reads "Hold to open the chest", within
   1.5 m of a container's sides "Hold to search the" and its kind (crate, cabinet, cupboard, dresser, shelves,
   wardrobe, sarcophagus or tomb, by its model's family), each within 2 m of its foot up or down; held a second, or a
-  second and a half, on the same ring and sound, it asks the room to open it, before a node and after a counter, a
-  point or a chapter (`findUse`). Letting go of E before the ring is full asks the room to stop, as does leaving
+  second and a half, on the same ring and sound, it asks the room to open it, before any other use but a public
+  event's chest (`findUse`). The finds are read from the room's word on the gear online or alone, as a public event's
+  chests are, so a page playing alone stands, marks and opens them too. Letting go of E before the ring is full asks the room to stop, as does leaving
   or the page losing its focus; a step or a blow stops it there, and a refusal ends it. A node is not offered on
   horseback, nor while its resource is full, and a chest or a container not on horseback. On a patrol or an Elite Dungeon's node within 2.5 m of an entrance's door
   E goes into its dungeon, and in a dungeon within 2.5 m of its exit door it goes out ([[#A dungeon]]). None is offered while a menu is up or

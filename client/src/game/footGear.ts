@@ -17,7 +17,6 @@ import { goalOf, puzzlePoints } from './quests/questBook.ts';
 import { shapeSpot } from './townsfolk.ts';
 import { chime } from './uiSounds.ts';
 import { chapterAt } from './compendium/loreBook.ts';
-import { findUse } from './finds.ts';
 import type { NodeInfo } from './worldData.ts';
 
 /** How near a resource node a player stands to gather it, and a puzzle's point to use it; how long E is held to gather
@@ -65,10 +64,9 @@ export interface Use {
  *  asks it (quests/quests.ts). */
 export type Speak = (counter: string, ask: (asked: GearAsk) => void) => Use | null;
 
-/** The use within reach of a player at (x, y), their feet `z` high: a station's offer (its keeper spoken with where
- *  `speak` says so), then Shape's, a puzzle's point, a chapter of the lore, a chest or a container to search
- *  (`finds.ts`), and last a node, so a counter is never lost to one. Neither a find nor a node is offered on horseback
- *  (`mounted`), nor a node whose resource the player is full of. */
+/** The use within reach of a player at (x, y): a station's offer (its keeper spoken with where `speak` says so), then
+ *  Shape's, before a node, so a counter is never lost to one. A node is not offered on horseback (`mounted`), nor one
+ *  whose resource the player is full of. A chest or a container is offered before all of these (`finds.ts`). */
 export function useAt(
   x: number,
   y: number,
@@ -77,7 +75,6 @@ export function useAt(
   ask: (asked: GearAsk) => void,
   speak: Speak = () => null,
   mounted = false,
-  z: number | null = null,
 ): Use | null {
   const shape = shapeSpot(gear?.shape, here.visitorSpots ?? []);
   const near = shape && Math.hypot(shape[0] - x, shape[1] - y) <= SERVED_M;
@@ -96,8 +93,6 @@ export function useAt(
     const words = `Read ${chapterAt(lying.chapter)?.book.name ?? 'the lore'}`;
     return { words, run: () => ask({ kind: ASKS.findLore, item: lying.chapter }) };
   }
-  const found = findUse([x, y, z], gear, ask, mounted);
-  if (found) return found;
   const node = gear?.nodes.find((each) => Math.hypot(each.x - x, each.y - y) <= NODE_REACH_M);
   if (!node || mounted || (gear?.resources[node.resource] ?? 0) >= STOCK_MOST) return null;
   return {

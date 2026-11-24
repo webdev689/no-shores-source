@@ -2,10 +2,12 @@
 // finds.rs, find_holds.rs): what E held does within reach of one, in words, and how long; and the chests as drawn, one
 // the player opened kept standing a while with its lid swung back, so it is seen to open before it goes.
 import { type EventProp, foundChestProps } from '../city/eventProps.ts';
+import { type Marked, OVER_HEAD_M } from '../combat/marksOver.ts';
 import type { GearChest } from '../network/findMessages.ts';
 import { ASKS, type GearAsk, type GearState } from '../network/gearMessages.ts';
 import { PROP_ROLES } from '../models/propRoles.ts';
 import type { HeldUse, Use } from './footGear.ts';
+import { CHEST_PICTURE, SEARCH_PICTURE } from './overheadMarks.ts';
 import { play } from './uiSounds.ts';
 
 /** How near a chest's middle a player opens it, how near a container's sides they search it, how far above or below
@@ -125,10 +127,30 @@ export class ChestsSeen {
   }
 }
 
-/** What the finds give a frame on foot: the chests as a patrol's props, and the sounds of one just opened, its lid's
- *  clunk heard where it stands as a public event's chest's is. */
+/** How high a chest's lid stands over its foot, metres (the event chest's, tools/modules/chest.py), its mark over it;
+ *  and how far over a container's top its mark stands. */
+const CHEST_TOP_M = 0.66;
+const OVER_TOP_M = 0.15;
+
+/** The marks over the finds standing for a player (overheadMarks.ts draws them): a chest over each chest's lid, on
+ *  its own ground; a glass over each container's top, over its box's middle. */
+export function findMarks(gear: GearState | null): Marked[] {
+  const chests = (gear?.chests ?? []).map(({ at }): Marked => ({
+    picture: CHEST_PICTURE,
+    at: [at[0], at[1], at[2] + CHEST_TOP_M + OVER_HEAD_M],
+  }));
+  const held = (gear?.searchables ?? []).map(({ box, top }): Marked => {
+    const middle = [((box[0] ?? 0) + (box[2] ?? 0)) / 2, ((box[1] ?? 0) + (box[3] ?? 0)) / 2] as const;
+    return { picture: SEARCH_PICTURE, at: [middle[0], middle[1], top + OVER_TOP_M + OVER_HEAD_M] };
+  });
+  return [...chests, ...held];
+}
+
+/** What the finds give a frame on foot: the chests as a patrol's props, the marks over every find, and the sounds of
+ *  one just opened, its lid's clunk heard where it stands as a public event's chest's is. */
 export interface FindsShown {
   readonly props: EventProp[];
+  readonly marks: Marked[];
   readonly sounds: readonly { readonly cue: string; readonly at: readonly [number, number, number] }[];
 }
 
@@ -152,6 +174,6 @@ export class FootFinds {
     const opened = drawn.filter((chest) => justOpened.includes(chest.number));
     if (opened.length > 0 && !quiet) play('open');
     const sounds = quiet ? [] : opened.map((chest) => ({ cue: 'ship.ready', at: chest.at }));
-    return { props: dungeon ? [] : drawn.flatMap(foundChestProps), sounds };
+    return { props: dungeon ? [] : drawn.flatMap(foundChestProps), marks: findMarks(gear), sounds };
   }
 }

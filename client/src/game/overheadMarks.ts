@@ -128,11 +128,6 @@ export const SEARCH_PICTURE: PixelPicture = {
   colours: [OUTLINE, '#c08a3e', '#9fc4d8', '#ffffff', '#6e4a22'],
 };
 
-/** How high a chest's lid stands over its foot, metres (the event chest's, tools/modules/chest.py), its mark over it;
- *  and how far over a container's top its mark stands. */
-const CHEST_TOP_M = 0.66;
-const OVER_TOP_M = 0.15;
-
 const faction = new Map<number, PixelPicture>();
 /** The mark of the keeper at a station of `kind`: their sign, else their faction's emblem; none for a kind with none. */
 export function markOfKind(kind: string): PixelPicture | null {
@@ -153,9 +148,8 @@ export const keeperLit = (gear: GearState | null, kind: string, waits: (counter:
 /** What wears a mark where a player stands, on `floor`'s height, read once each: each station that deals with them
  *  over its keeper's crown while the keeper stands there (the bounty board over its gable), lit while `speak` says a
  *  quest step asks to speak with its keeper or, the Postmaster's, while letters wait; Shape over his while he is here;
- *  each chapter of the lore lying here for them (its gear's `loreHere`) as a book floating over where it lies; each
- *  chest standing for them over its lid and each container to search over its top (its gear's `chests` and
- *  `searchables`); and each of a patrol's dungeon entrances over its door's lintel, once `props` gives its model's
+ *  each chapter of the lore lying here for them (its gear's `loreHere`) as a book floating over where it lies; and
+ *  each of a patrol's dungeon entrances over its door's lintel, once `props` gives its model's
  *  door: `entrances`, the room's word on them, which comes alone too, where the page holds no gear; else its gear's
  *  `dungeons`. */
 export function markedHere(
@@ -180,12 +174,6 @@ export function markedHere(
   if (shape && own) marked.push({ picture: own, at: crown(...shape) });
   // A chapter lying in the world is the book itself, floating at a crown's height over where it lies.
   for (const { at } of gear?.loreHere ?? []) marked.push({ picture: LORE_PICTURE, at: crown(...at, LORE_TOP_M) });
-  for (const { at } of gear?.chests ?? [])
-    marked.push({ picture: CHEST_PICTURE, at: [at[0], at[1], at[2] + CHEST_TOP_M + OVER_HEAD_M] });
-  for (const { box, top } of gear?.searchables ?? []) {
-    const middle = [((box[0] ?? 0) + (box[2] ?? 0)) / 2, ((box[1] ?? 0) + (box[3] ?? 0)) / 2] as const;
-    marked.push({ picture: SEARCH_PICTURE, at: [middle[0], middle[1], top + OVER_TOP_M + OVER_HEAD_M] });
-  }
   for (const entrance of entrances) {
     const door = props && doorOf(entrance, props);
     if (!door) continue;

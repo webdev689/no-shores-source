@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import { test } from 'node:test';
 import { state } from '../network/gearForTests.ts';
-import { ASKS, type GearAsk } from '../network/gearMessages.ts';
+import { ASKS, type GearAsk, type GearState } from '../network/gearMessages.ts';
 import {
   CHEST_REACH_M,
   ChestsSeen,
@@ -12,11 +12,12 @@ import {
   OPENED_KEPT_S,
   SEARCH_REACH_M,
   SEARCH_S,
+  findMarks,
   findUse,
   holderName,
   offBox,
 } from './finds.ts';
-import { useAt } from './footGear.ts';
+import { CHEST_PICTURE, SEARCH_PICTURE } from './overheadMarks.ts';
 
 const CHEST = { number: 7, at: [10, 0, 2] as const, facing: Math.PI / 2 };
 /** A wardrobe (41003) a metre across, its foot on the ground. */
@@ -91,13 +92,6 @@ test('each container is named by its family, a container where the page knows no
   ]);
 });
 
-test('a chest within reach comes before a node, and a counter before a chest', () => {
-  const both = state({ ...gear, nodes: [{ index: 2, x: 11, y: 0, resource: 0 }], resources: [0] });
-  assert.equal(useAt(10.5, 0, {}, both, () => undefined, undefined, false, 2)?.words, 'Hold to open the chest');
-  const counter = { kind: 'weaponsmith', keeper: [10, -2] as const, counter: [10, 0] as const };
-  assert.match(useAt(10, 0, { stations: [counter] }, both, () => undefined)?.words ?? '', /^The Weaponsmith/);
-});
-
 test('a chest the player opened stays drawn open a while; one that moved on goes at once', () => {
   const seen = new ChestsSeen();
   const other = { number: 8, at: [50, 0, 0] as const, facing: 0 };
@@ -149,4 +143,26 @@ test('the lid of a chest just opened clunks where it stands', () => {
   const opened = finds.frame(state({ chests: [] }), 0.1, false, false);
   assert.deepEqual(opened.sounds, [{ cue: 'ship.ready', at: CHEST.at }]);
   assert.deepEqual(finds.frame(state({ chests: [] }), 0.2, false, false).sounds, [], 'once');
+});
+
+test('each chest standing for the player wears a chest over its lid, and each container to search a glass over its top', () => {
+  const gear = {
+    chests: [{ number: 7, at: [10, 0, 2], facing: 0 }],
+    searchables: [{ number: 9, box: [0, 20, 1, 22], foot: 0, top: 1.8, model: 41003 }],
+  } as unknown as GearState;
+  const marked = findMarks(gear);
+  assert.equal(marked.length, 2);
+  assert.equal(marked[0]?.picture, CHEST_PICTURE);
+  assert.ok((marked[0]?.at[2] ?? 0) > 2.6 && marked[0]?.at[0] === 10, 'over the chest, standing on its own ground');
+  assert.equal(marked[1]?.picture, SEARCH_PICTURE);
+  assert.deepEqual(marked[1]?.at.slice(0, 2), [0.5, 21], "over its box's middle");
+  assert.ok((marked[1]?.at[2] ?? 0) > 1.8, 'over its top');
+  for (const picture of [CHEST_PICTURE, SEARCH_PICTURE]) {
+    assert.ok(picture.rows.length === 12 && picture.rows.every((row) => row.length === 12), 'twelve by twelve');
+    const letters = new Set(picture.rows.join('').replaceAll('.', ''));
+    assert.ok(
+      [...letters].every((letter) => 'abcde'.indexOf(letter) < picture.colours.length),
+      'every cell coloured',
+    );
+  }
 });
