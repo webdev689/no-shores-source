@@ -30,10 +30,10 @@ const SHUT_OUT = { full: 1, level: 2, hard: 3 } as const;
 /** Each encounter's line as it begins: the verb that wins it. */
 const TEACHING: Readonly<Record<number, string>> = {
   [ENCOUNTER.waking]: 'Hold all three moorings to wake the Spire',
-  [ENCOUNTER.mending]: 'Keep the Husks from the open seams',
+  [ENCOUNTER.mending]: 'Keep the Penitents from the open seams',
   [ENCOUNTER.choir]: 'Break the bells in the order they woke',
   [ENCOUNTER.ways]: 'Reach the Broken Stair unseen, all of you, and walk near a Watcher: it hears a sprint',
-  [ENCOUNTER.shores]: 'Hold a mooring to open its rift',
+  [ENCOUNTER.shores]: 'Fell the Warden, then hold a mooring to open its rift',
   [ENCOUNTER.steward]: 'Ground the Lodestone at its feet, and call the order to the taken',
 };
 /** Each encounter's line as it is won. */
@@ -155,12 +155,14 @@ export function stoneWords(seen: BreachSeen, nameOf: (player: number) => string)
  *  Scrivener's fury (0 in it, null where the page did not see its stage begin). */
 export interface RunCounts {
   readonly own: number;
+  /** Whether the player stands in one of the Steward's shores. */
+  readonly ashore: boolean;
   readonly stranded: number;
   readonly mooring: { readonly at: Point; readonly held: number; readonly needed: number } | null;
   readonly stair: { readonly on: number; readonly living: number } | null;
   readonly fury: number | null;
 }
-export const NO_COUNTS: RunCounts = { own: -1, stranded: 0, mooring: null, stair: null, fury: null };
+export const NO_COUNTS: RunCounts = { own: -1, ashore: false, stranded: 0, mooring: null, stair: null, fury: null };
 
 /** What the encounter under way shows, in its banner's objective, clock and bar. */
 interface Under {
@@ -183,8 +185,9 @@ function choirUnder(seen: BreachSeen, counts: RunCounts): Under {
     const bar = rung > 0 ? { share: seen.broken / rung, label: `Bells broken ${seen.broken} of ${rung}` } : null;
     return { objective: joined(round, ring, font), clock: seen.ringTicks, bar };
   }
-  const within = seen.deskTicks > 0 ? ` within ${ticksWords(seen.deskTicks)}` : '';
-  const desk = seen.markedDesk >= 0 ? `A desk is marked: stand on it${within}` : '';
+  // A desk is blotted by whoever stands on it as its marking ends, so the words ask it held to the end.
+  const until = seen.deskTicks > 0 ? ` for ${ticksWords(seen.deskTicks)}` : '';
+  const desk = seen.markedDesk >= 0 ? `A desk is marked: hold it${until}` : '';
   const ward = seen.warded ? 'The Scrivener is warded: ground the Lodestone beside it' : 'The Scrivener';
   const bell = seen.ringTicks > 0 ? `A bell rings in ${ticksWords(seen.ringTicks)}` : '';
   const writes = seen.writeTicks > 0 ? `Writes in ${ticksWords(seen.writeTicks)}` : '';
@@ -200,7 +203,8 @@ function stewardUnder(seen: BreachSeen, counts: RunCounts, nameOf: (player: numb
   const bells = away && seen.bells.length > 0 ? `Bells broken ${seen.broken} of ${seen.bells.length}` : '';
   const way = away && seen.wayBack ? 'The way back is open' : '';
   const toll = seen.writeTicks > 0 ? `Tolls in ${ticksWords(seen.writeTicks)}` : '';
-  if (away && seen.away.includes(counts.own)) {
+  // One taken who is back in the court, carried home or stood again there, reads the court's words.
+  if (away && seen.away.includes(counts.own) && counts.ashore) {
     const call = way || 'Break the bells in the order the court calls';
     return { objective: joined(`Taken to ${shore}`, call, bells, toll), clock: seen.writeTicks, bar: null };
   }
@@ -305,7 +309,13 @@ export function runBanner(
     bar: under.bar,
     heroic: null,
     bonus: null,
-    elsewhere: joined(stranded, markWords(seen, counts.own), stoneWords(seen, nameOf), revivesWords(seen.revives)),
+    // The revives are an attempt's: between encounters the next attempt's are whole, so none are counted then.
+    elsewhere: joined(
+      stranded,
+      markWords(seen, counts.own),
+      stoneWords(seen, nameOf),
+      running ? revivesWords(seen.revives) : '',
+    ),
   };
 }
 
@@ -314,7 +324,8 @@ export function runPlaceWords(plan: BreachPlan, seen: BreachSeen | null, tier: n
   const name = tierName(plan, seen?.tier ?? tier);
   if (!seen) return `Breach · ${name}`;
   const reached = encounterName(plan, encounterOn(seen));
-  return ['Breach', name, reached, revivesWords(seen.revives)].filter(Boolean).join(' · ');
+  const revives = seen.encounter > 0 ? revivesWords(seen.revives) : '';
+  return ['Breach', name, reached, revives].filter(Boolean).join(' · ');
 }
 
 /** The call over the view: a few words that stand while the player must act, the countdown beside them in the
@@ -325,9 +336,11 @@ export function breachCall(seen: BreachSeen, counts: Pick<RunCounts, 'own' | 'st
   if (seen.lyingTicks > 0) return 'Take the stone!';
   if (counts.stranded > 0) return 'Stranded!';
   if (seen.marked.some((marked) => marked.player === counts.own)) {
-    if (seen.encounter === ENCOUNTER.choir && seen.stage < 2 && seen.fontTicks === 0) return 'To the font!';
+    // The font cleanses while lit in the Choir's rounds and the Scrivener's stage alike.
+    if (seen.encounter === ENCOUNTER.choir && seen.fontTicks === 0) return 'To the font!';
     if (seen.stone === STONE.borne) return seen.bearer === counts.own ? 'Hold True!' : 'To the bearer!';
-    return 'Take the stone!';
+    // No stone in play and the font resting: nothing saves the mark, and no call sends anyone after one.
+    return seen.stone === STONE.away ? null : 'Take the stone!';
   }
   return seen.encounter === ENCOUNTER.choir && seen.markedDesk >= 0 ? 'Onto the desk!' : null;
 }

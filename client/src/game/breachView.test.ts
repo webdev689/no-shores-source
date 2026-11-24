@@ -337,7 +337,7 @@ test("an encounter's line stands in its banner as it begins; once won, its won l
     view.frame(word(more), events, [0, 0, 60], () => null, 0, [])?.shown;
   atTick(100);
   const begun = banner({ encounter: 1 }, toldAll(BREACH_EVENT.begun, 1, [7, 9]));
-  assert.deepEqual([begun?.beat, begun?.banner?.objective], ['stage', 'Keep the Husks from the open seams']);
+  assert.deepEqual([begun?.beat, begun?.banner?.objective], ['stage', 'Keep the Penitents from the open seams']);
   atTick(100 + 8 * 60);
   assert.match(banner({ encounter: 1 })?.banner?.objective ?? '', /^The north seam open/, 'then what it counts');
   const between = { encounter: 0, phases: [2, 2, 0, 0, 0, 0], reached: 2 };

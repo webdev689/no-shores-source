@@ -54,8 +54,10 @@ export class RunCounting {
     const living = seen.encounter === ENCOUNTER.ways || seen.awayShore >= 0 ? frame.living() : [];
     const stair =
       seen.encounter === ENCOUNTER.ways ? { on: this.inSpace(living, 'stair'), living: living.length } : null;
+    const stewardShores = this.plan.shores['steward'] ?? [];
     return {
       own: frame.own,
+      ashore: stewardShores.includes(spaceAt(this.plan, frame.feet[0], frame.feet[1])?.key ?? ''),
       stranded: this.strandedFor(frame),
       mooring: this.mooring(seen, living),
       stair,

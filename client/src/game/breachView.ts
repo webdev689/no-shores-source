@@ -246,7 +246,7 @@ export class BreachView {
     this.before = seen;
     const own = word.fight.player;
     const tick = word.fight.roomTick;
-    const nameOf = (player: number) => (player === own ? 'you' : (word.others.plateOf(player)?.name ?? 'a companion'));
+    const nameOf = (player: number) => (player === own ? 'you' : word.others.plateOf(player)?.name || 'a companion');
     for (const marked of seen.marked) {
       const spot = marked.player === own ? feet : where(marked.player);
       if (spot) dashedRing(marks, spot, REWRITTEN.inner, REWRITTEN.outer, REWRITTEN.colour);

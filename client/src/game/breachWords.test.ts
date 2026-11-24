@@ -105,7 +105,7 @@ test("the run's banner names the encounter under way with its countdown, the Lod
   const scrivener = { ...choir, stage: 2, warded: true, markedDesk: 2, deskTicks: 4 * 60, writeTicks: 20 * 60 };
   assert.equal(
     runBanner(plan, scrivener, names).objective,
-    'The Scrivener is warded: ground the Lodestone beside it · A desk is marked: stand on it within 0:04 · A bell rings in 0:08 · Writes in 0:20',
+    'The Scrivener is warded: ground the Lodestone beside it · A desk is marked: hold it for 0:04 · A bell rings in 0:08 · Writes in 0:20',
   );
   const between = runBanner(plan, RUN, names);
   assert.deepEqual([between.tone, between.title, between.objective], ['next', 'The Mending', '']);
@@ -160,7 +160,7 @@ test('the Ways, the Shores and the Steward each say what their room counts', () 
 
 test("the Steward's banner tells the taken their order to break and the court its mooring to hold", () => {
   const away = { ...RUN, encounter: ENCOUNTER.steward, takings: 1, awayShore: 0, away: [1, 2], bells: [3, 1, 4, 0, 2] };
-  const taken = { ...NO_COUNTS, own: 1 };
+  const taken = { ...NO_COUNTS, own: 1, ashore: true };
   assert.equal(
     runBanner(plan, { ...away, broken: 2 }, names, taken).objective,
     'Taken to What Was · Break the bells in the order the court calls · Bells broken 2 of 5',
@@ -177,6 +177,9 @@ test("the Steward's banner tells the taken their order to break and the court it
   );
   const empty = { ...court, mooring: { ...court.mooring, needed: 0 } };
   assert.doesNotMatch(runBanner(plan, back, names, empty).objective, /mooring/, 'none left in the court to hold it');
+  // One of the taken back in the court, carried home or stood again there, reads the court's words.
+  const home = { ...NO_COUNTS, own: 1, ashore: false, mooring: { at: [0, 0, 0] as const, held: 0, needed: 1 } };
+  assert.match(runBanner(plan, back, names, home).objective, /^Takings 1 of 4 .*Mooring of What Was held 0 of 1$/);
 });
 
 test("the run's banner counts what the page counts: those on the Stair, the Scrivener's lone bell and its fury", () => {
@@ -227,8 +230,13 @@ test('the Lodestone lying says the time before the company is unwritten', () => 
 
 test("the place line names the run's tier, its encounter and its revives; the call is a few words that stand", () => {
   assert.equal(
-    runPlaceWords(plan, { ...RUN, tier: 1, revives: 0 }, 1),
+    runPlaceWords(plan, { ...RUN, tier: 1, revives: 0, encounter: ENCOUNTER.mending }, 1),
     'Breach · Hard · The Mending · No revives left',
+  );
+  assert.equal(
+    runPlaceWords(plan, { ...RUN, tier: 1, revives: 0, encounter: 0 }, 1),
+    'Breach · Hard · The Mending',
+    'between encounters the next attempt’s revives are whole, so none are counted',
   );
   assert.equal(runPlaceWords(plan, null, 0), 'Breach · Normal');
   assert.equal(encounterOn({ ...RUN, encounter: ENCOUNTER.ways }), ENCOUNTER.ways);
@@ -237,7 +245,10 @@ test("the place line names the run's tier, its encounter and its revives; the ca
   assert.equal(call(marked), 'To the font!');
   assert.equal(call({ ...marked, marked: [{ player: 7, ticks: 60 * 8 }] }), 'To the font!', 'the same as it counts');
   assert.equal(call(marked, 8), null, "another's mark is theirs");
-  assert.equal(call({ ...marked, fontTicks: 60 }), 'Take the stone!', 'the font resting, and no one bearing it');
+  assert.equal(call({ ...marked, fontTicks: 60 }), null, 'the font resting and no stone in play: no call to chase one');
+  const onPlinth = { ...marked, fontTicks: 60, stone: STONE.plinth };
+  assert.equal(call(onPlinth), 'Take the stone!', 'the font resting, the stone on its plinth');
+  assert.equal(call({ ...marked, stage: 2 }), 'To the font!', 'the font cleanses in the Scrivener’s stage too');
   const borne = { ...marked, fontTicks: 60, stone: STONE.borne, bearer: 2 };
   assert.deepEqual([call(borne), call({ ...borne, bearer: 7 })], ['To the bearer!', 'Hold True!']);
   assert.equal(call({ ...marked, lyingTicks: 120 }, 8), 'Take the stone!');
@@ -268,7 +279,10 @@ test("the place line names the run's tier, its encounter and its revives; the ca
     [revivesWords(1), revivesWords(2), revivesWords(0), revivesWords(-1)],
     ['1 revive left', '2 revives left', 'No revives left', ''],
   );
-  assert.equal(runPlaceWords(plan, { ...RUN, tier: 1, revives: 1 }, 1), 'Breach · Hard · The Mending · 1 revive left');
+  assert.equal(
+    runPlaceWords(plan, { ...RUN, tier: 1, revives: 1, encounter: ENCOUNTER.mending }, 1),
+    'Breach · Hard · The Mending · 1 revive left',
+  );
 });
 
 test("the room's moments are said: the company fallen and why, one seen by a Watcher, but a revive (the game's)", () => {
