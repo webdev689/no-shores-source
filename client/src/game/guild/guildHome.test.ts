@@ -150,12 +150,14 @@ test('a bounty done together says what its brass means', () => {
 
 test('at 800 by 600 every edge press lies in the room, and the side says when more of it lies below', () => {
   const room = { width: 710, height: 350 };
-  const { ui, shows } = home(FACE, room, [800, 600]);
+  const { ui } = home(FACE, room, [800, 600]);
   for (const icon of EDGE) {
     const box = ui.boxOf(edgeId(icon));
     assert.ok(box && box.y + box.height <= room.height, `${icon} ends at ${box && box.y + box.height}`);
   }
-  assert.ok(shows().includes('More below'), 'a cue for the roster and outposts under the presses');
+  const side = ui.boxOf('guild-home-side');
+  const end = ui.boxOf('guild-home-side-end');
+  assert.ok(side && end && end.y > side.y + side.height, 'the roster and outposts run on below the side, to scroll to');
 });
 
 test('the longest name the guilds allow is shown whole, never cut short', () => {

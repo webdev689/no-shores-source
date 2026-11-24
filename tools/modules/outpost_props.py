@@ -77,10 +77,10 @@ def brazier(module, at, high=1.0, bowl=0.38, foot=True):
     # and not as one smooth cone.
     for tongue, (out, lean, tall) in enumerate(((0.0, 0.0, 0.75), (0.25, 0.28, 0.55), (0.25, 0.28, 0.45))):
         angle = math.tau * tongue / 3 + 0.5
-        dx, dy = math.cos(angle), math.sin(angle)
-        shapes.lathe(module, (x + dx * bowl * out, y + dy * bowl * out, top - 0.04),
+        east, north = math.cos(angle), math.sin(angle)
+        shapes.lathe(module, (x + east * bowl * out, y + north * bowl * out, top - 0.04),
                      [(bowl * 0.4, 0.0), (bowl * 0.28, tall * 0.33), (bowl * 0.1, tall * 0.73), (0.0, tall)], 'glow',
-                     sides=6, turn=(-dy * lean, dx * lean, 0.0))
+                     sides=6, turn=(-north * lean, east * lean, 0.0))
     module.part((x - bowl, y - bowl, at[2]), (x + bowl, y + bowl, top + 0.1))
 
 

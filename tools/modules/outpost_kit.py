@@ -275,8 +275,8 @@ def shutters(module, middle, quarter, wide, high, bars=False):
             shapes.slab(module, (x, -0.04, high / 2), (wide / 2, 0.04, high), 'timber')
             for z in (0.18, high - 0.18):
                 shapes.slab(module, (x, -0.07, z), (wide / 2 - 0.04, 0.02, 0.07), 'timber')
-            # The hinge on the frame's face, clear of its deep jamb.
-            shapes.slab(module, (side * (wide / 2 + 0.1), -0.19, high * 0.7), (0.1, 0.02, 0.03), 'iron')
+            # The hinge strap on the leaf's face, just clear of the deep jamb.
+            shapes.slab(module, (side * (wide / 2 + 0.2), -0.07, high * 0.7), (0.16, 0.02, 0.03), 'iron')
 
 
 def slit(module, middle, quarter, high=0.9):

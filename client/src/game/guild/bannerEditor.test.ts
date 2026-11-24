@@ -157,6 +157,23 @@ test("at 800 by 600 a member's editor keeps its note and every staff in the room
       );
 });
 
+test('a refused choice names the part it would match', () => {
+  const plainGround = { ...BANNER, ground: 'none', device: 'plain' };
+  const cases: [Part, string, Banner, string][] = [
+    ['cloth', 'storm', BANNER, 'Same as device'],
+    ['deviceColour', 'navy', BANNER, 'Same as cloth'],
+    ['groundColour', 'bone', BANNER, 'Same as sign'],
+    ['signColour', 'navy', plainGround, 'Same as cloth'],
+    ['cloth', 'bone', plainGround, 'Same as sign'],
+  ];
+  for (const [part, choice, banner, said] of cases) {
+    const shown = { ...banner, [part]: choice };
+    const why = bannerRefusal(shown, 99);
+    assert.ok(why, `${part} ${choice} is refused`);
+    assert.equal(clashOf(part, why, shown), said, `${part} ${choice}`);
+  }
+});
+
 test('every refusal a part can meet has a few words for its cell', () => {
   for (const ground of ['roundel', 'none'])
     for (const part of ['cloth', 'device', 'deviceColour', 'signColour', 'ground', 'groundColour'] as const)
