@@ -19,7 +19,9 @@ const plot = (...structures: Standing[]): Plot => ({ structures, decor: [] });
 test("every piece's reach holds its module turned to any step, so a turned piece never overhangs a structure", () => {
   const sizes = new Map(manifest.modules.map((module) => [module.name, module.size]));
   for (const piece of PIECES) {
-    const [width = 0, depth = 0] = sizes.get(piece.piece) ?? [];
+    const size = sizes.get(piece.piece);
+    assert.ok(size, `${piece.piece} is a module`);
+    const [width = 0, depth = 0] = size;
     for (let step = 0; step < DECOR_TURNS; step += 1) {
       const angle = (step * 2 * Math.PI) / DECOR_TURNS;
       const across = (width / 2) * Math.abs(Math.cos(angle)) + (depth / 2) * Math.abs(Math.sin(angle));
@@ -30,9 +32,9 @@ test("every piece's reach holds its module turned to any step, so a turned piece
 });
 
 test('a piece of decoration costs 50 Aurem a metre of reach, never under 25 or over 500', () => {
-  for (const piece of PIECES)
-    assert.equal(decorPrice(piece.piece), Math.min(500, Math.max(25, Math.round(piece.reach * 50))), piece.piece);
   assert.equal(decorPrice('bench'), 63, 'a reach of 1.25 m');
+  assert.equal(decorPrice('anvil-yard'), 175, 'a reach of 3.5 m');
+  assert.equal(decorPrice('rug-long'), 465, 'a reach of 9.3 m');
   assert.equal(decorPrice('no-such-piece'), 25, 'the least for what reaches nothing');
 });
 
