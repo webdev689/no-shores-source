@@ -87,7 +87,7 @@ token the deploys use ([[The Asset Workflows Publish to R2 With the Cloudflare T
 ([[The Audit's Leftovers Are Fixed as Claude Suggested]]). The `dungeon-modules` and `island-modules` workflows'
 second job runs their own publisher on the packs. In the others the first job runs its publisher with `R2_STAGE` set
 to a folder, where `tools/r2.py` writes each upload under its key instead of sending it, and reads it back from
-there; the second sends that folder with `python3 -I tools/r2.py upload <folder>`, which refuses it whole unless each
+there; the second sends that folder with `python3 -I tools/r2.py upload <folder>`, which refuses it whole unless it is a folder and each
 file is named by the SHA-256 of its bytes, under a folder a publisher writes and with an extension that folder takes.
 
 For the modules (`tools/modules/`, [[Modules]]): on Python 3.13,

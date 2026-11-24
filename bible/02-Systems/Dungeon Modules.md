@@ -1,6 +1,6 @@
 ---
 type: system
-status: built
+status: live
 code:
   - content/dungeon/kits.json
   - content/dungeon/landmarks.json

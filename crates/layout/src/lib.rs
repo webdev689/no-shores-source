@@ -239,7 +239,8 @@ pub fn plan(
         joined: &joined,
         moduled: &moduled,
     };
-    let (mut sculpt, basins, caverns) = carve::carve(&field, claim_of(node), network, &seating, shape, rise, seed);
+    let (mut sculpt, basins, caverns, climbed_from) =
+        carve::carve(&field, claim_of(node), network, &seating, shape, rise, seed);
     // Rock in the middle of the claim that no floor or climb reaches is given a climb or a valley, before the runs are
     // found in what is left.
     let mass_climbs = masses::reach_masses(&field, &mut sculpt);
@@ -278,11 +279,24 @@ pub fn plan(
     // A module levels the ground under its floors, where it now stands.
     let module_pads: Vec<land::pads::Pad> = seating.solids.iter().flat_map(city::modules::pads).collect();
     seating.pads.extend(module_pads);
-    let cells = ring::section_cells(reach, &|x, y| carved.floor_distance(x, y), anchor, &seating.bridges);
-    let ring = ring::traced(reach, &cells);
+    // The section holds what a body walks and fights in, and none of the rock beside a run on the rock's top.
+    let walked = ring::walked(&ring::walked_lines(&paths, &runs, &sculpt.climbs, &ledges, &caverns));
+    let tops: Vec<[f64; 7]> = runs
+        .iter()
+        .filter(|run| runs::on_top(run.kind))
+        .flat_map(|run| runs::capsules(run, runs::half_of(run.kind)))
+        .collect();
+    let top_distance = |x: f64, y: f64| {
+        tops.iter()
+            .map(|capsule| paths::off_line([x, y], [capsule[0], capsule[1]], [capsule[2], capsule[3]]) - capsule[4])
+            .fold(f64::INFINITY, f64::min)
+    };
+    let floor_distance = |x: f64, y: f64| carved.floor_distance(x, y);
+    let cells = ring::section_cells(reach, &floor_distance, &top_distance, anchor, &seating.bridges, &walked);
+    let ring = ring::traced(reach, &cells, &walked);
     let mut kit = pieces::Kit { ground, book, seed: seed ^ 0x3A11, draws: 0, into: &mut seating };
     // The works keep off the climbs' ways as off every other, though those are walked only once the works stand.
-    let kept: Vec<paths::Path> = paths.iter().cloned().chain(climb_ways(&sculpt.climbs)).collect();
+    let kept: Vec<paths::Path> = paths.iter().cloned().chain(carve::climb_ways(&sculpt.climbs)).collect();
     works::build(&mut kit, &areas, (&paths, &kept), &sculpt.outcrops, &carved);
     for cavern in &caverns {
         caverns::build(&mut kit, cavern, &carved);
@@ -298,7 +312,7 @@ pub fn plan(
         }
     }
     // Each climb is walked as a footpath, and its lookout over the basin is a place of its own.
-    for (pair, walk) in carve::lookouts(&sculpt.climbs).zip(climb_ways(&sculpt.climbs)) {
+    for (pair, walk) in carve::lookouts(&sculpt.climbs).zip(carve::climb_ways(&sculpt.climbs)) {
         let ([x1, y1, x2, y2, ..], end) = (pair[0], [pair[1][0], pair[1][1]]);
         paths.push(walk);
         skyline::lookout(&mut kit, end, [x2 - x1, y2 - y1], &carved);
@@ -393,6 +407,7 @@ pub fn plan(
         areas: &areas,
         ways: &ways,
         climbs: &climbs,
+        climbed_from: &climbed_from,
         runs: &runs,
         caverns: &caverns,
         ledges: &ledges,
@@ -535,23 +550,6 @@ fn blocked_by(field: &Field, seating: &Seating) -> Blocked {
         }
     }
     Blocked(blocked)
-}
-
-/// Each climb to a lookout as the footpath it is walked as, a point every 8 m or less.
-fn climb_ways(climbs: &[[f64; 7]]) -> Vec<paths::Path> {
-    carve::lookouts(climbs)
-        .map(|pair| {
-            let [x1, y1, x2, y2, ..] = pair[0];
-            let steps = (field::distance([x1, y1], [x2, y2]) / 8.0).ceil().max(1.0);
-            let points = (0..=steps as usize)
-                .map(|step| {
-                    let along = step as f64 / steps;
-                    [x1 + (x2 - x1) * along, y1 + (y2 - y1) * along]
-                })
-                .collect();
-            paths::Path { tier: paths::Tier::Footpath, points, crossings: Vec::new(), heights: Vec::new() }
-        })
-        .collect()
 }
 
 #[cfg(test)]

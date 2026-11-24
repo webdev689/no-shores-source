@@ -159,8 +159,8 @@ number is one of [[Gear as Claude Shapes It]].
   its colour and slot at the foe's level, whatever a named item's own (`keep_found`).
 - **A clear** ([[Bosses and Dungeons Drop Items, Clears Pay, and Shapes Come From the Week's Abyss]], `room::clears`):
   once every group of a mission's, a dungeon's or a world boss's garrison is down at once, no wave standing, each
-  player still in the room who shared a kill of it since its last clear (as their account, so one who rejoined keeps
-  it) is paid, at the garrison's highest level as a
+  player still in the room who shared a kill of a foe of its own groups, not a wave's or a quest's, since its last
+  clear ([[Only the Garrison's Own Kills Share Its Clear, and a Failed Trip Goes Back to the Beach]]; as their account, so one who rejoined keeps it) is paid, at the garrison's highest level as a
   kill is: at level 5 a mission 400 XP and 30 Aurem, a dungeon 800 and 60, a world boss 1,600 and 120
   (`rewards::Clear`). A dungeon's clear also leaves an item, coloured as its Miniboss's, and a Vestige as often as its
   Miniboss leaves one. It pays once until a group stands again. A patrol never ends, so it pays none. A laid

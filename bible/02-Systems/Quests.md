@@ -79,8 +79,8 @@ out) and its kind:
 A `kill` goal with a `spawn` stands its foes at its place: a list of `[type, rank]`, each the roster's name and a rank
 it comes in. A player on that goal coming within 150 m of the place stands the group there, at the node's island levels
 raised by its seas, as a garrison's group that never stands again once it falls; while the goal is unmet and none of
-the group stands, the next to come near stands it again. Anyone may fight it, and each kill counts for every player
-who struck it. The room bakes a navmesh square round each such place the first time it is wanted ([[Navmesh]]), so the
+the group stands, the next to come near stands it again; once no player in the room is on its goal and it fights no
+one, it is sent away. Anyone may fight it, and each kill counts for every player who struck it. The room bakes a navmesh square round each such place the first time it is wanted ([[Navmesh]]), so the
 group holds its
 place, fights there and walks back to its post as a garrison's group does.
 
@@ -99,7 +99,7 @@ clear at their level, 400 XP and 30 Aurem at level 5 raised as a kill is, as Des
 (the Weaponsmith, the Armorsmith, the Mage, the Vault, the Tailor, the Tack, the Postmaster, and the Harbourmaster for
 the Shipwright), each keeper saying what their counter is for; **Arm yourself**, a Melee weapon bought of the
 Weaponsmith and the four armour pieces of the Armorsmith, which the starter stock sells for 50 Aurem each ([[Gear]]);
-**Wear them**. Both are told of the pieces held after every answered ask, again until nothing more counts, so pieces
+**Put them on**. Both are told of the pieces held after every answered ask, again until nothing more counts, so pieces
 bought and worn during the round meet both as the last keeper is heard; a buy or wear goal names a weapon's or
 armour's slot and a count of 1; **Hear the three houses** (Arlo Kestrel, Elder Maren Hale and Sable each introducing their house,
 [[Factions]]); and **Choose a house**, the pledge. Its `begin` is the Weaponsmith calling the player over; the houses'
@@ -158,7 +158,7 @@ stall serves; the stranger is heard in a social space alone, never at the stall.
   gives its house's book a chapter a task, the last as the road ends ([[Each House's Lore Book Tells Its Art's Origin]]).
 - **The lines** are the speech system's ([[Speech]]): a quest's `begin` as it is first walked, a task's `end` as it is
   done and the next task's `start` as it begins, a `talk` goal's `scene` as the keeper is spoken with. A page that loads
-  mid-road says nothing it has said before.
+  mid-road says nothing it has said before. How they are written: [[Every Line Reads as Spoken, and the Lore Is Detailed, Mysterious and Gripping]].
 - **Speaking with a keeper**: within reach of a counter that a `talk` goal of the task names, the offer reads "Speak
   with" and the keeper's name; pressed, it asks 64 and the lines are said. Otherwise the counter opens as before.
 - **Marks**: `quest_at` stands a mark at its place, and the held map at sea rings the nodes the task's goals name (the land's map, raised on foot, draws no places). Both give way while the map is up.
@@ -194,7 +194,7 @@ stall serves; the stranger is heard in a social space alone, never at the stall.
   layout's paths between its places (each path's points within 6 m join it to another), straight where none comes
   within a place's reach, on the ground's height, and is no fighter. An ambush stands 6 m round it, on a mesh baked
   there. A ward has 700 health (a player's is 100), stands where it is put and fights no one, and only its player is
-  sent it. Waves stand 25 to 30 m out. A puzzle's point is moved onto ground within about 7 m of where it is meant to stand. A failed defence waits 10 s, then 20, then 40 (its foes after the first failure in a task drop nothing, and so do those of a wave the character stood before in the task, kept with their road, so a rejoin or a return pays no wave twice: [[The Audit's Leftovers Are Fixed as Claude Suggested]]); a tail noticed waits 10 s and walks back, whichever is longer; an unseen step seen waits 10 s. A wave with no ground to stand on counts as fallen. A figure that arrived stays standing at its end for its player until they leave the node. A ward, a wave, an ambush or a watch stands only while the room's cap on foes leaves room for it, beside a public event's kept places ([[Public Events]]); wards count against no cap. A place's mesh is baked the first
+  sent it. Waves stand 25 to 30 m out. A puzzle's point is moved onto ground within about 7 m of where it is meant to stand. A failed defence waits 10 s, then 20, then 40 (its foes after the first failure in a task drop nothing, and so do those of a wave or an escort's ambush (its one wave) the character stood before in the task, kept with their road, so a rejoin or a return pays no wave twice: [[The Audit's Leftovers Are Fixed as Claude Suggested]]); a tail noticed waits 10 s and walks back, whichever is longer; an unseen step seen waits 10 s. A wave with no ground to stand on counts as fallen. A figure that arrived stays standing at its end for its player until they leave the node. A ward, a wave, an ambush or a watch stands only while the room's cap on foes leaves room for it, beside a public event's kept places ([[Public Events]]); wards count against no cap. A place's mesh is baked the first
   time a kill group, a defence, a puzzle or an ambush needs it (about 140 to 270 ms that tick, natively).
 - **Figures, wards and points are the player's own**: they stand where the room's last word put them, unglided, and
   show only from the room the player is in, once it has spoken; other players do not see them.

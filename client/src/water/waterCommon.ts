@@ -303,7 +303,8 @@ struct Frame {
   // The chop along the wind's bearing now, then along the one it fades from (coarse_area.z is how far it has come).
   chop: array<vec4f, ${CHOP_WAVES * 2}>,
   // Each ship (hullValues): its middle from the eye and its heading's sine and cosine; its fitted half length and
-  // half beam, its way and 1 (0 is none); its drawn size and its bow's spray; then its line.
+  // half beam, its way and 1 (0 is none); its drawn size and its bow's spray; its line; then its track and the box
+  // its wake lies in (wakeValues).
   hulls: array<vec4f, ${HULLS * HULL_VECTORS}>,
 };
 

@@ -1,7 +1,8 @@
 //! A patrol's land: its island's resource at its layout's resource places (each a pile of that resource), a third of
 //! them holding a node at once and the next third after a while, so a player can plan a route through them. Each
-//! player may gather each node once while it stands, holding E. Its fights are its garrison's (`garrison.rs`), and
-//! its dungeons lie behind its entrances (`entrances.rs`).
+//! player may gather each node once while it stands, holding E. It stands no camps of its own: its fights are its
+//! garrison's (`garrison.rs`), its public events' and the houses' roads' groups', and its dungeons lie behind its
+//! entrances (`entrances.rs`).
 
 use crate::asks::{GATHER_GRACE_TICKS, GATHER_STIR_M, GATHER_TICKS};
 use crate::{PlayerId, ResourceNode, Room};
@@ -23,7 +24,7 @@ impl Room {
         let dungeons: Vec<(u32, dungeon::Style)> =
             (0..dungeon::PER_PATROL).map(|number| dungeon::of_patrol(node, number)).collect();
         let (ring, spawns) = (&section.ring, &section.spawns);
-        self.entrances = crate::entrances::laid(node, &dungeons, &self.floor, &dry, ring, spawns, places);
+        self.entrances = crate::entrances::laid(node, &dungeons, &self.floor, &dry, &self.blocks, ring, spawns, places);
     }
 
     /// Sets the difficulty the room's voyage set out at, and raises the garrison standing to it.

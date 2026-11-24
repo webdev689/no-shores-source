@@ -15,7 +15,7 @@ const BRIDGE: [&str; 3] = ["client/src/ui/canvasEvents.ts", "client/src/ui/page.
 /// What builds, styles or writes into a page's elements, and what each is called in a problem. A line is read
 /// `normalized`, so `document['createElement'] ('div')` is read as `document.createElement('div')`, and a word that
 /// ends in a letter is read whole, so `new Image` is refused but `new ImageData` is not.
-const REFUSED: [(&str, &str); 42] = [
+const REFUSED: [(&str, &str); 45] = [
     ("createElement", "makes an element"),
     ("createElementNS", "makes an element"),
     ("createTextNode", "makes an element"),
@@ -24,12 +24,15 @@ const REFUSED: [(&str, &str); 42] = [
     ("new Option", "makes an element"),
     ("new Audio", "makes an element"),
     ("new DocumentFragment", "makes an element"),
+    ("new Text", "makes an element"),
+    ("importNode", "makes an element"),
     ("cloneNode", "makes an element"),
     ("attachShadow", "makes an element"),
     ("customElements", "makes an element"),
     ("appendChild", "puts an element into the page"),
     ("insertBefore", "puts an element into the page"),
     ("insertAdjacentElement", "puts an element into the page"),
+    ("insertNode", "puts an element into the page"),
     ("insertAdjacentHTML", "writes HTML"),
     ("insertAdjacentText", "writes words into the page"),
     ("replaceChild", "puts an element into the page"),
@@ -193,15 +196,31 @@ fn assigns_style(line: &str) -> bool {
     assigned || merged
 }
 
-/// Whether `line` calls `.append(` or `.prepend(` on what may be an element: anything but a name `text` makes with
-/// `new` (a list of the game's own, a `URLSearchParams`, a `FormData`), a URL's `searchParams` or a request's
-/// `headers`.
+/// Whether `text` gives the name `receiver` only what `new` makes: it is assigned, each time as a whole name, and
+/// each time with `new` (a list of the game's own, a `URLSearchParams`, a `FormData`).
+fn made_only_with_new(receiver: &str, text: &str) -> bool {
+    let assigned = format!("{receiver} = ");
+    let mut made = false;
+    for (at, _) in text.match_indices(&assigned) {
+        if text[..at].ends_with(is_name) {
+            continue;
+        }
+        if !text[at + assigned.len()..].starts_with("new ") {
+            return false;
+        }
+        made = true;
+    }
+    made
+}
+
+/// Whether `line` calls `.append(` or `.prepend(` on what may be an element: anything but a name `text` gives only
+/// what `new` makes, a URL's `searchParams` or a request's `headers`.
 fn appends_to_page(line: &str, text: &str) -> bool {
     [".append(", ".prepend("].iter().any(|call| {
         line.match_indices(call).any(|(at, _)| {
             let before = &line[..at];
             let receiver = &before[before.trim_end_matches(is_name).len()..];
-            let made = !receiver.is_empty() && receiver != "this" && text.contains(&format!("{receiver} = new "));
+            let made = !receiver.is_empty() && receiver != "this" && made_only_with_new(receiver, text);
             !made && !["searchParams", "headers"].contains(&receiver)
         })
     })

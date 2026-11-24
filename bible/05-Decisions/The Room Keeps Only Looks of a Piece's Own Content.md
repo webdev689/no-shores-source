@@ -17,8 +17,8 @@ Asked whether to render the Abyss Dungeons' crossbows, which the forge does not 
 ## What it settles
 
 - **What others see of a piece's look is the room's word**: a worn armour set or weapon metal is kept only if it is
-  of that piece's content, written on it, or its faction's ([[Armour and Weapon Looks Belong to the Content That Gives
-  Them]]).
+  of that piece's content, written on it, or its faction's
+  ([[Armour and Weapon Looks Belong to the Content That Gives Them]]).
 - **The Abyss Dungeons' crossbows keep the nearest metal the forge draws** for now, which the room lets stand, until
   their own art is made.
 

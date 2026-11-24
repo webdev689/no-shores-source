@@ -73,6 +73,11 @@ fn a_minibosss_or_a_bosss_group_stands_again_after_ten_minutes_and_the_rest_afte
         "the Miniboss waits"
     );
     assert!(room.garrison.iter().filter(|post| !great(post)).all(|post| post.cleared_at.is_none()), "the rest stand");
+    assert!(room.garrison.iter().any(great), "the dungeon holds a Miniboss's group");
+    for _ in STAND_AGAIN..=GREAT_STAND_AGAIN {
+        room.tick();
+    }
+    assert!(room.garrison.iter().all(|post| post.cleared_at.is_none()), "the Miniboss's group stands at ten minutes");
 }
 
 #[test]
@@ -105,6 +110,37 @@ fn a_wave_that_stands_and_falls_after_a_clear_pays_no_clear_again() {
     room.tick();
     let gained = room.players[&player].character.xp - cleared;
     assert!(gained < 1_000, "the wave's kill alone, not the dungeon's clear again: {gained}");
+}
+
+#[test]
+fn a_player_who_felled_only_a_waves_foe_takes_no_share_of_the_clear() {
+    let (mut room, player) = cleared_room(NodeKind::Dungeon);
+    let other = room.join().expect("room");
+    let at = room.garrison[0].at;
+    let foe_type = ::foes::foe_type(::foes::roster::COLLECTOR).expect("the Tithe's Collector");
+    let wave = room.stand_foe(foe_type, ::foes::Rank::Minor, at, 0.0, None);
+    room.garrison.push(Post {
+        at,
+        members: vec![(14, ::foes::Rank::Minor, at, 0.0)],
+        girds: vec![(0, None)],
+        beat: None,
+        standing: vec![wave],
+        cleared_at: None,
+        leader: None,
+        broken: false,
+        defending: false,
+        fallback: at,
+        anchor: None,
+        arrival: true,
+    });
+    land(&mut room, other, wave, 1e9);
+    room.tick();
+    fell_all(&mut room, player);
+    let before = (room.players[&player].character.xp, room.players[&other].character.xp);
+    room.tick();
+    let fought = room.players[&player].character.xp - before.0;
+    assert!(fought >= 2_000, "who felled the garrison is paid its clear: {fought}");
+    assert_eq!(room.players[&other].character.xp, before.1, "a wave's foe is not the garrison's");
 }
 
 #[test]

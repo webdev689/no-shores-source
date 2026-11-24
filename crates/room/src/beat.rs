@@ -1,7 +1,7 @@
 //! A garrison group's beat: a round of points over its room's navmesh, drawn from the node's seed, that the group
 //! walks at a stroll, its leader on the way and the rest on a half ring behind it, pausing at each point and starting
-//! again from the first. The way between points is the navmesh's and keeps as clear of the spawns and the section's
-//! edge as the posts do. The group halts while any of its foes is stirred, fights or walks back to its place, and
+//! again from the first. The way between points is the navmesh's and keeps as clear of the spawns as the posts do,
+//! and SPREAD inside the section's edge. The group halts while any of its foes is stirred, fights or walks back to its place, and
 //! waits for one that has fallen behind.
 
 use super::{SPAWN_CLEAR, SPREAD};
@@ -37,6 +37,15 @@ pub(crate) struct Beat {
     stops: Vec<f64>,
     at: f64,
     paused_until: u64,
+}
+
+/// The navmesh's point nearest (x, y), where a foe of a group keeps its place round `from`, its leader's point or its
+/// gathering's middle: on the ground's level, else on `from`'s, so beside a leader on a ledge or a ramp with no ground
+/// near it stands on that; `from` itself only where the mesh has neither, so it never shares its leader's point while
+/// the mesh holds one.
+pub(crate) fn near_on((nav, floor): (&NavMesh, &Floor), from: [f64; 3], (x, y): (f64, f64)) -> [f64; 3] {
+    let on = |z: f64| nav.nearest_point([x, y, z]);
+    on(floor.height_at(x, y)).or_else(|| on(from[2])).unwrap_or(from)
 }
 
 /// The navmesh's way from one point to another, if every metre of it keeps inside the section, SPREAD inside its edge,
@@ -184,7 +193,7 @@ impl Beat {
         for index in 0..followers {
             let out = heading + PI + ((index as f64 + 0.5) / followers as f64 - 0.5) * PI;
             let (x, y) = (lead[0] + libm::sin(out) * SPREAD, lead[1] - libm::cos(out) * SPREAD);
-            let place = nav.nearest_point([x, y, floor.height_at(x, y)]).unwrap_or(lead);
+            let place = near_on((nav, floor), lead, (x, y));
             places.push((place, if marching { heading } else { out }));
         }
         places.truncate(count);

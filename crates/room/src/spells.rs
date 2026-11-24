@@ -281,6 +281,7 @@ impl Room {
         // Casting is attacking, which ends the veil (Vanish's veil is what it casts) and the grace of one stood again.
         if let Some(found) = self.players.get_mut(&caster) {
             found.graced = 0;
+            self.landing_struck.insert(caster);
             if def.key != "vanish" {
                 found.fighter.statuses.unveil();
             }
