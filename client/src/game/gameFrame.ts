@@ -260,11 +260,20 @@ export function startFrames(parts: FrameParts, playing: Playing): void {
     quests.hear(here.gear?.gear);
     playing.lore.hear(here.gear?.gear);
     quests.frame(seconds, playing.after.past, paused);
-    // The roads' next goal on the compass, and the ward a step defends among the plates, as a companion's.
+    // The roads' waypoint on the compass, step by step from where the player stands, and the ward a step defends
+    // among the plates, as a companion's.
+    const named = new Map(quests.roster.map((type) => [type.type, type.name]));
+    const seen = [...here.fight.foes.values()].map((foe) => ({
+      name: named.get(foe.type) ?? '',
+      rank: foe.rank,
+      at: [foe.view.x, foe.view.y] as const,
+    }));
+    const afoot = { on: 'land', node: here.node, at: [body.x, body.y], marked: null, foes: seen } as const;
+    const guided = quests.guide(afoot, playing.landmass);
     const ward = quests.wardPlate(parts.groundAt);
     const foes = ward ? [...shown.fight.foes, ward] : shown.fight.foes;
     const players = platedPlayers(here.otherPlayers, [body.x, body.y, body.z]);
-    const questShown = { ...shown, fight: { ...shown.fight, foes, questAt: quests.goalAt, players } };
+    const questShown = { ...shown, fight: { ...shown.fight, foes, questAt: guided.at, players } };
     const fight = footView.frame(here, questShown, seconds, { size, viewport, groundAt: here.groundAt });
     // Use held on another player opens their menu, where it does nothing else (a deed or a gate) and no menu or map is up.
     const offered = !paused && !looking && !here.fallen && !hud.usePrompt.showing && !playing.through;
@@ -324,7 +333,7 @@ export function startFrames(parts: FrameParts, playing: Playing): void {
     const leaving = leaveOffered({ paused, sheet: hud.controls.open, map: looking, chat: chatOpen(), speaking: told });
     if (hud.leaving.frame(controls.held('leave'), leaving, refused, seconds)) parts.leave();
     // The quest's mark gives way to the map, as the fight's display does.
-    hud.marks(looking ? [] : quests.marks(shown.shot, viewport, [body.x, body.y], parts.groundAt, here.node.id));
+    hud.marks(looking ? [] : quests.marks(shown.shot, viewport, [body.x, body.y], parts.groundAt));
     // The tracker is set once a frame, so a public event's steps stand in it unblinking, in the quest's place.
     hud.tasks.show(shown.quest ?? quests.tracked);
     const nameOf = (id: number) => (here.fight.others.has(id) ? (here.otherPlayers.plateOf(id)?.name ?? '') : null);
@@ -428,6 +437,9 @@ export function startFrames(parts: FrameParts, playing: Playing): void {
       friendly: fleet.marks,
       notices,
       free: !input.locked && !paused,
+      quests: playing.quests,
+      chart: landmass,
+      past: playing.after.past,
     });
     // Only while sailing: a landing chosen, or under way, stands on the landmass open now.
     charting.tick(here.position, landmass.id, seconds, flow.mode === 'sea');

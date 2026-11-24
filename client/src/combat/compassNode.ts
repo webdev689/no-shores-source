@@ -11,6 +11,7 @@ import {
   type ShipMark,
   shipsMarked,
 } from '../plus/compass.ts';
+import { distanceText } from '../game/hudLaw.ts';
 import { motionReduced } from '../plus/kit.ts';
 import { TONES } from '../plus/tones.ts';
 import { blinkDark, diamondNode } from './publicBanner.ts';
@@ -34,7 +35,32 @@ const PLACE_LOOKS: Readonly<Record<PlaceMark['kind'], { colour: string; size: nu
 };
 
 /** The houses' roads' mark: a brass diamond with a dark edge, where the task's next goal stands. */
-const QUEST_SVG = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="-1 -1 10 10"><path d="M4 0 8 4 4 8 0 4Z" fill="${TONES.brassHi}" stroke="rgba(0,0,0,0.9)" stroke-width="0.8"/></svg>`;
+export const QUEST_SVG = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="-1 -1 10 10"><path d="M4 0 8 4 4 8 0 4Z" fill="${TONES.brassHi}" stroke="rgba(0,0,0,0.9)" stroke-width="0.8"/></svg>`;
+
+/** The quest's waypoint at `quest` on a compass turned to `heading` round a player at `from` at `zoom`: the diamond on
+ *  the strip's top edge, and how far it is under it, as the screen's mark says it (`distanceText`). */
+export function questMark(
+  quest: readonly [number, number],
+  from: readonly [number, number],
+  heading: number,
+  zoom = 1,
+): Node[] {
+  const place = markPlace(quest, from, heading);
+  const far = distanceText(Math.hypot(quest[0] - from[0], quest[1] - from[1]));
+  return [
+    {
+      width: 8 * zoom,
+      height: 8 * zoom,
+      label: 'Quest',
+      picture: { key: 'compass quest', source: { svg: QUEST_SVG } },
+      float: { at: [place, 0], anchor: [0.5, 0], z: 1 },
+    },
+    {
+      text: { words: far, size: zoom, colour: TONES.brassHi, edge: 'halo', wrap: false },
+      float: { at: [place, 0], anchor: [0.5, 0], y: 9 * zoom, z: 2 },
+    },
+  ];
+}
 
 /** The compass `width` CSS pixels wide at `zoom`, turned to `heading` (turns from north), marking `ships` and the
  *  quest's next goal at `quest` round a player at `from`, and a public event's `places` on its foot, those that blink
@@ -78,14 +104,7 @@ export function compassNode(
     picture: { key: `compass ship ${ship.kind}`, source: { svg: shipSvg(SHIP_MARK_COLOURS[ship.kind]) } },
     float: { at: [markPlace([ship.x, ship.y], from, heading), 0], anchor: [0.5, 0], z: 1 },
   }));
-  if (quest)
-    marks.push({
-      width: 8 * zoom,
-      height: 8 * zoom,
-      label: 'Quest',
-      picture: { key: 'compass quest', source: { svg: QUEST_SVG } },
-      float: { at: [markPlace(quest, from, heading), 0], anchor: [0.5, 0], z: 1 },
-    });
+  if (quest) marks.push(...questMark(quest, from, heading, zoom));
   const still = motionReduced();
   const placed = places.marks.map((place): Node => {
     const look = PLACE_LOOKS[place.kind];

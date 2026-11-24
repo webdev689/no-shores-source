@@ -121,7 +121,12 @@ export class Hud {
   /** The toasts said now, which the game draws. */
   private toasts: Toast[] = [];
   private status = '';
-  private compassView: { heading: number; from: readonly [number, number]; ships: readonly ShipMark[] } | null = null;
+  private compassView: {
+    heading: number;
+    from: readonly [number, number];
+    ships: readonly ShipMark[];
+    quest?: readonly [number, number] | null;
+  } | null = null;
   private veilWords: string | null = null;
   private readonly veilShade = new Tween(1, VEIL_S, ease);
   private bars: readonly ShipBar[] = [];
@@ -216,6 +221,7 @@ export class Hud {
       readonly heading: number;
       readonly from: readonly [number, number];
       readonly ships: readonly ShipMark[];
+      readonly quest?: readonly [number, number] | null;
     } | null,
   ): void {
     this.compassView = view;
@@ -368,7 +374,15 @@ export class Hud {
           alignX: 'center',
           through: true,
           float: { to: 'screen', y: 18 },
-          children: [compassNode(width, this.compassView.heading, this.compassView.from, this.compassView.ships)],
+          children: [
+            compassNode(
+              width,
+              this.compassView.heading,
+              this.compassView.from,
+              this.compassView.ships,
+              this.compassView.quest ?? null,
+            ),
+          ],
         },
       placeNode(view, this.title, this.kind),
       standing.kind === 'warned' && warningNode(view, countdownText(standing.secondsLeft)),

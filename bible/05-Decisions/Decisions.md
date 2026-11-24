@@ -341,6 +341,8 @@ a decision is a record. How to add one: [[Recording a Decision]].
 - [[A Player Logs Back In Where They Left the Overworld or a Social Space]]
 - [[Revives, Respawns and Relogs as Claude Shapes Them]]
 - [[A Foe's Plain Swing Takes Seven Eighths of Its Time]]
+- [[Every Objective Has a Waypoint on the Compass, on Land and at Sea]]
+- [[Waypoints as Claude Builds Them]]
 
 ## Replaced
 

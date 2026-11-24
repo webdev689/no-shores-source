@@ -6,6 +6,13 @@ import type { Hud } from './hud.ts';
 import type { Sea } from './sea.ts';
 import type { SeaFrame } from './seaFrame.ts';
 import { hideSeaHud, seaPlace, type SeaHudState, seaShipMarks, showSeaHud } from './seaHud.ts';
+
+/** The roads as a sea display with no quest walked reads them. */
+const ROADS = {
+  quests: { guide: () => ({ at: null, notes: [] }), tracked: null },
+  chart: { nodes: [], layouts: [] },
+  past: true,
+};
 import { seaFightQuest } from './seaPanel.ts';
 
 const captain = (x: number, y: number, state: ShipState, hostile: boolean): FightCaptain =>
@@ -80,7 +87,7 @@ test('in a fight the sea bar goes: its map, pace, Manage and Leave do nothing th
       sighted: null,
     }) as unknown as Sea;
   const shown = { shot: { eye: [0, 0, 10], yaw: 0, pitch: 0.3, fov: 1 }, marks: [], bars: [], focus: [0, 0], note: '' };
-  const state = { landing: false, onSea: true, region: 'The sea', clock: 0, friendly: [], notices: [] };
+  const state = { ...ROADS, landing: false, onSea: true, region: 'The sea', clock: 0, friendly: [], notices: [] };
   const show = (fight: unknown) =>
     showSeaHud(hud as unknown as Hud, sea(fight), shown as unknown as SeaFrame, state as unknown as SeaHudState);
   show(null);
@@ -147,7 +154,7 @@ test("in a fight the readout stands over the sea: the ship's plate, rose, card a
       sighted: null,
     }) as unknown as Sea;
   const shown = { shot: { eye: [0, 0, 10], yaw: 0, pitch: 0.3, fov: 1 }, marks: [], bars: [], focus: [0, 0], note: '' };
-  const state = { landing: false, onSea: true, region: 'The sea', clock: 0, friendly: [], notices: [] };
+  const state = { ...ROADS, landing: false, onSea: true, region: 'The sea', clock: 0, friendly: [], notices: [] };
   const show = (deck: unknown) =>
     showSeaHud(hud as unknown as Hud, sea(deck), shown as unknown as SeaFrame, state as unknown as SeaHudState);
   show(null);
@@ -189,7 +196,7 @@ test("in a fight the hints are the fight's keys alone, as on foot, and the sea's
   } as unknown as Sea;
   const shown = { shot: { eye: [0, 0, 10], yaw: 0, pitch: 0.3, fov: 1 }, marks: [], bars: [], focus: [0, 0], note: '' };
   const notices = ['The Tithe Schooner joined the fight.'];
-  const state = { landing: false, onSea: true, region: 'The sea', clock: 0, friendly: [], notices };
+  const state = { ...ROADS, landing: false, onSea: true, region: 'The sea', clock: 0, friendly: [], notices };
   showSeaHud(hud as unknown as Hud, sea, shown as unknown as SeaFrame, state as unknown as SeaHudState);
   assert.deepEqual(said['strip'], [stripOf('fight')]);
   assert.deepEqual(said['notices'], [['The Tithe Schooner joined the fight.', 'The Tithe Brig surrenders!']]);
@@ -241,7 +248,7 @@ test('while the ship sails away to other waters the sea bar goes, so nothing on 
       travelling,
     }) as unknown as Sea;
   const shown = { shot: { eye: [0, 0, 10], yaw: 0, pitch: 0.3, fov: 1 }, marks: [], bars: [], focus: [0, 0], note: '' };
-  const state = { landing: false, onSea: true, region: 'The sea', clock: 0, friendly: [], notices: [] };
+  const state = { ...ROADS, landing: false, onSea: true, region: 'The sea', clock: 0, friendly: [], notices: [] };
   for (const travelling of [null, { away: { veil: null } }])
     showSeaHud(hud as unknown as Hud, sea(travelling), shown as unknown as SeaFrame, state as unknown as SeaHudState);
   assert.notEqual(bars[0], null, 'at sea the bar stands');

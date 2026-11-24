@@ -15,6 +15,8 @@ import { header, keycap } from './hudParts.ts';
  *  1), and whether it is met. */
 export interface Step {
   readonly text: string;
+  /** A word under its words: the way to where it is done, or that it is done anywhere. */
+  readonly note?: string;
   readonly keys?: readonly string[];
   readonly count?: number | string;
   readonly clock?: number;
@@ -84,6 +86,7 @@ export function sameQuest(one: Quest | null, other: Quest | null): boolean {
     return (
       that !== undefined &&
       step.text === that.text &&
+      step.note === that.note &&
       step.count === that.count &&
       step.clock === that.clock &&
       step.share === that.share &&
@@ -211,8 +214,12 @@ function stepNode(step: Step, size: number, flash: number): Node {
         ? { width: box, height: box, fill: TONES.brass, draw: edged(BRASS_EDGE) }
         : { width: box, height: box, role: 'well', bevel: 1 },
       {
+        direction: 'column',
         padding: [0, 2, 0, 0],
-        children: [{ text: { words: step.text, size, colour } }],
+        children: [
+          { text: { words: step.text, size, colour } },
+          step.note !== undefined && !step.done && { text: { words: step.note, size: 1, colour: TONES.wordDim } },
+        ],
       },
       ...(step.keys ?? []).map((key) => keycap(key, size)),
       leftOf(step) !== undefined && { width: 'grow' },

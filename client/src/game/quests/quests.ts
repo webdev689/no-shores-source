@@ -23,8 +23,9 @@ import { rosterFor } from '../footRoom.ts';
 import { actorCards } from '../prologue/actors.ts';
 import type { Quest } from '../tasks.ts';
 import { worldOutput } from '../uiSounds.ts';
-import { COUNTERS, buyAt, goalNodes, markedGoal, talkAt, trackedOf } from './questBook.ts';
+import { COUNTERS, buyAt, goalNodes, talkAt, trackedOf } from './questBook.ts';
 import { FIGURE_MOVES, FigureGlides, questActors, wardPlate } from './questFigures.ts';
+import { type Chart, type Guide, type Standing, guideOf } from './waypoint.ts';
 import { QuestWatch } from './questWatch.ts';
 
 /** What the lines are said in: the dialogue box, as the welcome's (welcome.ts WelcomeVoice). */
@@ -60,6 +61,8 @@ export class Quests {
   private readonly glides = new FigureGlides();
   /** When the room's last word on the quest came, milliseconds on `now`. */
   private heardAt = 0;
+  /** Where the compass last pointed for the quest walked, and each step's word, from where the player stood. */
+  private guided: Guide = { at: null, notes: [] };
   /** The forge the figures are drawn by, and the rules' roster their looks are read from, once it has come. */
   private readonly forge: Cards | null;
   roster: readonly FoeType[] = [];
@@ -153,9 +156,26 @@ export class Quests {
     return this.toasted.map((toast) => toast.text);
   }
 
-  /** What the tracker shows: the quest walked, once the story and the welcome are past. */
+  /** Where the compass points for the quest walked from where the player stands (`standing`), over `chart`, kept for
+   *  the tracker's words; none before the story and the welcome are past. At sea, where no frame runs the roads (their
+   *  lines and toasts wait for land), `past` says whether they are. */
+  guide(standing: Standing, chart: Chart, past = this.past): Guide {
+    this.past = past;
+    const marked = this.goalAt;
+    const where = standing.on === 'land' ? { ...standing, marked } : standing;
+    this.guided = this.past ? guideOf(this.gear?.quest, where, chart) : { at: null, notes: [] };
+    return this.guided;
+  }
+
+  /** What the tracker shows: the quest walked, once the story and the welcome are past, each step with its way. */
   get tracked(): Quest | null {
-    return this.past ? trackedOf(this.gear?.quest, (this.now() - this.heardAt) / 1000) : null;
+    const tracked = this.past ? trackedOf(this.gear?.quest, (this.now() - this.heardAt) / 1000) : null;
+    if (!tracked) return null;
+    const { notes } = this.guided;
+    return {
+      ...tracked,
+      steps: tracked.steps.map((step, index) => ({ ...step, ...(notes[index] ? { note: notes[index] } : {}) })),
+    };
   }
 
   /** The nodes the task's goals name, for the held map. */
@@ -190,17 +210,15 @@ export class Quests {
   }
 
   /** The quest's mark on the screen through `shot` on a picture `viewport` CSS pixels, standing on `groundAt`'s
-   *  ground, named for its goal in the node `node` the player is in, its distance from the player at `from`; none
-   *  while there is no place to mark. */
+   *  ground where the compass points (`guide`), named for the goal it points at, its distance from the player at
+   *  `from`; none while it points nowhere. */
   marks(
     shot: Shot,
     viewport: { readonly width: number; readonly height: number },
     from: readonly [number, number],
     groundAt: (x: number, y: number) => number | null,
-    node: string,
   ): ScreenMark[] {
-    const where = this.goalAt;
-    const goal = markedGoal(this.here?.quest, node);
+    const { at: where, goal } = this.guided;
     if (!where || !goal) return [];
     const [x, y] = where;
     const point = [x, y, (groundAt(x, y) ?? shot.eye[2]) + MARK_RISE_M] as const;

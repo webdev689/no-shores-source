@@ -1445,5 +1445,6 @@ button's corner and screen, and the Tailor's wares.
 - At sea the sea bar stays at the screen's foot. DFO stands its helm bar under the compass and the target's card
   under that bar, measured each frame; here a Boss ship's plate is drawn at a set place under the compass, where the
   bar would stand, and at 960 px the bar is as wide as the screen between the place's name and its right edge.
-- The compass marks ships and the public events. DFO's marks for the player's own boats, a party, a quest, the way out,
-  a profession's nodes and Detect spells wait on their like here ([[Pick - Enhanced Plus UI]]).
+- The compass marks ships, the public events and the quest's waypoint, a brass diamond on the strip's top edge with
+  its distance under it in brass, on foot and at sea ([[Quests]], "Marks"). DFO's marks for the player's own boats, a
+  party, the way out, a profession's nodes and Detect spells wait on their like here ([[Pick - Enhanced Plus UI]]).

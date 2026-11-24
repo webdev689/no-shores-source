@@ -192,6 +192,16 @@ each part works is in its system note.
 
 The decisions in [[Open Questions]] are not repeated here.
 
+- **Every objective has a waypoint on the compass, on land and at sea**, for the owner's yes to merge, on the owner's
+  "for any and all objectives we need to utilize waypoints utilizing our compass with land and sea, I dont want players
+  to feel lost" and their four answers ([[Every Objective Has a Waypoint on the Compass, on Land and at Sea]]; Claude's
+  calls in [[Waypoints as Claude Builds Them]]). A playtester on "Tail a collector" did not know what to do: the step
+  works (its walk on the baked Saltgrass Downs is tested) but its mark stood only inside Saltgrass Downs and its words
+  name no place. Now the page points step by step (`client/src/game/quests/waypoint.ts`): in the goal's zone at the
+  goal, in a gating patrol at the gate, elsewhere on land and at sea at the landing of the zone it is landed at, with
+  "Hold M to return to your ship" or "Sail to" under the step; a goal with no zone of its own at the nearest place to
+  do it; one done anywhere says so. The distance stands under the compass's diamond, and the tracker shows the quest
+  at sea. No rules change. Tested offline; not seen in the game or played.
 - **A foe's plain swing at seven eighths of its time**, for the owner's yes to merge, on the owner's "We recently
   adjusted parry timing and actually made it harder where I wanted to make it slighty easier"
   ([[A Foe's Plain Swing Takes Seven Eighths of Its Time]]). The longer parry window (15 ticks) forgave only an early

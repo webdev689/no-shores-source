@@ -23,14 +23,21 @@ status: in force
 > (Recommended)", the option that read: "No waypoint; the tracker marks the step as doable anywhere, so nobody goes
 > looking for a place."
 
+> Told that leaving a social space or a land zone is holding M anywhere to return to one's ship, not a walk to a
+> harbour, and asked again what the compass and tracker should do with the objective across the sea: "Point toward the
+> landing (Recommended)", the option that read: "The compass points across the water at the objective zone's landing,
+> with its distance, and the tracker's next line says 'Hold M to return to your ship'. At sea it then points at that
+> landing until you go ashore."
+
 > Asked whether the waypoint should show how far away it is: "Yes, under the mark (Recommended)", the option that
 > read: "Metres (or km at sea) under the waypoint's diamond on the compass."
 
 ## What it settles
 
 - Every objective a player is on shows a waypoint on the compass, on land and at sea, wherever the player stands.
-- Far from it, the waypoint points at the next leg of the way: at sea, the island and landing of the objective's
-  zone; in a social space, the harbour; in another land zone, the way out toward it; in its own zone, the objective.
+- Far from it, the waypoint points at the next leg of the way: at sea, the landing of the objective's zone; in a
+  social space or another land zone, across the water at that landing, the tracker saying to hold M to return to the
+  ship; in a zone whose gate leads to it, the gate; in its own zone, the objective.
 - An objective with no single place points at the nearest place it can be done.
 - An objective that can be done anywhere shows no waypoint, and the tracker says it can be done anywhere.
 - The waypoint shows its distance under its mark: metres, or kilometres at sea.
