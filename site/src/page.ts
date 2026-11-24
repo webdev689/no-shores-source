@@ -1,7 +1,7 @@
 // A page made whole at serve and at build: the bar and the foot laid in, and every word, link and picture the page
 // names filled in. A page's markup never spells a sentence, an address or a picture's file; it names them by key.
 import { pictureAddress, pictureOf } from './art/pictures.ts';
-import { OUTSIDE, SITE_PAGES, siteHref, type SitePage } from './siteMap.ts';
+import { OUTSIDE, SITE_ORIGIN, SITE_PAGES, pagePath, siteHref, type SitePage } from './siteMap.ts';
 import { WORDS } from './words.ts';
 
 /** The attributes a page may fill with words (`data-t-alt="world.depthsAlt"`). */
@@ -33,9 +33,10 @@ function link(to: string, wordKey: string, current = false, className = ''): str
 
 const wordKeyOf = (id: string): string => `nav${id[0]?.toUpperCase() ?? ''}${id.slice(1)}`;
 
-/** The top of every page: the skip link and the bar with the logo, the pages it names and Play. */
+/** The top of every page: the skip link and the bar with the logo, the pages it names, the Discord and Play. */
 export function siteTop(page: SitePage): string {
   const links = SITE_PAGES.filter((each) => each.inBar).map((each) => link(each.id, wordKeyOf(each.id), each === page));
+  links.push(link('discord', 'navDiscord'));
   return `<a class="skip" href="#main" data-t="shell.skip"></a>
   <header class="bar">
     <a class="bar-brand" data-to="home" data-t-aria-label="shell.brand"><img data-art="logo" alt="" /></a>
@@ -56,7 +57,8 @@ export function siteFoot(page: SitePage): string {
   return `<footer class="foot">
     <div class="foot-brand">
       <a data-to="home" data-t-aria-label="shell.brand"><img data-art="logo" alt="" /></a>
-      <p data-t="shell.copyright"></p>
+      <p data-t="shell.tagline"></p>
+      <p class="copyright" data-t="shell.copyright"></p>
     </div>
     <nav aria-labelledby="foot-pages">
       <h2 id="foot-pages" data-t="shell.footLabel"></h2>
@@ -71,7 +73,7 @@ export function siteFoot(page: SitePage): string {
 }
 
 /** Fill one tag's named attributes, link and picture. */
-function fillTag(tag: string): string {
+function fillTag(tag: string, outside: Readonly<Record<string, string>>): string {
   let next = tag;
   for (const [, attribute = '', key = ''] of tag.matchAll(/\sdata-t-([a-z-]+)="([^"]*)"/g)) {
     if (!WORD_ATTRIBUTES.includes(attribute)) throw new Error(`site: words cannot go into "${attribute}"`);
@@ -79,7 +81,7 @@ function fillTag(tag: string): string {
   }
   const to = /\sdata-to="([^"]*)"/.exec(tag)?.[1];
   if (to !== undefined) {
-    const place = siteHref(to);
+    const place = siteHref(to, outside);
     if (!place) throw new Error(`site: nowhere is named "${to}"`);
     next = setAttribute(next, 'href', place.href);
     if (place.outside) next = setAttribute(next, 'rel', 'noopener');
@@ -96,8 +98,8 @@ function fillTag(tag: string): string {
 }
 
 /** Whether a place a page needs (`data-needs="discord"`) has no address yet; a name nobody has stops the build. */
-function closed(name: string): boolean {
-  const place = siteHref(name);
+function closed(name: string, outside: Readonly<Record<string, string>>): boolean {
+  const place = siteHref(name, outside);
   if (!place) throw new Error(`site: nowhere is named "${name}"`);
   return place.href === '';
 }
@@ -107,7 +109,7 @@ function closed(name: string): boolean {
  * button, and so is a section that needs that place (`data-needs`), which may hold no section of its own. Words go
  * only into an element that holds nothing, or the build stops.
  */
-export function fillKeys(html: string): string {
+export function fillKeys(html: string, outside: Readonly<Record<string, string>> = OUTSIDE): string {
   const needs = [...html.matchAll(/\sdata-needs=/g)].length;
   const onSections = [...html.matchAll(/<section\b[^>]*\sdata-needs="[^"]*"/g)].length;
   if (needs !== onSections) throw new Error('site: data-needs goes on only a section, its place in double quotes');
@@ -115,13 +117,13 @@ export function fillKeys(html: string): string {
     /<section\b[^>]*\sdata-needs="([^"]*)"[^>]*>([\s\S]*?)<\/section>\s*/g,
     (whole, name: string, inner: string) => {
       if (/<section\b/.test(inner)) throw new Error('site: a section that needs a place holds a section of its own');
-      return closed(name) ? '' : whole;
+      return closed(name, outside) ? '' : whole;
     },
   );
   out = out.replace(/<a\b[^>]*\sdata-to="([^"]*)"[^>]*>[\s\S]*?<\/a>\s*/g, (whole, to: string) =>
-    siteHref(to)?.href === '' ? '' : whole,
+    siteHref(to, outside)?.href === '' ? '' : whole,
   );
-  out = out.replace(/<[a-zA-Z][^>]*\sdata-(?:to|art|t-[a-z-]+)="[^"]*"[^>]*>/g, fillTag);
+  out = out.replace(/<[a-zA-Z][^>]*\sdata-(?:to|art|t-[a-z-]+)="[^"]*"[^>]*>/g, (tag) => fillTag(tag, outside));
   const named = [...out.matchAll(/\sdata-t="([^"]*)"/g)].length;
   let filled = 0;
   out = out.replace(
@@ -141,7 +143,31 @@ const HEAD = `<link rel="icon" type="image/png" data-art-icon />
   <meta name="theme-color" content="#070c18" />
 </head>`;
 
-/** A page made whole: its head, bar and foot laid in, its keys filled. */
+/** The tags a link to a page unfolds into on Discord and elsewhere: its title and description, already filled, the
+ *  share picture, and the page's own address. */
+function shareTags(html: string, page: SitePage): string {
+  const title = /<title>([^<]*)<\/title>/.exec(html)?.[1] ?? '';
+  const description = /<meta name="description" content="([^"]*)"/.exec(html)?.[1] ?? '';
+  const share = pictureOf('share');
+  const address = `${SITE_ORIGIN}${pagePath(page)}`;
+  const tags = [
+    '<meta property="og:type" content="website" />',
+    '<meta property="og:site_name" content="No Shores" />',
+    `<meta property="og:url" content="${address}" />`,
+    `<meta property="og:title" content="${title}" />`,
+    `<meta property="og:description" content="${description}" />`,
+    '<meta name="twitter:card" content="summary_large_image" />',
+  ];
+  if (share) {
+    tags.push(`<meta property="og:image" content="${SITE_ORIGIN}${pictureAddress('share', share)}" />`);
+    tags.push(`<meta property="og:image:width" content="${share.width}" />`);
+    tags.push(`<meta property="og:image:height" content="${share.height}" />`);
+  }
+  return html.replace('</head>', `  ${tags.join('\n    ')}\n  </head>`);
+}
+
+/** A page made whole: its head, bar and foot laid in, its keys filled, its tab named after the site beside its own
+ *  name, and the tags a shared link shows. */
 export function makePage(html: string, page: SitePage): string {
   for (const mark of ['<!--site:top-->', '<!--site:foot-->', '</head>'])
     if (!html.includes(mark)) throw new Error(`site page "${page.id}" has no ${mark}`);
@@ -151,5 +177,8 @@ export function makePage(html: string, page: SitePage): string {
     .replace('</head>', head)
     .replace('<!--site:top-->', siteTop(page))
     .replace('<!--site:foot-->', siteFoot(page));
-  return fillKeys(laid);
+  const filled = fillKeys(laid);
+  const named =
+    page.id === 'home' ? filled : filled.replace(/<title>([^<]*)<\/title>/, '<title>$1 | No Shores</title>');
+  return shareTags(named, page);
 }

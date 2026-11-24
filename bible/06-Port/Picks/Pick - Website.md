@@ -17,7 +17,7 @@ picture but the logo drawn by code at build time in a pixel style, the same at e
 ## What comes over
 
 - The way a page is made: a frame of a bar and a foot round each page, words kept apart from the markup, links by
-  name, one script a page, and nothing loaded from another site.
+  name, no script on a page but the bot's panel, and nothing loaded from another site.
 - The kind of picture: pixel scenes drawn by our own code, of No Shores' own places.
 - The look: night colours, a pixel face, framed cards.
 - The Discord bot's page, from the `bot-panel` branch ([[Pick - Discord Bot]]).

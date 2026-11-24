@@ -3,7 +3,8 @@
 // and the owner's decisions: Overlook a lantern-lit port stepping up Saltmere's rock, the Grey Tithe's grey unmarked
 // sails, Thule's flagship, the call in the deep, the ruined ports overtaken by the Lattice's red and purple crystal,
 // the shore the captain wakes on.
-import { heroLayers } from './heroScene.ts';
+import { GAME_SCENES } from './gameScenes.ts';
+import { heroLayers, shareCard } from './heroScene.ts';
 import { LAND_SCENES } from './landScenes.ts';
 import { QUAY_SCENES } from './quayScenes.ts';
 import { SEA_SCENES } from './seaScenes.ts';
@@ -16,4 +17,6 @@ export const SCENES: Readonly<Record<string, () => Sheet>> = {
   ...SEA_SCENES,
   ...LAND_SCENES,
   ...QUAY_SCENES,
+  ...GAME_SCENES,
+  share: shareCard,
 };

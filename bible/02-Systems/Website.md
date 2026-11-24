@@ -44,16 +44,21 @@ Online's ([[The Website Is at noshores.online, After DFO's]], [[Pick - Website]]
   `cargo xtask check` builds them too ([[Checks]]).
 - **Words by name.** A page never spells a sentence. It names its words (`data-t="world.title"`, or
   `data-t-alt` for a picture's alt text) and the build fills them in from one table. The premise is the owner's
-  ([[No Shores]]), split into passages and never reworded; Home and The World say it. Every other line comes from a
-  decision: The Game's from [[Overlook Is a Shared World After Destiny 1]], [[The Sea Is a Patrol Zone, and the Ship Is Gear]],
-  [[Ships Have Their Own Power, Modules and Crew Who Fight Beside You]], [[Arts Are Overlook's Subclasses]],
-  [[Three Factions Keep the Arts, After Destiny 1]] and [[Gear and Power Follow Destiny 1 Vanilla]].
+  ([[No Shores]]), split into passages and never reworded; Home and The World say it. Every other line tells a
+  newcomer plainly what they will do, and says only what a recorded decision says or what the game has built; each
+  group of words names its notes in `words.ts`. The phrasing is Claude's, for the owner to change. The lore is shown,
+  not explained ([[The Game Shows the Mystery and Explains Almost None of It]]): the site names the Grey Tithe and
+  hints at the ruined ports, and says nothing of what the crystal is.
 - **Links by name.** A link names a page or an outside place (`data-to="play"`). The outside places are named once:
-  Play, the game at `noshores.online/play/`, and the Discord, empty until the owner has an invite. A place with no
-  address yet has its links left out of the page, so no Discord button shows.
-- **The frame.** Every page gets the same bar (the logo, The World, The Game, Play), a skip link, and a foot in
-  columns: the logo and "© Vestige Studios" ([[Copyright Held by Vestige Studios]]), the pages by name, the Discord
-  bot's among them, then Play and the Discord once it has an address.
+  Play, the game at `noshores.online/play/`, and the Discord, the No Shores server's invite. A place with no address
+  has its links left out of the page, and a section that needs it (`data-needs`) left out whole; the tests check both
+  against a stand-in list of places.
+- **The frame.** Every page gets the same bar (the logo, The World, The Game, the Discord, Play), a skip link, and a
+  foot in columns: the logo, the line "A pirate sandbox in a shared world." (the owner's own words for the game,
+  [[No Shores]]) and "© Vestige Studios" ([[Copyright Held by Vestige Studios]]); the pages by name, the Discord bot's
+  among them; then Play and the Discord. A tab reads "The World | No Shores"; Home's, its own line. Each page's head
+  carries the tags a shared link unfolds into on Discord and elsewhere: its title and description, its address, and
+  the share picture, Home's scene twice its size with the logo over its sky.
 - **Pictures drawn by code.** Every picture is drawn at build time in Node, each from a fixed seed, so it is the same
   at every build, and written as a small paletted PNG into the build, never into git
   ([[Generated Files Stay Out of Git]]). They are drawn the way DFO's are: skies dithered band into band through an
@@ -67,13 +72,22 @@ Online's ([[The Website Is at noshores.online, After DFO's]], [[Pick - Website]]
   that flickers), the Pale Expanse with a burned port, the Grey Tithe's grey sails closing out of the mist on a lone
   ship, Thule's flagship over a captain's broken, burning ship at a red dusk, the captain sinking toward a faint
   light, a ruined port overtaken by crystal, Saltmere's shore at first light, a ship under full sail, the three Arts'
-  flames in braziers on the quay, gear under a lantern, a ship's bell on the quay. The logo is drawn cell for cell from
+  flames in braziers on the quay, gear under a lantern, a ship's bell on the quay; and of play itself
+  (`gameScenes.ts`): the keepers' stalls on Overlook's quay, a duel by firelight with the fighters' edges lit by the
+  brazier between them, and a dungeon's gate in a hillside. Every scene fills its frame; only the lights layer and the
+  logo have clear cells. The logo is drawn cell for cell from
   the game's own picture of it, shown at whole-number scale; the tab's icon is its first letter.
-- **Home, after DFO's.** The scene with the logo, the premise's first line and Play; the premise's opening passages;
-  four numbered rows of what a player does, each a picture beside The Game's own lines (Overlook, the ship, the Arts
-  and the factions, gear), in turn left and right; a band of numbers, each from the premise or a decision (nine
-  continents, three port cities remain, three Arts, three factions); The World's lead; a call to the Discord, shown
-  only once it has an address (a section's `data-needs`); and the premise's last lines with Play.
+- **Home, after DFO's.** The scene with the logo, the premise's first line, a line saying what the game is, Play and
+  the Discord, and what it runs on; "What is No Shores?"; five numbered rows of what a player does, each a picture
+  beside a few lines and its facts as tags (Overlook, a ship of your own, steel and the Arts, gear, dungeons, events
+  and guilds), in turn left and right; a band of numbers, each from the premise or a decision (nine continents, three
+  port cities remain, three Arts, six dungeon styles); the story's opening in the owner's words; three steps to start
+  playing; a call to the Discord; and the premise's last lines with Play.
+- **The Game** tells what there is to do, a section each with its picture: Overlook, the sea, combat, the Arts and the
+  factions, gear, things to do, and how you play (in the browser, on keyboard and mouse or a pad, as a guest or with
+  an account).
+- **The World** is the premise as written, under headings of its places, with "Even history itself cannot be
+  trusted." set apart between them.
 - **Nothing from another site.** The face is Pixelify Sans, bundled from its package ([[Pixelify Sans Is Overlook's Font]]);
   the copyright sign alone takes the device's own sans, since Pixelify draws it as a speck. A built page carries a
   content policy that lets it load only its own styles, fonts and pictures, and runs no script. The panel's page is
@@ -129,15 +143,11 @@ small stand-in document (`domForTests.ts`) against a faked bot.
 
 ## Limits
 
-- Nothing is served until `noshores.online` is a zone of the Cloudflare account, its nameservers moved from Porkbun
-  ([[Open Questions]]); until then each deploy says so and serves nothing. The Cloudflare token then needs Zone: Read
-  and Workers Routes: Edit on that zone, beside the Workers R2 Storage: Edit it publishes with, which the bucket's
-  rules need too.
-- The bot's `/link` and its panel name `noshores.online` from the bot's first deploy, which does not wait on the zone:
-  until the nameservers move, those addresses do not answer.
+- A deploy serves the site only while `noshores.online` is an active zone of the Cloudflare account; otherwise it says
+  so and serves nothing. The Cloudflare token needs Zone: Read and Workers Routes: Edit on that zone, beside the
+  Workers R2 Storage: Edit it publishes with, which the bucket's rules need too.
 - A browser keeps a game's sign-in and saves by its address, so a guest who played on GitHub Pages starts afresh at
   `noshores.online`; an account linked to Discord signs in on either.
-- The Discord buttons stay hidden until the owner has an invite.
 - The panel works only once the bot is deployed with `PANEL_URL` and `PANEL_ORIGINS` naming this site ([[Discord Bot]]).
 - A built page previewed on this machine keeps the live policy, so it cannot reach `npm run bot`; use `npm run site`.
 - English only.

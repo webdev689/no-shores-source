@@ -26,7 +26,7 @@ export const SITE_PAGES: readonly SitePage[] = [
  */
 export const OUTSIDE: Readonly<Record<string, string>> = {
   play: `${SITE_ORIGIN}/play/`,
-  discord: '',
+  discord: 'https://discord.gg/gzqhU3zGh',
 };
 
 /** A page's own address, from the site's root. */
@@ -43,12 +43,15 @@ export function pageOfPath(path: string): SitePage | null {
  * Where a link named `to` leads: a page by its id or an outside place by its name, with an optional `#section`.
  * `href` is `''` for an outside place not open yet; null means nothing has that name.
  */
-export function siteHref(to: string): { href: string; outside: boolean } | null {
+export function siteHref(
+  to: string,
+  outside: Readonly<Record<string, string>> = OUTSIDE,
+): { href: string; outside: boolean } | null {
   const [name = '', section] = to.split('#');
   const page = SITE_PAGES.find((candidate) => candidate.id === name);
   const tail = section ? `#${section}` : '';
   if (page) return { href: pagePath(page) + tail, outside: false };
-  const address = OUTSIDE[name];
+  const address = outside[name];
   if (address === undefined) return null;
   return { href: address && address + tail, outside: true };
 }

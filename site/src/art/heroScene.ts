@@ -5,6 +5,7 @@ import { seeded } from '../../../client/src/seeded.ts';
 import { clouds, LIGHTS, moon, range, sea, sky, stars } from './light.ts';
 import { beacon, isle, quay, town } from './places.ts';
 import { ship } from './ships.ts';
+import { logoSheet } from './logo.ts';
 import { box, dot, land, makeSheet, patternOn, ridge, type Sheet } from './sheet.ts';
 
 export const HERO = { width: 640, height: 300, horizon: 212 } as const;
@@ -85,4 +86,25 @@ export function heroLayers(): { back: Sheet; lights: Sheet } {
   });
   box(back, 0, height - 1, width, 1, '#03050a');
   return { back, lights };
+}
+
+/** The picture a shared link unfolds into: the hero, its lights lit, twice its size, the logo over its sky. */
+export function shareCard(): Sheet {
+  const { back, lights } = heroLayers();
+  const scale = 2;
+  const card = makeSheet(back.width * scale, back.height * scale);
+  for (let row = 0; row < card.height; row++)
+    for (let column = 0; column < card.width; column++) {
+      const from = Math.floor(row / scale) * back.width + Math.floor(column / scale);
+      card.cells[row * card.width + column] = lights.cells[from] || back.cells[from] || '';
+    }
+  const logo = logoSheet();
+  const left = Math.round((card.width - logo.width * scale) / 2) - 40;
+  const top = 70;
+  for (let row = 0; row < logo.height * scale; row++)
+    for (let column = 0; column < logo.width * scale; column++) {
+      const ink = logo.cells[Math.floor(row / scale) * logo.width + Math.floor(column / scale)];
+      if (ink) card.cells[(top + row) * card.width + left + column] = ink;
+    }
+  return card;
 }

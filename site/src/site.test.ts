@@ -80,18 +80,20 @@ test('a page path finds its page, and a name nobody has finds nothing', () => {
 
 test('a place with no address shows no link, and one with an address shows its link', () => {
   const html = '<a data-to="discord" data-t="home.discord"></a><a data-to="play" data-t="shell.navPlay"></a>';
-  const filled = fillKeys(html);
-  assert.equal(OUTSIDE.discord, '');
+  const filled = fillKeys(html, { ...OUTSIDE, discord: '' });
   assert.doesNotMatch(filled, /Discord/);
+  assert.match(fillKeys(html), new RegExp(`href="${OUTSIDE.discord}" rel="noopener">Join the Discord<`), 'the invite');
   assert.match(filled, /href="https:\/\/noshores\.online\/play\/" rel="noopener">Play</, 'the game under the site');
 });
 
 test('a section that needs a place with no address is left out whole, and kept once the place has one', () => {
+  const closed = { ...OUTSIDE, discord: '' };
   const needs = (name: string) =>
     `<section data-needs="${name}"><h2 data-t="shell.navDiscord"></h2></section><p data-t="home.title"></p>`;
-  assert.equal(OUTSIDE.discord, '');
-  assert.equal(fillKeys(needs('discord')), '<p>No Shores</p>');
-  assert.equal(fillKeys(needs('play')), '<section><h2>Discord</h2></section><p>No Shores</p>');
+  const title = '<p>No Shores: a pirate sandbox in a shared world</p>';
+  assert.equal(fillKeys(needs('discord'), closed), title);
+  assert.equal(fillKeys(needs('discord')), `<section><h2>Discord</h2></section>${title}`, 'kept once it has one');
+  assert.equal(fillKeys(needs('play'), closed), `<section><h2>Discord</h2></section>${title}`);
   assert.throws(() => fillKeys(needs('nowhere')), /nowhere/);
   assert.throws(() => fillKeys('<section data-needs="play"><section></section></section>'), /section of its own/);
   assert.throws(
@@ -99,6 +101,14 @@ test('a section that needs a place with no address is left out whole, and kept o
     /only a section/,
   );
   assert.throws(() => fillKeys("<section data-needs='discord'></section>"), /only a section/);
+});
+
+test('every scene fills its frame: only the lights laid over Home’s scene and the logo have clear cells', () => {
+  const seeThrough = new Set(['overlook-lights', 'logo']);
+  for (const [name, draw] of Object.entries(PICTURES)) {
+    if (seeThrough.has(name)) continue;
+    assert.equal(draw().cells.filter((ink) => !ink).length, 0, name);
+  }
 });
 
 test('each picture is the same at every build and under 64 KB', () => {

@@ -22,8 +22,5 @@ status: in force
 - Its first pages are Home, The World, The Game and the Discord bot's panel
   ([[DFO's Discord Bot Comes Over, Its Panel on the Website]]).
 - DFO's live timers and its staff panel do not come over.
-- Where it is hosted, and whether the game is played from it, wait on the owner ([[Open Questions]]). Nothing is
-  deployed without the owner's yes ([[Ask Before Deploying]]).
-
-Answered by [[noshores.online Is Served From Cloudflare, and the Game Is Played There]]: it is served from Cloudflare,
-and the game is played there.
+- Nothing is deployed without the owner's yes ([[Ask Before Deploying]]). Where it is hosted, and whether the game is
+  played from it, are settled by [[noshores.online Is Served From Cloudflare, and the Game Is Played There]].
