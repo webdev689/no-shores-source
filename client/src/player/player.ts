@@ -26,7 +26,7 @@ export interface Player {
   /** Seconds since the last tick, toward the next. */
   readonly carry: number;
   /** A jump or a crouch pressed since the last tick, kept for the next so a press between ticks is never lost. */
-  readonly queued: { readonly jump: boolean; readonly crouch: boolean; readonly boost: boolean };
+  readonly queued: { readonly jump: boolean; readonly crouch: boolean };
   readonly yaw: number;
   readonly pitch: number;
   readonly view: ViewMode;
@@ -59,7 +59,7 @@ export function newPlayer(movement: MovementRules, x: number, y: number): Player
     previous: body,
     blend: 1,
     carry: 0,
-    queued: { jump: false, crouch: false, boost: false },
+    queued: { jump: false, crouch: false },
     yaw: 0,
     pitch: 0.1,
     view: { ...scrolled(FIRST_PERSON, 1), shown: 2 },
@@ -120,15 +120,23 @@ export function updatePlayer(
   let queued = {
     jump: player.queued.jump || input.pressed('jump'),
     crouch: player.queued.crouch || input.pressed('crouch'),
-    boost: player.queued.boost || input.pressed('boost'),
   };
   let { body, previous } = player;
   let carry = player.carry + seconds;
   while (carry >= movement.tickSeconds) {
     carry -= movement.tickSeconds;
     previous = body;
-    body = movement.step(body, { forward, sideways, yaw, run: input.held('run'), ...queued, mounted });
-    queued = { jump: false, crouch: false, boost: false };
+    // A horse never jumps (the movement crate's rule), so a rider's jump is the horse's boost.
+    body = movement.step(body, {
+      forward,
+      sideways,
+      yaw,
+      run: input.held('run'),
+      ...queued,
+      boost: queued.jump,
+      mounted,
+    });
+    queued = { jump: false, crouch: false };
   }
   // DFO's figure faces where it moves and keeps its facing when still; striking or casting, it turns to the view.
   // Locked on, it faces its foe on foot, so walking away backs off rather than turning its back; a sprint faces where

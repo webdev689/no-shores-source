@@ -1215,7 +1215,7 @@ lost strip and falling pieces), and the ship's bar is built of the Arts' bar's o
   and it goes with the readout.
 - **The horse's ring** ([[Other Ships Wear Their Players' Marks, the Sea Map Has No Fog, and New Players Ride a Bay That Bursts]]): while the player rides, the rider's boost stands at the
   bottom left in the Arts' place (no Art is cast from the saddle), one ring of the ship's bar's own build
-  (`combat/rideBoost.ts`), a horseshoe in iron, its keycap the boost's key as bound (Space, or the pad's A). A reader
+  (`combat/rideBoost.ts`), a horseshoe in iron, its keycap the jump's key as bound (Space, or the pad's A). A reader
   hears it as "Your Horse", "Boost (Space), ready". It is lit once ready, near white and draining over its 4 s while
   it runs, then swept dark as its 12 s recharge, its last seconds counted, flashing as the boost begins, as the
   burst's ring does. Getting down, the Arts' bar comes back.

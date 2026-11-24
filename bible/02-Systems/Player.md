@@ -47,8 +47,8 @@ moves and figure are DFO's ([[The Player Plays as in DFO]]); the Test Ground's n
   on foot. With none, a press does nothing and the frame it was pressed in says "You have no horse." once for it,
   ashore or at sea; the story says nothing. Getting down is never refused. A new character's first horse is the
   stranger's Bay ([[Gear]]).
-- **The boost** ([[Other Ships Wear Their Players' Marks, the Sea Map Has No Fog, and New Players Ride a Bay That Bursts]]): a rider taps the boost key (Space, or the pad's A, on the jump's
-  keys, since a horse never jumps; rebound on the controls sheet) for half again the horse's pace, walking or
+- **The boost** ([[Other Ships Wear Their Players' Marks, the Sea Map Has No Fog, and New Players Ride a Bay That Bursts]]): a rider taps the jump's key (Space, or the pad's A, as the jump is
+  rebound; a horse never jumps, so a rider's jump is its boost) for half again the horse's pace, walking or
   galloping, for 4 s; then it recharges for 12 s before it may boost again. The run stays as it is. It is the
   movement rules' (`boost_run`, `TUNING`'s `ride_boost`, `boost_seconds`, `recharge_seconds`): the controls carry
   the tap (`boost`) and the body its two clocks (`boosting`, `recharging`), so the room steps it and the page

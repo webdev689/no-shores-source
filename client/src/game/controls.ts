@@ -63,10 +63,9 @@ export const CONTROL_GROUPS: readonly ControlGroup[] = [
     controls: [
       { ...row('Move; climb', 'forward', 'left', 'back', 'right'), pad: LEFT_STICK },
       row('Run; gallop', 'run'),
-      row('Jump; vault', 'jump'),
+      row('Jump; vault; boost a horse', 'jump'),
       row('Crouch; let go', 'crouch'),
       row('Mount or dismount', 'mount'),
-      row("Boost a horse's pace", 'boost'),
       row('Use', 'use'),
       row('Hold to leave', 'leave'),
     ],
@@ -229,5 +228,5 @@ export function shipKeys(device: Device = BINDS.device, binds: Binds = BINDS.now
 export function hudKeys(device: Device = BINDS.device, binds: Binds = BINDS.now): HudKeys {
   const cap = (id: BindId) => boundCap(id, device, binds);
   const arts = [cap('anima'), cap('tenetOne'), cap('tenetTwo')] as const;
-  return { arts, loadouts: [cap('melee'), cap('ranged')], boost: cap('boost') };
+  return { arts, loadouts: [cap('melee'), cap('ranged')], boost: cap('jump') };
 }

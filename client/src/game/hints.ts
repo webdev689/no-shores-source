@@ -128,7 +128,7 @@ const STANCES = {
   mounted: [
     ['mount', 'Get down'],
     ['run', 'Gallop'],
-    ['boost', 'Boost'],
+    ['jump', 'Boost'],
   ],
 } as const satisfies Record<string, readonly StripHint[]>;
 type Stance = keyof typeof STANCES;
