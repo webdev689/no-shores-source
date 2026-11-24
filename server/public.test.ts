@@ -172,7 +172,8 @@ function playInPage(minute: number, heroic: boolean): readonly number[] {
 }
 
 test("a dev page's bots play its own room's events through, the heroic task taken or left alone", () => {
-  assert.deepEqual(playInPage(FISSURE_MINUTE, true), [1, 2, 2], 'the Fissure won, heroic');
+  // Sealed, its Warden, a Bulwark Miniboss blocking from the front, outlasts the bots' clock: they never flank it.
+  assert.deepEqual(playInPage(FISSURE_MINUTE, true), [1, 3, 2], 'the Fissure failed at its Warden, heroic');
   assert.deepEqual(playInPage(FISSURE_MINUTE, false), [1, 2, 3], 'the Fissure won, its heroic task missed');
   assert.deepEqual(playInPage(RAID_MINUTE, true), [2, 3, 2], 'the raid failed, its heroic task met');
   assert.deepEqual(playInPage(RAID_MINUTE, false), [2, 2, 3], 'the raid held, its heroic task missed');

@@ -82,5 +82,8 @@ Decisions waiting on the owner. None is in force until the owner decides it and 
   - An Elite Marksman's aimed shots fell a level-matched player in two; whether Majors' and higher's accuracy meets the
     owner's "insane accuracy" without that.
   - Conduit (Deepwatch) brings a Tenet back about every 27 s against 105.
+  - The heroic Fissure's Warden, a Bulwark Miniboss, blocks 49% of blows from the front now that the Bulwark blocks;
+    the dev page's two bots, who never flank, seal the Fissure but run out its clock on it (they won it before), while
+    the rules' scripted pair still wins in 261 s; whether the Warden should block so much.
   - Faction gear has no weekly limit, as Destiny 1's 100 Marks a week gave it; the rank, the Aurem and each piece's
     Essence gate it.
