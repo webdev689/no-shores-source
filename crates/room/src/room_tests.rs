@@ -2,8 +2,16 @@ use super::*;
 use combat::Intent;
 use movement::{Controls, TICK_SECONDS, step_body};
 
-const WALK: Controls =
-    Controls { forward: 1.0, sideways: 0.0, yaw: 0.3, run: false, jump: false, crouch: false, mounted: false };
+const WALK: Controls = Controls {
+    forward: 1.0,
+    sideways: 0.0,
+    yaw: 0.3,
+    run: false,
+    jump: false,
+    crouch: false,
+    mounted: false,
+    boost: false,
+};
 
 /// An input with these controls and no look.
 fn input(sequence: u32, controls: Controls) -> Input {

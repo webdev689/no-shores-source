@@ -42,7 +42,8 @@ The owner's answers to the questions that followed:
 - **A navigation panel** is open at sea. Its first option is the map.
 - **The map** takes the view down to the player's ship, in first person at the helm, and raises the first-person hands
   holding the map, from the owner's own art. It shows the whole world under fog of war: only the islands, ports and
-  nodes the player has discovered, and later what their quests track ([[World Map]]).
+  nodes the player has discovered, and later what their quests track ([[World Map]]) (replaced: no fog,
+  [[Other Ships Wear Their Players' Marks, the Sea Map Has No Fog, and New Players Ride a Bay That Bursts]]).
 - **A route** is one destination clicked on the map; the way round the land is planned for the player. Planning it
   takes the view back to the Overworld's, and the voyage can be stopped at any time and resumed with ease
   ([[Overworld]]).

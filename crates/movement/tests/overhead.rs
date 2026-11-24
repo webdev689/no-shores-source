@@ -3,8 +3,16 @@
 use movement::blocks::{room_at, under_ceiling};
 use movement::{Block, Body, Controls, Flat, Mode, TICK_SECONDS, TUNING, standing, step_body};
 
-const STILL: Controls =
-    Controls { forward: 0.0, sideways: 0.0, yaw: 0.0, run: false, jump: false, crouch: false, mounted: false };
+const STILL: Controls = Controls {
+    forward: 0.0,
+    sideways: 0.0,
+    yaw: 0.0,
+    run: false,
+    jump: false,
+    crouch: false,
+    mounted: false,
+    boost: false,
+};
 const NORTH: Controls = Controls { forward: 1.0, ..STILL };
 const SOUTH: Controls = Controls { forward: -1.0, ..STILL };
 const JUMP_NORTH: Controls = Controls { jump: true, ..NORTH };

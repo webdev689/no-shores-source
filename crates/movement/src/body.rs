@@ -38,6 +38,11 @@ pub struct Tuning {
     pub climb: f64,
     /// The steepest terrain walked up, in metres of rise a metre across: about 50°. The game's own, not DFO's.
     pub slope: f64,
+    /// A rider's boost: how much faster the horse goes, for how long, and how long it then takes to recharge
+    /// (seconds), the owner's numbers, the same as a ship's burst.
+    pub ride_boost: f64,
+    pub boost_seconds: f64,
+    pub recharge_seconds: f64,
 }
 
 pub const TUNING: Tuning = Tuning {
@@ -65,10 +70,13 @@ pub const TUNING: Tuning = Tuning {
     shimmy: 1.0,
     climb: 1.0,
     slope: 1.19,
+    ride_boost: 1.5,
+    boost_seconds: 4.0,
+    recharge_seconds: 12.0,
 };
 
 /// What the player asks of the body this tick: movement relative to where it looks (-1..1), the look's bearing in
-/// radians clockwise from north, and the keys that act once.
+/// radians clockwise from north, and the keys that act once: the jump, the crouch and the rider's boost.
 #[derive(Clone, Copy, Debug, Default, PartialEq)]
 pub struct Controls {
     pub forward: f64,
@@ -78,6 +86,7 @@ pub struct Controls {
     pub jump: bool,
     pub crouch: bool,
     pub mounted: bool,
+    pub boost: bool,
 }
 
 /// How the body is held: on its feet, in the air, hanging from a lip, on a wall, or mantling or vaulting over one.
@@ -121,6 +130,9 @@ pub struct Body {
     pub lip: f64,
     /// Whether it moved along the ground or the wall this tick.
     pub moving: bool,
+    /// The seconds its rider's boost still runs, then the seconds before it may boost again.
+    pub boosting: f64,
+    pub recharging: f64,
 }
 
 impl Body {
@@ -149,5 +161,7 @@ pub const fn standing(x: f64, y: f64) -> Body {
         over: None,
         lip: 0.0,
         moving: false,
+        boosting: 0.0,
+        recharging: 0.0,
     }
 }

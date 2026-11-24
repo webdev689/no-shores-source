@@ -61,7 +61,7 @@ interface Puff {
   readonly flat: boolean;
 }
 
-type PuffMaking = Partial<Omit<Puff, 'anchor' | 'born' | 'kind'>> & Pick<Puff, 'colour' | 'life' | 'size'>;
+export type PuffMaking = Partial<Omit<Puff, 'anchor' | 'born' | 'kind'>> & Pick<Puff, 'colour' | 'life' | 'size'>;
 
 /** The most puffs alive at once (DFO's PARTICLE_BUDGET). */
 export const PUFF_BUDGET = 900;
@@ -139,7 +139,8 @@ export class Effects {
     return (this.draw() * 2 - 1) * most;
   }
 
-  private add(kind: PuffKind, count: number, anchor: Point, now: number, make: (index: number) => PuffMaking): void {
+  /** Adds `count` puffs of `kind` from `anchor` at `now`, each as `make` says; past the budget the least go. */
+  add(kind: PuffKind, count: number, anchor: Point, now: number, make: (index: number) => PuffMaking): void {
     for (let index = 0; index < count; index++)
       this.puffs.push({
         from: [0, 0, 0],

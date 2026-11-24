@@ -126,6 +126,9 @@ export function showSeaHud(hud: Hud, here: Sea, shown: SeaFrame, state: SeaHudSt
   const { eye, yaw, pitch, fov } = shown.shot;
   // Aboard it the ships' plates and the sea's bar give the view to the fight on foot's display, as on land.
   hud.shipBars(deck ? [] : shown.bars, poseOf({ eye: [...eye], forward: forwardOf(yaw, -pitch) }, fov));
+  // Over other players' ships, the marks they wear on land, gone with the ships' plates aboard a struck ship, and at
+  // the helm, where the held map covers the view.
+  hud.seaPlayers(deck || atHelm ? [] : shown.players);
   // The held map raised at the helm covers the view, the compass with it.
   const ships = seaShipMarks(here.fight?.captains ?? null, here.sighted, here.fight?.vessel.ship ?? null);
   hud.compass(
@@ -142,11 +145,13 @@ export function showSeaHud(hud: Hud, here: Sea, shown: SeaFrame, state: SeaHudSt
   hud.note(state.charting ? 'Charting the coast ahead…' : shown.note);
 }
 
-/** Takes down what the sea alone shows, once the player is on land: the ships' plates and the sight, the fight's
+/** Takes down what the sea alone shows, once the player is on land: the ships' plates, the marks over other players'
+ *  ships and the sight, the fight's
  *  readout, the sea bar, Manage's panel and the wheel's offer. The tracker is the land's own to show. */
 export function hideSeaHud(hud: Hud): void {
   // With no plate to place, the pose is never read.
   hud.shipBars([], poseOf({ eye: [0, 0, 0], forward: forwardOf(0, 0) }, 1));
+  hud.seaPlayers([]);
   hud.seaFight(null);
   hud.seaBar(null);
   hud.shipPanel(null);

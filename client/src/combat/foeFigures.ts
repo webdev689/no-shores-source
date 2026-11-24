@@ -17,7 +17,9 @@ import {
   CHANGE_S,
   LATTICE_PLAIN,
   blinkShare,
+  blowPlayedOn,
   bulwarkChanged,
+  type HeldBlow,
   latticeBlinks,
   latticeDresses,
   latticeHidden,
@@ -88,6 +90,8 @@ export class FoeFigures {
   private readonly over = new Map<number, { feet: Point; staggered: boolean; exposed: boolean }>();
   /** Each Lattice foe drawn from its own pictures as last drawn, for what the game draws over them. */
   private readonly lattice = new Map<number, LatticeShown>();
+  /** Each Lattice foe's telegraphed blow, held in its tell or played on past it. */
+  private readonly blows = new Map<number, HeldBlow>();
   /** When each Bulwark began its change (page seconds). */
   private readonly changes = new Map<number, number>();
   /** When each Lattice foe died (page seconds): its wave burst then, and its figure fades from then. */
@@ -138,7 +142,7 @@ export class FoeFigures {
   forget(forge: Cards): void {
     for (const placed of this.figures.values()) forge.forget(placed.id);
     const keptBy = [this.figures, this.loops, this.overs, this.trails, this.dissolves, this.over, this.lattice];
-    for (const kept of [...keptBy, this.changes, this.dying, this.dressed]) kept.clear();
+    for (const kept of [...keptBy, this.changes, this.dying, this.blows, this.dressed]) kept.clear();
     this.glides.keep(new Set());
     this.seenIn = null;
   }
@@ -210,7 +214,11 @@ export class FoeFigures {
       const frames = (anim: string) => forge.frames(dress.body, anim);
       const shown = shownMove(doing, frames, draws, walking);
       const changed = this.changed(kept, own?.body ?? '', clock);
-      const move = (own && latticeMove(own.body, doing, shown, frames, changed.changed, changed.changing)) || shown;
+      const ruled = (own && latticeMove(own.body, doing, shown, frames, changed.changed, changed.changing)) || shown;
+      const played = own ? blowPlayedOn(this.blows.get(kept.id) ?? null, view.action, ruled, frames, clock) : null;
+      if (played?.held) this.blows.set(kept.id, played.held);
+      else this.blows.delete(kept.id);
+      const move = played?.shown ?? ruled;
       const moveFrames = forge.frames(dress.body, move.anim);
       const loop = this.loops.get(kept.id) ?? new Loop();
       this.loops.set(kept.id, loop);
@@ -277,6 +285,7 @@ export class FoeFigures {
           frames: moveFrames,
           feet: drawnAt,
           facing: placed.facing,
+          flip,
           target: targetOf(fight, kept.view.target),
         });
       else this.lattice.delete(kept.id);
@@ -301,7 +310,7 @@ export class FoeFigures {
     }
     for (const [id, placed] of this.figures) if (!fight.foes.has(id)) forge.forget(placed.id);
     const keptBy = [this.figures, this.loops, this.overs, this.trails, this.dissolves, this.over, this.lattice];
-    for (const kept of [...keptBy, this.changes, this.dying])
+    for (const kept of [...keptBy, this.changes, this.dying, this.blows])
       for (const id of kept.keys()) if (!fight.foes.has(id)) kept.delete(id);
     this.glides.keep(new Set(fight.foes.keys()));
     // Once the room has had its first word (its foes, or the player's own fighter), any foe after is one that came.

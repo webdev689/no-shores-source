@@ -247,7 +247,8 @@ export type FromRoomMessage =
       readonly tick: bigint;
       readonly players: readonly SeenPlayer[];
       readonly dressed: readonly PlayerDress[];
-      /** On land, the plates that changed since the snapshot the screen showed. */
+      /** On land, the plates that changed since the snapshot the screen showed; at sea, the plate of each other
+       *  player's ship sent, every snapshot. */
       readonly plates: readonly PlayerPlate[];
       readonly foes: readonly SeenFoe[];
       readonly events: readonly FightEvent[];

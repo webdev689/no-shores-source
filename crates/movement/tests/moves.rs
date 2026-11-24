@@ -4,8 +4,16 @@
 use movement::{Block, Body, Controls, Flat, Mode, TICK_SECONDS, TUNING, standing, step_body};
 use std::f64::consts::{FRAC_PI_2, FRAC_PI_4};
 
-const STILL: Controls =
-    Controls { forward: 0.0, sideways: 0.0, yaw: 0.0, run: false, jump: false, crouch: false, mounted: false };
+const STILL: Controls = Controls {
+    forward: 0.0,
+    sideways: 0.0,
+    yaw: 0.0,
+    run: false,
+    jump: false,
+    crouch: false,
+    mounted: false,
+    boost: false,
+};
 
 /// Controls held for every tick.
 fn holding(change: impl Fn(&mut Controls)) -> Controls {
@@ -192,6 +200,34 @@ fn mounted_the_body_rides_at_the_horses_paces_and_does_not_jump() {
     close(run(standing(0.0, 0.0), riding, 1.0, &[], Some(crouching)).y, -TUNING.ride_walk, 0.01);
     let tower = block(-5.0, -4.0, 5.0, -1.0, 4.0);
     assert_eq!(run(standing(0.0, 0.0), riding, 1.0, &[tower], None).mode, Mode::Ground);
+}
+
+#[test]
+fn a_rider_taps_the_boost_for_half_again_the_horses_pace_for_4_s_then_waits_12_s_to_boost_again() {
+    let riding = holding(|controls| {
+        controls.forward = 1.0;
+        controls.mounted = true;
+    });
+    let tap = Controls { boost: true, ..riding };
+    let boosted = run(standing(0.0, 0.0), riding, 4.0, &[], Some(tap));
+    close(boosted.y, -TUNING.ride_walk * TUNING.ride_boost * TUNING.boost_seconds, 0.01);
+    let after = run(boosted, riding, 1.0, &[], None);
+    close(after.y - boosted.y, -TUNING.ride_walk, 0.01);
+    // A tap while it recharges does nothing; 12 s after the boost ended it boosts again, galloping as well.
+    let early = run(after, riding, 1.0, &[], Some(tap));
+    close(early.y - after.y, -TUNING.ride_walk, 0.01);
+    let recharged = run(after, riding, TUNING.recharge_seconds - 1.0, &[], None);
+    let galloping = Controls { run: true, ..riding };
+    let again = run(recharged, galloping, 1.0, &[], Some(Controls { boost: true, ..galloping }));
+    close(again.y - recharged.y, -TUNING.ride_gallop * TUNING.ride_boost, 0.01);
+    // On foot a tap gives nothing and the run stays as it is.
+    let on_foot = holding(|controls| {
+        controls.forward = 1.0;
+        controls.run = true;
+    });
+    let ran = run(standing(0.0, 0.0), on_foot, 1.0, &[], Some(Controls { boost: true, ..on_foot }));
+    close(ran.y, -TUNING.run, 0.01);
+    assert_eq!((ran.boosting, ran.recharging), (0.0, 0.0));
 }
 
 #[test]

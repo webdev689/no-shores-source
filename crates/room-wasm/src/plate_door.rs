@@ -5,12 +5,13 @@ use crate::{Opened, hand_over, with_open};
 use room::PlayerId;
 
 /// Names a player by the username written in `bytes` (`Room::name_player`); false if it is not text, no username could
-/// be it, or the player is not in a room on land.
+/// be it, or the player is not in a room on land or at sea.
 pub fn name(player: PlayerId, bytes: &[u8]) -> bool {
     let Ok(name) = std::str::from_utf8(bytes) else { return false };
     with_open(|opened| match opened {
         Opened::Land { room, .. } => room.name_player(player, name),
-        Opened::Sea(_) | Opened::Fleet(_) => false,
+        Opened::Sea(sea) => sea.name_player(player, name),
+        Opened::Fleet(_) => false,
     })
     .unwrap_or(false)
 }
@@ -56,3 +57,7 @@ pub extern "C" fn room_water(player: PlayerId) -> u64 {
     });
     hand_over(name.flatten().unwrap_or_default().as_bytes().to_vec())
 }
+
+#[cfg(test)]
+#[path = "plate_door_tests.rs"]
+mod plate_door_tests;

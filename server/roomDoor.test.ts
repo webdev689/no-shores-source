@@ -31,7 +31,7 @@ const built = (name: string) =>
   });
 const compiled = new WebAssembly.Module(await built('room_wasm'));
 /** Forward at a walk, looking north, no fight's buttons. */
-const walk = new Float64Array([1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, Number.NaN, Number.NaN, Number.NaN, 0]);
+const walk = new Float64Array([1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, Number.NaN, Number.NaN, Number.NaN, 0]);
 const walking = { anim: 'walk', frame: 2, facing: 0 };
 /** An input as a browser writes it, holding nothing and seeing the start of the room. */
 const asking = (sequence: number, intent: Float64Array, look: Look, dress?: string, respawn = false) =>
@@ -661,6 +661,7 @@ test('a wounded player’s drink through the room heals them, and the page reads
   /** One tick of the player at rest, a drink asked if `heal`: what the page reads of them, and the fight's events. */
   const step = (heal = false) => {
     const intent = new Float64Array([
+      0,
       0,
       0,
       0,

@@ -157,8 +157,16 @@ impl Floor<'_> {
                 return Ok(body.z);
             }
             let yaw = libm::atan2(left[0], -left[1]);
-            let controls =
-                Controls { forward: 1.0, sideways: 0.0, yaw, run: false, jump: false, crouch: false, mounted: false };
+            let controls = Controls {
+                forward: 1.0,
+                sideways: 0.0,
+                yaw,
+                run: false,
+                jump: false,
+                crouch: false,
+                mounted: false,
+                boost: false,
+            };
             let next = step_body(&body, &controls, &self.blocks, self.terrain, TICK_SECONDS);
             let place = [next.x, next.y];
             if next.mode != Mode::Ground {

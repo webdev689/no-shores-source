@@ -19,6 +19,7 @@ code:
   - tools/modules/dress.py#DRESSING
   - crates/layout/src/pieces_land.rs#stone_bridge
   - client/src/city/modules.ts#loadModules
+  - client/src/contentCache.ts#fetchRetried
   - tools/modules/latticekit.py#taken
   - tools/modules/fissure.py#fissure
   - tools/modules/tithe.py#stores_a
@@ -235,7 +236,11 @@ publishes the first bake's meshes with the repository's `CLOUDFLARE_TOKEN`.
   its foot, 2 to 4% of that distance nearer (`chasm_depth`), so the land round the mouth gives way and anything nearer
   keeps its place; a point whose crossing falls outside the mouth is not drawn.
 - **The browser** fetches every module's meshes from R2 once, with the forged models' tables, before it builds a city
-  (`loadModules`), and draws each triangle in its material's picture, laid from the axis it faces most, as natural
+  (`loadModules`), eight at a time in the manifest's order, since R2's public address limits how fast it is asked.
+  A fetch that fails for a while (a network error, a 429, a 5xx) is asked again after 0.5, 1.5 and 4 s, or the
+  server's Retry-After up to 10 s (`fetchRetried`); a group still unread is not drawn, nor is any module it belongs
+  to, and is asked for again 20 s after the asking it failed in, once a public event's prop needs it. It draws each
+  triangle in its material's picture, laid from the axis it faces most, as natural
   rock is.
 
 The Gullwing Vale stands the Old Stones, the citadel at Valeguard and the chamber in the Hollow Coven's cavern, each

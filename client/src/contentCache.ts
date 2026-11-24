@@ -79,7 +79,10 @@ export async function contentBytes(url: string, range?: readonly [first: number,
 async function whole(url: string, range: readonly [number, number] | undefined): Promise<Fetched> {
   let short = '';
   for (const cache of ['default', 'reload'] as const) {
-    const answer = await fetch(url, range ? { headers: { range: `bytes=${range[0]}-${range[1]}` }, cache } : { cache });
+    const answer = await fetchRetried(
+      url,
+      range ? { headers: { range: `bytes=${range[0]}-${range[1]}` }, cache } : { cache },
+    );
     if (!answer.ok) throw new Error(`${url} answered ${answer.status}`);
     const bytes = await answer.arrayBuffer();
     const total = answer.status === 206 ? totalOfRange(answer.headers.get('content-range')) : bytes.byteLength;
@@ -89,4 +92,34 @@ async function whole(url: string, range: readonly [number, number] | undefined):
     short = `${url} sent ${bytes.byteLength} of ${wanted} bytes`;
   }
   throw new Error(short);
+}
+
+/** The waits before each try again after a failure that passes (seconds): a network error, too many asked (429) or
+ *  the server's own (5xx). R2's public address limits how fast it is asked, and serves a burst it cut off a moment
+ *  later. Any other failure (a 404) is final. */
+const RETRY_WAITS_S = [0.5, 1.5, 4] as const;
+/** The longest a server's own Retry-After is waited (seconds). */
+const RETRY_AFTER_MOST_S = 10;
+const pause = (seconds: number) => new Promise<void>((done) => setTimeout(done, seconds * 1000));
+
+/** `fetch(url, init)`, asked again after each of RETRY_WAITS_S (or the server's Retry-After, at most
+ *  RETRY_AFTER_MOST_S) while it fails in a way that passes, `wait` waiting each: its last answer, or its last network
+ *  error thrown. */
+export async function fetchRetried(url: string, init: RequestInit, wait = pause): Promise<Response> {
+  for (let tried = 0; ; tried++) {
+    const next = RETRY_WAITS_S[tried];
+    let answer: Response;
+    try {
+      answer = await fetch(url, init);
+    } catch (error) {
+      if (next === undefined) throw error;
+      await wait(next);
+      continue;
+    }
+    if (next === undefined || (answer.status !== 429 && answer.status < 500)) return answer;
+    const after = answer.headers.get('retry-after');
+    void answer.body?.cancel();
+    const asked = after === null ? Number.NaN : Number(after);
+    await wait(Number.isFinite(asked) && asked >= 0 ? Math.min(asked, RETRY_AFTER_MOST_S) : next);
+  }
 }

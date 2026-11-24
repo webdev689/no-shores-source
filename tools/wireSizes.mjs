@@ -50,7 +50,7 @@ for (const name of (await readdir(folder)).filter((file) => file.endsWith('.json
   for (let tick = 1; tick <= TICKS; tick++) {
     const swing = tick % 30 === 0 ? 1 : 0;
     // The controls, then the stroke, guard, dodge, shoot, pitch, aim, no mark and no drink (`fighters.ts`).
-    const intent = new Float64Array([1, 0, tick * 0.01, 1, 0, 0, 0, swing, 0, 0, 0, 0, 0, NaN, NaN, NaN, 0]);
+    const intent = new Float64Array([1, 0, tick * 0.01, 1, 0, 0, 0, 0, swing, 0, 0, 0, 0, 0, NaN, NaN, NaN, 0]);
     if (intent.length !== INTENT_FLOATS) throw new Error(`an intent is ${INTENT_FLOATS} numbers`);
     const look = { anim: '', frame: 0, facing: tick * 0.01 };
     const answer = door.input(player, inputBytes(tick, { intent, look, arms: 0, seen: BigInt(tick - 1) }));

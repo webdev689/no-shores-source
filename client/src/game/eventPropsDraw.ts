@@ -418,14 +418,19 @@ export class EventPropsDraw implements Drawer {
     EVENT_LAMPS.current = props.length > 0 ? propLamps(props) : NO_LAMPS;
   }
 
-  /** A module made ready to draw, the first time it is drawn after its meshes have come; none before. */
+  /** A module made ready to draw, the first time it is drawn after its meshes have come; none before, its meshes
+   *  asked for again while one is missing. */
   private madeOf(name: EventProp['module']): Made | null {
     const known = this.made.get(name);
     if (known) return known;
     if (!this.ready) return null;
     const number = moduleNumber(name);
     const packed = number >= 0 ? packModule(number) : null;
-    if (!packed) return null;
+    if (!packed) {
+      // A group of its that failed to come is asked for again, a while after it failed.
+      if (number >= 0) void loadModules();
+      return null;
+    }
     const { device } = this.gpu;
     const buffer = (data: ArrayBuffer | Uint32Array, usage: number) => {
       const made = device.createBuffer({

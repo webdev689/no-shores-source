@@ -546,6 +546,8 @@ pub(crate) mod fight_measure_tests;
 mod guilds;
 #[path = "sea_islands.rs"]
 pub mod islands;
+#[path = "sea_plates.rs"]
+mod plates;
 #[path = "sea_ports.rs"]
 mod ports;
 #[path = "sea_puts_in.rs"]

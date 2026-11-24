@@ -2,7 +2,6 @@ import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { ruinedPlaces } from './heldMapWaters.ts';
 import {
-  chartedWaters,
   difficultyColour,
   HOLDER_COLOURS,
   HATCHES,
@@ -53,7 +52,7 @@ test('each holder washes its water in its own colour; the Lattice and the Tithe 
     [2, 'lattice'],
   ] as const) {
     const grid = gridOf(block(cell));
-    const wash = washOf(grid, new Uint8Array(9).fill(1));
+    const wash = washOf(grid);
     assert.deepEqual([...wash.colour.subarray(16, 20)], rgba(HOLDER_COLOURS[holder], 255), holder);
     assert.deepEqual(
       [wash.hatch[8], wash.hatch[9]],
@@ -63,14 +62,13 @@ test('each holder washes its water in its own colour; the Lattice and the Tithe 
   }
 });
 
-test('the wash lies only on charted sea, and blends across a border rather than stepping', () => {
+test('the wash lies on the sea, and blends across a border rather than stepping', () => {
   const grid = gridOf([
     [0, 0, 2, 2],
     [0, 0, 2, 2],
     [LAND, LAND, LAND, LAND],
   ]);
-  const charted = Uint8Array.from([1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1]);
-  const wash = washOf(grid, charted);
+  const wash = washOf(grid);
   const alpha = (index: number) => wash.colour[index * 4 + 3];
   // The colour is kept multiplied by its alpha: divided back out, as the map's shader does.
   const red = (index: number) => ((wash.colour[index * 4] ?? 0) * 255) / (alpha(index) ?? 1);
@@ -79,18 +77,9 @@ test('the wash lies only on charted sea, and blends across a border rather than 
   const [home, lattice] = [rgba(HOLDER_COLOURS.home, 0)[0] ?? 0, rgba(HOLDER_COLOURS.lattice, 0)[0] ?? 0];
   assert.ok(red(1) > home && red(1) < lattice, 'the cell beside the border is blended');
   assert.ok(red(2) > home && red(2) < lattice, 'from both sides');
-  const uncharted = washOf(grid, Uint8Array.from([0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0]));
-  assert.equal(uncharted.colour[0 * 4 + 3], 0, 'sea away from the charted has no wash');
-  assert.ok((uncharted.colour[3 * 4 + 3] ?? 0) > 0, 'the charted cell and those by it do');
-  const none = washOf(grid, new Uint8Array(12));
-  assert.ok(
-    none.colour.every((byte) => byte === 0),
-    'nothing charted, no wash',
-  );
-  assert.throws(() => washOf(grid, new Uint8Array(3)), /not on the waters’ grid/);
 });
 
-test('a water is lettered from its sea cell farthest from land, other waters and the edge, once charted', () => {
+test('a water is lettered from its sea cell farthest from land, other waters and the edge', () => {
   const grid = gridOf([
     [0, 0, 0, 0, 0, 2, 2],
     [0, 0, 0, 0, 0, 2, 2],
@@ -102,9 +91,6 @@ test('a water is lettered from its sea cell farthest from land, other waters and
   assert.deepEqual(points.get(0), [2_500, 2_500], 'the middle of the open water');
   const [x, y] = points.get(2) ?? [0, 0];
   assert.equal(grid.water[Math.floor(y / 1_000) * grid.columns + Math.floor(x / 1_000)], 2, 'inside its own water');
-  const charted = new Uint8Array(grid.water.length);
-  charted[5] = 1;
-  assert.deepEqual([...chartedWaters(grid, charted)], [2]);
   assert.equal(
     waterWords({ continent: 7, id: 'continent-8', name: 'The Fen Deeps', holder: 'grey-tithe', levels: [22, 26] }),
     'The Fen Deeps, 22-26',
