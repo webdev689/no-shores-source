@@ -75,6 +75,14 @@ impl Lodestone {
             _ => None,
         }
     }
+
+    /// Hold True ends, however it ends (its guard let go, its most held, the stone set down or its bearer fallen),
+    /// and rests HOLD_REST from then: the rest is the stone's, so no set-down or pass skips it.
+    fn end_hold(&mut self, clock: u64) {
+        if self.held_from.take().is_some() {
+            self.rests_until = clock + HOLD_REST;
+        }
+    }
 }
 
 impl Room {
@@ -112,7 +120,7 @@ impl Room {
             return false;
         };
         breach.lodestone.stone = Stone::Lying([body.x, body.y, body.z], clock);
-        breach.lodestone.held_from = None;
+        breach.lodestone.end_hold(clock);
         self.tell(EventKind::LodestoneDropped, None, id, id, 0.0);
         true
     }
@@ -161,7 +169,7 @@ impl Room {
                     [body.x, body.y, body.z]
                 });
                 breach.lodestone.stone = Stone::Lying(at, clock);
-                breach.lodestone.held_from = None;
+                breach.lodestone.end_hold(clock);
                 self.tell(EventKind::LodestoneDropped, None, bearer, bearer, 0.0);
                 return;
             };
@@ -169,10 +177,7 @@ impl Room {
             let body = found.fighter.body;
             breach.lodestone.carried_at = [body.x, body.y, body.z];
             match breach.lodestone.held_from {
-                Some(from) if !guarding || clock >= from + HOLD_MOST => {
-                    breach.lodestone.held_from = None;
-                    breach.lodestone.rests_until = clock + HOLD_REST;
-                }
+                Some(from) if !guarding || clock >= from + HOLD_MOST => breach.lodestone.end_hold(clock),
                 None if guarding && clock >= breach.lodestone.rests_until => {
                     breach.lodestone.held_from = Some(clock);
                     self.tell(EventKind::HeldTrue, None, bearer, bearer, 0.0);

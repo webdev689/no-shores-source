@@ -549,6 +549,9 @@ mod gate_tests;
 #[path = "keeping_tests.rs"]
 mod keeping_tests;
 #[cfg(test)]
+#[path = "lodestone_tests.rs"]
+mod lodestone_tests;
+#[cfg(test)]
 #[path = "rewards_tests.rs"]
 mod rewards_tests;
 #[cfg(test)]
