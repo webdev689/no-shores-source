@@ -3,8 +3,8 @@
 //! walked, so only what stands round it is ever asked for.
 
 use crate::Plan;
+use crate::hug::KEEP_M;
 use crate::solids::{Material, Shape, Solid};
-use land::exact::sin_cos;
 
 /// A box a body runs into: west, north, east and south edges, its top and its underside, metres.
 pub type Box2 = [f64; 6];
@@ -12,52 +12,46 @@ pub type Box2 = [f64; 6];
 /// Solids lower than this over their foot are stepped over and left out, metres.
 const LEAST_HEIGHT_M: f64 = 0.3;
 /// An arch's opening as a share of its width, as the page draws it (`solidMesh.ts`, `OPENING_WIDTH`).
-const ARCH_OPENING_WIDTH: f64 = 0.8;
+pub(crate) const ARCH_OPENING_WIDTH: f64 = 0.8;
 
-/// A solid as a box, its underside where it really is: a roof, a lintel or a hung lamp over the floor is walked under.
-/// Natural rock and a module are their parts' boxes (a module's surfaces after its first carry none), so a body walks
-/// under a cave roof, through a rock arch and into a stall; an arch is its jambs and the head over its crown, so a
-/// body walks through it.
+/// A solid as boxes that keep within a quarter metre of it (`hug`), each underside where it really is: a roof, a
+/// lintel or a hung lamp over the floor is walked under. Natural rock and a module are their parts' boxes (a module's
+/// surfaces after its first carry none), so a body walks under a cave roof, through a rock arch and into a stall; an
+/// arch is its jambs and the head over its crown, so a body walks through it.
+#[must_use]
+pub fn boxes(solid: &Solid) -> Vec<Box2> {
+    let (shaped, keep) = crate::hug::keeps_of(solid.shape);
+    // A solid that leans or rolls so little no point of it moves more than `STILL_M` is boxed as if it stood upright.
+    // A round standing so whose width and depth differ by twice `KEEP_M` at most is boxed as a circle of their mean,
+    // square to the world, as a circle is the same however it is turned: its boxes are its parts, so its parts may
+    // stand all of `KEEP_M` off it, less how far the circle stands off it.
+    let still = crate::hug::tilt_move(solid) <= crate::hug::STILL_M;
+    let [width, depth, height] = solid.size;
+    let round =
+        matches!(solid.shape, Shape::Column { .. } | Shape::Dome { .. }) && (width - depth).abs() <= 2.0 * KEEP_M;
+    let (solid, shaped) = if still && round {
+        let mean = (width + depth) / 2.0;
+        let circle = Solid { size: [mean, mean, height], turn: 0.0, lean: 0.0, roll: 0.0, ..*solid };
+        (circle, KEEP_M - (width - depth).abs() / 4.0)
+    } else if still {
+        (Solid { lean: 0.0, roll: 0.0, ..*solid }, shaped)
+    } else {
+        (*solid, shaped)
+    };
+    crate::hug::shape_parts(solid.shape, solid.size, shaped)
+        .into_iter()
+        .flat_map(|part| crate::hug::part_boxes(&solid, part, keep))
+        .collect()
+}
+
+/// A city's solid as its boxes, but for the ground's own surfaces and what is stepped over.
 pub(crate) fn into_boxes(solid: &Solid) -> Vec<Box2> {
     if matches!(solid.material, Material::Paving | Material::Path | Material::Lawn | Material::Earth)
         || solid.size[2] < LEAST_HEIGHT_M
     {
         return Vec::new();
     }
-    if crate::rock::is_rock(solid.shape) {
-        return crate::rock::boxes(solid);
-    }
-    let own = |part: [f64; 6]| {
-        let [west, north, east, south, bottom, top] = solid.bounds_of(part);
-        [west, north, east, south, top, bottom]
-    };
-    let [width, depth, height] = solid.size;
-    let (half_width, half_depth) = (width / 2.0, depth / 2.0);
-    if let Shape::Arch { opening } = solid.shape {
-        let radius = half_width * ARCH_OPENING_WIDTH;
-        let crown = opening.clamp(0.05, 0.95) * height;
-        return vec![
-            own([-half_width, -half_depth, 0.0, -radius, half_depth, height]),
-            own([radius, -half_depth, 0.0, half_width, half_depth, height]),
-            own([-radius, -half_depth, crown, radius, half_depth, height]),
-        ];
-    }
-    // A round column as three boxes inside its round, crossed, so none reaches past it into its corners.
-    if matches!(solid.shape, Shape::Column { .. }) && solid.lean == 0.0 && solid.roll == 0.0 {
-        let [x, y, z] = solid.at;
-        return [22.5_f64, 45.0, 67.5]
-            .map(|degrees| {
-                let (sine, cosine) = sin_cos(degrees.to_radians());
-                let [across, along] = [half_width * cosine, half_depth * sine];
-                [x - across, y - along, x + across, y + along, z + height, z]
-            })
-            .to_vec();
-    }
-    // A block turned off the world's axes (a length of quay, a pier) in slices, so its boxes keep to it.
-    if solid.shape == Shape::Block && solid.lean == 0.0 && solid.roll == 0.0 {
-        return crate::rock::sliced(solid, vec![[-half_width, -half_depth, 0.0, half_width, half_depth, height]]);
-    }
-    vec![own([-half_width, -half_depth, 0.0, half_width, half_depth, height])]
+    boxes(solid)
 }
 
 /// The plan's solids reaching into `bounds` (west, north, east, south), as boxes.
@@ -93,7 +87,11 @@ mod tests {
     fn a_roof_over_the_floor_comes_back_with_its_underside() {
         let roof = Solid::upright(Shape::Gable, [0.0, 0.0, 16.0], [10.0, 80.0, 3.0], Material::Roof);
         let column = Solid::upright(Shape::Block, [0.0, 0.0, 10.0], [1.0, 1.0, 6.0], Material::Stone);
-        assert_eq!(into_boxes(&roof), vec![[-5.0, -40.0, 5.0, 40.0, 19.0, 16.0]]);
+        let layers = into_boxes(&roof);
+        // Layered as its slopes narrow, the lowest as wide as the roof's foot, none under it.
+        assert_eq!(layers[0][..4], [-5.0, -40.0, 5.0, 40.0]);
+        assert_eq!(layers[0][5], 16.0);
+        assert!(layers.iter().all(|&[.., top, bottom]| bottom >= 16.0 && top <= 19.0) && layers.len() > 1);
         assert_eq!(into_boxes(&column), vec![[-0.5, -0.5, 0.5, 0.5, 16.0, 10.0]]);
     }
 
@@ -120,11 +118,11 @@ mod tests {
     }
 
     #[test]
-    fn a_turned_length_of_quay_is_boxed_in_slices_that_keep_to_it() {
+    fn a_turned_length_of_quay_is_boxed_in_strips_that_keep_to_it() {
         let quay = Solid::upright(Shape::Block, [0.0, 0.0, -4.0], [8.0, 90.0, 7.0], Material::Stone).turned(-1.16);
         let boxes = into_boxes(&quay);
         assert!(boxes.len() > 10, "{}", boxes.len());
-        // Every box's middle lies within the quay's half width (and a slice's lean) of its middle line.
+        // Every box's middle lies within the quay's half width (and a strip's slant) of its middle line.
         let way = {
             let [east, south, _] = quay.place([0.0, 1.0, 0.0]);
             [east, south]

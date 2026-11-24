@@ -159,22 +159,81 @@ fn floor_of(beat: &layout::runs::Beat) -> Vec<[f64; 2]> {
     points
 }
 
+/// A piece a body meets as a whole: its boxes, and its own footprint's width and depth, metres.
+struct Piece {
+    boxes: Vec<[f64; 6]>,
+    wide: f64,
+    deep: f64,
+}
+
+impl Piece {
+    fn top(&self) -> f64 {
+        self.boxes.iter().map(|b| b[4]).fold(f64::NEG_INFINITY, f64::max)
+    }
+
+    fn bottom(&self) -> f64 {
+        self.boxes.iter().map(|b| b[5]).fold(f64::INFINITY, f64::min)
+    }
+
+    fn middle(&self) -> [f64; 2] {
+        let start = [f64::INFINITY, f64::INFINITY, f64::NEG_INFINITY, f64::NEG_INFINITY];
+        let [west, north, east, south] =
+            self.boxes.iter().fold(start, |[w, n, e, s], b| [w.min(b[0]), n.min(b[1]), e.max(b[2]), s.max(b[3])]);
+        [(west + east) / 2.0, (north + south) / 2.0]
+    }
+
+    fn off(&self, at: [f64; 2]) -> f64 {
+        self.boxes.iter().map(|b| off_box(at, b)).fold(f64::INFINITY, f64::min)
+    }
+}
+
+/// What a body meets on a layout, piece by piece: each solid and each prop by its own boxes together, as a body meets
+/// the shape drawn (a turned one in strips, a round in layers), and every box alone besides. Made once a layout.
+fn pieces(laid: &layout::Layout) -> std::sync::Arc<Vec<Piece>> {
+    type Made = std::collections::BTreeMap<String, std::sync::Arc<Vec<Piece>>>;
+    static MADE: std::sync::Mutex<Made> = std::sync::Mutex::new(std::collections::BTreeMap::new());
+    static BOOK: std::sync::OnceLock<layout::book::Book> = std::sync::OnceLock::new();
+    let book = BOOK.get_or_init(|| {
+        bake::builders(&Path::new(env!("CARGO_MANIFEST_DIR")).join("../..")).expect("the builders read").book
+    });
+    let mut made = MADE.lock().unwrap_or_else(std::sync::PoisonError::into_inner);
+    let found = made.entry(laid.id.clone()).or_insert_with(|| {
+        let met = |solid: &&city::solids::Solid| {
+            use city::solids::Material::{Earth, Lawn, Path, Paving};
+            !matches!(solid.material, Paving | Path | Lawn | Earth) && solid.size[2] >= 0.45
+        };
+        let solids = laid.seating.solids.iter().filter(met).map(|solid| Piece {
+            boxes: city::collision::boxes(solid),
+            wide: solid.size[0],
+            deep: solid.size[1],
+        });
+        let props = laid.seating.props.iter().filter_map(|prop| {
+            let measure = book.measure(prop.model, false)?;
+            let boxes = layout::collide::prop_boxes(prop, measure, book.parts.get(&prop.model));
+            Some(Piece { boxes, wide: measure.max[0] - measure.min[0], deep: measure.max[2] - measure.min[2] })
+        });
+        let single = laid.boxes.iter().map(|b| Piece { boxes: vec![*b], wide: b[2] - b[0], deep: b[3] - b[1] });
+        std::sync::Arc::new(solids.chain(props).chain(single).filter(|piece| !piece.boxes.is_empty()).collect())
+    });
+    std::sync::Arc::clone(found)
+}
+
 #[test]
 fn cover_stands_within_ten_metres_on_every_beat() {
     each_run(&|laid, run, floor| {
+        let pieces = pieces(laid);
         for beat in &run.beats {
-            // Cover is a box standing on its own ground and at least 0.9 m over it, near enough the beat to count.
-            let cover: Vec<&[f64; 6]> = laid
-                .boxes
+            // Cover is a piece standing on its own ground and at least 0.9 m over it, near enough the beat to count.
+            let cover: Vec<&Piece> = pieces
                 .iter()
-                .filter(|b| off_box(beat.at, b) <= beat.radius + 10.0)
-                .filter(|b| {
-                    let under = floor([(b[0] + b[2]) / 2.0, (b[1] + b[3]) / 2.0]);
-                    b[5] <= under + 0.6 && b[4] >= under + 0.9
+                .filter(|piece| piece.off(beat.at) <= beat.radius + 10.0)
+                .filter(|piece| {
+                    let under = floor(piece.middle());
+                    piece.bottom() <= under + 0.6 && piece.top() >= under + 0.9
                 })
                 .collect();
             for at in floor_of(beat) {
-                let nearest = cover.iter().map(|b| off_box(at, b)).fold(f64::INFINITY, f64::min);
+                let nearest = cover.iter().map(|piece| piece.off(at)).fold(f64::INFINITY, f64::min);
                 assert!(nearest <= 10.0, "{}: {} has no cover within 10 m of {at:?} ({nearest})", laid.id, run.name);
             }
         }
@@ -214,19 +273,21 @@ fn a_ledges_and_a_ramparts_cover_is_broken_masonry_of_more_than_one_form() {
 #[test]
 fn every_beat_has_a_raised_place() {
     each_run(&|laid, run, floor| {
+        let pieces = pieces(laid);
         for beat in &run.beats {
             let ground = floor(beat.at);
-            let within = |b: &&[f64; 6]| off_box(beat.at, b) <= beat.radius;
-            let platforms: Vec<&[f64; 6]> = laid
-                .boxes
+            // A platform is a piece 2 m by 2 m or more whose top stands 1.2 m to 4 m over the beat's ground.
+            let platforms: Vec<&Piece> = pieces
                 .iter()
-                .filter(within)
-                .filter(|b| (ground + 1.2..=ground + 4.0).contains(&b[4]) && b[2] - b[0] >= 2.0 && b[3] - b[1] >= 2.0)
+                .filter(|piece| piece.off(beat.at) <= beat.radius)
+                .filter(|piece| {
+                    (ground + 1.2..=ground + 4.0).contains(&piece.top()) && piece.wide >= 2.0 && piece.deep >= 2.0
+                })
                 .collect();
             let stepped = platforms.iter().any(|platform| {
                 let steps = laid.boxes.iter().filter(|b| {
                     let middle = [(b[0] + b[2]) / 2.0, (b[1] + b[3]) / 2.0];
-                    off_box(middle, platform) <= 4.0 && b[4] > ground + 0.2 && b[4] < platform[4] - 0.2
+                    platform.off(middle) <= 4.0 && b[4] > ground + 0.2 && b[4] < platform.top() - 0.2
                 });
                 steps.count() >= 2
             });

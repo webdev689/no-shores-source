@@ -180,49 +180,13 @@ pub const fn is_rock(shape: Shape) -> bool {
     )
 }
 
-/// How long a slice of a turned part runs at most, metres: a part turned off the world's axes is boxed in slices along
-/// its longer side, so each slice's box, square to the world round its turned corners, keeps close to the rock. A
-/// slice runs no longer than the part is thick either (0.5 m at the least), so a thin wall's slices, a parapet's, keep
-/// as close to it as a lump's do.
-const SLICE_M: f64 = 2.0;
-const THINNEST_SLICE_M: f64 = 0.5;
-
-/// What a body runs into of a rock: each part's box, square to the world round its turned corners (west, north,
-/// east, south, top, bottom, as the city's boxes); a part turned off the world's axes in slices along its longer side.
+/// What a body runs into of a rock: each part as boxes square to the world that keep within a quarter metre of it
+/// (west, north, east, south, top, bottom, as the city's boxes).
 #[must_use]
 pub fn boxes(solid: &Solid) -> Vec<Box2> {
-    sliced(solid, parts(solid.shape, solid.size))
-}
-
-/// Boxes of a solid's parts (boxes of its own frame: low x, y, z, then high), each square to the world round its turned
-/// corners; a part turned off the world's axes in slices along its longer side.
-#[must_use]
-pub fn sliced(solid: &Solid, parts: Vec<[f64; 6]>) -> Vec<Box2> {
-    let square = (solid.turn / std::f64::consts::FRAC_PI_2 - (solid.turn / std::f64::consts::FRAC_PI_2).round()).abs()
-        < 1e-9
-        && solid.lean == 0.0
-        && solid.roll == 0.0;
-    parts
+    parts(solid.shape, solid.size)
         .into_iter()
-        .flat_map(|[west, north, bottom, east, south, top]| {
-            let (long, along_x) =
-                if east - west >= south - north { (east - west, true) } else { (south - north, false) };
-            let short = (east - west).min(south - north);
-            let slice = SLICE_M.min(short.max(THINNEST_SLICE_M));
-            let count = if square { 1 } else { (long / slice).ceil().max(1.0) as usize };
-            (0..count).map(move |slice| {
-                let (from, to) = (slice as f64 / count as f64, (slice + 1) as f64 / count as f64);
-                if along_x {
-                    [west + (east - west) * from, north, bottom, west + (east - west) * to, south, top]
-                } else {
-                    [west, north + (south - north) * from, bottom, east, north + (south - north) * to, top]
-                }
-            })
-        })
-        .map(|part| {
-            let [west, north, east, south, bottom, top] = solid.bounds_of(part);
-            [west, north, east, south, top, bottom]
-        })
+        .flat_map(|part| crate::hug::part_boxes(solid, part, crate::hug::KEEP_M))
         .collect()
 }
 

@@ -355,9 +355,17 @@ What a body meets ([[Movement]]): each room's linings, lintels, planks, slabs an
 too low to enter whole, each building not walked into whole, each plinth, set piece, great work, rock and wall by the
 ways, and each prop too tall to step over. What lies wholly past the section (at the cliffs' feet, on their tops) is
 never reached and is no box: a piece is kept by its middle in the section or a cell of it, or, for one wider than 8 m,
-by any corner. An arch is its two jambs and its head over the crown of its opening, so a body walks under it. A box's
-underside is its own, so a body walks under a viaduct's deck and a lintel. A leaning or rolled solid's box is the box
-of its turned corners. Boxes are written to the centimetre, grown out so none shrinks. No box of a solid, prop or
+by any corner. What a body meets keeps to what is drawn ([[What a Body Meets Keeps to What Is Drawn]]): no box stands
+more than 0.45 m off what it boxes (`city::hug`). A prop is the parts its drawn shape fills ([[Forged Models]],
+"Parts"), a gate's arch with its parts taken down to its foot so the opening under its bar stays shut. A solid is cut
+into parts of its own frame: an arch its two jambs and its head over the crown of its opening, so a body walks under
+it; a column, a dome, a pyramid and a gable in layers that narrow as it does, a wide round in crossed boxes inside it.
+A part turned off the world's axes is boxed in strips across the world, each the box of the part within it, as wide as
+keeps it within 0.45 m; one leaning or rolled is halved until each half's box keeps as close, but a solid tilted so
+little none of it moves 0.45 m is boxed as if upright, and a piece of 2 m or less is not halved for its tilt alone. A
+box's underside is its own, so a body walks under a viaduct's deck and a lintel. On continent 1's zones that is some
+70,000 boxes where a box round each piece's turned corners made 22,500. Boxes are written to the centimetre, grown
+out so none shrinks. No box of a solid, prop or
 building stands across a way's walked width under head height on continent 1 (`crates/room/tests/layouts_laid.rs`). A
 body walks in at every ground-floor door of the Saltgrass Downs' buildings, and up to every upper floor, as the bake
 lays them (`crates/room/tests/rooms_walked.rs`).
