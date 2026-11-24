@@ -21,9 +21,10 @@ import { type Ground, type Placed, decorPlaceOf, placeOf, plotBoxes, socketOf } 
 
 /**
  * An outpost as the page stands it in its room: the plot read from the accounts on arriving, whenever the player
- * changes it, and whenever the room says it stood the plot anew; each structure and piece of decoration drawn as a prop where the plot's
- * reckoning stands it, the same boxes walled in the page's own movement and fight as the room walls, and what E does
- * at each. A wild site, or one whose outpost is not raised, is bare ground with the standard's staff at its middle.
+ * changes it, and whenever the room says it stood the plot anew; each structure and piece of decoration drawn as a
+ * prop where the plot's reckoning stands it, the same boxes walled in the page's own movement and fight as the room
+ * walls, and what E does at each. A wild site, or one whose outpost is not raised, is bare ground with the standard's
+ * staff at its middle, flying an unmarked grey cloth.
  */
 
 /** How near a structure's socket, or a piece of decoration, E reaches, metres. */
@@ -35,9 +36,13 @@ const AHEAD_M = 1;
 const GHOST_GREEN = [0.25, 0.85, 0.35] as const;
 const GHOST_RED = [0.9, 0.2, 0.15] as const;
 const RAISE_WORDS = "Raise your guild's outpost here from the Guild tab.";
-/** What a site the player's guild has not raised shows at the plot's middle: the Banner Standard's oak staff alone,
- *  no cloth on it, so the ground reads as a place to claim. */
+/** What a site with no outpost raised shows at the plot's middle: the Banner Standard's oak staff flying an unmarked
+ *  grey cloth, as the Grey Tithe's banner is, so the ground reads as a place to claim. */
 const BARE_STAFF = 'outpost-standard-oak';
+const BARE_CLOTH: Banner = {
+  ...{ cut: 'square', cloth: 'ash', device: 'plain', deviceColour: 'ash', sign: '', signColour: 'ash' },
+  ...{ ground: 'none', groundColour: 'ash', staff: 'oak' },
+};
 
 /** The socket a structure is used at: a gate's door, the stores of a camp or a dockyard, any other's use. */
 function socketNameOf(kind: string): string {
@@ -64,6 +69,17 @@ export function useWords(standing: Standing, runs = false): string {
 
 /** How far out before the gate's door the outpost's room stands a player come back out (`Room::join_at`). */
 const OUT_OF_GATE_M = 1.5;
+
+/** The bare site's staff, at the plot's middle. */
+const bareStaff = (ground: Ground): Placed => ({ module: BARE_STAFF, at: [...ground.plot, ground.level], turn: 0 });
+
+/** `banner` hung from the `cloth` socket of `placed` (a standard, or the bare staff), turned as it is. */
+function hungFrom(placed: Placed, banner: Banner): Hung {
+  const [x, y, z] = moduleSocket(moduleNumber(placed.module), 'cloth');
+  const [cos, sin] = [Math.cos(placed.turn), Math.sin(placed.turn)];
+  const top = [placed.at[0] + x * cos - y * sin, placed.at[1] + x * sin + y * cos, placed.at[2] + z] as const;
+  return { at: top, turn: placed.turn, banner };
+}
 
 /** A placed module as a prop standing whole. */
 const propOf = (placed: Placed): EventProp => ({ ...placed, scale: 1, rise: 1, lid: 0, glow: 1 });
@@ -174,6 +190,7 @@ export class OutpostHere {
     [this.entered, this.heard] = [joined, heard];
     this.room = nodeRoom({ id: site, kind: 'outpost' }, 'normal', joined.guild);
     this.shown = this.standing();
+    this.hung = this.hangs();
     this.look();
     addEventListener(OUTPOST_CHANGED, this.look);
     addEventListener(OUTPOST_DELVE, this.delveAsked);
@@ -251,14 +268,11 @@ export class OutpostHere {
   }
 
   private hangs(): Hung | null {
-    const { seen, ground, banner } = this;
-    const standard = seen?.plot.structures.find((standing) => standing.kind === 'standard' && standing.building === 0);
-    if (!seen || !standard || !banner) return null;
-    const placed = placeOf(standard, ground, banner.staff);
-    const [x, y, z] = moduleSocket(moduleNumber(placed.module), 'cloth');
-    const [cos, sin] = [Math.cos(placed.turn), Math.sin(placed.turn)];
-    const top = [placed.at[0] + x * cos - y * sin, placed.at[1] + x * sin + y * cos, placed.at[2] + z] as const;
-    return { at: top, turn: placed.turn, banner };
+    const { seen, ground } = this;
+    if (!seen) return hungFrom(bareStaff(ground), BARE_CLOTH);
+    const { banner } = this;
+    const standard = seen.plot.structures.find((standing) => standing.kind === 'standard' && standing.building === 0);
+    return standard && banner ? hungFrom(placeOf(standard, ground, banner.staff), banner) : null;
   }
 
   /** The props the outpost stands as beside `besides` (the zone's own), kept as one list while nothing changes, and
@@ -330,7 +344,7 @@ export class OutpostHere {
   private standing(): EventProp[] {
     const { seen, ground } = this;
     if (!seen) {
-      return [propOf({ module: BARE_STAFF, at: [...ground.plot, ground.level], turn: 0 })];
+      return [propOf(bareStaff(ground))];
     }
     const { staff } = this;
     return [

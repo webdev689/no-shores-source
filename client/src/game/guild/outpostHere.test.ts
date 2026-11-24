@@ -62,6 +62,10 @@ test('a bare site stands only the standard’s oak staff at the plot’s middle,
     null,
     'far from it, nothing',
   );
+  // The staff flies an unmarked grey cloth, as the Grey Tithe's banner, hung as a guild's is from its cloth socket.
+  const hung = here.cloth();
+  assert.deepEqual([hung?.banner.cloth, hung?.banner.device, hung?.banner.sign], ['ash', 'plain', '']);
+  assert.ok(Math.abs((hung?.at[2] ?? 0) - (GROUND.level + 5.45)) < 1e-9, 'from the staff, on its crossbar');
 });
 
 test('a raised outpost stands each structure and piece, walls them beside the node, and offers each at its socket', () => {
@@ -126,6 +130,7 @@ test('a piece being placed stands its ghost just before the player, snapped to a
 
 test("the guild's banner hangs from its standard's cloth socket, turned as the standard is", () => {
   const { here } = outpost();
+  here.take(SEEN);
   assert.equal(here.cloth(), null, 'no standard, no cloth');
   const standard = { ...structure(4, 'standard', 7, 11), turn: 1 };
   here.take({ ...SEEN, plot: { ...SEEN.plot, structures: [...SEEN.plot.structures, standard] } });

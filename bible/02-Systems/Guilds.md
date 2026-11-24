@@ -114,10 +114,12 @@ ranks are the Roster's as well ([[Accounts]], "The Roster").
   says it stood another plot, and every 15 s: each structure and piece of decoration where the plot's reckoning stands
   it, walled for the page's own body as the room walls it (a piece turned off the quarters as it is drawn), and the
   banner's cloth stirring on the standard. E before a structure's front opens the Outposts page on it, named at its
-  tier (the War Horn sounded by the founder or an admin), but at a built Delve Gate goes down at the gate's top tier;
-  the founder and admins alone take up a piece of decoration, E held through. A
-  bare site stands the Banner Standard's oak staff alone at the plot's middle, saying the outpost is raised from the
-  Guild tab.
+  tier (the War Horn sounded by the founder or an admin, offered only while it has not sounded this week), but at a
+  built Delve Gate goes down at the gate's top tier; the founder and admins alone take up a piece of decoration, E
+  held through. A company guest in another guild's outpost is offered only the Delve Gate's way down. A refusal
+  shows its words without E's key. A bare site stands the Banner Standard's oak staff at the plot's middle flying an
+  unmarked grey cloth; to a founder or admin whose level allows another outpost it says the outpost is raised from
+  the Guild tab.
 - **In no guild**, the tab founds one: its name, its tag and the banner made for it before it exists, "Found the
   guild" greyed with its reason until both are written, with the invites waiting, each joined or declined.
 
