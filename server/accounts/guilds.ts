@@ -18,6 +18,8 @@ export const GUILD_MOST = 100;
 /** The ranks: its founder, an admin, a member. */
 export const RANKS = ['Founder', 'Admin', 'Member'] as const;
 const [FOUNDER, ADMIN, MEMBER] = [0, 1, 2];
+/** How long an invite unanswered is kept. */
+const INVITE_KEPT_MS = 30 * 24 * 60 * 60_000;
 
 /** A player's guild and rank in it, or null for none. */
 export async function guildOf(database: Db, account: string): Promise<KeptGuild | null> {
@@ -123,6 +125,17 @@ export async function guildAsk(
     if (left <= 1) await database.prepare('DELETE FROM guilds WHERE id = ?1').bind(mine.id).run();
     return done;
   }
+  /** SQL that holds while the asker (?1) is in their guild (?2) at a rank so. */
+  const asker = (rank: string) =>
+    `EXISTS (SELECT 1 FROM guild_members WHERE account_id = ?1 AND guild_id = ?2 AND rank ${rank})`;
+  /** Runs a write whose parameters are the asker, their guild, then `values`: answers the rows it changed. */
+  const guarded = async (sql: string, ...values: unknown[]) =>
+    (
+      await database
+        .prepare(sql)
+        .bind(own, mine.id, ...values)
+        .run()
+    ).meta.changes;
   const face = await faceAsk(database, own, asked, given, mine);
   if (face) return face;
   if (asked === 'motto') {
@@ -130,51 +143,74 @@ export async function guildAsk(
     if (mine.rank > ADMIN) return said(403, 'Only the founder and admins can set the motto.');
     const unfit = refusalOf('motto', motto);
     if (unfit) return said(400, unfit);
-    await database.prepare('UPDATE guilds SET motto = ?1 WHERE id = ?2').bind(String(motto).trim(), mine.id).run();
-    return done;
+    const set = await guarded(
+      `UPDATE guilds SET motto = ?3 WHERE id = ?2 AND ${asker(`<= ${ADMIN}`)}`,
+      String(motto).trim(),
+    );
+    return set === 1 ? done : said(403, 'Only the founder and admins can set the motto.');
   }
   const them = await accountNamed(database, given?.['name']);
   if (!them || them.id === own) return said(404, 'No one by that name is there.');
   if (asked === 'invite' || asked === 'uninvite') {
     if (mine.rank > ADMIN) return said(403, 'Only the founder and admins can invite.');
+    const refused = said(403, 'Only the founder and admins can invite.');
     if (asked === 'uninvite') {
-      await database
-        .prepare('DELETE FROM guild_invites WHERE guild_id = ?1 AND account_id = ?2')
-        .bind(mine.id, them.id)
-        .run();
-      return done;
+      const taken = await guarded(
+        `DELETE FROM guild_invites WHERE guild_id = ?2 AND account_id = ?3 AND ${asker(`<= ${ADMIN}`)}`,
+        them.id,
+      );
+      return taken === 1 ? done : refused;
     }
     if (await blocks(database, own, them.id)) return said(409, 'Unblock them first.');
     if (await guildOf(database, them.id)) return said(409, 'They are in a guild already.');
     if (((await members())?.count ?? 0) >= GUILD_MOST) return said(409, 'Your guild is full.');
     // An invite to one who blocks the inviter is answered as sent, and never reaches them.
     if (await blocks(database, them.id, own)) return done;
-    await database
-      .prepare(
-        `INSERT INTO guild_invites (guild_id, account_id, from_id, created_at) VALUES (?1, ?2, ?3, ?4)
-         ON CONFLICT (guild_id, account_id) DO UPDATE SET from_id = ?3, created_at = ?4`,
-      )
-      .bind(mine.id, them.id, own, now)
-      .run();
-    return done;
+    const [, sent] = await database.batch([
+      database.prepare('DELETE FROM guild_invites WHERE created_at < ?1').bind(now - INVITE_KEPT_MS),
+      database
+        .prepare(
+          `INSERT INTO guild_invites (guild_id, account_id, from_id, created_at) SELECT ?2, ?3, ?1, ?4
+           WHERE ${asker(`<= ${ADMIN}`)} AND (SELECT COUNT(*) FROM guild_members WHERE guild_id = ?2) < ${GUILD_MOST}
+           ON CONFLICT (guild_id, account_id) DO UPDATE SET from_id = ?1, created_at = ?4`,
+        )
+        .bind(own, mine.id, them.id, now),
+    ]);
+    return sent?.meta.changes === 1 ? done : refused;
   }
   const theirs = await guildOf(database, them.id);
   if (theirs?.id !== mine.id) return said(404, 'They are not in your guild.');
-  const setRank = (rank: number, account: string) =>
-    database.prepare('UPDATE guild_members SET rank = ?1 WHERE account_id = ?2').bind(rank, account).run();
+  // Each write holds only while they are still in this guild at the rank read, and the asker still above them.
+  const setRank = async (rank: number) =>
+    (await guarded(
+      `UPDATE guild_members SET rank = ?5 WHERE account_id = ?3 AND guild_id = ?2 AND rank = ?4
+       AND ${asker(`= ${FOUNDER}`)}`,
+      them.id,
+      theirs.rank,
+      rank,
+    )) === 1;
   switch (asked) {
-    case 'remove':
-      if (mine.rank > ADMIN || theirs.rank <= mine.rank) return said(403, 'You can remove only those below you.');
-      await database.prepare('DELETE FROM guild_members WHERE account_id = ?1').bind(them.id).run();
-      return done;
-    case 'promote':
-      if (mine.rank !== FOUNDER || theirs.rank !== MEMBER) return said(403, 'The founder makes members admins.');
-      await setRank(ADMIN, them.id);
-      return done;
-    case 'demote':
-      if (mine.rank !== FOUNDER || theirs.rank !== ADMIN) return said(403, 'The founder makes admins members.');
-      await setRank(MEMBER, them.id);
-      return done;
+    case 'remove': {
+      const refused = said(403, 'You can remove only those below you.');
+      if (mine.rank > ADMIN || theirs.rank <= mine.rank) return refused;
+      const removed = await guarded(
+        `DELETE FROM guild_members WHERE account_id = ?3 AND guild_id = ?2 AND rank = ?4
+         AND ${asker(`<= ${ADMIN} AND rank < ?4`)}`,
+        them.id,
+        theirs.rank,
+      );
+      return removed === 1 ? done : refused;
+    }
+    case 'promote': {
+      const refused = said(403, 'The founder makes members admins.');
+      if (mine.rank !== FOUNDER || theirs.rank !== MEMBER) return refused;
+      return (await setRank(ADMIN)) ? done : refused;
+    }
+    case 'demote': {
+      const refused = said(403, 'The founder makes admins members.');
+      if (mine.rank !== FOUNDER || theirs.rank !== ADMIN) return refused;
+      return (await setRank(MEMBER)) ? done : refused;
+    }
     case 'founder': {
       const refused = said(403, 'The founder hands the founding to an admin.');
       if (mine.rank !== FOUNDER || theirs.rank !== ADMIN) return refused;

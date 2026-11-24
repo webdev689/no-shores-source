@@ -169,7 +169,9 @@ username, as a player is found by theirs; a guest is told to add one in Settings
   typed; and a motto of one line, 80 characters at most, with no control characters or marks that turn the text's
   direction. Each is judged as [[Names]] says. Its founder and admins invite players with no guild, who accept or
   decline; the founder makes members admins and back, either removes those below them, and the founder hands the
-  founding to an admin, who must first be made one, in one write, so two at once cannot make two founders. A founder leaves only once another founds it, or alone, which
+  founding to an admin, who must first be made one, in one write, so two at once cannot make two founders. Every
+  such write holds only while both are still in that guild at the ranks read, so a rank never lands in another guild
+  and a guild never loses its founder. An invite unanswered is kept 30 days. A founder leaves only once another founds it, or alone, which
   ends it. A hundred at most. Its banner, description and level, and the Guild tab's own read (`GET /v1/guild`), are
   in [[Guilds]].
 - **Blocking** ends a friendship and its ask and the invites either way. What the one blocked asks after is answered
@@ -183,7 +185,7 @@ username, as a player is found by theirs; a guest is told to add one in Settings
   the owner to read in the database, ten a day a player. [[Names]] says how the owner reads and acts on a name.
 - **The room's own**: the Game column lists the players with a name in the same room beside the company, the guests
   only counted. Another player's details show what they wear always, and where they are only to their friends, company
-  and guild. A friend ask still waiting and a guild's invite show no one where the player asked is.
+  and guild, and their guild's motto and description. A friend ask still waiting and a guild's invite show no one where the player asked is.
 - **Limits**: 60 an hour of the asks that reach another player (a friend ask, an invite, founding a guild).
 
 ## Find a Company
