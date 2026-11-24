@@ -3,11 +3,13 @@ use super::Problem;
 /// Where the Obsidian vault lives in the repository.
 pub const VAULT_ROOT: &str = "bible/";
 
-/// A link inside a note: what it names, and its 1-based line.
+/// A link inside a note: what it names, and its 1-based line; `split` for one left open at its line's end, broken
+/// across lines, which Obsidian resolves to nothing.
 #[derive(Debug, PartialEq, Eq)]
 pub struct Link {
     pub target: String,
     pub line: usize,
+    pub split: bool,
 }
 
 /// The wikilinks of a note, outside code blocks and inline code. `[[Note]]`, `[[Note|shown]]`, `[[Note#Heading]]`
@@ -28,11 +30,14 @@ pub fn wikilinks_of(text: &str) -> Vec<Link> {
         let mut rest = without_code.as_str();
         while let Some(open) = rest.find("[[") {
             let after = &rest[open + 2..];
-            let Some(close) = after.find("]]") else { break };
+            let Some(close) = after.find("]]") else {
+                links.push(Link { target: after.trim().to_owned(), line: offset + 1, split: true });
+                break;
+            };
             let inner = &after[..close];
             let target = inner.split(['|', '#', '^']).next().unwrap_or_default().trim();
             if !target.is_empty() {
-                links.push(Link { target: target.to_owned(), line: offset + 1 });
+                links.push(Link { target: target.to_owned(), line: offset + 1, split: false });
             }
             rest = &after[close + 2..];
         }
@@ -57,10 +62,10 @@ pub fn code_refs_of(text: &str) -> Vec<Link> {
             in_code = key.trim() == "code";
             let value = value.trim();
             if in_code && !value.is_empty() && value != "[]" {
-                refs.push(Link { target: unquote(value), line: offset + 1 });
+                refs.push(Link { target: unquote(value), line: offset + 1, split: false });
             }
         } else if let Some(item) = raw.trim_start().strip_prefix("- ").filter(|_| in_code) {
-            refs.push(Link { target: unquote(item), line: offset + 1 });
+            refs.push(Link { target: unquote(item), line: offset + 1, split: false });
         }
     }
     refs
@@ -285,7 +290,10 @@ pub fn check(notes: &[(String, String)], repo_files: &[String], read: impl Fn(&s
     let mut problems = Vec::new();
     for (path, text) in notes {
         for link in wikilinks_of(text) {
-            if !targets.contains(&link.target) {
+            if link.split {
+                let words = format!("[[{}... breaks across lines: Obsidian resolves no such link", link.target);
+                problems.push(Problem::new("vault", path, Some(link.line), words));
+            } else if !targets.contains(&link.target) {
                 problems.push(Problem::new(
                     "vault",
                     path,

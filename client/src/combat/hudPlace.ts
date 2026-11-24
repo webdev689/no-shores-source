@@ -47,14 +47,17 @@ export function clearOf<Spot extends { readonly x: number; readonly y: number }>
 }
 
 /** The veil over the display, by what holds the player: joining the room again, the room lost (and why), or their
- *  death (the ticks they have lain); a link's veil is plain, death's is blood. Null while none of these holds. */
+ *  death (the ticks they have lain, while the room will stand them again: with no revive left, it promises nothing);
+ *  a link's veil is plain, death's is blood. Null while none of these holds, and for a death the section dealt too,
+ *  whose own veil offers Respawn. */
 export function veilOf(
-  frame: Pick<HudFrame, 'own' | 'lost' | 'rejoining'>,
+  frame: Pick<HudFrame, 'own' | 'lost' | 'rejoining' | 'revivesLeft' | 'sectionDead'>,
 ): { readonly words: string; readonly link: boolean } | null {
   if (frame.rejoining) return { words: 'Reconnecting…', link: true };
   if (frame.lost !== null) return { words: `The link to the room was lost: ${frame.lost}.`, link: true };
   const dead = frame.own?.action.kind === 'dead' ? frame.own.action : null;
-  if (!dead) return null;
+  if (!dead || frame.sectionDead) return null;
+  if (frame.revivesLeft === 0) return { words: 'You fell.', link: false };
   const seconds = Math.ceil(Math.max(0, RESPAWN_TICKS - dead.elapsed) / 60);
   return { words: `You fell. Standing again in ${seconds} s`, link: false };
 }

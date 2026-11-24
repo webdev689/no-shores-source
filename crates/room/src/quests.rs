@@ -1,8 +1,9 @@
 //! The houses' roads in a room: its node and the places its file names, and each player's quest log told what they do
 //! here (`gear::quests`): a place reached, checked each tick only for a player whose task waits on one in this node;
 //! a foe's fall they struck; a spell cast; the node arrived in, and the sea island landed on. A kill goal's group stands
-//! at its place for a player on it coming near, as a wave arrives, on a navmesh baked round that place the first time,
-//! and again `STAND_AGAIN` after it fell while the goal is unmet.
+//! at its place for a player on it coming near, as a wave arrives, on the node's own navmesh where its square holds
+//! that place and else on one baked round it the first time, and again `STAND_AGAIN` after it fell while the goal is
+//! unmet.
 
 use crate::garrison::{Post, SPREAD, STAND_AGAIN, draws_of, gird_of, ground_middle, square, square_of};
 use crate::players::Player;
@@ -102,9 +103,13 @@ impl Room {
     /// The places of the node this room is, as its file names them, and its own square, which comes before theirs.
     pub fn set_places(&mut self, places: Vec<Place>) {
         self.quests.places = places;
-        let Some(section) = self.section.as_ref() else { return };
+        self.quests.square = self.own_square().or(self.quests.square);
+    }
+
+    /// The node's own square round its section's middle, which the meshes baked round places are told from.
+    pub(crate) fn own_square(&self) -> Option<navmesh::Bounds> {
         let first = self.spawn_points.first().copied().unwrap_or_default();
-        self.quests.square = Some(square_of(&[], ground_middle(section, first)).0);
+        self.section.as_ref().map(|section| square_of(&[], ground_middle(section, first)).0)
     }
 
     /// The mesh round a place, by its number among the room's (`routes.rs`): the node's own (0) where its square holds
@@ -120,7 +125,12 @@ impl Room {
         if self.quests.square.as_ref().is_some_and(holds) {
             return Some(0);
         }
-        if let Some(found) = self.quests.grounds.iter().position(|(name, _, _)| *name == place.name) {
+        // One baked before round this same middle is kept, whatever the place is named; a namesake elsewhere has its own.
+        let round = |bounds: &navmesh::Bounds| {
+            libm::fabs((bounds.min_x + bounds.max_x) / 2.0 - at[0]) < 0.5
+                && libm::fabs((bounds.min_y + bounds.max_y) / 2.0 - at[1]) < 0.5
+        };
+        if let Some(found) = self.quests.grounds.iter().position(|(_, bounds, _)| round(bounds)) {
             return Some(found + 1);
         }
         if self.quests.baked_at == Some(self.clock) {
@@ -186,10 +196,10 @@ impl Room {
 
     /// Each tick: a player whose task waits on a place of this node standing within its reach reaches it; one on a
     /// kill goal with a group to stand, within `SPAWN_NEAR` of its place, stands it, unless it stands, or its last fell
-    /// within `STAND_AGAIN`.
+    /// within `STAND_AGAIN`; and a group no player here pursues, fighting no one, is sent away.
     pub(crate) fn keep_quests(&mut self) {
         let Some(node) = self.quests.node.as_deref() else { return };
-        let (mut reached, mut near) = (Vec::new(), Vec::new());
+        let (mut reached, mut near, mut pursued) = (Vec::new(), Vec::new(), Vec::new());
         for (id, found) in &self.players {
             let at = [found.fighter.body.x, found.fighter.body.y];
             let now = found.character.quest_now();
@@ -202,6 +212,7 @@ impl Room {
                 match &goal.goal {
                     Goal::Reach(_) if here.any(|place| place.holds(at, 0.0)) => reached.push((*id, goal)),
                     Goal::Kill(Slay { spawn, .. }) if !spawn.is_empty() => {
+                        pursued.push([quest, task, goal_at]);
                         let close =
                             here.find(|place| libm::hypot(at[0] - place.at[0], at[1] - place.at[1]) <= SPAWN_NEAR);
                         near.extend(close.map(|place| ([quest, task, goal_at], goal, place.clone())));
@@ -238,6 +249,12 @@ impl Room {
         ground.groups.retain(|(_, ids)| standing(ids));
         ground.fallen.retain(|(key, at)| clock < at + STAND_AGAIN && !fell.contains(key));
         ground.fallen.extend(fell.into_iter().map(|key| (key, clock)));
+        let idle = |ids: &[FighterId]| ids.iter().all(|id| foes.get(id).is_none_or(|foe| foe.brain.fights().is_none()));
+        let unsought = |(key, ids): &([usize; 3], Vec<FighterId>)| !pursued.contains(key) && idle(ids);
+        let gone: Vec<FighterId> =
+            ground.groups.iter().filter(|each| unsought(each)).flat_map(|(_, ids)| ids.clone()).collect();
+        ground.groups.retain(|each| !unsought(each));
+        self.send_away(&gone);
         for (key, goal, place) in near {
             let waits = |each: &[usize; 3]| *each == key;
             let quests = &self.quests;

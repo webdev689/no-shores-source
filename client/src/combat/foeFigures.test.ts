@@ -90,6 +90,22 @@ test('a foe the room no longer holds is let go, and the forge forgets its last c
   assert.deepEqual(forgotten, [figure]);
 });
 
+test('joining a room again, whose foes may be numbered afresh, or leaving it, lets every foe figure go', () => {
+  const figures = new FoeFigures(roster);
+  const forgotten: number[] = [];
+  const forgetting = { ...forge, forget: (id: number) => forgotten.push(id) } as unknown as Cards;
+  const joined = (joins: number) => ({ ...(fightWith(3, -4, 10) as object), joins }) as unknown as Fighting;
+  figures.cards(joined(1), forgetting, { x: 0, y: 0 }, 0, 1, 1 / 60, new Flashes());
+  const first = figures.placed.get(7)?.id;
+  figures.cards(joined(2), forgetting, { x: 0, y: 0 }, 0, 1, 1 / 60, new Flashes());
+  assert.deepEqual(forgotten, [first], 'the old room’s foe 7 let go');
+  const again = figures.placed.get(7)?.id;
+  assert.notEqual(again, first, 'the new room’s foe 7 a figure of its own');
+  figures.forget(forgetting);
+  assert.equal(figures.placed.size, 0, 'none kept as the room is left');
+  assert.deepEqual(forgotten, [first, again]);
+});
+
 /** A Collector seen tick after tick, from `tick` on, at the places and in the modes `seen` gives, each kept with the
  *  glance before; the frames each move was drawn at. */
 function watched(seen: (tick: number) => readonly [number, number, number, number], ticks: number) {

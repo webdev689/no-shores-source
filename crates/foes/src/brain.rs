@@ -346,6 +346,12 @@ impl Brain {
         self.target
     }
 
+    /// The fighter whose blow it has seen coming and not yet weighed, if any.
+    #[must_use]
+    pub fn seen_coming(&self) -> Option<FighterId> {
+        self.reactions.threat.map(|threat| threat.by)
+    }
+
     /// The fighter its soft lock should hold: its chosen target, but while it answers a blow, the one whose blow it
     /// is, so its guard and its dodge face that one.
     #[must_use]

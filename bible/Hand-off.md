@@ -192,25 +192,25 @@ each part works is in its system note.
 
 The decisions in [[Open Questions]] are not repeated here.
 
-- **The writing pass** (#176, branch `ccr-c249af15-iwfmsb`, against `main` with `main` merged in), for the owner's
-  read and yes: every spoken line read and most reworded, all 33 lore chapters, the new tutorial with them, each
+- **The writing pass** (#176), merged, which deploys the page and the
+  rooms: every spoken line read and most reworded, all 33 lore chapters, the new tutorial with them, each
   speaker in a voice of their own within [[Dialogue]], and the lore given more detail and mysteries shown and never
   explained ([[Every Line Reads as Spoken, and the Lore Is Detailed, Mysterious and Gripping]], every call listed
   there). Ids, scene names, each scene's speakers in order and the puzzles' orders are kept, so the game behaves as
   before. The dialogue check holds two lines a turn across a quest's seams
-  ([[The Dialogue Check Holds Two Lines a Turn Across a Quest's Seams]]). Merging deploys the rooms too: `lore.json`,
-  `quests.json`, `items.json` and `factions.json` feed the protocol's version. Tested offline: the full check on the
+  ([[The Dialogue Check Holds Two Lines a Turn Across a Quest's Seams]]). `lore.json`, `quests.json`, `items.json` and
+  `factions.json` feed the protocol's version. Tested offline: the full check on the
   head. Not yet read or heard in the game. For the owner: the Pearl Tomb's brief (`briefs.json`, never shown) has
   dunes where the lore has cliffs; the books name Corran Hale, the brothers Penhallow and the wreckers' wars, which
   no note of the owner's names.
-- **A ship's wake follows the track it sailed** (#177, branch `ccr-836ab6ff-vgzmxg`), for the owner's yes to merge,
-  which deploys the page. The owner: "the waves that follow behind the ship dont animate when you turn your ship. They
-  are always straight". The water drew every wake straight aft of the heading the ship had that frame; it now keeps
-  where each ship's stern has been and lays the arms and the wash along it ([[Water]], "Its wake"; the numbers in [[The
-  Sea as Claude Shapes It]]). Tested offline (`wakes.test.ts`: a turn's wash where it sailed, no wake ahead of the bow
-  after a stop or going astern, a ship drawn 5x in a hard turn, the wake's box holding all of it); a read-only review's
-  five findings fixed with those tests. Not seen on a real GPU: how the curved wake looks, and the shader's cost while a
-  ship turns (unmeasured; a straight course takes the old path).
+- **A ship's wake follows the track it sailed** (#177), merged, which deploys the page. The owner: "the waves that
+  follow behind the ship dont animate when you turn your ship. They are always straight". The water drew every wake
+  straight aft of the heading the ship had that frame; it now keeps where each ship's stern has been and lays the arms
+  and the wash along it ([[Water]], "Its wake"; the numbers in [[The Sea as Claude Shapes It]]). Tested offline
+  (`wakes.test.ts`: a turn's wash where it sailed, no wake ahead of the bow after a stop or going astern, a ship drawn
+  5x in a hard turn, the wake's box holding all of it); a read-only review's five findings fixed with those tests. Not
+  seen on a real GPU: how the curved wake looks, and the shader's cost while a ship turns (unmeasured; a straight course
+  takes the old path).
 - **The wreck's R2 tools after #172**, which no session may edit: `tools/wreck/wreck_level.py`'s waves still list the
   Tithe-Mates and Bosuns at rank 1; to match `content/prologue/wreck.json` each `(11, 1, ...)` becomes `(11, 2, ...)`
   and each `(10, 1, ...)` `(10, 2, ...)`, and `export_wreck.py` should write the quiet deck's `masts` (added to
@@ -237,16 +237,33 @@ The decisions in [[Open Questions]] are not repeated here.
     they stood, 25 m or more off (`crates/room/src/landing.rs`, [[Enemies]]).
   - [[Friendly Ships Take Several Courses, About Five in View, Sailing Visibly]]: three courses a pair, about five
     in view near a port, 60 m/s, departures staggered across all nine courses ([[World Map]], "Traffic").
-  - Tested offline only. Unexplained, waiting on the owner's browser console: in the owner's patrol screenshot the
-    world stopped being drawn while the death veils stacked. Left: ships start and stop at 60 m/s at once, and lie on
-    one point at a roadstead; some retaining walls near Overlook's plaza may be dropped whole (low confidence, the
-    seam audit's).
+  - Tested offline only. Left: ships start and stop at 60 m/s at once, and lie on one point at a roadstead; some
+    retaining walls near Overlook's plaza may be dropped whole (low confidence, the seam audit's).
+- **#163's follow-up, the patrol audit and its leftovers** (#170, a draft for the owner's yes once its checks pass;
+  main merged in up to #177). The owner's solid red patrol screen was the death veils piling up under a frame that
+  threw before it presented; each frame now starts with none. What threw is still unknown: the owner's browser
+  console names it (`FrameGuard` logs each error once). The owner's "Can you do a deep audit on patrols and ensure its
+  clean" found and fixed the landing's leave lost to inert, fallen or stale foes, every foe told every swing, the
+  section's dead still a target, the tithe-taker and the growth killed by foes, a second event chest and entrances on
+  boxes. Then "Fix everything": each call put to the owner and fixed as answered
+  ([[The Patrol Audit's Leftovers Are Fixed as the Owner Chose]], with Claude's calls): the landing's officers left be
+  and only chases started there going on; blows at others passing a spared player by; a half-fallen patrol group made
+  whole as Destiny does; foes standing at the caverns' and runs' sites (`stands.rs`, lazily within 150 m and none
+  within 40 m); an escort's ambush dropping nothing again; the server checking a dungeon's way out; a locked patrol
+  refused alone. Every recorded risk is fixed, the layouts' by a worker (every walked line inside its section, the
+  rock beside ramparts out, caverns on quarters, building runs ramped short of their place's middle). Each moved pin
+  is attributed in its commit; the page's bots now lose the raid's stores at its pinned minute, which a 12-minute
+  sweep puts down to that one minute. Tested offline; the full check's result is in #170. Left for the owner: whether
+  sections may overlap (0.3 m new on continent 2, greystone-tors and hollow-crypt; 4.2 m before, highwater-fells and
+  wreckwood); none of Saltmere's landings has a boardwalk, why unchecked. Risks: a site's first stand bakes its
+  navmesh in one tick (130 to 270 ms natively); room memory with every site stood unmeasured; a cavern over 4 m below
+  the surface unchecked for followers' places; the page's bots fail about 10 of 12 heroic raids either way.
 - **Looks by content, the Playlist and the matchmade dungeons' encounters** (#160), merged with the owner's yes ("Let's merge and deploy and talk about this
   after"), which deploys the page and the rooms. The owner's asks are recorded ([[Armour and Weapon Looks Belong to the Content That Gives Them]],
   [[Elite and Abyss Dungeons Are Queued From a Playlist Beside Each Port]],
-  [[Matchmade Dungeons Gain Encounters, Puzzles, Climbs and Raid Mechanics]], [[A Playlist's Launch Is Drawn by the
-  Server]], [[The Room Keeps Only Looks of a Piece's Own Content]], [[Faction Blades Wear Their Faction's Colour on
-  Hilt and Trim]]), every call of Claude's in [[The Playlist and Its Dungeons as Claude Shapes Them]].
+  [[Matchmade Dungeons Gain Encounters, Puzzles, Climbs and Raid Mechanics]],
+  [[A Playlist's Launch Is Drawn by the Server]], [[The Room Keeps Only Looks of a Piece's Own Content]],
+  [[Faction Blades Wear Their Faction's Colour on Hilt and Trim]]), every call of Claude's in [[The Playlist and Its Dungeons as Claude Shapes Them]].
   - Looks ([[Gear]], "Where it came from" and "Looks"): every item and Vestige keeps its content; each armour set and
     metal is one content's; past the world a piece's set and metal follow its name, so each content's every look is
     seen where it drops; "From" on the card, the page and a Vestige's line, a faction's piece naming its faction; the
@@ -277,8 +294,8 @@ The decisions in [[Open Questions]] are not repeated here.
   is put away at sea; the wheel scrolls in the interface's pixels; flora that failed to come is asked for again; the
   island door, `identify`'s number, the bake's panics, the chat hall's sizes, mottos' hidden marks and the World
   Editor's keys; dead code and some 25 stale docs out; the Code Map, Toolchain, Testing and other notes made true.
-  Tested offline (the full check at its head, `main` merged in); not played. What it left is in four drafts, each
-  on the owner's yes, each passing the full check at its head:
+  Tested offline (the full check at its head, `main` merged in); not played. What it left went to four pull requests,
+  all merged:
   - #171: the `modules` workflow uploads the folder its bake fills, and `r2.py upload` refuses a missing one. Tested
     live on its push: the publish ended "491 staged files on R2" (it had said 0).
   - #173: a room holds eight sockets unsigned from one address at most (`UNSIGNED_FROM_ONE`); every room, not only
@@ -292,8 +309,8 @@ The decisions in [[Open Questions]] are not repeated here.
 - **Open pull requests**, for the owner's yes once their checks pass: #162 (the game's words out to Type and back; it
   conflicts with `main` in `Decisions.md`) and #159 (the rooms' worker tests wait for what they check; it conflicts
   with `main` in `roomThread.test.ts`). Drafts:
-  #171, #173, #174 and #175 (above), #93 (the toolkit's first review) and #114 (the gear message carries the pledge
-  once).
+  #169 (the owner's gear calls), #178 (the balance and economy pass), #179 (guilds), #93 (the toolkit's first
+  review) and #114 (the gear message carries the pledge once).
 - **Open points from merged work**, each the owner's to say:
   - #158 (the prologue's waking, scenes and arena, one loading screen, foes that give up only when far, feet on the
     city's ground; [[One Loading Screen Covers Every Trip Until the Place Is Ready]] and the decisions it names): the
@@ -453,6 +470,15 @@ The decisions in [[Open Questions]] are not repeated here.
 
 ## Next
 
+- **The patrol audit's risks left** (#170's description, each with its file in the audit): run lines against the
+  section's ring (the ways measured: 4 of some 14,800 samples outside, by 1.8 m at most) and rock beside a run inside
+  it, against [[A Run on the Rock's Top Is Held by Out of Bounds]]; `runs_everywhere` checks the wing from the ring,
+  not the claim; the map draws a run's connections straight; caverns' chambers turned by quarters, building runs off a
+  raised area, a rampart draw at a slope of 0.602, cave roofs over low rock; a kill goal's road group never sent away;
+  a rejected post dropping the points near it; a leashed foe off the navmesh walking straight home; a far-off shot
+  still filling an empty threat; the page's per-player and per-foe maps over a long stay; a trip that throws after
+  its room joined leaving the socket open; one throw every foot frame keeping the veil up. A check for wiki links that
+  span two lines (the vault check reads line by line) is the owner's to agree.
 - **The welcome's live pictures** (#172): the header's 400 Aurem after the stranger's gift, the tracker's first task,
   a starter piece bought at the Weaponsmith and the Character page with it worn. A local room runs (`npm run server`),
   but under `tools/claude-toolkit/webgpu-shot.cjs` the game's worker opens no socket to it (the driver rewrites the

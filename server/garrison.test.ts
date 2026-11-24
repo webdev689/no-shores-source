@@ -64,9 +64,11 @@ const NODE = {
   },
 };
 
-test('a node’s garrison fights to the same fingerprint through WebAssembly as the room natively', () => {
+/** A player run north into a node's garrison for RUN_IN ticks, then standing and swinging each SWING_EVERY ticks until
+ *  RUN_TICKS: the fingerprint of its snapshots, the most foes alert at once, and the events it saw. */
+function runIn(node: object): { hash: string; mostAlert: number; events: number } {
   const room = startRoomDoor(compiled);
-  assert.equal(room.openNode(JSON.stringify(NODE)), true);
+  assert.equal(room.openNode(JSON.stringify(node)), true);
   const player = room.join();
   const kept = new SnapshotKeeper();
   let hash = 0x811c_9dc5;
@@ -88,8 +90,23 @@ test('a node’s garrison fights to the same fingerprint through WebAssembly as 
     mostAlert = Math.max(mostAlert, message.foes.filter((foe) => foe.alert === 2).length);
     events += message.events.length;
   }
+  return { hash: hash.toString(16).padStart(8, '0'), mostAlert, events };
+}
+
+test('a node’s garrison fights to the same fingerprint through WebAssembly as the room natively', () => {
+  const { hash, mostAlert, events } = runIn(NODE);
   assert.ok(mostAlert >= 3 && events > 0, `the garrison fights: ${mostAlert} alert at once, ${events} events`);
-  assert.equal(hash.toString(16).padStart(8, '0'), GARRISON_HASH);
+  assert.equal(hash, GARRISON_HASH);
+});
+
+/** The room door's agreement test holds the same run and fingerprint: the node as a patrol whose layout marks a foes'
+ *  site the player runs near, so its group stands mid-run on a mesh baked round it then. */
+const PATROL_SITE_HASH = 'ea374418';
+
+test('a patrol’s foes’ site stands its group to the same fingerprint through WebAssembly as natively', () => {
+  const { hash, mostAlert } = runIn({ ...NODE, kind: 'patrol', foes: [[-60, 40]] });
+  assert.ok(mostAlert >= 1, 'its foes fight');
+  assert.equal(hash, PATROL_SITE_HASH);
 });
 
 /** The room door's agreement test holds the same run and fingerprint: two players, the garrison's foes shared out

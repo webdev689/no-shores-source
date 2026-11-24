@@ -41,9 +41,9 @@ export interface FoeFeel {
   smear?(id: number): CardAt['smear'];
 }
 
-/** A foe that dies dissolves once its fall is over (seconds after it died) when nothing gave its death an element. */
 /** How far past the Fissure's ground a foe coming still climbs out of it, metres. */
 const POUR_REACH_M = 10;
+/** A foe that dies dissolves once its fall is over (seconds after it died) when nothing gave its death an element. */
 const PLAIN_DISSOLVE_AFTER_S = (FIGHT_TICKS.death + 6) / 60;
 
 /** Foes' figures are numbered down from here, never twice in the page's life: the forge keeps each figure's last card
@@ -95,6 +95,8 @@ export class FoeFigures {
   /** The room (by the fight's joins) whose foes a frame has drawn: those there on the first frame of a room, joined
    *  or joined again, came before the page did. */
   private seenIn: number | null = null;
+  /** The room (by the fight's joins) the figures kept are of: one joined again may number its foes afresh. */
+  private drawnIn: number | null = null;
 
   /** Each type's dress, from the rules' roster, is made once. */
   constructor(roster: readonly FoeType[]) {
@@ -131,9 +133,19 @@ export class FoeFigures {
     return this.dresses.get(type?.type ?? kept.type) ?? null;
   }
 
+  /** Lets go of every foe's figure and all kept of each, its dress among them: as the room is left, or one joined
+   *  again numbers its foes afresh. */
+  forget(forge: Cards): void {
+    for (const placed of this.figures.values()) forge.forget(placed.id);
+    const keptBy = [this.figures, this.loops, this.overs, this.trails, this.dissolves, this.over, this.lattice];
+    for (const kept of [...keptBy, this.changes, this.dying, this.dressed]) kept.clear();
+    this.glides.keep(new Set());
+    this.seenIn = null;
+  }
+
   /** Dresses the foe the room numbers `id`, of roster type `type`, in `look` with its type's weapons drawn, in place
-   *  of its type's dress: as the Brig's crew wear their own clothes. Room numbers are never used twice, and a page
-   *  dresses a few dozen at most, so a dress is kept past its foe. */
+   *  of its type's dress: as the Brig's crew wear their own clothes. A room numbers no foe twice, and a page dresses a
+   *  few dozen at most, so a dress is kept past its foe until the room is left (`forget`). */
   dressFoe(id: number, type: number, look: Dress): void {
     const hands = this.roster.find((each) => each.type === type);
     this.dressed.set(id, {
@@ -156,6 +168,11 @@ export class FoeFigures {
     flashes: Flashes,
     feel: FoeFeel | null = null,
   ): CardAt[] {
+    if (fight.joins !== this.drawnIn) {
+      // What was set before a room's first frame (a crew's dress, a death's element) is that room's own.
+      if (this.drawnIn !== null) this.forget(forge);
+      this.drawnIn = fight.joins;
+    }
     const cards: CardAt[] = [];
     // The Fissure's growth is a foe the room strikes like one, but only its crystal stands there: no figure.
     const growths = (fight.publicHeld?.marks ?? []).filter((mark) => mark.kind === MARK.growth).map((mark) => mark.id);

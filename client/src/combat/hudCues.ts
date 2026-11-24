@@ -151,7 +151,8 @@ export function veilNode(veil: { readonly words: string; readonly link: boolean 
     fill: veil.link ? 'rgba(5,7,10,0.72)' : 'rgba(51,0,0,0.667)',
     alignX: 'center',
     alignY: 'center',
-    float: { to: 'screen', z: 1 },
+    // Over every mark of the display, the compass's diamonds (z 2) among them.
+    float: { to: 'screen', z: 3 },
     children: [{ text: { words: veil.words, size: 2, colour: '#f2efe6', edge: 'halo', align: 'center' } }],
   };
 }
