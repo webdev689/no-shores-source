@@ -321,8 +321,8 @@ player while they are in it (`room::perks`). A blow lands when it strikes, is bl
   piece. A Breach's armour or weapon (`vestige::make` from a Breach) rolls its handling and finish columns from the
   shared pools as any piece does, and every node of its perk columns from the Breaches' perks that fit it, never one
   the piece already offers, as a shared piece never offers a trait twice. Six fit armour, every perk node of a
-  Legendary's, and four or five each kind of weapon, a Legendary weapon's four. Shatterpoint (melee) Exposes a foe whose guard a blow breaks. Vein Strike
-  (weapon) strikes an Exposed foe 15% harder, a blow or a shot. Bloom (weapon) Exposes every other living foe within
+  Legendary's, and four or five each kind of weapon, a Legendary weapon's four. Shatterpoint (melee) Exposes a foe
+  whose guard a blow breaks. Vein Strike (weapon) strikes an Exposed foe 15% harder, a blow or a shot. Bloom (weapon) Exposes every other living foe within
   4 m of a foe it slays. Crystal Sight (ranged) Exposes a foe a shot lands on 20 m or more from the shooter, as the
   shot lands. Crystal Skin (armour) takes 10% off every blow while above three quarters of its wearer's health, a trim
   (`hale_taken`), so a browser predicts it, a blocked blow's chip too. Regrowth (armour) gives back 5% of the most

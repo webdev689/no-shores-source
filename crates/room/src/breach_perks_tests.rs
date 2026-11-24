@@ -1,7 +1,6 @@
 //! The Breaches' own perks in the room: Shatterpoint, Vein Strike, Bloom, Crystal Sight, Splinter and Shard Round on
 //! the weapons; Crystal Skin, Regrowth, Resonance, Fracture, Lattice Shell and Shardburst on the armour; Lattice Wall
-//! on a shield. Each is worn here on a Breach's piece, the
-//! only one it fits.
+//! on a shield. Each is worn here on a Breach's piece, the only one it fits.
 
 use super::verbs_tests::{SWING, blow, has, shoot, stand, swing};
 use crate::perks::trim_of;
