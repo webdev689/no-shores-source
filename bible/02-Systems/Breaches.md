@@ -90,19 +90,37 @@ Claude's ([[The Drowned Vale as Claude Builds It]]).
 ## On the page
 
 - **Launched from the Playlist** (`playlistBreach.ts`, `breachTrips.ts`): its crest opens Find a Company's Launch at
-  its tier; the run found, the page travels to the Gullwing Vale joined with the run, standing at the gate. A refusal
-  shows its words.
+  its tier; its card says it is played online with a company, the Prestige each tier reaches and the standing-again
+  times. The run found, the page travels to the Gullwing Vale joined with the run, standing at the gate. A refusal
+  shows its words: the gate's own (112), "Too far from the gate." (100), or that the gate did not answer.
 - **The gate in the zone** (`breachView.ts`, `breachWords.ts`): within 60 m of the gate its banner takes the zone's
-  banner's place (the Spire's fill, each mooring held, claimed or free, the companies inside); further off it is one
-  line under the zone's own; the compass marks the gate. A company the gate opened to is offered "Enter the Drowned
-  Vale" at its doorway.
+  banner's place (the Spire's fill, each mooring held, claimed or free by the holding company's living players, the
+  company holding it by its first player's name and its revives at Hard, the companies inside); further off it is one
+  line under the zone's own; the compass marks the gate. The seal stands in its doorway until the gate opens to the
+  viewer's company, which is offered "Enter the Drowned Vale" there. The Waking's moments and stings reach only its
+  company and those in the hollow.
 - **In the run**: its spaces drawn over the dark from the plan (`room_breach`), only the Breach's modules loaded while
-  there; its seals while shut, its slabs fading in and out over a second, its bells, the Lodestone (lying, on its
-  plinth, or turning 2.3 m over its bearer); each encounter's banner from the snapshot's Breach; the Rewritten ringed
-  at their feet and named on their plates; the revives left at Hard. The page predicts on the run's blocks as its
-  room stands them (`fighter_breach`). The way out is Use at the Descent's entry, or at the court's portal once won.
-- **Raising and following**: holding Use by a fallen company member raises them, its share a ring; while dead, the
-  view follows a living company member (`followCamera.ts`), F (RB) choosing the next.
+  there and let go on any way out; heard underground; its seals while shut, its slabs fading in and out over a
+  second, its bells, the hidden chests (shut until paid), the Lodestone (lying, on its plinth, or turning 2.3 m over
+  its bearer); each encounter's banner from the snapshot's Breach, with its limits (fusions of 4, Hard 3; the round of
+  5; the takings of 4); the Rewritten ringed at their feet and named on their plates; the revives left at Hard. The
+  page predicts, aims and sees on the run's blocks as its room stands them (`fighter_breach`). The way out is Use at
+  the Descent's entry, or at the court's portal once won.
+- **Its marks** (`breachMarks.ts`): the compass's stage reached, way on, way out and Lodestone; rings on the ground for
+  the open seams and their overtaken reach, the font lit or resting, the marked desk, each Watcher's cone (14 m,
+  40°), and the moorings' reach; the Steward's order while the taken are away as the numerals I to V in the court over
+  the rift's mooring, each shore bell carrying its place's numeral. Which Choir bell comes next is never marked.
+- **Its moments**, each once, at its place where it names one: a bell, a mooring, a rift, a desk. The great foes'
+  waking plays the Elite Boss's sting and the music's peak; a wipe, a raise and the company unwritten are told in
+  words.
+- **The Lodestone's bearer** is drawn bare handed with no crosshair; any Art key Grounds it once charged, and the hints
+  say so.
+- **Falling, raising and following**: the death veil says the Breach's truth (10 s at Normal in a running encounter
+  or the Waking, 6 s outside one, and at Hard that a company member can raise them, with the revives left), and
+  Respawn is offered only when the room would take it. Holding Use by a fallen company member raises them, its fill a
+  ring; there is no prompt with no revives left, nor at the gate outside one's company's Waking; "no revives left"
+  (110) and "none to raise" (111) are told in words. While dead, once their fall has played, the view follows a
+  living company member, in the run or at the gate (`followCamera.ts`), F (RB) choosing the next.
 
 ## Its art
 
