@@ -301,7 +301,7 @@ third person, the forge's figure and the first person's hands, and the Test Grou
 - **On the ground**: each resource node stands as the forge's picture of its island's resource (`nodeCards`,
   [[Sprite Forge]], [[Material Nodes Stand Where They Are Dressed, Worked by Holding E]]), every resource at one scale,
   before the place its resource comes from, while the room stands it for the player, and as it looks spent once they
-  gathered it, until its turn comes round; a place resting its turn shows only its dressing. The picture alone marks a
+  gathered it, until it returns for them; a place the room stands no node at shows only its dressing. The picture alone marks a
   node: no ring, no beam, no mark over it. Each drop lying for them hovers, a Vestige as its crystal, under its
   rarity's line (`combat/drops.ts`; [[Gear]], "Drops"), taken by walking over it.
 - **E** uses what is within reach, shown as Destiny shows it, a keycap and the deed low in the middle of the view

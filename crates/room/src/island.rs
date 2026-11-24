@@ -150,11 +150,11 @@ impl Room {
     /// The island's nodes a player's character gathered today, spent for them again in this room, landing or not, until
     /// the day turns ([[The Audit's Leftovers Are Fixed as Claude Suggested]]).
     pub(crate) fn spent_today(&mut self, player: PlayerId) {
-        let (Some(seed), day) = (self.isle.as_ref().map(|isle| isle.seed), self.day()) else { return };
+        let (Some(seed), day, clock) = (self.isle.as_ref().map(|isle| isle.seed), self.day(), self.clock) else { return };
         let Some(found) = self.players.get_mut(&player) else { return };
         for node in found.character.activity.gathered_on(day, seed).to_vec() {
-            if !found.spent.contains(&node) {
-                found.spent.push(node);
+            if !found.spent.iter().any(|&(spent, _)| spent == node) {
+                found.spent.push((node, clock));
                 found.gear_changed = true;
             }
         }

@@ -434,7 +434,7 @@ pub fn gear_bytes(room: &Room, player: PlayerId) -> Option<Vec<u8>> {
         items,
         vestiges,
         drops,
-        spent: Some(builder.create_vector(&found.spent)),
+        spent: Some(builder.create_vector(&found.spent.iter().map(|&(node, _)| node).collect::<Vec<u8>>())),
         at_mage: room.at_mage(player),
         answer: found.answer,
         identified: found.identified,

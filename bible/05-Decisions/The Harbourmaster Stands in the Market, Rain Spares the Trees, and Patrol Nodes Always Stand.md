@@ -30,3 +30,9 @@ a sealed gate at its head, like the hub's other sealed gates."
 - In a patrol zone every material node stands, for everyone, except one the player has gathered themselves; no node
   waits its turn ([[Gear]]). This replaces the turns of a third at a time in
   [[Material Nodes Stand Where They Are Dressed, Worked by Holding E]].
+
+## Claude's calls
+
+| Call | Chosen | Why |
+|---|---|---|
+| When a gathered patrol node returns for its gatherer | Nine minutes after they gathered it (`patrol::RETURN_TICKS`), for them alone, across a rejoin | The rate a player had before: a node stood for them one turn in three, three minutes a turn |

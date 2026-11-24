@@ -246,7 +246,7 @@ fn where_landings_are_checked_a_node_is_gathered_by_the_landed_alone_and_stands_
     for _ in 0..=asks::GATHER_TICKS {
         room.tick();
     }
-    assert!(room.player(player).expect("in").spent.contains(&0), "gathered");
+    assert!(room.player(player).expect("in").spent.iter().any(|&(node, _)| node == 0), "gathered");
     // Rejoined with its character, landed again, or in another room of the island, it stays spent for them until the
     // day turns.
     let kept = room.kept_character(player).expect("kept");
