@@ -25,6 +25,9 @@ pub const SWEEP_TICKS: f64 = 9.0 * 60.0;
 pub const SEEN_TICKS: u32 = 45;
 pub const HEARD_M: f64 = 8.0;
 pub const SEEN_TO_WIPE: u64 = 3 * 60;
+/// The Watchers listen only once the Ways have run this long, the time their teaching line takes to read: a company
+/// that runs in is not heard before it knows it may be.
+pub const HEAR_AFTER: u64 = 3 * 60;
 /// A Watcher's eye over its feet, and a player's chest, metres.
 const EYE_M: f64 = 2.2;
 const CHEST_M: f64 = 1.2;
@@ -66,7 +69,8 @@ impl Room {
         }
         let on_stair = self.in_space(breach, "stair");
         let living: Vec<PlayerId> = self.counted_players().into_iter().filter(|id| self.players[id].living()).collect();
-        let won = !living.is_empty() && living.iter().all(|id| on_stair.contains(id));
+        // An unwriting the Watchers have called at Hard comes, whoever reaches the Stair meanwhile.
+        let won = !living.is_empty() && living.iter().all(|id| on_stair.contains(id)) && fight.wipe_at.is_none();
         breach.fights.ways = fight;
         if won {
             self.win_encounter(breach, WAYS);
@@ -108,11 +112,13 @@ impl Room {
             .map(|foe| [foe.fighter.body.x, foe.fighter.body.y, foe.fighter.body.z, foe.fighter.body.facing])
             .collect();
         let mut seen_now = Vec::new();
+        let listening = matches!(breach.phases[WAYS], super::Phase::Running(since) if self.clock >= since + HEAR_AFTER);
         let players: Vec<PlayerId> = self.in_space(breach, "ways");
         for id in players {
             let Some(found) = self.players.get(&id) else { continue };
             let body = found.fighter.body;
-            let heard = body.mode == Mode::Ground
+            let heard = listening
+                && body.mode == Mode::Ground
                 && (body.vx * body.vx + body.vy * body.vy).sqrt() > movement::TUNING.walk + 0.5
                 && watchers.iter().any(|watcher| apart([watcher[0], watcher[1]], [body.x, body.y]) <= HEARD_M);
             let lit = watchers.iter().any(|&[x, y, z, facing]| {
@@ -140,6 +146,8 @@ impl Room {
     /// unwritten a few seconds on.
     fn watcher_saw(&mut self, breach: &mut Breach, fight: &mut Ways, id: PlayerId) {
         fight.seen = true;
+        // The Heart's chest opens only to an attempt in which no one was seen: once seen, it shuts again.
+        breach.chests.remove(&2);
         self.tell_all(EventKind::Seen, f64::from(id));
         if breach.tier == gear::breach::Tier::Hard {
             fight.wipe_at.get_or_insert(self.clock + SEEN_TO_WIPE);

@@ -590,3 +590,6 @@ mod steward_tests;
 #[cfg(test)]
 #[path = "tuning_tests.rs"]
 mod tuning_tests;
+#[cfg(test)]
+#[path = "ways_tests.rs"]
+mod ways_tests;
