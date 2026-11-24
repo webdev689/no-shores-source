@@ -633,11 +633,11 @@ the Grey Tithe's ships alone ([[Pirates Are Replaced by the Grey Tithe]]).
   each ship at that pace and sends it as the ship's pace; the page sails its own at the room's pace, drawn to where the room
   has it, and the voyage's line says it is held.
 - **A Tithe ship attacks a friendly ship** (`friendlies.rs`, `clash.rs`). A bold Tithe ship within 750 m of a friendly
-  ship of the traffic under way (not lying at its roadstead, its id not taken), or of one sailing on off its route,
+  ship of the traffic under way (not lying at its berth, its id not taken), or of one sailing on off its route,
   attacks the nearest: both leave the sea and fight there with no player, on the fight of many ships, which the room
   steps each tick. The friendly ship fights for the players: the players' faction at Major, in the hull the traffic
   gives it, at the Tithe ship's level and sight. Its traffic id is taken until its voyage would have ended (the rest of
-  its route at 5 m/s, and its 600 s at the roadstead), so the page draws it once. Each ship stays where the fight has
+  its way at 60 m/s, and its 600 s at its berth), so the page draws it once. Each ship stays where the fight has
   it, and the snapshot shows it there, the friendly one among the friendly ships. The fight lasts while either fights
   on; then one who struck, sank or runs leaves the sea, a Tithe ship that won sails on as hostile ships do, and a
   friendly ship afloat (at once, one that strikes) sails on for its route's far port at the traffic's 5 m/s by what

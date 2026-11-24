@@ -382,13 +382,13 @@ test('a sea where a Tithe ship attacks a friendly ship and a player joins them s
   const player = room.join();
   const out = [
     [450_000, 97_000],
-    [340_000, 92_000],
+    [340_000, 86_000],
   ] as const;
   assert.equal(room.input(player, courseBytes(out, 10)), 'taken');
   let hash = 0xcbf2_9ce4_8422_2325n;
   let friendly = false;
   for (let tick = 1; tick <= 16_000; tick++) {
-    if (tick === 1_831) assert.equal(room.input(player, courseBytes([[441_700, 96_800]], 10)), 'taken');
+    if (tick === 1_831) assert.equal(room.input(player, courseBytes([[441_700, 96_350]], 10)), 'taken');
     room.tick();
     if (tick % 60 !== 0) continue;
     const bytes = room.snapshot(player);
@@ -399,7 +399,7 @@ test('a sea where a Tithe ship attacks a friendly ship and a player joins them s
     friendly ||= others.some((other) => other.faction === 0);
   }
   assert.ok(friendly, 'the player fights beside the friendly ship');
-  assert.equal(hash.toString(16).padStart(16, '0'), '74ddb4da44c57151');
+  assert.equal(hash.toString(16).padStart(16, '0'), '2905558be09d8e59');
 });
 
 test('a fleet room sails the ships a browser orders, and the browser predicts its own to the bit', () => {
