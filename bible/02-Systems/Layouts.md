@@ -49,8 +49,12 @@ bounded by rock and walls rather than open ground. How it is laid out is Claude'
 `content/world/briefs.json` gives each node a line on its character and the areas it holds, by kind and name, in the
 order they are placed: a hamlet (one to four RMB blocks), a farm, a ruin, a keep, a graveyard, a coven, a shrine, a
 camp, a watchtower, a lighthouse, open wilds, a dock, a mill, a quarry, a wreck, a graveyard of ships, the bones of
-something enormous, a causeway, a cave's mouth, and an instance's way in and the arena it ends in. A node with no brief
-is open ground to arrive on and fight over. Every one of the 90 drawn nodes has its own. A brief may also carry hints:
+something enormous, a causeway, a cave's mouth, an instance's way in and the arena it ends in, and a plot. A node with
+no brief is open ground to arrive on and fight over; an outpost site's is a landing, a plot and an arena (The Landing,
+The Plot, The Muster Ground), and it links to no patrol area. A plot is the ground a guild builds on: a square 64 m a
+side, axis-aligned round its middle, on flat dry ground within 250 m of the landing where the land allows. Nothing
+stands on it: no beacon or resource is marked there, a way ends at its rim, and four low stones stand just outside its
+corners. Of the 99 drawn nodes, the 90 that are not outpost sites each have their own. A brief may also carry hints:
 `rock`, the shape its outcrops stand in where its climate's would not suit it (the Saltgrass Downs' whalebacks, the
 Gullwing Vale's knolls, the Driftwood Moors' tors); `stone`, the stone its cliffs and rubble wear (the Downs' chalk);
 and `river`, that a river runs through it (the Vale), which carries the claim along the river (below). `heights` stands its places at heights (Saltmere's
@@ -67,7 +71,8 @@ from the sea, fresh water and the claim's edge), then:
    for a dock, a river bank for a mill, a slope for a quarry. Areas keep at least 50 m of open ground between their
    reaches and spread over the claim, so something stands every couple of hundred metres. A patrol area's landing
    comes first on its seaward side, then a gate at its edge toward each instance it leads to (the mission, dungeon
-   and boss nodes nearer it than any other patrol area), then the brief's areas. An instance's way in comes first,
+   and boss nodes nearer it than any other patrol area), then the brief's areas. An outpost site's landing comes first
+   the same way, then its plot near it. An instance's way in comes first,
    at its edge toward its patrol area, and each later area lies further on, so the way through runs one way.
 2. **The blocks.** A hamlet stands a tavern, houses, a shop and a temple; a farm, a ruin, a keep, a graveyard, a
    coven, a shrine and a cave's mouth stand one block of their kind. A hamlet's blocks stand apart across lanes and
@@ -138,9 +143,10 @@ from the sea, fresh water and the claim's edge), then:
      cutting through no building. A ramp runs on from one of its ends along the rim down to the floor, and rows of
      headstones stand on the shelf, askew, a few gone, either side of a lane down its middle, the last pieces stood,
      none in a building, a prop, a solid or on a ramp;
-   - a keep and a camp: such a bowl with a platform round the middle, ramped wherever a way crosses its edge or ends
+   - a keep, a camp and a plot: such a bowl with a platform round the middle, ramped wherever a way crosses its edge or ends
      short of it, each way its own ramp unless one already climbs there on the same bearing. A keep's reaches 6 m past its buildings and 34 m at the least, at 0.18 of the massif's height; a
-     camp's reaches 6 m past its palisade, at 0.12;
+     camp's reaches 6 m past its palisade, at 0.12; a plot's 6 m past its square's corners, at 0.12, so its whole square
+     stands level;
    - every other kind: a round bowl 32 m wider than its reach.
 
    A shelf and a platform are level climbs, and a ramp a climb from the floor to their level ([[Land]]), 9 m wide,

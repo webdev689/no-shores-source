@@ -162,7 +162,7 @@ pub fn mark(
         ) {
             sites.push(site(SiteKind::Foes, area.at, area.radius * 0.8, Some(area.name.clone())));
         }
-        if matches!(area.kind, AreaKind::Gate | AreaKind::Landing | AreaKind::Entrance) {
+        if matches!(area.kind, AreaKind::Gate | AreaKind::Landing | AreaKind::Entrance | AreaKind::Plot) {
             continue;
         }
         // Two beacons a place, on its rim, where a body can stand: something to take up on arriving.
@@ -173,7 +173,7 @@ pub fn mark(
             let at = [area.at[0] + sine * area.radius * 0.85, area.at[1] - cosine * area.radius * 0.85];
             let apart =
                 sites.iter().filter(|other| other.kind == SiteKind::Beacon).all(|other| distance(other.at, at) > 40.0);
-            if clear(field, seating, at) && apart && off_paths(paths, at) {
+            if clear(field, seating, at) && apart && off_paths(paths, at) && !crate::areas::on_plot(areas, at, 3.0) {
                 sites.push(site(SiteKind::Beacon, at, 3.0, None));
                 placed += 1;
                 if placed == 2 {
@@ -207,6 +207,7 @@ pub fn mark(
                 && clear(field, seating, at)
                 && off_paths(paths, at)
                 && areas.iter().all(|area| distance(area.at, at) > area.radius * 0.6)
+                && !crate::areas::on_plot(areas, at, NODE_FRONT_M + 3.0)
             {
                 let back = NODE_FRONT_M / off;
                 let node = [at[0] + (pair[1][0] - at[0]) * back, at[1] + (pair[1][1] - at[1]) * back];

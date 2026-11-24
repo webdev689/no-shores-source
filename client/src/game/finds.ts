@@ -62,7 +62,7 @@ export function findUse(
   if (chest && chest.off <= CHEST_REACH_M) {
     const { number } = chest.find;
     const run = () => ask({ kind: ASKS.openFind, item: number });
-    return { words: 'Hold to open the chest', run, held: { kind: 'find', index: number, seconds: OPEN_S } };
+    return { words: 'Hold to open the chest', run, hold: { kind: 'find', index: number, seconds: OPEN_S } };
   }
   const searchables = (gear.searchables ?? []).filter((each) => level(each.foot));
   const held = nearest(searchables, (each) => offBox(each.box, x, y));
@@ -72,7 +72,7 @@ export function findUse(
   return {
     words: `Hold to search the ${holderName(model)}`,
     run,
-    held: { kind: 'find', index: number, seconds: SEARCH_S },
+    hold: { kind: 'find', index: number, seconds: SEARCH_S },
   };
 }
 

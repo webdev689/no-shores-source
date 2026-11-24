@@ -5,7 +5,7 @@ use flatbuffers::{FlatBufferBuilder, Vector, WIPOffset};
 use room::{PlayerId, Room};
 
 /// A chest or a container begun to be opened, E held, by its number in `item`; let go of by the gather's stop.
-pub const OPEN_FIND: u8 = 75;
+pub const OPEN_FIND: u8 = 81;
 
 /// The chests standing that a player has not opened: each its number, x, y, z and the way its front faces.
 pub(crate) fn chests_of<'built>(

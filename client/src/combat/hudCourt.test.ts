@@ -271,7 +271,7 @@ test("another player's plate under the banner is hidden as a foe's is", () => {
   const mariner = (z: number) => ({
     id: 5,
     feet: [archer.x, archer.y, z] as const,
-    plate: { player: 5, name: 'Mariner', level: 6, menu: false },
+    plate: { player: 5, name: 'Mariner', level: 6, menu: false, tag: '' },
     company: false,
   });
   const plate = () => allOf(hud.node(ui)).find((node) => node.id === 'player-plate-5');

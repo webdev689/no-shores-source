@@ -427,3 +427,8 @@ test('the lore found and lying in the node read back: each found by its number, 
   const none = gearOf(Gear.getRootAsGear(new flatbuffers.ByteBuffer(bare.asUint8Array())));
   assert.deepEqual([none.lore, none.loreHere], [[], []], 'a room that sends none');
 });
+
+test('every ask has a number of its own, so the room never mistakes one for another', () => {
+  const numbers = Object.values(ASKS);
+  assert.equal(new Set(numbers).size, numbers.length);
+});

@@ -6,7 +6,9 @@
 
 import type { Db } from './database.ts';
 import { friendsOf } from './friends.ts';
+import { keptBanner } from './guildFace.ts';
 import { RANKS, guildOf } from './guilds.ts';
+import { levelOf } from '../../client/src/game/guild/guildLaw.ts';
 import { INVITE_MS, PRIVACIES, keepPresent, companyOf, privacyOf } from './companies.ts';
 import { PERSON, type Person, type PersonRow, accountNamed, blocks, shown } from './people.ts';
 
@@ -147,6 +149,9 @@ export async function rosterOf(database: Db, own: string, now: number) {
           name: guild.name,
           tag: guild.tag,
           motto: guild.motto,
+          description: guild.description,
+          banner: keptBanner(guild.banner, guild.name),
+          level: levelOf(guild.xp),
           rank: RANKS[guild.rank],
           members: guildMembers.map((row) => ({ ...shown(row), rank: RANKS[row.rank] ?? 'Member' })),
           invited: invited.map(placeless),
@@ -182,7 +187,17 @@ export async function detailsOf(database: Db, own: string, name: string, now: nu
     ...seen,
     place: close ? seen.place : null,
     playing: seen.place !== null,
-    guild: guild ? { name: guild.name, tag: guild.tag, motto: guild.motto, rank: RANKS[guild.rank] } : null,
+    guild: guild
+      ? {
+          name: guild.name,
+          tag: guild.tag,
+          motto: guild.motto,
+          description: guild.description,
+          banner: keptBanner(guild.banner, guild.name),
+          level: levelOf(guild.xp),
+          rank: RANKS[guild.rank],
+        }
+      : null,
     shown: kept?.shown ? (JSON.parse(kept.shown) as Shown) : null,
   };
 }

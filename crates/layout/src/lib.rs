@@ -184,9 +184,13 @@ pub fn plan(
         .collect();
     let blocked = blocked_by(&field, &seating);
     let (mut paths, joined) = paths::lay(&field, &areas, &hubs, &blocked, patrol, seed);
-    // A way ending at an area's middle stops at what stands there: its set piece, tower or hull.
+    // A way ending at an area's middle stops at what stands there: its set piece, tower or hull; or at a plot's rim,
+    // past its square's corners.
     for (area, _) in areas.iter().zip(&hubs).filter(|&(area, &hub)| distance(hub, area.at) < 1e-6) {
-        clearing::end_at_rim(&mut paths, area.at, clearing::rim_of(&seating, area.at));
+        // A plot's rim stays inside its platform's edge, so a way crossing that edge is ramped up to it.
+        let rim =
+            if area.kind == AreaKind::Plot { areas::PLOT_CORNER_M + 1.0 } else { clearing::rim_of(&seating, area.at) };
+        clearing::end_at_rim(&mut paths, area.at, rim);
     }
     clearing::round_rooms(&mut paths, &seating);
     clearing::keep_off_paths(&mut seating, &paths, &|x, y| ground.height_at(x, y));
@@ -454,7 +458,8 @@ pub fn plan(
 }
 
 /// Places a brief's areas, and how many blocks each stands (0 for an area of no blocks). A patrol area's landing comes
-/// first, on the seaward side, then a gate at the edge toward each instance it leads to, then the brief's other areas.
+/// first, on the seaward side, then a gate at the edge toward each instance it leads to, then the brief's other areas;
+/// an outpost site's landing too, then its plot near it.
 /// An instance's entrance comes first, at the edge toward its patrol area, and each later area lies further on.
 fn place_areas(node: &Node, field: &Field, brief: &Brief, links: &[Link], seed: u32) -> (Vec<Area>, Vec<u8>) {
     let mut areas: Vec<Area> = Vec::new();
@@ -478,7 +483,7 @@ fn place_areas(node: &Node, field: &Field, brief: &Brief, links: &[Link], seed: 
             1.5 * (1.0 - distance(at, towards) / span).max(0.0) - inside / 150.0
         }
     };
-    if node.kind == NodeKind::Patrol {
+    if matches!(node.kind, NodeKind::Patrol | NodeKind::Outpost) {
         if let Some(landing) = brief.areas.iter().find(|area| area.kind == AreaKind::Landing) {
             // Players come ashore from the sea, so the landing lies on the claim's seaward side.
             let (middle, seaward) = (middle_of(node), field.seaward);
@@ -491,8 +496,15 @@ fn place_areas(node: &Node, field: &Field, brief: &Brief, links: &[Link], seed: 
         for link in links {
             put(&mut areas, AreaKind::Gate, "", 0, Some(link.id.clone()), &edge_pull(link.towards));
         }
+        // A plot lies near the landing, the ground a guild builds on in reach of its ships.
+        let landing = areas.first().filter(|area| area.kind == AreaKind::Landing).map(|area| area.at);
+        let near_landing = move |at: [f64; 2]| {
+            landing.map_or(0.0, |landing| if distance(at, landing) <= areas::PLOT_FROM_LANDING_M { 1.0 } else { -1.0 })
+        };
         for brief_area in brief.areas.iter().filter(|area| area.kind != AreaKind::Landing) {
-            put(&mut areas, brief_area.kind, &brief_area.name, brief_area.blocks.unwrap_or(1), None, &|_| 0.0);
+            let pull: &dyn Fn([f64; 2]) -> f64 =
+                if brief_area.kind == AreaKind::Plot { &near_landing } else { &|_| 0.0 };
+            put(&mut areas, brief_area.kind, &brief_area.name, brief_area.blocks.unwrap_or(1), None, pull);
         }
     } else {
         let entrance = brief.areas.iter().find(|area| area.kind == AreaKind::Entrance);

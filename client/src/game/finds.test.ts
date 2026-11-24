@@ -39,7 +39,7 @@ test('E held by a chest within reach opens it by its number, a second', () => {
   const asked: GearAsk[] = [];
   const use = findUse([10 + CHEST_REACH_M - 0.1, 0, 2], gear, (each) => asked.push(each), false);
   assert.equal(use?.words, 'Hold to open the chest');
-  assert.deepEqual(use?.held, { kind: 'find', index: 7, seconds: OPEN_S });
+  assert.deepEqual(use?.hold, { kind: 'find', index: 7, seconds: OPEN_S });
   use?.run();
   assert.deepEqual(asked, [{ kind: ASKS.openFind, item: 7 }]);
   assert.equal(
@@ -67,7 +67,7 @@ test('E held by a chest within reach opens it by its number, a second', () => {
 test('E held beside a container searches it a second and a half, naming it by its kind', () => {
   const use = findUse([0.5, 20 - SEARCH_REACH_M + 0.1, 0], gear, () => undefined, false);
   assert.equal(use?.words, 'Hold to search the wardrobe');
-  assert.deepEqual(use?.held, { kind: 'find', index: 9, seconds: SEARCH_S });
+  assert.deepEqual(use?.hold, { kind: 'find', index: 9, seconds: SEARCH_S });
   assert.equal(
     findUse([0.5, 20 - SEARCH_REACH_M - 0.1, 0], gear, () => undefined, false),
     null,
@@ -76,7 +76,7 @@ test('E held beside a container searches it a second and a half, naming it by it
   const above = { ...WARDROBE, number: 10, box: [0, 19.6, 1, 19.9] as const, foot: 3, top: 4.8 };
   const twoFloors = state({ chests: [], searchables: [above, WARDROBE] });
   assert.equal(
-    findUse([0.5, 20 - SEARCH_REACH_M + 0.1, 0], twoFloors, () => undefined, false)?.held?.index,
+    findUse([0.5, 20 - SEARCH_REACH_M + 0.1, 0], twoFloors, () => undefined, false)?.hold?.index,
     9,
     'one on the floor above, nearer across, never hides one beside them',
   );

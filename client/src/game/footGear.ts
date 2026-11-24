@@ -53,12 +53,15 @@ export interface HeldUse {
   readonly seconds: number;
 }
 
-/** What E does where a player stands: its deed in words, and the doing; and what it does held there, if anything, or
- *  the fallen ally it revives (`footRevive.ts`). */
+/** What E does where a player stands: its deed in words, and the doing; what it does as E is held there, if anything,
+ *  or the fallen ally it revives (`footRevive.ts`); for a deed done once E is held through, how far it has been held
+ *  (0 to 1); and `idle` where the words are a refusal and E does nothing, so no key is shown for it. */
 export interface Use {
   readonly words: string;
   readonly run: () => void;
-  readonly held?: HeldUse;
+  readonly hold?: HeldUse;
+  readonly held?: number;
+  readonly idle?: boolean;
   readonly revive?: number;
 }
 
@@ -100,7 +103,7 @@ export function useAt(
   return {
     words: `Hold to gather ${resourceName(node.resource)}`,
     run: () => ask({ kind: ASKS.gather, node: node.index }),
-    held: { kind: 'node', index: node.index, seconds: GATHER_S },
+    hold: { kind: 'node', index: node.index, seconds: GATHER_S },
   };
 }
 
@@ -175,6 +178,14 @@ export const STORY_BEHIND_ON_FOOT = true;
  *  gear that says it is not kept, so a kept character claimed after the first word is told again. */
 export function tellsPrologue(gear: GearState | null, played: boolean, told: GearState | null): boolean {
   return played && gear !== null && gear !== told && gear.prologueDone === false;
+}
+
+/** Tells the room the story is behind the player, once for each word on the gear that says it is not kept; answers the
+ *  gear last told of. */
+export function tellPrologue(gear: GearState | null, told: GearState | null, here: { ask(ask: GearAsk): void } | null) {
+  if (!tellsPrologue(gear, STORY_BEHIND_ON_FOOT, told)) return told;
+  here?.ask({ kind: ASKS.finishPrologue });
+  return gear;
 }
 
 /** The player's gear in their room, asked of through `ask`, with what draws it for the screens (`shown`); null offline

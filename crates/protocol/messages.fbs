@@ -166,13 +166,14 @@ table Dressed {
   dress: string;
 }
 
-// What others read over a player's head: their username (none for a guest), their level, and whether a menu is open
-// on their screen.
+// What others read over a player's head: their username (none for a guest), their level, whether a menu is open on
+// their screen, and their guild's tag (none in no guild).
 table Plate {
   player: uint;
   name: string;
   level: ubyte;
   menu: bool;
+  tag: string;
 }
 
 // The room's welcome: the joining player's number, everyone's dress so far, and in a node's room the node's id and
@@ -556,6 +557,9 @@ table Snapshot {
   // fallen player an ally is reviving.
   darkness: bool;
   reviving: [Reviving];
+  // At a guild's outpost, how many plots its room has stood: the page reads the outpost again when it changes. 0 in
+  // any other room.
+  outpost: uint;
 }
 
 // What a room sends: exactly one of these is present.

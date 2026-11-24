@@ -4,7 +4,7 @@ import type { Gear } from '../../../generated/messages/ts/overlook/wire/gear.ts'
 
 /** The finds' ask: a chest or a container begun to be opened, E held, by its number in `item`; let go of by the
  *  gather's stop. */
-export const FIND_ASKS = { openFind: 75 } as const;
+export const FIND_ASKS = { openFind: 81 } as const;
 
 /** A chest standing for the player: its number, the middle of its foot (x, y, z) and the way its front faces
  *  (radians clockwise from north). */

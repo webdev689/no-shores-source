@@ -433,3 +433,12 @@ test('a player mutes so many at most; muting one muted already still answers don
   assert.equal((await ada.ask('mute', { name: 'Cal' })).status, 409);
   assert.equal((await ada.ask('mute', { name: 'Ben' })).status, 200, 'Ben is muted already');
 });
+
+test("a player's details show their guild's description beside its motto", async () => {
+  const { player } = await world('Ada', 'Ben');
+  const ada = player('Ada');
+  await ada.ask('guild/found', { name: 'Salt Kings', tag: 'SALT' });
+  await ada.ask('guild/description', { description: 'We keep the cove.' });
+  const guild = (await player('Ben').details('Ada')).body['guild'] as { description: string };
+  assert.equal(guild.description, 'We keep the cove.');
+});

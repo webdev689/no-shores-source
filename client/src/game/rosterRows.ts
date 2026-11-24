@@ -45,13 +45,16 @@ export function placeWords(place: string | null): string {
   if (place === 'sea') return 'At sea';
   const node = nodeOfRoom(place);
   if (!node) return 'Playing';
-  const { id, seas, dungeon, run } = node;
+  const { id, seas, dungeon, run, guild } = node;
   const city = id.endsWith('-social') ? id.slice(0, -'-social'.length) : id;
   const name = city.replace(
     /(^|-)([a-z])/g,
     (_whole, gap: string, first: string) => `${gap ? ' ' : ''}${first.toUpperCase()}`,
   );
   const tierName = `${seas[0]?.toUpperCase()}${seas.slice(1)}`;
+  // A run of a guild's room is its guild dungeon, by its tier past Normal.
+  if (run !== null && guild !== null)
+    return [name, 'Guild dungeon', ...(seas === 'normal' ? [] : [tierName])].join(' · ');
   // An Elite Dungeon's run says which it is, the week's by its own tier.
   if (run !== null && dungeon === null)
     return [name, seas === 'normal' ? 'Elite Dungeon' : `${tierName} Dungeon of the week`].join(' · ');
