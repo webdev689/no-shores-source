@@ -212,7 +212,7 @@ test("a faction's armour waits for the second rank and its weapons for the third
     'Stormcaller Gauntlets',
     'Stormcaller Greaves',
   ]);
-  assert.deepEqual(names(atRank(0), 'Weapons'), ['Squallbreak', 'Thunderstring']);
+  assert.deepEqual(names(atRank(0), 'Weapons'), ['Stormcaller Sword and Shield', 'Stormcaller Bow']);
   const low = row(atRank(1), 'Armour')?.wares[0];
   assert.deepEqual([low?.note, low?.ask, low?.dim], ['From rank 2', null, true]);
   const helm = row(atRank(2), 'Armour')?.wares[0];

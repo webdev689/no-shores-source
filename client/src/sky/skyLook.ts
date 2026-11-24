@@ -178,6 +178,7 @@ export function lookOf(reading: SkyReading, worldS: number, flash: number): SkyL
     stars: smooth(-0.02, -0.25, sun[2]) * (1 - 0.6 * moonShown) * (1 - 0.5 * cover),
     starTurn: reading.starTurn,
     ...cloudDrift(reading.steeringMS, worldS),
+    worldS,
     latitude: (reading.latitudeDeg * Math.PI) / 180,
     moonPhase: reading.moonPhase,
   };

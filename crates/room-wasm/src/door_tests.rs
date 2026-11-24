@@ -372,7 +372,7 @@ fn a_patrol_on_overlooks_island_stands_its_foes_at_the_voyages_seas_and_sends_it
     }
     let sent = gear(player);
     let nodes: Vec<f64> = messages::root_as_from_room(&sent).unwrap().gear().unwrap().nodes().unwrap().iter().collect();
-    assert_eq!(nodes.len(), 4 * 4, "a third of its twelve places, four numbers each");
+    assert_eq!(nodes.len(), 12 * 4, "every one of its twelve places, four numbers each");
     assert!(nodes.chunks(4).all(|node| node[3] == 0.0), "Brineglass, the island's own");
 }
 

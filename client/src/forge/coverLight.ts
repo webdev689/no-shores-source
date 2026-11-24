@@ -24,6 +24,10 @@ const STANDING = ['idle', 'idle_bow', 'idle_staff', 'guard'];
 const TRIM = 1 / 50;
 /** The narrowest span of light a covering ramp is stretched across. */
 const SPAN_LEAST = 24;
+/** The alpha the forge draws a weapon's hilt, guard and trim in, every other drawn texel's being 255: where a
+ *  faction's colour lies on a faction's blade (layers.py `mark_trim`), laid across the trim's own span of light. A
+ *  strip drawn before the forge marked it has none, and draws as it did. */
+export const TRIM_ALPHA = 254;
 
 /** The layers a covered layer is pooled with, among those `drawn` for its body. */
 export function coverGroup(layer: string, drawn: Readonly<Record<string, readonly string[]>>): string[] {
@@ -48,18 +52,23 @@ export function coverPaths(body: string, layer: string, looks: ForgeLooks): stri
 export const lightOf = (rgb: ArrayLike<number>): number =>
   Math.round(0.299 * (rgb[0] ?? 0) + 0.587 * (rgb[1] ?? 0) + 0.114 * (rgb[2] ?? 0));
 
-/** Each strip's span of light, kept: a published strip never changes. */
-const SPANS = new WeakMap<Strip, readonly [number, number] | null>();
+/** Each strip's span of light, kept, of all it draws and of its trim alone: a published strip never changes. */
+const SPANS = {
+  all: new WeakMap<Strip, readonly [number, number] | null>(),
+  trim: new WeakMap<Strip, readonly [number, number] | null>(),
+};
 
-/** A strip's span of light: its darkest and brightest drawn texels, leaving out the fiftieth at each end; none for a
- *  strip with nothing drawn. */
-function spanOf(strip: Strip): readonly [number, number] | null {
-  const kept = SPANS.get(strip);
+/** A strip's span of light: its darkest and brightest drawn texels (its marked trim's, with `trim`), leaving out the
+ *  fiftieth at each end; none for a strip with nothing drawn. */
+function spanOf(strip: Strip, trim = false): readonly [number, number] | null {
+  const spans = trim ? SPANS.trim : SPANS.all;
+  const kept = spans.get(strip);
   if (kept !== undefined) return kept;
   const counts = new Uint32Array(256);
   let drawn = 0;
   for (let texel = 0; texel < strip.data.length; texel += 4) {
-    if ((strip.data[texel + 3] ?? 0) < 128) continue;
+    const alpha = strip.data[texel + 3] ?? 0;
+    if (trim ? alpha !== TRIM_ALPHA : alpha < 128) continue;
     counts[lightOf(strip.data.subarray(texel, texel + 3))] += 1;
     drawn += 1;
   }
@@ -69,15 +78,15 @@ function spanOf(strip: Strip): readonly [number, number] | null {
   seen = 0;
   while (high > low && (seen += counts[high] ?? 0) <= edge) high -= 1;
   const span = drawn === 0 ? null : ([low, high] as const);
-  SPANS.set(strip, span);
+  spans.set(strip, span);
   return span;
 }
 
-/** The step each light takes on a ramp covering a group: the span from the darkest of its pieces' spans to the
- *  brightest laid across the ramp, its darkest to the first step and its brightest to the last. A span too narrow
- *  to stretch, or none, keeps the light as it is. */
-export function coverSteps(strips: readonly Strip[]): CoverSteps {
-  const spans = strips.map(spanOf).filter((span) => span !== null);
+/** The step each light takes on a ramp covering a group (its pieces' marked trim alone, with `trim`): the span from
+ *  the darkest of its pieces' spans to the brightest laid across the ramp, its darkest to the first step and its
+ *  brightest to the last. A span too narrow to stretch, or none, keeps the light as it is. */
+export function coverSteps(strips: readonly Strip[], trim = false): CoverSteps {
+  const spans = strips.map((strip) => spanOf(strip, trim)).filter((span) => span !== null);
   const low = Math.min(...spans.map(([darkest]) => darkest));
   const high = Math.max(...spans.map(([, brightest]) => brightest));
   const steps = new Uint8Array(256);
@@ -88,18 +97,20 @@ export function coverSteps(strips: readonly Strip[]): CoverSteps {
   return steps;
 }
 
-/** The steps of each covered layer of `layers`, its group's strips read through `strip`. */
+/** The steps of each covered layer of `layers` (of each one's marked trim, with `trim`), its group's strips read
+ *  through `strip`. */
 export async function coversOf(
   body: string,
   layers: readonly string[],
   looks: ForgeLooks,
   strip: (path: string) => Promise<Strip | null>,
+  trim = false,
 ): Promise<Map<string, CoverSteps>> {
   const covers = new Map<string, CoverSteps>();
   for (const layer of layers) {
     const found = await Promise.all(coverPaths(body, layer, looks).map(strip));
     const strips = found.filter((each): each is Strip => each !== null);
-    if (strips.length > 0) covers.set(layer, coverSteps(strips));
+    if (strips.length > 0) covers.set(layer, coverSteps(strips, trim));
   }
   return covers;
 }

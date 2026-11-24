@@ -140,8 +140,8 @@ export function landSheetOf(
     node.spawns.length ? [{ glyph: 'landing', at: local(middleOf(node.spawns)), word: SITE_WORDS.landing }] : [];
   const social = node.kind === 'social' ? landmass.drawnPlan : null;
   if (social) {
-    // Its own solids, the city's landmark, and the city's works within its ring (the harbour way's); not the avenues
-    // round it, which are not the social space's.
+    // Its own solids, the city's landmark, and any of the city's works within its ring; not the avenues round it,
+    // which are not the social space's.
     const works = social.works.filter((solid) => insideRing(node.ring, [solid.at[0], solid.at[1]]));
     const keepers = (node.stations ?? []).flatMap((station): LandMark[] => {
       const word = stationWords(station.kind) ?? KEEPER_WORDS[station.kind];

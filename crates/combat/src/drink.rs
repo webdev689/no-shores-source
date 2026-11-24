@@ -40,7 +40,7 @@ pub(crate) fn drink(next: &mut Fighter, elapsed: u32, controls: Controls) -> Opt
         filled(next);
         return None;
     }
-    let health = (next.health + next.health_max * DRINK_HEALS).min(next.health_max);
+    let health = (next.health + next.health_max * DRINK_HEALS * next.trim.drink_heal).min(next.health_max);
     let healed = health - next.health;
     next.health = health;
     next.charges -= 1;

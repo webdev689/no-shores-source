@@ -50,7 +50,8 @@ function paused(nodes: readonly { x: number; y: number; resource: number }[] = c
 test('with the pointer free, each panel ask is answered in the frame after its press, and none is lost', () => {
   const { fighting, gear, tick, counted } = paused();
   const asks = new PanelAsks();
-  const grants = [0, 1, 2, 3, 4, 0].map((rarity) => ({ kind: ASKS.grantVestige, rarity, slot: 0, level: 1 }));
+  // Magic to Atheric and back: a Normal grant comes as its item, never a Vestige.
+  const grants = [1, 2, 3, 4, 1, 2].map((rarity) => ({ kind: ASKS.grantVestige, rarity, slot: 0, level: 1 }));
   for (const [index, ask] of grants.entries()) {
     asks.ask(fighting, ask);
     counted.ticks = 0;

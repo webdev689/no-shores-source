@@ -1,6 +1,7 @@
 //! The gear's content, authored in `content/gear/` and built into the rules, so the server and every browser read
 //! the same: each trait and what it fits, the named Legendaries, Atherics and cloaks with their nodes' traits, each
-//! island's resource, and the names a rolled item may take. `problems` lists anything in it the rules cannot keep.
+//! island's resource, each armour and weapon kind's word and the names a ship's rolled module may take. `problems`
+//! lists anything in it the rules cannot keep.
 
 use crate::cosmetics::CosmeticKind;
 use crate::grid::{Column, columns};
@@ -37,6 +38,13 @@ pub struct TraitDef {
     /// What a perk that gives and takes costs, apart from what it gives (`words`); none for any other.
     #[serde(default)]
     pub takes: Option<String>,
+    /// A faction's own perk, by the faction's key: no shared pool offers it, and it fits only that faction's pieces.
+    #[serde(default)]
+    pub faction: Option<String>,
+    /// A Breach's own perk: no shared pool offers it, and it fits only a Breach's pieces, whose perk columns roll from
+    /// these alone (`Catalogue::breach_perks`).
+    #[serde(default)]
+    pub breach: bool,
 }
 
 /// A named item: a Legendary, an Atheric or a cloak. Its layout is the traits each of its trait columns offers, in
@@ -52,6 +60,8 @@ pub struct NamedDef {
     #[serde(default)]
     pub resource: Option<String>,
     pub words: String,
+    /// Written for every named piece but a faction's armour and weapons, which roll theirs (`vestige::made_named`).
+    #[serde(default)]
     pub layout: Vec<Vec<String>>,
     #[serde(default)]
     pub breach: bool,
@@ -93,7 +103,7 @@ pub struct Resource {
     pub words: String,
 }
 
-/// The names a rolled item of a kind may take, by rarity.
+/// The names a ship's rolled module of a kind may take, by rarity.
 #[derive(Clone, Debug, Default, PartialEq, Eq, Deserialize)]
 pub struct Names {
     pub normal: Vec<String>,
@@ -108,6 +118,8 @@ pub struct Catalogue {
     pub items: Vec<NamedDef>,
     pub resources: Vec<Resource>,
     pub names: BTreeMap<Kind, Names>,
+    /// Each armour and weapon kind's word, said after its set's name ("Portwatch Helm").
+    pub kinds: BTreeMap<Kind, String>,
 }
 
 #[derive(Deserialize)]
@@ -128,6 +140,8 @@ struct ResourcesFile {
 #[derive(Deserialize)]
 struct RolledFile {
     names: BTreeMap<Kind, Names>,
+    #[serde(default)]
+    kinds: BTreeMap<Kind, String>,
 }
 
 /// The catalogue built into the rules, read once.
@@ -157,13 +171,15 @@ impl Catalogue {
     /// The first file that is not the shape the rules read, and why.
     pub fn parse(traits: &str, items: &str, resources: &str, rolled: &str) -> Result<Self, String> {
         let read = |file: &str, error: serde_json::Error| format!("content/gear/{file}: {error}");
+        let rolled = serde_json::from_str::<RolledFile>(rolled).map_err(|error| read("rolled.json", error))?;
         Ok(Self {
             traits: serde_json::from_str::<TraitsFile>(traits).map_err(|error| read("traits.json", error))?.traits,
             items: serde_json::from_str::<ItemsFile>(items).map_err(|error| read("items.json", error))?.items,
             resources: serde_json::from_str::<ResourcesFile>(resources)
                 .map_err(|error| read("resources.json", error))?
                 .resources,
-            names: serde_json::from_str::<RolledFile>(rolled).map_err(|error| read("rolled.json", error))?.names,
+            names: rolled.names,
+            kinds: rolled.kinds,
         })
     }
 
@@ -172,11 +188,12 @@ impl Catalogue {
         self.traits.iter().find(|found| found.id == id)
     }
 
-    /// Whether a trait fits an item of this kind, the named one it is if any: what a roll offers it and what a worn
-    /// piece gives by the same rule.
+    /// Whether a trait fits an item of this kind, the named one it is if any, and a Breach's piece or not (`breach`):
+    /// what a roll offers it and what a worn piece gives by the same rule.
     #[must_use]
-    pub fn trait_fits(&self, id: &str, kind: Kind, named: Option<&str>) -> bool {
-        self.trait_def(id).is_some_and(|found| fits(found, kind, named))
+    pub fn trait_fits(&self, id: &str, kind: Kind, named: Option<&str>, breach: bool) -> bool {
+        let faction = named.and_then(|named| self.named(named)).and_then(|entry| entry.faction.as_deref());
+        self.trait_def(id).is_some_and(|found| fits(found, kind, named, faction, breach))
     }
 
     #[must_use]
@@ -190,7 +207,14 @@ impl Catalogue {
         self.resources.iter().position(|found| found.id == id)
     }
 
-    /// The names a rolled item of this kind and rarity may take; none for a named rarity.
+    /// The word an armour or weapon kind is said by after its set's name; none for a cloak or a module.
+    #[must_use]
+    pub fn kind_word(&self, kind: Kind) -> Option<&str> {
+        self.kinds.get(&kind).map(String::as_str)
+    }
+
+    /// The names a ship's rolled module of this kind and rarity may take; none for any other kind, or a rarity a
+    /// module is named at.
     #[must_use]
     pub fn names_of(&self, kind: Kind, rarity: Rarity) -> &[String] {
         let Some(names) = self.names.get(&kind) else { return &[] };
@@ -211,11 +235,25 @@ impl Catalogue {
             Column::Perk(_) => TraitColumn::Perk,
             Column::Upgrade | Column::Signature => return Vec::new(),
         };
-        self.traits.iter().filter(|found| found.column == wanted && fits(found, kind, None)).collect()
+        self.traits.iter().filter(|found| found.column == wanted && fits(found, kind, None, None, false)).collect()
     }
 
-    /// The named items a Vestige of this rarity may open to in this slot: Breach items come from Breaches alone, and a
-    /// faction's from its counter alone.
+    /// A faction's own perks, by its key, that fit a piece of this kind.
+    #[must_use]
+    pub fn faction_perks(&self, faction: &str, kind: Kind) -> Vec<&TraitDef> {
+        let own = |found: &&TraitDef| found.faction.as_deref() == Some(faction);
+        self.traits.iter().filter(own).filter(|found| fits(found, kind, None, Some(faction), false)).collect()
+    }
+
+    /// The Breaches' own perks that fit a piece of this kind, which every node of a Breach piece's perk columns is
+    /// drawn among.
+    #[must_use]
+    pub fn breach_perks(&self, kind: Kind) -> Vec<&TraitDef> {
+        self.traits.iter().filter(|found| found.breach && fits(found, kind, None, None, true)).collect()
+    }
+
+    /// The named items of this rarity and slot that a Vestige's Atheric or ship's module, or Shape's ware, is drawn
+    /// among: Breach items come from Breaches alone, and a faction's from its counter alone.
     pub fn vestige_pool(&self, rarity: Rarity, slot: Slot) -> impl Iterator<Item = &NamedDef> {
         self.items.iter().filter(move |found| {
             found.rarity == rarity && !found.breach && found.faction.is_none() && found.kind.fits(slot)
@@ -238,6 +276,26 @@ impl Catalogue {
             let known = if named { self.named(&found.fits).is_some() } else { classes.contains(&found.fits.as_str()) };
             if !known {
                 problems.push(format!("trait {} fits {}, which is nothing it may fit", found.id, found.fits));
+            }
+            let faction_known = |key: &str| crate::factions::factions().factions.iter().any(|each| each.key == key);
+            if found.faction.as_deref().is_some_and(|key| !faction_known(key) || found.column != TraitColumn::Perk) {
+                problems.push(format!("trait {} names no faction the factions' file holds, or is no perk", found.id));
+            }
+            if found.breach && (found.faction.is_some() || found.column != TraitColumn::Perk) {
+                problems.push(format!("trait {} is a Breach's, so it is a perk and no faction's", found.id));
+            }
+        }
+        // A Breach piece's perk columns roll from the Breaches' pool alone, never one perk twice on the piece, so the
+        // pool must hold every perk node of the widest piece of each kind.
+        for kind in Kind::ALL.into_iter().filter(|kind| kind.armour() || kind.weapon()) {
+            let perk_nodes = |rarity: &Rarity| -> usize {
+                let perks =
+                    columns(*rarity, kind.weapon_grid()).iter().filter(|column| matches!(column, Column::Perk(_)));
+                perks.map(|column| usize::from(column.nodes())).sum()
+            };
+            let widest = Rarity::ALL.iter().map(perk_nodes).max().unwrap_or(0);
+            if self.breach_perks(kind).len() < widest {
+                problems.push(format!("a Breach {kind:?} needs {widest} Breach perks to fill its perk nodes"));
             }
         }
         for item in &self.items {
@@ -298,7 +356,7 @@ impl Catalogue {
             }
             return;
         }
-        if !item.rarity.named() {
+        if item.rarity < Rarity::Legendary {
             problems.push(format!("{id}: only Legendaries, Atherics and cloaks are named"));
         }
         if item.breach && !(item.kind.armour() && item.rarity == Rarity::Legendary) {
@@ -315,13 +373,26 @@ impl Catalogue {
         match item.intrinsic.as_deref().map(|found| self.trait_def(found)) {
             Some(_) if !atheric => problems.push(format!("{id}: only an Atheric weapon or module has an intrinsic")),
             Some(None) => problems.push(format!("{id}: no trait {}", item.intrinsic.as_deref().unwrap_or(""))),
-            Some(Some(found)) if found.column != TraitColumn::Intrinsic || !fits(found, item.kind, Some(id)) => {
+            Some(Some(found))
+                if found.column != TraitColumn::Intrinsic || !fits(found, item.kind, Some(id), None, false) =>
+            {
                 problems.push(format!("{id}: {} is no intrinsic of its own", found.id));
             }
             _ => {}
         }
         if item.rarity == Rarity::Atheric && (item.kind.weapon() || item.kind.module()) && item.intrinsic.is_none() {
             problems.push(format!("{id}: an Atheric weapon or module has an intrinsic"));
+        }
+        // A faction's armour and weapons roll their traits as they are made (`vestige::made_named`), one of them always
+        // the faction's own.
+        if let Some(faction) = item.faction.as_deref() {
+            if !item.layout.is_empty() {
+                problems.push(format!("{id}: a faction's piece rolls its traits, so it writes none"));
+            }
+            if self.faction_perks(faction, item.kind).is_empty() {
+                problems.push(format!("{id}: none of its faction's perks fits it"));
+            }
+            return;
         }
         let wanted: Vec<Column> =
             columns(item.rarity, item.kind.weapon_grid()).iter().copied().filter(|column| column.traits()).collect();
@@ -339,7 +410,9 @@ impl Catalogue {
                     problems.push(format!("{id}: {trait_id} is offered twice"));
                 }
                 match self.trait_def(trait_id) {
-                    Some(found) if column_kind(column) == Some(found.column) && fits(found, item.kind, Some(id)) => {}
+                    Some(found)
+                        if column_kind(column) == Some(found.column)
+                            && fits(found, item.kind, Some(id), None, false) => {}
                     Some(_) => problems.push(format!("{id}: {trait_id} does not belong in a {column:?} column")),
                     None => problems.push(format!("{id}: no trait {trait_id}")),
                 }
@@ -348,8 +421,17 @@ impl Catalogue {
     }
 
     fn kind_problems(&self, kind: Kind, problems: &mut Vec<String>) {
-        for rarity in [Rarity::Normal, Rarity::Magic, Rarity::Rare] {
-            if self.names_of(kind, rarity).is_empty() {
+        // A module is rolled up to Rare and named past it; an armour piece or a weapon is rolled up to Legendary.
+        let rolled: &[Rarity] = if kind.module() {
+            &[Rarity::Normal, Rarity::Magic, Rarity::Rare]
+        } else {
+            &[Rarity::Normal, Rarity::Magic, Rarity::Rare, Rarity::Legendary]
+        };
+        if !kind.module() && self.kind_word(kind).is_none() {
+            problems.push(format!("no word for a {kind:?}"));
+        }
+        for &rarity in rolled {
+            if kind.module() && self.names_of(kind, rarity).is_empty() {
                 problems.push(format!("no names for a {rarity:?} {kind:?}"));
             }
             // A rolled item never offers one trait twice, so each pool must hold its rarity's trait nodes.
@@ -360,7 +442,11 @@ impl Catalogue {
                 }
             }
             for (found, count) in needed {
-                let pooled = self.traits.iter().filter(|each| each.column == found && fits(each, kind, None)).count();
+                let pooled = self
+                    .traits
+                    .iter()
+                    .filter(|each| each.column == found && fits(each, kind, None, None, false))
+                    .count();
                 if pooled < count {
                     problems.push(format!("a {rarity:?} {kind:?} needs {count} {found:?} traits, there are {pooled}"));
                 }
@@ -379,8 +465,13 @@ fn column_kind(column: Column) -> Option<TraitColumn> {
     }
 }
 
-/// Whether a trait fits an item of this kind; a signature or an intrinsic fits only the named item it belongs to.
-fn fits(found: &TraitDef, kind: Kind, named: Option<&str>) -> bool {
+/// Whether a trait fits an item of this kind; a signature or an intrinsic fits only the named item it belongs to, and a
+/// faction's perk only a piece of that faction (`faction`, the piece's entry's), and a Breach's perk only a Breach's
+/// piece (`breach`).
+fn fits(found: &TraitDef, kind: Kind, named: Option<&str>, faction: Option<&str>, breach: bool) -> bool {
+    if (found.faction.is_some() && found.faction.as_deref() != faction) || (found.breach && !breach) {
+        return false;
+    }
     match found.fits.as_str() {
         "melee" => kind.weapon() && !kind.ranged(),
         "ranged" => kind.ranged(),

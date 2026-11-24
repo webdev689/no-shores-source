@@ -86,11 +86,15 @@ fn the_first_clear_at_each_tier_of_a_day_pays_a_boss_captains_worth_raised_by_th
         (2_142, 143),
         "a Major Captain's 120 and 8 at level 5, times 7, at 12, times 1.5"
     );
+    let before = character.clone();
     let vestige =
         character.clear_of_the_day(20_778, Difficulty::Elite, 12, &DICE).expect("the first Elite clear today");
     assert_eq!((character.xp, character.materials.aurem), (xp + u64::from(boss.xp), aurem + boss.aurem));
-    assert_eq!(vestige.level, 12);
-    assert!(vestige.rarity <= Rarity::Rare, "no Legendary below 18");
+    let [(rarity, _, level)] = crate::commons_tests::paid(&before, &character, vestige.as_slice())[..] else {
+        panic!("one Vestige, or a Normal one's item");
+    };
+    assert_eq!(level, 12);
+    assert!(rarity <= Rarity::Rare, "no Legendary below 18");
     assert_eq!(character.clear_of_the_day(20_778, Difficulty::Elite, 12, &DICE), None, "once a day at a tier");
     assert!(character.clear_of_the_day(20_778, Difficulty::Normal, 10, &DICE).is_some());
     assert!(character.clear_of_the_day(20_778, Difficulty::Abyss, 13, &DICE).is_some());

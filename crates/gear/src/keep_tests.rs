@@ -196,7 +196,7 @@ fn a_kept_rolled_item_offering_a_trait_now_gone_offers_another_of_its_pool() {
     let read = Character::from_json(&character.to_json()).expect("a character");
     let helm = read.item(id).expect("kept");
     let first = helm.layout[0][0].as_str();
-    assert!(crate::catalogue::catalogue().trait_fits(first, Kind::Head, None), "{first} fits a helm");
+    assert!(crate::catalogue::catalogue().trait_fits(first, Kind::Head, None, false), "{first} fits a helm");
     assert!(!["hardy", "unshaken", "scholar"].contains(&first), "and is offered once");
     assert!(helm.has(0, 0) && helm.chosen[0] == 0, "bought and chosen as the trait it stands for was");
     assert_eq!(read.materials.aurem, had);

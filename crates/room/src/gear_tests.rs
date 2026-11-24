@@ -167,6 +167,7 @@ fn a_kill_pays_those_who_struck_it_and_lays_their_vestige_for_them_alone() {
 #[test]
 fn a_vestige_left_lying_goes_to_the_mail_after_two_minutes() {
     let mut room = room();
+    room.seed = crate::SEALING_SEED;
     let player = room.join().expect("a room with space");
     let captain = stand_boss(&mut room, 0, -30.0);
     room.mark_struck(player, captain, Slot::Melee);

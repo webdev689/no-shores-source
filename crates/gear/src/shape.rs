@@ -8,9 +8,10 @@ use crate::character::{CARRIED_MOST, Character, STOCK_MOST};
 use crate::clock::{DAY_MINUTES, WEEK_MINUTES, minutes_to_next_week};
 use crate::dice::{Dice, Purpose};
 use crate::element;
-use crate::item::Item;
+use crate::item::{ITEM_LEVEL_MOST, Item};
 use crate::kinds::Slot;
 use crate::rarity::Rarity;
+use crate::source::Source;
 use crate::vestige;
 
 /// When in the clock's week (from Tuesday 09:00 UTC) he comes and goes: Friday 09:00, Xur's Friday, to Sunday 21:00.
@@ -53,46 +54,73 @@ pub fn price(item: &Item) -> u16 {
     }
 }
 
-/// The place in the catalogue's items of the named piece Shape shows at a place in a week, as a page names it when
-/// it buys there (`Ask::BuyFromShape`); `u32::MAX` past his six.
+/// The number a page names the piece Shape shows at a place in a week by when it buys there (`Ask::BuyFromShape`),
+/// which the room sends with his wares: an Atheric's place in the catalogue's items, a rolled Legendary's a hash of
+/// the piece itself, so a page shown another piece there (another week's, or his wares drawn again since, as the
+/// catalogue grew) buys nothing; `u32::MAX` past his six.
 #[must_use]
 pub fn shown(week: u64, ware: u8) -> u32 {
-    let named = wares(week).into_iter().nth(usize::from(ware)).and_then(|item| item.named);
-    let place = crate::catalogue::catalogue().items.iter().position(|entry| named.as_ref() == Some(&entry.id));
+    wares(week).get(usize::from(ware)).map_or(u32::MAX, number_of)
+}
+
+/// The number a page names one of his wares by (`shown`), for a ware as `wares` makes it.
+#[must_use]
+pub fn number_of(item: &Item) -> u32 {
+    let Some(named) = &item.named else {
+        let mut hasher = std::hash::DefaultHasher::new();
+        std::hash::Hash::hash(&serde_json::to_string(item).unwrap_or_default(), &mut hasher);
+        // Kept to 32 bits, the width a page's ask carries.
+        return std::hash::Hasher::finish(&hasher) as u32;
+    };
+    let place = catalogue().items.iter().position(|entry| &entry.id == named);
     place.and_then(|place| u32::try_from(place).ok()).unwrap_or(u32::MAX)
 }
 
-/// What he sells in a week: Legendary then Atheric pieces at level 20, no piece twice, by the week's dice. Their
-/// numbers are none until bought.
+/// The contents a Legendary of his may come from, its set look and name its content's: never a faction's or a
+/// Breach's.
+const CONTENTS: [Source; 5] = [Source::World, Source::Dungeon, Source::Sea, Source::Elite, Source::Abyss];
+
+/// What he sells in a week, by the week's dice: four Legendaries, one for each of four Vestige slots, each rolled as a
+/// Vestige makes one at level 20 in a content drawn among `CONTENTS`, so it wears that content's set; then two
+/// Atherics, no one twice. Their numbers are none until bought.
 #[must_use]
 pub fn wares(week: u64) -> Vec<Item> {
-    let mut wares = drawn(week, Rarity::Legendary, LEGENDARIES);
-    wares.extend(drawn(week, Rarity::Atheric, WARES - LEGENDARIES));
-    wares
+    let mut slots = Slot::VESTIGE.to_vec();
+    shuffled(week, Rarity::Legendary, &mut slots);
+    let mut wares: Vec<Item> = slots
         .into_iter()
+        .take(LEGENDARIES)
         .enumerate()
-        .map(|(ware, (named, slot))| {
-            let mut item = vestige::named_item(0, named, slot);
-            item.element =
-                element::rolled(item.kind, item.rarity, &Dice { seed: week, tick: 1 + ware as u64, player: 0 });
-            item
+        .filter_map(|(ware, slot)| {
+            // Ticks of their own, past the shuffles' and the Atherics' elements', so no roll of a ware shares one.
+            let dice = Dice { seed: week, tick: LEGENDARY_TICKS + ware as u64, player: 0 };
+            let content = CONTENTS[dice.pick(Purpose::Shape, 0, CONTENTS.len())];
+            vestige::make(0, Rarity::Legendary, slot, ITEM_LEVEL_MOST, content, &dice)
         })
-        .collect()
+        .collect();
+    let mut atherics: Vec<(&NamedDef, Slot)> = Slot::VESTIGE
+        .into_iter()
+        .flat_map(|slot| catalogue().vestige_pool(Rarity::Atheric, slot).map(move |named| (named, slot)))
+        .collect();
+    shuffled(week, Rarity::Atheric, &mut atherics);
+    wares.extend(atherics.into_iter().take(WARES - LEGENDARIES).enumerate().map(|(at, (named, slot))| {
+        let mut item = vestige::named_item(0, named, slot);
+        let ware = LEGENDARIES + at;
+        item.element = element::rolled(item.kind, item.rarity, &Dice { seed: week, tick: 1 + ware as u64, player: 0 });
+        item
+    }));
+    wares
 }
 
-/// `count` named pieces of a rarity from every Vestige slot's pool, each at most once, shuffled by the week's dice as
-/// `cosmetics::sold_on` shuffles a day's cosmetics.
-fn drawn(week: u64, rarity: Rarity, count: usize) -> Vec<(&'static NamedDef, Slot)> {
-    let mut pool: Vec<(&NamedDef, Slot)> = Slot::VESTIGE
-        .into_iter()
-        .flat_map(|slot| catalogue().vestige_pool(rarity, slot).map(move |named| (named, slot)))
-        .collect();
+/// The first of the ticks a week's Legendaries are made on, past every other tick of Shape's week (1 to 6).
+pub(crate) const LEGENDARY_TICKS: u64 = 16;
+
+/// Shuffles a week's choices of a rarity by the week's dice, as `cosmetics::sold_on` shuffles a day's cosmetics.
+fn shuffled<T>(week: u64, rarity: Rarity, pool: &mut [T]) {
     let dice = Dice { seed: week, tick: 1 + rarity as u64, player: 0 };
     for at in (1..pool.len()).rev() {
         pool.swap(at, dice.pick(Purpose::Shape, 1 + u32::try_from(at).unwrap_or_default(), at + 1));
     }
-    pool.truncate(count);
-    pool
 }
 
 impl Character {
@@ -103,14 +131,14 @@ impl Character {
 
     /// Buys one of Shape's pieces of the week, at his place, for Shapes, carried with its slot's: each made at its own
     /// level, as a faction's are, and sold to none who could not wear it yet. A page shown another piece at that place
-    /// (his wares drawn again since, as the catalogue grew) is told it is not sold here, as a smith's ware of another day.
+    /// (another week's, or his wares drawn again as the catalogue grew) is told it is not sold here, as a smith's ware
+    /// of another day.
     pub(crate) fn buy_from_shape(&mut self, ware: u8, shown: u32, here: Here) -> Result<Option<Done>, Refusal> {
         if !here.social {
             return Err(Refusal::NotHere);
         }
         let mut item = wares(here.week).into_iter().nth(usize::from(ware)).ok_or(Refusal::NoSuchItem)?;
-        let place = crate::catalogue::catalogue().items.iter().position(|entry| item.named.as_ref() == Some(&entry.id));
-        if place.and_then(|place| u32::try_from(place).ok()) != Some(shown) {
+        if number_of(&item) != shown {
             return Err(Refusal::NotSold);
         }
         if self.level() < item.level {
