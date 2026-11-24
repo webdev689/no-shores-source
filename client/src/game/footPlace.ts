@@ -133,7 +133,7 @@ export interface Heard {
 
 /** A room joined: its link, what is seen to stand in the place, the patrol's node file's text, the dungeon, the
  *  seas the room stands at, and at an outpost site whose outpost's room it is; in a Breach's run, the run, and the
- *  ground its blocks give in place of the land's. */
+ *  ground its blocks give in place of the land's; at a Breach's gate, the run its zone was joined for. */
 export interface Opened {
   readonly link: RoomLink;
   readonly boxes: readonly Block[];
@@ -142,6 +142,7 @@ export interface Opened {
   readonly seas: Difficulty;
   readonly outpost?: OutpostJoined | null;
   readonly run?: InBreach;
+  readonly launchedFor?: string;
   readonly groundAt?: (x: number, y: number) => number | null;
 }
 

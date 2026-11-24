@@ -30,13 +30,11 @@ import { keepSites, siteOfWorld } from './guild/siteNames.ts';
 import { GameScene } from './scene.ts';
 import { roomModuleFrom } from './shipPanel.ts';
 import { arrivalAt, loadWorld } from './worldData.ts';
+import { FIRST_NODE } from './nodes.ts';
 import { Stack } from '../ui/stack.ts';
 import { DrawnInterface } from './drawnInterface.ts';
 import { startSocial } from './social/social.ts';
 
-/** Where every player arrives: Overlook's social space, on Saltmere; `?at=<node id>` arrives at any node instead, to
- *  look round the world. */
-export const FIRST_NODE = 'overlook-social';
 /** The most ships of one hull drawn at sea in a frame: the player's, the room's and the friendly ships near it. */
 export const SEA_SHIPS = 16;
 

@@ -74,6 +74,8 @@ export class Foot {
   /** The dungeon the player plays in, or null on a node's land; the Breach's run, or null anywhere else. */
   readonly dungeon: InDungeon | null;
   readonly run: InBreach | null;
+  /** In a Breach's gate zone, the run its room was joined for, which a way back to the zone joins it for again. */
+  readonly launchedFor: string | null;
   /** The patrol's node file's text, which a room alone opens its dungeons from. */
   readonly text: string;
   /** The seas of the room the player joined, which a trip into or out of its dungeons keeps. */
@@ -145,7 +147,7 @@ export class Foot {
     this.context = context;
     this.node = node;
     [this.boxes, this.text, this.dungeon, this.seas] = [opened.boxes, opened.text, opened.dungeon, opened.seas];
-    this.run = opened.run ?? null;
+    [this.run, this.launchedFor] = [opened.run ?? null, opened.launchedFor ?? null];
     this.module = people.module;
     people.held.entrances.namesFrom(people.module, node);
     const layout = opened.dungeon?.layout;
@@ -220,7 +222,7 @@ export class Foot {
         }
         const text = nodeText(node, rect, ground, boxes, await context.land.grounds(node.id));
         const link = connection ?? (await openNodeAlone(module, node, text, heard, arriving?.number, seas));
-        return { link, boxes, text, dungeon: null, seas, outpost };
+        return { link, boxes, text, dungeon: null, seas, outpost, launchedFor: arriving?.breach };
       };
       return connection ? closedIfThrown(connection, work) : work();
     });

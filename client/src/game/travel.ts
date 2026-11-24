@@ -4,24 +4,24 @@
 import type { Difficulty } from '../heldmap/heldMap.ts';
 import { boundWord } from './controls.ts';
 import { type Happening, next, onTheSea } from './flow.ts';
-import type { Foot, FootContext } from './foot.ts';
-import { enterBreachRun, enterDungeon } from './footEntries.ts';
-import { FIRST_NODE } from './gameBoot.ts';
+import { launchedArrival } from './breachTrips.ts';
+import type { InBreach } from './breachView.ts';
+import type { TripGame } from './dungeonTrips.ts';
 import type { Playing } from './gameFrame.ts';
 import type { Hud } from './hud.ts';
 import type { IsleHeld } from './isles.ts';
-import { arrivalFacing } from './nodes.ts';
+import { arrivalFacing, FIRST_NODE } from './nodes.ts';
 import { type Fallback, onOtherLand, type Refuge, placeOf, sentOut, TOLD_MS, tripOrBack } from './tripBack.ts';
 import type { NodeInfo } from './worldData.ts';
 
-/** What travel asks of the game: the play, the HUD, the ways into a place on foot (`goInto`, `goFoot`) and onto the
- *  sea, the island the player stands on and the way onto it, and the hub's landmass opened where another is. */
-export interface TravelGame {
+/** What travel asks of the game: the play, the HUD, the ways into a place on foot (a node, a patrol zone arriving as
+ *  asked, a dungeon, a Breach's run) and onto the sea, the island the player stands on and the way onto it, and the
+ *  hub's landmass opened where another is. */
+export interface TravelGame extends Pick<TripGame, 'intoDungeon' | 'ontoPatrol'> {
   readonly playing: Playing;
   readonly hud: Hud;
-  readonly footContext: FootContext;
-  readonly goInto: (entering: () => Promise<Foot>) => Promise<void>;
   readonly goFoot: (node: NodeInfo, facing: number, seas?: Difficulty) => Promise<void>;
+  readonly intoBreach: (into: InBreach) => Promise<void>;
   readonly goSea: () => Promise<void>;
   readonly ashore: () => IsleHeld | null;
   /** Walks ashore on `held` again, as the player stood on it. */
@@ -29,6 +29,27 @@ export interface TravelGame {
   readonly hubLand: () => Promise<void>;
   /** Draws a landmass in place of the one shown: the one left, put back when the hub is not reached. */
   readonly showLandmass: (landmass: Playing['landmass']) => void;
+}
+
+/** The way back to where the player stands now, joined again: the ship, an island's beach, a dungeon, a Breach's run,
+ *  its gate's zone for the run it was joined for (so its room stands them in that run's company again), or a node. */
+export function wayBackOf(
+  game: Pick<
+    TravelGame,
+    'playing' | 'goFoot' | 'ontoPatrol' | 'intoDungeon' | 'intoBreach' | 'goSea' | 'ashore' | 'backAshore'
+  >,
+): Refuge | null {
+  const { flow, foot } = game.playing;
+  if (onTheSea(flow)) return { flow: { mode: 'sea' }, go: game.goSea };
+  if (flow.mode !== 'foot' || !foot) return null;
+  const [stood, { node, dungeon, text, seas, run, launchedFor }, held] = [flow, foot, game.ashore()];
+  if (dungeon)
+    return { flow: stood, go: () => game.intoDungeon({ node: dungeon.patrol, text }, dungeon, dungeon.layout, seas) };
+  // A Breach's run is joined again by its name, as its room lets its company back in.
+  if (run) return { flow: stood, go: () => game.intoBreach(run) };
+  if (launchedFor) return { flow: stood, go: () => game.ontoPatrol(node, 0, seas, launchedArrival(launchedFor)) };
+  if (held) return { flow: stood, go: () => game.backAshore(held) };
+  return { flow: stood, go: () => game.goFoot(node, arrivalFacing(node, game.playing.landmass.plan, null), seas) };
 }
 
 /** Starts travel for `game`: `travel` takes the player elsewhere as `happening` asks, by `work`; `behindVeil` runs
@@ -61,25 +82,7 @@ export function startTravel(game: TravelGame) {
       });
   };
 
-  /** The way back to where the player stands now, joined again: the ship, an island's beach, a dungeon or a node. */
-  const wayBack = (): Refuge | null => {
-    const { flow, foot } = playing;
-    if (onTheSea(flow)) return { flow: { mode: 'sea' }, go: game.goSea };
-    if (flow.mode !== 'foot' || !foot) return null;
-    const [stood, { node, dungeon, text, seas }, held] = [flow, foot, game.ashore()];
-    if (dungeon) {
-      const outside = { node: dungeon.patrol, text };
-      return {
-        flow: stood,
-        go: () => game.goInto(() => enterDungeon(game.footContext, outside, dungeon, dungeon.layout, seas)),
-      };
-    }
-    // A Breach's run is joined again by its name, as its room lets its company back in.
-    const run = foot.run;
-    if (run) return { flow: stood, go: () => game.goInto(() => enterBreachRun(game.footContext, run)) };
-    if (held) return { flow: stood, go: () => game.backAshore(held) };
-    return { flow: stood, go: () => game.goFoot(node, arrivalFacing(node, playing.landmass.plan, null), seas) };
-  };
+  const wayBack = () => wayBackOf(game);
 
   /** The hub, Overlook's social space, where a trip with no way back ends. */
   const hub: Fallback['hub'] = {

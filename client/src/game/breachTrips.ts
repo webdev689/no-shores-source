@@ -64,6 +64,10 @@ export async function gateArrival(
   return { number: -1, x, y, facing: socketBearing('breach-gate', 'arrival', gate.turn), breach: run };
 }
 
+/** How a player launched for `run` asks to join its gate's zone: the zone's room stands them at the gate, in the run's
+ *  company, and `gateArrival` says where on the page. */
+export const launchedArrival = (run: string): AtEntrance => ({ number: -1, x: 0, y: 0, facing: 0, breach: run });
+
 /** The run a room's name is, by its plan: its tier and its gate's zone; null for a name that is no run of it. */
 export function runOf(plan: BreachPlan, nodes: readonly NodeInfo[], run: string): InBreach | null {
   const where = nodeOfRoom(run);
@@ -85,7 +89,7 @@ export function breachTrips(game: BreachGame) {
     game.travel(happening, async () => {
       launched = into;
       // The zone's room stands the player at the gate; the page stands them there too, as its layout says.
-      await game.ontoPatrol(into.zone, 0, 'normal', { number: -1, x: 0, y: 0, facing: 0, breach: into.run });
+      await game.ontoPatrol(into.zone, 0, 'normal', launchedArrival(into.run));
     });
   return {
     /** Says a word of the Breach's to the player, as the gate's refusals are said. */
