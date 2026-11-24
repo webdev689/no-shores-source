@@ -38,7 +38,7 @@ test('only a whole banner of known parts is read from what is sent', () => {
   assert.deepEqual(bannerFrom({ ...NAVY, extra: 'ignored' }), NAVY);
   assert.equal(bannerFrom({ ...NAVY, cut: 3 }), null);
   assert.equal(bannerFrom('banner'), null);
-  assert.equal(bannerRefusal({ ...NAVY, cloth: 'chartreuse' }, 1), 'That banner has a part we do not know.');
+  assert.equal(bannerRefusal({ ...NAVY, cloth: 'chartreuse' }, 1), 'That banner has an unknown part.');
 });
 
 test('every sign the banners offer is drawn, no wider or taller than sixteen cells', () => {

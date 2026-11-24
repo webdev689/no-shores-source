@@ -253,3 +253,9 @@ test("a kind's cost names the island's own resource by its island", () => {
   if (!gate) throw new Error('the Delve Gate');
   assert.ok(costWords(gate, 1, 'Moonstone').includes('40 Moonstone'), costWords(gate, 1, 'Moonstone'));
 });
+
+test('the Decorate part offers the long rug, and no Court Tree, whose tree the page does not draw', async () => {
+  const { shows } = await opened(0, outposts());
+  assert.ok(shows().includes('Long Rug'), shows());
+  assert.ok(!shows().includes('Court Tree'), shows());
+});

@@ -186,13 +186,14 @@ def scaffold(module, wide, deep):
     rings = [half] if wide * deep == 1 else [half, (half[0] - 1.1, half[1] - 1.1)]
     top = lifts * 2.0 + 1.0
 
-    def ring_points(hx, hy):
-        xs = [-hx + 2 * hx * k / max(1, round(2 * hx / 2.2)) for k in range(max(1, round(2 * hx / 2.2)) + 1)]
-        ys = [-hy + 2 * hy * k / max(1, round(2 * hy / 2.2)) for k in range(max(1, round(2 * hy / 2.2)) + 1)]
+    def ring_points(half_x, half_y):
+        steps_x, steps_y = max(1, round(2 * half_x / 2.2)), max(1, round(2 * half_y / 2.2))
+        xs = [-half_x + 2 * half_x * k / steps_x for k in range(steps_x + 1)]
+        ys = [-half_y + 2 * half_y * k / steps_y for k in range(steps_y + 1)]
         return xs, ys
 
-    for hx, hy in rings:
-        xs, ys = ring_points(hx, hy)
+    for half_x, half_y in rings:
+        xs, ys = ring_points(half_x, half_y)
         for i, x in enumerate(xs):
             for j, y in enumerate(ys):
                 if i in (0, len(xs) - 1) or j in (0, len(ys) - 1):
@@ -200,44 +201,45 @@ def scaffold(module, wide, deep):
                     shapes.slab(module, (x, y, 0.03), (0.3, 0.3, 0.06), 'timber')
         for lift in range(1, lifts + 1):
             z = lift * 2.0
-            for y in (-hy, hy):
-                shapes.rod(module, (-hx - 0.15, y, z), (hx + 0.15, y, z), 0.04, 'timber', sides=6)
-            for x in (-hx, hx):
-                shapes.rod(module, (x, -hy - 0.15, z), (x, hy + 0.15, z), 0.04, 'timber', sides=6)
+            for y in (-half_y, half_y):
+                shapes.rod(module, (-half_x - 0.15, y, z), (half_x + 0.15, y, z), 0.04, 'timber', sides=6)
+            for x in (-half_x, half_x):
+                shapes.rod(module, (x, -half_y - 0.15, z), (x, half_y + 0.15, z), 0.04, 'timber', sides=6)
     # Planks on each lift along the outer ring, and braces across the outer faces bay by bay.
-    hx, hy = half
+    half_x, half_y = half
     band = 1.1 if len(rings) > 1 else 0.6
     for lift in range(1, lifts + 1):
         z = lift * 2.0 + 0.06
         for k in range(3):
             inset = band * (k + 0.5) / 3
-            for y in (-hy + inset, hy - inset):
-                shapes.slab(module, (0.0, y, z), (hx * 2 - 0.1, band / 3 - 0.03, 0.05), 'timber')
-            for x in (-hx + inset, hx - inset):
-                shapes.slab(module, (x, 0.0, z + 0.05), (band / 3 - 0.03, hy * 2 - band * 2, 0.05), 'timber')
-        for y in (-hy, hy):
-            module.part((-hx, min(y, y - band if y > 0 else y + band), z - 0.06),
-                        (hx, max(y, y - band if y > 0 else y + band), z + 0.1))
-        for x in (-hx, hx):
-            module.part((min(x, x - band if x > 0 else x + band), -hy + band, z - 0.06),
-                        (max(x, x - band if x > 0 else x + band), hy - band, z + 0.1))
-    xs, ys = ring_points(hx, hy)
+            for y in (-half_y + inset, half_y - inset):
+                shapes.slab(module, (0.0, y, z), (half_x * 2 - 0.1, band / 3 - 0.03, 0.05), 'timber')
+            for x in (-half_x + inset, half_x - inset):
+                shapes.slab(module, (x, 0.0, z + 0.05), (band / 3 - 0.03, half_y * 2 - band * 2, 0.05), 'timber')
+        for y in (-half_y, half_y):
+            module.part((-half_x, min(y, y - band if y > 0 else y + band), z - 0.06),
+                        (half_x, max(y, y - band if y > 0 else y + band), z + 0.1))
+        for x in (-half_x, half_x):
+            module.part((min(x, x - band if x > 0 else x + band), -half_y + band, z - 0.06),
+                        (max(x, x - band if x > 0 else x + band), half_y - band, z + 0.1))
+    xs, ys = ring_points(half_x, half_y)
     for lift in range(lifts):
         for a, b in zip(xs, xs[1:]):
-            for y in (-hy - 0.07, hy + 0.07):
+            for y in (-half_y - 0.07, half_y + 0.07):
                 low, high = (a, b) if lift % 2 else (b, a)
                 shapes.rod(module, (low, y, lift * 2.0 + 0.1), (high, y, lift * 2.0 + 1.9), 0.03, 'timber', sides=5)
         for a, b in zip(ys, ys[1:]):
-            for x in (-hx - 0.07, hx + 0.07):
+            for x in (-half_x - 0.07, half_x + 0.07):
                 shapes.rod(module, (x, a, lift * 2.0 + 0.1), (x, b, lift * 2.0 + 1.9), 0.03, 'timber', sides=5)
     # A ladder up the front to the first lift, a gin wheel out from the top at a corner with its rope and bucket.
-    lx = hx - 0.7
+    lx = half_x - 0.7
     for side in (-0.22, 0.22):
-        shapes.rod(module, (lx + side, -hy - 0.15, 0.0), (lx + side, -hy - 0.15, 3.0), 0.03, 'timber', sides=5)
+        shapes.rod(module, (lx + side, -half_y - 0.15, 0.0), (lx + side, -half_y - 0.15, 3.0), 0.03, 'timber', sides=5)
     for rung in range(10):
-        shapes.rod(module, (lx - 0.22, -hy - 0.15, 0.25 + rung * 0.28), (lx + 0.22, -hy - 0.15, 0.25 + rung * 0.28),
-                   0.018, 'timber', sides=4)
-    corner = (-hx + 0.1, -hy + 0.1)
+        height = 0.25 + rung * 0.28
+        shapes.rod(module, (lx - 0.22, -half_y - 0.15, height), (lx + 0.22, -half_y - 0.15, height), 0.018, 'timber',
+                   sides=4)
+    corner = (-half_x + 0.1, -half_y + 0.1)
     shapes.slab(module, (corner[0], corner[1] + 0.25, top - 0.15), (0.1, 0.7, 0.1), 'timber')
     shapes.ring(module, (corner[0], corner[1] + 0.5, top - 0.35), 0.15, 0.04, 'iron', turn=(0.0, math.pi / 2, 0.0),
                 segments=10, sides=4)

@@ -22,7 +22,7 @@ QUARTERS = {'-y': 0, '+x': 1, '+y': 2, '-x': 3}
 
 def fits(module, wide, deep):
     """Fails the bake if any surface, part or socket of the module reaches past its footprint (`wide` by `deep`
-    cells) less the margin: the page sets structures side by side, a cell apart at the least."""
+    cells) less the margin: the page may set structures side by side, touching, so none may reach into the next."""
     bpy.context.view_layer.update()
     depsgraph = bpy.context.evaluated_depsgraph_get()
     half = (wide * CELL_M / 2 - MARGIN_M, deep * CELL_M / 2 - MARGIN_M)
@@ -45,7 +45,7 @@ def pole(module, start, end, radius=0.06, material='timber'):
 
 
 def sheet(module, rows, columns, point, material='canvas', thick=0.02):
-    """Cloth from a grid, `point(u, v)` placing each of its points (u across, v down, each 0 to 1), creased by noise
+    """Cloth from a grid, `point(across, down)` placing each of its points (each a share, 0 to 1), creased by noise
     and thickened, so it reads from inside a tent as well as out."""
     noise = mathutils.noise
     seed = mathutils.Vector((module.draw(0, 50), module.draw(0, 50), 0.0))
@@ -78,10 +78,10 @@ def tent(module, at, quarter, wide, deep, ridge, eave=0.0, door=False, out=0.5, 
         slope_rows, skirt_rows = 6, 3 if walled else 0
         rows = slope_rows + skirt_rows + 1
 
-        def roof(u, v, side):
-            y = -half_d + deep * u
-            sag = 0.07 * math.sin(math.pi * ((u * bays) % 1.0))
-            row = v * (rows - 1)
+        def roof(across, down, side):
+            y = -half_d + deep * across
+            sag = 0.07 * math.sin(math.pi * ((across * bays) % 1.0))
+            row = down * (rows - 1)
             if row <= slope_rows:
                 t = row / slope_rows
                 bend = sag * math.sin(math.pi * t)
@@ -90,16 +90,16 @@ def tent(module, at, quarter, wide, deep, ridge, eave=0.0, door=False, out=0.5, 
             return (side * (half_w + 0.04 * k - sag * 0.5 * math.sin(math.pi * k)), y, low * (1 - k))
 
         for side in (-1, 1):
-            sheet(module, rows, bays * 6 + 1, lambda u, v, side=side: roof(u, v, side), material)
+            sheet(module, rows, bays * 6 + 1, lambda across, down, side=side: roof(across, down, side), material)
 
         def top(x):
             return ridge - (ridge - low) * min(1.0, abs(x) / half_w)
 
         def gable(y, outward):
-            def point(u, v):
-                x = -half_w + wide * u
-                bulge = outward * 0.04 * math.sin(math.pi * u) * math.sin(math.pi * v)
-                return (x, y + bulge, top(x) * (1 - v))
+            def point(across, down):
+                x = -half_w + wide * across
+                bulge = outward * 0.04 * math.sin(math.pi * across) * math.sin(math.pi * down)
+                return (x, y + bulge, top(x) * (1 - down))
             sheet(module, 6, 9, point, material)
 
         gable(half_d, 1)
@@ -108,14 +108,14 @@ def tent(module, at, quarter, wide, deep, ridge, eave=0.0, door=False, out=0.5, 
             gable(-half_d, -1)
             shapes.rod(module, (0.0, -half_d - 0.03, 0.05), (0.0, -half_d - 0.03, ridge - 0.1), 0.012, 'linen', sides=3)
         for side in (-1, 1) if door else ():
-            def flap(u, v, side=side):
-                # u from the door's middle out to its corner; the cloth gathered to the corner at its tie.
-                x = side * half_w * (1 - u)
-                z = top(x) * (1 - v)
+            def flap(across, down, side=side):
+                # across from the door's middle out to its corner; the cloth gathered to the corner at its tie.
+                x = side * half_w * (1 - across)
+                z = top(x) * (1 - down)
                 head = top(x)
                 kept = 0.1 + 0.9 * (z - tie) / max(0.01, head - tie) if z > tie else 0.1 + 0.3 * (tie - z) / tie
                 pulled = side * half_w - (side * half_w - x) * kept
-                fold = 0.05 * math.sin(u * math.pi * 3) * (1 - kept)
+                fold = 0.05 * math.sin(across * math.pi * 3) * (1 - kept)
                 return (pulled, -half_d - 0.04 - fold, z)
             sheet(module, 8, 7, flap, material)
             shapes.ring(module, (side * half_w * 0.92, -half_d - 0.06, tie), 0.09, 0.025, 'linen',
@@ -153,15 +153,15 @@ def fly(module, west, east, south, north, back, front, middles=(), out=0.5, mate
     """A canvas fly from its back edge (`north`, at `back`) down to its front (`south`, at `front`), sagging between
     them, a scalloped valance hung along its front; on rough poles at its corners and at each of `middles` (x) along
     its front and back, its corners guyed out `out` to either side."""
-    def point(u, v):
-        x = west + (east - west) * u
-        return (x, north + (south - north) * v, back + (front - back) * v - sag * math.sin(math.pi * u) *
-                math.sin(math.pi * v))
+    def point(across, down):
+        x = west + (east - west) * across
+        return (x, north + (south - north) * down, back + (front - back) * down - sag * math.sin(math.pi * across) *
+                math.sin(math.pi * down))
     sheet(module, max(4, int((north - south) / 0.35) + 1), max(4, int((east - west) / 0.35) + 1), point, material)
 
-    def hem(u, v):
-        scallop = valance * (0.75 + 0.25 * abs(math.sin(math.pi * u * max(2, round((east - west) / 0.6)))))
-        return (west + (east - west) * u, south - 0.02, front - scallop * v)
+    def hem(across, down):
+        scallop = valance * (0.75 + 0.25 * abs(math.sin(math.pi * across * max(2, round((east - west) / 0.6)))))
+        return (west + (east - west) * across, south - 0.02, front - scallop * down)
     sheet(module, 3, max(4, int((east - west) / 0.2) + 1), hem, material)
     for x in (west, *middles, east):
         for y, z in ((south, front), (north, back)):
