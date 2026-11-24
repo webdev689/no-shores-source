@@ -16,4 +16,5 @@ status: in force
 - **The Breach's own session builds them**, with the Breach's tiers (#182).
 
 How it is built: [[Breaches]] ("Rewards"), [[Gear]]. Their elements:
-[[A Breach's Normal Weapons Carry No Element, and Its Forged Ones Always Do]].
+[[A Breach's Normal Weapons Carry No Element, and Its Forged Ones Always Do]]. Its armour and its perks:
+[[Forged Perks Are Stronger, and Hard Armour Is Forged Too]].

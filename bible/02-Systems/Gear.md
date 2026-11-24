@@ -364,6 +364,12 @@ player while they are in it (`room::perks`). A blow lands when it strikes, is bl
   Charges a foe a shot lands on that was Exposed as it landed. Each is in the room's one door for statuses but
   Crystal Skin and Lattice Shell; every number is Claude's, in [[Gear as Claude Shapes It]] ("The Breaches'
   perks"). A Breach's piece is made by a Breach Vestige, which the Drowned Vale pays ([[Breaches]], "Rewards").
+  On a piece won at Hard each is **Forged** ([[Forged Perks Are Stronger, and Hard Armour Is Forged Too]];
+  `Item::forges`, `Character::forged_trait`, `forged_on`): the same perk, one number about half again as strong, its
+  words `forged` in `traits.json`: Vein Strike 20%, Bloom 6 m, Crystal Sight past 15 m, Crystal Skin 15% softer,
+  Regrowth 8%, Lattice Shell 30% softer, Shardburst and Splinter 5 m, and the Exposes of Shatterpoint, Resonance,
+  Lattice Wall and Fracture and Shard Round's Charge half again as long. A perk worn on a Normal piece and a Hard one
+  counts once, Forged. The page shows a Forged perk's words, with "Forged" under it in a piece's perks.
 - **The pools.** With the verbs and the perks that give and take, a Melee loadout is offered among 6 handling traits,
   7 finishes and 8 perks (9 with a shield), a Ranged one among 6, 7 and 6; armour among its 6 perks.
 

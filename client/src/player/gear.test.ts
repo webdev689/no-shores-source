@@ -1,10 +1,12 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import type { GearItem, GearState } from '../network/gearMessages.ts';
+import traits from '../../../content/gear/traits.json' with { type: 'json' };
 import type { Wardrobe } from './dressing.ts';
 import {
   WORN,
   answerText,
+  forgedOn,
   fullyUpgraded,
   gearHands,
   heldElements,
@@ -98,13 +100,14 @@ test('every rolled piece is named by the set it is drawn in, and its kind', () =
   assert.equal(legendary(head, 2, 0), 'Barrowknight Helm');
   assert.equal(legendary(sword, 2, 2), 'Gravewarden Sword');
   assert.equal(legendary(torso, 6, 0), 'Lattice Hauberk');
-  // A Breach's weapons come in two sets, Normal's and Hard's, the Hard one Forged; its armour is named as any.
+  // A Breach's pieces come in two sets, Normal's and Hard's, the Hard one Forged, its armour as its weapons.
   const breach = (kind: number, hard: boolean) =>
     itemName({ ...item({ kind, rarity: 3, level: 20, source: 6, name: 0 }), breach: true, hard });
   assert.equal(breach(sword, false), 'Lattice Sword', 'won at Normal');
   assert.equal(breach(sword, true), 'Lattice Sword (Forged)', 'won at Hard');
   assert.equal(breach(bow, true), 'Lattice Bow (Forged)');
-  assert.equal(breach(torso, true), 'Lattice Hauberk', 'armour is never Forged');
+  assert.equal(breach(torso, false), 'Lattice Hauberk', 'armour won at Normal');
+  assert.equal(breach(torso, true), 'Lattice Hauberk (Forged)', 'armour won at Hard');
   // A Magic torso rolled for clothes is Homespun; one in its content's lightest set is that set's, bought or not.
   assert.equal(itemName(item({ kind: torso, rarity: 1, name: 0 })), 'Homespun Hauberk');
   assert.equal(itemName(item({ kind: torso, rarity: 1, name: 6 })), 'Deckhand Hauberk');
@@ -267,4 +270,23 @@ test('the prologue’s own armour is named for its steel’s set; its sword and 
   );
   assert.equal(itemName({ ...story, kind: 12 }), itemName({ ...story, kind: 12, story: false }));
   assert.equal(itemName({ ...story, kind: 14, story: false }), 'Homespun Hauberk', 'a plain piece its own');
+});
+
+test("a Breach's perk on a piece won at Hard reads at its Forged grade, and no other trait has one", () => {
+  const hard = { breach: true, hard: true };
+  assert.ok(forgedOn(hard, 'vein_strike'));
+  assert.ok(!forgedOn({ breach: true, hard: false }, 'vein_strike'), 'won at Normal');
+  assert.ok(!forgedOn(hard, 'honed'), "a shared pool's trait");
+  assert.ok(!forgedOn({ breach: false, hard: true }, 'vein_strike'), "no Breach's piece");
+  assert.equal(traitOf('vein_strike').words, 'Blows and shots on an Exposed foe strike 15% harder.');
+  const forged = traitOf('vein_strike', true);
+  assert.equal(forged.words, 'Blows and shots on an Exposed foe strike 20% harder.');
+  assert.ok(forged.forged && forged.name === 'Vein Strike');
+  assert.ok(!traitOf('honed', true).forged, 'a trait with no Forged grade reads plain');
+  for (const each of traits.traits)
+    assert.equal(
+      'forged' in each,
+      'breach' in each && each.breach === true,
+      `${each.id}: Forged words with a Breach's perk alone`,
+    );
 });

@@ -172,6 +172,9 @@ what it touches, so its pool Exposes, spreads and hardens; each perk uses a stat
 | Shardburst (armour) | When a foe's blow breaks the wearer's guard, every foe within 3 m of the wearer, its striker too, is Exposed | A guard shattering throws shards; 3 m is the foes at the wearer's side, closer than Bloom's 4 |
 | Splinter (melee) | A riposte that lands Exposes its foe and every other foe within 3 m of it | Nightfall's hook, the riposte, with Bloom's spread from the foe struck, not the slain |
 | Shard Round (ranged) | A shot that lands on a foe Exposed as it lands Charges it | The pool's ranged payoff for its own Exposes, as Vein Strike's is for any weapon; Shocking Rounds' Charge |
+| What a Forged perk is ([[Forged Perks Are Stronger, and Hard Armour Is Forged Too]]) | A Breach perk on a Breach's piece won at Hard (`Item::forges`): the same perk, one number of it stronger; a shared pool's trait on that piece stays plain. Worn on a Normal piece and a Hard one at once, it counts once, Forged | Destiny's enhanced perks: the same verb, a step better, so a Hard piece is the one to keep without a perk the Normal raid cannot teach |
+| How much stronger | About half again what the plain grade does, in a round number: Vein Strike 20% (15), Bloom 6 m (4), Crystal Sight past 15 m (20), Crystal Skin 15% softer (10), Regrowth 8% (5), Lattice Shell 30% softer (20), Shardburst and Splinter 5 m (3); Shatterpoint's, Resonance's, Lattice Wall's and Fracture's Expose and Shard Round's Charge last half again as long | One rule a player can learn; an Expose's own length is what those perks give, so its length is what grows |
+| How it reads | The perk's Forged words on its node and card, and "Forged" under it in a piece's perks | The piece's name already says "(Forged)"; the words say what is stronger |
 
 ### Islands, seas and patrols
 

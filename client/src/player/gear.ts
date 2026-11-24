@@ -190,12 +190,13 @@ export function answerText(answer: number): string {
 /** Each armour and weapon kind's word, said after its set's name ("Portwatch Helm"). */
 const KIND_WORDS: Readonly<Record<string, string | undefined>> = rolled.kinds;
 
-/** What a Breach's weapon won at Hard is called after its set's name: its Forged version, as Destiny's raid weapons
- *  are Adept (the decision "Breach Weapons Come Normal and Forged"). */
+/** What a Breach's piece won at Hard is called after its set's name: its Forged version, as Destiny's raid weapons
+ *  are Adept (the decisions "Breach Weapons Come Normal and Forged" and "Forged Perks Are Stronger, and Hard Armour
+ *  Is Forged Too"). */
 export const FORGED = '(Forged)';
 
 /** An item's name: a named item's own (a faction's piece's is its set's); a rolled armour piece or weapon its set's
- *  and its kind's word, by the look it is drawn in, the prologue's armour by its steel, a Breach's weapon won at Hard
+ *  and its kind's word, by the look it is drawn in, the prologue's armour by its steel, a Breach's piece won at Hard
  *  Forged; a horse by its coat; the cloak its kind's. Ship modules are named by `gearName`. */
 export function itemName(
   item: Pick<GearItem, 'named' | 'kind' | 'rarity' | 'name' | 'id' | 'level' | 'source' | 'story'> &
@@ -203,8 +204,7 @@ export function itemName(
 ): string {
   if (item.named) return items.items.find((found) => found.id === item.named)?.name ?? item.named;
   const parts = rolledParts(item);
-  const forged = item.breach && item.hard && slotOf(item.kind) <= 1;
-  if (parts) return forged ? `${parts.set} ${parts.word} ${FORGED}` : `${parts.set} ${parts.word}`;
+  if (parts) return item.breach && item.hard ? `${parts.set} ${parts.word} ${FORGED}` : `${parts.set} ${parts.word}`;
   // A horse by its coat's name among its kind's; the cloak by its kind.
   const kind = kindKey(item.kind);
   const names = (rolled.names as Record<string, Record<string, readonly string[]> | undefined>)[kind];
@@ -251,16 +251,30 @@ export function itemWords(
 }
 
 /** A trait's name and words: all it does (`words`), and for a perk that gives and takes, what it gives and what it
- *  costs apart (`gives`, `takes`), so a screen can set the cost apart. */
-export function traitOf(id: string): {
+ *  costs apart (`gives`, `takes`), so a screen can set the cost apart. A Breach's perk on a piece won at Hard is at
+ *  its Forged grade (`forgedOn`): its Forged words, and `forged` set. */
+export function traitOf(
+  id: string,
+  forged = false,
+): {
   readonly name: string;
   readonly words: string;
   readonly gives: string;
   readonly takes: string;
+  readonly forged: boolean;
 } {
   const found = traits.traits.find((each) => each.id === id);
-  const [gives, takes] = [found?.words ?? '', (found && 'takes' in found ? found.takes : '') ?? ''];
-  return { name: found?.name ?? id, words: takes ? `${gives} ${takes}` : gives, gives, takes };
+  const graded = forged && found && 'forged' in found ? found.forged : undefined;
+  const [gives, takes] = [graded ?? found?.words ?? '', (found && 'takes' in found ? found.takes : '') ?? ''];
+  return { name: found?.name ?? id, words: takes ? `${gives} ${takes}` : gives, gives, takes, forged: !!graded };
+}
+
+/** Whether an item gives a trait at its Forged grade: a Breach's perk, on a Breach's piece won at Hard
+ *  (`gear::Item::forges`). */
+export function forgedOn(item: Partial<Pick<GearItem, 'breach' | 'hard'>>, id: string): boolean {
+  return (
+    !!item.breach && !!item.hard && traits.traits.some((each) => each.id === id && 'breach' in each && each.breach)
+  );
 }
 
 /** An island's resource's name, by its place in the list. */
@@ -344,7 +358,7 @@ export function nodeShown(item: GearItem, column: number, node: number): NodeSho
       : null;
   return {
     label: trait ? traitOf(trait).name : 'Upgrade',
-    words: trait ? traitOf(trait).words : 'Raises its power.',
+    words: trait ? traitOf(trait, forgedOn(item, trait)).words : 'Raises its power.',
     bought,
     chosen: bought && (!trait || item.chosen[column] === node),
     unlocked,

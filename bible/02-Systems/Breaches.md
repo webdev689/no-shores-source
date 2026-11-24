@@ -100,8 +100,10 @@ Claude's ([[The Drowned Vale as Claude Builds It]]).
 
 - **Each encounter's first clear a week** at each tier pays a Breach Vestige of that tier; the Steward pays two.
   Normal's armour climbs from Prestige 19 to 28, Hard's from 21 to 30: only Hard reaches level 30 ([[Gear]]). Its
-  weapons come in two sets, Normal's and Hard's, a weapon won at Hard named Forged after its set ("Lattice Sword
-  (Forged)", as Destiny's raid weapons are Adept: [[Breach Weapons Come Normal and Forged]]; `itemName`). Normal's
+  weapons come in two sets, Normal's and Hard's, a piece won at Hard named Forged after its set ("Lattice Sword
+  (Forged)", "Lattice Hauberk (Forged)", as Destiny's raid weapons are Adept:
+  [[Breach Weapons Come Normal and Forged]]; `itemName`), its Breach perks at their stronger Forged grade
+  ([[Forged Perks Are Stronger, and Hard Armour Is Forged Too]]; [[Gear]], "The Breaches' perks"). Normal's weapons
   never carry an element and the Forged always do
   ([[A Breach's Normal Weapons Carry No Element, and Its Forged Ones Always Do]]).
 - **The Steward's first clear ever** keeps the banner, the emblem The Drowned Vale; by chance the dye Drowned Vale

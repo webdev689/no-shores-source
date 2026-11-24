@@ -19,6 +19,7 @@ import {
   itemWords,
   resourceName,
   resourceWords,
+  forgedOn,
   traitOf,
   wearAsks,
 } from '../player/gear.ts';
@@ -104,10 +105,18 @@ function traitsOf(item: Pick<GearItem, 'columns' | 'chosen'>): { readonly id: st
   });
 }
 
-/** The traits an item, or an officer, gives now, as its card and page list them. */
-export function traitsShown(item: Pick<GearItem, 'columns' | 'chosen'>): Trait[] {
-  return traitsOf(item).map(({ id, kind }) => ({ ...traitOf(id), kind }));
+/** The traits an item, or an officer, gives now, as its card and page list them: a Forged perk marked so. */
+export function traitsShown(
+  item: Pick<GearItem, 'columns' | 'chosen'> & Partial<Pick<GearItem, 'breach' | 'hard'>>,
+): Trait[] {
+  return traitsOf(item).map(({ id, kind }) => {
+    const trait = traitOf(id, forgedOn(item, id));
+    return trait.forged ? { ...trait, kind, note: FORGED_NOTE } : { ...trait, kind };
+  });
 }
+
+/** The word under a Forged perk on its card and page. */
+export const FORGED_NOTE = 'Forged';
 
 /** An item's card; against `worn`, the piece it would replace, what changes. */
 export function cardOf(item: GearItem, worn: GearItem | null = null): Card {
