@@ -339,7 +339,9 @@ export function unwrittenBy(before: BreachSeen | null, seen: BreachSeen): string
   if (!before) return null;
   const most = FUSIONS_MOST[seen.tier] ?? FUSIONS_MOST[0];
   const fused = seen.counts.reduce((sum, count) => sum + count, 0) >= most;
-  if (before.lyingTicks > 0) return 'the Lodestone lay too long';
+  // The stone's own unwriting: its count ran out (no more needed, so none counts) while it still lies.
+  const ranOut = before.lyingTicks > 0 && before.lyingTicks <= TICKS_PER_SECOND && seen.lyingTicks === 0;
+  if (ranOut && seen.stone === STONE.lying) return 'the Lodestone lay too long';
   if (before.wipeTicks > 0) return 'seen by a Watcher';
   if (seen.encounter === ENCOUNTER.mending && fused) return `the seams fused ${most} times`;
   if (seen.encounter === ENCOUNTER.shores && fused) return `the Seam fused ${most} times`;

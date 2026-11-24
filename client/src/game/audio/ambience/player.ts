@@ -20,13 +20,14 @@ import {
 } from './law.ts';
 import { type Lay, type Point3, cityPoint, placeCall, riverNear, shorePoints } from './places.ts';
 import { BED_LOUD, SOFTER_BEDS } from './recordings.ts';
-import { type BedLayer, type Drive, SCAPES, type Scape, type Voice } from './scapes.ts';
+import { scapeOf } from './breachScapes.ts';
+import type { BedLayer, Drive, Scape, Voice } from './scapes.ts';
 import { FIGHT_NEAR_M } from './seaFight.ts';
 import { type HeardWeather, SHELTERING, THUNDER_MOST, type Thunder, gustDepth, snowSoftening } from './weatherLaw.ts';
 
 /** What the ambience hears this frame: where the ear is and faces, the frame's origin (the ship at sea, so all rides
  *  with it), the land, the phases of the hour, the drives, the weather and the share of the day's birds and insects
- *  not gone to shelter from it, and a social space's walking people. */
+ *  not gone to shelter from it, a social space's walking people, and where a Breach's gate and its Spire stand. */
 export interface Heard {
   readonly key: AmbienceKey;
   readonly ear: Point3;
@@ -44,6 +45,7 @@ export interface Heard {
     readonly z: number;
     readonly anim: string;
   }[];
+  readonly gate?: { readonly at: Point3; readonly spire: Point3 } | null;
 }
 
 /** Thunder is placed this far along the way it comes from, metres, heard whole there: its level and its darkness are
@@ -78,7 +80,15 @@ export const BED_LEVEL = 0.25;
 /** A recording not yet come is asked for again after this long, seconds. */
 const RECORDING_AGAIN_S = 5;
 /** How near a standing bed is heard whole, metres: a shore, a city's crowd and a harbour are wide sources. */
-const NEAR_M: Readonly<Record<BedLayer['at'], number>> = { wide: 1, shore: 40, harbour: 60, city: 90, river: 20 };
+const NEAR_M: Readonly<Record<BedLayer['at'], number>> = {
+  wide: 1,
+  shore: 40,
+  harbour: 60,
+  city: 90,
+  river: 20,
+  gate: 20,
+  spire: 15,
+};
 
 interface BedPlaying {
   readonly layer: BedLayer;
@@ -144,7 +154,7 @@ export class ScapePlayer {
   private readonly missing = new Map<string, number>();
 
   constructor(audio: BaseAudioContext, out: AudioNode, key: AmbienceKey, random: Random, calls: { count: number }) {
-    [this.audio, this.key, this.scape, this.random, this.calls] = [audio, key, SCAPES[key], random, calls];
+    [this.audio, this.key, this.scape, this.random, this.calls] = [audio, key, scapeOf(key), random, calls];
     this.gain = audio.createGain();
     this.gain.gain.value = 0;
     this.gain.connect(out);
@@ -257,6 +267,10 @@ export class ScapePlayer {
         const city = cityPoint(heard.lay);
         return city ? [[city[0], city[1], Math.max(0, heard.lay.heightAt(city[0], city[1])) + 3]] : [];
       }
+      case 'gate':
+        return heard.gate ? [heard.gate.at] : [];
+      case 'spire':
+        return heard.gate ? [heard.gate.spire] : [];
     }
   }
 

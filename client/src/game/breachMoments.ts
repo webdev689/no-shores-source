@@ -1,67 +1,119 @@
 // A Breach's moments as the page hears and tells them, from the room's events (judging.rs EventKind): which are the
 // player's (the room tells most to every player, so the page takes only its own player's copy); each heard once, at
 // its place where it names one (a bell, a mooring, a rift, a desk, a Keeper's shore, the player it marks), every bell
-// waking at its own note; the music's sting and the banner's beat; and the company's moments in words, a wipe saying
-// why where the page knows it. The room judges every one.
+// waking at its own note, each by its own recording (`breach.*`) once the owner has picked it and by the world's it
+// borrowed until then; what the room tells by its state (a slab rising or sinking, a mooring held); the music's sting
+// and the banner's beat; and the company's moments in words, a wipe saying why where the page knows it. The room
+// judges every one.
+import bank from '../../../content/audio/sounds.json' with { type: 'json' };
 import { EVENT } from '../combat/cues.ts';
 import type { BannerBeat } from '../combat/publicBanner.ts';
 import { BREACH_EVENT, type BreachSeen } from '../network/breachMessages.ts';
 import type { FightEvent } from '../network/messages.ts';
-import { type BreachPlan, spaceSocket } from './breachPlan.ts';
-import { ENCOUNTER, momentWords, shutOutWords, unwrittenBy } from './breachWords.ts';
+import { type BreachPlan, slabStands, spaceSocket } from './breachPlan.ts';
+import { ENCOUNTER, type Mooring, momentWords, shutOutWords, unwrittenBy } from './breachWords.ts';
 
 type Point = readonly [number, number, number];
 
-/** A moment heard: its recording, where, and how fast it plays (1 as recorded; a bell's note). */
+/** A moment heard: its recording, where, how fast it plays (1 as recorded; a bell's note), and whether it is heard
+ *  whole and from afar (a toll, a bell, the gong of an encounter begun), whichever recording plays it, not cut short
+ *  and near as the world's other sounds are. */
 export interface Heard {
   readonly cue: string;
   readonly at: Point;
   readonly rate?: number;
+  readonly whole?: true;
 }
 
-/** The recordings each moment plays where it happens, reused from the world's own. */
-const SOUNDS: Readonly<Record<number, string>> = {
-  [BREACH_EVENT.begun]: 'foe.alert',
-  [BREACH_EVENT.stage]: 'amb.ice.crack',
-  [BREACH_EVENT.won]: 'story.crash',
-  [BREACH_EVENT.rewritten]: 'element.cosmic',
-  [BREACH_EVENT.cleansed]: 'finish.cosmic',
-  [BREACH_EVENT.carried]: 'element.cosmic',
-  [BREACH_EVENT.unwritten]: 'story.thud',
-  [BREACH_EVENT.lodestoneTaken]: 'ship.ready',
-  [BREACH_EVENT.lodestoneDropped]: 'story.thud',
-  [BREACH_EVENT.grounded]: 'amb.thunder.crack',
-  [BREACH_EVENT.heldTrue]: 'anima.divine',
-  [BREACH_EVENT.bellWoke]: 'element.cosmic',
-  [BREACH_EVENT.bellBroken]: 'shield.break',
-  [BREACH_EVENT.bellRang]: 'amb.thunder.crack',
-  [BREACH_EVENT.fused]: 'amb.ice.crack',
-  [BREACH_EVENT.overtaken]: 'hit.blunt',
-  [BREACH_EVENT.claimed]: 'foe.alert',
-  [BREACH_EVENT.deskMarked]: 'foe.alert',
-  [BREACH_EVENT.blotted]: 'finish.cosmic',
-  [BREACH_EVENT.wroteItself]: 'story.thud',
-  [BREACH_EVENT.seen]: 'foe.alert',
-  [BREACH_EVENT.riftOpened]: 'element.cosmic',
-  [BREACH_EVENT.riftClosed]: 'amb.ice.crack',
-  [BREACH_EVENT.keeperFell]: 'kill',
-  [BREACH_EVENT.tolled]: 'amb.thunder.crack',
-  [BREACH_EVENT.taken]: 'element.cosmic',
-  [BREACH_EVENT.wayBack]: 'finish.cosmic',
-  [BREACH_EVENT.returned]: 'ship.ready',
-  [BREACH_EVENT.laidBare]: 'shield.break',
+/** Whether the owner has picked a cue's recording (content/audio/sounds.json). */
+const pickedCue = (cue: string): boolean => cue in bank.sounds;
+
+/** Each moment's own recording (content/audio/freesound.json's `breach.*`), and the world's it plays until its own is
+ *  picked (none where it was silent). A player carried into a shore is plunged under as the taken are. */
+export const MOMENT_CUES: Readonly<Record<number, { readonly cue: string; readonly until: string | null }>> = {
+  [BREACH_EVENT.begun]: { cue: 'breach.begun', until: 'foe.alert' },
+  [BREACH_EVENT.stage]: { cue: 'breach.stage', until: 'amb.ice.crack' },
+  [BREACH_EVENT.won]: { cue: 'breach.seal', until: 'story.crash' },
+  [BREACH_EVENT.wiped]: { cue: 'breach.wipe', until: 'story.thud' },
+  [BREACH_EVENT.rewritten]: { cue: 'breach.rewritten', until: 'element.cosmic' },
+  [BREACH_EVENT.cleansed]: { cue: 'breach.cleansed', until: 'finish.cosmic' },
+  [BREACH_EVENT.carried]: { cue: 'breach.taken', until: 'element.cosmic' },
+  [BREACH_EVENT.unwritten]: { cue: 'breach.unwritten', until: 'story.thud' },
+  [BREACH_EVENT.lodestoneTaken]: { cue: 'breach.stone.take', until: 'ship.ready' },
+  [BREACH_EVENT.lodestoneDropped]: { cue: 'breach.stone.drop', until: 'story.thud' },
+  [BREACH_EVENT.grounded]: { cue: 'breach.stone.ground', until: 'amb.thunder.crack' },
+  [BREACH_EVENT.heldTrue]: { cue: 'breach.stone.hold', until: 'anima.divine' },
+  [BREACH_EVENT.bellWoke]: { cue: 'breach.bell.wake', until: 'element.cosmic' },
+  [BREACH_EVENT.bellBroken]: { cue: 'breach.bell.break', until: 'shield.break' },
+  [BREACH_EVENT.bellRang]: { cue: 'breach.bell.ring', until: 'amb.thunder.crack' },
+  [BREACH_EVENT.fused]: { cue: 'breach.fused', until: 'amb.ice.crack' },
+  [BREACH_EVENT.overtaken]: { cue: 'breach.overtaken', until: 'hit.blunt' },
+  [BREACH_EVENT.claimed]: { cue: 'breach.claimed', until: 'foe.alert' },
+  [BREACH_EVENT.deskMarked]: { cue: 'breach.desk.marked', until: 'foe.alert' },
+  [BREACH_EVENT.blotted]: { cue: 'breach.blotted', until: 'finish.cosmic' },
+  [BREACH_EVENT.wroteItself]: { cue: 'breach.wrote', until: 'story.thud' },
+  [BREACH_EVENT.seen]: { cue: 'breach.seen', until: 'foe.alert' },
+  [BREACH_EVENT.riftOpened]: { cue: 'breach.rift.open', until: 'element.cosmic' },
+  [BREACH_EVENT.riftClosed]: { cue: 'breach.rift.shut', until: 'amb.ice.crack' },
+  [BREACH_EVENT.keeperFell]: { cue: 'breach.keeper.fell', until: 'kill' },
+  [BREACH_EVENT.tolled]: { cue: 'breach.toll', until: 'amb.thunder.crack' },
+  [BREACH_EVENT.taken]: { cue: 'breach.taken', until: 'element.cosmic' },
+  [BREACH_EVENT.wayBack]: { cue: 'breach.way.back', until: 'finish.cosmic' },
+  [BREACH_EVENT.returned]: { cue: 'breach.returned', until: 'ship.ready' },
+  [BREACH_EVENT.laidBare]: { cue: 'breach.laid.bare', until: 'shield.break' },
 };
+/** What the room tells by its state rather than by an event, and the hidden chest opened to the player: each by its
+ *  own recording alone, silent until it is picked (no world sound stands in for them). */
+export const STATE_CUES = {
+  slab: 'breach.slab',
+  mooring: 'breach.mooring',
+  chest: 'breach.chest',
+  woken: 'breach.spire.woken',
+} as const;
+/** The moments heard whole and from afar: long recordings (a toll rings 3 to 15 s, a bell 2 to 10 s) and the far
+ *  ones (the Choir's last bell stands 64 m from its stage). */
+const WHOLE: ReadonlySet<string> = new Set([
+  'breach.begun',
+  'breach.seal',
+  'breach.wipe',
+  'breach.bell.wake',
+  'breach.bell.ring',
+  'breach.bell.break',
+  'breach.toll',
+  'breach.rift.open',
+  'breach.rift.shut',
+  'breach.keeper.fell',
+  'breach.laid.bare',
+  'breach.spire.woken',
+]);
+/** How near the listener a slab's rising or sinking is heard, metres. */
+const SLAB_HEARD_M = 40;
+/** The most room ticks between two frames for a slab's change between them to be heard: a second's. */
+const SLAB_GAP_TICKS = 60;
+
+/** A recording heard at `where`: the moment's own once picked (`picked`), else the world's it borrows; none for
+ *  neither. */
+export function heardOf(
+  sound: { readonly cue: string; readonly until: string | null },
+  where: Point,
+  picked: (cue: string) => boolean = pickedCue,
+): Heard | null {
+  const cue = picked(sound.cue) ? sound.cue : sound.until;
+  if (!cue) return null;
+  return WHOLE.has(sound.cue) ? { cue, at: where, whole: true } : { cue, at: where };
+}
+
 /** The music's moment for a moment of the run: a cadence as an encounter begins or its great foe wakes (as an Elite
- *  Dungeon's Boss does), victory as one is won or the Breach cleared, defeat as an attempt is lost. */
+ *  Dungeon's Boss does), victory as one is won, defeat as an attempt is lost. The Breach cleared plays none: the
+ *  room tells it at the gate, where no one who cleared it stands. */
 const STINGS: Readonly<Record<number, 'cadence' | 'victory' | 'defeat'>> = {
   [BREACH_EVENT.begun]: 'cadence',
   [EVENT.bossWoke]: 'cadence',
   [BREACH_EVENT.won]: 'victory',
-  [BREACH_EVENT.cleared]: 'victory',
   [BREACH_EVENT.wiped]: 'defeat',
 };
-/** The moments the room tells once, of one player (`defender`), the gate shutting one out among them; every other it
- *  tells each player in the room, so the page takes only its own player's. */
+/** The moments the room tells once, of one player (`defender`); every other it tells each player in the room (the
+ *  gate shutting one out, to them alone), so the page takes only its own player's. */
 const TOLD_ONCE: ReadonlySet<number> = new Set([
   BREACH_EVENT.cleansed,
   BREACH_EVENT.carried,
@@ -70,7 +122,6 @@ const TOLD_ONCE: ReadonlySet<number> = new Set([
   BREACH_EVENT.grounded,
   BREACH_EVENT.heldTrue,
   BREACH_EVENT.overtaken,
-  BREACH_EVENT.shutOut,
 ]);
 /** The Waking's own moments at the gate, heard and told only by its company and those in its hollow. */
 const WAKING: ReadonlySet<number> = new Set([BREACH_EVENT.begun, BREACH_EVENT.won, BREACH_EVENT.wiped]);
@@ -79,14 +130,16 @@ const NOTES = [0, 2, 4, 5, 7, 9, 11] as const;
 /** The Shores' rifts in the hall, by their number. */
 const RIFTS = ['rift-was', 'rift-is'] as const;
 
-/** Where a frame's moments are placed: the player (their number and feet), each fighter as drawn, and at the gate in
- *  the zone its middle and its moorings by number (none in the run, or before the zone's layout says). */
+/** Where a frame's moments are placed: the player (their number and feet), each fighter as drawn, at the gate in the
+ *  zone its middle and its moorings by number (none in the run, or before the zone's layout says), and in the run its
+ *  hidden chests by number. */
 export interface MomentPlaces {
   readonly own: number;
   readonly feet: Point;
   readonly where: (id: number) => Point | null;
   readonly gate: Point | null;
   readonly mooring: (nth: number) => Point | null;
+  readonly chest?: (nth: number) => Point | null;
 }
 
 /** The moments of `events` the player has: each the room tells once, and their own copy of every other; at the gate,
@@ -106,21 +159,64 @@ export const stingOf = (had: readonly FightEvent[]) =>
   had.reduce<'cadence' | 'victory' | 'defeat' | null>((last, event) => STINGS[event.kind] ?? last, null);
 
 /** Each of a frame's moments heard once where it happens (`placeOf`); the Rewritten of a frame once between them, at
- *  the player where they are among them, else at the first; each bell waking at its place's note. */
+ *  the player where they are among them, else at the first; each bell waking at its place's note; a hidden chest the
+ *  room pays the player opening where it stands. `picked` says whose own recording has come. */
 export function momentSounds(
   plan: BreachPlan,
   seen: BreachSeen,
   had: readonly FightEvent[],
   places: MomentPlaces,
+  picked: (cue: string) => boolean = pickedCue,
 ): Heard[] {
   const rewritten = had.filter((event) => event.kind === BREACH_EVENT.rewritten);
   const marked = rewritten.find((event) => Math.round(event.amount) === places.own) ?? rewritten[0];
   return had.flatMap((event): Heard[] => {
-    const cue = SOUNDS[event.kind];
-    if (!cue || (event.kind === BREACH_EVENT.rewritten && event !== marked)) return [];
-    const place = placeOf(plan, seen, event, places);
+    if (event.kind === EVENT.chestOpened) {
+      const nth = Math.round(event.amount) - plan.encounters.length;
+      const spot = event.striker === places.own ? places.chest?.(nth) : null;
+      const heard = spot && heardOf({ cue: STATE_CUES.chest, until: null }, spot, picked);
+      return heard ? [heard] : [];
+    }
+    const sound = MOMENT_CUES[event.kind];
+    if (!sound || (event.kind === BREACH_EVENT.rewritten && event !== marked)) return [];
+    const heard = heardOf(sound, placeOf(plan, seen, event, places), picked);
+    if (!heard) return [];
     const note = NOTES[Math.round(event.amount) % NOTES.length] ?? 0;
-    return [event.kind === BREACH_EVENT.bellWoke ? { cue, at: place, rate: 2 ** (note / 12) } : { cue, at: place }];
+    return [event.kind === BREACH_EVENT.bellWoke ? { ...heard, rate: 2 ** (note / 12) } : heard];
+  });
+}
+
+/** The Broken Stair's slabs that rose or sank between the room's ticks `from` and `to`, each heard where it stands
+ *  within earshot of `ear`; none on the first tick seen (`from` null) or across a gap of more than a second. */
+export function slabSounds(
+  plan: BreachPlan,
+  from: number | null,
+  to: number,
+  ear: Point,
+  picked: (cue: string) => boolean = pickedCue,
+): Heard[] {
+  // A jump of more than a second (a hidden page's frames stopped) was not seen moving, so it is not heard.
+  if (from === null || to <= from || to - from > SLAB_GAP_TICKS) return [];
+  return plan.slabs.flatMap(({ at, phase }) => {
+    const moved = slabStands(plan, phase, from) !== slabStands(plan, phase, to);
+    const near = at && Math.hypot(at[0] - ear[0], at[1] - ear[1], at[2] - ear[2]) <= SLAB_HEARD_M;
+    const heard = moved && near ? heardOf({ cue: STATE_CUES.slab, until: null }, at, picked) : null;
+    return heard ? [heard] : [];
+  });
+}
+
+/** The gate's moorings newly held since the frame before (`before`, none the first frame), each heard at its own. */
+export function mooringSounds(
+  before: readonly Mooring[] | null,
+  now: readonly Mooring[],
+  socket: (nth: number) => Point | null,
+  picked: (cue: string) => boolean = pickedCue,
+): Heard[] {
+  if (!before) return [];
+  return now.flatMap((state, nth) => {
+    const spot = state === 'held' && before[nth] !== 'held' ? socket(nth) : null;
+    const heard = spot && heardOf({ cue: STATE_CUES.mooring, until: null }, spot, picked);
+    return heard ? [heard] : [];
   });
 }
 
@@ -167,7 +263,8 @@ export class MomentWords {
     { ours, nameOf, lost }: { ours: boolean; nameOf: (player: number) => string; lost: string | null },
   ): string[] {
     return had.flatMap((event) => {
-      if (event.kind === BREACH_EVENT.shutOut) return [shutOutWords(plan, seen.tier, Math.round(event.amount))];
+      // The room tells why, not the tier the player was refused at (gate.rs `breach_company`): no tier is named.
+      if (event.kind === BREACH_EVENT.shutOut) return [shutOutWords(plan, -1, Math.round(event.amount))];
       if (event.kind === BREACH_EVENT.begun) this.cause = null;
       const cause = event.kind === BREACH_EVENT.unwritten ? unwrittenBy(before, seen) : null;
       if (cause) this.cause = cause;

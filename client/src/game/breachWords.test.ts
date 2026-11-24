@@ -289,7 +289,10 @@ test("the room's moments are said: the company fallen and why, one seen by a Wat
 
 test('the company is unwritten whole only as the rules unwrite it, whoever already lay fallen', () => {
   const steward = { ...RUN, encounter: ENCOUNTER.steward, takings: 4, takingTicks: 3 };
-  assert.equal(unwrittenBy({ ...RUN, stone: STONE.lying, lyingTicks: 2 }, RUN), 'the Lodestone lay too long');
+  const lying = { ...RUN, stone: STONE.lying };
+  assert.equal(unwrittenBy({ ...lying, lyingTicks: 2 }, lying), 'the Lodestone lay too long');
+  assert.equal(unwrittenBy({ ...lying, lyingTicks: 900 }, { ...lying, lyingTicks: 899 }), null, 'a writing as it lies');
+  assert.equal(unwrittenBy({ ...lying, lyingTicks: 2 }, { ...RUN, stone: STONE.borne }), null, 'taken up in time');
   assert.equal(unwrittenBy({ ...RUN, encounter: ENCOUNTER.ways, wipeTicks: 2 }, RUN), 'seen by a Watcher');
   const mending = { ...RUN, encounter: ENCOUNTER.mending, tier: 1, counts: [2, 0, 1] };
   assert.equal(unwrittenBy(mending, mending), 'the seams fused 3 times');

@@ -6,13 +6,43 @@ import type { Random } from './dsp.ts';
 import type { Place } from '../place.ts';
 import { CLIMATES, type Climate } from '../place.ts';
 
-/** Each of the eleven ambiences: the sea, the social space, and an island's by its climate. */
-export type AmbienceKey = 'sea' | 'social' | Climate;
-export const AMBIENCES: readonly AmbienceKey[] = ['sea', 'social', ...CLIMATES];
+/** Each of the eleven ambiences of the world: the sea, the social space, and an island's by its climate. */
+export type WorldKey = 'sea' | 'social' | Climate;
+export const AMBIENCES: readonly WorldKey[] = ['sea', 'social', ...CLIMATES];
+/** A Breach's run's ambiences, one for each kind of its spaces (its Two Shores' four shores sound alike). */
+export const BREACH_AMBIENCES = [
+  'breach.descent',
+  'breach.mending',
+  'breach.choir',
+  'breach.ways',
+  'breach.stair',
+  'breach.court',
+  'breach.hall',
+  'breach.shore',
+] as const;
+export type BreachKey = (typeof BREACH_AMBIENCES)[number];
+/** Every ambience: the world's, the run's spaces', and the gate's hollow heard over its zone's (`breach.gate`). */
+export type AmbienceKey = WorldKey | BreachKey | 'breach.gate';
+
+/** The ambience a space of a Breach's run sounds as, by its plan's key: each its own, the shores (`hall-was`,
+ *  `court-is`, ...) as one; an unknown space as the Descent, where every run begins. */
+export function breachAmbienceOf(space: string): BreachKey {
+  if (space.endsWith('-was') || space.endsWith('-is')) return 'breach.shore';
+  return BREACH_AMBIENCES.find((key) => key === `breach.${space}`) ?? 'breach.descent';
+}
+
+/** Whether an ambience is under the ground, where the sky's time and weather never reach. */
+export const underground = (key: AmbienceKey): boolean => key.startsWith('breach.') && key !== 'breach.gate';
 
 /** The ambience a place sounds as. */
 export const ambienceOf = (place: Place): AmbienceKey =>
-  place.kind === 'sea' ? 'sea' : place.kind === 'social' ? 'social' : place.climate;
+  place.kind === 'sea'
+    ? 'sea'
+    : place.kind === 'social'
+      ? 'social'
+      : place.kind === 'breach'
+        ? breachAmbienceOf(place.space)
+        : place.climate;
 
 /** The day's four phases. */
 export type Phase = 'dawn' | 'day' | 'dusk' | 'night';

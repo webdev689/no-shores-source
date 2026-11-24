@@ -123,9 +123,12 @@ Claude's ([[The Drowned Vale as Claude Builds It]]).
   under the zone's own; the compass marks the gate. The Spire's fill rises as a pillar of light the whole zone sees,
   and its company hears the tension music while it fills. The seal stands in its doorway until the gate opens to the
   viewer's company, which is offered "Enter the Drowned Vale" there. The Waking's moments and stings reach only its
-  company and those in the hollow.
+  company and those in the hollow. Within 60 m the hollow's own air stands at the gate over the vale's ambience, and
+  while the viewer's company holds the Waking the Spire hums at the Spire, louder as it fills; each mooring newly held
+  catches, and the Spire's waking rings out as the gate opens to the company ([[Ambience]]).
 - **In the run**: its spaces drawn over the dark from the plan (`room_breach`), only the Breach's modules loaded while
-  there and let go on any way out (the seal's in the gate's zone too); heard underground; its seals while shut, its
+  there and let go on any way out (the seal's in the gate's zone too); heard underground, each space by its own
+  ambience ([[Ambience]]); its seals while shut, its
   slabs fading in and out over a second, its bells, the hidden chests (shut, dimly lit, until they pay the player),
   the Lodestone (lying, on its plinth, or turning 2.3 m over its bearer); each encounter's banner from the snapshot's
   Breach, with its limits and its clocks (fusions of 4, Hard 3; the round of 5; a desk's marking, a bell's ringing,
@@ -141,9 +144,17 @@ Claude's ([[The Drowned Vale as Claude Builds It]]).
   V in the court over the rift's mooring, each shore bell carrying its place's numeral. A ring that warns is dashed, so
   it is told from a safe one by shape as well as colour. Which Choir bell comes next is never marked.
 - **Its moments** (`breachMoments.ts`), each once, at its place: a bell (each waking at its own note), a mooring, a
-  rift, a desk, a Keeper's shore, the marked or seen player. The great foes' waking plays the Elite Boss's sting and
-  the music's peak; a wipe names its cause ("Your company fell: the Lodestone lay too long."), and the company
-  unwritten is told in words; a revive is told as the game tells it ([[Revives]]).
+  rift, a desk, a Keeper's shore, the marked or seen player. Each plays its own Freesound recording (`breach.*`), and
+  until the owner picks it the world's sound it borrowed (a wipe, a low thud); a carried player is plunged under as
+  the taken are. The gong of an encounter begun, a seal shattering, a wipe, the bells, the toll, a rift, a Keeper
+  falling, the Steward laid bare and the Spire waking are heard whole and up to 160 m off; the rest as the world's
+  sounds are (40 m, 5 s at most). The room's state is heard too: a slab of the Broken Stair rising or sinking within
+  40 m, a hidden chest opening where it stands as it pays the player (its chime kept), each silent until its own
+  recording is picked. The great foes' waking plays the Elite Boss's sting and the music's peak; the Breach cleared,
+  told at the gate where no one who cleared it stands, plays none. A wipe names its cause ("Your company fell: the
+  Lodestone lay too long.", only when the stone ran out while it lay), and the company unwritten is told in words; the
+  gate shutting a player out tells them alone, naming no tier (the room does not say which); a revive is told as the
+  game tells it ([[Revives]]).
 - **The Lodestone's bearer** is drawn bare handed with no crosshair; its key strip reads Strike, Hold True and Ground;
   any Art key Grounds it once charged. Use takes up the Lodestone before a revive while it lies counting down.
 - **Falling, reviving and following**: the game's death screen and revive prompt ([[Revives]], "On the page") say the

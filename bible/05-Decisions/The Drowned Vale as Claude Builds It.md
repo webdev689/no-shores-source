@@ -49,3 +49,27 @@ Claude's choices for the first Breach, built in full and recorded in [[Breaches]
 | The gate | Open to its company until the Breach is cleared or a day passes; a Waking lost when the Spire stands empty a minute; its waves sized to the company; one refused told why | A company can always come back through its gate, and one or two players cannot hold it from everyone else |
 | Leaving and coming back | Down if they left down, their mark and its time, and their shore kept by account | Leaving and rejoining undoes nothing the Breach laid on a player |
 | Teaching and telling | A teaching line as each encounter begins and a won line as it ends; a wipe named by its cause; each bell its own note; warning rings dashed; the Spire's fill a light the zone sees | Every mechanic taught before it kills, readable without colour, loud for the company and seen by onlookers |
+
+## Its ambience and moments
+
+Claude's calls for how the Drowned Vale sounds, from its own Freesound cues ([[Ambience]], [[Breaches]]); the
+recordings are the owner's picks on the sound sheet, none made yet.
+
+| Call | Chosen | Why |
+|---|---|---|
+| The run's places | Eight: the Descent, the Mending, the Choir, the Unlit Ways, the Broken Stair, the Steward's court, the Two Shores' hall, and one for every shore through a rift | One for each space the brief names; the four shores are alike, a rift's roar |
+| Between spaces | The last space heard stays; the Descent before any | A doorway or a gap over the dark is no place of its own, and a run begins there |
+| Under every space | The cave's air and the low drone, each space's own bed over them | "The drone and the cave's air under all of it" |
+| Each space's bed | The Descent the mill race; the Mending still water; the Choir the chapel; the Ways the streets; the Stair and the court the dark's wind; the hall a great hall's air with the rifts' roar under it; a shore its roar | Each cue's own use line |
+| The voices | Drips and creaks at the race; bubbles at the still water; a far bell and whispers in the chapel and the streets; chains in the streets, on the Stair and in the court; stones falling on the Stair; the rock's groan below; the crystal's ring where the Lattice is thickest | Each where its sound has a source: water, old timber, the drowned town, the dark, the Lattice |
+| Where voices stand | Round the listener by their own height, a groan below, a bubble at their feet | The run has no land to read, only spaces over the dark |
+| The rooms | The chapel the longest tail (4.5 s); the streets three echoes; the court the darkest and openest, one far echo; the hall long, two echoes; the race short, close echoes | "The chapel's long stone tail, the streets' echoes, the court's open dark" |
+| Its levels | Each space set by its beds' gains to stand as loud as Saltmere's downs, which were measured to about -30 LUFS | Every bed is levelled alike, so the gains say the loudness until the picks can be measured |
+| The gate's hollow | A place heard over the vale's own within 60 m of the gate, fading as places do | As near as the gate's banner stands first |
+| The Spire's hum | At the Spire, its gain the Spire's fill, only while the listener's company holds the Waking | It fills for them; to others the Spire's light is enough |
+| A moment unpicked | Plays the world's sound it played before; a wipe, which had none, a low thud | Nothing goes silent while the sheet is judged |
+| A player carried into a shore | The taken's recording, plunged under | No cue of its own; it is the same crossing |
+| Heard whole and far | An encounter begun, a seal, a wipe, the bells, the toll, a rift, a Keeper falling, the Steward laid bare, the Spire waking: never cut, up to 160 m | A toll rings 3 to 15 s and the Choir's last bell stands 64 m from its stage; the world's 5 s and 40 m would cut them |
+| What the state tells | A slab rising or sinking within 40 m; a mooring as it is newly held; a hidden chest as it pays the player, at the chest; the Spire waking as the gate opens to the player's company; each silent until picked | They sounded nothing before, so nothing borrowed stands in |
+| A chest's chime | Kept beside the chest's own sound | It says the reward came, as every chest's does |
+| The Breach cleared | No victory sting | The room tells it at the gate, where no one who cleared it stands |

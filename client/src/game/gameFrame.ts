@@ -245,7 +245,7 @@ export function startFrames(parts: FrameParts, playing: Playing): void {
     parts.eventProps.set(here.outpost?.props(shown.props, listener) ?? shown.props ?? []);
     parts.eventProps.hang(here.outpost?.cloth() ?? null);
     if (!here.run) outOfRun();
-    // A Breach's run is heard as a dungeon is, under the ground.
+    // A Breach's run is heard under the ground, as a dungeon is, but by its own spaces (`breachView.ts` tells them).
     parts.ambience.onFoot(here.node, playing.landmass, shown.shot, here.folk, !!here.dungeon || !!here.run);
     const { body } = walker.player;
     if (!here.mapless) {

@@ -267,6 +267,24 @@ test("a public event's cue holds its voice a few seconds at most, fading out; a 
   );
 });
 
+test("a cue heard whole (a Breach's toll, its far bells) plays out and carries farther than the others", () => {
+  const { output, play, played } = fakeSound();
+  const sounds = new WorldSounds(() => output, play);
+  const far = [100, 3, 2] as const;
+  sounds.frame({
+    ...frameOf(),
+    heard: [
+      { cue: 'breach.toll', at: far, whole: true },
+      { cue: 'story.crash', at: far },
+    ],
+  });
+  assert.deepEqual(
+    played.map((one) => [one.id, one.until]),
+    [['breach.toll', null]],
+    'the toll whole, the other crash too far',
+  );
+});
+
 test("another rider's boost is heard as it begins, from their body as the room last stepped it", () => {
   const { output, play, played } = fakeSound();
   const sounds = new WorldSounds(() => output, play);

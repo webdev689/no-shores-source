@@ -1,13 +1,14 @@
-// The eleven ambiences, each its own: what beds lie under it, where they stand, and the voices heard over them, how
-// often by the time of day, where each is placed round the listener and what drives it. Data only; the laws are
-// law.ts's, the recordings recordings.ts's, the playing ambience.ts's.
+// The world's eleven ambiences (a Breach's are breachScapes.ts's), each its own: what beds lie under it, where they
+// stand, and the voices heard over them, how often by the time of day, where each is placed round the listener and
+// what drives it. Data only; the laws are law.ts's, the recordings recordings.ts's, the playing ambience.ts's.
 
-import { type AmbienceKey, type ByPhase, always } from './law.ts';
+import { type ByPhase, type WorldKey, always } from './law.ts';
 import { BED_RECORDINGS, type BedKey, CALL_RECORDINGS, type SoundKey } from './recordings.ts';
 
 /** Where a voice is placed round the listener: in the open round them, on the ground near, in the trees, high in the
  *  sky, on the highest ground near, at the sea's edge or over the water past it; in a port city, at its harbour, in
- *  its streets below, on its plaza's ledges or at its smith; aboard, in its hull or its rigging; or at the ear. */
+ *  its streets below, on its plaza's ledges or at its smith; aboard, in its hull or its rigging; at the ear; or
+ *  under the ground, in the rock round them by their own height (a Breach's run has no land to read). */
 export type Spot =
   | 'around'
   | 'ground'
@@ -22,21 +23,23 @@ export type Spot =
   | 'smithy'
   | 'hull'
   | 'rigging'
-  | 'ear';
+  | 'ear'
+  | 'cave';
 
 /** What scales a bed or a voice besides the hour: a ship's way, its stillness, the coast's nearness, the deck's
- *  nearness to the ear, the wind's strength, how hard rain falls, and how hard sand blows. */
-export type Drive = 'way' | 'still' | 'coast' | 'deck' | 'wind' | 'rain' | 'sand';
+ *  nearness to the ear, the wind's strength, how hard rain falls, how hard sand blows, and how full a Breach's Spire
+ *  stands for the listener's company. */
+export type Drive = 'way' | 'still' | 'coast' | 'deck' | 'wind' | 'rain' | 'sand' | 'fill';
 
 /** A bed: wide about the listener, or standing at a point (the sea's edge, the harbour, the nearest river, the city
- *  below) through a panner. */
+ *  below, a Breach's gate or its Spire) through a panner. */
 export interface BedLayer {
   readonly bed: BedKey;
   readonly gain: number;
   readonly when: ByPhase;
   /** How deep its slow breathing goes, 0 to 1. */
   readonly breath: number;
-  readonly at: 'wide' | 'shore' | 'harbour' | 'river' | 'city';
+  readonly at: 'wide' | 'shore' | 'harbour' | 'river' | 'city' | 'gate' | 'spire';
   /** What scales it; several scale it together. */
   readonly drive?: Drive | readonly Drive[];
   /** Its gain rides the sea's swell. */
@@ -102,6 +105,7 @@ const SPOTS: Readonly<Record<Spot, { distance: [number, number]; lift: [number, 
   hull: { distance: [3, 9], lift: [-2.5, 0], near: 2 },
   rigging: { distance: [1, 6], lift: [3, 14], near: 3 },
   ear: { distance: [0.4, 1.5], lift: [-0.3, 0.4], near: 0.5 },
+  cave: { distance: [4, 30], lift: [-1.5, 5], near: 4 },
 };
 
 const voice = (
@@ -125,12 +129,12 @@ const voice = (
   };
 };
 /** A voice named by its cue alone. */
-const recordedOnly = (cue: string, spot: Spot, perMinute: ByPhase, more: Partial<Voice> = {}): Voice => ({
+export const recordedOnly = (cue: string, spot: Spot, perMinute: ByPhase, more: Partial<Voice> = {}): Voice => ({
   ...voice([], spot, perMinute, more),
   recorded: cue,
 });
 
-const bed = (key: BedKey, gain: number, more: Partial<BedLayer> = {}): BedLayer => ({
+export const bed = (key: BedKey, gain: number, more: Partial<BedLayer> = {}): BedLayer => ({
   bed: key,
   gain,
   recorded: BED_RECORDINGS[key],
@@ -163,7 +167,7 @@ const SANDSTORM = bed('wind.sand', 1.4, { drive: 'sand', gust: 0.7, breath: 0.3 
 const RAVEN = (perMinute: ByPhase) =>
   voice('raven', 'sky', perMinute, { recorded: 'amb.highland.raven', distance: [40, 160], lift: [20, 60] });
 
-export const SCAPES: Readonly<Record<AmbienceKey, Scape>> = {
+export const SCAPES: Readonly<Record<WorldKey, Scape>> = {
   'sea': {
     title: 'The open sea',
     level: 1.38,

@@ -9,6 +9,9 @@ code:
   - client/src/game/audio/ambience/player.ts#ScapePlayer
   - client/src/game/audio/ambience/graph.ts#callChain
   - client/src/game/audio/ambience/scapes.ts#SCAPES
+  - client/src/game/audio/ambience/breachScapes.ts#BREACH_SCAPES
+  - client/src/game/audio/ambience/breachScapes.ts#GATE_SCAPE
+  - client/src/game/audio/ambience/breachHeard.ts#BREACH_HEARD
   - client/src/game/audio/ambience/law.ts#ambienceOf
   - client/src/game/audio/ambience/law.ts#gapAfter
   - client/src/game/audio/ambience/law.ts#gustOf
@@ -19,8 +22,8 @@ code:
 ---
 # Ambience
 
-What the world sounds like where the player is: the open sea, Saltmere's social space and its port, and each of the nine
-islands by its climate. Each is its own: beds of wind, water and leaves under it, and the calls of birds, beasts,
+What the world sounds like where the player is: the open sea, Saltmere's social space and its port, each of the nine
+islands by its climate, and a Breach ([[Breaches]]): each space of its run, and its gate's hollow in the vale. Each is its own: beds of wind, water and leaves under it, and the calls of birds, beasts,
 insects, timbers and a city's work over it, placed round the listener. It is DFO's soundscape ([[Pick - Soundscape]]),
 grown to eleven places ([[Music and Ambience Come From DFO's Synthesiser]]), its every sound a Freesound recording the
 owner picked ([[Every Sound Comes From Freesound, and the Music Rests Between Pieces]]).
@@ -31,6 +34,15 @@ owner picked ([[Every Sound Comes From Freesound, and the Music Rests Between Pi
   aboard the ship. `placeOf` names the place; each place is one ambience. On foot the listener stands at the eye; at
   sea it stands on its deck and everything placed rides with it. In a dungeon ([[Dungeons]]) none of the open air is
   heard, not its wind, birds, rain or thunder: the island's ambience fades out as behind a veil.
+- **A Breach's run.** Underground too, but heard as its own: the space under the listener (its plan's `spaceAt`) is
+  the place, so walking from one into the next crossfades as places do; between spaces the last stays. Every space
+  has the cave's air and a low drone under its own bed, voices of the rock and the water placed round the listener
+  by their height (the run has no land to read), and its own room. No hour and no weather reach it: every rate is the
+  same at every hour, and no rain, wind, thunder or birds. The Breach's view tells the ambience its plan each frame
+  (`BREACH_HEARD`).
+- **A Breach's gate.** Within 60 m of the Sunken Gate (as near as its banner stands first) the hollow's air stands at
+  the gate over the vale's own, fading in and out as a place does; while the listener's company holds the Waking the
+  Spire's hum stands at the Spire, its gain the Spire's fill, so it rises as the Spire fills.
 - **The story.** While the [[Prologue]] plays, its beats at sea and on the wreck are heard as the open sea round the
   Brig or the wreck, and its shore at dawn as Saltmere's coast, under the sky the story tells ([[Sky]]): its rain,
   its wind and the thunder of its strikes. The story's own beds keep only the fire, the deep and its moments.
@@ -82,7 +94,8 @@ owner picked ([[Every Sound Comes From Freesound, and the Music Rests Between Pi
   ([[Sounds Come From Freesound, Judged on a Test Sheet]]), named by `BED_RECORDINGS` and `CALL_RECORDINGS`
   (`recordings.ts`), a place naming its own where it differs (the sea's wind and rain, the swamp's still water); the
   sea's ([[The Sea's Sounds Come From Freesound]]), Saltmere's gutters and both thunders
-  ([[The Weather's Gutters and Thunder Come From Freesound]]) among them. Each is silent until its recording has come.
+  ([[The Weather's Gutters and Thunder Come From Freesound]]) among them; a Breach's are its own `amb.breach.*` (and
+  the Spire's hum, `breach.spire.fill`), kept apart in `breachScapes.ts`. Each is silent until its recording has come.
 - **The sea fight.** A gun fired, a ball striking a ship, a ball falling in the sea and a ship breaking up as it goes
   down are heard where each happens, through the open sea's room, from the fight's own events, in the game's fights
   and the story's.
@@ -90,7 +103,9 @@ owner picked ([[Every Sound Comes From Freesound, and the Music Rests Between Pi
   the gutters and the rain on the deck a little softer); a thunder to a set loudness over its loudest 0.4 s, its peaks
   never past 0.6 of full scale; a call by the recordings' own levelling ([[Interface]]).
 - **Volume.** Everything plays through the Ambience volume in Settings, under the music's duck ([[Interface]]).
-  Each place is levelled to about -30 LUFS at the first volume.
+  Each place is levelled to about -30 LUFS at the first volume. A Breach's spaces are set by their beds' gains to
+  stand as loud as Saltmere's downs (`bedLoudness`), every bed being levelled alike; they are measured once their
+  recordings come.
 
 | Place | Beds | Voices by day | Voices by night |
 |---|---|---|---|
@@ -105,10 +120,20 @@ owner picked ([[Every Sound Comes From Freesound, and the Music Rests Between Pi
 | Steppe | Wide wind, grass, crickets at dusk | Larks, marmots, buzzard, gusts, raven | Wolves, crickets |
 | Swamp | Marsh drone, frog chorus, still water | Gas bubbles, frogs, bullfrogs, mosquitoes, flies, a fish, reed warbler, raven, a heron | The full frog chorus, peepers, owl |
 | Tundra | Gale, whistling gusts, blown snow | Gusts, rock whistles, ice groaning, cracking and singing, ravens, a far wolf | Wolves, an owl |
+| A Breach's gate | The hollow's air at the gate; the Spire's hum as it fills, for its company | None of its own: the vale's | The same |
+| The Descent | The mill race, the cave's air, the drone; a stone channel's echoes | Drips, stones, creaks, far whispers, the rock's groan | The same at every hour |
+| The Mending | The drowned green's still water, the cave, the drone; a cavern | Bubbles, drips, the crystal's ring, whispers, the rock's groan | The same |
+| The Choir | The drowned chapel's air, the drone, the cave; a long stone tail | A far bell, whispers, the crystal, drips, creaks | The same |
+| The Unlit Ways | A cold wind down the streets, the drone, the cave; the streets' echoes | A far bell, chains, creaks, stones, whispers | The same |
+| The Broken Stair | The dark's wind from below, the drone, the cave | Stones falling, the rock's groan, chains, the crystal, whispers | The same |
+| The Steward's court | The dark's wind from below, a deeper drone, the cave; its open dark | Chains, the rock's groan, whispers, a far bell, the crystal, stones | The same |
+| The Two Shores' hall | A great hall's air, the rifts' roar, the drone, the cave | The crystal, chains, drips, whispers, creaks | The same |
+| A shore through a rift | Its roar, the cave, the drone | Drips, bubbles, stones, whispers, the crystal, the rock's groan | The same |
 
 ## Limits
 
 - Ridges, trees and hollows are read off the land's 1 km cells, so on flat ground a wolf's ridge is any far point.
 - Thunder rolls from one point on its bearing; a long bolt's parts do not each come from their own place.
 - Townsfolk step only through Saltmere's plaza.
+- A Breach's spaces and gate are levelled by their beds' gains, not yet by measuring their recordings: none is picked.
 - Not tested in a running game with WebGPU: tested offline, through the same code, in an offline audio context.

@@ -1,12 +1,15 @@
 import assert from 'node:assert/strict';
 import { mock, test } from 'node:test';
+import vale from '../../../../../content/dungeon/breach-drowned-vale.json' with { type: 'json' };
 import { SKY_NOW } from '../../../sky/skyDriver.ts';
+import type { BreachPlan } from '../../breachPlan.ts';
 import type { Landmass } from '../../landmass.ts';
 import type { NodeInfo } from '../../worldData.ts';
 import { Ambience } from './ambience.ts';
+import { BREACH_HEARD } from './breachHeard.ts';
 import { seeded } from './dsp.ts';
 import { CROSSFADE_S } from './law.ts';
-import { MOST_THUNDERS, ScapePlayer } from './player.ts';
+import { type Heard, MOST_THUNDERS, ScapePlayer } from './player.ts';
 
 /** An audio parameter that keeps the last value it was set toward. */
 const param = () => {
@@ -256,4 +259,81 @@ test("a storm's thunder never takes the calls' room, and its rolls are held to a
   assert.equal(rolled.filter(Boolean).length, MOST_THUNDERS, 'a few rolls at once, the rest let pass');
   assert.equal(calls.count, 0, 'the calls keep all their room');
   assert.ok(thunder('thunder.crack'), 'a near crack comes through all the same');
+});
+
+/** The ambiences each frame hears, by the players stepped, and what the last frame heard of a Breach's gate. */
+function heardKeys(context: { after: (done: () => void) => void }) {
+  const keys: string[][] = [[]];
+  const last: { heard: Heard | null } = { heard: null };
+  const stepped = mock.method(ScapePlayer.prototype, 'frame', function (this: ScapePlayer, ...args: unknown[]) {
+    keys.at(-1)?.push(this.key);
+    last.heard = args[1] as Heard;
+  });
+  context.after(() => stepped.mock.restore());
+  return { keys, last };
+}
+
+test("in a Breach's run the space under the ear is heard, kept between spaces, and no strike thunders", (context) => {
+  const thundered = mock.method(ScapePlayer.prototype, 'thunder', () => undefined);
+  context.after(() => {
+    thundered.mock.restore();
+    SKY_NOW.current = { ...SKY_NOW.current, strikes: [], worldS: 0 };
+  });
+  const { keys, last } = heardKeys(context);
+  const fake = fakeAudio();
+  const ambience = new Ambience(world, () => fake, { random: seeded(3) });
+  const plan = { spaces: vale.spaces } as unknown as BreachPlan;
+  SKY_NOW.current = {
+    ...SKY_NOW.current,
+    strikes: [{ x: 30, y: 0, atS: 1000, toGround: true, power: 1 }],
+    worldS: 1000,
+  };
+  const earAt = (x: number, y: number) => ({ eye: [x, y, 62] as const, yaw: 0 });
+  const step = (seconds: number, eye: ReturnType<typeof earAt>) => {
+    for (let time = 0; time < seconds; time += 0.1) {
+      keys.push([]);
+      BREACH_HEARD.current = { run: plan };
+      ambience.onFoot(patrol, land, eye, [], true);
+      ambience.frame(0.1);
+      (fake.audio as { currentTime: number }).currentTime += 0.1;
+    }
+  };
+  step(CROSSFADE_S + 1, earAt(0, 0));
+  assert.deepEqual(keys.at(-1), ['breach.descent']);
+  assert.equal(last.heard?.drives.rain, 0, 'no rain falls');
+  assert.deepEqual(last.heard?.phases, { dawn: 0, day: 1, dusk: 0, night: 0 }, 'no hour is told');
+  step(CROSSFADE_S / 2, earAt(0, -150));
+  assert.deepEqual(keys.at(-1), ['breach.descent', 'breach.choir'], 'the Descent fades as the Choir comes in');
+  step(CROSSFADE_S + 1, earAt(0, -150));
+  assert.deepEqual(keys.at(-1), ['breach.choir']);
+  step(1, earAt(5000, 5000));
+  assert.deepEqual(keys.at(-1), ['breach.choir'], 'kept between spaces');
+  assert.equal(thundered.mock.callCount(), 0);
+  BREACH_HEARD.current = { run: plan };
+  ambience.onFoot(patrol, land, earAt(0, -150), [], true);
+  ambience.frame(0.1);
+  assert.equal(BREACH_HEARD.current, null, 'what the view told is let go each frame');
+});
+
+test("by a Breach's gate its hollow is heard over the vale's own, and its Spire's hum by its company's fill", (context) => {
+  const { keys, last } = heardKeys(context);
+  const fake = fakeAudio();
+  const ambience = new Ambience(world, () => fake, { random: seeded(2) });
+  const gate = { gate: [40, 0, 5] as const, spire: [40, 0, 14] as const, hum: 0.5 };
+  const step = (seconds: number, eye: readonly [number, number, number]) => {
+    for (let time = 0; time < seconds; time += 0.1) {
+      keys.push([]);
+      BREACH_HEARD.current = gate;
+      ambience.onFoot(patrol, land, { eye, yaw: 0 });
+      ambience.frame(0.1);
+      (fake.audio as { currentTime: number }).currentTime += 0.1;
+    }
+  };
+  step(1, [0, 0, 6]);
+  assert.deepEqual(keys.at(-1), ['woodland', 'breach.gate']);
+  assert.equal(ambience.stats.places, 2);
+  assert.equal(last.heard?.drives.fill, 0.5);
+  assert.deepEqual(last.heard?.gate, { at: gate.gate, spire: gate.spire });
+  step(CROSSFADE_S + 1, [200, 0, 6]);
+  assert.deepEqual(keys.at(-1), ['woodland'], 'out of its reach, the vale alone');
 });

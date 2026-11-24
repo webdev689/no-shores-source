@@ -118,7 +118,12 @@ export interface PublicFrame {
   readonly quest: Quest | null;
   readonly props: EventProp[];
   /** Each sound heard where it happens, at its own pitch where it has one (a Breach's bell's note). */
-  readonly sounds: readonly { readonly cue: string; readonly at: Point; readonly rate?: number }[];
+  readonly sounds: readonly {
+    readonly cue: string;
+    readonly at: Point;
+    readonly rate?: number;
+    readonly whole?: true;
+  }[];
   readonly sting: 'cadence' | 'victory' | 'defeat' | null;
   /** The interface's cue for a beat heard by the player alone (played as the frame is worked out): a heroic task
    *  missed, a chest opened, their own shard taken. */
