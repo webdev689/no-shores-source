@@ -1,5 +1,6 @@
 // What one frame at sea is handed and what it shows, as the sea (`sea.ts`) steps and the display reads it.
 import type { FightHeard } from './audio/ambience/seaFight.ts';
+import type { PlatedPlayer } from '../combat/playerPlates.ts';
 import type { Viewport } from '../overworld/overworldCamera.ts';
 import type { Pace } from '../overworld/voyage.ts';
 import type { CardAt } from '../player/cards.ts';
@@ -37,6 +38,8 @@ export interface SeaFrame {
   readonly hulls: readonly HullMask[];
   /** In a fight, each captain's bar over its masthead as it is drawn. */
   readonly bars: readonly ShipBar[];
+  /** Out of a fight, each other player's ship in sight with the plate the room sent, as its mark is drawn. */
+  readonly players: readonly PlatedPlayer[];
   readonly marks: readonly ScreenMark[];
   readonly note: string;
   /** What the ship is offered off the island's coast: to dock, to go ashore, or nothing. */

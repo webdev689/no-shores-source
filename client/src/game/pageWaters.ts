@@ -1,6 +1,6 @@
 // The waters as the page opens them, once a page: their rules on the room's module, their table, and their grid in
 // the held map's terms. The held map's tint, the friendly traffic and the sea's water names all read this one opening.
-import { CHART_CELL_M } from '../overworld/discovery.ts';
+import { CHART_CELL_M } from '../overworld/worldFrame.ts';
 import type { MapWaters } from '../heldmap/watersWash.ts';
 import {
   LAND_CELL,

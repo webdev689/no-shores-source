@@ -24,7 +24,7 @@ pub struct Plated {
 }
 
 /// Whether a name is one a username may be: 1 to `NAME_MOST` ASCII letters, digits or underscores.
-fn named(name: &str) -> bool {
+pub(crate) fn named(name: &str) -> bool {
     (1..=NAME_MOST).contains(&name.len()) && name.bytes().all(|byte| byte.is_ascii_alphanumeric() || byte == b'_')
 }
 

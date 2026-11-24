@@ -12,7 +12,7 @@ import { openHull, ShipModels } from '../ships/shipModels.ts';
 import { startLandWorker } from '../terrain/landClient.ts';
 import { loadLandTexts } from '../terrain/landTexts.ts';
 import { seaWeatherOn } from '../water/seaWeather.ts';
-import { keptDiscovered } from './discovered.ts';
+import { worldShown } from './worldShown.ts';
 import { EventPropsDraw } from './eventPropsDraw.ts';
 import { FigureView } from './figureView.ts';
 import { gearScreenOpen } from './gearScreen.ts';
@@ -99,8 +99,7 @@ export async function bootGame(gpu: Gpu, canvas: HTMLCanvasElement, shipScale: (
     flow = arriving(start.node, start.name);
     if (flow.mode === 'loading') hud.veil(flow.words);
   }
-  const discovered = keptDiscovered(world);
-  discovered.arrived(start.continent, start.node);
+  const shown = worldShown(world);
   const landmass = await openLandmass(land, world, landTexts, start.continent);
   /** A landmass's land as the scene draws it, its biome's woods coloured on it past the reach of its drawn trees. */
   const terrainFor = (opened: Landmass) => {
@@ -133,7 +132,7 @@ export async function bootGame(gpu: Gpu, canvas: HTMLCanvasElement, shipScale: (
     world,
     landTexts,
     start,
-    discovered,
+    shown,
     landmass,
     ...views,
     ...modules,

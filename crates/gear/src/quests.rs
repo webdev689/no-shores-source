@@ -7,6 +7,7 @@ use crate::arts::{EARNED_ART, EARNED_TENET_ONE, EARNED_TENET_TWO, FRAGMENTS, art
 use crate::asks::{Done, Here, Refusal};
 use crate::character::{Character, UnknownKeys};
 use crate::factions::factions;
+use crate::horses::FIRST_HORSE;
 use crate::kinds::Slot;
 pub use crate::quest_defs::{
     KEEPERS, PLACE_SQUARE, QuestDef, QuestsDef, RANKS, RewardDef, STRANGER, TaskDef, keeper_key, quests, speaker_place,
@@ -331,11 +332,16 @@ impl Character {
         }
     }
 
-    /// A task's reward: its Aurem, and of its house's Art, the Art earned and worn at once, a Tenet earned, fragments
+    /// A task's reward: its Aurem, the Bay, worn where no horse is (never a second: one horse of each coat), and of its
+    /// house's Art, the Art earned and worn at once, a Tenet earned, fragments
     /// to choose. A fragment beyond those the Art has left unowned and unchosen is its price at the counter in Aurem
     /// instead.
     fn reward(&mut self, faction: u8, reward: RewardDef) {
         self.materials.add_aurem(reward.aurem);
+        if reward.horse && !self.keeps_horse(FIRST_HORSE) {
+            let worn = !self.may_ride();
+            self.give_horse(FIRST_HORSE, worn);
+        }
         let Some(art) = factions().faction(faction).map(|found| found.art) else { return };
         let Some(at) = arts().arts.iter().position(|found| found.id == art) else { return };
         self.arts = std::mem::take(&mut self.arts).kept();

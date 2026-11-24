@@ -12,6 +12,7 @@ import {
 } from '../network/courseMessages.ts';
 import { readFromRoom, type SeenHostile, type SeenShip } from '../network/messages.ts';
 import type { GearState } from '../network/gearMessages.ts';
+import type { PlayerPlate } from '../network/plateMessages.ts';
 import type { RoomLink, Snapshot } from '../network/roomConnection.ts';
 import { type NavalEvent, fightViewOf, ordersNumbers } from '../network/seaFight.ts';
 import { RoomThread } from '../network/roomThread.ts';
@@ -48,6 +49,8 @@ export class SeaRoom {
   private joined: number;
   private fresh = false;
   private ships: readonly SeenShip[] = [];
+  /** The plate over each other player's ship in sight, by their number, as the room's last snapshot sent them. */
+  plates: ReadonlyMap<number, PlayerPlate> = new Map();
   /** The hostile ships at sea: each sailing, and each in a fight among captains alone where the room has it. */
   hostiles: readonly SeenHostile[] = [];
   /** The friendly ships the room keeps at sea, and each traffic id it has taken off its route. */
@@ -146,6 +149,7 @@ export class SeaRoom {
     this.tick = Number(snapshot.tick);
     this.sendCourse();
     this.ships = snapshot.ships;
+    this.plates = new Map(snapshot.plates.map((plate) => [plate.player, plate]));
     this.hostiles = snapshot.hostiles;
     [this.friendlies, this.taken] = [snapshot.friendlies, new Set(snapshot.taken)];
     const walking = snapshot.players.find((seen) => seen.player === this.own);

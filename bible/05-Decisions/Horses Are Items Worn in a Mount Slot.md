@@ -19,6 +19,10 @@ status: in force
 - **The Appearance screen draws no horse.**
 - **A new player has no horse** through the tutorial; one comes later.
 
+Replaced in part by
+[[Other Ships Wear Their Players' Marks, the Sea Map Has No Fog, and New Players Ride a Bay That Bursts]]: the
+stranger gives a new character the Bay, worn in the Mount slot, as the welcome tour begins.
+
 Replaces in part [[The Character Page Opens Appearance From an Icon Button]] (the mount on the Appearance screen).
 How it is built: [[Gear]], [[Interface]], [[Player]]; Claude's calls in
 [[The Prologue, Horses and the Welcome to Overlook as Claude Builds Them]].

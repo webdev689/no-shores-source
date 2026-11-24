@@ -1,9 +1,9 @@
-// The held map at the helm: the parchment raised in the player's gauntlets, the discovered world on it, panned,
+// The held map at the helm: the parchment raised in the player's gauntlets, the whole world on it, panned,
 // zoomed and clicked to choose where to sail; lowered with or without a destination. The forge's art is the owner's
 // own; its rules are DFO's held map's (heldMapLaw.ts).
 import type { Gpu } from '../gpu.ts';
 import { forgeName } from '../firstperson/fpFrames.ts';
-import { WORLD_FRAME } from '../overworld/discovery.ts';
+import { WORLD_FRAME } from '../overworld/worldFrame.ts';
 import type { Point2 } from '../overworld/ground.ts';
 import type { ForgeStore } from '../forge/store.ts';
 import { type CoastField } from './coastField.ts';
@@ -58,7 +58,7 @@ const handsPath = (gauntlets: string | null) =>
 /** The gauntlets' fidget: the fingers of each hand flex in turn, every few seconds, a frame each twelfth of a second. */
 const FIDGET = { every: 6, frameS: 1 / 12 } as const;
 
-/** Something the map shows, once discovered: a port or a node, where it lies, what it is, and where a ship sails for
+/** Something the map shows: a port or a node, where it lies, what it is, and where a ship sails for
  *  it (a node's nearest coast). */
 export interface MapPlace {
   readonly id: string;
@@ -80,8 +80,8 @@ export interface IsleMark {
 export type Course =
   { readonly ok: true; readonly points: readonly Point2[] } | { readonly ok: false; readonly why: string };
 
-/** What the map is asked each frame: where the ship lies and heads (on land, the player, in the world), what is
- *  discovered, the course sailed now, and the places the quest walked names, which it rings; on land, whether a
+/** What the map is asked each frame: where the ship lies and heads (on land, the player, in the world), what it
+ *  shows, the course sailed now, and the places the quest walked names, which it rings; on land, whether a
  *  keeper's coin is lit (`lit`, by its glyph): its keeper has something for the player, so its rings pulse. */
 export interface HeldMapScene {
   readonly ship: Point2;
@@ -130,7 +130,7 @@ export class HeldMap {
   private letteredShape = '';
   /** The last layout, and what it read: laid out again only when that has changed. */
   private readonly laidOut = new Kept<Lettering>();
-  /** Counts the times the charted sea and its waters were set, which the layout reads but no key can cheaply hold. */
+  /** Counts the times the waters were set, which the layout reads but no key can cheaply hold. */
   private chartings = 0;
   private phase: Phase = { kind: 'closed' };
   private mapView: View = { left: 0, top: 0, scale: 1 };
@@ -156,7 +156,6 @@ export class HeldMap {
   private shipAt: Point2 = [0, 0];
   /** The waters once they are open: their wash, letters and key, and which cities are ports. */
   private waters: HeldMapWaters | null = null;
-  private charted: Uint8Array | null = null;
   private isles: readonly IsleMark[] = [];
   /** The land the map shows while raised on foot (`openLand`), and what its view is held to: the world at sea. */
   private land: LandSheet | null = null;
@@ -181,7 +180,7 @@ export class HeldMap {
   }): void {
     this.waters = new HeldMapWaters(open.map, (point) => open.rules.waterAt(point)?.continent ?? null);
     this.chartings++;
-    if (this.charted) this.view.setWash(this.waters.chart(this.charted));
+    this.view.setWash(this.waters.wash());
   }
 
   /** The found islands the map marks from now on, each where it lies. */
@@ -200,22 +199,17 @@ export class HeldMap {
     this.lowered = then;
   }
 
-  /** Raises the map in the player's gauntlets (`null` bare hands), centred on the ship, the sea charted so far laid on
+  /** Raises the map in the player's gauntlets (`null` bare hands), centred on the ship, the whole world laid on
    *  it, the difficulties `shut` says why are shut (by tier, null where open) shut on its card. */
   open(
     viewport: { readonly width: number; readonly height: number },
     ship: Point2,
     gauntlets: string | null,
-    charted: Uint8Array,
     shut: readonly (string | null)[],
   ): void {
     if (this.phase.kind !== 'closed') return;
     this.shut = shut;
     this.picked = seasChoices(this.picked, shut).picked;
-    this.view.setCharted(charted);
-    this.charted = charted;
-    this.chartings++;
-    if (this.waters) this.view.setWash(this.waters.chart(charted));
     [this.land, this.extent] = [null, WORLD];
     this.raise(viewport, gauntlets, (ink) => viewOn(ship, ink, WORLD));
   }
@@ -306,7 +300,7 @@ export class HeldMap {
     this.mapView = zoomAt(moved, 0, 0, 1, this.ink, this.extent);
   }
 
-  /** A press let go: a click picks the nearest discovered place, or the point of the sea under it; on land, nothing. */
+  /** A press let go: a click picks the nearest place, or the point of the sea under it; on land, nothing. */
   pointerUp(x: number, y: number): void {
     const press = this.press;
     this.press = null;
@@ -501,7 +495,7 @@ export class HeldMap {
     return frame < HANDS_FRAMES ? frame : 0;
   }
 
-  /** What is lettered on the map this frame (`layOut`): each place on it and each charted water named, the ship's
+  /** What is lettered on the map this frame (`layOut`): each place on it and each water named, the ship's
    *  arrow and the key, all clear of the gauntlets on the painting at `sprite`; and the card over the parchment,
    *  `drop` pixels down its lowering. */
   private layout(scene: HeldMapScene, sprite: Rect): Lettering {

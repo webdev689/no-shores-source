@@ -354,6 +354,8 @@ a decision is a record. How to add one: [[Recording a Decision]].
 - [[Revives, Respawns and Relogs as Claude Shapes Them]]
 - [[A Foe's Plain Swing Takes Seven Eighths of Its Time]]
 - [[The Harbourmaster Stands in the Market, Rain Spares the Trees, and Patrol Nodes Always Stand]]
+- [[Other Ships Wear Their Players' Marks, the Sea Map Has No Fog, and New Players Ride a Bay That Bursts]]
+- [[The Lattice Is Shaded Darker, With Detailed Attacks and Projectile Tracers]]
 - [[What a Body Meets Keeps to What Is Drawn]]
 - [[The Owner's Handcrafted Meadow Grows Over the Grass]]
 - [[The Meadow Art Is the Owner's, Its Tables Stay in Git, and the Grass Takes the Trees' Rain]]

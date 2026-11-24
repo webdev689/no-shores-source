@@ -173,6 +173,7 @@ test('the sea room hands each snapshot of the deck the player stands on, decoded
       kept: [],
       told: [],
       decks,
+      plates: [],
     } as never);
   atSea([{ aboard: [[2, 9]], hull: 0, snapshot: deckBytes, holdLeft: null }]);
   assert.equal(heard.length, 0, 'another player’s deck');

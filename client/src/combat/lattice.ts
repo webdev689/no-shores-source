@@ -3,6 +3,7 @@
 // figure it is drawn as until its pictures are published.
 import type { Doing, Shown } from '../player/playerMoves.ts';
 import { type Dress, plainDress } from '../player/dressing.ts';
+import type { Action } from '../rules/fighters.ts';
 
 /** The crystal a foe grows: grey graded red, or the purple of its shadows taken over. */
 export type Strain = 'red' | 'purple';
@@ -32,7 +33,7 @@ export const latticeOfBody = (body: string): LatticeKind | null =>
 const IDLE_FRAME_S = 1 / 10;
 const WALK_FRAME_S = 1 / 14;
 /** The share of an attack's frames that are its wind-up, held while the rules hold a telegraphed blow. */
-const TELL_SHARE = 0.35;
+export const TELL_SHARE = 0.35;
 
 /** What a foe of a kind does with each kind of blow: struck high (an overhead), across (a side cut), straight (a
  *  thrust), or loosed (a shot), and while it draws one. */
@@ -210,6 +211,48 @@ export function latticeMove(
   if (doing.moving && own.walk)
     return loop(own.walk, shown.frame === null && shown.frameSeconds > 0 ? shown.frameSeconds : WALK_FRAME_S);
   return loop(own.idle, IDLE_FRAME_S);
+}
+
+/** How long each frame of a telegraphed blow lasts once its tell is over (seconds): its walk's, so it strikes fast. */
+const STRIKE_FRAME_S = WALK_FRAME_S;
+
+/** A Lattice foe's telegraphed blow as last drawn: its move, and the page second the rules ended its tell (null while
+ *  they hold it). */
+export interface HeldBlow {
+  readonly anim: string;
+  readonly struck: number | null;
+}
+
+/**
+ * What a Lattice foe shows at `clock` with its telegraphed blow `held`, `move` the move `latticeMove` gives for the
+ * rules' `action` now, each move `frames(anim)` long; and the blow to keep for the next frame. The rules hold the blow
+ * in its tell, then at once set the foe at rest as it lands or overreached as it misses, but the move's strike and
+ * landing are its frames after the tell: so those play on at STRIKE_FRAME_S a frame, an overreach then held on the
+ * last. A feint or an aimed shot strikes nothing; anything else the rules set, or the Bulwark's change, shows as
+ * `move` does.
+ */
+export function blowPlayedOn(
+  held: HeldBlow | null,
+  action: Action,
+  move: Shown,
+  frames: (anim: string) => number,
+  clock: number,
+): { readonly shown: Shown; readonly held: HeldBlow | null } {
+  if (move.anim === BULWARK_CHANGE) return { shown: move, held: null };
+  if (action.kind === 'telegraph')
+    return {
+      shown: move,
+      held: action.feintAt === null && action.shape !== 'aimed' ? { anim: move.anim, struck: null } : null,
+    };
+  if (!held || (action.kind !== 'idle' && action.kind !== 'overreach')) return { shown: move, held: null };
+  const struck = held.struck ?? clock;
+  const last = frames(held.anim) - 1;
+  const frame = Math.floor(TELL_SHARE * frames(held.anim)) + 1 + Math.floor((clock - struck) / STRIKE_FRAME_S);
+  if (frame > last && action.kind === 'idle') return { shown: move, held: null };
+  return {
+    shown: { anim: held.anim, frame: Math.max(0, Math.min(frame, last)), frameSeconds: 0 },
+    held: { ...held, struck },
+  };
 }
 
 /** The frame of the Ravager's hurl its first shard leaves on; the frame of the Heart's tear it grips its torn one,

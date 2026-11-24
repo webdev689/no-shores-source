@@ -34,7 +34,8 @@ const ISLANDS: [&str; 2] = ["cove", "isle"];
 const SIDES: [&str; 1] = ["tithe"];
 const HOWS: [&str; 3] = ["sink", "strike", "board"];
 
-/// What a task gives as it is done: Aurem, its house's Art, a Tenet (1 or 2, 0 none), and fragments to choose.
+/// What a task gives as it is done: Aurem, its house's Art, a Tenet (1 or 2, 0 none), fragments to choose, and the
+/// first horse (`FIRST_HORSE`, the Bay).
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Deserialize)]
 #[serde(default, deny_unknown_fields)]
 pub struct RewardDef {
@@ -42,6 +43,7 @@ pub struct RewardDef {
     pub art: bool,
     pub tenet: u8,
     pub fragments: u8,
+    pub horse: bool,
 }
 
 /// One task: its id and the ids it had before (a save of one is read as this), the tracker's words, the scenes played

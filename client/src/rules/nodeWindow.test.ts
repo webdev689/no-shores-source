@@ -22,7 +22,7 @@ const content = (path: string) => readFile(new URL(`../../../content/world/${pat
 
 /** The room crate's agreement test holds the same fingerprint, nodes, rects, starts and scripts
  *  (crates/room/tests/agree_node.rs). */
-const NODE_RUN_HASH = 'b2325b57d9f33fe8';
+const NODE_RUN_HASH = 'b39c55dc0f1f3fe8';
 
 /** Ticks, then forward, sideways, yaw, run, and jump on the first tick only. */
 type Phase = readonly [number, number, number, number, boolean, boolean];

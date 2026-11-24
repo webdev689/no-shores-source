@@ -72,7 +72,7 @@ function yawToward(east: number, south: number): number {
  *  tithe-taker alone. */
 export function decide(read: Read | null, player: number, tick: number, heroic = true): Float64Array {
   const intent = (forward: number, yaw: number, run: number, stroke: number, guard: number) =>
-    new Float64Array([forward, 0, yaw, run, 0, 0, 0, stroke, guard, 0, 0, 0, 0, NaN, NaN, NaN, 0]);
+    new Float64Array([forward, 0, yaw, run, 0, 0, 0, 0, stroke, guard, 0, 0, 0, 0, NaN, NaN, NaN, 0]);
   const still = intent(0, 0, 0, 0, 0);
   const feet = read?.players.find((each) => each.id === player)?.at;
   const event = read?.event;

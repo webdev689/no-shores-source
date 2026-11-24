@@ -202,7 +202,8 @@ view eases back over their shoulder, so she is seen going; the keys are theirs o
 bars, compass, tracker, marks and key strip, the use prompt, the toasts and a gate's offer are hidden while the keys are held, until the view is the player's again,
 the dialogue box hers. Her words wait while a menu is open over the view. A place no candidate eye sees clearly gives
 no shot: the view stays where it was. As she bids
-farewell she gives the player 400 Aurem, the opening quest's first task heard ([[Quests]]); the room gives it once a
+farewell she gives the player 400 Aurem and the Bay Horse, worn in the Mount slot ([[Gear]], "Horses"), the opening
+quest's first task heard ([[Quests]]); the room gives it once a
 character, so a second hearing, a rejoin or a second tab gives none. Leaving the place mid-welcome ends it at once, its lamp put out, the
 view and the keys the player's again, and gives nothing then: a character still owed her gift is given it on its next
 frame in a social space with no welcome to hear (a reload, or a browser that played the story before). Either way the

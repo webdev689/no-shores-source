@@ -14,6 +14,7 @@ import type { UiRenderer } from '../ui/uiRenderer.ts';
 import { type OnFoot, type StripHint, footStrip, stripOf, withMapKey } from './hints.ts';
 import { Hud } from './hud.ts';
 import { placeNode } from './hudPieces.ts';
+import { forwardOf, poseOf } from '../overworld/overworldCamera.ts';
 
 const block = glyphDrawn({ rows: ['##', '##'], advance: 600 });
 const face: Face = { glyph: () => block };
@@ -639,4 +640,20 @@ test("in a sea fight the ship's bar stands at the bottom left, clear of the key 
     hud.seaFight(null);
     assert.equal(boxOf(laidAt(ui, hud, width, height), 'fight-ship'), undefined, 'gone with the readout');
   }
+});
+
+test("at sea another player's ship wears their plate over its masthead, and on land none is left", () => {
+  const ui = new Interface(renderer());
+  const hud = new Hud();
+  // The camera 300 m west of the ship and 120 m up, looking east and a little down.
+  hud.shipBars([], poseOf({ eye: [-300, 0, 120], forward: forwardOf(Math.PI / 2, -0.2) }, 0.9));
+  const plate = { player: 98, name: 'Wooden_Osprey', level: 12, menu: false };
+  hud.seaPlayers([{ id: 98, feet: [0, 0, 80], plate, company: false }]);
+  const laid = frame(ui, hud);
+  const box = boxOf(laid, 'player-plate-98');
+  assert.ok(box, 'the plate is laid');
+  assert.ok(box.x > 0 && box.x < VIEW.width && box.y > 0 && box.y < VIEW.height / 2, 'over the ship, in view');
+  assert.ok(words(laid).includes('Wooden_Osprey'));
+  hud.seaPlayers([]);
+  assert.equal(boxOf(frame(ui, hud), 'player-plate-98'), undefined);
 });
