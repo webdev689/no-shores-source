@@ -27,3 +27,14 @@ manual merge. #192 moved to 81 and added a structural barrier: `gearMessages.tes
 is distinct. The test fails on the clash, so a later collision fails the check rather than a review. Rust's own decode
 `match` would also refuse two arms with one value (`unreachable_patterns` under `-D warnings`), but only where both
 arms share one match.
+
+**Third instance (no-shores-source, 2026-11-24, #201 the ships at the Harbourmaster):** the branch took refusals 150 to
+156 and asks 79 to 83 against its base; main had meanwhile given 150 to 165 to guilds and outposts and 75 to 80 to
+the guild bounty and outposts. Found only when main was merged in for an audit (refusal.rs came in as an add/add
+conflict; the asks as a textual one). Renumbered to 166 to 172 and 81 to 85; then a check of the open pull requests'
+branches (`git fetch origin <branch>`, grep of `ASKS` and `refusal.rs`) found #200 holding asks 82 to 84, so the ship
+asks moved again, to 86 to 90. The distinct-`ASKS` test only fires once both sides are in one tree.
+
+**What would have caught it early:** choosing a new number against main and every open pull request's branch, not the
+branch's base. A small script (`tools/claude-toolkit/numbers-in-flight.sh`: fetch each open PR head, list the ask,
+refusal and type numbers it adds over main) run before taking a number would make the check one command.
