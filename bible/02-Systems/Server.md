@@ -432,7 +432,8 @@ of its own: their number, their username (none for a guest), their level, whethe
 last input said, and their guild's tag (none in no guild). Every plate goes in the welcome, and a plate that changed goes in every snapshot until a later
 one is shown, as a dress does, the newest of each player's alone (`plates.rs`, `take_plate_changes`). At sea every snapshot
 carries the plate of each other player's ship it sends, whole, as the sea's ships are sent whole: their username, their
-character's level (a new character's for one who plays unkept), and never a menu, which the sea hears nothing of; and
+character's level (a new character's for one who plays unkept), their guild's tag as the keeper told it
+(`Sea::tag_player`; [[Ships at Sea Wear Their Guild's Tag]]), and never a menu, which the sea hears nothing of; and
 none of the player's own (`Sea::plate`;
 [[Other Ships Wear Their Players' Marks, the Sea Map Has No Fog, and New Players Ride a Bay That Bursts]]). A deck boarded draws none.
 
@@ -634,23 +635,23 @@ so every decision is Rust and the shell only carries bytes and time.
 - **The asks** (76 to 80): the room takes what an ask gives and holds it as an errand; each tick the host takes the
   errands (`room_outpost_errands`), asks the accounts (`deposit`, `deliver`, `takeStores`, `soundHorn`) and gives the
   answer back (`room_outpost_answered`): what was not moved or used goes back, what the stores gave is given, and the
-  player is answered (156 to 166 beside the gear's). A player has one errand with the accounts at a time ("Wait for
-  your last ask."), and a take of nothing is refused in the room. Each errand has its one id
-  (`<room>:<room opened>:<player>:<errand>`), under which the accounts keep their answer for good in the same write as
-  the errand, a refusal too (the first answer kept wins); one they throw on is asked again under it, every 10 s at the
-  slowest, for as long as the room lives, so one that went through answers as it did and is never done or given back
-  twice. A deposit, delivery or take is carried
-  by the character under its id (`gear::errand`, the body's `errand`) until it is answered, and goes only once the
-  keeper has saved the character so (`Keeper.saveNow`); unsaved, it goes back whole, and a take's gift is saved at
-  once. The room that answers it while it holds the character settles it, in the same save: this room when the
-  accounts answer, or, when another claim took the character first (a reload, a sailing off), the room that claimed
-  it, whose keeper asks the accounts again under the id and writes the answer into the body before the room reads it
-  (`Keeper.signIn`); not answered, it is carried on to the next. Past the account's limit on outpost asks every
-  errand answers so (a deposit `limited`, the rest -3), given back whole as "Too many asks. Wait a while." (166). The
-  horn's answer is its tier, or 0 (sounded this week), -1 (not the founder or an admin), -2 (no horn at a tier), each
-  its own refusal. A leaving player's last save waits for their errands in flight, 30 s at most, its timer armed only
-  while one is, and the room is told they are leaving (`room_outpost_parting`): their account joining again meanwhile
-  takes it over (`Room::own`) and is given each answer its character carries.
+  player is answered (156 to 166 beside the gear's). A player has one errand with the accounts at a time ("Wait for your
+  last ask."), and a take of nothing is refused in the room. Each errand has its one id
+  (`<room>:<room opened>:<player>:<errand>`), under which the accounts keep their answer (a week, longer while a
+  character carries it) in the same write as the errand, a refusal too (the first answer kept wins); one they throw on
+  is asked again under it, every 10 s at the slowest, for as long as the room lives, so one that went through answers as
+  it did and is never done or given back twice. A deposit, delivery or take is carried by the character under its id
+  (`gear::errand`, the body's `errand`) until it is answered, and goes only once the keeper has saved the character so
+  (`Keeper.saveNow`); unsaved, it goes back whole, and a take's gift is saved at once. The room that answers it while it
+  holds the character settles it, in the same save: this room when the accounts answer, or, when another claim took the
+  character first (a reload, a sailing off), the room that claimed it, whose keeper asks the accounts again under the id
+  and writes the answer into the body before the room reads it (`Keeper.signIn`); not answered, it is carried on to the
+  next. Past the account's limit on outpost asks every errand answers so (a deposit `limited`, the rest -3), given back
+  whole as "Too many asks. Wait a while." (166). The horn's answer is its tier, or 0 (sounded this week), -1 (not the
+  founder or an admin), -2 (no horn at a tier), each its own refusal. A leaving player's last save waits for their
+  errands in flight, 30 s at most, its timer armed only while one is, and the room is told they are leaving
+  (`room_outpost_parting`): their account joining again meanwhile takes it over (`Room::own`) and is given each answer
+  its character carries.
 - **Its guild dungeon's run**: `node-<site>--guild-<key>--run-<i>` at Normal, `--elite--run-<i>` or `--abyss--run-<i>`
   after the key at the harder two (`delveRoom.ts`, read by `nodeRoom`). It keeps to the guild as the outpost does and
   to one company as any run does. The host opens it (`delveAsk`) only on an outpost's site while `outpost(room)` of
@@ -773,8 +774,8 @@ set no swing on: every difference came within 2 s of a blow by or on the player,
   the World Editor asks for open water 15 m deep before it joins. A fleet's lay is judged at the room's tick, not as
   the player's screen showed the ships (a ball's flight is long beside the lag).
 - Players do not harm one another.
-- An errand's kept answer stays in the accounts for good (`outpost_errands`), one row an errand: a character may carry
-  one unanswered for as long as it is not played.
+- An errand's kept answer stays in the accounts a week (`outpost_errands`), and for as long after as a saved character
+  carries its errand, which may be as long as it is not played (`forgetAnswers`, on each new guest).
 - On a boarded deck each boarder's snapshot is sent whole every tick, not as what changed (the sea's page reads it
   without a keeper), and a boarder's input is read alone, without the inputs it carries from before.
 - A dress travels with a player's inputs, which flow only while they play: until then, others see a plain figure.

@@ -13,7 +13,7 @@ import { INVITE_MS } from './companies.ts';
 import { bindsAsk } from './binds.ts';
 import { lastPlace } from './lastPlace.ts';
 import { socialAsk, socialRead } from './social.ts';
-import { outpostAllowed, plotReadAllowed } from './outpostStores.ts';
+import { forgetAnswers, outpostAllowed, plotReadAllowed } from './outpostStores.ts';
 import { USERNAME, refusalOf, skeleton } from './names.ts';
 import { NO_ONES_PASSWORD, hashOf, hashPassword, passwordMatches, randomToken } from './secrets.ts';
 
@@ -180,6 +180,7 @@ async function respond(request: Request, deps: Deps): Promise<Response> {
         )
         .bind(now - SESSION_IDLE_MS)
         .run();
+      await forgetAnswers(database, now);
       // A guest unused for 30 days, made, seen and saved by none since, goes with all it holds (each table's rows
       // follow their account). Ten at a time: every guest pruned was made by an ask like this one.
       await database
