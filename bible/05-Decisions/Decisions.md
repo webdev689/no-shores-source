@@ -366,6 +366,8 @@ a decision is a record. How to add one: [[Recording a Decision]].
 - [[What a Body Meets Keeps to What Is Drawn]]
 - [[The Owner's Handcrafted Meadow Grows Over the Grass]]
 - [[The Meadow Art Is the Owner's, Its Tables Stay in Git, and the Grass Takes the Trees' Rain]]
+- [[Each Island Keeps One Patrol Zone, the One by Its Port City]]
+- [[Passages Web Out From the Patrol Zone Across Its Island]]
 
 ## Replaced
 
