@@ -96,3 +96,12 @@ export interface PlaceMark {
 export function shipsMarked(ships: readonly ShipMark[], from: readonly [number, number]): ShipMark[] {
   return ships.filter((ship) => Math.hypot(ship.x - from[0], ship.y - from[1]) <= (ship.rangeM ?? SHIP_MARK_RANGE_M));
 }
+
+/** A distance as a mark shows it: metres near, kilometres past one. */
+export function distanceText(metres: number): string {
+  // Rounded before the unit is chosen, so 996 m reads 1.0 km, never 1000 m.
+  const tens = Math.round(metres / 10) * 10;
+  if (tens < 1000) return `${tens} m`;
+  const tenths = Math.round(metres / 100) / 10;
+  return tenths < 20 ? `${tenths.toFixed(1)} km` : `${Math.round(metres / 1000)} km`;
+}
