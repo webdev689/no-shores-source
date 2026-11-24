@@ -356,22 +356,26 @@ too low to enter whole, each building not walked into whole, each plinth, set pi
 ways, and each prop too tall to step over. What lies wholly past the section (at the cliffs' feet, on their tops) is
 never reached and is no box: a piece is kept by its middle in the section or a cell of it, or, for one wider than 8 m,
 by any corner. What a body meets keeps to what is drawn ([[What a Body Meets Keeps to What Is Drawn]]): no box stands
-more than 0.45 m off what it boxes (`city::hug`), but for a tilted solid as below. A prop is the parts its drawn shape fills ([[Forged Models]],
-"Parts"), a gate's arch with its parts taken down to its foot so the opening under its bar stays shut. A solid is cut
+more than 0.45 m off what it boxes (`city::hug`), nor leaves more than that of it out, but for a tilted solid as
+below. A prop is the parts its drawn shape fills ([[Forged Models]], "Parts"), each within a 0.25 m column of its
+mesh; a turned prop is in strips within 0.2 m of its parts, so its edges stand no further past what is drawn than a
+solid's. A gate's arch has its parts taken down to its foot so the opening under its bar stays shut. A solid is cut
 into parts of its own frame: an arch its two jambs and its head over the crown of its opening, so a body walks under
-it; a column, a dome, a pyramid and a gable in layers that narrow as it does, a wide round in crossed boxes inside it.
-A part turned off the world's axes is boxed in strips across the world, each the box of the part within it, as wide as
-keeps it within 0.45 m; one leaning or rolled is halved until each half's box keeps as close, but a solid tilted so
-little none of it moves 0.45 m is boxed as if upright, standing off it as far again as its tilt moves it, and a piece
-of 2 m or less is not halved for its tilt alone, standing off it as far as its tilt throws its box out. A box's
-underside is its own, so a body walks under a viaduct's deck and a lintel.
+it; a column, a dome, a pyramid and a gable in layers that narrow as it does, a wide round in crossed boxes inside it,
+each kept to the faces the page draws (a round's polygon, a dome's rings). A part turned off the world's axes is
+boxed in strips across the world, each the box of the part within it, as wide as keeps it within 0.45 m; one leaning
+or rolled, however far (a mill's sails turn past a half-turn), is halved until each half's box keeps as close, but a
+solid tilted so little none of it moves 0.45 m is boxed as if upright, standing off it as far again as its tilt
+moves it, and a piece of 2 m or less is not halved for its tilt alone, standing off it as far as its tilt throws its
+box out. A box's underside is its own, so a body walks under a viaduct's deck and a lintel.
 
-What a solid may cost is held (`city::collision::kept`): at most 64 of its boxes over a 2 m square of ground, on a grid
-laid from its north-west corner (2 m is the finest cell of the movement rules' grid, every box of which a tick tests),
-and at most a box a square metre of its footprint, never fewer than 256. Its layers come first, as they take the fewest boxes; where they stack too thick over the
+What a solid or a turned prop may cost is held (`city::collision::kept`, `layout::collide::prop_kept`): at most 64
+of its boxes over a 2 m square of ground, on a grid laid from its north-west corner (2 m is the finest cell of the
+movement rules' grid, every box of which a tick tests), and at most a box a square metre of its footprint, never
+fewer than 256. A solid's layers come first, as they take the fewest boxes; where they stack too thick over the
 ground, the same layers are laid as terraces, each boxed only where no layer over it stands, up from the foot, which
-holds the same and stands no further off. A solid that still costs more is boxed with its keep a quarter looser at a
-time until it fits. Over every landmass 269,060 of 270,438 solids are boxed unloosened; on continent 1's zones eleven
+holds the same and stands no further off. One that still costs more is boxed with its keep a quarter looser at a time
+until it fits (and halving that stops short of its keep costs more), never leaving more than 0.45 m of it out. Over every landmass 269,060 of 270,438 solids are boxed unloosened; on continent 1's zones eleven
 are loosened, small tilted stones to within 0.7 m, the mills' two roofs 0.7 m, the Maw Shallows' dome 0.9 m and the
 Saltgrass Downs' wide dome 1.1 m; the cities' leaning spires to within 5.3 m at most. Continent 1's zones hold 67,482
 boxes, every landmass's zones and cities 1,258,643, a city boxed natively in 0.03 to 0.5 s (tested offline). Boxes
@@ -478,7 +482,7 @@ does nothing.
 The game draws the layouts within 4 km of the eye with the city layer ([[Cities]]), gathered again once the eye has
 moved 1.5 km: a plan of placed pieces (each building and prop where its layout stood it, a building walked into with
 its doorways open) and solids (plinths, set pieces, great works, rock, rooms), on a grid of cells just large enough
-to hold them, with no plates. Nature keeps off the buildings' yards and each place's open ground, and grows each
+to hold them, with no plates. Nature keeps off the buildings' yards, each place's open ground and the paths, and grows each
 layout's plantings where they were planted, as its own kind (`plantedOf`).
 
 The paths and a block's streets are the terrain's own ground ([[Game]], "The ground's pictures"): painted within

@@ -37,7 +37,7 @@ but one: the well house (props 43202 and 43204), whose posts run up to carry its
 |---|---|---|
 | `buildings.json` | 387 | The box, a plan of wings on a 0.4 m grid (each wing's eaves, ridge and rectangles, its covered ways, steps and platforms), the pictures the walls, roofs and glass wear, and the doors |
 | `props.json` | 434 | The box, the three pictures the piece wears most, its doors, a board's top cover, a canopy bed's bedding and a tall rock's relief |
-| `parts.json` | 276 | The boxes a prop's drawn shape fills, for each piece its box alone does not keep to, written from the forge |
+| `parts.json` | 255 | The boxes a prop's drawn shape fills (14,671), for each piece its box alone does not keep to, written from the forge |
 | `roomkit.json` | 751 | The box, the pictures, each face square to an axis as a rectangle on its plane, each sloped face as its triangles, and the doors |
 
 A page fetches and parses the table it needs and hands it to the layer, which reads no file itself.
@@ -77,16 +77,17 @@ their +z side are mirrored. A rock's, a ruin's, a column's and a headstone's sha
 ## Parts
 
 What a body meets of a prop is the shape it is drawn as, not its box ([[What a Body Meets Keeps to What Is Drawn]]):
-`propParts.ts` cuts the piece's floor plan into columns 0.25 m across (0.5 m for a piece over 8 m long), each as high
+`propParts.ts` cuts the piece's floor plan into columns 0.25 m across at most, each as high
 as the piece's mesh reaches over it, and joins neighbouring columns into boxes of its own frame. A column's heights
 are those of the faces crossing it, a gap too low for a crouched body (1 m) filled, an underside lower than that taken
 to the floor, and what stands no higher than the layouts step over (0.45 m) left out; a column no body reaches from
 outside, walled round, is filled to the floor, so a closed piece is solid and one with a door or a gap stays open.
 Columns are joined whose tops lie within 0.25 m and whose undersides are both the floor or both overhead within
 0.5 m. A beached boat is so its hull, deck, deckhouse and mast, a signpost its post with its arms over a body's head, a
-gate's arch its piers and bar. `node tools/forgedParts.mjs` writes every piece's parts into
-`content/forged/parts.json`, but for a piece its box keeps to, and a test holds the file to what the forge builds;
-the rules read it with the props' measures ([[Layouts]], "Boxes").
+gate's arch its piers and bar. No part's top stands more than 0.45 m from the mesh (`propParts.test.ts`).
+`node tools/forgedParts.mjs` writes every piece's parts into `content/forged/parts.json`, but for a piece its box
+keeps to or one stepped over whole, and a test holds the file to what the forge builds; the rules read it with the
+props' measures ([[Layouts]], "Boxes").
 
 ## The room kit
 

@@ -38,8 +38,10 @@ its card's height runs across the pixel.
 The land is cut into cells 16 m square, kept while within 160 m of the eye (and 24 m past, so a step back reads none
 again), read nearest first, 3 ms of them a frame. A cell reads a grid of 9 by 9 points of the plants' own ground:
 its height, and how much of it is grass (`grassShare`), as the land draws its grass: none on water, a road, a town or
-what the caller keeps clear (the cities' and layouts' solids and yards); less as stone shows through a slope from 0.3
-to 0.45, as the highland's dirt comes in from 200 m to 1600 m, under the snow line, and on the beach along the coast.
+what the caller keeps clear (the cities' and layouts' solids and yards, and the layouts' paths); less as stone shows
+through a slope from 0.3 to 0.45, as the highland's dirt comes in from 200 m to 1600 m, under the snow line, and on
+the beach along the coast. What its points stand too far apart to see, a wall, a plinth or a fire's stones, a mask
+of squares 0.5 m a side keeps bare: no tuft stands in a square the caller keeps clear at its middle.
 A landmass whose biome's low ground is not grass (the desert, the tundra) grows none. Where the ground changes (a new
 close patch), the cells over the plants' changed tiles are read again, their old grids drawn until their turn.
 
@@ -66,14 +68,15 @@ plants' wind, gusts rolling downwind across the land, a bush six tenths as far.
 The owner's green is lighter and bluer than a grass ground, so each texel is moved by its ground: the biome's low
 ground over the ground the tall tuft's green would stand a shade lighter over, held between 0.5 and 1.6. A texel takes
 that ratio's hue as far as it is green and only its light where it is not, so the green becomes the ground's own and
-the petals and dry stalks keep their colours (`texelOver`). A patch's tint lightens or darkens it in four bands, and
+the petals and dry stalks keep their colours (`texelOver`). A patch's tint lightens or darkens it in four bands, each rounded to its middle, and
 from 0.12 of the reach to 0.6 it gives way to the ground's colour. It is lit as the plants are (the sky, the sun
-through the shadow map, the lamps, rain), its foot shaded, and each card's face takes a low sun whole when turned to it
-and half when turned away.
+through the shadow map, the lamps, rain), its foot shaded and its light leaning across its lean, and each card's face
+takes a low sun's or the moon's own light whole when turned to it and half when turned away; the sky, the lamps and
+the light through it fall on every card alike.
 
 ## Drawing
 
-Cells in view are drawn nearest first, a draw a cell, its tufts thinned toward the reach: from 88 m a cell draws a
+Cells in view with any grass are drawn nearest first, a draw a cell, its tufts thinned toward the reach: from 88 m a cell draws a
 falling share of its tufts, the last of them fading out by the samples of the pixel as the plants fade. The shader
 draws a tuft it does not grow, or one past its share, nowhere.
 
