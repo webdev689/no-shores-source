@@ -175,6 +175,32 @@ fn blows_land_softer_on_a_fighter_above_three_quarters_of_its_health_with_crysta
 }
 
 #[test]
+fn blows_land_softer_on_a_fighter_below_a_quarter_of_its_health_with_lattice_shell() {
+    let shell = Trim { low_taken: 0.8, ..Trim::PLAIN };
+    let struck = |health: f64| {
+        let fighter = Fighter { health, health_max: 100.0, trim: shell, ..player_at(0.0, 0.0) };
+        match judge(&blow(BlowKind::Swing(Stroke::Down)), &fighter) {
+            Verdict::Hit { damage, .. } => damage,
+            other => panic!("a hit, not {other:?}"),
+        }
+    };
+    assert!((struck(20.0) - 8.0).abs() < 1e-9, "below a quarter");
+    assert!((struck(25.0) - 10.0).abs() < 1e-9, "at a quarter, not yet");
+    let low = |fighter: Fighter| Fighter { health: fighter.health_max * 0.2, ..fighter };
+    let mut guarded = low(armed(shell));
+    let mut plain_guard = low(armed(Trim::PLAIN));
+    for _ in 0..20 {
+        guarded = step_fighter(&guarded, &guarding(0.0), &AROUND).0;
+        plain_guard = step_fighter(&plain_guard, &guarding(0.0), &AROUND).0;
+    }
+    let chip = |fighter: &Fighter| match judge(&blow(BlowKind::Swing(Stroke::Down)), fighter) {
+        Verdict::Blocked { damage, .. } => damage,
+        other => panic!("blocked, not {other:?}"),
+    };
+    assert!((chip(&guarded) - chip(&plain_guard) * 0.8).abs() < 1e-9, "through a guard too");
+}
+
+#[test]
 fn unshaken_and_steady_fill_poise_less() {
     let open = Fighter { arms: SWORD, poise_max: 100.0, ..player_at(0.0, 0.0) };
     let filled = |trim: Trim, arms: Arms| {

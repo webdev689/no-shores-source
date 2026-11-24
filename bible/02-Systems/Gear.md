@@ -103,7 +103,8 @@ number is one of [[Gear as Claude Shapes It]].
   and each intrinsic belongs to one Atheric, and every Atheric weapon has an intrinsic; every kind of loadout has a named Legendary; every slot has a named Legendary and an Atheric; every armour and weapon
   kind has its word; every rolled pool holds enough traits for a Legendary; every faction perk is a perk of a faction the factions' file
   holds, and each faction's armour piece and weapon writes no traits and has one of its faction's perks that fits it;
-  every Breach perk is a perk and no faction's, and every armour and weapon kind has enough of them to fill a column.
+  every Breach perk is a perk and no faction's, and every armour and weapon kind has as many of them as its widest
+  piece has perk nodes in all.
 - **An item** is a kind (a Melee or a Ranged loadout, four armour pieces, the cloak, or one of a ship's four modules,
   [[Ship Power]]), a rarity, a level (1 to 20; a
   Legendary or Atheric is 20), its XP and the nodes bought and chosen. A faction's armour or weapon keeps the traits it
@@ -315,19 +316,24 @@ player while they are in it (`room::perks`). A blow lands when it strikes, is bl
   the one that ends the veil; Shade Step (armour) makes a dodge while Veiled cost 20% less stamina, a trim. Shared
   Flame and From the Dark take the striker's statuses as the blow is struck or the shot loosed. Every number is
   Claude's, in [[Gear as Claude Shapes It]] ("The factions' perks").
-- **The Breaches' perks** ([[Breaches Roll From a Perk Pool of Their Own]]). Eight perks, the Breaches' own
+- **The Breaches' perks** ([[Breaches Roll From a Perk Pool of Their Own]]). Thirteen perks, the Breaches' own
   (`breach` in `content/gear/traits.json`), which no shared pool and no faction offers and which fit only a Breach's
   piece. A Breach's armour or weapon (`vestige::make` from a Breach) rolls its handling and finish columns from the
-  shared pools as any piece does, and every node of its perk columns from the Breaches' perks that fit it: never one
-  twice in a column, those it has not yet offered first; the pool is smaller than a Legendary's perk nodes, so a later
-  column may offer one an earlier one does. Shatterpoint (melee) Exposes a foe whose guard a blow breaks. Vein Strike
-  (weapon) strikes an Exposed foe 15% harder, a blow or a shot. Bloom (weapon) Exposes every other living foe within
+  shared pools as any piece does, and every node of its perk columns from the Breaches' perks that fit it, never one
+  the piece already offers, as a shared piece never offers a trait twice. Six fit armour, every perk node of a
+  Legendary's, and four or five each kind of weapon, a Legendary weapon's four. Shatterpoint (melee) Exposes a foe
+  whose guard a blow breaks. Vein Strike (weapon) strikes an Exposed foe 15% harder, a blow or a shot. Bloom (weapon) Exposes every other living foe within
   4 m of a foe it slays. Crystal Sight (ranged) Exposes a foe a shot lands on 20 m or more from the shooter, as the
   shot lands. Crystal Skin (armour) takes 10% off every blow while above three quarters of its wearer's health, a trim
   (`hale_taken`), so a browser predicts it, a blocked blow's chip too. Regrowth (armour) gives back 5% of the most
   health on a kill of a foe, a spell's too, as the room heals (none once fallen). Resonance (armour) Exposes the foe whose blow is perfectly dodged.
-  Lattice Wall (shield) Exposes the striker of a blow blocked while its loadout is drawn. Each is in the room's one
-  door for statuses but Crystal Skin; every number is Claude's, in [[Gear as Claude Shapes It]] ("The Breaches'
+  Lattice Wall (shield) Exposes the striker of a blow blocked while its loadout is drawn. Fracture (armour) Exposes
+  the foe whose blow is parried. Lattice Shell (armour) takes 20% off every blow while below a quarter of its
+  wearer's health, a trim beside Crystal Skin's (`low_taken`), a blocked blow's chip too. Shardburst (armour) Exposes
+  every foe within 3 m of its wearer when a foe's blow breaks the wearer's guard, the striker too if it is that near.
+  Splinter (melee) Exposes the foe a riposte lands on and every other foe within 3 m of it. Shard Round (ranged)
+  Charges a foe a shot lands on that was Exposed as it landed. Each is in the room's one door for statuses but
+  Crystal Skin and Lattice Shell; every number is Claude's, in [[Gear as Claude Shapes It]] ("The Breaches'
   perks"). No Breach is built yet, so only the rules and their tests make a Breach's piece.
 - **The pools.** With the verbs and the perks that give and take, a Melee loadout is offered among 6 handling traits,
   7 finishes and 8 perks (9 with a shield), a Ranged one among 6, 7 and 6; armour among its 6 perks.

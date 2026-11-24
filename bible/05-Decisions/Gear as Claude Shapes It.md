@@ -153,7 +153,7 @@ what it touches, so its pool Exposes, spreads and hardens; each perk uses a stat
 |---|---|---|
 | What a Breach perk is | A perk-column trait marked `breach`; no shared pool and no faction offers it, and it fits only a Breach's piece | The factions' perks' mechanism, so the page shows its words from `traits.json` as any other's |
 | What a Breach piece is | An armour piece or weapon made from a Breach (`vestige::make`, `Source::Breach`), marked `breach`; its Legendary armour climbs to 30 Prestige, a Breach's Legendary's range | One mark says both what it rolls and how far it climbs |
-| How it rolls | Handling and finish from the shared pools, as any piece; every node of its perk columns from the Breaches' perks that fit it, never one twice in a column, those not yet offered first, then any not in the column | The owner: "its own unique perk pool". Three or four fit a kind, fewer than a Legendary's perk nodes, so a later column may offer one an earlier one does |
+| How it rolls | Handling and finish from the shared pools, as any piece; every node of its perk columns from the Breaches' perks that fit it, never one the piece already offers; the catalogue check refuses a kind with fewer Breach perks than its widest piece's perk nodes in all | The owner: "its own unique perk pool". A shared piece never offers a trait twice, and a perk chosen twice would count twice; six fit armour, a Legendary's six perk nodes, and four or five each weapon, a Legendary weapon's four |
 | A kept Breach piece | Keeps what it rolled, checked against its columns' pools and the Breaches' perks; a Breach perk gone gives way to another Breach perk | A piece a player earned never changes under them, as a faction's piece |
 | Shatterpoint (melee) | A blow that breaks a foe's guard Exposes it | Breaking is the Lattice cracking a foe open; Thunderclap's hook, with Expose |
 | Vein Strike (weapon) | Blows and shots on an Exposed foe strike 15% harder | The pool's payoff for its own Exposes; Thunderhead's number |
@@ -163,6 +163,11 @@ what it touches, so its pool Exposes, spreads and hardens; each perk uses a stat
 | Regrowth (armour) | A kill of a foe gives back 5% of the most health through the room's heal, a spell's kill too; a player already fallen takes none | The Lattice regrows; armour is no loadout, so any kill counts |
 | Resonance (armour) | A perfect dodge Exposes the foe whose blow was dodged | Squall Step's hook, turned on the foe |
 | Lattice Wall (shield) | Blocking a blow, with the shield's loadout drawn, Exposes its striker | Bulwark's and Coral Guard's hook; the shield is the loadout's |
+| Fracture (armour) | A parry Exposes the foe parried | Ebb's hook, the parry, turned on the foe as Resonance turns the perfect dodge |
+| Lattice Shell (armour) | Below a quarter of the wearer's health, blows hit 20% softer, a blocked blow's chip too; a trim (`low_taken`) beside Crystal Skin's, so a browser predicts it | Crystal Skin's other end: the Lattice hardens round a wearer near breaking; Guarded's 20% |
+| Shardburst (armour) | When a foe's blow breaks the wearer's guard, every foe within 3 m of the wearer, its striker too, is Exposed | A guard shattering throws shards; 3 m is the foes at the wearer's side, closer than Bloom's 4 |
+| Splinter (melee) | A riposte that lands Exposes its foe and every other foe within 3 m of it | Nightfall's hook, the riposte, with Bloom's spread from the foe struck, not the slain |
+| Shard Round (ranged) | A shot that lands on a foe Exposed as it lands Charges it | The pool's ranged payoff for its own Exposes, as Vein Strike's is for any weapon; Shocking Rounds' Charge |
 
 ### Islands, seas and patrols
 

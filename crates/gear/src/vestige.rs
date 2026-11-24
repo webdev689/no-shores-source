@@ -202,8 +202,8 @@ pub const LOOK_ROLLS: usize = 36;
 
 /// The traits an item's columns offer, each column's rolled from its kind's pool, never one trait twice; with a
 /// faction, the first node of its first perk column is drawn from that faction's own perks that fit it instead. A
-/// Breach's piece draws every node of its perk columns from the Breaches' own perks that fit it: those it has not yet
-/// offered first, and, as that pool is smaller than its perk nodes, any not yet in the column once they run out.
+/// Breach's piece draws every node of its perk columns from the Breaches' own perks that fit it, never one it has
+/// already offered (the catalogue holds enough of them for every perk node, `Catalogue::problems`).
 fn rolled_layout(item: &Item, faction: Option<&str>, dice: &Dice) -> Vec<Vec<String>> {
     let content = catalogue();
     let mut used: Vec<&str> = Vec::new();
@@ -221,11 +221,6 @@ fn rolled_layout(item: &Item, faction: Option<&str>, dice: &Dice) -> Vec<Vec<Str
             let own = faction_node.filter(|_| matches!(column, Column::Perk(_)));
             let chosen = if breach_column {
                 let unoffered: Vec<&str> = breach_perks.iter().copied().filter(|id| !used.contains(id)).collect();
-                let unoffered = if unoffered.is_empty() {
-                    breach_perks.iter().copied().filter(|id| !offered.iter().any(|each| each == id)).collect()
-                } else {
-                    unoffered
-                };
                 unoffered.get(dice.pick(Purpose::Traits, index, unoffered.len())).copied()
             } else if let Some(faction) = own {
                 faction_node = None;

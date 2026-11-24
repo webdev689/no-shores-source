@@ -1,6 +1,6 @@
-//! The Breaches' own perks in the room: Shatterpoint, Vein Strike, Bloom and Crystal Sight on the weapons; Crystal
-//! Skin, Regrowth and Resonance on the armour; Lattice Wall on a shield. Each is worn here on a Breach's piece, the
-//! only one it fits.
+//! The Breaches' own perks in the room: Shatterpoint, Vein Strike, Bloom, Crystal Sight, Splinter and Shard Round on
+//! the weapons; Crystal Skin, Regrowth, Resonance, Fracture, Lattice Shell and Shardburst on the armour; Lattice Wall
+//! on a shield. Each is worn here on a Breach's piece, the only one it fits.
 
 use super::verbs_tests::{SWING, blow, has, shoot, stand, swing};
 use crate::perks::trim_of;
@@ -162,4 +162,62 @@ fn lattice_wall_exposes_the_striker_of_a_blocked_blow() {
     let (mut room, player, [foe, _]) = room_wearing_unfit(Kind::SwordAndShield, "lattice_wall");
     room.settle(&blow(foe, SWING), How::Swing, player, blocked, None);
     assert!(!has(&room, foe, Status::Expose), "not on a piece from elsewhere");
+}
+
+#[test]
+fn fracture_exposes_the_foe_whose_blow_was_parried() {
+    let (mut room, player, [foe, other]) = room_wearing(Kind::Head, "fracture");
+    room.settle(&blow(other, SWING), How::Swing, player, Verdict::Dodged { perfect: true }, None);
+    assert!(!has(&room, other, Status::Expose), "a dodge is no parry");
+    room.settle(&blow(foe, SWING), How::Swing, player, Verdict::Parried, None);
+    assert!(has(&room, foe, Status::Expose));
+    let (mut room, player, [foe, _]) = room_wearing_unfit(Kind::Head, "fracture");
+    room.settle(&blow(foe, SWING), How::Swing, player, Verdict::Parried, None);
+    assert!(!has(&room, foe, Status::Expose), "not on a piece from elsewhere");
+}
+
+#[test]
+fn lattice_shell_trims_the_blows_on_a_wearer_below_a_quarter_of_their_health() {
+    let (room, player, _) = room_wearing(Kind::Head, "lattice_shell");
+    let trim = trim_of(&room.player(player).expect("in").character, Slot::Ranged);
+    assert!((trim.low_taken - 0.8).abs() < 1e-9);
+    let (room, player, _) = room_wearing_unfit(Kind::Head, "lattice_shell");
+    assert!((trim_of(&room.player(player).expect("in").character, Slot::Ranged).low_taken - 1.0).abs() < 1e-9);
+}
+
+#[test]
+fn shardburst_exposes_the_foes_near_a_wearer_whose_guard_a_blow_breaks() {
+    let broken = Verdict::GuardBroken { damage: 5.0 };
+    let (mut room, player, [striker, beside]) = room_wearing(Kind::Head, "shardburst");
+    place(&mut room, player, 0.0, 0.0);
+    let far = stand(&mut room, 0.0, -4.0);
+    room.settle(&blow(striker, SWING), How::Swing, player, HIT, None);
+    assert!(!has(&room, beside, Status::Expose), "a blow that breaks no guard");
+    room.settle(&blow(striker, SWING), How::Swing, player, broken, None);
+    assert!(has(&room, striker, Status::Expose) && has(&room, beside, Status::Expose), "the foes within 3 m");
+    assert!(!has(&room, far, Status::Expose), "a foe 4 m off");
+}
+
+#[test]
+fn splinter_exposes_a_ripostes_foe_and_every_foe_within_three_metres_of_it() {
+    let (mut room, player, [foe, beside]) = room_wearing(Kind::Sword, "splinter");
+    let riposte = combat::Blow { parryable: false, ..blow(player, SWING) };
+    let far = stand(&mut room, 0.0, -5.0);
+    swing(&mut room, player, &[foe], HIT);
+    assert!(!has(&room, foe, Status::Expose), "a swing is no riposte");
+    room.settle(&riposte, How::Riposte, foe, HIT, Some(Slot::Melee));
+    assert!(has(&room, foe, Status::Expose) && has(&room, beside, Status::Expose), "its foe and one 1 m off it");
+    assert!(!has(&room, far, Status::Expose), "a foe 3.5 m off it");
+}
+
+#[test]
+fn shard_round_charges_an_exposed_foe_a_shot_lands_on() {
+    let (mut room, player, [exposed, plain]) = room_wearing(Kind::Bow, "shard_round");
+    assert!(room.give(exposed, Status::Expose, None, None));
+    shoot(&mut room, player, Ranged::Bow, plain, HIT);
+    assert!(!has(&room, plain, Status::Charge), "a foe not Exposed");
+    shoot(&mut room, player, Ranged::Bow, exposed, Verdict::Dodged { perfect: false });
+    assert!(!has(&room, exposed, Status::Charge), "a shot that does not land");
+    shoot(&mut room, player, Ranged::Bow, exposed, HIT);
+    assert!(has(&room, exposed, Status::Charge));
 }

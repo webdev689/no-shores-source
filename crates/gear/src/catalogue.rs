@@ -284,12 +284,17 @@ impl Catalogue {
                 problems.push(format!("trait {} is a Breach's, so it is a perk and no faction's", found.id));
             }
         }
-        // A Breach piece's perk columns roll from the Breaches' pool alone, never one trait twice in a column.
+        // A Breach piece's perk columns roll from the Breaches' pool alone, never one perk twice on the piece, so the
+        // pool must hold every perk node of the widest piece of each kind.
         for kind in Kind::ALL.into_iter().filter(|kind| kind.armour() || kind.weapon()) {
-            let widest = Rarity::ALL.iter().flat_map(|rarity| columns(*rarity, kind.weapon_grid()));
-            let widest = widest.filter(|column| matches!(column, Column::Perk(_))).map(|column| column.nodes()).max();
-            if self.breach_perks(kind).len() < usize::from(widest.unwrap_or(0)) {
-                problems.push(format!("a Breach {kind:?} needs {} Breach perks to fill a column", widest.unwrap_or(0)));
+            let perk_nodes = |rarity: &Rarity| -> usize {
+                let perks =
+                    columns(*rarity, kind.weapon_grid()).iter().filter(|column| matches!(column, Column::Perk(_)));
+                perks.map(|column| usize::from(column.nodes())).sum()
+            };
+            let widest = Rarity::ALL.iter().map(perk_nodes).max().unwrap_or(0);
+            if self.breach_perks(kind).len() < widest {
+                problems.push(format!("a Breach {kind:?} needs {widest} Breach perks to fill its perk nodes"));
             }
         }
         for item in &self.items {
