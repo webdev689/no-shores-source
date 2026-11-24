@@ -66,7 +66,9 @@ Players and foes fight by the same rules, which the [[Server]] decides and each 
 A player's weapon reaches a tenth further than the table's reach; a foe's reaches as far as it says. Bare fists reach
 1.0 m for everyone ([[A Player's Melee Weapon Reaches a Tenth Further]]).
 
-- **Swings.** DFO's swing law times them, each swing taking three quarters of its time at the owner's word: five strike
+- **Swings.** DFO's swing law times them, a player's swing taking three quarters of its time at the owner's word, a
+  foe's seven eighths (`FOE_SWING_PACE`), so a person has a little longer to see a foe's blow come and parry it
+  ([[A Foe's Plain Swing Takes Seven Eighths of Its Time]]); a player's companions swing as players do: five strike
   frames, each 0.15 s for a sword, shorter or longer by the weapon's handling and a two-handed weight; the blow lands as
   the third frame begins. A player's pair comes round in four fifths of its lone weapon's time, each blow 0.9 of its
 damage (`PAIR_PACE`, `PAIR_DAMAGE`), about an eighth more a second for a left hand with no shield; a foe's pair swings
@@ -317,7 +319,7 @@ The timings are set against shipped games and what a person can do, measured or 
 | No window for 30 ticks after one unused | Sekiro and Lies of P reset after 500 ms | Mashing does not parry; the guard still blocks |
 | Dodge safe 1 to 18 ticks (300 ms), perfect within 12 (200 ms) | A backstep or quickstep's 230 to 300 ms; Stellar Blade's perfect dodge 150 ms, more with upgrades | A short hop; the perfect stretch a little inside the parry window, so the two reads feel alike |
 | Stamina back at 45 a second after 0.5 s; a dodge 22 of 100 | The Souls games' 37 to 45 a second | Four dodges from full, back in about two seconds |
-| A sword's blow 18 ticks (300 ms) after the press | For Honor's quickest light, 400 ms, "reactable" | A foe's swing can be answered by a person who watches for it |
+| A sword's blow 18 ticks (300 ms) after a player's press; a foe's 21 (350 ms) after its swing begins | For Honor's quickest light, 400 ms, "reactable" | A foe's swing can be answered by a person who watches for it, as the owner asked a little more easily than a player's is by a foe |
 | A press kept 8 ticks | Fighting games' 5 to 10 frame buffers | A press a moment early is not lost |
 | Lock takes within 9 m and 70 degrees; lets go past 15 m, after 1.5 s unseen | FromSoftware's 15 m lock and its keep time; God of War's on-screen targeting | Holds through a moment behind a pillar, and follows the look |
 

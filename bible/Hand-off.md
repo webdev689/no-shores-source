@@ -192,6 +192,15 @@ each part works is in its system note.
 
 The decisions in [[Open Questions]] are not repeated here.
 
+- **A foe's plain swing at seven eighths of its time**, for the owner's yes to merge, on the owner's "We recently
+  adjusted parry timing and actually made it harder where I wanted to make it slighty easier"
+  ([[A Foe's Plain Swing Takes Seven Eighths of Its Time]]). The longer parry window (15 ticks) forgave only an early
+  press; the swings made a quarter faster had sped foes' swings too, so a foe's sword blow landed 0.3 s after its
+  swing began. Now 0.35 s (21 ticks, `FOE_SWING_PACE`); a player's and their companions' swings as they were, and the
+  foes' plan of when a blow lands follows (`Fighter::swing_ticks`). The scripted runs moved both ways: the rules' pair
+  holds the heroic raid again, the dev page's bots now lose the plain raid's stores in its third wave, and the road's
+  test player, facing north while foes struck from its sides, fell before a kill (it now turns to the nearest foe).
+  A lone player is felled about as fast as before (`measure_blows`). Tested offline; not played.
 - **Revives, respawns near the fall or at a checkpoint, and logging back in where the player left** (#184, a draft for
   the owner's yes). The owner's three asks ([[Fallen Players Are Revived as in Destiny]],
   [[Activities Keep Checkpoints, and Patrol Zones Respawn the Player Near Where They Fell]],
@@ -419,8 +428,8 @@ The decisions in [[Open Questions]] are not repeated here.
 - **A thin black vertical line across the world**, reported by the owner and not yet found: the canvas fills the
   page, so it is not a gap in the page. The owner will send a screenshot.
 - **The public events under main's balance pass** (#141): with the fight's harm at 1.5 and 0.75, the rules' two scripted
-  players still seal a heroic Fissure (5.2 minutes, 3.7 before) but run out the heroic raid's clock in its third wave;
-  with the heroic task left alone, the page's scripted pair holds the raid. The events are Claude's to tune ("Claude
+  players seal a heroic Fissure and, foes' swings at seven eighths, hold the heroic raid;
+  the dev page's two bots win the Fissure either way and lose the raid's stores either way. The events are Claude's to tune ("Claude
   tunes them"); whether a pair should hold the heroic raid is the owner's to say. The chest's Vestige: #141 dropped the
   colour rows it drew on, so a plain chest draws on a Major's colours and a heroic one on a Boss's; a heroic chest's
   Vestige is now Normal about half the time (never before). The rest of #124's points are in its description and in
@@ -555,8 +564,7 @@ The decisions in [[Open Questions]] are not repeated here.
   blocks as a swordsman until its change (`roster::standing`); Tempest 48 an orb, Duskraven 16 a bolt, Linked 8 a
   second and ×1.3; a travel never brings the next hostile roll sooner; a cove's wreck one material of 1 or 2,
   Heartwood 1.5%, a module 3%; a fire's bite scales with the shooter's level strength and the ball. With the
-  Bulwark blocking, the rules' scripted pair and the dev page's bots still win the heroic Fissure, the pair 32 s later
-  than on `main`. On the owner's "Go ahead with your proposals except the stamina change"
+  Bulwark blocking, the rules' scripted pair and the dev page's bots still win the heroic Fissure. On the owner's "Go ahead with your proposals except the stamina change"
   ([[Pairs Swing Faster, Foes' Guns Strike Two Thirds and Faction Gear Has No Weekly Limit]]): a player's pair comes
   round in 0.8 of its lone weapon's time at 0.9 of its blow (a foe's pair as its lone weapon, for faster paired daggers
   set a crowd of skirmishers turning about); a foe's ball strikes two thirds (`FOE_GUN`, its aimed shot too), so an
@@ -564,8 +572,8 @@ The decisions in [[Open Questions]] are not repeated here.
   was. Measured with `economy_tests.rs` (six pace tests and the
   ledger), `balance_tests.rs` (`measure_ranks`), `measure_blows` and `measure_fights_by_rank`. Destiny 1's numbers
   came from search summaries; the proxy refused every page, so they are unchecked against the pages. Tested offline:
-  `cargo xtask check` on its head; not played. The rules' two scripted sword players run out the heroic raid's clock
-  in its fourth wave; with `main`'s captains, before this pass's, they hold it. The owner keeps it as it is for now. Its one open point, Conduit, is in [[Open Questions]].
+  `cargo xtask check` on its head; not played. The rules' two scripted sword players stand near the line of holding the
+  heroic raid, which the owner keeps as it is for now; they hold it since foes' swings take seven eighths. Its one open point, Conduit, is in [[Open Questions]].
   Not yet seen in the deployed game: a pair's quicker swings, the Bulwark's shield and its drop, the supers' numbers,
   a Marksman's three aimed shots, a sinking's pay, a bounty card's own pay and the heroic raid with players.
 
