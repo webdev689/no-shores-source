@@ -1,5 +1,5 @@
 ---
-id: 216
+id: 226
 title: "At sea, __qaEye does not move the camera (only the camera on foot reads QA_EYE); a dressed ship was pictured by setting __qaGame.sea.view.camera's yaw, a wheel step in, and patching sea.drawn.ownSeen for the hull and dress"
 status: open
 type: open-source
