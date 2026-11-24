@@ -5,11 +5,12 @@
 use super::{Phase, SHORES};
 use crate::{Player, PlayerId, Room};
 
-/// What an account left a run with: the share of its health (0 down), when it was marked Rewritten, and the shore it
-/// stood in, where, and how many takings the Steward had made then.
+/// What an account left a run with: the share of its health (0 down), whether it lay fallen into the dark, when it
+/// was marked Rewritten, and the shore it stood in, where, and how many takings the Steward had made then.
 #[derive(Clone, Debug, Default, PartialEq)]
 pub(crate) struct Left {
     pub share: f64,
+    pub fell: bool,
     pub marked: Option<u64>,
     pub shore: Option<(String, [f64; 3], u8)>,
 }
@@ -28,7 +29,8 @@ impl Room {
         let takings = breach.fights.steward.takings;
         let shore = shore.filter(|_| gone.living()).map(|space| (space.clone(), [body.x, body.y, body.z], takings));
         let marked = breach.marked.get(&id).copied();
-        breach.left.insert(owner, Left { share, marked, shore });
+        let fell = matches!(gone.standing, crate::Standing::Dead { fell: true, .. });
+        breach.left.insert(owner, Left { share, fell, marked, shore });
     }
 
     /// An account's body given back as it comes into the run again: in its shore while that still holds it (the
@@ -50,6 +52,10 @@ impl Room {
         let stage = self.stage_at(breach).0;
         let at = home.map(|(_, at)| at).or_else(|| (share <= 0.0).then_some(stage));
         self.give_share(player, share, at);
+        // One who left fallen into the dark comes back so: no revive raises them, as none would have.
+        if let Some(found) = self.players.get_mut(&player).filter(|_| share <= 0.0 && left.fell) {
+            found.standing = crate::Standing::Dead { ticks: 0, fell: true };
+        }
         let Some(breach) = self.breach.as_mut() else { return };
         if let Some(marked) = left.marked.filter(|_| share > 0.0) {
             breach.marked.insert(player, marked);

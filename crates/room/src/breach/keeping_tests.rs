@@ -214,3 +214,29 @@ fn one_who_leaves_from_a_shore_of_the_two_shores_comes_back_there() {
     assert!(room.own(back, "ben"));
     assert!(room.in_space(breach(&room), "hall-was").contains(&back), "back in what was");
 }
+
+#[test]
+fn one_who_left_fallen_into_the_dark_comes_back_so_and_no_revive_raises_them() {
+    let (mut room, players) = run(Tier::Hard, 2);
+    for (player, account) in players.iter().zip(["ada", "ben"]) {
+        assert!(room.own(*player, account));
+    }
+    let inside = at(&room, "mending", "mender");
+    for &player in &players {
+        stand_at(&mut room, player, inside);
+    }
+    room.tick();
+    let found = room.players.get_mut(&players[1]).expect("in");
+    found.fighter.health = 0.0;
+    found.fighter.action = combat::Action::Dead { elapsed: 0 };
+    found.standing = crate::Standing::Dead { ticks: 0, fell: true };
+    room.part(players[1]);
+    let back = crate::encounters::encounters_tests::hardy(&mut room);
+    assert!(room.own(back, "ben"));
+    assert!(matches!(room.players[&back].standing, crate::Standing::Dead { fell: true, .. }), "fallen still");
+    let body = room.players[&back].fighter.body;
+    stand_at(&mut room, players[0], [body.x + 1.0, body.y, body.z]);
+    super::breach_tests::hold_revive(&mut room, players[0], 1);
+    assert!(room.players[&back].fighter.dead(), "no revive raises one fallen into the dark");
+    assert_eq!(breach(&room).revives, Some(5), "and none is spent");
+}
