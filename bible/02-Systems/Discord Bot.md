@@ -244,5 +244,7 @@ built by the message law. The page only draws what the panel's API answers; ever
   the Worker at its next deploy.
 - A character's level is the one its room last saved, so it trails a level reached mid-session by up to twenty
   seconds; a character no room has kept since it was made shows no level.
-- A Worker isolate trusts a module's settings for 30 seconds after reading them, and the Gateway until the panel
-  saves.
+- A Worker isolate trusts a module's settings for 30 seconds after reading them, and the Gateway for at most five
+  minutes, sooner when the panel's save reaches it; a save whose word to the Gateway is lost waits out the five.
+- While the Gateway is down, the roles' permissions in a server's snapshot stay as last seen until the server's next
+  GUILD_CREATE or role event.

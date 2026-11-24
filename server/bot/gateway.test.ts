@@ -311,6 +311,8 @@ test('gateway core: intents Discord has not allowed yet wait an hour, said by th
 test('gateway core: the stored sequence is the last event handled, so a lost object resumes from what it had not handled', async () => {
   const w = world();
   let release = () => {};
+  // the fourth's handler runs until the test ends, then finishes, so its hold timer does not keep the run alive
+  let finishFourth = () => {};
   const base = w.deps();
   const deps: GatewayDeps = {
     ...base,
@@ -318,7 +320,7 @@ test('gateway core: the stored sequence is the last event handled, so a lost obj
       type === 'TYPING_START'
         ? new Promise<void>((resolve) => (release = resolve))
         : type === 'GUILD_MEMBER_ADD'
-          ? new Promise<void>(() => {})
+          ? new Promise<void>((resolve) => (finishFourth = resolve))
           : undefined,
   };
   const core = new GatewayCore(deps);
@@ -362,6 +364,7 @@ test('gateway core: the stored sequence is the last event handled, so a lost obj
   const next = lastSocket(w);
   await next.frame(OPCODE.HELLO, { heartbeat_interval: 40_000 });
   assert.deepEqual(next.sent.at(-1), { op: OPCODE.RESUME, d: { token: 'tok', session_id: 'sess1', seq: 3 } });
+  finishFourth();
 });
 
 test('gateway core: a session-ending close identifies afresh', async () => {
