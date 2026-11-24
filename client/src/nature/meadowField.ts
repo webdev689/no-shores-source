@@ -66,7 +66,9 @@ export function readCell(
     for (let column = 0; column < GRID; column++) {
       const [east, south] = [x * CELL_M + column * step, y * CELL_M + row * step];
       const sampled = ground.sample(east, south);
-      const share = MEADOW_BIOMES.has(ground.biome) ? grassShare(sampled, ground.cleared(east, south), ground.snowM) : 0;
+      const share = MEADOW_BIOMES.has(ground.biome)
+        ? grassShare(sampled, ground.cleared(east, south), ground.snowM)
+        : 0;
       grid.set([sampled.height, share], (row * GRID + column) * 2);
       [low, high] = [Math.min(low, sampled.height), Math.max(high, sampled.height)];
     }
