@@ -199,8 +199,9 @@ impl Room {
             MENDING => {
                 let fight = &fights.mending;
                 seen.stage = fight.stage;
+                let counting = fight.stage < 3 && breach.lost.is_none();
                 seen.stage_ticks =
-                    if fight.stage < 3 { left(clock, fight.stage_from + super::mending::STAGE_TICKS) } else { 0 };
+                    if counting { left(clock, fight.stage_from + super::mending::STAGE_TICKS) } else { 0 };
                 seen.counts = fight.fused.to_vec();
                 seen.boss = fight.mender.unwrap_or(0);
             }

@@ -96,8 +96,10 @@ pub struct Breach {
     pub lodestone: Lodestone,
     /// Each Rewritten player, by the tick they were marked.
     pub marked: BTreeMap<PlayerId, u64>,
-    /// The tick since which every living player has been down, while an encounter runs.
+    /// The tick since which every living player has been down, while an encounter runs; and when the whole company
+    /// was unwritten while one ran, which loses the attempt WIPE_TICKS on, whoever stands again meanwhile.
     pub down_since: Option<u64>,
+    pub lost: Option<u64>,
     pub foes: Vec<FighterId>,
     pub chests: BTreeSet<usize>,
     pub baked: BTreeSet<String>,
@@ -142,6 +144,7 @@ impl Room {
             lodestone: Lodestone::default(),
             marked: BTreeMap::new(),
             down_since: None,
+            lost: None,
             foes: Vec::new(),
             chests: BTreeSet::new(),
             baked: BTreeSet::from(["descent".to_owned()]),
@@ -359,11 +362,20 @@ impl Room {
         self.nav.join(vec![baked(&inside, bounds)]);
     }
 
-    /// An attempt is lost once every living player has been down for WIPE_TICKS while an encounter runs: its foes go,
-    /// it waits again with its rules as they began, the Lodestone and the marks are taken up, and every player stands
-    /// whole at its stage. Told to every player.
+    /// An attempt is lost once every living player has been down for WIPE_TICKS while an encounter runs, or
+    /// WIPE_TICKS after the whole company was unwritten (`lost`): its foes go, it waits again with its rules as they
+    /// began, the Lodestone and the marks are taken up, and every player stands whole at its stage. Told to every
+    /// player.
     fn keep_wipe(&mut self, breach: &mut Breach) {
         let running = (MENDING..=STEWARD).find(|&at| matches!(breach.phases[at], Phase::Running(_)));
+        if let Some(lost) = breach.lost {
+            match running {
+                Some(encounter) if self.clock >= lost + WIPE_TICKS => self.wipe(breach, encounter),
+                Some(_) => {}
+                None => breach.lost = None,
+            }
+            return;
+        }
         let keeps = self.players.values().any(|found| found.owner.is_some());
         let counted = |found: &&crate::players::Player| !keeps || found.owner.is_some();
         let all_down = !self.players.is_empty() && self.players.values().filter(counted).all(|found| !found.living());
@@ -396,7 +408,7 @@ impl Room {
         breach.marked.clear();
         breach.left.clear();
         breach.lodestone = Lodestone::default();
-        breach.down_since = None;
+        (breach.down_since, breach.lost) = (None, None);
         breach.revives = breach.tier.revives();
         self.tell_all(EventKind::BreachWiped, encounter as f64);
         let players: Vec<PlayerId> = self.players.keys().copied().collect();

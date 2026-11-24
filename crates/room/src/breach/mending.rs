@@ -72,6 +72,11 @@ impl Room {
                 ..Mending::default()
             };
         }
+        // Lost, the vale waits for its wipe: no stage, walker or wave comes.
+        if breach.lost.is_some() {
+            breach.fights.mending = fight;
+            return;
+        }
         let mouths = breach.plan.numbered("mending", "mouth");
         let seams: Vec<[f64; 3]> =
             SEAMS.iter().filter_map(|seam| breach.plan.socket("mending", seam)).map(|(at, _)| at).collect();
@@ -102,8 +107,9 @@ impl Room {
         let won = fight.mender.is_some_and(|id| !self.standing_foe(id)) && fight.stage == 3;
         breach.fights.mending = fight;
         if closed {
-            (breach.fights.mending.stage_from, breach.fights.mending.next_walker) = (u64::MAX / 2, u64::MAX);
-            self.unwrite_all(breach);
+            if breach.lost.is_none() {
+                self.unwrite_all(breach);
+            }
         } else if won {
             self.win_encounter(breach, MENDING);
         }

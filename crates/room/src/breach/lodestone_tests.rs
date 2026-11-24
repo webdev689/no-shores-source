@@ -39,3 +39,30 @@ fn hold_true_rests_after_it_ends_however_it_ends_a_set_down_or_a_pass_too() {
     room.tick();
     assert!(breach(&room).lodestone.held_from.is_some(), "rested, it rises again");
 }
+
+#[test]
+fn the_company_unwritten_loses_the_attempt_though_one_fallen_before_it_stands_again_in_time() {
+    let (mut room, players) = super::fights_tests::won_to(Tier::Normal, 3, CHOIR);
+    super::fights_tests::begin_at(&mut room, &players, "choir", "lectern-2");
+    // One falls; eight seconds on, the company is unwritten, and the first stands again two seconds after.
+    super::breach_tests::fell(&mut room, players[0]);
+    ticks(&mut room, 8 * 60);
+    let mut breach_box = room.breach.take().expect("run");
+    room.unwrite_all(&mut breach_box);
+    room.breach = Some(breach_box);
+    ticks(&mut room, WIPE_TICKS + 60);
+    assert_eq!(breach(&room).phases[CHOIR], Phase::Waiting, "the attempt is lost");
+    assert!(breach(&room).lodestone.needed || breach(&room).lodestone == Lodestone::default(), "its rule whole again");
+}
+
+#[test]
+fn a_vale_closed_by_its_fusions_stops_its_clock_and_loses_the_attempt() {
+    let (mut room, players) = run(Tier::Normal, 2);
+    super::fights_tests::begin_at(&mut room, &players, "mending", "mender");
+    room.breach.as_mut().expect("run").fights.mending.fused = [2, 1, 1];
+    room.tick();
+    assert!(breach(&room).lost.is_some(), "four fusions unwrite the company");
+    assert_eq!(room.breach_seen().expect("seen").stage_ticks, 0, "its clock stopped, never counting from nothing");
+    ticks(&mut room, WIPE_TICKS + 1);
+    assert_eq!(breach(&room).phases[MENDING], Phase::Waiting, "and the attempt lost");
+}

@@ -231,11 +231,15 @@ impl Room {
         }
     }
 
-    /// The whole company unwritten: every living player falls.
+    /// The whole company unwritten: every living player falls, and while an encounter runs its attempt is lost
+    /// (`keep_wipe`), so no one standing again in the moments after it saves it.
     pub(crate) fn unwrite_all(&mut self, breach: &mut Breach) {
         let living: Vec<PlayerId> =
             self.players.iter().filter(|(_, found)| found.living()).map(|(id, _)| *id).collect();
         breach.lodestone.needed = false;
+        if breach.phases.iter().any(|phase| matches!(phase, super::Phase::Running(_))) {
+            breach.lost.get_or_insert(self.clock);
+        }
         if living.is_empty() {
             return;
         }
