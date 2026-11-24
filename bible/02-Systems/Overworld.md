@@ -84,13 +84,14 @@ size from the sea camera and from the bird's-eye view. On the screen it is held 
 to be held stays at the picture's edge when off it, with an arrow pointing to it. Marks are laid farthest first, so a
 pointer picks the nearest.
 
-Each port city's harbour has a Playlist mark beside its port's (`<city>-playlist`, a list in amber, '☰' drawn in the
-game's face), at sea within the port's sight and over the island's side when docking there, open whether or not the
-city's social space is. Over the side the view is framed on the nodes alone (`landfallMarks`), so going ashore far from
-the harbour never stretches the view to show it. At sea it is laid beside
-the port's mark, as far apart as the two are drawn, to its right or, at the picture's right edge, its left, never
-thinned away by it, and shown while its port's mark is. Choosing it opens the Playlist screen ([[Interface]], "The Playlist") rather than sailing there
-or landing.
+Each port city's harbour has a Playlist mark (`<city>-playlist`, a list in amber, '☰' drawn in the game's face), at
+sea within the port's sight and over its island's side however the island is reached, docking or going ashore
+([[The Playlist Shows Over Its Island, Not Only at Sea]]), open whether or not the city's social space is. It is laid
+beside its city's mark, as far apart as the two are drawn, to its right or, at the picture's right edge, its left: at
+sea its port's, never thinned away by it and shown while it is; over the side its social space's, or on its harbour
+where that is not shown. Over the side the view is framed on the nodes alone (`landfallMarks`), so going ashore far
+from the harbour never stretches the view to show it: the Playlist waits at the picture's edge. Choosing it opens the
+Playlist screen ([[Interface]], "The Playlist") rather than sailing there or landing.
 
 A locked node's mark ([[World Map]], "Seen whole, reached by nodes") is grey, with a lock for its glyph and "Locked"
 for its distance. A click on it chooses nothing and the view's line says "<name> is locked" (`landingChoice`), so no
@@ -119,6 +120,8 @@ the climb reads as one steady zoom.
 ## Limits
 
 - The sea room judges a voyage's course: it refuses one that crosses a continent's coast ([[Server]], "The sea").
-- The bird's-eye view stands far above any cloud deck; only the sea camera keeps under it.
+- The bird's-eye view stands far above any cloud deck, and no deck is drawn under it: it sees the island through the
+  weather's rain and mist along the part of its line under the deck alone ([[Sky]], "Seen from over the deck"). Only
+  the sea camera keeps under the deck.
 - The mask is coarse: where a route hugs the coast it can run within a cell of real land.
 - The tuning numbers are Claude's choices, set by playing ([[The World as Claude Shapes It]]).
