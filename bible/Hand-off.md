@@ -201,8 +201,7 @@ The decisions in [[Open Questions]] are not repeated here.
   holds the heroic raid again, the dev page's bots now lose the plain raid's stores in its third wave, and the road's
   test player, facing north while foes struck from its sides, fell before a kill (it now turns to the nearest foe).
   A lone player is felled about as fast as before (`measure_blows`). Tested offline; not played.
-- **Patrol chests, the same chests in every dungeon, and searchable containers** (the pull request of `ccr-6b76c742-peor8g`, a draft for the owner's
-  yes). The owner's ask ([[Patrols and Dungeons Hold Chests, and Their Containers May Be Searched]]), built on "Take
+- **Patrol chests, the same chests in every dungeon, and searchable containers** (#192, a draft for the owner's yes). The owner's ask ([[Patrols and Dungeons Hold Chests, and Their Containers May Be Searched]]), built on "Take
   autonomy", every call in [[Chests and Searchable Containers as Claude Builds Them]] after Destiny 1's loot chests. A
   patrol's layout marks 12 to 24 chest places tucked against something tall (`layout::chests`); its room stands one
   chest for every five, two to four, each moving to another place every 5 minutes, staggered; every dungeon (a
@@ -215,10 +214,10 @@ The decisions in [[Open Questions]] are not repeated here.
   searchable container, the feed's "Chest" or "Searched the wardrobe", and plays alone as online. A read-only audit's
   findings were each tested first and fixed. Tested offline: `cargo xtask check` on its head (the commit named in the
   pull request); in the running game headless with no GPU, a chest opened (21 Aurem, 4 Brineglass) and a crate
-  searched (5 Aurem, 1 Brineglass) by holding E; pictured through the renderer (the pull request has them). Not yet:
-  played by hand, a real GPU, a deployed room, the feed's lines in a live room. For the owner: the bake may now read
-  the dungeon crate's families (`crates.rs`'s list for `bake` gains `dungeon`), and whether a dungeon's chest should
-  look as the patrol's event chest rather than the cache's.
+  searched (5 Aurem, 1 Brineglass) by holding E; pictured through the renderer (sent to the owner with the session's
+  report, not in git). Not yet: played by hand, a real GPU, a deployed room, the feed's lines in a live room. For the
+  owner: the bake may now read the dungeon crate's families (`crates.rs`'s list for `bake` gains `dungeon`), and
+  whether a dungeon's chest should look as the patrol's event chest rather than the cache's.
 - **Revives, respawns near the fall or at a checkpoint, and logging back in where the player left** (#184, a draft for
   the owner's yes). The owner's three asks ([[Fallen Players Are Revived as in Destiny]],
   [[Activities Keep Checkpoints, and Patrol Zones Respawn the Player Near Where They Fell]],
