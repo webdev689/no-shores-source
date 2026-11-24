@@ -15,6 +15,17 @@ test('the prompt shows the deed within reach on its keycap, low in the middle, a
   assert.equal(prompt.node(view), null);
 });
 
+test('a refusal, where E does nothing, shows its words without a key', () => {
+  const prompt = new UsePrompt();
+  const view = { width: 1280, height: 720 };
+  prompt.show('A structure stands there.');
+  const keyed = JSON.stringify(prompt.node(view));
+  prompt.show('A structure stands there.', null, true);
+  const idle = JSON.stringify(prompt.node(view));
+  assert.ok(idle.includes('A structure stands there.'));
+  assert.ok(keyed.includes('minWidth') && !idle.includes('minWidth'), 'no keycap');
+});
+
 test("a deed held traces a ring round its keycap's edge, clockwise from its top's middle, each texel once", () => {
   const box = { x: 0, y: 0, width: 40, height: 20 };
   const area = (share: number) => traced(box, 2, share).reduce((sum, part) => sum + part.width * part.height, 0);

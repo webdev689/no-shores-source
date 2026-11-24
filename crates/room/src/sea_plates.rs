@@ -27,6 +27,6 @@ impl Sea {
         let held = self.harbour.characters.get(&player);
         let level = held.map_or_else(|| gear::Character::starting().level(), gear::Character::level);
         let name = self.harbour.names.get(&player).cloned().unwrap_or_default();
-        Some(Plate { name, level, menu: false })
+        Some(Plate { name, level, menu: false, tag: String::new() })
     }
 }

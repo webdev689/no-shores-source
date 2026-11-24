@@ -90,7 +90,7 @@ test('one room at a time holds a character; a claim waits for another to let go,
 
   // A second room waits three seconds for the first to let go, then takes the character anyway.
   const second = await kept.claim(token, 'room-b:1');
-  assert.deepEqual(second, { account: first.account, body: '{"xp":5}', from: 'room-a', name: null });
+  assert.deepEqual(second, { account: first.account, body: '{"xp":5}', from: 'room-a', name: null, tag: null });
   assert.equal(
     waited.reduce((sum, millis) => sum + millis, 0),
     3000,
@@ -106,6 +106,7 @@ test('one room at a time holds a character; a claim waits for another to let go,
     body: '{"xp":9}',
     from: 'room-b',
     name: null,
+    tag: null,
   });
   assert.deepEqual(waited, []);
 
@@ -116,6 +117,7 @@ test('one room at a time holds a character; a claim waits for another to let go,
     body: '{"xp":9}',
     from: 'room-a',
     name: null,
+    tag: null,
   });
   assert.deepEqual(waited, []);
 

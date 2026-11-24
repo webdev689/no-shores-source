@@ -49,6 +49,9 @@ test('a node is landed at from the sea at its seas, its ship lying off the node�
   assert.equal(arrives('node-tidewall', 'sea', OFF_COAST, null), false, 'a node the index does not list');
   assert.equal(arrives('node-sunspire-social', 'sea--abyss', OFF_COAST, reach([], true)), true, 'one room each tier');
   assert.equal(arrives('node-sunspire-social', 'sea', FAR_OFF, reach([], true)), false);
+  const plot = 'node-gull-cove-outpost--guild-0a1b2c3d4e5f60718293a4b5c6d7e8f9';
+  for (const sea of ['sea--elite', 'sea--abyss'])
+    assert.equal(arrives(plot, sea, OFF_COAST, reach([], true)), true, sea);
   // The page's own measure off a coast, and every landfall it offers within the room's reach.
   for (const ship of [OFF_COAST, FAR_OFF, [1_050_000, 1_050_000], [900_000, 1_250_000]] as const)
     assert.equal(toCoast(ship, COAST), coastDistance(ship, COAST), String(ship));
@@ -138,6 +141,11 @@ test('a node’s reach reads from the bake’s index, and a ship’s place from 
     gatedFrom: ['gullwing-vale'],
   });
   assert.equal(reachOf(index, continents, 'overlook-social')?.social, true);
+  assert.equal(
+    reachOf([{ id: 'gull-cove', kind: 'outpost', continent: 'continent-1' }], continents, 'gull-cove')?.social,
+    true,
+    'an outpost site',
+  );
   assert.equal(reachOf(index, continents, 'nowhere'), null);
   assert.deepEqual(shipOf('{"xp":1,"ship_at":[5000,6000]}'), [5000, 6000]);
   for (const body of [null, '{"xp":1}', '{"ship_at":null}', '{"ship_at":["a",1]}', 'not a character'])
@@ -153,6 +161,8 @@ function roomOf(): KeptRoom & { readonly held: Map<number, string> } {
     restoreCharacter: (player, kept) => held.has(player) && Boolean(held.set(player, kept)),
     own: (player) => held.has(player),
     name: (player) => held.has(player),
+    tag: (player) => held.has(player),
+    guild: (player) => held.has(player),
     shut: () => '',
   };
 }
@@ -205,4 +215,37 @@ test('a node’s room lets go a character that came by no way leading there, unl
   await made.ask('POST', '/v1/social/company/accept', { name: 'Ada' }, tokens['Ben']);
   assert.equal(await tidewall.signIn(3, tokens['Ada'] ?? '', now, here), true, 'the Roster’s join');
   assert.equal(far.held.get(3), '{"start":1}', 'with her own character');
+});
+
+test('a player walks between an outpost site’s wild ground and a guild’s plot on it, and no farther', () => {
+  const plot = 'node-oakfast-landing--guild-0a1b2c3d4e5f60718293a4b5c6d7e8f9';
+  assert.equal(arrives(plot, 'node-oakfast-landing', null, reach()), true);
+  assert.equal(arrives('node-oakfast-landing', plot, null, reach()), true);
+  assert.equal(
+    arrives(plot, 'node-oakfast-landing--guild-99999999999999999999999999999999', null, reach()),
+    true,
+    'another guild’s, then',
+  );
+  assert.equal(arrives(plot, 'node-tidewall', null, reach()), false, 'from another node');
+  assert.equal(arrives(plot, 'node-oakfast-landing--elite', null, reach()), false, 'from another tier');
+});
+
+test('a guild dungeon’s run is entered from its guild’s outpost alone, and left back to it at the gate', () => {
+  const key = '0a1b2c3d4e5f60718293a4b5c6d7e8f9';
+  const plot = `node-oakfast-landing--guild-${key}`;
+  for (const run of [`${plot}--run-a1b2c3d4`, `${plot}--elite--run-a1b2c3d4`, `${plot}--abyss--run-a1b2c3d4`]) {
+    assert.equal(arrives(run, plot, null, reach()), true, `into ${run}`);
+    assert.equal(arrives(plot, run, null, reach()), true, `out of ${run}`);
+    assert.equal(cameOutOf(plot, run, 0), true, `before the gate out of ${run}`);
+    assert.equal(cameOutOf(plot, run, 1), false, 'by no other entrance');
+    assert.equal(arrives(run, 'node-oakfast-landing', null, reach()), false, 'never from the wild site');
+    assert.equal(arrives('node-oakfast-landing', run, null, reach()), false, 'nor out onto it');
+    const other = `node-oakfast-landing--guild-${'9'.repeat(32)}`;
+    assert.equal(arrives(run, other, null, reach()), false, 'nor from another guild’s outpost');
+    assert.equal(arrives(other, run, null, reach()), false, 'nor out to it');
+    assert.equal(cameOutOf(other, run, 0), false);
+    assert.equal(arrives(run, 'node-oakfast-landing--elite', null, reach()), false, 'nor from the site at a tier');
+    assert.equal(arrives(run, 'sea', OFF_COAST, reach()), false, 'nor from the sea');
+  }
+  assert.equal(cameOutOf(plot, plot, 0), false, 'the outpost itself is no run');
 });

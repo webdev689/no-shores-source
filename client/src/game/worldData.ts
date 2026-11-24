@@ -2,7 +2,7 @@ import { ruinedName } from '../ruinedName.ts';
 import { type Post, type StationInfo, type Ways, socialLocked } from './nodes.ts';
 
 /** A node's kind, as the edits files and the plans name it. */
-export type NodeKind = 'social' | 'patrol' | 'mission' | 'dungeon' | 'boss';
+export type NodeKind = 'social' | 'patrol' | 'mission' | 'dungeon' | 'boss' | 'outpost';
 
 type Point = readonly [number, number];
 

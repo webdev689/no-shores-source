@@ -30,3 +30,5 @@ Asked whether Journal and Guild show before they are built, the owner chose: "Sh
 
 Links: [[Interface]], [[The Gear Screens Follow Destiny, on Enhanced Plus]],
 [[Voyages Choose a Difficulty, Overlook Lives Like the Tower]].
+
+Replaced in part by [[Guilds Gain Banners, Levels, Bounties and Outposts]]: the Guild tab is built, no longer Later.

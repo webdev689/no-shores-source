@@ -65,6 +65,7 @@ export const KIND_WORDS = {
   mission: 'Mission',
   dungeon: 'Dungeon',
   boss: 'World boss',
+  outpost: 'Outpost site',
   port: 'Port',
   playlist: 'Elite and Abyss dungeons',
   hostile: 'Hostile',

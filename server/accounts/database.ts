@@ -8,6 +8,8 @@ export interface Statement {
 
 export interface Db {
   prepare(sql: string): Statement;
+  /** Runs the statements in order as one transaction: every write lands, or none does. */
+  batch(statements: Statement[]): Promise<readonly { readonly meta: { readonly changes: number } }[]>;
 }
 
 /** How long a session lasts unseen when its account has a way back in, a username or Discord; and how long a guest

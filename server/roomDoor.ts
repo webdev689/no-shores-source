@@ -153,6 +153,10 @@ export interface RoomDoor {
   own(player: number, account: string): boolean;
   /** Names a player by their account's username, for the plate others read over their head; false on no land. */
   name(player: number, name: string): boolean;
+  /** Gives a player their guild's tag for their plate, or takes it with none (''); false on no land. */
+  tag(player: number, tag: string): boolean;
+  /** Tells the room a player's guild as the accounts tell it (`guildWeeks.ts` `guildTold`), as text; '' for none. */
+  guild(player: number, told: string): boolean;
   /** At sea, the name of the water a player's ship lies in; null off the sea or before it puts to sea. */
   water(player: number): string | null;
   /** Holds a player's inputs, or lets them play: held, each is taken in its order and played as standing still. */
@@ -201,6 +205,35 @@ export interface RoomDoor {
   standBlock(block: CourseBlock): boolean;
   /** A page alone: takes a block from the course at once, as a way opening; false when the room holds no such block. */
   takeBlock(block: CourseBlock): boolean;
+  /** Makes the open node's room a guild's outpost: its guild's key, its muster ground's middle, and its name, which
+   *  with when it opened begins the accounts' id of each errand, so no two openings share one; false off land. */
+  outpost(key: string, muster: readonly [number, number], room: string): boolean;
+  /** The errands the outpost's players' asks hold for the host since it last took them (`outpostHost.ts`). */
+  outpostErrands(): Errand[];
+  /** The accounts' answer to an errand: how many they moved, used or gave, or the horn's answer (its tier, or 0, -1
+   *  or -2 for why it did not sound); null when they could not be reached, and the errand is given back whole. False
+   *  for no such errand. */
+  outpostAnswered(id: number, answer: number | null): boolean;
+  /** Says a player is leaving the outpost while their errands settle: their account joining again takes it over. */
+  outpostParting(player: number): boolean;
+  /** Says the host stood the outpost's plot anew, which the snapshot counts. */
+  outpostStood(): boolean;
+  /** Says where the plot's Delve Gate stands, as x east, y south and the way out from it (radians clockwise from
+   *  north), or null for none: one out of the guild dungeon joins before it as entrance 0 (`joinAt`). */
+  outpostGate(gate: readonly [number, number, number] | null): boolean;
+}
+
+/** An errand an outpost's room holds for its host, as `room-wasm`'s outpost door writes it. */
+export interface Errand {
+  readonly id: number;
+  /** The accounts' id for it, which the character carries until it is answered. */
+  readonly rid: string;
+  readonly player: number;
+  readonly account: string;
+  readonly kind: 'deposit' | 'deliver' | 'take' | 'horn' | 'changed';
+  readonly amount?: number;
+  readonly structure?: number;
+  readonly stuff?: 'timber' | 'canvas' | 'iron' | 'heartwood' | 'island';
 }
 
 interface RoomExports {
@@ -254,6 +287,8 @@ interface RoomExports {
   room_restore_character(player: number, address: number, length: number): number;
   room_own(player: number, address: number, length: number): number;
   room_name(player: number, address: number, length: number): number;
+  room_tag(player: number, address: number, length: number): number;
+  room_guild(player: number, address: number, length: number): number;
   room_water(player: number): bigint;
   room_hold(player: number, held: number): number;
   room_keep_characters(): number;
@@ -273,6 +308,12 @@ interface RoomExports {
   room_story_post(crew: number, x: number, y: number, facing: number): number;
   room_stand_block(minX: number, minY: number, maxX: number, maxY: number, top: number, bottom: number): number;
   room_take_block(minX: number, minY: number, maxX: number, maxY: number, top: number, bottom: number): number;
+  room_outpost(address: number, length: number): number;
+  room_outpost_errands(): bigint;
+  room_outpost_answered(id: number, answer: number): number;
+  room_outpost_stood(): number;
+  room_outpost_parting(player: number): number;
+  room_outpost_gate(x: number, y: number, facing: number): number;
 }
 
 /** A seed's low and high 32 bits, from its decimal string. */
@@ -416,6 +457,8 @@ export function startRoomDoor(module: WebAssembly.Module): RoomDoor {
       openWith((address, length) => exports.room_restore_character(player, address, length), kept),
     own: (player, account) => openWith((address, length) => exports.room_own(player, address, length), account),
     name: (player, name) => openWith((address, length) => exports.room_name(player, address, length), name),
+    tag: (player, tag) => openWith((address, length) => exports.room_tag(player, address, length), tag),
+    guild: (player, told) => openWith((address, length) => exports.room_guild(player, address, length), told),
     water: (player) => {
       const bytes = take(exports.room_water(player));
       return bytes.length === 0 ? null : new TextDecoder().decode(bytes);
@@ -450,5 +493,16 @@ export function startRoomDoor(module: WebAssembly.Module): RoomDoor {
       exports.room_stand_block(minX, minY, maxX, maxY, top, bottom) === 1,
     takeBlock: ({ minX, minY, maxX, maxY, top, bottom }) =>
       exports.room_take_block(minX, minY, maxX, maxY, top, bottom) === 1,
+    outpost: (key, muster, room) =>
+      openWith(exports.room_outpost, JSON.stringify({ key, muster, ids: `${room}:${Date.now()}` })),
+    outpostErrands: () => JSON.parse(new TextDecoder().decode(take(exports.room_outpost_errands()))) as Errand[],
+    outpostAnswered: (id, answer) =>
+      exports.room_outpost_answered(
+        id >>> 0,
+        answer === null ? -0x8000_0000 : Math.max(-0x7fff_ffff, Math.min(answer, 0x7fff_ffff)),
+      ) === 1,
+    outpostStood: () => exports.room_outpost_stood() === 1,
+    outpostParting: (player) => exports.room_outpost_parting(player) === 1,
+    outpostGate: (gate) => exports.room_outpost_gate(...(gate ?? [Number.NaN, 0, 0])) === 1,
   };
 }

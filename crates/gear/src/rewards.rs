@@ -4,6 +4,7 @@
 
 use crate::character::{At, CARRIED_MOST, Character, Stuff, VAULT_MOST, Vestige};
 use crate::dice::Dice;
+use crate::guild::Boons;
 use crate::item::{Item, NAMED_LEVEL};
 use crate::kinds::Slot;
 use crate::rarity::Rarity;
@@ -98,8 +99,8 @@ const MINIBOSS: u8 = 4;
 impl Character {
     /// Rewards a kill of a foe of this kind and rank (1 Minor to 5 Boss) this player had a hand in: the XP, to them
     /// and to the weapon whose blow last landed (`weapon`) and their armour, to their worn Art, and as reputation to
-    /// the faction pledged while its cape is worn; and the Aurem. A harder voyage pays more of each. What it drops is
-    /// `loot_kill`'s.
+    /// the faction pledged while its cape is worn; and the Aurem. A harder voyage pays more of each, and a guild's
+    /// outposts more again (`guild::Boons`). What it drops is `loot_kill`'s.
     pub fn reward_kill(
         &mut self,
         foe: Foe,
@@ -163,8 +164,13 @@ impl Character {
             let raised = libm::round(f64::from(at_level(amount, level)) * difficulty.reward());
             u32::try_from(raised as u64).unwrap_or(u32::MAX)
         };
-        let (xp, aurem) = (times(xp), times(aurem));
-        self.earn_play_xp(xp, weapon);
+        let (base, aurem) = (times(xp), times(aurem));
+        let boons = self.boons;
+        let (xp, aurem) = (Boons::more(base, boons.xp), Boons::more(aurem, boons.aurem));
+        // Reputation grows by the XP before the guild's XP boon: its own boon is applied as it is earned.
+        self.earn_art_xp(xp);
+        self.earn_reputation(base);
+        self.earn_xp(xp, weapon);
         self.materials.add_aurem(aurem);
         Reward { xp, aurem }
     }
