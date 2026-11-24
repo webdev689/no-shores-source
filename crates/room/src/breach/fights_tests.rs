@@ -1,6 +1,8 @@
-//! The Drowned Vale's encounters played through their rules: the Mending's walkers, stages and Mender; the Choir's
-//! rounds, font and Scrivener; the Unlit Ways' Watchers; the Two Shores' rifts and Keepers; and the Steward's takings
-//! and its laying bare.
+//! The Drowned Vale's encounters played through their rules: the Mending's walkers (and the Seam's, whatever their
+//! waves have stood), stages and Mender; the Choir's rounds, their waves, its bells, font and Scrivener; the Unlit
+//! Ways' Watchers, which no blow harms, and their win by the whole living company; the Two Shores' rifts and Keepers;
+//! the Steward's takings and its laying bare; the two great foes' phases; Hard's heavier blows; and every great foe
+//! and Watcher standing past a full cap.
 
 use super::breach_tests::{at, breach, fell, run, stand_at, told};
 use super::*;
@@ -460,4 +462,40 @@ fn at_hard_a_foes_blow_on_a_player_weighs_a_quarter_more_in_the_run_and_its_waki
     room.tick();
     let foe = *room.breach_gate.as_ref().expect("gate").foes.first().expect("a Bulwark sent");
     assert_eq!(room.modded_blow(&super::rewards_tests::swing(foe), players[0]), 1.25, "in a Hard company's Waking");
+}
+
+#[test]
+fn every_great_foe_and_watcher_stands_past_a_full_cap() {
+    let (mut room, players) = won_to(Tier::Normal, 2, CHOIR);
+    begin_at(&mut room, &players, "choir", "lectern-2");
+    filled(&mut room, "choir");
+    let mut breach_box = room.breach.take().expect("run");
+    let mut fight = std::mem::take(&mut breach_box.fights.choir);
+    room.wake_scrivener(&mut breach_box, &mut fight);
+    assert!(fight.scrivener.is_some(), "the Scrivener stands");
+    breach_box.fights.choir = fight;
+    room.breach = Some(breach_box);
+    let (mut room, players) = won_to(Tier::Normal, 1, WAYS);
+    put_at(&mut room, players[0], "ways", "checkpoint");
+    room.tick();
+    filled(&mut room, "ways");
+    begin_at(&mut room, &players, "ways", "heart");
+    assert_eq!(breach(&room).fights.ways.watchers.len(), 6, "every Watcher stands");
+    let (mut room, players) = won_to(Tier::Normal, 2, SHORES);
+    put_at(&mut room, players[0], "hall", "checkpoint");
+    room.tick();
+    filled(&mut room, "hall");
+    begin_at(&mut room, &players, "hall", "plinth");
+    let warden = breach(&room).fights.shores.warden.expect("the Warden stands");
+    kill(&mut room, warden);
+    room.tick();
+    put_at(&mut room, players[1], "hall-was", "arrival");
+    room.tick();
+    assert!(breach(&room).fights.shores.keepers[0].is_some(), "its Keeper stands");
+    let (mut room, players) = won_to(Tier::Normal, 1, STEWARD);
+    put_at(&mut room, players[0], "court", "checkpoint");
+    room.tick();
+    filled(&mut room, "court");
+    begin_at(&mut room, &players, "court", "chest");
+    assert!(breach(&room).fights.steward.boss.is_some(), "the Steward stands");
 }
