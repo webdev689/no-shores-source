@@ -96,6 +96,9 @@ decision, made in the same change as its entry here.
 | `site/src/page.ts`, `sitePlugin.ts` | A page made whole: the bar and the foot laid in, its words, links and pictures filled; and the Vite plugin that does it at serve and at build and writes the pictures into the build |
 | `site/src/art/` | The site's pictures, drawn at build time: the sheet and its PNG writer, the scenes' parts, the scenes, and the owner's logo and the tab's icon from the game's own pixel picture |
 | `site/src/site.css` | The site's one stylesheet: the night sea, lantern gold, framed pictures and Pixelify Sans, bundled |
+| `server/bot/` | The [[Discord Bot]]'s own Worker over its own D1: Discord's signed interactions, the panel's Discord sign-in and API, the Durable Object holding Discord's Gateway, the one door to Discord's REST, uploaded pictures with their metadata taken out, the registry that routes events, commands, presses, tables, acts and the clock to modules, and the database's migrations |
+| `server/bot/law/` | The bot's law, platform-neutral so the website's panel imports it too: access levels from Discord permissions, the settings law, every module's declared settings, tables and acts, and the message law that builds what Discord is sent |
+| `server/bot/modules/` | The bot's modules, one file each, and what a module is (`module.ts`) |
 | `crates/` | Every Rust crate, one folder each, named after its crate |
 | `crates/world` | The world's structure: the layout of continents and isles, its rules and exact geometry ([[World Map]]) |
 | `crates/world/src/waters.rs`, `traffic.rs`, `traffic_routes.rs`, `ports.rs` | The sea's nine waters, their holders, names and borders; the three port cities; and the friendly traffic's routes and ships ([[World Map]], "Waters" and "Traffic") |
