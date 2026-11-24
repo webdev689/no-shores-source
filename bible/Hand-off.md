@@ -230,6 +230,21 @@ The decisions in [[Open Questions]] are not repeated here.
     renderer in the Saltgrass Downs. Not seen on a real GPU or played: the meadow's cost there is unmeasured (some
     180,000 tufts on open grass), and so is the boxing's in WebAssembly.
 
+- **Revives, respawns near the fall or at a checkpoint, and logging back in where the player left** (#184, a draft for
+  the owner's yes). The owner's three asks ([[Fallen Players Are Revived as in Destiny]],
+  [[Activities Keep Checkpoints, and Patrol Zones Respawn the Player Near Where They Fell]],
+  [[A Player Logs Back In Where They Left the Overworld or a Social Space]]), built on "take autonomy", every call in
+  [[Revives, Respawns and Relogs as Claude Shapes Them]] with the Destiny research behind it ([[Revives]], [[Accounts]],
+  "Where a player logs back in"). A fallen player lies until an ally holds Use 2 s beside them or they press Respawn
+  after 4 s; a respawn stands them at the activity's checkpoint, near the fall in a patrol zone (43 m at most on
+  Saltmere's three zones, where the landing stood up to 1.5 km off), else at a spawn; the Court's cells while its Boss
+  stands and an Abyss run with no revive left are darkness zones; a company all down while the Court's Boss stands falls
+  back to its checkpoint. Only a dungeon run holds the ground its bands' falls won. The character keeps its last sea or
+  social-space place, `/v1/me` says it, and the page resumes there after the title, the social room standing the player
+  where they left only on that `?relog=1` join (offline from the browser, the spot across but not its height). Tested
+  offline: the full check at the PR's head (the commit named there), the rules' tests on Saltmere's real zones, the
+  agreement runs natively and in WebAssembly. Not yet: played by hand, two players reviving in a deployed room, a real
+  GPU. For the owner: [[Open Questions]], "Revives, respawns and relogs".
 - **The key strip, the leave held and Settings in tabs** (#181), merged on the owner's "Merge and deploy", which
   deploys the page (the rooms' code is untouched). The owner's three asks
   ([[The Key Strip Is a Compact Panel, a Held Key Leaves, and Settings Has Tabs]], Claude's calls listed there): the

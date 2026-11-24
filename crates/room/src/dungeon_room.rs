@@ -153,7 +153,7 @@ impl Room {
         room.world_seed = node_seed(name);
         room.foes_most = NODE_FOES_MOST;
         room.run = run;
-        room.stand_dungeon_garrison(dungeon, levels, end);
+        let bands = room.stand_dungeon_garrison(dungeon, levels, end);
         if let Some(plan) = plan {
             room.lay_encounters(plan, levels);
             let end = dungeon.rooms.get(dungeon.end()).map(|end| end.cells.clone()).unwrap_or_default();
@@ -162,13 +162,20 @@ impl Room {
                 encounters.reckoning_cells = crate::encounters::court::reckoning_reach(dungeon);
             }
         }
+        room.lay_dungeon_checkpoints(dungeon, &bands);
         Some(room)
     }
 
     /// Posts the end foe alone at the end room's middle, facing the way in, and a band drawn from the dungeon garrison
     /// in each room `band_rooms` names, each foe on a cell nearest its room's middle facing out from it; then girds and
-    /// stands them as any garrison, and lays the cache by the end foe.
-    fn stand_dungeon_garrison(&mut self, dungeon: &Dungeon, levels: Option<(u8, u8)>, (number, rank): (u8, Rank)) {
+    /// stands them as any garrison, and lays the cache by the end foe. Answers each band's post by its number, with its
+    /// room.
+    fn stand_dungeon_garrison(
+        &mut self,
+        dungeon: &Dungeon,
+        levels: Option<(u8, u8)>,
+        (number, rank): (u8, Rank),
+    ) -> Vec<(usize, usize)> {
         let (arrival, _) = dungeon.arrival();
         let end = dungeon.end();
         let reeve = self.placed(dungeon, end, 1).first().copied().unwrap_or([arrival[0], arrival[1], 0.0]);
@@ -188,6 +195,7 @@ impl Room {
             arrival: false,
         });
         let mut draws = draws_of(self.world_seed);
+        let mut bands = Vec::new();
         for room in band_rooms(dungeon, self.foes_most) {
             let found = &dungeon.rooms[room];
             let middle = [
@@ -203,6 +211,7 @@ impl Room {
                 })
                 .collect();
             let at = places.first().copied().unwrap_or([middle[0], middle[1], 0.0]);
+            bands.push((self.garrison.len(), room));
             self.garrison.push(Post {
                 at,
                 members,
@@ -220,6 +229,7 @@ impl Room {
         }
         self.gird_and_stand(levels);
         self.cache = cache_by(&self.floor, dungeon, reeve);
+        bands
     }
 
     /// Where `count` foes stand in a room: its free cells nearest its middle, each on the navmesh.

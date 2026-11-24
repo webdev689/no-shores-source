@@ -121,6 +121,7 @@ interface Placed {
   readonly resources?: readonly { readonly at: Point; readonly holds?: string }[];
   readonly foes?: readonly Point[];
   readonly places?: readonly NodePlace[];
+  readonly paths?: readonly (readonly Point[])[];
 }
 
 /** The drawn nodes with each laid node's section, spawns and places in place of the ring it was drawn with, its
@@ -143,7 +144,8 @@ export function laidNodes<Node extends Placed>(drawn: readonly Node[], layouts: 
     const foes = laid.sites.flatMap(({ kind, at, holds }) =>
       kind === 'foes' && (holds === undefined || cavern(holds)) ? [at] : [],
     );
-    return { ...node, ring: laid.ring, spawns: laid.spawns, centre, resources, foes, places: placesOf(laid) };
+    const paths = laid.paths.map((path) => path.points);
+    return { ...node, ring: laid.ring, spawns: laid.spawns, centre, resources, foes, places: placesOf(laid), paths };
   });
 }
 

@@ -97,8 +97,10 @@ on Cloudflare.
   character left a room within the last two minutes: then with the health and charges it left with, fallen if it
   left fallen (`left.rs`, [[The Audit's Leftovers Are Fixed as Claude Suggested]]). In
   a node's room they stand on the ground at the node's spawns in turn, the first player at the first spawn, the next
-  at the next; elsewhere at the room's spawn, on the top of the block under it (or the ground where none stands), and
-  a respawn stands them there too. A patrol's room may instead stand a player 1.5 m before one of its entrances'
+  at the next; elsewhere at the room's spawn, on the top of the block under it (or the ground where none stands). A
+  social space's room joined with `?relog=1`, logging back in, stands a player whose character last stood in it
+  where they left it ([[Accounts]], "Where a player logs back in"). Where a respawn stands a player is
+  [[Revives]]'s. A patrol's room may instead stand a player 1.5 m before one of its entrances'
   doors, facing away from it, as they come out of that entrance's dungeon, and stand them at the next spawn after all
   (`stand_at_spawn`), as an ordinary join, when its host learns they did not. A room holds 16 players; past that, it
   turns the next away.
@@ -189,12 +191,16 @@ on Cloudflare.
   how they fight (their trim, or the arms their gear allows) is sent at once, and before the snapshot, so their
   browser predicts them by it from that snapshot on. Only the Test Ground's room hands out gear to try the loop
   with.
-- **The dead** stand again, whole and with all three healing charges, after four seconds, at the spawn nearest where
-  they fell (in a dungeon, at its way in, facing into the room), and the foes leave them be for three more unless they
-  strike first (a blow, a shot or a spell); a dead foe is gone after ten. One standing again past a node's section, as
-  they ask, stands with all three too. In an Abyss run each stand takes one of the company's five revives, and the
-  fallen stay down once none is left; when every player in it is down at once and it was never won, the run starts over
-  (`abyss.rs`).
+- **The dead** lie where they fell until an ally revives them, holding Use beside them 2 s, or until they ask to respawn
+  once they have lain four seconds; then they stand whole with all three healing charges, the foes leaving them be for
+  three more unless they strike first (a blow, a shot or a spell) ([[Revives]]). A respawn stands them at their
+  activity's checkpoint, near where they fell in a patrol zone or a world boss's node, else at the spawn nearest (in a
+  dungeon before any checkpoint, at its way in, facing into the room); a room with no section stands its fallen again
+  unasked. A body lying in an Elite Dungeon's Court while its Boss stands, or anywhere in an Abyss run with no revive
+  left, takes no ask to respawn; a company all down while the Court's Boss stands, below Abyss, falls back to its
+  checkpoint as the Court starts over, once the last of them has lain four seconds. A dead foe is gone after ten
+  seconds. In an Abyss run each stand takes one of the company's five revives, and the fallen stay down once none is
+  left; when every player in it is down at once and it was never won, the run starts over (`abyss.rs`).
 - **A run's room** opens from a JSON ask (`room_open_run`): its dungeon (a patrol's by its number, an Elite Dungeon
   by its place, or a sea island's by its seed, style and continent), its tier and the Unix minute it opens, as
   `Room::dungeon_run` stands it ([[Dungeons]]); an ask no rule lays opens nothing. A patrol's dungeon's run also takes
@@ -219,14 +225,16 @@ on Cloudflare.
 - **The section:** after each player's inputs a node's room judges their body against the node's section ([[Reach]]):
   inside, warned with a count, or dead; in a social space a fall of 6 m or more from where the feet last stood kills.
   A body dead past the section is stepped with no controls of its own: its inputs are taken, and it falls on and lies
-  where it lands. An input that asks to respawn, once the section allows it, stands the body on the ground at the spawn
-  nearest where it died, a fall measured from there. A room with no section never judges.
+  where it lands. An input that asks to respawn, once the section allows it, stands the body where a respawn stands it
+  ([[Revives]]), a fall measured from there. A room with no section never judges.
 - **What it sees:** every player's fighter, where they stand with the section, and the number of their last input it
   took; every foe; the shots in flight, each with the ticks it has flown, and every gun's ball that stopped since it
   was last asked as its last segment, to where it stopped, with the point it left its gun, so every screen ends its
   tracer there however many ticks the room ran first; and what happened in the fight since it was last asked (a
   swing's blows with their stroke): hits, blocks, parries, guard breaks, dodges, staggers, deaths, players standing
-  again, feints, foes arriving, and a player's drink with the health it gave back. The same on every machine.
+  again or revived, feints, foes arriving, a player's drink with the health it gave back, a checkpoint won and a
+  company fallen back to it; whether it is a darkness zone; and each fallen player being revived. The same on every
+  machine.
 
 ## The sea
 
@@ -409,11 +417,11 @@ an older reader skips them.
 
 | Message | From | Holds |
 |---|---|---|
-| Input | A browser, on land | Its number, one tick's controls and the fight's buttons (with a ranged weapon's aim, the point an aimed shot is laid on and a drink asked), the look of the player's figure on their own screen (its move, frame and facing), their dress when it changed, what their hands hold, the room tick their screen showed, a foe asked for (0 none, 255 every foe sent away) with its type and rank (a page from before the roster asks by role alone, 1 to 5, taken as the Grey Tithe's type in that role, a foe, a Major or its first rank), its level and the element of its shield, whether they ask to respawn, an ask of their gear: what, and the item or Vestige, slot, node, rarity, level, count, kind or named item it names, and a spell cast that tick (1 Tempest to 9 Vanish) with where it is aimed (Dusk Daggers' ring while held and as it is let go), and whether a menu is open on their screen |
+| Input | A browser, on land | Its number, one tick's controls and the fight's buttons (with a ranged weapon's aim, the point an aimed shot is laid on and a drink asked), the look of the player's figure on their own screen (its move, frame and facing), their dress when it changed, what their hands hold, the room tick their screen showed, a foe asked for (0 none, 255 every foe sent away) with its type and rank (a page from before the roster asks by role alone, 1 to 5, taken as the Grey Tithe's type in that role, a foe, a Major or its first rank), its level and the element of its shield, whether they ask to respawn, an ask of their gear: what, and the item or Vestige, slot, node, rarity, level, count, kind or named item it names, and a spell cast that tick (1 Tempest to 9 Vanish) with where it is aimed (Dusk Daggers' ring while held and as it is let go), whether a menu is open on their screen, and whether they hold Use to revive a fallen ally |
 | Course | A browser, at sea | The points its ship sails through, x then y, and its pace, or no points and the one heading it faces at rest; in a fight, its orders instead, in the naval crate's numbers (`naval::wire`); off the helm, a step of the walk on deck instead, its controls and its number; or the helm left (1) or taken again (2) |
 | Orders | A browser, in a fleet | Its number; the helm (rudder, a rung); while aiming, the look's bearing and range, then its ray (2 or 8 numbers); the fire and the brace; a load to take; where the ship puts to sea (3 numbers, heeded once); and a captain called (with its faction and rank; 0 for both is the Grey Tithe's Major) or every one sent off |
 | Joined | The room | The joining player's number, every dress in the room, in a node's room the node's id and its window's rect (west, north, east, south), so the browser cuts the same window (none in a dungeon's room, which stands on no land), and the protocol's version: the hash of the schema, of the files laying out the fights' numbers that cross as plain lists (`FLOATS` in `server/protocolVersion.ts`: a fighter with its body, statuses and trim, an intent and a glance, the sea fight's view and lay, the foes' list and how others' numbers are packed) and of the content and rules the wire numbers by place (`tools/numbered.json`, `server/protocolVersion.ts`: cosmetics, emblems, factions, items, resources, rolled names, the Arts, the lore's chapters, the quests' tasks, the keepers spoken with and their counters' numbers, the cast's speakers, the items' kinds and slots, and the smiths' stock), so a page built from another schema, other layouts or another order of that content loads again, once; and everyone's plate |
-| Snapshot | The room | Cut for each player (under this table): the room's tick, the snapshot it is built on (0 for whole), the room's middle, the players and foes gone since; each player whole or as what changed: their number, their fighter without its gear's trim (its first 22 numbers their body, its healing charges and meter after its action's numbers and the shots its Ranged weapon has left, then its statuses' ticks left, a Veiled player's among them), the number of their last input taken, the look that came with it, and their standing (0 inside, 1 warned with the ticks left, 2 dead with the ticks since); the dresses changed since the screen's snapshot; the plates changed since it, each player's newest alone; each foe whole or as what changed: its number, role, a glance at its fighter, its level and its shield (its element, what it holds and held whole; none for a foe without one), type, rank, faction, phase (1 to 3), alert state (0 idle, 1 suspicious, 2 alert, 3 searching), and the ticks left of its Expose, its Charge and the immunity a Charge leaves, and for a companion (an officer ashore) its leader's number, its officer's given and family names' places and its post; and the name a foe stands under, if it has one (an event's great foe's); the fight's events since the screen's snapshot (each its kind, how the blow was struck, who struck whom, how much it did, its stroke, whether it was a crit and the element it carried); the shots in flight with the ticks each has flown, and each ball that stopped since the screen's snapshot as its last segment with the point it left its gun; in a dungeon's room its cache: where it stands, the way it faces, and whether it is open; in an Abyss run the revives its company has left (-1 in any other room); and at sea every ship near the player (as "The sea" cuts it): its player, position, heading and pace, 0 at rest; every hostile ship near them (the Grey Tithe's, sailing or in a clash): its number, position, heading, faction, rank and hull (0 the Sloop to 3 the Frigate; a reader that knows none reads the Sloop); each player's fight as the naval crate's numbers; each traffic id the room has taken off its route (`taken`) and each friendly ship it keeps at sea that the player's ship keeps in sight, as a hostile ship is kept (`friendlies`: its traffic id, position, heading and hull), none when there are none; and each player off the helm on a ship sent, as a player whose fighter is only their body on its deck, in its frame, with the number of their last step taken; in a fleet every ship with its hull, a captain's with its faction and rank, the balls aloft (each where and when it left its gun, its launch and its radius), the fight's events since the last snapshot, and the fight's clock; and on land every spell: its number, kind (1 Tempest's orb to 9 Vanish's veil, 10 a Duskraven's bolt), caster and Art, where it is and where it heads, the foe it seeks, the ticks it has lasted and its whole life, and how far it reaches; and in a zone's room its public event (`public_event`, left out of one built on a base while it stands as the base's counted on: [[Public Events]], "The wire") |
+| Snapshot | The room | Cut for each player (under this table): the room's tick, the snapshot it is built on (0 for whole), the room's middle, the players and foes gone since; each player whole or as what changed: their number, their fighter without its gear's trim (its first 22 numbers their body, its healing charges and meter after its action's numbers and the shots its Ranged weapon has left, then its statuses' ticks left, a Veiled player's among them), the number of their last input taken, the look that came with it, and their standing (0 inside, 1 warned with the ticks left, 2 dead with the ticks since); the dresses changed since the screen's snapshot; the plates changed since it, each player's newest alone; each foe whole or as what changed: its number, role, a glance at its fighter, its level and its shield (its element, what it holds and held whole; none for a foe without one), type, rank, faction, phase (1 to 3), alert state (0 idle, 1 suspicious, 2 alert, 3 searching), and the ticks left of its Expose, its Charge and the immunity a Charge leaves, and for a companion (an officer ashore) its leader's number, its officer's given and family names' places and its post; and the name a foe stands under, if it has one (an event's great foe's); the fight's events since the screen's snapshot (each its kind, how the blow was struck, who struck whom, how much it did, its stroke, whether it was a crit and the element it carried); the shots in flight with the ticks each has flown, and each ball that stopped since the screen's snapshot as its last segment with the point it left its gun; in a dungeon's room its cache: where it stands, the way it faces, and whether it is open; in an Abyss run the revives its company has left (-1 in any other room); and at sea every ship near the player (as "The sea" cuts it): its player, position, heading and pace, 0 at rest; every hostile ship near them (the Grey Tithe's, sailing or in a clash): its number, position, heading, faction, rank and hull (0 the Sloop to 3 the Frigate; a reader that knows none reads the Sloop); each player's fight as the naval crate's numbers; each traffic id the room has taken off its route (`taken`) and each friendly ship it keeps at sea that the player's ship keeps in sight, as a hostile ship is kept (`friendlies`: its traffic id, position, heading and hull), none when there are none; and each player off the helm on a ship sent, as a player whose fighter is only their body on its deck, in its frame, with the number of their last step taken; in a fleet every ship with its hull, a captain's with its faction and rank, the balls aloft (each where and when it left its gun, its launch and its radius), the fight's events since the last snapshot, and the fight's clock; and on land every spell: its number, kind (1 Tempest's orb to 9 Vanish's veil, 10 a Duskraven's bolt), caster and Art, where it is and where it heads, the foe it seeks, the ticks it has lasted and its whole life, and how far it reaches; and in a zone's room its public event (`public_event`, left out of one built on a base while it stands as the base's counted on: [[Public Events]], "The wire"); and on land whether the room is a darkness zone (`darkness`) and each fallen player being revived, with their reviver and the hold's share per mille (`reviving`, [[Revives]]) |
 
 **Plates.** On land each player's plate, what others read over their head ([[Interface]], "Players"), crosses as a table
 of its own: their number, their username (none for a guest), their level, and whether a menu is open on their screen, as
@@ -534,7 +542,8 @@ so every decision is Rust and the shell only carries bytes and time.
   its address stands them before that entrance's door, and an entrance it does not have is an ordinary join. They
   stay there only once the room keeps their character as come out of that entrance's dungeon or its run: one whose
   character came from anywhere else, who sends no token within five seconds or who plays unkept is stood at the next
-  spawn (`outOfDoor`). Each
+  spawn (`outOfDoor`). In a social space's room, `?relog=1` asks, once the room keeps the character, to stand the
+  player where that character left the space (`standWhereLeft`; [[Accounts]], "Where a player logs back in"). Each
   binary message is one of their inputs, at sea their course, or in a fleet their ship's orders. A course too soon after the last is dropped and a course
   the sea will not sail is refused; any other input refused, a message over 8 KB, or more than 240 messages in a
   second (a browser sends 60), closes the socket, since that browser is not keeping to the messages. Its player
@@ -602,7 +611,7 @@ so every decision is Rust and the shell only carries bytes and time.
 
 - `RoomConnection` joins a room, keeps its welcome's node, sends its session's token once welcomed when the page holds
   one ([[Accounts]]), and sends each tick's controls, numbered, as the player
-  plays, with a respawn when asked; at sea it sends the ship's course.
+  plays, with a respawn when asked and Use held to revive; at sea it sends the ship's course.
 - **Joining again.** When a room's socket closes, for a deploy or a dropped network, `RoomConnection` joins the room
   again by itself: after 1 s, then 2, 4 and 8 s between tries, 15 s at most, and 1 s again once a join holds. The page
   says "Reconnecting…" meanwhile, and nothing is sent until the new socket's welcome. A rejoin is a new join: a new
@@ -716,9 +725,9 @@ set no swing on: every difference came within 2 s of a blow by or on the player,
 - Bodies pass through each other; foes of one side keep apart by steering.
 - The browser does not predict the section: it shows a warning, a death or a respawn when the room's snapshot says so.
 - The [[Test Ground]] joins a Test Ground room by name; given a whole address it joins any room, a node's too, but sends
-  no token, so a room that keeps characters sends it away. It predicts on its own course and never asks to respawn; the
-  [[Game]] does both, and fights there. A server's node room takes no ask for a foe; only a room a page plays alone is
-  told to (`take_foe_asks`).
+  no token, so a room that keeps characters sends it away. It predicts on its own course and never asks to respawn,
+  its room standing its fallen again unasked; the [[Game]] does both, and fights there. A server's node room takes no
+  ask for a foe; only a room a page plays alone is told to (`take_foe_asks`).
 - A dungeon's room bakes its navmesh over the dungeon's whole rectangle: two to five blocks laid in a chain that never
   crosses itself (an Elite Dungeon's four or five), so up to five blocks one way. Each of the 27 patrols lays all three
   entrances; a dungeon's room opens for its number whether or not its patrol's land found room for its entrance. A

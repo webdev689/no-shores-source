@@ -124,7 +124,7 @@ fn fingerprint(dungeon: &Dungeon) -> String {
 }
 
 /// Each cell's walk from the way in over every open cell, u32::MAX for rock or one never reached.
-fn walks(dungeon: &Dungeon) -> Vec<u32> {
+pub(crate) fn walks(dungeon: &Dungeon) -> Vec<u32> {
     let mut steps = vec![u32::MAX; dungeon.cells.len()];
     let mut todo = std::collections::VecDeque::from([dungeon.way_in.cell]);
     steps[dungeon.way_in.cell] = 0;
