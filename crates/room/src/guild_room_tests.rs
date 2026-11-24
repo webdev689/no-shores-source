@@ -52,7 +52,7 @@ fn a_claim_just_after_the_week_turns_waits_for_the_week_s_standing() {
     room.guild_player(player, Some(GuildSeen { id: "salt".to_owned(), standing: last, boons: Boons::default() }));
     room.set_minute(IN_THE_WEEK + 7 * 24 * 60);
     room.answer(player, Asked::ClaimGuild { slot: 1 });
-    assert_eq!(room.players[&player].answer, answer_code(Err(Refusal::GuildWeekTurning)), "last week's done");
+    assert_eq!(room.players[&player].answer, answer_code(Err(Refusal::OutpostTrouble)), "last week's done");
     assert!(room.players[&player].character.vestiges.is_empty(), "no package");
     let now = Standing { done: [false; SLOTS], week: Some(week + 1), ..last };
     room.guild_player(player, Some(GuildSeen { id: "salt".to_owned(), standing: now, boons: Boons::default() }));
@@ -78,7 +78,7 @@ fn for_ten_seconds_after_the_week_turns_a_record_of_the_week_before_waits_so_its
     let kept = &room.players[&player].character.guild;
     assert_eq!((kept.week, kept.given), (week, 250), "last week's record, kept as it was");
     room.answer(player, Asked::ClaimGuild { slot: 1 });
-    assert_eq!(room.players[&player].answer, answer_code(Err(Refusal::GuildWeekTurning)));
+    assert_eq!(room.players[&player].answer, answer_code(Err(Refusal::OutpostTrouble)));
     for _ in 0..600 {
         room.tick();
     }

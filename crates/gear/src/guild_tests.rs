@@ -173,7 +173,7 @@ fn a_bounty_claim_judged_by_another_week_s_standing_waits_for_the_room_to_be_tol
     let mut character = Character::starting();
     character.xp = crate::power::xp_for_level(12);
     for stale in [DONE, Standing { week: None, ..NEXT }] {
-        assert_eq!(character.claim_guild_bounty(WEEK + 1, 0, stale, &DICE), Err(Refusal::GuildWeekTurning));
+        assert_eq!(character.claim_guild_bounty(WEEK + 1, 0, stale, &DICE), Err(Refusal::OutpostTrouble));
     }
     assert!(character.vestiges.is_empty() && !character.guild.claimed[0], "nothing given, nothing spent");
     assert_eq!(character.claim_guild_bounty(WEEK + 1, 0, NEXT, &DICE), Ok(()), "told the week, it pays");

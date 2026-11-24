@@ -1,6 +1,6 @@
 //! The door the host tells a room of a player's guild through, as the accounts told it: which guild, which of the
-//! week's four guild bounties it has done and for which week, whether the player was in it before the week turned, and what its outposts
-//! give its members.
+//! week's four guild bounties it has done and for which week, whether the player was in it before the week turned,
+//! and what its outposts give its members.
 
 use crate::{Opened, with_open};
 use room::{GuildSeen, PlayerId};

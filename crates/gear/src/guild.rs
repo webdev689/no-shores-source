@@ -176,7 +176,7 @@ impl Standing {
     /// # Errors
     /// Read for another week, or for none.
     pub fn of_week(self, week: u64) -> Result<Self, Refusal> {
-        if self.week == Some(week) { Ok(self) } else { Err(Refusal::GuildWeekTurning) }
+        if self.week == Some(week) { Ok(self) } else { Err(Refusal::OutpostTrouble) }
     }
 }
 

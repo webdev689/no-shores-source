@@ -245,8 +245,8 @@ impl Room {
     }
 
     /// The accounts' answer to an errand: how many they moved, used or gave, or the horn's tier (0 sounded this week,
-    /// -1 not by this player, -2 no horn stands, -3 past the accounts' limit on asks); none when they could not be reached, when the errand is given back
-    /// whole. The room gives back what was not moved or used, gives what was given, and answers the player; one who
+    /// -1 not by this player, -2 no horn stands, -3 past the accounts' limit on asks); none when they could not be
+    /// reached, when the errand is given back whole. The room gives back what was not moved or used, gives what was given, and answers the player; one who
     /// left is given it at their account's next claim here (`outpost_owed`). False for no such errand.
     pub fn outpost_answered(&mut self, id: u32, answer: Option<i64>) -> bool {
         let Some(outpost) = self.outpost.as_mut() else { return false };
@@ -284,12 +284,13 @@ impl Room {
     /// `player` instead.
     pub(crate) fn owned_elsewhere(&mut self, player: PlayerId, owner: &str) -> bool {
         let parting = self.outpost.as_ref().map(|outpost| outpost.parting.clone()).unwrap_or_default();
-        let others =
-            self.players.iter_mut().filter(|(id, found)| **id != player && found.owner.as_deref() == Some(owner));
-        for (id, found) in others {
-            if !parting.contains(id) {
-                return true;
-            }
+        let holders: Vec<_> = (self.players.iter_mut())
+            .filter(|(id, found)| **id != player && found.owner.as_deref() == Some(owner))
+            .collect();
+        if holders.iter().any(|(id, _)| !parting.contains(*id)) {
+            return true;
+        }
+        for (_, found) in holders {
             found.owner = None;
         }
         false
@@ -325,7 +326,7 @@ fn settle(materials: &mut Materials, what: What, answer: Option<i64>) -> u8 {
         }
         What::Horn => match answer {
             Some(-1) => (0, Refusal::HornNotLeader),
-            Some(-3) => (0, Refusal::TooManyAsks),
+            Some(-3) => (0, Refusal::OutpostTrouble),
             Some(tier) if tier < 0 => (0, Refusal::NoHorn),
             Some(tier) => (u32::try_from(tier).unwrap_or(0), Refusal::HornSounded),
             None => (0, Refusal::OutpostTrouble),

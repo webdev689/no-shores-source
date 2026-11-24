@@ -130,7 +130,7 @@ impl Guilds {
     ) -> Result<(), Refusal> {
         let seen = self.of(player).ok_or(Refusal::NotInGuild)?;
         if self.turning(character, week) {
-            return Err(Refusal::GuildWeekTurning);
+            return Err(Refusal::OutpostTrouble);
         }
         character.claim_guild_bounty(week, slot, seen.standing, dice)
     }

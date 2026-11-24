@@ -182,7 +182,7 @@ fn a_player_has_one_ask_with_the_accounts_at_a_time_and_a_take_of_nothing_is_ref
 fn the_horn_s_refusals_are_each_its_own() {
     let (mut room, player) = outpost();
     let answers = [(0, Refusal::HornSounded), (-1, Refusal::HornNotLeader), (-2, Refusal::NoHorn)];
-    for (answer, refusal) in answers.into_iter().chain([(-3, Refusal::TooManyAsks)]) {
+    for (answer, refusal) in answers.into_iter().chain([(-3, Refusal::OutpostTrouble)]) {
         ask(&mut room, player, OutpostAsk::Horn);
         let errand = room.outpost_errands().remove(0);
         room.outpost_answered(errand.id, Some(answer));
