@@ -207,8 +207,9 @@ The decisions in [[Open Questions]] are not repeated here.
   ([[The Inspect Panel's Hints Are Plain Verbs, and Impact Is Damage]]); a Fruit of Dagon no longer fed from an item's
   page but held from the inventory's Consumables, growing every piece worn 5,000 XP each, the owner's two answers
   ([[A Fruit of Dagon Is Used From the Inventory and Grows Everything Worn]]; the wire's Feed ask now carries no item).
-  Tested offline: the crates' and the page's tests, `cargo xtask repo`, pictures rendered headless at 1280 by 720,
-  1600 by 900 and 1920 by 1080; not played by hand, on a real GPU or in a deployed room. For the owner: [[Plain Text]]
+  Main (#196, the chests) merged in. Tested offline: the full `cargo xtask check` on 7f0e9388, the merge (this note's
+  commit after it changes only this note), and pictures rendered headless at 1280 by 720, 1600 by 900 and 1920 by
+  1080; not played by hand, on a real GPU or in a deployed room. For the owner: [[Plain Text]]
   still names the growth "a ring in its nodes", a rule note Claude does not change without a yes; and whether the
   hover card should keep every perk's words (it runs tall on a 900 px screen).
 
