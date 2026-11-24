@@ -40,6 +40,7 @@ struct Now {
     revives: Option<u8>,
     public: Option<PublicSeen>,
     encounter: Option<room::encounters::EncounterSeen>,
+    breach: Option<room::breach::seen::BreachSeen>,
 }
 
 #[derive(Debug, Default)]
@@ -94,6 +95,7 @@ impl Sent {
             revives: room.revives(),
             public: room.public_seen(),
             encounter: room.encounter_seen(),
+            breach: room.breach_seen(),
         };
         let own: BTreeMap<_, _> = now
             .players
@@ -192,6 +194,7 @@ impl Sent {
             revives: now.revives,
             public,
             encounter: now.encounter.as_ref(),
+            breach: now.breach.as_ref(),
         })
     }
 }

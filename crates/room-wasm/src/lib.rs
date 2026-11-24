@@ -20,6 +20,7 @@ use sent::Sent;
 use serde::Deserialize;
 use std::cell::RefCell;
 
+mod breach_door;
 mod course_door;
 mod deck_door;
 mod dungeon_door;
@@ -103,6 +104,9 @@ struct NodeFile {
     places: Vec<gear::quests::Place>,
     #[serde(default)]
     paths: Vec<Vec<[f64; 2]>>,
+    /// In a patrol area with a Breach's gate, where its module stands and its quarter turns.
+    #[serde(default)]
+    breach: Option<([f64; 3], u8)>,
 }
 
 fn floats_of(bytes: &[u8]) -> Vec<f64> {
@@ -137,7 +141,7 @@ fn open_course(bytes: &[u8], room_on: fn(Vec<Block>, (f64, f64)) -> Room) -> boo
     let blocks =
         blocks.chunks_exact(BLOCK_FLOATS).filter_map(|numbers| numbers.try_into().ok()).map(Block::from_floats);
     let blocks: Vec<Block> = blocks.collect();
-    fighter_door::COURSE.with(|course| *course.borrow_mut() = blocks.clone().into());
+    fighter_door::keep_course(blocks.clone().into());
     keep(Opened::Land {
         room: Box::new(room_on(blocks, (spawn[0], spawn[1]))),
         node: None,
@@ -181,6 +185,9 @@ pub fn open_node(text: &[u8]) -> bool {
     }
     if node.kind == NodeKind::Dungeon {
         room.lay_elite_entrance(&node.id);
+    }
+    if let Some((at, quarters)) = node.breach.filter(|_| node.kind == NodeKind::Patrol) {
+        room.open_breach_gate(at, quarters);
     }
     let refusal = lock_words(node.locked, &node.name);
     let sent = Box::new(Sent::around(protocol::pack::middle_of(Some(node.bounds))));

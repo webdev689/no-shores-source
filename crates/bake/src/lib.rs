@@ -56,6 +56,22 @@ pub struct NodeFile {
     pub places: Vec<Place>,
     /// Its layout's paths, each its points, that a road's figure walks between places.
     pub paths: Vec<Vec<[f64; 2]>>,
+    /// In a patrol area with a Breach's gate, where its module stands: its foot's middle and its quarter turns
+    /// clockwise.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub breach: Option<([f64; 3], u8)>,
+}
+
+/// Where a layout stood a Breach's gate (`layout::modules`), as its node's room stands it.
+fn breach_of(layout: &layout::Layout) -> Option<([f64; 3], u8)> {
+    let gate = city::modules::number_of("breach-gate")?;
+    let solid = layout
+        .seating
+        .solids
+        .iter()
+        .find(|solid| solid.shape == city::solids::Shape::Module { module: gate, group: 0 })?;
+    let quarters = (solid.turn / std::f64::consts::FRAC_PI_2).round().rem_euclid(4.0) as u8;
+    Some((solid.at, quarters))
 }
 
 /// A place of a node: its name, middle and reach, metres.
@@ -200,6 +216,7 @@ pub fn nodes_of(
             resources: Vec::new(),
             places,
             paths,
+            breach: None,
         }
     };
     let whole =
@@ -221,8 +238,9 @@ pub fn nodes_of(
         let paths =
             laid.map(|layout| layout.paths.iter().map(|path| path.points.clone()).collect()).unwrap_or_default();
         let grounds = laid.and_then(grounds_of);
+        let breach = laid.and_then(breach_of);
         let cut = cut(node.id.clone(), node.kind, node.name.clone(), ring, spawns);
-        NodeFile { grounds, gates, resources, places, paths, ..cut }
+        NodeFile { grounds, gates, resources, places, paths, breach, ..cut }
     });
     let social = plan.as_ref().map(|plan| {
         let (id, social) = (city::social_id(&plan.id), &plan.social);

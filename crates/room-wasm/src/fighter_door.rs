@@ -17,6 +17,14 @@ use std::cell::RefCell;
 thread_local! {
     pub(crate) static COURSE: RefCell<movement::Blocks> = RefCell::new(movement::Blocks::default());
     static FLOOR: RefCell<Floor> = const { RefCell::new(Floor::Flat) };
+    /// The seals open and the slabs standing the course was last made for in a Breach's run, a bit each.
+    static BREACH: std::cell::Cell<Option<(u8, u8)>> = const { std::cell::Cell::new(None) };
+}
+
+/// Keeps `blocks` as the course predicted on, a Breach's run's forgotten.
+pub(crate) fn keep_course(blocks: movement::Blocks) {
+    BREACH.with(|kept| kept.set(None));
+    COURSE.with(|course| *course.borrow_mut() = blocks);
 }
 
 /// Keeps a course for predicting a fighter without a room: the blocks, six numbers each (`BLOCK_FLOATS`). Answers whether they made
@@ -28,7 +36,7 @@ pub fn set_course(bytes: &[u8]) -> bool {
     }
     let blocks =
         floats.chunks_exact(BLOCK_FLOATS).filter_map(|numbers| numbers.try_into().ok()).map(Block::from_floats);
-    COURSE.with(|course| *course.borrow_mut() = movement::Blocks::new(blocks.collect()));
+    keep_course(movement::Blocks::new(blocks.collect()));
     true
 }
 
@@ -55,7 +63,25 @@ pub fn set_dungeon(text: &[u8]) -> bool {
     let Some(floor) = Floor::of_dungeon(&laid) else { return false };
     let pads = crate::dungeon_door::pads_of(text, &laid);
     FLOOR.with(|kept_floor| *kept_floor.borrow_mut() = floor);
-    COURSE.with(|course| *course.borrow_mut() = movement::Blocks::new(pads));
+    keep_course(movement::Blocks::new(pads));
+    true
+}
+
+/// Keeps a Breach's run for predicting a fighter without a room: open ground under its blocks as they stand at
+/// `tick` with the seals `open` (`Plan::blocks_at`, as its room stands them), made anew only when a seal or a slab
+/// changed. Answers whether the course was made anew.
+pub fn set_breach(open: u8, tick: u64) -> bool {
+    let plan = room::breach::plan::drowned_vale();
+    let standing = |(number, slab): (usize, &room::breach::plan::Slab)| {
+        u8::from(room::breach::plan::slab_stands(slab, tick)) << number
+    };
+    let key = (open, plan.slabs.iter().enumerate().map(standing).fold(0, |bits, bit| bits | bit));
+    if BREACH.with(std::cell::Cell::get) == Some(key) {
+        return false;
+    }
+    BREACH.with(|kept| kept.set(Some(key)));
+    FLOOR.with(|floor| *floor.borrow_mut() = Floor::Flat);
+    COURSE.with(|course| *course.borrow_mut() = movement::Blocks::new(plan.blocks_at(open, tick)));
     true
 }
 
@@ -195,6 +221,12 @@ pub unsafe extern "C" fn fighter_ground(address: *const u8, length: usize) -> u3
 pub unsafe extern "C" fn fighter_dungeon(address: *const u8, length: usize) -> u32 {
     // SAFETY: the caller wrote `length` bytes at `address`, in memory `reserve` handed out.
     u32::from(set_dungeon(unsafe { std::slice::from_raw_parts(address, length) }))
+}
+
+/// Keeps a Breach's run for predicting at room tick `tick` with the seals `open` (`set_breach`); 1 if made anew.
+#[unsafe(no_mangle)]
+pub extern "C" fn fighter_breach(open: u32, tick: u32) -> u32 {
+    u32::from(set_breach(u8::try_from(open).unwrap_or(u8::MAX), u64::from(tick)))
 }
 
 /// Keeps the deck whose grid's numbers are written at `address` for predicting; 1 if they were a grid, 0 if not.

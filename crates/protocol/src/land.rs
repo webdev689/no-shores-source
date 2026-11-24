@@ -46,6 +46,8 @@ pub struct Snapshot<'snapshot> {
     pub public: Option<&'snapshot room::public::PublicSeen>,
     /// In an Elite Dungeon's room, its encounters (`Room::encounter_seen`); none in any other room.
     pub encounter: Option<&'snapshot room::encounters::EncounterSeen>,
+    /// In a Breach's run or a room with a Breach's gate, the Breach (`Room::breach_seen`); none in any other room.
+    pub breach: Option<&'snapshot room::breach::seen::BreachSeen>,
 }
 
 /// How many numbers a foe crosses as, packed: its glance, then its role, type, rank, faction, phase, alertness and
@@ -201,6 +203,7 @@ pub fn snapshot_bytes(snapshot: &Snapshot<'_>) -> Vec<u8> {
     let revives = snapshot.revives.map_or(-1, |left| i8::try_from(left).unwrap_or(i8::MAX));
     let public_event = snapshot.public.map(|seen| crate::public_wire::public_offset(&mut builder, seen));
     let encounter = snapshot.encounter.map(|seen| crate::encounter_wire::encounter_offset(&mut builder, seen));
+    let breach = snapshot.breach.map(|seen| crate::breach_wire::breach_offset(&mut builder, seen));
     let args = messages::SnapshotArgs {
         tick,
         players,
@@ -218,6 +221,7 @@ pub fn snapshot_bytes(snapshot: &Snapshot<'_>) -> Vec<u8> {
         public_event,
         plates,
         encounter,
+        breach,
         ..messages::SnapshotArgs::default()
     };
     finish_snapshot(builder, &args)

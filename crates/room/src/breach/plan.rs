@@ -147,6 +147,21 @@ impl Plan {
         module.parts.first().map(|&part| placed_block(part, at, 0))
     }
 
+    /// The blocks standing at `tick` with the seals `open` (a bit each, as a snapshot carries them): every space's,
+    /// each seal still shut, and each slab standing in its cycle. The room stands these, and the page predicts on them.
+    #[must_use]
+    pub fn blocks_at(&self, open: u8, tick: u64) -> Vec<Block> {
+        let mut blocks = self.standing();
+        for (number, seal) in self.seals.iter().enumerate() {
+            if open & (1 << number) == 0 {
+                blocks.extend(self.seal_blocks(seal));
+            }
+        }
+        blocks
+            .extend(self.slabs.iter().filter(|slab| slab_stands(slab, tick)).filter_map(|slab| self.slab_block(slab)));
+        blocks
+    }
+
     /// The run's bounds on the ground, round every space's module, `margin` metres more each way: west, north, east,
     /// south.
     #[must_use]

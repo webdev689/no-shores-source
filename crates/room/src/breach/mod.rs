@@ -24,7 +24,7 @@ use combat::fighter::FighterId;
 use gear::breach::{DROWNED_VALE, Tier};
 pub use lodestone::Lodestone;
 use movement::Block;
-use plan::{Plan, drowned_vale, slab_stands};
+use plan::{Plan, drowned_vale};
 use reach::Section;
 use std::collections::{BTreeMap, BTreeSet};
 
@@ -144,6 +144,15 @@ impl Room {
         room.blocks = breach.standing.clone().into();
         room.breach = Some(Box::new(breach));
         Some(room)
+    }
+
+    /// How far a Breach's run's company has come: its tier and the encounter it is on, the count of encounters once
+    /// all are won; none in any other room.
+    #[must_use]
+    pub fn breach_progress(&self) -> Option<(Tier, usize)> {
+        let breach = self.breach.as_ref()?;
+        let on = breach.phases.iter().position(|phase| *phase != Phase::Won).unwrap_or(breach.phases.len());
+        Some((breach.tier, on))
     }
 
     /// Each tick in a Breach's run: its seals and slabs stood as they stand now, the stages reached, each encounter's
@@ -447,18 +456,9 @@ fn chapter_of(find: usize) -> &'static str {
 }
 
 impl Breach {
-    /// The blocks standing at `tick`: every space's, each seal still shut, and each slab standing in its cycle.
+    /// The blocks standing at `tick` (`Plan::blocks_at`).
     fn blocks_at(&self, tick: u64) -> Vec<Block> {
-        let plan = self.plan;
-        let mut blocks = plan.standing();
-        for (number, seal) in plan.seals.iter().enumerate() {
-            if !self.open_seals.contains(&number) {
-                blocks.extend(plan.seal_blocks(seal));
-            }
-        }
-        blocks
-            .extend(plan.slabs.iter().filter(|slab| slab_stands(slab, tick)).filter_map(|slab| plan.slab_block(slab)));
-        blocks
+        self.plan.blocks_at(self.open_seals.iter().fold(0, |bits, seal| bits | (1 << seal)), tick)
     }
 }
 
