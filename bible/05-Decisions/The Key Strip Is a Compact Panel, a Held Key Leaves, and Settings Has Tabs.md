@@ -41,11 +41,11 @@ status: in force
 | What it does | Returns the player to their ship, as the menu's Return to ship did, the room's word first (refused while fallen or within 10 s of a foe's blow, said as before); fallen, the prompt says why while the key is held | "Leave areas": the ship is where every place on foot is left to |
 | Where it is offered | On foot in any node, dungeon or island beach; not under a window, behind a veil, in the story, or while the stranger speaks; at sea nothing, and no menu there either (a landfall keeps its own offer and keys) | "Anywhere you can actively leave or abandon"; at sea there is nothing to leave |
 | Escape | With nothing else over the game, on foot or at sea, opens Settings | Exit to Menu and Exit to Desktop live there now, and other games' menus open on Escape |
-| Settings' tabs | Graphics, Audio, Controls, Account, in the shelves' well the Inventory and Ship use; the tabs stand still over a panel that scrolls; the tab last shown is kept while the page is open; the account's mark opens Account | "Tabs for audio. Graphics .keybinds, etc" |
+| Settings' tabs | Graphics, Audio, Controls, Account down a rail at the page's left, lit as the menu's own tabs are, beside the tab's panel, which scrolls on its own so the rail stands still; the tab last shown is kept while the page is open; the account's mark opens Account | "Tabs for audio. Graphics .keybinds, etc", as other games set a settings screen out |
 | Graphics | The resolution alone, under Display | No setting invented: the tab holds what the game has |
-| Controls | Every control as the sheet K opens lists it, each key bound anew there the same way, and Reset to defaults; K's sheet stays as it is | The keybinds in Settings; K's sheet is the owner's |
+| Controls | Every control as the sheet K opens lists it, each key bound anew there the same way, and Reset to defaults, its words at 11 px as the other tabs' are; K's sheet stays as it is | The keybinds in Settings; K's sheet is the owner's |
 | The credits | Audio's "Sound credits" press, View, shows them in the volumes' place, with ‹ Audio and Escape back | "A button you must press" |
-| The exits | Exit to Menu and Exit to Desktop beside the tabs, each held, in the warn role | What cannot be undone is held, as signing out is |
+| The exits | Exit to Menu and Exit to Desktop at the rail's foot, each held, in the warn role | What cannot be undone is held, as signing out is |
 | Exit to Menu | Loads the page at its title, the tap to start, keeping the rooms asked for in its address | The game's menu is its title |
 | Exit to Desktop | Closes the window where the browser lets a page close its own (the desktop app's, [[Browser and Desktop From the Start]]); a browser's tab stays open, and Settings says to close it | A page cannot close a tab the player opened |
 

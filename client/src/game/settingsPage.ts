@@ -10,7 +10,6 @@ import type { AccountPanel } from './accountTab.ts';
 import { bindingColumns, bindingWords } from './controlsSheet.ts';
 import { fillNode } from './gearHold.ts';
 import { INK, words } from './gearNodes.ts';
-import { shelvesNode } from './inventoryPage.ts';
 import type { PlainContext } from './menuPage.ts';
 import { PRESS_PADDING, answerNode, headingNode, hintNode } from './menuPages.ts';
 import { REBINDING, type Rebinding } from './rebinding.ts';
@@ -41,10 +40,13 @@ export type SettingsTab = (typeof SETTINGS_TABS)[number]['id'];
 const PAST_THE_TITLE = ['at', 'spawn', 'view', 'arrival', 'prologue', 'run'];
 /** How long the page waits for its window to close before it says the browser kept it open, milliseconds. */
 const CLOSE_WAIT_MS = 500;
-/** How wide a tab's panel stands at most, CSS pixels, and at the larger words; Controls takes the page's width. */
+/** How wide a tab's parts stand at most in its panel, CSS pixels, and at the larger words; Controls takes the panel's
+ *  width. The rail's width, and at the larger words. */
 const PANEL_MOST = 640;
 const PANEL_MOST_WIDE = 880;
-/** The tab's panel, which scrolls under the tabs. */
+const RAIL = 200;
+const RAIL_WIDE = 280;
+/** The tab's panel, which scrolls beside the rail. */
 const LIST = 'settings-list';
 
 /** `href` with the asks that skip the title taken off, so loaded it opens on the title, as the game first does. */
@@ -86,49 +88,52 @@ export class Settings {
     return took;
   }
 
-  /** The page this frame. */
+  /** The page this frame: the tabs down a rail at its left, the exits at the rail's foot, and the tab's panel beside
+   *  it, scrolling on its own. */
   node(context: PlainContext): Node {
     const wide = context.sizes.name > 1;
-    // The tab's panel scrolls under the tabs, which stay; what is newly shown stands from its top.
+    // What is newly shown stands from its top.
     if (this.toTop) context.ui.scrollBy(LIST, -Number.MAX_SAFE_INTEGER);
     this.toTop = false;
     const toCredits = (shown: boolean) => ([this.credits, this.toTop] = [shown, true]);
     const body = this.credits
       ? creditsNode(context, this.page, () => toCredits(false))
       : this.tabNode(context, toCredits);
-    const most = this.tab === 'controls' && !this.credits ? context.room.width : wide ? PANEL_MOST_WIDE : PANEL_MOST;
     return {
       id: 'page-settings',
       width: 'grow',
       height: context.room.height,
-      direction: 'column',
-      alignX: 'center',
-      gap: 12,
-      padding: [14, 0],
+      gap: wide ? 20 : 14,
       children: [
         {
-          width: 'grow',
-          maxWidth: most,
-          gap: 12,
-          wrap: true,
-          alignY: 'center',
+          width: wide ? RAIL_WIDE : RAIL,
+          height: 'grow',
+          direction: 'column',
+          gap: 6,
           children: [
-            shelvesNode(context, SETTINGS_TABS, this.tab, (chosen) => this.show(chosen as SettingsTab), 'settings'),
-            { width: 'grow' },
-            this.exitsNode(context),
+            ...SETTINGS_TABS.map(({ id, name }) =>
+              tabPress(context, `settings-${id}`, name, id === this.tab, () => this.show(id)),
+            ),
+            { height: 'grow' },
+            this.said !== '' && { width: 'grow', padding: [0, 0, 6, 0], children: [answerNode(this.said)] },
+            ...this.exits(context),
           ],
         },
-        this.said !== '' && { width: 'grow', maxWidth: most, children: [answerNode(this.said)] },
         {
           id: LIST,
           role: 'panel',
           width: 'grow',
-          maxWidth: most,
           height: 'grow',
           scroll: true,
           direction: 'column',
           padding: [20, 24],
-          children: [body],
+          children: [
+            {
+              width: 'grow',
+              maxWidth: this.tab === 'controls' ? undefined : wide ? PANEL_MOST_WIDE : PANEL_MOST,
+              children: [body],
+            },
+          ],
         },
       ],
     };
@@ -147,26 +152,41 @@ export class Settings {
   }
 
   /** Exit to Menu and Exit to Desktop, each held, as what cannot be undone is. */
-  private exitsNode(context: PlainContext): Node {
+  private exits(context: PlainContext): Node[] {
     const toTitle = () => this.page.assign(titleAddress(this.page.address()));
     const toDesktop = () => {
       this.page.close();
       // A browser's tab the player opened is theirs to close: still here, the page says so.
       setTimeout(() => (this.said = 'Your browser keeps this tab open. Close it to leave the game.'), CLOSE_WAIT_MS);
     };
-    return {
-      gap: 8,
-      alignY: 'center',
-      children: [
-        held(context, 'settings-exit-menu', 'Exit to Menu', toTitle),
-        held(context, 'settings-exit-desktop', 'Exit to Desktop', toDesktop),
-      ],
-    };
+    return [
+      held(context, 'settings-exit-menu', 'Exit to Menu', toTitle),
+      held(context, 'settings-exit-desktop', 'Exit to Desktop', toDesktop),
+    ];
   }
 }
 
 /** A column of a tab's parts. */
 const column = (children: readonly Child[], gap = 6): Node => ({ width: 'grow', direction: 'column', gap, children });
+
+/** A tab on the rail: its name in capitals, the one shown a lit brass press edged with a brass bar at its left, as the
+ *  menu's own tabs mark theirs. */
+function tabPress({ ui, sizes }: PlainContext, id: string, name: string, chosen: boolean, show: () => void): Node {
+  if (ui.clicked(id) && !chosen) show();
+  return {
+    id,
+    press: true,
+    role: chosen ? 'primary' : 'button',
+    label: chosen ? `${name}, shown` : name,
+    width: 'grow',
+    padding: sizes.name > 1 ? [14, 20] : [10, 16],
+    alignY: 'center',
+    children: [
+      words(name.toUpperCase(), sizes.name, chosen ? INK.brassLit : undefined, { tracking: 3 }),
+      chosen && { width: 3, height: 'grow', fill: INK.brassLit, float: { to: 'parent', anchor: [0, 0], at: [0, 0] } },
+    ],
+  };
+}
 
 /** A setting's row: its name, then its control and anything after it. */
 const settingRow = (name: string, ...children: Child[]): Node => ({
@@ -176,17 +196,18 @@ const settingRow = (name: string, ...children: Child[]): Node => ({
   children: [{ minWidth: 120, ...words(name, 1, INK.word) }, ...children],
 });
 
-/** A press held to act, in the warn role, its fill showing how long is left, said as held. */
-function held({ ui, holds }: PlainContext, id: string, said: string, act: () => void): Node {
+/** A press held to act across the rail, in the warn role, its fill showing how long is left, said as held. */
+function held({ ui, holds, sizes }: PlainContext, id: string, said: string, act: () => void): Node {
   const charged = holds.press(ui, id, act);
   return {
     id,
     press: true,
     role: 'warn',
     label: `${said}, held`,
-    padding: PRESS_PADDING,
+    width: 'grow',
+    padding: sizes.name > 1 ? [14, 20] : [10, 16],
     alignY: 'center',
-    children: [words(said, 1, INK.word), fillNode(charged, true)],
+    children: [words(said.toUpperCase(), sizes.name, INK.word, { tracking: 3 }), fillNode(charged, true)],
   };
 }
 
@@ -246,17 +267,18 @@ function volumeRow(
 }
 
 /** Controls: every control as the sheet K opens lists it, each key or button chosen bound anew, and Reset to
- *  defaults. */
+ *  defaults; its words at the face's 11 px, as the other tabs' are. */
 function controlsNode({ ui, room, sizes }: PlainContext, rebinding: Rebinding): Node {
   const reset = button(ui, 'settings-reset', 'Reset to defaults', () => rebinding.reset(), { padding: PRESS_PADDING });
   const said = bindingWords(rebinding);
-  // The panel's own padding and frame within the page's room.
-  const inside = Math.max(0, room.width - 2 * 24 - 4);
+  // The room the rail and its gap leave, less the panel's own padding and frame.
+  const rail = sizes.name > 1 ? RAIL_WIDE + 20 : RAIL + 14;
+  const inside = Math.max(0, room.width - rail - 2 * 24 - 4);
   return column(
     [
       headingNode('Controls', reset),
       said === '' ? hintNode('Choose a key or button, then press its new one.') : answerNode(said),
-      { gap: 24 * sizes.label, wrap: true, children: bindingColumns(ui, rebinding, sizes.label, inside) },
+      { gap: 24, wrap: true, children: bindingColumns(ui, rebinding, 1, inside) },
     ],
     10,
   );

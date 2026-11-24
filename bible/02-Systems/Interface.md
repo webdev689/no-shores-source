@@ -346,6 +346,7 @@ The game draws every screen itself, and by the owner's word no HTML is laid over
   each size. `game/journalShots.ts` draws the menu whole as the game starts it, over sample gear and the day's word:
   the Journal, its timers down, the bounty board, the Postmaster's letters and a dungeon's entrance card.
   `game/social/socialShots.ts` draws the plates over players, a player's menu, and the chat open and shut.
+  `game/journalShots.ts`' `settingsShot` draws Settings at its first tab, its others pressed by a shot's events.
   `game/hudShots.ts` draws the key strip over dusk (on foot with the leave held, a melee weapon drawn, sailing over the
   sea bar, and the pad's buttons), each shot's display kept across its frames. A shot may
   hear its events on a later frame (`at`), once a screen has put its focus where it wants it, and take more frames (`frames`) for many pictures
@@ -984,10 +985,11 @@ never while a press is held. Each press is an ask the room answers.
 - **The company on the heads-up display**: each other member's nameplate under the place's name, with where they are,
   and an invite waiting; it stands over the veil, so the company shows while the player travels.
 - **Settings** ([[The Key Strip Is a Compact Panel, a Held Key Leaves, and Settings Has Tabs]], `settingsPage.ts`) is
-  set out in tabs, as other games set theirs out, in the shelves' well the Inventory and Ship use: Graphics, Audio,
-  Controls and Account. The tabs stand still over the tab's panel, which scrolls; a tab newly shown stands from its
-  top, and the one last shown is kept while the page is open. Beside the tabs stand Exit to Menu and Exit to Desktop,
-  each held, in the warn role: Exit to Menu loads the page at its title, the tap to start, keeping the rooms asked for
+  set out in tabs, as other games set theirs out: Graphics, Audio, Controls and Account down a rail at its left, each
+  its name in capitals at the names' size, the one shown a lit brass press edged with a brass bar, as the menu's own
+  tabs are. Beside the rail the tab's panel scrolls on its own, so the rail stands still; a tab newly shown stands
+  from its top, its words at the face's 11 px, and the one last shown is kept while the page is open. At the rail's
+  foot stand Exit to Menu and Exit to Desktop, each held, in the warn role: Exit to Menu loads the page at its title, the tap to start, keeping the rooms asked for
   in its address (`titleAddress`); Exit to Desktop closes the window where the browser lets a page close its own (the
   desktop app's, [[Browser and Desktop From the Start]]), and where it does not (a browser's tab the player opened),
   Settings says to close the tab. Escape opens Settings wherever nothing else is over the game, on foot or at sea.

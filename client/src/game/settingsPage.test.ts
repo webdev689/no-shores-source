@@ -29,7 +29,7 @@ function hold(page: ReturnType<typeof settingsAt>, id: string, seconds: number):
 test('Settings stands in tabs, Graphics, Audio, Controls and Account, each a press showing its own', () => {
   const page = settingsAt('graphics');
   page.frame();
-  assert.match(page.shows(), /^GRAPHICS \| AUDIO \| CONTROLS \| ACCOUNT \| Exit to Menu \| Exit to Desktop/);
+  assert.match(page.shows(), /^GRAPHICS \| AUDIO \| CONTROLS \| ACCOUNT \| EXIT TO MENU \| EXIT TO DESKTOP/);
   assert.match(page.shows(), /DISPLAY \| Resolution \| Auto/);
   for (const { id } of SETTINGS_TABS) {
     page.click(`settings-${id}`);
