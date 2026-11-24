@@ -36,7 +36,10 @@ pub const BELL_HEALTH: f64 = 0.5;
 pub const MARK_EVERY: u64 = 25 * 60;
 pub const MARK_SHOWS: u64 = 4 * 60;
 pub const WRITE_EVERY: u64 = 30 * 60;
-pub const BELL_EVERY: u64 = 20 * 60;
+/// A lone bell wakes once a writing, this long before it: a bell missed rings with time left before the writing to
+/// reach the font or the bearer, at either tier, rather than as the clocks happen to fall.
+pub const BELL_EVERY: u64 = WRITE_EVERY;
+pub const BELL_LEAD: u64 = 22 * 60;
 pub const FURY_AFTER: u64 = 8 * 60 * 60;
 pub const BLOT_REACH_M: f64 = 1.8;
 /// What the Scrivener's health is times past the company's match: a company of eight fights it a minute and a half,
@@ -268,7 +271,7 @@ impl Room {
         }
         (fight.phase, fight.scrivener, fight.desk, fight.phase_from) = (2, scrivener, 0, clock);
         (fight.next_mark, fight.next_write, fight.next_bell) =
-            (clock + MARK_EVERY, clock + WRITE_EVERY, clock + BELL_EVERY);
+            (clock + MARK_EVERY, clock + WRITE_EVERY, clock + WRITE_EVERY - BELL_LEAD);
         self.set_on_plinth(breach, "choir", true);
         self.tell_all(EventKind::BossWoke, 0.0);
     }

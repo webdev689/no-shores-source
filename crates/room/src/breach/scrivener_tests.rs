@@ -69,3 +69,22 @@ fn no_spell_seeks_or_strikes_a_bell_so_the_arts_never_break_the_choirs_order() {
     }
     assert_eq!(room.nearest_foe(at, 30.0), None, "a Tempest's orb seeks no bell");
 }
+
+#[test]
+fn a_lone_bell_missed_rings_long_enough_before_each_writing_to_reach_the_font_at_either_tier() {
+    for (tier, ring) in [(Tier::Normal, choir::RING_AFTER.0), (Tier::Hard, choir::RING_AFTER.1)] {
+        let (mut room, players) = won_to(tier, 2, CHOIR);
+        begin_at(&mut room, &players, "choir", "lectern-2");
+        let mut breach_box = room.breach.take().expect("run");
+        let mut fight = std::mem::take(&mut breach_box.fights.choir);
+        room.wake_scrivener(&mut breach_box, &mut fight);
+        for writing in 0..4 {
+            let bell = fight.next_bell + writing * choir::BELL_EVERY;
+            let written = fight.next_write + writing * choir::WRITE_EVERY;
+            let left = written.saturating_sub(bell + ring);
+            assert!(left >= 12 * 60, "{tier:?}, writing {writing}: {} s from its ring to the writing", left / 60);
+        }
+        breach_box.fights.choir = fight;
+        room.breach = Some(breach_box);
+    }
+}
