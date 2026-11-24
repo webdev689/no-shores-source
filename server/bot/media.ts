@@ -32,6 +32,8 @@ export const MEDIA_BYTES_MAX = 8 * 1024 * 1024;
 export const MEDIA_FILES_MAX = 100;
 /** How much one server may keep in all. */
 export const MEDIA_GUILD_BYTES_MAX = 200 * 1024 * 1024;
+/** How long a served picture may be cached, in seconds: a removed one shows nothing once it runs out. */
+export const MEDIA_CACHE_S = 86_400;
 
 const asciiOf = (bytes: Uint8Array, from: number, to: number) => String.fromCharCode(...bytes.subarray(from, to));
 
@@ -117,7 +119,11 @@ export async function mediaRoute(
     await bucket.delete(`media/${id}`);
     await database.prepare('DELETE FROM media WHERE id = ?').bind(id).run();
     await record('media.remove', id, {});
-    return json({ ok: true, message: 'Removed. Messages that show it will show nothing there.' }, 200, cors);
+    return json(
+      { ok: true, message: 'Removed. Within a day, messages that show it will show nothing there.' },
+      200,
+      cors,
+    );
   }
   if (request.method !== 'POST' || id) return fail('route', 404, cors);
   return upload(context, request, snapshot, user, bucket, record);
@@ -184,7 +190,10 @@ async function upload(
   );
 }
 
-/** GET /v1/media/<id>.<ext>: a kept picture, to anyone with its address. It never changes under its address. */
+/**
+ * GET /v1/media/<id>.<ext>: a kept picture, to anyone with its address. It never changes under its address, but it
+ * can be removed, so it is cached for a day at most: by then a removed picture shows nothing.
+ */
 export async function serveMedia(bucket: Bucket | null, path: string): Promise<Response> {
   const found = /^\/v1\/media\/([a-f0-9]{32})\.(png|jpg|gif|webp)$/.exec(path);
   const notFound = () => new Response('Not found', { status: 404 });
@@ -197,7 +206,7 @@ export async function serveMedia(bucket: Bucket | null, path: string): Promise<R
     status: 200,
     headers: {
       'content-type': type,
-      'cache-control': 'public, max-age=31536000, immutable',
+      'cache-control': `public, max-age=${MEDIA_CACHE_S}`,
       'access-control-allow-origin': '*',
       'x-content-type-options': 'nosniff',
       'content-security-policy': "default-src 'none'",

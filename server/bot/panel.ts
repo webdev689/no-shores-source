@@ -10,10 +10,12 @@ import {
   atLeast,
   basePermissions,
   levelOf,
+  mentionRefusal,
+  roleNameRefusal,
   roleRefusal,
 } from './law/access.ts';
 import { type BotModule, BOT_MODULES, moduleOf } from './law/modules.ts';
-import { everyoneSpots, referencedIds, roleSpots, validate } from './law/settings.ts';
+import { type RoleUse, everyoneSpots, referencedIds, roleSpots, validate } from './law/settings.ts';
 import { type PanelUser, logout, sessionOf } from './auth.ts';
 import { type HeaderSet, bearer, fail, json, readJson } from './http.ts';
 import type { BotContext, Vars } from './kit.ts';
@@ -26,6 +28,7 @@ import {
   type Db,
   type Snapshot,
   audit,
+  listedServers,
   presentGuilds,
   readAudit,
   readConfig,
@@ -81,25 +84,26 @@ async function memberRoles(
   return roles;
 }
 
-const serverOf = (snapshot: Snapshot) => ({ id: snapshot.guildId, owner_id: snapshot.ownerId, roles: snapshot.roles });
+const serverOf = (snapshot: Pick<Snapshot, 'guildId' | 'ownerId' | 'roles'>) => ({
+  id: snapshot.guildId,
+  owner_id: snapshot.ownerId,
+  roles: snapshot.roles,
+});
 
-/** A person's level in a server. */
+/** A person's level in a server. `grants` are the server's panel grants where the caller read them already. */
 export async function levelIn(
   context: Pick<PanelContext, 'rest' | 'nowMs' | 'vars' | 'database'>,
   snapshot: Pick<Snapshot, 'guildId' | 'ownerId' | 'roles'>,
   userId: string,
+  grants?: readonly Grant[],
 ): Promise<Level | 'down'> {
   const roles = await memberRoles(context, snapshot.guildId, userId);
   const owner = ownersOf(context.vars).includes(userId);
   if (roles === 'down') return owner ? 'owner' : 'down';
   if (roles === null) return owner ? 'owner' : 'none';
-  const core = await readConfig(context.database, snapshot.guildId, 'core');
-  const grants = Array.isArray(core?.config.panelGrants) ? (core.config.panelGrants as Grant[]) : [];
-  return levelOf(
-    { id: snapshot.guildId, owner_id: snapshot.ownerId, roles: snapshot.roles },
-    { user_id: userId, roles },
-    { owners: ownersOf(context.vars), grants },
-  );
+  const core = grants ? null : await readConfig(context.database, snapshot.guildId, 'core');
+  const granted = grants ?? (Array.isArray(core?.config.panelGrants) ? (core.config.panelGrants as Grant[]) : []);
+  return levelOf(serverOf(snapshot), { user_id: userId, roles }, { owners: ownersOf(context.vars), grants: granted });
 }
 
 /** Route a panel request. Answers null when the path is not the panel's. */
@@ -122,14 +126,16 @@ export async function panelRoute(context: PanelContext, request: Request, url: U
   const snapshot = await readSnapshot(context.database, guildId);
   if (!snapshot || !snapshot.present) return fail('guild', 404, cors, 'The bot is not in that server.');
   const level = await levelIn(context, snapshot, user.id);
+  if (level === 'down' && !context.rest.on()) return fail('not-set-up', 503, cors, 'DISCORD_BOT_TOKEN is not set.');
   if (level === 'down') return fail('discord-down', 503, cors, 'Discord did not answer. Try again in a minute.');
   if (!atLeast(level, 'viewer')) return fail('level', 403, cors, 'You cannot open the panel for this server.');
   if (!part && request.method === 'GET') return overview(context, snapshot, level);
   if (part === 'test-message' && request.method === 'POST') return testMessage(context, request, snapshot, level, user);
   if (part?.startsWith('media')) return mediaRoute(context, request, snapshot, level, user, mediaId);
   if (part === 'audit' && request.method === 'GET') {
-    const before = Number(url.searchParams.get('before')) || 0;
-    return json({ entries: await readAudit(context.database, snapshot.guildId, before) }, 200, cors);
+    const before = url.searchParams.get('before') || '0';
+    if (!/^\d{1,15}$/.test(before)) return fail('query', 400, cors, 'Page the log by a row number.');
+    return json({ entries: await readAudit(context.database, snapshot.guildId, Number(before)) }, 200, cors);
   }
   if (!moduleId) return fail('route', 404, cors);
   const shape = moduleOf(moduleId);
@@ -156,17 +162,20 @@ const channelOutside = (snapshot: Snapshot, ids: readonly string[]): string | nu
   return ids.find((id) => !own.has(id)) ?? null;
 };
 
-/** GET /v1/panel/me: the servers this person may open, and their level in each. */
+/**
+ * GET /v1/panel/me: the servers this person may open, and their level in each. Anyone with a Discord account can ask,
+ * so the servers come in one read and only so many are weighed.
+ */
 async function listServers(context: PanelContext, user: PanelUser): Promise<Response> {
   const guilds: Array<{ id: string; name: string; icon: string | null; level: Level }> = [];
-  const snapshots = await presentGuilds(context.database);
-  for (let from = 0; from < snapshots.length; from += ASK_AT_ONCE) {
-    const batch = snapshots.slice(from, from + ASK_AT_ONCE);
-    const levels = await Promise.all(batch.map((snapshot) => levelIn(context, snapshot, user.id)));
-    batch.forEach((snapshot, i) => {
+  const servers = await listedServers(context.database);
+  for (let from = 0; from < servers.length; from += ASK_AT_ONCE) {
+    const batch = servers.slice(from, from + ASK_AT_ONCE);
+    const levels = await Promise.all(batch.map((server) => levelIn(context, server, user.id, server.grants)));
+    batch.forEach((server, i) => {
       const level = levels[i];
       if (level && level !== 'down' && atLeast(level, 'viewer'))
-        guilds.push({ id: snapshot.guildId, name: snapshot.name, icon: snapshot.icon, level });
+        guilds.push({ id: server.guildId, name: server.name, icon: server.icon, level });
     });
   }
   return json({ user, owner: ownersOf(context.vars).includes(user.id), guilds }, 200, context.cors);
@@ -202,10 +211,12 @@ async function overview(context: PanelContext, snapshot: Snapshot, level: Level)
 }
 
 /**
- * A role the save names where the settings did not name it before is held to Discord's own rule for giving it, so
- * the panel never lets anyone hand out a role they could not hand out in Discord, nor move one the owner only named
- * (no experience, say) into a setting that gives it out (a reward, a welcome). A mention of everyone set here is the
- * saver's own, as in Discord: it needs Mention Everyone. Answers the refusal, or null.
+ * A role the save puts to a use where the settings did not before is held to Discord's own rule for that use (its
+ * setting says which): one the bot gives, to the rule for giving it, so the panel never lets anyone hand out a role
+ * they could not hand out in Discord, nor move one the owner only named (no experience, say) into a setting that gives
+ * it out (a reward, a welcome); one it mentions, to the rule for mentions; one it only names, to being the server's.
+ * A mention of everyone set here is the saver's own, as in Discord: it needs Mention Everyone. Answers the refusal, or
+ * null.
  */
 async function refusedRoles(
   context: PanelContext,
@@ -216,19 +227,26 @@ async function refusedRoles(
   level: Level,
   user: PanelUser,
 ): Promise<Response | null> {
-  const held = new Set(before ? roleSpots(shape.schema, before) : []);
-  const fresh = roleSpots(shape.schema, after).filter((spot) => !held.has(spot));
-  const added = [...new Set(fresh.map((spot) => spot.slice(spot.lastIndexOf('=') + 1)))];
+  const added = (use: RoleUse) => {
+    const held = new Set(before ? roleSpots(shape.schema, before, use) : []);
+    const fresh = roleSpots(shape.schema, after, use).filter((spot) => !held.has(spot));
+    return [...new Set(fresh.map((spot) => spot.slice(spot.lastIndexOf('=') + 1)))];
+  };
+  const [given, named, mentioned] = [added('give'), added('name'), added('mention')];
   const loud = new Set(before ? everyoneSpots(shape.schema, before) : []);
   const louder = everyoneSpots(shape.schema, after).some((spot) => !loud.has(spot));
   const owner = level === 'owner';
-  if (!added.length && (!louder || owner)) return null;
+  if (!given.length && !named.length && !mentioned.length && (!louder || owner)) return null;
   const roles = await memberRoles(context, snapshot.guildId, user.id);
   const member = { user_id: user.id, roles: Array.isArray(roles) ? roles : [] };
-  const refused = roleRefusal(serverOf(snapshot), member, added, { owner });
+  const server = serverOf(snapshot);
+  const refused =
+    roleRefusal(server, member, given, { owner }) ??
+    mentionRefusal(server, member, mentioned, { owner }) ??
+    roleNameRefusal(server, named);
   if (refused)
     return json({ error: 'role', role: refused.role, message: ROLE_REFUSALS[refused.why] }, 403, context.cors);
-  if (louder && !owner && (basePermissions(serverOf(snapshot), member) & PERMISSION.MENTION_EVERYONE) === 0n)
+  if (louder && !owner && (basePermissions(server, member) & PERMISSION.MENTION_EVERYONE) === 0n)
     return fail('everyone', 403, context.cors, 'You need Mention Everyone to mention everyone here.');
   return null;
 }
@@ -251,7 +269,12 @@ async function saveModule(
   const rev = typeof body.rev === 'number' && Number.isSafeInteger(body.rev) && body.rev >= 0 ? body.rev : -1;
   if (rev < 0) return fail('body', 400, cors);
   const enabled = shape.alwaysOn ? true : body.enabled === true;
+  const stale = (there: number) =>
+    json({ error: 'stale', rev: there, message: 'Someone saved this page first. Reload it.' }, 409, cors);
+  // the roles are weighed against the revision the write is made on, so no save can land on settings it was not
+  // checked against
   const before = await readConfig(database, guildId, shape.id);
+  if (rev !== (before?.rev ?? 0)) return stale(before?.rev ?? 0);
   const refused = await refusedRoles(context, snapshot, shape, before?.config, checked.value, level, user);
   if (refused) return refused;
   const named = referencedIds(shape.schema, checked.value);
@@ -261,8 +284,7 @@ async function saveModule(
   if (strange) return json({ error: 'emoji', emoji: strange, message: EMOJI_REFUSAL }, 403, cors);
   const write = { guildId, moduleId: shape.id, config: checked.value, enabled, rev, by: user.id, nowS: context.nowS };
   const saved = await writeConfig(database, write);
-  if (!saved.ok)
-    return json({ error: 'stale', rev: saved.stale, message: 'Someone saved this page first. Reload it.' }, 409, cors);
+  if (!saved.ok) return stale(saved.stale);
   const changed = Object.keys(checked.value).filter(
     (key) => JSON.stringify(checked.value[key]) !== JSON.stringify(before?.config[key]),
   );

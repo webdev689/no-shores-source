@@ -1,7 +1,7 @@
 // The community modules' shapes: welcome, levels, role menus, tags and announcements.
 
 import type { BotModule } from './modules.ts';
-import { CHANNEL_KIND, type ChannelField, type ListField, type TextField } from './settings.ts';
+import { CHANNEL_KIND, type ChannelField, type ListField, type RoleUse, type TextField } from './settings.ts';
 import { messageField } from './message.ts';
 import { GAME_SLOTS } from './gameShape.ts';
 
@@ -29,12 +29,12 @@ const colour = (label: string, hex: string): TextField => ({
   pattern: '#[0-9a-fA-F]{6}',
   patternHelp: 'Use a # and six hex digits.',
 });
-const roles = (label: string, max: number): ListField => ({
+const roles = (label: string, max: number, use: RoleUse): ListField => ({
   type: 'list',
   label,
   max,
   default: [],
-  of: { type: 'role', label: 'Role', default: '' },
+  of: { type: 'role', use, label: 'Role', default: '' },
 });
 /** The placeholders a message about one member may use: the member, the server and the member's game character. */
 const MEMBER_SLOTS = ['user', 'name', 'server', 'count', 'avatar', 'server_icon', ...GAME_SLOTS];
@@ -78,8 +78,8 @@ export const WELCOME_SHAPE: BotModule = {
         background: colour('Background', '#0e1a2e'),
       },
     },
-    joinRoles: roles('Roles for new members', 10),
-    botRoles: roles('Roles for new bots', 10),
+    joinRoles: roles('Roles for new members', 10, 'give'),
+    botRoles: roles('Roles for new bots', 10, 'give'),
     delayMinutes: {
       type: 'int',
       label: 'Give roles after (minutes)',
@@ -118,7 +118,7 @@ export const LEVELS_SHAPE: BotModule = {
       default: [],
       of: { type: 'channel', label: 'Channel', default: '' },
     },
-    noXpRoles: roles('Roles that earn no experience', 20),
+    noXpRoles: roles('Roles that earn no experience', 20, 'name'),
     boosts: {
       type: 'list',
       label: 'Roles that earn more',
@@ -128,7 +128,7 @@ export const LEVELS_SHAPE: BotModule = {
         type: 'group',
         label: 'Boost',
         fields: {
-          role: { type: 'role', label: 'Role', default: '' },
+          role: { type: 'role', use: 'name', label: 'Role', default: '' },
           percent: { type: 'int', label: 'Extra (percent)', min: 1, max: 500, default: 50 },
         },
       },
@@ -160,7 +160,7 @@ export const LEVELS_SHAPE: BotModule = {
         label: 'Reward',
         fields: {
           level: { type: 'int', label: 'At level', min: 1, max: 500, default: 5 },
-          role: { type: 'role', label: 'Role', default: '' },
+          role: { type: 'role', use: 'give', label: 'Role', default: '' },
         },
       },
     },
@@ -275,7 +275,7 @@ export const ROLEMENUS_SHAPE: BotModule = {
               type: 'group',
               label: 'Role',
               fields: {
-                role: { type: 'role', label: 'Role', default: '' },
+                role: { type: 'role', use: 'give', label: 'Role', default: '' },
                 label: { type: 'text', label: 'Label', max: 80, default: '' },
                 emoji: { type: 'text', label: 'Emoji', help: 'One emoji. Needed for reactions.', max: 64, default: '' },
               },
@@ -318,7 +318,7 @@ export const TAGS_SHAPE: BotModule = {
           reply: messageField('Answer', {
             vars: ['user', 'name', 'server', 'avatar', 'server_icon', ...GAME_SLOTS],
           }),
-          roles: roles('Only these roles may use it (empty: everyone)', 10),
+          roles: roles('Only these roles may use it (empty: everyone)', 10, 'name'),
         },
       },
     },
@@ -372,7 +372,7 @@ export const ANNOUNCE_SHAPE: BotModule = {
               { value: 'everyone', label: 'Everyone' },
             ],
           },
-          role: { type: 'role', label: 'Role to mention', default: '' },
+          role: { type: 'role', use: 'mention', usedWhen: { ping: 'role' }, label: 'Role to mention', default: '' },
           repeat: {
             type: 'enum',
             label: 'Send',

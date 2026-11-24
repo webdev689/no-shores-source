@@ -2,6 +2,7 @@
 
 import { type Settings, channelsWithin, defaults, emojisWithin, recordOf, salvage } from './law/settings.ts';
 import { moduleOf } from './law/modules.ts';
+import type { Grant } from './law/access.ts';
 
 /** The part of Cloudflare D1 the bot uses, so its rules run on the Worker's database and on SQLite in tests. */
 export interface Statement {
@@ -18,6 +19,11 @@ export interface Db {
 export const AUDIT_PAGE = 50;
 /** How long audit rows are kept, in seconds. */
 export const AUDIT_KEEP_S = 180 * 86_400;
+/**
+ * The most servers a person's list of servers weighs, by name: each is a question to Discord, since the panel's
+ * sign-in does not ask Discord for a person's servers. A server past it still opens by its address.
+ */
+export const LISTED_MAX = 50;
 /** The most server emoji kept: Discord's own cap for a server at its highest boost. */
 export const EMOJIS_KEPT = 500;
 
@@ -28,6 +34,7 @@ export interface SnapshotRole {
   readonly position: number;
   readonly permissions: string;
   readonly managed: boolean;
+  readonly mentionable: boolean;
 }
 export interface SnapshotChannel {
   readonly id: string;
@@ -181,7 +188,7 @@ export async function audit(database: Db, entry: AuditEntry): Promise<void> {
 
 /** A page of a server's audit log, newest first, before row `before` when given. */
 export async function readAudit(database: Db, guildId: string, given = 0) {
-  const before = Math.max(0, given);
+  const before = Number.isSafeInteger(given) && given > 0 ? given : 0;
   const result = await database
     .prepare('SELECT * FROM audit_log WHERE guild_id = ? AND (? = 0 OR id < ?) ORDER BY id DESC LIMIT ?')
     .bind(guildId, before, before, AUDIT_PAGE)
@@ -244,6 +251,40 @@ export async function readSnapshot(database: Db, guildId: string): Promise<Snaps
   return row ? snapshotOfRow(row) : null;
 }
 
+/** A server as a person's list of servers weighs it: what the access law reads, and the panel's grants in it. */
+export interface ListedServer {
+  readonly guildId: string;
+  readonly name: string;
+  readonly icon: string | null;
+  readonly ownerId: string;
+  readonly roles: SnapshotRole[];
+  readonly grants: readonly Grant[];
+}
+
+/** The servers the bot is in, by name, up to `most`, each with its panel grants: one read, whatever their number. */
+export async function listedServers(database: Db, most = LISTED_MAX): Promise<ListedServer[]> {
+  const result = await database
+    .prepare(
+      `SELECT s.guild_id, s.name, s.icon, s.owner_id, s.roles, c.config AS core FROM guild_snapshot s
+       LEFT JOIN guild_config c ON c.guild_id = s.guild_id AND c.module = 'core'
+       WHERE s.present = 1 ORDER BY s.name LIMIT ?`,
+    )
+    .bind(most)
+    .all<Record<string, unknown>>();
+  const core = moduleOf('core')?.schema ?? {};
+  return result.results.map((row) => {
+    const grants = row.core ? salvage(core, parse(String(row.core), {})).panelGrants : [];
+    return {
+      guildId: String(row.guild_id),
+      name: String(row.name),
+      icon: row.icon ? String(row.icon) : null,
+      ownerId: String(row.owner_id),
+      roles: parse(String(row.roles), []),
+      grants: Array.isArray(grants) ? (grants as Grant[]) : [],
+    };
+  });
+}
+
 /** Every server the bot is in. */
 export async function presentGuilds(database: Db): Promise<Snapshot[]> {
   const result = await database
@@ -261,6 +302,7 @@ export const roleOf = (given: unknown): SnapshotRole => {
     position: Number(role.position) || 0,
     permissions: String(role.permissions ?? '0'),
     managed: !!role.managed,
+    mentionable: !!role.mentionable,
   };
 };
 

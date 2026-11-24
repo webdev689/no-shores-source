@@ -21,7 +21,10 @@ export interface IntField extends FieldBase {
   readonly max: number;
   readonly default: number;
 }
-/** `pattern` is a regular expression the whole text must match; empty text always passes it. */
+/**
+ * `pattern` is a regular expression the whole text must match, read by code point (the `u` flag), so it can ask for
+ * Unicode properties; empty text always passes it.
+ */
 export interface TextField extends FieldBase {
   readonly type: 'text';
   readonly max: number;
@@ -36,8 +39,17 @@ export interface ChannelField extends FieldBase {
   readonly kinds?: readonly number[];
   readonly default: string;
 }
+/**
+ * What the bot does with the role a role setting holds. `give` hands it to members, so whoever saves it must be able
+ * to give it in Discord; `name` only matches, exempts or lets in the members who hold it, so it need only be the
+ * server's; `mention` pings it, held to Discord's rule for mentions.
+ */
+export type RoleUse = 'give' | 'name' | 'mention';
+/** `usedWhen` names the settings beside it that must hold these values for the bot to use the role at all. */
 export interface RoleField extends FieldBase {
   readonly type: 'role';
+  readonly use: RoleUse;
+  readonly usedWhen?: Readonly<Record<string, string>>;
   readonly default: string;
 }
 export interface EnumField extends FieldBase {
@@ -101,14 +113,14 @@ export function defaults(schema: Schema): Settings {
 /**
  * Check `value` against `schema`. Answers the value with every missing field at its default and every unknown key
  * dropped, or the errors. A missing field is not an error, so a module can grow a setting without breaking a saved
- * config; a present field of the wrong shape is.
+ * config; a present field of the wrong shape is, and so is a missing whole, which would otherwise save every default.
  */
 export function validate(
   schema: Schema,
   value: unknown,
 ): { readonly ok: true; readonly value: Settings } | { readonly ok: false; readonly errors: FieldError[] } {
   const errors: FieldError[] = [];
-  const out = checkGroup(schema, value, '', errors, false);
+  const out = checkGroup(schema, value ?? null, '', errors, false);
   return errors.length ? { ok: false, errors } : { ok: true, value: out };
 }
 
@@ -152,7 +164,7 @@ function checkField(field: Field, value: unknown, path: string, errors: FieldErr
       const most = Math.min(field.max, TEXT_HARD_MAX);
       const text = lenient ? value.slice(0, most) : value;
       if (text.length > most) return bad(`At most ${most} characters.`);
-      if (field.pattern && text !== '' && !new RegExp(`^(?:${field.pattern})$`).test(text))
+      if (field.pattern && text !== '' && !new RegExp(`^(?:${field.pattern})$`, 'u').test(text))
         return bad(field.patternHelp ?? 'Not the right form.');
       return text;
     }
@@ -278,10 +290,14 @@ export function referencedIds(
  * level, by that. A thing moved to where it does more (a role from a setting that only names it to a reward, a reward
  * to a lower level) is then new where it now stands.
  */
-function spotsOf(schema: Schema, value: unknown, pick: (field: Field, held: unknown) => string | null): string[] {
+function spotsOf(
+  schema: Schema,
+  value: unknown,
+  pick: (field: Field, held: unknown, beside: Settings) => string | null,
+): string[] {
   const spots = new Set<string>();
-  const walk = (field: Field, held: unknown, path: string) => {
-    const found = pick(field, held);
+  const walk = (field: Field, held: unknown, path: string, beside: Settings) => {
+    const found = pick(field, held, beside);
     if (found) spots.add(`${path}=${found}`);
     else if (field.type === 'list' && Array.isArray(held))
       held.forEach((item) => {
@@ -293,18 +309,29 @@ function spotsOf(schema: Schema, value: unknown, pick: (field: Field, held: unkn
             : group && Number.isFinite(entry.level)
               ? `level:${String(entry.level)}`
               : '';
-        walk(field.of, item, `${path}[${named}]`);
+        walk(field.of, item, `${path}[${named}]`, beside);
       });
     else if (field.type === 'group' && held)
-      for (const [key, sub] of Object.entries(field.fields)) walk(sub, recordOf(held)[key], `${path}.${key}`);
+      for (const [key, sub] of Object.entries(field.fields))
+        walk(sub, recordOf(held)[key], `${path}.${key}`, recordOf(held));
   };
-  for (const [key, field] of Object.entries(schema)) walk(field, recordOf(value)[key], key);
+  for (const [key, field] of Object.entries(schema)) walk(field, recordOf(value)[key], key, recordOf(value));
   return [...spots];
 }
 
-/** Every role a config names, as `path=roleId`, with where it is named (`spotsOf`). */
-export const roleSpots = (schema: Schema, value: unknown): string[] =>
-  spotsOf(schema, value, (field, held) => (field.type === 'role' && held ? String(held) : null));
+/**
+ * Every role a config puts to `use` (or to any use), as `path=roleId`, with where it is named (`spotsOf`). A role
+ * whose `usedWhen` the settings beside it do not meet is not used, so turning those settings on uses it anew.
+ */
+export const roleSpots = (schema: Schema, value: unknown, use?: RoleUse): string[] =>
+  spotsOf(schema, value, (field, held, beside) =>
+    field.type === 'role' &&
+    held &&
+    (!use || field.use === use) &&
+    Object.entries(field.usedWhen ?? {}).every(([key, wanted]) => beside[key] === wanted)
+      ? String(held)
+      : null,
+  );
 
 /** Every setting that mentions everyone, with where it stands (`spotsOf`). */
 export const everyoneSpots = (schema: Schema, value: unknown): string[] =>

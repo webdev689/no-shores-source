@@ -22,6 +22,7 @@ import {
 import type { ServerModule } from './modules/module.ts';
 import { MEMBER_KEEP_MS, MEMBER_STALE_MS, levelIn, resetMembers } from './panel.ts';
 import type { Rest, RestResult } from './rest.ts';
+import { LISTED_MAX } from './store.ts';
 
 beforeEach(() => {
   resetStarts();
@@ -279,4 +280,114 @@ test('panel: while Discord is away, roles read a little while ago stand in; olde
   assert.equal(await levelIn(context, snapshot, '900000000000000303'), 'none', 'a minute old: still stands');
   context.nowMs += MEMBER_STALE_MS;
   assert.equal(await levelIn(context, snapshot, '900000000000000303'), 'down', 'too old: Discord is away');
+});
+
+test("panel: a role a setting only names need only be the server's, even an app's; a mention keeps Discord's rule", async () => {
+  const bot = await standWorker();
+  await bot.dispatcher.dispatch('GUILD_CREATE', guildWithRanks());
+  const open = '900000000000000024';
+  const pings = { id: open, name: 'Pings', position: 1, permissions: '0', mentionable: true };
+  await bot.dispatcher.dispatch('GUILD_ROLE_CREATE', { guild_id: GUILD, role: pings });
+  const owner = await signInPanel(bot, OWNER);
+  const mod = await signInPanel(bot, MOD);
+  await save(bot, owner, 'core', CORE, 0);
+  const levels = await configOf(bot, owner, 'levels');
+  const boosted = { ...levels, boosts: [{ role: BOT_ROLE, percent: 50 }], noXpRoles: [BOT_ROLE] };
+  assert.equal((await save(bot, owner, 'levels', boosted, 0)).status, 200, "an app's role can be matched");
+  // a manager by grant holds no Manage Roles, yet may name a role above their own where it is only matched
+  assert.equal((await save(bot, mod, 'levels', { ...levels, noXpRoles: [ADMIN_ROLE] }, 1)).status, 200);
+  const gone = await save(bot, mod, 'levels', { ...levels, noXpRoles: ['900000000000000777'] }, 2);
+  assert.deepEqual([gone.status, (await bodyOf(gone)).role], [403, '900000000000000777'], "still the server's own");
+  const grants = { ...CORE, panelGrants: [...CORE.panelGrants, { role: BOT_ROLE, level: 'viewer' }] };
+  assert.equal((await save(bot, owner, 'core', grants, 1)).status, 200);
+  const tickets = await configOf(bot, owner, 'tickets');
+  assert.equal((await save(bot, mod, 'tickets', { ...tickets, staffRoles: [BOT_ROLE] }, 0)).status, 200);
+  const everyone = await save(bot, mod, 'tickets', { ...tickets, staffRoles: [GUILD] }, 1);
+  assert.match(String((await bodyOf(everyone)).message), /everyone role/, 'a ticket open to everyone is not');
+  const base = await configOf(bot, owner, 'announce');
+  const item = { name: 'rules', channels: [], message: { content: 'Read the rules.', embeds: [] } };
+  const announce = (who: string, ping: string, role: string, rev: number) =>
+    save(bot, who, 'announce', { ...base, messages: [{ ...item, ping, role }] }, rev);
+  assert.equal((await announce(mod, 'role', open, 0)).status, 200, 'a role that lets anyone mention it');
+  const closed = await announce(mod, 'role', ADMIN_ROLE, 1);
+  const said = await bodyOf(closed);
+  assert.deepEqual([closed.status, said.role], [403, ADMIN_ROLE]);
+  assert.match(String(said.message), /Mention Everyone/);
+  assert.equal((await announce(owner, 'none', ADMIN_ROLE, 1)).status, 200);
+  const turned = await announce(mod, 'role', ADMIN_ROLE, 2);
+  assert.deepEqual([turned.status, (await bodyOf(turned)).role], [403, ADMIN_ROLE], 'a kept role mentioned anew');
+  const socials = await configOf(bot, owner, 'socials');
+  const feed = (role: string) => ({ ...socials, feeds: [{ kind: 'rss', source: 'https://x.example/feed', role }] });
+  assert.equal((await save(bot, mod, 'socials', feed(open), 0)).status, 200);
+  assert.equal((await save(bot, mod, 'socials', feed(ADMIN_ROLE), 1)).status, 403, "a feed's mention too");
+});
+
+test('panel: a save against any revision but the one there is answered stale before its roles are weighed', async () => {
+  const bot = await standWorker();
+  await bot.dispatcher.dispatch('GUILD_CREATE', guildWithRanks());
+  const owner = await signInPanel(bot, OWNER);
+  const mod = await signInPanel(bot, MOD);
+  await save(bot, owner, 'core', CORE, 0);
+  const welcome = await configOf(bot, owner, 'welcome');
+  assert.equal((await save(bot, owner, 'welcome', { ...welcome, joinRoles: [ADMIN_ROLE] }, 0)).status, 200);
+  const ahead = await save(bot, mod, 'welcome', { ...welcome, joinRoles: [ADMIN_ROLE] }, 2);
+  assert.deepEqual([ahead.status, (await bodyOf(ahead)).rev], [409, 1], 'a revision not yet made');
+  const behind = await save(bot, mod, 'welcome', { ...welcome, joinRoles: [MOD_ROLE] }, 0);
+  assert.deepEqual([behind.status, (await bodyOf(behind)).error], [409, 'stale']);
+});
+
+test('panel: a save without its settings is refused, not saved as every default', async () => {
+  const bot = await standWorker();
+  const owner = await signInPanel(bot, OWNER);
+  assert.equal((await save(bot, owner, 'core', CORE, 0)).status, 200);
+  const bare = { method: 'PUT', body: JSON.stringify({ rev: 1, enabled: true }) };
+  assert.equal((await bot.call(panelRequest(owner, `/v1/panel/g/${GUILD}/m/core`, bare))).status, 400);
+  assert.deepEqual((await configOf(bot, owner, 'core')).panelGrants, CORE.panelGrants);
+});
+
+test('panel: without the bot token, a server says the bot is not set up, not that Discord is away', async () => {
+  const bot = await standWorker({ env: { DISCORD_BOT_TOKEN: '' } });
+  const mod = await signInPanel(bot, MOD);
+  const answer = await bot.call(panelRequest(mod, `/v1/panel/g/${GUILD}`));
+  const said = await bodyOf(answer);
+  assert.deepEqual([answer.status, said.error], [503, 'not-set-up']);
+  assert.match(String(said.message), /DISCORD_BOT_TOKEN/);
+  const owner = await signInPanel(bot, OWNER);
+  assert.equal((await bot.call(panelRequest(owner, `/v1/panel/g/${GUILD}`))).status, 200, "the bot's owners need none");
+});
+
+test('panel: the audit log pages by a row number, and refuses anything else', async () => {
+  const bot = await standWorker();
+  const owner = await signInPanel(bot, OWNER);
+  await save(bot, owner, 'core', CORE, 0);
+  const page = (before: string) => bot.call(panelRequest(owner, `/v1/panel/g/${GUILD}/audit?before=${before}`));
+  for (const before of ['1e999', 'Infinity', '-1', '2.5', 'abc'])
+    assert.equal((await page(before)).status, 400, before);
+  const entriesOf = async (before: string) => ((await bodyOf(await page(before))).entries as unknown[]).length;
+  assert.deepEqual([await entriesOf('999'), await entriesOf('1'), await entriesOf('')], [1, 0, 1]);
+});
+
+test("panel: a person's servers are read in one go, and Discord is asked about a bounded number of them", async () => {
+  const bot = await standWorker();
+  const mod = await signInPanel(bot, MOD);
+  let reads = 0;
+  const prepare = bot.database.prepare;
+  bot.database.prepare = (sql) => ((reads += 1), prepare(sql));
+  const listing = async () => {
+    reads = 0;
+    resetMembers();
+    const asked = bot.discord.calls.length;
+    const mine = await bodyOf(await bot.call(panelRequest(mod, '/v1/panel/me')));
+    const lookups = bot.discord.calls.slice(asked).filter((call) => call.path.includes('/members/')).length;
+    return { reads, lookups, guilds: mine.guilds };
+  };
+  const one = await listing();
+  const others = bot.database.raw.prepare(
+    "INSERT INTO guild_snapshot (guild_id, name, owner_id, updated_at) VALUES (?, 'Wharf', ?, 1)",
+  );
+  for (let i = 0; i < LISTED_MAX + 10; i++) others.run(String(910000000000000000n + BigInt(i)), OWNER);
+  const many = await listing();
+  assert.deepEqual(many.guilds, one.guilds, 'the same answer');
+  assert.equal(many.reads, one.reads, 'the reads do not grow with the servers');
+  assert.equal(many.lookups, LISTED_MAX);
 });

@@ -84,7 +84,7 @@ export const AUTOMOD_SHAPE: BotModule = {
       label: 'Roles auto-mod leaves alone',
       max: 20,
       default: [],
-      of: { type: 'role', label: 'Role', default: '' },
+      of: { type: 'role', use: 'name', label: 'Role', default: '' },
     },
     exemptChannels: {
       type: 'list',

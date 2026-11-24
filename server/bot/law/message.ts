@@ -85,12 +85,14 @@ export const EMBED_SCHEMA: Schema = Object.freeze({
   timestamp: { type: 'bool', label: 'Show the time it was sent', default: false },
 });
 
+/** One picture character, with its presentation mark, skin tone or the tags of a flag such as England's. */
+const PICTURE = '\\p{Extended_Pictographic}(?:\\uFE0F|\\p{Emoji_Modifier}|[\\u{E0020}-\\u{E007E}]+\\u{E007F})?';
 /**
- * An emoji Discord takes on a button: a server's own as `<:name:id>`, or a picture character (with its joiners and
- * keycaps). Anything else, such as `:sword:` or a word, makes Discord refuse the whole message.
+ * An emoji Discord takes on a button: a server's own as `<:name:id>`, or one emoji: a keycap, a flag's two letters,
+ * or picture characters joined into one. Anything else, such as `:sword:`, a word, an arrow or a lone joiner, makes
+ * Discord refuse the whole message.
  */
-export const EMOJI_PATTERN =
-  '<a?:\\w{2,32}:\\d{5,25}>|(?:[\\uD800-\\uDBFF][\\uDC00-\\uDFFF]|[\\u00A9\\u00AE\\u203C-\\u3299\\uFE0F\\u200D\\u20E3]|[#*0-9](?=\\uFE0F?\\u20E3)){1,16}';
+export const EMOJI_PATTERN = `<a?:\\w{2,32}:\\d{5,25}>|[#*0-9]\\uFE0F?\\u20E3|\\p{Regional_Indicator}{2}|${PICTURE}(?:\\u200D${PICTURE})*`;
 
 /** A link button under a message: its words or emoji, and where it leads. */
 export const BUTTON_SCHEMA: Schema = Object.freeze({

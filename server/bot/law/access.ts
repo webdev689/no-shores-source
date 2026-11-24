@@ -41,6 +41,7 @@ export interface RoleOfServer {
   readonly permissions: string;
   readonly position?: number;
   readonly managed?: boolean;
+  readonly mentionable?: boolean;
 }
 export interface ServerOfAccess {
   readonly id: string;
@@ -109,15 +110,17 @@ export const hasAll = (have: bigint, need: bigint): boolean => (have & need) ===
 export const ROLE_REFUSALS = Object.freeze({
   missing: 'A role named here is not in the server.',
   managed: 'A role named here belongs to Discord or an app, so no one can be given it.',
+  everyone: 'The everyone role cannot be named here.',
   permission: 'You need Manage Roles to name a role here.',
   above: 'You can name only roles below your highest role.',
+  mention: 'You need Mention Everyone to mention a role here that does not let anyone mention it.',
 });
 export type RoleRefusal = { readonly role: string; readonly why: keyof typeof ROLE_REFUSALS };
 
 /**
- * Discord's own rule for giving a role, held for every role a person names in the bot's settings: the role is the
- * server's own and can be given, the person holds Manage Roles, and it sits below their highest role. The server's
- * owner, and the bot's owners (`owner`), are held only to the first. Answers the first role refused and why, or null.
+ * Discord's own rule for giving a role, held for every role a setting makes the bot give: the role is the server's
+ * own and can be given, the person holds Manage Roles, and it sits below their highest role. The server's owner, and
+ * the bot's owners (`owner`), are held only to the first. Answers the first role refused and why, or null.
  */
 export function roleRefusal(
   server: ServerOfAccess,
@@ -137,6 +140,37 @@ export function roleRefusal(
   const top = Math.max(0, ...member.roles.map((id) => byId.get(id)?.position ?? 0));
   const above = roleIds.find((id) => (byId.get(id)?.position ?? 0) >= top);
   return above ? { role: above, why: 'above' } : null;
+}
+
+/**
+ * The rule for a role a setting only names, to match, exempt or let in the members who hold it: it is one of the
+ * server's own. The everyone role is not, here: no member's roles list it, and a ticket opened to it is open to all.
+ */
+export function roleNameRefusal(server: ServerOfAccess, roleIds: readonly string[]): RoleRefusal | null {
+  const own = new Set(server.roles.map((role) => role.id));
+  for (const id of roleIds) {
+    if (id === server.id) return { role: id, why: 'everyone' };
+    if (!own.has(id)) return { role: id, why: 'missing' };
+  }
+  return null;
+}
+
+/**
+ * Discord's rule for mentioning a role, held for every role a setting makes the bot mention: the role is one a setting
+ * may name, and it lets anyone mention it or the person holds Mention Everyone. The server's owner, and the bot's
+ * owners (`owner`), are held only to the first.
+ */
+export function mentionRefusal(
+  server: ServerOfAccess,
+  member: MemberOfAccess,
+  roleIds: readonly string[],
+  { owner = false }: { readonly owner?: boolean } = {},
+): RoleRefusal | null {
+  const named = roleNameRefusal(server, roleIds);
+  if (named || owner || hasAll(basePermissions(server, member), PERMISSION.MENTION_EVERYONE)) return named;
+  const open = new Set(server.roles.filter((role) => role.mentionable).map((role) => role.id));
+  const closed = roleIds.find((id) => !open.has(id));
+  return closed ? { role: closed, why: 'mention' } : null;
 }
 
 /** The names of the bits in `need` that `have` lacks, for a setup check's words. */
