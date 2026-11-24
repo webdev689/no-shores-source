@@ -121,6 +121,7 @@ interface Placed {
   readonly resources?: readonly { readonly at: Point; readonly holds?: string }[];
   readonly foes?: readonly Point[];
   readonly places?: readonly NodePlace[];
+  readonly paths?: readonly (readonly Point[])[];
 }
 
 /** The drawn nodes with each laid node's section, spawns and places in place of the ring it was drawn with, its

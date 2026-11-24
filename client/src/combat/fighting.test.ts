@@ -403,6 +403,8 @@ test('a foe’s two glances are as many ticks apart as the snapshots that brough
     goneFoes: [],
     cache: [],
     revives: -1,
+    darkness: false,
+    reviving: [],
     vessels: [],
     balls: [],
     naval: [],
