@@ -45,7 +45,7 @@ const ROSTER_ROOMY_PX = 300;
 /** The room the edge's presses take, two to a line under the roster, and the outposts' panel there with each of its
  *  lines, at the label's first step. */
 const EDGE_GRID_PX = 128;
-const OUTPOSTS_PX = 60;
+const OUTPOSTS_PX = 48;
 const OUTPOST_LINE_PX = 20;
 /** What a together bounty's brass words mean. */
 const BRASS_WORDS = 'Brass: a bounty the guild does together.';
@@ -91,7 +91,7 @@ export function homeNode(context: PlainContext, home: Home, turn: RosterTurn): N
   const lines = Math.max(1, (home.outposts && home.outposts.children?.length) || 1);
   const besideRoster = (narrow ? EDGE_GRID_PX : 0) + (OUTPOSTS_PX + OUTPOST_LINE_PX * lines) * sizes.label;
   const rosterWidth = Math.min(260 + 80 * sizes.label, Math.max(180, Math.floor(room.width * 0.24)));
-  const headPx = ROSTER_HEAD_PX + (rosterWidth < ROSTER_ROOMY_PX ? 40 : 0);
+  const headPx = ROSTER_HEAD_PX + (rosterWidth < ROSTER_ROOMY_PX ? 20 : 0);
   const rowPx = ROW_PX + 12 * (sizes.label - 1) + 6;
   const rows = Math.max(2, Math.floor((room.height - headPx - besideRoster) / rowPx));
   const height = room.height - 6;
@@ -99,11 +99,14 @@ export function homeNode(context: PlainContext, home: Home, turn: RosterTurn): N
     headNode('Outposts'),
     home.outposts ?? words('No outposts yet.', sizes.label, INK.faint),
   ]);
-  const column: Child[] = [
-    rosterNode(ui, home.members, turn, rows, sizes.label, rosterWidth),
-    outposts,
-    narrow && edgeNode(sizes.label, 2),
-  ];
+  const roster = rosterNode(ui, home.members, turn, rows, sizes.label, rosterWidth);
+  // Narrow, the presses head the side so they are never below a short room; the roster and outposts scroll under them.
+  const side: Node = narrow
+    ? {
+        width: rosterWidth,
+        children: [scrollNode(ui, 'guild-home-side', height, [edgeNode(sizes.label, 2), roster, outposts])],
+      }
+    : { width: rosterWidth, direction: 'column', gap: 10, children: [roster, outposts] };
   return {
     id: 'guild-home',
     width: 'grow',
@@ -113,7 +116,7 @@ export function homeNode(context: PlainContext, home: Home, turn: RosterTurn): N
     children: [
       { direction: 'column', alignX: 'center', children: [standardNode(home.banner, scale)] },
       scrollNode(ui, 'guild-home-middle', height, middleNodes(home, sizes.label, sizes.name)),
-      { width: rosterWidth, direction: 'column', gap: 10, children: column },
+      side,
       !narrow && edgeNode(sizes.label, 1),
     ],
   };
@@ -150,8 +153,10 @@ function middleNodes(home: Home, size: number, named: number): Child[] {
           gap: 10,
           alignY: 'end',
           label: face.name,
+          wrap: true,
           children: [
-            words(face.name, named + 1, INK.word, { edge: 'shadow', edgeColour: '#000', ellipsis: true }),
+            // The whole name: it wraps, and the tag and count run on to the next line, where the column is narrow.
+            words(face.name, named + 1, INK.word, { edge: 'shadow', edgeColour: '#000', wrap: true }),
             words(`[${face.tag}]`, size, INK.faint),
             words(`// ${face.members} ${face.members === 1 ? 'MEMBER' : 'MEMBERS'}`, size, INK.faint, { tracking: 2 }),
           ],
@@ -177,7 +182,10 @@ function rosterNode(
   width: number,
 ): Node {
   const sorted = [...members].sort(
-    (one, two) => Number(two.place !== null) - Number(one.place !== null) || one.name.localeCompare(two.name),
+    (one, two) =>
+      Number(two.place !== null) - Number(one.place !== null) ||
+      rankOrder(one.rank) - rankOrder(two.rank) ||
+      one.name.localeCompare(two.name),
   );
   const pages = Math.max(1, Math.ceil(sorted.length / rows));
   if (ui.clicked(ROSTER_BACK) && turn.page > 0) turn.page--;
@@ -195,6 +203,12 @@ function rosterNode(
     { width, gap: 6 },
   );
 }
+
+/** Where a rank stands in the roster: the founder, then the admins, then everyone else. */
+const rankOrder = (rank: string) => {
+  const place = ['Founder', 'Admin'].indexOf(rank);
+  return place < 0 ? 2 : place;
+};
 
 /** A member's row: their emblem's sign, their name, and their rank and where they play in words; greyed while away. */
 function memberNode(member: Member, size: number): Node {

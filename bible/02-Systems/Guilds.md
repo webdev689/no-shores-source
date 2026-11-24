@@ -86,24 +86,27 @@ ranks are the Roster's as well ([[Accounts]], "The Roster").
   bounty is claimed ashore. A claim judged by what was read for another week, or in the ten seconds after the week
   turns over a record of the week before (whose last count is saved meanwhile), answers "The guild’s books
   could not be reached. Try again."
-- **The Guild tab** (`client/src/game/guild/`), drawn as the owner's picture of Destiny 2's clan screen: the standard
-  at the left at whole multiples of its cells; the name and tag, its members, its motto and description; the week
-  with when it turns; the level as a diamond on a rule filled toward the next, with the XP, and the player's weekly
-  contribution under it, its square filled at the week's most; the week's bounties as a checklist with the guild's
-  counts and a Claim on each one done, a "together" bounty's brass explained under them; the roster at the right,
-  those playing first, where each plays in words, with page arrows, and the outposts under it; and four named presses
-  down the edge (under the roster in a narrow room): Banner, Details, Outposts and Treasury, the last two opening the
-  guild's outposts and its treasury ([[Outposts]]). Its parts stand in the Journal's panels under its heads, every
-  word at the menu's label step; where the room is short the middle scrolls, a chip saying more lies below. The page
-  asks the accounts for the guild (`GET /v1/guild`), the Roster and the outposts on opening an outpost's page and
-  again every 15 s while any of its pages is seen; a failed read offers Try again. At sea a done bounty offers no
-  claim, since no room there answers one. Escape steps back to its home from any of its other pages.
+- **The Guild tab** (`client/src/game/guild/`), drawn as the owner's picture of Destiny 2's clan screen: the standard at
+  the left at whole multiples of its cells; the name whole (on a second line where it is long) and tag, its members, its
+  motto and description; the week with when it turns; the level as a diamond on a rule filled toward the next, with the
+  XP, and the player's weekly contribution under it, its square filled at the week's most; the week's bounties as a
+  checklist with the guild's counts and a Claim on each one done, a "together" bounty's brass explained under them; the
+  roster at the right, those playing first, and within those playing and those away the founder, then the admins, where
+  each plays in words, with page arrows, and the outposts under it; and four named presses down the edge (over the
+  roster in a narrow room, the roster and outposts scrolling under them): Banner, Details, Outposts and Treasury, the
+  last two opening the guild's outposts and its treasury ([[Outposts]]). Its parts stand in the Journal's panels under
+  its heads, every word at the menu's label step; where the room is short the middle scrolls, a chip saying more lies
+  below. The page asks the accounts for the guild (`GET /v1/guild`), the Roster and the outposts on opening an outpost's
+  page and again every 15 s while any of its pages is seen; a failed read offers Try again. At sea a done bounty offers
+  no claim, since no room there answers one. Escape steps back to its home from any of its other pages.
 - **The banner editor**, after Destiny 2's: the banner on its staff as it will hang; the nine parts, each naming its
   choice; and the chosen part's choices, each drawn as the banner would look with it, at twice its cells where all of
-  them fit the room and at their own where not, with Keep, Draw and Back in the head's line. A line under the head
-  names the choice under the pointer or the focus; one the law refuses with the rest stands dimmed, still takes the
-  focus, and says why there; a staff not yet earned names the level that opens it. "Draw another" draws a banner
-  afresh. Only the founder and admins keep one; a member sees the editor without the press.
+  them fit the room and at their own where not, with Keep, Draw and Back in the head's line. A line under the head names
+  the choice under the pointer or the focus; every choice is named under its face where the room allows (the 32 signs
+  only where they all fit named); one the law refuses with the rest stands dimmed, still takes the focus, says under its
+  face what it would match ("Same as ground") and why in the line; a staff not yet earned names the level that opens it.
+  "Draw another" draws a banner afresh. Only the founder and admins keep one; a member sees the editor without the
+  press.
 - **Details**, beside the banner: the founder and admins set the motto and description from what they are (the
   description read whole under its one-line field, with its count) and invite a player by name; a member reads them.
   Anyone may hold to leave.

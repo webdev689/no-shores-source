@@ -37,6 +37,19 @@ const PART_NAMES: Readonly<Record<Part, string>> = {
   staff: 'Staff',
 };
 
+/** What a refused choice would match, in the few words its cell has room for, from the law's reason `why` for the
+ *  banner `shown` with it; the line under the head says the reason whole. */
+export function clashOf(part: Part, why: string, shown: Banner): string {
+  const signs = part === 'sign' || part === 'signColour';
+  if (why.includes('unlike the cloth.')) return part === 'cloth' ? 'Same as device' : 'Same as cloth';
+  if (why.includes('unlike its ground')) return signs ? 'Same as ground' : 'Same as sign';
+  if (why.includes('behind it')) {
+    if (!signs) return 'Same as sign';
+    return shown.signColour === shown.cloth ? 'Same as cloth' : 'Same as device';
+  }
+  return why;
+}
+
 /** The ids of the editor's presses. */
 export const partId = (part: Part) => `banner-part-${part}`;
 export const choiceId = (part: Part, choice: string) => `banner-choice-${part}-${choice}`;
@@ -151,8 +164,11 @@ export class BannerEditor {
       gap: 16,
       children: [
         words(`${nameOf(part, shown)}${why ? `: ${why}` : ''}`, size, why ? INK.loss : INK.word, { ellipsis: true }),
-        { width: 'grow' },
-        !given.mayKeep && words('Only the founder and admins can change the banner.', size, INK.faint),
+        // The note wraps where the room is narrow, so it never pushes the choices past the room.
+        !given.mayKeep && {
+          width: 'grow',
+          ...words('Only the founder and admins can change the banner.', size, INK.faint, { wrap: true, align: 'end' }),
+        },
       ],
     };
   }
@@ -185,17 +201,19 @@ export class BannerEditor {
     const part = this.part;
     const colour = !['cut', 'device', 'sign', 'ground', 'staff'].includes(part);
     const choices = choicesOf(part);
-    // Each face drawn at twice its cells where every choice fits the room so, at its own cells where not; a staff's
-    // name and the level that opens it stand under it.
-    const [faceWidth, faceHeight, under] =
-      part === 'staff' ? [STANDARD_WIDTH, STANDARD_HEIGHT, 30 * size] : [CLOTH_WIDTH, CLOTH_HEIGHT, 0];
-    const fits = (cells: number) => {
-      const across = Math.max(1, Math.floor((width + 8) / (faceWidth * cells + 20)));
-      return Math.ceil(choices.length / across) * (faceHeight * cells + 20 + under) <= height;
+    // Each face drawn at twice its cells where every choice fits the room so, at its own cells where not; its name,
+    // and why it is refused or the level that opens it, stand under it, wrapped to its cell. Where even its own cells
+    // leave no room for the names, the line under the head names the one under the pointer or the focus.
+    const [faceWidth, faceHeight, wordsHeight] =
+      part === 'staff' ? [STANDARD_WIDTH, STANDARD_HEIGHT, 45 * size] : [CLOTH_WIDTH, CLOTH_HEIGHT, 30 * size];
+    const cellOf = (cells: number) => Math.max(faceWidth * cells + 8, 88 * size);
+    const fits = (cells: number, named: boolean) => {
+      const across = Math.max(1, Math.floor((width + 8) / ((named ? cellOf(cells) : faceWidth * cells + 8) + 8)));
+      return Math.ceil(choices.length / across) * (faceHeight * cells + 20 + (named ? wordsHeight : 0)) <= height;
     };
-    const scale = fits(2) ? 2 : 1;
-    // One width for every colour's cell, its longest name's, so the rows' columns line up.
-    const colourWidth = 64 * size + 8;
+    const scale = fits(2, true) ? 2 : 1;
+    const named = colour || part === 'staff' || fits(scale, true);
+    const cellWidth = colour ? 64 * size + 8 : named ? cellOf(scale) : faceWidth * scale + 8;
     return {
       width: 'grow',
       wrap: true,
@@ -211,7 +229,10 @@ export class BannerEditor {
             ? standardNode(shown, scale)
             : clothNode(shown, scale);
         const lit = chosen || ui.hovered(id) || ui.focused(id);
-        const locked = part === 'staff' && why !== null;
+        const beneath = (said: string, ink: string): Node => ({
+          width: 'grow',
+          ...words(said, size, ink, { wrap: true, align: 'center' }),
+        });
         return {
           id,
           // A refused choice is no press, but takes the focus, so the keys reach its reason too.
@@ -221,14 +242,14 @@ export class BannerEditor {
           direction: 'column',
           alignX: 'center',
           gap: 3,
-          ...(colour && { width: colourWidth }),
+          // One width for every cell, so the rows' columns line up and no long word widens its own.
+          width: cellWidth,
           label: `${nameOf(part, choice)}${why ? `: ${why}` : ''}`,
           outline: { width: 2, colour: chosen ? '#f2efe6' : lit ? INK.brassLit : 'rgba(0,0,0,0)' },
           children: [
             { ...face, ...(why !== null && { opacity: 0.6 }) },
-            (part === 'staff' || colour) && words(nameOf(part, choice), size, why ? INK.faint : INK.word),
-            locked && words(why, size, INK.loss),
-            colour && why !== null && words('Refused', size, INK.loss),
+            named && beneath(nameOf(part, choice), why ? INK.faint : INK.word),
+            named && why !== null && beneath(part === 'staff' ? why : clashOf(part, why, shown), INK.loss),
           ],
         };
       }),
