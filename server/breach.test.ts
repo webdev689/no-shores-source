@@ -81,6 +81,9 @@ test('a run asks its zone whether its gate opened until it says so once, and tel
   assert.equal(await run.gateOpen(), true);
   assert.deepEqual(said.asked, [`node-gullwing-vale ${RUN}`], 'asked once');
   const word = (name: string) => JSON.stringify({ run: RUN, tier: 1, name, encounter: 3 });
+  run.tick(19_000);
+  assert.deepEqual(said.inside, [], 'its gate open to one who was then refused: no one let in yet');
+  run.owned(9, 'wenna');
   run.tick(20_000);
   assert.deepEqual(said.inside, [word('A company')], 'no one named yet');
   run.named(9, 'Wenna');
@@ -97,6 +100,7 @@ test('a run tells its zone at once as its company moves on or clears, and asks i
   deps.room.breachProgress = () => JSON.stringify({ tier: 1, encounter });
   const run = new Breach(RUN, deps);
   assert.equal(await run.gateOpen(0), true);
+  run.owned(1, 'ada');
   run.tick(20_000);
   encounter = 6;
   run.tick(21_000);

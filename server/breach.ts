@@ -65,6 +65,8 @@ export class Breach {
   private readonly run: ReturnType<typeof breachRun>;
   private opened = false;
   private openedAsked = -Infinity;
+  /** In a run, whether anyone was let in: its gate may open to a joiner refused for another reason. */
+  private entered = false;
   private told = 0;
   private toldEncounter: number | null = null;
   /** In a zone, each player's run until the accounts answer; in a run, each player's name as the keeper gives it. */
@@ -109,10 +111,12 @@ export class Breach {
     return launched;
   }
 
-  /** A player's character is kept for `account`: in a zone, held in the company of the run they came for once the
-   *  accounts say it was launched for them that day, so one back from the run after the arrival window is held again;
-   *  asked twice, ASK_AGAIN_MS apart, as a blip at the accounts would leave them out of their company. */
+  /** A player's character is kept for `account`: in a run, one let in; in a zone, held in the company of the run
+   *  they came for once the accounts say it was launched for them that day, so one back from the run after the arrival
+   *  window is held again; asked twice, ASK_AGAIN_MS apart, as a blip at the accounts would leave them out of their
+   *  company. */
   owned(player: number, account: string): void {
+    if (this.run) return void (this.entered = true);
     const run = this.asked.get(player);
     const tier = run === undefined ? undefined : breachRun(run)?.tier;
     if (run === undefined || tier === undefined) return;
@@ -142,7 +146,7 @@ export class Breach {
    *  as its company reaches a new encounter or clears the Breach, so a company that leaves at once is still heard; by
    *  the name of its first player in, or NAMELESS; a run no one was let into tells its zone nothing. */
   tick(now: number): void {
-    if (!this.run || !this.opened) return;
+    if (!this.run || !this.opened || !this.entered) return;
     const progress = JSON.parse(this.deps.room.breachProgress()) as { tier: number; encounter: number } | null;
     if (!progress || (progress.encounter === this.toldEncounter && now - this.told < INSIDE_EVERY_MS)) return;
     const name = [...this.names.entries()].sort(([one], [other]) => one - other)[0]?.[1] ?? NAMELESS;
