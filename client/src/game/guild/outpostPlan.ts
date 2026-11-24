@@ -44,6 +44,8 @@ export const LOOKS: Readonly<Record<string, readonly [string, string, string]>> 
 };
 export const DARK_INK = '#0a0c0e';
 export const BLUEPRINT = '#11140f';
+/** A built block's front, light against every kind's colour. */
+const FRONT = '#f4ecd8';
 const GROUND = '#1b1f17';
 const GROUND_LIT = '#20251b';
 /** About how wide a letter of the plan's words is, so a block takes the longest name it holds. */
@@ -187,7 +189,14 @@ export function planNode(
     fill: refusal === null ? GHOST_FITS : GHOST_REFUSED,
     opacity: 0.7,
     outline: { width: 2, colour: refusal === null ? '#9be0a8' : '#e8968a' },
-    children: [frontNode(state.turn, cellPx, '#e8e0cc')],
+    children: [
+      frontNode(
+        state.turn,
+        [((ghost[2] ?? 0) - (ghost[0] ?? 0)) * cellPx, ((ghost[3] ?? 0) - (ghost[1] ?? 0)) * cellPx],
+        cellPx,
+        '#e8e0cc',
+      ),
+    ],
   };
   // The keys' cursor, ringed where the keys hold the focus.
   const ring: Child = focused &&
@@ -221,19 +230,16 @@ export function planNode(
   };
 }
 
-/** A bar along a block's front, the side it faces as it is turned. */
-function frontNode(turn: number, cellPx: number, colour: string): Node {
+/** A bar along the front of a block `size` pixels across and down, the side it faces as it is turned. */
+function frontNode(turn: number, size: readonly [number, number], cellPx: number, colour: string): Node {
   const bar = Math.max(3, Math.round(cellPx / 6));
   const facing = FACINGS[turn % 4];
-  const across = facing === 'south' || facing === 'north';
+  const [across, down] = size;
+  const flat = facing === 'south' || facing === 'north';
   return {
-    width: across ? 'grow' : bar,
-    height: across ? bar : 'grow',
-    float: {
-      to: 'parent',
-      anchor: [facing === 'east' ? 1 : 0, facing === 'south' ? 1 : 0],
-      at: [facing === 'east' ? 1 : 0, facing === 'south' ? 1 : 0],
-    },
+    width: flat ? across : bar,
+    height: flat ? bar : down,
+    float: { to: 'parent', x: facing === 'east' ? across - bar : 0, y: facing === 'south' ? down - bar : 0 },
     through: true,
     fill: colour,
     opacity: 0.8,
@@ -265,7 +271,7 @@ export function blockWords(standing: Standing, room: number): string {
   if (!kind || standing.tier === 0) return [kind?.name ?? mark, short].find(fits) ?? mark;
   const tier = String(standing.tier);
   const named = kind.tierNames ? `${tierName(kind, standing.tier)} ${tier}` : `${kind.name} ${tier}`;
-  return [named, `${short} ${tier}`].find(fits) ?? `${mark}${tier}`;
+  return [named, `${short} ${tier}`, `${mark}${tier}`].find(fits) ?? mark;
 }
 
 /** One structure as a block over its cells: its colour, its words, a bar on its front, hollow in its colour while it
@@ -293,10 +299,10 @@ function blockNode(standing: Standing, cellPx: number, chosen: boolean): Node {
     children: [
       words(blockWords(standing, (east - west) * cellPx - 8), 1, ink),
       (blueprint || rising) && tall >= 40 && words(blueprint ? 'building' : 'rising', 1, ink),
-      frontNode(standing.turn, cellPx, blueprint ? colour : DARK_INK),
+      frontNode(standing.turn, [(east - west) * cellPx - 2, tall - 2], cellPx, blueprint ? colour : FRONT),
       rising && {
         width: 'grow',
-        height: Math.max(3, Math.round(cellPx / 5)),
+        height: Math.max(4, Math.round((tall - 2) / 3)),
         float: { to: 'parent', anchor: [0, 0], at: [0, 0] },
         through: true,
         fill: BLUEPRINT,

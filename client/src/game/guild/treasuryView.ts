@@ -81,6 +81,27 @@ function lineNode(line: LedgerLine, now: number, size: number): Node {
   ]);
 }
 
+/** The field and the press that put the player's own Aurem in; `fits` whether what is typed may go in. */
+function depositNode(fits: boolean): Node {
+  return {
+    gap: 10,
+    alignY: 'center',
+    children: [
+      {
+        id: DEPOSIT_FIELD,
+        role: 'well',
+        width: 200,
+        height: 26,
+        padding: [0, 8],
+        alignY: 'center',
+        label: 'Aurem to put in',
+        field: { most: 7, placeholder: 'Aurem' },
+      },
+      pressNode(DEPOSIT_ID, 'Put in', 'primary', '', 1, { disabled: !fits }),
+    ],
+  };
+}
+
 /** The page; `room` asks the room the player stands in, which takes the Aurem from them. */
 export function treasuryNode(
   ui: Interface,
@@ -111,41 +132,35 @@ export function treasuryNode(
     children: [
       headNode('Treasury', null, words(`At most ${counted(TREASURY_MOST)} Aurem`, 1, INK.faint)),
       partNode([
-        words(`${counted(outposts.treasury)} Aurem`, size + 1, INK.brassLit),
+        {
+          width: 'grow',
+          gap: 10,
+          alignY: 'center',
+          wrap: true,
+          children: [
+            words(`${counted(outposts.treasury)} Aurem`, size + 1, INK.brassLit),
+            { width: 'grow' },
+            outposts.at !== null && depositNode(fits),
+          ],
+        },
+        over !== null && words(over, 1, INK.loss, { wrap: true }),
         words(
           "Members put Aurem in at the guild's outposts, and the outposts' strongboxes empty into it. It is spent only on outposts.",
           1,
           INK.faint,
           { wrap: true },
         ),
-        outposts.at === null
-          ? hintNode("Put your own Aurem in at any of your guild's outposts.")
-          : {
-              width: 'grow',
-              gap: 10,
-              alignY: 'center',
-              wrap: true,
-              children: [
-                {
-                  id: DEPOSIT_FIELD,
-                  role: 'well',
-                  width: 200,
-                  height: 26,
-                  padding: [0, 8],
-                  alignY: 'center',
-                  label: 'Aurem to put in',
-                  field: { most: 7, placeholder: 'Aurem' },
-                },
-                pressNode(DEPOSIT_ID, 'Put in', 'primary', '', 1, { disabled: !fits }),
-                over !== null && words(over, 1, INK.loss, { wrap: true }),
-              ],
-            },
+        outposts.at === null && hintNode("Put your own Aurem in at any of your guild's outposts."),
       ]),
-      partNode([
-        headNode('Ledger', outposts.ledger.length > 0 ? String(outposts.ledger.length) : null),
-        lines.length > 0 && columnsNode([label('When'), label('Who and what'), label('Aurem'), label('Balance')]),
-        ...(lines.length > 0 ? lines : [hintNode('Nothing has moved yet.')]),
-      ]),
+      {
+        ...partNode([
+          headNode('Ledger', outposts.ledger.length > 0 ? String(outposts.ledger.length) : null),
+          lines.length > 0 && columnsNode([label('When'), label('Who and what'), label('Aurem'), label('Balance')]),
+          ...(lines.length > 0 ? lines : [hintNode('Nothing has moved yet.')]),
+        ]),
+        // Close lines, so the most of the ledger fits on a short screen.
+        gap: 3,
+      },
     ],
   };
 }

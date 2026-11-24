@@ -88,8 +88,9 @@ ranks are the Roster's as well ([[Accounts]], "The Roster").
   contribution under it, its square filled at the week's most; the week's bounties as a checklist with the guild's
   counts and a Claim on each one done; the
   roster at the right, those playing first, with page arrows; and four presses down the edge: Banner, Details,
-  Outposts and Treasury, the last two opening the guild's outposts and its treasury ([[Outposts]]). The page asks the accounts for the guild (`GET /v1/guild`) and the Roster, again every 15 s
-  while it is seen. Escape steps back to its home from any of its other pages.
+  Outposts and Treasury, the last two opening the guild's outposts and its treasury ([[Outposts]]). The page asks the accounts for the guild (`GET /v1/guild`), the Roster and the outposts on
+  opening an outpost's page and again every 15 s while any of its pages is seen; a failed read offers Try again. At
+  sea a done bounty offers no claim, since no room there answers one. Escape steps back to its home from any of its other pages.
 - **The banner editor**, after Destiny 2's: the banner on its staff as it will hang; the nine parts, each naming its
   choice; and the chosen part's choices, each drawn as the banner would look with it, at twice its cells. A choice the
   law refuses with the rest stands greyed, saying why; a staff not yet earned names the level that opens it. "Draw
