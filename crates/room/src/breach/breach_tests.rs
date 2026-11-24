@@ -253,7 +253,7 @@ fn bits(blocks: &[Block]) -> Vec<[u64; 6]> {
 fn the_room_stands_its_plans_blocks_for_the_seals_and_the_tick_its_snapshot_tells() {
     use movement::Near;
     let (mut room, _) = run(Tier::Normal, 1);
-    for won in [None, Some(MENDING), Some(WAYS), Some(SHORES)] {
+    for won in [None, Some(MENDING), Some(CHOIR), Some(SHORES)] {
         if let Some(encounter) = won {
             let mut breach_box = room.breach.take().expect("run");
             room.win_encounter(&mut breach_box, encounter);
