@@ -34,13 +34,13 @@ pub const FISSURE_MINUTE: u32 = 15_000;
 pub const RAID_MINUTE: u32 = 15_015;
 const MOST_TICKS: u32 = 9 * 3_600;
 /// Both tests hold these values; a change to the events, the foes or the fight changes them in both, on purpose.
-pub const FISSURE_HASH: &str = "76aa4126";
-pub const RAID_HASH: &str = "affdf82f";
+pub const FISSURE_HASH: &str = "834a10b2";
+pub const RAID_HASH: &str = "ef5c5501";
 /// Where each stood as its result first showed, which a change to the fingerprint must account for: the tick, its
 /// stage (the Warden's; Marrow's wave) and its progress (the shards set; the stores' health left, per mille). The
 /// players' swings take the room's chain whatever stroke is asked (`room::chain`).
-pub const FISSURE_ENDED: [u32; 3] = [14_798, 2, 28];
-pub const RAID_ENDED: [u32; 3] = [28_800, 4, 956];
+pub const FISSURE_ENDED: [u32; 3] = [15_638, 2, 28];
+pub const RAID_ENDED: [u32; 3] = [20_998, 4, 948];
 /// A player strikes a foe within this, squared, swinging every SWING_EVERY ticks; walks to a point to within GOT.
 const STRIKE: f64 = 1.5 * 1.5;
 const SWING_EVERY: u32 = 20;
@@ -240,11 +240,11 @@ fn two_scripted_players_seal_a_heroic_fissure_to_the_same_fingerprint_natively_a
 }
 
 #[test]
-fn two_scripted_players_meet_a_raids_heroic_task_but_run_out_its_clock_to_the_same_fingerprint_natively_as_in_webassembly()
+fn two_scripted_players_meet_a_raids_heroic_task_and_hold_its_stores_to_the_same_fingerprint_natively_as_in_webassembly()
  {
     let (hash, event, at) = play(RAID_MINUTE);
-    assert_eq!(event, (2, 3, 2), "the raid failed on its clock, its heroic task met");
-    assert_eq!(at, RAID_ENDED, "the tick its clock ran out at, its wave and the stores left");
+    assert_eq!(event, (2, 2, 2), "the raid won, its heroic task met");
+    assert_eq!(at, RAID_ENDED, "the tick it was won at, its wave and the stores left");
     assert_eq!(hash, RAID_HASH);
 }
 

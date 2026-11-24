@@ -215,8 +215,20 @@ test('the opening is walked by speaking with each keeper and pledging, and the r
   road.standAt(CAMP[0] ?? 0, (CAMP[1] ?? 0) + 149);
   assert.equal(road.foes.filter(near).length, 5, 'within 150 m, its group stands');
   assert.ok(downs.putPlayer(player, CAMP[0] ?? 0, (CAMP[1] ?? 0) - 1.3));
-  // The camp's first foe stands 2.5 m north of its middle, 1.2 m before the player: faced, swung at until one falls.
-  for (let tick = 0; tick < 3600 && (road.quests?.counts[KILL] ?? 0) === 0; tick += 30) road.tick(30, undefined, 0, 15);
+  // The camp's first foe stands 2.5 m north of its middle, 1.2 m before the player: the player turns to the nearest
+  // foe each half second and swings at it until one falls.
+  const stand = [CAMP[0] ?? 0, (CAMP[1] ?? 0) - 1.3] as const;
+  const facing = (): number => {
+    const away = (foe: { readonly x: number; readonly y: number }) => Math.hypot(foe.x - stand[0], foe.y - stand[1]);
+    const nearest = road.foes.reduce<{ readonly x: number; readonly y: number } | null>(
+      (best, foe) => (best === null || away(foe) < away(best) ? foe : best),
+      null,
+    );
+    return nearest ? Math.atan2(nearest.x - stand[0], -(nearest.y - stand[1])) : 0;
+  };
+  for (let tick = 0; tick < 3600 && (road.quests?.counts[KILL] ?? 0) === 0; tick += 30) {
+    road.tick(30, undefined, facing(), 15);
+  }
   assert.ok((road.quests?.counts[KILL] ?? 0) >= 1, `a kill counts: ${JSON.stringify(road.quests)}`);
   assert.equal(road.quests?.task, 1);
 });
