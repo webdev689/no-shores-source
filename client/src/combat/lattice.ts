@@ -32,7 +32,7 @@ export const latticeOfBody = (body: string): LatticeKind | null =>
 const IDLE_FRAME_S = 1 / 10;
 const WALK_FRAME_S = 1 / 14;
 /** The share of an attack's frames that are its wind-up, held while the rules hold a telegraphed blow. */
-const TELL_SHARE = 0.35;
+export const TELL_SHARE = 0.35;
 
 /** What a foe of a kind does with each kind of blow: struck high (an overhead), across (a side cut), straight (a
  *  thrust), or loosed (a shot), and while it draws one. */

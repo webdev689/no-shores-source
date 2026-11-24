@@ -1,5 +1,7 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
+import { TELL_SHARE } from './lattice.ts';
+import { blowPhase } from './latticeStrikes.ts';
 import { MARK_FLOATS } from './marks.ts';
 import {
   type LatticeShown,
@@ -143,4 +145,14 @@ test("the Idol's beam leaves a fading tracer and bursts where it lands; the Rava
   assert.ok(near(out('idol_fire', 0), [0, -6, 1.2], 0.15), 'a burst where it lands');
   // Its sixth frame's shard is half flown: its trail runs back to within a hand's breadth of the hand.
   assert.ok(near(out('ravager_hurl', 6), [0.25, -0.4, 1.45], 0.3), 'the shard trails back toward the hand');
+});
+
+test("a blow's cut never shows while the rules still hold its tell, however many frames its move has", () => {
+  // The rules hold a telegraphed blow at frame floor(0.35 * frames) at most (lattice.ts latticeMove).
+  for (const frames of [8, 10, 12, 14]) {
+    const lastTell = Math.floor(TELL_SHARE * frames);
+    assert.equal(blowPhase(lastTell, frames), 'tell', `${frames} frames`);
+    assert.equal(blowPhase(lastTell + 1, frames), 'strike', `${frames} frames`);
+  }
+  assert.equal(blowPhase(9, 10), null);
 });

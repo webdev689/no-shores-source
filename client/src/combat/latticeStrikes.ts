@@ -3,6 +3,7 @@
 // Husk's lunge and gore, and the Heart's stomp), and a ring of shards breaking up on the ground where it lands. Laid
 // as latticeLooks.ts lays the rest, in the foe's crystal and scaled to it. Drawing only: the rules are the room's.
 import { layFlat, layLine, layUpright, ringSprite, slashSprite, starSprite } from './impactPixels.ts';
+import { TELL_SHARE } from './lattice.ts';
 import type { Ramp } from './markSprites.ts';
 import { BODY, CELL_M, DARK, HOT, LIGHT } from './spellPixels.ts';
 
@@ -34,10 +35,16 @@ export const BLOWS: Readonly<Record<string, Blow>> = {
   heart_stomp: { gathers: [0.3, 0.6], cut: null, lands: 0.6, ring: 16 },
 };
 
-/** Through a move, by the share of its frames played: its tell gathers until the strike, the strike runs until it
- *  lands, and the landing's ring breaks up until it is gone. The strike comes where the rules' tell ends (lattice.ts
- *  holds a telegraphed blow in the first 0.35 of its frames). */
-const SHARES = { strike: 0.35, lands: 0.55, gone: 0.8 } as const;
+/** Through a move, by the share of its frames played at a frame's start: its tell gathers through the frames the rules
+ *  hold a telegraphed blow in (lattice.ts), the strike runs until it lands, and the landing's ring breaks up until it
+ *  is gone. */
+const SHARES = { lands: 0.55, gone: 0.8 } as const;
+
+/** Where frame `frame` of a blow `frames` long stands: in its tell, its strike, its landing, or past them all. */
+export function blowPhase(frame: number, frames: number): 'tell' | 'strike' | 'lands' | null {
+  const share = frame / frames;
+  return share <= TELL_SHARE ? 'tell' : share < SHARES.lands ? 'strike' : share < SHARES.gone ? 'lands' : null;
+}
 /** A rush's streak runs this far back from where the crystal gathers (metres, on a man-sized foe). */
 const STREAK_BACK_M = 0.9;
 
@@ -54,13 +61,14 @@ export function layLatticeStrike(
 ): void {
   const blow = BLOWS[anim];
   if (!blow || frames <= 0) return;
-  const share = (frame + 0.5) / frames;
+  const share = frame / frames;
+  const phase = blowPhase(frame, frames);
   const cell = CELL_M * scale;
   const gathers = place(blow.gathers);
-  if (share < SHARES.strike) {
+  if (phase === 'tell') {
     // The tell: a star of its crystal growing where the blow comes from.
-    layUpright(out, starSprite(1 + Math.round((3 * share) / SHARES.strike)), ramp, gathers, eye, cell);
-  } else if (share < SHARES.lands) {
+    layUpright(out, starSprite(1 + Math.round((3 * share) / TELL_SHARE)), ramp, gathers, eye, cell);
+  } else if (phase === 'strike') {
     if (blow.cut) {
       layUpright(out, slashSprite(blow.cut[0], blow.cut[1], HOT), ramp, gathers, eye, cell);
     } else {
@@ -68,7 +76,7 @@ export function layLatticeStrike(
       layLine(out, eye, back, gathers, 0.12 * scale, ramp[DARK]);
       layLine(out, eye, back, gathers, 0.05 * scale, ramp[LIGHT]);
     }
-  } else if (share < SHARES.gone) {
+  } else if (phase === 'lands') {
     // Where it lands: a ring of shards on the ground, widening and breaking up, a flash at its heart.
     const landed = (share - SHARES.lands) / (SHARES.gone - SHARES.lands);
     const ground = place([blow.lands, 0]);

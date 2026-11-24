@@ -238,5 +238,5 @@ export function layLatticeLooks(out: number[], shown: LatticeShown, eye: Point):
       layLine(out, eye, tail, head, 0.035, ramp[LIGHT]);
     }
   }
-  layLatticeStrike(out, shown.anim, [frame, shown.frames], (spot) => place(spot), { scale, ramp, eye });
+  layLatticeStrike(out, shown.anim, [frame, shown.frames], place, { scale, ramp, eye });
 }

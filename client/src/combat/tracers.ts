@@ -493,8 +493,9 @@ export class Tracers {
     }
   }
 
-  /** A trail along a flight `shown` at each second flown, over its last ARROW.trail behind `flown`, `kept` of it, in
-   *  the element `look` (none by default) at `time`: its newest stretch whole, its oldest breaking up. */
+  /** A trail along a flight `shown` at each second flown, over its last `trail` seconds (an arrow's unless said) behind
+   *  `flown`, `kept` of it, in the element `look` (none by default) at `time`, or in `layers` where given: its newest
+   *  stretch whole, its oldest breaking up. */
   private trailMesh(
     out: number[],
     eye: Point,
