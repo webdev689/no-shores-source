@@ -73,6 +73,13 @@ test('E held beside a container searches it a second and a half, naming it by it
     null,
     'past its side',
   );
+  const above = { ...WARDROBE, number: 10, box: [0, 19.6, 1, 19.9] as const, foot: 3, top: 4.8 };
+  const twoFloors = state({ chests: [], searchables: [above, WARDROBE] });
+  assert.equal(
+    findUse([0.5, 20 - SEARCH_REACH_M + 0.1, 0], twoFloors, () => undefined, false)?.held?.index,
+    9,
+    'one on the floor above, nearer across, never hides one beside them',
+  );
   assert.equal(offBox([0, 0, 1, 1], 0.5, 0.5), 0, 'inside its box');
   assert.equal(offBox([0, 0, 1, 1], 4, 5), 5, 'from its nearest corner');
 });

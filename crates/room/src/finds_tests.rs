@@ -229,13 +229,22 @@ fn a_container_searched_a_second_and_a_half_beside_it_pays_less_than_a_chest_and
 }
 
 #[test]
-fn a_patrols_containers_are_drawn_again_in_their_turn() {
+fn a_patrols_containers_are_drawn_again_in_their_turn_and_one_searched_stays_searched() {
     let (mut room, player) = patrol();
     let first: Vec<u32> = room.searchables_for(player).into_iter().map(|(number, _)| number).collect();
     run(&mut room, SEARCH_TURN_TICKS);
     let next: Vec<u32> = room.searchables_for(player).into_iter().map(|(number, _)| number).collect();
     assert_eq!(next.len(), first.len());
-    assert!(next.iter().all(|number| !first.contains(number)), "new numbers, so each may be searched again");
+    // With one container, every turn draws it again: searched, it stays searched for its player, as its number stays.
+    room.lay_finds(&places(), holders().into_iter().take(1).collect());
+    room.tick();
+    let [(number, [west, north, east, ..])] = room.searchables_for(player)[..] else { panic!("one container") };
+    stand(&mut room, player, [(west + east) / 2.0, north - SEARCH_REACH + 0.1]);
+    assert_eq!(hold(&mut room, player, number, SEARCH_TICKS + 1), 0);
+    run(&mut room, SEARCH_TURN_TICKS);
+    assert!(room.searchables_for(player).is_empty(), "drawn again, still searched");
+    let other = room.join().expect("space");
+    assert_eq!(room.searchables_for(other).len(), 1, "and searchable for anyone else");
 }
 
 #[test]

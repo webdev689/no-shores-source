@@ -21,7 +21,7 @@ export interface Cache {
  *  the room stands it (crates/room finds.rs) it stays clear of every kit piece, none more than 0.3 m proud of a wall
  *  (tools/dungeon/envelope.py). */
 const LID_OPEN_S = 0.6;
-/** The chest's size: fitted to the box the cache's chest of boxes filled (0.9 m across, 0.5 m deep), metres. */
+/** The chest's size: fitted within 0.9 m across and 0.5 m deep, the box the room stands a chest in (finds.rs). */
 const SCALE = chestScale(0.9, 0.5);
 const HALF_DEEP = 0.25;
 const TALL = chestTall(SCALE);

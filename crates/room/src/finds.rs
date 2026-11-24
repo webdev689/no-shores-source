@@ -306,6 +306,8 @@ impl Room {
                 self.finds.chests.push(Chest { place, number, until: u64::MAX });
             }
         }
+        // Drawn afresh, every container is new to everyone, as its chests are.
+        self.finds.searchable.clear();
         self.draw_searchable();
     }
 
@@ -330,7 +332,7 @@ impl Room {
     }
 
     /// Draws which containers are searchable: one in its share of them, at least one where any stands, at most
-    /// SEARCHABLE_MOST, each a new number.
+    /// SEARCHABLE_MOST, each a new number but one searchable already.
     fn draw_searchable(&mut self) {
         let share = if self.finds.patrol { PATROL_SHARE } else { DUNGEON_SHARE };
         let holders = self.finds.holders.len();
@@ -338,9 +340,12 @@ impl Room {
         let dice = self.finds_dice();
         let mut left: Vec<usize> = (0..holders).collect();
         let mut drawn = Vec::new();
+        // A container drawn again keeps its number, so whoever searched it this turn cannot search it again at once.
+        let before = std::mem::take(&mut self.finds.searchable);
         for nth in 0..count {
             let holder = left.swap_remove(dice.pick(Purpose::Find, 40 + nth as u32, left.len()));
-            drawn.push((holder, self.take_number()));
+            let kept = before.iter().find(|(was, _)| *was == holder).map(|&(_, number)| number);
+            drawn.push((holder, kept.unwrap_or_else(|| self.take_number())));
         }
         self.finds.searchable = drawn;
         self.finds.searchable_until = self.clock + SEARCH_TURN_TICKS;

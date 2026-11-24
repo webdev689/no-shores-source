@@ -17,8 +17,7 @@ export type BuiltModule = {
   readonly meshes: readonly ModuleMesh[];
 };
 
-/** Each chest's name, the box it is fitted to (across, back to front, metres: the Blender chests' it took the place
- *  of) and its hinge's metal. */
+/** Each chest's name, the box it is fitted to (across, back to front, metres) and its hinge's metal. */
 const CHESTS = [
   { name: 'chest', wide: 0.95, deep: 0.58, hinge: 'iron' },
   { name: 'chest-heroic', wide: 1.1, deep: 0.66, hinge: 'gold' },

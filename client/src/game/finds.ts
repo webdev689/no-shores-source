@@ -55,16 +55,18 @@ export function findUse(
 ): Use | null {
   if (!gear || mounted) return null;
   const [x, y, z] = feet;
-  const chest = nearest(gear.chests ?? [], (each) => Math.hypot(each.at[0] - x, each.at[1] - y));
-  const within = (off: number, foot: number, reach: number) =>
-    off <= reach && (z === null || Math.abs(z - foot) <= FIND_HEIGHT_M);
-  if (chest && within(chest.off, chest.find.at[2], CHEST_REACH_M)) {
+  // Only finds on the player's own level, so one on a floor above never hides one beside them.
+  const level = (foot: number) => z === null || Math.abs(z - foot) <= FIND_HEIGHT_M;
+  const chests = (gear.chests ?? []).filter((each) => level(each.at[2]));
+  const chest = nearest(chests, (each) => Math.hypot(each.at[0] - x, each.at[1] - y));
+  if (chest && chest.off <= CHEST_REACH_M) {
     const { number } = chest.find;
     const run = () => ask({ kind: ASKS.openFind, item: number });
     return { words: 'Hold to open the chest', run, held: { kind: 'find', index: number, seconds: OPEN_S } };
   }
-  const held = nearest(gear.searchables ?? [], (each) => offBox(each.box, x, y));
-  if (!held || !within(held.off, held.find.foot, SEARCH_REACH_M)) return null;
+  const searchables = (gear.searchables ?? []).filter((each) => level(each.foot));
+  const held = nearest(searchables, (each) => offBox(each.box, x, y));
+  if (!held || held.off > SEARCH_REACH_M) return null;
   const { number, model } = held.find;
   const run = () => ask({ kind: ASKS.openFind, item: number });
   return {

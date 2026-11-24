@@ -450,7 +450,7 @@ DFO's spoils ([[Pick - Loot Drops]]).
   fanned toward the player who opened it as a kill's are, or onto the floor the cache keeps clear before it. It may be
   taken 122 ticks after (about 2 s: the lid's 0.22 s to open its mouth, and the longest the pour's higher pop
   bounces), and is otherwise as any drop. An event's chest that lapses unopened, or is opened as its player leaves,
-  puts its Vestige in the ten, else the vault, else on the ground, as before.
+  puts its Vestige in the ten, else the vault, else on the ground.
 - **Taken.** Walking within 1.5 m of a piece at rest takes it: a Vestige while fewer than ten are carried, a box while
   the ammunition is not full, a crate while fewer than five are carried. A piece not taken stays two minutes; then
   the room sends the player's gear again without it, so their page stops showing it, and a Vestige among them goes

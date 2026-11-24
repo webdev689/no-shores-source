@@ -161,8 +161,8 @@ on Cloudflare.
   beside, at any of eight spots 0.6 m out round its box (a crate inside a tent, one walled in by others), never is. A dungeon's room lays its own
   ([[Dungeons]], "In the rooms"). Every draw is made on the room's loot seed, on a stream and a count of its own, at
   its first tick, after its host seeds it. A player opens each find once: it stays for the rest, and the room keeps it
-  opened for their account however often they rejoin. Opened, it pays them ([[Gear]], "A find"), its Vestige thrown
-  out as a kill's drop is. A player's gear carries the chests standing they have not opened, five numbers each
+  opened for their account however often they rejoin. Opened, it pays them ([[Gear]], "A find"): a chest's Vestige
+  poured out of it toward them (`pour`; [[Gear]], "Drops"), a container's thrown to their feet. A player's gear carries the chests standing they have not opened, five numbers each
   (number, x, y, z, facing), the containers, eight each (number, box, foot, top, model), and the number of the last
   find the room paid them for (`opened`).
 - **A patrol's dungeon** has a room of its own ([[Dungeons]], "In the rooms"), opened from its patrol's node file:

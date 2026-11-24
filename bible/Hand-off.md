@@ -214,8 +214,8 @@ The decisions in [[Open Questions]] are not repeated here.
   (the finds, the cache, the events' plain and heroic) is the owner's chest from DFO, its 50 points ported and built
   in code (`models/chest.ts`, [[Pick - Chest]]), the Blender event chests gone; a chest's Vestige (a find's, the
   cache's, an event chest its player opens) is poured out of it as its lid opens, as project-final's cache pours; Aurem
-  and materials still go straight to the player, and a search pours nothing. A patrol's chest used to face its wall;
-  it now looks the way its place faces; and a page playing alone, which drew no drop at all, now draws them. The page draws a mark over each chest and searchable container, the feed's
+  and materials still go straight to the player, and a search pours nothing. A patrol's chest looks the way its place
+  faces, and a page playing alone draws the drops lying for the player. The page draws a mark over each chest and searchable container, the feed's
   "Chest" or "Searched the wardrobe", and plays alone as online. A read-only audit's
   findings were each tested first and fixed. Tested offline: `cargo xtask check` on its head (the commit named in the
   pull request); in the running game headless with no GPU, a chest opened (21 Aurem, 4 Brineglass) and a crate
