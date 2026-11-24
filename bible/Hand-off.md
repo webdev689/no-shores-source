@@ -193,33 +193,35 @@ each part works is in its system note.
 The decisions in [[Open Questions]] are not repeated here.
 
 - **The website and the Discord bot** (#194, a draft, not merged; [[The Website Is at noshores.online, After DFO's]],
-  [[DFO's Discord Bot Comes Over, Its Panel on the Website]]). On its branch `ccr-e0e5f211-v55a3s`: the [[Website]]
-  (`site/`: Home, The World, The Game, the panel; every picture redrawn to DFO's detail and Home laid out after DFO's),
-  the [[Discord Bot]] (`server/bot/`: the core and all 19 modules, from DFO's unmerged `ccr-ed24355a-76go4h`), its
-  panel as a page of the site, and the game link (the accounts' `LinkedCharacters` entrypoint, the `game` module's
-  `{character}` placeholders and `/link`). The owner's answers, recorded
-  ([[noshores.online Is Served From Cloudflare, and the Game Is Played There]],
-  [[The Discord Bot Deploys on Each Merge]]): the site and the game served from Cloudflare at `noshores.online`, the
-  game under `/play/` (`site.yml`, the Worker `noshores-site`), and the bot deployed on each merge when its code
-  changed (`bot.yml`), which also writes its slash commands to Discord, which nothing did before. `deploy-ready.sh`
-  decides both Workers' deploys; the bot is out of the rooms' code, so a bot change no longer redeploys the rooms.
-  Tested offline: every server and site test, lint, types and the repo checks; the site pictured at 1280, 1920, 390
-  and 360 wide. Not tested live: nothing has deployed. What it waits on, the owner's each:
+  [[DFO's Discord Bot Comes Over, Its Panel on the Website]],
+  [[noshores.online Is Served From Cloudflare, and the Game Is Played There]], [[The Discord Bot Deploys on Each Merge]]).
+  On its branch `ccr-e0e5f211-v55a3s`:
+  - The [[Website]]: Home, The World, The Game, the panel and a 404, telling a newcomer plainly what the game is, every
+    line matched to a decision or to what is built (a read-only audit checked each claim against these notes); every
+    picture drawn by code to DFO's detail, Overlook's court and a duel and a dungeon's gate among them; share cards; the
+    Discord invite set. Served by `site.yml` from Cloudflare: the site at `noshores.online`, the game under `/play/`,
+    `www` redirected, hashed files cached a year. `noshores.online`'s nameservers are Cloudflare's (tested live).
+  - The [[Discord Bot]] (`server/bot/`): the core and all 19 modules, deployed by `bot.yml` on each merge when its code
+    changed, writing its slash commands to Discord. Five read-only audits (the bot's core and security, its modules,
+    the deploys, the notes and tests, the site) and a final review of the merged fixes: every finding fixed with a test
+    that failed first, or recorded as a limit in its note; the two high ones were auto-mod's link allow-list bypassed
+    by `?` or `#` in a host, and a temporary ban's expiry lifting a later ban made by hand.
+  - The deploys: the accounts keep their own deploy record, so a failed accounts deploy is tried again; one tested
+    script decides the rooms', the accounts' and the bot's deploys.
+  Tested offline at the head: 637 server and site tests, lint, types, format and `cargo xtask repo`; both Workers'
+  `wrangler deploy --dry-run`; the site served by `wrangler dev` (404, redirects, caching). Not tested live: nothing
+  has deployed. `server/outpostReload.test.ts`'s three tests misreported once in a full parallel run and passed alone
+  and on the next run. What it waits on, the owner's each:
   - The yes to merge, once CI is green on the head.
-  - `noshores.online`'s nameservers moved from Porkbun to Cloudflare; until then `site.yml` serves nothing and says
-    so, while the bot's `/link` and panel already name the domain. The Cloudflare token then needs Zone: Read and
-    Workers Routes: Edit on that zone. The owner posted a Porkbun
-    API key in an earlier chat: it was never stored or used, and should be rotated.
-  - One Discord application, its keys added as repository secrets (`DISCORD_CLIENT_ID`, `DISCORD_CLIENT_SECRET`,
-    `DISCORD_PUBLIC_KEY`, `DISCORD_BOT_TOKEN`, `BOT_OWNERS`; [[Discord Bot]], "One Discord application"), its OAuth2
-    redirects and interactions endpoint set, then the `bot` workflow run by hand once so the keys reach the Worker.
-  - The Discord server's invite, the one empty `discord` address in `site/src/siteMap.ts`: the Discord buttons and
-    Home's Discord call stay hidden until it is set.
-  - The game moved to `noshores.online/play/` keeps its GitHub Pages copy (the World Editor lives there): a guest's
-    save is kept per address, so a guest who played on Pages starts afresh at the domain unless linked to Discord.
-    Whether Pages' game should send players to the domain is the owner's.
-  - Words that are Claude's: The Game page's line "A pirate sandbox in a shared world.", the auto-mod rules' prefix
-    `No Shores: `, "The bot" as the name on the bot's own cases, and Home's hidden heading "At a glance".
+  - The Discord application's keys as repository secrets (`DISCORD_CLIENT_ID`, `DISCORD_CLIENT_SECRET`,
+    `DISCORD_PUBLIC_KEY`, `DISCORD_BOT_TOKEN`, `BOT_OWNERS`), its redirects and interactions endpoint
+    ([[Discord Bot]], "One Discord application"), and the `bot` workflow run by hand once if keys are added after the
+    merge. The Cloudflare token needs Zone: Read and Workers Routes: Edit on `noshores.online`.
+  - A Discord invite that never expires: the one on the site, `gzqhU3zGh`, ends on 24 December.
+  - Whether the panel's sign-in asks for the `guilds` scope ([[Open Questions]]).
+  - The site's words are Claude's phrasing of the record, for the owner to change; so are the auto-mod prefix
+    `No Shores: `, "The bot" on the bot's own cases, and a month as how long the bot keeps a server it left.
+  - The Porkbun key posted in an earlier chat should be rotated; it was never stored or used.
 - **The island view in rain, the Playlist over the island and the ships at a roadstead** (#191, merged on the owner's
   "Deploy", which deploys the page and the rooms). The owner's three reports:
   - "When its cloudy and raining. The overworld pan over the island is shrouded and you can only see the nodes": the
