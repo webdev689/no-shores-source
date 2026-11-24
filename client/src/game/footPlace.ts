@@ -155,3 +155,14 @@ export interface FootFrame {
   readonly quest?: Quest | null;
   readonly sting?: 'cadence' | 'victory' | 'defeat' | null;
 }
+
+/** Runs `work` on a room just joined by `link`; should it throw, the link is let go first, so a trip that failed after
+ *  its room joined never rejoins later and takes the character from the room the player is really in. */
+export async function closedIfThrown<T>(link: { close?(): void }, work: () => Promise<T>): Promise<T> {
+  try {
+    return await work();
+  } catch (error) {
+    link.close?.();
+    throw error;
+  }
+}

@@ -772,13 +772,13 @@ never while a press is held. Each press is an ask the room answers.
 - **An icon shows its item's state, not words** ([[Text Is Plain]]): a weapon's element as its glyph in the top
   corner; a green gauge along its foot that fills as its nodes are bought ([[The Face Is Mended Whole, and the Gauge Counts Upgrades]]); and, once every node is
   bought, a gilded frame in place of the gauge, as Destiny 2's masterworks are.
-- **Character.** The player's figure large in the middle, under two plaques side by side ([[Prestige Stands Beside Level
-  on the Character Tab]], [[The Level and Prestige Plaques Show Their Numbers Alone]]): the level in brass and Prestige
+- **Character.** The player's figure large in the middle, under two plaques side by side
+  ([[Prestige Stands Beside Level on the Character Tab]], [[The Level and Prestige Plaques Show Their Numbers Alone]]): the level in brass and Prestige
   in pale steel, each its number alone, and under both the meter to the next level and what it takes; under the figure
   the Melee and Ranged loadouts' Attack and Defense ([[The Character Tab Shows No Fruit of Dagon]]). The Melee and
   Ranged loadouts, the cloak and the Appearance button stand to its left, under the worn Art's diamond, the armour to
-  its right, each slot its item's picture with its names, the worn Art's diamond first, then the Weapons heading ([[The
-  Weapons Heading Stands Under the Art]]) level with the Armour heading across, under the Mount slot, in the Art's
+  its right, each slot its item's picture with its names, the worn Art's diamond first, then the Weapons heading
+  ([[The Weapons Heading Stands Under the Art]]) level with the Armour heading across, under the Mount slot, in the Art's
   row, so each row stands level with the armour's across from it; under the Ranged slot's, the ammunition left of its capacity
   ("Ammo 18 of 24"), or "No ammo" in the loss colour, at 22 where the menu is wide. A kind is named as the screens name
   it: Sword & Shield, Double Daggers, Great Axe. A slot's card shows as the pointer moves over it or the keys bring the
@@ -1238,7 +1238,7 @@ serves each ask only at its own counter ([[Gear]], "In the rooms"; [[Factions]])
   and he speaks only to thank. The footer: Click / E (Take).
 - **What they say.** As the screen opens the keeper greets the player in a line of their own, typed and voiced in
   the band as [[Speech]] types and voices the dialogue box's; after a ware bought they thank them, and after a
-  refusal for want of the price they say so ("Not yet, dear. Come back when you can. I will be here."). Each line is
+  refusal for want of the price they say so ("Not yet, dear. Come back when you can. I'll be here."). Each line is
   a scene of `content/story/keepers.json`, said in turn, held to [[Dialogue]]. Once typed whole, the line is read to a
   screen reader from a polite live copy, as every line of the dialogue box is; the currencies are read with their
   names.

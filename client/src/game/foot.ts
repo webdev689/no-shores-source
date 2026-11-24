@@ -58,7 +58,7 @@ import { worldOutput } from './uiSounds.ts';
 import type { UsePrompt } from './usePrompt.ts';
 import { type Dressed, dressInGear, figureWhere, figuresEye, otherCards, ownCard, strikersOf } from './footFigures.ts';
 import type { AtEntrance, FootAsk, FootContext, FootFight, FootFrame, Heard, Held, Opened, Uses } from './footPlace.ts';
-import { nodeAddress, stand } from './footPlace.ts';
+import { closedIfThrown, nodeAddress, stand } from './footPlace.ts';
 import { type OutpostHere, outpostAt } from './guild/outpostHere.ts';
 import { hearing, nextOtherId, roomNote, rulesOf } from './footRoom.ts';
 
@@ -153,6 +153,7 @@ export class Foot {
     this.node = node;
     [this.boxes, this.text, this.dungeon, this.seas] = [opened.boxes, opened.text, opened.dungeon, opened.seas];
     this.module = people.module;
+    people.held.entrances.namesFrom(people.module, node);
     const layout = opened.dungeon?.layout;
     this.groundAt = layout
       ? (x, y) => (openAt(layout, Math.floor(x / layout.cell), Math.floor(y / layout.cell)) ? 0 : null)
@@ -214,18 +215,16 @@ export class Foot {
       const connection = address ? await RoomConnection.open(address, heard.snapshot, heard.gear, session) : null;
       // The room names the rect its window was cut to; a room baked from older edits is stood on as it stands.
       const bounds = connection?.node?.bounds;
-      try {
+      const work = async () => {
         if (bounds && bounds.some((value, index) => Math.abs(value - (rect[index] ?? 0)) > 0.5)) {
           rect = [bounds[0] ?? 0, bounds[1] ?? 0, bounds[2] ?? 0, bounds[3] ?? 0];
           ({ boxes, ground } = await standOn(context, rules.combat, rect));
         }
-      } catch (error) {
-        connection?.close();
-        throw error;
-      }
-      const text = nodeText(node, rect, ground, boxes, await context.land.grounds(node.id));
-      const link = connection ?? (await openNodeAlone(module, node.id, text, heard, arriving?.number));
-      return { link, boxes, text, dungeon: null, seas };
+        const text = nodeText(node, rect, ground, boxes, await context.land.grounds(node.id));
+        const link = connection ?? (await openNodeAlone(module, node, text, heard, arriving?.number, seas));
+        return { link, boxes, text, dungeon: null, seas };
+      };
+      return connection ? closedIfThrown(connection, work) : work();
     });
   }
 
@@ -248,7 +247,7 @@ export class Foot {
     return Foot.start(context, dungeonPlace(outside.node, layout), rules, async (heard, session) => ({
       link: address
         ? await RoomConnection.open(address, heard.snapshot, heard.gear, session)
-        : await openAlone(module, outside.text, into, heard),
+        : await openAlone(module, outside.text, into, heard, seas),
       boxes: seenBlocks(layout),
       text: outside.text,
       dungeon,
@@ -282,18 +281,15 @@ export class Foot {
       asks: asked.length > 0,
     };
     const opened = await open(heard, await context.session());
-    const fight = new Fighting(rules.combat, opened.link);
-    hearer.fight = fight;
-    if (!opened.dungeon) for (const foe of asked) fight.ask(foe);
-    // The welcome's dresses and plates come with the first snapshot after it (`RoomConnection`), so none newer is
-    // undone by the welcome taken late.
-    return new Foot(
-      context,
-      node,
-      opened,
-      { link: opened.link, fight, ...rules },
-      { otherPlayers: players, held, folk: [], module: await context.roomModule },
-    );
+    return closedIfThrown(opened.link, async () => {
+      const fight = new Fighting(rules.combat, opened.link);
+      hearer.fight = fight;
+      if (!opened.dungeon) for (const foe of asked) fight.ask(foe);
+      // The welcome's dresses and plates come with the first snapshot after it (`RoomConnection`), so none newer is
+      // undone by the welcome taken late.
+      const people = { otherPlayers: players, held, folk: [], module: await context.roomModule };
+      return new Foot(context, node, opened, { link: opened.link, fight, ...rules }, people);
+    });
   }
 
   /** The player on a grid of heights with no ground of the land: boarding a struck ship, on `node` its deck in its own
@@ -444,8 +440,9 @@ export class Foot {
     const foeFeel = { held: (id: number, view: FighterView) => feel.held(id, view), shift, drawn: drawnAt, smear };
     figures.push(...foes.cards(fight, forge, eye, clock, frameTicks, tickSeconds, effects.flashes, foeFeel));
     // The player's own shots leave the weapon as drawn: the first person's muzzle, or the figure's along its shot.
-    const [muzzle, gearNow, floor] = [walker.muzzle, this.gear?.gear ?? null, this.floor];
-    const marked = markedHere(gearNow, countersOf(this.node), floor, this.context.trips.props(), this.context.speak);
+    const [muzzle, gearNow, floor, doors] = [walker.muzzle, this.gear?.gear ?? null, this.floor, this.held.entrances];
+    const { trips, speak } = this.context;
+    const marked = markedHere(gearNow, countersOf(this.node), floor, trips.props(), speak, doors.entrances);
     const lit = litMarksSeen(marked, shot.eye, clock);
     const hidden = marksHidden(marked, shot.eye, clock);
     const laid = (gearNow?.drops ?? []).filter((drop) => drop.kind !== DROPPED.chest);
@@ -525,7 +522,6 @@ export class Foot {
       : (this.uses?.(x, y, (asked) => fight.askGear(asked)) ?? null);
     const { mounted } = walker.player;
     const counters = countersOf(this.node);
-    const { trips, speak } = this.context;
     const chest = this.publicView.use(chests, feet, (asked) => fight.askGear(asked), clock);
     this.using = able ? (chest ?? useOnFoot(x, y, placeUse, counters, gear, here, trips, speak, mounted)) : null;
     // Use let go, as bound (a key, the pad's button, or the page's focus lost): a gather under way is let go of.
@@ -583,14 +579,16 @@ export class Foot {
   /** Leaves the node: its room lets the player go, and every other player's figure and its people are taken away. */
   leave(): void {
     for (const changed of [ACCOUNT_CHANGED, GUILD_CHANGED]) removeEventListener(changed, this.renamed);
+    // The gather's stop is asked while the link still holds.
+    this.hold.release();
     this.link.close?.();
     this.otherPlayers.clear();
+    this.foes.forget(this.context.forge);
     this.arrivals.clear();
     this.plaza?.close();
     this.outpost?.stop();
     this.prompt.show(null);
     this.falling.close();
-    this.hold.release();
     // The figure stands again wherever the walker goes next, at sea as on foot.
     this.context.walker.fall = null;
     // An Anima's edge frame cast just before leaving must not stay over the next place.

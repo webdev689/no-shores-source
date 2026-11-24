@@ -484,3 +484,22 @@ fn where_the_sea_checks_landings_a_player_lands_and_counts_the_isles_kills_only_
     assert!(isle.land("account-a", 1));
     assert_eq!(now(&isle, player).1, counted(key, 1), "the sea's word for theirs");
 }
+
+#[test]
+fn a_kill_goals_group_no_player_in_the_room_pursues_and_fighting_no_one_is_sent_away() {
+    let (key, goal) = group_goal();
+    let (node, place) = (goal.goal.node().expect("a node"), goal.goal.place().expect("a place"));
+    let mut room = node_room(node, &[(place, [0.0, 0.0], 48.0)]);
+    let player = joined(&mut room, &on_goal(key), [0.0, 149.0]);
+    run(&mut room, 1);
+    let group = living(&room);
+    assert!(!group.is_empty(), "it stands for the player on its goal");
+    room.leave(player);
+    run(&mut room, 2);
+    assert!(group.iter().all(|id| !room.foes.contains_key(id)), "nobody here on its goal: it is sent away");
+    assert!(room.garrison.iter().all(|post| !post.arrival), "and its arriving post with it");
+    let back = joined(&mut room, &on_goal(key), [0.0, 149.0]);
+    run(&mut room, 1);
+    assert_eq!(living(&room).len(), group.len(), "one on its goal back: it stands for them afresh");
+    assert!(room.player(back).is_some());
+}

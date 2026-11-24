@@ -44,11 +44,12 @@ pub(crate) const SPREAD: f64 = 2.5;
 /// The beats are drawn from a stream of their own, so drawing them leaves every post where it stood.
 const BEAT_STREAM: u64 = 0x6265_6174;
 
-/// A group as the seed draws it: its foes by type and rank, the first standing in its middle when it leads, and
-/// whether its post is the one farthest from the spawns.
+/// A group as the seed draws it: its foes by type and rank.
 pub(crate) struct Group {
     pub members: Vec<(u8, Rank)>,
+    /// Its first stands in its middle facing the nearest spawn, the rest round it: a Boss's, and an isle's at its landmark.
     pub leads: bool,
+    /// It takes the post farthest from the spawns and holds it, walking no beat: a Boss's or a Miniboss's.
     pub farthest: bool,
 }
 
@@ -131,13 +132,7 @@ pub(crate) fn index(draws: &mut Mulberry32, count: usize) -> usize {
 
 /// Three or four groups of two to four, each foe drawn from `from`.
 fn bands(draws: &mut Mulberry32, from: &[(u8, Rank)]) -> Vec<Group> {
-    let mut groups = Vec::new();
-    for _ in 0..3 + usize::from(draws.draw() < 0.5) {
-        let size = 2 + index(draws, 3);
-        let members = (0..size).map(|_| from[index(draws, from.len())]).collect();
-        groups.push(Group { members, leads: false, farthest: false });
-    }
-    groups
+    (0..3 + usize::from(draws.draw() < 0.5)).map(|_| stands::band(draws, from)).collect()
 }
 
 /// A node's groups by its kind, as its seed draws them: a patrol area's bands of Minors and Majors; a mission's, with
@@ -340,14 +335,13 @@ impl Room {
         let lattice = open.clone();
         let mut beats = draws_of(self.world_seed ^ BEAT_STREAM);
         for group in groups(kind, &mut draws) {
-            while !open.is_empty() {
-                let pick = if group.farthest { farthest(&open, &section) } else { index(&mut draws, open.len()) };
-                let point = open.remove(pick);
-                open.retain(|&other| apart([other.0, other.1], [point.0, point.1]) >= POSTS_APART);
-                if let Some(post) = self.post_at(&group, point, (&section, &lattice), (&mut draws, &mut beats)) {
-                    self.garrison.push(post);
-                    break;
-                }
+            let pick = |open: &[(f64, f64)], draws: &mut Mulberry32| {
+                if group.farthest { farthest(open, &section) } else { index(draws, open.len()) }
+            };
+            let stood =
+                |point, draws: &mut Mulberry32| self.post_at(&group, point, (&section, &lattice), (draws, &mut beats));
+            if let Some(post) = stands::first_post(&mut open, &mut draws, pick, stood) {
+                self.garrison.push(post);
             }
         }
         self.gird_and_stand(levels);
@@ -432,20 +426,17 @@ impl Room {
     /// Stands every foe of a post's group at its place, idle, facing as it was posted, leashed to it, at its level
     /// raised by the seas and with its shield whole, if it has one.
     pub(crate) fn stand_post(&mut self, post: usize) {
-        let (members, girds) = (self.garrison[post].members.clone(), self.garrison[post].girds.clone());
-        let standing: Vec<FighterId> = members
-            .iter()
-            .zip(girds)
-            .filter_map(|(&(number, rank, place, facing), (level, shield))| {
-                let id = self.stand_foe(foe_type(number)?, rank, place, facing, None);
-                self.gird(id, self.at_seas(level), shield);
-                self.foes.get_mut(&id)?.brain.posted_at(place, facing);
-                Some(id)
-            })
-            .collect();
+        let standing = (0..self.garrison[post].members.len()).filter_map(|nth| self.stand_member(post, nth)).collect();
+        self.renew_post(post, standing);
+    }
+
+    /// A post's group as it stands anew, `standing`: led afresh, unbroken, not defending, its beat begun again.
+    fn renew_post(&mut self, post: usize, standing: Vec<FighterId>) {
+        if let Some(first) = self.garrison[post].standing.first() {
+            self.unvisited.remove(first);
+        }
         self.garrison[post].leader = leader_of(self, &standing);
-        self.garrison[post].standing = standing;
-        self.garrison[post].cleared_at = None;
+        (self.garrison[post].standing, self.garrison[post].cleared_at) = (standing, None);
         (self.garrison[post].broken, self.garrison[post].defending) = (false, false);
         self.renew_last_stand();
         let clock = self.clock;
@@ -481,10 +472,12 @@ impl Room {
         }
     }
 
-    /// Each tick each group walks its beat; a group whose last foe has fallen is cleared from that tick, and stands
-    /// again once STAND_AGAIN has passed, no player stands within CLEAR_AROUND of its post, and the living foes leave
-    /// room for it.
+    /// Each tick a patrol's foes' sites a player has come near stand their groups, each group walks its beat, and a
+    /// half-fallen patrol group left alone is made whole (`stands.rs`); a group whose last foe has fallen is cleared
+    /// from that tick, and stands again once STAND_AGAIN has passed, no player stands within CLEAR_AROUND of its post,
+    /// and the living foes leave room for it.
     pub(crate) fn keep_garrison(&mut self) {
+        self.stand_sites();
         self.lead_groups();
         self.walk_beats();
         // A wave that has fallen is gone: it never stands again.
@@ -492,6 +485,7 @@ impl Room {
         let fallen = |id: &FighterId| foes.get(id).is_none_or(|foe| foe.fighter.dead());
         self.garrison.retain(|post| !post.arrival || !post.standing.iter().all(fallen));
         for post in 0..self.garrison.len() {
+            self.make_whole(post);
             let found = &self.garrison[post];
             let fallen = |id: &FighterId| self.foes.get(id).is_none_or(|foe| foe.fighter.dead());
             let Some(cleared) = found.cleared_at else {
@@ -566,6 +560,9 @@ fn farthest(open: &[(f64, f64)], section: &Section) -> usize {
 #[path = "beat.rs"]
 mod beat;
 
+#[path = "stands.rs"]
+mod stands;
+
 #[path = "groups.rs"]
 mod groups;
 pub(crate) use groups::{Encounter, leader_of};
@@ -593,6 +590,10 @@ mod crowd_tests;
 #[cfg(test)]
 #[path = "beat_tests.rs"]
 mod beat_tests;
+
+#[cfg(test)]
+#[path = "stands_tests.rs"]
+mod stands_tests;
 
 #[cfg(test)]
 #[path = "clears_tests.rs"]

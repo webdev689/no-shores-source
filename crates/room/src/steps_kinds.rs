@@ -121,6 +121,15 @@ impl Room {
                 found.brain.hunt(player, target, clock);
             }
         }
+        // An ambush is its escort's one wave: stood before in this task, before a rejoin or a return, it drops nothing.
+        let key = self.quests.steps.get(&player).map(|step| step.key);
+        let quest = key.and_then(|key| gear::quests::quests().quests.get(key[0])).map(|quest| quest.id.as_str());
+        let fought = self.players.get_mut(&player).zip(quest.zip(key)).is_some_and(|(found, (quest, key))| {
+            !stood.is_empty() && found.character.quests.fought_wave(quest, key[2], 0)
+        });
+        if fought {
+            self.quests.spoilless.extend(&stood);
+        }
         if let Some(Step { kind: Stepping::Figure(figure), .. }) = self.quests.steps.get_mut(&player) {
             figure.state = if stood.is_empty() { figure.state } else { HELD };
             figure.ambush = Some(stood);

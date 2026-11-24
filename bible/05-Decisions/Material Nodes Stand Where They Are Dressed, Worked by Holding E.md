@@ -69,6 +69,8 @@ the resources' own nodes and "Match the resource").
   resource. Ore, herbs, timber and salvage are no longer kinds of node.
 - **The sea's procedural islands carry the resource** of the island whose waters they lie in ([[Islands]]): two to four
   nodes on each, all standing at once, each gathered once per player a visit and standing again on the next landing.
+  (Replaced in part: an island's spent nodes are kept with the character until the day turns at 09:00 UTC,
+  [[The Audit's Leftovers Are Fixed as Claude Suggested]].)
 - **The land map marks each node** with one resource glyph, named for the island's resource ([[Held Map]]).
 - **The pickup feed tells of everything gained**: XP, faction reputation, Art progress and what is gathered at sea
   besides what it tells now ([[Interface]]). Currency, XP and reputation stand as short lines, a count beside its

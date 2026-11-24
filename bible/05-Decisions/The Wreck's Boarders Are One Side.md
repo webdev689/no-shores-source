@@ -18,7 +18,7 @@ status: in force
 |---|---|---|
 | The side | The Grey Tithe's, for every boarder | Thule's ship rammed the Brig; the pirates came aboard with it |
 | Elsewhere | Enemy factions still fight each other in the world | [[Enemy Factions Start With the Grey Tithe]] stands; this is the wreck's |
-| The wake's flight (replaced: the flight is dropped, [[The Wreck Opens by Teaching the Player]]) | Each staged fight a Tithe boarder against one of the Brig's crew, the crew crying "Cut them down!" | The flight shows the fight as it is played |
+| The wake's flight (replaced: the flight is dropped, [[The Wreck Opens by Teaching the Player]]) | Each staged fight a Tithe boarder against one of the Brig's crew, the crew crying "Drive them off her!" | The flight shows the fight as it is played |
 
 Replaces the wreck's factions fighting each other in [[The Prologue as Claude Shapes It]].
 

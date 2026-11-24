@@ -19,7 +19,7 @@ fn links_name_their_target_before_alias_heading_or_block() {
 fn links_in_code_are_not_links() {
     let text = "`[[Not a link]]`\n```\n[[Also not]]\n```\n[[Real]]\n";
     let links = wikilinks_of(text);
-    assert_eq!(links, vec![Link { target: "Real".to_owned(), line: 5 }]);
+    assert_eq!(links, vec![Link { target: "Real".to_owned(), line: 5, split: false }]);
 }
 
 #[test]
@@ -63,6 +63,16 @@ fn code_refs_must_exist_and_hold_their_symbol() {
 fn a_symbol_matches_only_as_a_whole_name() {
     assert!(contains_word("fn gust() {}", "gust"));
     assert!(!contains_word("fn gust_strength() {}", "gust"));
+}
+
+#[test]
+fn a_link_broken_across_two_lines_is_a_problem_obsidian_resolves_none() {
+    let vault = files(&["bible/02-Systems/Sailing.md", "bible/Home.md"]);
+    let text = "As the [[Sailing]] note says ([[Players Arrive as\nDestiny's Transmat Does]]), and `[[not code\n`.";
+    let problems = check(&note("bible/Home.md", text), &vault, |_| None);
+    assert_eq!(problems.len(), 1, "{problems:?}");
+    assert_eq!(problems[0].line, Some(1));
+    assert!(problems[0].message.contains("breaks across lines"), "{}", problems[0].message);
 }
 
 #[test]

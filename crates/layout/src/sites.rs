@@ -56,10 +56,11 @@ pub struct Site {
     pub node: Option<[f64; 2]>,
 }
 
-/// How far apart resource nodes stand along the paths, metres, and how far off a path they lie at most.
+/// How far apart resource nodes stand along the paths, metres.
 const RESOURCE_EVERY_M: f64 = 180.0;
 /// The most resource nodes a layout holds.
 const RESOURCE_MOST: usize = 16;
+/// How far off a path a resource node lies at most, metres.
 const RESOURCE_OFF_M: f64 = 55.0;
 /// How far before its dressing, toward its path, a resource's node stands, metres: past the dressing's widest pieces
 /// (`marks`), so its picture stands clear of them.
@@ -104,7 +105,6 @@ fn clear(field: &Field, seating: &Seating, at: [f64; 2]) -> bool {
         })
 }
 
-/// The sites of a layout.
 /// How far a beacon or a resource keeps from every way's edge, metres: it stands beside the ways, never on one.
 const OFF_PATHS_M: f64 = 5.0;
 

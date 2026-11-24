@@ -1,13 +1,14 @@
 //! A patrol's dungeon entrances: one for each of its dungeons, laid out from the node's id the same every time, clear
-//! of its resource places; and an Elite Dungeon's node's one, drawn the same way. Each is one of the six entrances
-//! Daggerfall's dungeon blocks stand, drawn from its dungeon's seed, turned so its door faces the node's middle. A
+//! of its resource places and of every box; and an Elite Dungeon's node's one, drawn the same way. Each is one of its
+//! dungeon style's among the six Daggerfall's dungeon blocks stand (`MODELS`), drawn from its dungeon's seed, turned so
+//! its door faces the node's middle. A
 //! player may join the node's room before an entrance's door, as they come out of its dungeon.
 
 use crate::{Floor, PlayerId, Room, standing_on};
 use combat::sight::{apart, bearing};
 use gear::dice::{Dice, Purpose};
 use land::ground::WaterAt;
-use movement::{Body, Terrain};
+use movement::{Block, Body, Terrain};
 use reach::{distance_to_ring, inside};
 
 /// How far inside the ring's edge an entrance stands, and how far from every spawn, every resource spot and every
@@ -19,6 +20,9 @@ const APART_M: f64 = 300.0;
 /// The ground round an entrance, out to this far, rises and falls by no more than this (m).
 const LEVEL_ACROSS_M: f64 = 12.0;
 const LEVEL_WITHIN_M: f64 = 3.0;
+/// No box a body would run into stands within this far of an entrance, so it stands on open ground, never in a
+/// building, a wall or a rock's part, with room before its door to come out on (m).
+const CLEAR_OF_BOXES_M: f64 = 8.0;
 /// How many places are tried for a patrol's entrances.
 const TRIES: u32 = 400;
 /// How far before its door a player joins at an entrance (m).
@@ -145,15 +149,28 @@ fn level(floor: &dyn Terrain, x: f64, y: f64) -> bool {
     high - low <= LEVEL_WITHIN_M
 }
 
+/// Whether no box a body would run into, standing on the ground at `ground`, comes within CLEAR_OF_BOXES_M of (x, y).
+fn clear_of(blocks: &[Block], ground: f64, x: f64, y: f64) -> bool {
+    blocks.iter().all(|block| {
+        let east = (block.min_x - x).max(x - block.max_x).max(0.0);
+        let south = (block.min_y - y).max(y - block.max_y).max(0.0);
+        let low_or_over = block.top <= ground + 0.5 || block.bottom >= ground + 2.5;
+        east * east + south * south > CLEAR_OF_BOXES_M * CLEAR_OF_BOXES_M || low_or_over
+    })
+}
+
 /// A node's entrances to `dungeons` (each its seed and style), in their order, from the node's id: places drawn in the
 /// ring until each dungeon has one or the tries run out, each FROM_EDGE_M inside the ring's edge, FROM_SPAWNS_M from
-/// every spawn, FROM_SPOTS_M from every resource spot and APART_M from the others, on dry ground that is level; each
-/// turned so its door faces the ring's middle (its corners' average).
+/// every spawn, FROM_SPOTS_M from every resource spot and APART_M from the others, on dry ground that is level and
+/// CLEAR_OF_BOXES_M from every box among `blocks`; each turned so its door faces the ring's middle (its corners'
+/// average).
+#[allow(clippy::too_many_arguments, reason = "each is one thing an entrance stands clear of")]
 pub(crate) fn laid(
     node: &str,
     dungeons: &[(u32, dungeon::Style)],
     floor: &dyn Terrain,
     dry: &dyn Fn(f64, f64) -> bool,
+    blocks: &[Block],
     ring: &[[f64; 2]],
     spawns: &[[f64; 2]],
     spots: &[[f64; 2]],
@@ -174,7 +191,8 @@ pub(crate) fn laid(
             && spots.iter().all(|&spot| apart(spot, [x, y]) >= FROM_SPOTS_M)
             && found.iter().all(|other| apart([other.at[0], other.at[1]], [x, y]) >= APART_M)
             && dry(x, y)
-            && level(floor, x, y);
+            && level(floor, x, y)
+            && clear_of(blocks, floor.height_at(x, y), x, y);
         if clear {
             let model = model_of(&style, seed);
             let Model { normal, .. } = MODELS[model];
@@ -196,7 +214,7 @@ impl Room {
     pub fn lay_elite_entrance(&mut self, node: &str) {
         let (Some(section), Some(elite)) = (&self.section, crate::elite_laid(node)) else { return };
         let dry = |x: f64, y: f64| dry(&self.floor, x, y);
-        self.entrances = laid(node, &[elite], &self.floor, &dry, &section.ring, &section.spawns, &[]);
+        self.entrances = laid(node, &[elite], &self.floor, &dry, &self.blocks, &section.ring, &section.spawns, &[]);
     }
 
     /// A new player standing BEFORE_DOOR_M before the door of the entrance numbered `number`, facing away from it, as

@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { NO_WAY_HERE } from './arrival.ts';
-import { GUILD_EVERY_MS, Keeper, partFrom, SAVE_AFTER_CHANGE_MS, SAVE_UNCHANGED_MS } from './keeping.ts';
+import { GUILD_EVERY_MS, Keeper, leftByWayOut, partFrom, SAVE_AFTER_CHANGE_MS, SAVE_UNCHANGED_MS } from './keeping.ts';
 import { roomOf, world } from './keepingForTests.ts';
 
 test('a signed-in player plays their kept character, saved after a change and kept while they play', async () => {
@@ -580,4 +580,13 @@ test('a room whose gate shuts on an arrival judges before it claims, so the room
   first.changed(1);
   await first.due(clock.now + 3_600_000);
   assert.deepEqual(lost, [], 'the plaza still holds the character: its next save is its own');
+});
+
+test("a character's body says it left by a dungeon's way out only when its room kept it so", () => {
+  assert.equal(leftByWayOut(JSON.stringify({ left: { minute: 1, out: true } })), true, 'by its door or open portal');
+  assert.equal(leftByWayOut(JSON.stringify({ left: { minute: 1, out: false } })), false, 'from within it');
+  assert.equal(leftByWayOut(JSON.stringify({ left: { minute: 1 } })), false, 'kept before the word');
+  assert.equal(leftByWayOut(JSON.stringify({ start: 1 })), false, 'no body left anywhere');
+  assert.equal(leftByWayOut(null), false, 'no character');
+  assert.equal(leftByWayOut('not json'), false, 'one the room cannot read');
 });

@@ -45,17 +45,10 @@ const PAST_ITS_DOOR: &str = "a body gets past its door";
 const WALKS_ROUND: &str = "a body walks round the door across its face";
 /// The failures known, each run with what it fails by and why, so a new one fails the test and one mended must be
 /// taken off this list (`cargo test --release -p room --test runs_everywhere -- --nocapture` names them).
-const KNOWN: [(&str, &str, &str); 10] = [
+const KNOWN: [(&str, &str, &str); 3] = [
     ("continent-2: highwater-glen Test Ledge", STOPS_SHORT, "its way meets a face a body would climb"),
-    ("continent-3: elder-thicket Test Ledge", PAST_ITS_DOOR, WALKS_ROUND),
-    ("continent-3: elder-thicket Test Rampart", PAST_ITS_DOOR, WALKS_ROUND),
-    ("continent-3: hollow-dells Test Rampart", PAST_ITS_DOOR, WALKS_ROUND),
     ("continent-5: lion-grasslands Test Ledge", PAST_ITS_DOOR, WALKS_ROUND),
     ("continent-5: lion-grasslands Test Rampart", PAST_ITS_DOOR, WALKS_ROUND),
-    ("continent-7: horsehead-mounds Test Rampart", PAST_ITS_DOOR, WALKS_ROUND),
-    ("continent-7: greywind-steppe Test Ledge", PAST_ITS_DOOR, WALKS_ROUND),
-    ("continent-8: sunken-fen Test Rampart", PAST_ITS_DOOR, WALKS_ROUND),
-    ("continent-9: whitewind-tundra Test Ledge", PAST_ITS_DOOR, WALKS_ROUND),
 ];
 
 /// Every patrol zone of one continent given every run, and what fails: each run by name, what it fails by, and how far.
@@ -124,8 +117,9 @@ fn fails_on(only: &str) -> Vec<(String, &'static str, String)> {
                         failed.push((name.clone(), BEAT_IN_WATER, String::new()));
                     }
                 }
-                // Its wing, the rock carried past the claim round it, on dry land too.
-                if let Some([x1, y1, x2, y2, half]) = layout::runs::wing(run, &layout.ring) {
+                // Its wing, the rock carried past the claim round it as the plan builds it from the claim, on dry land
+                // too.
+                if let Some([x1, y1, x2, y2, half]) = layout::runs::wing(run, &layout.sculpt.claim) {
                     let length = distance([x1, y1], [x2, y2]).max(1e-9);
                     let across = [-(y2 - y1) / length * half, (x2 - x1) / length * half];
                     let wet = (0..=40).flat_map(|along| (-8..=8).map(move |out| (along, out))).any(|(along, out)| {

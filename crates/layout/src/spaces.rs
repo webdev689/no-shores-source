@@ -90,12 +90,13 @@ impl std::fmt::Debug for Land<'_> {
 }
 
 /// What a map is drawn from: the areas, each way with the two areas it joins, the climbs to lookouts (each a capsule
-/// `[x1, y1, x2, y2, half, ..]` with its lookout's), the runs and the solids.
+/// `[x1, y1, x2, y2, half, ..]` with its lookout's) and the area each climbs out of, the runs and the solids.
 #[derive(Debug)]
 pub struct Drawn<'a> {
     pub areas: &'a [Area],
     pub ways: &'a [(Path, [usize; 2])],
     pub climbs: &'a [&'a [[f64; 7]]],
+    pub climbed_from: &'a [usize],
     pub runs: &'a [Run],
     pub caverns: &'a [crate::caverns::Cavern],
     pub ledges: &'a [crate::ledges::Ledge],
@@ -140,9 +141,13 @@ pub fn map(drawn: &Drawn, land: &Land) -> Map {
         let (from, to, points) = (*from, *to, path.points.clone());
         map.connections.push(Connection { from, to, joined: Joined::Way, width: path.tier.width(), points });
     }
-    for pair in drawn.climbs {
+    for (number, pair) in drawn.climbs.iter().enumerate() {
         let ([x1, y1, x2, y2, half, ..], lookout) = (pair[0], pair[1]);
-        let from = nearest(&map.spaces[..drawn.areas.len()], [x1, y1]);
+        let from = drawn
+            .climbed_from
+            .get(number)
+            .copied()
+            .unwrap_or_else(|| nearest(&map.spaces[..drawn.areas.len()], [x1, y1]));
         map.spaces.push(space(SpaceKind::Lookout, "", [lookout[0], lookout[1]], lookout[4]));
         let to = map.spaces.len() - 1;
         let points = vec![[x1, y1], [x2, y2]];
@@ -153,15 +158,17 @@ pub fn map(drawn: &Drawn, land: &Land) -> Map {
         let points = vec![ledge.start, ledge.edge];
         map.connections.push(Connection { from: ledge.from, to: ledge.to, joined: Joined::Stair, width: 4.0, points });
     }
+    // A run's passages: from the area it breaks off into its first beat, then beat to beat, each along its line.
     for run in drawn.runs {
         let width = 2.0 * half_of(run.kind);
-        let mut from = nearest(&map.spaces[..drawn.areas.len()], run.mouth);
-        let mut start = run.mouth;
+        let (mut from, mut start) = (run.area, 0);
         for beat in &run.beats {
             map.spaces.push(space(SpaceKind::Beat, &run.name, beat.at, beat.radius));
             let to = map.spaces.len() - 1;
-            map.connections.push(Connection { from, to, joined: Joined::Run, width, points: vec![start, beat.at] });
-            (from, start) = (to, beat.at);
+            let end = run.line.iter().skip(start).position(|at| *at == beat.at).map_or(start, |at| start + at);
+            let points = run.line[start..=end].to_vec();
+            map.connections.push(Connection { from, to, joined: Joined::Run, width, points });
+            (from, start) = (to, end);
         }
     }
     for cavern in drawn.caverns {

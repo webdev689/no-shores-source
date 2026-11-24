@@ -3,8 +3,8 @@ import { LIVE_ROOMS } from '../network/roomAddress.ts';
 import type { Difficulty } from '../heldmap/heldMap.ts';
 
 /**
- * Where the game's rooms are, from its page's `?room=`: none without it (the game plays offline, judging the edge
- * itself); a whole `ws://` or `wss://` address names a server (`?room=ws://127.0.0.1:8787` under `npm run server`),
+ * Where the game's rooms are, from its page's `?room=`: none without it (the game plays offline, the rooms' worker
+ * running each room); a whole `ws://` or `wss://` address names a server (`?room=ws://127.0.0.1:8787` under `npm run server`),
  * anything else the deployed rooms. The answer names each room's address: `node-<id>` for a node, `sea` for the sea.
  */
 export function roomsFrom(given: string | null): ((name: string) => string) | null {
@@ -47,16 +47,23 @@ export function accountOf(
   return { link, session: () => first.then(() => link.token) };
 }
 
-/** A node's room's name: a patrol, mission, dungeon or boss at a voyage's harder difficulty is its own room
- *  (`node-<id>--elite`); a social space is one for everyone, whatever the difficulty; an outpost site is the room of
- *  the player's guild's outpost there (`node-<id>--guild-<key>`), or the wild site for one in no guild. */
+/** The difficulty a node's room stands at on a voyage's: a social space is one for everyone, and an outpost site its
+ *  guild's, at Normal whatever it is; a patrol, mission, dungeon or boss stands at the voyage's own. */
+export function roomSeas(node: { readonly kind: string }, difficulty: Difficulty): Difficulty {
+  return node.kind === 'social' || node.kind === 'outpost' ? 'normal' : difficulty;
+}
+
+/** A node's room's name: at a voyage's harder difficulty its own room (`node-<id>--elite`), as `roomSeas` stands it; an
+ *  outpost site is the room of the player's guild's outpost there (`node-<id>--guild-<key>`), or the wild site for one
+ *  in no guild. */
 export function nodeRoom(
   node: { readonly id: string; readonly kind: string },
   difficulty: Difficulty,
   guild: string | null = null,
 ): string {
   if (node.kind === 'outpost') return guild ? `node-${node.id}--guild-${guild}` : `node-${node.id}`;
-  return node.kind === 'social' || difficulty === 'normal' ? `node-${node.id}` : `node-${node.id}--${difficulty}`;
+  const seas = roomSeas(node, difficulty);
+  return seas === 'normal' ? `node-${node.id}` : `node-${node.id}--${seas}`;
 }
 
 /** The sea's room a voyage at `difficulty` sails in: `sea` at Normal, else `sea--elite` or `sea--abyss`. */

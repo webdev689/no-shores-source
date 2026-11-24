@@ -212,7 +212,8 @@ publishes the first bake's meshes with the repository's `CLOUDFLARE_TOKEN`.
   area's middle on the lowest ground under the module's foot, lifted with the land by the least the carving raises it
   under that foot, turned a whole quarter at a time so its parts stay
   square to the world, its first socket toward the zone's middle. Every cavern stands the chamber under its roof,
-  its entry turned to the tunnel. The area's basin takes no platform of its own, since the module brings its
+  its entry turned to the tunnel, which runs on one of the four quarters so the chamber faces it square.
+  The area's basin takes no platform of its own, since the module brings its
   platforms, and its ways arrive 2 m past its first socket: the citadel's ramp, the Old Stones' north flight.
   Every ledge ([[Layouts]], "Ledges") stands the cliff stair of the lowest baked rise at or over its climb, pressed
   down to it, so no riser stands over the 0.25 m it was built with: a body reaches two treads ahead, and a stair

@@ -56,8 +56,8 @@ stands on it: no beacon or resource is marked there, a way ends at its rim, and 
 corners. Of the 99 drawn nodes, the 90 that are not outpost sites each have their own. A brief may also carry hints:
 `rock`, the shape its outcrops stand in where its climate's would not suit it (the Saltgrass Downs' whalebacks, the
 Gullwing Vale's knolls, the Driftwood Moors' tors); `stone`, the stone its cliffs and rubble wear (the Downs' chalk);
-and `river`, that a river runs through it (the Vale), which carries the claim along the river (below). `heights` stands its places at heights (the Vale's
-only for now, [[Zones Rise and Fall, Above and Below Ground]]), and an area's `level`, in hundredths of the massif's
+and `river`, that a river runs through it (the Vale), which carries the claim along the river (below). `heights` stands its places at heights (Saltmere's
+three zones, [[Zones Rise and Fall, Above and Below Ground]]), and an area's `level`, in hundredths of the massif's
 height, sets its own height in place of its kind's (the Vale's Water Meadows lie by the river at 0). A layout
 carries its `stone` out with it, and the client wears it (below).
 
@@ -242,7 +242,13 @@ from the sea, fresh water and the claim's edge), then:
    shells, and Rimecrystal's frozen rock grown with spikes of frost.
 10. **The section** is the land the carving left as floor, a few metres onto its cliffs' feet, no cell of it touching
     the sea, and the bridges over water a cell wider either side, in the claim, as one piece with its holes filled,
-    traced into a ring: the layout's bounds are its cliffs and walls. Its three spawns stand round the landing or the
+    traced into a ring: the layout's bounds are its cliffs and walls. Narrow gaps of rock between floors are closed
+    into it, but never beside a rampart or a ledge: their floor is taken as far as it reaches and the rock's top beside
+    them is left out of bounds ([[A Run on the Rock's Top Is Held by Out of Bounds]]). What a body walks and fights in
+    lies inside it a metre either side: every way, each run's line to 3 m short of its door and its beats, each climb
+    and lookout, each ledge's stair, each cavern's tunnel and hollow. Every cell of the claim within 4 m of those is taken, and where
+    the ring's simplifying would cut one off, its corners within 24 m are kept as traced.
+    Its three spawns stand round the landing or the
     way in (`spawns::round`), each on walkable ground in the section and clear of everything a body runs into (a
     gate's arch stands on its way in): the first three points that are, of the anchor itself, six metres east and
     west of it and three south, then rings round the anchor two metres apart out to 16 m; the anchor alone where none
@@ -269,7 +275,7 @@ combat areas that break off it, where missions will run later. Saltmere's three 
 out past its edge.
 
 - **Its line** (`runs::find`): from where an area's floor ends (not a gate's, landing's or dock's), a way into the
-  rock through three to five beats (small arenas 25 to 60 m across, fewer beats larger) to an end arena 40 to 54 m
+  rock through three to five beats (small arenas 26 to 56 m across, fewer beats larger) to an end arena 42 to 54 m
   across and its sealed door: 200 to 400 m in all. Each passage between beats runs out of one beat's rim, bends 26
   to 49 degrees at its elbow and turns back into the next, so one beat never sees the next whole. The first fit wins
   among 24 headings from each area, seeded; a run keeps 16 m and its half-width off every floor, twice the face's run
@@ -280,14 +286,17 @@ out past its edge.
 - **Its land**: cut into the sculpt as levelled capsules ([[Land]]), its beats flat and its passages climbing between
   their rims. Each starts at the level of the floor it leaves, raised or not. A ledge climbs from there to 0.55 of
   the massif's height, and is laid only where that is a fifth of it at the least; a rampart climbs to the top in
-  its first two fifths, or longer where a slope of 0.6 needs it, keeps to it and drops to 0.55 into its end arena; on
+  its first two fifths, or longer where a slope of 0.6 needs it, keeps to it and drops to 0.55 into its end arena (a
+  run whose passages are too short to climb at 0.6 or less is not laid there); on
   a massif under 27 m both end lower, so the face behind the door stands at least 12 m (on the swamp's they end on
   the floor). A gorge's entry ramps down from the floor it leaves, no steeper than 0.6, to the land's own level, and
   it keeps to it; a building run (a keep, a mine, an undercroft) keeps to the land's own level, its entry built for
-  level ground. A climbing run ends at 0.55 so the face
+  level ground, and where it breaks off a raised place a ramp 2 m wider than its passage is cut down through that
+  place's floor to its mouth, no steeper than 0.6, so a body walks in and back out; a run whose ramp would come
+  within its half-width of the place's middle, where what the place holds stands, is not laid there. A climbing run ends at 0.55 so the face
   behind its door rises in ledges too steep to climb. A run past the edge has a wing that carries the claim out round
   it, and the section takes the run in. Its way is walked as a footpath, painted on the ground but not bedded as a
-  road. Foes hold its beats; its end arena is an objective's site and its door a door's.
+  road. Its beats are marked as foes' sites, where its room stands a group as a player first comes near ([[Enemies]], "Caverns and runs"); its end arena is an objective's site and its door a door's.
 - **What stands in it** (`run_kits`, `run_halls`, `halls`): its mouth marked so the zone sees where it goes (a fallen
   arch of rock, two standing stones, a broken gateway of towers, a gatehouse, a head-frame and its spoil, a ruined
   chapel); cover on every beat no more than 10 m from any point of its floor (rock, broken masonry, crates, stone
@@ -327,10 +336,10 @@ out past its edge.
   it keep off it; every ceiling over a building run's way stands 2.6 m or more over its floor. A body walks every run
   from its mouth to within 3 m of its door, and no further; up each keep's stair to its turret's top; and over each
   undercroft's chapel floor and down its stair (`crates/room/tests/runs_walked.rs`). Every patrol zone of every
-  continent is given a run of each of four kinds too, one test a continent (`runs_everywhere.rs`), with ten failures
+  continent is given a run of each of four kinds too, one test a continent (`runs_everywhere.rs`), with three failures
   known and named with their reasons, so a new one fails CI ([[The Audit's Leftovers Are Fixed as Claude Suggested]]):
-  on the savanna, steppe, tundra, woodland and fen a body walks round some ledges' and ramparts' doors across their
-  faces, and at highwater-glen a ledge's way meets a face a body would climb. They wait on the owner's call on the
+  on the savanna a body walks round a ledge's and a rampart's doors across their faces, and at highwater-glen a
+  ledge's way meets a face a body would climb. They wait on the owner's call on the
   runs there; only Saltmere's zones have runs of their own yet.
 
 ## Laid on the land
@@ -421,14 +430,17 @@ ways below Gullwing, Valeguard and the Old Stones straight up onto their floors.
 
 With heights a gate stands in a cleft of the rock, a floor of 14 m reach where its way arrives and its gorge leaves,
 and once the land is carved its palisade runs on from its last stakes, a stake every 1.1 m, until each side meets the
-rock. A coven or a cave at the land's own level opens into a cavern (`caverns`): from the first bearing of sixteen
+rock. A coven or a cave at the land's own level opens into a cavern (`caverns`): from the first of the four quarters
 along which its floor gives onto rock well inside the claim and dry, a tunnel 12 to 36 m long and 12 m wide into a
 hollow of 20 m reach, both cut into the rock at its level before the climbs, runs and dead rock are found; each roofed
 with rock (a cave roof, [[Cities]]) 7 m over the hollow's floor and 5 m over the tunnel's, its edges resting 5 m on
 the rock round it, which stands whole right beside a roofed floor ([[Land]]), and its top at the lowest that rock
-stands round its edges, so no roof stands over the massif; the tunnel's roof starts 4 m in, where the cliff the
+stands round its edges, so no roof stands over the massif (1 m thick at the least);
+the tunnel's roof starts 4 m in, where the cliff the
 tunnel opens in stands whole, and a tunnel mouth of rock frames the opening at the floor. The
 map takes the cavern as a roofed space joined to its area by a tunnel. In the Vale the Hollow Coven opens into one.
+Every coven's and cave's area marks a foes' site at its middle, where its room stands a group ([[Enemies]],
+"Caverns and runs").
 
 ## The map
 
@@ -438,9 +450,10 @@ in their order; then the lookout at each climb's top; then each run's beats. Eac
 floor's level as a share of the massif's height (0 the land's own level, 1 the massif's top), and whether it is
 roofed: five of its middle and eight points half its reach out under a solid at least 1.8 m over the floor, so a
 tower on an open area's middle does not roof it. A gate's space names the node it leads to. The connections are its
-ways (each joining the two areas it was laid between), its climbs (from the nearest area to the lookout), its ledges'
-stairs (between the places nearest their two ends), its caverns' tunnels and its runs' passages (from the area nearest
-the mouth into the first beat, then beat to beat), each with its walked width and its line. On continent 1 every space is reached from the first (`crates/room/tests/map_planned.rs`).
+ways (each joining the two areas it was laid between), its climbs (from the area it climbs out of to the lookout), its
+ledges' stairs (between the places nearest their two ends), its caverns' tunnels and its runs' passages (from the area
+it breaks off into the first beat, then beat to beat, each along the run's line), each with its walked width and its
+line. On continent 1 every space is reached from the first (`crates/room/tests/map_planned.rs`).
 
 ## Gates
 

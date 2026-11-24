@@ -258,7 +258,9 @@ export function startFrames(parts: FrameParts, playing: Playing): void {
     const ward = quests.wardPlate(parts.groundAt);
     const foes = ward ? [...shown.fight.foes, ward] : shown.fight.foes;
     const players = platedPlayers(here.otherPlayers, [body.x, body.y, body.z]);
-    const questShown = { ...shown, fight: { ...shown.fight, foes, questAt: quests.goalAt, players } };
+    // Whether the room will stand a fallen player again on its own, for the veil's words.
+    const fallen = { revivesLeft: here.held.revives, sectionDead: shown.standing.kind === 'dead' };
+    const questShown = { ...shown, fight: { ...shown.fight, foes, questAt: quests.goalAt, players, ...fallen } };
     const fight = footView.frame(here, questShown, seconds, { size, viewport, groundAt: here.groundAt });
     // Use held on another player opens their menu, where it does nothing else (a deed or a gate) and no menu or map is up.
     const offered = !paused && !looking && !here.fallen && !hud.usePrompt.showing && !playing.through;
@@ -495,9 +497,14 @@ export function startFrames(parts: FrameParts, playing: Playing): void {
     setBehindVeil(flow.mode === 'loading' || !!sea?.travelling?.away.veil);
     let settled = true;
     playing.shipScale = 1;
-    if (shown?.mode === 'story' && parts.story) storyFrame(parts.story, controls, seconds, size);
-    else if (shown?.mode === 'foot' && foot) settled = footFrame(foot, controls, seconds, size);
-    else if ((shown?.mode === 'sea' || shown?.mode === 'landing') && sea) seaFrame(sea, controls, seconds, size);
+    // A place's frame that throws leaves the rest of this one running, the interface and the veil's lift among it; it
+    // is not settled, so the veil waits READY_WAIT_S at most.
+    const placed = guard.run(() => {
+      if (shown?.mode === 'story' && parts.story) storyFrame(parts.story, controls, seconds, size);
+      else if (shown?.mode === 'foot' && foot) settled = footFrame(foot, controls, seconds, size);
+      else if ((shown?.mode === 'sea' || shown?.mode === 'landing') && sea) seaFrame(sea, controls, seconds, size);
+    });
+    settled &&= placed;
     parts.ambience.frame(seconds);
     ui.present(stack);
     // What stood in for the place this frame, asked every frame so none is carried into the next.

@@ -16,19 +16,25 @@ pub struct Beat {
     pub level: f64,
 }
 
-/// A run as found: its name, kind and place from its brief, its mouth, its line (beat middles and the bends of the
-/// passages between them, with each point's level), its beats (the last its end arena) and its door, facing on.
+/// A run as found: its name, kind and place from its brief, the area it breaks off (its place among the layout's
+/// areas), its mouth, its line (beat middles and the bends of the passages between them, with each point's level), its
+/// beats (the last its end arena) and its door, facing on.
 #[derive(Debug, Clone, PartialEq, Serialize)]
 pub struct Run {
     pub name: String,
     pub kind: RunKind,
     pub place: RunPlace,
+    pub area: usize,
     pub mouth: [f64; 2],
     pub line: Vec<[f64; 2]>,
     pub levels: Vec<f64>,
     pub beats: Vec<Beat>,
     pub door: [f64; 2],
     pub facing: [f64; 2],
+    /// A building run's ramp down from the raised floor it breaks off to its mouth, at the land's own level: a capsule
+    /// of the sculpt (`[x1, y1, x2, y2, half, from, to]`, its levels shares of the massif's height).
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub ramp: Option<[f64; 7]>,
 }
 
 impl Run {
@@ -61,6 +67,12 @@ pub const fn half_of(kind: RunKind) -> f64 {
         RunKind::Keep => 3.0,
         RunKind::Ledge | RunKind::Rampart | RunKind::Mine | RunKind::Undercroft => 2.5,
     }
+}
+
+/// Whether a run of a kind climbs onto the rock's top, where out of bounds holds a body that climbs off it.
+#[must_use]
+pub const fn on_top(kind: RunKind) -> bool {
+    matches!(kind, RunKind::Rampart | RunKind::Ledge)
 }
 
 /// A run's length from mouth to door, metres, at the least and the most.
@@ -120,12 +132,13 @@ pub fn find(setting: &Setting, wanted: &[RunBrief], seed: u32) -> Vec<Run> {
                 (0..3).find_map(|variant| {
                     // An open run leaves its area at the level its floor stands at, raised or not; a building run
                     // keeps to the land's own level, its entry (a keep's gate, an undercroft's chapel and stair, a
-                    // mine's mouth) built for it. A ledge climbs most of the massif from where it starts.
-                    let base = if brief.kind.building() { 0.0 } else { setting.bare.floor_share(mouth[0], mouth[1]) };
+                    // mine's mouth) built for it, and a ramp is cut down to its mouth through a raised floor. A
+                    // ledge climbs most of the massif from where it starts.
+                    let base = setting.bare.floor_share(mouth[0], mouth[1]);
                     if brief.kind == RunKind::Ledge && end_level(setting.rise) - base < LEDGE_CLIMBS {
                         return None;
                     }
-                    let run = shaped(brief, (mouth, base), [sine, -cosine], setting.rise, &|key| {
+                    let run = shaped(brief, (start, mouth, base), [sine, -cosine], setting.rise, &|key| {
                         draw(&[start as i64, i64::from(heading), variant, key])
                     });
                     let open = (1..=4)
@@ -176,7 +189,7 @@ fn ahead(from: [f64; 2], way: [f64; 2], out: f64) -> [f64; 2] {
 /// so the line wanders either side of its heading; the passages' lengths chosen so the whole is 200 to 400 m.
 fn shaped(
     brief: &RunBrief,
-    (mouth, base): ([f64; 2], f64),
+    (area, mouth, base): (usize, [f64; 2], f64),
     way: [f64; 2],
     rise: f64,
     draw: &dyn Fn(i64) -> f64,
@@ -223,10 +236,16 @@ fn shaped(
         beat.level = line.iter().position(|point| *point == beat.at).map_or(0.0, |at| levels[at]);
     }
     let end = radii[count - 1];
+    // Cut back into the raised floor it leaves, no steeper than a rampart climbs.
+    let ramp = (brief.kind.building() && base > 0.0).then(|| {
+        let top = ahead(mouth, way, -base * rise / RAMPART_STEEPEST);
+        [top[0], top[1], mouth[0], mouth[1], half_of(brief.kind) + 1.0, base, 0.0]
+    });
     Run {
         name: brief.name.clone(),
         kind: brief.kind,
         place: brief.place,
+        area,
         mouth,
         levels,
         line,
@@ -234,6 +253,7 @@ fn shaped(
         // At the foot of the face behind the end arena, past the flat its floor's edge leaves before the rock rises.
         door: ahead(at, way, end + DOOR_OUT_M),
         facing: way,
+        ramp,
     }
 }
 
@@ -282,6 +302,15 @@ fn end_level(rise: f64) -> f64 {
     END_LEVEL.min(1.0 - DOOR_FACE_M / rise.max(1e-9)).max(0.0)
 }
 
+/// The steepest a run's line climbs, rise a metre along it, on a massif `rise` metres high.
+fn steepest_climb(run: &Run, rise: f64) -> f64 {
+    run.line
+        .windows(2)
+        .zip(run.levels.windows(2))
+        .map(|(pair, levels)| (levels[1] - levels[0]) * rise / distance(pair[0], pair[1]).max(1e-9))
+        .fold(0.0, f64::max)
+}
+
 /// How far a point lies outside a ring, metres (negative inside).
 fn off_ring(ring: &[[f64; 2]], at: [f64; 2]) -> f64 {
     let edge = (0..ring.len())
@@ -290,12 +319,22 @@ fn off_ring(ring: &[[f64; 2]], at: [f64; 2]) -> f64 {
     if crate::field::ring_holds(ring, at[0], at[1]) { -edge } else { edge }
 }
 
+/// Whether a building run's ramp, cut back into the raised floor of the area it leaves, stops short of the area's
+/// middle by its half-width, so it cuts through nothing standing there.
+fn ramp_clear(run: &Run, areas: &[Area]) -> bool {
+    let (Some([x1, y1, x2, y2, half, ..]), Some(area)) = (run.ramp, areas.get(run.area)) else { return true };
+    crate::paths::off_line(area.at, [x1, y1], [x2, y2]) > half
+}
+
 /// Whether a run fits where it was shaped: as long as a run is, clear of the other runs and climbs, its rock standing
 /// round it, inside the claim (a run in the rock) or out past it on dry land clear of every other claim and the sea
 /// (a run past the edge).
 fn fits(setting: &Setting, run: &Run, taken: &[[f64; 7]]) -> bool {
     let long: f64 = run.line.windows(2).map(|pair| crate::field::distance(pair[0], pair[1])).sum();
-    if !(SHORTEST_M..=LONGEST_M).contains(&long) {
+    if !(SHORTEST_M..=LONGEST_M).contains(&long) || steepest_climb(run, setting.rise) > RAMPART_STEEPEST {
+        return false;
+    }
+    if !ramp_clear(run, setting.areas) {
         return false;
     }
     let beyond = run.place == RunPlace::Beyond;
@@ -395,7 +434,7 @@ pub fn capsules(run: &Run, half: f64) -> Vec<[f64; 7]> {
         .beats
         .iter()
         .map(|beat| [beat.at[0], beat.at[1], beat.at[0], beat.at[1], beat.radius, beat.level, beat.level]);
-    passages.chain(beats).collect()
+    passages.chain(beats).chain(run.ramp).collect()
 }
 
 /// For a run past the edge, the wing that carries the claim out round it: from the last of its line inside the claim

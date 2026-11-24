@@ -44,6 +44,18 @@ test('a page asked to start in a locked social space starts in Overlook instead'
   });
 });
 
+test('a page asked to start in a locked patrol, played alone, is refused it as the server refuses it', () => {
+  const world = {
+    cities: [],
+    nodes: [
+      { id: 'tidewall-patrol', kind: 'patrol', name: 'Tidewall', continent: 'continent-2', locked: true },
+      { id: 'saltgrass-downs', kind: 'patrol', name: 'Saltgrass Downs', continent: 'continent-1', locked: false },
+    ],
+  } as unknown as WorldData;
+  assert.equal(arrivalAt(world, 'tidewall-patrol'), null, 'its pass is not done');
+  assert.equal(arrivalAt(world, 'saltgrass-downs')?.node, 'saltgrass-downs', 'an open one');
+});
+
 test('of the locked social spaces only the two other ports’ say "Opens later"; a desolate city’s shows no mark', () => {
   const side: Mark[] = [
     { id: 'rimeholt-social', kind: 'social', name: 'Rimeholt', at: [0, -100, 5], edge: true, locked: true },

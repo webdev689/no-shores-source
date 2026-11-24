@@ -85,10 +85,13 @@ export class OtherPlayers {
       placed.dress = dressNow(dress, seen.fighter);
       showOther(placed, seen, (anim) => forge.draws(placed.dress.body, anim, null));
     }
+    // One no longer seen has left the room, whose every snapshot holds all its players: nothing of them is kept.
     for (const [number, placed] of this.figures) {
       if (present.has(number)) continue;
       this.page.remove(placed);
       this.figures.delete(number);
+      this.dresses.delete(number);
+      this.plates.delete(number);
     }
   }
 
@@ -102,9 +105,11 @@ export class OtherPlayers {
     return this.plates.get(number) ?? null;
   }
 
-  /** Takes away every figure. */
+  /** Takes away every figure, with every dress and plate the room sent. */
   clear(): void {
     for (const placed of this.figures.values()) this.page.remove(placed);
     this.figures.clear();
+    this.dresses.clear();
+    this.plates.clear();
   }
 }

@@ -39,6 +39,7 @@ pub use director::{Caps, Director, Pressed};
 pub use factions::{FACTIONS, Faction, faction};
 pub use noises::Noise;
 pub use ranks::{Call, Place, Rank};
+pub use react::{shot_at, swung_at};
 pub use roles::Role;
 pub use roster::{FoeType, ROSTER, foe_type, in_role, spawn};
 pub use shoot::aimed_shot;
@@ -178,6 +179,8 @@ pub fn think(me: FighterId, brain: &Brain, board: &mut Board, world: &World<'_>)
         return (fallen, Intent::default());
     };
     let mut next = brain.clone();
+    // An answer whose time has passed holds it to no one, whichever way its thought goes.
+    next.reactions.defence = next.reactions.defence.filter(|defence| defence.until >= world.tick);
     let here = Here {
         me,
         fighter,

@@ -8,6 +8,7 @@ import {
   dungeonRoom,
   nodeOfRoom,
   nodeRoom,
+  roomSeas,
   roomsFrom,
   runInstance,
   runOf,
@@ -52,6 +53,9 @@ test('a harder voyage to a patrol is a room of its own; a social space is one fo
   assert.equal(nodeRoom({ id: 'saltgrass-downs', kind: 'patrol' }, 'elite'), 'node-saltgrass-downs--elite');
   assert.equal(nodeRoom({ id: 'saltgrass-downs', kind: 'patrol' }, 'abyss'), 'node-saltgrass-downs--abyss');
   assert.equal(nodeRoom({ id: 'overlook-social', kind: 'social' }, 'abyss'), 'node-overlook-social');
+  // Alone too: a social space stands at Normal on any voyage, a patrol at the voyage's own.
+  assert.equal(roomSeas({ kind: 'social' }, 'abyss'), 'normal');
+  assert.equal(roomSeas({ kind: 'patrol' }, 'elite'), 'elite');
 });
 
 test("an outpost site is its guild's own room for a member, the wild site for anyone else, at any difficulty", () => {

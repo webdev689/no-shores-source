@@ -377,4 +377,4 @@ export class Stage {
 }
 
 /** The gap after a bark before the scene's next line, seconds. */
-const BARK_GAP_S = 1.1;
+export const BARK_GAP_S = 1.1;
