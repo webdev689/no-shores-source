@@ -3,7 +3,7 @@ import { after, test } from 'node:test';
 import type { AccountLink, OutpostSeen } from '../../network/accounts.ts';
 import type { Block } from '../../rules/movementRules.ts';
 import { OutpostHere, useWords } from './outpostHere.ts';
-import { letGo, startPlacing } from './decorPlacing.ts';
+import { letGo, placingStrip, startPlacing } from './decorPlacing.ts';
 import { guildRead, keepGuild } from './guildHeld.ts';
 import { PLOT_M, kindOf, tierName } from './outpostLaw.ts';
 import { decorPlaceOf, placeOf, socketOf } from './outpostPlaces.ts';
@@ -43,15 +43,16 @@ function outpost(link: AccountLink | null = null) {
   return { here, courses };
 }
 
-test('a bare site stands only a post at the hall’s door, whose use says how to raise the outpost', () => {
+test('a bare site stands only the standard’s oak staff at the plot’s middle, whose use says how to raise the outpost', () => {
   const { here } = outpost();
   const props = here.props();
   assert.deepEqual(
     props.map((prop) => prop.module),
-    ['lamp-post'],
+    ['outpost-standard-oak'],
   );
   const [x = 0, y = 0] = props[0]?.at ?? [];
-  assert.equal(here.uses(x, y, () => undefined)?.words, "Raise your guild's outpost here from the Guild tab.");
+  assert.deepEqual([x, y], [...GROUND.plot], 'at the plot’s middle');
+  assert.equal(here.uses(x + 1, y, () => undefined)?.words, "Raise your guild's outpost here from the Guild tab.");
   assert.equal(
     here.uses(x + 20, y, () => undefined),
     null,
@@ -254,4 +255,47 @@ test('a piece is offered to take up only to the founder or an admin, held throug
   now += 800;
   here.uses(wellX, wellY, () => undefined, 0, true);
   assert.deepEqual(asked, ['outpost/undecorate'], 'held through, it is asked once');
+});
+
+test('a structure is used from its front alone: a Delve Gate is not entered through its back wall', () => {
+  const course = { setCourse: () => undefined };
+  const here = new OutpostHere('gull-cove-outpost', GROUND, null, { boxes: [], courses: [course] }, () => undefined);
+  made.push(here);
+  const gate = structure(4, 'gate', 6, 12, 1);
+  here.take({ ...SEEN, plot: { structures: [gate], decor: [] } });
+  const [doorX, doorY] = socketOf(gate, GROUND, 'driftwood', 'door');
+  assert.equal(here.uses(doorX, doorY + 1.5, () => undefined)?.words, 'Delve: Normal', 'before its door, south');
+  assert.equal(
+    here.uses(doorX, doorY - 1.9, () => undefined),
+    null,
+    'behind it, through the wall',
+  );
+  const turned = { ...gate, turn: 1 };
+  here.take({ ...SEEN, plot: { structures: [turned], decor: [] } });
+  const [westX, westY] = socketOf(turned, GROUND, 'driftwood', 'door');
+  assert.equal(
+    here.uses(westX - 1.5, westY, () => undefined)?.words,
+    'Delve: Normal',
+    'turned a quarter, before it west',
+  );
+  assert.equal(
+    here.uses(westX + 1.9, westY, () => undefined),
+    null,
+  );
+});
+
+test('while placing, the law’s words show and Place is offered on the strip only where the piece may stand', () => {
+  const { here } = outpost();
+  here.take(SEEN);
+  startPlacing('gull-cove-outpost', 'bench');
+  const corner = [GROUND.plot[0] - PLOT_M / 2, GROUND.plot[1] - PLOT_M / 2] as const;
+  const east = Math.PI / 2;
+  const onHall = [GROUND.plot[0] - PLOT_M / 2 + 6 * 4 + 2, GROUND.plot[1] - PLOT_M / 2 + 6 * 4 + 2] as const;
+  assert.equal(here.uses(onHall[0], onHall[1], () => undefined, east)?.words, 'A structure stands there.');
+  const offered = () => (placingStrip()?.hints ?? []).map(([keys]) => keys);
+  assert.deepEqual(offered(), ['[ / ]', 'Esc'], 'red: no Place');
+  assert.equal(here.uses(corner[0] + 0.85, corner[1] + 30.4, () => undefined, east)?.words, 'Place the Bench');
+  assert.deepEqual(offered(), ['[ / ]', 'use', 'Esc'], 'green: Place');
+  letGo();
+  assert.equal(placingStrip(), null);
 });

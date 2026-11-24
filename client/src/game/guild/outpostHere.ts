@@ -23,20 +23,23 @@ import { type Ground, type Placed, decorPlaceOf, placeOf, plotBoxes, socketOf } 
  * An outpost as the page stands it in its room: the plot read from the accounts on arriving, whenever the player
  * changes it, and every so often while there; each structure and piece of decoration drawn as a prop where the plot's
  * reckoning stands it, the same boxes walled in the page's own movement and fight as the room walls, and what E does
- * at each. A wild site, or one whose outpost is not raised, is bare ground with a post where the hall would stand.
+ * at each. A wild site, or one whose outpost is not raised, is bare ground with the standard's staff at its middle.
  */
 
 /** How often the plot is read again while the player is there. */
 const LOOK_MS = 15_000;
 /** How near a structure's socket, or a piece of decoration, E reaches, metres. */
 const REACH_M = 2.5;
+/** How far behind a structure's socket, along the way its front faces, a player may stand and still use it. */
+const BEHIND_M = 0.5;
 /** How far before the player a piece being placed stands, past its own reach. */
 const AHEAD_M = 1;
 const GHOST_GREEN = [0.25, 0.85, 0.35] as const;
 const GHOST_RED = [0.9, 0.2, 0.15] as const;
 const RAISE_WORDS = "Raise your guild's outpost here from the Guild tab.";
-/** Where the hall stands once raised (`server/accounts/outposts.ts`), the post standing at its door while bare. */
-const HALL: Standing = { id: 0, kind: 'hall', tier: 1, building: 0, x: 6, y: 6, turn: 0 };
+/** What a site the player's guild has not raised shows at the plot's middle: the Banner Standard's oak staff alone,
+ *  no cloth on it, so the ground reads as a place to claim. */
+const BARE_STAFF = 'outpost-standard-oak';
 
 /** The socket a structure is used at: a gate's door, the stores of a camp or a dockyard, any other's use. */
 function socketNameOf(kind: string): string {
@@ -123,8 +126,13 @@ export class OutpostHere {
   private readonly room: string;
   /** How many plots the room last said it has stood, none before it first says. */
   private plots: number | null = null;
-  /** Each structure with the socket it is used at, and each piece of decoration with where it stands, once a read. */
-  private sockets: readonly { readonly standing: Standing; readonly at: readonly [number, number] }[] = [];
+  /** Each structure with the socket it is used at and the way its front faces (x east, y south), and each piece of
+   *  decoration with where it stands, worked out once a read. */
+  private sockets: readonly {
+    readonly standing: Standing;
+    readonly at: readonly [number, number];
+    readonly front: readonly [number, number];
+  }[] = [];
   private pieces: readonly { readonly decor: Decor; readonly at: readonly number[] }[] = [];
   /** The ghost of a piece being placed and the list it was last joined into, kept while it stands still. */
   private ghosted: {
@@ -230,6 +238,7 @@ export class OutpostHere {
     this.sockets = (seen?.plot.structures ?? []).map((standing) => ({
       standing,
       at: socketOf(standing, ground, staff, socketNameOf(standing.kind)),
+      front: [-Math.sin((standing.turn * Math.PI) / 2), Math.cos((standing.turn * Math.PI) / 2)] as const,
     }));
     this.pieces = (seen?.plot.decor ?? []).map((decor) => ({ decor, at: decorPlaceOf(decor, ground).at }));
     for (const course of this.course.courses) course.setCourse([...this.course.boxes, ...this.walls]);
@@ -297,14 +306,15 @@ export class OutpostHere {
   /** Places the piece being placed where it stands, as the accounts allow, telling the room once it is. */
   private place(feet: readonly [number, number], ask: (asked: GearAsk) => void): Use | null {
     const placed = this.placing(feet);
-    if (!placed || !this.link) return null;
+    if (!placed) return null;
     const { placing, decor, refusal, name } = placed;
     const link = this.link;
     const spot = `${decor.x},${decor.y},${decor.turn}`;
+    placing.refused = refusal !== null;
     // The accounts' last refusal shows only while the piece stands where it was refused.
     if (placing.said !== null && placing.saidAt !== spot) placing.said = null;
     const run = () => {
-      if (refusal !== null || placing.sending) return;
+      if (refusal !== null || placing.sending || !link) return;
       placing.sending = true;
       const sent = withRid('outpost/decorate', { site: this.site, ...decor });
       void link.social('outpost/decorate', sent).then((why) => {
@@ -324,8 +334,7 @@ export class OutpostHere {
   private standing(): EventProp[] {
     const { seen, ground } = this;
     if (!seen) {
-      const [x, y] = socketOf(HALL, ground, '', 'use');
-      return [propOf({ module: 'lamp-post', at: [x, y, ground.level], turn: 0 })];
+      return [propOf({ module: BARE_STAFF, at: [...ground.plot, ground.level], turn: 0 })];
     }
     const { staff } = this;
     return [
@@ -351,15 +360,15 @@ export class OutpostHere {
     const near = ([atX, atY]: readonly [number, number] | readonly number[]) =>
       Math.hypot((atX ?? 0) - x, (atY ?? 0) - y) <= REACH_M;
     if (!seen) {
-      const post = socketOf(HALL, ground, '', 'use');
-      return near(post)
+      return near(ground.plot)
         ? { words: RAISE_WORDS, run: () => openGearWindow({ view: 'guild', outpost: { site } }) }
         : null;
     }
     const top = gateTier(seen.plot);
     const runs = this.runs(seen);
-    for (const { standing, at } of this.sockets) {
-      if (!near(at)) continue;
+    for (const { standing, at, front } of this.sockets) {
+      // Used from its front alone: never through its back wall, its socket within reach beyond it.
+      if (!near(at) || (x - at[0]) * front[0] + (y - at[1]) * front[1] < -BEHIND_M) continue;
       // A gate standing goes down at its highest tier; a lower one is chosen on the Guild tab.
       if (standing.kind === 'gate' && standing.building === 0 && top !== null && this.delve)
         return { words: `Delve: ${DELVE_WORDS[top] ?? ''}`, run: () => this.delveAt(top) };

@@ -102,9 +102,10 @@ ranks are the Roster's as well ([[Accounts]], "The Roster").
   stands the outpost as the accounts keep it, read on arriving, when the player changes it, when the room's snapshot
   says it stood another plot, and every 15 s: each structure and piece of decoration where the plot's reckoning stands
   it, walled for the page's own body as the room walls it (a piece turned off the quarters as it is drawn), and the
-  banner's cloth stirring on the standard. E at a structure opens the Outposts page on it, named at its tier (the
-  War Horn sounded by the founder or an admin); they alone take up a piece of decoration, E held through. A bare site
-  has a post where the hall would stand, saying the outpost is raised from the Guild tab.
+  banner's cloth stirring on the standard. E before a structure's front opens the Outposts page on it, named at its
+  tier (the War Horn sounded by the founder or an admin); they alone take up a piece of decoration, E held through. A
+  bare site stands the Banner Standard's oak staff alone at the plot's middle, saying the outpost is raised from the
+  Guild tab.
 - **In no guild**, the tab founds one: its name, its tag and the banner made for it before it exists, with the
   invites waiting, each joined or declined.
 

@@ -21,19 +21,27 @@ export interface Placing {
   /** The spot the accounts last refused it at, and whether a placing is on its way to them. */
   saidAt: string;
   sending: boolean;
+  /** Whether the law refuses it where its ghost last stood, so Place is not offered. */
+  refused: boolean;
 }
 
 /** The strip while a piece is placed: its keys under the moment's name. */
 export const PLACING_STRIP: Strip = {
   title: 'Decorating',
   hints: [
-    ['[ ]', 'Turn'],
+    ['[ / ]', 'Turn'],
     ['use', 'Place'],
     ['Esc', 'Let go'],
   ],
 };
 
+/** The strip while the piece may not stand where its ghost is: no Place offered. */
+const REFUSED_STRIP: Strip = { ...PLACING_STRIP, hints: PLACING_STRIP.hints.filter(([keys]) => keys !== 'use') };
+
 let placing: Placing | null = null;
+
+/** The strip while a piece is placed, Place offered only where it may stand; none while none is. */
+export const placingStrip = (): Strip | null => (placing ? (placing.refused ? REFUSED_STRIP : PLACING_STRIP) : null);
 
 /** Turns the ghost a step either way, or lets it go; keys typed into the chat or a menu's field are theirs.
  *  shortcut: plain keys, not bound controls, so a pad cannot turn a piece; bind them when the pad needs it. */
@@ -49,7 +57,7 @@ function heard(event: KeyboardEvent): void {
 /** Begins placing a piece at a site. */
 export function startPlacing(site: string, piece: string): void {
   if (!placing) addEventListener('keydown', heard);
-  placing = { site, piece, turn: 0, said: null, saidAt: '', sending: false };
+  placing = { site, piece, turn: 0, said: null, saidAt: '', sending: false, refused: false };
 }
 
 /** Lets the piece go. */

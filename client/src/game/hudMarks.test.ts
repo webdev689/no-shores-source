@@ -55,8 +55,9 @@ test("the guild's own outposts are marked by a star over the ring and in words, 
   await guildHeld();
   await Promise.resolve();
   const ui = { clicked: () => false, hovered: () => false, focusOn: () => undefined } as unknown as Interface;
-  const mark = (id: string) =>
+  const mark = (id: string, named = false) =>
     ({
+      named,
       id,
       kind: 'outpost',
       name: 'Gull Cove',
@@ -69,10 +70,17 @@ test("the guild's own outposts are marked by a star over the ring and in words, 
       arrowDegrees: null,
     }) as unknown as ScreenMark;
   const [own] = markNodes(ui, [mark('gull-cove-outpost')], () => undefined);
+  const [ownNamed] = markNodes(ui, [mark('gull-cove-outpost', true)], () => undefined);
   const [other] = markNodes(ui, [mark('far-rocks-outpost')], () => undefined);
   const stars = (node?: Node) => (node?.children ?? []).filter((child) => !!child && child.picture?.key.includes('★'));
   assert.equal(stars(own).length, 1, 'a star over its own');
   assert.equal(stars(other).length, 0, 'none over another guild’s');
   assert.match(own?.label ?? '', /your guild's outpost/);
   assert.doesNotMatch(other?.label ?? '', /your guild/);
+  const named = (node?: Node) => (node?.children ?? []).map((child) => (child && child.text?.words) ?? '').join('|');
+  const drawn = (node?: Node) => drawnBy(node?.picture as Picture);
+  const strokes = (calls: string[]) => calls.filter((call) => call.startsWith('stroke')).length;
+  assert.ok(strokes(drawn(own)) > strokes(drawn(other)), 'its ring and glyph edged in light, to read on any cloth');
+  assert.ok(drawn(own).some((call) => call.startsWith('strokeText(')));
+  assert.match(named(ownNamed), /Your guild's outpost · raised/, 'its note says it is the guild’s own');
 });

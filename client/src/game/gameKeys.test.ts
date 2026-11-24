@@ -224,4 +224,9 @@ test('Escape or B while a piece of decoration is placed lets it go first and ope
     [padName('B')],
     'named for the pad',
   );
+  assert.deepEqual(
+    keysOf(PLACING_STRIP.hints[0]?.[0] ?? '', 'keys', BINDS.now),
+    ['[', ']'],
+    'the turn as its two keys',
+  );
 });
