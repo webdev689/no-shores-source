@@ -49,7 +49,7 @@ export function loadNodeCards(
 
 /** The cards of a layout's nodes: each its island resource's picture (what its place holds) at its place (`places`,
  *  numbered as the room numbers its nodes) on `floor`, standing where the room stands it for the player (`gear`'s
- *  `nodes`), and as it lies gathered until it stands again (a node the player gathered, or one resting its turn); none
+ *  `nodes`), and as it lies gathered until it stands again for them (a node the player gathered); none
  *  where the room stands no node at all (a mission's places), nor for one whose picture has not come. */
 export function nodeCardsAt(
   places: readonly Pick<LaidSite, 'at' | 'holds'>[],

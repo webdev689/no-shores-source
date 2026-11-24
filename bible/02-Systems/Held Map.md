@@ -186,8 +186,8 @@ The map on land speaks in icon glyphs, with little text, and a table on it says 
   own):
   - **The ground**: the sea washed blue-grey and the shore inked; the relief every 10 m and a bolder line every 50 m,
     read about 160 times across; rivers as wide as their flow; the edge of the ground walked, dashed.
-  - **A social space's plan**, from its own solids, the city's landmark and the city's works within its ring (the
-    harbour way), each module by its parts, each piece by how it stands over the ground under it: paving faint, lawn
+  - **A social space's plan**, from its own solids, the city's landmark and the city's works within its ring, each
+    module by its parts, each piece by how it stands over the ground under it: paving faint, lawn
     green, trodden earth ochre, still water blue, walks a shade darker; walls, stalls and buildings 1.8 m and taller
     near solid with a shadow; benches, counters and low walls light; what is walked under (a roof, a lintel, an arch's
     head) only outlined, dashed, so a passage through a range reads open. Its trees and bushes are green crowns.
@@ -195,7 +195,7 @@ The map on land speaks in icon glyphs, with little text, and a table on it says 
     buildings and pieces as a social space's, its plantings' trees and shrubs.
   - **Places by name**, a glyph's width under their middles, else over them, else twice as far, where clear of the
     glyphs, the names before them and the gauntlets (the hub's: the Seaward Walk, the Watch Court, the West Court, the Forge Yard, the Beacon Walk, the Hall of
-    the Arts, the Stair Yard and the Quay).
+    the Arts and the Stair Yard).
   - **The glyphs.** Each keeper is a coin in their sign's board colour carrying their sign's device: a star for the
     Mage, a key for the vaults, an anvil for the Weaponsmith, a helm for the Armorsmith, open shears for the Tailor, a
     horseshoe for the Tack, a ship's wheel for the Harbourmaster, candles for the chandler, and the Postmaster, who

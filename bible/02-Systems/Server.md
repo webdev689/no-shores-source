@@ -138,8 +138,10 @@ on Cloudflare.
   come, its public events' foes and the groups the houses' roads stand ([[Public Events]], [[Quests]]). Its island's resource stands where its
   layout stands its nodes ([[Layouts]], "The sites";
   [[Material Nodes Stand Where They Are Dressed, Worked by Holding E]]), which the bake writes into the node's file
-  (`resources`) and the room numbers in that order, as the page does; a third of them hold a node at once, the next
-  third every three minutes, and each player may gather each node once while it stands. Its three dungeons'
+  (`resources`) and the room numbers in that order, as the page does; every one holds a node for everyone at once,
+  and a node a player gathered is spent for them alone, standing for everyone else, until it returns for them nine
+  minutes of wall-clock time after, counted on the room's minute as the server tells it, so they pass while the room
+  stands empty and does not tick (`patrol::RETURN_MINUTES`; [[The Harbourmaster Stands in the Market, Rain Spares the Trees, and Patrol Nodes Always Stand]]). Its three dungeons'
   entrances are laid out from the node's id, the same every time: inside the ring and 60 m inside its edge, 60 m from
   every spawn, 40 m from every resource place and 300 m from one another, on dry ground (above the sea, out of a river
   or a lake) whose height varies by 3 m at most across the 12 m round it, 8 m from every box a body would run into;
@@ -179,12 +181,11 @@ on Cloudflare.
   at his place of the week while he is there ([[Factions]], [[Gear]]); the Test Ground's course serves them all within
   4 m of its stall. A resource node is gathered by a player alive and on foot within
   2.5 m of it who holds E two seconds: the gather ask begins it, and the room gathers it two seconds on unless they
-  were hurt (from their health the tick before), fell, mounted, filled its resource, or it stopped standing for
-  them; or they let go (the stop-gather ask) or stirred 0.3 m before its last quarter second, which the room, counting
+  were hurt (from their health the tick before), fell, mounted or filled its resource; or they let go (the stop-gather ask) or stirred 0.3 m before its last quarter second, which the room, counting
   from its answer while the page counts from the press, gathers all the same. A stop-gather ask is heard at once,
   past the queue, and lets go of every gather asked before it. Starting and keeping a gather share one check
   (`gather_refused`). It is then
-  spent for them until the nodes' turn passes; a kept character's is spent for its account, however often its player
+  spent for them until it returns; a kept character's is spent for its account, however often its player
   rejoins. One whose resource the player holds the most of is left standing, and a body dead past the edge gathers
   nothing. A room answers one player's asks five times a second at most, in the order asked, holding four for their
   turn and letting go of any past those; and sends their gear five times a second at most, so each answer reaches

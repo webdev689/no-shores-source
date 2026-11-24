@@ -91,7 +91,7 @@ export class Foot {
   readonly seas: Difficulty;
   /** The ground's height under a world point as drawn: the land's, or a dungeon's floor. */
   readonly groundAt: (x: number, y: number) => number | null;
-  /** The floor a placed figure stands on: in a social space on a pier, a podium or a landing (`floorOver`). */
+  /** The floor a placed figure stands on: in a social space on a podium or a landing (`floorOver`). */
   readonly floor: (x: number, y: number) => number;
   /** The ceiling over a world point in a dungeon, which the camera stays under; none on a node's land. */
   private readonly roof: ((x: number, y: number) => number | null) | null;
