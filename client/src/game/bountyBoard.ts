@@ -24,6 +24,8 @@ export interface BountyRow {
   readonly name: string;
   /** Where it counts: 0 on land, 1 at sea, 2 in dungeons. */
   readonly pool: number;
+  /** Its tier, 1 to 3, by how big a task it is. */
+  readonly tier: number;
   readonly count: number;
   readonly target: number;
   /** "12 / 30" while held, "Turned in" once paid, else empty. */
@@ -48,8 +50,8 @@ export function bountyRows(gear: GearState): readonly BountyRow[] {
         : state === 'open'
           ? { label: 'Take' as const, ask: { kind: ASKS.takeBounty, node: place, item: day } }
           : { label: 'Turn in' as const, ask: { kind: ASKS.turnInBounty, node: place, item: day } };
-    const { words, name, pool } = bounty;
-    return { place, words, name, pool, count, target, progress, state, press };
+    const { words, name, pool, tier } = bounty;
+    return { place, words, name, pool, tier, count, target, progress, state, press };
   });
 }
 
@@ -59,8 +61,12 @@ export interface Pay {
   readonly aurem: number;
 }
 
-/** What each bounty pays the player now, as the room's word on their gear says it. */
-export const payOf = (gear: GearState): Pay => ({ xp: gear.bountyXp ?? 0, aurem: gear.bountyAurem ?? 0 });
+/** What a bounty pays the player now, as the room's word on their gear says a first tier's: its tier's share of it,
+ *  once, half again or twice, rounded down as the rules round it (`gear::bounties::bounty_pay`). */
+export function payOf(gear: GearState, row: BountyRow): Pay {
+  const share = (amount: number): number => Math.floor((amount * (Math.min(3, Math.max(1, row.tier)) + 1)) / 2);
+  return { xp: share(gear.bountyXp ?? 0), aurem: share(gear.bountyAurem ?? 0) };
+}
 
 /** A bounty's state in words: its count while held, done, turned in, or not taken. */
 export function bountyWords(row: BountyRow): string {
@@ -121,7 +127,7 @@ export function boardPage(context: MenuContext, resetAt: () => number | null, no
   const card: Node = shut
     ? { id: 'bounty-card', role: 'panel', width: cardWidth, padding: [12, 14], children: [stateLine(SHUT, 'locked')] }
     : chosen
-      ? bountyCardNode(chosen, payOf(gear), foot(chosen), cardWidth, sizes.label)
+      ? bountyCardNode(chosen, payOf(gear, chosen), foot(chosen), cardWidth, sizes.label)
       : { width: cardWidth, text: { words: 'Six a day, from the board in Overlook’s plaza.', colour: INK.faint } };
   const tiles = [0, 1, 2].map((pool): Node => ({
     gap: 8,

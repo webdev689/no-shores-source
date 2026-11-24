@@ -294,7 +294,7 @@ export class Journal {
     const foot = (row: BountyRow): Child =>
       row.state === 'held' ? null : stateLine(bountyWords(row), 'taken', sizes.label);
     const said: Child = chosen
-      ? bountyCardNode(chosen, gear ? payOf(gear) : { xp: 0, aurem: 0 }, foot(chosen), 'grow', sizes.label)
+      ? bountyCardNode(chosen, gear ? payOf(gear, chosen) : { xp: 0, aurem: 0 }, foot(chosen), 'grow', sizes.label)
       : column.said !== null && { width: 'grow', text: { words: column.said, colour: INK.faint } };
     return {
       id: 'journal-bounties',

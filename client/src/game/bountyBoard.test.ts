@@ -9,7 +9,7 @@ import { bountyTileNode } from './bountyTiles.ts';
 import { sizesOf } from './gearNodes.ts';
 import type { MenuContext } from './menuPage.ts';
 
-const bounty = (words: string, target: number, count = 0, held = false, paid = false, pool = 0) => ({
+const bounty = (words: string, target: number, count = 0, held = false, paid = false, pool = 0, tier = 1) => ({
   words,
   target,
   count,
@@ -17,6 +17,7 @@ const bounty = (words: string, target: number, count = 0, held = false, paid = f
   paid,
   pool,
   name: `Sample ${words.length}`,
+  tier,
 });
 const gear = {
   prologueDone: true,
@@ -25,8 +26,8 @@ const gear = {
   bountyAurem: 210,
   bounties: [
     bounty('Defeat 30 Grey Tithe foes.', 30),
-    bounty('Defeat 2 foes of Miniboss rank or higher.', 2, 1, true),
-    bounty('Sink or take 3 ships.', 3, 3, true, false, 1),
+    bounty('Defeat 2 foes of Miniboss rank or higher.', 2, 1, true, false, 0, 3),
+    bounty('Sink or take 3 ships.', 3, 3, true, false, 1, 2),
     bounty('Sink or take a ship of Elite rank or higher.', 1, 1, true, true),
     bounty('Clear 2 dungeons.', 2),
     bounty('Clear 3 dungeons.', 3),
@@ -46,7 +47,16 @@ test('each of the day’s bounties is taken, counted, turned in once done, and t
   );
   assert.deepEqual(rows[0]?.press?.ask, { kind: ASKS.takeBounty, node: 0, item: 20_778 }, 'by the day it was shown');
   assert.deepEqual(rows[2]?.press?.ask, { kind: ASKS.turnInBounty, node: 2, item: 20_778 });
-  assert.deepEqual(payOf(gear), { xp: 3_500, aurem: 210 });
+  const pays = bountyRows(gear).map((row) => payOf(gear, row));
+  assert.deepEqual(
+    pays.slice(0, 3),
+    [
+      { xp: 3_500, aurem: 210 },
+      { xp: 7_000, aurem: 420 },
+      { xp: 5_250, aurem: 315 },
+    ],
+    "a first tier's pay, twice it at the third tier and half again at the second",
+  );
   assert.ok(
     bountyRows({ ...gear, prologueDone: false }).every((row) => row.press === null),
     'shut until the prologue',

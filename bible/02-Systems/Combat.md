@@ -61,14 +61,16 @@ Players and foes fight by the same rules, which the [[Server]] decides and each 
 | Axe (two hands) | 2.0 | 22 | 1.44 | 20 | 20 / 50 |
 | Warhammer (two hands) | 2.0 | 24 | 1.73 | 22 | 20 / 50 |
 | Staff (two hands) | 2.2 | 13 | 1.15 | 14 | 18 / 46 |
-| Greatsword (two hands) | 2.3 | 24 | 1.50 | 21 | 20 / 50 |
+| Greatsword (two hands) | 2.3 | 21 | 1.38 | 21 | 20 / 50 |
 
 A player's weapon reaches a tenth further than the table's reach; a foe's reaches as far as it says. Bare fists reach
 1.0 m for everyone ([[A Player's Melee Weapon Reaches a Tenth Further]]).
 
 - **Swings.** DFO's swing law times them, each swing taking three quarters of its time at the owner's word: five strike
   frames, each 0.15 s for a sword, shorter or longer by the weapon's handling and a two-handed weight; the blow lands as
-  the third frame begins. Holding the button swings again as each blow ends. A swing costs its stamina, and while it is
+  the third frame begins. A player's pair comes round in four fifths of its lone weapon's time, each blow 0.9 of its
+damage (`PAIR_PACE`, `PAIR_DAMAGE`), about an eighth more a second for a left hand with no shield; a foe's pair swings
+as its lone weapon. Holding the button swings again as each blow ends. A swing costs its stamina, and while it is
   struck the fighter moves at a third of its pace. The player's swings chain the side cut (left), the overhead (down)
   and the thrust (up) in turn, starting over at the side cut after a second without a swing; a stroke that does not
   reach the locked foe gives way to the next in the chain that does
@@ -195,13 +197,16 @@ A bow, a crossbow or a gun raises no guard: the guard's button fires it ([[Range
   crosshair, an arrow laid for its fall; with no mark, along the look, and with one inside the fighter's own
   round across the ground (looking straight down at its feet), down onto it along the look's bearing. An aimed shot
   strikes half again as hard as a quick one: a crossbow's or a gun's at once, a bow's by its draw, from a quick shot's
-  power at none to half again at a full second; a foe's drawn shot strikes as a quick one, times its might. Letting
-  the aim go lowers the weapon unfired.
+  power at none to half again at a full second; a foe's drawn shot strikes the weapon's whole damage, never half
+  again, times its might. A player's bow strikes two thirds of the bow's damage, quick or aimed (`PLAYER_BOW`): its
+  quick shots come every 0.6 s and would otherwise outstrike every blade. Letting the aim go lowers the weapon
+  unfired.
 - **In flight.** An arrow flies at 45 m/s and a bolt at 55, each falling 6 m/s² as it flies, until a block, the
   ground the room stands bodies on (a node's land, its hills included), a dungeon's wall where it first enters one,
   or a body stops it; a pistolet's or
   thunderlock's ball reaches 60 m along its line at once from a player's gun, and flies from a foe's, at 70 m/s and
-  110 m/s, so it can be dodged. A body is an upright cylinder
+  110 m/s, so it can be dodged; a foe's ball strikes two thirds of its gun's damage (`FOE_GUN`), so an Elite
+  Marksman's aimed shot fells a player of its level in three, not two. A foe's arrow and bolt strike whole. A body is an upright cylinder
   0.35 m across its middle (0.7 m wide) and 1.8 m tall; a shot strikes only what lies ahead of where it flew from, and
   one coming down over a head meets its top.
 - **Reloading.** A shot comes again after the first person's firing and reload: a bow's 0.6 s, a crossbow's 1.6, a
@@ -217,7 +222,7 @@ A bow, a crossbow or a gun raises no guard: the guard's button fires it ([[Range
 
 | Weapon | Quick shot | Aimed in full |
 |---|---|---|
-| Bow | 18 | 27, after a second's draw |
+| Bow (a foe's arrow 18) | 12 | 18, after a second's draw |
 | Crossbow | 26 | 39 |
 | Pistolet | 30 | 45 |
 | Double pistolet, each shot | 25.5 | 38.25 |
@@ -236,7 +241,7 @@ gives every one through one door, `Room::give`, for the status's own time unless
 | Expose | Its fighter takes 1.15 times from everyone | 6 s |
 | Charge | Cuts what its fighter was doing, as a stagger of its own cause, and holds it still: no action, no step. It counts as staggered, so it takes a quarter more. Given while its fighter is staggered by another cause, down, overreached or reloading, it waits, still, for that to end, then holds for its whole time. None begins while one holds, or for 3 s after it has held | By rank: Minor 2 s, Major 1.5, Elite 1, Miniboss 0.6, Boss 0.4; a player's as a Minor's |
 | Haste | Its fighter moves 1.3 times as fast on the ground | 6 s |
-| Linked | Heals 5 health at each second of the room's clock, and its fighter deals 1.2 times | 3 s |
+| Linked | Heals 8 health at each second of the room's clock, and its fighter deals 1.3 times | 3 s |
 | Veiled | Foes do not notice it, take it as a target or aim at it, and a foe fighting it lets it go; a wind-up already under way still lands. Its swing landing within 60 degrees of a fighter's back is a crit. Its own blow or shot ends it, and so does casting any spell but Vanish: the veil holds through the tick that blow lands or that spell is cast, and is gone the next | 4 s |
 
 - **Weighing a blow.** The room weighs a blow's damage as it settles it, whatever struck it: a crit's 1.5, its
@@ -255,8 +260,8 @@ gives every one through one door, `Room::give`, for the status's own time unless
   the weapons' verbs and the Atherics' perks ([[Gear]], "Verbs" and "Atherics").
 - **The weapons' perks** give them through it too, as a player's blow lands on a foe or the foe falls ([[Gear]],
   "Verbs"): Expose from Exposing Strikes and Marked Shot, Charge from Thunderclap and Shocking Rounds, Crit from Keen
-  Eye; Exploit marks a swing on an Exposed foe a crit. Each is the perk of the loadout the blow came from, never of a
-  spell. None is in the trim: a browser sees them only as the room sends its player's statuses.
+  Eye; Exploit makes a swing on an Exposed foe strike 25% harder. Each is the perk of the loadout the blow came from,
+  never of a spell. None is in the trim: a browser sees them only as the room sends its player's statuses.
 - **On the wire.** A player's statuses travel in their fighter's numbers, after its action's: their browser predicts
   its own from them, and another browser reads a player's veil there. A foe's Expose, its Charge and the immunity after
   it cross with the foe ([[Server]]). Foes' plates and the player's vitals show them ([[Interface]]), and the

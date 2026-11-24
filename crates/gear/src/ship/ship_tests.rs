@@ -140,24 +140,26 @@ fn salvage_gives_ship_materials_and_its_modules_never_past_what_its_level_could_
 }
 
 #[test]
-fn a_coves_wreckage_holds_less_than_a_minor_ships_whole_lot_and_an_isles_more_and_better() {
+fn a_whole_coves_wreckage_holds_less_than_a_minor_ships_whole_lot_and_an_isles_more_and_better() {
     let lot = |source: Source, pieces: u64| {
-        let (mut commons, mut modules, mut better) = (0_u32, 0_u32, 0_u32);
+        let (mut commons, mut modules, mut better, mut heartwood) = (0_u32, 0_u32, 0_u32, 0_u32);
         for tick in 0..2_000 {
             for piece in 0..pieces {
                 let found = salvage(source, 20, 1.0, &dice(tick * 8 + piece));
                 commons += u32::from(found.materials.timber + found.materials.canvas + found.materials.iron);
+                heartwood += u32::from(found.materials.heartwood);
                 modules += u32::from(found.module.is_some());
                 better += u32::from(found.module.is_some_and(|module| module.rarity >= Rarity::Rare));
             }
         }
-        (commons, modules, better)
+        (commons, modules, better, heartwood)
     };
-    let cove = lot(Source::Wreckage { isle: false }, 1);
+    // A cove's shore holds three wrecks at most (`isle::sites`); a Minor ship lays three pieces.
+    let cove = lot(Source::Wreckage { isle: false }, 3);
     let minor_ship = lot(Source::Flotsam { rank: 1, chest: false }, 3);
     let isle = lot(Source::Wreckage { isle: true }, 1);
-    assert!(cove.0 < minor_ship.0 && cove.1 < minor_ship.1, "{cove:?} under {minor_ship:?}");
-    assert!(isle.0 > cove.0 && isle.1 > cove.1 && isle.2 > cove.2, "{isle:?} over {cove:?}");
+    assert!(cove.0 < minor_ship.0 && cove.1 < minor_ship.1 && cove.3 < minor_ship.3, "{cove:?} under {minor_ship:?}");
+    assert!(isle.0 > cove.0 / 3 && isle.1 > cove.1 / 3 && isle.2 > cove.2 / 3, "{isle:?} over a cove wreck's");
 }
 
 #[test]
@@ -173,7 +175,7 @@ fn salvage_taken_fills_its_stocks_to_their_most_and_carries_its_module() {
 }
 
 #[test]
-fn the_shipwright_sells_modules_at_its_level_and_a_sinking_pays_its_experience() {
+fn the_shipwright_sells_modules_at_its_level_and_a_sinking_pays_the_ship_and_its_player_as_twelve_kills() {
     let mut character = Character::starting();
     character.earn_ship_xp(u32::try_from(power::xp_for_level(9)).expect("fits"));
     let wares = vendor::wares(Vendor::Shipwright, 3, character.ship_level());
@@ -182,11 +184,15 @@ fn the_shipwright_sells_modules_at_its_level_and_a_sinking_pays_its_experience()
     character.materials.aurem = 5_000;
     let social = Here { social: true, day: 3, pledge: 0, rank: 0, week: 0 };
     character.ask(Ask::Vend { vendor: Vendor::Shipwright, ware: 0, day: 3 }, social, &dice(0)).expect("sold");
-    let before = character.ship_xp;
+    let (before, aurem) = (character.ship_xp, character.materials.aurem);
     let earned = character.reward_sinking(Foe::Brute, 2, 10, Difficulty::Normal);
-    assert_eq!(earned, 165, "a Major brute's 110 at level 10");
-    assert_eq!(character.ship_xp - before, 165);
-    assert_eq!(character.xp, 0, "the player earns nothing from its sinking a ship");
+    assert_eq!(earned, 1_980, "twelve of a Major brute's 110 XP, at level 10");
+    assert_eq!(character.ship_xp - before, 1_980);
+    assert_eq!(character.xp, 1_980, "the player earns the same, as twelve kills");
+    assert_eq!(character.materials.aurem - aurem, 144, "and twelve of its 8 Aurem, at level 10");
+    let (ship_xp, xp) = (character.ship_xp, character.xp);
+    assert_eq!(character.reward_sinking(Foe::Brute, 2, 13, Difficulty::Normal), 0, "a level 9 ship, four below");
+    assert_eq!((character.ship_xp, character.xp), (ship_xp, xp), "nothing from a ship it could not harm");
 }
 
 #[test]

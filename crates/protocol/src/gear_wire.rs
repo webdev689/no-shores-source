@@ -422,7 +422,7 @@ pub fn gear_bytes(room: &Room, player: PlayerId) -> Option<Vec<u8>> {
         .collect();
     let cleared = Some(builder.create_vector(&cleared));
     let bounties = crate::bounty_wire::bounties_of(&mut builder, character, room.day());
-    let (bounty_xp, bounty_aurem) = gear::bounties::bounty_pay(character.level());
+    let (bounty_xp, bounty_aurem) = gear::bounties::bounty_pay(character.level(), 1);
     let args = messages::GearArgs {
         xp: character.xp,
         level: character.level(),

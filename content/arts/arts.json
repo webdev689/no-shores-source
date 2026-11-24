@@ -31,7 +31,7 @@
         "speed": 14,
         "turnPerS": 4,
         "lifeS": 4,
-        "damage": 18
+        "damage": 48
       },
       "tenets": [
         {
@@ -117,7 +117,7 @@
         "everyS": 0.8,
         "reach": 22,
         "speed": 30,
-        "damage": 7,
+        "damage": 16,
         "healShare": 0.5
       },
       "tenets": [

@@ -55,7 +55,8 @@ Other ships show their hands and captain on deck ([[Ships Show Their People, and
 - **How well they hold their post** (`Officer::strength`) rises from 0.5 at level 1 to 1 at level 29, and is what
   their post's own work is times.
 - **They earn** where they serve: those aboard or at their post from the sea's fights (a captain going down pays them
-  the ship's experience), those ashore from the fights on land the player has a hand in.
+  the ship's experience, twelve kills' worth: [[Ship Power]], "What a fight pays"), those ashore from the fights on
+  land the player has a hand in.
 
 ## Ashore
 

@@ -1,6 +1,7 @@
 //! The bounty board: six bounties a day, the same for everyone, drawn by the clock's day (`crate::activities`), two on
 //! land, two at sea and two in dungeons, each taken and turned in at the board by the day of the board shown, and
-//! paying XP and Aurem once at the character's level.
+//! paying XP and Aurem once at the character's level, more for a bigger task, as Destiny 1's bounties paid in three
+//! tiers.
 
 use crate::activities::{BOUNTY_DRAWS, drawn};
 use crate::activity::BOUNTIES;
@@ -19,9 +20,12 @@ pub struct Bounty {
     pub name: &'static str,
     /// Where it counts, by the board's pools: 0 on land, 1 at sea, 2 in dungeons.
     pub pool: u8,
+    /// Its tier, 1 to 3, by how big a task it is: it pays once, half again or twice a first tier's
+    /// (`bounty_pay`), as Destiny 1's paid 2,500, 3,750 or 5,000 XP.
+    pub tier: u8,
 }
 
-/// What a bounty pays at level 5, raised as a kill is by (5 + the character's level) ÷ 10 when turned in.
+/// What a first tier's bounty pays at level 5, raised as a kill is by (5 + the character's level) ÷ 10 when turned in.
 pub const BOUNTY_XP: u32 = 1_000;
 pub const BOUNTY_AUREM: u32 = 60;
 
@@ -29,7 +33,7 @@ pub const BOUNTY_AUREM: u32 = 60;
 pub const BOUNTY_NAME_MOST: usize = 16;
 
 /// A bounty of a pool: its objective, target, words and name.
-pub(crate) type Template = (fn() -> Objective, u32, &'static str, &'static str);
+pub(crate) type Template = (fn() -> Objective, u32, &'static str, &'static str, u8);
 
 const fn felled(faction: Option<u8>, rank: Option<u8>) -> Objective {
     Objective::Fell { faction, rank, island: None }
@@ -46,20 +50,20 @@ const fn cleared() -> Objective {
 /// The bounties the board draws from, on land, at sea and in dungeons. None names an island or a water: the board is
 /// the same for every level, and the islands' bands run from 1 to 30.
 pub(crate) static LAND: [Template; 4] = [
-    (|| felled(Some(GREY_TITHE), None), 30, "Defeat 30 Grey Tithe foes.", "Tithe Collector"),
-    (|| felled(None, Some(ELITE_RANK)), 6, "Defeat 6 foes of Elite rank or higher.", "A Cut Above"),
-    (|| Objective::Gather { resource: None }, 6, "Gather 6 resource nodes.", "Honest Work"),
-    (|| felled(None, Some(MINIBOSS_RANK)), 2, "Defeat 2 foes of Miniboss rank or higher.", "Big Game"),
+    (|| felled(Some(GREY_TITHE), None), 30, "Defeat 30 Grey Tithe foes.", "Tithe Collector", 2),
+    (|| felled(None, Some(ELITE_RANK)), 6, "Defeat 6 foes of Elite rank or higher.", "A Cut Above", 2),
+    (|| Objective::Gather { resource: None }, 6, "Gather 6 resource nodes.", "Honest Work", 1),
+    (|| felled(None, Some(MINIBOSS_RANK)), 2, "Defeat 2 foes of Miniboss rank or higher.", "Big Game", 3),
 ];
 pub(crate) static SEA: [Template; 3] = [
-    (|| sunk(None), 3, "Sink or take 3 ships.", "Broadside"),
-    (|| sunk(Some(ELITE_RANK)), 1, "Sink or take a ship of Elite rank or higher.", "Bigger Fish"),
-    (|| sunk(None), 6, "Sink or take 6 ships.", "Sea Wolf"),
+    (|| sunk(None), 3, "Sink or take 3 ships.", "Broadside", 1),
+    (|| sunk(Some(ELITE_RANK)), 1, "Sink or take a ship of Elite rank or higher.", "Bigger Fish", 2),
+    (|| sunk(None), 6, "Sink or take 6 ships.", "Sea Wolf", 3),
 ];
 pub(crate) static DUNGEONS: [Template; 3] = [
-    (cleared, 1, "Clear a dungeon.", "Into the Dark"),
-    (cleared, 2, "Clear 2 dungeons.", "Deeper Still"),
-    (cleared, 3, "Clear 3 dungeons.", "Deep Delver"),
+    (cleared, 1, "Clear a dungeon.", "Into the Dark", 1),
+    (cleared, 2, "Clear 2 dungeons.", "Deeper Still", 2),
+    (cleared, 3, "Clear 3 dungeons.", "Deep Delver", 3),
 ];
 
 /// The day's six: places 0 and 1 on land, 2 and 3 at sea, 4 and 5 in dungeons, each pair two of its pool.
@@ -76,16 +80,18 @@ pub fn board(day: u64) -> [Bounty; 6] {
             let other = drawn(day, BOUNTY_DRAWS, pair + 1, pool.len() - 1);
             if other >= first { other + 1 } else { other }
         };
-        let (objective, target, words, name) = pool[index];
-        Bounty { objective: objective(), target, words, name, pool: u8::try_from(place / 2).unwrap_or(u8::MAX) }
+        let (objective, target, words, name, tier) = pool[index];
+        Bounty { objective: objective(), target, words, name, pool: u8::try_from(place / 2).unwrap_or(u8::MAX), tier }
     };
     std::array::from_fn(pick)
 }
 
-/// What a bounty pays a character at its level when turned in: XP, then Aurem.
+/// What a bounty of a tier (1 to 3) pays a character at its level when turned in, XP then Aurem: a first tier's at
+/// the level, the second's half again, the third's twice, each rounded down.
 #[must_use]
-pub fn bounty_pay(level: u8) -> (u32, u32) {
-    (at_level(BOUNTY_XP, level), at_level(BOUNTY_AUREM, level))
+pub fn bounty_pay(level: u8, tier: u8) -> (u32, u32) {
+    let share = |amount: u32| amount * (u32::from(tier.clamp(1, 3)) + 1) / 2;
+    (share(at_level(BOUNTY_XP, level)), share(at_level(BOUNTY_AUREM, level)))
 }
 
 impl Character {
@@ -121,8 +127,9 @@ impl Character {
             return Err(Refusal::BountyNotDone);
         }
         today.turned_in.insert(place);
-        let (xp, aurem) = bounty_pay(self.level());
-        self.earn_xp(xp, None);
+        let tier = board(here.day)[usize::from(place)].tier;
+        let (xp, aurem) = bounty_pay(self.level(), tier);
+        self.earn_play_xp(xp, None);
         self.materials.add_aurem(aurem);
         Ok(None)
     }

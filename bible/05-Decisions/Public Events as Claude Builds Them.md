@@ -7,6 +7,9 @@ status: in force
 
 > "Take autonomy, just available props. Develop new using the blender pipeline and make yhis insanely detailed"
 
+Replaced in part by [[The Balance and Economy Pass as Claude Shapes It]]: a chest holds Essence only as a player's first
+heroic chest of the day, one of each stock, at any level.
+
 ## What it settles
 
 Claude's choices for the public events ([[Public Events Run on a Clock, After Destiny 1]],
