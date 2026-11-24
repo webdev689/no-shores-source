@@ -1,5 +1,5 @@
 ---
-id: 176
+id: 184
 title: "A damage cut put in the shared function every foe shot passes through (by_foe) was silently undone for aimed shots: the room set the aimed shot's damage afresh after it; found only by reading the caller while checking a number for the notes"
 status: open
 type: open-source
