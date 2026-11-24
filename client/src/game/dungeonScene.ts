@@ -13,8 +13,10 @@ import { Upscale } from './upscale.ts';
 import { ShadowMap } from '../shadow.ts';
 import { SAMPLES } from '../water/waterView.ts';
 
-/** The dark past the farthest torch's reach, where nothing is drawn. */
-const DARK: GPUColor = [0.01, 0.01, 0.015, 1];
+/** The dark past the farthest torch's reach, where nothing is drawn (a Breach's run's sky's fog, so its far pieces
+ *  fade into it). */
+export const DARK_RGB = [0.01, 0.01, 0.015] as const;
+const DARK: GPUColor = [...DARK_RGB, 1];
 
 export class DungeonScene {
   private readonly gpu: Gpu;

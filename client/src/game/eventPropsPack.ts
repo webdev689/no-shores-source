@@ -30,6 +30,7 @@ export const MATERIALS = [
   'paving',
   'lawn',
   'water',
+  'glass',
 ] as const;
 export type Material = (typeof MATERIALS)[number];
 

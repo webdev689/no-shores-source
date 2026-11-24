@@ -3,7 +3,8 @@ import { readFileSync } from 'node:fs';
 import { test } from 'node:test';
 import { moduleMouth, moduleNumber } from '../city/modules.ts';
 import { EVENT_LAMPS } from '../sky/lamps.ts';
-import { EventPropsDraw, PROPS_SHADER } from './eventPropsDraw.ts';
+import { EventPropsDraw } from './eventPropsDraw.ts';
+import { PROPS_SHADER } from './eventPropsShader.ts';
 import { MATERIALS, packLips } from './eventPropsPack.ts';
 import type { Gpu } from '../gpu.ts';
 
@@ -28,16 +29,16 @@ test("the fissure's lips pack station by station along its x, the lower lip's y 
   assert.equal(packLips(moduleNumber('lattice-growth')), null, 'a module that does not open has none');
 });
 
-test("the drawer's materials are the modules' kit's, in its order", () => {
+test("the drawer's materials are the modules' kit's, in its order, the page's newest ahead of the kit's", () => {
   const kit = readFileSync(new URL('../../../tools/modules/kit.py', import.meta.url), 'utf8');
   const tuple = (name: string) => /^NAME = \(([^)]*)\)/m.source.replace('NAME', name);
   const [listed, cloths] = ['MATERIALS', 'CLOTHS'].map((name) => new RegExp(tuple(name), 'm').exec(kit)?.[1]);
   assert.ok(listed && cloths, 'kit.py names its MATERIALS and its CLOTHS');
   const names = (text: string) => [...text.matchAll(/'([a-z_]+)'|\*CLOTHS/g)].map((found) => found[1] ?? '*');
-  assert.deepEqual(
-    names(listed).flatMap((name) => (name === '*' ? names(cloths) : [name])),
-    [...MATERIALS],
-  );
+  const kits = names(listed).flatMap((name) => (name === '*' ? names(cloths) : [name]));
+  assert.deepEqual(kits, MATERIALS.slice(0, kits.length));
+  // Stained glass is on the page before the kit gives it to a module (it is appended to the kit's list, last).
+  assert.ok(MATERIALS.slice(kits.length).every((ahead) => ahead === 'glass'));
 });
 
 test('every material a module may wear has a colour of its own in the drawer, none left to the grey default', () => {

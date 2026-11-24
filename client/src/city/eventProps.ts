@@ -2,8 +2,9 @@
 // the chests) drawn at its place, turned, scaled, risen out of the ground as far as it has come, its lid swung and its
 // crystal glowing. The props are worked out each frame from the event the room sends (its marks) and the player's
 // chests, and drawn by EventPropsDraw; their crystal also lights the night round them.
-import type { LampPlace } from '../sky/lamps.ts';
+import { FIRELIGHT, type LampPlace } from '../sky/lamps.ts';
 import { CRYSTAL_LAMP } from './crystal.ts';
+import { type LightKind, moduleLights } from './moduleLights.ts';
 import { moduleNumber, moduleParts, moduleSocket } from './modules.ts';
 
 type Point = readonly [number, number, number];
@@ -58,6 +59,8 @@ export type EventProp = {
   readonly glow: number;
   /** A colour the prop is washed in (a ghost's: green where it may stand, red where not); none for a prop itself. */
   readonly tint?: readonly [number, number, number];
+  /** Drawn as the dark of a way opened through it (a gate's doorway to the company it opened to), not as itself. */
+  readonly dark?: boolean;
 };
 
 /** A mark of the running event as the room sends it (protocol PublicMark): what it is, its id, where it stands, its
@@ -130,6 +133,13 @@ const LAMPS = {
   chestReachM: 5,
 } as const;
 const CHEST_LIGHT = [0.6, 0.42, 0.2] as const;
+/** A Breach's pieces' lamps, read from where each burns (moduleLights.ts): a crystal's red, brighter as it glows; a
+ *  fire's warmth (a candle, a hearth, a lantern); the light through stained glass, coloured and reaching further. */
+const BREACH_LAMPS: Readonly<Record<LightKind, { light: readonly [number, number, number]; reachM: number }>> = {
+  crystal: { light: CRYSTAL_LAMP, reachM: 6 },
+  fire: { light: FIRELIGHT, reachM: 9 },
+  glass: { light: [0.8, 0.5, 0.55], reachM: 12 },
+};
 /** A raid's banner's lamp: warm, this far under its pole's top (the module's part), lighting this far. */
 const BANNER_LAMP = { light: [0.5, 0.34, 0.16] as const, underTopM: 0.3, reachM: 6 } as const;
 const BANNER_TOP_M = moduleParts(moduleNumber('tithe-banner'))[0]?.[5] ?? 5.4;
@@ -337,6 +347,13 @@ export function propLamps(props: readonly EventProp[]): LampPlace[] {
         light: BANNER_LAMP.light,
         seed,
       });
+    else if (each.module.startsWith('breach-'))
+      for (const lit of moduleLights(moduleNumber(each.module)) ?? []) {
+        const { light, reachM } = BREACH_LAMPS[lit.kind];
+        const bright = strength * (lit.kind === 'crystal' ? 0.15 + 0.6 * lit.glow : 1);
+        const shown = light.map((part) => part * bright) as unknown as Point;
+        lamps.push({ at: place(lit.at), reachM: reachM * each.scale, light: shown, seed: seed + lit.at[0] });
+      }
     else if (each.module === 'event-chest-heroic-lid' && each.lid > 0)
       lamps.push({ at: place([0, 0.3, 0.3]), reachM: LAMPS.chestReachM, light: red(strength * 0.4), seed });
     else if (each.module === 'event-chest-lid' && each.lid > 0)
