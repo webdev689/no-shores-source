@@ -14,6 +14,7 @@ import {
   type Snapshot,
   channelOf,
   emojisOf,
+  presentGuilds,
   readSnapshot,
   roleOf,
   snapshotOfGuild,
@@ -112,6 +113,17 @@ export function createDispatcher(deps: DispatchDeps): Dispatcher {
   };
 
   const keep: Record<string, (data: EventData) => Promise<void>> = {
+    // READY lists every server the bot is in. One it left while the Gateway was down sent no GUILD_DELETE, so any
+    // stored as present and missing from the list is gone.
+    async READY(data) {
+      if (!Array.isArray(data.guilds)) return;
+      const listed = new Set(data.guilds.map((guild) => idOf(recordOf(guild).id)));
+      for (const held of await presentGuilds(deps.database))
+        if (!listed.has(held.guildId))
+          await withSnapshot(held.guildId, (snapshot) => {
+            snapshot.present = false;
+          });
+    },
     async GUILD_CREATE(data) {
       if (data.unavailable) return;
       await save(snapshotOfGuild(data, nowS()));

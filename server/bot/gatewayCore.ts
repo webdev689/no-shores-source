@@ -44,6 +44,8 @@ export interface Session {
   resumeUrl: string;
   seq: number | null;
   intents: number;
+  /** Connections opened on the resume URL since Discord last said RESUMED. */
+  resumeTries?: number;
 }
 /** Beat a little early: an alarm can land late, and a beat after the interval lets Discord close the socket. */
 export const BEAT_EARLY = 0.9;
@@ -53,6 +55,11 @@ export const GATEWAY_URL_TTL_MS = 24 * 3600_000;
 export const CLOSE_RESUME = 4900;
 /** How long one event's handlers may hold the queue before the next is let through. */
 export const DISPATCH_HOLD_MS = 30_000;
+/**
+ * How many connections a session's resume URL is given without a RESUMED before the session is dropped and the bot
+ * identifies afresh: enough to ride out a blip, never a dead host retried for good.
+ */
+export const RESUME_TRIES = 5;
 
 /** What the panel's health card shows of the connection. */
 export interface Status {
@@ -197,31 +204,54 @@ export class GatewayCore {
   // Events reach a Durable Object while an await is pending, so the clock's check and an alarm can both arrive here
   // before the first socket exists. They share one attempt.
   connect(): Promise<void> {
-    this.connecting ??= this.openOnce().finally(() => {
-      this.connecting = null;
-    });
+    if (!this.connecting) {
+      const attempt: Promise<void> = this.openOnce().finally(() => {
+        if (this.connecting === attempt) this.connecting = null;
+      });
+      this.connecting = attempt;
+    }
     return this.connecting;
   }
 
   async openOnce(): Promise<void> {
     const { deps } = this;
     if (!deps.token) return this.fatal('The bot token is not set.');
-    let base = this.session?.resumeUrl ?? '';
-    if (!base) {
+    // taken before any wait: a stop meanwhile moves it, and this attempt then gives way, setting no state and keeping
+    // no socket
+    const generation = ++this.generation;
+    if (this.session && (this.session.resumeTries ?? 0) >= RESUME_TRIES) {
+      this.log(`[gateway] ${RESUME_TRIES} tries on the resume URL without a RESUMED; identifying afresh`);
+      await this.clearSession();
+    }
+    let base: string;
+    if (this.session?.resumeUrl) {
+      base = this.session.resumeUrl;
+      this.session.resumeTries = (this.session.resumeTries ?? 0) + 1;
+      await deps.storage.put('session', { ...this.session, seq: this.handled });
+    } else {
       const info = await this.gatewayInfo();
+      if (generation !== this.generation) return;
       if (!info) return this.retryLater('Discord did not say where the Gateway is.');
       if (info.remaining <= 0) return this.retryAt(deps.now() + info.resetAfterMs, 'Out of identifies for today.');
       base = info.url;
     }
-    const generation = ++this.generation;
+    if (generation !== this.generation) return;
     await this.setState('connecting');
     let socket: SocketLike;
     try {
       socket = await deps.openSocket(gatewayUrl(base));
     } catch (error) {
+      if (generation !== this.generation) return;
       return this.retryLater(`The Gateway did not open: ${error instanceof Error ? error.message : 'error'}`);
     }
-    if (generation !== this.generation) return;
+    if (generation !== this.generation) {
+      try {
+        socket.close(1000, 'stopped');
+      } catch {
+        // Already closed.
+      }
+      return;
+    }
     this.socket = socket;
     this.openedAt = deps.now();
     this.helloAt = 0;
@@ -324,6 +354,7 @@ export class GatewayCore {
       this.status.lastError = '';
       await this.setState('ready');
     } else if (type === 'RESUMED') {
+      if (this.session) this.session.resumeTries = 0;
       this.status.attempts = 0;
       this.status.lastError = '';
       await this.setState('ready');
@@ -470,6 +501,8 @@ export class GatewayCore {
     const socket = this.socket;
     this.socket = null;
     this.generation++;
+    // an attempt still on its way gives way at its next step; a Start pressed meanwhile is not joined to it
+    this.connecting = null;
     try {
       socket?.close(1000, 'stopped');
     } catch {

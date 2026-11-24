@@ -52,6 +52,9 @@ async function answer(
   interaction: Interaction,
 ): Promise<InteractionReply> {
   const isCommand = interaction.type === TYPE.COMMAND || interaction.type === TYPE.AUTOCOMPLETE;
+  // Discord takes only choices as the answer to options being typed: a message there reads as the options failing
+  const refuse = (words: string): InteractionReply =>
+    interaction.type === TYPE.AUTOCOMPLETE ? { type: REPLY.CHOICES, data: { choices: [] } } : privateReply(words);
   const guildId = String(interaction.guild_id ?? '');
   if (interaction.type === TYPE.COMMAND && interaction.data?.name === 'panel') {
     const panel = panelUrl(context.vars);
@@ -68,13 +71,13 @@ async function answer(
   const owner = isCommand
     ? context.registry.commandOwner(String(interaction.data?.name ?? ''))
     : context.registry.byId(words[0] ?? '');
-  if (!owner || !/^\d{5,25}$/.test(guildId)) return privateReply(UNKNOWN);
+  if (!owner || !/^\d{5,25}$/.test(guildId)) return refuse(UNKNOWN);
   const found = await context.config(guildId, owner.id);
   if (!found?.enabled) {
     const title = moduleOf(owner.id)?.title ?? owner.id;
-    return privateReply(`${title} is off in this server. A manager can turn it on in the panel.`);
+    return refuse(`${title} is off in this server. A manager can turn it on in the panel.`);
   }
   if (isCommand && owner.command) return owner.command(context, interaction, found.config);
   if (isPress && owner.component) return owner.component(context, interaction, words.slice(1), found.config);
-  return privateReply(UNKNOWN);
+  return refuse(UNKNOWN);
 }
