@@ -234,12 +234,13 @@ export function inventoryPageOf(state: GearState): InventoryPage {
     words: "Hold it on an item's page to feed it to that item: it grows the item.",
   });
   const crates = state.crates ?? 0;
-  const full = (state.ammoShare ?? 1) >= 1;
+  const [full, unarmed] = [(state.ammoShare ?? 1) >= 1, state.ammoMost === 0];
+  const why = unarmed ? ' Wear a Ranged weapon first.' : full ? ' Yours is full.' : '';
   const crate = cell('ammo-crate', 'ammo-crate', 'Ammo crate', {
     count: crates,
-    words: `It fills your Ranged weapon's ammunition at once. You carry five at most.${full ? ' Yours is full.' : ''}`,
+    words: `It fills your Ranged weapon's ammunition at once. You carry five at most.${why}`,
     press:
-      crates > 0 && !full
+      crates > 0 && !full && !unarmed
         ? { label: 'Hold to fill your ammo', ask: { kind: ASKS.useCrate }, role: 'button', held: true, burst: 'pulse' }
         : null,
   });

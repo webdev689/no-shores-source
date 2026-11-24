@@ -10,7 +10,8 @@ use crate::ram::{
     ram_closing, ram_contact, ram_line, ram_men, ram_paid, ram_room, recoil_room,
 };
 use crate::shots::ShipId;
-use sailing::pose::{Pose, frame, pose_of};
+use sailing::pose::{Pose, frame, keel_spots, pose_of};
+use sailing::ship::{Ship, aground};
 use sailing::waters::Waters;
 use std::collections::{BTreeMap, VecDeque};
 
@@ -65,18 +66,26 @@ fn settle(vessel: &mut Vessel, waters: &impl Waters, time: f64) {
     vessel.pose = Pose { heave: afloat.heave - drop, pitch: afloat.pitch + pitch, roll: afloat.roll + roll, ..afloat };
 }
 
-/// Moves it by `push` and cuts its way by how squarely it drove into it.
-fn shove(vessel: &mut Vessel, push: [f64; 2]) {
+/// Cuts its way by how squarely it drove into what pushes it back along `push`.
+fn cut_way(vessel: &mut Vessel, push: [f64; 2]) {
     let (forward, _) = frame(vessel.ship.heading);
     let kept = 1.0 - driven_into(forward, push);
     let ship = &mut vessel.ship;
-    (ship.x, ship.y) = (ship.x + push[0], ship.y + push[1]);
     (ship.ahead, ship.sail_way) = (ship.ahead * kept, ship.sail_way * kept);
+}
+
+/// Moves it by `push` and cuts its way by how squarely it drove into it.
+fn shove(vessel: &mut Vessel, push: [f64; 2]) {
+    cut_way(vessel, push);
+    let ship = &mut vessel.ship;
+    (ship.x, ship.y) = (ship.x + push[0], ship.y + push[1]);
 }
 
 impl Fight {
     /// Hulls that overlap pushed apart, each pair in the order of their numbers: each out of the other by half the
-    /// overlap, its way cut by how squarely it drove into it. A ship gone down is no longer in the way.
+    /// overlap, its way cut by how squarely it drove into it; one that half would ground, as the ground refuses a
+    /// ship's own move (`aground`), stays, its way cut all the same, and the other takes the whole push where that
+    /// leaves it afloat. A ship gone down is no longer in the way.
     pub(super) fn keep_apart(&mut self, waters: &impl Waters, time: f64) {
         let ids: Vec<ShipId> = self
             .ships
@@ -88,10 +97,24 @@ impl Fight {
             for second in &ids[at + 1..] {
                 let (Some(one), Some(other)) = (self.ships.get(first), self.ships.get(second)) else { continue };
                 let Some(push) = overlap(&flat_of(one), &flat_of(other)) else { continue };
-                let half = [push[0] / 2.0, push[1] / 2.0];
-                for (id, push) in [(*first, half), (*second, [-half[0], -half[1]])] {
-                    if let Some(vessel) = self.ships.get_mut(&id) {
-                        shove(vessel, push);
+                let afloat = |vessel: &Vessel, share: f64| {
+                    let hull = vessel.hull.hull();
+                    let moved =
+                        Ship { x: vessel.ship.x + push[0] * share, y: vessel.ship.y + push[1] * share, ..vessel.ship };
+                    !aground(&keel_spots(&vessel.ship, hull, waters, time), &moved, hull, waters, time)
+                };
+                let shares = match (afloat(one, 0.5), afloat(other, -0.5)) {
+                    (true, true) => [0.5, -0.5],
+                    (true, false) => [if afloat(one, 1.0) { 1.0 } else { 0.5 }, 0.0],
+                    (false, true) => [0.0, if afloat(other, -1.0) { -1.0 } else { -0.5 }],
+                    (false, false) => [0.0, 0.0],
+                };
+                for (id, share, half) in [(*first, shares[0], 0.5), (*second, shares[1], -0.5)] {
+                    let Some(vessel) = self.ships.get_mut(&id) else { continue };
+                    if share == 0.0 {
+                        cut_way(vessel, [push[0] * half, push[1] * half]);
+                    } else {
+                        shove(vessel, [push[0] * share, push[1] * share]);
                         settle(vessel, waters, time);
                     }
                 }

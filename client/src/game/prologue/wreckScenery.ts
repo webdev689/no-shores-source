@@ -74,16 +74,30 @@ export class WreckScenery {
   private left = false;
   private readonly origin: readonly [number, number];
 
-  constructor(gpu: Gpu, drawn: Promise<WreckDrawn>, layout: WreckLayout, origin: readonly [number, number]) {
-    this.origin = origin;
+  private readonly gpu: Gpu;
+  private readonly drawn: () => Promise<WreckDrawn>;
+
+  /** Its mesh and light are asked for of `drawn`, which fetches them once they have come and again after a failure. */
+  constructor(gpu: Gpu, drawn: () => Promise<WreckDrawn>, layout: WreckLayout, origin: readonly [number, number]) {
+    [this.gpu, this.drawn, this.origin] = [gpu, drawn, origin];
     this.hulls = layout.dry;
     layout.zones.forEach((zone, index) => {
       if (zone.gate) this.standing.add(index);
     });
-    drawn.then(
+    this.ask();
+  }
+
+  /** Asks again for a mesh and light that failed to come, as each beat that shows the wreck begins. */
+  again(): void {
+    if (this.state === 'failed' && !this.left) this.ask();
+  }
+
+  private ask(): void {
+    this.state = 'coming';
+    this.drawn().then(
       ({ mesh, light }) => {
         if (this.left) return;
-        this.view = new WreckView(gpu, mesh, light);
+        this.view = new WreckView(this.gpu, mesh, light);
         this.mesh = mesh;
         this.state = 'drawn';
       },
