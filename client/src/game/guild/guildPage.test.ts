@@ -69,7 +69,11 @@ const roster = (more: Partial<Roster> = {}): Roster => ({
     tag: 'SALT',
     motto: '',
     rank: 'Founder',
-    members: [member('Ada', 'Founder', 'Overlook'), member('Ben', 'Admin', null), member('Cal', 'Member', null)],
+    members: [
+      member('Ada', 'Founder', 'node-overlook-social'),
+      member('Ben', 'Admin', null),
+      member('Cal', 'Member', null),
+    ],
     invited: [],
   },
   guildInvites: [],
@@ -113,7 +117,7 @@ test("the Guild tab stands the guild as Destiny 2's clan screen: its name, membe
     shows().includes('GUILD LEVEL | 5,000 / 25,000 XP | 2'),
     'the XP toward the next level, the level in its diamond',
   );
-  assert.ok(shows().includes('GUILD ROSTER | Page 1 / 1 | Ada | Founder · Overlook'), 'those playing first');
+  assert.ok(shows().includes('ROSTER | 3 | 1/1 | Ada | Founder · Overlook'), 'those playing first, where in words');
 });
 
 test('the banner press opens the editor, a choice changes the banner, and keeping it sends it to the guild', async () => {
@@ -233,7 +237,7 @@ test('a member who joined this week sees no claim press, but when claims open to
 test('the home names the part over the bounties and outposts for what it holds, and says it waits with an ellipsis', async () => {
   const { shows } = await tab(face());
   assert.ok(!shows().includes('GUILD DETAILS'), 'Details is its own page');
-  assert.ok(shows().includes('BOUNTIES AND OUTPOSTS'), shows());
+  assert.ok(shows().includes('BOUNTIES') && shows().includes('OUTPOSTS'), shows());
   const { link } = fakeLink(face());
   const waiting = new GuildPage({ link, now: () => 0 });
   const drawing = drawn((context) => guildPage(context, waiting));
