@@ -75,6 +75,22 @@ fn an_encounter_begins_once_a_living_player_stands_in_its_space_and_its_stage_is
 }
 
 #[test]
+fn no_encounter_begins_before_the_one_before_it_is_won_and_each_begins_with_its_revives_whole() {
+    let (mut room, players) = run(Tier::Hard, 1);
+    let font = at(&room, "choir", "font");
+    stand_at(&mut room, players[0], font);
+    room.tick();
+    assert_eq!(breach(&room).phases[CHOIR], Phase::Waiting, "the Mending not yet won");
+    let mut breach_box = room.breach.take().expect("run");
+    breach_box.revives = Some(1);
+    room.win_encounter(&mut breach_box, MENDING);
+    room.breach = Some(breach_box);
+    room.tick();
+    assert!(matches!(breach(&room).phases[CHOIR], Phase::Running(_)), "won, the next begins");
+    assert_eq!(breach(&room).revives, Tier::Hard.revives(), "its revives whole");
+}
+
+#[test]
 fn a_seal_stands_until_its_encounter_is_won_and_a_slab_stands_only_in_its_cycle() {
     let (mut room, players) = run(Tier::Normal, 1);
     let seal = room.breach.as_ref().map(|breach| breach.plan.seal_blocks(&breach.plan.seals[0])).expect("a seal");

@@ -84,6 +84,7 @@ impl Room {
         self.board.forget(id);
         self.inert.remove(&id);
         self.names.remove(&id);
+        self.quests.spoilless.remove(&id);
     }
 
     /// The foes the room moves itself are never stepped, so their statuses, poise and staggers run down here, as a

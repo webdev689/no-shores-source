@@ -99,8 +99,10 @@ pub struct Breach {
     pub foes: Vec<FighterId>,
     pub chests: BTreeSet<usize>,
     pub baked: BTreeSet<String>,
-    /// The blocks that stood last tick, seals and slabs among them, to know when the room's must be made again.
+    /// The blocks that stood last tick, seals and slabs among them, and which seals were open and which slabs stood
+    /// then (`standing_key`), to know when the room's must be made again.
     pub(crate) standing: Vec<Block>,
+    pub(crate) standing_key: (u8, u64),
     /// The share of their health each account left the run with, 0 for one down, so coming back stands no one up
     /// whole (as an Abyss run keeps it, `abyss::keep_body`).
     pub(crate) left: BTreeMap<String, f64>,
@@ -142,8 +144,10 @@ impl Room {
             chests: BTreeSet::new(),
             baked: BTreeSet::from(["descent".to_owned()]),
             standing,
+            standing_key: (0, 0),
             left: BTreeMap::new(),
         };
+        breach.standing_key = breach.standing_key(0);
         breach.standing = breach.blocks_at(0);
         room.blocks = breach.standing.clone().into();
         room.breach = Some(Box::new(breach));
@@ -160,9 +164,12 @@ impl Room {
     }
 
     /// Each tick in a Breach's run: its seals and slabs stood as they stand now, the stages reached, each encounter's
-    /// rules, the fallen raised by their company, the Lodestone and its marks, and an attempt lost to a wipe.
+    /// rules, the fallen raised by their company, the Lodestone and its marks, and an attempt lost to a wipe. A mark
+    /// goes with its player's fall, so one stood again is not unwritten by a mark from before.
     pub(crate) fn keep_breach(&mut self) {
         let Some(mut breach) = self.breach.take() else { return };
+        breach.marked.retain(|id, _| self.players.get(id).is_some_and(crate::players::Player::living));
+        breach.foes.retain(|id| self.foes.contains_key(id));
         self.reach_stages(&mut breach);
         for encounter in MENDING..=STEWARD {
             self.keep_encounter(&mut breach, encounter);
@@ -177,9 +184,10 @@ impl Room {
     /// The blocks that stand this tick, made the room's anew when they change: a seal opened, a slab come or gone.
     pub(crate) fn breach_blocks(&mut self) {
         let Some(breach) = self.breach.as_mut() else { return };
-        let now = breach.blocks_at(self.clock);
-        if now != breach.standing {
-            breach.standing = now;
+        let now = breach.standing_key(self.clock);
+        if now != breach.standing_key {
+            breach.standing_key = now;
+            breach.standing = breach.blocks_at(self.clock);
             self.blocks = breach.standing.clone().into();
         }
     }
@@ -206,11 +214,15 @@ impl Room {
         }
     }
 
-    /// An encounter begins: its revives whole, told to every player.
+    /// An encounter begins: its revives whole, its space's navmesh and its shores' baked, told to every player.
     fn begin(&mut self, breach: &mut Breach, encounter: usize) {
         breach.phases[encounter] = Phase::Running(self.clock);
         breach.revives = breach.tier.revives();
         self.bake_space(breach, &space_of(breach.plan, encounter));
+        let plan = breach.plan;
+        for shore in plan.shores.get(DROWNED_VALE.encounters[encounter].key).into_iter().flatten() {
+            self.bake_space(breach, shore);
+        }
         self.tell_all(EventKind::BreachBegun, encounter as f64);
     }
 
@@ -230,6 +242,8 @@ impl Room {
             }
         }
         breach.marked.clear();
+        // Every fallen player stands again, so one who left down comes back whole.
+        breach.left.clear();
         breach.lodestone = Lodestone::default();
         self.reach_stages(breach);
         self.stand_the_fallen(breach);
@@ -372,6 +386,7 @@ impl Room {
         }
         breach.marked.clear();
         breach.raising.clear();
+        breach.left.clear();
         breach.lodestone = Lodestone::default();
         breach.down_since = None;
         breach.revives = breach.tier.revives();
@@ -465,7 +480,14 @@ fn chapter_of(find: usize) -> &'static str {
 impl Breach {
     /// The blocks standing at `tick` (`Plan::blocks_at`).
     fn blocks_at(&self, tick: u64) -> Vec<Block> {
-        self.plan.blocks_at(self.open_seals.iter().fold(0, |bits, seal| bits | (1 << seal)), tick)
+        self.plan.blocks_at(self.standing_key(tick).0, tick)
+    }
+
+    /// Which seals are open and which slabs stand at `tick`, a bit each: what the blocks standing then hang on.
+    fn standing_key(&self, tick: u64) -> (u8, u64) {
+        let seals = self.open_seals.iter().fold(0, |bits, seal| bits | (1 << seal));
+        let slabs = self.plan.slabs.iter().enumerate();
+        (seals, slabs.fold(0, |bits, (nth, slab)| bits | (u64::from(plan::slab_stands(slab, tick)) << nth)))
     }
 }
 

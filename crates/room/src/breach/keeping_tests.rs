@@ -1,7 +1,8 @@
 //! What a Breach's run keeps as players fall, leave and come back: at Hard the fallen lie wherever they fell while an
 //! encounter runs; a late join comes in at the furthest stage, on its floor; one back after leaving comes back as they
-//! left, down at the stage if down; the Lodestone falls where it was last carried if its bearer leaves; and the
-//! Steward takes no one from an empty court, and a shore emptied of the living ends its taking.
+//! left, down at the stage if down, and whole once the attempt is won or wiped; the Lodestone falls where it was last
+//! carried if its bearer leaves; the Steward takes no one from an empty court, and a shore emptied of the living ends
+//! its taking; a mark goes with its player's fall; and a foe gone from the room is forgotten.
 
 use super::breach_tests::{at, breach, fell, run, stand_at};
 use super::*;
@@ -111,4 +112,64 @@ fn the_steward_takes_no_one_from_an_empty_court_and_a_shore_emptied_of_the_livin
     room.tick();
     assert!(breach(&room).fights.steward.away.is_none(), "the taking ends with every one taken fallen");
     assert!(away.bells.iter().all(|(_, id)| !room.standing_foe(*id)), "its bells gone with it");
+}
+
+#[test]
+fn a_mark_goes_with_its_players_fall_so_one_stood_again_is_not_unwritten_by_it() {
+    let (mut room, players) = run(Tier::Normal, 2);
+    let mut breach_box = room.breach.take().expect("run");
+    room.rewrite(&mut breach_box, players[0]);
+    room.breach = Some(breach_box);
+    fell(&mut room, players[0]);
+    room.tick();
+    assert!(!breach(&room).marked.contains_key(&players[0]), "gone with the fall");
+    let stage = at(&room, "descent", "start");
+    room.stand_whole(players[0], stage);
+    let mut breach_box = room.breach.take().expect("run");
+    room.write(&mut breach_box, 0);
+    room.breach = Some(breach_box);
+    assert!(!room.players[&players[0]].fighter.dead(), "not unwritten at the next writing");
+}
+
+#[test]
+fn one_who_left_down_comes_back_whole_once_the_attempt_is_won_or_wiped() {
+    for wiped in [false, true] {
+        let (mut room, players) = run(Tier::Hard, 2);
+        assert!(room.own(players[0], "ada") && room.own(players[1], "ben"));
+        let inside = at(&room, "mending", "mender");
+        for &player in &players {
+            stand_at(&mut room, player, inside);
+        }
+        room.tick();
+        fell(&mut room, players[1]);
+        room.tick();
+        room.part(players[1]);
+        let mut breach_box = room.breach.take().expect("run");
+        if wiped {
+            room.wipe(&mut breach_box, MENDING);
+        } else {
+            room.win_encounter(&mut breach_box, MENDING);
+        }
+        room.breach = Some(breach_box);
+        let back = hardy(&mut room);
+        assert!(room.own(back, "ben"));
+        assert!(!room.players[&back].fighter.dead(), "wiped {wiped}: back whole, as the company stood again");
+    }
+}
+
+#[test]
+fn a_foe_gone_from_the_room_is_gone_from_its_encounter_and_its_spoils() {
+    let (mut room, players) = run(Tier::Normal, 1);
+    let inside = at(&room, "mending", "mender");
+    stand_at(&mut room, players[0], inside);
+    ticks(&mut room, 4 * 60);
+    let foe = *breach(&room).foes.first().expect("the Mending stood its foes");
+    room.foes.get_mut(&foe).expect("standing").fighter.action =
+        combat::Action::Dead { elapsed: combat::tuning::FOE_GONE };
+    room.tick();
+    assert!(!room.foes.contains_key(&foe), "laid its time, gone from the room");
+    assert!(!breach(&room).foes.contains(&foe), "and from the encounter's foes");
+    let other = *breach(&room).foes.first().expect("another");
+    room.gone(other);
+    assert!(!room.quests.spoilless.contains(&other), "gone at once, its spoils forgotten");
 }

@@ -216,6 +216,8 @@ fn a_rift_held_open_carries_a_body_through_and_back_and_its_keepers_fall_rewrite
     assert!(combat::sight::apart([body.x, body.y], [arrival[0], arrival[1]]) < 1.0, "carried into what was");
     room.tick();
     let keeper = breach(&room).fights.shores.keepers[0].expect("its Keeper stands");
+    let post = at(&room, "hall-was", "keeper");
+    assert!(room.nav.nearest_point(post).is_some(), "its shore's ground baked for it to walk");
     kill(&mut room, keeper);
     room.tick();
     assert!(breach(&room).marked.contains_key(&players[1]), "Rewritten in its shore");
