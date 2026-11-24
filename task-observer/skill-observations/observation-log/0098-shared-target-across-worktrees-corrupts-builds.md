@@ -1,6 +1,6 @@
 ---
 id: 98
-title: "A worktree sharing the main checkout's target/ (symlink or CARGO_TARGET_DIR) overwrites its compiled crates; seen twice, needs a barrier"
+title: "Two cargo runs on one target/ (a worktree linking it, or a background suite beside a foreground run in the same checkout) overwrite each other's crates; seen four times, needs a barrier"
 status: open
 type: open-source
 skill: []
@@ -47,3 +47,13 @@ one, and a test comparing them failed. Worse, targeted test runs before that poi
 so "tested offline" results were silently of the wrong content. Cleanup: grep every `.fingerprint` and `deps/*.d` for
 `.claude/worktrees` and `cargo clean -p` those packages (17 crates, 15 GB). Barrier still proposed: forbid a target dir
 shared across checkouts.
+
+**Fourth occurrence, 2026-11-24 (inspect panel, the owner's Fruit ask), same checkout, no worktree:** a background
+`cargo test -p combat -p room -p room-wasm -p protocol` ran while the controller edited `protocol`'s sources and ran
+`cargo test -p gear -p protocol` in the foreground. The background run's room-wasm doctest failed "can't find crate for
+`protocol`" though rustdoc was handed `--extern protocol=…rlib`: the foreground run had rewritten that rlib (same
+metadata hash, new contents) under it. Rerun alone after the edits: 1722 passed, doctests included. The barrier
+proposed above covers it only if it also refuses a second cargo process in the same checkout, which cargo's own lock
+does not do across the build-then-rustdoc gap. Until a barrier exists: never start a cargo command while a backgrounded
+cargo run is alive; stop it first, or wait.
+
