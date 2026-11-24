@@ -209,16 +209,24 @@ pub fn prop_kept(prop: &Seated, measure: &Measure, parts: Option<&Vec<[f64; 6]>>
             })
             .collect()
     };
+    if square {
+        return (boxed(1.0), 1.0);
+    }
+    // Loosening thins only the strips: a prop of many parts may spend twice what its loosest strips cost, so its
+    // strips stay as close as that allows rather than falling to the loosest.
     let footprint = (max_x - min_x) * (max_z - min_z);
+    let loosest_at = (0..city::collision::MOST_LOOSENINGS).fold(1.0, |at, _| at * city::collision::LOOSER);
+    let loosest = boxed(loosest_at);
+    let (least, least_crowding) = (2 * loosest.len(), 2 * city::collision::crowding(&loosest));
     let mut loosened = 1.0;
     for _ in 0..city::collision::MOST_LOOSENINGS {
         let found = boxed(loosened);
-        if square || city::collision::affordable(&found, footprint) {
+        if city::collision::affordable(&found, footprint, least, least_crowding) {
             return (found, loosened);
         }
         loosened *= city::collision::LOOSER;
     }
-    (boxed(loosened), loosened)
+    (loosest, loosest_at)
 }
 
 /// Whether a body standing at `at` on a floor `floor` metres high stands clear of every box: none taller than a

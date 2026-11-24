@@ -68,10 +68,11 @@ fn allowed_over(footprint: f64) -> usize {
 }
 
 /// Whether a piece of this footprint (square metres) may stand as these boxes: few enough, and none crowding the
-/// ground. A prop is held to it as a solid is.
+/// ground, or no more than `least` boxes and `least_crowding` over a cell where it can never do with fewer. A prop is
+/// held to it as a solid is.
 #[must_use]
-pub fn affordable(boxes: &[Box2], footprint: f64) -> bool {
-    boxes.len() <= allowed_over(footprint) && crowding(boxes) <= MOST_OVER_A_CELL
+pub fn affordable(boxes: &[Box2], footprint: f64, least: usize, least_crowding: usize) -> bool {
+    boxes.len() <= allowed_over(footprint).max(least) && crowding(boxes) <= MOST_OVER_A_CELL.max(least_crowding)
 }
 
 /// How many whole boxes `share` allows, none for less than one.
@@ -81,7 +82,7 @@ fn floor_count(share: f64) -> usize {
 }
 
 /// The most boxes whose footprints reach into any one cell of a `CELL_M` grid laid from their north-west corner.
-pub(crate) fn crowding(boxes: &[Box2]) -> usize {
+pub fn crowding(boxes: &[Box2]) -> usize {
     let west = boxes.iter().map(|found| found[0]).fold(f64::INFINITY, f64::min);
     let north = boxes.iter().map(|found| found[1]).fold(f64::INFINITY, f64::min);
     let east = boxes.iter().map(|found| found[2]).fold(f64::NEG_INFINITY, f64::max);
