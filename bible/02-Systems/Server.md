@@ -422,8 +422,8 @@ their last input said. Every plate goes in the welcome, and a plate that changed
 one is shown, as a dress does, the newest of each player's alone (`plates.rs`, `take_plate_changes`). At sea every snapshot
 carries the plate of each other player's ship it sends, whole, as the sea's ships are sent whole: their username, their
 character's level (a new character's for one who plays unkept), and never a menu, which the sea hears nothing of; and
-none of the player's own (`Sea::plate`; [[Other Ships Wear Their Players' Marks, the Sea Map Has No Fog, and New
-Players Ride a Bay That Bursts]]). A deck boarded draws none.
+none of the player's own (`Sea::plate`;
+[[Other Ships Wear Their Players' Marks, the Sea Map Has No Fog, and New Players Ride a Bay That Bursts]]). A deck boarded draws none.
 
 **Each player's own snapshot.** On land a snapshot is written for each player. Their own fighter crosses whole, as
 they predict from it; everyone else's numbers, and every foe's, cross packed: each in thousandths, a whole number

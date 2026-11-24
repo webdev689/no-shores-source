@@ -44,6 +44,7 @@ ring in the ship's bar, the owner chose "Same as the ship", the option that read
 | Whether a mark is hidden behind something | No line is tried at sea, so a ship behind an island still wears its mark | Only an island stands between ships at sea, and the land's line test is against a node's blocks and ground |
 | The mark's menu dots at sea | Never shown | The sea hears nothing of a player's menu |
 | The mark in a sea fight | None; the captains' plates stand alone | A fight's plates and card already fill the view over its ships |
+| The mark at the helm | None | The held map raised there covers the view, as the compass goes there |
 | How the room sends the marks | Each sea snapshot carries the plate of each other player's ship it sends, whole | The sea sends its ships whole every snapshot; no base to send changes against |
 | The held map's charted sea | Deleted with the fog: the wash, the waters' names and the faint sea ink lie over all the sea | Only the fog needed it |
 | The browser's kept discovery | No longer read or written; one already kept is left where it is | Nothing else read it; it does no harm left |

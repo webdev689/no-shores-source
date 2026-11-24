@@ -35,8 +35,9 @@ code:
 
 The map the player navigates the sea by, held in their own gauntlets at the ship's helm
 ([[The Sea Is Navigated From the Helm With the Held Map]], [[Pick - Held Map]]). It shows the whole world from the first
-time it is raised, with no fog of war ([[Other Ships Wear Their Players' Marks, the Sea Map Has No Fog, and New
-Players Ride a Bay That Bursts]]), and a click on it sets the ship's destination. On land it is raised anywhere, and shows the land the player stands
+time it is raised, with no fog of war
+([[Other Ships Wear Their Players' Marks, the Sea Map Has No Fog, and New Players Ride a Bay That Bursts]]),
+and a click on it sets the ship's destination. On land it is raised anywhere, and shows the land the player stands
 on ([[The Held Map Comes to the Social Spaces and Every Land Area]]).
 
 ## How it works
