@@ -64,7 +64,7 @@ import type { ShipPeople } from './shipPeople.ts';
 import { nodeCardsAt } from './nodeCards.ts';
 import { keeperLit } from './overheadMarks.ts';
 import { HULLS } from '../water/hullMask.ts';
-import { chatAtSea, chatOpen, holdOnPlayer, platedPlayers, socialUp } from './social/social.ts';
+import { chatAtSea, chatInRun, chatOpen, holdOnPlayer, platedPlayers, socialUp } from './social/social.ts';
 import { uiScale } from '../ui/uiRenderer.ts';
 import { drawnWhole, frameDrawn, setBehindVeil, standIns } from '../standIns.ts';
 
@@ -297,6 +297,7 @@ export function startFrames(parts: FrameParts, playing: Playing): void {
     const foes = ward ? [...shown.fight.foes, ward] : shown.fight.foes;
     // A Breach's Rewritten are marked so on their plates.
     const marked = new Set(here.held.breach?.marked.map((each) => each.player));
+    chatInRun(!!here.run);
     const plated = platedPlayers(here.otherPlayers, [body.x, body.y, body.z]);
     const players = plated.map((each) => (marked.has(each.id) ? { ...each, marked: true } : each));
     const questShown = { ...shown, fight: { ...shown.fight, foes, questAt: guided.at, players } };
