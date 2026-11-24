@@ -107,6 +107,9 @@ pub struct Breach {
     pub(crate) standing_key: (u8, u64),
     /// What each account left the run with (`rejoin.rs`), so coming back stands no one up whole, cleansed or home.
     pub(crate) left: BTreeMap<String, rejoin::Left>,
+    /// Everyone who has played in the run, and the great foes matched to them (`waves.rs`).
+    pub(crate) roster: BTreeSet<String>,
+    pub(crate) matched: Vec<waves::Matched>,
 }
 
 impl Room {
@@ -145,6 +148,8 @@ impl Room {
             standing,
             standing_key: (0, 0),
             left: BTreeMap::new(),
+            roster: BTreeSet::new(),
+            matched: Vec::new(),
         };
         breach.standing_key = breach.standing_key(0);
         breach.standing = breach.blocks_at(0);
@@ -169,6 +174,7 @@ impl Room {
         let Some(mut breach) = self.breach.take() else { return };
         breach.marked.retain(|id, _| self.players.get(id).is_some_and(crate::players::Player::living));
         breach.foes.retain(|id| self.foes.contains_key(id));
+        self.keep_roster(&mut breach);
         self.reach_stages(&mut breach);
         for encounter in MENDING..=STEWARD {
             self.keep_encounter(&mut breach, encounter);
@@ -494,6 +500,12 @@ fn chapter_of(find: usize) -> &'static str {
 }
 
 impl Breach {
+    /// The company the great foes are matched to: everyone who has played in the run, still here, away or fallen, so
+    /// leaving before a great foe stands makes it no weaker; at least one, at most eight.
+    pub(crate) fn company(&self) -> usize {
+        self.roster.len().clamp(1, gear::breach::COMPANY_MOST)
+    }
+
     /// The blocks standing at `tick` (`Plan::blocks_at`).
     fn blocks_at(&self, tick: u64) -> Vec<Block> {
         self.plan.blocks_at(self.standing_key(tick).0, tick)

@@ -16,6 +16,29 @@ pub const STANDING_MOST: usize = 18;
 /// What a great foe's health is times for each player of the company beyond the first.
 pub const HEALTH_PER_PLAYER: f64 = 0.45;
 
+/// A great foe's health times for a company of `players`.
+fn company_times(players: usize) -> f64 {
+    1.0 + HEALTH_PER_PLAYER * (players.max(1) - 1) as f64
+}
+
+/// A great foe matched to the company: its number, whether it is matched to half of it (a Keeper), and the company it
+/// was last matched to.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub(crate) struct Matched {
+    pub id: FighterId,
+    pub half: bool,
+    pub to: usize,
+}
+
+impl Matched {
+    /// The company it is matched to for a roster of `everyone`: everyone, or half of them, at least one and at most
+    /// the Breach's eight.
+    fn of(self, everyone: usize) -> usize {
+        let company = everyone.clamp(1, gear::breach::COMPANY_MOST);
+        if self.half { company.div_ceil(2) } else { company }
+    }
+}
+
 impl Room {
     /// Whether the room has room for another of an encounter's walkers, whatever its waves stand.
     pub(crate) fn room_for_walker(&self) -> bool {
@@ -64,19 +87,42 @@ impl Room {
         self.players.iter().filter(|(_, found)| !keeps || found.owner.is_some()).map(|(id, _)| *id).collect()
     }
 
-    /// The company a great foe is matched to: every player it counts, living or not, so falling before it stands
-    /// changes nothing.
-    pub(crate) fn company(&self) -> usize {
-        self.counted_players().len().max(1)
+    /// The run's roster kept: every player it counts joins it, by account (by number in a room that keeps none, a
+    /// test's). Grown, every great foe standing is matched again to the larger company, keeping its share of health,
+    /// so a company that comes in after a great foe stands fights it as one that stood with it.
+    pub(crate) fn keep_roster(&mut self, breach: &mut Breach) {
+        let before = breach.company();
+        for id in self.counted_players() {
+            let key = self.players.get(&id).and_then(|found| found.owner.clone()).unwrap_or_else(|| format!("#{id}"));
+            breach.roster.insert(key);
+        }
+        if breach.company() == before {
+            return;
+        }
+        breach.matched.retain(|matched| self.foes.get(&matched.id).is_some_and(|foe| !foe.fighter.dead()));
+        for matched in &mut breach.matched {
+            let to = matched.of(breach.roster.len());
+            if to > matched.to {
+                if let Some(foe) = self.foes.get_mut(&matched.id) {
+                    let grown = company_times(to) / company_times(matched.to);
+                    foe.fighter.health *= grown;
+                    foe.fighter.health_max *= grown;
+                }
+                matched.to = to;
+            }
+        }
     }
 
-    /// A great foe made a match for `players` of the company, more health for each beyond the first, and then `times`
-    /// its own.
-    pub(crate) fn match_company(&mut self, id: FighterId, players: usize, times: f64) {
+    /// A great foe made a match for the company (half of it for a Keeper's `half`), more health for each player beyond
+    /// the first, and then `times` its own; kept, so the company growing grows it too (`keep_roster`).
+    pub(crate) fn match_company(&mut self, breach: &mut Breach, id: FighterId, half: bool, times: f64) {
         let Some(foe) = self.foes.get_mut(&id) else { return };
-        let times = (1.0 + HEALTH_PER_PLAYER * (players.max(1) - 1) as f64) * times;
+        let matched = Matched { id, half, to: 0 };
+        let to = matched.of(breach.roster.len());
+        let times = company_times(to) * times;
         foe.fighter.health *= times;
         foe.fighter.health_max *= times;
+        breach.matched.push(Matched { to, ..matched });
     }
 
     /// A wave of an encounter: `kinds` taken in turn, as many as the living players in `space` call for, each at one of

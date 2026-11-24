@@ -136,3 +136,35 @@ fn the_mender_and_the_warden_stand_half_again_their_match() {
     let warden = breach(&room).fights.shores.warden.expect("the Warden stands");
     assert!((room.foes[&warden].fighter.health_max - brute).abs() < 1e-6, "the Warden");
 }
+
+#[test]
+fn a_great_foe_is_matched_to_everyone_who_played_in_the_run_and_grows_with_those_who_come_after_it_stands() {
+    let steward = |room: &mut Room, standing: PlayerId| {
+        put_at(room, standing, "court", "chest");
+        room.tick();
+        breach(room).fights.steward.boss.expect("the Steward stands")
+    };
+    let (mut whole, players) = won_to(Tier::Normal, 8, STEWARD);
+    whole.tick();
+    let boss = steward(&mut whole, players[7]);
+    let matched = whole.foes[&boss].fighter.health_max;
+    // Seven leave before it stands: it is matched to all eight still.
+    let (mut room, players) = won_to(Tier::Normal, 8, STEWARD);
+    room.tick();
+    for &player in &players[..7] {
+        room.leave(player);
+    }
+    let boss = steward(&mut room, players[7]);
+    assert!((room.foes[&boss].fighter.health_max - matched).abs() < 1e-6, "seven gone, matched to eight");
+    // One stands it alone, and seven come in after: it grows to the eight's match, keeping its share.
+    let (mut room, players) = won_to(Tier::Normal, 1, STEWARD);
+    let boss = steward(&mut room, players[0]);
+    room.foes.get_mut(&boss).expect("it").fighter.health /= 2.0;
+    for _ in 0..7 {
+        crate::encounters::encounters_tests::hardy(&mut room);
+    }
+    room.tick();
+    let grown = room.foes[&boss].fighter;
+    assert!((grown.health_max - matched).abs() < 1e-6, "eight came in: {} against {matched}", grown.health_max);
+    assert!((grown.health / grown.health_max - 0.5).abs() < 0.01, "its share kept");
+}
