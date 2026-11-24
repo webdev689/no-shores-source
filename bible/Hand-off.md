@@ -197,8 +197,10 @@ The decisions in [[Open Questions]] are not repeated here.
   ([[A Foe's Plain Swing Takes Seven Eighths of Its Time]]). The longer parry window (15 ticks) forgave only an early
   press; the swings made a quarter faster had sped foes' swings too, so a foe's sword blow landed 0.3 s after its
   swing began. Now 0.35 s (21 ticks, `FOE_SWING_PACE`); a player's and their companions' swings as they were, and the
-  foes' plan of when a blow lands follows (`Fighter::swing_ticks`). The events' fingerprints moved: the rules' pair
-  holds the heroic raid again. Tested offline; not played.
+  foes' plan of when a blow lands follows (`Fighter::swing_ticks`). The scripted runs moved both ways: the rules' pair
+  holds the heroic raid again, the dev page's bots now lose the plain raid's stores in its third wave, and the road's
+  test player, facing north while foes struck from its sides, fell before a kill (it now turns to the nearest foe).
+  A lone player is felled about as fast as before (`measure_blows`). Tested offline; not played.
 - **The key strip, the leave held and Settings in tabs** (#181), merged on the owner's "Merge and deploy", which
   deploys the page (the rooms' code is untouched). The owner's three asks
   ([[The Key Strip Is a Compact Panel, a Held Key Leaves, and Settings Has Tabs]], Claude's calls listed there): the
@@ -386,7 +388,7 @@ The decisions in [[Open Questions]] are not repeated here.
   page, so it is not a gap in the page. The owner will send a screenshot.
 - **The public events under main's balance pass** (#141): with the fight's harm at 1.5 and 0.75, the rules' two scripted
   players seal a heroic Fissure and, foes' swings at seven eighths, hold the heroic raid;
-  with the heroic task left alone, the page's scripted pair holds the raid. The events are Claude's to tune ("Claude
+  the dev page's two bots win the Fissure either way and lose the raid's stores either way. The events are Claude's to tune ("Claude
   tunes them"); whether a pair should hold the heroic raid is the owner's to say. The chest's Vestige: #141 dropped the
   colour rows it drew on, so a plain chest draws on a Major's colours and a heroic one on a Boss's; a heroic chest's
   Vestige is now Normal about half the time (never before). The rest of #124's points are in its description and in
