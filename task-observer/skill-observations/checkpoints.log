@@ -97,3 +97,4 @@
 2026-11-24T06:44:23Z no-shores ccr-996cd9a1: collision fix + meadow port; logged 0186; no further observations at this checkpoint
 2026-11-24 10:14 [no-shores-source] session-start scan: files=165 parsed=156 principles=0
 2026-11-24 10:15 [no-shores-source] session-start scan: files=170 parsed=161 principles=0
+2026-11-24 10:15 [no-shores-source] session-start scan: files=168 parsed=159 principles=0
