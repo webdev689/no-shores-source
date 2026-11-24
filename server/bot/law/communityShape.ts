@@ -238,6 +238,7 @@ export const ROLEMENUS_SHAPE: BotModule = {
       label: 'Menus',
       max: 10,
       default: [],
+      unique: 'name',
       of: {
         type: 'group',
         label: 'Menu',
@@ -338,6 +339,7 @@ export const ANNOUNCE_SHAPE: BotModule = {
       label: 'Announcements',
       max: 25,
       default: [],
+      unique: 'name',
       of: {
         type: 'group',
         label: 'Announcement',

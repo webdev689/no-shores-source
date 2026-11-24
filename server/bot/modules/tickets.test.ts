@@ -106,7 +106,7 @@ test('tickets: a transcript is every message, oldest first, paged back past the 
       () => Response.json(pages++ ? newestFirst.slice(100) : newestFirst.slice(0, 100)),
     ],
   ];
-  const lines = (await transcript(bot.context, ROOM)).split('\n');
+  const lines = String(await transcript(bot.context, ROOM)).split('\n');
   assert.equal(pages, 2);
   assert.equal(lines.length, 101);
   assert.equal(lines[0], '[t0] u0: line 0 [https://cdn.example/a.png]');
@@ -122,4 +122,39 @@ test('tickets: two presses of Close at once post one transcript', async () => {
     (call) => call.method === 'POST' && call.path === `/channels/${LOGS}/messages`,
   );
   assert.equal(posted.length, 1);
+});
+
+test('tickets: a ticket whose channel was deleted by hand is closed, so its member can open another', async () => {
+  const bot = await standEngagement({ tickets: { maxOpen: 1 } }, [ticketsModule]);
+  const openChannel = () =>
+    String(recordOf(bot.database.raw.prepare('SELECT channel_id FROM tickets WHERE closed_at = 0').get()).channel_id);
+  await press(bot, TARGET, ['open']);
+  await bot.send('CHANNEL_DELETE', { guild_id: GUILD, id: openChannel(), type: 0 });
+  await press(bot, TARGET, ['open']);
+  assert.match(lastAnswer(bot), /Your ticket is open/, 'the deletion the bot heard closed the first');
+  // deleted while the bot heard nothing: Discord no longer knows the channel
+  bot.world.state.gone.push(openChannel());
+  await press(bot, TARGET, ['open']);
+  assert.match(lastAnswer(bot), /Your ticket is open/, 'a channel Discord says is gone is not counted');
+  await press(bot, TARGET, ['open']);
+  assert.match(lastAnswer(bot), /open already/, 'a channel still there is');
+  assert.equal(countOf(bot.database, 'SELECT COUNT(*) AS count FROM tickets WHERE closed_at = 0'), 1);
+});
+
+test('tickets: a transcript that cannot be read or posted keeps the ticket and its channel, and says why', async () => {
+  const bot = await standEngagement({ tickets: { logChannel: LOGS } }, [ticketsModule]);
+  await press(bot, TARGET, ['open']);
+  const channelId = String(recordOf(bot.database.raw.prepare('SELECT channel_id FROM tickets').get()).channel_id);
+  const refused = () => Response.json({ code: 50013, message: 'Missing Permissions' }, { status: 403 });
+  bot.world.state.extra = [['POST', new RegExp(`^/channels/${LOGS}/messages$`), refused]];
+  await press(bot, TARGET, ['close'], [], channelId);
+  assert.match(lastAnswer(bot), new RegExp(`could not post the transcript in <#${LOGS}>`));
+  bot.world.state.extra = [['GET', new RegExp(`^/channels/${channelId}/messages$`), refused]];
+  await press(bot, TARGET, ['close'], [], channelId);
+  assert.match(lastAnswer(bot), /could not read this ticket/);
+  assert.equal(bot.world.state.gone.includes(channelId), false, 'the channel is kept');
+  bot.world.state.extra = [];
+  await press(bot, TARGET, ['close'], [], channelId);
+  assert.equal(lastAnswer(bot), 'Closed.', 'it is still open, and closes once the transcript can be posted');
+  assert.ok(bot.world.state.gone.includes(channelId));
 });

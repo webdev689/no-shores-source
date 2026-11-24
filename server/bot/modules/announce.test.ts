@@ -1,7 +1,9 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { GUILD, TEXT_CHANNEL } from '../botForTests.ts';
+import { ANNOUNCE_SHAPE } from '../law/communityShape.ts';
 import { blankEmbed } from '../law/message.ts';
+import { salvage, validate } from '../law/settings.ts';
 import { actorOf, standCommunity } from './communityForTests.ts';
 import { type Announcement, announceModule, announcement, channelsOf, lastDue } from './announce.ts';
 
@@ -46,6 +48,16 @@ test('announcements: when each schedule falls due, in UTC', () => {
   assert.equal(lastDue({ repeat: 'once', at: '2026-11-18 12:15' }, now), Date.UTC(2026, 10, 18, 12, 15));
   assert.equal(lastDue({ repeat: 'once', at: '12:15' }, now), 0, 'once needs a date');
   assert.equal(lastDue({ repeat: 'never', at: '12:00' }, now), 0);
+});
+
+test('announcements: two cannot be saved with one name, and a save that has them still loads', () => {
+  const twins = { messages: [RULES, { ...NEWS_ITEM, name: 'rules' }] };
+  const checked = validate(ANNOUNCE_SHAPE.schema, twins);
+  assert.deepEqual(checked.ok ? [] : checked.errors, [
+    { path: 'messages[1].name', message: 'Another announcement has this name.' },
+  ]);
+  assert.equal((salvage(ANNOUNCE_SHAPE.schema, twins).messages as unknown[]).length, 2);
+  assert.equal(validate(ANNOUNCE_SHAPE.schema, { messages: [RULES, NEWS_ITEM] }).ok, true);
 });
 
 test('announcements: words and embeds, the server filled in, and only the named mention allowed', () => {

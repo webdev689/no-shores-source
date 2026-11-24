@@ -13,6 +13,7 @@ const SCHEMA = [
      since INTEGER NOT NULL, PRIMARY KEY (guild_id, user_id))`,
   `CREATE TABLE IF NOT EXISTS invite (guild_id TEXT NOT NULL, code TEXT NOT NULL, uses INTEGER NOT NULL,
      inviter_id TEXT NOT NULL, PRIMARY KEY (guild_id, code))`,
+  'CREATE TABLE IF NOT EXISTS invite_read (guild_id TEXT PRIMARY KEY, at INTEGER NOT NULL)',
 ];
 
 /** The Durable Object's SQL handle, as the runtime gives it. */
@@ -59,8 +60,12 @@ export interface Cache {
   dropVoice(guildId: string, userId: string): void;
   /** Everyone in voice in a server. */
   inVoice(guildId: string): Array<VoiceSeat & { readonly userId: string }>;
-  invites(guildId: string): Map<string, { readonly uses: number; readonly inviterId: string }>;
-  putInvites(guildId: string, list: readonly InviteCount[]): void;
+  /** Each invite's use count in a server as last read, and when that was, in milliseconds (0: never). */
+  invites(guildId: string): {
+    readonly at: number;
+    readonly counts: Map<string, { readonly uses: number; readonly inviterId: string }>;
+  };
+  putInvites(guildId: string, list: readonly InviteCount[], readAt: number): void;
 }
 
 const listOf = (text: unknown): string[] => {
@@ -152,14 +157,16 @@ export function createCache(sql: SqlLike): Cache {
       }));
     },
     invites(guildId) {
-      return new Map(
+      const counts = new Map(
         rows('SELECT code, uses, inviter_id FROM invite WHERE guild_id = ?', guildId).map((row) => [
           String(row.code),
           { uses: Number(row.uses), inviterId: String(row.inviter_id) },
         ]),
       );
+      return { at: Number(rows('SELECT at FROM invite_read WHERE guild_id = ?', guildId)[0]?.at ?? 0), counts };
     },
-    putInvites(guildId, list) {
+    putInvites(guildId, list, readAt) {
+      sql.exec('INSERT OR REPLACE INTO invite_read (guild_id, at) VALUES (?, ?)', guildId, readAt);
       sql.exec('DELETE FROM invite WHERE guild_id = ?', guildId);
       for (const invite of list)
         sql.exec(
