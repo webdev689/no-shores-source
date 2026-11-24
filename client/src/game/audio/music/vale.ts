@@ -1,6 +1,6 @@
-// The Drowned Vale's music, built once when it is first wanted: some 47,000 notes, a fifth of a second, so no game
-// that never nears the Breach builds it, and one that does builds it as the Breach's plan loads (`warmVale`), before
-// the gate's fight can start. Its recordings, the `music.*` cues its tracks and drums play (`VALE_CUES`).
+// The Drowned Vale's music, built once when it is first wanted: some 47,000 notes, about a tenth of a second, so no
+// game that never nears the Breach builds it, and one that does builds it as the Breach's plan loads (`warmVale`),
+// before the gate's fight can start; and the `music.*` cues a song's tracks and drums play (`cuesOf`).
 
 import type { Song } from './score.ts';
 import { valeBosses } from './valeBosses.ts';

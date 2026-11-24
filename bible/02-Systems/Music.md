@@ -89,7 +89,7 @@ plays ([[The Fight Music Varies, Recombined From Takes]]). Nothing in it rings o
   freesound.json and `publish.py` copies it onto the pick in `sounds.json`, where the page reads it. A textural or
   percussive cue has none and plays from the note its score names its home. A note longer than the recording plays
   on in further plays of its middle (from a quarter in), each crossfaded into the last at equal power. A drum plays
-  its recording `shift` semitones off, lasting no longer than its kit drum (its attack and decay), the high ones
+  its recording `shift` semitones off, shaped as its kit drum is (rising over its attack, dying over its decay), the high ones
   (metal, the bowed cymbal, the riser) cut a tenth of a second after their peak; a swell is started, or entered
   part way, so its recording ends on the beat the kit drum's lands on. Each channel's sampled voices pass two
   lowpasses in a row at 5.6 kHz (24 dB an octave; 8 kHz some 20 dB down), so no partial of a recording played high
@@ -215,7 +215,9 @@ on, and the sky over it.
   song of the encounter fought in the space the player stands in (the Waking's between spaces); an encounter running
   holds at least the tension (the page's), its foes bring the fight's layers as any fight does, and its moments
   (begun, won, a wipe) are the cadence, victory and defeat of the encounter the room tells them of, wherever the
-  player stands (`momentOf`, `askedSting`); the Breach cleared is the Steward's fall. The Scrivener and the Steward play their own boss
+  player stands (`momentOf`, `askedSting`); the Steward's encounter plays the Two Shores' cadence and defeat, and its
+  win, the Breach cleared, the Steward's fall. The zone hears no other company's clear, and an event of the zone's
+  own plays its own sting under its banner. The Scrivener and the Steward play their own boss
   scores by the names over their bars, the Scrivener from its waking, the Steward's court from its encounter's start
   whether or not the Steward is engaged; the Steward's fall is the Breach cleared. While a Watcher has seen the
   company the Ways play their peak. Between encounters a calm piece comes after 20 s, and 45 to 120 s of silence

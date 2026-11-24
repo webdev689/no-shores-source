@@ -105,14 +105,15 @@ export function lowpassInto(audio: BaseAudioContext, into: AudioNode): AudioNode
   return first;
 }
 
-/** How one note plays: its rate, from `when`, held `held` seconds (a drum: lasting at most that), at `amp` (its
- *  velocity's gain), from `offset` seconds into the recording. */
+/** How one note plays: its rate, from `when`, held `held` seconds, at `amp` (its velocity's gain), from `offset`
+ *  seconds into the recording; a drum's, shaped as its kit drum is, rising over its `attack` and dying over its
+ *  `decay`, lasting no longer than the recording. */
 export interface Played {
   readonly rate: number;
   readonly when: number;
   readonly held: number;
   readonly amp: number;
-  readonly drum?: boolean;
+  readonly drum?: { readonly attack: number; readonly decay: number };
   readonly offset?: number;
 }
 
@@ -125,17 +126,16 @@ export function sampledNote(
   audio: BaseAudioContext,
   recording: Recording,
   sample: Sample,
-  { rate, when, held, amp, drum = false, offset = 0 }: Played,
+  { rate, when, held, amp, drum, offset = 0 }: Played,
   connect: (gain: AudioNode) => AudioNode,
 ): Sounding {
   const recorded = recording.buffer.duration - offset;
-  const length = drum ? Math.min(held, recorded / rate) : held + (sample.release ?? RELEASE_S);
-  const release = Math.min(sample.release ?? RELEASE_S, length);
-  const hold = length - release;
+  const length = drum ? Math.min(drum.attack + drum.decay, recorded / rate) : held + (sample.release ?? RELEASE_S);
+  const hold = drum ? Math.min(drum.attack, length) : held;
   const end = when + length;
   const top = Math.max(0.0001, amp * recording.level * (sample.gain ?? 1));
   const envelope = audio.createGain();
-  const attackEnd = when + Math.min(sample.attack ?? ATTACK_S, hold);
+  const attackEnd = when + Math.min(drum ? hold : (sample.attack ?? ATTACK_S), hold);
   envelope.gain.setValueAtTime(0.0001, when);
   envelope.gain.linearRampToValueAtTime(top, attackEnd);
   envelope.gain.setValueAtTime(top, Math.max(attackEnd, when + hold));

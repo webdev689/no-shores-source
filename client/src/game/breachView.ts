@@ -540,6 +540,7 @@ export function withBreach(own: PublicShown | null, breached: BreachFrame | null
     banner: { ...own.banner, elsewhere },
     places: [...own.places, ...theirs.places],
     call: own.call ?? theirs.call ?? null,
-    breach: theirs.breach ?? null,
+    // The zone's own beat is the sting here, so no Breach moment goes with it.
+    breach: theirs.breach ? { ...theirs.breach, moment: undefined } : null,
   };
 }

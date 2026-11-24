@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import listed from '../../../../../content/audio/freesound.json' with { type: 'json' };
 import bank from '../../../../../content/audio/sounds.json' with { type: 'json' };
-import { LOWPASS_HZ, type Recording, ROOTS, playsOf, rateOf, rootNote, rootsOf } from './sampled.ts';
+import { LOWPASS_HZ, type Recording, ROOTS, playsOf, rateOf, rootNote, rootsOf, sampledNote } from './sampled.ts';
 import { type Sample, makeSong, midiNote } from './score.ts';
 import { SongPlayer } from './songPlayer.ts';
 
@@ -188,4 +188,31 @@ test("a sampled drum lasts no longer than its kit's drum, and a riser's recordin
   assert.ok(long && Math.abs(long.stop - (hit + 1.6 + 0.02)) < 1e-9, 'ending as it lands');
   const short = heard(cello, { 'music.riser': recording(1) }).sources.find((source) => source.rate === 1);
   assert.ok(short && Math.abs(short.start - (hit + 0.6)) < 1e-9, 'begun late, so it ends as it lands');
+});
+
+test("a sampled drum's recording rises over its kit drum's attack and dies over its decay, however short", () => {
+  const ramps: (readonly [string, number, number])[] = [];
+  const param = () => ({
+    value: 0,
+    setValueAtTime: (value: number, time: number) => ramps.push(['set', value, time]),
+    linearRampToValueAtTime: (value: number, time: number) => ramps.push(['rise', value, time]),
+    exponentialRampToValueAtTime: (value: number, time: number) => ramps.push(['fall', value, time]),
+    setValueCurveAtTime() {},
+  });
+  const node = (more: object) => ({ connect: (to: unknown) => to, disconnect() {}, ...more });
+  const audio = {
+    createGain: () => node({ gain: param() }),
+    createBufferSource: () => node({ playbackRate: param(), start() {}, stop() {}, onended: null }),
+  } as unknown as BaseAudioContext;
+  const sounding = sampledNote(
+    audio,
+    recording(2),
+    { cue: 'music.metal', release: 0.3 },
+    { rate: 1, when: 1, held: 0, amp: 1, drum: { attack: 0.002, decay: 0.1 } },
+    (gain) => gain,
+  );
+  assert.ok(Math.abs(sounding.endsAt - 1.102) < 1e-9, "the kit drum's length, not the release's");
+  const [rise, fall] = [ramps.find(([kind]) => kind === 'rise'), ramps.find(([kind]) => kind === 'fall')];
+  assert.ok(rise && Math.abs(rise[2] - 1.002) < 1e-9 && rise[1] === 0.5, 'up to its peak over the attack');
+  assert.ok(fall && Math.abs(fall[2] - 1.102) < 1e-9, 'down over the whole decay');
 });

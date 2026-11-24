@@ -47,10 +47,10 @@ export type KitDrum = Partial<Omit<Drum, 'kind'>>;
 
 /** A voice played on a recording, a `music.*` cue picked from Freesound: rising in `attack` seconds, dying over
  *  `release` after its note, at `gain` of its levelled loudness. A pitched cue plays each note at its pick's measured
- *  root (the cue's `root` in freesound.json); one written with a `home` (a percussive or textural cue, which has no
- *  root) plays at its own pitch on that note and transposed from it. A drum played on one sounds no longer than its kit
- *  drum, `shift` semitones off its own pitch. Until the recording has come, or while a pitched cue has no pick or no root, the track
- *  plays its program and the drum the kit's own. */
+ *  root (its `root` in sounds.json); one written with a `home` (a percussive or textural cue, which has no root)
+ *  plays at its own pitch on that note and transposed from it. A drum played on one sounds no longer than its kit
+ *  drum, `shift` semitones off its own pitch. Until the recording has come, or while a pitched cue has no pick or no
+ *  root, the track plays its program and the drum the kit's own. */
 export interface Sample {
   readonly cue: `music.${string}`;
   readonly attack?: number;

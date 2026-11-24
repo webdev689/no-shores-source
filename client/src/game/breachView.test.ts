@@ -160,6 +160,9 @@ test("a gate's banner stands first near it, and elsewhere its line goes under th
   assert.deepEqual(merged?.places, theirs.places, 'the gate marked on the compass all the same');
   assert.equal(withBreach(own, { ...frame, first: true, sting: null })?.banner, null, "the gate's own stands first");
   assert.equal(withBreach(own, null), own);
+  // The zone's own event's sting plays under its banner: the Breach's moment of that frame goes with neither.
+  const told = { ...theirs, breach: { run: false, song: null, boss: null, piece: 2, moment: 0 } };
+  assert.equal(withBreach(own, { ...frame, shown: told, sting: 'victory' })?.breach?.moment, undefined);
 });
 
 test('the fallen stand again as the room stands them: 6 s outside an encounter, 10 s in one at Normal, never at Hard', () => {

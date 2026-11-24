@@ -537,8 +537,9 @@ export class SongPlayer {
       // A swell's recording is started, or entered, so that it ends where the kit's own lands.
       const early = sample.lands === undefined ? 0 : recording.buffer.duration / rate - sample.lands;
       const [begins, offset] = early > 0 ? [when, early * rate] : [when - early, 0];
-      const held = shape.attack + shape.decay - (begins - when);
-      const played = { rate, when: begins, held, amp, drum: true, offset };
+      // A swell begun late rises for what is left of its attack.
+      const drum = { attack: Math.max(0, shape.attack - (begins - when)), decay: shape.decay };
+      const played = { rate, when: begins, held: 0, amp, drum, offset };
       const into = (gain: AudioNode) => this.connect(gain, 0, note, true);
       this.sounding.push(sampledNote(this.audio, recording, sample, played, into));
       return;

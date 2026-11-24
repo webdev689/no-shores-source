@@ -1,6 +1,6 @@
 // What the music hears of a Breach: from the room's BreachSeen, the space the player stands over and the frame's
 // moments, the song of the encounter under way or of its space, its great foe awake, the Ways' sighting, the calm
-// piece the space plays, and which encounter a moment (begun, won, wiped, cleared) is of. Pure, for the director.
+// piece the space plays, and which encounter a moment (begun, won, wiped) is of. Pure, for the director.
 
 import { BREACH_EVENT, type BreachSeen } from '../../../network/breachMessages.ts';
 import type { FightEvent } from '../../../network/messages.ts';
@@ -17,17 +17,17 @@ const AFTER_BELLS = 2;
 /** The room's moments that are an encounter's, each carrying its number (0 the Waking, at the gate). */
 const OF_ENCOUNTER: ReadonlySet<number> = new Set([BREACH_EVENT.begun, BREACH_EVENT.won, BREACH_EVENT.wiped]);
 
-/** The encounter a frame's moments are of, the last that is one's; 'cleared' for the Breach cleared; none. */
+/** The encounter a frame's moments are of, the last that is one's; 'cleared' for the Steward won, the run's last,
+ *  its fall the Breach cleared (the zone's own word of a clear is its onlookers', and plays nothing); none. */
 export function momentOf(had: readonly Pick<FightEvent, 'kind' | 'amount'>[]): number | 'cleared' | null {
-  if (had.some((event) => event.kind === BREACH_EVENT.cleared)) return 'cleared';
+  const won = (event: Pick<FightEvent, 'kind' | 'amount'>) =>
+    event.kind === BREACH_EVENT.won && event.amount === ENCOUNTER.steward;
+  if (had.some(won)) return 'cleared';
   return had.reduce<number | null>((last, event) => (OF_ENCOUNTER.has(event.kind) ? event.amount : last), null);
 }
 
-/** The cue a moment of encounter `number` plays its sting in: its song's, the Steward's own score in its court. */
-export const encounterCue = (number: number): Cue =>
-  number === ENCOUNTER.steward
-    ? { kind: 'boss', boss: 'steward', part: 1 }
-    : { kind: 'breach', song: ENCOUNTER_SONGS[number] ?? 'waking' };
+/** The cue a moment of encounter `number` plays its sting in: its song's, the Steward's court the Two Shores'. */
+export const encounterCue = (number: number): Cue => ({ kind: 'breach', song: ENCOUNTER_SONGS[number] ?? 'waking' });
 
 /** A Breach as the music hears it: in its run, the encounter under way (else the one fought in `space`, the space
  *  the player stands over), its great foe awake and the Ways' Watchers having seen; at its gate, the Waking while

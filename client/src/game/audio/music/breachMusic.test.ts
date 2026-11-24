@@ -154,7 +154,9 @@ const told = (kind: number, amount: number) => ({ kind, amount });
 
 test("a Breach's moment plays the sting of the encounter it is of, not of where the player stands", () => {
   assert.equal(momentOf([told(BREACH_EVENT.won, 3)]), 3);
-  assert.equal(momentOf([told(BREACH_EVENT.won, 5), told(BREACH_EVENT.cleared, 0)]), 'cleared');
+  assert.equal(momentOf([told(BREACH_EVENT.won, 5)]), 'cleared', "the Steward won, the run's last");
+  assert.equal(momentOf([told(BREACH_EVENT.cleared, 0)]), null, "the zone's word of another company's clear");
+  assert.equal(momentOf([told(BREACH_EVENT.begun, 5)]), 5);
   assert.equal(momentOf([told(BREACH_EVENT.rewritten, 2)]), null, 'no encounter in it');
   const gate = { ...RUN, place: { kind: 'island', climate: 'temperate-coast', node: 'node-gullwing-vale' } } as const;
   // The Spire woken, or the holders gone, on the very frame the room tells the Waking won or wiped.
@@ -176,7 +178,16 @@ test("a Breach's moment plays the sting of the encounter it is of, not of where 
     kind: 'victory',
     cue: { kind: 'breach', song: 'ways' },
   });
-  const cleared = hearBreach(SEEN, PLAN, 'court', true, [told(BREACH_EVENT.won, 5), told(BREACH_EVENT.cleared, 0)]);
+  const begun = hearBreach({ ...SEEN, encounter: 5 }, PLAN, 'court', true, [told(BREACH_EVENT.begun, 5)]);
+  assert.deepEqual(askedSting('cadence', inRun({}, { breach: begun })), {
+    kind: 'cadence',
+    cue: { kind: 'breach', song: 'shores' },
+  });
+  assert.equal(
+    stingOf(overlookScores(), { kind: 'cadence', cue: { kind: 'breach', song: 'shores' } })?.name,
+    'vale-shores-cadence',
+  );
+  const cleared = hearBreach(SEEN, PLAN, 'court', true, [told(BREACH_EVENT.won, 5)]);
   assert.deepEqual(askedSting('victory', inRun({}, { breach: cleared })), { kind: 'fallen', boss: 'steward' });
   assert.equal(stingOf(overlookScores(), { kind: 'fallen', boss: 'steward' })?.name, 'vale-steward-cleared');
   // A public event's moment in the hollow, while the company holds the Waking, is the island's.
