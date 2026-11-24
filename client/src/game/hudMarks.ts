@@ -133,7 +133,7 @@ function ring(
         context.textAlign = 'center';
         context.textBaseline = 'middle';
         if (outlined) {
-          context.lineWidth = 2 * unit;
+          context.lineWidth = unit;
           context.strokeStyle = TONES.ink;
           context.strokeText(glyph, middle[0], middle[1]);
         }
@@ -236,9 +236,9 @@ export function markNodes(ui: Interface, marks: readonly ScreenMark[], chosen: (
           look?.badge ? badgeNode(look.badge) : null,
           // Not by its colours alone: a light star over the ring marks the guild's own.
           own && {
-            width: 12,
-            height: 12,
-            float: { at: [0.5, 0], anchor: [0.5, 1], y: -1 },
+            width: 18,
+            height: 18,
+            float: { at: [0.5, 0], anchor: [0.5, 1], y: 2 },
             picture: signOf('★', TONES.ink),
           },
           held && {
