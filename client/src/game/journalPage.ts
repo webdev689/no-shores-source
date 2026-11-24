@@ -309,8 +309,10 @@ export class Journal {
       padding: 12,
       children: [
         {
+          // The count drops under the head where the column, three tiles wide, has no room for both.
           width: 'grow',
           gap: 10,
+          wrap: true,
           alignY: 'center',
           children: [
             { width: 'grow', ...words('BOUNTIES', 2, INK.word, { tracking: 3 }) },

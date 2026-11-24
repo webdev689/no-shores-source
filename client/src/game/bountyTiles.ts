@@ -137,7 +137,8 @@ const earnLine = (mark: Node, said: string, size: number, colour: string): Node 
   children: [mark, words(said, size, colour)],
 });
 
-/** What a bounty asks of the player, ticked while it is met: a faction's counts only while its cape is worn. */
+/** What a bounty asks of the player, ticked while it is met: a faction's counts only while the player is pledged to it
+ *  and wears its cape. */
 function askLine(met: boolean, size: number): Node {
   return {
     gap: 8,
@@ -151,7 +152,7 @@ function askLine(met: boolean, size: number): Node {
         outline: { width: 1, colour: met ? INK.gain : INK.faint },
         children: [met && iconNode('taken', 12)],
       },
-      words('Counts while you wear their cape', size, met ? INK.word : INK.faint),
+      words('Counts while pledged to them and wearing their cape', size, met ? INK.word : INK.faint),
     ],
   };
 }

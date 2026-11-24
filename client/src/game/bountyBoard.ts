@@ -102,19 +102,24 @@ export function serves(gear: GearState, faction: number): boolean {
 /** What a bounty's card says along its foot at the board: E takes one open, turns in one done. */
 const boardHints = (row: BountyRow): readonly Hint[] => (row.press ? [['E', row.press.label]] : []);
 
-/** The tile whose card shows: the one pointed at, else the one holding the focus. */
+/** The currencies' ids, whose cards name them. */
+const COINS = ['board-aurem', 'board-rank'] as const;
+
+/** What shows its card, as the menu shows one: what the pointer rests on, else what holds the keys' focus; none
+ *  otherwise. */
 function shownOf(context: MenuContext, ids: readonly string[]): string | null {
   const { ui } = context;
-  return ids.find((id) => ui.hovered(id)) ?? ids.find((id) => ui.focused(id)) ?? null;
+  return ids.find((id) => ui.hovered(id)) ?? ids.find((id) => ui.focused(id) && ui.keyFocused) ?? null;
 }
 
-/** The currencies at the top right: Aurem, and the pledged faction's rank by its emblem, each named by its card. */
-function purseNode(context: MenuContext): Node {
+/** The currencies at the top right: Aurem, and the pledged faction's rank by its emblem, each named by its card while
+ *  it is the one `shown`. */
+function purseNode(context: MenuContext, shown: string | null): Node {
   const { gear, sizes } = context;
   const pledge = gear.standing?.pledge ?? 0;
   const faction = pledge === 0 ? null : factionNamed(pledge);
   const coin = (id: string, mark: Node, said: string, named: string): Node => {
-    context.card(id, () => nameCard(sizes, named));
+    if (id === shown) context.card(id, () => nameCard(sizes, named));
     return { id, focusable: true, gap: 6, alignY: 'center', label: named, children: [mark, words(said, 2, INK.word)] };
   };
   const aurem = gear.aurem.toLocaleString('en');
@@ -167,9 +172,13 @@ export function boardPage(context: MenuContext, resetAt: () => number | null, no
   const rows = bountyRows(gear);
   const idOf = (row: BountyRow) => `bounty-${row.place}`;
   const ids = rows.map(idOf);
-  const shown = shownOf(context, ids);
+  const locks = Array.from({ length: pledge === 0 ? FACTION_BOUNTIES : 0 }, (unused, slot) => `bounty-locked-${slot}`);
+  const shown = shownOf(context, [...ids, ...locks, ...COINS]);
   const shownRow = rows.find((row) => idOf(row) === shown) ?? null;
-  // E on any tile acts on the bounty whose card shows, as the card's keycap says; a click or Enter on the tile pressed.
+  // E reaches only the press holding the focus, so while nothing holds it the first tile takes it, unringed, and E is
+  // heard; E then acts on the bounty whose card shows, as its keycap says, and on none while no bounty's card shows.
+  const first = ids[0];
+  if (ui.focusedId === null && first) ui.focusOn(first);
   const keyed = ids.some((id) => ui.keysOn(id).includes('e'));
   const pressed = rows.find((row) => ui.clicked(idOf(row))) ?? (keyed ? shownRow : null);
   if (!shut && pressed?.press) context.ask(pressed.press.ask);
@@ -191,9 +200,8 @@ export function boardPage(context: MenuContext, resetAt: () => number | null, no
   const town = rows.filter((row) => row.faction === 0).map(tile);
   // The pledged faction's three, then any other's held today; three locked slots while pledged to none.
   const theirs = rows.filter((row) => row.faction !== 0).map(tile);
-  const locked = Array.from({ length: pledge === 0 ? FACTION_BOUNTIES : 0 }, (unused, slot) => {
-    const id = `bounty-locked-${slot}`;
-    context.card(id, () => shutCardNode('Faction bounties', shut ? SHUT : LOCKED, sizes));
+  const locked = locks.map((id) => {
+    if (id === shown) context.card(id, () => shutCardNode('Faction bounties', shut ? SHUT : LOCKED, sizes));
     return lockedTileNode(id, wide);
   });
   const narrow = room.width < NARROW;
@@ -223,7 +231,7 @@ export function boardPage(context: MenuContext, resetAt: () => number | null, no
             alignY: 'center',
             children: [
               { width: 'grow', text: { words: BOARD_WORDS, size: text, colour: INK.faint, wrap: true } },
-              purseNode(context),
+              purseNode(context, shown),
             ],
           },
           {

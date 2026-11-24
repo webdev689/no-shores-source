@@ -188,7 +188,12 @@ test('one pledged to a faction has a slot for each of its three, its bounty take
   assert.ok(keyed(ui, 'bounty-9') && !keyed(ui, 'bounty-10'));
   point('bounty-9');
   const card = wordsOf(tree(), 'bounty-card');
-  for (const words of ['LAMP OIL', 'Lamplighters bounty', '+2,500 reputation', 'Counts while you wear their cape'])
+  for (const words of [
+    'LAMP OIL',
+    'Lamplighters bounty',
+    '+2,500 reputation',
+    'Counts while pledged to them and wearing their cape',
+  ])
     assert.ok(card.includes(words), words);
   assert.ok(!card.some((words) => words.includes('Aurem')), 'a faction pays reputation in the town’s Aurem’s place');
 });

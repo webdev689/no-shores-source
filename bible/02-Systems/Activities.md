@@ -350,7 +350,8 @@ keep their engine ([[The Journal Holds the Quests, the Bounties at Its Side and 
   held, each counting to its reset. A shut line says why in its gate's words. "Taken" is the character's record as
   their gear last carried it, judged against the page's own day and week, so yesterday's clear reads as not taken
   today. Its right column holds the day's bounties taken, as the gear last carried them, as the board's tiles with no
-  press, a slot for each bounty the board shows the player (six, or nine pledged), each tile's card floated beside it
+  press, a slot for each bounty the board shows the player (the town's six, the pledged faction's three and any other
+  faction's held that day), each tile's card floated beside it
   while it is pointed at or holds the keys; or before the prologue the board's shut line alone. Gear of another day
   than the page's (a word heard before the reset, as at sea, where the character is sent only as it changes) shows no
   bounty, only "Posted each day on the board in Overlook’s plaza.", as before any room sent one. Its middle holds the

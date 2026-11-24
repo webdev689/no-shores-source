@@ -209,7 +209,7 @@ test('a tile’s card floats beside it while pointed at: its name, kind, task, c
     'Lamplighters bounty',
     '3/8',
     '+2,500 reputation',
-    'Counts while you wear their cape',
+    'Counts while pledged to them and wearing their cape',
   ])
     assert.ok(card().includes(words), words);
   click(ui, frame, 'bounty-0');
@@ -284,4 +284,26 @@ test('the tile pointed at is ringed just outside its edge, over it, so its state
   assert.equal(tileBox.width, 52, 'its face twice its 24 cells, in a 2 pixel edge');
   const plain = laidOf({ padding: 20, children: [bountyTileNode(row, 'tile', false, { ...look, lit: false })] });
   assert.ok(!plain.some((each) => each.node.outline), 'no ring on a tile not pointed at');
+});
+
+test('E acts only on the bounty whose card shows: none while the pointer rests on a locked slot or a coin', () => {
+  const { ui, asked, frame, point, tree } = boardOf(UNPLEDGED);
+  ui.focusOn('bounty-3');
+  frame([{ kind: 'key', key: 'ArrowRight' }]);
+  frame();
+  assert.equal(ui.focusedId, 'bounty-4', 'the keys on an open bounty');
+  point('bounty-locked-0');
+  assert.ok(wordsIn(byId(tree(), 'bounty-card')).includes('FACTION BOUNTIES'), 'the locked slot’s card shows');
+  frame([{ kind: 'key', key: 'e' }]);
+  point('board-aurem');
+  frame([{ kind: 'key', key: 'e' }]);
+  assert.deepEqual(asked, [], 'no bounty taken behind another card');
+});
+
+test('with nothing holding the focus, E takes the tile the pointer rests on, as its card’s keycap says', () => {
+  const { ui, asked, frame, point } = boardOf(PLEDGED);
+  point('bounty-4');
+  assert.notEqual(ui.focusedId, 'bounty-4', 'pointed at, not pressed');
+  frame([{ kind: 'key', key: 'e' }]);
+  assert.deepEqual(asked, [{ kind: ASKS.takeBounty, node: 4, item: 20_778 }]);
 });

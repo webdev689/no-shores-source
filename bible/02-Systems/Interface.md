@@ -921,13 +921,14 @@ never while a press is held. Each press is an ask the room answers.
     for its card is cut short there and read whole to a screen reader with the rest of its card. With
     none to show (before any room's word, or a word not on the player's own character), it says why, the two banners
     resting over the line.
-  - **The bounties**: a slot for each bounty the board shows the player (the town's six, and the pledged faction's
-    three), three to a row under "Bounties", with how many are taken; each taken the board's tile with no press (below,
-    "The bounty board"), a slot not taken an empty frame. The tile pointed at or holding the keys is ringed white just
-    outside its edge and its card floats beside it, as the menu floats every card: its name, cut short where too long,
-    its kind, its words, its count, what it pays, for a faction's whether it counts now, and along its foot its state
-    once done or turned in. Bounties are taken and turned in at the board alone. The column stands at the right
-    wherever it fits beside the quests, as wide as its head; on a phone (under 600 px) it stands under them.
+  - **The bounties**: a slot for each bounty the board shows the player (the town's six, the pledged faction's three
+    and any other faction's held that day), three to a row under "Bounties", with how many are taken; each taken the
+    board's tile with no press (below, "The bounty board"), a slot not taken an empty frame. The tile pointed at or
+    holding the keys is ringed white just outside its edge and its card floats beside it, as the menu floats every
+    card: its name, cut short where too long, its kind, its words, its count, what it pays, for a faction's whether it
+    counts now, and along its foot its state once done or turned in. Bounties are taken and turned in at the board
+    alone. The column stands at the right wherever it fits beside the quests, as wide as its head; on a phone (under
+    600 px) it stands under them.
   - **The timers** lead with icons, drawn in the gear glyphs' style (`journalIcons.ts`), and write nothing twice.
     Today's head carries the rising sun and the one countdown to the daily reset, with its moment in the player's own
     time; This week's, a page of the week and the countdown to the weekly reset; Later's, its name alone. Each row
@@ -1341,13 +1342,14 @@ serves each ask only at its own counter ([[Gear]], "In the rooms"; [[Factions]])
     and its kind by the mark of where it counts ("Land bounty", or "Lamplighters bounty") on a band in its poster's
     colour; its words; its count once taken; "Rewards" with what it pays the player now by its tier (`payOf`: XP by its
     letters, and the town's Aurem by its coin or the faction's reputation by its emblem), resting once turned in; for
-    a faction's, "Counts while you wear their cape", ticked while the player is pledged to it with its cape worn
-    (`serves`); and along its foot E's press, Take on one not held or Turn in on one done, or "Turned in". A locked
-    well's card says "Pledge to a faction at its counter in Overlook to take its bounties."
-  - **Its keys**: a click, Enter or E on a tile takes or turns it in, E the one whose card shows, each asked by its
-    place with the day of the board shown; the arrows move between tiles and rows. The footer reads "Click / E Take or
-    turn in", the Character key "Open Character" and "Esc Dismiss". Before the prologue every tile rests grey, its
-    card holds the padlock and "The bounty board opens after the prologue.", and nothing is asked.
+    a faction's, "Counts while pledged to them and wearing their cape", ticked while it is met (`serves`); and along
+    its foot E's press, Take on one not held or Turn in on one done, or "Turned in". A locked well's card says "Pledge
+    to a faction at its counter in Overlook to take its bounties."
+  - **Its keys**: a click, Enter or E on a tile takes or turns it in, E the one whose card shows and none while no
+    bounty's card shows (while nothing holds the focus the first tile takes it, unringed, so E is heard), each asked
+    by its place with the day of the board shown; the arrows move between tiles and rows. The footer reads "Click / E
+    Take or turn in", the Character key "Open Character" and "Esc Dismiss". Before the prologue every tile rests grey,
+    its card holds the padlock and "The bounty board opens after the prologue.", and nothing is asked.
 
 ## Players
 
