@@ -61,6 +61,8 @@ test('role menus: a press toggles, one-at-a-time takes the others, kept roles st
   assert.deepEqual(member(), [ROLE_B], 'a role the menu does not offer is never given');
   await choose(MENU, [ROLE_A], 'pick');
   assert.deepEqual(member(), [ROLE_A], "a pick sets the menu's roles to the ones picked");
+  await choose(MENU, [ROLE_B, MOD_ROLE], 'pick');
+  assert.deepEqual(member(), [ROLE_B], 'a pick never gives a role the menu does not offer');
 });
 
 test('role menus: publishing posts, then edits; a reactions menu reacts and answers reactions', async () => {

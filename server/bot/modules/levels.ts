@@ -75,14 +75,15 @@ export async function award(
   how: Earned = {},
 ): Promise<Row | null> {
   const userId = String(user.id);
-  const name = String(user.global_name || user.username || user.id).slice(0, 64);
+  // a member known only by id keeps the name stored before: an id is never shown as a name on the public board
+  const name = String(user.global_name || user.username || '').slice(0, 64);
   const row = await context.database
     .prepare(
       `INSERT INTO levels (guild_id, user_id, xp, level, messages, voice_minutes, last_at, name, avatar)
        VALUES (?, ?, MAX(0, ?), 0, ?, ?, ?, ?, ?)
        ON CONFLICT (guild_id, user_id) DO UPDATE SET xp = MAX(0, xp + ?), messages = messages + excluded.messages,
-         voice_minutes = voice_minutes + excluded.voice_minutes, last_at = excluded.last_at, name = excluded.name,
-         avatar = excluded.avatar
+         voice_minutes = voice_minutes + excluded.voice_minutes, last_at = excluded.last_at,
+         name = CASE WHEN excluded.name = '' THEN name ELSE excluded.name END, avatar = excluded.avatar
        RETURNING xp, level`,
     )
     .bind(
@@ -110,7 +111,10 @@ export async function award(
     await context.rest.put(`/guilds/${guildId}/members/${userId}/roles/${role}`, undefined, { reason });
   for (const role of take) await context.rest.del(`/guilds/${guildId}/members/${userId}/roles/${role}`, { reason });
   if (reached < told || how.quiet) return row;
-  const vars = await slotsFor(context, guildId, user, config.levelMessage, { name, level: String(reached) });
+  const vars = await slotsFor(context, guildId, user, config.levelMessage, {
+    name: name || 'Member',
+    level: String(reached),
+  });
   const payload = messagePayload(config.levelMessage, vars, context.now());
   if (payloadEmpty(payload)) return row;
   // the member is pinged only where the server's setting says so
@@ -189,7 +193,7 @@ async function boardPage(context: BotContext, guildId: string, offset: number, l
   return page.results.map((row, index) => ({
     rank: offset + index + 1,
     userId: String(row.user_id),
-    name: String(row.name),
+    name: String(row.name) || 'Member',
     level: levelOf(Number(row.xp)).level,
     xp: Number(row.xp),
     messages: Number(row.messages),
@@ -221,7 +225,7 @@ async function onCommand(context: BotContext, interaction: Interaction, config: 
   return publicReply({
     embeds: [
       embed({
-        title: `${row.name}: level ${where.level}`,
+        title: `${row.name || 'Member'}: level ${where.level}`,
         description: `${bar(where.into, where.need)} ${where.into} / ${where.need} xp`,
         fields: [
           { name: 'Rank', value: `#${Number(above?.count ?? 0) + 1}`, inline: true },

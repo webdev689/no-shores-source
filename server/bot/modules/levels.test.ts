@@ -144,6 +144,30 @@ test('levels: the panel gives and takes, a reward role only by someone who could
   assert.deepEqual(view?.rows, []);
 });
 
+test('levels: a member known only by id keeps their stored name, and the public board never shows the id', async () => {
+  const bot = await standCommunity({ levels: LEVELS_ON }, [levelsModule]);
+  await chat(bot, '100000000000000001');
+  const config = await bot.settingsOf('levels');
+  const stranger = '900000000000000177';
+  await levelsModule.actions?.give?.(bot.context, GUILD, { user: stranger, amount: 50 }, actorOf(), config);
+  await levelsModule.actions?.give?.(bot.context, GUILD, { user: TARGET, amount: 5 }, actorOf(), config);
+  const names = bot.database.raw.prepare('SELECT user_id, name FROM levels ORDER BY user_id').all();
+  assert.deepEqual(
+    names.map((row) => ({ ...row })),
+    [
+      { user_id: TARGET, name: 'user12' },
+      { user_id: stranger, name: 'user77' },
+    ],
+  );
+  bot.database.raw.prepare("UPDATE levels SET name = '' WHERE user_id = ?").run(stranger);
+  const board = await publicBoard(bot.context, GUILD, 0);
+  assert.ok(!JSON.stringify(board).includes(stranger));
+  assert.deepEqual(
+    board?.rows.map((row) => row.name),
+    ['user12', 'Member'],
+  );
+});
+
 test('levels: the website reads the public board from the Worker, and a closed one answers 404', async () => {
   const bot = await standWorker({ modules: [levelsModule] });
   const write = { guildId: GUILD, moduleId: 'levels', enabled: true, rev: 0, by: TARGET, nowS: 1 };
@@ -158,6 +182,7 @@ test('levels: the website reads the public board from the Worker, and a closed o
   assert.deepEqual(body.rows, [{ rank: 1, name: 'Ann', level: 2, xp: 300 }]);
   assert.equal(body.guild.name, 'Harbour');
   const other = await standWorker({ modules: [levelsModule] });
+  await writeConfig(other.database, { ...write, config: { publicBoard: false } });
   const shut = await other.call(new Request(`https://bot.test/v1/public/levels/${GUILD}`));
   assert.equal(shut.status, 404);
 });
