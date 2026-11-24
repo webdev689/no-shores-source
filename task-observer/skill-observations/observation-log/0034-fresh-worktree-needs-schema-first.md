@@ -19,3 +19,7 @@ in git, so a new worktree's `npm run -s types` and any test importing the messag
 template's "Hard rules" say to run `npm run -s schema` once in a fresh worktree, or run-worker.sh runs it at start.
 
 **Instance (2026-11-23, fresh container, no worktree):** install-all.sh and `npm ci` leave `generated/messages` absent, so `npm run wasm` fails in `protocol` ("couldn't read messages_generated.rs") and `tsc` reports 40 missing modules. `cargo xtask check` makes it first, so the check itself passes; any narrower step run before it does not.
+
+2026-11-24, a bisect worktree (`git worktree add --detach`) for the room's WebAssembly: `cargo build -p room-wasm`
+failed on the missing `generated/messages/rust/messages_generated.rs`; copying `generated/` from the main tree and
+linking `node_modules` made a 20 s rebuild per step, which attributed a moved pin in three builds.

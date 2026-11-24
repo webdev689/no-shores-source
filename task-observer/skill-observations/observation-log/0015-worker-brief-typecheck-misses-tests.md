@@ -28,3 +28,14 @@ committed as "tsc clean" and caught only by the full check later.
 the subset silently drifts from what CI runs.
 
 **Another instance, 2026-11-20 (the main session, not a worker):** before the full check, `npx tsc --noEmit -p tsconfig.json` passed a test reading `role` and `ariaLabel` off the fake page's `FakeElement`; the full check's `npm run -s types` (which also runs `tsconfig.node.json`) failed it. The same round the spot checks also missed the `[layers] plus may not import combat` repo check and an `id-length` lint, each found only by the 15-minute full check. The fast pre-check that matches it is `npm run -s types && npm run -s lint && cargo xtask repo`.
+
+2026-11-23, the patrol audit's "Fix everything" (controller, not a worker): the controller itself ran
+`npx tsc --noEmit -p .` after each page change and called the types clean; `cargo xtask check`'s `npm run -s types`
+(three configs) then failed on `client/src/game/hudMarks.test.ts` importing `ScreenMark` from the wrong module, which
+cost a whole check run. The same gap as the worker brief's, in the controller's own habit: the only types command
+that answers for the check is `npm run -s types`.
+
+2026-11-24, workers cavefoes and layouts: neither ran the cheap pre-checks; after both merges the full check failed
+first on `npm run -s format:check` (an unformatted `layouts.test.ts`), and `cargo xtask repo` found the layout
+crate's `lib.rs` at 633 lines. The fast pre-check a worker should run is `npm run -s types && npm run -s lint &&
+npm run -s format:check && cargo xtask repo`, each seconds long.
