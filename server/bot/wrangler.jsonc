@@ -1,0 +1,43 @@
+// The No Shores Discord bot: one Worker with its own D1, one Durable Object holding Discord's Gateway, and the API the
+// website's panel calls. `npm run bot` runs it here. Its secrets, which the deploy puts and this file never holds:
+// DISCORD_BOT_TOKEN, DISCORD_CLIENT_SECRET and CARD_SIGNING_KEY. An empty var is a legal state: the part that needs it
+// says it is not set up.
+{
+  "name": "noshores-bot",
+  "main": "worker.ts",
+  "compatibility_date": "2026-11-01",
+  "send_metrics": false,
+  "workers_dev": true,
+  "preview_urls": false,
+  // Each minute: the Gateway checked on (it keeps itself alive between, on its own alarm), and once an hour the
+  // database swept.
+  "triggers": { "crons": ["* * * * *"] },
+  "d1_databases": [
+    {
+      "binding": "BOT_DB",
+      "database_name": "noshores-bot",
+      // The deploy writes the real database's id here in its own copy before it deploys.
+      "database_id": "set-by-the-deploy",
+      "migrations_dir": "migrations",
+    },
+  ],
+  // Pictures servers upload for their messages.
+  "r2_buckets": [{ "binding": "BOT_MEDIA", "bucket_name": "noshores-bot-media" }],
+  "durable_objects": { "bindings": [{ "name": "GATEWAY", "class_name": "BotGateway" }] },
+  "migrations": [{ "tag": "gateway", "new_sqlite_classes": ["BotGateway"] }],
+  "vars": {
+    // The bot's own public address: uploaded pictures are served from it, for Discord to fetch.
+    "BOT_URL": "",
+    // Where the panel lives: /panel sends people here, and a sign-in comes back to it.
+    "PANEL_URL": "https://noshores.online/panel/",
+    // The origins alone that may call the panel API; a sign-in started on one of them comes back to it.
+    "PANEL_ORIGINS": "https://noshores.online,https://www.noshores.online",
+    // Discord's public key for the application (not a secret), which signs every interaction.
+    "DISCORD_PUBLIC_KEY": "",
+    // The application's id, which the panel's Discord sign-in names.
+    "DISCORD_APPLICATION_ID": "",
+    // The bot's owners by Discord user id, comma-separated: they hold every panel level in every server and alone may
+    // restart or stop the Gateway.
+    "BOT_OWNERS": "",
+  },
+}
