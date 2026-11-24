@@ -169,6 +169,9 @@ test('while a fall plays no key is listed; once death is told, Respawn; standing
   assert.deepEqual(keysShown(standingOf('dead', 30, true, true), AT_REST), stripOf('dead'));
   assert.deepEqual(words(HINTS.dead), ['Enter Respawn', 'K All controls']);
   assert.deepEqual(keysShown(standingOf('inside', 0), AT_REST), footStrip(AT_REST));
+  // Fallen in the fight: nothing until Respawn may be pressed, then Respawn.
+  assert.deepEqual(keysShown(standingOf('inside', 0), AT_REST, { canRespawn: false }).hints, []);
+  assert.deepEqual(keysShown(standingOf('inside', 0), AT_REST, { canRespawn: true }), stripOf('dead'));
 });
 
 test('at sea the keys shown follow what the player is doing, a fight first and its aim within it', () => {

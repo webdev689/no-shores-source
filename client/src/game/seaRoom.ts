@@ -8,11 +8,9 @@ import {
   faceBytes,
   helmBytes,
   ordersBytes,
-  readFromRoom,
-  type SeenHostile,
-  type SeenShip,
   walkBytes,
-} from '../network/messages.ts';
+} from '../network/courseMessages.ts';
+import { readFromRoom, type SeenHostile, type SeenShip } from '../network/messages.ts';
 import type { GearState } from '../network/gearMessages.ts';
 import type { PlayerPlate } from '../network/plateMessages.ts';
 import type { RoomLink, Snapshot } from '../network/roomConnection.ts';

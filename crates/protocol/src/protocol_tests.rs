@@ -294,6 +294,8 @@ fn snapshot<'snapshot>(
         revives: None,
         public: Some(public),
         encounter: Some(&crate::encounter_wire_tests::ENCOUNTER),
+        darkness: false,
+        reviving: &[],
     }
 }
 
@@ -338,6 +340,7 @@ fn an_input_reads_back_as_its_number_intent_look_dress_arms_view_ask_and_respawn
         spawn_level: 12,
         cast: Some(room::Cast { spell: 8, aim: Some([3.0, -12.5, 0.25]) }),
         menu: true,
+        revive: true,
     };
     assert_eq!(read_input(&input_bytes(&sent)).unwrap(), sent);
     let unaimed = Input { cast: Some(room::Cast { spell: 2, aim: None }), ..sent.clone() };
@@ -347,8 +350,8 @@ fn an_input_reads_back_as_its_number_intent_look_dress_arms_view_ask_and_respawn
     let clearing = Input { spawn: Some(SpawnAsk::Clear), ..input(2, Controls::default()) };
     assert_eq!(read_input(&input_bytes(&clearing)).unwrap(), clearing);
     let plain = read_input(&input_bytes(&input(1, Controls::default()))).unwrap();
-    let asked = (plain.dress, plain.spawn, plain.intent.combat, plain.respawn);
-    assert_eq!(asked, (None, None, CombatInput::default(), false));
+    let asked = (plain.dress, plain.spawn, plain.intent.combat, plain.respawn, plain.revive);
+    assert_eq!(asked, (None, None, CombatInput::default(), false, false));
     // An input with no fight's numbers at all asks nothing in the fight, and lays no aim's mark at the world's origin.
     let mut builder = flatbuffers::FlatBufferBuilder::new();
     let controls = Some(builder.create_vector(&[0.0; CONTROLS_FLOATS]));
@@ -684,6 +687,27 @@ fn an_abyss_runs_revives_cross_in_its_snapshot_and_every_other_room_sends_none()
     assert_eq!(read(&plain), -1);
     assert_eq!(read(&Snapshot { revives: Some(5), ..plain }), 5);
     assert_eq!(read(&Snapshot { revives: Some(0), ..plain }), 0);
+}
+
+#[test]
+fn a_rooms_darkness_and_each_revive_under_way_cross_in_its_snapshot_and_cost_nothing_where_there_are_none() {
+    let none = crate::public_wire_tests::public();
+    let plain = Snapshot { public: None, ..snapshot(&[], &[], (&[], &[], &[]), &none) };
+    let reviving = [room::Reviving { fallen: 3, reviver: 7, progress: 425 }];
+    let bytes = snapshot_bytes(&Snapshot { darkness: true, reviving: &reviving, ..plain });
+    // The client's test reads these bytes back (`messages.test.ts`).
+    let folder = concat!(env!("CARGO_MANIFEST_DIR"), "/../../target/protocol");
+    std::fs::create_dir_all(folder).unwrap();
+    std::fs::write(format!("{folder}/reviving.bin"), &bytes).unwrap();
+    let seen = flatbuffers::root::<messages::FromRoom>(&bytes).expect("a message").snapshot().expect("a snapshot");
+    assert!(seen.darkness());
+    let read: Vec<_> =
+        seen.reviving().iter().flatten().map(|each| (each.fallen(), each.reviver(), each.progress())).collect();
+    assert_eq!(read, [(3, 7, 425)]);
+    let bare = snapshot_bytes(&plain);
+    let seen = flatbuffers::root::<messages::FromRoom>(&bare).expect("a message").snapshot().expect("a snapshot");
+    assert!(!seen.darkness() && seen.reviving().is_none(), "none sent");
+    assert_eq!(bare.len(), snapshot_bytes(&Snapshot { darkness: false, reviving: &[], ..plain }).len());
 }
 
 #[test]

@@ -5,7 +5,7 @@ import type { Cache } from './dungeonChest.ts';
 import type { Entrances, Trips } from './footTrips.ts';
 import type { GearAsk, GearState } from '../network/gearMessages.ts';
 import type { Difficulty } from '../heldmap/heldMap.ts';
-import type { FoeAsk } from '../network/messages.ts';
+import type { FoeAsk, Reviving } from '../network/messages.ts';
 import type { RoomLink, Snapshot } from '../network/roomConnection.ts';
 import type { Cards } from '../player/cards.ts';
 import { newPlayer } from '../player/player.ts';
@@ -93,12 +93,20 @@ export interface Held {
   alone: GearState | null;
   readonly entrances: Entrances;
   cache: Cache | null;
-  /** An Abyss run's revives left (-1 in any other room), and whether it said this player's company fell. */
+  /** An Abyss run's revives left (-1 in any other room), and whether it said this player's company fell; whether the
+   *  darkness holds the player where they lie, and who is reviving whom (`footRevive.ts`). */
   revives: number;
   wiped: boolean;
+  darkness: boolean;
+  reviving: readonly Reviving[];
   /** An Elite Dungeon's encounters as its room last said; null in any other room. */
   encounter: EncounterSeen | null;
 }
+
+/** What a join into a node's room asks of it besides: to stand before an entrance's door, coming out of its dungeon,
+ *  or to stand where the kept character left this social space, logging back in (`relog.ts`). */
+export const joinAsk = (asked?: AtEntrance | 'relog'): string =>
+  asked === 'relog' ? '?relog=1' : asked ? `?entrance=${asked.number}` : '';
 
 /** What E does where a player stands on a place of its own, if anything: with the way to ask of their gear. */
 export type Uses = (x: number, y: number, ask: (asked: GearAsk) => void) => Use | null;

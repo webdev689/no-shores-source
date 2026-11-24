@@ -36,6 +36,8 @@ export interface NodeInfo {
   readonly foes?: readonly Point[];
   /** The places its layout names, which a quest's goals stand at (layouts.ts `placesOf`); none for a node not laid. */
   readonly places?: readonly { readonly name: string; readonly at: Point; readonly radius: number }[];
+  /** Its layout's paths, each its points, along which its room lays where the fallen stand again (respawns.rs). */
+  readonly paths?: readonly (readonly Point[])[];
 }
 
 /** A continent's port city, as its edits file names it. */

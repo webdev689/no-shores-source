@@ -263,11 +263,18 @@ export function footHints(foot: OnFoot): readonly StripHint[] {
 /** The strip on foot: the stance's name over its keys (`footHints`). */
 export const footStrip = (foot: OnFoot): Strip => ({ title: STANCE_TITLES[stanceOf(foot)], hints: footHints(foot) });
 
-/** The strip on foot as the player stands with the section: none while a fall plays out (no key does anything until
- *  Respawn is offered), Respawn's once death is told, and otherwise what the player is doing asks. */
-export function keysShown(standing: Standing, foot: OnFoot): Strip {
-  if (standing.kind !== 'dead') return footStrip(foot);
-  return standing.told ? stripOf('dead') : { title: '', hints: [] };
+/** The strip on foot as the player stands with the section and the fight: none while a fall plays out or a fall in
+ *  the fight waits (no key does anything until Respawn is offered), Respawn's once it may be pressed, and otherwise
+ *  what the player is doing asks. */
+export function keysShown(
+  standing: Standing,
+  foot: OnFoot,
+  fallen: { readonly canRespawn: boolean } | null = null,
+): Strip {
+  const none = { title: '', hints: [] };
+  if (standing.kind === 'dead') return standing.told ? stripOf('dead') : none;
+  if (fallen) return fallen.canRespawn ? stripOf('dead') : none;
+  return footStrip(foot);
 }
 
 /** `strip` without the leave held, where there is nothing to leave: the story, a struck ship's deck at sea. */

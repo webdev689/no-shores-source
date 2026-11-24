@@ -50,10 +50,9 @@ export interface HudFrame {
   readonly pressed: boolean;
   readonly lost: string | null;
   readonly rejoining?: boolean;
-  /** An Abyss run's revives left (-1 or none in any other room): with none, the room stands no one fallen again. */
-  readonly revivesLeft?: number;
-  /** Whether the section killed the player too: only Respawn, on its own veil, stands them again. */
-  readonly sectionDead?: boolean;
+  /** Whether the room stands the fallen again only as they ask (the game's rooms, `footRevive.ts`), whose own death
+   *  screen tells of it: then no veil does. */
+  readonly asksToRespawn?: boolean;
   /** The crosshair: a ranged one while it aims or is out in first person, the melee one while a melee weapon is drawn. */
   readonly crosshair?: CrosshairFrame | null;
   /** The shots left, beside the crosshair, while the Ranged loadout is drawn; null while they are not shown. */

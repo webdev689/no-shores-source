@@ -30,11 +30,11 @@ table Ask {
 // aimed; the point an aimed shot is laid on; a drink asked: combat's intent order), what the hands hold as combat's
 // arms code, the room tick of the last snapshot the screen showed, a foe to stand before the player (0 none; 255 sends
 // every foe away; else its role, 1 to 5, in the low four bits when no type is named, and the element of a shield it
-// stands with in the bits above them), whether they ask to respawn, dead past a node's section, an ask of their gear,
-// and the level of the foe asked for (0 for none: combat's own numbers). Then the foe's type's number in the roster (0
-// none) and its rank (1 Minor to 5 Boss; one the type does not come in takes the type's first). Then a spell cast this
-// tick, by its number among the Arts' (1 Tempest to 9 Vanish, 0 none), and where it is aimed (x, y, z): Dusk Daggers'
-// ring while it is held and as it is let go. New fields go at the end, so old readers skip them.
+// stands with in the bits above them), whether they ask to respawn, fallen, an ask of their gear, and the level of the
+// foe asked for (0 for none: combat's own numbers). Then the foe's type's number in the roster (0 none) and its rank (1
+// Minor to 5 Boss; one the type does not come in takes the type's first). Then a spell cast this tick, by its number
+// among the Arts' (1 Tempest to 9 Vanish, 0 none), and where it is aimed (x, y, z): Dusk Daggers' ring while it is held
+// and as it is let go. New fields go at the end, so old readers skip them.
 table Input {
   sequence: uint;
   controls: [double];
@@ -58,6 +58,8 @@ table Input {
   earlier: [Input];
   // Whether a menu is open on the player's screen, which others see over their head.
   menu: bool;
+  // Whether the player holds Use to revive a fallen ally beside them.
+  revive: bool;
 }
 
 // A ship's course in the sea room: the world points it sails through in turn, x then y in metres, and its pace, one of
@@ -457,6 +459,14 @@ table PublicEvent {
   next_wave_ticks: uint;
 }
 
+// A fallen player an ally is reviving: the fallen player's number, the ally's, and how much of the hold is done, per
+// mille.
+table Reviving {
+  fallen: uint;
+  reviver: uint;
+  progress: ushort;
+}
+
 // One of an Elite Dungeon's seals: its kind (1 the Litany, 2 the Weighing, 3 the Ascent, 4 the Holdfast), its state
 // (0 waiting, 1 running, 2 broken), its progress per mille, its pieces' marks (a Litany's runes 0 dark, 1 showing, 2
 // stepped in order, 3 stepped wrong a moment ago; a Weighing's plates in play and a Holdfast's ring 1 while stood on;
@@ -496,7 +506,8 @@ table EncounterSeen {
 // land; and at sea what floats for each player, each player's ship's kept hurts, what each player is told this tick,
 // and each deck boarded; and in a fleet room the world time its clock started at, seconds since the Unix epoch, which
 // sets its weather. Then, at sea, the islands the player sees or has found. Then, in a zone that holds them, its
-// public events, sent whole in each snapshot; last, in an Elite Dungeon, its encounters.
+// public events, sent whole in each snapshot; in an Elite Dungeon, its encounters; last, on land, the darkness where
+// the player lies and each revive under way.
 table Snapshot {
   tick: ulong;
   players: [Seen];
@@ -541,6 +552,10 @@ table Snapshot {
   friendlies: [Friendly];
   // In an Elite Dungeon's room, its encounters, sent whole in each snapshot; none in any other room.
   encounter: EncounterSeen;
+  // On land, whether the player lies in a darkness zone now, where no one fallen respawns by their own ask; and each
+  // fallen player an ally is reviving.
+  darkness: bool;
+  reviving: [Reviving];
 }
 
 // What a room sends: exactly one of these is present.

@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { courseBytes, helmBytes } from '../network/messages.ts';
+import { courseBytes, helmBytes } from '../network/courseMessages.ts';
 import type { SeenShip } from '../network/messages.ts';
 import type { PlayerPlate } from '../network/plateMessages.ts';
 import type { Snapshot } from '../network/roomConnection.ts';
