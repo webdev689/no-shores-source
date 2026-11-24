@@ -74,7 +74,7 @@ export const CORE_SHAPE: BotModule = {
         type: 'group',
         label: 'Grant',
         fields: {
-          role: { type: 'role', label: 'Role', default: '' },
+          role: { type: 'role', use: 'name', label: 'Role', default: '' },
           level: {
             type: 'enum',
             label: 'Level',

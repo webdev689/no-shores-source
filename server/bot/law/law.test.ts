@@ -7,11 +7,23 @@ import {
   atLeast,
   basePermissions,
   levelOf,
+  mentionRefusal,
   missing,
+  openRefusal,
+  roleNameRefusal,
   roleRefusal,
 } from './access.ts';
 import { BOT_MODULES, moduleOf } from './modules.ts';
-import { type Schema, channelsWithin, defaults, referencedIds, roleSpots, salvage, validate } from './settings.ts';
+import {
+  type RoleUse,
+  type Schema,
+  channelsWithin,
+  defaults,
+  referencedIds,
+  roleSpots,
+  salvage,
+  validate,
+} from './settings.ts';
 
 const SERVER = '900000000000000001';
 const OWNER = '1000000000000000001';
@@ -89,6 +101,33 @@ test("access: naming a role is held to Discord's rule; the owner is held only to
   for (const why of ['missing', 'managed', 'permission', 'above'] as const) assert.ok(ROLE_REFUSALS[why]);
 });
 
+test("access: a role only named need be the server's; a channel opened to it needs Manage Roles; a mention, an open role or Mention Everyone", () => {
+  const roles = [
+    { id: 'g', permissions: '0', position: 0 },
+    { id: 'open', permissions: '0', position: 1, mentionable: true },
+    { id: 'closed', permissions: '0', position: 2 },
+    { id: 'app', permissions: '0', position: 3, managed: true },
+    { id: 'loud', permissions: String(PERMISSION.MENTION_EVERYONE), position: 4 },
+    { id: 'roler', permissions: String(PERMISSION.MANAGE_ROLES), position: 5 },
+  ];
+  const held = { id: 'g', owner_id: 'owner', roles };
+  const plain = { user_id: 'p', roles: [] };
+  assert.equal(roleNameRefusal(held, ['app', 'closed']), null, 'a role of an app can be named');
+  assert.deepEqual(roleNameRefusal(held, ['gone']), { role: 'gone', why: 'missing' });
+  assert.deepEqual(roleNameRefusal(held, ['g']), { role: 'g', why: 'everyone' });
+  assert.deepEqual(openRefusal(held, plain, ['app']), { role: 'app', why: 'permission' });
+  assert.equal(openRefusal(held, { user_id: 'r', roles: ['roler'] }, ['app', 'roler']), null);
+  assert.equal(openRefusal(held, plain, ['app'], { owner: true }), null, "the bot's owners");
+  assert.deepEqual(openRefusal(held, { user_id: 'owner', roles: [] }, ['g']), { role: 'g', why: 'everyone' });
+  assert.equal(mentionRefusal(held, plain, ['open']), null);
+  assert.deepEqual(mentionRefusal(held, plain, ['open', 'closed']), { role: 'closed', why: 'mention' });
+  assert.equal(mentionRefusal(held, { user_id: 'l', roles: ['loud'] }, ['closed', 'app']), null);
+  assert.equal(mentionRefusal(held, { user_id: 'owner', roles: [] }, ['closed']), null, "the server's owner");
+  assert.equal(mentionRefusal(held, plain, ['closed'], { owner: true }), null, "the bot's owners");
+  assert.deepEqual(mentionRefusal(held, plain, ['gone'], { owner: true }), { role: 'gone', why: 'missing' });
+  for (const why of ['everyone', 'mention'] as const) assert.ok(ROLE_REFUSALS[why]);
+});
+
 const SCHEMA: Schema = {
   on: { type: 'bool', label: 'On', default: false },
   n: { type: 'int', label: 'N', min: 1, max: 10, default: 5 },
@@ -103,13 +142,27 @@ const SCHEMA: Schema = {
       { value: 'b', label: 'B' },
     ],
   },
-  list: { type: 'list', label: 'List', max: 2, default: [], of: { type: 'role', label: 'Role', default: '' } },
+  list: {
+    type: 'list',
+    label: 'List',
+    max: 2,
+    default: [],
+    of: { type: 'role', use: 'name', label: 'Role', default: '' },
+  },
   group: { type: 'group', label: 'Group', fields: { inner: { type: 'bool', label: 'Inner', default: true } } },
 };
 
 test('settings: missing fields take their defaults and unknown keys are dropped', () => {
   const read = validate(SCHEMA, { on: true, stray: 1 });
   assert.deepEqual(read, { ok: true, value: { ...defaults(SCHEMA), on: true } });
+});
+
+test('settings: a save that is not a group of settings is refused, a missing one too', () => {
+  for (const given of [undefined, null, [], 'x'])
+    assert.deepEqual(validate(SCHEMA, given), {
+      ok: false,
+      errors: [{ path: '.', message: 'Must be a group of settings.' }],
+    });
 });
 
 test('settings: each field type refuses the wrong shape, with the path', () => {
@@ -166,12 +219,35 @@ test('settings: a role is placed by the setting that names it, a named entry by 
   ]);
 });
 
+test('settings: a role is found by what the bot does with it there; a mention only while its group asks for one', () => {
+  const levels = moduleOf('levels')?.schema ?? {};
+  const both = { noXpRoles: ['900000000000000020'], rewards: [{ level: 1, role: '900000000000000021' }] };
+  assert.deepEqual(roleSpots(levels, both, 'give'), ['rewards[level:1].role=900000000000000021']);
+  assert.deepEqual(roleSpots(levels, both, 'name'), ['noXpRoles[]=900000000000000020']);
+  const announce = moduleOf('announce')?.schema ?? {};
+  const item = { name: 'rules', role: '900000000000000020' };
+  const pinging = (ping: string, use: RoleUse) => roleSpots(announce, { messages: [{ ...item, ping }] }, use);
+  const spot = ['messages[name:rules].role=900000000000000020'];
+  assert.deepEqual([pinging('none', 'mention'), pinging('none', 'name')], [[], spot], 'kept, not mentioned: named');
+  assert.deepEqual([pinging('role', 'mention'), pinging('role', 'name')], [spot, []]);
+  const feeds = moduleOf('socials')?.schema ?? {};
+  assert.deepEqual(roleSpots(feeds, { feeds: [{ role: '900000000000000021' }] }, 'mention'), [
+    'feeds[].role=900000000000000021',
+  ]);
+});
+
 test('settings: a saved config read under a tighter schema keeps all it can, field by field', () => {
   const tight: Schema = {
     on: { type: 'bool', label: 'On', default: false },
     count: { type: 'int', label: 'Count', min: 1, max: 10, default: 3 },
     words: { type: 'text', label: 'Words', max: 5, default: '' },
-    roles: { type: 'list', label: 'Roles', max: 2, default: [], of: { type: 'role', label: 'Role', default: '' } },
+    roles: {
+      type: 'list',
+      label: 'Roles',
+      max: 2,
+      default: [],
+      of: { type: 'role', use: 'name', label: 'Role', default: '' },
+    },
     channel: { type: 'channel', label: 'Channel', default: '' },
   };
   const saved = {

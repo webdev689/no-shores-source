@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import {
   type Payload,
+  BUTTON_SCHEMA,
   LIMITS,
   LINK_SLOTS,
   MESSAGE_SCHEMA,
@@ -159,6 +160,17 @@ test('message law: a message setting checks every part, refuses past 6000 on a s
     welcome: { content: 'x', embeds: [], buttons: [{ label: 'x', emoji: ':sword:', url: 'https://x.example/' }] },
   });
   assert.deepEqual(pathsOf(emoji), ['welcome.buttons[0].emoji']);
+});
+
+test("message law: a button's emoji is one real emoji or one of a server's own, never a sign that only looks like one", () => {
+  const button = (emoji: string) => validate(BUTTON_SCHEMA, { label: '', emoji, url: 'https://x.example/' }).ok;
+  const real = ['\u{1F3AE}', '\u2764\uFE0F', '\u{1F44D}\u{1F3FD}', '\u{1F468}\u200D\u{1F469}\u200D\u{1F467}'];
+  real.push('\u{1F3F3}\uFE0F\u200D\u{1F308}', '\u{1F1EC}\u{1F1E7}', '#\uFE0F\u20E3', '1\u20E3', '\u00A9');
+  real.push('\u{1F3F4}\u{E0067}\u{E0062}\u{E0065}\u{E006E}\u{E0067}\u{E007F}', '<:sail:900000000000000077>', '');
+  for (const emoji of real) assert.equal(button(emoji), true, `${emoji} is taken`);
+  const signs = ['\uFE0F', '\u200D', '\u20E3', '\u2500', '\u3000', '\u2190', 'a', '1', '\u{1F3AE}\u{1F3AE}'];
+  signs.push('\u{1F1EC}', '\u{1F3FB}');
+  for (const sign of signs) assert.equal(button(sign), false, `U+${sign.codePointAt(0)?.toString(16)} is refused`);
 });
 
 test('message law: names escaped where Discord reads markdown, kept as typed where it does not', () => {
