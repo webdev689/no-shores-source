@@ -1,5 +1,5 @@
 ---
-id: 187
+id: 195
 title: "The offline shader check (naga) passed WGSL that Chrome's Tint refuses ('mixing * and ^ requires parenthesis'); the refused pipeline failed every frame's command buffer, land and all, and only a headless picture run caught it"
 status: open
 type: open-source

@@ -1,5 +1,5 @@
 ---
-id: 186
+id: 194
 title: "A collision tolerance chosen from first principles (0.25 m) multiplied a world's boxes 5.6x, and a cap was later set the same way; both times the aggregate cost was measured on one part of the real data (continent 1) and only later on all of it, forcing rework"
 status: open
 type: open-source
