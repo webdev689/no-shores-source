@@ -63,3 +63,5 @@ Decisions waiting on the owner. None is in force until the owner decides it and 
   ([[The Room Keeps Only Looks of a Piece's Own Content]]); the garments drawn are still each page's own word ([[Server]]).
 - **The Abyss Dungeons' crossbows.** The forge draws no adamantium or ebony crossbow, so they show the nearest metal it
   draws (mithril); their own art waits (the owner: "Not now").
+- **The balance pass's open point** ([[The Balance and Economy Pass as Claude Shapes It]]): Conduit (Deepwatch) brings
+  a Tenet back about every 27 s against 105.

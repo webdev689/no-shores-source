@@ -85,7 +85,7 @@ test("leaving the wreck hands the HUD back clean: no death, hints, prompt or fig
   } as unknown as Nameplate);
   calls.length = 0;
   fight.leave();
-  for (const done of ['stage.parts.hud.reach', 'stage.parts.hud.hints', 'stage.parts.footView.hide()'])
+  for (const done of ['stage.parts.hud.reach', 'stage.parts.hud.strip', 'stage.parts.footView.hide()'])
     assert.ok(
       calls.some((call) => call.startsWith(done)),
       done,
@@ -371,7 +371,7 @@ function stillRun(
         foes: [],
       },
       shot,
-      hints: [],
+      hints: { title: '', hints: [] },
       standing: { kind: 'inside' },
       figures: [],
     }),
@@ -591,7 +591,7 @@ test("in Thule's coming the fight's display (its bars, compass and keys) is hidd
   fight.frame(tick(0.05));
   fight.frame(tick(0.05));
   assert.ok(hidden() >= 1, 'hidden as he comes');
-  assert.ok(calls.includes('stage.parts.hud.hints()'), 'no keys');
+  assert.ok(calls.includes('stage.parts.hud.strip()'), 'no keys');
   for (let frame = 0; frame < 140; frame++) fight.frame(tick(0.05));
   const after = hidden();
   fight.frame(tick(0.05));
@@ -629,7 +629,7 @@ function taughtRun(state: {
       return {
         fight: { own, player: 1, events, foes: [] },
         shot,
-        hints: [],
+        hints: { title: '', hints: [] },
         standing: { kind: 'inside' },
         figures: [],
       };

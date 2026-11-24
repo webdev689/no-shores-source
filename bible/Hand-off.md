@@ -192,6 +192,22 @@ each part works is in its system note.
 
 The decisions in [[Open Questions]] are not repeated here.
 
+- **The key strip, the leave held and Settings in tabs** (#181), merged on the owner's "Merge and deploy", which
+  deploys the page (the rooms' code is untouched). The owner's three asks
+  ([[The Key Strip Is a Compact Panel, a Held Key Leaves, and Settings Has Tabs]], Claude's calls listed there): the
+  key strip a compact panel at the bottom right under the moment's name, its words at 11 px, fitting under the
+  Acquired feed and the tracker; the M menu gone, M or the pad's View held 1.5 s on foot returning the player to their
+  ship, Escape opening Settings; Settings in tabs down a rail (Graphics, Audio, Controls, Account; stacked on a phone),
+  Exit to Menu and Exit to Desktop held at its foot, the sound credits behind a press, Controls binding as the sheet K
+  opens does ([[Interface]], "The key strip", "The leave held", "Settings"). Before the deploy, on the owner's "Please
+  do an audit on this before we deploy", four read-only audits (input and flow, Settings, the strip's layout, tests and
+  the notes), each finding checked against the code and fixed, the code's with a test that fails without its fix.
+  Tested offline: the full check on its head with `main` merged in (the commit named in the pull request), driven
+  headless in the real game (`noGpu`: Escape, every tab, the credits, a short and a full hold of M to the sea) and
+  pictured through the real renderer. Not yet: a real GPU, a hand, a real pad's View held, and Exit to Desktop in a
+  desktop app (there is none yet). Unchecked in a browser: whether the Escape that frees a locked mouse also reaches
+  the game. For the owner: whether Graphics gains settings of its own (it holds the resolution alone, none invented),
+  and whether the strip's 11 px reads well enough on the owner's own screen.
 - **The fourth whole-codebase audit** (#180), merged on the owner's "Merge and depkoy", which deploys the page and the
   rooms: twelve read-only auditors by area and a reviewer of the diff, each finding read against the code first and each
   fix but two with a test that failed before it. High: the dungeon entrances bound no sky groups, so every frame on a
@@ -502,6 +518,34 @@ The decisions in [[Open Questions]] are not repeated here.
   owner's to say.
 - **Whether players may harm one another** ([[Combat]]); and **isles**: how many, how big and how placed
   ([[World Map]]).
+- **The balance and economy pass** (#178, branch `ccr-2fa9295d-99y63m`), for the owner's yes to merge, on the owner's
+  "comprehensive balance pass and economy pass on the entire game ecosystem so far ... Destiny 1 vanilla as a
+  reference ... autonomy" ([[The Balance and Economy Pass Is Claude's, After Destiny 1 Vanilla]]; every call, its
+  reason and its Destiny 1 source in [[The Balance and Economy Pass as Claude Shapes It]]). The owner's own decisions
+  stand. Changed: an Atheric's upgrades 8 Essence and its own node dearer, so no Atheric finishes cheaper than a
+  Legendary; a Breach's armour 7; every piece's Prestige by equal steps (a ship's guns no longer 33 and 36); a faction
+  rank every 100,000 reputation (rank 2 near level 20), packages 2,500 Aurem and Legendary one time in two, the cape
+  500, a faction weapon 12,000; Shape's Atheric armour 13 and weapon 23, the week's Abyss 10 Shapes; a chest's Essence
+  only from the day's first heroic one; bounties in three tiers (the tier on the wire, `GearBounty.tier`); every
+  deed's XP to the Art and the faction (`earn_play_xp`); a road's task paying a mission's clear; a sinking paying
+  twelve kills to the ship and now the player (XP and Aurem); no fire from a harmless ball; a player's bow two thirds
+  (12 quick, 18 drawn); the greatsword 21 and lighter; captains' defence under the cap so each rank defends more;
+  Exploit ×1.25, no crit; companions with the land's ease. On the owner's answers
+  ([[The Bulwark Blocks, Supers Are Powerful, the Sea's Gaps Close and Level 30 Takes Breach Gear]]): the Bulwark
+  blocks as a swordsman until its change (`roster::standing`); Tempest 48 an orb, Duskraven 16 a bolt, Linked 8 a
+  second and ×1.3; a travel never brings the next hostile roll sooner; a cove's wreck one material of 1 or 2,
+  Heartwood 1.5%, a module 3%; a fire's bite scales with the shooter's level strength and the ball. With the
+  Bulwark blocking, the rules' scripted pair and the dev page's bots still win the heroic Fissure, the pair 32 s later
+  than on `main`. On the owner's "Go ahead with your proposals except the stamina change"
+  ([[Pairs Swing Faster, Foes' Guns Strike Two Thirds and Faction Gear Has No Weekly Limit]]): a player's pair comes
+  round in 0.8 of its lone weapon's time at 0.9 of its blow (a foe's pair as its lone weapon, for faster paired daggers
+  set a crowd of skirmishers turning about); a foe's ball strikes two thirds (`FOE_GUN`, its aimed shot too), so an
+  Elite Marksman fells a matched player in three aimed shots, not two; no weekly limit on faction gear; stamina as it
+  was. Measured with `economy_tests.rs` (six pace tests and the
+  ledger), `balance_tests.rs` (`measure_ranks`), `measure_blows` and `measure_fights_by_rank`. Destiny 1's numbers
+  came from search summaries; the proxy refused every page, so they are unchecked against the pages. Tested offline:
+  `cargo xtask check` on its head; not played. The rules' two scripted sword players run out the heroic raid's clock
+  in its fourth wave; with `main`'s captains, before this pass's, they hold it. The owner keeps it as it is for now. Its one open point, Conduit, is in [[Open Questions]].
 
 ## Next
 

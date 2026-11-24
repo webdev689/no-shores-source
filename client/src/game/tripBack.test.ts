@@ -4,8 +4,8 @@ import type { Flow } from './flow.ts';
 import { type Fallback, onOtherLand, placeOf, sentOut, tripOrBack } from './tripBack.ts';
 
 const FULL = new Error('the room is full');
-const stood: Flow = { mode: 'foot', node: 'saltgrass-downs', menu: false };
-const atHub: Flow = { mode: 'foot', node: 'overlook-social', menu: false };
+const stood: Flow = { mode: 'foot', node: 'saltgrass-downs' };
+const atHub: Flow = { mode: 'foot', node: 'overlook-social' };
 
 /** A fallback whose ways succeed or fail as asked, keeping which were taken. */
 function fallbackOf(back: Error | null | 'none', hub: Error | null) {
@@ -113,11 +113,11 @@ test('a gate shut on the player, or their company fallen, leaves no way back', (
 test('the place a trip is for: the ship, the node by its name, else the name the trip gave', () => {
   const names: Record<string, string> = { 'saltgrass-downs': 'The Saltgrass Downs' };
   const nameOf = (node: string) => names[node];
-  const sea: Flow = { mode: 'sea', menu: false };
+  const sea: Flow = { mode: 'sea' };
   assert.equal(placeOf(sea, { kind: 'return-to-ship' }, nameOf), 'your ship');
   const out = { kind: 'leave', node: 'saltgrass-downs', name: 'The Cells of the Saltgrass Downs' } as const;
   assert.equal(placeOf(stood, out, nameOf), 'The Saltgrass Downs', 'out of a dungeon, its patrol');
-  const inside: Flow = { mode: 'foot', node: 'saltgrass-downs--dungeon-0', menu: false };
+  const inside: Flow = { mode: 'foot', node: 'saltgrass-downs--dungeon-0' };
   const into = { kind: 'enter', node: 'saltgrass-downs--dungeon-0', name: 'The Cells' } as const;
   assert.equal(placeOf(inside, into, nameOf), 'The Cells');
 });

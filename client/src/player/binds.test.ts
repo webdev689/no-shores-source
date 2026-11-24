@@ -35,7 +35,7 @@ test("the keys are DFO's as they were, each control on its own where they act al
   assert.deepEqual([keys('anima'), keys('tenetOne'), keys('tenetTwo')], [['r'], ['q'], ['g']]);
   assert.deepEqual([keys('melee'), keys('ranged'), keys('heal')], [['1'], ['2'], ['3']], 'a drink beside the loadouts');
   assert.deepEqual(
-    [keys('menu'), keys('character'), keys('inventory'), keys('controls')],
+    [keys('leave'), keys('character'), keys('inventory'), keys('controls')],
     [['m'], ['i'], ['o'], ['k']],
   );
   assert.deepEqual([keys('use'), keys('respawn'), keys('voyage'), keys('map')], [['e'], ['enter'], [' '], ['n']]);
@@ -145,9 +145,11 @@ test('binds read from outside are checked strictly: known controls, known keys a
   assert.ok(isKeyName('é') && isKeyName(';') && !isKeyName('A') && !isKeyName('tab') && !isKeyName('mouse5'));
 });
 
-test('every control acts somewhere, and the menus and the sheet everywhere', () => {
+test('every control acts somewhere, the menus and the sheet everywhere, and the leave on foot alone', () => {
   for (const id of BIND_IDS) assert.ok(CONTROLS[id].where.length > 0, id);
-  for (const id of ['menu', 'character', 'controls'] as const) assert.equal(CONTROLS[id].where.length, 5, id);
+  for (const id of ['character', 'controls'] as const) assert.equal(CONTROLS[id].where.length, 5, id);
+  assert.deepEqual(CONTROLS.leave.where, ['foot', 'dead'], 'on foot, fallen saying why not; nothing to leave at sea');
+  assert.deepEqual(CONTROLS.leave.pad, ['View hold'], "the pad's View held");
 });
 
 /** Every two controls that act somewhere alike and share a key or button: none may. */
@@ -206,7 +208,7 @@ test("a stick's ways are never bound, nor swapped into another control", () => {
 });
 
 test('a control that hears no mouse button takes none, bound or given in a swap', () => {
-  for (const id of ['use', 'menu', 'confirm', 'repair', 'controls', 'sailOn'] as const) assert.ok(!hearsMouse(id), id);
+  for (const id of ['use', 'leave', 'confirm', 'repair', 'controls', 'sailOn'] as const) assert.ok(!hearsMouse(id), id);
   for (const id of ['swing', 'guard', 'dodge', 'perspective', 'aim', 'jump'] as const) assert.ok(hearsMouse(id), id);
   assert.ok(!fits('use', 'keys', 'mouse0') && fits('jump', 'keys', 'mouse0') && !fits('jump', 'keys', 'mouse5'));
   // Swing gives up the right button where it takes E from Use, which cannot hear it, so Use keeps E.
@@ -235,4 +237,12 @@ test('binds kept by another build keep what still reads; a kept key a default no
     [['x'], ['x'], ['v', 'mouse4'], ['e']],
   );
   assert.deepEqual(withOverrides({ crouch: { keys: [' '] } }).crouch.keys, ['c'], "Space is Jump's, on its default");
+});
+
+test('a bind kept under the menu that M opened is read as the leave held, so a key swapped with it stays swapped', () => {
+  const kept = readOverrides({ inventory: { keys: ['m'] }, menu: { keys: ['o'] } });
+  assert.deepEqual(kept, { inventory: { keys: ['m'] }, leave: { keys: ['o'] } });
+  const binds = withOverrides(kept ?? {});
+  assert.deepEqual([binds.inventory.keys, binds.leave.keys], [['m'], ['o']], 'neither lost to a clash');
+  assert.deepEqual(readOverrides({ menu: { keys: ['o'] }, leave: { keys: ['p'] } }), { leave: { keys: ['p'] } });
 });

@@ -1,10 +1,10 @@
 // The page's own services that a screen drawn by the game asks for and cannot draw: opening a link in a new tab, the
-// page's address, loaded again or left for another, its touches held, its clipboard, a file saved or opened from the
-// player's chooser (through a link or a file input borrowed for a moment and never shown), a yes or no asked in the
-// browser's dialog, a sign-in kept in the browser's own password store, and the words written into the page when
-// nothing can be drawn. None builds interface. Only here, canvasEvents.ts, pictures.ts, announce.ts, main.ts and the
-// page's side of the game's worker (thread/pageHost.ts, thread/audioHost.ts) touch the page, so the interface itself
-// runs anywhere.
+// page's address, loaded again or left for another, its window closed, its touches held, its clipboard, a file saved
+// or opened from the player's chooser (through a link or a file input borrowed for a moment and never shown), a yes or
+// no asked in the browser's dialog, a sign-in kept in the browser's own password store, and the words written into the
+// page when nothing can be drawn. None builds interface. Only here, canvasEvents.ts, pictures.ts, announce.ts, main.ts
+// and the page's side of the game's worker (thread/pageHost.ts, thread/audioHost.ts) touch the page, so the interface
+// itself runs anywhere.
 
 /** What a screen asks of the page. */
 export interface Page {
@@ -16,6 +16,9 @@ export interface Page {
   readonly assign: (url: string) => void;
   /** The page's own address. */
   readonly address: () => string;
+  /** Closes the page's window where the browser lets a page close its own (the desktop app's, or a window a script
+   *  opened); elsewhere nothing happens. */
+  readonly close: () => void;
 }
 
 /** The browser's page. */
@@ -24,6 +27,7 @@ export const PAGE: Page = {
   reload: () => location.reload(),
   assign: (url) => location.assign(url),
   address: () => location.href,
+  close: () => window.close(),
 };
 
 /** Holds every touch on `surface` for the game while `held`: no drag pans the page or pulls it to reload, so a touch

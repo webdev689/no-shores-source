@@ -189,6 +189,7 @@ export class PageHost {
       }
       case 'go':
         if (message.how === 'open') window.open(message.url, '_blank', 'noopener');
+        else if (message.how === 'close') window.close();
         else if (message.how === 'reload') location.reload();
         else if (message.how === 'replaceState' || message.how === 'pushState')
           history[message.how](null, '', message.url);

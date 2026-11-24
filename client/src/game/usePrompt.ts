@@ -8,6 +8,9 @@ import type { Drawing, Node } from '../ui/node.ts';
 import type { Box } from '../ui/quads.ts';
 import { edged, paintBox } from '../combat/barDraw.ts';
 
+/** The prompt's id where it stands, low in the middle of the view: the use prompt's, or the leave held in its place. */
+export const PROMPT_ID = 'hud:prompt';
+
 /** The keycap's brass bevel, its foot deeper. */
 const BRASS_KEY = ['#f3cf86', '#8a5f17', '#8a5f17', '#f3cf86'];
 const BRASS_KEY_DEPTHS = [1, 1, 3, 1];
@@ -38,18 +41,24 @@ export function traced(box: Box, line: number, share: number): Box[] {
   return boxes;
 }
 
-/** The keycap's bevel, and while a deed is held (`held`, 0 to 1) a ring round it traced as far as it is held over its
- *  faint whole. */
+/** A ring `out` CSS pixels round its box and `line` thick, traced clockwise from its top's middle as far as `held`
+ *  (0 to 1) in brass over its faint whole: a hold's ring, here and on the key strip's caps. */
+export const heldRing =
+  (held: number, out: number, line: number): Drawing =>
+  (ui, box, scale, clip, shown) => {
+    const pen = { ui, box, scale, clip, fade: shown };
+    const [away, thick] = [out * scale, line * scale];
+    const ring = { x: box.x - away, y: box.y - away, width: box.width + 2 * away, height: box.height + 2 * away };
+    for (const part of traced(ring, thick, 1)) paintBox(pen, part, 'rgba(239,232,214,0.22)');
+    for (const part of traced(ring, thick, held)) paintBox(pen, part, TONES.brassHi);
+  };
+
+/** The keycap's bevel, and while a deed is held (`held`, 0 to 1) its ring. */
 const heldCap =
   (held: number | null): Drawing =>
   (ui, box, scale, clip, shown) => {
     edged(BRASS_KEY, BRASS_KEY_DEPTHS)(ui, box, scale, clip, shown);
-    if (held === null) return;
-    const pen = { ui, box, scale, clip, fade: shown };
-    const [out, line] = [RING_OUT * scale, RING_LINE * scale];
-    const ring = { x: box.x - out, y: box.y - out, width: box.width + 2 * out, height: box.height + 2 * out };
-    for (const part of traced(ring, line, 1)) paintBox(pen, part, 'rgba(239,232,214,0.22)');
-    for (const part of traced(ring, line, held)) paintBox(pen, part, TONES.brassHi);
+    if (held !== null) heldRing(held, RING_OUT, RING_LINE)(ui, box, scale, clip, shown);
   };
 
 export class UsePrompt {
@@ -77,14 +86,22 @@ export class UsePrompt {
     const big = view.width >= 1500 && view.height >= 900;
     return {
       ...promptChip(this.said, this.held),
+      id: PROMPT_ID,
       float: { to: 'screen', at: [0.5, 1], anchor: [0.5, 1], y: big ? -154 : -110 },
     };
   }
 }
 
-/** Use's keycap and `deed` in the prompt's chip, the keycap ringed as far as it is `held` (0 to 1; null while not),
- *  for its caller to set where it stands. */
-export function promptChip(deed: string, held: number | null): Node {
+/** A key's cap (`cap`, Use's unless given) and `deed` in the prompt's chip, `under` in faint words beneath the deed
+ *  where given, the keycap ringed as far as it is `held` (0 to 1; null while not), for its caller to set where it
+ *  stands. */
+export function promptChip(
+  deed: string,
+  held: number | null,
+  cap = boundCap('use'),
+  under: string | null = null,
+): Node {
+  const said = { text: { words: deed, colour: '#efe8d6', edge: 'shadow', edgeColour: '#000', wrap: false } } as const;
   return {
     role: 'chip',
     through: true,
@@ -98,16 +115,21 @@ export function promptChip(deed: string, held: number | null): Node {
         fill: 'rgba(192,138,62,0.15)',
         alignX: 'center',
         draw: heldCap(held),
-        children: [promptKey()],
+        children: [promptKey(cap)],
       },
-      { text: { words: deed, colour: '#efe8d6', edge: 'shadow', edgeColour: '#000', wrap: false } },
+      under === null
+        ? said
+        : {
+            direction: 'column',
+            gap: 2,
+            children: [said, { text: { words: under, colour: TONES.stoneHi, wrap: false } }],
+          },
     ],
   };
 }
 
-/** Use's key in brass, or the pad's button drawn, as the player last played. */
-function promptKey(): Node {
-  const cap = boundCap('use');
+/** A key's cap in brass, or the pad's button drawn, as the player last played. */
+function promptKey(cap: string): Node {
   if (cap.startsWith('pad:')) return keycap(cap);
   return { text: { words: cap, colour: TONES.brassHi, wrap: false } };
 }

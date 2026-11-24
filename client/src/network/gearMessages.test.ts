@@ -115,7 +115,7 @@ test('where a player stands crosses as the server wrote it, away from Shape and 
   assert.deepEqual([away.shapes, away.shape], [0, null], 'he is away');
   assert.deepEqual(here.standing, {
     pledge: 2,
-    reputation: [5, 35_000, 0],
+    reputation: [5, 350_000, 0],
     packages: [0, 1, 0],
     artLevels: [3, 1, 5],
     artXp: [700, 0, 0],
@@ -129,8 +129,8 @@ test('where a player stands crosses as the server wrote it, away from Shape and 
   const wares = here.shape?.wares ?? [];
   assert.deepEqual(
     wares.map((ware) => [ware.rarity, ware.price, ware.level, ware.named === null]),
-    [0, 1, 2, 3, 4, 5].map((place) => [place < 4 ? 3 : 4, place < 4 ? 7 : 15, 20, place < 4]),
-    'four rolled Legendary, then two named Atheric, priced in Shapes',
+    [0, 1, 2, 3, 4, 5].map((place) => [place < 4 ? 3 : 4, place < 4 ? 7 : 23, 20, place < 4]),
+    'four rolled Legendary, then two named Atheric (this week both weapons, 23), priced in Shapes',
   );
   // Each is numbered as a page asks for it: an Atheric by its place in the catalogue, a rolled piece by its hash.
   const atheric = wares[4];

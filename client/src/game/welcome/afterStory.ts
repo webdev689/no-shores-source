@@ -207,7 +207,7 @@ export class AfterStory {
  *  a gate's offer. */
 export interface HeldHud {
   quiet: boolean;
-  hints(hints: readonly never[]): void;
+  strip(strip: null): void;
   marks(marks: readonly never[]): void;
   readonly tasks: { show(quest: null): void };
 }
@@ -219,7 +219,7 @@ export function heldHud(hud: HeldHud, display: { hideDisplay(): void }, told: bo
   hud.quiet = told;
   if (!told) return;
   display.hideDisplay();
-  hud.hints([]);
+  hud.strip(null);
   hud.marks([]);
   hud.tasks.show(null);
 }

@@ -31,6 +31,8 @@ import {
 import type { GearHere } from './gearScreen.ts';
 import { chime } from './uiSounds.ts';
 
+/** How far up the view the feed's foot stands in play, a share of its height; the key strip keeps under it. */
+export const FEED_RISE = 0.3;
 /** How long a row stays, how long it takes to come in and to leave, and how many rows and short lines stand at once,
  *  each the oldest leaving first: a kill's currency, XP and reputation never push its drops out. */
 const STAY_MS = 4500;
@@ -149,7 +151,7 @@ export class AcquiredFeed {
         anchor: [1, 1],
         at: [1, 1],
         x: -40,
-        y: low ? -96 : -Math.round(view.height * 0.3),
+        y: low ? -96 : -Math.round(view.height * FEED_RISE),
         z: 30,
       },
       children: [

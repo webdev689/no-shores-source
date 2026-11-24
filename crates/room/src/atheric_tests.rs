@@ -162,8 +162,10 @@ fn storm_gull_leaps_from_foe_to_foe_in_volt_and_squall_line_charges_each() {
 fn an_arrow_loosed_from_the_draw_is_aimed_and_a_quick_one_is_not() {
     let (mut room, player, foes) = room_with("gullwing", false, &[0.0, 6.0]);
     let held = room.held(player, Slot::Ranged).expect("a player");
-    // A quick shot, one drawn, and one drawn a moment with Hair Trigger's softer aim.
-    for (power, leaps) in [(1.0, false), (1.2, true), (0.9, true)] {
+    // A quick shot, one drawn a moment, one drawn a moment with Hair Trigger's softer aim, and one drawn in full.
+    let quick = combat::shots::player_power(Ranged::Bow);
+    let full = combat::shots::aimed_power(Ranged::Bow, combat::shots::DRAW_FULL);
+    for (power, leaps) in [(quick, false), (quick * 1.2, true), (quick * 0.9, true), (full, true)] {
         let shot = combat::shots::loose(player, Ranged::Bow, [0.0, 0.0, 1.0], 0.0, 0.0, power);
         room.shots.push((shot, Some(crate::power::Loosed { aimed: crate::power::aimed(&shot), ..held })));
         let before = taken(&room, foes[1]);
@@ -419,7 +421,9 @@ fn an_arrow_takes_the_perks_of_the_bow_it_was_loosed_from_whatever_is_worn_as_it
 fn a_shot_loosed_from_the_draw_is_marked_aimed_as_it_leaves() {
     let (mut room, player, _) = room_with("gullwing", false, &[]);
     let fighter = *room.fighter(player).expect("in");
-    for (power, aimed) in [(1.0, false), (1.2, true), (0.9, true)] {
+    let quick = combat::shots::player_power(Ranged::Bow);
+    let full = combat::shots::aimed_power(Ranged::Bow, combat::shots::DRAW_FULL);
+    for (power, aimed) in [(quick, false), (quick * 1.2, true), (quick * 0.9, true), (full, true)] {
         let shot = combat::shots::loose(player, Ranged::Bow, [0.0, 0.0, 1.0], 0.0, 0.0, power);
         room.happened(player, &fighter, Some(combat::Happening::Loosed(shot)), &[]);
         let loosed = room.shots.last().and_then(|(_, loosed)| *loosed).expect("loosed by a player");

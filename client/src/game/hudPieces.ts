@@ -1,17 +1,15 @@
-// The heads-up display's pieces as nodes, each set against the view where it stands: the place's name,
-// the warning and its count, death's words, the key strip, the status line, the notices, the sea bar and the offers
-// over it, Manage's panel and the menu. Each answers its node for a frame, or nothing while it does not show; presses
-// run what they are handed.
+// The heads-up display's pieces as nodes, each set against the view where it stands: the place's name, the warning
+// and its count, death's words, the status line, the notices, the sea bar and the offers over it, and Manage's panel
+// (the key strip is `keyStrip.ts`). Each answers its node for a frame, or nothing while it does not show; presses run
+// what they are handed.
 import { NOTICE_LOOK, type NoticeRow, slidIn } from '../plus/notices.ts';
 import { TONES } from '../plus/tones.ts';
 import type { Node } from '../ui/node.ts';
 import type { Interface } from '../ui/ui.ts';
 import { boundWord, withKey } from './controls.ts';
-import type { Hint } from './gearNodes.ts';
 import { edged } from '../combat/barDraw.ts';
 import type { BannerTone } from '../combat/publicBanner.ts';
-import type { Reach } from '../combat/seaReadout.ts';
-import { footer, header, hintRow, hudPress, rail, ruleUnder, said } from './hudParts.ts';
+import { footer, header, hudPress, rail, ruleUnder, said } from './hudParts.ts';
 import type { ShipPanel } from './shipPanel.ts';
 
 /** The view as the display lays itself against it: its size, whether its words take their larger step (1500 by 900
@@ -35,12 +33,6 @@ export interface HudView {
 export const DIM = 'rgba(242,239,230,0.68)';
 const WARN = '#f0b545';
 const DEAD = '#d8574a';
-
-/** One choice of a menu. */
-export interface Choice {
-  readonly label: string;
-  readonly run: () => void;
-}
 
 /** The place's name and kind at the top left, clear of the compass; at the top right while the fight's display holds
  *  the left, and gone while a boss's bar, the ships' plates or the sea fight's readout hold the top, or a public
@@ -118,38 +110,6 @@ export function deathNode(ui: Interface, why: string, canRespawn: boolean, respa
   };
 }
 
-/** The key strip at the bottom right, under the dialogue box's foot, wrapping short of the Arts and weapons; over the
- *  sea bar and the offer over it while they show, and over the fight's Arts and weapons at the larger step; over the
- *  ship's bar in a sea fight where the view is too narrow for the two side by side (`shipBar`, how far that bar
- *  reaches from the view's bottom left, in its pixels); gone while someone speaks. */
-export function hintsNode(
-  view: HudView,
-  hints: readonly Hint[],
-  seaBar: boolean,
-  offer: boolean,
-  shipBar: Reach | null = null,
-): Node | null {
-  if (hints.length === 0 || view.speaking) return null;
-  const zoom = view.doubled ? 2 : 1;
-  const size = view.big ? 2 : 1;
-  // A narrow view, a phone's, still gives the strip room for its widest entry.
-  const most = Math.max(view.width - 480 * zoom, Math.min(view.width - 56 * zoom, 240 * zoom));
-  const overShip = shipBar !== null && view.width - 28 * zoom - most < shipBar.right + 8 * zoom;
-  const footing = view.fight && view.big && !view.doubled ? 200 : seaBar ? (offer ? 148 : 96) : 22;
-  const foot = overShip ? Math.max(footing, shipBar.up / zoom + 8) : footing;
-  return {
-    id: 'hud:hints',
-    through: true,
-    gap: 8 * zoom,
-    wrap: true,
-    alignX: 'end',
-    alignY: 'center',
-    maxWidth: most,
-    float: { to: 'screen', at: [1, 1], anchor: [1, 1], x: -28 * zoom, y: -foot * zoom },
-    children: hintRow(hints, size),
-  };
-}
-
 /** The line of what is happening: under the compass at sea, under the place's name at the top right on foot, and in
  *  the top right corner in a sea fight, off the sky the aim looks at. */
 export function statusNode(view: HudView, text: string): Node | null {
@@ -215,6 +175,7 @@ export function seaBarNode(ui: Interface, state: SeaBarState, act: SeaBarActions
   });
   const voyage = state.sailing || state.resumable;
   return {
+    id: 'sea:bar',
     role: 'window',
     gap: 18,
     alignY: 'center',
@@ -303,36 +264,6 @@ export function shipPanelNode(ui: Interface, panel: ShipPanel, back: () => void)
         children: [
           hudPress(ui, 'ship:back', withKey('Back to the sea', 'manage'), back, { width: 'grow', alignX: 'center' }),
         ],
-      },
-    ],
-  };
-}
-
-/** A menu in the middle of the view: its title over its choices, each a press, holding the keys while it is up. */
-export function menuNode(ui: Interface, title: string, choices: readonly Choice[]): Node {
-  return {
-    role: 'window',
-    direction: 'column',
-    minWidth: 288,
-    padding: 2,
-    solid: true,
-    modal: true,
-    float: { to: 'screen', at: [0.5, 0.5], anchor: [0.5, 0.5] },
-    children: [
-      {
-        width: 'grow',
-        padding: [12, 22, 10, 22],
-        ...header(),
-        children: [said(title.toUpperCase(), { colour: DIM, tracking: 3 })],
-      },
-      {
-        width: 'grow',
-        direction: 'column',
-        gap: 8,
-        padding: [6, 22, 20, 22],
-        children: choices.map((choice, index) =>
-          hudPress(ui, `menu:${index}`, choice.label, choice.run, { width: 'grow' }),
-        ),
       },
     ],
   };

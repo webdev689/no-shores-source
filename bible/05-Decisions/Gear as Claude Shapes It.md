@@ -73,6 +73,10 @@ offers a trait twice.
 
 A Breach's Legendary armour has a Legendary's columns, its upgrades 4 Prestige each instead of 3.
 
+Replaced in part by [[The Balance and Economy Pass as Claude Shapes It]]: an Atheric's last three upgrades ask 8 Essence
+each and a Breach's Legendary armour's 7; an Atheric's own node asks 2,500 Aurem, 4 fragments, 10 of its resource and 1
+Essence; every piece climbs to its rarity's Prestige by equal steps over its upgrades, however many its grid holds.
+
 Fragments and Essence are the item's own kind: a weapon's are Weapon Fragments and Weapon Essence, armour's Armor.
 A Fruit of Dagon gives an item 5,000 XP.
 

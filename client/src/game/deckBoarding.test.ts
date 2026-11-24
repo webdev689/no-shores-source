@@ -51,7 +51,13 @@ const FRAME = {
   lit: [],
   swings: new Float32Array(),
   fight: {},
-  hints: [['Mouse', 'Swing']],
+  hints: {
+    title: 'On foot',
+    hints: [
+      ['Mouse', 'Swing'],
+      ['leave', 'Hold to leave'],
+    ],
+  },
   dark: 0.5,
 } as unknown as FootFrame;
 
@@ -148,7 +154,17 @@ test('its deck won holds the boarder a minute, its time left and its hold’s ta
   assert.equal(boarding.won, true);
   assert.equal(boarding.words?.place, 'Its deck is yours');
   assert.equal(boarding.words?.line, 'Its hold: 2 crates, a chest');
-  assert.deepEqual(boarding.words?.hints[0], ['use', 'Back aboard your ship · 60 s left']);
+  assert.deepEqual(boarding.words?.hints.hints[0], ['use', 'Back aboard your ship · 60 s left']);
+  assert.ok(!boarding.words?.hints.hints.some(([names]) => names === 'leave'), 'nothing to leave at sea');
+  // Fallen there, Use does nothing, so the way back is not offered until they stand again.
+  Object.assign(FRAME, { standing: { kind: 'dead' } });
+  try {
+    boarding.frame(sea, view, INPUT);
+    assert.ok(!boarding.words?.hints.hints.some(([names]) => names === 'use'), 'no Use while fallen');
+  } finally {
+    Object.assign(FRAME, { standing: { kind: 'inside' } });
+  }
+  boarding.frame(sea, view, INPUT);
   assert.equal(fightAsk({ boarding, sighted: sea }), 'leave-deck');
   assert.deepEqual(asked, ['leave-deck']);
   // The room has the boarder back aboard their own ship: the view is the sea's fight's again, at their helm.
@@ -195,7 +211,7 @@ test('two boarders of one deck each fight there as themselves: the page’s own 
   assert.equal(boarding.frame(sea, fight('struck'), INPUT), null);
 });
 
-test('on its deck the sea’s own controls wait: Use asks, Respawn respawns, the menu and Escape are the game’s, every other the foot’s', async () => {
+test('on its deck the sea’s own controls wait: Use asks, Respawn respawns, Escape is the game’s, every other the foot’s', async () => {
   const foot = standOnFoot();
   const { sea, asked } = seaRoom();
   const boarding = new Boarding(CONTEXT, foot.stand);
@@ -225,7 +241,8 @@ test('on its deck the sea’s own controls wait: Use asks, Respawn respawns, the
   assert.equal(respawned, 1);
   assert.equal(
     deckKey(keyed('m'), false, atSea, () => undefined),
-    false,
+    true,
+    'nothing to leave at sea: the leave held is ashore alone',
   );
   assert.equal(
     deckKey(

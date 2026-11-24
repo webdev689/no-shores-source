@@ -229,6 +229,8 @@ export function pageAway(start: Start, send: Send): Away {
     window: { value: globalThis, configurable: true },
   });
   global['open'] = (url: string) => (send({ kind: 'go', how: 'open', url: new URL(url, start.href).href }), null);
+  // The page's window closes, as `window.close` asks: a worker's own `close` would end the game's worker instead.
+  global['close'] = () => send({ kind: 'go', how: 'close', url: start.href });
   global['matchMedia'] = (query: string) => ({
     media: query,
     get matches() {

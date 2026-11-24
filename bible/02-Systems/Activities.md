@@ -231,8 +231,9 @@ the owner approved ([[Where You Go and the Seas You Choose Set the Difficulty]])
   under level 18).
 - **The Elite Dungeon of the week**, once: a Legendary Vestige (its item at level 20) and 3 Essence of each stock.
 - **The Abyss Dungeon of the week**, once: a Legendary Vestige, Atheric one time in five, 5 Essence of each stock,
-  15 Shapes, the only Shapes there are ([[Gear]], "Vendors"), and the Abyss boon until the week turns: a quarter more of each kill's XP, rounded down, and as much more
-  reputation for the faction pledged while its cape is worn ([[Factions]]), as `boon_xp` pays it. A kill on a ship's
+  10 Shapes, the only Shapes there are ([[Gear]], "Vendors"), and the Abyss boon until the week turns: a quarter more
+  of each kill's XP, rounded down, to the player, their Art and the faction pledged while its cape is worn
+  ([[Factions]]), as `boon_xp` pays it. A kill on a ship's
   deck earns no boon, as it pays no officer ([[Naval Combat]]).
 - **Where it is paid.** The room pays as the cache opens, each player then in it whose character it keeps, and keeps the
   Vestige with the record that pays it, in the carried ten, else the vault, else the mail ([[Gear]], "The mail"), so a
@@ -269,8 +270,12 @@ keep their engine ([[The Journal Holds the Quests, the Bounties at Its Side and 
   no station and has no keeper. It offers six bounties a day, the same for everyone (`gear::bounties::board`, drawn by the day):
   places 0 and 1 on land, 2 and 3 at sea, 4 and 5 in dungeons, each pair two different ones of its pool. None names an
   island or a water, since the islands' bands run from 1 to 30. A character takes any of them; each pays once when
-  turned in, 1,000 XP and 60 Aurem at level 5, raised as a kill is by the character's level, and all end at the daily
-  reset.
+  turned in, by its tier as Destiny 1's three tiers paid (2,500, 3,750 and 5,000 XP): a first tier's 1,000 XP and 60
+  Aurem at level 5, a second's half again, a third's twice, raised as a kill is by the character's level, its XP to
+  their Art and faction as a kill's; and all end at the daily reset. Honest Work, Broadside and Into the Dark are of
+  the first tier; Tithe Collector, A Cut Above, Bigger Fish and Deeper Still the second; Big Game, Sea Wolf and Deep
+  Delver the third (`Bounty.tier`, `bounty_pay`). The gear message carries a first tier's pay and each bounty's tier,
+  and the card shows each one's own.
 - **Taking and turning in** happen at the board alone (`Ask::TakeBounty`, `Ask::TurnInBounty`), each by its place
   and the day of the board the page showed. The room refuses a day not its own, and a room whose day is behind the
   record refuses both, so a page or a room on either side of 09:00 cannot take or pay yesterday's bounty as today's.

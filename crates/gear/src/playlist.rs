@@ -175,7 +175,7 @@ impl Character {
             u32::try_from(raised as u64).unwrap_or(u32::MAX)
         };
         let (xp, aurem) = (times(worth.xp), times(worth.aurem));
-        self.earn_xp(xp, None);
+        self.earn_play_xp(xp, None);
         self.materials.add_aurem(aurem);
         let (rarity, slot, level) = of_colours(colours(BOSS), level, dice);
         Some(Vestige::new(self.take_id(), rarity, slot, level).from(Source::elite_at(playlist.tier())))

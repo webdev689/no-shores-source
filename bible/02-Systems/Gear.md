@@ -131,7 +131,9 @@ number is one of [[Gear as Claude Shapes It]].
   Aurem, and more as the rarity rises: a Magic's upgrades a fragment, a Rare's nodes one and its upgrades three; a
   Legendary's or Atheric's handling, finish and perks 2 fragments and 5 of its island's resource, a weapon's upgrades
   before its last three 5 fragments and 10 of the resource, and its last three upgrades (every upgrade of an armour
-  piece) 6 Essence each; an Atheric's own, 1,000 Aurem and 1 Essence ([[Gear as Claude Shapes It]]). A resource is
+  piece) 6 Essence each, an Atheric's 8 and a Breach's Legendary armour's 7; an Atheric's own, 2,500 Aurem, 4
+  fragments, 10 of the resource and 1 Essence, so an Atheric never costs less of anything to finish than a Legendary
+  ([[Gear as Claude Shapes It]], [[The Balance and Economy Pass as Claude Shapes It]]). A resource is
   gathered at its island's nodes, each drawn as the resource itself
   ([[Material Nodes Stand Where They Are Dressed, Worked by Holding E]]).
 - **A kill's pay.** XP and Aurem are the foe's kind's as a Major at level 5 (Skirmisher 80 and 7, Archer 85 and 7,
@@ -139,10 +141,13 @@ number is one of [[Gear as Claude Shapes It]].
   Elite 2.2, Miniboss 4, Boss 7; `rewards::RANK_PAY`), times (5 + its level) ÷ 10, times the voyage's tier. The kinds
   span less than one rank's step, so a higher rank always pays more, whatever the kinds, at every level and tier.
 - **XP.** A kill's XP goes to every player who struck the foe in its last 10 s, a tenth more with Scholar worn; for
-  each, to the loadout whose blow last landed and to every armour piece worn. An item stops earning at its
+  each, to the loadout whose blow last landed and to every armour piece worn. Every deed's XP (a kill, a clear, a
+  chest, a sinking, a bounty, the day's and the week's clears, a road's task) also grows the worn Art and, while its
+  cape is worn, the faction pledged, before Scholar's share (`earn_play_xp`). An item stops earning at its
   last column. Past level 20, each 20,000 XP grows a Fruit of Dagon, which gives an item 5,000 XP when fed to it.
 - **Level and Prestige.** XP alone reaches level 20. Past it, the Prestige of the four armour pieces worn sets the
-  level, to 30. A Rare at level 20 carries 13 to 15, a Legendary 18 to 27 (a Breach's to 30), an Atheric 21 to 30.
+  level, to 30. A Rare at level 20 carries 13 to 15, a Legendary 18 to 27 (a Breach's to 30), an Atheric 21 to 30,
+  each climbing by equal steps over its upgrades, however many its grid holds (a ship's guns five, armour three).
 - **Attack and Defense.** A weapon's blow is times 1.07 for each of the foe's levels up to its Attack ÷ 15, and
   falls to 0.67, 0.56, 0.47 and none as the player is one to four levels below the foe. A foe's health is its kind's
   times 1.07 for each of its levels, so a matched player fells it in the blows combat is tuned for. A foe's blow is
@@ -224,8 +229,8 @@ number is one of [[Gear as Claude Shapes It]].
 - **Kills.** A foe's death pays every player whose blow landed on it in its last ten seconds and could harm it (four
   levels below, a blow does nothing and shares nothing), and throws out what it drops for each, seen by them alone,
   for two minutes ("Drops", below). While a player holds the Abyss boon this week ([[Activities]]), each kill pays
-  them a quarter more of its XP, rounded down, to them and to the weapon that earned it, and as much more reputation
-  as the kill's own goes ([[Factions]]) (`boon_xp`).
+  them a quarter more of its XP, rounded down, to them and to the weapon that earned it, their worn Art and the
+  faction pledged, as the kill's own goes ([[Factions]]) (`boon_xp`).
 - **A dungeon's cache.** When a dungeon's end foe falls (its Reeve, or an Elite Dungeon's Boss), its cache opens
   and pays every player then in the dungeon's room a dungeon's clear at the end foe's level, whoever struck it
   (`pay_cache`; "A clear", above): its XP and Aurem, an item coloured as its Miniboss's, and a Vestige as often as its
@@ -256,7 +261,7 @@ number is one of [[Gear as Claude Shapes It]].
   pistolet or thunderlock (`gear::kinds`). A loadout is one item, however many hands it fills: one Attack, one element,
   one set of perks. A Vestige for Melee opens to any Melee kind, evenly, and one for Ranged to any Ranged.
 - **How each fights** ([[Combat]], `room::power::loadout_arms`). A pair's blows take turns between its two blades or
-  maces; an "& Shield" holds its weapon with a shield that blocks as a shield does (80 degrees, and shots); a lone
+  maces, coming round faster than the lone weapon's, each a little lighter; an "& Shield" holds its weapon with a shield that blocks as a shield does (80 degrees, and shots); a lone
   sword, mace or flail, or a pistolet, leaves the left hand free for a torch; the Great Axe fights as the axe; the
   Greatsword is its own, a sword held on its hilt in both hands; a double pistolet fires right, then left, before one
   long reload.
@@ -298,7 +303,7 @@ player while they are in it (`room::perks`). A blow lands when it strikes, is bl
   count starts again. A swing that lands on other foes and not on it ends its row, as does one it parries or dodges;
   a sweep that strikes it beside others keeps it. A swing that lands on no one leaves the other foes' rows as they
   were. Thunderclap (handling) Charges a foe whose guard a swing breaks. Exploit (perk) makes every swing on an
-  Exposed foe a crit.
+  Exposed foe strike 25% harder (`EXPLOIT_TIMES`).
 - **Ranged**, on a shot that lands. Marked Shot (handling) Exposes a foe on the player's first shot to land on it:
   each player marks a foe once, and forgets it when it dies or leaves the room. Shocking Rounds (perk) Charges
   the foe struck by every fifth shot to land, on any foe; a shot that does not land is not counted.
@@ -512,7 +517,8 @@ the factions' counters are in [[Factions]].
 - A day runs from 09:00 UTC to 09:00 UTC (`gear::clock`): the smiths' wares, the Tailor's and the Tack's turn then.
 - **Shape** comes to Overlook from Friday 09:00 to Sunday 21:00 UTC and stands at one of eight places on the plaza,
   the week's (`gear::shape`, in the clock's weeks from Tuesday 09:00 UTC). He sells six pieces for the week, four
-  Legendary and two Atheric, at level 20, for 7 and 15 Shapes. Each Legendary is rolled for one of four Vestige slots
+  Legendary and two Atheric, at level 20, a Legendary for 7 Shapes, an Atheric's armour for 13 and its weapon for 23,
+  as Xûr's exotics cost Strange Coins. Each Legendary is rolled for one of four Vestige slots
   the week's dice draw, as a Vestige makes one (`vestige::make`), in a content the week's dice draw among the world,
   a dungeon, a sea dungeon, an Elite Dungeon and an Abyss Dungeon (never a faction's or a Breach's): it wears that
   content's set look and set name and rolls its traits, like every other Legendary ("Names" above). The Atherics are
@@ -521,7 +527,7 @@ the factions' counters are in [[Factions]].
   [[Gear as Claude Shapes It]]). They are sold
   from level 20 as a faction's are (his screen dims them "From level 20" below it). **Shapes** come only from the
   week's Abyss content ([[Bosses and Dungeons Drop Items, Clears Pay, and Shapes Come From the Week's Abyss]]): the
-  week's Abyss Dungeon's first clear pays 15 (`gear::clears`, [[Activities]]), and no kill gives any. A player holds
+  week's Abyss Dungeon's first clear pays 10 (`gear::clears`, [[Activities]]), and no kill gives any. A player holds
   200 at most.
 - The room keeps the minute, set by its host before its first tick and each second after (and by the page as its own
   room steps, playing alone), whose day (`gear::clock`, from 09:00 UTC) sets every daily list and whose week (from
@@ -757,7 +763,8 @@ Officers ashore fight beside their player, as DFO's crew companions did
   each tick, and with no one to fight they walk back once 2.5 m from it (3.7 m for the second). One 40 m from the
   leader, or 6 m below a leader on the ground, is put back at their place at once.
 - **Power.** They fight at the officer's level as a player matched to it would: a weapon of 15 Attack a level, armour
-  of 45 Defense a level and 15% more again, their health their type's. Weathered gives 15% more health, Brawler
+  of 45 Defense a level and 15% more again, their health their type's, and the land's ×1.5 on their blows and ×0.75
+  on a foe's, as a player's. Weathered gives 15% more health, Brawler
   10% more harm, Steady Nerve 20% more poise.
 - **Never killed.** No player harms them. A blow that would leave one at 1 health or less holds them at 1: they leave
   the fight and rest eight minutes, kept with the officer so a return to this room or another keeps it
