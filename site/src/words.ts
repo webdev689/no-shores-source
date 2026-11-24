@@ -44,6 +44,7 @@ const SHELL = {
   'shell.navHome': 'Home',
   'shell.navWorld': 'The World',
   'shell.navGame': 'The Game',
+  'shell.navPanel': 'Discord bot',
   'shell.navPlay': 'Play',
   'shell.navDiscord': 'Discord',
   'shell.copyright': '© Vestige Studios',
@@ -107,4 +108,15 @@ const GAME = {
   'game.gearUse': 'The more you use a weapon, the more nodes it opens.',
 } as const;
 
-export const WORDS: Readonly<Record<string, string>> = { ...PREMISE, ...SHELL, ...HOME, ...WORLD, ...GAME };
+const PANEL = {
+  'panel.title': 'Discord bot',
+  'panel.description':
+    'Set up the No Shores bot for your Discord server: welcome messages, roles, levels and moderation.',
+  'panel.lede': 'Sign in with Discord to set up the bot for a server you run.',
+  'panel.bellAlt': "A ship's bell hanging from a post on the quay at night, a lantern beside it and ships beyond.",
+  'panel.noScript': 'The panel needs JavaScript.',
+  'panel.loading': 'Loading the panel.',
+  'panel.english': 'The panel is in English for now.',
+} as const;
+
+export const WORDS: Readonly<Record<string, string>> = { ...PREMISE, ...SHELL, ...HOME, ...WORLD, ...GAME, ...PANEL };

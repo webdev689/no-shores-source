@@ -66,6 +66,13 @@ A module is one file in `modules/` exporting a `ServerModule`, named in `registr
 tables and acts, keep Discord in step when it is saved, fill placeholders of its own, and serve public routes. Its
 tables come with a migration named by its UTC time.
 
+## The panel
+
+The bot is set up from its page on the [[Website]], `noshores.online/panel/` (`site/src/panel/`). A manager signs in
+with Discord there, picks a server, turns modules on, sets them through forms drawn from the law, runs their acts,
+reads their tables and the audit log, keeps the server's pictures, and writes messages in a composer whose preview is
+built by the message law. The page only draws what the panel's API answers; every check is the bot's.
+
 ## Limits
 
 - Not deployed: the Discord application's keys and the deploy wait on the owner ([[Open Questions]]). Every var in

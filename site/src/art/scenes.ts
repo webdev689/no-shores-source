@@ -381,6 +381,84 @@ function gear(): Sheet {
   return sheet;
 }
 
+/** A ship's bell hung from a post on Overlook's quay at night, a lantern beside it, ships at anchor beyond. */
+function bell(): Sheet {
+  const sheet = makeSheet(WIDE, TALL);
+  const horizon = 112;
+  nightSky(sheet, seeded(91), horizon);
+  moon(sheet, 262, 34, 8);
+  sea(sheet, seeded(92), horizon, [
+    { x: 262, wide: 4, ink: PALETTE.moon[0] },
+    { x: 112, wide: 4, ink: PALETTE.gold.deep, from: horizon + 4 },
+  ]);
+  const look = { hull: '#05080f', sail: PALETTE.grey.shade, shade: PALETTE.grey.hull, lantern: true, furled: true };
+  ship(sheet, 236, horizon + 10, 34, { ...look, masts: 3 });
+  ship(sheet, 52, horizon + 6, 22, { ...look, facing: -1 });
+  box(sheet, 0, 138, WIDE, 42, PALETTE.timber);
+  box(sheet, 0, 138, WIDE, 1, '#4a3424');
+  for (let board = 0; board < WIDE; board += 18) box(sheet, board, 139, 1, 41, '#1a120d');
+  for (let row = 146; row < TALL; row += 9) box(sheet, 0, row, WIDE, 1, '#20160f');
+  box(sheet, 116, 36, 5, 103, '#1d140f');
+  box(sheet, 116, 36, 1, 103, '#3a2a1e');
+  box(sheet, 116, 34, 80, 5, '#1d140f');
+  box(sheet, 116, 34, 80, 1, '#3a2a1e');
+  line(sheet, 121, 62, 142, 39, '#1d140f');
+  line(sheet, 122, 62, 143, 39, '#1d140f');
+  const bronze = { deep: PALETTE.gold.deep, mid: '#b97a2a', lit: PALETTE.gold.mid, bright: PALETTE.gold.bright };
+  line(sheet, 172, 39, 172, 50, '#2a2420');
+  box(sheet, 168, 49, 9, 4, bronze.deep);
+  const body: ReadonlyArray<readonly [number, number]> = [
+    [163, 53],
+    [182, 53],
+    [186, 62],
+    [188, 80],
+    [195, 90],
+    [150, 90],
+    [157, 80],
+    [159, 62],
+  ];
+  shape(sheet, body, bronze.mid);
+  shape(
+    sheet,
+    [
+      [164, 55],
+      [170, 55],
+      [168, 80],
+      [158, 88],
+      [160, 78],
+      [161, 62],
+    ],
+    bronze.lit,
+  );
+  line(sheet, 164, 57, 162, 82, bronze.bright);
+  shape(
+    sheet,
+    [
+      [179, 55],
+      [182, 55],
+      [186, 64],
+      [187, 81],
+      [193, 89],
+      [184, 89],
+      [182, 70],
+    ],
+    bronze.deep,
+  );
+  box(sheet, 150, 89, 46, 2, bronze.deep);
+  box(sheet, 152, 74, 41, 1, bronze.deep);
+  disc(sheet, 172, 93, 3, 3, bronze.deep);
+  line(sheet, 172, 95, 173, 122, '#8a7458');
+  line(sheet, 173, 95, 174, 122, '#5a4a38');
+  disc(sheet, 173, 123, 2, 2, '#8a7458');
+  box(sheet, 112, 60, 5, 2, '#1d140f');
+  line(sheet, 112, 62, 112, 66, '#2a2420');
+  lantern(sheet, 112, 70, 12);
+  box(sheet, 109, 67, 7, 7, '#2a2420');
+  box(sheet, 110, 68, 5, 5, PALETTE.gold.bright);
+  dot(sheet, 112, 70, PALETTE.gold.white);
+  return sheet;
+}
+
 /** Every picture the pages may name, by its name. */
 export const SCENES: Readonly<Record<string, () => Sheet>> = {
   overlook: () => overlookLayers().back,
@@ -394,4 +472,5 @@ export const SCENES: Readonly<Record<string, () => Sheet>> = {
   'under-sail': underSail,
   arts,
   gear,
+  bell,
 };

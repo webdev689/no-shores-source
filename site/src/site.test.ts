@@ -5,7 +5,8 @@ import { PICTURES, pictureOf } from './art/pictures.ts';
 import { pngOf } from './art/sheet.ts';
 import { fillKeys, makePage, siteFoot, siteTop } from './page.ts';
 import { OUTSIDE, SITE_PAGES, pageOfPath, siteHref, type SitePage } from './siteMap.ts';
-import { CONTENT_POLICY } from './sitePlugin.ts';
+import { BOT_ORIGIN } from './panel/panelApi.ts';
+import { CONTENT_POLICY, policyOf } from './sitePlugin.ts';
 import { WORDS } from './words.ts';
 
 const SITE = new URL('../', import.meta.url);
@@ -67,7 +68,8 @@ test('a page path finds its page, and a name nobody has finds nothing', () => {
   assert.equal(pageOfPath('/')?.id, 'home');
   assert.equal(pageOfPath('/world/index.html')?.id, 'world');
   assert.equal(pageOfPath('/game/')?.id, 'game');
-  assert.equal(pageOfPath('/panel/index.html'), null);
+  assert.equal(pageOfPath('/panel/index.html')?.id, 'panel');
+  assert.equal(pageOfPath('/staff/index.html'), null);
   assert.equal(pageOfPath('/world/deeper/index.html'), null);
   assert.equal(pageOfPath('/World/'), null);
   assert.equal(siteHref('nowhere'), null);
@@ -116,7 +118,24 @@ test('no page loads anything from another site, and its font is bundled', () => 
       assert.ok(address?.startsWith('/') && !address.startsWith('//'), `${page.id} loads ${address}`);
   }
   assert.match(CONTENT_POLICY, /default-src 'none'/);
-  assert.doesNotMatch(CONTENT_POLICY, /https?:/);
+  assert.doesNotMatch(CONTENT_POLICY, /https?:|script-src|connect-src/);
+});
+
+test("each page's own policy: none runs a script but the panel, which runs its own and talks to the bot alone", () => {
+  for (const { page, html } of made) {
+    const policy = policyOf(page);
+    assert.match(policy, /^default-src 'none'; /, page.id);
+    assert.doesNotMatch(policy, /'unsafe|localhost|http:/, page.id);
+    const scripts = [...html.matchAll(/<script\b[^>]*>/g)].map((found) => found[0]);
+    if (page.id !== 'panel') {
+      assert.equal(policy, CONTENT_POLICY, page.id);
+      assert.deepEqual(scripts, [], `${page.id} runs a script`);
+      continue;
+    }
+    assert.match(policy, /script-src 'self'/);
+    assert.match(policy, new RegExp(`connect-src ${BOT_ORIGIN.replace(/\./g, '\\.')}(;|$)`));
+    assert.deepEqual(scripts, ['<script type="module" src="/src/panel/panelPage.ts">']);
+  }
 });
 
 test('each page is under 96 KB with its stylesheet', () => {
@@ -128,8 +147,12 @@ test('no page has a timer, a clock, a countdown, a staff link, an account area o
   // "account" alone is a word of the premise ("which account is true"), so only an account page or link is banned
   const banned =
     /\btimers?\b|\bclocks?\b|countdown|\bstaff\b|\badmin|sign[ -]?in|log[ -]?in|\blanguages?\b|<select|<script|href="[^"]*account/i;
-  for (const { page, html } of made) assert.doesNotMatch(html, banned, page.id);
-  for (const [key, text] of Object.entries(WORDS)) assert.doesNotMatch(text, banned, key);
+  // the Discord bot's panel is the one page that signs in, with Discord, and runs its own script to do it
+  const signsIn = /sign[ -]?in|<script/gi;
+  for (const { page, html } of made)
+    assert.doesNotMatch(page.id === 'panel' ? html.replace(signsIn, '') : html, banned, page.id);
+  for (const [key, text] of Object.entries(WORDS))
+    assert.doesNotMatch(key.startsWith('panel.') ? text.replace(signsIn, '') : text, banned, key);
 });
 
 test('the foot holds the copyright of Vestige Studios on every page', () => {
