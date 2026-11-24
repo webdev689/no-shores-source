@@ -55,6 +55,8 @@ pub struct Lodestone {
     pub crossed_by: Option<PlayerId>,
     /// Where it was last carried, where it falls if its bearer leaves the run.
     pub carried_at: [f64; 3],
+    /// The plinth it was last stood on, where it goes back if it falls into the dark with its bearer.
+    pub home: [f64; 3],
 }
 
 impl Lodestone {
@@ -94,7 +96,8 @@ impl Room {
     /// The Lodestone set on a space's plinth, charged, needed or not.
     pub(crate) fn set_on_plinth(&self, breach: &mut Breach, space: &str, needed: bool) {
         let at = breach.plan.socket(space, "plinth").map_or([0.0, 0.0, 0.0], |(at, _)| at);
-        breach.lodestone = Lodestone { stone: super::lodestone::Stone::Plinth(at), needed, ..Lodestone::default() };
+        breach.lodestone =
+            Lodestone { stone: super::lodestone::Stone::Plinth(at), needed, home: at, ..Lodestone::default() };
     }
 
     /// A player takes the Lodestone up, living and within reach of where it stands.
@@ -111,9 +114,12 @@ impl Room {
         true
     }
 
-    /// The bearer sets the Lodestone down at their feet.
+    /// The bearer sets the Lodestone down at their feet, standing: never in the air, where it would hang over the dark.
     pub(crate) fn drop_lodestone(&mut self, id: PlayerId) -> bool {
-        let Some(found) = self.players.get(&id) else { return false };
+        let Some(found) = self.players.get(&id).filter(|found| found.fighter.body.mode == movement::Mode::Ground)
+        else {
+            return false;
+        };
         let body = found.fighter.body;
         let clock = self.clock;
         let Some(breach) = self.breach.as_mut().filter(|breach| breach.lodestone.bearer() == Some(id)) else {
@@ -164,11 +170,16 @@ impl Room {
         let clock = self.clock;
         if let Some(bearer) = breach.lodestone.bearer() {
             let Some(found) = self.players.get(&bearer).filter(|found| found.living()) else {
-                let at = self.players.get(&bearer).map_or(breach.lodestone.carried_at, |found| {
+                let fallen = self.players.get(&bearer);
+                // Fallen into the dark with it, the stone goes back to its plinth: none could reach it where they fell.
+                let dark =
+                    fallen.is_some_and(|found| matches!(found.standing, crate::Standing::Dead { fell: true, .. }));
+                let at = fallen.map_or(breach.lodestone.carried_at, |found| {
                     let body = found.fighter.body;
                     [body.x, body.y, body.z]
                 });
-                breach.lodestone.stone = Stone::Lying(at, clock);
+                breach.lodestone.stone =
+                    if dark { Stone::Plinth(breach.lodestone.home) } else { Stone::Lying(at, clock) };
                 breach.lodestone.end_hold(clock);
                 self.tell(EventKind::LodestoneDropped, None, bearer, bearer, 0.0);
                 return;
