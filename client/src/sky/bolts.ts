@@ -1,6 +1,7 @@
 import { type Gpu, SHADER_STAGE } from '../gpu.ts';
 import { flashOf } from './skyDriver.ts';
 import type { Strike } from './skyLaw.ts';
+import { smoothstep } from '../water/shore.ts';
 
 /** The most segments drawn in a frame, a strike's main channel's, and the share of its length a branch runs. */
 export const MOST_SEGMENTS = 512;
@@ -126,21 +127,44 @@ export interface StrikesNow {
   readonly worldS: number;
   readonly baseM: number;
   readonly groundAt: (x: number, y: number) => number | null;
-  readonly air: { readonly clearM: number; readonly fogDensity: number };
+  readonly air: Air;
+}
+
+/** The air a light is seen through: the clear air's haze over `clearM`, and the weather's fog of `fogDensity` a metre,
+ *  which lies under `topM`, the cloud deck's base (metres over the sea), as its rain and mist do. */
+export interface Air {
+  readonly clearM: number;
+  readonly fogDensity: number;
+  readonly topM: number;
 }
 
 /**
- * How much of a light at `fromEye` (metres from the eye, up) reaches an eye `eyeHighM` over the sea: the clear air's
- * haze over `clearM`, and the weather's fog of `density` a metre, thickest low down (by e every 60 m up). The land and
- * the sea are hazed by the same law (aerial in waterCommon.ts), so a bolt's foot fades as the sea under it does.
+ * How many metres of a line of sight `distance` long, from `fromM` to `toM` over the sea, the weather's fog lies
+ * along: all of it while the eye is under the deck's base `topM`, and once the eye has risen to twice that only the
+ * part under it, the share between eased, so from the Overworld's view over an island the land shows through the rain.
+ * The water's shader keeps the same law (under_weather in waterCommon.ts).
  */
-export function throughAir(eyeHighM: number, fromEye: Point, clearM: number, density: number): number {
+export function underWeatherM(fromM: number, toM: number, distance: number, topM: number): number {
+  const rise = Math.abs(toM - fromM);
+  const low = Math.min(fromM, toM);
+  const under = rise < 1 ? (fromM < topM ? distance : 0) : distance * Math.min(1, Math.max(0, (topM - low) / rise));
+  return distance + (under - distance) * smoothstep(topM, 2 * topM, fromM);
+}
+
+/**
+ * How much of a light at `fromEye` (metres from the eye, up) reaches an eye `eyeHighM` over the sea through `air`: the
+ * clear air's haze, and the weather's fog along the line under its top, thickest low down (by e every 60 m up). The
+ * land and the sea are hazed by the same law (aerial in waterCommon.ts), so a bolt's foot fades as the sea under it
+ * does.
+ */
+export function throughAir(eyeHighM: number, fromEye: Point, air: Air): number {
   const distance = Math.hypot(fromEye[0], fromEye[1], fromEye[2]);
   const from = Math.max(eyeHighM, 0);
   const rise = Math.max(eyeHighM + fromEye[2], 0) - from;
   const [lowFrom, lowTo] = [Math.exp(-from / 60), Math.exp(-(from + rise) / 60)];
   const low = Math.abs(rise) < 1 ? lowFrom : (60 * (lowFrom - lowTo)) / rise;
-  return Math.exp(-distance / clearM - density * 1.5 * Math.min(1, Math.max(0, low)) * distance);
+  const weather = air.fogDensity * underWeatherM(from, from + rise, distance, air.topM);
+  return Math.exp(-distance / air.clearM - weather - air.fogDensity * 1.5 * Math.min(1, Math.max(0, low)) * distance);
 }
 
 /**
@@ -165,7 +189,7 @@ export function boltsInto(into: Float32Array, eye: readonly [number, number, num
       ];
       // The channel is far brighter than the picture can show, so haze dims it only where it lets through under a
       // fifth: in heavy rain the foot of a far bolt fades into the grey, and the rest of it still blazes.
-      const seen = Math.min(1, 5 * throughAir(eye[2], middle, strikes.air.clearM, strikes.air.fogDensity));
+      const seen = Math.min(1, 5 * throughAir(eye[2], middle, strikes.air));
       into.set([from[0] - eye[0], from[1] - eye[1], from[2] - eye[2], light * brightness * seen], floats);
       into.set([to[0] - eye[0], to[1] - eye[1], to[2] - eye[2], width], floats + 4);
       floats += 8;
