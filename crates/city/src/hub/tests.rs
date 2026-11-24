@@ -335,15 +335,9 @@ fn the_hubs_places_are_named_inside_its_ring() {
     let (_, plan) = planned();
     let social = &plan.social;
     let names: Vec<&str> = social.areas.iter().map(|area| area.name.as_str()).collect();
-    for name in [
-        "Seaward Walk",
-        "Watch Court",
-        "West Court",
-        "Forge Yard",
-        "Beacon Walk",
-        "Hall of the Arts",
-        "Stair Yard",
-    ] {
+    for name in
+        ["Seaward Walk", "Watch Court", "West Court", "Forge Yard", "Beacon Walk", "Hall of the Arts", "Stair Yard"]
+    {
         assert!(names.contains(&name), "{name} is named: {names:?}");
     }
     let inside = |[x, y]: [f64; 2]| {
