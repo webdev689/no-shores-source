@@ -818,7 +818,9 @@ Officers ashore fight beside their player, as DFO's crew companions did
   woman's, and fails on any weapon or armour layer of the forge no item wears but a class's own (the class sword, axe,
   bow and staff, the archer's dark helm, the woman's horned one) and the laced boots, a garment. A gilded double
   pistolet's left gun is worn only by a named gilded double pistolet, Brass Chorus.
-- A Breach's pieces are rolled, never named: its Vestige opens to its armour and weapons at its tier ([[Breaches]]).
+- A Breach's pieces are rolled, never named: its Vestige opens to its armour and weapons at its tier ([[Breaches]]),
+  a weapon won at Hard named Forged after its set ("Lattice Sword (Forged)",
+  [[Breach Weapons Come Normal and Forged]]).
   The factions' pieces (each one's cape, armour and two weapons) are the only named items a Vestige never opens to
   ([[Factions]]).
 - The Wraith Mist barding's ride strips on R2 are blank, so it shows in third person only until the forge draws them

@@ -14,3 +14,5 @@ status: in force
 - **A weapon of the Hard set has "(Forged)" in its name**, as Destiny's raid weapons carry "(Adept)"
   ([[Everything Carries a Set Name, and Perks Roll by Pool]]).
 - **The Breach's own session builds them**, with the Breach's tiers (#182).
+
+How it is built: [[Breaches]] ("Rewards"), [[Gear]].
