@@ -22,6 +22,7 @@ DOOR_DEEP = 6.0
 LEDGE_TOP = 3.0
 # How far the cliff's mass and the ledges' are drawn back behind the rock laid over their faces.
 SET_BACK = 2.4
+BACK_SET = 1.0
 LEDGE_BACK = 0.8
 LEDGE_X = (22.0, 28.0)
 LEDGE_Y = (-12.0, 18.0)
@@ -38,17 +39,20 @@ def ground(module):
     field walls and the mill's foundation; the land held level under it all."""
     module.pad((-32.0, -34.0), (32.0, CLIFF_SOUTH), 0.0)
     # The cliff either side of the doorway, over it, and the doorway's sealed back. Past the doorway's surround the
-    # cliff's mass is drawn set back behind the rock dressing lays over its face, so the split stone is the face.
+    # cliff's mass is drawn set back behind the rock dressing lays over its face, and short of its back, so the split
+    # stone is its face, its back and its ends.
     for sign in (-1, 1):
         west, east = sorted((sign * CLIFF_HALF, sign * (DOOR_HALF + 0.6)))
         bk.solid(module, west, CLIFF_SOUTH, east, CLIFF_NORTH, -2.0, CLIFF_TOP)
         for near, far, south in ((DOOR_HALF + 0.6, DOOR_HALF + 3.4, CLIFF_SOUTH),
                                  (DOOR_HALF + 3.4, CLIFF_HALF, CLIFF_SOUTH + SET_BACK)):
-            at = (sign * (near + far) / 2, (south + CLIFF_NORTH) / 2, -2.0)
-            kit.block(module, at, (far - near, CLIFF_NORTH - south, CLIFF_TOP + 2.0), 'rubble', bevel=0.0, wear=0.0,
-                      part=False)
-    bk.wall(module, -DOOR_HALF - 0.6, CLIFF_SOUTH + DOOR_DEEP, DOOR_HALF + 0.6, CLIFF_NORTH, bottom=-2.0,
-            high=CLIFF_TOP, courses=False, material='rubble')
+            at = (sign * (near + far) / 2, (south + CLIFF_NORTH - BACK_SET) / 2, -2.0)
+            kit.block(module, at, (far - near, CLIFF_NORTH - BACK_SET - south, CLIFF_TOP + 2.0), 'rubble', bevel=0.0,
+                      wear=0.0, part=False)
+    bk.solid(module, -DOOR_HALF - 0.6, CLIFF_SOUTH + DOOR_DEEP, DOOR_HALF + 0.6, CLIFF_NORTH, -2.0, CLIFF_TOP)
+    kit.block(module, (0.0, (CLIFF_SOUTH + DOOR_DEEP + CLIFF_NORTH - BACK_SET) / 2, -2.0),
+              (DOOR_HALF * 2 + 1.2, CLIFF_NORTH - BACK_SET - CLIFF_SOUTH - DOOR_DEEP, CLIFF_TOP + 2.0), 'rubble',
+              bevel=0.0, wear=0.0, part=False)
     kit.block(module, (0.0, CLIFF_SOUTH + DOOR_DEEP / 2, DOOR_HIGH), (DOOR_HALF * 2 + 1.2, DOOR_DEEP, CLIFF_TOP - DOOR_HIGH),
               'rubble', bevel=0.0, wear=0.0)
     bk.floor(module, -DOOR_HALF, CLIFF_SOUTH - 0.5, DOOR_HALF, CLIFF_SOUTH + DOOR_DEEP, top=0.05, material='paving')
@@ -203,16 +207,23 @@ def dressing(module):
     kit.column(module, (-2.4, 2.8, TIERS[-1][1]), 1.4, 0.35, 'stone', sides=18, part=False)
     for base in ((1.3, -1.0, 1.2), (-1.4, 0.9, 1.2), (0.6, 1.4, 1.2)):
         bk.crystal(module, pick, base, count=5, length=2.4, radius=0.45)
-    bk.crust(module, pick, (DAIS[0], DAIS[1], TIERS[-1][1] + 0.02), 3.6)
+    bk.crust(module, pick, (DAIS[0], DAIS[1], TIERS[-1][1] + 0.02), 2.6)
     for number in range(1, 5):
         socket = next(each for each in module.sockets if each['name'] == f'mouth-{number}')
         x, y, _ = socket['at']
-        bk.crust(module, pick, (x, y, 0.02), 3.2)
+        bk.crust(module, pick, (x, y, 0.02), 1.6)
         bk.crystal(module, pick, (x + 1.0, y + 0.6, 0.0), count=7, length=3.0, radius=0.55)
     bk.crust(module, pick, (0.0, CLIFF_SOUTH - 0.6, 0.06), 4.0)
     for base in ((-DOOR_HALF - 0.9, CLIFF_SOUTH - 0.9, 0.0), (DOOR_HALF + 0.9, CLIFF_SOUTH - 0.9, 0.0),
                  (-DOOR_HALF - 0.5, CLIFF_SOUTH - 0.9, DOOR_HIGH + 1.0)):
         bk.crystal(module, pick, base, count=4, length=1.6, radius=0.35, up=(0.0, -0.4, 1.0))
+    # The cliff's back and ends as the same split stone, leaning back as they rise and buttressed, so from the vale
+    # behind it reads as an outcrop of the vale's rock.
+    bk.rock_face(module, -CLIFF_HALF - 1.0, CLIFF_NORTH - 2.2, CLIFF_HALF + 1.0, CLIFF_NORTH - 0.1, -0.5,
+                 CLIFF_TOP + 1.0, face=(0.0, 1.0))
+    for sign in (-1, 1):
+        west, east = sorted((sign * (CLIFF_HALF - 1.0), sign * (CLIFF_HALF + 2.0)))
+        bk.rock_face(module, west, CLIFF_SOUTH + 0.5, east, CLIFF_NORTH - 0.5, -0.5, CLIFF_TOP + 1.0, face=(sign, 0.0))
 
 
 def build(module):
