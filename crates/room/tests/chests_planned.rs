@@ -100,14 +100,16 @@ fn each_chest_place_stands_in_bounds_off_the_ways_clear_of_what_stands_and_tucke
             }
             let planted = laid.plantings.iter().flat_map(|planting| &planting.points);
             assert!(planted.into_iter().all(|&point| distance(point, place.at) >= 1.0), "{id}: planted over");
-            // Just behind its back, where it is tucked, stands a box taller than a chest.
+            // Just behind its back, where it is tucked, a box stands from its ground to over a chest, not overhead.
             let behind = [x - libm::sin(facing) * (OUT_M + 0.1), y + libm::cos(facing) * (OUT_M + 0.1)];
+            let floor = laid_one().1.height_at(x, y);
             let tucked = laid.boxes.iter().any(|&[west, north, east, south, top, bottom]| {
                 behind[0] >= west - 0.1
                     && behind[0] <= east + 0.1
                     && behind[1] >= north - 0.1
                     && behind[1] <= south + 0.1
-                    && top - bottom >= 1.0
+                    && bottom <= floor + 0.2
+                    && top - floor >= 1.0
             });
             assert!(tucked, "{id}: chest {:?} facing {facing} has nothing behind it", place.at);
         }

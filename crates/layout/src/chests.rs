@@ -85,7 +85,7 @@ pub fn mark(
             .iter()
             .filter(|anchor| {
                 let middle = [(anchor[0] + anchor[2]) / 2.0, (anchor[1] + anchor[3]) / 2.0];
-                distance(middle, round.at) <= reach && anchor[4] - floor(middle[0], middle[1]) >= ANCHOR_TALL_M
+                distance(middle, round.at) <= reach && stands_tall(anchor, floor(middle[0], middle[1]))
             })
             .collect();
         let near: Vec<&Box3> =
@@ -164,23 +164,37 @@ fn overlaps(room: [f64; 4], other: &[f64]) -> bool {
     other[0] < room[2] && other[2] > room[0] && other[1] < room[3] && other[3] > room[1]
 }
 
+/// Whether a box stands tall from ground `ground`: its foot on it and its top ANCHOR_TALL_M over it, so a chest before
+/// it is tucked behind something, never under an overhang.
+fn stands_tall(other: &Box3, ground: f64) -> bool {
+    other[5] <= ground + LEVEL_M && other[4] - ground >= ANCHOR_TALL_M
+}
+
 /// Whether a box stands over a chest on ground `ground`: its foot under the chest's top and its top over its floor.
 fn over(other: &Box3, ground: f64) -> bool {
     other[5] < ground + 1.0 && other[4] > ground + 0.05
 }
 
-/// Keeps only the chest places whose swing (`swing`) no box over their ground and no prop reaches into, once all is
-/// laid: the ruins along the cliffs' tops and the stores stand after the plan.
+/// Keeps only the chest places whose swing (`swing`) no box over their ground and no prop reaches into, and that are
+/// still tucked against a box at least ANCHOR_TALL_M tall, once all is laid: the ruins along the cliffs' tops and the
+/// stores stand after the plan, and every box is laid again round what is drawn.
 pub fn keep_clear(sites: &mut Vec<Site>, boxes: &[Box3], props: &[Seated], floor: &dyn Fn(f64, f64) -> f64) {
     sites.retain(|site| {
         if site.kind != SiteKind::Chest {
             return true;
         }
-        let quarters = (site.facing.unwrap_or_default() / core::f64::consts::FRAC_PI_2).round() as u8;
+        let facing = site.facing.unwrap_or_default();
+        let quarters = (facing / core::f64::consts::FRAC_PI_2).round() as u8;
         let room = swing(site.at, quarters);
         let ground = floor(site.at[0], site.at[1]);
         let boxed = boxes.iter().any(|other| overlaps(room, other) && over(other, ground));
-        !boxed && !props.iter().any(|prop| overlaps(room, &prop.footprint))
+        // A hand behind the face it was planned against, something tall still stands.
+        let back = OUT_M + 0.1;
+        let [x, y] = [site.at[0] - libm::sin(facing) * back, site.at[1] + libm::cos(facing) * back];
+        let tucked = boxes.iter().any(|other| {
+            (other[0]..=other[2]).contains(&x) && (other[1]..=other[3]).contains(&y) && stands_tall(other, ground)
+        });
+        tucked && !boxed && !props.iter().any(|prop| overlaps(room, &prop.footprint))
     });
 }
 
