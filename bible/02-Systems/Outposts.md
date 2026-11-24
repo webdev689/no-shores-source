@@ -105,7 +105,7 @@ outpost there plays it in a room of its own, `node-<site>--guild-<key>`, apart f
   its own: asked again, the accounts answer as they did, so nothing is done or given back twice. A player has one
   such ask with the accounts at a time.
 - **The guild boss.** The War Horn, sounded once a week by the founder or an admin (the accounts answer its tier, 0
-  when it sounded this week, -1 for one who may not sound it, -2 when none stands at a tier), calls a High Assessor and four
+  when it sounded this week, -1 for one who may not sound it, -2 when none stands at a tier, -3 past the account's outpost limit), calls a High Assessor and four
   Majors to the muster ground beyond the plot, at the level of the highest member there, at Normal, Elite or Abyss by
   the horn's tier. Felled, each player who struck it is paid as a world boss's clear pays, and each member among them
   who was in the guild before the week turned takes a guild package once that week, as from the guild dungeon.

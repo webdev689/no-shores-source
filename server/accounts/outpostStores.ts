@@ -342,8 +342,8 @@ export async function takeStores(
 
 /** Sounds the War Horn of the outpost a member's room is, once a guild a week, by its founder or an admin: answers its
  *  tier (1 to 3) when it sounds, 0 when it has sounded this week, -1 when the asker is not the founder or an admin of
- *  the outpost's guild, -2 when no horn stands there at a tier. Asked again under the room's id for it, it answers as
- *  it did. */
+ *  the outpost's guild, -2 when no horn stands there at a tier, -3 past the account's outpost limit. Asked again
+ *  under the room's id for it, it answers as it did. */
 export async function soundHorn(database: Db, account: string, room: string, now: number, rid?: string) {
   const kept = await keptAnswer(database, rid);
   if (kept !== null) return kept;
@@ -352,7 +352,7 @@ export async function soundHorn(database: Db, account: string, room: string, now
   const ranked = (asker: typeof member) =>
     outpost !== null && asker !== null && guildKey(asker.guild_id) === outpost.key && asker.rank <= 1;
   if (!outpost || !member || !ranked(member)) return -1;
-  if (!(await outpostAllowed(database, account, now))) return 0;
+  if (!(await outpostAllowed(database, account, now))) return -3;
   const horn = (await plotOf(database, member.guild_id, outpost.site)).structures.find(
     (standing) => standing.kind === 'horn',
   );

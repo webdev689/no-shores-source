@@ -259,7 +259,7 @@ test("a dock built where a camp already fills gives its first day's stores a day
   await standAt('Ada');
   await ask('Ada', 'outpost/place', { site: SITE, kind: 'dock', x: 0, y: 4, turn: 0 });
   await kept().deliver(ada, here, { id: 4, stuff: 'timber', amount: 60 });
-  await kept().deliver(ada, here, { id: 4, stuff: 'canvas', amount: 30 });
+  await kept().deliver(ada, here, { id: 4, stuff: 'canvas', amount: 50 });
   await kept().deliver(ada, here, { id: 4, stuff: 'iron', amount: 20 });
   clock.now += 1 * HOUR;
   assert.equal(await kept().takeStores(ada, here, 'timber', 20), 0, 'an hour after the dock stood');
@@ -272,6 +272,7 @@ test("a room's errands count in the account's outpost limit and are refused past
   let asked = 0;
   while ((await ask('Ada', 'outpost/collect', { site: SITE })).status !== 429 && asked < 1_000) asked++;
   assert.equal(await kept().deposit(await accountOf('Ada'), 5, `${await room()}:late`), 'refused');
+  assert.equal(await kept().soundHorn(await accountOf('Ada'), await room()), -3, 'the horn past the limit');
 });
 
 test('a raise turned other than a quarter at a time is refused before anything is written', async () => {
