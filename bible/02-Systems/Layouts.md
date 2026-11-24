@@ -22,6 +22,7 @@ code:
   - crates/layout/src/dressing.rs#dress
   - crates/layout/src/interiors.rs#build
   - crates/layout/src/sites.rs#mark
+  - crates/layout/src/chests.rs#mark
   - crates/layout/src/marks.rs#build
   - crates/layout/src/ring.rs#traced
   - crates/layout/src/collide.rs#boxes_of
@@ -239,7 +240,22 @@ from the sea, fresh water and the claim's edge), then:
    with wet stones and salt shards, Cairn Iron's stacked cairn seamed with iron, Heartwood Resin's broad old stump with
    amber bled down it, Sunstone's desert stones bedded in sand and glowing, Goldgrass's stand of tall gold grass,
    Mistbloom's low mound of pale flowers, Windthistle's thistles gone to down, Bog Pearl's black pool rimmed with
-   shells, and Rimecrystal's frozen rock grown with spikes of frost.
+   shells, and Rimecrystal's frozen rock grown with spikes of frost. Last, once everything stands where it will, a
+   patrol's chest places (`chests`, [[Patrols and Dungeons Hold Chests, and Their Containers May Be Searched]]): round
+   each area a body comes to but its landing, gates and way in, round each climb's lookout (10 m) and each run's beat,
+   before a face of something standing at least 1 m tall from the ground, never overhead (a box of a building, a
+   ruin's wall, a rock, a tent, a stack of crates, a lookout's parapet), its middle 0.75 m out, square to the world
+   and facing away from it, each place's
+   faces tried in an order drawn on the layout's seed. A place is kept where its swing (`swing`: its box, 1.1 by 0.8
+   m, and behind it the band its lid swings back into, to 5 cm short of the face) stands clear of every box and prop
+   over its ground, on dry, open land in the ring that rises or falls 0.2 m at most under it, 1.5 m off every way's
+   edge (the climbs', the runs' and each run's way on to its door), 1.5 m off a building walked into and 0.1 m off
+   any other, 1 m from a planting, 25 m from every other chest place, 10 m from a resource place, its node and a
+   beacon, 3 m past a public event's fissure, growth, store, banner or approach, and 15 m from a spawn: two a place
+   at most and 24 a layout. Once everything stands, the ruins along the cliffs' tops and the stores among it, the
+   settle drops a place whose swing any box or prop then reaches, or that no longer stands before something tall
+   (`keep_clear`). Continent 1's three patrols lay 22 to 24 each; a test holds them to four or more
+   (`crates/room/tests/chests_planned.rs`).
 10. **The section** is the land the carving left as floor, a few metres onto its cliffs' feet, no cell of it touching
     the sea, and the bridges over water a cell wider either side, in the claim, as one piece with its holes filled,
     traced into a ring: the layout's bounds are its cliffs and walls. Narrow gaps of rock between floors are closed
@@ -336,10 +352,10 @@ out past its edge.
   it keep off it; every ceiling over a building run's way stands 2.6 m or more over its floor. A body walks every run
   from its mouth to within 3 m of its door, and no further; up each keep's stair to its turret's top; and over each
   undercroft's chapel floor and down its stair (`crates/room/tests/runs_walked.rs`). Every patrol zone of every
-  continent is given a run of each of four kinds too, one test a continent (`runs_everywhere.rs`), with three failures
+  continent is given a run of each of four kinds too, one test a continent (`runs_everywhere.rs`), with two failures
   known and named with their reasons, so a new one fails CI ([[The Audit's Leftovers Are Fixed as Claude Suggested]]):
-  on the savanna a body walks round a ledge's and a rampart's doors across their faces, and at highwater-glen a
-  ledge's way meets a face a body would climb. They wait on the owner's call on the
+  on the savanna a body walks round a rampart's door across its face, and at highwater-glen a ledge's way meets a
+  face a body would climb. They wait on the owner's call on the
   runs there; only Saltmere's zones have runs of their own yet.
 
 ## Laid on the land
@@ -361,10 +377,32 @@ What a body meets ([[Movement]]): each room's linings, lintels, planks, slabs an
 too low to enter whole, each building not walked into whole, each plinth, set piece, great work, rock and wall by the
 ways, and each prop too tall to step over. What lies wholly past the section (at the cliffs' feet, on their tops) is
 never reached and is no box: a piece is kept by its middle in the section or a cell of it, or, for one wider than 8 m,
-by any corner. An arch is its two jambs and its head over the crown of its opening, so a body walks under it. A box's
-underside is its own, so a body walks under a viaduct's deck and a lintel. A leaning or rolled solid's box is the box
-of its turned corners. Boxes are written to the centimetre, grown out so none shrinks. No box of a solid, prop or
-building stands across a way's walked width under head height on continent 1 (`crates/room/tests/layouts_laid.rs`). A
+by any corner. What a body meets keeps to what is drawn ([[What a Body Meets Keeps to What Is Drawn]]): no box stands
+more than 0.45 m off what it boxes (`city::hug`), nor leaves more than that of it out, but for a tilted solid as
+below. A prop is the parts its drawn shape fills ([[Forged Models]], "Parts"), each within a 0.25 m column of its
+mesh; a turned prop is in strips within 0.2 m of its parts, so its edges stand no further past what is drawn than a
+solid's. A gate's arch has its parts taken down to its foot so the opening under its bar stays shut. A solid is cut
+into parts of its own frame: an arch its two jambs and its head over the crown of its opening, so a body walks under
+it; a column, a dome, a pyramid and a gable in layers that narrow as it does, a wide round in crossed boxes inside it,
+each kept to the faces the page draws (a round's polygon, a dome's rings). A part turned off the world's axes is
+boxed in strips across the world, each the box of the part within it, as wide as keeps it within 0.45 m; one leaning
+or rolled, however far (a mill's sails turn past a half-turn), is halved until each half's box keeps as close, but a
+solid tilted so little none of it moves 0.45 m is boxed as if upright, standing off it as far again as its tilt
+moves it, and a piece of 2 m or less is not halved for its tilt alone, standing off it as far as its tilt throws its
+box out. A box's underside is its own, so a body walks under a viaduct's deck and a lintel.
+
+What a solid or a turned prop may cost is held, as the owner approved ([[The Meadow Art Is the Owner's, Its Tables Stay in Git, and the Grass Takes the Trees' Rain]]; `city::collision::kept`,
+`layout::collide::prop_kept`): at most 64
+of its boxes over a 2 m square of ground, on a grid laid from its north-west corner (2 m is the finest cell of the
+movement rules' grid, every box of which a tick tests), and at most a box a square metre of its footprint, never
+fewer than 256. A solid's layers come first, as they take the fewest boxes; where they stack too thick over the
+ground, the same layers are laid as terraces, each boxed only where no layer over it stands, up from the foot, which
+holds the same and stands no further off. One that still costs more is boxed with its keep a quarter looser at a time
+until it fits (and halving that stops short of its keep costs more), never leaving more than 0.45 m of it out. Over every landmass 268,489 of 270,438 solids are boxed unloosened, and 11,659 of 12,016 laid props; on continent
+1's zones the loosened are small tilted stones and domes to within 0.56 to 1.1 m, the mills' two roofs 0.7 m, the
+Saltgrass Downs' wide dome 1.7 m, and the beached ships' strips 0.6 to 1.2 m; the cities' leaning spires are to
+within 13 m at most, nine in ten of their tilted columns unloosened. Continent 1's zones hold 86,909 boxes, every
+landmass's zones and cities 1,433,893, a city boxed natively in 0.05 to 0.3 s (tested offline). Boxes are written to the centimetre, grown out so none shrinks. No box of a solid, prop or building stands across a way's walked width under head height on continent 1 (`crates/room/tests/layouts_laid.rs`). A
 body walks in at every ground-floor door of the Saltgrass Downs' buildings, and up to every upper floor, as the bake
 lays them (`crates/room/tests/rooms_walked.rs`).
 
@@ -467,7 +505,7 @@ does nothing.
 The game draws the layouts within 4 km of the eye with the city layer ([[Cities]]), gathered again once the eye has
 moved 1.5 km: a plan of placed pieces (each building and prop where its layout stood it, a building walked into with
 its doorways open) and solids (plinths, set pieces, great works, rock, rooms), on a grid of cells just large enough
-to hold them, with no plates. Nature keeps off the buildings' yards and each place's open ground, and grows each
+to hold them, with no plates. Nature keeps off the buildings' yards, each place's open ground and the paths, and grows each
 layout's plantings where they were planted, as its own kind (`plantedOf`).
 
 The paths and a block's streets are the terrain's own ground ([[Game]], "The ground's pictures"): painted within

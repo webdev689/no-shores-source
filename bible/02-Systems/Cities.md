@@ -219,8 +219,9 @@ sides, up to 56 % and 2.8 m underneath; a side set against the ground, a face or
 box turned and stood at the rock's place, holds every vertex drawn, and a body walks under a roof, through an arch or
 a tunnel mouth, and up an overhang's face only until its head meets the lip (`crates/city/tests/rock_walks.rs`). The
 browser makes the same vertices to the bit (`rules/rockMesh.ts` writes the exact noise again; both pin the same
-fingerprints). A city's boxes (`boxes_within`) take a rock's parts' boxes. No city or layout places rock yet, and a
-layout's own boxes (`crates/layout/src/collide.rs`) do not yet read them.
+fingerprints). A city's boxes (`boxes_within`) and a layout's (`crates/layout/src/collide.rs`) take a rock's parts'
+boxes, a part turned off the world's axes in strips that keep within 0.45 m of it
+([[What a Body Meets Keeps to What Is Drawn]]).
 
 ## How it is drawn
 

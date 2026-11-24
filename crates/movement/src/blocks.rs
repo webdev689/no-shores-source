@@ -133,24 +133,39 @@ fn probe(body: &Body, bearing: f64) -> (f64, f64) {
 pub(crate) fn wall_top<B: Near + ?Sized>(blocks: &B, body: &Body, bearing: f64, ahead: WallAhead) -> WallAhead {
     let (x, y) = probe(body, bearing);
     let (east, south) = (libm::sin(bearing), -libm::cos(bearing));
+    let across_x = east.abs() > south.abs();
+    // Where a block stacked on `under` must stand: on its face, along the wall where it holds the probe or the wall's
+    // end where the probe lies past it.
+    let held = |under: &Block| {
+        if across_x {
+            (if east > 0.0 { under.min_x } else { under.max_x }, y.clamp(under.min_y, under.max_y))
+        } else {
+            (x.clamp(under.min_x, under.max_x), if south > 0.0 { under.min_y } else { under.max_y })
+        }
+    };
     // Its underside within a hair of the top, whatever the sums' last bits; its face as near the body as the wall's
-    // below; and along the wall, it holds the probe, or the wall's end where the probe lies past it, so a block set
-    // back on the top or beside the hold is no part of it.
+    // below, reaching back over that face so it stands on it; and it holds that point along the wall, so a block set
+    // back on the top or beside the hold is no part of it. So it holds the point `held` gives, and the blocks near that
+    // point (all of them, or the grid's) hold every one.
     let stacked = |block: &Block, under: &Block| {
-        let flush = if east.abs() > south.abs() {
+        let (face_x, face_y) = held(under);
+        let on_face = if across_x {
             (if east > 0.0 { under.min_x - block.min_x } else { block.max_x - under.max_x }) >= -1e-6
-                && (block.min_y..=block.max_y).contains(&y.clamp(under.min_y, under.max_y))
+                && (block.min_x - 1e-6..=block.max_x + 1e-6).contains(&face_x)
+                && (block.min_y..=block.max_y).contains(&face_y)
         } else {
             (if south > 0.0 { under.min_y - block.min_y } else { block.max_y - under.max_y }) >= -1e-6
-                && (block.min_x..=block.max_x).contains(&x.clamp(under.min_x, under.max_x))
+                && (block.min_y - 1e-6..=block.max_y + 1e-6).contains(&face_y)
+                && (block.min_x..=block.max_x).contains(&face_x)
         };
-        flush && (block.bottom - under.top).abs() <= 1e-6 && block.top > under.top
+        on_face && (block.bottom - under.top).abs() <= 1e-6 && block.top > under.top
     };
     let mut top = ahead;
-    while let Some(above) = blocks.near(x, y).find(|block| stacked(block, &top.block)) {
+    loop {
+        let (face_x, face_y) = held(&top.block);
+        let Some(above) = blocks.near(face_x, face_y).find(|block| stacked(block, &top.block)) else { return top };
         top = WallAhead { block: *above, depth: depth_along(above, bearing) };
     }
-    top
 }
 
 /// Moves along the ground by (`move_x`, `move_y`), sliding along a block's side or terrain too steep to walk up, and

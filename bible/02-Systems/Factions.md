@@ -49,8 +49,12 @@ keeps a counter in Overlook's plaza ([[Cities]]), and a lore book its road gives
 - **Reputation.** Every deed's XP, as the room pays it after the seas' share (a kill, a clear, a chest, a sinking, a
   bounty, the day's and the week's clears and a road's task; [[Gear]], "XP"), goes as reputation to the faction
   pledged, but only while the player wears that faction's cape (`earn_reputation`), and a kill's a quarter more while
-  they hold the Abyss boon ([[Activities]]). A rank is every 100,000 reputation, without end, so a player nears rank 2
-  as they reach level 20 (190,000 XP), as Destiny 1's ranks fell
+  they hold the Abyss boon ([[Activities]]). A faction's own bounties, taken at the bounty board by those pledged to
+  it, pay its reputation besides: 2,500 at the first tier, 3,750 at the second and 5,000 at the third
+  (`bountyReputation`; [[Activities]], "Bounties";
+  [[Standard and Faction Bounties Each Wear One Design, on a Board After the Bounty Tracker]],
+  [[The Bounty Board as Claude Shapes It]]). A rank is every 100,000 reputation, without end, so a player nears
+  rank 2 as they reach level 20 (190,000 XP), as Destiny 1's ranks fell
   ([[The Balance and Economy Pass as Claude Shapes It]]).
 - **What a rank earns.** Rank 1 keeps the faction's emblem and rank 2 its dye, as a level keeps its emblem
   (`earn_due`). From rank 3, every rank leaves a package: collected at the counter, it gives a Vestige at the player's
@@ -103,7 +107,6 @@ keeps a counter in Overlook's plaza ([[Cities]]), and a lore book its road gives
 
 ## Limits
 
-- Reputation comes from kills and clears alone: no bounties or activities give it yet, as there are none.
 - A blade's trim shows its faction's colour only once the forge's marked strips are published (forge.yml): until
   then a faction's blade draws as any other of its metal. The first person's sword and dagger frames are drawn by
   `fplayers.py`, which no workflow runs. The Lamplighters sell no blade.

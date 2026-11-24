@@ -40,6 +40,8 @@ pub enum SiteKind {
     /// Where a wilds' fissure opens: clear ground beside its middle, off the obelisk and the ruins its battlefield
     /// stands there; the site names the wilds.
     Fissure,
+    /// A place a patrol's chest may stand, tucked against something tall, its front facing away from it (`chests`).
+    Chest,
 }
 
 /// A site: what it is for, where, how much ground it takes, and what it holds or leads to.
@@ -54,6 +56,9 @@ pub struct Site {
     /// is off the section's floor.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub node: Option<[f64; 2]>,
+    /// Which way a chest's place faces, radians clockwise from north.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub facing: Option<f64>,
 }
 
 /// How far apart resource nodes stand along the paths, metres.
@@ -128,8 +133,14 @@ pub fn mark(
     resource: Option<&str>,
 ) -> Vec<Site> {
     let mut sites = Vec::new();
-    let site =
-        |kind: SiteKind, at: [f64; 2], radius: f64, holds: Option<String>| Site { kind, at, radius, holds, node: None };
+    let site = |kind: SiteKind, at: [f64; 2], radius: f64, holds: Option<String>| Site {
+        kind,
+        at,
+        radius,
+        holds,
+        node: None,
+        facing: None,
+    };
     for (number, area) in areas.iter().enumerate() {
         match area.kind {
             AreaKind::Landing | AreaKind::Entrance => sites.push(site(SiteKind::Landing, area.at, area.radius, None)),

@@ -5,9 +5,9 @@
 //! head, and an arch is its jambs and its head, so a body walks through it.
 
 use crate::Layout;
-use crate::book::Book;
-use crate::seat::Seating;
-use city::solids::{Material, Shape, Solid};
+use crate::book::{Book, Measure};
+use crate::seat::{Seated, Seating};
+use city::solids::Material;
 
 /// A box a body runs into: west, north, east, south, top and bottom, metres, as the city's.
 pub use city::collision::Box2 as Box3;
@@ -17,8 +17,6 @@ const STEPPED_OVER_M: f64 = 0.45;
 /// How far a body's head stands over its feet, and how far from a box its middle keeps, metres.
 const HEAD_M: f64 = 1.8;
 const BODY_CLEAR_M: f64 = 0.5;
-/// An arch's opening is this share of its width, as the browser draws it (client/src/city/solidMesh.ts).
-const ARCH_OPENING_WIDTH: f64 = 0.8;
 
 /// The section as cells held or not, a cell next to a held one counted held, so a box at its very edge is kept.
 struct Section {
@@ -110,29 +108,6 @@ impl Section {
     }
 }
 
-/// An upright arch's boxes: its two jambs whole and its head over the crown of its opening, so a body passes under it.
-fn arch_boxes(solid: &Solid, opening: f64) -> [Box3; 3] {
-    let (sine, cosine) = land::exact::sin_cos(solid.turn);
-    let [width, depth, height] = solid.size;
-    let half = width / 2.0;
-    let piece = |from: f64, to: f64, bottom: f64, top: f64| -> Box3 {
-        let start = [f64::INFINITY, f64::INFINITY, f64::NEG_INFINITY, f64::NEG_INFINITY];
-        let [west, north, east, south] =
-            [[from, -depth / 2.0], [to, -depth / 2.0], [from, depth / 2.0], [to, depth / 2.0]].iter().fold(
-                start,
-                |[west, north, east, south], &[across, along]| {
-                    let x = solid.at[0] + across * cosine - along * sine;
-                    let y = solid.at[1] + across * sine + along * cosine;
-                    [west.min(x), north.min(y), east.max(x), south.max(y)]
-                },
-            );
-        [west, north, east, south, solid.at[2] + top, solid.at[2] + bottom]
-    };
-    let crown = opening.clamp(0.05, 0.95) * height;
-    let jamb = half * ARCH_OPENING_WIDTH;
-    [piece(-half, -jamb, 0.0, height), piece(jamb, half, 0.0, height), piece(-half, half, crown, height)]
-}
-
 /// The boxes reaching into a rect (west, north, east, south).
 pub fn within(boxes: &[Box3], bounds: [f64; 4]) -> impl Iterator<Item = Box3> + '_ {
     boxes.iter().copied().filter(move |found| {
@@ -171,8 +146,7 @@ pub fn seated_boxes(seating: &Seating, ring: &[[f64; 2]], book: &Book) -> Vec<Bo
         if measure.max[1] - measure.min[1] < STEPPED_OVER_M || !section.reaches(prop.footprint) {
             continue;
         }
-        let [west, north, east, south] = prop.footprint;
-        boxes.push([west, north, east, south, prop.at[2] + measure.max[1], prop.at[2] + measure.min[1]]);
+        boxes.extend(prop_boxes(prop, measure, book.parts.get(&prop.model)));
     }
     for solid in &seating.solids {
         if matches!(solid.material, Material::Paving | Material::Path | Material::Lawn | Material::Earth)
@@ -180,19 +154,79 @@ pub fn seated_boxes(seating: &Seating, ring: &[[f64; 2]], book: &Book) -> Vec<Bo
         {
             continue;
         }
-        let [west, north, east, south, bottom, top] = solid.bounds();
-        if !section.reaches([west, north, east, south]) {
-            continue;
-        }
-        match solid.shape {
-            shape if city::rock::is_rock(shape) => boxes.extend(city::rock::boxes(solid)),
-            Shape::Arch { opening } if solid.lean == 0.0 && solid.roll == 0.0 => {
-                boxes.extend(arch_boxes(solid, opening))
-            }
-            _ => boxes.push([west, north, east, south, top, bottom]),
+        // A solid boxed upright or as a circle reaches up to `KEEP_M` past its turned corners.
+        let [west, north, east, south, ..] = solid.bounds();
+        let keep = city::hug::KEEP_M;
+        if section.reaches([west - keep, north - keep, east + keep, south + keep]) {
+            boxes.extend(city::collision::boxes(solid));
         }
     }
     boxes
+}
+
+/// How far a prop's part stands past what is drawn at most: a column of `client/src/models/propParts.ts`.
+const PART_CELL_M: f64 = 0.25;
+/// How far a turned prop's strips stand off its parts: what `KEEP_M` leaves past a part's column, so a turned prop's
+/// edge stands no further past what is drawn than a solid's.
+pub const STRIPS_KEEP_M: f64 = city::hug::KEEP_M - PART_CELL_M;
+
+/// A prop's boxes: each part its drawn shape fills (its whole box where that keeps to it) where the prop stands, a
+/// part turned off the world's axes in strips (`prop_kept`). A gate's arch is shut: its parts reach down to its foot,
+/// so the opening its bar spans stays closed as its whole box kept it.
+#[must_use]
+pub fn prop_boxes(prop: &Seated, measure: &Measure, parts: Option<&Vec<[f64; 6]>>) -> Vec<Box3> {
+    prop_kept(prop, measure, parts).0
+}
+
+/// A prop's boxes and how many times `STRIPS_KEEP_M` its strips keep within: a turned prop too costly to strip so
+/// closely (`city::collision::affordable`) is stripped a quarter looser at a time, as a solid is.
+#[must_use]
+pub fn prop_kept(prop: &Seated, measure: &Measure, parts: Option<&Vec<[f64; 6]>>) -> (Vec<Box3>, f64) {
+    let [min_x, min_y, min_z] = measure.min;
+    let [max_x, max_y, max_z] = measure.max;
+    let whole = [[min_x, min_y, min_z, max_x, max_y, max_z]];
+    let parts: &[[f64; 6]] = parts.map_or(&whole, Vec::as_slice);
+    let shut = crate::pieces::model::GATE_ARCHES.contains(&prop.model);
+    let (sine, cosine) = land::exact::sin_cos(prop.yaw.to_radians());
+    let square = (prop.yaw / 90.0 - (prop.yaw / 90.0).round()).abs() < 1e-9;
+    let world = |x: f64, z: f64| [prop.at[0] + x * cosine + z * sine, prop.at[1] + x * sine - z * cosine];
+    let boxed = |loosened: f64| -> Vec<Box3> {
+        parts
+            .iter()
+            .flat_map(|&[x0, y0, z0, x1, y1, z1]| {
+                let bottom = prop.at[2] + if shut { min_y } else { y0 };
+                let corners = [world(x0, z0), world(x1, z0), world(x1, z1), world(x0, z1)];
+                if square {
+                    let start = [f64::INFINITY, f64::INFINITY, f64::NEG_INFINITY, f64::NEG_INFINITY];
+                    let [west, north, east, south] =
+                        corners.iter().fold(start, |[west, north, east, south], &[x, y]| {
+                            [west.min(x), north.min(y), east.max(x), south.max(y)]
+                        });
+                    vec![[west, north, east, south, prop.at[2] + y1, bottom]]
+                } else {
+                    city::hug::strips(corners, bottom, prop.at[2] + y1, STRIPS_KEEP_M * loosened)
+                }
+            })
+            .collect()
+    };
+    if square {
+        return (boxed(1.0), 1.0);
+    }
+    // Loosening thins only the strips: a prop of many parts may spend twice what its loosest strips cost, so its
+    // strips stay as close as that allows rather than falling to the loosest.
+    let footprint = (max_x - min_x) * (max_z - min_z);
+    let loosest_at = (0..city::collision::MOST_LOOSENINGS).fold(1.0, |at, _| at * city::collision::LOOSER);
+    let loosest = boxed(loosest_at);
+    let (least, least_crowding) = (2 * loosest.len(), 2 * city::collision::crowding(&loosest));
+    let mut loosened = 1.0;
+    for _ in 0..city::collision::MOST_LOOSENINGS {
+        let found = boxed(loosened);
+        if city::collision::affordable(&found, footprint, least, least_crowding) {
+            return (found, loosened);
+        }
+        loosened *= city::collision::LOOSER;
+    }
+    (loosest, loosest_at)
 }
 
 /// Whether a body standing at `at` on a floor `floor` metres high stands clear of every box: none taller than a
@@ -214,6 +248,87 @@ pub fn stands_clear(boxes: &[Box3], at: [f64; 2], floor: f64) -> bool {
 mod tests {
     use super::*;
 
+    const RING: [[f64; 2]; 4] = [[-50.0, -50.0], [50.0, -50.0], [50.0, 50.0], [-50.0, 50.0]];
+
+    /// A book of one prop, a long one 6 m by 1 m and 3 m tall, and the parts its drawn shape fills: a post at one end
+    /// and a bar over a body's head along it, as a signpost's.
+    fn book(model: u32, parts: Option<Vec<[f64; 6]>>) -> Book {
+        let mut book = Book::default();
+        let measure =
+            Measure { min: [-3.0, 0.0, -0.5], max: [3.0, 3.0, 0.5], grid: None, plan: Vec::new(), doors: Vec::new() };
+        book.props.insert(model, measure);
+        if let Some(parts) = parts {
+            book.parts.insert(model, parts);
+        }
+        book
+    }
+
+    fn seated(model: u32, yaw: f64) -> Seating {
+        let footprint = [-3.0, -3.0, 3.0, 3.0];
+        let (building, purpose, open, grounded) = (false, 0, false, true);
+        let prop = Seated { model, at: [0.0, 0.0, 10.0], yaw, building, footprint, purpose, open, grounded };
+        Seating { props: vec![prop], ..Seating::default() }
+    }
+
+    /// How far a world point lies from the nearest part, in the prop's own frame, as the page stands it (yaw degrees).
+    fn off_parts(parts: &[[f64; 6]], yaw: f64, [east, south, up]: [f64; 3]) -> f64 {
+        let (sine, cosine) = land::exact::sin_cos(yaw.to_radians());
+        let (x, z, y) = (east * cosine + south * sine, east * sine - south * cosine, up - 10.0);
+        let gap = |value: f64, low: f64, high: f64| (low - value).max(value - high).max(0.0);
+        parts
+            .iter()
+            .map(|&[x0, y0, z0, x1, y1, z1]| {
+                let (across, rise, along) = (gap(x, x0, x1), gap(y, y0, y1), gap(z, z0, z1));
+                (across * across + rise * rise + along * along).sqrt()
+            })
+            .fold(f64::INFINITY, f64::min)
+    }
+
+    #[test]
+    fn a_turned_prop_is_its_drawn_parts_in_strips_that_keep_to_them_not_a_box_round_its_turned_corners() {
+        let parts = vec![[-3.0, 0.0, -0.5, -2.6, 3.0, 0.5], [-3.0, 2.2, -0.2, 3.0, 3.0, 0.2]];
+        for yaw in [0.0, 90.0, 30.0, 137.0] {
+            let boxes = seated_boxes(&seated(7, yaw), &RING, &book(7, Some(parts.clone())));
+            for [west, north, east, south, top, bottom] in &boxes {
+                for corner in 0..8 {
+                    let point = [
+                        if corner & 1 == 0 { *west } else { *east },
+                        if corner & 2 == 0 { *north } else { *south },
+                        if corner & 4 == 0 { *bottom } else { *top },
+                    ];
+                    let off = off_parts(&parts, yaw, point);
+                    assert!(off <= city::hug::KEEP_M + 1e-9, "at {yaw}: a corner {off:.2} m off the prop");
+                }
+            }
+            // Under the bar, beside the post, a body stands: nothing reaches down there.
+            let under = |along: f64| {
+                let (sine, cosine) = land::exact::sin_cos(yaw.to_radians());
+                [along * cosine, along * sine]
+            };
+            assert!(stands_clear(&boxes, under(1.5), 10.0), "at {yaw}: under the bar");
+            assert!(!stands_clear(&boxes, under(-2.8), 10.0), "at {yaw}: the post");
+        }
+        let square = seated_boxes(&seated(7, 90.0), &RING, &book(7, Some(parts)));
+        assert_eq!(square.len(), 2, "a quarter turn keeps each part one box");
+    }
+
+    #[test]
+    fn a_prop_with_no_parts_of_its_own_is_its_box_and_one_with_none_is_stepped_over() {
+        assert_eq!(seated_boxes(&seated(7, 0.0), &RING, &book(7, None)), vec![[-3.0, -0.5, 3.0, 0.5, 13.0, 10.0]]);
+        assert!(seated_boxes(&seated(7, 0.0), &RING, &book(7, Some(Vec::new()))).is_empty());
+    }
+
+    #[test]
+    fn a_gates_arch_is_its_piers_and_bar_with_the_opening_under_the_bar_shut() {
+        let gate = crate::pieces::model::GATE_ARCHES[0];
+        let parts =
+            vec![[-3.0, 0.0, -0.5, -2.0, 3.0, 0.5], [-2.0, 2.0, -0.5, 2.0, 2.6, 0.5], [2.0, 0.0, -0.5, 3.0, 3.0, 0.5]];
+        let boxes = seated_boxes(&seated(gate, 0.0), &RING, &book(gate, Some(parts)));
+        assert_eq!(boxes.len(), 3);
+        assert!(boxes.iter().all(|&[.., bottom]| bottom == 10.0), "every part down to its foot");
+        assert_eq!(boxes[1][4], 12.6, "the bar's top, under the piers'");
+    }
+
     #[test]
     fn the_section_holds_its_ring_and_a_cell_round_it_and_nothing_further() {
         let ring = [[0.0, 0.0], [40.0, 0.0], [40.0, 20.0], [0.0, 20.0]];
@@ -222,19 +337,5 @@ mod tests {
         assert!(!section.holds(46.0, 10.0) && !section.holds(20.0, -5.0));
         assert!(section.reaches([30.0, -30.0, 60.0, 5.0]), "a wide piece with a corner in");
         assert!(!section.reaches([44.0, 5.0, 47.0, 8.0]), "a stone past the edge");
-    }
-
-    #[test]
-    fn a_body_passes_under_an_arch_but_not_through_its_jambs() {
-        let arch = Solid::upright(Shape::Arch { opening: 0.7 }, [0.0, 0.0, 10.0], [40.0, 8.0, 30.0], Material::Rubble);
-        let boxes = arch_boxes(&arch, 0.7);
-        let holds = |x: f64, y: f64, z: f64| {
-            boxes.iter().any(|&[west, north, east, south, top, bottom]| {
-                (west..=east).contains(&x) && (north..=south).contains(&y) && (bottom..=top).contains(&z)
-            })
-        };
-        assert!(!holds(0.0, 0.0, 11.0) && !holds(12.0, 3.0, 20.0), "the opening is free");
-        assert!(holds(19.0, 0.0, 12.0) && holds(-19.0, 0.0, 12.0), "the jambs stand either side");
-        assert!(holds(0.0, 0.0, 10.0 + 21.5), "the head is over the crown");
     }
 }

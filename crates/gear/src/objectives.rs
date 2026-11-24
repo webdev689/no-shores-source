@@ -1,7 +1,7 @@
 //! What the bounties count: an objective is a count of something a room sees happen, and each feat a room sees counts
 //! toward the bounties a character holds today.
 
-use crate::bounties::board;
+use crate::bounties::{board, faction_at, faction_board, faction_places};
 use crate::character::Character;
 use crate::world::Difficulty;
 
@@ -63,15 +63,27 @@ impl Objective {
 
 impl Character {
     /// Counts a feat toward each bounty held today, up to its target: whether a count moved. A room whose day is not
-    /// the record's counts no bounty: before it the board was another, after it they ended.
+    /// the record's counts no bounty: before it the board was another, after it they ended. A faction's counts only
+    /// while the player serves it (`serves`): pledged to it, its cape worn.
     pub fn saw(&mut self, feat: &Feat<'_>, day: u64) -> bool {
         if day != self.activity.today.day {
             return false;
         }
-        let on = board(day);
+        let town = board(day);
+        let pledge = self.allegiance.pledge;
+        let served = if self.serves(pledge) { faction_board(day, pledge) } else { None };
+        let first = faction_places(pledge).start;
         let mut moved = false;
-        for (place, count) in &mut self.activity.today.bounties {
-            let Some(bounty) = on.get(usize::from(*place)) else { continue };
+        let today = &mut self.activity.today;
+        for (place, count) in today.bounties.iter_mut().chain(today.faction_bounties.iter_mut()) {
+            let bounty = match faction_at(*place) {
+                Some(0) => town.get(usize::from(*place)),
+                Some(faction) if faction == pledge => {
+                    served.as_ref().and_then(|own| own.get(usize::from(*place - first)))
+                }
+                _ => None,
+            };
+            let Some(bounty) = bounty else { continue };
             if *count < bounty.target && bounty.objective.counts(feat) {
                 *count += 1;
                 moved = true;
