@@ -20,11 +20,15 @@ DOOR_HALF = 3.0
 DOOR_HIGH = 8.0
 DOOR_DEEP = 6.0
 LEDGE_TOP = 3.0
+# How far the cliff's mass and the ledges' are drawn back behind the rock laid over their faces.
+SET_BACK = 2.4
+LEDGE_BACK = 0.8
 LEDGE_X = (22.0, 28.0)
 LEDGE_Y = (-12.0, 18.0)
 # The Spire's shaft, as wide as its part; the mooring stones, which the rock and the fieldstones keep clear of.
 SPIRE_M = 1.5
-MOORINGS = (('mooring-west', (-20.0, 2.0)), ('mooring-east', (20.0, 2.0)), ('mooring-south', (0.0, -19.0)))
+# The east stone stands plainly nearest the cliff, where *Soundings* finds the words scratched on one.
+MOORINGS = (('mooring-west', (-20.0, 2.0)), ('mooring-east', (19.5, 8.0)), ('mooring-south', (0.0, -19.0)))
 FIELD_WALLS = (((-12.0, -12.0), 6.0, True), ((12.0, -12.0), 6.0, True), ((-13.0, 13.0), 5.0, True),
                ((13.0, 13.0), 5.0, True), ((-17.0, -1.0), 4.0, False), ((17.0, -1.0), 4.0, False))
 
@@ -33,10 +37,16 @@ def ground(module):
     """What a body stands on and runs into: the cliff and its doorway, the dais, the ledges and their flights, the
     field walls and the mill's foundation; the land held level under it all."""
     module.pad((-32.0, -34.0), (32.0, CLIFF_SOUTH), 0.0)
-    # The cliff either side of the doorway, over it, and the doorway's sealed back.
-    for west, east in ((-CLIFF_HALF, -DOOR_HALF - 0.6), (DOOR_HALF + 0.6, CLIFF_HALF)):
-        bk.wall(module, west, CLIFF_SOUTH, east, CLIFF_NORTH, bottom=-2.0, high=CLIFF_TOP, courses=False,
-                material='rubble')
+    # The cliff either side of the doorway, over it, and the doorway's sealed back. Past the doorway's surround the
+    # cliff's mass is drawn set back behind the rock dressing lays over its face, so the split stone is the face.
+    for sign in (-1, 1):
+        west, east = sorted((sign * CLIFF_HALF, sign * (DOOR_HALF + 0.6)))
+        bk.solid(module, west, CLIFF_SOUTH, east, CLIFF_NORTH, -2.0, CLIFF_TOP)
+        for near, far, south in ((DOOR_HALF + 0.6, DOOR_HALF + 3.4, CLIFF_SOUTH),
+                                 (DOOR_HALF + 3.4, CLIFF_HALF, CLIFF_SOUTH + SET_BACK)):
+            at = (sign * (near + far) / 2, (south + CLIFF_NORTH) / 2, -2.0)
+            kit.block(module, at, (far - near, CLIFF_NORTH - south, CLIFF_TOP + 2.0), 'rubble', bevel=0.0, wear=0.0,
+                      part=False)
     bk.wall(module, -DOOR_HALF - 0.6, CLIFF_SOUTH + DOOR_DEEP, DOOR_HALF + 0.6, CLIFF_NORTH, bottom=-2.0,
             high=CLIFF_TOP, courses=False, material='rubble')
     kit.block(module, (0.0, CLIFF_SOUTH + DOOR_DEEP / 2, DOOR_HIGH), (DOOR_HALF * 2 + 1.2, DOOR_DEEP, CLIFF_TOP - DOOR_HIGH),
@@ -49,8 +59,11 @@ def ground(module):
     for sign in (-1, 1):
         west, east = sorted((sign * LEDGE_X[0], sign * LEDGE_X[1]))
         middle = (west + east) / 2
-        kit.block(module, (middle, (LEDGE_Y[0] + LEDGE_Y[1]) / 2, 0.0), (east - west, LEDGE_Y[1] - LEDGE_Y[0], LEDGE_TOP),
-                  'rubble', bevel=0.06, wear=0.05)
+        bk.solid(module, west, LEDGE_Y[0], east, LEDGE_Y[1], 0.0, LEDGE_TOP)
+        # Its mass drawn back from the face the rock dresses, its top level where a body stands.
+        inner, outer = (west + LEDGE_BACK, east) if sign > 0 else (west, east - LEDGE_BACK)
+        kit.block(module, ((inner + outer) / 2, (LEDGE_Y[0] + LEDGE_Y[1]) / 2, 0.0),
+                  (outer - inner, LEDGE_Y[1] - LEDGE_Y[0], LEDGE_TOP), 'rubble', bevel=0.06, wear=0.05, part=False)
         run = round(LEDGE_TOP / bk.RISE_M) * bk.RUN_M
         bk.stair(module, (middle, LEDGE_Y[0] - run), (0, 1), 3.6, 0.0, LEDGE_TOP)
     # The old field walls, low enough to vault, laid dry of fieldstones; and the mill's foundation round the dais,

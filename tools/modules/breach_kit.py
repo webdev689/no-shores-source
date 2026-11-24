@@ -68,6 +68,11 @@ def wall(module, west, south, east, north, bottom=-1.2, high=WALL_M, material='s
     return item
 
 
+def solid(module, west, south, east, north, bottom, top):
+    """A part with nothing drawn: the box a body meets where the rock drawn over it is its face."""
+    module.part([west, south, bottom], [east, north, top])
+
+
 def flight_run(rise):
     """How far a flight runs to climb `rise` metres."""
     return max(1, round(rise / RISE_M)) * RUN_M
@@ -350,11 +355,12 @@ def shaft(module, at, radius, height, lesser=5):
     return item
 
 
-def arch(module, at, radius, deep, thick, stones=11, material='trim', turn=0.0, pointed=False, broken=0):
+def arch(module, at, radius, deep, thick, stones=11, material='trim', turn=0.0, pointed=False, broken=0, whole=False):
     """An arch of wedged stones, its springing line's middle at `at`, `radius` to its stones' inner edge (half its
     span), `deep` through and `thick` from inner edge to outer, facing south (Blender's -y) turned `turn` about z; round,
-    or `pointed` as two arcs struck from a third of the span in from each side meeting at its crown. The keystone is a
-    little proud; `broken` stones fallen from its crown leave its springers standing. Drawn only."""
+    or `pointed` as two arcs struck from a third of the span in from each side meeting at its crown, or `whole`, a ring
+    of stones all round `at`. The keystone is a little proud; `broken` stones fallen from its crown leave its springers
+    standing. Drawn only."""
     if pointed:
         centre, reach = radius * 0.5, radius * 1.5
         crown = math.acos(-centre / reach)
@@ -365,7 +371,8 @@ def arch(module, at, radius, deep, thick, stones=11, material='trim', turn=0.0, 
                   / half) for k in range(half)]
     else:
         reach = radius
-        arcs = [(0.0, math.pi * k / stones, math.pi * (k + 1) / stones) for k in range(stones)]
+        sweep = math.tau if whole else math.pi
+        arcs = [(0.0, sweep * k / stones, sweep * (k + 1) / stones) for k in range(stones)]
     cosine, sine = math.cos(turn), math.sin(turn)
     fallen = set()
     if broken:
@@ -374,7 +381,7 @@ def arch(module, at, radius, deep, thick, stones=11, material='trim', turn=0.0, 
     for number, (middle, start, end) in enumerate(arcs):
         if number in fallen:
             continue
-        key = number == stones // 2 if not pointed else number in (len(arcs) // 2 - 1, len(arcs) // 2)
+        key = not whole and (number == stones // 2 if not pointed else number in (len(arcs) // 2 - 1, len(arcs) // 2))
         made = kit.bmesh.new()
         corners = []
         for angle in (start + 0.006, end - 0.006):

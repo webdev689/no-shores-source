@@ -16,9 +16,12 @@ def descent(module):
     """Down the mill race: a cut way, a drop of 3 m, the fallen wheel across a gap with a ledge off it (the line's
     chest), a flight down, a gap a running jump crosses, and a last flight down to the green's door."""
     def sides(south, north, floor_top):
+        # Each side's mass drawn only as a backing behind the split rock breach_dress lays over its face.
         for west, east in ((-6.0, -4.0), (4.0, 6.0)):
-            bk.wall(module, west, south, east, north, bottom=floor_top - 1.2, high=floor_top + 6.0, material='rubble',
-                    courses=False)
+            bk.solid(module, west, south, east, north, floor_top - 1.2, floor_top + 6.0)
+            back = west if west < 0 else east - 0.5
+            kit.block(module, (back + 0.25, (south + north) / 2, floor_top - 1.2), (0.5, north - south, 7.2), 'rubble',
+                      bevel=0.0, wear=0.0, part=False)
 
     bk.floor(module, -4.0, -34.0, 4.0, -18.0, top=0.0)
     sides(-36.0, -18.0, 0.0)

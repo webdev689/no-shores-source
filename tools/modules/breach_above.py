@@ -187,9 +187,8 @@ def shore(was):
         module.socket('keeper', (0.0, 5.0, 0.0), (0.0, -1.0))
         for number, at in enumerate(((-11.0, 12.0), (11.0, 12.0)), start=1):
             module.socket(f'mouth-{number}', (*at, 0.0), (0.0, 1.0))
+        breach_dress.hearth(module, (0.0, 14.0, 0.0), (0.0, -1.0), was, 10.0)
         if was:
-            kit.block(module, (0.0, 13.0, 0.0), (4.0, 1.6, 2.4), 'stone', bevel=0.05, wear=0.02, part=False)
-            kit.block(module, (0.0, 12.6, 0.3), (2.2, 0.6, 1.2), 'glow', bevel=0.0, wear=0.0, part=False)
             for side in (-1, 1):
                 kit.block(module, (side * 13.6, 0.0, 3.0), (0.1, 2.4, 4.0), 'crimson', bevel=0.0, wear=0.0, part=False)
         else:

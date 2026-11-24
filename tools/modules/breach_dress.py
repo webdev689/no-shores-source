@@ -89,6 +89,35 @@ def hanging(module, west, south, east, north, top, deep):
         scale *= module.draw(0.58, 0.72)
 
 
+def hearth(module, at, facing, lit, top):
+    """A hearth against a wall: a firebox between two cheeks under a mantel, its chimney breast up to the wall's `top`,
+    a hearthstone before it and logs on the fire, alight or cold. `at` is the middle of its foot at the wall's face,
+    `facing` out of the wall along x or y."""
+    across = (abs(facing[1]), abs(facing[0]))
+
+    def spot(along, out, z):
+        return (at[0] + across[0] * along + facing[0] * out, at[1] + across[1] * along + facing[1] * out, z)
+
+    def size(long, deep, tall):
+        return (across[0] * long + abs(facing[0]) * deep, across[1] * long + abs(facing[1]) * deep, tall)
+
+    for side in (-1, 1):
+        kit.block(module, spot(side * 1.2, 0.5, 0.0), size(0.6, 1.0, 1.5), 'stone', bevel=0.03, wear=0.03, part=False)
+    kit.block(module, spot(0.0, 0.15, 0.0), size(1.8, 0.3, 1.5), 'black', bevel=0.0, wear=0.0, part=False)
+    kit.block(module, spot(0.0, 0.6, 1.5), size(3.4, 1.2, 0.3), 'trim', bevel=0.03, wear=0.02, part=False)
+    kit.block(module, spot(0.0, 0.45, 1.8), size(2.8, 0.9, 1.6), 'stone', bevel=0.03, wear=0.03, part=False)
+    kit.block(module, spot(0.0, 0.35, 3.4), size(2.0, 0.7, top - 3.4), 'stone', bevel=0.03, wear=0.03, part=False)
+    kit.block(module, spot(0.0, 1.4, 0.0), size(3.4, 0.8, 0.05), 'trim', bevel=0.01, wear=0.0, part=False)
+    for log, (out, z) in enumerate(((0.45, 0.06), (0.7, 0.06), (0.57, 0.22))):
+        kit.block(module, spot(0.1 * (log - 1), out, z), size(1.4, 0.18, 0.16), 'timber' if lit else 'black',
+                  bevel=0.0, wear=0.0, part=False)
+    if lit:
+        kit.block(module, spot(0.0, 0.55, 0.0), size(1.6, 0.7, 0.08), 'glow', bevel=0.0, wear=0.0, part=False)
+        for flame, (along, tall) in enumerate(((-0.45, 0.6), (0.05, 0.95), (0.5, 0.7))):
+            kit.column(module, spot(along, 0.5 + 0.08 * flame, 0.1), 0.2, tall, 'glow', sides=5, top=0.0,
+                       part=False)
+
+
 def rubble(module, centre, reach, count, top=0.0):
     """Fallen work round `centre`: cut blocks, a pillar's drums, and split stone."""
     for _ in range(count):
@@ -115,10 +144,11 @@ def descent(module):
             bk.rock_face(module, west, south, east, north, floor_top - 0.3, floor_top + 6.6, face=(toward, 0.0))
         for west, east in ((-4.0, -3.2), (3.2, 4.0)):
             bk.drowned_floor(module, west, south + 0.5, east, north - 0.5, top=floor_top)
+    # Each sluice's beam crosses over a body's head and its jump, at 2.6 m over the drop's lip.
     for y, top in ((-18.0, 0.0), (12.6, -3.0), (30.0, -6.4)):
         for x in (-4.0, 4.0):
-            kit.block(module, (x, y, top - 3.6), (0.4, 0.4, 5.4), 'timber', bevel=0.02, wear=0.0, part=False)
-        kit.block(module, (0.0, y, top + 1.6), (8.4, 0.4, 0.4), 'timber', bevel=0.02, wear=0.0, part=False)
+            kit.block(module, (x, y, top - 3.6), (0.4, 0.4, 6.6), 'timber', bevel=0.02, wear=0.0, part=False)
+        kit.block(module, (0.0, y, top + 2.6), (8.4, 0.4, 0.4), 'timber', bevel=0.02, wear=0.0, part=False)
     wheel_z, tilt = bk.WHEEL_Z, bk.WHEEL_TILT
     for half in (0, 1):
         ring = bk.bpy_ring(module, (0.0, 0.0, wheel_z), 2.8 - half * 0.25, 0.14, material='timber')
@@ -199,8 +229,9 @@ def choir(module):
     """The chapel: its walls faced with pilasters and blind lancets, its pillars based and capitalled, pointed arcades
     from pillar to pillar down the nave and ribs across it, a rose in the head wall over the altar, the altar itself
     with its candles, the pews' backs, and the roof's fallen timbers."""
+    # The head wall's middle is left to the rose.
     for west, south, east, north, toward in ((-20.0, -32.0, -16.0, 36.0, (1.0, 0.0)), (16.0, -20.0, 20.0, 36.0, (-1.0, 0.0)),
-                                             (-16.0, 36.0, 16.0, 38.0, (0.0, -1.0))):
+                                             (-16.0, 36.0, -3.4, 38.0, (0.0, -1.0)), (3.4, 36.0, 16.0, 38.0, (0.0, -1.0))):
         face(module, west, south, east, north, 0.0, 12.0, toward)
     columns = (-24.0, -12.0, 0.0, 12.0, 22.0)
     for x in (-10.0, 10.0):
@@ -211,13 +242,25 @@ def choir(module):
                     turn=math.pi / 2, pointed=True)
     for y in columns[1:-1]:
         bk.arch(module, (0.0, y, 11.0), 9.2, 0.8, 0.7, stones=12, pointed=True, broken=6)
-    rose = (0.0, 35.7, 7.2)
-    bk.arch(module, (rose[0], rose[1], rose[2] - 2.0), 2.2, 0.4, 0.35, stones=10)
+    # The rose: a wheel of stone tracery over lit glass in a whole ring of wedged stones, set in a square frame high
+    # over the altar and bell 7's frame.
+    rose = (0.0, 35.7, 8.0)
+    bk.arch(module, rose, 2.2, 0.4, 0.35, stones=20, whole=True)
+    glass = kit.column(module, (rose[0], 35.98, rose[2]), 2.25, 0.12, 'glow', sides=20, wear=0.0, part=False)
+    glass.rotation_euler = (math.pi / 2, 0.0, 0.0)
     for spoke in range(8):
-        angle = spoke * math.pi / 8
-        bar = kit.block(module, (rose[0], rose[1], rose[2] - 2.0), (4.4, 0.12, 0.12), 'glow', bevel=0.0, wear=0.0,
+        bar = kit.block(module, (rose[0], rose[1], rose[2] - 0.06), (4.4, 0.14, 0.12), 'trim', bevel=0.0, wear=0.0,
                         part=False)
-        bar.rotation_euler = (0.0, angle, 0.0)
+        bar.rotation_euler = (0.0, spoke * math.pi / 8, 0.0)
+    bk.bpy_ring(module, (rose[0], rose[1], rose[2]), 1.2, 0.07, material='trim')
+    kit.column(module, (rose[0], 35.85, rose[2]), 0.4, 0.3, 'trim', sides=12, part=False).rotation_euler = (
+        math.pi / 2, 0.0, 0.0)
+    for side in (-1, 1):
+        kit.block(module, (side * 2.95, 35.75, 5.1), (0.5, 0.5, 5.8), 'trim', bevel=0.03, wear=0.02, part=False)
+    for z in (4.7, 10.9):
+        kit.block(module, (0.0, 35.75, z), (6.4, 0.5, 0.5), 'trim', bevel=0.03, wear=0.02, part=False)
+    kit.block(module, (0.0, 35.85, 0.0), (6.8, 0.3, 0.8), 'trim', bevel=0.03, wear=0.03, part=False)
+    kit.block(module, (0.0, 35.78, 11.5), (6.8, 0.45, 0.5), 'trim', bevel=0.03, wear=0.05, part=False)
     kit.block(module, (0.0, bk.ALTAR_Y, 1.2), (4.0, 1.6, 1.1), 'trim', bevel=0.04, wear=0.02, part=False)
     kit.block(module, (0.0, bk.ALTAR_Y, 2.3), (4.4, 1.9, 0.12), 'linen', bevel=0.0, wear=0.0, part=False)
     for candle in range(7):
