@@ -1,5 +1,5 @@
 ---
-id: 162
+id: 175
 title: "A scratch worktree that shared the repo's target/ (symlinked, to avoid a wasm-copy mismatch) left builds with its own CARGO_MANIFEST_DIR baked in; later checks in the real tree failed one crate at a time with NotFound on content files"
 status: open
 type: open-source
