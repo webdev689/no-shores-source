@@ -320,6 +320,10 @@ pub fn builders(root: &Path) -> Result<Builders, String> {
             *table = layout::book::Book::measures(&read_text(&path)?)?;
         }
     }
+    let parts = forged.join("parts.json");
+    if parts.is_file() {
+        builders.book.parts = layout::book::Book::parts(&read_text(&parts)?)?;
+    }
     let briefs = root.join("content/world/briefs.json");
     if briefs.is_file() {
         builders.briefs = layout::brief::Briefs::parse(&read_text(&briefs)?)?;

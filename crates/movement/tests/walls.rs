@@ -169,3 +169,19 @@ fn a_face_stacked_flush_is_climbed_past_the_seam_by_its_very_end_too() {
     let climbing = clear_for(standing(5.2, 0.0), Controls { forward: 1.0, ..Controls::default() }, &blocks, 0.5);
     assert_eq!((climbing.mode, climbing.lip), (Mode::Climb, 8.0), "at x {}", climbing.x);
 }
+
+#[test]
+fn a_wall_with_blocks_stacked_out_over_its_face_is_held_alike_through_the_grid() {
+    // An eave on the wall's top reaching out toward the body, and a coping on the eave reaching out further still,
+    // in the grid's next row of cells from the point the body's hold is looked for at.
+    let wall = block(-5.0, -4.0, 5.0, -1.0, 0.0, 2.3);
+    let eave = block(-5.0, -1.5, 5.0, 0.2, 2.3, 2.6);
+    let coping = block(-5.0, 0.1, 5.0, 0.6, 2.6, 3.0);
+    let list = vec![wall, eave, coping];
+    let grid = movement::Blocks::new(list.clone());
+    let hang = Body { mode: Mode::Hang, z: 1.0, lip: 2.3, facing: 0.0, ..standing(0.0, -0.65) };
+    let plain = step_body(&hang, &Controls::default(), list.as_slice(), &Flat, TICK_SECONDS);
+    let gridded = step_body(&hang, &Controls::default(), &grid, &Flat, TICK_SECONDS);
+    assert_eq!(plain.to_floats(), gridded.to_floats());
+    assert_eq!(plain.lip, 3.0, "the coping tops the stacked wall");
+}

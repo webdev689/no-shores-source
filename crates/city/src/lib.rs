@@ -11,6 +11,7 @@ pub mod districts;
 pub mod footprint;
 pub mod grid;
 pub mod hub;
+pub mod hug;
 pub mod landmarks;
 pub mod landmarks_inland;
 pub mod life;

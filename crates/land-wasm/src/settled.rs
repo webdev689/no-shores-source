@@ -35,7 +35,8 @@ pub fn blocks_from(request: &Value) -> Result<Blocks, String> {
 }
 
 /// What a request gives the layouts to build with: `rmbBlocks`, the RMB table's block files' lists; `forged`, the
-/// forged tables (`buildings` and `props`); `briefs`, every node's brief. Each missing part is empty.
+/// forged tables (`buildings`, `props` and the props' `parts`); `briefs`, every node's brief. Each missing part is
+/// empty.
 pub fn book_from(request: &Value) -> Result<(Book, Briefs), String> {
     let mut book = Book::default();
     if let Some(files) = request["rmbBlocks"].as_array() {
@@ -57,6 +58,9 @@ pub fn book_from(request: &Value) -> Result<(Book, Briefs), String> {
     };
     book.buildings = measures(&request["forged"]["buildings"])?;
     book.props = measures(&request["forged"]["props"])?;
+    if !request["forged"]["parts"].is_null() {
+        book.parts = Book::parts(&request["forged"]["parts"].to_string())?;
+    }
     let briefs = if request["briefs"].is_null() {
         Briefs::default()
     } else {
