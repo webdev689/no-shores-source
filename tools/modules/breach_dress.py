@@ -119,13 +119,15 @@ def descent(module):
         for x in (-4.0, 4.0):
             kit.block(module, (x, y, top - 3.6), (0.4, 0.4, 5.4), 'timber', bevel=0.02, wear=0.0, part=False)
         kit.block(module, (0.0, y, top + 1.6), (8.4, 0.4, 0.4), 'timber', bevel=0.02, wear=0.0, part=False)
+    wheel_z, tilt = bk.WHEEL_Z, bk.WHEEL_TILT
     for half in (0, 1):
-        ring = bk.bpy_ring(module, (0.0, 0.0, -3.0), 2.8 - half * 0.25, 0.14, material='timber')
-        ring.rotation_euler = (0.0, 0.0, 0.0)
+        ring = bk.bpy_ring(module, (0.0, 0.0, wheel_z), 2.8 - half * 0.25, 0.14, material='timber')
+        ring.rotation_euler = (tilt, 0.0, 0.0)
     for paddle in range(12):
         angle = paddle * math.tau / 12
-        kit.block(module, (math.cos(angle) * 3.0, math.sin(angle) * 3.0, -3.25), (0.7, 0.12, 0.5), 'timber',
-                  turn=angle, bevel=0.0, wear=0.0, part=False)
+        at = (math.cos(angle) * 3.0, math.sin(angle) * 3.0, wheel_z - 0.25 + math.sin(tilt) * math.sin(angle) * 3.0)
+        kit.block(module, at, (0.7, 0.12, 0.5), 'timber', turn=angle, bevel=0.0, wear=0.0,
+                  part=False).rotation_euler = (tilt, 0.0, angle)
     for centre in ((0.0, -24.0, 0.0), (0.0, 9.0, -3.0), (0.0, 20.0, -6.0), (0.0, 34.0, -10.0)):
         rubble(module, centre[:2], 3.0, 5, top=centre[2])
 
@@ -138,8 +140,9 @@ def mending(module):
                                              (-30.0, 30.0, -3.0, 34.0, (0.0, -1.0)), (3.0, 30.0, 30.0, 34.0, (0.0, -1.0))):
         timbered(module, west, south, east, north, toward)
     # The well: a stone ring with a roof on two posts and its windlass.
+    # Its posts stand beside the ring, from the ground.
     for side in (-1, 1):
-        kit.block(module, (side * 1.2, -8.0, 0.9), (0.2, 0.2, 2.4), 'timber', bevel=0.02, wear=0.0, part=False)
+        kit.block(module, (side * 1.2, -8.0, 0.0), (0.2, 0.2, 3.3), 'timber', bevel=0.02, wear=0.0, part=False)
     roof = kit.block(module, (0.0, -8.0, 3.3), (2.8, 1.2, 0.12), 'roof', bevel=0.0, wear=0.0, part=False)
     roof.rotation_euler = (0.5, 0.0, 0.0)
     roof = kit.block(module, (0.0, -8.0, 3.3), (2.8, 1.2, 0.12), 'roof', bevel=0.0, wear=0.0, part=False)
@@ -215,20 +218,19 @@ def choir(module):
         bar = kit.block(module, (rose[0], rose[1], rose[2] - 2.0), (4.4, 0.12, 0.12), 'glow', bevel=0.0, wear=0.0,
                         part=False)
         bar.rotation_euler = (0.0, angle, 0.0)
-    kit.block(module, (0.0, 32.6, 1.2), (4.0, 1.6, 1.1), 'trim', bevel=0.04, wear=0.02, part=False)
-    kit.block(module, (0.0, 32.6, 2.3), (4.4, 1.9, 0.12), 'linen', bevel=0.0, wear=0.0, part=False)
+    kit.block(module, (0.0, bk.ALTAR_Y, 1.2), (4.0, 1.6, 1.1), 'trim', bevel=0.04, wear=0.02, part=False)
+    kit.block(module, (0.0, bk.ALTAR_Y, 2.3), (4.4, 1.9, 0.12), 'linen', bevel=0.0, wear=0.0, part=False)
     for candle in range(7):
-        kit.column(module, (-1.6 + candle * 0.53, 32.4, 2.42), 0.05, 0.3 + (candle % 3) * 0.1, 'glow', sides=6,
-                   part=False)
+        kit.column(module, (-1.6 + candle * 0.53, bk.ALTAR_Y - 0.2, 2.42), 0.05, 0.3 + (candle % 3) * 0.1, 'glow',
+                   sides=6, part=False)
     for row_y in (-27.0, -15.0, -3.0, 5.0):
         for side in (-1, 1):
             kit.block(module, (side * 4.5, row_y + 0.45, 0.9), (5.0, 0.12, 0.6), 'timber', bevel=0.0, wear=0.0,
                       part=False)
-    for _ in range(6):
-        beam = kit.block(module, (module.draw(-9.0, 9.0), module.draw(-28.0, 18.0), 0.3), (0.5, module.draw(5.0, 9.0),
-                                                                                        0.5), 'timber', bevel=0.0,
-                         wear=0.0, part=False)
-        beam.rotation_euler = (module.draw(-0.25, 0.25), module.draw(-0.1, 0.1), module.draw(0.0, math.pi))
+    # The roof's fallen timbers, lying across the nave between the rows of pews, clear of the desks and the font.
+    for x, y, long in ((-3.0, -23.5, 6.0), (4.0, -10.5, 5.0), (-3.5, 15.0, 6.0)):
+        beam = kit.block(module, (x, y, 0.3), (0.5, long, 0.5), 'timber', bevel=0.0, wear=0.0, part=False)
+        beam.rotation_euler = (module.draw(-0.1, 0.1), module.draw(-0.1, 0.1), math.pi / 2 + module.draw(-0.2, 0.2))
     bk.drowned_floor(module, -15.0, -31.0, -11.0, 20.0)
     bk.drowned_floor(module, 11.0, -31.0, 15.0, 20.0)
     rubble(module, (-12.0, 16.0), 3.0, 5)
@@ -295,7 +297,7 @@ def hall(module):
     bk.arch(module, (0.0, 25.8, 5.6), 3.4, 1.6, 1.0, stones=11)
     for side in (-1, 1):
         kit.block(module, (side * 3.9, 25.6, 0.0), (1.4, 1.4, 5.6), 'trim', bevel=0.04, wear=0.02, part=False)
-    bk.shaft(module, (0.0, 0.0, 0.0), 1.7, 9.5, lesser=6)
+    bk.shaft(module, (0.0, 0.0, 0.0), bk.SEAM_M, 9.5, lesser=6)
     rubble(module, (-15.0, -20.0), 3.0, 6)
     rubble(module, (15.0, 20.0), 3.0, 6)
 
@@ -308,17 +310,20 @@ def shore(module, was):
         face(module, west, south, east, north, 0.0, 10.0, toward, lancets=was, ruin=0.0 if was else 0.7)
         if not was:
             bk.rock_face(module, west, south, east, north, 9.0, 11.5)
-    table = kit.block(module, (0.0, 2.0, 0.75), (2.0, 7.0, 0.14), 'timber', bevel=0.02, wear=0.0, part=False)
+    # The table stands west of the hall's middle, where the Keeper's post and the Lodestone's plinth are.
+    middle = (-5.5, 2.0)
+    table = kit.block(module, (*middle, 0.75), (2.0, 7.0, 0.14), 'timber', bevel=0.02, wear=0.0, part=False)
     for corner_x in (-0.8, 0.8):
         for corner_y in (-3.0, 3.0):
-            kit.block(module, (corner_x, 2.0 + corner_y, 0.0), (0.14, 0.14, 0.75), 'timber', bevel=0.0, wear=0.0,
-                      part=False)
+            kit.block(module, (middle[0] + corner_x, middle[1] + corner_y, 0.0), (0.14, 0.14, 0.75), 'timber',
+                      bevel=0.0, wear=0.0, part=False)
     for side in (-1, 1):
-        bench = kit.block(module, (side * 1.6, 2.0, 0.45), (0.5, 6.0, 0.1), 'timber', bevel=0.0, wear=0.0, part=False)
+        bench = kit.block(module, (middle[0] + side * 1.6, middle[1], 0.45), (0.5, 6.0, 0.1), 'timber', bevel=0.0,
+                          wear=0.0, part=False)
         if not was:
             bench.rotation_euler = (0.0, side * 0.3, 0.1)
     if was:
-        kit.block(module, (0.0, 2.0, 0.01), (5.0, 10.0, 0.02), 'crimson', bevel=0.0, wear=0.0, part=False)
+        kit.block(module, (*middle, 0.01), (5.0, 10.0, 0.02), 'crimson', bevel=0.0, wear=0.0, part=False)
         for x, y in ((-13.9, 6.0), (13.9, 6.0), (-13.9, -6.0), (13.9, -6.0)):
             kit.block(module, (x, y, 3.2), (0.12, 0.3, 0.5), 'glow', bevel=0.0, wear=0.0, part=False)
         for x in (-6.0, 6.0):

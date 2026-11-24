@@ -92,24 +92,30 @@ fn no_two_spaces_share_ground_and_each_spaces_mouths_lie_in_it_alone() {
     }
 }
 
+/// The sockets no body or piece stands at: a slab's (it comes and goes), the Steward's order shown over the court,
+/// and the Seam's, inside its crystal.
+fn stood_at(name: &str) -> bool {
+    !name.starts_with("slab-") && !name.starts_with("glyphs-") && name != "seam"
+}
+
 #[test]
-fn every_mouth_stands_on_its_spaces_floor_clear_of_every_part() {
+fn every_piece_stands_on_its_spaces_floor_clear_of_every_part() {
     let plan = drowned_vale();
     let blocks = plan.standing();
     for space in &plan.spaces {
-        for (at, _) in plan.numbered(&space.key, "mouth") {
+        let sockets = module(&space.module).expect("its module").sockets;
+        for name in sockets.iter().map(|socket| socket.name).filter(|name| stood_at(name)) {
+            let (at, _) = plan.socket(&space.key, name).expect("its socket");
             let under: Vec<&movement::Block> = blocks
                 .iter()
                 .filter(|block| {
                     block.min_x <= at[0] && at[0] <= block.max_x && block.min_y <= at[1] && at[1] <= block.max_y
                 })
                 .collect();
-            assert!(
-                under.iter().any(|block| (block.top - at[2]).abs() < 0.05),
-                "{}'s mouth {at:?}: a floor",
-                space.key
-            );
-            assert!(under.iter().all(|block| block.top < at[2] + 0.05), "{}'s mouth {at:?}: in a part", space.key);
+            let key = &space.key;
+            assert!(under.iter().any(|block| (block.top - at[2]).abs() < 0.05), "{key}'s {name} at {at:?}: a floor");
+            let clear = |block: &&&movement::Block| block.top < at[2] + 0.05 || block.bottom > at[2] + 1.8;
+            assert!(under.iter().all(|block| clear(&block)), "{key}'s {name} at {at:?}: in a part");
         }
     }
 }
@@ -213,7 +219,14 @@ fn a_body_walks_each_encounters_floor_from_its_way_in_to_its_pieces() {
         ),
         (
             "choir",
-            &[("checkpoint", [0.0, 0.0]), ("font", [0.0, 0.0]), ("lectern-2", [0.0, 0.0]), ("lectern-4", [0.0, 0.0])],
+            &[
+                ("checkpoint", [0.0, 0.0]),
+                ("font", [0.0, 0.0]),
+                ("lectern-2", [-2.0, -2.5]),
+                ("lectern-2", [0.0, 0.0]),
+                ("lectern-2", [-2.5, 0.0]),
+                ("lectern-4", [0.0, 0.0]),
+            ],
         ),
         (
             "hall",

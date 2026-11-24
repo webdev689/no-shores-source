@@ -141,8 +141,8 @@ def hall(module):
         bk.wall(module, west, south, east, north, high=12.0)
     bk.floor(module, -2.5, -32.0, 2.5, -26.0)
     bk.floor(module, -3.0, 26.0, 3.0, 32.0)
-    inner = 1.6 * (1 + 0.3) / 2 * 0.8
-    module.part([-inner, -inner, 0.0], [inner, inner, 9.0])
+    # The Seam's part as wide as the crystal breach_dress.hall draws there.
+    module.part([-bk.SEAM_M, -bk.SEAM_M, 0.0], [bk.SEAM_M, bk.SEAM_M, 9.0])
     for x in (-10.0, 10.0):
         for y in (-14.0, 14.0):
             kit.column(module, (x, y, 0.0), 0.8, 11.0, 'stone', sides=14)
@@ -177,6 +177,8 @@ def shore(was):
                                          (-14.0, 14.0, 14.0, 18.0)):
             bk.wall(module, west, south, east, north, high=10.0, material='stone' if was else 'rubble')
         bk.rift(module, 'rift', (0.0, -15.0, 0.0), (0.0, 1.0))
+        # The rift's opening floored, so a body walking into it shut stands stranded, not fallen into the dark.
+        bk.floor(module, -4.0, -18.0, 4.0, -14.0, material='paving' if was else 'rubble')
         bk.wall(module, -4.0, -19.0, 4.0, -18.0, high=10.0)
         bk.plinth(module, 'plinth', (0.0, -5.0, 0.0))
         for number, (x, y) in enumerate(((-10.0, 9.0), (10.0, 9.0), (-10.0, -4.0), (10.0, -4.0), (0.0, 11.0)), start=1):

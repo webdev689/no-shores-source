@@ -8,8 +8,20 @@ import math
 import kit
 import latticekit
 
-# A wall nobody climbs: past a jump's reach and a mantle's (1.8 m) with room to spare.
+# A wall's height: past a jump's reach and a mantle's (1.8 m) with room to spare, so in a Breach's run, where bodies
+# never climb, nobody gets over it.
 WALL_M = 7.0
+# How far round a desk's middle a body blots it (crates/room/src/breach/choir.rs BLOT_REACH_M), its step drawn so far.
+BLOT_M = 1.8
+# How far a buttress of rock stands proud of the face whose part holds it: a body's breadth at most.
+PROUD_M = 0.3
+# The hall's Seam, the shaft of crystal drawn up its middle and its part as wide.
+SEAM_M = 1.7
+# Where the Choir's altar stands on its apse, between the Scrivener's desk and the seventh bell, clear of both.
+ALTAR_Y = 32.4
+# The Descent's fallen wheel lies sunk in the gap under its plank, tilted, so only the plank reads as a way across.
+WHEEL_Z = -4.6
+WHEEL_TILT = 0.2
 # A riser a body and a foe walk up (the movement rules step 0.5 m), and a tread.
 RISE_M = 0.24
 RUN_M = 0.42
@@ -113,9 +125,10 @@ def bell_frame(module, name, at, facing):
     x, y, z = at
     across = (facing[1], -facing[0])
     kit.block(module, (x, y, z), (1.8, 1.8, 0.4), 'stone', bevel=0.05, wear=0.03)
+    # The posts stand just outside the foot, so they rise from the floor beside it.
     for side in (-1, 1):
-        post = (x + across[0] * 1.0 * side, y + across[1] * 1.0 * side, z + 0.4)
-        kit.block(module, post, (0.22, 0.22, 3.4), 'timber', bevel=0.02, wear=0.0, part=False)
+        post = (x + across[0] * 1.0 * side, y + across[1] * 1.0 * side, z)
+        kit.block(module, post, (0.22, 0.22, 3.8), 'timber', bevel=0.02, wear=0.0, part=False)
     beam = (x, y, z + 3.6)
     size = (2.4, 0.26, 0.26) if abs(across[0]) > 0.5 else (0.26, 2.4, 0.26)
     kit.block(module, beam, size, 'timber', bevel=0.02, wear=0.0, part=False)
@@ -125,11 +138,14 @@ def bell_frame(module, name, at, facing):
 
 def lectern(module, name, at):
     """A writing desk of the old vale's stone on a round step, where the Scrivener writes itself; its socket the step's
-    middle, where a body stands to blot it."""
+    middle, where a body stands to blot it. The step is drawn as far round as a body blots it from (the rules'
+    BLOT_REACH_M), its part the square within it, and the desk a part."""
     x, y, z = at
-    kit.column(module, (x, y, z), 2.6, 0.2, 'trim', sides=20, part=False)
-    module.part((x - 1.8, y - 1.8, z), (x + 1.8, y + 1.8, z + 0.2))
+    kit.column(module, (x, y, z), BLOT_M, 0.2, 'trim', sides=20, part=False)
+    inner = BLOT_M / math.sqrt(2.0)
+    module.part((x - inner, y - inner, z), (x + inner, y + inner, z + 0.2))
     kit.block(module, (x, y + 1.4, z + 0.2), (1.0, 0.6, 1.1), 'stone', bevel=0.05, wear=0.03, part=False)
+    module.part((x - 0.5, y + 1.1, z), (x + 0.5, y + 1.7, z + 1.3))
     kit.block(module, (x, y + 1.35, z + 1.3), (1.2, 0.8, 0.08), 'stone', bevel=0.02, wear=0.0, part=False)
     module.socket(name, (x, y, z + 0.2), (0.0, 1.0))
 
@@ -226,11 +242,12 @@ def facet_rock(module, at, size, material='rubble', points=16, turn=0.0, dip=(0.
     return item
 
 
-def rock_face(module, west, south, east, north, bottom, top, seed=0, triangles=None, face=None, ragged=True):
+def rock_face(module, west, south, east, north, bottom, top, seed=0, triangles=None, face=None, ragged=True, clear=()):
     """The vale's rock filling a box, drawn only (the wall or ledge it dresses carries the part): beds of split stone
     from `bottom` to `top`, each bed its own height, its blocks set in and out and dipping a little as the beds lie.
-    With `face` (the way it looks out, along x or y) each bed stands back from the one under it, as a cliff leans;
-    `ragged` breaks the last bed's tops into a skyline, else they end level at `top` for a body to stand on."""
+    With `face` (the way it looks out, along x or y) each bed stands back from the one under it, as a cliff leans, and
+    buttresses stand from its foot, none near a `clear` point (x, y); `ragged` breaks the last bed's tops into a
+    skyline, else they end level at `top` for a body to stand on."""
     del seed, triangles  # Its blocks are sized by its beds, and laid by the module's own draws in order.
     along_x = east - west >= north - south
     length = (east - west) if along_x else (north - south)
@@ -261,14 +278,16 @@ def rock_face(module, west, south, east, north, bottom, top, seed=0, triangles=N
                 across = (row_across + 0.5) / rows * deep - deep / 2 + module.draw(-0.12, 0.12) * deep / rows
                 material = 'stone' if module.draw() < 0.14 else 'rubble'
                 rise = tall * module.draw(0.85, 1.1) if rows > 1 and (last and ragged) else tall
+                # `back` is below 0, so each bed sits that much further from the way the face looks.
                 if along_x:
                     lean = 0.0 if face is None else back * face[1]
-                    at = ((west + east) / 2 + middle, (south + north) / 2 + across - lean, z - 0.15)
-                    facet_rock(module, at, (long, thick, rise), material, turn=module.draw(-0.08, 0.08), dip=dip)
+                    at = ((west + east) / 2 + middle, (south + north) / 2 + across + lean, z - 0.15)
+                    facet_rock(module, at, (long, thick, rise), material, points=14, turn=module.draw(-0.08, 0.08),
+                               dip=dip)
                 else:
                     lean = 0.0 if face is None else back * face[0]
-                    at = ((west + east) / 2 + across - lean, (south + north) / 2 + middle, z - 0.15)
-                    facet_rock(module, at, (long, thick, rise), material,
+                    at = ((west + east) / 2 + across + lean, (south + north) / 2 + middle, z - 0.15)
+                    facet_rock(module, at, (long, thick, rise), material, points=14,
                                turn=math.pi / 2 + module.draw(-0.08, 0.08), dip=dip)
             if end:
                 break
@@ -276,17 +295,20 @@ def rock_face(module, west, south, east, north, bottom, top, seed=0, triangles=N
         z += bed
     if face is None:
         return
-    # Buttresses of the same rock standing out of a cliff's face every few metres, up from its foot.
+    # Buttresses of the same rock standing out of a cliff's face every few metres, up from its foot, set back into it
+    # so each stands only PROUD_M before the face and the part behind it holds a body off the rock.
     offset = -length / 2 + module.draw(2.0, 6.0)
     while offset < length / 2 - 2.0:
         wide, out, tall = module.draw(3.0, 5.5), module.draw(1.5, 2.8), (top - bottom) * module.draw(0.35, 0.8)
         front = (west if face[0] < 0 else east) if not along_x else (south if face[1] < 0 else north)
+        set_back = PROUD_M - out * 0.8
         if along_x:
-            at = ((west + east) / 2 + offset, front + face[1] * out / 2, bottom)
+            at = ((west + east) / 2 + offset, front + face[1] * set_back, bottom)
         else:
-            at = (front + face[0] * out / 2, (south + north) / 2 + offset, bottom)
-        facet_rock(module, at, (wide, out * 1.6, tall), 'rubble', points=20,
-                   turn=(0.0 if along_x else math.pi / 2) + module.draw(-0.15, 0.15))
+            at = (front + face[0] * set_back, (south + north) / 2 + offset, bottom)
+        turn = (0.0 if along_x else math.pi / 2) + module.draw(-0.15, 0.15)
+        if all(math.dist(at[:2], point) > wide / 2 + 2.5 for point in clear):
+            facet_rock(module, at, (wide, out * 1.6, tall), 'rubble', points=20, turn=turn)
         offset += module.draw(7.0, 11.0)
 
 

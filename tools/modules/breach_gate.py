@@ -22,6 +22,9 @@ DOOR_DEEP = 6.0
 LEDGE_TOP = 3.0
 LEDGE_X = (22.0, 28.0)
 LEDGE_Y = (-12.0, 18.0)
+# The Spire's shaft, as wide as its part; the mooring stones, which the rock and the fieldstones keep clear of.
+SPIRE_M = 1.5
+MOORINGS = (('mooring-west', (-20.0, 2.0)), ('mooring-east', (20.0, 2.0)), ('mooring-south', (0.0, -19.0)))
 FIELD_WALLS = (((-12.0, -12.0), 6.0, True), ((12.0, -12.0), 6.0, True), ((-13.0, 13.0), 5.0, True),
                ((13.0, 13.0), 5.0, True), ((-17.0, -1.0), 4.0, False), ((17.0, -1.0), 4.0, False))
 
@@ -70,18 +73,12 @@ def pieces(module):
     """The Spire, the mooring stones and the sockets the rules and the page read. The first socket is the way in."""
     module.socket('way', (0.0, -33.0, 0.0), (0.0, -1.0))
     top = TIERS[-1][1]
-    bk.shaft(module, (*DAIS, top), 1.5, 16.0)
-    inner = 1.4 * (1 + 0.35) / 2 * 0.8
-    module.part([DAIS[0] - inner, DAIS[1] - inner, top], [DAIS[0] + inner, DAIS[1] + inner, top + 16.0])
-    bk.mooring(module, 'mooring-west', (-20.0, 2.0, 0.0))
-    bk.mooring(module, 'mooring-east', (20.0, 2.0, 0.0))
-    bk.mooring(module, 'mooring-south', (0.0, -19.0, 0.0))
-    module.socket('spire', (*DAIS, top), (0.0, -1.0))
+    bk.shaft(module, (*DAIS, top), SPIRE_M, 16.0)
+    module.part([DAIS[0] - SPIRE_M, DAIS[1] - SPIRE_M, top], [DAIS[0] + SPIRE_M, DAIS[1] + SPIRE_M, top + 16.0])
+    for name, at in MOORINGS:
+        bk.mooring(module, name, (*at, 0.0))
     module.socket('gate', (0.0, CLIFF_SOUTH + 1.0, 0.05), (0.0, -1.0))
     module.socket('arrival', (0.0, -28.0, 0.0), (0.0, 1.0))
-    module.socket('banner', (-DOOR_HALF - 2.4, CLIFF_SOUTH - 0.2, 3.2), (0.0, -1.0))
-    module.socket('pillar', (0.0, CLIFF_SOUTH + DOOR_DEEP / 2, CLIFF_TOP), (0.0, -1.0))
-    module.socket('chest', (8.0, -6.0, 0.0), (0.0, -1.0))
     for number, at in enumerate(((-24.0, -24.0), (24.0, -24.0), (-19.0, 21.0), (19.0, 21.0)), start=1):
         module.socket(f'mouth-{number}', (*at, 0.0), (0.0, 1.0))
     for number, x in enumerate((-LEDGE_X[1] + 1.5, LEDGE_X[1] - 1.5), start=1):
@@ -127,17 +124,18 @@ def dressing(module):
     """The hollow's look: the cliff's rock face, standing stones round its south, the mill's millstone broken by the
     Spire, crystal crept from the Spire's foot and the seal, and the four growths the Lattice comes out of."""
     pick = latticekit.picker(module.random.randrange(1 << 30))
-    bk.rock_face(module, -CLIFF_HALF - 2.0, CLIFF_SOUTH - 1.5, -DOOR_HALF - 3.4, CLIFF_SOUTH + 2.0, -0.5,
-                 CLIFF_TOP + 1.5, face=(0.0, -1.0))
-    bk.rock_face(module, DOOR_HALF + 3.4, CLIFF_SOUTH - 1.5, CLIFF_HALF + 2.0, CLIFF_SOUTH + 2.0, -0.5, CLIFF_TOP + 1.5,
+    # The cliff's face drawn from its part's south face, so no body walks into the rock.
+    bk.rock_face(module, -CLIFF_HALF - 2.0, CLIFF_SOUTH, -DOOR_HALF - 3.4, CLIFF_SOUTH + 2.0, -0.5, CLIFF_TOP + 1.5,
+                 face=(0.0, -1.0))
+    bk.rock_face(module, DOOR_HALF + 3.4, CLIFF_SOUTH, CLIFF_HALF + 2.0, CLIFF_SOUTH + 2.0, -0.5, CLIFF_TOP + 1.5,
                  face=(0.0, -1.0))
     bk.rock_face(module, -DOOR_HALF - 3.4, CLIFF_SOUTH - 0.2, DOOR_HALF + 3.4, CLIFF_SOUTH + 2.0,
                  DOOR_HIGH + DOOR_HALF + 3.4, CLIFF_TOP + 1.5)
     bk.rock_face(module, -CLIFF_HALF, CLIFF_SOUTH + 2.0, CLIFF_HALF, CLIFF_NORTH, CLIFF_TOP - 3.0, CLIFF_TOP + 2.5)
     for sign in (-1, 1):
-        west, east = sorted((sign * LEDGE_X[0] - sign * 0.4, sign * (LEDGE_X[1] + 1.5)))
+        west, east = sorted((sign * LEDGE_X[0], sign * (LEDGE_X[1] + 1.5)))
         bk.rock_face(module, west, LEDGE_Y[0] + 0.3, east, LEDGE_Y[1], -0.3, LEDGE_TOP, face=(-sign, 0.0),
-                     ragged=False)
+                     ragged=False, clear=[at for _, at in MOORINGS])
         for drum in range(3):
             at = (sign * module.draw(23.5, 26.5), module.draw(-4.0, 14.0), LEDGE_TOP)
             kit.column(module, at, 0.55, 0.7, 'trim', sides=10, part=False).rotation_euler = (
@@ -172,7 +170,7 @@ def dressing(module):
                   wear=0.0, part=False)
     for stone in range(22):
         at = (module.draw(-29.0, 29.0), module.draw(-30.0, 22.0), -0.1)
-        if abs(at[0]) < 9.0 and abs(at[1]) < 9.0:
+        if abs(at[0]) < 9.0 and abs(at[1]) < 9.0 or any(math.dist(at[:2], spot) < 3.0 for _, spot in MOORINGS):
             continue
         size = module.draw(0.4, 1.0)
         bk.facet_rock(module, at, (size * 1.3, size, size * 0.7), 'rubble', points=12, turn=module.draw(0, math.pi))
