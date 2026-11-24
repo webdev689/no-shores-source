@@ -446,9 +446,12 @@ impl Room {
                 .collect();
             let week = gear::clock::week_of(self.minute);
             for id in near {
+                // A character whose week is past the room's is paid nothing more this week, as `breach_cleared` says.
                 let paid = self.players.get(&id).is_some_and(|found| {
-                    found.character.breach_paid(&DROWNED_VALE, breach.tier, week, find)
-                        && found.character.finds_lore(&format!("{}/{}", DROWNED_VALE.id, chapter_of(find)))
+                    let character = &found.character;
+                    let behind = week < character.activity.this_week.week;
+                    (behind || character.breach_paid(&DROWNED_VALE, breach.tier, week, find))
+                        && character.finds_lore(&format!("{}/{}", DROWNED_VALE.id, chapter_of(find)))
                 });
                 if paid {
                     continue;

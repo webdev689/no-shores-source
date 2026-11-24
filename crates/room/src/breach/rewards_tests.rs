@@ -152,3 +152,17 @@ fn at_hard_the_spire_ebbs_at_half_the_pace_and_two_bulwarks_come_where_normal_se
         assert!(lost.abs_diff(400 / every) <= 1, "{tier:?} ebbs a tick every {every}: lost {lost}");
     }
 }
+
+#[test]
+fn a_hidden_chest_tells_itself_once_to_a_character_whose_week_is_past_the_rooms() {
+    let (mut room, players) = run(Tier::Normal, 1);
+    assert!(room.own(players[0], "ada"));
+    let week = gear::clock::week_of(room.minute);
+    room.players.get_mut(&players[0]).expect("in").character.activity.this_week.week = week + 1;
+    let chest = at(&room, "descent", "chest-descent");
+    stand_at(&mut room, players[0], chest);
+    room.take_events();
+    room.tick();
+    room.tick();
+    assert_eq!(told(&mut room, EventKind::ChestOpened), 1, "its lore found once, and then no more");
+}
