@@ -9,22 +9,28 @@ use combat::fighter::FighterId;
 
 /// How many foes a wave stands: two, and one more for every two living players, six at the most.
 pub const WAVE_MOST: usize = 6;
-/// The most of an encounter's foes that stand alive at once for another of its lesser foes (a wave's, a walker) to
-/// stand: its great foes, Watchers and bells stand whatever else stands, or the encounter could never be finished.
+/// The most of an encounter's foes that stand alive at once for another of its waves' foes to stand: its great foes,
+/// Watchers, bells and walkers stand whatever else stands, or a crowd left standing would keep its rules from coming
+/// round.
 pub const STANDING_MOST: usize = 18;
 /// What a great foe's health is times for each player of the company beyond the first.
 pub const HEALTH_PER_PLAYER: f64 = 0.45;
 
 impl Room {
-    /// Whether the room and the encounter have room for another of its lesser foes (`STANDING_MOST`).
+    /// Whether the room has room for another of an encounter's walkers, whatever its waves stand.
+    pub(crate) fn room_for_walker(&self) -> bool {
+        self.living_foes() < self.foes_most
+    }
+
+    /// Whether the room and the encounter have room for another of its waves' foes (`STANDING_MOST`).
     pub(crate) fn room_for_lesser(&self, breach: &Breach) -> bool {
         let living = breach.foes.iter().filter(|id| self.standing_foe(**id)).count();
         self.living_foes() < self.foes_most && living < STANDING_MOST
     }
 
     /// Stands one of an encounter's foes of a type and rank at a point, at the tier's level, dropping nothing and
-    /// hunting the nearest living player; named where it has a name of its own. Its lesser foes ask
-    /// `room_for_lesser` first.
+    /// hunting the nearest living player; named where it has a name of its own. Its waves' foes ask
+    /// `room_for_lesser` first, its walkers `room_for_walker`.
     pub(crate) fn stand_breach_foe(
         &mut self,
         breach: &mut Breach,

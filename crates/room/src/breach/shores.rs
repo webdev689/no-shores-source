@@ -217,7 +217,7 @@ impl Room {
             fight.next_walker = clock + WALK_EVERY;
             let mouths = breach.plan.numbered("hall", "mouth");
             if let Some((mouth, _)) = mouths.get((clock / WALK_EVERY) as usize % mouths.len().max(1))
-                && self.room_for_lesser(breach)
+                && self.room_for_walker()
                 && let Some(id) = self.stand_breach_foe(breach, (HUSK, Rank::Minor), *mouth, Some("Penitent"))
             {
                 self.make_walker(id);

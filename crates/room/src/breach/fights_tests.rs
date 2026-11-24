@@ -364,3 +364,32 @@ fn the_ways_are_won_once_every_living_player_of_the_company_stands_on_the_broken
     assert_eq!(breach(&room).phases[WAYS], Phase::Won, "the living all on the Stair, the fallen not waited for");
     assert!(breach(&room).chests.contains(&2), "unseen, the heart's house opened as they passed");
 }
+
+/// Lesser foes stood at a space's first mouth until the encounter would stand no more of its waves'.
+fn crowded(room: &mut Room, space: &str) {
+    let mut breach_box = room.breach.take().expect("run");
+    let (mouth, _) = breach_box.plan.numbered(space, "mouth")[0];
+    while room.room_for_lesser(&breach_box) {
+        room.stand_breach_foe(&mut breach_box, (::foes::roster::HUSK, ::foes::Rank::Minor), mouth, None);
+    }
+    room.breach = Some(breach_box);
+}
+
+#[test]
+fn the_walkers_of_the_mending_and_the_seam_stand_whatever_their_waves_have_stood() {
+    let (mut room, players) = run(Tier::Normal, 2);
+    begin_at(&mut room, &players, "mending", "mender");
+    crowded(&mut room, "mending");
+    room.breach.as_mut().expect("run").fights.mending.next_walker = room.clock;
+    room.tick();
+    assert!(!breach(&room).fights.mending.walkers.is_empty(), "a walker to a seam past the waves' cap");
+    let (mut room, players) = won_to(Tier::Normal, 2, SHORES);
+    begin_at(&mut room, &players, "hall", "plinth");
+    let warden = breach(&room).fights.shores.warden.expect("the Warden stands");
+    kill(&mut room, warden);
+    room.tick();
+    crowded(&mut room, "hall");
+    room.breach.as_mut().expect("run").fights.shores.next_walker = room.clock;
+    room.tick();
+    assert!(!breach(&room).fights.shores.walkers.is_empty(), "a walker to the Seam past the waves' cap");
+}

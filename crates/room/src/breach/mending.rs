@@ -138,7 +138,7 @@ impl Room {
                 far(one).total_cmp(&far(two))
             });
             if let Some(seam) = seam
-                && self.room_for_lesser(breach)
+                && self.room_for_walker()
                 && let Some(id) = self.stand_breach_foe(breach, (HUSK, Rank::Minor), mouth, Some("Penitent"))
             {
                 self.make_walker(id);
