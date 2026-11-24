@@ -195,14 +195,15 @@ The decisions in [[Open Questions]] are not repeated here.
 - **Guilds** (#179, branch `ccr-ddffaaf7-r2fnnc`, a draft), for the owner's yes to merge, which deploys the page and
   the rooms and applies five migrations. The owner asked for guild names and banners with the tag on nameplates and
   in the social menu, descriptions, bounties and levelling, and outposts on any island for a cost whose structures
-  give guild buffs, passive income, guild dungeons, guild bosses and housing decoration ([[Guilds Gain Banners,
-  Levels, Bounties and Outposts]]). All of it is built ([[Guilds]], [[Outposts]], [[Guilds and Outposts as Claude
-  Shapes Them]]): the banner and its editor, the Guild tab after Destiny 2's clan screen, levels, weekly contribution
+  give guild buffs, passive income, guild dungeons, guild bosses and housing decoration
+  ([[Guilds Gain Banners, Levels, Bounties and Outposts]]). All of it is built ([[Guilds]], [[Outposts]],
+  [[Guilds and Outposts as Claude Shapes Them]]): the banner and its editor, the Guild tab after Destiny 2's clan
+  screen, levels, weekly contribution
   and bounties, the treasury, an outpost site on each island with its own room for each guild, thirty-eight structure
   models in three tiers, the strongbox and stores, the boons, decoration placed in the world, the War Horn's guild
   boss and the guild dungeon behind the Delve Gate. A four-part audit (code review, design calls, an exploit and race
   hunt, notes and words) found real races in the treasury and the errands, all fixed with tests. `cargo xtask check`
-  passed on 5248f466; tested offline, not live. Waiting on the owner: the merge; marking the DFO Pick rows for
+  passed on the branch's head; tested offline, not live. Waiting on the owner: the merge; marking the DFO Pick rows for
   heraldry and for halls, works and decor approved (`proposed` now); whether to split the branch for review (it is
   long, against [[Short Branches, Green Main]]). Known limits, each needing minutes of the accounts down or a room
   evicted: a late errand's answer is held in room memory; a deposit that throws for five minutes is given back; the

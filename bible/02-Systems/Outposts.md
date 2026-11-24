@@ -33,9 +33,10 @@ code:
 # Outposts
 
 A guild's outpost is its own plot of land on an island, where its founder and admins place structures that earn for
-it and its members ([[Guilds Gain Banners, Levels, Bounties and Outposts]], [[Guilds and Outposts as Claude Shapes
-Them]]). Each island has one outpost site, and each guild that raises an outpost there plays it in a room of its own,
-`node-<site>--guild-<key>`, apart from every other guild's ([[Guilds]], [[Server]]).
+it and its members ([[Guilds Gain Banners, Levels, Bounties and Outposts]],
+[[Guilds and Outposts as Claude Shapes Them]]). Each island has one outpost site, and each guild that raises an
+outpost there plays it in a room of its own, `node-<site>--guild-<key>`, apart from every other guild's ([[Guilds]],
+[[Server]]).
 
 ## How it works
 
