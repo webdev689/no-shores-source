@@ -49,3 +49,25 @@ Claude's choices for the first Breach, built in full and recorded in [[Breaches]
 | The gate | Open to its company until the Breach is cleared or a day passes; a Waking lost when the Spire stands empty a minute; its waves sized to the company; one refused told why | A company can always come back through its gate, and one or two players cannot hold it from everyone else |
 | Leaving and coming back | Down if they left down, their mark and its time, and their shore kept by account | Leaving and rejoining undoes nothing the Breach laid on a player |
 | Teaching and telling | A teaching line as each encounter begins and a won line as it ends; a wipe named by its cause; each bell its own note; warning rings dashed; the Spire's fill a light the zone sees | Every mechanic taught before it kills, readable without colour, loud for the company and seen by onlookers |
+
+## Its music
+
+Asked for "proper thematic music", and whether the Drowned Vale's music should be played on recorded instruments, the
+synthesiser or Freesound's own pieces, the owner answered "Plenty of sounds come from freesound": read as scores
+written for the Drowned Vale and played on instruments recorded on Freesound, picked on the sound sheet. Claude's
+musical calls, built in [[Music]]:
+
+| Call | Chosen | Why |
+|---|---|---|
+| The theme | One for the whole raid: D Phrygian, low, D rising through E flat to G and home, then to B flat and down through the mode; a second strain answering it | A drowned chapel's chant, not happy; the Phrygian flat second is the Vale's pull, heard in every song |
+| Who carries it | The low choir and the organ; the cello or the horn its strain; the Steward's horn doubling the choir | The chapel and its bells; the climax at its fullest |
+| Each encounter's colour | The Waking and the Mending on the Lattice's glass, the Choir and the Two Shores on the bells, the Ways on the waterphone | The Lattice glows as glass, the chapel's bells are the Choir's sound, the Ways are wet and dark |
+| Keys and tempi | The Waking D at 92, the Mending C at 100, the Choir E at 84, the Ways B flat at 66, the Two Shores E flat at 108; the Scrivener G at 112 to 134, the Steward D at 120 to 140 | Each fight its own, the Steward home in the theme's key |
+| The modern layer | A drone under every fight, booms on the downbeats, struck metal and a noise riser into the bar line, never a pitched sweep | The owner's modern spin, inside the music's rule against ringing and whining |
+| The fights' form | Twelve takes of eight bars a fight: a vamp, the theme, the strain and a breakdown, each in three feels, the third over turned chords; nine in a last stand | As every fight song varies ([[The Fight Music Varies, Recombined From Takes]]) |
+| The Unlit Ways | No drums: a drone, the waterphone, the taiko's heartbeat and a low pulse; the peak (the high choir, a boom) only once a Watcher has seen | Stealth, as asked; the seen moment is its danger |
+| The Two Shores | The tonic struck against its flat second | Two shores a half step apart |
+| The great foes | The Scrivener from its waking; the Steward's score from its court's start, whether or not the Steward is engaged; the Steward's fall the theme in D major, the Breach cleared | The Steward's court is the climax from its first taking |
+| Between encounters | Three calm pieces (the Descent's, the Broken Stair's, After the Bells), sparse, on felt piano, harp, cello, a singing bowl and the choir; the first 20 s into a quiet stretch, then 45 to 120 s of silence after one | A run is short: an island's two to nine minutes would never let one play |
+| A fight outside an encounter | The song of the encounter fought where the player stands, else the Waking's | The run never hears the island family's fight |
+| Until a pick comes | Each track plays its FM program, each drum the kit's own | The Breach has music now and gains its instruments as they are picked |
