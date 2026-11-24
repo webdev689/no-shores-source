@@ -201,10 +201,10 @@ impl Room {
         self.breach_gate = Some(gate);
     }
 
-    /// The first company whose living player stands on a mooring takes the gate.
+    /// The first company whose living player stands on a mooring takes the gate, unless the gate already opened to it.
     fn take_gate(&mut self, gate: &mut Gate) {
         let moorings: Vec<[f64; 3]> = MOORINGS.iter().filter_map(|name| gate.socket(name)).collect();
-        let taker = gate.companies.iter().find(|(_, company)| {
+        let taker = gate.companies.iter().filter(|(run, _)| !gate.opened.contains_key(*run)).find(|(_, company)| {
             company.players.iter().any(|player| {
                 self.players.get(player).is_some_and(|found| {
                     found.living()

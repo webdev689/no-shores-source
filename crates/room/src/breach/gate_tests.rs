@@ -357,3 +357,20 @@ fn the_gate_stays_open_to_its_company_a_day_or_until_it_clears_and_one_too_far_f
     room.breach_inside("run-a", "Ada", Tier::Normal, 6);
     assert_eq!(room.ask_enter_breach(players[0]), gate::GATE_SHUT, "shut once its company cleared the Breach");
 }
+
+#[test]
+fn a_company_whose_gate_opened_takes_it_no_more() {
+    let (mut room, players) = gate_room(3);
+    for &player in &players {
+        room.breach_company(player, "run-a", Tier::Normal);
+    }
+    hold_moorings(&mut room, &players);
+    room.tick();
+    woken(&mut room, &players);
+    room.clock += gate::OPEN_TICKS;
+    room.tick();
+    assert!(room.breach_gate.as_ref().expect("gate").held_by.is_none(), "let go once open its while");
+    hold_moorings(&mut room, &players);
+    room.tick();
+    assert!(room.breach_gate.as_ref().expect("gate").held_by.is_none(), "not taken again by a member on a mooring");
+}
