@@ -13,6 +13,7 @@ import { nodeRoom } from '../rooms.ts';
 import type { NodeInfo } from '../worldData.ts';
 import { ghostOf, letGo, placingNow } from './decorPlacing.ts';
 import { accountsHeld, guildHeld } from './guildHeld.ts';
+import { ridAnswered, withRid } from './outpostAsks.ts';
 import { kindOf, pieceOf, type Plot, type Standing } from './outpostLaw.ts';
 import { type Ground, type Placed, decorPlaceOf, placeOf, plotBoxes, socketOf } from './outpostPlaces.ts';
 
@@ -240,10 +241,12 @@ export class OutpostHere {
     const run = () => {
       if (refusal !== null || placing.sending) return;
       placing.sending = true;
-      void link.social('outpost/decorate', { site: this.site, ...decor }).then((why) => {
+      const sent = withRid('outpost/decorate', { site: this.site, ...decor });
+      void link.social('outpost/decorate', sent).then((why) => {
         placing.sending = false;
         [placing.said, placing.saidAt] = [why, spot];
         if (why !== null) return;
+        ridAnswered(sent);
         letGo();
         ask({ kind: ASKS.outpostChanged });
         dispatchEvent(new Event(OUTPOST_CHANGED));

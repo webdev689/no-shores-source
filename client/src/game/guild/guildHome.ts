@@ -1,7 +1,6 @@
-// The Guild tab's own page, as the owner's picture of Destiny 2's clan screen stands it: the banner hung on its staff at
-// the left; the guild's name and tag, its members and its motto; the week, with the guild's level as a diamond on a
-// rule; the guild's details beneath; the roster at the right with its page arrows; and the small presses down the
-// edge. What only some guilds have yet (bounties, outposts) stands where it will, saying what is to come.
+// The Guild tab's own page, after Destiny 2's clan screen: the banner hung on its staff at the left; the guild's name
+// and tag, its members and its motto; the week, with the guild's level as a diamond on a rule; its bounties and
+// outposts beneath; the roster at the right with its page arrows; and the small presses down the edge.
 
 import type { GuildFace, Person } from '../../network/accounts.ts';
 import type { Child, Node } from '../../ui/node.ts';
@@ -36,19 +35,17 @@ export interface RosterTurn {
   page: number;
 }
 
-/** What the home page shows: the guild, its banner, its members, the parts to come, and what has been said. */
+/** What the home page shows: the guild, its banner, its members, its week, bounties and outposts, and what has been said. */
 export interface Home {
   readonly face: GuildFace;
   readonly banner: Banner;
   readonly members: readonly Member[];
   readonly now: number;
   readonly said: string;
-  /** The parts of the week and the details each later part fills, null while they are to come. */
+  /** The player's part in the week, the week's bounties, and the guild's outposts, each none where it has none. */
   readonly week?: Child;
   readonly bounties?: Child;
   readonly outposts?: Child;
-  /** The edge's presses that open nothing yet. */
-  readonly closed: ReadonlySet<keyof typeof ICONS>;
 }
 
 /** Days and hours until a time, in the plain words the week's heading reads. */
@@ -76,12 +73,12 @@ export function homeNode(context: PlainContext, home: Home, turn: RosterTurn): N
       { direction: 'column', alignX: 'center', children: [standardNode(home.banner, scale)] },
       middleNode(home, sizes.label, sizes.name),
       rosterNode(ui, home.members, turn, rows, sizes.label),
-      edgeNode(home.closed, sizes.label),
+      edgeNode(sizes.label),
     ],
   };
 }
 
-/** The middle column: the guild's face, its week and its details, its words at the menu's label and name steps. */
+/** The middle column: the guild's face, its week, and its bounties and outposts, its words at the menu's label and name steps. */
 function middleNode(home: Home, size: number, named: number): Node {
   const { face } = home;
   const toNext = face.nextXp === null ? null : face.nextXp - face.levelXp;
@@ -115,7 +112,7 @@ function middleNode(home: Home, size: number, named: number): Node {
       },
       headingNode('This week', words(untilWords(home.now, face.weekEnds), size, INK.faint), size),
       levelNode(face.level, share, xpWords, size, home.week),
-      headingNode('Guild details', null, size),
+      headingNode('Bounties and outposts', null, size),
       {
         width: 'grow',
         gap: 24,
@@ -124,10 +121,7 @@ function middleNode(home: Home, size: number, named: number): Node {
             width: 'grow',
             direction: 'column',
             gap: 8,
-            children: [
-              label('Weekly guild bounties', size),
-              home.bounties ?? hintNode('They come with the guild bounties.'),
-            ],
+            children: [label('Weekly guild bounties', size), home.bounties],
           },
           {
             width: 'grow',
@@ -223,25 +217,21 @@ function memberNode(member: Member, size: number): Node {
 }
 
 /** The small presses down the edge: the banner, the details, the outposts and the treasury. */
-function edgeNode(closed: ReadonlySet<keyof typeof ICONS>, size: number): Node {
+function edgeNode(size: number): Node {
   const side = size > 1 ? 36 : 24;
   return {
     direction: 'column',
     gap: 8,
-    children: EDGE.map((icon): Node => {
-      const shut = closed.has(icon);
-      return {
-        id: edgeId(icon),
-        press: !shut,
-        role: 'button',
-        ...(shut && { state: 'disabled' }),
-        width: side + 20,
-        height: side + 20,
-        alignX: 'center',
-        alignY: 'center',
-        label: `${EDGE_NAMES[icon]}${shut ? ', to come' : ''}`,
-        children: [iconNode(icon, side)],
-      };
-    }),
+    children: EDGE.map((icon): Node => ({
+      id: edgeId(icon),
+      press: true,
+      role: 'button',
+      width: side + 20,
+      height: side + 20,
+      alignX: 'center',
+      alignY: 'center',
+      label: EDGE_NAMES[icon],
+      children: [iconNode(icon, side)],
+    })),
   };
 }

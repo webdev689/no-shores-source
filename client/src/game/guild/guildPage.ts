@@ -17,6 +17,7 @@ import { type Banner, bannerFrom, bannerOfName } from './bannerLaw.ts';
 import { detailsNode, FIELDS, foundNode } from './guildDetails.ts';
 import { EDGE, edgeId, homeNode, type Home, type RosterTurn } from './guildHome.ts';
 import { bountiesNode, contributionNode } from './guildWeek.ts';
+import { ridAnswered, withRid } from './outpostAsks.ts';
 import { tierName, kindOf } from './outpostLaw.ts';
 import { type OutpostsState, type SiteOf, outpostsNode } from './outpostsView.ts';
 import { sitesKept } from './siteNames.ts';
@@ -26,7 +27,7 @@ import { treasuryNode } from './treasuryView.ts';
 const LOOK_MS = 15_000;
 /** How long after a claim the guild is asked for again: once the room has saved the claim. */
 const CLAIM_SAVED_MS = 2_500;
-/** What the tab shows: its home, the banner editor, or the guild's details. */
+/** What the tab shows: its home, the banner editor, the guild's details, its outposts or its treasury. */
 type View = 'home' | 'banner' | 'details' | 'outposts' | 'treasury';
 /** The asks that change which guild a player is in, after which the room reads their tag again. */
 const MOVES = /^guild\/(found|accept|leave)$/;
@@ -76,7 +77,7 @@ export class GuildPage {
     this.look();
   }
 
-  /** Asks for the guild and the Roster again, keeping only the latest answer. */
+  /** Asks for the guild, the Roster and the guild's outposts again, keeping only the latest answer. */
   look(): void {
     const asked = ++this.asked;
     this.lookedAt = this.now();
@@ -129,11 +130,13 @@ export class GuildPage {
   private ask(path: string, body: Readonly<Record<string, unknown>>, said: string, changes = false): void {
     if (this.busy) return;
     this.busy = true;
+    const sent = withRid(path, body);
     void this.link
-      .social(path, body)
+      .social(path, sent)
       .then((why) => {
         this.say(why ?? said);
         if (why !== null) return;
+        ridAnswered(sent);
         if (MOVES.test(path)) {
           dispatchEvent(new Event(GUILD_CHANGED));
           this.view = 'home';
@@ -167,8 +170,7 @@ export class GuildPage {
     const { ui } = context;
     this.ui = ui;
     if (this.now() - this.lookedAt >= LOOK_MS && !this.hidden() && this.view === 'home') this.look();
-    if (!this.looked)
-      return { width: 'grow', padding: 24, children: [words('Asking for your guild...', 1, INK.faint)] };
+    if (!this.looked) return { width: 'grow', padding: 24, children: [words('Asking for your guild…', 1, INK.faint)] };
     if (this.failure !== null && this.face === null)
       return {
         width: 'grow',
@@ -220,8 +222,7 @@ export class GuildPage {
   private outpostsPage(context: PlainContext, face: GuildFace): Node {
     const { ui, holds, room, sizes } = context;
     const outposts = this.outposts;
-    if (!outposts)
-      return { width: 'grow', padding: 24, children: [words('Asking for your outposts...', 1, INK.faint)] };
+    if (!outposts) return { width: 'grow', padding: 24, children: [words('Asking for your outposts…', 1, INK.faint)] };
     const acts = {
       social: this.ask.bind(this),
       room: (ask: GearAsk) => {
@@ -280,7 +281,6 @@ export class GuildPage {
       week: contributionNode(face, size),
       bounties: face.bounties ? bountiesNode(ui, face, size, (slot) => this.claim(slot)) : undefined,
       outposts: this.outpostsSummary(size),
-      closed: new Set(),
     };
   }
 

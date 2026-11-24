@@ -88,7 +88,7 @@ export function outpostsNode(
   if (state.shown === null || !tabs.includes(state.shown))
     state.shown = outposts.outposts.find((each) => each.here)?.site ?? tabs[0] ?? null;
   const shown = outposts.outposts.find((outpost) => outpost.site === state.shown);
-  const held = `${outposts.outposts.length} of ${outposts.allowed} your guild's level allows`;
+  const held = `${outposts.outposts.length} of ${outposts.allowed} outposts your level allows`;
   return {
     width: 'grow',
     direction: 'column',
@@ -133,7 +133,7 @@ function raiseNode(
     : !room
       ? 'Your guild holds as many outposts as its level allows.'
       : !afford
-        ? `The treasury holds ${counted(outposts.treasury)} Aurem.`
+        ? `The treasury holds ${counted(outposts.treasury)} of the ${counted(RAISE_AUREM)} Aurem. Put Aurem in on the Treasury page while you stand here.`
         : null;
   return {
     width: 'grow',
@@ -143,7 +143,7 @@ function raiseNode(
     children: [
       words(`${name} is unclaimed by your guild.`, 1, INK.word),
       words(
-        `Raising an outpost here takes ${counted(RAISE_AUREM)} Aurem from the treasury. Its hall and your banner stand at once; the rest is built by members.`,
+        `Raising an outpost here takes ${counted(RAISE_AUREM)} Aurem from the treasury. Its hall and its Banner Standard stand at once; the rest is built by members.`,
         1,
         INK.faint,
         { wrap: true },
@@ -161,7 +161,15 @@ function raiseNode(
 function outpostNode(
   ui: Interface,
   holds: Holds,
-  given: { face: GuildFace; outpost: OutpostFace; state: OutpostsState; siteOf: SiteOf; cellPx: number; size: number },
+  given: {
+    face: GuildFace;
+    outposts: OutpostsFace;
+    outpost: OutpostFace;
+    state: OutpostsState;
+    siteOf: SiteOf;
+    cellPx: number;
+    size: number;
+  },
   acts: OutpostActs,
 ): Node {
   const { face, outpost, state, cellPx } = given;
@@ -170,11 +178,12 @@ function outpostNode(
   const plan = planNode(ui, outpost.plot, state.plan, face.level, cellPx);
   const site = outpost.site;
   if (plan.placing) {
-    const name = kindOf(plan.placing.kind)?.name ?? 'It';
+    const kind = kindOf(plan.placing.kind);
+    const named = kind ? `The ${kind.name}` : 'It';
     acts.social(
       'outpost/place',
       { site, ...plan.placing },
-      `${name} is placed. Deliver its materials to build it.`,
+      `${named} is placed. Deliver its materials to build it.`,
       true,
     );
     state.plan.choosing = null;
@@ -182,7 +191,7 @@ function outpostNode(
   const chosen = outpost.plot.structures.find((standing) => standing.id === state.plan.chosen);
   const side: Child[] = chosen
     ? [structureNode(ui, holds, outpost, chosen, face, given.siteOf(site).island, acts)]
-    : [overviewNode(ui, holds, outpost, face, given.siteOf(site).island, acts)];
+    : [overviewNode(ui, holds, outpost, face, given.siteOf(site).island, given.outposts.taken ?? {}, acts)];
   return {
     width: 'grow',
     gap: 20,
@@ -203,7 +212,7 @@ function outpostNode(
         maxWidth: 520,
         children: [
           ...side,
-          builds && kindsNode(ui, outpost.plot, state.plan, face.level),
+          builds && kindsNode(ui, outpost.plot, state.plan, face.level, given.siteOf(site).island),
           builds && decorateNode(ui, outpost),
         ],
       },
@@ -243,7 +252,7 @@ function structureNode(
   });
   const runs = face.rank <= 1 && outpost.here;
   const next = standing.tier + 1;
-  const rise = kind ? riseRefusal(outpost.plot, standing, face.level) : 'There is no such structure.';
+  const rise = kind ? riseRefusal(outpost.plot, standing, face.level) : 'There is no such structure to build.';
   if (runs && rise === null && ui.clicked(RISE_ID))
     acts.social('outpost/rise', { site, id: standing.id }, 'The next tier is begun. Deliver its materials.', true);
   const removing = holds.press(ui, REMOVE_ID, () =>
@@ -267,7 +276,7 @@ function structureNode(
           gap: 4,
           children: [
             pressNode(RISE_ID, `Raise to tier ${next}`, 'primary', '', 1, { disabled: rise !== null }),
-            words(rise ?? costWords(kind, next), 1, rise ? INK.loss : INK.faint, { wrap: true }),
+            words(rise ?? costWords(kind, next, island), 1, rise ? INK.loss : INK.faint, { wrap: true }),
           ],
         },
       runs &&
@@ -306,13 +315,15 @@ function delveNode(ui: Interface, outpost: OutpostFace, standing: KeptPlot['stru
   };
 }
 
-/** An outpost at a glance: its strongbox, its stores, its War Horn, and the founder's press to abandon it. */
+/** An outpost at a glance: its strongbox, its stores (what the player may still take of each today, `taken` taken),
+ *  its War Horn, and the founder's press to abandon it. */
 function overviewNode(
   ui: Interface,
   holds: Holds,
   outpost: OutpostFace,
   face: GuildFace,
   island: string,
+  taken: Partial<Record<Stuff, number>>,
   acts: OutpostActs,
 ): Node {
   const site = outpost.site;
@@ -322,8 +333,8 @@ function overviewNode(
     acts.social('outpost/collect', { site }, `${counted(outpost.strongbox)} Aurem went into the treasury.`, false);
   const stores = STUFFS.filter((stuff) => (outpost.stores[stuff] ?? 0) > 0).map((stuff): Child => {
     const held = outpost.stores[stuff] ?? 0;
-    const take = Math.min(held, STORES_TAKE_A_DAY);
-    if (outpost.here && ui.clicked(takeId(stuff)))
+    const take = Math.min(held, Math.max(0, STORES_TAKE_A_DAY - (taken[stuff] ?? 0)));
+    if (outpost.here && take > 0 && ui.clicked(takeId(stuff)))
       acts.room({ kind: ASKS.outpostTake, slot: STUFF_SLOTS[stuff], count: take });
     return {
       width: 'grow',
@@ -332,7 +343,10 @@ function overviewNode(
       children: [
         words(`${stuffName(stuff, island)} ${held}`, 1, INK.word),
         { width: 'grow' },
-        outpost.here && pressNode(takeId(stuff), `Take ${take}`),
+        outpost.here &&
+          pressNode(takeId(stuff), take > 0 ? `Take ${take}` : 'Taken today', 'button', '', 1, {
+            disabled: take === 0,
+          }),
       ],
     };
   });
