@@ -346,17 +346,21 @@ The decisions in [[Open Questions]] are not repeated here.
   `cargo xtask check` green at its head (tested offline; not played, not in a deployed room). Built in full on
   Claude's autonomy after the owner's three decisions
   ([[The First Breach Follows the Vault of Glass, at Normal and Hard]] and the two it names); the system in
-  [[Breaches]] (its Limits say what waits), every call of Claude's in [[The Drowned Vale as Claude Builds It]]. Its rules, wire, doors, server, the Sunken Gate and nine spaces in Blender,
-  the page, the Drowned horse, the banner, dye and *Soundings*. A deep audit (rules, page, server and wire, design and
-  tests, the bible, the art) found about seventy defects and gaps; each is fixed with a test where it has a seam, and
-  the bible says what the code does. Left for the owner:
+  [[Breaches]] (its Limits say what waits), every call of Claude's in [[The Drowned Vale as Claude Builds It]]. Two
+  deep audits by six auditors each (rules, page, server and wire, design and tests, the bible, the art; then the first
+  round's fixes, encounter design, player experience, authority, art and world) found and fixed about 140 defects and
+  gaps, each with a test where the code has a seam; the second round's design pass reweighed the great foes, put the
+  Steward on a fixed clock, made the Ways the company's, taught each mechanic before it kills, and finished the art.
+  CI's check may now run an hour (the owner's choice, with the Breach's tests slimmed: a run's navmesh is baked once
+  per process). Left for the owner:
   - The Drowned horse renders only by a hand forge run (`figures` =
     `horseidle,horsewalk,horsegallop|horse_drowned`, a write to R2), and its first-person frames are in no workflow.
-  - Hard at the Waking and in the run never stands a fallen player of themselves; outside a running encounter they
-    stand after 6 s: Claude's reading of "no respawn", for the owner to widen.
+  - Claude's readings to confirm: Hard's "no respawn" as within a running encounter; at Hard the Ways wait only for
+    the living.
+  - New mechanics the audits proposed, not built: Keepers warded at Hard (so the crossing rule binds), Hard's seams in
+    a drawn order, the Steward taking into both shores, the Spire keeping each third, a pad way to call the Steward's
+    order without voice, a new danger sound; and sinking the Sunken Gate's area into the vale.
   - The Scrivener and the Steward wear the Idol's and the Heart's bodies until their own are drawn.
-  - The layouts: a dead mass's valley or climb now keeps off the caverns (it ran past the Hollow Coven's cavern once
-    the Sunken Gate's area was in the brief); every zone's layout tests pass with it.
 - **Open pull requests**, for the owner's yes once their checks pass: #162 (the game's words out to Type and back; it
   conflicts with `main` in `Decisions.md`) and #159 (the rooms' worker tests wait for what they check; it conflicts
   with `main` in `roomThread.test.ts`). Drafts:
