@@ -154,6 +154,11 @@ impl Room {
         room.foes_most = NODE_FOES_MOST;
         room.run = run;
         room.stand_dungeon_garrison(dungeon, levels, end);
+        // Its chests keep out of its seals' rooms, whose pieces fill their floors.
+        let kept: Vec<usize> = plan.iter().flat_map(|plan| plan.seals.iter().map(|seal| seal.room)).collect();
+        if let Floor::Dungeon(ground) = &room.floor {
+            room.finds = crate::finds::Finds::of_dungeon(dungeon, ground, &kept);
+        }
         if let Some(plan) = plan {
             room.lay_encounters(plan, levels);
             let end = dungeon.rooms.get(dungeon.end()).map(|end| end.cells.clone()).unwrap_or_default();
@@ -260,6 +265,10 @@ impl Room {
                     self.saw(player, &cleared);
                 }
             }
+        }
+        // As its garrison stands again, its chests and containers are drawn anew.
+        if cache.open && !open {
+            self.finds.drawn = false;
         }
         self.cache = Some(Cache { open, ..cache });
     }

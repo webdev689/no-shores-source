@@ -253,6 +253,11 @@ table Gear {
   abyss_playlist_taken: bool;
   elite_playlist_clears: ubyte;
   abyss_playlist_clears: ubyte;
+  // The chests standing in the room that they have not opened, five numbers each: its number, x, y, z and the way
+  // its front faces (radians clockwise from north); and the containers searchable that they have not searched, seven
+  // each: its number, its box across (west, north, east, south), its foot and its top.
+  chests: [double];
+  searchables: [double];
 }
 
 // A named officer: their number, post (0 First Mate, 1 Gunner, 2 Bosun, 3 Carpenter, 4 Lookout), grade (a rarity),

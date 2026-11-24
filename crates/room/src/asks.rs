@@ -74,6 +74,10 @@ pub enum Asked {
     OpenChest {
         chest: u32,
     },
+    /// Begins to open a chest or search a container by its number, E held (`find_holds.rs`); let go of as a gather is.
+    Find {
+        number: u32,
+    },
 }
 
 /// Gear the Test Ground hands out, to try the loop without playing it through.
@@ -309,9 +313,12 @@ impl Room {
         let Some(found) = self.players.get_mut(&player) else { return };
         // E let go of is heard at once, and lets go of every gather asked before it, so none outlives the key.
         if asked == Asked::StopGather {
-            found.asks.retain(|held| !matches!(held, Asked::Gather { .. }));
+            found.asks.retain(|held| !matches!(held, Asked::Gather { .. } | Asked::Find { .. }));
             if let Some(gathering) = found.gathering.as_mut() {
                 gathering.let_go = true;
+            }
+            if let Some(opening) = found.opening.as_mut() {
+                opening.let_go = true;
             }
             return;
         }
@@ -358,8 +365,9 @@ impl Room {
             }
             Asked::Gather { node } => self.gather(player, node),
             Asked::StopGather => {
-                if let Some(gathering) = self.players.get_mut(&player).and_then(|found| found.gathering.as_mut()) {
-                    gathering.let_go = true;
+                if let Some(found) = self.players.get_mut(&player) {
+                    found.gathering.iter_mut().for_each(|gathering| gathering.let_go = true);
+                    found.opening.iter_mut().for_each(|opening| opening.let_go = true);
                 }
                 0
             }
@@ -371,6 +379,7 @@ impl Room {
             Asked::FindLore { chapter } => self.find_lore(player, chapter),
             Asked::ToShip => self.to_ship(player),
             Asked::OpenChest { chest } => self.open_chest(player, chest),
+            Asked::Find { number } => self.open_find(player, number),
         };
         if let Some(found) = self.players.get_mut(&player) {
             found.answer = code;

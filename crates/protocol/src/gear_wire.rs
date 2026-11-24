@@ -2,6 +2,7 @@
 //! player's own gear, written for them alone whenever it changes, with every column of every item's nodes spelled out
 //! so a browser draws them without the rules.
 
+use crate::finds_wire::OPEN_FIND;
 use crate::lore_wire::FIND_LORE;
 use crate::messages;
 use flatbuffers::{FlatBufferBuilder, WIPOffset};
@@ -196,6 +197,7 @@ pub fn asked_of(ask: &messages::Ask<'_>) -> Option<Asked> {
         CHOOSE_FRAGMENT => Asked::Gear(Ask::ChooseFragment { art: column, fragment: node }),
         USE_POINT => Asked::UsePoint { point: column },
         FIND_LORE => Asked::FindLore { chapter: u16::try_from(item).ok()? },
+        OPEN_FIND => Asked::Find { number: item },
         TO_SHIP => Asked::ToShip,
         _ => return None,
     })
@@ -287,6 +289,7 @@ pub fn ask_offset<'built>(builder: &mut FlatBufferBuilder<'built>, asked: &Asked
         Asked::UsePoint { point } => args = messages::AskArgs { kind: USE_POINT, column: *point, ..args },
         Asked::FindLore { chapter } => args = messages::AskArgs { kind: FIND_LORE, item: u32::from(*chapter), ..args },
         Asked::ToShip => args = messages::AskArgs { kind: TO_SHIP, ..args },
+        Asked::Find { number } => args = messages::AskArgs { kind: OPEN_FIND, item: *number, ..args },
         Asked::Grant(Grant::Vestige { rarity, slot, level }) => {
             args = messages::AskArgs {
                 kind: GRANT_VESTIGE,
@@ -510,6 +513,8 @@ pub fn gear_bytes(room: &Room, player: PlayerId) -> Option<Vec<u8>> {
         abyss_playlist_taken: today.abyss_playlist,
         elite_playlist_clears: this_week.elite_playlist,
         abyss_playlist_clears: this_week.abyss_playlist,
+        chests: Some(crate::finds_wire::chests_of(&mut builder, room, player)),
+        searchables: Some(crate::finds_wire::searchables_of(&mut builder, room, player)),
     };
     let gear = messages::Gear::create(&mut builder, &args);
     let message =

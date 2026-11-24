@@ -24,6 +24,7 @@ pub mod dice;
 pub mod element;
 pub mod emblems;
 pub mod factions;
+pub mod finds;
 pub mod gate;
 pub mod grid;
 pub mod horses;

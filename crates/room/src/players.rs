@@ -182,6 +182,9 @@ pub struct Player {
     /// The node they are gathering, E held, if they are, and whether their last input rode a horse.
     pub gathering: Option<crate::asks::Gathering>,
     pub mounted: bool,
+    /// The chests and containers they have opened while they stand (`finds.rs`), and the one being opened, E held.
+    pub opened: Vec<u32>,
+    pub opening: Option<crate::find_holds::Opening>,
     /// The account that keeps their character, if one does: what they gathered this turn follows it across a rejoin.
     pub owner: Option<String>,
     /// What their worn gear trims of the fight's numbers with the loadout drawn; and with each drawn, Melee then
@@ -244,6 +247,8 @@ impl Player {
             spent: Vec::new(),
             gathering: None,
             mounted: false,
+            opened: Vec::new(),
+            opening: None,
             owner: None,
             trim: combat::Trim::PLAIN,
             trims: [combat::Trim::PLAIN; 2],
@@ -512,11 +517,17 @@ impl Room {
             return false;
         }
         let gathered = self.gathered.get(owner).cloned().unwrap_or_default();
+        let opened = self.finds.opened.get(owner).cloned().unwrap_or_default();
         let Some(found) = self.players.get_mut(&player) else { return false };
         found.owner = Some(owner.to_owned());
         for node in gathered {
             if !found.spent.contains(&node) {
                 found.spent.push(node);
+            }
+        }
+        for number in opened {
+            if !found.opened.contains(&number) {
+                found.opened.push(number);
             }
         }
         found.gear_changed = true;
