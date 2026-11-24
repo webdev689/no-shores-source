@@ -187,19 +187,30 @@ each part works is in its system note.
   - Known and left: at a steep downward look the aiming camera can show the figure's diagonal back view; a crowd's
     dresses are composed ahead only as room comes, small objects are made each frame, and the Test Ground's panels
     run the room while the pointer is free (#68).
+- **A ship's wake follows the track it sailed** ([[Water]], "Its wake"): each ship's stern's track keeps its arms
+  and wash along where it turned.
 
 ## Waiting on the owner
 
 The decisions in [[Open Questions]] are not repeated here.
 
-- **A ship's wake follows the track it sailed** (#177, branch `ccr-836ab6ff-vgzmxg`), for the owner's yes to merge,
-  which deploys the page. The owner: "the waves that follow behind the ship dont animate when you turn your ship. They
-  are always straight". The water drew every wake straight aft of the heading the ship had that frame; it now keeps
-  where each ship's stern has been and lays the arms and the wash along it ([[Water]], "Its wake"; the numbers in [[The
-  Sea as Claude Shapes It]]). Tested offline (`wakes.test.ts`: a turn's wash where it sailed, no wake ahead of the bow
-  after a stop or going astern, a ship drawn 5x in a hard turn, the wake's box holding all of it); a read-only review's
-  five findings fixed with those tests. Not seen on a real GPU: how the curved wake looks, and the shader's cost while a
-  ship turns (unmeasured; a straight course takes the old path).
+- **Guilds** (#179, branch `ccr-ddffaaf7-r2fnnc`, a draft), for the owner's yes to merge, which deploys the page and
+  the rooms and applies five migrations. The owner asked for guild names and banners with the tag on nameplates and
+  in the social menu, descriptions, bounties and levelling, and outposts on any island for a cost whose structures
+  give guild buffs, passive income, guild dungeons, guild bosses and housing decoration ([[Guilds Gain Banners,
+  Levels, Bounties and Outposts]]). All of it is built ([[Guilds]], [[Outposts]], [[Guilds and Outposts as Claude
+  Shapes Them]]): the banner and its editor, the Guild tab after Destiny 2's clan screen, levels, weekly contribution
+  and bounties, the treasury, an outpost site on each island with its own room for each guild, thirty-eight structure
+  models in three tiers, the strongbox and stores, the boons, decoration placed in the world, the War Horn's guild
+  boss and the guild dungeon behind the Delve Gate. A four-part audit (code review, design calls, an exploit and race
+  hunt, notes and words) found real races in the treasury and the errands, all fixed with tests. `cargo xtask check`
+  passed on 5248f466; tested offline, not live. Waiting on the owner: the merge; marking the DFO Pick rows for
+  heraldry and for halls, works and decor approved (`proposed` now); whether to split the branch for review (it is
+  long, against [[Short Branches, Green Main]]). Known limits, each needing minutes of the accounts down or a room
+  evicted: a late errand's answer is held in room memory; a deposit that throws for five minutes is given back; the
+  guild boss is lost if everyone leaves its room before it falls.
+- **The Discord bot**: porting DFO Online's unmerged bot work (#1662 to #1680 there, reverted by #1682) and redesigning
+  it around No Shores, which the owner raised and set aside: "Lets come back to this later."
 - **The wreck's R2 tools after #172**, which no session may edit: `tools/wreck/wreck_level.py`'s waves still list the
   Tithe-Mates and Bosuns at rank 1; to match `content/prologue/wreck.json` each `(11, 1, ...)` becomes `(11, 2, ...)`
   and each `(10, 1, ...)` `(10, 2, ...)`, and `export_wreck.py` should write the quiet deck's `masts` (added to
@@ -408,8 +419,8 @@ The decisions in [[Open Questions]] are not repeated here.
   in `combat/attackFeel.ts`). And whether a drawn bow or gun can punch, and in what element.
 - **The mirrored view**: a drawn sword, dagger or mace changes hands through the walk, the rest and a blow, as the
   forge draws none in the left fist there; whether it should.
-- **The Roster** ([[The Roster and Emblems as Claude Shapes Them]]): a join that loads another landmass; the Guild
-  tab's own page; more emblems and where they come from.
+- **The Roster** ([[The Roster and Emblems as Claude Shapes Them]]): a join that loads another landmass; more
+  emblems and where they come from.
 - **The ships** ([[The Ships as Claude Shapes Them]]): the owner asked for the Frigate as one more model "and call its
   there", so the Tithe Ram and the Fluyt wait until asked; splitting ships into parts for upgrades, and the cabin's
   decoration from DFO's `decor/`, are set aside by the owner for now.
