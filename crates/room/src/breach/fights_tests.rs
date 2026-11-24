@@ -419,3 +419,26 @@ fn the_choirs_font_rests_past_a_mark_its_bells_stand_at_half_a_minors_health_and
     room.clock += choir::MARK_LASTS - 60;
     assert!(rewritten(&mut room), "and still rests as the next mark would unwrite");
 }
+
+#[test]
+fn the_steward_and_the_scrivener_fight_in_phases_whose_calls_drop_nothing() {
+    use ::foes::{Place, Rank, foe_type, roster};
+    let steward = foe_type(roster::STEWARD).expect("its type").phases(Rank::Boss);
+    assert_eq!(steward.len(), 3);
+    assert!((steward[1].from - 2.0 / 3.0).abs() < 1e-12 && steward[1].adds.contains(&combat::shapes::Shape::Slam));
+    let call = steward[1].calls.expect("its call");
+    assert_eq!((call.foe_type, call.rank, call.count, call.place), (roster::HUSK, Rank::Major, 2, Place::Beside));
+    assert!((steward[2].from - 1.0 / 3.0).abs() < 1e-12 && steward[2].adds.contains(&combat::shapes::Shape::Ring));
+    let scrivener = foe_type(roster::SCRIVENER).expect("its type").phases(Rank::Boss);
+    let call = scrivener[1].calls.expect("its call");
+    assert_eq!((scrivener[1].from, scrivener[1].cooldown), (0.5, 0.7), "quicker at half");
+    assert_eq!((call.foe_type, call.rank, call.count, call.place), (roster::FLICKER, Rank::Major, 2, Place::Behind));
+    let (mut room, players) = won_to(Tier::Normal, 2, STEWARD);
+    begin_at(&mut room, &players, "court", "chest");
+    let boss = breach(&room).fights.steward.boss.expect("the Steward stands");
+    let before: Vec<FighterId> = room.foes.keys().copied().collect();
+    room.call(boss, call);
+    let called: Vec<FighterId> = room.foes.keys().copied().filter(|id| !before.contains(id)).collect();
+    assert_eq!(called.len(), 2);
+    assert!(called.iter().all(|id| room.quests.spoilless.contains(id)), "the calls of a foe that drops nothing");
+}

@@ -337,8 +337,10 @@ impl Room {
             let id = self.stand_foe(called_type, call.rank, spot, at.aim, Some(caller));
             // A called foe fights at its caller's level, and stands with no shield.
             self.gird(id, self.foes.get(&caller).map_or(0, |found| found.level), None);
-            // The calls of a fight after its caller leashed drop nothing: pulling it again pays no more.
-            if self.foes.get(&caller).is_some_and(|found| found.brain.has_leashed()) {
+            // The calls of a fight after its caller leashed drop nothing: pulling it again pays no more. Nor do those
+            // of a caller that drops nothing, as a Breach's great foes.
+            let leashed = self.foes.get(&caller).is_some_and(|found| found.brain.has_leashed());
+            if leashed || self.quests.spoilless.contains(&caller) {
                 self.quests.spoilless.insert(id);
             }
             let Some(found) = self.foes.get_mut(&id) else { continue };
