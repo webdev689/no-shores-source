@@ -287,7 +287,7 @@ test("other players' ships wear their marks out of a fight, and none while the v
     }) as unknown as Sea;
   const players = [{ id: 2 }];
   const shown = { shot: { eye: [0, 0, 10], yaw: 0, pitch: 0.3, fov: 1 }, marks: [], bars: [], players, focus: [0, 0] };
-  const state = { landing: false, onSea: true, region: 'The sea', clock: 0, friendly: [], notices: [] };
+  const state = { ...ROADS, landing: false, onSea: true, region: 'The sea', clock: 0, friendly: [], notices: [] };
   for (const helmView of [false, true])
     showSeaHud(hud as unknown as Hud, sea(helmView), shown as unknown as SeaFrame, state as unknown as SeaHudState);
   assert.deepEqual(shownPlayers, [players, []]);
