@@ -342,7 +342,7 @@ def dock_works(module):
     rope_walk(module, 2.3, -4.6, 4.4)
     iron_pallet(module, (-0.2, -3.0, 0.0))
     for k in range(3):
-        stall_tailor.bolt(module, (-2.8 + k * 0.42, 0.4, 0.2), 1.2, 0.2, 'linen', along_x=False)
-    module.part((-3.05, -0.25, 0.0), (-1.75, 1.05, 0.4))
+        stall_tailor.bolt(module, (-2.65 + k * 0.42, 0.4, 0.2), 1.2, 0.2, 'linen', along_x=False)
+    module.part((-2.9, -0.25, 0.0), (-1.6, 1.05, 0.4))
     stores_at(module, -5.4)
     shell.fits(module, 2, 3)

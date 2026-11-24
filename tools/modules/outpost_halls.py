@@ -1,10 +1,10 @@
 """The outpost's hall, its heart, on a plot of 4 x 4 cells (16 m), its front toward -y. The Command Tent
-(`outpost-hall-1`, so named in the guilds' content): a great command tent filling the plot's middle, its door's flaps
-tied back on a map table inside, three smaller tents round a stone-ringed fire pit, crates, barrels and a rack of arms.
-The Longhouse (`-2`): a long boarded hall on a stone sill under a shingle roof, its front gable carved and run out over
-a porch on posts hung with shields, iron-strapped doors, a smoke louvre on its ridge. The Stronghold (`-3`): a stone
-ground floor under a boarded upper storey, a square stone tower at its back corner with arrow slits and two flagstaffs
-in iron collars, an iron-bound door between braziers. Each has `door` at its door and `use` outside it.
+(`outpost-hall-1`, the Camp, being renamed so in the guilds' content): a great command tent filling the plot's middle,
+its door's flaps tied back on a map table inside, three smaller tents round a stone-ringed fire pit, crates, barrels and
+a rack of arms. The Longhouse (`-2`): a long boarded hall on a stone sill under a shingle roof, its front gable carved
+and run out over a porch on posts hung with shields, iron-strapped doors, a smoke louvre on its ridge. The Stronghold
+(`-3`): a stone ground floor under a boarded upper storey, a square stone tower at its back corner with arrow slits and
+two flagstaffs in iron collars, an iron-bound door between braziers. Each has `door` at its door and `use` outside it.
 """
 import math
 
@@ -38,7 +38,7 @@ def supplies(module, at):
 
 def hall_camp(module):
     # The command tent at the back of the plot, open toward the front, the map table and a chest inside.
-    # Wide and deep enough to fill the plot's middle, its front wall where the old one's was.
+    # Wide and deep enough to fill the plot's middle, its front wall at y -2.2 clear of the fire and its tents.
     shell.tent(module, (0.0, 2.6, 0.0), 0, 8.0, 9.6, 5.0, eave=2.4, open_door=True, out=0.6)
     top = furnish.trestle(module, (0.0, 3.6, 0.0), 2.4, 1.1)
     shapes.slab(module, (-0.2, 3.6, top + 0.004), (1.5, 0.9, 0.006), 'linen', turn=(0.0, 0.0, 0.05))

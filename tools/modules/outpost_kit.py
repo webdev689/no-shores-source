@@ -226,9 +226,9 @@ def walls(module, kind, west, east, front, back, high, base=0.0, thick=0.6, fron
 def keep(module, middle, side, high, strings, plinth=0.2, course=0.14, string=0.22, grow=0.12, inset=0.08,
          reach=0.12, merlons=(0.4, 1.3, 0.75, 0.8)):
     """A square stone tower on `middle`, `side` across and `high` tall, on a plinth `plinth` wider: a string course
-    `string` deep at each height of `strings`, a parapet corbelled out in three courses each `course` deep and `grow`
-    wider than the last, and merlons (thick, every, wide, high) round its top `inset` in from its walls; its part
-    reaching `reach` past its walls. Returns the parapet's top."""
+    `string` deep (and `course` wider than the tower) at each height of `strings`, a parapet corbelled out in three
+    courses each `course` deep and `grow` wider than the last, and merlons (thick, every, wide, high) round its top
+    `inset` in from its walls; its part reaching `reach` past its walls. Returns the parapet's top."""
     kit.block(module, (*middle, 0.0), (side + plinth, side + plinth, 0.5), 'trim', bevel=0.04, wear=0.02, part=False)
     kit.block(module, (*middle, 0.0), (side, side, high), 'stone', bevel=0.06, wear=0.04, cuts=3)
     for z in strings:

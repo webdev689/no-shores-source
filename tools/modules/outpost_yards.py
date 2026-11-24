@@ -92,7 +92,9 @@ def gate_mound(module):
             fittings.post(module, (x * (1.9 + k * 1.0), top_front - 0.1, 0.0), PLATFORM_M + 0.1, side=0.18,
                           part=False)
         for z in (0.5, 1.4):
-            shapes.slab(module, (x * 3.4, top_front - 0.04, z), (3.4, 0.06, 0.32), 'timber')
+            shapes.slab(module, (x * 3.4, top_front - 0.04, z), (3.2, 0.06, 0.32), 'timber')
+        near, far = sorted((x * 1.8, x * SIDE_M))
+        module.part((near, top_front - 0.19, 0.0), (far, top_front, PLATFORM_M + 0.1))
     # The headframe over the well's mouth: two legs, a beam, a wheel and its rope down into the dark.
     for x in (-1, 1):
         shell.pole(module, (x * 1.8, 2.4, PLATFORM_M), (x * 0.9, 2.4, PLATFORM_M + 2.8), 0.08)
