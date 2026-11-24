@@ -25,7 +25,7 @@ use crate::tuning::{
     FLEE_SHARE, FOLLOW, GUARD_RESERVE, HURT_SHARE, KITE_CORNERED, POISE_NEAR, RANK_GAP, RECOVER, RECOVER_HOP,
     RING_ROOM, RING_SLACK, RUN_FROM, STALE, STEP_PACE, SWING_FACE, SWING_SLACK, WALLED,
 };
-use combat::arms::{stroke_shape, swing_ticks, weapon};
+use combat::arms::{stroke_shape, weapon};
 use combat::fighter::Action;
 use combat::sight::{apart, bearing, clear_line, off, wrap};
 use combat::strike::reach_of;
@@ -429,7 +429,7 @@ fn speed_away(sight: &Sight) -> f64 {
 /// How much farther a target walking away at `away` stands once a blow begun now lands, the foe following it at the
 /// pace a swing allows.
 fn lead(here: &Here<'_, '_>, away: f64) -> f64 {
-    let strike = f64::from(swing_ticks(here.fighter.arms.melee).0) * TICK_SECONDS;
+    let strike = f64::from(here.fighter.swing_ticks().0) * TICK_SECONDS;
     (away - ATTACK_PACE * here.walk()).max(0.0) * strike
 }
 

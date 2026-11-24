@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import { test } from 'node:test';
+import { EVENT } from '../combat/cues.ts';
 import { type BreachSeen, RIFT, STONE } from '../network/breachMessages.ts';
 import { breachPlanOf } from './breachPlan.ts';
 import {
@@ -35,7 +36,7 @@ const plan = breachPlanOf(
 const RUN: BreachSeen = {
   ...{ gate: false, tier: 0, phases: [2, 0, 0, 0, 0, 0], reached: 1, seals: 0, revives: -1 },
   ...{ stone: STONE.away, bearer: 0, stoneAt: [0, 0, 0], charge: 1, held: 0, lyingTicks: 0 },
-  ...{ marked: [], raising: [], chests: 0, encounter: 0, stage: 0, stageTicks: 0, counts: [], bells: [] },
+  ...{ marked: [], chests: 0, encounter: 0, stage: 0, stageTicks: 0, counts: [], bells: [] },
   ...{ bellFoes: [], broken: 0, ringTicks: 0, fontTicks: 0, boss: 0, warded: false, desk: 0, markedDesk: -1 },
   ...{ deskTicks: 0, writeTicks: 0, seen: false, wipeTicks: 0, rifts: [], riftHeld: [], kept: 0, takings: 0 },
   ...{ takingTicks: 0, awayShore: -1, away: [], wayBack: false, bareTicks: 0, heldBy: false, fill: 0 },
@@ -270,7 +271,7 @@ test("the place line names the run's tier, its encounter and its revives; the ca
   assert.equal(runPlaceWords(plan, { ...RUN, tier: 1, revives: 1 }, 1), 'Breach · Hard · The Mending · 1 revive left');
 });
 
-test("the room's moments are said: the company fallen and why, a raising with its revives, one seen by a Watcher", () => {
+test("the room's moments are said: the company fallen and why, one seen by a Watcher, but a revive (the game's)", () => {
   const moment = (kind: number, amount = 0, striker = 0, defender = 0) => ({ kind, amount, striker, defender });
   assert.equal(momentWords(moment(BREACH_EVENT.wiped, 2), names), 'Your company fell.');
   const lay = 'the Lodestone lay too long';
@@ -278,8 +279,7 @@ test("the room's moments are said: the company fallen and why, a raising with it
     momentWords(moment(BREACH_EVENT.wiped, 2), names, lay),
     'Your company fell: the Lodestone lay too long.',
   );
-  assert.equal(momentWords(moment(BREACH_EVENT.revived, 2, 1, 0), names), 'Ada raised you · 2 revives left');
-  assert.equal(momentWords(moment(BREACH_EVENT.revived, 255, 0, 2), names), 'You raised Ben', 'none counted');
+  assert.equal(momentWords(moment(EVENT.revived, 2, 1, 0), names), null, 'told by footRevive.ts');
   assert.equal(momentWords(moment(BREACH_EVENT.unwritten, 3), names, lay), 'The company is unwritten.');
   assert.equal(momentWords(moment(BREACH_EVENT.unwritten, 1), names), null, 'a writing, or one mark come due');
   assert.equal(momentWords(moment(BREACH_EVENT.seen, 1), names), 'A Watcher saw Ada.');

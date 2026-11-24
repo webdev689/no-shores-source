@@ -27,7 +27,7 @@ import { CORNER } from '../plus/barFrame.ts';
 import { type HudLayout, hudLayout } from './hudLayout.ts';
 import { Crosshair, type CrosshairFrame } from './reticle.ts';
 import { Vitals } from './vitals.ts';
-import { type StandingAgain, blockedBy, clearOf, clipOf, meets, project, sidesOf, spanOf, veilOf } from './hudPlace.ts';
+import { blockedBy, clearOf, clipOf, meets, project, sidesOf, spanOf, veilOf } from './hudPlace.ts';
 import { type PlatedPlayer, PlayerPlates } from './playerPlates.ts';
 import { type ArmsShown, LOADOUT_KEYS, WeaponRows } from './weapons.ts';
 import type { CapFace } from './shipAbilityBar.ts';
@@ -49,12 +49,9 @@ export interface HudFrame {
   readonly pressed: boolean;
   readonly lost: string | null;
   readonly rejoining?: boolean;
-  /** An Abyss run's revives left (-1 or none in any other room): with none, the room stands no one fallen again. */
-  readonly revivesLeft?: number;
-  /** Whether the section killed the player too: only Respawn, on its own veil, stands them again. */
-  readonly sectionDead?: boolean;
-  /** How the fallen stand again where the place's room says so (a Breach's); none for the combat rules' own. */
-  readonly fall?: StandingAgain | null;
+  /** Whether the room stands the fallen again only as they ask (the game's rooms, `footRevive.ts`), whose own death
+   *  screen tells of it: then no veil does. */
+  readonly asksToRespawn?: boolean;
   /** The crosshair: a ranged one while it aims or is out in first person, the melee one while a melee weapon is drawn. */
   readonly crosshair?: CrosshairFrame | null;
   /** The shots left, beside the crosshair, while the Ranged loadout is drawn; null while they are not shown. */

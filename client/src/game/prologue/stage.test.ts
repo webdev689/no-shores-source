@@ -99,7 +99,7 @@ test('leaving gives the game back its clear weather and its own sky, quiet, an H
     flames: { clear: note('no fires') },
     hud: {
       reach: (standing: { kind: string }) => done.push(`reach ${standing.kind}`),
-      hints: note('no hints'),
+      strip: note('no hints'),
       tasks: { show: (quest: unknown) => quest === null && done.push('no task') },
       seaFight: (ship: unknown) => ship === null && done.push('no ship panel'),
       sight: (aiming: boolean) => !aiming && done.push('no sight'),

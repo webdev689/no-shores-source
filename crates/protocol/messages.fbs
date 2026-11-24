@@ -30,7 +30,7 @@ table Ask {
 // the point an aimed shot is laid on; a drink asked: combat's intent order), what the hands hold as
 // combat's arms code, the room tick of the last snapshot the screen showed, a foe to stand before the player (0 none;
 // 255 sends every foe away; else its role, 1 to 5, in the low four bits when no type is named, and the element of a
-// shield it stands with in the bits above them), whether they ask to respawn, dead past a node's section, an ask of
+// shield it stands with in the bits above them), whether they ask to respawn, fallen, an ask of
 // their gear, and the level of the foe asked for (0 for none: combat's own numbers). Then the foe's type's number in
 // the roster (0 none) and its rank (1 Minor to 5 Boss; one the type does not come in takes the type's first). Then a
 // spell cast this tick, by its number among the Arts' (1 Tempest to 9 Vanish, 0 none), and where it is aimed (x, y,
@@ -58,6 +58,8 @@ table Input {
   earlier: [Input];
   // Whether a menu is open on the player's screen, which others see over their head.
   menu: bool;
+  // Whether the player holds Use to revive a fallen ally beside them.
+  revive: bool;
 }
 
 // A ship's course in the sea room: the world points it sails through in turn, x then y in metres, and its pace, one of
@@ -457,6 +459,14 @@ table PublicEvent {
   next_wave_ticks: uint;
 }
 
+// A fallen player an ally is reviving: the fallen player's number, the ally's, and how much of the hold is done, per
+// mille.
+table Reviving {
+  fallen: uint;
+  reviver: uint;
+  progress: ushort;
+}
+
 // One of an Elite Dungeon's seals: its kind (1 the Litany, 2 the Weighing, 3 the Ascent, 4 the Holdfast), its state
 // (0 waiting, 1 running, 2 broken), its progress per mille, its pieces' marks (a Litany's runes 0 dark, 1 showing, 2
 // stepped in order, 3 stepped wrong a moment ago; a Weighing's plates in play and a Holdfast's ring 1 while stood on;
@@ -500,8 +510,8 @@ table BreachInside {
 // each field): in its run, each encounter's phase (0 waiting, 1 running, 2 won), the stage reached, the seals open (a
 // bit each), the revives left (-1 none counted), the Lodestone (0 away, 1 on a plinth, 2 borne, 3 lying; its bearer,
 // where it stands, its charge and Hold True's share left per mille, the ticks before the company is unwritten while it
-// lies), the Rewritten and their ticks left, the raisings (raiser and raised in pairs, each one's share), the hidden
-// chests open, and the encounter under way; at its gate, the Waking, who the gate is open to and the companies inside.
+// lies), the Rewritten and their ticks left, the hidden chests open, and the encounter under way; at its gate, the
+// Waking, who the gate is open to and the companies inside.
 // Ticks count down to a moment, 0 for none coming.
 table BreachSeen {
   gate: bool;
@@ -518,8 +528,6 @@ table BreachSeen {
   lying_ticks: uint;
   marked: [uint];
   mark_ticks: [uint];
-  raising: [uint];
-  raised: [ushort];
   chests: ubyte;
   encounter: ubyte;
   stage: ubyte;
@@ -564,7 +572,8 @@ table BreachSeen {
 // land; and at sea what floats for each player, each player's ship's kept hurts, what each player is told this tick,
 // and each deck boarded; and in a fleet room the world time its clock started at, seconds since the Unix epoch, which
 // sets its weather. Then, at sea, the islands the player sees or has found. Then, in a zone that holds them, its
-// public events, sent whole in each snapshot; last, in an Elite Dungeon, its encounters.
+// public events, sent whole in each snapshot; in an Elite Dungeon, its encounters; last, on land, the darkness where
+// the player lies and each revive under way.
 table Snapshot {
   tick: ulong;
   players: [Seen];
@@ -610,6 +619,10 @@ table Snapshot {
   encounter: EncounterSeen;
   // In a Breach's run or a patrol room with a Breach's gate, the Breach (BreachSeen); none in any other room.
   breach: BreachSeen;
+  // On land, whether the player lies in a darkness zone now, where no one fallen respawns by their own ask; and each
+  // fallen player an ally is reviving.
+  darkness: bool;
+  reviving: [Reviving];
 }
 
 // What a room sends: exactly one of these is present.

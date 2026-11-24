@@ -304,6 +304,9 @@ a decision is a record. How to add one: [[Recording a Decision]].
 - [[Every Perk Stands, the Factions' Nine With Them]]
 - [[Claude Finishes the Gear Calls on Its Own Word]]
 - [[The Set Names Stand as Claude Drafted Them]]
+- [[Weapons and Armour Carry Flavour Text]]
+- [[Commons Drop as Themselves, Never as Vestiges]]
+- [[Breach Weapons Come Normal and Forged]]
 - [[The Prologue Wakes by Darkening and Pulsing, Not Eyelids]]
 - [[The Prologue's Scenes Change Slower, Behind the Logo While They Load]]
 - [[Thule Fights on a Quarterdeck Twice as Long]]
@@ -344,6 +347,16 @@ a decision is a record. How to add one: [[Recording a Decision]].
 - [[The Breach Opens in the Patrol Zone, and the Rest Is Its Own Instance]]
 - [[The Drowned Vale as Claude Builds It]]
 - [[The Patrol Audit's Leftovers Are Fixed as the Owner Chose]]
+- [[The Key Strip Is a Compact Panel, a Held Key Leaves, and Settings Has Tabs]]
+- [[The Balance and Economy Pass Is Claude's, After Destiny 1 Vanilla]]
+- [[The Balance and Economy Pass as Claude Shapes It]]
+- [[The Bulwark Blocks, Supers Are Powerful, the Sea's Gaps Close and Level 30 Takes Breach Gear]]
+- [[Pairs Swing Faster, Foes' Guns Strike Two Thirds and Faction Gear Has No Weekly Limit]]
+- [[Fallen Players Are Revived as in Destiny]]
+- [[Activities Keep Checkpoints, and Patrol Zones Respawn the Player Near Where They Fell]]
+- [[A Player Logs Back In Where They Left the Overworld or a Social Space]]
+- [[Revives, Respawns and Relogs as Claude Shapes Them]]
+- [[A Foe's Plain Swing Takes Seven Eighths of Its Time]]
 
 ## Replaced
 

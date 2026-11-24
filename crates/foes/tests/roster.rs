@@ -3,7 +3,7 @@
 //! each rank throws its own set of telegraphed blows; roles, ranks and factions read back by number.
 
 use combat::arms::{OffHand, Ranged, WeaponClass};
-use combat::fighter::{Side, Weight};
+use combat::fighter::{Fighter, Side, Weight};
 use combat::shapes::Shape;
 use foes::ranks::{CORVANE, DEFENCE_MOST, Phase, REACTION_LEAST, THULE, shapes};
 use foes::roster::{COLLECTOR, CROSSBOWMAN, DECKHAND, Domain, HIGH_ASSESSOR, REEVE};
@@ -39,7 +39,8 @@ fn every_type_spawns_at_each_of_its_ranks_on_its_factions_side_with_its_numbers_
             assert_eq!(fighter.arms, combat::arms_of(foe.right, foe.left, true), "{}", foe.name);
             let shares = [numbers.parry, numbers.block, numbers.dodge];
             let total: f64 = shares.iter().sum();
-            let wanted = (role.parry + role.block + role.dodge) * defence;
+            let base = foe.base();
+            let wanted = (base.parry + base.block + base.dodge) * defence;
             assert!(total <= DEFENCE_MOST + CLOSE && (total - wanted.min(DEFENCE_MOST)).abs() < CLOSE);
             assert!(numbers.reaction >= REACTION_LEAST);
             assert_eq!((fighter.body.x, fighter.body.y, fighter.body.facing, fighter.aim), (3.0, -4.0, 1.0, 1.0));
@@ -57,17 +58,23 @@ fn spot_checks_of_the_ranks_multipliers_and_caps() {
     assert!((minor.might - 0.9).abs() < CLOSE && minor.reaction == 20);
     assert!((minor.parry - 0.075).abs() < CLOSE && (minor.block - 0.175).abs() < CLOSE);
     assert!((minor.dodge - 0.05).abs() < CLOSE && !minor.elite && !minor.feints);
-    // The crew's captain as an Elite: its shares, 0.875 together, scaled down evenly to 0.85; its reaction floored.
+    // The crew's captain as an Elite: its shares, 0.55 together, a quarter more; its reaction floored.
     let elite = numbers(17, Rank::Elite);
     assert!((elite.health - 352.0).abs() < CLOSE && (elite.poise - 96.0).abs() < CLOSE);
     assert!((elite.might - 1.38).abs() < CLOSE && elite.reaction == 13);
-    assert!((elite.parry - 0.25 * 1.25 * 0.85 / 0.875).abs() < CLOSE);
-    assert!((elite.parry + elite.block + elite.dodge - 0.85).abs() < CLOSE && elite.elite && !elite.feints);
-    // The Reeve is a captain of the Grey Tithe, as the crew's captain is; the Boss seven captains, its shares capped.
+    assert!((elite.parry - 0.2 * 1.25).abs() < CLOSE);
+    assert!((elite.parry + elite.block + elite.dodge - 0.55 * 1.25).abs() < CLOSE && elite.elite && !elite.feints);
+    // The Reeve is a captain of the Grey Tithe, as the crew's captain is; the Boss seven captains.
     assert_eq!(numbers(6, Rank::Elite), foes::roles::Numbers { right: "mace_iron", left: "shield_kite_iron", ..elite });
     let boss = numbers(12, Rank::Boss);
     assert!((boss.health - 1120.0).abs() < CLOSE && boss.reaction == 13 && boss.feints && boss.phases == 3);
-    assert!((boss.parry + boss.block + boss.dodge - 0.85).abs() < CLOSE);
+    // Each of a captain's ranks defends more than the one below, every one under the cap.
+    let defends = |rank: Rank| {
+        let found = numbers(17, rank);
+        found.parry + found.block + found.dodge
+    };
+    let (miniboss, boss_defends) = (defends(Rank::Miniboss), boss.parry + boss.block + boss.dodge);
+    assert!(defends(Rank::Elite) < miniboss && miniboss < boss_defends && boss_defends < 0.85, "{boss_defends}");
     assert_eq!(numbers(17, Rank::Miniboss).phases, 2);
     // A brute never defends at any rank.
     let bosun = numbers(10, Rank::Elite);
@@ -213,4 +220,22 @@ fn each_elite_dungeon_has_a_boss_of_its_own_of_its_garrisons_faction_fighting_co
         (foe_type(21).unwrap().name, foe_type(38).unwrap().name),
         ("Wreck-Reeve Oswin Tarr", "Catacomb-Reeve Silas Brine")
     );
+}
+
+#[test]
+fn the_bulwark_raises_its_shield_as_a_swordsman_does_until_its_change_drops_it() {
+    let bulwark = foe_type(foes::roster::BULWARK).expect("the Bulwark");
+    let (fighter, brain) = spawn(bulwark, Rank::Elite, 0.0, 0.0, 0.0);
+    let swordsman = foes::roles::numbers(Role::Swordsman).block;
+    let shielded = foes::roster::standing(&brain, &fighter);
+    assert!((shielded.block - swordsman * 1.25).abs() < CLOSE, "an Elite's share of a swordsman's block");
+    assert_eq!(
+        foes::roster::standing(&brain, &Fighter { health: fighter.health_max * 0.6, ..fighter }).block,
+        shielded.block
+    );
+    let changed = Fighter { health: fighter.health_max / 2.0, ..fighter };
+    assert_eq!(foes::roster::standing(&brain, &changed).block, 0.0, "at half its health its shield is gone");
+    // Another brute keeps its role's never-guarding way.
+    let (fighter, brain) = spawn(foe_type(4).expect("the Enforcer"), Rank::Major, 0.0, 0.0, 0.0);
+    assert_eq!(foes::roster::standing(&brain, &fighter).block, 0.0);
 }

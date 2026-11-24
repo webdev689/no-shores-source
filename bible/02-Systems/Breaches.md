@@ -9,6 +9,7 @@ code:
   - crates/room/src/breach/plan.rs#drowned_vale
   - crates/room/src/breach/gate.rs#open_breach_gate
   - crates/room/src/breach/fallen.rs#stands_after
+  - crates/room/src/breach/fallen.rs#breach_lets_revive
   - crates/room/src/breach/lodestone.rs#Lodestone
   - crates/room/src/breach/mending.rs#keep_mending
   - crates/room/src/breach/choir.rs#keep_choir
@@ -37,11 +38,14 @@ Claude's ([[The Drowned Vale as Claude Builds It]]).
 ## How it works
 
 - **Two tiers.** `gear::breach::Tier`: Normal stands its foes at 26 and opens at level 24; Hard at 30, opening at 28
-  and only once Normal is won (`Shut::BreachHard`). At Normal the fallen in a running encounter stand again after
-  10 s at its stage; at Hard they never stand again of themselves: a company member raises them (hold the interact
-  key 3 s within 2.5 m), each raising one of the attempt's 5 revives. Outside a running encounter the fallen stand
-  again after 6 s at either tier (`stands_after`); a fall into the dark waits as long. At the Waking the same holds
-  for the company holding the gate in its hollow, standing again at the gate's arrival. At Hard every blow on a player
+  and only once Normal is won (`Shut::BreachHard`). The fallen are revived as anywhere ([[Revives]]); the Breach adds
+  its own rules on top (`breach/fallen.rs`). At Normal the fallen in a running encounter stand again of themselves,
+  unasked, after 10 s at its stage, unless revived sooner; at Hard they never stand again of themselves, and each
+  revive spends one of the attempt's 5 revives, none left meaning none (`breach_lets_revive`). Outside a running
+  encounter the fallen stand again after 6 s at either tier (`stands_after`); a fall into the dark is not revived, and
+  waits as long. Every stand at the stage reached is a respawn there, the stage the Breach's checkpoint, told
+  `Checkpoint` as it moves on. At the Waking the same holds for the company holding the gate in its hollow, standing
+  again at the gate's arrival, its fallen revived only by its own company. At Hard every blow on a player
   in the run, or of the company in its Waking, weighs 1.25 times. Every living player down 3 s at once wipes the
   attempt: its foes go, the company stands whole at its stage, its revives are whole again, and it begins again as
   they walk in. A player who leaves and comes back keeps what the Breach laid on them: down if they left down (a fall
@@ -132,17 +136,17 @@ Claude's ([[The Drowned Vale as Claude Builds It]]).
   it is told from a safe one by shape as well as colour. Which Choir bell comes next is never marked.
 - **Its moments** (`breachMoments.ts`), each once, at its place: a bell (each waking at its own note), a mooring, a
   rift, a desk, a Keeper's shore, the marked or seen player. The great foes' waking plays the Elite Boss's sting and
-  the music's peak; a wipe names its cause ("Your company fell: the Lodestone lay too long."), and a raise and the
-  company unwritten are told in words.
+  the music's peak; a wipe names its cause ("Your company fell: the Lodestone lay too long."), and the company
+  unwritten is told in words; a revive is told as the game tells it ([[Revives]]).
 - **The Lodestone's bearer** is drawn bare handed with no crosshair; its key strip reads Strike, Hold True and Ground;
-  any Art key Grounds it once charged. Use takes up the Lodestone before raising anyone while it lies counting down.
-- **Falling, raising and following**: the death veil says the Breach's truth (10 s at Normal in a running encounter
-  or the Waking, 6 s outside one; at Hard that a company member can raise them, with the revives left, or for a fall
-  into the dark that they stand again once the encounter is won or the company falls), and Respawn is offered only
-  when the room would take it. Holding Use by a fallen company member raises them, its fill a ring; there is no prompt
-  with no revives left, nor at the gate outside one's company's Waking; "no revives left" (110) and "none to raise"
-  (111) are told in words. While dead, once their fall has played, the view follows a living company member, in the
-  run or at the gate (`followCamera.ts`), its key naming who ("Following Ada · Next").
+  any Art key Grounds it once charged. Use takes up the Lodestone before a revive while it lies counting down.
+- **Falling, reviving and following**: the game's death screen and revive prompt ([[Revives]], "On the page") say the
+  Breach's truth where it differs (`StandingAgain`): "Standing again in 9 s" (10 s at Normal in a running encounter or
+  the Waking, 6 s outside one), at Hard "A company member can revive you · 3 revives left" or, with none left, that
+  they stand again once the encounter is won or the company falls, as for a fall into the dark; Respawn is offered
+  only when the room would take it. There is no revive prompt with no revives left, nor over the Waking's company for
+  one outside it (`mayRevive`). While dead, once their fall has played, the view follows a living company member, in
+  the run or at the gate (`followCamera.ts`), its key naming who ("Following Ada · Next").
 
 ## Its art
 

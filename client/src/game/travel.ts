@@ -64,9 +64,9 @@ export function startTravel(game: TravelGame) {
   /** The way back to where the player stands now, joined again: the ship, an island's beach, a dungeon or a node. */
   const wayBack = (): Refuge | null => {
     const { flow, foot } = playing;
-    if (onTheSea(flow)) return { flow: { mode: 'sea', menu: false }, go: game.goSea };
+    if (onTheSea(flow)) return { flow: { mode: 'sea' }, go: game.goSea };
     if (flow.mode !== 'foot' || !foot) return null;
-    const [stood, { node, dungeon, text, seas }, held] = [{ ...flow, menu: false }, foot, game.ashore()];
+    const [stood, { node, dungeon, text, seas }, held] = [flow, foot, game.ashore()];
     if (dungeon) {
       const outside = { node: dungeon.patrol, text };
       return {
@@ -84,7 +84,7 @@ export function startTravel(game: TravelGame) {
   /** The hub, Overlook's social space, where a trip with no way back ends. */
   const hub: Fallback['hub'] = {
     name: 'Overlook',
-    flow: { mode: 'foot', node: FIRST_NODE, menu: false },
+    flow: { mode: 'foot', node: FIRST_NODE },
     go: () =>
       onOtherLand({ now: () => playing.landmass, open: game.hubLand, put: game.showLandmass }, async () => {
         const node = playing.landmass.nodes.find((each) => each.id === FIRST_NODE);
@@ -100,7 +100,6 @@ export function startTravel(game: TravelGame) {
     const back = sentOut(happening) ? null : wayBack();
     const place = placeOf(after.then, happening, (id) => playing.landmass.nodes.find((node) => node.id === id)?.name);
     playing.flow = after;
-    hud.menu(null);
     document.exitPointerLock();
     behindVeil(after.words, work, { place, back, hub });
   };

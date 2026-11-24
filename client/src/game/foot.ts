@@ -43,14 +43,14 @@ import { PlazaLife, countersOf, floorOver } from './plazaLife.ts';
 import { PublicView } from './publicView.ts';
 import { openNodeAlone } from './footNode.ts';
 import { nodeRoom } from './rooms.ts';
-import { heardRun, type InDungeon, roomNameAt, unheard, useOnFoot } from './footTrips.ts';
-import { cacheOf } from './dungeonChest.ts';
+import { hearRoom, type InDungeon, roomNameAt, unheard, useOnFoot } from './footTrips.ts';
+import { type Fallen, fallenMarks, fallenOf, reviveHere } from './footRevive.ts';
 import { ceilingAt, openAt } from './dungeonLayout.ts';
 import { worldOutput } from './uiSounds.ts';
 import type { UsePrompt } from './usePrompt.ts';
 import { type Dressed, dressInGear, figureWhere, figuresEye, otherCards, ownCard, strikersOf } from './footFigures.ts';
 import type { AtEntrance, FootAsk, FootContext, FootFight, FootFrame, Heard, Held, Opened, Uses } from './footPlace.ts';
-import { arrivalQuery, closedIfThrown, stand } from './footPlace.ts';
+import { closedIfThrown, joinAsk, stand } from './footPlace.ts';
 import { type InBreach, bearing } from './breachView.ts';
 import { gateArrival } from './breachTrips.ts';
 import { FollowCamera, fallPlayed, followable, livingAmong } from '../player/followCamera.ts';
@@ -197,17 +197,18 @@ export class Foot {
     node: NodeInfo,
     facing: number,
     seas: Difficulty = 'normal',
-    arriving?: AtEntrance,
+    asked?: AtEntrance | 'relog',
   ): Promise<Foot> {
     const rules = await rulesOf(context);
     const module = await context.roomModule;
     let rect = windowRect(node.ring);
     let { boxes, ground } = await standOn(context, rules.combat, rect);
+    const arriving = asked === 'relog' ? undefined : asked;
     // Launched for a Breach's run, the player stands at its gate, where the zone's room stands them.
     const placed = arriving?.breach === undefined ? arriving : await gateArrival(context.land, node, arriving.breach);
     const [x, y] = placed ? [placed.x, placed.y] : (node.spawns[0] ?? node.centre);
     stand(context, x, y, placed?.facing ?? facing, node.kind === 'social');
-    const address = context.rooms && `${context.rooms(nodeRoom(node, seas))}${arriving ? arrivalQuery(arriving) : ''}`;
+    const address = context.rooms && `${context.rooms(nodeRoom(node, seas))}${joinAsk(asked)}`;
     return Foot.start(context, node, rules, async (heard, session) => {
       const connection = address ? await RoomConnection.open(address, heard.snapshot, heard.gear, session) : null;
       // The room names the rect its window was cut to; a room baked from older edits is stood on as it stands.
@@ -237,20 +238,7 @@ export class Foot {
     const held: Held = { gear: null, alone: null, ...unheard() };
     const online = context.rooms !== null;
     const asked = online ? [] : context.foesAsked;
-    const heard: Heard = {
-      snapshot: (snapshot: Snapshot) => {
-        received(snapshot);
-        held.cache = cacheOf(snapshot.cache);
-        heardRun(held, snapshot, hearer.fight?.player ?? null);
-      },
-      // Offline the room's word on the gear tells of the patrol's entrances and the chests; the figure keeps its dress.
-      gear: (sent: GearState) => {
-        if (online) held.gear = sent;
-        else held.alone = sent;
-        held.entrances.heard(sent.dungeons);
-      },
-      asks: asked.length > 0,
-    };
+    const heard = hearRoom(held, () => hearer.fight?.player ?? null, received, { online, asks: asked.length > 0 });
     const opened = await open(heard, await context.session());
     return closedIfThrown(opened.link, async () => {
       const fight = new Fighting(rules.combat, opened.link);
@@ -288,12 +276,14 @@ export class Foot {
     const [x, y] = node.spawns[0] ?? node.centre;
     stand(context, x, y, place.facing ?? 0, false);
     const { players, heard, received } = hearing(context.forge);
-    const link = open(received);
+    // The place's own holder of the gear, which its room's word fills, is the one the figure is dressed from.
+    const held: Held = Object.assign(place.gear ?? { gear: null }, { alone: null }, unheard());
+    // Each snapshot is heard as a node's is, so a deck's fallen and their revives show as on land.
+    const own = () => heard.fight?.player ?? null;
+    const link = open(hearRoom(held, own, received, { online: context.rooms !== null, asks: false }).snapshot);
     const fight = new Fighting(rules.combat, link);
     heard.fight = fight;
     players.take(link);
-    // The place's own holder of the gear, which its room's word fills, is the one the figure is dressed from.
-    const held: Held = Object.assign(place.gear ?? { gear: null }, { alone: null }, unheard());
     const opened: Opened = { link, boxes, text: '', dungeon: null, seas: 'normal' };
     const people = { otherPlayers: players, held, folk: [], module: await context.roomModule };
     const foot = new Foot(context, node, opened, { link, fight, ...rules }, people);
@@ -435,6 +425,7 @@ export class Foot {
     const [muzzle, gearNow, floor, doors] = [walker.muzzle, this.gear?.gear ?? null, this.floor, this.held.entrances];
     const { trips, speak } = this.context;
     const marked = markedHere(gearNow, countersOf(this.node), floor, trips.props(), speak, doors.entrances);
+    marked.push(...fallenMarks(fight.others));
     const lit = litMarksSeen(marked, shot.eye, clock);
     const hidden = marksHidden(marked, shot.eye, clock);
     const laid = (gearNow?.drops ?? []).filter((drop) => drop.kind !== DROPPED.chest);
@@ -453,13 +444,7 @@ export class Foot {
       quiet: paused,
       held: fight.publicHeld,
       encounter: { layout: this.dungeon?.layout, seen: this.held.encounter },
-      breach: {
-        seen: this.held.breach,
-        using: controls.held('use'),
-        fight,
-        others: this.otherPlayers,
-        gear: this.held.gear,
-      },
+      breach: { seen: this.held.breach, fight, others: this.otherPlayers },
     });
     const marks = effects.marks(fight, seconds, {
       eye: shot.eye,
@@ -519,12 +504,17 @@ export class Foot {
     const placeUse = this.uses?.(x, y, (asked) => fight.askGear(asked)) ?? null;
     const { mounted } = walker.player;
     const counters = countersOf(this.node);
-    const chest = this.publicView.use(chests, feet, (asked) => fight.askGear(asked), clock);
-    this.using = able ? (chest ?? useOnFoot(x, y, placeUse, counters, gear, here, trips, speak, mounted)) : null;
+    // A fallen ally beside the player comes first, as Destiny's revive does, but for a Breach's Lodestone lying
+    // counting down; then a public event's chest.
+    const urgent = this.publicView.urgent(feet, (asked) => fight.askGear(asked));
+    const [own, may] = [[x, y, walker.player.body.z] as const, this.publicView.mayRevive];
+    const revive = reviveHere(fight, this.held, own, able && !mounted && !urgent, controls, this.nameOf, may);
+    const first = urgent ?? revive.use ?? this.publicView.use(chests, feet, (asked) => fight.askGear(asked), clock);
+    this.using = able ? (first ?? useOnFoot(x, y, placeUse, counters, gear, here, trips, speak, mounted)) : null;
     // Use let go, as bound (a key, the pad's button, or the page's focus lost): a gather under way is let go of.
     if (!controls.held('use')) this.hold.release();
     const gathered = this.hold.share(clock, able && !mounted, gear?.gear ?? null);
-    this.prompt.show(this.using?.words ?? null, gathered ?? this.using?.share ?? null);
+    this.prompt.show(this.using?.words ?? null, revive.share ?? gathered);
     const held = gear?.gear;
     // The room leaves an Ammo box lying while the ammunition is full, whether a Ranged weapon is worn or not.
     const full = (held?.ammoShare ?? 1) >= 1;
@@ -544,6 +534,7 @@ export class Foot {
       ammo: sights && !bearer ? (ownView?.ammo ?? null) : null,
       ammoMost: held?.ammoMost ?? null,
       ammoFull: !!ownView && this.drops.ammoFull(held?.drops ?? [], [ownView.x, ownView.y, ownView.z], full),
+      asksToRespawn: true, // every room on foot waits for the ask, its own death screen telling of it
       crosshair: bearer ? null : crosshairOf(shown.reticle, sights, ownView, fight.reach),
       arms: {
         gear: this.gear?.gear ?? null,
@@ -552,10 +543,9 @@ export class Foot {
         dress: walker.you.dress,
       },
       public: shownPublic.shown,
-      fall: this.publicView.fall,
     };
     const standing = this.standing;
-    const hints = keysShown(standing, onFoot(walker, shown, fight, !controls.locked && !paused, bearer));
+    const hints = keysShown(standing, onFoot(walker, shown, fight, !controls.locked && !paused, bearer), this.fell);
     const dark = arrivals.darkOf(fight.player, clock);
     const { props, quest, sting } = shownPublic;
     return { shot, figures, standing, marks, lit, hidden, swings, fight: fought, hints, dark, props, quest, sting };
@@ -571,10 +561,19 @@ export class Foot {
     return standingOf(standing.kind, standing.ticks, byFall, this.falling.told(byFall), fall ? fall.ticks : undefined);
   }
 
-  /** Asks the room to stand the player again at the section's spawn nearest where they died, while it offers it. */
+  /** The player's own fall in the fight, as the death screen tells it; null while they stand (`footRevive.ts`). */
+  get fell(): Fallen | null {
+    return fallenOf(this.fight.own, this.fight.player, this.held, this.nameOf, this.publicView.fall);
+  }
+
+  /** Another player's name, as their plate says it ('' for a guest). */
+  private readonly nameOf = (id: number): string => this.otherPlayers.plateOf(id)?.name ?? '';
+
+  /** Asks the room to stand the player again, fallen in the fight or dead past the section's edge, while it offers it:
+   *  it puts them at their activity's checkpoint, near where they fell in a patrol zone, else at a spawn. */
   respawn(): void {
     const { standing } = this;
-    if (standing.kind === 'dead' && standing.canRespawn) this.fight.askRespawn();
+    if ((standing.kind === 'dead' && standing.canRespawn) || this.fell?.canRespawn) this.fight.askRespawn();
   }
 
   /** Leaves the node: its room lets the player go, and every other player's figure and its people are taken away. */

@@ -62,7 +62,9 @@ pub struct Weapon {
     pub two_handed: bool,
 }
 
-/// Each class's numbers. Weights are DFO's poise weights by class, two-handed ones a further 1.15.
+/// Each class's numbers. Weights are DFO's poise weights by class, two-handed ones a further 1.15. The greatsword,
+/// our own, trades the great axe's blow and weight for reach and the warhammer's for more again, so none of the three
+/// outdoes another at everything.
 #[must_use]
 pub const fn weapon(class: WeaponClass) -> Weapon {
     let (reach, damage, weight, stamina, handling, two_handed) = match class {
@@ -74,7 +76,7 @@ pub const fn weapon(class: WeaponClass) -> Weapon {
         WeaponClass::Axe => (2.0, 22.0, 1.25 * 1.15, 20.0, 1.05, true),
         WeaponClass::Warhammer => (2.0, 24.0, 1.5 * 1.15, 22.0, 1.06, true),
         WeaponClass::Staff => (2.2, 13.0, 1.15, 14.0, 0.97, true),
-        WeaponClass::Greatsword => (2.3, 24.0, 1.3 * 1.15, 21.0, 1.06, true),
+        WeaponClass::Greatsword => (2.3, 21.0, 1.2 * 1.15, 21.0, 1.06, true),
     };
     Weapon { reach, damage, weight, stamina, handling, two_handed }
 }
@@ -87,12 +89,36 @@ pub const SWING_PACE: f64 = 0.75;
 const STRIKE_FRAMES: f64 = 5.0;
 const HIT_FRAME: f64 = 2.0;
 
-/// The ticks from a swing's start to its blow landing, and to its end.
+/// A player's pair's swings come round in this share of its lone weapon's time, each blow at this share of its damage:
+/// about an eighth more a second than the lone weapon, for a left hand that holds no shield.
+pub const PAIR_PACE: f64 = 0.8;
+pub const PAIR_DAMAGE: f64 = 0.9;
+
+/// A foe's swing takes this share of the law's time, slower than a player's three quarters, so a person has a little
+/// longer to see its blow come and parry it: a sword's lands 21 ticks after it begins, a player's 18.
+pub const FOE_SWING_PACE: f64 = 0.875;
+
+/// The ticks from a player's swing's start to its blow landing, and to its end.
 #[must_use]
 pub fn swing_ticks(class: WeaponClass) -> (u32, u32) {
+    paced_ticks(class, SWING_PACE)
+}
+
+/// The ticks of a player's pair's swing: PAIR_PACE of its lone weapon's.
+#[must_use]
+pub fn pair_swing_ticks(class: WeaponClass) -> (u32, u32) {
+    paced_ticks(class, SWING_PACE * PAIR_PACE)
+}
+
+/// The ticks of a foe's swing, at FOE_SWING_PACE.
+#[must_use]
+pub fn foe_swing_ticks(class: WeaponClass) -> (u32, u32) {
+    paced_ticks(class, FOE_SWING_PACE)
+}
+
+fn paced_ticks(class: WeaponClass, pace: f64) -> (u32, u32) {
     let weapon = weapon(class);
-    let frame =
-        (SWING_FRAME * weapon.handling * if weapon.two_handed { 1.06 } else { 1.0 }).clamp(0.09, 0.4) * SWING_PACE;
+    let frame = (SWING_FRAME * weapon.handling * if weapon.two_handed { 1.06 } else { 1.0 }).clamp(0.09, 0.4) * pace;
     (ticks(frame * HIT_FRAME), ticks(frame * STRIKE_FRAMES))
 }
 

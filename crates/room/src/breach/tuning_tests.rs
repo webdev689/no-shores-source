@@ -29,7 +29,7 @@ fn a_second(room: &mut Room, foe: FighterId, bells: bool) -> bool {
         kill(room, id);
     }
     let fallen: Vec<PlayerId> = room.players.iter().filter(|(_, found)| !found.living()).map(|(id, _)| *id).collect();
-    let (stage, _) = room.checkpoint(breach(room));
+    let (stage, _) = room.stage_at(breach(room));
     for id in fallen {
         room.stand_whole(id, stage);
     }

@@ -73,6 +73,10 @@ offers a trait twice.
 
 A Breach's Legendary armour has a Legendary's columns, its upgrades 4 Prestige each instead of 3. Replaced in [[The Drowned Vale as Claude Builds It]]: 3 each, from 19 at Normal and 21 at Hard.
 
+Replaced in part by [[The Balance and Economy Pass as Claude Shapes It]]: an Atheric's last three upgrades ask 8 Essence
+each and a Breach's Legendary armour's 7; an Atheric's own node asks 2,500 Aurem, 4 fragments, 10 of its resource and 1
+Essence; every piece climbs to its rarity's Prestige by equal steps over its upgrades, however many its grid holds.
+
 Fragments and Essence are the item's own kind: a weapon's are Weapon Fragments and Weapon Essence, armour's Armor.
 A Fruit of Dagon gives an item 5,000 XP.
 
@@ -224,6 +228,18 @@ Replaced in part by [[The Balance Pass Goes Halfway Back, and Loot Follows Desti
 order, it opens to its own colour three times in four, and a Miniboss, a Boss and a dungeon's clear leave items as
 themselves too ([[Gear]], "Vestiges").
 
+Replaced in part by [[Commons Drop as Themselves, Never as Vestiges]]: no Vestige is Normal. The calls it leaves open,
+made on the owner's word that Claude finishes them ([[Claude Finishes the Gear Calls on Its Own Word]]):
+
+| Choice | Chosen | Why |
+|---|---|---|
+| A Vestige that rolls Normal | Wherever one would come (a kill, a Boss or a Miniboss, at sea, a chest, a first clear, a playlist, the Test Ground), its item comes instead, made as it would have opened, at Normal, of its slot, level and content; the colours' weights stay as they are | The owner: "Commons should drop, no vestiges for commons". Keeping the weights keeps every rarity's chance as it was: only a Normal one comes unsealed |
+| Where that item goes | As an item found as itself: its slot's nine, else the vault, else the mail; never the ground | A kill's items as themselves are kept so already; the mail keeps it from being lost, as it keeps a Vestige |
+| A Normal item found with no room | Posted as itself, from a new source the page words, where a finer one is still laid as a Vestige of its colour | Laying it as a Vestige would seal a common again |
+| A Vestige opening below its colour | Unchanged: a Magic one may still open Normal | The call is about what drops; what a Vestige opens to is the owner's own earlier call |
+| A Normal Vestige a save already holds | Kept, and opens as before | No Vestige is lost |
+| The Test Ground | Hands out no Normal Vestige; asked for one, the room gives its item | One rule for everything that hands a Vestige out |
+
 ### Materials and keeping things
 
 | Choice | Chosen | Why |
@@ -299,3 +315,17 @@ finishes them ([[Claude Finishes the Gear Calls on Its Own Word]]).
 | How it is laid | By its light across the trim's own span of light: the darkest of the trim to the colour's first step, the brightest to its last. The figure and the item pictures read the span from the blade as it stands; first person from the blade's first frame in hand | Each hilt is drawn in colours of its own (elven gold, ebony black), as a guild's set is, so a ramp on greys alone would leave it. First person is lit brighter than the figure: the figure's span left its brightest trim one flat step |
 | Which blades | Every sword, dagger, axe, mace, flail and warhammer the forge draws in a metal is marked, in hand and sheathed; the colour lies only on a faction's | One rule for every melee weapon a faction may sell; today they sell an elven sword (Squallbreak) and an ebony dagger (Hushguard) |
 | The Veiled's colour | Nightveil laid as #131313, #35353b, #555560 and #a5a5ae: Daggerfall's cold lavender greys over a black foot | The game's palette has no stronger violet this light; these are the coldest steps it keeps, and they stay as far from the Veiled Dusk dye as a test asks |
+
+### Flavour text
+
+The call [[Weapons and Armour Carry Flavour Text]] leaves open, made on the owner's word that Claude finishes it
+([[Claude Finishes the Gear Calls on Its Own Word]]).
+
+| Choice | Chosen | Why |
+|---|---|---|
+| Whose words a rolled piece reads | Its set's for its kind: one line for each set name and kind word a rolled piece can be named by ("Portwatch Helm", "Lattice Bow"), Homespun's for every kind | The owner: "Weapons and armor need flavor text"; a rolled piece is named by its set and kind, so its words follow its name |
+| Where they live | `content/gear/words.json`, each set name's lines by kind word, read by the page's `itemWords` | One place, beside the looks and kinds that name the piece; no rule needs them |
+| Which pairs | Every pair a rolled piece is made in: each content's armour sets for the four armour kinds, its metals' sets for the eighteen weapon kinds, Homespun for all; 258 lines. A test makes every rolled piece of every content, rarity, level and look roll and holds each to its line, and every line to a piece | No piece left without, and no line for a piece never made |
+| A named piece | Keeps its own words; a faction's piece with none reads its faction's | The named pieces' words were written for them |
+| The voice | One or two short sentences, each about that set and that kind: the content it comes from (the ports and roads, the barrows, the sea dungeons, the Elite and Abyss Dungeons, the ruined ports a Breach overtook), what the piece was for, or someone who carried it. No metal word, no new name, no line twice | [[Every Line Reads as Spoken, and the Lore Is Detailed, Mysterious and Gripping]]: shown, never explained, and nothing new named |
+| The cloak, a horse | Unchanged: a rolled cloak has no set, a horse reads its coat's words | The owner asked for weapons and armour |

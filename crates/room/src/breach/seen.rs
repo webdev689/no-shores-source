@@ -1,6 +1,6 @@
 //! What each snapshot carries of a Breach, whole, to every player in the room: in a run, each encounter's phase, the
-//! stage reached, the seals open, the revives left, the Lodestone, the marks and the raisings, and the encounter under
-//! way; at its gate in the patrol zone, the Waking, who the gate is open to, and the companies inside.
+//! stage reached, the seals open, the revives left, the Lodestone, the marks, and the encounter under way; at its
+//! gate in the patrol zone, the Waking, who the gate is open to, and the companies inside.
 
 use super::lodestone::{GROUND_CHARGE, HOLD_MOST, LYING_MOST, Stone};
 use super::{Breach, CHOIR, MENDING, Phase, SHORES, STEWARD, WAYS};
@@ -30,9 +30,6 @@ pub struct BreachSeen {
     /// The Rewritten, and the ticks each has before a Choir's mark unwrites them (0 at the next writing).
     pub marked: Vec<PlayerId>,
     pub mark_ticks: Vec<u32>,
-    /// The raisings: raiser and raised in pairs, and each one's share per mille.
-    pub raising: Vec<PlayerId>,
-    pub raised: Vec<u16>,
     /// The hidden chests open to be taken, a bit each.
     pub chests: u8,
     /// The encounter under way (its number, 0 none in a run): its stage, the ticks left in it, its counts (a seam's
@@ -96,7 +93,6 @@ impl Room {
     #[must_use]
     pub fn breach_seen(&self) -> Option<BreachSeen> {
         if let Some(gate) = self.breach_gate.as_ref() {
-            let clock = self.clock;
             let open_to = gate
                 .companies
                 .iter()
@@ -124,12 +120,6 @@ impl Room {
                     .inside
                     .values()
                     .map(|inside| (inside.name.clone(), inside.tier as u8, inside.encounter))
-                    .collect(),
-                raising: gate.raising.iter().flat_map(|(id, (whom, _))| [*id, *whom]).collect(),
-                raised: gate
-                    .raising
-                    .values()
-                    .map(|(_, from)| per_mille(clock.saturating_sub(*from), super::fallen::RAISE_TICKS))
                     .collect(),
                 marked_desk: -1,
                 away_shore: -1,
@@ -189,12 +179,6 @@ impl Room {
                 .marked
                 .values()
                 .map(|at| if choir_marks { left(clock, at + super::choir::MARK_LASTS) } else { 0 })
-                .collect(),
-            raising: breach.raising.iter().flat_map(|(id, (whom, _))| [*id, *whom]).collect(),
-            raised: breach
-                .raising
-                .values()
-                .map(|(_, from)| per_mille(clock.saturating_sub(*from), super::fallen::RAISE_TICKS))
                 .collect(),
             chests: breach.chests.iter().fold(0, |bits, chest| bits | (1 << chest)),
             marked_desk: -1,

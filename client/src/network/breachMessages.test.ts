@@ -21,15 +21,13 @@ test('a room with no Breach sends none', () => {
   assert.equal(breachOf(snapshotWith()), null);
 });
 
-test("a run's Breach reads whole: the Lodestone borne, a raising in pairs, shares out of a thousand", () => {
+test("a run's Breach reads whole: the Lodestone borne, the Rewritten, shares out of a thousand", () => {
   const read = breachOf(
     snapshotWith((builder) => {
       const phases = BreachSeen.createPhasesVector(builder, [2, 1, 0]);
       const stoneAt = BreachSeen.createStoneAtVector(builder, [4, -76.5, 50]);
       const marked = BreachSeen.createMarkedVector(builder, [3]);
       const markTicks = BreachSeen.createMarkTicksVector(builder, [240]);
-      const raising = BreachSeen.createRaisingVector(builder, [5, 9]);
-      const raised = BreachSeen.createRaisedVector(builder, [500]);
       BreachSeen.startBreachSeen(builder);
       BreachSeen.addTier(builder, 1);
       BreachSeen.addPhases(builder, phases);
@@ -41,8 +39,6 @@ test("a run's Breach reads whole: the Lodestone borne, a raising in pairs, share
       BreachSeen.addCharge(builder, 250);
       BreachSeen.addMarked(builder, marked);
       BreachSeen.addMarkTicks(builder, markTicks);
-      BreachSeen.addRaising(builder, raising);
-      BreachSeen.addRaised(builder, raised);
       BreachSeen.addEncounter(builder, 2);
       BreachSeen.addMarkedDesk(builder, -1);
       BreachSeen.addAwayShore(builder, -1);
@@ -53,7 +49,6 @@ test("a run's Breach reads whole: the Lodestone borne, a raising in pairs, share
   assert.deepEqual([read.gate, read.tier, read.phases, read.seals, read.revives], [false, 1, [2, 1, 0], 3, 4]);
   assert.deepEqual([read.stone, read.bearer, read.stoneAt, read.charge], [STONE.borne, 9, [4, -76.5, 50], 0.25]);
   assert.deepEqual(read.marked, [{ player: 3, ticks: 240 }]);
-  assert.deepEqual(read.raising, [{ raiser: 5, raised: 9, share: 0.5 }]);
   assert.deepEqual([read.encounter, read.markedDesk, read.awayShore], [2, -1, -1]);
 });
 

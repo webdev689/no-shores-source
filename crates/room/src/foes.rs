@@ -12,8 +12,7 @@ use ::foes::{Brain, Call, FoeType, Place, Rank, Seen, aimed_shot, foe_type, noti
 use combat::fighter::{Action, FighterId};
 use combat::judge::telegraph_blow;
 use combat::shapes::{Shape, Telegraph};
-use combat::shots::shot_numbers;
-use combat::{Fighter, Happening, Ranged, Surroundings, Verdict, judge, step_fighter};
+use combat::{Fighter, Happening, Surroundings, Verdict, judge, step_fighter};
 use core::cell::{Cell, RefCell};
 use core::f64::consts::{FRAC_PI_2, PI};
 use movement::blocks::ground_at;
@@ -509,9 +508,9 @@ impl Room {
     /// An aimed shot leaves along its line from the foe's own weapon, faster and harder than a plain one: an arrow or
     /// a bolt aimed up for its fall over the line's length, as a drawn shot is; a ball straight.
     fn aimed_shot(&mut self, id: FighterId, foe: &Fighter, telegraph: &Telegraph) {
-        let ranged = foe.arms.ranged.unwrap_or(Ranged::Bow);
         let mut shot = aimed_shot(id, foe, telegraph.bearing, telegraph.ahead);
-        shot.damage = shot_numbers(ranged).1 * AIMED_DAMAGE * foe.might;
+        // On its weapon's as a foe looses it (a ball's at `FOE_GUN`).
+        shot.damage *= AIMED_DAMAGE * foe.might;
         self.shots.push((shot, None));
         // Loosed like any shot: heard, and seen coming by the foes of other sides it may strike.
         self.loosed.push(id);

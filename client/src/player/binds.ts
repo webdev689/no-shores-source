@@ -82,7 +82,9 @@ export const CONTROLS = {
   lookUp: control(['insert'], ['RS up'], ['foot', 'helm']),
   lookDown: control(['delete'], ['RS down'], ['foot', 'helm']),
   perspective: control(['mouse3'], ['RS'], FOOT),
-  menu: control(['m'], ['View hold'], EVERYWHERE),
+  // Held, it takes the player back to their ship from wherever they stand on foot (`leaveHold.ts`); fallen, it says
+  // why not, so the pad tells its View held from a tap there too.
+  leave: control(['m'], ['View hold'], ['foot', 'dead']),
   character: control(['i'], ['Start'], EVERYWHERE),
   inventory: control(['o'], [], EVERYWHERE),
   details: control(['x'], [], ['menu']),
@@ -134,7 +136,7 @@ export const DEFAULTS: Binds = Object.fromEntries(
 /** The controls that act on a key going down or the pad's press, or at the helm, whose pointer is free: none hears a
  *  mouse button. */
 const KEYS_ONLY: ReadonlySet<BindId> = new Set<BindId>([
-  ...(['use', 'menu', 'landMap', 'map', 'respawn', 'confirm', 'voyage', 'manage', 'leaveHelm', 'repair'] as const),
+  ...(['use', 'leave', 'landMap', 'map', 'respawn', 'confirm', 'voyage', 'manage', 'leaveHelm', 'repair'] as const),
   ...(['ashore', 'slower', 'faster', 'character', 'inventory', 'details', 'controls', 'chat'] as const),
   ...(['steerLeft', 'steerRight', 'sailOn', 'heaveTo'] as const),
 ]);
@@ -237,6 +239,9 @@ function clashOf(binds: Binds): { one: BindId; other: BindId; device: Device } |
   return null;
 }
 
+/** Controls kept with accounts under another name, by it: `menu`'s key, pressed, is the leave's, held. */
+const KEPT_AS: Readonly<Record<string, BindId>> = { menu: 'leave' };
+
 /** Overrides as sent or kept, each part checked strictly: a known control's `keys` or `pad`, a list of at most
  *  `MOST_EACH` distinct names it may be bound to, a stick's ways kept as they are. What does not read (a control
  *  since renamed, a name unknown) is left out, so binds kept by another build keep the rest; null for no object. */
@@ -246,7 +251,9 @@ export function readOverrides(read: unknown): Overrides | null {
   if (!isObject(read)) return null;
   const known: ReadonlySet<string> = new Set(BIND_IDS);
   const kept: Partial<Record<BindId, Partial<Bound>>> = {};
-  for (const [name, bound] of Object.entries(read)) {
+  for (const [stored, bound] of Object.entries(read)) {
+    // Under its other name only where it is not kept under its own too.
+    const name = stored in KEPT_AS && !((KEPT_AS[stored] ?? '') in read) ? (KEPT_AS[stored] ?? stored) : stored;
     if (!known.has(name) || !isObject(bound)) continue;
     const id = name as BindId;
     const sticks = CONTROLS[id].pad.filter(isStickWay);

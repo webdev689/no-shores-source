@@ -47,7 +47,7 @@ impl Room {
             .filter(|(space, _, _)| taken_to == Some(space) || shores.is_some_and(|shores| shores.contains(space)));
         let home = home.map(|(space, at, _)| (taken_to == Some(space), *at));
         let share = if left.shore.is_some() && home.is_none() { 0.0 } else { left.share };
-        let stage = self.checkpoint(breach).0;
+        let stage = self.stage_at(breach).0;
         let at = home.map(|(_, at)| at).or_else(|| (share <= 0.0).then_some(stage));
         self.give_share(player, share, at);
         let Some(breach) = self.breach.as_mut() else { return };

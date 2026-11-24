@@ -10,7 +10,7 @@ use protocol::land::foe_numbers;
 use protocol::pack::quantized;
 use protocol::{Snapshot, UNTRIMMED_FLOATS, snapshot_bytes, standing_parts};
 use room::public::PublicSeen;
-use room::{Event, FoeSeen, Plate, PlayerId, Room, Seen, SpellSeen};
+use room::{Event, FoeSeen, Plate, PlayerId, Reviving, Room, Seen, SpellSeen};
 use std::collections::{BTreeMap, VecDeque};
 
 /// How many ticks of snapshots are kept to build on: two seconds; a screen further behind is sent everything.
@@ -41,6 +41,7 @@ struct Now {
     public: Option<PublicSeen>,
     encounter: Option<room::encounters::EncounterSeen>,
     breach: Option<room::breach::seen::BreachSeen>,
+    reviving: Vec<Reviving>,
 }
 
 #[derive(Debug, Default)]
@@ -96,6 +97,7 @@ impl Sent {
             public: room.public_seen(),
             encounter: room.encounter_seen(),
             breach: room.breach_seen(),
+            reviving: room.reviving_seen(),
         };
         let own: BTreeMap<_, _> = now
             .players
@@ -195,6 +197,9 @@ impl Sent {
             public,
             encounter: now.encounter.as_ref(),
             breach: now.breach.as_ref(),
+            // The darkness is where the viewer lies, so the Court's holds only those in it (`Room::darkness_for`).
+            darkness: room.darkness_for(viewer),
+            reviving: &now.reviving,
         })
     }
 }

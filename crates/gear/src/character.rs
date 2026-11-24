@@ -229,6 +229,9 @@ pub struct Character {
     /// The body as it last left a room, given back on a return (`left.rs`); none before it first leaves one.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub left: Option<crate::left::Left>,
+    /// Where they last left the overworld or a social space, to log back in there (`last.rs`); none before either.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub last: Option<crate::last::Last>,
     /// Keys this room does not know, from a later room's save, written back as read, so a room rolled back to
     /// this one or later keeps them.
     #[serde(flatten)]
@@ -324,6 +327,7 @@ impl Character {
             mail: Vec::new(),
             lore: Vec::new(),
             left: None,
+            last: None,
             unknown: UnknownKeys::new(),
         };
         let pieces = [

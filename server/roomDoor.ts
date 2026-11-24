@@ -108,6 +108,8 @@ export interface RoomDoor {
   joinAt(entrance: number): number;
   /** Stands a player who joined before an entrance at the room's next spawn instead, as an ordinary join. */
   standAtSpawn(player: number): boolean;
+  /** Stands a player logging back in where their kept character last stood in this social space; whether it did. */
+  standWhereLeft(player: number): boolean;
   /** Why the room takes no player, a locked node's words; null for a room that takes them. */
   refusal(): string | null;
   /** The welcome's bytes for a player. */
@@ -246,6 +248,7 @@ interface RoomExports {
   room_join(): number;
   room_join_at(entrance: number): number;
   room_stand_at_spawn(player: number): number;
+  room_stand_where_left(player: number): number;
   room_refusal(): bigint;
   room_joined(player: number): bigint;
   room_leave(player: number): void;
@@ -395,6 +398,7 @@ export function startRoomDoor(module: WebAssembly.Module): RoomDoor {
     join: () => exports.room_join(),
     joinAt: (entrance) => exports.room_join_at(entrance >>> 0),
     standAtSpawn: (player) => exports.room_stand_at_spawn(player) === 1,
+    standWhereLeft: (player) => exports.room_stand_where_left(player) === 1,
     refusal: () => new TextDecoder().decode(take(exports.room_refusal())) || null,
     joined: (player) => take(exports.room_joined(player)),
     leave: (player) => exports.room_leave(player),

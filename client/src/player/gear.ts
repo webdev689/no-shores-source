@@ -1,7 +1,9 @@
+import factions from '../../../content/gear/factions.json' with { type: 'json' };
 import items from '../../../content/gear/items.json' with { type: 'json' };
 import resources from '../../../content/gear/resources.json' with { type: 'json' };
 import rolled from '../../../content/gear/rolled.json' with { type: 'json' };
 import traits from '../../../content/gear/traits.json' with { type: 'json' };
+import words from '../../../content/gear/words.json' with { type: 'json' };
 import type { GlowLook } from '../elementGlow.ts';
 import { COSMETICS } from '../forge/cosmetics.ts';
 import { ASKS, type GearAsk, type GearItem, type GearState } from '../network/gearMessages.ts';
@@ -179,13 +181,22 @@ export function itemName(
   item: Pick<GearItem, 'named' | 'kind' | 'rarity' | 'name' | 'id' | 'level' | 'source' | 'story'>,
 ): string {
   if (item.named) return items.items.find((found) => found.id === item.named)?.name ?? item.named;
+  const parts = rolledParts(item);
+  if (parts) return `${parts.set} ${parts.word}`;
+  // A horse by its coat's name among its kind's; the cloak by its kind.
+  const kind = kindKey(item.kind);
+  const names = (rolled.names as Record<string, Record<string, readonly string[]> | undefined>)[kind];
+  return names?.[(RARITIES[item.rarity]?.name ?? '').toLowerCase()]?.[item.name] ?? kind;
+}
+
+/** A rolled armour piece's or weapon's set name and kind word, by the look it is drawn in, the prologue's armour by
+ *  its steel; null for a kind with no word (a horse, the cloak). */
+function rolledParts(
+  item: Pick<GearItem, 'named' | 'kind' | 'rarity' | 'name' | 'id' | 'level' | 'source' | 'story'>,
+): { readonly set: string; readonly word: string } | null {
   const kind = kindKey(item.kind);
   const word = KIND_WORDS[kind];
-  if (!word) {
-    // A horse by its coat's name among its kind's; the cloak by its kind.
-    const names = (rolled.names as Record<string, Record<string, readonly string[]> | undefined>)[kind];
-    return names?.[(RARITIES[item.rarity]?.name ?? '').toLowerCase()]?.[item.name] ?? kind;
-  }
+  if (!word) return null;
   const armour = slotOf(item.kind) > 1;
   const look =
     item.story && armour
@@ -195,14 +206,26 @@ export function itemName(
         : armour
           ? rolledArmourSet(item, kind === 'torso' || kind === 'legs')
           : rolledMetal(item);
-  return `${setName(item, look)} ${word}`;
+  return { set: setName(item, look), word };
 }
 
-/** A named item's words, or a horse's, its coat's; else none. */
-export function itemWords(item: Pick<GearItem, 'named' | 'kind' | 'name'>): string {
+/** Each rolled set's words for each kind it is made in, by set name and kind word (`content/gear/words.json`). */
+const SET_WORDS: Readonly<Record<string, Readonly<Record<string, string | undefined>> | undefined>> = words.sets;
+
+/** An item's words: a named item's own, a faction's piece with none its faction's; a rolled armour piece's or
+ *  weapon's its set's for its kind; a horse's its coat's; else none. */
+export function itemWords(
+  item: Pick<GearItem, 'named' | 'kind' | 'rarity' | 'name' | 'id' | 'level' | 'source' | 'story'>,
+): string {
   const coat = coatOfHorse(item);
   if (coat) return COSMETICS.find((each) => each.id === coat)?.words ?? '';
-  return item.named ? (items.items.find((found) => found.id === item.named)?.words ?? '') : '';
+  if (item.named) {
+    const found = items.items.find((each) => each.id === item.named);
+    const faction = found && 'faction' in found ? factions.factions.find((each) => each.key === found.faction) : null;
+    return found?.words || faction?.words || '';
+  }
+  const parts = rolledParts(item);
+  return (parts && SET_WORDS[parts.set]?.[parts.word]) ?? '';
 }
 
 /** A trait's name and words: all it does (`words`), and for a perk that gives and takes, what it gives and what it

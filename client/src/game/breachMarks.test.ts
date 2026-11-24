@@ -18,7 +18,7 @@ const plan = breachPlanOf(
 const RUN: BreachSeen = {
   ...{ gate: false, tier: 0, phases: [2, 2, 2, 2, 2, 1], reached: 6, seals: 0, revives: -1 },
   ...{ stone: STONE.away, bearer: 0, stoneAt: [0, 0, 0], charge: 1, held: 0, lyingTicks: 0 },
-  ...{ marked: [], raising: [], chests: 0, encounter: 0, stage: 0, stageTicks: 0, counts: [], bells: [] },
+  ...{ marked: [], chests: 0, encounter: 0, stage: 0, stageTicks: 0, counts: [], bells: [] },
   ...{ bellFoes: [], broken: 0, ringTicks: 0, fontTicks: 0, boss: 0, warded: false, desk: 0, markedDesk: -1 },
   ...{ deskTicks: 0, writeTicks: 0, seen: false, wipeTicks: 0, rifts: [], riftHeld: [], kept: 0, takings: 0 },
   ...{ takingTicks: 0, awayShore: -1, away: [], wayBack: false, bareTicks: 0, heldBy: false, fill: 0 },

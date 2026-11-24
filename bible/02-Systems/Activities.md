@@ -176,9 +176,10 @@ Claude's, recorded in [[The Playlist and Its Dungeons as Claude Shapes Them]].
   the sea ([[Server]], "Where a character comes from").
 - **What it pays.** Every clear pays its kills, its cache and a dungeon's clear, as any run. Beside them:
   - **Daily:** each playlist's first clear each day, a Boss Captain's kill at the run's level and tier (as the dungeon
-    of the day pays) and a sure Vestige in a Boss's colours.
+    of the day pays) and a sure Vestige in a Boss's colours, a Normal one coming as its item
+    ([[Gear]], "Commons drop as themselves").
   - **Weekly:** each playlist's third clear each week, Essence of each stock (Elite 2, Abyss 3) and Vestiges in a
-    Boss's colours (Elite one, Abyss two).
+    Boss's colours (Elite one, Abyss two), each Normal one as its item.
   - A clear counts once a run for each account (`Run::playlist_counted`), however often its cache opens. The daily pays
     only in the day the run was opened for, its modifiers fixed then; a clear counts toward the weekly only in the
     week it was opened in.
@@ -191,10 +192,11 @@ Claude's, recorded in [[The Playlist and Its Dungeons as Claude Shapes Them]].
 They hold in every Abyss run: the hardest seas take Nightfall's rules, limited revives and a wipe ending the run, as
 the owner approved ([[Where You Go and the Seas You Choose Set the Difficulty]]).
 
-- **Revives:** the company shares five a run (`Room::revives`). Each stand of a fallen player takes one, the
-  lowest player number first when two fall together; when none are left, the fallen stay down. Leaving stands no one
-  up: the run keeps each kept player's body as they leave (`keep_body`), so one who left down comes back down and
-  one who left wounded comes back at the share of health they left with, until the run starts over.
+- **Revives:** the company shares five a run (`Room::revives`). Each stand of a fallen player takes one, whether an ally
+  revives them or they respawn ([[Revives]]), revives before respawns in the same tick, each lowest player number first;
+  when none are left the fallen stay down, no ally's hold taken up and no Respawn offered: the run is a darkness zone.
+  Leaving stands no one up: the run keeps each kept player's body as they leave (`keep_body`), so one who left down
+  comes back down and one who left wounded comes back at the share of health they left with, until the run starts over.
 - **A wipe ends the run:** when every player in it is down at once, each is told (`Wiped`), the dungeon starts over and
   its five revives with it (`start_over`): its foes stand again at their posts, its shots and spells are gone, its
   drops are taken up, each Vestige to its player's mail, its cache shuts, and its players stand whole at the way in.
@@ -230,16 +232,19 @@ the owner approved ([[Where You Go and the Seas You Choose Set the Difficulty]])
 - **The dungeon of the day**, the first clear at each tier each day, on any island's: beside the cache's own pay
   ([[Dungeons]], "The cache"), a Boss Captain's kill at the run's level, raised by the tier (XP 840 and Aurem 56 at
   level 5, times (5 + level) ÷ 10, times the tier's 1, 1.5 or 2), and a sure Vestige in a Boss's colours at the run's
-  level ([[Gear]], "Vestiges"). Three a day at most, under the rules every Vestige keeps now (no Legendary from foes
+  level ([[Gear]], "Vestiges"), a Normal one coming as its item ([[Gear]], "Commons drop as themselves").
+  Three a day at most, under the rules every Vestige keeps now (no Legendary from foes
   under level 18).
 - **The Elite Dungeon of the week**, once: a Legendary Vestige (its item at level 20) and 3 Essence of each stock.
 - **The Abyss Dungeon of the week**, once: a Legendary Vestige, Atheric one time in five, 5 Essence of each stock,
-  15 Shapes, the only Shapes there are ([[Gear]], "Vendors"), and the Abyss boon until the week turns: a quarter more of each kill's XP, rounded down, and as much more
-  reputation for the faction pledged while its cape is worn ([[Factions]]), as `boon_xp` pays it. A kill on a ship's
+  10 Shapes, the only Shapes there are ([[Gear]], "Vendors"), and the Abyss boon until the week turns: a quarter more
+  of each kill's XP, rounded down, to the player, their Art and the faction pledged while its cape is worn
+  ([[Factions]]), as `boon_xp` pays it. A kill on a ship's
   deck earns no boon, as it pays no officer ([[Naval Combat]]).
 - **Where it is paid.** The room pays as the cache opens, each player then in it whose character it keeps, and keeps the
   Vestige with the record that pays it, in the carried ten, else the vault, else the mail ([[Gear]], "The mail"), so a
-  Vestige once paid is never lost (`pay_clear`, `keep_paid`). A player playing unkept finds the
+  Vestige once paid is never lost (`pay_clear`, `keep_paid`); a Normal one's item is kept as it is made, in its slot's
+  nine, else the vault, else the mail. A player playing unkept finds the
   cache's own pay alone. A run's first clear pays only in the day or the week it was opened for, as its modifiers
   are fixed then. The day's pays in a run opened while its dungeon was its island's dungeon of the day, with that day's
   modifier at Elite and Abyss, and cleared that day; and at Normal in a patrol's shared room while it is its island's
@@ -272,8 +277,12 @@ keep their engine ([[The Journal Holds the Quests, the Bounties at Its Side and 
   no station and has no keeper. It offers six bounties a day, the same for everyone (`gear::bounties::board`, drawn by the day):
   places 0 and 1 on land, 2 and 3 at sea, 4 and 5 in dungeons, each pair two different ones of its pool. None names an
   island or a water, since the islands' bands run from 1 to 30. A character takes any of them; each pays once when
-  turned in, 1,000 XP and 60 Aurem at level 5, raised as a kill is by the character's level, and all end at the daily
-  reset.
+  turned in, by its tier as Destiny 1's three tiers paid (2,500, 3,750 and 5,000 XP): a first tier's 1,000 XP and 60
+  Aurem at level 5, a second's half again, a third's twice, raised as a kill is by the character's level, its XP to
+  their Art and faction as a kill's; and all end at the daily reset. Honest Work, Broadside and Into the Dark are of
+  the first tier; Tithe Collector, A Cut Above, Bigger Fish and Deeper Still the second; Big Game, Sea Wolf and Deep
+  Delver the third (`Bounty.tier`, `bounty_pay`). The gear message carries a first tier's pay and each bounty's tier,
+  and the card shows each one's own.
 - **Taking and turning in** happen at the board alone (`Ask::TakeBounty`, `Ask::TurnInBounty`), each by its place
   and the day of the board the page showed. The room refuses a day not its own, and a room whose day is behind the
   record refuses both, so a page or a room on either side of 09:00 cannot take or pay yesterday's bounty as today's.

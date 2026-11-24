@@ -39,7 +39,8 @@ import type { Shot } from './camera.ts';
 import type { Quest } from './tasks.ts';
 import { chime as rarityChime, play } from './uiSounds.ts';
 import { type BreachOn, type BreachParts, BreachView, withBreach } from './breachView.ts';
-import type { StandingAgain } from '../combat/hudPlace.ts';
+import type { StandingAgain } from './footRevive.ts';
+import type { Use } from './footGear.ts';
 
 type Point = readonly [number, number, number];
 
@@ -374,6 +375,13 @@ export class PublicView {
   get fall(): StandingAgain | null {
     return this.breach?.fall() ?? null;
   }
+
+  /** What E does at the player's feet before a fallen ally's revive (`BreachView.urgent`), and whom a revive may stand
+   *  where a Breach's rules say (`BreachView.mayRevive`). */
+  urgent(feet: Point, ask: (asked: GearAsk) => void): Use | null {
+    return this.breach?.urgent(feet, ask) ?? null;
+  }
+  readonly mayRevive = (fallen: number): boolean => this.breach?.mayRevive(fallen) ?? true;
 
   /** What E does at the player's feet: opens their chest in reach not yet asked, if one is, else what it does in a
    *  Breach. */

@@ -10,10 +10,14 @@ import {
   type StripHint,
   followHint,
   footHints,
+  footStrip,
   hintsFor,
   keysShown,
-  seaHints,
+  seaStrip,
+  stripOf,
   withMapKey,
+  withFollow,
+  withoutLeave,
 } from './hints.ts';
 import { standingOf } from './hudLaw.ts';
 
@@ -41,8 +45,23 @@ const words = (hints: readonly StripHint[], device: 'keys' | 'pad' = 'keys', bin
   hintsFor(hints, device, binds).map(([key, said]) => `${key} ${said}`);
 const shown = (foot: Partial<OnFoot>) => words(footHints({ ...AT_REST, ...foot }));
 
-test('at rest on foot the strip shows the weapon, the body, the menu and the key to every control', () => {
-  assert.deepEqual(shown({}), ['Z Draw', 'Shift Run', 'Space Jump', 'C Crouch', 'M Menu', 'K All controls']);
+test('at rest on foot the strip shows the weapon, the body, the leave held and the key to every control', () => {
+  assert.deepEqual(shown({}), ['Z Draw', 'Shift Run', 'Space Jump', 'C Crouch', 'M Hold to leave', 'K All controls']);
+});
+
+test("the strip's head names the moment: the stance on foot, what the player does at sea", () => {
+  const title = (foot: Partial<OnFoot>) => footStrip({ ...AT_REST, ...foot }).title;
+  assert.equal(title({}), 'On foot');
+  assert.equal(title({ drawn: true }), 'Melee');
+  assert.equal(title({ drawn: true, ranged: true }), 'Ranged');
+  assert.equal(title({ drawn: true, ranged: true, aiming: true }), 'Aiming');
+  assert.equal(title({ worn: 3, daggers: true }), 'Dusk Daggers');
+  assert.equal(title({ mounted: true, drawn: true }), 'Riding');
+  assert.equal(title({ mode: 'hang' }), 'Ledge');
+  assert.equal(title({ mode: 'climb', drawn: true }), 'Climbing');
+  assert.equal(seaStrip(SAILING).title, 'Sailing');
+  assert.equal(seaStrip({ ...SAILING, fighting: true, aiming: true }).title, 'Guns laid');
+  for (const name of Object.keys(HINTS) as (keyof typeof HINTS)[]) assert.notEqual(stripOf(name).title, '', name);
 });
 
 test('the click to look round shows only while the mouse is free', () => {
@@ -96,8 +115,9 @@ test("Shadow worn offers holding Q to aim Dusk Daggers until they are aimed; no 
       'the other Arts still show',
     );
   }
-  assert.ok(!shown({ worn: shadow, daggers: true }).some((entry) => /hold/i.test(entry)), 'aimed, only the release');
-  for (const art of [1, 2]) assert.ok(!shown({ worn: art }).some((entry) => /hold/i.test(entry)), `Art ${art}`);
+  const holdsQ = (entry: string) => entry.startsWith('Q ') && /hold/i.test(entry);
+  assert.ok(!shown({ worn: shadow, daggers: true }).some(holdsQ), 'aimed, only the release');
+  for (const art of [1, 2]) assert.ok(!shown({ worn: art }).some(holdsQ), `Art ${art}`);
 });
 
 test('hanging or climbing shows only the climb’s keys, the weapon drawn or not', () => {
@@ -117,7 +137,7 @@ test('hanging or climbing shows only the climb’s keys, the weapon drawn or not
   }
 });
 
-test('the map’s N shows in every stance on foot, before the menu’s M, and K stays last', () => {
+test('the map’s N shows in every stance on foot, before the leave’s M, and K stays last', () => {
   const stances: Partial<OnFoot>[] = [
     {},
     { drawn: true },
@@ -128,25 +148,33 @@ test('the map’s N shows in every stance on foot, before the menu’s M, and K 
     { mode: 'climb' },
   ];
   for (const foot of stances) {
-    const strip = words(withMapKey(footHints({ ...AT_REST, ...foot })));
+    const strip = words(withMapKey(footStrip({ ...AT_REST, ...foot })).hints);
     assert.ok(strip.includes('N Map'), strip.join(', '));
     assert.equal(strip.at(-1), 'K All controls');
-    const menu = strip.indexOf('M Menu');
-    if (menu >= 0) assert.equal(strip.indexOf('N Map'), menu - 1);
+    const leave = strip.indexOf('M Hold to leave');
+    if (leave >= 0) assert.equal(strip.indexOf('N Map'), leave - 1);
   }
 });
 
 test('riding shows how to get down and gallop', () => {
-  assert.deepEqual(shown({ mounted: true, drawn: true }), [', Get down', 'Shift Gallop', 'M Menu', 'K All controls']);
+  assert.deepEqual(shown({ mounted: true, drawn: true }), [
+    ', Get down',
+    'Shift Gallop',
+    'M Hold to leave',
+    'K All controls',
+  ]);
 });
 
 test('while a fall plays no key is listed; once death is told, Respawn; standing, what the player is doing', () => {
-  assert.deepEqual(keysShown(standingOf('dead', 30, true, false), AT_REST), []);
-  assert.deepEqual(keysShown(standingOf('dead', 30, true, true), AT_REST), HINTS.dead);
+  assert.deepEqual(keysShown(standingOf('dead', 30, true, false), AT_REST).hints, []);
+  assert.deepEqual(keysShown(standingOf('dead', 30, true, true), AT_REST), stripOf('dead'));
   assert.deepEqual(words(HINTS.dead), ['Enter Respawn', 'K All controls']);
-  assert.deepEqual(keysShown(standingOf('inside', 0), AT_REST), footHints(AT_REST));
+  assert.deepEqual(keysShown(standingOf('inside', 0), AT_REST), footStrip(AT_REST));
+  // Fallen in the fight: nothing until Respawn may be pressed, then Respawn.
+  assert.deepEqual(keysShown(standingOf('inside', 0), AT_REST, { canRespawn: false }).hints, []);
+  assert.deepEqual(keysShown(standingOf('inside', 0), AT_REST, { canRespawn: true }), stripOf('dead'));
   const waits = standingOf('dead', 30, true, true, null);
-  assert.deepEqual(keysShown(waits, AT_REST), [ALL_CONTROLS], 'no Respawn where the place stands them again itself');
+  assert.deepEqual(keysShown(waits, AT_REST).hints, [ALL_CONTROLS], 'no Respawn where the place stands them itself');
 });
 
 test("bearing the Lodestone the strip lists each key once: the swing its Strike, the guard Hold True, an Art's Ground", () => {
@@ -165,18 +193,21 @@ test("bearing the Lodestone the strip lists each key once: the swing its Strike,
     'Space Jump',
     'Left button Hold True',
     'R / Q / G Ground (charging)',
-    'M Menu',
+    'M Hold to leave',
     'K All controls',
   ]);
   assert.deepEqual(shown({ mounted: true, bearer }), shown({ mounted: true }), 'riding, as ever');
 });
 
-test('fallen in a Breach the follow key names whom the camera follows', () => {
+test('fallen in a Breach the follow key names whom the camera follows, first under the fallen strip', () => {
   assert.deepEqual(words([followHint('Ada')]), ['F Following Ada · Next']);
   assert.deepEqual(words([followHint('')]), ['F Follow']);
+  const none = keysShown(standingOf('inside', 0), AT_REST, { canRespawn: false });
+  assert.deepEqual(withFollow(none, 'Ada'), { title: 'Fallen', hints: [followHint('Ada')] });
 });
 
 test('at sea the keys shown follow what the player is doing, a fight first and its aim within it', () => {
+  const seaHints = (state: AtSea) => seaStrip(state).hints;
   assert.equal(seaHints(SAILING), HINTS.sea);
   assert.equal(seaHints({ ...SAILING, managing: true }), HINTS.manage);
   assert.equal(seaHints({ ...SAILING, walking: true }), HINTS.deck);
@@ -185,6 +216,7 @@ test('at sea the keys shown follow what the player is doing, a fight first and i
   assert.equal(seaHints({ ...SAILING, landing: true }), HINTS.landing);
   assert.equal(seaHints({ ...SAILING, walking: true, fighting: true }), HINTS.fight);
   assert.equal(seaHints({ ...SAILING, fighting: true, aiming: true }), HINTS.aim);
+  assert.ok(!words(HINTS.sea).some((entry) => entry.startsWith('M ')), 'nothing to leave at sea');
   assert.ok(words(HINTS.aim).includes('Right button Release to fire'));
   assert.ok(words(HINTS.fight).includes('Shift Burst'));
 });
@@ -224,7 +256,7 @@ test("the strip shows the pad's buttons while the pad was played last, a stick f
     'pad:LS Run',
     'pad:A Jump',
     'pad:B hold Crouch',
-    'pad:View hold Menu',
+    'pad:View hold Leave',
     'pad:View All controls',
   ]);
   assert.deepEqual(words(footHints({ ...AT_REST, drawn: true, ranged: true }), 'pad').slice(0, 2), [
@@ -236,7 +268,6 @@ test("the strip shows the pad's buttons while the pad was played last, a stick f
     'pad:LS across Steer',
     'pad:LS up Sail on',
     'pad:LS down Heave to',
-    'pad:View hold Menu',
     'pad:View All controls',
   ]);
   assert.deepEqual(words(HINTS.aim, 'pad'), [
@@ -250,6 +281,17 @@ test("the strip shows the pad's buttons while the pad was played last, a stick f
   assert.ok(words(HINTS.fight).includes('A / D Steer'), 'the first key of each control');
   const swapped = rebind(DEFAULTS, { id: 'jump', device: 'keys', place: 0 }, 'c').binds;
   assert.deepEqual(words(footHints(AT_REST), 'keys', swapped).slice(2, 4), ['C Jump', 'Space Crouch']);
+});
+
+test('where there is nothing to leave (the story, a struck deck at sea) the strip lists no leave, and the rest as it was', () => {
+  const strip = footStrip(AT_REST);
+  const without = withoutLeave(strip);
+  assert.ok(strip.hints.some(([names]) => names === 'leave'));
+  assert.deepEqual(
+    without.hints,
+    strip.hints.filter(([names]) => names !== 'leave'),
+  );
+  assert.equal(without.title, strip.title);
 });
 
 test("the land's held map names its way to close on the keys and on the pad, which has no button for the map", () => {

@@ -2,16 +2,16 @@
 //! still), what it is doing carried on or ended, a new swing, guard, dodge, shot or telegraphed blow begun, its body
 //! moved by the movement rules as that allows (faster Hasted), and its aim turned. What it does to others is the host's: a blow that lands now is said, and the host judges it.
 
-use crate::arms::{Ranged, swing_ticks, weapon};
+use crate::arms::{Ranged, weapon};
 use crate::fighter::{Action, Attack, CombatInput, Fighter, Held, Intent, Kept, Swing};
 use crate::shapes::Telegraph;
-use crate::shots::{BRACE_GAP, DRAW_FULL, Shot, aimed_power, by_foe, loose, shot_numbers, toward};
+use crate::shots::{BRACE_GAP, DRAW_FULL, Shot, aimed_power, by_foe, loose, player_power, shot_numbers, toward};
 use crate::sight::{apart, bearing, off, turned, wrap};
 use crate::strike::reach_of;
 use crate::tuning::{
-    AIM_TURN, ATTACK_PACE, BODY_RADIUS, DODGE_ATTACK, DODGE_LIFT, DODGE_SPEED, DODGE_STAMINA, DODGE_TICKS, FLINCH,
-    FLINCH_DODGE, GUARD_PACE, GUARD_TURN, LOCK_ARC, PARRY_PLAYS, PARRY_RUSHED, POISE_REST, PRESS_KEPT, STAMINA,
-    STAMINA_GUARDING, STAMINA_PER_TICK, STAMINA_REST, STEER_REACH, parry_window,
+    AIM_TURN, ATTACK_PACE, BODY_RADIUS, DODGE_ATTACK, DODGE_LIFT, DODGE_SPEED, DODGE_TICKS, FLINCH, FLINCH_DODGE,
+    GUARD_PACE, GUARD_TURN, LOCK_ARC, PARRY_PLAYS, PARRY_RUSHED, POISE_REST, PRESS_KEPT, STAMINA, STAMINA_GUARDING,
+    STAMINA_PER_TICK, STAMINA_REST, STEER_REACH, parry_window,
 };
 use core::f64::consts::FRAC_PI_2;
 use movement::blocks::{ground_at, room_at};
@@ -360,7 +360,8 @@ fn begin<B: Near + ?Sized>(next: &mut Fighter, intent: &Intent, around: &Surroun
         let ahead = |at: &[f64; 3]| off(yaw, bearing([chest[0], chest[1]], [at[0], at[1]])) <= LOCK_ARC;
         let (heading, pitch) =
             around.target_at.filter(ahead).map_or((yaw, input.pitch), |target| toward(ranged, chest, target));
-        return Some(shoot(next, loose(0, ranged, chest, heading, pitch, 1.0)));
+        let power = if next.is_player() { player_power(ranged) } else { 1.0 };
+        return Some(shoot(next, loose(0, ranged, chest, heading, pitch, power)));
     }
     swing(next, intent)
 }
@@ -380,7 +381,7 @@ fn swing(next: &mut Fighter, intent: &Intent) -> Option<Happening> {
         return None;
     }
     let stroke = intent.combat.attack.or(next.kept.stroke.filter(|_| next.kept.attack > 0))?;
-    let (strike, end) = swing_ticks(next.arms.melee);
+    let (strike, end) = next.swing_ticks();
     let swing = if let Some((foe, _)) = next.riposte.take() {
         Swing::Riposte(foe)
     } else if next.counter > 0 {
@@ -424,9 +425,7 @@ fn dodge<B: Near + ?Sized>(next: &mut Fighter, controls: Controls, around: &Surr
     let body = next.body;
     let facing =
         around.target_at.map_or_else(|| bearing([0.0, 0.0], toward), |at| bearing([body.x, body.y], [at[0], at[1]]));
-    let drawn = if next.arms == crate::arms::BARE_HANDS { 1.0 } else { next.trim.drawn_dodge_stamina };
-    let veiled = if next.statuses.has(crate::Status::Veiled) { next.trim.veiled_dodge_stamina } else { 1.0 };
-    spend(next, DODGE_STAMINA * next.trim.dodge_stamina * drawn * veiled);
+    spend(next, next.dodge_stamina());
     next.body = Body {
         mode: Mode::Air,
         vx: toward[0] * DODGE_SPEED,

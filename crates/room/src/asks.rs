@@ -7,7 +7,7 @@
 use crate::{PlayerId, Room, Standing};
 use gear::dice::Dice;
 use gear::vendor::Vendor;
-use gear::{Ask, Here, Item, Kind, Rarity, Refusal, Slot, Vestige};
+use gear::{Ask, Here, Item, Kind, Rarity, Refusal, Slot};
 
 /// How near the stall a player must stand for a social space's asks, a counter for its own, and a resource node for
 /// gathering, in metres. A counter's is a metre past where the browser offers it, for a body still walking up.
@@ -76,13 +76,8 @@ pub enum Asked {
     OpenChest {
         chest: u32,
     },
-    /// In a Breach, begins to raise a fallen player of the company by holding Use beside their body, and lets go
-    /// (`breach/fallen.rs`); takes the Lodestone up and sets it down (`breach/lodestone.rs`); and at a Breach's gate,
-    /// asks whether it is open to the player's company (`breach/gate.rs`).
-    Raise {
-        player: PlayerId,
-    },
-    StopRaise,
+    /// In a Breach, takes the Lodestone up and sets it down (`breach/lodestone.rs`); and at a Breach's gate, asks
+    /// whether it is open to the player's company (`breach/gate.rs`).
     TakeLodestone,
     DropLodestone,
     EnterBreach,
@@ -383,8 +378,6 @@ impl Room {
             Asked::FindLore { chapter } => self.find_lore(player, chapter),
             Asked::ToShip => self.to_ship(player),
             Asked::OpenChest { chest } => self.open_chest(player, chest),
-            Asked::Raise { player: whom } => self.ask_raise(player, whom),
-            Asked::StopRaise => self.stop_raising(player),
             Asked::TakeLodestone => {
                 if self.take_lodestone(player) {
                     0
@@ -469,9 +462,10 @@ impl Room {
         let character = &mut found.character;
         match grant {
             Grant::Vestige { rarity, slot, level } => {
-                let id = character.take_id();
-                let vestige = Vestige::new(id, rarity, slot, level.clamp(1, gear::item::ITEM_LEVEL_MOST));
-                if !character.pick_up(vestige) {
+                // A Normal one comes as its item, as every Normal drop does, kept as a found item is.
+                let rolled = (rarity, slot, level.clamp(1, gear::item::ITEM_LEVEL_MOST));
+                let unsealed = character.unsealed(rolled, gear::Source::World, &dice);
+                if unsealed.is_some_and(|vestige| !character.pick_up(vestige)) {
                     return answer_code(Err(Refusal::VestigesFull));
                 }
             }

@@ -52,7 +52,12 @@ pub fn foe_speed(ranged: Ranged) -> f64 {
     }
 }
 
-/// A shot as a foe looses it: an arrow or a bolt as it is; a ball along the same line at a foe's speed.
+/// A foe's ball strikes this share of its gun's damage, as a player's bow does of its own: an Elite Marksman's aimed
+/// shot fells a player of its level in three, not two. A foe's arrow or bolt is whole.
+pub const FOE_GUN: f64 = 2.0 / 3.0;
+
+/// A shot as a foe looses it: an arrow or a bolt as it is; a ball along the same line at a foe's speed and FOE_GUN of
+/// its damage.
 #[must_use]
 pub fn by_foe(shot: &Shot) -> Shot {
     if shot_numbers(shot.ranged).0 > 0.0 {
@@ -61,7 +66,7 @@ pub fn by_foe(shot: &Shot) -> Shot {
     let [east, south, up] = shot.velocity;
     let speed = (east * east + south * south + up * up).sqrt();
     let scale = if speed > 0.0 { foe_speed(shot.ranged) / speed } else { 0.0 };
-    Shot { velocity: shot.velocity.map(|along| along * scale), ..*shot }
+    Shot { velocity: shot.velocity.map(|along| along * scale), damage: shot.damage * FOE_GUN, ..*shot }
 }
 
 /// Whether a ball has flown its whole reach by the end of this tick: a player's, crossing it at once, in its first; a
@@ -99,12 +104,25 @@ pub fn loose(owner: FighterId, ranged: Ranged, chest: [f64; 3], bearing: f64, pi
     }
 }
 
-/// The power of a shot aimed `aimed` ticks: a bow's grows from a quick shot's to `AIMED_POWER` over `DRAW_FULL`,
-/// a crossbow's or a gun's is `AIMED_POWER` at once.
+/// The share of its weapon's damage a player's shot strikes with before its aim: a bow's two thirds, as its shots come
+/// three times as fast as a crossbow's and would otherwise outstrike every blade; a crossbow's or a gun's whole. A
+/// foe's shot is whole, quick or aimed.
+#[must_use]
+pub fn player_power(ranged: Ranged) -> f64 {
+    if ranged == Ranged::Bow { PLAYER_BOW } else { 1.0 }
+}
+
+/// A player's bow strikes 12 of its 18 quick and 18 at a full draw, so its quick shots come about as fast as a
+/// thunderlock's (19.5 a second against 20.5), a quiver of either kind of shot strikes as hard as a gun's carried
+/// shots, and an aimed shot is still half again a quick one.
+pub const PLAYER_BOW: f64 = 2.0 / 3.0;
+
+/// The power of a player's shot aimed `aimed` ticks: a bow's grows from a quick shot's to half again as much over
+/// `DRAW_FULL`, a crossbow's or a gun's is `AIMED_POWER` at once.
 #[must_use]
 pub fn aimed_power(ranged: Ranged, aimed: u32) -> f64 {
     let share = if ranged == Ranged::Bow { (f64::from(aimed) / f64::from(DRAW_FULL)).min(1.0) } else { 1.0 };
-    1.0 + (AIMED_POWER - 1.0) * share
+    player_power(ranged) * (1.0 + (AIMED_POWER - 1.0) * share)
 }
 
 /// The bearing and pitch that carry a shot from a chest to a target's: straight for a ball, and for an arrow or a

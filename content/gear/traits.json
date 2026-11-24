@@ -20,7 +20,7 @@
     {"id": "opportunist", "name": "Opportunist", "column": "perk", "fits": "melee", "words": "Counters (after a perfect dodge) strike 25% harder."},
     {"id": "guardbreaker", "name": "Guardbreaker", "column": "perk", "fits": "melee", "words": "Your blows drain 30% more stamina from a foe's guard."},
     {"id": "exposing_strikes", "name": "Exposing Strikes", "column": "perk", "fits": "melee", "words": "Every third blow in a row on one foe Exposes it."},
-    {"id": "exploit", "name": "Exploit", "column": "perk", "fits": "melee", "words": "Blows on an Exposed foe crit."},
+    {"id": "exploit", "name": "Exploit", "column": "perk", "fits": "melee", "words": "Blows on an Exposed foe strike 25% harder."},
     {"id": "point_blank", "name": "Point Blank", "column": "perk", "fits": "ranged", "words": "A shot at a foe within 5 m strikes 20% harder."},
     {"id": "long_shot", "name": "Long Shot", "column": "perk", "fits": "ranged", "words": "A shot at a foe past 20 m strikes 15% harder."},
     {"id": "shocking_rounds", "name": "Shocking Rounds", "column": "perk", "fits": "ranged", "words": "Every fifth shot that strikes a foe Charges it."},

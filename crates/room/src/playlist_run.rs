@@ -53,7 +53,7 @@ impl Room {
         let character = &mut found.character;
         let mut paid = Vec::new();
         if opened == day {
-            paid.extend(character.playlist_of_the_day(day, playlist, level, &dice));
+            paid.extend(character.playlist_of_the_day(day, playlist, level, &dice).flatten());
         }
         if opened_week == week {
             paid.extend(character.playlist_of_the_week(week, playlist, level, &dice));

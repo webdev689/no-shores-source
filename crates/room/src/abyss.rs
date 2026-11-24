@@ -50,8 +50,8 @@ impl Room {
         run.left.insert(owner, share);
     }
 
-    /// An account's body given back as it comes into the run again: down where it left down, so the next raising
-    /// spends a revive or leaves it down, else at the share of its health it left with.
+    /// An account's body given back as it comes into the run again: down where it left down, so it stands again only
+    /// by a revive or a respawn asked, each spending one, else at the share of its health it left with.
     pub(crate) fn give_body_back(&mut self, player: PlayerId, owner: &str) {
         if self.breach.is_some() {
             self.give_breach_back(player, owner);

@@ -235,20 +235,24 @@ fn the_gate_holds_no_ninth_of_a_company_nor_a_kept_character_the_breach_shuts_ou
 }
 
 #[test]
-fn a_raising_under_way_ends_as_the_spire_wakes() {
+fn in_the_waking_its_company_alone_revives_its_fallen_and_at_hard_each_revive_spends_one_of_its_revives() {
     let (mut room, players) = gate_room(5);
-    for &player in &players {
-        room.breach_company(player, "run-a", Tier::Normal);
+    for &player in &players[..4] {
+        room.breach_company(player, "run-a", Tier::Hard);
     }
     hold_moorings(&mut room, &players);
+    let near = socket(&room, MOORINGS[0]);
+    stand(&mut room, players[3], [near[0] + 2.0, near[1], near[2]]);
     room.tick();
     room.harm_share(players[3], 1.0e3, 0);
     let body = room.players[&players[3]].fighter.body;
     stand(&mut room, players[4], [body.x + 1.0, body.y, body.z]);
-    assert_eq!(room.ask_raise(players[4], players[3]), 0);
-    assert!(!room.breach_seen().expect("the gate's").raising.is_empty(), "raising");
-    woken(&mut room, &players[..3]);
-    assert!(room.breach_seen().expect("the gate's").raising.is_empty(), "ended with the Waking");
+    super::breach_tests::hold_revive(&mut room, players[4], 1);
+    assert!(room.players[&players[3]].fighter.dead(), "not by one outside the company");
+    stand(&mut room, players[0], [body.x - 1.0, body.y, body.z]);
+    super::breach_tests::hold_revive(&mut room, players[0], 1);
+    assert!(!room.players[&players[3]].fighter.dead(), "by one of the company");
+    assert_eq!(room.breach_gate.as_ref().expect("gate").revives, Some(4), "for one of its five");
 }
 
 #[test]
@@ -387,7 +391,11 @@ fn a_hard_companys_fallen_stand_again_at_the_gate_once_it_woke() {
     room.tick();
     woken(&mut room, &players);
     room.harm_share(players[0], 1.0e3, 0);
-    ticks(&mut room, u64::from(combat::tuning::RESPAWN) + crate::VIEW_LAG + 2);
+    // Out of the Waking the zone's own rules stand them: once they have lain long enough, as they ask.
+    for sequence in 1..=combat::tuning::RESPAWN + 2 {
+        room.input(players[0], crate::Input { sequence, respawn: true, ..crate::Input::default() }).expect("taken");
+        room.tick();
+    }
     let (body, arrival) = (room.players[&players[0]].fighter.body, socket(&room, "arrival"));
     assert!(!room.players[&players[0]].fighter.dead(), "stood again");
     assert!(combat::sight::apart([body.x, body.y], [arrival[0], arrival[1]]) < 1.0, "at the gate's arrival");
@@ -418,8 +426,11 @@ fn breach_ready() -> gear::Character {
 /// What a player was told of being shut out of a company, by the amount told them.
 fn shut_out(room: &mut Room, player: PlayerId) -> Vec<f64> {
     let told = room.take_events();
-    assert!(told.iter().filter(|event| event.kind as u8 == 67).all(|event| event.defender == player), "them alone");
-    told.iter().filter(|event| event.kind as u8 == 67).map(|event| event.amount).collect()
+    assert!(
+        told.iter().filter(|event| event.kind == EventKind::ShutOut).all(|event| event.defender == player),
+        "them alone"
+    );
+    told.iter().filter(|event| event.kind == EventKind::ShutOut).map(|event| event.amount).collect()
 }
 
 #[test]

@@ -30,6 +30,7 @@ pub mod grid;
 pub mod horses;
 pub mod item;
 pub mod kinds;
+pub mod last;
 pub mod left;
 pub mod looks;
 pub mod lore;
@@ -81,7 +82,11 @@ mod breach_perks_tests;
 #[cfg(test)]
 mod clock_tests;
 #[cfg(test)]
+mod commons_tests;
+#[cfg(test)]
 mod cosmetics_tests;
+#[cfg(test)]
+mod economy_tests;
 #[cfg(test)]
 mod emblems_tests;
 #[cfg(test)]

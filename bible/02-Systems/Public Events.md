@@ -132,9 +132,13 @@ a leaver's chests (`room_parting`) before it keeps their character. A chest is o
 and its XP and Aurem are the seas' reward times as much, as a kill's are. It holds, by tier: 1,500, 2,200, 3,200 and
 4,500 XP and 120, 180, 260 and 360 Aurem at level 5, each growing with the event's level as a kill's worth does, the
 XP growing the worn Art and the faction pledged while its cape is worn as a kill's XP does; 2, 3, 5 and 7 of each
-Fragment, Essence from the heroic tiers (1, 2) and 3, 4, 6 and 8 of the island's resource, the same at any level;
+Fragment and 3, 4, 6 and 8 of the island's resource, the same at any level; one Essence of each stock from the first
+heroic chest a player opens each day, at any level, and none from any other, as Destiny 1's first gold event of the
+day sent an Ascendant material (`FIRST_HEROIC_ESSENCE`, kept with the day's record);
 and a Vestige always, of the event's level, a foe's colours from a plain chest (a Major's) and a Boss's from a heroic
-one ([[Gear]]'s colours by rank), the bonus's tier rolling twice and keeping the better. A Vestige with no room in the
+one ([[Gear]]'s colours by rank), the bonus's tier rolling twice and keeping the better; a Normal one comes as its item,
+kept in its slot's nine, else the vault, else the mail ([[Gear]], "Commons drop as themselves").
+A Vestige with no room in the
 ten goes to the vault, and with no room there either lies on the ground where the chest stood, as any drop does; a
 leaver's goes to the vault however full, since the ground they leave would lose it.
 
@@ -156,10 +160,11 @@ a chest, with its tier. The browser reads it all in `client/src/network/publicMe
 **Agreement.** Every path is tested natively in `crates/room/src/public/`. Two scripted players, reading only their
 snapshots, play a whole Fissure and a whole raid through the room's door
 (`crates/room-wasm/src/public_door_tests.rs`), at level 6 with Rare gear at 6: they win the Fissure, heroic, and
-meet the raid's heroic task but lose its stores in its second wave, under `main`'s fight (its harm ×1.5 and ×0.75,
-its foes' pace, and the swings' chain the room keeps whatever stroke is asked)
+meet the raid's heroic task and hold its stores, under `main`'s fight (its harm ×1.5 and ×0.75, its foes' pace and
+their swings at seven eighths, and the swings' chain the room keeps whatever stroke is asked)
 ([[The Balance Pass Goes Halfway Back, and Loot Follows Destiny 1's Order]],
-[[The Audit's Leftovers Are Fixed as Claude Suggested]]); the same script, run through
+[[The Audit's Leftovers Are Fixed as Claude Suggested]], [[The Balance and Economy Pass as Claude Shapes It]],
+[[A Foe's Plain Swing Takes Seven Eighths of Its Time]]); the same script, run through
 WebAssembly by `server/public.test.ts`, comes to the same fingerprints ([[Agree to the Bit]]).
 
 ## The page

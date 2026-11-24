@@ -9,47 +9,39 @@ export const RIFT = { shut: 0, opening: 1, open: 2 } as const;
  *  but the gate shutting a member of its company out (`shutOut`), told to them alone; what each event's amount carries
  *  is said there. */
 export const BREACH_EVENT = {
-  begun: 35,
-  stage: 36,
-  won: 37,
-  wiped: 38,
-  cleared: 39,
-  revived: 40,
-  rewritten: 41,
-  cleansed: 42,
-  carried: 43,
-  unwritten: 44,
-  lodestoneTaken: 45,
-  lodestoneDropped: 46,
-  grounded: 47,
-  heldTrue: 48,
-  bellWoke: 49,
-  bellBroken: 50,
-  bellRang: 51,
-  fused: 52,
-  overtaken: 53,
-  claimed: 54,
-  deskMarked: 55,
-  blotted: 56,
-  wroteItself: 57,
-  seen: 58,
-  riftOpened: 59,
-  riftClosed: 60,
-  keeperFell: 61,
-  tolled: 62,
-  taken: 63,
-  wayBack: 64,
-  returned: 65,
-  laidBare: 66,
-  shutOut: 67,
+  begun: 38,
+  stage: 39,
+  won: 40,
+  wiped: 41,
+  cleared: 42,
+  rewritten: 43,
+  cleansed: 44,
+  carried: 45,
+  unwritten: 46,
+  lodestoneTaken: 47,
+  lodestoneDropped: 48,
+  grounded: 49,
+  heldTrue: 50,
+  bellWoke: 51,
+  bellBroken: 52,
+  bellRang: 53,
+  fused: 54,
+  overtaken: 55,
+  claimed: 56,
+  deskMarked: 57,
+  blotted: 58,
+  wroteItself: 59,
+  seen: 60,
+  riftOpened: 61,
+  riftClosed: 62,
+  keeperFell: 63,
+  tolled: 64,
+  taken: 65,
+  wayBack: 66,
+  returned: 67,
+  laidBare: 68,
+  shutOut: 69,
 } as const;
-
-/** A raising under way: who raises, who is raised, and how far it has come, 0 to 1. */
-export interface Raising {
-  readonly raiser: number;
-  readonly raised: number;
-  readonly share: number;
-}
 
 /** A company inside a Breach's run, as its gate shows the zone: its leader's name, its tier (0 Normal, 1 Hard) and
  *  the encounter it is on, by its number in the Breach's list. */
@@ -62,9 +54,9 @@ export interface BreachInside {
 /**
  * A Breach as each snapshot carries it whole (crates/room/src/breach/seen.rs says what each field means): in its run
  * (`gate` false) each encounter's phase, the stage reached, the seals open (a bit each), the revives left (-1 none
- * counted), the Lodestone, the Rewritten, the raisings, the hidden chests open and the encounter under way; at its
- * gate in the patrol zone (`gate` true) the Waking, who the gate is open to and the companies inside. Ticks count down
- * to a moment, 0 for none coming; shares run 0 to 1.
+ * counted), the Lodestone, the Rewritten, the hidden chests open and the encounter under way; at its gate in the
+ * patrol zone (`gate` true) the Waking, who the gate is open to and the companies inside. Ticks count down to a
+ * moment, 0 for none coming; shares run 0 to 1.
  */
 export interface BreachSeen {
   readonly gate: boolean;
@@ -80,7 +72,6 @@ export interface BreachSeen {
   readonly held: number;
   readonly lyingTicks: number;
   readonly marked: readonly { readonly player: number; readonly ticks: number }[];
-  readonly raising: readonly Raising[];
   readonly chests: number;
   readonly encounter: number;
   readonly stage: number;
@@ -125,8 +116,6 @@ export function breachOf(snapshot: Snapshot): BreachSeen | null {
   const read = snapshot.breach();
   if (!read) return null;
   const ticks = Array.from(read.markTicksArray() ?? []);
-  const pairs = Array.from(read.raisingArray() ?? []);
-  const shares = Array.from(read.raisedArray() ?? []);
   const stoneAt = Array.from(read.stoneAtArray() ?? []);
   return {
     gate: read.gate(),
@@ -142,11 +131,6 @@ export function breachOf(snapshot: Snapshot): BreachSeen | null {
     held: share(read.held()),
     lyingTicks: read.lyingTicks(),
     marked: Array.from(read.markedArray() ?? [], (player, index) => ({ player, ticks: ticks[index] ?? 0 })),
-    raising: shares.map((raised, index) => ({
-      raiser: pairs[index * 2] ?? 0,
-      raised: pairs[index * 2 + 1] ?? 0,
-      share: share(raised),
-    })),
     chests: read.chests(),
     encounter: read.encounter(),
     stage: read.stage(),

@@ -92,8 +92,9 @@ fn a_lone_dagger_becomes_double_daggers_and_named_shields_their_sword_and_shield
     assert_eq!(character.at(7), Some(At::Carried));
     assert_eq!(kind_at(&character, 8), (Kind::SwordAndShield, At::Vault), "Seawall stays in the vault");
     let materials = &character.materials;
-    assert_eq!((materials.aurem, materials.armor_fragments, materials.armor_essence), (3_210 + 7_100, 7 + 4, 19));
-    assert_eq!(materials.resource(7), 10, "the Reefwall's nodes cost back, Bog Pearl and all");
+    // Two perks, its own node and three upgrades, at what each costs now.
+    assert_eq!((materials.aurem, materials.armor_fragments, materials.armor_essence), (3_210 + 8_600, 7 + 8, 25));
+    assert_eq!(materials.resource(7), 20, "the Reefwall's nodes cost back, Bog Pearl and all");
 }
 
 #[test]

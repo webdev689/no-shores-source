@@ -58,6 +58,8 @@ fn public_bytes() -> (usize, usize) {
         public: None,
         encounter: None,
         breach: None,
+        darkness: false,
+        reviving: &[],
     };
     let mark =
         |kind: u8, id: u32| room::public::PublicMark { kind, id, at: [512.25, -301.5, 12.75], health: 0.5, state: 1 };

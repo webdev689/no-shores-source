@@ -3,13 +3,12 @@
 // gate's mark on the compass, and E at the gate once it is open to the player's company; in its run, its spaces, its
 // seals while shut, the Broken Stair's slabs while they stand, its bells, the Lodestone and the hidden chests as props,
 // the encounter's banner and marks (`breachMarks.ts`), the compass's places, and E at the way out. In both, a ring
-// under each Rewritten player and round each fallen one being raised, E held to raise a fallen company member, how
-// the fallen stand again, and the room's moments heard and told (`breachMoments.ts`). The room judges it all.
+// under each Rewritten player, whom the game's revive may stand (`footRevive.ts`) and how the fallen stand again, and
+// the room's moments heard and told (`breachMoments.ts`). The room judges it all.
 import type { EventProp, PropModule } from '../city/eventProps.ts';
 import { PROP_MODULES, chestProps } from '../city/eventProps.ts';
 import { loadSealModule, moduleNumber } from '../city/modules.ts';
 import { markLine } from '../combat/drops.ts';
-import type { StandingAgain } from '../combat/hudPlace.ts';
 import type { Banner, PublicShown } from '../combat/publicBanner.ts';
 import { markRing } from '../combat/marks.ts';
 import { BREACH_EVENT, BREACH_PHASE, type BreachSeen, STONE } from '../network/breachMessages.ts';
@@ -25,6 +24,7 @@ import { type BreachPlan, breachPlanOf, sealOpen, slabStands, socketAt, spaceSoc
 import { ENCOUNTER, type Mooring, breachCall, encounterName, encounterOn } from './breachWords.ts';
 import { gateBanner, gateLine, inSentence, runBanner, teachingWords, wonWords } from './breachWords.ts';
 import type { Use } from './footGear.ts';
+import type { StandingAgain } from './footRevive.ts';
 import type { NodeInfo } from './worldData.ts';
 
 type Point = readonly [number, number, number];
@@ -51,12 +51,11 @@ export interface BreachParts {
   readonly seal?: () => unknown;
 }
 
-/** What a frame reads of the room: its word on the Breach, whether Use is held, the fight (the player's number and
- *  their own fighter, the room's tick the slabs stand by, every other player and foe with its type, the way to ask),
- *  the other players' plates (their names), and the room's last answer to the player's asks. */
+/** What a frame reads of the room: its word on the Breach, the fight (the player's number and their own fighter, the
+ *  room's tick the slabs stand by, every other player and foe with its type, the way to ask), and the other players'
+ *  plates (their names). */
 export interface BreachOn {
   readonly seen: BreachSeen | null;
-  readonly using: boolean;
   readonly fight: {
     readonly player: number;
     readonly own: { readonly action: { readonly kind: string } } | null;
@@ -66,7 +65,6 @@ export interface BreachOn {
     askGear(ask: GearAsk): void;
   };
   readonly others: { plateOf(id: number): PlayerPlate | null };
-  readonly gear?: { readonly answered: number; readonly answer: number } | null;
 }
 
 /** What a frame of the Breach gives the zone's or the run's view. */
@@ -97,21 +95,14 @@ const SPIRE = { footM: 1.2, tallM: 16, colour: [1, 0.28, 0.36] as const, least: 
  *  inside one at Normal. */
 const STANDS_OUTSIDE = 6 * 60;
 const STANDS_INSIDE = 10 * 60;
-/** The room's answers to a raising refused (fallen.rs): no revive left, none fallen in reach. */
-const NO_REVIVES = 110;
-const NONE_TO_RAISE = 111;
-/** How near a body E raises it (fallen.rs RAISE_REACH_M), takes up the Lodestone (lodestone.rs TAKE_REACH_M) and
- *  leaves by the way out. */
-const RAISE_REACH_M = 2.5;
+/** How near E takes up the Lodestone (lodestone.rs TAKE_REACH_M) and leaves by the way out. */
 const TAKE_REACH_M = 2.5;
 const OUT_REACH_M = 2.5;
 /** How high over its bearer's feet the Lodestone is drawn, metres, and how fast it turns there, radians a second. */
 const BORNE_M = 2.3;
 const BORNE_TURN = 1.2;
-/** The rings: the Rewritten's mark (a pale violet, in dashes as it warns), a raising's fill (gold), and their sizes,
- *  metres. */
+/** The Rewritten's ring: a pale violet, in dashes as it warns, and its sizes, metres. */
 const REWRITTEN = { colour: [0.72, 0.55, 1, 0.55] as const, inner: 0.55, outer: 0.7 };
-const RAISING = { colour: [1, 0.82, 0.4, 0.7] as const, inner: 0.75, outer: 0.95 };
 /** How long an encounter's line stands in its banner as it begins, and its won line once it is won, ticks. */
 const TEACHING_TICKS = 8 * 60;
 const WON_TICKS = 6 * 60;
@@ -201,9 +192,6 @@ export class BreachView {
   private readonly parts: BreachParts;
   private readonly plan: BreachPlan | null;
   private gate: { at: Point; turn: number; place: string } | null = null;
-  /** The fallen player Use was pressed to raise, until it is let go; the room's count of answers as it was asked. */
-  private raising: number | null = null;
-  private asked: number | null = null;
   private word: BreachOn | null = null;
   private feet: Point = [0, 0, 0];
   /** The gate's holders as the last frame had them (the snapshot the Waking is lost in holds none), and how many of
@@ -251,26 +239,17 @@ export class BreachView {
     eye: Point = feet,
   ): BreachFrame | null {
     [this.word, this.feet] = [word, feet];
-    if (this.raising !== null && !word.using) {
-      word.fight.askGear({ kind: ASKS.stopRaise });
-      this.raising = null;
-    }
     const { plan, counting } = this;
     const seen = word.seen;
     if (!plan || !counting || !seen) return null;
     const before = this.before;
     this.before = seen;
-    this.heedRaising(word);
     const own = word.fight.player;
     const tick = word.fight.roomTick;
     const nameOf = (player: number) => (player === own ? 'you' : (word.others.plateOf(player)?.name ?? 'a companion'));
     for (const marked of seen.marked) {
       const spot = marked.player === own ? feet : where(marked.player);
       if (spot) dashedRing(marks, spot, REWRITTEN.inner, REWRITTEN.outer, REWRITTEN.colour);
-    }
-    for (const raising of seen.raising) {
-      const spot = where(raising.raised);
-      if (spot) markRing(marks, spot, RAISING.inner, RAISING.outer, RAISING.colour, [0, raising.share * 2 * Math.PI]);
     }
     // At the gate the Waking's moments are its company's, and theirs who stand in its hollow.
     const company = seen.gate ? [...new Set([...seen.holders, ...this.holders])] : [own, ...word.fight.others.keys()];
@@ -401,20 +380,6 @@ export class BreachView {
     return places.flatMap(({ at, kind }) => (at ? [{ x: at[0], y: at[1], kind }] : []));
   }
 
-  /** A raising asked: the room's answer to it, once it comes, told in words where it refused. */
-  private heedRaising(word: BreachOn): void {
-    const gear = word.gear;
-    if (this.asked === null || !gear || gear.answered === this.asked) return;
-    this.asked = null;
-    const words =
-      gear.answer === NO_REVIVES
-        ? 'No revives are left to raise them.'
-        : gear.answer === NONE_TO_RAISE
-          ? 'No one fallen is in reach to raise.'
-          : null;
-    if (words) this.parts.context.trips.tell?.(words);
-  }
-
   /** Each of the gate's moorings: claimed by the Lattice (the room's word), held by a living player of the company
    *  holding the gate standing on it, or free. */
   private moorings(seen: BreachSeen): Mooring[] {
@@ -486,34 +451,32 @@ export class BreachView {
     return props;
   }
 
-  /** What E does at the player's feet in a Breach: takes up the Lodestone first while it lies counting down to the
-   *  company's unwriting; raises a fallen company member in reach while held; sets down or takes up the Lodestone;
-   *  enters the run at the gate once it is open to the player's company, or leaves the run by the way in, or by the
-   *  court's portal once the Breach is cleared. */
+  /** What E does at the player's feet in a Breach before a fallen ally's revive: takes up the Lodestone while it lies
+   *  counting down to the company's unwriting; null otherwise. */
+  urgent(feet: Point, ask: (asked: GearAsk) => void): Use | null {
+    const seen = this.plan ? this.word?.seen : null;
+    return seen && seen.lyingTicks > 0 && this.takes(seen, feet) ? this.take(ask) : null;
+  }
+
+  private takes(seen: BreachSeen, feet: Point): boolean {
+    const lies = seen.stone === STONE.plinth || seen.stone === STONE.lying;
+    return lies && flat(feet, seen.stoneAt) <= TAKE_REACH_M && Math.abs(feet[2] - seen.stoneAt[2]) <= 2;
+  }
+
+  private take(ask: (asked: GearAsk) => void): Use {
+    return { words: 'Take up the Lodestone', run: () => ask({ kind: ASKS.takeLodestone }) };
+  }
+
+  /** What E does at the player's feet in a Breach once no fallen ally is revived there: sets down or takes up the
+   *  Lodestone; enters the run at the gate once it is open to the player's company, or leaves the run by the way in,
+   *  or by the court's portal once the Breach is cleared. */
   use(feet: Point, ask: (asked: GearAsk) => void): Use | null {
     const [plan, word] = [this.plan, this.word];
     const seen = word?.seen;
     if (!plan || !word || !seen) return null;
-    const lies = seen.stone === STONE.plinth || seen.stone === STONE.lying;
-    const takes = lies && flat(feet, seen.stoneAt) <= TAKE_REACH_M && Math.abs(feet[2] - seen.stoneAt[2]) <= 2;
-    const take = { words: 'Take up the Lodestone', run: () => ask({ kind: ASKS.takeLodestone }) };
-    if (takes && seen.lyingTicks > 0) return take;
-    const raise = this.raisable(seen, feet);
-    if (raise !== null) {
-      const name = word.others.plateOf(raise)?.name ?? 'them';
-      const held = seen.raising.find((raising) => raising.raiser === word.fight.player && raising.raised === raise);
-      return {
-        words: `Hold to raise ${name}`,
-        share: held?.share ?? null,
-        run: () => {
-          [this.raising, this.asked] = [raise, word.gear?.answered ?? null];
-          ask({ kind: ASKS.raise, item: raise });
-        },
-      };
-    }
     if (seen.stone === STONE.borne && seen.bearer === word.fight.player)
       return { words: 'Set down the Lodestone', run: () => ask({ kind: ASKS.dropLodestone }) };
-    if (takes) return take;
+    if (this.takes(seen, feet)) return this.take(ask);
     const trips = this.parts.context.trips;
     if (seen.gate) {
       const gate = this.gateSocket('gate');
@@ -528,23 +491,16 @@ export class BreachView {
     return out ? { words: `Leave ${inSentence(plan.name)}`, run: () => trips.leaveBreach?.() } : null;
   }
 
-  /** A fallen company member within reach of `feet`, the nearest, where the room would let them be raised: none with
-   *  no revive left; anyone in the run (it holds only its company); at the gate, one of the company holding it while
-   *  its Waking runs, the player among them. */
-  private raisable(seen: BreachSeen, feet: Point): number | null {
-    const word = this.word;
-    if (!word || seen.revives === 0) return null;
-    const waking = seen.heldBy && !seen.woken && seen.holders.includes(word.fight.player);
-    if (seen.gate && !waking) return null;
-    let nearest: { id: number; apart: number } | null = null;
-    for (const [id, other] of word.fight.others) {
-      if (!fallen(other) || other.standing.kind === 'dead') continue;
-      if (seen.gate && !seen.holders.includes(id)) continue;
-      const apart = flat(feet, [other.body.x, other.body.y, other.body.z]);
-      if (apart <= RAISE_REACH_M && (!nearest || apart < nearest.apart)) nearest = { id, apart };
-    }
-    return nearest?.id ?? null;
-  }
+  /** Whether the player may revive the fallen player `fallen` as the room's Breach would let them (fallen.rs
+   *  `breach_lets_revive`): none once the attempt's revives are spent; at the gate, the company holding it while its
+   *  Waking runs revived only by its own. Anyone, outside a Breach. */
+  readonly mayRevive = (fallen: number): boolean => {
+    const [seen, word] = [this.plan ? this.word?.seen : null, this.word];
+    if (!seen || !word) return true;
+    const fighting = (id: number) => seen.gate && seen.heldBy && !seen.woken && seen.holders.includes(id);
+    if (seen.gate && !fighting(fallen)) return true;
+    return seen.revives !== 0 && (!seen.gate || fighting(word.fight.player));
+  };
 }
 
 /** The run's banner while an encounter's line stands (`lately`): its teaching as it begins, in the objective while it

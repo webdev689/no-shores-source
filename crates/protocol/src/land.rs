@@ -7,7 +7,7 @@ use crate::{UNTRIMMED_FLOATS, dressed_vector, finish_snapshot, messages, standin
 use combat::fighter::FighterId;
 use combat::shots::Line;
 use combat::{Shot, Status};
-use room::{Event, FoeSeen, Plate, PlayerId, Seen, SpellSeen};
+use room::{Event, FoeSeen, Plate, PlayerId, Reviving, Seen, SpellSeen};
 use std::collections::BTreeMap;
 
 /// Everything a snapshot carries after a room's tick, for one player.
@@ -48,6 +48,10 @@ pub struct Snapshot<'snapshot> {
     pub encounter: Option<&'snapshot room::encounters::EncounterSeen>,
     /// In a Breach's run or a room with a Breach's gate, the Breach (`Room::breach_seen`); none in any other room.
     pub breach: Option<&'snapshot room::breach::seen::BreachSeen>,
+    /// Whether the darkness holds the player it is sent to (`Room::darkness_for`), and each fallen player being
+    /// revived.
+    pub darkness: bool,
+    pub reviving: &'snapshot [Reviving],
 }
 
 /// How many numbers a foe crosses as, packed: its glance, then its role, type, rank, faction, phase, alertness and
@@ -204,6 +208,16 @@ pub fn snapshot_bytes(snapshot: &Snapshot<'_>) -> Vec<u8> {
     let public_event = snapshot.public.map(|seen| crate::public_wire::public_offset(&mut builder, seen));
     let encounter = snapshot.encounter.map(|seen| crate::encounter_wire::encounter_offset(&mut builder, seen));
     let breach = snapshot.breach.map(|seen| crate::breach_wire::breach_offset(&mut builder, seen));
+    let reviving = (!snapshot.reviving.is_empty()).then(|| {
+        let each: Vec<_> = (snapshot.reviving.iter())
+            .map(|seen| {
+                let args =
+                    messages::RevivingArgs { fallen: seen.fallen, reviver: seen.reviver, progress: seen.progress };
+                messages::Reviving::create(&mut builder, &args)
+            })
+            .collect();
+        builder.create_vector(&each)
+    });
     let args = messages::SnapshotArgs {
         tick,
         players,
@@ -222,6 +236,8 @@ pub fn snapshot_bytes(snapshot: &Snapshot<'_>) -> Vec<u8> {
         plates,
         encounter,
         breach,
+        darkness: snapshot.darkness,
+        reviving,
         ..messages::SnapshotArgs::default()
     };
     finish_snapshot(builder, &args)

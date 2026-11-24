@@ -1,4 +1,4 @@
-//! A Breach's run: its room, its stages and how its fallen stand again at each tier, raising and revives, wipes, its
+//! A Breach's run: its room, its stages and how its fallen stand again at each tier, revives, wipes, its
 //! seals and slabs (the room's blocks its plan's for the seals and tick its snapshot tells), and the Lodestone.
 
 use super::*;
@@ -57,15 +57,17 @@ fn a_run_opens_at_the_descents_top_with_its_seals_shut_and_its_encounters_waitin
 }
 
 #[test]
-fn an_encounter_begins_once_a_living_player_stands_in_its_space_and_its_stage_is_reached() {
+fn an_encounter_begins_once_a_living_player_stands_in_its_space_and_its_stage_is_reached_as_a_checkpoint() {
     let (mut room, players) = run(Tier::Normal, 2);
     room.tick();
     assert_eq!(breach(&room).phases[MENDING], Phase::Waiting);
     let stage = at(&room, "mending", "checkpoint");
     stand_at(&mut room, players[0], stage);
+    room.take_events();
     room.tick();
     assert_eq!(breach(&room).phases[MENDING], Phase::Waiting, "not at its stage");
     assert_eq!(breach(&room).reached, 1, "but the stage is reached");
+    assert_eq!(told(&mut room, EventKind::Checkpoint), players.len(), "told to each player as a checkpoint");
     let inside = at(&room, "mending", "seam-west");
     stand_at(&mut room, players[0], inside);
     room.tick();
@@ -113,8 +115,19 @@ fn a_seal_stands_until_its_encounter_is_won_and_a_slab_stands_only_in_its_cycle(
     }
 }
 
+/// Ticks the room as long as a revive takes and one more, `reviver` holding Use as their page sends it, its inputs
+/// numbered on from `sequence`; the number of the next.
+pub(crate) fn hold_revive(room: &mut Room, reviver: PlayerId, sequence: u32) -> u32 {
+    let last = sequence + crate::revive::REVIVE_TICKS;
+    for sequence in sequence..=last {
+        room.input(reviver, crate::Input { sequence, revive: true, ..crate::Input::default() }).expect("taken");
+        room.tick();
+    }
+    last + 1
+}
+
 #[test]
-fn at_hard_the_fallen_in_a_running_encounter_never_stand_again_of_themselves_but_are_raised_for_a_revive() {
+fn at_hard_the_fallen_in_a_running_encounter_never_stand_again_of_themselves_but_are_revived_for_one_of_its_revives() {
     let (mut room, players) = run(Tier::Hard, 2);
     let inside = at(&room, "mending", "mender");
     for &player in &players {
@@ -127,15 +140,16 @@ fn at_hard_the_fallen_in_a_running_encounter_never_stand_again_of_themselves_but
     let body = room.players[&players[1]].fighter.body;
     stand_at(&mut room, players[0], [body.x + 1.0, body.y, body.z]);
     room.take_events();
-    assert_eq!(room.ask_raise(players[0], players[1]), 0);
-    ticks(&mut room, fallen::RAISE_TICKS + 1);
-    assert!(!room.players[&players[1]].fighter.dead(), "raised");
+    let sequence = hold_revive(&mut room, players[0], 1);
+    assert!(!room.players[&players[1]].fighter.dead(), "revived");
     assert_eq!(breach(&room).revives, Some(4), "for one of the attempt's five");
     assert_eq!(told(&mut room, EventKind::Revived), 1);
     room.breach.as_mut().expect("run").revives = Some(0);
     fell(&mut room, players[1]);
     room.tick();
-    assert_eq!(room.ask_raise(players[0], players[1]), fallen::NO_REVIVES);
+    hold_revive(&mut room, players[0], sequence);
+    assert!(room.players[&players[1]].fighter.dead(), "none left, none revived");
+    assert!(room.reviving_seen().is_empty(), "no hold taken up");
 }
 
 #[test]

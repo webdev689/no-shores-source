@@ -8,8 +8,8 @@ import type { Box } from './hitWords.ts';
 import type { HudFrame } from './hud.ts';
 import { SIGHT_SKIN_M } from './plateSight.ts';
 
-/** How long the dead lie before standing again, in ticks (crates/combat/src/tuning.rs RESPAWN). */
-const RESPAWN_TICKS = 240;
+/** How long the dead lie before standing again or asking to, in ticks (crates/combat/src/tuning.rs RESPAWN). */
+export const RESPAWN_TICKS = 240;
 /** How tall a Boss's figure stands, metres, for the span of the view the call keeps clear of. */
 const BOSS_TALL_M = 2.6;
 
@@ -46,34 +46,18 @@ export function clearOf<Spot extends { readonly x: number; readonly y: number }>
   return { ...spot, y: below ? box.bottom + gap : box.top - gap };
 }
 
-/** How the fallen stand again where a place's room says so (a Breach's): after `ticks` lain, or never of themselves
- *  (null), when a company member may still raise them while `revives` are left (-1 none counted). */
-export interface StandingAgain {
-  readonly ticks: number | null;
-  readonly revives: number;
-}
-
 /** The veil over the display, by what holds the player: joining the room again, the room lost (and why), or their
- *  death (the ticks they have lain, while the room will stand them again: with no revive left, it promises nothing;
- *  where the place says how its fallen stand, as it says); a link's veil is plain, death's is blood. Null while none
- *  of these holds, and for a death the section dealt too, whose own veil offers Respawn. */
+ *  death in a room that stands them again unasked (the ticks they have lain); a link's veil is plain, death's is
+ *  blood. Null while none of these holds, and for a death in a room that waits for the ask, whose own screen tells it. */
 export function veilOf(
-  frame: Pick<HudFrame, 'own' | 'lost' | 'rejoining' | 'revivesLeft' | 'sectionDead' | 'fall'>,
+  frame: Pick<HudFrame, 'own' | 'lost' | 'rejoining' | 'asksToRespawn'>,
 ): { readonly words: string; readonly link: boolean } | null {
   if (frame.rejoining) return { words: 'Reconnecting…', link: true };
   if (frame.lost !== null) return { words: `The link to the room was lost: ${frame.lost}.`, link: true };
   const dead = frame.own?.action.kind === 'dead' ? frame.own.action : null;
-  if (!dead || frame.sectionDead) return null;
-  const standing = (ticks: number) => ({
-    words: `You fell. Standing again in ${Math.ceil(Math.max(0, ticks - dead.elapsed) / 60)} s`,
-    link: false,
-  });
-  const fall = frame.fall;
-  if (!fall) return frame.revivesLeft === 0 ? { words: 'You fell.', link: false } : standing(RESPAWN_TICKS);
-  if (fall.ticks !== null) return standing(fall.ticks);
-  if (fall.revives === 0) return { words: 'You fell. No revives are left to raise you.', link: false };
-  const left = fall.revives > 0 ? ` · ${fall.revives} revive${fall.revives === 1 ? '' : 's'} left` : '';
-  return { words: `You fell. A company member can raise you${left}`, link: false };
+  if (!dead || frame.asksToRespawn) return null;
+  const seconds = Math.ceil(Math.max(0, RESPAWN_TICKS - dead.elapsed) / 60);
+  return { words: `You fell. Standing again in ${seconds} s`, link: false };
 }
 
 /** The span down the view a figure standing at `view` fills, where it stands within the call's reach (at `zoom`) of

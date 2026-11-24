@@ -2,11 +2,10 @@
 //! of the room it was seeing, and a foe to stand before it), the checks an input must pass, the turn each input and
 //! dress is taken in, and what the room keeps of each to judge blows on it as it saw them.
 
+use crate::Room;
 use crate::asks::Asked;
-use crate::{EventKind, Room};
 use combat::Fighter;
-use combat::fighter::{Action, FighterId, player};
-use combat::tuning::FOE_GONE;
+use combat::fighter::FighterId;
 use gear::Character;
 use reach::Standing;
 use std::collections::VecDeque;
@@ -67,8 +66,8 @@ pub struct Shown {
 /// shows; their dress when it changed (as the browser writes it; the room puts in the cosmetics worn); what their
 /// hands hold (`combat::Arms` as its code); the room tick of the last snapshot their screen showed; a foe to stand
 /// before them, or every foe sent away, if they asked (the Test Ground's panel), and the foe's level (0 for none: it
-/// fights by combat's own numbers); whether they ask to respawn, dead past a node's section; an ask of their gear;
-/// a spell they cast; and whether a menu is open on their screen.
+/// fights by combat's own numbers); whether they ask to respawn, fallen; an ask of their gear; a spell they cast;
+/// whether a menu is open on their screen; and whether they hold Use to revive a fallen ally (`revive.rs`).
 #[derive(Clone, Debug, Default, PartialEq)]
 pub struct Input {
     pub sequence: u32,
@@ -83,6 +82,7 @@ pub struct Input {
     pub spawn_level: u8,
     pub cast: Option<crate::arts::Cast>,
     pub menu: bool,
+    pub revive: bool,
 }
 
 /// What a player asks of the room's foes: one of a type (the roster's number) at a rank (its number; a rank the type
@@ -202,6 +202,12 @@ pub struct Player {
     pub(crate) struck_at: Option<u64>,
     /// Where their swings' chain stands (`chain.rs`).
     pub(crate) chain: crate::chain::Chain,
+    /// Whether their last input held Use to revive a fallen ally, and whether one this tick asked to respawn.
+    pub(crate) reviving: bool,
+    pub(crate) respawn_asked: bool,
+    /// Where their kept character last left the overworld or a social space, as it was claimed: the spot logging back
+    /// in stands them at, kept apart from the character's, which the room moves on as they stand (`keep_spots`).
+    pub(crate) left_at: Option<gear::last::Last>,
 }
 
 impl Player {
@@ -254,6 +260,9 @@ impl Player {
             plate: crate::plates::Plated::default(),
             struck_at: None,
             chain: crate::chain::Chain::default(),
+            reviving: false,
+            respawn_asked: false,
+            left_at: None,
         }
     }
 
@@ -325,55 +334,6 @@ impl Player {
 }
 
 impl Room {
-    /// A player dead long enough stands again at the spawn nearest where they fell, whole, if an Abyss run has a revive
-    /// left for them (`abyss.rs`); a foe dead long enough is gone. An Abyss run whose players are all down starts over
-    /// instead.
-    pub(crate) fn raise_the_dead(&mut self) {
-        if self.wiped() {
-            self.start_over();
-            return;
-        }
-        let mut raised = Vec::new();
-        let fallen: Vec<(PlayerId, Fighter)> = self
-            .players
-            .iter()
-            .filter(|(id, _)| self.lain_long_enough(**id))
-            // One the section killed too stands again only by its own respawn, which ends that death as well.
-            .filter(|(_, found)| !matches!(found.standing, Standing::Dead { .. }))
-            .map(|(id, found)| (*id, found.fighter))
-            .collect();
-        for (id, fighter) in fallen {
-            if !self.revive() {
-                continue;
-            }
-            let body = self.stand_again(id, fighter.body.x, fighter.body.y);
-            let graced = self.clock + GRACE;
-            if let Some(found) = self.players.get_mut(&id) {
-                found.fighter = found.armed(player(body, fighter.arms));
-                // A fall is measured from where the feet stand again, not from where the player died.
-                found.stood = body.z;
-                found.graced = graced;
-                raised.push(id);
-            }
-        }
-        for id in raised {
-            self.tell(EventKind::Respawned, None, id, id, 0.0);
-        }
-        let gone: Vec<FighterId> = self
-            .foes
-            .iter()
-            .filter(|(_, foe)| matches!(foe.fighter.action, Action::Dead { elapsed } if elapsed >= FOE_GONE))
-            .map(|(id, _)| *id)
-            .collect();
-        for id in gone {
-            self.foes.remove(&id);
-            self.quests.spoilless.remove(&id);
-            self.board.forget(id);
-            self.quiet.remove(&id);
-            self.names.remove(&id);
-        }
-    }
-
     /// Whether this is the Test Ground: a course's room on open ground with no section. A wreck laid over the sea has
     /// no section either, but it is a story level, played at the player's own levels.
     pub(crate) fn is_test_ground(&self) -> bool {
@@ -467,6 +427,7 @@ impl Room {
             return false;
         }
         let Some(found) = self.players.get_mut(&player) else { return false };
+        found.left_at = character.last.clone();
         found.character = character;
         (found.gear_changed, found.claimed) = (true, true);
         self.arrived(player);
@@ -550,6 +511,8 @@ impl Room {
         if found.stepped + VIEW_LAG >= clock - found.joined {
             return;
         }
+        // A hold on Use lasts no longer than the inputs that held it.
+        found.reviving = false;
         let dead = matches!(found.standing, Standing::Dead { .. });
         let standing = if dead {
             lying_still(&found.fighter)

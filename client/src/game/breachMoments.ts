@@ -24,7 +24,6 @@ const SOUNDS: Readonly<Record<number, string>> = {
   [BREACH_EVENT.begun]: 'foe.alert',
   [BREACH_EVENT.stage]: 'amb.ice.crack',
   [BREACH_EVENT.won]: 'story.crash',
-  [BREACH_EVENT.revived]: 'anima.divine',
   [BREACH_EVENT.rewritten]: 'element.cosmic',
   [BREACH_EVENT.cleansed]: 'finish.cosmic',
   [BREACH_EVENT.carried]: 'element.cosmic',
@@ -64,7 +63,6 @@ const STINGS: Readonly<Record<number, 'cadence' | 'victory' | 'defeat'>> = {
 /** The moments the room tells once, of one player (`defender`), the gate shutting one out among them; every other it
  *  tells each player in the room, so the page takes only its own player's. */
 const TOLD_ONCE: ReadonlySet<number> = new Set([
-  BREACH_EVENT.revived,
   BREACH_EVENT.cleansed,
   BREACH_EVENT.carried,
   BREACH_EVENT.lodestoneTaken,

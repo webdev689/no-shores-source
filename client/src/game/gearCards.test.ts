@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { ASKS, type GearItem, type GearState } from '../network/gearMessages.ts';
 import { cardOf, flyoutOf, inventoryPageOf, vaultOf, wearIn } from './gearCards.ts';
+import words from '../../../content/gear/words.json' with { type: 'json' };
 
 const item = (fields: Partial<GearItem>): GearItem => ({
   id: 1,
@@ -208,4 +209,11 @@ test("a vault over its limit (a leaver's chest Vestige kept past it) shows every
   }));
   const [, , shelf] = vaultOf(state({ atMage: true, vestiges })).kept;
   assert.deepEqual([shelf?.held, shelf?.most, shelf?.cells.length], [23, 20, 23]);
+});
+
+test("a rolled piece's card says its set's words for its kind", () => {
+  // A Normal sword is Homespun whatever its content; its card reads that set's line for a Sword.
+  const card = cardOf(item({ kind: 2, rarity: 0 }), null);
+  assert.equal(card.name, 'Homespun Sword');
+  assert.equal(card.words, words.sets.Homespun.Sword);
 });

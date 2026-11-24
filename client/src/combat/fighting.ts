@@ -169,6 +169,8 @@ export class Fighting {
   private artsAt = 0;
   private sentDress = '';
   private respawnAsked = false;
+  /** Whether Use is held over a fallen ally beside the player, sent with each tick's input (`footRevive.ts`). */
+  reviving = false;
   /** Whether a menu is open on the player's screen, sent with each input for others to see over their head. */
   menuOpen = false;
   /** Where the player stands with a node's section, as the room last said: dead, by a fall or past its edge, the room
@@ -288,8 +290,8 @@ export class Fighting {
     return abilitiesAt(this.artsTaken, this.artsAt, this.roomTick);
   }
 
-  /** Asks the room, with the next tick's input, to stand the player again at the spawn nearest where they fell past
-   *  the section's edge. */
+  /** Asks the room, with the next tick's input, to stand the player again once fallen: where a respawn stands them
+   *  (crates/room/src/revive.rs), past the section's edge or in a fight. */
   askRespawn(): void {
     this.respawnAsked = true;
   }
@@ -397,6 +399,7 @@ export class Fighting {
       spawn: spawned?.foe,
       spawnLevel: spawned?.level ?? 0,
       respawn: this.respawnAsked && !holding,
+      revive: this.reviving && !holding,
       menu: this.menuOpen,
       ...(gear === undefined ? {} : { ask: gear }),
       ...(cast === null ? {} : { cast }),
@@ -506,7 +509,10 @@ export class Fighting {
     this.shots = snapshot.shots;
     // Kept only so many: a hidden tab draws no frame to take them, and on its return the newest are enough.
     this.shotsReceived = [...this.shotsReceived, ...snapshot.shots].slice(-QUEUED_MOST);
-    const isPublic = (event: FightEvent) => event.kind >= EVENT.publicBegun;
+    // A public event's, an encounter's and a Breach's beats are the zone's; a revive, a checkpoint and a fall back are
+    // the fight's.
+    const fights = (kind: number) => kind >= EVENT.revived && kind <= EVENT.fellBack;
+    const isPublic = (event: FightEvent) => event.kind >= EVENT.publicBegun && !fights(event.kind);
     this.events = [...this.events, ...snapshot.events.filter((event) => !isPublic(event))].slice(-QUEUED_MOST);
     this.publicEvents = [...this.publicEvents, ...snapshot.events.filter(isPublic)].slice(-QUEUED_MOST);
     this.publicWord = snapshot.public ?? null;

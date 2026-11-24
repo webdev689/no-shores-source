@@ -111,7 +111,8 @@ async function play(minute: number): Promise<{ hash: string; ended: readonly num
     for (const player of players) {
       const intent = decide(last, player, tick);
       const look = { anim: '', frame: 0, facing: 0 };
-      const sent = inputBytes(tick, { intent, look, arms: SWORD, seen: BigInt(tick - 1) });
+      // Each asks to respawn every tick, as the rules' test's players do: the room takes it once they may.
+      const sent = inputBytes(tick, { intent, look, arms: SWORD, seen: BigInt(tick - 1), respawn: true });
       assert.equal(room.input(player, sent), 'taken');
     }
     room.tick();
@@ -175,7 +176,7 @@ test("a dev page's bots play its own room's events through, the heroic task take
   assert.deepEqual(playInPage(FISSURE_MINUTE, true), [1, 2, 2], 'the Fissure won, heroic');
   assert.deepEqual(playInPage(FISSURE_MINUTE, false), [1, 2, 3], 'the Fissure won, its heroic task missed');
   assert.deepEqual(playInPage(RAID_MINUTE, true), [2, 3, 2], "the raid's stores fall, its heroic task met");
-  assert.deepEqual(playInPage(RAID_MINUTE, false), [2, 2, 3], 'the raid held, its heroic task missed');
+  assert.deepEqual(playInPage(RAID_MINUTE, false), [2, 3, 3], "the raid's stores fall, its heroic task missed");
 });
 
 test("the dev address's play: ticks a frame, bots, and the heroic task left alone only when asked", () => {

@@ -80,14 +80,14 @@ test('pledged to another, switching costs its price; pledged here, it says so an
 });
 
 test('rank and the meter to the next come of the reputation; each package waiting is a press to collect', () => {
-  assert.deepEqual(reputationOf(STORM, standing({ reputation: [25_000, 0, 0] })), {
+  assert.deepEqual(reputationOf(STORM, standing({ reputation: [250_000, 0, 0] })), {
     rank: 2,
     toNext: 0.5,
-    words: '5,000 of 10,000 to rank 3',
+    words: '50,000 of 100,000 to rank 3',
   });
   const rows = factionRows(
     STORM,
-    state({ standing: standing({ reputation: [30_000, 0, 0], packages: [2, 0, 0] }) }),
+    state({ standing: standing({ reputation: [300_000, 0, 0], packages: [2, 0, 0] }) }),
     false,
   );
   const packages = row(rows, 'Reputation')?.wares;
@@ -157,7 +157,7 @@ test('fragments owned or sold are lit; the rest are sold from rank 1', () => {
       [true, 'From rank 1', null],
     ],
   );
-  const ranked = standing({ reputation: [10_000, 0, 0] });
+  const ranked = standing({ reputation: [100_000, 0, 0] });
   const sold = row(factionRows(STORM, state({ standing: ranked, aurem: 7_500 }), false), 'Fragments')?.wares[0];
   assert.equal(sold?.dim, false, 'one that may be bought is lit, as the armour is');
   assert.deepEqual(sold?.ask, { kind: ASKS.buyFragment, column: STORM, node: 0 });

@@ -27,8 +27,6 @@ pub(crate) fn breach_offset<'built>(
     let stone_at = (seen.stone_at != [0.0; 3]).then(|| builder.create_vector(&seen.stone_at));
     let marked = (!seen.marked.is_empty()).then(|| builder.create_vector(&seen.marked));
     let mark_ticks = (!seen.mark_ticks.is_empty()).then(|| builder.create_vector(&seen.mark_ticks));
-    let raising = (!seen.raising.is_empty()).then(|| builder.create_vector(&seen.raising));
-    let raised = (!seen.raised.is_empty()).then(|| builder.create_vector(&seen.raised));
     let counts = (!seen.counts.is_empty()).then(|| builder.create_vector(&seen.counts));
     let bells = (!seen.bells.is_empty()).then(|| builder.create_vector(&seen.bells));
     let bell_foes = (!seen.bell_foes.is_empty()).then(|| builder.create_vector(&seen.bell_foes));
@@ -52,8 +50,6 @@ pub(crate) fn breach_offset<'built>(
         lying_ticks: seen.lying_ticks,
         marked,
         mark_ticks,
-        raising,
-        raised,
         chests: seen.chests,
         encounter: seen.encounter,
         stage: seen.stage,
@@ -131,8 +127,6 @@ pub fn breach_of(snapshot: &messages::Snapshot<'_>) -> Option<BreachSeen> {
         lying_ticks: read.lying_ticks(),
         marked: numbers(read.marked()),
         mark_ticks: numbers(read.mark_ticks()),
-        raising: numbers(read.raising()),
-        raised: shorts(read.raised()),
         chests: read.chests(),
         encounter: read.encounter(),
         stage: read.stage(),
@@ -189,8 +183,6 @@ mod tests {
             held: 250,
             marked: vec![7, 9],
             mark_ticks: vec![600, 0],
-            raising: vec![4, 9],
-            raised: vec![333],
             chests: 0b101,
             encounter: 2,
             bells: vec![3, 0, 6],

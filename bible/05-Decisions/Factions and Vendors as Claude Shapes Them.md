@@ -36,6 +36,10 @@ from the vendor. Sources: Destinypedia's Faction, Reputation and Dead Orbit page
 
 Reputation is kept for every faction across a switch, as Destiny's was. A cape of a faction not pledged earns nothing.
 
+Replaced in part by [[The Balance and Economy Pass as Claude Shapes It]]: a rank every 100,000 reputation, earned from
+every deed's XP (kills, clears, chests, bounties) while the cape is worn; a package 2,500 Aurem and a Vestige, Legendary
+one time in two from level 18; the cape 500 Aurem.
+
 ## Faction gear
 
 Destiny 1's faction vendors sold legendary armour from rank 2 and weapons from rank 3, for Glimmer and Legendary Marks
@@ -58,6 +62,8 @@ look. The owner said yes to gear of each faction's own, "with its own unique col
 | Its look | The armour is drawn in a guild's set no other gear wears: the Stormcallers' in the fighters', the Lamplighters' in the mages', the Veiled's in the brotherhood's. The weapons are drawn in the faction's metal (elven, silver, ebony), and their colour covers the bows, the staff and the shields whole by their light, as the armour's does; a sword's or a dagger's blade keeps its metal |
 | First person | The gauntlets, the boots, the bow, the staff and the shield take the faction's colour in first person too |
 | The screen | The faction's counter shows rows ARMOUR and WEAPONS to everyone, the pieces not yet earned dim with "From rank 2" or "From rank 3"; each card says the colour it is drawn in |
+
+Replaced in part by [[The Balance and Economy Pass as Claude Shapes It]]: a faction's weapon costs 12,000 Aurem.
 
 ## The Arts' levels
 
@@ -124,6 +130,9 @@ oldest giving way unsaid as more came. Everything below is Claude's.
 | His level | His named pieces are made at level 20 and sold from level 20, as a faction's are; below it his screen dims them "From level 20", so no keeper sells a piece the buyer could not wear yet |
 
 Replaced in part by [[Bosses and Dungeons Drop Items, Clears Pay, and Shapes Come From the Week's Abyss]]: no kill gives Shapes; only the week's Abyss content does.
+
+Replaced in part by [[The Balance and Economy Pass as Claude Shapes It]]: an Atheric's armour costs 13 Shapes and its
+weapon 23, as Xûr's exotics cost Strange Coins; a Legendary 7.
 
 Replaced in part by Claude's call under [[Dailies and Weeklies Follow Destiny 1, With One Abyss Dungeon a Week]]: his
 weeks are the game's, from Tuesday 09:00 UTC, so his place and wares turn then; he still comes Friday 09:00 and goes

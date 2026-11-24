@@ -1,7 +1,8 @@
-// The key strip at the bottom right: only the controls that matter at this moment, each its keys (keys that do the
-// same parted by " / ", each on its own keycap, drawn as the mouse's button or as the pad's) and what it does, and
-// last the key to the sheet of every control (`controls.ts`). A strip names controls (`binds.ts`), or the mouse's
-// gestures and a window's keys by name; `hintsFor` shows them as bound now, for the keys or the pad.
+// The key strip at the bottom right: the moment's name, then only the controls that matter at this moment, each its
+// keys (keys that do the same parted by " / ", each on its own keycap, drawn as the mouse's button or as the pad's)
+// and what it does, and last the key to the sheet of every control (`controls.ts`). A strip names controls
+// (`binds.ts`), or the mouse's gestures and a window's keys by name; `hintsFor` shows them as bound now, for the keys
+// or the pad.
 
 import { DAGGERS } from '../combat/casting.ts';
 import type { PlayerFightFrame } from '../combat/playerFight.ts';
@@ -11,12 +12,17 @@ import { type Binds, CONTROLS, type Device } from '../player/binds.ts';
 import type { Mode } from '../rules/movementRules.ts';
 import type { Walker } from '../player/walker.ts';
 import { keyName, padName } from './controls.ts';
-import type { Hint } from './gearNodes.ts';
 import type { Standing } from './hudLaw.ts';
 
 /** One entry of the strip: what it names, " / " between them (a control, or a gesture or key by name; `keys|pad`
  *  names one for the keys and another for the pad), what it does, and what it does on the pad where that differs. */
 export type StripHint = readonly [names: string, words: string, padWords?: string];
+
+/** What the strip shows at a moment: the moment's name over its entries. */
+export interface Strip {
+  readonly title: string;
+  readonly hints: readonly StripHint[];
+}
 
 /** The strip's last entry wherever it shows: the key to every control. */
 export const ALL_CONTROLS: StripHint = ['controls', 'All controls'];
@@ -24,7 +30,8 @@ export const ALL_CONTROLS: StripHint = ['controls', 'All controls'];
 export const followHint = (name: string): StripHint => ['follow', name ? `Following ${name} · Next` : 'Follow'];
 /** The click that takes the mouse to look round, shown while the mouse is free. */
 const LOOK: StripHint = ['Left button', 'Look round'];
-const MENU: StripHint = ['menu', 'Menu'];
+/** Held, the leave control takes the player back to their ship from wherever they stand on foot (`leaveHold.ts`). */
+const LEAVE: StripHint = ['leave', 'Hold to leave', 'Leave'];
 const MAP: StripHint = ['landMap', 'Map'];
 
 /** The keys each moment shows, the strip's last entry with them. */
@@ -36,7 +43,6 @@ export const HINTS = {
     ['steerLeft / steerRight', 'Steer'],
     ['sailOn', 'Sail on'],
     ['heaveTo', 'Heave to'],
-    MENU,
     ALL_CONTROLS,
   ],
   manage: [['Drag', 'Turn'], ['Wheel', 'Zoom'], ['manage', 'Back'], ALL_CONTROLS],
@@ -67,7 +73,23 @@ export const HINTS = {
   landing: [['Left button', 'Choose; again to land'], ['confirm', 'Land'], ['Esc', 'Back'], ALL_CONTROLS],
 } as const satisfies Record<string, readonly StripHint[]>;
 
-/** The keys of each stance on foot, before the Arts', the menu's and the strip's last. A ranged weapon's aim and
+/** Each moment's name, as the strip's head says it. */
+const TITLES: Readonly<Record<keyof typeof HINTS, string>> = {
+  landMap: 'Map',
+  dead: 'Fallen',
+  sea: 'Sailing',
+  manage: 'Manage',
+  deck: 'On deck',
+  fight: 'Sea fight',
+  aim: 'Guns laid',
+  map: 'Chart',
+  landing: 'Landing',
+};
+
+/** The strip of the moment `name`. */
+export const stripOf = (name: keyof typeof HINTS): Strip => ({ title: TITLES[name], hints: HINTS[name] });
+
+/** The keys of each stance on foot, before the Arts', the leave's and the strip's last. A ranged weapon's aim and
  *  fire are the swing's and the guard's keys, and on the pad the other way round (`Input`). */
 const STANCES = {
   away: [
@@ -129,6 +151,18 @@ const BEARER = {
 } as const satisfies Record<string, readonly StripHint[]>;
 const GROUND_KEYS = 'anima / tenetOne / tenetTwo';
 
+/** Each stance's name, as the strip's head says it. */
+const STANCE_TITLES: Readonly<Record<Stance, string>> = {
+  away: 'On foot',
+  melee: 'Melee',
+  ranged: 'Ranged',
+  aiming: 'Aiming',
+  daggers: 'Dusk Daggers',
+  hang: 'Ledge',
+  climb: 'Climbing',
+  mounted: 'Riding',
+};
+
 /** What the mouse's gestures and a window's keys are on the pad; none for one it has no way to do. */
 const ON_THE_PAD: Readonly<Record<string, string>> = { Drag: padName('Right stick'), Esc: padName('B') };
 
@@ -164,12 +198,15 @@ export function keysOf(names: string, device: Device, binds: Binds, every = fals
   return sticksJoined([...new Set(shown)]);
 }
 
+/** An entry as the strip draws it: its keys as shown (" / " between them), its words, and the controls it names. */
+export type StripRow = readonly [keys: string, words: string, names: string];
+
 /** The strip's entries shown for `device` under `binds`: each control by its first key (the sheet has the rest), a
  *  gesture by its name or the pad's way to do it; an entry with nothing to show is left out. */
-export function hintsFor(hints: readonly StripHint[], device: Device, binds: Binds): Hint[] {
-  return hints.flatMap(([names, words, padWords]): Hint[] => {
+export function hintsFor(hints: readonly StripHint[], device: Device, binds: Binds): StripRow[] {
+  return hints.flatMap(([names, words, padWords]): StripRow[] => {
     const keys = keysOf(names, device, binds);
-    return keys.length === 0 ? [] : [[keys.join(' / '), device === 'pad' ? (padWords ?? words) : words]];
+    return keys.length === 0 ? [] : [[keys.join(' / '), device === 'pad' ? (padWords ?? words) : words, names]];
   });
 }
 
@@ -230,8 +267,8 @@ const SHADOW: readonly StripHint[] = [
 ];
 
 /** The keys shown on foot: the click to look while the mouse is free, the stance's own, the Arts' while one is worn
- *  and nothing else holds the keys (the bearer's own in place of both, at rest or with their hands up), the menu's at
- *  rest or riding, and the strip's last. */
+ *  and nothing else holds the keys (the bearer's own in place of both, at rest or with their hands up), the leave's
+ *  at rest or riding, and the strip's last. */
 export function footHints(foot: OnFoot): readonly StripHint[] {
   const stance = stanceOf(foot);
   const casts = foot.worn !== 0 && (stance === 'away' || stance === 'melee' || stance === 'ranged');
@@ -241,26 +278,49 @@ export function footHints(foot: OnFoot): readonly StripHint[] {
   return [
     ...(foot.free ? [LOOK] : []),
     ...(bearer ? [...bearer, ground] : [...STANCES[stance], ...(casts ? (daggersWorn ? SHADOW : ARTS) : [])]),
-    ...(stance === 'away' || stance === 'mounted' ? [MENU] : []),
+    ...(stance === 'away' || stance === 'mounted' ? [LEAVE] : []),
     ALL_CONTROLS,
   ];
 }
 
-/** The keys shown on foot as the player stands with the section: none while a fall plays out (no key does anything
- *  until Respawn is offered), Respawn's once death is told (none but the sheet's where the place stands the fallen
- *  again of itself), and otherwise what the player is doing asks. */
-export function keysShown(standing: Standing, foot: OnFoot): readonly StripHint[] {
-  if (standing.kind !== 'dead') return footHints(foot);
-  if (!standing.told) return [];
-  return standing.waits ? [ALL_CONTROLS] : HINTS.dead;
+/** The strip on foot: the stance's name over its keys (`footHints`). */
+export const footStrip = (foot: OnFoot): Strip => ({ title: STANCE_TITLES[stanceOf(foot)], hints: footHints(foot) });
+
+/** The strip on foot as the player stands with the section and the fight: none while a fall plays out or a fall in
+ *  the fight waits (no key does anything until Respawn is offered), Respawn's once it may be pressed (none but the
+ *  sheet's where the place stands the fallen again of itself), and otherwise what the player is doing asks. */
+export function keysShown(
+  standing: Standing,
+  foot: OnFoot,
+  fallen: { readonly canRespawn: boolean } | null = null,
+): Strip {
+  const none = { title: '', hints: [] };
+  if (standing.kind === 'dead' && standing.waits)
+    return standing.told ? { title: TITLES.dead, hints: [ALL_CONTROLS] } : none;
+  if (standing.kind === 'dead') return standing.told ? stripOf('dead') : none;
+  if (fallen) return fallen.canRespawn ? stripOf('dead') : none;
+  return footStrip(foot);
 }
 
-/** The keys shown on foot where the held map can be raised (not in the story, nor on a ship's deck, nor down): the
- *  map's before the menu's, or before the strip's last where the menu's is not shown. */
-export function withMapKey(hints: readonly StripHint[]): readonly StripHint[] {
-  const menu = hints.findIndex(([names]) => names === 'menu');
-  const place = menu >= 0 ? menu : hints.length - 1;
-  return [...hints.slice(0, place), MAP, ...hints.slice(place)];
+/** Fallen in a Breach, `strip` under the fallen's name with the key that follows the company first (`followHint`). */
+export const withFollow = (strip: Strip, name: string): Strip => ({
+  title: TITLES.dead,
+  hints: [followHint(name), ...strip.hints],
+});
+
+/** `strip` without the leave held, where there is nothing to leave: the story, a struck ship's deck at sea. */
+export const withoutLeave = (strip: Strip): Strip => ({
+  ...strip,
+  hints: strip.hints.filter(([names]) => names !== 'leave'),
+});
+
+/** The strip on foot where the held map can be raised (not in the story, nor on a ship's deck, nor down): the map's
+ *  before the leave's, or before the strip's last where the leave's is not shown. */
+export function withMapKey(strip: Strip): Strip {
+  const { hints } = strip;
+  const leave = hints.findIndex(([names]) => names === 'leave');
+  const place = leave >= 0 ? leave : hints.length - 1;
+  return { ...strip, hints: [...hints.slice(0, place), MAP, ...hints.slice(place)] };
 }
 
 /** What the player is doing at sea, for the keys shown: fighting and aiming the guns, choosing a landing, at the helm
@@ -275,11 +335,11 @@ export interface AtSea {
   readonly free: boolean;
 }
 
-/** The keys shown at sea for what the player is doing. */
-export function seaHints(state: AtSea): readonly StripHint[] {
-  if (state.fighting) return state.aiming ? HINTS.aim : HINTS.fight;
-  if (state.landing) return HINTS.landing;
-  if (state.atHelm) return HINTS.map;
-  if (state.walking) return state.free ? [LOOK, ...HINTS.deck] : HINTS.deck;
-  return state.managing ? HINTS.manage : HINTS.sea;
+/** The strip at sea for what the player is doing. */
+export function seaStrip(state: AtSea): Strip {
+  if (state.fighting) return stripOf(state.aiming ? 'aim' : 'fight');
+  if (state.landing) return stripOf('landing');
+  if (state.atHelm) return stripOf('map');
+  if (state.walking) return state.free ? { ...stripOf('deck'), hints: [LOOK, ...HINTS.deck] } : stripOf('deck');
+  return stripOf(state.managing ? 'manage' : 'sea');
 }

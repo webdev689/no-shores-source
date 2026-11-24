@@ -46,6 +46,9 @@ pub struct Today {
     pub elite_playlist: bool,
     #[serde(skip_serializing_if = "std::ops::Not::not")]
     pub abyss_playlist: bool,
+    /// Whether a heroic chest has paid its Essence today (`chests::FIRST_HEROIC_ESSENCE`).
+    #[serde(skip_serializing_if = "std::ops::Not::not")]
+    pub heroic_chest: bool,
     /// What a later build kept here, kept as it was through a rollback.
     #[serde(flatten)]
     pub unknown: crate::character::UnknownKeys,

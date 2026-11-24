@@ -17,6 +17,10 @@ const POINT_BLANK_M: f64 = 5.0;
 pub(crate) const LONG_SHOT_M: f64 = 20.0;
 /// Attuned's blows deal this much; Keen Eye's Crit lasts this long (seconds).
 const ATTUNED_TIMES: f64 = 1.1;
+/// Exploit's swings on an Exposed foe strike this much harder: a quarter, as Riposte Master's ripostes do, beside the
+/// Exposed's own share. Not a crit's half again: with Exposing Strikes keeping a foe Exposed, that would be worth any
+/// three other perks.
+pub(crate) const EXPLOIT_TIMES: f64 = 1.25;
 const KEEN_EYE_S: f64 = 4.0;
 /// Exposing Strikes Exposes a foe at this many swings in a row landed on it; Shocking Rounds Charges at this many
 /// shots landed.
@@ -213,10 +217,10 @@ impl Room {
 
     /// The perks a player's blow on a foe takes on as it is struck: Honed on every blow, Executioner on a staggered
     /// foe (a riposte, the stagger's own answer, aside, as combat counts it), Undertow on one below half its health,
-    /// Exploit marking a swing on an Exposed foe a crit, Attuned on a blow in the worn Art's element, Thunderhead on a
-    /// Charged foe, Vein Strike on an Exposed one, Shared Flame while its striker was Linked and From the Dark's crit
-    /// while they were Veiled, as the blow was struck or the shot loosed (`held`), and what an Atheric's own adds
-    /// (`struck_harder`) (`perk_on`: of the loadout the blow came from, never a spell's).
+    /// Exploit on a swing at an Exposed foe, Attuned on a blow in the worn Art's element, Thunderhead on a Charged foe,
+    /// Vein Strike on an Exposed one, Shared Flame while its striker was Linked and From the Dark's crit while they were
+    /// Veiled, as the blow was struck or the shot loosed (`held`), and what an Atheric's own adds (`struck_harder`)
+    /// (`perk_on`: of the loadout the blow came from, never a spell's).
     pub(crate) fn sharpened(&self, blow: Blow, defender: FighterId, held: &Loosed) -> Blow {
         let Some(foe) = self.fighter(defender) else { return blow };
         let Some(player) = self.players.get(&blow.striker).filter(|_| self.foes.contains_key(&defender)) else {
@@ -227,6 +231,7 @@ impl Room {
         let low = if foe.health < foe.health_max / 2.0 { trim.on_low } else { 1.0 };
         let swing = matches!(blow.kind, BlowKind::Swing(_));
         let exploits = swing && foe.statuses.has(Status::Expose) && self.perk_on(&blow, "exploit");
+        let exploited = if exploits { EXPLOIT_TIMES } else { 1.0 };
         let in_element = self.arts
             && blow.element != 0
             && player.character.worn_art().is_some_and(|art| art.element == blow.element);
@@ -238,9 +243,9 @@ impl Room {
         let veined = foe.statuses.has(Status::Expose) && self.perk_on(&blow, "vein_strike");
         let vein_strike = if veined { VEIN_STRIKE_TIMES } else { 1.0 };
         let atheric = self.struck_harder(&blow, defender);
-        let damage = blow.damage * trim.damage * staggered * low * attuned * thunderhead * shared_flame * atheric;
-        let damage = damage * vein_strike;
-        Blow { damage, crit: blow.crit || exploits || from_the_dark, ..blow }
+        let damage = blow.damage * trim.damage * staggered * low * attuned * exploited * thunderhead * shared_flame;
+        let damage = damage * vein_strike * atheric;
+        Blow { damage, crit: blow.crit || from_the_dark, ..blow }
     }
 
     /// A player's shot by the ground it covered to its mark and the trim it was loosed with: Point Blank within 5 m,

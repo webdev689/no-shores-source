@@ -103,11 +103,7 @@ export const ASKS = {
   /** A return to the player's ship, which the room answers (107 yes, or 105 fallen, 106 struck in the last ten
    *  seconds) before the page leaves for the sea. */
   toShip: 73,
-  /** A Breach's: a fallen player raised (`item` their number) while Use is held, and let go; the Lodestone taken up
-   *  and set down; and the gate asked whether it is open (0 yes, 112 shut). A raising answers 110 with no revive
-   *  left, 111 with none in reach to raise. */
-  raise: 80,
-  stopRaise: 81,
+  /** A Breach's: the Lodestone taken up and set down; and the gate asked whether it is open (0 yes, 112 shut). */
   takeLodestone: 82,
   dropLodestone: 83,
   enterBreach: 84,
@@ -290,7 +286,7 @@ export interface GearState extends LoreState {
   readonly prologueDone?: boolean;
   /** Their day's and week's record, as kept with their character. */
   readonly activity?: ActivityRecord;
-  /** The day's six bounties on the board, in its order, and what each pays them when turned in. */
+  /** The day's six bounties on the board, in its order, and what a first tier's pays them when turned in. */
   readonly bounties?: readonly GearBounty[];
   readonly bountyXp?: number;
   readonly bountyAurem?: number;
@@ -309,6 +305,8 @@ export interface GearBounty {
   readonly pool: number;
   /** Its short name, as its card heads it. */
   readonly name: string;
+  /** Its tier, 1 to 3: it pays a first tier's pay, half again or twice that, rounded down. */
+  readonly tier: number;
 }
 
 export type { ActivityRecord } from './activityRecord.ts';
@@ -487,7 +485,8 @@ export function gearOf(gear: Gear): GearState {
       const words = bounty?.words() ?? '';
       const [target, count] = [bounty?.target() ?? 0, bounty?.count() ?? 0];
       const [held, paid] = [bounty?.held() ?? false, bounty?.paid() ?? false];
-      return { words, target, count, held, paid, pool: bounty?.pool() ?? 0, name: bounty?.name() ?? '' };
+      const [pool, name, tier] = [bounty?.pool() ?? 0, bounty?.name() ?? '', bounty?.tier() || 1];
+      return { words, target, count, held, paid, pool, name, tier };
     }),
     bountyXp: gear.bountyXp(),
     bountyAurem: gear.bountyAurem(),

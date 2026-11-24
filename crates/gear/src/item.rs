@@ -198,10 +198,15 @@ impl Item {
         intrinsic.into_iter().chain(chosen)
     }
 
-    /// What a column's node costs.
+    /// What a column's node costs: a Breach's Legendary armour's last upgrades a little more Essence than another
+    /// Legendary's, as Destiny 1's raid armour asked.
     #[must_use]
     pub fn cost_of(&self, column: usize) -> Cost {
-        cost(self.rarity, self.columns(), column)
+        let cost = cost(self.rarity, self.columns(), column);
+        if self.breach && cost.essence == crate::grid::LAST_ESSENCE {
+            return Cost { essence: crate::grid::BREACH_LAST_ESSENCE, ..cost };
+        }
+        cost
     }
 
     /// The Essence its bought nodes cost.
@@ -228,20 +233,28 @@ impl Item {
     }
 
     /// Its Prestige, if it is armour or a ship's module of level 20: a Rare 13 to 15, a Legendary 18 to 27 (a
-    /// Breach's at Normal 19 to 28, at Hard 21 to 30), an Atheric 21 to 30.
+    /// Breach's at Normal 19 to 28, at Hard 21 to 30), an Atheric 21 to 30, climbing by equal steps over its upgrades,
+    /// however many its grid holds, so a module on a weapon's grid (the guns, five upgrades) carries no more than one
+    /// on armour's (three).
     #[must_use]
     pub fn prestige(&self) -> u32 {
         if !self.kind.carries_prestige() {
             return 0;
         }
-        let (bought, _) = self.upgrades();
-        match self.rarity {
-            Rarity::Rare if self.level >= NAMED_LEVEL => 13 + bought,
-            Rarity::Legendary if self.breach => (if self.hard { 21 } else { 19 }) + 3 * bought,
-            Rarity::Legendary => 18 + 3 * bought,
-            Rarity::Atheric => 21 + 3 * bought,
-            _ => 0,
-        }
+        let (start, most) = match self.rarity {
+            Rarity::Rare if self.level >= NAMED_LEVEL => (13, 15),
+            Rarity::Legendary if self.breach => {
+                if self.hard {
+                    (21, 30)
+                } else {
+                    (19, 28)
+                }
+            }
+            Rarity::Legendary => (18, 27),
+            Rarity::Atheric => (21, 30),
+            _ => return 0,
+        };
+        self.stepped(start, most)
     }
 
     /// Its Defense, if it is armour or a ship's hull, sails or rigging: 45 times its slot's share times its defense

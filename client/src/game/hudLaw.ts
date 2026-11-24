@@ -42,6 +42,9 @@ export function standingOf(
   return { kind, secondsDead, canRespawn, fell, told: told || !fell, ...(respawnTicks === null && { waits: true }) };
 }
 
+/** How dark the screen's edge grows once death is told. */
+export const DEAD_SHADE = 0.85;
+
 /** Whether the world drains to grey: once death is told, so a fall plays out in colour first. */
 export function greyed(standing: Standing): boolean {
   return standing.kind === 'dead' && standing.told;
@@ -62,7 +65,7 @@ export function countdownText(secondsLeft: number): string {
  *  `warningSeconds` in all. */
 export function vignette(standing: Standing, warningSeconds: number): number {
   if (standing.kind === 'inside') return 0;
-  if (standing.kind === 'dead') return standing.told ? 0.85 : 0;
+  if (standing.kind === 'dead') return standing.told ? DEAD_SHADE : 0;
   const spent = 1 - Math.min(1, Math.max(0, standing.secondsLeft / warningSeconds));
   return 0.25 + 0.6 * spent * spent;
 }
@@ -95,16 +98,19 @@ export function distanceText(metres: number): string {
 export const ISLANDS: Readonly<Record<string, string>> = { 'continent-1': 'Saltmere' };
 
 /** The words under a place's name: the room of a dungeon the player stands in, the place's kind, its island's name
- *  where it has one, and in an Abyss run the revives its company has left (-1, none counted, elsewhere). A ruined
- *  city's place is no social space: it says only that it lies in ruins. */
+ *  where it has one, in an Abyss run the revives its company has left (-1, none counted, elsewhere), and whether it
+ *  is a darkness zone now, where no one respawns by their own ask. A ruined city's place is no social space: it says
+ *  only that it lies in ruins. */
 export function placeWords(
   node: Pick<NodeInfo, 'kind' | 'continent'> & { readonly name?: string },
   room?: string | null,
   revives = -1,
+  darkness = false,
 ): string {
   const island = ISLANDS[node.continent];
   const kind = node.name?.startsWith(ruinedName('')) ? 'Ruins' : KIND_WORDS[node.kind];
   const named = room ? `${room[0]?.toUpperCase()}${room.slice(1)} · ${kind}` : kind;
   const left = revives === 0 ? 'No revives left' : `${revives} revive${revives === 1 ? '' : 's'} left`;
-  return [named, ...(island ? [island] : []), ...(revives < 0 ? [] : [left])].join(' · ');
+  const dark = darkness ? ['Darkness zone'] : [];
+  return [named, ...(island ? [island] : []), ...(revives < 0 ? [] : [left]), ...dark].join(' · ');
 }

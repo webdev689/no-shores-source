@@ -228,25 +228,27 @@ impl Room {
 
     /// What a blow between a companion and a foe is times, by gear's power as a player matched to the companion's
     /// level would strike and be struck: a weapon of their level's Attack, Brawler's harm on top, and armour a little
-    /// above their level's Defense. None for any other blow.
+    /// above their level's Defense, each with the land's ease (`PLAYER_HARM`, `FOE_HARM`) as a player's blows have it.
+    /// None for any other blow.
     pub(crate) fn companion_times(&self, striker: FighterId, defender: FighterId) -> Option<f64> {
+        use crate::power::{FOE_HARM, PLAYER_HARM};
         let level_of = |id: FighterId| self.foes.get(&id).map(|foe| foe.level);
         if let Some(hand) = self.ashore.hands.get(&striker) {
             let attack = (ATTACK_PER_LEVEL * f64::from(hand.level)) as u32;
-            return Some(gear::power::by_player(attack, hand.level, level_of(defender)?));
+            return Some(gear::power::by_player(attack, hand.level, level_of(defender)?) * PLAYER_HARM);
         }
         if let Some(hand) = self.ashore.hands.get(&defender) {
             let defense = (DEFENSE_PER_LEVEL * DEFENSE_OVER * f64::from(hand.level)) as u32;
-            return Some(gear::power::on_player(defense, hand.level, level_of(striker)?));
+            return Some(gear::power::on_player(defense, hand.level, level_of(striker)?) * FOE_HARM);
         }
         if let Some(companion) = self.ashore.standing.get(&striker) {
             let attack = (ATTACK_PER_LEVEL * f64::from(companion.level)) as u32;
             let brawler = if companion.brawler { BRAWLER } else { 1.0 };
-            return Some(gear::power::by_player(attack, companion.level, level_of(defender)?) * brawler);
+            return Some(gear::power::by_player(attack, companion.level, level_of(defender)?) * brawler * PLAYER_HARM);
         }
         let companion = self.ashore.standing.get(&defender)?;
         let defense = (DEFENSE_PER_LEVEL * DEFENSE_OVER * f64::from(companion.level)) as u32;
-        Some(gear::power::on_player(defense, companion.level, level_of(striker)?))
+        Some(gear::power::on_player(defense, companion.level, level_of(striker)?) * FOE_HARM)
     }
 
     /// Whom a blow's kill is shared by, and by which of their loadouts: a player's own blow by the loadout it came

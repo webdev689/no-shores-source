@@ -27,7 +27,7 @@ const into = { run: 'node-gullwing-vale--breach-hard--run-k3j4h5g6', tier: 1, pl
 const SEEN: BreachSeen = {
   ...{ gate: false, tier: 1, phases: [2, 1, 0, 0, 0, 0], reached: 1, seals: 0b1, revives: 5 },
   ...{ stone: STONE.plinth, bearer: 0, stoneAt: [0, -60, 50], charge: 1, held: 0, lyingTicks: 0 },
-  ...{ marked: [], raising: [], chests: 0, encounter: 1, stage: 0, stageTicks: 0, counts: [0, 0, 0], bells: [] },
+  ...{ marked: [], chests: 0, encounter: 1, stage: 0, stageTicks: 0, counts: [0, 0, 0], bells: [] },
   ...{ bellFoes: [40], broken: 0, ringTicks: 0, fontTicks: 0, boss: 0, warded: false, desk: 0, markedDesk: -1 },
   ...{ deskTicks: 0, writeTicks: 0, seen: false, wipeTicks: 0, rifts: [], riftHeld: [], kept: 0, takings: 0 },
   ...{ takingTicks: 0, awayShore: -1, away: [], wayBack: false, bareTicks: 0, heldBy: false, fill: 0 },
@@ -76,20 +76,16 @@ function inRun(gate = false) {
   });
   const others = new Map<number, SeenPlayer>();
   let own: BreachOn['fight']['own'] = { action: { kind: 'idle' } };
-  let gear = { answered: 1, answer: 0 };
   let tick = 0;
   const foes = new Map([[40, { view: { x: 1, y: -150, z: 50, facing: 0, health: 1 }, type: 39 }]]);
-  const word = (more: Partial<BreachSeen> = {}, using = false): BreachOn => ({
+  const word = (more: Partial<BreachSeen> = {}): BreachOn => ({
     seen: { ...SEEN, ...(gate ? { gate: true, phases: [] } : {}), ...more },
-    using,
     fight: { player: 7, own, roomTick: tick, others, foes, askGear: (ask) => void asked.push(ask) },
     others: { plateOf: (id) => ({ player: id, name: id === 9 ? 'Ada' : 'Ben', level: 26, menu: false }) },
-    gear,
   });
   const fell = (down: boolean) => void (own = down ? { action: { kind: 'dead' } } : { action: { kind: 'idle' } });
-  const answer = (answered: number) => void (gear = { answered: gear.answered + 1, answer: answered });
   const atTick = (ticks: number) => void (tick = ticks);
-  return { view, asked, told, others, foes, word, fell, answer, atTick, sealed };
+  return { view, asked, told, others, foes, word, fell, atTick, sealed };
 }
 
 /** A moment the room tells every one of `players`, each its own event with that player its defender. */
@@ -115,32 +111,18 @@ test("a run's frame stands its spaces, its seals still shut, its bells and the L
   assert.equal(shown.shown?.banner?.title, 'The Mending');
 });
 
-test('E raises a fallen member in reach while held, and lets go as it is released', () => {
-  const { view, asked, others, word } = inRun();
-  others.set(9, player(9, [1, 0, 60], true));
-  view.frame(word(), [], [0, 0, 60], () => null, 0, []);
-  const use = view.use([0, 0, 60], (ask) => void asked.push(ask));
-  assert.equal(use?.words, 'Hold to raise Ada');
-  use?.run();
-  assert.deepEqual(asked.at(-1), { kind: ASKS.raise, item: 9 });
-  view.frame(word({}, true), [], [0, 0, 60], () => null, 0, []);
-  assert.equal(asked.length, 1, 'held: nothing more asked');
-  view.frame(word({}, false), [], [0, 0, 60], () => null, 0, []);
-  assert.deepEqual(asked.at(-1), { kind: ASKS.stopRaise }, 'let go');
-});
-
-test('while the Lodestone lies counting down to the unwriting, E takes it up before raising the fallen beside it', () => {
-  const { view, others, word } = inRun();
-  others.set(9, player(9, [0.5, -60, 50], true));
+test('while the Lodestone lies counting down to the unwriting, E takes it up before reviving the fallen beside it', () => {
+  const { view, word } = inRun();
   const lying = { stone: STONE.lying, lyingTicks: 4 * 60 };
   view.frame(word(lying), [], [0, -60, 50], () => null, 0, []);
-  assert.equal(view.use([0, -60, 50], () => undefined)?.words, 'Take up the Lodestone');
+  assert.equal(view.urgent([0, -60, 50], () => undefined)?.words, 'Take up the Lodestone');
   view.frame(word({ ...lying, lyingTicks: 0 }), [], [0, -60, 50], () => null, 0, []);
   assert.equal(
-    view.use([0, -60, 50], () => undefined)?.words,
-    'Hold to raise Ada',
-    'lying but not needed: raised first',
+    view.urgent([0, -60, 50], () => undefined),
+    null,
+    'lying but not needed: a revive first',
   );
+  assert.equal(view.use([0, -60, 50], () => undefined)?.words, 'Take up the Lodestone', 'then E takes it up');
 });
 
 test('E takes up the Lodestone in reach, sets it down while borne, and leaves by the way in', () => {
@@ -184,7 +166,7 @@ test('the fallen stand again as the room stands them: 6 s outside an encounter, 
   const feet = [10, 0, 0] as const;
   assert.deepEqual(breachFall({ ...SEEN, encounter: 0 }, 7, feet, null), { ticks: 360, revives: 5 });
   assert.deepEqual(breachFall({ ...SEEN, tier: 0, revives: -1 }, 7, feet, null), { ticks: 600, revives: -1 });
-  assert.deepEqual(breachFall(SEEN, 7, feet, null), { ticks: null, revives: 5 }, 'raised, or not at all');
+  assert.deepEqual(breachFall(SEEN, 7, feet, null), { ticks: null, revives: 5 }, 'revived, or not at all');
   const gate = { ...SEEN, gate: true, phases: [], encounter: 0, heldBy: true, holders: [7, 9], revives: 4 };
   assert.deepEqual(breachFall(gate, 7, feet, [0, 0, 0]), { ticks: null, revives: 4 }, 'the Hard Waking');
   assert.deepEqual(breachFall({ ...gate, tier: 0, revives: -1 }, 7, feet, [0, 0, 0]), { ticks: 600, revives: -1 });
@@ -202,17 +184,12 @@ test('the Lodestone is borne by the player with its grounding charged or chargin
 
 test('a moment told to every player is heard once where its number places it; one of a player at them, in words', () => {
   const { view, word, told } = inRun();
-  const raised = { tick: 0n, kind: BREACH_EVENT.revived, how: 0, striker: 9, defender: 11, amount: 4, stroke: 0 };
-  const events = [...toldAll(BREACH_EVENT.bellBroken, 2, [7, 9, 11]), raised];
+  const events = toldAll(BREACH_EVENT.bellBroken, 2, [7, 9, 11]);
   const where = (id: number) => (id === 11 ? ([5, 5, 60] as const) : null);
   const shown = view.frame(word({ encounter: 2 }), events, [0, 0, 60], where, 0, []);
-  assert.deepEqual(shown?.sounds, [
-    { cue: 'shield.break', at: spaceSocket(plan, 'choir', 'bell-3') },
-    { cue: 'anima.divine', at: [5, 5, 60] },
-  ]);
-  assert.deepEqual(told, ['Ada raised Ben · 4 revives left']);
+  assert.deepEqual(shown?.sounds, [{ cue: 'shield.break', at: spaceSocket(plan, 'choir', 'bell-3') }]);
   view.frame(word(), toldAll(BREACH_EVENT.wiped, 1, [7, 9, 11]), [0, 0, 60], () => null, 0, []);
-  assert.deepEqual(told.slice(1), ['Your company fell.'], 'an attempt lost, said once');
+  assert.deepEqual(told, ['Your company fell.'], 'an attempt lost, said once');
 });
 
 test("the Waking's moments at the gate are its company's and theirs in its hollow; a claim is heard at its mooring", async () => {
@@ -242,37 +219,24 @@ test("the gate's moorings are held by the living of the company holding it, whic
   assert.equal(theirs?.shown?.banner?.objective, 'The Waking · Ada · Hard · Moorings held 2 of 3 · 3 revives left');
 });
 
-test("E raises only where the room would: none with no revive left; at the gate, only among the Waking's company", async () => {
-  const { view, word, others } = inRun();
-  others.set(9, player(9, [1, 0, 60], true));
+test("a revive stands the fallen where the room would: none with none left; the Waking's company only by its own", async () => {
+  const { view, word } = inRun();
+  view.frame(word(), [], [0, 0, 60], () => null, 0, []);
+  assert.equal(view.mayRevive(9), true);
   view.frame(word({ revives: 0 }), [], [0, 0, 60], () => null, 0, []);
-  assert.equal(
-    view.use([0, 0, 60], () => undefined),
-    null,
-  );
+  assert.equal(view.mayRevive(9), false, 'none left');
   const gate = inRun(true);
   await settled();
   const feet = [GATE_AT[0] + 20, GATE_AT[1], 3] as const;
-  gate.others.set(9, player(9, [feet[0] + 1, feet[1], 3], true));
-  const raise = (more: Partial<BreachSeen>) => {
+  const may = (more: Partial<BreachSeen>) => {
     gate.view.frame(gate.word({ heldBy: true, revives: -1, ...more }), [], feet, () => null, 0, []);
-    return gate.view.use(feet, () => undefined)?.words ?? null;
+    return gate.view.mayRevive(9);
   };
-  assert.equal(raise({ holders: [7] }), null, 'not of the company');
-  assert.equal(raise({ holders: [7, 9] }), 'Hold to raise Ada');
-  assert.equal(raise({ holders: [7, 9], woken: true }), null, 'the Waking won');
-});
-
-test("a raising shows its fill, and the room's refusal of it is told in words", () => {
-  const { view, word, others, told, answer } = inRun();
-  others.set(9, player(9, [1, 0, 60], true));
-  view.frame(word({ raising: [{ raiser: 7, raised: 9, share: 0.5 }] }), [], [0, 0, 60], () => null, 0, []);
-  const use = view.use([0, 0, 60], () => undefined);
-  assert.equal(use?.share, 0.5);
-  use?.run();
-  answer(110);
-  view.frame(word({}, true), [], [0, 0, 60], () => null, 0, []);
-  assert.deepEqual(told, ['No revives are left to raise them.']);
+  assert.equal(may({ holders: [9] }), false, 'of the company, by one outside it');
+  assert.equal(may({ holders: [7, 9] }), true, 'by one of the company');
+  assert.equal(may({ holders: [7, 9], revives: 0 }), false, 'none left');
+  assert.equal(may({ holders: [7] }), true, 'not of the company, as anywhere in the zone');
+  assert.equal(may({ holders: [9], woken: true }), true, 'the Waking won');
 });
 
 test("the run's compass marks the stage reached, the way on, the way out and the Lodestone; a great foe is the peak", () => {

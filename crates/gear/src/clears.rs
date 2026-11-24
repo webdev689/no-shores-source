@@ -17,8 +17,9 @@ pub const BOON_SHARE: u32 = 4;
 /// A Boss's rank, whose kill the dungeon of the day pays as and whose colours its Vestige takes.
 const BOSS: u8 = 5;
 /// The Shapes the week's Abyss Dungeon pays its first clear: Shapes come from the week's Abyss content alone, as the
-/// owner chose; this many buy one of Shape's Atheric pieces, or two Legendary, a week.
-pub const ABYSS_SHAPES: u16 = 15;
+/// owner chose; this many buy a Legendary of Shape's a week, an Atheric's armour in a week and a half and its weapon
+/// in two and a half, about as Destiny 1's weekly Strange Coins bought Xûr's exotics.
+pub const ABYSS_SHAPES: u16 = 10;
 
 impl Weekly {
     /// The colour weights of the Vestige its first clear pays, Normal to Atheric: the Elite's Legendary, the Abyss's
@@ -31,7 +32,7 @@ impl Weekly {
     }
 
     /// The Essence of each stock its first clear pays.
-    const fn essence(self) -> u16 {
+    pub(crate) const fn essence(self) -> u16 {
         match self {
             Weekly::Elite => 3,
             Weekly::Abyss => 5,
@@ -42,8 +43,9 @@ impl Weekly {
 impl Character {
     /// The dungeon of the day's first clear at `tier` today: a Boss Captain's kill at `level` (the run's, the tier
     /// applied), its XP and Aurem times the tier's reward, and a sure Vestige in a Boss's colours at `level`, returned
-    /// to be laid on the ground. None once taken today, or when `day` is behind the record's.
-    pub fn clear_of_the_day(&mut self, day: u64, tier: Difficulty, level: u8, dice: &Dice) -> Option<Vestige> {
+    /// to be laid on the ground, or none for a Normal one, kept as its item (`unsealed`). None at all once taken
+    /// today, or when `day` is behind the record's.
+    pub fn clear_of_the_day(&mut self, day: u64, tier: Difficulty, level: u8, dice: &Dice) -> Option<Option<Vestige>> {
         if day < self.activity.today.day || !self.activity.today(day).cleared.insert(tier) {
             return None;
         }
@@ -53,10 +55,9 @@ impl Character {
             u32::try_from(raised as u64).unwrap_or(u32::MAX)
         };
         let (xp, aurem) = (times(worth.xp), times(worth.aurem));
-        self.earn_xp(xp, None);
+        self.earn_play_xp(xp, None);
         self.materials.add_aurem(aurem);
-        let (rarity, slot, level) = of_colours(colours(BOSS), level, dice);
-        Some(Vestige::new(self.take_id(), rarity, slot, level).from(Source::Dungeon))
+        Some(self.unsealed(of_colours(colours(BOSS), level, dice), Source::Dungeon, dice))
     }
 
     /// The week's Elite or Abyss Dungeon's first clear this week: a Legendary Vestige (the Abyss's Atheric one in
@@ -85,15 +86,14 @@ impl Character {
         Some(Vestige::new(self.take_id(), rarity, slot, level).from(Source::elite_at(weekly.tier())))
     }
 
-    /// A quarter more of a kill's XP while the Abyss boon is held this week, to the player and to `weapon` as the
-    /// kill's own XP goes, and as reputation as the kill's goes (`earn_reputation`); the XP it gave.
+    /// A quarter more of a kill's XP while the Abyss boon is held this week, to the worn Art, the faction pledged, the
+    /// player and `weapon` as the kill's own XP goes (`earn_play_xp`); the XP it gave.
     pub fn boon_xp(&mut self, week: u64, xp: u32, weapon: Option<Slot>) -> u32 {
         if !self.activity.this_week(week).boon {
             return 0;
         }
         let more = xp / BOON_SHARE;
-        self.earn_reputation(more);
-        self.earn_xp(more, weapon);
+        self.earn_play_xp(more, weapon);
         more
     }
 }

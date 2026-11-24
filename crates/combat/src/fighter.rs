@@ -293,10 +293,39 @@ pub fn player(body: Body, arms: Arms) -> Fighter {
 }
 
 impl Fighter {
+    /// What a dodge costs it: a dodge's stamina, trimmed by its perks, by its drawn weapon's balance (bare hands have
+    /// none) and, while it is Veiled, by Shade Step.
+    #[must_use]
+    pub fn dodge_stamina(&self) -> f64 {
+        let drawn = if self.arms == crate::arms::BARE_HANDS { 1.0 } else { self.trim.drawn_dodge_stamina };
+        let veiled = if self.statuses.has(crate::Status::Veiled) { self.trim.veiled_dodge_stamina } else { 1.0 };
+        crate::tuning::DODGE_STAMINA * self.trim.dodge_stamina * drawn * veiled
+    }
+
     /// Whether a player fights as it: on the players' side, and no ally the rules drive.
     #[must_use]
     pub fn is_player(&self) -> bool {
         self.side.is_players() && !self.ally
+    }
+
+    /// Whether it swings a player's pair (`arms::PAIR_PACE`): a foe's pair swings as its lone weapon.
+    #[must_use]
+    pub fn swings_a_pair(&self) -> bool {
+        self.is_player() && self.arms.off_hand == crate::arms::OffHand::Weapon
+    }
+
+    /// The ticks from its swing's start to its blow landing, and to its end: a player's pair's at `arms::PAIR_PACE`, a
+    /// foe's at `arms::FOE_SWING_PACE`; a player's companions swing as players do.
+    #[must_use]
+    pub fn swing_ticks(&self) -> (u32, u32) {
+        let melee = self.arms.melee;
+        if !self.side.is_players() {
+            crate::arms::foe_swing_ticks(melee)
+        } else if self.swings_a_pair() {
+            crate::arms::pair_swing_ticks(melee)
+        } else {
+            crate::arms::swing_ticks(melee)
+        }
     }
 
     #[must_use]

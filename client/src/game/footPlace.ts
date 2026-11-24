@@ -6,7 +6,7 @@ import type { Cache } from './dungeonChest.ts';
 import type { Entrances, Trips } from './footTrips.ts';
 import type { GearAsk, GearState } from '../network/gearMessages.ts';
 import type { Difficulty } from '../heldmap/heldMap.ts';
-import type { FoeAsk } from '../network/messages.ts';
+import type { FoeAsk, Reviving } from '../network/messages.ts';
 import type { RoomLink, Snapshot } from '../network/roomConnection.ts';
 import type { Cards } from '../player/cards.ts';
 import { newPlayer } from '../player/player.ts';
@@ -22,7 +22,7 @@ import type { HudFrame } from '../combat/hud.ts';
 import type { CardAt } from '../player/cards.ts';
 import type { Shot } from './camera.ts';
 import type { Use } from './footGear.ts';
-import type { StripHint } from './hints.ts';
+import type { Strip } from './hints.ts';
 import type { Standing } from './hudLaw.ts';
 import type { Quest } from './tasks.ts';
 
@@ -104,14 +104,23 @@ export interface Held {
   alone: GearState | null;
   readonly entrances: Entrances;
   cache: Cache | null;
-  /** An Abyss run's revives left (-1 in any other room), and whether it said this player's company fell. */
+  /** An Abyss run's revives left (-1 in any other room), and whether it said this player's company fell; whether the
+   *  darkness holds the player where they lie, and who is reviving whom (`footRevive.ts`). */
   revives: number;
   wiped: boolean;
+  darkness: boolean;
+  reviving: readonly Reviving[];
   /** An Elite Dungeon's encounters as its room last said; null in any other room. */
   encounter: EncounterSeen | null;
   /** A Breach as its run or its gate's patrol zone last said; null in any other room. */
   breach: BreachSeen | null;
 }
+
+/** What a join into a node's room asks of it besides: to stand before an entrance's door, coming out of its dungeon,
+ *  or at the gate of the Breach's run the player was launched for (`arrivalQuery`); or to stand where the kept
+ *  character left this social space, logging back in (`relog.ts`). */
+export const joinAsk = (asked?: AtEntrance | 'relog'): string =>
+  asked === 'relog' ? '?relog=1' : asked ? arrivalQuery(asked) : '';
 
 /** What E does where a player stands on a place of its own, if anything: with the way to ask of their gear. */
 export type Uses = (x: number, y: number, ask: (asked: GearAsk) => void) => Use | null;
@@ -146,7 +155,7 @@ export interface FootFrame {
   readonly hidden?: Float32Array;
   readonly swings: Float32Array;
   readonly fight: FootFight;
-  readonly hints: readonly StripHint[];
+  readonly hints: Strip;
   readonly dark: number;
   readonly props?: readonly EventProp[];
   readonly quest?: Quest | null;

@@ -7,23 +7,23 @@ test('the player arrives through a veil, on foot in their node', () => {
   assert.deepEqual(first, {
     mode: 'loading',
     words: 'Arriving at Overlook',
-    then: { mode: 'foot', node: 'overlook-social', menu: false },
+    then: { mode: 'foot', node: 'overlook-social' },
   });
-  assert.deepEqual(next(first, { kind: 'loaded' }), { mode: 'foot', node: 'overlook-social', menu: false });
+  assert.deepEqual(next(first, { kind: 'loaded' }), { mode: 'foot', node: 'overlook-social' });
 });
 
 test('from a node the player returns to their ship, views an island side and lands at a chosen node', () => {
-  let flow: Flow = { mode: 'foot', node: 'overlook-social', menu: true };
+  let flow: Flow = { mode: 'foot', node: 'overlook-social' };
   flow = next(flow, { kind: 'return-to-ship' });
   assert.equal(flow.mode, 'loading');
   flow = next(flow, { kind: 'loaded' });
-  assert.deepEqual(flow, { mode: 'sea', menu: false });
+  assert.deepEqual(flow, { mode: 'sea' });
   flow = next(flow, { kind: 'view-landings' });
   flow = next(flow, { kind: 'choose', node: 'saltgrass-downs' });
   assert.deepEqual(flow, { mode: 'landing', chosen: 'saltgrass-downs' });
   flow = next(flow, { kind: 'land', node: 'saltgrass-downs', name: 'The Saltgrass Downs' });
   assert.equal(flow.mode === 'loading' && flow.words, 'Landing at The Saltgrass Downs');
-  assert.deepEqual(next(flow, { kind: 'loaded' }), { mode: 'foot', node: 'saltgrass-downs', menu: false });
+  assert.deepEqual(next(flow, { kind: 'loaded' }), { mode: 'foot', node: 'saltgrass-downs' });
 });
 
 test('landing needs the node chosen first, and back leaves the landings for the sea', () => {
@@ -31,35 +31,27 @@ test('landing needs the node chosen first, and back leaves the landings for the 
   assert.equal(next(landing, { kind: 'land', node: 'tidewall', name: 'Tidewall' }), landing);
   const other: Flow = { mode: 'landing', chosen: 'pearl-tomb' };
   assert.equal(next(other, { kind: 'land', node: 'tidewall', name: 'Tidewall' }), other, 'only the chosen one lands');
-  assert.deepEqual(next(landing, { kind: 'back' }), { mode: 'sea', menu: false });
-});
-
-test('the menu opens and closes on foot and at sea, and back closes it', () => {
-  const foot: Flow = { mode: 'foot', node: 'tidewall', menu: false };
-  const open = next(foot, { kind: 'menu' });
-  assert.deepEqual(open, { mode: 'foot', node: 'tidewall', menu: true });
-  assert.deepEqual(next(open, { kind: 'back' }), foot);
-  assert.deepEqual(next({ mode: 'sea', menu: false }, { kind: 'menu' }), { mode: 'sea', menu: true });
+  assert.deepEqual(next(landing, { kind: 'back' }), { mode: 'sea' });
 });
 
 test('what does not fit the mode changes nothing', () => {
-  const foot: Flow = { mode: 'foot', node: 'tidewall', menu: false };
+  const foot: Flow = { mode: 'foot', node: 'tidewall' };
   for (const happening of [{ kind: 'view-landings' }, { kind: 'loaded' }, { kind: 'back' }] as const) {
     assert.equal(next(foot, happening), foot);
   }
-  const sea: Flow = { mode: 'sea', menu: false };
+  const sea: Flow = { mode: 'sea' };
   assert.equal(next(sea, { kind: 'return-to-ship' }), sea);
   const loading = arriving('overlook-social', 'Overlook');
-  assert.equal(next(loading, { kind: 'menu' }), loading, 'no menu while the veil is down');
+  assert.equal(next(loading, { kind: 'back' }), loading, 'nothing to step back from while the veil is down');
 });
 
-test('on foot the player goes through a gate into an instance and back out, never from a menu', () => {
-  const foot: Flow = { mode: 'foot', node: 'saltgrass-downs', menu: false };
+test('on foot the player goes through a gate into an instance and back out', () => {
+  const foot: Flow = { mode: 'foot', node: 'saltgrass-downs' };
   const into = next(foot, { kind: 'pass', node: 'burned-mill', name: 'The Burned Mill', into: true });
   assert.equal(into.mode === 'loading' && into.words, 'Entering The Burned Mill');
-  assert.deepEqual(next(into, { kind: 'loaded' }), { mode: 'foot', node: 'burned-mill', menu: false });
+  assert.deepEqual(next(into, { kind: 'loaded' }), { mode: 'foot', node: 'burned-mill' });
   const back = next(
-    { mode: 'foot', node: 'burned-mill', menu: false },
+    { mode: 'foot', node: 'burned-mill' },
     {
       kind: 'pass',
       node: 'saltgrass-downs',
@@ -68,17 +60,17 @@ test('on foot the player goes through a gate into an instance and back out, neve
     },
   );
   assert.equal(back.mode === 'loading' && back.words, 'Returning to The Saltgrass Downs');
-  const menu: Flow = { ...foot, menu: true };
-  assert.equal(next(menu, { kind: 'pass', node: 'burned-mill', name: 'The Burned Mill', into: true }), menu);
+  const sea: Flow = { mode: 'sea' };
+  assert.equal(next(sea, { kind: 'pass', node: 'burned-mill', name: 'The Burned Mill', into: true }), sea, 'on foot');
 });
 
 test('a company member is joined from on foot or at sea, never while landing or loading', () => {
   const join = { kind: 'join', node: 'saltgrass-downs', name: 'The Saltgrass Downs' } as const;
-  const joined = next({ mode: 'sea', menu: true }, join);
+  const joined = next({ mode: 'sea' }, join);
   assert.deepEqual(joined, {
     mode: 'loading',
     words: 'Joining your company at The Saltgrass Downs',
-    then: { mode: 'foot', node: 'saltgrass-downs', menu: false },
+    then: { mode: 'foot', node: 'saltgrass-downs' },
   });
   assert.equal(next(joined, join), joined, 'not while loading');
   const landing: Flow = { mode: 'landing', chosen: null };
@@ -86,41 +78,36 @@ test('a company member is joined from on foot or at sea, never while landing or 
 });
 
 test("on foot the player goes into a patrol's dungeon and out again, each behind the veil", () => {
-  const patrol: Flow = { mode: 'foot', node: 'saltgrass-downs', menu: false };
+  const patrol: Flow = { mode: 'foot', node: 'saltgrass-downs' };
   const into = { kind: 'enter', node: 'saltgrass-downs--dungeon-0', name: 'The Cells of the Saltgrass Downs' } as const;
   const entering = next(patrol, into);
   assert.equal(entering.mode === 'loading' && entering.words, 'Entering The Cells of the Saltgrass Downs');
   const inside = next(entering, { kind: 'loaded' });
-  assert.deepEqual(inside, { mode: 'foot', node: 'saltgrass-downs--dungeon-0', menu: false });
+  assert.deepEqual(inside, { mode: 'foot', node: 'saltgrass-downs--dungeon-0' });
   const out = { kind: 'leave', node: 'saltgrass-downs', name: 'The Cells of the Saltgrass Downs' } as const;
   const leaving = next(inside, out);
   assert.equal(leaving.mode === 'loading' && leaving.words, 'Leaving The Cells of the Saltgrass Downs');
   assert.deepEqual(next(leaving, { kind: 'loaded' }), patrol);
-  assert.equal(next({ ...patrol, menu: true }, into).mode, 'foot', 'not with a menu open');
-  assert.equal(next({ mode: 'sea', menu: false }, out).mode, 'sea', 'only on foot');
+  assert.equal(next({ mode: 'sea' }, out).mode, 'sea', 'only on foot');
 });
 
 test('washed up from the sea, the veil says why and the player stands in the port city’s social space', () => {
   const words = 'Washed up at Sunspire. Your ship lies at its moorings.';
   const washUp = { kind: 'wash-up', node: 'sunspire-social', words } as const;
-  assert.deepEqual(next({ mode: 'sea', menu: false }, washUp), {
+  assert.deepEqual(next({ mode: 'sea' }, washUp), {
     mode: 'loading',
     words,
-    then: { mode: 'foot', node: 'sunspire-social', menu: false },
+    then: { mode: 'foot', node: 'sunspire-social' },
   });
-  assert.deepEqual(next({ mode: 'foot', node: 'glade', menu: false }, washUp), {
-    mode: 'foot',
-    node: 'glade',
-    menu: false,
-  });
+  assert.deepEqual(next({ mode: 'foot', node: 'glade' }, washUp), { mode: 'foot', node: 'glade' });
 });
 
 test('anchored off an island, the player walks ashore on its beach behind the veil, from the sea alone', () => {
   const ashore = { kind: 'isle', node: '7', words: 'Going ashore on a cove' } as const;
-  assert.deepEqual(next({ mode: 'sea', menu: false }, ashore), {
+  assert.deepEqual(next({ mode: 'sea' }, ashore), {
     mode: 'loading',
     words: 'Going ashore on a cove',
-    then: { mode: 'foot', node: '7', menu: false },
+    then: { mode: 'foot', node: '7' },
   });
   const landing: Flow = { mode: 'landing', chosen: null };
   assert.equal(next(landing, ashore), landing);
@@ -128,21 +115,21 @@ test('anchored off an island, the player walks ashore on its beach behind the ve
 
 test('the story opens the game and, ended, brings the player through the veil to the social space', () => {
   const story: Flow = { mode: 'story' };
-  assert.equal(next(story, { kind: 'menu' }), story, 'no menu over the story');
+  assert.equal(next(story, { kind: 'back' }), story);
   assert.equal(next(story, { kind: 'return-to-ship' }), story);
   const ended = next(story, { kind: 'story-ended', node: 'overlook-social', name: 'Overlook' });
   assert.deepEqual(ended, arriving('overlook-social', 'Overlook'));
-  const foot: Flow = { mode: 'foot', node: 'overlook-social', menu: false };
+  const foot: Flow = { mode: 'foot', node: 'overlook-social' };
   assert.equal(next(foot, { kind: 'story-ended', node: 'x', name: 'X' }), foot, 'only the story ends the story');
 });
 
 test('a room whose gate shuts sends the player back to their ship, the veil saying why', () => {
   const landing = next({ mode: 'landing', chosen: 'tidewall' }, { kind: 'land', node: 'tidewall', name: 'Tidewall' });
   const why = 'Abyss seas open at level 20.';
-  const back = { mode: 'loading', words: `${why} Returning to your ship`, then: { mode: 'sea', menu: false } };
+  const back = { mode: 'loading', words: `${why} Returning to your ship`, then: { mode: 'sea' } };
   assert.deepEqual(next(landing, { kind: 'shut', why }), back, 'while the veil is up');
-  assert.deepEqual(next({ mode: 'foot', node: 'tidewall', menu: false }, { kind: 'shut', why }), back);
-  assert.deepEqual(next({ mode: 'sea', menu: false }, { kind: 'shut', why }), { mode: 'sea', menu: false });
+  assert.deepEqual(next({ mode: 'foot', node: 'tidewall' }, { kind: 'shut', why }), back);
+  assert.deepEqual(next({ mode: 'sea' }, { kind: 'shut', why }), { mode: 'sea' });
 });
 
 test('a sea island’s dungeon is entered from the sea and left back to it, the veil saying why', () => {
@@ -151,13 +138,12 @@ test('a sea island’s dungeon is entered from the sea and left back to it, the 
     node: 'sea-dungeon-continent-4-caverns-0a1b2c3d--dungeon',
     name: 'The Caverns of the Sea',
   } as const;
-  const inside = { mode: 'foot', node: enter.node, menu: false } as const;
-  assert.deepEqual(next({ mode: 'sea', menu: false }, enter), {
+  const inside = { mode: 'foot', node: enter.node } as const;
+  assert.deepEqual(next({ mode: 'sea' }, enter), {
     mode: 'loading',
     words: 'Entering The Caverns of the Sea',
     then: inside,
   });
-  assert.deepEqual(next({ mode: 'sea', menu: true }, enter), { mode: 'sea', menu: true }, 'not with the menu open');
   const overTheSide = next({ mode: 'landing', chosen: null }, enter);
   assert.deepEqual(
     overTheSide,
@@ -165,12 +151,8 @@ test('a sea island’s dungeon is entered from the sea and left back to it, the 
     'the Playlist',
   );
   const surface = { kind: 'surface', name: 'The Caverns of the Sea', fell: false } as const;
-  const atSea = { mode: 'sea', menu: false } as const;
-  assert.deepEqual(
-    next({ ...inside, menu: true }, surface),
-    { mode: 'loading', words: 'Leaving The Caverns of the Sea', then: atSea },
-    'even with the menu open',
-  );
+  const atSea = { mode: 'sea' } as const;
+  assert.deepEqual(next(inside, surface), { mode: 'loading', words: 'Leaving The Caverns of the Sea', then: atSea });
   assert.deepEqual(next(inside, { ...surface, fell: true }), {
     mode: 'loading',
     words: 'Your company fell. Leaving The Caverns of the Sea',
@@ -181,25 +163,18 @@ test('a sea island’s dungeon is entered from the sea and left back to it, the 
 
 test('a company that falls in an Abyss run is taken out to its entrance, the veil saying so', () => {
   const words = 'Your company fell. Leaving The Halls of the Saltgrass Downs';
-  const out = { mode: 'loading', words, then: { mode: 'foot', node: 'saltgrass-downs', menu: false } };
+  const out = { mode: 'loading', words, then: { mode: 'foot', node: 'saltgrass-downs' } };
   const happening = { kind: 'wiped', node: 'saltgrass-downs', name: 'The Halls of the Saltgrass Downs' } as const;
-  assert.deepEqual(
-    next({ mode: 'foot', node: 'saltgrass-downs--dungeon-1', menu: true }, happening),
-    out,
-    'even with the menu open',
-  );
-  assert.deepEqual(next({ mode: 'sea', menu: false }, happening), { mode: 'sea', menu: false });
+  assert.deepEqual(next({ mode: 'foot', node: 'saltgrass-downs--dungeon-1' }, happening), out);
+  assert.deepEqual(next({ mode: 'sea' }, happening), { mode: 'sea' });
 });
 
 test('the player is on the sea while sailing or choosing where to land, never on foot or between places', () => {
-  const sea: Flow = { mode: 'sea', menu: true };
+  const sea: Flow = { mode: 'sea' };
   assert.equal(onTheSea(sea), true);
   assert.equal(onTheSea({ mode: 'landing', chosen: null }), true);
-  assert.equal(onTheSea({ mode: 'foot', node: 'overlook-social', menu: false }), false);
+  assert.equal(onTheSea({ mode: 'foot', node: 'overlook-social' }), false);
   assert.equal(onTheSea(arriving('saltgrass-downs', 'The Saltgrass Downs')), false, 'a trip from land to land');
-  assert.equal(
-    onTheSea(next({ mode: 'foot', node: 'overlook-social', menu: false }, { kind: 'return-to-ship' })),
-    false,
-  );
+  assert.equal(onTheSea(next({ mode: 'foot', node: 'overlook-social' }, { kind: 'return-to-ship' })), false);
   assert.equal(onTheSea({ mode: 'story' }), false);
 });

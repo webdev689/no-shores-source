@@ -5,7 +5,6 @@
 //! ebb; a Bulwark claims one left empty. Woken, the gate opens to that company alone; anyone else in the zone may fight
 //! beside them, and the foes drop nothing. The gate shows the zone the companies inside the run ([[Breaches]]).
 
-use super::fallen::{RAISE_REACH_M, RAISE_TICKS};
 use super::plan::turned;
 use crate::players::Player;
 use crate::{EventKind, PlayerId, Room};
@@ -83,7 +82,6 @@ pub struct Gate {
     pub waves: usize,
     pub bulwarks: u8,
     pub revives: Option<u8>,
-    pub raising: BTreeMap<PlayerId, (PlayerId, u64)>,
     pub down_since: Option<u64>,
     /// The accounts of the holding company's fallen who left down, to come back down.
     pub left_down: BTreeSet<String>,
@@ -254,7 +252,7 @@ impl Room {
             }
         }
         (gate.held_by, gate.fill, gate.woken, gate.claims) = (None, 0, None, [None; 3]);
-        (gate.claimers, gate.raising, gate.down_since, gate.empty_since) = (Vec::new(), BTreeMap::new(), None, None);
+        (gate.claimers, gate.down_since, gate.empty_since) = (Vec::new(), None, None);
         gate.left_down.clear();
     }
 
@@ -317,7 +315,6 @@ impl Room {
             gate.next_wave = clock + WAVE_EVERY;
             self.gate_wave(gate);
         }
-        self.keep_gate_raising(gate);
         let all_down = !company.players.is_empty()
             && company.players.iter().all(|player| self.players.get(player).is_none_or(|found| !found.living()));
         if all_down {
@@ -331,7 +328,6 @@ impl Room {
         if gate.fill >= SPIRE_TICKS {
             gate.woken = Some(clock);
             gate.opened.insert(run, clock);
-            gate.raising.clear();
             gate.left_down.clear();
             for id in std::mem::take(&mut gate.foes) {
                 if self.foes.get(&id).is_some_and(|foe| !foe.fighter.dead()) {
@@ -436,31 +432,6 @@ impl Room {
         let at = gate.socket("arrival").unwrap_or(gate.at);
         for player in &company.players {
             self.stand_whole(*player, at);
-        }
-    }
-
-    /// A company member raising another while the Waking runs, as in the run (`fallen.rs`), with the gate's revives.
-    fn keep_gate_raising(&mut self, gate: &mut Gate) {
-        for (id, (whom, from)) in gate.raising.clone() {
-            let (Some(raiser), Some(fallen)) = (self.players.get(&id), self.players.get(&whom)) else {
-                gate.raising.remove(&id);
-                continue;
-            };
-            let (at, body) = (raiser.fighter.body, fallen.fighter.body);
-            let still = raiser.living()
-                && fallen.fighter.dead()
-                && apart([at.x, at.y], [body.x, body.y]) <= RAISE_REACH_M + 0.3
-                && gate.revives != Some(0);
-            if !still {
-                gate.raising.remove(&id);
-            } else if self.clock >= from + RAISE_TICKS {
-                gate.raising.remove(&id);
-                if let Some(left) = gate.revives.as_mut() {
-                    *left -= 1;
-                }
-                self.stand_whole(whom, [body.x, body.y, body.z]);
-                self.tell(EventKind::Revived, None, id, whom, f64::from(gate.revives.unwrap_or(u8::MAX)));
-            }
         }
     }
 

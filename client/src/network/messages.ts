@@ -1,5 +1,5 @@
 import * as flatbuffers from 'flatbuffers';
-import { Course, FromRoom, Input } from '../../../generated/messages/ts/overlook/wire.ts';
+import { FromRoom, Input } from '../../../generated/messages/ts/overlook/wire.ts';
 import { Ask } from '../../../generated/messages/ts/overlook/wire/ask.ts';
 import type { Dressed } from '../../../generated/messages/ts/overlook/wire/dressed.ts';
 import { GLANCE_FLOATS, UNTRIMMED_FLOATS } from '../rules/fighters.ts';
@@ -273,14 +273,29 @@ export type FromRoomMessage =
       readonly cache: readonly number[];
       /** In an Abyss run, the revives its company has left; -1 in any other room. */
       readonly revives: number;
+      /** On land, whether the room is a darkness zone, where no one respawns by their own ask; and who is reviving whom. */
+      readonly darkness: boolean;
+      readonly reviving: readonly Reviving[];
     } & FleetPart &
       HarbourPart)
   | ({ readonly kind: 'gear' } & GearState);
 
+/** A fallen player an ally is reviving: the fallen player's number, the ally's, and the share of the hold done. */
+export interface Reviving {
+  readonly fallen: number;
+  readonly reviver: number;
+  readonly progress: number;
+}
+
+/** A revive as a snapshot carries it, its share from per mille. */
+function revivingOf(seen: { fallen(): number; reviver(): number; progress(): number } | null): Reviving {
+  return { fallen: seen?.fallen() ?? 0, reviver: seen?.reviver() ?? 0, progress: (seen?.progress() ?? 0) / 1000 };
+}
+
 /** One tick's input beyond its number: the intent's numbers (the controls', then the fight's), what the player's figure
  *  shows, their dress when it changed, what their hands hold, the room tick their screen showed, what they ask of the
- *  foes (none if nothing) and the foe's level (0 for none), whether they ask to respawn, dead past a node's section,
- *  an ask of their gear, and a spell cast (spell 0 carries only Dusk Daggers' aim while it is held). */
+ *  foes (none if nothing) and the foe's level (0 for none), whether they ask to respawn, fallen, an ask of their gear,
+ *  a spell cast (spell 0 carries only Dusk Daggers' aim while it is held), and whether they hold Use to revive. */
 export interface InputParts {
   readonly intent: Float64Array;
   readonly look: Look;
@@ -294,6 +309,8 @@ export interface InputParts {
   readonly cast?: CastAsk;
   /** A menu is open on the player's screen, which others see over their head. */
   readonly menu?: boolean;
+  /** Use is held to revive a fallen ally beside the player (crates/room/src/revive.rs). */
+  readonly revive?: boolean;
 }
 
 /** The most a ulong field holds. */
@@ -363,72 +380,8 @@ function inputOffset(builder: flatbuffers.Builder, sequence: number, parts: Inpu
   if (aim) Input.addCastAim(builder, aim);
   if (earlier) Input.addEarlier(builder, earlier);
   if (parts.menu) Input.addMenu(builder, true);
+  if (parts.revive) Input.addRevive(builder, true);
   return Input.endInput(builder);
-}
-
-/** A ship's course as its bytes: the world points it sails through in turn, and its pace, one of the steps of a
- *  ship's speed. No points brings it to rest. With `travel`, the held map takes the ship to the other waters it ends
- *  in. */
-export function courseBytes(
-  points: readonly (readonly [number, number])[],
-  pace: number,
-  travel = false,
-): Uint8Array<ArrayBuffer> {
-  const builder = new flatbuffers.Builder(256);
-  const numbers = Course.createPointsVector(builder, points.flat());
-  const paced = wholeIn(pace, 0, 0xffff, 'the pace');
-  builder.finish(Course.createCourse(builder, numbers, paced, 0, 0, 0, 0, 0, 0, 0, travel));
-  return builder.asUint8Array().slice();
-}
-
-/** A ship brought to rest turned to a heading (radians clockwise from north), as its bytes: the helm turned while it
- *  lies still. */
-export function faceBytes(heading: number): Uint8Array<ArrayBuffer> {
-  const builder = new flatbuffers.Builder(64);
-  const facing = Course.createFacingVector(builder, [heading]);
-  builder.finish(Course.createCourse(builder, 0, 0, 0, 0, 0, 0, facing, 0, 0, false));
-  return builder.asUint8Array().slice();
-}
-
-/** A step of the walk on deck, off the helm, as its bytes: its number and its controls in the movement crate's order,
- *  in a course's message. */
-export function walkBytes(sequence: number, controls: readonly number[]): Uint8Array<ArrayBuffer> {
-  const builder = new flatbuffers.Builder(128);
-  const numbers = Course.createWalkVector(builder, [...controls]);
-  const numbered = wholeIn(sequence, 0, 0xffff_ffff, "the step's number");
-  builder.finish(Course.createCourse(builder, 0, 0, 0, numbers, numbered, 0, 0, 0, 0, false));
-  return builder.asUint8Array().slice();
-}
-
-/** A chase of the hostile ship numbered `ship` (null for none), as its bytes, in a course's message. */
-export function chaseBytes(ship: number | null): Uint8Array<ArrayBuffer> {
-  const builder = new flatbuffers.Builder(32);
-  builder.finish(Course.createCourse(builder, 0, 0, 0, 0, 0, 3, 0, ship ?? 0, 0, false));
-  return builder.asUint8Array().slice();
-}
-
-/** Leaving the helm (`leave`), or taking it again at the wheel, as its bytes, in a course's message. */
-export function helmBytes(leave: boolean): Uint8Array<ArrayBuffer> {
-  const builder = new flatbuffers.Builder(32);
-  builder.finish(Course.createCourse(builder, 0, 0, 0, 0, 0, leave ? 1 : 2, 0, 0, 0, false));
-  return builder.asUint8Array().slice();
-}
-
-/** What a player asks of the sea as its bytes, in a course's message: a repair by a port city, to board a captain
- *  who struck, or to leave its deck once its crew has fallen. */
-export function askBytes(ask: 'repair' | 'board' | 'leave-deck'): Uint8Array<ArrayBuffer> {
-  const builder = new flatbuffers.Builder(32);
-  const number = { repair: 1, board: 2, 'leave-deck': 3 }[ask];
-  builder.finish(Course.createCourse(builder, 0, 0, 0, 0, 0, 0, 0, 0, number, false));
-  return builder.asUint8Array().slice();
-}
-
-/** A fighting ship's orders as their bytes: the naval crate's numbers (`ordersNumbers`), in a course's message. */
-export function ordersBytes(orders: readonly number[]): Uint8Array<ArrayBuffer> {
-  const builder = new flatbuffers.Builder(128);
-  const numbers = Course.createOrdersVector(builder, [...orders]);
-  builder.finish(Course.createCourse(builder, 0, 0, numbers, 0, 0, 0, 0, 0, 0, false));
-  return builder.asUint8Array().slice();
 }
 
 /** The dresses a message holds. */
@@ -588,6 +541,10 @@ export function readFromRoom(bytes: Uint8Array): FromRoomMessage | null {
       goneFoes: Array.from(snapshot.goneFoesArray() ?? []),
       cache: Array.from(snapshot.cacheArray() ?? []),
       revives: snapshot.revives(),
+      darkness: snapshot.darkness(),
+      reviving: Array.from({ length: snapshot.revivingLength() }, (unused, index) =>
+        revivingOf(snapshot.reviving(index)),
+      ),
       ...fleetOf(snapshot),
       ...harbourOf(snapshot),
     };

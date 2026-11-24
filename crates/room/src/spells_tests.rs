@@ -207,9 +207,10 @@ fn the_duskraven_bolts_the_nearest_foe_exposing_it_and_healing_its_caster_half_a
         for _ in 0..40 {
             room.tick();
         }
-        assert!((1000.0 - health(&room, near) - 7.0 * PLAYER_HARM).abs() < 1e-6, "7 damage, a player's");
+        let damage = arts().art(3).expect("Shadow").anima.damage;
+        assert!((1000.0 - health(&room, near) - damage * PLAYER_HARM).abs() < 1e-6, "its damage, a player's");
         assert!(has(&room, near, Status::Expose) > 0);
-        assert!((health(&room, player) - (50.0 + 7.0 * PLAYER_HARM * share)).abs() < 1e-6, "healed {share} of it");
+        assert!((health(&room, player) - (50.0 + damage * PLAYER_HARM * share)).abs() < 1e-6, "healed {share} of it");
         assert_eq!(health(&room, far), 1000.0);
         assert_eq!(seen(&room, DUSKRAVEN).first().map(|raven| raven.life), Some(720));
     }

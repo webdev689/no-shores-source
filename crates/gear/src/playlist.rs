@@ -155,9 +155,15 @@ impl Character {
     }
 
     /// A playlist's first clear on `day`: a Boss Captain's kill at `level` (the run's), its XP and Aurem times the
-    /// tier's reward, and a sure Vestige in a Boss's colours at `level`, returned to be kept. None once taken today,
-    /// or when `day` is behind the record's.
-    pub fn playlist_of_the_day(&mut self, day: u64, playlist: Playlist, level: u8, dice: &Dice) -> Option<Vestige> {
+    /// tier's reward, and a sure Vestige in a Boss's colours at `level`, returned to be kept, or none for a Normal
+    /// one, kept as its item (`unsealed`). None at all once taken today, or when `day` is behind the record's.
+    pub fn playlist_of_the_day(
+        &mut self,
+        day: u64,
+        playlist: Playlist,
+        level: u8,
+        dice: &Dice,
+    ) -> Option<Option<Vestige>> {
         if day < self.activity.today.day {
             return None;
         }
@@ -175,15 +181,14 @@ impl Character {
             u32::try_from(raised as u64).unwrap_or(u32::MAX)
         };
         let (xp, aurem) = (times(worth.xp), times(worth.aurem));
-        self.earn_xp(xp, None);
+        self.earn_play_xp(xp, None);
         self.materials.add_aurem(aurem);
-        let (rarity, slot, level) = of_colours(colours(BOSS), level, dice);
-        Some(Vestige::new(self.take_id(), rarity, slot, level).from(Source::elite_at(playlist.tier())))
+        Some(self.unsealed(of_colours(colours(BOSS), level, dice), Source::elite_at(playlist.tier()), dice))
     }
 
     /// Counts a playlist's clear in `week`; at the `WEEK_CLEARS`th, its weekly reward: Essence of each stock and its
-    /// Vestiges in a Boss's colours at `level`, returned to be kept. Nothing past the third, or when `week` is behind
-    /// the record's.
+    /// Vestiges in a Boss's colours at `level`, returned to be kept, each Normal one kept as its item. Nothing past the
+    /// third, or when `week` is behind the record's.
     pub fn playlist_of_the_week(&mut self, week: u64, playlist: Playlist, level: u8, dice: &Dice) -> Vec<Vestige> {
         if week < self.activity.this_week.week {
             return Vec::new();
@@ -204,11 +209,10 @@ impl Character {
             self.materials.add(Stuff::Essence(stock), playlist.week_essence());
         }
         (0..playlist.week_vestiges())
-            .map(|nth| {
+            .filter_map(|nth| {
                 // Each on dice of its own, apart from the daily's too, so no two of a clear's Vestiges are one twice.
                 let dice = Dice { tick: dice.tick ^ (u64::from(nth + 1) << 48), ..*dice };
-                let (rarity, slot, level) = of_colours(colours(BOSS), level, &dice);
-                Vestige::new(self.take_id(), rarity, slot, level).from(Source::elite_at(playlist.tier()))
+                self.unsealed(of_colours(colours(BOSS), level, &dice), Source::elite_at(playlist.tier()), &dice)
             })
             .collect()
     }

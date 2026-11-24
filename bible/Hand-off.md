@@ -192,6 +192,46 @@ each part works is in its system note.
 
 The decisions in [[Open Questions]] are not repeated here.
 
+- **A foe's plain swing at seven eighths of its time**, for the owner's yes to merge, on the owner's "We recently
+  adjusted parry timing and actually made it harder where I wanted to make it slighty easier"
+  ([[A Foe's Plain Swing Takes Seven Eighths of Its Time]]). The longer parry window (15 ticks) forgave only an early
+  press; the swings made a quarter faster had sped foes' swings too, so a foe's sword blow landed 0.3 s after its
+  swing began. Now 0.35 s (21 ticks, `FOE_SWING_PACE`); a player's and their companions' swings as they were, and the
+  foes' plan of when a blow lands follows (`Fighter::swing_ticks`). The scripted runs moved both ways: the rules' pair
+  holds the heroic raid again, the dev page's bots now lose the plain raid's stores in its third wave, and the road's
+  test player, facing north while foes struck from its sides, fell before a kill (it now turns to the nearest foe).
+  A lone player is felled about as fast as before (`measure_blows`). Tested offline; not played.
+- **Revives, respawns near the fall or at a checkpoint, and logging back in where the player left** (#184, a draft for
+  the owner's yes). The owner's three asks ([[Fallen Players Are Revived as in Destiny]],
+  [[Activities Keep Checkpoints, and Patrol Zones Respawn the Player Near Where They Fell]],
+  [[A Player Logs Back In Where They Left the Overworld or a Social Space]]), built on "take autonomy", every call in
+  [[Revives, Respawns and Relogs as Claude Shapes Them]] with the Destiny research behind it ([[Revives]], [[Accounts]],
+  "Where a player logs back in"). A fallen player lies until an ally holds Use 2 s beside them or they press Respawn
+  after 4 s; a respawn stands them at the activity's checkpoint, near the fall in a patrol zone (43 m at most on
+  Saltmere's three zones, where the landing stood up to 1.5 km off), else at a spawn; the Court's cells while its Boss
+  stands and an Abyss run with no revive left are darkness zones; a company all down while the Court's Boss stands falls
+  back to its checkpoint. Only a dungeon run holds the ground its bands' falls won. The character keeps its last sea or
+  social-space place, `/v1/me` says it, and the page resumes there after the title, the social room standing the player
+  where they left only on that `?relog=1` join (offline from the browser, the spot across but not its height). Tested
+  offline: the full check at the PR's head (the commit named there), the rules' tests on Saltmere's real zones, the
+  agreement runs natively and in WebAssembly. Not yet: played by hand, two players reviving in a deployed room, a real
+  GPU. For the owner: [[Open Questions]], "Revives, respawns and relogs".
+- **The key strip, the leave held and Settings in tabs** (#181), merged on the owner's "Merge and deploy", which
+  deploys the page (the rooms' code is untouched). The owner's three asks
+  ([[The Key Strip Is a Compact Panel, a Held Key Leaves, and Settings Has Tabs]], Claude's calls listed there): the
+  key strip a compact panel at the bottom right under the moment's name, its words at 11 px, fitting under the
+  Acquired feed and the tracker; the M menu gone, M or the pad's View held 1.5 s on foot returning the player to their
+  ship, Escape opening Settings; Settings in tabs down a rail (Graphics, Audio, Controls, Account; stacked on a phone),
+  Exit to Menu and Exit to Desktop held at its foot, the sound credits behind a press, Controls binding as the sheet K
+  opens does ([[Interface]], "The key strip", "The leave held", "Settings"). Before the deploy, on the owner's "Please
+  do an audit on this before we deploy", four read-only audits (input and flow, Settings, the strip's layout, tests and
+  the notes), each finding checked against the code and fixed, the code's with a test that fails without its fix.
+  Tested offline: the full check on its head with `main` merged in (the commit named in the pull request), driven
+  headless in the real game (`noGpu`: Escape, every tab, the credits, a short and a full hold of M to the sea) and
+  pictured through the real renderer. Not yet: a real GPU, a hand, a real pad's View held, and Exit to Desktop in a
+  desktop app (there is none yet). Unchecked in a browser: whether the Escape that frees a locked mouse also reaches
+  the game. For the owner: whether Graphics gains settings of its own (it holds the resolution alone, none invented),
+  and whether the strip's 11 px reads well enough on the owner's own screen.
 - **The fourth whole-codebase audit** (#180), merged on the owner's "Merge and depkoy", which deploys the page and the
   rooms: twelve read-only auditors by area and a reviewer of the diff, each finding read against the code first and each
   fix but two with a test that failed before it. High: the dungeon entrances bound no sky groups, so every frame on a
@@ -335,14 +375,18 @@ The decisions in [[Open Questions]] are not repeated here.
     [[First Person]]); a rolled piece's look roll (`vestige::LOOK_ROLLS`, 36) choosing its set, metal, dye, make and
     shield, so a ware is bought as shown.
   - The set names stand: the owner's yes to merge settled them ([[The Set Names Stand as Claude Drafted Them]]).
-  - The forge run, for the owner's named yes (a write to R2 with the Cloudflare key): forge.yml by hand on the branch
-    or on `main`, `figures` =
-    `|sword_elven,sword_elven_l,dagger_ebony,dagger_ebony_l,sheath_dagger_ebony,sheath_dagger_ebony_l` and
-    `firstperson` = `sword|Elven;dagger|Ebony`, then its log's manifest line into `content/forge/renders.json`. Until
-    then every blade draws as before; the large weapon pictures re-render by themselves on the merge.
+  - Asked to wait before the merge, the owner added three calls: flavour text for every weapon and armour piece
+    ([[Weapons and Armour Carry Flavour Text]]: `content/gear/words.json`, a line for each set and kind); commons drop
+    as themselves, never as Vestiges ([[Commons Drop as Themselves, Never as Vestiges]]); and a Breach's Hard weapons
+    named "(Forged)" ([[Breach Weapons Come Normal and Forged]]), for the Breach's own PR (#182, stacked on #169) to
+    build with its `Item.hard`. The owner relays that one: this session may not message another.
+  - The faction blades' art is published (forge run 18: figure strips and first person's frames, after a first run
+    failed on a missing scikit-image pin) and `content/forge/renders.json` points at it.
   - Unchecked: whether the new first-person blades pair with the published hands (same size and `oFFs`); every look
-    of a kept piece moves once with the wider look roll; played live.
-- **#182, the first Breach, the Drowned Vale**, a draft stacked on #169 for the owner's yes, merged with #169's head;
+    of a kept piece moves once with the wider look roll; played live. Here the full check stops at four R2 ship tests
+    this container cannot fetch, before the repo checks: run `cargo xtask repo` beside it.
+- **#182, the first Breach, the Drowned Vale**, a draft stacked on #169 for the owner's yes, merged with #169's head
+  (its raising now the game's revive, [[Revives]], with the Breach's own rules on top);
   `cargo xtask check` green at its head (tested offline; not played, not in a deployed room). Built in full on
   Claude's autonomy after the owner's three decisions
   ([[The First Breach Follows the Vault of Glass, at Normal and Hard]] and the two it names); the system in
@@ -404,8 +448,8 @@ The decisions in [[Open Questions]] are not repeated here.
 - **A thin black vertical line across the world**, reported by the owner and not yet found: the canvas fills the
   page, so it is not a gap in the page. The owner will send a screenshot.
 - **The public events under main's balance pass** (#141): with the fight's harm at 1.5 and 0.75, the rules' two scripted
-  players still seal a heroic Fissure (5.2 minutes, 3.7 before) but run out the heroic raid's clock in its third wave;
-  with the heroic task left alone, the page's scripted pair holds the raid. The events are Claude's to tune ("Claude
+  players seal a heroic Fissure and, foes' swings at seven eighths, hold the heroic raid;
+  the dev page's two bots win the Fissure either way and lose the raid's stores either way. The events are Claude's to tune ("Claude
   tunes them"); whether a pair should hold the heroic raid is the owner's to say. The chest's Vestige: #141 dropped the
   colour rows it drew on, so a plain chest draws on a Major's colours and a heroic one on a Boss's; a heroic chest's
   Vestige is now Normal about half the time (never before). The rest of #124's points are in its description and in
@@ -521,6 +565,36 @@ The decisions in [[Open Questions]] are not repeated here.
   owner's to say.
 - **Whether players may harm one another** ([[Combat]]); and **isles**: how many, how big and how placed
   ([[World Map]]).
+- **The balance and economy pass** (#178), merged on the owner's "Merge and deploy", which deployed the rooms and the
+  page; on the owner's
+  "comprehensive balance pass and economy pass on the entire game ecosystem so far ... Destiny 1 vanilla as a
+  reference ... autonomy" ([[The Balance and Economy Pass Is Claude's, After Destiny 1 Vanilla]]; every call, its
+  reason and its Destiny 1 source in [[The Balance and Economy Pass as Claude Shapes It]]). The owner's own decisions
+  stand. Changed: an Atheric's upgrades 8 Essence and its own node dearer, so no Atheric finishes cheaper than a
+  Legendary; a Breach's armour 7; every piece's Prestige by equal steps (a ship's guns no longer 33 and 36); a faction
+  rank every 100,000 reputation (rank 2 near level 20), packages 2,500 Aurem and Legendary one time in two, the cape
+  500, a faction weapon 12,000; Shape's Atheric armour 13 and weapon 23, the week's Abyss 10 Shapes; a chest's Essence
+  only from the day's first heroic one; bounties in three tiers (the tier on the wire, `GearBounty.tier`); every
+  deed's XP to the Art and the faction (`earn_play_xp`); a road's task paying a mission's clear; a sinking paying
+  twelve kills to the ship and now the player (XP and Aurem); no fire from a harmless ball; a player's bow two thirds
+  (12 quick, 18 drawn); the greatsword 21 and lighter; captains' defence under the cap so each rank defends more;
+  Exploit ×1.25, no crit; companions with the land's ease. On the owner's answers
+  ([[The Bulwark Blocks, Supers Are Powerful, the Sea's Gaps Close and Level 30 Takes Breach Gear]]): the Bulwark
+  blocks as a swordsman until its change (`roster::standing`); Tempest 48 an orb, Duskraven 16 a bolt, Linked 8 a
+  second and ×1.3; a travel never brings the next hostile roll sooner; a cove's wreck one material of 1 or 2,
+  Heartwood 1.5%, a module 3%; a fire's bite scales with the shooter's level strength and the ball. With the
+  Bulwark blocking, the rules' scripted pair and the dev page's bots still win the heroic Fissure. On the owner's "Go ahead with your proposals except the stamina change"
+  ([[Pairs Swing Faster, Foes' Guns Strike Two Thirds and Faction Gear Has No Weekly Limit]]): a player's pair comes
+  round in 0.8 of its lone weapon's time at 0.9 of its blow (a foe's pair as its lone weapon, for faster paired daggers
+  set a crowd of skirmishers turning about); a foe's ball strikes two thirds (`FOE_GUN`, its aimed shot too), so an
+  Elite Marksman fells a matched player in three aimed shots, not two; no weekly limit on faction gear; stamina as it
+  was. Measured with `economy_tests.rs` (six pace tests and the
+  ledger), `balance_tests.rs` (`measure_ranks`), `measure_blows` and `measure_fights_by_rank`. Destiny 1's numbers
+  came from search summaries; the proxy refused every page, so they are unchecked against the pages. Tested offline:
+  `cargo xtask check` on its head; not played. The rules' two scripted sword players stand near the line of holding the
+  heroic raid, which the owner keeps as it is for now; they hold it since foes' swings take seven eighths. Its one open point, Conduit, is in [[Open Questions]].
+  Not yet seen in the deployed game: a pair's quicker swings, the Bulwark's shield and its drop, the supers' numbers,
+  a Marksman's three aimed shots, a sinking's pay, a bounty card's own pay and the heroic raid with players.
 
 ## Next
 

@@ -34,13 +34,13 @@ pub const FISSURE_MINUTE: u32 = 15_000;
 pub const RAID_MINUTE: u32 = 15_015;
 const MOST_TICKS: u32 = 9 * 3_600;
 /// Both tests hold these values; a change to the events, the foes or the fight changes them in both, on purpose.
-pub const FISSURE_HASH: &str = "47799d4c";
-pub const RAID_HASH: &str = "9c9b2ec4";
+pub const FISSURE_HASH: &str = "2f4cd047";
+pub const RAID_HASH: &str = "ada47548";
 /// Where each stood as its result first showed, which a change to the fingerprint must account for: the tick, its
 /// stage (the Warden's; Marrow's wave) and its progress (the shards set; the stores' health left, per mille). The
 /// players' swings take the room's chain whatever stroke is asked (`room::chain`).
-pub const FISSURE_ENDED: [u32; 3] = [12_858, 2, 28];
-pub const RAID_ENDED: [u32; 3] = [18_418, 4, 1000];
+pub const FISSURE_ENDED: [u32; 3] = [15_638, 2, 28];
+pub const RAID_ENDED: [u32; 3] = [20_998, 4, 948];
 /// A player strikes a foe within this, squared, swinging every SWING_EVERY ticks; walks to a point to within GOT.
 const STRIKE: f64 = 1.5 * 1.5;
 const SWING_EVERY: u32 = 20;
@@ -203,11 +203,13 @@ fn play(minute: u32) -> (String, (u8, u8, u8), [u32; 3]) {
         for player in players {
             let (controls, combat) = decide(&last, player, tick);
             let intent = combat::Intent { controls, combat };
+            // Each asks to respawn every tick: the room takes it once they may.
             let sent = room::Input {
                 sequence: tick,
                 intent,
                 seen: u64::from(tick - 1),
                 arms: sword,
+                respawn: true,
                 ..room::Input::default()
             };
             assert_eq!(input(player, &protocol::input_bytes(&sent)), TAKEN);

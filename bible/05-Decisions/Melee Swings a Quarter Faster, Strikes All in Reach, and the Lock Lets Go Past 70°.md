@@ -20,3 +20,6 @@ and arc, at full damage. Asked when the lock should let go, the owner chose "Pas
 - Each stroke strikes every fighter of another side within its reach and arc, each taking the full blow; a stroke's
   arc still sets how many it can reach.
 - The soft lock lets go the moment the fighter's look leaves the 70 degrees within which it takes a foe.
+
+Replaced in part by [[A Foe's Plain Swing Takes Seven Eighths of Its Time]]: a foe's swing takes seven eighths of
+its old time, a player's three quarters.

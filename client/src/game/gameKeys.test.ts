@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { type Controlled, contextOf, listenForControls } from './gameKeys.ts';
-import { OPEN_AT } from './gearScreen.ts';
+import { OPEN_AT, setGearScreenOpen } from './gearScreen.ts';
 import { FakeEvent, fakePage } from './pageForTests.ts';
 
 type Playing = Parameters<typeof contextOf>[0];
@@ -18,11 +18,8 @@ const afloat = (more: object = {}) => ({
 });
 
 test('the controls act where the player is: a window, dead, on foot, at the helm or in a fight at sea', () => {
-  assert.equal(contextOf(game({ mode: 'foot', menu: true }, null, alive)), 'menu');
   assert.equal(contextOf(game({ mode: 'foot' }, null, alive)), 'foot');
   assert.equal(contextOf(game({ mode: 'foot' }, null, dead)), 'dead');
-  const felled = { standing: { kind: 'inside' }, fallen: true };
-  assert.equal(contextOf(game({ mode: 'foot' }, null, felled)), 'dead', 'felled in a fight, as the Follow key is read');
   assert.equal(contextOf(game({ mode: 'sea' }, afloat())), 'helm');
   assert.equal(contextOf(game({ mode: 'landing' }, afloat())), 'helm');
   assert.equal(contextOf(game({ mode: 'sea' }, afloat({ fight: {} }))), 'fight');
@@ -30,6 +27,10 @@ test('the controls act where the player is: a window, dead, on foot, at the helm
   const boarded = (foot: object) => afloat({ fight: {}, boarding: { onDeck: true, foot } });
   assert.equal(contextOf(game({ mode: 'sea' }, boarded(alive))), 'foot', "on a struck ship's deck");
   assert.equal(contextOf(game({ mode: 'sea' }, boarded(dead))), 'dead');
+  // Fallen in a fight, the section's standing inside: Respawn's key, the pad's A and Follow act there too.
+  const fell = { standing: { kind: 'inside' }, fell: { offered: true, canRespawn: false, line: '' } };
+  assert.equal(contextOf(game({ mode: 'foot' }, null, fell)), 'dead', 'fallen on foot, as the Follow key is read');
+  assert.equal(contextOf(game({ mode: 'sea' }, boarded(fell))), 'dead', 'fallen on a boarded deck');
 });
 
 test('the repair key repairs at the helm and walking its own deck, never in a fight', () => {
@@ -88,7 +89,7 @@ test("the pad's Start opens the Character page in the story as the key does, for
   assert.deepEqual(opened, [{ view: 'character', toggle: true }]);
 });
 
-test('while the stranger speaks her welcome the menu opens as in the story; no other game key acts but Space', () => {
+test('while the stranger speaks her welcome Escape opens Settings; no other game key acts but Space', () => {
   const { window } = fakePage();
   const changes: unknown[] = [];
   const opened: unknown[] = [];
@@ -126,12 +127,64 @@ test('while the stranger speaks her welcome the menu opens as in the story; no o
   assert.deepEqual([changes, opened], [[], []], 'no map, chat, use or respawn');
   key('Escape', 'Escape');
   key('m', 'KeyM');
-  pads[0]?.(new Set(['menu']), new Set());
+  pads[0]?.(new Set(['leave']), new Set());
   pads[0]?.(new Set(['character']), new Set());
   pads[0]?.(new Set(['controls']), new Set());
-  assert.deepEqual(changes, [{ kind: 'back' }, { kind: 'menu' }, { kind: 'menu' }, 'sheet'], 'the menu and the sheet');
-  assert.deepEqual(opened, [{ view: 'character', toggle: true }], 'the character page, which refuses where it must');
+  assert.deepEqual(changes, ['sheet'], 'the sheet; the leave is held, and heard each frame');
+  assert.deepEqual(
+    opened,
+    [{ view: 'settings' }, { view: 'character', toggle: true }],
+    'Settings, and the character page, which refuses where it must',
+  );
   key(' ', 'Space');
   pads[0]?.(new Set(['jump']), new Set());
   assert.equal(pressed, 2, 'her words move on');
+});
+
+test('Escape opens Settings with nothing else over the game, and steps back from a landing instead', () => {
+  const { window } = fakePage();
+  const [changes, opened]: [unknown[], unknown[]] = [[], []];
+  let backed = 0;
+  const playing = {
+    flow: { mode: 'foot' } as object,
+    sea: { ...afloat(), view: { backToSea: () => void (backed += 1) } },
+    foot: { standing: { kind: 'inside' } },
+    helmMap: { key: (key: string) => key === 'escape' && playing.mapUp, busy: false },
+    mapUp: false,
+    through: null,
+    after: { holding: false },
+  };
+  listenForControls({
+    playing,
+    input: { onPad: () => undefined },
+    ui: { typing: false },
+    hud: { controls: { rebinding: {}, open: false } },
+    story: null,
+    retry: () => null,
+    change: (asked: unknown) => changes.push(asked),
+  } as unknown as Controlled);
+  window.addEventListener(OPEN_AT, (event) => opened.push((event as unknown as CustomEvent).detail));
+  const escape = () => window.dispatchEvent(new FakeEvent('keydown', { key: 'Escape', code: 'Escape' }));
+  escape();
+  assert.deepEqual(opened, [{ view: 'settings' }], 'on foot');
+  playing.mapUp = true;
+  escape();
+  assert.equal(opened.length, 1, 'the held map takes it first');
+  playing.mapUp = false;
+  playing.flow = { mode: 'landing', chosen: null };
+  escape();
+  assert.deepEqual([opened.length, backed, changes], [1, 1, [{ kind: 'back' }]], 'back to the sea from a landing');
+  playing.flow = { mode: 'sea' };
+  escape();
+  assert.deepEqual(opened, [{ view: 'settings' }, { view: 'settings' }], 'at sea');
+  playing.helmMap.busy = true;
+  escape();
+  playing.helmMap.busy = false;
+  playing.flow = { mode: 'loading', words: 'Returning to your ship', then: { mode: 'sea' } };
+  escape();
+  playing.flow = { mode: 'foot' };
+  setGearScreenOpen(true);
+  escape();
+  setGearScreenOpen(false);
+  assert.equal(opened.length, 2, 'not on the way to the helm’s map, behind the veil, nor over a window');
 });

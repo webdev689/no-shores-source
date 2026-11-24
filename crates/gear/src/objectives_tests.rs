@@ -69,7 +69,8 @@ fn the_board_offers_six_bounties_a_day_two_each_on_land_at_sea_and_in_dungeons()
         seen.extend(on.map(|bounty| bounty.words));
     }
     assert_eq!(seen.len(), 10, "every bounty comes up");
-    assert_eq!([bounty_pay(1), bounty_pay(5), bounty_pay(30)], [(600, 36), (1_000, 60), (3_500, 210)]);
+    assert_eq!([bounty_pay(1, 1), bounty_pay(5, 1), bounty_pay(30, 1)], [(600, 36), (1_000, 60), (3_500, 210)]);
+    assert_eq!([bounty_pay(5, 2), bounty_pay(5, 3)], [(1_500, 90), (2_000, 120)], "half again, then twice");
 }
 
 #[test]

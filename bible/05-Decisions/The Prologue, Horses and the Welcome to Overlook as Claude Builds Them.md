@@ -71,3 +71,6 @@ writes the quiet deck's `masts`.
 | Elder Maren Hale | Her welcome walk is gone; she keeps the Lamplighters' counter and introduces her house in the quest | The stranger's welcome replaces hers |
 | The Test Ground and the public events' scripted players | Keep a plain sword and armour, no horse; the Test Ground's opening shows no task it cannot do | So they stay fightable, and the events' fingerprints hold |
 | An old page | The protocol's version covers the smiths' stock and the quests, so a page left open across a deploy reloads | Its ware and task numbers would be wrong |
+
+Replaced in part by [[The Key Strip Is a Compact Panel, a Held Key Leaves, and Settings Has Tabs]]: while she speaks
+the game's menu no longer opens (it is gone); Escape opens Settings, and the leave held waits until she is done.

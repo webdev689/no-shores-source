@@ -82,8 +82,8 @@ pub(crate) struct Fights {
 }
 
 /// A Breach's run: its tier and plan, each encounter's phase and what each keeps, the stages reached, the seals open,
-/// the revives left in this attempt (Hard's), the Lodestone, the marks on the Rewritten, who is raising whom, the
-/// encounters' foes, the hidden chests opened, and the spaces whose navmesh is baked.
+/// the revives left in this attempt (Hard's), the Lodestone, the marks on the Rewritten, the encounters' foes, the
+/// hidden chests opened, and the spaces whose navmesh is baked.
 #[derive(Clone, Debug)]
 pub struct Breach {
     pub tier: Tier,
@@ -96,8 +96,6 @@ pub struct Breach {
     pub lodestone: Lodestone,
     /// Each Rewritten player, by the tick they were marked.
     pub marked: BTreeMap<PlayerId, u64>,
-    /// Each player raising a fallen one: whom, and the tick they began.
-    pub raising: BTreeMap<PlayerId, (PlayerId, u64)>,
     /// The tick since which every living player has been down, while an encounter runs.
     pub down_since: Option<u64>,
     pub foes: Vec<FighterId>,
@@ -140,7 +138,6 @@ impl Room {
             revives: tier.revives(),
             lodestone: Lodestone::default(),
             marked: BTreeMap::new(),
-            raising: BTreeMap::new(),
             down_since: None,
             foes: Vec::new(),
             chests: BTreeSet::new(),
@@ -166,7 +163,7 @@ impl Room {
     }
 
     /// Each tick in a Breach's run: its seals and slabs stood as they stand now, the stages reached, each encounter's
-    /// rules, the fallen raised by their company, the Lodestone and its marks, and an attempt lost to a wipe. A mark
+    /// rules, the Lodestone and its marks, and an attempt lost to a wipe. A mark
     /// goes with its player's fall, so one stood again is not unwritten by a mark from before.
     pub(crate) fn keep_breach(&mut self) {
         let Some(mut breach) = self.breach.take() else { return };
@@ -176,7 +173,6 @@ impl Room {
         for encounter in MENDING..=STEWARD {
             self.keep_encounter(&mut breach, encounter);
         }
-        self.keep_raising(&mut breach);
         self.keep_lodestone(&mut breach);
         self.keep_chests(&mut breach);
         self.keep_wipe(&mut breach);
@@ -268,8 +264,9 @@ impl Room {
         }
     }
 
-    /// The furthest stage reached: by a win, or by a living player standing in its space.
+    /// The furthest stage reached: by a win, or by a living player standing in its space; told as a checkpoint.
     fn reach_stages(&mut self, breach: &mut Breach) {
+        let was = breach.reached;
         for (stage, (space, _, won_by)) in STAGES.iter().enumerate().skip(breach.reached + 1) {
             let reached = match won_by {
                 Some(encounter) => breach.phases[*encounter] == Phase::Won,
@@ -281,13 +278,17 @@ impl Room {
             breach.reached = stage;
             self.bake_space(breach, space);
             // Whoever comes in later, or back, comes in at the furthest stage.
-            let (at, _) = self.checkpoint(breach);
+            let (at, _) = self.stage_at(breach);
             self.spawn_points = vec![(at[0], at[1])];
+        }
+        // The stage is the run's checkpoint, told as an activity's is (`checkpoints.rs`).
+        if breach.reached > was {
+            self.tell_all(EventKind::Checkpoint, 0.0);
         }
     }
 
-    /// Where the fallen stand again: the furthest stage reached.
-    pub(crate) fn checkpoint(&self, breach: &Breach) -> ([f64; 3], [f64; 2]) {
+    /// Where the fallen stand again: the furthest stage reached, the run's checkpoint.
+    pub(crate) fn stage_at(&self, breach: &Breach) -> ([f64; 3], [f64; 2]) {
         let (space, socket, _) = STAGES[breach.reached];
         breach.plan.socket(space, socket).unwrap_or(([0.0, 0.0, 0.0], [0.0, -1.0]))
     }
@@ -387,14 +388,13 @@ impl Room {
             _ => breach.fights.steward = steward::Steward::default(),
         }
         breach.marked.clear();
-        breach.raising.clear();
         breach.left.clear();
         breach.lodestone = Lodestone::default();
         breach.down_since = None;
         breach.revives = breach.tier.revives();
         self.tell_all(EventKind::BreachWiped, encounter as f64);
         let players: Vec<PlayerId> = self.players.keys().copied().collect();
-        let (at, _) = self.checkpoint(breach);
+        let (at, _) = self.stage_at(breach);
         for id in players {
             self.stand_whole(id, at);
         }

@@ -54,7 +54,6 @@ export function ticksWords(ticks: number): string {
 
 const percent = (share: number) => `${Math.round(share * 100)}%`;
 const tierName = (plan: BreachPlan, tier: number) => plan.tiers[tier]?.name ?? '';
-const capital = (words: string) => `${words[0]?.toUpperCase() ?? ''}${words.slice(1)}`;
 
 /** The revives left in words: "1 revive left", "No revives left"; empty where none are counted (-1). */
 export function revivesWords(revives: number): string {
@@ -359,8 +358,8 @@ export function shutOutWords(plan: BreachPlan, tier: number, why: number): strin
 }
 
 /** A moment of the room's in words, to the company (`nameOf` naming each, "you" the player): the company fallen, its
- *  attempt lost, with why where the page knows it (`cause`); a fallen one raised, with the revives left where they
- *  are counted; the whole company unwritten (`cause` given); one seen by a Watcher. Null for any other moment. */
+ *  attempt lost, with why where the page knows it (`cause`); the whole company unwritten (`cause` given); one seen by
+ *  a Watcher. Null for any other moment (a revive is the game's, told by `footRevive.ts`). */
 export function momentWords(
   event: Pick<FightEvent, 'kind' | 'striker' | 'defender' | 'amount'>,
   nameOf: (player: number) => string,
@@ -368,9 +367,5 @@ export function momentWords(
 ): string | null {
   if (event.kind === BREACH_EVENT.wiped) return cause ? `Your company fell: ${cause}.` : 'Your company fell.';
   if (event.kind === BREACH_EVENT.unwritten) return cause ? 'The company is unwritten.' : null;
-  if (event.kind === BREACH_EVENT.seen) return `A Watcher saw ${nameOf(Math.round(event.amount))}.`;
-  if (event.kind !== BREACH_EVENT.revived) return null;
-  // The room tells a raising's revives left, or 255 where none are counted.
-  const left = event.amount < 255 ? revivesWords(event.amount) : '';
-  return joined(capital(`${nameOf(event.striker)} raised ${nameOf(event.defender)}`), left);
+  return event.kind === BREACH_EVENT.seen ? `A Watcher saw ${nameOf(Math.round(event.amount))}.` : null;
 }
