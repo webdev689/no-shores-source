@@ -368,6 +368,7 @@ a decision is a record. How to add one: [[Recording a Decision]].
 - [[The Meadow Art Is the Owner's, Its Tables Stay in Git, and the Grass Takes the Trees' Rain]]
 - [[Each Island Keeps One Patrol Zone, the One by Its Port City]]
 - [[Passages Web Out From the Patrol Zone Across Its Island]]
+- [[Passages as Claude Builds Them]]
 
 ## Replaced
 
