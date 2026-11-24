@@ -186,26 +186,90 @@ fn walked(blocks: &Blocks, from: [f64; 3], waypoints: &[[f64; 3]], seconds: f64)
             continue;
         }
         let controls = Controls { forward: 1.0, yaw: libm::atan2(east, -south), ..Controls::default() };
-        body = step_body(&body, &controls, blocks, &Floor::Flat, TICK_SECONDS);
+        body = step_body(&body, &controls, blocks, &Floor::Dark, TICK_SECONDS);
     }
     (body, next)
 }
+
+/// A step of a walk: a socket, and how far aside of it, metres east and south, round what a body cannot climb.
+type Step = (&'static str, [f64; 2]);
 
 #[test]
 fn a_body_walks_each_encounters_floor_from_its_way_in_to_its_pieces() {
     let plan = drowned_vale();
     let blocks: Blocks = plan.standing().into();
-    let walks: [(&str, &[&str]); 4] = [
-        ("mending", &["checkpoint", "seam-west", "seam-north", "seam-east"]),
-        ("choir", &["checkpoint", "font", "lectern-2", "lectern-4"]),
-        ("hall", &["checkpoint", "mooring-was", "plinth", "mooring-is"]),
-        ("court", &["checkpoint", "mooring-was", "chest", "mooring-is"]),
+    let walks: [(&str, &[Step]); 4] = [
+        (
+            "mending",
+            &[
+                ("checkpoint", [0.0, 0.0]),
+                ("seam-west", [0.0, 0.0]),
+                ("mender", [0.0, 0.0]),
+                ("mender", [3.0, -4.0]),
+                ("seam-north", [0.0, 0.0]),
+                ("seam-north", [12.0, 0.0]),
+                ("seam-east", [0.0, 0.0]),
+            ],
+        ),
+        (
+            "choir",
+            &[("checkpoint", [0.0, 0.0]), ("font", [0.0, 0.0]), ("lectern-2", [0.0, 0.0]), ("lectern-4", [0.0, 0.0])],
+        ),
+        (
+            "hall",
+            &[
+                ("checkpoint", [0.0, 0.0]),
+                ("mooring-was", [0.0, 0.0]),
+                ("plinth", [0.0, 0.0]),
+                ("mooring-is", [0.0, 0.0]),
+            ],
+        ),
+        (
+            "court",
+            &[
+                ("checkpoint", [0.0, 0.0]),
+                ("mooring-was", [0.0, 0.0]),
+                ("chest", [0.0, 0.0]),
+                ("mooring-is", [0.0, 0.0]),
+            ],
+        ),
     ];
-    for (space, sockets) in walks {
-        let points: Vec<[f64; 3]> =
-            sockets.iter().map(|socket| plan.socket(space, socket).expect("its socket").0).collect();
+    for (space, steps) in walks {
+        let points: Vec<[f64; 3]> = steps
+            .iter()
+            .map(|(socket, [east, south])| {
+                let (at, _) = plan.socket(space, socket).expect("its socket");
+                [at[0] + east, at[1] + south, at[2]]
+            })
+            .collect();
         let (body, passed) = walked(&blocks, points[0], &points[1..], 90.0);
         assert_eq!(passed, points.len() - 1, "in {space} the body stops at {:.1},{:.1},{:.1}", body.x, body.y, body.z);
         assert!((body.z - points[points.len() - 1][2]).abs() < 0.4, "{space}: on its floor, {:.2}", body.z);
+    }
+}
+
+/// The highest a body stood at `from` gets in `seconds` pressing at bearing `yaw`, jumping as it goes if `jump`.
+fn highest_pressing(blocks: &Blocks, from: [f64; 3], yaw: f64, jump: bool, seconds: f64) -> f64 {
+    let mut body = Body { z: from[2], ..standing(from[0], from[1]) };
+    let mut highest = body.z;
+    for _ in 0..(seconds / TICK_SECONDS) as usize {
+        let controls = Controls { forward: 1.0, yaw, jump, ..Controls::default() };
+        body = step_body(&body, &controls, blocks, &Floor::Dark, TICK_SECONDS);
+        highest = highest.max(body.z);
+    }
+    highest
+}
+
+#[test]
+fn a_body_pressing_or_jumping_into_the_ways_barricades_and_walls_never_gets_up_them() {
+    let plan = drowned_vale();
+    let blocks: Blocks = plan.standing().into();
+    let (stage, _) = plan.socket("ways", "checkpoint").expect("its stage");
+    // East from the stage, over the first Watcher's post into the barricade across the street; north into the wall.
+    for (yaw, what) in [(std::f64::consts::FRAC_PI_2, "the barricade"), (0.0, "the west wall")] {
+        for jump in [false, true] {
+            let highest = highest_pressing(&blocks, stage, yaw, jump, 8.0);
+            assert!(highest < stage[2] + 2.0, "{what}, jumping {jump}: up to {:.2} m", highest - stage[2]);
+        }
     }
 }

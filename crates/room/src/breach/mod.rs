@@ -121,7 +121,7 @@ impl Room {
         let standing = plan.standing();
         let nav =
             navmesh::NavMesh::bake_over_sea(&standing, plan.space_bounds("descent", NAV_MARGIN_M)?, &navmesh::AGENT);
-        let mut room = Room::on(Floor::Flat, standing.clone(), vec![(arrival[0], arrival[1])], Some(section), nav);
+        let mut room = Room::on(Floor::Dark, standing.clone(), vec![(arrival[0], arrival[1])], Some(section), nav);
         room.facing = combat::sight::bearing([0.0, 0.0], facing);
         room.place = Some(gear::gate::Place::Breach(tier));
         room.world_seed = crate::garrison::node_seed(&format!("breach-{}", DROWNED_VALE.id));

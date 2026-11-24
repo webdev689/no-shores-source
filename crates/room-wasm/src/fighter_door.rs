@@ -68,9 +68,9 @@ pub fn set_dungeon(text: &[u8]) -> bool {
     true
 }
 
-/// Keeps a Breach's run for predicting a fighter without a room: open ground under its blocks as they stand at
-/// `tick` with the seals `open` (`Plan::blocks_at`, as its room stands them), made anew only when a seal or a slab
-/// changed. Answers whether the course was made anew.
+/// Keeps a Breach's run for predicting a fighter without a room: the dark (`Floor::Dark`, never climbed) under its
+/// blocks as they stand at `tick` with the seals `open` (`Plan::blocks_at`, as its room stands them), made anew only
+/// when a seal or a slab changed. Answers whether the course was made anew.
 pub fn set_breach(open: u8, tick: u64) -> bool {
     let plan = room::breach::plan::drowned_vale();
     let standing = |(number, slab): (usize, &room::breach::plan::Slab)| {
@@ -81,7 +81,7 @@ pub fn set_breach(open: u8, tick: u64) -> bool {
         return false;
     }
     BREACH.with(|kept| kept.set(Some(key)));
-    FLOOR.with(|floor| *floor.borrow_mut() = Floor::Flat);
+    FLOOR.with(|floor| *floor.borrow_mut() = Floor::Dark);
     COURSE.with(|course| *course.borrow_mut() = movement::Blocks::new(plan.blocks_at(open, tick)));
     true
 }
