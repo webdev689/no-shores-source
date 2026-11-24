@@ -34,6 +34,15 @@ pub const ROADSTEAD_OUT_M: f64 = 3_000.0;
 pub const ROADSTEAD_CLEAR_M: f64 = 1_000.0;
 /// How far a roadstead moves out each time it is not yet clear, metres.
 pub const ROADSTEAD_STEP_M: f64 = 500.0;
+/// A course's ships lie at, and leave from, berths of its own off each port's roadstead, square to its last leg there:
+/// its arrivals this far to starboard of the roadstead, its departures as far to the other side, metres, so no two lie
+/// together, none lies where another sets out, and the roadstead itself, where a player's new ship puts in, is left
+/// clear. A berth that would come within BERTH_APART_M of another course's at that port moves out by BERTH_STEP_M, up
+/// to BERTH_LEVELS places out, all within the roadstead's ROADSTEAD_CLEAR_M of open water.
+pub const BERTH_M: f64 = 300.0;
+pub const BERTH_STEP_M: f64 = 200.0;
+pub const BERTH_APART_M: f64 = 200.0;
+const BERTH_LEVELS: u32 = 4;
 /// The sea mask the routes are planned on: cells this wide, metres.
 pub const MASK_CELL_M: f64 = 5_000.0;
 /// A mask cell is open sea when its middle is at least this clear of every coast, metres.
@@ -54,8 +63,8 @@ pub struct Port {
     pub centre: [f64; 2],
 }
 
-/// A course between two ports: its path from the first port's roadstead to the second's, in whole metres, and when its
-/// first ships leave.
+/// A course between two ports: its path from the first port's roadstead to the second's, in whole metres, when its
+/// first ships leave, and the two ways its ships sail it, berth to berth.
 #[derive(Debug, Clone, PartialEq)]
 pub struct Route {
     /// Indices into the ports the traffic was made with.
@@ -66,30 +75,52 @@ pub struct Route {
     /// World time its departure 0 leaves, seconds: each course of a pair a share of the gap after the one before, so
     /// a port's ships leave on its courses in turn.
     pub start_s: f64,
-    /// How far along the path each of its points lies, metres.
-    along: Vec<f64>,
+    /// How its ships sail it: from the first port (direction 0), then back from the second (direction 1).
+    pub ways: [Way; 2],
 }
 
 impl Route {
     fn new(from_port: usize, to_port: usize, path: Vec<Point>, start_s: f64) -> Self {
+        let back: Vec<Point> = path.iter().rev().copied().collect();
+        let ways = [Way::new(path.clone()), Way::new(back)];
+        Self { from_port, to_port, length_m: ways[0].length_m, start_s, path, ways }
+    }
+}
+
+/// One way a course is sailed: from the berth its ships leave at, along the course, to the berth they lie at, in whole
+/// metres. Each end is a berth of the course's own off its port's roadstead (`berths`), never the roadstead itself.
+#[derive(Debug, Clone, PartialEq)]
+pub struct Way {
+    pub path: Vec<Point>,
+    pub length_m: f64,
+    /// How far along the path each of its points lies, metres.
+    along: Vec<f64>,
+}
+
+impl Way {
+    fn new(path: Vec<Point>) -> Self {
         let mut along = vec![0.0];
         for leg in path.windows(2) {
             let (dx, dy) = ((leg[1].x - leg[0].x) as f64, (leg[1].y - leg[0].y) as f64);
             along.push(along[along.len() - 1] + (dx * dx + dy * dy).sqrt());
         }
-        Self { from_port, to_port, length_m: along[along.len() - 1], start_s, path, along }
+        Self { length_m: along[along.len() - 1], path, along }
     }
 
     fn corner(&self, index: usize) -> [f64; 2] {
         [self.path[index].x as f64, self.path[index].y as f64]
     }
 
-    /// The point `distance` metres along the path from its start, and the unit way the path runs there.
+    /// The point `distance` metres along the path from its start, and the unit way the path runs there; at its end,
+    /// the berth itself.
     fn at(&self, distance: f64) -> ([f64; 2], [f64; 2]) {
         let leg = self.along.partition_point(|&along| along <= distance).clamp(1, self.path.len() - 1) - 1;
         let (from, to) = (self.corner(leg), self.corner(leg + 1));
         let length = self.along[leg + 1] - self.along[leg];
         let way = [(to[0] - from[0]) / length, (to[1] - from[1]) / length];
+        if distance >= self.length_m {
+            return (to, way);
+        }
         let past = distance - self.along[leg];
         ([from[0] + past * way[0], from[1] + past * way[1]], way)
     }
@@ -134,7 +165,7 @@ pub struct TrafficShip {
     pub direction: [f64; 2],
     /// How far it has sailed, metres.
     pub progress_m: f64,
-    /// Its route's length, metres.
+    /// Its way's length, berth to berth, metres.
     pub length_m: f64,
 }
 
@@ -246,6 +277,7 @@ impl Traffic {
         for (index, route) in planned.iter_mut().enumerate() {
             route.start_s = DEPARTURE_EVERY_S * index as f64 / count;
         }
+        routes::berth(&mut planned, &roadsteads);
         Self { ports: kept, routes: planned, roadsteads }
     }
 
@@ -266,21 +298,21 @@ impl Traffic {
     }
 
     /// The ship with this id at this world time; none if it has not left yet, has lain its `DWELL_S` at the end, or
-    /// never sails. Arrived, it lies at the route's end, heading as it came in.
+    /// never sails. Arrived, it lies at its berth at the way's end, heading as it came in.
     #[must_use]
     pub fn ship(&self, id: u64, time_s: f64) -> Option<TrafficShip> {
         let direction = (id & 1) as u8;
         let route_index = ((id >> 1) & ROUTE_BITS) as usize;
         let route = self.routes.get(route_index)?;
+        let way = &route.ways[usize::from(direction)];
         let since = time_s - route.start_s - (id >> DEPARTURE_SHIFT) as f64 * DEPARTURE_EVERY_S;
-        if !(0.0..route.length_m / SPEED_M_S + DWELL_S).contains(&since) {
+        if !(0.0..way.length_m / SPEED_M_S + DWELL_S).contains(&since) {
             return None;
         }
-        let sailed = (SPEED_M_S * since).min(route.length_m);
-        let (position, way) = if direction == 0 { route.at(sailed) } else { route.at(route.length_m - sailed) };
+        let sailed = (SPEED_M_S * since).min(way.length_m);
+        let (position, heading) = way.at(sailed);
         let (from_port, to_port) =
             if direction == 0 { (route.from_port, route.to_port) } else { (route.to_port, route.from_port) };
-        let heading = if direction == 0 { way } else { [-way[0], -way[1]] };
         Some(TrafficShip {
             id,
             route: route_index,
@@ -290,11 +322,11 @@ impl Traffic {
             position,
             direction: heading,
             progress_m: sailed,
-            length_m: route.length_m,
+            length_m: way.length_m,
         })
     }
 
-    /// Every ship within `radius_m` of `centre` at this world time, by id. Per route, the stretches of its path within
+    /// Every ship within `radius_m` of `centre` at this world time, by id. Per way, the stretches of its path within
     /// the radius give the distances sailed that put a ship there, and those give the departures: never a walk over
     /// every departure since 1970. Each candidate is then placed and judged exactly, as `ship` places it. A time or
     /// radius that is not a finite number, a negative radius, or a time past the last departure an id holds, finds
@@ -311,14 +343,12 @@ impl Traffic {
         let mut ids = BTreeSet::new();
         for (route_index, route) in self.routes.iter().enumerate() {
             let time_s = time_s - route.start_s;
-            for [start, end] in route.stretches_near(centre, radius_m) {
-                for direction in 0..2_u8 {
-                    let (low, high) =
-                        if direction == 0 { (start, end) } else { (route.length_m - end, route.length_m - start) };
+            for (direction, way) in (0..2_u8).zip(&route.ways) {
+                for [low, high] in way.stretches_near(centre, radius_m) {
                     // A metre either side, so rounding never loses a ship at the edge; the exact judging below drops
                     // any that fall outside.
-                    // A stretch reaching the route's end also holds the ships lying there.
-                    let lying = if high + 1.0 >= route.length_m { DWELL_S } else { 0.0 };
+                    // A stretch reaching the way's end also holds the ships lying there.
+                    let lying = if high + 1.0 >= way.length_m { DWELL_S } else { 0.0 };
                     let first = ((time_s - (high + 1.0) / SPEED_M_S - lying) / DEPARTURE_EVERY_S).ceil().max(0.0);
                     let last = ((time_s - (low - 1.0) / SPEED_M_S) / DEPARTURE_EVERY_S).floor();
                     if last >= first {

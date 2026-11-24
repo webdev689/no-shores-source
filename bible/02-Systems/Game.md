@@ -603,8 +603,8 @@ through its harbour to water 4 m deep, then 600 m on. Later returns find it wher
   `friendlyShips.ts`). The game asks the waters' rules where they are at world time, seconds since the Unix epoch by
   the browser's clock (the sea room sends none), four times a second within the sea view's reach of the ship (its far plane),
   and between answers reckons each on along its leg at the pace the waters' table gives (60 m/s); a new answer's gap,
-  as at a turn onto its next leg, is closed over about a second. One arrived lies at anchor at its destination's
-  roadstead, no way on it, until it is gone. A ship the room has taken off its route (the snapshot's `taken`) is
+  as at a turn onto its next leg, is closed over about a second. One arrived lies at anchor at its berth off its
+  destination's roadstead ([[World Map]], "Berths"), no way on it, until it is gone. A ship the room has taken off its route (the snapshot's `taken`) is
   left out: the sea draws it where the room has it. Of each hull only as many as the ships layer has slots for are drawn,
   16 less the room's own of that hull, the nearest first; only those are rigged, posed and footprinted. Each is drawn
   by the ships layer as its hull in friendly colours, its sails set and filled by the steady wind (furled while it

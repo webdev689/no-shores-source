@@ -133,3 +133,4 @@ only at tier 3 of the Hall (30), the Delve Gate (25), the Assay House (20) and t
 | A word from before the week turned | A standing read in an earlier week means the player was in the guild before this week turned | The moment between the turn and the room's new word refuses no one who earned a package |
 | The roster's order | Those playing first, then those away; within each, the founder and admins first | The guild's leaders are on its first page |
 | A bare site | The Banner Standard's oak staff at the plot's middle with an unmarked grey cloth | It reads as ground to claim, as the Tithe's unmarked banner reads as no one's |
+| The errands' kept answers (the owner: "make the best decision on the stored errand answers") | Forgotten a week on, once no saved character carries the errand; one a character carries is kept whatever its age | Nothing that may still ask under an id loses its answer, so nothing is done twice, and the table stays a week of errands deep |

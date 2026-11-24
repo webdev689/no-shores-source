@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { boltPath, boltsInto, LOWEST_BASE_OVER_GROUND_M, MOST_SEGMENTS, throughAir } from './bolts.ts';
+import { boltPath, boltsInto, LOWEST_BASE_OVER_GROUND_M, MOST_SEGMENTS, throughAir, underWeatherM } from './bolts.ts';
 import { carriedOn, FALL_BOX_M, fallingOf, LONGEST_FALL_STEP_S } from './fall.ts';
 import { AFTERNOON } from './skyUniform.ts';
 
@@ -55,7 +55,12 @@ test('a bolt ends on the ground under its own strike, or on the sea, wherever th
   const into = new Float32Array(MOST_SEGMENTS * 8);
   const eye = [0, 0, 302] as const;
   const groundAt = (x: number, y: number) => (x === 0 && y === 0 ? 300 : x === 1000 ? -40 : 120);
-  const flashing = { worldS: strike.atS + 0.01, baseM: 900, groundAt, air: { clearM: 25_000, fogDensity: 0 } };
+  const flashing = {
+    worldS: strike.atS + 0.01,
+    baseM: 900,
+    groundAt,
+    air: { clearM: 25_000, fogDensity: 0, topM: 900 },
+  };
   const overSea = endsOf(into, boltsInto(into, eye, { ...flashing, list: [strike] }));
   assert.ok(overSea.length > 0, 'a strike flashing near the eye is drawn');
   assert.ok(
@@ -86,21 +91,46 @@ test("a bolt fades into the weather's haze as the sea under it does: its foot mo
     [2000, 0, -eyeHigh],
     [2000, 0, 800 - eyeHigh],
   ] as const;
-  const rain = (point: readonly [number, number, number]) => throughAir(eyeHigh, point, 20_000, 0.0012);
+  const rain = (point: readonly [number, number, number]) =>
+    throughAir(eyeHigh, point, { clearM: 20_000, fogDensity: 0.0012, topM: 900 });
   assert.ok(rain(foot) < 0.1, `the foot 2 km off through heavy rain: ${rain(foot)}`);
   assert.ok(rain(top) > rain(foot) * 3, 'the top, in thinner air, shows more');
-  assert.ok(throughAir(eyeHigh, foot, 25_000, 0) > 0.9, 'in clear air it is barely dimmed');
+  assert.ok(throughAir(eyeHigh, foot, { clearM: 25_000, fogDensity: 0, topM: 900 }) > 0.9, 'clear air barely dims it');
   // Drawn, a far bolt in heavy rain keeps its top's light and loses its foot's: it is far brighter than the haze.
   const into = new Float32Array(MOST_SEGMENTS * 8);
   const far = { ...strike, x: 2000, y: 0 };
   const flashing = { worldS: strike.atS + 0.01, baseM: 900, groundAt: () => 0, list: [far] };
   const lights = (fogDensity: number) => {
-    const floats = boltsInto(into, [0, 0, eyeHigh], { ...flashing, air: { clearM: 20_000, fogDensity } });
+    const floats = boltsInto(into, [0, 0, eyeHigh], { ...flashing, air: { clearM: 20_000, fogDensity, topM: 900 } });
     return Array.from({ length: floats / 8 }, (unused, segment) => into[segment * 8 + 3] ?? 0);
   };
   const [clear, rainy] = [lights(0), lights(0.0012)];
-  assert.ok(Math.abs((rainy[0] ?? 0) - (clear[0] ?? 0)) < 1e-6, 'the top blazes as in clear air');
-  assert.ok((rainy[27] ?? 0) < (clear[27] ?? 0) * 0.5, `the foot fades: ${rainy[27]} of ${clear[27]}`);
+  const kept = (segment: number) => (rainy[segment] ?? 0) / (clear[segment] ?? 1);
+  assert.ok(kept(0) > 0.1, `the top still shows: ${kept(0)} of its light`);
+  assert.ok(kept(27) < 0.05, `the foot fades into the grey: ${kept(27)} of its light`);
+  assert.ok(kept(0) > kept(27) * 5, 'the top keeps far more than the foot');
+});
+
+test("the weather's fog lies along a whole line of sight under the deck, and only along its part under it from far over", () => {
+  const [deck, rain] = [400, 0.0012];
+  // Under the deck, as on foot and at the helm, all of a line is in the rain however far it runs or climbs.
+  assert.equal(underWeatherM(30, 0, 5_000, deck), 5_000);
+  assert.equal(underWeatherM(340, 900, 2_000, deck), 2_000);
+  // From the Overworld's view over an island, 20 km up and looking 52 degrees down, only the last 400 m of height.
+  const [high, down] = [20_000, (52 * Math.PI) / 180];
+  const line = high / Math.sin(down);
+  assert.ok(Math.abs(underWeatherM(high, 0, line, deck) - deck / Math.sin(down)) < 1e-6);
+  const land = (topM: number) =>
+    throughAir(high, [0, high / Math.tan(down), -high], { clearM: 1e6, fogDensity: rain, topM });
+  assert.ok(land(deck) > 0.4, `the land shows through heavy rain from over the deck: ${land(deck)}`);
+  assert.ok(land(1e9) < 1e-6, `with the rain charged along the whole line it was lost: ${land(1e9)}`);
+  // Rising through the deck the share eases over, so the view never jumps.
+  const shares = [deck * 0.99, deck * 1.25, deck * 1.5, deck * 1.75, deck * 2.01].map(
+    (eye) => underWeatherM(eye, 0, 10_000, deck) / 10_000,
+  );
+  assert.equal(shares[0], 1);
+  for (const [index, share] of shares.slice(1).entries()) assert.ok(share < (shares[index] ?? 0), `${shares}`);
+  assert.ok(Math.abs((shares[4] ?? 0) - deck / (deck * 2.01)) < 1e-9, 'past twice the deck, only the part under it');
 });
 
 const RAIN = { box: [FALL_BOX_M, FALL_BOX_M, FALL_BOX_M], frame: 1 / 60 } as const;

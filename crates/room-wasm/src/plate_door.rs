@@ -17,12 +17,13 @@ pub fn name(player: PlayerId, bytes: &[u8]) -> bool {
 }
 
 /// Gives a player the guild tag written in `bytes`, none for no guild (`Room::tag_player`); false if it is not text, no
-/// guild's tag could be it, or the player is not in a room on land.
+/// guild's tag could be it, or the player is not in a room on land or at sea.
 pub fn tag(player: PlayerId, bytes: &[u8]) -> bool {
     let Ok(tag) = std::str::from_utf8(bytes) else { return false };
     with_open(|opened| match opened {
         Opened::Land { room, .. } => room.tag_player(player, tag),
-        Opened::Sea(_) | Opened::Fleet(_) => false,
+        Opened::Sea(sea) => sea.tag_player(player, tag),
+        Opened::Fleet(_) => false,
     })
     .unwrap_or(false)
 }
