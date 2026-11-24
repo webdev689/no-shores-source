@@ -1,5 +1,5 @@
 ---
-id: 227
+id: 231
 title: "Code moved out of a file to meet the 600-line limit during a merge dropped a side effect (the gear read each frame recorded 'keeps no ship'); the moved module's test called its getters in an order that hid it"
 status: open
 type: open-source
