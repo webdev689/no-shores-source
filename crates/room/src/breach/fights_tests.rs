@@ -442,3 +442,22 @@ fn the_steward_and_the_scrivener_fight_in_phases_whose_calls_drop_nothing() {
     assert_eq!(called.len(), 2);
     assert!(called.iter().all(|id| room.quests.spoilless.contains(id)), "the calls of a foe that drops nothing");
 }
+
+#[test]
+fn at_hard_a_foes_blow_on_a_player_weighs_a_quarter_more_in_the_run_and_its_waking() {
+    for tier in Tier::ALL {
+        let (mut room, players) = won_to(tier, 1, STEWARD);
+        begin_at(&mut room, &players, "court", "chest");
+        let boss = breach(&room).fights.steward.boss.expect("the Steward stands");
+        let blow = super::rewards_tests::swing(boss);
+        let expected = if tier == Tier::Hard { 1.25 } else { 1.0 };
+        assert_eq!(room.modded_blow(&blow, players[0]), expected, "{tier:?}");
+    }
+    let (mut room, players) = super::gate_tests::gate_room(1);
+    room.breach_company(players[0], "run-a", Tier::Hard);
+    let mooring = room.breach_gate.as_ref().and_then(|gate| gate.socket(gate::MOORINGS[0])).expect("a mooring");
+    stand_at(&mut room, players[0], mooring);
+    room.tick();
+    let foe = *room.breach_gate.as_ref().expect("gate").foes.first().expect("a Bulwark sent");
+    assert_eq!(room.modded_blow(&super::rewards_tests::swing(foe), players[0]), 1.25, "in a Hard company's Waking");
+}

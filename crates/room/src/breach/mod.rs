@@ -38,6 +38,8 @@ const NAV_MARGIN_M: f64 = 2.0;
 /// How long every living player must be down for an attempt to be lost, ticks: three seconds, as Destiny's raids
 /// gave a last revive.
 pub const WIPE_TICKS: u64 = 3 * 60;
+/// What a foe's blow on a player weighs at Hard, in its run and its Waking.
+pub const HARD_BLOW: f64 = 1.25;
 /// The encounters fought in the run, by their place in the Breach's list: the Waking, the first, is the gate's.
 pub const MENDING: usize = 1;
 pub const CHOIR: usize = 2;
@@ -400,6 +402,17 @@ impl Room {
 }
 
 impl Room {
+    /// What a foe's blow on a player weighs at Hard: HARD_BLOW in a Hard run, and on the company holding the gate
+    /// in its Hard Waking.
+    pub(crate) fn hard_times(&self, defender: FighterId) -> f64 {
+        let run = self.breach.as_ref().is_some_and(|breach| breach.tier == Tier::Hard);
+        let waking = self.breach_gate.as_ref().is_some_and(|gate| {
+            let tier = gate.run_of(defender).and_then(|run| gate.companies.get(run)).and_then(|company| company.tier);
+            gate.fighting(defender) && tier == Some(Tier::Hard)
+        });
+        if run || waking { HARD_BLOW } else { 1.0 }
+    }
+
     /// The Lodestone grounded at a point: the Scrivener's ward broken, or the Steward laid bare, where in reach.
     pub(crate) fn grounded(&mut self, breach: &mut Breach, at: [f64; 3], _near: &[FighterId]) -> bool {
         let scrivener = matches!(breach.phases[CHOIR], Phase::Running(_)) && self.ground_scrivener(breach, at);

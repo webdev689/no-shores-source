@@ -20,7 +20,7 @@ fn won(room: &mut Room, encounter: usize) {
 }
 
 /// A swing from `striker`, as it lands before power.
-fn swing(striker: FighterId) -> Blow {
+pub(super) fn swing(striker: FighterId) -> Blow {
     Blow {
         striker,
         kind: BlowKind::Swing(Stroke::Down),

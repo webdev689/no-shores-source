@@ -86,7 +86,8 @@ impl Room {
 
     /// What the run's modifiers weigh a blow by: Brawler a player's swing, Marksman a player's shot, Lightswitch a
     /// foe's swing or telegraphed blow on a player, Burn a foe's blow on a player wearing its Art, and an Elite
-    /// Dungeon's Fury any foe's blow on a player (`court.rs`); their product, 1 for none.
+    /// Dungeon's Fury any foe's blow on a player (`court.rs`), and a Breach's Hard and Hold True a foe's blow on a
+    /// player (`breach/`); their product, 1 for none.
     pub(crate) fn modded_blow(&self, blow: &Blow, defender: FighterId) -> f64 {
         let by_player = self.players.contains_key(&blow.striker);
         let on_player = self.players.get(&defender).filter(|_| self.foes.contains_key(&blow.striker));
@@ -106,7 +107,7 @@ impl Room {
                 times *= BURN_TIMES;
             }
             times *= self.fury_times();
-            times *= self.held_times(defender);
+            times *= self.held_times(defender) * self.hard_times(defender);
         }
         // In a Breach: the Lodestone's Strike, and the Steward laid bare.
         if by_player && melee && self.bears_lodestone(blow.striker) {
