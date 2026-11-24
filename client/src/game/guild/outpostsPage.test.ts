@@ -198,6 +198,32 @@ test('by keys the plan is one Tab stop, its arrows move a cursor that shows the 
   assert.ok(tabs < 10, `Tabs from the plan to the first Build press: ${tabs}`);
 });
 
+test('after a click on the plan, the arrows move the ghost, and Enter places where the cursor stands', async () => {
+  const { frame, click, shows, asked } = await page([held(true)]);
+  click(kindId('war-table'));
+  click(cellId(0, 4));
+  await settle();
+  asked.length = 0;
+  click(kindId('war-table'));
+  click(cellId(6, 6));
+  assert.ok(shows().includes('Something already stands there.'));
+  for (let step = 0; step < 6; step++) frame([{ kind: 'key', key: 'arrowleft' }]);
+  frame();
+  assert.ok(!shows().includes('Something already stands there.'), shows());
+  frame([{ kind: 'key', key: 'enter' }]);
+  await settle();
+  assert.deepEqual(asked, ['outpost/place', `room ${ASKS.outpostChanged}`]);
+});
+
+test('a refused read again keeps the outposts last heard on the page', async () => {
+  const drawing = await page([held(true), 'Too many asks. Wait a while.']);
+  drawing.later(15_000);
+  drawing.frame();
+  await settle();
+  drawing.frame();
+  assert.notEqual(drawing.ui.boxOf(COLLECT_ID), null, drawing.shows());
+});
+
 test('the Outposts page opens on the outpost the player stands at', async () => {
   const two = (stood: string | null): OutpostsFace => ({
     ...held(false),

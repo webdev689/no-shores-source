@@ -69,6 +69,8 @@ export interface PlanState {
   turn: number;
   chosen: number | null;
   cursor?: number;
+  /** Whether the keys last moved on the plan, so the cursor, not the pointer, leads. */
+  keyed?: boolean;
 }
 
 /** The plan's answer this frame: a structure to build there, if a cell took one. */
@@ -164,7 +166,11 @@ export function planNode(
   const hovered = pointedAt(ui, cellPx);
   const focused = ui.focused(PLAN_ID);
   // The keys' cursor leads while the keys hold the focus; else the pointer's cell, or the cursor where it left.
-  const spotted = focused && ui.keyFocused ? cursor : hovered >= 0 ? hovered : focused ? cursor : -1;
+  // The arrows hand the lead to the cursor even after a click put focus there; a click by the pointer takes it back.
+  if (ui.keysOn(PLAN_ID).length > 0 || (focused && ui.keyFocused)) state.keyed = true;
+  if (ui.drag(PLAN_ID) !== null) state.keyed = false;
+  const keyed = focused && state.keyed === true;
+  const spotted = keyed ? cursor : hovered >= 0 ? hovered : focused ? cursor : -1;
   if (ui.clicked(PLAN_ID) && spotted >= 0) cursor = spotted;
   state.cursor = cursor;
   const spot = spotted >= 0 ? { x: spotted % PLOT_CELLS, y: Math.floor(spotted / PLOT_CELLS), turn: state.turn } : null;
@@ -199,14 +205,13 @@ export function planNode(
     ],
   };
   // The keys' cursor, ringed where the keys hold the focus.
-  const ring: Child = focused &&
-    ui.keyFocused && {
-      width: cellPx,
-      height: cellPx,
-      float: { to: 'parent', x: (cursor % PLOT_CELLS) * cellPx, y: Math.floor(cursor / PLOT_CELLS) * cellPx },
-      through: true,
-      outline: { width: 2, colour: INK.brassLit },
-    };
+  const ring: Child = keyed && {
+    width: cellPx,
+    height: cellPx,
+    float: { to: 'parent', x: (cursor % PLOT_CELLS) * cellPx, y: Math.floor(cursor / PLOT_CELLS) * cellPx },
+    through: true,
+    outline: { width: 2, colour: INK.brassLit },
+  };
   // Blocks, marks, the ghost and the ring float over the cells without a z of their own, so each is drawn just above
   // whatever holds the plan: the menu's window floats high, and a fixed low z would draw them under it.
   return {

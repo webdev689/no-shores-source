@@ -95,7 +95,9 @@ export class GuildPage {
         if (typeof guild !== 'string') this.face = guild.guild;
         if (typeof roster !== 'string') this.roster = roster;
         // A player in no guild has no outposts; the accounts say so as a refusal.
-        this.outposts = typeof outposts === 'string' || this.face === null ? null : outposts;
+        // A refused read keeps the last outposts heard, so a busy moment does not blank a page in use.
+        if (this.face === null) this.outposts = null;
+        else if (typeof outposts !== 'string') this.outposts = outposts;
         this.outpostsFailure = typeof outposts === 'string' && this.face !== null ? outposts : null;
       },
     );

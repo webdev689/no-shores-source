@@ -16,7 +16,7 @@ import { OUTPOST_DELVE, openGearWindow } from '../gearScreen.ts';
 import { DELVE_WORDS, GATE, gateTier } from './delveRoom.ts';
 import { decorateNode } from './decorateView.ts';
 import { counted } from './guildHome.ts';
-import { RAISE_AUREM, type Stuff, kindOf, riseRefusal } from './outpostLaw.ts';
+import { PLOT_CELLS, RAISE_AUREM, type Stuff, kindOf, riseRefusal } from './outpostLaw.ts';
 import {
   type PlanState,
   costWords,
@@ -196,7 +196,7 @@ function outpostNode(ui: Interface, holds: Holds, given: Given & { readonly outp
   const building: Child[] = builds
     ? [kindsNode(ui, outpost.plot, state.plan, face.level, island), decorateNode(ui, outpost, outposts.treasury)]
     : [];
-  const planPx = cellPx * 16 + 4;
+  const planPx = cellPx * PLOT_CELLS + 4;
   const width = given.width ?? planPx + COLUMN_PX + 20;
   const three = width >= planPx + 2 * COLUMN_PX + 40;
   // Too narrow for a column beside the plan, the plan stands over the rest.
@@ -354,10 +354,11 @@ function delveNode(ui: Interface, outpost: OutpostFace, standing: KeptPlot['stru
   };
 }
 
-/** What taking the whole outpost back gives the treasury: half of its raising and of every structure's cost, as much
- *  as the treasury holds. */
+/** What taking the whole outpost back gives the treasury: half of its raising, every structure's cost and every
+ *  piece of decoration's price, as much as the treasury holds. */
 function abandonBack(outposts: OutpostsFace, outpost: OutpostFace): number {
-  const spent = outpost.plot.structures.reduce((sum, standing) => sum + standing.spent, RAISE_AUREM);
+  const built = outpost.plot.structures.reduce((sum, standing) => sum + standing.spent, RAISE_AUREM);
+  const spent = outpost.plot.decor.reduce((sum, decor) => sum + decor.paid, built);
   return backOf(outposts.treasury, spent);
 }
 
