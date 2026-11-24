@@ -66,17 +66,19 @@ outpost there plays it in a room of its own, `node-<site>--guild-<key>`, apart f
   then, and the rest stand as a scaffold while members deliver their materials at the outpost, each delivery taking
   only what it still needs, standing the moment the last arrives. Raising a tier does the same. A character carries
   at most 200 of each material. Taking one down gives half its Aurem back; the hall stands while the outpost does.
-  The founder may abandon an outpost from anywhere, for half of all spent on it.
+  The founder may abandon an outpost from anywhere, for half of all spent on it. A treasury too full for the half
+  takes what fits, the rest lost, and the answer says how much came back.
 - **Decorating.** A piece of decoration costs 50 Aurem a metre of its reach (the half-diagonal of its model, so it
   stays within its reach however it turns), 25 at least and 500 at most, and taking it up gives half back. The hall
   holds 40, 80 or 150 pieces by its tier (`decorPrice`, `decorCap`).
 - **What it earns.** A Counting House's strongbox fills each whole hour by its tier and holds two days; a member there
-  empties it into the treasury. An Island Camp gathers the island's own resource and a Dockyard Timber, Canvas and Iron
-  into the outpost's stores each whole day, three days at most; a member there takes up to 20 of each a day, counted
-  across all the guild's outposts. Each outpost keeps its own strongbox and stores. The strongbox is written when it is
-  emptied and the stores when they are taken from, and both when a structure that fills them stands, rises or is taken
-  down: each is settled to that moment at the rates before it, so a new rate counts only from then. A strongbox the
-  treasury cannot hold whole gives what fits and keeps the rest.
+  empties it into the treasury. An Island Camp gathers the island's own resource and a Dockyard Timber, Canvas and
+  Iron into the outpost's stores each whole day, three days at most; a member there takes up to 20 of each a game
+  day (from 09:00 UTC), counted across all the guild's outposts. Each outpost keeps its own strongbox and stores. The
+  strongbox is written when emptied, the stores when taken from, and both when a structure that fills them stands,
+  rises or is taken down: then both are settled to that moment at the rates before it, the part of an hour or a day
+  since the last whole one paid pro rata, so a new rate, or a store just beginning to fill, counts only from then. A
+  strongbox the treasury cannot hold whole gives what fits and keeps the rest.
 - **Boons.** The War Table, Captain's Lodge and Assay House give every member, wherever they play, 5, 10 or 15% more
   XP, reputation or Aurem from kills and clears (reputation from chests and the Abyss boon too): the highest tier of
   each standing at any of the guild's outposts, counted once however many stand. A member's contribution to the
@@ -118,9 +120,10 @@ outpost there plays it in a room of its own, `node-<site>--guild-<key>`, apart f
 - **The models.** Each structure at each tier, the standard on each staff, and a scaffold for each footprint are
   modules built in Blender ([[Modules]], "The outposts' structures"); unturned, each faces south.
 - **Reading an outpost.** `GET /v1/outposts` gives a member their guild's outposts, its treasury and ledger, the
-  site they stand at, and what they took from the stores today (`taken`); `GET /v1/outposts/<room>` gives anyone
-  signed in the plot and banner a room stands, so a member's company draws it too ([[Accounts]]). A player stands at
-  an outpost only while its room holds their character. Outpost asks and plot reads are 600 an hour an account.
+  site they stand at, what they took from the stores this game day (`taken`) and whether the horn sounded this week
+  (`hornSounded`); `GET /v1/outposts/<room>` gives anyone signed in the plot and banner a room stands, or null where
+  the guild raised none, so a member's company draws it too ([[Accounts]]). A player stands at an outpost only while
+  its room holds their character. Outpost asks, plot reads and the rooms' errands are 600 an hour an account.
 
 ## Limits
 

@@ -51,11 +51,13 @@ export async function move(
     throw error;
   }
   if (move.amount === 0) return written.at(-1)?.meta.changes === 1 ? 'moved' : 'stale';
+  // Decided by the balance's own write, never by reading the line back: the prune after it may take the line first.
+  if (written[writes.length + 1]?.meta.changes === 1) return 'moved';
   const kept = await database
-    .prepare('SELECT mark FROM guild_ledger WHERE guild_id = ?1 AND rid = ?2')
+    .prepare('SELECT 1 AS yes FROM guild_ledger WHERE guild_id = ?1 AND rid = ?2')
     .bind(guild, move.rid)
-    .first<{ mark: string }>();
-  if (kept) return kept.mark === mark ? 'moved' : 'already';
+    .first<{ yes: number }>();
+  if (kept) return 'already';
   if (paid.length === 0) return 'refused';
   const balance = await database
     .prepare(`SELECT ${within('?1', '?2')} AS fits`)

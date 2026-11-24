@@ -132,14 +132,16 @@ export async function creditGuild(database: Db, account: string, body: string): 
   ]);
 }
 
-/** What a room is told of a player's guild: its id, which of this week's bounties it has done, and whether they were
- *  in it before the week turned; null in no guild. */
+/** What a room is told of a player's guild: its id, the week it was read for, which of that week's bounties it has
+ *  done, and whether they were in it before that week turned; null in no guild. The week is told so a room can judge
+ *  a claim on this word only in that week, never on a word told before the turn. */
 export async function guildTold(
   database: Db,
   account: string,
   now: number,
 ): Promise<{
   id: string;
+  week: number;
   done: boolean[];
   beforeTheWeek: boolean;
   boons: { xp: number; aurem: number; reputation: number };
@@ -161,6 +163,7 @@ export async function guildTold(
   const plots = await Promise.all(sites.map(({ site }) => plotOf(database, row.guild_id, site)));
   return {
     id: row.guild_id,
+    week,
     done: SLOTTED.map((slot) => row[`done${slot}`] === 1),
     beforeTheWeek: row.joined_at < weekStart(week),
     boons: boonsOf(plots),
