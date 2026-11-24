@@ -112,6 +112,7 @@ impl Finds {
                 let model = f64::from(prop.model);
                 prop.solid.map(|[west, north, east, south, top]| [west, north, east, south, 0.0, top, model])
             })
+            .filter(|held| beside(held).iter().any(|&spot| ground.clear_between(spot, spot, movement::TUNING.radius)))
             .collect();
         let count = dungeon.squares.len().min(places.len());
         Finds { places, groups, holders, patrol: false, count, ..Finds::default() }
@@ -131,6 +132,28 @@ impl Finds {
         let chests = self.chests.iter().map(|chest| chest.number);
         chests.chain(self.searchable.iter().map(|&(_, number)| number)).collect()
     }
+}
+
+/// How far out from a container's box a body stands to search it, metres: its radius and a hand, well within reach.
+const BESIDE_M: f64 = 0.6;
+
+/// Where a body may stand to search a container: BESIDE_M out from the middle of each side of its box and each corner.
+/// One it can stand at none of (inside a tent, walled in by others) is never searchable.
+fn beside(held: &Holder) -> [[f64; 2]; 8] {
+    let [west, north, east, south, ..] = *held;
+    let (middle_x, middle_y) = (f64::midpoint(west, east), f64::midpoint(north, south));
+    let (out_west, out_north, out_east, out_south) =
+        (west - BESIDE_M, north - BESIDE_M, east + BESIDE_M, south + BESIDE_M);
+    [
+        [middle_x, out_north],
+        [out_east, middle_y],
+        [middle_x, out_south],
+        [out_west, middle_y],
+        [out_west, out_north],
+        [out_east, out_north],
+        [out_east, out_south],
+        [out_west, out_south],
+    ]
 }
 
 /// A find standing: a chest at its place, or a container searchable in its holder's box.
@@ -360,6 +383,10 @@ impl Room {
                 reach::inside(&section.ring, f64::midpoint(held[0], held[2]), f64::midpoint(held[1], held[3]))
             });
         }
+        let height = movement::TUNING.height;
+        holders.retain(|held| {
+            beside(held).iter().any(|&[x, y]| movement::blocks::room_at(&self.blocks, x, y, held[4], height))
+        });
         let floor = |x: f64, y: f64| self.floor.height_at(x, y);
         self.finds = Finds::of_patrol(places, holders, &floor);
     }

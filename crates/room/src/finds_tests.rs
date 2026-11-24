@@ -323,3 +323,16 @@ fn a_dungeons_chests_and_containers_are_drawn_again_as_its_garrison_stands_again
     let drawn: Vec<u32> = room.chests_for(again).into_iter().map(|(number, _)| number).collect();
     assert!(!drawn.is_empty() && drawn.iter().all(|number| !first.contains(number)), "drawn anew");
 }
+
+#[test]
+fn a_container_no_body_can_stand_beside_as_one_inside_a_tent_is_never_searchable() {
+    let ring = vec![[-300.0, -300.0], [300.0, -300.0], [300.0, 300.0], [-300.0, 300.0]];
+    // A tent's box, 4 m across and 2 m tall, over a crate inside it; and a crate in the open.
+    let tent = movement::Block { min_x: -2.0, min_y: -2.0, max_x: 2.0, max_y: 2.0, top: 2.0, bottom: 0.0 };
+    let section = Section { ring, spawns: vec![[50.0, 50.0]], falls_kill: false };
+    let mut room = Room::node(Floor::Flat, vec![tent], section);
+    let inside = [-0.4, -0.4, 0.4, 0.4, 0.0, 0.8, 41_816.0];
+    let open = [20.0, 20.0, 20.8, 20.8, 0.0, 0.8, 41_816.0];
+    room.lay_finds(&[], vec![inside, open]);
+    assert_eq!(room.finds.holders, vec![open], "the crate in the tent is left out");
+}

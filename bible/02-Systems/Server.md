@@ -154,7 +154,8 @@ on Cloudflare.
   model; from a page playing alone, every prop of its layout, `props`, keeping those the dungeon crate's families say
   hold things, as the bake does), and stands a chest for every five places, two to four, each at a place no other holds; each moves on after
   5 minutes to another as a new chest, the first ones staggered so one moves every 5 minutes over their count. One
-  holder in six is searchable at once, 16 at most, drawn again every 10 minutes. A dungeon's room lays its own
+  holder in six is searchable at once, 16 at most, drawn again every 10 minutes; a holder no body has room to stand
+  beside, at any of eight spots 0.6 m out round its box (a crate inside a tent, one walled in by others), never is. A dungeon's room lays its own
   ([[Dungeons]], "In the rooms"). Every draw is made on the room's loot seed, on a stream and a count of its own, at
   its first tick, after its host seeds it. A player opens each find once: it stays for the rest, and the room keeps it
   opened for their account however often they rejoin. Opened, it pays them ([[Gear]], "A find"), its Vestige thrown

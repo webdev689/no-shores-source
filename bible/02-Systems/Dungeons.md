@@ -307,7 +307,8 @@ The patrol areas' dungeons: three in each patrol, each laid by DFO's Forge from 
   (0.9 by 0.5 m) clear of rock and every solid; none on a doorway's cell, the way in's or the portal's, one holding a
   prop, a fixture or a landmark, or under a torch (`against_walls`). It stands a chest for each block, each in a room
   of its own drawn on the room's loot seed, and where rooms run short a room holds a second, two cells from every
-  other; and one of its props of the holding families in four searchable, 16 at most, none in a seal's room. All are drawn again as the
+  other; and one of its props of the holding families in four searchable, 16 at most, none in a seal's room nor one
+  that rock and solids leave no body room to stand beside. All are drawn again as the
   cache shuts, when the end foe stands again, never at an Abyss wipe. Each player opens each once, as a patrol's
   ([[Server]], "Chests and containers").
 - **The entrances**: a patrol's room lays its three dungeons' entrances as it starts ([[Server]], "A patrol"), from
