@@ -207,33 +207,32 @@ The decisions in [[Open Questions]] are not repeated here.
   offline: the full check at the PR's head (the commit named there), the rules' tests on Saltmere's real zones, the
   agreement runs natively and in WebAssembly. Not yet: played by hand, two players reviving in a deployed room, a real
   GPU. For the owner: [[Open Questions]], "Revives, respawns and relogs".
-- **The playtest's seven notes**, in three draft pull requests, each waiting on the owner's yes, with `main` (#178)
-  merged in. The owner's notes, and answers where asked, are recorded in three decisions, Claude's calls in their
-  tables. An independent audit by eight read-only reviewers followed, its findings fixed on each branch (each pull
-  request lists them). #185 (this branch): the Harbourmaster's stall in the Beacon Walk market and the harbour way
-  sealed at its head; rain spares the trees' crowns and the far woods, fewer and finer puddles, a slower sway; every
-  patrol node standing, one gathered spent for its gatherer alone for 9 minutes of wall-clock time
-  ([[The Harbourmaster Stands in the Market, Rain Spares the Trees, and Patrol Nodes Always Stand]]). #187: other
-  players' marks over their ships at sea, no fog on the sea map, the Bay given by the stranger, a rider's jump boosting
-  the horse 1.5x for 4 s with 12 s to recharge, the burst's spray and every rider's boost dust, and 14 horse cues
-  (its decision note, "Other Ships Wear Their Players' Marks, the Sea Map Has No Fog, and New Players Ride a Bay That
-  Bursts", is on #187's branch). #188: the Lattice shaded darker with only its crystal's points glowing, its blows
-  drawn through tell, strike and landing, its shots as crystal tracers, and the module meshes fetched again when a
-  fetch fails (its decision note, on #188's branch: "The Lattice Is Shaded Darker, With Detailed Attacks and
-  Projectile Tracers"). Tested offline; pictured headless only the rain, the sea's marks and map, and the Lattice's
-  layers. For the owner:
+- **The playtest's seven notes** (#185, #187, #188), merged on the owner's "Merge and deploy when ready", which
+  deploys the page and the rooms. The owner's notes, and answers where asked, are in three decisions, Claude's calls
+  in their tables: [[The Harbourmaster Stands in the Market, Rain Spares the Trees, and Patrol Nodes Always Stand]]
+  (the Harbourmaster's stall in the Beacon Walk market and the harbour way sealed at its head; rain spares the trees'
+  crowns and the far woods, fewer and finer puddles, a slower sway; every patrol node standing, one gathered spent for
+  its gatherer alone for 9 minutes of wall-clock time),
+  [[Other Ships Wear Their Players' Marks, the Sea Map Has No Fog, and New Players Ride a Bay That Bursts]] (other
+  players' marks over their ships, no fog on the sea map, the stranger's Bay, a rider's jump boosting the horse 1.5x
+  for 4 s with 12 s to recharge, the burst's spray and every rider's boost dust, 14 horse cues) and
+  [[The Lattice Is Shaded Darker, With Detailed Attacks and Projectile Tracers]] (the Lattice darker with only its
+  crystal's points glowing, its blows drawn through tell, strike and landing, its shots as crystal tracers). Eight
+  read-only reviewers audited the three before they merged, each finding fixed (the pull requests list them). Tested
+  offline: the full check on each head; pictured headless only the rain, the sea's marks and map, and the Lattice's
+  layers. Not yet: played by hand, a real GPU, a deployed room. For the owner:
   - **The invisible public event**: its likely cause, found in the code and not seen live, is fixed in #188. The page
     fetched all 512 module meshes at once from R2's rate-limited `r2.dev` address, never asked again for one that
-    failed, and drew no module missing a mesh; the event's 42 are the burst's last. If it is seen again, the browser's
-    console (F12) would name the meshes that could not be drawn.
+    failed, and drew no module missing a mesh; the event's 42 are the burst's last. Now fetches are retried and 8 go
+    at a time. If it is seen again, the browser's console (F12) names the meshes that could not be drawn.
   - Whether Haste and the horse's boost should stack (they do).
   - **The horse cues' candidates** come from the `freesound` workflow on #187's branch, but this session's network
     refused GitHub's artifact store (`productionresultssa14.blob.core.windows.net`), so the Overlook Sound Sheet does
     not list them yet. A session that can reach that host adds them to the sheet; until the owner picks, the horse is
     silent.
-  - Left as each pull request says: a ship behind an island still wears its mark, the hub's buildings never draw
+  - Left as the pull requests say: a ship behind an island still wears its mark, the hub's buildings never draw
     headless (no picture of the stall or the gate), a Grey Tithe figure's telegraphed blow snaps to idle after its
-    tell.
+    tell, a city built before its module meshes come draws none of them.
 - **The key strip, the leave held and Settings in tabs** (#181), merged on the owner's "Merge and deploy", which
   deploys the page (the rooms' code is untouched). The owner's three asks
   ([[The Key Strip Is a Compact Panel, a Held Key Leaves, and Settings Has Tabs]], Claude's calls listed there): the
