@@ -27,10 +27,11 @@ const layers = BODIES.male;
 let wardrobe = wardrobeOf('male', layers);
 
 const plain: Outfit = { armour: {}, garments: [], dyes: {}, right: null, left: null, drawn: true, hair: null };
-/** The rarities a piece is rolled at, Normal to Legendary, and how many looks each rolls among (`vestige::rolled`). */
-const LOOK_ROLLS = [1, 3, 3, 3] as const;
-/** A spread of item numbers, enough to turn every choice a number makes (up to three), and every level. */
-const NUMBERS = Array.from({ length: 6 }, (unused, place) => place + 1);
+/** The rarities a piece is rolled at, Normal to Legendary, and how many looks each rolls among
+ *  (`vestige::LOOK_ROLLS`): every choice of look is its roll's, none its number's. */
+const LOOK_ROLLS = [36, 36, 36, 36] as const;
+/** One item number: a piece's look never turns on it. */
+const NUMBERS = [1];
 const LEVELS = Array.from({ length: 20 }, (unused, place) => place + 1);
 
 /** The forge's weapon and armour layers: the weapons a hand holds, and each armour piece in any set. */
@@ -78,9 +79,12 @@ function held() {
   );
   const rarityOf = (id: string) =>
     ['normal', 'magic', 'rare', 'legendary', 'atheric'].indexOf(items.items.find((each) => each.id === id)!.rarity);
+  // The prologue's own pieces, Normal and of level 1, each kind it lends.
+  const story = KINDS.map((unused, kind) => ({ kind, rarity: 0, name: 0, id: 1, level: 1, source: 0, story: true }));
   return [
     ...named.filter((each) => each.kind > 0).map((each) => ({ ...each, rarity: rarityOf(each.named) })),
     ...rolls.filter((each) => each.kind > 0),
+    ...story.filter((each) => each.kind > 0),
   ];
 }
 
@@ -185,6 +189,7 @@ test('the room keeps every armour and weapon layer the page dresses any item in,
         level: fields.level,
         name: fields.name,
         named: 'named' in fields ? fields.named : null,
+        story: 'story' in fields && fields.story,
       };
       const shown = { armour, right, left };
       const key = JSON.stringify([worn, shown]);

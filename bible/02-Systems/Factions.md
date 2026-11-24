@@ -40,8 +40,12 @@ keeps a counter in Overlook's plaza ([[Cities]]), and a lore book its road gives
 - **The pledge.** A character keeps the faction pledged (none at first), and for each faction its reputation and the
   packages collected (`Allegiance`). Pledging is an ask served only at that faction's counter: the first is free, a
   switch costs 2,500 Aurem, the faction already pledged is refused. A pledge begins that house's road ([[Quests]]), on which its Art, its two Tenets and three
-  of its fragments are earned. Reputation with every faction is kept across a
-  switch. A saved character from before the factions reads pledged to none, and a broken one is made whole.
+  of its fragments are earned. Reputation with every faction is kept across a switch. A saved character from before
+  the factions reads pledged to none, and a broken one is made whole.
+- **The houses introduced.** Before the pledge the opening quest has the player hear all three, each keeper
+  introducing their house when spoken to at its counter (`content/story/houses.json`): Arlo Kestrel the Stormcallers,
+  Elder Maren Hale the Lamplighters, Sable the Veiled. The stranger names the three chapels as she welcomes the player
+  ([[Prologue]]). How the keepers speak: [[Every Line Reads as Spoken, and the Lore Is Detailed, Mysterious and Gripping]].
 - **Reputation.** Each kill's XP and each clear's ([[Gear]], "A clear"), as the room pays it after the seas' share,
   goes as reputation to the faction pledged, but only while the player wears that faction's cape (`earn_reputation`),
   and a kill's a quarter more while they hold the Abyss boon ([[Activities]]). A rank is every 10,000 reputation,

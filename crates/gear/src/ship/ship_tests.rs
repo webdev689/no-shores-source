@@ -34,7 +34,7 @@ fn a_new_ship_is_fitted_with_four_plain_modules_and_none_count_toward_the_charac
     let without: u32 =
         character.all_worn().filter(|(slot, _)| !slot.ship()).filter_map(|(_, item)| item.defense()).sum();
     assert_eq!(character.defense(), without, "its modules' Defense is its, not the player's");
-    assert_eq!(character.shown().worn.len(), 5);
+    assert_eq!(character.shown().worn.len(), 0, "the modules are none of what others see worn");
 }
 
 #[test]

@@ -51,6 +51,9 @@ pub struct Item {
     /// The content it came from, which its look follows; a save from before sources reads as the world's.
     #[serde(default, skip_serializing_if = "Source::is_world", deserialize_with = "crate::source::known_source")]
     pub source: Source,
+    /// One of the prologue's own items, which its end takes back (`crate::story::story_item`).
+    #[serde(default, skip_serializing_if = "std::ops::Not::not")]
+    pub story: bool,
     /// Keys this room does not know, from a later room's save, written back as read, so a room rolled back to
     /// this one or later keeps them.
     #[serde(flatten)]
@@ -78,6 +81,7 @@ impl Item {
             bucket,
             element: None,
             source: Source::World,
+            story: false,
             unknown: crate::character::UnknownKeys::new(),
         };
         item.chosen = vec![NONE_CHOSEN; item.columns().len()];
@@ -117,10 +121,10 @@ impl Item {
         self
     }
 
-    /// Its columns of nodes; a cloak has none.
+    /// Its columns of nodes; a cloak and a horse have none.
     #[must_use]
     pub fn columns(&self) -> &'static [Column] {
-        if self.kind == Kind::Cloak { &[] } else { columns(self.rarity, self.kind.weapon_grid()) }
+        if matches!(self.kind, Kind::Cloak | Kind::Horse) { &[] } else { columns(self.rarity, self.kind.weapon_grid()) }
     }
 
     /// The XP that unlocks its last column; it earns no more.

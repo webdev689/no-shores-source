@@ -8,8 +8,10 @@ import { smoothstep } from './shore.ts';
 /** A ship's footprint on the water (window metres): its middle, its heading (radians clockwise from north), half
  *  its waterline's length and beam as drawn, its way (m/s), its own hull line (its half beam at each of `STATIONS`,
  *  stern to bow, as a share of its widest: the fair line without one), how many times its size it is drawn (its wake
- *  and foam widen with it), and its bow's spray now, 0 to 1. */
+ *  and foam widen with it), its bow's spray now, 0 to 1, and who it is, so the water keeps the track it sails and its
+ *  wake follows it (without, its wake runs straight aft). */
 export interface HullMask {
+  readonly id?: string;
   readonly x: number;
   readonly y: number;
   readonly heading: number;
@@ -37,8 +39,11 @@ export const FAIR_LINE = Float32Array.from({ length: STATIONS }, (_value, statio
   const along = (station / (STATIONS - 1)) * 2 - 1;
   return along > 0 ? Math.sqrt(Math.max(0, 1 - along * along)) : 0.45 + 0.55 * Math.sqrt(1 - along * along * 0.8);
 });
-/** The water's frame holds four numbers a ship this many times: its place, its size, its drawing, then its line. */
-export const HULL_VECTORS = 3 + STATIONS / 4;
+/** The points of a ship's track the water reads its wake along (wakes.ts). */
+export const TRACK = 8;
+/** The water's frame holds four numbers a ship this many times: its place, its size, its drawing, its line, its
+ *  track's points, then the box its wake lies in. */
+export const HULL_VECTORS = 3 + STATIONS / 4 + TRACK + 1;
 
 /** Its half beam at `share` of its half length toward its bow (-1 its stern, 1 its bow), as a share of its widest,
  *  between the stations. Mirrors WGSL hull_half_beam. */
@@ -80,8 +85,13 @@ export function hullFoam(mask: HullMask, point: readonly [number, number]): numb
 }
 
 /** The water's numbers for the ships it draws, measured from the eye: each ship's place and heading's sine and
- *  cosine; its half length, half beam, way and 1 (0 is no ship); its drawn size and spray; then its line. */
-export function hullValues(hulls: readonly HullMask[], eye: readonly [number, number]): Float32Array {
+ *  cosine; its half length, half beam, way and 1 (0 is no ship); its drawn size and spray; its line; then its wake's
+ *  track and box (`wakes`, wakeValues). */
+export function hullValues(
+  hulls: readonly HullMask[],
+  eye: readonly [number, number],
+  wakes: readonly Float32Array[],
+): Float32Array {
   const out = new Float32Array(HULLS * HULL_VECTORS * 4);
   for (const [index, hull] of hulls.slice(0, HULLS).entries()) {
     const start = index * HULL_VECTORS * 4;
@@ -89,6 +99,7 @@ export function hullValues(hulls: readonly HullMask[], eye: readonly [number, nu
     out.set([hull.halfLength * HULL_FIT, hull.halfBeam * HULL_FIT, hull.way, 1], start + 4);
     out.set([hull.scale ?? 1, hull.spray ?? 0, 0, 0], start + 8);
     out.set(hull.line ?? FAIR_LINE, start + 12);
+    out.set(wakes[index] ?? [], start + 12 + STATIONS);
   }
   return out;
 }

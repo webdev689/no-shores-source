@@ -133,7 +133,7 @@ function fightIn(right: string) {
 test('a guard or a swing tapped between two ticks still reaches the rules', () => {
   const guarded = fightIn('sword_iron');
   guarded.tick({ guardPressed: true });
-  assert.deepEqual(guarded.fighting.own?.action, { kind: 'guard', elapsed: 0, window: 12 });
+  assert.deepEqual(guarded.fighting.own?.action, { kind: 'guard', elapsed: 0, window: 15 });
   const swung = fightIn('sword_iron');
   swung.tick({ swingPressed: true });
   assert.equal(swung.fighting.own?.action.kind, 'attack');
@@ -147,7 +147,7 @@ test('the other guard binding pressed while one is held opens a fresh parry wind
   assert.equal(fighting.own?.action.kind === 'guard' && fighting.own.action.elapsed, 60);
   tick({ guard: true, guardPressed: true });
   tick({ guard: true });
-  assert.deepEqual(fighting.own?.action, { kind: 'guard', elapsed: 0, window: 12 });
+  assert.deepEqual(fighting.own?.action, { kind: 'guard', elapsed: 0, window: 15 });
 });
 
 test('the Test Ground’s hands take up a crossbow through the gear, so the room fights with it and spends its bolts', () => {
@@ -646,6 +646,50 @@ test('a drink pressed between two ticks reaches the rules on the next tick only,
   assert.deepEqual(drinks, [1, 0, 0]);
   assert.equal(fighting.own?.charges, 3, 'a player comes into the room with all three');
   assert.equal(fighting.own?.action.kind, 'idle', 'whole, the drink is refused');
+});
+
+test('a respawn asked while the link joins its room again goes with the first input the new room takes', () => {
+  const door = startRoomDoor(compiled);
+  door.open(course.start, course.blocks);
+  const asked: boolean[] = [];
+  let fight: Fighting | null = null;
+  const kept = new SnapshotKeeper();
+  const link = {
+    player: door.join(),
+    dressed: [],
+    joins: 1,
+    rejoining: false,
+    lost: null,
+    // As a rejoining link does, nothing is sent until the new room has welcomed it.
+    send: (bytes: Uint8Array<ArrayBuffer>) => {
+      if (link.rejoining) return;
+      asked.push(Input.getRootAsInput(new flatbuffers.ByteBuffer(bytes)).respawn());
+      door.input(link.player, bytes);
+    },
+    pump: () => {
+      door.tick();
+      const message = wholeOf(kept, door.snapshot(link.player));
+      if (message) fight?.receive(message);
+    },
+  };
+  const rules = startCombatRules(compiled);
+  rules.setCourse(course.blocks);
+  const fighting = new Fighting(rules, link);
+  fight = fighting;
+  link.pump();
+  const steps = fighting.steps(movement);
+  link.rejoining = true;
+  fighting.askRespawn();
+  for (let count = 0; count < 3; count += 1) steps.step({} as Body, STILL);
+  assert.deepEqual(asked, [], 'nothing goes while it rejoins');
+  kept.clear();
+  Object.assign(link, { player: door.join(), joins: 2, rejoining: false });
+  link.pump();
+  for (let count = 0; count < 2; count += 1) {
+    steps.step({} as Body, STILL);
+    link.pump();
+  }
+  assert.deepEqual(asked, [true, false], 'the respawn asked goes with the first input');
 });
 
 test("in a Breach's run each input is predicted on its own tick's blocks, and the Lodestone's bearer bare handed", () => {

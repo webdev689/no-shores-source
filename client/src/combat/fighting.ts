@@ -313,6 +313,11 @@ export class Fighting {
     return ranged === 0 && (fighter[MISSED_PARRY_AT] ?? 0) === 0;
   }
 
+  /** How many ticks the parry window a press of the player's guard opens stays open, as the rules give it. */
+  get parryWindow(): number {
+    return this.rules.parryWindow(true);
+  }
+
   /** Where the soft lock's target stands, as last seen; null with no lock. */
   get targetAt(): { readonly x: number; readonly y: number } | null {
     const target = this.own?.target ?? null;
@@ -377,10 +382,12 @@ export class Fighting {
     this.ahead += 1;
     const asked: Asked = { intent, view, arms, tick: Number(this.seen) + this.ahead, fired: null };
     const sequence = this.prediction.next(asked);
-    const spawned = this.spawnsQueued.shift();
-    const gear = this.gearQueued.shift();
-    const cast = this.castQueued;
-    this.castQueued = null;
+    // Rejoining, the link sends nothing: what is asked then waits for the first input the new room takes.
+    const holding = this.link.rejoining === true;
+    const spawned = holding ? undefined : this.spawnsQueued.shift();
+    const gear = holding ? undefined : this.gearQueued.shift();
+    const cast = holding ? null : this.castQueued;
+    if (!holding) this.castQueued = null;
     const parts = {
       intent,
       look: this.look,
@@ -388,12 +395,12 @@ export class Fighting {
       seen: this.seen,
       spawn: spawned?.foe,
       spawnLevel: spawned?.level ?? 0,
-      respawn: this.respawnAsked,
+      respawn: this.respawnAsked && !holding,
       menu: this.menuOpen,
       ...(gear === undefined ? {} : { ask: gear }),
       ...(cast === null ? {} : { cast }),
     };
-    this.respawnAsked = false;
+    if (!holding) this.respawnAsked = false;
     const sent = { sequence, parts: dress === undefined ? parts : { ...parts, dress } };
     this.link.send(inputBytes(sent.sequence, sent.parts, this.sentLately));
     this.link.inputSent?.(sequence);

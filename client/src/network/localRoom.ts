@@ -108,9 +108,10 @@ export class LocalRoom implements RoomLink {
   }
 
   /** Opens a node's room from its file's text (as the bake writes it) from the compiled `room-wasm` module, its player
-   *  joined at its first spawn, or before entrance `entrance`'s door; the player's own gear goes to `gear`. With
-   *  `foeAsks` the player may ask it for foes, to try a fight on the node's land; with `minuteShift` its clock stands
-   *  that many minutes ahead, and `play` plays it (a dev page's alone). */
+   *  joined at its first spawn, or before entrance `entrance`'s door; the player's own gear goes to `gear`. Its
+   *  garrison stands at the voyage's `seas` (0 Normal, 1 Elite, 2 Abyss), as the server's room does. With `foeAsks`
+   *  the player may ask it for foes, to try a fight on the node's land; with `minuteShift` its clock stands that many
+   *  minutes ahead, and `play` plays it (a dev page's alone). */
   static openNode(
     module: WebAssembly.Module,
     nodeText: string,
@@ -119,17 +120,19 @@ export class LocalRoom implements RoomLink {
     {
       gear = () => undefined,
       entrance,
+      seas = 0,
       minuteShift = 0,
       play = null,
     }: {
       gear?: (gear: GearMessage) => void;
       entrance?: number;
+      seas?: number;
       minuteShift?: number;
       play?: RoomPlay | null;
     } = {},
   ): LocalRoom {
     const door = startRoomDoor(module);
-    if (!door.openNode(nodeText)) throw new Error('the place is not one a room can stand on');
+    if (!door.openNode(nodeText) || !door.difficulty(seas)) throw new Error('the place is not one a room can stand on');
     door.epoch(Date.now());
     if (foeAsks) door.takeFoeAsks();
     // An entrance the room does not have is an ordinary join, as the servers take it.
@@ -138,16 +141,19 @@ export class LocalRoom implements RoomLink {
   }
 
   /** Opens dungeon `number` of a patrol from the patrol's node file's text, from the compiled `room-wasm` module, its
-   *  player joined at its way in; the player's own gear goes to `gear`. */
+   *  player joined at its way in, its garrison at the voyage's `seas` as the patrol's; the player's own gear goes to
+   *  `gear`. */
   static openDungeon(
     module: WebAssembly.Module,
     patrolText: string,
     number: number,
     snapshot: (snapshot: Snapshot) => void,
     gear: (gear: GearMessage) => void = () => undefined,
+    seas = 0,
   ): LocalRoom {
     const door = startRoomDoor(module);
-    if (!door.openDungeon(patrolText, number)) throw new Error('the dungeon is not one a room can stand in');
+    const opened = door.openDungeon(patrolText, number) && door.difficulty(seas);
+    if (!opened) throw new Error('the dungeon is not one a room can stand in');
     return new LocalRoom(door, snapshot, gear);
   }
 
@@ -222,16 +228,21 @@ export class LocalRoom implements RoomLink {
     this.door.clearFoes();
   }
 
-  /** Plays the prologue's wreck (`RoomDoor.storyWreck`): no Art, the player waking hurt with no weapon, and every
-   *  boarder on one side, held to a Major. */
+  /** Plays the prologue's wreck (`RoomDoor.storyWreck`): no Art, the player waking hurt in the story's steel with no
+   *  weapon, and every boarder on one side. */
   storyWreck(): void {
     this.door.storyWreck();
   }
 
-  /** The story's sword and shield taken from the deck into the player's pack (`RoomDoor.storyTakeArms`): whether
-   *  they were given. */
-  storyTakeArms(): boolean {
-    return this.door.storyTakeArms(this.player);
+  /** The story's sword and shield or its bow (`kind`, the gear's number) taken from the deck into the player's pack
+   *  (`RoomDoor.storyTake`): whether it was given. */
+  storyTake(kind: number): boolean {
+    return this.door.storyTake(this.player, kind);
+  }
+
+  /** The wisp gives the player the Storm (`RoomDoor.storyStorm`): whether it did. */
+  storyStorm(): boolean {
+    return this.door.storyStorm(this.player);
   }
 
   /** On the wreck, moves one of the Brig's crew's post to (`x`, `y`), facing `facing` (`RoomDoor.storyPost`): whether

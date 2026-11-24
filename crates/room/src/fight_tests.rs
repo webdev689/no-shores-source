@@ -67,6 +67,7 @@ fn a_players_swing_lands_on_a_foe_in_reach_and_everyone_is_told() {
 fn nothing_is_fought_from_the_saddle() {
     let mut room = room();
     let player = room.join().expect("a room with space");
+    crate::gear_tests::horsed(&mut room, player);
     let held = [
         CombatInput { attack: Some(Stroke::Down), ..CombatInput::default() },
         CombatInput { guard: true, ..CombatInput::default() },
@@ -244,4 +245,119 @@ fn the_room_keeps_the_swings_chain_side_cut_overhead_thrust_whatever_stroke_the_
         rested = if swinging { 0 } else { rested + 1 };
     }
     assert_eq!(swing(&mut room, &mut sequence, Stroke::Up), Stroke::Left, "a second's rest starts it over");
+}
+
+#[test]
+fn a_foe_holds_the_swing_begun_at_it_though_a_quicker_one_begins_far_off() {
+    let mut room = room();
+    let (near, far) = (room.join().unwrap(), room.join().unwrap());
+    let foe = stand(&mut room, ::foes::roster::COLLECTOR, 0.0, -2.0);
+    let swing = |strike: u32| combat::fighter::Attack {
+        stroke: Stroke::Down,
+        elapsed: 0,
+        strike,
+        end: 60,
+        swing: combat::fighter::Swing::Plain,
+        left_hand: false,
+    };
+    // Two metres south of the foe, facing it, a slow swing begun at it.
+    let mut striker = *room.fighter(near).unwrap();
+    (striker.body, striker.aim, striker.target) = (standing(0.0, 0.0), 0.0, Some(foe));
+    striker.action = Action::Attack(swing(30));
+    room.set_fighter(near, striker);
+    // Fifteen metres south, facing away, a quicker swing at no one near it.
+    let mut other = *room.fighter(far).unwrap();
+    (other.body, other.aim, other.action) = (standing(0.0, 15.0), core::f64::consts::PI, Action::Attack(swing(10)));
+    room.set_fighter(far, other);
+    let clock = room.clock();
+    room.foes.get_mut(&foe).unwrap().brain.hunt(near, [0.0, 0.0, 0.0], clock);
+    room.swings.push((near, swing(30)));
+    room.tell_brains();
+    assert_eq!(room.foes[&foe].brain.seen_coming(), Some(near), "the swing at it");
+    room.swings.push((far, swing(10)));
+    room.tell_brains();
+    assert_eq!(room.foes[&foe].brain.seen_coming(), Some(near), "still the swing at it, not the quicker one far off");
+}
+
+#[test]
+fn a_foe_lets_go_of_a_player_the_section_killed() {
+    let mut room = room();
+    let player = room.join().unwrap();
+    let foe = stand(&mut room, ::foes::roster::COLLECTOR, 0.0, -3.0);
+    let clock = room.clock();
+    room.foes.get_mut(&foe).unwrap().brain.hunt(player, [0.0, 0.0, 0.0], clock);
+    room.tick();
+    assert_eq!(room.foes[&foe].brain.fights(), Some(player), "fighting them");
+    // Killed by the section, as past its edge: their fighter keeps its health, but they lie dead until they respawn.
+    room.players.get_mut(&player).unwrap().standing = crate::Standing::Dead { ticks: 0, fell: false };
+    room.tick();
+    assert_eq!(room.foes[&foe].brain.fights(), None, "let go once the section killed them");
+}
+
+#[test]
+fn a_player_the_foes_leave_be_is_struck_by_no_sweep_or_shot_aimed_at_another() {
+    let mut room = room();
+    let (fought, spared) = (room.join().unwrap(), room.join().unwrap());
+    // A brute 1.5 m north of the origin facing south, fighting the player at the origin; beside them, the other just
+    // stood again.
+    let foe = stand_foe(&mut room);
+    let clock = room.clock();
+    room.foes.get_mut(&foe).unwrap().brain.hunt(fought, [0.0, 0.0, 0.0], clock);
+    for (player, x) in [(fought, 0.0), (spared, 0.4)] {
+        let mut stood = *room.fighter(player).unwrap();
+        stood.body = standing(x, 0.0);
+        room.set_fighter(player, stood);
+    }
+    room.players.get_mut(&spared).unwrap().graced = room.clock() + crate::players::GRACE;
+    let brute = *room.fighter(foe).unwrap();
+    let attack = combat::fighter::Attack {
+        stroke: Stroke::Left,
+        elapsed: 0,
+        strike: 1,
+        end: 30,
+        swing: combat::fighter::Swing::Plain,
+        left_hand: false,
+    };
+    let view = room.fighters();
+    room.happened(foe, &brute, Some(combat::Happening::Struck(attack)), &view);
+    let struck: Vec<FighterId> = room.pending.iter().map(|pending| pending.defender).collect();
+    assert!(struck.contains(&fought), "the one it fights is struck: {struck:?}");
+    assert!(!struck.contains(&spared), "the one left be is not");
+    // A bolt at the one it fights passes by the one left be standing on its line, in front of them.
+    room.pending.clear();
+    let mut ahead = *room.fighter(spared).unwrap();
+    ahead.body = standing(0.0, -0.7);
+    room.set_fighter(spared, ahead);
+    let shot = ::foes::aimed_shot(foe, &brute, core::f64::consts::PI, 3.0);
+    room.shots.push((shot, None));
+    for _ in 0..30 {
+        room.fly_shots();
+    }
+    let shot_at: Vec<FighterId> = room.pending.iter().map(|pending| pending.defender).collect();
+    assert!(shot_at.contains(&fought), "the bolt struck the one it was loosed at: {shot_at:?}");
+    assert!(!shot_at.contains(&spared), "and passed the one left be by");
+}
+
+#[test]
+fn a_foe_is_told_of_no_shot_loosed_away_from_it() {
+    let mut room = room();
+    let (near, far) = (room.join().unwrap(), room.join().unwrap());
+    let foe = stand(&mut room, ::foes::roster::COLLECTOR, 0.0, -2.0);
+    let clock = room.clock();
+    room.foes.get_mut(&foe).unwrap().brain.hunt(near, [0.0, 0.0, 0.0], clock);
+    // Fifteen metres south, facing away from the foe, a shot loosed at another.
+    let mut shooter = *room.fighter(far).unwrap();
+    (shooter.body, shooter.aim) = (standing(0.0, 15.0), core::f64::consts::PI);
+    shooter.arms = combat::Arms { ranged: Some(combat::Ranged::Pistolet), ..combat::arms::BARE_HANDS };
+    room.set_fighter(far, shooter);
+    room.loosed.push(far);
+    room.tell_brains();
+    assert_eq!(room.foes[&foe].brain.seen_coming(), None, "a shot away from it is no shot at it");
+    // Facing it, the same shot is one to answer.
+    let mut facing = shooter;
+    facing.aim = 0.0;
+    room.set_fighter(far, facing);
+    room.loosed.push(far);
+    room.tell_brains();
+    assert_eq!(room.foes[&foe].brain.seen_coming(), Some(far), "a shot at it");
 }

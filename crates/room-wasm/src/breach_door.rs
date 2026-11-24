@@ -37,6 +37,13 @@ fn on_land<T>(ask: impl FnOnce(&mut Room) -> T) -> Option<T> {
     .flatten()
 }
 
+/// A patrol's Breach's gate stood in its node's room where the bake says the layout stood its module.
+pub(crate) fn stand_gate(room: &mut Room, kind: room::NodeKind, seat: Option<([f64; 3], u8)>) {
+    if let Some((at, quarters)) = seat.filter(|_| kind == room::NodeKind::Patrol) {
+        room.open_breach_gate(at, quarters);
+    }
+}
+
 /// Opens a Breach's run from its ask; answers whether the ask read and names a Breach and a tier.
 pub fn open_breach(text: &[u8]) -> bool {
     let Ok(asked) = serde_json::from_slice::<RunAsked>(text) else { return false };

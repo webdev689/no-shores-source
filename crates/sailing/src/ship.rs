@@ -7,7 +7,7 @@ use crate::helm::{
     COAST, HANDLING, PACE, SAIL_ACCEL, TURN_ACCEL_SAIL, canvas_drive, point_of_sail, sea_wind, steerage,
 };
 use crate::pose::{frame, keel_spots, shallower};
-use crate::waters::Waters;
+use crate::waters::{Spot, Waters};
 use std::f64::consts::TAU;
 
 /// A ship: its middle (metres east and south), its heading (radians clockwise from north, in [0, 2π)), its way ahead
@@ -183,13 +183,8 @@ pub fn step_pulled(
         sail_way,
         rung,
     };
-    // A keel point grounds where it was afloat, or where it was aground already and the bed rises under it.
     let before = keel_spots(ship, hull, waters, time);
-    let grounds = |candidate: &Ship| {
-        keel_spots(candidate, hull, waters, time).iter().zip(&before).any(|(now, then)| {
-            shallower(now, hull.draught_m) && (!shallower(then, hull.draught_m) || now.bed > then.bed)
-        })
-    };
+    let grounds = |candidate: &Ship| aground(&before, candidate, hull, waters, time);
     if !grounds(&moved) {
         return moved;
     }
@@ -201,6 +196,16 @@ pub fn step_pulled(
     }
     let swung = Ship { heading: moved.heading, ahead: 0.0, abeam: 0.0, turn, sail_way: 0.0, rung, ..*ship };
     if grounds(&swung) { Ship { ahead: 0.0, abeam: 0.0, turn: 0.0, sail_way: 0.0, rung, ..*ship } } else { swung }
+}
+
+/// Whether a ship whose keel stood on `before` (`keel_spots`) would ground at `candidate`: a keel point grounds where
+/// it was afloat, or where it was aground already and the bed rises under it.
+#[must_use]
+pub fn aground(before: &[Spot; 3], candidate: &Ship, hull: &Hull, waters: &impl Waters, time: f64) -> bool {
+    keel_spots(candidate, hull, waters, time)
+        .iter()
+        .zip(before)
+        .any(|(now, then)| shallower(now, hull.draught_m) && (!shallower(then, hull.draught_m) || now.bed > then.bed))
 }
 
 #[cfg(test)]

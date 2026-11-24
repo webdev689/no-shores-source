@@ -98,9 +98,10 @@ test('every rolled piece is named by the set it is drawn in, and its kind', () =
   assert.equal(legendary(head, 2, 0), 'Barrowknight Helm');
   assert.equal(legendary(sword, 2, 2), 'Gravewarden Sword');
   assert.equal(legendary(torso, 6, 0), 'Lattice Hauberk');
-  // A Magic torso numbered for clothes is Homespun; one in its content's lightest set is that set's.
-  assert.equal(itemName(item({ kind: torso, rarity: 1, id: 3 })), 'Homespun Hauberk');
-  assert.equal(itemName(item({ kind: torso, rarity: 1, id: 4 })), 'Deckhand Hauberk');
+  // A Magic torso rolled for clothes is Homespun; one in its content's lightest set is that set's, bought or not.
+  assert.equal(itemName(item({ kind: torso, rarity: 1, name: 0 })), 'Homespun Hauberk');
+  assert.equal(itemName(item({ kind: torso, rarity: 1, name: 6 })), 'Deckhand Hauberk');
+  assert.equal(itemName(item({ kind: torso, rarity: 1, name: 6, id: 0 })), 'Deckhand Hauberk', 'as a ware');
   // A faction's piece is its faction's set, whatever metal it is drawn in.
   assert.equal(itemName(item({ kind: 12, rarity: 3, named: 'squallbreak' })), 'Stormcaller Sword and Shield');
   assert.equal(itemName(item({ kind: bow, rarity: 3, named: 'nightpin' })), 'Veiled Bow');
@@ -222,14 +223,19 @@ test("a weapon's look: a named piece's as written; a rolled one climbs with its 
     [from(2, 2, 1), from(5, 1, 1), from(6, 2, 20)],
     ['silver silver silver', 'elven dwarven elven', 'daedric daedric daedric'],
   );
-  const makes = (kind: number) => [1, 2, 3].map((id) => look({ kind, rarity: 1, id }).make).join(' ');
+  // Its make by its look roll's sixths, apart from the remainder its metal climbs by.
+  const makes = (kind: number) => [6, 12, 18].map((name) => look({ kind, rarity: 1, name }).make).join(' ');
   assert.deepEqual(
     [makes(12), makes(18), makes(21), makes(8)],
     ['round tower kite', 'round kite buckler', 'kite tower round', 'short long short'],
   );
-  assert.equal(look({ kind: 12, id: 3, name: 1 }).make, 'kite', 'by its number, not its name');
-  assert.equal(look({ kind: 12, id: 0, name: 1 }).make, 'round', "a smith's ware, numbered 0, by its name");
-  const shields = [1, 2].map((id) => look({ kind: 12, id }).shield);
+  assert.deepEqual(
+    [18, 19, 24].map((name) => look({ kind: 12, name }).make),
+    ['kite', 'kite', 'round'],
+    'not by the remainder its metal climbs by',
+  );
+  assert.equal(look({ kind: 12, id: 0, name: 6 }).make, look({ kind: 12, id: 9, name: 6 }).make, 'bought as shown');
+  const shields = [6, 12].map((name) => look({ kind: 12, name }).shield);
   assert.deepEqual([...shields, look({ kind: 12, level: 11 }).shield], ['iron', 'plain', 'steel'], 'a Normal shield');
   assert.deepEqual(
     [2, 3].map((rarity) => look({ kind: 11, rarity }).metal),
@@ -237,4 +243,14 @@ test("a weapon's look: a named piece's as written; a rolled one climbs with its 
     'a thunderlock',
   );
   assert.equal(look({ named: 'signal_pair', kind: 23, rarity: 3 }).metal, 'plain', 'unless it names its own');
+});
+
+test('the prologue’s own armour is named for its steel’s set; its sword and shield and its bow as any piece', () => {
+  const story = { named: null, rarity: 0, name: 0, story: true, id: 1, level: 1, source: 0 };
+  assert.deepEqual(
+    [14, 15, 16].map((kind) => itemName({ ...story, kind })),
+    ['Wayfarer Hauberk', 'Wayfarer Gauntlets', 'Wayfarer Greaves'],
+  );
+  assert.equal(itemName({ ...story, kind: 12 }), itemName({ ...story, kind: 12, story: false }));
+  assert.equal(itemName({ ...story, kind: 14, story: false }), 'Homespun Hauberk', 'a plain piece its own');
 });

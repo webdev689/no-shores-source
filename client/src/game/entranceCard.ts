@@ -94,6 +94,8 @@ export class EntranceCardView {
   /** The card this frame over the dimmed world, its presses heard; nothing while it is shut. */
   readonly layer: Layer = (ui: Interface) => {
     if (!this.card) return null;
+    // The pad's B steps out as Escape does, which the keys' own listener hears.
+    if (ui.escaped) return (this.presses.close(), null);
     if (ui.clicked(CLOSE)) this.presses.close();
     else if (ui.clicked(ENTER) && this.card.shut === null) this.presses.enter();
     else if (ui.clicked(FIND)) this.presses.find();

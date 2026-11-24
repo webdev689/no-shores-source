@@ -18,5 +18,6 @@ build, the owner said:
 - **Claude makes the calls those leave open** and writes each down with its reason ([[Gear as Claude Shapes It]]),
   for the owner to change.
 - **The set names are built as Claude drafted them** ([[Set Names and Faction Perks as Claude Drafts Them]]), so the
-  owner sees them in the game; they stay a draft, the owner having said "Not yet", until the owner's yes at the merge.
+  owner sees them in the game; they stay a draft, the owner having said "Not yet", until the owner's yes at the merge,
+  which the owner gave ([[The Set Names Stand as Claude Drafted Them]]).
 - **Merging still waits on the owner's yes**, as every merge does.

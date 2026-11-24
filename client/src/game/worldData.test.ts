@@ -39,7 +39,7 @@ test("a ring's middle is the mean of its points", () => {
 });
 
 test('a player arrives at any node by its id, a social space by its city, and nowhere for an id the world lacks', () => {
-  const { city, nodes } = sitesOf('continent-1', saltmere, []);
+  const { city, nodes } = sitesOf('continent-1', saltmere, ['saltgrass-downs']);
   const world: WorldData = { layoutText: '{}', continents: [], cities: city ? [city] : [], nodes };
   assert.deepEqual(arrivalAt(world, 'overlook-social'), {
     continent: 'continent-1',

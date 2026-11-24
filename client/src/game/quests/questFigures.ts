@@ -11,7 +11,7 @@ import { ACTOR_IDS, type Actor } from '../prologue/actors.ts';
 import { goalOf } from './questBook.ts';
 import { faceOf, speakerFace } from './questLooks.ts';
 
-/** The figures' and the ward's numbers among the placed figures, clear of the story's own and Maren's. */
+/** The figures' and the ward's numbers among the placed figures, clear of the story's own. */
 const FIGURE_IDS = ACTOR_IDS + 300;
 const WARD_ID = ACTOR_IDS + 299;
 /** The ward's plate's number among the marked foes, which no room gives a fighter. */

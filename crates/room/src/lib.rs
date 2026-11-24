@@ -49,6 +49,7 @@ mod power;
 pub mod public;
 mod quests;
 mod recharge;
+mod riding;
 mod routes;
 mod run;
 pub mod sea;
@@ -61,6 +62,7 @@ mod statuses;
 mod steps;
 mod story;
 pub mod threat;
+mod told;
 pub mod winds;
 
 pub use arts::{Cast, Casting};
@@ -182,6 +184,10 @@ pub struct Room {
     pub counters: Option<Vec<asks::Counter>>,
     pub(crate) stall: Option<[f64; 2]>,
     pub(crate) resource_nodes: Vec<ResourceNode>,
+    /// A patrol's foes' sites, each with whether its group has stood there yet (`stands.rs`).
+    pub(crate) foe_sites: Vec<([f64; 2], bool)>,
+    /// Since when no player has come near each half-fallen patrol group, by its first foe as it stood (`stands.rs`).
+    pub(crate) unvisited: BTreeMap<FighterId, u64>,
     pub(crate) drops: Vec<Drop>,
     pub(crate) spells: spells::Spells,
     /// The difficulty its voyage set out at; whether it is a patrol, whose nodes take turns (`patrol.rs`); and the
@@ -195,7 +201,8 @@ pub struct Room {
     pub(crate) place: Option<gear::gate::Place>,
     /// A dungeon's run (`run.rs`): what its clear pays, its modifiers and its revives; none in any other room.
     pub(crate) run: Option<run::Run>,
-    /// The players who struck in a patrol zone's landing since they last stood out of it (`landing.rs`).
+    /// The players who struck (a blow, a shot or a cast) and have not since stood out of a patrol zone's landing or
+    /// stood again: the landing's leave is not theirs (`landing.rs`).
     pub(crate) landing_struck: BTreeSet<FighterId>,
     /// The island it stands on, by its continent's id, for the feats it counts (`bounties.rs`); none at sea.
     pub(crate) island: Option<&'static str>,
@@ -209,6 +216,8 @@ pub struct Room {
     /// The way a body faces as it stands at a spawn, and a dungeon's cache by its Reeve's post (`dungeon_room.rs`).
     pub(crate) facing: f64,
     pub(crate) cache: Option<dungeon_room::Cache>,
+    /// A dungeon's ways out: its exit door's middle and its return portal's, at their feet; none in any other room.
+    pub(crate) ways_out: Option<([f64; 2], [f64; 2])>,
     /// The minute it is, counted from the epoch (`set_minute`), whose day's wares and week's Shape it shows.
     pub minute: u64,
     pub shape_spots: Vec<[f64; 2]>,
@@ -279,6 +288,8 @@ impl Room {
             counters: None,
             stall: None,
             resource_nodes: Vec::new(),
+            foe_sites: Vec::new(),
+            unvisited: BTreeMap::new(),
             drops: Vec::new(),
             spells: spells::Spells::default(),
             difficulty: gear::Difficulty::Normal,
@@ -295,6 +306,7 @@ impl Room {
             clearing: None,
             facing: core::f64::consts::PI,
             cache: None,
+            ways_out: None,
             minute: 0,
             shape_spots: Vec::new(),
             public: None,
@@ -473,12 +485,8 @@ impl Room {
             while taken < CATCH_UP {
                 let Some((mut input, seen)) = self.next_input(id) else { break };
                 taken += 1;
-                // The room says who rides: a player with a horse, never aboard a ship's deck, whatever the page says.
-                let on_deck = matches!(self.floor, Floor::Deck(_));
-                if let Some(found) = self.players.get_mut(&id) {
-                    input.intent.controls.mounted &= found.character.may_ride() && !on_deck;
-                    found.mounted = input.intent.controls.mounted;
-                }
+                // The room says who rides and who shows a horse, whatever the page says (`riding.rs`).
+                riding::ride(self.players.get_mut(&id), &mut input, matches!(self.floor, Floor::Deck(_)));
                 if let Some(asked) = input.ask.take() {
                     self.take_ask(id, asked);
                 }

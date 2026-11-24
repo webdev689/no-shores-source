@@ -138,6 +138,9 @@ Sunday 21:00 UTC ([[Activities]], "The clock").
 | Dyes | Twelve sold (five Magic at 1,000, five Rare at 2,500 from level 5 or 10, two Legendary at 5,000 from level 20) and three faction dyes at rank 2. A dye is four colours laid as a 16-step ramp, as the forge's metals and cloth are, and snapped once to the game's palette, so each view draws the same sixteen; each keeps ten steps at least and stands apart from every other. The palette has no violet, so the Veiled's dye is a dusky mauve and the second Legendary dye Heather, a dusky pink |
 | Ramps | A dye's and a coat's snapped ramp never steps darker (a step the snap would darken takes the nearest kept colour no darker); Brine White and the White coat end at the palette's lightest neutral with a shaded top third. A faction's colour keeps its steps as snapped, as the owner chose it |
 | Coats | Six sold: Chestnut, Dun and Grey at 1,500; Black and White at 3,000 from level 5; Palomino at 3,000 from level 10 |
+
+Replaced in part by [[Horses Are Items Worn in a Mount Slot]]: each coat is a horse, an item worn in the Mount slot;
+no one starts with the Bay, which the Tack always sells.
 | Bardings | The four the forge already draws over its horse (DFO's shop looks): Ember Plate, Wraith Mist, Dawnfire and Clockwork, 9,000 each from level 15 or 20 |
 
 ## The plaza's people
@@ -170,7 +173,7 @@ mark and never open. Shape visits Overlook alone (its `shapeVisits`).
 | One screen | Every keeper who deals with a player opens the same screen, after the owner's three references; the vault's two sides stand in its right column, under the vault keeper |
 | The keeper | Drawn from the forge in their own dress, idle, facing the viewer, grown by whole pixels, breathing between the idle's two frames |
 | Prompt | A counter's prompt is its keeper's title alone ("The Mage", "Shape") |
-| Lines | One-line scenes, said in turn: three greetings, two thanks and one for being short of the price a keeper (the Mage and the vault keeper none short; he thanks for each thing moved) |
+| Lines | One-line scenes, said in turn: four greetings, two thanks (the Mage three) and one for being short of the price a keeper (the Mage and the vault keeper none short; he thanks for each thing moved) |
 | Voice | Through the world's sound, as the dialogue box's |
 | Currencies | A faction's top shows Aurem and the four materials an Art's rise takes; the Mage's shows none |
 | Countdown | "Stock refresh" for the smiths, the Tailor and the Tack (to midnight, UTC); "Leaves in" for Shape; none for the Mage and the factions |
@@ -182,6 +185,9 @@ Replaced in part by Claude's call under [[Dailies and Weeklies Follow Destiny 1,
 refresh" counts to the daily reset, 09:00 UTC, as the rules count it ([[Interface]]).
 
 ## Elder Maren Hale's welcome
+
+Replaced by [[The Stranger Welcomes the Player, and a Quest Walks Them Round Overlook]]: the stranger welcomes the
+player, and the opening quest walks them round the counters.
 
 | Call | Choice |
 |---|---|
@@ -204,6 +210,9 @@ refresh" counts to the daily reset, 09:00 UTC, as the rules count it ([[Interfac
 | Worn | Set in brass with a brass corner; a dim piece's card says how it is had |
 | A dye | Takes the armour's padding with the armour |
 | A coat | Takes only the hide (the forge publishes no mane mask), so the mane stays grey |
+
+Replaced in part by [[Horses Are Items Worn in a Mount Slot]]: the Appearance screen draws the figure alone, with Emblem
+and Dye; the horse and its barding are chosen in the Mount slot.
 | A barding | Over the horse's own texels where it lies no more than 0.15 m behind them, so its far side and its inside stay hidden; depth decides between it and the rider |
 | The Art's level | Five pips by its name; the bar under the three diamonds; brass when full or at the highest |
 | Before the room's word | Every Art shows level 1 with every fragment owned, so the screen locks nothing the room would allow |

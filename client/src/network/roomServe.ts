@@ -12,8 +12,9 @@ export type Opening =
       readonly nodeText: string;
       readonly foeAsks: boolean;
       readonly entrance: number | undefined;
+      readonly seas: number;
     }
-  | { readonly how: 'dungeon'; readonly patrolText: string; readonly number: number }
+  | { readonly how: 'dungeon'; readonly patrolText: string; readonly number: number; readonly seas: number }
   | { readonly how: 'run'; readonly ask: string; readonly patrolText: string }
   | {
       readonly how: 'sea';
@@ -32,7 +33,9 @@ export type Opening =
 /** What the story asks of the wreck's room (`LocalRoom`'s story calls), each answered in turn with a number: a foe's,
  *  1 for one done or given, 0 for one refused, or for none to give. */
 export type StoryAsk =
-  | { readonly ask: 'wreck' | 'clear' | 'arms' }
+  | { readonly ask: 'wreck' | 'clear' | 'storm' }
+  /** The story's sword and shield or its bow, by the gear's kind number, taken up. */
+  | { readonly ask: 'take'; readonly kind: number }
   | {
       readonly ask: 'stand';
       readonly type: number;
@@ -59,8 +62,10 @@ export function storyOn(room: LocalRoom, story: StoryAsk): number {
     }
     case 'post':
       return done(room.storyPost(story.crew, story.x, story.y, story.facing));
-    case 'arms':
-      return done(room.storyTakeArms());
+    case 'take':
+      return done(room.storyTake(story.kind));
+    case 'storm':
+      return done(room.storyStorm());
     case 'wreck':
       room.storyWreck();
       return 1;
@@ -106,11 +111,11 @@ export function serveRooms(say: (told: FromRooms) => void): (told: ToRooms) => v
     // Each word on the player's gear, before its tick's snapshot, as the room gives them.
     const gear = (said: GearMessage) => say({ kind: 'gear', id, gear: said });
     if (opening.how === 'node') {
-      const { nodeText, foeAsks, entrance } = opening;
-      return LocalRoom.openNode(module, nodeText, snapshot, foeAsks, { gear, entrance });
+      const { nodeText, foeAsks, entrance, seas } = opening;
+      return LocalRoom.openNode(module, nodeText, snapshot, foeAsks, { gear, entrance, seas });
     }
     if (opening.how === 'dungeon')
-      return LocalRoom.openDungeon(module, opening.patrolText, opening.number, snapshot, gear);
+      return LocalRoom.openDungeon(module, opening.patrolText, opening.number, snapshot, gear, opening.seas);
     if (opening.how === 'run') return LocalRoom.openRun(module, opening.ask, opening.patrolText, snapshot, gear);
     if (opening.how === 'island') return LocalRoom.openIsland(module, opening.word, snapshot, opening.seas, gear);
     if (opening.how === 'overSea') return LocalRoom.openOverSea(module, opening.spawn, opening.blocks, snapshot, gear);

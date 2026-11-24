@@ -34,13 +34,13 @@ pub const FISSURE_MINUTE: u32 = 15_000;
 pub const RAID_MINUTE: u32 = 15_015;
 const MOST_TICKS: u32 = 9 * 3_600;
 /// Both tests hold these values; a change to the events, the foes or the fight changes them in both, on purpose.
-pub const FISSURE_HASH: &str = "14ea429c";
-pub const RAID_HASH: &str = "eb9017f7";
+pub const FISSURE_HASH: &str = "47799d4c";
+pub const RAID_HASH: &str = "9c9b2ec4";
 /// Where each stood as its result first showed, which a change to the fingerprint must account for: the tick, its
 /// stage (the Warden's; Marrow's wave) and its progress (the shards set; the stores' health left, per mille). The
 /// players' swings take the room's chain whatever stroke is asked (`room::chain`).
-pub const FISSURE_ENDED: [u32; 3] = [12_658, 2, 28];
-pub const RAID_ENDED: [u32; 3] = [10_087, 2, 0];
+pub const FISSURE_ENDED: [u32; 3] = [12_858, 2, 28];
+pub const RAID_ENDED: [u32; 3] = [18_418, 4, 1000];
 /// A player strikes a foe within this, squared, swinging every SWING_EVERY ticks; walks to a point to within GOT.
 const STRIKE: f64 = 1.5 * 1.5;
 const SWING_EVERY: u32 = 20;
@@ -177,10 +177,10 @@ fn decide(read: &Read, player: u32, tick: u32) -> (Controls, CombatInput) {
     (Controls { yaw, ..Controls::default() }, combat)
 }
 
-/// The character each scripted player plays: a starting one at SEASONED, its gear Rare at that level, as a player who
+/// The character each scripted player plays: a kitted one at SEASONED, its gear Rare at that level, as a player who
 /// comes to Saltmere's events (its foes at 1 to 4) is.
 fn seasoned() -> String {
-    let mut character = gear::Character::starting();
+    let mut character = gear::Character::kitted();
     character.xp = gear::power::xp_for_level(SEASONED);
     for (item, _) in character.items.values_mut() {
         (item.level, item.rarity) = (SEASONED, gear::Rarity::Rare);
@@ -238,11 +238,11 @@ fn two_scripted_players_seal_a_heroic_fissure_to_the_same_fingerprint_natively_a
 }
 
 #[test]
-fn two_scripted_players_meet_a_raids_heroic_task_but_lose_its_stores_to_the_same_fingerprint_natively_as_in_webassembly()
+fn two_scripted_players_meet_a_raids_heroic_task_and_hold_its_stores_to_the_same_fingerprint_natively_as_in_webassembly()
  {
     let (hash, event, at) = play(RAID_MINUTE);
-    assert_eq!(event, (2, 3, 2), "the raid failed, its heroic task met");
-    assert_eq!(at, RAID_ENDED, "the tick its stores fell at, its wave and the stores left");
+    assert_eq!(event, (2, 2, 2), "the raid won, its heroic task met");
+    assert_eq!(at, RAID_ENDED, "the tick it was won at, its wave and the stores left");
     assert_eq!(hash, RAID_HASH);
 }
 

@@ -110,9 +110,10 @@ on Cloudflare.
   ([[Clients Predict With the Shared Rules]]). What the hands hold is taken up only at rest, never in the middle of a
   swing, a guard, a draw or a reload.
 - **Riding:** a player rides wherever they walk, in a node's room, a dungeon, a run or on an island, on the room's
-  word: it takes a page's mounted input only from a character with a horse, a coat worn, which every rider starts with
-  (`may_ride`, [[The Audit's Leftovers Are Fixed as Claude Suggested]]); on a deck, the ship's own or one boarded, the
-  room walks every body on foot. Nothing is fought from the saddle, as the page
+  word: it takes a page's mounted input only from a character with a horse worn in the Mount slot (`may_ride`,
+  [[Horses Are Items Worn in a Mount Slot]]); on a deck, the ship's own or one boarded, the
+  room walks every body on foot (`riding.rs`). A player on foot shows others no horse: a horse move their page sends
+  is relayed as the body's own, walking while it moves, else standing. Nothing is fought from the saddle, as the page
   asks nothing there: a mounted input's swing, guard, shot and aim are dropped, and its cast refused.
 - **Foes:** on a course, a player may ask for a foe by its type and rank, at a level and with a shield (the
   [[Test Ground]]'s panel), one with each input; the room stands it 5 m along the player's aim, which follows their
@@ -130,21 +131,24 @@ on Cloudflare.
   its allies' shouts, and keeps the fight's heat, fed where blows are settled.
 - **Foes of different factions** fight each other: a foe's swing, telegraphed blow or shot on a foe of another side
   is judged at once, as a player's blow on a foe is.
-- **A patrol** (a patrol node's room) fights its garrison alone ([[Enemies]]). Its island's resource stands where its
+- **A patrol** (a patrol node's room) stands no camps of its own: it fights its garrison ([[Enemies]]), and where they
+  come, its public events' foes and the groups the houses' roads stand ([[Public Events]], [[Quests]]). Its island's resource stands where its
   layout stands its nodes ([[Layouts]], "The sites";
   [[Material Nodes Stand Where They Are Dressed, Worked by Holding E]]), which the bake writes into the node's file
   (`resources`) and the room numbers in that order, as the page does; a third of them hold a node at once, the next
   third every three minutes, and each player may gather each node once while it stands. Its three dungeons'
   entrances are laid out from the node's id, the same every time: inside the ring and 60 m inside its edge, 60 m from
   every spawn, 40 m from every resource place and 300 m from one another, on dry ground (above the sea, out of a river
-  or a lake) whose height varies by 3 m at most across the 12 m round it; fewer when fewer fit. Each is the entrance
+  or a lake) whose height varies by 3 m at most across the 12 m round it, 8 m from every box a body would run into;
+  fewer when fewer fit (every patrol zone and Elite Dungeon's node lays all of its own). Each is the entrance
   model its dungeon's seed draws, turned so its door faces the middle of the ring. A kill, in any node, pays by the
   room's seas ([[Gear]], "Where foes stand").
 - **A patrol's dungeon** has a room of its own ([[Dungeons]], "In the rooms"), opened from its patrol's node file:
   its floor, its one spawn at the way in, a body standing there facing into the room, and the patrol's island band
   for its garrison's levels. The Grey Tithe's dungeon garrison stands where the Forge puts foes ([[Enemies]]). Beside
   the Reeve's post stands its cache, shut while the Reeve stands; when he falls it opens, and every player then in the
-  room finds a Vestige lying before it for them alone ([[Gear]]); it shuts when he stands again.
+  room is paid a dungeon's clear, its Vestige, when one comes (at a Miniboss's chance by the tier), lying before it for
+  them alone ([[Gear]], [[Dungeons]]); it shuts when he stands again.
 - **Blows, as each defender saw them:** a player's blow on a foe is judged at once against the foe where the player's
   screen showed it, up to 24 ticks back, but guarding, dodging and staggered as it is now, so a foe's answers count the
   same at any lag; a player's ball (a pistolet's, a thunderlock's) is judged the same way.
@@ -154,7 +158,7 @@ on Cloudflare.
   blow that finds no one overreaches its foe once every player near it has been judged.
 - **Shots** fly a tick at a time and strike the first body of the other side on their line; arrows and bolts fly in
   the room's own time.
-- **Gear** ([[Gear]]): each player holds their gear while they are in the room, the starting kit as they join (in a
+- **Gear** ([[Gear]]): each player holds their gear while they are in the room, a new character's as they join (in a
   node's room, their own kept character once their session is given, [[Accounts]]), and
   only what it puts in their hands (or a torch beside a one-handed weapon): any other arms asked for are bare hands.
   Every blow is made with its power: a player's on a foe by the Attack of the hand that struck and their levels (an
@@ -168,7 +172,7 @@ on Cloudflare.
   them. A social space's room serves each of its asks within 4 m of that ask's counter, which its node
   file names (a ruin's plaza names none, and its room serves and shows nothing: [[Cities]], "Ruins"): a Vestige
   opened at the Mage's, the vault at a vault's, a ware at its own smith's, an emblem or a dye at
-  the Tailor's, a coat or barding at the Tack's, a faction's asks and its Art's at that faction's counter, and Shape's
+  the Tailor's, a horse or barding at the Tack's, a faction's asks and its Art's at that faction's counter, and Shape's
   at his place of the week while he is there ([[Factions]], [[Gear]]); the Test Ground's course serves them all within
   4 m of its stall. A resource node is gathered by a player alive and on foot within
   2.5 m of it who holds E two seconds: the gather ask begins it, and the room gathers it two seconds on unless they
@@ -408,7 +412,7 @@ an older reader skips them.
 | Input | A browser, on land | Its number, one tick's controls and the fight's buttons (with a ranged weapon's aim, the point an aimed shot is laid on and a drink asked), the look of the player's figure on their own screen (its move, frame and facing), their dress when it changed, what their hands hold, the room tick their screen showed, a foe asked for (0 none, 255 every foe sent away) with its type and rank (a page from before the roster asks by role alone, 1 to 5, taken as the Grey Tithe's type in that role, a foe, a Major or its first rank), its level and the element of its shield, whether they ask to respawn, an ask of their gear: what, and the item or Vestige, slot, node, rarity, level, count, kind or named item it names, and a spell cast that tick (1 Tempest to 9 Vanish) with where it is aimed (Dusk Daggers' ring while held and as it is let go), and whether a menu is open on their screen |
 | Course | A browser, at sea | The points its ship sails through, x then y, and its pace, or no points and the one heading it faces at rest; in a fight, its orders instead, in the naval crate's numbers (`naval::wire`); off the helm, a step of the walk on deck instead, its controls and its number; or the helm left (1) or taken again (2) |
 | Orders | A browser, in a fleet | Its number; the helm (rudder, a rung); while aiming, the look's bearing and range, then its ray (2 or 8 numbers); the fire and the brace; a load to take; where the ship puts to sea (3 numbers, heeded once); and a captain called (with its faction and rank; 0 for both is the Grey Tithe's Major) or every one sent off |
-| Joined | The room | The joining player's number, every dress in the room, in a node's room the node's id and its window's rect (west, north, east, south), so the browser cuts the same window (none in a dungeon's room, which stands on no land), and the protocol's version: the hash of the schema, of the fight's number layouts (`crates/combat/src/floats.rs`: a fighter, an intent and a glance cross as plain lists of numbers) and of the content the wire numbers by place (cosmetics, emblems, factions, items, resources, rolled names and the Arts), so a page built from another schema, other layouts or another order of that content loads again, once; and everyone's plate |
+| Joined | The room | The joining player's number, every dress in the room, in a node's room the node's id and its window's rect (west, north, east, south), so the browser cuts the same window (none in a dungeon's room, which stands on no land), and the protocol's version: the hash of the schema, of the files laying out the fights' numbers that cross as plain lists (`FLOATS` in `server/protocolVersion.ts`: a fighter with its body, statuses and trim, an intent and a glance, the sea fight's view and lay, the foes' list and how others' numbers are packed) and of the content and rules the wire numbers by place (`tools/numbered.json`, `server/protocolVersion.ts`: cosmetics, emblems, factions, items, resources, rolled names, the Arts, the lore's chapters, the quests' tasks, the keepers spoken with and their counters' numbers, the cast's speakers, the items' kinds and slots, and the smiths' stock), so a page built from another schema, other layouts or another order of that content loads again, once; and everyone's plate |
 | Snapshot | The room | Cut for each player (under this table): the room's tick, the snapshot it is built on (0 for whole), the room's middle, the players and foes gone since; each player whole or as what changed: their number, their fighter without its gear's trim (its first 22 numbers their body, its healing charges and meter after its action's numbers and the shots its Ranged weapon has left, then its statuses' ticks left, a Veiled player's among them), the number of their last input taken, the look that came with it, and their standing (0 inside, 1 warned with the ticks left, 2 dead with the ticks since); the dresses changed since the screen's snapshot; the plates changed since it, each player's newest alone; each foe whole or as what changed: its number, role, a glance at its fighter, its level and its shield (its element, what it holds and held whole; none for a foe without one), type, rank, faction, phase (1 to 3), alert state (0 idle, 1 suspicious, 2 alert, 3 searching), and the ticks left of its Expose, its Charge and the immunity a Charge leaves, and for a companion (an officer ashore) its leader's number, its officer's given and family names' places and its post; and the name a foe stands under, if it has one (an event's great foe's); the fight's events since the screen's snapshot (each its kind, how the blow was struck, who struck whom, how much it did, its stroke, whether it was a crit and the element it carried); the shots in flight with the ticks each has flown, and each ball that stopped since the screen's snapshot as its last segment with the point it left its gun; in a dungeon's room its cache: where it stands, the way it faces, and whether it is open; in an Abyss run the revives its company has left (-1 in any other room); and at sea every ship near the player (as "The sea" cuts it): its player, position, heading and pace, 0 at rest; every hostile ship near them (the Grey Tithe's, sailing or in a clash): its number, position, heading, faction, rank and hull (0 the Sloop to 3 the Frigate; a reader that knows none reads the Sloop); each player's fight as the naval crate's numbers; each traffic id the room has taken off its route (`taken`) and each friendly ship it keeps at sea that the player's ship keeps in sight, as a hostile ship is kept (`friendlies`: its traffic id, position, heading and hull), none when there are none; and each player off the helm on a ship sent, as a player whose fighter is only their body on its deck, in its frame, with the number of their last step taken; in a fleet every ship with its hull, a captain's with its faction and rank, the balls aloft (each where and when it left its gun, its launch and its radius), the fight's events since the last snapshot, and the fight's clock; and on land every spell: its number, kind (1 Tempest's orb to 9 Vanish's veil, 10 a Duskraven's bolt), caster and Art, where it is and where it heads, the foe it seeks, the ticks it has lasted and its whole life, and how far it reaches; and in a zone's room its public event (`public_event`, left out of one built on a base while it stands as the base's counted on: [[Public Events]], "The wire") |
 
 **Plates.** On land each player's plate, what others read over their head ([[Interface]], "Players"), crosses as a table
@@ -459,9 +463,10 @@ held within it.
 
 Looks and dresses are each player's own word, passed on and decided nothing about, but for the gear they show: the
 room keeps in a dress's armour and hands only the looks the page could draw the pieces worn in on the dress's body:
-each piece's own content's, written or faction's set or metal, or the one the page falls to where the forge does not
-draw it (`looks::shown`; [[Gear]], "Looks"; a light in the left hand is no piece, and stays), drops any other from
-what others see, puts the dye, coat and barding the character wears into it, none for a start piece, and
+each piece's own content's, written or faction's set or metal, the prologue's own armour's steel, or the one the page
+falls to where the forge does not draw it (`looks::shown`; [[Gear]], "Looks"; a light in the left hand is no piece,
+and stays), drops any other from what others see, puts the dye and barding the character wears and the coat of the
+horse it wears into it, none for a start piece, and
 keeps a faction's colour or a dye only on the layers its pieces worn and dyes kept allow, so no page can show another
 a piece it does not wear or keep ([[Gear]], "Cosmetics"). It makes a dress again when the browser sends one or after
 the player's gear is sent. A look goes out with the tick that
@@ -548,7 +553,10 @@ so every decision is Rust and the shell only carries bytes and time.
   replaces, and every player of a room a deploy restarts or a fault stops, leave without that last save. A socket there
   that sends no token within five seconds of the join (a claim's own waits, `TOKEN_WAIT_MS`), or whose token is no
   session, is closed with 4003 and "Sign in to play online." (in a run, "Sign in to enter this run."), so sockets that
-  never sign in cannot hold a room's places; every page of the game sends one, a guest's included. While the accounts do
+  never sign in cannot hold a room's places; every page of the game sends one, a guest's included. Nor can one address
+  fill them in those five seconds: a room holds eight of its sockets unsigned at most (`UNSIGNED_FROM_ONE`, an IPv6
+  address by its /64 as the accounts count it, `addressKey`), and a ninth closes with 1013, which the page joins again
+  on. While the accounts do
   not answer a claim, or the look before it, the player plays on unkept, and a look unanswered claims nothing. The Test
   Ground's rooms and a fleet's keep nothing and take anyone. A character the room's gate shuts ([[Activities]]) is let
   go untouched, and the socket closed with 4003 and the gate's reason. Every room that keeps characters judges one on a
@@ -729,10 +737,14 @@ set no swing on: every difference came within 2 s of a blow by or on the player,
   block stood on the course after it opened, as a way closing; and a block it holds taken from it, as a way opening.
   The door keeps its own course for prediction in step with both. The foes' navmesh is not baked again for either. The
   [[Prologue]]'s wreck is played so.
-- A node's room bakes its foes' navmesh over a 70 m square of its land and its layout's boxes in it, never its whole
-  section or its city's boxes; a foe that chases a player off it walks straight. A node's room opens in 0.15 to
-  0.34 s of WebAssembly, garrison and beats and all, 0.17 s at the median over the 90 garrisoned nodes (tested
-  offline, on an idle machine).
+- A node's room bakes its foes' navmesh over a 70 m square of its land and every box in it, its layout's and its
+  city's where any reach in, never its whole section; a foe that chases a player off it walks straight. A node's room
+  opens in 0.15 to 0.34 s of WebAssembly, garrison and beats and all, 0.17 s at the median over the 90 garrisoned
+  nodes (tested offline, on an idle machine); Saltmere's three zones, baking their public events' grounds too, in
+  0.71 to 1.0 s ([[Public Events]]). Their caverns' and runs' foes' sites stand nothing as a room opens: with them
+  the three open in 0.62 to 0.95 s of WebAssembly and 0.57 to 0.78 s natively, as they do without (tested offline, on
+  a machine shared with other builds); a site's group stands in the tick a player first comes within 150 m of it,
+  which bakes its navmesh, 130 to 270 ms natively, one such bake a tick ([[Enemies]], "Caverns and runs").
 - A node's room with one player and every group but a Boss's or a Miniboss's walking its beat ticks in 0.02 to 0.12 ms
   of WebAssembly at the median and in 0.65 ms at most at the 99th in a hundred, and its WebAssembly holds about 25 MB,
   the same after an hour open (tested offline).

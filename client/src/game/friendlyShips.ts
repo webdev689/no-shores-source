@@ -239,10 +239,11 @@ export function friendlyFrame(
 
 /** Each ship's footprint on the water, `scale` times its size: under way, or still at anchor. */
 export function friendlyHulls(ships: readonly FriendlySailing[], scale: number): HullMask[] {
-  return ships.map(({ x, y, heading, hull, lying }) => {
+  return ships.map(({ id, x, y, heading, hull, lying }) => {
     const { lengthM, beamM } = hullWaterline(hull);
     const way = lying ? 0 : UNDER_WAY;
-    return { x, y, heading, halfLength: (lengthM / 2) * scale, halfBeam: (beamM / 2) * scale, way };
+    const [halfLength, halfBeam] = [(lengthM / 2) * scale, (beamM / 2) * scale];
+    return { id: `friendly ${id}`, x, y, heading, halfLength, halfBeam, way };
   });
 }
 

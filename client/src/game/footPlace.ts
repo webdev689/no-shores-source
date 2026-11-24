@@ -120,6 +120,17 @@ export type Uses = (x: number, y: number, ask: (asked: GearAsk) => void) => Use 
  *  tells of that). */
 export type FootFight = Omit<HudFrame, 'matrix' | 'width' | 'height' | 'lost' | 'groundAt'>;
 
+/** What a frame on foot is asked: whether play is paused or the map is looked at, whether the hands are free, the
+ *  view's aspect, and the eye of a cutscene's shot shown in place of the player's own (the stranger's welcome), which
+ *  the figures are then drawn for. */
+export interface FootAsk {
+  readonly paused: boolean;
+  readonly looking?: boolean;
+  readonly hands: boolean;
+  readonly aspect: number;
+  readonly eye?: readonly [number, number, number] | null;
+}
+
 /** What one frame on foot shows: the shot, every figure, where the player stands with the section's edge, the
  *  fight (its marks on the ground and in the air, measured from the eye, with the marks over what the player can use
  *  and the nodes' beams; the lit keepers' marks, measured alike, drawn over everything; the arcs of its blows, in
@@ -140,4 +151,15 @@ export interface FootFrame {
   readonly props?: readonly EventProp[];
   readonly quest?: Quest | null;
   readonly sting?: 'cadence' | 'victory' | 'defeat' | null;
+}
+
+/** Runs `work` on a room just joined by `link`; should it throw, the link is let go first, so a trip that failed after
+ *  its room joined never rejoins later and takes the character from the room the player is really in. */
+export async function closedIfThrown<T>(link: { close?(): void }, work: () => Promise<T>): Promise<T> {
+  try {
+    return await work();
+  } catch (error) {
+    link.close?.();
+    throw error;
+  }
 }

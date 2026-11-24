@@ -17,6 +17,7 @@ import type { Story } from './story.ts';
 import type { WreckLayout } from './wreckLayout.ts';
 import { pulseAt } from './waking.ts';
 import { lightFires, type WreckScenery } from './wreckScenery.ts';
+import { seaTakenDress } from './look.ts';
 
 const LENS = { fov: 0.95, near: 0.1, far: 4_000 } as const;
 /** How fast the body sinks, metres a second; when the camera goes into the player's eyes; the flash; the end. */
@@ -105,9 +106,12 @@ export class Deep implements Beat {
     this.done = true;
   }
 
-  /** The wreck's fires are put out with the wreck: the shore has none. */
+  /** The wreck's fires are put out with the wreck, and the heart stops, however the deep was left: the shore has
+   *  neither. */
   leave(): void {
-    this.story.stage.parts.flames.clear();
+    const { flames, ambience } = this.story.stage.parts;
+    flames.clear();
+    ambience.heartbeat(false);
   }
 
   /** The player's body: under the surface and going down. */
@@ -157,7 +161,7 @@ export class Deep implements Beat {
     if (!eyes)
       actors.push({
         id: YOU_ID,
-        dress: this.story.dress,
+        dress: seaTakenDress(this.story.look),
         anim: 'fallen',
         x: body[0],
         y: body[1],

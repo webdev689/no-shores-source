@@ -214,7 +214,7 @@ pub struct Character {
     /// The faction pledged to, and the reputation earned with each (`factions.rs`).
     #[serde(default)]
     pub allegiance: crate::factions::Allegiance,
-    /// The dyes, coats and bardings kept, and the one of each worn (`cosmetics.rs`).
+    /// The dyes and bardings kept, and the one of each worn (`cosmetics.rs`).
     #[serde(default)]
     pub cosmetics: crate::cosmetics::Cosmetics,
     /// Their place in every quest, and the fragment choices their roads gave (`quests.rs`).
@@ -268,9 +268,37 @@ impl Character {
         }
     }
 
-    /// A new player, as Destiny 1 starts a Guardian: a level 1 Normal sword for Melee and level 1 Normal armour.
+    /// A new player, arriving with no weapon and no armour: only their ship's first modules.
     #[must_use]
     pub fn starting() -> Self {
+        Self::new_player(false)
+    }
+
+    /// A new player wearing a level 1 Normal sword for Melee and level 1 Normal armour: the Test Ground's, whose
+    /// fights are tried at once, and the scripted players'.
+    #[must_use]
+    pub fn kitted() -> Self {
+        Self::new_player(true)
+    }
+
+    /// The Test Ground's player: kitted, every Art mastered, and at a quest's `kept` task, as a character kept before:
+    /// no stranger stands on the Test Ground, and its stall serves the houses.
+    #[must_use]
+    pub fn test_grounds() -> Self {
+        let mut character = Self::kitted();
+        character.arts = crate::arts::WornArts::mastered();
+        for quest in crate::quests::quests().quests.iter() {
+            if let Some(kept) = &quest.kept {
+                let road = crate::quests::Road { task: kept.clone(), ..crate::quests::Road::default() };
+                character.quests.roads.insert(quest.id.clone(), road);
+            }
+        }
+        character.quests = std::mem::take(&mut character.quests).kept();
+        character
+    }
+
+    /// A new player, `kit` wearing the sword and armour, numbered before the ship's modules.
+    fn new_player(kit: bool) -> Self {
         let mut character = Self {
             xp: 0,
             fruit_grown: 0,
@@ -292,19 +320,20 @@ impl Character {
             scavenged: Vec::new(),
             allegiance: crate::factions::Allegiance::default().kept(),
             cosmetics: crate::cosmetics::Cosmetics::default(),
-            quests: crate::quests::QuestLog::default().kept(),
+            quests: crate::quests::QuestLog::begun(),
             mail: Vec::new(),
             lore: Vec::new(),
             left: None,
             unknown: UnknownKeys::new(),
         };
-        for (kind, slot) in [
+        let pieces = [
             (Kind::Sword, Slot::Melee),
             (Kind::Head, Slot::Head),
             (Kind::Torso, Slot::Torso),
             (Kind::Arms, Slot::Arms),
             (Kind::Legs, Slot::Legs),
-        ] {
+        ];
+        for (kind, slot) in pieces.into_iter().filter(|_| kit) {
             let id = character.take_id();
             character.items.insert(id, (Item::new(id, kind, Rarity::Normal, 1, slot), At::Worn(slot)));
         }
@@ -337,6 +366,8 @@ impl Character {
         // What others see is made again from the gear on each write (`to_json`), never kept as an unknown key.
         if let Some(object) = kept.as_object_mut() {
             object.remove("shown");
+            // One kept before cosmetics was read wearing the Bay, which is its horse now.
+            object.entry("cosmetics").or_insert_with(|| serde_json::json!({ "coat": crate::horses::FIRST_HORSE }));
         }
         let mut character: Self = serde_json::from_value(kept).ok()?;
         let resources = catalogue().resources.len();
@@ -393,6 +424,7 @@ impl Character {
         character.materials.shapes = character.materials.shapes.min(STOCK_MOST);
         let mut seen = std::collections::BTreeSet::new();
         character.lore.retain(|key| seen.insert(key.clone()));
+        character.horses_from_coats();
         character.earn_due();
         Some(character)
     }

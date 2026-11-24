@@ -6,6 +6,7 @@ import items from '../../../content/gear/items.json' with { type: 'json' };
 import { ASKS, type GearItem, type GearState, NONE } from '../network/gearMessages.ts';
 import {
   CARRIED,
+  HORSE,
   RARITIES,
   RESOURCE_COUNT,
   SLOTS,
@@ -115,10 +116,11 @@ export function cardOf(item: GearItem, worn: GearItem | null = null): Card {
     : item.defense
       ? { label: 'Defense', value: item.defense }
       : null;
-  const rows: [string, string][] = [['Level', String(item.level)]];
+  // A horse has no level, as it has no stats.
+  const rows: [string, string][] = item.kind === HORSE ? [] : [['Level', String(item.level)]];
   if (item.prestige) rows.push(['Prestige', String(item.prestige)]);
-  // Where it was earned, which its look says too; a ship's module keeps no look of a content.
-  if (!isModule(item.kind)) rows.push(['From', capital(earnedFrom(item))]);
+  // Where it was earned, which its look says too; a ship's module and a horse, its coat its look, keep none of a content.
+  if (!isModule(item.kind) && item.kind !== HORSE) rows.push(['From', capital(earnedFrom(item))]);
   const changes = (['attack', 'defense', 'prestige'] as const)
     .map((stat) => ({ label: capital(stat), from: worn?.[stat] ?? 0, to: item[stat] }))
     .filter((change) => change.from !== 0 || change.to !== 0);
@@ -166,6 +168,7 @@ export type Glyph =
   | 'ammo-crate'
   | 'xp'
   | 'empty'
+  | 'horse'
   | ShipGlyph
   | 'item';
 
@@ -231,12 +234,13 @@ export function inventoryPageOf(state: GearState): InventoryPage {
     words: "Hold it on an item's page to feed it to that item: it grows the item.",
   });
   const crates = state.crates ?? 0;
-  const full = (state.ammoShare ?? 1) >= 1;
+  const [full, unarmed] = [(state.ammoShare ?? 1) >= 1, state.ammoMost === 0];
+  const why = unarmed ? ' Wear a Ranged weapon first.' : full ? ' Yours is full.' : '';
   const crate = cell('ammo-crate', 'ammo-crate', 'Ammo crate', {
     count: crates,
-    words: `It fills your Ranged weapon's ammunition at once. You carry five at most.${full ? ' Yours is full.' : ''}`,
+    words: `It fills your Ranged weapon's ammunition at once. You carry five at most.${why}`,
     press:
-      crates > 0 && !full
+      crates > 0 && !full && !unarmed
         ? { label: 'Hold to fill your ammo', ask: { kind: ASKS.useCrate }, role: 'button', held: true, burst: 'pulse' }
         : null,
   });

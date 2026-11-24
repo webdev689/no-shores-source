@@ -31,7 +31,7 @@ export async function enterDungeon(
   return Foot.start(context, dungeonPlace(outside.node, layout), rules, async (heard, session) => ({
     link: address
       ? await RoomConnection.open(address, heard.snapshot, heard.gear, session)
-      : await openAlone(module, outside.text, into, heard),
+      : await openAlone(module, outside.text, into, heard, seas),
     boxes: seenBlocks(layout),
     text: outside.text,
     dungeon,

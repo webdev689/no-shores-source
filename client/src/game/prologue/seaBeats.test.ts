@@ -1,10 +1,13 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import scenes from '../../../../content/story/prologue.json' with { type: 'json' };
+import castJson from '../../../../content/story/cast.json' with { type: 'json' };
 import ships from '../../../../content/ships/ships.json' with { type: 'json' };
 import type { CaptainAt } from '../../rules/fightRules.ts';
 import type { LandWorker } from '../../terrain/landClient.ts';
-import type { Line } from '../../speech/cast.ts';
+import { castOf, scenesOf, type Line } from '../../speech/cast.ts';
+import { Conversation } from '../../speech/conversation.ts';
+import { Typing } from '../../speech/typing.ts';
 import { onScreen } from '../camera.ts';
 import { ambushersFrom, Battle, type Wreck } from './battle.ts';
 import { Calm, DECK_VIEW, onBrig } from './calm.ts';
@@ -13,7 +16,7 @@ import { onDeck } from './sailing.ts';
 import { CRY_S, inboundAt, shotOnDeck, Sighted } from './sighted.ts';
 import { helmInShip } from './helm.ts';
 import { captainAtSea } from '../../ships/shipCrew.ts';
-import { headOnView } from './stage.ts';
+import { BARK_GAP_S, headOnView } from './stage.ts';
 import { FROM, lying, sayingS, speakers, STEP_S, storied, turnBetween, unseen, VIEW, viewOf } from './seaStory.test.ts';
 
 test('each cry of the ships sighted is said with every speaker of it on the view, from the first cry to the last word', () => {
@@ -408,4 +411,42 @@ test('a wreck the fight left far off still reads as the lookout speaks of it', (
     onScreen(frame.shot, VIEW, [far.x, far.y, far.z + 15]),
   ];
   assert.ok(foot && top && foot[1] - top[1] >= VIEW.height * 0.15, `${foot?.[1]} ${top?.[1]}`);
+});
+
+test('every word of the ram is typed out by the time the crew brace, as the stage plays its lines', () => {
+  const cast = castOf(castJson);
+  const lines = scenesOf(scenes, cast).ram ?? [];
+  const syllableOf = (line: Line) => cast.voices[cast.speakers[line.who]?.voice ?? '']?.syllableS ?? 0.1;
+  const secondsUntil = (done: () => boolean, step: (seconds: number) => void) => {
+    let seconds = 0;
+    while (!done()) [step(STEP_S), (seconds += STEP_S)];
+    return seconds;
+  };
+  let [saidS, typedBy, index] = [0, 0, 0];
+  while (index < lines.length) {
+    const line = lines[index] as Line;
+    if (line.kind === 'bark') {
+      const typing = new Typing(line.say, syllableOf(line));
+      typedBy =
+        saidS +
+        secondsUntil(
+          () => typing.done,
+          (seconds) => typing.step(seconds),
+        );
+      [saidS, index] = [saidS + BARK_GAP_S, index + 1];
+      continue;
+    }
+    const run: Line[] = [];
+    while (lines[index] && lines[index]?.kind !== 'bark') run.push(lines[index++] as Line);
+    const talk = new Conversation(run, cast, true);
+    saidS += secondsUntil(
+      () => talk.finished,
+      (seconds) => talk.step(seconds),
+    );
+    typedBy = saidS;
+  }
+  assert.ok(
+    typedBy <= BRACED_S,
+    `the last word is typed ${typedBy.toFixed(2)} s in, after the crew brace at ${BRACED_S} s`,
+  );
 });

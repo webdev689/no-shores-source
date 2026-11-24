@@ -23,7 +23,8 @@ fn striker() -> combat::Fighter {
 }
 
 #[test]
-fn a_press_opens_a_parry_window_of_a_fifth_of_a_second_and_then_the_guard_blocks() {
+fn a_press_opens_a_parry_window_of_a_quarter_of_a_second_and_then_the_guard_blocks() {
+    assert_eq!(PARRY_WINDOW, 15, "15 ticks, a quarter of a second");
     let blow = swing_blow(2, &striker(), &CHOP, 1);
     let (raised, happenings) = run(player_at(0.0, 0.0), guarding(0.0), 1, None);
     assert_eq!(happenings, vec![(0, Happening::Guarded { window: true })]);
@@ -33,7 +34,7 @@ fn a_press_opens_a_parry_window_of_a_fifth_of_a_second_and_then_the_guard_blocks
 }
 
 #[test]
-fn a_foe_s_press_opens_three_quarters_of_a_player_s_window() {
+fn a_foe_s_press_opens_a_window_of_nine_ticks() {
     let blow = swing_blow(1, &player_at(0.0, -1.5), &CHOP, 2);
     let window = parry_window(false);
     assert_eq!((window, parry_window(true)), (9, PARRY_WINDOW));

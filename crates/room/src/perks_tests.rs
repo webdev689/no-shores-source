@@ -10,7 +10,7 @@ use std::collections::BTreeMap;
 
 /// A character wearing a Legendary sword whose first trait column offers these, the one at `chosen` bought and chosen.
 fn wearing(traits: &[&str], chosen: u8) -> gear::Character {
-    let mut character = gear::Character::starting();
+    let mut character = gear::Character::kitted();
     let mut sword = Item::new(99, Kind::Sword, Rarity::Legendary, 20, Slot::Melee);
     sword.layout = vec![
         traits.iter().map(|id| (*id).to_owned()).collect(),

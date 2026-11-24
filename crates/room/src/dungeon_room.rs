@@ -2,7 +2,7 @@
 //! corner, its floor at 0 m), one spawn at the way in, and a navmesh over the whole dungeon kept to the floor joined to
 //! the way in. Its garrison is the Grey Tithe's dungeon garrison standing where the Forge puts foes: its end foe (the
 //! Reeve, a Miniboss, or an Elite Dungeon's own Boss) alone in the end room, and a band in each other room past the
-//! way in's, each room's on its free cells nearest its middle, its quiet cells first, round its props. Beside the end
+//! way in's as far as the room's most foes allow, each room's on its free cells nearest its middle, its quiet cells first, round its props. Beside the end
 //! foe's post stands the cache, shut while it stands; when it falls the cache opens and every player then in the room
 //! finds a Vestige before it, theirs alone, and a second where the run's first clear pays (`run_room.rs`).
 
@@ -147,6 +147,7 @@ impl Room {
         // Its jambs and pillars are its ground's own walls, not blocks a body could climb; its pads are blocks.
         let mut room = Self::node(floor, pads, Section { ring, spawns: vec![[x, y]], falls_kill: false });
         room.facing = bearing([x, y], [x + toward_x, y + toward_y]);
+        room.ways_out = Some((dungeon.exit_door(), dungeon.portal_door()));
         // Shut by its seas alone, as a node with no patrol is; a patrol's own dungeon is gated as its patrol.
         room.place = Some(gear::gate::Place::Node);
         room.world_seed = node_seed(name);

@@ -52,6 +52,9 @@ pub struct NodeFile {
     pub gates: Vec<String>,
     /// In a patrol area, its layout's resource places, where its room's nodes stand, in the layout's order.
     pub resources: Vec<[f64; 2]>,
+    /// In a patrol area, its layout's foes' sites in its caverns (a coven's or a cave's area) and on its runs' beats
+    /// short of their end arenas, in the layout's order: where its room stands a group as a player first comes near.
+    pub foes: Vec<[f64; 2]>,
     /// The places the houses' roads name: each of its layout's areas, and each run at its mouth.
     pub places: Vec<Place>,
     /// Its layout's paths, each its points, that a road's figure walks between places.
@@ -84,6 +87,18 @@ pub struct Place {
 
 /// How far a run's place reaches round its mouth, metres.
 pub const RUN_REACH_M: f64 = 25.0;
+
+/// A layout's foes' sites a room stands groups at: a run's beats (a site naming nothing) and a coven's or a cave's
+/// area; a camp's, a ruin's and the rest stand in the garrison's square or wait on the owner's word.
+#[must_use]
+pub fn foes_of(layout: &layout::Layout) -> Vec<[f64; 2]> {
+    use layout::brief::AreaKind;
+    let cavern = |name: &String| {
+        layout.areas.iter().any(|area| &area.name == name && matches!(area.kind, AreaKind::Coven | AreaKind::Cave))
+    };
+    let held = layout.sites.iter().filter(|site| site.kind == layout::sites::SiteKind::Foes);
+    held.filter(|site| site.holds.as_ref().is_none_or(cavern)).map(|site| site.at).collect()
+}
 
 /// A layout's places: its areas, then its runs at their mouths, but a run named as one of its areas is, whose name
 /// names that area alone.
@@ -214,6 +229,7 @@ pub fn nodes_of(
             grounds: None,
             gates: Vec::new(),
             resources: Vec::new(),
+            foes: Vec::new(),
             places,
             paths,
             breach: None,
@@ -234,13 +250,14 @@ pub fn nodes_of(
             let places = layout.sites.iter().filter(|site| site.kind == layout::sites::SiteKind::Resource);
             places.filter_map(|site| site.node).collect()
         });
+        let foes = laid.map(foes_of).unwrap_or_default();
         let places = laid.map(places_of).unwrap_or_default();
         let paths =
             laid.map(|layout| layout.paths.iter().map(|path| path.points.clone()).collect()).unwrap_or_default();
         let grounds = laid.and_then(grounds_of);
         let breach = laid.and_then(breach_of);
         let cut = cut(node.id.clone(), node.kind, node.name.clone(), ring, spawns);
-        NodeFile { grounds, gates, resources, places, paths, breach, ..cut }
+        NodeFile { grounds, gates, resources, foes, places, paths, breach, ..cut }
     });
     let social = plan.as_ref().map(|plan| {
         let (id, social) = (city::social_id(&plan.id), &plan.social);
@@ -328,6 +345,33 @@ mod tests {
         .unwrap();
         assert_eq!(nodes.len(), 1);
         (nodes.remove(0), layout)
+    }
+
+    #[test]
+    fn a_layout_s_foes_sites_its_room_stands_are_its_caverns_and_its_runs_beats_short_of_their_end_arenas() {
+        let (_, layout) = glade();
+        let mut whole = generate(&layout.continents[0], land::edits::parse(GLADE).unwrap()).unwrap();
+        let laid =
+            layout::settle::settle(&mut whole, &layout::book::Book::default(), &layout::brief::Briefs::default());
+        let mut glade = laid.into_iter().find(|each| each.id == "glade").expect("laid");
+        glade.areas.truncate(2);
+        glade.areas[0].kind = layout::brief::AreaKind::Cave;
+        glade.areas[1].kind = layout::brief::AreaKind::Camp;
+        let site = |kind, at, holds: Option<&String>| layout::sites::Site {
+            kind,
+            at,
+            radius: 10.0,
+            holds: holds.cloned(),
+            node: None,
+        };
+        let (cave, camp) = (&glade.areas[0], &glade.areas[1]);
+        glade.sites = vec![
+            site(layout::sites::SiteKind::Foes, cave.at, Some(&cave.name)),
+            site(layout::sites::SiteKind::Foes, camp.at, Some(&camp.name)),
+            site(layout::sites::SiteKind::Foes, [1.0, 2.0], None),
+            site(layout::sites::SiteKind::Objective, [3.0, 4.0], Some(&cave.name)),
+        ];
+        assert_eq!(foes_of(&glade), vec![glade.areas[0].at, [1.0, 2.0]]);
     }
 
     #[test]

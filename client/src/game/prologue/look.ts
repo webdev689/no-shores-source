@@ -95,6 +95,10 @@ export function plainDressOf(look: Look): Dress {
 /** A dress with nothing in the hands: the player wakes on the wreck without their sword and shield. */
 export const unarmed = (dress: Dress): Dress => ({ ...dress, outfit: { ...dress.outfit, right: null, left: null } });
 
+/** What the sea leaves the player once Thule throws them over, from the deep to the shore: the plain clothes a player
+ *  with nothing wears in Overlook, nothing in the hands and no sword at the hip. */
+export const seaTakenDress = (look: Look): Dress => unarmed(plainDressOf(look));
+
 /** The prologue's dress: steel armour but no helm, so the face shows, the sword sheathed and the kite shield slung. */
 export function armouredDress(look: Look): Dress {
   const plain = plainDressOf(look);

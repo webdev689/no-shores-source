@@ -3,7 +3,9 @@ import { readFileSync } from 'node:fs';
 import { readFile } from 'node:fs/promises';
 import { test } from 'node:test';
 import { EVENT } from '../../combat/cues.ts';
+import type { GearState } from '../../network/gearMessages.ts';
 import type { FightEvent } from '../../network/messages.ts';
+import { WORN } from '../../player/gear.ts';
 import type { Dress } from '../../player/dressing.ts';
 import type { InputFrame } from '../../player/input.ts';
 import type { FighterView } from '../../rules/fighters.ts';
@@ -11,7 +13,7 @@ import { setGearScreenOpen } from '../gearScreen.ts';
 import { rosterOf } from '../../rules/roster.ts';
 import { figureOf } from '../../player/dressing.ts';
 import type { Actor } from './actors.ts';
-import { armouredDress, FIRST_LOOK } from './look.ts';
+import { armouredDress, FIRST_LOOK, plainDressOf, unarmed } from './look.ts';
 import { onScreen, type Shot } from '../camera.ts';
 import type { Beat } from './beat.ts';
 import { Deep } from './deep.ts';
@@ -26,6 +28,7 @@ import { courseOf, readWreck, topAt } from './wreckLayout.ts';
 import type { WreckRun } from './wreckRun.ts';
 import { WreckFight } from './wreckFight.ts';
 import type { WreckScenery } from './wreckScenery.ts';
+import { ARMS_ITEM } from './wreckTeaching.ts';
 
 const layout = readWreck();
 const SIZE = { width: 960, height: 540 };
@@ -176,6 +179,18 @@ test('the throw overboard and the wake cut short say and sound nothing more', ()
   assert.ok(!calls.some((call) => call.includes('thud')), calls.join(' '));
 });
 
+test('the sea takes what the player wore: in the deep they sink in plain clothes, unarmed', () => {
+  const { story } = recorded({}, { look: FIRST_LOOK }, armouredDress(FIRST_LOOK));
+  const beat = new Deep(story, layout, scenery);
+  const dresses = [];
+  for (let since = 0; since < 8; since += 0.5) {
+    const you = beat.frame(tick(0.5)).actors?.find((actor) => actor.id === YOU_ID);
+    if (you) dresses.push(you.dress);
+  }
+  assert.ok(dresses.length > 0, 'the player is seen sinking');
+  for (const dress of dresses) assert.deepEqual(dress, unarmed(plainDressOf(FIRST_LOOK)));
+});
+
 test('the deep cut short says nothing more and flashes no more', () => {
   const { story, calls } = recorded();
   const beat = new Deep(story, layout, scenery);
@@ -185,6 +200,15 @@ test('the deep cut short says nothing more and flashes no more', () => {
   beat.frame(tick(0.1));
   assert.ok(beat.done);
   assert.ok(!calls.some((call) => call.startsWith('stage.play') || call.includes('flash')));
+});
+
+test('the deep left while its heart beats stops it, however it was left', () => {
+  const { story, calls } = recorded();
+  const beat = new Deep(story, layout, scenery);
+  beat.frame(tick(0.5));
+  calls.length = 0;
+  beat.leave();
+  assert.ok(calls.includes('stage.parts.ambience.heartbeat(false)'), 'the shore hears no heart');
 });
 
 test("the wake eases out of the eyes to over the player's shoulder, their hands empty, and ends on the shot play begins from", async () => {
@@ -359,10 +383,11 @@ function stillRun(
     heads: () => new Map(boss ? [['thule', boss.head]] : []),
     beginBoss: () => undefined,
     fight: { player: 1, parryOpen: true },
-    armedDress: (dress: Dress) => dress,
-    arms: 'worn',
+    gear: null,
+    storyArms: { arms: 'worn', bow: 'none', dropBow: () => undefined },
     boarder: 'none',
     boarderView: null,
+    boarderPlace: null,
     standBoarder: () => undefined,
     holdWaves: () => undefined,
   } as unknown as WreckRun;
@@ -392,6 +417,25 @@ test('the player felled by Thule is never told they will rise: the boss fight en
   own.dead = true;
   fight.frame(tick(0.016));
   assert.ok(!calls.some((call) => call.includes('Fallen')), 'no death words over the fade');
+});
+
+test("Thule's coming is watched from its own eye: the figures are placed for it, not the player's", async () => {
+  const { story } = recorded(FOOT_VIEW);
+  const run = stillRun({ dead: false }, true);
+  const asked: { eye: readonly number[] }[] = [];
+  const played = run.frame.bind(run);
+  run.frame = (controls, elapsed, clock, ask) => {
+    if (ask.cutscene) asked.push(ask.cutscene);
+    return played(controls, elapsed, clock, ask);
+  };
+  const fight = new WreckFight(story, layout, scenery, Promise.resolve(run), {
+    show: () => undefined,
+    hide: () => undefined,
+  } as unknown as Nameplate);
+  await Promise.resolve();
+  for (let since = 0; since < 1; since += 0.05) fight.frame(tick(0.05));
+  assert.ok(asked.length > 0, 'the push in holds the camera');
+  assert.notDeepEqual(asked.at(-1)?.eye, [0, 0, 5], 'from its eye, pushed in toward him');
 });
 
 test('the push in to Thule goes 2.6 m in at most, so on the long quarterdeck it never passes the player', async () => {
@@ -498,7 +542,8 @@ test('every figure the wake, the throw overboard and the deep stand is drawn clo
     await readFile(new URL('../../../../target/wasm32-unknown-unknown/release/room_wasm.wasm', import.meta.url)),
   );
   const roster = rosterOf(compiled);
-  const { story } = recorded(FOOT_VIEW, { 'stage.parts.roster': roster }, armouredDress(FIRST_LOOK));
+  const parts = { 'stage.parts.roster': roster, look: FIRST_LOOK };
+  const { story } = recorded(FOOT_VIEW, parts, armouredDress(FIRST_LOOK));
   const actors: Actor[] = [];
   const wake = new Wake(story, layout, scenery, new Promise<WreckRun>(() => undefined));
   for (let since = 0; since < 24; since += 0.5) actors.push(...(wake.frame(tick(0.5)).actors ?? []));
@@ -537,6 +582,22 @@ test("Thule's cry brings one strike down 400 m beyond him, seen from where the p
   assert.ok(Math.abs(Math.hypot(x - thuleX, y - thuleY) - 400) < 1e-6, `${x}, ${y}`);
 });
 
+test("in Thule's coming the fight's display (its bars, compass and keys) is hidden, and shown again after", async () => {
+  const { story, calls } = recorded(FOOT_VIEW);
+  const nameplate = { show: () => undefined, hide: () => undefined } as unknown as Nameplate;
+  const fight = new WreckFight(story, layout, scenery, Promise.resolve(stillRun({ dead: false }, true)), nameplate);
+  await Promise.resolve();
+  const hidden = () => calls.filter((call) => call === 'stage.parts.footView.hideDisplay()').length;
+  fight.frame(tick(0.05));
+  fight.frame(tick(0.05));
+  assert.ok(hidden() >= 1, 'hidden as he comes');
+  assert.ok(calls.includes('stage.parts.hud.hints()'), 'no keys');
+  for (let frame = 0; frame < 140; frame++) fight.frame(tick(0.05));
+  const after = hidden();
+  fight.frame(tick(0.05));
+  assert.equal(hidden(), after, 'shown again once the fight is on');
+});
+
 /** A run the teaching can be walked through: its arms, the boarder, the player's action and the frame's events as
  *  `state` holds them; each frame's options, each boarder stood and each word on the waves written down. */
 function taughtRun(state: {
@@ -545,8 +606,19 @@ function taughtRun(state: {
   view: FighterView | null;
   action: string;
   events: FightEvent[];
-}): { run: WreckRun; frames: { frozen?: boolean; paused: boolean }[]; stood: number[]; waves: boolean[] } {
+  fell?: readonly number[];
+}): {
+  run: WreckRun;
+  frames: { frozen?: boolean; paused: boolean }[];
+  stood: number[];
+  waves: boolean[];
+  dropped: (readonly number[])[];
+} {
   const [frames, stood, waves] = [[] as { frozen?: boolean; paused: boolean }[], [] as number[], [] as boolean[]];
+  const dropped: (readonly number[])[] = [];
+  /** A forge that draws the iron sword and shield and no armour, as gear dresses a figure. */
+  const sets = { helm: [], pauldrons: [], cuirass: [], gauntlets: [], greaves: [], boots: [] };
+  const wardrobe = { sets, garments: [], right: ['sword_iron'], left: ['shield_kite_iron'], hairStyles: [] };
   const shot = { eye: [0, 0, 5], yaw: 0, pitch: 0, fov: 1, near: 0.1, far: 500 } as unknown as Shot;
   const run = {
     frame: (controls: unknown, seconds: number, clock: number, options: { frozen?: boolean; paused: boolean }) => {
@@ -572,12 +644,23 @@ function taughtRun(state: {
       parryOpen: true,
       own: { action: { kind: 'idle' }, mode: 'ground', health: 50, stamina: 50, x: 0, y: 0, facing: 0, aim: 0 },
     },
-    armedDress: (dress: Dress) => ({
-      ...dress,
-      outfit: { ...dress.outfit, right: 'sword_iron', left: 'shield_kite_iron' },
-    }),
-    get arms() {
-      return state.arms;
+    get gear() {
+      const where = state.arms === 'worn' ? WORN : 0;
+      return { items: state.arms === 'lying' ? [] : [{ ...ARMS_ITEM, at: where }] } as unknown as GearState;
+    },
+    forge: { wardrobe: () => wardrobe },
+    storyArms: {
+      get arms() {
+        return state.arms;
+      },
+      bow: 'none',
+      dropBow(fell: readonly number[]) {
+        dropped.push(fell);
+        this.bow = 'lying';
+      },
+    },
+    get boarderPlace() {
+      return state.boarder === 'fallen' ? (state.fell ?? [1, 2, 3]) : null;
     },
     get boarder() {
       return state.boarder;
@@ -591,13 +674,18 @@ function taughtRun(state: {
     },
     holdWaves: (held: boolean) => waves.push(held),
   } as unknown as WreckRun;
-  return { run, frames, stood, waves };
+  return { run, frames, stood, waves, dropped };
 }
 
 test('the teaching on the wreck: bare hands until the arms are worn, a boarder once ready, its blows frozen to teach', async () => {
   const body = { x: 0, y: 0, z: 2, vx: 0, vy: 0, vz: 0, mode: 'ground' };
-  const walker = { you: { dress: null as Dress | null }, player: { body, yaw: 0 }, inFirstPerson: false };
   const armed = armouredDress(FIRST_LOOK);
+  const walker = {
+    you: { dress: armed as Dress | null },
+    player: { body, yaw: 0, loadout: 0 },
+    inFirstPerson: false,
+    ridesIn: () => undefined,
+  };
   const { story, calls } = recorded(FOOT_VIEW, { walker }, armed);
   const state = {
     arms: 'lying',
@@ -606,7 +694,7 @@ test('the teaching on the wreck: bare hands until the arms are worn, a boarder o
     action: 'idle',
     events: [] as FightEvent[],
   };
-  const { run, frames, stood, waves } = taughtRun(state);
+  const { run, frames, stood, waves, dropped } = taughtRun(state);
   const fight = new WreckFight(story, layout, scenery, Promise.resolve(run), {} as Nameplate);
   await Promise.resolve();
   const step = (seconds = 0.1, controls: Partial<InputFrame> = {}) =>
@@ -667,6 +755,12 @@ test('the teaching on the wreck: bare hands until the arms are worn, a boarder o
   assert.ok(calls.includes(`stage.parts.hud.toast(${reminder()})`), 'then the reminder');
   state.boarder = 'fallen';
   onFor(2);
-  assert.equal(waves.at(-1), false, 'the boarder down, the waves come');
+  assert.deepEqual(dropped, [[1, 2, 3]], 'the boarder down, its bow drops where it fell, once');
+  Object.assign(state, { boarder: 'standing', fell: [4, 5, 6] });
+  step();
+  state.boarder = 'fallen';
+  onFor(1);
+  assert.deepEqual(dropped, [[1, 2, 3]], 'a boarder brought down after it drops none');
+  assert.equal(waves.at(-1), true, 'the waves wait for the bow and the Storm');
   assert.deepEqual(stood, [1], 'no other boarder');
 });

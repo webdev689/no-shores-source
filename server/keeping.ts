@@ -52,14 +52,25 @@ const CLAIM_WAITS_MS = [1_000, 4_000];
 export const TOKEN_WAIT_MS = CLAIM_WAITS_MS.reduce((total, millis) => total + millis, 0);
 const sleep = (millis: number) => new Promise<void>((resolve) => setTimeout(resolve, millis));
 
+/** Whether a kept character's body says it left its room by a dungeon's way out (`gear::left`'s `out`). */
+export function leftByWayOut(body: string | null): boolean {
+  if (body === null) return false;
+  try {
+    return (JSON.parse(body) as { left?: { out?: unknown } }).left?.out === true;
+  } catch {
+    return false;
+  }
+}
+
 /** A session's token, as a browser sends it. */
 export const TOKEN = /^[0-9a-f]{64}$/;
 
 interface Held {
   readonly account: string;
   readonly holder: string;
-  /** The room that held the character before this one. */
+  /** The room that held the character before this one, and whether it left that room by a dungeon's way out. */
   readonly from: string | null;
+  readonly out: boolean;
   changed: boolean;
   savedAt: number;
   saving: boolean;
@@ -130,6 +141,12 @@ export class Keeper {
   arrivingLaunched(launched: (player: number, account: string) => Promise<boolean>): this {
     this.launchedHere = launched;
     return this;
+  }
+
+  /** Whether a kept player's character left the room it came from by a dungeon's way out: its exit door, or its open
+   *  return portal, as that room kept it (`gear::left`'s `out`). */
+  leftByWayOut(player: number): boolean {
+    return this.held.get(player)?.out ?? false;
   }
 
   /** The room a kept player's character came from; null for one not kept here, or a character no room held before. */
@@ -210,6 +227,7 @@ export class Keeper {
       account: claimed.account,
       holder,
       from: claimed.from,
+      out: leftByWayOut(claimed.body),
       changed: claimed.body === null,
       savedAt: now(),
       saving: false,

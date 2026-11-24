@@ -103,7 +103,8 @@ number is one of [[Gear as Claude Shapes It]].
   and each intrinsic belongs to one Atheric, and every Atheric weapon has an intrinsic; every kind of loadout has a named Legendary; every slot has a named Legendary and an Atheric; every armour and weapon
   kind has its word; every rolled pool holds enough traits for a Legendary; every faction perk is a perk of a faction the factions' file
   holds, and each faction's armour piece and weapon writes no traits and has one of its faction's perks that fits it;
-  every Breach perk is a perk and no faction's, and every armour and weapon kind has enough of them to fill a column.
+  every Breach perk is a perk and no faction's, and every armour and weapon kind has as many of them as its widest
+  piece has perk nodes in all.
 - **An item** is a kind (a Melee or a Ranged loadout, four armour pieces, the cloak, or one of a ship's four modules,
   [[Ship Power]]), a rarity, a level (1 to 20; a
   Legendary or Atheric is 20), its XP and the nodes bought and chosen. A faction's armour or weapon keeps the traits it
@@ -184,8 +185,8 @@ number is one of [[Gear as Claude Shapes It]].
   its colour and slot at the foe's level, whatever a named item's own (`keep_found`).
 - **A clear** ([[Bosses and Dungeons Drop Items, Clears Pay, and Shapes Come From the Week's Abyss]], `room::clears`):
   once every group of a mission's, a dungeon's or a world boss's garrison is down at once, no wave standing, each
-  player still in the room who shared a kill of it since its last clear (as their account, so one who rejoined keeps
-  it) is paid, at the garrison's highest level as a
+  player still in the room who shared a kill of a foe of its own groups, not a wave's or a quest's, since its last
+  clear ([[Only the Garrison's Own Kills Share Its Clear, and a Failed Trip Goes Back to the Beach]]; as their account, so one who rejoined keeps it) is paid, at the garrison's highest level as a
   kill is: at level 5 a mission 400 XP and 30 Aurem, a dungeon 800 and 60, a world boss 1,600 and 120
   (`rewards::Clear`). A dungeon's clear also leaves an item, coloured as its Miniboss's, and a Vestige as often as its
   Miniboss leaves one. It pays once until a group stands again. A patrol never ends, so it pays none. A laid
@@ -205,7 +206,11 @@ number is one of [[Gear as Claude Shapes It]].
 
 ## In the rooms
 
-- **Each player's gear** is held by the room they are in ([[Server]]), the starting kit as they join, and sent to
+- **A new character** arrives with no weapon and no armour, only their ship's first modules
+  ([[The Stranger Welcomes the Player, and a Quest Walks Them Round Overlook]]); the Test Ground's player, and the
+  scripted players that try the public events, wear a level 1 Normal sword and level 1 Normal armour
+  (`Character::kitted`). A character kept before keeps its gear.
+- **Each player's gear** is held by the room they are in ([[Server]]), a new character's as they join, and sent to
   them alone whenever it changes, every column of every item spelled out so the browser draws it without the rules.
 - **Hands.** A player holds only what a loadout they wear puts in their hands, the fists with no Melee worn, or a
   torch beside a loadout that leaves the left hand free; the browser draws the hands from the loadout drawn, in a
@@ -316,19 +321,24 @@ player while they are in it (`room::perks`). A blow lands when it strikes, is bl
   the one that ends the veil; Shade Step (armour) makes a dodge while Veiled cost 20% less stamina, a trim. Shared
   Flame and From the Dark take the striker's statuses as the blow is struck or the shot loosed. Every number is
   Claude's, in [[Gear as Claude Shapes It]] ("The factions' perks").
-- **The Breaches' perks** ([[Breaches Roll From a Perk Pool of Their Own]]). Eight perks, the Breaches' own
+- **The Breaches' perks** ([[Breaches Roll From a Perk Pool of Their Own]]). Thirteen perks, the Breaches' own
   (`breach` in `content/gear/traits.json`), which no shared pool and no faction offers and which fit only a Breach's
   piece. A Breach's armour or weapon (`vestige::make` from a Breach) rolls its handling and finish columns from the
-  shared pools as any piece does, and every node of its perk columns from the Breaches' perks that fit it: never one
-  twice in a column, those it has not yet offered first; the pool is smaller than a Legendary's perk nodes, so a later
-  column may offer one an earlier one does. Shatterpoint (melee) Exposes a foe whose guard a blow breaks. Vein Strike
-  (weapon) strikes an Exposed foe 15% harder, a blow or a shot. Bloom (weapon) Exposes every other living foe within
+  shared pools as any piece does, and every node of its perk columns from the Breaches' perks that fit it, never one
+  the piece already offers, as a shared piece never offers a trait twice. Six fit armour, every perk node of a
+  Legendary's, and four or five each kind of weapon, a Legendary weapon's four. Shatterpoint (melee) Exposes a foe
+  whose guard a blow breaks. Vein Strike (weapon) strikes an Exposed foe 15% harder, a blow or a shot. Bloom (weapon) Exposes every other living foe within
   4 m of a foe it slays. Crystal Sight (ranged) Exposes a foe a shot lands on 20 m or more from the shooter, as the
   shot lands. Crystal Skin (armour) takes 10% off every blow while above three quarters of its wearer's health, a trim
   (`hale_taken`), so a browser predicts it, a blocked blow's chip too. Regrowth (armour) gives back 5% of the most
   health on a kill of a foe, a spell's too, as the room heals (none once fallen). Resonance (armour) Exposes the foe whose blow is perfectly dodged.
-  Lattice Wall (shield) Exposes the striker of a blow blocked while its loadout is drawn. Each is in the room's one
-  door for statuses but Crystal Skin; every number is Claude's, in [[Gear as Claude Shapes It]] ("The Breaches'
+  Lattice Wall (shield) Exposes the striker of a blow blocked while its loadout is drawn. Fracture (armour) Exposes
+  the foe whose blow is parried. Lattice Shell (armour) takes 20% off every blow while below a quarter of its
+  wearer's health, a trim beside Crystal Skin's (`low_taken`), a blocked blow's chip too. Shardburst (armour) Exposes
+  every foe within 3 m of its wearer when a foe's blow breaks the wearer's guard, the striker too if it is that near.
+  Splinter (melee) Exposes the foe a riposte lands on and every other foe within 3 m of it. Shard Round (ranged)
+  Charges a foe a shot lands on that was Exposed as it landed. Each is in the room's one door for statuses but
+  Crystal Skin and Lattice Shell; every number is Claude's, in [[Gear as Claude Shapes It]] ("The Breaches'
   perks"). No Breach is built yet, so only the rules and their tests make a Breach's piece.
 - **The pools.** With the verbs and the perks that give and take, a Melee loadout is offered among 6 handling traits,
   7 finishes and 8 perks (9 with a shield), a Ranged one among 6, 7 and 6; armour among its 6 perks.
@@ -490,12 +500,16 @@ the factions' counters are in [[Factions]].
   Ranged, and an Ammo crate, in a social space's arcades ([[Cities]]). Each shows six wares a day, three Rare and three
   Magic, made at the buyer's level (at most 20), the same for everyone that day and new the next (`gear::vendor`). The
   slots turn with the day, so over four days the Armorsmith sells each armour piece at each rarity.
-- A ware costs Aurem only: 2,000 for Rare, 600 for Magic. It is bought only at its smith's counter, and carried with
-  its slot's nine. The smiths sell no Legendary or Atheric gear: it is earned, had from Shape, or a faction's own
+- **The starter stock.** Beside the day's wares each smith always sells plain pieces to start with, Normal at the
+  buyer's level (at most 20), 50 Aurem each: the Armorsmith a head, a torso, arms and legs; the Weaponsmith a Sword &
+  Shield (Melee) and a bow (Ranged). Their screens show them first, under "To start". A smith's stock is numbered the
+  day's six first, then the starter stock (`gear::vendor::stock`).
+- A ware costs Aurem only: 2,000 for Rare, 600 for Magic, 50 for a starter piece. It is bought only at its smith's
+  counter, and carried with its slot's nine; the quest walked hears of it by its slot ([[Quests]]). The smiths sell no Legendary or Atheric gear: it is earned, had from Shape, or a faction's own
   bought at its counter by rank ([[Factions]]).
 - **The Mage** identifies Vestiges, free.
-- **The Tailor** sells six emblems a day ("Emblems") and four dyes; **the Tack** four horse pieces a day
-  ("Cosmetics").
+- **The Tailor** sells six emblems a day ("Emblems") and four dyes; **the Tack** four a day of horses and bardings
+  ("Horses", "Cosmetics").
 - A day runs from 09:00 UTC to 09:00 UTC (`gear::clock`): the smiths' wares, the Tailor's and the Tack's turn then.
 - **Shape** comes to Overlook from Friday 09:00 to Sunday 21:00 UTC and stands at one of eight places on the plaza,
   the week's (`gear::shape`, in the clock's weeks from Tuesday 09:00 UTC). He sells six pieces for the week, four
@@ -512,7 +526,7 @@ the factions' counters are in [[Factions]].
   200 at most.
 - The room keeps the minute, set by its host before its first tick and each second after (and by the page as its own
   room steps, playing alone), whose day (`gear::clock`, from 09:00 UTC) sets every daily list and whose week (from
-  Tuesday 09:00 UTC) sets Shape. It sends the day's wares, the Tailor's emblems and dyes, the Tack's pieces and, while he is here, Shape's place and his
+  Tuesday 09:00 UTC) sets Shape. It sends each smith's stock and the Shipwright's in turn, the Tailor's emblems and dyes, the Tack's pieces and, while he is here, Shape's place and his
   wares (none twice in a week) with a player's gear while they stand in a social space, sends them again as the
   day turns or Shape comes, goes or moves, and a purchase is an ask like any other: 12 a smith's ware (its place in
   `node` and the day it was shown, which the gear message carries, so one shown before the day turned is refused as
@@ -543,16 +557,43 @@ and its art (`gear::emblems`).
 ## Cosmetics
 
 Dyes, coats and bardings, after Destiny's shaders and Sparrows: `content/gear/cosmetics.json`, numbered by its order
-on the wire, each with a kind, a name, a rarity, words, where it comes from and its look (`gear::cosmetics`).
+on the wire, each with a kind, a name, a rarity, words, where it comes from and its look (`gear::cosmetics`). A coat
+is a horse's hide, kept as its horse ("Horses").
 
-- **Kept and worn** as emblems are: a character keeps every one they have had and wears one dye, one coat and one
-  barding. A new one keeps and wears the starts: Own Colours, Bay and Bare. One worn that is not kept, or of another
-  kind, is the start again as the character is read.
+- **Kept and worn** as emblems are: a character keeps every dye and barding they have had and wears one of each. A
+  new one keeps and wears the starts: Own Colours and Bare. One worn that is not kept, or of another kind, is the
+  start again as the character is read.
 - **Where each comes from**: the start; a faction's second rank (its dye, [[Factions]]); and the Tailor (dyes) and the
-  Tack (coats and bardings), each showing four a day of those they sell, the same for everyone that day, for Aurem,
+  Tack (horses and bardings), each showing four a day of those they sell, the same for everyone that day, for Aurem,
   some from a level.
-- **Asks**: wearing one kept, anywhere (55, its number in `item`); buying one of the day's at its seller's counter
-  (56). The gear message carries those kept, the three worn, and in a social space those sold today.
+- **Asks**: wearing a dye or barding kept, anywhere (55, its number in `item`); buying one of the day's at its
+  seller's counter (56), a coat's number buying its horse. The gear message carries those kept, the dye and barding
+  worn and the worn horse's coat, and in a social space those sold today.
+
+## Horses
+
+[[Horses Are Items Worn in a Mount Slot]] (`gear::horses`; Claude's calls in
+[[The Prologue, Horses and the Welcome to Overlook as Claude Builds Them]]).
+
+- **A horse is an item** of its own kind (28), worn in the Mount slot (11), one to each coat: the Bay Horse, the
+  Chestnut Horse and so on, its name its coat's place among the coats (`content/gear/rolled.json` names them in that
+  order). It is Normal, of level 1, with no stats, nodes or perks; it is never upgraded, fed or dismantled. It is
+  carried with the Mount slot's nine and kept in the vault among the armour. Nothing buys an item back, so a horse is
+  kept until stored. The Test Ground hands out no horse.
+- **Riding** needs a horse worn in the Mount slot (`Character::may_ride`).
+- **The Tack** sells horses as it sells bardings, at its coat's price; one bought goes to the pack, one of each coat,
+  refused while the Mount slot carries nine. Beside its day's four it sells the Bay Horse every day, first on its
+  screen, at the cheapest coat's price (1,500 Aurem, from level 1): a new player's first horse, had there after the
+  tutorial ("Later, not in the tutorial", `horses::FIRST_HORSE`).
+- **A new character has no horse.** A character kept while coats were cosmetics is given, as it is read, a horse in
+  the pack for each coat it kept and the one it wore worn in the Mount slot; one kept before cosmetics wore the Bay,
+  so it is given the Bay Horse worn. The coats leave its cosmetics, and a room with horses marks every character's
+  cosmetics (`horses`), so this is done once: a coat found beside the mark is what a room from before horses wrote
+  back as its own default, and is dropped, so a room rolled back and forward gives no horse; a coat bought from the
+  older room meanwhile is dropped with it, and a character made there is read as one from before horses (the Bay
+  worn). A room rolled back past the welcome to Overlook resets an opening task it does not know to its own first, so a
+  new character rolled back and forward reads on "Hear the three houses": the stranger's 400 Aurem and the round of the
+  counters are lost to it.
 
 ## Elements and shields
 
@@ -618,20 +659,22 @@ The figure wears its gear (`gearOutfit`), redressed whenever what it wears chang
 to every other player. Every garment is armour ([[Clothing Is Armour, With a Wardrobe Later]]):
 
 - **Normal** pieces are clothes: a shirt, breeches, trousers or a skirt, and shoes, dyed in the rarity's plain dyes;
-  a Normal head or arms piece shows nothing.
+  a Normal head or arms piece shows nothing. The prologue's own armour is the one Normal set: its steel
+  ([[Prologue]]).
 - **Each content's sets and metals** (`content/gear/looks.json`, in `Source`'s order); by worth, each of the world, a
   dungeon, an Elite Dungeon and an Abyss Dungeon is wholly above the one before, a sea dungeon's apart: the world leather, the thieves', chain, iron and steel, in iron and steel; a dungeon
   the knights' and silver, in silver; a sea dungeon elven and dwarven, in elven and dwarven; an Elite Dungeon orcish
   and mithril, in orcish and mithril; an Abyss Dungeon adamantium and ebony, in adamantium and ebony; a Breach
   daedric, in daedric; a faction its guild set. No armour set is two contents'; a faction's weapons share a metal with
   another content's but wear their faction's colour.
-- **Magic** pieces are light armour or clothes by the item's own number (its id; a smith's ware's the one it takes
-  once bought, below): the head and arms its content's lightest sets (the world's leather or the thieves', another
+- **Magic** pieces are light armour or clothes by the sixths of their look roll (`numberOf`): the head and arms its content's lightest sets (the world's leather or the thieves', another
   content's first), the torso and legs clothes (a shirt with a tunic or vest over it, breeches, trousers or a skirt,
   and tall boots or shoes, in brighter dyes) or those sets.
-- **A smith's ware** is drawn by the number it takes once bought, which the gear message sends (`next_id`, the number
-  the next item the player gets takes), so the shop shows the piece the player gets: its set or clothes, its shield
-  and its make. A test buys each of the day's wares in turn and holds each to its look in the shop.
+- **A smith's ware**, and Shape's, is drawn by its look roll alone, rolled as it was made and kept once bought
+  (`vestige::LOOK_ROLLS`: 36, its remainders by 2, 3 and 4 climbing its sets and metals and picking its dye, its
+  sixths its make, shield and Magic set, so each pairs with each), so the shop shows the piece the player gets: its
+  set or clothes, its name, its shield and its make. A test buys each of the day's wares in turn and holds each to its
+  look in the shop.
 - **Rare and finer** pieces are armour sets of the forge. A rolled Rare piece of the world climbs its sets over levels 1
   to 20, chain to steel, and one more by its look roll where one is left (`rareSet`); a rolled Legendary climbs as a
   Rare does; another content's drops at its own
@@ -649,9 +692,8 @@ to every other player. Every garment is armour ([[Clothing Is Armour, With a War
 - **The hands** hold the loadout drawn in its look (`weaponLook`). A rolled Normal weapon is iron to level 10 and steel
   past it from any content, as Normal armour is clothes; a Magic or finer one is made in its content's metals: the
   world's climbing them over levels 1 to 20 and one more by its look roll where one is left, another content's chosen
-  by its look roll alone (`rolledMetal`). Its make is chosen by its own
-  number: a Sword & Shield's shield kite, round or tower, a Dagger & Shield's buckler, round or kite, a Mace & Shield's
-  round, kite or tower, a bow long or short. A Normal shield is plain or iron to level 10 by its number and its weapon's
+  by its look roll alone (`rolledMetal`). Its make is chosen by its look roll's sixths: a Sword & Shield's shield kite, round or tower, a Dagger & Shield's buckler, round or kite, a Mace & Shield's
+  round, kite or tower, a bow long or short. A Normal shield is plain or iron to level 10 by its look roll's sixths and its weapon's
   metal past it; a finer one its weapon's metal. A rolled pistolet, double pistolet or thunderlock is plain, gilded from Legendary up. A named
   weapon wears the metal (or a gun's `gilded` or `plain`) and make (a shield's kind, a bow's, `short` for a short sword)
   written on it; a faction's weapon its faction's metal and colour, its shield and bow their make by its name. A metal
@@ -687,8 +729,8 @@ to every other player. Every garment is armour ([[Clothing Is Armour, With a War
   worn dye, coat and barding into each dress it relays, so others see only what a player keeps and wears; another
   player's dress naming one that is not of its kind is refused as any broken dress is. A dress's armour and the things
   in its hands keep only the looks the page could draw the pieces worn in on the dress's body (`looks::shown`,
-  [[The Room Keeps Only Looks of a Piece's Own Content]]): an armour piece's faction's set, the set written on a named
-  piece, or else its content's by its rarity (a Magic piece's lightest, a world Rare piece's chain to steel, none for a
+  [[The Room Keeps Only Looks of a Piece's Own Content]]): the prologue's own armour's steel, an armour piece's
+  faction's set, the set written on a named piece, or else its content's by its rarity (a Magic piece's lightest, a world Rare piece's chain to steel, none for a
   Normal piece's clothes); a weapon and its shield in its faction's metal, its written metal and make, or else its
   content's metals (a Normal one's iron or steel, a gun's plain or gilded) with any of its shield's or bow's makes; and
   for each look the forge does not draw for the body, the one the page falls to, read from the forge's table of drawn

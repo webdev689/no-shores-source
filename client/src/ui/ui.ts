@@ -295,6 +295,8 @@ export class Interface {
 
   /** Lays out and draws `root` over the view; what it lays is what the next frame's input is read against. */
   draw(root: Node): void {
+    // A frame that threw before it presented left its quads; drawn under the next they would pile up, frame on frame.
+    this.renderer.quads.clear();
     const view = { x: 0, y: 0, ...this.view };
     const scrollOf = (id: string) => this.scrolls.get(id) ?? 0;
     const keys = this.screen;

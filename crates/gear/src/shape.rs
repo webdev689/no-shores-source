@@ -86,7 +86,8 @@ pub fn wares(week: u64) -> Vec<Item> {
         .take(LEGENDARIES)
         .enumerate()
         .filter_map(|(ware, slot)| {
-            let dice = Dice { seed: week, tick: 1 + ware as u64, player: 0 };
+            // Ticks of their own, past the shuffles' and the Atherics' elements', so no roll of a ware shares one.
+            let dice = Dice { seed: week, tick: LEGENDARY_TICKS + ware as u64, player: 0 };
             let content = CONTENTS[dice.pick(Purpose::Shape, 0, CONTENTS.len())];
             vestige::make(0, Rarity::Legendary, slot, ITEM_LEVEL_MOST, content, &dice)
         })
@@ -104,6 +105,9 @@ pub fn wares(week: u64) -> Vec<Item> {
     }));
     wares
 }
+
+/// The first of the ticks a week's Legendaries are made on, past every other tick of Shape's week (1 to 6).
+pub(crate) const LEGENDARY_TICKS: u64 = 16;
 
 /// Shuffles a week's choices of a rarity by the week's dice, as `cosmetics::sold_on` shuffles a day's cosmetics.
 fn shuffled<T>(week: u64, rarity: Rarity, pool: &mut [T]) {

@@ -7,10 +7,10 @@ import type { GearState } from '../network/gearMessages.ts';
 import { BODY_HEIGHT } from '../player/crosshair.ts';
 import type { StationInfo } from './nodes.ts';
 import { keeperPicture } from './npc/npcMarks.ts';
+import { entrancesOf } from './entrances.ts';
 import { DOOR_PICTURE, keeperLit, markOfKind, markedHere } from './overheadMarks.ts';
 import { countersOf } from './plazaLife.ts';
 import { STATIONS } from './welcome/plazaForTests.ts';
-import { awayFromCounters } from './townsfolk.ts';
 
 const station = (kind: string, keeper: readonly [number, number]): StationInfo => ({
   kind,
@@ -103,6 +103,22 @@ test("Shape wears his mark on his week's spot; a node to gather wears none, its 
   assert.equal(marked.length, 1, 'no mark over the node');
 });
 
+test("alone, where the page holds no gear, a patrol's entrances the room told still wear their doors", () => {
+  const door = { type: 2, a: [-0.634, 0.045, -1.692], b: [-0.634, -2.205, -1.692], c: [0.616, -2.205, -1.692] };
+  const props = { 42000: { doors: [{ ...door, n: [0, 0, -1] }] } } as unknown as PropTable;
+  const told = entrancesOf([100, 200, 10, 0, 0, -50, 80, 4, Math.PI / 2, 0]);
+  const marked = markedHere(
+    null,
+    { stations: [] },
+    () => 0,
+    props,
+    () => null,
+    told,
+  );
+  assert.equal(marked.length, 2, 'one mark an entrance');
+  assert.ok(marked.every((mark) => mark.picture === DOOR_PICTURE));
+});
+
 test("each of a patrol's dungeon entrances wears a door over its door; none where its gear names none", () => {
   // Entrance model 0 (42000) with its door as the forged props measure it.
   const door = { type: 2, a: [-0.634, 0.045, -1.692], b: [-0.634, -2.205, -1.692], c: [0.616, -2.205, -1.692] };
@@ -156,7 +172,7 @@ test("near, the hub's twelve marks are laid in layers, in under half the vertice
   assert.ok(layered < flat / 2, `${layered} numbers a frame against ${flat}`);
 });
 
-test('a keeper away from their counter is not lit, on the map or over their post', () => {
+test('the Postmaster is lit while letters wait for the player, whether or not a quest step asks for him', () => {
   const letter = { id: 9, from: 0, crowded: false, vestige: null, item: null };
   const gear = { mail: [letter] } as unknown as GearState;
   assert.equal(
@@ -164,14 +180,4 @@ test('a keeper away from their counter is not lit, on the map or over their post
     true,
     'letters wait',
   );
-  awayFromCounters.add('mail');
-  try {
-    assert.equal(
-      keeperLit(gear, 'mail', () => true),
-      false,
-      'away, whatever waits',
-    );
-  } finally {
-    awayFromCounters.delete('mail');
-  }
 });

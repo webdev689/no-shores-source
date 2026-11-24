@@ -21,8 +21,10 @@ function host(opened = false, launched = true) {
   const deps: BreachDeps = {
     room,
     zone: (name) => ({
-      breachOpened: (run) => Promise.resolve(said.asked.push(`${name} ${run}`) > 0 && opened),
-      breachInside: (word) => Promise.resolve(said.inside.push(word) > 0),
+      breachWord: (kind, text) =>
+        Promise.resolve(
+          kind === 'opened' ? said.asked.push(`${name} ${text}`) > 0 && opened : said.inside.push(text) > 0,
+        ),
     }),
     launched: () => Promise.resolve(launched),
   };

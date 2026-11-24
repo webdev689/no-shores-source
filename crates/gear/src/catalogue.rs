@@ -3,6 +3,7 @@
 //! island's resource, each armour and weapon kind's word and the names a ship's rolled module may take. `problems`
 //! lists anything in it the rules cannot keep.
 
+use crate::cosmetics::CosmeticKind;
 use crate::grid::{Column, columns};
 use crate::kinds::{Kind, Slot};
 use crate::rarity::Rarity;
@@ -284,12 +285,17 @@ impl Catalogue {
                 problems.push(format!("trait {} is a Breach's, so it is a perk and no faction's", found.id));
             }
         }
-        // A Breach piece's perk columns roll from the Breaches' pool alone, never one trait twice in a column.
+        // A Breach piece's perk columns roll from the Breaches' pool alone, never one perk twice on the piece, so the
+        // pool must hold every perk node of the widest piece of each kind.
         for kind in Kind::ALL.into_iter().filter(|kind| kind.armour() || kind.weapon()) {
-            let widest = Rarity::ALL.iter().flat_map(|rarity| columns(*rarity, kind.weapon_grid()));
-            let widest = widest.filter(|column| matches!(column, Column::Perk(_))).map(|column| column.nodes()).max();
-            if self.breach_perks(kind).len() < usize::from(widest.unwrap_or(0)) {
-                problems.push(format!("a Breach {kind:?} needs {} Breach perks to fill a column", widest.unwrap_or(0)));
+            let perk_nodes = |rarity: &Rarity| -> usize {
+                let perks =
+                    columns(*rarity, kind.weapon_grid()).iter().filter(|column| matches!(column, Column::Perk(_)));
+                perks.map(|column| usize::from(column.nodes())).sum()
+            };
+            let widest = Rarity::ALL.iter().map(perk_nodes).max().unwrap_or(0);
+            if self.breach_perks(kind).len() < widest {
+                problems.push(format!("a Breach {kind:?} needs {widest} Breach perks to fill its perk nodes"));
             }
         }
         for item in &self.items {
@@ -307,8 +313,14 @@ impl Catalogue {
                 problems.push(format!("intrinsic {} must be carried by {} alone", intrinsic.id, intrinsic.fits));
             }
         }
-        for kind in Kind::ALL.into_iter().filter(|kind| *kind != Kind::Cloak) {
+        for kind in Kind::ALL.into_iter().filter(|kind| !matches!(kind, Kind::Cloak | Kind::Horse)) {
             self.kind_problems(kind, &mut problems);
+        }
+        // A horse's name is its coat's place among the coats (`horses.rs`): one name to each, in their order.
+        let coats = crate::cosmetics::cosmetics().iter().filter(|found| found.kind == CosmeticKind::Coat);
+        let wanted: Vec<String> = coats.map(|found| format!("{} Horse", found.name)).collect();
+        if self.names_of(Kind::Horse, Rarity::Normal) != wanted.as_slice() {
+            problems.push(format!("a horse's names are its coats', in their order: {}", wanted.join(", ")));
         }
         for kind in Kind::ALL.into_iter().filter(|kind| kind.weapon()) {
             // A faction's piece is sold at its counter alone, so it is no Legendary a Vestige, Shape or package gives.

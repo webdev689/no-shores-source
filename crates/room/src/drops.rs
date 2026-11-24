@@ -161,6 +161,8 @@ impl Room {
     /// Sends every Vestige still lying for a player to their mail and takes all their drops off the ground. Their host
     /// calls it as they leave, before it reads their character for its last save, so the save keeps the Vestiges.
     pub fn mail_lying(&mut self, player: PlayerId) {
+        // A chest is never lost: opened for them first, whatever their host called before.
+        self.open_chests_of(player);
         let Some(found) = self.players.get_mut(&player) else { return };
         let (theirs, others) = std::mem::take(&mut self.drops).into_iter().partition(|drop| drop.player == player);
         self.drops = others;

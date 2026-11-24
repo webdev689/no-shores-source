@@ -1,9 +1,12 @@
 ---
 type: decision
 date: 2026-11-20
-status: in force
+status: replaced
+replaced_by: "[[The Stranger Welcomes the Player, and a Quest Walks Them Round Overlook]]"
 ---
 # Elder Maren Hale Welcomes the Player to Overlook
+
+Replaced by [[The Stranger Welcomes the Player, and a Quest Walks Them Round Overlook]]: the stranger who found the player welcomes them, and a quest walks them round the vendors; Maren introduces the Lamplighters in it.
 
 > "We're going to be working on the new game experience, storyline, etc
 >

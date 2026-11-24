@@ -148,10 +148,12 @@ export class Prologue {
     return this.carried.layout;
   }
 
-  /** The wreck as drawn, made once for every beat that shows it, from the wake to the deep. */
+  /** The wreck as drawn, made once for every beat that shows it, from the wake to the deep, each asking again for a
+   *  wreck that failed to come. */
   private scenery(): WreckScenery {
     const { gpu, drawn } = this.wreckContext;
-    this.carried.scenery ??= new WreckScenery(gpu, drawn(), this.wreck(), this.meeting());
+    this.carried.scenery ??= new WreckScenery(gpu, drawn, this.wreck(), this.meeting());
+    this.carried.scenery.again();
     return this.carried.scenery;
   }
 

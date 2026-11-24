@@ -6,7 +6,7 @@ import { DRINKS_AT, FIGHTER_FLOATS, GLANCE_FLOATS, INTENT_FLOATS, fighterView } 
 import { PROTOCOL } from '../../../generated/messages/ts/version.ts';
 
 /** The combat crate's agreement test holds the same fingerprint, course and script (crates/combat/tests/agree.rs). */
-const FIGHT_HASH = 'f71645f9b1a6b01e';
+const FIGHT_HASH = '500234eec5b765a3';
 
 const MODULE = new URL('../../../target/wasm32-unknown-unknown/release/room_wasm.wasm', import.meta.url);
 const compiled = new WebAssembly.Module(
@@ -129,6 +129,11 @@ test('a stroke reaches as far as the combat crate says: a sword’s thrust farth
     'the chop, the slants, the sweeps, the thrust',
   );
   assert.equal(rules.strokeArc(0), 0, 'no stroke');
+});
+
+test('the parry window a press opens is the combat crate’s: a quarter of a second for a player, nine ticks for a foe', () => {
+  const rules = startCombatRules(compiled);
+  assert.deepEqual([rules.parryWindow(true), rules.parryWindow(false)], [15, 9]);
 });
 
 test('rules that lay a fighter, an intent or a glance out otherwise than the page are refused, and their address names the protocol', () => {

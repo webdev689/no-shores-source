@@ -277,15 +277,16 @@ export class StoryFight {
   }
 
   /** Each afloat ship's footprint on the water: the player's ship's the Brig's, each captain's a Sloop's. */
-  private hulls(player: FightVessel, captains: readonly FightVessel[], scale: number): HullMask[] {
-    const hull = (vessel: FightVessel, kind: 'own' | 'captain'): HullMask[] => {
+  private hulls(player: FightVessel, captains: readonly FightCaptain[], scale: number): HullMask[] {
+    const hull = (vessel: FightVessel, kind: 'own' | 'captain', id: string): HullMask[] => {
       if (vessel.state === 'sinking' || vessel.state === 'sunk') return [];
       const [x = 0, y = 0, heading = 0, ahead = 0, abeam = 0] = vessel.ship;
       const way = Math.hypot(ahead, abeam) > 0.5 ? UNDER_WAY : 0;
       const { lengthM, beamM } = this.waterlines[kind];
-      return [{ x, y, heading, halfLength: (lengthM / 2) * scale, halfBeam: (beamM / 2) * scale, way }];
+      return [{ id, x, y, heading, halfLength: (lengthM / 2) * scale, halfBeam: (beamM / 2) * scale, way }];
     };
-    return [...hull(player, 'own'), ...captains.flatMap((captain) => hull(captain, 'captain'))];
+    const ships = captains.flatMap((captain) => hull(captain, 'captain', `captain ${captain.id}`));
+    return [...hull(player, 'own', 'own'), ...ships];
   }
 
   /** A key down or up; answers whether the fight takes it (SeaCombat.key). */

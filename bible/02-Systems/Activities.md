@@ -1,6 +1,6 @@
 ---
 type: system
-status: built
+status: live
 code:
   - crates/gear/src/clock.rs#day_of
   - crates/gear/src/activity.rs#Activity
@@ -32,10 +32,10 @@ code:
 # Activities
 
 The days and the weeks of play, after Destiny 1's first year: what is on today and this week, how hard it is, what
-it pays once, and what opens it. The owner's decisions are [[Dailies and Weeklies Follow Destiny 1, With One Abyss
-Dungeon a Week]], [[The Story Opens Places, Levels Open Tiers, and the Campaign's End Opens the Week]],
-[[The Story Is Nine Missions, With Side Quests Between Them]], [[Where You Go and the Seas You Choose Set the
-Difficulty]] and [[The Tiers Are Normal, Elite and Abyss]]. Everything else here is Claude's call, listed at the end,
+it pays once, and what opens it. The owner's decisions are
+[[Dailies and Weeklies Follow Destiny 1, With One Abyss Dungeon a Week]], [[The Story Opens Places, Levels Open Tiers, and the Campaign's End Opens the Week]],
+[[The Story Is Nine Missions, With Side Quests Between Them]],
+[[Where You Go and the Seas You Choose Set the Difficulty]] and [[The Tiers Are Normal, Elite and Abyss]]. Everything else here is Claude's call, listed at the end,
 and the owner can change any of it. The owner approved it to be built in full, the story's missions apart
 ([[The Activities Are Built in Full, Before the Story's Missions]]). All five steps are built: the core, the
 dungeons, the screens, companies of four with Find a Company, and the bounties, ships sunk at sea among them.
@@ -52,8 +52,8 @@ dungeons, the screens, companies of four with Find a Company, and the bounties, 
 side quests past the prologue. The houses' roads are the quests there are ([[Quests]]); the Journal shows them.
 
 **Must not happen:** a second clock; a reward taken twice in its period by leaving and coming back; an activity a
-player cannot tell is on, or cannot tell why it is shut; Destiny's own words on screen ([[A Group of Players Is a
-Company]]).
+player cannot tell is on, or cannot tell why it is shut; Destiny's own words on screen
+([[A Group of Players Is a Company]]).
 
 ## The clock
 
@@ -115,8 +115,9 @@ Company]]).
 
 ## Runs and companies
 
-- **A company** holds up to eight, as a Breach's run does ([[Breaches Drop the Best, at Sea Too, for a Fleet of
-  Eight]]); every other run holds four: a fifth is sent away saying "This run is full.".
+- **A company** holds up to eight, as a Breach's run does
+  ([[Breaches Drop the Best, at Sea Too, for a Fleet of Eight]]); every other run holds four: a fifth is sent away
+  saying "This run is full.".
 - **A run** is a private room for the company that enters: every dungeon at Elite or Abyss, every Elite Dungeon and
   both of the week's. A dungeon at Normal in a patrol stays in the patrol's shared room, as does a sea island's.
 - **A run's room** is named by an instance after its dungeon's name (`--run-` and eight lowercase letters or digits,

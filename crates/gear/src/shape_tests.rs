@@ -7,7 +7,7 @@ use crate::clock::week_of;
 use crate::dice::Dice;
 use crate::kinds::Slot;
 use crate::rarity::Rarity;
-use crate::shape::{PLACES, WARES, minutes_left, place, present, price, wares};
+use crate::shape::{LEGENDARY_TICKS, PLACES, WARES, minutes_left, place, present, price, wares};
 use crate::source::Source;
 
 const DICE: Dice = Dice { seed: 5, tick: 9, player: 1 };
@@ -142,4 +142,11 @@ fn a_piece_is_bought_with_shapes_at_his_place() {
     let bought = character.items.values().map(|(item, _)| item).find(|item| item.rarity == Rarity::Atheric);
     assert_eq!(bought.map(|item| item.named.clone()), Some(wares(5_000)[4].named.clone()));
     assert_eq!(character.ask(Ask::BuyFromShape { ware: 9, shown: shown(9) }, here, &DICE), Err(Refusal::NoSuchItem));
+}
+
+#[test]
+fn a_weeks_legendaries_roll_on_ticks_no_other_roll_of_his_week_takes() {
+    // The shuffles take ticks 1 + rarity and the wares' elements 1 + ware: all below the Legendaries' own.
+    let taken = [1 + Rarity::Legendary as u64, 1 + Rarity::Atheric as u64, WARES as u64];
+    assert!(taken.iter().all(|tick| *tick < LEGENDARY_TICKS));
 }

@@ -7,7 +7,8 @@ use crate::rarity::Rarity;
 use crate::rewards::{Foe, worth};
 use crate::source::Source;
 use crate::vestige::{
-    ATHERIC_FROM, LEGENDARY_FROM, OPENS, chance, colours, dropped, gated, item_chance, make, of_colours, opens_to,
+    ATHERIC_FROM, LEGENDARY_FROM, LOOK_ROLLS, OPENS, chance, colours, dropped, gated, item_chance, make, of_colours,
+    opens_to,
 };
 use crate::world::Difficulty;
 
@@ -219,7 +220,11 @@ fn what_a_vestige_makes_belongs_to_its_slot_and_never_offers_a_trait_twice() {
                     assert!(!named.breach, "Breach items come from Breaches alone");
                 } else {
                     assert_eq!(item.level, if rarity == Rarity::Legendary { NAMED_LEVEL } else { 12 });
-                    assert!(item.named.is_none() && item.name < 3, "a rolled look: {}", item.name);
+                    assert!(
+                        item.named.is_none() && usize::from(item.name) < LOOK_ROLLS,
+                        "a rolled look: {}",
+                        item.name
+                    );
                     let pooled = |id: &String| {
                         catalogue().trait_def(id).is_some_and(|found| found.column != TraitColumn::Signature)
                     };

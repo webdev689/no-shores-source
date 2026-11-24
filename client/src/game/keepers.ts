@@ -92,7 +92,7 @@ export const KEEPERS: Readonly<Record<KeeperKind, Keeper>> = {
   },
   weaponsmith: {
     title: 'The Weaponsmith',
-    words: 'Blades, bows and guns, and the shot to feed them. New pieces every day.',
+    words: 'Blades, bows, guns and their shot. New every day.',
     speaker: 'weaponsmith',
     dress: dressed(
       'male',
@@ -119,7 +119,7 @@ export const KEEPERS: Readonly<Record<KeeperKind, Keeper>> = {
   },
   tack: {
     title: 'The Tack',
-    words: 'Coats and barding for your horse. New ones every day.',
+    words: 'Horses, and barding for them. New ones every day.',
     speaker: 'tack',
     dress: dressed(
       'female',

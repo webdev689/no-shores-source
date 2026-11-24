@@ -426,9 +426,10 @@ impl Room {
         let everyone = self.fighters();
         for (shot, loosed) in shots {
             let Some(side) = self.fighter(shot.owner).map(|owner| owner.side) else { continue };
+            // A player the foes leave be is passed by: the shot was loosed at another.
             let bodies: Vec<(FighterId, [f64; 3])> = everyone
                 .iter()
-                .filter(|(_, fighter)| fighter.side != side && !fighter.dead())
+                .filter(|(id, fighter)| fighter.side != side && !fighter.dead() && !self.spares(shot.owner, *id))
                 .map(|(id, fighter)| (*id, [fighter.body.x, fighter.body.y, fighter.body.z]))
                 .collect();
             let flight = fly(&shot, &self.blocks, &self.floor, &bodies);

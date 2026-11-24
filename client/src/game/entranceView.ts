@@ -13,6 +13,7 @@ import { type ForgedModel, meshBuilder } from '../models/model.ts';
 import { propModel } from '../models/props.ts';
 import type { PropTable } from '../models/tables.ts';
 import type { ShadowMap } from '../shadow.ts';
+import { skyUniformFor } from '../sky/skyUniform.ts';
 import { smallBook, type Wanted } from './dungeonBook.ts';
 import { ENTRANCE_MODELS, type Entrance, layModel, standOf } from './entrances.ts';
 
@@ -166,6 +167,8 @@ export class EntranceView implements Drawer {
     if (painting(drawn.painter)) standIn('entrance pictures');
     pass.setPipeline(this.pipelines.models);
     pass.setBindGroup(1, shadow.receiverGroup(this.pipelines.models));
+    // The sky, as the city binds it: the terrain drawn just before leaves groups only its own pipeline can read.
+    skyUniformFor(this.gpu.device).bindShared(pass, [2]);
     this.drawWith(pass, drawn);
   }
 

@@ -33,7 +33,7 @@ import type { Drawer } from './scene.ts';
 import { IsleLanding, ashoreOn, ashoreWords } from './isleVisit.ts';
 import { FootView } from './footView.ts';
 import { bootGame, FIRST_NODE, SEA_SHIPS } from './gameBoot.ts';
-import { afterStoryOn } from './welcome/afterStory.ts';
+import { AfterStory } from './welcome/afterStory.ts';
 import { questsOn } from './quests/quests.ts';
 import { Lore } from './compendium/lore.ts';
 import { FIRST_LOOK, keptLook, plainDressOf } from './prologue/look.ts';
@@ -127,7 +127,7 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement): Promise<vo
     flow: boot.flow,
     foot: null,
     sea: null,
-    after: afterStoryOn(stack, forge, (x, y) => scene.groundAt(x, y)),
+    after: new AfterStory(),
     quests,
     lore: new Lore(localStorage, () => link?.account?.id ?? null),
     through: null,
@@ -184,8 +184,8 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement): Promise<vo
       islesNature.drawInto(pass, fromEye, shot, time, shadow);
     },
   };
-  /** The island the player stands on, drawn though the sea no longer tells of it. */
-  let ashore: IsleHeld | null = null;
+  /** The island the player stands on, drawn though the sea no longer tells of it, and the sea's word it opened on. */
+  let [ashore, ashoreWord]: [IsleHeld | null, string | null] = [null, null];
   const waterHere = () => waterOf(scene.land?.swell, playing.landmass.heightAt);
   /** Draws the landmass `opened` in place of the one left, at sea and on land. */
   const showLandmass = (opened: Landmass) => {
@@ -231,7 +231,6 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement): Promise<vo
     leaveHere();
     playing.foot?.leave();
     playing.foot = null;
-    dungeons.forget();
     scene.sky.shelterUnder([]);
     if (!playing.sea) {
       // The ship first lies facing the city, so the view over it looks at the island.
@@ -259,6 +258,7 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement): Promise<vo
     // The held map's coasts are worked out behind the veil, not on its first raising.
     void playing.helmMap.made;
     await enterSea(playing.helmMap.difficulty ?? 'normal');
+    dungeons.forget(); // once aboard, as `goInto` once arrived: a failed return's way back finds the dungeon drawn
   };
 
   /** The sea room a voyage at `seas` sails in, joined: online the server's at that difficulty; playing alone, the same
@@ -297,7 +297,7 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement): Promise<vo
     ...{ playing, hud, footContext, goInto, goFoot, goSea, showLandmass },
     ashore: () => ashore,
     backAshore: async (held) => {
-      await goInto(() => isleFoot(held, null));
+      await goInto(() => isleFoot(held, ashoreWord));
       ashore = held;
     },
     // Overlook's landmass, opened where the player was on another.
@@ -417,7 +417,7 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement): Promise<vo
       leaveHere();
       playing.foot?.leave();
       playing.sea?.leaveRoom();
-      ashore = held;
+      [ashore, ashoreWord] = [held, word];
       playing.foot = foot;
       scene.sky.shelterUnder(foot.boxes);
     });

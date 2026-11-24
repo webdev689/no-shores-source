@@ -101,6 +101,8 @@ struct NodeFile {
     #[serde(default)]
     resources: Vec<[f64; 2]>,
     #[serde(default)]
+    foes: Vec<[f64; 2]>,
+    #[serde(default)]
     places: Vec<gear::quests::Place>,
     #[serde(default)]
     paths: Vec<Vec<[f64; 2]>>,
@@ -152,8 +154,8 @@ fn open_course(bytes: &[u8], room_on: fn(Vec<Block>, (f64, f64)) -> Room) -> boo
 }
 
 /// Opens a new node's room from its file's text: its bodies stand on its window of the ground among its boxes, its
-/// kind's garrison stands, and it judges against its section. Answers whether the text was a node with a section and
-/// a spawn.
+/// kind's garrison stands (a patrol's caverns' and runs' groups as players come near), and it judges against its
+/// section. Answers whether the text was a node with a section and a spawn.
 pub fn open_node(text: &[u8]) -> bool {
     let Ok(node) = serde_json::from_slice::<NodeFile>(text) else { return false };
     if node.ring.len() < 3 || node.spawns.is_empty() {
@@ -173,6 +175,7 @@ pub fn open_node(text: &[u8]) -> bool {
     });
     room.shape_spots = node.shape_spots;
     room.set_places(node.places);
+    room.set_foe_sites(&node.foes);
     room.set_paths(node.paths);
     if let Some(grounds) = node.grounds {
         room.open_public(&node.id, grounds.into(), levels);
@@ -186,9 +189,7 @@ pub fn open_node(text: &[u8]) -> bool {
     if node.kind == NodeKind::Dungeon {
         room.lay_elite_entrance(&node.id);
     }
-    if let Some((at, quarters)) = node.breach.filter(|_| node.kind == NodeKind::Patrol) {
-        room.open_breach_gate(at, quarters);
-    }
+    breach_door::stand_gate(&mut room, node.kind, node.breach);
     let refusal = lock_words(node.locked, &node.name);
     let sent = Box::new(Sent::around(protocol::pack::middle_of(Some(node.bounds))));
     keep(Opened::Land { room: Box::new(room), node: Some((node.id, node.bounds)), refusal, sent });
@@ -261,8 +262,8 @@ pub fn take_foe_asks() {
     });
 }
 
-/// Plays the prologue's wreck in the open room: no Art, the player waking hurt with no weapon, and every boarder on
-/// one side and held to a Major; see `Room::story_wreck`.
+/// Plays the prologue's wreck in the open room: no Art until the Storm is given, the player waking hurt in the story's
+/// steel with no weapon, and every boarder on one side; see `Room::story_wreck`.
 pub fn story_wreck() {
     with_open(|opened| {
         if let Opened::Land { room, .. } = opened {

@@ -163,8 +163,8 @@ plants' pipelines are made once per device and format, and the lit keepers' mark
 frame as the game starts, so a continent or an island opened while sailing compiles none.
 
 A trip that fails, its room full or out of reach, puts the player back where they stood before it, joined again:
-aboard their ship, on the island's beach, in the dungeon, or in the node at its arrival spot
-([[The Audit's Leftovers Are Fixed as Claude Suggested]]; `travel.ts`, `tripBack.ts`). Should that fail too, or should
+aboard their ship, on the island's beach (online or alone, [[Only the Garrison's Own Kills Share Its Clear, and a Failed Trip Goes Back to the Beach]]), in the dungeon, or in the node at its
+arrival spot ([[The Audit's Leftovers Are Fixed as Claude Suggested]]; `travel.ts`, `tripBack.ts`). Should that fail too, or should
 the trip be one that sent them out of where they stood (a gate shut on them, their company fallen), they are taken
 to the hub, Overlook's social space, its landmass opened first where another is. The veil says why while they go
 ("You could not reach The Saltgrass Downs:" and the reason), and once it lifts the same words stand as a toast for
@@ -183,7 +183,8 @@ stranger's last moment plays there once the veil has fallen ([[Prologue]]); leav
 
 With `?at=<node id>` in the address the player arrives at that node instead, on its continent (a city's social space
 is `<city id>-social`): a way to look round the world. An id the world does not hold arrives at Overlook, and so
-does a social space still locked: only Overlook's opens for now ([[Cities]], "Open and locked"), so a ruined city's is
+does a patrol or mission still locked, played alone too, as the server refuses it
+([[The Patrol Audit's Leftovers Are Fixed as the Owner Chose]]), and a social space still locked: only Overlook's opens for now ([[Cities]], "Open and locked"), so a ruined city's is
 never arrived at. Should one open, it is named "Ruins of" and the city's name ([[Cities]], "Ruins"), on the veil too
 (the game waits for the rules' module to say which cities are ports, `mainPortsOf`), and on foot the line under its
 name says "Ruins" (`placeWords`). Online, a node's room lets a kept character in only by a way that leads there
@@ -247,8 +248,8 @@ third person, the forge's figure and the first person's hands, and the Test Grou
   their weapon's glow as their game shows it, any other as the room tells it) dissolves at once in it (Blaze burning up
   from the feet, Volt blinking out in 4 by 4 cells, Cosmic drawn in to the chest in four steps), its finisher round it.
   A player arriving, as they spawn into a place or respawn, is built from the feet up in 2 by 2 cells over 0.6 s, each
-  white as it lands, throwing no shadow until they stand whole, when their weapon glows ([[Players Arrive as Destiny's
-  Transmat Does, Unexplained]]): the player as the veil lifts, as they board a deck and on each respawn, every other
+  white as it lands, throwing no shadow until they stand whole, when their weapon glows
+  ([[Players Arrive as Destiny's Transmat Does, Unexplained]]): the player as the veil lifts, as they board a deck and on each respawn, every other
   player on respawning or when first seen after the player arrived. The player sees their own figure begin once their
   view is first open, 0.5 s in. Foes never arrive so.
   A crit's flash keeps its two white frames, then its outline is gold for four. The statuses show on the figures as in
@@ -265,25 +266,24 @@ third person, the forge's figure and the first person's hands, and the Test Grou
   the walk's frames go at the pace they stroll, each in a step of its own. Each walker stands on the ground, or on the
   highest top under them whose underside is within a step of the floor so far, climbed in turn (`floorOver`): a pier's
   deck, a podium or a landing, never a roof over them; it is found again only once they have walked a step. Shape, the
-  keepers' marks, Elder Maren Hale and a quest's rings stand on the same floor in a social space. A round's sweeper
+  keepers' marks, the stranger and a quest's rings stand on the same floor in a social space. A round's sweeper
   keeps a whole number of the walkers' 600 s loops, staying at the round's first post until it is up, and the walkers
   are drawn clear of the sweeper's walks, so none walks in another however long the clock runs. The fight never takes
   them for targets.
 - **Over what a player can use** (`overheadMarks`, `marksOver`; [[What a Player Can Use Wears Its Mark Over It]]),
   drawn among the fight's marks, after DFO's marks over the people who do something: over each keeper who deals with
   the player their own mark as their screen shows it, their sign in its brass diamond (the Harbourmaster's an anchor)
-  or a faction's emblem in the diamond edged in its Art's colour, and none while the keeper is away from the counter
-  (the elder on her welcome); over the bounty board in Overlook's hub its gold "!" in the keepers' diamond, over its
+  or a faction's emblem in the diamond edged in its Art's colour; over the bounty board in Overlook's hub its gold "!" in the keepers' diamond, over its
   gable (`countersOf`); over Shape on his spot his own; and, as the room's word on the gear names them online,
   over each chapter of the lore lying there for the player a closed book in a brass binding, 0.9 m over where it
-  lies ([[Lore]]); and over each of a patrol's dungeon entrances a door, an arched door of planks banded in iron with a brass ring, 0.2 m
+  lies ([[Lore]]); and, as the room names them online or alone, over each of a patrol's dungeon entrances a door, an arched door of planks banded in iron with a brass ring, 0.2 m
   over its door's lintel and a mark's width out from its face, once the forged props say where its door is. As DFO's, a mark's foot stands 0.2 m over the crown,
   0.32 m across, turned to the eye, never narrower on the screen than 0.017 radians
   either side so a keeper across the plaza still shows one; it bobs 6 cm once a second on a phase of its own, holding
   still under reduced motion, and fades out over the last fifth of its 30 m, the nearest twelve laid (each mark weighed
   once against the twelve kept, `Nearest`, none sorted). A keeper's mark
   is lit while the keeper has something for the player (`keeperLit`;
-  [[A Keeper With Something for You Pulses and Is Seen From Everywhere]]): a step of the quest walked asks to speak with them, once the story and the welcome are
+  [[A Keeper With Something for You Pulses and Is Seen From Everywhere]]): a step of the quest walked asks to speak with them or to buy one of their wares, once the story and the welcome are
   past (`Quests.wants`), or, the Postmaster's sealed letter, letters wait. A lit mark is laid apart (`litMarksSeen`):
   at any distance, every one of them, whole, beating (a fifth wider and back every 1.3 s), farthest first, and drawn
   over the finished picture after the water with no depth (`MarkDraw.drawAbove`), so it is seen from everywhere in the

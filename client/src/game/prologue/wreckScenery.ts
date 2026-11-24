@@ -6,7 +6,7 @@ import type { Drawer } from '../scene.ts';
 import { WRECK } from './skies.ts';
 import type { Story } from './story.ts';
 import type { WreckLayout } from './wreckLayout.ts';
-import { type WreckMesh, WreckView } from './wreckView.ts';
+import { type WreckLook, type WreckMesh, WreckView } from './wreckView.ts';
 
 /** The wreck's sounds: its fires, the rain and wind, the sea against the hulls and their timbers working. */
 const WRECK_SOUNDS = { fire: 0.8, rain: 0.65, wind: 0.5, waves: 0.8, creak: 0.9, deep: 0, gulls: 0 } as const;
@@ -74,16 +74,30 @@ export class WreckScenery {
   private left = false;
   private readonly origin: readonly [number, number];
 
-  constructor(gpu: Gpu, drawn: Promise<WreckDrawn>, layout: WreckLayout, origin: readonly [number, number]) {
-    this.origin = origin;
+  private readonly gpu: Gpu;
+  private readonly drawn: () => Promise<WreckDrawn>;
+
+  /** Its mesh and light are asked for of `drawn`, which fetches them once they have come and again after a failure. */
+  constructor(gpu: Gpu, drawn: () => Promise<WreckDrawn>, layout: WreckLayout, origin: readonly [number, number]) {
+    [this.gpu, this.drawn, this.origin] = [gpu, drawn, origin];
     this.hulls = layout.dry;
     layout.zones.forEach((zone, index) => {
       if (zone.gate) this.standing.add(index);
     });
-    drawn.then(
+    this.ask();
+  }
+
+  /** Asks again for a mesh and light that failed to come, as each beat that shows the wreck begins. */
+  again(): void {
+    if (this.state === 'failed' && !this.left) this.ask();
+  }
+
+  private ask(): void {
+    this.state = 'coming';
+    this.drawn().then(
       ({ mesh, light }) => {
         if (this.left) return;
-        this.view = new WreckView(gpu, mesh, light);
+        this.view = new WreckView(this.gpu, mesh, light);
         this.mesh = mesh;
         this.state = 'drawn';
       },
@@ -99,12 +113,16 @@ export class WreckScenery {
     return this.state === 'coming';
   }
 
+  /** A light near the wreck, the wisp's, while it shines. */
+  near: WreckLook['near'] = null;
+
   /** The drawer the scene draws it with. */
   get drawer(): Drawer {
     return {
       drawInto: (pass, fromEye, shot, time) => {
+        const look = { fire: FIRE_SHARE, time, near: this.near };
         // A heap is its zone's run of the mesh: piece z + 1 for the heap closing zone z.
-        this.view?.drawInto(pass, this.origin, { fromEye, eye: shot.eye }, { fire: FIRE_SHARE, time }, (piece) =>
+        this.view?.drawInto(pass, this.origin, { fromEye, eye: shot.eye }, look, (piece) =>
           this.standing.has(piece - 1),
         );
       },

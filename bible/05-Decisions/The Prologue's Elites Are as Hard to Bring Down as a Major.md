@@ -1,9 +1,12 @@
 ---
 type: decision
 date: 2026-11-21
-status: in force
+status: replaced
+replaced_by: "[[The Prologue Is Reworked With Real Armour, a Bow, the Storm and No Elites]]"
 ---
 # The Prologue's Elites Are as Hard to Bring Down as a Major
+
+Replaced by [[The Prologue Is Reworked With Real Armour, a Bow, the Storm and No Elites]]: the prologue has no Elites; its foes are Minors and Majors but for Thule.
 
 > "The elite enemies are way too tanky in the prologue"
 

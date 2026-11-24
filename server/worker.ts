@@ -4,8 +4,9 @@ import layout from '../content/world/layout.json' with { type: 'json' };
 import roomModule from '../target/wasm32-unknown-unknown/release/room_wasm.wasm';
 import type { CharacterKeeper } from './accounts/worker.ts';
 import { type Listed, arrives, cameOutOf, reachOf, shipOf } from './arrival.ts';
-import { Breach, GATE_SHUT, breachAsked } from './breach.ts';
-import { type Count, counted } from './budget.ts';
+import { addressKey } from './address.ts';
+import { Breach, breachAsked } from './breach.ts';
+import { type Count, admitsFrom, counted } from './budget.ts';
 import { Keeper, partFrom, TOKEN, TOKEN_WAIT_MS } from './keeping.ts';
 import {
   breachAsk,
@@ -99,6 +100,8 @@ export class RoomHost extends DurableObject<Env> {
     WebSocket,
     {
       readonly player: number;
+      /** The address it joined from (`addressKey`), which holds only so many sockets unsigned (`admitsFrom`). */
+      readonly address: string;
       count: Count | undefined;
       signed: boolean;
       spoke: boolean;
@@ -154,14 +157,10 @@ export class RoomHost extends DurableObject<Env> {
     return this.guarded(() => this.room.holdAshore(id, seed), false);
   }
 
-  /** A Breach's gate's word, for its run's room: whether that run's gate has opened in this zone's room. */
-  async breachOpened(run: string): Promise<boolean> {
-    return (await (this.opened ?? Promise.resolve(false))) && this.guarded(() => this.room.breachOpened(run), false);
-  }
-
-  /** A Breach's run's word, for its gate's zone's room: how far its company has come. */
-  async breachInside(word: string): Promise<boolean> {
-    return (await (this.opened ?? Promise.resolve(false))) && this.guarded(() => this.room.breachInside(word), false);
+  /** A Breach's word between its zone and its run (`breach.ts`): whether a run's gate opened, or how far it came. */
+  async breachWord(kind: 'opened' | 'inside', text: string): Promise<boolean> {
+    const heard = () => (kind === 'opened' ? this.room.breachOpened(text) : this.room.breachInside(text));
+    return (await (this.opened ?? Promise.resolve(false))) && this.guarded(heard, false);
   }
 
   override async fetch(request: Request): Promise<Response> {
@@ -182,6 +181,12 @@ export class RoomHost extends DurableObject<Env> {
       server.close(1013, 'the room is full');
       return new Response(null, { status: 101, webSocket: client });
     }
+    const address = addressKey(request.headers.get('CF-Connecting-IP') ?? 'nowhere');
+    if (!admitsFrom(this.players.values(), address)) {
+      server.accept();
+      server.close(AGAIN, 'too many joins from one address');
+      return new Response(null, { status: 101, webSocket: client });
+    }
     // A join at an entrance that is not one is the room's ordinary join; one at an entrance stays there only once the
     // room keeps the player's character as come out of its dungeon (`outOfDoor`).
     const entrance = entranceOf(request);
@@ -196,7 +201,8 @@ export class RoomHost extends DurableObject<Env> {
     }
     server.binaryType = 'arraybuffer';
     server.accept();
-    const held = { player, count: undefined, signed: false, spoke: false, token: null, door: atDoor ? entrance : null };
+    const door = atDoor ? entrance : null;
+    const held = { player, address, count: undefined, signed: false, spoke: false, token: null, door };
     this.players.set(server, held);
     this.breach?.joined(player, breachAsked(request, this.name));
     if (held.door !== null) setTimeout(() => !held.signed && this.outOfDoor(server), TOKEN_WAIT_MS);
@@ -272,14 +278,12 @@ export class RoomHost extends DurableObject<Env> {
       if (socket) this.dismiss(socket, code, why ?? 'your character joined another room');
     });
     if (privateRun(name)) this.keeper.forCompany();
+    this.breach?.keep(this.keeper);
     // A node's room, its dungeons' and its runs' judge where each kept character comes from.
     const reached = name.startsWith('node-') ? nodeRoom(name.slice('node-'.length)) : null;
     if (reached) {
       const reach = await this.reachOf(reached.id);
       this.keeper.judgingArrivals((from, body) => arrives(name, from, shipOf(body), reach));
-      this.keeper.arrivingLaunched(
-        async (player, account) => (await this.breach?.launchedHere(player, account)) ?? false,
-      );
     }
     // Every room on land, and the sea's flotsam and decks, roll their loot from seeds of their own that no player sees:
     // the sea's own seed shows in its islands'.
@@ -301,12 +305,8 @@ export class RoomHost extends DurableObject<Env> {
     const isle = /^isle-(.+)$/.exec(name)?.[1];
     if (isle !== undefined) return this.openIsland(isle);
     const node = /^node-(.+)$/.exec(name)?.[1];
-    // A Breach's run lets its company in once its gate's zone says they woke it.
     const breach = breachAsk(name, Math.floor(Date.now() / MINUTE_MS));
-    if (breach !== null) {
-      this.keeper.behindGate(async () => ((await this.breach?.gateOpen()) ? '' : GATE_SHUT));
-      return this.room.openBreach(breach) && this.room.reseed(seeds);
-    }
+    if (breach !== null) return this.room.openBreach(breach) && this.room.reseed(seeds);
     const ask = runAsk(name, Math.floor(Date.now() / MINUTE_MS));
     if (ask !== null || name.startsWith('sea-dungeon-')) {
       if (name.startsWith('sea-dungeon-') && !(await this.behindDoor(name))) return false;
@@ -338,13 +338,14 @@ export class RoomHost extends DurableObject<Env> {
   }
 
   /** Stands a player joined before an entrance at a spawn, as an ordinary join, unless the room keeps their character
-   *  as come out of that entrance's dungeon or run. */
+   *  as come out of that entrance's dungeon or run, by its exit door or its open portal. */
   private outOfDoor(socket: WebSocket): void {
     const held = this.players.get(socket);
     if (!held || held.door === null) return;
     const door = held.door;
     held.door = null;
-    if (!cameOutOf(this.name, this.keeper?.cameFrom(held.player) ?? null, door))
+    const cameOut = cameOutOf(this.name, this.keeper?.cameFrom(held.player) ?? null, door);
+    if (!cameOut || !this.keeper?.leftByWayOut(held.player))
       this.guarded(() => this.room.standAtSpawn(held.player), false);
   }
 

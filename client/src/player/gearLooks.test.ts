@@ -153,8 +153,8 @@ test('a Rare or finer piece is an armour set; a Magic one light armour or clothe
   const magic = gearOutfit(state([item({ id: 3, kind: 14, rarity: 1, at: 5, name: 1 })]), wardrobe, plain);
   assert.deepEqual(magic.garments, ['shirt_long_v', 'vest'], 'a Magic torso numbered for clothes');
   assert.equal(magic.dyes['vest'], 'Aquamarine', 'each item keeps its own look by its name');
-  const light = gearOutfit(state([item({ id: 4, kind: 14, rarity: 1, at: 5 })]), wardrobe, plain);
-  assert.deepEqual([light.armour.cuirass, light.garments], ['leather', []], 'one numbered for leather');
+  const light = gearOutfit(state([item({ id: 4, kind: 14, rarity: 1, at: 5, name: 6 })]), wardrobe, plain);
+  assert.deepEqual([light.armour.cuirass, light.garments], ['leather', []], 'one rolled for leather');
 });
 
 test("a rolled Rare piece climbs the world's sets with its level, and any other content's spreads by its name", () => {
@@ -167,7 +167,8 @@ test("a rolled Rare piece climbs the world's sets with its level, and any other 
   assert.deepEqual([cuirasses(2, 1), cuirasses(2, 20)], ['knights silver knights', 'knights silver knights']);
   assert.deepEqual([cuirasses(3, 20), cuirasses(4, 20)], ['orcish mithril orcish', 'adamantium ebony adamantium']);
   assert.deepEqual([cuirasses(5, 20), cuirasses(6, 1)], ['elven dwarven elven', 'daedric daedric daedric']);
-  const magic = (source: number) => gearOutfit(state([item({ kind: 13, rarity: 1, at: 4, source })]), every, plain);
+  const magic = (source: number) =>
+    gearOutfit(state([item({ kind: 13, rarity: 1, at: 4, source, name: 6 })]), every, plain);
   assert.deepEqual([magic(0).armour.helm, magic(3).armour.helm], ['thieves', 'orcish'], "a Magic helm, its content's");
   assert.deepEqual(worn({ name: 0 }), { cuirass: 'chain' }, 'chain has no pauldrons: its cuirass alone');
   assert.deepEqual(worn({ id: 7 }), worn({ id: 8 }), 'its number does not move it');
@@ -260,9 +261,27 @@ test("a faction's weapon is drawn in its faction's metal, its shield too, and ea
   assert.deepEqual([squall.left, squall.dyes['shield_kite_elven']], ['shield_kite_elven', 'stormcallers']);
 });
 
+test('the prologue’s own armour is its steel, a Normal piece though it is, as the story dressed the player', () => {
+  const steel = state([
+    item({ id: 1, kind: 14, at: 5, story: true }),
+    item({ id: 2, kind: 15, at: 6, story: true }),
+    item({ id: 3, kind: 16, at: 7, story: true }),
+  ]);
+  const outfit = gearOutfit(steel, every, plain);
+  assert.deepEqual(outfit.armour, {
+    cuirass: 'steel',
+    pauldrons: 'steel',
+    gauntlets: 'steel',
+    greaves: 'steel',
+    boots: 'steel',
+  });
+  assert.deepEqual(outfit.garments, [], 'no clothes over it');
+});
+
 test("a smith's ware is drawn as the piece it becomes once bought: its set or clothes, its metal and its make", async () => {
   // gear_wire_tests.rs writes the player's gear at the stall, then again after each of the Armorsmith's and the
-  // Weaponsmith's six wares is bought in turn, each message its length in four bytes and then itself.
+  // Weaponsmith's wares, the day's six then the starter stock, is bought in turn, each message its length in four bytes
+  // and then itself; the smiths' stocks come first among the wares, so the ware bought is the one at its place.
   const bytes = await readFile(new URL('../../../target/protocol/gear_vended.bin', import.meta.url)).catch(() => {
     throw new Error('gear_vended.bin is not written: run `cargo test -p protocol`');
   });
@@ -273,7 +292,7 @@ test("a smith's ware is drawn as the piece it becomes once bought: its set or cl
     if (read?.kind === 'gear') sent.push(read);
     start += 4 + length;
   }
-  assert.equal(sent.length, 13, 'before any is bought, and after each of twelve');
+  assert.equal(sent.length, 19, 'before any is bought, and after each of the ten and the eight');
   const looks = (piece: GearItem) => {
     const slot = piece.bucket;
     const wearing = state([{ ...piece, at: WORN + slot }]);

@@ -55,14 +55,11 @@ Decisions waiting on the owner. None is in force until the owner decides it and 
   another time or another zone's ([[Gear]], "Vendors").
 - **The Tack's wares.** The horse has the four bardings the forge draws and six coats laid on its colours; more
   looks need the forge to draw them ([[Gear]], "Cosmetics").
-- **The welcome's mark.** The story and Elder Maren Hale's welcome are marked played in the browser, so a second
-  account on one browser never sees them and one account on a new browser sees them again; whether they should be
-  kept with the character in its room ([[Prologue]]).
+- **The welcome's mark.** The story, and the stranger's welcome at its end, are marked played in the browser, so a
+  second account on one browser never sees them (her gift is given it all the same, as it arrives) and one account on
+  a new browser sees them again; whether they should be kept with the character in its room ([[Prologue]]).
 - **What others see.** The room puts the cosmetics and faction colours a player has earned into the dress others see,
-  and keeps a worn set or metal only of its piece's own content ([[The Room Keeps Only Looks of a Piece's Own
-  Content]]); the garments drawn are still each page's own word ([[Server]]).
-- **Set names** ([[Everything Carries a Set Name, and Perks Roll by Pool]]): Claude's draft of each set's name
-  ([[Set Names and Faction Perks as Claude Drafts Them]]) is built as drafted so it can be seen in the game, and waits
-  on the owner's yes at #169's merge (the owner: "Not yet"; [[Claude Finishes the Gear Calls on Its Own Word]]).
+  and keeps a worn set or metal only of its piece's own content
+  ([[The Room Keeps Only Looks of a Piece's Own Content]]); the garments drawn are still each page's own word ([[Server]]).
 - **The Abyss Dungeons' crossbows.** The forge draws no adamantium or ebony crossbow, so they show the nearest metal it
   draws (mithril); their own art waits (the owner: "Not now").

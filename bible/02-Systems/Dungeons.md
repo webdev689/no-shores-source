@@ -1,6 +1,6 @@
 ---
 type: system
-status: built
+status: live
 code:
   - crates/dungeon/src/lib.rs#of_patrol
   - crates/room/src/playlist_run.rs#playlist_run
@@ -314,8 +314,8 @@ The patrol areas' dungeons: three in each patrol, each laid by DFO's Forge from 
 ## Encounters
 
 Every Elite Dungeon run, at Normal, as the week's two and from both playlists, is more than a run of fights: seals to
-break before its Boss stands, and a Court round the Boss ([[Matchmade Dungeons Gain Encounters, Puzzles, Climbs and
-Raid Mechanics]]; Claude's calls in [[The Playlist and Its Dungeons as Claude Shapes Them]], "Encounters"). A room
+break before its Boss stands, and a Court round the Boss
+([[Matchmade Dungeons Gain Encounters, Puzzles, Climbs and Raid Mechanics]]; Claude's calls in [[The Playlist and Its Dungeons as Claude Shapes Them]], "Encounters"). A room
 lays them where its end foe is a Boss (`laid_dungeon`); no patrol's or sea island's dungeon has any.
 
 - **The plan** (`plan_encounters`) is laid from the dungeon alone, so the room and the page lay the same: its draws on
@@ -554,7 +554,10 @@ as standing none (`readDungeon`).
   relic falling below three tenths (once each time, as the banner reddens) play the refused sound. The page's fighter predicts on the pads
   (`fighter_dungeon`).
 - **The return portal** (`layout.portal`): an arch of the end room's trim round a face, dark while the cache is shut
-  and glowing, lighting the room, while it is open; E "Leave" within 2.5 m while it is open.
+  and glowing, lighting the room, while it is open; E "Leave" within 2.5 m while it is open. The room keeps, with the
+  body a player leaves with, whether they left by a way out: within 3.5 m of the exit door or the open portal, and
+  alive (`gear::left`'s `out`); the patrol's room stands them before the dungeon's door only then, else at a spawn
+  ([[The Patrol Audit's Leftovers Are Fixed as the Owner Chose]]).
 
 ## Limits
 
@@ -580,4 +583,4 @@ as standing none (`readDungeon`).
 - The third-person camera keeps short of the rock and under the ceiling, so in a narrow room, a corridor or a low room
   it sits close behind the player.
 - A player who joins a company member in a dungeon came by no entrance, so leaving by its door or portal stands them
-  at the patrol's first spawn.
+  at the patrol's spawns in turn, as any join does (its first, in a room just opened).

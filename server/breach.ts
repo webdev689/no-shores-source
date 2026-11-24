@@ -6,6 +6,7 @@
  * sees who is inside.
  */
 
+import type { Keeper } from './keeping.ts';
 import { breachRun } from './roomNames.ts';
 import type { RoomDoor } from './roomDoor.ts';
 
@@ -17,8 +18,7 @@ export const GATE_SHUT = 'The Sunken Gate has not opened to your company.';
 
 /** A patrol zone's room with a gate, as the run's host speaks to it: the run's own words, and the gate's answer. */
 export interface Zone {
-  breachOpened(run: string): Promise<boolean>;
-  breachInside(word: string): Promise<boolean>;
+  breachWord(kind: 'opened' | 'inside', text: string): Promise<boolean>;
 }
 
 /** What a host needs: its room, the zone's room by name, and whether the accounts launched a run for an account. */
@@ -55,8 +55,14 @@ export class Breach {
 
   /** In a run: whether its gate has opened, asked of its zone until it says so once. */
   async gateOpen(): Promise<boolean> {
-    if (this.run && !this.opened) this.opened = await this.deps.zone(this.run.zone).breachOpened(this.name);
+    if (this.run && !this.opened) this.opened = await this.deps.zone(this.run.zone).breachWord('opened', this.name);
     return this.opened;
+  }
+
+  /** Keeps the keeper's ways in: in a run, its gate's word; anywhere, a player launched for a run of this zone. */
+  keep(keeper: Keeper): void {
+    if (this.run) keeper.behindGate(async () => ((await this.gateOpen()) ? '' : GATE_SHUT));
+    keeper.arrivingLaunched((player, account) => this.launchedHere(player, account));
   }
 
   /** A player joined the zone for `run`, held until their account is known. */
@@ -102,7 +108,7 @@ export class Breach {
     const word = JSON.stringify({ run: this.name, tier: progress.tier, name, encounter: progress.encounter });
     void this.deps
       .zone(this.run.zone)
-      .breachInside(word)
+      .breachWord('inside', word)
       .catch(() => false);
   }
 }

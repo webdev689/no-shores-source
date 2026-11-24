@@ -62,10 +62,13 @@ export function rolledMetal(item: Pick<GearItem, 'source' | 'level' | 'name'>): 
   return own.metals[climbed(item, 0, own.metals.length, own.key === SOURCES[WORLD]?.key)] ?? 'iron';
 }
 
-/** The item's own number for a choice its name does not make: its id (a smith's ware comes with the one it takes once
- *  bought), its name while it has none, and a named piece's name, so a faction's piece always shows one make. */
-export const numberOf = (item: Pick<GearItem, 'named' | 'id' | 'name'>): number =>
-  item.named ? item.name : item.id || item.name;
+/** The set the prologue's own armour is drawn in, Normal though it is: the steel the story dresses the player in. */
+export const STORY_SET = 'steel';
+
+/** The item's own number for a choice of make, shield or Magic set: its look roll's sixths (`name`, rolled as it was
+ *  made, `vestige::LOOK_ROLLS`), apart from the remainders its metal and set climb by, so each pairs with each and a
+ *  smith's or Shape's ware shows the look it keeps once bought. */
+export const numberOf = (item: Pick<GearItem, 'name'>): number => Math.floor(item.name / 6);
 
 /** The set a rolled armour piece is drawn in where the forge draws it, or null for clothes: a Normal piece's clothes;
  *  a Magic one's its content's lightest sets by its number, on the torso and legs clothes among them; a finer one's

@@ -22,8 +22,9 @@ pub(crate) struct Standing<'built> {
     pub faction_wares: WIPOffset<Vector<'built, flatbuffers::ForwardsUOffset<messages::GearItem<'built>>>>,
 }
 
-/// A worn cosmetic's number; a worn id the catalogue does not hold never reaches here, as the character is made whole
-/// when read (`earn_cosmetics_due`), so 0 is only a guard.
+/// A worn cosmetic's number, 0 for none worn (a coat with no horse ridden), which the page reads as none by its kind; a
+/// worn id the catalogue does not hold never reaches here, as the character is made whole when read
+/// (`earn_cosmetics_due`).
 pub(crate) fn number_of_worn(id: &str) -> u16 {
     gear::cosmetics::number_of(id).unwrap_or_default()
 }
@@ -55,17 +56,16 @@ pub(crate) fn standing_of<'built>(
     } else {
         Vec::new()
     };
-    // The smiths' wares of the day, each numbered by its place among its vendor's.
+    // Each smith's stock in turn, the day's wares then the starter stock, each numbered by its place in its vendor's.
     let smiths: Vec<_> = if social {
         gear::vendor::Vendor::ALL
             .into_iter()
             .flat_map(|vendor| {
                 let level = if vendor.for_ship() { character.ship_level() } else { character.level() };
-                gear::vendor::wares(vendor, room.day(), level)
+                gear::vendor::stock(vendor, room.day(), level).into_iter().enumerate()
             })
-            .enumerate()
             .map(|(place, mut ware)| {
-                ware.id = u32::try_from(place % gear::vendor::WARES).unwrap_or_default();
+                ware.id = u32::try_from(place).unwrap_or_default();
                 let price = gear::vendor::price(ware.rarity);
                 crate::gear_wire::item_offset(builder, &ware, At::Carried, price)
             })

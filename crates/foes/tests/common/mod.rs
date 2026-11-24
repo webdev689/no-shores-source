@@ -300,8 +300,16 @@ impl Room {
         self.happenings.push((self.tick, by, happening));
         match happening {
             Happening::Swung(attack) => {
-                self.tell_all(by, Seen::Swung { by, attack });
-                self.hear(swing(&self.fighter(by)));
+                // As the room tells it: only to the foes of another side it is begun at (`foes::swung_at`).
+                let striker = self.fighter(by);
+                let ids: Vec<FighterId> = self.brains.iter().map(|(id, _)| *id).filter(|id| *id != by).collect();
+                for id in ids {
+                    let me = self.fighter(id);
+                    if me.side != striker.side && foes::swung_at(&striker, id, [me.body.x, me.body.y]) {
+                        self.tell(id, Seen::Swung { by, attack });
+                    }
+                }
+                self.hear(swing(&striker));
             }
             Happening::Struck(attack) => {
                 let striker = self.fighter(by);

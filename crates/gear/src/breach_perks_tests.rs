@@ -35,7 +35,7 @@ fn offered(item: &Item) -> Vec<(Column, &Vec<String>)> {
 }
 
 #[test]
-fn the_eight_breach_perks_are_perks_of_the_breaches_alone() {
+fn the_thirteen_breach_perks_are_perks_of_the_breaches_alone() {
     let perks = breach_perks();
     let named: Vec<(&str, &str)> = perks.iter().map(|found| (found.name.as_str(), found.fits.as_str())).collect();
     assert_eq!(
@@ -49,6 +49,11 @@ fn the_eight_breach_perks_are_perks_of_the_breaches_alone() {
             ("Regrowth", "armour"),
             ("Resonance", "armour"),
             ("Lattice Wall", "shield"),
+            ("Fracture", "armour"),
+            ("Lattice Shell", "armour"),
+            ("Shardburst", "armour"),
+            ("Splinter", "melee"),
+            ("Shard Round", "ranged"),
         ]
     );
     assert!(perks.iter().all(|found| found.column == TraitColumn::Perk && found.faction.is_none()));
@@ -66,6 +71,36 @@ fn a_breach_perk_that_is_no_perk_or_a_factions_too_is_a_problem() {
         let mut content = catalogue().clone();
         spoil(content.traits.iter_mut().find(|found| found.id == "bloom").expect("Bloom"));
         assert!(content.problems().iter().any(|problem| problem.contains("bloom")), "{:?}", content.problems());
+    }
+}
+
+#[test]
+fn a_kind_with_fewer_breach_perks_than_its_widest_pieces_perk_nodes_is_a_problem() {
+    let mut content = catalogue().clone();
+    content.traits.retain(|found| found.id != "fracture");
+    let problems = content.problems();
+    assert!(problems.iter().any(|problem| problem.contains("Breach Head needs 6")), "{problems:?}");
+}
+
+#[test]
+fn no_breach_piece_offers_one_perk_twice_on_any_armour_or_weapon_kind() {
+    let pieces = breach_pieces();
+    for kind in Kind::ALL.into_iter().filter(|kind| kind.armour() || kind.weapon()) {
+        assert!(pieces.iter().any(|piece| piece.kind == kind), "no Breach {kind:?} made");
+    }
+    for piece in pieces {
+        let mut offered: Vec<&String> = piece.layout.iter().flatten().collect();
+        let all = offered.len();
+        offered.sort_unstable();
+        offered.dedup();
+        assert_eq!(
+            offered.len(),
+            all,
+            "a {:?} {:?} offers a trait twice: {:?}",
+            piece.rarity,
+            piece.kind,
+            piece.layout
+        );
     }
 }
 
