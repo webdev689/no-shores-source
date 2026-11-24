@@ -154,19 +154,34 @@ pub fn seated_boxes(seating: &Seating, ring: &[[f64; 2]], book: &Book) -> Vec<Bo
         {
             continue;
         }
+        // A solid boxed upright or as a circle reaches up to `KEEP_M` past its turned corners.
         let [west, north, east, south, ..] = solid.bounds();
-        if section.reaches([west, north, east, south]) {
+        let keep = city::hug::KEEP_M;
+        if section.reaches([west - keep, north - keep, east + keep, south + keep]) {
             boxes.extend(city::collision::boxes(solid));
         }
     }
     boxes
 }
 
+/// How far a prop's part stands past what is drawn at most: a column of `client/src/models/propParts.ts`.
+const PART_CELL_M: f64 = 0.25;
+/// How far a turned prop's strips stand off its parts: what `KEEP_M` leaves past a part's column, so a turned prop's
+/// edge stands no further past what is drawn than a solid's.
+pub const STRIPS_KEEP_M: f64 = city::hug::KEEP_M - PART_CELL_M;
+
 /// A prop's boxes: each part its drawn shape fills (its whole box where that keeps to it) where the prop stands, a
-/// part turned off the world's axes in strips that keep within 0.45 m of it. A gate's arch is shut: its
-/// parts reach down to its foot, so the opening its bar spans stays closed as its whole box kept it.
+/// part turned off the world's axes in strips (`prop_kept`). A gate's arch is shut: its parts reach down to its foot,
+/// so the opening its bar spans stays closed as its whole box kept it.
 #[must_use]
 pub fn prop_boxes(prop: &Seated, measure: &Measure, parts: Option<&Vec<[f64; 6]>>) -> Vec<Box3> {
+    prop_kept(prop, measure, parts).0
+}
+
+/// A prop's boxes and how many times `STRIPS_KEEP_M` its strips keep within: a turned prop too costly to strip so
+/// closely (`city::collision::affordable`) is stripped a quarter looser at a time, as a solid is.
+#[must_use]
+pub fn prop_kept(prop: &Seated, measure: &Measure, parts: Option<&Vec<[f64; 6]>>) -> (Vec<Box3>, f64) {
     let [min_x, min_y, min_z] = measure.min;
     let [max_x, max_y, max_z] = measure.max;
     let whole = [[min_x, min_y, min_z, max_x, max_y, max_z]];
@@ -175,22 +190,35 @@ pub fn prop_boxes(prop: &Seated, measure: &Measure, parts: Option<&Vec<[f64; 6]>
     let (sine, cosine) = land::exact::sin_cos(prop.yaw.to_radians());
     let square = (prop.yaw / 90.0 - (prop.yaw / 90.0).round()).abs() < 1e-9;
     let world = |x: f64, z: f64| [prop.at[0] + x * cosine + z * sine, prop.at[1] + x * sine - z * cosine];
-    parts
-        .iter()
-        .flat_map(|&[x0, y0, z0, x1, y1, z1]| {
-            let bottom = prop.at[2] + if shut { min_y } else { y0 };
-            let corners = [world(x0, z0), world(x1, z0), world(x1, z1), world(x0, z1)];
-            if square {
-                let start = [f64::INFINITY, f64::INFINITY, f64::NEG_INFINITY, f64::NEG_INFINITY];
-                let [west, north, east, south] = corners.iter().fold(start, |[west, north, east, south], &[x, y]| {
-                    [west.min(x), north.min(y), east.max(x), south.max(y)]
-                });
-                vec![[west, north, east, south, prop.at[2] + y1, bottom]]
-            } else {
-                city::hug::strips(corners, bottom, prop.at[2] + y1, city::hug::KEEP_M)
-            }
-        })
-        .collect()
+    let boxed = |loosened: f64| -> Vec<Box3> {
+        parts
+            .iter()
+            .flat_map(|&[x0, y0, z0, x1, y1, z1]| {
+                let bottom = prop.at[2] + if shut { min_y } else { y0 };
+                let corners = [world(x0, z0), world(x1, z0), world(x1, z1), world(x0, z1)];
+                if square {
+                    let start = [f64::INFINITY, f64::INFINITY, f64::NEG_INFINITY, f64::NEG_INFINITY];
+                    let [west, north, east, south] =
+                        corners.iter().fold(start, |[west, north, east, south], &[x, y]| {
+                            [west.min(x), north.min(y), east.max(x), south.max(y)]
+                        });
+                    vec![[west, north, east, south, prop.at[2] + y1, bottom]]
+                } else {
+                    city::hug::strips(corners, bottom, prop.at[2] + y1, STRIPS_KEEP_M * loosened)
+                }
+            })
+            .collect()
+    };
+    let footprint = (max_x - min_x) * (max_z - min_z);
+    let mut loosened = 1.0;
+    for _ in 0..city::collision::MOST_LOOSENINGS {
+        let found = boxed(loosened);
+        if square || city::collision::affordable(&found, footprint) {
+            return (found, loosened);
+        }
+        loosened *= city::collision::LOOSER;
+    }
+    (boxed(loosened), loosened)
 }
 
 /// Whether a body standing at `at` on a floor `floor` metres high stands clear of every box: none taller than a

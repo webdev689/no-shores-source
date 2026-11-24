@@ -41,6 +41,50 @@ test('nothing wild grows on a run: its beats and its way are cleared', () => {
   assert.ok(!covers(20, 30), 'not the rock beside it');
 });
 
+test('nothing wild grows on a path: a track and a footpath are cleared as wide as the land paints them', () => {
+  const laid = {
+    id: 'downs',
+    kind: 'patrol',
+    name: 'Downs',
+    theme: '',
+    ring: [],
+    spawns: [],
+    areas: [],
+    paths: [
+      {
+        tier: 'track',
+        points: [
+          [0, 0],
+          [30, 40],
+        ],
+        heights: [0, 0],
+        crossings: [],
+      },
+      {
+        tier: 'footpath',
+        points: [
+          [100, 0],
+          [100, 25],
+        ],
+        heights: [0, 0],
+        crossings: [],
+      },
+    ],
+    buildings: [],
+    props: [{ model: 1, at: [0, 0, 0], yaw: 0, building: false, footprint: [0, 0, 1, 1], open: false }],
+    tiles: [],
+    solids: [],
+    rooms: [],
+    pads: [],
+  } as unknown as NodeLayout;
+  const clearings = planOfLayouts([laid])?.clearings ?? [];
+  const covers = (x: number, y: number) =>
+    clearings.some((clearing) => Math.hypot(x - clearing.at[0], y - clearing.at[1]) <= clearing.radius);
+  assert.ok(covers(15, 20) && covers(16.5, 19), "the track's middle and a metre to its side");
+  assert.ok(covers(100, 12) && covers(100.9, 12), "the footpath's middle and its side");
+  assert.ok(!covers(20, 10) && !covers(104, 12), 'not the grass beside them');
+});
+
 test("a chalk zone's rubble is chalk, and its other solids are as they were", () => {
   const solid = (material: string) => ({
     shape: 'block',
@@ -61,6 +105,7 @@ test("a chalk zone's rubble is chalk, and its other solids are as they were", ()
       rooms: [],
       pads: [],
       areas: [],
+      paths: [],
       stone,
       solids: [solid('rubble'), solid('stone')],
     }) as unknown as NodeLayout;

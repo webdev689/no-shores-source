@@ -18,12 +18,12 @@ pub(crate) const ARCH_OPENING_WIDTH: f64 = 0.8;
 /// tick tests), and the most boxes a square metre of its footprint, though never fewer than `FEWEST_ALLOWED`: what a
 /// room's file and a tick may spend on one solid. One boxed within `KEEP_M` that costs more (a wide dome, a landmark's
 /// spire leaning out of true) is boxed with its keep a quarter looser at a time until it fits.
-pub(crate) const MOST_OVER_A_CELL: usize = 64;
+pub const MOST_OVER_A_CELL: usize = 64;
 pub(crate) const MOST_A_SQUARE_METRE: f64 = 1.0;
 pub(crate) const FEWEST_ALLOWED: usize = 256;
 const CELL_M: f64 = 2.0;
-const LOOSER: f64 = 1.25;
-const MOST_LOOSENINGS: u32 = 20;
+pub const LOOSER: f64 = 1.25;
+pub const MOST_LOOSENINGS: u32 = 20;
 
 /// A solid as boxes that keep within 0.45 m of it (`hug`), or as near as its cost allows (`kept`), each underside where
 /// it really is: a roof, a lintel or a hung lamp over the floor is walked under. Natural rock and a module are their
@@ -39,7 +39,7 @@ pub fn boxes(solid: &Solid) -> Vec<Box2> {
 #[must_use]
 pub fn kept(solid: &Solid) -> (Vec<Box2>, f64) {
     let [width, depth, _] = solid.size;
-    let allowed = FEWEST_ALLOWED.max(floor_count(width * depth * MOST_A_SQUARE_METRE));
+    let allowed = allowed_over(width * depth);
     // A try stops as soon as it takes more boxes than allowed, so a great spire's tight tries cost no more than one.
     let fitting = |terraced: bool, loosened: f64| {
         boxed_at_most(solid, loosened, terraced, allowed).filter(|found| crowding(found) <= MOST_OVER_A_CELL)
@@ -60,6 +60,18 @@ pub fn kept(solid: &Solid) -> (Vec<Box2>, f64) {
 /// further than `STILL_M` (rock keeps its own tilt).
 fn is_still(solid: &Solid) -> bool {
     !crate::rock::is_rock(solid.shape) && crate::hug::tilt_move(solid) <= crate::hug::STILL_M
+}
+
+/// How many boxes a piece of this footprint may take, square metres.
+fn allowed_over(footprint: f64) -> usize {
+    FEWEST_ALLOWED.max(floor_count(footprint * MOST_A_SQUARE_METRE))
+}
+
+/// Whether a piece of this footprint (square metres) may stand as these boxes: few enough, and none crowding the
+/// ground. A prop is held to it as a solid is.
+#[must_use]
+pub fn affordable(boxes: &[Box2], footprint: f64) -> bool {
+    boxes.len() <= allowed_over(footprint) && crowding(boxes) <= MOST_OVER_A_CELL
 }
 
 /// How many whole boxes `share` allows, none for less than one.
@@ -95,13 +107,17 @@ pub(crate) fn boxed(solid: &Solid, loosened: f64, terraced: bool) -> Vec<Box2> {
     boxed_at_most(solid, loosened, terraced, usize::MAX).unwrap_or_default()
 }
 
-/// A solid's boxes as `boxed`, or none once they number more than `most`.
+/// A solid's boxes as `boxed`, or none once they number more than `most` or a part's halving stops short of its keep;
+/// with no bound (`usize::MAX`), every box, a piece that halving stops short of boxed whole.
 fn boxed_at_most(solid: &Solid, loosened: f64, terraced: bool, most: usize) -> Option<Vec<Box2>> {
     let (shaped, keep) = crate::hug::keeps_of(solid.shape);
     // A solid still enough is boxed upright. A round standing so whose width and depth differ by twice `KEEP_M` at
     // most is boxed as a circle of their mean, square to the world, as a circle is the same however it is turned: its
     // boxes are its parts, so its parts may stand all of `KEEP_M` off it, less how far the circle stands off it.
     let still = is_still(solid);
+    // The page's faces lie inside the round the parts keep to: the parts keep that much closer to it, and a keep too
+    // tight to leave room for it does not fit.
+    let sag = crate::hug::facet_sag(solid.shape, solid.size);
     let [width, depth, height] = solid.size;
     let round =
         matches!(solid.shape, Shape::Column { .. } | Shape::Dome { .. }) && (width - depth).abs() <= 2.0 * KEEP_M;
@@ -114,9 +130,19 @@ fn boxed_at_most(solid: &Solid, loosened: f64, terraced: bool, most: usize) -> O
     } else {
         (*solid, shaped)
     };
+    let budget = shaped * loosened - sag;
+    if budget < shaped * loosened / 2.0 && most != usize::MAX {
+        return None;
+    }
     let mut found = Vec::new();
-    for part in crate::hug::shape_parts(solid.shape, solid.size, shaped * loosened, terraced) {
-        found.extend(crate::hug::part_boxes(&solid, part, keep * loosened));
+    for part in crate::hug::shape_parts(solid.shape, solid.size, budget.max(shaped * loosened / 2.0), terraced) {
+        // A part halving cannot keep so close does not fit at this keep either.
+        let kept = if most == usize::MAX {
+            crate::hug::part_boxes(&solid, part, keep * loosened)
+        } else {
+            crate::hug::part_boxes_kept(&solid, part, keep * loosened)?
+        };
+        found.extend(kept);
         if found.len() > most {
             return None;
         }
@@ -135,12 +161,16 @@ pub(crate) fn into_boxes(solid: &Solid) -> Vec<Box2> {
 }
 
 /// The plan's solids reaching into `bounds` (west, north, east, south), as boxes. A solid is boxed only where its box
-/// round its turned corners reaches in, as none of its boxes reaches further.
+/// round its turned corners, grown by `KEEP_M`, reaches in: a solid boxed upright or as a circle reaches that much
+/// further at most.
 #[must_use]
 pub fn boxes_within(plan: &Plan, bounds: [f64; 4]) -> Vec<Box2> {
     let reaches = |solid: &&Solid| {
         let [west, north, east, south, ..] = solid.bounds();
-        west <= bounds[2] && east >= bounds[0] && north <= bounds[3] && south >= bounds[1]
+        west - KEEP_M <= bounds[2]
+            && east + KEEP_M >= bounds[0]
+            && north - KEEP_M <= bounds[3]
+            && south + KEEP_M >= bounds[1]
     };
     plan.social
         .solids

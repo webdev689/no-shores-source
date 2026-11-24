@@ -31,7 +31,7 @@ but one: the well house (props 43202 and 43204), whose posts run up to carry its
 
 ## The tables
 
-`content/forged/` holds three tables, keyed by classic model id:
+`content/forged/` holds four tables, keyed by classic model id:
 
 | Table | Pieces | What it measures |
 |---|---|---|

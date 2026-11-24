@@ -15,9 +15,10 @@ dfo_commit: aee22261
 # Pick - Meadow Grass
 
 DFO's meadow: the grass style its settings called "hand-drawn tufts, flowers and bushes", the owner's five pixel
-sprites stood up as crossed cards in DFO's grass field. The owner asked for it to come over
-([[The Owner's Hand-Drawn Meadow Grows Over the Grass]]); its row on the [[Pick List - Engine and World]] was marked
-Cut, and this is its approval.
+sprites stood up as crossed cards in DFO's grass field. Its row on the [[Pick List - Engine and World]] was marked
+Cut; the owner's words approve it: "Implement the handcrafted grass texture we have from DFO"
+([[The Owner's Handcrafted Meadow Grows Over the Grass]]). The row's GPU blades and pixel grass stay behind, so it is
+approved in part.
 
 ## What comes over
 

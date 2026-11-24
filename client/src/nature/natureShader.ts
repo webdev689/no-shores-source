@@ -8,6 +8,9 @@ export const FRAME_FLOATS = 32;
 export const SHADE_SEGMENTS = 10;
 /** The leaf share the bake gives moss (tools/flora/near.py MOSS_LEAF): it is let go past a stone's throw. */
 const MOSS_LEAF = 0.6;
+/** How far a gust travels, as a phase a metre and a second: the plants' and the meadow's alike. */
+export const GUST_PER_M = 0.035;
+export const GUST_PER_S = 1.4;
 const { azimuths, elevations } = FLORA.frames;
 
 /** What the plants' passes share: their terms, their instances, their pictures, and where each stands. */
@@ -77,9 +80,8 @@ struct Vertex {
 };
 
 const NOWHERE = vec4f(2.0, 2.0, 2.0, 1.0);
-// How far a gust travels in a second, as a phase a metre and a second.
-const GUST_PER_M = 0.035;
-const GUST_PER_S = 1.4;
+const GUST_PER_M = ${GUST_PER_M};
+const GUST_PER_S = ${GUST_PER_S};
 // Moss is known by its leaf share, and hangs only as far as a stone's throw: past that it is too fine to read.
 const MOSS = ${MOSS_LEAF};
 const MOSS_REACH = 150.0;
@@ -191,9 +193,10 @@ const SNOW = vec3f(0.94, 0.95, 0.97);
 const BOUNCE = vec3f(0.95, 0.9, 0.76);
 const SKYLIGHT = vec3f(1.0, 1.02, 1.08);
 
-fn lit(base: vec3f, normal: vec3f, leaf: f32, occlusion: f32, from_eye: vec3f, snow: f32) -> vec3f {
+fn lit(base: vec3f, normal: vec3f, leaf: f32, occlusion: f32, from_eye: vec3f, snow: f32, facing: f32) -> vec3f {
   let sun = sunlit(from_eye, normal) * sky_dapple(from_eye);
-  let direct = sky_direct(normal, sun);
+  // 'facing' is the share of the sun's or the moon's own light a face turned from it keeps: 1 but for a meadow's card.
+  let direct = sky_direct(normal, sun) * facing;
   let ambient = sky_ambient(normal) * mix(BOUNCE, SKYLIGHT, normal.z * 0.5 + 0.5) * occlusion;
   // Leaves pass on the sky and the ground's bounce, and the sun behind them: a crown's underside is green, never black.
   let behind = 0.3 * max(-dot(normal, sky_state.key.xyz), 0.0) * sun;
@@ -323,7 +326,7 @@ fn plant_fragment(shaded: Shaded) -> Drawn {
   let up = cross(normal_axis, across) * select(-1.0, 1.0, shaded.tangent.w >= 0.0);
   let normal = normalize(across * mapped.x + up * mapped.y + normal_axis * max(mapped.z, 0.2));
   let base = tinted(albedo.rgb * shaded.colour.rgb, shaded.look.y, shaded.leaf, shaded.look.z);
-  let colour = lit(base, normal, shaded.leaf, shaded.colour.a, shaded.from_eye, shaded.look.x);
+  let colour = lit(base, normal, shaded.leaf, shaded.colour.a, shaded.from_eye, shaded.look.x, 1.0);
   return Drawn(vec4f(colour, 1.0), mask);
 }
 
@@ -429,7 +432,7 @@ fn sprite_fragment(sprite: Sprite) -> Drawn {
   let blender = normalize(facing.xyz * 2.0 - 1.0);
   let normal = vec3f(turned(sprite.rows.zw, vec2f(blender.x, -blender.y)), blender.z);
   let base = tinted(albedo.rgb, sprite.look.y, facing.a, sprite.look.z);
-  return Drawn(vec4f(lit(base, normal, facing.a, 1.0, sprite.from_eye, sprite.look.x), 1.0), mask);
+  return Drawn(vec4f(lit(base, normal, facing.a, 1.0, sprite.from_eye, sprite.look.x, 1.0), 1.0), mask);
 }
 
 struct Shade {

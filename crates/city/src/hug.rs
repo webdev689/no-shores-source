@@ -6,6 +6,7 @@
 use crate::collision::Box2;
 use crate::solids::{Shape, Solid};
 use land::exact::sin_cos;
+use std::f64::consts::FRAC_PI_2;
 
 /// How far a box may stand off what it boxes, metres: a body climbing it, or standing at its edge, keeps this close
 /// to what is drawn. The layouts lay a wall at a slant in lengths whose boxes keep as close (`halls.rs`). A shape cut
@@ -54,24 +55,34 @@ pub fn shape_parts(shape: Shape, size: [f64; 3], budget: f64, terraced: bool) ->
                 Shape::Column { top, .. } | Shape::Pyramid { top } => top,
                 _ => 0.0,
             };
-            let dome = matches!(shape, Shape::Dome { .. });
+            // A dome as the page draws it: straight between its rings, each a quarter-turn's equal step up the round.
+            let rings: Vec<(f64, f64)> = match shape {
+                Shape::Dome { .. } => {
+                    let count = drawn_rings(shape);
+                    (0..=count).map(|ring| sin_cos(FRAC_PI_2 * f64::from(ring) / f64::from(count))).collect()
+                }
+                _ => Vec::new(),
+            };
             let outline = Outline {
                 height,
                 narrows: &|up: f64| {
-                    if dome {
-                        (1.0 - (up / height) * (up / height)).max(0.0).sqrt()
-                    } else {
-                        1.0 - (1.0 - top) * up / height
+                    if rings.is_empty() {
+                        return 1.0 - (1.0 - top) * up / height;
                     }
+                    let at =
+                        rings.windows(2).find(|pair| up <= height * pair[1].0).unwrap_or(&rings[rings.len() - 2..]);
+                    let ((low_sine, low_cosine), (high_sine, high_cosine)) = (at[0], at[1]);
+                    low_cosine + (high_cosine - low_cosine) * (up / height - low_sine) / (high_sine - low_sine)
                 },
                 up_at: &|share: f64| {
-                    if dome {
-                        height * (1.0 - share * share).max(0.0).sqrt()
-                    } else if top >= 1.0 {
-                        height
-                    } else {
-                        height * (1.0 - share) / (1.0 - top)
+                    // shortcut: a column widening as it rises (a brazier) is one layer as wide as its foot, its rim
+                    // reaching past its box (a brazier's 0.16 m); layer it as it widens if a rim ever passes KEEP_M.
+                    if rings.is_empty() {
+                        return if top >= 1.0 { height } else { height * (1.0 - share) / (1.0 - top) };
                     }
+                    let at = rings.windows(2).find(|pair| share >= pair[1].1).unwrap_or(&rings[rings.len() - 2..]);
+                    let ((low_sine, low_cosine), (high_sine, high_cosine)) = (at[0], at[1]);
+                    height * (low_sine + (high_sine - low_sine) * (low_cosine - share) / (low_cosine - high_cosine))
                 },
             };
             let round = !matches!(shape, Shape::Pyramid { .. });
@@ -125,7 +136,7 @@ fn layers(outline: &Outline, narrowing: f64, budget: f64, misfit: impl Fn(f64) -
 fn round_misfit(reach: f64, budget: f64) -> f64 {
     if reach * (std::f64::consts::SQRT_2 - 1.0) <= budget / 2.0 {
         reach * (std::f64::consts::SQRT_2 - 1.0)
-    } else if reach * ROUND_OFF_SHARE <= budget / 2.0 {
+    } else if reach * ROUND_OFF_SHARE <= budget.min(KEEP_M) / 2.0 {
         reach * ROUND_OFF_SHARE
     } else {
         0.0
@@ -135,16 +146,18 @@ fn round_misfit(reach: f64, budget: f64) -> f64 {
 /// A layer's cross-section, halves `half_x` by `half_y`, as boxes of its own frame centred on its axis, given as a
 /// staircase: each step how far out along y it reaches and its half-width in x, out from the axis. A rectangle is
 /// one step; a round its own box while that stands within half of `budget` of it, then one box a little inside it,
-/// then boxes crossed inside it, as many as keep the round within `budget` of them.
+/// then boxes crossed inside it, as many as keep the round within `budget` of them. What a round leaves out is never
+/// more than `KEEP_M`, however loose `budget` is: a body never walks into what is drawn further.
 fn across(half_x: f64, half_y: f64, round: bool, budget: f64) -> Vec<[f64; 2]> {
     let reach = half_x.max(half_y);
+    let left = budget.min(KEEP_M);
     if !round || reach * (std::f64::consts::SQRT_2 - 1.0) <= budget / 2.0 {
         return vec![[half_y, half_x]];
     }
-    if reach * ROUND_OFF_SHARE <= budget / 2.0 {
+    if reach * ROUND_OFF_SHARE <= left / 2.0 {
         return vec![[half_y * ROUND_SHARE, half_x * ROUND_SHARE]];
     }
-    let count = (std::f64::consts::PI * reach / (4.0 * budget)).ceil().max(2.0) as u32;
+    let count = (std::f64::consts::PI * reach / (4.0 * left)).ceil().max(2.0) as u32;
     (0..count)
         .map(|step| {
             let angle = (f64::from(step) + 0.5) * std::f64::consts::FRAC_PI_2 / f64::from(count);
@@ -210,6 +223,26 @@ fn terraces(layers: impl DoubleEndedIterator<Item = (f64, Vec<[f64; 2]>)>) -> Ve
     parts
 }
 
+/// How many rings the page draws a dome in, from its base to its crown (`solidMesh.ts`).
+fn drawn_rings(shape: Shape) -> u32 {
+    match shape {
+        Shape::Dome { sides } => (f64::from(sides.max(4)) / 4.0).round().max(2.0) as u32,
+        _ => 0,
+    }
+}
+
+/// How far the page's faces round a column or a dome lie inside the round its boxes keep to, at most: each face a
+/// chord of the round, its corners on it, as many as the page draws (`solidMesh.ts`).
+#[must_use]
+pub fn facet_sag(shape: Shape, [width, depth, _]: [f64; 3]) -> f64 {
+    let faces = match shape {
+        Shape::Column { sides, .. } => sides.max(3),
+        Shape::Dome { sides } => sides.max(4),
+        _ => return 0.0,
+    };
+    width.max(depth) / 2.0 * (1.0 - sin_cos(std::f64::consts::PI / f64::from(faces)).1)
+}
+
 /// Whether a shape is cut in layers that narrow as it rises, which may be laid as terraces.
 #[must_use]
 pub const fn is_layered(shape: Shape) -> bool {
@@ -228,9 +261,22 @@ pub const fn keeps_of(shape: Shape) -> (f64, f64) {
     }
 }
 
-/// A part of a solid's own frame as boxes square to the world, each within `keep` of it.
+/// A part of a solid's own frame as boxes square to the world, each within `keep` of it but where halving stopped
+/// short (`part_boxes_kept`).
 #[must_use]
 pub fn part_boxes(solid: &Solid, part: Part, keep: f64) -> Vec<Box2> {
+    boxes_of_part(solid, part, keep, &mut false)
+}
+
+/// A part's boxes as `part_boxes`, or none where halving stopped short of keeping them within `keep`.
+#[must_use]
+pub(crate) fn part_boxes_kept(solid: &Solid, part: Part, keep: f64) -> Option<Vec<Box2>> {
+    let mut short = false;
+    let boxes = boxes_of_part(solid, part, keep, &mut short);
+    (!short).then_some(boxes)
+}
+
+fn boxes_of_part(solid: &Solid, part: Part, keep: f64, short: &mut bool) -> Vec<Box2> {
     let whole = box_of(solid, part);
     if off(solid, part, whole) <= keep {
         return vec![whole];
@@ -243,7 +289,7 @@ pub fn part_boxes(solid: &Solid, part: Part, keep: f64) -> Vec<Box2> {
         });
         return strips(corners, solid.at[2] + z0, solid.at[2] + z1, keep);
     }
-    halves(solid, part, keep, 0)
+    halves(solid, part, keep, 0, short)
 }
 
 /// A part's box square to the world round its turned corners: west, north, east, south, top, bottom.
@@ -271,12 +317,17 @@ fn off(solid: &Solid, part: Part, [west, north, east, south, top, bottom]: Box2)
 }
 
 /// A leaning or rolled part halved until each piece's box keeps within `keep` of it, each time across the side
-/// whose halving brings the halves' boxes nearest it: halving a side the tilt does not throw out gains nothing.
-fn halves(solid: &Solid, part: Part, keep: f64, halved: u32) -> Vec<Box2> {
+/// whose halving brings the halves' boxes nearest it: halving a side the tilt does not throw out gains nothing. A
+/// piece still too far off when halving stops is boxed whole and marked `short`.
+fn halves(solid: &Solid, part: Part, keep: f64, halved: u32, short: &mut bool) -> Vec<Box2> {
     let whole = box_of(solid, part);
     let longest = (part[3] - part[0]).max(part[4] - part[1]).max(part[5] - part[2]);
     let forgiven = if longest <= TILTED_PIECE_M { longest * tilt_reach(solid) } else { 0.0 };
-    if halved >= MOST_HALVINGS || off(solid, part, whole) <= keep + forgiven {
+    if off(solid, part, whole) <= keep + forgiven {
+        return vec![whole];
+    }
+    if halved >= MOST_HALVINGS {
+        *short = true;
         return vec![whole];
     }
     let halved_across = |axis: usize| {
@@ -286,22 +337,28 @@ fn halves(solid: &Solid, part: Part, keep: f64, halved: u32) -> Vec<Box2> {
         high[axis] = middle;
         (low, high)
     };
-    let worse = |axis: usize| {
+    let worse = [0, 1, 2].map(|axis| {
         let (low, high) = halved_across(axis);
         off(solid, low, box_of(solid, low)).max(off(solid, high, box_of(solid, high)))
-    };
-    let axis = (0..3).fold(0, |best, axis| if worse(axis) < worse(best) { axis } else { best });
+    });
+    let axis = (0..3).fold(0, |best, axis| if worse[axis] < worse[best] { axis } else { best });
     let (low, high) = halved_across(axis);
-    let mut boxes = halves(solid, low, keep, halved + 1);
-    boxes.extend(halves(solid, high, keep, halved + 1));
+    let mut boxes = halves(solid, low, keep, halved + 1, short);
+    boxes.extend(halves(solid, high, keep, halved + 1, short));
     boxes
 }
 
-/// How far a metre of a part reaches out of square as the solid leans and rolls, in the land's exact sines, as the
-/// browser's rules work it to the bit.
+/// How far a metre of a part moves at most as the solid leans and rolls: a turn through an angle moves a point by its
+/// chord, twice the sine of half the angle, which never falls back as a sine does past a right angle, and the two
+/// turns' chords add; in the land's exact sines, as the browser's rules work it to the bit.
 #[must_use]
 pub fn tilt_reach(solid: &Solid) -> f64 {
-    sin_cos(solid.lean.abs()).0 + sin_cos(solid.roll.abs()).0
+    let chord = |angle: f64| {
+        let whole = std::f64::consts::TAU;
+        let within = angle.abs() - (angle.abs() / whole).floor() * whole;
+        2.0 * sin_cos(within / 2.0).0
+    };
+    chord(solid.lean) + chord(solid.roll)
 }
 
 /// How far the solid's leaning and rolling moves its farthest corner from where it would stand upright, at most.

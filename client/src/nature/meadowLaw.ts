@@ -67,21 +67,32 @@ export const SHIFT = [0.5, 1.6] as const;
  *  and dry stalks take only the ground's light. */
 export const GREEN_EDGE = 12;
 
+/** How much each channel counts toward a colour's light. */
+export const LUMA = [0.299, 0.587, 0.114] as const;
+
 /** A texel's colour (0..1 a channel) over a ground (0..1), before the light: the shader's own law. */
 export function texelOver(art: readonly number[], ground: readonly number[]): number[] {
   const shift = ground.map((value, channel) =>
     Math.min(SHIFT[1], Math.max(SHIFT[0], value / ((GREEN[channel] ?? 1) / (TONE[channel] ?? 1)))),
   );
-  const light = (shift[0] ?? 1) * 0.299 + (shift[1] ?? 1) * 0.587 + (shift[2] ?? 1) * 0.114;
+  const light = shift.reduce((sum, value, channel) => sum + value * (LUMA[channel] ?? 0), 0);
   const green = Math.min(1, Math.max(0, ((art[1] ?? 0) - Math.max(art[0] ?? 0, art[2] ?? 0)) * GREEN_EDGE));
   return art.map((value, channel) => value * (light + ((shift[channel] ?? 1) - light) * green));
 }
 
-/** The most a tuft's standing lean, wind lean (a gale's push, metres a metre of height) and its place's cluster carry
- *  it, as the shader lays them. */
-const STANDING_LEAN = Math.hypot(0.25, 0.25);
-const GALE_LEAN = 2.2 * 6 * (0.6 + 0.45) * 0.032;
-const CLUSTER_M = 0.55;
+/** A tuft's standing lean at most, a way each (a bush keeps its `stiff` share of it), metres a metre of height. */
+export const STANDING_LEAN = 0.25;
+/** A fresh breeze, m/s, and how far it leans a tuft's top, a metre a second of its push over the tuft's height; a
+ *  gust pushes from 0.6 of the breeze to 0.6 and 0.45 of it, and the land's wind is a gale at 2.2 times. */
+export const BREEZE_MS = 6;
+export const LEAN_PER_PUSH = 0.032;
+export const GUST = [0.6, 0.45] as const;
+export const GALE = 2.2;
+/** How far a tuft stands from where its draw put it at most, metres, so tufts gather a little. */
+export const CLUSTER_M = 0.55;
+/** The most a tuft's standing lean and a gale's lean carry its top, metres a metre of height. */
+const MOST_STANDING = Math.hypot(STANDING_LEAN, STANDING_LEAN);
+const GALE_LEAN = GALE * BREEZE_MS * (GUST[0] + GUST[1]) * LEAN_PER_PUSH;
 /** The steepest ground a tuft grows on (meadowField.ts grassShare), its card's foot raised as far again. */
 const STEEPEST = 0.45;
 
@@ -92,7 +103,7 @@ export function cardReach(): { tallest: number; widest: number } {
   const sides = VARIANTS.map((variant, place) => {
     const box = BOXES[place] ?? { u0: 0, u1: 1, v0: 0, v1: 1 };
     const side = most * variant.scale;
-    const lean = (STANDING_LEAN * variant.stiff + GALE_LEAN * variant.sway) * box.v1 * box.v1;
+    const lean = (MOST_STANDING * variant.stiff + GALE_LEAN * variant.sway) * box.v1 * box.v1;
     return { side, across: side * (Math.max(0.5 - box.u0, box.u1 - 0.5) + lean), up: side * box.v1 };
   });
   const widest = Math.max(...sides.map(({ across }) => across)) + CLUSTER_M;

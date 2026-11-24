@@ -34,11 +34,11 @@ def sprite(path):
                 continue
             colour = '#%02x%02x%02x' % (red, green, blue)
             if colour not in colours:
+                if len(colours) == len(LETTERS):
+                    sys.exit(f'{path}: more than {len(LETTERS)} colours, more than a letter each')
                 colours.append(colour)
             row += LETTERS[colours.index(colour)]
         rows.append(row)
-    if len(colours) > len(LETTERS):
-        sys.exit(f'{path}: {len(colours)} colours, more than a letter each')
     return rows, colours
 
 

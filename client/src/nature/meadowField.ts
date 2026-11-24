@@ -40,17 +40,23 @@ export function grassShare(ground: GroundAt, cleared: boolean, snowM: number): n
   return (1 - stone) * (1 - dirt) * (1 - snow) * (1 - beach);
 }
 
+/** Squares a side of a cell's kept-clear mask, a bit each, row by row from the north-west: what the grid's points
+ *  stand too far apart to see (a wall, a plinth, a fire's stones) keeps its square bare. */
+export const CLEAR_SQUARES = 32;
+
 /** One cell: its place (whole cells east and south), its slot on the GPU, its grid (height and grass share each
- *  sample, row by row from the north-west) and the ground version it was read at. */
+ *  sample, row by row from the north-west), its kept-clear mask and the ground version it was read at. */
 export interface Cell {
   readonly x: number;
   readonly y: number;
   readonly slot: number;
   readonly grid: Float32Array;
+  readonly clear: Uint32Array;
   version: number;
-  /** The highest and lowest ground in it, metres, for culling. */
+  /** The highest and lowest ground in it, metres, for culling, and its most grass share: a cell with none is not drawn. */
   low: number;
   high: number;
+  grass: number;
 }
 
 /** A cell's grid read from the ground. */
@@ -58,9 +64,9 @@ export function readCell(
   x: number,
   y: number,
   ground: NatureGround,
-): { grid: Float32Array; low: number; high: number } {
+): { grid: Float32Array; clear: Uint32Array; low: number; high: number; grass: number } {
   const grid = new Float32Array(GRID * GRID * 2);
-  let [low, high] = [Infinity, -Infinity];
+  let [low, high, grass] = [Infinity, -Infinity, 0];
   const step = CELL_M / (GRID - 1);
   for (let row = 0; row < GRID; row++)
     for (let column = 0; column < GRID; column++) {
@@ -70,9 +76,16 @@ export function readCell(
         ? grassShare(sampled, ground.cleared(east, south), ground.snowM)
         : 0;
       grid.set([sampled.height, share], (row * GRID + column) * 2);
-      [low, high] = [Math.min(low, sampled.height), Math.max(high, sampled.height)];
+      [low, high, grass] = [Math.min(low, sampled.height), Math.max(high, sampled.height), Math.max(grass, share)];
     }
-  return { grid, low, high };
+  const clear = new Uint32Array(CLEAR_SQUARES);
+  const square = CELL_M / CLEAR_SQUARES;
+  for (let row = 0; grass > 0 && row < CLEAR_SQUARES; row++)
+    for (let column = 0; column < CLEAR_SQUARES; column++) {
+      const [east, south] = [x * CELL_M + (column + 0.5) * square, y * CELL_M + (row + 0.5) * square];
+      if (ground.cleared(east, south)) clear[row] |= 1 << column;
+    }
+  return { grid, clear, low, high, grass };
 }
 
 /** The cells round the eye: kept while near, read nearest first within a budget a frame, read again where the ground
@@ -126,8 +139,8 @@ export class MeadowField {
       const known = this.cells.get(`${x},${y}`);
       const slot = known?.slot ?? this.free.pop();
       if (slot === undefined) break;
-      const { grid, low, high } = readCell(x, y, ground);
-      const cell: Cell = { x, y, slot, grid, version: ground.version, low, high };
+      const { grid, clear, low, high, grass } = readCell(x, y, ground);
+      const cell: Cell = { x, y, slot, grid, clear, version: ground.version, low, high, grass };
       this.cells.set(`${x},${y}`, cell);
       this.filled.push(cell);
       read++;

@@ -3,7 +3,7 @@ type: decision
 date: 2026-11-24
 status: in force
 ---
-# The Owner's Hand-Drawn Meadow Grows Over the Grass
+# The Owner's Handcrafted Meadow Grows Over the Grass
 
 > "2. Implement the handcrafted grass texture we have from DFO
 >
@@ -11,8 +11,11 @@ status: in force
 
 ## What it settles
 
-- DFO's meadow comes over ([[Pick - Meadow Grass]]): the owner's five hand-drawn sprites (a tall tuft, the same cut
-  short, a tuft of flowers, a dry tuft and a bush), stood up as crossed cards over the grass ([[Meadow]]).
+- DFO's meadow comes over ([[Pick - Meadow Grass]]): the five handcrafted sprites DFO keeps as the owner's (a tall
+  tuft, the same cut short, a tuft of flowers, a dry tuft and a bush), stood up as crossed cards over the grass
+  ([[Meadow]]). Who made them is for the owner to confirm ([[Own Work]]).
+- That the texture brings DFO's whole meadow with it (where it grows, its pick, sizes, colour and wind), not its
+  blades or its pixel grass, is Claude's reading of the ask.
 - The details are Claude's to call, below.
 
 ## Claude's calls

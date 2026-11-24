@@ -8,7 +8,7 @@ import { SAMPLES } from '../water/waterView.ts';
 import type { NatureGround } from './field.ts';
 import { smooth } from './ground.ts';
 import { meadowLevels } from './meadowAtlas.ts';
-import { CELL_M, GRID, MEADOW_BIOMES, MeadowField, REACH_M, TUFTS } from './meadowField.ts';
+import { CELL_M, CLEAR_SQUARES, GRID, MEADOW_BIOMES, MeadowField, REACH_M, TUFTS } from './meadowField.ts';
 import { cardReach } from './meadowLaw.ts';
 import { FAR_FROM, FAR_VERTICES, MEADOW_FRAME_FLOATS, MEADOW_SHADER, NEAR_VERTICES } from './meadowShader.ts';
 import type { NatureFrame } from './natureView.ts';
@@ -54,6 +54,7 @@ function meadowPipelines(gpu: Gpu): MeadowPipelines {
       { binding: 2, visibility: SHADER_STAGE.vertex, buffer: { type: 'read-only-storage' } },
       { binding: 3, visibility: SHADER_STAGE.fragment, texture: {} },
       { binding: 4, visibility: SHADER_STAGE.fragment, sampler: {} },
+      { binding: 5, visibility: SHADER_STAGE.vertex, buffer: { type: 'read-only-storage' } },
     ],
   });
   const module = device.createShaderModule({ code: MEADOW_SHADER });
@@ -86,6 +87,7 @@ export class MeadowView {
   private readonly frameBuffer: GPUBuffer;
   private readonly cellBuffer: GPUBuffer;
   private readonly gridBuffer: GPUBuffer;
+  private readonly clearBuffer: GPUBuffer;
   private readonly atlas: GPUTexture;
   private readonly bind: GPUBindGroup;
   private anchor: [number, number] | null = null;
@@ -103,6 +105,7 @@ export class MeadowView {
     const stored = BUFFER_USAGE.storage | BUFFER_USAGE.copyDestination;
     this.cellBuffer = device.createBuffer({ size: KEPT_CELLS * 16, usage: stored });
     this.gridBuffer = device.createBuffer({ size: KEPT_CELLS * GRID * GRID * 8, usage: stored });
+    this.clearBuffer = device.createBuffer({ size: KEPT_CELLS * CLEAR_SQUARES * 4, usage: stored });
     const levels = meadowLevels();
     const [first] = levels;
     this.atlas = device.createTexture({
@@ -127,6 +130,7 @@ export class MeadowView {
         { binding: 2, resource: { buffer: this.gridBuffer } },
         { binding: 3, resource: this.atlas.createView() },
         { binding: 4, resource: nearest },
+        { binding: 5, resource: { buffer: this.clearBuffer } },
       ],
     });
   }
@@ -150,7 +154,10 @@ export class MeadowView {
       const corner = [cell.x * CELL_M - anchor[0], cell.y * CELL_M - anchor[1], cell.x, cell.y];
       queue.writeBuffer(this.cellBuffer, cell.slot * 16, new Float32Array(corner));
     }
-    for (const cell of this.field.filled) queue.writeBuffer(this.gridBuffer, cell.slot * GRID * GRID * 8, cell.grid);
+    for (const cell of this.field.filled) {
+      queue.writeBuffer(this.gridBuffer, cell.slot * GRID * GRID * 8, cell.grid);
+      queue.writeBuffer(this.clearBuffer, cell.slot * CLEAR_SQUARES * 4, cell.clear);
+    }
     const blowing = frame.wind ? { ...plantWind(null), way: frame.wind } : plantWind(SKY_NOW.current.reading);
     const way = blowing.way;
     const gusts = ((anchor[0] * way[0] + anchor[1] * way[1]) * GUST_PER_M) % (Math.PI * 2);
@@ -163,6 +170,7 @@ export class MeadowView {
     queue.writeBuffer(this.frameBuffer, 0, floats);
     const planes = viewPlanes(frame.fromEye);
     for (const cell of this.field.cells.values()) {
+      if (cell.grass <= 0) continue;
       const [west, north] = [cell.x * CELL_M - eyeX, cell.y * CELL_M - eyeY];
       const [low, high] = [cell.low * frame.exaggeration - eyeZ, cell.high * frame.exaggeration - eyeZ + TALLEST_M];
       const across = Math.hypot(
@@ -204,7 +212,9 @@ export class MeadowView {
 
   /** Gives the GPU back this view's buffers and picture; it draws nothing after. */
   destroy(): void {
-    for (const owned of [this.frameBuffer, this.cellBuffer, this.gridBuffer, this.atlas]) owned.destroy();
+    for (const owned of [this.frameBuffer, this.cellBuffer, this.gridBuffer, this.clearBuffer, this.atlas]) {
+      owned.destroy();
+    }
     this.draws = [];
   }
 }

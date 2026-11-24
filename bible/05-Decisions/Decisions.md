@@ -337,7 +337,7 @@ a decision is a record. How to add one: [[Recording a Decision]].
 - [[The Bulwark Blocks, Supers Are Powerful, the Sea's Gaps Close and Level 30 Takes Breach Gear]]
 - [[Pairs Swing Faster, Foes' Guns Strike Two Thirds and Faction Gear Has No Weekly Limit]]
 - [[What a Body Meets Keeps to What Is Drawn]]
-- [[The Owner's Hand-Drawn Meadow Grows Over the Grass]]
+- [[The Owner's Handcrafted Meadow Grows Over the Grass]]
 
 ## Replaced
 

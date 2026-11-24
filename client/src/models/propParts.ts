@@ -9,10 +9,8 @@ import { propModel } from './props.ts';
 /** A box of the prop's own frame: low x, y, z, then high x, y, z, metres. */
 export type PropPart = readonly [number, number, number, number, number, number];
 
-/** A column's side, and on a piece longer than LARGE_M a larger one, metres. */
+/** A column's side at most, metres: a part's edge stands no further past what is drawn. */
 export const PART_CELL_M = 0.25;
-export const LARGE_PART_CELL_M = 0.5;
-export const LARGE_M = 8;
 /** Columns are joined whose tops lie within this of each other, metres: a body stands no further off the mesh. */
 export const TOP_KEEP_M = 0.25;
 /** A crouched body's height: a gap lower is filled, and an underside lower than this over the floor is the floor. */
@@ -90,8 +88,7 @@ export function partsOf(model: ForgedModel, box: { readonly min: Point; readonly
       min[axis] = Math.min(min[axis], model.positions[vertex + axis]);
       max[axis] = Math.max(max[axis], model.positions[vertex + axis]);
     }
-  const cell = Math.max(max[0] - min[0], max[2] - min[2]) > LARGE_M ? LARGE_PART_CELL_M : PART_CELL_M;
-  const [columns, rows] = [0, 2].map((axis) => Math.max(1, Math.ceil((max[axis] - min[axis]) / cell - 1e-9)));
+  const [columns, rows] = [0, 2].map((axis) => Math.max(1, Math.ceil((max[axis] - min[axis]) / PART_CELL_M - 1e-9)));
   const [wide, deep] = [(max[0] - min[0]) / columns, (max[2] - min[2]) / rows];
   const reached: Span[][] = Array.from({ length: columns * rows }, () => []);
   const { positions, indices } = model;
@@ -229,6 +226,8 @@ export function partsTable(table: PropTable): Map<number, PropPart[]> {
     const model = propModel(table, id);
     if (!model) continue;
     const { min, max } = table[key];
+    // A piece no higher than a step is stepped over whole (crates/layout/src/collide.rs), so it needs no parts.
+    if (max[1] - min[1] < STEPPED_OVER_M) continue;
     const parts = partsOf(model, table[key]);
     const whole = [...min.map(centimetresDown), ...max.map(centimetresUp)];
     if (parts.length === 1 && parts[0].every((value, index) => value === whole[index])) continue;

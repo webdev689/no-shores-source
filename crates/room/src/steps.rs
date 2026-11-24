@@ -300,7 +300,7 @@ impl Room {
                 let from = held_near(mesh, &self.floor, middle.at, middle.radius);
                 let points = puzzle.points.iter().map(|point| {
                     let [x, y] = ahead(middle.at, point.bearing.to_radians(), point.at);
-                    // As far as its place's middle at most, which is always reached.
+                    // As far out as its place's middle, near where the walk starts.
                     let reach = POINT_NUDGE.max(point.at);
                     let reached = from.and_then(|from| reached_near(mesh, &self.floor, from, [x, y], reach));
                     // A place whose middle the mesh does not hold still puts its points on the mesh near them.

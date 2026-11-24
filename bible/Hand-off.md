@@ -195,7 +195,7 @@ The decisions in [[Open Questions]] are not repeated here.
 - **What a body meets keeps to what is drawn, and the owner's meadow** (this branch's pull request, a draft for the
   owner's yes; its merge redeploys the page and the rooms). The owner: "In patrol zones there are invisible bounds of
   some props that can be climbed" and "Implement the handcrafted grass texture we have from DFO"
-  ([[What a Body Meets Keeps to What Is Drawn]], [[The Owner's Hand-Drawn Meadow Grows Over the Grass]], Claude's calls
+  ([[What a Body Meets Keeps to What Is Drawn]], [[The Owner's Handcrafted Meadow Grows Over the Grass]], Claude's calls
   in each).
   - The bounds: a layout's prop was the box round its turned footprint to its highest point (a beached boat at a
     slant a block twice its size as tall as its mast), a turned or tilted solid the box round its turned corners (a

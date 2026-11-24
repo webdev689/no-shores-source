@@ -159,11 +159,9 @@ fn floor_of(beat: &layout::runs::Beat) -> Vec<[f64; 2]> {
     points
 }
 
-/// A piece a body meets as a whole: its boxes, and its own footprint's width and depth, metres.
+/// A piece a body meets as a whole: its boxes.
 struct Piece {
     boxes: Vec<[f64; 6]>,
-    wide: f64,
-    deep: f64,
 }
 
 impl Piece {
@@ -173,6 +171,18 @@ impl Piece {
 
     fn bottom(&self) -> f64 {
         self.boxes.iter().map(|b| b[5]).fold(f64::INFINITY, f64::min)
+    }
+
+    /// What a body stands on at its top: how far its boxes within 0.2 m of the top reach west to east and north to
+    /// south, and how much ground they cover, square metres.
+    fn top_reach(&self) -> (f64, f64, f64) {
+        let top = self.top();
+        let start = [f64::INFINITY, f64::INFINITY, f64::NEG_INFINITY, f64::NEG_INFINITY];
+        let high = self.boxes.iter().filter(|b| b[4] >= top - 0.2);
+        let [west, north, east, south] = high.clone().fold(start, |[west, north, east, south], b| {
+            [west.min(b[0]), north.min(b[1]), east.max(b[2]), south.max(b[3])]
+        });
+        (east - west, south - north, high.map(|b| (b[2] - b[0]) * (b[3] - b[1])).sum())
     }
 
     fn middle(&self) -> [f64; 2] {
@@ -203,17 +213,12 @@ fn pieces(laid: &layout::Layout) -> std::sync::Arc<Vec<Piece>> {
             use city::solids::Material::{Earth, Lawn, Path, Paving};
             !matches!(solid.material, Paving | Path | Lawn | Earth) && solid.size[2] >= 0.45
         };
-        let solids = laid.seating.solids.iter().filter(met).map(|solid| Piece {
-            boxes: city::collision::boxes(solid),
-            wide: solid.size[0],
-            deep: solid.size[1],
-        });
+        let solids = laid.seating.solids.iter().filter(met).map(|solid| Piece { boxes: city::collision::boxes(solid) });
         let props = laid.seating.props.iter().filter_map(|prop| {
             let measure = book.measure(prop.model, false)?;
-            let boxes = layout::collide::prop_boxes(prop, measure, book.parts.get(&prop.model));
-            Some(Piece { boxes, wide: measure.max[0] - measure.min[0], deep: measure.max[2] - measure.min[2] })
+            Some(Piece { boxes: layout::collide::prop_boxes(prop, measure, book.parts.get(&prop.model)) })
         });
-        let single = laid.boxes.iter().map(|b| Piece { boxes: vec![*b], wide: b[2] - b[0], deep: b[3] - b[1] });
+        let single = laid.boxes.iter().map(|b| Piece { boxes: vec![*b] });
         std::sync::Arc::new(solids.chain(props).chain(single).filter(|piece| !piece.boxes.is_empty()).collect())
     });
     std::sync::Arc::clone(found)
@@ -277,18 +282,23 @@ fn every_beat_has_a_raised_place() {
         let pieces = pieces(laid);
         for beat in &run.beats {
             let ground = floor(beat.at);
-            // A platform is a piece 2 m by 2 m or more whose top stands 1.2 m to 4 m over the beat's ground.
+            // A platform is a piece whose top stands 1.2 m to 4 m over the beat's ground, 2 m by 2 m or more across it.
             let platforms: Vec<&Piece> = pieces
                 .iter()
                 .filter(|piece| piece.off(beat.at) <= beat.radius)
                 .filter(|piece| {
-                    (ground + 1.2..=ground + 4.0).contains(&piece.top()) && piece.wide >= 2.0 && piece.deep >= 2.0
+                    let (across, along, covered) = piece.top_reach();
+                    (ground + 1.2..=ground + 4.0).contains(&piece.top())
+                        && across >= 2.0
+                        && along >= 2.0
+                        && covered >= 4.0
                 })
                 .collect();
+            // Its steps stand beside it, not under it: a dome's or a tower's own lower layers are none.
             let stepped = platforms.iter().any(|platform| {
                 let steps = laid.boxes.iter().filter(|b| {
-                    let middle = [(b[0] + b[2]) / 2.0, (b[1] + b[3]) / 2.0];
-                    platform.off(middle) <= 4.0 && b[4] > ground + 0.2 && b[4] < platform.top() - 0.2
+                    let beside = platform.off([(b[0] + b[2]) / 2.0, (b[1] + b[3]) / 2.0]);
+                    beside > 0.0 && beside <= 4.0 && b[4] > ground + 0.2 && b[4] < platform.top() - 0.2
                 });
                 steps.count() >= 2
             });

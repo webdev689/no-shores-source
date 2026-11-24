@@ -1,8 +1,9 @@
 use super::*;
 use crate::solids::Material;
 
-/// How far a point of a shape's own frame lies from it, every round taken as a circle as these tests draw them: in
-/// the plane through the shape's axis and the point, how far the point lies from the shape's outline there.
+/// How far a point of a shape's own frame lies from it as the page draws it (`solidMesh.ts`), a round as wide as it is
+/// deep: a round a polygon of its faces at every height, a dome's outline straight between its rings; in the plane
+/// through the shape's axis and the point, how far the point lies from the shape's outline there.
 fn distance_to(shape: Shape, [width, depth, height]: [f64; 3], [x, y, z]: [f64; 3]) -> f64 {
     let (half_width, half_depth) = (width / 2.0, depth / 2.0);
     let outward = |reach: f64, up: f64| -> f64 {
@@ -51,15 +52,75 @@ fn distance_to(shape: Shape, [width, depth, height]: [f64; 3], [x, y, z]: [f64; 
                 })
                 .fold(f64::INFINITY, f64::min)
         }
+        Shape::Column { .. } | Shape::Dome { .. } => {
+            let sides = drawn(shape).0;
+            let off_at = |at: f64| off_polygon(x, y, reach_at(shape, half_width, at, height), sides);
+            if (0.0..=height).contains(&z) && off_at(z) == 0.0 {
+                return 0.0;
+            }
+            (0..=2000)
+                .map(|step| {
+                    let at = height * f64::from(step) / 2000.0;
+                    let (out, rise) = (off_at(at), z - at);
+                    (out * out + rise * rise).sqrt()
+                })
+                .fold(f64::INFINITY, f64::min)
+        }
         _ => outward((x * x + y * y).sqrt(), z),
     }
+}
+
+/// How many faces the page draws round a column or a dome, and a dome's rings from its base to its crown.
+fn drawn(shape: Shape) -> (u32, u32) {
+    match shape {
+        Shape::Column { sides, .. } => (sides.max(3), 0),
+        Shape::Dome { sides } => {
+            let count = sides.max(4);
+            (count, (f64::from(count) / 4.0).round().max(2.0) as u32)
+        }
+        _ => (0, 0),
+    }
+}
+
+/// How far a point lies outside a polygon of `sides` faces whose corners stand `radius` out, the first on the x axis.
+fn off_polygon(x: f64, y: f64, radius: f64, sides: u32) -> f64 {
+    if radius <= 0.0 {
+        return (x * x + y * y).sqrt();
+    }
+    let corner = |number: u32| {
+        let (sine, cosine) = land::exact::sin_cos(std::f64::consts::TAU * f64::from(number) / f64::from(sides));
+        [radius * cosine, radius * sine]
+    };
+    let (mut outside, mut nearest) = (false, f64::INFINITY);
+    for number in 0..sides {
+        let (from, to) = (corner(number), corner(number + 1));
+        let (along_x, along_y) = (to[0] - from[0], to[1] - from[1]);
+        let (east, south) = (x - from[0], y - from[1]);
+        outside |= east * along_y - south * along_x > 0.0;
+        let share = ((east * along_x + south * along_y) / (along_x * along_x + along_y * along_y)).clamp(0.0, 1.0);
+        let (gap_x, gap_y) = (east - share * along_x, south - share * along_y);
+        nearest = nearest.min((gap_x * gap_x + gap_y * gap_y).sqrt());
+    }
+    if outside { nearest } else { 0.0 }
 }
 
 /// A shape's outline: how far out it reaches at a height.
 fn reach_at(shape: Shape, half: f64, up: f64, height: f64) -> f64 {
     match shape {
         Shape::Column { top, .. } | Shape::Pyramid { top } => half * (1.0 - (1.0 - top) * up / height),
-        Shape::Dome { .. } => half * (1.0 - (up / height) * (up / height)).max(0.0).sqrt(),
+        Shape::Dome { .. } => {
+            // Straight between the rings, each at an equal step of a quarter-turn up the round.
+            let rings = f64::from(drawn(shape).1);
+            let ring = |number: f64| land::exact::sin_cos(std::f64::consts::FRAC_PI_2 * number / rings);
+            (0..drawn(shape).1).map(f64::from).find(|&number| up <= height * ring(number + 1.0).0).map_or(
+                0.0,
+                |number| {
+                    let ((low_sine, low_cosine), (high_sine, high_cosine)) = (ring(number), ring(number + 1.0));
+                    let share = (up / height - low_sine) / (high_sine - low_sine);
+                    half * (low_cosine + (high_cosine - low_cosine) * share)
+                },
+            )
+        }
         Shape::Gable => half * (1.0 - up / height),
         _ => half,
     }
@@ -126,6 +187,7 @@ fn shapes() -> Vec<(Shape, [f64; 3])> {
         (Shape::Column { sides: 8, top: 0.8 }, [0.55, 0.55, 17.9]),
         (Shape::Column { sides: 12, top: 1.0 }, [6.3, 6.3, 14.6]),
         (Shape::Column { sides: 6, top: 0.55 }, [0.55, 0.55, 3.6]),
+        (Shape::Column { sides: 8, top: 1.4 }, [0.8, 0.8, 0.9]),
         (Shape::Dome { sides: 8 }, [1.6, 1.6, 0.7]),
         (Shape::Dome { sides: 16 }, [6.0, 6.0, 4.0]),
         (Shape::Pyramid { top: 0.6 }, [1.0, 1.0, 0.6]),
@@ -234,7 +296,12 @@ fn a_solid_too_costly_to_box_closely_is_boxed_more_loosely_within_its_budget_lea
     let upright = Solid::upright(Shape::Pyramid { top: 0.0 }, [0.0; 3], [32.0, 32.0, 26.0], Material::Roof);
     let pyramid = Solid { lean: 0.05, ..upright }.turned(0.4);
     let small = Solid::upright(Shape::Gable, [0.0; 3], [4.0, 5.0, 2.0], Material::Roof).turned(0.3);
-    for solid in [roof, dome, pyramid, small] {
+    let tusk = Solid {
+        lean: 0.6,
+        ..Solid::upright(Shape::Column { sides: 12, top: 0.5 }, [0.0; 3], [5.0, 5.0, 14.0], Material::Stone)
+    }
+    .turned(0.2);
+    for solid in [roof, dome, pyramid, small, tusk] {
         let (boxes, loosened) = crate::collision::kept(&solid);
         let (standing_off, left_out, count) = fitted(&solid, &boxes);
         let crowded = crate::collision::crowding(&boxes);
@@ -260,4 +327,31 @@ fn a_solid_too_costly_to_box_closely_is_boxed_more_loosely_within_its_budget_lea
     assert!((loosened - 1.0).abs() < 1e-12, "a small turned roof keeps within KEEP_M: {loosened}x");
     let tower = Solid::upright(Shape::Column { sides: 12, top: 1.0 }, [0.0; 3], [6.3, 6.3, 14.6], Material::Stone);
     assert!((crate::collision::kept(&tower.turned(0.6)).1 - 1.0).abs() < 1e-12, "a straight tower keeps within KEEP_M");
+}
+
+#[test]
+fn a_shape_tilted_past_a_right_angle_is_boxed_where_it_is_drawn() {
+    // A mill's sails roll round their hub a quarter-turn apart, past a right angle and past a half-turn.
+    let sail = Solid::upright(Shape::Block, [3.0, -2.0, 60.0], [2.0, 0.3, 12.0], Material::Stone);
+    for (lean, roll) in [(std::f64::consts::PI, 0.0), (0.0, 1.97), (0.0, 3.54), (0.0, 5.11), (-4.0, 0.0)] {
+        let solid = Solid { lean, roll, ..sail }.turned(0.6);
+        let (boxes, loosened) = crate::collision::kept(&solid);
+        let (standing_off, left_out, _) = fitted(&solid, &boxes);
+        let reach = KEEP_M * loosened + TILTED_PIECE_M * tilt_reach(&solid);
+        assert!(left_out <= KEEP_M + 1e-6, "at {lean} {roll}: {left_out} m of it left out");
+        assert!(standing_off <= reach + 1e-6, "at {lean} {roll}: off by {standing_off}");
+    }
+}
+
+#[test]
+fn a_great_slab_leaning_a_little_is_loosened_when_halving_cannot_keep_it_close() {
+    // Halving stops at 256 pieces; past that its pieces' boxes stand off, so the solid must count as loosened.
+    for (size, lean) in [([0.6, 200.0, 150.0], 0.05), ([0.4, 120.0, 90.0], 0.04), ([1.0, 300.0, 40.0], 0.02)] {
+        let solid = Solid { lean, ..Solid::upright(Shape::Block, [0.0; 3], size, Material::Stone) }.turned(0.3);
+        let (boxes, loosened) = crate::collision::kept(&solid);
+        let (standing_off, left_out, _) = fitted(&solid, &boxes);
+        let reach = KEEP_M * loosened + TILTED_PIECE_M * tilt_reach(&solid);
+        assert!(standing_off <= reach + 1e-6, "{size:?} at {lean}: off by {standing_off} kept {loosened}x");
+        assert!(left_out <= KEEP_M + 1e-6, "{size:?} at {lean}: {left_out} m of it left out");
+    }
 }

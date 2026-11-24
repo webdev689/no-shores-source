@@ -4,17 +4,25 @@ import { MEADOW_SPRITES } from './meadowArt.ts';
 import { MEADOW_CELL, MEADOW_SLOTS, meadowAtlas, meadowLevels, slotCoverage, spriteBox } from './meadowAtlas.ts';
 import {
   BOXES,
+  BREEZE_MS,
   BUSH,
   cardReach,
+  CLUSTER_M,
   DRY,
   FLOWERS,
+  GALE,
   GREEN,
+  GUST,
   HEIGHT_M,
+  LEAN_PER_PUSH,
+  LUMA,
   pick,
   SHORT,
+  STANDING_LEAN,
   TALL,
   texelOver,
   TONE,
+  VARIANTS,
 } from './meadowLaw.ts';
 import { MEADOW_SHADER } from './meadowShader.ts';
 
@@ -162,6 +170,20 @@ test("the shader draws with the law's numbers, and three cards near", () => {
   for (const { u0, u1, v0, v1 } of BOXES)
     assert.ok(MEADOW_SHADER.includes(`vec4f(${[u0, u1, v0, v1].map((value) => value.toFixed(6)).join(', ')})`));
   assert.ok(MEADOW_SHADER.includes('fn meadow_near') && MEADOW_SHADER.includes('fn meadow_far'));
+  // The pick's sprites, its lean and its colour come from the law, never copied by hand.
+  for (const [rung, variant] of [
+    ['x', BUSH],
+    ['y', FLOWERS],
+    ['z', DRY],
+  ] as const)
+    assert.ok(MEADOW_SHADER.includes(`shares.${rung}`) && MEADOW_SHADER.includes(`variant = ${variant}u;`));
+  assert.ok(MEADOW_SHADER.includes(`variant = ${SHORT}u;`));
+  assert.ok(MEADOW_SHADER.includes(`MEADOW_BREEZE_MS = ${BREEZE_MS.toFixed(1)};`));
+  assert.ok(MEADOW_SHADER.includes(`MEADOW_LEAN_PER_PUSH = ${LEAN_PER_PUSH};`));
+  assert.ok(MEADOW_SHADER.includes(`MEADOW_CLUSTER_M = ${CLUSTER_M};`));
+  assert.ok(
+    MEADOW_SHADER.includes(`MEADOW_LUMA_WEIGHTS = vec3f(${LUMA.map((value) => value.toFixed(6)).join(', ')});`),
+  );
 });
 
 test("a cell's cull box grown by the cards' reach holds every corner of every tuft, in a gale, on the steepest grass", () => {
@@ -170,12 +192,12 @@ test("a cell's cull box grown by the cards' reach holds every corner of every tu
     for (const tint of [0, 0.5, 1]) {
       const { variant, scale } = pick(step / 64, tint);
       const box = BOXES[variant];
-      const sway = variant === BUSH ? 0.6 : 1;
-      const stiff = variant === BUSH ? 0.3 : 1;
+      const { sway, stiff } = VARIANTS[variant] ?? { sway: 1, stiff: 1 };
       assert.ok(box);
       const side = (HEIGHT_M[0] + HEIGHT_M[1]) * scale;
-      const lean = (Math.hypot(0.25, 0.25) * stiff + 2.2 * 6 * 1.05 * 0.032 * sway) * box.v1 * box.v1 * side;
-      const across = Math.max(0.5 - box.u0, box.u1 - 0.5) * side + lean + 0.55;
+      const gale = GALE * BREEZE_MS * (GUST[0] + GUST[1]) * LEAN_PER_PUSH;
+      const lean = (Math.hypot(STANDING_LEAN, STANDING_LEAN) * stiff + gale * sway) * box.v1 * box.v1 * side;
+      const across = Math.max(0.5 - box.u0, box.u1 - 0.5) * side + lean + CLUSTER_M;
       assert.ok(across <= widest + 1e-9, `${variant}: reaches ${across}`);
       assert.ok(box.v1 * side + across * 0.45 <= tallest + 1e-9, `${variant}: stands ${box.v1 * side}`);
     }

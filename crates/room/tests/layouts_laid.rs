@@ -461,7 +461,7 @@ fn corners([west, north, east, south, top, bottom]: [f64; 6]) -> impl Iterator<I
 }
 
 #[test]
-fn no_box_of_a_laid_prop_or_solid_stands_further_off_what_is_drawn_than_a_box_may() {
+fn no_box_of_a_laid_prop_or_solid_stands_further_off_its_parts_or_its_own_box_than_a_box_may() {
     let laid = laid();
     let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
     let book = bake::builders(&root).expect("the builders read").book;
@@ -471,13 +471,18 @@ fn no_box_of_a_laid_prop_or_solid_stands_further_off_what_is_drawn_than_a_box_ma
     for layout in &laid.layouts {
         for prop in &layout.seating.props {
             let Some(parts) = book.parts.get(&prop.model) else { continue };
+            let Some(measure) = book.measure(prop.model, false) else { continue };
+            // A turned prop's strips keep within their own keep of its parts, loosened as its cost asks.
+            let loosened = layout::collide::prop_kept(prop, measure, Some(parts)).1;
+            let strips = layout::collide::STRIPS_KEEP_M * loosened + 0.015;
             let alone = layout::seat::Seating { props: vec![prop.clone()], ..layout::seat::Seating::default() };
             let (sine, cosine) = land::exact::sin_cos(prop.yaw.to_radians());
             for found in layout::collide::seated_boxes(&alone, &layout.ring, &book) {
                 let shut = layout::pieces::model::GATE_ARCHES.contains(&prop.model);
                 for [east, south, up] in corners(found) {
-                    let (dx, dy) = (east - prop.at[0], south - prop.at[1]);
-                    let (x, z, y) = (dx * cosine + dy * sine, dx * sine - dy * cosine, up - prop.at[2]);
+                    let (east_of, south_of) = (east - prop.at[0], south - prop.at[1]);
+                    let (x, z, y) =
+                        (east_of * cosine + south_of * sine, east_of * sine - south_of * cosine, up - prop.at[2]);
                     let gap = |value: f64, low: f64, high: f64| (low - value).max(value - high).max(0.0);
                     let off = parts
                         .iter()
@@ -487,7 +492,7 @@ fn no_box_of_a_laid_prop_or_solid_stands_further_off_what_is_drawn_than_a_box_ma
                             (across * across + rise * rise + along * along).sqrt()
                         })
                         .fold(f64::INFINITY, f64::min);
-                    if off > keep {
+                    if off > strips {
                         failed.push(format!("{}: prop {} {off:.2} m off", layout.id, prop.model));
                     }
                 }

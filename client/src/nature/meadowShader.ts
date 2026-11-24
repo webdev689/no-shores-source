@@ -1,9 +1,30 @@
 import { SHADOW_WGSL } from '../shadow.ts';
 import { SHARED_WGSL } from '../water/waterCommon.ts';
 import { MEADOW_SLOTS } from './meadowAtlas.ts';
-import { CELL_M, GRID, TUFTS } from './meadowField.ts';
-import { BOXES, GREEN, GREEN_EDGE, HEIGHT_M, LUSH, PATCH_SCALE, SHARES, SHIFT, TONE, VARIANTS } from './meadowLaw.ts';
-import { PLANT_LIGHT_WGSL } from './natureShader.ts';
+import { CELL_M, CLEAR_SQUARES, GRID, TUFTS } from './meadowField.ts';
+import {
+  BOXES,
+  BREEZE_MS,
+  BUSH,
+  CLUSTER_M,
+  DRY,
+  FLOWERS,
+  GREEN,
+  GREEN_EDGE,
+  GUST,
+  HEIGHT_M,
+  LEAN_PER_PUSH,
+  LUMA,
+  LUSH,
+  PATCH_SCALE,
+  SHARES,
+  SHIFT,
+  SHORT,
+  STANDING_LEAN,
+  TONE,
+  VARIANTS,
+} from './meadowLaw.ts';
+import { GUST_PER_M, GUST_PER_S, PLANT_LIGHT_WGSL } from './natureShader.ts';
 
 /** The frame's uniform floats: the view-projection, the anchor, the wind, the snow line and reach, and the ground. */
 export const MEADOW_FRAME_FLOATS = 32;
@@ -51,9 +72,12 @@ struct MeadowFrame {
 @group(0) @binding(2) var<storage, read> meadow_grids: array<vec2f>;
 @group(0) @binding(3) var atlas: texture_2d<f32>;
 @group(0) @binding(4) var nearest: sampler;
+// Each cell's kept-clear mask (meadowField.ts), a word a row of its squares, a bit a square: no tuft stands in one.
+@group(0) @binding(5) var<storage, read> meadow_clear: array<u32>;
 
 const MEADOW_CELL_M = ${CELL_M.toFixed(1)};
 const MEADOW_GRID = ${GRID}u;
+const MEADOW_CLEAR = ${CLEAR_SQUARES}u;
 const MEADOW_TUFTS = ${TUFTS}u;
 const MEADOW_SLOTS = ${MEADOW_SLOTS.toFixed(1)};
 const MEADOW_NOWHERE = vec4f(2.0, 2.0, 2.0, 1.0);
@@ -73,13 +97,16 @@ const MEADOW_HEIGHT_M = vec2f(${list(HEIGHT_M)});
 const MEADOW_ART_GROUND = ${vec3(GREEN.map((value, channel) => value / (TONE[channel] ?? 1)))};
 const MEADOW_SHIFT = vec2f(${list(SHIFT)});
 const MEADOW_GREEN_EDGE = ${GREEN_EDGE.toFixed(1)};
-const MEADOW_LUMA_WEIGHTS = vec3f(0.299, 0.587, 0.114);
+const MEADOW_LUMA_WEIGHTS = vec3f(${list(LUMA)});
 // How far a gust travels a metre and a second, as the plants' (natureShader.ts), and a fresh breeze, m/s, that
-// leans a tuft's top this much a metre a second over its height.
-const MEADOW_GUST_PER_M = 0.035;
-const MEADOW_GUST_PER_S = 1.4;
-const MEADOW_BREEZE_MS = 6.0;
-const MEADOW_LEAN_PER_PUSH = 0.032;
+// leans a tuft's top this much a metre a second over its height (meadowLaw.ts).
+const MEADOW_GUST_PER_M = ${GUST_PER_M};
+const MEADOW_GUST_PER_S = ${GUST_PER_S};
+const MEADOW_BREEZE_MS = ${BREEZE_MS.toFixed(1)};
+const MEADOW_LEAN_PER_PUSH = ${LEAN_PER_PUSH};
+const MEADOW_GUST = vec2f(${list(GUST)});
+const MEADOW_CLUSTER_M = ${CLUSTER_M};
+const MEADOW_STANDING = ${(STANDING_LEAN * 2).toFixed(3)};
 const MEADOW_FAR_FROM = ${FAR_FROM.toFixed(3)};
 const MEADOW_FAR_BAND = ${FAR_BAND.toFixed(3)};
 
@@ -148,10 +175,12 @@ fn meadow_tuft(vertex: u32, instance: u32, cards: u32) -> MeadowShaded {
   let key = vec2i(i32(round(cell.z)), i32(round(cell.w)));
   var seed = meadow_hash((bitcast<u32>(key.x) * 2654435761u) ^ (bitcast<u32>(key.y) * 40503u) ^ (number * 2246822519u));
   let jitter = meadow_draw(&seed) * 2.0 * MEADOW_PI;
-  let cluster = meadow_draw(&seed) * meadow_draw(&seed) * 0.55;
+  let cluster = meadow_draw(&seed) * meadow_draw(&seed) * MEADOW_CLUSTER_M;
   let local = vec2f(meadow_draw(&seed), meadow_draw(&seed)) * MEADOW_CELL_M + vec2f(cos(jitter), sin(jitter)) * cluster;
   let ground = meadow_ground(slot, local);
   if (meadow_draw(&seed) >= ground.y) { return out; }
+  let square = vec2u(clamp(local * (f32(MEADOW_CLEAR) / MEADOW_CELL_M), vec2f(0.0), vec2f(f32(MEADOW_CLEAR) - 1.0)));
+  if (((meadow_clear[slot * MEADOW_CLEAR + square.y] >> square.x) & 1u) == 1u) { return out; }
   let anchored = cell.xy + local;
   let root = vec3f(anchored + frame.anchor.xy, ground.x * frame.anchor.w + frame.anchor.z);
   let distance = length(root);
@@ -175,22 +204,22 @@ fn meadow_tuft(vertex: u32, instance: u32, cards: u32) -> MeadowShaded {
   let pick = meadow_draw(&seed);
   var variant = 0u;
   if (pick < shares.x) {
-    variant = 4u;
+    variant = ${BUSH}u;
   } else if (pick < shares.x + shares.y) {
-    variant = 2u;
+    variant = ${FLOWERS}u;
   } else if (pick < shares.x + shares.y + shares.z) {
-    variant = 3u;
+    variant = ${DRY}u;
   } else if ((pick - shares.x - shares.y - shares.z) / (1.0 - shares.x - shares.y - shares.z) < shares.w) {
-    variant = 1u;
+    variant = ${SHORT}u;
   }
   let side = height * MEADOW_SCALES[variant] * mix(MEADOW_PATCH.x, MEADOW_PATCH.y, lush);
-  let standing = (vec2f(meadow_draw(&seed), meadow_draw(&seed)) - 0.5) * 0.5 * MEADOW_STIFF[variant];
+  let standing = (vec2f(meadow_draw(&seed), meadow_draw(&seed)) - 0.5) * MEADOW_STANDING * MEADOW_STIFF[variant];
   let mirrored = meadow_draw(&seed) < 0.5;
   // Gusts roll downwind across the land, as through the plants.
   let gusting = 0.25 + 0.5 * frame.land.z;
   let rolling = frame.wind.w + dot(anchored, frame.wind.yz) * MEADOW_GUST_PER_M - frame.wind.x * MEADOW_GUST_PER_S;
   let gust = 1.0 - gusting + gusting * sin(rolling + meadow_draw(&seed) * 0.6);
-  let push = frame.land.y * MEADOW_BREEZE_MS * (0.6 + 0.45 * gust);
+  let push = frame.land.y * MEADOW_BREEZE_MS * (MEADOW_GUST.x + MEADOW_GUST.y * gust);
   let lean = standing + frame.wind.yz * push * MEADOW_LEAN_PER_PUSH * MEADOW_SWAY[variant];
   // The card's corner, cut to the sprite's drawn box, and the card turned its own way, a mirrored one a half-turn.
   let corners = array<vec2f, 6>(vec2f(0.0, 0.0), vec2f(1.0, 0.0), vec2f(1.0, 1.0), vec2f(0.0, 0.0), vec2f(1.0, 1.0), vec2f(0.0, 1.0));
@@ -207,7 +236,8 @@ fn meadow_tuft(vertex: u32, instance: u32, cards: u32) -> MeadowShaded {
   out.clip = frame.from_eye * vec4f(point, 1.0);
   out.uv = vec2f((f32(variant) + across) / MEADOW_SLOTS, 1.0 - up);
   let level = normalize(vec3f(-ground.zw, 1.0));
-  out.normal = normalize(level * 1.2 + vec3f(lean, 0.0));
+  // Lit across its lean, as DFO's cards are: a card leaning in the wind catches a low sun on one side.
+  out.normal = normalize(level * 1.2 + vec3f(-lean.y, lean.x, 0.0));
   out.from_eye = point;
   out.look = vec4f(tint, smoothstep(0.12 * reach, 0.6 * reach, distance), fade, mix(0.72, 1.0, corner.y));
   let face = vec3f(-way.y, way.x, 0.0);
@@ -249,12 +279,14 @@ fn meadow_fragment(in: MeadowShaded) -> MeadowDrawn {
   if (texel.a < 0.5) { discard; }
   let ground = select(${vec3(GREEN)}, frame.ground.rgb, frame.ground.w > 0.5);
   var colour = meadow_over_ground(texel.rgb, ground);
-  colour *= 0.88 + floor(min(in.look.x, 0.999) * 4.0) / 3.0 * 0.24;
+  // Four bands, each rounded to its centre, so the mean holds and the top band is whole.
+  colour *= 0.88 + floor(in.look.x * 3.0 + 0.5) / 3.0 * 0.24;
   colour = mix(colour, ground, in.look.y);
-  // A card turned to a low sun takes it whole, one turned away keeps half; at noon the two sit close.
+  // A card turned to a low sun takes its light whole, one turned away keeps half; at noon the two sit close. The sky,
+  // the lamps and what passes through it light every card alike.
   let key = sky_state.key.xyz;
   let faced = mix(1.0, clamp(0.72 + 0.28 * dot(in.face, key), 0.5, 1.0), length(key.xy));
-  let lit_colour = lit(colour, in.normal, 1.0, in.look.w, in.from_eye, 0.0) * faced;
+  let lit_colour = lit(colour, in.normal, 1.0, in.look.w, in.from_eye, 0.0, faced);
   var out: MeadowDrawn;
   out.colour = vec4f(lit_colour, 1.0);
   // Each tuft fades out over the last of the cell's share the fade still draws, so a cell thins tuft by tuft.

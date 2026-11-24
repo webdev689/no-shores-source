@@ -14,9 +14,9 @@ code:
 ---
 # Meadow
 
-The owner's hand-drawn grass over the land: a tall tuft, the same tuft cut short, a tuft of flowers, a dry tuft and a
-bush, five pixel sprites the owner drew for DFO ([[Pick - Meadow Grass]],
-[[The Owner's Hand-Drawn Meadow Grows Over the Grass]]), stood up as crossed cards round the eye. It grows beside the
+The owner's handcrafted grass over the land: a tall tuft, the same tuft cut short, a tuft of flowers, a dry tuft and a
+bush, five pixel sprites DFO keeps as the owner's ([[Pick - Meadow Grass]],
+[[The Owner's Handcrafted Meadow Grows Over the Grass]]), stood up as crossed cards round the eye. It grows beside the
 [[Nature]] layer's plants and is drawn after them, in the land's pass.
 
 ## The sprites
@@ -49,7 +49,7 @@ A cell holds 576 tufts where all of it is grass, about two and a quarter a squar
 alone. Each tuft's draws are a hash of its cell and its number, so a cell grows the same meadow whenever it comes back:
 
 - where it stands in the cell, a little clustered, and whether it grows there (its grass share);
-- its height, 0.25 m to 0.72 m, and how lush its patch is: its own tint pulled half way to noise over the cells at
+- its height, 0.25 m to 0.72 m, and how lush its patch is: its own tint pulled a little over half way to noise over the cells at
   about 16 m and 64 m, so whole patches run lush or poor;
 - its sprite: of each 256 draws, a poor patch grows 72 tall tufts, 118 short, 2 flowering, 61 dry and 3 bushes, a lush
   one 147, 63, 35, 5 and 6 (`pick`);

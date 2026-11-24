@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import type { NatureGround } from './field.ts';
 import type { GroundAt } from './ground.ts';
-import { CELL_M, GRID, grassShare, MeadowField, readCell, REACH_M } from './meadowField.ts';
+import { CELL_M, CLEAR_SQUARES, GRID, grassShare, MeadowField, readCell, REACH_M } from './meadowField.ts';
 
 const meadowAt = (more: Partial<GroundAt> = {}): GroundAt => ({
   height: 20,
@@ -113,4 +113,19 @@ test("a cell whose grid's edge lies on a changed tile is read again, though its 
     field.filled.some(({ x }) => x === 3),
     'the cell beside the changed tile',
   );
+});
+
+test("a wall thinner than the grid's points is kept clear square by square, and a cell with no grass is marked so", () => {
+  // A drystone wall 0.7 m thick, north to south, midway between two of the grid's points 2 m apart.
+  const walled = { ...ground(), cleared: (x: number) => x >= 2 * CELL_M + 4.6 && x <= 2 * CELL_M + 5.3 };
+  const { clear, grass } = readCell(2, 0, walled);
+  assert.equal(grass, 1);
+  const square = CELL_M / CLEAR_SQUARES;
+  const kept = (east: number, south: number) =>
+    ((clear[Math.floor(south / square)] ?? 0) >> Math.floor(east / square)) & 1;
+  for (const south of [0.2, 7.9, 15.8]) {
+    assert.equal(kept(4.9, south), 1, `the wall at ${south}`);
+    assert.equal(kept(3.9, south) + kept(6.1, south), 0, `the grass beside it at ${south}`);
+  }
+  assert.equal(readCell(-10, 0, ground()).grass, 0, 'the sea grows none');
 });
