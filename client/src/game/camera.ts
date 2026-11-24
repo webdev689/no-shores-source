@@ -1,4 +1,4 @@
-import type { Orbit } from '../editor/orbit.ts';
+import { FIELD_OF_VIEW, type Orbit } from '../editor/orbit.ts';
 
 /**
  * The game's one camera, whatever drives it (a player's shoulder on foot, the Overworld's raised eye at sea): where
@@ -117,6 +117,11 @@ export function onScreen(
   const upward = (dot(offset, up) / ahead) * focal;
   return [((across + 1) / 2) * size.width, ((1 - upward) / 2) * size.height];
 }
+
+/** The lens a player walks with, on land and on a deck: the Test Ground's field of view, near enough for the first
+ *  person's eye, far to the haze; and how far over the ground the third-person camera is held. */
+export const WALK_LENS = { fov: FIELD_OF_VIEW, near: 0.1, far: 60_000 } as const;
+export const CAMERA_CLEARANCE_M = 0.3;
 
 /** A QA view's eye, standing anywhere in place of the camera (qaViews.ts `__qaEye`), with its look; null in play. */
 export const QA_EYE: { shot: { eye: [number, number, number]; yaw: number; pitch: number } | null } = { shot: null };

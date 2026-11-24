@@ -289,13 +289,8 @@ export class RoomHost extends DurableObject<Env> {
     const node = /^node-(.+)$/.exec(name)?.[1];
     // A guild dungeon's run opens only while its guild's Delve Gate stands at its tier (`delveHost.ts`).
     if (reached?.guild && reached.run !== null) {
-      const minute = Math.floor(Date.now() / MINUTE_MS);
-      const delve = await delveAsk(
-        name,
-        minute,
-        (room) => this.env.ACCOUNTS.outpost(room),
-        (id) => this.nodeText(id),
-      );
+      const outposts = (room: string) => this.env.ACCOUNTS.outpost(room);
+      const delve = await delveAsk(name, Math.floor(Date.now() / MINUTE_MS), outposts, (id) => this.nodeText(id));
       return delve !== null && this.room.openRun(delve) && this.room.reseed(seeds);
     }
     const ask = runAsk(name, Math.floor(Date.now() / MINUTE_MS));

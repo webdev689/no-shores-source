@@ -10,7 +10,6 @@ import { PlayerFight } from '../combat/playerFight.ts';
 import type { Vector } from '../combat/swingArcs.ts';
 import { figureMuzzle, screenMuzzle } from '../combat/tracers.ts';
 import { WorldSounds } from '../combat/worldSounds.ts';
-import { FIELD_OF_VIEW } from '../editor/orbit.ts';
 import type { Difficulty } from '../heldmap/heldMap.ts';
 import { ASKS, DROPPED, type GearState } from '../network/gearMessages.ts';
 import { RoomConnection, type RoomLink, type Snapshot } from '../network/roomConnection.ts';
@@ -29,7 +28,7 @@ import { type FighterView, fighterView } from '../rules/fighters.ts';
 import type { Block, MovementRules } from '../rules/movementRules.ts';
 import type { FoeType } from '../rules/roster.ts';
 import { WORLD_CLOCK } from '../sky/worldClock.ts';
-import { shotOfOrbit } from './camera.ts';
+import { CAMERA_CLEARANCE_M, WALK_LENS, shotOfOrbit } from './camera.ts';
 import { FallWatch } from './fallWatch.ts';
 import { type Use, dropsLaid, gearInRoom, questRings, tellPrologue } from './footGear.ts';
 import { GatherHold } from './gatherHold.ts';
@@ -64,11 +63,6 @@ import { hearing, nextOtherId, roomNote, rulesOf } from './footRoom.ts';
 
 export type { AtEntrance, FootContext, FootFight, FootFrame, Uses } from './footPlace.ts';
 import type { NodeInfo } from './worldData.ts';
-
-/** The lens on foot: the Test Ground's field of view, near enough for the first person's eye, far to the haze. */
-const LENS = { fov: FIELD_OF_VIEW, near: 0.1, far: 60_000 } as const;
-/** How far over the ground the third-person camera is held. */
-const CAMERA_CLEARANCE_M = 0.3;
 
 /**
  * The player on foot in one node: standing on its real ground, among its city's walls, inside its section, fighting
@@ -404,7 +398,7 @@ export class Foot {
     const kicked = pushedIn(feel.camera(aimed(), fight.player, fight.own, firstPerson, sights), effects.anima.push);
     const { x: fallX, y: fallY, z: fallZ } = walker.player.body;
     const shot = this.falling.shot(
-      shotOfOrbit(kicked, LENS, groundAt, CAMERA_CLEARANCE_M),
+      shotOfOrbit(kicked, WALK_LENS, groundAt, CAMERA_CLEARANCE_M),
       [fallX, fallY, fallZ],
       seconds,
     );
