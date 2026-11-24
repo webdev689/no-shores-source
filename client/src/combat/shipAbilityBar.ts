@@ -91,10 +91,12 @@ export class ShipAbilityBar {
   private readonly used = new Map<string, number>();
   private readonly pictures = new TurnedPictures();
   private readonly face: CapFace | null;
+  private readonly label: string;
 
-  /** With `face`, a key that is no word stands drawn on its keycap. */
-  constructor(face: CapFace | null = null) {
+  /** With `face`, a key that is no word stands drawn on its keycap; `label` is what a screen reader calls the bar. */
+  constructor(face: CapFace | null = null, label = 'Your Ship') {
     this.face = face;
+    this.label = label;
   }
 
   /** How many abilities it shows. */
@@ -146,7 +148,7 @@ export class ShipAbilityBar {
       return ringNode(look, this.pictures, cell, zoom, still);
     };
     return {
-      label: 'Your Ship',
+      label: this.label,
       direction: 'row',
       alignY: 'end',
       gap: gap * zoom,

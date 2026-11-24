@@ -6,8 +6,16 @@ use city::rock::boxes;
 use city::solids::{Material, Shape, Solid};
 use movement::{Block, Body, Controls, Flat, Mode, TICK_SECONDS, TUNING, standing, step_body};
 
-const NORTH: Controls =
-    Controls { forward: 1.0, sideways: 0.0, yaw: 0.0, run: false, jump: false, crouch: false, mounted: false };
+const NORTH: Controls = Controls {
+    forward: 1.0,
+    sideways: 0.0,
+    yaw: 0.0,
+    run: false,
+    jump: false,
+    crouch: false,
+    mounted: false,
+    boost: false,
+};
 const STILL: Controls = Controls { forward: 0.0, ..NORTH };
 
 fn blocks_of(solid: &Solid) -> Vec<Block> {

@@ -521,6 +521,7 @@ export class WreckRun {
         walked: walker.walked,
         drawn: walker.you.dress.outfit.drawn,
         mounted: walker.player.mounted,
+        boosting: walker.player.body.boosting ?? 0,
         look: effects.ownLook,
         pulled: shown.pulled,
       },

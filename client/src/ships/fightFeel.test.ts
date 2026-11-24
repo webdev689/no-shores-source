@@ -398,3 +398,16 @@ test('it times each captain side from when it was first seen run out, and forget
   frame(feel, ships, [], 2);
   assert.equal(feel.ranOutFor(1, 'port', 2), 0);
 });
+
+test('a ship that goes down mid-burst ends its burst with no settle', () => {
+  const bursting = (state: string): FeelShip => {
+    const ship = brig(state);
+    return { ...ship, vessel: { ...ship.vessel, boost: [0.5, 0] } };
+  };
+  const feel = new FightFeel(8);
+  frame(feel, new Map([[1, bursting('afloat')]]), [], 0);
+  frame(feel, new Map([[1, bursting('afloat')]]), [], 1 / 30);
+  const bursted = feel.effects.count;
+  frame(feel, new Map([[1, bursting('sinking')]]), [], 1 / 30);
+  assert.equal(feel.effects.count, bursted, 'no fall of spray and no ring of foam');
+});

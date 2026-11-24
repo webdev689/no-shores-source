@@ -5,10 +5,11 @@ use crate::blocks::Block;
 use crate::body::{Body, Controls, Mode, Over};
 
 /// A body's numbers: x, y, z, vx, vy, vz, facing, mode, crouched, crouch, grounded; then whether it is going over a
-/// lip, the start (3) and end (3), progress and seconds of that; then lip and moving. Booleans are 0 or 1.
-pub const BODY_FLOATS: usize = 22;
-/// The controls' numbers: forward, sideways, yaw, run, jump, crouch, mounted.
-pub const CONTROLS_FLOATS: usize = 7;
+/// lip, the start (3) and end (3), progress and seconds of that; then lip and moving; then the boost's seconds and the
+/// recharge's. Booleans are 0 or 1.
+pub const BODY_FLOATS: usize = 24;
+/// The controls' numbers: forward, sideways, yaw, run, jump, crouch, mounted, boost.
+pub const CONTROLS_FLOATS: usize = 8;
 /// A block's numbers: min x, min y, max x, max y, top, bottom.
 pub const BLOCK_FLOATS: usize = 6;
 
@@ -59,6 +60,8 @@ impl Body {
             over.seconds,
             self.lip,
             flag(self.moving),
+            self.boosting,
+            self.recharging,
         ]
     }
 
@@ -85,6 +88,8 @@ impl Body {
             over,
             lip: floats[20],
             moving: floats[21] != 0.0,
+            boosting: floats[22],
+            recharging: floats[23],
         }
     }
 }
@@ -93,7 +98,7 @@ impl Controls {
     #[must_use]
     pub fn to_floats(&self) -> [f64; CONTROLS_FLOATS] {
         let (run, jump, crouch, mounted) = (flag(self.run), flag(self.jump), flag(self.crouch), flag(self.mounted));
-        [self.forward, self.sideways, self.yaw, run, jump, crouch, mounted]
+        [self.forward, self.sideways, self.yaw, run, jump, crouch, mounted, flag(self.boost)]
     }
 
     #[must_use]
@@ -106,6 +111,7 @@ impl Controls {
             jump: floats[4] != 0.0,
             crouch: floats[5] != 0.0,
             mounted: floats[6] != 0.0,
+            boost: floats[7] != 0.0,
         }
     }
 }
@@ -148,6 +154,8 @@ mod tests {
             over: Some(Over { from: [1.0, 2.0, 0.0], to: [1.0, -0.5, 0.0], progress: 0.25, seconds: 0.4 }),
             lip: 1.1,
             moving: true,
+            boosting: 2.5,
+            recharging: 12.0,
             ..standing(1.0, 2.0)
         };
         for body in [standing(0.1, -3.7), going_over] {

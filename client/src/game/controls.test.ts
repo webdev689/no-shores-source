@@ -48,7 +48,7 @@ test('every control the player binds is on the sheet, on the keys and the pad bu
   assert.deepEqual(shown('Change shot', 'pad'), ['pad:Left', 'pad:Right']);
   assert.deepEqual(shown('Zoom out or in', 'pad'), [], 'no way on the pad');
   const swapped = rebind(DEFAULTS, { id: 'jump', device: 'keys', place: 0 }, 'c').binds;
-  assert.deepEqual(shown('Jump; vault', 'keys', swapped), ['C'], 'as bound now');
+  assert.deepEqual(shown('Jump; vault; boost a horse', 'keys', swapped), ['C'], 'as bound now');
 });
 
 test('a key that can be bound stands in its slot, a written one in none, and a control bound to none shows one empty', () => {
@@ -94,10 +94,11 @@ test("the ship's bar shows what fires a broadside (the aim's release, the pad's 
 });
 
 test("the Arts' and the loadouts' keycaps are the keys bound now, or the pad's buttons once the pad was played last", () => {
-  assert.deepEqual(hudKeys('keys', DEFAULTS), { arts: ['R', 'Q', 'G'], loadouts: ['1', '2'] });
+  assert.deepEqual(hudKeys('keys', DEFAULTS), { arts: ['R', 'Q', 'G'], loadouts: ['1', '2'], boost: 'Space' });
   assert.deepEqual(hudKeys('pad', DEFAULTS), {
     arts: ['pad:LB+RB', 'pad:LB', 'pad:RB'],
     loadouts: ['pad:Left', 'pad:Right'],
+    boost: 'pad:A',
   });
   const bound = rebind(DEFAULTS, { id: 'tenetOne', device: 'keys', place: 0 }, 'e').binds ?? DEFAULTS;
   assert.equal(hudKeys('keys', bound).arts[1], 'E');

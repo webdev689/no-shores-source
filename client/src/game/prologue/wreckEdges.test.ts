@@ -3,7 +3,7 @@ import { readFile } from 'node:fs/promises';
 import { test } from 'node:test';
 import { startCombatRules } from '../../rules/combatRules.ts';
 import { FIGHTER_FLOATS } from '../../rules/fighters.ts';
-import { startMovementRules } from '../../rules/movementRules.ts';
+import { BODY_FLOATS, startMovementRules } from '../../rules/movementRules.ts';
 import { courseOf, readWreck, topAt } from './wreckLayout.ts';
 
 const MODULE = new URL('../../../../target/wasm32-unknown-unknown/release/movement_wasm.wasm', import.meta.url);
@@ -74,13 +74,17 @@ test("in a fight, the page's own prediction holds the player at the wreck's edge
   for (const { x, y, yaw } of outer) {
     let fighter: Float64Array = new Float64Array(FIGHTER_FLOATS);
     fighter.set([x, y, topAt(course, x, y), 0, 0, 0, yaw, 0, 0, 0, 1]);
-    fighter.set([0, swordAndShield, 1, 100, 100, 100, 0, 0, 40, 0, 0, yaw, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0], 22);
+    fighter.set(
+      [0, swordAndShield, 1, 100, 100, 100, 0, 0, 40, 0, 0, yaw, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0],
+      BODY_FLOATS,
+    );
     for (let tick = 0; tick < 60; tick++) {
       const dodge = tick % 30 === 10 ? 1 : 0;
       const intent = new Float64Array([
         1,
         0,
         yaw,
+        0,
         0,
         0,
         0,

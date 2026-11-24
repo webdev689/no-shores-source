@@ -1,5 +1,5 @@
 //! The welcome to Overlook in a room: the stranger is heard anywhere in a social space and nowhere else, her gift
-//! given once, and the Postmaster spoken with at the mail counter.
+//! (her Aurem and the Bay) given once, and the Postmaster spoken with at the mail counter.
 
 use crate::Room;
 use crate::asks::{Asked, Counter, CounterKind, answer_code};
@@ -26,6 +26,7 @@ fn the_stranger_is_heard_anywhere_in_a_social_space_and_gives_her_gift_once() {
     assert_eq!(keeper_key(STRANGER), Some("stranger"));
     assert_eq!(speak(&mut room, player, STRANGER), 0, "far from every counter");
     assert_eq!(aurem(&room, player), 400);
+    assert!(room.player(player).expect("in").character.may_ride(), "the Bay given worn with it");
     assert_eq!(speak(&mut room, player, STRANGER), answer_code(Err(Refusal::NothingToSay)), "a second hearing");
     assert_eq!(aurem(&room, player), 400);
     let mut afield = node_room("a-patrol", &[]);

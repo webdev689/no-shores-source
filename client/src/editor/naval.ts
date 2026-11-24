@@ -113,7 +113,8 @@ export class Naval {
         this.calling = false;
         if (fighting === 'sent off') return;
         if (typeof fighting === 'string') fail(new Error(fighting));
-        else [this.fight, this.ended] = [fighting, null];
+        // A new fight's effects are its own: one that ended by itself left its feel, a burst under way among it.
+        else [this.fight, this.ended, this.feel] = [fighting, null, new FightFeel(1)];
       })
       .catch((error: unknown) => {
         if (call !== this.call) return;

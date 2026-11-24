@@ -182,6 +182,15 @@ test('mounted, the horse walks and gallops; a move chosen by hand plays over eve
   assert.equal(shownMove({ ...doing, act: { anim: 'death', progress: 0.5 } }, frames, classic).anim, 'death');
 });
 
+test('a rider off a drop keeps the horse’s move in the air, by its pace', () => {
+  // In the air the body moves along no ground, so only its pace says how the horse goes.
+  const falling = { ...doing, mode: 'air', mounted: true, moving: false, vz: -3 } as const;
+  assert.equal(shownMove({ ...falling, speed: 12 }, frames, classic).anim, 'horsegallop');
+  assert.equal(shownMove({ ...falling, speed: 6 }, frames, classic).anim, 'horsewalk');
+  assert.equal(shownMove({ ...falling, speed: 0 }, frames, classic).anim, 'horseidle');
+  assert.equal(shownMove({ ...falling, mounted: false, speed: 6 }, frames, classic).anim, 'jump', 'on foot, the jump');
+});
+
 test('an off hand: two blades fight as a pair, and a shield or blade in the left keeps the weapon’s own attack', () => {
   const pair = { ...doing, left: 'dagger_iron_l' };
   assert.equal(shownMove(pair, frames, classic).anim, 'twinguard');

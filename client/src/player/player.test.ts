@@ -49,6 +49,16 @@ test('locked on, a figure on foot faces its foe as it walks away from it; mounte
   assert.notEqual(riding.facing, toward);
 });
 
+test("a rider's jump boosts the horse, as a horse never jumps; on foot a jump boosts nothing", () => {
+  const mounted = updatePlayer(start(), frame([], ['mount']), movement, TICK);
+  const boosted = updatePlayer(mounted, frame(['forward'], ['jump']), movement, TICK);
+  assert.ok((boosted.body.boosting ?? 0) > 0, 'boosting');
+  assert.equal(boosted.body.vz, 0, 'and not in the air');
+  const jumped = updatePlayer(start(), frame([], ['jump']), movement, TICK);
+  assert.equal(jumped.body.boosting ?? 0, 0);
+  assert.ok(jumped.body.vz > 0, 'a jump on foot');
+});
+
 test('locked on, a sprint faces where it runs, and once it ends the figure faces its foe again', () => {
   const toward = 0.5;
   const sprinting = updatePlayer(start(), frame(['back', 'run']), movement, TICK, false, toward);

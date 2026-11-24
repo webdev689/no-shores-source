@@ -191,6 +191,7 @@ code:
   - client/src/trueType.ts#trueType
   - client/src/combat/playerPlates.ts#PlayerPlates
   - client/src/combat/playerPlates.ts#aimedPlayer
+  - client/src/game/seaPlates.ts#seaPlated
   - client/src/combat/playerPlates.ts#levelInk
   - client/src/game/social/interactMenu.ts#interactRows
   - client/src/game/social/social.ts#holdOnPlayer
@@ -639,7 +640,7 @@ The game draws every screen itself, and by the owner's word no HTML is laid over
   On foot: with the weapon put away, draw, run, jump, crouch and the leave held; a melee weapon drawn, the swing, the
   guard or parry, the dodge, the drink and the Ranged loadout; a ranged one, the aim, the fire, the dodge, the drink
   and the Melee loadout; aiming, the fire and letting go; Dusk Daggers aimed, only letting go of the first Tenet;
-  riding, getting down, the gallop and the leave held; hanging from a ledge, the climb and letting go, and on a wall
+  riding, getting down, the gallop, the boost and the leave held; hanging from a ledge, the climb and letting go, and on a wall
   the kick off too, whatever is drawn; the Arts' three while one is worn and the hands are free to cast, Shadow's
   first Tenet apart as held to aim Dusk Daggers; the held map's key wherever it can be raised, before the leave's;
   the click that takes the mouse to look round first while the mouse is free; dead, Respawn once death is told, and
@@ -1056,6 +1057,12 @@ plays any but the one it played last. The Duskraven plays its raven with a fire 
 - **Moving.** A footstep each 2.5 m walked, in time with the first person's bob, never mounted: on wood (the Test
   Ground's crate, and the prologue's wreck, timber throughout), on a block (the city's stone), in water (land below the sea) or on the ground. A jump as a body
   rises, a landing after a fall of 0.6 m or more, and a dodge's roll.
+- **Horses** ([[Other Ships Wear Their Players' Marks, the Sea Map Has No Fog, and New Players Ride a Bay That Bursts]], `combat/horseSounds.ts`). A rider's hooves instead of their steps, a cue a
+  stride (1.7 m at a walk, 3.4 m at a gallop, 4.6 m boosted), at a walk, a gallop (over 8 m/s) or boosted (while the
+  rider's boost runs: another player's as the room last stepped their body) on the ground, stone or water, a
+  footstep's wood (only the wreck's) heard as stone (`horse.<gait>.<ground>`, nine cues); mounting (`horse.mount`, and the horse's `horse.whinny`) and getting down (`horse.dismount`); a snort
+  each 9 s a ridden horse stands (`horse.snort`); and the boost's start (`horse.boost`). The player's and every other
+  player's horse, another's riding read from its moves. Each is silent until it has its pick on the sound sheet.
 - **The Arts.** The player's own Anima gathering as it is cast; each spell as it first appears, an Anima with its
   Art's release, once a cast; a Tempest orb bursting on what it sought; each Duskraven bolt; Linked and Veiled as
   they are given (Exposed, Charged and Haste make no sound: [[Exposed, Charged and Haste Make No Sound]]).
@@ -1064,7 +1071,7 @@ plays any but the one it played last. The Duskraven plays its raven with a fire 
 
 Each is heard through a panner (equal power, fading with distance past 2 m, none past 40 m), the listener at the eye
 facing its yaw. At most 16 play at once: the farthest gives way to a nearer one. One fighter's cue plays once in
-0.1 s, and a step, a swing and a blow stray up to 4% in pitch. A figure first seen makes no sound for what it was
+0.1 s, and a step, a swing, a blow and a horse's stray up to 4% in pitch. A figure first seen makes no sound for what it was
 already doing. In the game they play through the interface's engine at the World volume, beside the interface's in
 Settings (80% at first); nothing new plays while a menu is open on foot or the page is hidden, and nothing at sea.
 The Test Ground makes its own sound at full volume on the first click into its view.
@@ -1212,6 +1219,12 @@ lost strip and falling pieces), and the ship's bar is built of the Arts' bar's o
   lit in brass, drawn on the cap, and the pad's button as its picture; the load's is the wheel while no key steps the
   load. The bar is laid from a list of abilities (`ships/shipAbilities.ts`), so another ability is one more entry,
   and it goes with the readout.
+- **The horse's ring** ([[Other Ships Wear Their Players' Marks, the Sea Map Has No Fog, and New Players Ride a Bay That Bursts]]): while the player rides, the rider's boost stands at the
+  bottom left in the Arts' place (no Art is cast from the saddle), one ring of the ship's bar's own build
+  (`combat/rideBoost.ts`), a horseshoe in iron, its keycap the jump's key as bound (Space, or the pad's A). A reader
+  hears it as "Your Horse", "Boost (Space), ready". It is lit once ready, near white and draining over its 4 s while
+  it runs, then swept dark as its 12 s recharge, its last seconds counted, flashing as the boost begins, as the
+  burst's ring does. Getting down, the Arts' bar comes back.
 - **The card**, centred under the compass, is the target's plate (as `combat/foePlate.ts` builds it), light and never a
   box, on the ship the look is on (while the Sloop's guns are laid, the captain nearest where they fall; else the nearest
   captain): its faction's emblem framed, its name, one hull bar in its rank's colour (an ally's blue), and as small
@@ -1327,6 +1340,14 @@ serves each ask only at its own counter ([[Gear]], "In the rooms"; [[Factions]])
   place's blocks and land do not hide, the line tried as a foe's plate's is (`PlateSight`), shrinking with distance by
   the foes' plates' law (`plateScale`) and laid so none covers another (`BarLayout`); not the cone the foes' plates
   keep. They stand under the foes' plates, 1.9 m over the feet.
+- **At sea**
+  ([[Other Ships Wear Their Players' Marks, the Sea Map Has No Fog, and New Players Ride a Bay That Bursts]]):
+  out of a fight, each other player's ship wears the same plate, the room's ([[Server]], "Plates"), as far
+  over its masthead as drawn as a captain's plate stands in a fight (`plateOverM`, `seaPlated`), laid by the same
+  law: shrinking with distance to the size its name still reads at, laid so none covers another, out to 8 km across
+  the water (`SEA_PLATE_RANGE_M`), and only before the eye. No line is tried, so a ship behind an island still wears
+  its mark. The player's own ship wears none; in a fight the captains' plates stand alone, and at the helm,
+  where the held map covers the view, none shows.
 - **Interact** ([[Holding Use on a Player Opens Their Interact Menu]]): the named player the crosshair rests on within
   6.4 m of the player's own feet, the nearest of several (`aimedPlayer`), a guest nearer in the line hiding one
   behind, wears a thin diamond round their body, a chevron in each corner, with Use's key and "Interact" beside it,

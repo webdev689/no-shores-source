@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import type { FightEvent } from '../network/messages.ts';
+import type { FightEvent, SeenPlayer } from '../network/messages.ts';
+import { plainDress } from '../player/dressing.ts';
 import type { FighterView } from '../rules/fighters.ts';
 import { EVENT } from './cues.ts';
 import type { KeptFoe } from './fighting.ts';
@@ -250,4 +251,43 @@ test("a public event's cue holds its voice a few seconds at most, fading out; a 
     played.some((one) => one.id !== 'story.crash' && one.until === null),
     "the blow's own is not cut",
   );
+});
+
+test("another rider's boost is heard as it begins, from their body as the room last stepped it", () => {
+  const { output, play, played } = fakeSound();
+  const sounds = new WorldSounds(() => output, play);
+  const dress = plainDress('human', 0.5);
+  const rider = { id: 5, x: 2, y: 3, z: 0, facing: 0, dress, anim: 'horsewalk', frame: null, spin: false };
+  const body = {
+    x: 2,
+    y: 3,
+    z: 0,
+    vx: 0,
+    vy: 0,
+    vz: 0,
+    facing: 0,
+    mode: 'ground',
+    crouched: false,
+    crouch: 0,
+  } as const;
+  const seen = (boosting: number): SeenPlayer => ({
+    player: 5,
+    acknowledged: 0,
+    body: { ...body, grounded: 1, over: null, lip: 0, moving: false, boosting },
+    fighter: null,
+    standing: { kind: 'inside' },
+    anim: 'horsewalk',
+    frame: 0,
+    facing: 0,
+  });
+  const riding = (boosting: number): WorldFrame => {
+    const frame = frameOf();
+    return {
+      ...frame,
+      fight: { ...frame.fight, others: new Map([[5, seen(boosting)]]) },
+      others: new Map([[5, rider]]),
+    };
+  };
+  for (const boosting of [0, 0, 4, 3.9]) sounds.frame(riding(boosting));
+  assert.equal(played.filter((one) => one.id === 'horse.boost').length, 1);
 });
