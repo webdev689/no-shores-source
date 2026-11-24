@@ -878,7 +878,9 @@ never while a press is held. Each press is an ask the room answers.
   word on the gear is not a gain, nor what changes in the ten seconds after it, while the player's own character is
   claimed. Ammunition an Ammo box gives back shows as "Ammo" and its shots, and Ammo crates gained as theirs; a crate
   used is spent, not gained. Letters newly in the mail show as one row, "Sent to the mail" and how many, under the
-  Postmaster's mark; a letter taken is not a gain, though what it held is.
+  Postmaster's mark; a letter taken is not a gain, though what it held is. A Normal piece a kill, a chest or a clear
+  gives in a Vestige's place shows as its item's row, as any item new to them does
+  ([[Gear]], "Commons drop as themselves").
   Currency, XP, each faction's reputation ("Reputation") and an Art's XP ([[Material Nodes Stand Where They Are Dressed, Worked by Holding E]]) stand as short
   lines over the rows, as Destiny shows them: the count, its word where the icon alone is not enough, and its icon,
   with no band; five stand at most, apart from the rows' six, so a kill's lines never push its drops out. An Art's
