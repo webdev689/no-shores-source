@@ -22,7 +22,7 @@ export const TAB_PRESSES: Readonly<
   compendium: { label: 'Compendium' },
   ship: { label: 'Ship' },
   social: { label: 'Social' },
-  guild: { label: 'Guild', later: 'Your guild will gather here.' },
+  guild: { label: 'Guild' },
   settings: { label: 'Settings' },
 };
 /** How many pixels each of the banner's cells takes: three, so its 24 cells stand 72 px tall. */

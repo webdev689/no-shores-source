@@ -6,7 +6,13 @@ import { SLOOP_HULL, plateOverM } from '../ships/hulls.ts';
 import { SEA_PLATE_RANGE_M, seaPlated, seaPlates } from './seaPlates.ts';
 
 const ship = (player: number, x: number): SeenShip => ({ player, x, y: 0, heading: 0, pace: 0 });
-const plate = (player: number, name: string, level: number): PlayerPlate => ({ player, name, level, menu: false });
+const plate = (player: number, name: string, level: number): PlayerPlate => ({
+  player,
+  name,
+  level,
+  menu: false,
+  tag: '',
+});
 const plates = new Map([
   [2, plate(2, 'Wooden_Osprey', 12)],
   [3, plate(3, '', 4)],

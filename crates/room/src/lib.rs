@@ -33,6 +33,8 @@ pub mod flotsam;
 mod foes;
 pub mod friendlies;
 mod garrison;
+mod guild_book;
+mod guild_room;
 mod happening;
 pub mod harbour;
 pub mod hostiles;
@@ -41,6 +43,8 @@ mod judging;
 mod landing;
 mod left;
 pub mod lore;
+mod outpost;
+mod outpost_boss;
 pub mod patrol;
 mod perks;
 mod plates;
@@ -74,7 +78,9 @@ pub use drops::{AMMO_REST_TICKS, DROP_TICKS, Drop, Dropped, VESTIGE_REST_TICKS};
 pub use entrances::Entrance;
 pub use floor::{Floor, standing_on};
 pub use foes::{CLEAR_FOES, FOES_MOST, FoeSeen, NODE_FOES_MOST, SHIELD_SHIFT};
+pub use guild_book::{GuildSeen, Guilds};
 pub use judging::{Event, EventKind, How};
+pub use outpost::{Errand, Material, OutpostAsk, PENDING, What, guild_key};
 pub use perks::trim_of;
 pub use plates::Plate;
 pub use players::{
@@ -137,6 +143,8 @@ pub struct Room {
     /// How many players have joined: the next stands at the spawn this many turns on.
     joins: usize,
     pub(crate) players: BTreeMap<PlayerId, Player>,
+    /// Each player's guild, as its host told it (`guild_book.rs`).
+    pub(crate) guilds: guild_book::Guilds,
     pub(crate) foes: BTreeMap<FighterId, Foe>,
     /// The foes a page stood itself, whose phases call no one (`course.rs`).
     pub(crate) quiet: BTreeSet<FighterId>,
@@ -236,6 +244,8 @@ pub struct Room {
     pub(crate) quests: quests::QuestGround,
     /// An Elite Dungeon's seals and Court (`encounters.rs`); none in any other room.
     pub(crate) encounters: Option<Box<encounters::Encounters>>,
+    /// A guild's outpost's errands, plot and War Horn's foe (`outpost.rs`); none in any other room.
+    pub(crate) outpost: Option<Box<outpost::Outpost>>,
     /// Its fallen being revived, and where they respawn (`revive.rs`).
     pub(crate) respawning: revive::Respawning,
 }
@@ -317,7 +327,9 @@ impl Room {
             inert_ways: BTreeMap::new(),
             names: BTreeMap::new(),
             quests: quests::QuestGround::default(),
+            guilds: guild_book::Guilds::default(),
             encounters: None,
+            outpost: None,
             respawning: revive::Respawning::default(),
         }
     }
@@ -445,11 +457,13 @@ impl Room {
         self.raise_the_dead();
         let checkpoint = self.checkpoint();
         self.keep_garrison();
+        self.keep_outpost();
         self.keep_encounters();
         self.keep_checkpoints(checkpoint);
         self.keep_public();
         self.keep_cache();
         self.keep_quests();
+        self.give_guilds();
         self.keep_steps();
         self.pick_up_drops();
         self.past.push_back((self.clock, self.fighters()));
@@ -542,10 +556,6 @@ impl Room {
 /// The seed every course's room draws its chances from, and every node's mixes with its id: one room plays the same
 /// fight for the same inputs.
 const SEED: u64 = 0x4f56_4552_4c4f_4f4b;
-/// A loot seed on which the tests' first kills, chests and flotsam roll finer than Normal, so each leaves a Vestige
-/// where a Normal roll would leave its item: for the tests of where a Vestige goes.
-#[cfg(test)]
-pub(crate) const SEALING_SEED: u64 = 5;
 #[cfg(test)]
 mod balance_tests;
 #[cfg(test)]

@@ -189,7 +189,7 @@ fn what_floats_rolls_on_the_hosts_own_loot_seed_which_the_seas_seed_cannot_show(
 #[test]
 fn a_vestige_in_flotsam_gathered_with_the_carried_ten_full_goes_to_the_mail() {
     let mut flotsam = Flotsam::new(1);
-    flotsam.reseed(crate::SEALING_SEED);
+    flotsam.reseed(crate::gear_tests::SEALING_SEED);
     flotsam.lay(&sank(Rank::Boss, vec![1]), 0, (1, 0));
     let mut full = Character::starting();
     for _ in 0..gear::character::VESTIGES_MOST {

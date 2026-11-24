@@ -6,7 +6,7 @@ use room::{Plate, PlayerId};
 type Plates<'built> =
     flatbuffers::WIPOffset<flatbuffers::Vector<'built, flatbuffers::ForwardsUOffset<messages::Plate<'built>>>>;
 
-/// Each player's plate as the messages carry it; a guest's name is left out.
+/// Each player's plate as the messages carry it; a guest's name and a tag of no guild are left out.
 pub(crate) fn plates_vector<'built>(
     builder: &mut flatbuffers::FlatBufferBuilder<'built>,
     plates: &[(PlayerId, Plate)],
@@ -15,7 +15,8 @@ pub(crate) fn plates_vector<'built>(
         .iter()
         .map(|(player, plate)| {
             let name = (!plate.name.is_empty()).then(|| builder.create_string(&plate.name));
-            let args = messages::PlateArgs { player: *player, name, level: plate.level, menu: plate.menu };
+            let tag = (!plate.tag.is_empty()).then(|| builder.create_string(&plate.tag));
+            let args = messages::PlateArgs { player: *player, name, level: plate.level, menu: plate.menu, tag };
             messages::Plate::create(builder, &args)
         })
         .collect();
@@ -33,7 +34,8 @@ pub(crate) fn plates_of(
                 .iter()
                 .map(|plate| {
                     let name = plate.name().unwrap_or_default().to_owned();
-                    let read = Plate { name, level: plate.level(), menu: plate.menu() };
+                    let tag = plate.tag().unwrap_or_default().to_owned();
+                    let read = Plate { name, level: plate.level(), menu: plate.menu(), tag };
                     (plate.player(), read)
                 })
                 .collect()

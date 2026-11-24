@@ -134,13 +134,16 @@ impl Room {
         if matches!(pays, Pays::Playlist { .. }) {
             return self.pay_playlist(player, level);
         }
+        if let Pays::Guild { key } = pays {
+            return self.pay_delve(player, &key);
+        }
         let (day, now, tier) = (self.day(), week_of(self.minute), self.difficulty);
         let dice = self.dice(player);
         // A player playing unkept keeps nothing: their record would be marked on a character the accounts never see.
         let Some(found) = self.players.get_mut(&player).filter(|found| found.owner.is_some()) else { return };
         let character = &mut found.character;
         let vestige = match pays {
-            Pays::Nothing | Pays::Playlist { .. } => None,
+            Pays::Nothing | Pays::Playlist { .. } | Pays::Guild { .. } => None,
             Pays::Today { patrol, number } => {
                 let today = island_of(&patrol).and_then(|island| dungeon_of_the_day(day, island.continent));
                 (tier == Difficulty::Normal && today == Some((patrol.as_str(), number)))
@@ -159,6 +162,25 @@ impl Room {
         found.gear_changed = true;
         if let Some(vestige) = paid {
             character.keep_paid(vestige);
+        }
+    }
+
+    /// Makes this run its guild's dungeon, the guild's key `key`: its clear pays as a sea island's dungeon's, and each
+    /// member a guild package at their first clear of the week. False in a room that is no run.
+    pub fn delve_for(&mut self, key: &str) -> bool {
+        self.run.as_mut().map(|run| run.pays = Pays::Guild { key: key.to_owned() }).is_some()
+    }
+
+    /// A guild package to a kept member of the run's guild from before the week turned, once a week: in the week of the
+    /// clear, whatever week the run opened in, so a run across the turn still pays.
+    fn pay_delve(&mut self, player: PlayerId, key: &str) {
+        let seen = self.guilds.of(player).filter(|seen| crate::outpost::guild_key(&seen.id) == key);
+        let Some(standing) = seen.map(|seen| seen.standing) else { return };
+        let (dice, now) = (self.dice(player), week_of(self.minute));
+        let Some(found) = self.players.get_mut(&player).filter(|found| found.owner.is_some()) else { return };
+        // Refused once taken this week, to one who joined since it turned, or with ten Vestiges carried.
+        if found.character.claim_delve_package(now, standing, &dice).is_ok() {
+            found.gear_changed = true;
         }
     }
 }

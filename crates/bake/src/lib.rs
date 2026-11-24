@@ -11,7 +11,7 @@ use land::landmass::generate;
 use land::sites::NodeKind;
 use layout::book::Book;
 use layout::brief::Briefs;
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 use std::path::{Path, PathBuf};
 use world::layout::Continent;
 
@@ -59,6 +59,29 @@ pub struct NodeFile {
     pub places: Vec<Place>,
     /// Its layout's paths, each its points, that a road's figure walks between places.
     pub paths: Vec<Vec<[f64; 2]>>,
+    /// At an outpost site, the ground its guilds build on and gather at.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub outpost: Option<OutpostGround>,
+}
+
+/// An outpost site's ground: its plot's middle and level (the ground's height on its platform, as the window reads
+/// it), and the middles of its muster ground and its landing, metres.
+#[derive(Debug, Clone, Copy, PartialEq, Serialize, Deserialize)]
+pub struct OutpostGround {
+    pub plot: [f64; 2],
+    pub level: f64,
+    pub muster: [f64; 2],
+    pub landing: [f64; 2],
+}
+
+/// An outpost site's ground from its layout, its level read on the node's window; None for a layout with no plot,
+/// muster ground or landing.
+#[must_use]
+pub fn outpost_of(layout: &layout::Layout, window: &Ground) -> Option<OutpostGround> {
+    use layout::brief::AreaKind;
+    let middle = |kind: AreaKind| layout.areas.iter().find(|area| area.kind == kind).map(|area| area.at);
+    let (plot, muster, landing) = (middle(AreaKind::Plot)?, middle(AreaKind::Arena)?, middle(AreaKind::Landing)?);
+    Some(OutpostGround { plot, level: window.height_at(plot[0], plot[1]), muster, landing })
 }
 
 /// A place of a node: its name, middle and reach, metres.
@@ -175,7 +198,7 @@ pub struct Builders {
 
 /// Every node of a continent, drawn and social, generated with its edits, its city settled on the land and every
 /// drawn node's layout laid on it: a drawn node's section, spawns and boxes are its layout's. Fails for edits that
-/// break their rules or a city that cannot be planned.
+/// break their rules, a city that cannot be planned or an outpost site whose land holds no plot.
 pub fn nodes_of(
     continent: &Continent,
     edits: Edits,
@@ -216,6 +239,7 @@ pub fn nodes_of(
             foes: Vec::new(),
             places,
             paths,
+            outpost: None,
         }
     };
     let whole =
@@ -239,7 +263,9 @@ pub fn nodes_of(
             laid.map(|layout| layout.paths.iter().map(|path| path.points.clone()).collect()).unwrap_or_default();
         let grounds = laid.and_then(grounds_of);
         let cut = cut(node.id.clone(), node.kind, node.name.clone(), ring, spawns);
-        NodeFile { grounds, gates, resources, foes, places, paths, ..cut }
+        let outpost =
+            laid.filter(|_| node.kind == NodeKind::Outpost).and_then(|layout| outpost_of(layout, &cut.ground));
+        NodeFile { grounds, gates, resources, foes, places, paths, outpost, ..cut }
     });
     let social = plan.as_ref().map(|plan| {
         let (id, social) = (city::social_id(&plan.id), &plan.social);
@@ -253,7 +279,11 @@ pub fn nodes_of(
             ..cut(id, NodeKind::Social, plan.name.clone(), social.ring.clone(), social.spawns.clone())
         }
     });
-    Ok(drawn.chain(social).collect())
+    let nodes: Vec<NodeFile> = drawn.chain(social).collect();
+    if let Some(bare) = nodes.iter().find(|node| node.kind == NodeKind::Outpost && node.outpost.is_none()) {
+        return Err(format!("{}: {}: no plot, muster ground or landing found room", continent.id, bare.id));
+    }
+    Ok(nodes)
 }
 
 /// Marks each node locked or not by the open list, `open` the ids in `content/world/open.json`
