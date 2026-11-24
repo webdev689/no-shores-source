@@ -62,6 +62,12 @@ pub enum EventKind {
     /// slam landed (the amount how many it struck), told to every player.
     Drowned = 33,
     BossSlammed = 34,
+    /// A fallen player stood up by an ally's revive (the striker the ally); an activity's checkpoint reached, told to
+    /// every player (the amount its number among the room's); and a company all down in a darkness zone falling back
+    /// to its checkpoint, told to each player (`revive.rs`).
+    Revived = 35,
+    Checkpoint = 36,
+    FellBack = 37,
 }
 
 /// How a blow was struck, for the words a client shows: an Atheric's leap from one foe to the next, its burst round

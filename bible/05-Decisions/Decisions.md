@@ -337,6 +337,11 @@ a decision is a record. How to add one: [[Recording a Decision]].
 - [[The Bulwark Blocks, Supers Are Powerful, the Sea's Gaps Close and Level 30 Takes Breach Gear]]
 - [[Pairs Swing Faster, Foes' Guns Strike Two Thirds and Faction Gear Has No Weekly Limit]]
 - [[The Playlist Shows Over Its Island, Not Only at Sea]]
+- [[Fallen Players Are Revived as in Destiny]]
+- [[Activities Keep Checkpoints, and Patrol Zones Respawn the Player Near Where They Fell]]
+- [[A Player Logs Back In Where They Left the Overworld or a Social Space]]
+- [[Revives, Respawns and Relogs as Claude Shapes Them]]
+- [[A Foe's Plain Swing Takes Seven Eighths of Its Time]]
 
 ## Replaced
 

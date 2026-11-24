@@ -11,6 +11,7 @@ import { edged } from '../combat/barDraw.ts';
 import type { BannerTone } from '../combat/publicBanner.ts';
 import { footer, header, hudPress, rail, ruleUnder, said } from './hudParts.ts';
 import type { ShipPanel } from './shipPanel.ts';
+import type { Fallen } from './footRevive.ts';
 
 /** The view as the display lays itself against it: its size, whether its words take their larger step (1500 by 900
  *  or more) and stand doubled (2400 by 1300 or more), and what else holds the screen: the fight's display on foot and
@@ -85,8 +86,9 @@ export function warningNode(view: HudView, count: string): Node {
   };
 }
 
-/** Death's words over the middle of the view and the press to rise again, waiting while it may not yet. */
-export function deathNode(ui: Interface, why: string, canRespawn: boolean, respawn: () => void): Node {
+/** Death's words over the middle of the view and the press to rise again, waiting while it may not yet; none at all
+ *  where no Respawn comes (`offered` false: a darkness zone, or an ally reviving the player). */
+export function deathNode(ui: Interface, why: string, canRespawn: boolean, respawn: () => void, offered = true): Node {
   return {
     width: 'grow',
     height: 'grow',
@@ -102,12 +104,19 @@ export function deathNode(ui: Interface, why: string, canRespawn: boolean, respa
         through: true,
         children: [said(why, { colour: DIM })],
       },
-      hudPress(ui, 'hud:respawn', canRespawn ? 'Respawn' : 'Respawn…', respawn, {
-        role: 'primary',
-        disabled: !canRespawn,
-      }),
+      offered &&
+        hudPress(ui, 'hud:respawn', canRespawn ? 'Respawn' : 'Respawn…', respawn, {
+          role: 'primary',
+          disabled: !canRespawn,
+        }),
     ],
   };
+}
+
+/** A fall in the fight over the middle of the view: death's words over the line `fallen` tells, and Respawn where
+ *  it is offered. */
+export function fallenNode(ui: Interface, fallen: Fallen, respawn: () => void): Node {
+  return deathNode(ui, fallen.line, fallen.canRespawn, respawn, fallen.offered);
 }
 
 /** The line of what is happening: under the compass at sea, under the place's name at the top right on foot, and in

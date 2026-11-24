@@ -52,6 +52,8 @@ fn bare() -> Snapshot<'static> {
         public: None,
         plates: &[],
         encounter: None,
+        darkness: false,
+        reviving: &[],
     }
 }
 

@@ -189,10 +189,11 @@ Claude's, recorded in [[The Playlist and Its Dungeons as Claude Shapes Them]].
 They hold in every Abyss run: the hardest seas take Nightfall's rules, limited revives and a wipe ending the run, as
 the owner approved ([[Where You Go and the Seas You Choose Set the Difficulty]]).
 
-- **Revives:** the company shares five a run (`Room::revives`). Each stand of a fallen player takes one, the
-  lowest player number first when two fall together; when none are left, the fallen stay down. Leaving stands no one
-  up: the run keeps each kept player's body as they leave (`keep_body`), so one who left down comes back down and
-  one who left wounded comes back at the share of health they left with, until the run starts over.
+- **Revives:** the company shares five a run (`Room::revives`). Each stand of a fallen player takes one, whether an ally
+  revives them or they respawn ([[Revives]]), revives before respawns in the same tick, each lowest player number first;
+  when none are left the fallen stay down, no ally's hold taken up and no Respawn offered: the run is a darkness zone.
+  Leaving stands no one up: the run keeps each kept player's body as they leave (`keep_body`), so one who left down
+  comes back down and one who left wounded comes back at the share of health they left with, until the run starts over.
 - **A wipe ends the run:** when every player in it is down at once, each is told (`Wiped`), the dungeon starts over and
   its five revives with it (`start_over`): its foes stand again at their posts, its shots and spells are gone, its
   drops are taken up, each Vestige to its player's mail, its cache shuts, and its players stand whole at the way in.
