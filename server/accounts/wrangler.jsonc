@@ -29,7 +29,9 @@
     { "tag": "finders", "new_sqlite_classes": ["CompanyFinder"] },
     { "tag": "chat", "new_sqlite_classes": ["ChatHall"] },
   ],
-  // The pages a Discord sign-in may come back to, by origin and path: the published game alone. `npm run accounts`
-  // gives the dev server's own.
-  "vars": { "PAGES": "https://lattymoy.github.io/no-shores-source/" },
+  // The pages a Discord sign-in may come back to, by origin and path: the game at noshores.online and on GitHub Pages,
+  // where it is still published. `npm run accounts` gives the dev server's own.
+  "vars": {
+    "PAGES": "https://noshores.online/play/ https://www.noshores.online/play/ https://lattymoy.github.io/no-shores-source/",
+  },
 }

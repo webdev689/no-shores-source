@@ -2,10 +2,11 @@ import assert from 'node:assert/strict';
 import { beforeEach, test } from 'node:test';
 import { resetStarts } from './auth.ts';
 import { GUILD, ORIGIN, PANEL, bodyOf, countOf, panelRequest, signInPanel, standWorker } from './botForTests.ts';
-import { commandsOf } from './commands.ts';
+import { commandsOf, writeCommands } from './commands.ts';
 import type { ServerModule } from './modules/module.ts';
 import { resetMembers } from './panel.ts';
 import { registryOf } from './registry.ts';
+import { createRest } from './rest.ts';
 import { BOT_VERSION, tick } from './worker.ts';
 
 beforeEach(() => {
@@ -42,6 +43,30 @@ test("commands: the bot's own /panel and every module's, each name once", () => 
   assert.equal(every[0], 'panel');
   assert.ok(every.includes('ban'), "moderation's commands are deployed with the rest");
   assert.equal(new Set(every).size, every.length, 'no name twice across the modules');
+});
+
+test("commands: a deploy writes the whole list to the application, with the bot's token", async () => {
+  const sent: { url: string; method: string; auth: string; body: unknown }[] = [];
+  const rest = createRest({
+    token: 'bot-token',
+    fetch: async (url, init) => {
+      const headers = new Headers(init?.headers);
+      sent.push({
+        url,
+        method: String(init?.method),
+        auth: String(headers.get('authorization')),
+        body: JSON.parse(String(init?.body)),
+      });
+      return new Response('[]', { status: 200, headers: { 'content-type': 'application/json' } });
+    },
+  });
+  const answer = await writeCommands(rest, '1234', registryOf([greeter]));
+  assert.ok(answer.ok);
+  assert.deepEqual(
+    sent.map(({ url, method, auth }) => ({ url, method, auth })),
+    [{ url: 'https://discord.com/api/v10/applications/1234/commands', method: 'PUT', auth: 'Bot bot-token' }],
+  );
+  assert.deepEqual(sent[0]?.body, commandsOf(registryOf([greeter])));
 });
 
 test('interactions: a bad or stale signature is refused; a ping is answered; no key says it is not set up', async () => {

@@ -1,0 +1,140 @@
+name: site
+
+# Serves the website and the game at noshores.online from Cloudflare: the Worker noshores-site, whose static files are
+# the site's pages at the root and the game's client under /play/. Only ci.yml calls it, from main once the same commit
+# has passed the check and the rooms have deployed or had nothing to, as it publishes the page, so no game is served on
+# a protocol no room speaks. The game's R2 bucket is first made to answer the domain wherever it answers the page.
+# Until noshores.online is a zone of the Cloudflare account (its nameservers moved from Porkbun), nothing is served and
+# the run says so. The token then needs Zone: Read and Workers Routes: Edit on that zone.
+on:
+  workflow_call:
+
+permissions:
+  contents: read
+
+jobs:
+  # Installs others' code and builds, so it holds no secret: what it builds goes on as an artifact.
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+      - name: Install the pinned toolchain
+        run: rustup toolchain install
+      - uses: Swatinem/rust-cache@d1527c8f67ef9af357290475d4af4b0fab8f12e0 # v2.9.3
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: 22
+          cache: npm
+      - name: Install the TypeScript tools
+        run: npm ci
+      - name: Build the site, and the game under /play/
+        run: |
+          set -euo pipefail
+          npm run build -- --base=/play/
+          npm run site:build
+          mkdir -p target/served
+          cp -R target/site/. target/served/
+          cp -R dist target/served/play
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: served
+          path: target/served
+          retention-days: 1
+
+  # One deploy at a time; a newer merge's deploy replaces one waiting. Merges are checked side by side, so an older one
+  # can finish last: it deploys only while it is still main's head. The token reaches only the steps that use it.
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    concurrency:
+      group: site
+      cancel-in-progress: false
+    env:
+      CLOUDFLARE_ACCOUNT_ID: a27adccb38c8e8b82fa32e5736274a94
+      API: https://api.cloudflare.com/client/v4
+      ZONE: noshores.online
+      BUCKET: overlook-forge
+      PAGE_ORIGIN: https://lattymoy.github.io
+      SITE_ORIGINS: '["https://noshores.online", "https://www.noshores.online"]'
+    steps:
+      - id: head
+        env:
+          GH_TOKEN: ${{ github.token }}
+        # Asked apart from the comparison, so a failed ask fails the step rather than skipping the deploy unseen.
+        run: |
+          sha=$(gh api "repos/${{ github.repository }}/commits/main" --jq .sha)
+          echo "sha=$sha" >> "$GITHUB_OUTPUT"
+      - id: zone
+        if: steps.head.outputs.sha == github.sha
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_TOKEN }}
+        run: |
+          set -euo pipefail
+          if [ -z "$CLOUDFLARE_API_TOKEN" ]; then
+            echo "::warning::the repository has no CLOUDFLARE_TOKEN secret: the site was not served"
+            exit 0
+          fi
+          status=$(curl -fsS -H "Authorization: Bearer $CLOUDFLARE_API_TOKEN" \
+            "$API/zones?name=$ZONE&account.id=$CLOUDFLARE_ACCOUNT_ID" | jq -r '.result[0].status // "absent"')
+          if [ "$status" = active ]; then
+            echo "served=yes" >> "$GITHUB_OUTPUT"
+          else
+            echo "::warning::$ZONE is $status on the Cloudflare account (its nameservers not yet moved, or the token cannot read the zone): the site was not served"
+          fi
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        if: steps.zone.outputs.served == 'yes'
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        if: steps.zone.outputs.served == 'yes'
+        with:
+          node-version: 22
+          cache: npm
+      - name: Install the TypeScript tools
+        if: steps.zone.outputs.served == 'yes'
+        run: npm ci
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
+        if: steps.zone.outputs.served == 'yes'
+        with:
+          name: served
+          path: target/served
+      # Every rule of the bucket's that lets the page read it lets the domain too; the rest are left as they are. The
+      # call replaces the whole list, so it is read first and put back only when an origin was missing.
+      - name: Let the game's bucket answer the domain
+        if: steps.zone.outputs.served == 'yes'
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_TOKEN }}
+        run: |
+          set -euo pipefail
+          url="$API/accounts/$CLOUDFLARE_ACCOUNT_ID/r2/buckets/$BUCKET/cors"
+          rules=$(curl -fsS -H "Authorization: Bearer $CLOUDFLARE_API_TOKEN" "$url" | jq '.result.rules // []')
+          wanted=$(jq --arg page "$PAGE_ORIGIN" --argjson site "$SITE_ORIGINS" \
+            'map(if (.allowed.origins | index($page)) then .allowed.origins = (.allowed.origins + $site | unique) else . end)' <<< "$rules")
+          if ! jq -e --arg page "$PAGE_ORIGIN" 'any(.[]; .allowed.origins | index($page))' <<< "$wanted" > /dev/null; then
+            echo "::error::no CORS rule of $BUCKET lets $PAGE_ORIGIN read it, so none was widened for the domain"
+            exit 1
+          fi
+          if [ "$(jq -S . <<< "$rules")" = "$(jq -S . <<< "$wanted")" ]; then
+            echo "$BUCKET already answers the domain"
+          else
+            jq '{rules: .}' <<< "$wanted" | curl -fsS -X PUT -H "Authorization: Bearer $CLOUDFLARE_API_TOKEN" \
+              -H 'content-type: application/json' --data-binary @- "$url" > /dev/null
+            echo "$BUCKET now answers the domain"
+          fi
+      - name: Deploy the site and the game
+        if: steps.zone.outputs.served == 'yes'
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_TOKEN }}
+        run: npx wrangler deploy --config site/wrangler.jsonc --domain "$ZONE" --domain "www.$ZONE"
+      - name: Check the site and the game answer
+        if: steps.zone.outputs.served == 'yes'
+        run: |
+          set -euo pipefail
+          for path in / /world/ /game/ /panel/ /play/; do
+            for attempt in 1 2 3 4 5 6; do
+              if curl -fsS -o /dev/null --max-time 15 "https://$ZONE$path"; then continue 2; fi
+              sleep 10
+            done
+            echo "::error::https://$ZONE$path did not answer"
+            exit 1
+          done

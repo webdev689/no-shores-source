@@ -6,7 +6,7 @@ import { privateReply } from '../kit.ts';
 import type { ServerModule } from './module.ts';
 
 /** Where the game is played. */
-export const GAME_URL = 'https://lattymoy.github.io/no-shores-source/';
+export const GAME_URL = 'https://noshores.online/play/';
 /** /link's answer, in the account tab's own words (`client/src/game/accountTab.ts`). */
 export const LINK_WORDS = `Open the game at ${GAME_URL}, then in Settings open Account and press Sign in or link with Discord.`;
 

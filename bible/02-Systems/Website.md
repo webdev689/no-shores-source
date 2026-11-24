@@ -23,6 +23,8 @@ code:
   - site/src/art/sheet.ts#pngOf
   - site/src/art/logo.ts#iconSheet
   - site/src/site.css
+  - site/wrangler.jsonc
+  - .github/workflows/site.yml
 ---
 # Website
 
@@ -42,7 +44,7 @@ Online's ([[The Website Is at noshores.online, After DFO's]], [[Pick - Website]]
   [[Ships Have Their Own Power, Modules and Crew Who Fight Beside You]], [[Arts Are Overlook's Subclasses]],
   [[Three Factions Keep the Arts, After Destiny 1]] and [[Gear and Power Follow Destiny 1 Vanilla]].
 - **Links by name.** A link names a page or an outside place (`data-to="play"`). The outside places are named once:
-  Play, the game at its current address, and the Discord, empty until the owner has an invite. A place with no
+  Play, the game at `noshores.online/play/`, and the Discord, empty until the owner has an invite. A place with no
   address yet has its links left out of the page, so no Discord button shows.
 - **The frame.** Every page gets the same bar (the logo, The World, The Game, Play), a skip link, and a foot (the
   pages by name, the Discord bot's among them, the Discord once it has an address, and "© Vestige Studios",
@@ -62,6 +64,17 @@ Online's ([[The Website Is at noshores.online, After DFO's]], [[Pick - Website]]
   the one exception, below.
 - **Look.** Night colours with lantern-gold accents, framed pictures and cards. It fits from 360 px wide to a wide
   desktop without scrolling sideways; the lanterns stop flickering for a player who asks for reduced motion.
+
+## Where it is served
+
+The Worker `noshores-site` serves the site and the game at `noshores.online` and `www.noshores.online`
+([[noshores.online Is Served From Cloudflare, and the Game Is Played There]]): static files alone, the site's pages at
+the root and the game's client, built with its base at `/play/`, under `/play/`. A merge into `main` deploys it
+(`site.yml`) on the page's terms: once the same commit has passed the check and the rooms have deployed or had nothing
+to, so no game is served on a protocol no room speaks. Before it deploys, every CORS rule of the game's R2 bucket
+(`overlook-forge`) that lets the published page read it is widened to the domain's two origins, and the accounts send
+a Discord sign-in back to the game there. The game is still published on GitHub Pages as well
+([[The World Editor Is on GitHub Pages]]).
 
 ## The Discord bot's panel
 
@@ -100,7 +113,11 @@ small stand-in document (`domForTests.ts`) against a faked bot.
 
 ## Limits
 
-- Not hosted yet: where it is served waits on the owner ([[Open Questions]]).
+- Nothing is served until `noshores.online` is a zone of the Cloudflare account, its nameservers moved from Porkbun
+  ([[Open Questions]]); until then each deploy says so and serves nothing. The Cloudflare token then needs Zone: Read
+  and Workers Routes: Edit on that zone.
+- A browser keeps a game's sign-in and saves by its address, so a guest who played on GitHub Pages starts afresh at
+  `noshores.online`; an account linked to Discord signs in on either.
 - The Discord buttons stay hidden until the owner has an invite.
 - The panel works only once the bot is deployed with `PANEL_URL` and `PANEL_ORIGINS` naming this site ([[Discord Bot]]).
 - A built page previewed on this machine keeps the live policy, so it cannot reach `npm run bot`; use `npm run site`.

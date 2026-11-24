@@ -28,6 +28,10 @@ code:
   - server/bot/slots.ts#slotsFor
   - server/bot/kit.ts#BotContext
   - server/bot/commands.ts#PANEL_COMMAND
+  - server/bot/commands.ts#writeCommands
+  - tools/botCommands.ts
+  - .github/workflows/bot.yml
+  - .github/deploy-ready.sh
   - server/bot/law/access.ts#levelOf
   - server/bot/law/access.ts#roleRefusal
   - server/bot/law/settings.ts#validate
@@ -173,18 +177,32 @@ do not answer, gets the module's words for "not linked" in all three (empty by d
 username, no level kept yet or no pledge shows nothing in that one. Welcome, goodbye, level-up and tag messages offer
 the three placeholders; where the module is off they show nothing.
 
-`/link` answers privately how to link: open the game at `https://lattymoy.github.io/no-shores-source/`, then in
+`/link` answers privately how to link: open the game at `https://noshores.online/play/`, then in
 Settings open Account and press Sign in or link with Discord. The link itself is the accounts' own.
+
+## The deploy
+
+A merge into `main` deploys the bot once the same commit has passed the check, only when what it is built from
+changed since its last deploy ([[The Discord Bot Deploys on Each Merge]]): `bot.yml`, after the rooms' workflow, which
+deploys the accounts its binding names. It finds or makes the `noshores-bot` database and the `noshores-bot-media`
+bucket, applies the migrations, deploys with `BOT_URL` set to its own `workers.dev` address, hands over the keys the
+repository has, makes `CARD_SIGNING_KEY` once when the Worker has none, writes the slash commands to the application
+(`commands.ts`'s whole list, in place of the one Discord had), and waits for `/health` to name this `BOT_VERSION`.
+`deploy-ready.sh` decides whether a deploy is due, for the rooms as for the bot. Run by hand from the Actions tab it
+deploys whatever changed, which is how keys added later reach the Worker.
 
 ## One Discord application
 
-The accounts' Discord sign-in and the bot share one Discord application. Each Worker reads its keys as secrets or
-vars, never from the repository:
+The accounts' Discord sign-in and the bot share one Discord application. Its keys are the repository's secrets, which
+the deploys hand to each Worker; none is in the repository:
 
-| Worker | Reads |
+| Repository secret | Reaches |
 |---|---|
-| `overlook-accounts` | `DISCORD_CLIENT_ID` (the application's id) and `DISCORD_CLIENT_SECRET` |
-| `noshores-bot` | `DISCORD_APPLICATION_ID` (the same id), `DISCORD_PUBLIC_KEY`, `DISCORD_BOT_TOKEN`, `DISCORD_CLIENT_SECRET` (the same secret) and `CARD_SIGNING_KEY` (the bot's own, not Discord's) |
+| `DISCORD_CLIENT_ID`, the application's id | `overlook-accounts`, and `noshores-bot` as its var `DISCORD_APPLICATION_ID` |
+| `DISCORD_CLIENT_SECRET` | both Workers |
+| `DISCORD_PUBLIC_KEY`, the application's public key | `noshores-bot`, as a var |
+| `DISCORD_BOT_TOKEN`, the bot user's token | `noshores-bot` |
+| `BOT_OWNERS`, the owners' Discord user ids, comma-separated | `noshores-bot`, as a var |
 
 The application's OAuth2 redirects must list both callbacks:
 `https://overlook-accounts.mackcothran.workers.dev/v1/discord/callback` for the game's sign-in, and the bot's own
@@ -200,8 +218,9 @@ built by the message law. The page only draws what the panel's API answers; ever
 
 ## Limits
 
-- Not deployed: the Discord application's keys and the deploy wait on the owner ([[Open Questions]]). Every var in
-  `wrangler.jsonc` may be empty, and the part that needs one says it is not set up.
+- It runs without the Discord application until the owner adds its keys ([[Open Questions]]): every var in
+  `wrangler.jsonc` may be empty, and the part that needs one says it is not set up. A key the repository gains reaches
+  the Worker at its next deploy.
 - A character's level is the one its room last saved, so it trails a level reached mid-session by up to twenty
   seconds; a character no room has kept since it was made shows no level.
 - A Worker isolate trusts a module's settings for 30 seconds after reading them, and the Gateway until the panel

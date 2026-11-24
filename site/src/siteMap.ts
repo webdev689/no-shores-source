@@ -25,7 +25,7 @@ export const SITE_PAGES: readonly SitePage[] = [
  * left out of the page until it is filled.
  */
 export const OUTSIDE: Readonly<Record<string, string>> = {
-  play: 'https://lattymoy.github.io/no-shores-source/',
+  play: `${SITE_ORIGIN}/play/`,
   discord: '',
 };
 

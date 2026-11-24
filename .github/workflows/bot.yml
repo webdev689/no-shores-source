@@ -1,0 +1,152 @@
+name: bot
+
+# Deploys the Discord bot, the Worker noshores-bot, to Cloudflare with the repository's Cloudflare token: over its D1
+# database and its pictures' R2 bucket (each made if it is not there, the migrations applied first), with the Discord
+# application's id, public key and keys handed over when the repository has them, a card signing key of its own made
+# once, and its slash commands written to the application. ci.yml calls it from main once the same commit has passed
+# the check and the accounts, whose LinkedCharacters its service binding names, have had their turn; it deploys only
+# when what the bot is built from has changed since its last deploy. It also runs by hand from main, deploying whether
+# anything changed or not, but only a commit whose own CI check passed: run it so after adding the Discord keys.
+on:
+  workflow_call:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  # Merges are checked side by side, so an older one can finish last: it deploys only while it is still main's head.
+  # Without the token, nothing deploys and main stays green, with a warning to add it.
+  ready:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+      deployments: read
+      checks: read
+    outputs:
+      deploy: ${{ steps.ready.outputs.deploy }}
+    steps:
+      # The history without its files' contents, to compare the bot's code with that of its last deploy.
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          fetch-depth: 0
+          filter: blob:none
+          sparse-checkout: .github
+      - id: ready
+        env:
+          GH_TOKEN: ${{ github.token }}
+          HAS_TOKEN: ${{ secrets.CLOUDFLARE_TOKEN != '' }}
+          BY_HAND: ${{ github.event_name == 'workflow_dispatch' }}
+          # What the bot is built from: its own folder, the accounts' reader of linked characters it imports and what
+          # that reads, the runner that writes its commands, the locks and the scripts that deploy, and this workflow.
+          CODE: >-
+            server/bot server/accounts/linked.ts server/accounts/database.ts content/gear/factions.json
+            tools/botCommands.ts package.json package-lock.json .github/workflows/bot.yml .github/deploy-ready.sh
+        run: bash .github/deploy-ready.sh bot "the Discord bot"
+
+  # One deploy at a time; a newer merge's deploy replaces one waiting. The database's id never enters the repository:
+  # it is looked up, or the database made, and written into this runner's copy of the config. The Cloudflare token and
+  # the Discord keys reach only the steps that need them, never `npm ci` and the packages it installs.
+  deploy:
+    needs: ready
+    if: needs.ready.outputs.deploy == 'yes'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    concurrency:
+      group: bot
+      cancel-in-progress: false
+    # Each deploy is recorded against the commit it came from, which the next run compares with.
+    environment: bot
+    env:
+      CLOUDFLARE_ACCOUNT_ID: a27adccb38c8e8b82fa32e5736274a94
+      CONFIG: server/bot/wrangler.jsonc
+      DATABASE: noshores-bot
+      BUCKET: noshores-bot-media
+      BOT_URL: https://noshores-bot.mackcothran.workers.dev
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: 22
+          cache: npm
+      - name: Install the TypeScript tools
+        run: npm ci
+      - name: Find the database, or make it, and name it in the config
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_TOKEN }}
+        run: |
+          set -euo pipefail
+          listed() { npx wrangler d1 list --json | jq -r --arg name "$DATABASE" 'map(select(.name == $name)) | .[0].uuid // .[0].id // empty'; }
+          id=$(listed)
+          if [ -z "$id" ]; then
+            npx wrangler d1 create "$DATABASE"
+            id=$(listed)
+          fi
+          test -n "$id" || { echo "::error::Cloudflare named no id for $DATABASE"; exit 1; }
+          sed -i "s/\"set-by-the-deploy\"/\"$id\"/" "$CONFIG"
+          grep -q "\"$id\"" "$CONFIG" || { echo "::error::the id did not reach $CONFIG"; exit 1; }
+      - name: Make the pictures' bucket if it is not there
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_TOKEN }}
+        run: npx wrangler r2 bucket info "$BUCKET" > /dev/null || npx wrangler r2 bucket create "$BUCKET"
+      - name: Apply the migrations
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_TOKEN }}
+        run: npx wrangler d1 migrations apply "$DATABASE" --remote --config "$CONFIG"
+      # The application's id and public key and the owners' ids are no secrets, but the owner's to give: each goes in
+      # as a var only when the repository has it, so an empty one stays as the config has it, which says not set up.
+      - name: Deploy the bot
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_TOKEN }}
+          DISCORD_APPLICATION_ID: ${{ secrets.DISCORD_CLIENT_ID }}
+          DISCORD_PUBLIC_KEY: ${{ secrets.DISCORD_PUBLIC_KEY }}
+          BOT_OWNERS: ${{ secrets.BOT_OWNERS }}
+        run: |
+          set -euo pipefail
+          vars=(--var "BOT_URL:$BOT_URL")
+          for name in DISCORD_APPLICATION_ID DISCORD_PUBLIC_KEY BOT_OWNERS; do
+            if [ -n "${!name}" ]; then vars+=(--var "$name:${!name}")
+            else echo "::warning::the repository has no ${name/DISCORD_APPLICATION_ID/DISCORD_CLIENT_ID} secret: the bot runs without it"; fi
+          done
+          npx wrangler deploy --config "$CONFIG" "${vars[@]}"
+      # Each key goes in from a pipe, never a command line or a file, and only when the repository has it. The card
+      # signing key is the bot's own: made once, when the Worker has none, and kept over every later deploy.
+      - name: Hand over the Discord keys and make the card signing key
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_TOKEN }}
+          DISCORD_BOT_TOKEN: ${{ secrets.DISCORD_BOT_TOKEN }}
+          DISCORD_CLIENT_SECRET: ${{ secrets.DISCORD_CLIENT_SECRET }}
+        run: |
+          set -euo pipefail
+          for name in DISCORD_BOT_TOKEN DISCORD_CLIENT_SECRET; do
+            if [ -n "${!name}" ]; then
+              printf '%s' "${!name}" | npx wrangler secret put "$name" --config "$CONFIG"
+            else
+              echo "::warning::the repository has no $name secret: the bot runs without it unless an earlier deploy gave the Worker one"
+            fi
+          done
+          kept=$(npx wrangler secret list --config "$CONFIG" --format json | jq -r '.[].name')
+          if ! grep -qx CARD_SIGNING_KEY <<< "$kept"; then
+            openssl rand -hex 32 | tr -d '\n' | npx wrangler secret put CARD_SIGNING_KEY --config "$CONFIG"
+          fi
+      - name: Write the slash commands to the application
+        env:
+          DISCORD_APPLICATION_ID: ${{ secrets.DISCORD_CLIENT_ID }}
+          DISCORD_BOT_TOKEN: ${{ secrets.DISCORD_BOT_TOKEN }}
+        run: node tools/botCommands.ts
+      # The health check names the version the Worker answers with, so the new code is known to be live.
+      - name: Check the bot answers with this version
+        run: |
+          set -euo pipefail
+          version=$(sed -n "s/^export const BOT_VERSION = '\(.*\)';$/\1/p" server/bot/worker.ts)
+          test -n "$version" || { echo "::error::no BOT_VERSION in server/bot/worker.ts"; exit 1; }
+          for attempt in 1 2 3 4 5 6; do
+            if curl -fsS --max-time 15 "$BOT_URL/health" | jq -e --arg version "$version" '.version == $version'; then
+              exit 0
+            fi
+            sleep 10
+          done
+          echo "::error::the bot did not answer /health with version $version"
+          exit 1

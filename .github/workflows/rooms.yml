@@ -48,54 +48,23 @@ jobs:
           HAS_TOKEN: ${{ secrets.CLOUDFLARE_TOKEN != '' }}
           BY_HAND: ${{ github.event_name == 'workflow_dispatch' }}
           # What the rooms are built from: the crates of `room-wasm` and of the bake, the Workers and the page's files
-          # they import (the sea's ports read as the page reads them), the schema's maker and its list
-          # (tools/numbered.json), the content they read, the toolchain, the locks and the scripts that deploy, and this
-          # workflow.
-          ROOMS_CODE: >-
+          # they import (the sea's ports read as the page reads them), but the Discord bot's, which deploys on its own
+          # (bot.yml), the schema's maker and its list (tools/numbered.json), the content they read, the toolchain, the
+          # locks and the scripts that deploy, and this workflow.
+          CODE: >-
             crates/bake crates/city crates/combat crates/dungeon crates/foes crates/gear crates/isle crates/land
             crates/layout crates/movement crates/naval crates/navmesh crates/protocol crates/reach crates/room
-            crates/room-wasm crates/sailing crates/sky crates/world server tools/schema.mjs tools/numbered.json
-            content/world content/islands/kits.json content/testground content/gear content/arts content/modules
-            content/dungeon content/lore content/quests content/story/cast.json content/ships/ships.json content/forged
-            client/src/game/worldData.ts client/src/game/nodes.ts client/src/ruinedName.ts client/src/player/binds.ts
-            client/src/game/guild/bannerLaw.ts client/src/game/guild/guildLaw.ts client/src/game/guild/outpostLaw.ts
-            content/guilds client/src/game/guild/outpostPlaces.ts client/src/game/guild/delveRoom.ts
-            Cargo.toml Cargo.lock rust-toolchain.toml package.json package-lock.json .github/workflows/rooms.yml
-        run: |
-          repo="${{ github.repository }}"
-          head=$(gh api "repos/$repo/commits/main" --jq .sha)
-          # The commit the rooms were last deployed from: the newest deployment to `rooms` whose last word is success.
-          # With none found, they deploy.
-          list=$(gh api "repos/$repo/deployments?environment=rooms&per_page=30" \
-            --jq '.[] | "\(.sha) \(.id)"') || list=""
-          deployed=""
-          while read -r sha id; do
-            [ -n "$id" ] || continue
-            state=$(gh api "repos/$repo/deployments/$id/statuses" --jq '.[0].state') || state=""
-            if [ "$state" = success ]; then deployed=$sha; break; fi
-          done <<< "$list"
-          # Whether this commit passed main's CI check: a check run named `check`, of GitHub Actions, that succeeded.
-          passed() {
-            gh api "repos/$repo/commits/${{ github.sha }}/check-runs?check_name=check" \
-              --jq 'any(.check_runs[]; .app.slug == "github-actions" and .conclusion == "success")'
-          }
-          if [ "$head" != "${{ github.sha }}" ]; then
-            echo "main has moved past this commit; its own run deploys the rooms"
-            echo "deploy=no" >> "$GITHUB_OUTPUT"
-          elif [ "$BY_HAND" = "true" ] && [ "$(passed)" != true ]; then
-            echo "::error::by hand the rooms deploy only a commit that passed the CI check, and this one has not"
-            exit 1
-          elif [ "$BY_HAND" != "true" ] && [ -n "$deployed" ] &&
-            git diff --quiet --no-renames "$deployed" HEAD -- $ROOMS_CODE; then
-            echo "the rooms' code is as deployed from $deployed: nothing to deploy"
-            echo "deploy=no" >> "$GITHUB_OUTPUT"
-          elif [ "$HAS_TOKEN" != "true" ]; then
-            # The rooms cannot deploy, so the page waits too: none is published on a protocol no room speaks.
-            echo "::warning::the repository has no CLOUDFLARE_TOKEN secret, so the rooms and the page were not deployed"
-            echo "deploy=blocked" >> "$GITHUB_OUTPUT"
-          else
-            echo "deploy=yes" >> "$GITHUB_OUTPUT"
-          fi
+            crates/room-wasm crates/sailing crates/sky crates/world server :!server/bot tools/schema.mjs
+            tools/numbered.json content/world content/islands/kits.json content/testground content/gear content/arts
+            content/modules content/dungeon content/lore content/quests content/story/cast.json content/ships/ships.json
+            content/forged client/src/game/worldData.ts client/src/game/nodes.ts client/src/ruinedName.ts
+            client/src/player/binds.ts client/src/game/guild/bannerLaw.ts client/src/game/guild/guildLaw.ts
+            client/src/game/guild/outpostLaw.ts content/guilds client/src/game/guild/outpostPlaces.ts
+            client/src/game/guild/delveRoom.ts Cargo.toml Cargo.lock rust-toolchain.toml package.json package-lock.json
+            .github/workflows/rooms.yml .github/deploy-ready.sh
+        # The rooms cannot deploy without the token, so the page waits too: none is published on a protocol no room
+        # speaks.
+        run: bash .github/deploy-ready.sh rooms "the rooms"
 
   # One deploy at a time; a newer merge's deploy replaces one waiting. The database's id never enters the repository:
   # it is looked up, or the database made, and written into this runner's copy of the config. The Cloudflare token

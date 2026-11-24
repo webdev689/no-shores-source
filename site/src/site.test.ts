@@ -83,7 +83,7 @@ test('a place with no address shows no link, and one with an address shows its l
   const filled = fillKeys(html);
   assert.equal(OUTSIDE.discord, '');
   assert.doesNotMatch(filled, /Discord/);
-  assert.match(filled, /href="https:\/\/lattymoy\.github\.io\/no-shores-source\/" rel="noopener">Play</);
+  assert.match(filled, /href="https:\/\/noshores\.online\/play\/" rel="noopener">Play</, 'the game under the site');
 });
 
 test('each picture is the same at every build and under 64 KB', () => {

@@ -1,7 +1,8 @@
-// Every slash command the application has, declared in code: the bot's own `/panel` and each module's. Whatever
-// writes the list to Discord writes this whole list, so a command added here appears there and one removed is gone.
+// Every slash command the application has, declared in code: the bot's own `/panel` and each module's. Each deploy
+// writes this whole list to Discord, so a command added here appears there and one removed is gone.
 
 import { REGISTRY, type Registry } from './registry.ts';
+import type { Rest, RestResult } from './rest.ts';
 
 const MANAGE_MESSAGES = String(1 << 13);
 
@@ -18,3 +19,8 @@ export const PANEL_COMMAND = Object.freeze({
 /** The bot's commands, its own first. */
 export const commandsOf = (registry: Registry = REGISTRY): readonly { readonly name: string }[] =>
   Object.freeze([PANEL_COMMAND, ...registry.commands]);
+
+/** Writes the whole list to the application in Discord, in place of the one it had: each deploy of the bot does,
+ *  through `tools/botCommands.ts`. */
+export const writeCommands = (rest: Rest, applicationId: string, registry: Registry = REGISTRY): Promise<RestResult> =>
+  rest.put(`/applications/${applicationId}/commands`, commandsOf(registry));

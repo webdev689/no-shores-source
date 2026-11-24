@@ -1,30 +1,12 @@
 import assert from 'node:assert/strict';
-import { execFileSync } from 'node:child_process';
-import {
-  chmodSync,
-  existsSync,
-  mkdirSync,
-  mkdtempSync,
-  readFileSync,
-  readdirSync,
-  rmSync,
-  writeFileSync,
-} from 'node:fs';
-import { tmpdir } from 'node:os';
+import { existsSync, readFileSync } from 'node:fs';
 import { dirname, join, normalize } from 'node:path';
 import { test } from 'node:test';
 import numberedContent from '../tools/numbered.json' with { type: 'json' };
-
-const workflow = readFileSync(new URL('../.github/workflows/rooms.yml', import.meta.url), 'utf8');
+import { REPO, codeOf, decided, filesUnder, refused, underCode, workflowText } from './deployReadyForTests.ts';
 
 /** The paths the rooms are built from, as the workflow lists them. */
-const roomsCode = (/ROOMS_CODE: >-\n((?: {12}\S.*\n)+)/.exec(workflow)?.[1] ?? '').trim().split(/\s+/);
-
-/** The `ready` step's script, as the runner's shell is handed it. */
-const readyScript = (/- id: ready\n[\s\S]*?run: \|\n((?: {10}.*\n|\n)+)/.exec(workflow)?.[1] ?? '')
-  .split('\n')
-  .map((line) => line.slice(10))
-  .join('\n');
+const roomsCode = codeOf(workflowText('rooms.yml'));
 
 /** The workspace crates a crate is built from, by its manifest's `[dependencies]`, and theirs in turn. */
 function builtFrom(roots: readonly string[]): string[] {
@@ -55,12 +37,9 @@ test('the rooms’ code is every crate the room’s WebAssembly and the bake are
     assert.ok(roomsCode.includes(path), path);
 });
 
-const repo = new URL('../', import.meta.url);
-/** Every file under a folder of the repository, by its path from the root. */
-const filesUnder = (folder: string): string[] =>
-  readdirSync(new URL(folder, repo), { recursive: true, encoding: 'utf8' }).map((name) => join(folder, name));
-/** Whether a path from the root lies under one of the rooms' code paths. */
-const deployed = (path: string) => roomsCode.some((code) => path === code || path.startsWith(`${code}/`));
+const repo = REPO;
+/** Whether a path from the root lies under the rooms' code. */
+const deployed = (path: string) => underCode(roomsCode, path);
 
 test('every file the rooms read lies under the rooms’ code, so a change to it deploys them', () => {
   // What the room's crates build in: each `include_str!` and `include_bytes!` of their sources, not their tests', and
@@ -88,9 +67,10 @@ test('every file the rooms read lies under the rooms’ code, so a change to it 
     .filter((path) => !path.startsWith('generated/'));
   // What the protocol's version hashes: the content numbered on the wire, and the list that names it.
   const numbered = [...numberedContent.paths, 'tools/numbered.json'];
-  // What the Workers import from beyond their own folder, but the room's WebAssembly built from the crates.
+  // What the Workers import from beyond their own folder, but the room's WebAssembly built from the crates; the bot is
+  // its own Worker, deployed by its own workflow.
   const imported = filesUnder('server')
-    .filter((path) => path.endsWith('.ts') && !path.endsWith('.test.ts'))
+    .filter((path) => path.endsWith('.ts') && !path.endsWith('.test.ts') && !path.startsWith('server/bot/'))
     .flatMap((path) =>
       [...readFileSync(new URL(path, repo), 'utf8').matchAll(/from '(\.[^']+)'/g)].map(([, file]) =>
         normalize(join(dirname(path), file ?? '')),
@@ -103,91 +83,50 @@ test('every file the rooms read lies under the rooms’ code, so a change to it 
   }
 });
 
-/** What the `ready` step decides for a commit that changes `changed` over the one last deployed: with the token, from
- *  a merge (or by hand), while the commit is main's head (or after main moved on), with that deploy found, and with
- *  the commit's CI check passed. */
-function decided(
-  changed: string,
-  options: { byHand?: boolean; moved?: boolean; found?: boolean; token?: boolean; checked?: boolean } = {},
-): string {
-  const root = mkdtempSync(join(tmpdir(), 'rooms-deploy-'));
-  const git = (...args: string[]) =>
-    execFileSync('git', ['-c', 'user.name=test', '-c', 'user.email=test@test', ...args], { cwd: root })
-      .toString()
-      .trim();
-  const write = (path: string, text: string) => {
-    mkdirSync(dirname(join(root, path)), { recursive: true });
-    writeFileSync(join(root, path), text);
-  };
-  try {
-    git('init', '-q');
-    for (const path of ['server/worker.ts', 'crates/room/src/lib.rs', 'bible/Home.md', changed]) write(path, 'one');
-    git('add', '.');
-    git('commit', '-qm', 'deployed');
-    const deployed = git('rev-parse', 'HEAD');
-    write(changed, 'two');
-    git('add', '.');
-    git('commit', '-qm', 'merged');
-    const head = git('rev-parse', 'HEAD');
-    // The GitHub CLI as the step asks it: main's head, the deployments to `rooms`, each one's last word, and whether
-    // the commit passed its check.
-    write(
-      'bin/gh',
-      [
-        '#!/bin/bash',
-        `case "$2" in`,
-        `  *check-runs?check_name=check) echo ${options.checked === false ? 'false' : 'true'} ;;`,
-        `  *commits/main) echo ${options.moved ? 'f'.repeat(40) : head} ;;`,
-        `  *environment=rooms*) ${options.found === false ? 'true' : `echo "${deployed} 7"`} ;;`,
-        `  */deployments/7/statuses) echo success ;;`,
-        'esac',
-      ].join('\n'),
-    );
-    chmodSync(join(root, 'bin/gh'), 0o755);
-    const script = readyScript
-      .replaceAll('${{ github.repository }}', 'owner/overlook')
-      .replaceAll('${{ github.sha }}', head);
-    write('ready.sh', script);
-    write('output', '');
-    const env = {
-      PATH: `${join(root, 'bin')}:${process.env['PATH'] ?? ''}`,
-      HAS_TOKEN: options.token === false ? 'false' : 'true',
-      BY_HAND: options.byHand ? 'true' : 'false',
-      ROOMS_CODE: roomsCode.join(' '),
-      GITHUB_OUTPUT: join(root, 'output'),
-    };
-    execFileSync('bash', ['--noprofile', '--norc', '-eo', 'pipefail', 'ready.sh'], { cwd: root, env });
-    return readFileSync(join(root, 'output'), 'utf8').trim();
-  } finally {
-    rmSync(root, { recursive: true, force: true });
-  }
-}
+/** What the ready step decides for the rooms, as `decided` runs it. */
+const roomsDecided = (changed: string, asked: Parameters<typeof decided>[3] = {}) =>
+  decided('rooms', roomsCode, changed, asked);
 
 test('a merge deploys the rooms when their code changed since the last deploy, and never for notes alone', () => {
-  assert.equal(decided('bible/Hand-off.md'), 'deploy=no');
-  assert.equal(decided('client/src/main.ts'), 'deploy=no', 'the page alone');
-  assert.equal(decided('crates/room/src/lib.rs'), 'deploy=yes');
-  assert.equal(decided('crates/protocol/messages.fbs'), 'deploy=yes', 'the schema');
-  assert.equal(decided('server/worker.ts'), 'deploy=yes');
-  assert.equal(decided('.github/workflows/rooms.yml'), 'deploy=yes', 'the workflow itself');
+  assert.equal(roomsDecided('bible/Hand-off.md'), 'deploy=no');
+  assert.equal(roomsDecided('client/src/main.ts'), 'deploy=no', 'the page alone');
+  assert.equal(roomsDecided('crates/room/src/lib.rs'), 'deploy=yes');
+  assert.equal(roomsDecided('crates/protocol/messages.fbs'), 'deploy=yes', 'the schema');
+  assert.equal(roomsDecided('server/worker.ts'), 'deploy=yes');
+  assert.equal(roomsDecided('server/bot/worker.ts'), 'deploy=no', 'the Discord bot, which deploys on its own');
+  assert.equal(roomsDecided('.github/workflows/rooms.yml'), 'deploy=yes', 'the workflow itself');
+  assert.equal(roomsDecided('.github/deploy-ready.sh'), 'deploy=yes', 'the script that decides');
 });
 
 test('by hand the rooms deploy whatever changed; with no deploy found they deploy; past main’s head they do not', () => {
-  assert.equal(decided('bible/Hand-off.md', { byHand: true }), 'deploy=yes');
-  const refused = (thrown: unknown) => String((thrown as { stdout?: Buffer }).stdout).includes('::error::');
-  assert.throws(() => decided('server/worker.ts', { byHand: true, checked: false }), refused, 'by hand, not checked');
-  assert.equal(decided('server/worker.ts', { checked: false }), 'deploy=yes', 'a merge, which its own run checked');
-  assert.equal(decided('bible/Hand-off.md', { found: false }), 'deploy=yes');
-  assert.equal(decided('server/worker.ts', { moved: true }), 'deploy=no');
-  assert.equal(decided('server/worker.ts', { token: false }), 'deploy=blocked', 'the rooms to deploy, with no token');
-  assert.equal(decided('bible/Hand-off.md', { token: false }), 'deploy=no', 'nothing to deploy, token or not');
+  assert.equal(roomsDecided('bible/Hand-off.md', { byHand: true }), 'deploy=yes');
+  assert.throws(
+    () => roomsDecided('server/worker.ts', { byHand: true, checked: false }),
+    refused,
+    'by hand, not checked',
+  );
+  assert.equal(
+    roomsDecided('server/worker.ts', { checked: false }),
+    'deploy=yes',
+    'a merge, which its own run checked',
+  );
+  assert.equal(roomsDecided('bible/Hand-off.md', { found: false }), 'deploy=yes');
+  assert.equal(roomsDecided('server/worker.ts', { moved: true }), 'deploy=no');
+  assert.equal(
+    roomsDecided('server/worker.ts', { token: false }),
+    'deploy=blocked',
+    'the rooms to deploy, with no token',
+  );
+  assert.equal(roomsDecided('bible/Hand-off.md', { token: false }), 'deploy=no', 'nothing to deploy, token or not');
 });
 
-test('on main, the page is published only once the rooms have deployed or had nothing to deploy', () => {
+test('on main, the page and the site are published only once the rooms have deployed or had nothing to deploy', () => {
   const checks = readFileSync(new URL('../.github/workflows/ci.yml', import.meta.url), 'utf8');
-  const pages = /\n  pages:\n((?: {4}.*\n|\s*\n)*)/.exec(checks)?.[1] ?? '';
-  assert.match(pages, /needs: \[check, rooms\]/, 'the page waits for the rooms');
-  const when = /if: >-\n((?: {6}.*\n)*)/.exec(pages)?.[1]?.replace(/\s+/g, ' ') ?? '';
-  assert.ok(when.includes("needs.rooms.outputs.deploy == 'no' || needs.rooms.outputs.deployed == 'yes'"), when);
-  assert.ok(!when.includes('blocked'), 'a blocked deploy publishes no page');
+  for (const job of ['pages', 'site']) {
+    const body = new RegExp(`\\n  ${job}:\\n((?: {4}.*\\n|\\s*\\n)*)`).exec(checks)?.[1] ?? '';
+    assert.match(body, /needs: \[check, rooms\]/, `${job} waits for the rooms`);
+    const when = /if: >-\n((?: {6}.*\n)*)/.exec(body)?.[1]?.replace(/\s+/g, ' ') ?? '';
+    assert.ok(when.includes("needs.rooms.outputs.deploy == 'no' || needs.rooms.outputs.deployed == 'yes'"), when);
+    assert.ok(!when.includes('blocked'), `a blocked deploy publishes no ${job}`);
+  }
 });
