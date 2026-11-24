@@ -367,6 +367,8 @@ a decision is a record. How to add one: [[Recording a Decision]].
 - [[DFO's Discord Bot Comes Over, Its Panel on the Website]]
 - [[noshores.online Is Served From Cloudflare, and the Game Is Played There]]
 - [[The Discord Bot Deploys on Each Merge]]
+- [[The Panel's Sign-in Asks for a Person's Servers]]
+- [[The Website's Words and the Bot's Month Are Approved]]
 
 ## Replaced
 

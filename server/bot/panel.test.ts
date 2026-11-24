@@ -391,8 +391,10 @@ test('panel: the audit log pages by a row number, and refuses anything else', as
   assert.deepEqual([await entriesOf('999'), await entriesOf('1'), await entriesOf('')], [1, 0, 1]);
 });
 
-test("panel: a person's servers are read in one go, and Discord is asked about a bounded number of them", async () => {
+/** A rig with more servers than the panel weighs, every one named to sort before the rig's own. */
+async function manyServers(guildsKnown: boolean) {
   const bot = await standWorker();
+  if (!guildsKnown) bot.discord.world.guilds = null;
   const mod = await signInPanel(bot, MOD);
   let reads = 0;
   const prepare = bot.database.prepare;
@@ -407,11 +409,20 @@ test("panel: a person's servers are read in one go, and Discord is asked about a
   };
   const one = await listing();
   const others = bot.database.raw.prepare(
-    "INSERT INTO guild_snapshot (guild_id, name, owner_id, updated_at) VALUES (?, 'Wharf', ?, 1)",
+    "INSERT INTO guild_snapshot (guild_id, name, owner_id, updated_at) VALUES (?, 'Aardvark Bay', ?, 1)",
   );
   for (let i = 0; i < LISTED_MAX + 10; i++) others.run(String(910000000000000000n + BigInt(i)), OWNER);
-  const many = await listing();
-  assert.deepEqual(many.guilds, one.guilds, 'the same answer');
-  assert.equal(many.reads, one.reads, 'the reads do not grow with the servers');
+  return { one, many: await listing() };
+}
+
+test("panel: a person's list holds the servers Discord says they are in, read in one go, however many the bot is in", async () => {
+  const { one, many } = await manyServers(true);
+  assert.deepEqual(many.guilds, one.guilds, 'their own server, though fifty others sort before it');
+  assert.equal(many.reads, one.reads, 'the reads do not grow with the bot’s servers');
+  assert.equal(many.lookups, 1, 'Discord is asked about their server alone');
+});
+
+test("panel: where Discord gave no list of a person's servers, the panel weighs the bot's first servers by name", async () => {
+  const { many } = await manyServers(false);
   assert.equal(many.lookups, LISTED_MAX);
 });

@@ -117,7 +117,7 @@ export async function panelRoute(context: PanelContext, request: Request, url: U
   if (!session) return fail('auth', 401, cors, 'Sign in again.');
   const { user } = session;
   if (path === '/v1/auth/logout' && request.method === 'POST') return logout(context, session.tokenHash);
-  if (path === '/v1/panel/me' && request.method === 'GET') return listServers(context, user);
+  if (path === '/v1/panel/me' && request.method === 'GET') return listServers(context, user, session.guilds);
   if (path === '/v1/panel/gateway' && request.method === 'POST') return gatewayAct(context, request, user);
   const match =
     /^\/v1\/panel\/g\/(\d{5,25})(?:\/(m\/([a-z0-9-]{1,32})(?:\/([va])\/([a-z0-9-]{1,32}))?|audit|test-message|media(?:\/([a-f0-9]{32}))?))?$/.exec(
@@ -165,12 +165,12 @@ const channelOutside = (snapshot: Snapshot, ids: readonly string[]): string | nu
 };
 
 /**
- * GET /v1/panel/me: the servers this person may open, and their level in each. Anyone with a Discord account can ask,
- * so the servers come in one read and only so many are weighed.
+ * GET /v1/panel/me: the servers this person may open, and their level in each: those they share with the bot, as
+ * Discord named their servers at sign-in, read in one go. Where Discord did not, only so many are weighed.
  */
-async function listServers(context: PanelContext, user: PanelUser): Promise<Response> {
+async function listServers(context: PanelContext, user: PanelUser, mine: readonly string[] | null): Promise<Response> {
   const guilds: Array<{ id: string; name: string; icon: string | null; level: Level }> = [];
-  const servers = await listedServers(context.database);
+  const servers = await listedServers(context.database, mine);
   for (let from = 0; from < servers.length; from += ASK_AT_ONCE) {
     const batch = servers.slice(from, from + ASK_AT_ONCE);
     const levels = await Promise.all(batch.map((server) => levelIn(context, server, user.id, server.grants)));

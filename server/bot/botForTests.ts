@@ -140,6 +140,8 @@ export async function standWorker(
     DISCORD_PUBLIC_KEY: keys.publicKeyHex,
     ...over.env,
   };
+  // the person signing in is in the rig's server, as Discord's list of their servers says
+  discord.world.guilds = [GUILD];
   const registry: Registry = registryOf(over.modules ?? []);
   const dispatcher = createDispatcher({ database, now: Date.now });
   await dispatcher.dispatch('GUILD_CREATE', guildCreate());

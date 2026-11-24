@@ -28,11 +28,15 @@ const headersOf = (init: RequestInit | undefined): Record<string, string> =>
 
 /**
  * A fake Discord. `routes` maps "METHOD /path" (ids literal) to an answer; a member's roles come from `members`, and
- * the person a sign-in names is `signedIn`. Every call is recorded.
+ * the person a sign-in names is `signedIn`, and the servers Discord says they are in are `guilds` (null: Discord does
+ * not answer). Every call is recorded.
  */
 export function fakeDiscord(routes: Readonly<Record<string, Route>> = {}, members = new Map<string, string[]>()) {
   const calls: Call[] = [];
-  const world = { signedIn: { id: '900000000000000010', username: 'mod', global_name: 'Mod' } };
+  const world: { signedIn: Record<string, unknown>; guilds: string[] | null } = {
+    signedIn: { id: '900000000000000010', username: 'mod', global_name: 'Mod' },
+    guilds: [],
+  };
   const base: Record<string, Route> = {
     'GET /api/v10/gateway/bot': () => [
       200,
@@ -45,6 +49,12 @@ export function fakeDiscord(routes: Readonly<Record<string, Route>> = {}, member
     'POST /api/v10/oauth2/token/revoke': () => [200, {}],
     'GET /api/v10/users/@me': (call) =>
       call.headers.authorization === `Bearer ${ACCESS_TOKEN}` ? [200, world.signedIn] : [401, {}],
+    'GET /api/v10/users/@me/guilds': (call) =>
+      call.headers.authorization !== `Bearer ${ACCESS_TOKEN}`
+        ? [401, {}]
+        : world.guilds === null
+          ? [503, {}]
+          : [200, world.guilds.map((id) => ({ id, name: `Server ${id.slice(-3)}` }))],
   };
   const fetch: Fetch = async (url, init) => {
     const address = new URL(url);

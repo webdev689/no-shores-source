@@ -30,7 +30,7 @@ export const SITE_PAGES: readonly SitePage[] = [
  */
 export const OUTSIDE: Readonly<Record<string, string>> = {
   play: `${SITE_ORIGIN}/play/`,
-  discord: 'https://discord.gg/gzqhU3zGh',
+  discord: 'https://discord.gg/RdDURveYus',
 };
 
 /** A page's own address, from the site's root. */

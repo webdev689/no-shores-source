@@ -1,6 +1,7 @@
-// Sign-in to the panel with Discord. The flow is OAuth2's authorization code with PKCE and the `identify` scope alone:
-// Discord tells the bot who the person is, and the bot works out what they may do from the server itself, so no
-// Discord token is kept. The finished sign-in reaches the panel as a one-use ticket in the URL's fragment (never sent
+// Sign-in to the panel with Discord. The flow is OAuth2's authorization code with PKCE and the `identify` and `guilds`
+// scopes: Discord tells the bot who the person is and which servers they are in, so the panel lists only the servers
+// they share with the bot, and the bot works out what they may do from each server itself, so no Discord token is
+// kept. The finished sign-in reaches the panel as a one-use ticket in the URL's fragment (never sent
 // to a server or a Referer), which the panel trades for a session token it sends as a bearer header. A bearer header
 // carries no ambient credential, so the panel API needs no CSRF defence.
 
@@ -113,7 +114,7 @@ export async function startLogin(context: AuthContext, url: URL): Promise<Respon
   const discord = new URL(OAUTH_AUTHORIZE);
   discord.searchParams.set('response_type', 'code');
   discord.searchParams.set('client_id', String(context.vars.DISCORD_APPLICATION_ID));
-  discord.searchParams.set('scope', 'identify');
+  discord.searchParams.set('scope', 'identify guilds');
   discord.searchParams.set('redirect_uri', `${context.selfOrigin}${CALLBACK_PATH}`);
   discord.searchParams.set('state', state);
   discord.searchParams.set('code_challenge', await pkceChallenge(verifier));
@@ -144,11 +145,18 @@ export async function finishLogin(context: AuthContext, url: URL): Promise<Respo
   if (!/^[A-Za-z0-9]{10,64}$/.test(code)) return back('error=code', returnTo);
   const signedIn = await identify(context, code, String(row.verifier));
   if (!signedIn) return back('error=discord', returnTo);
+  const guilds = await guildsOf(context, signedIn.access);
   context.later(revoke(context, signedIn.access));
   const ticket = randomToken(32);
   await context.database
-    .prepare('INSERT INTO panel_tickets (ticket_hash, user_id, user, created_at) VALUES (?, ?, ?, ?)')
-    .bind(await sha256Hex(ticket), signedIn.user.id, JSON.stringify(signedIn.user), context.nowS)
+    .prepare('INSERT INTO panel_tickets (ticket_hash, user_id, user, created_at, guilds) VALUES (?, ?, ?, ?, ?)')
+    .bind(
+      await sha256Hex(ticket),
+      signedIn.user.id,
+      JSON.stringify(signedIn.user),
+      context.nowS,
+      guilds ? JSON.stringify(guilds) : null,
+    )
     .run();
   return back(`ticket=${ticket}`, returnTo);
 }
@@ -207,6 +215,25 @@ async function identify(
   }
 }
 
+/** The most servers Discord lists for a person in one answer, which covers every account's limit. */
+const GUILDS_A_PAGE = 200;
+
+/** The ids of the servers Discord says the token's person is in, or null when Discord does not answer them. */
+async function guildsOf(context: AuthContext, access: string): Promise<string[] | null> {
+  try {
+    const answered = await context.fetch(`${DISCORD_API}/users/@me/guilds?limit=${GUILDS_A_PAGE}`, {
+      headers: { authorization: `Bearer ${access}`, 'user-agent': USER_AGENT },
+      signal: AbortSignal.timeout(CALL_TIMEOUT_MS),
+    });
+    if (!answered.ok) return null;
+    const listed: unknown = await answered.json();
+    if (!Array.isArray(listed)) return null;
+    return listed.map((guild) => String(recordOf(guild).id ?? '')).filter((id) => /^\d{5,25}$/.test(id));
+  } catch {
+    return null;
+  }
+}
+
 /** Revoke a Discord token the bot holds. */
 export async function revoke(context: { readonly vars: Vars; readonly fetch: Fetch }, access: string): Promise<void> {
   try {
@@ -231,14 +258,16 @@ export async function exchange(context: AuthContext, request: Request): Promise<
   const ticket = typeof body?.ticket === 'string' ? body.ticket : '';
   if (!/^[A-Za-z0-9_-]{40,64}$/.test(ticket)) return fail('ticket', 400, context.cors);
   const row = await context.database
-    .prepare('DELETE FROM panel_tickets WHERE ticket_hash = ? RETURNING user_id, user, created_at')
+    .prepare('DELETE FROM panel_tickets WHERE ticket_hash = ? RETURNING user_id, user, created_at, guilds')
     .bind(await sha256Hex(ticket))
-    .first<{ user_id: string; user: string; created_at: number }>();
+    .first<{ user_id: string; user: string; created_at: number; guilds: string | null }>();
   if (!row || context.nowS - Number(row.created_at) > TICKET_KEEP_S) return fail('ticket', 401, context.cors);
   const token = randomToken(32);
   await context.database
-    .prepare('INSERT INTO panel_sessions (token_hash, user_id, user, created_at, last_seen) VALUES (?, ?, ?, ?, ?)')
-    .bind(await sha256Hex(token), String(row.user_id), String(row.user), context.nowS, context.nowS)
+    .prepare(
+      'INSERT INTO panel_sessions (token_hash, user_id, user, created_at, last_seen, guilds) VALUES (?, ?, ?, ?, ?, ?)',
+    )
+    .bind(await sha256Hex(token), String(row.user_id), String(row.user), context.nowS, context.nowS, row.guilds ?? null)
     .run();
   return json({ token, user: JSON.parse(String(row.user)) as unknown }, 200, context.cors);
 }
@@ -247,13 +276,13 @@ export async function exchange(context: AuthContext, request: Request): Promise<
 export async function sessionOf(
   context: { readonly database: Db; readonly nowS: number },
   token: string,
-): Promise<{ user: PanelUser; tokenHash: string } | null> {
+): Promise<{ user: PanelUser; tokenHash: string; guilds: string[] | null } | null> {
   if (!token) return null;
   const tokenHash = await sha256Hex(token);
   const row = await context.database
-    .prepare('SELECT user, created_at, last_seen FROM panel_sessions WHERE token_hash = ?')
+    .prepare('SELECT user, created_at, last_seen, guilds FROM panel_sessions WHERE token_hash = ?')
     .bind(tokenHash)
-    .first<{ user: string; created_at: number; last_seen: number }>();
+    .first<{ user: string; created_at: number; last_seen: number; guilds: string | null }>();
   if (!row) return null;
   const idle = context.nowS - Number(row.last_seen);
   if (idle > SESSION_IDLE_S || context.nowS - Number(row.created_at) > SESSION_MAX_S) {
@@ -265,7 +294,12 @@ export async function sessionOf(
       .prepare('UPDATE panel_sessions SET last_seen = ? WHERE token_hash = ?')
       .bind(context.nowS, tokenHash)
       .run();
-  return { user: JSON.parse(String(row.user)) as PanelUser, tokenHash };
+  const guilds = row.guilds ? (JSON.parse(String(row.guilds)) as unknown) : null;
+  return {
+    user: JSON.parse(String(row.user)) as PanelUser,
+    tokenHash,
+    guilds: Array.isArray(guilds) ? guilds.map(String) : null,
+  };
 }
 
 /** POST /v1/auth/logout. */

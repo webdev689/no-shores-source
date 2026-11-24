@@ -149,13 +149,13 @@ test("interactions: a module's command and buttons reach it only where it is on;
     assert.equal(await reached(other), 'That is not something this bot knows yet.');
 });
 
-test('sign-in: Discord is asked for identify alone, with PKCE, and sent back to the bot', async () => {
+test('sign-in: Discord is asked who the person is and which servers they are in, with PKCE, and sent back to the bot', async () => {
   const bot = await standWorker();
   const answer = await bot.call(start());
   assert.equal(answer.status, 302);
   const discord = backOf(answer);
   assert.equal(discord.origin + discord.pathname, 'https://discord.com/oauth2/authorize');
-  assert.equal(discord.searchParams.get('scope'), 'identify');
+  assert.equal(discord.searchParams.get('scope'), 'identify guilds');
   assert.equal(discord.searchParams.get('code_challenge_method'), 'S256');
   assert.equal(discord.searchParams.get('redirect_uri'), 'https://bot.test/v1/auth/discord/callback');
   assert.equal(countOf(bot.database, 'SELECT COUNT(*) AS count FROM oauth_states'), 1);

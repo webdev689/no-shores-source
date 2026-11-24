@@ -208,20 +208,17 @@ The decisions in [[Open Questions]] are not repeated here.
     by `?` or `#` in a host, and a temporary ban's expiry lifting a later ban made by hand.
   - The deploys: the accounts keep their own deploy record, so a failed accounts deploy is tried again; one tested
     script decides the rooms', the accounts' and the bot's deploys.
-  Tested offline at the head: 637 server and site tests, lint, types, format and `cargo xtask repo`; both Workers'
-  `wrangler deploy --dry-run`; the site served by `wrangler dev` (404, redirects, caching). Not tested live: nothing
-  has deployed. `server/outpostReload.test.ts`'s three tests misreported once in a full parallel run and passed alone
-  and on the next run. What it waits on, the owner's each:
-  - The yes to merge, once CI is green on the head.
-  - The Discord application's keys as repository secrets (`DISCORD_CLIENT_ID`, `DISCORD_CLIENT_SECRET`,
-    `DISCORD_PUBLIC_KEY`, `DISCORD_BOT_TOKEN`, `BOT_OWNERS`), its redirects and interactions endpoint
-    ([[Discord Bot]], "One Discord application"), and the `bot` workflow run by hand once if keys are added after the
-    merge. The Cloudflare token needs Zone: Read and Workers Routes: Edit on `noshores.online`.
-  - A Discord invite that never expires: the one on the site, `gzqhU3zGh`, ends on 24 December.
-  - Whether the panel's sign-in asks for the `guilds` scope ([[Open Questions]]).
-  - The site's words are Claude's phrasing of the record, for the owner to change; so are the auto-mod prefix
-    `No Shores: `, "The bot" on the bot's own cases, and a month as how long the bot keeps a server it left.
-  - The Porkbun key posted in an earlier chat should be rotated; it was never stored or used.
+  The owner's answers since: the yes to merge once CI is green; the Discord keys are repository secrets and the
+  Cloudflare token holds its permissions; a Discord invite that never expires (`RdDURveYus`, tested live); the
+  panel's sign-in asks for a person's servers ([[The Panel's Sign-in Asks for a Person's Servers]]); and the site's
+  words and the bot's month approved ([[The Website's Words and the Bot's Month Are Approved]]). Tested offline at the
+  head: 638 server and site tests, lint, types, format and `cargo xtask repo`; both Workers' `wrangler deploy
+  --dry-run`; the site served by `wrangler dev` (404, redirects, caching). `server/outpostReload.test.ts`'s three
+  tests misreported once in a full parallel run and passed alone and on the next run. After the merge, still the
+  owner's: the Discord application's interactions endpoint set to the bot's `/v1/discord/interactions` once it is
+  deployed, its redirects ([[Discord Bot]], "One Discord application"), and the words still Claude's: the auto-mod
+  rules' prefix `No Shores: ` and "The bot" on the bot's own cases. The Porkbun key posted in an earlier chat should
+  be rotated; it was never stored or used.
 - **The island view in rain, the Playlist over the island and the ships at a roadstead** (#191, merged on the owner's
   "Deploy", which deploys the page and the rooms). The owner's three reports:
   - "When its cloudy and raining. The overworld pan over the island is shrouded and you can only see the nodes": the

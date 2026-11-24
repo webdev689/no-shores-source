@@ -20,8 +20,8 @@ export const AUDIT_PAGE = 50;
 /** How long audit rows are kept, in seconds. */
 export const AUDIT_KEEP_S = 180 * 86_400;
 /**
- * The most servers a person's list of servers weighs, by name: each is a question to Discord, since the panel's
- * sign-in does not ask Discord for a person's servers. A server past it still opens by its address.
+ * The most servers a person's list weighs, by name, where Discord did not name their servers at sign-in: each is a
+ * question to Discord. A server past it still opens by its address.
  */
 export const LISTED_MAX = 50;
 /** The most server emoji kept: Discord's own cap for a server at its highest boost. */
@@ -262,15 +262,20 @@ export interface ListedServer {
 }
 
 /** The servers the bot is in, by name, up to `most`, each with its panel grants: one read, whatever their number. */
-export async function listedServers(database: Db, most = LISTED_MAX): Promise<ListedServer[]> {
-  const result = await database
-    .prepare(
-      `SELECT s.guild_id, s.name, s.icon, s.owner_id, s.roles, c.config AS core FROM guild_snapshot s
-       LEFT JOIN guild_config c ON c.guild_id = s.guild_id AND c.module = 'core'
-       WHERE s.present = 1 ORDER BY s.name LIMIT ?`,
-    )
-    .bind(most)
-    .all<Record<string, unknown>>();
+export async function listedServers(
+  database: Db,
+  mine: readonly string[] | null,
+  most = LISTED_MAX,
+): Promise<ListedServer[]> {
+  const columns = `SELECT s.guild_id, s.name, s.icon, s.owner_id, s.roles, c.config AS core FROM guild_snapshot s
+       LEFT JOIN guild_config c ON c.guild_id = s.guild_id AND c.module = 'core'`;
+  // a person's own servers, where Discord named them at sign-in; otherwise the bot's first by name
+  const statement = mine
+    ? database
+        .prepare(`${columns} WHERE s.present = 1 AND s.guild_id IN (SELECT value FROM json_each(?)) ORDER BY s.name`)
+        .bind(JSON.stringify(mine))
+    : database.prepare(`${columns} WHERE s.present = 1 ORDER BY s.name LIMIT ?`).bind(most);
+  const result = await statement.all<Record<string, unknown>>();
   const core = moduleOf('core')?.schema ?? {};
   return result.results.map((row) => {
     const grants = row.core ? salvage(core, parse(String(row.core), {})).panelGrants : [];
