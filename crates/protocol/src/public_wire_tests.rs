@@ -57,6 +57,7 @@ fn public_bytes() -> (usize, usize) {
         revives: None,
         public: None,
         encounter: None,
+        outpost: 0,
         darkness: false,
         reviving: &[],
     };

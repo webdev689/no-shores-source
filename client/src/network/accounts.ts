@@ -36,6 +36,10 @@ export interface Roster {
     readonly name: string;
     readonly tag: string;
     readonly motto: string;
+    readonly description?: string;
+    /** Its banner's parts by id, as the banner law reads them; none from accounts before banners. */
+    readonly banner?: Readonly<Record<string, unknown>>;
+    readonly level?: number;
     readonly rank: string;
     readonly members: readonly (Person & { readonly rank: string })[];
     readonly invited: readonly Person[];
@@ -44,6 +48,118 @@ export interface Roster {
   readonly blocked: readonly string[];
   /** Those the player mutes, whose chat lines never reach them; none from accounts before mutes. */
   readonly muted?: readonly string[];
+}
+
+/** The player's guild as the Guild tab shows it (`server/accounts/guildFace.ts`): its face, its rank for the player
+ *  (0 founder, 1 admin, 2 member), its members counted, its level and the XP that brought it and brings the next, and
+ *  the week, numbered, with when it turns in milliseconds. */
+export interface GuildFace {
+  /** The key its outposts' rooms are named by (`node-<site>--guild-<key>`). */
+  readonly key?: string;
+  readonly name: string;
+  readonly tag: string;
+  readonly motto: string;
+  readonly description: string;
+  readonly banner: Readonly<Record<string, unknown>>;
+  readonly rank: number;
+  readonly members: number;
+  readonly level: number;
+  readonly xp: number;
+  readonly levelXp: number;
+  readonly nextXp: number | null;
+  readonly week: number;
+  readonly weekEnds: number;
+  /** The XP the guild's members gave it this week, and the player's own part, at most `most` (Destiny's 5,000). */
+  readonly given?: number;
+  readonly contribution?: number;
+  /** The week's four guild bounties, each with the guild's count, whether it is done and whether the player claimed it. */
+  readonly bounties?: readonly GuildBountyShown[];
+  /** Whether the player was in the guild before the week turned, as a claim needs; none from older accounts. */
+  readonly beforeTheWeek?: boolean;
+}
+
+/** A material a structure is built from, as the accounts name it: the ship's four and the island's own. */
+export type StuffName = 'timber' | 'canvas' | 'iron' | 'heartwood' | 'island';
+
+/** An outpost's plot as the accounts keep it (`client/src/game/guild/outpostLaw.ts` reads its law): each structure at
+ *  its corner cell and turn, the tier built and the tier being built (0 for none), with the Aurem spent on it and the
+ *  materials delivered toward the tier being built; each piece of decoration at metres from the plot's corner, turned
+ *  in steps, with what it cost. */
+export interface KeptPlot {
+  readonly structures: readonly {
+    readonly id: number;
+    readonly kind: string;
+    readonly tier: number;
+    readonly building: number;
+    readonly x: number;
+    readonly y: number;
+    readonly turn: number;
+    readonly spent: number;
+    readonly delivered: Readonly<Partial<Record<StuffName, number>>>;
+  }[];
+  readonly decor: readonly {
+    readonly id: number;
+    readonly piece: string;
+    readonly x: number;
+    readonly y: number;
+    readonly turn: number;
+    readonly paid: number;
+  }[];
+}
+
+/** One of a guild's outposts (`server/accounts/outpostStores.ts` `outpostsRead`): its site, its room, when it was
+ *  raised, its plot, its strongbox and stores filled to now, and whether the player stands at it. */
+export interface OutpostFace {
+  readonly site: string;
+  readonly room: string;
+  readonly raisedAt: number;
+  readonly plot: KeptPlot;
+  readonly strongbox: number;
+  readonly stores: Readonly<Partial<Record<StuffName, number>>>;
+  readonly here: boolean;
+}
+
+/** A line of a guild's treasury's ledger: what moved, by how much, the balance after, when, and by whom. */
+export interface LedgerLine {
+  readonly kind: string;
+  readonly amount: number;
+  readonly balance: number;
+  readonly at: number;
+  readonly name: string | null;
+}
+
+/** A guild's outposts and treasury as the Guild tab shows them: the treasury and its latest lines, how many outposts
+ *  its level allows, the site the player stands at in their guild's room (null elsewhere), and each outpost. */
+export interface OutpostsFace {
+  readonly treasury: number;
+  readonly ledger: readonly LedgerLine[];
+  readonly allowed: number;
+  readonly at: string | null;
+  readonly outposts: readonly OutpostFace[];
+  /** How much of each material the player has taken from any outpost's stores today; none from older accounts. */
+  readonly taken?: Readonly<Partial<Record<StuffName, number>>>;
+  /** Whether the guild's War Horn has sounded this week; missing from older accounts, read as not. */
+  readonly hornSounded?: boolean;
+}
+
+/** An outpost as anyone standing in its room reads it: its guild's id, name and banner, its site and its plot. */
+export interface OutpostSeen {
+  readonly guild: string;
+  readonly name: string;
+  readonly banner: string;
+  readonly site: string;
+  readonly plot: KeptPlot;
+}
+
+/** A guild bounty of the week as its tab shows it. */
+export interface GuildBountyShown {
+  readonly name: string;
+  readonly words: string;
+  readonly target: number;
+  readonly together: boolean;
+  readonly count: number;
+  readonly done: boolean;
+  readonly claimed: boolean;
 }
 
 /** A worn piece as others see it, numbered as the gear message numbers it. */
@@ -67,7 +183,16 @@ export interface ShownPiece {
 /** Another player's details, as Destiny's Inspect shows them. */
 export interface Details extends Person {
   readonly playing: boolean;
-  readonly guild: { readonly name: string; readonly tag: string; readonly motto: string; readonly rank: string } | null;
+  readonly guild: {
+    readonly name: string;
+    readonly tag: string;
+    readonly motto: string;
+    /** Its description; none from older accounts. */
+    readonly description?: string;
+    readonly rank: string;
+    readonly banner?: Readonly<Record<string, unknown>>;
+    readonly level?: number;
+  } | null;
   readonly shown: {
     readonly level: number;
     readonly defense: number;
@@ -283,6 +408,24 @@ export class AccountLink {
     return typeof answer === 'string' ? answer : (answer as unknown as Roster);
   }
 
+  /** The player's guild as its tab shows it, null in none; or why not. */
+  async guild(): Promise<{ readonly guild: GuildFace | null } | string> {
+    const answer = await this.call('GET', '/v1/guild');
+    return typeof answer === 'string' ? answer : { guild: (answer['guild'] ?? null) as GuildFace | null };
+  }
+
+  /** The player's guild's outposts and treasury, or why not. */
+  async outposts(): Promise<OutpostsFace | string> {
+    const answer = await this.call('GET', '/v1/outposts');
+    return typeof answer === 'string' ? answer : (answer as unknown as OutpostsFace);
+  }
+
+  /** The outpost a room stands, null for none raised there; or why not. */
+  async outpost(room: string): Promise<{ readonly outpost: OutpostSeen | null } | string> {
+    const answer = await this.call('GET', `/v1/outposts/${encodeURIComponent(room)}`);
+    return typeof answer === 'string' ? answer : { outpost: (answer['outpost'] ?? null) as OutpostSeen | null };
+  }
+
   /** Another player's details, or why not. */
   async details(name: string): Promise<Details | string> {
     const answer = await this.call('GET', `/v1/players/${encodeURIComponent(name)}`);
@@ -290,9 +433,18 @@ export class AccountLink {
   }
 
   /** Asks something of the Roster (`friend/ask`, `company/join`, `guild/promote`, `block`...); why not, if it cannot. */
-  async social(path: string, body: Readonly<Record<string, string | number>> = {}): Promise<string | null> {
-    const answer = await this.call('POST', `/v1/social/${path}`, body);
+  async social(path: string, body: Readonly<Record<string, unknown>> = {}): Promise<string | null> {
+    const answer = await this.answered(path, body);
     return typeof answer === 'string' ? answer : null;
+  }
+
+  /** A social ask's whole answer, as `social` sends it: what the accounts said back (a take-down's `back`, the Aurem
+   *  the treasury got), or why not. */
+  async answered(
+    path: string,
+    body: Readonly<Record<string, unknown>> = {},
+  ): Promise<Readonly<Record<string, unknown>> | string> {
+    return this.call('POST', `/v1/social/${path}`, body);
   }
 
   /** The controls the player bound, as kept with their account (null for none kept yet), or why not; read as the

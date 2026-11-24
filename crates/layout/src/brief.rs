@@ -55,6 +55,8 @@ pub enum AreaKind {
     Gate,
     /// A graveyard of ships: hulls driven up and left to rot, and the wreckage strewn between them.
     Hulks,
+    /// The ground a guild builds its outpost on: a level square, nothing standing on it.
+    Plot,
 }
 
 /// One area a brief asks for.
@@ -156,6 +158,11 @@ fn plain(kind: land::sites::NodeKind) -> Brief {
     let area = |kind: AreaKind, name: &str| AreaBrief { kind, name: name.to_owned(), blocks: None, level: None };
     let areas = match kind {
         NodeKind::Patrol => vec![area(AreaKind::Landing, "The Landing"), area(AreaKind::Wilds, "The Wilds")],
+        NodeKind::Outpost => vec![
+            area(AreaKind::Landing, "The Landing"),
+            area(AreaKind::Plot, "The Plot"),
+            area(AreaKind::Arena, "The Muster Ground"),
+        ],
         _ => vec![area(AreaKind::Entrance, "The Way In"), area(AreaKind::Arena, "The Heart")],
     };
     Brief { theme: String::new(), areas, runs: Vec::new(), rock: None, stone: None, river: false, heights: false }

@@ -8,7 +8,7 @@ use crate::{DROP_TICKS, Dropped, EventKind, PlayerId, Room};
 /// A room with one player and a heroic chest laid for them at the Fissure's ground; the chest's number.
 fn chested() -> (Room, PlayerId, u32) {
     let (mut room, players) = room_at(0, 1);
-    room.seed = crate::SEALING_SEED;
+    room.seed = crate::gear_tests::SEALING_SEED;
     place(&mut room, players[0], [FISSURE_AT[0], FISSURE_AT[1] + 10.0]);
     room.lay_chest(players[0], 3, FISSURE_AT, 5);
     let chest = room.drops_for(players[0]).next().expect("the chest").id;

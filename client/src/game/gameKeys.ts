@@ -3,12 +3,13 @@
 // acts only where its control does (`binds.ts`), so a key bound at the helm and on foot alike does each in its place.
 // The story hears its keys itself.
 import { type BindId, CONTROLS, type Context } from '../player/binds.ts';
-import { BINDS, type Input, keyNameOf } from '../player/input.ts';
+import { type Action, BINDS, type Input, type InputFrame, keyNameOf } from '../player/input.ts';
 import type { DrawnInterface } from './drawnInterface.ts';
 import type { Happening } from './flow.ts';
 import type { Playing } from './gameFrame.ts';
 import { openGearWindow } from './gearScreen.ts';
 import { gearScreenOpen } from './gearWindow.ts';
+import { letGo, placingNow } from './guild/decorPlacing.ts';
 import type { Hud } from './hud.ts';
 import type { StoryHost } from './prologue/host.ts';
 import { deckKey, fightAsk } from './seaWord.ts';
@@ -48,6 +49,18 @@ export function contextOf(playing: Pick<Playing, 'flow' | 'sea' | 'foot'>): Cont
   return sea?.fight ? 'fight' : 'helm';
 }
 
+/** What the pad's B pressed as it let go of a piece being placed, taken from the next frame's controls. */
+let taken: ReadonlySet<Action> = new Set();
+
+/** The frame's controls without the presses the pad's B made as it let go of a piece: the letting go takes the press,
+ *  so the player does not dodge as well. */
+export function withoutTaken(frame: InputFrame): InputFrame {
+  const took = taken;
+  if (took.size === 0) return frame;
+  taken = new Set();
+  return { ...frame, pressed: (action) => !took.has(action) && frame.pressed(action) };
+}
+
 /** Hears the keys and the pad's presses for what `game` does with them. */
 export function listenForControls(game: Controlled): void {
   const { playing, input, ui, hud, story, change } = game;
@@ -65,6 +78,8 @@ export function listenForControls(game: Controlled): void {
     if (sea?.travelling) return;
     if (playing.helmMap.key(escape ? 'escape' : acts('confirm') ? 'enter' : acts('landMap') ? 'n' : '')) return;
     if (deckKey(acts, escape, sailing ? sea : null, game.respawn)) return;
+    // A piece of decoration being placed is let go first, and nothing opens.
+    if (escape && placingNow() && !overGame()) return letGo();
     if ((pressed('confirm') || pressed('respawn')) && retry) retry();
     else if (acts('chat') && !gearScreenOpen() && !socialUp()) openChat();
     else if (escape && flow.mode === 'landing') {
@@ -106,7 +121,8 @@ export function listenForControls(game: Controlled): void {
     act((id) => !welcome && BINDS.now[id].keys.includes(key), key === 'escape');
   });
   // The pad's presses do as the keys do, but under the gear screen or the sheet, whose buttons they are; B is
-  // Escape at the helm's map and at a landing; in the story, and while she speaks, A is a tap. Start and View open and
+  // Escape at the helm's map, at a landing and while a piece of decoration is placed; in the story, and while she
+  // speaks, A is a tap. Start and View open and
   // shut the menu and the sheet wherever their keys would.
   input.onPad((pressed, buttons) => {
     // A button being bound in the sheet is the sheet's alone.
@@ -114,7 +130,8 @@ export function listenForControls(game: Controlled): void {
     const welcome = playing.after.holding;
     if (welcome && (pressed.has('jump') || pressed.has('confirm'))) playing.after.press();
     const covered = gearScreenOpen() || hud.controls.open || socialUp() || chatOpen();
-    const escape = buttons.has('B') && (playing.helmMap.busy || playing.flow.mode === 'landing');
+    const escape = buttons.has('B') && (playing.helmMap.busy || playing.flow.mode === 'landing' || !!placingNow());
+    if (escape && placingNow()) taken = new Set([...pressed].filter((id) => BINDS.now[id].pad.includes('B')));
     if (playing.flow.mode === 'story' && (pressed.has('jump') || pressed.has('confirm'))) story?.press();
     else if (playing.flow.mode !== 'story' && !covered)
       act((id) => !escape && !welcome && pressed.has(id), escape && !welcome);

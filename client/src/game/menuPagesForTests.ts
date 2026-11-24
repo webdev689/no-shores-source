@@ -1,83 +1,13 @@
 // What the menu's plain pages are tested with: a page drawn frame by frame through the interface over a face of blocks,
 // fake accounts answering, and a page that records what it is asked. The game never imports it.
 import type { Account, AccountLink, Details, Person, Roster } from '../network/accounts.ts';
-import { glyphDrawn } from '../ui/glyphs.ts';
-import type { Child, Node } from '../ui/node.ts';
 import type { Page } from '../ui/page.ts';
-import { QuadList } from '../ui/quads.ts';
-import { type Face, widthOf } from '../ui/text.ts';
-import { Interface, type UiEvent } from '../ui/ui.ts';
-import type { UiRenderer } from '../ui/uiRenderer.ts';
-import { Holds } from './gearHold.ts';
-import { sizesOf } from './gearNodes.ts';
-import type { PlainContext } from './menuPage.ts';
-
-const block = glyphDrawn({ rows: ['##', '##'], advance: 600 });
-const face: Face = { glyph: () => block };
-const VIEW = { width: 1280, height: 720, scale: 1 };
-const ROOM = { width: 1180, height: 520 };
-
-function renderer(): UiRenderer {
-  return {
-    face,
-    quads: new QuadList(),
-    tileTexels: () => null,
-    glyphTexels: () => null,
-    picture: () => undefined,
-    measure: (words: string, size: number) => widthOf(face, words, size),
-  } as unknown as UiRenderer;
-}
 
 // What the pages dispatch to the page around them: heard and counted, never acted on.
 export const heard: string[] = [];
 Object.assign(globalThis, { dispatchEvent: (event: Event) => heard.push(event.type) });
 
-/** Every word a tree shows, in order. */
-export function wordsOf(node: Child): string[] {
-  if (!node) return [];
-  const own = node.text
-    ? [typeof node.text.words === 'string' ? node.text.words : node.text.words.map((span) => span.words).join('')]
-    : [];
-  return [...own, ...(node.children ?? []).flatMap(wordsOf)];
-}
-
-/** A page drawn frame by frame through the interface, with the clock `now` for its holds, in `room`. */
-export function drawn(page: (context: PlainContext) => Node, room: { width: number; height: number } = ROOM) {
-  let now = 0;
-  const ui = new Interface(renderer());
-  ui.speak = () => undefined;
-  const holds = new Holds(() => now);
-  const context: PlainContext = { ui, room, sizes: sizesOf(VIEW.width, VIEW.height, 1), holds, card: () => undefined };
-  let last: Node = { children: [] };
-  const frame = (events: UiEvent[] = [], seconds = 1 / 60) => {
-    now += seconds * 1000;
-    ui.frame(VIEW, events, seconds);
-    holds.frame(ui);
-    last = page(context);
-    holds.end();
-    ui.draw({ width: 'grow', height: 'grow', direction: 'column', children: [last] });
-  };
-  const middle = (id: string) => {
-    const box = ui.boxOf(id);
-    if (!box) throw new Error(`${id} is not laid`);
-    return { x: box.x + box.width / 2, y: box.y + box.height / 2 };
-  };
-  const click = (id: string) => {
-    const point = middle(id);
-    frame([
-      { kind: 'pointer', ...point },
-      { kind: 'down', ...point, button: 0 },
-      { kind: 'up', ...point, button: 0 },
-    ]);
-    frame();
-  };
-  const type = (id: string, text: string) => {
-    click(id);
-    frame([{ kind: 'text', text }]);
-  };
-  const shows = () => wordsOf(last).join(' | ');
-  return { ui, frame, click, type, middle, shows };
-}
+export { drawn, wordsOf } from './menuForTests.ts';
 
 export const settle = () => new Promise((done) => setTimeout(done, 0));
 

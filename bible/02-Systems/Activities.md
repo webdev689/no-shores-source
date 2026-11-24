@@ -139,9 +139,9 @@ The owner's decision is [[Elite and Abyss Dungeons Are Queued From a Playlist Be
 Claude's, recorded in [[The Playlist and Its Dungeons as Claude Shapes Them]].
 
 - **Where.** A Playlist mark stands beside the harbour of each port city, Overlook, Sunspire and Rimeholt, at sea and
-  over the island's side when docking there, open whether or not the city's social space is ([[Overworld]], "Marks"). Choosing it opens
-  the Playlist screen for that port ([[Interface]], "The Playlist") rather than sailing or landing. The screen and
-  its queues are the same from every port.
+  over its island's side however the island is reached, open whether or not the city's social space is ([[Overworld]],
+  "Marks"). Choosing it opens the Playlist screen for that port ([[Interface]], "The Playlist") rather than sailing
+  or landing. The screen and its queues are the same from every port.
 - **What it holds.** The Elite Playlist and the Abyss Playlist, then the Elite Dungeon of the week and the Abyss
   Dungeon of the week. The Journal's lines for the week's two say they are queued from the Playlist beside any port.
 - **A playlist's run** (`gear::playlist`, `room::playlist_run`) is one of the 18 Elite Dungeons, laid as its run at
@@ -253,7 +253,8 @@ the owner approved ([[Where You Go and the Seas You Choose Set the Difficulty]])
 
 ## Bounties
 
-The bounties count what the rooms see happen on an engine of their own (`gear::objectives`). The quests are the
+The bounties count what the rooms see happen on an engine of their own (`gear::objectives`), which a guild's week
+counts toward its guild bounties too ([[Guilds]]). The quests are the
 houses' roads, judged by their own events ([[Quests]]): the owner chose that the Journal shows them and the bounties
 keep their engine ([[The Journal Holds the Quests, the Bounties at Its Side and the Timers at Its Top]]).
 

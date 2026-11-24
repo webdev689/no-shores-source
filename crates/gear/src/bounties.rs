@@ -203,8 +203,8 @@ pub fn bounty_pay(level: u8, tier: u8) -> (u32, u32) {
 
 /// What a faction's bounty of a tier pays in its reputation, whatever the level, raised by tier as its XP is.
 #[must_use]
-pub fn faction_bounty_reputation(tier: u8) -> u64 {
-    factions().bounty_reputation * (u64::from(tier.clamp(1, 3)) + 1) / 2
+pub fn faction_bounty_reputation(tier: u8) -> u32 {
+    by_tier(factions().bounty_reputation, tier)
 }
 
 /// A first tier's amount at a tier: once, half again or twice, rounded down.

@@ -10,7 +10,6 @@ import { PlayerFight } from '../combat/playerFight.ts';
 import type { Vector } from '../combat/swingArcs.ts';
 import { figureMuzzle, screenMuzzle } from '../combat/tracers.ts';
 import { WorldSounds } from '../combat/worldSounds.ts';
-import { FIELD_OF_VIEW } from '../editor/orbit.ts';
 import type { Difficulty } from '../heldmap/heldMap.ts';
 import { ASKS, DROPPED, type GearState } from '../network/gearMessages.ts';
 import { RoomConnection, type RoomLink, type Snapshot } from '../network/roomConnection.ts';
@@ -29,20 +28,19 @@ import { type FighterView, fighterView } from '../rules/fighters.ts';
 import type { Block, MovementRules } from '../rules/movementRules.ts';
 import type { FoeType } from '../rules/roster.ts';
 import { WORLD_CLOCK } from '../sky/worldClock.ts';
-import { shotOfOrbit } from './camera.ts';
+import { CAMERA_CLEARANCE_M, WALK_LENS, shotOfOrbit } from './camera.ts';
 import { FallWatch } from './fallWatch.ts';
-import { STORY_BEHIND_ON_FOOT, type Use, dropsLaid, gearInRoom, questRings, tellsPrologue } from './footGear.ts';
+import { type Use, dropsLaid, gearInRoom, questRings, tellPrologue } from './footGear.ts';
 import { GatherHold } from './gatherHold.ts';
 import { markedHere } from './overheadMarks.ts';
 import { nodeText, standOn } from './footGround.ts';
-import { ACCOUNT_CHANGED, type GearHere } from './gearScreen.ts';
+import { ACCOUNT_CHANGED, GUILD_CHANGED, type GearHere } from './gearScreen.ts';
 import { keysShown, onFoot } from './hints.ts';
 import { type Standing, standingOf } from './hudLaw.ts';
 import { windowRect } from './nodes.ts';
 import { PlazaLife, countersOf, floorOver } from './plazaLife.ts';
 import { PublicView } from './publicView.ts';
 import { openNodeAlone } from './footNode.ts';
-import { nodeRoom } from './rooms.ts';
 import {
   dungeonPlace,
   hearRoom,
@@ -59,16 +57,12 @@ import { worldOutput } from './uiSounds.ts';
 import type { UsePrompt } from './usePrompt.ts';
 import { type Dressed, dressInGear, figureWhere, figuresEye, otherCards, ownCard, strikersOf } from './footFigures.ts';
 import type { AtEntrance, FootAsk, FootContext, FootFight, FootFrame, Heard, Held, Opened, Uses } from './footPlace.ts';
-import { closedIfThrown, joinAsk, stand } from './footPlace.ts';
+import { closedIfThrown, nodeAddress, outpostJoined, stand } from './footPlace.ts';
+import { type OutpostHere, outpostAt } from './guild/outpostHere.ts';
 import { hearing, nextOtherId, roomNote, rulesOf } from './footRoom.ts';
 
 export type { AtEntrance, FootContext, FootFight, FootFrame, Uses } from './footPlace.ts';
 import type { NodeInfo } from './worldData.ts';
-
-/** The lens on foot: the Test Ground's field of view, near enough for the first person's eye, far to the haze. */
-const LENS = { fov: FIELD_OF_VIEW, near: 0.1, far: 60_000 } as const;
-/** How far over the ground the third-person camera is held. */
-const CAMERA_CLEARANCE_M = 0.3;
 
 /**
  * The player on foot in one node: standing on its real ground, among its city's walls, inside its section, fighting
@@ -122,6 +116,8 @@ export class Foot {
   private prologueTold: GearState | null = null;
   /** A social space's people, and what E does where the player stands, shown low in the middle of the view. */
   private readonly plaza: PlazaLife | null;
+  /** At an outpost site, its outpost as the accounts keep it. */
+  readonly outpost: OutpostHere | null;
   readonly folk: Placed[];
   private readonly prompt: UsePrompt;
   private using: Use | null = null;
@@ -178,25 +174,28 @@ export class Foot {
       },
     };
     this.plaza = node.kind === 'social' ? new PlazaLife(node, placing, this.floor) : null;
+    this.outpost = outpostAt(node, opened, context, parts.combat, people.held);
     this.publicView = new PublicView(node.id, this.feel, {
       boxes: opened.boxes,
       courses: [context.movement, parts.combat],
     });
-    addEventListener(ACCOUNT_CHANGED, this.renamed);
+    for (const changed of [ACCOUNT_CHANGED, GUILD_CHANGED]) addEventListener(changed, this.renamed);
   }
 
-  /** A username taken while here reaches the room, so the player's plate shows it. */
+  /** A username taken while here, or a guild joined or left, reaches the room, so the player's plate shows it. */
   private readonly renamed = () => this.link.named?.();
 
   /** Lands the player in a node at its first spawn, facing `facing`, or before the door of the entrance `arriving`
    *  names, keeping how they hold the camera, and joins its room: online the server's at the voyage's `seas`, signed
-   *  in with the session's token; alone one in the rooms' worker that may stand the foes asked for. */
+   *  in with the session's token; alone one in the rooms' worker that may stand the foes asked for. At an outpost
+   *  site the room is the outpost's of `guild`, a companion's (null the wild site), else the player's own guild's. */
   static async enter(
     context: FootContext,
     node: NodeInfo,
     facing: number,
     seas: Difficulty = 'normal',
     asked?: AtEntrance | 'relog',
+    guild?: string | null,
   ): Promise<Foot> {
     const rules = await rulesOf(context);
     const module = await context.roomModule;
@@ -205,7 +204,8 @@ export class Foot {
     const arriving = asked === 'relog' ? undefined : asked;
     const [x, y] = arriving ? [arriving.x, arriving.y] : (node.spawns[0] ?? node.centre);
     stand(context, x, y, arriving?.facing ?? facing, node.kind === 'social');
-    const address = context.rooms && `${context.rooms(nodeRoom(node, seas))}${joinAsk(asked)}`;
+    const outpost = await outpostJoined(node, guild);
+    const address = nodeAddress(context, node, seas, asked, outpost?.guild ?? null);
     return Foot.start(context, node, rules, async (heard, session) => {
       const connection = address ? await RoomConnection.open(address, heard.snapshot, heard.gear, session) : null;
       // The room names the rect its window was cut to; a room baked from older edits is stood on as it stands.
@@ -217,7 +217,7 @@ export class Foot {
         }
         const text = nodeText(node, rect, ground, boxes, await context.land.grounds(node.id));
         const link = connection ?? (await openNodeAlone(module, node, text, heard, arriving?.number, seas));
-        return { link, boxes, text, dungeon: null, seas };
+        return { link, boxes, text, dungeon: null, seas, outpost };
       };
       return connection ? closedIfThrown(connection, work) : work();
     });
@@ -313,14 +313,6 @@ export class Foot {
     return foot;
   }
 
-  /** Tells the room the story is behind the player, once for each word on the gear that says it is not kept. */
-  private tellPrologue(): void {
-    const gear = this.held.gear;
-    if (!tellsPrologue(gear, STORY_BEHIND_ON_FOOT, this.prologueTold)) return;
-    this.prologueTold = gear;
-    this.gear?.ask({ kind: ASKS.finishPrologue });
-  }
-
   /** The player's gear in their room, and the way to ask of it (`gearInRoom`). */
   get gear(): GearHere | null {
     const { forge, walker } = this.context;
@@ -373,14 +365,14 @@ export class Foot {
     const { groundAt } = this;
     const { fight, foes, effects } = this;
     dressInGear(walker, forge, this.held.gear, this.dressed);
-    this.tellPrologue();
+    this.prologueTold = tellPrologue(this.held.gear, this.prologueTold, this.gear);
     this.plaza?.frame(WORLD_CLOCK.seconds(), this.gear?.gear ?? null);
     const near = [...foes.placed.values(), ...this.otherPlayers.placed.values()];
     const bodies = near.map((placed) => [placed.x, placed.y, placed.z] as const);
     const { feel } = this;
     // The tumble starts the way the figure was last drawn facing (the aim, while aiming).
     walker.fall = this.falling.figure(fight.standing, walker.player.body, walker.you.facing);
-    const blocks = [...this.boxes, ...(this.context.cameraBlocks ?? [])];
+    const blocks = [...this.boxes, ...(this.outpost?.walls ?? []), ...(this.context.cameraBlocks ?? [])];
     const aimed = () => playerCamera(walker.player, movement, blocks, AIM, groundAt, this.roof);
     const camera = () => pushedIn(aimed(), effects.anima.push);
     const shown = this.player.frame(still ? IDLE : { ...controls, locked: true }, this.steps, seconds, clock, {
@@ -405,7 +397,7 @@ export class Foot {
     const kicked = pushedIn(feel.camera(aimed(), fight.player, fight.own, firstPerson, sights), effects.anima.push);
     const { x: fallX, y: fallY, z: fallZ } = walker.player.body;
     const shot = this.falling.shot(
-      shotOfOrbit(kicked, LENS, groundAt, CAMERA_CLEARANCE_M),
+      shotOfOrbit(kicked, WALK_LENS, groundAt, CAMERA_CLEARANCE_M),
       [fallX, fallY, fallZ],
       seconds,
     );
@@ -510,7 +502,9 @@ export class Foot {
       entrances: this.held.entrances,
       module: this.module,
     };
-    const placeUse = this.uses?.(x, y, (asked) => fight.askGear(asked)) ?? null;
+    const placeUse = this.outpost
+      ? this.outpost.uses(x, y, (asked) => fight.askGear(asked), walker.player.facing, controls.held('use'))
+      : (this.uses?.(x, y, (asked) => fight.askGear(asked)) ?? null);
     const counters = countersOf(this.node);
     // A fallen ally beside the player comes first, as Destiny's revive does, then a public event's chest.
     const revive = reviveHere(fight, this.held, [x, y, walker.player.body.z], able && !mounted, controls, this.nameOf);
@@ -518,8 +512,8 @@ export class Foot {
     this.using = able ? (first ?? useOnFoot(x, y, placeUse, counters, gear, here, trips, speak, mounted)) : null;
     // Use let go, as bound (a key, the pad's button, or the page's focus lost): a gather under way is let go of.
     if (!controls.held('use')) this.hold.release();
-    const gathered = this.hold.share(clock, able && !mounted, gear?.gear ?? null);
-    this.prompt.show(this.using?.words ?? null, revive.share ?? gathered);
+    const gathered = this.using?.held ?? this.hold.share(clock, able && !mounted, gear?.gear ?? null);
+    this.prompt.show(this.using?.words ?? null, revive.share ?? gathered, this.using?.idle === true);
     const held = gear?.gear;
     // The room leaves an Ammo box lying while the ammunition is full, whether a Ranged weapon is worn or not.
     const full = (held?.ammoShare ?? 1) >= 1;
@@ -582,7 +576,7 @@ export class Foot {
 
   /** Leaves the node: its room lets the player go, and every other player's figure and its people are taken away. */
   leave(): void {
-    removeEventListener(ACCOUNT_CHANGED, this.renamed);
+    for (const changed of [ACCOUNT_CHANGED, GUILD_CHANGED]) removeEventListener(changed, this.renamed);
     // The gather's stop is asked while the link still holds.
     this.hold.release();
     this.link.close?.();
@@ -590,6 +584,7 @@ export class Foot {
     this.foes.forget(this.context.forge);
     this.arrivals.clear();
     this.plaza?.close();
+    this.outpost?.stop();
     this.prompt.show(null);
     this.falling.close();
     // The figure stands again wherever the walker goes next, at sea as on foot.

@@ -163,6 +163,22 @@ const REFUSALS: Readonly<Record<number, string>> = {
   137: 'They have nothing more to say to you now.',
   138: 'No fragment of that Art waits to be chosen.',
   141: 'There is no such letter.',
+  151: 'There is no such guild bounty this week.',
+  152: 'Your guild has not finished that bounty yet.',
+  153: 'You have claimed that this week.',
+  154: 'Only members who joined before the week turned may claim it.',
+  155: 'You are in no guild.',
+  156: "Do that at your guild's outpost.",
+  157: 'The treasury cannot hold that much.',
+  158: 'Nothing here needs that.',
+  159: 'The stores hold none of that for you today.',
+  160: 'The War Horn has sounded this week.',
+  161: "The guild's books are busy. Try again in a moment.",
+  162: 'The guild boss still stands.',
+  163: 'Wait for your last ask.',
+  164: 'Only the founder or an admin sounds the War Horn.',
+  165: 'No War Horn stands here yet.',
+  166: 'Too many asks. Wait a while.',
 };
 
 /** What a room's answer to an ask says: nothing for done. */

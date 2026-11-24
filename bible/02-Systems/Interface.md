@@ -255,7 +255,8 @@ The game draws every screen itself, and by the owner's word no HTML is laid over
   pad's cross, whose up and down always move focus and whose left and right step a slider; A presses, and B goes back;
   the wheel scrolling the list under it, and focus by keys scrolling every list that holds it into sight. A press held
   as its node goes is let go. A field takes the mouse as a page's does: a drag selects, Shift with a click extends, a
-  double click takes a word. A hidden field is typed through keys and paste only, never handed to the browser's typing,
+  double click takes a word. Words longer than a field show from their start until it is typed in, then scroll to keep
+  the caret in sight. A hidden field is typed through keys and paste only, never handed to the browser's typing,
   and its words go the frame its field does; what the interface keeps by id (scrolls, a field's words unless asked for
   that frame) goes with the id. A field takes words through the browser's `EditContext` where it has one (Chromium), so
   composition works on the canvas, and through keys and paste elsewhere; copy and cut take its selection. A field
@@ -756,8 +757,17 @@ A screen over the game, after Destiny's ([[The Menu Follows Destiny, the Vault a
 the tabs Character (I), Inventory (O), Journal, Compendium, Ship, Social, Guild and Settings fill the top of its header, each a
 whole number of pixels wide, their words at the names' size (the words' under 1100 px, or wherever one would not fit
 its tab at the names' size);
-keys on keycaps where the menu is wide enough; Guild
-marked Later, a page saying what it will hold. The chosen tab is a lit brass press; a tab with something new on it
+keys on keycaps where the menu is wide enough; Guild opens the player's guild after Destiny 2's clan screen
+([[Guilds]]), with its Outposts page (each outpost's plan from above, a structure a block in its colour saying its
+mark and tier as the key does, with its front, hollow while built and banded while it rises, the decoration as dots,
+the key naming each by the law and each mark; the footprint's ghost green or red as one is placed, kept on the plot,
+its words beside the plan; the grid one Tab stop walked by the arrows, which speak the ghost's words; the plan beside
+the outpost's rows, its cells shrinking before that column would pass the room, and the building in a third column
+where wide; the page scrolls with a More below chip, every word at the label step; for a founder or admin standing there, a Decorate
+part listing each piece with its price and what the hall holds, whose choice closes the menu and stands the piece's
+ghost a metre past its own reach before the player, green or red, turned with [ and ], placed with the use key, let go
+with Escape or the pad's B, which then does nothing else) and
+its Treasury page (the ledger in words in four columns, each as wide as its words), both headed and framed as the Journal is ([[Outposts]]). The chosen tab is a lit brass press; a tab with something new on it
 (the Compendium, while a chapter found waits unread) wears Destiny's small diamond at its top right, and its name is
 read with ", new"; the arrow keys move between tabs. At the top line's right stands the account's mark, after DFO's
 ([[The HUD Drops Its Room Line, and the Account Mark Comes From DFO]]): a round well rimmed in brass with the player's
@@ -1355,8 +1365,9 @@ serves each ask only at its own counter ([[Gear]], "In the rooms"; [[Factions]])
 
 - **A plate over each other player's head** ([[Other Players Wear a Nameplate, Their Level or Prestige in a Square]],
   [[A Player's Square Shows Their Level, Gold Past 20]]): a square and their username beside it, after the owner's
-  pictures of Destiny's. The square shows their level, 21 to 30, the levels Prestige raises, in gold (`levelInk`,
-  `TONES.brassHi`); while a menu is open on their screen (the menu's window, a player's menu or Inspect)
+  pictures of Destiny's, and after it their guild's tag in brackets, a shade fainter ([[Guilds]]). The square shows
+  their level, 21 to 30, the levels Prestige raises, in gold (`levelInk`, `TONES.brassHi`); while a menu is open on
+  their screen (the menu's window, a player's menu or Inspect)
   a speech bubble's three dots stand in its place. Square and name are the company's green (`FILLS.green`,
   `TONES.company`) for a member of the viewer's company, by the Roster the company's display last heard, and the
   players' blue (`FILLS.ally`, `TONES.ally`) for anyone else; a guest shows the square alone. The room sends each plate
@@ -1477,8 +1488,9 @@ button's corner and screen, and the Tailor's wares.
   pictures on the player's own figure, which is not theirs.
 - A join reaches a company member on foot on the landmass open now, in a patrol's dungeon too; one across the sea,
   or at sea, is not reached, and the Roster says so.
-- A player's plate shows their username from the room their account last claimed their character in: one added
-  meanwhile shows from their next room.
+- A player's plate shows their username and guild's tag from the room their account last claimed their character in,
+  read again when they take a username or their guild changes on the page they play from; a guild changed elsewhere
+  shows from their next room.
 - An item is drawn from the front only, and a piece the forge has no layer for (plain arms) shows its initials.
 - The world's sounds play on foot and on the Test Ground; a deck at sea has none, and the music has
   none yet.

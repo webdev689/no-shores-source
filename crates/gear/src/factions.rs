@@ -56,7 +56,7 @@ pub struct FactionsDef {
     pub fragment_aurem: u32,
     pub fragment_rank: u32,
     /// What a faction's first-tier bounty pays in its reputation, whatever the player's level (`bounties`).
-    pub bounty_reputation: u64,
+    pub bounty_reputation: u32,
     pub factions: Vec<FactionDef>,
 }
 
@@ -176,20 +176,23 @@ impl Character {
         factions().of_cape(cloak.named.as_deref()?).map(|faction| faction.id)
     }
 
-    /// A kill's reputation: as much as its XP, to the faction pledged, while its cape is worn.
+    /// Reputation as much as `xp`, raised by the guild's reputation boon, to the faction pledged, while its cape is
+    /// worn. Every source passes its base, so the boon raises each once.
     pub(crate) fn earn_reputation(&mut self, xp: u32) {
         let pledge = self.allegiance.pledge;
         if pledge == 0 || self.cape_worn() != Some(pledge) {
             return;
         }
-        self.add_reputation(pledge, u64::from(xp));
+        self.add_reputation(pledge, xp);
     }
 
-    /// Reputation with a faction, cape or none: a faction's bounty pays its own.
-    pub(crate) fn add_reputation(&mut self, faction: u8, amount: u64) {
+    /// Reputation with a faction, cape or none, raised by the guild's reputation boon: a deed's to the faction pledged,
+    /// and a faction's bounty its own.
+    pub(crate) fn add_reputation(&mut self, faction: u8, amount: u32) {
+        let raised = crate::guild::Boons::more(amount, self.boons.reputation);
         self.allegiance = std::mem::take(&mut self.allegiance).kept();
         if let Some(reputation) = place(faction).and_then(|at| self.allegiance.reputation.get_mut(at)) {
-            *reputation = reputation.saturating_add(amount);
+            *reputation = reputation.saturating_add(u64::from(raised));
         }
     }
 
@@ -276,21 +279,36 @@ impl Character {
         if self.packages(faction) == 0 {
             return Err(Refusal::NoPackage);
         }
-        if self.vestiges_held(false) >= VESTIGES_MOST {
-            return Err(Refusal::VestigesFull);
-        }
-        let numbers = factions();
-        let level = self.level().clamp(1, NAMED_LEVEL);
-        let legendary = level >= numbers.package_legendary_from_level
-            && dice.roll(Purpose::Package, 0) < numbers.package_legendary_share;
-        let rarity = if legendary { Rarity::Legendary } else { Rarity::Rare };
-        let slot = Slot::VESTIGE[dice.pick(Purpose::Package, 1, Slot::VESTIGE.len())];
-        let id = self.take_id();
-        self.vestiges.insert(id, (Vestige::new(id, rarity, slot, level), false));
-        self.materials.add_aurem(numbers.package_aurem);
+        self.give_package(Purpose::Package, dice)?;
         self.allegiance = std::mem::take(&mut self.allegiance).kept();
         self.allegiance.collected[at] += 1;
         Ok(None)
+    }
+
+    /// Gives a package, a faction's or a guild's, rolled by `purpose`: a Vestige at the player's level for a random
+    /// slot, Rare or now and then Legendary from a level, and its Aurem.
+    ///
+    /// # Errors
+    /// When ten Vestiges are carried already.
+    pub(crate) fn give_package(&mut self, purpose: Purpose, dice: &Dice) -> Result<(), Refusal> {
+        if self.vestiges_held(false) >= VESTIGES_MOST {
+            return Err(Refusal::VestigesFull);
+        }
+        self.keep_package(purpose, dice);
+        Ok(())
+    }
+
+    /// Gives a package that is paid once and never asked for again, whatever is carried: its Vestige kept as a first
+    /// clear's is (`keep_paid`: carried, else the vault, else the mail).
+    pub(crate) fn keep_package(&mut self, purpose: Purpose, dice: &Dice) {
+        let numbers = factions();
+        let level = self.level().clamp(1, NAMED_LEVEL);
+        let legendary =
+            level >= numbers.package_legendary_from_level && dice.roll(purpose, 0) < numbers.package_legendary_share;
+        let rarity = if legendary { Rarity::Legendary } else { Rarity::Rare };
+        let slot = Slot::VESTIGE[dice.pick(purpose, 1, Slot::VESTIGE.len())];
+        self.keep_paid(Vestige::new(0, rarity, slot, level));
+        self.materials.add_aurem(numbers.package_aurem);
     }
 }
 

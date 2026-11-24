@@ -10,6 +10,7 @@ code:
   - crates/world/src/geometry.rs#doubled_area
   - crates/world/src/waters.rs#Waters
   - crates/world/src/traffic.rs#Traffic
+  - crates/world/src/traffic_routes.rs#berth
   - crates/world/src/ports.rs#MAIN_PORTS
   - client/src/rules/watersRules.ts#startWatersRules
 ---
@@ -81,13 +82,13 @@ varied across the continent into other biomes. Which biome each continent is: [[
 
 The player reaches an island only at its nodes ([[Every Island Is Seen Whole and Reached by Nodes]]). From the
 Overworld's bird's-eye view of the side of an island, they choose a node (a mission, a dungeon, a social space, a
-patrol area, a world boss) and are taken there. A node is one section of the land, and its edge warns the player to
+patrol area, a world boss, an outpost site) and are taken there. A node is one section of the land, and its edge warns the player to
 go back. The rest of the island and of its city is the same ground the [[Land]] generates, drawn in less detail with
 distance, never reached. Each island has one major port city; Saltmere's is Overlook.
 
 Patrol areas and missions open as a pass is done on each ([[Patrol Zones and Missions Open as Their Pass Is Done]]).
 `content/world/open.json` lists the open ones by id. Every other patrol area and mission is locked; social spaces,
-dungeons and world bosses never are. A locked node still shows where the player picks a landing, greyed with a lock
+dungeons, world bosses and outpost sites never are. A locked node still shows where the player picks a landing, greyed with a lock
 ([[Overworld]]), but neither a click on it nor a gate toward it ([[Layouts]], "Gates") takes anyone there, and its room
 turns every player away ([[Server]]). A pass opens a node by adding its id to the list; a test holds the list to
 patrol and mission nodes of the edits files, each once. The rooms read the list from the node files, so a change
@@ -149,6 +150,14 @@ The numbers are Claude's, under the owner's "Friendly ships should dynamically t
 - **Roadstead.** Where a port's ships come and go: the nearest point of its own coast to the city's centre, 3 km out
   to sea away from the centre, then on outward in 500 m steps until it is at least 1 km clear of every coast and isle,
   in whole metres. A port whose way out leaves the frame first gets none, and no ships.
+- **Berths.** No ship lies on the roadstead itself, where a player's new ship puts in. Each course has two berths off
+  each of its ports' roadsteads, on the line through it square to the course's last leg there: its arrivals lie 300 m
+  to starboard of the way in, its departures leave from 300 m to the other side, so arriving and leaving ships keep
+  to their own sides. A berth that would come within 200 m of one another course laid there first moves out 200 m at a
+  time, at most 900 m out, within the roadstead's 1 km of open water (`BERTH_M`). Each of a course's two ways then runs
+  from its departure berth along the course to its arrival berth. Over a day no lying ship comes within 150 m of
+  another ship at any of the three ports, and none within 225 m of a roadstead (`traffic_tests.rs`); before the
+  berths two or more hulls lay on Overlook's roadstead at once a third of the time.
 - **Routes.** Between every pair of the port cities, first with second, first with third, second with third, so
   each port trades with both others and the lanes cross the most waters; each pair sails up to three courses ([[Friendly Ships Take Several Courses, About Five in View, Sailing Visibly]]).
   The shortest is planned round land: A* over a mask of 5 km cells whose middles are at least 3 km clear of every
@@ -166,15 +175,15 @@ The numbers are Claude's, under the owner's "Friendly ships should dynamically t
 - **Schedule.** On each course a ship leaves each end every 3,000 s of world time, departure n at its course's start
   plus n × 3,000 s, the nine courses' starts a ninth of that apart, so two courses that share a stretch out of a port
   (each of Sunspire's and Rimeholt's ways out carries a course to each of the other two ports) never send ships out
-  together; each sails at 60 m/s, the pace dial's slowest step, to the other end. There it lies at the roadstead 600 s
+  together; each sails at 60 m/s, the pace dial's slowest step, to the other end. There it lies at its berth 600 s
   (`DWELL_S`), heading as it came in, and is then gone. About five ships are within 60 km of Overlook's roadstead at
   any moment, counting those lying there (5.2 on a day's mean). World time is seconds since the Unix epoch, passed in,
   so every machine computes the same ships for the same time. The waters' table the door returns carries the pace
   (`friendly_speed_m_s`), so the page reckons ships on between answers at the rules' own pace.
 - **A ship.** Its id is `n << 8 | route << 1 | direction` (direction 0 from the route's first port). Its hull comes
   from a fixed hash of its id: a sloop 4 times in 10, a schooner 3, a brig 2, a frigate 1. It carries its position,
-  the unit way it sails along its leg, the metres sailed and its route's length.
-- `ships_near(centre, radius_m, time_s)` works in closed form: per route, the stretches of its path within the radius
+  the unit way it sails along its leg, the metres sailed and its way's length, berth to berth.
+- `ships_near(centre, radius_m, time_s)` works in closed form: per way, the stretches of its path within the radius
   give the distances sailed that put a ship there, and those give the departures; each is then placed exactly.
   `ship(id, time_s)` places one ship. A time or radius that is not a finite number, or a negative radius, finds none.
 

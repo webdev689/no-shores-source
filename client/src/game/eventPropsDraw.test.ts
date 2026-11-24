@@ -3,7 +3,7 @@ import { readFileSync } from 'node:fs';
 import { test } from 'node:test';
 import { moduleMouth, moduleNumber } from '../city/modules.ts';
 import { EVENT_LAMPS } from '../sky/lamps.ts';
-import { EventPropsDraw } from './eventPropsDraw.ts';
+import { EventPropsDraw, PROPS_SHADER } from './eventPropsDraw.ts';
 import { MATERIALS, packLips } from './eventPropsPack.ts';
 import type { Gpu } from '../gpu.ts';
 
@@ -38,6 +38,21 @@ test("the drawer's materials are the modules' kit's, in its order", () => {
     names(listed).flatMap((name) => (name === '*' ? names(cloths) : [name])),
     [...MATERIALS],
   );
+});
+
+test('every material a module may wear has a colour of its own in the drawer, none left to the grey default', () => {
+  const body = /fn material_colour[^]*?\n}\n/.exec(PROPS_SHADER)?.[0] ?? '';
+  const cased = new Set([...body.matchAll(/case ([0-9u, ]+):/g)].flatMap((found) => (found[1] ?? '').split(/,\s*/)));
+  // The crystal is drawn as crystal, apart from the other materials.
+  const missing = MATERIALS.filter((material, number) => material !== 'crystal' && !cased.has(`${number}u`));
+  assert.deepEqual(missing, []);
+});
+
+test("a ghost's fire is washed in its tint too: a Lamp Post's flame being placed shows green or red", () => {
+  const shade = /fn shade[^]*?\n}\n/.exec(PROPS_SHADER)?.[0] ?? '';
+  const fire = /if in\.material == \d+u \{\n\s*let flame[^]*?\n {2}}\n/.exec(shade)?.[0] ?? '';
+  assert.ok(fire.includes('tint'), "the fire's early return takes the tint");
+  assert.ok(shade.indexOf('look.yzw') < shade.indexOf(fire), 'read before it');
 });
 
 test('the drawer makes its pipelines only once it has props to draw, not as the game boots', () => {

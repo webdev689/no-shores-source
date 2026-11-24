@@ -124,7 +124,7 @@ fn a_factions_bounty_counts_only_while_its_cape_is_worn_and_pays_xp_and_its_repu
     assert_eq!(caped_again.materials.aurem, aurem, "no Aurem");
     // Its XP earns reputation as every deed's does with the cape worn, and the bounty its own besides.
     let own = faction_bounty_reputation(tier);
-    assert_eq!(caped_again.reputation(faction), reputation + u64::from(paid_xp) + own);
+    assert_eq!(caped_again.reputation(faction), reputation + u64::from(paid_xp) + u64::from(own));
     assert_eq!(caped_again.ask(turn_in, at_board(DAY), &DICE), Err(Refusal::BountyPaid));
     assert_eq!([1, 2, 3].map(faction_bounty_reputation), [2_500, 3_750, 5_000]);
 }
@@ -145,7 +145,7 @@ fn a_switch_of_pledge_stops_a_held_bounty_counting_but_it_still_turns_in_to_its_
     let tier = bounty_at(DAY, place).expect("on the board").tier;
     assert_eq!(
         character.reputation(faction),
-        before + faction_bounty_reputation(tier),
+        before + u64::from(faction_bounty_reputation(tier)),
         "to the faction that posted it"
     );
     let mut held = serving(faction);
@@ -171,8 +171,30 @@ fn a_factions_day_of_bounties_pays_about_a_tenth_of_a_rank_as_destiny_1s_did() {
     for faction in 1..=POSTING_FACTIONS {
         for day in 20_000..20_200 {
             let board = faction_board(day, faction).expect("a faction posts");
-            let paid: u64 = board.iter().map(|bounty| faction_bounty_reputation(bounty.tier)).sum();
+            let paid: u64 = board.iter().map(|bounty| u64::from(faction_bounty_reputation(bounty.tier))).sum();
             assert!(per_rank / 20 <= paid && paid <= per_rank * 3 / 20, "{paid} of {per_rank} on day {day}");
         }
     }
+}
+
+#[test]
+fn the_guilds_reputation_boon_raises_a_factions_bounty_as_it_raises_every_reputation_earned() {
+    let faction = (1..=POSTING_FACTIONS).find(|&faction| felling_place(faction).is_some()).expect("one fells Elites");
+    let (place, target) = felling_place(faction).expect("found");
+    let paid = |boon: u8| {
+        let mut character = serving(faction);
+        character.boons.reputation = boon;
+        character.ask(Ask::TakeBounty { place, day: DAY }, at_board(DAY), &DICE).expect("taken");
+        for _ in 0..target {
+            character.saw(&ELITE_FOE, DAY);
+        }
+        let before = character.reputation(faction);
+        character.ask(Ask::TurnInBounty { place, day: DAY }, at_board(DAY), &DICE).expect("turned in");
+        character.reputation(faction) - before
+    };
+    let tier = bounty_at(DAY, place).expect("on the board").tier;
+    let (paid_xp, _) = bounty_pay(serving(faction).level(), tier);
+    let base = u64::from(paid_xp) + u64::from(faction_bounty_reputation(tier));
+    assert_eq!(paid(0), base);
+    assert_eq!(paid(10), base + base / 10, "the Captain's Lodge's 10% on its XP's share and its own alike");
 }

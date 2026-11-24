@@ -93,6 +93,15 @@ def put(data, folder, extension, kind):
     return key
 
 
+def served(key):
+    """The status R2 serves `key` with: a passing fault, or an object not served yet, is asked again after a wait."""
+    for wait in (5, 20, 60, None):
+        status = fetch('HEAD', PUBLIC + key)[0]
+        if status == 200 or wait is None:
+            return status
+        time.sleep(wait)
+
+
 def published(manifest, key):
     """An object's bytes, checked against the hash its key names: anything else is not what was published."""
     status, data = fetch('GET', manifest['base'] + key)
@@ -123,8 +132,9 @@ def upload(stage):
     for path, key, folder, extension, kind in sorted(found):
         with open(path, 'rb') as file:
             put(file.read(), folder, extension, kind)
-        if fetch('HEAD', PUBLIC + key)[0] != 200:
-            sys.exit(f'{key} was uploaded but R2 does not serve it')
+        status = served(key)
+        if status != 200:
+            sys.exit(f'{key} was uploaded but R2 does not serve it ({status})')
     print(f'{len(found)} staged files on R2', flush=True)
 
 
