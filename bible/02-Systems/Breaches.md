@@ -40,7 +40,8 @@ Claude's ([[The Drowned Vale as Claude Builds It]]).
   and only once Normal is won (`Shut::BreachHard`). At Normal the fallen in a running encounter stand again after
   10 s at its stage; at Hard they never stand again of themselves: a company member raises them (hold the interact
   key 3 s within 2.5 m), each raising one of the attempt's 5 revives. Outside a running encounter the fallen stand
-  again after 6 s at either tier (`stands_after`). Every living player down 3 s at once wipes the attempt: its foes go,
+  again after 6 s at either tier (`stands_after`); a fall into the dark waits as long. At the Waking the same holds
+  for the company holding the gate in its hollow, standing again at the gate's arrival. Every living player down 3 s at once wipes the attempt: its foes go,
   the company stands whole at its stage, its revives are whole again, and it begins again as they walk in.
 - **The company.** Companies hold eight, as a Breach is taken on by up to eight
   ([[Breaches Drop the Best, at Sea Too, for a Fleet of Eight]]); a Breach's run holds eight and every other run four. It is
@@ -52,12 +53,15 @@ Claude's ([[The Drowned Vale as Claude Builds It]]).
   One company holds the gate at a time: **the Waking**. Its three moorings held at once by its living players fill
   the Spire (150 s); fewer let it ebb (at a quarter the pace at Normal, a half at Hard), and a Bulwark sent out claims
   a mooring left empty, which holds nothing while it stands. Waves come from the hollow's four growths. The Spire
-  woken, the gate opens to that company alone; lost, the company stands whole at the gate's arrival and the gate is
-  free. Everyone in the zone sees the Waking, and the companies inside the run by the name of their run's first player, tier and encounter.
+  woken, the gate opens to that company alone, and stays open 3 minutes, or while its run says its company is inside
+  (a word every 10 s, forgotten after a minute's silence); lost, the company stands whole at the gate's arrival and the
+  gate is free. The gate's company holds eight at most, and only those the Breach would let in (its tier's level, and
+  Hard's Normal win); the gate stands only in the Gullwing Vale's room at Normal seas. Everyone in the zone sees the Waking, and the companies inside the run by the name of their run's first player, tier and encounter.
 - **Into the run.** The run's room lets a character in only once the zone's room says its company's gate opened
   (`server/breach.ts`), and its first player must be one the run was launched for. Its spaces are the plan's
   (`content/dungeon/breach-drowned-vale.json`): each a module stood at a point of the run's own frame and turned whole
-  quarters, laid over the dark, a fall into which kills. Its three seals open as their encounters are won; the Broken
+  quarters, no two sharing ground, laid over the dark, a fall into which kills. Bodies vault in the run but never climb
+  (`Floor::Dark`), so its walls and the Ways' bars hold. Its three seals open as their encounters are won; the Broken
   Stair's six slabs come and go on an 11 s measure, standing 7 s of it. The run tells the zone how far it has come.
 - **The Lodestone.** The Breach's relic, taken from its plinth within 2.5 m and set down again. Its bearer fights bare
   handed: their swing is its Strike (three times a blow); Guard raises Hold True (4 m round the bearer, 6 s at most,
@@ -77,7 +81,7 @@ Claude's ([[The Drowned Vale as Claude Builds It]]).
 | The Unlit Ways | The old town's streets between houses bricked shut, and its Watchers | A Watcher sees 14 m in a 40° cone on its sweep; a living player in its sight 0.75 s, or sprinting within 8 m, is seen: at Normal they are unwritten, at Hard the company in 3 s; a Watcher killed, the rest sweep a quarter faster; the Heart's chest opens to an attempt in which no one was seen |
 | The Broken Stair | Slabs over the dark | A traversal on the slabs' measure; a hidden chest on a side slab |
 | The Two Shores | The keep's hall: the Seam, two rifts | The Warden first; then each rift opens (3 s) while its mooring is held; inside, its Keeper; a Keeper's fall Rewrites its shore, again every 4 s while inside; a shore shut strands those in it (unwritten after 8 s); the Seam tolls every 30 s and fuses Husks as the Mending's seams do |
-| The Steward | Its court over the dark | Its first taking at 25 s, then every 70 s (Hard 60 s): four players into one shore, Rewritten; there, five bells broken in order open the way back while the rift's mooring is held from the court; it tolls every 20 s; Grounded at its feet it lies bare 25 s (blows on it five times, the Arts recharging three times as fast); after the fourth taking its next toll unwrites everyone |
+| The Steward | Its court over the dark | Its first taking at 25 s, then every 70 s (Hard 60 s): half the court, up to four, into one shore, Rewritten; there, five bells broken in the order shown in the court open the way back while the rift's mooring is held from the court (by two at Hard while two are left there); it tolls every 20 s; Grounded at its feet it lies bare 25 s (blows on it five times, the Arts recharging three times as fast); after the fourth taking, when a fifth would come it unwrites everyone, and every 20 s after; its fall wins, bringing back any still in a shore |
 
 ## Rewards
 
@@ -126,5 +130,18 @@ Claude's ([[The Drowned Vale as Claude Builds It]]).
 
 Built in Blender ([[Modules]]): the Sunken Gate's hollow (the cliff of split stone and its portal, the Spire of red
 crystal, the moorings, the ledges) and each space of the run (`tools/modules/breach_*.py`), every one under 32,000
-triangles, its parts and sockets what the rules stand on; the dressing (`breach_dress.py`) is drawn only. The Drowned
-horse is a mount look of the forge (`barding.py`), its ridden pictures rendered by the forge's workflow on `main`.
+triangles, its parts and sockets what the rules stand on, every piece's socket on its floor clear of every part; the
+dressing (`breach_dress.py`) is drawn only. The Drowned horse is a mount look of the forge (`barding.py`).
+
+## Limits
+
+- **The Drowned horse is not rendered yet.** Its ridden strips come only from a forge run started by hand
+  (`forge.yml`, `figures` = `horseidle,horsewalk,horsegallop|horse_drowned`), which writes to R2 and so waits for the
+  owner's named yes; its first-person frames (`fpride.py --looks`) are in no workflow. Until then the page draws the
+  bare horse under it. The swatches' count sets every look's stripes, so that run redraws the other four looks too.
+- **The Scrivener and the Steward** wear the Idol's and the Heart's bodies until their own are drawn.
+- **The page copies some of the rules' numbers** (the standing-again times, the hollow's reach, the Choir's rounds,
+  the fusions and takings that end an attempt, the stages, the Prestige each tier reaches): a change to one in the
+  rules changes it in the page too.
+- **Small companies**: one or two cannot hold the Spire's three moorings, and nothing says so on the page.
+- **Played offline only**: tested by the rules' and the page's tests, never in a deployed room.
