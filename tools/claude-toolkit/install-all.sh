@@ -66,12 +66,15 @@ json.dump(d, open(p, 'w'), indent=2)
 claude mcp remove -s user skillsmp >/dev/null 2>&1 || true
 # skillsmp.com/mcp needs a SkillsMP account (401 AUTH_REQUIRED without one). The key lives only in
 # the environment variable SKILLSMP_API_KEY; the literal ${SKILLSMP_API_KEY} is expanded by Claude Code at connect time.
+# set +x keeps the key out of the log: the test below would print it expanded.
+set +x
 if [ -n "${SKILLSMP_API_KEY:-}" ]; then
   claude mcp add --scope user --transport http skillsmp https://skillsmp.com/mcp --header 'Authorization: Bearer ${SKILLSMP_API_KEY}'
 else
   echo "skillsmp: no SKILLSMP_API_KEY set; registered without auth (it will answer 401)"
   claude mcp add --scope user --transport http skillsmp https://skillsmp.com/mcp
 fi
+set -x
 # The shared folder's repo is owned by another user id: that one repo is trusted, never every one on the machine.
 if [ -n "${REPO_DIR:-}" ] && ! git config --global --get-all safe.directory | grep -qxF "$REPO_DIR"; then
   git config --global --add safe.directory "$REPO_DIR"

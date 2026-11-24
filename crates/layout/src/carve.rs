@@ -195,8 +195,25 @@ pub fn lookouts(climbs: &[[f64; 7]]) -> impl Iterator<Item = &[[f64; 7]]> {
     climbs.chunks_exact(2).take_while(|pair| pair[1][5] >= 1.0)
 }
 
+/// Each climb to a lookout as the footpath it is walked as, a point every 8 m or less.
+pub(crate) fn climb_ways(climbs: &[[f64; 7]]) -> Vec<Path> {
+    lookouts(climbs)
+        .map(|pair| {
+            let [x1, y1, x2, y2, ..] = pair[0];
+            let steps = (distance([x1, y1], [x2, y2]) / 8.0).ceil().max(1.0);
+            let points = (0..=steps as usize)
+                .map(|step| {
+                    let along = step as f64 / steps;
+                    [x1 + (x2 - x1) * along, y1 + (y2 - y1) * along]
+                })
+                .collect();
+            Path { tier: Tier::Footpath, points, crossings: Vec::new(), heights: Vec::new() }
+        })
+        .collect()
+}
+
 /// A layout's sculpt (its claim, its floors, its outcrops of a shape, its climbs, its massif's height and seed), each of
-/// its areas' basins, and the caverns cut beside them.
+/// its areas' basins, the caverns cut beside them, and the area each climb to a lookout climbs out of (`lookouts`).
 #[must_use]
 pub fn carve(
     field: &Field,
@@ -206,7 +223,7 @@ pub fn carve(
     shape: Shape,
     rise: f64,
     seed: u32,
-) -> (Sculpt, Vec<Basin>, Vec<crate::caverns::Cavern>) {
+) -> (Sculpt, Vec<Basin>, Vec<crate::caverns::Cavern>, Vec<usize>) {
     let Network { areas, paths, exits, pockets, meadows, levels, joined, moduled } = network;
     let mut drawn = 0_i64;
     let mut draw = || {
@@ -341,13 +358,13 @@ pub fn carve(
         terraced: heights,
         roofed: Vec::new(),
     }]);
-    let mut climbs = crate::climbs::climbs(field, areas, &bare, rise, seed);
+    let (mut climbs, climbed_from) = crate::climbs::climbs(field, areas, &bare, rise, seed);
     climbs.extend(terraces);
     let outcrops = outcrops(areas, Ways { paths, climbs: &climbs, passages: &passages }, seating, (shape, rise), seed);
     let (runs, wings, levels, terraced) = (Vec::new(), Vec::new(), raised, heights);
     let roofed = caverns.iter().flat_map(crate::caverns::Cavern::floors).collect();
     let sculpt = Sculpt { claim, floors, outcrops, rise, seed, climbs, runs, wings, levels, terraced, roofed };
-    (sculpt, basins, caverns)
+    (sculpt, basins, caverns, climbed_from)
 }
 
 /// How an outcrop of a shape is sized: its radius at least and at most, metres, and its tall, a share of its radius

@@ -10,7 +10,7 @@ use crate::senses::Here;
 use crate::steer::Ask;
 use crate::tuning::{BACK_TURNED, GUARD_AFTER, PRESS_LATEST, PRESS_LEAD, THREAT_MARGIN};
 use combat::arms::{OffHand, stroke_shape};
-use combat::fighter::{Action, Attack};
+use combat::fighter::{Action, Attack, Fighter};
 use combat::shots::{foe_speed, shot_numbers};
 use combat::sight::{apart, bearing, off};
 use combat::strike::{reach_of, stroke_reach};
@@ -76,6 +76,27 @@ fn can_swing(action: &Action) -> bool {
     matches!(action, Action::Idle | Action::Guard { .. } | Action::Parry { .. })
 }
 
+/// Whether `striker`'s swing under way is at the fighter `me` standing at `at`: within the stroke's reach and
+/// THREAT_MARGIN, and aimed at it, its target or within the stroke's arc and a little more.
+#[must_use]
+pub fn swung_at(striker: &Fighter, me: FighterId, at: [f64; 2]) -> bool {
+    let Action::Attack(attack) = striker.action else { return false };
+    let from = [striker.body.x, striker.body.y];
+    let reach = stroke_reach(striker.arms.melee, attack.stroke, striker.is_player());
+    let aimed =
+        striker.target == Some(me) || off(striker.aim, bearing(from, at)) <= stroke_shape(attack.stroke).half_arc + 0.5;
+    apart(from, at) <= reach + THREAT_MARGIN && aimed
+}
+
+/// Whether `shooter`, loosing now, aims at the fighter standing at `at`: its aim within SHOT_AIMED of the bearing.
+#[must_use]
+pub fn shot_at(shooter: &Fighter, at: [f64; 2]) -> bool {
+    off(shooter.aim, bearing([shooter.body.x, shooter.body.y], at)) <= SHOT_AIMED
+}
+
+/// How far off its aim a shot is still taken as one at a fighter, radians.
+const SHOT_AIMED: f64 = 0.2;
+
 /// The answer it settles on for a threat its reaction time has passed, if any: whether the blow is at it at all, then
 /// its shares, then what its action and stamina allow, then whether there is time.
 fn weigh(here: &Here<'_, '_>, threat: &Threat) -> Option<Defence> {
@@ -88,20 +109,14 @@ fn weigh(here: &Here<'_, '_>, threat: &Threat) -> Option<Defence> {
         return None;
     }
     let distance = apart(from, at);
-    let facing = off(striker.aim, bearing(from, at));
     let lands = match threat.lands {
-        Some(lands) => {
-            let Action::Attack(attack) = striker.action else { return None };
-            let reach = stroke_reach(striker.arms.melee, attack.stroke, striker.is_player());
-            let aimed_here = striker.target == Some(here.me) || facing <= stroke_shape(attack.stroke).half_arc + 0.5;
-            (distance <= reach + THREAT_MARGIN && aimed_here).then_some(lands)?
-        }
+        Some(lands) => swung_at(striker, here.me, at).then_some(lands)?,
         None => {
             let ranged = striker.arms.ranged?;
             // An aimed shot flies faster than its weapon's plain one: the room's word on its speed comes first.
             let weapon = if striker.is_player() { shot_numbers(ranged).0 } else { foe_speed(ranged) };
             let speed = if threat.speed > 0.0 { threat.speed } else { weapon };
-            if speed <= 0.0 || facing > 0.2 {
+            if speed <= 0.0 || !shot_at(striker, at) {
                 return None;
             }
             threat.seen + Here::ticks(distance / speed)
@@ -234,3 +249,7 @@ pub fn opening(
     })?;
     Some((whom, CombatInput { attack: Some(Stroke::Down), ..CombatInput::default() }))
 }
+
+#[cfg(test)]
+#[path = "react_tests.rs"]
+mod react_tests;

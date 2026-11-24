@@ -5,6 +5,10 @@
 
 use crate::players::Player;
 use crate::{PlayerId, Room};
+
+/// How near a way out of a dungeon a player stands as they leave by it, metres: the page's `DOOR_REACH_M` and a metre for
+/// the view it saw them by.
+const WAY_OUT_REACH: f64 = 3.5;
 use gear::left::{Left, share, whole_of};
 
 impl Room {
@@ -30,7 +34,18 @@ impl Room {
             art: found.character.arts.worn,
             anima: share(found.casting.anima),
             tenets: found.casting.tenets.map(share),
+            out: !fallen && self.at_way_out([fighter.body.x, fighter.body.y]),
         }
+    }
+
+    /// Whether a body standing at `at` stands at one of a dungeon's ways out, within WAY_OUT_REACH of its exit door or
+    /// of its return portal while that stands open, as the page offers "Leave" there.
+    fn at_way_out(&self, at: [f64; 2]) -> bool {
+        let open = self.cache.is_some_and(|cache| cache.open);
+        self.ways_out.is_some_and(|(door, portal)| {
+            combat::sight::apart(at, door) <= WAY_OUT_REACH
+                || (open && combat::sight::apart(at, portal) <= WAY_OUT_REACH)
+        })
     }
 
     /// What a returning player's character brings back into the room: the body it left with, and on a sea island the

@@ -87,8 +87,13 @@ test('other players are placed in their own dress, moved as the room saw them, a
     [4],
     'moved, and the one gone taken away',
   );
+  // One the room no longer sees has left it: what it held of them goes too, so a long stay keeps nothing of the gone.
+  others.seen([seen(1, 0)], 1, forge);
+  assert.equal(others.plateOf(7), null, "a gone player's plate is let go");
+  others.take({ dressed: [{ player: 7, dress: JSON.stringify(robed) }], plates: [named] });
   others.clear();
   assert.equal(shown.length, 0);
+  assert.equal(others.plateOf(7), null, 'and every plate as the room is left');
 });
 
 test('another player drinking has their weapon put away at once, from the snapshot, and back in hand after', () => {

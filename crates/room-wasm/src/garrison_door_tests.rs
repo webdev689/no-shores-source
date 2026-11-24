@@ -69,7 +69,38 @@ const RUN_TICKS: u32 = 1500;
 
 #[test]
 fn a_node_s_garrison_fights_to_the_same_fingerprint_natively_as_in_the_browser_s_webassembly() {
-    assert!(open_node(GARRISON_NODE.as_bytes()));
+    let (hash, most_alert, blows) = run_in(GARRISON_NODE);
+    assert!(most_alert >= 3 && blows > 0, "the garrison fights: {most_alert} alert at once, {blows} events");
+    assert_eq!(format!("{hash:08x}"), GARRISON_HASH);
+}
+
+/// Both tests hold this value: the node as a patrol whose layout marks a foes' site the player runs near, so its
+/// group stands mid-run on a mesh baked round it then.
+pub const PATROL_SITE_HASH: &str = "ea374418";
+const PATROL_SITE: [f64; 2] = [-60.0, 40.0];
+
+/// The node as a patrol, its file naming one foes' site at `site`.
+fn patrol_node(site: [f64; 2]) -> String {
+    let patrol = GARRISON_NODE.replacen(r#""kind": "mission""#, r#""kind": "patrol""#, 1);
+    patrol.replacen(r#""bounds""#, &format!(r#""foes": [[{}, {}]], "bounds""#, site[0], site[1]), 1)
+}
+
+#[test]
+fn a_patrol_s_foes_site_stands_its_group_to_the_same_fingerprint_natively_as_in_the_browser_s_webassembly() {
+    let (hash, most_alert, _) = run_in(&patrol_node(PATROL_SITE));
+    let grounds = with_open(|opened| {
+        let Opened::Land { room, .. } = opened else { panic!("a node's room") };
+        room.place_grounds()
+    });
+    assert_eq!(grounds, Some(1), "the site's group stood on a mesh baked round it");
+    assert!(most_alert >= 1, "its foes fight");
+    assert_eq!(format!("{hash:08x}"), PATROL_SITE_HASH);
+}
+
+/// A player run north into the node's garrison for RUN_IN ticks, then standing and swinging each SWING_EVERY ticks
+/// until RUN_TICKS: the fingerprint of its snapshots, the most foes alert at once, and the events it saw.
+fn run_in(node: &str) -> (u32, usize, usize) {
+    assert!(open_node(node.as_bytes()));
     let player = room_join();
     let (mut hash, mut most_alert, mut blows, mut kept) = (0x811c_9dc5_u32, 0, 0, FoesKept::default());
     for tick in 1..=RUN_TICKS {
@@ -94,8 +125,7 @@ fn a_node_s_garrison_fights_to_the_same_fingerprint_natively_as_in_the_browser_s
         most_alert = most_alert.max(alert);
         blows += seen.events().map_or(0, |events| events.len());
     }
-    assert!(most_alert >= 3 && blows > 0, "the garrison fights: {most_alert} alert at once, {blows} events");
-    assert_eq!(format!("{hash:08x}"), GARRISON_HASH);
+    (hash, most_alert, blows)
 }
 
 fn input_of(player: PlayerId, input: &room::Input) -> i32 {
@@ -134,4 +164,27 @@ fn two_players_against_a_node_s_garrison_fight_to_the_same_fingerprint_natively_
     }
     assert!(struck.iter().all(|blows| *blows > 0), "the garrison fights both players: {struck:?}");
     assert_eq!(format!("{hash:08x}"), GARRISON_PAIR_HASH);
+}
+
+#[test]
+fn a_patrol_s_node_file_names_its_foes_sites_and_its_room_stands_a_group_at_one_as_a_player_comes_near() {
+    let site = [-120.0, -150.0];
+    assert!(open_node(patrol_node(site).as_bytes()));
+    let near = || {
+        with_open(|opened| {
+            let Opened::Land { room, .. } = opened else { panic!("a node's room") };
+            let feet = |foe: &room::FoeSeen| combat::sight::apart([foe.fighter.body.x, foe.fighter.body.y], site);
+            room.foes_seen().filter(|foe| feet(foe) <= 5.0).count()
+        })
+        .unwrap()
+    };
+    let player = room_join();
+    room_tick();
+    assert_eq!(near(), 0, "none stands while the player is far");
+    with_open(|opened| {
+        let Opened::Land { room, .. } = opened else { panic!("a node's room") };
+        assert!(room.put_player(player, site[0], site[1] + 100.0));
+    });
+    room_tick();
+    assert!(near() >= 2, "its group stands round it");
 }

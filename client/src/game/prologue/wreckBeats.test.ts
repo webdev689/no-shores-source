@@ -202,6 +202,15 @@ test('the deep cut short says nothing more and flashes no more', () => {
   assert.ok(!calls.some((call) => call.startsWith('stage.play') || call.includes('flash')));
 });
 
+test('the deep left while its heart beats stops it, however it was left', () => {
+  const { story, calls } = recorded();
+  const beat = new Deep(story, layout, scenery);
+  beat.frame(tick(0.5));
+  calls.length = 0;
+  beat.leave();
+  assert.ok(calls.includes('stage.parts.ambience.heartbeat(false)'), 'the shore hears no heart');
+});
+
 test("the wake eases out of the eyes to over the player's shoulder, their hands empty, and ends on the shot play begins from", async () => {
   const { story } = recorded();
   // Over the shoulder, as the run's own camera takes the player standing where they woke.

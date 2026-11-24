@@ -21,10 +21,10 @@ export async function standOn(
   return { boxes, ground };
 }
 
-/** A node's file as the bake writes it, for a room in the page: its section, its resource places and window rect, the
- *  window of the land cut there, its boxes, the places its layout names, so the room judges a quest's reach and
- *  stands its foes as the servers' rooms do, and where it fights its public events (the land's `grounds`, JSON;
- *  `null` for none). */
+/** A node's file as the bake writes it, for a room in the page: its section, its resource places, its foes' sites and
+ *  window rect, the window of the land cut there, its boxes, the places its layout names, so the room judges a
+ *  quest's reach and stands its foes as the servers' rooms do, and where it fights its public events (the land's
+ *  `grounds`, JSON; `null` for none). */
 export function nodeText(
   node: NodeInfo,
   rect: Rect,
@@ -33,8 +33,8 @@ export function nodeText(
   grounds = 'null',
 ): string {
   const box = boxes.map((block) => [block.minX, block.minY, block.maxX, block.maxY, block.top, block.bottom]);
-  const { id, kind, continent, ring, spawns, places = [] } = node;
+  const { id, kind, continent, ring, spawns, places = [], foes = [] } = node;
   const resources = (node.resources ?? []).map((site) => site.at);
   const fought = grounds === 'null' ? '' : `,"grounds":${grounds}`;
-  return `{"id":${JSON.stringify(id)},"kind":${JSON.stringify(kind)},"continent":${JSON.stringify(continent)},"ring":${JSON.stringify(ring)},"spawns":${JSON.stringify(spawns)},"resources":${JSON.stringify(resources)},"bounds":${JSON.stringify(rect)},"boxes":${JSON.stringify(box)},"places":${JSON.stringify(places)},"ground":${ground}${fought}}`;
+  return `{"id":${JSON.stringify(id)},"kind":${JSON.stringify(kind)},"continent":${JSON.stringify(continent)},"ring":${JSON.stringify(ring)},"spawns":${JSON.stringify(spawns)},"resources":${JSON.stringify(resources)},"foes":${JSON.stringify(foes)},"bounds":${JSON.stringify(rect)},"boxes":${JSON.stringify(box)},"places":${JSON.stringify(places)},"ground":${ground}${fought}}`;
 }

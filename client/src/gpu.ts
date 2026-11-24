@@ -23,6 +23,12 @@ export async function startGpu(canvas: HTMLCanvasElement): Promise<Gpu> {
   // reads the frame's GPU time from it.
   const requiredFeatures: GPUFeatureName[] = adapter.features.has('timestamp-query') ? ['timestamp-query'] : [];
   const device = await adapter.requestDevice({ requiredFeatures });
+  // A validation error drops the work it was in without a word: each is said once, so a picture that stops says why.
+  const said = new Set<string>();
+  device.addEventListener('uncapturederror', (event) => {
+    const { message } = (event as GPUUncapturedErrorEvent).error;
+    if (said.size < 20 && !said.has(message)) (said.add(message), console.error(`WebGPU: ${message}`));
+  });
   const context = canvas.getContext('webgpu');
   if (!(context instanceof GPUCanvasContext)) {
     throw new GpuUnavailable('The page could not open a WebGPU drawing surface.');

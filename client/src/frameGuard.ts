@@ -18,12 +18,14 @@ export class FrameGuard {
     this.report = report;
   }
 
-  /** Runs `work`; what it throws goes no further, and is reported the first time it is seen. */
-  run(work: () => void): void {
+  /** Runs `work`; what it throws goes no further, and is reported the first time it is seen. Whether it ran whole. */
+  run(work: () => void): boolean {
     try {
       work();
+      return true;
     } catch (error) {
       this.failed(error);
+      return false;
     }
   }
 

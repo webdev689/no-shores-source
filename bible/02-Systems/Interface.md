@@ -803,13 +803,13 @@ never while a press is held. Each press is an ask the room answers.
 - **An icon shows its item's state, not words** ([[Text Is Plain]]): a weapon's element as its glyph in the top
   corner; a green gauge along its foot that fills as its nodes are bought ([[The Face Is Mended Whole, and the Gauge Counts Upgrades]]); and, once every node is
   bought, a gilded frame in place of the gauge, as Destiny 2's masterworks are.
-- **Character.** The player's figure large in the middle, under two plaques side by side ([[Prestige Stands Beside Level
-  on the Character Tab]], [[The Level and Prestige Plaques Show Their Numbers Alone]]): the level in brass and Prestige
+- **Character.** The player's figure large in the middle, under two plaques side by side
+  ([[Prestige Stands Beside Level on the Character Tab]], [[The Level and Prestige Plaques Show Their Numbers Alone]]): the level in brass and Prestige
   in pale steel, each its number alone, and under both the meter to the next level and what it takes; under the figure
   the Melee and Ranged loadouts' Attack and Defense ([[The Character Tab Shows No Fruit of Dagon]]). The Melee and
   Ranged loadouts, the cloak and the Appearance button stand to its left, under the worn Art's diamond, the armour to
-  its right, each slot its item's picture with its names, the worn Art's diamond first, then the Weapons heading ([[The
-  Weapons Heading Stands Under the Art]]) level with the Armour heading across, under the Mount slot, in the Art's
+  its right, each slot its item's picture with its names, the worn Art's diamond first, then the Weapons heading
+  ([[The Weapons Heading Stands Under the Art]]) level with the Armour heading across, under the Mount slot, in the Art's
   row, so each row stands level with the armour's across from it; under the Ranged slot's, the ammunition left of its capacity
   ("Ammo 18 of 24"), or "No ammo" in the loss colour, at 22 where the menu is wide. A kind is named as the screens name
   it: Sword & Shield, Double Daggers, Great Axe. A slot's card shows as the pointer moves over it or the keys bring the
@@ -861,7 +861,8 @@ never while a press is held. Each press is an ask the room answers.
   first, then the islands' resources. Each shelf is a grid as Destiny's is: each thing a stack in a cell with its count,
   shown only while one is held, then empty places to the end of its row of ten. Consumables holds the Fruit of Dagon and
   the Ammo crate; the crate is held ("Hold to fill your ammo") to fill the Ranged weapon's ammunition, and offers
-  nothing at full. The gear is on the Character page alone.
+  nothing at full, nor with no Ranged weapon worn, when it says to wear one first. The gear is on the Character page
+  alone.
 - **Holds.** What cannot be undone is held. As a press is held, what it acts on charges: a wash of its rarity rises
   through a tile, and its picture brightens and quivers toward the end, as Destiny's dismantle does. A piece is held
   longer the rarer it is: 0.6 seconds for Normal up to 1.8 for Atheric. Once it acts, a dismantled piece breaks

@@ -372,9 +372,9 @@ impl Room {
         self.foes_most.saturating_sub(EVENT_ROOM) + event.min(EVENT_ROOM)
     }
 
-    /// A player's account told: the part they took under their number until then is their account's. Told while a
-    /// won event's result shows, they are laid the chest their account earned if neither it nor their number was laid
-    /// one: a player back under a new number as it was won had none.
+    /// A player's account told: the part they took under their number until then is their account's, and so is a chest
+    /// laid under it. Told while a won event's result shows, they are laid the chest their account earned if it was laid
+    /// none: a player back under a new number as it was won had none.
     pub(crate) fn own_part(&mut self, player: PlayerId) {
         let who = self.who(player);
         let Some(mut public) = self.public.take() else { return };
@@ -383,7 +383,8 @@ impl Room {
                 let part = running.parts.entry(who.clone()).or_default();
                 (part.present, part.did) = (part.present + before.present, part.did || before.did);
             }
-            let laid = running.chested.contains(&who) || running.chested.contains(&Who::Player(player));
+            let under_number = running.chested.contains(&Who::Player(player));
+            let laid = running.chested.contains(&who) || (under_number && running.chested.insert(who.clone()));
             let earned = running.phase == Phase::Won && !laid && running.parts.get(&who).is_some_and(took_part);
             earned.then(|| {
                 running.chested.insert(who);
@@ -412,13 +413,14 @@ impl Room {
     }
 
     /// Stands one of an event's foes of a type and rank at a place, at the event's level, at home round `home` and
-    /// hunting the nearest player on its ground; none while the room has no room for it.
+    /// hunting the nearest player on its ground if it `hunts` (not the foes the room moves); none while it has no room.
     pub(crate) fn stand_event_foe(
         &mut self,
         running: &mut Running,
         (number, rank): (u8, Rank),
         (at, facing): ([f64; 3], f64),
         (home, level): ([f64; 3], u8),
+        hunts: bool,
     ) -> Option<FighterId> {
         if self.living_foes() >= self.foes_most {
             return None;
@@ -431,7 +433,7 @@ impl Room {
         let foe = self.foes.get_mut(&id)?;
         foe.brain.posted_at(home, facing);
         foe.brain.leashed(running.leash);
-        if let Some((player, at)) = hunted {
+        if let Some((player, at)) = hunted.filter(|_| hunts) {
             foe.brain.hunt(player, at, clock);
         }
         running.foes.push(id);

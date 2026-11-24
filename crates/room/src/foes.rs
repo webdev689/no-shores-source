@@ -8,9 +8,8 @@
 use crate::judging::{Check, Group, How, Pending};
 use crate::spells::feet_of;
 use crate::{EventKind, Room, SpawnAsk};
-use ::foes::noises::{Noise, landed, running, shot, swing};
 use ::foes::{Brain, Call, FoeType, Place, Rank, Seen, aimed_shot, foe_type, notice, spawn};
-use combat::fighter::{Action, FighterId, Side};
+use combat::fighter::{Action, FighterId};
 use combat::judge::telegraph_blow;
 use combat::shapes::{Shape, Telegraph};
 use combat::shots::shot_numbers;
@@ -37,6 +36,8 @@ pub const CLEAR_FOES: u8 = 255;
 /// A body this near the navmesh's nearest point to it, across, stands on the mesh: the margin its erosion trims by a
 /// wall.
 const ON_MESH: f64 = 1.5;
+/// How far off the mesh a foe with no way from where it stands makes back for it, metres: past any leash.
+const BACK_TO_MESH: f64 = 80.0;
 /// A telegraphed blow is judged against every player within its shape's reach and this much more.
 const SHAPE_MARGIN: f64 = 2.0;
 /// An aimed shot strikes harder than a plain one.
@@ -150,7 +151,14 @@ impl ::foes::Routes for MeshRoutes<'_> {
             return Some(to);
         }
         let path = self.mesh.find_path_kept(way, from, reachable);
-        Some(path.map_or(to, |points| self.onward(way, &points, from, to)))
+        // With no way from where it stands, off the mesh, it makes back for the mesh, never straight through what stands
+        // between it and its goal.
+        let back = || {
+            self.mesh
+                .nearest_point_within(from, BACK_TO_MESH)
+                .filter(|near| combat::sight::apart([near[0], near[1]], [from[0], from[1]]) > CORNER_REACHED)
+        };
+        Some(path.map_or_else(|| back().unwrap_or(to), |points| self.onward(way, &points, from, to)))
     }
 
     fn drops(&self, from: [f64; 3], to: [f64; 3]) -> bool {
@@ -370,8 +378,10 @@ impl Room {
         self.director.step();
         let fighters = self.fighters();
         self.leave_landings();
+        // A player the section killed lies dead though their fighter keeps its health: the foes let them go.
+        let fallen = |id: &FighterId| self.players.get(id).is_some_and(|found| !found.living());
         let noticed: Vec<(FighterId, Fighter)> =
-            fighters.iter().filter(|(id, _)| !self.left_be(*id)).copied().collect();
+            fighters.iter().filter(|(id, _)| !self.left_be(*id) && !fallen(id)).copied().collect();
         let intents = self.think_foes(&noticed);
         let (mut crews, mut shouts) = (Vec::new(), Vec::new());
         for (id, (mut brain, intent)) in intents {
@@ -468,7 +478,9 @@ impl Room {
         let near: Vec<FighterId> = self
             .players
             .iter()
-            .filter(|(_, player)| player.fighter.side != foe.side && !player.fighter.dead())
+            .filter(|(player, found)| {
+                found.fighter.side != foe.side && !found.fighter.dead() && !self.spares(id, **player)
+            })
             .filter(|(_, player)| {
                 combat::sight::apart(
                     [player.fighter.body.x, player.fighter.body.y],
@@ -502,64 +514,6 @@ impl Room {
         // Loosed like any shot: heard, and seen coming by the foes of other sides it may strike.
         self.loosed.push(id);
         self.ended_telegraphs.push((id, false, false));
-    }
-
-    /// Tells each foe's brain what it saw this tick: swings begun and shots loosed by fighters of another side, blows
-    /// that reached it and its own that landed, how its telegraphed blows ended, and every noise made.
-    pub(crate) fn tell_brains(&mut self) {
-        let (swings, loosed) = (std::mem::take(&mut self.swings), std::mem::take(&mut self.loosed));
-        let noises = self.noises(&swings, &loosed);
-        let side = |id: &FighterId| self.fighter(*id).map(|fighter| fighter.side);
-        let swings: Vec<(FighterId, combat::fighter::Attack, Option<Side>)> =
-            swings.into_iter().map(|(by, attack)| (by, attack, side(&by))).collect();
-        // Each shot's speed as it flies, the newest of its shooter's: a ball that reaches its mark at once flies none.
-        let speed = |by: FighterId| {
-            let shot = self.shots.iter().rev().map(|(shot, _)| shot).find(|shot| shot.owner == by);
-            shot.map_or(0.0, |shot| libm::sqrt(shot.velocity.iter().map(|part| part * part).sum()))
-        };
-        let loosed: Vec<(FighterId, Option<Side>, f64)> =
-            loosed.into_iter().map(|by| (by, side(&by), speed(by))).collect();
-        let verdicts = std::mem::take(&mut self.verdicts);
-        let ended = std::mem::take(&mut self.ended_telegraphs);
-        let tick = self.clock;
-        for (id, Foe { fighter, brain, .. }) in &mut self.foes {
-            // Only a blow from another side is a threat to answer: an ally's would only crowd it out.
-            let hostile = |by: &Option<Side>| by.is_some_and(|by| by != fighter.side);
-            for (by, attack, _) in swings.iter().filter(|(_, _, by)| hostile(by)) {
-                notice(brain, *id, &Seen::Swung { by: *by, attack: *attack }, tick);
-            }
-            for (by, _, speed) in loosed.iter().filter(|(_, by, _)| hostile(by)) {
-                notice(brain, *id, &Seen::Loosed { by: *by, speed: *speed }, tick);
-            }
-            for (striker, defender, verdict) in &verdicts {
-                if defender == id {
-                    notice(brain, *id, &Seen::Struck { by: *striker, verdict: *verdict }, tick);
-                } else if striker == id {
-                    notice(brain, *id, &Seen::Landed { on: *defender, verdict: *verdict }, tick);
-                }
-            }
-            for noise in &noises {
-                notice(brain, *id, &Seen::Heard(*noise), tick);
-            }
-            for (_, missed, perfectly_dodged) in ended.iter().filter(|(foe, _, _)| foe == id) {
-                let seen = Seen::TelegraphEnded { missed: *missed, perfectly_dodged: *perfectly_dodged };
-                notice(brain, *id, &seen, tick);
-            }
-        }
-    }
-
-    /// The noises made this tick: swings begun, shots loosed, blows landed, and runners' feet, but for a player's
-    /// still in their grace.
-    fn noises(&self, swings: &[(FighterId, combat::fighter::Attack)], loosed: &[FighterId]) -> Vec<Noise> {
-        let swung = swings.iter().filter_map(|(id, _)| self.fighter(*id).map(swing));
-        let shots = loosed.iter().filter_map(|id| self.fighter(*id).and_then(|by| Some(shot(by, by.arms.ranged?))));
-        let blows = self
-            .verdicts
-            .iter()
-            .filter_map(|(striker, defender, _)| Some(landed(self.fighter(*striker)?, self.fighter(*defender)?)));
-        let fighters = self.fighters().into_iter().filter(|(id, _)| !self.left_be(*id));
-        let runners = fighters.filter_map(|(_, by)| running(&by, self.clock));
-        swung.chain(shots).chain(blows).chain(runners).collect()
     }
 
     /// Every foe as the room last stepped it, in the order of their numbers.

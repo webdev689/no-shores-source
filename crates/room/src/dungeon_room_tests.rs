@@ -457,3 +457,23 @@ fn a_cache_on_the_reeves_post_throws_its_vestige_onto_clear_floor() {
     assert!(on_post > 0, "some post where no way round fits");
     assert!(thrown * 5 > on_post, "{thrown} Vestiges from {on_post} clears");
 }
+
+#[test]
+fn a_player_leaving_a_dungeon_by_its_exit_door_or_its_open_portal_is_kept_as_come_out_and_none_leaving_elsewhere() {
+    let mut room = Room::dungeon("saltgrass-downs", 0, None).expect("its first dungeon");
+    let player = room.join().expect("a room with space");
+    let (door, portal) = room.ways_out.expect("a dungeon's ways out");
+    let out = |room: &Room| {
+        let kept = gear::Character::from_json(&room.kept_character(player).expect("kept")).expect("a character");
+        kept.left.expect("its body left").out
+    };
+    stand_player(&mut room, player, door);
+    assert!(out(&room), "at its exit door");
+    let middle = [(door[0] + portal[0]) / 2.0, (door[1] + portal[1]) / 2.0];
+    stand_player(&mut room, player, middle);
+    assert!(!out(&room), "within it, away from either way out");
+    stand_player(&mut room, player, portal);
+    assert!(!out(&room), "at its portal while it stands shut");
+    room.cache.as_mut().expect("its cache").open = true;
+    assert!(out(&room), "at its portal once it stands open");
+}

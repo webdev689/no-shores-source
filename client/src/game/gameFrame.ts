@@ -259,7 +259,9 @@ export function startFrames(parts: FrameParts, playing: Playing): void {
     const ward = quests.wardPlate(parts.groundAt);
     const foes = ward ? [...shown.fight.foes, ward] : shown.fight.foes;
     const players = platedPlayers(here.otherPlayers, [body.x, body.y, body.z]);
-    const questShown = { ...shown, fight: { ...shown.fight, foes, questAt: quests.goalAt, players } };
+    // Whether the room will stand a fallen player again on its own, for the veil's words.
+    const fallen = { revivesLeft: here.held.revives, sectionDead: shown.standing.kind === 'dead' };
+    const questShown = { ...shown, fight: { ...shown.fight, foes, questAt: quests.goalAt, players, ...fallen } };
     const fight = footView.frame(here, questShown, seconds, { size, viewport, groundAt: here.groundAt });
     // Use held on another player opens their menu, where it does nothing else (a deed or a gate) and no menu or map is up.
     const offered = !paused && !looking && !here.fallen && !hud.usePrompt.showing && !playing.through;
@@ -315,9 +317,9 @@ export function startFrames(parts: FrameParts, playing: Playing): void {
     hud.strip(looking ? stripOf('landMap') : mapless ? shown.hints : withMapKey(shown.hints));
     // The leave held through takes the player to their ship: not under a window, the sheet, the held map or the chat,
     // nor while she speaks; fallen, it says why not.
-    const fallen = here.fallen ? refusedWords(FALLEN) : null;
+    const refused = here.fallen ? refusedWords(FALLEN) : null;
     const leaving = leaveOffered({ paused, sheet: hud.controls.open, map: looking, chat: chatOpen(), speaking: told });
-    if (hud.leaving.frame(controls.held('leave'), leaving, fallen, seconds)) parts.leave();
+    if (hud.leaving.frame(controls.held('leave'), leaving, refused, seconds)) parts.leave();
     // The quest's mark gives way to the map, as the fight's display does.
     hud.marks(looking ? [] : quests.marks(shown.shot, viewport, [body.x, body.y], parts.groundAt, here.node.id));
     // The tracker is set once a frame, so a public event's steps stand in it unblinking, in the quest's place.
@@ -500,9 +502,14 @@ export function startFrames(parts: FrameParts, playing: Playing): void {
     setBehindVeil(flow.mode === 'loading' || !!sea?.travelling?.away.veil);
     let settled = true;
     playing.shipScale = 1;
-    if (shown?.mode === 'story' && parts.story) storyFrame(parts.story, controls, seconds, size);
-    else if (shown?.mode === 'foot' && foot) settled = footFrame(foot, controls, seconds, size);
-    else if ((shown?.mode === 'sea' || shown?.mode === 'landing') && sea) seaFrame(sea, controls, seconds, size);
+    // A place's frame that throws leaves the rest of this one running, the interface and the veil's lift among it; it
+    // is not settled, so the veil waits READY_WAIT_S at most.
+    const placed = guard.run(() => {
+      if (shown?.mode === 'story' && parts.story) storyFrame(parts.story, controls, seconds, size);
+      else if (shown?.mode === 'foot' && foot) settled = footFrame(foot, controls, seconds, size);
+      else if ((shown?.mode === 'sea' || shown?.mode === 'landing') && sea) seaFrame(sea, controls, seconds, size);
+    });
+    settled &&= placed;
     // Only on foot is there a place to leave: a hold under way goes with the place it was begun in.
     if (shown?.mode !== 'foot') hud.leaving.frame(false, false, null, seconds);
     parts.ambience.frame(seconds);

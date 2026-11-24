@@ -646,3 +646,47 @@ test('a drink pressed between two ticks reaches the rules on the next tick only,
   assert.equal(fighting.own?.charges, 3, 'a player comes into the room with all three');
   assert.equal(fighting.own?.action.kind, 'idle', 'whole, the drink is refused');
 });
+
+test('a respawn asked while the link joins its room again goes with the first input the new room takes', () => {
+  const door = startRoomDoor(compiled);
+  door.open(course.start, course.blocks);
+  const asked: boolean[] = [];
+  let fight: Fighting | null = null;
+  const kept = new SnapshotKeeper();
+  const link = {
+    player: door.join(),
+    dressed: [],
+    joins: 1,
+    rejoining: false,
+    lost: null,
+    // As a rejoining link does, nothing is sent until the new room has welcomed it.
+    send: (bytes: Uint8Array<ArrayBuffer>) => {
+      if (link.rejoining) return;
+      asked.push(Input.getRootAsInput(new flatbuffers.ByteBuffer(bytes)).respawn());
+      door.input(link.player, bytes);
+    },
+    pump: () => {
+      door.tick();
+      const message = wholeOf(kept, door.snapshot(link.player));
+      if (message) fight?.receive(message);
+    },
+  };
+  const rules = startCombatRules(compiled);
+  rules.setCourse(course.blocks);
+  const fighting = new Fighting(rules, link);
+  fight = fighting;
+  link.pump();
+  const steps = fighting.steps(movement);
+  link.rejoining = true;
+  fighting.askRespawn();
+  for (let count = 0; count < 3; count += 1) steps.step({} as Body, STILL);
+  assert.deepEqual(asked, [], 'nothing goes while it rejoins');
+  kept.clear();
+  Object.assign(link, { player: door.join(), joins: 2, rejoining: false });
+  link.pump();
+  for (let count = 0; count < 2; count += 1) {
+    steps.step({} as Body, STILL);
+    link.pump();
+  }
+  assert.deepEqual(asked, [true, false], 'the respawn asked goes with the first input');
+});
