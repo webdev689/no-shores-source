@@ -119,9 +119,6 @@ export class DungeonDrawers {
   }
 
   /** One frame in a Breach's run: its spaces and pieces as `props` draws them over the dark, the fight's blood under
-   *  the figures and its marks over them, and the figures lit as by the run's crystal; `after` and `drain` as a
-   *  dungeon's. */
-  /** One frame in a Breach's run: its spaces and pieces as `props` draws them over the dark, the fight's blood under
    *  the figures and its marks over them; all of it under the run's own sky, written here each frame (underground, no
    *  sun), lit by the lamps nearest the eye of those the pieces give (EVENT_LAMPS) and the light `carried`, the
    *  figures lit as the stone round them is; `after` and `drain` as a dungeon's. */
@@ -142,7 +139,7 @@ export class DungeonDrawers {
     const { eye } = shown.shot;
     const light = carriedLight(carried?.left);
     const held = light && carried ? { light, feet: carried.feet } : null;
-    // Underground no daylight puts the lamps out.
+    // Underground there is no daylight to put the lamps out.
     const lamps = lampsRound(eye, EVENT_LAMPS.current, held, 0, time);
     const sky = runSky(time);
     this.sky.write(sky, lamps, eye);

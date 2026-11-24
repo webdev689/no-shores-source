@@ -414,9 +414,6 @@ export class BreachView {
     return !!this.word && seen.openTo.includes(this.word.fight.player);
   }
 
-  /** The run's props: its spaces where its plan stands them, each seal while shut, each slab while it stands, a
-   *  crystal at each bell, the Lodestone on its plinth, lying, or over its bearer, turning, and the hidden chests,
-   *  shut (glowing while open to pay) until the room pays the player, their lids then thrown back. */
   /** The run's props: its spaces where its plan stands them (a shore only while it is shown, `shoresShown`), each
    *  seal while shut, each slab while it stands, a crystal at each bell, a dim one asleep at each bell socket no bell
    *  stands at, the Lodestone on its plinth, lying, or over its bearer, turning, and the hidden chests, shut until the

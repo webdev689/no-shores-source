@@ -131,7 +131,7 @@ Claude's ([[The Drowned Vale as Claude Builds It]]).
   above, and everything fading into the dark from 40 m to black at 120 m; the lamps nearest the eye (16) of those its
   pieces give, each read from where the piece's crystal, fire and glass lie (red at the seals, bells, the Seam and the
   clusters; warm at the Choir's candles and rose window, the shore's hearth and sconces, the Heart's lantern), and a
-  carried torch or lantern; the figures in the same light as the stone. A shore is drawn only while a player stands in
+  carried torch or lantern; the figures in the same light as the stone, fading into the dark with it. A shore is drawn only while a player stands in
   it, a rift to it is opening or open, or the Steward's taken are there. Its seals while shut, its slabs fading in and
   out over a second, its bells (a dim one asleep at each bell socket no bell foe holds), the hidden chests (the plain
   chest dim while it will not pay, the heroic chest, its crystal alight, once it will, thrown open once it has),
@@ -193,7 +193,6 @@ slowly and glints with the lamps over it ([[Modules]], "In the game").
   A Hard ward on the Keepers would give it weight; that is a new mechanic, for the owner.
 - **The run's light casts no shadows**: its lamps reach through walls, and only the 16 nearest the eye light it; the
   crystal clusters' many small lamps can crowd a far candle out.
-- **The figures do not fade into the dark** as the stone does; a figure 100 m off is drawn dim, not lost.
 - **Stained glass is on the page before any piece wears it**: until the modules are rebuilt with `glass`, the Choir's
   rose window and the shore's lancets wear `glow` and read as a flat warm disc.
 - **Played offline only**: tested by the rules' and the page's tests, never in a deployed room; its light was

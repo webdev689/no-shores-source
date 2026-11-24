@@ -250,6 +250,7 @@ fn material_colour(material: u32, local: vec3f, grey: bool) -> vec3f {
     }
     case ${id('bone')}: { return mix(vec3f(0.74, 0.69, 0.56), vec3f(0.86, 0.82, 0.71), fine); }
     case ${id('glow')}: { return mix(vec3f(1.9, 1.2, 0.5), vec3f(2.2, 1.6, 0.8), fine); }
+    // shade() draws glass itself, across its own face; this stands for a caller with no face to lay it across.
     case ${id('glass')}: { return glass_colour(local, vec3f(0.0, 1.0, 0.0)); }
     ${CLOTH_CASES}
     case ${id('paving')}: {
@@ -274,7 +275,8 @@ fn shade(in: Out) -> vec4f {
     let deep = 1.0 - smoothstep(0.0, 3.0, in.local.z);
     return vec4f(vec3f(0.006, 0.003, 0.012) + vec3f(0.12, 0.04, 0.24) * (rim * 0.5 + deep * 0.35), 1.0);
   }
-  if in.material == WATER { facing = normalize(facing + vec3f(water_ripple(in.local), 0.0)); }
+  // Only a face lying flat ripples: a fountain's jet is no pool.
+  if in.material == WATER && facing.z > 0.7 { facing = normalize(facing + vec3f(water_ripple(in.local), 0.0)); }
   let direct = max(dot(facing, sky_state.key.xyz), 0.0);
   let sun = select(1.0, sunlit(in.from_eye, facing), direct > 0.0) * sky_dapple(in.from_eye);
   if in.material == CRYSTAL {
