@@ -9,9 +9,9 @@ use crate::shots::{BRACE_GAP, DRAW_FULL, Shot, aimed_power, by_foe, loose, playe
 use crate::sight::{apart, bearing, off, turned, wrap};
 use crate::strike::reach_of;
 use crate::tuning::{
-    AIM_TURN, ATTACK_PACE, BODY_RADIUS, DODGE_ATTACK, DODGE_LIFT, DODGE_SPEED, DODGE_STAMINA, DODGE_TICKS, FLINCH,
-    FLINCH_DODGE, GUARD_PACE, GUARD_TURN, LOCK_ARC, PARRY_PLAYS, PARRY_RUSHED, POISE_REST, PRESS_KEPT, STAMINA,
-    STAMINA_GUARDING, STAMINA_PER_TICK, STAMINA_REST, STEER_REACH, parry_window,
+    AIM_TURN, ATTACK_PACE, BODY_RADIUS, DODGE_ATTACK, DODGE_LIFT, DODGE_SPEED, DODGE_TICKS, FLINCH, FLINCH_DODGE,
+    GUARD_PACE, GUARD_TURN, LOCK_ARC, PARRY_PLAYS, PARRY_RUSHED, POISE_REST, PRESS_KEPT, STAMINA, STAMINA_GUARDING,
+    STAMINA_PER_TICK, STAMINA_REST, STEER_REACH, parry_window,
 };
 use core::f64::consts::FRAC_PI_2;
 use movement::blocks::{ground_at, room_at};
@@ -425,9 +425,7 @@ fn dodge<B: Near + ?Sized>(next: &mut Fighter, controls: Controls, around: &Surr
     let body = next.body;
     let facing =
         around.target_at.map_or_else(|| bearing([0.0, 0.0], toward), |at| bearing([body.x, body.y], [at[0], at[1]]));
-    let drawn = if next.arms == crate::arms::BARE_HANDS { 1.0 } else { next.trim.drawn_dodge_stamina };
-    let veiled = if next.statuses.has(crate::Status::Veiled) { next.trim.veiled_dodge_stamina } else { 1.0 };
-    spend(next, DODGE_STAMINA * next.trim.dodge_stamina * drawn * veiled);
+    spend(next, next.dodge_stamina());
     next.body = Body {
         mode: Mode::Air,
         vx: toward[0] * DODGE_SPEED,
