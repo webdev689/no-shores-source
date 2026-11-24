@@ -38,12 +38,14 @@ def platform(module, body, cap, step, wear):
     rise = PLATFORM_M / STEPS
     top_front = FLIGHT_FOOT_Y + STEPS * RUN_M
     head = LANDING_Y - STEPS * RUN_M
-    for x0, x1, y0, y1 in ((-SIDE_M, SIDE_M, top_front, head), (-SIDE_M, -WELL_HALF_M, head, BACK_Y),
-                           (WELL_HALF_M, SIDE_M, head, BACK_Y), (-WELL_HALF_M, WELL_HALF_M, DOORWAY_Y + 0.3, BACK_Y)):
-        kit.block(module, ((x0 + x1) / 2, (y0 + y1) / 2, 0.0), (x1 - x0, y1 - y0, PLATFORM_M - 0.12), body,
+    for west, east, south, north in ((-SIDE_M, SIDE_M, top_front, head), (-SIDE_M, -WELL_HALF_M, head, BACK_Y),
+                                     (WELL_HALF_M, SIDE_M, head, BACK_Y),
+                                     (-WELL_HALF_M, WELL_HALF_M, DOORWAY_Y + 0.3, BACK_Y)):
+        middle_x, middle_y = (west + east) / 2, (south + north) / 2
+        kit.block(module, (middle_x, middle_y, 0.0), (east - west, north - south, PLATFORM_M - 0.12), body,
                   bevel=0.06, wear=wear, cuts=2, part=False)
-        module.part((x0, y0, 0.0), (x1, y1, PLATFORM_M))
-        kit.block(module, ((x0 + x1) / 2, (y0 + y1) / 2, PLATFORM_M - 0.14), (x1 - x0 + 0.06, y1 - y0 + 0.06, 0.14),
+        module.part((west, south, 0.0), (east, north, PLATFORM_M))
+        kit.block(module, (middle_x, middle_y, PLATFORM_M - 0.14), (east - west + 0.06, north - south + 0.06, 0.14),
                   cap, bevel=0.03, wear=0.0, part=False)
     kit.stair(module, (0.0, FLIGHT_FOOT_Y, 0.0), (0, 1), 3.0, rise, RUN_M, STEPS, step, wear=wear)
     kit.stair(module, (0.0, LANDING_Y, 0.0), (0, -1), STEPS_HALF_M * 2, rise, RUN_M, STEPS, step, wear=wear)
@@ -85,8 +87,8 @@ def gate_mound(module):
     for x in (-2.4, 2.4):
         furnish.lantern_post(module, (x, FLIGHT_FOOT_Y + 0.4, 0.0), high=2.2)
     for k in range(6):
-        at = ((1 if k % 2 else -1) * module.draw(2.2, 4.5), FLIGHT_FOOT_Y + module.draw(0.4, 3.2), 0.0)
-        kit.rock(module, at, (0.5, 0.4, 0.35),
+        spot = ((1 if k % 2 else -1) * module.draw(2.2, 4.5), FLIGHT_FOOT_Y + module.draw(0.4, 3.2), 0.0)
+        kit.rock(module, spot, (0.5, 0.4, 0.35),
                  k * 2.3, material='rubble', part=True, detail=2)
     shell.fits(module, 3, 3)
 
@@ -204,7 +206,7 @@ def anchor(module, x, y):
 
 
 def lodge_tent(module):
-    shell.tent(module, (0.0, 0.6, 0.0), 0, 3.2, 3.8, 3.0, eave=1.7, door=True, out=0.5)
+    shell.tent(module, (0.0, 0.6, 0.0), 0, 3.2, 3.8, 3.0, eave=1.7, open_door=True, out=0.5)
     fittings.post(module, (2.2, -1.45, 0.0), 2.2, side=0.14)
     stall_harbour.ship_wheel(module, (2.2, -1.6, 1.45))
     fittings.chest(module, (-1.7, -1.9, 0.0), turn=0.15)
@@ -241,13 +243,13 @@ def lodge_timber(module):
     west, east, front, back, sill, wall = -2.3, 2.3, -1.4, 2.4, 0.3, 2.6
     kit.block(module, (0.0, (front + back) / 2, 0.0), (east - west + 0.3, back - front + 0.3, sill), 'stone',
               bevel=0.04, wear=0.03, cuts=1)
-    shell.run(module, 'boards', (west, front), (east, front), wall, sill, gaps=((1.75, 2.85, 2.2),))
-    shell.run(module, 'boards', (west, back), (east, back), wall, sill)
-    for x in (west, east):
-        shell.run(module, 'boards', (x, front), (x, back), wall, sill)
+    def window_and_posts(x):
         shell.shutters(module, (x + (0.14 if x > 0 else -0.14), 0.5, sill + 1.0), 1 if x > 0 else 3, 0.7, 0.9)
         for y in (front, back):
             fittings.post(module, (x, y, 0.0), sill + wall, side=0.26)
+
+    shell.walls(module, 'boards', west, east, front, back, wall, sill, front_gaps=((1.75, 2.85, 2.2),),
+                beside=window_and_posts)
     shell.door(module, (0.0, front, sill), 0, 1.06, 2.2)
     kit.block(module, (0.0, front - 0.35, 0.0), (1.4, 0.5, sill - 0.05), 'stone', bevel=0.02, wear=0.0)
     eave, ridge = sill + wall, sill + wall + 1.9
@@ -265,10 +267,7 @@ def lodge_timber(module):
 
 def lodge_stone(module):
     west, east, front, back, wall = -2.3, 2.3, -1.4, 2.4, 3.0
-    shell.run(module, 'stone', (west, front), (east, front), wall, gaps=((1.75, 2.85, 2.3),))
-    shell.run(module, 'stone', (west, back), (east, back), wall)
-    for x in (west, east):
-        shell.run(module, 'stone', (x, front), (x, back), wall)
+    shell.walls(module, 'stone', west, east, front, back, wall, front_gaps=((1.75, 2.85, 2.3),))
     shell.door(module, (0.0, front, 0.0), 0, 1.06, 2.3, kind='bound')
     for x in (-1.5, 1.5):
         shell.shutters(module, (x, front - 0.32, 1.1), 0, 0.6, 0.9)
@@ -325,7 +324,6 @@ def great_horn(module, base, length, mouth, quarter=0):
         for polygon in item.polygons:
             polygon.use_smooth = True
         kit.item_of(module, f'horn{len(module.objects)}', item, 'bone')
-        end = middle(1.0)
         shapes.lathe(module, tuple(middle(0.97)), [(radius(0.97) * 0.95, 0.0), (0.0, 0.02)], 'black', sides=12,
                      turn=(math.pi / 2 - 0.54, 0.0, 0.0))
         for t in (0.25, 0.5, 0.75, 0.97):
@@ -368,11 +366,12 @@ def horn_platform(module):
               wear=0.0)
     for k in range(7):
         shapes.slab(module, (-half + 0.2 + k * 0.4, 0.0, deck + 0.01), (0.36, half * 2 + 0.2, 0.03), 'timber')
-    for x0, y0, x1, y1 in ((-half, -half, half, -half), (half, -half, half, half), (-half, half, half, half)):
-        shapes.slab(module, ((x0 + x1) / 2, (y0 + y1) / 2, deck + 0.95), (abs(x1 - x0) + 0.1, abs(y1 - y0) + 0.1,
-                    0.1), 'timber')
-        module.part((min(x0, x1) - 0.05, min(y0, y1) - 0.05, deck), (max(x0, x1) + 0.05, max(y0, y1) + 0.05,
-                    deck + 1.0))
+    for (start_x, start_y), (end_x, end_y) in (((-half, -half), (half, -half)), ((half, -half), (half, half)),
+                                               ((-half, half), (half, half))):
+        shapes.slab(module, ((start_x + end_x) / 2, (start_y + end_y) / 2, deck + 0.95),
+                    (abs(end_x - start_x) + 0.1, abs(end_y - start_y) + 0.1, 0.1), 'timber')
+        module.part((min(start_x, end_x) - 0.05, min(start_y, end_y) - 0.05, deck),
+                    (max(start_x, end_x) + 0.05, max(start_y, end_y) + 0.05, deck + 1.0))
     kit.stair(module, (-half - 7 * 0.3, 0.6, 0.0), (1, 0), 1.0, rise, 0.3, 7, 'timber', wear=0.0)
     for y in (0.6 - 0.5, 0.6 + 0.5):
         fittings.post(module, (-half - 2.1, y, 0.0), 1.0, side=0.08, part=False)
@@ -389,27 +388,14 @@ def horn_platform(module):
 def horn_tower(module):
     side, high = 3.2, 7.0
     middle = (0.0, 0.6)
-    kit.block(module, (*middle, 0.0), (side + 0.3, side + 0.3, 0.5), 'trim', bevel=0.04, wear=0.02, part=False)
-    kit.block(module, (*middle, 0.0), (side, side, high), 'stone', bevel=0.06, wear=0.04, cuts=3)
-    for z in (3.5,):
-        kit.block(module, (*middle, z), (side + 0.12, side + 0.12, 0.2), 'trim', bevel=0.03, wear=0.0, part=False)
-    for course in range(3):
-        grow = 0.1 * (course + 1)
-        kit.block(module, (*middle, high + course * 0.12), (side + grow, side + grow, 0.12), 'trim', bevel=0.02,
-                  wear=0.0, part=False)
-    top = high + 0.36
-    edge = side / 2 + 0.15 - 0.2
-    corners = [(middle[0] + x * edge, middle[1] + y * edge) for x, y in ((-1, -1), (1, -1), (1, 1), (-1, 1))]
-    for a, b in zip(corners, corners[1:] + corners[:1]):
-        kit.battlements(module, a, b, top, 0.35, every=1.1, wide=0.6, high=0.7)
-    module.part((middle[0] - side / 2, middle[1] - side / 2, 0.0), (middle[0] + side / 2, middle[1] + side / 2,
-                top + 0.7))
+    top = shell.keep(module, middle, side, high, (3.5,), plinth=0.3, course=0.12, string=0.2, grow=0.1, inset=0.05,
+                     reach=0.0, merlons=(0.35, 1.1, 0.6, 0.7))
     shell.door(module, (0.0, middle[1] - side / 2 - 0.02, 0.0), 0, 1.0, 2.2, kind='bound')
     shell.slit(module, (0.0, middle[1] - side / 2 - 0.03, 4.6), 0)
-    for face, at in (('+x', (side / 2 + 0.03, middle[1])), ('-x', (-side / 2 - 0.03, middle[1])),
-                     ('+y', (0.0, middle[1] + side / 2 + 0.03))):
+    for face, face_middle in (('+x', (side / 2 + 0.03, middle[1])), ('-x', (-side / 2 - 0.03, middle[1])),
+                              ('+y', (0.0, middle[1] + side / 2 + 0.03))):
         for z in (2.2, 5.0):
-            shell.slit(module, (*at, z), shell.QUARTERS[face])
+            shell.slit(module, (*face_middle, z), shell.QUARTERS[face])
     for y in (middle[1] - 0.6, middle[1] + 0.6):
         rest = horn_rest((0.0, middle[1] - 0.4, top + 0.7), 3.0, 0.42, y)
         shapes.slab(module, (0.0, y, (top + rest) / 2), (0.6, 0.16, rest - top), 'timber')

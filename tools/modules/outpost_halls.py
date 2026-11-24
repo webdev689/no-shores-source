@@ -27,17 +27,17 @@ def supplies(module, at):
     fittings.crate(module, (x + 0.05, y, 0.7), (0.75, 0.65, 0.55), turn=-0.12)
     fittings.crate(module, (x + 0.95, y + 0.1, 0.0), (0.8, 0.7, 0.62), turn=0.0)
     module.part((x - 0.5, y - 0.45, 0.0), (x + 1.4, y + 0.5, 1.25))
-    for dx, dy in ((-0.9, 0.2), (-0.9, -0.5)):
-        fittings.barrel(module, (x + dx, y + dy, 0.0), radius=0.3, high=0.85)
+    for along, across in ((-0.9, 0.2), (-0.9, -0.5)):
+        fittings.barrel(module, (x + along, y + across, 0.0), radius=0.3, high=0.85)
     module.part((x - 1.2, y - 0.8, 0.0), (x - 0.6, y + 0.5, 0.85))
-    for dx in (0.3, 0.8):
-        fittings.sack(module, (x + dx, y - 0.75, 0.0), size=0.5, material='canvas')
+    for along in (0.3, 0.8):
+        fittings.sack(module, (x + along, y - 0.75, 0.0), size=0.5, material='canvas')
     fittings.rope_coil(module, (x + 0.95, y + 0.1, 0.62), radius=0.24, turns=3)
 
 
 def hall_camp(module):
     # The command tent at the back of the plot, open toward the front, the map table and a chest inside.
-    shell.tent(module, (0.0, 1.2, 0.0), 0, 6.0, 7.0, 4.0, eave=2.0, door=True, out=0.8)
+    shell.tent(module, (0.0, 1.2, 0.0), 0, 6.0, 7.0, 4.0, eave=2.0, open_door=True, out=0.8)
     top = furnish.trestle(module, (0.0, 2.2, 0.0), 2.4, 1.1)
     shapes.slab(module, (-0.2, 2.2, top + 0.004), (1.5, 0.9, 0.006), 'linen', turn=(0.0, 0.0, 0.05))
     for line in range(4):
@@ -106,14 +106,14 @@ def hall_longhouse(module):
     sill, wall, eave, ridge = 0.5, 3.0, 3.5, 7.2
     door_wide, door_high = 1.8, 2.6
     # The stone sill under the walls, broken for the door; the boarded walls on it; corner and wall posts.
-    for x0, x1, y0, y1 in ((west, east, back, back), (west, west, front, back), (east, east, front, back),
-                           (west, -door_wide / 2, front, front), (door_wide / 2, east, front, front)):
-        middle = ((x0 + x1) / 2, (y0 + y1) / 2, 0.0)
-        kit.block(module, middle, (x1 - x0 + 0.4, 0.4, sill) if y0 == y1 else (0.4, y1 - y0 + 0.4, sill), 'stone',
-                  bevel=0.04, wear=0.03, cuts=1)
-    shell.run(module, 'boards', (west, back), (east, back), wall, sill)
-    for x in (west, east):
-        shell.run(module, 'boards', (x, front), (x, back), wall, sill)
+    for west_end, east_end, south_end, north_end in ((west, east, back, back), (west, west, front, back),
+                                                     (east, east, front, back), (west, -door_wide / 2, front, front),
+                                                     (door_wide / 2, east, front, front)):
+        middle = ((west_end + east_end) / 2, (south_end + north_end) / 2, 0.0)
+        size = ((east_end - west_end + 0.4, 0.4, sill) if south_end == north_end else
+                (0.4, north_end - south_end + 0.4, sill))
+        kit.block(module, middle, size, 'stone', bevel=0.04, wear=0.03, cuts=1)
+    shell.walls(module, 'boards', west, east, front, back, wall, sill, open_front=True)
     shell.run(module, 'boards', (west, front), (-door_wide / 2, front), wall, sill)
     shell.run(module, 'boards', (door_wide / 2, front), (east, front), wall, sill)
     lintel = sill + wall - door_high
@@ -166,21 +166,7 @@ def tower(module, west, south, side, high):
     """A square stone tower from (`west`, `south`), `side` across and `high` tall: string courses, a corbelled
     parapet, merlons round its top and two flagstaffs in iron collars at its west corners."""
     middle = (west + side / 2, south + side / 2)
-    kit.block(module, (*middle, 0.0), (side + 0.2, side + 0.2, 0.5), 'trim', bevel=0.04, wear=0.02, part=False)
-    kit.block(module, (*middle, 0.0), (side, side, high), 'stone', bevel=0.06, wear=0.04, cuts=3)
-    for z in (4.2, 8.4):
-        kit.block(module, (*middle, z), (side + 0.14, side + 0.14, 0.22), 'trim', bevel=0.03, wear=0.0, part=False)
-    for course in range(3):
-        grow = 0.12 * (course + 1)
-        kit.block(module, (*middle, high + course * 0.14), (side + grow, side + grow, 0.14), 'trim', bevel=0.02,
-                  wear=0.0, part=False)
-    top = high + 0.42
-    edge = side / 2 + 0.12
-    corners = [(middle[0] + x * (edge - 0.2), middle[1] + y * (edge - 0.2)) for x, y in ((-1, -1), (1, -1), (1, 1),
-                                                                                         (-1, 1))]
-    for a, b in zip(corners, corners[1:] + corners[:1]):
-        kit.battlements(module, a, b, top, 0.4, every=1.3, wide=0.75, high=0.8)
-    module.part((middle[0] - edge, middle[1] - edge, 0.0), (middle[0] + edge, middle[1] + edge, top + 0.8))
+    top = shell.keep(module, middle, side, high, (4.2, 8.4))
     for y in (south + 0.45, south + side - 0.45):
         x = west + 0.45
         shapes.lathe(module, (x, y, top), [(0.12, 0.0), (0.12, 0.35), (0.09, 0.38), (0.09, 0.55), (0.12, 0.58),
@@ -199,11 +185,8 @@ def hall_stronghold(module):
     stone, upper = 4.2, 3.0
     door_wide, door_high = 2.2, 3.0
     # The stone ground floor, its door's opening carried over by a lintel; arrow slits along its front.
-    shell.run(module, 'stone', (west, front), (east, front), stone, gaps=((-west - door_wide / 2, -west + door_wide / 2,
-              door_high),), thick=0.7)
-    shell.run(module, 'stone', (west, back), (east, back), stone, thick=0.7)
-    for x in (west, east):
-        shell.run(module, 'stone', (x, front), (x, back), stone, thick=0.7)
+    shell.walls(module, 'stone', west, east, front, back, stone, thick=0.7,
+                front_gaps=((-west - door_wide / 2, -west + door_wide / 2, door_high),))
     for side in (-1, 1):
         shell.door(module, (side * door_wide / 4, front - 0.1, 0.0), 0, door_wide / 2 - 0.02, door_high, kind='bound')
     shapes.ball(module, (0.0, front - 0.32, door_high - 0.4), 0.12, 'gold', detail=1)
@@ -220,12 +203,11 @@ def hall_stronghold(module):
     for x in [west + 0.4 + k * 0.9 for k in range(12)]:
         shapes.slab(module, (x, front - 0.4, stone + 0.1), (0.16, 0.5, 0.18), 'timber')
     base = stone + 0.18
-    shell.run(module, 'boards', (west, front), (east, front), upper, base)
-    shell.run(module, 'boards', (west, back), (east, back), upper, base)
-    for x in (west, east):
-        shell.run(module, 'boards', (x, front), (x, back), upper, base)
+    def corner_posts(x):
         for y in (front, back):
             fittings.post(module, (x, y, base), upper, side=0.3)
+
+    shell.walls(module, 'boards', west, east, front, back, upper, base, beside=corner_posts)
     for x in (-3.6, -1.2, 1.2, 3.6):
         shell.shutters(module, (x, front - 0.14, base + 0.9), 0, 0.8, 1.0)
         fittings.post(module, (x + 0.6 if x < 0 else x - 0.6, front, base), upper, side=0.22, part=False)

@@ -87,20 +87,23 @@ def trestle(module, at, length, deep, high=0.85, material='timber', turned=False
         shapes.slab(module, (x, y - deep / 3 + board * deep / 3, top - 0.03), (length, deep / 3 - 0.012, 0.06),
                     material, bevel=0.008)
     if turned:
-        for dx in (-1, 1):
-            for dy in (-1, 1):
-                shapes.lathe(module, (x + dx * (length / 2 - 0.12), y + dy * (deep / 2 - 0.1), z),
+        for east_west in (-1, 1):
+            for north_south in (-1, 1):
+                shapes.lathe(module, (x + east_west * (length / 2 - 0.12), y + north_south * (deep / 2 - 0.1), z),
                              [(0.07, 0.0), (0.05, 0.08), (0.06, high * 0.3), (0.035, high * 0.45), (0.06, high * 0.6),
                               (0.045, high - 0.16), (0.06, high - 0.06)], material, sides=8)
-        for dy in (-1, 1):
-            shapes.slab(module, (x, y + dy * (deep / 2 - 0.1), top - 0.14), (length - 0.2, 0.05, 0.16), material)
-        for dx in (-1, 1):
-            shapes.slab(module, (x + dx * (length / 2 - 0.12), y, top - 0.14), (0.05, deep - 0.2, 0.16), material)
+        for north_south in (-1, 1):
+            shapes.slab(module, (x, y + north_south * (deep / 2 - 0.1), top - 0.14), (length - 0.2, 0.05, 0.16),
+                        material)
+        for east_west in (-1, 1):
+            shapes.slab(module, (x + east_west * (length / 2 - 0.12), y, top - 0.14), (0.05, deep - 0.2, 0.16),
+                        material)
     else:
-        for dx in (-1, 1):
-            leg_x = x + dx * (length / 2 - 0.25)
-            for dy in (-1, 1):
-                shapes.rod(module, (leg_x, y + dy * (deep / 2 - 0.05), z), (leg_x, y + dy * 0.08, top - 0.08), 0.035,
+        for east_west in (-1, 1):
+            leg_x = x + east_west * (length / 2 - 0.25)
+            for north_south in (-1, 1):
+                shapes.rod(module, (leg_x, y + north_south * (deep / 2 - 0.05), z),
+                           (leg_x, y + north_south * 0.08, top - 0.08), 0.035,
                            material, sides=5)
             shapes.slab(module, (leg_x, y, top - 0.1), (0.09, deep - 0.1, 0.08), material)
         shapes.slab(module, (x, y, z + high * 0.35), (length - 0.5, 0.06, 0.08), material)
@@ -128,11 +131,11 @@ def strongbox(module, at, size=(0.8, 0.5, 0.48), turn=0.0, metal='iron'):
         for side in (-1, 1):
             shapes.slab(module, placed(wide * share, side * (deep / 2 + 0.012), high / 2), (0.07, 0.012, high),
                         metal, turn=(0.0, 0.0, turn))
-    for dx in (-1, 1):
-        for dy in (-1, 1):
-            shapes.slab(module, placed(dx * (wide / 2 - 0.03), dy * (deep / 2 - 0.03), high / 2),
+    for east_west in (-1, 1):
+        for north_south in (-1, 1):
+            shapes.slab(module, placed(east_west * (wide / 2 - 0.03), north_south * (deep / 2 - 0.03), high / 2),
                         (0.09, 0.09, high + 0.03), metal, turn=(0.0, 0.0, turn))
-        shapes.ring(module, placed(dx * (wide / 2 + 0.04), 0.0, high * 0.6), 0.06, 0.016, 'iron',
+        shapes.ring(module, placed(east_west * (wide / 2 + 0.04), 0.0, high * 0.6), 0.06, 0.016, 'iron',
                     turn=(0.0, math.pi / 2, turn), segments=8, sides=3)
     shapes.slab(module, placed(0.0, -deep / 2 - 0.02, high * 0.78), (0.08, 0.02, 0.2), 'iron', turn=(0.0, 0.0, turn))
     shapes.slab(module, placed(0.0, -deep / 2 - 0.05, high * 0.6), (0.14, 0.05, 0.13), 'iron', bevel=0.01,
@@ -233,15 +236,15 @@ def lantern_post(module, at, high=2.2, side=0.12):
     fittings.lantern(module, (x, y - 0.5, z + high - 0.62), size=0.24, hung_from=z + high - 0.12)
 
 
-def bin(module, at, size, fill='rubble', boards='timber'):
+def heaped_bin(module, at, size, fill='rubble', boards='timber'):
     """A bin of boards on `at`, open at its top and heaped with `fill` (ore, grain, roots); a part."""
     wide, deep, high = size
     x, y, z = at
     for side in (-1, 1):
         shapes.slab(module, (x, y + side * (deep / 2 - 0.02), z + high / 2), (wide, 0.04, high), boards)
         shapes.slab(module, (x + side * (wide / 2 - 0.02), y, z + high / 2), (0.04, deep, high), boards)
-        for dx in (-1, 1):
-            shapes.slab(module, (x + dx * (wide / 2 - 0.03), y + side * (deep / 2 - 0.03), z + high / 2 + 0.02),
+        for east_west in (-1, 1):
+            shapes.slab(module, (x + east_west * (wide / 2 - 0.03), y + side * (deep / 2 - 0.03), z + high / 2 + 0.02),
                         (0.07, 0.07, high + 0.04), boards)
     for band in (0.12, high - 0.1):
         for side in (-1, 1):
@@ -261,8 +264,8 @@ def weapon_rack(module, at, quarter=0, length=1.8):
             shapes.slab(module, (0.0, 0.0, z), (length + 0.1, deep, 0.08), 'timber', bevel=0.01)
         arms = 6
         for arm in range(arms):
-            ax = -length / 2 + 0.2 + arm * (length - 0.4) / (arms - 1)
-            fittings.polearm(module, (ax, 0.0, 0.26), high=2.0 + 0.15 * (arm % 2),
+            arm_x = -length / 2 + 0.2 + arm * (length - 0.4) / (arms - 1)
+            fittings.polearm(module, (arm_x, 0.0, 0.26), high=2.0 + 0.15 * (arm % 2),
                              head='spear' if arm % 3 else 'halberd')
         for side in (-0.3, 0.3):
             fittings.sword(module, (side, -0.09, 0.45), length=1.0)
@@ -279,18 +282,18 @@ def tool_rack(module, at, quarter=0, length=1.6):
         shapes.slab(module, (0.0, 0.0, 1.35), (length + 0.1, 0.08, 0.1), 'timber', bevel=0.01)
         shapes.slab(module, (0.0, 0.0, 0.3), (length + 0.1, 0.06, 0.08), 'timber')
         for tool in range(4):
-            tx = -length / 2 + 0.25 + tool * 0.3
-            shapes.rod(module, (tx, -0.1, 0.0), (tx, -0.1, 1.15), 0.02, 'timber', sides=5)
+            tool_x = -length / 2 + 0.25 + tool * 0.3
+            shapes.rod(module, (tool_x, -0.1, 0.0), (tool_x, -0.1, 1.15), 0.02, 'timber', sides=5)
             pick = [(-0.38, 0.03), (-0.05, 0.05), (0.0, 0.08), (0.05, 0.05), (0.3, 0.0), (0.05, -0.03), (-0.05, -0.03)]
             shapes.cutout(module, pick if tool % 2 else [(x * 0.8, z * 1.6) for x, z in pick], 0.04, 'iron',
-                          (tx, -0.1, 1.17))
+                          (tool_x, -0.1, 1.17))
         for peg in range(3):
-            px = length / 2 - 0.25 - peg * 0.22
-            shapes.rod(module, (px, 0.0, 1.32), (px, -0.12, 1.32), 0.012, 'timber', sides=4)
+            peg_x = length / 2 - 0.25 - peg * 0.22
+            shapes.rod(module, (peg_x, 0.0, 1.32), (peg_x, -0.12, 1.32), 0.012, 'timber', sides=4)
             outline = [(math.cos(a) * 0.17, -0.05 - math.sin(a) * 0.17) for a in (0.0, 0.6, 1.2, 1.8, 2.4)]
             outline += [(math.cos(a) * 0.13, -0.03 - math.sin(a) * 0.12) for a in (2.3, 1.7, 1.1, 0.5, 0.1)]
-            shapes.cutout(module, outline, 0.01, 'iron', (px - 0.02, -0.11, 1.22))
-            shapes.rod(module, (px + 0.16, -0.11, 1.2), (px + 0.16, -0.11, 0.98), 0.016, 'timber', sides=4)
+            shapes.cutout(module, outline, 0.01, 'iron', (peg_x - 0.02, -0.11, 1.22))
+            shapes.rod(module, (peg_x + 0.16, -0.11, 1.2), (peg_x + 0.16, -0.11, 0.98), 0.016, 'timber', sides=4)
         shapes.rod(module, (length / 2 + 0.2, -0.1, 0.0), (length / 2 + 0.2, -0.1, 1.4), 0.02, 'timber', sides=5)
         shapes.slab(module, (length / 2 + 0.2, -0.1, 0.12), (0.24, 0.03, 0.3), 'iron')
         module.part((-length / 2 - 0.1, -0.25, 0.0), (length / 2 + 0.35, 0.1, 1.5))

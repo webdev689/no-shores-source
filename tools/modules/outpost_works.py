@@ -24,10 +24,10 @@ def use_at(module, x, y):
 def coin_sacks(module, at):
     """Small sacks of coin tied at the neck, one slumped open with gold spilt at its mouth."""
     x, y, z = at
-    for k, (dx, dy) in enumerate(((0.0, 0.0), (0.22, 0.08), (0.1, -0.18))):
-        fittings.sack(module, (x + dx, y + dy, z), size=0.26 + 0.03 * (k % 2), material='canvas')
-    for coin in range(6):
-        shapes.lathe(module, (x - 0.2 + coin * 0.04, y - 0.25 + (coin % 2) * 0.05, z + coin % 3 * 0.012),
+    for k, (along, across) in enumerate(((0.0, 0.0), (0.22, 0.08), (0.1, -0.18))):
+        fittings.sack(module, (x + along, y + across, z), size=0.26 + 0.03 * (k % 2), material='canvas')
+    for piece in range(6):
+        shapes.lathe(module, (x - 0.2 + piece * 0.04, y - 0.25 + (piece % 2) * 0.05, z + piece % 3 * 0.012),
                      [(0.025, 0.0), (0.025, 0.008), (0.0, 0.008)], 'gold', sides=8)
 
 
@@ -54,10 +54,8 @@ def counting_shed(module):
     kit.block(module, (0.0, (front + back) / 2, 0.0), (east - west + 0.3, back - front + 0.3, sill), 'stone',
               bevel=0.04, wear=0.03, cuts=1)
     # The front wall round its counter window, the east wall round its door.
-    shell.run(module, 'boards', (west, front), (east, front), wall, sill, gaps=((1.4, 3.4, 1.85, 0.65),))
-    shell.run(module, 'boards', (west, back), (east, back), wall, sill)
-    shell.run(module, 'boards', (west, front), (west, back), wall, sill)
-    shell.run(module, 'boards', (east, front), (east, back), wall, sill, gaps=((1.4, 2.4, 2.0),))
+    shell.walls(module, 'boards', west, east, front, back, wall, sill, front_gaps=((1.4, 3.4, 1.85, 0.65),),
+                east_gaps=((1.4, 2.4, 2.0),))
     shell.door(module, (east + 0.12, 1.9 + front, sill), 1, 0.96, 2.0)
     for x in (west, east):
         for y in (front, back):
@@ -97,10 +95,7 @@ def coin(module, middle, radius, facing):
 
 def counting_house(module):
     west, east, front, back, wall = -2.5, 2.5, -1.5, 2.2, 3.0
-    shell.run(module, 'stone', (west, front), (east, front), wall, gaps=((0.9, 2.3, 2.2, 1.0), (3.25, 4.35, 2.3)))
-    shell.run(module, 'stone', (west, back), (east, back), wall)
-    for x in (west, east):
-        shell.run(module, 'stone', (x, front), (x, back), wall)
+    shell.walls(module, 'stone', west, east, front, back, wall, front_gaps=((0.9, 2.3, 2.2, 1.0), (3.25, 4.35, 2.3)))
     stall_vault.grille(module, -1.6, -0.2, front - 0.1, 1.0, 2.2)
     shell.door(module, (1.3, front, 0.0), 0, 1.06, 2.3, kind='iron')
     kit.block(module, (1.3, front - 0.45, 0.0), (1.4, 0.4, 0.12), 'trim', bevel=0.02, wear=0.0, part=False)
@@ -127,13 +122,13 @@ def chart(module, middle, size, top, stones='rubble'):
     """A chart spread on a table, its routes inked, held flat by a stone at each corner and markers stood on it."""
     x, y = middle
     shapes.slab(module, (x, y, top + 0.004), (size[0], size[1], 0.006), 'linen', turn=(0.0, 0.0, 0.03))
-    for line in range(4):
+    for _ in range(4):
         shapes.slab(module, (x + module.draw(-0.3, 0.3) * size[0], y + module.draw(-0.3, 0.3) * size[1], top + 0.009),
                     (module.draw(0.2, 0.45) * size[0], 0.012, 0.002), 'crimson', turn=(0.0, 0.0, module.draw(-1, 1)))
-    for dx in (-1, 1):
-        for dy in (-1, 1):
-            kit.rock(module, (x + dx * (size[0] / 2 - 0.06), y + dy * (size[1] / 2 - 0.06), top), (0.11, 0.09, 0.07),
-                     dx * 3 + dy, material=stones, part=False, detail=1)
+    for east_west in (-1, 1):
+        for north_south in (-1, 1):
+            kit.rock(module, (x + east_west * (size[0] / 2 - 0.06), y + north_south * (size[1] / 2 - 0.06), top),
+                     (0.11, 0.09, 0.07), east_west * 3 + north_south, material=stones, part=False, detail=1)
     for piece in range(6):
         war_table.marker(module, (x + module.draw(-0.35, 0.35) * size[0], y + module.draw(-0.3, 0.3) * size[1],
                                   top + 0.01), ('gold', 'iron', 'crimson')[piece % 3], piece % 3)
@@ -176,10 +171,10 @@ def standards_rack(module, x, y, cloths):
         fittings.post(module, (x + side * (span / 2 + 0.3), y, 0.0), 1.1, side=0.1, part=False)
     shapes.slab(module, (x, y, 1.0), (span + 0.7, 0.12, 0.08), 'timber')
     for k, cloth in enumerate(cloths):
-        px = x - span / 2 + k * 0.5
-        shapes.rod(module, (px, y, 0.0), (px, y, 2.9), 0.025, 'timber', sides=6)
-        shapes.lathe(module, (px, y, 2.9), [(0.035, 0.0), (0.05, 0.05), (0.0, 0.2)], 'iron', sides=6)
-        shapes.banner(module, (px, y - 0.04, 2.72), 0.4, 0.75, cloth, trim='linen')
+        pole_x = x - span / 2 + k * 0.5
+        shapes.rod(module, (pole_x, y, 0.0), (pole_x, y, 2.9), 0.025, 'timber', sides=6)
+        shapes.lathe(module, (pole_x, y, 2.9), [(0.035, 0.0), (0.05, 0.05), (0.0, 0.2)], 'iron', sides=6)
+        shapes.banner(module, (pole_x, y - 0.04, 2.72), 0.4, 0.75, cloth, trim='linen')
     module.part((x - span / 2 - 0.35, y - 0.15, 0.0), (x + span / 2 + 0.35, y + 0.15, 1.1))
 
 
@@ -294,8 +289,8 @@ def chimney(module, x, y, high, side=0.9):
     """A stone chimney stack rising to `high`, a capping course and its pots; a part."""
     kit.block(module, (x, y, 0.0), (side, side, high), 'stone', bevel=0.04, wear=0.03, cuts=2)
     kit.block(module, (x, y, high), (side + 0.2, side + 0.2, 0.2), 'trim', bevel=0.03, wear=0.0, part=False)
-    for dx in (-0.2, 0.2):
-        shapes.lathe(module, (x + dx, y, high + 0.2), [(0.12, 0.0), (0.1, 0.35), (0.12, 0.4), (0.08, 0.4)], 'roof',
+    for along in (-0.2, 0.2):
+        shapes.lathe(module, (x + along, y, high + 0.2), [(0.12, 0.0), (0.1, 0.35), (0.12, 0.4), (0.08, 0.4)], 'roof',
                      sides=8)
 
 
@@ -303,9 +298,7 @@ def assay_smithy(module):
     west, east, front, back, wall = -2.4, 2.4, -1.3, 2.2, 2.6
     kit.block(module, (0.0, (front + back) / 2, 0.0), (east - west + 0.2, back - front + 0.2, 0.1), 'stone',
               bevel=0.03, wear=0.02, part=False)
-    shell.run(module, 'boards', (west, back), (east, back), wall)
-    shell.run(module, 'boards', (west, front + 1.2), (west, back), wall)
-    shell.run(module, 'boards', (east, front + 1.2), (east, back), wall)
+    shell.walls(module, 'boards', west, east, front, back, wall, open_front=True, sides_from=front + 1.2)
     for x in (west, -1.0, 1.0, east):
         fittings.post(module, (x, front, 0.0), wall, side=0.24)
     shapes.slab(module, (0.0, front, wall - 0.1), (east - west + 0.3, 0.26, 0.26), 'timber', bevel=0.01)
@@ -326,10 +319,7 @@ def assay_smithy(module):
 
 def assay_house(module):
     west, east, front, back, wall = -2.4, 2.4, -1.5, 2.2, 3.2
-    shell.run(module, 'stone', (west, front), (east, front), wall, gaps=((1.9, 2.9, 2.4), (3.55, 4.25, 2.2, 1.0)))
-    shell.run(module, 'stone', (west, back), (east, back), wall)
-    for x in (west, east):
-        shell.run(module, 'stone', (x, front), (x, back), wall)
+    shell.walls(module, 'stone', west, east, front, back, wall, front_gaps=((1.9, 2.9, 2.4), (3.55, 4.25, 2.2, 1.0)))
     shell.door(module, (0.0, front, 0.0), 0, 0.96, 2.4, kind='bound')
     shell.opening(module, (1.5, front - 0.34, 1.0), 0, 0.66, 1.15)
     stall_vault.grille(module, 1.2, 1.8, front - 0.36, 1.0, 2.15)

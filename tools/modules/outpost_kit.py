@@ -32,7 +32,8 @@ def fits(module, wide, deep):
         for corner in evaluated.bound_box:
             point = item.matrix_world @ mathutils.Vector(corner)
             reaches.append((point.x, point.y, item.name))
-    reaches += [(x, y, 'a part') for x0, y0, _, x1, y1, _ in module.parts for x, y in ((x0, y0), (x1, y1))]
+    reaches += [(x, y, 'a part') for low_x, low_y, _, high_x, high_y, _ in module.parts
+                for x, y in ((low_x, low_y), (high_x, high_y))]
     reaches += [(socket['at'][0], socket['at'][1], socket['name']) for socket in module.sockets]
     for x, y, name in reaches:
         if abs(x) > half[0] + 1e-6 or abs(y) > half[1] + 1e-6:
@@ -60,10 +61,11 @@ def sheet(module, rows, columns, point, material='canvas', thick=0.02):
     return item
 
 
-def tent(module, at, quarter, wide, deep, ridge, eave=0.0, door=False, out=0.5, material='canvas'):
+def tent(module, at, quarter, wide, deep, ridge, eave=0.0, open_door=False, out=0.5,
+         material='canvas'):
     """A ridge tent on `at`, turned `quarter` quarter turns, `wide` across and `deep` along its ridge, its door at its
     own -y end: canvas from the ridge pole down to its eaves at `eave` (an A-frame to the ground where that is 0) and a
-    wall below them, sagging between its poles; its door's flaps tied back to its corner poles when `door`, laced
+    wall below them, sagging between its poles; its door's flaps tied back to its corner poles when `open_door`, laced
     shut otherwise; guy ropes pegged `out` past it. Its parts are its walls and its roof in strips stepping up to the
     ridge: an open tent's floor is left clear inside, a laced one is solid."""
     half_w, half_d = wide / 2, deep / 2
@@ -104,10 +106,10 @@ def tent(module, at, quarter, wide, deep, ridge, eave=0.0, door=False, out=0.5, 
 
         gable(half_d, 1)
         tie = min(1.1, low * 0.55) if walled else ridge * 0.4
-        if not door:
+        if not open_door:
             gable(-half_d, -1)
             shapes.rod(module, (0.0, -half_d - 0.03, 0.05), (0.0, -half_d - 0.03, ridge - 0.1), 0.012, 'linen', sides=3)
-        for side in (-1, 1) if door else ():
+        for side in (-1, 1) if open_door else ():
             def flap(across, down, side=side):
                 # across from the door's middle out to its corner; the cloth gathered to the corner at its tie.
                 x = side * half_w * (1 - across)
@@ -132,8 +134,8 @@ def tent(module, at, quarter, wide, deep, ridge, eave=0.0, door=False, out=0.5, 
                     guy(module, (0.0, y, ridge + 0.12), (side * out * 0.5, y + (1 if y > 0 else -1) * out, 0.0),
                         ((1 if y > 0 else -1) * 0.25, -side * 0.12))
         # The parts: walls to the eaves round an open tent, then the roof in strips up to the ridge.
-        floor = low if door else 0.0
-        if door:
+        floor = low if open_door else 0.0
+        if open_door:
             gap = half_w * 0.4
             module.part((-half_w, -half_d - 0.05, 0.0), (-gap, -half_d + 0.1, low))
             module.part((gap, -half_d - 0.05, 0.0), (half_w, -half_d + 0.1, low))
@@ -179,20 +181,20 @@ def run(module, kind, start, end, high, base=0.0, gaps=(), thick=0.6):
     along_x = abs(end[0] - start[0]) > abs(end[1] - start[1])
     length = abs(end[0] - start[0]) if along_x else abs(end[1] - start[1])
 
-    def at(along):
+    def point_along(along):
         return (start[0] + along, start[1]) if along_x else (start[0], start[1] + along)
 
     def piece(a, b, low, tall, lintel=False):
         if kind == 'boards':
-            stall_harbour.boarded_wall(module, at(a), at(b), tall, low)
+            stall_harbour.boarded_wall(module, point_along(a), point_along(b), tall, low)
         elif lintel:
-            middle = at((a + b) / 2)
+            middle = point_along((a + b) / 2)
             size = (b - a, thick, tall) if along_x else (thick, b - a, tall)
             kit.block(module, (*middle, low), size, 'stone', bevel=0.04, wear=0.02, cuts=1)
             face = (b - a + 0.3, thick + 0.08, 0.3) if along_x else (thick + 0.08, b - a + 0.3, 0.3)
             kit.block(module, (*middle, low), face, 'trim', bevel=0.03, wear=0.01, part=False)
         else:
-            fittings.wall(module, at(a), at(b), tall, thick=thick, base=low, course=True)
+            fittings.wall(module, point_along(a), point_along(b), tall, thick=thick, base=low, course=True)
 
     edge = 0.0
     for a, b, head, *sill in sorted(gaps):
@@ -204,6 +206,47 @@ def run(module, kind, start, end, high, base=0.0, gaps=(), thick=0.6):
         edge = b
     if edge < length:
         piece(edge, length, base, high)
+
+
+def walls(module, kind, west, east, front, back, high, base=0.0, thick=0.6, front_gaps=(), east_gaps=(),
+          open_front=False, sides_from=None, beside=None):
+    """A building's walls as `run`s: its front wall (with `front_gaps`) unless `open_front`, its back wall, then its
+    west and east walls from `sides_from` (its front when not given) to its back, the east one with `east_gaps`, each
+    followed by `beside(x)` when given (what stands along that side, its parts after that wall's)."""
+    if not open_front:
+        run(module, kind, (west, front), (east, front), high, base, gaps=front_gaps, thick=thick)
+    run(module, kind, (west, back), (east, back), high, base, thick=thick)
+    for x in (west, east):
+        run(module, kind, (x, front if sides_from is None else sides_from), (x, back), high, base,
+            gaps=east_gaps if x == east else (), thick=thick)
+        if beside:
+            beside(x)
+
+
+def keep(module, middle, side, high, strings, plinth=0.2, course=0.14, string=0.22, grow=0.12, inset=0.08,
+         reach=0.12, merlons=(0.4, 1.3, 0.75, 0.8)):
+    """A square stone tower on `middle`, `side` across and `high` tall, on a plinth `plinth` wider: a string course
+    `string` deep at each height of `strings`, a parapet corbelled out in three courses each `course` deep and `grow`
+    wider than the last, and merlons (thick, every, wide, high) round its top `inset` in from its walls; its part
+    reaching `reach` past its walls. Returns the parapet's top."""
+    kit.block(module, (*middle, 0.0), (side + plinth, side + plinth, 0.5), 'trim', bevel=0.04, wear=0.02, part=False)
+    kit.block(module, (*middle, 0.0), (side, side, high), 'stone', bevel=0.06, wear=0.04, cuts=3)
+    for z in strings:
+        kit.block(module, (*middle, z), (side + course, side + course, string), 'trim', bevel=0.03, wear=0.0,
+                  part=False)
+    for corbel in range(3):
+        wider = grow * (corbel + 1)
+        kit.block(module, (*middle, high + corbel * course), (side + wider, side + wider, course), 'trim', bevel=0.02,
+                  wear=0.0, part=False)
+    top = high + 3 * course
+    corner = side / 2 - inset
+    corners = [(middle[0] + x * corner, middle[1] + y * corner) for x, y in ((-1, -1), (1, -1), (1, 1), (-1, 1))]
+    thick, every, wide, tall = merlons
+    for a, b in zip(corners, corners[1:] + corners[:1]):
+        kit.battlements(module, a, b, top, thick, every=every, wide=wide, high=tall)
+    edge = side / 2 + reach
+    module.part((middle[0] - edge, middle[1] - edge, 0.0), (middle[0] + edge, middle[1] + edge, top + tall))
+    return top
 
 
 def opening(module, middle, quarter, wide, high, material='black', frame='timber'):
