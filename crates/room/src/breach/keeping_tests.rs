@@ -240,3 +240,29 @@ fn one_who_left_fallen_into_the_dark_comes_back_so_and_no_revive_raises_them() {
     assert!(room.players[&back].fighter.dead(), "no revive raises one fallen into the dark");
     assert_eq!(breach(&room).revives, Some(5), "and none is spent");
 }
+
+#[test]
+fn two_revives_finished_on_one_tick_spend_no_revive_the_attempt_has_not_left() {
+    let (mut room, players) = run(Tier::Hard, 4);
+    let inside = at(&room, "mending", "mender");
+    for (nth, &player) in players.iter().enumerate() {
+        stand_at(&mut room, player, [inside[0] + nth as f64 * 6.0, inside[1], inside[2]]);
+    }
+    room.tick();
+    fell(&mut room, players[2]);
+    fell(&mut room, players[3]);
+    for (reviver, fallen) in [(players[0], players[2]), (players[1], players[3])] {
+        let body = room.players[&fallen].fighter.body;
+        stand_at(&mut room, reviver, [body.x + 1.0, body.y, body.z]);
+    }
+    room.breach.as_mut().expect("run").revives = Some(1);
+    for sequence in 1..=crate::revive::REVIVE_TICKS + 1 {
+        for reviver in [players[0], players[1]] {
+            room.input(reviver, crate::Input { sequence, revive: true, ..crate::Input::default() }).expect("taken");
+        }
+        room.tick();
+    }
+    let stood = [players[2], players[3]].iter().filter(|fallen| !room.players[fallen].fighter.dead()).count();
+    assert_eq!(stood, 1, "one revive left, one raised");
+    assert_eq!(breach(&room).revives, Some(0));
+}

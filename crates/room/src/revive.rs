@@ -191,7 +191,8 @@ impl Room {
             revivals.iter().filter(|(_, (_, ticks))| *ticks >= REVIVE_TICKS).map(|(id, (by, _))| (*id, *by)).collect();
         self.respawning.revivals = revivals;
         for (id, by) in done {
-            if !self.revive() {
+            // Asked again for each, so two finished on one tick spend no revive a Breach has not left.
+            if !self.revive() || !self.breach_lets_revive(by, id) {
                 continue;
             }
             self.spend_breach_revive(id);
