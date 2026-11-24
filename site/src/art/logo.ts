@@ -8,9 +8,9 @@ export function pictureSheet(picture: PixelPicture): Sheet {
   const width = Math.max(...picture.rows.map((row) => row.length));
   const sheet = makeSheet(width, picture.rows.length);
   picture.rows.forEach((text, row) => {
-    for (let col = 0; col < text.length; col++) {
-      const ink = picture.colours[(text.codePointAt(col) ?? 0) - 'a'.charCodeAt(0)];
-      if (ink) sheet.cells[row * width + col] = ink;
+    for (let column = 0; column < text.length; column++) {
+      const ink = picture.colours[(text.codePointAt(column) ?? 0) - 'a'.charCodeAt(0)];
+      if (ink) sheet.cells[row * width + column] = ink;
     }
   });
   return sheet;
@@ -36,9 +36,9 @@ export function iconSheet(): Sheet {
   const top = Math.round((size - logo.height) / 2);
   const left = Math.round((size - FIRST_LETTER_COLUMNS) / 2);
   for (let row = 0; row < logo.height; row++)
-    for (let col = 0; col < FIRST_LETTER_COLUMNS; col++) {
-      const ink = logo.cells[row * logo.width + col];
-      if (ink) sheet.cells[(top + row) * size + left + col] = ink;
+    for (let column = 0; column < FIRST_LETTER_COLUMNS; column++) {
+      const ink = logo.cells[row * logo.width + column];
+      if (ink) sheet.cells[(top + row) * size + left + column] = ink;
     }
   return sheet;
 }

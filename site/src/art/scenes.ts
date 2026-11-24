@@ -76,8 +76,8 @@ function expanse(): Sheet {
   lightOn(sheet, 236, horizon - 8, 30, '#4a2a22', 0.5);
   const smoke = seeded(15);
   for (let row = 0; row < 70; row++)
-    for (let col = -8 - row / 4; col < 8 + row / 4; col++) {
-      const x = 236 + col + row * 0.6;
+    for (let column = -8 - row / 4; column < 8 + row / 4; column++) {
+      const x = 236 + column + row * 0.6;
       if (patternOn(Math.round(x), horizon - 10 - row, 0.5 - row / 160 + (smoke() - 0.5) * 0.3))
         dot(sheet, x, horizon - 10 - row, '#1a2030');
     }
@@ -103,9 +103,9 @@ function greyTithe(): Sheet {
   ship(sheet, 290, horizon + 16, 34, grey);
   ship(sheet, 208, horizon + 34, 52, { ...grey, masts: 3 });
   for (let row = horizon - 30; row < horizon + 14; row++)
-    for (let col = 150; col < WIDE; col++)
-      if (patternOn(col, row, 0.18 * Math.sin(((row - horizon + 30) / 44) * Math.PI)))
-        dot(sheet, col, row, PALETTE.grey.mist);
+    for (let column = 150; column < WIDE; column++)
+      if (patternOn(column, row, 0.18 * Math.sin(((row - horizon + 30) / 44) * Math.PI)))
+        dot(sheet, column, row, PALETTE.grey.mist);
   ship(sheet, 82, horizon + 40, 40, { hull: '#04070d', sail: '#4a5568', shade: '#2c3546', lantern: true });
   return sheet;
 }
@@ -241,13 +241,13 @@ function shore(): Sheet {
   sea(sheet, seeded(62), horizon, []);
   const ground = isle(sheet, seeded(63), 196, 340, 30, horizon + 4);
   town(sheet, seeded(64), ground, 196, [222, 316], 26);
-  const beach = ridge(seeded(65), WIDE, 132, 142, 0.4).map((height, col) => height + col * 0.08);
+  const beach = ridge(seeded(65), WIDE, 132, 142, 0.4).map((height, column) => height + column * 0.08);
   land(sheet, beach, PALETTE.sand[1], TALL);
-  beach.forEach((height, col) => {
-    dot(sheet, col, height, PALETTE.sand[2]);
+  beach.forEach((height, column) => {
+    dot(sheet, column, height, PALETTE.sand[2]);
     for (let row = Math.round(height) + 1; row < TALL; row++)
-      if (patternOn(col, row, 0.25 + (row - height) / 90)) dot(sheet, col, row, PALETTE.sand[0]);
-    if (col % 3 !== 0) dot(sheet, col, height - 2 - (col % 5 === 0 ? 1 : 0), '#6f7a88');
+      if (patternOn(column, row, 0.25 + (row - height) / 90)) dot(sheet, column, row, PALETTE.sand[0]);
+    if (column % 3 !== 0) dot(sheet, column, height - 2 - (column % 5 === 0 ? 1 : 0), '#6f7a88');
   });
   figure(sheet, 'lying', 100, Math.round(beach[120] ?? 140) - 4, ['#08090e', '#2a2f3c', '#a08a78']);
   shape(

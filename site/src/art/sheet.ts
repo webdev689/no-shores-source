@@ -32,10 +32,10 @@ export const patternOn = (x: number, y: number, share: number): boolean =>
   share * 16 > (BAYER[y & 3]?.[x & 3] ?? 0) + 0.5;
 
 export function dot(sheet: Sheet, x: number, y: number, ink: Ink): void {
-  const col = Math.round(x);
+  const column = Math.round(x);
   const row = Math.round(y);
-  if (col < 0 || row < 0 || col >= sheet.width || row >= sheet.height) return;
-  sheet.cells[row * sheet.width + col] = ink;
+  if (column < 0 || row < 0 || column >= sheet.width || row >= sheet.height) return;
+  sheet.cells[row * sheet.width + column] = ink;
 }
 
 export function inkAt(sheet: Sheet, x: number, y: number): Ink {
@@ -44,7 +44,8 @@ export function inkAt(sheet: Sheet, x: number, y: number): Ink {
 }
 
 export function box(sheet: Sheet, x: number, y: number, width: number, height: number, ink: Ink): void {
-  for (let row = 0; row < height; row++) for (let col = 0; col < width; col++) dot(sheet, x + col, y + row, ink);
+  for (let row = 0; row < height; row++)
+    for (let column = 0; column < width; column++) dot(sheet, x + column, y + row, ink);
 }
 
 /** Bands of colour top to bottom, each dithered into the next: a sky or a stretch of water. */
@@ -53,9 +54,9 @@ export function fade(sheet: Sheet, top: number, height: number, inks: readonly I
   for (let row = 0; row < height; row++) {
     const along = (row / Math.max(1, height - 1)) * bands;
     const band = Math.min(bands - 1, Math.floor(along));
-    for (let col = 0; col < sheet.width; col++) {
-      const ink = patternOn(col, top + row, along - band) ? inks[band + 1] : inks[band];
-      dot(sheet, col, top + row, ink ?? '');
+    for (let column = 0; column < sheet.width; column++) {
+      const ink = patternOn(column, top + row, along - band) ? inks[band + 1] : inks[band];
+      dot(sheet, column, top + row, ink ?? '');
     }
   }
 }
@@ -63,26 +64,27 @@ export function fade(sheet: Sheet, top: number, height: number, inks: readonly I
 /** A filled oval. */
 export function disc(sheet: Sheet, centreX: number, centreY: number, wide: number, tall: number, ink: Ink): void {
   for (let row = Math.floor(-tall); row <= Math.ceil(tall); row++)
-    for (let col = Math.floor(-wide); col <= Math.ceil(wide); col++)
-      if ((col * col) / (wide * wide) + (row * row) / (tall * tall) <= 1) dot(sheet, centreX + col, centreY + row, ink);
+    for (let column = Math.floor(-wide); column <= Math.ceil(wide); column++)
+      if ((column * column) / (wide * wide) + (row * row) / (tall * tall) <= 1)
+        dot(sheet, centreX + column, centreY + row, ink);
 }
 
 /** Light falling off round a point, dithered: near the middle most cells take the ink, at `reach` none. */
 export function glow(sheet: Sheet, centreX: number, centreY: number, reach: number, ink: Ink, strength = 0.6): void {
   for (let row = -reach; row <= reach; row++)
-    for (let col = -reach; col <= reach; col++) {
-      const away = Math.hypot(col, row) / reach;
-      if (away < 1 && patternOn(centreX + col, centreY + row, strength * (1 - away) ** 2))
-        dot(sheet, centreX + col, centreY + row, ink);
+    for (let column = -reach; column <= reach; column++) {
+      const away = Math.hypot(column, row) / reach;
+      if (away < 1 && patternOn(centreX + column, centreY + row, strength * (1 - away) ** 2))
+        dot(sheet, centreX + column, centreY + row, ink);
     }
 }
 
 /** Light that only falls on cells already inked, so a lit wall stays inside its wall. */
 export function lightOn(sheet: Sheet, centreX: number, centreY: number, reach: number, ink: Ink, strength = 0.6): void {
   for (let row = -reach; row <= reach; row++)
-    for (let col = -reach; col <= reach; col++) {
-      const away = Math.hypot(col, row) / reach;
-      const x = centreX + col;
+    for (let column = -reach; column <= reach; column++) {
+      const away = Math.hypot(column, row) / reach;
+      const x = centreX + column;
       const y = centreY + row;
       if (away < 1 && inkAt(sheet, x, y) && patternOn(x, y, strength * (1 - away) ** 2)) dot(sheet, x, y, ink);
     }
@@ -106,15 +108,15 @@ export function shape(sheet: Sheet, corners: readonly (readonly [number, number]
     });
     cuts.sort((left, right) => left - right);
     for (let pair = 0; pair + 1 < cuts.length; pair += 2)
-      for (let col = Math.round(cuts[pair] ?? 0); col < Math.round(cuts[pair + 1] ?? 0); col++)
-        dot(sheet, col, row, ink);
+      for (let column = Math.round(cuts[pair] ?? 0); column < Math.round(cuts[pair + 1] ?? 0); column++)
+        dot(sheet, column, row, ink);
   }
 }
 
 /** Land seen side on: each column inked from its height down to `floor`. */
 export function land(sheet: Sheet, heights: readonly number[], ink: Ink, floor: number, left = 0): void {
-  heights.forEach((height, col) => {
-    for (let row = Math.round(height); row < floor; row++) dot(sheet, left + col, row, ink);
+  heights.forEach((height, column) => {
+    for (let row = Math.round(height); row < floor; row++) dot(sheet, left + column, row, ink);
   });
 }
 
@@ -150,20 +152,11 @@ export function stamp(
   scale = 1,
 ): void {
   rows.forEach((text, row) => {
-    for (let col = 0; col < text.length; col++) {
-      const ink = inks[text[col] ?? '.'];
-      if (ink) box(sheet, place[0] + col * scale, place[1] + row * scale, scale, scale, ink);
+    for (let column = 0; column < text.length; column++) {
+      const ink = inks[text[column] ?? '.'];
+      if (ink) box(sheet, place[0] + column * scale, place[1] + row * scale, scale, scale, ink);
     }
   });
-}
-
-/** One sheet laid over another: its clear cells leave what is under them. */
-export function lay(sheet: Sheet, over: Sheet, x = 0, y = 0): void {
-  for (let row = 0; row < over.height; row++)
-    for (let col = 0; col < over.width; col++) {
-      const ink = inkAt(over, col, row);
-      if (ink) dot(sheet, x + col, y + row, ink);
-    }
 }
 
 const CRC_TABLE = Array.from({ length: 256 }, (_unused, place) => {

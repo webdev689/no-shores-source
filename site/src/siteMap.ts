@@ -7,16 +7,16 @@ export const SITE_ORIGIN = 'https://noshores.online';
 export interface SitePage {
   /** The page's name in code and in its words' keys (`world.title`). */
   readonly id: string;
-  /** Its folder under `site/`, `''` for the home page; the page is `<dir>/index.html` and is served at `/<dir>/`. */
-  readonly dir: string;
+  /** Its folder under `site/`, `''` for the home page; the page is `<folder>/index.html` and is served at `/<folder>/`. */
+  readonly folder: string;
   /** Whether the top bar names it. */
   readonly inBar: boolean;
 }
 
 export const SITE_PAGES: readonly SitePage[] = [
-  { id: 'home', dir: '', inBar: false },
-  { id: 'world', dir: 'world', inBar: true },
-  { id: 'game', dir: 'game', inBar: true },
+  { id: 'home', folder: '', inBar: false },
+  { id: 'world', folder: 'world', inBar: true },
+  { id: 'game', folder: 'game', inBar: true },
 ];
 
 /**
@@ -29,12 +29,13 @@ export const OUTSIDE: Readonly<Record<string, string>> = {
 };
 
 /** A page's own address, from the site's root. */
-export const pagePath = (page: SitePage): string => (page.dir ? `/${page.dir}/` : '/');
+export const pagePath = (page: SitePage): string => (page.folder ? `/${page.folder}/` : '/');
 
 /** The page a request or build path names (`/world/index.html`, `/world/`, `/`), or null. */
 export function pageOfPath(path: string): SitePage | null {
-  const dir = /^\/?(?:([a-z][a-z0-9-]*)\/)?(?:index\.html)?$/.exec(path.split('?')[0] ?? '')?.[1] ?? '';
-  return SITE_PAGES.find((page) => page.dir === dir) ?? null;
+  const found = /^\/?(?:([a-z][a-z0-9-]*)\/)?(?:index\.html)?$/.exec(path.split('?')[0] ?? '');
+  if (!found) return null;
+  return SITE_PAGES.find((page) => page.folder === (found[1] ?? '')) ?? null;
 }
 
 /**

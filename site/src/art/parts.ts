@@ -96,9 +96,9 @@ export function sea(sheet: Sheet, random: () => number, horizon: number, glints:
     for (let row = glint.from ?? horizon + 1; row < sheet.height; row++) {
       const depth = (row - horizon) / (sheet.height - horizon);
       const wide = glint.wide * (0.6 + depth);
-      for (let col = -wide; col <= wide; col++)
-        if (row % 2 === 0 && random() < 0.55 * (1 - Math.abs(col) / (wide + 1)) * (1 - depth * 0.6))
-          dot(sheet, glint.x + col + Math.round((random() - 0.5) * 2), row, glint.ink);
+      for (let column = -wide; column <= wide; column++)
+        if (row % 2 === 0 && random() < 0.55 * (1 - Math.abs(column) / (wide + 1)) * (1 - depth * 0.6))
+          dot(sheet, glint.x + column + Math.round((random() - 0.5) * 2), row, glint.ink);
     }
 }
 
@@ -168,9 +168,9 @@ export function ship(sheet: Sheet, x: number, waterline: number, length: number,
         look.sail,
       );
       for (let row = Math.round(top); row < bottom; row++)
-        for (let col = Math.round(foot - span); col < foot + span + 1; col++)
-          if (inkAt(sheet, col, row) === look.sail && patternOn(col, row, (row - top) / (bottom - top) - 0.3))
-            dot(sheet, col, row, look.shade);
+        for (let column = Math.round(foot - span); column < foot + span + 1; column++)
+          if (inkAt(sheet, column, row) === look.sail && patternOn(column, row, (row - top) / (bottom - top) - 0.3))
+            dot(sheet, column, row, look.shade);
     }
   }
   if (look.lantern) lantern(sheet, Math.round(along(-0.95)), waterline - deep - 3, 5);
@@ -197,16 +197,16 @@ export function isle(
 ): number[] {
   const width = right - left;
   const rough = ridge(random, width, top, top + (waterline - top) * 0.45, 0.6);
-  const heights = rough.map((height, col) => {
-    const edge = Math.min(col, width - 1 - col) / (width * 0.28);
+  const heights = rough.map((height, column) => {
+    const edge = Math.min(column, width - 1 - column) / (width * 0.28);
     return waterline - (waterline - height) * Math.min(1, Math.sqrt(Math.max(0, edge)));
   });
   land(sheet, heights, PALETTE.rock.hue, waterline + 1, left);
-  heights.forEach((height, col) => {
-    dot(sheet, left + col, height, PALETTE.rock.edge);
+  heights.forEach((height, column) => {
+    dot(sheet, left + column, height, PALETTE.rock.edge);
     for (let row = Math.round(height) + 1; row < waterline; row++)
-      if (patternOn(left + col, row, 0.35 - (row - height) / 40 + (random() - 0.5) * 0.2))
-        dot(sheet, left + col, row, PALETTE.rock.lit);
+      if (patternOn(left + column, row, 0.35 - (row - height) / 40 + (random() - 0.5) * 0.2))
+        dot(sheet, left + column, row, PALETTE.rock.lit);
   });
   return heights;
 }
@@ -308,9 +308,9 @@ export function ruins(
   for (let x = from; x < to;) {
     const wide = 4 + Math.floor(random() * 9);
     const tall = 6 + Math.floor(random() * 18);
-    for (let col = 0; col < wide; col++) {
+    for (let column = 0; column < wide; column++) {
       const broken = Math.floor(random() * (tall / 2));
-      box(sheet, x + col, ground - tall + broken, 1, tall - broken, ink);
+      box(sheet, x + column, ground - tall + broken, 1, tall - broken, ink);
     }
     for (let row = ground - tall + 4; row < ground - 2; row += 4)
       if (random() < 0.6) box(sheet, x + 1 + Math.floor(random() * (wide - 2)), row, 1, 2, hole);

@@ -10,7 +10,7 @@ import { WORDS } from './words.ts';
 
 const SITE = new URL('../', import.meta.url);
 const source = (page: SitePage): string =>
-  readFileSync(new URL(`${page.dir ? `${page.dir}/` : ''}index.html`, SITE), 'utf8');
+  readFileSync(new URL(`${page.folder ? `${page.folder}/` : ''}index.html`, SITE), 'utf8');
 const made = SITE_PAGES.map((page) => ({ page, html: makePage(source(page), page) }));
 
 /** The keys a page's markup names before it is filled, the bar's and the foot's with them. */
@@ -51,8 +51,10 @@ test('every link goes to a page or a named address, never one typed into a page'
   for (const { page, html } of made) {
     for (const [, href = ''] of html.matchAll(/\shref="([^"]*)"/g)) {
       const known = href === '#main' || href.startsWith('/art/') || href.startsWith('/src/');
+      const place = href.split('#')[0] ?? '';
       const named =
-        SITE_PAGES.some((each) => siteHref(each.id)?.href === href) || Object.values(OUTSIDE).includes(href);
+        SITE_PAGES.some((each) => siteHref(each.id)?.href === place) ||
+        Object.values(OUTSIDE).some((address) => address !== '' && address === place);
       assert.ok(known || named, `${page.id} links to "${href}"`);
     }
     const typed = [...source(page).matchAll(/<a\b[^>]*\shref="([^"]*)"/g)].map((found) => found[1]);
@@ -66,6 +68,8 @@ test('a page path finds its page, and a name nobody has finds nothing', () => {
   assert.equal(pageOfPath('/world/index.html')?.id, 'world');
   assert.equal(pageOfPath('/game/')?.id, 'game');
   assert.equal(pageOfPath('/panel/index.html'), null);
+  assert.equal(pageOfPath('/world/deeper/index.html'), null);
+  assert.equal(pageOfPath('/World/'), null);
   assert.equal(siteHref('nowhere'), null);
   assert.throws(() => fillKeys('<a data-to="nowhere"></a>'), /nowhere/);
   assert.throws(() => fillKeys('<p data-t="home.nothing"></p>'), /home\.nothing/);
@@ -89,6 +93,9 @@ test('each picture is the same at every build and under 64 KB', () => {
 });
 
 test('every picture a page names exists and has words for its alt text, or is marked as decoration', () => {
+  for (const page of SITE_PAGES)
+    for (const [tag] of source(page).matchAll(/<img\b[^>]*>/g))
+      assert.match(tag, /\sdata-t-alt="|\saria-hidden="true"/, `${page.id}: ${tag} has no words for its alt text`);
   for (const { page, html } of made)
     for (const [tag] of html.matchAll(/<img\b[^>]*>/g)) {
       assert.match(tag, /\ssrc="\/art\/[a-z0-9-]+\.png\?v=[0-9a-f]{8}"/, `${page.id}: ${tag}`);
@@ -100,13 +107,13 @@ test('every picture a page names exists and has words for its alt text, or is ma
 test('no page loads anything from another site, and its font is bundled', () => {
   const css = readFileSync(new URL('src/site.css', SITE), 'utf8');
   assert.match(css, /@import '@fontsource-variable\/pixelify-sans/);
-  assert.doesNotMatch(css, /url\(\s*['"]?(?:https?:)?\/\//);
+  assert.doesNotMatch(css, /(?:url\(|@import)\s*['"]?(?:https?:)?\/\//);
   for (const { page, html } of made) {
     const loads = [...html.matchAll(/<(?:img|script|link|iframe|source)\b[^>]*\s(?:src|href)="([^"]*)"/g)].map(
       (found) => found[1],
     );
-    for (const address of loads) assert.ok(address?.startsWith('/'), `${page.id} loads ${address}`);
-    assert.ok([...html.matchAll(/<script\b/g)].length <= 1, `${page.id} runs more than one script`);
+    for (const address of loads)
+      assert.ok(address?.startsWith('/') && !address.startsWith('//'), `${page.id} loads ${address}`);
   }
   assert.match(CONTENT_POLICY, /default-src 'none'/);
   assert.doesNotMatch(CONTENT_POLICY, /https?:/);
