@@ -32,6 +32,8 @@ test('the square shows the level, gold for the levels past 20 that Prestige rais
       (each): each is string => typeof each === 'string',
     );
   assert.deepEqual(words(plateNode(placed(1, 2, { level: 27 }), 1)), ['27', 'Mariner']);
+  const rewritten = { ...placed(1, 2, { level: 27 }), marked: true };
+  assert.deepEqual(words(plateNode(rewritten, 1)), ['27', 'Mariner', 'Rewritten'], "a Breach's mark after the name");
 });
 
 test('the player under the crosshair within reach is aimed at, the nearest of several, never a guest', () => {

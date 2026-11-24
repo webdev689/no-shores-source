@@ -8,7 +8,7 @@ import { moduleNumber, moduleParts, moduleSocket } from './modules.ts';
 
 type Point = readonly [number, number, number];
 
-/** The event props' modules by name (tools/modules/catalogue.py EVENTS). */
+/** The event props' modules by name (tools/modules/catalogue.py EVENTS), and a Breach's. */
 export const PROP_MODULES = [
   'lattice-fissure',
   'lattice-fissure-sealed',
@@ -23,6 +23,20 @@ export const PROP_MODULES = [
   'event-chest-lid',
   'event-chest-heroic',
   'event-chest-heroic-lid',
+  // A Breach's run's spaces and pieces (tools/modules/breach_kit.py), drawn only while the player is in it.
+  'breach-descent',
+  'breach-mending',
+  'breach-choir',
+  'breach-ways',
+  'breach-stair',
+  'breach-hall',
+  'breach-shore-was',
+  'breach-shore-is',
+  'breach-court',
+  'breach-seal',
+  'breach-slab',
+  'breach-bell',
+  'breach-lodestone',
 ] as const;
 export type PropModule = (typeof PROP_MODULES)[number];
 
@@ -190,7 +204,7 @@ const prop = (module: PropModule, foot: Point, turn: number, more: Partial<Event
 });
 
 /** A chest and its lid, the lid at the chest's hinge swung open as far as the seconds since it was opened say. */
-function chestProps(chest: ChestLike): EventProp[] {
+export function chestProps(chest: ChestLike): EventProp[] {
   const heroic = chest.tier >= 3;
   const body = prop(heroic ? 'event-chest-heroic' : 'event-chest', chest.at, turnOf(chest.id));
   const lidModule = heroic ? 'event-chest-heroic-lid' : 'event-chest-lid';

@@ -16,7 +16,7 @@ import { SAMPLES } from '../water/waterView.ts';
 import { CRYSTAL_HOT, CRYSTAL_WGSL } from '../city/crystal.ts';
 import { CLOTH_COLOURS } from '../city/pictures.ts';
 import { type EventProp, OPENS, type PropModule, propLamps } from '../city/eventProps.ts';
-import { loadModules, moduleNumber, moduleShape } from '../city/modules.ts';
+import { loadModuleOf, loadModules, moduleNumber, moduleShape } from '../city/modules.ts';
 import { BannerCloth, type Hung } from './guild/bannerCloth.ts';
 import { MATERIALS, type Material, STRIDE, packLips, packModule } from './eventPropsPack.ts';
 
@@ -418,6 +418,16 @@ export class EventPropsDraw implements Drawer {
     EVENT_LAMPS.current = props.length > 0 ? propLamps(props) : NO_LAMPS;
   }
 
+  /** Lets go of the modules `gone` names, made ready to draw before: a Breach's run's, once the player is out of it. */
+  forget(gone: (name: EventProp['module']) => boolean): void {
+    for (const [name, made] of this.made) {
+      if (!gone(name)) continue;
+      made.vertices.destroy();
+      made.indices.destroy();
+      this.made.delete(name);
+    }
+  }
+
   /** A module made ready to draw, the first time it is drawn after its meshes have come; none before, its meshes
    *  asked for again while one is missing. */
   private madeOf(name: EventProp['module']): Made | null {
@@ -428,7 +438,7 @@ export class EventPropsDraw implements Drawer {
     const packed = number >= 0 ? packModule(number) : null;
     if (!packed) {
       // A group of its that failed to come is asked for again, a while after it failed.
-      if (number >= 0) void loadModules();
+      if (number >= 0) void loadModuleOf(name);
       return null;
     }
     const { device } = this.gpu;

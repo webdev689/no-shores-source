@@ -40,6 +40,8 @@ pub const FALLEN: u8 = 105;
 pub const FIGHTING: u8 = 106;
 /// The player may return to their ship: a yes no other ask gives, so the page never takes another's done for it.
 pub const TO_SHIP: u8 = 107;
+/// A player let through a Breach's gate into its run (`Room::ask_enter_breach`): its own yes, as `TO_SHIP` is.
+pub const INTO_BREACH: u8 = 108;
 /// How long past a foe's blow a player waits to return to their ship: ten seconds.
 pub const TO_SHIP_AFTER_TICKS: u64 = 10 * 60;
 
@@ -80,6 +82,11 @@ pub enum Asked {
     },
     /// An ask at one's guild's outpost (`outpost.rs`).
     Outpost(crate::OutpostAsk),
+    /// In a Breach, takes the Lodestone up and sets it down (`breach/lodestone.rs`); and at a Breach's gate, asks
+    /// whether it is open to the player's company (`breach/gate.rs`).
+    TakeLodestone,
+    DropLodestone,
+    EnterBreach,
 }
 
 /// Gear the Test Ground hands out, to try the loop without playing it through.
@@ -379,6 +386,21 @@ impl Room {
             Asked::OpenChest { chest } => self.open_chest(player, chest),
             Asked::ClaimGuild { slot } => self.claim_guild(player, slot),
             Asked::Outpost(ask) => self.ask_outpost(player, ask),
+            Asked::TakeLodestone => {
+                if self.take_lodestone(player) {
+                    0
+                } else {
+                    OUT_OF_REACH
+                }
+            }
+            Asked::DropLodestone => {
+                if self.drop_lodestone(player) {
+                    0
+                } else {
+                    OUT_OF_REACH
+                }
+            }
+            Asked::EnterBreach => self.ask_enter_breach(player),
         };
         if let Some(found) = self.players.get_mut(&player) {
             // An errand with the accounts is answered once they answer (`outpost_answered`).

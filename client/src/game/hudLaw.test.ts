@@ -47,6 +47,22 @@ test("a standing's ticks read as seconds, and Respawn is offered after 4 s dead"
   assert.equal(strayedNow.kind === 'dead' && strayedNow.told, true, 'a death by straying is told at once');
 });
 
+test('where a place stands its falls again later, or never, Respawn waits for it', () => {
+  const respawns = (ticks: number, after: number | null) => {
+    const standing = standingOf('dead', ticks, true, true, after);
+    return standing.kind === 'dead' && standing.canRespawn;
+  };
+  assert.deepEqual([respawns(359, 360), respawns(360, 360), respawns(600, 600)], [false, true, true]);
+  assert.equal(respawns(100_000, null), false, "never, where the room never takes it (Hard, an encounter's)");
+  const waits = standingOf('dead', 60, true, true, null);
+  assert.equal(waits.kind === 'dead' && waits.waits, true, 'it says so, so nothing offers Respawn');
+  assert.equal('waits' in standingOf('dead', 60, true, true, 600), false);
+});
+
+test("where the place stands the fallen again itself, the death's words say when", () => {
+  assert.equal(deathWords(true, true), 'You fell. You stand again once the encounter is won or your company falls.');
+});
+
 test('death by a fall reads "You fell."; by straying, that the player strayed', () => {
   assert.equal(deathWords(true), 'You fell.');
   assert.equal(deathWords(false), 'You strayed too far from the area.');

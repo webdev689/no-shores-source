@@ -28,7 +28,9 @@ import type { FootView } from './footView.ts';
 import type { FriendlyTraffic, FriendlyWater } from './friendlyShips.ts';
 import { contextOf, withoutTaken } from './gameKeys.ts';
 import { gearScreenOpen } from './gearWindow.ts';
-import { stripOf, withMapKey } from './hints.ts';
+import { stripOf, withFollow, withMapKey } from './hints.ts';
+import { runPlaceWords } from './breachWords.ts';
+import { ofRun, releaseRunModules } from '../city/modules.ts';
 import { FALLEN, refusedWords } from './toShip.ts';
 import { binding } from './rebinding.ts';
 import { leaveOffered } from './leaveHold.ts';
@@ -193,6 +195,12 @@ export function startFrames(parts: FrameParts, playing: Playing): void {
     if (greyed(shown) && !wasDead) document.exitPointerLock();
     drain.toward(dead);
   };
+  /** Out of a Breach's run by any way (to another place on foot, or to the ship), its modules are let go, drawn and
+   *  read. */
+  const outOfRun = () => {
+    parts.eventProps.forget(ofRun);
+    releaseRunModules();
+  };
   /** What the mount key says with no horse worn in the Mount slot. */
   const NO_HORSE = 'You have no horse.';
   /** The words that tell why the player is not where they went, or that the mount key found no horse, while they
@@ -236,9 +244,11 @@ export function startFrames(parts: FrameParts, playing: Playing): void {
     // An outpost's structures and decoration are drawn as the events' props are.
     parts.eventProps.set(here.outpost?.props(shown.props, listener) ?? shown.props ?? []);
     parts.eventProps.hang(here.outpost?.cloth() ?? null);
-    parts.ambience.onFoot(here.node, playing.landmass, shown.shot, here.folk, !!here.dungeon);
+    if (!here.run) outOfRun();
+    // A Breach's run is heard as a dungeon is, under the ground.
+    parts.ambience.onFoot(here.node, playing.landmass, shown.shot, here.folk, !!here.dungeon || !!here.run);
     const { body } = walker.player;
-    if (!here.dungeon) {
+    if (!here.mapless) {
       scene.keepClose([body.x, body.y], parts.closeSource, () => undefined);
       scene.keepMiddle([body.x, body.y], parts.closeSource);
     }
@@ -285,7 +295,10 @@ export function startFrames(parts: FrameParts, playing: Playing): void {
     const guided = quests.guide(afoot, { nodes: playing.zones, layouts: playing.landmass.layouts });
     const ward = quests.wardPlate(parts.groundAt);
     const foes = ward ? [...shown.fight.foes, ward] : shown.fight.foes;
-    const players = platedPlayers(here.otherPlayers, [body.x, body.y, body.z]);
+    // A Breach's Rewritten are marked so on their plates.
+    const marked = new Set(here.held.breach?.marked.map((each) => each.player));
+    const plated = platedPlayers(here.otherPlayers, [body.x, body.y, body.z]);
+    const players = plated.map((each) => (marked.has(each.id) ? { ...each, marked: true } : each));
     const questShown = { ...shown, fight: { ...shown.fight, foes, questAt: guided.at, players } };
     const fight = footView.frame(here, questShown, seconds, { size, viewport, groundAt: here.groundAt });
     // Use held on another player opens their menu, where it does nothing else (a deed or a gate) and no menu or map is up.
@@ -330,17 +343,21 @@ export function startFrames(parts: FrameParts, playing: Playing): void {
     const near = [...shown.figures, ...nodes, ...walking, ...crews];
     const cards = [...(eye ? clearOfEye(near, eye, here.ownFigure) : near), ...met];
     if (here.dungeon) parts.dungeons.draw(here, shown, size, clock, fight, hands, more.drain);
+    else if (here.run) parts.dungeons.drawRun(shown, size, clock, fight, parts.eventProps, hands, more.drain);
     else scene.draw(shown.shot, size, clock, seconds, standing(ships, cards, fight), more);
     showStanding(shown.standing, here.fell);
-    hud.place(here.node.name, placeWords(here.node, here.roomName, here.held.revives, here.held.darkness));
+    const run = here.run && runPlaceWords(here.run.plan, here.held.breach, here.run.tier);
+    hud.place(here.node.name, run || placeWords(here.node, here.roomName, here.held.revives, here.held.darkness));
     // As E's other use, a gate takes no one while a menu or the held map is up, the player is down or in a dungeon.
-    const gated = paused || looking || here.fallen || here.dungeon;
+    const gated = paused || looking || here.fallen || here.mapless;
     playing.through = gated ? null : gateWay(playing.landmass, here.node.id, [body.x, body.y]);
     hud.passageOffer(playing.through?.offer ?? null);
     // N raises the map on foot unless a menu is up, the player has fallen or is in a dungeon, as `openMap` has it.
-    const mapless = paused || here.fallen || here.dungeon;
+    const mapless = paused || here.fallen || here.mapless;
     const placing = placingStrip();
-    hud.strip(looking ? stripOf('landMap') : (placing ?? (mapless ? shown.hints : withMapKey(shown.hints))));
+    // Fallen in a Breach, the camera follows the company: its key, naming whom, is shown while anyone may be followed.
+    const strip = here.followable !== null ? withFollow(shown.hints, here.followable) : shown.hints;
+    hud.strip(looking ? stripOf('landMap') : (placing ?? (mapless ? strip : withMapKey(strip))));
     // The leave held through takes the player to their ship: not under a window, the sheet, the held map or the chat,
     // nor while she speaks; fallen, it says why not.
     const refused = here.fallen ? refusedWords(FALLEN) : null;
@@ -356,9 +373,9 @@ export function startFrames(parts: FrameParts, playing: Playing): void {
     heldHud(hud, footView, told);
     hideSeaHud(hud);
     hud.note(here.roomNote);
-    // A dungeon's floor is all there before the veil lifts; a node waits for the exact ground round the player and its
-    // city, built a few steps a frame, whole.
-    return !!here.dungeon || (scene.closeReady(body.x, body.y) && playing.drawers.ready());
+    // A dungeon's floor and a Breach's run are all there before the veil lifts; a node waits for the exact ground round
+    // the player and its city, built a few steps a frame, whole.
+    return here.mapless || (scene.closeReady(body.x, body.y) && playing.drawers.ready());
   };
 
   const seaFrame = (here: Sea, controls: InputFrame, seconds: number, size: { width: number; height: number }) => {
@@ -372,6 +389,7 @@ export function startFrames(parts: FrameParts, playing: Playing): void {
     const swell = parts.seaWeather()?.follow(here.position, parts.seaView.reachM, seconds) ?? scene.land?.swell;
     parts.eventProps.set([]);
     parts.eventProps.hang(null);
+    outOfRun();
     // The helm's controls while the sea's own view is up: the map's and the deck's are their own, and a fight's its.
     if (!paused && !helmMap.shown) {
       const steer = axis(controls, 'steerLeft', 'steerRight');

@@ -448,7 +448,7 @@ The decisions in [[Open Questions]] are not repeated here.
     its set and kind ("Portwatch Helm"), Atherics and kept named pieces keeping theirs; every drop, Vestige and Shape's
     Legendaries rolled in a content's set look with random perks, the named Legendaries kept-only; faction pieces
     rolling the shared pool and one of their faction's nine perks; the Breaches' own pool of thirteen, a Breach piece
-    rolling its perk columns from it alone, never one twice (no Breach is built: the owner, "Lets just finish this");
+    rolling its perk columns from it alone, never one twice (the Drowned Vale pays them, #182);
     no metal name in anything a player reads (`client/src/metalWords.test.ts`); a faction blade's hilt, guard and
     trim in its faction's colour, the Veiled's a faint cold violet ([[Factions]], [[Sprite Forge]],
     [[First Person]]); a rolled piece's look roll (`vestige::LOOK_ROLLS`, 36) choosing its set, metal, dye, make and
@@ -464,6 +464,30 @@ The decisions in [[Open Questions]] are not repeated here.
   - Unchecked: whether the new first-person blades pair with the published hands (same size and `oFFs`); every look
     of a kept piece moves once with the wider look roll; played live. Here the full check stops at four R2 ship tests
     this container cannot fetch, before the repo checks: run `cargo xtask repo` beside it.
+- **#182, the first Breach, the Drowned Vale**, a draft stacked on #169 for the owner's yes, merged with #169's head
+  (its raising now the game's revive, [[Revives]], with the Breach's own rules on top);
+  `cargo xtask check` green at its head (tested offline; not played, not in a deployed room). Built in full on
+  Claude's autonomy after the owner's three decisions
+  ([[The First Breach Follows the Vault of Glass, at Normal and Hard]] and the two it names); the system in
+  [[Breaches]] (its Limits say what waits), every call of Claude's in [[The Drowned Vale as Claude Builds It]]. Two
+  deep audits by six auditors each (rules, page, server and wire, design and tests, the bible, the art; then the first
+  round's fixes, encounter design, player experience, authority, art and world) found and fixed about 140 defects and
+  gaps, each with a test where the code has a seam; the second round's design pass reweighed the great foes, put the
+  Steward on a fixed clock, made the Ways the company's, taught each mechanic before it kills, and finished the art.
+  CI's check may now run an hour (the owner's choice, with the Breach's tests slimmed: a run's navmesh is baked once
+  per process). #169's revives, respawns and relogs are merged in: the Breach raises with the game's revive and keeps
+  only its own rules on top, its event kinds after #169's. Its weapons come Normal and Forged, as the owner decided:
+  a Forged weapon is named so and always carries an element, a Normal one never. Left for the owner:
+  - The Drowned horse renders only by a hand forge run (`figures` =
+    `horseidle,horsewalk,horsegallop|horse_drowned`, a write to R2), and its first-person frames are in no workflow.
+  - Claude's readings to confirm: Hard's "no respawn" as within a running encounter; at Hard the Ways wait only for
+    the living.
+  - New mechanics the audits proposed, not built: Keepers warded at Hard (so the crossing rule binds), Hard's seams in
+    a drawn order, the Steward taking into both shores, the Spire keeping each third, a pad way to call the Steward's
+    order without voice, a new danger sound; and sinking the Sunken Gate's area into the vale.
+  - The Scrivener and the Steward wear the Idol's and the Heart's bodies until their own are drawn.
+  - Whether a Forged weapon should differ from its Normal one in more than its name and its element (Destiny's
+    Adept weapons roll better).
 - **Open pull requests**, for the owner's yes once their checks pass: #162 (the game's words out to Type and back; it
   conflicts with `main` in `Decisions.md`) and #159 (the rooms' worker tests wait for what they check; it conflicts
   with `main` in `roomThread.test.ts`). Drafts:

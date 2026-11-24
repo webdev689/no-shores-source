@@ -1,7 +1,7 @@
 use crate::catalogue::catalogue;
 use crate::character::{At, Character};
 use crate::dice::Dice;
-use crate::item::NAMED_LEVEL;
+use crate::item::{Item, NAMED_LEVEL};
 use crate::kinds::Slot;
 use crate::rarity::Rarity;
 use crate::source::Source;
@@ -60,7 +60,8 @@ fn a_rolled_legendarys_armour_carries_a_legendarys_prestige() {
         Some(18)
     );
     assert_eq!(full(Source::Abyss).prestige(), 27);
-    assert_eq!(full(Source::Breach).prestige(), 30);
+    assert_eq!(full(Source::Breach).prestige(), 28);
+    assert_eq!(Item { hard: true, ..full(Source::Breach) }.prestige(), 30);
 }
 
 #[test]

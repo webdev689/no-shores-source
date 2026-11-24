@@ -110,6 +110,10 @@ pub const OUTPOST_DELIVER: u8 = 77;
 pub const OUTPOST_TAKE: u8 = 78;
 pub const OUTPOST_HORN: u8 = 79;
 pub const OUTPOST_CHANGED: u8 = 80;
+/// A Breach's asks: take up and set down the Lodestone, and ask at the gate whether it is open (`room::breach`).
+pub const TAKE_LODESTONE: u8 = 82;
+pub const DROP_LODESTONE: u8 = 83;
+pub const ENTER_BREACH: u8 = 84;
 /// Shape's place on the gear message while he is away.
 pub const SHAPE_AWAY: u8 = 255;
 
@@ -215,6 +219,9 @@ pub fn asked_of(ask: &messages::Ask<'_>) -> Option<Asked> {
         OUTPOST_TAKE => Asked::Outpost(OutpostAsk::Take { slot: ask.slot(), count: ask.count() }),
         OUTPOST_HORN => Asked::Outpost(OutpostAsk::Horn),
         OUTPOST_CHANGED => Asked::Outpost(OutpostAsk::Changed),
+        TAKE_LODESTONE => Asked::TakeLodestone,
+        DROP_LODESTONE => Asked::DropLodestone,
+        ENTER_BREACH => Asked::EnterBreach,
         _ => return None,
     })
 }
@@ -320,6 +327,9 @@ pub fn ask_offset<'built>(builder: &mut FlatBufferBuilder<'built>, asked: &Asked
         Asked::ToShip => args = messages::AskArgs { kind: TO_SHIP, ..args },
         Asked::ClaimGuild { slot } => args = messages::AskArgs { kind: CLAIM_GUILD_BOUNTY, column: *slot, ..args },
         Asked::Outpost(outpost) => args = outpost_args(*outpost, args),
+        Asked::TakeLodestone => args = messages::AskArgs { kind: TAKE_LODESTONE, ..args },
+        Asked::DropLodestone => args = messages::AskArgs { kind: DROP_LODESTONE, ..args },
+        Asked::EnterBreach => args = messages::AskArgs { kind: ENTER_BREACH, ..args },
         Asked::Grant(Grant::Vestige { rarity, slot, level }) => {
             args = messages::AskArgs {
                 kind: GRANT_VESTIGE,

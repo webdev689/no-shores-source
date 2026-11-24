@@ -75,6 +75,8 @@ export const CONTROLS = {
   tenetOne: control(['q'], ['LB'], FOOT),
   tenetTwo: control(['g'], ['RB'], FOOT),
   respawn: control(['enter'], ['A'], ['dead']),
+  // Fallen in a Breach's run, the camera follows the next of the company: F and RB, free while the player lies.
+  follow: control(['f'], ['RB'], ['dead']),
   turnLeft: control(['arrowleft'], ['RS left'], ['foot', 'helm']),
   turnRight: control(['arrowright'], ['RS right'], ['foot', 'helm']),
   lookUp: control(['insert'], ['RS up'], ['foot', 'helm']),

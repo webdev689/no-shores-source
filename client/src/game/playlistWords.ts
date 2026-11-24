@@ -14,9 +14,11 @@ import {
 import type { ActivityRecord } from '../network/activityRecord.ts';
 import { SOURCES } from '../player/sourceLooks.ts';
 import { countdownWords } from './journalWords.ts';
+import type { BreachPlan } from './breachPlan.ts';
+import { breachEntries } from './playlistBreach.ts';
 
-/** The four entries, in the order the screen shows them. */
-export type PlaylistKind = 'elite' | 'abyss' | 'week-elite' | 'week-abyss';
+/** The entries, in the order the screen shows them: the four of the Elite Dungeons, then a Breach at each tier. */
+export type PlaylistKind = 'elite' | 'abyss' | 'week-elite' | 'week-abyss' | 'breach-normal' | 'breach-hard';
 
 /** A reward an entry pays, and how this character stands with it: taken or not (null before their gear is known), its
  *  clears this week as marks filling (the weekly's alone), and the time to its reset. */
@@ -28,12 +30,15 @@ export interface PlaylistReward {
 }
 
 /** What Launch and Find a Company start: a run at `seas` of `place` (null: one of the 18, drawn as it starts) with its
- *  foes at `playlist` for a playlist's (null for the week's), and the base Find a Company matches (null for none). */
+ *  foes at `playlist` for a playlist's (null for the week's), and the base Find a Company matches (null for none); a
+ *  Breach's at its tier (0 Normal, 1 Hard), `place` its gate's patrol zone, `finds` the base its Launch asks for: a
+ *  Breach is launched by its company, never matched. */
 export interface PlaylistLaunch {
   readonly place: string | null;
-  readonly seas: 'elite' | 'abyss';
+  readonly seas: 'elite' | 'abyss' | 'breach';
   readonly playlist: number | null;
   readonly finds: string | null;
+  readonly breach?: number;
 }
 
 export interface PlaylistEntry {
@@ -67,8 +72,8 @@ const PLAIN = 'Every clear pays its kills and its cache, as any run does.';
 
 /** What a tier's runs drop, by its content's name (`content/gear/looks.json`), never a metal's: "Drops Elite Dungeon
  *  gear". */
-function dropsWords(seas: 'elite' | 'abyss'): string {
-  const name = SOURCES.find((source) => source.key === seas)?.name ?? '';
+export function dropsWords(content: 'elite' | 'abyss' | 'breach'): string {
+  const name = SOURCES.find((source) => source.key === content)?.name ?? '';
   return name === '' ? '' : `Drops ${name.replace(/^(an?|the) /, '')} gear`;
 }
 
@@ -90,7 +95,8 @@ function weeklyWords(given: PlaylistOn): string {
   return `Weekly, at ${given.weekClears} clears: ${given.weekEssence} Essence of each stock and ${vestiges} in a Boss's colours.`;
 }
 
-/** The Playlist screen opened beside `port`, at `now` (Unix milliseconds), for a character of `level`. */
+/** The Playlist screen opened beside `port`, at `now` (Unix milliseconds), for a character of `level`; the Breach's
+ *  two entries after the rest where its plan is given. */
 export function playlistScreenOf(
   port: string,
   drawn: Activities,
@@ -99,6 +105,7 @@ export function playlistScreenOf(
   level: number | null,
   placeName: (id: string) => string,
   now: number,
+  breach: BreachPlan | null = null,
 ): PlaylistScreenState {
   const dayResets = `Resets in ${countdownWords((drawn.minute + drawn.untilDay) * 60_000 - now)}`;
   const weekResets = `Resets in ${countdownWords((drawn.minute + drawn.untilWeek) * 60_000 - now)}`;
@@ -166,7 +173,12 @@ export function playlistScreenOf(
   return {
     title: 'Playlist',
     port,
-    entries: [...drawn.playlists.map(playlist), week('elite'), week('abyss')],
+    entries: [
+      ...drawn.playlists.map(playlist),
+      week('elite'),
+      week('abyss'),
+      ...(breach ? breachEntries(breach, level, placeName, weekResets) : []),
+    ],
     note: PLAIN,
   };
 }

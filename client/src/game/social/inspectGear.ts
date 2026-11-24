@@ -25,6 +25,7 @@ export function inspectedGear(found: Details): GearState | null {
     name: piece.name,
     resource: null,
     breach: false,
+    hard: false,
     xp: 0,
     xpMost: 0,
     bought: piece.gilded ? 1 : 0,

@@ -261,6 +261,7 @@ export function officerNode(officer: GearOfficer, column: number, node: number):
     name: 0,
     resource: null,
     breach: false,
+    hard: false,
     xpMost: officer.trainedMost,
     bought: officer.bought,
     chosen: officer.chosen,

@@ -31,13 +31,17 @@ const COLOURS = {
 } as const;
 
 /** Another player as their plate is drawn: their number, where their figure's feet stand, what the room says of them,
- *  and whether they are in the viewer's company. */
+ *  whether they are in the viewer's company, and whether a Breach marks them Rewritten. */
 export interface PlatedPlayer {
   readonly id: number;
   readonly feet: Point;
   readonly plate: PlayerPlate;
   readonly company: boolean;
+  readonly marked?: boolean;
 }
+
+/** The Rewritten's word on a plate, in the pale violet of the ring under them (`breachView.ts`). */
+const REWRITTEN = '#c4a8ff';
 
 /** How the plates see the world this frame: the camera, whether a line is blocked, where a point falls on the screen
  *  (null behind the eye) with its depth, and the viewer's own feet, from which a person's reach is measured. */
@@ -210,7 +214,7 @@ function plateWords(plate: PlayerPlate): string {
 }
 
 /** A player's plate at `scale`: its square (or the bubble), their name and their guild's tag a shade fainter after it,
- *  in the company's colours or another's. */
+ *  in the company's colours or another's, and the Breach's Rewritten mark after them while they bear it. */
 export function plateNode(player: PlatedPlayer, scale: number): Node {
   const colours = player.company ? COLOURS.company : COLOURS.other;
   const side = Math.round(SIDE * scale);
@@ -247,6 +251,7 @@ export function plateNode(player: PlatedPlayer, scale: number): Node {
           opacity: TAG_OPACITY,
           text: { words: `[${plate.tag}]`, colour: colours.word, edge: 'halo', wrap: false },
         },
+      !!player.marked && { text: { words: 'Rewritten', colour: REWRITTEN, edge: 'halo', wrap: false } },
     ],
   };
 }

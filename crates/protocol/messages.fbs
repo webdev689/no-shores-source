@@ -499,6 +499,72 @@ table EncounterSeen {
   slam_ticks: uint;
 }
 
+// A company inside a Breach's run, as its gate in the patrol zone shows the zone: the name of its first player in,
+// its tier (0 Normal, 1 Hard) and the encounter it is on.
+table BreachInside {
+  name: string;
+  tier: ubyte;
+  encounter: ubyte;
+}
+
+// A Breach, sent whole in each snapshot to every player in its room (room::breach::seen::BreachSeen, which says
+// each field): in its run, each encounter's phase (0 waiting, 1 running, 2 won), the stage reached, the seals open (a
+// bit each), the revives left (-1 none counted), the Lodestone (0 away, 1 on a plinth, 2 borne, 3 lying; its bearer,
+// where it stands, its charge and Hold True's share left per mille, the ticks before the company is unwritten while it
+// lies), the Rewritten and their ticks left, the hidden chests open, and the encounter under way; at its gate, the
+// Waking, who the gate is open to and the companies inside.
+// Ticks count down to a moment, 0 for none coming.
+table BreachSeen {
+  gate: bool;
+  tier: ubyte;
+  phases: [ubyte];
+  reached: ubyte;
+  seals: ubyte;
+  revives: byte = -1;
+  stone: ubyte;
+  bearer: uint;
+  stone_at: [float];
+  charge: ushort;
+  held: ushort;
+  lying_ticks: uint;
+  marked: [uint];
+  mark_ticks: [uint];
+  chests: ubyte;
+  encounter: ubyte;
+  stage: ubyte;
+  stage_ticks: uint;
+  counts: [ubyte];
+  bells: [ubyte];
+  bell_foes: [uint];
+  broken: ubyte;
+  ring_ticks: uint;
+  font_ticks: uint;
+  boss: uint;
+  warded: bool;
+  desk: ubyte;
+  marked_desk: byte = -1;
+  desk_ticks: uint;
+  write_ticks: uint;
+  seen: bool;
+  wipe_ticks: uint;
+  rifts: [ubyte];
+  rift_held: [ushort];
+  kept: ubyte;
+  takings: ubyte;
+  taking_ticks: uint;
+  away_shore: byte = -1;
+  away: [uint];
+  way_back: bool;
+  bare_ticks: uint;
+  held_by: bool;
+  fill: ushort;
+  woken: bool;
+  claims: ubyte;
+  open_to: [uint];
+  inside: [BreachInside];
+  holders: [uint];
+}
+
 // Every player in the room after one of its ticks, the dresses that changed since the last snapshot, every foe, what
 // happened in the fight since the last snapshot, and the shots in flight; in the sea room, every ship at sea, every
 // hostile, each player's fight, and as `players` each player off the helm, their fighter only their body on their ship's
@@ -560,6 +626,8 @@ table Snapshot {
   // At a guild's outpost, how many plots its room has stood: the page reads the outpost again when it changes. 0 in
   // any other room.
   outpost: uint;
+  // In a Breach's run or a patrol room with a Breach's gate, the Breach (BreachSeen); none in any other room.
+  breach: BreachSeen;
 }
 
 // What a room sends: exactly one of these is present.

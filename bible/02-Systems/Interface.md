@@ -456,7 +456,9 @@ The game draws every screen itself, and by the owner's word no HTML is laid over
   are down; one going down has no mark. On foot in a zone that holds public events it marks the event's ground on its
   foot with a gold diamond (the next one's between events), held at the nearer end while off the strip as a ship is,
   and the growth or the tithe-taker with an orange one, blinking, while the heroic window is open; a chest of the
-  player's waiting there with a smaller gold one, and a store under attack with a red one, blinking faster. The compass hides
+  player's waiting there with a smaller gold one, and a store under attack with a red one, blinking faster. In the
+  Gullwing Vale it marks the Sunken Gate; in a Breach's run, the stage reached, the way on, the way out and the
+  Lodestone while it lies or stands on its plinth ([[Breaches]], "On the page"). The compass hides
   with the view while the held map is up at the helm.
 - **The vitals** stand at the top left, 28 px in and 14 down, after a souls-like display: three long thin bars, health
   over stamina over poise, each in a fine stone frame whose ends come to a point at a brass tip (`plus/barFrame.ts`),
@@ -644,9 +646,9 @@ The game draws every screen itself, and by the owner's word no HTML is laid over
   riding, getting down, the gallop, the boost and the leave held; hanging from a ledge, the climb and letting go, and on a wall
   the kick off too, whatever is drawn; the Arts' three while one is worn and the hands are free to cast, Shadow's
   first Tenet apart as held to aim Dusk Daggers; the held map's key wherever it can be raised, before the leave's;
-  the click that takes the mouse to look round first while the mouse is free; dead, Respawn once death is told, and
-  nothing while the fall plays out; fallen in a fight, Respawn once it may be pressed, and nothing before it or in a
-  darkness zone. The prompt for Use says what it does, with Use's key or button, so the strip
+  the click that takes the mouse to look round first while the mouse is free; dead, Respawn once death is told and
+  the room would take it, and nothing while the fall plays out; fallen in a fight, Respawn once it may be pressed,
+  and nothing before it or in a darkness zone; Follow first in a Breach while a company member stands. The prompt for Use says what it does, with Use's key or button, so the strip
   leaves it out. At sea: sailing, the click to sail there and the helm's controls (the sea bar names its own keys); in
   Manage, the drag, the wheel and Manage's key back; on the deck, the click to look round as on foot, run, jump and
   Use to take the helm; at the map and choosing a landing, their clicks, Set sail and Escape; with the land's held map
@@ -952,8 +954,8 @@ never while a press is held. Each press is an ask the room answers.
     modifiers each by its icon alone, its name and what it does said at the foot (Burn's flame in its Art's colours,
     Brawler's fist, Marksman's target, Lightswitch's claws, Ironclad's shield, Trickle's drop, Juggler's three balls on
     an arc, Exposure's broken heart) and its pay (the Vestige
-    in its rarity, Essence, the boon's star); and the Abyss boon while held, by XP's glyph. Under Later, Breaches (a
-    rift). The panel's foot says in words whatever the pointer or the focus rests on, and each mark's words are read
+    in its rarity, Essence, the boon's star); and the Abyss boon while held, by XP's glyph; and Breaches (a rift),
+    each encounter paying once a week at each tier, launched from the Playlist. The panel's foot says in words whatever the pointer or the focus rests on, and each mark's words are read
     to a screen reader with its row as the focus takes it; the arrows step between the rows. Each countdown is drawn
     afresh each frame. The panel drops from under the hourglass, or with T, on its own ground, edged and ruled in
     brass, the focus going to its Close; Escape, Close, T or the hourglass takes it up, the focus going back to the
@@ -1114,9 +1116,12 @@ gone into, and the card says "The week turned. Try again.".
 A Playlist mark beside a port's harbour ([[Overworld]], "Marks") opens the Playlist screen ([[Activities]], "The
 Playlist"), drawn after the owner's reference, Destiny's Vanguard screen (`PlaylistView`, its parts in
 `playlistParts.ts`, in the entrance card's layer, over a dark scrim): "PLAYLIST" at its head and the port it was opened
-beside ("Beside Overlook") over a brass rule; then the four entries as crests, the Elite Playlist (three chevrons) and
+beside ("Beside Overlook") over a brass rule; then six crests, the Elite Playlist (three chevrons) and
 the Abyss Playlist (an eye of the deep) above, the Elite Dungeon of the week (crossed blades under a star) and the
-Abyss Dungeon of the week (a crown over the deep) below their playlists, a fifth smaller. A crest is a shield, brass
+Abyss Dungeon of the week (a crown over the deep) below their playlists, a fifth smaller; and the Breach, the Drowned
+Vale at Normal and at Hard (an arch under a crystal spire, ringed and violet at Hard), between them in the middle,
+up and down choosing its tier (`playlistBreach.ts`, [[Breaches]]). A Breach is launched for the company, never
+searched for. A crest is a shield, brass
 for Elite, violet for Abyss, grey while its entry is shut; at its shoulder a gold dot while a reward of it waits, or a
 padlock while it is shut. Under it its name in capitals (a week's dungeon's on two lines, broken before "of"), and its
 level a part a line past its tier ("Levels 15 to 19", "Foes at level 17"; "From level 10" before it), or, shut, why in
@@ -1126,7 +1131,7 @@ focus glows a little.
 
 On a screen 1000 pixels wide or more the crests stand on a chart (`playlistMap.ts`: a lit middle fading to nothing
 before its edges, faint stars, two wide rings, a ring round each crest's spot and dotted lines from each playlist to
-the other and to its week's dungeon), each shield's middle on its spot, its words wrapped to 2.2 times a playlist's
+the Breach between them and to its week's dungeon, and from the Breach's Normal to its Hard), each shield's middle on its spot, its words wrapped to 2.2 times a playlist's
 shield; the chart's picture is drawn again only at 64-pixel steps of the screen. The chosen entry's card stands beside
 it in a column that grows to the footer and scrolls. Narrower, the crests stand two by two over the chart's ground
 (its stars and rings, no spots), each its half of a row, and the card under them, the two scrolling together. A list

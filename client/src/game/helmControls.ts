@@ -20,7 +20,7 @@ export function helmControls(playing: Playing, input: { lock(): void }, { landAt
   const openMap = () => {
     const { flow, sea, foot } = playing;
     if (flow.mode === 'sea' && sea) playing.helmMap.open(sea);
-    else if (flow.mode === 'foot' && !gearScreenOpen() && foot && !foot.fallen && !foot.dungeon) {
+    else if (flow.mode === 'foot' && !gearScreenOpen() && foot && !foot.fallen && !foot.mapless) {
       // Read each time it is raised, off the ground as the camera keeps it (an island's, or the land's exact round the
       // player): the ground drawn by then is the truest.
       playing.helmMap.openLand(landSheetOf(foot.node, playing.landmass, groundAt));

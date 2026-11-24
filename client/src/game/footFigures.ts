@@ -175,24 +175,33 @@ export function figuresEye(
   return { x: own[0], y: own[1], nearest: firstPerson ? CARD_NEAREST_M : 0, held: false };
 }
 
-/** What the player's figure was last dressed in: their gear and the loadout drawn. */
+/** What the player's figure was last dressed in: their gear, the loadout drawn, and whether bare handed. */
 export interface Dressed {
   gear: GearState | null;
   loadout: number;
+  bare?: boolean;
 }
 
-/** Dresses the player's figure in their gear as their room last sent it, its hands the loadout drawn, once either
- *  changes from what it was `dressed` in, its weapons glowing in their element; and says whether a horse is worn. */
-export function dressInGear(walker: Walker, forge: Cards, gear: GearState | null, dressed: Dressed): void {
+/** Dresses the player's figure in their gear as their room last sent it, its hands the loadout drawn (empty while
+ *  `bare`: the Lodestone's bearer holds no weapon, as the room has them), once any of these changes from what it was
+ *  `dressed` in, its weapons glowing in their element; and says whether a horse is worn. */
+export function dressInGear(
+  walker: Walker,
+  forge: Cards,
+  gear: GearState | null,
+  dressed: Dressed,
+  bare = false,
+): void {
   const { loadout } = walker.player;
-  if (!gear || (gear === dressed.gear && loadout === dressed.loadout)) return;
-  [dressed.gear, dressed.loadout] = [gear, loadout];
+  if (!gear || (gear === dressed.gear && loadout === dressed.loadout && bare === (dressed.bare ?? false))) return;
+  [dressed.gear, dressed.loadout, dressed.bare] = [gear, loadout, bare];
   const wardrobe = forge.wardrobe(walker.you.dress.body);
   if (wardrobe) {
     const outfit = gearOutfit(gear, wardrobe, walker.you.dress.outfit, loadout);
     walker.you.dress = { ...walker.you.dress, outfit };
     walker.spare = spareOutfit(gear, wardrobe, outfit, loadout);
   }
+  if (bare) walker.you.dress = { ...walker.you.dress, outfit: { ...walker.you.dress.outfit, right: null, left: null } };
   walker.glow = heldElements(gear, loadout);
   walker.ridesIn(gear);
   walker.spareGlow = heldElements(gear, otherLoadout(loadout))[0];

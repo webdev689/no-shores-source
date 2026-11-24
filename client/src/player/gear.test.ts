@@ -25,6 +25,7 @@ const item = (fields: Partial<GearItem>): GearItem => ({
   name: 0,
   resource: null,
   breach: false,
+  hard: false,
   xp: 0,
   xpMost: 1_000,
   bought: 0,
@@ -97,6 +98,13 @@ test('every rolled piece is named by the set it is drawn in, and its kind', () =
   assert.equal(legendary(head, 2, 0), 'Barrowknight Helm');
   assert.equal(legendary(sword, 2, 2), 'Gravewarden Sword');
   assert.equal(legendary(torso, 6, 0), 'Lattice Hauberk');
+  // A Breach's weapons come in two sets, Normal's and Hard's, the Hard one Forged; its armour is named as any.
+  const breach = (kind: number, hard: boolean) =>
+    itemName({ ...item({ kind, rarity: 3, level: 20, source: 6, name: 0 }), breach: true, hard });
+  assert.equal(breach(sword, false), 'Lattice Sword', 'won at Normal');
+  assert.equal(breach(sword, true), 'Lattice Sword (Forged)', 'won at Hard');
+  assert.equal(breach(bow, true), 'Lattice Bow (Forged)');
+  assert.equal(breach(torso, true), 'Lattice Hauberk', 'armour is never Forged');
   // A Magic torso rolled for clothes is Homespun; one in its content's lightest set is that set's, bought or not.
   assert.equal(itemName(item({ kind: torso, rarity: 1, name: 0 })), 'Homespun Hauberk');
   assert.equal(itemName(item({ kind: torso, rarity: 1, name: 6 })), 'Deckhand Hauberk');

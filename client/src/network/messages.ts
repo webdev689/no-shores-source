@@ -11,6 +11,7 @@ import { unpack } from './pack.ts';
 import { withOthers } from './seaFight.ts';
 import { type PublicEvent, publicOf } from './publicMessages.ts';
 import { type EncounterSeen, encounterOf } from './encounterMessages.ts';
+import { type BreachSeen, breachOf } from './breachMessages.ts';
 import { type HarbourPart, harbourOf } from './seaHarbour.ts';
 import { type PlayerPlate, platesOf } from './plateMessages.ts';
 
@@ -262,6 +263,8 @@ export type FromRoomMessage =
       readonly public: PublicEvent | null;
       /** An Elite Dungeon's encounters; null in any other room. */
       readonly encounter: EncounterSeen | null;
+      /** A Breach, in its run or at its gate in the patrol zone; null in any other room. */
+      readonly breach: BreachSeen | null;
       /** On land, the tick of the snapshot this one builds on (0 for none), and the players and foes gone since it:
        *  the players and foes it holds are those that changed since (`snapshots.ts` makes it whole again). */
       readonly base: bigint;
@@ -535,6 +538,7 @@ export function readFromRoom(bytes: Uint8Array): FromRoomMessage | null {
       spells: spellsOf(snapshot),
       public: publicOf(snapshot),
       encounter: encounterOf(snapshot),
+      breach: breachOf(snapshot),
       base: snapshot.base(),
       gonePlayers: Array.from(snapshot.gonePlayersArray() ?? []),
       goneFoes: Array.from(snapshot.goneFoesArray() ?? []),

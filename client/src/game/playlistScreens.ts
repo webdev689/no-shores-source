@@ -11,6 +11,7 @@ import { LAUNCHING, PlaylistView } from './playlistScreen.ts';
 import { type PlaylistEntry, type PlaylistScreenState, launchRoom, playlistScreenOf } from './playlistWords.ts';
 import { playlistPort } from './seaMarks.ts';
 import { nodeOfRoom, runInstance } from './rooms.ts';
+import { breachPlanOf } from './breachPlan.ts';
 import type { NodeInfo } from './worldData.ts';
 
 /** What the Playlist needs: the room module once read, the places by id, the last word of the character, the way
@@ -21,6 +22,8 @@ export interface PlaylistDeps {
   readonly nodes: readonly NodeInfo[];
   readonly kept: () => GearState | null;
   readonly intoRun: (node: NodeInfo, run: string) => void;
+  /** Into a Breach's run launched or found: to its gate's patrol zone, standing at the gate in the run's company. */
+  readonly toBreach?: (run: string) => void;
   readonly link: (Pick<AccountLink, 'token' | 'finderAt'> & Partial<Pick<AccountLink, 'roster'>>) | null;
   readonly atSea?: () => boolean;
   readonly now: () => number;
@@ -38,8 +41,11 @@ export interface Playlists {
   readonly layer: Layer;
 }
 
-/** What the footer says when the accounts do not answer Launch's ask for a run. */
+/** What the footer says when the accounts do not answer Launch's ask for a run, of a Breach played alone, and of one
+ *  Launched online while signed out. */
 export const LAUNCH_LOST = 'The accounts did not answer. Try again.';
+export const BREACH_ONLINE = 'A Breach is played online.';
+export const BREACH_SIGN_IN = 'Sign in to launch a Breach.';
 
 export function startPlaylists(deps: PlaylistDeps): Playlists {
   const instance = deps.instance ?? (() => runInstance());
@@ -79,17 +85,21 @@ export function startPlaylists(deps: PlaylistDeps): Playlists {
     const gates = kept ? gatesAt(module, kept.level, kept.prologueDone ?? true) : null;
     const drawn = activitiesAt(module, minute);
     const record = kept?.activity ?? null;
-    const screen = playlistScreenOf(port, drawn, gates, record, kept?.level ?? null, placeName, deps.now());
+    const plan = breachPlanOf(module);
+    const screen = playlistScreenOf(port, drawn, gates, record, kept?.level ?? null, placeName, deps.now(), plan);
     opened = { port, second, gear: kept, screen };
     render();
     return true;
   };
-  /** Into a run of `place`, closing the screen: none where the place is unknown. */
+  /** Into a run of `place`, closing the screen: none where the place is unknown. A Breach's run is gone into by its
+   *  gate's patrol zone. */
   const into = (run: string) => {
-    const node = deps.nodes.find((each) => each.id === nodeOfRoom(run)?.id);
+    const where = nodeOfRoom(run);
+    const node = deps.nodes.find((each) => each.id === where?.id);
     if (!node) return;
     close();
-    deps.intoRun(node, run);
+    if (where && where.breach !== null) deps.toBreach?.(run);
+    else deps.intoRun(node, run);
   };
   /** Asks the server for a run of `entry`'s base: Find a Company's group, or with `launch` a playlist's run at once,
    *  alone or for the company, its Elite Dungeon drawn there as a found run's is; false where the page cannot ask. */
@@ -121,8 +131,15 @@ export function startPlaylists(deps: PlaylistDeps): Playlists {
   const view = new PlaylistView({
     launch: (entry: PlaylistEntry) => {
       if (search) return;
-      // A playlist's Elite Dungeon is the server's draw while signed in; the week's two are the week's own.
+      // A playlist's Elite Dungeon is the server's draw while signed in; the week's two are the week's own. A Breach's
+      // run is the server's alone: its gate stands only in the zone's room online.
       if (entry.launch.place === null && entry.launch.playlist !== null && seek(entry, true)) return;
+      if (entry.launch.seas === 'breach') {
+        if (seek(entry, true)) return;
+        // Online, the finder launches only for an account; a tier shut or a search under way says nothing more.
+        said = !deps.link ? BREACH_ONLINE : !deps.link.token ? BREACH_SIGN_IN : said;
+        return render();
+      }
       const module = deps.module();
       const elites = module ? activitiesAt(module, Math.floor(deps.now() / 60_000)).elites : [];
       // Playing alone keeps nothing, so the page draws it: no account's record is paid there.
@@ -130,7 +147,8 @@ export function startPlaylists(deps: PlaylistDeps): Playlists {
       if (place !== undefined) into(launchRoom(entry.launch, place, instance()));
     },
     find: (entry: PlaylistEntry) => {
-      seek(entry, false);
+      // A Breach is launched by its company, never matched.
+      if (entry.launch.seas !== 'breach') seek(entry, false);
     },
     stop: () => {
       stopSearch();

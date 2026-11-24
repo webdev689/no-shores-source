@@ -13,6 +13,9 @@ export type Standing =
       readonly fell: boolean;
       /** Whether death is told yet: the grey veil, the words and Respawn, which wait for a fall to play. */
       readonly told: boolean;
+      /** Where the place's room never takes Respawn and stands the fallen again itself (a Breach's running encounter
+       *  at Hard, once it is won or the company falls). */
+      readonly waits?: true;
     };
 
 /** The reach rules' times (crates/reach): the warning's count, and how long a body lies dead before it may respawn,
@@ -23,12 +26,20 @@ export const TICKS_A_SECOND = 60;
 
 /** A standing given in ticks, as the movement door's reach rules and a room's snapshots give it (the ticks left of a
  *  warning, or the ticks dead), as the player reads it: in seconds, with Respawn offered once the body has lain dead
- *  long enough; a death by a fall (`fell`) told once `told`, one by straying at once. */
-export function standingOf(kind: Standing['kind'], ticks: number, fell = false, told = true): Standing {
+ *  `respawnTicks` (the reach rules' own unless the place says otherwise; null where its room never takes it); a death
+ *  by a fall (`fell`) told once `told`, one by straying at once. */
+export function standingOf(
+  kind: Standing['kind'],
+  ticks: number,
+  fell = false,
+  told = true,
+  respawnTicks: number | null = RESPAWN_SECONDS * TICKS_A_SECOND,
+): Standing {
   if (kind === 'inside') return { kind };
   if (kind === 'warned') return { kind, secondsLeft: ticks / TICKS_A_SECOND };
   const secondsDead = ticks / TICKS_A_SECOND;
-  return { kind, secondsDead, canRespawn: secondsDead >= RESPAWN_SECONDS, fell, told: told || !fell };
+  const canRespawn = respawnTicks !== null && ticks >= respawnTicks;
+  return { kind, secondsDead, canRespawn, fell, told: told || !fell, ...(respawnTicks === null && { waits: true }) };
 }
 
 /** How dark the screen's edge grows once death is told. */
@@ -39,9 +50,10 @@ export function greyed(standing: Standing): boolean {
   return standing.kind === 'dead' && standing.told;
 }
 
-/** The words under "You died": how the player died. */
-export function deathWords(fell: boolean): string {
-  return fell ? 'You fell.' : 'You strayed too far from the area.';
+/** The words under "You died": how the player died, and where the place stands them again itself (`waits`), when. */
+export function deathWords(fell: boolean, waits = false): string {
+  const how = fell ? 'You fell.' : 'You strayed too far from the area.';
+  return waits ? `${how} You stand again once the encounter is won or your company falls.` : how;
 }
 
 /** The warning's count, as the player reads it: whole seconds, never below 0. */

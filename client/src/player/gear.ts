@@ -190,15 +190,21 @@ export function answerText(answer: number): string {
 /** Each armour and weapon kind's word, said after its set's name ("Portwatch Helm"). */
 const KIND_WORDS: Readonly<Record<string, string | undefined>> = rolled.kinds;
 
+/** What a Breach's weapon won at Hard is called after its set's name: its Forged version, as Destiny's raid weapons
+ *  are Adept (the decision "Breach Weapons Come Normal and Forged"). */
+export const FORGED = '(Forged)';
+
 /** An item's name: a named item's own (a faction's piece's is its set's); a rolled armour piece or weapon its set's
- *  and its kind's word, by the look it is drawn in, the prologue's armour by its steel; a horse by its coat; the cloak
- *  its kind's. Ship modules are named by `gearName`. */
+ *  and its kind's word, by the look it is drawn in, the prologue's armour by its steel, a Breach's weapon won at Hard
+ *  Forged; a horse by its coat; the cloak its kind's. Ship modules are named by `gearName`. */
 export function itemName(
-  item: Pick<GearItem, 'named' | 'kind' | 'rarity' | 'name' | 'id' | 'level' | 'source' | 'story'>,
+  item: Pick<GearItem, 'named' | 'kind' | 'rarity' | 'name' | 'id' | 'level' | 'source' | 'story'> &
+    Partial<Pick<GearItem, 'breach' | 'hard'>>,
 ): string {
   if (item.named) return items.items.find((found) => found.id === item.named)?.name ?? item.named;
   const parts = rolledParts(item);
-  if (parts) return `${parts.set} ${parts.word}`;
+  const forged = item.breach && item.hard && slotOf(item.kind) <= 1;
+  if (parts) return forged ? `${parts.set} ${parts.word} ${FORGED}` : `${parts.set} ${parts.word}`;
   // A horse by its coat's name among its kind's; the cloak by its kind.
   const kind = kindKey(item.kind);
   const names = (rolled.names as Record<string, Record<string, readonly string[]> | undefined>)[kind];

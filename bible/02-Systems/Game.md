@@ -430,7 +430,8 @@ The node's room judges the body against the node's section each tick ([[Reach]])
 "Return to the area" counts down 10 s; back inside, it ends. At 0, or 60 m past, the player dies: "You died", the
 pointer is freed, and Respawn is offered after 4 s (or Enter). A dead body lies still while its standing ticks on. A
 player killed in the fight falls and lies there the same way, "YOU DIED" over the view counting down to Respawn, until
-they press it or an ally revives them ([[Revives]], "On the page"); a respawn stands them where [[Revives]] says.
+they press it or an ally revives them ([[Revives]], "On the page"); a respawn stands them where [[Revives]] says. A
+Breach's fallen keep its own times and places ([[Breaches]]).
 
 ## At sea
 
