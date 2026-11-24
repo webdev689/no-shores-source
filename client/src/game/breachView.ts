@@ -20,7 +20,8 @@ import type { NodeLayout } from '../layout/layouts.ts';
 import { RunCounting } from './breachCounts.ts';
 import { type MarkedFoe, dashedRing, mooringMark, runMarks } from './breachMarks.ts';
 import { type Heard, MomentWords, beatOf, momentSounds, momentsHad, stingOf } from './breachMoments.ts';
-import { type BreachPlan, breachPlanOf, sealOpen, slabStands, socketAt, spaceSocket } from './breachPlan.ts';
+import { hearBreach } from './audio/music/hearing.ts';
+import { type BreachPlan, breachPlanOf, sealOpen, slabStands, socketAt, spaceAt, spaceSocket } from './breachPlan.ts';
 import { ENCOUNTER, type Mooring, breachCall, encounterName, encounterOn } from './breachWords.ts';
 import { gateBanner, gateLine, inSentence, runBanner, teachingWords, wonWords } from './breachWords.ts';
 import type { Use } from './footGear.ts';
@@ -285,7 +286,8 @@ export class BreachView {
     // A great foe awake (the Scrivener, the Steward) is the music's peak, as an Elite Dungeon's Boss is.
     const great = seen.boss > 0 && (seen.encounter === ENCOUNTER.choir || seen.encounter === ENCOUNTER.steward);
     const mood = great ? ('peak' as const) : seen.encounter > 0 ? ('tension' as const) : null;
-    const shown: PublicShown = { banner, beat, places: this.runPlaces(plan, seen), stores: [], call, mood };
+    const breach = hearBreach(seen, plan, spaceAt(plan, feet[0], feet[1])?.key ?? null, true);
+    const shown: PublicShown = { banner, beat, places: this.runPlaces(plan, seen), stores: [], call, mood, breach };
     return { shown, line: '', first: true, props: this.runProps(plan, seen, word, where, clock), sounds, sting };
   }
 
@@ -338,6 +340,7 @@ export class BreachView {
       stores: [],
       call: heard.call ?? null,
       mood,
+      breach: hearBreach(seen, plan, null, mine),
     };
     return { shown, line: gateLine(plan, seen), first: near, props, sounds: heard.sounds, sting: heard.sting };
   }
@@ -535,5 +538,6 @@ export function withBreach(own: PublicShown | null, breached: BreachFrame | null
     banner: { ...own.banner, elsewhere },
     places: [...own.places, ...theirs.places],
     call: own.call ?? theirs.call ?? null,
+    breach: theirs.breach ?? null,
   };
 }

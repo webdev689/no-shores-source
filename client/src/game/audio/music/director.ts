@@ -8,12 +8,14 @@
 // stands (band.ts), and a calm piece gives way to it near it.
 
 import { SKY_NOW } from '../../../sky/skyDriver.ts';
+import { recordingOf } from '../../../soundSamples.ts';
 import { duckAmbience, musicOutput } from '../../uiSounds.ts';
 import { Band, type BandHeard, themeUnder } from './band.ts';
 import { boardingScore } from './boardingScore.ts';
 import { coldScore } from './coldScore.ts';
 import {
   type Boss,
+  type BreachSong,
   type Cue,
   FAMILY_OF,
   type Family,
@@ -36,9 +38,13 @@ import { reckoningScore } from './reckoningScore.ts';
 import { ROLES, type Role, type Song, TICKS_PER_BEAT, songSeconds } from './score.ts';
 import { type SeaSong, seaSongs } from './seaScore.ts';
 import { socialPieces } from './socialPieces.ts';
+import type { Recordings } from './sampled.ts';
 import { START_LEAD_S, SongPlayer, songTail } from './songPlayer.ts';
 import { type StorySong, storyScores } from './storyScore.ts';
 import { wetScore } from './wetScore.ts';
+import { valeBosses } from './valeBosses.ts';
+import { valeCalm } from './valeCalm.ts';
+import { valeFights } from './valeScore.ts';
 import { wrathScore } from './wrathScore.ts';
 
 /** A family's fight score: one song in layers for every mood, written as takes its players string together, and its
@@ -64,6 +70,9 @@ export interface Scores {
   /** The social space's calm pieces, and each family's for its islands. */
   readonly social: readonly Song[];
   readonly roaming: Readonly<Record<Family, readonly Song[]>>;
+  /** A Breach's encounters' fights, and its calm pieces for its run's quiet stretches. */
+  readonly breach: Readonly<Record<BreachSong, FightScore>>;
+  readonly vale: readonly Song[];
   readonly sea: Readonly<Record<SeaSong, Song>>;
   readonly bosses: Readonly<Record<Boss, BossScore>>;
   readonly story: Readonly<Record<StorySong, Song>>;
@@ -76,8 +85,15 @@ export function overlookScores(): Scores {
     families: { green: greenScore(), dry: dryScore(), wet: wetScore(), cold: coldScore() },
     social: socialPieces(),
     roaming: islandPieces(),
+    breach: valeFights(),
+    vale: valeCalm(),
     sea: seaSongs(),
-    bosses: { boarding: { ...boarding, defeat: boarding.end }, reckoning: reckoningScore(), wrath: wrathScore() },
+    bosses: {
+      boarding: { ...boarding, defeat: boarding.end },
+      reckoning: reckoningScore(),
+      wrath: wrathScore(),
+      ...valeBosses(),
+    },
     story: storyScores(),
   };
 }
@@ -93,6 +109,10 @@ export function songOf(scores: Scores, cue: Cue): Song | null {
       return scores.families[cue.family]?.song ?? null;
     case 'roam':
       return scores.roaming[cue.family][cue.piece] ?? null;
+    case 'breach':
+      return scores.breach[cue.song].song;
+    case 'vale':
+      return scores.vale[cue.piece] ?? null;
     case 'sea':
       return scores.sea[cue.song];
     case 'boss': {
@@ -112,6 +132,7 @@ export function stingOf(scores: Scores, sting: Sting): Song | null {
   const { cue } = sting;
   if (cue.kind === 'boss') return sting.kind === 'defeat' ? (scores.bosses[cue.boss].defeat ?? null) : null;
   if (cue.kind === 'family') return scores.families[cue.family]?.[sting.kind] ?? null;
+  if (cue.kind === 'breach') return scores.breach[cue.song][sting.kind] ?? null;
   return null;
 }
 
@@ -162,6 +183,8 @@ export interface DirectorOptions {
   readonly clock?: (audio: BaseAudioContext) => number;
   readonly scores?: () => Scores;
   readonly random?: () => number;
+  /** Where the sampled voices' recordings come from: the game's picks. */
+  readonly recordings?: Recordings;
 }
 
 /** The game's music, fed each frame with what the game hears. */
@@ -176,6 +199,7 @@ export class MusicDirector {
   private readonly songClock: SongClock;
   /** Chooses each fight song's takes for every player, remembering what each song played across fights. */
   private readonly arranger: Arranger;
+  private readonly recordings: Recordings;
   private bus: MusicOut | null = null;
   private players: SongPlayer[] = [];
   private stinger: SongPlayer | null = null;
@@ -197,15 +221,21 @@ export class MusicDirector {
     clock = (audio) => audio.currentTime,
     scores = overlookScores,
     random = Math.random,
+    recordings = recordingOf,
   }: DirectorOptions = {}) {
     [this.output, this.duckTo, this.timed, this.clockOf, this.scores] = [output, duck, timed, clock, scores()];
+    this.recordings = recordings;
     // A calm piece ends once its last note has rung, a bar line after it is asked for.
     const lengthOf = (cue: Cue) => {
       const song = songOf(this.scores, cue);
       return song ? songTail(song) + START_LEAD_S + barOf(song) : 0;
     };
-    const pieces = (where: Family | 'social') =>
-      where === 'social' ? this.scores.social.length : this.scores.roaming[where].length;
+    const pieces = (where: Family | 'social' | 'breach') =>
+      where === 'social'
+        ? this.scores.social.length
+        : where === 'breach'
+          ? this.scores.vale.length
+          : this.scores.roaming[where].length;
     this.songClock = { lengthOf, pieces, random };
     this.arranger = new Arranger(random);
     // A hidden page's timers are slowed to a wake a second, too few to keep a song whole: it falls silent instead.
@@ -232,27 +262,33 @@ export class MusicDirector {
     const nearBand = this.band.frame(calmHere ? band : null, seconds, now);
     const { scores } = this;
     if (this.stinger?.song && this.stinger.finished(now)) this.stinger.stop();
-    // The game's moment is played in the place's own fight score, unless the law has one of its own this frame.
+    // The game's moment is played in the place's own fight score (a Breach's encounter's), unless the law has one of
+    // its own this frame.
+    const song = hearing.breach?.song;
     const moment: Sting | null =
       verdict.sting ??
       (wanted && hearing.place.kind !== 'sea'
-        ? { kind: wanted, cue: { kind: 'family', family: FAMILY_OF[hearing.place.climate] } }
+        ? {
+            kind: wanted,
+            cue: song ? { kind: 'breach', song } : { kind: 'family', family: FAMILY_OF[hearing.place.climate] },
+          }
         : null);
     if (moment) this.sting(stingOf(scores, moment), moment.kind === 'wake', now);
     const asked = songOf(scores, verdict.cue);
     const { kind } = verdict.cue;
-    const calm = kind === 'social' || kind === 'roam' || (kind === 'sea' && verdict.mood === 'silent');
+    const calm =
+      kind === 'social' || kind === 'roam' || kind === 'vale' || (kind === 'sea' && verdict.mood === 'silent');
     // A hidden page cut it short: the law's clock stood while the page's ran on, so it is not played again.
-    const song = calm && asked === this.once && !this.current ? null : asked;
+    const next = calm && asked === this.once && !this.current ? null : asked;
     this.once = calm ? asked : null;
     // A calm piece plays whole, at its own level, once through; the social space's gives way to the band near it.
     const whole = calm;
     const roles = whole ? ALL_ROLES : MOOD_ROLES[verdict.mood];
     const story = verdict.cue.kind === 'story' ? verdict.cue.song : null;
     const once = calm || (story !== null && ONCE.has(story));
-    this.follow(song, roles, whole ? themeUnder(social ? nearBand : 0) : MOOD_LEVEL[verdict.mood], now, !once);
+    this.follow(next, roles, whole ? themeUnder(social ? nearBand : 0) : MOOD_LEVEL[verdict.mood], now, !once);
     // The story's songs leave its sea and storm heard under them, as the social space's theme leaves the harbour.
-    const under = !song ? 1 : whole || story ? SOCIAL_DUCK : MOOD_DUCK[verdict.mood];
+    const under = !next ? 1 : whole || story ? SOCIAL_DUCK : MOOD_DUCK[verdict.mood];
     // A sting is music too: the ambience stays lowered under it.
     this.duck(now < this.holdUntil ? Math.min(under, MOOD_DUCK.combat) : under);
   }
@@ -291,7 +327,8 @@ export class MusicDirector {
     this.bus = bus;
     const clock = () => this.clockOf(bus.audio);
     const out = ceilingOn(bus.audio, bus.out);
-    const make = () => new SongPlayer(bus.audio, out, { timed: this.timed, clock, arranger: this.arranger });
+    const { timed, arranger, recordings } = this;
+    const make = () => new SongPlayer(bus.audio, out, { timed, clock, arranger, recordings });
     this.players = [make(), make(), make()];
     this.stinger = make();
     this.band.wire(bus.audio, out, { timed: this.timed, clock });
