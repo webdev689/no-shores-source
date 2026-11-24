@@ -70,3 +70,19 @@ test('the standard hangs the cloth from its crossbar over its pole, on a stone f
   assert.equal(pixelAt(pixels, STANDARD_WIDTH, 2, 85)[3], 0, 'and nothing stands beside it');
   assert.equal(pixelAt(pixels, STANDARD_WIDTH, 14, STANDARD_HEIGHT - 1)[3], 255, 'the foot');
 });
+
+test('the spyglass lies level, so it never reads as the slanted oar', () => {
+  // The sign's cells in its own colour, a colour nothing else on this banner wears.
+  const extent = (sign: string) => {
+    const pixels = clothPixels({ ...BANNER, sign, signColour: 'kelp', ground: 'none', device: 'plain' });
+    const [across, down]: [number[], number[]] = [[], []];
+    for (let y = 0; y < CLOTH_HEIGHT; y += 1)
+      for (let x = 0; x < CLOTH_WIDTH; x += 1)
+        if (near(pixelAt(pixels, CLOTH_WIDTH, x, y), hexOf('kelp'))) [across.push(x), down.push(y)];
+    return { wide: Math.max(...across) - Math.min(...across) + 1, tall: Math.max(...down) - Math.min(...down) + 1 };
+  };
+  const spyglass = extent('spyglass');
+  assert.ok(spyglass.wide >= 2 * spyglass.tall, `the spyglass ${spyglass.wide} wide, ${spyglass.tall} tall`);
+  const oar = extent('oar');
+  assert.ok(oar.tall > oar.wide / 2, 'the oar still slants');
+});
