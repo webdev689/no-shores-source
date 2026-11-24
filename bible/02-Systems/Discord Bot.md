@@ -171,7 +171,7 @@ it) and the name of the faction it is pledged to, or nothing when that Discord a
 id, email or gear leaves the accounts. A member not linked, or any member when the binding is missing or the accounts
 do not answer, gets the module's words for "not linked" in all three (empty by default). A linked character with no
 username, no level kept yet or no pledge shows nothing in that one. Welcome, goodbye, level-up and tag messages offer
-the three placeholders.
+the three placeholders; where the module is off they show nothing.
 
 `/link` answers privately how to link: open the game at `https://lattymoy.github.io/no-shores-source/`, then in
 Settings open Account and press Sign in or link with Discord. The link itself is the accounts' own.

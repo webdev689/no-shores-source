@@ -60,7 +60,7 @@ test('game: with no accounts binding the placeholders fill with the setting and 
   assert.deepEqual([filled.character, filled.character_level, filled.character_faction], ['', '', '']);
 });
 
-test('game: /link says privately how to link, in the account tab own words', async () => {
+test("game: /link says privately how to link, in the account tab's own words", async () => {
   const bot = await standCommunity({ game: {} }, [gameModule]);
   const command = gameModule.command;
   assert.ok(command);
@@ -68,4 +68,10 @@ test('game: /link says privately how to link, in the account tab own words', asy
   assert.equal(answer.data?.flags, 64);
   assert.match(String(answer.data?.content), new RegExp(GAME_URL.replaceAll('.', '\\.')));
   assert.match(String(answer.data?.content), /Account.*Sign in or link with Discord/);
+});
+
+test('game: where the module is off, no character fills, linked or not', async () => {
+  const bot = await standCommunity({}, [gameModule], { ACCOUNTS: accounts });
+  const filled = await slotsFor(bot.context, GUILD, { id: LINKED }, ASKING, {}, {}, registryOf([gameModule]));
+  assert.deepEqual([filled.character, filled.character_level, filled.character_faction], ['', '', '']);
 });

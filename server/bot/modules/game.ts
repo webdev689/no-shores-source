@@ -19,8 +19,10 @@ export const gameModule: ServerModule = {
   slots: {
     names: GAME_SLOTS,
     async fill(context, guildId, user, _vars, fresh) {
-      const saved = fresh ?? (await context.config(guildId, 'game'))?.config;
-      const unlinked = String(saved?.notLinked ?? '');
+      // A server that has not turned the module on shows no member's character, whatever its messages name.
+      const kept = await context.config(guildId, 'game');
+      if (!kept?.enabled) return { character: '', character_level: '', character_faction: '' };
+      const unlinked = String((fresh ?? kept.config).notLinked ?? '');
       const accounts = context.vars.ACCOUNTS;
       const found =
         accounts && user.id
