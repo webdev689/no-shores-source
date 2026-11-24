@@ -14,6 +14,7 @@ import { skyUniformFor } from '../sky/skyUniform.ts';
 import { SHARED_WGSL } from '../water/waterCommon.ts';
 import { SAMPLES } from '../water/waterView.ts';
 import { CRYSTAL_HOT, CRYSTAL_WGSL } from '../city/crystal.ts';
+import { CLOTH_COLOURS } from '../city/pictures.ts';
 import { type EventProp, OPENS, type PropModule, propLamps } from '../city/eventProps.ts';
 import { loadModules, moduleNumber, moduleShape } from '../city/modules.ts';
 import { BannerCloth, type Hung } from './guild/bannerCloth.ts';
@@ -21,6 +22,13 @@ import { MATERIALS, type Material, STRIDE, packLips, packModule } from './eventP
 
 /** A material's number in the shader, as WGSL. */
 const id = (material: Material): string => `${MATERIALS.indexOf(material)}u`;
+/** A colour as WGSL. */
+const rgb = ([red, green, blue]: readonly [number, number, number]): string =>
+  `vec3f(${red.toFixed(3)}, ${green.toFixed(3)}, ${blue.toFixed(3)})`;
+/** Each cloth as the city dyes it, its weave a little uneven. */
+const CLOTH_CASES = Object.entries(CLOTH_COLOURS)
+  .map(([cloth, dye]) => `case ${id(cloth as Material)}: { return mix(${rgb(dye)} * 0.82, ${rgb(dye)}, fine); }`)
+  .join('\n    ');
 /** How far toward the eye a point of a chasm is drawn, as a share of its distance: enough to stand clear of the land
  *  round the mouth, too little to come in front of a rise or a house nearer the eye. */
 const CHASM_LEAD = 0.04;
@@ -167,7 +175,8 @@ fn noise3(at: vec3f) -> f32 {
 
 // Each material's colour at a point of the module's own frame, worked so a surface reads as what it is: chalk white
 // with grey flint in it, turf mottled green and dry, soil dark, timber weathered grey-brown along its grain, canvas
-// oiled tan with darker stains and dirtier toward the ground, iron dark with rust, gold, a heap of grain straw-pale.
+// oiled tan with darker stains and dirtier toward the ground, iron dark with rust, gold, a heap of grain straw-pale;
+// plaster lime-pale, shingles dark in courses, bone yellowed, paving in setts, still water deep, a fire's glow.
 fn material_colour(material: u32, local: vec3f, grey: bool) -> vec3f {
   let fine = noise3(local * 9.0);
   let broad = noise3(local * 1.3);
@@ -201,6 +210,20 @@ fn material_colour(material: u32, local: vec3f, grey: bool) -> vec3f {
     }
     case ${id('iron')}: { return mix(vec3f(0.17, 0.18, 0.2), vec3f(0.34, 0.2, 0.12), smoothstep(0.6, 0.9, fine) * 0.7); }
     case ${id('gold')}: { return mix(vec3f(0.78, 0.58, 0.2), vec3f(0.92, 0.74, 0.34), fine); }
+    case ${id('plaster')}: { return mix(vec3f(0.7, 0.66, 0.58), vec3f(0.8, 0.77, 0.7), broad * 0.6 + fine * 0.4); }
+    case ${id('roof')}: {
+      let course = smoothstep(0.0, 0.25, fract(local.z * 5.0));
+      return mix(vec3f(0.17, 0.14, 0.13), mix(vec3f(0.27, 0.22, 0.19), vec3f(0.36, 0.3, 0.25), fine), course);
+    }
+    case ${id('bone')}: { return mix(vec3f(0.74, 0.69, 0.56), vec3f(0.86, 0.82, 0.71), fine); }
+    case ${id('glow')}: { return mix(vec3f(1.9, 1.2, 0.5), vec3f(2.2, 1.6, 0.8), fine); }
+    ${CLOTH_CASES}
+    case ${id('paving')}: {
+      let joint = 1.0 - smoothstep(0.0, 0.08, min(fract(local.x * 3.0), fract(local.y * 3.0)));
+      return mix(mix(vec3f(0.44, 0.42, 0.38), vec3f(0.56, 0.53, 0.48), fine), vec3f(0.22, 0.21, 0.19), joint);
+    }
+    case ${id('lawn')}: { return mix(vec3f(0.19, 0.31, 0.1), vec3f(0.29, 0.41, 0.15), fine); }
+    case ${id('water')}: { return mix(vec3f(0.05, 0.15, 0.17), vec3f(0.09, 0.22, 0.24), broad); }
     default: { return vec3f(0.5, 0.48, 0.44); }
   }
 }
@@ -214,6 +237,10 @@ fn shade(in: Out) -> vec4f {
   let sun = select(1.0, sunlit(in.from_eye, facing), direct > 0.0) * sky_dapple(in.from_eye);
   if in.material == CRYSTAL {
     return vec4f(crystal_colour(facing, in.from_eye, in.glow, sun), 1.0);
+  }
+  // A fire is its own light, not lit by the sky's.
+  if in.material == ${id('glow')} {
+    return vec4f(material_colour(in.material, in.local, false), 1.0);
   }
   let ambient = AMBIENT + BOUNCE * (1.0 - abs(facing.z));
   let light = sky_ambient(facing) * (ambient / AMBIENT) + sky_direct(facing, sun) * ((1.0 - ambient) / 0.65);
