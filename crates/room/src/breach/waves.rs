@@ -158,6 +158,14 @@ impl Room {
         self.foes.get(&id).is_some_and(|foe| !foe.fighter.dead())
     }
 
+    /// Whether the Arts pass a foe by in a Breach's run: its bells, which break in an order only a hand that means it
+    /// keeps, and the Unlit Ways' Watchers, which nothing harms. No spell seeks one or strikes one.
+    pub(crate) fn arts_pass_by(&self, id: FighterId) -> bool {
+        let Some(breach) = self.breach.as_ref() else { return false };
+        let bell = self.foes.get(&id).is_some_and(|foe| foe.brain.foe_type.number == ::foes::roster::BELL);
+        bell || breach.fights.ways.watchers.iter().any(|(watcher, _, _)| *watcher == id)
+    }
+
     /// A walker: a foe of the encounter the room moves itself toward a point (`walk_inert`), neither thinking nor
     /// striking; struck down, it falls as any foe.
     pub(crate) fn make_walker(&mut self, id: FighterId) {

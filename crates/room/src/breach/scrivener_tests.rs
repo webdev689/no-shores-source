@@ -49,3 +49,23 @@ fn a_blow_heavier_than_all_its_health_never_fells_the_warded_scrivener() {
     assert!((foe.health - held).abs() < 1e-9, "and holds what it had: {} of {held}", foe.health);
     assert!(matches!(breach(&room).phases[CHOIR], Phase::Running(_)), "the Choir is not won");
 }
+
+#[test]
+fn no_spell_seeks_or_strikes_a_bell_so_the_arts_never_break_the_choirs_order() {
+    let (mut room, players) = won_to(Tier::Normal, 2, CHOIR);
+    begin_at(&mut room, &players, "choir", "lectern-2");
+    let round_bell = |room: &Room| breach(room).fights.choir.bells.first().map(|(_, id)| *id);
+    let mut bell = round_bell(&room);
+    while bell.is_none() {
+        room.tick();
+        bell = round_bell(&room);
+    }
+    let bell = bell.expect("a bell woke");
+    let at = room.foes[&bell].fighter.chest();
+    assert!(room.arts_pass_by(bell), "the Arts pass a bell by");
+    let others: Vec<FighterId> = room.foes.keys().copied().filter(|id| *id != bell).collect();
+    for id in others {
+        room.gone(id);
+    }
+    assert_eq!(room.nearest_foe(at, 30.0), None, "a Tempest's orb seeks no bell");
+}
