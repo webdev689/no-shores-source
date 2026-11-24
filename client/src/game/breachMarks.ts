@@ -28,8 +28,10 @@ export const MOORING_REACH_M = 1.7;
 const MOORING_RISE_M = 1.5;
 const CLAIMED_M = MOORING_REACH_M + 0.5;
 const RIFT_REACH_M = 1.6;
-/** The Lattice's Bulwark, by its number in the rules' roster: the foe that claims a mooring it stands on. */
+/** The Lattice's Bulwark, by its number in the rules' roster: the foe that claims a mooring it stands on; and the
+ *  Idol, which stands at the Ways' posts as their Watchers. */
 const BULWARK = 43;
+const IDOL = 41;
 /** The Mending's seams in the room's order, and which stand open at each of its first three stages (mending.rs). */
 const SEAMS = ['seam-north', 'seam-west', 'seam-east'] as const;
 const SEAMS_OPEN = [
@@ -151,7 +153,10 @@ function watchers(plan: BreachPlan, marks: number[], read: MarksOf): void {
     const spot = spaceSocket(plan, 'ways', `watcher-${post}`);
     const watcher =
       spot &&
-      foes.find(({ view }) => view.health > 0 && Math.hypot(view.x - spot[0], view.y - spot[1]) <= POSTED_M)?.view;
+      foes.find(
+        ({ view, type }) =>
+          type === IDOL && view.health > 0 && Math.hypot(view.x - spot[0], view.y - spot[1]) <= POSTED_M,
+      )?.view;
     if (!watcher) continue;
     const stands = [watcher.x, watcher.y, watcher.z] as const;
     const light = [watcher.facing - HALF_WIDE, watcher.facing + HALF_WIDE] as const;

@@ -7,6 +7,9 @@ import { type MarkedFoe, numerals, roman, runMarks } from './breachMarks.ts';
 import { breachPlanOf, spaceSocket } from './breachPlan.ts';
 import { ENCOUNTER, NO_COUNTS } from './breachWords.ts';
 
+/** The Idol and the Flicker, by their numbers in the rules' roster (crates/foes/src/roster.rs). */
+const [IDOL, FLICKER] = [41, 40];
+
 const MODULE = new URL('../../../target/wasm32-unknown-unknown/release/room_wasm.wasm', import.meta.url);
 const plan = breachPlanOf(
   new WebAssembly.Module(
@@ -124,7 +127,7 @@ test("each Watcher's light reaches 14 m along its facing, 40 degrees wide, and i
   const post = spaceSocket(plan, 'ways', 'watcher-1');
   assert.ok(post);
   const watcher = { x: post[0], y: post[1], z: post[2], facing: 0, health: 1 };
-  const laid = points(marked({ encounter: ENCOUNTER.ways }, { foes: [{ view: watcher }] }));
+  const laid = points(marked({ encounter: ENCOUNTER.ways }, { foes: [{ view: watcher, type: IDOL }] }));
   const from = (x = 0, y = 0) => Math.hypot(x - post[0], y - post[1]);
   const light = laid.filter(([x, y]) => from(x, y) > 8.01);
   assert.ok(light.length > 0);
@@ -133,13 +136,15 @@ test("each Watcher's light reaches 14 m along its facing, 40 degrees wide, and i
     assert.ok(from(x, y) <= 14.01 && north > 0 && Math.abs(Math.atan2(east, north)) <= 0.35);
   }
   // Its hearing goes all round it, broken into dashes: three fifths of the turn laid.
-  const marks = marked({ encounter: ENCOUNTER.ways }, { foes: [{ view: watcher }] });
+  const marks = marked({ encounter: ENCOUNTER.ways }, { foes: [{ view: watcher, type: IDOL }] });
   const heard = apart(marks, post).flatMap((far, nth) =>
     far > 7.8 && far <= 8.01 ? marks.slice(nth * MARK_FLOATS, (nth + 1) * MARK_FLOATS) : [],
   );
   assert.ok(near(covered(heard, post), 0.6 * TURN), `${covered(heard, post)}`);
-  const down = marked({ encounter: ENCOUNTER.ways }, { foes: [{ view: { ...watcher, health: 0 } }] });
+  const down = marked({ encounter: ENCOUNTER.ways }, { foes: [{ view: { ...watcher, health: 0 }, type: IDOL }] });
   assert.equal(down.length, 0, 'none standing at its post');
+  const passing = marked({ encounter: ENCOUNTER.ways }, { foes: [{ view: watcher, type: FLICKER }] });
+  assert.equal(passing.length, 0, 'a Lattice foe passing its post is no Watcher');
   const seams = marked({ encounter: ENCOUNTER.mending, stage: 0, counts: [2, 0, 0] });
   const north = spaceSocket(plan, 'mending', 'seam-north');
   const far = Math.max(
