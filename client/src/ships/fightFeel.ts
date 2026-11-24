@@ -198,7 +198,8 @@ export class FightFeel {
       const halfLength = hullWaterline(hull).lengthM / 2;
       const afloat = vessel.state !== 'sinking' && vessel.state !== 'sunk';
       const bursting = { anchor: toWindow([middle[0], middle[1], 0]), heading, halfLength };
-      this.bursts.frame(index, bursting, afloat ? (vessel.boost?.[0] ?? 0) : 0, now, input.seconds);
+      if (afloat) this.bursts.frame(index, bursting, vessel.boost?.[0] ?? 0, now, input.seconds);
+      else this.bursts.forget(index);
       if (vessel.state !== 'sinking' && vessel.state !== 'sunk') {
         this.effects.burn(anchor, [0, 0, deckOverM(hull)], vessel.fires, halfLength * 0.3, now, input.seconds);
         if (vessel.fires > 0) burning.push([anchor[0], anchor[1], anchor[2] + deckOverM(hull)]);

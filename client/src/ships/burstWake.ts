@@ -67,9 +67,9 @@ export class BurstWake {
     for (; kept.owedWake >= 1; kept.owedWake--) this.wake(ship, [1.4, 4.5], 3 + this.draw(), now);
   }
 
-  /** Forgets every ship's burst: the fight is over or left. */
-  forget(): void {
-    this.kept.clear();
+  /** Forgets ship `id`'s burst, which ends with no settle: the ship is going down. */
+  forget(id: number): void {
+    this.kept.delete(id);
   }
 
   /** As the burst begins: a sheet of spray off each bow, thrown high and wide, and a ring of foam under the stern. */
