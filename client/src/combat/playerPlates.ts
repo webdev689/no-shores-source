@@ -41,6 +41,7 @@ export interface PlatedPlayer {
 }
 
 /** The Rewritten's word on a plate, in the pale violet of the ring under them (`breachView.ts`). */
+const REWRITTEN_WORD = 'Rewritten';
 const REWRITTEN = '#c4a8ff';
 
 /** How the plates see the world this frame: the camera, whether a line is blocked, where a point falls on the screen
@@ -161,7 +162,7 @@ export class PlayerPlates {
       y,
       depth,
       // The name's letters are drawn whole at any distance: only the square shrinks.
-      width: (SIDE + 6) * scale + plateWords(player.plate).length * LETTER_PX,
+      width: (SIDE + 6) * scale + plateWords(player).length * LETTER_PX,
       height: SIDE * scale,
     }));
     const laid = this.layout.lay(spots, motionReduced() ? Infinity : seconds);
@@ -208,9 +209,11 @@ export class PlayerPlates {
   }
 }
 
-/** What a plate writes after its square: the name, and the guild's tag in brackets after it; none for a guest. */
-function plateWords(plate: PlayerPlate): string {
-  return plate.name === '' ? '' : plate.tag === '' ? plate.name : `${plate.name} [${plate.tag}]`;
+/** What a plate writes after its square, as it is laid: the name, and the guild's tag in brackets after it (none for a
+ *  guest), and the Breach's Rewritten mark while the player bears it. */
+export function plateWords({ plate, marked }: PlatedPlayer): string {
+  const named = plate.name === '' ? [] : plate.tag === '' ? [plate.name] : [plate.name, `[${plate.tag}]`];
+  return [...named, ...(marked ? [REWRITTEN_WORD] : [])].join(' ');
 }
 
 /** A player's plate at `scale`: its square (or the bubble), their name and their guild's tag a shade fainter after it,
@@ -251,7 +254,7 @@ export function plateNode(player: PlatedPlayer, scale: number): Node {
           opacity: TAG_OPACITY,
           text: { words: `[${plate.tag}]`, colour: colours.word, edge: 'halo', wrap: false },
         },
-      !!player.marked && { text: { words: 'Rewritten', colour: REWRITTEN, edge: 'halo', wrap: false } },
+      !!player.marked && { text: { words: REWRITTEN_WORD, colour: REWRITTEN, edge: 'halo', wrap: false } },
     ],
   };
 }
