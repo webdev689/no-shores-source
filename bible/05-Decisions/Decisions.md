@@ -365,6 +365,8 @@ a decision is a record. How to add one: [[Recording a Decision]].
 - [[Waypoints as Claude Builds Them]]
 - [[The Website Is at noshores.online, After DFO's]]
 - [[DFO's Discord Bot Comes Over, Its Panel on the Website]]
+- [[noshores.online Is Served From Cloudflare, and the Game Is Played There]]
+- [[The Discord Bot Deploys on Each Merge]]
 
 ## Replaced
 

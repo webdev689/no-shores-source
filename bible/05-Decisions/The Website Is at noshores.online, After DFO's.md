@@ -24,3 +24,6 @@ status: in force
 - DFO's live timers and its staff panel do not come over.
 - Where it is hosted, and whether the game is played from it, wait on the owner ([[Open Questions]]). Nothing is
   deployed without the owner's yes ([[Ask Before Deploying]]).
+
+Answered by [[noshores.online Is Served From Cloudflare, and the Game Is Played There]]: it is served from Cloudflare,
+and the game is played there.

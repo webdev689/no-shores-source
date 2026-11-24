@@ -27,3 +27,5 @@ status: in force
   ([[Accounts]]).
 - The Discord application's keys are the owner's to add, and the bot deploys only on the owner's yes
   ([[Ask Before Deploying]]).
+
+Its deploy is settled by [[The Discord Bot Deploys on Each Merge]].
