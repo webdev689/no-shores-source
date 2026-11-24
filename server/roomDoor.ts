@@ -207,7 +207,8 @@ export interface RoomDoor {
   /** The errands the outpost's players' asks hold for the host since it last took them (`outpostHost.ts`). */
   outpostErrands(): Errand[];
   /** The accounts' answer to an errand: how many they moved, used or gave, or the horn's answer (its tier, or 0, -1
-   *  or -2 for why it did not sound); null when they could not be reached, and the errand is given back whole. False for no such errand. */
+   *  or -2 for why it did not sound); null when they could not be reached, and the errand is given back whole. False
+   *  for no such errand. */
   outpostAnswered(id: number, answer: number | null): boolean;
   /** Says the host stood the outpost's plot anew, which the snapshot counts. */
   outpostStood(): boolean;

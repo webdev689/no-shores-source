@@ -243,8 +243,9 @@ impl Room {
         if let (What::Horn, Some(tier)) = (errand.what, tier) {
             self.horn_sounded(tier);
         }
-        let here = self.players.get(&errand.player).is_some_and(|found| found.owner.as_ref() == Some(&errand.account));
-        let Some(found) = self.players.get_mut(&errand.player).filter(|_| here) else {
+        // One account is one player here: one who left and joined again is answered as themselves.
+        let mut players = self.players.values_mut();
+        let Some(found) = players.find(|found| found.owner.as_ref() == Some(&errand.account)) else {
             if let Some(outpost) = self.outpost.as_mut() {
                 outpost.owed.entry(errand.account).or_default().push((errand.what, answer));
             }

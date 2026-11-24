@@ -205,4 +205,14 @@ fn an_answer_after_the_player_left_is_given_at_their_account_s_next_claim_here()
     assert_eq!(room.players[&back].character.materials.aurem, aurem + 150, "what the treasury did not take");
     assert!(room.own(back, "salt"));
     assert_eq!(room.players[&back].character.materials.aurem, aurem + 150, "given once");
+    let seen = GuildSeen { id: GUILD.to_owned(), standing: Standing::default(), boons: Boons::default() };
+    room.guild_player(back, Some(seen));
+    ask(&mut room, back, OutpostAsk::Deposit { count: 100 });
+    let deposit = room.outpost_errands().remove(0);
+    room.leave(back);
+    let again = room.join().expect("a room with space");
+    assert!(room.own(again, "salt"));
+    let aurem = room.players[&again].character.materials.aurem;
+    assert!(room.outpost_answered(deposit.id, Some(0)));
+    assert_eq!(room.players[&again].character.materials.aurem, aurem + 100, "back already, given at once");
 }
