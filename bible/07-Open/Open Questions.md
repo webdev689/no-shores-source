@@ -70,3 +70,9 @@ Decisions waiting on the owner. None is in force until the owner decides it and 
   draws (mithril); their own art waits (the owner: "Not now").
 - **The balance pass's open point** ([[The Balance and Economy Pass as Claude Shapes It]]): Conduit (Deepwatch) brings
   a Tenet back about every 27 s against 105.
+- **The website's host.** Where `noshores.online` is served (Cloudflare, beside the servers, is Claude's suggestion),
+  whether the game is played from it, and when its domain's nameservers move
+  ([[The Website Is at noshores.online, After DFO's]]).
+- **The Discord bot's application and deploy.** The Discord application the bot and the accounts' sign-in share, its
+  keys, and whether the bot deploys on each merge as the accounts do or only when asked
+  ([[DFO's Discord Bot Comes Over, Its Panel on the Website]]).
