@@ -61,8 +61,11 @@ test('in its zone a launched player is held in their run’s company once the ac
 });
 
 test('a run asks its zone whether its gate opened until it says so once, and tells it how far its company has come', async () => {
-  const shut = new Breach(RUN, host(false).deps);
+  const { said: silent, deps: unopened } = host(false);
+  const shut = new Breach(RUN, unopened);
   assert.equal(await shut.gateOpen(), false);
+  shut.tick(20_000);
+  assert.deepEqual(silent.inside, [], 'a run no one was let into tells its zone nothing');
   const { said, deps } = host(true);
   const run = new Breach(RUN, deps);
   assert.equal(await run.gateOpen(), true);
@@ -77,6 +80,27 @@ test('a run asks its zone whether its gate opened until it says so once, and tel
   assert.equal(said.inside.length, 1, 'every ten s');
   run.tick(30_000);
   assert.deepEqual(said.inside, [word('A company'), word('Ossery')], 'by its first player in');
+});
+
+test('in its zone a launched player arrives from anywhere within the arrival window, and is held in the company for the day, asked twice', async () => {
+  const asked: (number | undefined)[] = [];
+  let blips = 1;
+  const { said, deps } = host();
+  const zone = new Breach('node-gullwing-vale', {
+    ...deps,
+    launched: (_account, _run, within) => {
+      asked.push(within);
+      return blips-- > 0 ? Promise.reject(new Error('blip')) : Promise.resolve(true);
+    },
+  });
+  zone.joined(4, RUN);
+  zone.owned(4, 'ada');
+  await new Promise((done) => setTimeout(done, 0));
+  assert.deepEqual(asked, [undefined, undefined], 'the day a found run is kept, asked again after a blip');
+  assert.deepEqual(said.company, [[4, JSON.stringify({ run: RUN, tier: 1 })]]);
+  zone.joined(5, RUN);
+  assert.equal(await zone.launchedHere(5, 'ben'), true);
+  assert.equal(asked.at(-1), LAUNCH_ARRIVES_MS, 'arriving from anywhere only within the arrival window');
 });
 
 test('a Breach’s run lets its company in only once its gate opened, and its zone a player launched to it from anywhere', async () => {

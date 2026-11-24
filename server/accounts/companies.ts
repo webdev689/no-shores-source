@@ -76,6 +76,27 @@ export async function launchedFor(
   return row !== null;
 }
 
+/** The newest run of `base` (`<base>--run-<instance>`) found or launched for the account or their company within
+ *  `within` ms; null for none. */
+export async function companyRunOf(
+  database: Db,
+  account: string,
+  base: string,
+  now: number,
+  within: number,
+): Promise<string | null> {
+  const prefix = `${base}--run-`;
+  const row = await database
+    .prepare(
+      `SELECT room FROM found_runs WHERE substr(room, 1, ?4) = ?1 AND found_at >= ?3 AND (account_id = ?2 OR account_id
+       IN (SELECT account_id FROM company_members WHERE company_id =
+         (SELECT company_id FROM company_members WHERE account_id = ?2))) ORDER BY found_at DESC LIMIT 1`,
+    )
+    .bind(prefix, account, now - within, prefix.length)
+    .first<{ room: string }>();
+  return row?.room ?? null;
+}
+
 /** Takes a player out of their company: a company left with one ends, and a leader who leaves hands the lead to the
  *  longest there. */
 async function leave(database: Db, account: string): Promise<void> {

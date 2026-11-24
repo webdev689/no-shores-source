@@ -51,6 +51,8 @@ export const BREACH_HARD_SHUT = 'A Breach at Hard opens once you have won it at 
 /** The Breach a base launches, by its zone; null for a base that is no Breach's. */
 const breachOf = (base: string) => BREACH_ZONES[/^node-(.+)--breach-/.exec(base)?.[1] ?? ''] ?? null;
 export const BREACH_LAUNCHED = 'A Breach is launched by its company from the Playlist.';
+/** A Breach launched again by its company within this is the run it launched, so two members' Launches start one. */
+export const BREACH_RELAUNCH_MS = 30 * 60_000;
 const breachShut = (tier: (typeof BREACH_TIERS)[number]) =>
   `A Breach at ${tier === 'normal' ? 'Normal' : 'Hard'} opens at level ${BREACH_OPENS[tier]}.`;
 
@@ -185,6 +187,8 @@ export interface FinderSocket {
 export interface FinderDeps {
   seeker(token: string): Promise<Seeking | null>;
   found(run: string, accounts: readonly string[]): Promise<boolean>;
+  /** The run of a base launched for the account's company within BREACH_RELAUNCH_MS, if any (`companyRunOf`). */
+  relaunched?(account: string, base: string): Promise<string | null>;
   readonly now: () => number;
   readonly instance: () => string;
   readonly pick?: (count: number) => number;
@@ -273,10 +277,13 @@ export class Finder {
       try {
         const playlist = playlistOf(this.base);
         const band = group[0]?.band ?? 0;
+        const first = group[0]?.account;
+        const again = BREACH_BASE.test(this.base) && first ? await this.deps.relaunched?.(first, this.base) : null;
         const run =
-          playlist === null
+          again ??
+          (playlist === null
             ? `${this.base}--run-${this.deps.instance()}`
-            : playlistRun(playlist, band, this.deps.pick ?? drawnOf, this.deps.instance());
+            : playlistRun(playlist, band, this.deps.pick ?? drawnOf, this.deps.instance()));
         const accounts = group.map((one) => one.account);
         const kept = await this.deps.found(run, accounts).catch(() => false);
         for (const { socket } of group)

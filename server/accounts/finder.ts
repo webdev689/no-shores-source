@@ -5,7 +5,8 @@
 
 import { DurableObject } from 'cloudflare:workers';
 import { runInstance } from '../roomNames.ts';
-import { Finder, findingAt, foundRun, seekerOf } from './finding.ts';
+import { companyRunOf } from './companies.ts';
+import { BREACH_RELAUNCH_MS, Finder, findingAt, foundRun, seekerOf } from './finding.ts';
 
 /** How often it starts the runs due. */
 const FIND_TICK_MS = 1_000;
@@ -21,6 +22,7 @@ export class CompanyFinder extends DurableObject<{ readonly DB: D1Database }> {
     this.finder ??= new Finder(base, {
       seeker: (token) => seekerOf(database, token, Date.now()),
       found: (run, accounts) => foundRun(database, run, accounts, Date.now()),
+      relaunched: (account, base) => companyRunOf(database, account, base, Date.now(), BREACH_RELAUNCH_MS),
       now: Date.now,
       instance: () => runInstance(),
     });

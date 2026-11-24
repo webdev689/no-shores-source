@@ -25,11 +25,12 @@ export interface Zone {
   breachWord(kind: 'opened' | 'inside', text: string): Promise<boolean>;
 }
 
-/** What a host needs: its room, the zone's room by name, and whether the accounts launched a run for an account. */
+/** What a host needs: its room, the zone's room by name, and whether the accounts launched a run for an account, within
+ *  `within` ms or the day a found run is kept. */
 export interface BreachDeps {
   readonly room: RoomDoor;
   readonly zone: (name: string) => Zone;
-  readonly launched: (account: string, run: string) => Promise<boolean>;
+  readonly launched: (account: string, run: string, within?: number) => Promise<boolean>;
 }
 
 /** The run a join into a patrol's room comes launched for, `?breach=<room>`: null for none, or a name that is no
@@ -76,16 +77,18 @@ export class Breach {
     if (run !== null) this.asked.set(player, run);
   }
 
-  /** Whether a player joined the zone for a run the accounts say was launched for `account`. */
+  /** Whether a player joined the zone for a run the accounts say was launched for `account` within LAUNCH_ARRIVES_MS,
+   *  so they may arrive from anywhere. */
   async launchedHere(player: number, account: string): Promise<boolean> {
     const run = this.asked.get(player);
-    const launched = run !== undefined && (await this.deps.launched(account, run));
+    const launched = run !== undefined && (await this.deps.launched(account, run, LAUNCH_ARRIVES_MS));
     if (launched) this.launched.add(player);
     return launched;
   }
 
   /** A player's character is kept for `account`: in a zone, held in the company of the run they came for once the
-   *  accounts say it was launched for them. */
+   *  accounts say it was launched for them that day, so one back from the run after the arrival window is held again;
+   *  asked twice, as a blip at the accounts would leave them out of their company. */
   owned(player: number, account: string): void {
     const run = this.asked.get(player);
     const tier = run === undefined ? undefined : breachRun(run)?.tier;
@@ -94,8 +97,9 @@ export class Breach {
     const hold = () => this.deps.room.breachCompany(player, JSON.stringify({ run, tier }));
     // One the keeper let in as launched is held at once; one who came by a way leading here is asked of the accounts.
     if (this.launched.delete(player)) return void hold();
-    void this.deps
-      .launched(account, run)
+    const ask = () => this.deps.launched(account, run);
+    void ask()
+      .catch(ask)
       .then((launched) => launched && hold())
       .catch(() => false);
   }
@@ -110,10 +114,10 @@ export class Breach {
     this.launched.delete(player);
   }
 
-  /** Each second's look: in a run, its progress told to its zone every INSIDE_EVERY_MS, by the name of its first player
-   *  in, or NAMELESS. */
+  /** Each second's look: in a run whose gate opened, its progress told to its zone every INSIDE_EVERY_MS, by the name
+   *  of its first player in, or NAMELESS; a run no one was let into tells its zone nothing. */
   tick(now: number): void {
-    if (!this.run || now - this.told < INSIDE_EVERY_MS) return;
+    if (!this.run || !this.opened || now - this.told < INSIDE_EVERY_MS) return;
     const progress = JSON.parse(this.deps.room.breachProgress()) as { tier: number; encounter: number } | null;
     const name = [...this.names.entries()].sort(([one], [other]) => one - other)[0]?.[1] ?? NAMELESS;
     if (!progress) return;
