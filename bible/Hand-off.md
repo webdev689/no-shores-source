@@ -266,8 +266,9 @@ The decisions in [[Open Questions]] are not repeated here.
     they stood, 25 m or more off (`crates/room/src/landing.rs`, [[Enemies]]).
   - [[Friendly Ships Take Several Courses, About Five in View, Sailing Visibly]]: three courses a pair, about five
     in view near a port, 60 m/s, departures staggered across all nine courses ([[World Map]], "Traffic").
-  - Tested offline only. Left: ships start and stop at 60 m/s at once, and lie on one point at a roadstead; some
-    retaining walls near Overlook's plaza may be dropped whole (low confidence, the seam audit's).
+  - Tested offline only. Left: ships start and stop at 60 m/s at once (they no longer lie on one point at a
+    roadstead: each course has berths of its own, below); some retaining walls near Overlook's plaza may be dropped
+    whole (low confidence, the seam audit's).
 - **#163's follow-up, the patrol audit and its leftovers** (#170, a draft for the owner's yes once its checks pass;
   main merged in up to #177). The owner's solid red patrol screen was the death veils piling up under a frame that
   threw before it presented; each frame now starts with none. What threw is still unknown: the owner's browser
