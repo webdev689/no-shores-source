@@ -3,6 +3,7 @@ type: system
 status: live
 code:
   - crates/movement/src/step.rs#step_body
+  - crates/movement/src/step.rs#boost_run
   - crates/movement/src/body.rs#TUNING
   - crates/movement/src/body.rs#TICK_SECONDS
   - crates/movement/src/blocks.rs#ground_at
@@ -31,9 +32,15 @@ to grab. The [[Test Ground]] plays it with DFO's controls ([[The Player Plays as
   library compiled into it, so every machine rounds them alike ([[Agree to the Bit]]).
 - **Ticks.** A body moves in whole ticks of 1/60 s. Each tick takes the body and the player's controls: forward and
   sideways (held to -1 to 1), the look's bearing (wrapped within half a turn either way, as the fight's rules take it,
-  so a browser's step and a room's agree), run, mounted, and jump and crouch pressed. A control that is not a number
-  counts as none, so a body never takes one in. A press between two ticks is kept for the next. The view turns
-  every frame. The body is drawn eased from the tick before toward the last, so it moves smoothly, a tick behind.
+  so a browser's step and a room's agree), run, mounted, and jump, crouch and the rider's boost pressed. A control
+  that is not a number counts as none, so a body never takes one in. A press between two ticks is kept for the next.
+  The view turns every frame. The body is drawn eased from the tick before toward the last, so it moves smoothly, a tick behind.
+- **A rider's boost.** A boost tapped while mounted, once the last has recharged, sets the body's two clocks,
+  `boosting` to `boost_seconds` and `recharging` to `recharge_seconds`. Each tick `boost_run` runs `boosting` down
+  first and `recharging` only once it is spent, so a boost lasts 4 s and the next is taken 12 s after it ends. While
+  `boosting` runs on a mounted body, its pace, walking or galloping, is `ride_boost` times its own. Dismounted, the
+  clocks run on and the body goes at its own pace; a tap on foot does nothing
+  ([[Other Ships Wear Their Players' Marks, the Sea Map Has No Fog, and New Players Ride a Bay That Bursts]]).
 - **Blocks.** A course is a list of blocks, each a footprint, a top and an underside (`bottom`): a block from the
   ground up has its underside at or below the ground where it stands; a floor, a bridge or a roof has it over the
   ground. Each crosses as six numbers: west, north, east, south, top, bottom. The body, a square reaching 0.35 m each
@@ -92,9 +99,9 @@ to grab. The [[Test Ground]] plays it with DFO's controls ([[The Player Plays as
 - **Foes move by the same rules.** A foe's brain asks for the controls a player's keys would, and its room steps its
   body by them as it steps a player's ([[Foes]]); the [[Navmesh]] tries each of its climbs and drops by these rules,
   with those controls, before it lays one.
-- **Crossing into a browser.** A body is 22 numbers and its controls 7, little-endian 64-bit floats in one fixed
-  order, so no number is rounded on the way. The door keeps the course, and steps the body in memory it reserved once;
-  it leaves alone memory too short for a step.
+- **Crossing into a browser.** A body is 24 numbers, its boost's two clocks last, and its controls 8, the boost
+  last, little-endian 64-bit floats in one fixed order, so no number is rounded on the way. The door keeps the course,
+  and steps the body in memory it reserved once; it leaves alone memory too short for a step.
 - **Predicting on the land.** The door also keeps a window of the land, handed over as the JSON the land's door cuts
   (`setGround`): every later step stands on it, the same ground to the bit as the node's room, and a body asked to
   stand does so on its ground. Anything that is not a window is open ground at 0 m again. The game's `standOn`
@@ -118,9 +125,10 @@ lip of a face built of blocks stacked flush is the top of the stack, so a seam i
 DFO's numbers ([[The Player Plays as in DFO]]), in `TUNING`: walking 4.43 m/s, running 7.59, crouched 2.53; a foe on the
 ground at three quarters of those ([[Foes]], "Moving"). A jump leaves at 4.5 m/s against gravity of 20 m/s², about half
 a metre high; crouched, it leaves at 0.8 of that speed. Shimmying and climbing go at 1 m/s. Riding goes at 6 m/s and
-galloping at 12, until No Shores has riding speeds of its own. A mantle or vault takes (0.25 + 0.22 × rise) × 1.05
-seconds, DFO's time at middling skill. The eye stands 1.7 m over the feet, 0.8 m crouched; the crown 1.8 m, 1.0 m
-crouched.
+galloping at 12, until No Shores has riding speeds of its own; a rider's boost goes at 1.5 times the horse's pace
+(`ride_boost`) for 4 s (`boost_seconds`), then takes 12 s to recharge (`recharge_seconds`), the owner's numbers. A
+mantle or vault takes (0.25 + 0.22 × rise) × 1.05 seconds, DFO's time at middling skill. The eye stands 1.7 m over
+the feet, 0.8 m crouched; the crown 1.8 m, 1.0 m crouched.
 
 The slope limit is the game's own: terrain rising 1.19 m a metre, about 50°, is the steepest walked up, Claude's
 choice ([[The World Is Claude's to Mold]]). The pace is the same up a slope as on the flat.

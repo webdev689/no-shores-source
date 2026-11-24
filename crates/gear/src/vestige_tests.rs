@@ -7,7 +7,8 @@ use crate::rarity::Rarity;
 use crate::rewards::{Foe, worth};
 use crate::source::Source;
 use crate::vestige::{
-    ATHERIC_FROM, LEGENDARY_FROM, OPENS, chance, colours, dropped, gated, item_chance, make, of_colours, opens_to,
+    ATHERIC_FROM, LEGENDARY_FROM, LOOK_ROLLS, OPENS, chance, colours, dropped, gated, item_chance, make, of_colours,
+    opens_to,
 };
 use crate::world::Difficulty;
 
@@ -66,7 +67,7 @@ fn a_catalogue_that_breaks_a_rule_says_which() {
         "odd: its resource is none the catalogue holds",
         "odd: 2 trait columns, its rarity has 4",
         "signature own must be carried by someone_else alone",
-        "no names for a Normal Sword",
+        "no word for a Sword",
         "guild_blade: its faction is none the factions' file holds",
         "no Legendary Greatsword",
         "bare_atheric: an Atheric weapon or module has an intrinsic",
@@ -213,13 +214,17 @@ fn what_a_vestige_makes_belongs_to_its_slot_and_never_offers_a_trait_twice() {
                 for (column, traits) in item.columns().iter().filter(|column| column.traits()).zip(&item.layout) {
                     assert_eq!(traits.len(), usize::from(column.nodes()));
                 }
-                if rarity.named() {
+                if rarity == Rarity::Atheric {
                     assert_eq!(item.level, NAMED_LEVEL);
                     let named = catalogue().named(item.named.as_deref().expect("a named item")).expect("in it");
                     assert!(!named.breach, "Breach items come from Breaches alone");
                 } else {
-                    assert_eq!(item.level, 12);
-                    assert!(usize::from(item.name) < catalogue().names_of(item.kind, rarity).len());
+                    assert_eq!(item.level, if rarity == Rarity::Legendary { NAMED_LEVEL } else { 12 });
+                    assert!(
+                        item.named.is_none() && usize::from(item.name) < LOOK_ROLLS,
+                        "a rolled look: {}",
+                        item.name
+                    );
                     let pooled = |id: &String| {
                         catalogue().trait_def(id).is_some_and(|found| found.column != TraitColumn::Signature)
                     };

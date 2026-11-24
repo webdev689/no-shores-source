@@ -42,13 +42,13 @@ fn players_in(bytes: &[u8]) -> Vec<(PlayerId, u32, movement::Body)> {
                 },
                 |fighter| fighter.iter().collect(),
             );
-            (seen.player(), seen.acknowledged(), protocol::body_of(&numbers[..22]).unwrap())
+            (seen.player(), seen.acknowledged(), protocol::body_of(&numbers[..movement::floats::BODY_FLOATS]).unwrap())
         })
         .collect()
 }
 
 /// An input that walks by these controls and asks nothing else.
-fn walk_input(sequence: u32, walk: &[f64; 7]) -> Vec<u8> {
+fn walk_input(sequence: u32, walk: &[f64; 8]) -> Vec<u8> {
     let intent = combat::Intent { controls: Controls::from_floats(walk), ..combat::Intent::default() };
     protocol::input_bytes(&room::Input { sequence, intent, ..room::Input::default() })
 }
@@ -65,7 +65,7 @@ fn players_join_send_inputs_and_are_seen_as_the_movement_rules_step_them() {
     let ledge = [-5.0, -4.0, 5.0, -1.0, 2.3, 0.0];
     assert!(open(&bytes_of(&[0.0, 2.0, ledge[0], ledge[1], ledge[2], ledge[3], ledge[4], ledge[5]])));
     let (first, second) = (room_join(), room_join());
-    let walk = [1.0, 0.0, 0.3, 0.0, 0.0, 0.0, 0.0];
+    let walk = [1.0, 0.0, 0.3, 0.0, 0.0, 0.0, 0.0, 0.0];
     assert_eq!(input(first, &walk_input(1, &walk)), TAKEN);
     assert_eq!(input(first, &walk_input(3, &walk)), OUT_OF_ORDER);
     assert_eq!(input(second, b"not an input"), NOT_AN_INPUT);
@@ -94,7 +94,7 @@ fn a_node_opens_on_its_ground_and_welcomes_with_its_id_and_rect() {
     room_tick();
     let bodies = players_in(&snapshot(player));
     assert_eq!(bodies[0].2.z, 12.0, "on the terrace at the spawn");
-    let walk = [1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0];
+    let walk = [1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0];
     for sequence in 1..=300 {
         assert_eq!(input(player, &walk_input(sequence, &walk)), TAKEN);
         room_tick();
@@ -379,7 +379,7 @@ fn a_patrol_on_overlooks_island_stands_its_foes_at_the_voyages_seas_and_sends_it
     }
     let sent = gear(player);
     let nodes: Vec<f64> = messages::root_as_from_room(&sent).unwrap().gear().unwrap().nodes().unwrap().iter().collect();
-    assert_eq!(nodes.len(), 4 * 4, "a third of its twelve places, four numbers each");
+    assert_eq!(nodes.len(), 12 * 4, "every one of its twelve places, four numbers each");
     assert!(nodes.chunks(4).all(|node| node[3] == 0.0), "Brineglass, the island's own");
     let gear = messages::root_as_from_room(&sent).unwrap().gear().unwrap();
     assert_eq!(gear.chests().unwrap().len(), 2 * 5, "a chest for each five places, five numbers each");

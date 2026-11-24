@@ -197,11 +197,12 @@ pub struct Room {
     pub(crate) unvisited: BTreeMap<FighterId, u64>,
     pub(crate) drops: Vec<Drop>,
     pub(crate) spells: spells::Spells,
-    /// The difficulty its voyage set out at; whether it is a patrol, whose nodes take turns (`patrol.rs`); and the
-    /// nodes each account's character gathered here (in a patrol, this turn), kept past a player's leaving.
+    /// The difficulty its voyage set out at; whether it is a patrol, whose gathered nodes return (`patrol.rs`); and
+    /// the nodes each account's character gathered here, each with its minute (in a patrol, until it returns), kept
+    /// past a player's leaving.
     pub(crate) difficulty: gear::Difficulty,
     pub(crate) patrol: bool,
-    pub(crate) gathered: std::collections::BTreeMap<String, Vec<u8>>,
+    pub(crate) gathered: std::collections::BTreeMap<String, Vec<(u8, u64)>>,
     /// Its chests and searchable containers (`finds.rs`).
     pub(crate) finds: finds::Finds,
     /// A patrol's dungeons' entrances, or an Elite Dungeon's node's one (`entrances.rs`).
@@ -550,10 +551,16 @@ impl Room {
 /// The seed every course's room draws its chances from, and every node's mixes with its id: one room plays the same
 /// fight for the same inputs.
 const SEED: u64 = 0x4f56_4552_4c4f_4f4b;
+/// A loot seed on which the tests' first kills, chests and flotsam roll finer than Normal, so each leaves a Vestige
+/// where a Normal roll would leave its item: for the tests of where a Vestige goes.
+#[cfg(test)]
+pub(crate) const SEALING_SEED: u64 = 5;
 #[cfg(test)]
 mod balance_tests;
 #[cfg(test)]
 mod climb_tests;
+#[cfg(test)]
+mod commons_tests;
 #[cfg(test)]
 mod course_tests;
 #[cfg(test)]

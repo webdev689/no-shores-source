@@ -494,6 +494,10 @@ fn where_a_player_stands_with_factions_arts_cosmetics_and_shape_crosses_whole() 
     let atheric = u32::from(gear::shape::price(&gear::shape::wares(week)[5]));
     assert!(atheric == 13 || atheric == 23, "an Atheric's armour or weapon: {atheric}");
     assert_eq!((wares[0].price(), wares[5].price()), (7, atheric), "Legendary, then Atheric, in Shapes");
+    let numbers: Vec<u32> = wares.iter().map(|ware| ware.id()).collect();
+    let asked: Vec<u32> = (0..6).map(|ware| gear::shape::shown(week, ware)).collect();
+    assert_eq!(numbers, asked, "each numbered as a page asks for it");
+    assert_eq!(wares[0].named(), None, "his Legendary rolled, not named");
     let sold: Vec<_> = gear.faction_wares().expect("the factions' wares").iter().collect();
     let each: usize =
         gear::factions::factions().factions.iter().map(|faction| gear::factions::wares(faction.id).len()).sum();

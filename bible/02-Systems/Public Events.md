@@ -136,10 +136,11 @@ Fragment and 3, 4, 6 and 8 of the island's resource, the same at any level; one 
 heroic chest a player opens each day, at any level, and none from any other, as Destiny 1's first gold event of the
 day sent an Ascendant material (`FIRST_HEROIC_ESSENCE`, kept with the day's record);
 and a Vestige always, of the event's level, a foe's colours from a plain chest (a Major's) and a Boss's from a heroic
-one ([[Gear]]'s colours by rank), the bonus's tier rolling twice and keeping the better. Opened by its player, the
-chest pours its Vestige out toward them, to be taken by walking over it ([[Gear]], "Drops"). One opened for them as it
-lapses puts its Vestige in the ten, else the vault, and with no room there either on the ground where the chest stood,
-as any drop does; a leaver's goes to the vault however full, since the ground they leave would lose it.
+one ([[Gear]]'s colours by rank), the bonus's tier rolling twice and keeping the better; a Normal one comes as its item,
+kept in its slot's nine, else the vault, else the mail ([[Gear]], "Commons drop as themselves"). Opened by its player,
+the chest pours its Vestige out toward them, to be taken by walking over it ([[Gear]], "Drops"). One opened for them as
+it lapses puts its Vestige in the ten, else the vault, and with no room there either on the ground where the chest
+stood, as any drop does; a leaver's goes to the vault however full, since the ground they leave would lose it.
 
 **The wire.** A snapshot of a zone's room carries `public_event` ([[Server]]), but one built on a base leaves it
 out while it stands as the base's counted on, the page counting its countdowns on alike ("Limits"): the event running or showing its
@@ -223,8 +224,9 @@ sees and hears; the words are `game/publicLaw.ts`'s, worked out from the event a
   keep theirs. Its crack flares at each beat, its width eases to the room's, and a shard set arcs into it over 0.4 s.
   The Fissure won bursts the Lattice's death wave at four times a man's size where it seals (`sealWave`), in its
   picture's own texels; each Lattice foe coming while it runs climbs out of its wave played backwards. A raid won
-  topples its banners; a failed Fissure closes into the plain turf. A Lattice figure's crystal glows of itself at
-  night. The ground trembles (the camera's shake) as the Lattice pours out, a shard is set and the seal bursts.
+  topples its banners; a failed Fissure closes into the plain turf. A Lattice figure is shaded darker than a man, its
+  crystal's bright points glowing of themselves at night
+  ([[The Lattice Is Shaded Darker, With Detailed Attacks and Projectile Tracers]]). The ground trembles (the camera's shake) as the Lattice pours out, a shard is set and the seal bursts.
   A room lost leaves no event on the screen but its stores, whose walls still stand; a page come mid-event replays no
   beat; and one back from a hidden tab slides the last beat in, but plays none of the sounds, stings, chimes or
   tremors kept meanwhile.
@@ -263,6 +265,8 @@ sees and hears; the words are `game/publicLaw.ts`'s, worked out from the event a
 - Built and tested but not pictured on the page: a store plundered, the tithe-taker counting and leaving, Marrow, the
   Tithe giving up, the raid's chest, the growth sinking unbroken, a lid swinging open, the scar risen, the Lattice's
   glow at night and the seal's wave in its picture's own texels.
+- The props are pictured drawn on a page playing alone (its room in the page or in its own thread, a development or
+  a production build); in a server's room they are unchecked.
 - The Heart is in the roster only: it has no phases of its own and stands in no event.
 - The stores, banners, fissures and growth spots are chosen before the layout stands its beacons and resource marks,
   climbs, cliff stairs, retaining walls, footbridges, talus and graves, so they could meet;

@@ -24,9 +24,7 @@ code:
   - client/src/heldmap/mapLayout.ts#layOut
   - client/src/heldmap/mapLayout.ts#handsCover
   - client/src/heldmap/mapKey.ts#keyPlace
-  - client/src/game/discovered.ts#Discovered
-  - client/src/overworld/discovery.ts#chartAround
-  - client/src/overworld/discovery.ts#sightIslands
+  - client/src/game/worldShown.ts#worldShown
   - client/src/game/landMap.ts#landSheetOf
   - client/src/heldmap/landSheet.ts#relief
   - client/src/heldmap/landLetters.ts#paintLand
@@ -36,8 +34,10 @@ code:
 # Held Map
 
 The map the player navigates the sea by, held in their own gauntlets at the ship's helm
-([[The Sea Is Navigated From the Helm With the Held Map]], [[Pick - Held Map]]). It shows the whole world under fog of
-war, and a click on it sets the ship's destination. On land it is raised anywhere, and shows the land the player stands
+([[The Sea Is Navigated From the Helm With the Held Map]], [[Pick - Held Map]]). It shows the whole world from the first
+time it is raised, with no fog of war
+([[Other Ships Wear Their Players' Marks, the Sea Map Has No Fog, and New Players Ride a Bay That Bursts]]),
+and a click on it sets the ship's destination. On land it is raised anywhere, and shows the land the player stands
 on ([[The Held Map Comes to the Social Spaces and Every Land Area]]).
 
 ## How it works
@@ -56,28 +56,27 @@ on ([[The Held Map Comes to the Social Spaces and Every Land Area]]).
 - **The fit**, DFO's: the parchment takes 0.9 of the screen's width or 0.84 of its height, whichever fits, under a
   head of a tenth of the height (78 px at least) and over a foot of 0.06 (52 px at least); the painting's foot sits
   a little past the screen's, so the gauntlets run off it.
-- **The ink** is drawn on the GPU a pixel at a time over the parchment, which is the land and the unknown. From the
+- **The ink** is drawn on the GPU a pixel at a time over the parchment, which is the land. From the
   continents' outlines, once, a coast field over the world's 1,024 × 640 cells of 4.8 km (`coastField`, about a
   third of a second, behind the veil on first going to sea): each cell's exact distance to the nearest coast within 60 km, negative on land, and whose coast
-  it is. A discovered island's coast is drawn as a pen does, a soft wash on the sea's side and then the line, with
-  engraved lines following it out to sea and fading; the charted sea carries a faint wash, its edge soft.
+  it is. Every island's coast is drawn as a pen does, a soft wash on the sea's side and then the line, with
+  engraved lines following it out to sea and fading; the sea carries a faint wash, its edge soft.
 - **The waters** ([[The Waters Come From the Islands]]). The game opens the waters once, just after its first frame
   (about 0.6 s in WebAssembly, `pageWaters.ts`), and takes their grid at the coast field's own 4.8 km cell
-  ([[World Map]], "Waters"). Under the ink, on the charted sea only, lies a faint wash in each water's holder's colour,
+  ([[World Map]], "Waters"). Under the ink, on the sea, lies a faint wash in each water's holder's colour,
   at 0.26: Home green `#3f7f6f`, the Grey Tithe slate `#6b7785` (its ships' slate), the Lattice its crystal's red
   lit a third again `#de3d49` (`CRYSTAL.red`). None darkens the parchment by more than 6 in lightness; two washes closer than 10 apart in
   CIEDE2000 are told apart by their hatching.
-  Each cell blends the charted sea within a cell of it (`washOf`), and the map samples between cells, so a border is
+  Each cell blends the sea within a cell of it (`washOf`), and the map samples between cells, so a border is
   soft over a cell or two and never stepped. The Lattice's waters are hatched over their wash with fine level lines in
   a dark crystal red (`#60141c` at 0.3), the Grey Tithe's with level lines in a dark slate (`#4a5563` at 0.3), each 7
-  device pixels apart (`HATCHES`). The wash is laid for the sea charted when the map is raised, so fog
-  of war hides what it hides from the rest of the map.
+  device pixels apart (`HATCHES`). The wash is laid once, as the waters open.
 - **The waters' names.** Each water is lettered with its name and level band ("The Fen Deeps, 22-26") at its label
   point, the name and a ring round it inked in the band's colour on the difficulty ramp
   ([[The Held Map Colours Each Water's Name by Its Difficulty]]): green `#256327` at level 1, gold `#6a5507` at 8,
   orange `#894314` at 15, red `#a3241f` at 22 and deep purple `#5a1f6e` at 30, blended between and read at the band's
   middle (`difficultyColour`). The ring is filled with the parchment's own colour, and every level's colour reads at
-  least 4.5 : 1 against it. A water is named while any of its charted sea is in view. Its name is tried first at its
+  least 4.5 : 1 against it. A water is named while any of its sea is in view. Its name is tried first at its
   label point, the middle of its sea cell farthest from land, from other waters and from the frame's edge
   (`labelPoints`, chamfer distances in cells), then at every point of a grid 10 px apart over the map that lies on its
   sea, nearest the middle of its sea in view first (`HeldMapWaters.letters`); on one line, then on two, its name over
@@ -86,7 +85,7 @@ on ([[The Held Map Comes to the Social Spaces and Every Land Area]]).
   holders' swatches (Home, Grey Tithe, The Lattice) and words in two columns, then "Levels" and the difficulty ramp from "1" to "30". Each swatch is
   its wash as the map shows it, over the map's parchment (`washedOver`), with the Tithe's and the Lattice's
   hatching. It stands in a
-  corner of the map whose box covers no discovered land (the coast field asked every 4 px across it), no name, no mark
+  corner of the map whose box covers no land (the coast field asked every 4 px across it), no name, no mark
   and no hand: the corner it stands in while that stays clear, else the first clear one, lower left, lower right, upper
   left, upper right. With none clear it takes, of the place it stood, the corners and the places along the map's four
   edges half its size apart (`keyEdges`), one clear of the hands, the marks and the ports' and the chosen place's
@@ -94,7 +93,7 @@ on ([[The Held Map Comes to the Social Spaces and Every Land Area]]).
   any other name lost one. So it moves only when it must, and never back and forth while the map stands still
   (`keyPlace`). It is never laid on the
   parchment's margin, where the game's hints stand under the map.
-- **Places.** Each discovered port is named at its city, and each discovered node at its middle. A city that is not
+- **Places.** Every port is named at its city, and every node at its middle (`worldShown`). A city that is not
   a port (the waters' table names the three, [[Three Port Cities Remain, and the Others Are Desolate and Destroyed]])
   is drawn with a ruin's glyph, a dashed diamond, and named "Ruins of <name>" (`ruinedPlaces`); until the waters are
   open every city is drawn as a port. The ship is a red-brown arrow along its heading, ringed in the parchment. The
@@ -104,8 +103,8 @@ on ([[The Held Map Comes to the Social Spaces and Every Land Area]]).
   change, onto a picture of the parchment (`paintLettering`), which the ink's pass lays down over the ink, before the
   gauntlets are drawn. So the hands cover them as they cover the parchment. Only the card that offers Set sail stands
   over the picture, a node of the game's interface. They are laid out again only when something the layout reads has changed
-  (`layoutKey`: the map's view, the ink and the hands' place, the face's loading, the charted sea, the ship's point
-  and heading, the places and islands known, the place chosen); a still frame lays out nothing (at 1920 × 1080,
+  (`layoutKey`: the map's view, the ink and the hands' place, the face's loading, the waters set, the ship's point
+  and heading, the places and islands shown, the place chosen); a still frame lays out nothing (at 1920 × 1080,
   0.02 ms against 8 ms). How it reads:
   - *Sizes.* In the game's face, every word at least 13 px at a 1280 × 720 screen, a port's name 15 px; every size,
     mark and line grows with the map on a larger screen (`letterScale`: the map's height over its height at
@@ -135,7 +134,7 @@ on ([[The Held Map Comes to the Social Spaces and Every Land Area]]).
 - **The view**, DFO's: it opens centred on the ship, 1,600 km across. A drag pans; the wheel zooms about the cursor,
   from the whole world fitting the parchment to 6 px a kilometre; the world stays centred on an axis it does not
   fill. A press that moves more than 6 px is a pan, not a click.
-- **Choosing.** A click picks the discovered place within 16 px of it, or else the point of the sea under it; a node
+- **Choosing.** A click picks the place within 16 px of it, or else the point of the sea under it; a node
   is sailed for at its island's coast nearest it, a port at its city. The way there round the land is planned at once ([[Game]], "Sailing") and inked, and a card over the parchment offers Set
   sail (named with its key as bound, Enter or the pad's A), or says why no way leads there. Escape lets the choice go, then lowers the map.
 - **Other waters** ([[The Held Map Takes the Ship to Other Waters, Seen Sailing Away]]). At sea, the water under the
@@ -187,8 +186,8 @@ The map on land speaks in icon glyphs, with little text, and a table on it says 
   own):
   - **The ground**: the sea washed blue-grey and the shore inked; the relief every 10 m and a bolder line every 50 m,
     read about 160 times across; rivers as wide as their flow; the edge of the ground walked, dashed.
-  - **A social space's plan**, from its own solids, the city's landmark and the city's works within its ring (the
-    harbour way), each module by its parts, each piece by how it stands over the ground under it: paving faint, lawn
+  - **A social space's plan**, from its own solids, the city's landmark and the city's works within its ring, each
+    module by its parts, each piece by how it stands over the ground under it: paving faint, lawn
     green, trodden earth ochre, still water blue, walks a shade darker; walls, stalls and buildings 1.8 m and taller
     near solid with a shadow; benches, counters and low walls light; what is walked under (a roof, a lintel, an arch's
     head) only outlined, dashed, so a passage through a range reads open. Its trees and bushes are green crowns.
@@ -196,7 +195,7 @@ The map on land speaks in icon glyphs, with little text, and a table on it says 
     buildings and pieces as a social space's, its plantings' trees and shrubs.
   - **Places by name**, a glyph's width under their middles, else over them, else twice as far, where clear of the
     glyphs, the names before them and the gauntlets (the hub's: the Seaward Walk, the Watch Court, the West Court, the Forge Yard, the Beacon Walk, the Hall of
-    the Arts, the Stair Yard and the Quay).
+    the Arts and the Stair Yard).
   - **The glyphs.** Each keeper is a coin in their sign's board colour carrying their sign's device: a star for the
     Mage, a key for the vaults, an anvil for the Weaponsmith, a helm for the Armorsmith, open shears for the Tailor, a
     horseshoe for the Tack, a ship's wheel for the Harbourmaster, candles for the chandler, and the Postmaster, who
@@ -218,30 +217,14 @@ The map on land speaks in icon glyphs, with little text, and a table on it says 
     of the ground's length at the map's zoom ("25 m").
   - **Other land** (an island's): its ground, edge and landing.
 
-## Fog of war
-
-What the player has discovered is kept in this browser (`noshores-discovery`), every 30 s once it changes and as the
-page is hidden or goes ([[World Map]]):
-
-| What | Discovered |
-|---|---|
-| The sea | Charted within 40 km of the ship, a cell at a time |
-| An island | Once its coast comes within 40 km of the ship; it is then seen whole |
-| A port | Once the ship is within 60 km of its city, as its icon shows at sea |
-| A node | Once it is marked over an island's side, or landed at |
-
-The player starts with the island they arrive on, its port, the place they arrive at and the waters round its city.
-
 ## Limits
 
-- Discovery is the browser's: another browser or a cleared one starts again, and the server keeps none of it.
-- A route is planned on every continent's outline, so it keeps clear of an island the player has not found.
+- A route is planned on every continent's outline.
 - The coast field is a cell's middle every 4.8 km, interpolated: a headland narrower than a few kilometres is drawn
   softened.
-- The charted sea's wash is laid when the map is raised: what the ship charts while it is up shows the next time.
 - The route is inked through at most 128 of its points.
 - On land, the map marks a keeper a quest step names, not the place of a quest's other goals.
-- The waters' wash is laid when the map is raised, as the charted sea's is. A water's sea is judged a 4.8 km cell at a
+- A water's sea is judged a 4.8 km cell at a
   time, so its words may stand over an isle smaller than a cell.
 - A place's mark under a gauntlet's thumb stays there, under it; only its name keeps clear.
 - With every corner and edge place taken by marks, ports' names or the hands the key is left off, as on a screen as
@@ -250,4 +233,4 @@ The player starts with the island they arrive on, its port, the place they arriv
   off until the map is zoomed or panned.
 - On land the relief is exact within the 2 km of ground the camera keeps round the player and the land's 1 km grid's
   past it, so a patrol area's far side may read softer.
-- On land the sheet is the land's own, with no fog of war: all of it shows from the first time the map is raised.
+- On land the sheet is the land's own: all of it shows from the first time the map is raised, as the sea's does.

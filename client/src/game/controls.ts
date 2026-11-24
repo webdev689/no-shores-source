@@ -63,7 +63,7 @@ export const CONTROL_GROUPS: readonly ControlGroup[] = [
     controls: [
       { ...row('Move; climb', 'forward', 'left', 'back', 'right'), pad: LEFT_STICK },
       row('Run; gallop', 'run'),
-      row('Jump; vault', 'jump'),
+      row('Jump; vault; boost a horse', 'jump'),
       row('Crouch; let go', 'crouch'),
       row('Mount or dismount', 'mount'),
       row('Use', 'use'),
@@ -223,9 +223,10 @@ export function shipKeys(device: Device = BINDS.device, binds: Binds = BINDS.now
   };
 }
 
-/** The keycaps of the Art's abilities (the Anima's, then each Tenet's) and of the two loadouts, for the keys or the
- *  pad last used, as `boundCap` writes them: the fight's display draws them as the ship's bar draws its own. */
+/** The keycaps of the Art's abilities (the Anima's, then each Tenet's), of the two loadouts and of a rider's boost,
+ *  for the keys or the pad last used, as `boundCap` writes them: the fight's display draws them as the ship's bar draws its own. */
 export function hudKeys(device: Device = BINDS.device, binds: Binds = BINDS.now): HudKeys {
   const cap = (id: BindId) => boundCap(id, device, binds);
-  return { arts: [cap('anima'), cap('tenetOne'), cap('tenetTwo')], loadouts: [cap('melee'), cap('ranged')] };
+  const arts = [cap('anima'), cap('tenetOne'), cap('tenetTwo')] as const;
+  return { arts, loadouts: [cap('melee'), cap('ranged')], boost: cap('jump') };
 }

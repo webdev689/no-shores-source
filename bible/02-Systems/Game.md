@@ -273,8 +273,8 @@ third person, the forge's figure and the first person's hands, and the Test Grou
   drinking, talking or carrying, keeping to the right; each keeps a routine laid on the world clock from the plan and a
   seed, so every browser and every visit has the same people in the same places. Each walk is found by A* over the ways;
   the walk's frames go at the pace they stroll, each in a step of its own. Each walker stands on the ground, or on the
-  highest top under them whose underside is within a step of the floor so far, climbed in turn (`floorOver`): a pier's
-  deck, a podium or a landing, never a roof over them; it is found again only once they have walked a step. Shape, the
+  highest top under them whose underside is within a step of the floor so far, climbed in turn (`floorOver`): a
+  podium or a landing, never a roof over them; it is found again only once they have walked a step. Shape, the
   keepers' marks, the stranger and a quest's rings stand on the same floor in a social space. A round's sweeper
   keeps a whole number of the walkers' 600 s loops, staying at the round's first post until it is up, and the walkers
   are drawn clear of the sweeper's walks, so none walks in another however long the clock runs. The fight never takes
@@ -311,7 +311,7 @@ third person, the forge's figure and the first person's hands, and the Test Grou
 - **On the ground**: each resource node stands as the forge's picture of its island's resource (`nodeCards`,
   [[Sprite Forge]], [[Material Nodes Stand Where They Are Dressed, Worked by Holding E]]), every resource at one scale,
   before the place its resource comes from, while the room stands it for the player, and as it looks spent once they
-  gathered it, until its turn comes round; a place resting its turn shows only its dressing. The picture alone marks a
+  gathered it, until it returns for them; a place the room stands no node at shows only its dressing. The picture alone marks a
   node: no ring, no beam, no mark over it. Each chest standing for them in a patrol stands as a public event's plain
   chest and its lid, the owner's chest from DFO built in code ([[Pick - Chest]], `foundChestProps`), its front looking
   the way its place faces; one the room says it paid them for swings its lid open to 77 degrees over 0.6 s, its

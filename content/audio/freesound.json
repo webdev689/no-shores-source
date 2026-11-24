@@ -524,6 +524,132 @@
       "dfo": "if/Deep_Water_Footstep"
     },
     {
+      "id": "horse.walk.ground",
+      "use": "A horse walking on earth or grass, one stride",
+      "query": "horse walk dirt",
+      "seconds": [
+        0.3,
+        1.5
+      ]
+    },
+    {
+      "id": "horse.walk.stone",
+      "use": "A horse walking on stone, one stride",
+      "query": "horse walk cobblestone",
+      "seconds": [
+        0.3,
+        1.5
+      ]
+    },
+    {
+      "id": "horse.walk.water",
+      "use": "A horse walking through water, one stride",
+      "query": "horse walk water splash",
+      "seconds": [
+        0.3,
+        1.5
+      ]
+    },
+    {
+      "id": "horse.gallop.ground",
+      "use": "A horse galloping on earth or grass, one stride",
+      "query": "horse gallop dirt",
+      "seconds": [
+        0.3,
+        1.2
+      ]
+    },
+    {
+      "id": "horse.gallop.stone",
+      "use": "A horse galloping on stone, one stride",
+      "query": "horse gallop cobblestone",
+      "seconds": [
+        0.3,
+        1.2
+      ]
+    },
+    {
+      "id": "horse.gallop.water",
+      "use": "A horse galloping through water, one stride",
+      "query": "horse gallop water splash",
+      "seconds": [
+        0.3,
+        1.2
+      ]
+    },
+    {
+      "id": "horse.boost.ground",
+      "use": "A horse boosted to its fastest gallop on earth or grass, one stride",
+      "query": "horse gallop fast dirt",
+      "seconds": [
+        0.2,
+        1.0
+      ]
+    },
+    {
+      "id": "horse.boost.stone",
+      "use": "A horse boosted to its fastest gallop on stone, one stride",
+      "query": "horse gallop fast cobblestone",
+      "seconds": [
+        0.2,
+        1.0
+      ]
+    },
+    {
+      "id": "horse.boost.water",
+      "use": "A horse boosted to its fastest gallop through water, one stride",
+      "query": "horse gallop fast water splash",
+      "seconds": [
+        0.2,
+        1.0
+      ]
+    },
+    {
+      "id": "horse.mount",
+      "use": "A rider climbs into the saddle",
+      "query": "saddle leather creak",
+      "seconds": [
+        0.3,
+        2.0
+      ]
+    },
+    {
+      "id": "horse.whinny",
+      "use": "A horse whinnies as its rider mounts",
+      "query": "horse whinny",
+      "seconds": [
+        0.5,
+        3.0
+      ]
+    },
+    {
+      "id": "horse.dismount",
+      "use": "A rider gets down from the saddle",
+      "query": "dismount horse",
+      "seconds": [
+        0.3,
+        2.0
+      ]
+    },
+    {
+      "id": "horse.snort",
+      "use": "A ridden horse snorts while it stands",
+      "query": "horse snort",
+      "seconds": [
+        0.3,
+        2.0
+      ]
+    },
+    {
+      "id": "horse.boost",
+      "use": "A rider's boost begins: the horse kicks off",
+      "query": "horse neigh gallop start",
+      "seconds": [
+        0.3,
+        2.0
+      ]
+    },
+    {
       "id": "jump",
       "use": "A jump",
       "query": "cloth whoosh",

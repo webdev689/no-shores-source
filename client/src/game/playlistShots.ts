@@ -15,7 +15,7 @@ const BRAWLER = { key: 'brawler', name: 'Brawler', words: 'Melee deals 50% more 
 const DAILY = "Daily, the first clear: a Boss's worth of XP and Aurem, and a Vestige in a Boss's colours.";
 const DRAWN = 'One of the 18 Elite Dungeons, drawn as each run starts.';
 const ABYSS_DRAWN = 'One of the 18 Elite Dungeons, at Abyss, drawn as each run starts.';
-const [ORCISH, ADAMANTIUM] = ['Drops orcish and mithril gear', 'Drops adamantium and ebony gear'];
+const [ELITE_GEAR, ABYSS_GEAR] = ['Drops Elite Dungeon gear', 'Drops Abyss Dungeon gear'];
 const REVIVES = '5 revives for the company. A wipe starts the run over.';
 const [DAY, WEEK] = ['Resets in 14:02:11', 'Resets in 3d 14h'];
 
@@ -31,7 +31,7 @@ export const SAMPLE_SCREEN: PlaylistScreenState = {
       name: 'Elite Playlist',
       about: 'Elite · Levels 20 to 24 · Foes at level 22',
       rules: [DRAWN],
-      drops: ORCISH,
+      drops: ELITE_GEAR,
       modifiers: [BURN],
       rewards: [
         { words: DAILY, taken: true, clears: null, resets: DAY },
@@ -51,7 +51,7 @@ export const SAMPLE_SCREEN: PlaylistScreenState = {
       name: 'Abyss Playlist',
       about: 'Abyss · Levels 20 to 24 · Foes at level 23',
       rules: [ABYSS_DRAWN, REVIVES],
-      drops: ADAMANTIUM,
+      drops: ABYSS_GEAR,
       modifiers: [BURN, TRICKLE],
       rewards: [
         { words: DAILY, taken: false, clears: null, resets: DAY },
@@ -71,7 +71,7 @@ export const SAMPLE_SCREEN: PlaylistScreenState = {
       name: 'Elite Dungeon of the week',
       about: 'Forsaken Cistern · Elite · Level 26',
       rules: [],
-      drops: ORCISH,
+      drops: ELITE_GEAR,
       modifiers: [BRAWLER],
       rewards: [{ words: 'Once a week: a Legendary Vestige and Essence.', taken: false, clears: null, resets: WEEK }],
       shut: 'This dungeon opens at level 24.',
@@ -83,7 +83,7 @@ export const SAMPLE_SCREEN: PlaylistScreenState = {
       name: 'Abyss Dungeon of the week',
       about: 'Saltworm Warrens · Abyss · Level 30',
       rules: [REVIVES, 'Never matched. Bring your company.'],
-      drops: ADAMANTIUM,
+      drops: ABYSS_GEAR,
       modifiers: [TRICKLE, BRAWLER, BURN],
       rewards: [
         {

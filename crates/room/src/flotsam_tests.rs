@@ -110,12 +110,13 @@ fn a_players_ship_gathers_their_own_pieces_within_twenty_five_metres_and_no_one_
 
 #[test]
 fn a_harder_seas_ship_leaves_a_vestige_as_often_as_a_harder_voyages_kill_on_land() {
-    // A Miniboss leaves one 35 times in 100 on land, raised by half at Elite and doubled in the Abyss.
+    // A Miniboss leaves one 35 times in 100 on land, raised by half at Elite and doubled in the Abyss; about four in
+    // ten of them are sealed, finer than Normal, as a Normal one comes as its item.
     let counted =
         [Difficulty::Normal, Difficulty::Elite, Difficulty::Abyss].map(|difficulty| miniboss_vestiges(difficulty, 400));
-    assert!((100..180).contains(&counted[0]), "about 140 from 400 Miniboss ships: {counted:?}");
-    assert!((170..250).contains(&counted[1]), "about 210 at Elite: {counted:?}");
-    assert!((240..320).contains(&counted[2]), "about 280 in the Abyss: {counted:?}");
+    assert!((35..80).contains(&counted[0]), "about 55 from 400 Miniboss ships: {counted:?}");
+    assert!((60..110).contains(&counted[1]), "about 83 at Elite: {counted:?}");
+    assert!((85..140).contains(&counted[2]), "about 110 in the Abyss: {counted:?}");
 }
 
 #[test]
@@ -188,6 +189,7 @@ fn what_floats_rolls_on_the_hosts_own_loot_seed_which_the_seas_seed_cannot_show(
 #[test]
 fn a_vestige_in_flotsam_gathered_with_the_carried_ten_full_goes_to_the_mail() {
     let mut flotsam = Flotsam::new(1);
+    flotsam.reseed(crate::SEALING_SEED);
     flotsam.lay(&sank(Rank::Boss, vec![1]), 0, (1, 0));
     let mut full = Character::starting();
     for _ in 0..gear::character::VESTIGES_MOST {

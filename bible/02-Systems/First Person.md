@@ -147,7 +147,12 @@ The forge draws every metal grey. A grey texel goes to the nearest step of Dagge
 step of the metal's ramp; every other colour snaps to the nearest palette colour. Steel, leather, chain and the guilds'
 sets keep their own colours, unless a dye or a faction's colour is worn: then the gauntlets and boots are covered whole
 by its light, as the figure's armour is, and a faction's bow, staff and shield in its colour, each laid by its set's
-span of light on the player's body ([[Gear]], "Cosmetics"). Bare hands take iron's.
+span of light on the player's body ([[Gear]], "Cosmetics"). A faction's blade keeps its metal and wears its colour on
+the hilt, guard and trim the forge marks, laid across the trim's span of light in the blade's first frame in hand
+(`trimOf`). Bare hands take iron's.
+
+A dagger's or a sword's blade layers, right hand and left, reach the game from a `forge` run asked for by hand with
+`firstperson` ([[Sprite Forge]], "Running it"); until a metal's are published, its blade draws as it did.
 
 ### On the screen
 

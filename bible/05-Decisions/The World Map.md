@@ -54,7 +54,7 @@ The owner's answers to the questions that followed:
 | The world | Tamriel's frame at DFO's scale: about 4,915 × 3,072 km, ocean included (6,000 × 3,750 map pixels of 819.2 m) |
 | Continents | Nine, hand-placed and outlined by us; each from Daggerfall's whole map (about 161,600 km² of land) up to Hammerfell (about 940,000 km² on DFO's map) |
 | Main biomes | One per continent, starting from World 2.0's ten climate profiles; each continent is one biome, not varied into others ([[Each Continent Is One Biome]]); which nine is decided later |
-| Static isles | Thousands, each one biome, static and persistent; each player's map is fog of war, so an isle stays hidden from a player until they find it; the first discoverer's name stays attached for good |
+| Static isles | Thousands, each one biome, static and persistent; each player's map is fog of war, so an isle stays hidden from a player until they find it (replaced in part: the held map has no fog, so every isle shows, [[Other Ships Wear Their Players' Marks, the Sea Map Has No Fog, and New Players Ride a Bay That Bursts]]); the first discoverer's name stays attached for good |
 | Discoveries | Non-persistent islands between the continents and the isles, shared like DFO's spawned dungeons; each fades a while after the last player leaves |
 | Weather | DFO's dynamic weather and cloud rendering over the whole map |
 | Travel | Ships sail faster than real speed; DFO's Overworld comes over, and ships go faster still in it |

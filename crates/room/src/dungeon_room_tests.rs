@@ -449,7 +449,8 @@ fn a_cache_on_the_reeves_post_throws_its_vestige_onto_clear_floor() {
             room.cache = Some(cache);
             let before = room.drops.len();
             room.keep_cache();
-            // A dungeon's clear leaves a Vestige one time in three: whatever this one threw.
+            // A dungeon's clear leaves a Vestige one time in three, sealed when it rolls finer than Normal (about two
+            // times in five, a Normal one's item kept as itself): whatever this one threw.
             for vestige in &room.drops[before..] {
                 thrown += 1;
                 let lies = [vestige.at[0], vestige.at[1]];
@@ -458,7 +459,7 @@ fn a_cache_on_the_reeves_post_throws_its_vestige_onto_clear_floor() {
         }
     }
     assert!(on_post > 0, "some post where no way round fits");
-    assert!(thrown * 5 > on_post, "{thrown} Vestiges from {on_post} clears");
+    assert!(thrown * 10 > on_post, "{thrown} Vestiges from {on_post} clears");
 }
 
 #[test]

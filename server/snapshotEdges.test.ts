@@ -11,7 +11,7 @@ import { startRoomDoor } from './roomDoor.ts';
 const compiled = new WebAssembly.Module(
   await readFile(new URL('../target/wasm32-unknown-unknown/release/room_wasm.wasm', import.meta.url)),
 );
-const still = new Float64Array([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, NaN, NaN, NaN]);
+const still = new Float64Array([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, NaN, NaN, NaN, 0]);
 const look = { anim: '', frame: 0, facing: 0 };
 
 test('a snapshot taken before the first tick is never the base a later one is built on', () => {

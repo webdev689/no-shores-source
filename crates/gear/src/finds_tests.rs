@@ -59,9 +59,17 @@ fn a_full_stock_takes_none_of_the_resource_and_the_chest_still_pays_its_aurem() 
 
 #[test]
 fn a_chest_holds_a_vestige_about_one_time_in_four_and_a_search_about_one_in_twenty() {
+    // A Normal roll comes as its item rather than a Vestige, so either counts.
     let share = |find: Find, difficulty: Difficulty| {
-        let found = opened(find, 10, difficulty, 4_000);
-        found.iter().map(|each| each.vestiges.len()).sum::<usize>() as f64 / found.len() as f64
+        let rolled: usize = (0..4_000)
+            .map(|tick| {
+                let mut character = Character::starting();
+                let items = character.items.len();
+                let found = character.find(find, (10, difficulty), Some(0), Source::World, &Dice { tick, ..DICE });
+                found.vestiges.len() + character.items.len() - items
+            })
+            .sum();
+        rolled as f64 / 4_000.0
     };
     let chest = share(Find::Chest, Difficulty::Normal);
     assert!((chest - CHEST.vestige).abs() < 0.03, "a chest's {chest}");

@@ -4,6 +4,7 @@ import { EVENT } from '../combat/cues.ts';
 import { RESPAWN_TICKS } from '../combat/hudPlace.ts';
 import type { SeenPlayer } from '../network/messages.ts';
 import { FIGHTER_FLOATS, fighterView } from '../rules/fighters.ts';
+import { BODY_FLOATS } from '../rules/movementRules.ts';
 import {
   FALLEN_PICTURE,
   type FallenWord,
@@ -16,7 +17,7 @@ import {
 } from './footRevive.ts';
 
 /** Where a fighter's action is among its numbers, after its body and its glance (rules/fighters.ts). */
-const ACTION_AT = 22 + 23;
+const ACTION_AT = BODY_FLOATS + 23;
 const DEAD = 12;
 
 /** A player seen at (x, y, z), fallen for `elapsed` ticks, or standing; dead past the section where `strayed`. */

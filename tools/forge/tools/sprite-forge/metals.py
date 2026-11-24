@@ -610,6 +610,15 @@ def hilt(metal, P=None):
 
 
 HILT_ROLES = ('fit', 'grip', 'blade', 'blade_glow')   # the palette's roles a hilt's parts wear
+# the materials of a weapon's hilt, guard and trim, by their palette class (`palette`): its fittings (`blade.`), its
+# grip, haft and cords (`haft.`) and its accents (`edge.`). A faction's colour lies on them on a faction's weapon; a
+# glow keeps its fire, and a blade or a head (`steel.`) and a haft's wood keep their own.
+TRIM_CLASSES = ('blade.', 'haft.', 'edge.')
+
+
+def is_trim(name):
+    """Whether a material, by its name, is a weapon's hilt, guard or trim (`TRIM_CLASSES`)."""
+    return name.startswith(TRIM_CLASSES) and 'glow' not in name
 
 
 def _key(mat):

@@ -48,8 +48,16 @@ const HUB: [&str; 37] = [
     "bale-stack",
 ];
 
-const NORTH: Controls =
-    Controls { forward: 1.0, sideways: 0.0, yaw: 0.0, run: false, jump: false, crouch: false, mounted: false };
+const NORTH: Controls = Controls {
+    forward: 1.0,
+    sideways: 0.0,
+    yaw: 0.0,
+    run: false,
+    jump: false,
+    crouch: false,
+    mounted: false,
+    boost: false,
+};
 
 fn piece(name: &str) -> &'static Module {
     all().iter().find(|module| module.name == name).unwrap_or_else(|| panic!("{name} is in the manifest"))

@@ -11,6 +11,8 @@ import { NoticeStack } from '../plus/notices.ts';
 import type { SeaFightModel } from '../plus/seaFight.ts';
 import { type ShipBar, ShipPlates } from '../ships/shipBars.ts';
 import { shipPlateNodes } from './shipPlates.ts';
+import type { PlatedPlayer } from '../combat/playerPlates.ts';
+import { seaPlates } from './seaPlates.ts';
 import { announce } from '../ui/announce.ts';
 import { ease } from '../ui/ease.ts';
 import type { Child, Node, Picture } from '../ui/node.ts';
@@ -127,6 +129,10 @@ export class Hud {
   private bars: readonly ShipBar[] = [];
   private pose: CameraPose | null = null;
   private readonly shipPlates = new ShipPlates();
+  /** The marks over other players' ships at sea, and the clock they were last laid at. */
+  private readonly seaPlates = seaPlates();
+  private seaPlayersShown: readonly PlatedPlayer[] = [];
+  private seaPlatesAt = now();
   private marksShown: readonly ScreenMark[] = [];
   private sea: (SeaBarState & { readonly landfall: Landfall }) | null = null;
   private panel: ShipPanel | null = null;
@@ -236,6 +242,11 @@ export class Hud {
   /** Each captain's bar over its ship (world metres) as `pose` sees the picture; none out of a fight. */
   shipBars(bars: readonly ShipBar[], pose: CameraPose): void {
     [this.bars, this.pose] = [bars, pose];
+  }
+
+  /** Each other player's ship's mark (world metres), as `shipBars`' pose sees the picture; none on land. */
+  seaPlayers(players: readonly PlatedPlayer[]): void {
+    this.seaPlayersShown = players;
   }
 
   /** Places the marks on the screen; choosing one calls what `onMark` set. */
@@ -361,6 +372,7 @@ export class Hud {
         opacity: shade,
         picture: VIGNETTE,
       },
+      ...this.seaPlayersNode(width, height, clock),
       ...plates,
       this.compassView &&
         !besides.fight && {
@@ -452,6 +464,20 @@ export class Hud {
       return seen.front ? seen : null;
     };
     return shipPlateNodes(this.shipPlates.place(this.bars, spot, width, clock));
+  }
+
+  /** The marks over other players' ships as the picture is seen now, laid as the plates on land are. */
+  private seaPlayersNode(width: number, height: number, clock: number): Node[] {
+    const [pose, seconds] = [this.pose, clock - this.seaPlatesAt];
+    this.seaPlatesAt = clock;
+    if (this.seaPlayersShown.length === 0 || !pose) return [];
+    const spot = (point: readonly [number, number, number]) => {
+      const seen = projectPoint(pose, { width, height }, [...point]);
+      return seen.front ? seen : null;
+    };
+    const camera = { eye: pose.eye, forward: pose.forward, focal: 1 / Math.tan(pose.fovY / 2) };
+    this.seaPlates.update(this.seaPlayersShown, { camera, blocked: () => false, spot, own: null }, seconds);
+    return this.seaPlates.nodes();
   }
 
   /** The veil over the view while a place loads: the loading screen with the trip's words. It takes the pointer while

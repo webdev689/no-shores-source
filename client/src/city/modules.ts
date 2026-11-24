@@ -38,7 +38,13 @@ const meshes = new Map<string, ModuleMesh>();
 built.forEach((module, nth) =>
   module.meshes.forEach((mesh, group) => meshes.set(`${listed.modules.length + nth}:${group}`, mesh)),
 );
-let loading: Promise<void> | null = null;
+/** How many groups' meshes are fetched at once: R2's public address limits how fast it is asked, and a burst of every
+ *  group at once can lose its last, the public events'. */
+const FETCHES_AT_ONCE = 8;
+/** A call this long after an asking that left groups unread asks for them again (ms); sooner, it has that asking's. */
+const ASK_AGAIN_MS = 20_000;
+/** The last asking for the meshes: when it began (ms), whether it left any unread once over, and its end. */
+let asking: { readonly at: number; missed: boolean; done: Promise<void> } | null = null;
 
 /** A module's own height, metres: a solid of it stands stretched up to its own size's. */
 export function moduleHeight(module: number): number {
@@ -101,18 +107,32 @@ export function readModuleMesh(bytes: ArrayBuffer): ModuleMesh {
   return { positions, normals, glows, triangles };
 }
 
-/** Fetches every module's meshes once; a group that cannot be read is left undrawn, and said so. */
-export function loadModules(): Promise<void> {
-  loading ??= Promise.all(
-    listed.modules.flatMap((module, number) =>
-      module.groups.map(async (group, index) => {
-        try {
-          meshes.set(`${number}:${index}`, readModuleMesh((await contentBytes(`${manifest.base}${group.mesh}`)).bytes));
-        } catch (error) {
-          console.error(`module ${number}'s ${group.mesh} cannot be drawn:`, error);
-        }
-      }),
-    ),
-  ).then(() => undefined);
-  return loading;
+/** Fetches every module's meshes not yet read, FETCHES_AT_ONCE at a time in the manifest's order, as of `now`
+ *  (ms): a group that cannot be read is left undrawn, said so, and asked for again by a call ASK_AGAIN_MS after. */
+export function loadModules(now = performance.now()): Promise<void> {
+  if (asking && !(asking.missed && now - asking.at >= ASK_AGAIN_MS)) return asking.done;
+  const unread = listed.modules.flatMap((module, number) =>
+    module.groups.flatMap(({ mesh }, index) => (meshes.has(`${number}:${index}`) ? [] : [{ number, index, mesh }])),
+  );
+  const begun = { at: now, missed: false, done: Promise.resolve() };
+  begun.done = inTurn(unread, FETCHES_AT_ONCE, async ({ number, index, mesh }) => {
+    try {
+      meshes.set(`${number}:${index}`, readModuleMesh((await contentBytes(`${manifest.base}${mesh}`)).bytes));
+    } catch (error) {
+      console.error(`module ${number}'s ${mesh} cannot be drawn:`, error);
+    }
+  }).then(() => {
+    begun.missed = unread.some(({ number, index }) => !meshes.has(`${number}:${index}`));
+  });
+  asking = begun;
+  return begun.done;
+}
+
+/** `work` done on each of `items` in their order, at most `most` at once. */
+async function inTurn<Item>(items: readonly Item[], most: number, work: (item: Item) => Promise<void>): Promise<void> {
+  let next = 0;
+  const worker = async () => {
+    while (next < items.length) await work(items[next++] as Item);
+  };
+  await Promise.all(Array.from({ length: Math.min(most, items.length) }, worker));
 }

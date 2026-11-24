@@ -8,6 +8,7 @@ use crate::{DROP_TICKS, Dropped, EventKind, POURED_REST_TICKS, PlayerId, Room};
 /// A room with one player and a heroic chest laid for them at the Fissure's ground; the chest's number.
 fn chested() -> (Room, PlayerId, u32) {
     let (mut room, players) = room_at(0, 1);
+    room.seed = crate::SEALING_SEED;
     place(&mut room, players[0], [FISSURE_AT[0], FISSURE_AT[1] + 10.0]);
     room.lay_chest(players[0], 3, FISSURE_AT, 5);
     let chest = room.drops_for(players[0]).next().expect("the chest").id;
@@ -154,21 +155,33 @@ fn left_to_lapse_with_their_ten_full_its_vestige_goes_to_the_vault_and_with_the_
             character.vestiges.insert(id, (gear::Vestige::new(id, gear::Rarity::Normal, gear::Slot::Head, 1), true));
         }
     };
-    let lapse = |room: &mut Room| {
-        for _ in 0..DROP_TICKS {
-            room.tick();
+    // A Normal roll comes as its item, not a Vestige: each try lays its chest a tick later, until one holds a Vestige.
+    let lapsed = |vault: bool| {
+        for late in 0..60 {
+            let (mut room, players) = room_at(0, 1);
+            let player = players[0];
+            place(&mut room, player, [FISSURE_AT[0], FISSURE_AT[1] + 10.0]);
+            for _ in 0..late {
+                room.tick();
+            }
+            room.lay_chest(player, 3, FISSURE_AT, 5);
+            fill(&mut room, player, vault);
+            let at = chest_at(&room, player).unwrap();
+            let items = room.players[&player].character.items.len();
+            for _ in 0..DROP_TICKS {
+                room.tick();
+            }
+            if room.players[&player].character.items.len() == items {
+                return (room, player, at);
+            }
         }
+        panic!("none of sixty chests held a Vestige");
     };
-    let (mut room, player, _) = chested();
-    fill(&mut room, player, false);
-    lapse(&mut room);
+    let (room, player, _) = lapsed(false);
     let character = &room.players[&player].character;
     assert_eq!((character.vestiges_held(false), character.vestiges_held(true)), (10, 1), "to the vault");
     assert_eq!(room.drops_for(player).count(), 0, "nothing on the ground");
-    let (mut room, player, _) = chested();
-    fill(&mut room, player, true);
-    let at = chest_at(&room, player).unwrap();
-    lapse(&mut room);
+    let (room, player, at) = lapsed(true);
     let character = &room.players[&player].character;
     assert_eq!(character.vestiges_held(true), gear::character::VAULT_MOST, "the vault kept to its limit");
     let lying: Vec<[f64; 3]> =

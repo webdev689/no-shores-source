@@ -1,7 +1,7 @@
 //! Overlook's road to the sea as the planner lays it, walked by the movement rules: from out on the pier, onto the
-//! quay, up the harbour avenue's flight and its ramps terrace by terrace, and up the switchback at its head to the
-//! platform's level, never stepping more than the rules step nor leaving the ramps' walls; and the terraces' walls
-//! open only where a ramp crosses them.
+//! quay, up the harbour avenue's flight and its ramps terrace by terrace, and up the switchback at its head to its top
+//! landing at the platform's level, where the hub's sealed gate stops it, never stepping more than the rules step nor
+//! leaving the ramps' walls; and the terraces' walls open only where a ramp crosses them.
 
 use city::grid::{SIDE_CELLS, index};
 use city::ramps::{Piece, Ramp};
@@ -99,7 +99,7 @@ fn pier(town: &Overlook) -> (Solid, [f64; 2]) {
         .expect("Overlook's piers")
 }
 
-/// The harbour avenue's way from 20 m out on the pier to inside the platform's edge: the pier's root, the flight,
+/// The harbour avenue's way from 20 m out on the pier to the switchback's top landing: the pier's root, the flight,
 /// each terrace's middle with the ramp across each step, and the switchback from its foot to its top.
 fn waypoints(town: &Overlook) -> Vec<[f64; 2]> {
     let (pier, root) = pier(town);
@@ -134,12 +134,12 @@ fn waypoints(town: &Overlook) -> Vec<[f64; 2]> {
     for piece in stair {
         up(piece, &mut points);
     }
-    // Off the top landing onto the platform.
-    let [x, y, _] = points.last().map(|&[x, y]| [x, y, 0.0]).expect("a way");
-    let landmark = centre_of(town, town.avenue[head + 1]);
-    let (east, south) = (landmark[0] - x, landmark[1] - y);
-    let length = (east * east + south * south).sqrt();
-    points.push([x + east / length * 8.0, y + south / length * 8.0]);
+    // The top landing's far end lies under the sealed gate's wall: the way ends at the landing's middle.
+    if let [.., before, last] = points[..] {
+        let middle = [f64::midpoint(before[0], last[0]), f64::midpoint(before[1], last[1])];
+        points.pop();
+        points.push(middle);
+    }
     points
 }
 
@@ -167,7 +167,7 @@ fn walked(town: &Overlook, waypoints: &[[f64; 2]], seconds: f64) -> (Vec<Body>, 
 }
 
 #[test]
-fn a_body_walks_from_the_pier_up_the_harbour_avenue_and_its_switchback_to_the_platform() {
+fn a_body_walks_from_the_pier_up_the_harbour_avenue_and_its_switchback_to_the_sealed_gate() {
     let town = overlook();
     let points = waypoints(town);
     let (bodies, passed) = walked(town, &points, 900.0);
@@ -184,6 +184,18 @@ fn a_body_walks_from_the_pier_up_the_harbour_avenue_and_its_switchback_to_the_pl
     );
     let level = town.plan.pads.last().expect("the base's pad").level;
     assert!((end.z - level).abs() < 0.05, "it ends {:.2} m up, the platform is at {level}", end.z);
+    // On toward the platform, the gate and its wall stop it on the landing.
+    let toward = town.plan.social.spawns[0];
+    let (east, south) = (toward[0] - end.x, toward[1] - end.y);
+    let controls = Controls { forward: 1.0, yaw: libm::atan2(east, -south), ..Controls::default() };
+    let mut body = end;
+    for _ in 0..600 {
+        body = step_body(&body, &controls, &town.blocks, &town.floor, TICK_SECONDS);
+    }
+    let landing =
+        town.plan.ramps.iter().find(|ramp| ramp.piece == Piece::Landing && holds(ramp.pad.bounds, end.x, end.y));
+    let landing = landing.expect("it ends on the switchback's top landing");
+    assert!(holds(landing.pad.bounds, body.x, body.y), "past the gate at {:.1},{:.1}", body.x, body.y);
     assert!(bodies[0].z <= city::walls::QUAY_TOP_M + 0.01, "it starts on the pier: {:.2}", bodies[0].z);
     for pair in bodies.windows(2) {
         let (from, to) = (pair[0], pair[1]);

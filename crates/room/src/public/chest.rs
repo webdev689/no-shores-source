@@ -47,7 +47,8 @@ impl Room {
 
     /// Pays a chest to its player: what it holds goes to their gear; its Vestige, poured out of it when they opened
     /// it, else to their ten, else to their vault, else onto the ground where the chest stood when both are full; a
-    /// leaver's into their vault however full.
+    /// leaver's into their vault however full. A Normal roll holds no Vestige: its item is kept as a found item is, in
+    /// its slot's nine, else the vault, else the mail.
     pub(crate) fn pay_chest(&mut self, player: PlayerId, (tier, level): (u8, u8), at: [f64; 3], paid_as: Paid) {
         let dice = self.dice(player);
         let resource = self.resource_nodes.first().map(|node| usize::from(node.resource));
@@ -56,7 +57,7 @@ impl Room {
         let Some(paid) = found.character.open_chest(tier, (level, difficulty, day), resource, &dice) else { return };
         found.gear_changed = true;
         if paid_as == Paid::Opened {
-            self.pour(player, vec![paid.vestige], at, None);
+            self.pour(player, paid.vestige.into_iter().collect(), at, None);
             self.tell(EventKind::ChestOpened, None, player, player, f64::from(tier));
             return;
         }
@@ -64,11 +65,12 @@ impl Room {
         // A leaver's chest is paid as they go, so the vault keeps what the ten cannot, over its limit if it must: the
         // ground they leave would lose it.
         let vaulted = paid_as == Paid::Leaving || character.vestiges_held(true) < gear::character::VAULT_MOST;
-        if !character.pick_up(paid.vestige.clone()) {
+        // A Normal roll held no Vestige: its item is kept already, as a found item is.
+        if let Some(vestige) = paid.vestige.filter(|vestige| !character.pick_up(vestige.clone())) {
             if vaulted {
-                character.vestiges.insert(paid.vestige.id, (paid.vestige, true));
+                character.vestiges.insert(vestige.id, (vestige, true));
             } else {
-                self.lay_drop(player, Dropped::Vestige(paid.vestige), at);
+                self.lay_drop(player, Dropped::Vestige(vestige), at);
             }
         }
         self.tell(EventKind::ChestOpened, None, player, player, f64::from(tier));

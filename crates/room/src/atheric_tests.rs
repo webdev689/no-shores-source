@@ -100,7 +100,7 @@ fn ten_atheric_weapons_each_have_an_intrinsic_and_an_own_node_of_their_own() {
     assert_eq!(weapons.len(), 10);
     for weapon in weapons {
         let intrinsic = weapon.intrinsic.as_deref().expect("an intrinsic");
-        assert!(content.trait_fits(intrinsic, weapon.kind, Some(&weapon.id)), "{intrinsic} is {}'s", weapon.id);
+        assert!(content.trait_fits(intrinsic, weapon.kind, Some(&weapon.id), false), "{intrinsic} is {}'s", weapon.id);
         assert_eq!(weapon.layout.iter().map(Vec::len).collect::<Vec<_>>(), [3, 1, 2, 2], "{}'s grid", weapon.id);
     }
     assert!(content.trait_def("updraft").is_none(), "Updraft is gone");
