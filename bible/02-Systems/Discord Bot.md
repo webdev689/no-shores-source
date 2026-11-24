@@ -38,6 +38,17 @@ code:
   - server/bot/migrations/20261124120000_core.sql
   - server/bot/migrations/20261124120100_messages.sql
   - server/bot/wrangler.jsonc
+  - server/bot/modules/giveaways.ts#giveawaysModule
+  - server/bot/modules/polls.ts#pollsModule
+  - server/bot/modules/polls.ts#suggestModule
+  - server/bot/modules/starboard.ts#starboardModule
+  - server/bot/modules/tickets.ts#ticketsModule
+  - server/bot/modules/birthdays.ts#birthdaysModule
+  - server/bot/modules/tempVoice.ts#tempVoiceModule
+  - server/bot/modules/invites.ts#invitesModule
+  - server/bot/modules/stats.ts#statsModule
+  - server/bot/modules/socials.ts#socialsWith
+  - server/bot/migrations/20261124130200_engagement.sql
 ---
 # Discord Bot
 
@@ -65,6 +76,28 @@ A module is one file in `modules/` exporting a `ServerModule`, named in `registr
 `law/modules.ts`. It may answer commands and presses, hear Gateway events, run each minute, answer the panel's
 tables and acts, keep Discord in step when it is saved, fill placeholders of its own, and serve public routes. Its
 tables come with a migration named by its UTC time.
+
+## Engagement modules
+
+- **Giveaways**: `/giveaway` or the panel posts a card with an Enter button; a press enters or leaves, and a role
+  may be required. The clock ends it, or a manager does; winners are drawn with the secure random source, each entry
+  equally likely, and one draw wins when two run at once. A reroll leaves out the last winners where enough entered.
+- **Polls and suggestions**: `/poll` posts Discord's own poll (two to ten answers). `/suggest` posts a card with a
+  thumbs up and down to vote by, and buttons staff press to take or decline it; the card holds its state.
+- **Starboard**: a message with enough of the chosen emoji is shown again on the board, its count kept current, and
+  taken down when it falls below. The author's own star counts only where the settings say.
+- **Tickets**: a button opens a channel only the member, the staff roles and the bot see, one ticket at a time up to
+  the setting. Closing it posts its messages as a file in the transcript channel and deletes the channel.
+  `/ticket add` and `remove` let staff change who is in it.
+- **Birthdays**: `/birthday set` keeps a day; at the setting's hour (UTC) the bot posts the message and gives the
+  day's role, taken back the next day. 29 February is kept on the 28th in other years.
+- **Voice rooms**: joining the hub makes the member a room of their own and moves them in; an empty room is deleted,
+  as is one no one could be moved into, or one left empty while the bot was away.
+- **Invites**: each join is matched to the invite whose use count rose; `/invites` and the panel's table count them.
+- **Stat channels**: every ten minutes, a counter's channel is renamed to show members, roles or channels, only when
+  the name changed.
+- **Feeds**: every ten minutes each YouTube channel or https RSS or Atom feed is read, at most 512 KB and 50 items.
+  The first read marks the place; later reads post up to five new items, their titles shown as typed.
 
 ## Limits
 

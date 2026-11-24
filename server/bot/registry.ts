@@ -3,11 +3,31 @@
 
 import type { BotContext } from './kit.ts';
 import type { EventData, ServerModule } from './modules/module.ts';
+import { birthdaysModule } from './modules/birthdays.ts';
+import { giveawaysModule } from './modules/giveaways.ts';
+import { invitesModule } from './modules/invites.ts';
+import { pollsModule, suggestModule } from './modules/polls.ts';
+import { socialsModule } from './modules/socials.ts';
+import { starboardModule } from './modules/starboard.ts';
+import { statsModule } from './modules/stats.ts';
+import { tempVoiceModule } from './modules/tempVoice.ts';
+import { ticketsModule } from './modules/tickets.ts';
 
 // A module is added in two steps: its shape in `law/modules.ts` (what the panel draws and the bot checks), and its
 // code as one file in `modules/` exporting a `ServerModule` with the same id, named in the list below. Its tables, if
 // it has any, come with a migration in `migrations/` named by its UTC time.
-export const SERVER_MODULES: readonly ServerModule[] = Object.freeze([]);
+export const SERVER_MODULES: readonly ServerModule[] = Object.freeze([
+  giveawaysModule,
+  pollsModule,
+  suggestModule,
+  starboardModule,
+  ticketsModule,
+  birthdaysModule,
+  tempVoiceModule,
+  invitesModule,
+  statsModule,
+  socialsModule,
+]);
 
 /** A module list, ready to route: tests build one of their own. */
 export interface Registry {

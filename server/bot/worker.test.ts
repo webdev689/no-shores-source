@@ -38,10 +38,9 @@ test('worker: health names the version', async () => {
 test("commands: the bot's own /panel and every module's, each name once", () => {
   const names = commandsOf(registryOf([greeter])).map((command) => command.name);
   assert.deepEqual(names, ['panel', 'tag']);
-  assert.deepEqual(
-    commandsOf().map((command) => command.name),
-    ['panel'],
-  );
+  const every = commandsOf().map((command) => command.name);
+  assert.equal(every[0], 'panel');
+  assert.equal(new Set(every).size, every.length, 'no two modules answer one name');
 });
 
 test('interactions: a bad or stale signature is refused; a ping is answered; no key says it is not set up', async () => {
