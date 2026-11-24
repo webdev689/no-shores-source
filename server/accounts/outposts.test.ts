@@ -383,3 +383,46 @@ test("outpost asks and reads of an outpost's plot are limited", async () => {
   while ((await get('Ben', `/v1/outposts/${room}`))['error'] === undefined && read < 1_000) read++;
   assert.ok(read < 1_000, 'reads stop');
 });
+
+test('the horn answers its tier when it sounds and 0 once it has this week; a take lets go of earlier days', async () => {
+  const { ask, standAt, fund, guild, kept, accountOf, clock, deps } = await world();
+  await standAt('Ada');
+  await fund(6_000);
+  await ask('Ada', 'outpost/raise', { site: SITE, turn: 0 });
+  const { id } = await guild();
+  await deps.database
+    .prepare(
+      "INSERT INTO outpost_structures (guild_id, site, id, kind, tier, x, y, turn) VALUES (?1, ?2, 9, 'horn', 2, 0, 0, 0)",
+    )
+    .bind(id, SITE)
+    .run();
+  const room = outpostRoom(SITE, id);
+  const ada = await accountOf('Ada');
+  assert.equal(await kept.soundHorn(ada, room), 2);
+  assert.equal(await kept.soundHorn(ada, room), 0, 'sounded this week');
+  await deps.database
+    .prepare("INSERT INTO outpost_takes (account_id, day, stuff, taken) VALUES (?1, 1, 'island', 5)")
+    .bind(ada)
+    .run();
+  await deps.database.prepare(`UPDATE outposts SET stores = '{"island":40}', stores_at = ?1`).bind(clock.now).run();
+  await deps.database.prepare("UPDATE outpost_structures SET kind = 'camp', tier = 1 WHERE id = 9").run();
+  assert.equal(await kept.takeStores(ada, room, 'island', 3), 3);
+  const days = await deps.database.prepare('SELECT day FROM outpost_takes').all<{ day: number }>();
+  assert.equal(days.results.length, 1, "only today's kept");
+});
+
+test('a Counting House taken down settles its strongbox first, so what it earned stays to be emptied', async () => {
+  const { ask, standAt, fund, guild, kept, accountOf, clock, read } = await world();
+  await standAt('Ada');
+  await fund(20_000);
+  await ask('Ada', 'outpost/raise', { site: SITE, turn: 0 });
+  await ask('Ada', 'outpost/place', { site: SITE, kind: 'counting', x: 0, y: 0, turn: 0 });
+  const room = outpostRoom(SITE, (await guild()).id);
+  const ada = await accountOf('Ada');
+  await kept.deliver(ada, room, { id: 3, stuff: 'timber', amount: 40 });
+  await kept.deliver(ada, room, { id: 3, stuff: 'iron', amount: 20 });
+  clock.now += 3 * HOUR;
+  await standAt('Ada');
+  assert.equal((await ask('Ada', 'outpost/remove', { site: SITE, id: 3 })).status, 200);
+  assert.equal(((await read('Ada'))['outposts'] as { strongbox: number }[])[0]?.strongbox, 3 * 30);
+});

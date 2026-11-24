@@ -129,3 +129,16 @@ test('a founder who hands over the founding as they demote the same admin leaves
     assert.equal(founders?.count, 1, first);
   }
 });
+
+test('guild invites a month unanswered are let go as new ones are sent', async () => {
+  const { ask, deps, clock } = await people(['Ada', 'Ben', 'Cyra']);
+  await ask('Ada', 'guild/found', { name: 'Salt Kings', tag: 'SALT' });
+  await ask('Ada', 'guild/invite', { name: 'Ben' });
+  await deps.database
+    .prepare('UPDATE guild_invites SET created_at = ?1')
+    .bind(clock.now - 31 * 24 * 3_600_000)
+    .run();
+  assert.equal((await ask('Ada', 'guild/invite', { name: 'Cyra' })).status, 200);
+  const invites = await deps.database.prepare('SELECT account_id FROM guild_invites').all();
+  assert.equal(invites.results.length, 1, "only Cyra's");
+});
