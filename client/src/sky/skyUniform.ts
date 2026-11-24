@@ -8,6 +8,13 @@ export const LAMPS_MOST = 16;
 const NOISE_CELLS = 1024;
 const DAPPLE_CELL_M = 384;
 const PUDDLE_CELL_M = DAPPLE_CELL_M / 128;
+/** How deep a hollow of the puddles' noise (0 to 1) holds water once the ground is soaked: only the deepest few. */
+export const PUDDLE_DEEP = 0.76;
+/** The cells a ripple each spreads in, metres (a whole number of them to the puddles' wrap), and how often each ring starts again, a second. */
+const RIPPLE_CELL_M = 0.5;
+const RIPPLE_PER_S = 0.9;
+/** The world seconds the ripples' rings run on, wrapped so a float keeps their beat. */
+const RIPPLE_WRAP_S = 1000;
 const DRIFT_TO_DAPPLE = 20;
 export const WRAP_M = NOISE_CELLS * DAPPLE_CELL_M;
 /** The shelter grid's cells, four to a row of the uniform. */
@@ -165,16 +172,40 @@ fn sky_sheen(normal: vec3f, from_eye: vec3f, wet: f32) -> vec3f {
   return wet * (sky_state.horizon.rgb * glare * (0.3 + 0.7 * wet) + sky_state.key_light.rgb * glint * lift * 0.8);
 }
 
-// Where rain stands in puddles on flat ground at 'from_eye' with 'slope' (rise a metre): in the hollows a noise lays
-// out, only once the ground is soaked.
+// Where rain stands in puddles on flat ground at 'from_eye' with 'slope' (rise a metre): in the deepest hollows a noise
+// lays out, only once the ground is soaked, their shores ragged by a finer noise and sharp.
 fn sky_puddle(from_eye: vec3f, slope: f32) -> f32 {
   let soaked = smoothstep(0.45, 0.9, sky_state.ambient_sky.w);
   if (soaked <= 0.0) {
     return 0.0;
   }
   // The eye's place wrapped where the puddles' noise repeats, small enough that a float keeps their edges still.
-  let hollow = sky_noise((sky_state.puddle_place.xy + from_eye.xy) / ${PUDDLE_CELL_M.toFixed(1)});
-  return soaked * (1.0 - smoothstep(0.02, 0.06, slope)) * smoothstep(0.62 - 0.1 * soaked, 0.68 - 0.1 * soaked, hollow);
+  let place = (sky_state.puddle_place.xy + from_eye.xy) / ${PUDDLE_CELL_M.toFixed(1)};
+  // The finer noise is read turned off the grid, so its cells' lines never show as steps along a shore.
+  let turned = vec2f(0.8 * place.x - 0.6 * place.y, 0.6 * place.x + 0.8 * place.y);
+  let hollow = sky_noise(place) + 0.06 * (sky_noise(turned * 5.0 + vec2f(31.0, 11.0)) - 0.5);
+  let deep = ${PUDDLE_DEEP.toFixed(2)} - 0.03 * soaked;
+  return soaked * (1.0 - smoothstep(0.02, 0.06, slope)) * smoothstep(deep, deep + 0.025, hollow);
+}
+
+// Rings spreading on standing water where drops land as it rains, as the tilt (east, south) they give its mirror: a
+// ring a cell of the place, one in more cells the harder it falls, each growing and fading on its own beat.
+fn sky_ripple(from_eye: vec3f) -> vec2f {
+  let fall = sky_state.wind.w * (1.0 - smoothstep(0.3, 0.7, sky_state.ambient_ground.w));
+  if (fall <= 0.0) {
+    return vec2f(0.0);
+  }
+  let place = (sky_state.puddle_place.xy + from_eye.xy) / ${RIPPLE_CELL_M.toFixed(2)};
+  let cell = floor(place);
+  var hash = (u32(i32(cell.x) & 0xffff) * 0x8da6b343u) ^ (u32(i32(cell.y) & 0xffff) * 0xd8163841u);
+  hash = (hash ^ (hash >> 15u)) * 0x2c1b3c6du;
+  let draws = vec3f(f32(hash & 0x3ffu), f32((hash >> 10u) & 0x3ffu), f32((hash >> 20u) & 0x3ffu)) / 1024.0;
+  let age = fract(sky_state.puddle_place.w * ${RIPPLE_PER_S.toFixed(2)} + draws.z);
+  let out = place - cell - (vec2f(0.3) + 0.4 * draws.xy);
+  let reach = length(out);
+  let off_ring = (reach - 0.45 * age) / 0.035;
+  let ring = exp(-off_ring * off_ring) * (1.0 - age) * step(draws.z, fall);
+  return out / max(reach, 1e-4) * ring * 0.5;
 }
 
 // How much fresh snow lies on flat ground at 'height_m' over the sea, where 'slope' (rise a metre) lets it: the
@@ -228,6 +259,8 @@ export interface SkyLook {
   readonly drift: readonly [number, number];
   readonly driftNext: readonly [number, number];
   readonly driftFade: number;
+  /** The world's seconds the sky was read at, which the rain's ripples run on. */
+  readonly worldS: number;
   /** The place's latitude, radians: how high the pole the stars wheel about stands, due north. */
   readonly latitude: number;
   /** The moon's month, 0 new to a half full and back to 1. */
@@ -271,6 +304,7 @@ export const AFTERNOON: SkyLook = {
   drift: [0, 0],
   driftNext: [0, 0],
   driftFade: 0,
+  worldS: 0,
   latitude: 0.5,
   moonPhase: 0.5,
 };
@@ -307,7 +341,9 @@ export function skyNumbers(
     [look.sand, look.flash, look.stars, look.starTurn],
     [...look.drift, look.latitude, look.moonPhase],
     [...look.driftNext, look.driftFade, 0],
-    eye ? [wrapped(eye[0], PUDDLE_WRAP_M), wrapped(eye[1], PUDDLE_WRAP_M), eye[2], 0] : [0, 0, 0, 0],
+    eye
+      ? [wrapped(eye[0], PUDDLE_WRAP_M), wrapped(eye[1], PUDDLE_WRAP_M), eye[2], wrapped(look.worldS, RIPPLE_WRAP_S)]
+      : [0, 0, 0, 0],
     eye ? [shown.length, wrapped(eye[0]), wrapped(eye[1]), 1] : [shown.length, 0, 0, 0],
     shelterPlace,
     ...shown.flatMap((lamp) => [

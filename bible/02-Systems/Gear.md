@@ -120,7 +120,9 @@ number is one of [[Gear as Claude Shapes It]].
   fragments, 10 of the resource and 1 Essence, so an Atheric never costs less of anything to finish than a Legendary
   ([[Gear as Claude Shapes It]], [[The Balance and Economy Pass as Claude Shapes It]]). A resource is
   gathered at its island's nodes, each drawn as the resource itself
-  ([[Material Nodes Stand Where They Are Dressed, Worked by Holding E]]).
+  ([[Material Nodes Stand Where They Are Dressed, Worked by Holding E]]). In a patrol every node stands for everyone;
+  one a player gathers is spent for them alone and returns for them nine minutes later ([[Server]];
+  [[The Harbourmaster Stands in the Market, Rain Spares the Trees, and Patrol Nodes Always Stand]]).
 - **A kill's pay.** XP and Aurem are the foe's kind's as a Major at level 5 (Skirmisher 80 and 7, Archer 85 and 7,
   Swordsman 95 and 7, Brute 110 and 8, Captain 120 and 8), times its rank's health against a Major's (Minor 0.6,
   Elite 2.2, Miniboss 4, Boss 7; `rewards::RANK_PAY`), times (5 + its level) ÷ 10, times the voyage's tier. The kinds

@@ -42,8 +42,11 @@ test("each node stands its island resource's picture where the room stands it, g
     NODE_WIDTH_M.brineglass,
     'at one scale',
   );
-  assert.equal(gathered?.x, 30, 'gathered this turn');
-  assert.ok(resting?.x === 90 && resting.card === gathered?.card, 'resting its turn, it looks spent until it returns');
+  assert.equal(gathered?.x, 30, 'gathered by the player');
+  assert.ok(
+    resting?.x === 90 && resting.card === gathered?.card,
+    'not stood for the player, it looks spent until it returns',
+  );
   const whole = nodeCardsAt(places.slice(1, 2), { nodes: [{ index: 0, x: 0, y: 0, resource: 0 }], spent: [] }, () => 0);
   assert.ok(whole[0] && whole[0].card !== gathered?.card, 'a node gathered shows its picture gathered');
   assert.deepEqual(

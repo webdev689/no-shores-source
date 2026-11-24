@@ -87,6 +87,8 @@ const POINTS: &[(&str, &str, f64, f64)] = &[
     ("fish", "stall:fish", -58.0, -95.0),
     ("fruit", "stall:fruit", 58.0, -95.0),
     ("pots", "stall:pots", -136.0, -97.0),
+    ("harbour", "counter:harbourmaster", 82.0, -96.0),
+    ("chandlery", "counter:chandler", -82.0, -96.0),
     ("gate-w", "view:sealed-west", -115.0, -96.0),
     ("gate-e", "view:sealed-east", 115.0, -96.0),
     ("ww", "view:west-walk", -142.0, -40.0),
@@ -94,7 +96,7 @@ const POINTS: &[(&str, &str, f64, f64)] = &[
     ("ew-s", "", 140.0, -96.0),
     ("sy", "", 118.0, -128.0),
     ("tack", "counter:tack", 92.0, -130.0),
-    ("stair", "stair:top", 146.0, -134.0),
+    ("stair", "view:sealed-harbour", 146.0, -134.0),
     ("po-front", "", 0.0, -84.0),
     ("po-door", "", 0.0, -100.0),
     // The Hall: in by the door, down the aisles either side of the war table, through the columns' gaps.
@@ -209,6 +211,8 @@ const LINKS: &[(&str, &str)] = &[
     ("bw-145", "pots"),
     ("bw-70", "fish"),
     ("bw70", "fruit"),
+    ("bw95", "harbour"),
+    ("bw-95", "chandlery"),
     ("bw-120", "gate-w"),
     ("bw120", "gate-e"),
     ("bw0", "po-front"),
@@ -265,6 +269,7 @@ const POSTS: &[(Task, f64, f64, f64, Keep, &str)] = &[
     (Task::Idle, -142.0, -36.0, 270.0, Keep::Visited, "ww"),
     (Task::Idle, -115.0, -99.0, 180.0, Keep::Visited, "gate-w"),
     (Task::Idle, 115.0, -99.0, 180.0, Keep::Visited, "gate-e"),
+    (Task::Idle, 146.0, -131.0, 90.0, Keep::Visited, "stair"),
 ];
 
 /// A direction's bearing, radians clockwise from north: what a post's facing is.

@@ -1,6 +1,6 @@
-//! A patrol's land: its island's resource at its layout's resource places (each a pile of that resource), a third of
-//! them holding a node at once and the next third after a while, so a player can plan a route through them. Each
-//! player may gather each node once while it stands, holding E. It stands no camps of its own: its fights are its
+//! A patrol's land: its island's resource at its layout's resource places (each a pile of that resource), every one
+//! holding a node for everyone at once. A player gathers a node holding E; it is spent for them alone, standing still
+//! for everyone else, until it returns for them. It stands no camps of its own: its fights are its
 //! garrison's (`garrison.rs`), its public events' and the houses' roads' groups', and its dungeons lie behind its
 //! entrances (`entrances.rs`).
 
@@ -8,9 +8,9 @@ use crate::asks::{GATHER_GRACE_TICKS, GATHER_STIR_M, GATHER_TICKS};
 use crate::{PlayerId, ResourceNode, Room};
 use gear::Difficulty;
 
-/// How many groups of a patrol's nodes take turns, and how long each group stands (three minutes).
-pub const GROUPS: usize = 3;
-pub const ROTATE_TICKS: u64 = 60 * 180;
+/// How long a node a player gathered stays spent for them (nine minutes): the once in three turns of three minutes
+/// each that a node stood for a player when the nodes took turns.
+pub const RETURN_TICKS: u64 = 60 * 540;
 
 impl Room {
     /// Makes this node's room a patrol: `resource`'s nodes where its layout stands them (`places`, each on its
@@ -33,36 +33,38 @@ impl Room {
         self.raise_garrison();
     }
 
-    /// Whether a resource node stands now: in a patrol, only its group's turn; elsewhere, always.
-    #[must_use]
-    pub fn node_standing(&self, index: usize) -> bool {
-        !self.patrol || (self.clock / ROTATE_TICKS) as usize % GROUPS == index % GROUPS
-    }
-
-    /// The resource nodes standing that a player may still gather, each with its number.
+    /// The resource nodes a player may still gather, each with its number.
     pub fn nodes_for(&self, player: crate::PlayerId) -> impl Iterator<Item = (u8, &ResourceNode)> + '_ {
         let spent = self.players.get(&player).map(|found| found.spent.as_slice()).unwrap_or_default();
         self.resource_nodes.iter().enumerate().filter_map(move |(index, node)| {
             let number = u8::try_from(index).ok()?;
-            (self.node_standing(index) && !spent.contains(&number)).then_some((number, node))
+            (!spent.iter().any(|&(gathered, _)| gathered == number)).then_some((number, node))
         })
     }
 
-    /// Keeps a patrol going for a tick: when the nodes' turn passes, every player may gather again and is sent the
-    /// nodes now standing.
+    /// Keeps a patrol going for a tick: each node a player gathered `RETURN_TICKS` ago returns for them, and they are
+    /// sent the nodes they may gather now.
     pub(crate) fn keep_patrol(&mut self) {
-        if self.patrol && self.clock.is_multiple_of(ROTATE_TICKS) {
-            for found in self.players.values_mut() {
-                found.spent.clear();
+        if !self.patrol {
+            return;
+        }
+        let clock = self.clock;
+        let returned = |&(_, at): &(u8, u64)| clock.saturating_sub(at) >= RETURN_TICKS;
+        for found in self.players.values_mut() {
+            if found.spent.iter().any(returned) {
+                found.spent.retain(|spent| !returned(spent));
                 found.gear_changed = true;
             }
-            self.gathered.clear();
         }
+        self.gathered.retain(|_, nodes| {
+            nodes.retain(|spent| !returned(spent));
+            !nodes.is_empty()
+        });
     }
 
     /// Keeps each gather under way for a tick: one whose player may no longer gather it (`gather_refused`) or was hurt
     /// stops; one stepped off or let go of stops, unless within `GATHER_GRACE_TICKS` of its end, when it is gathered;
-    /// one held `GATHER_TICKS` gathers its node, spent for the player this turn.
+    /// one held `GATHER_TICKS` gathers its node, spent for the player until it returns.
     pub(crate) fn keep_gathering(&mut self) {
         let under_way: Vec<PlayerId> =
             self.players.iter().filter(|(_, found)| found.gathering.is_some()).map(|(&id, _)| id).collect();
@@ -84,13 +86,13 @@ impl Room {
             found.gathering = None;
             found.gear_changed = true;
             let Some(node) = self.resource_nodes.get(usize::from(gathering.node)).filter(|_| done) else { continue };
-            found.spent.push(gathering.node);
+            found.spent.push((gathering.node, self.clock));
             // On a sea island the node stays spent for the character until the day turns, in any room of it.
             if let Some(seed) = isle {
                 found.character.activity.gather_on(day, seed, gathering.node);
             }
             if let Some(owner) = &found.owner {
-                self.gathered.entry(owner.clone()).or_default().push(gathering.node);
+                self.gathered.entry(owner.clone()).or_default().push((gathering.node, self.clock));
             }
             let resource = node.resource;
             found.character.gather(usize::from(resource));
