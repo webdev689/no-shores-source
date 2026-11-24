@@ -9,7 +9,7 @@ import { type Mark, type PlacedMark, placeMarks } from '../overworld/overworldMa
 import type { Point2, Vec3 } from '../overworld/ground.ts';
 import { sideNodes } from '../overworld/islandView.ts';
 import type { ScreenMark } from './hud.ts';
-import { distanceText } from './hudLaw.ts';
+import { distanceText } from '../plus/compass.ts';
 import { HOSTILE_PREFIX, hostileLook, hostileMarks, hostileNote } from './seaHostiles.ts';
 import type { Landmass } from './landmass.ts';
 import { LOCKED_WORDS, portOf, socialLater, socialLocked } from './nodes.ts';

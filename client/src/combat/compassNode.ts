@@ -5,13 +5,13 @@ import {
   COMPASS,
   COMPASS_POINTS,
   compassPlace,
+  distanceText,
   markPlace,
   SHIP_MARK_COLOURS,
   type PlaceMark,
   type ShipMark,
   shipsMarked,
 } from '../plus/compass.ts';
-import { distanceText } from '../game/hudLaw.ts';
 import { motionReduced } from '../plus/kit.ts';
 import { TONES } from '../plus/tones.ts';
 import { blinkDark, diamondNode } from './publicBanner.ts';

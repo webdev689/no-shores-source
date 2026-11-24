@@ -6,7 +6,7 @@ import type { Point2 } from '../overworld/ground.ts';
 import { maskFromOutlines, planSeaRoute, type RouteRefusal, type SeaMask } from '../overworld/seaRoute.ts';
 import { PACE_DEFAULT, type Pace, secondsLeft, shipAt, stepPace, type Voyage, voyageOf } from '../overworld/voyage.ts';
 import type { Lies } from '../ships/swellPose.ts';
-import { distanceText } from './hudLaw.ts';
+import { distanceText } from '../plus/compass.ts';
 import { type KeptClear, detour } from './isleLaw.ts';
 import { AHEAD, clearAhead, HELM_TURN, turned } from './seaHelm.ts';
 import {

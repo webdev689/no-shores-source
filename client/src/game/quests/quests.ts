@@ -17,7 +17,7 @@ import type { Stack } from '../../ui/stack.ts';
 import type { Shot } from '../camera.ts';
 import type { Use } from '../footGear.ts';
 import type { ScreenMark } from '../hudMarks.ts';
-import { distanceText } from '../hudLaw.ts';
+import { distanceText } from '../../plus/compass.ts';
 import { HARBOURMASTER, keeperOf } from '../keepers.ts';
 import { rosterFor } from '../footRoom.ts';
 import { actorCards } from '../prologue/actors.ts';
