@@ -71,6 +71,7 @@ const saves = () => Promise.resolve(true);
 const settle = () => new Promise((done) => setTimeout(done, 0));
 const errand = (id: number, kind: Errand['kind'], more: Partial<Errand> = {}): Errand => ({
   id,
+  rid: `${ROOM}:77:3:${id}`,
   player: 3,
   account: 'salt',
   kind,
@@ -102,6 +103,22 @@ test('the plot stands as its boxes, and read again stands the new plot in place 
   assert.equal(door.stood, 2, 'each plot stood counted, for the snapshot');
 });
 
+test('a plot read again as it stands is not stood again, so the pages in the room read nothing more', async () => {
+  const door = doorOf();
+  let delivered = {};
+  const { accounts } = accountsOf({
+    plot: () => ({ ...plotOf(1), structures: [{ ...hall(1), spent: 0, delivered }] }),
+  });
+  const host = new OutpostHost(door, accounts, ROOM, GROUND, guarded, saves);
+  await host.read(0);
+  for (let read = 1; read <= 4; read++) (host.tick(read * READ_EVERY_MS), await settle());
+  assert.equal(door.stood, 1, 'read every half minute, stood once');
+  assert.equal(door.gates.length, 1);
+  delivered = { timber: 5 };
+  await host.read();
+  assert.equal(door.stood, 2, 'what was delivered changed the read');
+});
+
 test('a plot the accounts cannot read leaves the plot standing as it was', async () => {
   const door = doorOf();
   let broken = false;
@@ -126,7 +143,7 @@ test('an errand is asked again under its one id while the accounts throw, past e
     deposit: [new Error('blip'), 'already', 'refused', ...Array(6).fill(new Error('down')), 'moved'],
     deliver: [new Error('blip'), 6],
   });
-  const host = new OutpostHost(door, accounts, ROOM, GROUND, guarded, saves, 77, [1, 1, 1]);
+  const host = new OutpostHost(door, accounts, ROOM, GROUND, guarded, saves, [1, 1, 1]);
   door.waiting.push(errand(1, 'deposit', { amount: 40 }));
   await host.settled(3);
   door.waiting.push(errand(2, 'deposit', { amount: 30 }), errand(3, 'deposit', { amount: 20 }));
@@ -235,7 +252,7 @@ test('a deposit or delivery goes only once the character it was taken from is sa
     asked.push(['save', player]);
     return Promise.resolve(holds);
   };
-  const host = new OutpostHost(door, accounts, ROOM, GROUND, guarded, saving, 1, [1]);
+  const host = new OutpostHost(door, accounts, ROOM, GROUND, guarded, saving, [1]);
   door.waiting.push(errand(1, 'deposit', { amount: 40 }));
   await host.settled(3);
   assert.deepEqual(door.answered, [[1, null]], 'unsaved, given back whole');
@@ -250,14 +267,18 @@ test('a deposit or delivery goes only once the character it was taken from is sa
     [3, 2],
   ]);
   const order = asked.map(([ask]) => ask).filter((ask) => ask !== 'outpost');
-  assert.deepEqual(order, ['save', 'save', 'deliver', 'takeStores', 'save'], 'saved before a delivery, after a take');
+  assert.deepEqual(
+    order,
+    ['save', 'save', 'deliver', 'save', 'takeStores', 'save'],
+    'saved before a delivery and a take, and after a take',
+  );
 });
 
 test('an errand the accounts throw on is asked again under its id, never given back unanswered', async () => {
   assert.equal(AGAIN_WAITS_MS.at(-1), 10_000, 'every ten seconds at last');
   const door = doorOf();
   const { accounts, asked } = accountsOf({ deposit: [...Array(40).fill(new Error('down')), 'moved'] });
-  const host = new OutpostHost(door, accounts, ROOM, GROUND, guarded, saves, 1, [1]);
+  const host = new OutpostHost(door, accounts, ROOM, GROUND, guarded, saves, [1]);
   door.waiting.push(errand(1, 'deposit', { amount: 40 }));
   await host.settled(3);
   assert.deepEqual(door.answered, [[1, 40]], 'answered as the first try went through');

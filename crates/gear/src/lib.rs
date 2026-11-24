@@ -24,6 +24,7 @@ pub mod crew;
 pub mod dice;
 pub mod element;
 pub mod emblems;
+pub mod errand;
 pub mod factions;
 pub mod gate;
 pub mod grid;

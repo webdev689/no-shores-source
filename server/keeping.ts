@@ -13,10 +13,14 @@ import type { Claimed, Characters as Kept } from './accounts/characters.ts';
 import { guildKey } from './accounts/outpostStores.ts';
 import { weekOf } from '../client/src/game/guild/guildLaw.ts';
 import { NO_WAY_HERE } from './arrival.ts';
+import { askedAgain, carriedOf } from './outpostHost.ts';
 import { nodeRoom, runFull } from './roomNames.ts';
 
 /** What a room keeps characters with: claiming, saving and letting go, and a player's companions. */
-type Characters = Pick<Kept, 'look' | 'claim' | 'save' | 'release' | 'companions' | 'launched' | 'guild'>;
+type Characters = Pick<
+  Kept,
+  'look' | 'claim' | 'save' | 'release' | 'companions' | 'launched' | 'guild' | 'deposit' | 'deliver' | 'takeStores'
+>;
 
 /** Why a run's room sends a player away who is in no company of those kept in it. */
 export const ANOTHER_COMPANY = "This run is another company's.";
@@ -218,7 +222,8 @@ export class Keeper {
     // A new account's character is the one the room holds, given back so the room keeps it as any other.
     const own = claimed.body === null ? this.room.character(player) : null;
     if (own !== null) this.room.restoreCharacter(player, own);
-    const given = claimed.body === null || this.room.restoreCharacter(player, claimed.body);
+    const body = claimed.body === null ? null : await this.answered(claimed.account, claimed.body, here);
+    const given = body === null || this.room.restoreCharacter(player, body);
     if (!here() || !given || this.held.has(player)) {
       // Gone already, or kept as nothing this room can read: let it go untouched rather than save over it.
       await characters.release(claimed.account, holder, null).catch(() => false);
@@ -243,7 +248,7 @@ export class Keeper {
       holder,
       from: claimed.from,
       out: leftByWayOut(claimed.body),
-      changed: claimed.body === null,
+      changed: claimed.body === null || body !== claimed.body,
       savedAt: now(),
       saving: false,
       saved: claimed.body,
@@ -253,13 +258,30 @@ export class Keeper {
     return true;
   }
 
+  /** A claimed body with the outpost errand it carries answered: asked again under its id (the accounts answer as they
+   *  did), the answer written in for the room to settle as it reads the body (`gear::errand`), and the room that asked
+   *  it first given nothing (its save no longer holds, or the body it saves settled it). As kept when it carries none,
+   *  or the accounts do not answer: it is carried on, for this room's outpost to answer or the next room to ask. */
+  private async answered(account: string, body: string, here: () => boolean): Promise<string> {
+    const characters = this.characters;
+    const carried = carriedOf(account, body);
+    if (!characters || !carried) return body;
+    const answer = await this.tried(() => askedAgain(characters, carried), here);
+    if (answer === undefined) return body;
+    const kept = JSON.parse(body) as { errand: object };
+    return JSON.stringify({ ...kept, errand: { ...kept.errand, answer } });
+  }
+
   /** Tells the room a kept player's guild as the accounts tell it now, and at an outpost notes whether they are still
    *  its member, so one who left it no longer admits their company; nothing if they cannot be reached. A guild that
-   *  changed since the room was last told reads the tag over their head again (none for no guild), and at an outpost
-   *  one who is no longer its member, and in no company with one here, is sent away as a stranger arriving would be. */
+   *  changed since the room was last told reads the tag over their head again (none for no guild). In the outpost's
+   *  own room, one whose own guild changed away from it (they left, or were removed) is sent away unless one of their
+   *  company who is a member plays here; a guest let in with a member stays until they leave, and a guild dungeon's
+   *  run sends no one away, as leaving it brings them back to the outpost, where its gate judges them. */
   private async tellGuild(player: number, held: Held): Promise<void> {
     const told = await this.characters?.guild(held.account).catch(() => undefined);
     if (told === undefined) return;
+    const wasMember = this.members.has(held.account);
     if (this.guild !== null && told !== null && guildKey(told.id) === this.guild) this.members.add(held.account);
     else this.members.delete(held.account);
     if (this.held.get(player) !== held) return;
@@ -272,8 +294,8 @@ export class Keeper {
       const looked = await this.characters?.look(held.token).catch(() => null);
       if (looked?.account === held.account && here()) this.room.tag(player, looked.tag ?? '');
     }
-    if (this.guild !== null && !this.members.has(held.account) && (await this.outsider(held.account, here)) && here())
-      this.lost(player, ANOTHER_GUILD);
+    const left = wasMember && !this.members.has(held.account) && !this.company;
+    if (left && (await this.outsider(held.account, here)) && here()) this.lost(player, ANOTHER_GUILD);
   }
 
   /** Why this room turns a character away ('' when it lets it in): its gate, in a run its four accounts and its

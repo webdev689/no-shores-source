@@ -176,6 +176,7 @@ const REFUSALS: Readonly<Record<number, string>> = {
   163: 'Wait for your last ask.',
   164: 'Only the founder or an admin sounds the War Horn.',
   165: 'No War Horn stands here yet.',
+  166: 'Too many asks. Wait a while.',
 };
 
 /** What a room's answer to an ask says: nothing for done. */

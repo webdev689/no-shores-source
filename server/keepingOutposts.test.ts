@@ -18,6 +18,9 @@ function accounts(guilds: Record<string, string>, companies: Record<string, stri
     save: () => asked(true),
     release: () => asked(true),
     launched: () => asked(true),
+    deposit: () => asked('moved' as const),
+    deliver: () => asked(0),
+    takeStores: () => asked(0),
     companions: (account: string) => asked(companies[account] ?? [account]),
     guild: (account: string) => {
       const id = guilds[account];
@@ -223,4 +226,44 @@ test('a save now saves the character as the room holds it, after the save under 
   up = false;
   assert.equal(await keeper.saveNow(1), false, 'the accounts down');
   assert.equal(await keeper.saveNow(9), false, 'no one kept');
+});
+
+test('a guest let in with a member stays at the outpost after the member steps out or reloads', async () => {
+  const room = roomOf();
+  const sent: [number, string | undefined][] = [];
+  const keeper = new Keeper(
+    accounts({ ada: GUILD }, { ben: ['ben', 'ada'], ada: ['ada', 'ben'] }),
+    room,
+    ROOM,
+    (player, why) => sent.push([player, why]),
+    () => Promise.resolve(),
+  );
+  keeper.forGuild('0a1b2c3d4e5f60718293a4b5c6d7e8f9');
+  assert.equal(await joins(keeper, room, 1, 'ada'), true);
+  assert.equal(await joins(keeper, room, 2, 'ben'), true, 'in a company with Ada');
+  await keeper.leave(1);
+  room.held.delete(1);
+  for (let round = 1; round <= 3; round++) (await keeper.due(round * GUILD_EVERY_MS), await settle());
+  assert.deepEqual(sent, [], 'Ben stays until he leaves');
+});
+
+test('a member who leaves the guild alone in its guild dungeon’s run is not sent out of it', async () => {
+  const guilds: Record<string, string> = { ada: GUILD };
+  const room = roomOf();
+  const sent: [number, string | undefined][] = [];
+  const keeper = new Keeper(
+    accounts(guilds, {}),
+    room,
+    `${ROOM}--run-abcd1234`,
+    (player, why) => sent.push([player, why]),
+    () => Promise.resolve(),
+  );
+  keeper.forCompany().forGuild('0a1b2c3d4e5f60718293a4b5c6d7e8f9');
+  assert.equal(await joins(keeper, room, 1, 'ada'), true);
+  await keeper.due(GUILD_EVERY_MS);
+  await settle();
+  delete guilds['ada'];
+  await keeper.due(2 * GUILD_EVERY_MS);
+  await settle();
+  assert.deepEqual(sent, [], 'leaving the run brings her to the outpost, whose gate judges her');
 });

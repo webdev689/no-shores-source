@@ -318,7 +318,7 @@ export class RoomHost extends DurableObject<Env> {
     if (named.guild !== null && !ground) return false;
     const ready =
       text !== null && (named.dungeon === null ? this.room.openNode(text) : this.room.openDungeon(text, named.dungeon));
-    if (ready && ground && named.guild !== null && this.room.outpost(named.guild, ground.muster)) {
+    if (ready && ground && named.guild !== null && this.room.outpost(named.guild, ground.muster, name)) {
       const guard = <T>(call: () => T, fallback: T) => this.guarded(call, fallback);
       const saved = (player: number) => this.keeper?.saveNow(player) ?? Promise.resolve(false);
       this.outpost = new OutpostHost(this.room, this.env.ACCOUNTS, name, ground, guard, saved);

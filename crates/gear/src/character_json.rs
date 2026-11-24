@@ -88,6 +88,7 @@ impl Character {
         character.lore.retain(|key| seen.insert(key.clone()));
         character.horses_from_coats();
         character.earn_due();
+        character.settle_carried();
         Some(character)
     }
 }

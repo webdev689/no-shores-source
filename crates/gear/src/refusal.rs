@@ -107,4 +107,6 @@ pub enum Refusal {
     AskInFlight = 162,
     HornNotLeader = 163,
     NoHorn = 164,
+    /// Past the account's limit on outpost asks, which the accounts answer so: never a refusal of the ask itself.
+    TooManyAsks = 165,
 }

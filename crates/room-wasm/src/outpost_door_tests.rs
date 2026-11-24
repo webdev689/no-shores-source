@@ -9,7 +9,8 @@ use serde_json::json;
 fn member(aurem: u32) -> u32 {
     let spawn: Vec<u8> = [0.0_f64, 0.0].iter().flat_map(|value| value.to_le_bytes()).collect();
     assert!(crate::open(&spawn));
-    assert!(outpost(json!({ "key": "abcdef010000", "muster": [20.0, 0.0] }).to_string().as_bytes()));
+    let told = json!({ "key": "abcdef010000", "muster": [20.0, 0.0], "ids": "node-x--guild-abcdef010000:9" });
+    assert!(outpost(told.to_string().as_bytes()));
     let player = room_join();
     assert!(gear_door::own(player, b"salt"));
     let told = json!({ "id": "ABCDEF01-0000", "done": [false, false, false, false], "beforeTheWeek": true });
@@ -40,7 +41,9 @@ fn a_deposit_is_held_as_an_errand_for_the_host_and_its_refusal_gives_the_aurem_b
     let player = member(300);
     ask(player, room::OutpostAsk::Deposit { count: 120 });
     let taken: Value = serde_json::from_str(&errands()).unwrap();
-    assert_eq!(taken, json!([{ "id": 1, "player": player, "account": "salt", "kind": "deposit", "amount": 120 }]));
+    let rid = format!("node-x--guild-abcdef010000:9:{player}:1");
+    let written = json!({ "id": 1, "rid": rid, "player": player, "account": "salt", "kind": "deposit", "amount": 120 });
+    assert_eq!(taken, json!([written]));
     assert_eq!(errands(), "[]", "taken once");
     let aurem = || on_land(|room| room.player(player).map(|found| found.character.materials.aurem)).flatten();
     assert_eq!(aurem(), Some(180));

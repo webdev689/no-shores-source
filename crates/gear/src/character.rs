@@ -226,6 +226,9 @@ pub struct Character {
     /// The body as it last left a room, given back on a return (`left.rs`); none before it first leaves one.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub left: Option<crate::left::Left>,
+    /// The outpost's errand it carries while the accounts have not answered it (`errand.rs`).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub errand: Option<crate::errand::Carried>,
     /// Keys this room does not know, from a later room's save, written back as read, so a room rolled back to
     /// this one or later keeps them.
     #[serde(flatten)]
@@ -323,6 +326,7 @@ impl Character {
             guild: crate::guild::GuildWeek::default(),
             boons: crate::guild::Boons::default(),
             left: None,
+            errand: None,
             unknown: UnknownKeys::new(),
         };
         let pieces = [
