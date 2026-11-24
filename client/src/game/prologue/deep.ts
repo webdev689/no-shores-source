@@ -106,9 +106,12 @@ export class Deep implements Beat {
     this.done = true;
   }
 
-  /** The wreck's fires are put out with the wreck: the shore has none. */
+  /** The wreck's fires are put out with the wreck, and the heart stops, however the deep was left: the shore has
+   *  neither. */
   leave(): void {
-    this.story.stage.parts.flames.clear();
+    const { flames, ambience } = this.story.stage.parts;
+    flames.clear();
+    ambience.heartbeat(false);
   }
 
   /** The player's body: under the surface and going down. */
