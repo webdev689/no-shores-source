@@ -148,7 +148,8 @@ export interface RoomDoor {
    *  the story they already hold in the room carried forward, or at sea the sea's tier; empty when it may enter, in a
    *  fleet, or for no character. */
   shut(player: number, kept: string | null): string;
-  /** Notes the account that keeps a player's character, so what they gathered this turn follows a rejoin. */
+  /** Notes the account that keeps a player's character, so the nodes it gathered, still spent for it, follow a
+   *  rejoin. */
   own(player: number, account: string): boolean;
   /** Names a player by their account's username, for the plate others read over their head; false on no land. */
   name(player: number, name: string): boolean;

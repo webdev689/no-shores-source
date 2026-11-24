@@ -353,6 +353,7 @@ a decision is a record. How to add one: [[Recording a Decision]].
 - [[A Player Logs Back In Where They Left the Overworld or a Social Space]]
 - [[Revives, Respawns and Relogs as Claude Shapes Them]]
 - [[A Foe's Plain Swing Takes Seven Eighths of Its Time]]
+- [[The Harbourmaster Stands in the Market, Rain Spares the Trees, and Patrol Nodes Always Stand]]
 
 ## Replaced
 

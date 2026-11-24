@@ -402,7 +402,7 @@ impl Room {
     }
 
     /// Why `player` may not gather `node` now, as its answer's code, wherever they stand: it does not stand for them
-    /// (its turn has not come, or they gathered it), they are down, on horseback, or full of its resource.
+    /// (they gathered it and it has not returned for them), they are down, on horseback, or full of its resource.
     pub(crate) fn gather_refused(&self, player: PlayerId, node: u8) -> Option<u8> {
         let spot = self.resource_nodes.get(usize::from(node))?;
         let (Some(fighter), Some(found)) = (self.fighter(player), self.players.get(&player)) else {
@@ -415,7 +415,7 @@ impl Room {
             .as_ref()
             .and_then(|isle| isle.landed.as_ref())
             .is_none_or(|landed| found.owner.as_ref().is_some_and(|owner| landed.contains_key(owner)));
-        if found.spent.contains(&node) || !self.node_standing(usize::from(node)) || dead || !landed {
+        if found.spent.iter().any(|&(spent, _)| spent == node) || dead || !landed {
             Some(OUT_OF_REACH)
         } else if found.mounted {
             Some(MOUNTED)
