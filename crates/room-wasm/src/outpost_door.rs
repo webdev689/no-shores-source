@@ -8,11 +8,14 @@ use room::{Errand, Room, What};
 use serde::Deserialize;
 use serde_json::{Value, json};
 
-/// What makes a room an outpost, as the host writes it: the guild's key and the muster ground's middle.
+/// What makes a room an outpost, as the host writes it: the guild's key, the muster ground's middle, and what begins
+/// the accounts' id of each errand.
 #[derive(Deserialize)]
 struct Told {
     key: String,
     muster: [f64; 2],
+    #[serde(default)]
+    ids: String,
 }
 
 fn on_land<T>(ask: impl FnOnce(&mut Room) -> T) -> Option<T> {
@@ -27,13 +30,14 @@ fn on_land<T>(ask: impl FnOnce(&mut Room) -> T) -> Option<T> {
 /// no room on land.
 pub fn outpost(bytes: &[u8]) -> bool {
     let Ok(told) = serde_json::from_slice::<Told>(bytes) else { return false };
-    on_land(|room| room.open_outpost(&told.key, told.muster)).is_some()
+    on_land(|room| room.open_outpost(&told.key, told.muster, &told.ids)).is_some()
 }
 
-/// An errand as the host reads it: its number, player and account, its kind ('deposit', 'deliver', 'take', 'horn' or
-/// 'changed'), and for the first three its amount, for a delivery its structure, and for both its material's name.
+/// An errand as the host reads it: its number, the accounts' id for it, player and account, its kind ('deposit',
+/// 'deliver', 'take', 'horn' or 'changed'), and for the first three its amount, for a delivery its structure, and for
+/// both its material's name.
 fn errand_json(errand: &Errand) -> Value {
-    let mut written = json!({ "id": errand.id, "player": errand.player, "account": errand.account });
+    let mut written = json!({ "id": errand.id, "rid": errand.rid, "player": errand.player, "account": errand.account });
     let fields = match errand.what {
         What::Deposit(amount) => json!({ "kind": "deposit", "amount": amount }),
         What::Deliver { structure, stuff, amount } => {

@@ -12,7 +12,7 @@ import { type DiscordApp, NONCE, backTo, callback, start, taken, ticketFor } fro
 import { INVITE_MS } from './companies.ts';
 import { bindsAsk } from './binds.ts';
 import { socialAsk, socialRead } from './social.ts';
-import { outpostAllowed } from './outpostStores.ts';
+import { outpostAllowed, plotReadAllowed } from './outpostStores.ts';
 import { USERNAME, refusalOf, skeleton } from './names.ts';
 import { NO_ONES_PASSWORD, hashOf, hashPassword, passwordMatches, randomToken } from './secrets.ts';
 
@@ -30,7 +30,7 @@ const PASSWORD_MOST = 200;
 const MINUTE = 60_000;
 /** How many times one address may ask each of these within its window, and new guests be made from everywhere at
  *  once; one username be tried from one address, and from everywhere at once; and one account take a Discord ticket.
- *  Outpost asks and plot reads count with the rooms' errands in `OUTPOST_LIMIT` (`outpostStores.ts`). */
+ *  Outpost asks count with the rooms' errands in `OUTPOST_LIMIT` (`outpostStores.ts`), plot reads apart in one alike. */
 const LIMITS = {
   guest: { most: 10, window: 60 * MINUTE },
   guests: { most: 500, window: 60 * MINUTE },
@@ -128,10 +128,13 @@ async function social(request: Request, deps: Deps, route: string, now: number):
   if (account === LAPSED) return refused(401, LAPSED);
   if (!account) return refused(401, 'Not signed in.');
   if (account.username === null) return refused(409, 'Add a username in Settings to use the Roster.');
-  // Outpost asks and reads of a plot each write or read a plot's rows, so they are limited too.
-  const outpost = read?.startsWith('outposts/') || asked?.startsWith('outpost/');
-  if (outpost && !(await outpostAllowed(database, account.id, now)))
-    return refused(429, 'Too many asks. Wait a while.');
+  // Outpost asks and reads of a plot each write or read a plot's rows, so they are limited too, each apart.
+  const allowed = read?.startsWith('outposts/')
+    ? plotReadAllowed
+    : asked?.startsWith('outpost/')
+      ? outpostAllowed
+      : null;
+  if (allowed && !(await allowed(database, account.id, now))) return refused(429, 'Too many asks. Wait a while.');
   if (read) {
     const answer = await socialRead(database, account.id, read, now);
     return json(answer.body, answer.status);

@@ -10,8 +10,7 @@ import { companionsOf, launchedFor } from './companies.ts';
 import { type Db, SESSION_IDLE_MS } from './database.ts';
 import { creditGuild, guildTold } from './guildWeeks.ts';
 import type { Stuff } from '../../client/src/game/guild/outpostLaw.ts';
-import { deliver, deposit, outpostFor, soundHorn, takeStores } from './outpostStores.ts';
-import type { Moved } from './treasury.ts';
+import { type Deposited, deliver, deposit, outpostFor, soundHorn, takeStores } from './outpostStores.ts';
 import { guildTagOf, present, usernameOf } from './people.ts';
 import { hashOf } from './secrets.ts';
 
@@ -59,7 +58,7 @@ export interface Characters {
   /** What a room is told of a player's guild (`guildWeeks.ts`), null in none. */
   guild(account: string): ReturnType<typeof guildTold>;
   /** What an outpost's room asks for its players (`outpostStores.ts`). */
-  deposit(account: string, amount: number, rid: string): Promise<Moved>;
+  deposit(account: string, amount: number, rid: string): Promise<Deposited>;
   deliver(
     account: string,
     room: string,

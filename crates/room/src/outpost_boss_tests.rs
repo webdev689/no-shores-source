@@ -18,7 +18,7 @@ fn seen(before_the_week: bool) -> GuildSeen {
 
 fn sounded(tier: u32) -> (Room, PlayerId) {
     let mut room = Room::new(Vec::new(), (0.0, 0.0));
-    room.open_outpost(&guild_key(GUILD), [30.0, 0.0]);
+    room.open_outpost(&guild_key(GUILD), [30.0, 0.0], "node-x--guild-y:1");
     let player = room.join().expect("a room with space");
     room.guild_player(player, Some(seen(true)));
     let found = room.players.get_mut(&player).expect("in");

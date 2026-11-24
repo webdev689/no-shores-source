@@ -1,16 +1,18 @@
 /**
  * The host's side of a guild's outpost's room (`node-<site>--guild-<key>`): it stands the guild's plot as blocks, as
- * the page draws it (`outpostPlaces.ts` `plotBoxes`), anew each time the plot is read again (every half minute besides,
- * so a plot changed or abandoned from anywhere stands here soon after), and runs the errands the room holds for its
- * players' asks with the accounts. A deposit or delivery goes only once the character it was taken from is saved, so
- * no claim elsewhere finds it whole, and a take's gift is saved at once. The accounts keep each errand's answer under
- * its own id, so one they throw on is asked again under it until they answer, and is never done or given back twice. A
- * leaving player's last save waits a while for their errands (`settled`); the room keeps a later answer.
+ * the page draws it (`outpostPlaces.ts` `plotBoxes`), anew each time the plot read again differs from what stands (read
+ * every half minute besides, so a plot changed or abandoned from anywhere stands here soon after), and runs the errands
+ * the room holds for its players' asks with the accounts. A deposit, delivery or take goes only once the character,
+ * carrying the errand, is saved, so a claim elsewhere finds it carried and settles it there; a take's gift is saved at
+ * once. The accounts keep each errand's answer under its own id, so one they throw on is asked again under it until
+ * they answer, and is never done or given back twice. A leaving player's last save waits a while for their errands
+ * (`settled`); an answer after it goes to the room that holds the character next (`keeping.ts`).
  */
 
 import manifest from '../content/modules/modules.json' with { type: 'json' };
 import type { Characters } from './accounts/characters.ts';
 import { keptBanner } from './accounts/guildFace.ts';
+import { LIMITED } from './accounts/outpostStores.ts';
 import type { Stuff } from '../client/src/game/guild/outpostLaw.ts';
 import { gateOf, gateTier } from '../client/src/game/guild/delveRoom.ts';
 import type { Plot } from '../client/src/game/guild/outpostLaw.ts';
@@ -19,6 +21,8 @@ import type { Errand, RoomDoor } from './roomDoor.ts';
 
 /** What the host asks the accounts for an outpost. */
 export type OutpostAccounts = Pick<Characters, 'outpost' | 'deposit' | 'deliver' | 'takeStores' | 'soundHorn'>;
+/** An errand that takes from or gives to the character, as the room writes it, or as its character carries it. */
+type Taking = Pick<Errand, 'rid' | 'account' | 'kind' | 'amount' | 'structure' | 'stuff'>;
 type OutpostDoor = Pick<
   RoomDoor,
   'outpostErrands' | 'outpostAnswered' | 'outpostStood' | 'outpostGate' | 'outpostParting' | 'standBlock' | 'takeBlock'
@@ -54,9 +58,50 @@ export function gateDoor(plot: Plot, ground: Ground, staff: string): readonly [n
   return [x, y, Math.atan2(east, -south) + placed.turn];
 }
 
+/** What the accounts answer an errand that takes or gives, asked under its id, at the room its id begins with: how
+ *  many they moved, used or gave, or `LIMITED`; they answer as they did each time. Throws when they cannot be reached. */
+export async function askedAgain(
+  accounts: Pick<OutpostAccounts, 'deposit' | 'deliver' | 'takeStores'>,
+  errand: Taking,
+): Promise<number> {
+  const { account, amount = 0, rid } = errand;
+  const room = rid.split(':')[0] ?? '';
+  const stuff = (errand.stuff ?? 'timber') satisfies Stuff;
+  if (errand.kind === 'deliver')
+    return accounts.deliver(account, room, { id: errand.structure ?? 0, stuff, amount }, rid);
+  if (errand.kind === 'take') return accounts.takeStores(account, room, stuff, amount, rid);
+  const moved = await accounts.deposit(account, amount, rid);
+  return moved === 'refused' ? 0 : moved === 'limited' ? LIMITED : amount;
+}
+
+/** The errand a kept character's body carries, as the room writes errands (`gear::errand::Carried`); null for none,
+ *  for one already answered, and for a body that is no character. */
+export function carriedOf(account: string, body: string): Taking | null {
+  type Stuffed = { readonly stuff: { readonly ship?: Stuff }; readonly amount: number };
+  let carried: {
+    rid?: unknown;
+    answer?: unknown;
+    what?: { deposit?: number; deliver?: Stuffed & { structure: number }; take?: Stuffed };
+  };
+  try {
+    carried = (JSON.parse(body) as { errand?: typeof carried }).errand ?? {};
+  } catch {
+    return null;
+  }
+  const { rid, what } = carried;
+  if (typeof rid !== 'string' || carried.answer !== undefined || !what) return null;
+  if (typeof what.deposit === 'number') return { rid, account, kind: 'deposit', amount: what.deposit };
+  const given = what.deliver ?? what.take;
+  if (!given) return null;
+  const stuff = given.stuff.ship ?? 'island';
+  const kind = what.deliver ? 'deliver' : 'take';
+  return { rid, account, kind, amount: given.amount, stuff, structure: what.deliver?.structure };
+}
+
 export class OutpostHost {
-  /** The blocks the plot stands as now. */
+  /** The blocks the plot stands as now, and the read they stand from with its gate; null before any stood. */
   private stood: Box[] = [];
+  private standing: string | null = null;
   /** The read under way, and whether another was asked meanwhile. */
   private reading: Promise<void> | null = null;
   private again = false;
@@ -73,8 +118,6 @@ export class OutpostHost {
   private readonly guarded: <T>(call: () => T, fallback: T) => T;
   /** Saves a player's character as the room holds it now; whether the save holds. */
   private readonly saved: (player: number) => Promise<boolean>;
-  /** When this host began, which makes its deposits' ids its own though the room's count starts again. */
-  private readonly began: number;
   private readonly waits: readonly number[];
 
   constructor(
@@ -84,7 +127,6 @@ export class OutpostHost {
     ground: Ground,
     guarded: <T>(call: () => T, fallback: T) => T,
     saved: (player: number) => Promise<boolean>,
-    began = Date.now(),
     waits: readonly number[] = AGAIN_WAITS_MS,
   ) {
     this.door = door;
@@ -93,7 +135,6 @@ export class OutpostHost {
     this.ground = ground;
     this.guarded = guarded;
     this.saved = saved;
-    this.began = began;
     this.waits = waits;
   }
 
@@ -114,15 +155,19 @@ export class OutpostHost {
     return this.reading;
   }
 
-  /** Stands the plot as the accounts keep it now, taking what was stood before; nothing changes if they cannot say. */
+  /** Stands the plot as the accounts keep it now, taking what was stood before, when it differs from what stands:
+   *  each stand makes every page in the room read the plot again. Nothing changes if they cannot say. */
   private async stand(): Promise<void> {
     const outpost = await this.accounts.outpost(this.room);
     const staff = outpost ? keptBanner(outpost.banner, outpost.name).staff : '';
+    const gate = outpost ? gateDoor(outpost.plot, this.ground, staff) : null;
+    const standing = JSON.stringify([outpost, gate]);
+    if (standing === this.standing) return;
+    this.standing = standing;
     const boxes = outpost ? plotBoxes(outpost.plot, this.ground, staff) : [];
     for (const box of this.stood) this.guarded(() => this.door.takeBlock(box), false);
     for (const box of boxes) this.guarded(() => this.door.standBlock(box), false);
     this.stood = boxes;
-    const gate = outpost ? gateDoor(outpost.plot, this.ground, staff) : null;
     this.guarded(() => this.door.outpostGate(gate), false);
     this.guarded(() => this.door.outpostStood(), false);
   }
@@ -147,10 +192,10 @@ export class OutpostHost {
     }
   }
 
-  /** Runs an errand and gives its answer to the room. What the room took is saved before it is asked; unsaved, it is
-   *  surely not taken, and given back whole. */
+  /** Runs an errand and gives its answer to the room. What the room took, and the errand the character carries, are
+   *  saved before it is asked; unsaved, it is surely not asked, and given back whole. */
   private async run(errand: Errand): Promise<void> {
-    const takes = errand.kind === 'deposit' || errand.kind === 'deliver';
+    const takes = errand.kind === 'deposit' || errand.kind === 'deliver' || errand.kind === 'take';
     const answer = takes && !(await this.saved(errand.player)) ? null : await this.answer(errand);
     this.guarded(() => this.door.outpostAnswered(errand.id, answer), false);
     if (errand.kind === 'take' && (answer ?? 0) > 0) await this.saved(errand.player);
@@ -160,25 +205,9 @@ export class OutpostHost {
   /** What the accounts answer an errand: how many they moved, used or gave, or the horn's tier; null for no errand
    *  they answer. */
   private answer(errand: Errand): Promise<number | null> {
-    const { account, amount = 0 } = errand;
-    const stuff = (errand.stuff ?? 'timber') satisfies Stuff;
-    const rid = `${this.room}:${this.began}:${errand.player}:${errand.id}`;
-    switch (errand.kind) {
-      case 'deposit':
-        return this.retried(async () =>
-          (await this.accounts.deposit(account, amount, rid)) === 'refused' ? 0 : amount,
-        );
-      case 'deliver':
-        return this.retried(() =>
-          this.accounts.deliver(account, this.room, { id: errand.structure ?? 0, stuff, amount }, rid),
-        );
-      case 'take':
-        return this.retried(() => this.accounts.takeStores(account, this.room, stuff, amount, rid));
-      case 'horn':
-        return this.retried(() => this.accounts.soundHorn(account, this.room, rid));
-      default:
-        return Promise.resolve(null);
-    }
+    if (errand.kind === 'horn')
+      return this.retried(() => this.accounts.soundHorn(errand.account, this.room, errand.rid));
+    return errand.kind === 'changed' ? Promise.resolve(null) : this.retried(() => askedAgain(this.accounts, errand));
   }
 
   /** An errand asked again under its one id while the accounts throw, until they answer. */

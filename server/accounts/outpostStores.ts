@@ -5,7 +5,8 @@
  * taken from, and both when a structure that fills them changes. A room asks on a player's behalf what only the
  * accounts can do: put Aurem into the treasury, deliver materials to a structure being built, take from the stores (so
  * many a member a game day), sound the War Horn (once a guild a week), and read the plot its outpost stands as. Its
- * errands count in the account's outpost limit, as the page's asks do.
+ * errands count in the account's outpost limit, as the page's asks do; past it each answers so (`LIMITED`), never as a
+ * refusal. Plot reads count apart, as every page in an outpost's room reads its plot each time it stands anew.
  */
 
 import { weekOf } from '../../client/src/game/guild/guildLaw.ts';
@@ -31,6 +32,11 @@ export const OUTPOST_LIMIT = { most: 600, window: 60 * 60_000 } as const;
 /** Whether one more outpost ask or errand of the account passes its limit; counts it either way. */
 export const outpostAllowed = (database: Db, account: string, now: number) =>
   within(database, `outpost:${account}`, OUTPOST_LIMIT, now);
+/** Whether one more read of an outpost's plot by the account passes its own limit, as many an hour as asks. */
+export const plotReadAllowed = (database: Db, account: string, now: number) =>
+  within(database, `plot:${account}`, OUTPOST_LIMIT, now);
+/** What a room's delivery, take or horn answers past the account's outpost limit (a deposit answers `limited`). */
+export const LIMITED = -3;
 
 /** A guild's key, as its outposts' rooms are named: its id's 32 hexadecimal digits, so no two guilds share one. */
 export const guildKey = (guild: string) => guild.replaceAll('-', '').toLowerCase();
@@ -170,7 +176,7 @@ async function memberOf(database: Db, account: string) {
 }
 
 /** The answer kept for a room's errand under its id, or null for none kept: asked again, it is answered the same. */
-async function keptAnswer(database: Db, rid: string | undefined): Promise<number | null> {
+export async function keptAnswer(database: Db, rid: string | undefined): Promise<number | null> {
   if (rid === undefined) return null;
   const row = await database
     .prepare('SELECT answer FROM outpost_errands WHERE rid = ?1')
@@ -179,17 +185,28 @@ async function keptAnswer(database: Db, rid: string | undefined): Promise<number
   return row?.answer ?? null;
 }
 
-/** An errand's write with its answer kept under the room's id for it: the work's statements, then the answer, written
- *  only when the work's last statement changed a row. Answers a day old go first. */
+/** The statement that keeps an errand's answer under the room's id for it, written only when the statement before it
+ *  changed a row. Kept for good: a character carries an errand it was not answered until a room holds it again, which
+ *  may be long after, and asked again then it must answer as it did. */
+export const keepAnswer = (database: Db, rid: string, answer: number, now: number) =>
+  database
+    .prepare('INSERT INTO outpost_errands (rid, answer, at) SELECT ?1, ?2, ?3 WHERE changes() = 1')
+    .bind(rid, answer, now);
+
+/** A refusal of a room's errand kept under its id, the first answer kept winning, so asked again by any room it is
+ *  refused alike: a refusal one room gives back on is never done later for another still asking. */
+async function refused(database: Db, rid: string | undefined, answer: number, now: number): Promise<number> {
+  if (rid === undefined) return answer;
+  await database
+    .prepare('INSERT OR IGNORE INTO outpost_errands (rid, answer, at) VALUES (?1, ?2, ?3)')
+    .bind(rid, answer, now)
+    .run();
+  return (await keptAnswer(database, rid)) ?? answer;
+}
+
+/** An errand's write with its answer kept under the room's id for it: the work's statements, then the answer. */
 function withAnswer(database: Db, rid: string | undefined, now: number, work: Statement[], answer: number) {
-  if (rid === undefined) return work;
-  return [
-    database.prepare('DELETE FROM outpost_errands WHERE at < ?1').bind(now - DAY_MS),
-    ...work,
-    database
-      .prepare('INSERT INTO outpost_errands (rid, answer, at) SELECT ?1, ?2, ?3 WHERE changes() = 1')
-      .bind(rid, answer, now),
-  ];
+  return rid === undefined ? work : [...work, keepAnswer(database, rid, answer, now)];
 }
 
 /** An errand's answer from its write: `answer` when its work's last statement changed a row (its kept answer, last in a
@@ -206,25 +223,35 @@ async function answerOf(
   return (await keptAnswer(database, rid)) ?? otherwise();
 }
 
+/** How a room's deposit went: moved, moved already under its id, refused, or past the account's outpost limit. */
+export type Deposited = Moved | 'limited';
+
 /** Puts a member's Aurem into the treasury of the guild whose outpost room took it from them, once for the room's id,
  *  which begins with the room's name; refused when they are no longer of that guild. */
-export async function deposit(database: Db, account: string, amount: number, rid: string, now: number): Promise<Moved> {
+export async function deposit(
+  database: Db,
+  account: string,
+  amount: number,
+  rid: string,
+  now: number,
+): Promise<Deposited> {
+  // One asked again once moved is answered so before anything since (a guild left, the limit), so the room never gives
+  // back what was kept; its answer is kept with the move, never with the ledger's line, which newer lines prune.
+  const deposited = (kept: number): Deposited => (kept === 0 ? 'refused' : kept === LIMITED ? 'limited' : 'already');
+  const kept = await keptAnswer(database, rid);
+  if (kept !== null) return deposited(kept);
   // A room names its errands by its own name first, so the outpost's guild is read from the id: a player who changed
   // guilds since the room last heard puts nothing into the other.
   const outpost = outpostOf(rid.split(':')[0] ?? '');
   const member = await memberOf(database, account);
-  if (!outpost || !member || guildKey(member.guild_id) !== outpost.key) return 'refused';
-  if (!Number.isInteger(amount) || amount <= 0) return 'refused';
-  const ledgerId = `room:${rid}`;
-  // One asked again once moved is answered so even past the limit, so the room never gives back what was kept.
-  const kept = await database
-    .prepare('SELECT 1 AS yes FROM guild_ledger WHERE guild_id = ?1 AND rid = ?2')
-    .bind(member.guild_id, ledgerId)
-    .first<{ yes: number }>();
-  if (kept) return 'already';
-  if (!(await outpostAllowed(database, account, now))) return 'refused';
-  const moved = await move(database, member.guild_id, { account, kind: 'deposit', amount, rid: ledgerId, now });
-  return moved === 'stale' ? 'refused' : moved;
+  if (!outpost || !member || guildKey(member.guild_id) !== outpost.key || !Number.isInteger(amount) || amount <= 0)
+    return deposited(await refused(database, rid, 0, now));
+  if (!(await outpostAllowed(database, account, now))) return deposited(await refused(database, rid, LIMITED, now));
+  const moving = { account, kind: 'deposit', amount, rid: `room:${rid}`, now };
+  const moved = await move(database, member.guild_id, moving, [], keepAnswer(database, rid, amount, now));
+  if (moved === 'moved' || moved === 'already') return moved;
+  // Refused, or stale as the same errand moved meanwhile under its id: answered as kept, else refused and kept so.
+  return deposited(await refused(database, rid, 0, now));
 }
 
 /** Delivers a member's materials to a structure being built at the outpost their room is: answers how many it used, the
@@ -242,8 +269,8 @@ export async function deliver(
   if (kept !== null) return kept;
   const outpost = outpostOf(room);
   const member = await memberOf(database, account);
-  if (!outpost || !member || guildKey(member.guild_id) !== outpost.key) return 0;
-  if (!(await outpostAllowed(database, account, now))) return 0;
+  if (!outpost || !member || guildKey(member.guild_id) !== outpost.key) return refused(database, rid, 0, now);
+  if (!(await outpostAllowed(database, account, now))) return refused(database, rid, LIMITED, now);
   const row = await database
     .prepare(
       `SELECT kind, tier, building, delivered FROM outpost_structures WHERE guild_id = ?1 AND site = ?2 AND id = ?3`,
@@ -251,10 +278,10 @@ export async function deliver(
     .bind(member.guild_id, outpost.site, given.id)
     .first<{ kind: string; tier: number; building: number; delivered: string }>();
   const needs = row && row.building > 0 ? kindOf(row.kind)?.tiers[row.building - 1]?.materials : undefined;
-  if (!row || !needs) return 0;
+  if (!row || !needs) return refused(database, rid, 0, now);
   const delivered = JSON.parse(row.delivered) as Partial<Record<Stuff, number>>;
   const used = Math.max(0, Math.min(given.amount, (needs[given.stuff] ?? 0) - (delivered[given.stuff] ?? 0)));
-  if (used === 0) return 0;
+  if (used === 0) return refused(database, rid, 0, now);
   const after = { ...delivered, [given.stuff]: (delivered[given.stuff] ?? 0) + used };
   const whole = (Object.entries(needs) as [Stuff, number][]).every(([stuff, needed]) => (after[stuff] ?? 0) >= needed);
   const settle =
@@ -283,7 +310,8 @@ export async function deliver(
       row.building,
     );
   const work = settle ? [database.prepare(settle.sql('1')).bind(...settle.values), update] : [update];
-  return answerOf(database, rid, await database.batch(withAnswer(database, rid, now, work, used)), used);
+  const written = await database.batch(withAnswer(database, rid, now, work, used));
+  return answerOf(database, rid, written, used, () => refused(database, rid, 0, now));
 }
 
 /** Takes up to `amount` of a material from the stores of the outpost a member's room is, within what they may take a
@@ -302,13 +330,13 @@ export async function takeStores(
   if (kept !== null) return kept;
   const outpost = outpostOf(room);
   const member = await memberOf(database, account);
-  if (!outpost || !member || guildKey(member.guild_id) !== outpost.key) return 0;
-  if (!(await outpostAllowed(database, account, now))) return 0;
+  if (!outpost || !member || guildKey(member.guild_id) !== outpost.key) return refused(database, rid, 0, now);
+  if (!(await outpostAllowed(database, account, now))) return refused(database, rid, LIMITED, now);
   const row = await database
     .prepare('SELECT stores, stores_at FROM outposts WHERE guild_id = ?1 AND site = ?2')
     .bind(member.guild_id, outpost.site)
     .first<{ stores: string; stores_at: number }>();
-  if (!row) return 0;
+  if (!row) return refused(database, rid, 0, now);
   const filled = storesNow(
     await plotOf(database, member.guild_id, outpost.site),
     JSON.parse(row.stores),
@@ -321,15 +349,31 @@ export async function takeStores(
     .bind(account, day, stuff)
     .first<{ taken: number }>();
   const give = Math.max(0, Math.min(amount, filled.stores[stuff] ?? 0, STORES_TAKE_A_DAY - (taken?.taken ?? 0)));
-  if (give === 0) return 0;
+  if (give === 0) return refused(database, rid, 0, now);
   const after = JSON.stringify({ ...filled.stores, [stuff]: (filled.stores[stuff] ?? 0) - give });
+  // The day's take is counted across the guild's outposts, so the stores give only while it holds in the write: a take
+  // at another outpost meanwhile is in the count it reads.
   const work = [
     database.prepare('DELETE FROM outpost_takes WHERE account_id = ?1 AND day < ?2').bind(account, day),
     database
       .prepare(
-        'UPDATE outposts SET stores = ?3, stores_at = ?4 WHERE guild_id = ?1 AND site = ?2 AND stores = ?5 AND stores_at = ?6',
+        `UPDATE outposts SET stores = ?3, stores_at = ?4 WHERE guild_id = ?1 AND site = ?2 AND stores = ?5
+         AND stores_at = ?6 AND ?9 + COALESCE((SELECT taken FROM outpost_takes WHERE account_id = ?7 AND day = ?8
+         AND stuff = ?10), 0) <= ?11`,
       )
-      .bind(member.guild_id, outpost.site, after, filled.at, row.stores, row.stores_at),
+      .bind(
+        member.guild_id,
+        outpost.site,
+        after,
+        filled.at,
+        row.stores,
+        row.stores_at,
+        account,
+        day,
+        give,
+        stuff,
+        STORES_TAKE_A_DAY,
+      ),
     database
       .prepare(
         `INSERT INTO outpost_takes (account_id, day, stuff, taken) SELECT ?1, ?2, ?3, ?4 WHERE changes() = 1
@@ -337,7 +381,8 @@ export async function takeStores(
       )
       .bind(account, day, stuff, give),
   ];
-  return answerOf(database, rid, await database.batch(withAnswer(database, rid, now, work, give)), give);
+  const written = await database.batch(withAnswer(database, rid, now, work, give));
+  return answerOf(database, rid, written, give, () => refused(database, rid, 0, now));
 }
 
 /** Sounds the War Horn of the outpost a member's room is, once a guild a week, by its founder or an admin: answers its
@@ -352,7 +397,7 @@ export async function soundHorn(database: Db, account: string, room: string, now
   const ranked = (asker: typeof member) =>
     outpost !== null && asker !== null && guildKey(asker.guild_id) === outpost.key && asker.rank <= 1;
   if (!outpost || !member || !ranked(member)) return -1;
-  if (!(await outpostAllowed(database, account, now))) return -3;
+  if (!(await outpostAllowed(database, account, now))) return LIMITED;
   const horn = (await plotOf(database, member.guild_id, outpost.site)).structures.find(
     (standing) => standing.kind === 'horn',
   );

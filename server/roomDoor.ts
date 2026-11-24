@@ -202,8 +202,9 @@ export interface RoomDoor {
   standBlock(block: CourseBlock): boolean;
   /** A page alone: takes a block from the course at once, as a way opening; false when the room holds no such block. */
   takeBlock(block: CourseBlock): boolean;
-  /** Makes the open node's room a guild's outpost: its guild's key and its muster ground's middle; false off land. */
-  outpost(key: string, muster: readonly [number, number]): boolean;
+  /** Makes the open node's room a guild's outpost: its guild's key, its muster ground's middle, and its name, which
+   *  with when it opened begins the accounts' id of each errand, so no two openings share one; false off land. */
+  outpost(key: string, muster: readonly [number, number], room: string): boolean;
   /** The errands the outpost's players' asks hold for the host since it last took them (`outpostHost.ts`). */
   outpostErrands(): Errand[];
   /** The accounts' answer to an errand: how many they moved, used or gave, or the horn's answer (its tier, or 0, -1
@@ -222,6 +223,8 @@ export interface RoomDoor {
 /** An errand an outpost's room holds for its host, as `room-wasm`'s outpost door writes it. */
 export interface Errand {
   readonly id: number;
+  /** The accounts' id for it, which the character carries until it is answered. */
+  readonly rid: string;
   readonly player: number;
   readonly account: string;
   readonly kind: 'deposit' | 'deliver' | 'take' | 'horn' | 'changed';
@@ -485,7 +488,8 @@ export function startRoomDoor(module: WebAssembly.Module): RoomDoor {
       exports.room_stand_block(minX, minY, maxX, maxY, top, bottom) === 1,
     takeBlock: ({ minX, minY, maxX, maxY, top, bottom }) =>
       exports.room_take_block(minX, minY, maxX, maxY, top, bottom) === 1,
-    outpost: (key, muster) => openWith(exports.room_outpost, JSON.stringify({ key, muster })),
+    outpost: (key, muster, room) =>
+      openWith(exports.room_outpost, JSON.stringify({ key, muster, ids: `${room}:${Date.now()}` })),
     outpostErrands: () => JSON.parse(new TextDecoder().decode(take(exports.room_outpost_errands()))) as Errand[],
     outpostAnswered: (id, answer) =>
       exports.room_outpost_answered(

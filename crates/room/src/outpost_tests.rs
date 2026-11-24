@@ -15,7 +15,7 @@ const GUILD: &str = "5A1T0000-1111-2222-3333-444455556666";
 fn outpost() -> (Room, PlayerId) {
     let mut room = Room::new(Vec::new(), (0.0, 0.0));
     room.island = Some("continent-1");
-    room.open_outpost(&guild_key(GUILD), [30.0, 0.0]);
+    room.open_outpost(&guild_key(GUILD), [30.0, 0.0], "node-x--guild-y:1");
     let player = room.join().expect("a room with space");
     let seen = GuildSeen { id: GUILD.to_owned(), standing: Standing::default(), boons: Boons::default() };
     room.guild_player(player, Some(seen));
@@ -182,7 +182,7 @@ fn a_player_has_one_ask_with_the_accounts_at_a_time_and_a_take_of_nothing_is_ref
 fn the_horn_s_refusals_are_each_its_own() {
     let (mut room, player) = outpost();
     let answers = [(0, Refusal::HornSounded), (-1, Refusal::HornNotLeader), (-2, Refusal::NoHorn)];
-    for (answer, refusal) in answers.into_iter().chain([(-3, Refusal::OutpostTrouble)]) {
+    for (answer, refusal) in answers.into_iter().chain([(-3, Refusal::TooManyAsks)]) {
         ask(&mut room, player, OutpostAsk::Horn);
         let errand = room.outpost_errands().remove(0);
         room.outpost_answered(errand.id, Some(answer));
@@ -192,30 +192,42 @@ fn the_horn_s_refusals_are_each_its_own() {
 }
 
 #[test]
-fn an_answer_after_the_player_left_is_given_at_their_account_s_next_claim_here() {
+fn an_errand_that_takes_or_gives_is_carried_by_the_character_until_it_is_answered() {
+    let (mut room, player) = outpost();
+    ask(&mut room, player, OutpostAsk::Deposit { count: 200 });
+    let deposit = room.outpost_errands().remove(0);
+    assert_eq!(deposit.rid, format!("node-x--guild-y:1:{player}:{}", deposit.id), "the room's own id for it");
+    let carried = room.players[&player].character.errand.clone().expect("carried");
+    assert_eq!((carried.rid.as_str(), carried.what), (deposit.rid.as_str(), What::Deposit(200)));
+    let saved = room.players[&player].character.to_json();
+    assert!(saved.contains(&deposit.rid), "saved with what it took");
+    room.outpost_answered(deposit.id, Some(50));
+    assert_eq!(room.players[&player].character.errand, None, "settled, carried no more");
+    ask(&mut room, player, OutpostAsk::Horn);
+    assert_eq!(room.players[&player].character.errand, None, "the horn takes and gives nothing");
+}
+
+#[test]
+fn an_answer_after_the_player_left_is_given_nowhere_here_as_their_character_carries_it_on() {
     let (mut room, player) = outpost();
     ask(&mut room, player, OutpostAsk::Deposit { count: 200 });
     let deposit = room.outpost_errands().remove(0);
     room.leave(player);
-    assert!(room.outpost_answered(deposit.id, Some(50)), "kept for them");
-    let other = room.join().expect("a room with space");
-    assert!(room.own(other, "pepper"));
     let back = room.join().expect("a room with space");
+    assert!(room.own(back, "salt"));
     let aurem = room.players[&back].character.materials.aurem;
-    assert!(room.own(back, "salt"));
-    assert_eq!(room.players[&back].character.materials.aurem, aurem + 150, "what the treasury did not take");
-    assert!(room.own(back, "salt"));
-    assert_eq!(room.players[&back].character.materials.aurem, aurem + 150, "given once");
-    let seen = GuildSeen { id: GUILD.to_owned(), standing: Standing::default(), boons: Boons::default() };
-    room.guild_player(back, Some(seen));
-    ask(&mut room, back, OutpostAsk::Deposit { count: 100 });
-    let deposit = room.outpost_errands().remove(0);
-    room.leave(back);
-    let again = room.join().expect("a room with space");
-    assert!(room.own(again, "salt"));
-    let aurem = room.players[&again].character.materials.aurem;
-    assert!(room.outpost_answered(deposit.id, Some(0)));
-    assert_eq!(room.players[&again].character.materials.aurem, aurem + 100, "back already, given at once");
+    assert!(room.outpost_answered(deposit.id, Some(50)));
+    assert_eq!(room.players[&back].character.materials.aurem, aurem, "a character that does not carry it");
+}
+
+#[test]
+fn a_character_carrying_an_errand_from_another_room_asks_nothing_more_until_it_is_settled() {
+    let (mut room, player) = outpost();
+    let what = What::Deposit(10);
+    room.players.get_mut(&player).expect("in").character.errand =
+        Some(gear::errand::Carried { rid: "elsewhere".to_owned(), what, answer: None });
+    assert_eq!(ask(&mut room, player, OutpostAsk::Deposit { count: 5 }), answer_code(Err(Refusal::AskInFlight)));
+    assert!(room.outpost_errands().is_empty());
 }
 
 #[test]
@@ -240,14 +252,18 @@ fn the_same_account_joining_again_while_its_errand_settles_takes_it_over_and_is_
     let (mut room, player) = outpost();
     ask(&mut room, player, OutpostAsk::Deposit { count: 200 });
     let deposit = room.outpost_errands().remove(0);
+    let saved = room.players[&player].character.to_json();
     let again = room.join().expect("a room with space");
     assert!(!room.own(again, "salt"), "a second tab while the first plays");
     assert!(room.outpost_parting(player));
+    // Its claim finds the body saved before the errand went, which carries it.
+    assert!(room.restore_character(again, &saved));
     assert!(room.own(again, "salt"), "the first is leaving");
     let aurem = room.players[&again].character.materials.aurem;
     assert!(room.outpost_answered(deposit.id, Some(50)));
     assert_eq!(room.players[&again].character.materials.aurem, aurem + 150, "given back to the one it is now");
     assert_eq!(room.players[&player].owner, None, "the leaving one keeps none of it");
+    assert!(!room.outpost_answered(deposit.id, Some(50)), "answered once");
     let mut plain = Room::new(Vec::new(), (0.0, 0.0));
     assert!(!plain.outpost_parting(0), "no outpost");
 }

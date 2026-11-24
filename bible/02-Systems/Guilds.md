@@ -84,8 +84,8 @@ ranks are the Roster's as well ([[Accounts]], "The Roster").
   player is in (ask 75): it pays a guild package, as a faction's (a Vestige at their level, Rare or now and then
   Legendary, and 1,000 Aurem), once a week each, to a member who was in the guild before the week turned. A guild
   bounty is claimed ashore. A claim judged by what was read for another week, or in the ten seconds after the week
-  turns over a record of the week before (whose last count is saved meanwhile), answers "The guild’s books
-  could not be reached. Try again."
+  turns over a record of the week before (whose last count is saved meanwhile), answers "The guild's books are
+  busy. Try again in a moment."
 - **The Guild tab** (`client/src/game/guild/`), drawn as the owner's picture of Destiny 2's clan screen: the standard at
   the left at whole multiples of its cells; the name whole (on a second line where it is long) and tag, its members, its
   motto and description; the week with when it turns; the level as a diamond on a rule filled toward the next, with the

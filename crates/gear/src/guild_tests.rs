@@ -169,6 +169,20 @@ fn the_horn_s_and_the_guild_dungeon_s_packages_go_only_to_members_from_before_th
 }
 
 #[test]
+fn a_standing_read_last_week_says_its_member_joined_before_this_week_turned() {
+    let mut character = Character::starting();
+    character.xp = crate::power::xp_for_level(12);
+    // Joined during last week, read before this week's word reached the room.
+    let last_week = Standing { before_the_week: false, ..DONE };
+    assert_eq!(character.claim_horn_package(WEEK + 1, last_week, &DICE), Ok(()));
+    assert_eq!(character.claim_delve_package(WEEK + 1, last_week, &DICE), Ok(()));
+    let unread = Standing { week: None, ..last_week };
+    let mut other = Character::starting();
+    other.xp = crate::power::xp_for_level(12);
+    assert_eq!(other.claim_horn_package(WEEK + 1, unread, &DICE), Err(Refusal::JoinedThisWeek), "no week read");
+}
+
+#[test]
 fn a_bounty_claim_judged_by_another_week_s_standing_waits_for_the_room_to_be_told_again() {
     let mut character = Character::starting();
     character.xp = crate::power::xp_for_level(12);

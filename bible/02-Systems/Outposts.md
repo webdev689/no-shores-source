@@ -99,14 +99,17 @@ outpost there plays it in a room of its own, `node-<site>--guild-<key>`, apart f
   heads, and lets a member at an outpost put Aurem in, saying why when the treasury cannot hold it ([[Interface]]).
 - **The room.** Each guild plays its outpost at a site in a room of its own, `node-<site>--guild-<key>`, the key its
   whole id; the bare site is nobody's ([[Server]], "An outpost's room"). Its members come in, and anyone in a company
-  with a member there; one who leaves the guild while there, in no such company, is sent out as a stranger arriving
-  would be. The host stands the plot's boxes as the room's blocks (`outpostHost.ts`), and stands them anew when a
-  member changes the plot, a delivery raises a structure, and every 30 s besides; an outpost abandoned stands nothing
-  within that time, its players left on the site's bare ground until they go. The snapshot counts each plot stood, so
-  the page reads it again. Putting Aurem in, delivering, taking from the stores and sounding the horn are asked of the room,
-  which takes what is given at once, saves the character so taken, and asks the accounts as an errand under an id of
-  its own: asked again, the accounts answer as they did, so nothing is done or given back twice; it is asked again
-  until they answer. A player has one such ask with the accounts at a time.
+  with a member there; a guest so let in stays until they leave. Only one whose own guild changed away from it (they
+  left, or were removed) is sent out of the outpost's own room, unless one of their company who is a member is there;
+  its guild dungeon's run sends no one out. The host stands the plot's boxes as the room's blocks (`outpostHost.ts`),
+  and stands them anew when what it reads of the plot changed: a member changes the plot, a delivery, and a read
+  every 30 s besides; an outpost abandoned stands nothing within that time, its players left on the site's bare
+  ground until they go. The snapshot counts each plot stood, so the page reads it again. Putting Aurem in,
+  delivering, taking from the stores and sounding the horn are asked of the room, which takes what is given at once,
+  saves the character so taken, carrying the errand, and asks the accounts under an id of its own: asked again, the
+  accounts answer as they did, so nothing is done or given back twice; it is asked again until they answer. What
+  comes back reaches the character once wherever it went meanwhile: the room that next holds it asks again and gives
+  it there. A player has one such ask with the accounts at a time.
 - **The guild boss.** The War Horn, sounded once a week by the founder or an admin (the accounts answer its tier, 0
   when it sounded this week, -1 for one who may not sound it, -2 when none stands at a tier, -3 past the account's
   outpost limit), calls a High Assessor and four Majors to the muster ground beyond the plot, at the level of the
@@ -130,13 +133,15 @@ outpost there plays it in a room of its own, `node-<site>--guild-<key>`, apart f
   site they stand at, what they took from the stores this game day (`taken`) and whether the horn sounded this week
   (`hornSounded`); `GET /v1/outposts/<room>` gives anyone signed in the plot and banner a room stands, or null where
   the guild raised none, so a member's company draws it too ([[Accounts]]). A player stands at an outpost only while
-  its room holds their character. Outpost asks, plot reads and the rooms' errands are 600 an hour an account.
+  its room holds their character. Outpost asks and the rooms' errands are 600 an hour an account, past which an errand
+  is given back as "Too many asks. Wait a while."; plot reads are 600 an hour of their own.
 
 ## Limits
 
 - No upkeep: each guild has its own ground, so none is hoarded.
 - The guild boss is lost if everyone leaves its room before it falls.
 - Materials delivered to a structure taken down are spent.
-- An errand the accounts keep failing is asked again for as long as its room lives, and that player's outpost asks
-  wait on it until they join again ([[Server]], "Limits").
+- An errand the accounts keep failing is asked again for as long as its room lives, and is carried by the character
+  until a room that holds it is answered; that player's outpost asks wait on it until then ([[Server]], "An outpost's
+  room").
 - A member can push older ledger lines out with many small deposits; each line names who moved it.

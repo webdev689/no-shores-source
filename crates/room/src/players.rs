@@ -523,7 +523,6 @@ impl Room {
         found.gear_changed = true;
         self.give_casting_back(player, owner);
         self.give_body_back(player, owner);
-        self.outpost_owed(player, owner);
         self.tell_landed(player);
         self.own_part(player);
         true
