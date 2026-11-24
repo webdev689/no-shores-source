@@ -73,6 +73,9 @@ code:
   - server/bot/modules/stats.ts#statsModule
   - server/bot/modules/socials.ts#socialsWith
   - server/bot/migrations/20261124130200_engagement.sql
+  - server/bot/migrations/20261125100000_clock_indexes.sql
+  - server/bot/migrations/20261125110000_bot_ban_asks.sql
+  - server/bot/migrations/20261125130000_feeds.sql
   - server/bot/modules/game.ts#gameModule
   - server/bot/law/gameShape.ts#GAME_SHAPE
   - server/accounts/linked.ts#linkedCharacter
@@ -111,18 +114,23 @@ tables come with a migration named by its UTC time.
 Every act goes through one path (`moderate`): Discord's own permission of whoever asks, role order on the target, the
 bot's own permission before a member is told of a kick or a ban, then Discord, a numbered case in `mod_cases`, the
 member's direct message and the case log. A warning can set off the step its count names. The clock lifts temporary
-bans, and tries one the bot may not lift again an hour later. Purge, slow mode, lock and unlock act on the channel.
+bans, and tries one the bot may not lift again an hour later. A ban or an unban made by hand in Discord ends the
+member's ban cases, so the clock never lifts a ban the bot did not set; the bot tells its own apart by the asks it
+writes to `bot_ban_asks` before asking Discord. Purge, slow mode, lock and unlock act on the channel.
 
 **Logs** posts edits and deletions with the words the Gateway's cache kept, joins with the account's age, leaves with
 the roles held, role and nickname changes, voice moves, and channels, roles and bans made or deleted.
 
 **Auto-mod** keeps Discord's own AutoMod rules for blocked words, word lists, mentions and spam in step on each save,
-its own named `No Shores: ...`, and leaves rules made by hand alone. It checks each message from a member without
-Manage Messages for invites, links, capitals, emoji, floods and repeats, deletes one that breaks a filter, and warns or
-times out through moderation.
+its own named `No Shores: ...`, and leaves rules made by hand alone. It checks each message, and the new words of each
+edit, from a member without Manage Messages for invites, links (judged by the host a browser opens; an allowed site
+counts with its subdomains, never as part of another name), capitals, emoji, floods and repeats. It deletes each
+message that breaks a filter, and warns or times out through moderation once a breach: for a minute after, more
+breaks of that filter are only deleted.
 
 **Raid guard** counts joins in the Gateway object's memory. Enough inside the window starts raid mode, kept in
-`raid_mode` so a restart does not end it: joiners are reported, timed out or kicked, and the verification level is
+`raid_mode` so a restart does not end it: joiners are reported (one post each in the alert channel), timed out or
+kicked, and the verification level is
 raised and given back when the clock ends it. Very new accounts can be dealt with at any time.
 
 ## Community modules
@@ -137,7 +145,9 @@ raised and given back when the clock ends it. Very new accounts can be dealt wit
   resets; a level a gift reaches gives its reward only if the giver could give that role. The website reads the
   public board at `/v1/public/levels/<server>`: names and standing, never a user id.
 - **Role menus** post buttons, a list or reactions from which members pick roles: any number, one at a time, or
-  kept once given. Publishing again edits the same message, and only the roles a menu offers ever move.
+  kept once given. Publishing again edits the same message, and only the roles a menu offers ever move. A press is
+  answered privately once Discord has acted, naming any role it refused. Each menu, like each announcement, has a name
+  of its own.
 - **Tags** answer a saved message to the prefix in chat or to `/tag`, which offers names as they are typed. A tag can
   be kept to some roles.
 - **Announcements** post a message in up to ten channels, now from the panel or on a schedule in UTC (once, hourly,
@@ -154,17 +164,25 @@ raised and given back when the clock ends it. Very new accounts can be dealt wit
 - **Starboard**: a message with enough of the chosen emoji is shown again on the board, its count kept current, and
   taken down when it falls below. The author's own star counts only where the settings say.
 - **Tickets**: a button opens a channel only the member, the staff roles and the bot see, one ticket at a time up to
-  the setting. Closing it posts its messages as a file in the transcript channel and deletes the channel.
+  the setting. Closing it posts its messages as a file in the transcript channel and deletes the channel; if the
+  transcript cannot be read or posted, the ticket stays open and the closer is told why. A ticket whose channel is
+  deleted by hand is closed.
   `/ticket add` and `remove` let staff change who is in it.
 - **Birthdays**: `/birthday set` keeps a day; at the setting's hour (UTC) the bot posts the message and gives the
   day's role, taken back the next day. 29 February is kept on the 28th in other years.
 - **Voice rooms**: joining the hub makes the member a room of their own and moves them in; an empty room is deleted,
   as is one no one could be moved into, or one left empty while the bot was away.
-- **Invites**: each join is matched to the invite whose use count rose; `/invites` and the panel's table count them.
+- **Invites**: each join is matched to the one invite whose use count rose by one since the counts were read with the
+  module on; a join no single invite explains, or the first after the module is turned on or saved, is credited to no
+  one. `/invites` and the panel's table count them.
 - **Stat channels**: every ten minutes, a counter's channel is renamed to show members, roles or channels, only when
-  the name changed.
-- **Feeds**: every ten minutes each YouTube channel or https RSS or Atom feed is read, at most 512 KB and 50 items.
-  The first read marks the place; later reads post up to five new items, their titles shown as typed.
+  the name changed; a text channel's name is compared as Discord folds it, by its letters and numbers.
+- **Feeds**: every ten minutes the YouTube channels and https RSS or Atom feeds are read, four at a time for at most
+  three minutes; feeds a run does not reach are read first in the next. Each read takes at most 512 KB and 50 items. No
+  address on the bot's own machine or a private network is read, and a feed is followed only through redirects to
+  https addresses that are neither. The first read marks the place; later reads post up to five new items, their
+  titles shown as typed. Each feed keeps its place per channel, so two channels can follow one feed, and an item's
+  link is posted only as an http or https address.
 
 ## The game module
 
