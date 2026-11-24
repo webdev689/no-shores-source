@@ -216,7 +216,7 @@ export class GuildPage {
         direction: 'column',
         gap: 10,
         children: [
-          detailsNode(context, face, context.holds, this.ask.bind(this)),
+          detailsNode(context, face, context.holds, this.ask.bind(this), () => this.back()),
           this.said !== '' && words(this.said, 1, INK.answer, { wrap: true }),
         ],
       };
@@ -289,7 +289,9 @@ export class GuildPage {
         const hall = outpost.plot.structures.find((standing) => standing.kind === 'hall');
         const kind = kindOf('hall');
         const named = hall && kind ? tierName(kind, hall.tier) : 'Hall';
-        return words(`${this.siteOf(outpost.site).name} · ${named}${outpost.here ? ' · here' : ''}`, size, INK.word);
+        return words(`${this.siteOf(outpost.site).name} · ${named}${outpost.here ? ' · here' : ''}`, size, INK.word, {
+          ellipsis: true,
+        });
       }),
     };
   }

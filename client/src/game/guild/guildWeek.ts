@@ -52,10 +52,10 @@ function bountyNode(
   const claimable = claim !== null && bounty.done && !bounty.claimed;
   if (claimable && ui.clicked(id)) claim(slot);
   const beside: Node = bounty.claimed
-    ? words('Claimed', 1, INK.faint)
+    ? words('Claimed', size, INK.faint)
     : claimable
-      ? pressNode(id, 'Claim', 'primary', '', 1, { padding: [5, 10] })
-      : words(`${counted(bounty.count)} / ${counted(bounty.target)}`, 1, INK.faint);
+      ? pressNode(id, 'Claim', 'primary', '', size, { padding: [5, 10] })
+      : words(`${counted(bounty.count)} / ${counted(bounty.target)}`, size, INK.faint);
   return {
     width: 'grow',
     direction: 'column',
@@ -64,7 +64,7 @@ function bountyNode(
       checkNode(bounty.done, bounty.name, beside, size),
       {
         padding: [0, 0, 0, 20],
-        children: [words(bounty.words, 1, bounty.together ? TONES.brassHi : INK.faint, { wrap: true })],
+        children: [words(bounty.words, size, bounty.together ? TONES.brassHi : INK.faint, { wrap: true })],
       },
     ],
   } satisfies Node;
@@ -86,11 +86,11 @@ export function bountiesNode(
     gap: 8,
     children: [
       ...(face.bounties ?? []).map((bounty, slot) => bountyNode(ui, bounty, slot, size, late || atSea ? null : claim)),
-      late && words('Claims open to you next week.', 1, INK.faint),
+      late && words('Claims open to you next week.', size, INK.faint),
       !late &&
         atSea &&
         (face.bounties ?? []).some((bounty) => bounty.done && !bounty.claimed) &&
-        words('Claim a done bounty ashore.', 1, INK.faint),
+        words('Claim a done bounty ashore.', size, INK.faint),
     ],
   };
 }

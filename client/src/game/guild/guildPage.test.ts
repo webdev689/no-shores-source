@@ -5,7 +5,7 @@ import type { GearAsk } from '../../network/gearMessages.ts';
 import { drawn } from '../menuForTests.ts';
 import { SAVE_ID, choiceId, partId } from './bannerEditor.ts';
 import { type Banner, bannerOfName } from './bannerLaw.ts';
-import { FIELDS, FOUND_BANNER_ID, FOUND_ID, joinId, sendId } from './guildDetails.ts';
+import { DETAILS_BACK_ID, FIELDS, FOUND_BANNER_ID, FOUND_ID, joinId, sendId } from './guildDetails.ts';
 import { edgeId } from './guildHome.ts';
 import { claimId } from './guildWeek.ts';
 import { GuildPage, guildPage } from './guildPage.ts';
@@ -192,6 +192,13 @@ test('Escape steps back from the editor or the details to the guild, and no furt
   click(edgeId('details'));
   assert.equal(page.back(), true);
   assert.equal(page.back(), false, 'at home it leaves Escape to the menu');
+});
+
+test("the details' Back press steps back to the guild, as Escape does", async () => {
+  const { click, page } = await tab(face());
+  click(edgeId('details'));
+  click(DETAILS_BACK_ID);
+  assert.equal(page.back(), false, 'already home');
 });
 
 const bounty = (

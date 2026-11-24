@@ -136,8 +136,8 @@ test('at 1280 by 720 the whole home fits, and at 1280 by 600 a cue says more lie
 test('at 1600 by 900 the home keeps one type scale: nothing smaller than the label step, the motto as the description', () => {
   const { tree } = home(FACE, { width: 1500, height: 650 }, [1600, 900]);
   const texts = sizesIn(tree());
-  // The week's lines are its own part's; a chip's count and the page between the arrows stand as the Journal's.
-  const own = texts.filter((text) => text.size < 2 && !/Defeat|Clear|Sink|Claimed|^\d+( \/ |\/)?\d*$/.test(text.words));
+  // A chip's count and the page between the arrows stand as the Journal's.
+  const own = texts.filter((text) => text.size < 2 && !/^\d+(\/\d+)?$/.test(text.words));
   assert.deepEqual(own, [], 'every word of the home at the label step or larger');
   const motto = texts.find((text) => text.words === FACE.motto);
   const description = texts.find((text) => text.words === FACE.description);
