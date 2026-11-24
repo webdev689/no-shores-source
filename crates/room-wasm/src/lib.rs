@@ -27,6 +27,7 @@ mod snapshot_door;
 pub use snapshot_door::snapshot;
 mod dress_door;
 mod fighter_door;
+mod finds_door;
 mod fleet_door;
 mod gear_door;
 mod isle_door;
@@ -99,15 +100,8 @@ struct NodeFile {
     grounds: Option<public_door::NodeGrounds>,
     #[serde(default)]
     resources: Vec<[f64; 2]>,
-    /// A patrol's chest places (x, y, facing) and its props that hold things (box across, foot, top, model).
-    #[serde(default)]
-    chests: Vec<[f64; 3]>,
-    #[serde(default)]
-    holders: Vec<[f64; 7]>,
-    /// Or, from a page playing alone, its layout's props that may hold things, each its model, its box across and
-    /// its origin's height, which the room takes as holders as the bake would (`dungeon::models::held_by`).
-    #[serde(default)]
-    props: Vec<[f64; 6]>,
+    #[serde(flatten)]
+    finds: finds_door::Finds,
     #[serde(default)]
     foes: Vec<[f64; 2]>,
     #[serde(default)]
@@ -190,12 +184,7 @@ pub fn open_node(text: &[u8]) -> bool {
         && let Some(resource) = resource
     {
         room.start_patrol(&node.id, u8::try_from(resource).unwrap_or_default(), &node.resources);
-    }
-    if node.kind == NodeKind::Patrol {
-        let held = node.props.iter().filter_map(|&[model, west, north, east, south, up]| {
-            dungeon::models::held_by(model as u32, [west, north, east, south], up)
-        });
-        room.lay_finds(&node.chests, node.holders.iter().copied().chain(held).collect());
+        finds_door::lay(&mut room, node.finds);
     }
     if node.kind == NodeKind::Dungeon {
         room.lay_elite_entrance(&node.id);

@@ -317,9 +317,7 @@ impl Room {
             if let Some(gathering) = found.gathering.as_mut() {
                 gathering.let_go = true;
             }
-            if let Some(opening) = found.opening.as_mut() {
-                opening.let_go = true;
-            }
+            self.finds.opening.entry(player).and_modify(|opening| opening.let_go = true);
             return;
         }
         if found.asks.len() < ASKS_HELD {
@@ -365,10 +363,10 @@ impl Room {
             }
             Asked::Gather { node } => self.gather(player, node),
             Asked::StopGather => {
-                if let Some(found) = self.players.get_mut(&player) {
-                    found.gathering.iter_mut().for_each(|gathering| gathering.let_go = true);
-                    found.opening.iter_mut().for_each(|opening| opening.let_go = true);
+                if let Some(gathering) = self.players.get_mut(&player).and_then(|found| found.gathering.as_mut()) {
+                    gathering.let_go = true;
                 }
+                self.finds.opening.entry(player).and_modify(|opening| opening.let_go = true);
                 0
             }
             Asked::Scavenge { wreck } => self.scavenge(player, wreck),

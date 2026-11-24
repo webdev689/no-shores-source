@@ -5,6 +5,9 @@ code:
   - crates/room/src/lib.rs#Room
   - crates/room/src/floor.rs#Floor
   - crates/room/src/dungeon_room.rs#dungeon
+  - crates/room/src/finds.rs#keep_finds
+  - crates/room/src/find_holds.rs#open_find
+  - crates/protocol/src/finds_wire.rs#chests_of
   - crates/room/src/entrances.rs#laid
   - crates/room/src/entrances.rs#join_at
   - crates/room/src/judging.rs#Event
@@ -143,6 +146,18 @@ on Cloudflare.
   fewer when fewer fit (every patrol zone and Elite Dungeon's node lays all of its own). Each is the entrance
   model its dungeon's seed draws, turned so its door faces the middle of the ring. A kill, in any node, pays by the
   room's seas ([[Gear]], "Where foes stand").
+- **Chests and containers** ([[Patrols and Dungeons Hold Chests, and Their Containers May Be Searched]], Claude's
+  calls in [[Chests and Searchable Containers as Claude Builds Them]]): a patrol's room reads its node file's chest
+  places (`chests`, x, y and facing, [[Layouts]]) and its props that hold things (`holders`: box, foot, top and
+  model; from a page playing alone, every prop of its layout, `props`, keeping those the dungeon crate's families say
+  hold things, as the bake does), and stands a chest for every five places, two to four, each at a place no other holds; each moves on after
+  5 minutes to another as a new chest, the first ones staggered so one moves every 5 minutes over their count. One
+  holder in six is searchable at once, 16 at most, drawn again every 10 minutes. A dungeon's room lays its own
+  ([[Dungeons]], "In the rooms"). Every draw is made on the room's loot seed, on a stream and a count of its own, at
+  its first tick, after its host seeds it. A player opens each find once: it stays for the rest, and the room keeps it
+  opened for their account however often they rejoin. Opened, it pays them ([[Gear]], "A find"), its Vestige thrown
+  out as a kill's drop is. A player's gear carries the chests standing they have not opened, five numbers each
+  (number, x, y, z, facing), and the containers, eight each (number, box, foot, top, model).
 - **A patrol's dungeon** has a room of its own ([[Dungeons]], "In the rooms"), opened from its patrol's node file:
   its floor, its one spawn at the way in, a body standing there facing into the room, and the patrol's island band
   for its garrison's levels. The Grey Tithe's dungeon garrison stands where the Forge puts foes ([[Enemies]]). Beside
@@ -183,7 +198,10 @@ on Cloudflare.
   (`gather_refused`). It is then
   spent for them until the nodes' turn passes; a kept character's is spent for its account, however often its player
   rejoins. One whose resource the player holds the most of is left standing, and a body dead past the edge gathers
-  nothing. A room answers one player's asks five times a second at most, in the order asked, holding four for their
+  nothing. A chest or a container to search (`finds.rs`, below) is opened the same way by the open-find ask (75, its
+  number in `item`): held a second for a chest within 2.5 m of its middle, a second and a half for a container within
+  1.5 m of its sides, both within 2 m of its foot up or down, alive and on foot; the stop-gather ask lets go of it as of
+  a gather, and drops a held open-find ask too. A room answers one player's asks five times a second at most, in the order asked, holding four for their
   turn and letting go of any past those; and sends their gear five times a second at most, so each answer reaches
   them before the next is made and a page that asks without end cannot flood its socket or slow the room. A change to
   how they fight (their trim, or the arms their gear allows) is sent at once, and before the snapshot, so their

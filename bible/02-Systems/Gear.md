@@ -2,6 +2,7 @@
 type: system
 status: live
 code:
+  - crates/gear/src/finds.rs#find
   - crates/gear/src/emblems.rs#emblems
   - crates/gear/src/looks.rs#shown
   - client/src/player/sourceLooks.ts#earnedFrom
@@ -165,6 +166,13 @@ number is one of [[Gear as Claude Shapes It]].
   (`rewards::Clear`). A dungeon's clear also leaves an item, coloured as its Miniboss's, and a Vestige as often as its
   Miniboss leaves one. It pays once until a group stands again. A patrol never ends, so it pays none. A laid
   dungeon's room pays the same clear as its cache opens ([[Dungeons]], "The cache").
+- **A find** ([[Patrols and Dungeons Hold Chests, and Their Containers May Be Searched]], `gear::finds`): a chest
+  opened in a patrol or a dungeon pays 30 Aurem at level 5, grown with the level as a kill's worth is, 2 to 4 of the
+  island's resource and a Vestige one time in four, coloured as a Major's; a container searched 8 Aurem, one of the
+  resource one time in two and a Vestige one time in twenty, coloured as a Minor's. A harder voyage raises the Aurem
+  and the Vestige's chance by its reward, as a kill's. Neither pays XP. It is of the island's band's middle, raised by
+  the room's seas, and a full stock takes none of the resource while the rest is paid
+  ([[Chests and Searchable Containers as Claude Builds Them]]).
 - **Asks.** Wearing, taking off, buying and choosing nodes, dismantling, identifying, feeding Fruit, and the vault;
   a ship's modules are fitted, upgraded and infused by the same asks ([[Ship Power]]), and its officers have theirs
   ([[Crew]]).

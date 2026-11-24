@@ -336,6 +336,8 @@ a decision is a record. How to add one: [[Recording a Decision]].
 - [[The Balance and Economy Pass as Claude Shapes It]]
 - [[The Bulwark Blocks, Supers Are Powerful, the Sea's Gaps Close and Level 30 Takes Breach Gear]]
 - [[Pairs Swing Faster, Foes' Guns Strike Two Thirds and Faction Gear Has No Weekly Limit]]
+- [[Patrols and Dungeons Hold Chests, and Their Containers May Be Searched]]
+- [[Chests and Searchable Containers as Claude Builds Them]]
 
 ## Replaced
 

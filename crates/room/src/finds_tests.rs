@@ -145,7 +145,7 @@ fn a_chest_out_of_reach_on_horseback_or_while_down_is_not_begun() {
 fn letting_go_stirring_or_being_hurt_stops_an_opening_and_letting_go_at_its_end_opens_it() {
     let (mut room, player) = patrol();
     let (number, [x, y, ..]) = room.chests_for(player)[0];
-    let opening = |room: &Room| room.player(player).expect("in").opening.is_some();
+    let opening = |room: &Room| room.finds.opening.contains_key(&player);
     stand(&mut room, player, [x + 1.0, y]);
     hold(&mut room, player, number, 20);
     room.take_ask(player, Asked::StopGather);

@@ -46,8 +46,7 @@ impl Room {
         }
         let Some(fighter) = self.fighter(player).copied() else { return OUT_OF_REACH };
         let (since, at, health) = (self.clock, [fighter.body.x, fighter.body.y], fighter.health);
-        let Some(found) = self.players.get_mut(&player) else { return OUT_OF_REACH };
-        found.opening = Some(Opening { number, since, at, health, let_go: false });
+        self.finds.opening.insert(player, Opening { number, since, at, health, let_go: false });
         0
     }
 
@@ -65,7 +64,7 @@ impl Room {
             Standing::Holder(holder) => (off_box(&holder, body), holder[4], SEARCH_REACH),
         };
         let far = across > reach || (fighter.body.z - foot).abs() > FIND_HEIGHT;
-        if dead || far || found.opened.contains(&number) {
+        if dead || far || self.opened_by(player).contains(&number) {
             Some(OUT_OF_REACH)
         } else if found.mounted {
             Some(MOUNTED)
@@ -76,10 +75,9 @@ impl Room {
 
     /// Keeps each find being opened for a tick, as `keep_gathering` keeps a gather: one held its time opens.
     pub(crate) fn keep_opening(&mut self) {
-        let under_way: Vec<PlayerId> =
-            self.players.iter().filter(|(_, found)| found.opening.is_some()).map(|(&id, _)| id).collect();
-        for player in under_way {
-            let Some(opening) = self.players.get(&player).and_then(|found| found.opening) else { continue };
+        let under_way: Vec<(PlayerId, Opening)> =
+            self.finds.opening.iter().map(|(&id, &opening)| (id, opening)).collect();
+        for (player, opening) in under_way {
             let Some(fighter) = self.fighter(player).copied() else { continue };
             let held = match self.finds.standing(opening.number) {
                 Some(Standing::Holder(_)) => SEARCH_TICKS,
@@ -90,13 +88,14 @@ impl Room {
             let left = (opening.since + held).saturating_sub(self.clock);
             let ended = opening.let_go || stirred > GATHER_STIR_M;
             let done = !broken && (left == 0 || (ended && left <= GATHER_GRACE_TICKS));
-            let Some(found) = self.players.get_mut(&player) else { continue };
             if !(broken || ended || done) {
-                found.opening = Some(Opening { health: fighter.health, ..opening });
+                self.finds.opening.insert(player, Opening { health: fighter.health, ..opening });
                 continue;
             }
-            found.opening = None;
-            found.gear_changed = true;
+            self.finds.opening.remove(&player);
+            if let Some(found) = self.players.get_mut(&player) {
+                found.gear_changed = true;
+            }
             if done {
                 self.pay_find(player, opening.number);
             }
@@ -110,7 +109,7 @@ impl Room {
             (self.find_level(), self.resource_here(), self.difficulty, self.source);
         let dice = self.dice(player);
         let Some(found) = self.players.get_mut(&player) else { return };
-        found.opened.push(number);
+        self.finds.by_player.entry(player).or_default().push(number);
         if let Some(owner) = &found.owner {
             self.finds.opened.entry(owner.clone()).or_default().push(number);
         }

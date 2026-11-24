@@ -46,7 +46,7 @@ pub(crate) struct Chest {
 }
 
 /// A room's chests and containers: where its chests may stand, each with its group (a dungeon's room, one apiece in a
-/// patrol), its props that hold things, what stands now, and what each account opened here, kept past their leaving.
+/// patrol), its props that hold things, what stands now, and what has been opened.
 #[derive(Clone, Debug, Default)]
 pub(crate) struct Finds {
     pub places: Vec<ChestPlace>,
@@ -63,7 +63,11 @@ pub(crate) struct Finds {
     pub drawn: bool,
     pub next: u32,
     pub rolls: u64,
+    /// What each account opened here, kept past their leaving; what each player in the room opened; and the find each
+    /// is opening, E held (`find_holds.rs`).
     pub opened: BTreeMap<String, Vec<u32>>,
+    pub by_player: BTreeMap<PlayerId, Vec<u32>>,
+    pub opening: BTreeMap<PlayerId, crate::find_holds::Opening>,
 }
 
 impl Finds {
@@ -201,6 +205,22 @@ impl Room {
         if changed {
             self.forget_gone_finds();
         }
+        // A player who left keeps nothing here but what their account keeps.
+        let players = &self.players;
+        self.finds.by_player.retain(|player, _| players.contains_key(player));
+        self.finds.opening.retain(|player, _| players.contains_key(player));
+    }
+
+    /// The finds an account opened here are opened again for the player it is now.
+    pub(crate) fn give_finds_back(&mut self, player: PlayerId, owner: &str) {
+        let kept = self.finds.opened.get(owner).cloned().unwrap_or_default();
+        let opened = self.finds.by_player.entry(player).or_default();
+        opened.extend(kept.into_iter().filter(|number| !opened.contains(number)).collect::<Vec<_>>());
+    }
+
+    /// The finds a player has opened while they stand here.
+    pub(crate) fn opened_by(&self, player: PlayerId) -> &[u32] {
+        self.finds.by_player.get(&player).map_or(&[], Vec::as_slice)
     }
 
     /// Draws every find anew: in a patrol each chest at a place of its own, staggered so one moves on every
@@ -291,11 +311,10 @@ impl Room {
     /// Lets each player and account forget the finds no longer standing, and sends every player what stands now.
     fn forget_gone_finds(&mut self) {
         let standing = self.finds.standing_numbers();
-        for opened in self.finds.opened.values_mut() {
+        for opened in self.finds.opened.values_mut().chain(self.finds.by_player.values_mut()) {
             opened.retain(|number| standing.contains(number));
         }
         for found in self.players.values_mut() {
-            found.opened.retain(|number| standing.contains(number));
             found.gear_changed = true;
         }
     }
@@ -303,7 +322,7 @@ impl Room {
     /// The chests standing that a player has not opened: each its number and its place.
     #[must_use]
     pub fn chests_for(&self, player: PlayerId) -> Vec<(u32, ChestPlace)> {
-        let opened = self.players.get(&player).map(|found| found.opened.as_slice()).unwrap_or_default();
+        let opened = self.opened_by(player);
         let unopened = self.finds.chests.iter().filter(|chest| !opened.contains(&chest.number));
         unopened.filter_map(|chest| self.finds.places.get(chest.place).map(|&place| (chest.number, place))).collect()
     }
@@ -311,7 +330,7 @@ impl Room {
     /// The containers searchable that a player has not searched: each its number and its holder.
     #[must_use]
     pub fn searchables_for(&self, player: PlayerId) -> Vec<(u32, Holder)> {
-        let opened = self.players.get(&player).map(|found| found.opened.as_slice()).unwrap_or_default();
+        let opened = self.opened_by(player);
         let unopened = self.finds.searchable.iter().filter(|(_, number)| !opened.contains(number));
         unopened
             .filter_map(|&(holder, number)| self.finds.holders.get(holder).map(|&box_of| (number, box_of)))

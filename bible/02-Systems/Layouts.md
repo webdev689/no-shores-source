@@ -22,6 +22,7 @@ code:
   - crates/layout/src/dressing.rs#dress
   - crates/layout/src/interiors.rs#build
   - crates/layout/src/sites.rs#mark
+  - crates/layout/src/chests.rs#mark
   - crates/layout/src/marks.rs#build
   - crates/layout/src/ring.rs#traced
   - crates/layout/src/collide.rs#boxes_of
@@ -233,7 +234,17 @@ from the sea, fresh water and the claim's edge), then:
    with wet stones and salt shards, Cairn Iron's stacked cairn seamed with iron, Heartwood Resin's broad old stump with
    amber bled down it, Sunstone's desert stones bedded in sand and glowing, Goldgrass's stand of tall gold grass,
    Mistbloom's low mound of pale flowers, Windthistle's thistles gone to down, Bog Pearl's black pool rimmed with
-   shells, and Rimecrystal's frozen rock grown with spikes of frost.
+   shells, and Rimecrystal's frozen rock grown with spikes of frost. Last, once everything stands where it will, a
+   patrol's chest places (`chests`, [[Patrols and Dungeons Hold Chests, and Their Containers May Be Searched]]): round
+   each area a body comes to but its landing, gates and way in, round each climb's lookout (10 m) and each run's beat,
+   before a face of something at least 1 m tall (a box of a building, a ruin's wall, a rock, a tent, a stack of
+   crates, a lookout's parapet), its middle 0.75 m out, square to the world and facing away from it, each place's
+   faces tried in an order drawn on the layout's seed. A place is kept where its box (1.1 by 0.8 m) stands clear of
+   every box and prop over its ground, on dry, open land in the ring that rises or falls 0.2 m at most under its
+   corners, 1.5 m off every way's edge (the climbs' and the runs' too), 1.5 m off a building walked into and 0.1 m
+   off any other, 1 m from a planting, 25 m from every other chest place, 10 m from a resource place, its node and a
+   beacon, and 15 m from a spawn: two a place at most and 24 a layout. The 27 patrols lay 12 to 24 each as baked; a
+   test holds continent 1's to four or more (`crates/room/tests/chests_planned.rs`).
 10. **The section** is the land the carving left as floor, a few metres onto its cliffs' feet, no cell of it touching
     the sea, and the bridges over water a cell wider either side, in the claim, as one piece with its holes filled,
     traced into a ring: the layout's bounds are its cliffs and walls. Narrow gaps of rock between floors are closed
