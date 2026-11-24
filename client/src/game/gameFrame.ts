@@ -184,9 +184,10 @@ export function startFrames(parts: FrameParts, playing: Playing): void {
   const showStanding = (shown: Standing, fallen: Fallen | null = null) => {
     hud.reach(shown, fallen);
     // Death's grey over the world is the one mark of it, once death is told (a fall plays out in colour first) or as
-    // the player falls in the fight: standing again, or leaving the place, takes it off.
+    // the player falls in the fight: standing again, or leaving the place, takes it off. A fall in a fight keeps the
+    // pointer, to look round while an ally comes; Respawn's key works either way.
     const [dead, wasDead] = [greyed(shown) || fallen !== null, drain.dead];
-    if (dead && !wasDead) document.exitPointerLock();
+    if (greyed(shown) && !wasDead) document.exitPointerLock();
     drain.toward(dead);
   };
   /** What the mount key says with no horse worn in the Mount slot. */
@@ -263,9 +264,7 @@ export function startFrames(parts: FrameParts, playing: Playing): void {
     const ward = quests.wardPlate(parts.groundAt);
     const foes = ward ? [...shown.fight.foes, ward] : shown.fight.foes;
     const players = platedPlayers(here.otherPlayers, [body.x, body.y, body.z]);
-    // The game's rooms stand the fallen again only as they ask: its own death screen tells of it, not the veil.
-    const fallen = { asksToRespawn: true };
-    const questShown = { ...shown, fight: { ...shown.fight, foes, questAt: quests.goalAt, players, ...fallen } };
+    const questShown = { ...shown, fight: { ...shown.fight, foes, questAt: quests.goalAt, players } };
     const fight = footView.frame(here, questShown, seconds, { size, viewport, groundAt: here.groundAt });
     // Use held on another player opens their menu, where it does nothing else (a deed or a gate) and no menu or map is up.
     const offered = !paused && !looking && !here.fallen && !hud.usePrompt.showing && !playing.through;
@@ -410,7 +409,8 @@ export function startFrames(parts: FrameParts, playing: Playing): void {
     const crews = parts.crews.cards(ships, shown.shot, viewport.height, seconds, clock);
     const drawers = standing(ships, [...shown.figures, ...crews], herDeck);
     scene.draw(shown.shot, size, clock, seconds, drawers, more);
-    showStanding(here.boarding.standing ?? { kind: 'inside' });
+    // A boarder fallen on its deck is told so as on foot, Respawn with it ([[Revives]]).
+    showStanding(here.boarding.standing ?? { kind: 'inside' }, here.boarding.foot?.fell ?? null);
     const { landmass, seaWord } = playing;
     // The status chip keeps the state alone; the watch's and the sea's word are DFO's toasts. In a fight the fight's
     // own messages say who is sighted, so the watch's last line gives way.

@@ -95,8 +95,9 @@ fn no_spot_is_kept_from_a_jump_a_fall_or_another_room_and_one_a_body_no_longer_f
     let earlier = character.to_json();
     assert!(left.restore_character(player, &earlier));
     left.players.get_mut(&player).expect("in").fighter.body.mode = movement::Mode::Air;
-    let last =
-        |room: &Room| gear::Character::from_json(&room.kept_character(player).expect("kept")).and_then(|c| c.last);
+    let last = |room: &Room| {
+        gear::Character::from_json(&room.kept_character(player).expect("kept")).and_then(|character| character.last)
+    };
     assert_eq!(last(&left), Some(gear::last::Last::Sea), "mid-jump: as it was");
     left.players.get_mut(&player).expect("in").fighter.body.mode = movement::Mode::Ground;
     left.players.get_mut(&player).expect("in").standing = crate::Standing::Dead { ticks: 0, fell: true };
@@ -106,7 +107,7 @@ fn no_spot_is_kept_from_a_jump_a_fall_or_another_room_and_one_a_body_no_longer_f
     assert!(patrol.restore_character(walker, &earlier));
     let kept = patrol.kept_character(walker).expect("kept");
     assert_eq!(
-        gear::Character::from_json(&kept).and_then(|c| c.last),
+        gear::Character::from_json(&kept).and_then(|character| character.last),
         Some(gear::last::Last::Sea),
         "no other room writes it"
     );
