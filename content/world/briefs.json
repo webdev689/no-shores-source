@@ -56,10 +56,6 @@
     "blocks": 2
    },
    {
-    "kind": "breach",
-    "name": "The Sunken Gate"
-   },
-   {
     "kind": "mill",
     "name": "Weir Mill"
    },
@@ -83,6 +79,11 @@
    {
     "kind": "coven",
     "name": "Hollow Coven"
+   },
+   {
+    "kind": "breach",
+    "name": "The Sunken Gate",
+    "level": 20
    }
   ], "runs": [{"name": "Valeguard Walls", "kind": "rampart", "place": "rock"}, {"name": "The Weir Gorge", "kind": "gorge", "place": "beyond"}, {"name": "The Hollow Undercroft", "kind": "undercroft", "place": "rock"}]
  },
