@@ -133,8 +133,8 @@ export async function creditGuild(database: Db, account: string, body: string): 
 }
 
 /** What a room is told of a player's guild: its id, the week it was read for, which of that week's bounties it has
- *  done, and whether they were in it before that week turned; null in no guild. A room judges a claim on it only in
- *  that week, so a word told before the turn never answers for the week after. */
+ *  done, and whether they were in it before that week turned; null in no guild. The week is told so a room can judge
+ *  a claim on this word only in that week, never on a word told before the turn. */
 export async function guildTold(
   database: Db,
   account: string,

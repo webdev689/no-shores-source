@@ -286,3 +286,27 @@ test('a raise turned other than a quarter at a time is refused before anything i
   assert.equal((await guild()).treasury, 6_000);
   assert.deepEqual((await get('Ada', '/v1/outposts'))['outposts'], []);
 });
+
+test("a Counting House risen part way through an hour pays that part at its old tier, the new tier's hours from then", async () => {
+  const { standAt, fund, ask, kept, accountOf, room, clock, sql, get } = await world();
+  await sql('UPDATE guilds SET xp = 40000');
+  await standAt('Ada');
+  await fund(100_000);
+  await ask('Ada', 'outpost/raise', { site: SITE, turn: 0 });
+  await sql("UPDATE outpost_structures SET tier = 2 WHERE kind = 'hall'");
+  await ask('Ada', 'outpost/place', { site: SITE, kind: 'counting', x: 0, y: 0, turn: 0 });
+  const [ada, here] = [await accountOf('Ada'), await room()];
+  await kept().deliver(ada, here, { id: 3, stuff: 'timber', amount: 40 });
+  await kept().deliver(ada, here, { id: 3, stuff: 'iron', amount: 20 });
+  clock.now += 1.5 * HOUR;
+  await standAt('Ada');
+  assert.equal((await ask('Ada', 'outpost/rise', { site: SITE, id: 3 })).status, 200);
+  for (const stuff of ['timber', 'iron', 'island'] as const)
+    await kept().deliver(ada, here, { id: 3, stuff, amount: 200 });
+  clock.now += 0.5 * HOUR;
+  await standAt('Ada');
+  const box = async () => ((await get('Ada', '/v1/outposts'))['outposts'] as { strongbox: number }[])[0]?.strongbox;
+  assert.equal(await box(), 30 + 15, 'an hour and a half at tier 1, none yet at tier 2');
+  clock.now += 0.5 * HOUR;
+  assert.equal(await box(), 30 + 15 + 60);
+});
