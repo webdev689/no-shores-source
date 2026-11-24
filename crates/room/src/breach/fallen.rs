@@ -23,6 +23,12 @@ pub const NO_REVIVES: u8 = 110;
 pub const NONE_TO_RAISE: u8 = 111;
 
 impl Room {
+    /// Whether a player killed in a fight has lain as long as they lie (`stands_after`), so they stand again now.
+    pub(crate) fn lain_long_enough(&self, id: PlayerId) -> bool {
+        let (Some(found), Some(after)) = (self.players.get(&id), self.stands_after(id)) else { return false };
+        matches!(found.fighter.action, combat::fighter::Action::Dead { elapsed } if elapsed >= after)
+    }
+
     /// How long a fallen player lies before standing again of themselves in a Breach's run, ticks; none for never
     /// (Hard, inside a running encounter); in any other room, the combat rules' own.
     pub(crate) fn stands_after(&self, id: PlayerId) -> Option<u32> {

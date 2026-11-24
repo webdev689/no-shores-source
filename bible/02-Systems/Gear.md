@@ -141,7 +141,8 @@ number is one of [[Gear as Claude Shapes It]].
   each, to the loadout whose blow last landed and to every armour piece worn. An item stops earning at its
   last column. Past level 20, each 20,000 XP grows a Fruit of Dagon, which gives an item 5,000 XP when fed to it.
 - **Level and Prestige.** XP alone reaches level 20. Past it, the Prestige of the four armour pieces worn sets the
-  level, to 30. A Rare at level 20 carries 13 to 15, a Legendary 18 to 27 (a Breach's to 30), an Atheric 21 to 30.
+  level, to 30. A Rare at level 20 carries 13 to 15, a Legendary 18 to 27 (a Breach's to 28 from Normal, to 30
+  from Hard, [[Breaches]]), an Atheric 21 to 30.
 - **Attack and Defense.** A weapon's blow is times 1.07 for each of the foe's levels up to its Attack ÷ 15, and
   falls to 0.67, 0.56, 0.47 and none as the player is one to four levels below the foe. A foe's health is its kind's
   times 1.07 for each of its levels, so a matched player fells it in the blows combat is tuned for. A foe's blow is
@@ -162,7 +163,7 @@ number is one of [[Gear as Claude Shapes It]].
   content's. Any other colour, a Legendary too, is a piece of a kind the slot takes in its content's set look, its look
   and traits rolled, never a trait twice ([[Every Drop Wears Its Content's Set, With Random Perks]]); a Legendary is
   level 20, its Prestige a Legendary's, its nodes asking for an island's resource rolled among the catalogue's, and a
-  Breach's Legendary armour climbs to 30 Prestige. A Breach's armour or weapon rolls its perk columns from the
+  Breach's Legendary armour climbs to 28 Prestige from Normal (19, and 3 an upgrade) and to 30 from Hard (21). A Breach's armour or weapon rolls its perk columns from the
   Breaches' own perks ("Verbs", "The Breaches' perks"). A ship's Legendary module is a named one ([[Ship Power]]).
 - **Names** ([[Everything Carries a Set Name, and Perks Roll by Pool]]). Every rolled armour piece and weapon is named
   by its set and its kind's word: "Portwatch Helm", "Wreckborn Sword and Shield" (`itemName`). Its set is the one its

@@ -6,6 +6,7 @@ import { accounts } from './accountsForTests.ts';
 import { characters } from './characters.ts';
 import { FOUND_KEPT_MS, companionsOf, launchedFor } from './companies.ts';
 import {
+  BREACH_LAUNCHED,
   FINDING_MOST,
   Finder,
   type FinderSocket,
@@ -455,6 +456,8 @@ test('a Breach is found for eight at its tier, opens at its tier’s level, and 
   const { tokens, finderOf } = await world(['Ada', 'Ben'], 27);
   const under = finderOf('node-gullwing-vale--breach-hard');
   assert.deepEqual((await seeking(under, tokens['Ada'] ?? '')).closed, [4003, 'A Breach at Hard opens at level 28.']);
+  const matched = finderOf('node-gullwing-vale--breach-normal');
+  assert.deepEqual((await seeking(matched, tokens['Ada'] ?? '')).closed, [4003, BREACH_LAUNCHED], 'never matched');
   const normal = finderOf('node-gullwing-vale--breach-normal');
   const launch = new FakeSocket();
   await normal.heard(normal.opened(launch, true), tokens['Ben'] ?? '');

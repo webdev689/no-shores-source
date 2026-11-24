@@ -1,12 +1,9 @@
 //! The Waking: a Breach's opening, fought at its gate in the patrol zone, in view of everyone there
 //! ([[The Breach Opens in the Patrol Zone, and the Rest Is Its Own Instance]]). The host tells the room which players
 //! came launched for which run, at which tier: their company. One company at a time holds the gate: the first whose
-//! living player steps onto a mooring stone while it is free. Its three moorings held at once by the company's living
-//! players fill the Spire; while fewer are held it ebbs. Only a Bulwark claims a mooring, walking to one left empty,
-//! and a claimed mooring is held by no one until it falls. Filled, the Spire wakes and the gate opens to that company
-//! alone, for a while; anyone else in the zone may fight beside them, and the foes drop nothing. At Hard the company's
-//! fallen do not stand again of themselves while the Waking runs. The gate also shows the zone the companies inside the
-//! run, as their runs' hosts tell it.
+//! living player steps onto a mooring stone while it is free. Its moorings held at once fill the Spire; fewer let it
+//! ebb; a Bulwark claims one left empty. Woken, the gate opens to that company alone; anyone else in the zone may fight
+//! beside them, and the foes drop nothing. The gate shows the zone the companies inside the run ([[Breaches]]).
 
 use super::fallen::{RAISE_REACH_M, RAISE_TICKS};
 use super::plan::turned;
@@ -82,8 +79,7 @@ impl Gate {
     /// A socket of the gate's module in the room's frame.
     #[must_use]
     pub fn socket(&self, name: &str) -> Option<[f64; 3]> {
-        let module = city::modules::all().iter().find(|module| module.name == "breach-gate")?;
-        let found = module.sockets.iter().find(|socket| socket.name == name)?;
+        let found = super::plan::module("breach-gate")?.sockets.iter().find(|socket| socket.name == name)?;
         let at = turned(found.at, self.quarters);
         Some([self.at[0] + at[0], self.at[1] + at[1], self.at[2] + at[2]])
     }

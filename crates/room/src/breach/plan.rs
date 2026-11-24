@@ -2,13 +2,57 @@
 //! stood at a point of the run's frame and turned whole quarters, its parts the blocks a body stands on and its
 //! sockets where the encounters' pieces stand; the seals across its ways on, each a module of its own that opens as an
 //! encounter wins; and the Broken Stair's slabs that come and go. Quarter turns are made by swapping and signing, never
-//! by sines, so every machine lays each block to the bit.
+//! by sines, so every machine lays each block to the bit. The plan and its modules are the build's tables (build.rs).
 
-use city::modules::{Module, all as modules, number_of};
 use movement::Block;
-use serde::Deserialize;
 use std::collections::BTreeMap;
 use std::sync::OnceLock;
+
+/// A module as the build wrote it from the manifest: its name, size, parts (west, north, bottom, east, south, top in
+/// its own frame) and sockets.
+#[derive(Debug)]
+pub struct ModuleTable {
+    pub name: &'static str,
+    pub size: [f64; 3],
+    pub parts: &'static [[f64; 6]],
+    pub sockets: &'static [ModuleSocket],
+}
+
+/// A socket of a module: its name, where it stands in the module's frame and the way it faces out.
+#[derive(Debug)]
+pub struct ModuleSocket {
+    pub name: &'static str,
+    pub at: [f64; 3],
+    pub facing: [f64; 2],
+}
+
+pub(crate) struct SpaceTable {
+    key: &'static str,
+    module: &'static str,
+    at: [f64; 3],
+    turn: u8,
+}
+
+pub(crate) struct SealTable {
+    space: &'static str,
+    socket: &'static str,
+    opens: &'static str,
+    turn: u8,
+}
+
+pub(crate) struct SlabTable {
+    space: &'static str,
+    socket: &'static str,
+    phase: u64,
+}
+
+include!(concat!(env!("OUT_DIR"), "/breach_tables.rs"));
+
+/// A module the Breaches stand by its name; none for one no plan names.
+#[must_use]
+pub fn module(name: &str) -> Option<&'static ModuleTable> {
+    MODULES.iter().find(|module| module.name == name)
+}
 
 /// How long one slab's cycle runs, ticks, and how long of it it stands: 11 s, 7 of them standing (it forms for one
 /// second, stands six and fades over the last), as the Broken Stair's measure.
@@ -16,7 +60,7 @@ pub const SLAB_CYCLE: u64 = 11 * 60;
 pub const SLAB_STANDS: u64 = 7 * 60;
 
 /// One space: the key the plan names it by, its module, its foot's middle and its quarter turns clockwise.
-#[derive(Clone, Debug, PartialEq, Deserialize)]
+#[derive(Clone, Debug, PartialEq)]
 pub struct Space {
     pub key: String,
     pub module: String,
@@ -25,7 +69,7 @@ pub struct Space {
 }
 
 /// A seal across a way on: the space and socket it stands at, the encounter whose win opens it, and its quarter turns.
-#[derive(Clone, Debug, PartialEq, Deserialize)]
+#[derive(Clone, Debug, PartialEq)]
 pub struct Seal {
     pub space: String,
     pub socket: String,
@@ -34,15 +78,15 @@ pub struct Seal {
 }
 
 /// A slab that comes and goes: the space and socket it stands at, and the tick of its cycle at the run's first.
-#[derive(Clone, Debug, PartialEq, Deserialize)]
+#[derive(Clone, Debug, PartialEq)]
 pub struct Slab {
     pub space: String,
     pub socket: String,
     pub phase: u64,
 }
 
-/// A Breach's plan as the file holds it.
-#[derive(Clone, Debug, PartialEq, Deserialize)]
+/// A Breach's plan.
+#[derive(Clone, Debug, PartialEq)]
 pub struct Plan {
     pub id: String,
     pub spaces: Vec<Space>,
@@ -55,15 +99,33 @@ pub struct Plan {
 }
 
 /// The Drowned Vale's plan.
-///
-/// # Panics
-/// Never for the file in the repository: its test reads it.
 #[must_use]
 pub fn drowned_vale() -> &'static Plan {
     static PLAN: OnceLock<Plan> = OnceLock::new();
-    PLAN.get_or_init(|| {
-        serde_json::from_str(include_str!("../../../../content/dungeon/breach-drowned-vale.json"))
-            .expect("content/dungeon/breach-drowned-vale.json reads: its test says so")
+    PLAN.get_or_init(|| Plan {
+        id: PLAN_ID.to_owned(),
+        spaces: SPACES
+            .iter()
+            .map(|space| Space { key: space.key.into(), module: space.module.into(), at: space.at, turn: space.turn })
+            .collect(),
+        seals: SEALS
+            .iter()
+            .map(|seal| Seal {
+                space: seal.space.into(),
+                socket: seal.socket.into(),
+                opens: seal.opens.into(),
+                turn: seal.turn,
+            })
+            .collect(),
+        slabs: SLABS
+            .iter()
+            .map(|slab| Slab { space: slab.space.into(), socket: slab.socket.into(), phase: slab.phase })
+            .collect(),
+        encounters: ENCOUNTERS.iter().map(|(key, space)| ((*key).to_owned(), space[0].to_owned())).collect(),
+        shores: SHORES
+            .iter()
+            .map(|(key, shores)| ((*key).to_owned(), shores.iter().map(|shore| (*shore).to_owned()).collect()))
+            .collect(),
     })
 }
 
@@ -99,8 +161,8 @@ impl Plan {
     }
 
     /// The module a space stands.
-    fn module_of(&self, space: &Space) -> Option<&'static Module> {
-        modules().get(number_of(&space.module)? as usize)
+    fn module_of(&self, space: &Space) -> Option<&'static ModuleTable> {
+        module(&space.module)
     }
 
     /// A socket of a space in the run's frame, and the way it faces out; none for a space or socket the plan lacks.
@@ -132,8 +194,7 @@ impl Plan {
     /// A seal's blocks, its module's parts at its socket.
     #[must_use]
     pub fn seal_blocks(&self, seal: &Seal) -> Vec<Block> {
-        let module = modules().iter().find(|module| module.name == "breach-seal");
-        let (Some((at, _)), Some(module)) = (self.socket(&seal.space, &seal.socket), module) else {
+        let (Some((at, _)), Some(module)) = (self.socket(&seal.space, &seal.socket), module("breach-seal")) else {
             return Vec::new();
         };
         module.parts.iter().map(|&part| placed_block(part, at, seal.turn)).collect()
@@ -143,8 +204,7 @@ impl Plan {
     #[must_use]
     pub fn slab_block(&self, slab: &Slab) -> Option<Block> {
         let (at, _) = self.socket(&slab.space, &slab.socket)?;
-        let module = modules().iter().find(|module| module.name == "breach-slab")?;
-        module.parts.first().map(|&part| placed_block(part, at, 0))
+        module("breach-slab")?.parts.first().map(|&part| placed_block(part, at, 0))
     }
 
     /// The blocks standing at `tick` with the seals `open` (a bit each, as a snapshot carries them): every space's,

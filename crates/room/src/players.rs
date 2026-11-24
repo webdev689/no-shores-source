@@ -340,10 +340,7 @@ impl Room {
         let fallen: Vec<(PlayerId, Fighter)> = self
             .players
             .iter()
-            .filter(|(id, found)| {
-                let after = self.stands_after(**id);
-                matches!(found.fighter.action, Action::Dead { elapsed } if after.is_some_and(|after| elapsed >= after))
-            })
+            .filter(|(id, _)| self.lain_long_enough(**id))
             // One the section killed too stands again only by its own respawn, which ends that death as well.
             .filter(|(_, found)| !matches!(found.standing, Standing::Dead { .. }))
             .map(|(id, found)| (*id, found.fighter))

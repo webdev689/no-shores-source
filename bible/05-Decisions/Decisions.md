@@ -335,6 +335,10 @@ a decision is a record. How to add one: [[Recording a Decision]].
 - [[A Keeper With Something for You Pulses and Is Seen From Everywhere]]
 - [[Friendly Ships Take Several Courses, About Five in View, Sailing Visibly]]
 - [[Each Patrol Zone Has a Built Landing Site, Its Guards Beyond It]]
+- [[The First Breach Follows the Vault of Glass, at Normal and Hard]]
+- [[The First Breach Is Built in Full, on Claude's Autonomy]]
+- [[The Breach Opens in the Patrol Zone, and the Rest Is Its Own Instance]]
+- [[The Drowned Vale as Claude Builds It]]
 
 ## Replaced
 

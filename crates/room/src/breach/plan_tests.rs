@@ -49,7 +49,7 @@ fn every_space_stands_a_module_and_each_way_in_meets_the_last_way_out() {
     let plan = drowned_vale();
     assert_eq!(plan.id, "drowned-vale");
     for space in &plan.spaces {
-        assert!(number_of(&space.module).is_some(), "{} stands {}, which the manifest holds", space.key, space.module);
+        assert!(module(&space.module).is_some(), "{} stands {}, which the manifest holds", space.key, space.module);
     }
     for pair in ["descent", "mending", "choir", "ways", "stair", "hall", "court"].windows(2) {
         let (out, _) = plan.socket(pair[0], "exit").expect("a way out");
@@ -81,6 +81,19 @@ fn every_piece_the_rules_stand_on_has_its_socket() {
             }
         }
     }
+}
+
+#[test]
+fn the_builds_tables_hold_each_module_as_the_manifest_does() {
+    for table in MODULES {
+        let found = city::modules::all().iter().find(|each| each.name == table.name).expect("in the manifest");
+        assert_eq!(found.size, table.size, "{}", table.name);
+        assert_eq!(found.parts, table.parts, "{}", table.name);
+        let sockets: Vec<_> = found.sockets.iter().map(|socket| (socket.name.as_str(), socket.at, socket.facing)).collect();
+        let tables: Vec<_> = table.sockets.iter().map(|socket| (socket.name, socket.at, socket.facing)).collect();
+        assert_eq!(sockets, tables, "{}", table.name);
+    }
+    assert!(module("breach-gate").is_some() && module("breach-seal").is_some() && module("breach-slab").is_some());
 }
 
 #[test]

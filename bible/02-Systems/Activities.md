@@ -48,8 +48,8 @@ dungeons, the screens, companies of four with Find a Company, and the bounties, 
 - **Gates kept by the rooms.** No client can skip a level gate or take a reward twice. The prologue's end is the page's
   word, since the story plays in the page alone and may be passed over ([[Prologue]]).
 
-**Not now:** Breaches themselves and sea Breaches ("I dont want to build this yet"), and the story's missions and side
-quests past the prologue. The houses' roads are the quests there are ([[Quests]]); the Journal shows them.
+**Not now:** sea Breaches ([[Breaches Drop the Best, at Sea Too, for a Fleet of Eight]]), and the story's missions and
+side quests past the prologue. The houses' roads are the quests there are ([[Quests]]); the Journal shows them.
 
 **Must not happen:** a second clock; a reward taken twice in its period by leaving and coming back; an activity a
 player cannot tell is on, or cannot tell why it is shut; Destiny's own words on screen ([[A Group of Players Is a
@@ -85,7 +85,7 @@ Company]]).
 | Abyss Dungeon of the week | Another of the 18, with three modifiers | Abyss, foes at 30 | Campaign's end, level 28 |
 | Elite Playlist | Any of the 18, drawn as each run starts, with the day's modifier | Elite, by bands of five levels | After the prologue, level 10 |
 | Abyss Playlist | Any of the 18, with the day's modifier and one more | Abyss, by bands of five levels | After the prologue, level 20 |
-| Breaches | Later | | Campaign's end |
+| Breaches | The Drowned Vale, launched to the Sunken Gate ([[Breaches]]) | Normal, foes at 26; Hard, at 30 | Campaign's end, level 24; Hard at 28, once Normal is won |
 
 - **Draws** are `gear::activities`, seeded by the clock's day or week number alone, so every room and page sees the
   same. Each island's dungeon of the day is one of its patrols' nine, evenly; the day's modifier is one of the eight,
@@ -115,7 +115,8 @@ Company]]).
 
 ## Runs and companies
 
-- **A company** holds up to four, and a run holds four too: a fifth is sent away saying "This run is full.".
+- **A company** holds up to eight, as a Breach's run does ([[Breaches Drop the Best, at Sea Too, for a Fleet of
+  Eight]]); every other run holds four: a fifth is sent away saying "This run is full.".
 - **A run** is a private room for the company that enters: every dungeon at Elite or Abyss, every Elite Dungeon and
   both of the week's. A dungeon at Normal in a patrol stays in the patrol's shared room, as does a sea island's.
 - **A run's room** is named by an instance after its dungeon's name (`--run-` and eight lowercase letters or digits,

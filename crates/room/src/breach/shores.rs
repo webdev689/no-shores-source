@@ -2,11 +2,10 @@
 //! hall. Its Warden stands at the Seam first; when it falls the Lodestone stands on the hall's plinth and the two rifts
 //! wake, one to the hall as it was and one to the hall as it is. A rift opens while a living player holds its mooring,
 //! and closes once it is left (or a Bulwark stands on it); a body walking into an open rift is carried through, and
-//! back out through the shore's own. In each shore its Keeper waits; its fall Rewrites everyone in that shore, and
-//! the mark clings while they stay. The Seam tolls on a measure, unwriting the Rewritten, and the Lattice walks to it
-//! to fuse as in the Mending. Those left in a shore whose rift has closed are unwritten. Both Keepers fallen, with no
-//! one left in a shore, the Seam breaks and the Steward's door opens. At Hard, the Lodestone's last bearer through a
-//! rift may not carry it through again until another has.
+//! back out through the shore's own. In each shore its Keeper waits; its fall Rewrites everyone there while they stay.
+//! The Seam tolls, unwriting the Rewritten, and the Lattice fuses at it; those left in a shut shore are unwritten. Both
+//! Keepers fallen and no one in a shore, the Steward's door opens. At Hard the Lodestone's last bearer through a rift
+//! may not carry it through again until another has ([[Breaches]]).
 
 use super::{Breach, SHORES};
 use crate::{EventKind, PlayerId, Room};

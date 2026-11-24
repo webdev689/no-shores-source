@@ -390,7 +390,6 @@ dependencies = [
  "navmesh",
  "reach",
  "sailing",
- "serde",
  "serde_json",
  "sky",
  "world",

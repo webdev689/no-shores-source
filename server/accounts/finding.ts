@@ -5,7 +5,7 @@
  * other. A group found is no company: the accounts keep whom each run was found for (`found_runs`), and that run's
  * room lets them in together, for that run alone. The Abyss Dungeon of the week is never matched. The two playlists
  * have a queue each, banded by five levels, whose runs are drawn as they are found (playlists.ts). A Breach's run is
- * found for eight at its tier, and launched for its seeker's company from the Playlist.
+ * launched for its seeker's company from the Playlist, up to eight, never matched.
  */
 
 import { BREACH_MOST, type BREACH_TIERS, RUN_MOST } from '../roomNames.ts';
@@ -44,6 +44,7 @@ const FINDING =
 /** A Breach's base, and the level each of its tiers opens at (`gear::breach::Tier::opens_at`), in the gate's words. */
 const BREACH_BASE = /--breach-(normal|hard)$/;
 export const BREACH_OPENS = { normal: 24, hard: 28 } as const;
+export const BREACH_LAUNCHED = 'A Breach is launched by its company from the Playlist.';
 const breachShut = (tier: (typeof BREACH_TIERS)[number]) =>
   `A Breach at ${tier === 'normal' ? 'Normal' : 'Hard'} opens at level ${BREACH_OPENS[tier]}.`;
 
@@ -229,6 +230,8 @@ export class Finder {
     if (WEEK.test(this.base) && level < WEEK_ELITE_OPENS) return this.letGo(socket, 4003, WEEK_ELITE_SHUT);
     const breach = BREACH_BASE.exec(this.base)?.[1] as (typeof BREACH_TIERS)[number] | undefined;
     if (breach !== undefined && level < BREACH_OPENS[breach]) return this.letGo(socket, 4003, breachShut(breach));
+    // A Breach is no stranger's: it is launched for a company, never matched.
+    if (breach !== undefined && !held.alone) return this.letGo(socket, 4003, BREACH_LAUNCHED);
     // Only a playlist's run and a Breach's are launched alone: an Elite Dungeon's and the week's start from their
     // entrances.
     const alone = held.alone && (playlist !== null || breach !== undefined);
