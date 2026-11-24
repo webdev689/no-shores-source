@@ -1,7 +1,7 @@
 // The helm's keys at sea in the Overworld's view, as in a fight: A and D turn it while held, W sets it sailing
 // straight ahead at the pace dial, S heaves it to. Straight ahead is a course to the farthest point that way short of
 // the first coast, so the sea room, which refuses a course whose leg meets a coast, takes every one sent.
-import { WORLD_FRAME } from '../overworld/discovery.ts';
+import { WORLD_FRAME } from '../overworld/worldFrame.ts';
 import type { Point2 } from '../overworld/ground.ts';
 
 /** How fast the helm turns it under sail, radians a second: Come Sail Away's (crates/sailing/src/helm.rs,

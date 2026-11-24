@@ -25,6 +25,27 @@ export function moveOf(body: Body): string {
   return Math.hypot(body.vx, body.vy) > RUNNING ? 'run' : 'walk';
 }
 
+/** Another player as their horse goes: their number, their feet and facing as drawn, whether they ride (a rider's
+ *  moves are the horse's), and the seconds their boost still runs, as the room last stepped their body. */
+export interface OtherRider {
+  readonly id: number;
+  readonly feet: readonly [number, number, number];
+  readonly facing: number;
+  readonly mounted: boolean;
+  readonly boosting: number;
+}
+
+/** Every other player the page draws, as their horse goes. */
+export function ridersOf(placed: ReadonlyMap<number, Placed>, seen: ReadonlyMap<number, SeenPlayer>): OtherRider[] {
+  return [...placed].map(([id, figure]) => ({
+    id,
+    feet: [figure.x, figure.y, figure.z],
+    facing: figure.facing,
+    mounted: figure.anim.startsWith('horse'),
+    boosting: seen.get(id)?.body.boosting ?? 0,
+  }));
+}
+
 /** Moves another player's figure to the body the room last saw. It shows the move their own screen showed with it,
  *  facing as it faced, where the forge draws that move for this figure; else the move their body is in. */
 export function showOther(placed: Placed, seen: SeenPlayer, draws: (anim: string) => boolean): void {

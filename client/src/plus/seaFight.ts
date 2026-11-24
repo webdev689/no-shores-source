@@ -10,7 +10,8 @@ import { BAR_TONES, VITAL_SIZES } from './barFrame.ts';
 /** The loads a ship's guns take. */
 export type SeaShot = 'round' | 'grape' | 'chain' | 'heated';
 /** The pictures the ship's bar draws its abilities with: a side's gun, the burst, the brace and each load. */
-export type ShipIcon = 'port' | 'starboard' | 'burst' | 'brace' | SeaShot;
+/** The bar's pictures: a ship's abilities', and the horseshoe of a rider's boost, whose ring is drawn as theirs are. */
+export type ShipIcon = 'port' | 'starboard' | 'burst' | 'brace' | 'horseshoe' | SeaShot;
 
 /** One of the ship's abilities as its bar shows it, so another is one more of them: which it is and its picture, its
  *  name and the key that uses it as a keycap draws it (`pad:` before a pad's button); whether it is ready, recharging

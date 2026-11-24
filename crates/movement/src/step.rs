@@ -139,6 +139,8 @@ pub fn step_body_paced<B: Near + ?Sized>(
     let (sin, cos) = (libm::sin(controls.yaw), libm::cos(controls.yaw));
     let wish_x = sin * controls.forward + cos * controls.sideways;
     let wish_y = -cos * controls.forward + sin * controls.sideways;
+    let (body, boosted) = &boost_run(body, controls, seconds);
+    let pace = if *boosted { pace * TUNING.ride_boost } else { pace };
     let wish = Wish { x: wish_x, y: wish_y, length: (wish_x * wish_x + wish_y * wish_y).sqrt(), pace };
     match body.mode {
         Mode::Mantle | Mode::Vault => going_over(body, blocks, seconds),
@@ -146,6 +148,19 @@ pub fn step_body_paced<B: Near + ?Sized>(
         Mode::Air => in_air(body, controls, blocks, terrain, seconds, wish),
         Mode::Ground => on_ground(body, controls, blocks, terrain, seconds, wish),
     }
+}
+
+/// A rider's boost: a tap while riding, once it has recharged, runs it; its clocks then run, the boost and then the
+/// recharge. Answers the body with its clocks run, and whether the horse goes boosted this tick.
+fn boost_run(body: &Body, controls: &Controls, seconds: f64) -> (Body, bool) {
+    let tapped = controls.boost && controls.mounted && body.boosting <= 0.0 && body.recharging <= 0.0;
+    let (boosting, recharging) =
+        if tapped { (TUNING.boost_seconds, TUNING.recharge_seconds) } else { (body.boosting, body.recharging) };
+    // Ticks of 1/60 s add up a hair off a whole second, so a clock within a nanosecond of its end has ended.
+    let run_down = |left: f64| if left - seconds > 1e-9 { left - seconds } else { 0.0 };
+    let (after, recharged) =
+        if boosting > 0.0 { (run_down(boosting), recharging) } else { (0.0, run_down(recharging)) };
+    (Body { boosting: after, recharging: recharged, ..*body }, boosting > 0.0 && controls.mounted)
 }
 
 /// Mantling or vaulting: along the way at its pace, rising first and then going over, so it never cuts the lip.

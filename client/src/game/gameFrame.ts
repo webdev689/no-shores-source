@@ -13,7 +13,7 @@ import type { HelmMap } from './helmMap.ts';
 import { musiciansOf } from './audio/music/band.ts';
 import type { MusicDirector } from './audio/music/director.ts';
 import type { Charting } from './charting.ts';
-import type { Discovered } from './discovered.ts';
+import type { WorldShown } from './worldShown.ts';
 import type { EventPropsDraw } from './eventPropsDraw.ts';
 import type { DungeonDrawers } from './dungeonDrawers.ts';
 import type { FigureView } from './figureView.ts';
@@ -122,7 +122,7 @@ export interface FrameParts {
   readonly traffic: FriendlyTraffic;
   /** The people aboard every other ship drawn, at sea and seen from land. */
   readonly crews: ShipPeople;
-  readonly discovered: Discovered;
+  readonly shown: WorldShown;
   readonly charting: Charting<Landmass>;
   readonly seaWeather: ReturnType<typeof seaWeatherOn>;
   readonly seaView: { reachM: number };
@@ -156,7 +156,7 @@ export interface FrameParts {
 
 /** Starts the frames: one each animation frame, at most one waiting on the GPU while the next is drawn. */
 export function startFrames(parts: FrameParts, playing: Playing): void {
-  const { gpu, canvas, hud, input, scene, walker, firstPerson, footView, traffic, discovered, charting } = parts;
+  const { gpu, canvas, hud, input, scene, walker, firstPerson, footView, traffic, charting } = parts;
   const { ui, stack, drain } = parts;
   let [last, clock] = [performance.now(), 0];
   let wasWalking = false;
@@ -402,12 +402,10 @@ export function startFrames(parts: FrameParts, playing: Playing): void {
     const afoot = here.aboard.walking || here.boarding.onDeck;
     if (wasWalking && !afoot && input.locked) document.exitPointerLock();
     wasWalking = afoot;
-    // What a lookout sees is discovered as the ship sails.
-    if (flow.mode === 'sea') discovered.lookout(here.position);
     const free = flow.mode === 'sea';
     const dpr = canvas.width / Math.max(1, canvas.clientWidth);
     const hands = walker.you.dress.outfit.armour.gauntlets ?? null;
-    const mapDraw = helmMap.frame(here, seconds, { free, viewport, dpr, hands }, discovered);
+    const mapDraw = helmMap.frame(here, seconds, { free, viewport, dpr, hands }, parts.shown);
     // The map at the helm, or the player's own hands walking its deck in first person, over the finished picture.
     const after =
       mapDraw ??

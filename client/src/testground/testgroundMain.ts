@@ -470,6 +470,7 @@ async function start(): Promise<void> {
         walked: player.walked,
         drawn: you.dress.outfit.drawn,
         mounted: player.player.mounted,
+        boosting: player.player.body.boosting ?? 0,
         look: effects.ownLook,
         pulled: shown.pulled,
       },

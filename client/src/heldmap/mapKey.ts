@@ -74,7 +74,7 @@ export function anyCellUnder(
   return false;
 }
 
-/** Whether any discovered land lies under `box` (ink pixels), the map showing `view` (`anyCellUnder`). */
+/** Whether any shown land lies under `box` (ink pixels), the map showing `view` (`anyCellUnder`). */
 export function landUnder(
   field: CoastField,
   knownIslands: number,

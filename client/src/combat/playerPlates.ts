@@ -125,6 +125,13 @@ export class PlayerPlates {
   /** Whether Use is offered on the player aimed at (nothing else is within its reach, no menu is up), and how far it
    *  has been held (0 to 1; null while it is not). */
   offer: { readonly held: number | null } | null = null;
+  /** How far across the ground from the eye a plate shows, and how high over its `feet` it stands, metres. */
+  private readonly rangeM: number;
+  private readonly overM: number;
+
+  constructor(rangeM = PLATE_RANGE_M, overM = PLATE_OVER_M) {
+    [this.rangeM, this.overM] = [rangeM, overM];
+  }
 
   /** Lays the plates of `players` as `viewing` sees them, `seconds` after the last frame. */
   update(players: readonly PlatedPlayer[], viewing: PlayersViewing, seconds: number): void {
@@ -134,8 +141,8 @@ export class PlayerPlates {
     for (const player of players) {
       const [x, y, z] = player.feet;
       const head: Point = [x, y, z + HEAD_M];
-      const far = !!camera && Math.hypot(x - camera.eye[0], y - camera.eye[1]) > PLATE_RANGE_M;
-      const spot = viewing.spot([x, y, z + PLATE_OVER_M]);
+      const far = !!camera && Math.hypot(x - camera.eye[0], y - camera.eye[1]) > this.rangeM;
+      const spot = viewing.spot([x, y, z + this.overM]);
       if (!spot || far) continue;
       tried.add(player.id);
       if (this.sight.hidden(player.id, !!camera && viewing.blocked(camera.eye, head), seconds)) continue;

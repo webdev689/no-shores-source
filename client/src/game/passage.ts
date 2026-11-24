@@ -1,7 +1,7 @@
 // The player's ship's passage at sea: where it lies and heads, the voyage it sails (one planned round the land to a
 // point, or the helm's straight on along its heading), the pace dial, and each course sent to the sea room, which sails
 // it by its own law while the page draws it toward where the room has it.
-import { WORLD_FRAME } from '../overworld/discovery.ts';
+import { WORLD_FRAME } from '../overworld/worldFrame.ts';
 import type { Point2 } from '../overworld/ground.ts';
 import { maskFromOutlines, planSeaRoute, type RouteRefusal, type SeaMask } from '../overworld/seaRoute.ts';
 import { PACE_DEFAULT, type Pace, secondsLeft, shipAt, stepPace, type Voyage, voyageOf } from '../overworld/voyage.ts';

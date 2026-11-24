@@ -13,7 +13,7 @@ async function movement() {
 }
 
 /** The movement crate's agreement test holds the same fingerprint, course and script (crates/movement/tests/agree.rs). */
-const RUN_HASH = '2267bd9bb6ecb0ec';
+const RUN_HASH = 'e8369fd91758ace2';
 
 /** A ledge to catch and climb, a low thin wall to vault, a tower to climb, and a step. */
 const COURSE: readonly Block[] = [
@@ -23,7 +23,8 @@ const COURSE: readonly Block[] = [
   { minX: -2, minY: 3, maxX: 2, maxY: 5, top: 0.4, bottom: 0 },
 ];
 
-/** Ticks, then forward, sideways, yaw, run, jump and crouch (on the first tick only) and mounted. */
+/** Ticks, then forward, sideways, yaw, run, jump and crouch (on the first tick only) and mounted (its boost tapped on
+ *  the first tick). */
 type Phase = readonly [number, number, number, number, boolean, boolean, boolean, boolean];
 
 const SCRIPT: readonly Phase[] = [
@@ -51,7 +52,16 @@ async function runScript(): Promise<Body[]> {
   for (const [ticks, forward, sideways, yaw, run, jump, crouch, mounted] of SCRIPT)
     for (let tick = 0; tick < ticks; tick++) {
       const first = tick === 0;
-      const controls: Controls = { forward, sideways, yaw, run, jump: jump && first, crouch: crouch && first, mounted };
+      const controls: Controls = {
+        forward,
+        sideways,
+        yaw,
+        run,
+        jump: jump && first,
+        crouch: crouch && first,
+        mounted,
+        boost: mounted && first,
+      };
       body = rules.step(body, controls);
       bodies.push(body);
     }

@@ -218,6 +218,7 @@ test("on land the sea's own pieces go: the ships' plates, the sight, the readout
   hideSeaHud(hud as unknown as Hud);
   assert.equal(said['tasks'], undefined, "the tracker is left to the land, which shows the roads' quest there");
   assert.deepEqual(said['shipBars']?.[0], [], "no ship's plate stands over the land");
+  assert.deepEqual(said['seaPlayers']?.[0], [], "no other player's ship's mark either");
   assert.equal(said['seaFight']?.[0], null);
   assert.equal(said['seaBar']?.[0], null);
   assert.equal(said['shipPanel']?.[0], null);
@@ -260,4 +261,34 @@ test('a friendly ship the room keeps at sea keeps its friendly mark on the compa
   assert.deepEqual(seaShipMarks(null, { others: [], hostiles: [], friendlies }), [
     { x: 300, y: -40, kind: 'friendly' },
   ]);
+});
+
+test("other players' ships wear their marks out of a fight, and none while the view is down at the helm, where the map covers it", () => {
+  const shownPlayers: unknown[] = [];
+  const hud = new Proxy(
+    {},
+    {
+      get: (_target, key) =>
+        key === 'tasks'
+          ? { show: () => undefined }
+          : key === 'seaPlayers'
+            ? (players: unknown) => shownPlayers.push(players)
+            : () => undefined,
+    },
+  );
+  const sea = (helmView: boolean) =>
+    ({
+      view: { helmView },
+      aboard: { walking: false, managing: false, active: false, atWheel: false, where: {} },
+      boarding: { words: null },
+      waterWords: null,
+      fight: null,
+      sighted: null,
+    }) as unknown as Sea;
+  const players = [{ id: 2 }];
+  const shown = { shot: { eye: [0, 0, 10], yaw: 0, pitch: 0.3, fov: 1 }, marks: [], bars: [], players, focus: [0, 0] };
+  const state = { landing: false, onSea: true, region: 'The sea', clock: 0, friendly: [], notices: [] };
+  for (const helmView of [false, true])
+    showSeaHud(hud as unknown as Hud, sea(helmView), shown as unknown as SeaFrame, state as unknown as SeaHudState);
+  assert.deepEqual(shownPlayers, [players, []]);
 });

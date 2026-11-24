@@ -6,7 +6,7 @@ import { BODY_FLOATS, type Body } from '../rules/movementRules.ts';
 import type { Cards } from './cards.ts';
 import { plainDress } from './dressing.ts';
 import type { Placed } from './figures.ts';
-import { OtherPlayers, dressNow, moveOf } from './others.ts';
+import { OtherPlayers, dressNow, moveOf, ridersOf } from './others.ts';
 
 const body: Body = {
   x: 0,
@@ -127,4 +127,38 @@ test('another player drinking has their weapon put away at once, from the snapsh
   assert.equal(others.placed.get(7)?.dress.outfit.drawn, false);
   others.seen([seen(0)], 1, forge);
   assert.equal(others.placed.get(7)?.dress.outfit.drawn, true);
+});
+
+test('other players ride as they are drawn, each boosted as the room last stepped their body', () => {
+  const figure = (id: number, anim: string): Placed => {
+    const dress = plainDress('human', 0.5);
+    return { id, x: id, y: 2, z: 0.5, facing: 1, dress, anim, frame: null, spin: false };
+  };
+  const placed = new Map([
+    [7, figure(7, 'horsegallop')],
+    [8, figure(8, 'walk')],
+    [9, figure(9, 'horseidle')],
+  ]);
+  const seen = (player: number, boosting: number): SeenPlayer => ({
+    player,
+    acknowledged: 0,
+    body: { ...body, boosting },
+    fighter: null,
+    standing: { kind: 'inside' },
+    anim: '',
+    frame: 0,
+    facing: 0,
+  });
+  const riders = ridersOf(
+    placed,
+    new Map([
+      [7, seen(7, 2.5)],
+      [8, seen(8, 0)],
+    ]),
+  );
+  assert.deepEqual(riders, [
+    { id: 7, feet: [7, 2, 0.5], facing: 1, mounted: true, boosting: 2.5 },
+    { id: 8, feet: [8, 2, 0.5], facing: 1, mounted: false, boosting: 0 },
+    { id: 9, feet: [9, 2, 0.5], facing: 1, mounted: true, boosting: 0 },
+  ]);
 });

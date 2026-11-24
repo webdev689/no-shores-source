@@ -22,7 +22,7 @@ import { IDLE, type InputFrame } from '../player/input.ts';
 import { cameraFollowed, playerCamera, shownBody } from '../player/player.ts';
 import { AIM, handsZoom } from '../player/playerCamera.ts';
 import type { PlacedLoop } from '../player/playerMoves.ts';
-import type { OtherPlayers, Others } from '../player/others.ts';
+import { type OtherPlayers, type Others, ridersOf } from '../player/others.ts';
 import type { CombatRules } from '../rules/combatRules.ts';
 import { crosshairOf } from '../combat/reticle.ts';
 import { type FighterView, fighterView } from '../rules/fighters.ts';
@@ -267,8 +267,7 @@ export class Foot {
       const fight = new Fighting(rules.combat, opened.link);
       hearer.fight = fight;
       if (!opened.dungeon) for (const foe of asked) fight.ask(foe);
-      // The welcome's dresses and plates come with the first snapshot after it (`RoomConnection`), so none newer is
-      // undone by the welcome taken late.
+      // Dresses and plates come with the snapshot after the welcome (`RoomConnection`): a late welcome undoes no newer.
       const people = { otherPlayers: players, held, folk: [], module: await context.roomModule };
       return new Foot(context, node, opened, { link: opened.link, fight, ...rules }, people);
     });
@@ -455,16 +454,17 @@ export class Foot {
       held: fight.publicHeld,
       encounter: { layout: this.dungeon?.layout, seen: this.held.encounter },
     });
+    const [{ facing, mounted }, boosting] = [walker.player, body.boosting ?? 0];
     const marks = effects.marks(fight, seconds, {
       eye: shot.eye,
       blocks: this.boxes,
       bodies,
-      muzzleOf: () =>
-        muzzle ? screenMuzzle(kicked, aspect, muzzle) : figureMuzzle([body.x, body.y, body.z], walker.you.facing),
+      muzzleOf: () => (muzzle ? screenMuzzle(kicked, aspect, muzzle) : figureMuzzle(feet, walker.you.facing)),
       origin: shot.eye,
       groundAt,
       drawn: { foes: foes.placed, others: this.otherPlayers.placed },
       more: dropped.marks,
+      riders: [{ id: fight.player, feet, facing, mounted, boosting }, ...ridersOf(others, fight.others)],
     });
     this.sounds.frame({
       seconds,
@@ -478,7 +478,8 @@ export class Foot {
         feet: [body.x, body.y, body.z],
         walked: walker.walked,
         drawn: walker.you.dress.outfit.drawn,
-        mounted: walker.player.mounted,
+        mounted,
+        boosting,
         look: effects.ownLook,
         pulled: shown.pulled,
       },
@@ -489,9 +490,8 @@ export class Foot {
       crates: this.held.gear?.crates ?? null,
       heard: shownPublic.sounds,
     });
-    const { fall } = walker;
-    const playerFall = { id: fight.player, feet: [body.x, body.y, body.z] as const, tumbling: !!fall?.tumbling };
-    const heard = { ...playerFall, lying: fall?.tumbling === false };
+    const playerFall = { id: fight.player, feet, tumbling: !!walker.fall?.tumbling };
+    const heard = { ...playerFall, lying: walker.fall?.tumbling === false };
     this.falling.hear(heard, fight.others, this.otherPlayers.placed, { seconds, eye: shot.eye, quiet: paused });
     // Every blow being struck, its arc following its striker's figure as drawn; none through the eyes.
     const yours = { dress: walker.shownDress, looks: walker.glowing };
@@ -511,7 +511,6 @@ export class Foot {
       module: this.module,
     };
     const placeUse = this.uses?.(x, y, (asked) => fight.askGear(asked)) ?? null;
-    const { mounted } = walker.player;
     const counters = countersOf(this.node);
     // A fallen ally beside the player comes first, as Destiny's revive does, then a public event's chest.
     const revive = reviveHere(fight, this.held, [x, y, walker.player.body.z], able && !mounted, controls, this.nameOf);
@@ -536,6 +535,7 @@ export class Foot {
       parryOpen: fight.parryOpen,
       parryWindow: fight.parryWindow,
       abilities: fight.abilities,
+      rider: walker.player.mounted ? walker.player.body : null,
       // The shots left stand beside the crosshair, wherever it shows.
       ammo: sights ? (ownView?.ammo ?? null) : null,
       ammoMost: held?.ammoMost ?? null,

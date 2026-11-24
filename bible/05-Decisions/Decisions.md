@@ -354,6 +354,8 @@ a decision is a record. How to add one: [[Recording a Decision]].
 - [[Revives, Respawns and Relogs as Claude Shapes Them]]
 - [[A Foe's Plain Swing Takes Seven Eighths of Its Time]]
 - [[The Harbourmaster Stands in the Market, Rain Spares the Trees, and Patrol Nodes Always Stand]]
+- [[Other Ships Wear Their Players' Marks, the Sea Map Has No Fog, and New Players Ride a Bay That Bursts]]
+- [[The Lattice Is Shaded Darker, With Detailed Attacks and Projectile Tracers]]
 - [[Every Objective Has a Waypoint on the Compass, on Land and at Sea]]
 - [[Waypoints as Claude Builds Them]]
 

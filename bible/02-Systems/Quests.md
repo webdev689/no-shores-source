@@ -85,7 +85,8 @@ group holds its
 place, fights there and walks back to its post as a garrison's group does.
 
 A reward gives Aurem (`aurem`, any quest's), the Art (`art`, its Anima with it, worn at once), a Tenet (`tenet`: 1 or
-2, in the Art's order), or fragments to choose (`fragments`: how many choices). Which Art is the quest's house's.
+2, in the Art's order), fragments to choose (`fragments`: how many choices), or the first horse (`horse`: the Bay,
+worn where none is, never a second). Which Art is the quest's house's.
 Beside it, every task that sends the player out (any goal but `talk`, `pledge`, `buy` and `wear`) pays a mission's
 clear at their level, 400 XP and 30 Aurem at level 5 raised as a kill is, as Destiny 1 paid each mission done
 ([[Gear]], "A clear"; [[The Balance and Economy Pass as Claude Shapes It]]).
@@ -95,7 +96,9 @@ clear at their level, 400 XP and 30 Aurem at level 5 raised as a kill is, as Des
 "A House of Your Own" walks a new player round Overlook, then to a house
 ([[The Stranger Welcomes the Player, and a Quest Walks Them Round Overlook]]; Claude's calls in
 [[The Prologue, Horses and the Welcome to Overlook as Claude Builds Them]]): **Hear the stranger out** (her welcome,
-[[Prologue]]; its reward the 400 Aurem she gives); **Find your way round Overlook**, speaking at each counter in turn
+[[Prologue]]; its reward the 400 Aurem she gives and the Bay Horse, `"horse": true`, worn unless one is, never a
+second,
+[[Other Ships Wear Their Players' Marks, the Sea Map Has No Fog, and New Players Ride a Bay That Bursts]]); **Find your way round Overlook**, speaking at each counter in turn
 (the Weaponsmith, the Armorsmith, the Mage, the Vault, the Tailor, the Tack, the Postmaster, and the Harbourmaster for
 the Shipwright), each keeper saying what their counter is for; **Arm yourself**, a Melee weapon bought of the
 Weaponsmith and the four armour pieces of the Armorsmith, which the starter stock sells for 50 Aurem each ([[Gear]]);
