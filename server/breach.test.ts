@@ -4,7 +4,7 @@ import { characters } from './accounts/characters.ts';
 import { launchedFor } from './accounts/companies.ts';
 import { foundRun } from './accounts/finding.ts';
 import { accounts } from './accounts/accountsForTests.ts';
-import { Breach, type BreachDeps, GATE_SHUT, LAUNCH_ARRIVES_MS, breachAsked } from './breach.ts';
+import { Breach, type BreachDeps, GATE_SHUT, LAUNCH_ARRIVES_MS, breachAsked, toldBreach } from './breach.ts';
 import { NO_WAY_HERE } from './arrival.ts';
 import { Keeper } from './keeping.ts';
 import { roomOf } from './keepingForTests.ts';
@@ -149,4 +149,18 @@ test('a launch takes its company to the gate from anywhere for half an hour, and
   assert.equal(await arrives(LAUNCH_ARRIVES_MS - 1), true);
   assert.equal(await arrives(LAUNCH_ARRIVES_MS + 1), false, 'too long since: they sail there');
   assert.equal(await launchedFor(made.deps.database, account, RUN, made.clock.now + LAUNCH_ARRIVES_MS + 1), true);
+});
+
+test('a host’s keeper tells its Breach of each character it keeps, once kept, and of each name it gives', () => {
+  const told: string[] = [];
+  const breach = {
+    owned: (player: number) => told.push(`owned ${player}`),
+    named: (player: number, name: string) => told.push(`${player} ${name}`),
+  };
+  const door = toldBreach(() => breach as unknown as Breach, {
+    own: (player: number) => player === 4,
+    name: () => true,
+  });
+  assert.deepEqual([door.own(4, 'ada'), door.own(5, 'ben'), door.name(4, 'Ada')], [true, false, true]);
+  assert.deepEqual(told, ['owned 4', '4 Ada'], 'one refused is not told');
 });

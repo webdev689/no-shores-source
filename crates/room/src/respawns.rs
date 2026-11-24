@@ -4,8 +4,8 @@
 //! they fell with no living foe within FOES_CLEAR_M, facing where they fell. Where a foe stands near every one, they
 //! stand at the section's spawn nearest them.
 
-use crate::{PlayerId, Room};
 use crate::garrison::SPAWN_CLEAR;
+use crate::{PlayerId, Room};
 use combat::sight::{apart, bearing};
 use combat::tuning::BODY_HEIGHT;
 use movement::Body;

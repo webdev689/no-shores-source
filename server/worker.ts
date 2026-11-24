@@ -5,7 +5,7 @@ import roomModule from '../target/wasm32-unknown-unknown/release/room_wasm.wasm'
 import type { CharacterKeeper } from './accounts/worker.ts';
 import { type Listed, arrives, cameOutOf, reachOf, shipOf } from './arrival.ts';
 import { addressKey } from './address.ts';
-import { Breach, breachAsked } from './breach.ts';
+import { Breach, breachAsked, breachHeard, toldBreach } from './breach.ts';
 import { type Count, admitsFrom, counted } from './budget.ts';
 import { Keeper, partFrom, TOKEN, TOKEN_WAIT_MS } from './keeping.ts';
 import {
@@ -161,8 +161,7 @@ export class RoomHost extends DurableObject<Env> {
 
   /** A Breach's word between its zone and its run (`breach.ts`): whether a run's gate opened, or how far it came. */
   async breachWord(kind: 'opened' | 'inside', text: string): Promise<boolean> {
-    const heard = () => (kind === 'opened' ? this.room.breachOpened(text) : this.room.breachInside(text));
-    return (await (this.opened ?? Promise.resolve(false))) && this.guarded(heard, false);
+    return (await this.opened) === true && this.guarded(() => breachHeard(this.room, kind, text), false);
   }
 
   override async fetch(request: Request): Promise<Response> {
@@ -239,7 +238,7 @@ export class RoomHost extends DurableObject<Env> {
   private async openRoom(name: string): Promise<boolean> {
     this.name = name;
     const accounts = this.env.ACCOUNTS;
-    const room = {
+    const room = toldBreach(() => this.breach, {
       character: (player: number) => this.guarded(() => this.room.character(player), null),
       restoreCharacter: (player: number, kept: string) =>
         this.guarded(() => this.room.restoreCharacter(player, kept), false),
@@ -248,15 +247,11 @@ export class RoomHost extends DurableObject<Env> {
         // Kept, a run's player plays; a sea island's dungeon's waits on the sea's word that they are landed.
         if (owned && !this.name.startsWith('sea-dungeon-')) this.guarded(() => this.room.hold(player, false), false);
         if (owned && this.island) void this.landOn(this.island, player, account);
-        if (owned) this.breach?.owned(player, account);
         return owned;
       },
       shut: (player: number, kept: string | null) => this.guarded(() => this.room.shut(player, kept), ''),
-      name: (player: number, name: string) => {
-        this.breach?.named(player, name);
-        return this.guarded(() => this.room.name(player, name), false);
-      },
-    };
+      name: (player: number, name: string) => this.guarded(() => this.room.name(player, name), false),
+    });
     this.breach = new Breach(name, {
       room: this.room,
       zone: (zone) => this.env.ROOMS.getByName(zone),

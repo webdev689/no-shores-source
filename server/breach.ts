@@ -129,3 +129,24 @@ export class Breach {
       .catch(() => false);
   }
 }
+
+/** A zone's or a run's room taking a Breach's word from the other (`Zone`): a run's gate opened, or how far it came. */
+export const breachHeard = (room: RoomDoor, kind: 'opened' | 'inside', text: string): boolean =>
+  kind === 'opened' ? room.breachOpened(text) : room.breachInside(text);
+
+/** What a host's keeper does with its room (`door`), its Breach told of each character it keeps (once kept) and of
+ *  each name it gives. */
+export function toldBreach<
+  Door extends { own(player: number, account: string): boolean; name(player: number, name: string): boolean },
+>(breach: () => Breach | null, door: Door): Door {
+  const own = (player: number, account: string) => {
+    const owned = door.own(player, account);
+    if (owned) breach()?.owned(player, account);
+    return owned;
+  };
+  const name = (player: number, named: string) => {
+    breach()?.named(player, named);
+    return door.name(player, named);
+  };
+  return { ...door, own, name };
+}
