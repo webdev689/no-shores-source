@@ -1,5 +1,6 @@
-// Moderation: the slash commands, the panel's tables and acts, and the clock that lifts temporary bans. Every act on
-// a member goes through `actFor` in moderationCases.ts; the channel tools (purge, slow mode, lock) are here.
+// Moderation: the slash commands, the panel's tables and acts, the clock that lifts temporary bans, and Discord's word
+// of bans made by hand, which end them. Every act on a member goes through `actFor` in moderationCases.ts; the channel
+// tools (purge, slow mode, lock) are here.
 
 import { escapeText } from '../law/message.ts';
 import { PERMISSION } from '../law/access.ts';
@@ -14,17 +15,22 @@ import {
   postTo,
   privateReply,
 } from '../kit.ts';
-import type { ActionRunner, ServerModule, ViewReader } from './module.ts';
+import type { ActionRunner, EventHandler, ServerModule, ViewReader } from './module.ts';
 import {
   type Act,
   type Action,
   type Asker,
+  type BanChange,
   BOT_NAME,
+  OWN_BAN_S,
   TITLES,
   actFor,
+  askBanChange,
   caseCard,
+  endBanCases,
   isAction,
   recordCase,
+  takeOwnBanChange,
 } from './moderationCases.ts';
 
 /** How long a temporary ban the bot could not lift waits before it is tried again. */
@@ -274,6 +280,10 @@ async function onCommand(context: BotContext, interaction: Interaction, config: 
 /** Lift the temporary bans whose time is up, a bounded number a tick. */
 async function minute(context: BotContext): Promise<void> {
   const nowS = Math.floor(context.now() / 1000);
+  await context.database
+    .prepare('DELETE FROM bot_ban_asks WHERE at < ?')
+    .bind(nowS - OWN_BAN_S)
+    .run();
   const due = await context.database
     .prepare(
       "SELECT guild_id, case_no, user_id, user_name FROM mod_cases WHERE expires_at > 0 AND expires_at <= ? AND active = 1 AND action = 'ban' ORDER BY expires_at LIMIT ?",
@@ -283,9 +293,10 @@ async function minute(context: BotContext): Promise<void> {
   for (const row of due.results ?? []) {
     const guildId = String(row.guild_id);
     const found = await context.config(guildId, 'moderation');
-    const lifted = await context.rest.del(`/guilds/${guildId}/bans/${String(row.user_id)}`, {
-      reason: `Case ${String(row.case_no)} ended`,
-    });
+    const userId = String(row.user_id);
+    const lifted = await askBanChange(context, guildId, userId, 'unban', () =>
+      context.rest.del(`/guilds/${guildId}/bans/${userId}`, { reason: `Case ${String(row.case_no)} ended` }),
+    );
     // An unknown ban was lifted by hand already. A refusal (the bot lost Ban Members, or left the server) is tried
     // again in an hour, so it never holds the head of the line for every other server; anything else, next tick.
     if (!lifted.ok && lifted.status === 403) {
@@ -303,7 +314,7 @@ async function minute(context: BotContext): Promise<void> {
     const act: Act = {
       action: 'unban',
       guildId,
-      user: { id: String(row.user_id), name: String(row.user_name) },
+      user: { id: userId, name: String(row.user_name) },
       mod: { id: 'bot', name: BOT_NAME },
       reason: `The ban in case ${String(row.case_no)} ended`,
       config: found?.config ?? {},
@@ -312,6 +323,22 @@ async function minute(context: BotContext): Promise<void> {
     await postTo(context.rest, String(act.config.logChannel ?? ''), { embeds: [caseCard(act, caseNo, context.now())] });
   }
 }
+
+/**
+ * Discord's word of a ban or an unban, whoever made it. One made by hand ends the member's ban cases, as the bot's own
+ * do in `moderate`, so the clock never lifts a ban it did not set. Word of the bot's own change can come after the
+ * bot has opened another case (an unban, then a ban for a day), so it is told apart and changes nothing.
+ */
+const onBanChange =
+  (change: BanChange): EventHandler =>
+  async (context, data) => {
+    const [guildId, userId] = [String(data.guild_id), String(recordOf(data.user).id)];
+    if (!(await takeOwnBanChange(context, guildId, userId, change))) await endBanCases(context, guildId, userId);
+  };
+const events: Readonly<Record<string, EventHandler>> = {
+  GUILD_BAN_ADD: onBanChange('ban'),
+  GUILD_BAN_REMOVE: onBanChange('unban'),
+};
 
 const CASES_PAGE = 50;
 
@@ -391,6 +418,7 @@ export const moderationModule: ServerModule = {
   id: 'moderation',
   commands: MODERATION_COMMANDS,
   command: onCommand,
+  events,
   minute,
   views,
   actions,

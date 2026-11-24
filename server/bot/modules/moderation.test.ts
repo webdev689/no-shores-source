@@ -147,6 +147,45 @@ test('moderation: a ban ends the ban cases before it, so an old time limit never
   assert.ok(bot.discord.state.bans.has(TARGET), 'still banned, for good');
 });
 
+test('moderation: a ban or unban made by hand ends a temporary ban, so the clock never lifts a ban it did not set', async () => {
+  const bot = await standSafetyWorker();
+  const banEvent = (type: string) => bot.dispatcher.dispatch(type, { guild_id: GUILD, user: { id: TARGET } });
+  await bot.ask(ban(text('duration', '1d')));
+  await banEvent('GUILD_BAN_ADD');
+  bot.discord.state.bans.delete(TARGET);
+  await banEvent('GUILD_BAN_REMOVE');
+  bot.discord.state.bans.set(TARGET, {});
+  await banEvent('GUILD_BAN_ADD');
+  await bot.clock(Date.now() + 2 * 86_400_000);
+  assert.ok(bot.discord.state.bans.has(TARGET), 'still banned, for good');
+  assert.deepEqual(
+    bot.cases().map((row) => [row.action, row.active]),
+    [['ban', 0]],
+  );
+  // an unban the Gateway missed (it was away): the ban by hand that follows is enough
+  const missed = await standSafetyWorker();
+  const missedEvent = () => missed.dispatcher.dispatch('GUILD_BAN_ADD', { guild_id: GUILD, user: { id: TARGET } });
+  await missed.ask(ban(text('duration', '1d')));
+  await missedEvent();
+  await missedEvent();
+  await missed.clock(Date.now() + 2 * 86_400_000);
+  assert.ok(missed.discord.state.bans.has(TARGET));
+});
+
+test("moderation: the Gateway seeing the bot's own bans and unbans late leaves a later time limit alone", async () => {
+  const bot = await standSafetyWorker();
+  const banEvent = (type: string) => bot.dispatcher.dispatch(type, { guild_id: GUILD, user: { id: TARGET } });
+  await bot.ask(ban());
+  await bot.ask(slash(OWNER, 'unban', [text('user', TARGET)], { permissions: ALL, roles: [] }));
+  await bot.ask(ban(text('duration', '1d')));
+  // Discord's word of all three arrives only now, after the day's ban was recorded
+  await banEvent('GUILD_BAN_ADD');
+  await banEvent('GUILD_BAN_REMOVE');
+  await banEvent('GUILD_BAN_ADD');
+  await bot.clock(Date.now() + 2 * 86_400_000);
+  assert.equal(bot.discord.state.bans.has(TARGET), false, 'lifted on time');
+});
+
 test('moderation: a member is told of a ban only once the bot holds Ban Members, and told again if Discord refuses', async () => {
   const bot = await standSafetyWorker();
   const botRole = (permissions: string) => ({

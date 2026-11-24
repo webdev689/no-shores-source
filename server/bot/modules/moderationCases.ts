@@ -22,6 +22,8 @@ import type { Actor } from './module.ts';
 
 /** Discord's longest time-out. */
 export const TIMEOUT_MAX_S = 28 * 86_400;
+/** How long a ban or an unban the bot asked for is known as its own: far longer than Discord's word of it takes. */
+export const OWN_BAN_S = 600;
 /** The name the case shows for an act the bot took by itself. */
 export const BOT_NAME = 'The bot';
 
@@ -120,6 +122,57 @@ export async function recordCase(context: BotContext, act: Act, nowS: number): P
   return Number(row?.case_no ?? 0);
 }
 
+/** End a member's open ban cases, so no time limit set before lifts the ban they are under now. */
+export async function endBanCases(context: BotContext, guildId: string, userId: string): Promise<void> {
+  await context.database
+    .prepare("UPDATE mod_cases SET active = 0 WHERE guild_id = ? AND user_id = ? AND action = 'ban' AND active = 1")
+    .bind(guildId, userId)
+    .run();
+}
+
+export type BanChange = 'ban' | 'unban';
+
+/**
+ * Ask Discord for a ban or an unban, noted in `bot_ban_asks` first: Discord's word of it can reach the Gateway before
+ * its answer reaches here. An ask Discord refused is let go.
+ */
+export async function askBanChange(
+  context: BotContext,
+  guildId: string,
+  userId: string,
+  change: BanChange,
+  ask: () => Promise<RestResult>,
+): Promise<RestResult> {
+  const asked = await context.database
+    .prepare('INSERT INTO bot_ban_asks (guild_id, user_id, action, at) VALUES (?, ?, ?, ?) RETURNING id')
+    .bind(guildId, userId, change, Math.floor(context.now() / 1000))
+    .first<{ id: number }>();
+  const done = await ask();
+  if (!done.ok && asked) await context.database.prepare('DELETE FROM bot_ban_asks WHERE id = ?').bind(asked.id).run();
+  return done;
+}
+
+/**
+ * Take the oldest of the bot's asks for this change in the last OWN_BAN_S: true when there was one, so the change
+ * Discord tells of is the bot's. Each ask answers one change, so one made by hand soon after is still told apart.
+ */
+export async function takeOwnBanChange(
+  context: BotContext,
+  guildId: string,
+  userId: string,
+  change: BanChange,
+): Promise<boolean> {
+  const since = Math.floor(context.now() / 1000) - OWN_BAN_S;
+  const taken = await context.database
+    .prepare(
+      `DELETE FROM bot_ban_asks WHERE id = (SELECT id FROM bot_ban_asks
+         WHERE guild_id = ? AND user_id = ? AND action = ? AND at >= ? ORDER BY id LIMIT 1) RETURNING id`,
+    )
+    .bind(guildId, userId, change, since)
+    .first();
+  return taken !== null;
+}
+
 const botIdOf = (context: BotContext) => botUserId(context.rest, String(context.vars.DISCORD_BOT_TOKEN ?? ''));
 
 /**
@@ -157,6 +210,7 @@ export async function whyNot(
 /** What Discord is asked to do for an act; a warning or a note asks nothing. */
 async function applyToDiscord(context: BotContext, act: Act): Promise<RestResult | null> {
   const member = `/guilds/${act.guildId}/members/${act.user.id}`;
+  const ban = `/guilds/${act.guildId}/bans/${act.user.id}`;
   const reason = act.reason || `By ${act.mod.name}`;
   switch (act.action) {
     case 'timeout': {
@@ -168,13 +222,11 @@ async function applyToDiscord(context: BotContext, act: Act): Promise<RestResult
     case 'kick':
       return context.rest.del(member, { reason });
     case 'ban':
-      return context.rest.put(
-        `/guilds/${act.guildId}/bans/${act.user.id}`,
-        { delete_message_seconds: act.deleteS ?? 0 },
-        { reason },
+      return askBanChange(context, act.guildId, act.user.id, 'ban', () =>
+        context.rest.put(ban, { delete_message_seconds: act.deleteS ?? 0 }, { reason }),
       );
     case 'unban':
-      return context.rest.del(`/guilds/${act.guildId}/bans/${act.user.id}`, { reason });
+      return askBanChange(context, act.guildId, act.user.id, 'unban', () => context.rest.del(ban, { reason }));
     default:
       return null;
   }
@@ -255,11 +307,7 @@ export async function moderate(context: BotContext, act: Act): Promise<Outcome> 
   if (told && !toldFirst) await directMessage(context.rest, act.user.id, told);
   const nowS = Math.floor(context.now() / 1000);
   // An unban ends every ban case; a new ban ends the ones before it, so an old time limit never lifts it.
-  if (act.action === 'unban' || act.action === 'ban')
-    await context.database
-      .prepare("UPDATE mod_cases SET active = 0 WHERE guild_id = ? AND user_id = ? AND action = 'ban' AND active = 1")
-      .bind(act.guildId, act.user.id)
-      .run();
+  if (act.action === 'unban' || act.action === 'ban') await endBanCases(context, act.guildId, act.user.id);
   const caseNo = await recordCase(context, act, nowS);
   await postTo(context.rest, String(act.config.logChannel ?? ''), { embeds: [caseCard(act, caseNo, context.now())] });
   if (act.action === 'warn') await stepAfterWarning(context, act, nowS);

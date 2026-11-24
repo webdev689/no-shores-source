@@ -110,6 +110,20 @@ async function deal(
   }
 }
 
+/** Tell the alert channel of one member who joined, with their account's age. */
+async function report(context: BotContext, config: Settings, title: string, user: Settings, ageMs: number) {
+  await postTo(context.rest, String(config.alertChannel ?? ''), {
+    embeds: [
+      embed({
+        title,
+        color: 0xd9a33c,
+        description: `${userLabel(user)}: the account is ${durationWords(ageMs / 1000)} old.`,
+        timestamp: context.now(),
+      }),
+    ],
+  });
+}
+
 const events: Readonly<Record<string, EventHandler>> = {
   async GUILD_MEMBER_ADD(context, data, config) {
     const user = recordOf(data.user);
@@ -131,25 +145,18 @@ const events: Readonly<Record<string, EventHandler>> = {
       await startRaid(context, guildId, config, Number(config.raidMinutes), why);
       raid = await raidOf(context, guildId);
     }
+    const ageMs = now - snowflakeTime(userId);
     if (raid) {
       const left = Math.max(60, Number(raid.until_s) - Math.floor(now / 1000));
       await deal(context, guildId, userId, config.raidAction, left, 'Raid mode');
+      // a kick or a time-out shows in Discord's audit log; a joiner only reported is told of here, one post each
+      if (config.raidAction === 'alert') await report(context, config, 'Joined in raid mode', user, ageMs);
       return;
     }
-    const ageMs = now - snowflakeTime(userId);
     const youngDays = Number(config.minAccountDays) || 0;
     if (youngDays <= 0 || ageMs >= youngDays * 86_400_000) return;
     await deal(context, guildId, userId, config.youngAction, YOUNG_TIMEOUT_S, 'A very new account');
-    await postTo(context.rest, String(config.alertChannel ?? ''), {
-      embeds: [
-        embed({
-          title: 'New account joined',
-          color: 0xd9a33c,
-          description: `${userLabel(user)}: the account is ${durationWords(ageMs / 1000)} old.`,
-          timestamp: now,
-        }),
-      ],
-    });
+    await report(context, config, 'New account joined', user, ageMs);
   },
 };
 

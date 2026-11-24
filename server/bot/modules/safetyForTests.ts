@@ -23,7 +23,7 @@ import type { BotContext, InteractionOption } from '../kit.ts';
 import { registryOf, moduleHandlers } from '../registry.ts';
 import { createRest, type Fetch } from '../rest.ts';
 import { writeConfig } from '../store.ts';
-import { handle, tick } from '../worker.ts';
+import { handle, tick, workerContext } from '../worker.ts';
 import { antiraidModule } from './antiraid.ts';
 import { automodModule } from './automod.ts';
 import { logsModule } from './logs.ts';
@@ -207,6 +207,8 @@ export async function standSafetyWorker(moderation: Settings = {}, enabled = tru
     nowS: 1,
   });
   const over = { fetch: discord.fetch, registry: bot.registry };
+  // the Gateway's side of the same bot, so a test can send the events Discord sends for what was done by hand
+  bot.dispatcher.use(moduleHandlers(workerContext(bot.env, bot.execution, Date.now, over), bot.registry));
   const call = async (request: Request) => {
     try {
       return await handle(request, bot.env, bot.execution, over);
