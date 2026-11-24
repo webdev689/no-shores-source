@@ -58,7 +58,8 @@ exposure and how long it lasts. As the rules build them (`hull_builds_json`, whi
 | Frigate | 579 | 235 | 24 | 10 | ×1.5 | 7.0 s | ×0.9 | ×0.72 | 4 |
 
 - **In a fight**: the fight puts the player's ship to sea in its own hull with its class's hull, canvas and men
-  (`Fight::put_to_sea_kept`); each ball of a side is its share of the Sloop's broadside times its class's weight; a side
+  (`Fight::put_to_sea_kept`); each ball of a side is its share of the Sloop's broadside times its class's weight, each
+  gun elevated for the range from its own port and deck, so the Frigate's lower deck throws as its upper one; a side
   reloads at its class's pace, times its trim's and its hands'; its helm pulls and swings at its class's way and swing
   (`sail_hurt`); a captain sizing it up reckons its class (`Power::player_in`). Every player's hull answers its helm
   as the Sloop does (the Sloop's gain), and its canvas drives it as the Sloop's, so its class alone sets its way and
@@ -109,6 +110,13 @@ Dresses and the name's words cross the wire by their place in their lists, so bo
 (`tools/numbered.json`): a page built from another order of either loads again, once ([[Server]]).
 
 ## Limits
+
+- A broadside fires square ([[Ship Guns Keep Square Broadsides]]), so a battery longer than its target lands less of
+  its weight on it as the range opens. Abeam of an Elite's Schooner, at 60 m every hull lands 96 to 98% of its weight
+  against what the Sloop lands; at 150 m the Schooner 93%, the Brig 85%, the Frigate 79%.
+- A captain's battery takes its middle's elevation, so a Boss's Frigate's lower deck still falls short, as a
+  player's did. Laying each of its guns too is the owner's to choose: it would make Minibosses and Bosses hit harder
+  than their ranks were measured.
 
 - Playing offline the page holds no gear, so it sails the Sloop as built, as before.
 - A figurehead waits on a model of one; the owner's ask was the models built.

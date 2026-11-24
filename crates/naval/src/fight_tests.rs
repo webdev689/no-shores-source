@@ -258,9 +258,13 @@ fn a_look_on_its_hull_lays_on_that_point_and_its_unscattered_volley_strikes_it()
     let own = player(&fight);
     let on = lay_on(&own.ship, &own.pose, &SLOOP_ARMS, Side::Starboard, Shot::Round, met);
     let laid = fight.laid(PLAYER, &aim, &Open, 0.0);
-    // The look's point and the test's differ in their last bits, so the elevation is held to a hair of it.
+    // The look's point and the test's differ in their last bits, so the elevation and the point the guns are laid on
+    // are held to a hair of it.
     let same = laid.clone().is_some_and(|laid| {
-        (laid.elevation - on.elevation).abs() < 1e-12 && Lay { elevation: on.elevation, ..laid } == on
+        let at = laid.on.unwrap_or_default();
+        (laid.elevation - on.elevation).abs() < 1e-12
+            && (0..3).all(|axis| (at[axis] - met[axis]).abs() < 1e-9)
+            && Lay { elevation: on.elevation, on: None, ..laid } == on
     });
     assert!(same, "laid for the point the look meets on its side, not the water's 300 m: {laid:?} against {on:?}");
     let ends = laid.map(|laid| ends(&fight, &laid)).unwrap_or_default();

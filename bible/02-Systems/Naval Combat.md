@@ -112,7 +112,10 @@ sea's soundscape ([[Ambience]]).
   a shot or tunnels one through a hull.
 - **A gun is laid, not pointed.** A broadside fires square to the hull ([[Ship Guns Keep Square Broadsides]]); the
   gunner sets only the range, and the low arc that lands there is found within the carriage. Each gun's mouth rides
-  the ship's heel; the lay stays its upright hull's.
+  the ship's heel; the lay stays its upright hull's. A player's guns are each elevated for that range from their own
+  port and deck (`Lay::laid_on`), so a second gun deck throws as far as the first; a captain's all take their
+  battery's middle's elevation. Square, a battery longer than the ship it fires at throws its end guns' balls past
+  that ship's ends, the more so as the range opens.
 - **The guns** are DFO's swivel, three a side: 55 m/s, -10 to 14 degrees, 149 m at most from the ship's deck. A broadside
   ripples 0.09 s a gun, each ball from where its port is by then, scattered by the volley's seed (more for a poorer
   gunner). No battery bears within 35 degrees of its bow or 40 of its stern. Each side reloads on its own clock: a

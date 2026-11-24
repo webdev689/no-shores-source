@@ -112,3 +112,46 @@ fn a_wary_captain_needs_more_strength_to_fall_on_a_brig_and_more_again_on_a_frig
         [HullKind::Sloop, HullKind::Brig, HullKind::Frigate].map(|hull| least(hull).expect("some strength takes it"));
     assert!(sloop < brig && brig < frigate, "{sloop} < {brig} < {frigate}");
 }
+
+/// The balls of one broadside of `hull`'s that strike an Elite captain lying `range` m off its starboard beam, and the
+/// balls it fires, over forty seeds.
+fn struck_by(hull: HullKind, range: f64) -> (f64, f64) {
+    let (mut hits, mut balls) = (0.0, 0.0);
+    for seed in 1..=40u32 {
+        let commission = Commission { faction: GREY_TITHE, rank: Rank::Elite };
+        let mut fight = Fight::begin(at(0.0, 0.0), commission, seed, &Open, 0.0).expect("a fight");
+        fight.put_to_sea_kept(PLAYER, (at(0.0, 0.0), hull), [1.0; 3], &Open, 0.0);
+        let captain = fight.ships.get_mut(&CAPTAIN).expect("its captain");
+        captain.ship = at(range, 0.0);
+        if let Sailor::Captain(command) = &mut captain.sailor {
+            command.mind.temper = Temper::Wary;
+            command.mind.cruise = 0.0;
+        }
+        let fire = Orders { aim: Some(Aim { bearing_deg: 90.0, range_m: range, ray: None }), fire: true, ..IDLE };
+        let mut events = fight.step(&[(PLAYER, fire)], &Open, &|_| WIND, 0.0);
+        balls += fight.balls.iter().filter(|ball| ball.shooter == PLAYER).count() as f64;
+        for tick in 1..240u32 {
+            events.extend(fight.step(&[(PLAYER, IDLE)], &Open, &|_| WIND, f64::from(tick) * TICK_SECONDS));
+        }
+        let struck = |event: &&Event| matches!(event, Event::Hit { ship, .. } if *ship == CAPTAIN);
+        hits += events.iter().filter(struck).count() as f64;
+    }
+    (hits, balls)
+}
+
+#[test]
+fn each_gun_elevated_from_its_own_deck_lands_a_broadside_near_its_classs_weight_abeam_and_close() {
+    let (sloop_hits, sloop_balls) = struck_by(HullKind::Sloop, 60.0);
+    for class in &CLASSES[1..] {
+        let (hits, balls) = struck_by(class.hull, 60.0);
+        // What lands of its side's weight, against what lands of the Sloop's: the Frigate's lower gun deck as its
+        // upper one, each gun elevated for the range from its own port.
+        let landed = (hits / balls) / (sloop_hits / sloop_balls) * class.broadside;
+        assert!(
+            landed > 0.95 * class.broadside && landed < 1.02 * class.broadside,
+            "{:?} lands {landed} of the Sloop's for its {}",
+            class.hull,
+            class.broadside
+        );
+    }
+}
