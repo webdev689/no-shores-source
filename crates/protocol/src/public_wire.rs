@@ -9,7 +9,8 @@ pub(crate) fn public_offset<'built>(
     builder: &mut FlatBufferBuilder<'built>,
     seen: &PublicSeen,
 ) -> WIPOffset<messages::PublicEvent<'built>> {
-    // A mark's place to the centimetre and better anywhere on a continent: f32 is enough.
+    // An f32 steps by 0.25 m east where Saltmere's zones lie (2.1 to 3 million metres), finer north and far finer up:
+    // a mark's place to within a quarter metre, which a prop's place can bear.
     let marks: Vec<_> = seen
         .marks
         .iter()
