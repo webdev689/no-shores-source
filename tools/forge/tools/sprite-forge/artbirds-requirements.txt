@@ -1,6 +1,7 @@
 # What artbirds.py and weaponart.py run on in CI (.github/workflows/forge.yml), each package at one version and its
 # wheels by their hashes, so the run that holds the publishing token runs no package it was not given. Python 3.13 on
-# x86-64 Linux. SciPy lays a weapon's dyed metal grey on its band as the figure's layers are laid (layers.py `dyeable`).
+# x86-64 Linux. SciPy lays a weapon's dyed metal grey on its band as the figure's layers are laid (layers.py `dyeable`);
+# scikit-image draws first person's hands and spells (fphand.py, fpspell.py) for the `firstperson` input.
 attrs==26.1.0 \
     --hash=sha256:c647aa4a12dfbad9333ca4e71fe62ddc36f4e63b2d260a37a8b83d2f043ac309
 bpy==5.2.3 \
@@ -17,14 +18,26 @@ cython==3.3.1 \
     --hash=sha256:61abc7feedd20dac6c4ff7ab3a30e17136a067b242ab9253e2b4a6d9a72c2b61
 idna==3.20 \
     --hash=sha256:ab7ae7122974553370f0bdb919e1a960b2cd1bc1ef0276416d896db81c14582c
+imageio==2.38.2 \
+    --hash=sha256:d71174e7af8369a4f73525c5b1c0d2621eb2827ed3cfd7327560be02ac1b4084
+lazy-loader==0.6 \
+    --hash=sha256:77253be3391b06124a0e16105bd663b6c54470af1a9ca8e1cf026f38d58ed056
+networkx==3.7 \
+    --hash=sha256:e3fd2c13a7814cee3746340d8d7f8598a67f16a58bf47fb7f8793fab6efca1b0
 numpy==2.5.3 \
     --hash=sha256:a5fa86b80fd24bcd1aff83ad23be44ea323de3f787be8f8b15d4a65621e25321
+packaging==26.4 \
+    --hash=sha256:81383611a09c1bc0b08b76e0fd5829d7c6824c65b27a6aee339da133f4233ea2
 pillow==12.3.0 \
     --hash=sha256:0847a763afefb695bc912d7c131e7e0632d4edc1d8698f58ddabec8e46b8b6d3
 requests==2.34.2 \
     --hash=sha256:2a0d60c172f83ac6ab31e4554906c0f3b3588d37b5cb939b1c061f4907e278e0
+scikit-image==0.26.0 \
+    --hash=sha256:b36ab5e778bf50af5ff386c3ac508027dc3aaeccf2161bdf96bde6848f44d21b
 scipy==1.18.1 \
     --hash=sha256:fdaf5ea890a6183d0565f51a61799d67081bd5b1cf03c5f4b3fd3732108625c9
+tifffile==2026.11.16 \
+    --hash=sha256:d2103c2537f185868f0a880eceba590b316aa1981bd76d91028e5f2eb0e1a6e6
 typing-extensions==4.16.0 \
     --hash=sha256:481caa481374e813c1b176ada14e97f1f67a4539ce9cfeb3f350d78d6370c2e8
 urllib3==2.8.0 \
