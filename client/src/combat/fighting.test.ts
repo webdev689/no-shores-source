@@ -679,7 +679,7 @@ test("in a Breach's run each input is predicted on its own tick's blocks, and th
   assert.ok(stood.length >= 3 && stood.every(([open]) => open === 0b1), 'its seals as the room last said');
   const ticks = stood.map(([, tick]) => tick);
   assert.ok(
-    ticks.every((tick, at) => at === 0 || tick >= (ticks[at - 1] ?? 0)),
+    ticks.every((tick, index) => index === 0 || tick >= (ticks[index - 1] ?? 0)),
     `on, tick by tick: ${ticks}`,
   );
   assert.ok(armed.length > 0 && armed.every((arms) => arms === 0), 'bare handed while bearing it');
