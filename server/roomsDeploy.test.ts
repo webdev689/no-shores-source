@@ -80,6 +80,12 @@ test('every file the rooms read lies under the rooms’ code, so a change to it 
       reads(path, /(?:include_(?:str|bytes)!\(\s*|env!\("CARGO_MANIFEST_DIR"\),\s*)"([^"]+)"/g),
     ),
   ];
+  // What the bake reads from the repository as it runs (`root.join`), but what it writes, the nodes the rooms serve.
+  const baked = filesUnder('crates/bake/src')
+    .filter((path) => path.endsWith('.rs'))
+    .flatMap((path) => [...readFileSync(new URL(path, repo), 'utf8').matchAll(/root\.join\("([^"]+)"\)/g)])
+    .map(([, file]) => normalize(file ?? ''))
+    .filter((path) => !path.startsWith('generated/'));
   // What the protocol's version hashes: the content numbered on the wire, and the list that names it.
   const numbered = [...numberedContent.paths, 'tools/numbered.json'];
   // What the Workers import from beyond their own folder, but the room's WebAssembly built from the crates.
@@ -91,7 +97,7 @@ test('every file the rooms read lies under the rooms’ code, so a change to it 
       ),
     )
     .filter((path) => !path.startsWith('server/') && !path.startsWith('target/'));
-  for (const [what, paths] of Object.entries({ included, numbered, imported })) {
+  for (const [what, paths] of Object.entries({ included, baked, numbered, imported })) {
     assert.ok(paths.length > 0, `some ${what} found`);
     for (const path of paths) assert.ok(existsSync(new URL(path, repo)) && deployed(path), `${what}: ${path}`);
   }
