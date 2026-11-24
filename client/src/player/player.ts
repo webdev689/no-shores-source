@@ -174,6 +174,18 @@ function headOf(player: Player, movement: MovementRules): readonly [number, numb
   return [body.x, body.y, body.z + movement.eyeHeight(body) + (player.mounted ? SADDLE : 0)];
 }
 
+/** A node's boxes and any more the camera keeps off (a boarded deck's), as one list made once while both stay the
+ *  same lists: a node has thousands of boxes, and the camera is set every frame. */
+const JOINED = new WeakMap<readonly Block[], { readonly more: readonly Block[]; readonly blocks: readonly Block[] }>();
+export function withBlocks(boxes: readonly Block[], more: readonly Block[] | undefined): readonly Block[] {
+  if (!more?.length) return boxes;
+  const kept = JOINED.get(boxes);
+  if (kept?.more === more) return kept.blocks;
+  const blocks = [...boxes, ...more];
+  JOINED.set(boxes, { more, blocks });
+  return blocks;
+}
+
 /** The camera the scene draws the player's frame from, its aiming view at `place`, kept off `blocks` and, given its
  *  height, the ground, and under the ceiling `roof` gives. */
 export function playerCamera(
