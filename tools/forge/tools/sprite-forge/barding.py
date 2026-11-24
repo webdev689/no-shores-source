@@ -1,9 +1,7 @@
 """The shop's mount looks as geometry on the Courser: each look's own pieces, cut from the body's own surface as the
 tack is (tack.py) and skinned to the hide under them, so they ride every stride the hide rides. The forge wears them
 (horse.py `Courser.look_objects`), each look a layer of its own under a rider (riding.py `LOOK_LAYERS`); `--bake`
-writes them for the game's 3D horse.
-
-    python -I tools/sprite-forge/barding.py --bake src/assets/horse
+writes them for the game's 3D horse (barding_bake.py).
 
 - warhorse: Daedric plate in black over a red glow that shows through its seams, blades up the crest and down the
   croup, a chanfron with a blade and swept horns, a spiked peytral, embers at the hooves.
@@ -12,6 +10,8 @@ writes them for the game's 3D horse.
 - spectral: long wisps streaming back off the crest and the tail, mist off the hooves.
 - dawnfire: a gilded sunburst on the brow, a plume of flame between the ears, a mane and tail of tall flames in two
   ranks, fire off every hoof.
+- drowned: the Drowned Vale's: rusted plates crusted with barnacles, weed hanging off them and off the tail, red
+  crystal grown up through the mane.
 
 A piece's UV points into the swatches (`SWATCHES`): u its stripe, v along the piece (a flame's root to its tip). The
 picture's alpha says how much a texel glows (255 none, 0 all), which the game's character pass and the forge both
@@ -28,7 +28,7 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import horse  # noqa: E402
 import tack  # noqa: E402
 
-LOOKS = ('warhorse', 'spectral', 'dawnfire', 'automaton')
+LOOKS = ('warhorse', 'spectral', 'dawnfire', 'automaton', 'drowned')
 # each swatch: its colour at a piece's root and at its tip (sRGB), how much it glows (0..1) and whether it is metal
 SWATCHES = {
     'daedric': ((30, 22, 26), (30, 22, 26), 0.0, True),
@@ -41,6 +41,10 @@ SWATCHES = {
     'wisp': ((110, 170, 230), (200, 236, 255), 0.6, False),
     'flame': ((210, 60, 8), (255, 236, 150), 0.95, False),
     'gilt': ((214, 160, 48), (255, 226, 120), 0.35, True),
+    'rust': ((62, 44, 34), (62, 44, 34), 0.0, True),
+    'barnacle': ((112, 108, 96), (150, 144, 128), 0.0, False),
+    'weed': ((18, 44, 30), (64, 104, 60), 0.0, False),
+    'crystal': ((128, 12, 22), (255, 120, 120), 0.7, False),
 }
 STRIPE = (16, 32)   # a stripe's width and height in the picture
 LIFT = 0.006
@@ -508,7 +512,46 @@ def dawnfire():
     return out
 
 
-BUILD = {'warhorse': warhorse, 'spectral': spectral, 'dawnfire': dawnfire, 'automaton': automaton}
+def drowned():
+    """The Drowned Vale's: a crinet, peytral and crupper of iron gone to rust, crusted with barnacles, weed hanging off
+    their lowest edges and trailing from the tail, and the vale's red crystal grown up through the mane, tallest at the
+    withers."""
+    out = []
+    for name, (rows, nrms), per in (('crinet', neck_rows(LIFT + 0.006, top_share=0.6), 2),
+                                    ('peytral', chest_rows(LIFT + 0.006), 3),
+                                    ('crupper', rump_rows(LIFT + 0.008), 2)):
+        if len(rows) < 2:
+            continue
+        out += lames(name, 'rust', rows, nrms, per=per, thick=0.01, gap=0.3)
+        for i in range(0, len(rows), 2):   # barnacles over the plates
+            for j in range(1 + i % 3, rows.shape[1] - 1, 3):
+                out.append(disc(f'{name}_barnacle_{i}_{j}', 'barnacle', rows[i][j] + nrms[i][j] * 0.013, nrms[i][j],
+                                0.008 + 0.003 * ((i + j) % 3), 0.01, k=6))
+        points, normals = rows.reshape(-1, 3), nrms.reshape(-1, 3)
+        low = np.argsort(points[:, 2])[:max(4, len(points) // 5)]
+        for n, k in enumerate(low[::3]):   # weed off the plates' lowest edge, hanging
+            out.append(tongue(f'{name}_weed_{n}', 'weed', points[k] + normals[k] * 0.012,
+                              np.array([0.0, 0.0, -1.0]) + normals[k] * 0.25, 0.14 + 0.05 * math.sin(n * 1.9), 0.012,
+                              0.02, m=4, seed=200 + 17 * n + len(name)))
+    pts, ns = crest_points(10)
+    for i, (q, nv) in enumerate(zip(pts, ns)):   # crystal up the mane in splayed clusters, the withers' the tallest
+        for k in range(2 + i % 2):
+            splay = np.array([(k - 0.5 - 0.5 * (i % 2)) * 0.7, -0.3 + 0.15 * k, 0.0])
+            length = (0.22 - 0.011 * i) * (1.0, 0.62, 0.45)[k] * (1.0 + 0.15 * math.sin(i * 2.3))
+            out.append(horn(f'crystal_crest_{i}_{k}', 'crystal', q + nv * 0.008, nv + splay, length,
+                            (0.026 - 0.001 * i) * (1.0, 0.75, 0.6)[k], m=5))
+    for i, q in enumerate(tail_points(8)):
+        out.append(tongue(f'weed_tail_{i}', 'weed', q, [0.0, -0.6, -1.0], 0.36, 0.02, 0.06, m=4, seed=70 + i))
+    for i, (c, r) in enumerate(coronets()):   # barnacles round each hoof's crown
+        for k in range(3):
+            a = 2 * math.pi * k / 3 + i
+            spot = c + np.array([math.cos(a) * r, math.sin(a) * r, 0.02])
+            out.append(disc(f'hoof_barnacle_{i}_{k}', 'barnacle', spot, [math.cos(a), math.sin(a), 0.2], 0.014,
+                            0.012, k=6))
+    return out
+
+
+BUILD = {'warhorse': warhorse, 'spectral': spectral, 'dawnfire': dawnfire, 'automaton': automaton, 'drowned': drowned}
 # a flame or a wisp off the crest behind this far up the neck (the bake's +Y) streams back at the rider's eye and hides
 # the horse in first person, so the ride draws only those toward the poll; seen from outside they are all drawn
 NEAR_FROM = 0.9
@@ -530,70 +573,3 @@ def swatch_uv(material, v):
     names = list(SWATCHES)
     u = (names.index(material) + 0.5) / len(names)
     return np.stack([np.full(len(v), u), 0.03 + 0.94 * np.asarray(v)], axis=1)
-
-
-def swatch_picture():
-    """The swatches: a stripe each, its colour from its root (the picture's foot) to its tip, its alpha 255 less its
-    glow."""
-    names = list(SWATCHES)
-    w, h = STRIPE
-    img = np.zeros((h, w * len(names), 4), np.uint8)
-    for i, n in enumerate(names):
-        root, tip, glow, _ = SWATCHES[n]
-        for y in range(h):
-            s = 1.0 - (y + 0.5) / h   # the foot is the root
-            img[y, i * w:(i + 1) * w, :3] = np.round(np.array(root) + (np.array(tip) - np.array(root)) * s)
-            img[y, i * w:(i + 1) * w, 3] = round(255 * (1 - glow))
-    return img
-
-
-# the bake's numbers as whole numbers of these steps (horseModel.js `withBarding` reads them back): millimetres, a
-# thousandth of the swatches' picture, a hundredth of a weight; the normals are worked out again where it is read
-QUANT = {'positions': 0.001, 'uvs': 0.001, 'weights': 0.01}
-
-
-def bake_mesh(look, made):
-    """A look's pieces as one mesh of the game's bake, its UVs into the swatches, its numbers whole (`QUANT`)."""
-    pos, uv, jj, ww, idx = [], [], [], [], []
-    base = 0
-    for pc in made:
-        pos.append(pc['positions'])
-        uv.append(swatch_uv(pc['material'], pc['v']))
-        jj.append(pc['joints'])
-        ww.append(pc['weights'])
-        idx.append(pc['triangles'] + base)
-        base += len(pc['positions'])
-    w = np.round(np.concatenate(ww) / QUANT['weights']).astype(np.int64)
-    w[:, 0] += 100 - w.sum(axis=1)   # each vertex's weights still sum to one
-    whole = lambda a, q: np.round(np.concatenate(a) / q).astype(np.int64).ravel().tolist()   # noqa: E731
-    return {'part': f'look_{look}', 'texture': 'barding', 'alpha': False, 'quant': QUANT,
-            'positions': whole(pos, QUANT['positions']), 'uvs': whole(uv, QUANT['uvs']),
-            'joints': np.concatenate(jj).ravel().tolist(), 'weights': w.ravel().tolist(),
-            'indices': np.concatenate(idx).ravel().tolist()}
-
-
-def bake_barding(out_dir):
-    """The looks as the game's 3D horse reads them: `barding.json`, a mesh a look skinned to the bake's bones, and
-    `barding.png`, the swatches."""
-    from PIL import Image
-    meshes = []
-    for look in LOOKS:   # each look's own, and the pieces a first-person view leaves out apart (`<look>_near`)
-        made = pieces(look)
-        meshes.append(bake_mesh(look, [pc for pc in made if not near_rider(pc)]))
-        near = [pc for pc in made if near_rider(pc)]
-        if near:
-            meshes.append(bake_mesh(f'{look}_near', near))
-    with open(os.path.join(out_dir, 'barding.json'), 'w') as fh:
-        json.dump({'barding': 1, 'looks': list(LOOKS), 'swatches': list(SWATCHES), 'meshes': meshes}, fh,
-                  separators=(',', ':'))
-        fh.write('\n')
-    Image.fromarray(swatch_picture()).save(os.path.join(out_dir, 'barding.png'), optimize=True)
-    return {m['part']: len(m['positions']) // 3 for m in meshes}
-
-
-if __name__ == '__main__':
-    import argparse
-    ap = argparse.ArgumentParser()
-    ap.add_argument('--bake', required=True, help='the folder the game reads the horse from')
-    args = ap.parse_args()
-    print(bake_barding(args.bake))
