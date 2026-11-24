@@ -302,7 +302,7 @@ function blockNode(standing: Standing, cellPx: number, chosen: boolean): Node {
       frontNode(standing.turn, [(east - west) * cellPx - 2, tall - 2], cellPx, blueprint ? colour : FRONT),
       rising && {
         width: 'grow',
-        height: Math.max(4, Math.round((tall - 2) / 3)),
+        height: Math.max(4, Math.round(cellPx / 4)),
         float: { to: 'parent', anchor: [0, 0], at: [0, 0] },
         through: true,
         fill: BLUEPRINT,
