@@ -143,6 +143,9 @@ pub fn bounties_of(week: u64) -> [usize; SLOTS] {
 pub struct GuildWeek {
     pub week: u64,
     pub given: u32,
+    /// The XP they earned in the guild this week, of which the guild is given its share.
+    #[serde(default)]
+    pub gained: u32,
     pub counts: [u32; SLOTS],
     pub claimed: [bool; SLOTS],
     /// Whether they took the guild package the War Horn's foe gives this week.
@@ -192,11 +195,14 @@ impl Character {
     }
 
     /// Gives a member's guild its share of XP they earned, up to the week's most; answers what it gave.
+    /// The share is of the week's whole gain, less what was given of it, so many small gains give as one large one.
     pub fn give_guild(&mut self, week: u64, xp: u32) -> u32 {
         let numbers = numbers();
-        let share = xp.saturating_mul(numbers.tenths) / 10;
         let record = self.guild_week(week);
-        let given = share.min(numbers.week_most.saturating_sub(record.given));
+        record.gained = record.gained.saturating_add(xp);
+        let share = u64::from(record.gained) * u64::from(numbers.tenths) / 10;
+        let owed = u32::try_from(share).unwrap_or(u32::MAX).min(numbers.week_most);
+        let given = owed.saturating_sub(record.given);
         record.given += given;
         given
     }

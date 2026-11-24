@@ -40,6 +40,11 @@ fn a_member_gives_a_tenth_of_their_xp_at_most_five_thousand_a_week_and_afresh_ea
     assert_eq!(character.give_guild(WEEK, 10_000), 0, "and no more that week");
     assert_eq!(character.guild.given, 5_000);
     assert_eq!(character.give_guild(WEEK + 1, 2_000), 200, "the next week starts afresh");
+    let mut small = Character::starting();
+    let given: u32 = (0..20).map(|_| small.give_guild(WEEK, 9)).sum();
+    assert_eq!(given, 18, "a tenth of the week's 180, though no tick earns 10");
+    let old: crate::guild::GuildWeek = serde_json::from_str(r#"{"week":3,"given":7}"#).expect("an older week");
+    assert_eq!((old.given, old.gained), (7, 0), "a week kept before its gains were");
     assert_eq!(character.guild.week, WEEK + 1);
 }
 

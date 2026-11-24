@@ -159,7 +159,7 @@ impl Character {
         let boons = self.boons;
         let (xp, aurem) = (Boons::more(base, boons.xp), Boons::more(aurem, boons.aurem));
         self.earn_art_xp(xp);
-        self.earn_reputation(Boons::more(base, boons.reputation));
+        self.earn_reputation(base);
         self.earn_xp(xp, weapon);
         self.materials.add_aurem(aurem);
         Reward { xp, aurem }
