@@ -1,9 +1,9 @@
-//! A patrol's resource nodes stand at its layout's resource places, a third at a time, each gathered by holding E two
-//! seconds; its foes are its garrison's alone.
+//! A patrol's resource nodes all stand at its layout's resource places, each gathered by holding E two seconds and
+//! spent for that player alone until it returns for them; its foes are its garrison's alone.
 
 use super::*;
 use crate::asks::{GATHER_TICKS, NODE_REACH};
-use crate::patrol::{GROUPS, ROTATE_TICKS};
+use crate::patrol::RETURN_MINUTES;
 use gear::Difficulty;
 
 const SPAWN: [f64; 2] = [0.0, 0.0];
@@ -42,7 +42,7 @@ fn hold(room: &mut Room, player: PlayerId, node: u8, ticks: u64) -> u8 {
 }
 
 fn spent(room: &Room, player: PlayerId, node: u8) -> bool {
-    room.player(player).expect("in").spent.contains(&node)
+    room.player(player).expect("in").spent.iter().any(|&(spent, _)| spent == node)
 }
 
 #[test]
@@ -68,32 +68,74 @@ fn a_patrol_stands_no_camps_of_its_own_its_fights_are_its_garrisons() {
 }
 
 #[test]
-fn resource_nodes_stand_at_the_layouts_places_a_third_at_a_time_and_each_may_be_gathered_again_next_turn() {
+fn every_node_stands_for_everyone_and_one_gathered_is_spent_for_its_gatherer_alone_until_it_returns() {
     let (mut room, player) = patrol(Difficulty::Normal);
     let at = |room: &Room| room.resource_nodes.iter().map(|node| [node.x, node.y]).collect::<Vec<_>>();
     assert_eq!(at(&room), places(), "at the layout's places, in its order");
-    let standing = |room: &Room| room.nodes_for(player).map(|(index, _)| index).collect::<Vec<u8>>();
-    let first = standing(&room);
-    assert_eq!(first.len(), 12 / GROUPS);
-    // Gathered where it stands, by its dressing's edge: spent for this turn.
-    stand_by(&mut room, player, first[0], NODE_REACH - 0.2);
-    assert_eq!(hold(&mut room, player, first[0], GATHER_TICKS + 1), 0);
-    assert!(spent(&room, player, first[0]) && !standing(&room).contains(&first[0]));
-    while room.clock % ROTATE_TICKS != ROTATE_TICKS - 1 {
+    let standing = |room: &Room, who: PlayerId| room.nodes_for(who).map(|(index, _)| index).collect::<Vec<u8>>();
+    let every: Vec<u8> = (0..12).collect();
+    assert_eq!(standing(&room, player), every, "every node stands, none waiting a turn");
+    for _ in 0..60 * 200 {
         room.tick();
     }
+    assert_eq!(standing(&room, player), every, "and still stands minutes on");
+    // Gathered by its dressing's edge: spent for this player, standing for another.
+    let other = room.join().expect("a room with space");
+    stand_by(&mut room, player, 4, NODE_REACH - 0.2);
+    assert_eq!(hold(&mut room, player, 4, GATHER_TICKS + 1), 0);
+    assert!(spent(&room, player, 4) && !standing(&room, player).contains(&4));
+    assert_eq!(standing(&room, other), every, "still standing for another player");
+    stand_by(&mut room, other, 4, 1.0);
+    assert_eq!(hold(&mut room, other, 4, GATHER_TICKS + 1), 0, "who gathers it too");
+    assert_eq!(hold(&mut room, other, 4, 0), asks::OUT_OF_REACH, "and it is spent for them in turn");
+}
+
+/// A minute of the world's clock, as a room is told it.
+const MINUTE: u64 = 29_000_000;
+
+/// Gathers the room's first node standing for `player`, at `MINUTE`; answers its number.
+fn gather_one(room: &mut Room, player: PlayerId) -> u8 {
+    room.set_minute(MINUTE);
+    let node = room.nodes_for(player).map(|(index, _)| index).next().expect("a node standing");
+    stand_by(room, player, node, 1.0);
+    assert_eq!(hold(room, player, node, GATHER_TICKS + 1), 0);
+    node
+}
+
+#[test]
+fn a_gathered_node_returns_for_its_gatherer_nine_minutes_on_by_the_worlds_clock() {
+    let (mut room, player) = patrol(Difficulty::Normal);
+    let node = gather_one(&mut room, player);
+    room.set_minute(MINUTE + 8);
     room.tick();
-    let next = standing(&room);
-    assert_eq!(next.len(), 12 / GROUPS);
-    assert!(next.iter().all(|index| !first.contains(index)), "the next third");
-    assert_eq!(hold(&mut room, player, first[0], 0), asks::OUT_OF_REACH, "its place rests this turn");
-    // Its group's turn come round again, the node gathered before stands and is gathered again.
-    while !standing(&room).contains(&first[0]) {
-        room.tick();
-    }
-    assert_eq!(standing(&room), first, "the first third again");
-    assert_eq!(hold(&mut room, player, first[0], GATHER_TICKS + 1), 0, "gathered again");
-    assert!(spent(&room, player, first[0]));
+    assert!(spent(&room, player, node), "spent eight minutes on");
+    room.players.get_mut(&player).expect("in").gear_changed = false;
+    room.set_minute(MINUTE + 9);
+    room.tick();
+    assert!(room.nodes_for(player).any(|(index, _)| index == node), "back for them nine minutes on");
+    assert!(room.player(player).expect("in").gear_changed, "and their page is told");
+    assert_eq!(hold(&mut room, player, node, GATHER_TICKS + 1), 0, "gathered again");
+    assert_eq!(RETURN_MINUTES, 9);
+}
+
+#[test]
+fn a_gathered_node_returns_by_the_worlds_clock_while_the_room_stood_empty_and_still() {
+    let (mut room, player) = patrol(Difficulty::Normal);
+    room.own(player, "account-a");
+    let node = gather_one(&mut room, player);
+    // An empty room does not tick; its minute is told again as the next player comes.
+    room.leave(player);
+    room.set_minute(MINUTE + 8);
+    let back = room.join().expect("a room with space");
+    room.own(back, "account-a");
+    room.tick();
+    assert!(spent(&room, back, node), "eight minutes away, still spent");
+    room.leave(back);
+    room.set_minute(MINUTE + 20);
+    let again = room.join().expect("a room with space");
+    room.own(again, "account-a");
+    room.tick();
+    assert!(room.nodes_for(again).any(|(index, _)| index == node), "twenty minutes away, back for them");
 }
 
 #[test]
@@ -142,7 +184,7 @@ fn letting_go_stirring_or_being_hurt_stops_a_gather() {
 }
 
 #[test]
-fn a_node_gathered_stays_spent_for_its_account_however_often_the_player_rejoins_this_turn() {
+fn a_node_gathered_stays_spent_for_its_account_however_often_the_player_rejoins_until_it_returns() {
     let (mut room, player) = patrol(Difficulty::Normal);
     room.own(player, "account-a");
     let node = room.nodes_for(player).map(|(index, _)| index).next().expect("a node standing");
@@ -159,6 +201,13 @@ fn a_node_gathered_stays_spent_for_its_account_however_often_the_player_rejoins_
     stand_by(&mut room, other, node, 1.0);
     assert_eq!(hold(&mut room, other, node, GATHER_TICKS + 1), 0, "another account gathers it");
     assert!(spent(&room, other, node));
+    // Once it has returned, a rejoin brings it back spent no more.
+    room.leave(back);
+    room.set_minute(room.minute + RETURN_MINUTES);
+    room.tick();
+    let again = room.join().expect("a room with space");
+    room.own(again, "account-a");
+    assert!(room.nodes_for(again).any(|(index, _)| index == node), "returned for the account");
 }
 
 #[test]
@@ -222,7 +271,7 @@ fn a_gather_is_not_begun_on_horseback_and_mounting_stops_one() {
 }
 
 #[test]
-fn a_full_stock_or_the_turn_passing_stops_a_gather() {
+fn a_full_stock_stops_a_gather() {
     let (mut room, player) = patrol(Difficulty::Normal);
     let node = room.nodes_for(player).map(|(index, _)| index).next().expect("a node standing");
     stand_by(&mut room, player, node, 1.0);
@@ -233,12 +282,4 @@ fn a_full_stock_or_the_turn_passing_stops_a_gather() {
     }
     room.tick();
     assert!(room.player(player).expect("in").gathering.is_none(), "full");
-    let (mut room, player) = patrol(Difficulty::Normal);
-    while room.clock % ROTATE_TICKS != ROTATE_TICKS - GATHER_TICKS / 2 {
-        room.tick();
-    }
-    let node = room.nodes_for(player).map(|(index, _)| index).next().expect("a node standing");
-    stand_by(&mut room, player, node, 1.0);
-    hold(&mut room, player, node, GATHER_TICKS + 1);
-    assert!(!spent(&room, player, node), "its turn passed before it was gathered");
 }

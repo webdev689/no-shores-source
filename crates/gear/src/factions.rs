@@ -212,8 +212,9 @@ impl Character {
 
     /// Buys one of a faction's wares at its counter, by its place among them, carried with its slot's items: the cape
     /// pledged to it, one kept at a time, at any level; its armour and weapons from their ranks, pledged or not, as a
-    /// switch keeps the reputation earned, and from level 20, the level they are made at. A weapon may roll an
-    /// element, as every weapon made does.
+    /// switch keeps the reputation earned, and from level 20, the level they are made at. Its armour and weapons roll
+    /// their traits, one always the faction's own, and a weapon may roll an element, as every weapon made does
+    /// (`vestige::made_named`).
     pub(crate) fn buy_faction_ware(
         &mut self,
         faction: u8,
@@ -248,8 +249,7 @@ impl Character {
         }
         self.materials.aurem -= aurem;
         let id = self.take_id();
-        let mut item = crate::vestige::named_item(id, named, slot);
-        item.element = crate::element::rolled(item.kind, item.rarity, dice);
+        let item = crate::vestige::made_named(id, named, slot, dice);
         self.items.insert(id, (item, crate::character::At::Carried));
         Ok(None)
     }

@@ -149,8 +149,8 @@ pub enum Ask {
     BuyCosmetic {
         cosmetic: u16,
     },
-    /// Buys one of Shape's pieces of the week, by its place among them and the named piece shown there (`shown`, its
-    /// place in the catalogue's items): at his place, while he is here, and only while that piece stands there.
+    /// Buys one of Shape's pieces of the week, by its place among them and the number of the piece shown there
+    /// (`shown`, `shape::shown`): at his place, while he is here, and only while that piece stands there.
     BuyFromShape {
         ware: u8,
         shown: u32,

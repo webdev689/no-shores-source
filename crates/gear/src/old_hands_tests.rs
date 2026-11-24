@@ -144,3 +144,14 @@ fn a_character_kept_since_the_loadouts_reads_as_it_was() {
     character.items.insert(id, (item, At::Worn(Slot::Ranged)));
     assert_eq!(Character::from_json(&character.to_json()), Some(character));
 }
+
+#[test]
+fn an_old_shield_named_for_a_faction_weapon_is_made_again_with_its_traits_rolled() {
+    let text = include_str!("old_saves/lone_dagger_and_named_shields.json").replace("\"seawall\"", "\"squallbreak\"");
+    let (_, character) = read(&text);
+    let remade = character.item(8).expect("Squallbreak");
+    assert_eq!((remade.kind, remade.named.as_deref()), (Kind::SwordAndShield, Some("squallbreak")));
+    let offered: Vec<&String> = remade.layout.iter().flatten().collect();
+    let own = crate::catalogue::catalogue().faction_perks("stormcallers", remade.kind);
+    assert!(!offered.is_empty() && own.iter().any(|perk| offered.contains(&&perk.id)), "{offered:?}");
+}

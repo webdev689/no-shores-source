@@ -75,7 +75,9 @@ fn a_playlist_clear_pays_the_daily_once_a_day_and_counts_toward_the_weekly_once_
     let paid = &room.players[&player].character;
     assert!(paid.playlist_taken(20_778, Playlist::Abyss));
     assert_eq!(paid.playlist_clears(2_968, Playlist::Abyss), 1);
-    assert_eq!(paid.vestiges.len(), 1, "the daily's Vestige kept");
+    // A Normal roll is kept as its item, where its Vestige would have been.
+    let held = |kept: &gear::Character| kept.vestiges.len() + kept.items.len() - character.items.len();
+    assert_eq!(held(paid), 1, "the daily's Vestige kept");
     room.pay_clear(player, 23);
     assert_eq!(room.players[&player].character.playlist_clears(2_968, Playlist::Abyss), 1, "once a run");
     let mut kept = room.players[&player].character.clone();
@@ -86,7 +88,7 @@ fn a_playlist_clear_pays_the_daily_once_a_day_and_counts_toward_the_weekly_once_
         kept = again.players[&player].character.clone();
         assert_eq!(kept.playlist_clears(2_968, Playlist::Abyss), clear);
     }
-    assert_eq!(kept.vestiges.len(), 3, "the daily's once, then the weekly's two at the third");
+    assert_eq!(held(&kept), 3, "the daily's once, then the weekly's two at the third");
 }
 
 #[test]

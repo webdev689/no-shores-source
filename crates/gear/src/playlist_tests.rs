@@ -4,6 +4,7 @@
 use crate::activities::{Modifier, modifier_of_the_day};
 use crate::activity::Activity;
 use crate::character::Character;
+use crate::commons_tests::paid;
 use crate::dice::Dice;
 use crate::gate::{Place, Shut, shut_at};
 use crate::playlist::Playlist;
@@ -70,9 +71,11 @@ fn a_playlists_first_clear_each_day_pays_a_boss_captains_worth_at_its_tier_and_a
     let mut character = Character::starting();
     let (xp, aurem) = (character.xp, character.materials.aurem);
     let boss = Character::starting().reward_kill(crate::rewards::Foe::Captain, 5, 23, None, Difficulty::Abyss);
+    let before = character.clone();
     let vestige = character.playlist_of_the_day(DAY, Playlist::Abyss, 23, &DICE).expect("the first today");
     assert_eq!((character.xp, character.materials.aurem), (xp + u64::from(boss.xp), aurem + boss.aurem));
-    assert_eq!(vestige.level, 20, "a Vestige at most at the named pieces' level");
+    let paid = paid(&before, &character, vestige.as_slice());
+    assert_eq!(paid.iter().map(|(.., level)| *level).collect::<Vec<_>>(), [20], "at most the named pieces' level");
     assert!(character.playlist_taken(DAY, Playlist::Abyss));
     assert!(!character.playlist_taken(DAY, Playlist::Elite), "each playlist its own");
     assert_eq!(character.playlist_of_the_day(DAY, Playlist::Abyss, 23, &DICE), None, "once a day");
@@ -95,10 +98,12 @@ fn a_playlists_third_clear_each_week_pays_essence_and_its_vestiges_once() {
     assert!(character.playlist_of_the_week(WEEK, Playlist::Abyss, 28, &DICE).is_empty());
     assert_eq!(character.playlist_clears(WEEK, Playlist::Abyss), 2);
     assert_eq!(essence(&character), before, "nothing before the third");
-    let paid = character.playlist_of_the_week(WEEK, Playlist::Abyss, 28, &DICE);
-    assert_eq!(paid.len(), 2, "the Abyss pays two Vestiges");
-    assert_ne!(paid[0].id, paid[1].id);
-    assert!(paid.iter().all(|vestige| vestige.level == 20));
+    let held = character.clone();
+    let sealed = character.playlist_of_the_week(WEEK, Playlist::Abyss, 28, &DICE);
+    let paid_now = paid(&held, &character, &sealed);
+    assert_eq!(paid_now.len(), 2, "the Abyss pays two Vestiges, or a Normal one's item");
+    assert!(sealed.len() < 2 || sealed[0].id != sealed[1].id);
+    assert!(paid_now.iter().all(|(.., level)| *level == 20));
     assert_eq!(essence(&character), (before.0 + 3, before.1 + 3));
     assert!(character.playlist_of_the_week(WEEK, Playlist::Abyss, 28, &DICE).is_empty(), "once a week");
     assert_eq!(character.playlist_clears(WEEK, Playlist::Abyss), 3);
@@ -107,7 +112,9 @@ fn a_playlists_third_clear_each_week_pays_essence_and_its_vestiges_once() {
     for _ in 0..2 {
         assert!(character.playlist_of_the_week(WEEK, Playlist::Elite, 12, &DICE).is_empty());
     }
-    assert_eq!(character.playlist_of_the_week(WEEK, Playlist::Elite, 12, &DICE).len(), 1, "the Elite pays one");
+    let held = character.clone();
+    let sealed = character.playlist_of_the_week(WEEK, Playlist::Elite, 12, &DICE);
+    assert_eq!(paid(&held, &character, &sealed).len(), 1, "the Elite pays one");
     assert_eq!(essence(&character), (before.0 + 5, before.1 + 5), "and 2 of each");
 }
 
@@ -135,9 +142,13 @@ fn the_playlists_records_are_written_only_once_touched_and_read_from_a_save_that
 fn a_clear_paying_the_daily_and_the_weekly_at_once_pays_vestiges_on_dice_of_their_own() {
     let mut character = Character::starting();
     character.activity.this_week(WEEK).abyss_playlist = 2;
+    let before = character.clone();
     let daily = character.playlist_of_the_day(DAY, Playlist::Abyss, 23, &DICE).expect("the daily");
+    let daily = paid(&before, &character, daily.as_slice());
+    let before = character.clone();
     let weekly = character.playlist_of_the_week(WEEK, Playlist::Abyss, 23, &DICE);
-    let drawn = |vestige: &crate::character::Vestige| (vestige.rarity, vestige.slot);
-    assert_eq!(weekly.len(), 2);
-    assert!(weekly.iter().all(|vestige| drawn(vestige) != drawn(&daily)), "{daily:?} {weekly:?}");
+    let weekly = paid(&before, &character, &weekly);
+    let drawn = |(rarity, slot, _): &(crate::Rarity, crate::Slot, u8)| (*rarity, *slot);
+    assert_eq!((daily.len(), weekly.len()), (1, 2));
+    assert!(weekly.iter().all(|paid| drawn(paid) != drawn(&daily[0])), "{daily:?} {weekly:?}");
 }

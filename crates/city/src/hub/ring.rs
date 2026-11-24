@@ -1,7 +1,6 @@
 //! The hub's section: one ring round everything walked, the outline of the rectangles it is made of: the plaza, the
-//! walks before the Beacon (to the west sealed gate, and on round the base's east side to the Stair Yard's), the
-//! Hall through its door, and, once the city's ramps are laid, the harbour way's cells, its flight, the quay and the
-//! pier (`harbour`).
+//! walks before the Beacon (to the west sealed gate, and on round the base's east side to the Stair Yard's), and the
+//! Hall through its door.
 
 use super::courts::{HALF_DEPTH_M, HALF_LENGTH_M, PLATFORM_FROM_M};
 use super::hall::hall_span;
@@ -105,7 +104,7 @@ pub fn outline(rects: &[[f64; 4]]) -> Vec<[f64; 2]> {
         .collect()
 }
 
-/// The platform's ring alone: the hub's before the harbour way joins it.
+/// The hub's ring, round the platform's rectangles.
 #[must_use]
 pub fn ring(frame: &Frame) -> Vec<[f64; 2]> {
     outline(&platform_rects(frame))

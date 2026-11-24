@@ -64,3 +64,36 @@ test('a covered piece takes one shade in every move and with whatever else of it
   assert.ok((walking[0] ?? 0) > (standing[0] ?? 0), 'a brighter texel takes a brighter step');
   assert.deepEqual(await shade('walk', ['boots_mages', 'helm_mages']), walking);
 });
+
+test("a faction's blade has its trim laid by its trim's light as it stands, read from strips its job names", async () => {
+  const bladed: ForgeLooks = {
+    ...looks,
+    bodies: { male: { anims: { idle: cell, walk: cell }, layers: { sword_elven: ['idle', 'walk'] } } },
+  };
+  // Its guard and grip, marked: standing, from 30 to 150; walking, the guard brighter than that, as the light falls.
+  const read = (asked: string[]) => (path: string) => {
+    asked.push(path);
+    if (path.endsWith('_z.png')) return Promise.resolve(texel([0, 10, 9]));
+    const [guard, grip] = path.includes('_walk') ? [200, 100] : [150, 30];
+    return Promise.resolve({
+      width: 2,
+      height: 1,
+      data: Uint8Array.of(guard, guard, guard, 254, grip, grip, grip, 254),
+    });
+  };
+  const trimmed = (anim: string): ComposeJob => ({
+    ...job(anim, ['sword_elven']),
+    ramps: { sword_elven: ramp },
+    whole: [],
+    trimmed: ['sword_elven'],
+  });
+  const asked: string[] = [];
+  const walking = await composeCard(trimmed('walk'), bladed, colours, read(asked));
+  const named = new Set(stripsOf(trimmed('walk'), bladed));
+  for (const path of asked) assert.ok(named.has(path), `it reads ${path}, which its job names`);
+  assert.ok(named.has('forge/layers/male/sword_elven_idle.png'), 'its standing light');
+  // The walk's 200 is past the standing span's brightest: the ramp's last step.
+  assert.deepEqual([...(walking?.pixels.subarray(0, 4) ?? [])], [240, 0, 0, 255]);
+  const plain = await composeCard({ ...trimmed('walk'), ramps: {}, trimmed: [] }, bladed, colours, read([]));
+  assert.deepEqual([...(plain?.pixels.subarray(0, 4) ?? [])], [200, 200, 200, 255], "a content's: its own colour");
+});

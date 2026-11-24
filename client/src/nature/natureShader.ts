@@ -9,6 +9,9 @@ export const SHADE_SEGMENTS = 10;
 /** The leaf share the bake gives moss (tools/flora/near.py MOSS_LEAF): it is let go past a stone's throw. */
 const MOSS_LEAF = 0.6;
 const { azimuths, elevations } = FLORA.frames;
+/** How fast the plants move, radians of each beat a second: gusts rolling downwind, each plant rocking on its own
+ *  beat, and its leaves trembling. Slow, so a crown sways rather than shakes. */
+export const SWAY = { gustPerS: 0.6, rockPerS: 0.85, tremblePerS: 3 } as const;
 
 /** What the plants' passes share: their terms, their instances, their pictures, and where each stands. */
 const PLANTS = /* wgsl */ `
@@ -83,7 +86,7 @@ const BOUNCE = vec3f(0.95, 0.9, 0.76);
 const SKYLIGHT = vec3f(1.0, 1.02, 1.08);
 // How far a gust travels in a second, as a phase a metre and a second.
 const GUST_PER_M = 0.035;
-const GUST_PER_S = 1.4;
+const GUST_PER_S = ${SWAY.gustPerS.toFixed(2)};
 // Moss is known by its leaf share, and hangs only as far as a stone's throw: past that it is too fine to read.
 const MOSS = ${MOSS_LEAF};
 const MOSS_REACH = 150.0;
@@ -160,10 +163,11 @@ fn standing_of(vertex: Vertex, at: Placed) -> vec3f {
   let gusting = 0.25 + 0.5 * frame.land.z;
   let rolling = frame.wind.w + dot(at.foot.anchored, frame.wind.yz) * GUST_PER_M - frame.wind.x * GUST_PER_S;
   let gust = 1.0 - gusting + gusting * sin(rolling);
-  let sway = 0.35 * sin(frame.wind.x * 2.3 + item.look.w * 40.0);
+  let sway = 0.35 * sin(frame.wind.x * ${SWAY.rockPerS.toFixed(2)} + item.look.w * 40.0);
   let bend = vertex.extra.x * form.thin.z * item.look.y * (gust + sway) * frame.land.y;
   offset += frame.wind.yz * bend;
-  let tremble = vertex.normal.w * 0.03 * sin(frame.wind.x * 7.0 + dot(vertex.position, vec3f(3.1, 2.3, 1.7)));
+  let shiver = frame.wind.x * ${SWAY.tremblePerS.toFixed(2)} + dot(vertex.position, vec3f(3.1, 2.3, 1.7));
+  let tremble = vertex.normal.w * 0.03 * sin(shiver);
   return at.foot.from_eye + vec3f(offset, local.z - abs(bend) * 0.2 + tremble);
 }
 
@@ -187,7 +191,8 @@ fn picture_of(uv: vec2f, wraps: f32) -> Picture {
 
 /** Lighting, as the land is lit by the sky: its ambient bounced warm from the ground under a crown and cool from the
  *  sky over it, the sun as the shadow map and the sky's dapple let it through, a little light through the leaves, the
- *  lamps, snow settling on what faces up, and rain darkening bark and making leaves glisten. */
+ *  lamps, snow settling on what faces up, and rain darkening bark and leaves. A leaf takes no sky's glare: its normal
+ *  turns every way, so the glare a grazing eye sees on stone would wash a whole crown white. */
 const LIGHT = /* wgsl */ `
 fn lit(base: vec3f, normal: vec3f, leaf: f32, occlusion: f32, from_eye: vec3f, snow: f32) -> vec3f {
   let sun = sunlit(from_eye, normal) * sky_dapple(from_eye);
@@ -202,7 +207,7 @@ fn lit(base: vec3f, normal: vec3f, leaf: f32, occlusion: f32, from_eye: vec3f, s
   let settled = snow * smoothstep(0.35, 0.75, normal.z) * open;
   colour = mix(colour, SNOW * (sky_ambient(normal) + direct + lamps), settled);
   let wet = sky_state.ambient_sky.w * (1.0 - settled) * open;
-  return sky_soaked(colour, wet * (1.0 - leaf) * 0.6) + sky_sheen(normal, from_eye, wet * leaf);
+  return sky_soaked(colour, wet * mix(0.6, 0.3, leaf));
 }
 
 // The instance's tint turns foliage warmer and yellower one way, deeper and cooler the other; bark only lightens or

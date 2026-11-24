@@ -43,8 +43,9 @@ impl Weekly {
 impl Character {
     /// The dungeon of the day's first clear at `tier` today: a Boss Captain's kill at `level` (the run's, the tier
     /// applied), its XP and Aurem times the tier's reward, and a sure Vestige in a Boss's colours at `level`, returned
-    /// to be laid on the ground. None once taken today, or when `day` is behind the record's.
-    pub fn clear_of_the_day(&mut self, day: u64, tier: Difficulty, level: u8, dice: &Dice) -> Option<Vestige> {
+    /// to be laid on the ground, or none for a Normal one, kept as its item (`unsealed`). None at all once taken
+    /// today, or when `day` is behind the record's.
+    pub fn clear_of_the_day(&mut self, day: u64, tier: Difficulty, level: u8, dice: &Dice) -> Option<Option<Vestige>> {
         if day < self.activity.today.day || !self.activity.today(day).cleared.insert(tier) {
             return None;
         }
@@ -56,8 +57,7 @@ impl Character {
         let (xp, aurem) = (times(worth.xp), times(worth.aurem));
         self.earn_play_xp(xp, None);
         self.materials.add_aurem(aurem);
-        let (rarity, slot, level) = of_colours(colours(BOSS), level, dice);
-        Some(Vestige::new(self.take_id(), rarity, slot, level).from(Source::Dungeon))
+        Some(self.unsealed(of_colours(colours(BOSS), level, dice), Source::Dungeon, dice))
     }
 
     /// The week's Elite or Abyss Dungeon's first clear this week: a Legendary Vestige (the Abyss's Atheric one in

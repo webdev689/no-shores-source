@@ -90,7 +90,7 @@ pub const BUY_FRAGMENT: u8 = 54;
 /// A cosmetic worn, or bought from the Tailor or the Tack, by its number in `item`.
 pub const WEAR_COSMETIC: u8 = 55;
 pub const BUY_COSMETIC: u8 = 56;
-/// One of Shape's wares of the week bought, by its place in `node`.
+/// One of Shape's wares of the week bought, by its place in `node` and in `item` the number the room sent with it.
 pub const BUY_FROM_SHAPE: u8 = 57;
 /// A keeper spoken with, by their number in `column` (`gear::quests::keeper_key`), at their counter.
 pub const SPEAK: u8 = 64;
@@ -467,7 +467,7 @@ pub fn gear_bytes(room: &Room, player: PlayerId) -> Option<Vec<u8>> {
         items,
         vestiges,
         drops,
-        spent: Some(builder.create_vector(&found.spent)),
+        spent: Some(builder.create_vector(&found.spent.iter().map(|&(node, _)| node).collect::<Vec<u8>>())),
         at_mage: room.at_mage(player),
         answer: found.answer,
         identified: found.identified,

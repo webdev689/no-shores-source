@@ -7,9 +7,13 @@ use crate::dice::Dice;
 use crate::guild::Boons;
 use crate::item::{Item, NAMED_LEVEL};
 use crate::kinds::Slot;
+use crate::rarity::Rarity;
 use crate::source::Source;
 use crate::vestige;
 use crate::world::Difficulty;
+
+/// The stream a Normal Vestige's item is rolled on (`unsealed`), apart from the roll of its colour.
+const COMMON_STREAM: u64 = 0x636f_6d6d_6f6e;
 
 /// The foes that give loot, as rewards know them.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -181,7 +185,7 @@ impl Character {
     }
 
     /// Vestiges and items by their chances, coloured by `rank` at `level`, from `source`: the items kept, the
-    /// Vestiges returned.
+    /// Vestiges returned, a Normal one's item among the kept (`unsealed`).
     fn loot(
         &mut self,
         (vestiges, items): (f64, f64),
@@ -190,10 +194,8 @@ impl Character {
         source: Source,
         dice: &Dice,
     ) -> Vec<Vestige> {
-        let mut laid: Vec<Vestige> = vestige::dropped(vestiges, rank, level, dice)
-            .into_iter()
-            .map(|(rarity, slot, level)| Vestige::new(self.take_id(), rarity, slot, level).from(source))
-            .collect();
+        let rolled = vestige::dropped(vestiges, rank, level, dice);
+        let mut laid: Vec<Vestige> = rolled.into_iter().filter_map(|drop| self.unsealed(drop, source, dice)).collect();
         // An item there is no room for is laid as a Vestige of the content it dropped in, as a kill's own are.
         for item in vestige::found_items(items, rank, level, source, dice) {
             laid.extend(self.keep_found(item, level.clamp(1, NAMED_LEVEL)).map(|vestige| vestige.from(source)));
@@ -202,19 +204,42 @@ impl Character {
     }
 
     /// Keeps an item found as itself, numbered as it is taken: carried with its slot's, else in the vault. With both
-    /// full it comes back as a Vestige of its colour and slot at `level`, its foe's, to be laid, so nothing found is
-    /// lost and none opens above what that foe could drop (a named item stands at 20, a cloak at 1, whatever its foe).
+    /// full a Normal one is posted as itself, as no common is ever sealed; anything finer comes back as a Vestige of
+    /// its colour and slot at `level`, its foe's, to be laid, so nothing found is lost and none opens above what that
+    /// foe could drop (a named item stands at 20, a cloak at 1, whatever its foe).
     pub fn keep_found(&mut self, item: Item, level: u8) -> Option<Vestige> {
         let at = if self.carried_in(item.bucket) < CARRIED_MOST {
             At::Carried
         } else if self.vaulted(item.kind.stock()) < VAULT_MOST {
             At::Vault
+        } else if item.rarity == Rarity::Normal {
+            self.post(crate::mail::Source::Found, crate::mail::Posted::Item(item));
+            return None;
         } else {
             return Some(Vestige::new(self.take_id(), item.rarity, item.bucket, level).from(item.source));
         };
         let id = self.take_id();
         self.items.insert(id, (Item { id, ..item }, at));
         None
+    }
+
+    /// A Vestige rolled for this player, its colour, slot and level, from `source`: Magic or finer comes sealed,
+    /// numbered and returned; a Normal one comes as the item it would have opened to, kept as a found item is
+    /// (`keep_found`), so no common is ever sealed.
+    pub fn unsealed(
+        &mut self,
+        (rarity, slot, level): (Rarity, Slot, u8),
+        source: Source,
+        dice: &Dice,
+    ) -> Option<Vestige> {
+        if rarity > Rarity::Normal {
+            return Some(Vestige::new(self.take_id(), rarity, slot, level).from(source));
+        }
+        // Each on dice of its own, by the number it will take, so two commons of one kill are never one twice, and
+        // apart from the kill's found items' stream.
+        let seed = dice.seed ^ COMMON_STREAM ^ u64::from(self.id_to_take()).wrapping_mul(0x9E37_79B9_7F4A_7C15);
+        let item = vestige::make(0, Rarity::Normal, slot, level, source, &Dice { seed, ..*dice })?;
+        self.keep_found(item, level)
     }
 
     /// Takes a Vestige off the ground into the carried ten; refused, leaving it lying, when they are full.

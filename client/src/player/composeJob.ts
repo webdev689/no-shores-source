@@ -16,6 +16,8 @@ export interface ComposeJob {
   /** The layers whose ramp covers them whole: a dye worn's or a faction's colour on its armour, and a faction's on
    *  its shield, bow and staff (`layerRamps`). */
   readonly whole?: readonly string[] | undefined;
+  /** The layers whose ramp lies on their marked trim alone: a faction's blade (`layerRamps`). */
+  readonly trimmed?: readonly string[] | undefined;
   readonly glow: GlowLook;
   readonly alone?: readonly string[] | undefined;
 }
@@ -43,10 +45,12 @@ export interface ComposedCard {
 export const CAST = 'cast';
 const SPARK: ReadonlySet<string> = new Set(['spark']);
 
-/** The layers of a job's frame whose ramp covers them whole. Their sets' light is read from the body's whole table,
- *  so a piece drawn alone (an item's picture) is laid as it is worn. */
-const coveredOf = (job: ComposeJob, looks: ForgeLooks): string[] =>
-  layersOf(job.figure, job.anim, looksOf(job, looks)).filter((layer) => job.whole?.includes(layer));
+/** The layers of a job's frame whose ramp covers them whole (or, with `trim`, lies on their marked trim). Their
+ *  sets' light is read from the body's whole table, so a piece drawn alone (an item's picture) is laid as it is worn. */
+const coveredOf = (job: ComposeJob, looks: ForgeLooks, trim = false): string[] =>
+  layersOf(job.figure, job.anim, looksOf(job, looks)).filter((layer) =>
+    (trim ? job.trimmed : job.whole)?.includes(layer),
+  );
 
 /** Every strip a job's frame is composed from: each of its layers' colour and depth, and the strips its covered
  *  layers' light is read from. */
@@ -56,7 +60,9 @@ export function stripsOf(job: ComposeJob, looks: ForgeLooks): string[] {
     layerPath(body, layer, job.anim),
     layerPath(body, layer, job.anim, true),
   ]);
-  const covered = coveredOf(job, looks).flatMap((layer) => coverPaths(body, layer, looks));
+  const covered = [...coveredOf(job, looks), ...coveredOf(job, looks, true)].flatMap((layer) =>
+    coverPaths(body, layer, looks),
+  );
   return [...new Set([...own, ...covered])];
 }
 
@@ -70,7 +76,12 @@ export async function composeCard(
 ): Promise<ComposedCard | null> {
   const cast = job.anim === CAST;
   const { figure, anim, view, frame, ramps, glow } = job;
-  const covers = await coversOf(figure.body, coveredOf(job, looks), looks, strip);
+  const [whole, trims] = await Promise.all([
+    coversOf(figure.body, coveredOf(job, looks), looks, strip),
+    coversOf(figure.body, coveredOf(job, looks, true), looks, strip, true),
+  ]);
+  // A layer is covered whole or trimmed, never both (`layerRamps`): one map holds the steps of each.
+  const covers = new Map([...whole, ...trims]);
   const composed = await composeFrame(
     figure,
     anim,

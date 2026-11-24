@@ -1,7 +1,7 @@
 //! The walks round the courts on the Beacon's platform: the Beacon Walk between the courts and the Beacon's base, its
 //! portico before the Hall's great door, townsfolk's market stalls and braziers; the East and West Walks off the
-//! plaza's ends; the Stair Yard on round the base's east side, where the Tack keeps a stable at the head of the
-//! Harbour Stair down to the harbour way; and the sealed gates where the platform runs on round the base.
+//! plaza's ends; the Stair Yard on round the base's east side, where the Tack keeps a stable by the head of the
+//! harbour way; and the sealed gates where the platform runs on round the base and at the harbour way's head.
 
 use super::courts::{HALF_LENGTH_M, PLATFORM_FROM_M, brazier};
 use super::{Laid, parapet, stand_against, stand_at};
@@ -22,6 +22,14 @@ const SEALED_GATE_ACROSS_M: f64 = 115.0;
 /// On the east, the wall closes the Stair Yard past the Harbour Stair's head, where the city's switchback meets the
 /// platform (`ramps`), metres seaward of the plaza's middle.
 pub(crate) const SEALED_EAST_M: f64 = -150.0;
+/// The harbour way's head: the wall closing the Stair Yard's open edge over the city's switchback (`ramps`), from the
+/// east sealed wall to this far seaward, and its sealed gate's middle, across the switchback's top landing, metres
+/// seaward of the plaza's middle.
+const HARBOUR_WALL_TO_M: f64 = -120.0;
+const HARBOUR_GATE_TOWARD_M: f64 = -134.0;
+/// The Harbourmaster's stall and the chandlery in the market's outer bays, between its lamp posts (`adorn`), metres
+/// either side of the plaza's middle, their backs on the base's face.
+const HARBOUR_STALLS_ACROSS_M: f64 = 82.0;
 /// The Tack's stable against the base's east face, its middle metres seaward of the plaza's middle.
 const STABLE_TOWARD_M: f64 = -130.0;
 /// The portico before the Hall's door: its width, its podium's depth before the base and height, its columns' height.
@@ -56,12 +64,29 @@ pub fn beacon_walk(ground: &Ground, frame: &Frame, laid: &mut Laid) {
         laid.piece(stand_against("sealed-gate", "front", gate, frame.level, frame.seaward));
         laid.spots.push(frame.at(toward + 9.0, side * (SEALED_GATE_ACROSS_M - 9.0)));
     }
+    let west = [-across[0], -across[1]];
+    let [_, _, thick, high] = SEALED_M;
+    let length = HARBOUR_WALL_TO_M - SEALED_EAST_M;
+    let middle = SEALED_EAST_M + length / 2.0;
+    laid.solids.push(frame.block(middle, PLATFORM_EDGE_M, 0.0, [thick, length, high], Material::Stone));
+    let gate = frame.at(HARBOUR_GATE_TOWARD_M, PLATFORM_EDGE_M - thick / 2.0);
+    laid.piece(stand_against("sealed-gate", "front", gate, frame.level, west));
+    // Shape's two places on this side, kept clear of the ways, as the other gates' are: before the harbour way's gate
+    // and in the market's west end.
+    laid.spots.push(frame.at(HARBOUR_GATE_TOWARD_M + 9.0, PLATFORM_EDGE_M - 9.0));
+    laid.spots.push(frame.at(BASE_FACE_M + 17.0, -108.0));
     let north = frame.seaward;
     for (name, side) in [("market-stall-fish", -58.0), ("market-stall-fruit", 58.0)] {
         laid.piece(stand_against(name, "front", frame.at(BASE_FACE_M, side), frame.level, north));
     }
     laid.piece(stand_against("market-stall-pots", "front", frame.at(SEALED_M[0] + 1.0, -136.0), frame.level, north));
     laid.piece(stand_at("crates-barrels", "front", frame.at(BASE_FACE_M + 4.0, -72.0), frame.level, north));
+    for (kind, name, side) in
+        [(StationKind::Harbourmaster, "stall-harbourmaster", 1.0), (StationKind::Chandler, "stall-chandler", -1.0)]
+    {
+        let back = frame.at(BASE_FACE_M, side * HARBOUR_STALLS_ACROSS_M);
+        laid.stall(kind, stand_against(name, "counter", back, frame.level, north));
+    }
     let east = [across[0], across[1]];
     let base_side = SEALED_M[1] - 0.5;
     let stable = stand_against("stall-tack", "counter", frame.at(STABLE_TOWARD_M, base_side), frame.level, east);

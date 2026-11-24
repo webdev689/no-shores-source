@@ -225,7 +225,8 @@ export class GearPanel {
     const kinds = KINDS.map((kind, index) => [String(index), kindName(index)] as const).filter(
       ([number, name]) => name && number !== String(KINDS.indexOf('cloak')),
     );
-    const lesser = RARITIES.slice(0, 3).map((rarity, index) => [String(index), rarity.name] as const);
+    // Every rarity but the Atheric is rolled; an Atheric is handed out by its name.
+    const rolled = RARITIES.slice(0, 4).map((rarity, index) => [String(index), rarity.name] as const);
     return [
       heading('Hand out'),
       labelled('Level', field('tg:grant:level', 'Level', { width: 60 })),
@@ -233,11 +234,16 @@ export class GearPanel {
         'Slot',
         pick(ui, 'tg:grant:slot', slots, String(grant.slot), (value) => (grant.slot = Number(value))),
       ),
+      // No Normal Vestige: a Normal piece drops as itself, so the room hands one out as its item.
       presses(
-        RARITIES.map((rarity, index) =>
-          press(ui, `tg:grant:vestige${index}`, `${rarity.name} Vestige`, () =>
-            ask({ kind: ASKS.grantVestige, rarity: index, slot: grant.slot, level }),
-          ),
+        RARITIES.flatMap((rarity, index) =>
+          index === 0
+            ? []
+            : [
+                press(ui, `tg:grant:vestige${index}`, `${rarity.name} Vestige`, () =>
+                  ask({ kind: ASKS.grantVestige, rarity: index, slot: grant.slot, level }),
+                ),
+              ],
         ),
       ),
       labelled(
@@ -246,7 +252,7 @@ export class GearPanel {
       ),
       labelled(
         'Rarity',
-        pick(ui, 'tg:grant:rarity', lesser, String(grant.rarity), (value) => (grant.rarity = Number(value))),
+        pick(ui, 'tg:grant:rarity', rolled, String(grant.rarity), (value) => (grant.rarity = Number(value))),
       ),
       presses([
         press(ui, 'tg:grant:item', 'Hand out that item', () =>

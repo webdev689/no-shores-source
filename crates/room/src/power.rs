@@ -6,10 +6,10 @@
 //! drops for them alone (`drops.rs`), and counts toward their bounties (`bounties.rs`).
 
 use crate::{Foe, PlayerId, Room};
-use combat::Shot;
 use combat::arms::{Arms, BARE_HANDS, OffHand, Ranged, WeaponClass};
 use combat::fighter::{Fighter, FighterId};
 use combat::judge::{Blow, BlowKind};
+use combat::{Shot, Status};
 use gear::objectives::Feat;
 use gear::rewards::{Foe as Worth, SHARE_TICKS};
 use gear::{Character, Kind, Slot};
@@ -24,7 +24,8 @@ pub const FOE_HARM: f64 = 0.75;
 /// What a player's blow carries of its striker: the Attack and element of the loadout it came from, and their trim. An
 /// arrow or a bolt keeps those it was loosed with, so a weapon changed while it flies changes nothing of it, whether it
 /// was aimed (loosed from the draw, striking harder than a quick shot), for Storm Gull, and the item it was loosed
-/// from, whose perks it takes wherever that item is when it lands.
+/// from, whose perks it takes wherever that item is when it lands; and whether its striker was Veiled (From the Dark)
+/// and Linked (Shared Flame) as it was struck or loosed.
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub struct Loosed {
     pub attack: u32,
@@ -32,6 +33,8 @@ pub struct Loosed {
     pub trim: combat::Trim,
     pub aimed: bool,
     pub item: Option<u32>,
+    pub veiled: bool,
+    pub linked: bool,
 }
 
 /// What a loadout puts in a player's hands, drawn: a pair's second blade or mace and an "& Shield"'s shield in the
@@ -153,7 +156,9 @@ impl Room {
         let element = character.worn(loadout).and_then(|item| item.element);
         let attack = character.attack(loadout).unwrap_or(0);
         let item = character.worn(loadout).map(|item| item.id);
-        Some(Loosed { attack, element, trim: player.fighter.trim, aimed: false, item })
+        let statuses = player.fighter.statuses;
+        let (veiled, linked) = (statuses.has(Status::Veiled), statuses.has(Status::Linked));
+        Some(Loosed { attack, element, trim: player.fighter.trim, aimed: false, item, veiled, linked })
     }
 
     /// A blow as `empower` makes it, a player's by the Attack and trim `held` gives.
@@ -173,7 +178,7 @@ impl Room {
         let element = held.and_then(|held| held.element).map_or(0, |element| element as u8);
         let blow = Blow { damage: blow.damage * times * self.modded_blow(&blow, defender), element, ..blow };
         match held {
-            Some(held) => self.sharpened(blow, defender, &held.trim),
+            Some(held) => self.sharpened(blow, defender, &held),
             None => blow,
         }
     }

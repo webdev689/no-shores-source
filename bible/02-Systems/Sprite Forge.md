@@ -111,6 +111,14 @@ Leather and chain take steel's; the guild sets keep their own colours, unless a 
 which covers every set's armour whole by its light ([[Gear]], "Cosmetics"). A composed frame is then snapped to the
 palette, nearest in OKLab with hue weighed four times light, as DFO's game does.
 
+A weapon's hilt, guard and trim are marked in every strip and picture of it: each such texel is drawn at alpha 254,
+every other drawn texel at 255 (`stage.py` `mark_trim`). The trim is each material of a fitting's, a grip's or an
+accent's class, never a glow (`metals.py` `is_trim`), on every sword, dagger, axe, mace, flail and warhammer layer,
+in hand or sheathed (`layers.py` `TRIMMED`, the large pictures of `weaponart.py`), and the first person's sword and
+dagger (`fplayers.py` `TRIM_MATS`). The page lays a faction's colour on those texels of a faction's blade alone, by
+their light across the trim's own span ([[Gear]], "Looks"); a strip without marks draws as it did. A trimmed layer's
+render key carries the mark, so a figures run draws those strips again and no others.
+
 ## Running it
 
 Blender runs as a Python module: `pip install bpy==5.2.3` on Python 3.13, with `scipy`, `cma` and `pillow`. Run
@@ -133,6 +141,12 @@ manifest into `content/forge/renders.json`.
 A run asked for may also draw figure strips first, for both bodies (`figures`: runs split by `;`, each `anims|layers`,
 either empty for all), with a limit of 300 minutes: a cloud session holds no Cloudflare key, so this is how a figure
 strip reaches R2 from one. A fresh checkout holds no strips, so every strip of each layer named is drawn.
+It may also draw the first person's dagger and sword blade layers (`firstperson`: runs split by `;`, each
+`weapon|metals`, the weapon `dagger` or `sword`, the metals empty for every make), for the right hand and the left's
+twin, into the studio's `forge/WEAPON02/layers` or `forge/WEAPON04/layers`, with a limit of 90 minutes when no
+figures are asked for (every make of both weapons is reckoned at about 40 on four cores, from one record's time); the hands are not drawn again, and the wear
+maps are not, as the game reads none. `fplayers.py --check` checks, without rendering, that every record is cut from
+the canvas it was rendered on.
 The weapons take under a minute on four cores; `weaponart.py --check` checks their layout without rendering.
 
 The `lattice` workflow runs only when asked: by a push to a branch other than `main` that changes

@@ -7,7 +7,8 @@ use crate::clock::week_of;
 use crate::dice::Dice;
 use crate::kinds::Slot;
 use crate::rarity::Rarity;
-use crate::shape::{PLACES, WARES, minutes_left, place, present, price, wares};
+use crate::shape::{LEGENDARY_TICKS, PLACES, WARES, minutes_left, place, present, price, wares};
+use crate::source::Source;
 
 const DICE: Dice = Dice { seed: 5, tick: 9, player: 1 };
 
@@ -54,20 +55,64 @@ fn each_week_has_its_place_and_its_six_pieces() {
     assert_eq!(&rarities[4..], [Rarity::Atheric; 2]);
     for piece in &pieces {
         assert_eq!(piece.level, 20);
-        assert!(piece.named.is_some() && piece.bucket != Slot::Cloak);
+        assert!(piece.bucket != Slot::Cloak);
     }
     assert_eq!(wares(week), pieces);
 }
 
 #[test]
-fn no_week_sells_one_piece_twice() {
+fn his_legendaries_are_rolled_in_their_contents_set_one_per_slot() {
+    let sold = [Source::World, Source::Dungeon, Source::Sea, Source::Elite, Source::Abyss];
+    let mut contents = std::collections::BTreeSet::new();
+    for week in 2_900..3_000 {
+        let pieces = wares(week);
+        let slots: std::collections::BTreeSet<_> = pieces[..4].iter().map(|piece| piece.bucket).collect();
+        assert_eq!(slots.len(), 4, "one Legendary per Vestige slot drawn, week {week}");
+        for piece in &pieces[..4] {
+            assert_eq!(piece.named, None, "a rolled Legendary, never a named one, week {week}");
+            assert!(Slot::VESTIGE.contains(&piece.bucket) && sold.contains(&piece.source), "week {week}");
+            assert!(!piece.layout.is_empty() && !piece.breach, "its traits rolled, week {week}");
+            contents.insert(piece.source as u8);
+        }
+        for piece in &pieces[4..] {
+            assert!(piece.named.is_some() && piece.source != Source::Faction, "an Atheric keeps its name");
+        }
+    }
+    assert_eq!(contents.len(), sold.len(), "each of the five contents comes some week");
+}
+
+#[test]
+fn no_week_sells_one_atheric_twice() {
     for week in 2_900..3_420 {
         let named: std::collections::BTreeSet<_> = wares(week).into_iter().filter_map(|piece| piece.named).collect();
-        assert_eq!(named.len(), WARES, "week {week}");
+        assert_eq!(named.len(), WARES - 4, "week {week}");
     }
 }
 
-/// The named piece Shape shows at a place in the tests' week, as a page names it.
+#[test]
+fn an_atheric_is_shown_by_its_place_in_the_catalogue() {
+    let atheric = wares(5_000)[4].named.clone();
+    let place = crate::catalogue::catalogue().items.iter().position(|entry| Some(&entry.id) == atheric.as_ref());
+    assert_eq!(place.and_then(|place| u32::try_from(place).ok()), Some(shown(4)));
+}
+
+#[test]
+fn a_rolled_legendary_is_bought_by_its_weeks_number_and_last_weeks_page_is_refused() {
+    let mut character = Character::starting();
+    character.xp = crate::power::xp_for_level(20);
+    character.add_shapes(100);
+    let here = Here { social: true, day: 0, pledge: 0, rank: 0, week: 5_000 };
+    let stale = crate::shape::shown(4_999, 0);
+    assert_ne!(stale, shown(0), "another week's piece has another number");
+    assert_eq!(character.ask(Ask::BuyFromShape { ware: 0, shown: stale }, here, &DICE), Err(Refusal::NotSold));
+    assert!(character.ask(Ask::BuyFromShape { ware: 0, shown: shown(0) }, here, &DICE).is_ok());
+    let bought = character.items.values().map(|(item, _)| item).find(|item| item.rarity == Rarity::Legendary);
+    let mut sold = wares(5_000)[0].clone();
+    sold.id = bought.map_or(0, |item| item.id);
+    assert_eq!(bought, Some(&sold), "the piece shown, rolled as the week rolled it");
+}
+
+/// The number of the piece Shape shows at a place in the tests' week, as a page names it.
 fn shown(ware: u8) -> u32 {
     crate::shape::shown(5_000, ware)
 }
@@ -97,6 +142,13 @@ fn a_piece_is_bought_with_shapes_at_his_place() {
     assert_eq!(character.materials.shapes, 200 - bought.map_or(0, price), "{bought:?}");
     assert_eq!(bought.map(|item| item.named.clone()), Some(wares(5_000)[4].named.clone()));
     assert_eq!(character.ask(Ask::BuyFromShape { ware: 9, shown: shown(9) }, here, &DICE), Err(Refusal::NoSuchItem));
+}
+
+#[test]
+fn a_weeks_legendaries_roll_on_ticks_no_other_roll_of_his_week_takes() {
+    // The shuffles take ticks 1 + rarity and the wares' elements 1 + ware: all below the Legendaries' own.
+    let taken = [1 + Rarity::Legendary as u64, 1 + Rarity::Atheric as u64, WARES as u64];
+    assert!(taken.iter().all(|tick| *tick < LEGENDARY_TICKS));
 }
 
 #[test]

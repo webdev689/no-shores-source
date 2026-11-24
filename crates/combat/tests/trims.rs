@@ -54,6 +54,28 @@ fn a_trimmed_swing_and_dodge_cost_less_stamina() {
 }
 
 #[test]
+fn a_dodge_while_veiled_costs_its_own_trim_and_only_while_veiled() {
+    let shade = Trim { veiled_dodge_stamina: 0.8, ..Trim::PLAIN };
+    let open = step_fighter(&armed(shade), &dodging(0.0, 0.0, 1.0), &AROUND).0;
+    assert!((STAMINA - open.stamina - DODGE_STAMINA).abs() < 1e-9, "unveiled, a dodge costs what it does");
+    let mut veiled = armed(shade);
+    veiled.statuses = combat::give(&veiled, combat::Status::Veiled, 60, None).expect("veiled").statuses;
+    let hidden = step_fighter(&veiled, &dodging(0.0, 0.0, 1.0), &AROUND).0;
+    assert!((STAMINA - hidden.stamina - DODGE_STAMINA * 0.8).abs() < 1e-9, "Shade Step: 20% less while Veiled");
+}
+
+#[test]
+fn a_trimmed_healing_charge_restores_more() {
+    let wounded = Fighter { health: 20.0, trim: Trim { drink_heal: 1.15, ..Trim::PLAIN }, ..player_at(0.0, 0.0) };
+    let heal = combat::CombatInput { heal: true, ..combat::CombatInput::default() };
+    let mut intents = vec![common::asking(0.0, heal)];
+    intents.extend(std::iter::repeat_n(idle(0.0), usize::try_from(combat::tuning::DRINK_TICKS).unwrap()));
+    let (drunk, _) = common::script(wounded, &intents);
+    let healed = drunk.health - 20.0;
+    assert!((healed - 100.0 * combat::tuning::DRINK_HEALS * 1.15).abs() < 1e-9, "Lightbearer: 15% more, {healed}");
+}
+
+#[test]
 fn stamina_comes_back_faster_trimmed_and_faster_again_below_half_health() {
     let rested = |trim: Trim, health: f64| {
         let tired = Fighter { stamina: 10.0, stamina_rest: 100, health, trim, ..player_at(0.0, 0.0) };
@@ -128,6 +150,57 @@ fn blows_land_softer_from_behind_or_telegraphed_and_a_tolling_stagger_lasts_long
 }
 
 #[test]
+fn blows_land_softer_on_a_fighter_above_three_quarters_of_its_health_with_crystal_skin() {
+    let skin = Trim { hale_taken: 0.9, ..Trim::PLAIN };
+    let struck = |health: f64| {
+        let fighter = Fighter { health, health_max: 100.0, trim: skin, ..player_at(0.0, 0.0) };
+        match judge(&blow(BlowKind::Swing(Stroke::Down)), &fighter) {
+            Verdict::Hit { damage, .. } => damage,
+            other => panic!("a hit, not {other:?}"),
+        }
+    };
+    assert!((struck(80.0) - 9.0).abs() < 1e-9, "above three quarters");
+    assert!((struck(75.0) - 10.0).abs() < 1e-9, "at three quarters, no longer");
+    let mut guarded = armed(skin);
+    let mut plain_guard = armed(Trim::PLAIN);
+    for _ in 0..20 {
+        guarded = step_fighter(&guarded, &guarding(0.0), &AROUND).0;
+        plain_guard = step_fighter(&plain_guard, &guarding(0.0), &AROUND).0;
+    }
+    let chip = |fighter: &Fighter| match judge(&blow(BlowKind::Swing(Stroke::Down)), fighter) {
+        Verdict::Blocked { damage, .. } => damage,
+        other => panic!("blocked, not {other:?}"),
+    };
+    assert!((chip(&guarded) - chip(&plain_guard) * 0.9).abs() < 1e-9, "through a guard too");
+}
+
+#[test]
+fn blows_land_softer_on_a_fighter_below_a_quarter_of_its_health_with_lattice_shell() {
+    let shell = Trim { low_taken: 0.8, ..Trim::PLAIN };
+    let struck = |health: f64| {
+        let fighter = Fighter { health, health_max: 100.0, trim: shell, ..player_at(0.0, 0.0) };
+        match judge(&blow(BlowKind::Swing(Stroke::Down)), &fighter) {
+            Verdict::Hit { damage, .. } => damage,
+            other => panic!("a hit, not {other:?}"),
+        }
+    };
+    assert!((struck(20.0) - 8.0).abs() < 1e-9, "below a quarter");
+    assert!((struck(25.0) - 10.0).abs() < 1e-9, "at a quarter, not yet");
+    let low = |fighter: Fighter| Fighter { health: fighter.health_max * 0.2, ..fighter };
+    let mut guarded = low(armed(shell));
+    let mut plain_guard = low(armed(Trim::PLAIN));
+    for _ in 0..20 {
+        guarded = step_fighter(&guarded, &guarding(0.0), &AROUND).0;
+        plain_guard = step_fighter(&plain_guard, &guarding(0.0), &AROUND).0;
+    }
+    let chip = |fighter: &Fighter| match judge(&blow(BlowKind::Swing(Stroke::Down)), fighter) {
+        Verdict::Blocked { damage, .. } => damage,
+        other => panic!("blocked, not {other:?}"),
+    };
+    assert!((chip(&guarded) - chip(&plain_guard) * 0.8).abs() < 1e-9, "through a guard too");
+}
+
+#[test]
 fn unshaken_and_steady_fill_poise_less() {
     let open = Fighter { arms: SWORD, poise_max: 100.0, ..player_at(0.0, 0.0) };
     let filled = |trim: Trim, arms: Arms| {
@@ -147,7 +220,7 @@ fn a_trim_crosses_with_its_fighter_to_the_bit() {
     let floats: [f64; FIGHTER_FLOATS] = fighter.to_floats();
     assert_eq!(Fighter::from_floats(&floats), fighter);
     let mut broken = floats;
-    broken[FIGHTER_FLOATS - 29] = f64::NAN;
+    broken[FIGHTER_FLOATS - combat::trim::TRIM_FLOATS] = f64::NAN;
     assert_eq!(Fighter::from_floats(&broken).trim.swing_stamina, 1.0, "a factor that is not a number trims nothing");
 }
 

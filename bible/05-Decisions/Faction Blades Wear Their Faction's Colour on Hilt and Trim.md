@@ -17,4 +17,6 @@ a Veiled dagger as an Abyss Dungeon's ebony one, the owner chose:
 - **A faction's weapon reads apart from a content's** of the same metal
   ([[Armour and Weapon Looks Belong to the Content That Gives Them]]).
 
-Built on the branch `wt/fblade` and held by the owner, its art not published: [[Open Questions]].
+How it is drawn: the forge marks each blade's hilt, guard and trim, and the page lays a faction's colour there on a
+faction's blade alone ([[Sprite Forge]], "Colours"; [[Gear]], "Looks"). Claude's calls in [[Gear as Claude Shapes It]]
+("The faction blades' colour").
