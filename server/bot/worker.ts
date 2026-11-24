@@ -99,7 +99,7 @@ export async function handle(request: Request, env: Env, execution: Execution, o
   const registry = over.registry ?? REGISTRY;
   const cors = corsFor(env, request);
   if (request.method === 'OPTIONS') return new Response(null, { status: 204, headers: cors });
-  if (url.pathname === '/health') return json({ ok: true, version: BOT_VERSION });
+  if (url.pathname === '/health') return json({ ok: true, version: BOT_VERSION, commit: String(env.BOT_COMMIT ?? '') });
   const context = workerContext(env, execution, () => over.nowMs ?? Date.now(), over);
   if (url.pathname === INTERACTION_PATH) return interactionRoute({ ...context, nowS, registry }, request);
   if (url.pathname.startsWith(MEDIA_PATH) && request.method === 'GET')

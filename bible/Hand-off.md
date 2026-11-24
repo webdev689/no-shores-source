@@ -207,7 +207,8 @@ The decisions in [[Open Questions]] are not repeated here.
   and 360 wide. Not tested live: nothing has deployed. What it waits on, the owner's each:
   - The yes to merge, once CI is green on the head.
   - `noshores.online`'s nameservers moved from Porkbun to Cloudflare; until then `site.yml` serves nothing and says
-    so. The Cloudflare token then needs Zone: Read and Workers Routes: Edit on that zone. The owner posted a Porkbun
+    so, while the bot's `/link` and panel already name the domain. The Cloudflare token then needs Zone: Read and
+    Workers Routes: Edit on that zone. The owner posted a Porkbun
     API key in an earlier chat: it was never stored or used, and should be rotated.
   - One Discord application, its keys added as repository secrets (`DISCORD_CLIENT_ID`, `DISCORD_CLIENT_SECRET`,
     `DISCORD_PUBLIC_KEY`, `DISCORD_BOT_TOKEN`, `BOT_OWNERS`; [[Discord Bot]], "One Discord application"), its OAuth2

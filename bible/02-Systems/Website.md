@@ -131,7 +131,10 @@ small stand-in document (`domForTests.ts`) against a faked bot.
 
 - Nothing is served until `noshores.online` is a zone of the Cloudflare account, its nameservers moved from Porkbun
   ([[Open Questions]]); until then each deploy says so and serves nothing. The Cloudflare token then needs Zone: Read
-  and Workers Routes: Edit on that zone.
+  and Workers Routes: Edit on that zone, beside the Workers R2 Storage: Edit it publishes with, which the bucket's
+  rules need too.
+- The bot's `/link` and its panel name `noshores.online` from the bot's first deploy, which does not wait on the zone:
+  until the nameservers move, those addresses do not answer.
 - A browser keeps a game's sign-in and saves by its address, so a guest who played on GitHub Pages starts afresh at
   `noshores.online`; an account linked to Discord signs in on either.
 - The Discord buttons stay hidden until the owner has an invite.

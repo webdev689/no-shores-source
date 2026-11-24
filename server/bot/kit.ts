@@ -26,6 +26,8 @@ export const EDGE_COLOUR = colorNumber(DEFAULT_COLOUR);
  */
 export interface Vars {
   readonly BOT_URL?: string;
+  /** The commit the deploy came from, stamped by it, which `/health` answers so a deploy knows its code is live. */
+  readonly BOT_COMMIT?: string;
   readonly PANEL_URL?: string;
   readonly PANEL_ORIGINS?: string;
   readonly DISCORD_PUBLIC_KEY?: string;

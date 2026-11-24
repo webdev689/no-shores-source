@@ -28,12 +28,18 @@ const greeter: ServerModule = {
   component: async (_context, _interaction, words) => ({ type: 4, data: { content: `pressed ${words.join(',')}` } }),
 };
 
-test('worker: health names the version', async () => {
+test('worker: health names the version, and the commit the deploy stamped on it', async () => {
   const bot = await standWorker();
   assert.deepEqual(await bodyOf(await bot.call(new Request('https://bot.test/health'))), {
     ok: true,
     version: BOT_VERSION,
+    commit: '',
   });
+  const stamped = await standWorker({ env: { BOT_COMMIT: 'abc123' } });
+  assert.equal(
+    ((await bodyOf(await stamped.call(new Request('https://bot.test/health')))) as { commit: string }).commit,
+    'abc123',
+  );
 });
 
 test("commands: the bot's own /panel and every module's, each name once", () => {

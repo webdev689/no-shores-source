@@ -187,7 +187,8 @@ changed since its last deploy ([[The Discord Bot Deploys on Each Merge]]): `bot.
 deploys the accounts its binding names. It finds or makes the `noshores-bot` database and the `noshores-bot-media`
 bucket, applies the migrations, deploys with `BOT_URL` set to its own `workers.dev` address, hands over the keys the
 repository has, makes `CARD_SIGNING_KEY` once when the Worker has none, writes the slash commands to the application
-(`commands.ts`'s whole list, in place of the one Discord had), and waits for `/health` to name this `BOT_VERSION`.
+(`commands.ts`'s whole list, in place of the one Discord had), and waits for `/health` to name the commit it
+stamped on the Worker as `BOT_COMMIT`, so the new code is known to be live.
 `deploy-ready.sh` decides whether a deploy is due, for the rooms as for the bot. Run by hand from the Actions tab it
 deploys whatever changed, which is how keys added later reach the Worker.
 

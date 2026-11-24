@@ -32,7 +32,8 @@ passed() {
   gh api "repos/$repo/commits/$sha/check-runs?check_name=check" \
     --jq 'any(.check_runs[]; .app.slug == "github-actions" and .conclusion == "success")'
 }
-read -r -a code <<< "$CODE"
+# Every path, whether the workflow folds them onto one line or gives each its own.
+read -r -d '' -a code <<< "$CODE" || true
 if [ "$head" != "$sha" ]; then
   echo "main has moved past this commit; its own run deploys $what"
   echo "deploy=no" >> "$GITHUB_OUTPUT"

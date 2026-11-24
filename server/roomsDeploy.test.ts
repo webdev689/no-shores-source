@@ -96,6 +96,13 @@ test('a merge deploys the rooms when their code changed since the last deploy, a
   assert.equal(roomsDecided('server/bot/worker.ts'), 'deploy=no', 'the Discord bot, which deploys on its own');
   assert.equal(roomsDecided('.github/workflows/rooms.yml'), 'deploy=yes', 'the workflow itself');
   assert.equal(roomsDecided('.github/deploy-ready.sh'), 'deploy=yes', 'the script that decides');
+  const lines = { joined: '\n' };
+  assert.equal(
+    roomsDecided('.github/workflows/rooms.yml', lines),
+    'deploy=yes',
+    'the last of the paths given a line each',
+  );
+  assert.equal(roomsDecided('server/bot/worker.ts', lines), 'deploy=no', 'a path left out, given a line of its own');
 });
 
 test('by hand the rooms deploy whatever changed; with no deploy found they deploy; past main’s head they do not', () => {

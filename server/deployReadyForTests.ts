@@ -37,6 +37,8 @@ export interface Asked {
   readonly token?: boolean;
   /** The commit passed its CI check. */
   readonly checked?: boolean;
+  /** What the code's paths are joined by, as the workflow's YAML hands them over; a space when not given. */
+  readonly joined?: string;
 }
 
 /** What the ready script decides for a commit that changes `changed` over the one last deployed to `environment`,
@@ -83,7 +85,7 @@ export function decided(environment: string, code: readonly string[], changed: s
       PATH: `${join(root, 'bin')}:${process.env['PATH'] ?? ''}`,
       HAS_TOKEN: asked.token === false ? 'false' : 'true',
       BY_HAND: asked.byHand ? 'true' : 'false',
-      CODE: code.join(' '),
+      CODE: code.join(asked.joined ?? ' '),
       GITHUB_REPOSITORY: 'owner/no-shores',
       GITHUB_SHA: head,
       GITHUB_OUTPUT: join(root, 'output'),

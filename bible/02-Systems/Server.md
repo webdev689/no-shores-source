@@ -711,8 +711,8 @@ so every decision is Rust and the shell only carries bytes and time.
   [[The Page Publishes Only After the Rooms Deploy]]): the `rooms` workflow, with the repository's `CLOUDFLARE_TOKEN`
   secret, only while that commit is still `main`'s head, and only when what the rooms are built from differs from the
   commit they were last deployed from: the crates of `room-wasm` and of the bake, `server/` and the page's files it imports, the schema's
-  maker and its list, the content they read, the toolchain, the locks and the deploy's scripts, and the workflow (`ROOMS_CODE` in
-  `rooms.yml`; `server/roomsDeploy.test.ts` fails when it misses a crate, or a file those crates or their build scripts build in). A merge of notes alone deploys nothing. Each deploy is recorded as a deployment to the `rooms`
+  maker and its list, the content they read, the toolchain, the locks and the deploy's scripts, and the workflow (`CODE` in
+  `rooms.yml`, which `.github/deploy-ready.sh` reads, leaving the Discord bot's folder out; `server/roomsDeploy.test.ts` fails when it misses a crate, or a file those crates or their build scripts build in). A merge of notes alone deploys nothing. Each deploy is recorded as a deployment to the `rooms`
   environment, which the next run compares with; with none found, it deploys. Without the secret it warns and deploys
   nothing, and when the rooms had something to deploy the page is not published either. Run by hand from `main`, it
   deploys whatever changed or not, but only a commit whose own CI check passed (a check run named `check` that

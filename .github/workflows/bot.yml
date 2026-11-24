@@ -105,7 +105,7 @@ jobs:
           BOT_OWNERS: ${{ secrets.BOT_OWNERS }}
         run: |
           set -euo pipefail
-          vars=(--var "BOT_URL:$BOT_URL")
+          vars=(--var "BOT_URL:$BOT_URL" --var "BOT_COMMIT:$GITHUB_SHA")
           for name in DISCORD_APPLICATION_ID DISCORD_PUBLIC_KEY BOT_OWNERS; do
             if [ -n "${!name}" ]; then vars+=(--var "$name:${!name}")
             else echo "::warning::the repository has no ${name/DISCORD_APPLICATION_ID/DISCORD_CLIENT_ID} secret: the bot runs without it"; fi
@@ -136,17 +136,15 @@ jobs:
           DISCORD_APPLICATION_ID: ${{ secrets.DISCORD_CLIENT_ID }}
           DISCORD_BOT_TOKEN: ${{ secrets.DISCORD_BOT_TOKEN }}
         run: node tools/botCommands.ts
-      # The health check names the version the Worker answers with, so the new code is known to be live.
-      - name: Check the bot answers with this version
+      # The deploy stamped this commit on the Worker, so a health answer naming it is the new code live.
+      - name: Check the bot answers from this commit
         run: |
           set -euo pipefail
-          version=$(sed -n "s/^export const BOT_VERSION = '\(.*\)';$/\1/p" server/bot/worker.ts)
-          test -n "$version" || { echo "::error::no BOT_VERSION in server/bot/worker.ts"; exit 1; }
           for attempt in 1 2 3 4 5 6; do
-            if curl -fsS --max-time 15 "$BOT_URL/health" | jq -e --arg version "$version" '.version == $version'; then
+            if curl -fsS --max-time 15 "$BOT_URL/health" | jq -e --arg commit "$GITHUB_SHA" '.commit == $commit'; then
               exit 0
             fi
             sleep 10
           done
-          echo "::error::the bot did not answer /health with version $version"
+          echo "::error::the bot did not answer /health from $GITHUB_SHA"
           exit 1

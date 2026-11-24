@@ -108,6 +108,9 @@ function closed(name: string): boolean {
  * only into an element that holds nothing, or the build stops.
  */
 export function fillKeys(html: string): string {
+  const needs = [...html.matchAll(/\sdata-needs=/g)].length;
+  const onSections = [...html.matchAll(/<section\b[^>]*\sdata-needs="[^"]*"/g)].length;
+  if (needs !== onSections) throw new Error('site: data-needs goes on only a section, its place in double quotes');
   let out = html.replace(
     /<section\b[^>]*\sdata-needs="([^"]*)"[^>]*>([\s\S]*?)<\/section>\s*/g,
     (whole, name: string, inner: string) => {

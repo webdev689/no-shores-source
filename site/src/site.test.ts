@@ -94,6 +94,11 @@ test('a section that needs a place with no address is left out whole, and kept o
   assert.equal(fillKeys(needs('play')), '<section><h2>Discord</h2></section><p>No Shores</p>');
   assert.throws(() => fillKeys(needs('nowhere')), /nowhere/);
   assert.throws(() => fillKeys('<section data-needs="play"><section></section></section>'), /section of its own/);
+  assert.throws(
+    () => fillKeys('<div data-needs="discord"><h2 data-t="shell.navDiscord"></h2></div>'),
+    /only a section/,
+  );
+  assert.throws(() => fillKeys("<section data-needs='discord'></section>"), /only a section/);
 });
 
 test('each picture is the same at every build and under 64 KB', () => {
