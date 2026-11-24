@@ -374,3 +374,19 @@ fn a_company_whose_gate_opened_takes_it_no_more() {
     room.tick();
     assert!(room.breach_gate.as_ref().expect("gate").held_by.is_none(), "not taken again by a member on a mooring");
 }
+
+#[test]
+fn a_hard_companys_fallen_stand_again_at_the_gate_once_it_woke() {
+    let (mut room, players) = gate_room(3);
+    for &player in &players {
+        room.breach_company(player, "run-a", Tier::Hard);
+    }
+    hold_moorings(&mut room, &players);
+    room.tick();
+    woken(&mut room, &players);
+    room.harm_share(players[0], 1.0e3, 0);
+    ticks(&mut room, u64::from(combat::tuning::RESPAWN) + crate::VIEW_LAG + 2);
+    let (body, arrival) = (room.players[&players[0]].fighter.body, socket(&room, "arrival"));
+    assert!(!room.players[&players[0]].fighter.dead(), "stood again");
+    assert!(combat::sight::apart([body.x, body.y], [arrival[0], arrival[1]]) < 1.0, "at the gate's arrival");
+}

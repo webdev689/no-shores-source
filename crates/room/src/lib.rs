@@ -345,7 +345,7 @@ impl Room {
     /// gate while their company holds it the gate's arrival, else the section's spawn nearest it, or the room's spawn.
     pub(crate) fn stand_again(&self, id: PlayerId, x: f64, y: f64) -> Body {
         let breach = self.breach.as_ref().map(|breach| self.checkpoint(breach).0);
-        let gate = self.breach_gate.as_ref().filter(|gate| gate.fighting(id)).and_then(|gate| gate.socket("arrival"));
+        let gate = self.breach_gate.as_ref().filter(|gate| gate.holds(id)).and_then(|gate| gate.socket("arrival"));
         if let Some(at) = breach.or(gate) {
             let body = self.stand((at[0], at[1]));
             return Body { z: at[2].max(body.z), ..body };

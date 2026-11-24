@@ -107,7 +107,13 @@ impl Gate {
     /// Whether the gate's Waking runs for this player's company.
     #[must_use]
     pub fn fighting(&self, player: PlayerId) -> bool {
-        self.woken.is_none() && self.held_by.as_deref().is_some_and(|run| self.run_of(player) == Some(run))
+        self.woken.is_none() && self.holds(player)
+    }
+
+    /// Whether this player's company holds the gate, its Waking under way or woken.
+    #[must_use]
+    pub fn holds(&self, player: PlayerId) -> bool {
+        self.held_by.as_deref().is_some_and(|run| self.run_of(player) == Some(run))
     }
 
     /// Whether a point lies in the gate's hollow.
