@@ -1,14 +1,15 @@
-// What the public events' props stand as on the page: each a module (tools/modules: the Fissure's, the Grey Tithe's,
-// the chests) drawn at its place, turned, scaled, risen out of the ground as far as it has come, its lid swung and its
+// What the public events' props stand as on the page: each a module (tools/modules: the Fissure's, the Grey Tithe's;
+// the chests built in code, chestModules.ts) drawn at its place, turned, scaled, risen out of the ground as far as it has come, its lid swung and its
 // crystal glowing. The props are worked out each frame from the event the room sends (its marks) and the player's
 // chests, and drawn by EventPropsDraw; their crystal also lights the night round them.
+import { CHEST_OPEN_RAD } from '../models/chest.ts';
 import type { LampPlace } from '../sky/lamps.ts';
 import { CRYSTAL_LAMP } from './crystal.ts';
 import { moduleNumber, moduleParts, moduleSocket } from './modules.ts';
 
 type Point = readonly [number, number, number];
 
-/** The event props' modules by name (tools/modules/catalogue.py EVENTS). */
+/** The event props' modules by name (tools/modules/catalogue.py EVENTS, and the chests of chestModules.ts). */
 export const PROP_MODULES = [
   'lattice-fissure',
   'lattice-fissure-sealed',
@@ -19,10 +20,10 @@ export const PROP_MODULES = [
   'tithe-stores-c',
   'tithe-stores-plundered',
   'tithe-banner',
-  'event-chest',
-  'event-chest-lid',
-  'event-chest-heroic',
-  'event-chest-heroic-lid',
+  'chest',
+  'chest-lid',
+  'chest-heroic',
+  'chest-heroic-lid',
 ] as const;
 export type PropModule = (typeof PROP_MODULES)[number];
 
@@ -90,7 +91,7 @@ export const MOTION = {
   growthShatterS: 0.5,
   bannerPlantS: 0.7,
   lidOpenS: 0.6,
-  lidOpenRad: 1.95,
+  lidOpenRad: CHEST_OPEN_RAD,
   shardTurnRadS: 1.1,
   shardBobM: 0.08,
   shardBlinkBelow: 0.3,
@@ -102,9 +103,9 @@ export const MOTION = {
   fissureShutS: 2.5,
 } as const;
 
-/** The lamps the crystal lights at night: along the fissure (its own x, metres), over the growth, at a shard and a
- *  heroic chest, each's reach in metres, short so the red stays on the ground by the crystal and never runs off along
- *  a pale way; a chest opened spills a warm light. */
+/** The lamps the crystal lights at night: along the fissure (its own x, metres), over the growth and at a shard, each's
+ *  reach in metres, short so the red stays on the ground by the crystal and never runs off along a pale way; a chest
+ *  opened spills a warm light. */
 const LAMPS = {
   fissureAlong: [-4.5, -1.5, 1.5, 4.5],
   fissureReachM: 8,
@@ -189,11 +190,11 @@ const prop = (module: PropModule, foot: Point, turn: number, more: Partial<Event
 /** A chest and its lid, the lid at the chest's hinge swung open as far as the seconds since it was opened say. */
 function chestProps(chest: ChestLike): EventProp[] {
   const heroic = chest.tier >= 3;
-  const [body, lid] = heroic ? (['event-chest-heroic', 'event-chest-heroic-lid'] as const) : PLAIN_CHEST;
+  const [body, lid] = heroic ? (['chest-heroic', 'chest-heroic-lid'] as const) : PLAIN_CHEST;
   return chestPair(body, lid, chest.at, turnOf(chest.id), chest.opened);
 }
 
-const PLAIN_CHEST = ['event-chest', 'event-chest-lid'] as const;
+const PLAIN_CHEST = ['chest', 'chest-lid'] as const;
 
 /** A chest's body at its foot turned `turn`, and its lid at its hinge swung open as far as `opened` seconds say. */
 function chestPair(body: PropModule, lid: PropModule, foot: Point, turn: number, opened: number | null): EventProp[] {
@@ -204,10 +205,10 @@ function chestPair(body: PropModule, lid: PropModule, foot: Point, turn: number,
   return [{ ...standing, glow }, prop(lid, hinge, turn, { lid: swung, glow })];
 }
 
-/** A chest a patrol stands (game/finds.ts) as a public event's plain chest and its lid: its front, the module's -y,
- *  the way its place faces, its lid swinging back as the player opens it. */
+/** A chest a patrol stands (game/finds.ts) as a public event's plain chest and its lid, its lid swinging back as the
+ *  player opens it: its front, the module's +y, turned half round from north to look the way its place faces. */
 export function foundChestProps(chest: { at: Point; facing: number; opened: number | null }): EventProp[] {
-  return chestPair(PLAIN_CHEST[0], PLAIN_CHEST[1], chest.at, chest.facing, chest.opened);
+  return chestPair(PLAIN_CHEST[0], PLAIN_CHEST[1], chest.at, chest.facing + Math.PI, chest.opened);
 }
 
 /**
@@ -309,8 +310,8 @@ export function eventProps(
   return props;
 }
 
-/** The lamps the props light at night: red along the fissure, over the growth and at every shard and heroic chest,
- *  each as strong as it glows and as far as it has risen; warm where a chest stands open. */
+/** The lamps the props light at night: red along the fissure, over the growth and at every shard, each as strong as
+ *  it glows and as far as it has risen; warm where a chest stands open. */
 export function propLamps(props: readonly EventProp[]): LampPlace[] {
   const lamps: LampPlace[] = [];
   const red = (strength: number) => CRYSTAL_LAMP.map((part) => part * strength) as unknown as Point;
@@ -333,9 +334,7 @@ export function propLamps(props: readonly EventProp[]): LampPlace[] {
         light: BANNER_LAMP.light,
         seed,
       });
-    else if (each.module === 'event-chest-heroic-lid' && each.lid > 0)
-      lamps.push({ at: place([0, 0.3, 0.3]), reachM: LAMPS.chestReachM, light: red(strength * 0.4), seed });
-    else if (each.module === 'event-chest-lid' && each.lid > 0)
+    else if ((each.module === 'chest-lid' || each.module === 'chest-heroic-lid') && each.lid > 0)
       lamps.push({
         at: place([0, 0.3, 0.3]),
         reachM: LAMPS.chestReachM * Math.min(1, each.lid),

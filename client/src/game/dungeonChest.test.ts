@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
+import { CHEST_OPEN_RAD } from '../models/chest.ts';
 import { cacheOf, chestMesh, chestsMesh, foundChest } from './dungeonChest.ts';
 import { IRON } from './dungeonMesh.ts';
 
@@ -9,7 +10,7 @@ test("the cache reads from a snapshot's five numbers, and an empty one is none",
   assert.equal(cacheOf([]), null);
 });
 
-test('a chest of wood bound in iron stands where the cache stands, its lid thrown back when open', () => {
+test("the owner's chest in the dungeon's wood, its hinge and latch iron, stands where the cache stands, open or shut", () => {
   const where = { x: 10, y: 20, z: 0, bearing: 0 };
   const tops = (open: boolean) => {
     const model = chestMesh({ ...where, open }, [364, 1]);
@@ -25,7 +26,7 @@ test('a chest of wood bound in iron stands where the cache stands, its lid throw
     assert.ok(Math.min(...eastings) > 9 && Math.max(...eastings) < 11, 'round the cache');
     return Math.max(...heights);
   };
-  assert.ok(tops(true) > tops(false) + 0.3, 'an open lid stands up over the shut one');
+  assert.ok(tops(true) > tops(false) + 0.2, 'an open lid stands up over the shut one');
 });
 
 test("the chests a dungeon stands to find are the cache's chest, each its own, its lid as far open as it has swung", () => {
@@ -40,7 +41,7 @@ test("the chests a dungeon stands to find are the cache's chest, each its own, i
       ...Array.from({ length: model.positions.length / 3 }, (unused, vertex) => model.positions[vertex * 3 + 2] ?? 0),
     );
   };
-  assert.ok(top(0.7) > top(0) && top(1.35) > top(0.7), 'the lid rises as it swings back');
+  assert.ok(top(0.7) > top(0) && top(CHEST_OPEN_RAD) > top(0.7), 'the lid rises as it swings back');
   assert.equal(chestsMesh([], [364, 1]).positions.length, 0, 'none, nothing drawn');
 });
 

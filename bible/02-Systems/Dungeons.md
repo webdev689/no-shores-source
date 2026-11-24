@@ -530,11 +530,12 @@ as standing none (`readDungeon`).
   walked cell by cell (`rock_between`). A slow ripple moves it all.
 - **Its rooms' names**: the room the player stands in names the place on the screen, before the patrol's own
   (`roomNameAt`, `placeWords`).
-- **The cache** (`chestMesh`): a chest of wood and iron at the room's `Snapshot.cache`, its lid shut or thrown back.
+- **The cache** (`chestMesh`): the owner's chest from DFO ([[Pick - Chest]]) in wood and iron at the room's
+  `Snapshot.cache`, fitted to 0.9 by 0.5 m, its lid shut or open.
 - **The chests to find** (`chestsMesh`, `finds.ts`): the cache's chest at each the room stands for the player, centred
-  where it stands, built in one mesh, lit by the torches; one the player opens swings its lid back over 0.6 s to 1.35
-  rad, just short of upright, coming no nearer the wall behind it than 0.4 m, clear of the kits there, none more than
-  0.3 m proud (`foundChest`), and stands open 4 seconds before it goes.
+  where it stands, built in one mesh, lit by the torches; one the player opens swings its lid over 0.6 s to the
+  model's 77 degrees, short of upright, coming no nearer the wall behind it than 0.36 m, clear of the kits there,
+  none more than 0.3 m proud (`foundChest`), and stands open 4 seconds before it goes.
 - **The props** (`layout.props`): each forged prop laid by `layModel` as the city lays one, lit by the torches; the
   `boxes` past the jambs and pillars are their solids, which the camera keeps short of and nothing draws.
 - **Its pictures**, every one painted by the procedural textures: each look's sets (records 0 to 4, each turned by

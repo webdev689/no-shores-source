@@ -313,8 +313,9 @@ third person, the forge's figure and the first person's hands, and the Test Grou
   before the place its resource comes from, while the room stands it for the player, and as it looks spent once they
   gathered it, until its turn comes round; a place resting its turn shows only its dressing. The picture alone marks a
   node: no ring, no beam, no mark over it. Each chest standing for them in a patrol stands as a public event's plain
-  chest and its lid, made in the Blender pipeline (`foundChestProps`), turned the way its place faces; one the room says it paid them for
-  swings its lid back over 0.6 s and stands open 4 seconds before it goes, the interface's open sound and the chest's
+  chest and its lid, the owner's chest from DFO built in code ([[Pick - Chest]], `foundChestProps`), its front looking
+  the way its place faces; one the room says it paid them for swings its lid open to 77 degrees over 0.6 s, its
+  Vestige poured out as its mouth opens ([[Gear]], "Drops"), and stands open 4 seconds before it goes, the interface's open sound and the chest's
   clunk heard as an event chest's; one that moves on goes at once (`finds.ts`). Each drop lying for them hovers, a Vestige as its crystal, under its
   rarity's line (`combat/drops.ts`; [[Gear]], "Drops"), taken by walking over it.
 - **E** uses what is within reach, shown as Destiny shows it, a keycap and the deed low in the middle of the view
@@ -431,8 +432,9 @@ procedural textures as the city paints its own ([[Procedural Textures]]). Their 
   Saltmere".
 - **The figures**, the player's, the foes' and their fight's marks and blood, are drawn as on a node, but each figure
   lit by the light where it stands, at its chest's height, in place of the sun.
-- **The cache** is a chest of boxes, wood in the island's timber and bands of the textures' ironwork, where the room's
-  `Snapshot.cache` stands it and facing its way, its lid shut, or thrown back while it stands open.
+- **The cache** is the owner's chest from DFO ([[Pick - Chest]]), wood in the island's timber, its hinge and latch the
+  textures' ironwork, where the room's `Snapshot.cache` stands it and facing its way, its lid shut, or open to 77
+  degrees while it stands open.
 - **The chests to find** are the same chest, each where the room stands it for the player ([[Dungeons]], "In the
   Game"), opened as a patrol's is (above).
 

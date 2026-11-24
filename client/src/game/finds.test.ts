@@ -132,9 +132,13 @@ test("a patrol's chests stand as the event chest and its lid, which swings back 
   const shut = finds.frame(gear, 0, false, true);
   assert.deepEqual(
     shut.props.map((prop) => prop.module),
-    ['event-chest', 'event-chest-lid'],
+    ['chest', 'chest-lid'],
   );
-  assert.equal(shut.props[0]?.turn, CHEST.facing, 'turned the way its place faces');
+  assert.equal(
+    shut.props[0]?.turn,
+    CHEST.facing + Math.PI,
+    "its front, the module's +y, turned the way its place faces",
+  );
   assert.equal(shut.props[1]?.lid, 0, 'shut');
   const opening = finds.frame(state({ chests: [], opened: 7 }), 0.2, false, true);
   assert.equal(opening.sounds.length, 0, 'quiet while paused');

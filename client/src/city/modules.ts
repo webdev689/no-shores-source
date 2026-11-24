@@ -1,8 +1,10 @@
 // Handcrafted modules' surfaces (tools/modules), read from R2 as content/modules/modules.json names them, once for
 // every city built after: a module's solid is drawn from its group's mesh in its material's picture. A city built
-// before they come draws no module; the loaders that build cities wait for them.
+// before they come draws no module; the loaders that build cities wait for them. The chests are built in code
+// (chestModules.ts) and listed after the manifest's.
 import manifest from '../../../content/modules/modules.json' with { type: 'json' };
 import { contentBytes } from '../contentCache.ts';
+import { chestModules } from './chestModules.ts';
 
 /** One surface group: positions in the module's frame (x east, y south, z up), normals in 127ths, each vertex's glow
  *  in 127ths (only crystal's is ever more than none), triangles. */
@@ -29,40 +31,45 @@ type Listed = {
 };
 
 const listed = manifest as unknown as Listed;
+const built = chestModules();
+const modules: Listed['modules'] = [...listed.modules, ...built];
 
 const meshes = new Map<string, ModuleMesh>();
+built.forEach((module, nth) =>
+  module.meshes.forEach((mesh, group) => meshes.set(`${listed.modules.length + nth}:${group}`, mesh)),
+);
 let loading: Promise<void> | null = null;
 
 /** A module's own height, metres: a solid of it stands stretched up to its own size's. */
 export function moduleHeight(module: number): number {
-  return listed.modules[module]?.size[2] ?? 1;
+  return modules[module]?.size[2] ?? 1;
 }
 
 /** A module's place in the manifest by its name, or -1. */
 export function moduleNumber(name: string): number {
-  return listed.modules.findIndex((module) => module.name === name);
+  return modules.findIndex((module) => module.name === name);
 }
 
 /** A module's size (across x and y, and its height) and the materials of its surface groups, in order. */
 export function moduleShape(module: number): { size: readonly number[]; materials: readonly string[] } {
-  const found = listed.modules[module];
+  const found = modules[module];
   return { size: found?.size ?? [1, 1, 1], materials: found?.groups.map((group) => group.material) ?? [] };
 }
 
 /** A socket of a module (a chest's hinge) in its own frame, or the middle of its foot where it has none so named. */
 export function moduleSocket(module: number, name: string): Point {
-  return listed.modules[module]?.sockets.find((socket) => socket.name === name)?.at ?? [0, 0, 0];
+  return modules[module]?.sockets.find((socket) => socket.name === name)?.at ?? [0, 0, 0];
 }
 
 /** A module's solid parts, each a box in its own frame (x east, y south, z up): west, north, bottom, east, south,
  *  top. */
 export function moduleParts(module: number): readonly (readonly number[])[] {
-  return listed.modules[module]?.parts ?? [];
+  return modules[module]?.parts ?? [];
 }
 
 /** The two lips of a module's mouth, where it opens the land, or none. */
 export function moduleMouth(module: number): readonly (readonly (readonly [number, number])[])[] | undefined {
-  return listed.modules[module]?.mouth;
+  return modules[module]?.mouth;
 }
 
 /** A group's mesh, once loaded. */

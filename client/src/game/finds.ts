@@ -117,8 +117,8 @@ export class ChestsSeen {
   }
 }
 
-/** How high a chest's lid stands over its foot, metres (the event chest's, tools/modules/chest.py), its mark over it;
- *  and how far over a container's top its mark stands. */
+/** How high a patrol's chest stands over its foot, metres (the plain chest's 0.64, city/chestModules.ts, and a
+ *  little), its mark over it; and how far over a container's top its mark stands. */
 const CHEST_TOP_M = 0.66;
 const OVER_TOP_M = 0.15;
 

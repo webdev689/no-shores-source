@@ -3,7 +3,6 @@ import adorn
 import bridge
 import cavern
 import chapels
-import chest
 import citadel
 import court_pieces
 import dress
@@ -73,8 +72,7 @@ EVENTS = {'lattice-fissure': (fissure.fissure, 101), 'lattice-fissure-sealed': (
           'lattice-growth': (fissure.growth, 103), 'lattice-shard': (fissure.shard, 104),
           'tithe-stores-a': (tithe.stores_a, 111), 'tithe-stores-b': (tithe.stores_b, 112),
           'tithe-stores-c': (tithe.stores_c, 113), 'tithe-stores-plundered': (tithe.stores_plundered, 114),
-          'tithe-banner': (tithe.banner, 115), 'event-chest': (chest.chest, 121), 'event-chest-lid': (chest.chest_lid, 122),
-          'event-chest-heroic': (chest.heroic, 123), 'event-chest-heroic-lid': (chest.heroic_lid, 124)}
+          'tithe-banner': (tithe.banner, 115)}
 for name, (build, seed) in EVENTS.items():
     BUILDERS[name] = build
     SEEDS[name] = seed
