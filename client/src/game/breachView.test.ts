@@ -11,7 +11,9 @@ import { BREACH_EVENT, RIFT } from '../network/breachMessages.ts';
 import { EVENT } from '../combat/cues.ts';
 import { MARK_FLOATS } from '../combat/marks.ts';
 import type { FightEvent } from '../network/messages.ts';
-import { breachPlanOf, runPlace, sealOpen, socketAt, spaceSocket } from './breachPlan.ts';
+import bank from '../../../content/audio/sounds.json' with { type: 'json' };
+import { BREACH_HEARD } from './audio/ambience/breachHeard.ts';
+import { breachPlanOf, runPlace, sealOpen, slabStands, socketAt, spaceSocket } from './breachPlan.ts';
 import { type BreachOn, BreachView, bearing, breachFall, gateOf, withBreach } from './breachView.ts';
 import type { NodeInfo } from './worldData.ts';
 
@@ -187,7 +189,7 @@ test('a moment told to every player is heard once where its number places it; on
   const events = toldAll(BREACH_EVENT.bellBroken, 2, [7, 9, 11]);
   const where = (id: number) => (id === 11 ? ([5, 5, 60] as const) : null);
   const shown = view.frame(word({ encounter: 2 }), events, [0, 0, 60], where, 0, []);
-  assert.deepEqual(shown?.sounds, [{ cue: 'shield.break', at: spaceSocket(plan, 'choir', 'bell-3') }]);
+  assert.deepEqual(shown?.sounds, [{ cue: 'shield.break', at: spaceSocket(plan, 'choir', 'bell-3'), whole: true }]);
   view.frame(word(), toldAll(BREACH_EVENT.wiped, 1, [7, 9, 11]), [0, 0, 60], () => null, 0, []);
   assert.deepEqual(told, ['Your company fell.'], 'an attempt lost, said once');
 });
@@ -320,7 +322,7 @@ test('a mark is heard once a frame at the player it marks, a sighting at the one
   assert.deepEqual(heard(toldAll(BREACH_EVENT.seen, 9, [7, 9])), [{ cue: 'foe.alert', at: [3, 3, 60] }]);
   assert.deepEqual(told, ['A Watcher saw Ada.']);
   const keeper = spaceSocket(plan, plan.shores['shores']?.[1] ?? '', 'keeper');
-  assert.deepEqual(heard(toldAll(BREACH_EVENT.keeperFell, 1, [7])), [{ cue: 'kill', at: keeper }]);
+  assert.deepEqual(heard(toldAll(BREACH_EVENT.keeperFell, 1, [7])), [{ cue: 'kill', at: keeper, whole: true }]);
 });
 
 test('each bell wakes at its own note, by its place, so the order is heard as it is seen', () => {
@@ -442,4 +444,93 @@ test("the foes' and the living's places are read only where an encounter's marks
   assert.deepEqual([foesRead, othersRead], [0, 0], 'the Mending asks for neither');
   view.frame(word({ encounter: 3 }), [], [0, 0, 60], () => null, 0, []);
   assert.deepEqual([foesRead, othersRead], [1, 1], 'the Ways: the Watchers, and who stands on the Stair');
+});
+
+test("the ambience hears the run's plan, and at the gate its hollow and the Spire's hum for its company", async () => {
+  const run = inRun();
+  run.view.frame(run.word(), [], [0, 0, 60], () => null, 0, []);
+  assert.deepEqual(BREACH_HEARD.current, { run: plan });
+  const { view, word } = inRun(true);
+  await settled();
+  const hollow = [GATE_AT[0] + 10, GATE_AT[1], 3] as const;
+  const hum = (more: Partial<BreachSeen>) => {
+    BREACH_HEARD.current = null;
+    view.frame(word(more), [], hollow, () => null, 0, []);
+    const heard = BREACH_HEARD.current as { gate: readonly number[]; hum: number } | null;
+    return [heard?.gate, heard?.hum];
+  };
+  assert.deepEqual(hum({ heldBy: true, holders: [7, 9], fill: 0.4 }), [GATE_AT, 0.4]);
+  assert.deepEqual(hum({ heldBy: true, holders: [9], fill: 0.4 }), [GATE_AT, 0], "another company's Waking");
+  assert.deepEqual(hum({ heldBy: true, holders: [7], woken: true, fill: 1 }), [GATE_AT, 0], 'woken');
+  BREACH_HEARD.current = null;
+});
+
+test('the Spire is heard woken once, as the gate opens to the player; a mooring as it is newly held', async (context) => {
+  // Their own recordings picked, as the sound sheet will pick them.
+  const sounds = bank.sounds as Record<string, unknown>;
+  for (const cue of ['breach.mooring', 'breach.spire.woken']) sounds[cue] = {};
+  context.after(() => ['breach.mooring', 'breach.spire.woken'].forEach((cue) => delete sounds[cue]));
+  const { view, word, others } = inRun(true);
+  await settled();
+  const hollow = [GATE_AT[0] + 10, GATE_AT[1], 3] as const;
+  const cues = (more: Partial<BreachSeen>) =>
+    view.frame(word(more), [], hollow, () => null, 0, [])?.sounds.map((sound) => sound.cue) ?? [];
+  const waking = { heldBy: true, holders: [7, 9] };
+  assert.deepEqual(cues(waking), []);
+  others.set(9, player(9, socketAt('breach-gate', 'mooring-west', GATE_AT, 0), false));
+  assert.deepEqual(cues(waking), ['breach.mooring'], 'held by Ada');
+  assert.deepEqual(cues(waking), [], 'and only as it is newly held');
+  const opened = { ...waking, woken: true, openTo: [7, 9] };
+  assert.deepEqual(cues(opened), ['breach.spire.woken']);
+  assert.deepEqual(cues(opened), [], 'once');
+});
+
+test('the Spire rings on its waking alone: not on a return from the run, nor a mooring walked over after', async (context) => {
+  const sounds = bank.sounds as Record<string, unknown>;
+  for (const cue of ['breach.mooring', 'breach.spire.woken']) sounds[cue] = {};
+  context.after(() => ['breach.mooring', 'breach.spire.woken'].forEach((cue) => delete sounds[cue]));
+  const { view, word, others } = inRun(true);
+  await settled();
+  const hollow = [GATE_AT[0] + 10, GATE_AT[1], 3] as const;
+  const cues = (more: Partial<BreachSeen>) =>
+    view.frame(word(more), [], hollow, () => null, 0, [])?.sounds.map((sound) => sound.cue) ?? [];
+  // Back from the run, the company's gate long woken: the room counts the player in again a few snapshots on.
+  const woken = { heldBy: true, holders: [7, 9], woken: true };
+  assert.deepEqual(cues({ ...woken, openTo: [9] }), []);
+  assert.deepEqual(cues({ ...woken, openTo: [7, 9] }), [], 'no ring on the return');
+  others.set(9, player(9, socketAt('breach-gate', 'mooring-west', GATE_AT, 0), false));
+  assert.deepEqual(cues({ ...woken, openTo: [7, 9] }), [], 'a mooring walked over on the way to the door');
+  const again = inRun(true);
+  await settled();
+  const againCues = (more: Partial<BreachSeen>) =>
+    again.view.frame(again.word(more), [], hollow, () => null, 0, [])?.sounds.map((sound) => sound.cue) ?? [];
+  again.others.set(9, player(9, socketAt('breach-gate', 'mooring-west', GATE_AT, 0), false));
+  assert.deepEqual(againCues({ heldBy: false, holders: [] }), []);
+  assert.deepEqual(againCues({ heldBy: true, holders: [7, 9] }), ['breach.mooring'], 'held as the Waking begins');
+  // Another company's waking rings for none of this one.
+  const theirs = inRun(true);
+  await settled();
+  const theirCues = (more: Partial<BreachSeen>) =>
+    theirs.view.frame(theirs.word(more), [], hollow, () => null, 0, [])?.sounds.map((sound) => sound.cue) ?? [];
+  assert.deepEqual(theirCues({ heldBy: true, holders: [9] }), []);
+  assert.deepEqual(theirCues({ heldBy: true, holders: [9], woken: true, openTo: [9] }), []);
+});
+
+test('in the run a hidden chest is heard opening where it stands, and a slab rising near the listener', (context) => {
+  const sounds = bank.sounds as Record<string, unknown>;
+  for (const cue of ['breach.chest', 'breach.slab']) sounds[cue] = {};
+  context.after(() => ['breach.chest', 'breach.slab'].forEach((cue) => delete sounds[cue]));
+  const { view, word, atTick } = inRun();
+  const paid = { tick: 0n, kind: EVENT.chestOpened, how: 0, striker: 7, defender: 7, stroke: 0 };
+  const chest = view.frame(word(), [{ ...paid, amount: plan.encounters.length + 3 }], [0, 0, 60], () => null, 0, []);
+  assert.deepEqual(chest?.sounds, [{ cue: 'breach.chest', at: spaceSocket(plan, 'stair', 'chest-stair') }]);
+  const slab = plan.slabs.find((each) => each.at);
+  assert.ok(slab?.at);
+  let tick = 1;
+  while (slabStands(plan, slab.phase, tick - 1) === slabStands(plan, slab.phase, tick)) tick++;
+  atTick(tick - 1);
+  view.frame(word(), [], slab.at, () => null, 0, []);
+  atTick(tick);
+  const heard = view.frame(word(), [], slab.at, () => null, 0, [])?.sounds ?? [];
+  assert.ok(heard.some((one) => one.cue === 'breach.slab' && one.at === slab.at));
 });

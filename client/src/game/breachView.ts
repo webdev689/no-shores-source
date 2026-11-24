@@ -4,7 +4,8 @@
 // seals while shut, the Broken Stair's slabs while they stand, its bells, the Lodestone and the hidden chests as props,
 // the encounter's banner and marks (`breachMarks.ts`), the compass's places, and E at the way out. In both, a ring
 // under each Rewritten player, whom the game's revive may stand (`footRevive.ts`) and how the fallen stand again, and
-// the room's moments heard and told (`breachMoments.ts`). The room judges it all.
+// the room's moments heard and told (`breachMoments.ts`), and what the ambience hears of it (`BREACH_HEARD`). The room
+// judges it all.
 import type { EventProp, PropModule } from '../city/eventProps.ts';
 import { PROP_MODULES, chestProps } from '../city/eventProps.ts';
 import { loadSealModule, moduleNumber } from '../city/modules.ts';
@@ -17,9 +18,12 @@ import type { FightEvent, SeenPlayer } from '../network/messages.ts';
 import type { PlayerPlate } from '../network/plateMessages.ts';
 import { fighterView } from '../rules/fighters.ts';
 import type { NodeLayout } from '../layout/layouts.ts';
+import { BREACH_HEARD } from './audio/ambience/breachHeard.ts';
 import { RunCounting } from './breachCounts.ts';
 import { type MarkedFoe, dashedRing, mooringMark, runMarks } from './breachMarks.ts';
-import { type Heard, MomentWords, beatOf, momentSounds, momentsHad, stingOf } from './breachMoments.ts';
+import type { HeardSound } from '../combat/worldSounds.ts';
+import { MomentWords, STATE_CUES, beatOf, heardOf, momentSounds, momentsHad } from './breachMoments.ts';
+import { mooringSounds, slabSounds, stingOf } from './breachMoments.ts';
 import { type BreachPlan, breachPlanOf, sealOpen, slabStands, socketAt, spaceSocket } from './breachPlan.ts';
 import { ENCOUNTER, type Mooring, breachCall, encounterName, encounterOn } from './breachWords.ts';
 import { gateBanner, gateLine, inSentence, runBanner, teachingWords, wonWords } from './breachWords.ts';
@@ -75,7 +79,7 @@ export interface BreachFrame {
   /** Whether the Breach's banner stands before any other: in its run, or by its gate. */
   readonly first: boolean;
   readonly props: EventProp[];
-  readonly sounds: readonly Heard[];
+  readonly sounds: readonly HeardSound[];
   readonly sting: 'cadence' | 'victory' | 'defeat' | null;
 }
 
@@ -199,6 +203,9 @@ export class BreachView {
   private holders: readonly number[] = [];
   private holdersLiving = 0;
   private before: BreachSeen | null = null;
+  /** The room's tick and the gate's moorings as the last frame had them, for what changed since to be heard. */
+  private tick: number | null = null;
+  private moored: Mooring[] | null = null;
   /** What the page counts of the run, the moments it tells, and the encounter last begun or won with the room's tick
    *  its line stands in the banner until. */
   private readonly counting: RunCounting | null;
@@ -240,6 +247,7 @@ export class BreachView {
   ): BreachFrame | null {
     [this.word, this.feet] = [word, feet];
     const { plan, counting } = this;
+    if (plan && this.parts.run) BREACH_HEARD.current = { run: plan };
     const seen = word.seen;
     if (!plan || !counting || !seen) return null;
     const before = this.before;
@@ -263,8 +271,14 @@ export class BreachView {
       where,
       gate: gate?.at ?? null,
       mooring: (nth: number) => this.gateSocket(MOORINGS[nth] ?? ''),
+      chest: (nth: number) => {
+        const chest = HIDDEN_CHESTS[nth];
+        return chest ? spaceSocket(plan, chest.space, chest.socket) : null;
+      },
     };
-    const sounds = momentSounds(plan, seen, had, places);
+    const slabs = seen.gate ? [] : slabSounds(plan, this.tick, tick);
+    this.tick = tick;
+    const sounds = [...momentSounds(plan, seen, had, places), ...slabs];
     // A Waking lost while some of its company still lived was lost to its Spire left empty.
     const lost = seen.gate && this.holdersLiving > 0 ? 'the Spire stood empty a whole minute' : null;
     const ours = { ours: company.includes(own), nameOf, lost };
@@ -276,7 +290,8 @@ export class BreachView {
     const counts = counting.frame({ seen, before, events: had, tick, own, feet, alive, living });
     const call = breachCall(seen, counts);
     const heard = { sounds, sting, beat, call };
-    if (seen.gate) return this.gateFrame(plan, seen, { own, nameOf, feet, inHollow, lately, clock, eye, marks }, heard);
+    const here = { own, nameOf, feet, inHollow, lately, clock, eye, marks, before };
+    if (seen.gate) return this.gateFrame(plan, seen, here, heard);
     runMarks(plan, seen, marks, { feet, living, foes: () => [...word.fight.foes.values()], counts });
     const portal = seen.phases.length > 0 && seen.phases.every((phase) => phase === BREACH_PHASE.won);
     const way = portal ? spaceSocket(plan, 'court', 'portal') : null;
@@ -304,6 +319,7 @@ export class BreachView {
       clock: number;
       eye: Point;
       marks: number[];
+      before: BreachSeen | null;
     },
     heard: Pick<BreachFrame, 'sounds' | 'sting'> & Pick<PublicShown, 'beat' | 'call'>,
   ): BreachFrame {
@@ -324,8 +340,20 @@ export class BreachView {
     }
     const door = this.gateSocket('gate');
     const props = door && gate && !this.openToMe(seen) ? [prop('breach-seal', door, gate.turn * quarter)] : [];
-    const first = seen.holders[0];
+    const spire = gate && ([gate.at[0], gate.at[1], gate.at[2] + SPIRE.footM + SPIRE.tallM / 2] as const);
     const mine = seen.holders.includes(here.own);
+    // The ambience hears the gate's hollow, and the Spire's hum as it fills while the player's company holds it.
+    if (gate && spire) BREACH_HEARD.current = { gate: gate.at, spire, hum: mine && waking ? seen.fill : 0 };
+    // A mooring is heard held only while the Waking runs: its holders stay a while after, as they walk to the door.
+    const moored = waking ? mooringSounds(this.moored, moorings, (nth) => this.gateSocket(MOORINGS[nth] ?? '')) : [];
+    // Outside the Waking every mooring stands free, so one held as it begins is heard; one held as the page joins it
+    // (no frame before) is not.
+    this.moored = waking ? moorings : moorings.map((): Mooring => 'free');
+    // The Spire is heard on its waking, by its own company: not as a player coming back is counted in again.
+    const opened = mine && here.before && !here.before.woken && seen.woken;
+    const woken = opened && spire ? heardOf({ cue: STATE_CUES.woken, until: null }, spire) : null;
+    const sounds = [...heard.sounds, ...moored, ...(woken ? [woken] : [])];
+    const first = seen.holders[0];
     const holding = first === undefined ? '' : mine ? 'Your company' : here.nameOf(first);
     const banner = gateBanner(plan, seen, gate?.place ?? '', moorings, this.openToMe(seen), holding);
     const teaching = mine && waking && here.lately && !here.lately.won ? teachingWords(ENCOUNTER.waking) : '';
@@ -339,7 +367,7 @@ export class BreachView {
       call: heard.call ?? null,
       mood,
     };
-    return { shown, line: gateLine(plan, seen), first: near, props, sounds: heard.sounds, sting: heard.sting };
+    return { shown, line: gateLine(plan, seen), first: near, props, sounds, sting: heard.sting };
   }
 
   /** The encounter last begun or won by `had`, while its line stands in the banner at the room's `tick`; null after. */

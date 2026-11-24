@@ -35,6 +35,16 @@ import {
 
 type Point = readonly [number, number, number];
 
+/** A cue heard where something else happened: its recording, where, how fast it plays (1 as recorded; a Breach's
+ *  bell's note), and whether it is heard whole and from afar (a Breach's toll, its bells, the gong of an encounter
+ *  begun): never cut short, heard farther, and ranked among the voices as near. */
+export interface HeardSound {
+  readonly cue: string;
+  readonly at: Point;
+  readonly rate?: number;
+  readonly whole?: true;
+}
+
 /** Where the world's sounds play: a page's audio context and the node they go into (null: none may sound yet). */
 export interface WorldOutput {
   readonly audio: AudioContext;
@@ -73,9 +83,8 @@ export interface WorldFrame {
   readonly ground: StepGround;
   readonly landed: readonly Point[];
   readonly crates: number | null;
-  /** Cues heard where something else happened, each at its own pitch where it has one: a public event's beats, a
-   *  Breach's bells (game/publicView.ts). */
-  readonly heard?: readonly { readonly cue: string; readonly at: Point; readonly rate?: number }[];
+  /** Cues heard where something else happened (game/publicView.ts): a public event's beats, a Breach's moments. */
+  readonly heard?: readonly HeardSound[];
 }
 
 type Play = (audio: AudioContext, out: AudioNode, id: string, rate: number) => AudioBufferSourceNode | null;
@@ -83,6 +92,8 @@ type Play = (audio: AudioContext, out: AudioNode, id: string, rate: number) => A
 /** A sound is as loud as it is this close (metres), fading by distance beyond; none is played farther than the most. */
 const NEAR_M = 2;
 const MOST_M = 40;
+/** A cue heard whole is heard this far, metres: a toll or a bell across a Breach's space. */
+const WHOLE_MOST_M = 160;
 /** A cue heard where something else happened (a public event's) holds its voice this long at most (seconds), fading
  *  out over the last of it, so no long recording keeps a voice from the fight. */
 export const HEARD_MOST_S = 5;
@@ -176,6 +187,7 @@ export class WorldSounds {
       readonly key: number | null;
       readonly short?: true;
       readonly rate?: number;
+      readonly whole?: true;
     }[] = [];
     const hear = (cue: string | null, place: Point | null, key: number | null) => {
       if (cue && place) heard.push({ cue, at: place, key });
@@ -200,7 +212,8 @@ export class WorldSounds {
     this.shots(frame, hear);
     this.spellsCast(fight, hear);
     for (const place of frame.landed) hear('drop.land', place, null);
-    for (const { cue, at, rate } of frame.heard ?? []) heard.push({ cue, at, key: null, short: true, rate });
+    for (const { cue, at, rate, whole } of frame.heard ?? [])
+      heard.push(whole ? { cue, at, key: null, rate, whole } : { cue, at, key: null, short: true, rate });
     if (this.crates !== null && frame.crates !== null && frame.crates < this.crates)
       hear('ammo.refill', walker.feet, fight.player);
     this.crates = frame.crates;
@@ -214,7 +227,8 @@ export class WorldSounds {
     if (this.down && !down) hear('respawn', walker.feet, fight.player);
     this.down = down;
     if (output)
-      for (const one of heard) this.sound(output, one.cue, one.at, one.key, frame.eye, one.short ?? false, one.rate);
+      for (const one of heard)
+        this.sound(output, one.cue, one.at, one.key, frame.eye, one.short ?? false, one.rate, one.whole ?? false);
   }
 
   /** Every fighter this frame: the player at their walker's feet, the others and the foes where they are drawn. */
@@ -329,7 +343,8 @@ export class WorldSounds {
   }
 
   /** Plays one cue at `place` through its own panner, at `rate` (a blow's strays a little), once its fighter has not
-   *  just made it, within reach of the eye and room among the voices; an unpicked cue plays nothing. */
+   *  just made it, within reach of the eye (farther for one heard `whole`) and room among the voices; an unpicked cue
+   *  plays nothing. */
   private sound(
     output: WorldOutput,
     cue: string,
@@ -338,6 +353,7 @@ export class WorldSounds {
     eye: Point,
     short = false,
     rate = 1,
+    whole = false,
   ): void {
     if (key !== null) {
       const heardKey = `${key}|${cue}`;
@@ -347,18 +363,21 @@ export class WorldSounds {
         for (const [each, when] of this.heardAt) if (this.clock - when >= GAP_S) this.heardAt.delete(each);
     }
     const distance = Math.hypot(place[0] - eye[0], place[1] - eye[1], place[2] - eye[2]);
+    // One heard whole ranks as near, so a far bell whose note tells the order is never the first to give way.
+    const ranked = whole ? 0 : distance;
     const drop = voiceToDrop(
       this.voices.map((voice) => voice.distance),
-      distance,
+      ranked,
     );
-    if (distance > MOST_M || drop === 'new') return;
+    const most = whole ? WHOLE_MOST_M : MOST_M;
+    if (distance > most || drop === 'new') return;
     const { audio, out } = output;
     const panner = audio.createPanner();
     Object.assign(panner, {
       panningModel: 'equalpower',
       distanceModel: 'inverse',
       refDistance: NEAR_M,
-      maxDistance: MOST_M,
+      maxDistance: most,
     });
     // Placed in the listener's frame, whose origin the ambience may have moved to the player's ship.
     [panner.positionX.value, panner.positionY.value, panner.positionZ.value] = audioPoint(audio, place);
@@ -382,7 +401,7 @@ export class WorldSounds {
       stopped.source.stop();
       this.voices = this.voices.filter((voice) => voice !== stopped);
     }
-    const voice = { source, distance };
+    const voice = { source, distance: ranked };
     this.voices.push(voice);
     source.addEventListener('ended', () => {
       this.voices = this.voices.filter((each) => each !== voice);

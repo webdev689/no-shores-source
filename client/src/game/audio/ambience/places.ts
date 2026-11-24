@@ -107,7 +107,8 @@ export function placeCall(
   switch (spot) {
     case 'hull':
     case 'rigging':
-    case 'ear': {
+    case 'ear':
+    case 'cave': {
       const [x, y] = aside(flat, reach, random);
       return [x, y, ear[2] + lift];
     }

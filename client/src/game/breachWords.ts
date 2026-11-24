@@ -24,9 +24,9 @@ const SHORES = ['What Was', 'What Is'] as const;
 const FUSIONS_MOST = [4, 3] as const;
 const ROUND_BELLS = [3, 4, 5, 6, 7] as const;
 const TAKINGS_MOST = 4;
-/** Why a gate shuts out a member of its company, as the room tells them (judging.rs ShutOut): the company full, under
- *  the tier's level, Hard before a Normal win. */
-const SHUT_OUT = { full: 1, level: 2, hard: 3 } as const;
+/** Why a gate shuts out a member of its company, as the room tells them (judging.rs ShutOut): the company full, or
+ *  Hard before a Normal win; any other (under the tier's level, the tier untold) says no more. */
+const SHUT_OUT = { full: 1, hard: 3 } as const;
 /** Each encounter's line as it begins: the verb that wins it. */
 const TEACHING: Readonly<Record<number, string>> = {
   [ENCOUNTER.waking]: 'Hold all three moorings to wake the Spire',
@@ -352,7 +352,9 @@ export function unwrittenBy(before: BreachSeen | null, seen: BreachSeen): string
   if (!before) return null;
   const most = FUSIONS_MOST[seen.tier] ?? FUSIONS_MOST[0];
   const fused = seen.counts.reduce((sum, count) => sum + count, 0) >= most;
-  if (before.lyingTicks > 0) return 'the Lodestone lay too long';
+  // The stone's own unwriting: its count ran out (no more needed, so none counts) while it still lies.
+  const ranOut = before.lyingTicks > 0 && before.lyingTicks <= TICKS_PER_SECOND && seen.lyingTicks === 0;
+  if (ranOut && seen.stone === STONE.lying) return 'the Lodestone lay too long';
   if (before.wipeTicks > 0) return 'seen by a Watcher';
   if (seen.encounter === ENCOUNTER.mending && fused) return `the seams fused ${most} times`;
   if (seen.encounter === ENCOUNTER.shores && fused) return `the Seam fused ${most} times`;
@@ -360,12 +362,10 @@ export function unwrittenBy(before: BreachSeen | null, seen: BreachSeen): string
   return last && before.takingTicks > 0 && before.takingTicks <= TICKS_PER_SECOND ? 'the Steward unwrote you' : null;
 }
 
-/** Why the gate shut the player out of its company, in words: its company full, under the tier's level, or Hard
- *  before the Breach is won at Normal. */
-export function shutOutWords(plan: BreachPlan, tier: number, why: number): string {
-  const named = plan.tiers[tier];
+/** Why the gate shut the player out of its company, in words: its company full, or Hard before the Breach is won at
+ *  Normal. Under the tier's level it says no more: the room does not tell which tier the player came for. */
+export function shutOutWords(plan: BreachPlan, why: number): string {
   if (why === SHUT_OUT.full) return 'The gate shut you out: your company holds eight already.';
-  if (why === SHUT_OUT.level && named) return `The gate shut you out: ${named.name} opens at level ${named.opens}.`;
   if (why === SHUT_OUT.hard) return `The gate shut you out: Hard opens once ${inSentence(plan.name)} is won at Normal.`;
   return 'The gate shut you out.';
 }
