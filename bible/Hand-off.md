@@ -194,21 +194,31 @@ The decisions in [[Open Questions]] are not repeated here.
 
 - **The website and the Discord bot** (#194, a draft, not merged; [[The Website Is at noshores.online, After DFO's]],
   [[DFO's Discord Bot Comes Over, Its Panel on the Website]]). On its branch `ccr-e0e5f211-v55a3s`: the [[Website]]
-  (`site/`: Home, The World, The Game, art drawn at build time), the [[Discord Bot]] (`server/bot/`: the core and all
-  19 modules, from DFO's unmerged `ccr-ed24355a-76go4h`), its panel as a page of the site, and the game link (the
-  accounts' `LinkedCharacters` entrypoint, the `game` module's `{character}` placeholders and `/link`). Tested offline
-  only; CI's run on the head was pending at the pause. What it waits on:
-  - The owner's yes to merge, once CI is green.
-  - One Discord application for the bot and the accounts' sign-in, its keys put as secrets and vars by the owner
-    ([[Discord Bot]], "One Discord application"), and its redirects and interactions endpoint set.
-  - The Discord server's invite, the one empty `discord` address in `site/src/siteMap.ts`: the Discord buttons stay
-    hidden until it is set.
-  - Where `noshores.online` is served and whether the game plays from it ([[Open Questions]]). Claude suggested
-    Cloudflare, beside the servers, with the domain's nameservers moved from Porkbun once, so no Porkbun key is kept.
-    The owner posted a Porkbun API key in the chat: it was never stored or used, and should be rotated.
-  - How the bot deploys: no workflow is in the branch yet; on each merge as the accounts do, or only when asked.
+  (`site/`: Home, The World, The Game, the panel; every picture redrawn to DFO's detail and Home laid out after DFO's),
+  the [[Discord Bot]] (`server/bot/`: the core and all 19 modules, from DFO's unmerged `ccr-ed24355a-76go4h`), its
+  panel as a page of the site, and the game link (the accounts' `LinkedCharacters` entrypoint, the `game` module's
+  `{character}` placeholders and `/link`). The owner's answers, recorded
+  ([[noshores.online Is Served From Cloudflare, and the Game Is Played There]],
+  [[The Discord Bot Deploys on Each Merge]]): the site and the game served from Cloudflare at `noshores.online`, the
+  game under `/play/` (`site.yml`, the Worker `noshores-site`), and the bot deployed on each merge when its code
+  changed (`bot.yml`), which also writes its slash commands to Discord, which nothing did before. `deploy-ready.sh`
+  decides both Workers' deploys; the bot is out of the rooms' code, so a bot change no longer redeploys the rooms.
+  Tested offline: every server and site test, lint, types and the repo checks; the site pictured at 1280, 1920, 390
+  and 360 wide. Not tested live: nothing has deployed. What it waits on, the owner's each:
+  - The yes to merge, once CI is green on the head.
+  - `noshores.online`'s nameservers moved from Porkbun to Cloudflare; until then `site.yml` serves nothing and says
+    so. The Cloudflare token then needs Zone: Read and Workers Routes: Edit on that zone. The owner posted a Porkbun
+    API key in an earlier chat: it was never stored or used, and should be rotated.
+  - One Discord application, its keys added as repository secrets (`DISCORD_CLIENT_ID`, `DISCORD_CLIENT_SECRET`,
+    `DISCORD_PUBLIC_KEY`, `DISCORD_BOT_TOKEN`, `BOT_OWNERS`; [[Discord Bot]], "One Discord application"), its OAuth2
+    redirects and interactions endpoint set, then the `bot` workflow run by hand once so the keys reach the Worker.
+  - The Discord server's invite, the one empty `discord` address in `site/src/siteMap.ts`: the Discord buttons and
+    Home's Discord call stay hidden until it is set.
+  - The game moved to `noshores.online/play/` keeps its GitHub Pages copy (the World Editor lives there): a guest's
+    save is kept per address, so a guest who played on Pages starts afresh at the domain unless linked to Discord.
+    Whether Pages' game should send players to the domain is the owner's.
   - Words that are Claude's: The Game page's line "A pirate sandbox in a shared world.", the auto-mod rules' prefix
-    `No Shores: ` and "The bot" as the name on the bot's own cases.
+    `No Shores: `, "The bot" as the name on the bot's own cases, and Home's hidden heading "At a glance".
 - **The island view in rain, the Playlist over the island and the ships at a roadstead** (#191, merged on the owner's
   "Deploy", which deploys the page and the rooms). The owner's three reports:
   - "When its cloudy and raining. The overworld pan over the island is shrouded and you can only see the nodes": the
@@ -674,18 +684,8 @@ The decisions in [[Open Questions]] are not repeated here.
 
 ## Next
 
-- **The website's second pass** (#194's branch; stopped at the pause, unfinished, nothing of it kept). The first
-  pass's pictures are far plainer than DFO's site and its home page thinner. Redraw every scene to DFO's detail, of
-  our own subjects (several depth layers, dithered skies, Overlook's stepped town with lit windows and a beacon,
-  ships with real sail shapes, rigging, gunports and wakes, the crystal ruins with faceted glow), each under 64 KB and
-  readable at 390 px; keep the hero's logo, tagline and Play over open sky, not over the town's lights. Lay out the
-  home page after DFO's: alternating "what you do" rows from The Game's lines, a band of numbers each sourced in the
-  premise or a decision (nine continents, three ports remain, three Arts, three factions), a community band shown only
-  while the Discord invite is set, and a foot in columns. Every new line names its source note. DFO's site, its
-  `bot-panel` branch and its art code are in `Lattymoy/website.df.source`; DFO's bot is on `dfo-online-source`'s
-  `ccr-ed24355a-76go4h` at 11cec6ed.
-- **DFO's newest site.** `MckaySea/website.df.source` was pushed after the copy read here; it cannot share a session
-  with `Lattymoy/website.df.source` (same name), so it is unread.
+- **DFO's newest site.** `MckaySea/website.df.source`, a fork pushed after `Lattymoy/website.df.source`, stays unread:
+  attaching it was refused as another account's. The second pass followed `Lattymoy/website.df.source` at 375ba209.
 - **The patrol audit's risks left** (#170's description, each with its file in the audit): run lines against the
   section's ring (the ways measured: 4 of some 14,800 samples outside, by 1.8 m at most) and rock beside a run inside
   it, against [[A Run on the Rock's Top Is Held by Out of Bounds]]; `runs_everywhere` checks the wing from the ring,

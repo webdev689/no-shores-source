@@ -350,8 +350,7 @@ p {
   display: block;
   font-size: clamp(2rem, 3vw + 1rem, 3.2rem);
   line-height: 1;
-  color: var(--gold-deep);
-  text-shadow: 0 0 18px rgb(217 154 54 / 35%);
+  color: var(--gold-mid);
 }
 
 .features > .buttons {
