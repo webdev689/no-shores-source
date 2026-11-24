@@ -4,13 +4,15 @@ hung in a frame, and the Lodestone, a pitted lump of grey iron-stone bound in a 
 """
 import math
 
+import breach_kit as bk
 import kit
 import latticekit
 
 
 def seal(module):
     """A wall of the Lattice's crystal grown across a doorway 6 m wide and 8 m high, its facets dark at the root and
-    alight at its heart; one part, its whole box."""
+    alight at its heart, a pane of dark crystal behind its shards so nothing is seen through it; one part, its whole
+    box."""
     pick = latticekit.picker(module.random.randrange(1 << 30))
     materials = latticekit.kinds()
     for row in range(4):
@@ -20,6 +22,11 @@ def seal(module):
             latticekit.cluster(module, materials, pick, base, up, 3, (1.6, 2.6), 0.45, 0.35, 0.8)
     latticekit.light(module, materials, (0.0, 0.0, 3.6), 0.8)
     module.part((-3.2, -0.5, 0.0), (3.2, 0.5, 8.0))
+    for row in range(2):
+        for column in range(3):
+            pane = bk.facet_rock(module, (-2.05 + column * 2.05, 0.0, row * 3.95), (2.5, 0.5, 4.1), 'crystal',
+                                 points=18)
+            module.slots[pane.name] = [('crystal', 0.15)]
 
 
 def slab(module):
@@ -31,30 +38,40 @@ def slab(module):
 
 
 def bell(module):
-    """A bell of the crystal, as tall as a child, hung from an iron crown: its mouth wide and its shoulder narrow, its
-    facets catching the light; drawn only, the rules' bell standing at its foot."""
+    """A bell of the crystal, as tall as a child, hung by a loop from an iron yoke: its lip flared wide at its mouth,
+    its waist narrow, its shoulder rounded to a flat crown, its wall thick enough to be seen at the mouth and its
+    clapper hung inside; its facets catch the light. Drawn only, the rules' bell standing at its foot."""
     mesh = kit.bpy.data.meshes.new('bell')
     made = kit.bmesh.new()
-    rings = ((0.62, 0.0), (0.66, 0.08), (0.55, 0.3), (0.42, 0.7), (0.36, 1.0), (0.28, 1.2), (0.0, 1.26))
-    sides = 9
+    # Its outside from the lip up to the crown, then its inside back down to the lip, so the wall closes on itself.
+    outside = ((0.64, 0.0), (0.66, 0.06), (0.6, 0.14), (0.5, 0.32), (0.42, 0.6), (0.38, 0.9), (0.37, 1.04),
+               (0.32, 1.15), (0.2, 1.21), (0.0, 1.23))
+    inside = ((0.0, 1.15), (0.28, 1.1), (0.32, 1.0), (0.33, 0.88), (0.37, 0.6), (0.45, 0.32), (0.55, 0.12),
+              (0.6, 0.02))
+    rings = outside + inside
+    sides = 12
     for radius, z in rings:
         for side in range(sides):
             angle = math.tau * side / sides
             made.verts.new((radius * math.cos(angle), radius * math.sin(angle), z + 1.4))
     made.verts.ensure_lookup_table()
-    for ring in range(len(rings) - 1):
+    for ring in range(len(rings)):
+        after = (ring + 1) % len(rings)
         for side in range(sides):
-            corners = [ring * sides + side, ring * sides + (side + 1) % sides, (ring + 1) * sides + (side + 1) % sides,
-                       (ring + 1) * sides + side]
+            corners = [ring * sides + side, ring * sides + (side + 1) % sides, after * sides + (side + 1) % sides,
+                       after * sides + side]
             made.faces.new([made.verts[corner] for corner in corners])
+    kit.bmesh.ops.remove_doubles(made, verts=made.verts, dist=1e-5)
     made.to_mesh(mesh)
     made.free()
     for polygon in mesh.polygons:
         polygon.use_smooth = False
     item = kit.item_of(module, 'bell', mesh, 'crystal', 0.7)
     item.location = (0.0, 0.0, 0.0)
-    kit.column(module, (0.0, 0.0, 2.66), 0.12, 0.4, 'iron', sides=8, part=False)
-    kit.column(module, (0.0, 0.0, 1.5), 0.08, 0.4, 'crystal', sides=6, top=0.4, part=False)
+    bk.bpy_ring(module, (0.0, 0.0, 2.79), 0.14, 0.04)
+    kit.block(module, (0.0, 0.0, 2.93), (0.5, 0.14, 0.13), 'iron', bevel=0.0, wear=0.0, part=False)
+    kit.column(module, (0.0, 0.0, 1.62), 0.02, 0.9, 'iron', sides=4, wear=0.0, part=False)
+    kit.column(module, (0.0, 0.0, 1.5), 0.09, 0.16, 'crystal', sides=6, top=0.5, part=False)
 
 
 def lodestone(module):
