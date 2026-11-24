@@ -338,13 +338,26 @@ fn a_body_pressing_or_jumping_into_the_ways_barricades_and_walls_never_gets_up_t
 #[test]
 fn each_of_the_ways_barricades_cuts_its_street_between_two_crossings() {
     let plan = drowned_vale();
-    let blocks: Blocks = plan.standing().into();
+    let standing = plan.standing();
+    let blocks: Blocks = standing.clone().into();
     for (nth, (at, along)) in bars(plan).into_iter().enumerate() {
         // Toward its street's crossings 6 m either way, or the lane inside the town's wall, stopped short of a Watcher's
         // post standing in one.
         let crossing = |sign: f64| [at[0] + along[0] * sign * 4.5, at[1] + along[1] * sign * 4.5, at[2]];
         for (from, to) in [(crossing(-1.0), crossing(1.0)), (crossing(1.0), crossing(-1.0))] {
             assert!(!walks_to(&blocks, from, to, 0.8), "bar-{} lets a body down its street from {from:?}", nth + 1);
+        }
+        // A house stands past each of its ends, so no body goes round it.
+        for sign in [-1.0, 1.0] {
+            let end = [at[0] - along[1] * sign * 2.4, at[1] + along[0] * sign * 2.4];
+            let housed = standing.iter().any(|block| {
+                block.min_x <= end[0]
+                    && end[0] <= block.max_x
+                    && block.min_y <= end[1]
+                    && end[1] <= block.max_y
+                    && block.top >= at[2] + 2.0
+            });
+            assert!(housed, "past bar-{}'s end at {end:?} the street opens", nth + 1);
         }
     }
 }
@@ -374,6 +387,10 @@ fn every_set_piece_a_body_meets_on_a_fight_floor_is_a_part() {
         ("mending", [-26.0, 0.0], 0.7),
         ("mending", [14.0, -12.0], 1.0),
         ("mending", [-23.3, -11.6], 0.8),
+        ("mending", [-1.2, -8.0], 3.0),
+        ("mending", [1.2, -8.0], 3.0),
+        ("mending", [-19.0, 22.5], 4.5),
+        ("mending", [24.0, -18.5], 4.5),
         ("choir", [-3.6, -23.5], 0.45),
         ("choir", [4.0, -10.5], 0.45),
         ("choir", [-3.5, 15.0], 0.45),

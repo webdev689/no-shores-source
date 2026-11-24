@@ -440,7 +440,8 @@ def court(module, radius):
         if abs(angle - 1.5 * math.pi) < 0.16 or abs(math.cos(angle)) > 0.95:
             continue
         far = radius + module.draw(-0.8, 1.4)
-        top = -0.1 - max(0.0, far - radius + 0.6) * 1.3
+        # Half a metre under the floor at the least, so in a step's notch it reads as the drop, not ground.
+        top = -0.5 - max(0.0, far - radius + 0.6) * 1.3
         tall = module.draw(1.8, 3.6)
         bk.facet_rock(module, (math.cos(angle) * far, math.sin(angle) * far, top - tall),
                       (module.draw(1.4, 2.8), module.draw(1.0, 2.0), tall), 'rubble', points=12,
@@ -449,8 +450,8 @@ def court(module, radius):
         angle = module.draw(0.0, math.tau)
         if abs(angle - 1.5 * math.pi) < 0.16 or abs(math.cos(angle)) > 0.95:
             continue
-        far = module.draw(23.2, 24.6)
-        tipped = far > 24.2
+        far = module.draw(23.0, 24.6)
+        tipped = far > 23.6
         stone = kit.block(module, (math.cos(angle) * far, math.sin(angle) * far, -0.16 if tipped else -0.07),
                           (module.draw(0.9, 1.6), module.draw(0.7, 1.2), 0.1), 'paving', turn=angle, bevel=0.0,
                           wear=0.0, part=False)

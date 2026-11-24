@@ -18,9 +18,10 @@ HOUSE = 8.0
 OPEN_CELLS = {(2, 2), (3, 2), (2, 3)}
 HEART_CELL = (3, 3)
 # Where the streets are barred to make the way through a maze: each bar across its street halfway between two
-# crossings (or a crossing and the lane inside the town's wall), so a body must go round by the next street, as
+# crossings (or a crossing and the lane inside the town's wall), a house standing at each of its ends, so a body
+# must go round by the next street, as
 # (x, y, the street running along x).
-BARS = ((-12.0, 6.0, False), (18.0, -12.0, True), (6.0, 12.0, True), (-24.0, 18.0, False), (24.0, -6.0, False),
+BARS = ((-12.0, 18.0, False), (18.0, -12.0, True), (6.0, 12.0, True), (-24.0, 18.0, False), (24.0, -6.0, False),
         (-30.0, -24.0, True), (30.0, 24.0, True), (0.0, -30.0, False))
 WATCHERS = ((-24.0, 0.0, (1.0, 0.0)), (0.0, -12.0, (0.0, 1.0)), (12.0, 0.0, (-1.0, 0.0)), (0.0, 24.0, (0.0, -1.0)),
             (24.0, -24.0, (-1.0, 0.0)), (24.0, 24.0, (0.0, -1.0)))
