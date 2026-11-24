@@ -9,14 +9,22 @@ use combat::fighter::FighterId;
 
 /// How many foes a wave stands: two, and one more for every two living players, six at the most.
 pub const WAVE_MOST: usize = 6;
-/// The most of an encounter's foes that stand alive at once.
+/// The most of an encounter's foes that stand alive at once for another of its lesser foes (a wave's, a walker) to
+/// stand: its great foes, Watchers and bells stand whatever else stands, or the encounter could never be finished.
 pub const STANDING_MOST: usize = 18;
 /// What a great foe's health is times for each living player beyond the first.
 pub const HEALTH_PER_PLAYER: f64 = 0.45;
 
 impl Room {
+    /// Whether the room and the encounter have room for another of its lesser foes (`STANDING_MOST`).
+    pub(crate) fn room_for_lesser(&self, breach: &Breach) -> bool {
+        let living = breach.foes.iter().filter(|id| self.standing_foe(**id)).count();
+        self.living_foes() < self.foes_most && living < STANDING_MOST
+    }
+
     /// Stands one of an encounter's foes of a type and rank at a point, at the tier's level, dropping nothing and
-    /// hunting the nearest living player; named where it has a name of its own. None while the room is full.
+    /// hunting the nearest living player; named where it has a name of its own. Its lesser foes ask
+    /// `room_for_lesser` first.
     pub(crate) fn stand_breach_foe(
         &mut self,
         breach: &mut Breach,
@@ -24,10 +32,6 @@ impl Room {
         at: [f64; 3],
         name: Option<&'static str>,
     ) -> Option<FighterId> {
-        let living = breach.foes.iter().filter(|id| self.foes.get(id).is_some_and(|foe| !foe.fighter.dead())).count();
-        if self.living_foes() >= self.foes_most || living >= STANDING_MOST {
-            return None;
-        }
         let place = self.nav.nearest_point(at).unwrap_or(at);
         let id = self.stand_foe(::foes::foe_type(number)?, rank, place, 0.0, None);
         self.gird(id, breach.tier.foes_at(), None);
@@ -76,6 +80,9 @@ impl Room {
                 let kind = kinds[(nth + at) % kinds.len()];
                 let mouth = mouths[(nth + at) % mouths.len()];
                 let spread = [mouth[0] + (at % 3) as f64 - 1.0, mouth[1] + (at / 3) as f64 - 0.5, mouth[2]];
+                if !self.room_for_lesser(breach) {
+                    return None;
+                }
                 self.stand_breach_foe(breach, kind, spread, None)
             })
             .collect()

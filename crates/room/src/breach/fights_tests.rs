@@ -8,19 +8,19 @@ use crate::encounters::encounters_tests::ticks;
 use crate::{EventKind, PlayerId};
 
 /// Stands a player at a socket of a space.
-fn put_at(room: &mut Room, player: PlayerId, space: &str, socket: &str) {
+pub(super) fn put_at(room: &mut Room, player: PlayerId, space: &str, socket: &str) {
     let point = at(room, space, socket);
     stand_at(room, player, point);
 }
 
 /// A foe struck down where it stands.
-fn kill(room: &mut Room, id: FighterId) {
+pub(super) fn kill(room: &mut Room, id: FighterId) {
     let foe = room.foes.get_mut(&id).expect("standing");
     (foe.fighter.health, foe.fighter.action) = (0.0, combat::Action::Dead { elapsed: 0 });
 }
 
 /// Every player stood at a socket of a space, the encounter there begun.
-fn begin_at(room: &mut Room, players: &[PlayerId], space: &str, socket: &str) {
+pub(super) fn begin_at(room: &mut Room, players: &[PlayerId], space: &str, socket: &str) {
     let point = at(room, space, socket);
     for (nth, &player) in players.iter().enumerate() {
         stand_at(room, player, [point[0] + nth as f64 * 0.5, point[1], point[2]]);
@@ -29,7 +29,7 @@ fn begin_at(room: &mut Room, players: &[PlayerId], space: &str, socket: &str) {
 }
 
 /// The run with every encounter before `encounter` won and its seals open.
-fn won_to(tier: Tier, count: usize, encounter: usize) -> (Room, Vec<PlayerId>) {
+pub(super) fn won_to(tier: Tier, count: usize, encounter: usize) -> (Room, Vec<PlayerId>) {
     let (mut room, players) = run(tier, count);
     let mut breach_box = room.breach.take().expect("run");
     for before in MENDING..encounter {
@@ -223,6 +223,80 @@ fn a_rift_held_open_carries_a_body_through_and_back_and_its_keepers_fall_rewrite
     room.tick();
     let body = room.players[&players[1]].fighter.body;
     assert!(!room.someone_in(breach(&room), "hall-was") && body.z > 50.0, "carried back to the hall");
+}
+
+#[test]
+fn a_rifts_mooring_let_go_before_it_opens_lets_its_opening_fall_back() {
+    let (mut room, players) = won_to(Tier::Normal, 1, SHORES);
+    begin_at(&mut room, &players, "hall", "plinth");
+    let warden = breach(&room).fights.shores.warden.expect("the Warden stands");
+    kill(&mut room, warden);
+    room.tick();
+    put_at(&mut room, players[0], "hall", "mooring-was");
+    ticks(&mut room, shores::OPENS_TICKS / 2);
+    assert!(breach(&room).fights.shores.rifts[0].held > 0, "opening while held");
+    put_at(&mut room, players[0], "hall", "plinth");
+    ticks(&mut room, shores::OPENS_TICKS / 2 + 1);
+    assert_eq!(breach(&room).fights.shores.rifts[0].held, 0, "let go as long, it falls back whole");
+}
+
+#[test]
+fn at_hard_the_lodestones_last_bearer_through_a_rift_is_turned_back_from_it_and_told() {
+    let (mut room, players) = won_to(Tier::Hard, 2, SHORES);
+    begin_at(&mut room, &players, "hall", "plinth");
+    let warden = breach(&room).fights.shores.warden.expect("the Warden stands");
+    kill(&mut room, warden);
+    room.tick();
+    put_at(&mut room, players[0], "hall", "plinth");
+    assert!(room.take_lodestone(players[0]));
+    put_at(&mut room, players[1], "hall", "mooring-was");
+    ticks(&mut room, shores::OPENS_TICKS + 1);
+    put_at(&mut room, players[0], "hall", "rift-was");
+    room.tick();
+    assert!(room.someone_in(breach(&room), "hall-was"), "carried through with it");
+    put_at(&mut room, players[0], "hall-was", "rift");
+    room.tick();
+    room.take_events();
+    put_at(&mut room, players[0], "hall", "rift-was");
+    room.tick();
+    let (body, mouth) = (room.players[&players[0]].fighter.body, at(&room, "hall", "rift-was"));
+    assert!(!room.someone_in(breach(&room), "hall-was"), "not through with it again");
+    assert!(combat::sight::apart([body.x, body.y], [mouth[0], mouth[1]]) > shores::RIFT_REACH_M, "turned back");
+    assert_eq!(told(&mut room, EventKind::Carried), 1, "and told so");
+}
+
+/// Lesser foes stood at a space's first mouth until the encounter, or the room, would stand no more.
+fn filled(room: &mut Room, space: &str) {
+    let mut breach_box = room.breach.take().expect("run");
+    let (mouth, _) = breach_box.plan.numbered(space, "mouth")[0];
+    for _ in 0..crate::NODE_FOES_MOST {
+        room.stand_breach_foe(&mut breach_box, (::foes::roster::HUSK, ::foes::Rank::Minor), mouth, None);
+    }
+    room.breach = Some(breach_box);
+}
+
+#[test]
+fn an_encounters_great_foes_and_bells_stand_though_its_lesser_foes_fill_it() {
+    let (mut room, players) = run(Tier::Normal, 2);
+    begin_at(&mut room, &players, "mending", "mender");
+    filled(&mut room, "mending");
+    for _ in 1..=3 {
+        room.clock += mending::STAGE_TICKS;
+        room.tick();
+    }
+    assert!(breach(&room).fights.mending.mender.is_some(), "the Mender stands");
+    let (mut room, players) = won_to(Tier::Normal, 1, CHOIR);
+    begin_at(&mut room, &players, "choir", "font");
+    filled(&mut room, "choir");
+    ticks(&mut room, 2 * 60 + 3 * choir::WAKE_APART.0);
+    assert_eq!(breach(&room).fights.choir.bells.len(), choir::ROUNDS[0], "every bell of the round stands");
+    let (mut room, players) = won_to(Tier::Normal, 2, STEWARD);
+    begin_at(&mut room, &players, "court", "chest");
+    filled(&mut room, "court");
+    room.breach.as_mut().expect("run").fights.steward.next_taking = room.clock;
+    room.tick();
+    let away = breach(&room).fights.steward.away.clone().expect("taken");
+    assert_eq!(away.bells.len(), 5, "every bell of the shore stands");
 }
 
 #[test]

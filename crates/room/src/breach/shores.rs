@@ -77,10 +77,11 @@ impl Room {
             (fight.next_toll, fight.next_walker) = (clock + TOLL_EVERY, clock + WALK_EVERY);
             self.tell_all(EventKind::BreachStage, 1.0);
         }
-        let shores = breach.plan.shores.get("shores").cloned().unwrap_or_default();
+        let plan = breach.plan;
+        let shores = plan.shores.get("shores").map(Vec::as_slice).unwrap_or_default();
         if woke {
             for rift in 0..RIFTS.len() {
-                self.keep_rift(breach, &mut fight, rift, &shores);
+                self.keep_rift(breach, &mut fight, rift, shores);
             }
             self.keep_seam(breach, &mut fight);
         }
@@ -99,7 +100,8 @@ impl Room {
         }
     }
 
-    /// One rift: its mooring held opens it and keeps it open; left, or stood on by a Bulwark, it closes; open, it
+    /// One rift: its mooring held opens it (let go first, its opening falls back) and keeps it open; left, or stood on
+    /// by a Bulwark, it closes; open, it
     /// carries bodies through either way; its Keeper stands as its shore is first entered, and Rewrites the shore as it
     /// falls; and those left in its shore once it closes are unwritten.
     fn keep_rift(&mut self, breach: &mut Breach, fight: &mut Shores, rift: usize, shores: &[String]) {
@@ -110,12 +112,15 @@ impl Room {
         else {
             return;
         };
-        let held = self.held_by_players(mooring, MOORING_REACH_M) >= self.held_by_needed(breach);
+        let held = self.held_by_players(mooring, MOORING_REACH_M) > 0;
         let claimed = self.held_by_bulwark(breach, mooring);
         let state = &mut fight.rifts[rift];
         if held && !claimed {
             state.last_held = clock;
             state.held = (state.held + 1).min(OPENS_TICKS);
+        } else if !state.open {
+            // Let go before it opens, its opening falls back as fast as it was held.
+            state.held = state.held.saturating_sub(1);
         }
         if state.held >= OPENS_TICKS && !state.open {
             state.open = true;
@@ -131,10 +136,10 @@ impl Room {
             if let (Some((arrival, _)), Some((back, _))) =
                 (breach.plan.socket(shore, "arrival"), breach.plan.socket(shore, "rift"))
             {
-                self.carry_through(breach, mouth, arrival, true);
                 let out =
                     [mouth[0] + (mooring[0] - mouth[0]) * 0.4, mouth[1] + (mooring[1] - mouth[1]) * 0.4, mouth[2]];
-                self.carry_through(breach, back, out, false);
+                self.carry_through(breach, mouth, arrival, Some(out));
+                self.carry_through(breach, back, out, None);
             }
         } else if self.someone_in(breach, shore) {
             let from = *fight.rifts[rift].stranded_from.get_or_insert(clock);
@@ -169,9 +174,9 @@ impl Room {
         }
     }
 
-    /// Every living body within reach of a rift's mouth carried through to `to`; the Lodestone's bearer turned back
-    /// at Hard when they were its last to cross.
-    fn carry_through(&mut self, breach: &mut Breach, from: [f64; 3], to: [f64; 3], inward: bool) {
+    /// Every living body within reach of a rift's mouth carried through to `to`; going in (`turned_back` the hall's side
+    /// of the mouth), the Lodestone's bearer is carried back there instead at Hard when they were its last to cross.
+    fn carry_through(&mut self, breach: &mut Breach, from: [f64; 3], to: [f64; 3], turned_back: Option<[f64; 3]>) {
         let near: Vec<PlayerId> = self
             .players
             .iter()
@@ -184,8 +189,9 @@ impl Room {
             .collect();
         for id in near {
             let bearer = breach.lodestone.bearer() == Some(id);
-            if bearer && inward {
+            if let Some(back) = turned_back.filter(|_| bearer) {
                 if breach.tier == gear::breach::Tier::Hard && breach.lodestone.crossed_by == Some(id) {
+                    self.carry(id, back);
                     continue;
                 }
                 breach.lodestone.crossed_by = Some(id);
@@ -208,6 +214,7 @@ impl Room {
             fight.next_walker = clock + WALK_EVERY;
             let mouths = breach.plan.numbered("hall", "mouth");
             if let Some((mouth, _)) = mouths.get((clock / WALK_EVERY) as usize % mouths.len().max(1))
+                && self.room_for_lesser(breach)
                 && let Some(id) = self.stand_breach_foe(breach, (HUSK, Rank::Minor), *mouth, Some("Penitent"))
             {
                 self.make_walker(id);
@@ -243,11 +250,6 @@ impl Room {
                     && (found.fighter.body.z - at[2]).abs() < 1.5
             })
             .count()
-    }
-
-    /// How many must stand on a mooring to hold it: one, two at Hard in the Steward's court.
-    fn held_by_needed(&self, _breach: &Breach) -> usize {
-        1
     }
 
     /// Whether one of the encounter's Bulwarks stands on a mooring.

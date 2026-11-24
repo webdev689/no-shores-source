@@ -487,3 +487,6 @@ mod gate_tests;
 #[cfg(test)]
 #[path = "keeping_tests.rs"]
 mod keeping_tests;
+#[cfg(test)]
+#[path = "steward_tests.rs"]
+mod steward_tests;

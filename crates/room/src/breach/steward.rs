@@ -3,9 +3,9 @@
 //! and what is in turn, and Rewrites them; it tolls on a shorter measure, unwriting the Rewritten. In the shore the
 //! Lodestone stands on its plinth and five bells wake; their order is shown only in the court, over that rift's
 //! mooring, so the court must call it. Broken in order the way back opens, while a player in the court holds that
-//! rift's mooring (two at Hard). Back in the court, the Lodestone grounded at the Steward's feet lays it bare: its
-//! ledger cracks open and every blow on it weighs five times, and Arts recharge three times as fast. After its fourth
-//! taking, its next toll unwrites the whole company. Its fall wins the Drowned Vale.
+//! rift's mooring (two at Hard, if two are left there). Grounded at its feet, the Lodestone lays it bare: every blow on
+//! it weighs five times, and Arts recharge three times as fast. After its fourth taking, when the next would come it
+//! unwrites the whole company, and on each toll's measure after. Its fall wins, bringing back any still in a shore.
 
 use super::{Breach, STEWARD};
 use crate::{EventKind, PlayerId, Room};
@@ -62,10 +62,17 @@ impl Room {
         let clock = self.clock;
         let mut fight = std::mem::take(&mut breach.fights.steward);
         if fight.boss.is_none() {
-            if let Some((at, _)) = breach.plan.socket("court", "steward") {
-                fight.boss = self.stand_breach_foe(breach, (STEWARD_TYPE, Rank::Boss), at, Some("The Steward"));
-                fight.boss.iter().for_each(|id| self.match_company(*id));
-            }
+            let stood = breach
+                .plan
+                .socket("court", "steward")
+                .and_then(|(at, _)| self.stand_breach_foe(breach, (STEWARD_TYPE, Rank::Boss), at, Some("The Steward")));
+            // Not stood, it is tried again next tick, its waking told only once it stands.
+            let Some(boss) = stood else {
+                breach.fights.steward = fight;
+                return;
+            };
+            self.match_company(boss);
+            fight.boss = Some(boss);
             (fight.woke_at, fight.next_taking) = (clock, clock + FIRST_TAKING);
             (fight.next_toll, fight.next_wave) = (clock + TOLL_EVERY, clock + 5 * 60);
             self.tell_all(EventKind::BossWoke, 1.0);
@@ -92,9 +99,22 @@ impl Room {
             fight.waves += 1;
         }
         let won = fight.boss.is_some_and(|id| !self.standing_foe(id));
+        if won && let Some(away) = fight.away.take() {
+            self.bring_back(breach, &away);
+        }
         breach.fights.steward = fight;
         if won {
             self.win_encounter(breach, STEWARD);
+        }
+    }
+
+    /// Those still in a taking's shore as the Steward falls, carried back to the court as its way back carries them.
+    fn bring_back(&mut self, breach: &Breach, away: &Away) {
+        let plan = breach.plan;
+        let space = plan.shores.get("steward").and_then(|shores| shores.get(away.shore));
+        let (Some(space), Some((out, _))) = (space, way_out(breach, away.shore)) else { return };
+        for id in self.in_space(breach, space) {
+            self.carry(id, out);
         }
     }
 
@@ -103,8 +123,8 @@ impl Room {
     fn take(&mut self, breach: &mut Breach, fight: &mut Steward) {
         let clock = self.clock;
         let shore = usize::from(fight.takings % 2);
-        let shores = breach.plan.shores.get("steward").cloned().unwrap_or_default();
-        let Some(space) = shores.get(shore) else { return };
+        let plan = breach.plan;
+        let Some(space) = plan.shores.get("steward").and_then(|shores| shores.get(shore)) else { return };
         let mut court = self.in_space(breach, "court");
         let count = TAKES.min(court.len().div_ceil(2));
         // No one in the court to take: the taking waits for them.
@@ -118,11 +138,12 @@ impl Room {
             taken.push(court.swap_remove(pick));
         }
         let Some((arrival, _)) = breach.plan.socket(space, "arrival") else { return };
+        // The Lodestone goes to the shore's plinth from whoever bears it, taken or not.
+        if let Some(bearer) = breach.lodestone.bearer() {
+            self.tell(EventKind::LodestoneDropped, None, bearer, bearer, 0.0);
+        }
         for (nth, id) in taken.iter().enumerate() {
             let spread = [arrival[0] + (nth % 2) as f64 * 1.6 - 0.8, arrival[1] + (nth / 2) as f64 * 1.2, arrival[2]];
-            if breach.lodestone.bearer() == Some(*id) {
-                self.drop_lodestone(*id);
-            }
             self.carry(*id, spread);
             self.rewrite(breach, *id);
         }
@@ -151,8 +172,8 @@ impl Room {
     /// set free of the taking.
     fn keep_away(&mut self, breach: &mut Breach, fight: &mut Steward) {
         let Some(mut away) = fight.away.take() else { return };
-        let shores = breach.plan.shores.get("steward").cloned().unwrap_or_default();
-        let Some(space) = shores.get(away.shore).cloned() else { return };
+        let plan = breach.plan;
+        let Some(space) = plan.shores.get("steward").and_then(|shores| shores.get(away.shore)) else { return };
         let mut wrong = false;
         for (place, id) in away.bells.clone() {
             if self.standing_foe(id) {
@@ -172,14 +193,14 @@ impl Room {
                 self.gone(id);
             }
             away.broken = 0;
-            let places = breach.plan.numbered(&space, "bell");
+            let places = breach.plan.numbered(space, "bell");
             for &place in &away.order.clone() {
                 if let Some(id) = self.stand_breach_foe(breach, (BELL, Rank::Minor), places[place].0, None) {
                     self.make_walker(id);
                     away.bells.push((place, id));
                 }
             }
-            for id in self.in_space(breach, &space) {
+            for id in self.in_space(breach, space) {
                 self.rewrite(breach, id);
             }
         }
@@ -187,23 +208,17 @@ impl Room {
             away.done = true;
             self.tell_all(EventKind::WayBack, away.shore as f64);
         }
-        let (rift, mooring) = if away.shore == 0 { ("rift-was", "mooring-was") } else { ("rift-is", "mooring-is") };
-        let needed = if breach.tier == gear::breach::Tier::Hard { 2 } else { 1 };
-        let held = breach
-            .plan
-            .socket("court", mooring)
-            .is_some_and(|(at, _)| self.held_by_players(at, super::shores::MOORING_REACH_M) >= needed);
+        // Two hold the mooring at Hard, or as many as the taking left in the court.
+        let most = if breach.tier == gear::breach::Tier::Hard { 2 } else { 1 };
+        let needed = most.min(self.in_space(breach, "court").len()).max(1);
+        let way = way_out(breach, away.shore);
+        let held = way.is_some_and(|(_, at)| self.held_by_players(at, super::shores::MOORING_REACH_M) >= needed);
         if away.done
             && held
-            && let (Some((back, _)), Some((mouth, _)), Some((at, _))) = (
-                breach.plan.socket(&space, "rift"),
-                breach.plan.socket("court", rift),
-                breach.plan.socket("court", mooring),
-            )
+            && let (Some((back, _)), Some((out, _))) = (breach.plan.socket(space, "rift"), way)
         {
-            let out = [mouth[0] + (at[0] - mouth[0]) * 0.5, mouth[1] + (at[1] - mouth[1]) * 0.5, at[2]];
             let leaving: Vec<PlayerId> = self
-                .in_space(breach, &space)
+                .in_space(breach, space)
                 .into_iter()
                 .filter(|id| {
                     self.players.get(id).is_some_and(|found| {
@@ -216,7 +231,7 @@ impl Room {
                 self.carry(id, out);
             }
         }
-        if self.someone_in(breach, &space) {
+        if self.someone_in(breach, space) {
             fight.away = Some(away);
         } else if away.done {
             self.tell_all(EventKind::Returned, away.shore as f64);
@@ -259,4 +274,11 @@ impl Room {
         let seed = self.world_seed ^ DRAWS ^ salt.rotate_left(13);
         naval::random::Mulberry32::new((seed ^ (seed >> 32)) as u32)
     }
+}
+
+/// Where a shore's way back comes out in the court, halfway from its rift to its mooring, and that mooring.
+fn way_out(breach: &Breach, shore: usize) -> Option<([f64; 3], [f64; 3])> {
+    let (rift, mooring) = if shore == 0 { ("rift-was", "mooring-was") } else { ("rift-is", "mooring-is") };
+    let ((mouth, _), (at, _)) = (breach.plan.socket("court", rift)?, breach.plan.socket("court", mooring)?);
+    Some(([mouth[0] + (at[0] - mouth[0]) * 0.5, mouth[1] + (at[1] - mouth[1]) * 0.5, at[2]], at))
 }
