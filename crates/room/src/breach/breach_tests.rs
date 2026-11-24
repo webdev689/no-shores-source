@@ -1,5 +1,5 @@
 //! A Breach's run: its room, its stages and how its fallen stand again at each tier, raising and revives, wipes, its
-//! seals and slabs, and the Lodestone.
+//! seals and slabs (the room's blocks its plan's for the seals and tick its snapshot tells), and the Lodestone.
 
 use super::*;
 use crate::encounters::encounters_tests::{hardy, ticks};
@@ -241,4 +241,30 @@ fn hold_true_cleanses_the_rewritten_round_its_bearer_and_halves_a_foes_blow_ther
     assert!(breach(&room).lodestone.held_from.is_some(), "Hold True raised");
     assert!(breach(&room).marked.is_empty(), "the mark cleansed");
     assert_eq!(room.held_times(players[1]), lodestone::HELD_TIMES);
+}
+
+/// Blocks' edges to the bit.
+fn bits(blocks: &[Block]) -> Vec<[u64; 6]> {
+    let edges = |block: &Block| [block.min_x, block.min_y, block.max_x, block.max_y, block.bottom, block.top];
+    blocks.iter().map(|block| edges(block).map(f64::to_bits)).collect()
+}
+
+#[test]
+fn the_room_stands_its_plans_blocks_for_the_seals_and_the_tick_its_snapshot_tells() {
+    use movement::Near;
+    let (mut room, _) = run(Tier::Normal, 1);
+    for won in [None, Some(MENDING), Some(WAYS), Some(SHORES)] {
+        if let Some(encounter) = won {
+            let mut breach_box = room.breach.take().expect("run");
+            room.win_encounter(&mut breach_box, encounter);
+            room.breach = Some(breach_box);
+        }
+        for _ in 0..plan::SLAB_CYCLE / 6 {
+            room.clock += 5;
+            room.tick();
+            let seals = room.breach_seen().expect("a run's").seals;
+            let planned = drowned_vale().blocks_at(seals, room.clock());
+            assert_eq!(bits(room.blocks.all()), bits(&planned), "seals {seals:b} at {}", room.clock());
+        }
+    }
 }

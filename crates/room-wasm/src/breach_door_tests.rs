@@ -103,3 +103,23 @@ fn the_predictor_stands_the_runs_blocks_as_its_room_does_and_makes_them_anew_onl
     let changed = (2..room::breach::plan::SLAB_CYCLE).find(|tick| crate::fighter_door::set_breach(0b1, *tick));
     assert!(changed.is_some(), "a slab comes or goes within its cycle");
 }
+
+/// Blocks' edges to the bit.
+fn bits(blocks: &[movement::Block]) -> Vec<[u64; 6]> {
+    let edges = |block: &movement::Block| [block.min_x, block.min_y, block.max_x, block.max_y, block.bottom, block.top];
+    blocks.iter().map(|block| edges(block).map(f64::to_bits)).collect()
+}
+
+#[test]
+fn the_page_predicts_on_the_blocks_its_room_stands_to_the_bit_for_every_seal_and_slab() {
+    use movement::Near;
+    // The room stands the plan's blocks for the seals and the tick its snapshot tells (the room's own tests), so the
+    // page agrees with the room where its predictor stands the plan's for the same.
+    for open in 0..8_u8 {
+        for tick in (0..room::breach::plan::SLAB_CYCLE).step_by(20) {
+            crate::fighter_door::fighter_breach(u32::from(open), u32::try_from(tick).expect("small"));
+            let predicted = crate::fighter_door::COURSE.with(|course| bits(course.borrow().all()));
+            assert_eq!(predicted, bits(&drowned_vale().blocks_at(open, tick)), "seals {open:b} at {tick}");
+        }
+    }
+}
