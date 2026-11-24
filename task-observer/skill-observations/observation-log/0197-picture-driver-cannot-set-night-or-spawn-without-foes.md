@@ -1,5 +1,5 @@
 ---
-id: 176
+id: 197
 title: "The picture driver cannot set night where the room keeps its own clock, and `&spawn=` also asks for foes"
 status: open
 type: open-source

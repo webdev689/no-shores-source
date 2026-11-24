@@ -1,5 +1,5 @@
 ---
-id: 177
+id: 198
 title: "A busy port's vite preview failed silently, so pictures showed the old build; a worker's targeted checks skipped rustfmt"
 status: open
 type: open-source
