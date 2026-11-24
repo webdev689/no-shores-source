@@ -1,5 +1,5 @@
 ---
-id: 210
+id: 219
 title: "An index on json_extract(body, ...) made every save of a character body that is not JSON fail with 'malformed JSON', and would have failed the migration on such a row"
 status: open
 type: open-source
