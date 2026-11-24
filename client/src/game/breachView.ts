@@ -340,7 +340,7 @@ export class BreachView {
       stores: [],
       call: heard.call ?? null,
       mood,
-      breach: hearBreach(seen, plan, null, mine),
+      breach: hearBreach(seen, plan, null, mine && here.inHollow),
     };
     return { shown, line: gateLine(plan, seen), first: near, props, sounds: heard.sounds, sting: heard.sting };
   }

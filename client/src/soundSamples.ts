@@ -57,8 +57,10 @@ async function decodedMeasured(audio: BaseAudioContext, bytes: ArrayBuffer) {
   return { buffer, measured: measuredOf(channelsOf(buffer), buffer.sampleRate) };
 }
 
-/** Whether a cue is fetched as soon as the sound wakes: the short sounds of play, not the ambience or the story's. */
-export const fetchedAtWake = (id: string): boolean => !id.startsWith('amb.') && !id.startsWith('story.');
+/** Whether a cue is fetched as soon as the sound wakes: the short sounds of play, not the ambience, the story's or
+ *  the music's instruments, which come as a score first asks for them. */
+export const fetchedAtWake = (id: string): boolean =>
+  !id.startsWith('amb.') && !id.startsWith('story.') && !id.startsWith('music.');
 
 /** A sound's files: a Freesound pick's one, or each variant of one of DFO's own. */
 export const keysOf = (sound: { readonly key: string } | { readonly keys: readonly string[] }): readonly string[] =>
@@ -157,7 +159,9 @@ export class Samples {
    *  music's sampled voices); null, and fetched, where it has not come. Asked for, it counts as played. */
   recording(audio: BaseAudioContext, id: string): { readonly buffer: AudioBuffer; readonly level: number } | null {
     this.audio ??= audio;
-    const sound = this.held.get(id)?.find((each) => each.chunk === null);
+    // shortcut: a pick longer than a chunk plays its first chunk (a minute) as its recording; enough for a drone.
+    const held = this.held.get(id) ?? [];
+    const sound = held.find((each) => each.chunk === null) ?? held.find((each) => each.chunk === 0);
     if (!sound) {
       this.want(id);
       return null;

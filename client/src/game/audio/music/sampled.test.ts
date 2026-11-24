@@ -137,6 +137,8 @@ test("until a voice's recording has come, or while its cue has no root, the trac
   );
   await Promise.resolve();
   assert.ok(sampled.lowpasses.includes(SAMPLE_TOP_HZ), 'every sampled voice passes the lowpass');
+  const tap = heard(cello, { 'music.cello': recording(4), 'music.taiko': recording(0.1) });
+  assert.equal(tap.sources.filter((source) => source.rate === 0.5).length, 1, 'a short drum sounds once, not twice');
   const long = heard(cello, { 'music.cello': recording(1.5) }, 4);
   assert.ok(long.sources.length > 2 && long.sources.slice(1).every((source) => source.offset > 0), 'played on');
 });

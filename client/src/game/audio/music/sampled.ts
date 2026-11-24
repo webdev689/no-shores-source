@@ -112,7 +112,7 @@ export function sampledNote(
   envelope.connect(lowpass);
   const out = connect(lowpass);
   const sources: AudioBufferSourceNode[] = [];
-  for (const play of playsOf(recorded, rate, end - when)) {
+  for (const play of playsOf(recorded, rate, whole ? recorded / rate : end - when)) {
     const source = audio.createBufferSource();
     source.buffer = recording.buffer;
     source.playbackRate.value = rate;
