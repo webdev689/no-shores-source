@@ -154,10 +154,11 @@ test('the map’s N shows in every stance on foot, before the leave’s M, and K
   }
 });
 
-test('riding shows how to get down and gallop', () => {
+test('riding shows how to get down, gallop and boost', () => {
   assert.deepEqual(shown({ mounted: true, drawn: true }), [
     ', Get down',
     'Shift Gallop',
+    'Space Boost',
     'M Hold to leave',
     'K All controls',
   ]);

@@ -322,12 +322,12 @@ export function strokeFrame(progress: number, lands = BLOW_LANDS, span = 3): num
 
 /**
  * The move the player's figure shows, by DFO's law: a move chosen by hand first; then on a ledge or a wall its move by
- * progress or looping; in the air the jump by rising or falling; mounted, the horse's; a cast; a blow, the owner's blow
- * for the stroke and the hold where drawn, else a stroke of the weapon's attack (frames 0-2, the next blow 3-5); a
- * shot, its weapon's own move, then its reload; crouching; running, its strides slowed below a full run; else the
- * weapon's own walk and rest, the walk's steps slowed below a full walk. `draws` says whether the forge draws a held
- * thing in a move. Moving, a blow, a shot, a reload, a ranged weapon aimed and the cast play their own on the move
- * where the figure draws it whole (`walking`).
+ * progress or looping; mounted, the horse's, off a drop too; in the air the jump by rising or falling; a cast; a
+ * blow, the owner's blow for the stroke and the hold where drawn, else a stroke of the weapon's attack (frames 0-2,
+ * the next blow 3-5); a shot, its weapon's own move, then its reload; crouching; running, its strides slowed below a
+ * full run; else the weapon's own walk and rest, the walk's steps slowed below a full walk. `draws` says whether the
+ * forge draws a held thing in a move. Moving, a blow, a shot, a reload, a ranged weapon aimed and the cast play their
+ * own on the move where the figure draws it whole (`walking`).
  */
 export function shownMove(
   doing: Doing,
@@ -354,11 +354,12 @@ export function shownMove(
   if (doing.mode === 'hang') return doing.moving ? loop('shimmy', 1 / frames('shimmy')) : byProgress('hang', 0);
   if (doing.mode === 'climb')
     return doing.moving ? loop('climb', 1 / frames('climb')) : { anim: 'climb', frame: 0, frameSeconds: 0 };
-  if (doing.mode === 'air') return { anim: 'jump', frame: jumpFrame(doing.vz), frameSeconds: 0 };
   if (doing.mounted) {
-    if (!doing.moving) return loop('horseidle', WALK_FRAME);
+    // In the air a body moves along no ground, so its pace says whether the horse goes on.
+    if (doing.mode === 'air' ? doing.speed <= 0.2 : !doing.moving) return loop('horseidle', WALK_FRAME);
     return doing.speed > 10 ? loop('horsegallop', WALK_FRAME / 4) : loop('horsewalk', WALK_FRAME / 2);
   }
+  if (doing.mode === 'air') return { anim: 'jump', frame: jumpFrame(doing.vz), frameSeconds: 0 };
   if (doing.cast !== null) return byProgress(moved('cast'), doing.cast);
   const kit = kitOf(doing.drawn ? doing.right : null, doing.drawn ? doing.left : null, draws);
   const { blow } = doing;

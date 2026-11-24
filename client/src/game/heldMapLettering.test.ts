@@ -45,7 +45,7 @@ const overlaps = (one: Rect, other: Rect) =>
   one.y < other.y + other.height &&
   other.y < one.y + one.height;
 
-/** The real world: every island, port and node discovered, the waters as the rules open them, all charted. */
+/** The real world: every island, port and node, the waters as the rules open them. */
 async function realWorld() {
   const world = new URL('../../../content/world/', import.meta.url);
   const layoutText = await readFile(new URL('layout.json', world), 'utf8');
@@ -68,7 +68,6 @@ async function realWorld() {
   );
   const columns = WORLD.width / 4_800;
   const rows = WORLD.height / 4_800;
-  waters.chart(new Uint8Array(columns * rows).fill(1));
   const field = coastField(
     layout.continents.map((continent) => continent.outline),
     columns,

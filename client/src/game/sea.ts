@@ -37,6 +37,7 @@ import { SeaRoom } from './seaRoom.ts';
 import { type Landfall, landfallOf, pictureAt, roomWords, shownScale } from './seaLaw.ts';
 import { isleOff, isleWords, keptClear } from './isleLaw.ts';
 import type { Isles } from './isles.ts';
+import { seaPlated } from './seaPlates.ts';
 import { SeaTravel } from './seaTravel.ts';
 import { SeaView } from './seaView.ts';
 
@@ -501,6 +502,7 @@ export class Sea {
       shipScale: scale,
       hulls: combat ? combat.hulls(scale) : this.drawn.hulls(own, others, hostiles, scale, friendlies),
       bars: combat?.bars(scale) ?? [],
+      players: combat ? [] : seaPlated(others, this.room?.plates ?? new Map(), scale),
       marks: marks.shown,
       figures: boarded
         ? boarded.figures

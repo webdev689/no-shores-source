@@ -19,7 +19,8 @@
             }
           ],
           "reward": {
-            "aurem": 400
+            "aurem": 400,
+            "horse": true
           }
         },
         {

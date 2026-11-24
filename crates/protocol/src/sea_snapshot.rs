@@ -3,6 +3,7 @@
 //! told, and each deck boarded), the islands each player sees or has found, and the traffic's friendly ships the room
 //! has taken off their routes.
 
+use crate::plates_wire::plates_vector;
 use crate::{PlayerId, finish_snapshot, messages};
 use movement::Body;
 use naval::ranks::Commission;
@@ -127,6 +128,7 @@ pub fn sea_snapshot_bytes(
         .collect();
     let friendlies = (!each.is_empty()).then(|| builder.create_vector(&each));
     let taken = (!harbour.taken.is_empty()).then(|| builder.create_vector(&harbour.taken));
+    let plates = (!harbour.plates.is_empty()).then(|| plates_vector(&mut builder, &harbour.plates));
     let args = messages::SnapshotArgs {
         tick,
         players,
@@ -140,6 +142,7 @@ pub fn sea_snapshot_bytes(
         islands,
         taken,
         friendlies,
+        plates,
         ..messages::SnapshotArgs::default()
     };
     finish_snapshot(builder, &args)
@@ -149,7 +152,8 @@ pub fn sea_snapshot_bytes(
 /// where it floats and its kind, 0 a crate, 1 a barrel, 2 a chest), each player's ship's kept hurts with the seconds
 /// its repair has left, what each player is told this tick, and each deck boarded (each boarder's number at sea with
 /// theirs on its deck, its hull, and its deck room's snapshot), the islands the player sees or has found, each traffic
-/// id the room has taken off its route, and the friendly ships it keeps at sea.
+/// id the room has taken off its route, the friendly ships it keeps at sea, and the plate over each other player's ship
+/// the player is sent.
 #[derive(Clone, Debug, Default, PartialEq)]
 pub struct SeaHarbour {
     pub flotsam: Vec<(PlayerId, u32, [f64; 2], u8)>,
@@ -159,6 +163,7 @@ pub struct SeaHarbour {
     pub islands: Vec<IsleSeen>,
     pub taken: Vec<u64>,
     pub friendlies: Vec<room::friendlies::Friendly>,
+    pub plates: Vec<(PlayerId, room::Plate)>,
 }
 
 /// A sea island as a player is told of it: its number and seed, where its middle is, its kind's number, its water's

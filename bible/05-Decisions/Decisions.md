@@ -340,6 +340,8 @@ a decision is a record. How to add one: [[Recording a Decision]].
 - [[Activities Keep Checkpoints, and Patrol Zones Respawn the Player Near Where They Fell]]
 - [[A Player Logs Back In Where They Left the Overworld or a Social Space]]
 - [[Revives, Respawns and Relogs as Claude Shapes Them]]
+- [[The Harbourmaster Stands in the Market, Rain Spares the Trees, and Patrol Nodes Always Stand]]
+- [[Other Ships Wear Their Players' Marks, the Sea Map Has No Fog, and New Players Ride a Bay That Bursts]]
 - [[The Lattice Is Shaded Darker, With Detailed Attacks and Projectile Tracers]]
 
 ## Replaced

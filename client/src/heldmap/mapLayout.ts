@@ -119,7 +119,7 @@ export interface LayoutAsk {
   /** How a box, ink pixels, stands on the sea of the water whose continent's index is given: 2 wholly, 1 on no land
    *  with its middle on it, 0 not at all (`onOwnSea`). */
   readonly sea: (box: Rect, continent: number) => 0 | 1 | 2;
-  /** Whether discovered land lies under a box, ink pixels. */
+  /** Whether shown land lies under a box, ink pixels. */
   readonly land: (box: Rect) => boolean;
   /** The key's panel's size, units; null while the waters are not open. */
   readonly key: { readonly width: number; readonly height: number } | null;

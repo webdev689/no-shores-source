@@ -1,9 +1,9 @@
 //! Overlook's social space, planned as a hub of its own after Destiny 1's Tower, where the generic courtyard serves
 //! the cities still locked: a landing court on the seaward walk (the Tower's Watch), two side courts through arched
 //! passages in stone ranges (Tower North, and the yard toward the Hangar), a walk before the Beacon whose portico
-//! opens into the Hall of the Arts inside its base (the Hall of Guardians), sealed gates where the platform runs on,
-//! and the harbour way down the platform's wall and the ramped avenue to the quay. Each keeper stands in a stall of
-//! their own, a handcrafted module (`tools/modules`).
+//! opens into the Hall of the Arts inside its base (the Hall of Guardians), and sealed gates where the platform runs
+//! on and at the harbour way's head. Each keeper stands in a stall of their own, a handcrafted module
+//! (`tools/modules`).
 //!
 //! Places are given in the hub's frame: metres seaward of the plaza's middle and metres across it (`Frame::at`).
 

@@ -65,8 +65,8 @@ const FLOOR_STEP_M = 0.5;
 const CLIMB_M = 0.5;
 
 /** The floor a placed figure stands on at (x, y): over the ground (`standing`, as the movement rules stand a body),
- *  on the highest top of the blocks under it whose underside is within a step of that floor, climbed in turn. A pier,
- *  a podium or a landing a plaza's ways lead onto is stood on; a roof or a bridge overhead is not. A figure inside a
+ *  on the highest top of the blocks under it whose underside is within a step of that floor, climbed in turn. A
+ *  podium or a landing a plaza's ways lead onto is stood on; a roof or a bridge overhead is not. A figure inside a
  *  block from the ground up would stand on its top: a plaza's people and places keep clear of its solids. */
 export function floorOver(
   blocks: readonly Block[],

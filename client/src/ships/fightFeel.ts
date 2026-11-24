@@ -7,6 +7,7 @@
 import type { RoomEvent } from '../rules/feelEvents.ts';
 import type { FightEvent, FightVessel, Point } from '../rules/fightRules.ts';
 import { DRESSES, type ShipSide } from './dress.ts';
+import { BurstWake } from './burstWake.ts';
 import { BURN_LIGHT, Effects, type Mark, type Splash } from './effects.ts';
 import { Flotsam } from './flotsam.ts';
 import { hullPaint, hullWaterline, SLOOP_HULL } from './hulls.ts';
@@ -37,17 +38,18 @@ type TickTold<Event> = Event extends unknown ? Omit<Event, 'tick'> & { readonly 
 export { feelOf, type RoomEvent } from '../rules/feelEvents.ts';
 
 /** What the feel reads of a ship's numbers in the fight's view. */
-export type FeelVessel = Pick<FightVessel, 'fires' | 'sail' | 'max_sail'> & {
-  readonly ship: Iterable<number> & ArrayLike<number>;
-  readonly pose: Iterable<number> & ArrayLike<number>;
-  readonly state: string;
-  /** Its hull's hurt, its guns' reload (port, then starboard, seconds left) and a captain's sides run out, where the
-   *  view says them. */
-  readonly hull?: number;
-  readonly max_hull?: number;
-  readonly guns?: { readonly left: readonly [number, number] };
-  readonly run_out?: readonly string[];
-};
+export type FeelVessel = Pick<FightVessel, 'fires' | 'sail' | 'max_sail'> &
+  Partial<Pick<FightVessel, 'boost'>> & {
+    readonly ship: Iterable<number> & ArrayLike<number>;
+    readonly pose: Iterable<number> & ArrayLike<number>;
+    readonly state: string;
+    /** Its hull's hurt, its guns' reload (port, then starboard, seconds left) and a captain's sides run out, where the
+     *  view says them. */
+    readonly hull?: number;
+    readonly max_hull?: number;
+    readonly guns?: { readonly left: readonly [number, number] };
+    readonly run_out?: readonly string[];
+  };
 
 /** A ship in the fight as the feel sees it: its numbers in its view, its rig (its harm is on it; null while its
  *  model has not come), its hull and its side. */
@@ -118,6 +120,8 @@ export function frameOf(vessel: FeelVessel, point: Point): Point {
 
 export class FightFeel {
   readonly effects: Effects;
+  /** Each ship's burst of speed, thrown as the fight's own spray and foam. */
+  private readonly bursts: BurstWake;
   readonly flotsam = new Flotsam();
   private cues: Cue[] = [];
   /** The balls aloft at the last frame, for the size of the splash each makes. */
@@ -150,6 +154,7 @@ export class FightFeel {
 
   constructor(seed: number) {
     this.effects = new Effects(seed);
+    this.bursts = new BurstWake(this.effects, seed + 1);
   }
 
   /** One frame of the fight at `now`, `seconds` on: its events since the last, its ships by number, the balls aloft
@@ -188,9 +193,13 @@ export class FightFeel {
       harm?.wear(vessel.max_sail > 0 ? 1 - vessel.sail / vessel.max_sail : 0);
       if (vessel.state === 'struck') harm?.strike(now);
       if (vessel.state === 'sinking') harm?.sink(now);
-      const { middle } = lying(vessel);
+      const { middle, heading } = lying(vessel);
       const anchor = toWindow(middle);
       const halfLength = hullWaterline(hull).lengthM / 2;
+      const afloat = vessel.state !== 'sinking' && vessel.state !== 'sunk';
+      const bursting = { anchor: toWindow([middle[0], middle[1], 0]), heading, halfLength };
+      if (afloat) this.bursts.frame(index, bursting, vessel.boost?.[0] ?? 0, now, input.seconds);
+      else this.bursts.forget(index);
       if (vessel.state !== 'sinking' && vessel.state !== 'sunk') {
         this.effects.burn(anchor, [0, 0, deckOverM(hull)], vessel.fires, halfLength * 0.3, now, input.seconds);
         if (vessel.fires > 0) burning.push([anchor[0], anchor[1], anchor[2] + deckOverM(hull)]);

@@ -57,7 +57,8 @@ the resources' own nodes and "Match the resource").
 ## What it settles
 
 - **A patrol's material nodes stand at its layout's resource places** ([[Layouts]]), each before the place its
-  resource comes from. The room gathers there, still a third of them at a time ([[Server]]).
+  resource comes from. The room gathers there, still a third of them at a time ([[Server]]) (replaced in part:
+  every node stands for everyone, one gathered spent for its gatherer alone, [[The Harbourmaster Stands in the Market, Rain Spares the Trees, and Patrol Nodes Always Stand]]).
 - **No ring and no beam**: each node is drawn as a sprite of its resource baked in the owner's Blender pipeline
   ([[Sprite Forge]]), for its detail, and the sprite alone marks it: no mark floats over it. It stands in front of its place's dressing, a few metres toward the
   path, and the room gathers it there, every resource at one scale, half the size it was first drawn.

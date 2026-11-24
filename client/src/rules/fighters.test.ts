@@ -1,8 +1,9 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { DRINKS_AT, FIGHTER_FLOATS, chargesOf, fighterView } from './fighters.ts';
+import { BODY_FLOATS } from './movementRules.ts';
 
-const ACTION_AT = 22 + 23;
+const ACTION_AT = BODY_FLOATS + 23;
 
 test('a fighter’s numbers say its drink, its charges and its meter, and nonsense reads as none', () => {
   const fighter = new Float64Array(FIGHTER_FLOATS);

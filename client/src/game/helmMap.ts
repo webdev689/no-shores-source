@@ -4,12 +4,12 @@ import { coastField } from '../heldmap/coastField.ts';
 import { type Difficulty, HeldMap } from '../heldmap/heldMap.ts';
 import type { LandSheet } from '../heldmap/landSheet.ts';
 import type { MapWater } from '../heldmap/watersWash.ts';
-import { CHART_CELL_M, CHART_COLUMNS, CHART_ROWS } from '../overworld/discovery.ts';
+import { CHART_CELL_M, CHART_COLUMNS, CHART_ROWS } from '../overworld/worldFrame.ts';
 import type { Point2 } from '../overworld/ground.ts';
 import type { Viewport } from '../overworld/overworldCamera.ts';
 import { BINDS } from '../player/input.ts';
 import { boundWord } from './controls.ts';
-import type { Discovered } from './discovered.ts';
+import type { WorldShown } from './worldShown.ts';
 import type { Sea } from './sea.ts';
 import type { Stack } from '../ui/stack.ts';
 
@@ -145,7 +145,7 @@ export class HelmMap {
     here: Sea,
     seconds: number,
     helm: { readonly free: boolean; readonly viewport: Viewport; readonly dpr: number; readonly hands: string | null },
-    discovered: Discovered,
+    shown: WorldShown,
   ): MapDraw | undefined {
     // The land's map up or wanted at sea (a room's gate shut on the player as they looked) is put away at once.
     if (this.onLand) {
@@ -154,7 +154,7 @@ export class HelmMap {
     }
     if (this.wanted && here.view.atHelm && helm.free) {
       this.wanted = false;
-      this.made.open(helm.viewport, here.position, helm.hands, discovered.discovery.charted, this.context.shut());
+      this.made.open(helm.viewport, here.position, helm.hands, this.context.shut());
     }
     // The map's scene is gathered only while the map is up.
     const map = this.map;
@@ -162,8 +162,8 @@ export class HelmMap {
       ? map.frame(seconds, helm.viewport, helm.dpr, {
           ship: here.position,
           heading: here.heading,
-          places: discovered.places,
-          knownIslands: discovered.knownIslands,
+          places: shown.places,
+          knownIslands: shown.knownIslands,
           course: here.course,
           quest: this.context.quest?.() ?? [],
         })

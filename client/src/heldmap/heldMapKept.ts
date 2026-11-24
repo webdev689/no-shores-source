@@ -3,7 +3,7 @@ import type { HeldMapScene } from './heldMap.ts';
 import type { Rect, View } from './heldMapLaw.ts';
 
 /** What the map's layout reads, as one string: the map's view, the stage's ink and hands, the face's loading, how often
- *  the charted sea was set, the ship's point and heading, the places and islands known, the choice and the quest's. */
+ *  the waters were set, the ship's point and heading, the places and islands known, the choice and the quest's. */
 export function layoutKey(
   view: View,
   stage: { readonly ink: Rect; readonly sprite: Rect },

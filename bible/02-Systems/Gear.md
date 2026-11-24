@@ -120,7 +120,9 @@ number is one of [[Gear as Claude Shapes It]].
   fragments, 10 of the resource and 1 Essence, so an Atheric never costs less of anything to finish than a Legendary
   ([[Gear as Claude Shapes It]], [[The Balance and Economy Pass as Claude Shapes It]]). A resource is
   gathered at its island's nodes, each drawn as the resource itself
-  ([[Material Nodes Stand Where They Are Dressed, Worked by Holding E]]).
+  ([[Material Nodes Stand Where They Are Dressed, Worked by Holding E]]). In a patrol every node stands for everyone;
+  one a player gathers is spent for them alone and returns for them nine minutes of wall-clock time later ([[Server]];
+  [[The Harbourmaster Stands in the Market, Rain Spares the Trees, and Patrol Nodes Always Stand]]).
 - **A kill's pay.** XP and Aurem are the foe's kind's as a Major at level 5 (Skirmisher 80 and 7, Archer 85 and 7,
   Swordsman 95 and 7, Brute 110 and 8, Captain 120 and 8), times its rank's health against a Major's (Minor 0.6,
   Elite 2.2, Miniboss 4, Boss 7; `rewards::RANK_PAY`), times (5 + its level) ÷ 10, times the voyage's tier. The kinds
@@ -506,7 +508,8 @@ is a horse's hide, kept as its horse ("Horses").
 ## Horses
 
 [[Horses Are Items Worn in a Mount Slot]] (`gear::horses`; Claude's calls in
-[[The Prologue, Horses and the Welcome to Overlook as Claude Builds Them]]).
+[[The Prologue, Horses and the Welcome to Overlook as Claude Builds Them]]; the stranger's Bay in
+[[Other Ships Wear Their Players' Marks, the Sea Map Has No Fog, and New Players Ride a Bay That Bursts]]).
 
 - **A horse is an item** of its own kind (28), worn in the Mount slot (11), one to each coat: the Bay Horse, the
   Chestnut Horse and so on, its name its coat's place among the coats (`content/gear/rolled.json` names them in that
@@ -516,9 +519,12 @@ is a horse's hide, kept as its horse ("Horses").
 - **Riding** needs a horse worn in the Mount slot (`Character::may_ride`).
 - **The Tack** sells horses as it sells bardings, at its coat's price; one bought goes to the pack, one of each coat,
   refused while the Mount slot carries nine. Beside its day's four it sells the Bay Horse every day, first on its
-  screen, at the cheapest coat's price (1,500 Aurem, from level 1): a new player's first horse, had there after the
-  tutorial ("Later, not in the tutorial", `horses::FIRST_HORSE`).
-- **A new character has no horse.** A character kept while coats were cosmetics is given, as it is read, a horse in
+  screen, at the cheapest coat's price (1,500 Aurem, from level 1).
+- **A new character starts with no horse, and the stranger gives the Bay** (`horses::FIRST_HORSE`): her task's reward
+  (`"horse": true` in `content/quests/quests.json`) is her 400 Aurem and the Bay Horse, paid together as the room
+  pays the task, so a page that asks for her gift late, after a reload, has both from it then. It is worn in the Mount
+  slot, or carried where one is worn already, and never a second: one who keeps a Bay already is given only the
+  Aurem. A character already past her task is given nothing new. A character kept while coats were cosmetics is given, as it is read, a horse in
   the pack for each coat it kept and the one it wore worn in the Mount slot; one kept before cosmetics wore the Bay,
   so it is given the Bay Horse worn. The coats leave its cosmetics, and a room with horses marks every character's
   cosmetics (`horses`), so this is done once: a coat found beside the mark is what a room from before horses wrote
