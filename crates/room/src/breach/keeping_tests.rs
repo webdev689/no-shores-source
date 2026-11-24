@@ -1,8 +1,9 @@
 //! What a Breach's run keeps as players fall, leave and come back: at Hard the fallen lie wherever they fell while an
 //! encounter runs; a late join comes in at the furthest stage, on its floor; one back after leaving comes back as they
-//! left, down at the stage if down, and whole once the attempt is won or wiped; the Lodestone falls where it was last
-//! carried if its bearer leaves; a shore emptied of the living ends its taking; a mark goes with its player's fall;
-//! and a foe gone from the room is forgotten.
+//! left, down at the stage if down (a fall into the dark among them), marked as they left, in a shore of the Two Shores
+//! they left from, and whole once the attempt is won or wiped; the Lodestone falls where it was last carried if its
+//! bearer leaves; a shore emptied of the living ends its taking; a mark goes with its player's fall; and a foe gone
+//! from the room is forgotten.
 
 use super::breach_tests::{at, breach, fell, run, stand_at};
 use super::*;
@@ -179,4 +180,37 @@ fn one_who_leaves_after_a_fall_into_the_dark_comes_back_down() {
     let back = hardy(&mut room);
     assert!(room.own(back, "ben"));
     assert!(!room.players[&back].living(), "down at the stage, not stood up whole by coming back");
+}
+
+#[test]
+fn one_back_after_leaving_keeps_their_rewritten_mark_and_its_time() {
+    let (mut room, players) = run(Tier::Normal, 2);
+    assert!(room.own(players[0], "ada") && room.own(players[1], "ben"));
+    room.tick();
+    let mut breach_box = room.breach.take().expect("run");
+    room.rewrite(&mut breach_box, players[1]);
+    room.breach = Some(breach_box);
+    let marked = breach(&room).marked[&players[1]];
+    room.tick();
+    room.part(players[1]);
+    let back = hardy(&mut room);
+    assert!(room.own(back, "ben"));
+    room.tick();
+    assert_eq!(breach(&room).marked.get(&back), Some(&marked), "Rewritten still, since the same tick");
+}
+
+#[test]
+fn one_who_leaves_from_a_shore_of_the_two_shores_comes_back_there() {
+    let (mut room, players) = super::fights_tests::won_to(Tier::Normal, 2, SHORES);
+    assert!(room.own(players[0], "ada") && room.own(players[1], "ben"));
+    super::fights_tests::begin_at(&mut room, &players, "hall", "plinth");
+    let warden = breach(&room).fights.shores.warden.expect("the Warden stands");
+    super::fights_tests::kill(&mut room, warden);
+    room.tick();
+    super::fights_tests::put_at(&mut room, players[1], "hall-was", "arrival");
+    room.tick();
+    room.part(players[1]);
+    let back = hardy(&mut room);
+    assert!(room.own(back, "ben"));
+    assert!(room.in_space(breach(&room), "hall-was").contains(&back), "back in what was");
 }

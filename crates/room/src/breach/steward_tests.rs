@@ -1,7 +1,8 @@
 //! The Steward's court played through its rules: the way back opened by the court that is left, or by its bells alone
 //! with none left there, the Lodestone taken to the shore from its bearer, a bell broken out of order, its measure kept
-//! whoever is away, its laying bare once a taking, its last takings unwriting the company, and its fall, which wins the
-//! Drowned Vale and brings back any still in a shore; and the Choir's ring, which reaches the whole company.
+//! whoever is away, its laying bare once a taking, one taken who leaves coming back to the shore, its last takings
+//! unwriting the company, and its fall, which wins the Drowned Vale and brings back any still in a shore; and the
+//! Choir's ring, which reaches the whole company.
 
 use super::breach_tests::{breach, stand_at, told};
 use super::fights_tests::{begin_at, kill, put_at, won_to};
@@ -164,4 +165,26 @@ fn the_steward_lies_bare_once_between_takings() {
     assert_eq!(ground(&mut room), first, "not again before the next taking");
     taken_now(&mut room);
     assert!(ground(&mut room) > first, "again once it has taken");
+}
+
+#[test]
+fn one_taken_who_leaves_comes_back_to_the_shore_while_the_taking_holds_and_down_once_it_is_over() {
+    let (mut room, players) = won_to(Tier::Normal, 3, STEWARD);
+    for (player, account) in players.iter().zip(["ada", "ben", "cai"]) {
+        assert!(room.own(*player, account));
+    }
+    begin_at(&mut room, &players, "court", "chest");
+    let away = taken_now(&mut room);
+    assert_eq!(away.taken.len(), 2, "two of three");
+    let account = room.players[&away.taken[0]].owner.clone().expect("kept");
+    room.part(away.taken[0]);
+    let back = crate::encounters::encounters_tests::hardy(&mut room);
+    assert!(room.own(back, &account));
+    assert!(room.in_space(breach(&room), "court-was").contains(&back), "back in the shore");
+    assert!(breach(&room).fights.steward.away.as_ref().is_some_and(|away| away.taken.contains(&back)), "still taken");
+    room.part(back);
+    room.breach.as_mut().expect("run").fights.steward.away = None;
+    let again = crate::encounters::encounters_tests::hardy(&mut room);
+    assert!(room.own(again, &account));
+    assert!(room.players[&again].fighter.dead(), "the taking over, lost as a shut shore loses those in it");
 }

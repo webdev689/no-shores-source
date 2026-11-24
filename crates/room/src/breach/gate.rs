@@ -14,7 +14,7 @@ use ::foes::roster::{BULWARK, FLICKER, HUSK, RAVAGER};
 use combat::fighter::FighterId;
 use combat::sight::apart;
 use gear::breach::Tier;
-use std::collections::BTreeMap;
+use std::collections::{BTreeMap, BTreeSet};
 
 /// The Spire's fill, ticks of all three moorings held: two and a half minutes.
 pub const SPIRE_TICKS: u64 = 150 * 60;
@@ -85,6 +85,8 @@ pub struct Gate {
     pub revives: Option<u8>,
     pub raising: BTreeMap<PlayerId, (PlayerId, u64)>,
     pub down_since: Option<u64>,
+    /// The accounts of the holding company's fallen who left down, to come back down.
+    pub left_down: BTreeSet<String>,
     /// The last tick a living player of the holding company stood in the hollow, and since when the Spire is empty.
     pub last_near: u64,
     pub empty_since: Option<u64>,
@@ -154,6 +156,7 @@ impl Room {
             self.tell(EventKind::ShutOut, None, 0, player, why);
             return false;
         }
+        let owner = self.players.get(&player).and_then(|found| found.owner.clone());
         let Some(gate) = self.breach_gate.as_mut() else { return false };
         for company in gate.companies.values_mut() {
             company.players.retain(|each| *each != player);
@@ -161,11 +164,16 @@ impl Room {
         let company = gate.companies.entry(run.to_owned()).or_default();
         company.tier = Some(tier);
         company.players.push(player);
+        // One who left their company's Waking down comes back down, to be raised for a revive or lie.
+        let down = gate.fighting(player) && owner.is_some_and(|owner| gate.left_down.remove(&owner));
         let at = gate.socket("arrival").unwrap_or(gate.at);
         let body = self.stand((at[0], at[1]));
         if let Some(found) = self.players.get_mut(&player) {
             let body = movement::Body { z: at[2].max(body.z), facing: found.fighter.body.facing, ..body };
             (found.fighter.body, found.stood) = (body, body.z);
+            if down {
+                (found.fighter.health, found.fighter.action) = (0.0, combat::Action::Dead { elapsed: 0 });
+            }
         }
         true
     }
@@ -247,6 +255,7 @@ impl Room {
         }
         (gate.held_by, gate.fill, gate.woken, gate.claims) = (None, 0, None, [None; 3]);
         (gate.claimers, gate.raising, gate.down_since, gate.empty_since) = (Vec::new(), BTreeMap::new(), None, None);
+        gate.left_down.clear();
     }
 
     /// The Waking under way: the moorings judged, the Spire filled or ebbing, the Bulwarks sent to claim, the waves,
@@ -323,6 +332,7 @@ impl Room {
             gate.woken = Some(clock);
             gate.opened.insert(run, clock);
             gate.raising.clear();
+            gate.left_down.clear();
             for id in std::mem::take(&mut gate.foes) {
                 if self.foes.get(&id).is_some_and(|foe| !foe.fighter.dead()) {
                     self.inert.remove(&id);

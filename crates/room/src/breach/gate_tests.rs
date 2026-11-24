@@ -1,8 +1,10 @@
-//! The Waking at a Breach's gate in its patrol zone: one company at a time holds it, its three moorings held by the
-//! company's living players fill the Spire and fewer let it ebb, a Bulwark claims a mooring left empty, the gate opens
-//! to that company alone once the Spire wakes, for a day or until it clears, a lost Waking stands the company again at
-//! the gate, its fallen stand again there, the zone hears of the companies inside, the gate holds eight it would let
-//! in, the Waking's foes keep within the room's places, and only Normal seas stand a gate.
+//! The Waking at a Breach's gate in its patrol zone: one company at a time holds it, never one it opened to; its three
+//! moorings held by the company's living players fill the Spire, fewer let it ebb and a minute empty loses it; a
+//! Bulwark claims a mooring left empty; its waves are sized to its holders; the gate opens to that company alone once
+//! the Spire wakes, for a day or until it clears; a lost Waking stands the company again at the gate, and its fallen
+//! stand again there, one who leaves down coming back down; the zone hears of the companies inside; the gate holds
+//! eight it would let in and tells the rest why; the Waking's foes keep within the room's places; and only Normal seas
+//! stand a gate.
 
 use super::gate::{MOORINGS, SPIRE_TICKS};
 use super::*;
@@ -437,4 +439,36 @@ fn one_the_gates_company_refuses_is_told_why_once() {
     assert!(!room.breach_company(players[10], "run-b", Tier::Hard));
     assert_eq!(shut_out(&mut room, players[10]), [3.0], "Hard without Normal won");
     assert!(room.breach_company(players[10], "run-b", Tier::Normal), "Normal lets them in");
+}
+
+#[test]
+fn a_hard_holder_who_leaves_down_comes_back_down_with_no_revive_spent() {
+    let (mut room, players) = gate_room(2);
+    for (player, account) in players.iter().zip(["ada", "ben"]) {
+        assert!(room.own(*player, account));
+        room.players.get_mut(player).expect("in").character = breach_ready();
+        room.players.get_mut(player).expect("in").character.story.breaches = breach_won();
+        assert!(room.breach_company(*player, "run-a", Tier::Hard));
+    }
+    hold_moorings(&mut room, &players);
+    room.tick();
+    room.harm_share(players[1], 1.0e3, 0);
+    room.tick();
+    room.part(players[1]);
+    let back = hardy(&mut room);
+    assert!(room.own(back, "ben"));
+    room.players.get_mut(&back).expect("in").character = breach_ready();
+    room.players.get_mut(&back).expect("in").character.story.breaches = breach_won();
+    assert!(room.breach_company(back, "run-a", Tier::Hard));
+    assert!(room.players[&back].fighter.dead(), "down at the gate, as they left");
+    assert_eq!(room.breach_gate.as_ref().expect("gate").revives, Some(5), "no revive spent");
+}
+
+/// The record of a character who has seen the Drowned Vale won at Normal.
+fn breach_won() -> std::collections::BTreeSet<String> {
+    let mut character = gear::Character::starting();
+    let dice = gear::dice::Dice { seed: 1, tick: 0, player: 0 };
+    let last = gear::breach::DROWNED_VALE.encounters.len() - 1;
+    character.breach_cleared(&gear::breach::DROWNED_VALE, Tier::Normal, 0, last, &dice);
+    character.story.breaches
 }

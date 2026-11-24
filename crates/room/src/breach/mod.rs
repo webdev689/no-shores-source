@@ -12,6 +12,7 @@ mod fallen;
 pub mod gate;
 mod lodestone;
 mod mending;
+mod rejoin;
 pub mod seen;
 mod shores;
 mod steward;
@@ -106,9 +107,8 @@ pub struct Breach {
     /// then (`standing_key`), to know when the room's must be made again.
     pub(crate) standing: Vec<Block>,
     pub(crate) standing_key: (u8, u64),
-    /// The share of their health each account left the run with, 0 for one down, so coming back stands no one up
-    /// whole (as an Abyss run keeps it, `abyss::keep_body`).
-    pub(crate) left: BTreeMap<String, f64>,
+    /// What each account left the run with (`rejoin.rs`), so coming back stands no one up whole, cleansed or home.
+    pub(crate) left: BTreeMap<String, rejoin::Left>,
 }
 
 impl Room {
