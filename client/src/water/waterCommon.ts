@@ -290,6 +290,8 @@ struct Frame {
   depth_terms: vec4f,
   view: vec4f,
   patch_area: vec4f,
+  // The 1 km grid's cell, whether the eye's water is fresh, how far the chop has faded, and the top of the weather's
+  // fog: the cloud deck's base, metres over the sea.
   coarse_area: vec4f,
   grid: vec4f,
   ripple_area: vec4f,
@@ -542,8 +544,18 @@ fn scene_distance(pixel: vec2f) -> f32 {
   return forward * length(ray_through(pixel));
 }
 
-// The haze between the eye and what it sees: the air's, toward the dome's colour, and the weather's fog, which lies
-// thickest low down (its density falls by e every 60 m up), toward the fog's colour.
+// How many metres of a line of sight from 'from_height' to 'to_height' the weather's fog lies along: all of it while
+// the eye is under the deck's base 'top', only the part under it once the eye has risen to twice that
+// (underWeatherM in sky/bolts.ts), so from the Overworld's view over an island the land shows through the rain.
+fn under_weather(from_height: f32, to_height: f32, distance_to: f32, top: f32) -> f32 {
+  let rise = abs(to_height - from_height);
+  let crossed = distance_to * clamp((top - min(from_height, to_height)) / max(rise, 1.0), 0.0, 1.0);
+  let under = select(crossed, select(0.0, distance_to, from_height < top), rise < 1.0);
+  return mix(distance_to, under, smoothstep(top, 2.0 * top, from_height));
+}
+
+// The haze between the eye and what it sees: the air's, toward the dome's colour, and the weather's fog along the line
+// under its top, which lies thickest low down (its density falls by e every 60 m up), toward the fog's colour.
 fn aerial(colour: vec3f, direction: vec3f, distance_to: f32) -> vec3f {
   let eye_height = frame.eye.z / frame.depth_terms.w;
   let from_height = max(eye_height, 0.0);
@@ -553,8 +565,10 @@ fn aerial(colour: vec3f, direction: vec3f, distance_to: f32) -> vec3f {
   let low_to = exp(-to_height / 60.0);
   let low = select(60.0 * (low_from - low_to) / rise, low_from, abs(rise) < 1.0);
   let ground_fog = sky_state.fog.w * 1.5 * clamp(low, 0.0, 1.0) * distance_to;
-  let haze = 1.0 - exp(-distance_to / frame.view.z - ground_fog);
-  let foggy = clamp(sky_state.fog.w * frame.view.z + ground_fog * 0.2, 0.0, 1.0);
+  let clear_depth = distance_to / frame.view.z;
+  let fog_depth = sky_state.fog.w * under_weather(from_height, to_height, distance_to, frame.coarse_area.w);
+  let haze = 1.0 - exp(-clear_depth - fog_depth - ground_fog);
+  let foggy = clamp(fog_depth / max(clear_depth + fog_depth, 1e-6) + ground_fog * 0.2, 0.0, 1.0);
   // Only what the fog leaves of the dome's colour is worked out, and the fog's only where there is fog.
   var air = vec3f(0.0);
   if (foggy < 1.0) { air = sky_haze(vec3f(direction.xy, max(direction.z, 0.02))) * 0.95; }

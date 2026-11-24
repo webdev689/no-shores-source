@@ -18,9 +18,9 @@ permissions:
 jobs:
   check:
     runs-on: ubuntu-latest
-    # The check runs over 40 minutes on a hosted runner; the limit stands well past it, so a slow runner never
-    # cancels a whole pass.
-    timeout-minutes: 60
+    # The check runs about 45 minutes on a hosted runner, and grows with the tests; at 45 a merge's pass was cancelled
+    # and nothing deployed. The limit stays well above the run, to stop only a hung one.
+    timeout-minutes: 75
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
       - name: Install the pinned toolchain
