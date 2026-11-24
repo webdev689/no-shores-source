@@ -175,9 +175,6 @@ test('the player is on the sea while sailing or choosing where to land, never on
   assert.equal(onTheSea({ mode: 'landing', chosen: null }), true);
   assert.equal(onTheSea({ mode: 'foot', node: 'overlook-social' }), false);
   assert.equal(onTheSea(arriving('saltgrass-downs', 'The Saltgrass Downs')), false, 'a trip from land to land');
-  assert.equal(
-    onTheSea(next({ mode: 'foot', node: 'overlook-social' }, { kind: 'return-to-ship' })),
-    false,
-  );
+  assert.equal(onTheSea(next({ mode: 'foot', node: 'overlook-social' }, { kind: 'return-to-ship' })), false);
   assert.equal(onTheSea({ mode: 'story' }), false);
 });

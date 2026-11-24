@@ -31,7 +31,7 @@ export type Happening =
 
 /** The first flow: the player arrives in a node, as they wash up on Overlook's shore. */
 export function arriving(node: string, name: string): Flow {
-  return { mode: 'loading', words: `Arriving at ${name}`, then: { mode: 'foot', node} };
+  return { mode: 'loading', words: `Arriving at ${name}`, then: { mode: 'foot', node } };
 }
 
 /** Whether the player is on the sea: sailing, or looking over an island's side to land; never between places. */
@@ -56,14 +56,14 @@ export function next(flow: Flow, happening: Happening): Flow {
       return {
         mode: 'loading',
         words: `Landing at ${happening.name}`,
-        then: { mode: 'foot', node: happening.node},
+        then: { mode: 'foot', node: happening.node },
       };
     case 'pass':
       if (flow.mode !== 'foot') return flow;
       return {
         mode: 'loading',
         words: `${happening.into ? 'Entering' : 'Returning to'} ${happening.name}`,
-        then: { mode: 'foot', node: happening.node},
+        then: { mode: 'foot', node: happening.node },
       };
     case 'join':
       // A company member is joined from wherever the player is, on foot or at sea, as Destiny's join brings them in.
@@ -71,7 +71,7 @@ export function next(flow: Flow, happening: Happening): Flow {
       return {
         mode: 'loading',
         words: `Joining your company at ${happening.name}`,
-        then: { mode: 'foot', node: happening.node},
+        then: { mode: 'foot', node: happening.node },
       };
     case 'enter':
     case 'leave': {
@@ -80,7 +80,7 @@ export function next(flow: Flow, happening: Happening): Flow {
       const from = happening.kind === 'enter' && onTheSea(flow) ? flow.mode : 'foot';
       if (flow.mode !== from) return flow;
       const words = `${happening.kind === 'enter' ? 'Entering' : 'Leaving'} ${happening.name}`;
-      return { mode: 'loading', words, then: { mode: 'foot', node: happening.node} };
+      return { mode: 'loading', words, then: { mode: 'foot', node: happening.node } };
     }
     case 'wiped':
       // A company that fell in an Abyss run is taken out to its entrance.
@@ -88,7 +88,7 @@ export function next(flow: Flow, happening: Happening): Flow {
       return {
         mode: 'loading',
         words: `Your company fell. Leaving ${happening.name}`,
-        then: { mode: 'foot', node: happening.node},
+        then: { mode: 'foot', node: happening.node },
       };
     case 'surface': {
       // Out of a sea island's dungeon onto the sea, as a company that fell is taken out.
@@ -101,7 +101,7 @@ export function next(flow: Flow, happening: Happening): Flow {
       // Washed up from the sea, the player stands in the port city's social space or on an island's beach, the veil
       // saying why; anchored off an island, they walk ashore on its beach.
       if (flow.mode !== 'sea') return flow;
-      return { mode: 'loading', words: happening.words, then: { mode: 'foot', node: happening.node} };
+      return { mode: 'loading', words: happening.words, then: { mode: 'foot', node: happening.node } };
     case 'story-ended':
       // The story hands the player to the game where it leaves them: Overlook's social space.
       return flow.mode === 'story' ? arriving(happening.node, happening.name) : flow;

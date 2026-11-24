@@ -85,7 +85,12 @@ export class UsePrompt {
 /** A key's cap (`cap`, Use's unless given) and `deed` in the prompt's chip, `under` in faint words beneath the deed
  *  where given, the keycap ringed as far as it is `held` (0 to 1; null while not), for its caller to set where it
  *  stands. */
-export function promptChip(deed: string, held: number | null, cap = boundCap('use'), under: string | null = null): Node {
+export function promptChip(
+  deed: string,
+  held: number | null,
+  cap = boundCap('use'),
+  under: string | null = null,
+): Node {
   const said = { text: { words: deed, colour: '#efe8d6', edge: 'shadow', edgeColour: '#000', wrap: false } } as const;
   return {
     role: 'chip',
