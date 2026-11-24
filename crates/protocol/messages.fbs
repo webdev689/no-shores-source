@@ -23,18 +23,18 @@ table Ask {
   named: string;
 }
 
-// A browser's controls for one tick: forward, sideways, yaw, run, jump, crouch, mounted. Numbered 1, 2, 3 and so on.
-// With them, what the player's figure shows on their own screen (the forge's move, its frame, the way it faces), and
-// their dress, as the browser writes it, only when it changed. Then the fight's buttons (the stroke a swing would take,
-// 0 for none and 1 to 6 as combat numbers them; guard, dodge and shoot held; the look's pitch; a ranged weapon aimed;
-// the point an aimed shot is laid on; a drink asked: combat's intent order), what the hands hold as
-// combat's arms code, the room tick of the last snapshot the screen showed, a foe to stand before the player (0 none;
-// 255 sends every foe away; else its role, 1 to 5, in the low four bits when no type is named, and the element of a
-// shield it stands with in the bits above them), whether they ask to respawn, dead past a node's section, an ask of
-// their gear, and the level of the foe asked for (0 for none: combat's own numbers). Then the foe's type's number in
-// the roster (0 none) and its rank (1 Minor to 5 Boss; one the type does not come in takes the type's first). Then a
-// spell cast this tick, by its number among the Arts' (1 Tempest to 9 Vanish, 0 none), and where it is aimed (x, y,
-// z): Dusk Daggers' ring while it is held and as it is let go. New fields go at the end, so old readers skip them.
+// A browser's controls for one tick: forward, sideways, yaw, run, jump, crouch, mounted, boost. Numbered 1, 2, 3 and so
+// on. With them, what the player's figure shows on their own screen (the forge's move, its frame, the way it faces),
+// and their dress, as the browser writes it, only when it changed. Then the fight's buttons (the stroke a swing would
+// take, 0 for none and 1 to 6 as combat numbers them; guard, dodge and shoot held; the look's pitch; a ranged weapon
+// aimed; the point an aimed shot is laid on; a drink asked: combat's intent order), what the hands hold as combat's
+// arms code, the room tick of the last snapshot the screen showed, a foe to stand before the player (0 none; 255 sends
+// every foe away; else its role, 1 to 5, in the low four bits when no type is named, and the element of a shield it
+// stands with in the bits above them), whether they ask to respawn, dead past a node's section, an ask of their gear,
+// and the level of the foe asked for (0 for none: combat's own numbers). Then the foe's type's number in the roster (0
+// none) and its rank (1 Minor to 5 Boss; one the type does not come in takes the type's first). Then a spell cast this
+// tick, by its number among the Arts' (1 Tempest to 9 Vanish, 0 none), and where it is aimed (x, y, z): Dusk Daggers'
+// ring while it is held and as it is let go. New fields go at the end, so old readers skip them.
 table Input {
   sequence: uint;
   controls: [double];
@@ -190,7 +190,7 @@ table Joined {
 }
 
 // One player as the room last stepped them: the number of their last input it took, what their figure showed with
-// it, their whole fighter in combat's order (crates/combat/src/floats.rs), whose first 22 numbers are its body and
+// it, their whole fighter in combat's order (crates/combat/src/floats.rs), whose first 24 numbers are its body and
 // whose statuses (each one's ticks left, a Veiled player's among them) follow its action's numbers, and where they
 // stand with a node's section: 0 inside it or on its edge, 1 outside and warned to go back, with the ticks left, 2
 // dead by straying, 3 dead by a fall in a social space, each with the ticks since. A number, not a schema enum, so the

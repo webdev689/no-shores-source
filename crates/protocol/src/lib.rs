@@ -450,7 +450,7 @@ pub(crate) fn finish_snapshot<'builder>(
     builder.finished_data().to_vec()
 }
 
-/// A body from a snapshot's 22 numbers, or nothing when they are not 22.
+/// A body from a snapshot's 24 numbers, a rider's boost's two clocks last, or nothing when they are not 24.
 #[must_use]
 pub fn body_of(numbers: &[f64]) -> Option<Body> {
     numbers.try_into().ok().map(Body::from_floats)

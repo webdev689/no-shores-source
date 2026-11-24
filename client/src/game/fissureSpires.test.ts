@@ -64,7 +64,26 @@ test("at a spire the page's movement and the room's fight both stop a body runni
   let fighter: Float64Array = new Float64Array(FIGHTER_FLOATS);
   fighter.set([spire.minX - 2, middleY, 0, 0, 0, 0, yaw, 0, 0, 0, 1]);
   fighter.set([0, 0, 1, 100, 100, 100, 0, 0, 40, 0, 0, yaw, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0], BODY_FLOATS);
-  const intent = new Float64Array([1, 0, yaw, 0, 0, 0, 0, 0, 0, 0, 0, 0.1, 0, Number.NaN, Number.NaN, Number.NaN]);
+  const intent = new Float64Array([
+    1,
+    0,
+    yaw,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0.1,
+    0,
+    Number.NaN,
+    Number.NaN,
+    Number.NaN,
+    0,
+  ]);
   for (let tick = 0; tick < 90; tick++) fighter = combat.predict(fighter, intent, 1, 0, []).fighter;
   const [roomX = Infinity] = fighter;
   assert.ok(roomX < spire.minX, `the room's step stopped at ${roomX}, short of ${spire.minX}`);
