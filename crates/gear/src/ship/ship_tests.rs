@@ -127,7 +127,7 @@ fn salvage_gives_ship_materials_and_its_modules_never_past_what_its_level_could_
         assert!(module.kind.module() && module.rarity <= Rarity::Rare && module.level == 10);
         assert!(low.materials.heartwood == 2 && low.materials.timber + low.materials.canvas + low.materials.iron >= 12);
         let high = salvage(Source::Breach, 20, 1.0, &dice(tick));
-        legendary += usize::from(high.module.is_some_and(|module| module.rarity.named()));
+        legendary += usize::from(high.module.is_some_and(|module| module.rarity >= Rarity::Legendary));
     }
     assert!((140..250).contains(&legendary), "a Breach, coloured as a Boss's drop, about 96 in 1,000: {legendary}");
     let found = |raised: f64| {

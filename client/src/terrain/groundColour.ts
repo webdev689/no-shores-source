@@ -250,9 +250,10 @@ fn grove_at(world: vec2f) -> f32 {
 // canopy's colour as the trees' sprites fade out (4.8 to 6 km, nature's TREE reach); none on the beach, on ground too
 // steep for trees, or near the snow line. A grove's trees cover the ground thickly from afar, crowns and sides together.
 // From 1 km the far trees thin out, each widened to stand in for the rest: the ground between them takes most of the
-// canopy's colour already, so a far wood reads closed rather than as crowns over bare ground.
-fn wooded(colour: vec3f, world: vec2f, bed: f32, slope: f32, distance_to: f32) -> vec3f {
-  if (view.woods.w <= 0.0) { return colour; }
+// canopy's colour already, so a far wood reads closed rather than as crowns over bare ground. Alpha is the canopy's
+// share of the colour, which takes no wet ground's sheen, as the trees' crowns take none.
+fn wooded(colour: vec3f, world: vec2f, bed: f32, slope: f32, distance_to: f32) -> vec4f {
+  if (view.woods.w <= 0.0) { return vec4f(colour, 0.0); }
   let in_grove = smoothstep(0.4, 0.6, grove_at(world));
   let gather = view.world.z;
   let density = (1.0 + gather * (2.0 * in_grove - 1.0)) / (1.0 + gather);
@@ -260,6 +261,6 @@ fn wooded(colour: vec3f, world: vec2f, bed: f32, slope: f32, distance_to: f32) -
   cover *= smoothstep(2.0, 2.5, bed) * (1.0 - smoothstep(0.6, 0.75, slope));
   cover *= 1.0 - smoothstep(view.ground.w - 300.0, view.ground.w - 100.0, bed);
   let far = max(smoothstep(4800.0, 6000.0, distance_to), 0.7 * smoothstep(1000.0, 3000.0, distance_to));
-  return mix(colour * mix(1.0, 0.72, cover), mix(colour, view.woods.rgb, cover), far);
+  return vec4f(mix(colour * mix(1.0, 0.72, cover), mix(colour, view.woods.rgb, cover), far), cover * far);
 }
 `;

@@ -204,7 +204,8 @@ fn fragment_main(surface: Surface) -> @location(0) vec4f {
   let dirt_grain = tile_grain(DIRT_TILE, local);
   let laid = paint_at(point);
   let land = land_colour(bed, slope, ground.w, local, normal, dirt_grain, chalk_share(laid));
-  var dry = wooded(land, world, bed, slope, reach_to);
+  let woods = wooded(land, world, bed, slope, reach_to);
+  var dry = woods.rgb;
   let in_close = share > 0.5;
   dry = mix(dry, RIVER, 0.7 * select(marked(wide_marks, wide, 1u, 2u), 0.0, in_close));
   let road = select(marked(wide_marks, wide, 3u, 3u), marked(close_marks, close, 3u, 3u), in_close);
@@ -224,14 +225,16 @@ fn fragment_main(surface: Surface) -> @location(0) vec4f {
   let soaked = max(sky_state.ambient_sky.w * open_ground * 0.8, puddle);
   dry = sky_soaked(dry, soaked);
   var colour = mix(dry, wet, under);
-  let lit_normal = normalize(mix(normal, vec3f(0.0, 0.0, 1.0), puddle));
+  let rings_seen = 1.0 - smoothstep(SKY_RIPPLE_RING_M, 3.0 * SKY_RIPPLE_RING_M, footprint);
+  let ripple = sky_ripple(on_ground) * puddle * rings_seen;
+  let lit_normal = normalize(mix(normal, vec3f(0.0, 0.0, 1.0), puddle) + vec3f(ripple, 0.0));
   let direct = max(dot(lit_normal, sky_state.key.xyz), 0.0);
   // Under water the sun's shadow fades with the depth it is seen through, scattered by the water above: a ship's
   // shadow lies on the surface beside it, not on the seabed far from it.
   let lit = select(1.0, sunlit(on_ground, lit_normal), direct > 0.0) * sky_dapple(on_ground);
   let sun = mix(lit, 1.0, under * (1.0 - exp(-max(depth, 0.0) / 1.5)));
   colour *= sky_ambient(lit_normal) + sky_direct(lit_normal, sun) + sky_lamps(on_ground, lit_normal);
-  colour += sky_sheen(lit_normal, on_ground, soaked * (0.4 + 0.6 * puddle));
+  colour += sky_sheen(lit_normal, on_ground, soaked * (0.4 + 0.6 * puddle) * (1.0 - woods.a));
   let ring = 1.0 - smoothstep(0.0, ring_width * 1.5, abs(from_brush - view.brush.z));
   colour = mix(colour, RING, select(0.0, ring, view.brush.z > 0.0));
 

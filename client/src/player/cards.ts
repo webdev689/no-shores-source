@@ -1,7 +1,7 @@
 import type { GlowElement, GlowField, GlowLook } from '../elementGlow.ts';
 import { type Colours, onRamp } from '../forge/compose.ts';
 import { cosmeticRamp } from '../forge/cosmetics.ts';
-import { coversOf } from '../forge/coverLight.ts';
+import { TRIM_ALPHA, coverSteps, coversOf } from '../forge/coverLight.ts';
 import { type DyeTable, PaletteSnap } from '../forge/dyes.ts';
 import { type ForgeLooks, HORSE_LAYER, layersOf, mirroredGear } from '../forge/looks.ts';
 import type { HairColours, RaceSkins } from '../forge/skins.ts';
@@ -190,10 +190,10 @@ export class Cards {
     const dressed = figureOf(dress, layers, anim);
     const held = [dress.outfit.right, dress.outfit.left];
     const figure = flip ? { ...dressed, gear: mirroredGear(dressed.gear, anim, layers, held) } : dressed;
-    const { ramps, whole } = layerRamps(figure.gear, dress.outfit, this.looks, this.dyes);
+    const { ramps, whole, trimmed } = layerRamps(figure.gear, dress.outfit, this.looks, this.dyes);
     const only = typeof alone === 'string' ? [alone] : alone;
     // Through the composer the world's frames take, so a page's picture is composed off the page's thread too.
-    const job = { figure, anim, view, frame, ramps, whole, glow: 0, alone: only } as const;
+    const job = { figure, anim, view, frame, ramps, whole, trimmed, glow: 0, alone: only } as const;
     const composed = await this.composer.compose(`picture ${anim} ${view} ${frame} ${only?.join() ?? ''}`, job, 'now');
     if (!composed) return null;
     const { width, height } = composed;
@@ -215,15 +215,26 @@ export class Cards {
   async weaponArt(dress: Dress, layer: string, share = 1): Promise<Picture | null> {
     const art = await this.store.strip(weaponArtPath(layer));
     if (!art) return null;
-    const { ramps, whole } = layerRamps([layer], dress.outfit, this.looks, this.dyes);
+    const { ramps, whole, trimmed } = layerRamps([layer], dress.outfit, this.looks, this.dyes);
     const ramp = this.looks.dye?.includes(layer) ? (ramps[layer] ?? null) : null;
     const strip = (path: string) => this.store.strip(path);
     const covers = ramp && whole.includes(layer) ? await coversOf(dress.body, [layer], this.looks, strip) : null;
     const steps = covers?.get(layer) ?? null;
+    // A faction's blade: its faction's colour on its marked trim, laid by the trim's light as the figure's is.
+    const trim = trimmed.includes(layer) ? (ramps[layer] ?? null) : null;
+    const trims = trim ? await coversOf(dress.body, [layer], this.looks, strip, true) : null;
+    const trimSteps = trims?.get(layer) ?? coverSteps([]);
     let [width, height, pixels] = [art.width, art.height, new Uint8ClampedArray(art.data)];
     for (let texel = 0; texel < pixels.length; texel += 4) {
-      const dyed = pixels[texel + 3] ? onRamp(pixels.subarray(texel, texel + 3), ramp, steps) : null;
+      const shown = pixels.subarray(texel, texel + 3);
+      const alpha = pixels[texel + 3];
+      const dyed = !alpha
+        ? null
+        : trim && alpha === TRIM_ALPHA
+          ? onRamp(shown, trim, trimSteps)
+          : onRamp(shown, ramp, steps);
       if (dyed) pixels.set(dyed, texel);
+      if (alpha) pixels[texel + 3] = 255;
     }
     if (share < 1) {
       [width, height] = [Math.max(1, Math.round(width * share)), Math.max(1, Math.round(height * share))];
@@ -295,11 +306,11 @@ export class Cards {
     const { dyes, dye, coat } = dress.outfit;
     // The coat counts only where the move draws the horse; the barding is in the figure only there.
     const horse = layers[HORSE_LAYER]?.includes(anim) ? (coat ?? null) : null;
-    const { ramps, whole } = layerRamps(figure.gear, dress.outfit, this.looks, this.dyes);
+    const { ramps, whole, trimmed } = layerRamps(figure.gear, dress.outfit, this.looks, this.dyes);
     // The dye worn counts only where a layer takes it: each dye's ramp is one made once, so it is found by itself.
     const worn = cosmeticRamp(dye, this.dyes.palette);
     const dyed = worn && Object.values(ramps).includes(worn) ? dye : null;
-    return { figure, ramps, whole, key: JSON.stringify([figure, dyes, dyed, horse, anim, view, frame, glow]) };
+    return { figure, ramps, whole, trimmed, key: JSON.stringify([figure, dyes, dyed, horse, anim, view, frame, glow]) };
   }
 
   /** A figure's frame in a move and a view, composed `haste` if it is not kept or under way, and hurried if it is
@@ -316,7 +327,7 @@ export class Cards {
     glow: GlowLook = 0,
     haste: Haste = 'now',
   ): Card | 'coming' | null {
-    const { figure, ramps, whole, key } = this.framed(dress, anim, view, frame, flip, glow);
+    const { figure, ramps, whole, trimmed, key } = this.framed(dress, anim, view, frame, flip, glow);
     const kept = this.kept.get(key);
     if (kept !== undefined) {
       // Asked again, it is kept the longest of all.
@@ -333,7 +344,7 @@ export class Cards {
     this.failedAt.delete(key);
     this.composing.add(key);
     this.composer
-      .compose(key, { figure, anim, view, frame, ramps, whole, glow }, haste)
+      .compose(key, { figure, anim, view, frame, ramps, whole, trimmed, glow }, haste)
       .then((composed) => {
         const card = composed && this.scene.card(composed.pixels, composed.width, composed.height, composed.root);
         const field = composed?.field;

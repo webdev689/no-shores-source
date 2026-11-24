@@ -161,8 +161,10 @@ def room_of(spec, r):
 
 
 def aim(spec, r):
-    """The eye set to render record `r`: its canvas, with the record's room past the screen."""
-    fpstage.bleed(*room_of(spec, r))
+    """The eye set to render record `r` (a mirrored record: its source, whose screens it flips): its canvas, with the
+    record's room past the screen. Aimed again before a record's screens are cut, as `cut` finds them on the canvas
+    last aimed: rendering every record first leaves the last one's."""
+    fpstage.bleed(*room_of(spec, record_of(spec, r).get('mirror', r)))
 
 
 def cut(scr, rect):
@@ -618,6 +620,7 @@ def main():
         if r not in plain:
             continue
         rec = spec['records'][r]
+        aim(spec, r)
         for f, scr in enumerate(frames):
             name = f"{spec['archive']}_{r}-{f}.png"
             pic = scr if args.work else cut(scr, out_rect(rec))

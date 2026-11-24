@@ -7,7 +7,7 @@
 use crate::{PlayerId, Room, Standing};
 use gear::dice::Dice;
 use gear::vendor::Vendor;
-use gear::{Ask, Here, Item, Kind, Rarity, Refusal, Slot, Vestige};
+use gear::{Ask, Here, Item, Kind, Rarity, Refusal, Slot};
 
 /// How near the stall a player must stand for a social space's asks, a counter for its own, and a resource node for
 /// gathering, in metres. A counter's is a metre past where the browser offers it, for a body still walking up.
@@ -402,7 +402,7 @@ impl Room {
     }
 
     /// Why `player` may not gather `node` now, as its answer's code, wherever they stand: it does not stand for them
-    /// (its turn has not come, or they gathered it), they are down, on horseback, or full of its resource.
+    /// (they gathered it and it has not returned for them), they are down, on horseback, or full of its resource.
     pub(crate) fn gather_refused(&self, player: PlayerId, node: u8) -> Option<u8> {
         let spot = self.resource_nodes.get(usize::from(node))?;
         let (Some(fighter), Some(found)) = (self.fighter(player), self.players.get(&player)) else {
@@ -415,7 +415,7 @@ impl Room {
             .as_ref()
             .and_then(|isle| isle.landed.as_ref())
             .is_none_or(|landed| found.owner.as_ref().is_some_and(|owner| landed.contains_key(owner)));
-        if found.spent.contains(&node) || !self.node_standing(usize::from(node)) || dead || !landed {
+        if found.spent.iter().any(|&(spent, _)| spent == node) || dead || !landed {
             Some(OUT_OF_REACH)
         } else if found.mounted {
             Some(MOUNTED)
@@ -426,7 +426,7 @@ impl Room {
         }
     }
 
-    fn grant(&mut self, player: PlayerId, grant: Grant) -> u8 {
+    pub(crate) fn grant(&mut self, player: PlayerId, grant: Grant) -> u8 {
         if let Grant::Status { status, on_foes, ticks } = grant {
             self.grant_status(player, status, on_foes, ticks);
             return 0;
@@ -440,9 +440,10 @@ impl Room {
         let character = &mut found.character;
         match grant {
             Grant::Vestige { rarity, slot, level } => {
-                let id = character.take_id();
-                let vestige = Vestige::new(id, rarity, slot, level.clamp(1, gear::item::ITEM_LEVEL_MOST));
-                if !character.pick_up(vestige) {
+                // A Normal one comes as its item, as every Normal drop does, kept as a found item is.
+                let rolled = (rarity, slot, level.clamp(1, gear::item::ITEM_LEVEL_MOST));
+                let unsealed = character.unsealed(rolled, gear::Source::World, &dice);
+                if unsealed.is_some_and(|vestige| !character.pick_up(vestige)) {
                     return answer_code(Err(Refusal::VestigesFull));
                 }
             }
@@ -450,13 +451,16 @@ impl Room {
                 let Some(def) = gear::catalogue::catalogue().named(&named) else {
                     return answer_code(Err(Refusal::NoSuchItem));
                 };
-                let mut item = gear::vestige::named_item(character.take_id(), def, def.kind.slot());
-                item.element = gear::element::rolled(item.kind, item.rarity, &dice);
+                let item = gear::vestige::made_named(character.take_id(), def, def.kind.slot(), &dice);
                 return carry(character, item);
             }
             Grant::Item { kind, rarity, level } => {
                 // A horse is bought at the Tack, Normal and of its coat (`gear::horses`), never handed out.
-                if rarity.named() || kind == Kind::Cloak || kind == Kind::Horse {
+                if rarity == Rarity::Atheric
+                    || kind == Kind::Cloak
+                    || kind == Kind::Horse
+                    || (kind.module() && rarity == Rarity::Legendary)
+                {
                     return answer_code(Err(Refusal::NoSuchItem));
                 }
                 let mut item = gear::vestige::rolled(character.take_id(), kind, rarity, kind.slot(), level, &dice);

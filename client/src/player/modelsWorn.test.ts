@@ -27,9 +27,11 @@ const layers = BODIES.male;
 let wardrobe = wardrobeOf('male', layers);
 
 const plain: Outfit = { armour: {}, garments: [], dyes: {}, right: null, left: null, drawn: true, hair: null };
-const RARITIES = ['normal', 'magic', 'rare'] as const;
-/** A spread of item numbers, enough to turn every choice a number makes (up to three), and every level. */
-const NUMBERS = Array.from({ length: 6 }, (unused, place) => place + 1);
+/** The rarities a piece is rolled at, Normal to Legendary, and how many looks each rolls among
+ *  (`vestige::LOOK_ROLLS`): every choice of look is its roll's, none its number's. */
+const LOOK_ROLLS = [36, 36, 36, 36] as const;
+/** One item number: a piece's look never turns on it. */
+const NUMBERS = [1];
 const LEVELS = Array.from({ length: 20 }, (unused, place) => place + 1);
 
 /** The forge's weapon and armour layers: the weapons a hand holds, and each armour piece in any set. */
@@ -43,7 +45,7 @@ const LEFT_OUT: readonly { readonly layers: RegExp; readonly why: string }[] = [
   { layers: /^boots_laced$/, why: 'a garment, not armour' },
 ];
 /** Every weapon and armour item the game can hold: each named piece, and each rolled kind at each rarity a Vestige or
- *  a smith rolls it at, under each of its names, a spread of numbers and every level. */
+ *  a smith rolls it at, under each of its look rolls, a spread of numbers and every level. */
 function held() {
   const named = items.items.map((each) => ({
     kind: KINDS.indexOf(each.kind as never),
@@ -57,9 +59,9 @@ function held() {
     ),
   }));
   // A rolled piece is drawn in its content's looks, so it is rolled in every content.
-  const rolls = Object.entries(rolled.names).flatMap(([kind, names]) =>
-    RARITIES.flatMap((rarity, number) =>
-      (names as Record<string, readonly string[]>)[rarity]!.flatMap((unused, name) =>
+  const rolls = Object.keys(rolled.kinds).flatMap((kind) =>
+    LOOK_ROLLS.flatMap((looks, number) =>
+      Array.from({ length: looks }, (unused, name) => name).flatMap((name) =>
         NUMBERS.flatMap((id) =>
           LEVELS.flatMap((level) =>
             SOURCES.map((unused, source) => ({
