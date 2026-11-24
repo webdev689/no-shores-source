@@ -78,6 +78,7 @@ const shown = (anim: string, frame: number): LatticeShown => ({
   frames: 8,
   feet: [0, 0, 0],
   facing: 0,
+  flip: false,
   target: [0, -6, 1.2],
 });
 const looks = (anim: string, frame: number) => {
@@ -104,9 +105,9 @@ test('a move with no frames draws no glow, and throws nothing', () => {
   assert.equal(out.length, 0);
 });
 
-const blow = (body: string, anim: string, frame: number, frames = 10) => {
+const blow = (body: string, anim: string, frame: number, frames = 10, flip = false) => {
   const out: number[] = [];
-  layLatticeLooks(out, { ...shown(anim, frame), body, frames, strain: 'red' }, EYE);
+  layLatticeLooks(out, { ...shown(anim, frame), body, frames, strain: 'red', flip }, EYE);
   return out;
 };
 
@@ -155,4 +156,13 @@ test("a blow's cut never shows while the rules still hold its tell, however many
     assert.equal(blowPhase(lastTell + 1, frames), 'strike', `${frames} frames`);
   }
   assert.equal(blowPhase(9, 10), null);
+});
+
+test("a diagonal cut is mirrored as the figure's card is; an upright or a flat one is the same either way", () => {
+  // The Flicker's left and right slashes are each other's mirror, struck from the same place.
+  const left = blow('flicker', 'flicker_slash_left', 4, 10, true);
+  assert.deepEqual(left, blow('flicker', 'flicker_slash_right', 4), 'its left slash, mirrored, cuts as its right');
+  assert.notDeepEqual(left, blow('flicker', 'flicker_slash_left', 4));
+  assert.deepEqual(blow('flicker', 'flicker_overhead', 4, 10, true), blow('flicker', 'flicker_overhead', 4));
+  assert.deepEqual(blow('bulwark', 'bulwark_sweep', 4, 10, true), blow('bulwark', 'bulwark_sweep', 4));
 });

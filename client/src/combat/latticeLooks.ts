@@ -130,7 +130,8 @@ export function sealWave(from: Point, clock: number): void {
 export const waveFade = (seconds: number): number => Math.min(1, Math.max(0, seconds) / WAVE.fadeS);
 
 /** A Lattice foe as last drawn, for what the game draws over its picture: its body, crystal and size, its move and
- *  frame, where its feet are, which way it faces, and the chest it aims at, if any. */
+ *  frame, where its feet are, which way it faces, whether its card is drawn mirrored, and the chest it aims at, if
+ *  any. */
 export interface LatticeShown {
   readonly body: string;
   readonly strain: Strain;
@@ -140,6 +141,7 @@ export interface LatticeShown {
   readonly frames: number;
   readonly feet: Point;
   readonly facing: number;
+  readonly flip: boolean;
   readonly target: Point | null;
 }
 
@@ -238,5 +240,5 @@ export function layLatticeLooks(out: number[], shown: LatticeShown, eye: Point):
       layLine(out, eye, tail, head, 0.035, ramp[LIGHT]);
     }
   }
-  layLatticeStrike(out, shown.anim, [frame, shown.frames], place, { scale, ramp, eye });
+  layLatticeStrike(out, shown.anim, [frame, shown.frames], place, { scale, ramp, eye, flip: shown.flip });
 }

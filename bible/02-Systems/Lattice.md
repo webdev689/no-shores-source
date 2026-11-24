@@ -24,6 +24,7 @@ code:
   - tools/lattice/jobs.py
   - tools/forge_publish.py#lattice
   - client/src/combat/lattice.ts#latticeMove
+  - client/src/combat/lattice.ts#blowPlayedOn
   - client/src/combat/lattice.ts#latticeHidden
   - client/src/combat/latticeLooks.ts#LatticeWaves
   - client/src/combat/latticeLooks.ts#layLatticeLooks
@@ -104,8 +105,10 @@ workflow renders every move of every foe and the wave this way, a job a move, an
   and gores at any other blow; the Flicker slashes left and right in turn and brings both blades down; the Idol
   charges as it draws and fires its beam; the Ravager hurls its shards as it shoots and mauls up close; the Bulwark
   discharges its shield, and once changed (its second phase, or half its health; the change played once) sweeps and
-  slams its maul; the Heart slams, sweeps, stomps and tears. A telegraphed blow holds in its tell. The Flicker and
-  the Idol never walk: the rules' dodge is a blink, out through their landing backwards and in through it.
+  slams its maul; the Heart slams, sweeps, stomps and tears. A telegraphed blow holds in its tell (the first 0.35 of
+  the move) while the rules hold it; once they end it, landed or missed, `blowPlayedOn` plays the move on from past
+  its tell at 1/14 s a frame, a missed one then held on its last frame while the foe is open. A feint or an aimed
+  shot plays nothing on. The Flicker and the Idol never walk: the rules' dodge is a blink, out through their landing backwards and in through it.
 - **Its parts.** `latticeHidden` takes away the Ravager's shards from its first throw to its hurl's end, the
   Bulwark's maul until it changes and its shield from then, and the Heart's torn one but from its grip to its fling.
 - **What the game draws over the pictures** (`latticeLooks.ts`): the Idol's lens glowing through its charge, its
@@ -116,7 +119,7 @@ workflow renders every move of every foe and the wave this way, a job a move, an
 - **Its blows** (`latticeStrikes.ts`), each in the foe's crystal and at its size, by the share of the move played:
   through the tell (its first 0.35) a star of crystal grows where the blow comes from; the strike (to 0.55) is a cut
   across it (the Flicker's slashes left and right and its overhead, the Ravager's maul, the Bulwark's sweep and slam,
-  the Heart's slam and sweep) or a rush's streak behind it (the Husk's lunge and gore, the Heart's stomp); then (to
+  the Heart's slam and sweep; a diagonal one mirrored as the figure's card is) or a rush's streak behind it (the Husk's lunge and gore, the Heart's stomp); then (to
   0.8) a ring of shards on the ground where it lands, widening and breaking up, a flash at its heart.
 - **Its shots** (`tracers.ts`): the Idol's shots, an archer's in the rules, fly as its crystal, not as steel arrows: a
   trail twice an arrow's in its crystal's body and white-hot, its head a glint (`FightEffects` asks each shooter's

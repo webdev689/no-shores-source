@@ -20,7 +20,7 @@ interface Blow {
   readonly ring: number;
 }
 
-/** Each blow of the six foes' moves (Lattice.md), by its move. */
+/** Each blow of the six foes' moves, by its move. */
 const BLOWS: Readonly<Record<string, Blow>> = {
   husk_lunge: { gathers: [0.45, 1.25], cut: null, lands: 1.1, ring: 6 },
   husk_gore: { gathers: [0.45, 1.25], cut: null, lands: 1.0, ring: 7 },
@@ -51,14 +51,20 @@ const STREAK_BACK_M = 0.9;
 
 /**
  * What a Lattice foe's blow draws in its frame: `place` stands a spot of a man-sized foe where this one stands and
- * faces, `scale` how many times a man it is, `ramp` its crystal's, seen from `eye`.
+ * faces, `scale` how many times a man it is, `ramp` its crystal's, seen from `eye`; its cut mirrored with its card
+ * when `flip`.
  */
 export function layLatticeStrike(
   out: number[],
   anim: string,
   [frame, frames]: readonly [number, number],
   place: (spot: Spot) => Point,
-  { scale, ramp, eye }: { readonly scale: number; readonly ramp: Ramp; readonly eye: Point },
+  {
+    scale,
+    ramp,
+    eye,
+    flip,
+  }: { readonly scale: number; readonly ramp: Ramp; readonly eye: Point; readonly flip: boolean },
 ): void {
   const blow = BLOWS[anim];
   if (!blow || frames <= 0) return;
@@ -71,7 +77,8 @@ export function layLatticeStrike(
     layUpright(out, starSprite(1 + Math.round((3 * share) / TELL_SHARE)), ramp, gathers, eye, cell);
   } else if (phase === 'strike') {
     if (blow.cut) {
-      layUpright(out, slashSprite(blow.cut[0], blow.cut[1], HOT), ramp, gathers, eye, cell);
+      const turn = flip ? 8 - blow.cut[0] : blow.cut[0];
+      layUpright(out, slashSprite(turn, blow.cut[1], HOT), ramp, gathers, eye, cell);
     } else {
       const back = place([blow.gathers[0] - STREAK_BACK_M, blow.gathers[1] * 0.8]);
       layLine(out, eye, back, gathers, 0.12 * scale, ramp[DARK]);
