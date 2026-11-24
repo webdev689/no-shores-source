@@ -7,6 +7,7 @@
 
 use super::fallen::{RAISE_REACH_M, RAISE_TICKS};
 use super::plan::turned;
+use crate::players::Player;
 use crate::{EventKind, PlayerId, Room};
 use ::foes::Rank;
 use ::foes::roster::{BULWARK, FLICKER, HUSK, RAVAGER};
@@ -344,11 +345,15 @@ impl Room {
         }
     }
 
-    /// A wave at the gate: Husks and Flickers at its mouths, Ravagers on its perches.
+    /// A wave at the gate: Husks and Flickers at its mouths, two and one more for every two of the holding company's
+    /// living players (WAVE_MOST at most), and every other wave a Ravager on its perches.
     fn gate_wave(&mut self, gate: &mut Gate) {
         let mouths: Vec<[f64; 3]> = (1..=4).filter_map(|number| gate.socket(&format!("mouth-{number}"))).collect();
         let perches: Vec<[f64; 3]> = (1..=2).filter_map(|number| gate.socket(&format!("perch-{number}"))).collect();
-        for nth in 0..4 {
+        let holders = gate.held_by.as_ref().and_then(|run| gate.companies.get(run)).map_or(0, |company| {
+            company.players.iter().filter(|player| self.players.get(player).is_some_and(Player::living)).count()
+        });
+        for nth in 0..(2 + holders / 2).min(super::waves::WAVE_MOST) {
             let kind = if nth % 2 == 0 { (HUSK, Rank::Major) } else { (FLICKER, Rank::Major) };
             if let Some(mouth) = mouths.get((gate.waves + nth) % mouths.len().max(1)) {
                 self.stand_gate_foe(gate, kind, *mouth);

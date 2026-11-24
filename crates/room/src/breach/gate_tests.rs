@@ -310,3 +310,20 @@ fn only_normal_seas_stand_a_breachs_gate() {
     room.set_difficulty(gear::world::Difficulty::Elite);
     assert!(room.breach_gate.is_none(), "none at Elite seas, where no run would hear it opened");
 }
+
+#[test]
+fn the_gates_waves_are_sized_to_the_living_company_holding_it() {
+    for (count, size) in [(2, 3), (8, 6)] {
+        let (mut room, players) = gate_room(count);
+        for &player in &players {
+            room.breach_company(player, "run-a", Tier::Normal);
+        }
+        hold_moorings(&mut room, &players);
+        room.tick();
+        let before = room.breach_gate.as_ref().expect("gate").foes.clone();
+        room.breach_gate.as_mut().expect("gate").next_wave = room.clock + 1;
+        room.tick();
+        let wave = room.breach_gate.as_ref().expect("gate").foes.iter().filter(|id| !before.contains(id)).count();
+        assert_eq!(wave, size, "{count} holding, and no Ravager on the first wave");
+    }
+}
