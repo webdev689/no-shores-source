@@ -145,7 +145,8 @@ export function namingPrice(ship: Pick<GearKeptShip, 'named'> | undefined): numb
   return ship?.named ? shipyard.renaming : 0;
 }
 
-/** The ask that names the ship of `hull` from two words by their places, `NO_WORD` for no first word. */
-export function nameAsk(hull: number, first: number, second: number): GearAsk {
-  return { kind: ASKS.nameShip, column: hull, node: first, slot: second };
+/** The ask that names the ship of `hull` from two words by their places, `NO_WORD` for no first word: its first, free
+ *  name, or a renaming at the shipyard's price, which the room never takes for the other. */
+export function nameAsk(hull: number, first: number, second: number, renaming: boolean): GearAsk {
+  return { kind: ASKS.nameShip, column: hull, node: first, slot: second, count: renaming ? 1 : 0 };
 }

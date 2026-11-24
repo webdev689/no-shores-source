@@ -104,6 +104,9 @@ export const CARRIED = 0;
 export const VAULTED = 1;
 export const WORN = 2;
 
+/** What the page says to a player who keeps no ship yet, as the room's gate to the sea says it (`gear::gate`). */
+export const NO_SHIP_YET = "You have no ship yet. The Harbourmaster in Overlook's market has one for you.";
+
 /** Why an ask was refused, by the room's answer numbers: the gear crate's refusals, then the room's own. */
 const REFUSALS: Readonly<Record<number, string>> = {
   1: 'There is no such item.',
@@ -152,6 +155,7 @@ const REFUSALS: Readonly<Record<number, string>> = {
   104: 'Not on horseback.',
   105: 'You cannot return to your ship while fallen.',
   106: 'You cannot return to your ship within ten seconds of being struck.',
+  108: NO_SHIP_YET,
   110: 'There is no such Art.',
   111: 'An Art’s Core has three slots.',
   112: 'There is no such fragment.',
@@ -163,6 +167,13 @@ const REFUSALS: Readonly<Record<number, string>> = {
   137: 'They have nothing more to say to you now.',
   138: 'No fragment of that Art waits to be chosen.',
   141: 'There is no such letter.',
+  151: 'The shipyard has no such ship.',
+  152: 'You keep no such ship yet.',
+  153: 'There is no such dress.',
+  154: 'The shipyard has no such word.',
+  155: 'You sail that ship already.',
+  156: 'It bears that name already.',
+  157: 'It has a name already. Hold to rename it.',
 };
 
 /** What a room's answer to an ask says: nothing for done. */

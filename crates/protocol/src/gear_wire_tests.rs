@@ -69,6 +69,17 @@ fn every_ask() -> Vec<Asked> {
         Asked::ToShip,
         Asked::Gear(Ask::TakeLetter { letter: 41 }),
         Asked::Gear(Ask::TakeAllLetters),
+        Asked::Gear(Ask::Ship(ShipAsk::Buy { hull: 2 })),
+        Asked::Gear(Ask::Ship(ShipAsk::Sail { hull: 1 })),
+        Asked::Gear(Ask::Ship(ShipAsk::BuyDress { dress: 37 })),
+        Asked::Gear(Ask::Ship(ShipAsk::Dress { hull: 3, dress: 25 })),
+        Asked::Gear(Ask::Ship(ShipAsk::Name { hull: 0, first: 4, second: 9, renaming: false })),
+        Asked::Gear(Ask::Ship(ShipAsk::Name {
+            hull: 2,
+            first: gear::ship::fleet::NO_WORD,
+            second: 31,
+            renaming: true,
+        })),
     ]
 }
 

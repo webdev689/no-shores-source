@@ -4,10 +4,10 @@
 use super::{FIGHT_PACE, FIGHT_TURN, fitting};
 use crate::class::class_of;
 use crate::damage::{Damage, way_share_of};
-use sailing::HullKind;
 use sailing::TICK_SECONDS;
 use sailing::ship::{Helm, Pull, SAILS_SET, Ship, step_pulled};
 use sailing::waters::Waters;
+use sailing::{Hull, HullKind, SLOOP};
 
 /// What a player's ship's hurts leave its helm: the canvas it has left and the share of its way that canvas leaves it.
 #[derive(Debug, Clone, Copy, PartialEq)]
@@ -42,7 +42,8 @@ impl Hurts {
 
 /// A player's ship of `hull` stepped a tick by its helm, as its hurts let it, at a fight's pace and swing and its
 /// class's way and swing: no sail sets with its rigging shot away, its sails' and oars' pull is held back, and a burst
-/// drives it. Answers the ship and whether its helm climbed for sail it could not set.
+/// drives it. It answers its helm as the Sloop does (the Sloop's gain), so its class alone sets its way and swing apart.
+/// Answers the ship and whether its helm climbed for sail it could not set.
 #[must_use]
 pub fn sail_hurt(
     ship: &Ship,
@@ -65,5 +66,6 @@ pub fn sail_hurt(
         oars: hurts.drive * FIGHT_PACE * class.way,
         turn: hurts.turn * FIGHT_TURN * class.turn,
     };
-    (step_pulled(ship, &helm, hull.hull(), wind, waters, time, TICK_SECONDS, pull), refused)
+    let handled = Hull { gain: SLOOP.gain, ..*hull.hull() };
+    (step_pulled(ship, &helm, &handled, wind, waters, time, TICK_SECONDS, pull), refused)
 }

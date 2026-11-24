@@ -82,6 +82,29 @@ fn settled(hull: HullKind) -> (f64, f64) {
     (way, ship.turn)
 }
 
+/// Its swing hard over, settled, its way held at `way` m/s: what its helm makes of that way.
+fn swing_at(hull: HullKind, way: f64) -> f64 {
+    let sound = Hurts::of(&crate::damage::Damage::new(class_of(hull).build(), true));
+    let mut ship = Ship { x: 0.0, y: 0.0, heading: 0.0, ahead: way, abeam: 0.0, turn: 0.0, sail_way: way, rung: 2 };
+    for tick in 0..600u32 {
+        ship.ahead = way;
+        let helm = Helm { steer: 1.0, climb: 0 };
+        ship = sail_hurt(&ship, hull, helm, sound, &Open, [1.5, 0.0], f64::from(tick) * TICK_SECONDS).0;
+    }
+    ship.turn
+}
+
+#[test]
+fn held_at_the_same_way_each_hull_swings_its_class_against_the_sloop_at_every_way() {
+    for way in [1.0, 3.0, 4.5, 6.0, 8.0] {
+        let sloop = swing_at(HullKind::Sloop, way);
+        for class in &CLASSES[1..] {
+            let turned = swing_at(class.hull, way) / sloop;
+            assert!((turned - class.turn).abs() < 0.01, "{:?} at {way} m/s swings {turned} of the Sloop", class.hull);
+        }
+    }
+}
+
 #[test]
 fn in_a_fight_its_class_sets_its_way_and_its_swing_against_the_sloops() {
     let (sloop_way, sloop_swing) = settled(HullKind::Sloop);

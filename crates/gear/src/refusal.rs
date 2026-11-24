@@ -96,4 +96,8 @@ pub enum Refusal {
     NoSuchName = 153,
     /// The ship asked to be sailed is the one sailed.
     Sailed = 154,
+    /// The ship asked to be named bears that name already.
+    Called = 155,
+    /// A free name was asked for a ship named already: a new name is the shipyard's renaming, asked as one.
+    Named = 156,
 }

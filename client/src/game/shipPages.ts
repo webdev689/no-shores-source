@@ -6,7 +6,7 @@
 // officers of the day, on the screen of the faction pledged to's keeper, whose counter signs them on.
 
 import type { GearItem, GearOfficer } from '../network/gearMessages.ts';
-import { WORN } from '../player/gear.ts';
+import { NO_SHIP_YET, WORN } from '../player/gear.ts';
 import type { Child, Drawing, Node } from '../ui/node.ts';
 import { colourOf } from '../ui/quads.ts';
 import { cardNode, traitNode } from './gearCard.ts';
@@ -44,8 +44,6 @@ import {
 } from './shipGear.ts';
 import type { ShipPanel } from './shipPanel.ts';
 
-/** What the Ship tab says before the player keeps a ship. */
-export const NO_SHIP_YET = "You have no ship yet. The Harbourmaster in Overlook's market has one for you.";
 /** The Shipwright's number among the vendors (`Vendor::ALL`). */
 const SHIPWRIGHT = 2;
 /** A tile and the glyph or picture in it, a module's press, and an officer's emblem small and on their page, in

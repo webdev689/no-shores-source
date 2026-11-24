@@ -280,9 +280,13 @@ impl Room {
         self.here(player, &Ask::Identify { vestige: 0 }).social
     }
 
-    /// Whether a player may return to their ship now: `TO_SHIP`, or why not (`NO_SHIP`, `FALLEN`, `FIGHTING`).
+    /// Whether a player may return to their ship now: `TO_SHIP`, or why not (`NOT_YET` while the accounts have yet to
+    /// say which character is theirs, `NO_SHIP`, `FALLEN`, `FIGHTING`).
     fn to_ship(&self, player: PlayerId) -> u8 {
         let Some(found) = self.players.get(&player) else { return TO_SHIP };
+        if !found.claimed {
+            return NOT_YET;
+        }
         if !found.character.has_ship() {
             return NO_SHIP;
         }

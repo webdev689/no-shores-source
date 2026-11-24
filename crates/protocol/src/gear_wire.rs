@@ -210,7 +210,12 @@ pub fn asked_of(ask: &messages::Ask<'_>) -> Option<Asked> {
         SAIL_SHIP => Asked::Gear(Ask::Ship(ShipAsk::Sail { hull: column })),
         BUY_DRESS => Asked::Gear(Ask::Ship(ShipAsk::BuyDress { dress: u16::try_from(item).ok()? })),
         DRESS_SHIP => Asked::Gear(Ask::Ship(ShipAsk::Dress { hull: column, dress: u16::try_from(item).ok()? })),
-        NAME_SHIP => Asked::Gear(Ask::Ship(ShipAsk::Name { hull: column, first: node, second: ask.slot() })),
+        NAME_SHIP => Asked::Gear(Ask::Ship(ShipAsk::Name {
+            hull: column,
+            first: node,
+            second: ask.slot(),
+            renaming: ask.count() > 0,
+        })),
         _ => return None,
     })
 }
@@ -224,9 +229,14 @@ fn ship_ask_args<'built>(ask: ShipAsk, args: messages::AskArgs<'built>) -> messa
         ShipAsk::Dress { hull, dress } => {
             messages::AskArgs { kind: DRESS_SHIP, column: hull, item: u32::from(dress), ..args }
         }
-        ShipAsk::Name { hull, first, second } => {
-            messages::AskArgs { kind: NAME_SHIP, column: hull, node: first, slot: second, ..args }
-        }
+        ShipAsk::Name { hull, first, second, renaming } => messages::AskArgs {
+            kind: NAME_SHIP,
+            column: hull,
+            node: first,
+            slot: second,
+            count: u32::from(renaming),
+            ..args
+        },
     }
 }
 

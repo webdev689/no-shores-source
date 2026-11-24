@@ -205,7 +205,7 @@ fn measure_fights_by_hull() {
     for hull in sailing::HullKind::ALL {
         for rank in [Rank::Major, Rank::Elite, Rank::Miniboss] {
             let (off, close) =
-                (row_in(hull, (rank, 0), 300.0, FIGHTS_A_LEVEL), row_in(hull, (rank, 0), 150.0, FIGHTS_A_LEVEL));
+                (row_in(hull, (rank, 0), 300.0, FIGHTS_A_ROW), row_in(hull, (rank, 0), 150.0, FIGHTS_A_ROW));
             eprintln!("| {hull:?}, {rank:?} | {off} | {close} |");
         }
     }

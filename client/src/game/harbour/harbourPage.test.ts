@@ -156,7 +156,7 @@ test('a ship is named free the first time and for the yard’s price after, from
   page.click('first-1');
   page.click('second-2');
   page.click('name-ship');
-  assert.deepEqual(page.asked, [{ kind: 83, column: 0, node: 1, slot: 2 }]);
+  assert.deepEqual(page.asked, [{ kind: 83, column: 0, node: 1, slot: 2, count: 0 }], 'the first, free name');
   const named = [{ hull: 0, name: [1, 2], named: true, dress: BUILT }];
   const renaming = drawn(gear({}, { fleet: named }), (context) =>
     harbourPage(context, BUILDS, ['name', null], () => undefined),
@@ -165,7 +165,7 @@ test('a ship is named free the first time and for the yard’s price after, from
   renaming.click('name-ship');
   assert.deepEqual(renaming.asked, [], 'a new name is held for, not clicked');
   renaming.hold('name-ship', 900);
-  assert.deepEqual(renaming.asked, [{ kind: 83, column: 0, node: 1, slot: 3 }]);
+  assert.deepEqual(renaming.asked, [{ kind: 83, column: 0, node: 1, slot: 3, count: 1 }], 'a renaming, paid');
 });
 
 test('with no ship kept yet the counter says so, and the shipyard offers the Sloop as given', () => {

@@ -32,11 +32,14 @@ every call of Claude's in [[The Ships at the Harbourmaster as Claude Shapes Them
   3 the Frigate), the one it sails, and the dresses it has bought. Each ship kept has its own name and its own dress.
 - **A new player keeps none.** The welcome's Harbourmaster hands over the Sloop: the opening's task "Take your ship
   from the Harbourmaster" comes after the round of the counters, its reward `"ship": true` ([[Quests]]). The Sloop
-  comes fitted with its four plain modules. One who walked past that task with no ship is handed it as their character
-  is read; a save from before fleets keeps and sails the Sloop, as every player sailed it then.
-- **No ship, no sea.** The land room answers a return to the ship with 108 for a player who keeps none, and the page
-  says "You have no ship yet. The Harbourmaster in Overlook's market has one for you." The sea's gate shuts to a
-  character who keeps none with the same line, so no page can sail one (`Sea::shut`). The Ship tab says so too.
+  comes fitted with a plain module in each slot that wears none (one bought before it keeps its slot). One who walked
+  past that task with no ship is handed it as their character is read; a save from before fleets keeps and sails the
+  Sloop, as every player sailed it then.
+- **No ship, no sea.** The land room answers a return to the ship with 103 ("Wait a moment before you try that
+  again.") until the accounts have said whose character it holds, and with 108 for a player who keeps none, and the
+  page says "You have no ship yet. The Harbourmaster in Overlook's market has one for you." The sea's gate shuts to a
+  character who keeps none with the same line, so no page can sail one (`Sea::shut`). The Ship tab says so too. A
+  land room whose gate shuts sends a player who keeps no ship to Overlook, not to the sea.
 - **What a ship keeps** whichever hull it is: its hurts as shares of whole, where it lies at sea, its experience and
   level, its fitted and carried modules, its officers and hands, and its materials.
 
@@ -57,8 +60,10 @@ exposure and how long it lasts. As the rules build them (`hull_builds_json`, whi
 - **In a fight**: the fight puts the player's ship to sea in its own hull with its class's hull, canvas and men
   (`Fight::put_to_sea_kept`); each ball of a side is its share of the Sloop's broadside times its class's weight; a side
   reloads at its class's pace, times its trim's and its hands'; its helm pulls and swings at its class's way and swing
-  (`sail_hurt`); a captain sizing it up reckons its class (`Power::player_in`). Every hull's raw way and swing are the
-  Sloop's, so the class alone sets them apart. Its deck is its own hull's, walked off the helm and steered from.
+  (`sail_hurt`); a captain sizing it up reckons its class (`Power::player_in`). Every player's hull answers its helm
+  as the Sloop does (the Sloop's gain), and its canvas drives it as the Sloop's, so its class alone sets its way and
+  swing apart: held at the same way, it swings its class's share of the Sloop's swing. Its deck is its own hull's,
+  walked off the helm and steered from.
 - **At sea**: a voyage sails at its pace times the canvas it keeps and its class's way, and the page eases its ship
   along the same way.
 - **A captain's ship keeps its rank's numbers** ([[Naval Combat]], "Ranks and factions"), and the World Editor's fleet
@@ -87,7 +92,10 @@ answered only within reach of that counter (`ShipAsk`).
   entry, the ship as built. Prices follow the Tailor's dyes: Magic 1,000 Aurem, Rare 2,500, Legendary 5,000, each from a
   ship level; each house's canvas and colours are kept at its second rank, never sold.
 - **Name**: a ship is named from two lists of words, its first word none or one of the first list's; the first name
-  is free, each after 250 Aurem. Read as "the Grey Gull".
+  is free, each after 250 Aurem, held for. Read as "the Grey Gull". The ask says which it is (`count` 1 a renaming):
+  a free name asked of a ship named already is refused, and so is the name it bears, so an ask sent twice never pays.
+  Refusals the page says in words: no such ship (151), none kept (152), no such dress (153) or word (154), the ship
+  sailed already (155), the name it bears (156), and a named ship asked a free name (157).
 - **Shipwright**: the Shipwright's six modules of the day ([[Ship Power]]).
 
 ## Seen by others

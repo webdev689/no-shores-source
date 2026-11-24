@@ -120,7 +120,13 @@ export class Sea {
       new Boarding(aboard, (...asked) => Foot.onDeck(...asked)),
     ];
     this.scale = SHIP_DRAWN_M / hull.waterline.lengthM;
-    this.passage = new Passage(outlines, () => this.landmass.mask, start, heading);
+    this.passage = new Passage(
+      outlines,
+      () => this.landmass.mask,
+      start,
+      heading,
+      (sailed) => hull.way?.(sailed) ?? 1,
+    );
     this.passage.keepClear = () => keptClear(this.isles?.all() ?? []);
     this.view = new SeaView(start, heading, () => this.drawn.ownDeck());
     this.setLandmass(landmass);

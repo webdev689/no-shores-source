@@ -3,7 +3,8 @@ import { test } from 'node:test';
 import type { GearOfficer, GearShip, GearState } from '../network/gearMessages.ts';
 import { sampleItem } from './gearShots.ts';
 import { drawn } from './drawnForTests.ts';
-import { NO_SHIP_YET, musterAt, shipTab, shipwrightPart } from './shipPages.ts';
+import { NO_SHIP_YET } from '../player/gear.ts';
+import { musterAt, shipTab, shipwrightPart } from './shipPages.ts';
 import { stationTitle } from './stationView.ts';
 
 const officer = (fields: Partial<GearOfficer>): GearOfficer => ({

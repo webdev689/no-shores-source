@@ -67,7 +67,7 @@ export function namePart(context: MenuContext, draft: NameDraft, choose: (hull: 
   const kept = context.gear.ship?.fleet.find((ship) => ship.hull === draft.hull);
   const price = namingPrice(kept);
   const named = calledOf(kept);
-  const asked = nameAsk(draft.hull, draft.first, draft.second);
+  const asked = nameAsk(draft.hull, draft.first, draft.second, price > 0);
   const same = named === spelled(draft);
   const short = context.gear.aurem < price;
   const id = 'name-ship';

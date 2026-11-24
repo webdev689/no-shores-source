@@ -102,7 +102,8 @@ Done for the Schooner, the Brig and the Frigate:
 - **Never a captain's strength**: its canvas drives it no harder than the Sloop's, and its side's broadside takes as
   much from a ship as the Sloop's, however many guns share it ([[Naval Combat]], "Ranks and factions").
 - **A player's hull's own numbers**: a player sails any of the four the Harbourmaster keeps, each by its class: how
-  long it lasts, its broadside's weight and reload, its way and swing, and its boarders ([[Shipyard]],
+  long it lasts, its broadside's weight and reload, its way and swing (answering its helm as the Sloop does), and its
+  boarders ([[Shipyard]],
   [[The Harbourmaster Keeps Every Ship, Each With Its Own Numbers and Dress]]).
 
 - **Drawing them**: every ship is drawn as its own hull in its side's colours, its square sails bellied and their

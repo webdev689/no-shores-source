@@ -18,7 +18,8 @@ Claude's calls in building [[The Harbourmaster Keeps Every Ship, Each With Its O
 | How much stronger | About the Sloop's fighting power for the Schooner (1.03, with its speed), 1.37 for the Brig, 1.62 for the Frigate, by lasting times weight over reload | A clear step for each price without making the sea's levels, tuned for the Sloop, fall away; ship level and modules stay the main climb ([[Ship Power]]) |
 | Boarders | 2, 2, 3 and 4 before the First Mate leads more | More hands to spare on a bigger deck; the room already boards hands (`boarding_hands`) |
 | Captains' ships | Unchanged: a captain's rank sets its numbers whatever its hull | Rank already picks the hull and scales it ([[Naval Combat]], "Ranks and factions"); a class on top would count it twice |
-| Out of a fight | A voyage sails at its class's way too | "The fast ship" should reach places sooner; the Frigate pays for its strength in time |
+| How a hull handles | In a fight a player's hull answers its helm with the Sloop's gain; a captain's keeps its own | The shipyard shows each class's way and swing, so they must be what the ship does: with its own gain a Frigate gathered way half again faster than the Sloop and swung less than its ×0.72 |
+| Out of a fight | A voyage sails at its class's way too, in the room and on the page | "The fast ship" should reach places sooner; the Frigate pays for its strength in time |
 | The fleet room and the story's fight | Still the Sloop | The World Editor's fleet room holds no characters, and the story's rules sail every ship as a Sloop ([[Prologue]]) |
 
 ## Owning and buying
@@ -38,6 +39,7 @@ Claude's calls in building [[The Harbourmaster Keeps Every Ship, Each With Its O
 | The Harbourmaster's lines | The tour: "The Harbourmaster. Ships, and everything that keeps them afloat." / "Come and find me. I've a Sloop that wants a captain." The task: "So the sea gave you back. You'll want a deck under you." / "The Sloop at the end of the quay is yours. Bring it back afloat." | The old lines called a ship "her" ([[Ships Are It, Not Her]]) and spoke of a ship the player did not have |
 | Before the Sloop | The return to the ship is refused with "You have no ship yet. The Harbourmaster in Overlook's market has one for you."; the sea's gate shuts to a character with no ship with the same line; the Ship tab says it | The room is the authority ([[The Server Is the Authority Over Everything]]); a page that skipped the ask still cannot sail |
 | Characters from before | Keep and sail the Sloop; one past the Harbourmaster's task with no ship is handed it as read | No one who sailed loses their ship, and no save can be left without one past the beat that gives it |
+| Shut out with no ship | A land room's gate sends a player who keeps no ship to Overlook; before the accounts say whose character it holds, a return to the ship is "Wait a moment" | There is no ship to send them back to, and a room that does not yet know the character cannot say it keeps none |
 | The Test Ground's player | Keeps the Sloop | It stands for a character kept before |
 
 ## Dress and names
@@ -51,5 +53,6 @@ Claude's calls in building [[The Harbourmaster Keeps Every Ship, Each With Its O
 | Flag devices | A cross, saltire, bar, quarters, border and star laid by shape; an anchor, gull, bolt, lamp and moon drawn pixel for pixel, as the faction emblems are | The flags' own pixel style; each house's sign its Art's (the Storm, the Divine, the Shadow) |
 | "Your Emblem" | A flag that flies the Roster emblem its player wears, changing as they change it | The player's own mark, already theirs to choose |
 | Names | Two words from the shipyard's lists, the first none or one of 32, the second one of 32, read "the Grey Gull"; free the first time, 250 Aurem after | Free words would need the accounts' judge of names ([[Names]]), which the rooms cannot ask; two lists give a thousand names no one can misuse |
+| A name asked twice | The ask says whether it is the free name or a paid renaming; the name a ship bears is refused | A double click on the free name never pays 250 Aurem for nothing |
 | Seen by others | Every ship's hull, dress, name and its player's emblem in the sea's snapshot; another player's plate over their own masthead with the ship's name under theirs | A dressed ship is for others to see |
 | Figureheads | Not made | No model of one exists, and the owner's ask was "all our current models" |

@@ -6,6 +6,7 @@ import type { Point2 } from '../overworld/ground.ts';
 import { maskFromOutlines, planSeaRoute, type RouteRefusal, type SeaMask } from '../overworld/seaRoute.ts';
 import { PACE_DEFAULT, type Pace, secondsLeft, shipAt, stepPace, type Voyage, voyageOf } from '../overworld/voyage.ts';
 import type { Lies } from '../ships/swellPose.ts';
+import { SLOOP_HULL } from '../ships/hulls.ts';
 import { distanceText } from './hudLaw.ts';
 import { type KeptClear, detour } from './isleLaw.ts';
 import { AHEAD, clearAhead, HELM_TURN, turned } from './seaHelm.ts';
@@ -61,10 +62,20 @@ export class Passage {
   /** The sea's islands in sight, which every voyage is bent round: the route's grid is far coarser than an island. */
   keepClear: () => readonly KeptClear[] = () => [];
 
-  constructor(outlines: readonly (readonly Point2[])[], landmassMask: () => SeaMask, start: Point2, heading: number) {
+  /** Each hull's way on a course against the Sloop's, by its number: its class's, as the room's rules build it. */
+  private readonly classWay: (hull: number) => number;
+
+  constructor(
+    outlines: readonly (readonly Point2[])[],
+    landmassMask: () => SeaMask,
+    start: Point2,
+    heading: number,
+    classWay: (hull: number) => number = () => 1,
+  ) {
     this.outlines = outlines;
     this.landmassMask = landmassMask;
     this.lie = { x: start[0], y: start[1], heading };
+    this.classWay = classWay;
   }
 
   /** Where it lies and heads. */
@@ -226,8 +237,8 @@ export class Passage {
       return;
     }
     const held = this.room?.ownShip?.pace ?? null;
-    // Its way is its pace's by the canvas it keeps, never under half, as the room sails it.
-    const way = Math.max(0.5, this.room?.kept?.sail ?? 1);
+    // Its way is its pace's by the canvas it keeps, never under half, and its hull's class, as the room sails it.
+    const way = Math.max(0.5, this.room?.kept?.sail ?? 1) * this.classWay(this.room?.ownShip?.hull ?? SLOOP_HULL);
     const fix = shipAt(this.voyage, followed(this.voyage, this.travelled, seconds, this.sailed, settled, held, way));
     this.lie = { x: fix.position[0], y: fix.position[1], heading: fix.heading ?? this.lie.heading };
     this.travelled = fix.travelledM;

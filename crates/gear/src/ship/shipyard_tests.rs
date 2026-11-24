@@ -97,6 +97,17 @@ fn a_new_player_keeps_no_ship_and_no_modules_until_the_harbourmaster_hands_over_
 }
 
 #[test]
+fn a_module_worn_before_the_sloop_is_handed_over_keeps_its_slot_and_the_others_are_fitted_plain() {
+    let mut character = Character::starting();
+    let id = 900;
+    let bought = crate::item::Item::new(id, crate::kinds::Kind::Sails, crate::rarity::Rarity::Rare, 3, Slot::Sails);
+    character.items.insert(id, (bought, crate::character::At::Worn(Slot::Sails)));
+    assert!(character.give_first_ship());
+    assert_eq!(character.worn(Slot::Sails).map(|item| item.id), Some(id));
+    assert_eq!(character.all_fitted().count(), 4, "one in each slot, never two");
+}
+
+#[test]
 fn a_save_from_before_fleets_keeps_and_sails_the_sloop() {
     let mut kept = serde_json::to_value(Character::starting()).expect("kept");
     kept.as_object_mut().expect("an object").remove("fleet");
@@ -208,19 +219,25 @@ fn a_ship_is_named_free_the_first_time_and_at_the_yards_price_after() {
         (place(&shipyard().first, "Grey").expect("a place"), place(&shipyard().second, "Gull").expect("a place"));
     assert_eq!(character.fleet.kept(SLOOP).and_then(KeptShip::called), None, "unnamed as built");
     let aurem = character.materials.aurem;
-    assert!(ask(&mut character, ShipAsk::Name { hull: SLOOP, first: grey, second: gull }).is_ok());
+    let named = |first: u8, second: u8, renaming: bool| ShipAsk::Name { hull: SLOOP, first, second, renaming };
+    assert!(ask(&mut character, named(grey, gull, false)).is_ok());
     assert_eq!(character.materials.aurem, aurem, "the first name is free");
     let sloop = character.fleet.kept(SLOOP).expect("kept");
     assert_eq!(sloop.called().as_deref(), Some("the Grey Gull"));
     assert_eq!(sloop.name_numbers(), [grey, gull]);
-    assert!(ask(&mut character, ShipAsk::Name { hull: SLOOP, first: NO_WORD, second: gull }).is_ok());
+    assert_eq!(ask(&mut character, named(grey, gull, false)), Err(Refusal::Called), "the free name sent twice");
+    assert_eq!(ask(&mut character, named(grey, gull, true)), Err(Refusal::Called), "no price for the name it bears");
+    assert_eq!(ask(&mut character, named(NO_WORD, gull, false)), Err(Refusal::Named), "a new name is a renaming");
+    assert_eq!(character.materials.aurem, aurem, "nothing paid for any of them");
+    assert!(ask(&mut character, named(NO_WORD, gull, true)).is_ok());
     assert_eq!(character.materials.aurem, aurem - shipyard().renaming);
     assert_eq!(character.fleet.kept(SLOOP).and_then(KeptShip::called).as_deref(), Some("the Gull"));
     let none = u8::try_from(shipyard().second.len()).expect("a place");
-    assert_eq!(ask(&mut character, ShipAsk::Name { hull: SLOOP, first: grey, second: none }), Err(Refusal::NoSuchName));
-    assert_eq!(ask(&mut character, ShipAsk::Name { hull: BRIG, first: grey, second: gull }), Err(Refusal::NoShip));
+    assert_eq!(ask(&mut character, named(grey, none, true)), Err(Refusal::NoSuchName));
+    let brig = ShipAsk::Name { hull: BRIG, first: grey, second: gull, renaming: false };
+    assert_eq!(ask(&mut character, brig), Err(Refusal::NoShip));
     character.materials.aurem = shipyard().renaming - 1;
-    assert_eq!(ask(&mut character, ShipAsk::Name { hull: SLOOP, first: grey, second: gull }), Err(Refusal::Short));
+    assert_eq!(ask(&mut character, named(grey, gull, true)), Err(Refusal::Short));
 }
 
 #[test]

@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { state } from '../network/gearForTests.ts';
 import type { GearAsk, GearState } from '../network/gearMessages.ts';
-import { FIGHTING, NO_SHIP, TO_SHIP, askToShip } from './toShip.ts';
+import { FIGHTING, NO_SHIP, NOT_YET, TO_SHIP, askToShip } from './toShip.ts';
 
 const never = () => false;
 
@@ -34,6 +34,12 @@ test('a return to the ship goes on the room yes, and is refused in words while s
     await askToShip(shipless.asker, false, never, shipless.wait),
     "You have no ship yet. The Harbourmaster in Overlook's market has one for you.",
     'a new player before the Harbourmaster hands over the Sloop',
+  );
+  const unclaimed = room(NOT_YET);
+  assert.equal(
+    await askToShip(unclaimed.asker, false, never, unclaimed.wait),
+    'Wait a moment before you try that again.',
+    'before the accounts give the room its character',
   );
   const fallen = room(0);
   assert.equal(await askToShip(fallen.asker, true, never, fallen.wait), 'You cannot return to your ship while fallen.');

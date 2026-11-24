@@ -9,14 +9,15 @@ use crate::character::Character;
 use crate::emblems::Source;
 
 /// One ask of the Harbourmaster's: a hull by its number (0 the Sloop to 3 the Frigate), a dress by its number in the
-/// catalogue, a name's words by their places in the shipyard's lists (`NO_WORD` for no first word).
+/// catalogue, a name's words by their places in the shipyard's lists (`NO_WORD` for no first word), and whether the
+/// name is a renaming at the shipyard's price or the first, free one.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum ShipAsk {
     Buy { hull: u8 },
     Sail { hull: u8 },
     BuyDress { dress: u16 },
     Dress { hull: u8, dress: u16 },
-    Name { hull: u8, first: u8, second: u8 },
+    Name { hull: u8, first: u8, second: u8, renaming: bool },
 }
 
 impl Character {
@@ -30,7 +31,7 @@ impl Character {
             ShipAsk::Sail { hull } => self.sail_ship(hull),
             ShipAsk::BuyDress { dress } => self.buy_dress(dress),
             ShipAsk::Dress { hull, dress } => self.dress_ship(hull, dress),
-            ShipAsk::Name { hull, first, second } => self.name_ship(hull, [first, second]),
+            ShipAsk::Name { hull, first, second, renaming } => self.name_ship(hull, [first, second], renaming),
         }
     }
 
@@ -114,8 +115,9 @@ impl Character {
     }
 
     /// Names a ship kept from the shipyard's two lists, its first word none or one of the first list's: free the first
-    /// time, at the shipyard's price for each name after.
-    fn name_ship(&mut self, hull: u8, [first, second]: [u8; 2]) -> Result<Option<Done>, Refusal> {
+    /// time, at the shipyard's price for each name after, asked as a renaming. A name it bears already is refused, and
+    /// a free name asked for a ship named already, so an ask sent twice never pays for nothing.
+    fn name_ship(&mut self, hull: u8, [first, second]: [u8; 2], renaming: bool) -> Result<Option<Done>, Refusal> {
         let yard = shipyard();
         let first = match first {
             NO_WORD => String::new(),
@@ -124,6 +126,12 @@ impl Character {
         let second = yard.second.get(usize::from(second)).ok_or(Refusal::NoSuchName)?.clone();
         let aurem = self.materials.aurem;
         let ship = self.fleet.kept_mut(hull).ok_or(Refusal::NoShip)?;
+        if ship.named && ship.name[0] == first && ship.name[1] == second {
+            return Err(Refusal::Called);
+        }
+        if ship.named && !renaming {
+            return Err(Refusal::Named);
+        }
         let price = if ship.named { yard.renaming } else { 0 };
         if aurem < price {
             return Err(Refusal::Short);

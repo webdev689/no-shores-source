@@ -38,6 +38,8 @@ export interface SeaHull {
   readonly shown: (hull: number) => number;
   /** Makes every hull's model and its shell tags ready; awaited behind the sea's veil. */
   readonly warm?: () => Promise<unknown>;
+  /** Each hull's way on a course against the Sloop's, as the room's rules build its class; the Sloop's until known. */
+  readonly way?: (hull: number) => number;
   readonly marks: MarkDrawer;
 }
 

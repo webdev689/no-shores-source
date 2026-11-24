@@ -100,12 +100,13 @@ export const ASKS = {
   takeLetter: 71,
   takeAllLetters: 72,
   ...LORE_ASKS,
-  /** A return to the player's ship, which the room answers (107 yes, or 105 fallen, 106 struck in the last ten
-   *  seconds, 108 no ship kept yet) before the page leaves for the sea. */
+  /** A return to the player's ship, which the room answers (107 yes, or 103 its character not yet given it, 105
+   *  fallen, 106 struck in the last ten seconds, 108 no ship kept yet) before the page leaves for the sea. */
   toShip: 73,
   /** The Harbourmaster's asks, the hull's number in `column`: a hull bought, a ship kept sailed, a dress bought by its
    *  number in `item`, a dress kept laid on a ship (`item` the dress), and a ship named (its words' places in `node`
-   *  and `slot`, 255 for no first word). At the Harbourmaster's counter. */
+   *  and `slot`, 255 for no first word; `count` 1 for a renaming at the shipyard's price, 0 for the first, free name).
+   *  At the Harbourmaster's counter. */
   buyShip: 79,
   sailShip: 80,
   buyDress: 81,

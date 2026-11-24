@@ -105,6 +105,22 @@ test('while the room has not yet taken its new course, it sails at the pace it l
   assert.ok(Math.abs(passage.ship.y - (place(0, 0)[1] - 12)) < 1e-6, `held to ×1, 12 m: ${passage.ship.y}`);
 });
 
+test("a hull sails its course at its class's way, as the room sails it: a Schooner 1.15 times the Sloop's", () => {
+  const passage = new Passage(
+    ISLAND,
+    () => MASK,
+    place(0, 0),
+    0,
+    (hull) => (hull === 1 ? 1.15 : 1),
+  );
+  const { room, word } = fakeRoom();
+  passage.room = room;
+  word.ownShip = { player: 1, ...{ x: 0, y: 0 }, heading: 0, pace: 1, hull: 1, dress: [], name: [], emblem: 0 };
+  passage.straightOn();
+  passage.advance(1);
+  assert.ok(Math.abs(passage.ship.y - (place(0, 0)[1] - 12 * 1.15)) < 1e-6, `13.8 m: ${passage.ship.y}`);
+});
+
 test("the room's word sets it right: at rest where it has it, or laid there when it drifts off its course", () => {
   const passage = new Passage(ISLAND, () => MASK, place(0, 0), 0);
   const { room, asked, word } = fakeRoom();

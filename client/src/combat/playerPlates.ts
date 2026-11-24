@@ -229,19 +229,16 @@ export function plateNode(player: PlatedPlayer, scale: number): Node {
         alignY: 'center',
         children: [{ text: { words: String(plate.level), colour: levelInk(plate.level), edge: 'halo', wrap: false } }],
       };
+  const name = plate.name !== '' && {
+    text: { words: plate.name, colour: colours.word, edge: 'halo' as const, wrap: false },
+  };
+  const vessel = Boolean(player.vessel) && {
+    text: { words: player.vessel ?? '', colour: TONES.stoneHi, edge: 'halo' as const, wrap: false },
+  };
   return {
     direction: 'row',
     alignY: 'center',
     gap: Math.round(5 * scale),
-    children: [
-      square,
-      {
-        direction: 'column',
-        children: [
-          plate.name !== '' && { text: { words: plate.name, colour: colours.word, edge: 'halo', wrap: false } },
-          player.vessel ? { text: { words: player.vessel, colour: TONES.stoneHi, edge: 'halo', wrap: false } } : null,
-        ],
-      },
-    ],
+    children: [square, (name || vessel) && { direction: 'column', children: [name, vessel] }],
   };
 }

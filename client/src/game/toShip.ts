@@ -4,9 +4,12 @@
 // on its yes.
 
 import { ASKS, type GearAsk, type GearState } from '../network/gearMessages.ts';
+import { answerText } from '../player/gear.ts';
 
-/** The room's answers to a return to the ship (`room::asks`): refused while fallen or just struck, its yes, which no
- *  other ask gives, so another ask's done is never taken for it, and refused to one who keeps no ship. */
+/** The room's answers to a return to the ship (`room::asks`): refused before the accounts have given the room its
+ *  character, while fallen or just struck, its yes, which no other ask gives, so another ask's done is never taken for
+ *  it, and refused to one who keeps no ship. */
+export const NOT_YET = 103;
 export const FALLEN = 105;
 export const FIGHTING = 106;
 export const TO_SHIP = 107;
@@ -22,16 +25,14 @@ export interface ShipAsker {
 }
 
 /** The answers the room gives a return to the ship: yes, or why not. */
-const ANSWERS: readonly number[] = [TO_SHIP, FALLEN, FIGHTING, NO_SHIP];
+const ANSWERS: readonly number[] = [TO_SHIP, NOT_YET, FALLEN, FIGHTING, NO_SHIP];
 /** What the page says when its room gave no answer: out of reach, or yet to send the player's gear. */
 const UNANSWERED = 'Your room did not answer. Try again.';
 
 /** Why the room refused a return to the ship, in words; null where it answered yes. */
 export function refusedWords(answer: number): string | null {
-  if (answer === FALLEN) return 'You cannot return to your ship while fallen.';
-  if (answer === FIGHTING) return 'You cannot return to your ship within ten seconds of being struck.';
-  if (answer === NO_SHIP) return "You have no ship yet. The Harbourmaster in Overlook's market has one for you.";
-  return answer === TO_SHIP ? null : 'You cannot return to your ship now.';
+  if (answer === TO_SHIP) return null;
+  return ANSWERS.includes(answer) ? answerText(answer) : 'You cannot return to your ship now.';
 }
 
 /** Asks the room whether the player may return to their ship: null once it says yes, or with no room to ask (offline,

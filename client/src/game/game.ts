@@ -244,6 +244,7 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement): Promise<vo
           waterline: sloop.waterline,
           marks: new MarkView(gpu),
           shown: (hull) => shipModels.shown(hull),
+          way: (hull) => builtHulls()?.[hull]?.way ?? 1,
           warm: () => Promise.all(HULL_NAMES.map((name) => shipModels.load(HULL_NAMES.indexOf(name)))),
         },
         anchorage,
@@ -528,7 +529,20 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement): Promise<vo
   const storyMode = () => playing.flow.mode === 'story';
   const gearHere = () =>
     playing.flow.mode === 'foot' ? (playing.foot?.gear ?? null) : storyMode() ? (story?.gear ?? null) : null;
-  const fed = () => (playing.flow.mode === 'sea' ? (playing.sea?.gear ?? null) : gearHere());
+  /** The ships the player keeps as their gear last said (null before it has), for a gate shut on the way in. */
+  let shipsHeard: number | null = null;
+  const fed = () => {
+    const here = playing.flow.mode === 'sea' ? (playing.sea?.gear ?? null) : gearHere();
+    if (here?.gear?.ship) shipsHeard = here.gear.ship.fleet.length;
+    return here;
+  };
+  /** A gate shut sends the player back to their ship; one who keeps none yet, to Overlook, where the Harbourmaster is. */
+  const shutOut = (why: string) => {
+    const home = shipsHeard === 0 ? playing.landmass.nodes.find((node) => node.id === FIRST_NODE) : undefined;
+    if (!home || playing.foot?.node.id === FIRST_NODE) return travel({ kind: 'shut', why }, goSea);
+    const ashore = { node: home.id, name: home.name };
+    travel({ kind: 'shut', why, ashore }, () => goFoot(home, arrivalFacing(home, playing.landmass.plan, null)));
+  };
   const fighting = () => footView.shown.fight;
   const resting = () => (storyMode() && !story?.gear) || Boolean(playing.sea?.travelling);
   stack.add(
@@ -575,7 +589,7 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement): Promise<vo
       ...{ builtShip, closeSource, waterHere, leave, travel, goFoot, isleFrame, groundAt, story, arrive },
       ...{ isles: islesDrawer, eventProps: boot.eventProps },
       ...{ world, music, ambience, dungeons },
-      heed: (here) => heed(here, (why) => travel({ kind: 'shut', why }, goSea), playing.flow.mode === 'foot'),
+      heed: (here) => heed(here, shutOut, playing.flow.mode === 'foot'),
     },
     playing,
   );
