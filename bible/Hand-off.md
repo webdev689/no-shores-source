@@ -447,7 +447,9 @@ The decisions in [[Open Questions]] are not repeated here.
   ([[The Bulwark Blocks, Supers Are Powerful, the Sea's Gaps Close and Level 30 Takes Breach Gear]]): the Bulwark
   blocks as a swordsman until its change (`roster::standing`); Tempest 48 an orb, Duskraven 16 a bolt, Linked 8 a
   second and ×1.3; a travel never brings the next hostile roll sooner; a cove's wreck one material of 1 or 2,
-  Heartwood 1.5%, a module 3%; a fire's bite scales with the shooter's level strength and the ball. Measured with `economy_tests.rs` (six pace tests and the
+  Heartwood 1.5%, a module 3%; a fire's bite scales with the shooter's level strength and the ball. With the
+  Bulwark blocking, the dev page's two bots seal the heroic Fissure but run out its clock on its Warden (a Bulwark
+  Miniboss, 49% of frontal blows blocked); the rules' scripted pair still wins it, in 261 s. Measured with `economy_tests.rs` (six pace tests and the
   ledger), `balance_tests.rs` (`measure_ranks`), `measure_blows` and `measure_fights_by_rank`. Destiny 1's numbers
   came from search summaries; the proxy refused every page, so they are unchecked against the pages. Tested offline:
   `cargo xtask check` on its head; not played. The page's two scripted sword players stand near the line of holding
