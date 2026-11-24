@@ -146,7 +146,8 @@ export async function standWorker(
   const running = execution();
   const call = async (request: Request, nowMs?: number) => {
     try {
-      return await handle(request, env, running, { fetch: discord.fetch, registry, ...(nowMs ? { nowMs } : {}) });
+      const clock = nowMs === undefined ? {} : { nowMs };
+      return await handle(request, env, running, { fetch: discord.fetch, registry, ...clock });
     } finally {
       await running.settle();
     }
@@ -155,23 +156,30 @@ export async function standWorker(
 }
 export type StoodWorker = Awaited<ReturnType<typeof standWorker>>;
 
-/** Sign a user in through the whole flow and answer their panel token. */
-export async function signInPanel(bot: StoodWorker, userId = MOD): Promise<string> {
+/** Walk a user through Discord's sign-in, at `nowMs` on the rig's clock when given, and answer the panel's ticket. */
+export async function ticketFor(bot: StoodWorker, userId = MOD, nowMs?: number): Promise<string> {
   if (!bot.discord.members.has(userId)) bot.discord.members.set(userId, []);
   bot.discord.world.signedIn = { id: userId, username: `u${userId.slice(-2)}`, global_name: 'Someone' };
-  const start = await bot.call(new Request('https://bot.test/v1/auth/discord?to=/panel/'));
+  const start = await bot.call(new Request('https://bot.test/v1/auth/discord?to=/panel/'), nowMs);
   const state = new URL(start.headers.get('location') ?? '').searchParams.get('state');
   const back = await bot.call(
     new Request(`https://bot.test/v1/auth/discord/callback?code=goodcode00000&state=${state}`),
+    nowMs,
   );
-  const ticket = new URL(back.headers.get('location') ?? '').hash.replace('#ticket=', '');
-  const exchanged = await bot.call(
-    new Request('https://bot.test/v1/auth/exchange', {
-      method: 'POST',
-      headers: { origin: ORIGIN, 'content-type': 'application/json' },
-      body: JSON.stringify({ ticket }),
-    }),
-  );
+  return new URL(back.headers.get('location') ?? '').hash.replace('#ticket=', '');
+}
+
+/** The panel trading a ticket for a session, from its own origin. */
+export const exchangeRequest = (ticket: string) =>
+  new Request('https://bot.test/v1/auth/exchange', {
+    method: 'POST',
+    headers: { origin: ORIGIN, 'content-type': 'application/json' },
+    body: JSON.stringify({ ticket }),
+  });
+
+/** Sign a user in through the whole flow and answer their panel token. */
+export async function signInPanel(bot: StoodWorker, userId = MOD): Promise<string> {
+  const exchanged = await bot.call(exchangeRequest(await ticketFor(bot, userId)));
   return ((await exchanged.json()) as { token: string }).token;
 }
 
