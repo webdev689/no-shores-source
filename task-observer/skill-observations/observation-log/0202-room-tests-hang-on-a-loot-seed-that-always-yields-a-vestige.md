@@ -1,5 +1,5 @@
 ---
-id: 188
+id: 202
 title: "Many room tests hang on a fixed loot seed always yielding a Vestige, so a change to the loot tables broke tests that are not about loot"
 status: open
 type: open-source
