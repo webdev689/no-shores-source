@@ -61,9 +61,9 @@ test('an item gives its intrinsic and each column’s chosen node, bought; a nod
 
 test("a weapon's bars name what it does in a fight, a bow's with its ammunition, armour's what a body keeps", () => {
   const labels = (shown: ReturnType<typeof sheetOf>) => shown?.rows.map((row) => row.label);
-  assert.deepEqual(labels(sheetOf(sword(0))), ['Impact', 'Speed', 'Reach', 'Poise', 'Swing cost']);
+  assert.deepEqual(labels(sheetOf(sword(0))), ['Damage', 'Speed', 'Reach', 'Poise', 'Swing cost']);
   const bow = sheetOf(item({ kind: kind('bow') }));
-  assert.deepEqual(labels(bow), ['Impact', 'Aimed', 'Fire rate', 'Poise', 'Pace aiming', 'Ammo']);
+  assert.deepEqual(labels(bow), ['Damage', 'Aimed', 'Fire rate', 'Poise', 'Pace aiming', 'Ammo']);
   const ammo = bow?.rows.at(-1);
   assert.ok(ammo && !ammo.bar && ammo.said === '60', "its ammunition a count, as Destiny's magazine, no bar");
   assert.ok(bow?.notes.includes('Two-handed'), JSON.stringify(bow?.notes));
@@ -90,7 +90,7 @@ test('beside another, each bar says what changes, signed, a cost better as it fa
   assert.equal(light?.rows.find((row) => row.label === 'Speed')?.change, '', 'no change, no words');
   const heavy = sheetOf(sword(0), null, givenTraits(sword(0), { column: 0, node: 1 }));
   const plain = sheetOf(sword(0));
-  assert.ok((heavy?.rows[0]?.value ?? 0) > (plain?.rows[0]?.value ?? 0), "Heavy Head's Impact, tried");
+  assert.ok((heavy?.rows[0]?.value ?? 0) > (plain?.rows[0]?.value ?? 0), "Heavy Head's Damage, tried");
   const armour = sheetOf(item({ kind: kind('head') }), statsOf(kind('sword'), []));
   assert.ok(
     armour?.rows.every((row) => row.from === null),
@@ -178,8 +178,15 @@ test('a bar names its change in green where it is better and red where worse, a 
     'costing more is worse',
   );
   assert.equal(
-    spanColour(tried?.rows.find((row) => row.label === 'Impact') as StatRow),
+    spanColour(tried?.rows.find((row) => row.label === 'Damage') as StatRow),
     'gain',
     'striking harder is better',
   );
+});
+
+test('a hand left free says nothing; a shield, a pair and both hands each say so', () => {
+  const notes = (name: string) => sheetOf(item({ kind: kind(name) }))?.notes ?? [];
+  assert.deepEqual(notes('sword'), []);
+  assert.deepEqual(notes('sword_and_shield'), ['Blocks with its shield']);
+  assert.deepEqual(notes('greatsword'), ['Two-handed']);
 });

@@ -202,10 +202,15 @@ The decisions in [[Open Questions]] are not repeated here.
   "Stats"). Five read-only audits (the rules, the page, the design, the bible, the tests) and each finding tested
   before its fix: the fire rate a tick fast per reload, Impact without a player's ×1.5, a finish's drawn trims unseen,
   a module's card set against the worn sword, locked nodes' cards never reachable, italic breaking the face's letters,
-  among them. Tested offline: the crates' and the page's tests, `cargo xtask repo`, pictures rendered headless at
-  1280 by 720, 1600 by 900 and 1920 by 1080; not played by hand, on a real GPU or in a deployed room. For the owner:
-  [[Plain Text]] still names the growth "a ring in its nodes", a rule note Claude does not change without a yes;
-  and whether the hover card should keep every perk's words (it runs tall on a 900 px screen).
+  among them. The owner's next asks are in too: hints as plain verbs ("Hold, Buy", "Click, Choose", and a held
+  consumable's "Hold, Use"), no "frees a hand" line, Impact named Damage
+  ([[The Inspect Panel's Hints Are Plain Verbs, and Impact Is Damage]]); a Fruit of Dagon no longer fed from an item's
+  page but held from the inventory's Consumables, growing every piece worn 5,000 XP each, the owner's two answers
+  ([[A Fruit of Dagon Is Used From the Inventory and Grows Everything Worn]]; the wire's Feed ask now carries no item).
+  Tested offline: the crates' and the page's tests, `cargo xtask repo`, pictures rendered headless at 1280 by 720,
+  1600 by 900 and 1920 by 1080; not played by hand, on a real GPU or in a deployed room. For the owner: [[Plain Text]]
+  still names the growth "a ring in its nodes", a rule note Claude does not change without a yes; and whether the
+  hover card should keep every perk's words (it runs tall on a 900 px screen).
 
 - **The island view in rain, the Playlist over the island and the ships at a roadstead** (#191, merged on the owner's
   "Deploy", which deploys the page and the rooms). The owner's three reports:

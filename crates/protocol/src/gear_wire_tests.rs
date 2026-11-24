@@ -16,7 +16,7 @@ fn every_ask() -> Vec<Asked> {
         Asked::Gear(Ask::Choose { item: 4, column: 0, node: 2 }),
         Asked::Gear(Ask::Dismantle { item: 5 }),
         Asked::Gear(Ask::Identify { vestige: 6 }),
-        Asked::Gear(Ask::Feed { item: 7 }),
+        Asked::Gear(Ask::Feed),
         Asked::Gear(Ask::Store { item: 8 }),
         Asked::Gear(Ask::Withdraw { item: 9 }),
         Asked::Gear(Ask::StoreVestige { vestige: 10 }),

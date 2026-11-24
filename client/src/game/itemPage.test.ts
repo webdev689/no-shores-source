@@ -172,7 +172,8 @@ test('a node not affordable says what is short, and one beside another chosen sa
     'choosing it sets Light Grip aside',
   );
   const richCard = cardsOf(sword, state({ aurem: 900, stocks: [9, 0, 0, 0, 0] })).get('node-0-1');
-  assert.ok(textsOf(richCard).some((text) => text.words === 'Hold to buy'));
+  const hint = textsOf(richCard).map((text) => text.words);
+  assert.ok(hint.includes('Hold') && hint.includes('Buy'), 'its hint, in a word');
   const spans = (node: Child): Span[] =>
     node
       ? [

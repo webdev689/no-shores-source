@@ -104,6 +104,23 @@ test('a card is set beside the piece worn in its own slot: a module beside the m
   );
 });
 
+test('a Fruit of Dagon is held to use from the inventory while anything worn can still grow, and grows all of it', () => {
+  const column = { kind: 0, traits: [], xp: 1_000, aurem: 0, fragments: 0, essence: 0, resource: 0 };
+  const fruitOf = (items: GearItem[]) =>
+    inventoryPageOf(state({ stocks: [0, 0, 0, 0, 2], items }))
+      .tabs.find((tab) => tab.id === 'consumables')
+      ?.cells.find((cell) => cell.key === 'fruit');
+  const growing = item({ id: 1, at: 2, columns: [column], xp: 0, xpMost: 1_000 });
+  const fruit = fruitOf([growing]);
+  assert.deepEqual(fruit?.press?.ask, { kind: ASKS.feed }, 'one ask, for every piece worn');
+  assert.deepEqual([fruit?.press?.held, fruit?.press?.label], [true, 'Use'], 'held, its hint a plain verb');
+  assert.match(fruit?.words ?? '', /every piece you wear/);
+  const full = fruitOf([{ ...growing, xp: 1_000 }]);
+  assert.equal(full?.press, null, 'nothing worn can grow');
+  assert.match(full?.words ?? '', /Nothing you wear can grow/);
+  assert.equal(fruitOf([{ ...growing, at: 0 }])?.press, null, 'a carried piece is not grown');
+});
+
 test('a slot’s flyout holds its nine places, and a carried loadout is worn in the slot it is shown under', () => {
   const brace = item({ id: 3, kind: 23, at: 0, bucket: 1 });
   const gear = state({ items: [item({ id: 1, at: 3, kind: 8 }), brace, item({ id: 4, at: 0, bucket: 0 })] });
@@ -169,7 +186,7 @@ test('the Ammo crate stands on the Consumables shelf with its count, held to fil
   const crate = crateOf({ crates: 3, ammoShare: 0.5, ammoMost: 24 });
   assert.deepEqual([crate?.name, crate?.glyph, crate?.count], ['Ammo crate', 'ammo-crate', 3]);
   assert.deepEqual(crate?.press, {
-    label: 'Hold to fill your ammo',
+    label: 'Use',
     ask: { kind: ASKS.useCrate },
     role: 'button',
     held: true,

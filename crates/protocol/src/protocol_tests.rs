@@ -337,7 +337,7 @@ fn an_input_reads_back_as_its_number_intent_look_dress_arms_view_ask_and_respawn
         seen: 977,
         spawn: Some(SpawnAsk::Foe { foe_type: 12, rank: 5, shield: 2 }),
         respawn: true,
-        ask: Some(room::Asked::Gear(gear::Ask::Feed { item: 4 })),
+        ask: Some(room::Asked::Gear(gear::Ask::Feed)),
         spawn_level: 12,
         cast: Some(room::Cast { spell: 8, aim: Some([3.0, -12.5, 0.25]) }),
         menu: true,

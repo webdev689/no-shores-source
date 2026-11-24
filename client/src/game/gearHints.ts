@@ -26,8 +26,8 @@ export const HINTS: Readonly<Partial<Record<View | 'item', readonly Hint[]>>> = 
   mail: [['Click / E', 'Take']],
   journal: [['T', 'Timers']],
   item: [
-    ['Hold', 'Buy a node'],
-    ['Click', 'Choose one bought'],
+    ['Hold', 'Buy'],
+    ['Click', 'Choose'],
   ],
 };
 /** What the inventory's shelves' cells show. */

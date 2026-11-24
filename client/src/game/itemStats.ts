@@ -29,10 +29,10 @@ const FIELDS = [
 type Field = (typeof FIELDS)[number];
 export type ItemStats = Readonly<Record<Field, number>>;
 
-/** Which loadout the numbers are of (`room::stats::Loadout`), and how one is held (`Hands`): each but the last its
- *  note, a pair's by what it strikes with. */
+/** Which loadout the numbers are of (`room::stats::Loadout`), and how one is held (`Hands`): a shield, a pair (by what
+ *  it strikes with) and both hands each their note; a hand left free, or one held, none. */
 export const LOADOUT = { none: 0, melee: 1, ranged: 2 } as const;
-const HANDS = ['Leaves a hand free for a torch', 'Blocks with its shield', 'A pair', 'Two-handed'];
+const HANDS = ['', 'Blocks with its shield', 'A pair', 'Two-handed'];
 
 type Rules = Pick<CombatRules, 'itemStats'>;
 let rules: Rules | null = null;
@@ -123,14 +123,14 @@ interface Stat {
 }
 
 const MELEE: readonly Stat[] = [
-  { label: 'Impact', field: 'impact', places: 1 },
+  { label: 'Damage', field: 'impact', places: 1 },
   { label: 'Speed', field: 'rate', places: 2, unit: '/s' },
   { label: 'Reach', field: 'reach', places: 1, unit: ' m' },
   { label: 'Poise', field: 'poise', places: 1 },
   { label: 'Swing cost', field: 'stamina', places: 1, less: true },
 ];
 const RANGED: readonly Stat[] = [
-  { label: 'Impact', field: 'impact', places: 1 },
+  { label: 'Damage', field: 'impact', places: 1 },
   { label: 'Aimed', field: 'aimed', places: 1 },
   { label: 'Fire rate', field: 'rate', places: 2, unit: '/s' },
   { label: 'Poise', field: 'poise', places: 1 },

@@ -368,6 +368,8 @@ a decision is a record. How to add one: [[Recording a Decision]].
 - [[The Meadow Art Is the Owner's, Its Tables Stay in Git, and the Grass Takes the Trees' Rain]]
 - [[The Inspect Panel Follows Destiny's Weapon Page, Its Stats Shown and Its Nodes Square]]
 - [[The Inspect Panel as Claude Shapes It]]
+- [[The Inspect Panel's Hints Are Plain Verbs, and Impact Is Damage]]
+- [[A Fruit of Dagon Is Used From the Inventory and Grows Everything Worn]]
 
 ## Replaced
 

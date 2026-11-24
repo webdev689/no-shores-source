@@ -879,11 +879,12 @@ never while a press is held. Each press is an ask the room answers.
   against a bone bar on a faint track, its value beside it (`statBars.ts`), a page's bar 10 px tall (14 at the larger
   words) and a card's 6 (8). The numbers are the room's own, asked of its rules through the combat rules' WebAssembly
   once the game has them (`setItemRules`, `itemStats.ts`; [[Gear]], "Stats"), each trait the item gives trimming
-  them: a Melee weapon's Impact, Speed, Reach, Poise and Swing cost; a Ranged one's Impact, Aimed, Fire rate, Poise,
+  them: a Melee weapon's Damage, Speed, Reach, Poise and Swing cost; a Ranged one's Damage, Aimed, Fire rate, Poise,
   Pace aiming and Ammo, a count with no bar; a weapon whose finish moves the body while it is drawn, or one set beside
   it that does, Dodge cost and Poise held after them; an armour piece's or the cloak's Stamina back, Dodge cost, Poise
-  held and Healing. On the page, under a weapon's rows, how it is held (a hand free for a torch, blocks with its
-  shield, a pair whose blows or shots take turns, two-handed) and "Strikes at once" for a gun. A bar is the most any
+  held and Healing ([[The Inspect Panel's Hints Are Plain Verbs, and Impact Is Damage]]). On the page, under a
+  weapon's rows, how it is held where that changes how it plays (blocks with its shield, a pair whose blows or shots
+  take turns, two-handed) and "Strikes at once" for a gun. A bar is the most any
   kind of its loadout reaches with no traits and three tenths again (a body's own number and three fifths again, Pace
   aiming the whole pace). Beside another item or another choice of nodes, the part both share stands in bone and what
   changes past it in green where it is better and red where it is worse, solid either way, a cost better as it falls,
@@ -895,7 +896,7 @@ never while a press is held. Each press is an ask the room answers.
   fading to the right over a rule of it. Under it, at the left, its words, upright and faint, over a rule; Attack or
   Defense large with its element's glyph and its Prestige under it, level with the middle of its rows beside it, or
   over them where the column has less than 340 px across beside the number for them (480 at the larger words); the
-  node grid, "Hold, Buy a node" and "Click, Choose one bought" over it; and its perks (an Atheric's two first: its
+  node grid, "Hold, Buy" and "Click, Choose" over it; and its perks (an Atheric's two first: its
   intrinsic, marked always on, and its own node's perk, marked and dimmed until it is chosen, never listed twice; a
   perk that gives and takes with its cost on a line of its own in the colour of a loss). That column is half the page
   across, 460 to 600 px (780 at the larger words), and scrolls, its foot fading into the page. At the right the item
@@ -906,8 +907,9 @@ never while a press is held. Each press is an ask the room answers.
   its glyph brass once bought; set in brass when chosen. Every node takes the pointer and the keys, locked or not, so
   its card says why. A node is bought by holding it and one bought is chosen by a click. A node hovered, or focused by
   the keys (over one under a resting pointer), that is not chosen shows on the rows what choosing it would change,
-  and the main number then shows no compare. Its card stands beside it: its name and state ("Not enough Aurem" in
-  the colour of a loss where the player cannot pay), its words, "Replaces" the perk chosen in its column, and until
+  and the main number then shows no compare. Its card stands beside it: its name and its state (Chosen, Bought, Locked,
+  or "Not enough Aurem" in the colour of a loss where the player cannot pay; none where it can be bought), along its
+  foot its press in a word ("Hold, Buy"; "Click, Choose"), its words, "Replaces" the perk chosen in its column, and until
   it is bought each thing it costs (Aurem, the item's fragments and Essence, its island's resource) with its glyph,
   what the player has over what it asks, enough in green and short in red; a locked one says, in its own words, that
   its square fills as the item, or an officer, is used; a ship's module's and an officer's nodes say their price in
@@ -917,14 +919,15 @@ never while a press is held. Each press is an ask the room answers.
   it was; the rows and the main number show what this piece changes over it, and the press reads "Compare: on" while
   it shows, kept from page to page until the menu shuts. Its presses go to the footer, Back first and what wears the
   piece last, which wraps them onto a second line where they do not fit: wear it, take it off, put it in the vault or
-  take it out (at the vault's counter), and, held, feed it a Fruit of Dagon or dismantle it (never a horse, on its
+  take it out (at the vault's counter), and, held, dismantle it (never a horse, on its
   page, its vault cell or its flyout).
 - **Inventory.** Aurem and the Shapes held along the top, each named under its count; under it the Vestiges carried, "Vestiges 3/10" over ten places
   in two rows of five, as Destiny 2's engrams stand, an empty place a dark Vestige, a click opening one at the Mage;
   then shelves, each counting what it holds: Consumables, and Materials, the Weapon and Armor Fragments and Essence
   first, then the islands' resources. Each shelf is a grid as Destiny's is: each thing a stack in a cell with its count,
   shown only while one is held, then empty places to the end of its row of ten. Consumables holds the Fruit of Dagon and
-  the Ammo crate; the crate is held ("Hold to fill your ammo") to fill the Ranged weapon's ammunition, and offers
+  the Ammo crate; a Fruit is held (its hint "Hold, Use", a plain verb as [[The Inspect Panel's Hints Are Plain Verbs, and Impact Is Damage]] has it) to grow every piece worn, and offers nothing while nothing worn can
+  grow, when it says so ([[A Fruit of Dagon Is Used From the Inventory and Grows Everything Worn]]); the crate is held ("Hold, Use") to fill the Ranged weapon's ammunition, and offers
   nothing at full, nor with no Ranged weapon worn, when it says to wear one first. The gear is on the Character page
   alone.
 - **Holds.** What cannot be undone is held. As a press is held, what it acts on charges: a wash of its rarity rises

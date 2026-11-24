@@ -248,9 +248,18 @@ export function inventoryPageOf(state: GearState): InventoryPage {
       words: STOCK_WORDS[index] ?? '',
     }),
   );
+  const fruits = state.stocks[4] ?? 0;
+  // A Fruit is eaten from here, and grows every piece worn that can still grow (`gear::asks` feed).
+  const growing = state.items.some(
+    (item) => item.at >= WORN && item.at <= WORN + 6 && item.columns.length > 0 && item.xp < item.xpMost,
+  );
   const fruit = cell('fruit', 'fruit', 'Fruit of Dagon', {
-    count: state.stocks[4] ?? 0,
-    words: "Hold it on an item's page to feed it to that item: it grows the item.",
+    count: fruits,
+    words: `It grows every piece you wear.${growing ? '' : ' Nothing you wear can grow any more.'}`,
+    press:
+      fruits > 0 && growing
+        ? { label: 'Use', ask: { kind: ASKS.feed }, role: 'button', held: true, burst: 'pulse' }
+        : null,
   });
   const crates = state.crates ?? 0;
   const [full, unarmed] = [(state.ammoShare ?? 1) >= 1, state.ammoMost === 0];
@@ -260,7 +269,7 @@ export function inventoryPageOf(state: GearState): InventoryPage {
     words: `It fills your Ranged weapon's ammunition at once. You carry five at most.${why}`,
     press:
       crates > 0 && !full && !unarmed
-        ? { label: 'Hold to fill your ammo', ask: { kind: ASKS.useCrate }, role: 'button', held: true, burst: 'pulse' }
+        ? { label: 'Use', ask: { kind: ASKS.useCrate }, role: 'button', held: true, burst: 'pulse' }
         : null,
   });
   const materials = Array.from({ length: RESOURCE_COUNT }, (unused, index) =>

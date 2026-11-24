@@ -13,7 +13,7 @@ import type { Interface } from '../ui/ui.ts';
 import { cardFrame, cardName, rarityTone } from './gearCard.ts';
 import type { Glyph } from './gearCards.ts';
 import { fillNode } from './gearHold.ts';
-import { INK, focusRing, glyphNode, growthNode, label, nodeGlyphNode, words } from './gearNodes.ts';
+import { type Hint, INK, focusRing, glyphNode, growthNode, label, nodeGlyphNode, words } from './gearNodes.ts';
 import type { itemDetailOf } from './gearScreen.ts';
 import type { MenuContext } from './menuPage.ts';
 
@@ -75,12 +75,13 @@ export function bar(context: Pick<MenuContext, 'sizes'>, said: string, share: nu
   };
 }
 
-/** What a node's state says, and the press it waits for; `short`, the costs the player has too little of. */
+/** What a node's state says: chosen, bought, locked, or what the player has too little of (`short`) to buy it; nothing
+ *  where it can be bought, as its hint says. */
 function stateOf(node: NodeShown, short: readonly Cost[] = []): string {
   if (node.chosen) return 'Chosen';
-  if (node.bought) return 'Bought: click to choose';
+  if (node.bought) return 'Bought';
   if (!node.unlocked) return 'Locked';
-  return short.length > 0 ? `Not enough ${short.map((cost) => cost.name).join(', ')}` : 'Hold to buy';
+  return short.length > 0 ? `Not enough ${short.map((cost) => cost.name).join(', ')}` : '';
 }
 
 /** A cost's line: its glyph and name, and what the player has over what it asks, enough in green, short in red. */
@@ -114,6 +115,13 @@ function nodeCard(context: MenuContext, node: NodeShown, costs: readonly Cost[] 
   const short = costs?.filter((cost) => cost.have < cost.need) ?? [];
   const state = stateOf(node, node.unlocked ? short : []);
   const priced = !node.bought && costs !== null && costs.length > 0;
+  // Its press in a word, as every hint says it: Hold, Buy; Click, Choose.
+  const hints: Hint[] =
+    node.unlocked && !node.bought && node.ask !== null && short.length === 0
+      ? [['Hold', 'Buy']]
+      : node.bought && !node.chosen && node.ask !== null
+        ? [['Click', 'Choose']]
+        : [];
   const foot: Child[] = [
     !node.unlocked && words(node.cost, size, INK.faint),
     priced && label('Costs', size),
@@ -128,13 +136,14 @@ function nodeCard(context: MenuContext, node: NodeShown, costs: readonly Cost[] 
     rarityTone(null),
     [
       cardName(node.label, null),
-      words(state, size, node.chosen ? INK.brassLit : short.length > 0 && node.unlocked ? INK.loss : INK.word),
+      state !== '' &&
+        words(state, size, node.chosen ? INK.brassLit : short.length > 0 && node.unlocked ? INK.loss : INK.word),
     ],
     [
       { width: 'grow', text: { words: node.words, size, colour: INK.faint } },
       replaces !== null && words(`Replaces ${replaces}`, size, INK.word),
     ],
-    [],
+    hints,
     foot.some(Boolean) && {
       width: 'grow',
       direction: 'column',
@@ -185,7 +194,7 @@ function nodePress(
   return {
     id,
     press: true,
-    label: `${node.label}, ${stateOf(node)}: ${node.cost}`,
+    label: `${node.label}, ${stateOf(node) || 'Buy'}: ${node.cost}`,
     width: tile,
     height: tile,
     alignX: 'center',

@@ -152,7 +152,9 @@ number is one of [[Gear as Claude Shapes It]].
   each, to the loadout whose blow last landed and to every armour piece worn. Every deed's XP (a kill, a clear, a
   chest, a sinking, a bounty, the day's and the week's clears, a road's task) also grows the worn Art and, while its
   cape is worn, the faction pledged, before Scholar's share (`earn_play_xp`). An item stops earning at its
-  last column. Past level 20, each 20,000 XP grows a Fruit of Dagon, which gives an item 5,000 XP when fed to it.
+  last column. Past level 20, each 20,000 XP grows a Fruit of Dagon, used from the inventory: one gives every piece
+  worn (the loadouts, the armour and the cloak, never a ship's module or a horse) 5,000 XP each, up to its last column,
+  and is refused while none of them can grow ([[A Fruit of Dagon Is Used From the Inventory and Grows Everything Worn]]).
 - **Level and Prestige.** XP alone reaches level 20. Past it, the Prestige of the four armour pieces worn sets the
   level, to 30. A Rare at level 20 carries 13 to 15, a Legendary 18 to 27 (a Breach's to 30), an Atheric 21 to 30,
   each climbing by equal steps over its upgrades, however many its grid holds (a ship's guns five, armour three).
@@ -215,7 +217,7 @@ number is one of [[Gear as Claude Shapes It]].
   draw's, shots a second (the tick a reload ends begins nothing, so the next shot comes a tick after it; a pair of
   pistolets fires twice, the left a brace's gap and a tick after the right, then reloads), the poise a shot fills (its
   weight's alone), the shots it carries (`ammo::capacity`), how fast an arrow or a bolt flies (a ball at once) and the
-  share of the pace kept aiming. How either is held: a hand free for a torch, a shield, a pair, or both hands (a
+  share of the pace kept aiming. How either is held: a hand free (the page says nothing of it), a shield, a pair, or both hands (a
   two-handed blade, a bow, a crossbow, a thunderlock). Any item's body numbers, which armour shows: the stamina back a
   second resting, a dodge's cost, the poise held before a stagger and a healing charge's share; a weapon's with its
   finish's trims while it is drawn. The browser asks them of the room's module (`fighter_item_stats`), as it predicts

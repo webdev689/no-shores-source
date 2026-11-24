@@ -122,7 +122,7 @@ const REFUSALS: Readonly<Record<number, string>> = {
   14: 'That node is not bought.',
   15: 'You do not have enough for it.',
   16: 'You have no Fruit of Dagon.',
-  17: 'It cannot grow any more.',
+  17: 'Nothing you wear can grow any more.',
   18: 'There is no such emblem.',
   19: 'You do not have that.',
   20: 'You already have that.',

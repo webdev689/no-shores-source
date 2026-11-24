@@ -41,7 +41,7 @@ const holds = (cell: Cell): boolean => cell.item !== null || cell.glyph === 'ves
 /** What a cell's presses do, in keycaps. */
 function hintsOf(cell: Cell): Hint[] {
   return [
-    ...(cell.press ? [[cell.press.held ? 'Press' : 'Click', cell.press.label] as const] : []),
+    ...(cell.press ? [[cell.press.held ? 'Hold' : 'Click', cell.press.label] as const] : []),
     ...(cell.other ? [['Right-click', cell.other.label] as const] : []),
   ];
 }
@@ -93,7 +93,7 @@ export function cellNode(context: MenuContext, cell: Cell): Node {
   }
   if (item) context.details(id, item);
   const hints: Hint[] = [
-    ...(press ? [[press.held ? 'Press' : 'Click', press.label] as const] : []),
+    ...(press ? [[press.held ? 'Hold' : 'Click', press.label] as const] : []),
     ['Right-click / details', 'Details'],
     ...(carried ? [[DISMANTLE_KEY, 'Hold to dismantle'] as const] : []),
   ];
