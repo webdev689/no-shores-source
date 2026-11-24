@@ -1,5 +1,5 @@
 ---
-id: 153
+id: 180
 title: "The common brief names `$WORKER_INBOX` as if it were set, but it is only a path in the task text; files sitting at 593-599 lines turn any edit into a size violation"
 status: open
 type: open-source

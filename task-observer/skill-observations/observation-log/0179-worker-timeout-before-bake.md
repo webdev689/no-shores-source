@@ -1,5 +1,5 @@
 ---
-id: 152
+id: 179
 title: "A Blender worker building 38 modules hit the background task's two-hour limit before its whole bake, leaving its work uncommitted and unreported"
 status: open
 type: open-source

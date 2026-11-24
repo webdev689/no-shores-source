@@ -1,5 +1,5 @@
 ---
-id: 155
+id: 182
 title: "Parallel workers' build folders filled the shared disk mid-run (7 GB a worktree), and a brief changing shared words left out the server test that pins them"
 status: open
 type: open-source
