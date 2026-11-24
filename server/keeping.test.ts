@@ -535,14 +535,12 @@ test("a kept player's room is told their guild as it keeps them, again now and t
   assert.equal(room.guilds.get(1), '', 'not told again so soon');
   await keeper.rename(1, token);
   const told = JSON.parse(room.guilds.get(1) ?? 'null') as Record<string, unknown>;
-  // The week the accounts read `done` for, where they tell it.
-  const week = 'week' in told ? { week: weekOf(clock.now) } : {};
   assert.deepEqual(told, {
     id: 'g',
     done: [false, false, false, false],
     beforeTheWeek: true,
     boons: { xp: 0, aurem: 0, reputation: 0 },
-    ...week,
+    week: weekOf(clock.now),
   });
   await database.prepare('DELETE FROM guild_members').run();
   await keeper.due(clock.now + GUILD_EVERY_MS);
