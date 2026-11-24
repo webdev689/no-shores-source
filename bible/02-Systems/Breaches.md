@@ -194,4 +194,17 @@ dressing (`breach_dress.py`) is drawn only. The Drowned horse is a mount look of
   Vault let a few finish its maze. Claude's reading; the owner may want every player.
 - **The Two Shores' crossing rule at Hard** (the Lodestone may not cross a rift) never binds yet: no Keeper is warded.
   A Hard ward on the Keepers would give it weight; that is a new mechanic, for the owner.
+- **The Ways wait on every living player of the company**, as the rule reads: one idle elsewhere in the run holds the
+  Ways unwon until they reach the Stair or fall. The owner's call whether those away from the Ways count.
+- **The Steward's bell order travels to every player.** The page draws it only in the court, and the taken see their
+  bells' numerals alone; but the room sends one snapshot to all, so hiding the order from the taken's page would need
+  a snapshot of its own for them.
+- **A private run's unjudged sockets** see its snapshots for the few seconds before the keeper judges them, and one
+  refused is sent away after.
+- **The gate's answer** to E is read as the first word on the player's gear after it is asked; another ask answered in
+  that moment could be taken for it.
+- **The Steward's court's objective line** can run to eight parts (the takings, the clocks, who is taken, the bells,
+  the way back, the mooring, its bareness) and is cut in a short view.
+- **Following a company member at the gate** follows them wherever they stand in the zone, the ground near them not
+  kept loaded if they are far off.
 - **Played offline only**: tested by the rules' and the page's tests, never in a deployed room.

@@ -58,8 +58,8 @@ code:
 
 The game's music: DFO's own FM synthesiser playing scores written as notes in code, synthesised while the game runs
 ([[Music and Ambience Come From DFO's Synthesiser]], [[Pick - Music]]); the Drowned Vale's scores are written for
-instruments recorded on Freesound, each played on its pick once the owner has picked it and on the synthesiser until
-then. Out of danger a calm piece comes now and then,
+instruments recorded on Freesound ([[The Drowned Vale Has Its Own Music and Ambience From Freesound]]), each played on
+its pick once the owner has picked it and on the synthesiser until then. Out of danger a calm piece comes now and then,
 at sea, in the social space and on the islands, with minutes of silence between pieces
 ([[Every Sound Comes From Freesound, and the Music Rests Between Pieces]]); music comes as danger nears, grows into the
 fight a layer at a time on the bar line, and falls back to silence when it ends. A fight's music never plays the same

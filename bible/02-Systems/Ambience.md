@@ -23,10 +23,12 @@ code:
 # Ambience
 
 What the world sounds like where the player is: the open sea, Saltmere's social space and its port, each of the nine
-islands by its climate, and a Breach ([[Breaches]]): each space of its run, and its gate's hollow in the vale. Each is its own: beds of wind, water and leaves under it, and the calls of birds, beasts,
-insects, timbers and a city's work over it, placed round the listener. It is DFO's soundscape ([[Pick - Soundscape]]),
-grown to eleven places ([[Music and Ambience Come From DFO's Synthesiser]]), its every sound a Freesound recording the
-owner picked ([[Every Sound Comes From Freesound, and the Music Rests Between Pieces]]).
+islands by its climate, and a Breach ([[Breaches]], [[The Drowned Vale Has Its Own Music and Ambience From Freesound]]):
+each space of its run, and its gate's hollow in the vale. Each is its own: beds of wind, water and leaves under it, and
+the calls of birds, beasts, insects, timbers and a city's work over it, placed round the listener. It is DFO's
+soundscape ([[Pick - Soundscape]]), grown to eleven places ([[Music and Ambience Come From DFO's Synthesiser]]), its
+every sound a Freesound recording the owner picked
+([[Every Sound Comes From Freesound, and the Music Rests Between Pieces]]).
 
 ## How it works
 
