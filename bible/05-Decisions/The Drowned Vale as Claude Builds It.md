@@ -94,3 +94,26 @@ punished what play could not prevent.
 | A sighting at Hard | Its unwriting comes whoever reaches the Stair in its 3 s; the Heart's chest shuts once anyone is seen | Stepping onto the Stair cancelled it; the chest stayed open to an attempt someone had been seen in |
 | A Bulwark at a rift's mooring | Shuts the rift only from a mooring the company has left, as at the gate | It shut a held rift at once, stranding those inside, against what the Waking teaches |
 | The Steward's weight and the tiers' doors | 6.5 times its match; each tier opens one level under its foes, 25 and 29 | Two under, a company strikes at about half its match and could not fell an eight-times Steward in the time its takings give, however it played; never laid bare, a matched company still cannot fell it before its last toll |
+
+## Its music
+
+Asked for "proper thematic music", and whether the Drowned Vale's music should be played on recorded instruments, the
+synthesiser or Freesound's own pieces, the owner answered "Plenty of sounds come from freesound": read as scores
+written for the Drowned Vale and played on instruments recorded on Freesound, picked on the sound sheet. Claude's
+musical calls, built in [[Music]]:
+
+| Call | Chosen | Why |
+|---|---|---|
+| The theme | One for the whole raid: D Phrygian, low, D rising through E flat to G and home, then to B flat and down through the mode; a second strain answering it | A drowned chapel's chant, not happy; the Phrygian flat second is the Vale's pull, heard in every song |
+| Who carries it | The low choir and the organ; the cello or the horn its strain; the Steward's horn doubling the choir | The chapel and its bells; the climax at its fullest |
+| Each encounter's colour | The Waking and the Mending on the Lattice's glass, the Choir and the Two Shores on the bells, the Ways on the waterphone | The Lattice glows as glass, the chapel's bells are the Choir's sound, the Ways are wet and dark |
+| Keys and tempi | The Waking D at 92, the Mending C at 100, the Choir E at 84, the Ways B flat at 66, the Two Shores E flat at 108; the Scrivener G at 112 to 134, the Steward D at 120 to 140 | Each fight its own, the Steward home in the theme's key |
+| The modern layer | A drone under every fight, booms on the downbeats, struck metal and a noise riser into the bar line, never a pitched sweep | The owner's modern spin, inside the music's rule against ringing and whining |
+| The fights' form | Twelve takes of eight bars a fight: a vamp, the theme, the strain and a breakdown, each in three feels, the third over turned chords; nine in a last stand | As every fight song varies ([[The Fight Music Varies, Recombined From Takes]]) |
+| The Unlit Ways | No drums: a drone, the waterphone, the taiko's heartbeat and a low pulse; the peak (the high choir, a boom) only once a Watcher has seen | Stealth, as asked; the seen moment is its danger |
+| The Two Shores | The tonic struck against its flat second | Two shores a half step apart |
+| The great foes | The Scrivener from its waking; the Steward's score from its court's start, whether or not the Steward is engaged; the Steward's fall the theme in D major, the Breach cleared | The Steward's court is the climax from its first taking |
+| Between encounters | Three calm pieces (the Descent's, the Broken Stair's, After the Bells), sparse, on felt piano, harp, cello, a singing bowl and the choir; the first 20 s into a quiet stretch, then 45 to 120 s of silence after one, never the one begun last while there is another | A run is short: an island's two to nine minutes would never let one play |
+| A fight outside an encounter | The song of the encounter fought where the player stands, else the Waking's | The run never hears the island family's fight |
+| The drums' recordings | Each lasts no longer than its kit drum; struck metal, the bowed cymbal and the riser cut a tenth of a second after their peak, a riser's recording ending on its bar line | No drum rings, recorded or synthesised, and a swell lands where it is written |
+| Until a pick comes | Each track plays its FM program, each drum the kit's own | The Breach has music now and gains its instruments as they are picked |

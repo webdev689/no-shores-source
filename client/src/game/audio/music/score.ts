@@ -45,7 +45,25 @@ export interface Voice extends Partial<FmVoice> {
 /** A song's own drum over the bank's for its key: any of its fields. */
 export type KitDrum = Partial<Omit<Drum, 'kind'>>;
 
-/** A track: its channel, General MIDI program, level and place (0 to 127, 64 the middle), layer and own voice. */
+/** A voice played on a recording, a `music.*` cue picked from Freesound: rising in `attack` seconds, dying over
+ *  `release` after its note, at `gain` of its levelled loudness. A pitched cue plays each note at its pick's measured
+ *  root (its `root` in sounds.json); one written with a `home` (a percussive or textural cue, which has no root)
+ *  plays at its own pitch on that note and transposed from it. A drum played on one sounds no longer than its kit
+ *  drum, `shift` semitones off its own pitch. Until the recording has come, or while a pitched cue has no pick or no
+ *  root, the track plays its program and the drum the kit's own. */
+export interface Sample {
+  readonly cue: `music.${string}`;
+  readonly attack?: number;
+  readonly release?: number;
+  readonly gain?: number;
+  readonly home?: number;
+  readonly shift?: number;
+  /** A swell's: the seconds after its hit it lands, as the kit's own drum does; its recording ends there. */
+  readonly lands?: number;
+}
+
+/** A track: its channel, General MIDI program, level and place (0 to 127, 64 the middle), layer, own voice and the
+ *  recording it plays on where it has one. */
 export interface Track {
   readonly channel: number;
   readonly program: number;
@@ -53,6 +71,7 @@ export interface Track {
   readonly pan: number;
   readonly role: Role;
   readonly voice: Voice | null;
+  readonly sample?: Sample;
 }
 
 /** A compressor a song plays through, and how far it is carried after it (`out`) into a soft ceiling `ceiling`
@@ -92,7 +111,11 @@ export interface Song {
   readonly durationTicks: number;
   readonly notes: readonly Note[];
   readonly tracks: readonly Track[];
-  readonly kit: { readonly volume: number; readonly drums: ReadonlyMap<number, KitDrum> };
+  readonly kit: {
+    readonly volume: number;
+    readonly drums: ReadonlyMap<number, KitDrum>;
+    readonly samples?: ReadonlyMap<number, Sample>;
+  };
   readonly level: number;
   readonly press: Press | null;
   readonly form?: Form;
@@ -105,6 +128,7 @@ export interface TrackSpec {
   readonly pan: number;
   readonly role: Role;
   readonly voice?: Voice;
+  readonly sample?: Sample;
 }
 
 /** The score's drums: their level and layer, each name's key, and any drum with its own layer or its own sound. */
@@ -114,6 +138,7 @@ export interface KitSpec<D extends string> {
   readonly keys: Readonly<Record<D, number>>;
   readonly roles?: Partial<Readonly<Record<D, Role>>>;
   readonly drums?: Partial<Readonly<Record<D, KitDrum>>>;
+  readonly samples?: Partial<Readonly<Record<D, Sample>>>;
 }
 
 /**
@@ -338,13 +363,18 @@ export function makeSong<T extends string, D extends string>(
   }
   heard.sort((one, other) => one.tick - other.tick);
   const tracks = named.map((track): Track => {
-    const { program, volume, pan, role, voice = null } = spec.tracks[track];
-    return { channel: channels.get(track) ?? 0, program, volume, pan, role, voice };
+    const { program, volume, pan, role, voice = null, sample } = spec.tracks[track];
+    return { channel: channels.get(track) ?? 0, program, volume, pan, role, voice, ...(sample && { sample }) };
   });
   const drums = new Map<number, KitDrum>();
   for (const drum of Object.keys(kit.drums ?? {}) as D[]) {
     const own = kit.drums?.[drum];
     if (own) drums.set(kit.keys[drum], own);
+  }
+  const samples = new Map<number, Sample>();
+  for (const drum of Object.keys(kit.samples ?? {}) as D[]) {
+    const own = kit.samples?.[drum];
+    if (own) samples.set(kit.keys[drum], own);
   }
   return {
     name,
@@ -354,7 +384,7 @@ export function makeSong<T extends string, D extends string>(
     durationTicks: length,
     notes: heard,
     tracks,
-    kit: { volume: kit.volume, drums },
+    kit: { volume: kit.volume, drums, ...(samples.size > 0 && { samples }) },
     level,
     press,
   };

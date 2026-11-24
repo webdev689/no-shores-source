@@ -24,7 +24,9 @@ import { type MarkedFoe, dashedRing, mooringMark, runMarks } from './breachMarks
 import type { HeardSound } from '../combat/worldSounds.ts';
 import { MomentWords, STATE_CUES, beatOf, heardOf, momentSounds, momentsHad } from './breachMoments.ts';
 import { mooringSounds, slabSounds, stingOf } from './breachMoments.ts';
-import { type BreachPlan, breachPlanOf, sealOpen, slabStands, socketAt, spaceSocket } from './breachPlan.ts';
+import { hearBreach } from './audio/music/breachHearing.ts';
+import { warmVale } from './audio/music/vale.ts';
+import { type BreachPlan, breachPlanOf, sealOpen, slabStands, socketAt, spaceAt, spaceSocket } from './breachPlan.ts';
 import { ENCOUNTER, type Mooring, breachCall, encounterName, encounterOn } from './breachWords.ts';
 import { gateBanner, gateLine, inSentence, runBanner, teachingWords, wonWords } from './breachWords.ts';
 import type { Use } from './footGear.ts';
@@ -218,6 +220,7 @@ export class BreachView {
     // Only the run, or the patrol zone its gate stands in, shows the Breach.
     this.plan = parts.run || plan?.zone === parts.zone.id ? plan : null;
     this.counting = this.plan && new RunCounting(this.plan);
+    if (this.plan) warmVale();
     if (this.plan && !parts.run) {
       // The gate's doorway stands sealed in this zone alone, so its seal's mesh is fetched only here (and for the run).
       (parts.seal ?? loadSealModule)();
@@ -289,7 +292,7 @@ export class BreachView {
     const alive = !!word.fight.own && word.fight.own.action.kind !== 'dead';
     const counts = counting.frame({ seen, before, events: had, tick, own, feet, alive, living });
     const call = breachCall(seen, counts);
-    const heard = { sounds, sting, beat, call };
+    const heard = { sounds, sting, beat, call, had };
     const here = { own, nameOf, feet, inHollow, lately, clock, eye, marks, before };
     if (seen.gate) return this.gateFrame(plan, seen, here, heard);
     runMarks(plan, seen, marks, { feet, living, foes: () => [...word.fight.foes.values()], counts });
@@ -300,7 +303,8 @@ export class BreachView {
     // A great foe awake (the Scrivener, the Steward) is the music's peak, as an Elite Dungeon's Boss is.
     const great = seen.boss > 0 && (seen.encounter === ENCOUNTER.choir || seen.encounter === ENCOUNTER.steward);
     const mood = great ? ('peak' as const) : seen.encounter > 0 ? ('tension' as const) : null;
-    const shown: PublicShown = { banner, beat, places: this.runPlaces(plan, seen), stores: [], call, mood };
+    const breach = hearBreach(seen, plan, spaceAt(plan, feet[0], feet[1])?.key ?? null, true, had);
+    const shown: PublicShown = { banner, beat, places: this.runPlaces(plan, seen), stores: [], call, mood, breach };
     return { shown, line: '', first: true, props: this.runProps(plan, seen, word, where, clock), sounds, sting };
   }
 
@@ -321,7 +325,7 @@ export class BreachView {
       marks: number[];
       before: BreachSeen | null;
     },
-    heard: Pick<BreachFrame, 'sounds' | 'sting'> & Pick<PublicShown, 'beat' | 'call'>,
+    heard: Pick<BreachFrame, 'sounds' | 'sting'> & Pick<PublicShown, 'beat' | 'call'> & { had: readonly FightEvent[] },
   ): BreachFrame {
     const { gate } = this;
     const { marks } = here;
@@ -366,6 +370,7 @@ export class BreachView {
       stores: [],
       call: heard.call ?? null,
       mood,
+      breach: hearBreach(seen, plan, null, mine && here.inHollow, heard.had),
     };
     return { shown, line: gateLine(plan, seen), first: near, props, sounds, sting: heard.sting };
   }
@@ -563,5 +568,7 @@ export function withBreach(own: PublicShown | null, breached: BreachFrame | null
     banner: { ...own.banner, elsewhere },
     places: [...own.places, ...theirs.places],
     call: own.call ?? theirs.call ?? null,
+    // The zone's own beat is the sting here, so no Breach moment goes with it.
+    breach: theirs.breach ? { ...theirs.breach, moment: undefined } : null,
   };
 }
