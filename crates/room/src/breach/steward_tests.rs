@@ -130,3 +130,15 @@ fn the_ring_of_the_choir_rewrites_the_company_wherever_it_stands() {
     room.tick();
     assert!(breach(&room).marked.contains_key(&players[1]), "Rewritten outside the chapel");
 }
+
+#[test]
+fn a_company_taken_whole_comes_back_on_the_bells_alone() {
+    let (mut room, players) = won_to(Tier::Normal, 1, STEWARD);
+    begin_at(&mut room, &players, "court", "chest");
+    let away = taken_now(&mut room);
+    assert_eq!(away.taken, players, "the one of one");
+    broken_in_order(&mut room, &away);
+    put_at(&mut room, players[0], "court-was", "rift");
+    room.tick();
+    assert!(room.in_space(breach(&room), "court").contains(&players[0]), "home with no one to hold the mooring");
+}

@@ -1,11 +1,11 @@
 //! The Steward, the Drowned Vale's last encounter, after the Vault of Glass's Atheon, on the round court over the
 //! dark. On a fixed measure it takes four living players of the company (half, fewer when fewer stand) into a shore,
 //! what was and what is in turn, and Rewrites them, losing first any still away from its last taking; it tolls on a
-//! shorter measure from each taking, unwriting the Rewritten. In the shore the Lodestone stands on its plinth and five
-//! bells wake, their order shown only in the court over that rift's mooring. Broken in order the way back opens while
-//! a player in the court holds the mooring (two at Hard, if two are left there). Grounded at its feet, the Lodestone
-//! lays it bare: blows on it weigh five times, and Arts recharge three times as fast. After its fourth taking, when the
-//! next would come it unwrites the whole company, and on each toll's measure after. Its fall brings back any away.
+//! shorter measure from each taking, unwriting the Rewritten. In the shore five bells wake, their order shown only in
+//! the court over that rift's mooring; broken in order, the way back opens while the court holds the mooring (two at
+//! Hard if two are there; with none there, the bells alone open it). Grounded at its feet, the Lodestone lays it bare:
+//! blows on it weigh five times, and Arts recharge three times as fast. After its fourth taking, when the next would
+//! come it unwrites the whole company, and on each toll's measure after. Its fall brings back any away.
 
 use super::{Breach, STEWARD};
 use crate::{EventKind, PlayerId, Room};
@@ -229,9 +229,9 @@ impl Room {
             away.done = true;
             self.tell_all(EventKind::WayBack, away.shore as f64);
         }
-        // Two hold the mooring at Hard, or as many as the taking left in the court.
+        // Two hold the mooring at Hard, or as many as the taking left in the court: with none, the bells alone open it.
         let most = if breach.tier == gear::breach::Tier::Hard { 2 } else { 1 };
-        let needed = most.min(self.in_space(breach, "court").len()).max(1);
+        let needed = most.min(self.in_space(breach, "court").len());
         let way = way_out(breach, away.shore);
         let held = way.is_some_and(|(_, at)| self.held_by_players(at, super::shores::MOORING_REACH_M) >= needed);
         if away.done
