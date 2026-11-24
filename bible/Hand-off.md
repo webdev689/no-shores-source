@@ -342,19 +342,21 @@ The decisions in [[Open Questions]] are not repeated here.
     then every blade draws as before; the large weapon pictures re-render by themselves on the merge.
   - Unchecked: whether the new first-person blades pair with the published hands (same size and `oFFs`); every look
     of a kept piece moves once with the wider look roll; played live.
-- **#182, the first Breach, the Drowned Vale**, a draft stacked on #169 for the owner's yes, `cargo xtask check` green
-  at 4a1c78c9 (tested offline; not played, not in a deployed room). Built in full on Claude's autonomy after the
-  owner's three decisions ([[The First Breach Follows the Vault of Glass, at Normal and Hard]] and the two it names);
-  the system in [[Breaches]], every call of Claude's in [[The Drowned Vale as Claude Builds It]]. Its rules, wire,
-  doors, server (eight to a company and a Breach's run, launched never matched, the run let in only once the zone's
-  gate opened), the Sunken Gate and ten spaces in Blender, the page, the Drowned horse, the banner, dye and
-  *Soundings*. A read-only review of the branch found ten defects, each fixed with a test. Left for the owner:
-  - Hard is not shown locked on the Playlist for a character without a Normal clear (the gear message carries no
-    story records); the run's own gate refuses them. A gate refusal (112) shows no words yet.
-  - The Scrivener and the Steward wear the Idol's and the Heart's bodies until their own are drawn; the Drowned
-    horse's ridden pictures render on `main`'s forge workflow.
-  - The Sunken Gate's area stands last in Gullwing Vale's brief at level 20: at the land's own level its ways ramped
-    the Old Stones' and Valeguard's ledges away, and earlier in the list it moved the Old Stones off their puzzle.
+- **#182, the first Breach, the Drowned Vale**, a draft stacked on #169 for the owner's yes, merged with #169's head;
+  `cargo xtask check` green at its head (tested offline; not played, not in a deployed room). Built in full on
+  Claude's autonomy after the owner's three decisions
+  ([[The First Breach Follows the Vault of Glass, at Normal and Hard]] and the two it names); the system in
+  [[Breaches]] (its Limits say what waits), every call of Claude's in [[The Drowned Vale as Claude Builds It]]. Its rules, wire, doors, server, the Sunken Gate and nine spaces in Blender,
+  the page, the Drowned horse, the banner, dye and *Soundings*. A deep audit (rules, page, server and wire, design and
+  tests, the bible, the art) found about seventy defects and gaps; each is fixed with a test where it has a seam, and
+  the bible says what the code does. Left for the owner:
+  - The Drowned horse renders only by a hand forge run (`figures` =
+    `horseidle,horsewalk,horsegallop|horse_drowned`, a write to R2), and its first-person frames are in no workflow.
+  - Hard at the Waking and in the run never stands a fallen player of themselves; outside a running encounter they
+    stand after 6 s: Claude's reading of "no respawn", for the owner to widen.
+  - The Scrivener and the Steward wear the Idol's and the Heart's bodies until their own are drawn.
+  - The layouts: a dead mass's valley or climb now keeps off the caverns (it ran past the Hollow Coven's cavern once
+    the Sunken Gate's area was in the brief); every zone's layout tests pass with it.
 - **Open pull requests**, for the owner's yes once their checks pass: #162 (the game's words out to Type and back; it
   conflicts with `main` in `Decisions.md`) and #159 (the rooms' worker tests wait for what they check; it conflicts
   with `main` in `roomThread.test.ts`). Drafts:
