@@ -11,6 +11,8 @@ import type { Plot, Standing } from './outpostLaw.ts';
 const TIERS = ['normal', 'elite', 'abyss'] as const;
 /** The styles a sea island's dungeon is laid in (`isle::Kind::dungeon`): a cove's, a ruin's and a quarry's. */
 export const DELVE_STYLES = ['caverns', 'crypt', 'mines'] as const;
+/** The tiers as a player reads them, by the same numbers. */
+export const DELVE_WORDS: readonly string[] = ['Normal', 'Elite', 'Abyss'];
 /** The Delve Gate's kind among an outpost's structures. */
 export const GATE = 'gate';
 

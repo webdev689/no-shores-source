@@ -4,7 +4,9 @@ import type { AccountLink, OutpostSeen } from '../../network/accounts.ts';
 import { ASKS, type GearAsk } from '../../network/gearMessages.ts';
 import type { Block } from '../../rules/movementRules.ts';
 import type { Use } from '../footGear.ts';
-import { OUTPOST_CHANGED, openGearWindow } from '../gearScreen.ts';
+import { OUTPOST_CHANGED, OUTPOST_DELVE, openGearWindow } from '../gearScreen.ts';
+import type { Trips } from '../footTrips.ts';
+import { DELVE_WORDS, gateOf, gateTier } from './delveRoom.ts';
 import type { Hung } from './bannerCloth.ts';
 import { type Banner, bannerFrom, bannerOfName } from './bannerLaw.ts';
 import { nodeRoom } from '../rooms.ts';
@@ -55,6 +57,9 @@ export function useWords(standing: Standing): string {
   return kind.name;
 }
 
+/** How far out before the gate's door the outpost's room stands a player come back out (`Room::join_at`). */
+const OUT_OF_GATE_M = 1.5;
+
 /** A placed module as a prop standing whole. */
 const propOf = (placed: Placed): EventProp => ({ ...placed, scale: 1, rise: 1, lid: 0, glow: 1 });
 
@@ -95,20 +100,42 @@ export class OutpostHere {
   private readonly ground: Ground;
   private readonly link: AccountLink | null;
   private readonly course: { readonly boxes: readonly Block[]; readonly courses: readonly Course[] };
+  /** The page's way into the guild dungeon, where it has one. */
+  private readonly delve: Trips['enterDelve'];
 
   constructor(
     site: string,
     ground: Ground,
     link: AccountLink | null,
     course: { readonly boxes: readonly Block[]; readonly courses: readonly Course[] },
+    delve: Trips['enterDelve'] = undefined,
   ) {
-    [this.site, this.ground, this.link, this.course] = [site, ground, link, course];
+    [this.site, this.ground, this.link, this.course, this.delve] = [site, ground, link, course, delve];
     this.room = guildHeld().then((guild) => nodeRoom({ id: site, kind: 'outpost' }, 'normal', guild?.key ?? null));
     this.shown = this.standing();
     this.look();
     this.timer = setInterval(this.look, LOOK_MS);
     addEventListener(OUTPOST_CHANGED, this.look);
+    addEventListener(OUTPOST_DELVE, this.delveAsked);
   }
+
+  /** The guild dungeon at `tier` (0 Normal to 2 Abyss), where the gate stands at it or higher: in by the page's trips,
+   *  out before the gate's door, facing away from it. */
+  private delveAt(tier: number): void {
+    const { seen, ground } = this;
+    const gate = seen ? gateOf(seen.plot) : null;
+    const top = seen ? gateTier(seen.plot) : null;
+    if (!seen || !gate || top === null || tier < 0 || tier > top) return;
+    const facing = Math.PI + (gate.turn * Math.PI) / 2;
+    const [doorX, doorY] = socketOf(gate, ground, this.staff, 'door');
+    const out = { x: doorX + Math.sin(facing) * OUT_OF_GATE_M, y: doorY - Math.cos(facing) * OUT_OF_GATE_M, facing };
+    this.delve?.(seen.guild.replaceAll('-', '').toLowerCase(), tier, out);
+  }
+
+  private readonly delveAsked = (event: Event): void => {
+    const tier = (event as CustomEvent<number>).detail;
+    if (typeof tier === 'number') this.delveAt(tier);
+  };
 
   /** The plot as last read, none before or where none is raised. */
   get plot(): Plot | null {
@@ -255,8 +282,12 @@ export class OutpostHere {
         : null;
     }
     const { staff } = this;
+    const top = gateTier(seen.plot);
     for (const standing of seen.plot.structures) {
       if (!near(socketOf(standing, ground, staff, socketNameOf(standing.kind)))) continue;
+      // A gate standing goes down at its highest tier; a lower one is chosen on the Guild tab.
+      if (standing.kind === 'gate' && standing.building === 0 && top !== null && this.delve)
+        return { words: `Delve: ${DELVE_WORDS[top] ?? ''}`, run: () => this.delveAt(top) };
       const outpost = { site, structure: standing.id };
       return { words: useWords(standing), run: () => openGearWindow({ view: 'guild', outpost }) };
     }
@@ -280,6 +311,7 @@ export class OutpostHere {
     clearInterval(this.timer);
     letGo();
     removeEventListener(OUTPOST_CHANGED, this.look);
+    removeEventListener(OUTPOST_DELVE, this.delveAsked);
     this.asked++;
   }
 }
@@ -291,7 +323,8 @@ export function outpostAt(
   boxes: readonly Block[],
   movement: Course & { standing(x: number, y: number): { readonly z: number } },
   fight: Course,
+  delve?: Trips['enterDelve'],
 ): OutpostHere {
   const ground = groundOf(node, (x, y) => movement.standing(x, y).z);
-  return new OutpostHere(node.id, ground, accountsHeld(), { boxes, courses: [movement, fight] });
+  return new OutpostHere(node.id, ground, accountsHeld(), { boxes, courses: [movement, fight] }, delve);
 }

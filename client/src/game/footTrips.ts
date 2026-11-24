@@ -32,6 +32,12 @@ export interface Trips {
   props(): PropTable | null;
   enter(number: number, name: string): void;
   leave(): void;
+  /** Into the guild dungeon behind an outpost's Delve Gate (`dungeonTrips.ts`), where the page has the way. */
+  enterDelve?(
+    key: string,
+    tier: number,
+    gate: { readonly x: number; readonly y: number; readonly facing: number },
+  ): void;
 }
 
 /** The name of the room a point stands in, or null in a corridor or past the grid: "the Ossuary". */

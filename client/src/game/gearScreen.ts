@@ -50,6 +50,8 @@ export const GUILD_CHANGED = 'overlook:guild';
 /** Said on the window when the player changed an outpost's plot through the accounts, so the outpost drawn reads it
  *  again. */
 export const OUTPOST_CHANGED = 'overlook:outpost';
+/** Said on the window when the player asks, from the Guild tab, to delve the guild dungeon at a tier (its detail). */
+export const OUTPOST_DELVE = 'overlook:delve';
 /** The event the Roster sends with each answer it hears, so the company on the HUD need not ask as well. */
 export const ROSTER_HEARD = 'overlook:roster';
 

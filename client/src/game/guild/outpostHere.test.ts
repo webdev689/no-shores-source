@@ -123,3 +123,31 @@ test("the guild's banner hangs from its standard's cloth socket, turned as the s
   assert.ok(Math.abs((hung?.at[0] ?? 0) - (placed.at[0] - 0.15)) < 1e-9);
   assert.ok(Math.abs((hung?.at[2] ?? 0) - (GROUND.level + 5.35)) < 1e-9);
 });
+
+test('at a Delve Gate standing, its prompt goes down at the highest tier it opens, out before its door', () => {
+  const delved: unknown[][] = [];
+  const course = { setCourse: () => undefined };
+  const here = new OutpostHere('gull-cove-outpost', GROUND, null, { boxes: [], courses: [course] }, (...asked) =>
+    delved.push(asked),
+  );
+  made.push(here);
+  const gate = structure(4, 'gate', 6, 12, 2);
+  here.take({ ...SEEN, plot: { structures: [...SEEN.plot.structures, gate], decor: [] } });
+  const [doorX, doorY] = socketOf(gate, GROUND, 'driftwood', 'door');
+  const use = here.uses(doorX, doorY, () => undefined);
+  assert.equal(use?.words, 'Delve: Elite');
+  use?.run();
+  const [key, tier, out] = delved[0] ?? [];
+  assert.deepEqual([key, tier], ['0a1b2c3d4e5f60718293a4b5c6d7e8f9', 1]);
+  const { x = 0, y = 0, facing = 0 } = out as { x?: number; y?: number; facing?: number };
+  assert.ok(Math.abs(x - doorX) < 1e-9 && Math.abs(y - (doorY + 1.5)) < 1e-9, 'a step and a half south of the door');
+  assert.ok(Math.abs(facing - Math.PI) < 1e-9, 'facing out of the gate, south');
+  const building = { ...gate, tier: 0, building: 1 };
+  here.take({ ...SEEN, plot: { structures: [...SEEN.plot.structures, building], decor: [] } });
+  const [scaffoldX, scaffoldY] = socketOf(building, GROUND, 'driftwood', 'door');
+  assert.equal(
+    here.uses(scaffoldX, scaffoldY, () => undefined)?.words,
+    'Deliver materials',
+    'a gate first being built opens nothing: its scaffold takes deliveries',
+  );
+});

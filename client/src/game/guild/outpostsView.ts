@@ -12,6 +12,8 @@ import type { Holds } from '../gearHold.ts';
 import { fillNode } from '../gearHold.ts';
 import { INK, label, pressNode, words } from '../gearNodes.ts';
 import { headingNode, hintNode } from '../menuPages.ts';
+import { OUTPOST_DELVE, openGearWindow } from '../gearScreen.ts';
+import { DELVE_WORDS, GATE, gateTier } from './delveRoom.ts';
 import { decorateNode } from './decorateView.ts';
 import { counted } from './guildHome.ts';
 import {
@@ -33,6 +35,7 @@ export const REMOVE_ID = 'outpost-remove';
 export const HORN_ID = 'outpost-horn';
 export const ABANDON_ID = 'outpost-abandon';
 export const outpostTabId = (site: string) => `outpost-tab-${site}`;
+export const delveId = (tier: number) => `outpost-delve-${tier}`;
 export const takeId = (stuff: Stuff) => `outpost-take-${stuff}`;
 export const deliverId = (stuff: Stuff) => `outpost-deliver-${stuff}`;
 
@@ -255,6 +258,7 @@ function structureNode(
       words(kind?.words ?? '', 1, INK.faint, { wrap: true }),
       building && words(`Building tier ${standing.building}: deliver its materials here.`, 1, INK.word),
       ...needs,
+      delveNode(ui, outpost, standing),
       runs &&
         kind &&
         next <= kind.tiers.length &&
@@ -271,6 +275,33 @@ function structureNode(
         pressNode(REMOVE_ID, 'Hold to take it down (half its Aurem back)', 'warn', '', 1, {
           children: [fillNode(removing, true)],
         }),
+    ],
+  };
+}
+
+/** A Delve Gate's way down: a press for each tier it opens, for a member standing at the outpost, which closes the menu
+ *  and goes down with their company (`outpostHere.ts`); words of what it opens elsewhere. */
+function delveNode(ui: Interface, outpost: OutpostFace, standing: KeptPlot['structures'][number]): Child {
+  if (standing.kind !== GATE || standing.tier < 1) return null;
+  const top = gateTier(outpost.plot) ?? 0;
+  const tiers = DELVE_WORDS.slice(0, top + 1);
+  for (const [tier] of tiers.entries())
+    if (outpost.here && ui.clicked(delveId(tier))) {
+      dispatchEvent(new CustomEvent(OUTPOST_DELVE, { detail: tier }));
+      openGearWindow({ view: 'guild', toggle: true });
+    }
+  return {
+    direction: 'column',
+    gap: 6,
+    children: [
+      words(`The guild dungeon this week, laid afresh each week: ${tiers.join(', ')}.`, 1, INK.faint, { wrap: true }),
+      outpost.here && {
+        gap: 8,
+        wrap: true,
+        children: tiers.map((said, tier) =>
+          pressNode(delveId(tier), `Delve at ${said}`, tier === top ? 'primary' : 'button'),
+        ),
+      },
     ],
   };
 }

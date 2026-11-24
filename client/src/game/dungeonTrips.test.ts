@@ -347,3 +347,39 @@ test('a run the Playlist starts is entered from the sea by its name and left bac
     ['enter', 'surface', 'join', 'surface'],
   );
 });
+
+test('the guild dungeon is entered from an outpost as its company’s run at a tier and left before the Delve Gate', async () => {
+  const key = '0a1b2c3d4e5f60718293a4b5c6d7e8f9';
+  const outpost = { id: 'tern-strand-outpost', name: 'Tern Strand', kind: 'outpost' } as NodeInfo;
+  const gate = { x: 410.5, y: -220.25, facing: Math.PI };
+  const { trips, happenings, ways, settled } = recorded({ foot: standing(outpost, 'normal') });
+  trips.enterDelve(key, 1, gate);
+  await settled();
+  assert.deepEqual(ways[0]?.slice(2, 3), [`node-tern-strand-outpost--guild-${key}--elite--run-k3j4h5g6`]);
+  assert.equal(ways[0]?.[4], 'elite');
+  trips.leave();
+  await settled();
+  assert.deepEqual(ways[1], ['onto', outpost.id, Math.PI, 'normal', { number: 0, ...gate }], 'out before the gate');
+  assert.deepEqual(
+    happenings.map((happening) => happening.kind),
+    ['enter', 'leave'],
+  );
+  const member = recorded({ foot: null }, [`node-tern-strand-outpost--guild-${key}--abyss--run-a1b2c3d4`]);
+  member.trips.enterDelve(key, 2, gate);
+  await member.settled();
+  assert.deepEqual(member.ways, [], 'from nowhere on foot, no trip');
+  const company = recorded({ foot: standing(outpost, 'normal') }, [
+    `node-tern-strand-outpost--guild-${key}--abyss--run-a1b2c3d4`,
+  ]);
+  company.trips.enterDelve(key, 2, gate);
+  await company.settled();
+  assert.equal(
+    company.ways[0]?.[2],
+    `node-tern-strand-outpost--guild-${key}--abyss--run-a1b2c3d4`,
+    'the company’s run',
+  );
+  const patrolled = recorded({ foot: standing(patrol, 'normal') });
+  patrolled.trips.enterDelve(key, 0, gate);
+  await patrolled.settled();
+  assert.deepEqual(patrolled.ways, [], 'only from an outpost');
+});

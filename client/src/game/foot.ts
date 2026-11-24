@@ -179,7 +179,10 @@ export class Foot {
       },
     };
     this.plaza = node.kind === 'social' ? new PlazaLife(node, placing, this.floor) : null;
-    this.outpost = node.kind === 'outpost' ? outpostAt(node, opened.boxes, context.movement, parts.combat) : null;
+    this.outpost =
+      node.kind === 'outpost'
+        ? outpostAt(node, opened.boxes, context.movement, parts.combat, context.trips.enterDelve?.bind(context.trips))
+        : null;
     this.publicView = new PublicView(node.id, this.feel, {
       boxes: opened.boxes,
       courses: [context.movement, parts.combat],

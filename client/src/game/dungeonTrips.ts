@@ -8,6 +8,8 @@ import { roomNow } from '../sky/worldClock.ts';
 import { askLayout, type DungeonAsk, type DungeonLayout, type StyleKey } from './dungeonLayout.ts';
 import { BEFORE_DOOR_M, beforeDoor, type Entrance } from './entrances.ts';
 import type { AtEntrance } from './footPlace.ts';
+import { delveBase, delveLaid } from './guild/delveRoom.ts';
+import { weekOf } from './guild/guildLaw.ts';
 import { type InDungeon, type Trips, seaPlace } from './footTrips.ts';
 import type { Happening } from './flow.ts';
 import type { DungeonDoor } from './isleLaw.ts';
@@ -59,6 +61,9 @@ export interface TripGame {
 /** A new run's instance and the Unix minute it opens, by the rooms' clock, unless a test pins them. */
 const CHANCE = { instance: () => runInstance(), minute: () => Math.floor(roomNow() / 60_000) };
 
+/** The guild dungeon's tiers by its gate's, 0 to 2. */
+const DELVE_SEAS: readonly Difficulty[] = ['normal', 'elite', 'abyss'];
+
 /** A sea island's dungeon's name, its tier after it at Elite or Abyss. */
 const SEA_TIER = /^(.*?)(?:--(elite|abyss))?$/;
 
@@ -80,6 +85,9 @@ export function dungeonTrips(
   /** Into a run of the Elite Dungeon `node` by its room's name, from the sea, as the Playlist launches or finds one;
    *  out of it back onto the sea. */
   intoRun(node: NodeInfo, run: string): void;
+  /** Into the guild dungeon behind an outpost's Delve Gate, for the guild of `key`, at `tier` (0 Normal to 2 Abyss):
+   *  the company's run of it or a new one, laid by its week's seed and style; out before the gate at `gate`. */
+  enterDelve(key: string, tier: number, gate: Omit<AtEntrance, 'number'>): void;
 } {
   /** The way out of the dungeon the player is in, kept as they went in; `fell` when their company fell. */
   let out: ((fell: boolean) => void) | null = null;
@@ -100,6 +108,16 @@ export function dungeonTrips(
         game.ontoPatrol(node, before?.facing ?? 0, seas, arriving),
       );
     };
+  /** A guild's dungeon's ask this week, named for its outpost's place, and the way out of it to the outpost at
+   *  Normal, before its gate, where the outpost's room stands a player by entrance 0. */
+  const delveAsk = (key: string, name: string): DungeonAsk => {
+    const { seed, style } = delveLaid(key, weekOf(roomNow()));
+    return { seed, style: style as StyleKey, name };
+  };
+  const toGate = (node: NodeInfo, gate: Omit<AtEntrance, 'number'>) => (layout: DungeonLayout, fell: boolean) =>
+    game.travel({ kind: fell ? 'wiped' : 'leave', node: node.id, name: layout.name }, () =>
+      game.ontoPatrol(node, gate.facing, 'normal', { number: 0, ...gate }),
+    );
   /** Out of a run the Playlist started, back onto the sea where the ship lies. */
   const toSea = (layout: DungeonLayout, fell: boolean) =>
     game.travel({ kind: 'surface', name: layout.name, fell }, () => game.ontoSea());
@@ -163,6 +181,20 @@ export function dungeonTrips(
     join: (node, place) => {
       const where = nodeOfRoom(place);
       if (!where) return;
+      // A member's guild dungeon is joined by its name; its way out is the outpost's spawn, the gate not known here.
+      if (where.guild !== null && where.run !== null) {
+        const out = node.spawns[0] ?? node.centre;
+        const away = toGate(node, { x: out[0], y: out[1], facing: 0 });
+        const work = into(
+          { node, text: '' },
+          { number: 0, ask: delveAsk(where.guild, node.name) },
+          where.seas,
+          async () => place,
+          away,
+        );
+        game.travel({ kind: 'join', node: `${node.id}--delve`, name: node.name }, work);
+        return;
+      }
       const number = where.dungeon ?? 0;
       const ask: DungeonAsk =
         where.dungeon === null ? { place: node.id, name: node.name } : { patrol: node.id, name: node.name, number };
@@ -183,6 +215,21 @@ export function dungeonTrips(
         const work = into({ node, text: '' }, { number: 0, ask }, where.seas, async () => run, toSea);
         game.travel({ kind: 'enter', node: `${node.id}--dungeon`, name }, work);
       });
+    },
+    enterDelve: (key, tier, gate) => {
+      const from = game.foot();
+      if (!from || from.dungeon || from.node.kind !== 'outpost') return;
+      const { node } = from;
+      const seas = DELVE_SEAS[tier] ?? 'normal';
+      const room = roomOf(delveBase(key, node.id, tier), seas, true);
+      const work = into(
+        { node, text: from.text },
+        { number: 0, ask: delveAsk(key, node.name) },
+        seas,
+        room,
+        toGate(node, gate),
+      );
+      game.travel({ kind: 'enter', node: `${node.id}--delve`, name: node.name }, work);
     },
     enterSeaDungeon: ({ room, at: [x, y], facing }) => {
       const [, base = '', tier = 'normal'] = SEA_TIER.exec(room) ?? [];

@@ -84,20 +84,24 @@ export function nodeOfRoom(room: string): {
   readonly dungeon: number | null;
   readonly run: string | null;
   readonly playlist: number | null;
+  /** A guild's outpost's key: its room, or the guild dungeon's run behind its Delve Gate. */
+  readonly guild: string | null;
 } | null {
   const found =
-    /^node-([a-z0-9-]+?)(?:--(elite|abyss|rough|storm)|--guild-[0-9a-f]{32})?(?:--dungeon-([0-2]))?(?:--playlist-([1-9][0-9]?)|--(sea))?(?:--run-([a-z0-9]{8}))?$/.exec(
+    /^node-([a-z0-9]+(?:-[a-z0-9]+)*)(?:--guild-([0-9a-f]{32}))?(?:--(elite|abyss|rough|storm))?(?:--dungeon-([0-2]))?(?:--playlist-([1-9][0-9]?)|--(sea))?(?:--run-([a-z0-9]{8}))?$/.exec(
       room,
     );
   if (!found?.[1]) return null;
-  const named = found[2];
-  const dungeon = found[3] === undefined ? null : Number(found[3]);
+  const [, id, guild, named, number, listed, atSea, run] = found;
+  const dungeon = number === undefined ? null : Number(number);
   const seas = named === undefined ? 'normal' : (OLD_NAMES[named] ?? (named as Difficulty));
-  const playlist = found[4] === undefined ? null : Number(found[4]);
+  const playlist = listed === undefined ? null : Number(listed);
   // A run started from the Playlist is an Elite Dungeon's alone, at Elite or Abyss, as the rooms read it.
-  const marked = playlist !== null || found[5] !== undefined;
-  if (marked && (dungeon !== null || found[6] === undefined || seas === 'normal')) return null;
-  return { id: found[1], seas, dungeon, run: found[6] ?? null, playlist };
+  const marked = playlist !== null || atSea !== undefined;
+  if (marked && (dungeon !== null || run === undefined || seas === 'normal')) return null;
+  // A guild's outpost is a bare node's; its dungeon a run at a tier, never a patrol's dungeon or a playlist's.
+  if (guild !== undefined && (dungeon !== null || marked || (named !== undefined && run === undefined))) return null;
+  return { id, seas, dungeon, run: run ?? null, playlist, guild: guild ?? null };
 }
 
 // A run's instance is drawn as the server's Find a Company draws one, and a run started at sea read, by one rule.

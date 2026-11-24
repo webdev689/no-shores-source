@@ -7,10 +7,15 @@ import { edgeId } from './guildHome.ts';
 import { GuildPage, guildPage } from './guildPage.ts';
 import { RAISE_AUREM } from './outpostLaw.ts';
 import { cellId, kindId } from './outpostPlan.ts';
-import { COLLECT_ID, RAISE_ID, deliverId, outpostTabId, takeId } from './outpostsView.ts';
+import { COLLECT_ID, RAISE_ID, delveId, deliverId, outpostTabId, takeId } from './outpostsView.ts';
+import { OUTPOST_DELVE } from '../gearScreen.ts';
 import { DEPOSIT_FIELD, DEPOSIT_ID, agoWords, ledgerWords } from './treasuryView.ts';
 
-Object.assign(globalThis, { dispatchEvent: () => true });
+// What the page says on the window: kept, so a test reads what it asked of the world.
+const said: { type: string; detail?: unknown }[] = [];
+Object.assign(globalThis, {
+  dispatchEvent: (event: Event) => said.push({ type: event.type, detail: (event as CustomEvent).detail }) > 0,
+});
 const settle = () => new Promise((done) => setTimeout(done, 0));
 const NOW = Date.UTC(2026, 10, 21, 12);
 const SITE = 'gull-cove-outpost';
@@ -178,4 +183,22 @@ test('ledger lines and times read plainly', () => {
   assert.equal(ledgerWords('raise'), 'Raised an outpost');
   assert.equal(ledgerWords('decorate well'), 'Set a Well');
   assert.equal(agoWords(NOW, NOW - 50 * 3_600_000), '2 days ago');
+});
+
+test('a Delve Gate on the plan offers each tier it opens, and a member there goes down at the one pressed', async () => {
+  const gated = outposts();
+  const outpost = gated.outposts[0];
+  if (!outpost) throw new Error('the test outpost');
+  const gate = { ...structure(11, 'gate', 6, 12, 2), turn: 0 };
+  const plot = { ...outpost.plot, structures: [...outpost.plot.structures, gate] };
+  const { click, ui, shows } = await opened(2, { ...gated, outposts: [{ ...outpost, plot }] });
+  click(cellId(7, 13));
+  assert.ok(shows().includes('Normal, Elite'), `names the tiers it opens: ${shows()}`);
+  assert.equal(ui.boxOf(delveId(2)), null, 'not Abyss below the gate’s third tier');
+  said.length = 0;
+  click(delveId(0));
+  assert.deepEqual(
+    said.filter((event) => event.type === OUTPOST_DELVE),
+    [{ type: OUTPOST_DELVE, detail: 0 }],
+  );
 });
