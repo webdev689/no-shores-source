@@ -122,6 +122,8 @@ export const inOpenWorld = (name: string): boolean => !ofRun(name) && name !== S
 interface Asking {
   readonly at: number;
   missed: boolean;
+  /** Let go while under way: what it has yet to fetch is not fetched, and what comes is not kept. */
+  letGo: boolean;
   done: Promise<void>;
 }
 
@@ -135,10 +137,12 @@ function fetchMeshes(asked: Asking | null, wanted: (name: string) => boolean, no
       ? module.groups.flatMap(({ mesh }, index) => (meshes.has(`${number}:${index}`) ? [] : [{ number, index, mesh }]))
       : [],
   );
-  const begun: Asking = { at: now, missed: false, done: Promise.resolve() };
+  const begun: Asking = { at: now, missed: false, letGo: false, done: Promise.resolve() };
   begun.done = inTurn(unread, FETCHES_AT_ONCE, async ({ number, index, mesh }) => {
+    if (begun.letGo) return;
     try {
-      meshes.set(`${number}:${index}`, readModuleMesh((await contentBytes(`${manifest.base}${mesh}`)).bytes));
+      const read = readModuleMesh((await contentBytes(`${manifest.base}${mesh}`)).bytes);
+      if (!begun.letGo) meshes.set(`${number}:${index}`, read);
     } catch (error) {
       console.error(`module ${number}'s ${mesh} cannot be drawn:`, error);
     }
@@ -186,9 +190,10 @@ export function loadModuleOf(name: string, now = performance.now()): Promise<voi
   return name === SEAL ? loadSealModule(now) : loadModules(now);
 }
 
-/** Lets go of a Breach's run's modules' meshes, once the player is out of it. */
+/** Lets go of a Breach's run's modules' meshes, once the player is out of it: a fetch still under way stops. */
 export function releaseRunModules(): void {
   if (!runAsking) return;
+  runAsking.letGo = true;
   runAsking = null;
   listed.modules.forEach((module, number) => {
     if (ofRun(module.name)) module.groups.forEach((_group, index) => meshes.delete(`${number}:${index}`));

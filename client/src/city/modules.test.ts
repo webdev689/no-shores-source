@@ -1,7 +1,15 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import manifest from '../../../content/modules/modules.json' with { type: 'json' };
-import { inOpenWorld, loadModules, loadRunModules, moduleMesh, ofRun, readModuleMesh } from './modules.ts';
+import {
+  inOpenWorld,
+  loadModules,
+  loadRunModules,
+  moduleMesh,
+  ofRun,
+  readModuleMesh,
+  releaseRunModules,
+} from './modules.ts';
 import { pictureBook } from './pictures.ts';
 
 test('a module mesh reads its vertices, normals and triangles', () => {
@@ -74,4 +82,25 @@ test('the open world’s meshes are fetched a few at a time, in order, a group t
   await loadRunModules(130_000);
   assert.ok(run.length > 0 && most <= 8);
   assert.deepEqual(asked, run, 'a Breach’s run’s, only as it is entered, in the manifest’s order');
+});
+
+test('a Breach’s run’s meshes let go while still being fetched are neither kept as they come nor fetched further', async (context) => {
+  const run = manifest.modules.map((module, number) => ({ module, number })).filter(({ module }) => ofRun(module.name));
+  const groups = run.flatMap(({ module }) => module.groups).length;
+  releaseRunModules();
+  let answer = () => undefined as void;
+  const answered = new Promise<void>((done) => (answer = done));
+  let asked = 0;
+  context.mock.method(globalThis, 'fetch', async () => {
+    asked++;
+    await answered;
+    return new Response(new ArrayBuffer(8));
+  });
+  const loading = loadRunModules(200_000);
+  releaseRunModules();
+  answer();
+  await loading;
+  const kept = run.filter(({ module, number }) => module.groups.some((_group, index) => moduleMesh(number, index)));
+  assert.deepEqual(kept, [], 'none kept after they were let go');
+  assert.ok(asked < groups, `${asked} of ${groups} fetched`);
 });
