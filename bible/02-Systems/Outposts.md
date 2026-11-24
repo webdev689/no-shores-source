@@ -62,16 +62,20 @@ outpost there plays it in a room of its own, `node-<site>--guild-<key>`, apart f
 - **Raising.** The founder or an admin standing in their guild's room at a site raises an outpost for 5,000 Aurem: its
   hall stands in the middle of the plot and its standard before it. A guild holds one outpost from level 1, two from
   level 4 and three from level 7, one a site.
-- **Building.** A structure placed costs its tier's Aurem at once and stands as a scaffold; members deliver its
-  materials at the outpost, each delivery taking only what it still needs, and it stands the moment the last arrives.
-  Raising a tier does the same. Taking one down gives half its Aurem back; the hall stands while the outpost does.
+- **Building.** A structure placed costs its tier's Aurem at once; one that asks no materials (the standard) stands
+  then, and the rest stand as a scaffold while members deliver their materials at the outpost, each delivery taking
+  only what it still needs, standing the moment the last arrives. Raising a tier does the same. A character carries
+  at most 200 of each material. Taking one down gives half its Aurem back; the hall stands while the outpost does.
   The founder may abandon an outpost from anywhere, for half of all spent on it.
+- **Decorating.** A piece of decoration costs 50 Aurem a metre of its reach (the half-diagonal of its model, so it
+  stays within its reach however it turns), 25 at least and 500 at most, and taking it up gives half back. The hall
+  holds 40, 80 or 150 pieces by its tier (`decorPrice`, `decorCap`).
 - **What it earns.** A Counting House's strongbox fills each whole hour by its tier and holds two days; a member there
   empties it into the treasury. An Island Camp gathers the island's own resource and a Dockyard Timber, Canvas and
   Iron into the outpost's stores each whole day, three days at most; a member there takes up to 20 of each a day,
-  counted across all the guild's outposts. Each outpost keeps its own strongbox and stores. Neither is written until
-  it is read or emptied, or a structure that fills them stands, rises or is taken down: then both are settled to that
-  moment at the rates before it, so a new rate counts only from then. A strongbox the treasury cannot hold whole gives
+  counted across all the guild's outposts. Each outpost keeps its own strongbox and stores. The strongbox is written
+  when it is emptied and the stores when they are taken from, and both when a structure that fills them stands, rises
+  or is taken down: each is settled to that moment at the rates before it, so a new rate counts only from then. A strongbox the treasury cannot hold whole gives
   what fits and keeps the rest.
 - **Boons.** The War Table, Captain's Lodge and Assay House give every member, wherever they play, 5, 10 or 15% more
   XP, reputation or Aurem from kills and clears (reputation from chests and the Abyss boon too): the highest tier of
@@ -82,7 +86,7 @@ outpost there plays it in a room of its own, `node-<site>--guild-<key>`, apart f
 - **The Guild tab.** The Outposts page shows each outpost by its site: its plan from above, each structure a block in
   its colour (a blueprint while built), its strongbox and stores, and what it gives. Standing there a member delivers,
   takes and empties; a founder or admin builds on the plan (the footprint's ghost green where the law lets it stand,
-  red with the law's words where not), raises tiers, takes down, sounds the War Horn and abandons. A change to a plot
+  red with the law's words where not), raises tiers, takes down and sounds the War Horn; the founder alone abandons. A change to a plot
   tells the room, and says so on the window. The Treasury page reads the ledger in words and lets a member at an
   outpost put Aurem in ([[Interface]]).
 - **The room.** Each guild plays its outpost at a site in a room of its own, `node-<site>--guild-<key>`, the key its

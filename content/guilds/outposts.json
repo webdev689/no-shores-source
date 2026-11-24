@@ -31,7 +31,7 @@
       "id": "hall",
       "name": "Hall",
       "tierNames": [
-        "Camp",
+        "Command Tent",
         "Longhouse",
         "Stronghold"
       ],
@@ -53,7 +53,8 @@
         {
           "aurem": 15000,
           "materials": {
-            "timber": 160,
+            "timber": 100,
+            "canvas": 60,
             "iron": 60,
             "island": 80
           }
@@ -61,9 +62,10 @@
         {
           "aurem": 40000,
           "materials": {
-            "timber": 300,
-            "iron": 160,
-            "heartwood": 40,
+            "timber": 200,
+            "canvas": 120,
+            "iron": 140,
+            "heartwood": 30,
             "island": 200
           }
         }
@@ -118,17 +120,17 @@
         {
           "aurem": 9000,
           "materials": {
-            "timber": 90,
-            "iron": 50,
+            "timber": 70,
+            "iron": 70,
             "island": 30
           }
         },
         {
           "aurem": 24000,
           "materials": {
-            "timber": 160,
+            "timber": 100,
+            "canvas": 60,
             "iron": 100,
-            "heartwood": 20,
             "island": 80
           }
         }
@@ -164,17 +166,18 @@
         {
           "aurem": 10000,
           "materials": {
-            "timber": 100,
+            "timber": 60,
             "canvas": 60,
+            "iron": 40,
             "island": 40
           }
         },
         {
           "aurem": 28000,
           "materials": {
-            "timber": 180,
+            "timber": 100,
             "canvas": 100,
-            "heartwood": 25,
+            "iron": 80,
             "island": 100
           }
         }
@@ -210,17 +213,17 @@
         {
           "aurem": 8000,
           "materials": {
-            "timber": 90,
-            "canvas": 40,
-            "iron": 30
+            "timber": 60,
+            "canvas": 60,
+            "iron": 40
           }
         },
         {
           "aurem": 22000,
           "materials": {
-            "timber": 160,
-            "iron": 80,
-            "heartwood": 20
+            "timber": 80,
+            "canvas": 100,
+            "iron": 60
           }
         }
       ]
@@ -248,26 +251,25 @@
         {
           "aurem": 4000,
           "materials": {
-            "timber": 60,
-            "canvas": 30,
+            "timber": 40,
+            "canvas": 50,
             "iron": 20
           }
         },
         {
           "aurem": 11000,
           "materials": {
-            "timber": 120,
-            "canvas": 60,
+            "timber": 70,
+            "canvas": 110,
             "iron": 50
           }
         },
         {
           "aurem": 30000,
           "materials": {
-            "timber": 220,
-            "canvas": 120,
-            "iron": 100,
-            "heartwood": 30
+            "timber": 120,
+            "canvas": 200,
+            "iron": 120
           }
         }
       ]
@@ -281,7 +283,7 @@
       ],
       "level": 4,
       "most": 1,
-      "words": "Opens the guild dungeon, laid afresh each week in its island's continent, at Normal, Elite or Abyss by its tier.",
+      "words": "Opens the guild dungeon, laid afresh each week on its island, at Normal, Elite or Abyss by its tier.",
       "effect": {
         "kind": "dungeon"
       },
@@ -289,7 +291,8 @@
         {
           "aurem": 6000,
           "materials": {
-            "timber": 60,
+            "timber": 40,
+            "canvas": 20,
             "iron": 40,
             "island": 40
           }
@@ -297,7 +300,8 @@
         {
           "aurem": 15000,
           "materials": {
-            "timber": 120,
+            "timber": 70,
+            "canvas": 50,
             "iron": 80,
             "island": 80
           }
@@ -305,9 +309,10 @@
         {
           "aurem": 40000,
           "materials": {
-            "timber": 200,
+            "timber": 100,
+            "canvas": 100,
             "iron": 140,
-            "heartwood": 40,
+            "heartwood": 25,
             "island": 160
           }
         }
@@ -343,17 +348,18 @@
         {
           "aurem": 10000,
           "materials": {
-            "timber": 100,
+            "timber": 60,
             "canvas": 60,
+            "iron": 40,
             "island": 40
           }
         },
         {
           "aurem": 28000,
           "materials": {
-            "timber": 180,
+            "timber": 100,
             "canvas": 100,
-            "heartwood": 25,
+            "iron": 80,
             "island": 100
           }
         }
@@ -376,24 +382,26 @@
         {
           "aurem": 5000,
           "materials": {
-            "timber": 50,
+            "timber": 40,
+            "canvas": 10,
             "iron": 30
           }
         },
         {
           "aurem": 13000,
           "materials": {
-            "timber": 100,
-            "iron": 60,
-            "canvas": 40
+            "timber": 70,
+            "canvas": 60,
+            "iron": 70
           }
         },
         {
           "aurem": 35000,
           "materials": {
-            "timber": 180,
-            "iron": 120,
-            "heartwood": 35,
+            "timber": 90,
+            "canvas": 100,
+            "iron": 110,
+            "heartwood": 15,
             "island": 120
           }
         }
@@ -422,24 +430,27 @@
         {
           "aurem": 5000,
           "materials": {
-            "timber": 40,
+            "timber": 30,
+            "canvas": 10,
             "iron": 50
           }
         },
         {
           "aurem": 13000,
           "materials": {
-            "timber": 80,
-            "iron": 110,
+            "timber": 60,
+            "canvas": 30,
+            "iron": 100,
             "island": 50
           }
         },
         {
           "aurem": 36000,
           "materials": {
-            "timber": 150,
-            "iron": 200,
-            "heartwood": 35,
+            "timber": 100,
+            "canvas": 60,
+            "iron": 190,
+            "heartwood": 20,
             "island": 140
           }
         }
@@ -450,7 +461,7 @@
     {
       "piece": "lamp-post",
       "name": "Lamp Post",
-      "reach": 0.76
+      "reach": 0.8
     },
     {
       "piece": "bench",
@@ -460,27 +471,27 @@
     {
       "piece": "table-benches",
       "name": "Table and Benches",
-      "reach": 1.25
+      "reach": 1.6
     },
     {
       "piece": "parasol-table",
       "name": "Parasol Table",
-      "reach": 1.57
+      "reach": 2.15
     },
     {
       "piece": "planter",
       "name": "Planter",
-      "reach": 1.0
+      "reach": 1.05
     },
     {
       "piece": "potted-tree",
       "name": "Potted Tree",
-      "reach": 0.73
+      "reach": 0.95
     },
     {
       "piece": "lawn-bed",
       "name": "Lawn Bed",
-      "reach": 4.0
+      "reach": 4.25
     },
     {
       "piece": "rug-long",
@@ -490,87 +501,87 @@
     {
       "piece": "well",
       "name": "Well",
-      "reach": 1.5
+      "reach": 1.9
     },
     {
       "piece": "statue-keeper",
       "name": "Statue of a Keeper",
-      "reach": 0.95
+      "reach": 1.3
     },
     {
       "piece": "statue-sentinel",
       "name": "Statue of a Sentinel",
-      "reach": 0.94
+      "reach": 1.25
     },
     {
       "piece": "crates-barrels",
       "name": "Crates and Barrels",
-      "reach": 1.54
+      "reach": 1.75
     },
     {
       "piece": "barrel-stack",
       "name": "Barrel Stack",
-      "reach": 1.85
+      "reach": 2.05
     },
     {
       "piece": "sacks-grain",
       "name": "Grain Sacks",
-      "reach": 1.07
+      "reach": 1.35
     },
     {
       "piece": "amphorae",
       "name": "Amphorae",
-      "reach": 1.75
+      "reach": 1.85
     },
     {
       "piece": "woodpile",
       "name": "Woodpile",
-      "reach": 2.55
+      "reach": 2.65
     },
     {
       "piece": "bale-stack",
       "name": "Hay Bales",
-      "reach": 1.86
+      "reach": 1.9
     },
     {
       "piece": "cart",
       "name": "Cart",
-      "reach": 2.15
+      "reach": 2.3
     },
     {
       "piece": "hay-cart",
       "name": "Hay Cart",
-      "reach": 2.03
+      "reach": 2.25
     },
     {
       "piece": "flower-cart",
       "name": "Flower Cart",
-      "reach": 1.87
+      "reach": 2.0
     },
     {
       "piece": "market-stall-cloth",
       "name": "Cloth Stall",
-      "reach": 2.5
+      "reach": 2.9
     },
     {
       "piece": "market-stall-bread",
       "name": "Bread Stall",
-      "reach": 2.5
+      "reach": 2.9
     },
     {
       "piece": "market-stall-flowers",
       "name": "Flower Stall",
-      "reach": 2.5
+      "reach": 2.9
     },
     {
       "piece": "anvil-yard",
       "name": "Anvil Yard",
-      "reach": 2.95
+      "reach": 3.5
     },
     {
       "piece": "bollards",
       "name": "Bollards",
-      "reach": 1.91
+      "reach": 2.2
     }
   ]
 }

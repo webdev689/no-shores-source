@@ -100,7 +100,7 @@ missions and by a mine that fills over time; Albion's guild islands are bought l
 
 | Structure | Cells | Opens at | What it does, by tier |
 |---|---|---|---|
-| Hall: Camp, Longhouse, Stronghold | 4 × 4 | Founding | The outpost's heart; its tier caps the rest; it holds 40, 80 or 150 pieces of decoration |
+| Hall: Command Tent, Longhouse, Stronghold | 4 × 4 | Founding | The outpost's heart; its tier caps the rest; it holds 40, 80 or 150 pieces of decoration |
 | Banner Standard | 1 × 1 | Founding | The guild's banner on its staff, in the wind |
 | Counting House | 2 × 2 | Level 1 | Its strongbox fills with 30, 60 or 120 Aurem an hour and holds two days; a member empties it into the treasury |
 | War Table | 2 × 2 | Level 2 | Members earn 5, 10 or 15% more XP from kills and clears |
@@ -114,6 +114,14 @@ missions and by a mine that fills over time; Albion's guild islands are bought l
 Tier 2 opens at level 3 and tier 3 at level 6, each needing the hall at that tier. What each costs is in
 `content/guilds/outposts.json`: Aurem, and Timber, Canvas, Iron, Heartwood and the island's resource, more at each
 tier, so a tier 3 asks for many members' stores.
+
+Claude's call on the materials (the controller's, not the owner's): across one outpost with every structure at
+tier 3, Timber, Canvas and Iron are asked about evenly (1,940 : 1,600 : 1,730), within 1.3 to 1 of each other,
+because flotsam and the Dockyard give them evenly; asked 4.5 : 1 : 2.2 before, a guild held thousands of Canvas
+and Iron it could not spend. Each structure keeps its own lean (the Dockyard Canvas, the Assay House and the Delve
+Gate Iron). Heartwood, rare in flotsam and given by no Dockyard, is asked only at tier 3 of the Hall (30), the
+Delve Gate (25), the Assay House (20) and the War Horn (15): 90 an outpost, about 130 Elite ships or 45 Breaches,
+where it was 270. The Aurem and the island's resource are as they were.
 
 | Call | Chosen | Why |
 |---|---|---|

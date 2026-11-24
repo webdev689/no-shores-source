@@ -100,8 +100,9 @@ ranks are the Roster's as well ([[Accounts]], "The Roster").
   gives; a player in no guild joins the wild site. The page stands the outpost as the accounts keep it, read on
   arriving, when the player changes it and every 15 s: each structure and piece of decoration where the plot's
   reckoning stands it, walled for the page's own body as the room walls it, and the banner's cloth stirring on the
-  standard. E at a structure opens the Outposts page on it; a bare site has a post where the hall would stand,
-  saying the outpost is raised from the Guild tab.
+  standard. E at a structure opens the Outposts page on it, but at a built Delve Gate goes down at the gate's top
+  tier; E at a piece of decoration takes it up. A bare site has a post where the hall would stand, saying the outpost
+  is raised from the Guild tab.
 - **In no guild**, the tab founds one: its name, its tag and the banner made for it before it exists, with the
   invites waiting, each joined or declined.
 
