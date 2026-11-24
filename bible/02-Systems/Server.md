@@ -623,7 +623,7 @@ so every decision is Rust and the shell only carries bytes and time.
   player is answered (156 to 166 beside the gear's). A player has one errand with the accounts at a time ("Wait for
   your last ask."), and a take of nothing is refused in the room. Each errand has its one id
   (`<room>:<room opened>:<player>:<errand>`), under which the accounts keep their answer for good in the same write as
-  the errand; one they throw on is asked again under it, every 10 s at last, for as long as the room lives, so one
+  the errand, a refusal too (the first answer kept wins); one they throw on is asked again under it, every 10 s at last, for as long as the room lives, so one
   that went through answers as it did and is never done or given back twice. A deposit, delivery or take is carried
   by the character under its id (`gear::errand`, the body's `errand`) until it is answered, and goes only once the
   keeper has saved the character so (`Keeper.saveNow`); unsaved, it goes back whole, and a take's gift is saved at

@@ -33,8 +33,9 @@ pub fn outpost(bytes: &[u8]) -> bool {
     on_land(|room| room.open_outpost(&told.key, told.muster, &told.ids)).is_some()
 }
 
-/// An errand as the host reads it: its number, the accounts' id for it, player and account, its kind ('deposit', 'deliver', 'take', 'horn' or
-/// 'changed'), and for the first three its amount, for a delivery its structure, and for both its material's name.
+/// An errand as the host reads it: its number, the accounts' id for it, player and account, its kind ('deposit',
+/// 'deliver', 'take', 'horn' or 'changed'), and for the first three its amount, for a delivery its structure, and for
+/// both its material's name.
 fn errand_json(errand: &Errand) -> Value {
     let mut written = json!({ "id": errand.id, "rid": errand.rid, "player": errand.player, "account": errand.account });
     let fields = match errand.what {

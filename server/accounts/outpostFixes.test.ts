@@ -411,3 +411,18 @@ test('a named take-down or abandonment a full treasury gave nothing for is lined
   assert.deepEqual([leftAgain.status, leftAgain.body['back']], [200, 0], 'not "no outpost there"');
   assert.deepEqual(await lines(), ['abandon', 'take down counting']);
 });
+
+test('an errand refused under its id is refused again under it, though another room asks after the cause is gone', async () => {
+  const { ask, kept, accountOf, room, guild, sql } = await world();
+  const [ben, here] = [await accountOf('Ben'), await room()];
+  await sql('UPDATE guilds SET treasury = ?1', TREASURY_MOST);
+  assert.equal(await kept().deposit(ben, 500, `${here}:1:2:3`), 'refused', 'the treasury full: the room gives back');
+  await sql('UPDATE guilds SET treasury = 0');
+  assert.equal(await kept().deposit(ben, 500, `${here}:1:2:3`), 'refused', 'a claim elsewhere asking again');
+  assert.equal((await guild()).treasury, 0, 'never moved after it was given back');
+  let asked = 0;
+  while ((await ask('Ben', 'outpost/collect', { site: SITE })).status !== 429 && asked < 1_000) asked++;
+  assert.equal(await kept().deliver(ben, here, { id: 3, stuff: 'timber', amount: 5 }, 'past-limit'), -3);
+  assert.equal(await kept().deposit(ben, 5, `${here}:limited`), 'limited');
+  assert.equal(await kept().deposit(ben, 5, `${here}:limited`), 'limited', 'answered alike');
+});
