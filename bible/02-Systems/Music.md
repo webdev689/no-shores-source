@@ -47,7 +47,11 @@ code:
   - client/src/game/audio/music/valeScore.ts#valeFights
   - client/src/game/audio/music/valeBosses.ts#valeBosses
   - client/src/game/audio/music/valeCalm.ts#valeCalm
-  - client/src/game/audio/music/hearing.ts#hearBreach
+  - client/src/game/audio/music/breachHearing.ts#hearBreach
+  - client/src/game/audio/music/breachHearing.ts#momentOf
+  - client/src/game/audio/music/director.ts#askedSting
+  - client/src/game/audio/music/vale.ts#valeMusic
+  - client/src/game/audio/music/sampled.ts#lowpassInto
   - tools/freesound/root.py
 ---
 # Music
@@ -80,13 +84,19 @@ plays ([[The Fight Music Varies, Recombined From Takes]]). Nothing in it rings o
 - **Sampled voices** (`sampled.ts`). A track may name a `music.*` cue of `content/audio/freesound.json`, its
   envelope (attack, release) and its gain; a drum of a kit may too. Each note plays the pick's recording, fetched as
   the world's recordings are (`recordingOf`), at playbackRate 2^((note - root)/12), into the track's level and place
-  as an FM note goes: the root is the pick's measured pitch, the cue's `root` ("C3"), which `tools/freesound/root.py`
-  finds by YIN over the preview's steady middle; a textural or percussive cue has none and plays from the note its
-  score names its home. A note longer than the recording plays on in further plays of its middle (from a quarter in),
-  each crossfaded into the last at equal power; a drum plays its recording through, `shift` semitones off. Every
-  sampled voice passes a 6 kHz lowpass, so no partial of a recording played high passes the music's ceiling; the
-  score's B5 ceiling, the 30 Hz high-pass and the soft ceilings hold for it as for the FM bank. Until a recording
-  has come, or while a pitched cue has no pick or no root, the track plays its FM program, the drum the kit's own.
+  as an FM note goes. The root is the pick's measured pitch with its cents ("C3-38", 38 cents flat of C3), which
+  `tools/freesound/root.py` finds by YIN over the preview's steady middle; it is written on the cue in
+  freesound.json and `publish.py` copies it onto the pick in `sounds.json`, where the page reads it. A textural or
+  percussive cue has none and plays from the note its score names its home. A note longer than the recording plays
+  on in further plays of its middle (from a quarter in), each crossfaded into the last at equal power. A drum plays
+  its recording `shift` semitones off, lasting no longer than its kit drum (its attack and decay), the high ones
+  (metal, the bowed cymbal, the riser) cut a tenth of a second after their peak; a swell is started, or entered
+  part way, so its recording ends on the beat the kit drum's lands on. Each channel's sampled voices pass two
+  lowpasses in a row at 5.6 kHz (24 dB an octave; 8 kHz some 20 dB down), so no partial of a recording played high
+  passes the music's ceiling; the score's B5 ceiling, the 30 Hz high-pass and the soft ceilings hold for it as for
+  the FM bank. Until a recording has come, or while a pitched cue has no pick or no root, the track plays its FM
+  program, the drum the kit's own. The Breach's instruments are fetched as its gate or its run is first heard, and
+  let go on leaving it, so its fights open on recordings.
 - **The score format.** A score lays notes with `note(track, bar, beat, beats, pitch, velocity)` and drums with
   `hit(drum, bar, beat, velocity)`, beats in quarter notes. `tune` reads a line as text (`'A4:1.5 D5:.5 | r:1'`).
   Each track names its program, level, place and layer role, and may name its own voice. A drum may have a role of
@@ -204,11 +214,13 @@ on, and the sky over it.
   run the song of the encounter under way plays in place of the island family's, or, with none under way, the
   song of the encounter fought in the space the player stands in (the Waking's between spaces); an encounter running
   holds at least the tension (the page's), its foes bring the fight's layers as any fight does, and its moments
-  (begun, won, a wipe) are its song's cadence, victory and defeat. The Scrivener and the Steward play their own boss
+  (begun, won, a wipe) are the cadence, victory and defeat of the encounter the room tells them of, wherever the
+  player stands (`momentOf`, `askedSting`); the Breach cleared is the Steward's fall. The Scrivener and the Steward play their own boss
   scores by the names over their bars, the Scrivener from its waking, the Steward's court from its encounter's start
   whether or not the Steward is engaged; the Steward's fall is the Breach cleared. While a Watcher has seen the
   company the Ways play their peak. Between encounters a calm piece comes after 20 s, and 45 to 120 s of silence
-  after one: the Descent's in the Descent, the Broken Stair's on the Stair, After the Bells elsewhere. At the Sunken
+  after one: the Descent's in the Descent, the Broken Stair's on the Stair, After the Bells elsewhere, never the
+  one begun last while there is another. At the Sunken
   Gate, while the player's company holds the Waking and the Spire has not woken, the Waking's song plays as the
   hollow's fight.
 - **The story.** While the [[Prologue]] plays, each beat tells the director what plays: a song of the story's own in
@@ -359,8 +371,8 @@ story's songs -20 to -22.8 dBFS, the deep -24.3 under the sea, the ram -18.4 as 
 
 ## Limits
 
-- Every score is built as the game starts, all its takes at once: 100 to 170 ms in Node, not yet measured in a
-  browser.
+- Every score is built as the game starts, all its takes at once: some 240 ms in Node, not yet measured in a
+  browser; the Drowned Vale's (some 47,000 notes, about a tenth of a second more) as its plan loads.
 - One fight score, and one pair of calm pieces, serves every climate of its family: the coast and the highland share
   green's.
 - The calm pieces out of danger play while it is at sea, whether it is under way or hove to.
