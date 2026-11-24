@@ -11,9 +11,10 @@ import latticekit
 
 
 def face(module, west, south, east, north, bottom, top, toward, bay=4.0, lancets=True, ruin=0.25,
-         material='stone'):
+         material='stone', pane='black'):
     """Dresses the face of a wall's box that looks `toward` (along x or y): a plinth along its foot, pilasters every
-    `bay` metres, a blind pointed lancet in each bay, and a cornice along its top, a share `ruin` of it fallen."""
+    `bay` metres, a pointed lancet in each bay, blind (its `pane` black) or glazed and lit (glow, a mullion down it),
+    and a cornice along its top, a share `ruin` of it fallen."""
     along_x = toward[0] == 0.0
     length = (east - west) if along_x else (north - south)
     front = (north if toward[1] > 0 else south) if along_x else (east if toward[0] > 0 else west)
@@ -39,8 +40,13 @@ def face(module, west, south, east, north, bottom, top, toward, bay=4.0, lancets
             middle = along + span / 2
             wide = min(span * 0.42, 1.8)
             sill, head = bottom + 2.2, top - 2.2 - wide
-            kit.block(module, at(middle, 0.0, sill), size(wide, 0.04, head - sill), 'black', bevel=0.0, wear=0.0,
+            kit.block(module, at(middle, 0.0, sill), size(wide, 0.04, head - sill), pane, bevel=0.0, wear=0.0,
                       part=False)
+            if pane != 'black':
+                kit.block(module, at(middle, 0.06, sill), size(0.12, 0.05, head - sill), 'trim', bevel=0.0, wear=0.0,
+                          part=False)
+                kit.block(module, at(middle, 0.06, (sill + head) / 2), size(wide, 0.05, 0.1), 'trim', bevel=0.0,
+                          wear=0.0, part=False)
             kit.block(module, at(middle, 0.0, sill - 0.25), size(wide + 0.5, 0.25, 0.25), 'trim', bevel=0.02,
                       wear=0.0, part=False)
             turn = (0.0 if out < 0 else math.pi) if along_x else (-math.pi / 2 if out < 0 else math.pi / 2)
@@ -360,12 +366,32 @@ def hall(module):
     hanging(module, -17.0, -23.0, 17.0, 23.0, -1.2, 16.0)
 
 
+def banner(module, at, facing, field, band):
+    """A banner on an iron pole run out from a wall at `at` (the pole's root), `facing` out of it along x or y: the
+    cloth hangs from the pole across the wall, its `field` parted by a `band` down its middle and along its hem."""
+    along_x = facing[0] != 0.0
+
+    def size(out, thick, tall):
+        return (out, thick, tall) if along_x else (thick, out, tall)
+
+    def spot(out, z):
+        return (at[0] + facing[0] * out, at[1] + facing[1] * out, z)
+
+    kit.block(module, spot(0.9, at[2]), size(1.8, 0.08, 0.08), 'iron', bevel=0.0, wear=0.0, part=False)
+    kit.block(module, spot(1.05, at[2] - 3.4), size(1.3, 0.04, 3.4), field, bevel=0.0, wear=0.0, part=False)
+    kit.block(module, spot(1.05, at[2] - 3.4), size(0.3, 0.06, 3.4), band, bevel=0.0, wear=0.0, part=False)
+    kit.block(module, spot(1.05, at[2] - 3.4), size(1.3, 0.06, 0.3), band, bevel=0.0, wear=0.0, part=False)
+
+
 def shore(module, was):
-    """A shore's dressing: as it was, a long table set before the hearth, benches, the floor's rugs, tapestries and lit
-    sconces on faced walls; as it is, the same walls fallen to ragged tops, the table broken, rubble, and crystal."""
+    """A shore's dressing: as it was, a long table set before the lit hearth, benches, a rug, the sun at glazed windows,
+    lit sconces and banners in the colours of no house the vale knows; as it is, the same walls fallen to ragged tops,
+    the table broken, rubble, and crystal."""
     for west, south, east, north, toward in ((-18.0, -14.0, -14.0, 14.0, (1.0, 0.0)), (14.0, -14.0, 18.0, 14.0, (-1.0, 0.0)),
                                              (-14.0, 14.0, 14.0, 18.0, (0.0, -1.0))):
-        face(module, west, south, east, north, 0.0, 10.0, toward, lancets=was, ruin=0.0 if was else 0.7)
+        # Bays of 5.6 m leave the north wall's middle to the hearth and its pilasters' faces to banners and sconces.
+        face(module, west, south, east, north, 0.0, 10.0, toward, bay=5.6, lancets=was, ruin=0.0 if was else 0.7,
+             pane='glow')
         if not was:
             bk.rock_face(module, west, south, east, north, 9.0, 11.5)
     # The table stands west of the hall's middle, where the Keeper's post and the Lodestone's plinth are.
@@ -381,11 +407,13 @@ def shore(module, was):
         if not was:
             bench.rotation_euler = (0.0, side * 0.3, 0.1)
     if was:
-        kit.block(module, (*middle, 0.01), (5.0, 10.0, 0.02), 'crimson', bevel=0.0, wear=0.0, part=False)
-        for x, y in ((-13.9, 6.0), (13.9, 6.0), (-13.9, -6.0), (13.9, -6.0)):
+        kit.block(module, (*middle, 0.01), (5.0, 10.0, 0.02), 'verdant', bevel=0.0, wear=0.0, part=False)
+        for x, y in ((-13.5, 2.8), (13.5, 2.8), (-13.5, -2.8), (13.5, -2.8)):
             kit.block(module, (x, y, 3.2), (0.12, 0.3, 0.5), 'glow', bevel=0.0, wear=0.0, part=False)
-        for x in (-6.0, 6.0):
-            kit.block(module, (x, 13.95, 2.5), (3.0, 0.06, 5.0), 'crimson', bevel=0.0, wear=0.0, part=False)
+        for at, facing in (((-13.6, 8.4, 8.6), (1.0, 0.0)), ((13.6, 8.4, 8.6), (-1.0, 0.0)),
+                           ((-13.6, -8.4, 8.6), (1.0, 0.0)), ((13.6, -8.4, 8.6), (-1.0, 0.0)),
+                           ((-8.4, 13.6, 8.6), (0.0, -1.0)), ((8.4, 13.6, 8.6), (0.0, -1.0))):
+            banner(module, at, facing, 'verdant', 'straw')
     else:
         table.rotation_euler = (0.0, 0.25, 0.08)
         rubble(module, (0.0, 0.0), 11.0, 16)

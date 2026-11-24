@@ -6,6 +6,7 @@ import math
 
 import breach_dress
 import breach_kit as bk
+import breach_lore
 import kit
 import latticekit
 
@@ -55,6 +56,7 @@ def descent(module):
                   part=False).rotation_euler = (bk.WHEEL_TILT, 0.0, angle)
     bk.drowned_floor(module, -4.0, 36.0, 4.0, 40.0, top=-10.0)
     breach_dress.descent(module)
+    breach_lore.line(module)
 
 
 def mending(module):
@@ -90,6 +92,7 @@ def mending(module):
     for west, south, east, north in ((-30.0, -30.0, -12.0, -12.0), (12.0, -30.0, 30.0, -12.0), (-12.0, 12.0, 12.0, 30.0)):
         bk.drowned_floor(module, west, south, east, north)
     breach_dress.mending(module)
+    breach_lore.green(module)
 
 
 BELLS_Y = (-18.0, -2.0, 14.0)

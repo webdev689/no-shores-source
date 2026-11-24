@@ -7,6 +7,7 @@ import math
 
 import breach_dress
 import breach_kit as bk
+import breach_lore
 import kit
 import latticekit
 
@@ -66,6 +67,7 @@ def ways(module):
     for x, y, _ in WATCHERS:
         bk.crust(module, pick, (x, y, 0.02), 1.8, dim=0.5)
     breach_dress.ways(module, shut, half, HOUSE)
+    breach_lore.heart(module, heart, HOUSE)
 
 
 # The Broken Stair, laid along x from its west door: landings 6 m square, three slabs 2.8 m square between each two a
@@ -130,6 +132,7 @@ def stair(module):
             bk.crystal(module, pick, (x, 0.0, top - 0.6), count=4, length=1.6, radius=0.3, up=(0.0, 0.0, -1.0))
     held = [(x, 0.0, top, SLAB) for x, top, steady in slabs if steady] + [(hidden[0], hidden[1], hidden[2], SLAB)]
     breach_dress.stair(module, landings, LANDING, held)
+    breach_lore.camp(module, hidden)
 
 
 def hall(module):
@@ -164,6 +167,7 @@ def hall(module):
     for base in ((1.4, 1.0, 0.0), (-1.2, -1.3, 0.0)):
         bk.crystal(module, pick, base, count=6, length=2.6, radius=0.5)
     breach_dress.hall(module)
+    breach_lore.hall(module)
 
 
 def shore(was):
@@ -188,10 +192,7 @@ def shore(was):
         for number, at in enumerate(((-11.0, 12.0), (11.0, 12.0)), start=1):
             module.socket(f'mouth-{number}', (*at, 0.0), (0.0, 1.0))
         breach_dress.hearth(module, (0.0, 14.0, 0.0), (0.0, -1.0), was, 10.0)
-        if was:
-            for side in (-1, 1):
-                kit.block(module, (side * 13.6, 0.0, 3.0), (0.1, 2.4, 4.0), 'crimson', bevel=0.0, wear=0.0, part=False)
-        else:
+        if not was:
             pick = latticekit.picker(module.random.randrange(1 << 30))
             bk.drowned_floor(module, -14.0, -14.0, 14.0, 14.0)
             for base in ((-12.0, 12.0, 0.0), (12.0, 12.0, 0.0), (-12.0, -12.0, 0.0), (12.0, -8.0, 0.0), (0.0, 13.0, 0.0)):
