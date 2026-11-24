@@ -274,6 +274,23 @@ fn marked(marks: texture_2d<u32>, at: vec2f, first: u32, last: u32) -> f32 {
   return smoothstep(0.3, 0.7, cover);
 }
 
+// The river's (marks 1 and 2), road's (3), town's (4) and port's (5) cover at a point, as \`marked\` finds each, from
+// one read of the four texels round it.
+fn marks_at(marks: texture_2d<u32>, at: vec2f) -> vec4f {
+  let top = vec2i(textureDimensions(marks)) - 1;
+  let base = vec2i(floor(at));
+  let fraction = at - floor(at);
+  var cover = vec4f(0.0);
+  for (var corner_index = 0; corner_index < 4; corner_index++) {
+    let offset = vec2i(corner_index & 1, corner_index >> 1);
+    let mark = textureLoad(marks, clamp(base + offset, vec2i(0), top), 0).r;
+    let share = mix(1.0 - fraction.x, fraction.x, f32(offset.x)) * mix(1.0 - fraction.y, fraction.y, f32(offset.y));
+    let kinds = vec4<bool>(mark >= 1u && mark <= 2u, mark == 3u, mark == 4u, mark == 5u);
+    cover += select(vec4f(0.0), vec4f(share), kinds);
+  }
+  return smoothstep(vec4f(0.3), vec4f(0.7), cover);
+}
+
 `;
 
 /**

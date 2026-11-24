@@ -210,7 +210,11 @@ fn shade(in: Out) -> vec4f {
   // Cloth is one sheet: its back is lit as its front.
   if dot(facing, in.from_eye) > 0.0 { facing = -facing; }
   let direct = max(dot(facing, sky_state.key.xyz), 0.0);
-  let sun = select(1.0, sunlit(in.from_eye, facing), direct > 0.0) * sky_dapple(in.from_eye);
+  // A face turned from the sun takes no shadow: its map is not read.
+  var sun = sky_dapple(in.from_eye);
+  if (direct > 0.0) {
+    sun *= sunlit(in.from_eye, facing);
+  }
   if in.material == CRYSTAL {
     return vec4f(crystal_colour(facing, in.from_eye, in.glow, sun), 1.0);
   }

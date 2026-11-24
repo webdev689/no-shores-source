@@ -188,8 +188,12 @@ fn vertex_main(
 fn fragment_main(drawn: Drawn) -> @location(0) vec4f {
   let normal = normalize(drawn.normal);
   let lit = max(dot(normal, sky_state.key.xyz), 0.0);
-  // In the sun's shadows, as the land and the ships are: a crate in a ship's shadow is darker.
-  let sun = select(1.0, sunlit(drawn.from_eye, normal), lit > 0.0) * sky_dapple(drawn.from_eye);
+  // In the sun's shadows, as the land and the ships are: a crate in a ship's shadow is darker. A face turned from the
+  // sun takes no shadow, its map not read.
+  var sun = sky_dapple(drawn.from_eye);
+  if (lit > 0.0) {
+    sun *= sunlit(drawn.from_eye, normal);
+  }
   // Marks were lit a little brighter than the land: AMBIENT against the land's 0.35.
   let direct = sky_direct(normal, sun) * ((1.0 - AMBIENT) / 0.65);
   let light = sky_ambient(normal) * (AMBIENT / 0.35) + direct + sky_lamps(drawn.from_eye, normal);

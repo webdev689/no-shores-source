@@ -193,7 +193,11 @@ fn lit(layer: u32, albedo: vec3f, normal: vec3f, from_eye: vec3f) -> vec3f {
   // A clear noon's ambient was AMBIENT, more on a wall by the bounce, the sun lighting the rest.
   let ambient = AMBIENT + BOUNCE * (1.0 - abs(facing.z));
   let direct = max(dot(facing, sky_state.key.xyz), 0.0);
-  let sun = select(1.0, sunlit(from_eye, facing), direct > 0.0) * sky_dapple(from_eye);
+  // A face turned from the sun takes no shadow: its map is not read.
+  var sun = sky_dapple(from_eye);
+  if (direct > 0.0) {
+    sun *= sunlit(from_eye, facing);
+  }
   if layer == CRYSTAL {
     return crystal_colour(facing, from_eye, crystal_glow, sun);
   }

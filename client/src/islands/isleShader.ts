@@ -140,7 +140,11 @@ fn module_vertex(
 // The land's light: the sky's, the key light where the shadows and the clouds let it, and the lamps near.
 fn lit(colour: vec3f, normal: vec3f, from_eye: vec3f) -> vec3f {
   let direct = max(dot(normal, sky_state.key.xyz), 0.0);
-  let sun = select(1.0, sunlit(from_eye, normal), direct > 0.0) * sky_dapple(from_eye);
+  // A face turned from the sun takes no shadow: its map is not read.
+  var sun = sky_dapple(from_eye);
+  if (direct > 0.0) {
+    sun *= sunlit(from_eye, normal);
+  }
   return colour * (sky_ambient(normal) + sky_direct(normal, sun) + sky_lamps(from_eye, normal));
 }
 
