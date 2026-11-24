@@ -435,7 +435,7 @@ export class Hud {
         standing.told &&
         deathNode(
           ui,
-          deathWords(standing.fell, standing.waits),
+          deathWords(standing.fell, standing.waits, standing.respawnIn),
           standing.canRespawn,
           () => this.respawnWanted(),
           !standing.waits,

@@ -34,12 +34,15 @@ test("a standing's ticks read as seconds, and Respawn is offered after 4 s dead"
   assert.deepEqual(standingOf('inside', 0), { kind: 'inside' });
   assert.deepEqual(standingOf('warned', 540), { kind: 'warned', secondsLeft: 9 });
   const strayed = { fell: false, told: true };
-  assert.deepEqual(standingOf('dead', 120), { kind: 'dead', secondsDead: 2, canRespawn: false, ...strayed });
-  assert.deepEqual(standingOf('dead', 240), { kind: 'dead', secondsDead: 4, canRespawn: true, ...strayed });
+  const dead = (secondsDead: number, canRespawn: boolean, respawnIn: number) =>
+    ({ kind: 'dead', secondsDead, canRespawn, respawnIn, ...strayed }) as const;
+  assert.deepEqual(standingOf('dead', 120), dead(2, false, 2));
+  assert.deepEqual(standingOf('dead', 240), dead(4, true, 0));
   assert.deepEqual(standingOf('dead', 60, true, false), {
     kind: 'dead',
     secondsDead: 1,
     canRespawn: false,
+    respawnIn: 3,
     fell: true,
     told: false,
   });
@@ -66,6 +69,18 @@ test("where the place stands the fallen again itself, the death's words say when
 test('death by a fall reads "You fell."; by straying, that the player strayed', () => {
   assert.equal(deathWords(true), 'You fell.');
   assert.equal(deathWords(false), 'You strayed too far from the area.');
+});
+
+test('until Respawn may be pressed, the death words count the seconds left, as a death in the fight does', () => {
+  const fell = standingOf('dead', 90, true, true, 6 * 60);
+  assert.ok(fell.kind === 'dead');
+  assert.equal(fell.respawnIn, 5);
+  assert.equal(deathWords(fell.fell, fell.waits, fell.respawnIn), 'You fell. Respawn in 5 s');
+  const strayed = standingOf('dead', 4 * 60);
+  assert.ok(strayed.kind === 'dead' && strayed.canRespawn && strayed.respawnIn === 0);
+  assert.equal(deathWords(strayed.fell, strayed.waits, strayed.respawnIn), 'You strayed too far from the area.');
+  const waits = standingOf('dead', 90, true, true, null);
+  assert.ok(waits.kind === 'dead' && waits.respawnIn === 0);
 });
 
 test('distances read in metres near and kilometres far', () => {
@@ -102,6 +117,7 @@ test("the warning's count and the wait to respawn are the reach rules' own, read
     kind: 'dead',
     secondsDead: (dead - 1) / 60,
     canRespawn: false,
+    respawnIn: 1,
     fell: false,
     told: true,
   });

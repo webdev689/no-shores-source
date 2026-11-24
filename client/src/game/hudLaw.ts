@@ -9,6 +9,8 @@ export type Standing =
       readonly kind: 'dead';
       readonly secondsDead: number;
       readonly canRespawn: boolean;
+      /** Whole seconds left before Respawn may be pressed: 0 once it may, or where the room never takes it. */
+      readonly respawnIn: number;
       /** Dead by a fall in a social space, not by straying. */
       readonly fell: boolean;
       /** Whether death is told yet: the grey veil, the words and Respawn, which wait for a fall to play. */
@@ -39,7 +41,9 @@ export function standingOf(
   if (kind === 'warned') return { kind, secondsLeft: ticks / TICKS_A_SECOND };
   const secondsDead = ticks / TICKS_A_SECOND;
   const canRespawn = respawnTicks !== null && ticks >= respawnTicks;
-  return { kind, secondsDead, canRespawn, fell, told: told || !fell, ...(respawnTicks === null && { waits: true }) };
+  const respawnIn = respawnTicks === null ? 0 : Math.ceil(Math.max(0, respawnTicks - ticks) / TICKS_A_SECOND);
+  const waits = respawnTicks === null && { waits: true as const };
+  return { kind, secondsDead, canRespawn, respawnIn, fell, told: told || !fell, ...waits };
 }
 
 /** How dark the screen's edge grows once death is told. */
@@ -50,10 +54,12 @@ export function greyed(standing: Standing): boolean {
   return standing.kind === 'dead' && standing.told;
 }
 
-/** The words under "You died": how the player died, and where the place stands them again itself (`waits`), when. */
-export function deathWords(fell: boolean, waits = false): string {
+/** The words under "You died": how the player died, and where the place stands them again itself (`waits`), when;
+ *  else, while Respawn may not yet be pressed, the seconds left before it may (`respawnIn`). */
+export function deathWords(fell: boolean, waits = false, respawnIn = 0): string {
   const how = fell ? 'You fell.' : 'You strayed too far from the area.';
-  return waits ? `${how} You stand again once the encounter is won or your company falls.` : how;
+  if (waits) return `${how} You stand again once the encounter is won or your company falls.`;
+  return respawnIn > 0 ? `${how} Respawn in ${respawnIn} s` : how;
 }
 
 /** The warning's count, as the player reads it: whole seconds, never below 0. */
