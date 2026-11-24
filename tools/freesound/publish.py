@@ -29,6 +29,8 @@ WANTED = os.path.join(REPO, 'content', 'audio', 'freesound.json')
 CHANGES = 'Unchanged.'
 VARIED = re.compile(r'ui\.(hover|press|back)|(step|swing|hit|amb)\..+')
 VARIES = 'Its pitch varies a little each time it plays.'
+# The music's instruments (client/src/game/audio/music/sampled.ts) play a pick at many pitches.
+PLAYED = 'Played at many pitches as an instrument in the game\'s music.'
 # The licences the owner allows, each at its own address with its version.
 LICENCES = {
     'CC0': re.compile(r'https://creativecommons\.org/publicdomain/zero/\d\.\d/'),
@@ -102,7 +104,7 @@ def cut_of(entry):
 
 def changes_of(cue, entry):
     """Everything done to a pick on its way in and as it plays, as its credit says it."""
-    said = [cut_of(entry), VARIES if VARIED.fullmatch(cue) else '']
+    said = [cut_of(entry), VARIES if VARIED.fullmatch(cue) else '', PLAYED if cue.startswith('music.') else '']
     return ' '.join(part for part in said if part) or CHANGES
 
 

@@ -153,6 +153,19 @@ export class Samples {
     return Math.max(0, ...(this.held.get(id) ?? []).map((each) => each.measured.rush));
   }
 
+  /** A cue's recording held whole, decoded, and the gain that levels it, for a player that builds its own nodes (the
+   *  music's sampled voices); null, and fetched, where it has not come. Asked for, it counts as played. */
+  recording(audio: BaseAudioContext, id: string): { readonly buffer: AudioBuffer; readonly level: number } | null {
+    this.audio ??= audio;
+    const sound = this.held.get(id)?.find((each) => each.chunk === null);
+    if (!sound) {
+      this.want(id);
+      return null;
+    }
+    sound.playedAt = audio.currentTime;
+    return { buffer: sound.buffer, level: sound.measured.level };
+  }
+
   /** Plays `id` into `out`, its pitch at `rate`, answering it as it plays; null, and fetched, where it has not come. */
   play(audio: AudioContext, out: AudioNode, id: string, rate = 1, play: SamplePlay = {}): AudioBufferSourceNode | null {
     this.audio ??= audio;
@@ -302,6 +315,9 @@ export function playSample(
 
 /** The seconds into a cue's recording its rush comes, the latest of its files'; 0 until it has come. */
 export const rushOfCue = (id: string): number => samples.rushOf(id);
+
+/** A cue's recording held whole and its level, for the music's sampled voices (`Samples.recording`). */
+export const recordingOf = (audio: BaseAudioContext, id: string) => samples.recording(audio, id);
 
 /** Every Freesound recording's credit, by name; DFO's own sounds owe none. */
 export function soundCredits(): SoundCredit[] {

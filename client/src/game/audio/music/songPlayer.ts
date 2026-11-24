@@ -1,15 +1,16 @@
 // The song player: a score's notes onto the audio clock. It wakes on a coarse timer and schedules every note falling
 // in the next quarter second at its exact time, so a stalled page never makes a note late (a stall past the window
 // skips the gap rather than playing the past all at once). A song loops on its bar line, to the tick; a song written
-// as takes plays the take its arranger chooses at each seam, also to the tick. Each note is built from the FM bank: a
-// modulator sine bending a carrier's pitch, its brightness settling as a real instrument's does, in unison copies for
-// a song's own ensembles; each drum by drumVoice.ts. Each layer role plays through a gain of its own, so the director
-// brings layers in and out on a bar line; a note is only built while its layer plays. Under the song's own level, its
-// press and a fader for fades, the whole stands at MUSIC_GAIN in the music's bus.
+// as takes plays the take its arranger chooses at each seam, also to the tick. Each note is built from the FM bank, in
+// unison copies for a song's own ensembles, each drum by drumVoice.ts; a track or drum played on a recording
+// (sampled.ts) plays it once it has come. Each layer role plays through a gain of its own, so the director brings
+// layers in and out on a bar line; a note is only built while its layer plays. Under the song's own level, its press
+// and a fader for fades, the whole stands at MUSIC_GAIN in the music's bus.
 
 import { type Sounding, buildDrum } from './drumVoice.ts';
 import { type FmVoice, PERCUSSION_CHANNEL, fmVoice, noteToHz, panPosition, velocityGain } from './fmBank.ts';
 import { Arranger } from './form.ts';
+import { type Recordings, rateOf, sampledNote } from './sampled.ts';
 import { type Note, type Press, ROLES, type Role, type Song, TICKS_PER_BEAT, type Track } from './score.ts';
 
 /** How far ahead each wake schedules, and how often it wakes: the window must outlast the wait. */
@@ -142,6 +143,7 @@ export class SongPlayer {
   private readonly timed: boolean;
   private readonly clock: () => number;
   private readonly arranger: Arranger;
+  private readonly recordings: Recordings;
   private playing: Song | null = null;
   private tracks: (Track | undefined)[] = [];
   private looping = true;
@@ -156,13 +158,20 @@ export class SongPlayer {
   private startedAt = 0;
 
   /** `timed`: pumped by its own timer, as in the game; `clock`: the time it schedules against (a render's own);
-   *  `arranger`: who chooses the takes, shared by players that should remember the same fights. */
+   *  `arranger`: who chooses the takes, shared by players that should remember the same fights; `recordings`: where a
+   *  sampled voice's recording comes from (none, and every voice is the FM bank's, unless it says). */
   constructor(
     audio: BaseAudioContext,
     out: AudioNode,
-    { timed = true, clock = () => audio.currentTime, arranger = new Arranger() } = {},
+    {
+      timed = true,
+      clock = () => audio.currentTime,
+      arranger = new Arranger(),
+      recordings = (() => null) as Recordings,
+    } = {},
   ) {
     this.audio = audio;
+    this.recordings = recordings;
     this.timed = timed;
     this.clock = clock;
     this.arranger = arranger;
@@ -422,6 +431,7 @@ export class SongPlayer {
     if (note.channel === PERCUSSION_CHANNEL) return this.drum(note, when, amp);
     const track = this.tracks[note.channel];
     if (!track) return;
+    if (track.sample && this.sampled(track, note, when, seconds, amp)) return;
     const own = track.voice;
     const spec = { ...fmVoice(track.program), ...own };
     const audio = this.audio;
@@ -486,8 +496,29 @@ export class SongPlayer {
     this.sounding.push({ endsAt: end, stop: () => oscillators.forEach((oscillator) => oscillator.stop()) });
   }
 
-  /** Builds one drum hit: the bank's, under the song's own drum for its key where its kit has one. */
+  /** Plays a note on its track's recording, answering whether it could: not until the recording has come, nor while
+   *  a pitched cue has no root. */
+  private sampled(track: Track, note: Note, when: number, seconds: number, amp: number): boolean {
+    const sample = track.sample;
+    const rate = sample ? rateOf(sample, note.note) : null;
+    const recording = sample && rate !== null ? this.recordings(this.audio, sample.cue) : null;
+    if (!sample || rate === null || !recording) return false;
+    const pan = panPosition(track.pan);
+    const played = { rate, when, held: seconds, amp };
+    this.sounding.push(sampledNote(this.audio, recording, sample, played, (gain) => this.connect(gain, pan, note)));
+    return true;
+  }
+
+  /** Builds one drum hit: on its recording where the kit samples it and it has come, else the bank's, under the
+   *  song's own drum for its key where its kit has one. */
   private drum(note: Note, when: number, amp: number): void {
+    const sample = this.playing?.kit.samples?.get(note.note);
+    const recording = sample ? this.recordings(this.audio, sample.cue) : null;
+    if (sample && recording) {
+      const played = { rate: 2 ** ((sample.shift ?? 0) / 12), when, held: 0, amp, whole: true };
+      this.sounding.push(sampledNote(this.audio, recording, sample, played, (gain) => this.connect(gain, 0, note)));
+      return;
+    }
     const own = this.playing?.kit.drums.get(note.note);
     this.sounding.push(buildDrum(this.audio, note.note, own, when, amp, (gain) => this.connect(gain, 0, note)));
   }
