@@ -146,7 +146,8 @@ width, and from the exact close patch where it reaches, eased in over its outer 
   as thick as its trees grow, and the forest floor darker under them near. From 1 km, where the far trees thin out,
   the ground under the groves already takes most of the canopy's colour, so the gaps between the widened trees
   read as more crowns. So a forest reads from the sea and over an
-  island's side, and stands where its trees stand.
+  island's side, and stands where its trees stand. In rain the painted canopy, as much of the ground as it covers,
+  takes no sky's glare, as the crowns take none ([[The Harbourmaster Stands in the Market, Rain Spares the Trees, and Patrol Nodes Always Stand]]).
 - **Contact shade.** Each plant drawn far lays a soft dark disc on the ground under it,
   as wide as its crown, leaning a little the way the sun throws shadows and laid on the ground's slope at its foot,
   fading out by half its near range. Trunks darken toward the ground to meet it.

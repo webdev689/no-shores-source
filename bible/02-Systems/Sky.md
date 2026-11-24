@@ -96,12 +96,15 @@ what show the ground there.
   dimmed already.
 - **Wet and snow.** The weather's wetness darkens the land and the city's stone and gives them a sheen toward a
   grazing eye; once the ground is soaked, rain stands in puddles in the deepest few of the flat hollows of the land
-  and the plaza (`PUDDLE_DEEP`), their shores ragged by a finer noise and sharp, mirroring the sky, and while it
-  rains rings spread on them where drops land, one a cell of 0.5 m in more cells the harder it falls, each starting
-  again about every 1.1 s (`sky_ripple`, on the world's clock) ([[The Harbourmaster Stands in the Market, Rain Spares the Trees, and Patrol Nodes Always Stand]]). Snow
+  and the plaza (`PUDDLE_DEEP`), their shores ragged by a finer noise and sharp, mirroring the sky, and while rain
+  falls rings spread on them where drops land: one a cell of 0.5 m in more cells the harder it falls (falling snow's
+  share makes none), each kept within its cell and starting again about every 1.1 s on its own beat (`sky_ripple`,
+  on the world's clock and the eye's wrapped place), fading out before a pixel is wider than a ring: on the land by
+  the pixel's footprint, on the city's stone from 4 to 12 m off ([[The Harbourmaster Stands in the Market, Rain Spares the Trees, and Patrol Nodes Always Stand]]). Snow
   that has fallen in the last twenty minutes whitens the flat ground and the city's flat stone where the weather laid
   it: on the ground under the eye, where it is read, and higher, fading out 100 to 300 m lower down, which is warmer.
-  Puddles lie only where no snow does. Rain darkens a plant's bark and leaves and lays no sheen on them.
+  Puddles lie only where no snow does. Rain darkens a plant's bark and leaves and lays no sheen on them, nor on the
+  far woods the land is painted with ([[Nature]], "Woods from afar").
 
 ## Limits
 

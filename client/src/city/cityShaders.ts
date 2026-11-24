@@ -207,7 +207,10 @@ fn lit(layer: u32, albedo: vec3f, normal: vec3f, from_eye: vec3f) -> vec3f {
   let wet = max(sky_state.ambient_sky.w * 0.7 * (1.0 - snow), puddle) * open;
   let light = sky_ambient(facing) * (ambient / AMBIENT) + sky_direct(facing, sun) * ((1.0 - ambient) / 0.65);
   let surface = sky_soaked(sky_snowed(albedo, snow), wet);
-  let mirror = normalize(facing + vec3f(sky_ripple(from_eye) * puddle, 0.0));
+  // The rings, under 2 cm wide, fade out before they are narrower than a pixel; by distance, as a derivative
+  // here would not be in uniform control flow.
+  let ripple = sky_ripple(from_eye) * puddle * (1.0 - smoothstep(4.0, 12.0, length(from_eye)));
+  let mirror = normalize(facing + vec3f(ripple, 0.0));
   return surface * (light + sky_lamps(from_eye, facing)) + sky_sheen(mirror, from_eye, wet);
 }
 
