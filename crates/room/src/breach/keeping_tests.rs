@@ -164,3 +164,19 @@ fn a_shore_emptied_of_the_living_ends_its_taking() {
     assert!(breach(&room).fights.steward.away.is_none(), "the taking ends with every one taken fallen");
     assert!(away.bells.iter().all(|(_, id)| !room.standing_foe(*id)), "its bells gone with it");
 }
+
+#[test]
+fn one_who_leaves_after_a_fall_into_the_dark_comes_back_down() {
+    let (mut room, players) = run(Tier::Hard, 2);
+    assert!(room.own(players[0], "ada") && room.own(players[1], "ben"));
+    let inside = at(&room, "mending", "mender");
+    for &player in &players {
+        stand_at(&mut room, player, inside);
+    }
+    room.tick();
+    room.players.get_mut(&players[1]).expect("in").standing = reach::Standing::Dead { ticks: 0, fell: true };
+    room.part(players[1]);
+    let back = hardy(&mut room);
+    assert!(room.own(back, "ben"));
+    assert!(!room.players[&back].living(), "down at the stage, not stood up whole by coming back");
+}

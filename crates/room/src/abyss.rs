@@ -31,11 +31,12 @@ impl Room {
     }
 
     /// A kept player leaving a run that counts revives: the share of their health they left with kept by account, 0
-    /// for one down, so coming back stands no one up whole, as `arts::keep_casting` keeps their Arts.
+    /// for one down (a fall that killed them among them, though it leaves their health), so coming back stands no one
+    /// up whole, as `arts::keep_casting` keeps their Arts.
     pub(crate) fn keep_body(&mut self, gone: &Player) {
         let Some(owner) = gone.owner.clone() else { return };
         let fighter = gone.fighter;
-        let share = if fighter.dead() { 0.0 } else { fighter.health / fighter.health_max.max(f64::EPSILON) };
+        let share = if gone.living() { fighter.health / fighter.health_max.max(f64::EPSILON) } else { 0.0 };
         // A Breach's run keeps it as well, at either tier.
         if let Some(breach) = self.breach.as_mut() {
             breach.left.insert(owner, share);
