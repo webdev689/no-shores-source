@@ -192,6 +192,23 @@ each part works is in its system note.
 
 The decisions in [[Open Questions]] are not repeated here.
 
+- **The website and the Discord bot** (#194, a draft, not merged; [[The Website Is at noshores.online, After DFO's]],
+  [[DFO's Discord Bot Comes Over, Its Panel on the Website]]). On its branch `ccr-e0e5f211-v55a3s`: the [[Website]]
+  (`site/`: Home, The World, The Game, art drawn at build time), the [[Discord Bot]] (`server/bot/`: the core and all
+  19 modules, from DFO's unmerged `ccr-ed24355a-76go4h`), its panel as a page of the site, and the game link (the
+  accounts' `LinkedCharacters` entrypoint, the `game` module's `{character}` placeholders and `/link`). Tested offline
+  only; CI's run on the head was pending at the pause. What it waits on:
+  - The owner's yes to merge, once CI is green.
+  - One Discord application for the bot and the accounts' sign-in, its keys put as secrets and vars by the owner
+    ([[Discord Bot]], "One Discord application"), and its redirects and interactions endpoint set.
+  - The Discord server's invite, the one empty `discord` address in `site/src/siteMap.ts`: the Discord buttons stay
+    hidden until it is set.
+  - Where `noshores.online` is served and whether the game plays from it ([[Open Questions]]). Claude suggested
+    Cloudflare, beside the servers, with the domain's nameservers moved from Porkbun once, so no Porkbun key is kept.
+    The owner posted a Porkbun API key in the chat: it was never stored or used, and should be rotated.
+  - How the bot deploys: no workflow is in the branch yet; on each merge as the accounts do, or only when asked.
+  - Words that are Claude's: The Game page's line "A pirate sandbox in a shared world.", the auto-mod rules' prefix
+    `No Shores: ` and "The bot" as the name on the bot's own cases.
 - **The island view in rain, the Playlist over the island and the ships at a roadstead** (#191, merged on the owner's
   "Deploy", which deploys the page and the rooms). The owner's three reports:
   - "When its cloudy and raining. The overworld pan over the island is shrouded and you can only see the nodes": the
@@ -647,6 +664,18 @@ The decisions in [[Open Questions]] are not repeated here.
 
 ## Next
 
+- **The website's second pass** (#194's branch; stopped at the pause, unfinished, nothing of it kept). The first
+  pass's pictures are far plainer than DFO's site and its home page thinner. Redraw every scene to DFO's detail, of
+  our own subjects (several depth layers, dithered skies, Overlook's stepped town with lit windows and a beacon,
+  ships with real sail shapes, rigging, gunports and wakes, the crystal ruins with faceted glow), each under 64 KB and
+  readable at 390 px; keep the hero's logo, tagline and Play over open sky, not over the town's lights. Lay out the
+  home page after DFO's: alternating "what you do" rows from The Game's lines, a band of numbers each sourced in the
+  premise or a decision (nine continents, three ports remain, three Arts, three factions), a community band shown only
+  while the Discord invite is set, and a foot in columns. Every new line names its source note. DFO's site, its
+  `bot-panel` branch and its art code are in `Lattymoy/website.df.source`; DFO's bot is on `dfo-online-source`'s
+  `ccr-ed24355a-76go4h` at 11cec6ed.
+- **DFO's newest site.** `MckaySea/website.df.source` was pushed after the copy read here; it cannot share a session
+  with `Lattymoy/website.df.source` (same name), so it is unread.
 - **The patrol audit's risks left** (#170's description, each with its file in the audit): run lines against the
   section's ring (the ways measured: 4 of some 14,800 samples outside, by 1.8 m at most) and rock beside a run inside
   it, against [[A Run on the Rock's Top Is Held by Out of Bounds]]; `runs_everywhere` checks the wing from the ring,
