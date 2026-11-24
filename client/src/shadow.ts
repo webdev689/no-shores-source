@@ -272,6 +272,8 @@ const FAR_LAYER = CASCADES.indexOf(FAR);
 export class ShadowMap {
   private readonly gpu: Gpu;
   private readonly texture: GPUTexture;
+  /** Each cascade's layer as a view a pass draws into, made the first time. */
+  private readonly layerViews: GPUTextureView[] = [];
   private readonly receiving: GPUBuffer;
   private readonly casting: GPUBuffer[];
   private readonly sampler: GPUSampler;
@@ -412,7 +414,11 @@ export class ShadowMap {
     const pass = encoder.beginRenderPass({
       colorAttachments: [],
       depthStencilAttachment: {
-        view: this.texture.createView({ dimension: '2d', baseArrayLayer: layer, arrayLayerCount: 1 }),
+        view: (this.layerViews[layer] ??= this.texture.createView({
+          dimension: '2d',
+          baseArrayLayer: layer,
+          arrayLayerCount: 1,
+        })),
         depthClearValue: 1,
         depthLoadOp: 'clear',
         depthStoreOp: 'store',

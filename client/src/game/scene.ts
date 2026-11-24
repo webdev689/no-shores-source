@@ -4,7 +4,7 @@ import { standIn } from '../standIns.ts';
 import { Atmosphere, drawsNothing } from '../cinema/atmosphere.ts';
 import { CLEAR, swellGained, type Weather } from '../cinema/weather.ts';
 import { LightLayer } from '../combat/lightLayer.ts';
-import { type Gpu, TEXTURE_USAGE } from '../gpu.ts';
+import { type Gpu, TEXTURE_USAGE, viewOf } from '../gpu.ts';
 import { perfZone, PERF, timedEncoder } from '../perfMeter.ts';
 import { motionReduced } from '../plus/kit.ts';
 import { ShadowMap } from '../shadow.ts';
@@ -329,15 +329,15 @@ export class GameScene {
     const pass = encoder.beginRenderPass({
       colorAttachments: [
         {
-          view: targets.multisampled.createView(),
-          resolveTarget: targets.colour.createView(),
+          view: viewOf(targets.multisampled),
+          resolveTarget: viewOf(targets.colour),
           clearValue: [0, 0, 0, 1],
           loadOp: 'clear',
           storeOp: 'discard',
         },
       ],
       depthStencilAttachment: {
-        view: targets.multidepth.createView(),
+        view: viewOf(targets.multidepth),
         depthClearValue: 0,
         depthLoadOp: 'clear',
         depthStoreOp: 'store',
@@ -349,7 +349,7 @@ export class GameScene {
     this.copy.encode(encoder, targets.multidepth, targets.depth);
     const camera = frameOf(local);
     const canvas = this.gpu.context.getCurrentTexture();
-    const target = (targets.picture ?? canvas).createView();
+    const target = targets.picture ? viewOf(targets.picture) : canvas.createView();
     const eyeWater = this.waterAt(shot.eye[0], shot.eye[1], time);
     // The weather's fog thickens the haze: their densities add.
     const air = { clearM: 1 / (1 / Math.max(25_000, above * 60) + look.fogDensity), fogDensity: look.fogDensity };

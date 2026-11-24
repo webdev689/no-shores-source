@@ -1,5 +1,5 @@
 import { viewPlanes } from '../frustum.ts';
-import { BUFFER_USAGE, type Gpu, SHADER_STAGE, TEXTURE_USAGE } from '../gpu.ts';
+import { BUFFER_USAGE, type Gpu, SHADER_STAGE, TEXTURE_USAGE, viewOf } from '../gpu.ts';
 import { ShadowMap, shadowLayouts } from '../shadow.ts';
 import type { Swell } from '../rules/landRules.ts';
 import { skyUniformFor } from '../sky/skyUniform.ts';
@@ -252,14 +252,14 @@ export class WaterView {
     const pass = encoder.beginRenderPass({
       colorAttachments: [
         {
-          view: scene.drawn.multisampled.createView(),
+          view: viewOf(scene.drawn.multisampled),
           resolveTarget: scene.target,
           clearValue: [0, 0, 0, 1],
           loadOp: 'clear',
           storeOp: 'discard',
         },
       ],
-      depthStencilAttachment: { view: scene.drawn.multidepth.createView(), depthReadOnly: true },
+      depthStencilAttachment: { view: viewOf(scene.drawn.multidepth), depthReadOnly: true },
     });
     pass.setBindGroup(0, bindGroup);
     pass.setBindGroup(1, (scene.shadow ?? ShadowMap.none(this.gpu)).receiverGroup(this.surface));
