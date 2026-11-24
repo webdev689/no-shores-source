@@ -104,8 +104,10 @@ export class RoomHost extends DurableObject<Env> {
       signed: boolean;
       spoke: boolean;
       token: string | null;
-      /** The entrance a player was joined before, until the room learns whether they came out of its dungeon. */
+      /** The entrance a player was joined before, until the room learns whether they came out of its dungeon; and whether
+       *  they log back in here (`?relog=1`), to stand where their kept character left this social space. */
       door: number | null;
+      relog?: boolean;
       /** At sea, the water their ship lay in as the accounts last took it (unset till they do), which the chat's Region
        *  is; and the word on it in flight, so each is said after the last. */
       water?: string | null;
@@ -193,7 +195,8 @@ export class RoomHost extends DurableObject<Env> {
     server.binaryType = 'arraybuffer';
     server.accept();
     const door = atDoor ? entrance : null;
-    const held = { player, address, count: undefined, signed: false, spoke: false, token: null, door };
+    const relog = new URL(request.url).searchParams.get('relog') === '1';
+    const held = { player, address, count: undefined, signed: false, spoke: false, token: null, door, relog };
     this.players.set(server, held);
     if (held.door !== null) setTimeout(() => !held.signed && this.outOfDoor(server), TOKEN_WAIT_MS);
     // In a run no one plays before the room keeps their character, nor in a sea island's dungeon before the sea says
@@ -421,6 +424,8 @@ export class RoomHost extends DurableObject<Env> {
           const owner = !kept && seaRoom(this.name) !== null ? `unkept:${await sessionHash(message)}` : null;
           if (here() && owner !== null) this.guarded(() => this.room.own(player, owner), undefined);
           if (here()) this.guarded(() => this.room.noneKept(player), undefined);
+          // Logging back in, the kept character stands where it left this social space, by the room's own word on it.
+          if (here() && kept && held.relog) this.guarded(() => this.room.standWhereLeft(player), false);
           this.outOfDoor(socket);
         });
       // At sea the room also says who is there, for the Roster; the next second says in which water.

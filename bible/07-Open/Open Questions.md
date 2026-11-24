@@ -39,6 +39,11 @@ Decisions waiting on the owner. None is in force until the owner decides it and 
   the Heart not yet rendered; the events at the top of Saltmere's band; the Grey Tithe's garrison joining the
   Fissure's fight; other players' numbers crowding an event; the Tithe-Taker without a ledger; a leaver's vault past
   its 20; the end chest and the heroic task, which the offers and the owner called Destiny 1's, are Destiny 2's.
+- **Revives, respawns and relogs**, built on Claude's calls ([[Revives, Respawns and Relogs as Claude Shapes Them]]),
+  each the owner's to change: whether an Elite Dungeon's Court is a darkness zone below Abyss, as Destiny's dungeons
+  make their bosses'; the 2 s hold and the 2.5 m reach; whether any player in a room may revive, or only the company;
+  whether a mission's and a shared dungeon's won groups should hold their ground as a run's bands do, where now they
+  stand again and the checkpoint falls back; and whether logging back in at sea keeps the voyage's tier, Normal now.
 - **The one mystery.** What the Cube is called, how long it stays unseen, and what calls in the deep
   ([[Raum's Lore Is Adapted Into One Mystery]]).
 - **The islands.** The owner's "Islands dont come and go" beside the discoveries that fade when nobody is near

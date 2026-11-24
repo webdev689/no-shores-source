@@ -192,6 +192,21 @@ each part works is in its system note.
 
 The decisions in [[Open Questions]] are not repeated here.
 
+- **Revives, respawns near the fall or at a checkpoint, and logging back in where the player left** (#184, a draft for
+  the owner's yes). The owner's three asks ([[Fallen Players Are Revived as in Destiny]],
+  [[Activities Keep Checkpoints, and Patrol Zones Respawn the Player Near Where They Fell]],
+  [[A Player Logs Back In Where They Left the Overworld or a Social Space]]), built on "take autonomy", every call in
+  [[Revives, Respawns and Relogs as Claude Shapes Them]] with the Destiny research behind it ([[Revives]], [[Accounts]],
+  "Where a player logs back in"). A fallen player lies until an ally holds Use 2 s beside them or they press Respawn
+  after 4 s; a respawn stands them at the activity's checkpoint, near the fall in a patrol zone (43 m at most on
+  Saltmere's three zones, where the landing stood up to 1.5 km off), else at a spawn; the Court's cells while its Boss
+  stands and an Abyss run with no revive left are darkness zones; a company all down while the Court's Boss stands falls
+  back to its checkpoint. Only a dungeon run holds the ground its bands' falls won. The character keeps its last sea or
+  social-space place, `/v1/me` says it, and the page resumes there after the title, the social room standing the player
+  where they left only on that `?relog=1` join (offline from the browser, the spot across but not its height). Tested
+  offline: the full check at the PR's head (the commit named there), the rules' tests on Saltmere's real zones, the
+  agreement runs natively and in WebAssembly. Not yet: played by hand, two players reviving in a deployed room, a real
+  GPU. For the owner: [[Open Questions]], "Revives, respawns and relogs".
 - **The playtest's seven notes**, in three draft pull requests, each waiting on the owner's yes, with `main` (#178)
   merged in. The owner's notes, and answers where asked, are recorded in three decisions, Claude's calls in their
   tables. An independent audit by eight read-only reviewers followed, its findings fixed on each branch (each pull
@@ -523,7 +538,8 @@ The decisions in [[Open Questions]] are not repeated here.
   owner's to say.
 - **Whether players may harm one another** ([[Combat]]); and **isles**: how many, how big and how placed
   ([[World Map]]).
-- **The balance and economy pass** (#178, branch `ccr-2fa9295d-99y63m`), for the owner's yes to merge, on the owner's
+- **The balance and economy pass** (#178), merged on the owner's "Merge and deploy", which deployed the rooms and the
+  page; on the owner's
   "comprehensive balance pass and economy pass on the entire game ecosystem so far ... Destiny 1 vanilla as a
   reference ... autonomy" ([[The Balance and Economy Pass Is Claude's, After Destiny 1 Vanilla]]; every call, its
   reason and its Destiny 1 source in [[The Balance and Economy Pass as Claude Shapes It]]). The owner's own decisions
@@ -551,6 +567,8 @@ The decisions in [[Open Questions]] are not repeated here.
   came from search summaries; the proxy refused every page, so they are unchecked against the pages. Tested offline:
   `cargo xtask check` on its head; not played. The rules' two scripted sword players run out the heroic raid's clock
   in its fourth wave; with `main`'s captains, before this pass's, they hold it. The owner keeps it as it is for now. Its one open point, Conduit, is in [[Open Questions]].
+  Not yet seen in the deployed game: a pair's quicker swings, the Bulwark's shield and its drop, the supers' numbers,
+  a Marksman's three aimed shots, a sinking's pay, a bounty card's own pay and the heroic raid with players.
 
 ## Next
 

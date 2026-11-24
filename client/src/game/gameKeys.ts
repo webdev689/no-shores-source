@@ -35,13 +35,15 @@ export interface Controlled {
   readonly landAt: (id: string) => void;
 }
 
-/** Where the player's controls act now: in a window, dead, at the helm, in a fight at sea, or on foot (on land, or
- *  walking a deck). */
+/** Where the player's controls act now: in a window, dead (past the edge, or fallen in a fight), at the helm, in a fight
+ *  at sea, or on foot (on land, or walking a deck). */
 export function contextOf(playing: Pick<Playing, 'flow' | 'sea' | 'foot'>): Context {
   const { flow, sea, foot } = playing;
+  const down = (here: Pick<NonNullable<Playing['foot']>, 'standing' | 'fell'> | null | undefined) =>
+    here?.standing.kind === 'dead' || !!here?.fell;
   if (socialUp()) return 'menu';
-  if (flow.mode === 'foot') return foot?.standing.kind === 'dead' ? 'dead' : 'foot';
-  if (sea?.boarding.onDeck) return sea.boarding.foot?.standing.kind === 'dead' ? 'dead' : 'foot';
+  if (flow.mode === 'foot') return down(foot) ? 'dead' : 'foot';
+  if (sea?.boarding.onDeck) return down(sea.boarding.foot) ? 'dead' : 'foot';
   if (sea?.aboard.walking) return 'foot';
   return sea?.fight ? 'fight' : 'helm';
 }

@@ -12,6 +12,7 @@ pub mod boarding_hands;
 mod bounties;
 mod chain;
 pub mod chart;
+mod checkpoints;
 pub mod clash;
 mod clears;
 mod coast;
@@ -48,6 +49,8 @@ mod power;
 pub mod public;
 mod quests;
 mod recharge;
+mod respawns;
+mod revive;
 mod riding;
 mod routes;
 mod run;
@@ -79,6 +82,7 @@ pub use players::{
     Shown, SpawnAsk, VIEW_LAG, WAITING_LIMIT,
 };
 pub use power::{allowed_arms, arms_allowed, loadout_arms};
+pub use revive::{REVIVE_REACH_M, REVIVE_RISE_M, REVIVE_TICKS, Reviving};
 pub use run::{REVIVES, RunOf, elite_laid};
 pub use spells::{BOLT, SpellSeen};
 pub use steps::{StepSeen, way_between, way_length};
@@ -232,6 +236,8 @@ pub struct Room {
     pub(crate) quests: quests::QuestGround,
     /// An Elite Dungeon's seals and Court (`encounters.rs`); none in any other room.
     pub(crate) encounters: Option<Box<encounters::Encounters>>,
+    /// Its fallen being revived, and where they respawn (`revive.rs`).
+    pub(crate) respawning: revive::Respawning,
 }
 
 impl Room {
@@ -312,6 +318,7 @@ impl Room {
             names: BTreeMap::new(),
             quests: quests::QuestGround::default(),
             encounters: None,
+            respawning: revive::Respawning::default(),
         }
     }
 
@@ -328,8 +335,12 @@ impl Room {
         Body { facing: self.facing, ..body }
     }
 
-    /// Where a body that fell at (x, y) stands again: the section's spawn nearest it, or the room's spawn.
+    /// Where a body that fell at (x, y) stands again by its own respawn: at an activity's checkpoint, near where it
+    /// fell in a patrol zone (`respawns.rs`), else at the section's spawn nearest it, or the room's spawn.
     pub(crate) fn stand_again(&self, x: f64, y: f64) -> Body {
+        if let Some(body) = self.at_checkpoint().or_else(|| self.near_where_fell(x, y)) {
+            return body;
+        }
         let near = self.section.as_ref().and_then(|section| respawn_point(section, x, y));
         let first = self.spawn_points.first().copied().unwrap_or((0.0, 0.0));
         self.stand(near.map_or(first, |[near_x, near_y]| (near_x, near_y)))
@@ -418,6 +429,7 @@ impl Room {
     pub fn tick(&mut self) {
         self.clock += 1;
         self.step_players();
+        self.keep_spots();
         self.spawn_asked();
         self.keep_patrol();
         self.keep_gathering();
@@ -431,8 +443,10 @@ impl Room {
         self.tell_brains();
         self.fall_with_callers();
         self.raise_the_dead();
+        let checkpoint = self.checkpoint();
         self.keep_garrison();
         self.keep_encounters();
+        self.keep_checkpoints(checkpoint);
         self.keep_public();
         self.keep_cache();
         self.keep_quests();
@@ -448,8 +462,9 @@ impl Room {
     /// inputs have stopped coming is stepped standing still once they fall a view's lag behind, so nothing they were
     /// doing (a dodge's safe stretch, a guard's parry window) outlasts its time while they are away. A body the section
     /// killed falls under its own weight (`lying_still`): its inputs are taken without steering it, and one asking to
-    /// respawn, once the section allows, stands it at the spawn nearest where it fell. Then each player is judged
-    /// against the section, from the height their feet last stood at.
+    /// respawn, once the section allows, stands it where a respawn stands a player (`stand_again`). Each input also
+    /// says whether Use is held to revive and whether the player asks to respawn (`revive.rs`). Then each player is
+    /// judged against the section, from the height their feet last stood at.
     fn step_players(&mut self) {
         // The kept views are lent to each input, not copied: they stand aside while the players step.
         let past = std::mem::take(&mut self.past);
@@ -490,16 +505,9 @@ impl Room {
                     let (lying, dead) = (players::lying_still(&found.fighter), found.armed(found.fighter));
                     found.fighter = player_tick(id, &dead, &lying, &view, &self.blocks, &self.floor).0;
                     if input.respawn && found.standing.may_respawn() {
-                        let lain = found.fighter;
-                        let body = self.stand_again(lain.body.x, lain.body.y);
-                        let graced = self.clock + GRACE;
-                        if let Some(found) = self.players.get_mut(&id) {
-                            found.fighter = found.armed(player(body, lain.arms));
-                            found.standing = Standing::Inside;
-                            found.stood = body.z;
-                            found.graced = graced;
-                        }
-                        self.tell(EventKind::Respawned, None, id, id, 0.0);
+                        let lain = found.fighter.body;
+                        let body = self.stand_again(lain.x, lain.y);
+                        self.stand_up(id, body, None);
                     }
                     continue;
                 }
@@ -511,6 +519,7 @@ impl Room {
                 (found.fighter, found.chain) = (next, found.chain.after(&next));
                 found.shown = input.shown;
                 found.remember(seen);
+                (found.reviving, found.respawn_asked) = (input.revive, found.respawn_asked || input.respawn);
                 if let Some(ask) = input.spawn.filter(|_| self.takes_foe_asks) {
                     self.spawns.push((id, ask, input.spawn_level));
                 }
