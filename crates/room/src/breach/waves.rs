@@ -3,7 +3,7 @@
 //! walkers an encounter moves itself, which make for a point and do something there.
 
 use super::Breach;
-use crate::Room;
+use crate::{PlayerId, Room};
 use ::foes::Rank;
 use combat::fighter::FighterId;
 
@@ -51,11 +51,17 @@ impl Room {
         Some(id)
     }
 
-    /// The company a great foe is matched to: every player the room keeps in the run, living or not, so falling before
-    /// it stands changes nothing; every player in a room that keeps none (a test's).
-    pub(crate) fn company(&self) -> usize {
+    /// The players the run counts as its company: every one the room keeps, or every one in a room that keeps none (a
+    /// test's).
+    pub(crate) fn counted_players(&self) -> Vec<PlayerId> {
         let keeps = self.players.values().any(|found| found.owner.is_some());
-        self.players.values().filter(|found| !keeps || found.owner.is_some()).count().max(1)
+        self.players.iter().filter(|(_, found)| !keeps || found.owner.is_some()).map(|(id, _)| *id).collect()
+    }
+
+    /// The company a great foe is matched to: every player it counts, living or not, so falling before it stands
+    /// changes nothing.
+    pub(crate) fn company(&self) -> usize {
+        self.counted_players().len().max(1)
     }
 
     /// A great foe made a match for `players` of the company, more health for each beyond the first, and then `times`

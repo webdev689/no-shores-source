@@ -280,9 +280,13 @@ impl Room {
         true
     }
 
-    /// What a blow on a foe weighs in a Breach's run: five times on the Steward while it lies bare.
+    /// What a blow on a foe weighs in a Breach's run: five times on the Steward while it lies bare, and nothing on a
+    /// Watcher, which no blow harms.
     pub(crate) fn bare_times(&self, defender: FighterId) -> f64 {
         let Some(breach) = self.breach.as_ref() else { return 1.0 };
+        if breach.fights.ways.watchers.iter().any(|(id, _, _)| *id == defender) {
+            return 0.0;
+        }
         let fight = &breach.fights.steward;
         if fight.boss == Some(defender) && self.clock < fight.bare_until { BARE_BLOW } else { 1.0 }
     }

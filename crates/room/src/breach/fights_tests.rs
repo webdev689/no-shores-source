@@ -202,37 +202,6 @@ fn a_watcher_sees_a_player_in_its_light_and_at_normal_unwrites_them_and_at_hard_
 }
 
 #[test]
-fn a_watcher_struck_down_hastens_the_others_sweeps_without_snapping_their_lenses() {
-    let (mut room, players) = won_to(Tier::Normal, 1, WAYS);
-    begin_at(&mut room, &players, "ways", "heart");
-    put_at(&mut room, players[0], "ways", "checkpoint");
-    ticks(&mut room, 20 * 60);
-    let watchers = breach(&room).fights.ways.watchers.clone();
-    let (first, second) = (watchers[0].0, watchers[1].0);
-    let before = room.foes[&second].fighter.body.facing;
-    room.tick();
-    let unhastened = combat::sight::off(before, room.foes[&second].fighter.body.facing);
-    let before = room.foes[&second].fighter.body.facing;
-    kill(&mut room, first);
-    room.tick();
-    let step = combat::sight::off(before, room.foes[&second].fighter.body.facing);
-    assert!(
-        step <= unhastened * ways::FASTER + 1e-3,
-        "a tick's turn, a quarter faster: {step:.3} after {unhastened:.3}"
-    );
-}
-
-#[test]
-fn the_ways_are_won_once_a_living_player_stands_on_the_broken_stair() {
-    let (mut room, players) = won_to(Tier::Normal, 1, WAYS);
-    begin_at(&mut room, &players, "ways", "heart");
-    put_at(&mut room, players[0], "stair", "start");
-    room.tick();
-    assert_eq!(breach(&room).phases[WAYS], Phase::Won);
-    assert!(breach(&room).chests.contains(&2), "unseen, the heart's house opened as they passed");
-}
-
-#[test]
 fn a_rift_held_open_carries_a_body_through_and_back_and_its_keepers_fall_rewrites_its_shore() {
     let (mut room, players) = won_to(Tier::Normal, 2, SHORES);
     begin_at(&mut room, &players, "hall", "plinth");
@@ -368,4 +337,30 @@ fn the_steward_takes_half_the_company_into_a_shore_and_grounded_at_its_feet_lies
     assert!(room.ground_lodestone(players[0]));
     assert_eq!(room.bare_times(boss), steward::BARE_BLOW, "laid bare");
     fell(&mut room, players[0]);
+}
+
+#[test]
+fn no_blow_harms_a_watcher() {
+    let (mut room, players) = won_to(Tier::Normal, 1, WAYS);
+    begin_at(&mut room, &players, "ways", "heart");
+    let (id, _, _) = breach(&room).fights.ways.watchers[0];
+    let whole = room.foes[&id].fighter.health_max;
+    room.foes.get_mut(&id).expect("standing").fighter.health = 1.0;
+    room.tick();
+    assert_eq!(room.foes[&id].fighter.health, whole, "its health held whole");
+}
+
+#[test]
+fn the_ways_are_won_once_every_living_player_of_the_company_stands_on_the_broken_stair() {
+    let (mut room, players) = won_to(Tier::Normal, 3, WAYS);
+    begin_at(&mut room, &players, "ways", "heart");
+    put_at(&mut room, players[0], "stair", "start");
+    fell(&mut room, players[2]);
+    room.tick();
+    assert!(matches!(breach(&room).phases[WAYS], Phase::Running(_)), "one still in the streets");
+    let (stair, _) = breach(&room).plan.socket("stair", "start").expect("its start");
+    stand_at(&mut room, players[1], [stair[0] + 1.0, stair[1], stair[2]]);
+    room.tick();
+    assert_eq!(breach(&room).phases[WAYS], Phase::Won, "the living all on the Stair, the fallen not waited for");
+    assert!(breach(&room).chests.contains(&2), "unseen, the heart's house opened as they passed");
 }

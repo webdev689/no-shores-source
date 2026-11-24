@@ -2,9 +2,8 @@
 //! dark, and at their crossings the Watchers, Idols whose lenses turn in slow sweeps on a measure and cast a red light
 //! down the street. A living player in a Watcher's light with nothing between them a moment is seen; one sprinting
 //! near it is heard. At Normal the one seen is unwritten and the Lattice comes for the rest; at Hard the whole company
-//! is unwritten a few seconds on. A Watcher struck down leaves its looking to the others, which sweep faster. The
-//! house at the heart of the streets opens to those who reach it unseen, and the Ways are won when a living player
-//! stands on the Broken Stair.
+//! is unwritten a few seconds on. No blow harms a Watcher. The house at the heart of the streets opens to those who
+//! reach it unseen, and the Ways are won when every living player of the company stands on the Broken Stair.
 
 use super::{Breach, WAYS};
 use crate::{EventKind, PlayerId, Room};
@@ -18,10 +17,9 @@ use movement::{Mode, Near};
 pub const SIGHT_M: f64 = 14.0;
 pub const HALF_WIDE: f64 = 0.349_065_850_398_865_9;
 /// How far either way of its post's facing a Watcher sweeps, radians (55 degrees), and the ticks of one sweep there
-/// and back; faster by a quarter for each Watcher struck down.
+/// and back.
 pub const SWEEP: f64 = 0.959_931_088_596_881_2;
 pub const SWEEP_TICKS: f64 = 9.0 * 60.0;
-pub const FASTER: f64 = 1.25;
 /// How long a player stands in a light before being seen, ticks; how near a Watcher sprinting is heard, metres; and
 /// how long after a sighting at Hard the company is unwritten, ticks.
 pub const SEEN_TICKS: u32 = 45;
@@ -32,8 +30,8 @@ const EYE_M: f64 = 2.2;
 const CHEST_M: f64 = 1.2;
 
 /// The Ways as they stand: each Watcher, its post's facing and how far its sweep has come, in sweeps (below 0 until it
-/// begins; it comes on by the pace each tick, so a quicker pace never jumps the lens); how long each player has stood
-/// in a light; whether anyone was seen this attempt, and at Hard when the company is unwritten.
+/// begins); how long each player has stood in a light; whether anyone was seen this attempt, and at Hard when the
+/// company is unwritten.
 #[derive(Clone, Debug, Default, PartialEq)]
 pub struct Ways {
     pub begun: bool,
@@ -42,13 +40,6 @@ pub struct Ways {
     pub seen: bool,
     pub wipe_at: Option<u64>,
     pub waves: usize,
-}
-
-impl Ways {
-    /// The Watchers struck down.
-    fn fallen(&self, room: &Room) -> usize {
-        self.watchers.iter().filter(|(id, _, _)| !room.standing_foe(*id)).count()
-    }
 }
 
 impl Room {
@@ -73,7 +64,9 @@ impl Room {
                 breach.chests.insert(2);
             }
         }
-        let won = self.someone_in(breach, "stair");
+        let on_stair = self.in_space(breach, "stair");
+        let living: Vec<PlayerId> = self.counted_players().into_iter().filter(|id| self.players[id].living()).collect();
+        let won = !living.is_empty() && living.iter().all(|id| on_stair.contains(id));
         breach.fights.ways = fight;
         if won {
             self.win_encounter(breach, WAYS);
@@ -94,15 +87,15 @@ impl Room {
         fight.begun = true;
     }
 
-    /// Each Watcher's lens turned to where its sweep stands now, a smooth swing either way of its post's facing, and
-    /// its sweep brought on by this tick's pace.
+    /// Each Watcher's lens turned to where its sweep stands now, a smooth swing either way of its post's facing, its
+    /// sweep brought on a tick, and its health held whole as the Scrivener's ward holds it.
     fn turn_watchers(&mut self, fight: &mut Ways) {
-        let pace = libm::pow(FASTER, fight.fallen(self) as f64);
         for (id, post, along) in &mut fight.watchers {
             let Some(foe) = self.foes.get_mut(id).filter(|foe| !foe.fighter.dead()) else { continue };
             let facing = movement::wrap(*post + SWEEP * libm::sin(along.max(0.0) * std::f64::consts::TAU));
             (foe.fighter.body.facing, foe.fighter.aim) = (facing, facing);
-            *along += pace / SWEEP_TICKS;
+            foe.fighter.health = foe.fighter.health_max;
+            *along += 1.0 / SWEEP_TICKS;
         }
     }
 
