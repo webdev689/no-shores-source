@@ -316,7 +316,7 @@ third person, the forge's figure and the first person's hands, and the Test Grou
   chest and its lid, the owner's chest from DFO built in code ([[Pick - Chest]], `foundChestProps`), its front looking
   the way its place faces; one the room says it paid them for swings its lid open to 77 degrees over 0.6 s, its
   Vestige poured out as its mouth opens ([[Gear]], "Drops"), and stands open 4 seconds before it goes, the interface's open sound and the chest's
-  clunk heard as an event chest's; one that moves on goes at once (`finds.ts`). Each drop lying for them hovers, a Vestige as its crystal, under its
+  clunk heard as an event chest's; one that moves on goes at once (`finds.ts`). Each drop lying for them, online or alone, hovers, a Vestige as its crystal, under its
   rarity's line (`combat/drops.ts`; [[Gear]], "Drops"), taken by walking over it.
 - **E** uses what is within reach, shown as Destiny shows it, a keycap and the deed low in the middle of the view
   (`UsePrompt`): at a counter, or within 3 m of Shape while he is here, it opens the keeper's screen in the menu

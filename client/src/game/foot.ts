@@ -434,7 +434,8 @@ export class Foot {
     marked.push(...found.marks, ...fallenMarks(fight.others));
     const lit = litMarksSeen(marked, shot.eye, clock);
     const hidden = marksHidden(marked, shot.eye, clock);
-    const laid = (gearNow?.drops ?? []).filter((drop) => drop.kind !== DROPPED.chest);
+    // Drops are drawn online or alone, as a public event's chests are.
+    const laid = ((this.held.gear ?? this.held.alone)?.drops ?? []).filter((drop) => drop.kind !== DROPPED.chest);
     const dropped = dropsLaid(this.drops, laid, clock, shot.eye, [
       ...questRings(gearNow, floor, clock),
       ...marksSeen(marked, shot.eye, clock),
