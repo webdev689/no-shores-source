@@ -114,11 +114,11 @@ pub const OUTPOST_CHANGED: u8 = 80;
 /// The Harbourmaster's asks (`gear::ship::shipyard`), the hull's number in `column`: a hull bought, a ship kept sailed,
 /// a dress bought by its number in `item`, a dress kept laid on a ship (`item` the dress), and a ship named (its
 /// words' places in `node` and `slot`, 255 for no first word; `count` 1 for a renaming, 0 for the first, free name).
-pub const BUY_SHIP: u8 = 81;
-pub const SAIL_SHIP: u8 = 82;
-pub const BUY_DRESS: u8 = 83;
-pub const DRESS_SHIP: u8 = 84;
-pub const NAME_SHIP: u8 = 85;
+pub const BUY_SHIP: u8 = 86;
+pub const SAIL_SHIP: u8 = 87;
+pub const BUY_DRESS: u8 = 88;
+pub const DRESS_SHIP: u8 = 89;
+pub const NAME_SHIP: u8 = 90;
 /// Shape's place on the gear message while he is away.
 pub const SHAPE_AWAY: u8 = 255;
 

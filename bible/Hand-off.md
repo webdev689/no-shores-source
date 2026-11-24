@@ -202,7 +202,7 @@ The decisions in [[Open Questions]] are not repeated here.
   lasts, broadside, reload, way, swing, boarders), answering its helm as the Sloop does, each gun elevated from its
   own deck; 33 dresses sold, besides each part's start and the houses' six at rank 2, bought once and laid free;
   names from two word lists, free once then 250 Aurem; every ship seen by others in its hull, dress, name and flag.
-  Asks 81 to 85, refusals answered 167 to 173. Tested offline: the full check on the branch's head as pushed, the
+  Asks 86 to 90, refusals answered 167 to 173. Tested offline: the full check on the branch's head as pushed, the
   counter pictured headless (`harbourShots.ts`), a dressed Brig pictured at sea, and 12 fights a row by hull
   ([[Shipyard]], "Measured"). Not yet played by hand or in a deployed room. Open for the owner: the prices, levels and
   class numbers, the word lists, a figurehead once one is modelled, whether a captain's guns are elevated gun by gun

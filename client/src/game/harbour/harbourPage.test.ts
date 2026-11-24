@@ -71,7 +71,7 @@ test('the shipyard offers every hull: the one sailed, the Sloop given, one to bu
       ['Frigate', 'locked'],
     ],
   );
-  assert.deepEqual(offers[1]?.ask, { kind: 81, column: 1 });
+  assert.deepEqual(offers[1]?.ask, { kind: 86, column: 1 });
   assert.equal(offers[2]?.ask, null, 'none asked of one sold from a higher level');
   const poor = hullOffers(gear({ aurem: 100 }))[1];
   assert.equal(poor?.state, 'short');
@@ -81,7 +81,7 @@ test('the shipyard offers every hull: the one sailed, the Sloop given, one to bu
     { hull: 1, name: [0, 0], named: true, dress: BUILT },
   ];
   const kept = hullOffers(gear({}, { fleet, sailed: 1 }));
-  assert.deepEqual([kept[0]?.state, kept[0]?.ask], ['kept', { kind: 82, column: 0 }], 'one kept is sailed again');
+  assert.deepEqual([kept[0]?.state, kept[0]?.ask], ['kept', { kind: 87, column: 0 }], 'one kept is sailed again');
   assert.equal(kept[1]?.called, `the ${SHIPYARD.first[0]} ${SHIPYARD.second[0]}`);
   const shipless = hullOffers(gear({}, { fleet: [] }));
   assert.deepEqual(
@@ -92,14 +92,14 @@ test('the shipyard offers every hull: the one sailed, the Sloop given, one to bu
   const pledged = hullOffers(gear({}, { fleet: [], pledge: 2 }));
   assert.deepEqual(
     [pledged[0]?.state, pledged[0]?.ask],
-    ['take', { kind: 81, column: 0 }],
+    ['take', { kind: 86, column: 0 }],
     'pledged before the welcome',
   );
   const taking = drawn(gear({}, { fleet: [], pledge: 2 }), (context) =>
     harbourPage(context, BUILDS, ['shipyard', null], () => undefined),
   );
   taking.click('hull-0');
-  assert.deepEqual(taking.asked, [{ kind: 81, column: 0 }], 'taken with a click: it costs nothing');
+  assert.deepEqual(taking.asked, [{ kind: 86, column: 0 }], 'taken with a click: it costs nothing');
 });
 
 test("a hull's numbers stand against the most any hull has, a reload against the quickest", () => {
@@ -119,7 +119,7 @@ test('the shipyard is held to buy, a ship kept is clicked to sail, and nothing e
   page.click('hull-1');
   assert.deepEqual(page.asked, [], 'a click buys nothing');
   page.hold('hull-1', 900);
-  assert.deepEqual(page.asked, [{ kind: 81, column: 1 }]);
+  assert.deepEqual(page.asked, [{ kind: 86, column: 1 }]);
   const fleet = [
     { hull: 0, name: [NO_WORD, NO_WORD], named: false, dress: BUILT },
     { hull: 1, name: [NO_WORD, NO_WORD], named: false, dress: BUILT },
@@ -128,7 +128,7 @@ test('the shipyard is held to buy, a ship kept is clicked to sail, and nothing e
     harbourPage(context, BUILDS, ['shipyard', null], () => undefined),
   );
   sailing.click('hull-0');
-  assert.deepEqual(sailing.asked, [{ kind: 82, column: 0 }]);
+  assert.deepEqual(sailing.asked, [{ kind: 87, column: 0 }]);
 });
 
 test('a dress kept is clicked to lay it, one sold is held to buy, and the worn one is marked', () => {
@@ -139,8 +139,8 @@ test('a dress kept is clicked to lay it, one sold is held to buy, and the worn o
   );
   const paint = new Map(rows[0]?.tiles.map((tile) => [tile.entry.id, tile]));
   assert.equal(paint.get('bare_timber')?.state, 'worn');
-  assert.deepEqual(paint.get('harbour_blue')?.ask, { kind: 84, column: 0, item: number('harbour_blue') });
-  assert.deepEqual(paint.get('tar_black')?.ask, { kind: 83, item: number('tar_black') });
+  assert.deepEqual(paint.get('harbour_blue')?.ask, { kind: 89, column: 0, item: number('harbour_blue') });
+  assert.deepEqual(paint.get('tar_black')?.ask, { kind: 88, item: number('tar_black') });
   assert.equal(paint.get('bone')?.state, 'buy', 'from ship level 5');
   assert.equal(paint.get('lacquer_crimson')?.state, 'locked', 'from ship level 20');
   const flags = new Map(rows[3]?.tiles.map((tile) => [tile.entry.id, tile]));
@@ -150,11 +150,11 @@ test('a dress kept is clicked to lay it, one sold is held to buy, and the worn o
     harbourPage(context, BUILDS, ['paint', null], () => undefined),
   );
   page.click(`dress-${number('harbour_blue')}`);
-  assert.deepEqual(page.asked, [{ kind: 84, column: 0, item: number('harbour_blue') }]);
+  assert.deepEqual(page.asked, [{ kind: 89, column: 0, item: number('harbour_blue') }]);
   page.click(`dress-${number('tar_black')}`);
   assert.equal(page.asked.length, 1, 'one not kept is never laid with a click');
   page.hold(`dress-${number('tar_black')}`, 900);
-  assert.deepEqual(page.asked.at(-1), { kind: 83, item: number('tar_black') });
+  assert.deepEqual(page.asked.at(-1), { kind: 88, item: number('tar_black') });
   assert.match(page.shows(), /HULL PAINT .*STRIPE .*CANVAS .*FLAG/);
 });
 
@@ -167,7 +167,7 @@ test('a ship is named free the first time and for the yard’s price after, from
   page.click('first-1');
   page.click('second-2');
   page.click('name-ship');
-  assert.deepEqual(page.asked, [{ kind: 85, column: 0, node: 1, slot: 2, count: 0 }], 'the first, free name');
+  assert.deepEqual(page.asked, [{ kind: 90, column: 0, node: 1, slot: 2, count: 0 }], 'the first, free name');
   const named = [{ hull: 0, name: [1, 2], named: true, dress: BUILT }];
   const renaming = drawn(gear({}, { fleet: named }), (context) =>
     harbourPage(context, BUILDS, ['name', null], () => undefined),
@@ -176,7 +176,7 @@ test('a ship is named free the first time and for the yard’s price after, from
   renaming.click('name-ship');
   assert.deepEqual(renaming.asked, [], 'a new name is held for, not clicked');
   renaming.hold('name-ship', 900);
-  assert.deepEqual(renaming.asked, [{ kind: 85, column: 0, node: 1, slot: 3, count: 1 }], 'a renaming, paid');
+  assert.deepEqual(renaming.asked, [{ kind: 90, column: 0, node: 1, slot: 3, count: 1 }], 'a renaming, paid');
 });
 
 test('with no ship kept yet the counter says so, and the shipyard offers the Sloop as given', () => {

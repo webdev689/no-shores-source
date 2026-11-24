@@ -118,11 +118,11 @@ export const ASKS = {
    *  number in `item`, a dress kept laid on a ship (`item` the dress), and a ship named (its words' places in `node`
    *  and `slot`, 255 for no first word; `count` 1 for a renaming at the shipyard's price, 0 for the first, free name).
    *  At the Harbourmaster's counter. */
-  buyShip: 81,
-  sailShip: 82,
-  buyDress: 83,
-  dressShip: 84,
-  nameShip: 85,
+  buyShip: 86,
+  sailShip: 87,
+  buyDress: 88,
+  dressShip: 89,
+  nameShip: 90,
 } as const;
 
 /** Shape's place while he is away. */
