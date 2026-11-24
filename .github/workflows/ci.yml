@@ -18,8 +18,9 @@ permissions:
 jobs:
   check:
     runs-on: ubuntu-latest
-    # The check runs about 30 minutes on a hosted runner; at 30 a whole pass was cancelled with nothing left to do.
-    timeout-minutes: 45
+    # The check runs over 40 minutes on a hosted runner; the limit stands well past it, so a slow runner never
+    # cancels a whole pass.
+    timeout-minutes: 60
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
       - name: Install the pinned toolchain

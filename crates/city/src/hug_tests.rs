@@ -4,7 +4,11 @@ use crate::solids::Material;
 /// How far a point of a shape's own frame lies from it as the page draws it (`solidMesh.ts`), a round as wide as it is
 /// deep: a round a polygon of its faces at every height, a dome's outline straight between its rings; in the plane
 /// through the shape's axis and the point, how far the point lies from the shape's outline there.
-fn distance_to(shape: Shape, [width, depth, height]: [f64; 3], [x, y, z]: [f64; 3]) -> f64 {
+fn distance_to(shape: Shape, size: [f64; 3], point: [f64; 3]) -> f64 {
+    if inside(shape, size, point) {
+        return 0.0;
+    }
+    let ([width, depth, height], [x, y, z]) = (size, point);
     let (half_width, half_depth) = (width / 2.0, depth / 2.0);
     let outward = |reach: f64, up: f64| -> f64 {
         // The outline as its reach at each height, sampled finely; a point inside is no distance off.
@@ -40,10 +44,6 @@ fn distance_to(shape: Shape, [width, depth, height]: [f64; 3], [x, y, z]: [f64; 
                 let (out_x, out_y) = ((x.abs() - wide).max(0.0), (y.abs() - deep).max(0.0));
                 (out_x, out_y)
             };
-            let (out_x, out_y) = off_at(z);
-            if (0.0..=height).contains(&z) && out_x == 0.0 && out_y == 0.0 {
-                return 0.0;
-            }
             (0..=2000)
                 .map(|step| {
                     let at = height * f64::from(step) / 2000.0;
@@ -53,11 +53,8 @@ fn distance_to(shape: Shape, [width, depth, height]: [f64; 3], [x, y, z]: [f64; 
                 .fold(f64::INFINITY, f64::min)
         }
         Shape::Column { .. } | Shape::Dome { .. } => {
-            let sides = drawn(shape).0;
-            let off_at = |at: f64| off_polygon(x, y, reach_at(shape, half_width, at, height), sides);
-            if (0.0..=height).contains(&z) && off_at(z) == 0.0 {
-                return 0.0;
-            }
+            let corners = faces(drawn(shape).0);
+            let off_at = |at: f64| off_polygon(x, y, reach_at(shape, half_width, at, height), &corners);
             (0..=2000)
                 .map(|step| {
                     let at = height * f64::from(step) / 2000.0;
@@ -68,6 +65,20 @@ fn distance_to(shape: Shape, [width, depth, height]: [f64; 3], [x, y, z]: [f64; 
         }
         _ => outward((x * x + y * y).sqrt(), z),
     }
+}
+
+/// Whether a point of a shape's own frame lies in it as the page draws it: in its cross-section at the point's height.
+fn inside(shape: Shape, [width, depth, height]: [f64; 3], [x, y, z]: [f64; 3]) -> bool {
+    let (half_width, half_depth) = (width / 2.0, depth / 2.0);
+    let wide = reach_at(shape, half_width, z, height);
+    (0.0..=height).contains(&z)
+        && match shape {
+            Shape::Block => x.abs() <= half_width && y.abs() <= half_depth,
+            Shape::Gable => x.abs() <= wide && y.abs() <= half_depth,
+            Shape::Pyramid { .. } => x.abs() <= wide && y.abs() <= reach_at(shape, half_depth, z, height),
+            Shape::Column { .. } | Shape::Dome { .. } => off_polygon(x, y, wide, &faces(drawn(shape).0)) == 0.0,
+            _ => (x * x + y * y).sqrt() <= wide,
+        }
 }
 
 /// How many faces the page draws round a column or a dome, and a dome's rings from its base to its crown.
@@ -82,18 +93,22 @@ fn drawn(shape: Shape) -> (u32, u32) {
     }
 }
 
-/// How far a point lies outside a polygon of `sides` faces whose corners stand `radius` out, the first on the x axis.
-fn off_polygon(x: f64, y: f64, radius: f64, sides: u32) -> f64 {
+/// The corners of a polygon of `sides` faces a metre out, the first on the x axis, and the first again to close it.
+fn faces(sides: u32) -> Vec<(f64, f64)> {
+    (0..=sides)
+        .map(|number| land::exact::sin_cos(std::f64::consts::TAU * f64::from(number) / f64::from(sides)))
+        .collect()
+}
+
+/// How far a point lies outside a polygon whose corners (`faces`) stand `radius` out.
+fn off_polygon(x: f64, y: f64, radius: f64, faces: &[(f64, f64)]) -> f64 {
     if radius <= 0.0 {
         return (x * x + y * y).sqrt();
     }
-    let corner = |number: u32| {
-        let (sine, cosine) = land::exact::sin_cos(std::f64::consts::TAU * f64::from(number) / f64::from(sides));
-        [radius * cosine, radius * sine]
-    };
+    let corner = |(sine, cosine): (f64, f64)| [radius * cosine, radius * sine];
     let (mut outside, mut nearest) = (false, f64::INFINITY);
-    for number in 0..sides {
-        let (from, to) = (corner(number), corner(number + 1));
+    for pair in faces.windows(2) {
+        let (from, to) = (corner(pair[0]), corner(pair[1]));
         let (along_x, along_y) = (to[0] - from[0], to[1] - from[1]);
         let (east, south) = (x - from[0], y - from[1]);
         outside |= east * along_y - south * along_x > 0.0;
@@ -135,7 +150,7 @@ fn cloud(solid: &Solid, steps: u32) -> Vec<[f64; 3]> {
             for k in 0..=steps {
                 let share = |at: u32| f64::from(at) / f64::from(steps);
                 let own = [(share(i) - 0.5) * width, (share(j) - 0.5) * depth, share(k) * height];
-                if distance_to(solid.shape, solid.size, own) == 0.0 {
+                if inside(solid.shape, solid.size, own) {
                     points.push(solid.place(own));
                 }
             }
