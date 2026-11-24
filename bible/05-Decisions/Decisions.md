@@ -307,6 +307,7 @@ a decision is a record. How to add one: [[Recording a Decision]].
 - [[Weapons and Armour Carry Flavour Text]]
 - [[Commons Drop as Themselves, Never as Vestiges]]
 - [[Breach Weapons Come Normal and Forged]]
+- [[A Breach's Normal Weapons Carry No Element, and Its Forged Ones Always Do]]
 - [[The Prologue Wakes by Darkening and Pulsing, Not Eyelids]]
 - [[The Prologue's Scenes Change Slower, Behind the Logo While They Load]]
 - [[Thule Fights on a Quarterdeck Twice as Long]]

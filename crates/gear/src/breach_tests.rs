@@ -4,7 +4,7 @@
 
 use crate::asks::{Ask, Done, Here};
 use crate::breach::{DROWNED_VALE, Tier, rewards_chance};
-use crate::character::{At, Character};
+use crate::character::{At, Character, Vestige};
 use crate::dice::{Dice, Purpose};
 use crate::gate::{Place, Shut, shut, shut_at};
 use crate::grid::Column;
@@ -167,6 +167,32 @@ fn normal_breach_armour_climbs_to_28_prestige_and_hards_to_30_so_only_hard_reach
         character.level()
     };
     assert_eq!((level(false), level(true)), (29, 30));
+}
+
+#[test]
+fn a_breach_weapon_opened_at_normal_never_carries_an_element_and_one_opened_at_hard_always_does() {
+    for (tier, carries) in [(Tier::Normal, false), (Tier::Hard, true)] {
+        let mut judged = 0;
+        for seed in 0..40 {
+            let mut character = Character::starting();
+            let vestige = Vestige::new(900, Rarity::Legendary, Slot::Melee, 26).from(Source::Breach).at_tier(tier);
+            character.vestiges.insert(vestige.id, (vestige.clone(), false));
+            let dice = Dice { seed, ..DICE };
+            let Ok(Done::Identified(opened)) = character.ask(Ask::Identify { vestige: vestige.id }, IN_TOWN, &dice)
+            else {
+                panic!("it opens")
+            };
+            let (item, _) = &character.items[&opened];
+            // One opened up to an Atheric is a named piece of its own, no Breach's.
+            if !item.breach {
+                continue;
+            }
+            assert!(item.kind.weapon(), "{item:?}");
+            assert_eq!(item.element.is_some(), carries, "{tier:?}, seed {seed}");
+            judged += 1;
+        }
+        assert!(judged >= 30, "{judged} Breach weapons opened at {tier:?}");
+    }
 }
 
 #[test]

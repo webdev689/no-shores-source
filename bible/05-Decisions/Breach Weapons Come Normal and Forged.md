@@ -15,4 +15,5 @@ status: in force
   ([[Everything Carries a Set Name, and Perks Roll by Pool]]).
 - **The Breach's own session builds them**, with the Breach's tiers (#182).
 
-How it is built: [[Breaches]] ("Rewards"), [[Gear]].
+How it is built: [[Breaches]] ("Rewards"), [[Gear]]. Their elements:
+[[A Breach's Normal Weapons Carry No Element, and Its Forged Ones Always Do]].

@@ -397,8 +397,8 @@ The decisions in [[Open Questions]] are not repeated here.
   Steward on a fixed clock, made the Ways the company's, taught each mechanic before it kills, and finished the art.
   CI's check may now run an hour (the owner's choice, with the Breach's tests slimmed: a run's navmesh is baked once
   per process). #169's revives, respawns and relogs are merged in: the Breach raises with the game's revive and keeps
-  only its own rules on top, its event kinds after #169's. Its weapons come Normal and Forged, by name alone, as the
-  owner's decision says. Left for the owner:
+  only its own rules on top, its event kinds after #169's. Its weapons come Normal and Forged, as the owner decided:
+  a Forged weapon is named so and always carries an element, a Normal one never. Left for the owner:
   - The Drowned horse renders only by a hand forge run (`figures` =
     `horseidle,horsewalk,horsegallop|horse_drowned`, a write to R2), and its first-person frames are in no workflow.
   - Claude's readings to confirm: Hard's "no respawn" as within a running encounter; at Hard the Ways wait only for
@@ -407,8 +407,8 @@ The decisions in [[Open Questions]] are not repeated here.
     a drawn order, the Steward taking into both shores, the Spire keeping each third, a pad way to call the Steward's
     order without voice, a new danger sound; and sinking the Sunken Gate's area into the vale.
   - The Scrivener and the Steward wear the Idol's and the Heart's bodies until their own are drawn.
-  - Whether a Forged weapon should differ from its Normal one in more than its name (Destiny's Adept weapons roll
-    better); built as the name alone.
+  - Whether a Forged weapon should differ from its Normal one in more than its name and its element (Destiny's
+    Adept weapons roll better).
 - **Open pull requests**, for the owner's yes once their checks pass: #162 (the game's words out to Type and back; it
   conflicts with `main` in `Decisions.md`) and #159 (the rooms' worker tests wait for what they check; it conflicts
   with `main` in `roomThread.test.ts`). Drafts:

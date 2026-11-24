@@ -628,7 +628,10 @@ is a horse's hide, kept as its horse ("Horses").
   or none. It is rolled as the weapon is made, as a Vestige opens, a vendor stocks it, a faction sells it or the Test
   Ground grants it, by
   rarity: one in ten for Normal, one in five for Magic, about one in three for Rare, one in two for Legendary and
-  Atheric; it is not guaranteed. Armour carries none. A blow carries the element of the loadout that struck it, none
+  Atheric; it is not guaranteed. A Breach's weapon won at Normal carries none, and one won at Hard (Forged) always
+  carries one, chosen evenly (`element::forged`,
+  [[A Breach's Normal Weapons Carry No Element, and Its Forged Ones Always Do]]). Armour carries none. A blow carries
+  the element of the loadout that struck it, none
   from the fists; a shot keeps the one it was loosed with.
 - **A foe's shield.** One foe in five that a garrison stands carries a shield of an element chosen evenly, holding half
   its health, drawn from its node's id, so its group stands with the same shields each time; a Boss or a Miniboss never

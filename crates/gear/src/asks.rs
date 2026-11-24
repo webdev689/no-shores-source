@@ -6,6 +6,7 @@
 
 use crate::character::{At, CARRIED_MOST, Character, Stuff};
 use crate::dice::{Dice, Purpose};
+use crate::element;
 use crate::emblems::Deed;
 use crate::item::{Item, NAMED_LEVEL, NONE_CHOSEN};
 use crate::kinds::{Slot, Stock};
@@ -551,6 +552,9 @@ impl Character {
         let mut item = vestige::make(item_id, rarity, vestige.slot, vestige.level, vestige.source, dice)
             .ok_or(Refusal::NoSuchItem)?;
         item.hard = vestige.hard && item.breach;
+        if item.hard {
+            item.element = element::forged(item.kind, dice);
+        }
         self.take_id();
         self.vestiges.remove(&id);
         let opened = item.rarity;
