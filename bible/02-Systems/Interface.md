@@ -252,7 +252,8 @@ The game draws every screen itself, and by the owner's word no HTML is laid over
   pad's cross, whose up and down always move focus and whose left and right step a slider; A presses, and B goes back;
   the wheel scrolling the list under it, and focus by keys scrolling every list that holds it into sight. A press held
   as its node goes is let go. A field takes the mouse as a page's does: a drag selects, Shift with a click extends, a
-  double click takes a word. A hidden field is typed through keys and paste only, never handed to the browser's typing,
+  double click takes a word. Words longer than a field show from their start until it is typed in, then scroll to keep
+  the caret in sight. A hidden field is typed through keys and paste only, never handed to the browser's typing,
   and its words go the frame its field does; what the interface keeps by id (scrolls, a field's words unless asked for
   that frame) goes with the id. A field takes words through the browser's `EditContext` where it has one (Chromium), so
   composition works on the canvas, and through keys and paste elsewhere; copy and cut take its selection. A field
