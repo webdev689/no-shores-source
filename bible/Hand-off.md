@@ -200,13 +200,18 @@ The decisions in [[Open Questions]] are not repeated here.
   [[Guilds and Outposts as Claude Shapes Them]]): the banner and its editor, the Guild tab after Destiny 2's clan
   screen, levels, weekly contribution and bounties, the treasury, an outpost site on each island with its own room for
   each guild, thirty-eight structure models in three tiers, the strongbox and stores, the boons, decoration placed in
-  the world, the War Horn's guild boss and the guild dungeon behind the Delve Gate. A four-part audit (code review, design calls, an exploit and race
-  hunt, notes and words) found real races in the treasury and the errands, all fixed with tests. `cargo xtask check`
-  passed on the branch's head; tested offline, not live. Waiting on the owner: the merge; marking the DFO Pick rows for
-  heraldry and for halls, works and decor approved (`proposed` now); whether to split the branch for review (it is
-  long, against [[Short Branches, Green Main]]). Known limits, each needing minutes of the accounts down or a room
-  evicted: a late errand's answer is held in room memory; a deposit that throws for five minutes is given back; the
-  guild boss is lost if everyone leaves its room before it falls.
+  the world, the War Horn's guild boss and the guild dungeon behind the Delve Gate. Two deep audits ran, the second
+  in five parts (integrity races, client code, player journeys, content and models, and pictures of every screen in
+  the real menu and of the outpost in the world); every real finding is fixed with a test or a picture, among them
+  the Outposts plan drawn under the menu's window, company guests and Elite or Abyss voyages that could not reach an
+  outpost, packages claimed at the week's turn, and a dozen materials the props' drawer left grey. `cargo xtask check`
+  passed on the branch's head; tested offline, not live. Waiting on the owner: the merge; marking the DFO Pick rows
+  for heraldry and for halls, works and decor approved (`proposed` now); whether to split the branch for review (it
+  is long, against [[Short Branches, Green Main]]). Known limits: the players on an abandoned outpost stand on bare
+  ground until they leave; an errand the accounts keep failing holds that player's outpost asks until they join
+  again; a room evicted while the accounts are down loses what an errand took; the guild boss is lost if everyone
+  leaves its room before it falls; a member can push older ledger lines out with many small deposits, each line
+  naming who moved it.
 - **The Discord bot**: porting DFO Online's unmerged bot work (#1662 to #1680 there, reverted by #1682) and redesigning
   it around No Shores, which the owner raised and set aside: "Lets come back to this later."
 - **The key strip, the leave held and Settings in tabs** (#181), merged on the owner's "Merge and deploy", which

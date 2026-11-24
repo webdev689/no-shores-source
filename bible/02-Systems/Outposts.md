@@ -136,3 +136,6 @@ outpost there plays it in a room of its own, `node-<site>--guild-<key>`, apart f
 - No upkeep: each guild has its own ground, so none is hoarded.
 - The guild boss is lost if everyone leaves its room before it falls.
 - Materials delivered to a structure taken down are spent.
+- An errand the accounts keep failing is asked again for as long as its room lives, and that player's outpost asks
+  wait on it until they join again ([[Server]], "Limits").
+- A member can push older ledger lines out with many small deposits; each line names who moved it.
