@@ -71,8 +71,8 @@ shows what the room says.
   shows the room's share. It comes before any other use where the player stands.
 - **The fallen ally's mark** (`fallenMarks`): a faceted shell of light round a glowing eye, after Destiny's Ghost,
   1.1 m over the body, lit, so it beats and shows through walls ([[What a Player Can Use Wears Its Mark Over It]]).
-- **The player fallen** (`fallenOf`): the world greys, the screen's edge darkens, the pointer is freed, and death's
-  words stand over the view: "YOU DIED", then "Respawn in 3 s" and Respawn waiting, "You fell." and Respawn once it may
+- **The player fallen** (`fallenOf`): the world greys and the screen's edge darkens, the pointer kept to look round
+  while an ally comes, and death's words stand over the view: "YOU DIED", then "Respawn in 3 s" and Respawn waiting, "You fell." and Respawn once it may
   be pressed (the respawn key, Enter or the pad's A), "Ada is reviving you  40%" while an ally holds, or "Darkness zone.
   Only an ally can raise you." and "No revives left. Only an ally can raise you." with no Respawn. The key strip shows
   Respawn only once it may be pressed. The place line adds "Darkness zone" while the room is one ([[Interface]]).
