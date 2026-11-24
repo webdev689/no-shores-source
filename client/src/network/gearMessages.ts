@@ -280,7 +280,8 @@ export interface GearState extends LoreState {
   readonly prologueDone?: boolean;
   /** Their day's and week's record, as kept with their character. */
   readonly activity?: ActivityRecord;
-  /** The day's six bounties on the board, in its order, and what a first tier's pays them when turned in. */
+  /** The day's bounties on the board: the town's six in its order, the pledged faction's three, then any other
+   *  faction's held today; and what a first tier's pays them when turned in, XP for any and Aurem for the town's. */
   readonly bounties?: readonly GearBounty[];
   readonly bountyXp?: number;
   readonly bountyAurem?: number;
@@ -301,6 +302,10 @@ export interface GearBounty {
   readonly name: string;
   /** Its tier, 1 to 3: it pays a first tier's pay, half again or twice that, rounded down. */
   readonly tier: number;
+  /** Its place on the board, which its take and turn-in ask by: the town's 0 to 5, then each faction's three. */
+  readonly place: number;
+  /** The faction that posts it, by its number, paying its reputation for the town's Aurem; 0 the town's. */
+  readonly faction: number;
 }
 
 export type { ActivityRecord } from './activityRecord.ts';
@@ -473,13 +478,14 @@ export function gearOf(gear: Gear): GearState {
     dungeons: Array.from(gear.dungeonsArray() ?? []),
     prologueDone: gear.prologueDone(),
     activity: activityOf(gear),
-    bounties: Array.from({ length: gear.bountiesLength() }, (unusedBounty, place) => {
-      const bounty = gear.bounties(place);
+    bounties: Array.from({ length: gear.bountiesLength() }, (unusedBounty, index) => {
+      const bounty = gear.bounties(index);
       const words = bounty?.words() ?? '';
       const [target, count] = [bounty?.target() ?? 0, bounty?.count() ?? 0];
       const [held, paid] = [bounty?.held() ?? false, bounty?.paid() ?? false];
       const [pool, name, tier] = [bounty?.pool() ?? 0, bounty?.name() ?? '', bounty?.tier() || 1];
-      return { words, target, count, held, paid, pool, name, tier };
+      const [place, faction] = [bounty?.place() ?? index, bounty?.faction() ?? 0];
+      return { words, target, count, held, paid, pool, name, tier, place, faction };
     }),
     bountyXp: gear.bountyXp(),
     bountyAurem: gear.bountyAurem(),
