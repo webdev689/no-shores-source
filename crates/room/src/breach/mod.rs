@@ -555,6 +555,9 @@ mod lodestone_tests;
 #[path = "rewards_tests.rs"]
 mod rewards_tests;
 #[cfg(test)]
+#[path = "scrivener_tests.rs"]
+mod scrivener_tests;
+#[cfg(test)]
 #[path = "steward_tests.rs"]
 mod steward_tests;
 #[cfg(test)]

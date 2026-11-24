@@ -220,7 +220,8 @@ impl Room {
         let verdict = self.weighed(blow, &before, verdict);
         let (verdict, shielded) = self.shielded(defender, blow, verdict);
         let held = self.held_up(defender, suffer(&before, blow, &verdict));
-        let after = self.warded(defender, held);
+        let court = self.warded(defender, held);
+        let after = self.scrivener_warded(defender, court);
         self.set_fighter(defender, after);
         // The fight's heat follows what the players' side took and what it dealt and killed, their companions and
         // hands with them, each as the numbers combat is tuned for: what they dealt, a shield's share with it,

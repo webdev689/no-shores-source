@@ -236,6 +236,19 @@ impl Room {
         pool
     }
 
+    /// A blow on the Scrivener as it lands (`settle`): while warded it holds the health its ward holds and is never
+    /// felled, however heavy the blow, as an Elite Dungeon's Boss holds its ward (`warded`).
+    pub(crate) fn scrivener_warded(&self, id: FighterId, after: combat::Fighter) -> combat::Fighter {
+        let Some(fight) = self.breach.as_ref().map(|breach| &breach.fights.choir) else { return after };
+        match fight.warded.filter(|_| fight.scrivener == Some(id)) {
+            Some(held) => {
+                let action = if after.dead() { combat::Action::Idle } else { after.action };
+                combat::Fighter { health: held, action, ..after }
+            }
+            None => after,
+        }
+    }
+
     /// The Scrivener stands at the altar's desk, warded; the Lodestone stands on its plinth, needed.
     pub(crate) fn wake_scrivener(&mut self, breach: &mut Breach, fight: &mut Choir) {
         let clock = self.clock;
