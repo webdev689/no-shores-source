@@ -192,14 +192,14 @@ each part works is in its system note.
 
 The decisions in [[Open Questions]] are not repeated here.
 
-- **A ship's wake follows the track it sailed** (#177, branch `ccr-836ab6ff-vgzmxg`), for the owner's yes to merge,
-  which deploys the page. The owner: "the waves that follow behind the ship dont animate when you turn your ship. They
-  are always straight". The water drew every wake straight aft of the heading the ship had that frame; it now keeps
-  where each ship's stern has been and lays the arms and the wash along it ([[Water]], "Its wake"; the numbers in
-  [[The Sea as Claude Shapes It]]). Tested offline (`wakes.test.ts`: a turn's wash where it sailed, no wake ahead of the bow
-  after a stop or going astern, a ship drawn 5x in a hard turn, the wake's box holding all of it); a read-only review's
-  five findings fixed with those tests. Not seen on a real GPU: how the curved wake looks, and the shader's cost while a
-  ship turns (unmeasured; a straight course takes the old path).
+- **A ship's wake follows the track it sailed** (#177), merged, which deploys the page. The owner: "the waves that
+  follow behind the ship dont animate when you turn your ship. They are always straight". The water drew every wake
+  straight aft of the heading the ship had that frame; it now keeps where each ship's stern has been and lays the arms
+  and the wash along it ([[Water]], "Its wake"; the numbers in [[The Sea as Claude Shapes It]]). Tested offline
+  (`wakes.test.ts`: a turn's wash where it sailed, no wake ahead of the bow after a stop or going astern, a ship drawn
+  5x in a hard turn, the wake's box holding all of it); a read-only review's five findings fixed with those tests. Not
+  seen on a real GPU: how the curved wake looks, and the shader's cost while a ship turns (unmeasured; a straight course
+  takes the old path).
 - **The wreck's R2 tools after #172**, which no session may edit: `tools/wreck/wreck_level.py`'s waves still list the
   Tithe-Mates and Bosuns at rank 1; to match `content/prologue/wreck.json` each `(11, 1, ...)` becomes `(11, 2, ...)`
   and each `(10, 1, ...)` `(10, 2, ...)`, and `export_wreck.py` should write the quiet deck's `masts` (added to
@@ -228,21 +228,25 @@ The decisions in [[Open Questions]] are not repeated here.
     in view near a port, 60 m/s, departures staggered across all nine courses ([[World Map]], "Traffic").
   - Tested offline only. Left: ships start and stop at 60 m/s at once, and lie on one point at a roadstead; some
     retaining walls near Overlook's plaza may be dropped whole (low confidence, the seam audit's).
-- **#163's follow-up and the patrol audit** (#170, a draft for the owner's yes once its checks pass). The owner's solid
-  red patrol screen was the death veils piling up, a frame that threw before it presented leaving its quads under the
-  next; each frame now starts with none, and WebGPU's validation errors are logged once each. What threw is still
-  unknown: the owner's browser console names it (`FrameGuard` logs each error once). Then the owner's "Can you do a
-  deep audit on patrols and ensure its clean": six read-only auditors and a review of the diff, every bug fixed with a
-  test that fails without it. Fixed: the landing's leave lost to inert, fallen or stale foes, or kept from one who
-  stood again or cast; every foe told every swing in the room, the one at it crowded out; the section's dead still a
-  target; a falling-back foe's target; the tithe-taker and the growth killed by foes; a second event chest; entrances
-  on boxes (all 45 of every continent's patrols and Elite nodes still lay theirs); alone, a patrol and its dungeon at
-  Normal on a harder voyage, and no door marks. The moved pins are attributed in their commits; a lone player takes
-  the same blows a minute. Tested offline; the full check passes but `shipTags.test.ts`'s four R2 fetches, which this
-  container's network refuses and CI runs. The owner's to decide, in #170's description: officers ashore and the
-  landing; a half-fallen patrol group holding its post for good; telegraphs and bolts at others striking a left-be
-  player, and one foe opening a landed player to all; the death veil's words when no stand comes; an escort's ambush
-  after a rejoin; foes in caverns, which nothing stands; overlapping sections; the landing and the boardwalk.
+- **#163's follow-up, the patrol audit and its leftovers** (#170, a draft for the owner's yes once its checks pass;
+  main merged in up to #177). The owner's solid red patrol screen was the death veils piling up under a frame that
+  threw before it presented; each frame now starts with none. What threw is still unknown: the owner's browser
+  console names it (`FrameGuard` logs each error once). The owner's "Can you do a deep audit on patrols and ensure its
+  clean" found and fixed the landing's leave lost to inert, fallen or stale foes, every foe told every swing, the
+  section's dead still a target, the tithe-taker and the growth killed by foes, a second event chest and entrances on
+  boxes. Then "Fix everything": each call put to the owner and fixed as answered
+  ([[The Patrol Audit's Leftovers Are Fixed as the Owner Chose]], with Claude's calls): the landing's officers left be
+  and only chases started there going on; blows at others passing a spared player by; a half-fallen patrol group made
+  whole as Destiny does; foes standing at the caverns' and runs' sites (`stands.rs`, lazily within 150 m and none
+  within 40 m); an escort's ambush dropping nothing again; the server checking a dungeon's way out; a locked patrol
+  refused alone. Every recorded risk is fixed, the layouts' by a worker (every walked line inside its section, the
+  rock beside ramparts out, caverns on quarters, building runs ramped short of their place's middle). Each moved pin
+  is attributed in its commit; the page's bots now lose the raid's stores at its pinned minute, which a 12-minute
+  sweep puts down to that one minute. Tested offline; the full check's result is in #170. Left for the owner: whether
+  sections may overlap (0.3 m new on continent 2, greystone-tors and hollow-crypt; 4.2 m before, highwater-fells and
+  wreckwood); none of Saltmere's landings has a boardwalk, why unchecked. Risks: a site's first stand bakes its
+  navmesh in one tick (130 to 270 ms natively); room memory with every site stood unmeasured; a cavern over 4 m below
+  the surface unchecked for followers' places; the page's bots fail about 10 of 12 heroic raids either way.
 - **Looks by content, the Playlist and the matchmade dungeons' encounters** (#160), merged with the owner's yes ("Let's merge and deploy and talk about this
   after"), which deploys the page and the rooms. The owner's asks are recorded ([[Armour and Weapon Looks Belong to the Content That Gives Them]],
   [[Elite and Abyss Dungeons Are Queued From a Playlist Beside Each Port]],
@@ -279,8 +283,8 @@ The decisions in [[Open Questions]] are not repeated here.
   is put away at sea; the wheel scrolls in the interface's pixels; flora that failed to come is asked for again; the
   island door, `identify`'s number, the bake's panics, the chat hall's sizes, mottos' hidden marks and the World
   Editor's keys; dead code and some 25 stale docs out; the Code Map, Toolchain, Testing and other notes made true.
-  Tested offline (the full check at its head, `main` merged in); not played. What it left is in four drafts, each
-  on the owner's yes, each passing the full check at its head:
+  Tested offline (the full check at its head, `main` merged in); not played. What it left went to four pull requests,
+  all merged:
   - #171: the `modules` workflow uploads the folder its bake fills, and `r2.py upload` refuses a missing one. Tested
     live on its push: the publish ended "491 staged files on R2" (it had said 0).
   - #173: a room holds eight sockets unsigned from one address at most (`UNSIGNED_FROM_ONE`); every room, not only
@@ -294,8 +298,8 @@ The decisions in [[Open Questions]] are not repeated here.
 - **Open pull requests**, for the owner's yes once their checks pass: #162 (the game's words out to Type and back; it
   conflicts with `main` in `Decisions.md`) and #159 (the rooms' worker tests wait for what they check; it conflicts
   with `main` in `roomThread.test.ts`). Drafts:
-  #171, #173, #174 and #175 (above), #93 (the toolkit's first review) and #114 (the gear message carries the pledge
-  once).
+  #169 (the owner's gear calls), #178 (the balance and economy pass), #179 (guilds), #93 (the toolkit's first
+  review) and #114 (the gear message carries the pledge once).
 - **Open points from merged work**, each the owner's to say:
   - #158 (the prologue's waking, scenes and arena, one loading screen, foes that give up only when far, feet on the
     city's ground; [[One Loading Screen Covers Every Trip Until the Place Is Ready]] and the decisions it names): the
