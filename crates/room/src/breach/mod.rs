@@ -27,6 +27,7 @@ use movement::Block;
 use plan::{Plan, drowned_vale};
 use reach::Section;
 use std::collections::{BTreeMap, BTreeSet};
+use std::sync::{Mutex, OnceLock, PoisonError};
 
 /// How far past its spaces the run's ring lies, metres: a body leaves it only by falling, which kills first.
 const RING_MARGIN_M: f64 = 30.0;
@@ -119,8 +120,7 @@ impl Room {
         let ring = vec![[west, north], [east, north], [east, south], [west, south]];
         let section = Section { ring, spawns: vec![[arrival[0], arrival[1]]], falls_kill: true };
         let standing = plan.standing();
-        let nav =
-            navmesh::NavMesh::bake_over_sea(&standing, plan.space_bounds("descent", NAV_MARGIN_M)?, &navmesh::AGENT);
+        let nav = baked(&standing, plan.space_bounds("descent", NAV_MARGIN_M)?);
         let mut room = Room::on(Floor::Dark, standing.clone(), vec![(arrival[0], arrival[1])], Some(section), nav);
         room.facing = combat::sight::bearing([0.0, 0.0], facing);
         room.place = Some(gear::gate::Place::Breach(tier));
@@ -347,7 +347,7 @@ impl Room {
                     && block.max_y > bounds.min_y
             })
             .collect();
-        self.nav.join(vec![navmesh::NavMesh::bake_over_sea(&inside, bounds, &navmesh::AGENT)]);
+        self.nav.join(vec![baked(&inside, bounds)]);
     }
 
     /// An attempt is lost once every living player has been down for WIPE_TICKS while an encounter runs: its foes go,
@@ -489,6 +489,29 @@ impl Breach {
         let slabs = self.plan.slabs.iter().enumerate();
         (seals, slabs.fold(0, |bits, (nth, slab)| bits | (u64::from(plan::slab_stands(slab, tick)) << nth)))
     }
+}
+
+/// The most bakes a process keeps (`baked`): each space's, and the Broken Stair's once for each way its slabs stand.
+const BAKED_MOST: usize = 96;
+
+/// A navmesh baked over blocks laid on the dark within bounds, kept for the process: every run of a Breach bakes each
+/// space over the same blocks, so the runs a host opens, and the tests, bake each once. Past BAKED_MOST it bakes afresh.
+fn baked(blocks: &[Block], bounds: navmesh::Bounds) -> navmesh::NavMesh {
+    static BAKES: OnceLock<Mutex<BTreeMap<Vec<u64>, navmesh::NavMesh>>> = OnceLock::new();
+    let edges =
+        blocks.iter().flat_map(|block| [block.min_x, block.min_y, block.max_x, block.max_y, block.bottom, block.top]);
+    let key: Vec<u64> =
+        [bounds.min_x, bounds.min_y, bounds.max_x, bounds.max_y].into_iter().chain(edges).map(f64::to_bits).collect();
+    let bakes = BAKES.get_or_init(Mutex::default);
+    if let Some(nav) = bakes.lock().unwrap_or_else(PoisonError::into_inner).get(&key) {
+        return nav.clone();
+    }
+    let nav = navmesh::NavMesh::bake_over_sea(blocks, bounds, &navmesh::AGENT);
+    let mut kept = bakes.lock().unwrap_or_else(PoisonError::into_inner);
+    if kept.len() < BAKED_MOST {
+        kept.insert(key, nav.clone());
+    }
+    nav
 }
 
 /// The space an encounter is fought in.
