@@ -7,7 +7,8 @@ import { PROTOCOL } from '../../../generated/messages/ts/version.ts';
 import type { FightOrders } from '../rules/fightRules.ts';
 import { fighterView, glanceView, statusesOf } from '../rules/fighters.ts';
 import { floatsOf, startMovementRules } from '../rules/movementRules.ts';
-import { courseBytes, inputBytes, ordersBytes, readFromRoom, walkBytes } from './messages.ts';
+import { courseBytes, ordersBytes, walkBytes } from './courseMessages.ts';
+import { inputBytes, readFromRoom } from './messages.ts';
 import { fightViewOf, ordersNumbers } from './seaFight.ts';
 import { HEROIC, MARK, PUBLIC_KIND, PUBLIC_PHASE } from './publicMessages.ts';
 
@@ -257,8 +258,18 @@ test('an input is its number, its controls and fight buttons in the combat crate
   assert.deepEqual([input.spawnType(), input.spawnRank(), input.respawn()], [12, 5, true]);
   const plain = Input.getRootAsInput(new flatbuffers.ByteBuffer(inputBytes(1, { ...parts, spawn: undefined })));
   assert.deepEqual([plain.dress(), plain.respawn(), plain.spawn(), plain.spawnType()], [null, false, 0, 0]);
+  const reviving = Input.getRootAsInput(new flatbuffers.ByteBuffer(inputBytes(3, { ...parts, revive: true })));
+  assert.deepEqual([reviving.revive(), plain.revive()], [true, false], 'Use held to revive, and not');
   const clearing = Input.getRootAsInput(new flatbuffers.ByteBuffer(inputBytes(2, { ...parts, spawn: 'clear' })));
   assert.deepEqual([clearing.spawn(), clearing.spawnType()], [255, 0]);
+});
+
+test('a room’s darkness and a revive under way the server wrote read back, its share from per mille', async () => {
+  // protocol_tests.rs writes it: a darkness zone, player 3 fallen and player 7 reviving them, 425 per mille done.
+  const read = readFromRoom(await written('reviving.bin'));
+  assert.equal(read?.kind, 'snapshot');
+  if (read?.kind !== 'snapshot') return;
+  assert.deepEqual([read.darkness, read.reviving], [true, [{ fallen: 3, reviver: 7, progress: 0.425 }]]);
 });
 
 test('a course is its points, x then y, and its pace', () => {

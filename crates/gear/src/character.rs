@@ -229,6 +229,9 @@ pub struct Character {
     /// The outpost's errand it carries while the accounts have not answered it (`errand.rs`).
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub errand: Option<crate::errand::Carried>,
+    /// Where they last left the overworld or a social space, to log back in there (`last.rs`); none before either.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub last: Option<crate::last::Last>,
     /// Keys this room does not know, from a later room's save, written back as read, so a room rolled back to
     /// this one or later keeps them.
     #[serde(flatten)]
@@ -327,6 +330,7 @@ impl Character {
             boons: crate::guild::Boons::default(),
             left: None,
             errand: None,
+            last: None,
             unknown: UnknownKeys::new(),
         };
         let pieces = [

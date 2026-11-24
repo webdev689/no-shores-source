@@ -317,10 +317,10 @@ impl Room {
     ) -> Self {
         let mut room = Self::node(floor, blocks, section);
         (room.quests.node, room.quests.levels) = (Some(id.to_owned()), levels);
-        room.world_seed = node_seed(id);
-        room.foes_most = NODE_FOES_MOST;
+        (room.world_seed, room.foes_most) = (node_seed(id), NODE_FOES_MOST);
         room.place = Some(place_of(kind));
         room.stand_garrison(kind, levels);
+        room.lay_post_checkpoints();
         room
     }
 

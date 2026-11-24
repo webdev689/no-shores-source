@@ -306,6 +306,10 @@ impl Sea {
         character.ship = kept.map(|share| (share.clamp(0.0, 1.0) * whole).round() as u16);
         let kept_at = at.iter().all(|metres| metres.is_finite()).then(|| at.map(|metres| metres.round() as i64));
         character.ship_at = kept_at.or(character.ship_at);
+        // A ship at sea is where its player logs back in (`gear::last`).
+        if kept_at.is_some() {
+            character.last = Some(gear::last::Last::Sea);
+        }
         Some(character.to_json())
     }
 

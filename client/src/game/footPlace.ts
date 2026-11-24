@@ -5,7 +5,7 @@ import type { Cache } from './dungeonChest.ts';
 import type { Entrances, Trips } from './footTrips.ts';
 import type { GearAsk, GearState } from '../network/gearMessages.ts';
 import type { Difficulty } from '../heldmap/heldMap.ts';
-import type { FoeAsk } from '../network/messages.ts';
+import type { FoeAsk, Reviving } from '../network/messages.ts';
 import type { RoomLink, Snapshot } from '../network/roomConnection.ts';
 import type { Cards } from '../player/cards.ts';
 import { newPlayer } from '../player/player.ts';
@@ -94,17 +94,17 @@ export function rejoinOnGuild(here: () => AtOutpost | null, rejoin: (standing: A
   });
 }
 
-/** The address of the room a player arriving at a node joins (null offline), at the entrance they come out of: at an
- *  outpost site, the room of the outpost of `guild`, or the wild site for none. */
+/** The address of the room a player arriving at a node joins (null offline), at the entrance they come out of or
+ *  logging back in (`joinAsk`): at an outpost site, the room of the outpost of `guild`, or the wild site for none. */
 export function nodeAddress(
   context: FootContext,
   node: NodeInfo,
   seas: Difficulty,
-  arriving: AtEntrance | undefined,
+  asked: AtEntrance | 'relog' | undefined,
   guild: string | null,
 ): string | null {
   if (!context.rooms) return null;
-  return `${context.rooms(nodeRoom(node, seas, guild))}${arriving ? `?entrance=${arriving.number}` : ''}`;
+  return `${context.rooms(nodeRoom(node, seas, guild))}${joinAsk(asked)}`;
 }
 
 /** Where a player arrives on a patrol leaving one of its dungeons: before entrance `number`'s door, facing out. */
@@ -142,14 +142,22 @@ export interface Held {
   alone: GearState | null;
   readonly entrances: Entrances;
   cache: Cache | null;
-  /** An Abyss run's revives left (-1 in any other room), and whether it said this player's company fell. */
+  /** An Abyss run's revives left (-1 in any other room), and whether it said this player's company fell; whether the
+   *  darkness holds the player where they lie, and who is reviving whom (`footRevive.ts`). */
   revives: number;
   wiped: boolean;
+  darkness: boolean;
+  reviving: readonly Reviving[];
   /** An Elite Dungeon's encounters as its room last said; null in any other room. */
   encounter: EncounterSeen | null;
   /** At a guild's outpost, how many plots its room has stood (0 in any other room): its plot is read again on a change. */
   plots: number;
 }
+
+/** What a join into a node's room asks of it besides: to stand before an entrance's door, coming out of its dungeon,
+ *  or to stand where the kept character left this social space, logging back in (`relog.ts`). */
+export const joinAsk = (asked?: AtEntrance | 'relog'): string =>
+  asked === 'relog' ? '?relog=1' : asked ? `?entrance=${asked.number}` : '';
 
 /** What E does where a player stands on a place of its own, if anything: with the way to ask of their gear. */
 export type Uses = (x: number, y: number, ask: (asked: GearAsk) => void) => Use | null;

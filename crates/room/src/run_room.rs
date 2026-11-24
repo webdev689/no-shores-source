@@ -120,6 +120,8 @@ impl Room {
         };
         room.set_difficulty(tier);
         room.set_minute(minute);
+        // A run keeps to one company: the ground its fallen bands won stays won while the company is in it.
+        room.respawning.holds_ground = true;
         Some(room)
     }
 

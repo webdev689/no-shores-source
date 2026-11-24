@@ -11,6 +11,7 @@ import { type AccountRow, HEADERS, LAPSED, bodyOf, json, refused, sessionOf, sig
 import { type DiscordApp, NONCE, backTo, callback, start, taken, ticketFor } from './discord.ts';
 import { INVITE_MS } from './companies.ts';
 import { bindsAsk } from './binds.ts';
+import { lastPlace } from './lastPlace.ts';
 import { socialAsk, socialRead } from './social.ts';
 import { outpostAllowed, plotReadAllowed } from './outpostStores.ts';
 import { USERNAME, refusalOf, skeleton } from './names.ts';
@@ -199,7 +200,9 @@ async function respond(request: Request, deps: Deps): Promise<Response> {
     case 'GET /v1/me': {
       const account = await sessionOf(request, database, now);
       if (account === LAPSED) return refused(401, LAPSED);
-      return account ? json({ account: shown(account) }) : refused(401, 'Not signed in.');
+      if (!account) return refused(401, 'Not signed in.');
+      // Where its character logs back in, for the page to go after the title (`lastPlace.ts`).
+      return json({ account: shown(account), place: await lastPlace(database, account.id) });
     }
     case 'POST /v1/register': {
       const account = await signedIn(request, database, now);
