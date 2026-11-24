@@ -12,7 +12,7 @@ pub const WAVE_MOST: usize = 6;
 /// The most of an encounter's foes that stand alive at once for another of its lesser foes (a wave's, a walker) to
 /// stand: its great foes, Watchers and bells stand whatever else stands, or the encounter could never be finished.
 pub const STANDING_MOST: usize = 18;
-/// What a great foe's health is times for each living player beyond the first.
+/// What a great foe's health is times for each player of the company beyond the first.
 pub const HEALTH_PER_PLAYER: f64 = 0.45;
 
 impl Room {
@@ -51,11 +51,18 @@ impl Room {
         Some(id)
     }
 
-    /// A great foe made a match for the living players: more health for each beyond the first.
-    pub(crate) fn match_company(&mut self, id: FighterId) {
-        let living = self.players.values().filter(|found| found.living()).count().max(1);
+    /// The company a great foe is matched to: every player the room keeps in the run, living or not, so falling before
+    /// it stands changes nothing; every player in a room that keeps none (a test's).
+    pub(crate) fn company(&self) -> usize {
+        let keeps = self.players.values().any(|found| found.owner.is_some());
+        self.players.values().filter(|found| !keeps || found.owner.is_some()).count().max(1)
+    }
+
+    /// A great foe made a match for `players` of the company, more health for each beyond the first, and then `times`
+    /// its own.
+    pub(crate) fn match_company(&mut self, id: FighterId, players: usize, times: f64) {
         let Some(foe) = self.foes.get_mut(&id) else { return };
-        let times = 1.0 + HEALTH_PER_PLAYER * (living - 1) as f64;
+        let times = (1.0 + HEALTH_PER_PLAYER * (players.max(1) - 1) as f64) * times;
         foe.fighter.health *= times;
         foe.fighter.health_max *= times;
     }

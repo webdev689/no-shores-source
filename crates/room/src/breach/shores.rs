@@ -67,7 +67,7 @@ impl Room {
             fight.begun = true;
             if let Some((at, _)) = breach.plan.socket("hall", "warden") {
                 fight.warden = self.stand_breach_foe(breach, (BULWARK, Rank::Miniboss), at, Some("The Warden"));
-                fight.warden.iter().for_each(|id| self.match_company(*id));
+                fight.warden.iter().for_each(|id| self.match_company(*id, self.company(), 1.0));
             }
             (fight.next_wave, fight.next_walker) = (clock + 2 * 60, u64::MAX);
         }
@@ -156,7 +156,8 @@ impl Room {
         {
             let name = if rift == 0 { "Keeper of What Was" } else { "Keeper of What Is" };
             fight.keepers[rift] = self.stand_breach_foe(breach, (BULWARK, Rank::Miniboss), at, Some(name));
-            fight.keepers[rift].iter().for_each(|id| self.match_company(*id));
+            // A Keeper is fought by those who cross, so it is matched to half the company.
+            fight.keepers[rift].iter().for_each(|id| self.match_company(*id, self.company().div_ceil(2), 1.0));
         }
         let fell = fight.keepers[rift].is_some_and(|id| !self.standing_foe(id));
         if fell && !fight.kept[rift] {

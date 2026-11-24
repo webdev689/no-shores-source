@@ -226,7 +226,7 @@ impl Room {
         let Some((at, _)) = breach.plan.socket("choir", "lectern-1") else { return };
         let scrivener = self.stand_breach_foe(breach, (SCRIVENER, Rank::Boss), at, Some("The Scrivener"));
         if let Some(id) = scrivener {
-            self.match_company(id);
+            self.match_company(id, self.company(), 1.0);
             fight.warded = self.foes.get(&id).map(|foe| foe.fighter.health);
         }
         (fight.phase, fight.scrivener, fight.desk, fight.phase_from) = (2, scrivener, 0, clock);

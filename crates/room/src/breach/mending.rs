@@ -112,7 +112,7 @@ impl Room {
         let Some((at, _)) = breach.plan.socket("mending", "mender") else { return };
         let mender = self.stand_breach_foe(breach, (BULWARK, Rank::Miniboss), at, Some("The Mender"));
         if let Some(id) = mender {
-            self.match_company(id);
+            self.match_company(id, self.company(), 1.0);
         }
         fight.mender = mender;
     }

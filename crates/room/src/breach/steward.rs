@@ -71,7 +71,7 @@ impl Room {
                 breach.fights.steward = fight;
                 return;
             };
-            self.match_company(boss);
+            self.match_company(boss, self.company(), 1.0);
             fight.boss = Some(boss);
             (fight.woke_at, fight.next_taking) = (clock, clock + FIRST_TAKING);
             (fight.next_toll, fight.next_wave) = (clock + TOLL_EVERY, clock + 5 * 60);
