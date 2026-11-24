@@ -28,12 +28,15 @@ mod dungeon_room;
 pub mod encounter_plan;
 pub mod encounters;
 mod entrances;
+mod find_holds;
+mod finds;
 pub mod fleet;
 mod floor;
 pub mod flotsam;
 mod foes;
 pub mod friendlies;
 mod garrison;
+mod grants;
 mod guild_book;
 mod guild_room;
 mod happening;
@@ -76,8 +79,10 @@ pub mod winds;
 pub use arts::{Cast, Casting};
 pub use asks::{Asked, Grant, ResourceNode};
 pub use companions::Companion;
-pub use drops::{AMMO_REST_TICKS, DROP_TICKS, Drop, Dropped, VESTIGE_REST_TICKS};
+pub use drops::{AMMO_REST_TICKS, DROP_TICKS, Drop, Dropped, POURED_REST_TICKS, VESTIGE_REST_TICKS};
 pub use entrances::Entrance;
+pub use find_holds::{CHEST_REACH, FIND_HEIGHT, OPEN_TICKS, SEARCH_REACH, SEARCH_TICKS};
+pub use finds::{ChestPlace, Holder};
 pub use floor::{Floor, standing_on};
 pub use foes::{CLEAR_FOES, FOES_MOST, FoeSeen, NODE_FOES_MOST, SHIELD_SHIFT};
 pub use guild_book::{GuildSeen, Guilds};
@@ -207,6 +212,8 @@ pub struct Room {
     pub(crate) difficulty: gear::Difficulty,
     pub(crate) patrol: bool,
     pub(crate) gathered: std::collections::BTreeMap<String, Vec<(u8, u64)>>,
+    /// Its chests and searchable containers (`finds.rs`).
+    pub(crate) finds: finds::Finds,
     /// A patrol's dungeons' entrances, or an Elite Dungeon's node's one (`entrances.rs`).
     pub(crate) entrances: Vec<entrances::Entrance>,
     /// What the gates know it as (`gear::gate`): none for a course, which no gate shuts.
@@ -311,6 +318,7 @@ impl Room {
             difficulty: gear::Difficulty::Normal,
             patrol: false,
             gathered: std::collections::BTreeMap::new(),
+            finds: finds::Finds::default(),
             entrances: Vec::new(),
             place: None,
             source: gear::Source::World,
@@ -448,6 +456,8 @@ impl Room {
         self.spawn_asked();
         self.keep_patrol();
         self.keep_gathering();
+        self.keep_finds();
+        self.keep_opening();
         self.keep_companions();
         self.step_foes();
         self.keep_on_course();

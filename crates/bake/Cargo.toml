@@ -8,6 +8,7 @@ description = "What the rooms read, made at build time: each node's section and 
 
 [dependencies]
 city = { path = "../city" }
+dungeon = { path = "../dungeon" }
 land = { path = "../land" }
 layout = { path = "../layout" }
 world = { path = "../world" }

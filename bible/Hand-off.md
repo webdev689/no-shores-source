@@ -192,6 +192,22 @@ each part works is in its system note.
 
 The decisions in [[Open Questions]] are not repeated here.
 
+- **The bounty board after the Bounty Tracker, and faction bounties** (#196, a draft for the owner's yes), on the
+  owner's "take autonomy and focus on overhauling the bounty menu and bounty design" with Destiny 1's Bounty Tracker
+  ([[Standard and Faction Bounties Each Wear One Design, on a Board After the Bounty Tracker]]; every call in
+  [[The Bounty Board as Claude Shapes It]]). Each faction posts three of its own four bounties a day, taken only by
+  those pledged to it, counting only with its cape worn, paying XP and its reputation (2,500, 3,750, 5,000 by tier),
+  kept in the day's record under keys of their own so a rollback of the rooms keeps them; the wire carries each
+  bounty's place and faction, so the merge deploys the page and the rooms together. The board is laid as a keeper's
+  screen, the board drawn where a keeper stands; every town bounty wears one writ, every faction's its emblem, 52 px
+  tiles (were 80), the card floating beside the tile pointed at, the refresh under the tiles; the Journal's column
+  takes the same. Then, on the owner's "Do a comprehensive audit on this", main (#179's guilds, #191) merged in and
+  five read-only audits, every finding measured first and fixed (the PR lists them). Tested offline: the full check
+  on the PR's head (the commit named there), the rules', wire's, room's and page's tests, pictures through the real
+  renderer at five sizes. Not yet: the board in the live game (the picture driver reaches no local room and the
+  offline page keeps no gear), a real GPU, a hand. Known: no card shows by touch, as none in the menu does. For the
+  owner ([[Open Questions]]): the faction bounties' design, one icon for every faction's bounties or each faction's
+  emblem as built, and whether a card gains a line of tale.
 - **The island view in rain, the Playlist over the island and the ships at a roadstead** (#191, merged on the owner's
   "Deploy", which deploys the page and the rooms). The owner's three reports:
   - "When its cloudy and raining. The overworld pan over the island is shrouded and you can only see the nodes": the
@@ -253,6 +269,69 @@ The decisions in [[Open Questions]] are not repeated here.
   holds the heroic raid again, the dev page's bots now lose the plain raid's stores in its third wave, and the road's
   test player, facing north while foes struck from its sides, fell before a kill (it now turns to the nearest foe).
   A lone player is felled about as fast as before (`measure_blows`). Tested offline; not played.
+- **What a body meets keeps to what is drawn, and the owner's meadow** (#186, merged on the owner's "Merge and deploy
+  when ready", which deploys the page and the rooms). The owner: "In patrol zones there are invisible bounds of
+  some props that can be climbed" and "Implement the handcrafted grass texture we have from DFO"
+  ([[What a Body Meets Keeps to What Is Drawn]], [[The Owner's Handcrafted Meadow Grows Over the Grass]], Claude's calls
+  in each).
+  - The bounds: a layout's prop was the box round its turned footprint to its highest point (a beached boat at a
+    slant a block twice its size as tall as its mast), a turned or tilted solid the box round its turned corners (a
+    25 m rail at a slant 11 by 23 m). Now no box stands more than 0.45 m off what is drawn, nor leaves more of it out
+    (`city::hug`, used by cities and layouts alike): props are the parts their forged mesh fills in 0.25 m columns
+    (`content/forged/parts.json`, written by `node tools/forgedParts.mjs`, held to the mesh by a test), a turned
+    prop's strips within 0.2 m of them; solids are cut to the faces the page draws (a round's polygon, a dome's
+    rings), turned pieces in strips, tilted ones halved however far they turn ([[Layouts]], "Boxes";
+    [[Forged Models]], "Parts"). What a solid or a turned prop may cost is held (64 boxes a 2 m cell, a box a square metre,
+    at least 256, a prop twice its loosest strips; looser a quarter at a time past that): 99.3 % of solids and 97 %
+    of laid props keep that close. Against the merge base on one machine: 1,433,893 boxes over every landmass where
+    271,789 were, the rooms' files 50 MB where 16.4 MB were, a tick 8.0 µs where 3.4 µs. A puzzle's point now stands
+    on ground a walk reaches from its place. The node runs' fingerprint moved with the boxes, native and WebAssembly
+    agreeing on the new one.
+  - A deep audit on the owner's "Do a deep audit on this" (five read-only audits by part) found and fixed: a mill's
+    sails rolled past a half-turn boxed 37 m off (a tilt's reach is now its chord); halving that stopped short of its
+    keep reported as fitting; rounds kept to a smooth shape where the page draws polygons and rings; large props'
+    0.5 m columns standing 0.7 m off their mesh; turned props' strips adding a full 0.45 m; a test that passed
+    without a raised place; the meadow on the layouts' paths and through thin walls, drawing grassless cells, its
+    card light law dimming all light where DFO's dims the sun's; and notes that said more than the code does. The
+    full check then caught the movement grid missing a block stacked out over a wall's face (fixed in `wall_top`),
+    and the boxes mended a known failure: the Lion Grasslands' Test Ledge's door is no longer walked round.
+  - The meadow ([[Meadow]], [[Pick - Meadow Grass]]): the owner's five sprites written from DFO's PNGs by
+    `tools/meadow/write.py` (pixel for pixel DFO's bake), DFO's atlas, chain, pick, sizes and colour law, 16 m cells
+    of 576 tufts drawn by the GPU to 160 m over the grass of every grass biome.
+  - The owner's answers
+    ([[The Meadow Art Is the Owner's, Its Tables Stay in Git, and the Grass Takes the Trees' Rain]]): the sprites
+    are the owner's own; `parts.json` and `meadowArt.ts` stay in git by exception; the boxes' budget stands; and the
+    meadow takes the trees' rain fix (#185: no sky's glare in rain, the plants' slower `SWAY`), sharing the plants'
+    light in `natureShader.ts`. Still the owner's: whether the plants' baked grass stays under the meadow, and whether
+    Graphics gains a grass setting.
+  - Tested offline: the full check on the head (the commit named in the pull request), `main` merged in; the meadow pictured headless through the real
+    renderer in the Saltgrass Downs. Not seen on a real GPU or played: the meadow's cost there is unmeasured (some
+    180,000 tufts on open grass), and so is the boxing's in WebAssembly.
+
+- **Patrol chests, the same chests in every dungeon, and searchable containers** (#192, merged on the owner's "Merge
+  and deploy", which deploys the page and the rooms). The owner's ask ([[Patrols and Dungeons Hold Chests, and Their Containers May Be Searched]]), built on "Take
+  autonomy", every call in [[Chests and Searchable Containers as Claude Builds Them]] after Destiny 1's loot chests. A
+  patrol's layout marks 12 to 24 chest places tucked against something tall (`layout::chests`); its room stands one
+  chest for every five, two to four, each moving to another place every 5 minutes, staggered; every dungeon (a
+  patrol's, an Elite Dungeon's at every tier, the playlists', a sea island's) stands one a block against a room's
+  wall, drawn again as its garrison stands again; one container in six (a dungeon's one in four) is searchable, 16
+  at most, none a body cannot stand beside. E held 1 s opens a chest, 1.5 s searches; each player opens each once,
+  kept for their account. A chest pays 30 Aurem at level 5, 2 to 4 of the island's resource and a Vestige one time in
+  four; a search 8 Aurem, the resource one time in two and a Vestige one time in twenty; no XP. Then the owner's
+  second word ([[Every Chest Is DFO's Chest, and Its Vestige Pours Out as project-final's Cache Pours]]): every chest
+  (the finds, the cache, the events' plain and heroic) is the owner's chest from DFO, its 50 points ported and built
+  in code (`models/chest.ts`, [[Pick - Chest]]), the Blender event chests gone; a chest's Vestige (a find's, the
+  cache's, an event chest its player opens) is poured out of it as its lid opens, as project-final's cache pours; Aurem
+  and materials still go straight to the player, and a search pours nothing. A patrol's chest looks the way its place
+  faces, and a page playing alone draws the drops lying for the player. The page draws a mark over each chest and searchable container, the feed's
+  "Chest" or "Searched the wardrobe", and plays alone as online. A read-only audit's
+  findings were each tested first and fixed. Tested offline: `cargo xtask check` on its head (the commit named in the
+  pull request); in the running game headless with no GPU, a chest opened (21 Aurem, 4 Brineglass) and a crate
+  searched (5 Aurem, 1 Brineglass) by holding E; pictured through the renderer (sent to the owner with the session's
+  report, not in git). Not yet: played by hand, a real GPU, a deployed room, the feed's lines in a live room. For the
+  owner: the bake may now read the dungeon crate's families (`crates.rs`'s list for `bake` gains `dungeon`); the
+  chest's source in DFO is named `Low_Poly_Chest_Mimic.fbx`, recorded there as the owner's supplied model; and the
+  `modules` workflow bakes on this branch with the four Blender chests taken out of the manifest by hand.
 - **Revives, respawns near the fall or at a checkpoint, and logging back in where the player left** (#184, a draft for
   the owner's yes). The owner's three asks ([[Fallen Players Are Revived as in Destiny]],
   [[Activities Keep Checkpoints, and Patrol Zones Respawn the Player Near Where They Fell]],
@@ -681,6 +760,10 @@ The decisions in [[Open Questions]] are not repeated here.
 
 ## Next
 
+- **The boxing's cost, further** (this branch): a leaning spire of the cities keeps within 13 m only, as boxes
+  square to the world stack up a lean; boxing a city takes 0.03 to 0.5 s natively where it took a millisecond, and
+  WebAssembly's cost (the land worker boxes a node's city on entry) is unmeasured. The meadow's cost on a real GPU,
+  and a hand's play of both, are still to come.
 - **The patrol audit's risks left** (#170's description, each with its file in the audit): run lines against the
   section's ring (the ways measured: 4 of some 14,800 samples outside, by 1.8 m at most) and rock beside a run inside
   it, against [[A Run on the Rock's Top Is Held by Out of Bounds]]; `runs_everywhere` checks the wing from the ring,

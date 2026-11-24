@@ -97,21 +97,24 @@ test('the warning counts down, death offers Respawn only once it may, and the vi
   let risen = 0;
   hud.onRespawn(() => (risen += 1));
   // A fall plays out before death is told; then the words say how.
-  hud.reach({ kind: 'dead', secondsDead: 1, canRespawn: false, fell: true, told: false });
+  hud.reach({ kind: 'dead', secondsDead: 1, canRespawn: false, respawnIn: 3, fell: true, told: false });
   assert.ok(!words(frame(ui, hud)).includes('YOU DIED'));
-  hud.reach({ kind: 'dead', secondsDead: 1, canRespawn: false, fell: true, told: true });
-  assert.ok(words(frame(ui, hud)).includes('You fell.'));
-  hud.reach({ kind: 'dead', secondsDead: 1, canRespawn: false, fell: false, told: true });
+  // Told, the seconds before Respawn may be pressed are counted.
+  hud.reach({ kind: 'dead', secondsDead: 1, canRespawn: false, respawnIn: 3, fell: true, told: true });
+  assert.ok(words(frame(ui, hud)).includes('You fell. Respawn in 3 s'));
+  hud.reach({ kind: 'dead', secondsDead: 1, canRespawn: false, respawnIn: 3, fell: false, told: true });
   laid = frame(ui, hud);
-  assert.ok(words(laid).includes('Respawn…') && words(laid).includes('You strayed too far from the area.'));
+  assert.ok(
+    words(laid).includes('Respawn…') && words(laid).includes('You strayed too far from the area. Respawn in 3 s'),
+  );
   laid = clickOn(ui, hud, laid, 'hud:respawn');
   assert.equal(risen, 0);
-  hud.reach({ kind: 'dead', secondsDead: 5, canRespawn: true, fell: false, told: true });
+  hud.reach({ kind: 'dead', secondsDead: 5, canRespawn: true, respawnIn: 0, fell: false, told: true });
   laid = frame(ui, hud);
   clickOn(ui, hud, laid, 'hud:respawn');
   assert.equal(risen, 1);
   // Where the place stands them again itself, no Respawn waits greyed: the words say when.
-  hud.reach({ kind: 'dead', secondsDead: 50, canRespawn: false, fell: true, told: true, waits: true });
+  hud.reach({ kind: 'dead', secondsDead: 50, canRespawn: false, respawnIn: 0, fell: true, told: true, waits: true });
   laid = frame(ui, hud);
   assert.ok(!words(laid).includes('Respawn…') && !words(laid).includes('Respawn'));
   assert.ok(words(laid).includes('You fell. You stand again once the encounter is won or your company falls.'));

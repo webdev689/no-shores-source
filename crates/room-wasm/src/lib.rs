@@ -28,6 +28,7 @@ mod snapshot_door;
 pub use snapshot_door::snapshot;
 mod dress_door;
 mod fighter_door;
+mod finds_door;
 mod fleet_door;
 mod gear_door;
 mod guild_door;
@@ -103,6 +104,8 @@ struct NodeFile {
     grounds: Option<public_door::NodeGrounds>,
     #[serde(default)]
     resources: Vec<[f64; 2]>,
+    #[serde(flatten)]
+    finds: finds_door::Finds,
     #[serde(default)]
     foes: Vec<[f64; 2]>,
     #[serde(default)]
@@ -183,11 +186,11 @@ pub fn open_node(text: &[u8]) -> bool {
     if let Some(grounds) = node.grounds {
         room.open_public(&node.id, grounds.into(), levels);
     }
+    let patrol = node.kind == NodeKind::Patrol;
     let resource = gear::catalogue::catalogue().resources.iter().position(|found| found.continent == node.continent);
-    if node.kind == NodeKind::Patrol
-        && let Some(resource) = resource
-    {
+    if let Some(resource) = resource.filter(|_| patrol) {
         room.start_patrol(&node.id, u8::try_from(resource).unwrap_or_default(), &node.resources);
+        finds_door::lay(&mut room, node.finds);
     }
     if node.kind == NodeKind::Dungeon {
         room.lay_elite_entrance(&node.id);

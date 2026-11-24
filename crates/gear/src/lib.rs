@@ -27,6 +27,7 @@ pub mod element;
 pub mod emblems;
 pub mod errand;
 pub mod factions;
+pub mod finds;
 pub mod gate;
 pub mod grid;
 pub mod guild;
@@ -93,6 +94,8 @@ mod cosmetics_tests;
 mod economy_tests;
 #[cfg(test)]
 mod emblems_tests;
+#[cfg(test)]
+mod faction_bounties_tests;
 #[cfg(test)]
 mod faction_perks_tests;
 #[cfg(test)]

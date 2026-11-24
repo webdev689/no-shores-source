@@ -23,7 +23,7 @@ code:
   - tools/modules/latticekit.py#taken
   - tools/modules/fissure.py#fissure
   - tools/modules/tithe.py#stores_a
-  - tools/modules/chest.py#lid
+  - client/src/city/chestModules.ts#chestModules
   - client/src/city/crystal.ts#CRYSTAL_WGSL
   - client/src/city/eventProps.ts#eventProps
   - client/src/game/eventPropsDraw.ts#EventPropsDraw
@@ -130,9 +130,10 @@ are written with paving last, since the first group carries the parts and paving
   - The Tithe's banner (`tithe-banner`): a heavy cloth, unmarked, 3.4 m long, lashed along its sleeve to a
     crossbar on a 5.4 m pole, a weighted rod in its hem so it hangs straight and bellies only between; three guy ropes
     pegged out behind it and to either side, an iron spike and collar at its head, stones packed round its foot.
-  - The chests (`event-chest`, iron-bound; `event-chest-heroic`, gilded and set with crystal at its corners) and their
-    lids (`event-chest-lid`, `event-chest-heroic-lid`, the heroic one crowned with crystal): each lid a module of its
-    own, its hinge at its origin, and the chest's `hinge` socket where that hinge sits on it.
+  - The chests are not baked: every chest is the owner's chest from DFO ([[Pick - Chest]]), built in code by
+    `client/src/city/chestModules.ts` and listed after the manifest's modules: `chest` and `chest-heroic`, each with
+    its lid (`chest-lid`, `chest-heroic-lid`), a module of its own with its hinge at its origin, and the chest's `hinge`
+    socket where that hinge sits on it.
 - **The Drowned Vale's** ([[Breaches]], "Its art"): the Sunken Gate's hollow (`breach-gate`), the run's nine spaces
   (`breach-descent`, `-mending`, `-choir`, `-ways`, `-stair`, `-hall`, `-shore-was`, `-shore-is`, `-court`) and its
   pieces (`breach-seal`, `-slab`, `-bell`, `-lodestone`), from `tools/modules/breach_*.py`.
@@ -225,8 +226,8 @@ publishes the first bake's meshes with the repository's `CLOUDFLARE_TOKEN`.
   stretched taller lifts the second over its step.
   Every river crossing, a way's or a gate's gorge's, stands the shortest stone bridge as long as its deck would run
   (timber where none is), its deck where the timber's would be, turned along the way, and moving with the land as
-  a bridge does. A turned part's boxes are cut in slices no longer than the part is thick, so a parapet's keep off
-  the way they line.
+  a bridge does. A turned part is boxed in strips across the world that keep within 0.45 m of it, so a parapet's keep
+  off the way they line.
 - **The public events' props** are drawn by the page's event-props drawer (`EventPropsDraw`, among the scene's drawers
   after the layouts and before the nature) from a list it is handed (`eventProps` makes it from the room's event
   marks and the player's chests): each prop at its place, turn and scale, risen out of the ground as far as it has

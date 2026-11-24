@@ -22,7 +22,7 @@ function fakeAudio() {
     setValueCurveAtTime() {},
     cancelScheduledValues() {},
   });
-  const node = (more: object) => ({ connect: (to: unknown) => to, disconnect() {}, ...more });
+  const node = <More extends object>(more: More) => ({ connect: (to: unknown) => to, disconnect() {}, ...more });
   const audio = {
     currentTime: 0,
     sampleRate: 44100,
@@ -199,7 +199,7 @@ test("a sampled drum's recording rises over its kit drum's attack and dies over 
     exponentialRampToValueAtTime: (value: number, time: number) => ramps.push(['fall', value, time]),
     setValueCurveAtTime() {},
   });
-  const node = (more: object) => ({ connect: (to: unknown) => to, disconnect() {}, ...more });
+  const node = <More extends object>(more: More) => ({ connect: (to: unknown) => to, disconnect() {}, ...more });
   const audio = {
     createGain: () => node({ gain: param() }),
     createBufferSource: () => node({ playbackRate: param(), start() {}, stop() {}, onended: null }),

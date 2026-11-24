@@ -134,6 +134,7 @@ test('a chest opened shows its tier in four pips, the XP it gave and the reputat
     from: [0, 0, 0] as const,
     flying: 0,
     tier: 3,
+    poured: false,
   };
   const before = state({
     xp: 1_000n,
@@ -201,4 +202,34 @@ test('XP, reputation and an Art’s progress are short lines; a level, a fragmen
     ['Timber', 2, false],
     ['Ship XP', 30, true],
   ]);
+});
+
+test('a chest opened or a container searched is named, with no count, over the Aurem it gave', () => {
+  const chest = { number: 7, at: [0, 0, 0] as const, facing: 0 };
+  const wardrobe = { number: 9, box: [0, 0, 1, 1] as const, foot: 0, top: 1.8, model: 41003 };
+  const before = state({ aurem: 100, chests: [chest], searchables: [wardrobe] });
+  const opened = gainsOf(before, state({ aurem: 130, chests: [], searchables: [wardrobe], opened: 7 }));
+  assert.deepEqual(
+    opened.map((each) => [each.name, each.bare ?? false]),
+    [
+      ['Chest', true],
+      ['Aurem', false],
+    ],
+  );
+  assert.ok(opened[0]?.icon?.startsWith('<svg'), 'its mark beside it');
+  const searched = gainsOf(before, state({ aurem: 108, chests: [chest], searchables: [], opened: 9 }));
+  assert.equal(searched[0]?.name, 'Searched the wardrobe');
+  const moved = gainsOf(before, state({ aurem: 100, chests: [{ ...chest, number: 8 }], searchables: [wardrobe] }));
+  assert.deepEqual(moved, [], 'a chest that moved on gave nothing');
+});
+
+test('a chest that moved on while a kill paid Aurem is no gain: only the room naming it opened makes one', () => {
+  const chest = { number: 7, at: [0, 0, 0] as const, facing: 0 };
+  const before = state({ aurem: 100, chests: [chest], searchables: [] });
+  const moved = state({ aurem: 110, chests: [{ ...chest, number: 8 }], searchables: [] });
+  assert.deepEqual(
+    gainsOf(before, moved).map((each) => each.name),
+    ['Aurem'],
+    "the kill's Aurem, no chest",
+  );
 });

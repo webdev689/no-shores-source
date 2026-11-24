@@ -1,0 +1,131 @@
+import assert from 'node:assert/strict';
+import { test } from 'node:test';
+import type { NatureGround } from './field.ts';
+import type { GroundAt } from './ground.ts';
+import { CELL_M, CLEAR_SQUARES, GRID, grassShare, MeadowField, readCell, REACH_M } from './meadowField.ts';
+
+const meadowAt = (more: Partial<GroundAt> = {}): GroundAt => ({
+  height: 20,
+  slope: 0.05,
+  water: 'dry',
+  mark: 0,
+  ...more,
+});
+
+test('grass grows on dry, open, gentle ground, and not on water, a road, a town or what is kept clear', () => {
+  assert.equal(grassShare(meadowAt(), false, 2300), 1);
+  assert.equal(grassShare(meadowAt({ water: 'river' }), false, 2300), 0);
+  assert.equal(grassShare(meadowAt({ mark: 3 }), false, 2300), 0);
+  assert.equal(grassShare(meadowAt({ mark: 4 }), false, 2300), 0);
+  assert.equal(grassShare(meadowAt(), true, 2300), 0);
+});
+
+test('stone shows through as a slope steepens, dirt comes in up high, and none grows under the snow or on a beach', () => {
+  assert.equal(grassShare(meadowAt({ slope: 0.29 }), false, 2300), 1);
+  assert.ok(grassShare(meadowAt({ slope: 0.38 }), false, 2300) < 1);
+  assert.equal(grassShare(meadowAt({ slope: 0.5 }), false, 2300), 0);
+  assert.ok(grassShare(meadowAt({ height: 900 }), false, 2300) < 0.6);
+  assert.equal(grassShare(meadowAt({ height: 2250 }), false, 2300), 0);
+  assert.equal(grassShare(meadowAt({ height: 1, coastM: 20 }), false, 2300), 0);
+  assert.equal(grassShare(meadowAt({ height: 1, coastM: 200 }), false, 2300), 1);
+});
+
+/** A ground of gentle meadow rising eastward, a road along y = 40 and the sea west of x = -100. */
+function ground(
+  version = 1,
+  unchanged?: NatureGround['unchanged'],
+  biome = 'temperate-coast',
+): NatureGround & { reads: number } {
+  const made = {
+    biome,
+    snowM: 2300,
+    version,
+    unchanged,
+    reads: 0,
+    cleared: () => false,
+    sample: (x: number, y: number): GroundAt => {
+      made.reads++;
+      return meadowAt({ height: 10 + x * 0.01, water: x < -100 ? 'sea' : 'dry', mark: Math.abs(y - 40) < 3 ? 3 : 0 });
+    },
+  };
+  return made;
+}
+
+test("a cell's grid is the ground's height and grass share, its edges shared with its neighbours'", () => {
+  const { grid, low, high } = readCell(2, 2, ground());
+  assert.equal(grid.length, GRID * GRID * 2);
+  const sample = (column: number, row: number) => [
+    grid[(row * GRID + column) * 2],
+    grid[(row * GRID + column) * 2 + 1],
+  ];
+  assert.ok(Math.abs((sample(0, 0)[0] ?? 0) - (10 + 2 * CELL_M * 0.01)) < 1e-6 && sample(0, 0)[1] === 1);
+  assert.ok(
+    Math.abs((sample(GRID - 1, 0)[0] ?? 0) - (10 + 3 * CELL_M * 0.01)) < 1e-6,
+    "its east edge is the next cell's west",
+  );
+  assert.equal(sample(4, 4)[1], 0, 'none on the road');
+  assert.ok(low < high);
+  assert.ok(
+    readCell(0, 0, ground(1, undefined, 'desert')).grid.every((value, index) => index % 2 === 0 || value === 0),
+  );
+});
+
+test('the field keeps the cells round the eye, nearest first, and lets those out of reach go', () => {
+  const field = new MeadowField(512, Infinity);
+  const land = ground();
+  assert.equal(field.update(0, 0, land), false);
+  const kept = [...field.cells.values()];
+  assert.ok(kept.length > 300 && kept.length <= 512);
+  assert.equal(field.filled[0]?.x, -1, 'the eye stands at a corner, so a nearest cell first');
+  assert.ok(kept.every(({ slot }) => slot >= 0 && slot < 512));
+  assert.equal(new Set(kept.map(({ slot }) => slot)).size, kept.length, 'no two share a slot');
+  field.update(1000, 0, land);
+  assert.ok([...field.cells.values()].every(({ x }) => x * CELL_M > 1000 - REACH_M - 2 * CELL_M));
+});
+
+test('a frame reads no more than its budget, and the rest wait', () => {
+  let clock = 0;
+  const field = new MeadowField(512, 5);
+  const waiting = field.update(0, 0, ground(), () => (clock += 1));
+  assert.ok(waiting && field.filled.length > 0 && field.filled.length < 10);
+});
+
+test('a changed ground is read again only where it changed', () => {
+  const field = new MeadowField(512, Infinity);
+  field.update(0, 0, ground(1));
+  const before = field.cells.size;
+  const changed = ground(2, (tileX) => tileX !== 0);
+  field.update(0, 0, changed);
+  assert.ok(field.filled.length > 0 && field.filled.length < before);
+  // Only cells whose grid reaches tile 0, from the one whose east edge lies on it to the last within it.
+  assert.ok(field.filled.every(({ x }) => x >= -1 && x <= 3));
+  assert.equal(field.update(0, 0, changed), false);
+  assert.equal(field.filled.length, 0, 'then nothing more');
+});
+
+test("a cell whose grid's edge lies on a changed tile is read again, though its corner's tile is unchanged", () => {
+  const field = new MeadowField(512, Infinity);
+  field.update(0, 0, ground(1));
+  // Cell 3 runs from 48 m to 64 m: its last column samples x = 64, the next tile's.
+  const changed = ground(2, (tileX) => tileX !== 1);
+  field.update(0, 0, changed);
+  assert.ok(
+    field.filled.some(({ x }) => x === 3),
+    'the cell beside the changed tile',
+  );
+});
+
+test("a wall thinner than the grid's points is kept clear square by square, and a cell with no grass is marked so", () => {
+  // A drystone wall 0.7 m thick, north to south, midway between two of the grid's points 2 m apart.
+  const walled = { ...ground(), cleared: (x: number) => x >= 2 * CELL_M + 4.6 && x <= 2 * CELL_M + 5.3 };
+  const { clear, grass } = readCell(2, 0, walled);
+  assert.equal(grass, 1);
+  const square = CELL_M / CLEAR_SQUARES;
+  const kept = (east: number, south: number) =>
+    ((clear[Math.floor(south / square)] ?? 0) >> Math.floor(east / square)) & 1;
+  for (const south of [0.2, 7.9, 15.8]) {
+    assert.equal(kept(4.9, south), 1, `the wall at ${south}`);
+    assert.equal(kept(3.9, south) + kept(6.1, south), 0, `the grass beside it at ${south}`);
+  }
+  assert.equal(readCell(-10, 0, ground()).grass, 0, 'the sea grows none');
+});

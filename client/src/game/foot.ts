@@ -21,7 +21,7 @@ import { IDLE, type InputFrame } from '../player/input.ts';
 import { cameraFollowed, playerCamera, shownBody } from '../player/player.ts';
 import { AIM, handsZoom } from '../player/playerCamera.ts';
 import type { PlacedLoop } from '../player/playerMoves.ts';
-import { type OtherPlayers, type Others, ridersOf } from '../player/others.ts';
+import { type OtherPlayers, ridersOf } from '../player/others.ts';
 import type { CombatRules } from '../rules/combatRules.ts';
 import { crosshairOf } from '../combat/reticle.ts';
 import { type FighterView, fighterView } from '../rules/fighters.ts';
@@ -32,6 +32,7 @@ import { CAMERA_CLEARANCE_M, WALK_LENS, shotOfOrbit } from './camera.ts';
 import { FallWatch } from './fallWatch.ts';
 import { type Use, dropsLaid, gearInRoom, questRings, tellPrologue } from './footGear.ts';
 import { GatherHold } from './gatherHold.ts';
+import { FootFinds, findUse } from './finds.ts';
 import { markedHere } from './overheadMarks.ts';
 import { nodeText, standOn } from './footGround.ts';
 import { ACCOUNT_CHANGED, GUILD_CHANGED, type GearHere } from './gearScreen.ts';
@@ -53,7 +54,7 @@ import { type OutpostHere, outpostAt } from './guild/outpostHere.ts';
 import { type InBreach, bearing } from './breachView.ts';
 import { gateArrival } from './breachTrips.ts';
 import { FollowCamera, fallPlayed, followable, livingAmong } from '../player/followCamera.ts';
-import { hearing, nextOtherId, roomNote, rulesOf } from './footRoom.ts';
+import { hearing, placingFolk, roomNote, rulesOf } from './footRoom.ts';
 
 export type { AtEntrance, FootContext, FootFight, FootFrame, Uses } from './footPlace.ts';
 import type { NodeInfo } from './worldData.ts';
@@ -126,7 +127,9 @@ export class Foot {
    *  (null while none may be). */
   private readonly follow = new FollowCamera();
   followable: string | null = null;
-  /** A node being gathered while E is held. */
+  /** The chests and containers the room stands for the player (`finds.ts`). */
+  readonly finds = new FootFinds();
+  /** A node being gathered, or a find opened, while E is held. */
   readonly hold = new GatherHold(
     () => this.gear?.ask({ kind: ASKS.stopGather }),
     () => ({
@@ -164,17 +167,7 @@ export class Foot {
     this.feel = new AttackFeel(parts.combat, context.movement.tickSeconds);
     this.prompt = context.usePrompt;
     this.floor = floorOver(node.kind === 'social' ? opened.boxes : [], (x, y) => context.movement.standing(x, y).z);
-    const placing: Others = {
-      place: (dress, x, y, facing) => {
-        const one = { id: nextOtherId(), x, y, z: 0, facing, dress, anim: 'idle', frame: null, spin: false };
-        this.folk.push(one);
-        return one;
-      },
-      remove: (one) => {
-        this.folk.splice(this.folk.indexOf(one) >>> 0, 1);
-        context.forge.forget(one.id);
-      },
-    };
+    const placing = placingFolk(this.folk, (id) => context.forge.forget(id));
     this.plaza = node.kind === 'social' ? new PlazaLife(node, placing, this.floor) : null;
     this.outpost = outpostAt(node, opened, context, parts.combat, people.held);
     this.publicView = new PublicView(node.id, this.feel, {
@@ -312,7 +305,7 @@ export class Foot {
    *  held. */
   use(): void {
     this.using?.run();
-    this.hold.begin(this.using?.gather, this.gear?.gear ?? null);
+    this.hold.begin(this.using?.hold, this.held.gear ?? this.held.alone);
   }
 
   /** The name of the dungeon's room the player stands in, or null in a corridor or on a node's land. */
@@ -417,11 +410,15 @@ export class Foot {
     // The player's own shots leave the weapon as drawn: the first person's muzzle, or the figure's along its shot.
     const [muzzle, gearNow, floor, doors] = [walker.muzzle, this.gear?.gear ?? null, this.floor, this.held.entrances];
     const { trips, speak } = this.context;
+    // The finds stand alone too, as a public event's chests do: the room's word on the gear, online or alone.
+    const gearHeard = this.held.gear ?? this.held.alone;
+    const found = this.finds.frame(gearHeard, clock, !!this.dungeon, paused);
     const marked = markedHere(gearNow, countersOf(this.node), floor, trips.props(), speak, doors.entrances);
-    marked.push(...fallenMarks(fight.others));
+    marked.push(...found.marks, ...fallenMarks(fight.others));
     const lit = litMarksSeen(marked, shot.eye, clock);
     const hidden = marksHidden(marked, shot.eye, clock);
-    const laid = (gearNow?.drops ?? []).filter((drop) => drop.kind !== DROPPED.chest);
+    // Drops are drawn online or alone, as a public event's chests are.
+    const laid = ((this.held.gear ?? this.held.alone)?.drops ?? []).filter((drop) => drop.kind !== DROPPED.chest);
     const dropped = dropsLaid(this.drops, laid, clock, shot.eye, [
       ...questRings(gearNow, floor, clock),
       ...marksSeen(marked, shot.eye, clock),
@@ -473,7 +470,7 @@ export class Foot {
       ground: { blocks: this.boxes, groundAt },
       landed: dropped.landed,
       crates: this.held.gear?.crates ?? null,
-      heard: shownPublic.sounds,
+      heard: [...shownPublic.sounds, ...found.sounds],
     });
     const playerFall = { id: fight.player, feet, tumbling: !!walker.fall?.tumbling };
     const heard = { ...playerFall, lying: walker.fall?.tumbling === false };
@@ -500,15 +497,17 @@ export class Foot {
       : (this.uses?.(x, y, (asked) => fight.askGear(asked)) ?? null);
     const counters = countersOf(this.node);
     // A fallen ally beside the player comes first, as Destiny's revive does, but for a Breach's Lodestone lying
-    // counting down; then a public event's chest.
+    // counting down; then a public event's chest, then a find.
     const urgent = this.publicView.urgent(feet, (asked) => fight.askGear(asked));
     const [own, may] = [[x, y, walker.player.body.z] as const, this.publicView.mayRevive];
     const revive = reviveHere(fight, this.held, own, able && !mounted && !urgent, controls, this.nameOf, may);
-    const first = urgent ?? revive.use ?? this.publicView.use(chests, feet, (asked) => fight.askGear(asked), clock);
+    const find = findUse(own, gearHeard, (asked) => fight.askGear(asked), mounted);
+    const chest = this.publicView.use(chests, feet, (asked) => fight.askGear(asked), clock);
+    const first = urgent ?? revive.use ?? chest ?? find;
     this.using = able ? (first ?? useOnFoot(x, y, placeUse, counters, gear, here, trips, speak, mounted)) : null;
     // Use let go, as bound (a key, the pad's button, or the page's focus lost): a gather under way is let go of.
     if (!controls.held('use')) this.hold.release();
-    const gathered = this.using?.held ?? this.hold.share(clock, able && !mounted, gear?.gear ?? null);
+    const gathered = this.using?.held ?? this.hold.share(clock, able && !mounted, gearHeard);
     this.prompt.show(this.using?.words ?? null, revive.share ?? gathered, this.using?.idle === true);
     const held = gear?.gear;
     // The room leaves an Ammo box lying while the ammunition is full, whether a Ranged weapon is worn or not.
@@ -543,7 +542,8 @@ export class Foot {
     const standing = this.standing;
     const hints = keysShown(standing, onFoot(walker, shown, fight, !controls.locked && !paused, bearer), this.fell);
     const dark = arrivals.darkOf(fight.player, clock);
-    const { props, quest, sting } = shownPublic;
+    const { quest, sting } = shownPublic;
+    const props = [...(shownPublic.props ?? []), ...found.props];
     return { shot, figures, standing, marks, lit, hidden, swings, fight: fought, hints, dark, props, quest, sting };
   }
 

@@ -52,6 +52,12 @@ pub struct NodeFile {
     pub gates: Vec<String>,
     /// In a patrol area, its layout's resource places, where its room's nodes stand, in the layout's order.
     pub resources: Vec<[f64; 2]>,
+    /// In a patrol area, its layout's chest places, each x, y and the way its front faces (radians clockwise from
+    /// north), where its room stands a few chests at a time, in the layout's order.
+    pub chests: Vec<[f64; 3]>,
+    /// In a patrol area, its layout's props that hold things (`dungeon::models::HOLDERS`), each its box across
+    /// (west, north, east, south), its foot, its top and its model, which its room makes searchable now and then.
+    pub holders: Vec<[f64; 7]>,
     /// In a patrol area, its layout's foes' sites in its caverns (a coven's or a cave's area) and on its runs' beats
     /// short of their end arenas, in the layout's order: where its room stands a group as a player first comes near.
     pub foes: Vec<[f64; 2]>,
@@ -121,6 +127,24 @@ pub fn foes_of(layout: &layout::Layout) -> Vec<[f64; 2]> {
     };
     let held = layout.sites.iter().filter(|site| site.kind == layout::sites::SiteKind::Foes);
     held.filter(|site| site.holds.as_ref().is_none_or(cavern)).map(|site| site.at).collect()
+}
+
+/// A patrol's chest places, each x, y and the way it faces, in the layout's order.
+#[must_use]
+pub fn chests_of(layout: &layout::Layout) -> Vec<[f64; 3]> {
+    let places = layout.sites.iter().filter(|site| site.kind == layout::sites::SiteKind::Chest);
+    places.map(|site| [site.at[0], site.at[1], site.facing.unwrap_or_default()]).collect()
+}
+
+/// A patrol's props that hold things, inside its ring: each its box across, its foot, its top and its model.
+#[must_use]
+pub fn holders_of(layout: &layout::Layout) -> Vec<[f64; 7]> {
+    let held = layout.seating.props.iter().filter_map(|prop| {
+        let [west, north, east, south] = prop.footprint;
+        let inside = layout::field::ring_holds(&layout.ring, (west + east) / 2.0, (north + south) / 2.0);
+        inside.then(|| dungeon::models::held_by(prop.model, prop.footprint, prop.at[2])).flatten()
+    });
+    held.collect()
 }
 
 /// A layout's places: its areas, then its runs at their mouths, but a run named as one of its areas is, whose name
@@ -252,6 +276,8 @@ pub fn nodes_of(
             grounds: None,
             gates: Vec::new(),
             resources: Vec::new(),
+            chests: Vec::new(),
+            holders: Vec::new(),
             foes: Vec::new(),
             places,
             paths,
@@ -275,6 +301,8 @@ pub fn nodes_of(
             places.filter_map(|site| site.node).collect()
         });
         let foes = laid.map(foes_of).unwrap_or_default();
+        let patrol = laid.filter(|layout| layout.kind == NodeKind::Patrol);
+        let (chests, holders) = (patrol.map(chests_of).unwrap_or_default(), patrol.map(holders_of).unwrap_or_default());
         let places = laid.map(places_of).unwrap_or_default();
         let paths =
             laid.map(|layout| layout.paths.iter().map(|path| path.points.clone()).collect()).unwrap_or_default();
@@ -283,7 +311,7 @@ pub fn nodes_of(
         let cut = cut(node.id.clone(), node.kind, node.name.clone(), ring, spawns);
         let outpost =
             laid.filter(|_| node.kind == NodeKind::Outpost).and_then(|layout| outpost_of(layout, &cut.ground));
-        NodeFile { grounds, gates, resources, foes, places, paths, outpost, breach, ..cut }
+        NodeFile { grounds, gates, resources, chests, holders, foes, places, paths, outpost, breach, ..cut }
     });
     let social = plan.as_ref().map(|plan| {
         let (id, social) = (city::social_id(&plan.id), &plan.social);
@@ -337,6 +365,10 @@ pub fn builders(root: &Path) -> Result<Builders, String> {
         if path.is_file() {
             *table = layout::book::Book::measures(&read_text(&path)?)?;
         }
+    }
+    let parts = forged.join("parts.json");
+    if parts.is_file() {
+        builders.book.parts = layout::book::Book::parts(&read_text(&parts)?)?;
     }
     let briefs = root.join("content/world/briefs.json");
     if briefs.is_file() {
@@ -393,6 +425,7 @@ mod tests {
             radius: 10.0,
             holds: holds.cloned(),
             node: None,
+            facing: None,
         };
         let (cave, camp) = (&glade.areas[0], &glade.areas[1]);
         glade.sites = vec![
@@ -402,6 +435,44 @@ mod tests {
             site(layout::sites::SiteKind::Objective, [3.0, 4.0], Some(&cave.name)),
         ];
         assert_eq!(foes_of(&glade), vec![glade.areas[0].at, [1.0, 2.0]]);
+    }
+
+    #[test]
+    fn a_patrols_chest_places_keep_their_facing_and_only_its_props_that_hold_things_are_holders() {
+        let (_, layout) = glade();
+        let mut whole = generate(&layout.continents[0], land::edits::parse(GLADE).unwrap()).unwrap();
+        let laid = layout::settle::settle(&mut whole, &Default::default(), &Default::default());
+        let mut glade = laid.into_iter().find(|each| each.id == "glade").expect("laid");
+        let chest = layout::sites::Site {
+            kind: layout::sites::SiteKind::Chest,
+            at: [5.0, 6.0],
+            radius: 0.5,
+            holds: None,
+            node: None,
+            facing: Some(1.5),
+        };
+        glade.sites = vec![chest];
+        assert_eq!(chests_of(&glade), vec![[5.0, 6.0, 1.5]]);
+        let [middle_x, middle_y] =
+            [(glade.ring[0][0] + glade.ring[2][0]) / 2.0, (glade.ring[0][1] + glade.ring[2][1]) / 2.0];
+        let seated = |model: u32| layout::seat::Seated {
+            model,
+            at: [middle_x, middle_y, 10.0],
+            yaw: 0.0,
+            building: false,
+            footprint: [middle_x - 0.4, middle_y - 0.4, middle_x + 0.4, middle_y + 0.4],
+            purpose: 0,
+            open: false,
+            grounded: true,
+        };
+        // A crate holds things; a rock does not.
+        glade.seating.props = vec![seated(41816), seated(41704)];
+        let crate_box = dungeon::models::holder(41816).expect("a crate");
+        let foot_and_top = [10.0 + crate_box.min[1], 10.0 + crate_box.max[1]];
+        let held = holders_of(&glade);
+        assert_eq!(held.len(), 1, "the crate alone");
+        assert_eq!([held[0][4], held[0][5]], foot_and_top, "its foot and top as it stands");
+        assert_eq!(held[0][6], 41_816.0, "and its model, which the page names it by");
     }
 
     #[test]

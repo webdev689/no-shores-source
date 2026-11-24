@@ -125,7 +125,10 @@ test('in its zone a launched player arrives from anywhere within the arrival win
       asked.push(within);
       return blips-- > 0 ? Promise.reject(new Error('blip')) : Promise.resolve(true);
     },
-    wait: (span) => void waited.push(span) ?? Promise.resolve(),
+    wait: (span) => {
+      waited.push(span);
+      return Promise.resolve();
+    },
   });
   zone.joined(4, RUN);
   zone.owned(4, 'ada');

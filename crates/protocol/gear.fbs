@@ -63,7 +63,7 @@ table GearVestige {
 // A drop lying on the ground for this player alone: their number for it, a Vestige's colour and slot, and where it
 // lies (x, y, z); then what it is (0 a Vestige, 1 an Ammo box, 2 an Ammo crate, 3 a public event's chest), where it
 // was thrown from (x, y, z) and how many ticks it has still to fly before it rests; then a chest's tier (1 won, 2 won
-// with the bonus, 3 heroic, 4 heroic with the bonus; 0 for anything else).
+// with the bonus, 3 heroic, 4 heroic with the bonus; 0 for anything else); and whether it was poured out of a chest.
 table GearDrop {
   id: uint;
   rarity: ubyte;
@@ -73,6 +73,7 @@ table GearDrop {
   from: [double];
   flying: ubyte;
   tier: ubyte;
+  poured: bool;
 }
 
 // A letter of the game's mail: its number, where what it holds came from (the gear crate's `mail::Source`, which the
@@ -87,7 +88,8 @@ table GearLetter {
 }
 
 // A bounty of the day's board as it stands for a player: its words, how many it asks, how many they have counted,
-// whether they hold it and whether they turned it in.
+// whether they hold it and whether they turned it in; where it counts, its name and tier, its place on the board and
+// the faction that posts it.
 table GearBounty {
   words: string;
   target: uint;
@@ -100,6 +102,10 @@ table GearBounty {
   name: string;
   // Its tier, 1 to 3: it pays the gear's bounty pay (its first tier's), half again or twice that, rounded down.
   tier: ubyte;
+  // Its place on the board, which its take and turn-in ask by: the town's 0 to 5, then each faction's three.
+  place: ubyte;
+  // The faction that posts it, by its number: it pays that faction's reputation for the town's Aurem; 0 the town's.
+  faction: ubyte;
 }
 
 // A player's own gear, sent to them alone whenever it changes: their XP, level, Prestige and Defense; their Aurem,
@@ -232,8 +238,9 @@ table Gear {
   week_elite: bool;
   week_abyss: bool;
   boon: bool;
-  // The day's six bounties on the board, in its order, as they stand for them (none held from another day); and what
-  // a first tier's pays them when turned in, at their level (each bounty's tier raises it).
+  // The day's bounties on the board as they stand for them (none held from another day): the town's six in its order,
+  // then the three of the faction they are pledged to, then any of another faction's they hold today; and what a first
+  // tier's pays them in XP and the town's in Aurem when turned in, at their level (each bounty's tier raises it).
   bounties: [GearBounty];
   bounty_xp: uint;
   bounty_aurem: uint;
@@ -255,6 +262,13 @@ table Gear {
   abyss_playlist_taken: bool;
   elite_playlist_clears: ubyte;
   abyss_playlist_clears: ubyte;
+  // The chests standing in the room that they have not opened, five numbers each: its number, x, y, z and the way
+  // its front faces (radians clockwise from north); and the containers searchable that they have not searched, eight
+  // each: its number, its box across (west, north, east, south), its foot, its top and its model.
+  chests: [double];
+  searchables: [double];
+  // The number of the last chest or container the room paid them for, 0 for none: their page tells of it once.
+  opened: uint;
 }
 
 // A named officer: their number, post (0 First Mate, 1 Gunner, 2 Bosun, 3 Carpenter, 4 Lookout), grade (a rarity),

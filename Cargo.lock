@@ -19,6 +19,7 @@ name = "bake"
 version = "0.0.0"
 dependencies = [
  "city",
+ "dungeon",
  "land",
  "layout",
  "serde",

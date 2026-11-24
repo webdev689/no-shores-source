@@ -270,7 +270,7 @@ test('every hidden chest stands shut at its socket, glowing while open to pay, i
   const { view, word, atTick } = inRun();
   const chests = (more: Partial<BreachSeen>, events: FightEvent[] = []) => {
     const props = view.frame(word(more), events, [0, 0, 60], () => null, 0, [])?.props ?? [];
-    const bodies = props.filter((prop) => prop.module === 'event-chest');
+    const bodies = props.filter((prop) => prop.module === 'chest');
     assert.deepEqual(
       bodies.map((prop) => prop.at),
       [
@@ -280,7 +280,7 @@ test('every hidden chest stands shut at its socket, glowing while open to pay, i
         spaceSocket(plan, 'stair', 'chest-stair'),
       ],
     );
-    const lids = props.filter((prop) => prop.module === 'event-chest-lid').map((prop) => prop.lid > 0);
+    const lids = props.filter((prop) => prop.module === 'chest-lid').map((prop) => prop.lid > 0);
     return { lids, lit: bodies.map((prop) => prop.glow > 0.5) };
   };
   assert.deepEqual(chests({}), { lids: [false, false, false, false], lit: [true, false, false, true] });

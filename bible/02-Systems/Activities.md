@@ -11,6 +11,7 @@ code:
   - crates/gear/src/objectives.rs#saw
   - crates/room/src/sea_ports.rs#count_down
   - crates/gear/src/bounties.rs#board
+  - crates/gear/src/bounties.rs#faction_board
   - client/src/game/journalPage.ts#Journal
   - crates/room/src/run.rs#modded_blow
   - crates/room/src/run_room.rs#dungeon_run
@@ -79,7 +80,7 @@ player cannot tell is on, or cannot tell why it is shut; Destiny's own words on 
 | Activity | What | Tier and level | Opens |
 |---|---|---|---|
 | Dungeon of the day | One patrol dungeon on each island, drawn each day | The seas', at its island's band | Normal at any level; Elite seas from 10, Abyss seas from 20 |
-| Bounties | Six from the board, drawn each day | | After the prologue |
+| Bounties | The town's six and the pledged faction's three, from the board, drawn each day | | After the prologue; a faction's once pledged to it |
 | Elite Dungeons | The 18 named dungeons | Normal, at their island's band | After the prologue |
 | Elite Dungeon of the week | One of the 18, with one modifier | Elite, foes at 26 | Campaign's end, level 24 |
 | Abyss Dungeon of the week | Another of the 18, with three modifiers | Abyss, foes at 30 | Campaign's end, level 28 |
@@ -222,9 +223,11 @@ the owner approved ([[Where You Go and the Seas You Choose Set the Difficulty]])
 
 - **Each character keeps its day and its week** with the account (`Character.activity`): `today` holds the tiers of
   the dungeon of the day it has cleared, its bounties, each by its board place with its count, and the places it
-  turned in (`turned_in`); `this_week` holds whether it cleared each of the week's two dungeons, whether it holds
-  the Abyss boon, the playlists' clears counted, and each Breach's finds paid at each tier (`breaches`, one bit each:
-  its encounters in order, then its hidden chests; [[Breaches]]). Each begins anew at its first touch in a later day or week, and never turns back, so a room whose
+  turned in (`turned_in`), the town's six under those keys and the factions' under keys of their own
+  (`faction_bounties`, `faction_turned_in`), so a room built before them carries them through a rollback; `this_week`
+  holds whether it cleared each of the week's two dungeons, whether it holds the Abyss boon, the playlists' clears
+  counted, and each Breach's finds paid at each tier (`breaches`, one bit each: its encounters in order, then its hidden
+  chests; [[Breaches]]). Each begins anew at its first touch in a later day or week, and never turns back, so a room whose
   clock is behind cannot pay twice. `today` and `story` keep any key a later build wrote in them, so a rollback to
   this build loses none.
 - **What a first clear pays** is `gear::clears`. Each writes the record, and none pays for a day or a week behind the
@@ -275,21 +278,39 @@ keep their engine ([[The Journal Holds the Quests, the Bounties at Its Side and 
 - **The bounty board** stands on the notice board's landing in the Watch Court of Overlook's hub, its face to the
   court ([[Cities]], `city::board`), and opens after the prologue, on the counters' pattern of the
   plaza's keepers: the bake writes its counter on the plaza's node file, and the room serves its asks there. It is
-  no station and has no keeper. It offers six bounties a day, the same for everyone (`gear::bounties::board`, drawn by the day):
-  places 0 and 1 on land, 2 and 3 at sea, 4 and 5 in dungeons, each pair two different ones of its pool. None names an
-  island or a water, since the islands' bands run from 1 to 30. A character takes any of them; each pays once when
-  turned in, by its tier as Destiny 1's three tiers paid (2,500, 3,750 and 5,000 XP): a first tier's 1,000 XP and 60
-  Aurem at level 5, a second's half again, a third's twice, raised as a kill is by the character's level, its XP to
-  their Art and faction as a kill's; and all end at the daily reset. Honest Work, Broadside and Into the Dark are of
-  the first tier; Tithe Collector, A Cut Above, Bigger Fish and Deeper Still the second; Big Game, Sea Wolf and Deep
-  Delver the third (`Bounty.tier`, `bounty_pay`). The gear message carries a first tier's pay and each bounty's tier,
-  and the card shows each one's own.
+  no station and has no keeper. It holds the town's six bounties and each faction's three, every one drawn by the
+  day and the same for everyone
+  ([[Standard and Faction Bounties Each Wear One Design, on a Board After the Bounty Tracker]],
+  [[The Bounty Board as Claude Shapes It]]).
+- **The town's six** (`gear::bounties::board`): places 0 and 1 on land, 2 and 3 at sea, 4 and 5 in dungeons, each pair
+  two different ones of its pool. None names an island or a water, since the islands' bands run from 1 to 30. A
+  character takes any of them; each pays once when turned in, by its tier as Destiny 1's three tiers paid (2,500,
+  3,750 and 5,000 XP): a first tier's 1,000 XP and 60 Aurem at level 5, a second's half again, a third's twice, raised
+  as a kill is by the character's level, its XP to their Art and faction as a kill's; and all end at the daily reset.
+  Honest Work, Broadside and Into the Dark are of the first tier; Tithe Collector, A Cut Above, Bigger Fish and Deeper
+  Still the second; Big Game, Sea Wolf and Deep Delver the third (`Bounty.tier`, `bounty_pay`).
+- **A faction's three** (`faction_board`): each faction draws three a day from four of its own, the one left out by
+  the day, at its own places after the town's (the Stormcallers' 6 to 8, the Lamplighters' 9 to 11, the Veiled's 12
+  to 14; `faction_places`). The Stormcallers': Storm Front (40 foes), Thunderhead (8 of Elite rank or higher), Squall
+  Line (4 ships) and Eye of the Storm (3 of Miniboss rank or higher). The Lamplighters': Lamp Oil (8 nodes), Calm
+  Waters (3 ships), Light the Way (2 dungeons) and Harbour Light (2 ships of Elite rank or higher). The Veiled's: Quiet
+  Knives (25 Grey Tithe foes), Below Stairs (a dungeon), Night Work (10 of Elite rank or higher) and No Witnesses (2
+  of Miniboss rank or higher). Only a player pledged to the faction takes one, and it counts only while they serve it,
+  pledged and wearing its cape (`Character::serves`). Turned in it pays XP as a town bounty of its tier and the
+  faction's own reputation in place of Aurem: `bountyReputation` (2,500) at the first tier, half again at the second,
+  twice at the third, whatever the level (`faction_bounty_reputation`); its XP earns reputation besides with the cape
+  worn, as every deed's does ([[Factions]]). After a switch of pledge one held counts no more but still turns in, to
+  the faction that posted it.
+- **On the wire** the gear message carries the town's six, then the pledged faction's three, then any other faction's
+  held that day, each with its place and the faction that posts it (none for the town), and a first tier's XP and
+  Aurem; the card shows each one's own pay.
 - **Taking and turning in** happen at the board alone (`Ask::TakeBounty`, `Ask::TurnInBounty`), each by its place
   and the day of the board the page showed. The room refuses a day not its own, and a room whose day is behind the
   record refuses both, so a page or a room on either side of 09:00 cannot take or pay yesterday's bounty as today's.
   The refusals read "The bounty board opens after the prologue.", "That bounty is no longer on the board.", "You
   already hold that bounty.", "That bounty is not done yet." and "That bounty is turned in already."; they are
-  numbered 80 to 84, apart from the rest.
+  numbered 80 to 84, apart from the rest. A faction's taken by one not pledged to it is refused "Pledge to them
+  first." (`NotPledged`).
 - **At sea** the sea's room keeps its sailors' characters ([[Accounts]], "At sea") and counts each captain's ship
   that goes down, sunk or taken (a ship taken is scuttled once her boarders leave her), on the character it keeps for
   each player who fought her, once each however often they are listed, by the water she went down in (its
@@ -338,17 +359,22 @@ keep their engine ([[The Journal Holds the Quests, the Bounties at Its Side and 
   levels, then the week's two with their levels, rules, modifiers and pay, taken or not, and the Abyss boon while
   held, each counting to its reset. A shut line says why in its gate's words. "Taken" is the character's record as
   their gear last carried it, judged against the page's own day and week, so yesterday's clear reads as not taken
-  today. Its right column holds the day's bounties taken, as the gear last carried them, as tiles with no press, or
-  before the prologue the board's shut line alone. Gear of another day than the page's (a word heard before the reset,
-  as at sea, where the character is sent only as it changes) shows no bounty, only "Six a day, from the board in
-  Overlook’s plaza.", as before any room sent one. Its middle holds the houses' roads as story missions: the one the
-  player walks at its task, and each done.
+  today. Its right column holds the day's bounties taken, as the gear last carried them, as the board's tiles with no
+  press, a slot for each bounty the board shows the player (the town's six, the pledged faction's three and any other
+  faction's held that day), each tile's card floated beside it
+  while it is pointed at or holds the keys; or before the prologue the board's shut line alone. Gear of another day
+  than the page's (a word heard before the reset, as at sea, where the character is sent only as it changes) shows no
+  bounty, only "Posted each day on the board in Overlook’s plaza.", as before any room sent one. Its middle holds the
+  houses' roads as story missions: the one the player walks at its task, and each done.
 - **At the bounty board**, E opens its screen in the menu ([[Interface]], "The social space's counters"), after
-  Destiny's Bounty Tracker: "Bounties for XP and Aurem, posted each day.", the day's six as tiles in a row a kind
-  (land, sea, dungeons), a bar counting to the next board, and the chosen tile's card (its name, its kind, its words,
-  its count, what it pays, and its press, Take or Turn in, with E). Each bounty has a short name of its own, as
-  Destiny's do (`gear::bounties`, "Tithe Collector" to "Deep Delver"), carried with the board to the page. Arrows move between tiles; E or a click takes or
-  turns one in. Before the prologue the tiles are grey and the card says why.
+  Destiny's Bounty Tracker and laid as a keeper's: the board drawn on its lit stage under its mark and title; "When
+  Overlook needs a hand, it posts a bounty here. The factions post their own.", the player's Aurem and their faction's
+  rank; "Available bounties" with the town's six in a row and the pledged faction's three under them (three locked
+  slots while pledged to none); and the time to the next board. Every town bounty wears one face and every faction's
+  its faction's emblem; each has a short name of its own, carried with the board to the page. The card of the tile
+  pointed at or holding the keys floats beside it (its name, its kind, its task, its count, what it pays, for a
+  faction's whether it counts now, and its press, Take or Turn in, with E). Arrows move between tiles; a click, Enter
+  or E takes or turns one in. Before the prologue the tiles are grey and their cards say why.
 - **At a dungeon's entrance**, E opens a card ([[Interface]], "At a dungeon's entrance"): the run's tier and level,
   its rules and modifiers, what it pays or that it is taken, and why it is shut if it is, with Enter. A patrol's
   dungeon carries the day's modifier at Elite and Abyss seas while it is its island's dungeon of the day. An Elite
@@ -381,5 +407,6 @@ with foes at 26 and 30, opening at 24 and 28; private runs at Elite and Abyss; a
 a Company's bands of ten levels, and a group found sharing one run without becoming a company; the Playlist's shape,
 its bands, modifiers, rewards and screen ([[The Playlist and Its Dungeons as Claude Shapes Them]]); five shared revives,
 restored by a wipe; the modifier set; the rewards above and the quarter-more boon; a foe felled on a ship's deck
-counting toward no bounty and earning no Abyss boon; six bounties a day paying XP and Aurem; and the screen's names,
-Find a Company and the Journal's Timers.
+counting toward no bounty and earning no Abyss boon; six bounties a day paying XP and Aurem; the factions' bounties
+and the board's screen ([[The Bounty Board as Claude Shapes It]]); and the screen's names, Find a Company and the
+Journal's Timers.

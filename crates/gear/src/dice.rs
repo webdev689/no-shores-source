@@ -48,6 +48,10 @@ pub enum Purpose {
     Taken = 1_900,
     /// A Breach's clear: its Vestiges' slots, and its last encounter's chances at the dye and the horse.
     Breach = 2_000,
+    /// How much of the island's resource a chest or a search holds, and whether a search holds any (the question
+    /// added); and, apart, which places a patrol's chests and which containers are searchable stand at
+    /// (`room::finds`).
+    Find = 2_100,
 }
 
 /// One player's dice for one tick of one room.

@@ -15,7 +15,7 @@ import { hearBreach, momentOf } from './breachHearing.ts';
 
 /** A Breach's run as the page hears it: the Gullwing Vale's climate, no sky underground. */
 const RUN: Hearing = {
-  place: { kind: 'island', climate: 'temperate-coast', node: 'node-gullwing-vale--breach' },
+  place: { kind: 'island', climate: 'temperate-coast', node: 'patrol' },
   dead: false,
   health: 1,
   struck: false,
@@ -108,7 +108,7 @@ test("an encounter's foes bring its own song's layers, not the island family's, 
     'vale-mending-cadence',
   );
   assert.equal(songOf(scores, { kind: 'breach', song: 'ways' })?.name, 'vale-ways');
-  const gate = { ...RUN, place: { kind: 'island', climate: 'temperate-coast', node: 'node-gullwing-vale' } } as const;
+  const gate = { ...RUN, place: { kind: 'island', climate: 'temperate-coast', node: 'patrol' } } as const;
   const waking = run(
     times(5, { ...gate, breach: { run: false, song: 'waking', boss: null, piece: 2 }, least: 'tension' }),
   );
@@ -158,7 +158,7 @@ test("a Breach's moment plays the sting of the encounter it is of, not of where 
   assert.equal(momentOf([told(BREACH_EVENT.cleared, 0)]), null, "the zone's word of another company's clear");
   assert.equal(momentOf([told(BREACH_EVENT.begun, 5)]), 5);
   assert.equal(momentOf([told(BREACH_EVENT.rewritten, 2)]), null, 'no encounter in it');
-  const gate = { ...RUN, place: { kind: 'island', climate: 'temperate-coast', node: 'node-gullwing-vale' } } as const;
+  const gate = { ...RUN, place: { kind: 'island', climate: 'temperate-coast', node: 'patrol' } } as const;
   // The Spire woken, or the holders gone, on the very frame the room tells the Waking won or wiped.
   const won = hearBreach({ ...SEEN, gate: true, heldBy: true, woken: true }, PLAN, null, true, [
     told(BREACH_EVENT.won, 0),

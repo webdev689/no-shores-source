@@ -41,6 +41,10 @@ export interface NodeInfo {
   readonly places?: readonly { readonly name: string; readonly at: Point; readonly radius: number }[];
   /** Its layout's paths, each its points, along which its room lays where the fallen stand again (respawns.rs). */
   readonly paths?: readonly (readonly Point[])[];
+  /** A patrol area's chest places and its props, of which a room playing alone keeps those that hold things
+   *  (layouts.ts `findsOf`). */
+  readonly chests?: readonly (readonly [number, number, number])[];
+  readonly holderProps?: readonly (readonly [number, number, number, number, number, number])[];
 }
 
 /** A continent's port city, as its edits file names it. */

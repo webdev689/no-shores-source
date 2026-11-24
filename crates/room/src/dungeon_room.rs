@@ -154,6 +154,11 @@ impl Room {
         room.foes_most = NODE_FOES_MOST;
         room.run = run;
         let bands = room.stand_dungeon_garrison(dungeon, levels, end);
+        // Its chests keep out of its seals' rooms, whose pieces fill their floors.
+        let kept: Vec<usize> = plan.iter().flat_map(|plan| plan.seals.iter().map(|seal| seal.room)).collect();
+        if let Floor::Dungeon(ground) = &room.floor {
+            room.finds = crate::finds::Finds::of_dungeon(dungeon, ground, &kept);
+        }
         if let Some(plan) = plan {
             room.lay_encounters(plan, levels);
             let end = dungeon.rooms.get(dungeon.end()).map(|end| end.cells.clone()).unwrap_or_default();
@@ -271,6 +276,10 @@ impl Room {
                 }
             }
         }
+        // As its garrison stands again, its chests and containers are drawn anew.
+        if cache.open && !open {
+            self.finds.drawn = false;
+        }
         self.cache = Some(Cache { open, ..cache });
     }
 
@@ -281,10 +290,8 @@ impl Room {
         let Some(found) = self.players.get_mut(&player) else { return };
         let vestiges = found.character.reward_clear(gear::rewards::Clear::Dungeon, level, difficulty, source, &dice);
         found.gear_changed = true;
-        // Thrown out of the cache onto the floor before it, which `cache_by` keeps clear, as a kill throws its drops.
-        for vestige in vestiges {
-            self.lay(player, crate::Dropped::Vestige(vestige), cache.vestige, cache.at);
-        }
+        // Poured out of the cache onto the floor before it, which `cache_by` keeps clear.
+        self.pour(player, vestiges, cache.at, Some(cache.vestige));
     }
 
     /// The cache of a dungeon's room, as the snapshot carries it: x, y, z, the way it faces, and 1 open or 0 shut.
