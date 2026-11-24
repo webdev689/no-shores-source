@@ -3,6 +3,7 @@ import { handle } from './accounts.ts';
 import { type Characters, type Claimed, characters } from './characters.ts';
 import type { CompanyFinder } from './finder.ts';
 import { findingAt } from './finding.ts';
+import { type LinkedCharacter, linkedCharacter } from './linked.ts';
 import { type ChatHall, chatAt } from './chat.ts';
 
 export { CompanyFinder } from './finder.ts';
@@ -53,6 +54,13 @@ export class CharacterKeeper extends WorkerEntrypoint<Env> implements Characters
 
   launched(account: string, room: string): Promise<boolean> {
     return this.kept.launched(account, room);
+  }
+}
+
+/** A Discord member's linked character, for the Discord bot alone: reached only through its service binding. */
+export class LinkedCharacters extends WorkerEntrypoint<Env> {
+  linked(discordId: string): Promise<LinkedCharacter | null> {
+    return linkedCharacter(this.env.DB, String(discordId));
   }
 }
 

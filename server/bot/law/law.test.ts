@@ -256,8 +256,11 @@ test('modules: each has a unique id, valid defaults, and levels that exist; core
   assert.equal(moduleOf('nothing'), null);
 });
 
-test('modules: a message setting offers the member, the server, and only what its own module will fill (a card, a level)', () => {
-  const fillable = new Set(['user', 'name', 'server', 'count', 'avatar', 'server_icon', 'welcome_card', 'level']);
+test('modules: a message setting offers the member, the server, their character, and only what its own module fills (a card, a level)', () => {
+  const fillable = new Set([
+    ...['user', 'name', 'server', 'count', 'avatar', 'server_icon', 'welcome_card', 'level'],
+    ...['character', 'character_level', 'character_faction'],
+  ]);
   const walk = (schema: Schema, path: string) => {
     for (const [key, field] of Object.entries(schema)) {
       if (field.type === 'message')

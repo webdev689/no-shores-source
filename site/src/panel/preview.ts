@@ -21,6 +21,9 @@ export function previewVars(context: FormContext): Record<string, string> {
     avatar: preview.me?.avatar ?? '',
     server_icon: preview.guildIcon ?? '',
     welcome_card: preview.cardUrl ?? '',
+    character: preview.me?.name || 'Member',
+    character_level: '5',
+    character_faction: 'Stormcallers',
   };
 }
 

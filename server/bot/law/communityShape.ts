@@ -3,6 +3,7 @@
 import type { BotModule } from './modules.ts';
 import { CHANNEL_KIND, type ChannelField, type ListField, type TextField } from './settings.ts';
 import { messageField } from './message.ts';
+import { GAME_SLOTS } from './gameShape.ts';
 
 const KEY: TextField = {
   type: 'text',
@@ -35,8 +36,8 @@ const roles = (label: string, max: number): ListField => ({
   default: [],
   of: { type: 'role', label: 'Role', default: '' },
 });
-/** The placeholders a message about one member may use: the member and the server. */
-const MEMBER_SLOTS = ['user', 'name', 'server', 'count', 'avatar', 'server_icon'];
+/** The placeholders a message about one member may use: the member, the server and the member's game character. */
+const MEMBER_SLOTS = ['user', 'name', 'server', 'count', 'avatar', 'server_icon', ...GAME_SLOTS];
 /** How many channels one announcement is posted in at most. */
 export const ANNOUNCE_CHANNELS_MAX = 10;
 
@@ -146,7 +147,7 @@ export const LEVELS_SHAPE: BotModule = {
     announceChannel: text('Level-up channel'),
     levelUpPing: { type: 'bool', label: 'Mention the member in the post', default: true },
     levelMessage: messageField('Level-up message', {
-      vars: ['user', 'name', 'level', 'server', 'avatar'],
+      vars: ['user', 'name', 'level', 'server', 'avatar', ...GAME_SLOTS],
       content: '{user} reached level {level}!',
     }),
     rewards: {
@@ -315,7 +316,7 @@ export const TAGS_SHAPE: BotModule = {
         fields: {
           name: KEY,
           reply: messageField('Answer', {
-            vars: ['user', 'name', 'server', 'avatar', 'server_icon'],
+            vars: ['user', 'name', 'server', 'avatar', 'server_icon', ...GAME_SLOTS],
           }),
           roles: roles('Only these roles may use it (empty: everyone)', 10),
         },

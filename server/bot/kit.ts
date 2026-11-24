@@ -4,6 +4,7 @@
 
 import { DEFAULT_COLOUR, colorNumber, escapeText } from './law/message.ts';
 import { recordOf } from './law/settings.ts';
+import type { LinkedCharacter } from '../accounts/linked.ts';
 import type { Cache } from './cache.ts';
 import type { Rest } from './rest.ts';
 import { type Db, type ReadSettings, type Snapshot, readConfig } from './store.ts';
@@ -20,7 +21,8 @@ export const EDGE_COLOUR = colorNumber(DEFAULT_COLOUR);
 
 /**
  * The Worker's settings, each a plain string that may be empty: an empty one is a legal state, and the part that needs
- * it says what is not set up. The last three are secrets the deploy puts; the rest are `wrangler.jsonc`'s vars.
+ * it says what is not set up. Three are secrets the deploy puts; the rest are `wrangler.jsonc`'s vars, and its one
+ * service binding.
  */
 export interface Vars {
   readonly BOT_URL?: string;
@@ -32,6 +34,8 @@ export interface Vars {
   readonly DISCORD_BOT_TOKEN?: string;
   readonly DISCORD_CLIENT_SECRET?: string;
   readonly CARD_SIGNING_KEY?: string;
+  /** The accounts' LinkedCharacters (accounts/worker.ts) by service binding; without it no member reads as linked. */
+  readonly ACCOUNTS?: { linked(discordId: string): Promise<LinkedCharacter | null> };
 }
 
 /** The context a module runs in. `cache` and `memory` exist only in the Gateway object; `later` outlives the answer. */

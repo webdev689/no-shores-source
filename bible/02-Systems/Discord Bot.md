@@ -69,6 +69,9 @@ code:
   - server/bot/modules/stats.ts#statsModule
   - server/bot/modules/socials.ts#socialsWith
   - server/bot/migrations/20261124130200_engagement.sql
+  - server/bot/modules/game.ts#gameModule
+  - server/bot/law/gameShape.ts#GAME_SHAPE
+  - server/accounts/linked.ts#linkedCharacter
 ---
 # Discord Bot
 
@@ -78,8 +81,8 @@ modules are built on.
 
 ## How it works
 
-One Cloudflare Worker, `noshores-bot`, with its own D1 (`BOT_DB`), an R2 bucket for pictures (`BOT_MEDIA`) and one
-Durable Object holding Discord's Gateway. `npm run bot` runs it here on port 8789, for the website's panel on 5174.
+One Cloudflare Worker, `noshores-bot`, with its own D1 (`BOT_DB`), an R2 bucket for pictures (`BOT_MEDIA`), one
+Durable Object holding Discord's Gateway, and a service binding to the [[Accounts]] (`ACCOUNTS`). `npm run bot` runs it here on port 8789, for the website's panel on 5174.
 
 | Part | What it does |
 |---|---|
@@ -158,6 +161,36 @@ raised and given back when the clock ends it. Very new accounts can be dealt wit
 - **Feeds**: every ten minutes each YouTube channel or https RSS or Atom feed is read, at most 512 KB and 50 items.
   The first read marks the place; later reads post up to five new items, their titles shown as typed.
 
+## The game module
+
+**No Shores** fills a message's `{character}`, `{character_level}` and `{character_faction}` for a member whose
+Discord is linked to an account in the game ([[Accounts]], "Discord"). The bot asks the accounts through its
+service binding to their `LinkedCharacters` entrypoint, which no web address reaches: given a Discord user id, it
+answers the account's username, the level its room last kept for others to see (`shown.level`, as the Roster reads
+it) and the name of the faction it is pledged to, or nothing when that Discord account is linked to none. No account
+id, email or gear leaves the accounts. A member not linked, or any member when the binding is missing or the accounts
+do not answer, gets the module's words for "not linked" in all three (empty by default). A linked character with no
+username, no level kept yet or no pledge shows nothing in that one. Welcome, goodbye, level-up and tag messages offer
+the three placeholders.
+
+`/link` answers privately how to link: open the game at `https://lattymoy.github.io/no-shores-source/`, then in
+Settings open Account and press Sign in or link with Discord. The link itself is the accounts' own.
+
+## One Discord application
+
+The accounts' Discord sign-in and the bot share one Discord application. Each Worker reads its keys as secrets or
+vars, never from the repository:
+
+| Worker | Reads |
+|---|---|
+| `overlook-accounts` | `DISCORD_CLIENT_ID` (the application's id) and `DISCORD_CLIENT_SECRET` |
+| `noshores-bot` | `DISCORD_APPLICATION_ID` (the same id), `DISCORD_PUBLIC_KEY`, `DISCORD_BOT_TOKEN`, `DISCORD_CLIENT_SECRET` (the same secret) and `CARD_SIGNING_KEY` (the bot's own, not Discord's) |
+
+The application's OAuth2 redirects must list both callbacks:
+`https://overlook-accounts.mackcothran.workers.dev/v1/discord/callback` for the game's sign-in, and the bot's own
+address followed by `/v1/auth/discord/callback` for the panel's (on `workers.dev`, `noshores-bot`'s address on the
+same Cloudflare account). Its interactions endpoint is the bot's address followed by `/v1/discord/interactions`.
+
 ## The panel
 
 The bot is set up from its page on the [[Website]], `noshores.online/panel/` (`site/src/panel/`). A manager signs in
@@ -169,6 +202,7 @@ built by the message law. The page only draws what the panel's API answers; ever
 
 - Not deployed: the Discord application's keys and the deploy wait on the owner ([[Open Questions]]). Every var in
   `wrangler.jsonc` may be empty, and the part that needs one says it is not set up.
-- A message's placeholders are the member's and the server's; a game character waits on the accounts' link.
+- A character's level is the one its room last saved, so it trails a level reached mid-session by up to twenty
+  seconds; a character no room has kept since it was made shows no level.
 - A Worker isolate trusts a module's settings for 30 seconds after reading them, and the Gateway until the panel
   saves.

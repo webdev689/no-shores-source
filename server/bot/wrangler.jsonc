@@ -25,6 +25,8 @@
   "r2_buckets": [{ "binding": "BOT_MEDIA", "bucket_name": "noshores-bot-media" }],
   "durable_objects": { "bindings": [{ "name": "GATEWAY", "class_name": "BotGateway" }] },
   "migrations": [{ "tag": "gateway", "new_sqlite_classes": ["BotGateway"] }],
+  // The accounts' reader of linked characters (accounts/wrangler.jsonc), reached by RPC alone, for the game module.
+  "services": [{ "binding": "ACCOUNTS", "service": "overlook-accounts", "entrypoint": "LinkedCharacters" }],
   "vars": {
     // The bot's own public address: uploaded pictures are served from it, for Discord to fetch.
     "BOT_URL": "",
