@@ -1,18 +1,28 @@
-// What Manage shows of the player's Sloop: what the naval rules say it is, its measure, where its voyage stands and
-// its repair. Its power, modules and crew come with the player's gear (`shipGear.ts`).
-import { sloopBuildText } from '../network/localRoom.ts';
+// What Manage shows of the player's ship: what the naval rules say a ship of its hull is, its measure, where its voyage
+// stands and its repair. Its power, modules and crew come with the player's gear (`shipGear.ts`).
+import { hullBuildsText } from '../network/localRoom.ts';
 import { fetchRoomWasm } from '../rules/combatRules.ts';
 import { capital } from '../player/gear.ts';
 import { withKey } from './controls.ts';
 
-/** The Sloop's build as the room's door gives it (crates/room-wasm/src/deck_door.rs `sloop_build_json`). */
-export interface SloopBuild {
+/** A player's hull's build as the room's door gives it (crates/room-wasm/src/deck_door.rs `hull_builds_json`): its
+ *  name, hull and canvas whole, crew, guns a side and loads; and its class: how long it and its rig last against the
+ *  Sloop under the same fire, its broadside's weight, a whole crew's reload of a side in seconds, its way and swing
+ *  against the Sloop's, and the hands who board with its player. */
+export interface HullBuild {
   readonly name: string;
   readonly hull: number;
   readonly sail: number;
   readonly crew: number;
   readonly guns: { readonly port: number; readonly starboard: number };
   readonly loads: readonly string[];
+  readonly lasts: number;
+  readonly rig_lasts: number;
+  readonly broadside: number;
+  readonly reload_s: number;
+  readonly way: number;
+  readonly turn: number;
+  readonly boarders: number;
 }
 
 /** Its waterline's measure, metres. */
@@ -53,38 +63,48 @@ export interface ShipPanel {
 const isCount = (value: unknown): value is number => typeof value === 'number' && Number.isFinite(value) && value >= 0;
 
 /** The room's module fetched from `base` (asked again each time, so a new page never runs on an old one) and compiled
- *  once, and the Sloop's build as its naval rules hold it, read the
- *  first time it is asked once the module has come; null until then, or when it does not read. */
+ *  once, and each hull's build as its naval rules hold it, read the first time it is asked once the module has come;
+ *  null until then, or when it does not read. */
 export function roomModuleFrom(base: string): {
   readonly module: Promise<WebAssembly.Module>;
-  readonly sloop: () => SloopBuild | null;
+  readonly hulls: () => readonly HullBuild[] | null;
 } {
   const module = fetchRoomWasm(base)
     .then((answer) => (answer.ok ? answer.arrayBuffer() : Promise.reject(new Error(`room.wasm: ${answer.status}`))))
     .then((bytes) => WebAssembly.compile(bytes));
-  let [compiled, built]: [WebAssembly.Module | null, SloopBuild | null | undefined] = [null, undefined];
+  let [compiled, built]: [WebAssembly.Module | null, readonly HullBuild[] | null | undefined] = [null, undefined];
   void module.then((made) => (compiled = made)).catch(() => undefined);
-  const sloop = () =>
-    (compiled && built === undefined ? (built = sloopBuildOf(sloopBuildText(compiled))) : built) ?? null;
-  return { module, sloop };
+  const hulls = () =>
+    (compiled && built === undefined ? (built = hullBuildsOf(hullBuildsText(compiled))) : built) ?? null;
+  return { module, hulls };
 }
 
-/** The build in the door's JSON, if it is one. */
-export function sloopBuildOf(text: string): SloopBuild | null {
+/** One build of the door's JSON, if it is one. */
+function hullBuildOf(value: unknown): HullBuild | null {
+  if (typeof value !== 'object' || value === null) return null;
+  const build = value as Record<string, unknown>;
+  const guns = build['guns'] as Record<string, unknown> | undefined;
+  const loads = build['loads'];
+  const counted = [build['hull'], build['sail'], build['crew'], guns?.['port'], guns?.['starboard']].every(isCount);
+  const classed = ['lasts', 'rig_lasts', 'broadside', 'reload_s', 'way', 'turn', 'boarders'].every((key) =>
+    isCount(build[key]),
+  );
+  if (typeof build['name'] !== 'string' || !counted || !classed || !Array.isArray(loads)) return null;
+  if (!loads.every((load) => typeof load === 'string')) return null;
+  return value as HullBuild;
+}
+
+/** Every hull's build in the door's JSON, in the hulls' order, if it holds builds and only builds. */
+export function hullBuildsOf(text: string): readonly HullBuild[] | null {
   let value: unknown;
   try {
     value = JSON.parse(text);
   } catch {
     return null;
   }
-  if (typeof value !== 'object' || value === null) return null;
-  const build = value as Record<string, unknown>;
-  const guns = build['guns'] as Record<string, unknown> | undefined;
-  const loads = build['loads'];
-  const counted = [build['hull'], build['sail'], build['crew'], guns?.['port'], guns?.['starboard']].every(isCount);
-  if (typeof build['name'] !== 'string' || !counted || !Array.isArray(loads)) return null;
-  if (!loads.every((load) => typeof load === 'string')) return null;
-  return value as SloopBuild;
+  if (!Array.isArray(value) || value.length === 0) return null;
+  const builds = value.map(hullBuildOf);
+  return builds.every((build) => build !== null) ? (builds as HullBuild[]) : null;
 }
 
 const POINTS = ['N', 'NE', 'E', 'SE', 'S', 'SW', 'W', 'NW'] as const;
@@ -99,7 +119,7 @@ const metres = (value: number) => `${value.toFixed(1)} m`;
 
 /** The panel once its build is read, none before: for its build, its measure and its voyage, if it is under one. */
 export function shipPanelOnceBuilt(
-  build: SloopBuild | null,
+  build: HullBuild | null,
   measure: Measure,
   voyage: Voyaging | null,
   kept: Kept | null = null,
@@ -110,7 +130,7 @@ export function shipPanelOnceBuilt(
 /** The panel for its build, its measure, its voyage if it is under one, and the hurts the sea keeps with it (whole
  *  when it has said none) with its repair. */
 export function shipPanelOf(
-  build: SloopBuild,
+  build: HullBuild,
   measure: Measure,
   voyage: Voyaging | null,
   kept: Kept | null = null,

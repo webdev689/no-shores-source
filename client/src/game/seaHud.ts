@@ -14,7 +14,7 @@ import type { SeaFrame } from './seaFrame.ts';
 import type { SeaRoom } from './seaRoom.ts';
 import { aimLineOf } from './seaSight.ts';
 import { seaFightQuest } from './seaPanel.ts';
-import { shipPanelOf, type SloopBuild } from './shipPanel.ts';
+import { type HullBuild, shipPanelOf } from './shipPanel.ts';
 
 /** What the display reads off the game besides the sea: whether a landing is being chosen or the sea's controls are
  *  the player's, the island the ship lies off and the sea's own name, the clock, its build once Manage asks for it, its
@@ -25,7 +25,7 @@ export interface SeaHudState {
   readonly island: string | undefined;
   readonly region: string;
   readonly clock: number;
-  readonly build: () => SloopBuild | null;
+  readonly build: () => HullBuild | null;
   readonly waterline: Waterline;
   readonly charting: boolean;
   /** The friendly ships round the ship, for the compass. */
@@ -77,16 +77,17 @@ function showSight(hud: Hud, here: Sea, onDeck: boolean): void {
 export function seaPlace(
   here: Pick<Sea, 'boarding' | 'aboard' | 'waterWords'> & { readonly view: Pick<Sea['view'], 'helmView'> },
   shown: Pick<SeaFrame, 'landfall'>,
-  state: Pick<SeaHudState, 'landing' | 'island' | 'region'>,
+  state: Pick<SeaHudState, 'landing' | 'island' | 'region'> & Partial<Pick<SeaHudState, 'build'>>,
 ): [string, string] {
   const { island, region } = state;
+  const hull = state.build?.()?.name ?? 'Sloop';
   const deck = here.boarding.words;
   const water = here.waterWords ?? region;
   if (deck) return [deck.place, deck.line];
   if (state.landing) return ['Landings', island ? `The side of ${island} in view` : 'The coast in view'];
   if (here.view.helmView) return ['At the helm', water];
-  if (here.aboard.walking) return ['Aboard the Sloop', 'Off the helm'];
-  if (here.aboard.managing) return ['Managing the Sloop', water];
+  if (here.aboard.walking) return [`Aboard the ${hull}`, 'Off the helm'];
+  if (here.aboard.managing) return [`Managing the ${hull}`, water];
   return ['At sea', shown.landfall && island ? `Off ${island}` : water];
 }
 

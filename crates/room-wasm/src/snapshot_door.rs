@@ -166,6 +166,7 @@ pub fn prepare() {
                     taken: sea.taken(),
                     friendlies: sea.friendlies(),
                     plates: sea.ships().filter_map(|(player, _)| Some((player, sea.plate(player)?))).collect(),
+                    looks: sea.ships().filter_map(|(player, _)| Some((player, sea.look(player)?))).collect(),
                 },
                 deck_views,
                 islands,
@@ -215,6 +216,7 @@ pub fn snapshot_for(player: PlayerId) -> Vec<u8> {
                 taken: all.taken.clone(),
                 friendlies: friendlies_seen(parts.own(player), &all.friendlies),
                 plates: all.plates.iter().filter(|(other, _)| sent(other)).cloned().collect(),
+                looks: all.looks.clone(),
             };
             // Each player's fight view is theirs alone too.
             let fights: Vec<_> = parts.fights.iter().filter(|fight| fight.player == player).cloned().collect();

@@ -534,7 +534,7 @@ through its harbour to water 4 m deep, then 600 m on. Later returns find it wher
   the Sloop 3, the Schooner 4, the Brig 5, the Frigate 6. On a Grey Tithe ship the Tithe-Mate stands at the
   wheel in the roster's dress, and on a Grey Tithe Boss's Captain Brannoc Thule; its hands wear the dress of the deck crew its boarders meet ([[Naval Combat]], "Its deck"),
   its lead first unless the lead is at the wheel, then its plain hands in turn. Everyone aboard keeps their weapons
-  sheathed. Another player's Sloop and a friendly ship, the room's too, carry a plain master and plain hands, as the player's own
+  sheathed. Another player's ship and a friendly ship, the room's too, carry a plain master and plain hands, as the player's own
   stand-ins look; seen from land, the friendly ships passing carry theirs too. A figure is drawn only while it would
   stand 4 pixels tall or more on the picture (`figureReach`): about 250 m off on a 720-pixel picture through the sea's
   field, as many times farther as its ship is drawn larger. The nearest are drawn first, 40 at most a frame across
@@ -822,7 +822,7 @@ blinks open: dark for 0.3 s, open to 15% dark by 0.5 s, shut to 90% by 0.6 s, op
   tries each step down: one that leaves the frames no 10% quicker is taken back, and steps down then wait 30 s, twice
   as long after each that did not help, up to 160 s. A browser may round its timestamps: Chrome rounds them to
   0.1 ms unless its WebGPU developer features are on, so a short pass reads 0 or 0.1 ms and only the means hold.
-- The people seen aboard another ship are drawn, not the room's: another player's Sloop shows plain people, not that
+- The people seen aboard another ship are drawn, not the room's: another player's ship shows plain people, not that
   player's own look, and a captain's hands and captain are not its deck crew until it is boarded. Ships moored by a
   social space's pier carry no one. A captain's ship met at sea is known by its sea number and in its fight by its
   fight's, which the fight's view does not tie together: its hands are laid out afresh as its fight begins and ends,

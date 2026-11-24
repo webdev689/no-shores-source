@@ -59,7 +59,7 @@ export async function bootGame(gpu: Gpu, canvas: HTMLCanvasElement, shipScale: (
   const { link, session } = accountOf(location, localStorage, sessionStorage);
   if (link) void keepBinds(link);
   // The sea room's own module, for playing alone, fetched now; and the Sloop's build from it, for Manage's panel.
-  const { module: roomModule, sloop: builtSloop } = roomModuleFrom(base);
+  const { module: roomModule, hulls: builtHulls } = roomModuleFrom(base);
   const land = startLandWorker();
   const scene = new GameScene(gpu);
   // The interface the game draws itself, once its face is read, alone until the game's frames begin.
@@ -110,7 +110,7 @@ export async function bootGame(gpu: Gpu, canvas: HTMLCanvasElement, shipScale: (
   const views = { scene, figureView, eventProps, shipModels, forge, firstPerson, store, sloop };
   const modules = {
     roomModule,
-    builtSloop,
+    builtHulls,
     land,
     movement,
     seaWeather,

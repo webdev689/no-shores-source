@@ -360,8 +360,9 @@ rank each, fight whom they choose, all in one fight ([[Naval Combat]]).
 - **Its weather.** The host opens it at the world's time (`room_world_start`); its sea takes the weather at its place
   then and keeps it, and its snapshot carries that time (`world_start`), so a browser predicting its ship sails in the
   same weather.
-- **Putting to sea.** A player joins with no ship at sea. The first of their orders that says where puts their Sloop to
-  sea there, at that heading, anywhere in the world's frame; after that only its helm moves it.
+- **Putting to sea.** A player joins with no ship at sea. The first of their orders that says where puts their ship to
+  sea there, in the hull their character sails ([[Shipyard]]), at that heading, anywhere in the world's frame; after
+  that only its helm moves it.
 - **Orders** are taken as a land room takes inputs: numbered 1, 2, 3 and so on, refused out of order or with a number
   that is not one (a rudder past its throw, a rung of more than one, a look past its half circle or the guns' 100 km);
   one a tick, never more than the ticks since they joined and 6 of slack, 3 a tick at most to catch up, and none in a

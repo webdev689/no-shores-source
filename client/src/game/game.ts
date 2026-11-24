@@ -11,7 +11,7 @@ import { Walker } from '../player/walker.ts';
 import { RoomThread } from '../network/roomThread.ts';
 import { RoomConnection } from '../network/roomConnection.ts';
 import { MarkView } from '../ships/markView.ts';
-import { HULL_NAMES } from '../ships/hulls.ts';
+import { HULL_NAMES, hullWaterline, SLOOP_HULL } from '../ships/hulls.ts';
 import { Ambience } from './audio/ambience/ambience.ts';
 import { MusicDirector } from './audio/music/director.ts';
 import { Charting } from './charting.ts';
@@ -72,7 +72,7 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement): Promise<vo
   const boot = await bootGame(gpu, canvas, () => shipScale);
   const { hud, stack, ui, story, rooms, link, session, world, landTexts, start, shown, roomModule, land } = boot;
   const { scene, shipModels, figureView, forge, firstPerson, store, sloop, movement, drawersOn, terrainFor } = boot;
-  const { builtSloop } = boot;
+  const { builtHulls } = boot;
   const dungeons = new DungeonDrawers(gpu, figureView, boot.cityAssets, boot.biomeOf);
   const { continents } = world;
   const input = new Input(canvas, () => ui.typing);
@@ -501,11 +501,15 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement): Promise<vo
   hud.onManage(manage);
   hud.onLeaveHelm(leaveHelm);
   hud.onTakeHelm(takeHelm);
+  // The hull the player sails, by the gear the room last sent, its build and its waterline.
+  const sailed = () => fed()?.gear?.ship?.sailed ?? SLOOP_HULL;
+  const builtShip = () => builtHulls()?.[sailed()] ?? null;
+  const shipWaterline = () => hullWaterline(sailed());
   // The Ship tab's papers: its voyage only while it is at sea.
   const shipNow = () =>
     shipPanelOnceBuilt(
-      builtSloop(),
-      sloop.waterline,
+      builtShip(),
+      shipWaterline(),
       playing.flow.mode === 'sea' ? playing.sea : null,
       playing.seaWord?.keptOf(playing.sea?.sighted ?? null) ?? null,
     );
@@ -524,7 +528,9 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement): Promise<vo
   const fed = () => (playing.flow.mode === 'sea' ? (playing.sea?.gear ?? null) : gearHere());
   const fighting = () => footView.shown.fight;
   const resting = () => (storyMode() && !story?.gear) || Boolean(playing.sea?.travelling);
-  stack.add(startGearWindow(fighting, link, gearHere, shipNow, joinAt, resting, fed, screens, playing.lore));
+  stack.add(
+    startGearWindow(fighting, link, gearHere, shipNow, joinAt, resting, fed, screens, playing.lore, builtHulls),
+  );
   stack.add(screens.layer); // the card E opens at a dungeon's entrance, over the menu's layer
   addEventListener('keyup', (event) => void (playing.flow.mode === 'story' && story?.key(keyUpNameOf(event), false)));
   listenForControls({
@@ -562,8 +568,8 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement): Promise<vo
     {
       ...{ gpu, canvas, hud, input, scene, walker, firstPerson, footView, shipModels, figureView, traffic },
       ...{ ui, stack, drain, crews: shipPeopleOf(roomModule, forge) },
-      ...{ shown, charting, seaWeather: boot.seaWeather, seaView: boot.seaView, waterline: sloop.waterline },
-      ...{ builtSloop, closeSource, waterHere, leave, travel, goFoot, isleFrame, groundAt, story, arrive },
+      ...{ shown, charting, seaWeather: boot.seaWeather, seaView: boot.seaView, waterline: shipWaterline },
+      ...{ builtShip, closeSource, waterHere, leave, travel, goFoot, isleFrame, groundAt, story, arrive },
       ...{ isles: islesDrawer, eventProps: boot.eventProps },
       ...{ world, music, ambience, dungeons },
       heed: (here) => heed(here, (why) => travel({ kind: 'shut', why }, goSea), playing.flow.mode === 'foot'),

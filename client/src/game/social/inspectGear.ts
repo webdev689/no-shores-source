@@ -6,7 +6,7 @@ import type { Details } from '../../network/accounts.ts';
 import type { GearColumn, GearItem, GearState } from '../../network/gearMessages.ts';
 import { WORN } from '../../player/gear.ts';
 import { ARTS } from '../artsCards.ts';
-import { EMBLEMS } from '../emblemArt.ts';
+import { EMBLEMS } from '../../plus/emblemArt.ts';
 
 /** A gilded piece is drawn with every node bought: one column with nothing in it, its one node bought. */
 const GILDED: readonly GearColumn[] = [{ kind: 0, traits: [], xp: 0, aurem: 0, fragments: 0, essence: 0, resource: 0 }];

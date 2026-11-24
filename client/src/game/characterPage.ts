@@ -17,7 +17,7 @@ import { LOCK_MAP, mapSvg } from '../player/artGlyphs.ts';
 import { ARTS, artCard, artOf, emblemSvg, frameSvg } from './artsCards.ts';
 import { ART_DIAMOND_KEY } from './artsPage.ts';
 import { APPEARANCE_KEY } from './appearanceButton.ts';
-import { emblemOf } from './emblemArt.ts';
+import { emblemOf } from '../plus/emblemArt.ts';
 import { cardFrame, cardName, cardNode, elementTone, rarityTone } from './gearCard.ts';
 import { cardOf, flyoutOf, wearIn } from './gearCards.ts';
 import { DISMANTLE_KEY, quiver, washNode } from './gearHold.ts';

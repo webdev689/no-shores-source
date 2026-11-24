@@ -20,7 +20,7 @@ import { portOf } from './nodes.ts';
 import type { Swell } from '../rules/landRules.ts';
 import type { SeaFacts } from '../rules/watersRules.ts';
 import { SKY_NOW } from '../sky/skyDriver.ts';
-import { type Lying, SLOOP_DECK } from '../ships/deck.ts';
+import type { Lying } from '../ships/deck.ts';
 import { Aboard } from './aboard.ts';
 import { Boarding } from './deckBoarding.ts';
 import { Foot, type FootContext } from './foot.ts';
@@ -114,15 +114,15 @@ export class Sea {
     aboard: FootContext,
   ) {
     [this.landmass, this.hull, this.context] = [landmass, hull, aboard];
-    this.drawn = new SeaShips(hull.shown);
+    this.drawn = new SeaShips(hull.shown, undefined, () => this.room?.ownShip ?? null);
     [this.aboard, this.boarding] = [
-      new Aboard(aboard, SLOOP_DECK),
+      new Aboard(aboard, () => this.drawn.ownDeck()),
       new Boarding(aboard, (...asked) => Foot.onDeck(...asked)),
     ];
     this.scale = SHIP_DRAWN_M / hull.waterline.lengthM;
     this.passage = new Passage(outlines, () => this.landmass.mask, start, heading);
     this.passage.keepClear = () => keptClear(this.isles?.all() ?? []);
-    this.view = new SeaView(start, heading);
+    this.view = new SeaView(start, heading, () => this.drawn.ownDeck());
     this.setLandmass(landmass);
   }
 

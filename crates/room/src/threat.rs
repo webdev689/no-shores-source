@@ -79,11 +79,11 @@ pub fn held_pace(pace: u16, at: [f64; 2], heading: f64, hostiles: impl IntoItera
     rate
 }
 
-/// Whether a hostile ship holds a voyage at `at`, its hull at `hull` of whole, that it would meet: it is within its
-/// hold of it and bold, or chased by its player (`chased`, its number), or wary and one it would fall on
-/// (`wary_takes`). A ship beyond its hold, or one that will not engage, caps the pace only by the ladder.
+/// Whether a hostile ship holds a voyage at `at` of a ship of `hull`, its hull at that share of whole, that it would
+/// meet: it is within its hold of it and bold, or chased by its player (`chased`, its number), or wary and one it
+/// would fall on (`wary_takes`). A ship beyond its hold, or one that will not engage, caps the pace only by the ladder.
 #[must_use]
-pub fn holds(hostile: &Hostile, at: [f64; 2], chased: Option<u32>, hull: f64) -> bool {
+pub fn holds(hostile: &Hostile, at: [f64; 2], chased: Option<u32>, hull: (sailing::HullKind, f64)) -> bool {
     libm::hypot(hostile.x - at[0], hostile.y - at[1]) <= HOSTILE_NEAR_M
         && (hostile.bold || chased == Some(hostile.id) || wary_takes(hostile.commission, hostile.strength(), hull))
 }

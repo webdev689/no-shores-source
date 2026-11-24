@@ -4,7 +4,7 @@
 import type { PixelPicture } from '../../combat/dropPictures.ts';
 import { svgOf } from '../../plus/emblems.ts';
 import { TONES } from '../../plus/tones.ts';
-import { MOTIFS } from '../emblemMotifs.ts';
+import { MOTIFS } from '../../plus/emblemMotifs.ts';
 
 /** A cover's shape, its width to its height, as its pixels stand at its smallest (48 CSS pixels, a pixel each). */
 export const COVER: readonly [number, number] = [48, 60];

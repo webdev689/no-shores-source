@@ -111,7 +111,7 @@ are in [[Crew]].
 
   A ship sinks to the ball that takes the last of its hull: that ball's shooter sank it. Only a player's ship is
   fitted, so a captain's carries none of these. The trim's numbers cross in the gear message beside the rest.
-- **Its hands.** The player's Sloop carries ten men ([[Crew]]): balls cut them down as a captain's are, a thinned crew
+- **Its hands.** The player's ship carries its hull's men, the Sloop ten ([[Crew]], [[Shipyard]]): balls cut them down as a captain's are, a thinned crew
   reloads its guns slower (whole, at the pace one player alone always loaded them), and the sea keeps the share left
   until a port city repairs it ([[Naval Combat]], "How a fight ends").
 - **What a fight pays.** A captain going down pays as twelve kills of a foe of its rank would, at its level, raised by

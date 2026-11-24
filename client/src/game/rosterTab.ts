@@ -9,7 +9,7 @@ import { button } from '../ui/controls.ts';
 import { announce } from '../ui/announce.ts';
 import type { Child, Node } from '../ui/node.ts';
 import type { Interface } from '../ui/ui.ts';
-import { emblemOf } from './emblemArt.ts';
+import { emblemOf } from '../plus/emblemArt.ts';
 import { INK, emblemNode, plateNode, pressNode, svgNode, words } from './gearNodes.ts';
 import { ROSTER_HEARD } from './gearScreen.ts';
 import type { PlainContext } from './menuPage.ts';

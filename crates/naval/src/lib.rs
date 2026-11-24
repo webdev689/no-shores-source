@@ -7,6 +7,7 @@ pub mod arms;
 pub mod ballistics;
 pub mod boost;
 pub mod captain;
+pub mod class;
 pub mod damage;
 pub mod fight;
 pub mod gunnery;

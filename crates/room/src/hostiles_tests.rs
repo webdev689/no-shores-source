@@ -33,7 +33,17 @@ impl Chart for OneWater {
 
 /// A player's ship at `at`, heading north at `pace`, fighting or not; its waters run at its pace.
 fn voyager(player: PlayerId, at: [f64; 2], pace: u16, fighting: bool) -> Voyager {
-    Voyager { player, at, heading: 0.0, pace, fighting, home: false, clock: f64::from(pace.max(1)), hull: 1.0 }
+    Voyager {
+        player,
+        at,
+        heading: 0.0,
+        pace,
+        fighting,
+        home: false,
+        clock: f64::from(pace.max(1)),
+        hull: 1.0,
+        hull_kind: sailing::HullKind::Sloop,
+    }
 }
 
 fn standing(id: u32, at: [f64; 2], heading: f64, bold: bool) -> Hostile {

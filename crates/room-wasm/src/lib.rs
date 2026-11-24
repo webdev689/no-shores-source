@@ -542,10 +542,10 @@ pub extern "C" fn room_snapshot_for(player: PlayerId) -> u64 {
     hand_over(snapshot_door::snapshot_for(player))
 }
 
-/// The Sloop's build as the naval rules hold it, as JSON (`deck_door::sloop_build_json`).
+/// Each player's hull's build as the naval rules hold it, as JSON (`deck_door::hull_builds_json`).
 #[unsafe(no_mangle)]
-pub extern "C" fn room_sloop() -> u64 {
-    hand_over(deck_door::sloop_build_json().into_bytes())
+pub extern "C" fn room_hulls() -> u64 {
+    hand_over(deck_door::hull_builds_json().into_bytes())
 }
 
 /// The port cities' ids as JSON (`world::ports::MAIN_PORTS`): every other city is a ruin.

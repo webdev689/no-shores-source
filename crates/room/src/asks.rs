@@ -40,6 +40,8 @@ pub const FALLEN: u8 = 105;
 pub const FIGHTING: u8 = 106;
 /// The player may return to their ship: a yes no other ask gives, so the page never takes another's done for it.
 pub const TO_SHIP: u8 = 107;
+/// The player keeps no ship yet to return to: the Harbourmaster hands over the first (`gear::ship::fleet`).
+pub const NO_SHIP: u8 = 108;
 /// How long past a foe's blow a player waits to return to their ship: ten seconds.
 pub const TO_SHIP_AFTER_TICKS: u64 = 10 * 60;
 
@@ -195,6 +197,8 @@ pub fn counter_for(ask: &Ask) -> Option<CounterKind> {
         Ask::Speak { keeper } => keeper_counter(*keeper),
         Ask::TakeBounty { .. } | Ask::TurnInBounty { .. } => Some(CounterKind::Board),
         Ask::TakeLetter { .. } | Ask::TakeAllLetters => Some(CounterKind::Mail),
+        // The Harbourmaster's counter is the Shipwright's.
+        Ask::Ship(_) => Some(CounterKind::Vendor(Vendor::Shipwright)),
         _ => None,
     }
 }
@@ -276,9 +280,12 @@ impl Room {
         self.here(player, &Ask::Identify { vestige: 0 }).social
     }
 
-    /// Whether a player may return to their ship now: `TO_SHIP`, or why not (`FALLEN`, `FIGHTING`).
+    /// Whether a player may return to their ship now: `TO_SHIP`, or why not (`NO_SHIP`, `FALLEN`, `FIGHTING`).
     fn to_ship(&self, player: PlayerId) -> u8 {
         let Some(found) = self.players.get(&player) else { return TO_SHIP };
+        if !found.character.has_ship() {
+            return NO_SHIP;
+        }
         if found.fighter.dead() || matches!(found.standing, Standing::Dead { .. }) {
             return FALLEN;
         }

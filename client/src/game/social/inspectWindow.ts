@@ -11,7 +11,7 @@ import type { Node } from '../../ui/node.ts';
 import type { Interface } from '../../ui/ui.ts';
 import { uiScale } from '../../ui/uiRenderer.ts';
 import { characterPage } from '../characterPage.ts';
-import { emblemOf } from '../emblemArt.ts';
+import { emblemOf } from '../../plus/emblemArt.ts';
 import { Holds } from '../gearHold.ts';
 import { INK, pressNode, sizesOf, words } from '../gearNodes.ts';
 import { bannerNode } from '../gearShell.ts';

@@ -237,7 +237,14 @@ fn the_sea_opens_on_a_layout_with_its_ports_whose_lanes_the_tithe_patrols() {
 }
 
 /// Both tests hold this value: roomDoor.test.ts runs the same sea through WebAssembly, as the servers and the page do.
-pub const SEA_CLASH_HASH: &str = "74ddb4da44c57151";
+pub const SEA_CLASH_HASH: &str = "8aa4922bbf32e293";
+
+/// A new player handed the Sloop, as the Harbourmaster hands it over in the welcome: one the sea lets in.
+fn sailor() -> gear::Character {
+    let mut character = gear::Character::starting();
+    assert!(character.give_first_ship());
+    character
+}
 /// The world time the sea opens at, so the weather its fights sail in is the same every run.
 pub const CLASH_START_S: f64 = 1_790_153_100.0;
 
@@ -554,7 +561,7 @@ fn what_the_sea_tells_a_player_goes_to_them_alone() {
         assert_eq!(input(player, &protocol::course_bytes(&[[50_000.0, 50_000.0]], 10)), TAKEN);
     }
     room_tick();
-    let mut character = gear::Character::starting();
+    let mut character = sailor();
     character.ship_at = Some([60_000, 50_000]);
     assert!(gear_door::restore_character(first, character.to_json().as_bytes()));
     snapshot_door::prepare();
@@ -662,7 +669,7 @@ fn at_sea_a_players_gear_is_sent_from_the_character_the_sea_keeps_once_it_change
             sea.minute = minute;
         }
     });
-    let mut character = gear::Character::starting();
+    let mut character = sailor();
     character.materials.add_aurem(777);
     character.activity.today.day = gear::clock::day_of(minute);
     character.activity.today.bounties.insert(2, 1);
@@ -684,10 +691,10 @@ fn at_sea_each_sailors_gear_carries_their_own_characters_story_alone() {
         assert_eq!(input(player, &protocol::course_bytes(&[[50_000.0, 50_000.0]], 10)), TAKEN);
     }
     room_tick();
-    let mut past = gear::Character::starting();
+    let mut past = sailor();
     past.story.prologue = true;
     assert!(gear_door::restore_character(done, past.to_json().as_bytes()));
-    assert!(gear_door::restore_character(new, gear::Character::starting().to_json().as_bytes()));
+    assert!(gear_door::restore_character(new, sailor().to_json().as_bytes()));
     let prologue = |player| {
         let bytes = gear_door::gear(player);
         messages::root_as_from_room(&bytes).unwrap().gear().expect("their gear").prologue_done()
@@ -750,10 +757,11 @@ fn each_player_at_sea_is_sent_only_those_walking_the_decks_of_the_ships_they_are
 #[test]
 fn the_sea_says_why_its_tier_shuts_to_a_kept_character_or_a_new_one() {
     small_sea();
-    assert_eq!(shut(0, b""), "", "the Normal sea is open to anyone");
+    assert_eq!(shut(0, b""), gear::gate::NO_SHIP, "a new one keeps no ship yet");
+    assert_eq!(shut(0, sailor().to_json().as_bytes()), "", "the Normal sea is open to anyone who keeps a ship");
     assert!(set_difficulty(2));
-    assert_eq!(shut(0, b""), "Abyss seas open at level 20.");
-    let mut seasoned = gear::Character::starting();
+    assert_eq!(shut(0, sailor().to_json().as_bytes()), "Abyss seas open at level 20.");
+    let mut seasoned = sailor();
     seasoned.xp = gear::power::xp_for_level(20);
     assert_eq!(shut(0, seasoned.to_json().as_bytes()), "", "a character of level 20 sails it");
 }

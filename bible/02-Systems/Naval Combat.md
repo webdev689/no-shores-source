@@ -19,7 +19,7 @@ code:
   - crates/naval/src/captain/aim.rs#Judgement
   - crates/naval/src/captain/odds.rs#odds
   - crates/naval/src/fight.rs#Fight
-  - crates/naval/src/fight.rs#sail_hurt
+  - crates/naval/src/fight_helm.rs#sail_hurt
   - crates/naval/src/boost.rs#Boost
   - crates/naval/src/fight_step.rs
   - crates/naval/src/fight_focus.rs#spread_after
@@ -83,7 +83,8 @@ code:
 ---
 # Naval Combat
 
-Broadsides, and rams, between players' Sloops and the enemy factions' captains, each in its rank's hull: DFO's naval
+Broadsides, and rams, between players' ships, each in the hull its player sails ([[Shipyard]]), and the enemy factions'
+captains, each in its rank's hull: DFO's naval
 combat, rebuilt in Rust ([[Pick - Sailing and Naval Combat]]) on the [[Sailing]] crate's ships. The owner fights one
 captain alone in the [[World Editor]], or with other players in a fleet room on the [[Server]]. At sea a fight ends
 in a sinking and what floats, or in a captain striking and a boarding; a player who loses washes up at a port city,
@@ -116,7 +117,7 @@ sea's soundscape ([[Ambience]]).
   ripples 0.09 s a gun, each ball from where its port is by then, scattered by the volley's seed (more for a poorer
   gunner). No battery bears within 35 degrees of its bow or 40 of its stern. Each side reloads on its own clock: a
   captain's 4 to 7.2 s by its crew left; the player's Sloop's ten hands load its guns in 5.6 s whole, up to 10.1 s with
-  none left ([[Crew]], "Hands").
+  none left ([[Crew]], "Hands"), another hull at its class's pace ([[Shipyard]]).
 - **The loads** are round, grape, chain and heated shot, with DFO's factors over round shot: grape is slower and wider
   and kills men (less as its flight lengthens), chain tears canvas, heated shot sets a ship alight. A loaded side drawn
   for a new load takes half its reload; one loading keeps its progress.
@@ -287,8 +288,9 @@ Elite's or a Miniboss's mark, above a bar of their hull, red, orange or yellow b
 no plate covers another. A Boss's stands across the top of the screen with their faction's name. Out of a fight, each
 other player's ship wears the plate that player wears on land ([[Interface]], "Players").
 
-A hull changes the ship's size, its boxes, its sails, its handling, its stem and how many guns it carries, never its
-strength: the table above is the whole of it. A bigger box is struck more often, so its canvas and men are its class's
+For a captain, a hull changes the ship's size, its boxes, its sails, its handling, its stem and how many guns it
+carries, never its strength: the table above is the whole of it. A player's ship has its hull's class's numbers
+instead ([[Shipyard]], "Each hull's numbers"). A bigger box is struck more often, so its canvas and men are its class's
 times its rank's times its exposure: the fight's hit share on its box over the Sloop's, from the Sloop's guns at the
 duel's 110 m by a captain's gunners (the Schooner 1.44, the Brig 1.65, the Frigate 1.88). Its hull points take it too,
 less for a taller hull's hits holing it less often (the Schooner 1.39, the Brig 1.58, the Frigate 1.79), so the same

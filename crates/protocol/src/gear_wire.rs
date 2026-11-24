@@ -6,6 +6,7 @@ use crate::lore_wire::FIND_LORE;
 use crate::messages;
 use flatbuffers::{FlatBufferBuilder, WIPOffset};
 use gear::arts::ArtAsk;
+use gear::ship::shipyard::ShipAsk;
 use gear::{Ask, At, Kind, Rarity, Slot};
 use room::{Asked, Drop, Dropped, Grant, PlayerId, Room};
 
@@ -100,6 +101,14 @@ pub const CHOOSE_FRAGMENT: u8 = 65;
 pub const USE_POINT: u8 = 66;
 /// A return to the player's ship asked, which the room answers before the page leaves for the sea.
 pub const TO_SHIP: u8 = 73;
+/// The Harbourmaster's asks (`gear::ship::shipyard`), the hull's number in `column`: a hull bought, a ship kept sailed,
+/// a dress bought by its number in `item`, a dress kept laid on a ship (`item` the dress), and a ship named (its
+/// words' places in `node` and `slot`, 255 for no first word).
+pub const BUY_SHIP: u8 = 79;
+pub const SAIL_SHIP: u8 = 80;
+pub const BUY_DRESS: u8 = 81;
+pub const DRESS_SHIP: u8 = 82;
+pub const NAME_SHIP: u8 = 83;
 /// Shape's place on the gear message while he is away.
 pub const SHAPE_AWAY: u8 = 255;
 
@@ -197,8 +206,28 @@ pub fn asked_of(ask: &messages::Ask<'_>) -> Option<Asked> {
         USE_POINT => Asked::UsePoint { point: column },
         FIND_LORE => Asked::FindLore { chapter: u16::try_from(item).ok()? },
         TO_SHIP => Asked::ToShip,
+        BUY_SHIP => Asked::Gear(Ask::Ship(ShipAsk::Buy { hull: column })),
+        SAIL_SHIP => Asked::Gear(Ask::Ship(ShipAsk::Sail { hull: column })),
+        BUY_DRESS => Asked::Gear(Ask::Ship(ShipAsk::BuyDress { dress: u16::try_from(item).ok()? })),
+        DRESS_SHIP => Asked::Gear(Ask::Ship(ShipAsk::Dress { hull: column, dress: u16::try_from(item).ok()? })),
+        NAME_SHIP => Asked::Gear(Ask::Ship(ShipAsk::Name { hull: column, first: node, second: ask.slot() })),
         _ => return None,
     })
+}
+
+/// One of the Harbourmaster's asks as an input carries it.
+fn ship_ask_args<'built>(ask: ShipAsk, args: messages::AskArgs<'built>) -> messages::AskArgs<'built> {
+    match ask {
+        ShipAsk::Buy { hull } => messages::AskArgs { kind: BUY_SHIP, column: hull, ..args },
+        ShipAsk::Sail { hull } => messages::AskArgs { kind: SAIL_SHIP, column: hull, ..args },
+        ShipAsk::BuyDress { dress } => messages::AskArgs { kind: BUY_DRESS, item: u32::from(dress), ..args },
+        ShipAsk::Dress { hull, dress } => {
+            messages::AskArgs { kind: DRESS_SHIP, column: hull, item: u32::from(dress), ..args }
+        }
+        ShipAsk::Name { hull, first, second } => {
+            messages::AskArgs { kind: NAME_SHIP, column: hull, node: first, slot: second, ..args }
+        }
+    }
 }
 
 /// An ask written as an input carries it: for tests, as a browser writes it.
@@ -279,6 +308,7 @@ pub fn ask_offset<'built>(builder: &mut FlatBufferBuilder<'built>, asked: &Asked
                 let item = u32::try_from(day).unwrap_or(u32::MAX);
                 args = messages::AskArgs { kind: TURN_IN_BOUNTY, item, node: place, ..args };
             }
+            Ask::Ship(ship) => args = ship_ask_args(ship, args),
         },
         Asked::Gather { node } => args = messages::AskArgs { kind: GATHER, node: *node, ..args },
         Asked::OpenChest { chest } => args = messages::AskArgs { kind: OPEN_CHEST, item: *chest, ..args },

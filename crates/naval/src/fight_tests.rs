@@ -1,4 +1,5 @@
 use super::*;
+use crate::arms::LARGE_BOAT;
 use crate::arms::Side;
 use crate::arms::{SLOOP_ARMS, TITHE_SLOOP};
 use crate::ballistics::Ball;
@@ -8,6 +9,7 @@ use crate::gunnery::{Lay, lay, lay_on};
 use crate::laying::Sighted;
 use crate::shots::ShotEvent;
 use crate::shots::step_balls;
+use sailing::TICK_SECONDS;
 use sailing::waters::Spot;
 
 /// Deep, still water everywhere.
@@ -502,8 +504,14 @@ fn a_captain_raised_to_a_strength_fights_with_that_many_times_its_hull_men_and_g
     assert_eq!(command.mind.strength, 2.0);
     let gun = commission.armed(crate::guns::SWIVEL, command.mind.strength);
     assert_eq!(gun.hull, commission.armed(crate::guns::SWIVEL, 1.0).hull * 2.0, "its guns' harm as many times");
-    assert!(!crate::captain::wary_takes(commission, 1.0, 1.0), "a wary Minor will not fall on a whole Sloop");
-    assert!(crate::captain::wary_takes(commission, 6.0, 1.0), "six times as strong, the Minor outguns the Sloop");
+    assert!(
+        !crate::captain::wary_takes(commission, 1.0, (HullKind::Sloop, 1.0)),
+        "a wary Minor will not fall on a whole Sloop"
+    );
+    assert!(
+        crate::captain::wary_takes(commission, 6.0, (HullKind::Sloop, 1.0)),
+        "six times as strong, the Minor outguns the Sloop"
+    );
 }
 
 /// A sound Sloop from rest heading north (rowing ahead, or climbing for sail) stepped `ticks` by `helm`, in a fight or
@@ -519,7 +527,7 @@ fn sailed_from(ship: Ship, helm: Helm, fighting: bool, ticks: u32) -> Ship {
         let time = f64::from(tick) * TICK_SECONDS;
         let order = if tick == 0 { helm } else { Helm { climb: 0, ..helm } };
         ship = if fighting {
-            sail_hurt(&ship, &sailing::hull::SLOOP, order, sound, &Open, WIND, time).0
+            sail_hurt(&ship, HullKind::Sloop, order, sound, &Open, WIND, time).0
         } else {
             sailing::ship::step_ship(&ship, &order, &sailing::hull::SLOOP, WIND, &Open, time, TICK_SECONDS)
         };

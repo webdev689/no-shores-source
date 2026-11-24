@@ -1,9 +1,9 @@
-// The ship's tab of the menu and the harbourmaster's counter, drawn by the game. Manage: its papers (what the naval
-// rules say it is), its power with a meter to its next level, its four modules and those carried, each a tile
-// opening the module's page with its node grid, its materials and its hands. Crew: each officer by name, post and
-// grade, their level's meter, their duty and the presses that change it, paying them off, and their node grid on a
-// page of their own. The harbourmaster's counter: the Shipwright's wares. The muster of the officers of the day
-// stands on the screen of the faction pledged to's keeper, whose counter signs them on.
+// The ship's tab of the menu, drawn by the game. Manage: its papers (what the naval rules say a ship of its hull is),
+// its power with a meter to its next level, its four modules and those carried, each a tile opening the module's
+// page with its node grid, its materials and its hands. Crew: each officer by name, post and grade, their level's
+// meter, their duty and the presses that change it, paying them off, and their node grid on a page of their own. Then
+// the Shipwright's wares, part of the Harbourmaster's counter (harbour/harbourPage.ts); and the muster of the
+// officers of the day, on the screen of the faction pledged to's keeper, whose counter signs them on.
 
 import type { GearItem, GearOfficer } from '../network/gearMessages.ts';
 import { WORN } from '../player/gear.ts';
@@ -44,6 +44,8 @@ import {
 } from './shipGear.ts';
 import type { ShipPanel } from './shipPanel.ts';
 
+/** What the Ship tab says before the player keeps a ship. */
+export const NO_SHIP_YET = "You have no ship yet. The Harbourmaster in Overlook's market has one for you.";
 /** The Shipwright's number among the vendors (`Vendor::ALL`). */
 const SHIPWRIGHT = 2;
 /** A tile and the glyph or picture in it, a module's press, and an officer's emblem small and on their page, in
@@ -442,6 +444,9 @@ export function shipTab(
   choose: (part: string, officer: number | null) => void,
 ): Node {
   const shown = part === 'crew' ? 'crew' : 'manage';
+  // A new player keeps no ship until the Harbourmaster hands over the first; a room that sends no ship's part is
+  // taken as one that keeps it.
+  if (context.gear.ship?.fleet.length === 0) return hintNode(NO_SHIP_YET);
   return {
     width: 'grow',
     direction: 'column',
@@ -517,8 +522,9 @@ export function musterAt(context: MenuContext, faction: number | undefined): Nod
   ];
 }
 
-/** The Harbourmaster's counter: the Shipwright's modules of the day, each held to buy, as Destiny's vendors sell. */
-export function harbourPage(context: MenuContext): Node {
+/** The Shipwright's part of the Harbourmaster's counter: its modules of the day, each held to buy, as Destiny's
+ *  vendors sell. */
+export function shipwrightPart(context: MenuContext): Node {
   const { ui, holds, gear, sizes } = context;
   const stall = vendorsOf(gear)[SHIPWRIGHT];
   const wares = (stall?.wares ?? []).map((ware, place): Node => {

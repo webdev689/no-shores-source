@@ -99,8 +99,11 @@ Done for the Schooner, the Brig and the Frigate:
 - **A ship's hull, everywhere** in the rules: every ship in a fight carries its hull and sails, fights, is struck and
   rams as it; a captain's rank picks it (`Rank::hull`) and names the ship (the Tithe Brig, the Tithe Frigate; a friendly ship keeps the traffic's hull, the Merchant Brig); the
   snapshots, a fight's view and the doors carry it.
-- **Never its strength**: its canvas drives it no harder than the Sloop's, and its side's broadside takes as much
-  from a ship as the Sloop's, however many guns share it ([[Naval Combat]], "Ranks and factions").
+- **Never a captain's strength**: its canvas drives it no harder than the Sloop's, and its side's broadside takes as
+  much from a ship as the Sloop's, however many guns share it ([[Naval Combat]], "Ranks and factions").
+- **A player's hull's own numbers**: a player sails any of the four the Harbourmaster keeps, each by its class: how
+  long it lasts, its broadside's weight and reload, its way and swing, and its boarders ([[Shipyard]],
+  [[The Harbourmaster Keeps Every Ship, Each With Its Own Numbers and Dress]]).
 
 - **Drawing them**: every ship is drawn as its own hull in its side's colours, its square sails bellied and their
   yards braced round ([[Sailing]], "Square sails"); a hull with no model yet is drawn as the Sloop.

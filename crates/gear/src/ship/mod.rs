@@ -3,9 +3,11 @@
 //! Defense from its hull, sails and rigging, by the character's own sums and shares (`item.rs`, `power.rs`). Ship
 //! power decides every fight of ship against ship; character power everything on foot, and the two are never summed.
 
+pub mod fleet;
 pub mod found;
 pub mod infuse;
 pub mod materials;
+pub mod shipyard;
 pub mod trim;
 
 #[cfg(test)]

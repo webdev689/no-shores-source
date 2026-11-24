@@ -209,7 +209,8 @@ impl Sea {
         if self.aboard.contains_key(&player) {
             return Err(HelmRefused::AlreadyThere);
         }
-        self.aboard.insert(player, Aboard::left_helm(&self.deck, self.clock));
+        let left = Aboard::left_helm(self.deck_of(player), self.clock);
+        self.aboard.insert(player, left);
         Ok(())
     }
 
@@ -219,7 +220,7 @@ impl Sea {
             return Err(HelmRefused::NoSuchPlayer);
         }
         let walking = self.aboard.get(&player).ok_or(HelmRefused::AlreadyThere)?;
-        if !walking.at_wheel(&self.deck, self.clock) {
+        if !walking.at_wheel(self.deck_of(player), self.clock) {
             return Err(HelmRefused::NotAtTheWheel);
         }
         self.aboard.remove(&player);
@@ -346,8 +347,9 @@ impl Sea {
     /// left them; its last view waits for the next snapshot (`fights_sent`).
     pub fn tick(&mut self) {
         self.clock += 1;
-        for aboard in self.aboard.values_mut() {
-            aboard.tick(&self.deck, self.clock);
+        for (player, aboard) in &mut self.aboard {
+            let hull = ports::hull_sailed(&self.harbour.characters, *player);
+            aboard.tick(self.decks.hulls.get(usize::from(hull.number())).unwrap_or(&self.deck), self.clock);
         }
         let time = self.clock as f64 * TICK_SECONDS;
         let (hostiles, sailing_count) = (self.hostiles(), self.hostiles.sailing.len());
@@ -357,7 +359,8 @@ impl Sea {
             // Overlook's home waters hold no hostile ship, so no hostile holds or slows a ship inside them.
             let home = self.chart.home([ship.x, ship.y]);
             // A ship in a clash is joined by a player who comes in sight of it, so it holds as a bold one does.
-            let (chased, hull) = (self.hostiles.chased(*player), berth.kept[0]);
+            let class = naval::class::class_of(ports::hull_sailed(&self.harbour.characters, *player));
+            let (chased, hull) = (self.hostiles.chased(*player), (class.hull, berth.kept[0]));
             let hostiles: Vec<([f64; 2], bool)> = (hostiles.iter().enumerate())
                 .filter(|_| !home)
                 .map(|(at, hostile)| {
@@ -365,15 +368,16 @@ impl Sea {
                 })
                 .collect();
             // Judged along every leg its pace would take it through this tick, so no turn of its course slips by.
-            let reach = f64::from(ship.pace) * SHIP_SPEED_M_S * TICK_SECONDS;
+            let reach = f64::from(ship.pace) * SHIP_SPEED_M_S * class.way.max(1.0) * TICK_SECONDS;
             let held = |way: f64| held_pace(ship.pace, [ship.x, ship.y], way, hostiles.iter().copied());
             sailing.ship.rate = if self.fights.fighting(*player) {
                 0
             } else {
                 ways_ahead(sailing, reach).into_iter().map(held).min().unwrap_or_else(|| held(ship.heading))
             };
-            // Its way is its pace's by the canvas it keeps, never under half.
-            sail(sailing, f64::from(sailing.ship.rate) * SHIP_SPEED_M_S * TICK_SECONDS * berth.kept[1].max(0.5));
+            // Its way is its pace's by the canvas it keeps, never under half, and its hull's class.
+            let way = berth.kept[1].max(0.5) * class.way;
+            sail(sailing, f64::from(sailing.ship.rate) * SHIP_SPEED_M_S * TICK_SECONDS * way);
         }
         self.tick_harbour();
         self.tick_islands();
@@ -397,6 +401,7 @@ impl Sea {
                 home: self.chart.home([ship.x, ship.y]),
                 clock: f64::from(ship.rate.max(1)),
                 hull: self.berths.get(&player).map_or(1.0, |berth| berth.kept[0]),
+                hull_kind: ports::hull_sailed(&self.harbour.characters, player),
             })
             .collect();
         let islands: Vec<&Coast> = self.islands.coasts().collect();
@@ -467,8 +472,8 @@ impl Sea {
     }
 }
 
-/// Brings a player's ship to rest for a fight, calling them to the helm: the player, their Sloop hove to where it lies,
-/// and the hurts it keeps.
+/// Brings a player's ship to rest for a fight, calling them to the helm: the player, their ship hove to where it lies,
+/// the hurts it keeps and its hull.
 fn heave_to(
     (berths, aboard, harbour): (
         &mut BTreeMap<PlayerId, Berth>,
@@ -476,7 +481,7 @@ fn heave_to(
         &mut crate::harbour::Harbour,
     ),
     player: PlayerId,
-) -> Option<(PlayerId, sailing::ship::Ship, [f64; 3])> {
+) -> Option<(PlayerId, sailing::ship::Ship, [f64; 3], sailing::HullKind)> {
     let berth = berths.get_mut(&player)?;
     // A repair stops as the ship heaves to for a fight, keeping what it mended: the fight starts from that.
     if let Some(mended) = harbour.repairs.stop(player) {
@@ -487,7 +492,8 @@ fn heave_to(
     sailing.course.clear();
     (sailing.ship.pace, sailing.ship.rate) = (0, 0);
     aboard.remove(&player);
-    Some((player, ship_at(sailing.ship.x, sailing.ship.y, sailing.ship.heading, 0), kept))
+    let hull = ports::hull_sailed(&harbour.characters, player);
+    Some((player, ship_at(sailing.ship.x, sailing.ship.y, sailing.ship.heading, 0), kept, hull))
 }
 
 /// The bearing of each leg a ship sails through within `reach` metres along its course, from where it is.
@@ -545,6 +551,7 @@ pub(crate) mod fight_measure_tests;
 pub mod islands;
 #[path = "sea_plates.rs"]
 mod plates;
+pub use plates::ShipLook;
 #[path = "sea_ports.rs"]
 mod ports;
 #[path = "sea_puts_in.rs"]

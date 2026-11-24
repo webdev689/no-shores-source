@@ -42,6 +42,7 @@ mod quest_defs;
 mod quest_goals;
 pub mod quests;
 pub mod rarity;
+mod refusal;
 pub mod rewards;
 pub mod shape;
 pub mod ship;

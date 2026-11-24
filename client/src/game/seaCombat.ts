@@ -20,7 +20,7 @@ import type { Stir } from '../ships/swellPose.ts';
 import type { ShadowMap } from '../shadow.ts';
 import { type ShelteredSwell, swellHeight } from '../water/swell.ts';
 import type { Pose, ShipFloats } from '../rules/landRules.ts';
-import { factionSide } from '../ships/dress.ts';
+import { factionSide, type ShipLook } from '../ships/dress.ts';
 import { BOOST_KEY } from '../ships/helmKeys.ts';
 import type { BindId } from '../player/binds.ts';
 import { BINDS, type InputFrame, axis } from '../player/input.ts';
@@ -39,6 +39,7 @@ import type { FightHeard } from './audio/ambience/seaFight.ts';
 import type { Shot } from './camera.ts';
 import { type FightReadout, readoutOf } from './seaPanel.ts';
 import type { SeaRoom } from './seaRoom.ts';
+import { playerLook } from './seaShips.ts';
 import { worldOutput } from './uiSounds.ts';
 
 /** Seconds the view takes to come down to the fight, or go back up. */
@@ -153,6 +154,10 @@ export class SeaCombat {
   /** The hull the player's ship is drawn as, and how it lies where it is drawn on another swell than the rules'
    *  (the story's): the aim's eye and the camera's clearance ride it as drawn. */
   private readonly ownHull: number;
+  /** How the player's ship is drawn: in the dress they keep, as the room says, at the fight's start; and the hull
+   *  whose guns its aim lays, the rules' (the story's rules sail it as the Sloop). */
+  private readonly ownLook: ShipLook;
+  private readonly ownGuns: number;
   ownPose: ((x: number, y: number, heading: number) => { heave: number; pitch: number; roll: number }) | null = null;
   /** Where the frame's ships were last drawn from, in the window, and when. */
   private drawnFrom: { readonly eye: readonly [number, number, number]; readonly now: number } | null = null;
@@ -183,7 +188,10 @@ export class SeaCombat {
     this.marks = marks;
     const own = 'source' in fought ? fought : null;
     this.room = own ? { mayBoard: false } : (fought as SeaRoom);
-    this.ownHull = own?.hull ?? SLOOP_HULL;
+    // The room's fight sails the player's own hull, as its view says; the story's draws its own.
+    this.ownHull = own?.hull ?? first.player.hull_kind ?? SLOOP_HULL;
+    this.ownGuns = own ? SLOOP_HULL : this.ownHull;
+    this.ownLook = own ? { side: 'player' } : playerLook((fought as SeaRoom).ownShip);
     // Its aim's station found as the fight opens, not on the first aim.
     aimStation(this.ownHull);
     this.naval = new Naval(marks, shown);
@@ -317,7 +325,7 @@ export class SeaCombat {
     const [x = 0, y = 0, heading = 0] = this.last.player.ship;
     const [heave = 0, pitch = 0, roll = 0] = this.last.player.pose;
     const drawn = this.ownPose?.(x, y, heading) ?? { heave, pitch, roll };
-    return { x, y, heading, ...drawn, hull: this.ownHull, guns: SLOOP_HULL };
+    return { x, y, heading, ...drawn, hull: this.ownHull, guns: this.ownGuns };
   }
 
   /** The fight's camera round the player's ship `seconds` on, standing back at least as far as clears its hull and
@@ -420,10 +428,10 @@ export class SeaCombat {
     return [this.last.captain, ...(this.last.others ?? [])];
   }
 
-  /** Every ship in the fight with its hull, side and the number its events name it by: the player's Sloop (0), then
+  /** Every ship in the fight with its hull, side and the number its events name it by: the player's own (0), then
    *  each captain's by its own (`FightCaptain.id`). */
   private vessels(answer: FightView = this.last) {
-    const player = { vessel: answer.player, hull: SLOOP_HULL, side: 'player' as const, number: 0 };
+    const player = { vessel: answer.player, hull: this.shown(this.ownHull), side: 'player' as const, number: 0 };
     const captains = [answer.captain, ...(answer.others ?? [])].map((captain) => ({
       vessel: captain,
       hull: this.shown(hullOfCaptain(captain)),
@@ -470,7 +478,8 @@ export class SeaCombat {
       ship.rig?.step(seconds, wind, time);
       const captain = number === boarded ? undefined : captains.get(number);
       const crew = captain && number > 0 ? { crew: captainInFight(`fight-${number}`, captain) } : {};
-      return { hull: ship.hull, place, rig: ship.rig, look: { side: ship.side }, ...crew };
+      const look = number === 0 ? this.ownLook : { side: ship.side };
+      return { hull: ship.hull, place, rig: ship.rig, look, ...crew };
     });
   }
 

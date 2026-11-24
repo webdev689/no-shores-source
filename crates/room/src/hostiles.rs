@@ -15,6 +15,7 @@ use crate::sighting::{
     turned_toward, way_of,
 };
 use naval::captain::course::heading_to;
+use naval::captain::wary_takes;
 use naval::captain::{ENGAGE_RANGE, Temper, temper_for};
 use naval::fight::SPAWN_TRIES;
 use naval::random::Mulberry32;
@@ -94,7 +95,9 @@ pub struct Voyager {
     /// In Overlook's home waters, which hold no hostile ship: nothing meets it there.
     pub home: bool,
     pub clock: f64,
+    /// The share of its hull it keeps, and the hull it is (`naval::class`), which a wary captain sizes up.
     pub hull: f64,
+    pub hull_kind: sailing::HullKind,
 }
 
 /// The hostile ships at sea, and each player's wait for their next roll.
@@ -155,12 +158,13 @@ pub(crate) fn round_the_coast(
 
 /// A ship's heading after `seconds` at its `clock`, and the player it comes for: the one it came for while still in
 /// its sight and not fighting, else the nearest such; it steers to intercept them, at most at the helm's rate. A bold
-/// ship comes for anyone; a wary one only for a Sloop it would take (`wary_takes`, DFO's `takesPrize`). One with no
+/// ship comes for anyone; a wary one only for a ship it would take (`wary_takes`, DFO's `takesPrize`). One with no
 /// one to come for keeps its heading.
 fn come_for(hostile: &Hostile, ships: &[Voyager], (seconds, clock): (f64, f64)) -> (f64, Option<PlayerId>) {
     let at = [hostile.x, hostile.y];
-    let takes =
-        |ship: &Voyager| hostile.bold || naval::captain::wary_takes(hostile.commission, hostile.strength(), ship.hull);
+    let takes = |ship: &Voyager| {
+        hostile.bold || wary_takes(hostile.commission, hostile.strength(), (ship.hull_kind, ship.hull))
+    };
     let open = |ship: &&Voyager| !ship.fighting && hostile.sees(ship.at) && takes(ship);
     let kept = ships.iter().filter(open).find(|ship| Some(ship.player) == hostile.quarry);
     let nearest = || ships.iter().filter(open).min_by(|one, other| apart(at, one.at).total_cmp(&apart(at, other.at)));

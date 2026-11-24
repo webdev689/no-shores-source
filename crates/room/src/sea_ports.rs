@@ -235,7 +235,10 @@ impl Sea {
         let tick = self.clock as f64;
         for (who, told) in joined {
             let numbers = match *who {
-                crate::battle::Joined::Player(player) => vec![JOINED, tick, f64::from(player), 0.0, 0.0, 0.0],
+                crate::battle::Joined::Player(player) => {
+                    let hull = f64::from(hull_sailed(&self.harbour.characters, player).number());
+                    vec![JOINED, tick, f64::from(player), 0.0, 0.0, hull]
+                }
                 crate::battle::Joined::Hostile(commission) => {
                     let (faction, rank) = (f64::from(commission.faction), f64::from(commission.rank.number()));
                     vec![JOINED, tick, 0.0, faction, rank, f64::from(commission.hull().number())]
@@ -290,7 +293,8 @@ impl Sea {
             // Leaving a fight under a third of its hull counts as sunk: never more than it had. Its hands who fell on
             // a deck it stands on are lost as they are stepping off.
             Some((mut kept, at)) => {
-                kept[2] = (kept[2] - f64::from(self.fallen_on_deck(player)) / naval::arms::LARGE_BOAT.crew).max(0.0);
+                let crew = naval::class::class_of(hull_sailed(&self.harbour.characters, player)).build().crew;
+                kept[2] = (kept[2] - f64::from(self.fallen_on_deck(player)) / crew).max(0.0);
                 (
                     if kept[0] < LEFT_AS_SUNK { std::array::from_fn(|at| kept[at].min(SUNK_KEPT[at])) } else { kept },
                     in_frame(self.harbour.harbours.nearest(at).map_or(at, |port| self.harbour.harbours.ports[port].1)),
@@ -356,10 +360,13 @@ impl Sea {
         self.harbour.characters.get(&player)
     }
 
-    /// Why the sea's gate shuts to a character: the level its tier opens at, as on land (`gear::gate`); never at
-    /// Normal.
+    /// Why the sea's gate shuts to a character: it keeps no ship yet; or the level its tier opens at, as on land
+    /// (`gear::gate`), never at Normal.
     #[must_use]
     pub fn shut(&self, character: &gear::Character) -> Option<gear::gate::Shut> {
+        if !character.has_ship() {
+            return Some(gear::gate::Shut::NoShip);
+        }
         gear::gate::shut(character, gear::gate::Place::Node, self.hostiles.difficulty)
     }
 
@@ -407,6 +414,12 @@ impl Sea {
     }
 }
 
+/// The hull a player sails, by the character the sea holds for them: the Sloop for one it holds none of.
+pub(crate) fn hull_sailed(characters: &BTreeMap<PlayerId, gear::Character>, player: PlayerId) -> sailing::HullKind {
+    let sailed = characters.get(&player).and_then(gear::Character::sailed_hull);
+    sailed.and_then(sailing::HullKind::numbered).unwrap_or_default()
+}
+
 /// A point held within the world's frame.
 pub(crate) fn in_frame([x, y]: [f64; 2]) -> [f64; 2] {
     #[allow(clippy::cast_precision_loss)]
@@ -414,7 +427,7 @@ pub(crate) fn in_frame([x, y]: [f64; 2]) -> [f64; 2] {
     [x.clamp(0.0, width), y.clamp(0.0, height)]
 }
 
-/// Each wary ship at sea within `ENGAGE_RANGE` of a player not fighting whose Sloop it would take as its kept hull
+/// Each wary ship at sea within `ENGAGE_RANGE` of a player not fighting whose ship it would take as its kept hull
 /// leaves it (`naval::captain::wary_takes`, DFO's `takesPrize`) meets them as a bold one does: it leaves the sea, and
 /// the meeting joins `met`.
 pub(super) fn wary_meet(
@@ -427,7 +440,7 @@ pub(super) fn wary_meet(
     while at < hostiles.sailing.len() {
         let hostile = hostiles.sailing[at];
         let takes = |ship: &&crate::hostiles::Voyager| {
-            let hull = berths.get(&ship.player).map_or(1.0, |berth| berth.kept[0]);
+            let hull = (ship.hull_kind, berths.get(&ship.player).map_or(1.0, |berth| berth.kept[0]));
             let near = libm::hypot(ship.at[0] - hostile.x, ship.at[1] - hostile.y) <= naval::captain::ENGAGE_RANGE;
             !ship.fighting
                 && !ship.home
@@ -463,6 +476,10 @@ mod tests;
 #[cfg(test)]
 #[path = "sea_keeping_tests.rs"]
 mod keeping_tests;
+
+#[cfg(test)]
+#[path = "sea_hulls_tests.rs"]
+mod hulls_tests;
 
 #[cfg(test)]
 #[path = "sea_course_tests.rs"]

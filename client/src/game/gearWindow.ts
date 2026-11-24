@@ -23,7 +23,7 @@ import { boardPage } from './bountyBoard.ts';
 import { characterPage } from './characterPage.ts';
 import { CompanyHud } from './companyHud.ts';
 import { nameCard } from './gearCard.ts';
-import { emblemOf } from './emblemArt.ts';
+import { emblemOf } from '../plus/emblemArt.ts';
 import { HINTS, SHELF_HINTS } from './gearHints.ts';
 import { Holds } from './gearHold.ts';
 import { type Hint, INK, pressNode, sizesOf, words } from './gearNodes.ts';
@@ -52,7 +52,7 @@ import { isKeeperView, npcChoosing, npcHints, npcOpened, npcStepBack } from './n
 import { RosterPage, socialPage } from './rosterTab.ts';
 import { answerSaid } from './shipGear.ts';
 import { shipTab } from './shipPages.ts';
-import type { ShipPanel } from './shipPanel.ts';
+import type { HullBuild, ShipPanel } from './shipPanel.ts';
 import { stationPage, stationTitle } from './stationView.ts';
 import { play } from './uiSounds.ts';
 
@@ -86,6 +86,7 @@ export function startGearWindow(
   fed: () => GearHere | null = here,
   source: JournalSource | null = null,
   lore: Lore | null = null,
+  hulls: () => readonly HullBuild[] | null = () => null,
 ): Layer {
   // What the player gains shows at the right, in play and over the menu alike, its pieces drawn by the menu's forge.
   let pictures: ItemPictures | null = null;
@@ -377,7 +378,7 @@ export function startGearWindow(
         page = shipTab(context, ship(), [shelf, slot], (part, officer) => ([shelf, slot] = [part, officer]));
       else if (shown === 'board') page = boardPage(context, () => source?.week()?.today.endsAt ?? null);
       else if (!isTab(shown)) {
-        page = stationPage(context, shown);
+        page = stationPage(context, shown, hulls(), [shelf, slot], (part, hull) => ([shelf, slot] = [part, hull]));
         if (isKeeperView(shown) && npcChoosing()) aside = npcHints(shown);
       }
       item = inspected ? itemPage(context, inspected, back) : null;

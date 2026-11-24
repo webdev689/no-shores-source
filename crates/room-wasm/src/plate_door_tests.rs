@@ -22,6 +22,7 @@ fn at_sea_each_player_is_sent_the_plates_of_the_other_ships_in_sight_but_not_the
     }
     room_tick();
     let mut seasoned = gear::Character::starting();
+    assert!(seasoned.give_first_ship());
     seasoned.xp = 190_000;
     for player in [one, far] {
         assert!(gear_door::restore_character(player, seasoned.to_json().as_bytes()));

@@ -187,7 +187,7 @@ impl Harbour {
 /// they washed up at one they found (0 at a port).
 pub const WASHED_UP: f64 = 20.0;
 /// A player told that someone joined their fight: the code, the tick, the player's number (0 for a hostile ship),
-/// and a hostile ship's faction, rank and hull (`HullKind::number`; 0 for a player).
+/// a hostile ship's faction and rank (0 for a player), and the hull the ship that joined sails (`HullKind::number`).
 pub const JOINED: f64 = 22.0;
 /// A player told where their ship lies once the accounts gave it back: the code, the tick, x and y, and its heading.
 pub const MOORED: f64 = 23.0;

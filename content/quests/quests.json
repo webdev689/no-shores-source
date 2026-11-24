@@ -68,14 +68,23 @@
               "to": "mail",
               "scene": "roundMail",
               "text": "The Postmaster"
-            },
+            }
+          ]
+        },
+        {
+          "id": "your-ship",
+          "task": "Take your ship from the Harbourmaster",
+          "goals": [
             {
               "kind": "talk",
               "to": "harbourmaster",
               "scene": "roundHarbour",
-              "text": "The Harbourmaster, for the Shipwright"
+              "text": "The Harbourmaster, in the market"
             }
-          ]
+          ],
+          "reward": {
+            "ship": true
+          }
         },
         {
           "id": "arm-yourself",

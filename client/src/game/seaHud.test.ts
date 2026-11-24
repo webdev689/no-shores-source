@@ -12,7 +12,7 @@ const captain = (x: number, y: number, state: ShipState, hostile: boolean): Figh
   ({ ship: [x, y, 0], pose: [0, 0, 0], state, hostile, run_out: [] }) as unknown as FightCaptain;
 
 test('out of a fight the compass marks every other player’s ship in bone and every hostile one in red', () => {
-  const others = [{ player: 4, x: 10, y: -20, heading: 0, pace: 1 }];
+  const others = [{ player: 4, x: 10, y: -20, heading: 0, pace: 1, hull: 0, dress: [], name: [], emblem: 0 }];
   const hostiles = [
     { id: 7, x: -300, y: 40, heading: 1, faction: 1, rank: 3 },
     { id: 8, x: 9_000, y: 0, heading: 1, faction: 1, rank: 2, sight: 25_920 },

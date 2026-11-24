@@ -99,7 +99,7 @@ test('while the room has not yet taken its new course, it sails at the pace it l
   const passage = new Passage(ISLAND, () => MASK, place(0, 0), 0);
   const { room, word } = fakeRoom();
   passage.room = room;
-  word.ownShip = { player: 1, ...{ x: 0, y: 0 }, heading: 0, pace: 1 };
+  word.ownShip = { player: 1, ...{ x: 0, y: 0 }, heading: 0, pace: 1, hull: 0, dress: [], name: [], emblem: 0 };
   passage.straightOn();
   passage.advance(1);
   assert.ok(Math.abs(passage.ship.y - (place(0, 0)[1] - 12)) < 1e-6, `held to ×1, 12 m: ${passage.ship.y}`);
@@ -111,11 +111,11 @@ test("the room's word sets it right: at rest where it has it, or laid there when
   passage.room = room;
   passage.straightOn();
   const [x, y] = place(80, -500);
-  word.settledShip = { player: 1, x, y, heading: 0, pace: 60 };
+  word.settledShip = { player: 1, x, y, heading: 0, pace: 60, hull: 0, dress: [], name: [], emblem: 0 };
   passage.advance(0);
   assert.deepEqual([passage.ship.x, passage.ship.y], [x, y], '80 m off its line: laid where the room has it');
   assert.equal(asked.length, 2, 'and its course set again from there');
-  word.settledShip = { player: 1, x, y: y - 300, heading: 0, pace: 0 };
+  word.settledShip = { player: 1, x, y: y - 300, heading: 0, pace: 0, hull: 0, dress: [], name: [], emblem: 0 };
   passage.advance(1);
   assert.equal(passage.sailing, false, 'the room has it at rest short of the end: it rests');
   assert.equal(passage.stoppedShort, true, 'hove to, to be resumed');
@@ -158,7 +158,17 @@ test("watched close it eases down the ladder to the world's own time a step each
   const before = passage.ship.y;
   passage.advance(1, true);
   assert.ok(Math.abs(before - passage.ship.y - 12) < 1e-6, `its true speed, 12 m a second: ${before - passage.ship.y}`);
-  word.settledShip = { player: 1, x: passage.ship.x, y: passage.ship.y, heading: 0, pace: 1 };
+  word.settledShip = {
+    player: 1,
+    x: passage.ship.x,
+    y: passage.ship.y,
+    heading: 0,
+    pace: 1,
+    hull: 0,
+    dress: [],
+    name: [],
+    emblem: 0,
+  };
   assert.equal(passage.note, 'Sailing straight on · Sailing at true speed while you watch close.');
   word.settledShip = null;
   asked.length = 0;
@@ -189,7 +199,17 @@ test('a pace step the room refused is asked again once its word comes, until the
   for (let frame = 0; frame < 60; frame++) passage.advance(0.05, true);
   asked.length = 0;
   // The room still sails it at x5: the last step down was refused.
-  word.settledShip = { player: 1, x: passage.ship.x, y: passage.ship.y, heading: 0, pace: 5 };
+  word.settledShip = {
+    player: 1,
+    x: passage.ship.x,
+    y: passage.ship.y,
+    heading: 0,
+    pace: 5,
+    hull: 0,
+    dress: [],
+    name: [],
+    emblem: 0,
+  };
   passage.advance(0.05, true);
   assert.match(asked.at(-1) ?? '', /×1$/, 'the world’s own time asked again');
   assert.equal(passage.note, 'Sailing straight on', 'not said while the room has it at another pace');

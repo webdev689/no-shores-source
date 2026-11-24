@@ -6,7 +6,7 @@
 
 import type { AccountLink, Roster } from '../network/accounts.ts';
 import type { Child, Node } from '../ui/node.ts';
-import { emblemOf } from './emblemArt.ts';
+import { emblemOf } from '../plus/emblemArt.ts';
 import { ACCOUNT_CHANGED, ROSTER_HEARD } from './gearScreen.ts';
 import { INK, emblemNode, words } from './gearNodes.ts';
 import { placeWords } from './rosterRows.ts';

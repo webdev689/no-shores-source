@@ -36,6 +36,8 @@ pub enum Shut {
     Playlist(Playlist),
     /// A playlist's run for another band than the character's, by the band's first and last level.
     Band(u8, u8),
+    /// The sea, to a character who keeps no ship yet: the Harbourmaster hands over the first (`ship::fleet`).
+    NoShip,
 }
 
 impl Shut {
@@ -56,9 +58,13 @@ impl Shut {
             Shut::Playlist(playlist) => format!("The {} opens at level {}.", playlist.name(), playlist.opens_at()),
             Shut::Band(first, last) if first == last => format!("This run is for level {first}."),
             Shut::Band(first, last) => format!("This run is for levels {first} to {last}."),
+            Shut::NoShip => NO_SHIP.to_owned(),
         }
     }
 }
+
+/// What a player who keeps no ship is told when they would go to sea.
+pub const NO_SHIP: &str = "You have no ship yet. The Harbourmaster in Overlook's market has one for you.";
 
 /// Whether a character may enter a place at these seas, and if not why (`shut_at`).
 #[must_use]

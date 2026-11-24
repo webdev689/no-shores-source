@@ -29,12 +29,13 @@ const COLOURS = {
 } as const;
 
 /** Another player as their plate is drawn: their number, where their figure's feet stand, what the room says of them,
- *  and whether they are in the viewer's company. */
+ *  whether they are in the viewer's company, and at sea the name of the ship they sail, if they named it. */
 export interface PlatedPlayer {
   readonly id: number;
   readonly feet: Point;
   readonly plate: PlayerPlate;
   readonly company: boolean;
+  readonly vessel?: string;
 }
 
 /** How the plates see the world this frame: the camera, whether a line is blocked, where a point falls on the screen
@@ -202,7 +203,8 @@ export class PlayerPlates {
   }
 }
 
-/** A player's plate at `scale`: its square (or the bubble) and their name, in the company's colours or another's. */
+/** A player's plate at `scale`: its square (or the bubble) and their name, in the company's colours or another's, and
+ *  under it the name of the ship they sail, where it has one. */
 export function plateNode(player: PlatedPlayer, scale: number): Node {
   const colours = player.company ? COLOURS.company : COLOURS.other;
   const side = Math.round(SIDE * scale);
@@ -233,7 +235,13 @@ export function plateNode(player: PlatedPlayer, scale: number): Node {
     gap: Math.round(5 * scale),
     children: [
       square,
-      plate.name !== '' && { text: { words: plate.name, colour: colours.word, edge: 'halo', wrap: false } },
+      {
+        direction: 'column',
+        children: [
+          plate.name !== '' && { text: { words: plate.name, colour: colours.word, edge: 'halo', wrap: false } },
+          player.vessel ? { text: { words: player.vessel, colour: TONES.stoneHi, edge: 'halo', wrap: false } } : null,
+        ],
+      },
     ],
   };
 }

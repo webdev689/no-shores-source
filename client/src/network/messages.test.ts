@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import { test } from 'node:test';
+import shipDress from '../../../content/gear/ship_dress.json' with { type: 'json' };
 import * as flatbuffers from 'flatbuffers';
 import { Course, Input } from '../../../generated/messages/ts/overlook/wire.ts';
 import { PROTOCOL } from '../../../generated/messages/ts/version.ts';
@@ -166,6 +167,11 @@ test('the sea’s snapshot the server wrote reads back the traffic ids its room 
   assert.deepEqual(sea.friendlies, [{ traffic: 2_605, x: 1_500.5, y: 2_200.25, heading: 0.75, hull: 1 }]);
 });
 
+/** The dresses every ship is built in, by their numbers, in the parts' order. */
+const BUILT = ['bare_timber', 'unbanded', 'plain_canvas', 'overlook_flag'].map((id) =>
+  shipDress.dress.findIndex((entry) => entry.id === id),
+);
+
 test('the sea’s snapshot the server wrote reads back as its ships, its hostiles, its fights and its walkers on deck', async () => {
   const sea = readFromRoom(await written('sea.bin'));
   const walker = sea?.kind === 'snapshot' ? sea.players[0] : undefined;
@@ -177,9 +183,30 @@ test('the sea’s snapshot the server wrote reads back as its ships, its hostile
   assert.deepEqual(sea?.kind === 'snapshot' ? [sea.tick, sea.ships] : null, [
     77n,
     [
-      // The pace it sailed at, held down near a hostile: 5 where 60 was asked.
-      { player: 3, x: 50_000, y: 149_880.25, heading: 0, pace: 5 },
-      { player: 4, x: 61_000, y: 149_000, heading: Math.PI / 2, pace: 0 },
+      // The pace it sailed at, held down near a hostile: 5 where 60 was asked; and as each player keeps it: a dressed
+      // and named Brig, and one the room knows no look of, the Sloop as built.
+      {
+        player: 3,
+        x: 50_000,
+        y: 149_880.25,
+        heading: 0,
+        pace: 5,
+        hull: 2,
+        dress: [1, 11, 21, 31],
+        name: [255, 3],
+        emblem: 4,
+      },
+      {
+        player: 4,
+        x: 61_000,
+        y: 149_000,
+        heading: Math.PI / 2,
+        pace: 0,
+        hull: 0,
+        dress: BUILT,
+        name: [255, 255],
+        emblem: 0,
+      },
     ],
   ]);
   assert.deepEqual(sea?.kind === 'snapshot' ? sea.hostiles : null, [

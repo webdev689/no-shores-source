@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { state } from '../network/gearForTests.ts';
 import type { GearAsk, GearState } from '../network/gearMessages.ts';
-import { FIGHTING, TO_SHIP, askToShip } from './toShip.ts';
+import { FIGHTING, NO_SHIP, TO_SHIP, askToShip } from './toShip.ts';
 
 const never = () => false;
 
@@ -20,7 +20,7 @@ function room(answer: number, after = 2) {
   return { asker, wait, asked };
 }
 
-test('a return to the ship goes on the room yes, and is refused in words while struck or fallen', async () => {
+test('a return to the ship goes on the room yes, and is refused in words while struck, fallen or shipless', async () => {
   const yes = room(TO_SHIP);
   assert.equal(await askToShip(yes.asker, false, never, yes.wait), null);
   assert.deepEqual(yes.asked, [{ kind: 73 }]);
@@ -28,6 +28,12 @@ test('a return to the ship goes on the room yes, and is refused in words while s
   assert.equal(
     await askToShip(struck.asker, false, never, struck.wait),
     'You cannot return to your ship within ten seconds of being struck.',
+  );
+  const shipless = room(NO_SHIP);
+  assert.equal(
+    await askToShip(shipless.asker, false, never, shipless.wait),
+    "You have no ship yet. The Harbourmaster in Overlook's market has one for you.",
+    'a new player before the Harbourmaster hands over the Sloop',
   );
   const fallen = room(0);
   assert.equal(await askToShip(fallen.asker, true, never, fallen.wait), 'You cannot return to your ship while fallen.');

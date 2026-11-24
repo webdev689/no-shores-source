@@ -9,8 +9,8 @@ const texel = (rgba: Uint8Array, x: number, y: number) => [
 ];
 
 test("each side's flag is its ground, a faction's bearing its emblem in the middle", () => {
-  const flags = flagPictures();
-  assert.equal(flags.length, SHIP_SIDES.length);
+  const flags = flagPictures().slice(0, SHIP_SIDES.length);
+  assert.equal(flags.length, SHIP_SIDES.length, 'the sides first, the dresses and emblems after');
   flags.forEach((flag, index) => {
     const side = SHIP_SIDES[index] ?? 'player';
     const ground = DRESSES[side].flag.map((channel) => channel * 255);
@@ -22,7 +22,7 @@ test("each side's flag is its ground, a faction's bearing its emblem in the midd
     );
     assert.equal(differs, DRESSES[side].emblem !== null, `${side}'s emblem across its middle`);
   });
-  assert.deepEqual(flagPictures()[3]?.rgba, flags[3]?.rgba, 'the same bytes every time');
+  assert.deepEqual(flagPictures()[2]?.rgba, flags[2]?.rgba, 'the same bytes every time');
 });
 
 const luminance = (rgb: readonly number[]) => {

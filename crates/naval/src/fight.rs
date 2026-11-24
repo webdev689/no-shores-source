@@ -1,15 +1,15 @@
-//! A fight at sea: players' Sloops and captains of each faction in their ranks' hulls, the balls between them, and the
+//! A fight at sea: players' ships in their own hulls and captains of each faction in their ranks', the balls between them, and the
 //! harm they do, stepped together a tick at a time. Each player orders their own helm, a lay (the look's bearing off
 //! their bow and its range), the fire, the brace and the load; each captain decides for itself whom it fights, a player
 //! or a captain of another faction. A ball strikes only a ship under another flag. One seeded stream decides every
 //! chance, in a fixed order, so a fight is the same on every machine.
 
-use crate::arms::{Arms, LARGE_BOAT, arms_of, posed};
+use crate::arms::{Arms, arms_of, posed};
 use crate::ballistics::Ball;
 use crate::boost::Boost;
 use crate::captain::odds::Power;
 use crate::captain::{Captain, Own, Sighting};
-use crate::damage::{Damage, SINK_CLEAR_M, SINK_LIST_DEG, SINK_PITCH_DEG, State, way_share_of};
+use crate::damage::{Damage, SINK_CLEAR_M, SINK_LIST_DEG, SINK_PITCH_DEG, State};
 use crate::gunnery::Guns;
 use crate::guns::Shot;
 use crate::random::Mulberry32;
@@ -17,9 +17,9 @@ use crate::ranks::Commission;
 use crate::rigging::Rigging;
 use crate::shots::{Flag, ShipId};
 use sailing::pose::{Pose, pose_of, shallower};
-use sailing::ship::{Helm, Pull, SAILS_SET, Ship, step_pulled};
+use sailing::ship::{Helm, Ship};
 use sailing::waters::Waters;
-use sailing::{Hull, HullKind, TICK_SECONDS};
+use sailing::{Hull, HullKind};
 use std::collections::BTreeMap;
 use std::f64::consts::TAU;
 
@@ -146,64 +146,6 @@ pub struct Fight {
     ambush: bool,
 }
 
-/// What a player's ship's hurts leave its helm: the canvas it has left and the share of its way that canvas leaves it.
-#[derive(Debug, Clone, Copy, PartialEq)]
-pub struct Hurts {
-    pub sail: f64,
-    pub way_share: f64,
-    /// The share of the turn its helm asks that its trim gives it.
-    pub turn: f64,
-    /// The share of its sails' and oars' pull its burst gives it (`Boost::drive`).
-    pub drive: f64,
-}
-
-impl Hurts {
-    #[must_use]
-    pub fn of(damage: &Damage) -> Self {
-        Self { sail: damage.sail, way_share: damage.way_share(), turn: 1.0, drive: 1.0 }
-    }
-
-    /// Its hurts from its numbers as a snapshot gives them.
-    #[must_use]
-    pub fn from_numbers(sail: f64, max_sail: f64) -> Self {
-        Self { sail, way_share: way_share_of(sail, max_sail), turn: 1.0, drive: 1.0 }
-    }
-
-    /// Its hurts as its fitting trims them: the way its canvas leaves it, and its turn.
-    #[must_use]
-    pub fn fitted(self, fitting: Option<&fitting::Fitting>) -> Self {
-        let Some(fitting) = fitting else { return self };
-        Self { way_share: fitting.way_share(self.way_share), turn: fitting.trim.turn, ..self }
-    }
-}
-
-/// A player's ship of `hull` stepped a tick by its helm, as its hurts let it, at a fight's pace and swing: no sail sets
-/// with its rigging shot away, its sails' and oars' pull is held back, and a burst drives it. Answers the ship and
-/// whether its helm climbed for sail it could not set.
-#[must_use]
-pub fn sail_hurt(
-    ship: &Ship,
-    hull: &Hull,
-    helm: Helm,
-    hurts: Hurts,
-    waters: &impl Waters,
-    wind: [f64; 2],
-    time: f64,
-) -> (Ship, bool) {
-    let mut helm = helm;
-    let mut refused = false;
-    if hurts.sail <= 0.0 && ship.rung.saturating_add(helm.climb) >= SAILS_SET {
-        refused = helm.climb > 0;
-        helm.climb = if ship.rung >= SAILS_SET { -1 } else { 0 };
-    }
-    let pull = Pull {
-        sail: hurts.way_share * hurts.drive * FIGHT_PACE,
-        oars: hurts.drive * FIGHT_PACE,
-        turn: hurts.turn * FIGHT_TURN,
-    };
-    (step_pulled(ship, &helm, hull, wind, waters, time, TICK_SECONDS, pull), refused)
-}
-
 /// Whether water at a point is deep enough to float `hull`.
 fn floats(waters: &impl Waters, hull: &Hull, x: f64, y: f64, time: f64) -> bool {
     !shallower(&waters.at(x, y, time), hull.draught_m)
@@ -241,7 +183,7 @@ pub(crate) fn carry_of(ship: &Ship) -> [f64; 3] {
 fn sighting_of(id: ShipId, vessel: &Vessel) -> Sighting {
     let damage = &vessel.damage;
     let power = match vessel.command() {
-        None => Power::player(&LARGE_BOAT, damage.hull_share()),
+        None => Power::player_in(vessel.hull, damage.hull_share()),
         Some(command) => command.mind.power(damage),
     };
     Sighting {
@@ -291,15 +233,22 @@ impl Fight {
 
     /// A player's Sloop, sound, put to sea as `ship` under number `id`.
     pub fn put_to_sea(&mut self, id: ShipId, ship: Ship, waters: &impl Waters, time: f64) {
-        self.put_to_sea_kept(id, ship, [1.0; 3], waters, time);
+        self.put_to_sea_kept(id, (ship, HullKind::Sloop), [1.0; 3], waters, time);
     }
 
-    /// A player's Sloop put to sea as `ship` under number `id` with the hurts it keeps: the shares of its hull,
-    /// canvas and men it has left (each to the whole point or man, never under one point of hull).
-    pub fn put_to_sea_kept(&mut self, id: ShipId, ship: Ship, kept: [f64; 3], waters: &impl Waters, time: f64) {
-        let hull = HullKind::Sloop;
+    /// A player's ship of `hull` put to sea as `ship` under number `id` with the hurts it keeps: the shares of its
+    /// hull, canvas and men it has left (each to the whole point or man, never under one point of hull), its hull
+    /// points, canvas and men its class's (`class.rs`).
+    pub fn put_to_sea_kept(
+        &mut self,
+        id: ShipId,
+        (ship, hull): (Ship, HullKind),
+        kept: [f64; 3],
+        waters: &impl Waters,
+        time: f64,
+    ) {
         let pose = pose_of(&ship, hull.hull(), waters, time);
-        let mut damage = Damage::new(&LARGE_BOAT, true);
+        let mut damage = Damage::new(crate::class::class_of(hull).build(), true);
         let [hull_share, sail_share, crew_share] =
             kept.map(|share| if share.is_finite() { share.clamp(0.0, 1.0) } else { 1.0 });
         damage.hull = (damage.max_hull * hull_share).round().max(1.0);
@@ -571,6 +520,9 @@ pub mod focus;
 pub use events::{End, Event, Part, Piece, Refusal};
 #[path = "fitting.rs"]
 pub mod fitting;
+#[path = "fight_helm.rs"]
+mod helm;
+pub use helm::{Hurts, sail_hurt};
 #[path = "fight_ram.rs"]
 mod ram;
 #[path = "fight_step.rs"]
@@ -595,6 +547,9 @@ mod faction_tests;
 #[cfg(test)]
 #[path = "fight_ambush_tests.rs"]
 mod ambush_tests;
+#[cfg(test)]
+#[path = "fight_class_tests.rs"]
+mod class_tests;
 #[cfg(test)]
 #[path = "fight_ending_tests.rs"]
 mod ending_tests;

@@ -1,13 +1,16 @@
 // Returning to the ship, on the room's word: refused while fallen or within ten seconds of a foe's blow, as the owner
-// chose ([[The Audit's Leftovers Are Fixed as Claude Suggested]]); the room judges, the page leaves only on its yes.
+// chose ([[The Audit's Leftovers Are Fixed as Claude Suggested]]), and to a player who keeps no ship yet
+// ([[The Harbourmaster Keeps Every Ship, Each With Its Own Numbers and Dress]]); the room judges, the page leaves only
+// on its yes.
 
 import { ASKS, type GearAsk, type GearState } from '../network/gearMessages.ts';
 
-/** The room's answers to a return to the ship (`room::asks`): refused while fallen or just struck, and its yes, which
- *  no other ask gives, so another ask's done is never taken for it. */
+/** The room's answers to a return to the ship (`room::asks`): refused while fallen or just struck, its yes, which no
+ *  other ask gives, so another ask's done is never taken for it, and refused to one who keeps no ship. */
 export const FALLEN = 105;
 export const FIGHTING = 106;
 export const TO_SHIP = 107;
+export const NO_SHIP = 108;
 /** How long the page waits on the room's answer before saying it did not come. */
 const ANSWER_WAIT_MS = 3000;
 const POLL_MS = 100;
@@ -19,7 +22,7 @@ export interface ShipAsker {
 }
 
 /** The answers the room gives a return to the ship: yes, or why not. */
-const ANSWERS: readonly number[] = [TO_SHIP, FALLEN, FIGHTING];
+const ANSWERS: readonly number[] = [TO_SHIP, FALLEN, FIGHTING, NO_SHIP];
 /** What the page says when its room gave no answer: out of reach, or yet to send the player's gear. */
 const UNANSWERED = 'Your room did not answer. Try again.';
 
@@ -27,6 +30,7 @@ const UNANSWERED = 'Your room did not answer. Try again.';
 export function refusedWords(answer: number): string | null {
   if (answer === FALLEN) return 'You cannot return to your ship while fallen.';
   if (answer === FIGHTING) return 'You cannot return to your ship within ten seconds of being struck.';
+  if (answer === NO_SHIP) return "You have no ship yet. The Harbourmaster in Overlook's market has one for you.";
   return answer === TO_SHIP ? null : 'You cannot return to your ship now.';
 }
 

@@ -14,7 +14,7 @@ import { ARTS, emblemSvg } from './artsCards.ts';
 import { gearName, moduleGlyph, SHIP_MATERIALS } from './shipGear.ts';
 import { cosmeticRamp } from '../forge/cosmetics.ts';
 import { GAME_PALETTE } from './appearance/gamePalette.ts';
-import { EMBLEMS } from './emblemArt.ts';
+import { EMBLEMS } from '../plus/emblemArt.ts';
 import type { Glyph } from './gearCards.ts';
 import { bardingSvg, keeperMarkSvg, shapesSvg } from './npc/npcMarks.ts';
 import { rarityNamed } from './npc/npcWares.ts';

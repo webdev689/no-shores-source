@@ -33,7 +33,7 @@ fn a_new_player_keeps_and_wears_the_starting_emblem_and_earns_by_level_and_deed(
 
 #[test]
 fn gilded_is_earned_by_a_legendary_or_atheric_piece_bought_whole_and_no_lesser_one() {
-    let mut character = Character::starting();
+    let mut character = Character::kitted();
     let (id, (item, _)) = character.items.iter_mut().next().expect("a starting piece");
     let id = *id;
     item.bought = (1_u32 << crate::grid::node_offsets(item.columns()).1) - 1;

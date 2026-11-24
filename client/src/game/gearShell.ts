@@ -5,7 +5,7 @@
 import type { GearState } from '../network/gearMessages.ts';
 import type { Child, Node } from '../ui/node.ts';
 import type { Interface } from '../ui/ui.ts';
-import { type Emblem, SIGN_CELLS } from './emblemArt.ts';
+import { type Emblem, SIGN_CELLS } from '../plus/emblemArt.ts';
 import { type Hint, INK, emblemNode, focusRing, glyphNode, hintsNode, keycap, words, type Sizes } from './gearNodes.ts';
 import { boundCap } from './controls.ts';
 import { TABS, type Tab, characterOf } from './gearScreen.ts';

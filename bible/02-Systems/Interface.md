@@ -136,7 +136,7 @@ code:
   - client/src/game/acquiredFeed.ts#AcquiredFeed
   - client/src/game/menuPage.ts#MenuContext
   - client/src/game/shipPages.ts#shipTab
-  - client/src/game/shipPages.ts#harbourPage
+  - client/src/game/harbour/harbourPage.ts#harbourPage
   - client/src/game/shipPages.ts#musterAt
   - client/src/game/stationView.ts#stationPage
   - client/src/game/gearHold.ts#Holds
@@ -168,7 +168,7 @@ code:
   - client/src/game/rosterRows.ts#actionsFor
   - client/src/game/playerDetails.ts#detailsNode
   - client/src/ui/page.ts#PAGE
-  - client/src/game/emblemArt.ts#emblemPixels
+  - client/src/plus/emblemArt.ts#emblemPixels
   - client/src/game/appearanceButton.ts#emblemCard
   - client/src/game/appearance/appearancePage.ts#appearancePage
   - client/src/game/appearance/appearanceDisplay.ts#displayNode
@@ -1254,8 +1254,12 @@ Destiny's keep theirs in the Tower ([[Overlook's Keepers Are the Mage, the Smith
 E at one opens it in the menu's window, its name where the tabs stand. The prompt names the keeper by their title ("The Mage", "Shape"). The room
 serves each ask only at its own counter ([[Gear]], "In the rooms"; [[Factions]]).
 
-- **The Harbourmaster's counter** sells the Shipwright's six modules of the day, each held to buy, its hover card
-  beside it, as a keeper's wares are (`harbourPage`).
+- **The Harbourmaster's counter** stands in four parts chosen as the inventory's shelves are ([[Shipyard]],
+  `harbourPage`): the shipyard, each hull's panel with its numbers as bars and its price, held to buy and clicked to
+  sail; the paint yard, a chip for each ship kept and a row of swatches a part, each clicked to lay one kept, held to buy
+  one sold, its hover card beside it; the register, two rows of words to name the ship chosen; and the Shipwright's six
+  modules of the day, each held to buy, its hover card beside it, as a keeper's wares are. With no ship kept yet, the
+  Ship tab says so.
 - **The muster** stands on the pledged faction's keeper's screen, under its wares: each officer offered, signed on by
   a hold; one the player cannot afford stands flat and takes no press (`musterAt`).
 - **The vault**, after Destiny 1's, in the keepers' screen's right column under the vault keeper, who greets and thanks
