@@ -474,3 +474,6 @@ mod breach_tests;
 #[cfg(test)]
 #[path = "fights_tests.rs"]
 mod fights_tests;
+#[cfg(test)]
+#[path = "gate_tests.rs"]
+mod gate_tests;

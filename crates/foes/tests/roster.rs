@@ -169,7 +169,7 @@ fn roles_ranks_types_and_factions_read_back_by_number() {
     }
     assert_eq!(Rank::from_number(0), None);
     let numbers: Vec<u8> = ROSTER.iter().map(|foe| foe.number).collect();
-    assert_eq!(numbers, (1..=45).collect::<Vec<u8>>(), "numbered 1 to 45 in order");
+    assert_eq!(numbers, (1..=48).collect::<Vec<u8>>(), "numbered 1 to 48 in order");
     assert_eq!(foe_type(0), None);
     let tithe = faction(1).unwrap();
     assert_eq!((tithe.name, tithe.side()), ("The Grey Tithe", Side::Faction(1)));
@@ -185,7 +185,11 @@ fn roles_ranks_types_and_factions_read_back_by_number() {
     assert_eq!(crew, [(foes::factions::CREW, Side::Players); 5], "the crew's own types, on the players' side");
     let lattice = faction(3).unwrap();
     let crystal: Vec<&str> = lattice.types(Domain::Land).map(|foe| foe.name).collect();
-    assert_eq!(crystal, ["Husk", "Flicker", "Idol", "Ravager", "Bulwark", "Heart"]);
+    let breach = ["Bell", "The Scrivener", "The Steward"];
+    assert_eq!(
+        crystal,
+        ["Husk", "Flicker", "Idol", "Ravager", "Bulwark", "Heart"].into_iter().chain(breach).collect::<Vec<_>>()
+    );
     assert_eq!((lattice.types(Domain::Deck).count(), lattice.screens), (0, false), "on land only, never screened");
     assert_eq!(FACTIONS.len(), 2);
     assert_eq!(spawn(foe_type(14).unwrap(), Rank::Major, 0.0, 0.0, 0.0).0.weight, Weight::Medium);
