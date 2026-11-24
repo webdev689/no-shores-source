@@ -124,10 +124,24 @@ function fetchMeshes(wanted: (name: string) => boolean): Promise<void> {
   ).then(() => undefined);
 }
 
-/** Fetches every module's meshes once, but a Breach's run's. */
+/** The crystal a Breach's doorways stand sealed by: drawn only at its gate's zone and in its run, so fetched there. */
+const SEAL = 'breach-seal';
+
+/** Whether a module's meshes are fetched with the open world: every one but a Breach's run's and its seal. */
+export const inOpenWorld = (name: string): boolean => !ofRun(name) && name !== SEAL;
+
+/** Fetches every module's meshes the open world draws, once. */
 export function loadModules(): Promise<void> {
-  loading ??= fetchMeshes((name) => !ofRun(name));
+  loading ??= fetchMeshes(inOpenWorld);
   return loading;
+}
+
+let sealLoading: Promise<void> | null = null;
+
+/** Fetches a Breach's seal's meshes once, as its gate's zone or its run is opened; kept once fetched. */
+export function loadSealModule(): Promise<void> {
+  sealLoading ??= fetchMeshes((name) => name === SEAL);
+  return sealLoading;
 }
 
 let runLoading: Promise<void> | null = null;

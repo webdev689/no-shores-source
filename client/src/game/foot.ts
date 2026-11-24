@@ -36,7 +36,7 @@ import { GatherHold } from './gatherHold.ts';
 import { markedHere } from './overheadMarks.ts';
 import { nodeText, standOn } from './footGround.ts';
 import { ACCOUNT_CHANGED, type GearHere } from './gearScreen.ts';
-import { bearerHints, keysShown, onFoot } from './hints.ts';
+import { keysShown, onFoot } from './hints.ts';
 import { type Standing, standingOf } from './hudLaw.ts';
 import { windowRect } from './nodes.ts';
 import { PlazaLife, countersOf, floorOver } from './plazaLife.ts';
@@ -53,7 +53,7 @@ import type { AtEntrance, FootAsk, FootContext, FootFight, FootFrame, Heard, Hel
 import { arrivalQuery, closedIfThrown, stand } from './footPlace.ts';
 import { type InBreach, bearing } from './breachView.ts';
 import { gateArrival } from './breachTrips.ts';
-import { FollowCamera, followable, livingAmong } from '../player/followCamera.ts';
+import { FollowCamera, fallPlayed, followable, livingAmong } from '../player/followCamera.ts';
 import { hearing, nextOtherId, roomNote, rulesOf } from './footRoom.ts';
 
 export type { AtEntrance, FootContext, FootFight, FootFrame, Uses } from './footPlace.ts';
@@ -124,9 +124,10 @@ export class Foot {
   ownFigure: CardAt | null = null;
   /** The zone's public events as the page plays them. */
   private readonly publicView: PublicView;
-  /** Fallen in a Breach, whom the camera follows, and whether anyone living may be followed now. */
+  /** Fallen in a Breach, whom the camera follows, and while anyone living may be followed, the name of the one it does
+   *  (null while none may be). */
   private readonly follow = new FollowCamera();
-  followable = false;
+  followable: string | null = null;
   /** A node being gathered while E is held. */
   readonly hold = new GatherHold(
     () => this.gear?.ask({ kind: ASKS.stopGather }),
@@ -378,9 +379,11 @@ export class Foot {
     // fall has played.
     const breach = { run: this.run !== null, seen: this.held.breach, player: fight.player };
     const company = followable(livingAmong(fight.others, this.otherPlayers.placed), breach);
-    const down = this.fallen && (this.standing.kind !== 'dead' || this.standing.told) && company !== null;
-    this.followable = down && (company?.length ?? 0) > 0;
+    const down = this.fallen && fallPlayed(this.standing, fight.own?.action) && company !== null;
     this.follow.frame(down, company ?? [], controls.pressed('follow'));
+    const followed = this.follow.following;
+    const named = followed === null ? '' : (this.otherPlayers.plateOf(followed)?.name ?? '');
+    this.followable = down && (company?.length ?? 0) > 0 ? named : null;
     const aimed = () => playerCamera(this.follow.viewed(walker.player), movement, blocks, AIM, groundAt, this.roof);
     const camera = () => pushedIn(aimed(), effects.anima.push);
     const shown = this.player.frame(still ? IDLE : { ...controls, locked: true }, this.steps, seconds, clock, {
@@ -552,8 +555,7 @@ export class Foot {
       fall: this.publicView.fall,
     };
     const standing = this.standing;
-    const keys = keysShown(standing, onFoot(walker, shown, fight, !controls.locked && !paused));
-    const hints = bearer ? [...bearerHints(bearer.charged), ...keys] : keys;
+    const hints = keysShown(standing, onFoot(walker, shown, fight, !controls.locked && !paused, bearer));
     const dark = arrivals.darkOf(fight.player, clock);
     const { props, quest, sting } = shownPublic;
     return { shot, figures, standing, marks, lit, hidden, swings, fight: fought, hints, dark, props, quest, sting };

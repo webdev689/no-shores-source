@@ -352,11 +352,12 @@ export class PlaylistView {
       finding
         ? !search.launching && pressNode(STOP, 'Stop finding', 'button', 'F', size)
         : findable && pressNode(FIND, 'Find a Company', 'primary', 'F', size),
-      // While a search or a launch runs, Launch is not offered: Stop finding or the wait stands in its place.
+      // While a search or a launch runs, Launch is not offered: Stop finding or the wait stands in its place. A
+      // Breach is a company's, so it is never offered alone.
       !finding &&
         pressNode(
           LAUNCH,
-          search.company ? 'Go with your company' : 'Go alone',
+          search.company ? 'Go with your company' : entry.launch.seas === 'breach' ? 'Launch' : 'Go alone',
           findable ? 'button' : 'primary',
           'E',
           size,

@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import { test } from 'node:test';
-import { moduleNumber, ofRun } from '../city/modules.ts';
+import { inOpenWorld, moduleNumber, ofRun } from '../city/modules.ts';
 import { ASKS, type GearAsk, type GearState } from '../network/gearMessages.ts';
 import type { Happening } from './flow.ts';
 import { arrivalQuery } from './footPlace.ts';
@@ -110,12 +110,8 @@ test("launched, the player stands at the gate's own arrival as the zone's layout
   assert.deepEqual([none.x, none.y], [5, 6], 'the zone spawn, the room standing them');
 });
 
-test("only a Breach's run's own modules wait for the run: the gate and its seal stand in the open world", () => {
-  assert.deepEqual(['breach-gate', 'breach-seal', 'breach-choir', 'breach-bell', 'lattice-shard'].map(ofRun), [
-    false,
-    false,
-    true,
-    true,
-    false,
-  ]);
+test("only a Breach's run's own modules wait for the run; its seal is fetched apart, at its gate and in the run", () => {
+  const modules = ['breach-gate', 'breach-seal', 'breach-choir', 'breach-bell', 'lattice-shard'];
+  assert.deepEqual(modules.map(ofRun), [false, false, true, true, false]);
+  assert.deepEqual(modules.map(inOpenWorld), [true, false, false, false, true], 'the open world fetches no seal');
 });

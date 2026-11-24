@@ -97,9 +97,10 @@ function fightingPlayer(right = 'sword_iron', start: { readonly x: number; reado
   const player = new PlayerFight(fighting, rules, walker);
   const steps = fighting.steps(movement);
   let clock = 0;
-  const frame = (input: InputFrame) => {
+  const frame = (input: InputFrame, bearer: { readonly charged: boolean } | null = null) => {
     clock += TICK;
-    return player.frame(input, steps, TICK, clock, { running: true, hands: true, markOf: () => null, zoomOf: () => 1 });
+    const asked = { running: true, hands: true, markOf: () => null, zoomOf: () => 1, bearer };
+    return player.frame(input, steps, TICK, clock, asked);
   };
   return { fighting, walker, shown, frame, said, warmed, loads };
 }
@@ -316,4 +317,17 @@ test('locked on, a dodge is drawn rolling the way it goes, while the rules keep 
   assert.ok(Math.abs((own?.aim ?? east) - east) > 0.5, `the rules face the foe: ${own?.aim}`);
   assert.ok(Math.abs(walker.you.facing - east) < 1e-9, `the figure rolls east: ${walker.you.facing}`);
   assert.equal(walker.look.facing, walker.you.facing, 'the room is told it so');
+});
+
+test("bearing the Lodestone, an Art's key asks the room to ground it and plays no spell; unborne, the Art is cast", () => {
+  const { fighting, walker, frame } = fightingPlayer();
+  for (let step = 0; step < 4; step++) frame(controls());
+  frame(controls([], ['tenetOne']), { charged: true });
+  frame(controls(), { charged: true });
+  assert.deepEqual([fighting.castSent, walker.player.cast], [null, null], 'no spell sent to be shown, no cast begun');
+  const unborne = fightingPlayer();
+  for (let step = 0; step < 4; step++) unborne.frame(controls());
+  unborne.frame(controls([], ['tenetOne']));
+  unborne.frame(controls());
+  assert.notEqual(unborne.fighting.castSent, null, 'Storm worn: its First Tenet cast');
 });

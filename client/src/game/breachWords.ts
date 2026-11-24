@@ -1,25 +1,49 @@
-// What a Breach says on the page, from what its room says of it (`BreachSeen`) and its plan: its gate's banner in the
-// patrol zone, for everyone there, with the companies inside; the encounter under way's banner in its run, with the
-// Lodestone and the revives left; its place line; and the call over the view while a mark or a countdown is the
-// player's. Nothing here judges a rule: the words only say what the room said.
+// What a Breach says on the page, from what its room says of it (`BreachSeen`), its plan and what the page counts of
+// it (`RunCounts`): its gate's banner in the patrol zone, for everyone there, with the companies inside; the encounter
+// under way's banner in its run, with the Lodestone and the revives left; its place line; the call over the view
+// while the player must act; and its moments in words. Nothing here judges a rule: the words only say what the room
+// said.
 import type { Banner } from '../combat/publicBanner.ts';
 import { BREACH_EVENT, BREACH_PHASE, type BreachSeen, RIFT, STONE } from '../network/breachMessages.ts';
 import type { FightEvent } from '../network/messages.ts';
 import type { BreachPlan } from './breachPlan.ts';
 
+type Point = readonly [number, number, number];
+
 /** The room's ticks a second. */
 const TICKS_PER_SECOND = 60;
 /** The encounters by their place in the Breach's list (crates/room/src/breach/mod.rs). */
 export const ENCOUNTER = { waking: 0, mending: 1, choir: 2, ways: 3, shores: 4, steward: 5 } as const;
-/** The Mending's seams and the Shores' rifts, in the order the room counts them. */
+/** The Mending's seams in the order the room counts them, and the shores, what was then what is, named as their
+ *  Keepers are (shores.rs). */
 const SEAMS = ['north', 'west', 'east'] as const;
-const SHORES = ['what was', 'what is'] as const;
+const SHORES = ['What Was', 'What Is'] as const;
 /** The room's limits (crates/room/src/breach): the fusions that close the Mending and the Shores, Normal then Hard;
  *  the bells of each of the Choir's rounds, whose `bells` name only those woken yet; the Steward's takings before it
  *  unwrites the company. */
 const FUSIONS_MOST = [4, 3] as const;
 const ROUND_BELLS = [3, 4, 5, 6, 7] as const;
 const TAKINGS_MOST = 4;
+/** Why a gate shuts out a member of its company, as the room tells them (judging.rs ShutOut): the company full, under
+ *  the tier's level, Hard before a Normal win. */
+const SHUT_OUT = { full: 1, level: 2, hard: 3 } as const;
+/** Each encounter's line as it begins: the verb that wins it. */
+const TEACHING: Readonly<Record<number, string>> = {
+  [ENCOUNTER.waking]: 'Hold all three moorings to wake the Spire',
+  [ENCOUNTER.mending]: 'Keep the Husks from the open seams',
+  [ENCOUNTER.choir]: 'Break the bells in the order they woke',
+  [ENCOUNTER.ways]: 'Reach the Broken Stair unseen, all of you, and walk near a Watcher: it hears a sprint',
+  [ENCOUNTER.shores]: 'Hold a mooring to open its rift',
+  [ENCOUNTER.steward]: 'Ground the Lodestone at its feet, and call the order to the taken',
+};
+/** Each encounter's line as it is won. */
+const WON: Readonly<Record<number, string>> = {
+  [ENCOUNTER.mending]: 'The seams are mended',
+  [ENCOUNTER.choir]: 'The Scrivener is silenced',
+  [ENCOUNTER.ways]: 'Through the Unlit Ways',
+  [ENCOUNTER.shores]: 'Both Keepers have fallen',
+  [ENCOUNTER.steward]: 'The Steward has fallen',
+};
 
 /** Ticks as a clock: "0:12", "1:05"; empty for none. */
 export function ticksWords(ticks: number): string {
@@ -30,6 +54,7 @@ export function ticksWords(ticks: number): string {
 
 const percent = (share: number) => `${Math.round(share * 100)}%`;
 const tierName = (plan: BreachPlan, tier: number) => plan.tiers[tier]?.name ?? '';
+const capital = (words: string) => `${words[0]?.toUpperCase() ?? ''}${words.slice(1)}`;
 
 /** The revives left in words: "1 revive left", "No revives left"; empty where none are counted (-1). */
 export function revivesWords(revives: number): string {
@@ -49,6 +74,10 @@ export function encounterOn(seen: BreachSeen): number {
   const next = seen.phases.findIndex((phase) => phase !== BREACH_PHASE.won);
   return next < 0 ? seen.phases.length : next;
 }
+
+/** An encounter's line as it begins, the verb that wins it; and as it is won. Empty for none. */
+export const teachingWords = (encounter: number): string => TEACHING[encounter] ?? '';
+export const wonWords = (encounter: number): string => WON[encounter] ?? '';
 
 /** The companies inside the run, as the gate shows the zone: "Ada · Hard · The Choir". */
 export function insideWords(plan: BreachPlan, seen: BreachSeen): string[] {
@@ -121,6 +150,19 @@ export function stoneWords(seen: BreachSeen, nameOf: (player: number) => string)
   return '';
 }
 
+/** What the page counts of a run itself, beside the room's word (`breachCounts.ts`): the player's number, the ticks
+ *  before they are stranded in a shut shore (0 for none), the court's way-back mooring (where it is, how many hold it
+ *  and how many it needs), the company living and how many of them stand on the Broken Stair, and the ticks before the
+ *  Scrivener's fury (0 in it, null where the page did not see its stage begin). */
+export interface RunCounts {
+  readonly own: number;
+  readonly stranded: number;
+  readonly mooring: { readonly at: Point; readonly held: number; readonly needed: number } | null;
+  readonly stair: { readonly on: number; readonly living: number } | null;
+  readonly fury: number | null;
+}
+export const NO_COUNTS: RunCounts = { own: -1, stranded: 0, mooring: null, stair: null, fury: null };
+
 /** What the encounter under way shows, in its banner's objective, clock and bar. */
 interface Under {
   readonly objective: string;
@@ -128,43 +170,75 @@ interface Under {
   readonly bar: Banner['bar'];
 }
 
-/** The encounter under way, by its number, as its room counts it (crates/room/src/breach/seen.rs). */
-function underWay(seen: BreachSeen, nameOf: (player: number) => string): Under {
+const joined = (...parts: readonly string[]) => parts.filter(Boolean).join(' · ');
+
+/** The Choir under way: its rounds, the bells broken of the round's and the font; then the Scrivener, its ward, the
+ *  desk it marked, its lone bell's ring, its writing and its fury. */
+function choirUnder(seen: BreachSeen, counts: RunCounts): Under {
+  if (seen.stage < 2) {
+    const font = seen.fontTicks > 0 ? `Font rests ${ticksWords(seen.fontTicks)}` : 'Font lit';
+    const ring = seen.ringTicks > 0 ? `Rings in ${ticksWords(seen.ringTicks)}` : '';
+    const nth = seen.counts[0] ?? 0;
+    const round = `Round ${nth + 1} of ${ROUND_BELLS.length}`;
+    const rung = ROUND_BELLS[nth] ?? seen.bells.length;
+    const bar = rung > 0 ? { share: seen.broken / rung, label: `Bells broken ${seen.broken} of ${rung}` } : null;
+    return { objective: joined(round, ring, font), clock: seen.ringTicks, bar };
+  }
+  const within = seen.deskTicks > 0 ? ` within ${ticksWords(seen.deskTicks)}` : '';
+  const desk = seen.markedDesk >= 0 ? `A desk is marked: stand on it${within}` : '';
+  const ward = seen.warded ? 'The Scrivener is warded: ground the Lodestone beside it' : 'The Scrivener';
+  const bell = seen.ringTicks > 0 ? `A bell rings in ${ticksWords(seen.ringTicks)}` : '';
+  const writes = seen.writeTicks > 0 ? `Writes in ${ticksWords(seen.writeTicks)}` : '';
+  const fury = counts.fury === null ? '' : counts.fury > 0 ? `Fury in ${ticksWords(counts.fury)}` : 'In its fury';
+  return { objective: joined(ward, desk, bell, writes, fury), clock: seen.writeTicks, bar: null };
+}
+
+/** The Steward under way, to the taken and to the court: the taken see their shore, the order's call and the bells
+ *  broken; the court the takings, the toll, who is taken, the bells and the way back's mooring, and its bareness. */
+function stewardUnder(seen: BreachSeen, counts: RunCounts, nameOf: (player: number) => string): Under {
+  const away = seen.awayShore >= 0;
+  const shore = SHORES[seen.awayShore] ?? '';
+  const bells = away && seen.bells.length > 0 ? `Bells broken ${seen.broken} of ${seen.bells.length}` : '';
+  const way = away && seen.wayBack ? 'The way back is open' : '';
+  const toll = seen.writeTicks > 0 ? `Tolls in ${ticksWords(seen.writeTicks)}` : '';
+  if (away && seen.away.includes(counts.own)) {
+    const call = way || 'Break the bells in the order the court calls';
+    return { objective: joined(`Taken to ${shore}`, call, bells, toll), clock: seen.writeTicks, bar: null };
+  }
+  // After its last taking, the next one due unwrites the company.
+  const due = ticksWords(seen.takingTicks);
+  const takes = !due ? '' : seen.takings >= TAKINGS_MOST ? `The company is unwritten in ${due}` : `Takes in ${due}`;
+  const taken = away ? `Taken to ${shore}: ${seen.away.map(nameOf).join(', ')}` : '';
+  const mooring = away && counts.mooring && counts.mooring.needed > 0 ? counts.mooring : null;
+  const held = mooring ? `Mooring of ${shore} held ${mooring.held} of ${mooring.needed}` : '';
+  const bare = seen.bareTicks > 0 ? `Laid bare ${ticksWords(seen.bareTicks)}` : '';
+  const objective = joined(`Takings ${seen.takings} of ${TAKINGS_MOST}`, takes, toll, taken, bells, way, held, bare);
+  return { objective, clock: seen.bareTicks || seen.takingTicks, bar: null };
+}
+
+/** The encounter under way, by its number, as its room counts it (crates/room/src/breach/seen.rs) and the page counts
+ *  beside it. */
+function underWay(seen: BreachSeen, counts: RunCounts, nameOf: (player: number) => string): Under {
   const most = FUSIONS_MOST[seen.tier] ?? FUSIONS_MOST[0];
-  const bells = (seen.bells.length > 0 && `Bells broken ${seen.broken} of ${seen.bells.length}`) || '';
   switch (seen.encounter) {
     case ENCOUNTER.mending: {
       const open = ['The north seam open', 'The west and east seams open', 'All three seams open', 'The Mender stands'];
       const fusions = seen.counts.reduce((sum, count) => sum + count, 0);
       const seams = seen.counts.map((count, seam) => `${SEAMS[seam] ?? seam} ${count}`).join(' · ');
       const fused = `Fused ${fusions} of ${most}: ${seams}`;
-      return { objective: [open[seen.stage] ?? '', fused].join(' · '), clock: seen.stageTicks, bar: null };
+      return { objective: joined(open[seen.stage] ?? '', fused), clock: seen.stageTicks, bar: null };
     }
-    case ENCOUNTER.choir: {
-      if (seen.stage < 2) {
-        const font = seen.fontTicks > 0 ? `Font rests ${ticksWords(seen.fontTicks)}` : 'Font lit';
-        const ring = seen.ringTicks > 0 ? `Rings in ${ticksWords(seen.ringTicks)}` : '';
-        const nth = seen.counts[0] ?? 0;
-        const round = `Round ${nth + 1} of ${ROUND_BELLS.length}`;
-        const rung = ROUND_BELLS[nth] ?? seen.bells.length;
-        const bar = rung > 0 ? { share: seen.broken / rung, label: `Bells broken ${seen.broken} of ${rung}` } : null;
-        return { objective: [round, ring, font].filter(Boolean).join(' · '), clock: seen.ringTicks, bar };
-      }
-      const desk =
-        seen.markedDesk >= 0
-          ? `Desk ${seen.markedDesk + 1} marked: blot it from its step · ${ticksWords(seen.deskTicks)}`
-          : '';
-      const ward = seen.warded ? 'The Scrivener is warded: ground the Lodestone beside it' : 'The Scrivener';
-      const writes = seen.writeTicks > 0 ? `Writes in ${ticksWords(seen.writeTicks)}` : '';
-      return { objective: [ward, desk, writes].filter(Boolean).join(' · '), clock: seen.writeTicks, bar: null };
-    }
+    case ENCOUNTER.choir:
+      return choirUnder(seen, counts);
     case ENCOUNTER.ways: {
       const seenWords = seen.seen
         ? seen.wipeTicks > 0
           ? `Seen: the company is unwritten in ${ticksWords(seen.wipeTicks)}`
           : 'Seen'
         : 'Unseen';
-      return { objective: `${seenWords} · reach the Broken Stair`, clock: seen.wipeTicks, bar: null };
+      const stair = counts.stair;
+      const onStair = stair ? `On the Broken Stair ${stair.on} of ${stair.living}` : 'Reach the Broken Stair';
+      return { objective: joined(seenWords, onStair), clock: seen.wipeTicks, bar: null };
     }
     case ENCOUNTER.shores: {
       if (seen.stage === 0) return { objective: 'The Warden stands at the Seam', clock: 0, bar: null };
@@ -180,51 +254,59 @@ function underWay(seen: BreachSeen, nameOf: (player: number) => string): Under {
       const kept = [0, 1].filter((rift) => (seen.kept & (1 << rift)) !== 0).length;
       const toll = seen.writeTicks > 0 ? `Tolls in ${ticksWords(seen.writeTicks)}` : '';
       const fused = `Fused ${seen.counts[0] ?? 0} of ${most}`;
-      const objective = [...rifts, `Keepers fallen ${kept} of 2`, toll, fused].filter(Boolean).join(' · ');
-      return { objective, clock: seen.writeTicks, bar: null };
+      return {
+        objective: joined(...rifts, `Keepers fallen ${kept} of 2`, toll, fused),
+        clock: seen.writeTicks,
+        bar: null,
+      };
     }
-    case ENCOUNTER.steward: {
-      const away =
-        seen.awayShore >= 0
-          ? `Taken to ${SHORES[seen.awayShore] ?? seen.awayShore}: ${seen.away.map(nameOf).join(', ')}${seen.wayBack ? ' · the way back is open' : ''}`
-          : '';
-      const bare = seen.bareTicks > 0 ? `Laid bare ${ticksWords(seen.bareTicks)}` : '';
-      // After its last taking, the next one due unwrites the company.
-      const last = seen.takings >= TAKINGS_MOST;
-      const due = ticksWords(seen.takingTicks);
-      const takes = !due ? '' : last ? `The company is unwritten in ${due}` : `Takes in ${due}`;
-      const toll = seen.writeTicks > 0 ? `Tolls in ${ticksWords(seen.writeTicks)}` : '';
-      const takings = `Takings ${seen.takings} of ${TAKINGS_MOST}`;
-      const objective = [takings, takes, toll, away, seen.awayShore >= 0 ? bells : '', bare]
-        .filter(Boolean)
-        .join(' · ');
-      return { objective, clock: seen.bareTicks || seen.takingTicks, bar: null };
-    }
+    case ENCOUNTER.steward:
+      return stewardUnder(seen, counts, nameOf);
     default:
       return { objective: '', clock: 0, bar: null };
   }
 }
 
+/** The player's own mark in words: Rewritten, with the time before they are unwritten, or the toll or the writing
+ *  that unwrites them. Empty while they bear none. */
+function markWords(seen: BreachSeen, own: number): string {
+  const mark = seen.marked.find((marked) => marked.player === own);
+  if (!mark) return '';
+  // The Seam and the Steward unwrite at their toll; the Choir and the Scrivener at their writing.
+  const tolls = seen.encounter === ENCOUNTER.shores || seen.encounter === ENCOUNTER.steward;
+  return mark.ticks > 0
+    ? `Rewritten: unwritten in ${ticksWords(mark.ticks)}`
+    : `Rewritten: unwritten at the next ${tolls ? 'toll' : 'writing'}`;
+}
+
 /** The run's banner: its tier, the encounter under way (or the way on to the next), the Lodestone and the revives
- *  left. */
-export function runBanner(plan: BreachPlan, seen: BreachSeen, nameOf: (player: number) => string): Banner {
+ *  left; the player's own countdown first where one runs (seen in the Ways at Hard, the Lodestone lying, stranded in a
+ *  shut shore, Rewritten), its clock and its words, which the call only points to. */
+export function runBanner(
+  plan: BreachPlan,
+  seen: BreachSeen,
+  nameOf: (player: number) => string,
+  counts: RunCounts = NO_COUNTS,
+): Banner {
   const reached = encounterOn(seen);
   const running = seen.encounter > 0;
-  const under = underWay(seen, nameOf);
-  const revives = revivesWords(seen.revives);
+  const under = underWay(seen, counts, nameOf);
   const cleared = reached >= plan.encounters.length;
+  const mark = seen.marked.find((marked) => marked.player === counts.own)?.ticks ?? 0;
+  const due = [seen.wipeTicks, seen.lyingTicks, counts.stranded, mark].find((ticks) => ticks > 0) ?? 0;
+  const stranded = counts.stranded > 0 ? `Stranded: unwritten in ${ticksWords(counts.stranded)}` : '';
   return {
     tone: cleared ? 'won' : running ? 'running' : 'next',
     kicker: `Breach · ${tierName(plan, seen.tier)}`,
     title: cleared ? `${plan.name} cleared` : encounterName(plan, reached),
     place: plan.name,
-    clock: ticksWords(under.clock),
-    urgent: seen.wipeTicks > 0 || seen.lyingTicks > 0,
+    clock: ticksWords(due || under.clock),
+    urgent: due > 0,
     objective: running ? under.objective : '',
     bar: under.bar,
     heroic: null,
     bonus: null,
-    elsewhere: [stoneWords(seen, nameOf), revives].filter(Boolean).join(' · '),
+    elsewhere: joined(stranded, markWords(seen, counts.own), stoneWords(seen, nameOf), revivesWords(seen.revives)),
   };
 }
 
@@ -236,33 +318,59 @@ export function runPlaceWords(plan: BreachPlan, seen: BreachSeen | null, tier: n
   return ['Breach', name, reached, revivesWords(seen.revives)].filter(Boolean).join(' · ');
 }
 
-/** The call over the view for the player numbered `own`: Rewritten with the time before they are unwritten, or the
- *  company's countdown while it runs (seen in the Ways at Hard, the Lodestone lying). Null for none. */
-export function breachCall(seen: BreachSeen, own: number): string | null {
-  if (seen.wipeTicks > 0) return `Seen: the company is unwritten in ${ticksWords(seen.wipeTicks)}`;
-  if (seen.lyingTicks > 0) return `The Lodestone lies: the company is unwritten in ${ticksWords(seen.lyingTicks)}`;
-  const mark = seen.marked.find((marked) => marked.player === own);
-  if (!mark) return null;
-  // The Seam and the Steward unwrite at their toll; the Choir and the Scrivener at their writing.
-  const tolls = seen.encounter === ENCOUNTER.shores || seen.encounter === ENCOUNTER.steward;
-  return mark.ticks > 0
-    ? `Rewritten: unwritten in ${ticksWords(mark.ticks)}`
-    : `Rewritten: unwritten at the next ${tolls ? 'toll' : 'writing'}`;
+/** The call over the view: a few words that stand while the player must act, the countdown beside them in the
+ *  banner. Seen in the Ways at Hard; the Lodestone lying; stranded in a shut shore; the player Rewritten (to the font
+ *  while it is lit, else to Hold True); a desk marked. Null for none. */
+export function breachCall(seen: BreachSeen, counts: Pick<RunCounts, 'own' | 'stranded'>): string | null {
+  if (seen.wipeTicks > 0) return 'Seen!';
+  if (seen.lyingTicks > 0) return 'Take the stone!';
+  if (counts.stranded > 0) return 'Stranded!';
+  if (seen.marked.some((marked) => marked.player === counts.own)) {
+    if (seen.encounter === ENCOUNTER.choir && seen.stage < 2 && seen.fontTicks === 0) return 'To the font!';
+    if (seen.stone === STONE.borne) return seen.bearer === counts.own ? 'Hold True!' : 'To the bearer!';
+    return 'Take the stone!';
+  }
+  return seen.encounter === ENCOUNTER.choir && seen.markedDesk >= 0 ? 'Onto the desk!' : null;
 }
 
-/** A moment of the room's in words, for a company of `company` players (`nameOf` naming each, "you" the player): the
- *  company fallen, its attempt lost; a fallen one raised, with the revives left where they are counted; the whole
- *  company unwritten. Null for any other moment. */
+/** Why the room unwrote every living player (lodestone.rs `unwrite_all`), by its word the frame before (`before`)
+ *  and as it did: the Lodestone left lying, seen in the Ways at Hard, the seams or the Seam fused to their limit, or
+ *  the Steward's last toll. Null for any other unwriting: a writing, or one mark's time come. */
+export function unwrittenBy(before: BreachSeen | null, seen: BreachSeen): string | null {
+  if (!before) return null;
+  const most = FUSIONS_MOST[seen.tier] ?? FUSIONS_MOST[0];
+  const fused = seen.counts.reduce((sum, count) => sum + count, 0) >= most;
+  if (before.lyingTicks > 0) return 'the Lodestone lay too long';
+  if (before.wipeTicks > 0) return 'seen by a Watcher';
+  if (seen.encounter === ENCOUNTER.mending && fused) return `the seams fused ${most} times`;
+  if (seen.encounter === ENCOUNTER.shores && fused) return `the Seam fused ${most} times`;
+  const last = before.encounter === ENCOUNTER.steward && before.takings >= TAKINGS_MOST;
+  return last && before.takingTicks > 0 && before.takingTicks <= TICKS_PER_SECOND ? 'the Steward unwrote you' : null;
+}
+
+/** Why the gate shut the player out of its company, in words: its company full, under the tier's level, or Hard
+ *  before the Breach is won at Normal. */
+export function shutOutWords(plan: BreachPlan, tier: number, why: number): string {
+  const named = plan.tiers[tier];
+  if (why === SHUT_OUT.full) return 'The gate shut you out: your company holds eight already.';
+  if (why === SHUT_OUT.level && named) return `The gate shut you out: ${named.name} opens at level ${named.opens}.`;
+  if (why === SHUT_OUT.hard) return `The gate shut you out: Hard opens once ${inSentence(plan.name)} is won at Normal.`;
+  return 'The gate shut you out.';
+}
+
+/** A moment of the room's in words, to the company (`nameOf` naming each, "you" the player): the company fallen, its
+ *  attempt lost, with why where the page knows it (`cause`); a fallen one raised, with the revives left where they
+ *  are counted; the whole company unwritten (`cause` given); one seen by a Watcher. Null for any other moment. */
 export function momentWords(
   event: Pick<FightEvent, 'kind' | 'striker' | 'defender' | 'amount'>,
-  company: number,
   nameOf: (player: number) => string,
+  cause: string | null = null,
 ): string | null {
-  if (event.kind === BREACH_EVENT.wiped) return 'Your company fell.';
-  if (event.kind === BREACH_EVENT.unwritten) return event.amount >= company ? 'The company is unwritten.' : null;
+  if (event.kind === BREACH_EVENT.wiped) return cause ? `Your company fell: ${cause}.` : 'Your company fell.';
+  if (event.kind === BREACH_EVENT.unwritten) return cause ? 'The company is unwritten.' : null;
+  if (event.kind === BREACH_EVENT.seen) return `A Watcher saw ${nameOf(Math.round(event.amount))}.`;
   if (event.kind !== BREACH_EVENT.revived) return null;
   // The room tells a raising's revives left, or 255 where none are counted.
   const left = event.amount < 255 ? revivesWords(event.amount) : '';
-  const raised = `${nameOf(event.striker)} raised ${nameOf(event.defender)}`;
-  return [`${raised[0]?.toUpperCase() ?? ''}${raised.slice(1)}`, left].filter(Boolean).join(' · ');
+  return joined(capital(`${nameOf(event.striker)} raised ${nameOf(event.defender)}`), left);
 }

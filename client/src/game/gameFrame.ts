@@ -26,7 +26,7 @@ import type { FootView } from './footView.ts';
 import type { FriendlyTraffic, FriendlyWater } from './friendlyShips.ts';
 import { contextOf } from './gameKeys.ts';
 import { gearScreenOpen } from './gearWindow.ts';
-import { FOLLOW_HINT, HINTS, withMapKey } from './hints.ts';
+import { HINTS, followHint, withMapKey } from './hints.ts';
 import { runPlaceWords } from './breachWords.ts';
 import { ofRun, releaseRunModules } from '../city/modules.ts';
 import { gearTakesKeys } from './gearScreen.ts';
@@ -325,8 +325,8 @@ export function startFrames(parts: FrameParts, playing: Playing): void {
     hud.passageOffer(playing.through?.offer ?? null);
     // N raises the map on foot unless a menu is up, the player has fallen or is in a dungeon, as `openMap` has it.
     const mapless = paused || here.fallen || here.mapless;
-    // Fallen in a Breach, the camera follows the company: its key is shown while anyone living may be followed.
-    const hints = here.followable ? [FOLLOW_HINT, ...shown.hints] : shown.hints;
+    // Fallen in a Breach, the camera follows the company: its key, naming whom, is shown while anyone may be followed.
+    const hints = here.followable !== null ? [followHint(here.followable), ...shown.hints] : shown.hints;
     hud.hints(looking ? HINTS.landMap : mapless ? hints : withMapKey(hints));
     // The quest's mark gives way to the map, as the fight's display does.
     hud.marks(looking ? [] : quests.marks(shown.shot, viewport, [body.x, body.y], parts.groundAt, here.node.id));

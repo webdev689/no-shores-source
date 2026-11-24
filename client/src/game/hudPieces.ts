@@ -93,8 +93,9 @@ export function warningNode(view: HudView, count: string): Node {
   };
 }
 
-/** Death's words over the middle of the view and the press to rise again, waiting while it may not yet. */
-export function deathNode(ui: Interface, why: string, canRespawn: boolean, respawn: () => void): Node {
+/** Death's words over the middle of the view and the press to rise again, waiting while it may not yet; none where
+ *  the place stands the player again itself (`respawn` null). */
+export function deathNode(ui: Interface, why: string, canRespawn: boolean, respawn: (() => void) | null): Node {
   return {
     width: 'grow',
     height: 'grow',
@@ -110,10 +111,11 @@ export function deathNode(ui: Interface, why: string, canRespawn: boolean, respa
         through: true,
         children: [said(why, { colour: DIM })],
       },
-      hudPress(ui, 'hud:respawn', canRespawn ? 'Respawn' : 'Respawn…', respawn, {
-        role: 'primary',
-        disabled: !canRespawn,
-      }),
+      respawn &&
+        hudPress(ui, 'hud:respawn', canRespawn ? 'Respawn' : 'Respawn…', respawn, {
+          role: 'primary',
+          disabled: !canRespawn,
+        }),
     ],
   };
 }

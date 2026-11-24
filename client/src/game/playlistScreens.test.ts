@@ -330,6 +330,7 @@ test("the Breach stands on the Playlist at Normal and Hard, shut below each tier
   assert.equal(normal?.rules[0], 'Played online, with a company of up to eight.', 'said first');
   assert.ok(normal?.rules.includes('Outside an encounter the fallen stand again after 6 s. In one, after 10 s.'));
   assert.ok(hard?.rules.includes('Outside an encounter the fallen stand again after 6 s.'));
+  assert.ok(hard?.rules.includes('Opens once the Drowned Vale is won at Normal.'), 'its name as a sentence carries it');
   assert.deepEqual(
     [normal?.drops, hard?.drops],
     ['Drops Breach gear, its armour to 28 Prestige', 'Drops Breach gear, its armour to 30 Prestige'],

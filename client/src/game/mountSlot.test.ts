@@ -177,15 +177,19 @@ test('at sea the horse worn is read from the gear the sea sends, on deck as asho
   assert.equal(walker.rides, false, 'and none once it is taken off');
 });
 
-test("bearing the Lodestone the player's figure holds no weapon, as the room has its bearer", () => {
+test("bearing the Lodestone the player's figure holds no weapon, as the room has its bearer, and again once set down", () => {
   const walker = Object.assign(Object.create(Walker.prototype) as Walker, {
     player: { mounted: false, loadout: 0 },
-    you: { dress: { ...plainDress('human', 0.3), outfit: { ...plainDress('human', 0.3).outfit, right: 'sword' } } },
+    you: { dress: plainDress('human', 0.3) },
   });
-  const forge = { wardrobe: () => null } as unknown as Cards;
+  const wardrobe = { sets: {}, garments: [], right: ['sword_iron'], left: [], hairStyles: [] };
+  const forge = { wardrobe: () => wardrobe } as unknown as Cards;
   const dressed: Dressed = { gear: null, loadout: 0 };
-  const gear = state({ items: [] });
+  const gear = state({ items: [item({ id: 1, kind: 2, at: 2 })] });
+  dressInGear(walker, forge, gear, dressed);
+  assert.equal(walker.you.dress.outfit.right, 'sword_iron', 'the sword worn');
   dressInGear(walker, forge, gear, dressed, true);
   assert.deepEqual([walker.you.dress.outfit.right, walker.you.dress.outfit.left], [null, null]);
-  assert.equal(dressed.bare, true, 'dressed again once the stone is set down');
+  dressInGear(walker, forge, gear, dressed);
+  assert.equal(walker.you.dress.outfit.right, 'sword_iron', 'dressed again once the stone is set down');
 });

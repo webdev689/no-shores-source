@@ -236,6 +236,20 @@ test('at most sixteen sounds at once: the farthest gives way to a nearer one, a 
   assert.equal(voiceToDrop([1, 9], 10, 3), null);
 });
 
+test("a cue heard where something else happened plays at its own pitch where it has one, a Breach's bell's note", () => {
+  const { output, play, played } = fakeSound();
+  const sounds = new WorldSounds(() => output, play);
+  const bell = { cue: 'element.cosmic', at: [1, 3, 2] as const, rate: 1.5 };
+  sounds.frame({ ...frameOf(), heard: [bell, { cue: 'story.crash', at: [1, 3, 2] }] });
+  assert.deepEqual(
+    played.map((one) => [one.id, one.rate]),
+    [
+      ['element.cosmic', 1.5],
+      ['story.crash', 1],
+    ],
+  );
+});
+
 test("a public event's cue holds its voice a few seconds at most, fading out; a fight's plays out", () => {
   const { output, play, played, faded } = fakeSound();
   const sounds = new WorldSounds(() => output, play);

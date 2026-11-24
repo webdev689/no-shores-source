@@ -1,9 +1,10 @@
 // Following the company while fallen, as the owner asked for the Breach: while the player lies down or waits to stand
-// again in a Breach's run, or at its gate while their company holds it, the camera stands over a living member of
-// their company (every other player in a run is one), in third person, turned as the player turns it; Follow goes to
-// the next. Standing again, it is the player's own.
+// again in a Breach's run, or at its gate while their company holds it, once their own fall has played, the camera
+// stands over a living member of their company (every other player in a run is one), in third person, turned as the
+// player turns it; Follow goes to the next. Standing again, it is the player's own.
 import type { SeenPlayer } from '../network/messages.ts';
 import { fighterView } from '../rules/fighters.ts';
+import { FIGHT_TICKS } from './fightMoves.ts';
 import type { Player } from './player.ts';
 
 type Point = readonly [number, number, number];
@@ -62,6 +63,16 @@ export function followable(
   if (run) return living;
   if (!seen?.gate || !seen.holders.includes(player)) return null;
   return living.filter((each) => seen.holders.includes(each.id));
+}
+
+/** Whether the player's own fall has played, so the camera may leave them: a fall past the section's edge once death
+ *  is told (`standing`), a fight's death once its move has played out (`action`, the player's own). */
+export function fallPlayed(
+  standing: { readonly kind: 'inside' | 'warned' } | { readonly kind: 'dead'; readonly told: boolean },
+  action: { readonly kind: string; readonly elapsed?: number } | undefined,
+): boolean {
+  if (standing.kind === 'dead') return standing.told;
+  return action?.kind === 'dead' && (action.elapsed ?? 0) >= FIGHT_TICKS.death;
 }
 
 /** Every other player living, where their figure stands: those whose fighter the room says has not fallen. */

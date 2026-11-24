@@ -413,7 +413,12 @@ export class Hud {
       this.menuShown && menuNode(ui, this.menuShown.title, this.menuShown.choices),
       standing.kind === 'dead' &&
         standing.told &&
-        deathNode(ui, deathWords(standing.fell), standing.canRespawn, () => this.respawnWanted()),
+        deathNode(
+          ui,
+          deathWords(standing.fell, standing.waits),
+          standing.canRespawn,
+          standing.waits ? null : () => this.respawnWanted(),
+        ),
       this.veilNode(width, clock, still),
       !this.quiet && this.usePrompt.node(view),
       this.seaSight.node(),

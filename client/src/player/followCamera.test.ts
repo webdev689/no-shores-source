@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { FollowCamera, followable, nextFollowed } from './followCamera.ts';
+import { FollowCamera, fallPlayed, followable, nextFollowed } from './followCamera.ts';
+import { FIGHT_TICKS } from './fightMoves.ts';
 import type { Player } from './player.ts';
 
 const ada = { id: 4, at: [10, 0, 50] as const };
@@ -45,4 +46,15 @@ test("fallen, the camera follows anyone living in a run, at the gate its holding
   assert.deepEqual(followable([ada, ben], { run: false, seen: gate([7, 9]), player: 7 }), [ben]);
   assert.equal(followable([ada, ben], { run: false, seen: gate([4, 9]), player: 7 }), null, "another company's");
   assert.equal(followable([ada, ben], { run: false, seen: null, player: 7 }), null, 'no Breach');
+});
+
+test("the camera leaves the player's body only once their own fall has played, by the edge or by a blow", () => {
+  const inside = { kind: 'inside' } as const;
+  const dead = (elapsed: number) => ({ kind: 'dead', elapsed });
+  assert.equal(fallPlayed(inside, dead(0)), false, 'struck down this moment');
+  assert.equal(fallPlayed(inside, dead(FIGHT_TICKS.death - 1)), false, 'still falling');
+  assert.equal(fallPlayed(inside, dead(FIGHT_TICKS.death)), true);
+  assert.equal(fallPlayed({ kind: 'dead', told: false }, undefined), false, 'over the edge, still tumbling');
+  assert.equal(fallPlayed({ kind: 'dead', told: true }, undefined), true);
+  assert.equal(fallPlayed(inside, { kind: 'idle' }), false, 'standing');
 });

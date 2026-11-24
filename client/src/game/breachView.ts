@@ -1,16 +1,16 @@
 // A Breach as the page plays it, a frame at a time, from what its room says of it (`BreachSeen`): in its gate's patrol
-// zone, the gate's banner for everyone there (or its line beside a public event's), the gate's mark on the compass,
-// and E at the gate once it is open to the player's company; in its run, its spaces, its seals while shut, the Broken
-// Stair's slabs while they stand, its bells, the Lodestone and the hidden chests open as props, the encounter's banner
-// and marks (`breachMarks.ts`), the compass's places, and E at the way out. In both, a ring under each Rewritten player
-// and round each fallen one being raised, E held to raise a fallen company member, how the fallen stand again, and the
-// room's moments heard (and some told) where they happen. The room judges it all.
+// zone, the gate's banner for everyone there (or its line beside a public event's), the Spire's glow as it fills, the
+// gate's mark on the compass, and E at the gate once it is open to the player's company; in its run, its spaces, its
+// seals while shut, the Broken Stair's slabs while they stand, its bells, the Lodestone and the hidden chests as props,
+// the encounter's banner and marks (`breachMarks.ts`), the compass's places, and E at the way out. In both, a ring
+// under each Rewritten player and round each fallen one being raised, E held to raise a fallen company member, how
+// the fallen stand again, and the room's moments heard and told (`breachMoments.ts`). The room judges it all.
 import type { EventProp, PropModule } from '../city/eventProps.ts';
 import { PROP_MODULES, chestProps } from '../city/eventProps.ts';
-import { moduleNumber } from '../city/modules.ts';
-import { EVENT } from '../combat/cues.ts';
+import { loadSealModule, moduleNumber } from '../city/modules.ts';
+import { markLine } from '../combat/drops.ts';
 import type { StandingAgain } from '../combat/hudPlace.ts';
-import type { PublicShown } from '../combat/publicBanner.ts';
+import type { Banner, PublicShown } from '../combat/publicBanner.ts';
 import { markRing } from '../combat/marks.ts';
 import { BREACH_EVENT, BREACH_PHASE, type BreachSeen, STONE } from '../network/breachMessages.ts';
 import { ASKS, type GearAsk } from '../network/gearMessages.ts';
@@ -18,10 +18,12 @@ import type { FightEvent, SeenPlayer } from '../network/messages.ts';
 import type { PlayerPlate } from '../network/plateMessages.ts';
 import { fighterView } from '../rules/fighters.ts';
 import type { NodeLayout } from '../layout/layouts.ts';
-import { type MarkedFoe, mooringMark, runMarks } from './breachMarks.ts';
+import { RunCounting } from './breachCounts.ts';
+import { type MarkedFoe, dashedRing, mooringMark, runMarks } from './breachMarks.ts';
+import { type Heard, MomentWords, beatOf, momentSounds, momentsHad, stingOf } from './breachMoments.ts';
 import { type BreachPlan, breachPlanOf, sealOpen, slabStands, socketAt, spaceSocket } from './breachPlan.ts';
-import { ENCOUNTER, type Mooring, breachCall, encounterOn, gateBanner, gateLine } from './breachWords.ts';
-import { inSentence, momentWords, runBanner } from './breachWords.ts';
+import { ENCOUNTER, type Mooring, breachCall, encounterName, encounterOn } from './breachWords.ts';
+import { gateBanner, gateLine, inSentence, runBanner, teachingWords, wonWords } from './breachWords.ts';
 import type { Use } from './footGear.ts';
 import type { NodeInfo } from './worldData.ts';
 
@@ -36,7 +38,8 @@ export interface InBreach {
 }
 
 /** What a Breach's view is made with: the place on foot, the run it is (none in the zone), the land's worker (the
- *  zone's layout, for where its gate stands), the ways in and out, and the room's module (the plan). */
+ *  zone's layout, for where its gate stands), the ways in and out, the room's module (the plan), and the way the
+ *  gate's seal's mesh is fetched (`loadSealModule` unless given). */
 export interface BreachParts {
   readonly zone: NodeInfo;
   readonly run: InBreach | null;
@@ -45,11 +48,12 @@ export interface BreachParts {
     readonly trips: { enterBreach?(): void; leaveBreach?(): void; tell?(words: string): void };
   };
   readonly module: WebAssembly.Module;
+  readonly seal?: () => unknown;
 }
 
 /** What a frame reads of the room: its word on the Breach, whether Use is held, the fight (the player's number and
- *  their own fighter, the room's tick the slabs stand by, every other player and foe, the way to ask), the other
- *  players' plates (their names), and the room's last answer to the player's asks. */
+ *  their own fighter, the room's tick the slabs stand by, every other player and foe with its type, the way to ask),
+ *  the other players' plates (their names), and the room's last answer to the player's asks. */
 export interface BreachOn {
   readonly seen: BreachSeen | null;
   readonly using: boolean;
@@ -58,7 +62,7 @@ export interface BreachOn {
     readonly own: { readonly action: { readonly kind: string } } | null;
     readonly roomTick: number;
     readonly others: ReadonlyMap<number, SeenPlayer>;
-    readonly foes: ReadonlyMap<number, { readonly view: MarkedFoe }>;
+    readonly foes: ReadonlyMap<number, { readonly view: MarkedFoe; readonly type?: number }>;
     askGear(ask: GearAsk): void;
   };
   readonly others: { plateOf(id: number): PlayerPlate | null };
@@ -73,7 +77,7 @@ export interface BreachFrame {
   /** Whether the Breach's banner stands before any other: in its run, or by its gate. */
   readonly first: boolean;
   readonly props: EventProp[];
-  readonly sounds: { readonly cue: string; readonly at: Point }[];
+  readonly sounds: readonly Heard[];
   readonly sting: 'cadence' | 'victory' | 'defeat' | null;
 }
 
@@ -86,6 +90,9 @@ const GATE_NEAR_M = 60;
 /** How far the gate's hollow reaches from its middle (gate.rs HOLLOW_M): its company fights the Waking there, and
  *  the Waking's moments are heard there. */
 const HOLLOW_M = 45;
+/** The Spire at the gate's middle (tools/modules/breach_gate.py): its foot over the gate's, how tall it stands, and
+ *  its glow, the Lattice's red, rising and brightening as it fills. */
+const SPIRE = { footM: 1.2, tallM: 16, colour: [1, 0.28, 0.36] as const, least: 0.25 } as const;
 /** How long the fallen lie before standing again of themselves, ticks (fallen.rs): outside a running encounter, and
  *  inside one at Normal. */
 const STANDS_OUTSIDE = 6 * 60;
@@ -101,68 +108,16 @@ const OUT_REACH_M = 2.5;
 /** How high over its bearer's feet the Lodestone is drawn, metres, and how fast it turns there, radians a second. */
 const BORNE_M = 2.3;
 const BORNE_TURN = 1.2;
-/** The rings: the Rewritten's mark (a pale violet), a raising's fill (gold), and their sizes, metres. */
+/** The rings: the Rewritten's mark (a pale violet, in dashes as it warns), a raising's fill (gold), and their sizes,
+ *  metres. */
 const REWRITTEN = { colour: [0.72, 0.55, 1, 0.55] as const, inner: 0.55, outer: 0.7 };
 const RAISING = { colour: [1, 0.82, 0.4, 0.7] as const, inner: 0.75, outer: 0.95 };
-/** The recordings each moment plays where it happens, reused from the world's own. */
-const SOUNDS: Readonly<Record<number, string>> = {
-  [BREACH_EVENT.begun]: 'foe.alert',
-  [BREACH_EVENT.stage]: 'amb.ice.crack',
-  [BREACH_EVENT.won]: 'story.crash',
-  [BREACH_EVENT.revived]: 'anima.divine',
-  [BREACH_EVENT.rewritten]: 'element.cosmic',
-  [BREACH_EVENT.cleansed]: 'finish.cosmic',
-  [BREACH_EVENT.carried]: 'element.cosmic',
-  [BREACH_EVENT.unwritten]: 'story.thud',
-  [BREACH_EVENT.lodestoneTaken]: 'ship.ready',
-  [BREACH_EVENT.lodestoneDropped]: 'story.thud',
-  [BREACH_EVENT.grounded]: 'amb.thunder.crack',
-  [BREACH_EVENT.heldTrue]: 'anima.divine',
-  [BREACH_EVENT.bellWoke]: 'element.cosmic',
-  [BREACH_EVENT.bellBroken]: 'shield.break',
-  [BREACH_EVENT.bellRang]: 'amb.thunder.crack',
-  [BREACH_EVENT.fused]: 'amb.ice.crack',
-  [BREACH_EVENT.overtaken]: 'hit.blunt',
-  [BREACH_EVENT.claimed]: 'foe.alert',
-  [BREACH_EVENT.deskMarked]: 'foe.alert',
-  [BREACH_EVENT.blotted]: 'finish.cosmic',
-  [BREACH_EVENT.wroteItself]: 'story.thud',
-  [BREACH_EVENT.seen]: 'foe.alert',
-  [BREACH_EVENT.riftOpened]: 'element.cosmic',
-  [BREACH_EVENT.riftClosed]: 'amb.ice.crack',
-  [BREACH_EVENT.keeperFell]: 'kill',
-  [BREACH_EVENT.tolled]: 'amb.thunder.crack',
-  [BREACH_EVENT.taken]: 'element.cosmic',
-  [BREACH_EVENT.wayBack]: 'finish.cosmic',
-  [BREACH_EVENT.returned]: 'ship.ready',
-  [BREACH_EVENT.laidBare]: 'shield.break',
-};
-/** The music's moment for a moment of the run: a cadence as an encounter begins or its great foe wakes (as an Elite
- *  Dungeon's Boss does), victory as one is won or the Breach cleared, defeat as an attempt is lost. */
-const STINGS: Readonly<Record<number, 'cadence' | 'victory' | 'defeat'>> = {
-  [BREACH_EVENT.begun]: 'cadence',
-  [EVENT.bossWoke]: 'cadence',
-  [BREACH_EVENT.won]: 'victory',
-  [BREACH_EVENT.cleared]: 'victory',
-  [BREACH_EVENT.wiped]: 'defeat',
-};
-/** The moments the room tells once, of one player (`defender`); every other it tells each player in the room, so
- *  the page takes only its own player's. */
-const TOLD_ONCE: ReadonlySet<number> = new Set([
-  BREACH_EVENT.revived,
-  BREACH_EVENT.cleansed,
-  BREACH_EVENT.carried,
-  BREACH_EVENT.lodestoneTaken,
-  BREACH_EVENT.lodestoneDropped,
-  BREACH_EVENT.grounded,
-  BREACH_EVENT.heldTrue,
-  BREACH_EVENT.overtaken,
-]);
-/** The Waking's own moments at the gate, heard and told only by its company and those in its hollow. */
-const WAKING: ReadonlySet<number> = new Set([BREACH_EVENT.begun, BREACH_EVENT.won, BREACH_EVENT.wiped]);
+/** How long an encounter's line stands in its banner as it begins, and its won line once it is won, ticks. */
+const TEACHING_TICKS = 8 * 60;
+const WON_TICKS = 6 * 60;
 /** The stages the fallen stand again at, by `reached` (mod.rs STAGES), and the hidden chests by their sockets, each
- *  open as the room pays it (mod.rs keep_chests): the Descent's and the Stair's always, the page's once the Choir is
- *  won with its bit in `chests`, the heart's with its own. */
+ *  open to pay as the room says (mod.rs keep_chests): the Descent's and the Stair's always, the page's once the Choir
+ *  is won with its bit in `chests`, the heart's with its own. */
 const STAGES = [
   ['descent', 'start'],
   ['mending', 'checkpoint'],
@@ -178,12 +133,10 @@ const HIDDEN_CHESTS = [
   { space: 'ways', socket: 'heart', open: (seen: BreachSeen) => chestBit(seen, 2) },
   { space: 'stair', socket: 'chest-stair', open: () => true },
 ] as const;
-/** How long ago a chest shown open was opened, seconds: long enough that its lid stands thrown back. */
-const LONG_OPEN_S = 60;
+/** A hidden chest's glow while it is not yet open to pay (one waiting for the player glows as an event's chest). */
+const CHEST_GLOW = { shut: 0.25 } as const;
 /** The way out once the Breach is cleared, the court's portal, ringed as a dungeon's lit portal shows the way. */
 const PORTAL = { colour: [0.72, 0.55, 1, 0.7] as const, inner: 2.2, outer: 2.5 };
-/** The Shores' rifts in the hall, by their number. */
-const RIFTS = ['rift-was', 'rift-is'] as const;
 
 const flat = (from: Point, to: Point) => Math.hypot(from[0] - to[0], from[1] - to[1]);
 const chestBit = (seen: BreachSeen, bit: number) => (seen.chests & (1 << bit)) !== 0;
@@ -193,6 +146,11 @@ const asProp = (name: string): PropModule | null =>
 const prop = (module: PropModule, where: Point, turn: number, rise = 1): EventProp => ({
   ...{ module, at: where, turn, scale: 1, rise, lid: 0, glow: 1 },
 });
+/** `make`'s answer, worked out only once it is first asked for. */
+const once = <Value>(make: () => Value): (() => Value) => {
+  let made: { value: Value } | null = null;
+  return () => (made ??= { value: make() }).value;
+};
 
 /** Whether another player lies fallen, by the room's word on their fighter. */
 const fallen = (seen: SeenPlayer | undefined): boolean =>
@@ -248,19 +206,31 @@ export class BreachView {
   private asked: number | null = null;
   private word: BreachOn | null = null;
   private feet: Point = [0, 0, 0];
-  /** The gate's holders as the last frame had them: the snapshot the Waking is lost in holds none. */
+  /** The gate's holders as the last frame had them (the snapshot the Waking is lost in holds none), and how many of
+   *  them lived; the room's word the frame before this one. */
   private holders: readonly number[] = [];
+  private holdersLiving = 0;
+  private before: BreachSeen | null = null;
+  /** What the page counts of the run, the moments it tells, and the encounter last begun or won with the room's tick
+   *  its line stands in the banner until. */
+  private readonly counting: RunCounting | null;
+  private readonly told = new MomentWords();
+  private lately: { readonly won: boolean; readonly encounter: number; readonly until: number } | null = null;
 
   constructor(parts: BreachParts) {
     this.parts = parts;
     const plan = parts.run?.plan ?? planOf(parts.module);
     // Only the run, or the patrol zone its gate stands in, shows the Breach.
     this.plan = parts.run || plan?.zone === parts.zone.id ? plan : null;
-    if (this.plan && !parts.run)
+    this.counting = this.plan && new RunCounting(this.plan);
+    if (this.plan && !parts.run) {
+      // The gate's doorway stands sealed in this zone alone, so its seal's mesh is fetched only here (and for the run).
+      (parts.seal ?? loadSealModule)();
       void parts.context.land.layoutsNamed([parts.zone.id]).then(
         (text) => (this.gate = (JSON.parse(text) as NodeLayout[]).map(gateOf).find(Boolean) ?? null),
         () => undefined,
       );
+    }
   }
 
   /** A gate socket's place in the world, once the zone's layout has said where the gate stands. */
@@ -269,8 +239,8 @@ export class BreachView {
     return gate && socketAt('breach-gate', name, gate.at, gate.turn);
   }
 
-  /** One frame at `clock` (the page's seconds): the room's word and `events` since the last, the player at `feet`,
-   *  each fighter where it is drawn (`where`), the rings laid into `marks`. None outside a Breach. */
+  /** One frame at `clock` (the page's seconds): the room's word and `events` since the last, the player at `feet`
+   *  seen from `eye`, each fighter where it is drawn (`where`), the rings laid into `marks`. None outside a Breach. */
   frame(
     word: BreachOn,
     events: readonly FightEvent[],
@@ -278,21 +248,25 @@ export class BreachView {
     where: (id: number) => Point | null,
     clock: number,
     marks: number[],
+    eye: Point = feet,
   ): BreachFrame | null {
     [this.word, this.feet] = [word, feet];
     if (this.raising !== null && !word.using) {
       word.fight.askGear({ kind: ASKS.stopRaise });
       this.raising = null;
     }
-    const { plan } = this;
+    const { plan, counting } = this;
     const seen = word.seen;
-    if (!plan || !seen) return null;
+    if (!plan || !counting || !seen) return null;
+    const before = this.before;
+    this.before = seen;
     this.heedRaising(word);
     const own = word.fight.player;
+    const tick = word.fight.roomTick;
     const nameOf = (player: number) => (player === own ? 'you' : (word.others.plateOf(player)?.name ?? 'a companion'));
     for (const marked of seen.marked) {
       const spot = marked.player === own ? feet : where(marked.player);
-      if (spot) markRing(marks, spot, REWRITTEN.inner, REWRITTEN.outer, REWRITTEN.colour);
+      if (spot) dashedRing(marks, spot, REWRITTEN.inner, REWRITTEN.outer, REWRITTEN.colour);
     }
     for (const raising of seen.raising) {
       const spot = where(raising.raised);
@@ -301,52 +275,34 @@ export class BreachView {
     // At the gate the Waking's moments are its company's, and theirs who stand in its hollow.
     const company = seen.gate ? [...new Set([...seen.holders, ...this.holders])] : [own, ...word.fight.others.keys()];
     this.holders = seen.holders;
-    const hears = !seen.gate || company.includes(own) || (!!this.gate && flat(feet, this.gate.at) <= HOLLOW_M);
-    const told = events.filter(
-      (event) => (TOLD_ONCE.has(event.kind) || event.defender === own) && (hears || !WAKING.has(event.kind)),
-    );
-    const sounds = told.flatMap((event) => {
-      const cue = SOUNDS[event.kind];
-      return cue ? [{ cue, at: this.placeOf(plan, seen, event, where) }] : [];
-    });
-    // Its moments are told in words to the company alone.
-    for (const event of company.includes(own) ? told : []) {
-      const words = momentWords(event, company.length, nameOf);
-      if (words) this.parts.context.trips.tell?.(words);
-    }
-    const sting = told.reduce<BreachFrame['sting']>((last, event) => STINGS[event.kind] ?? last, null);
-    const call = breachCall(seen, own);
-    const beat = told.some((event) => event.kind === BREACH_EVENT.begun || event.kind === BREACH_EVENT.stage)
-      ? 'stage'
-      : told.some((event) => event.kind === BREACH_EVENT.won)
-        ? 'won'
-        : told.some((event) => event.kind === BREACH_EVENT.wiped)
-          ? 'failed'
-          : null;
-    if (seen.gate) {
-      const gate = this.gate;
-      const places = gate ? [{ x: gate.at[0], y: gate.at[1], kind: 'breach' as const }] : [];
-      const moorings = this.moorings(seen);
-      moorings.forEach((state, nth) => {
-        const spot = this.gateSocket(MOORINGS[nth] ?? '');
-        if (spot && !seen.woken) mooringMark(marks, spot, state);
-      });
-      // The Lattice's crystal seals the gate's doorway but to the company it opened to.
-      const door = this.gateSocket('gate');
-      const props = door && gate && !this.openToMe(seen) ? [prop('breach-seal', door, gate.turn * quarter)] : [];
-      const first = seen.holders[0];
-      const holding = first === undefined ? '' : first === own ? 'Your company' : nameOf(first);
-      const banner = gateBanner(plan, seen, gate?.place ?? '', moorings, this.openToMe(seen), holding);
-      const near = !!gate && flat(feet, gate.at) <= GATE_NEAR_M;
-      const shown: PublicShown = { banner, beat, places, stores: [], call };
-      return { shown, line: gateLine(plan, seen), first: near, props, sounds, sting };
-    }
-    const foes = [...word.fight.foes.values()].map((foe) => foe.view);
-    runMarks(plan, seen, marks, { feet, living: this.living(), foes });
+    const inHollow = !!this.gate && flat(feet, this.gate.at) <= HOLLOW_M;
+    const had = momentsHad(events, own, !seen.gate || company.includes(own) || inHollow);
+    const gate = this.gate;
+    const places = {
+      own,
+      feet,
+      where,
+      gate: gate?.at ?? null,
+      mooring: (nth: number) => this.gateSocket(MOORINGS[nth] ?? ''),
+    };
+    const sounds = momentSounds(plan, seen, had, places);
+    // A Waking lost while some of its company still lived was lost to its Spire left empty.
+    const lost = seen.gate && this.holdersLiving > 0 ? 'the Spire stood empty a whole minute' : null;
+    const ours = { ours: company.includes(own), nameOf, lost };
+    for (const words of this.told.words(plan, { seen, before, had }, ours)) this.parts.context.trips.tell?.(words);
+    const lately = this.latelyIn(had, tick);
+    const [sting, beat] = [stingOf(had), beatOf(had)];
+    const living = once(() => this.living());
+    const alive = !!word.fight.own && word.fight.own.action.kind !== 'dead';
+    const counts = counting.frame({ seen, before, events: had, tick, own, feet, alive, living });
+    const call = breachCall(seen, counts);
+    const heard = { sounds, sting, beat, call };
+    if (seen.gate) return this.gateFrame(plan, seen, { own, nameOf, feet, inHollow, lately, clock, eye, marks }, heard);
+    runMarks(plan, seen, marks, { feet, living, foes: () => [...word.fight.foes.values()], counts });
     const portal = seen.phases.length > 0 && seen.phases.every((phase) => phase === BREACH_PHASE.won);
     const way = portal ? spaceSocket(plan, 'court', 'portal') : null;
     if (way) markRing(marks, way, PORTAL.inner, PORTAL.outer, PORTAL.colour);
-    const banner = runBanner(plan, seen, nameOf);
+    const banner = lateBanner(plan, runBanner(plan, seen, nameOf, counts), seen, lately);
     // A great foe awake (the Scrivener, the Steward) is the music's peak, as an Elite Dungeon's Boss is.
     const great = seen.boss > 0 && (seen.encounter === ENCOUNTER.choir || seen.encounter === ENCOUNTER.steward);
     const mood = great ? ('peak' as const) : seen.encounter > 0 ? ('tension' as const) : null;
@@ -354,36 +310,77 @@ export class BreachView {
     return { shown, line: '', first: true, props: this.runProps(plan, seen, word, where, clock), sounds, sting };
   }
 
+  /** A frame at the gate in the zone: its moorings' rings while the Waking runs and the Spire glowing as it fills, the
+   *  seal in its doorway but to the company it opened to, its banner (the player's own company named as theirs, its
+   *  line as it begins), its mark on the compass, and the music's tension for its company in the hollow. */
+  private gateFrame(
+    plan: BreachPlan,
+    seen: BreachSeen,
+    here: {
+      own: number;
+      nameOf: (player: number) => string;
+      feet: Point;
+      inHollow: boolean;
+      lately: { readonly won: boolean } | null;
+      clock: number;
+      eye: Point;
+      marks: number[];
+    },
+    heard: Pick<BreachFrame, 'sounds' | 'sting'> & Pick<PublicShown, 'beat' | 'call'>,
+  ): BreachFrame {
+    const { gate } = this;
+    const { marks } = here;
+    const compass = gate ? [{ x: gate.at[0], y: gate.at[1], kind: 'breach' as const }] : [];
+    const moorings = this.moorings(seen);
+    const waking = seen.heldBy && !seen.woken;
+    moorings.forEach((state, nth) => {
+      const spot = this.gateSocket(MOORINGS[nth] ?? '');
+      if (spot && !seen.woken) mooringMark(marks, spot, state);
+    });
+    // The Spire glows as it fills, for everyone in the zone to see.
+    if (gate && waking) {
+      const foot = [gate.at[0], gate.at[1], gate.at[2] + SPIRE.footM] as const;
+      const tall = SPIRE.tallM * Math.max(SPIRE.least, seen.fill);
+      markLine(marks, foot, tall, SPIRE.colour, SPIRE.least + seen.fill, here.clock, here.eye);
+    }
+    const door = this.gateSocket('gate');
+    const props = door && gate && !this.openToMe(seen) ? [prop('breach-seal', door, gate.turn * quarter)] : [];
+    const first = seen.holders[0];
+    const mine = seen.holders.includes(here.own);
+    const holding = first === undefined ? '' : mine ? 'Your company' : here.nameOf(first);
+    const banner = gateBanner(plan, seen, gate?.place ?? '', moorings, this.openToMe(seen), holding);
+    const teaching = mine && waking && here.lately && !here.lately.won ? teachingWords(ENCOUNTER.waking) : '';
+    const near = !!gate && flat(here.feet, gate.at) <= GATE_NEAR_M;
+    const mood = mine && waking && here.inHollow ? ('tension' as const) : null;
+    const shown: PublicShown = {
+      banner: teaching ? { ...banner, objective: teaching } : banner,
+      beat: heard.beat,
+      places: compass,
+      stores: [],
+      call: heard.call ?? null,
+      mood,
+    };
+    return { shown, line: gateLine(plan, seen), first: near, props, sounds: heard.sounds, sting: heard.sting };
+  }
+
+  /** The encounter last begun or won by `had`, while its line stands in the banner at the room's `tick`; null after. */
+  private latelyIn(
+    had: readonly FightEvent[],
+    tick: number,
+  ): { readonly won: boolean; readonly encounter: number } | null {
+    for (const event of had) {
+      const won = event.kind === BREACH_EVENT.won;
+      if (won || event.kind === BREACH_EVENT.begun)
+        this.lately = { won, encounter: Math.round(event.amount), until: tick + (won ? WON_TICKS : TEACHING_TICKS) };
+    }
+    return this.lately && tick < this.lately.until ? this.lately : null;
+  }
+
   /** How the player stands again if they fall where they stand now (`breachFall`); null outside a Breach. */
   fall(): StandingAgain | null {
     const seen = this.word?.seen;
     if (!this.plan || !this.word || !seen) return null;
     return breachFall(seen, this.word.fight.player, this.feet, this.gate?.at ?? null);
-  }
-
-  /** Where a moment is heard: where the one it tells of stands, the place its number names (a bell's, a mooring, a
-   *  rift, a desk), the gate for the Waking's own, or else at the player's feet. */
-  private placeOf(plan: BreachPlan, seen: BreachSeen, event: FightEvent, where: (id: number) => Point | null): Point {
-    const feet = this.feet;
-    if (TOLD_ONCE.has(event.kind)) return where(event.defender) ?? where(event.striker) ?? feet;
-    const nth = Math.round(event.amount);
-    const bells = seen.encounter === ENCOUNTER.steward ? plan.shores['steward']?.[seen.awayShore] : 'choir';
-    switch (event.kind) {
-      case BREACH_EVENT.bellWoke:
-      case BREACH_EVENT.bellBroken:
-        return (bells && spaceSocket(plan, bells, `bell-${nth + 1}`)) || feet;
-      case BREACH_EVENT.claimed:
-        return this.gateSocket(MOORINGS[nth] ?? '') ?? feet;
-      case BREACH_EVENT.riftOpened:
-      case BREACH_EVENT.riftClosed:
-      case BREACH_EVENT.keeperFell:
-        return spaceSocket(plan, 'hall', RIFTS[nth] ?? '') ?? feet;
-      case BREACH_EVENT.deskMarked:
-      case BREACH_EVENT.blotted:
-        return spaceSocket(plan, 'choir', `lectern-${nth + 1}`) ?? feet;
-      default:
-        return seen.gate && WAKING.has(event.kind) ? (this.gate?.at ?? feet) : feet;
-    }
   }
 
   /** The compass's places in the run: the stage reached, the way on to the next encounter while none runs, the way
@@ -422,6 +419,7 @@ export class BreachView {
    *  holding the gate standing on it, or free. */
   private moorings(seen: BreachSeen): Mooring[] {
     const bodies = this.living(seen.holders);
+    this.holdersLiving = bodies.length;
     return MOORINGS.map((name, nth) => {
       if ((seen.claims & (1 << nth)) !== 0) return 'claimed';
       const spot = this.gateSocket(name);
@@ -446,7 +444,8 @@ export class BreachView {
   }
 
   /** The run's props: its spaces where its plan stands them, each seal while shut, each slab while it stands, a
-   *  crystal at each bell, the Lodestone on its plinth, lying, or over its bearer, turning, and the hidden chests open. */
+   *  crystal at each bell, the Lodestone on its plinth, lying, or over its bearer, turning, and the hidden chests,
+   *  shut (glowing while open to pay) until the room pays the player, their lids then thrown back. */
   private runProps(
     plan: BreachPlan,
     seen: BreachSeen,
@@ -475,21 +474,30 @@ export class BreachView {
     if (bearer) props.push(prop('breach-lodestone', [bearer[0], bearer[1], bearer[2] + BORNE_M], clock * BORNE_TURN));
     else if (seen.stone === STONE.plinth || seen.stone === STONE.lying)
       props.push(prop('breach-lodestone', seen.stoneAt, 0));
-    // Each hidden chest stands shut, as an event's chest does, and open once the room pays it to those beside it.
     HIDDEN_CHESTS.forEach(({ space, socket, open }, nth) => {
       const spot = spaceSocket(plan, space, socket);
-      if (spot) props.push(...chestProps({ id: nth, at: spot, tier: 1, opened: open(seen) ? LONG_OPEN_S : null }));
+      if (!spot) return;
+      const opened = this.counting?.chestOpened(nth, tick) ?? null;
+      const chest = chestProps({ id: nth, at: spot, tier: 1, opened });
+      // One not yet open to pay glows less than one waiting for the player.
+      const dim = opened === null && !open(seen);
+      props.push(...(dim ? chest.map((part) => ({ ...part, glow: CHEST_GLOW.shut })) : chest));
     });
     return props;
   }
 
-  /** What E does at the player's feet in a Breach: raises a fallen company member in reach while held, takes up or
-   *  sets down the Lodestone, enters the run at the gate once it is open to the player's company, or leaves the run
-   *  by the way in, or by the court's portal once the Breach is cleared. */
+  /** What E does at the player's feet in a Breach: takes up the Lodestone first while it lies counting down to the
+   *  company's unwriting; raises a fallen company member in reach while held; sets down or takes up the Lodestone;
+   *  enters the run at the gate once it is open to the player's company, or leaves the run by the way in, or by the
+   *  court's portal once the Breach is cleared. */
   use(feet: Point, ask: (asked: GearAsk) => void): Use | null {
     const [plan, word] = [this.plan, this.word];
     const seen = word?.seen;
     if (!plan || !word || !seen) return null;
+    const lies = seen.stone === STONE.plinth || seen.stone === STONE.lying;
+    const takes = lies && flat(feet, seen.stoneAt) <= TAKE_REACH_M && Math.abs(feet[2] - seen.stoneAt[2]) <= 2;
+    const take = { words: 'Take up the Lodestone', run: () => ask({ kind: ASKS.takeLodestone }) };
+    if (takes && seen.lyingTicks > 0) return take;
     const raise = this.raisable(seen, feet);
     if (raise !== null) {
       const name = word.others.plateOf(raise)?.name ?? 'them';
@@ -505,9 +513,7 @@ export class BreachView {
     }
     if (seen.stone === STONE.borne && seen.bearer === word.fight.player)
       return { words: 'Set down the Lodestone', run: () => ask({ kind: ASKS.dropLodestone }) };
-    const lies = seen.stone === STONE.plinth || seen.stone === STONE.lying;
-    if (lies && flat(feet, seen.stoneAt) <= TAKE_REACH_M && Math.abs(feet[2] - seen.stoneAt[2]) <= 2)
-      return { words: 'Take up the Lodestone', run: () => ask({ kind: ASKS.takeLodestone }) };
+    if (takes) return take;
     const trips = this.parts.context.trips;
     if (seen.gate) {
       const gate = this.gateSocket('gate');
@@ -539,6 +545,25 @@ export class BreachView {
     }
     return nearest?.id ?? null;
   }
+}
+
+/** The run's banner while an encounter's line stands (`lately`): its teaching as it begins, in the objective while it
+ *  runs; its won line once won, in the won tone, under its own name. As it is otherwise. */
+function lateBanner(
+  plan: BreachPlan,
+  banner: Banner,
+  seen: BreachSeen,
+  lately: { readonly won: boolean; readonly encounter: number } | null,
+): Banner {
+  if (!lately) return banner;
+  if (lately.won)
+    return {
+      ...banner,
+      tone: 'won',
+      title: encounterName(plan, lately.encounter),
+      objective: wonWords(lately.encounter),
+    };
+  return seen.encounter === lately.encounter ? { ...banner, objective: teachingWords(lately.encounter) } : banner;
 }
 
 /** What the fight's display shows of the place's events with a Breach's beside them: the Breach's banner where it

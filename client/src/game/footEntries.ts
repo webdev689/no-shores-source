@@ -1,6 +1,6 @@
 // The ways onto foot that join a run's own room: a dungeon's, from its node's entrance, and a Breach's, from its gate.
 // Each stands the page's movement and fight on the place's own ground as its room stands its bodies, then joins it.
-import { loadRunModules } from '../city/modules.ts';
+import { loadRunModules, loadSealModule } from '../city/modules.ts';
 import type { Difficulty } from '../heldmap/heldMap.ts';
 import { RoomConnection, type Snapshot } from '../network/roomConnection.ts';
 import { blocksGround, runPlace, socketBearing, spaceSocket, standingBlocks } from './breachPlan.ts';
@@ -46,7 +46,7 @@ export async function enterBreachRun(context: FootContext, into: InBreach): Prom
   const { rooms, movement } = context;
   if (!rooms) throw new Error('a Breach is played online');
   // Its spaces' meshes come before the veil lifts on it; they are let go once the player is out (`gameFrame.ts`).
-  const [rules] = await Promise.all([rulesOf(context), loadRunModules()]);
+  const [rules] = await Promise.all([rulesOf(context), loadRunModules(), loadSealModule()]);
   const { blocks, keep } = standingBlocks(into.plan, (seals, tick) => {
     movement.setCourse(blocks);
     rules.combat.setBreach(seals, tick);

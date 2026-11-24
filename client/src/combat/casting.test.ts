@@ -144,7 +144,7 @@ test('with no mark the ring stands straight along the look at its reach, and its
   assert.ok(mesh.length > 0 && mesh.length % MARK_FLOATS === 0);
 });
 
-test("bearing the Lodestone, an Art's key grounds it once charged, ready Art or not, plays no spell and holds no key", () => {
+test("bearing the Lodestone, an Art's key grounds it once charged, ready Art or not, tells its caller it is no spell, and holds no key", () => {
   const casting = new CastKeys();
   const spent = state(1, 0, [0, 0]);
   const bearing = (charged: boolean, pressed: readonly Action[] = ['tenetOne'], hands = true) =>

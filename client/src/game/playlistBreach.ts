@@ -3,6 +3,7 @@
 // after how long, its revives, what it drops (its armour's Prestige at the tier) and pays, and the base its Launch asks
 // of the finder. Nothing here judges a rule: the finder and the run's gate do.
 import type { BreachPlan } from './breachPlan.ts';
+import { inSentence } from './breachWords.ts';
 import { type PlaylistEntry, dropsWords, lockWords } from './playlistWords.ts';
 
 /** Why the finder refuses a character below a tier's level, in its own words (server/accounts/finding.ts). */
@@ -40,7 +41,7 @@ export function breachEntries(
           `${tier.revives} revives an attempt, for the company.`,
           outside,
           'In an encounter the fallen do not stand again of themselves: a company member raises them, at a revive each.',
-          `Opens once ${plan.name} is won at Normal.`,
+          `Opens once ${inSentence(plan.name)} is won at Normal.`,
         ]
       : [
           `${outside} In one, after ${STANDS_INSIDE_S} s.`,

@@ -116,7 +116,8 @@ export interface PublicFrame {
   readonly shown: PublicShown | null;
   readonly quest: Quest | null;
   readonly props: EventProp[];
-  readonly sounds: readonly { readonly cue: string; readonly at: Point }[];
+  /** Each sound heard where it happens, at its own pitch where it has one (a Breach's bell's note). */
+  readonly sounds: readonly { readonly cue: string; readonly at: Point; readonly rate?: number }[];
   readonly sting: 'cadence' | 'victory' | 'defeat' | null;
   /** The interface's cue for a beat heard by the player alone (played as the frame is worked out): a heroic task
    *  missed, a chest opened, their own shard taken. */
@@ -330,7 +331,8 @@ export class PublicView {
     const left = Math.min(...waiting.map((chest) => moments.chestsLeft.get(chest.id) ?? CHEST_LIES_S));
     const sealed = encounter && encounterFrame(encounter, stale ? [] : events, bodies, clock, marks, this.heard);
     if (loud) sealed?.ui.forEach(play);
-    const breached = breach && this.breach?.frame(breach, stale ? [] : events, bodies.feet, bodies.where, clock, marks);
+    const { feet, where, shot } = bodies;
+    const breached = breach && this.breach?.frame(breach, stale ? [] : events, feet, where, clock, marks, shot.eye);
     if (breached) props.push(...breached.props);
     const heard = [...(sealed && !stale ? sealed.sounds : []), ...(breached?.sounds ?? [])];
     return {

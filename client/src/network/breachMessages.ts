@@ -5,8 +5,9 @@ export const STONE = { away: 0, plinth: 1, borne: 2, lying: 3 } as const;
 export const BREACH_PHASE = { waiting: 0, running: 1, won: 2 } as const;
 /** A rift's states: shut, opening while held, open. */
 export const RIFT = { shut: 0, opening: 1, open: 2 } as const;
-/** A Breach's moments by their numbers (crates/room/src/judging.rs EventKind), each told to every player in its room;
- *  what each event's amount carries is said there. */
+/** A Breach's moments by their numbers (crates/room/src/judging.rs EventKind), each told to every player in its room
+ *  but the gate shutting a member of its company out (`shutOut`), told to them alone; what each event's amount carries
+ *  is said there. */
 export const BREACH_EVENT = {
   begun: 35,
   stage: 36,
@@ -40,6 +41,7 @@ export const BREACH_EVENT = {
   wayBack: 64,
   returned: 65,
   laidBare: 66,
+  shutOut: 67,
 } as const;
 
 /** A raising under way: who raises, who is raised, and how far it has come, 0 to 1. */

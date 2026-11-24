@@ -109,6 +109,11 @@ test('the warning counts down, death offers Respawn only once it may, and the vi
   laid = frame(ui, hud);
   clickOn(ui, hud, laid, 'hud:respawn');
   assert.equal(risen, 1);
+  // Where the place stands them again itself, no Respawn waits greyed: the words say when.
+  hud.reach({ kind: 'dead', secondsDead: 50, canRespawn: false, fell: true, told: true, waits: true });
+  laid = frame(ui, hud);
+  assert.ok(!words(laid).includes('Respawn…') && !words(laid).includes('Respawn'));
+  assert.ok(words(laid).includes('You fell. You stand again once the encounter is won or your company falls.'));
 });
 
 test('a mark is pressed by its ring, its name and note under it; a held one points and hides its note', () => {

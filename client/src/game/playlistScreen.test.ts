@@ -20,6 +20,7 @@ const WITH_BREACH = {
       kind,
       name: 'The Drowned Vale',
       about: `${tier === 0 ? 'Normal' : 'Hard'} · Foes at level ${tier === 0 ? 26 : 30}`,
+      launch: { place: 'gullwing-vale', seas: 'breach' as const, playlist: null, finds: null, breach: tier },
     })),
   ],
 };
@@ -108,6 +109,14 @@ test('Find a Company is the primary press of a matched entry; Launch goes alone 
   const signedOut = standing(1600, 900, { ...IDLE, canFind: false });
   assert.equal(byId(signedOut.built(), 'playlist-find'), undefined);
   assert.equal(byId(signedOut.built(), 'playlist-launch')?.role, 'primary', 'with no search, Launch leads');
+  for (const company of [false, true]) {
+    const breach = standing(1600, 900, { ...IDLE, company }, WITH_BREACH);
+    breach.click('playlist-tile-4');
+    breach.frame();
+    assert.equal(breach.view.entry?.kind, 'breach-normal');
+    const label = byId(breach.built(), 'playlist-launch')?.label;
+    assert.equal(label, company ? 'Go with your company' : 'Launch', 'a Breach is never gone alone');
+  }
 });
 
 test('a shut entry says why in neutral ink with a padlock, on its crest and beside the resting Launch', () => {
