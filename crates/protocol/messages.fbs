@@ -488,8 +488,8 @@ table EncounterSeen {
   slam_ticks: uint;
 }
 
-// A company inside a Breach's run, as its gate in the patrol zone shows the zone: its leader's name, its tier (0
-// Normal, 1 Hard) and the encounter it is on.
+// A company inside a Breach's run, as its gate in the patrol zone shows the zone: the name of its first player in,
+// its tier (0 Normal, 1 Hard) and the encounter it is on.
 table BreachInside {
   name: string;
   tier: ubyte;

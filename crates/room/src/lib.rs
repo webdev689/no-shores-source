@@ -341,11 +341,12 @@ impl Room {
         Body { facing: self.facing, ..body }
     }
 
-    /// Where a body that fell at (x, y) stands again: in a Breach's run its furthest stage reached, else the section's
-    /// spawn nearest it, or the room's spawn.
-    pub(crate) fn stand_again(&self, x: f64, y: f64) -> Body {
-        if let Some(breach) = self.breach.as_ref() {
-            let (at, _) = self.checkpoint(breach);
+    /// Where a player's body that fell at (x, y) stands again: in a Breach's run its furthest stage reached, at its
+    /// gate while their company holds it the gate's arrival, else the section's spawn nearest it, or the room's spawn.
+    pub(crate) fn stand_again(&self, id: PlayerId, x: f64, y: f64) -> Body {
+        let breach = self.breach.as_ref().map(|breach| self.checkpoint(breach).0);
+        let gate = self.breach_gate.as_ref().filter(|gate| gate.fighting(id)).and_then(|gate| gate.socket("arrival"));
+        if let Some(at) = breach.or(gate) {
             let body = self.stand((at[0], at[1]));
             return Body { z: at[2].max(body.z), ..body };
         }
@@ -514,7 +515,7 @@ impl Room {
                     found.fighter = player_tick(id, &dead, &lying, &view, &self.blocks, &self.floor).0;
                     if input.respawn && found.standing.may_respawn() && may_respawn {
                         let lain = found.fighter;
-                        let body = self.stand_again(lain.body.x, lain.body.y);
+                        let body = self.stand_again(id, lain.body.x, lain.body.y);
                         let graced = self.clock + GRACE;
                         if let Some(found) = self.players.get_mut(&id) {
                             found.fighter = found.armed(player(body, lain.arms));

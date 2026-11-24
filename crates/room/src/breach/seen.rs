@@ -36,9 +36,9 @@ pub struct BreachSeen {
     /// The hidden chests open to be taken, a bit each.
     pub chests: u8,
     /// The encounter under way (its number, 0 none in a run): its stage, the ticks left in it, its counts (a seam's
-    /// fusions, the Seam's), its bells' places in order and their foes, how many broken in order, the ticks to their
-    /// ring, the font's rest, its great foe and whether warded, the desk it stands at, the desk marked (-1 none) and
-    /// the ticks before it writes itself there, and the ticks to its writing or toll.
+    /// fusions, the Seam's), its bells' places in order (in the Choir, those woken so far) and their foes, how many
+    /// broken in order, the ticks to their ring, the font's rest, its great foe and whether warded, the desk it stands
+    /// at, the desk marked (-1 none) and the ticks before it writes itself there, and the ticks to its writing or toll.
     pub encounter: u8,
     pub stage: u8,
     pub stage_ticks: u32,
@@ -131,6 +131,8 @@ impl Room {
                     .values()
                     .map(|(_, from)| per_mille(clock.saturating_sub(*from), super::fallen::RAISE_TICKS))
                     .collect(),
+                marked_desk: -1,
+                away_shore: -1,
                 ..BreachSeen::default()
             });
         }
@@ -222,7 +224,9 @@ impl Room {
                 let fight = &fights.choir;
                 (seen.stage, seen.broken) = (fight.phase, u8::try_from(fight.broken).unwrap_or(0));
                 seen.counts = vec![u8::try_from(fight.round).unwrap_or(0)];
-                seen.bells = fight.order.iter().map(|place| u8::try_from(*place).unwrap_or(0)).collect();
+                // Only the bells woken so far: the order is learnt by watching them wake.
+                let woken = fight.order.iter().zip(&fight.woke).filter(|(_, woke)| woke.is_some());
+                seen.bells = woken.map(|(place, _)| u8::try_from(*place).unwrap_or(0)).collect();
                 seen.bell_foes = fight.bells.iter().map(|(_, id)| *id).collect();
                 seen.ring_ticks = fight.ring_at.map_or(0, |at| left(clock, at));
                 seen.font_ticks = left(clock, fight.font_rests_until);

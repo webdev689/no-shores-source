@@ -104,6 +104,19 @@ fn the_choirs_bells_wake_in_turn_and_broken_in_that_order_the_round_is_won() {
 }
 
 #[test]
+fn the_choirs_snapshot_shows_only_the_bells_woken_so_far_so_their_order_is_learnt_by_watching() {
+    let (mut room, players) = won_to(Tier::Normal, 1, CHOIR);
+    begin_at(&mut room, &players, "choir", "font");
+    ticks(&mut room, 2 * 60 + 1);
+    let seen = room.breach_seen().expect("a run's");
+    let fight = &breach(&room).fights.choir;
+    let woken: Vec<u8> =
+        fight.order.iter().zip(&fight.woke).filter(|(_, woke)| woke.is_some()).map(|(place, _)| *place as u8).collect();
+    assert!(!woken.is_empty() && woken.len() < fight.order.len(), "the round still waking");
+    assert_eq!(seen.bells, woken);
+}
+
+#[test]
 fn a_bell_broken_out_of_order_rings_and_rewrites_the_chapel_and_the_font_cleanses_then_rests() {
     let (mut room, players) = won_to(Tier::Normal, 2, CHOIR);
     begin_at(&mut room, &players, "choir", "lectern-2");

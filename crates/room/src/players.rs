@@ -346,7 +346,7 @@ impl Room {
             if !self.revive() {
                 continue;
             }
-            let body = self.stand_again(fighter.body.x, fighter.body.y);
+            let body = self.stand_again(id, fighter.body.x, fighter.body.y);
             let graced = self.clock + GRACE;
             if let Some(found) = self.players.get_mut(&id) {
                 found.fighter = found.armed(player(body, fighter.arms));

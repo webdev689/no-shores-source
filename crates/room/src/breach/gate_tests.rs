@@ -1,7 +1,8 @@
 //! The Waking at a Breach's gate in its patrol zone: one company at a time holds it, its three moorings held by the
 //! company's living players fill the Spire and fewer let it ebb, a Bulwark claims a mooring left empty, the gate opens
-//! to that company alone once the Spire wakes, a lost Waking stands the company again at the gate, and the zone hears
-//! of the companies inside.
+//! to that company alone once the Spire wakes and while it is inside, a lost Waking stands the company again at the
+//! gate, its fallen stand again there, the zone hears of the companies inside, the gate holds eight it would let in,
+//! the Waking's foes keep within the room's places, and only Normal seas stand a gate.
 
 use super::gate::{MOORINGS, SPIRE_TICKS};
 use super::*;
@@ -148,11 +149,12 @@ fn the_zone_hears_of_the_companies_inside_until_they_are_done_or_silent() {
     room.breach_inside("run-a", "Wenna", Tier::Hard, 2);
     let seen = room.breach_seen().expect("the gate's");
     assert_eq!(seen.inside, [("Wenna".to_owned(), Tier::Hard as u8, 2)]);
+    assert_eq!((seen.marked_desk, seen.away_shore), (-1, -1), "no desk marked, no one away, as a run says it");
     room.breach_inside("run-a", "Wenna", Tier::Hard, 6);
     assert!(room.breach_seen().expect("the gate's").inside.is_empty(), "done");
     room.breach_inside("run-b", "Ossery", Tier::Normal, 1);
-    ticks(&mut room, gate::INSIDE_LASTS + 1);
-    assert!(room.breach_seen().expect("the gate's").inside.is_empty(), "silent too long");
+    ticks(&mut room, 61 * 60);
+    assert!(room.breach_seen().expect("the gate's").inside.is_empty(), "silent a minute, as its host forgets it");
 }
 
 #[test]
@@ -165,13 +167,15 @@ fn a_company_gone_from_the_hollow_lets_the_gate_go_and_a_member_it_would_shut_ou
     hold_moorings(&mut room, &players);
     room.tick();
     assert_eq!(room.breach_gate.as_ref().expect("gate").held_by.as_deref(), Some("run-a"));
-    let items = room.players[&players[0]].character.items.len();
     room.breach_gate.as_mut().expect("gate").fill = SPIRE_TICKS - 1;
     room.breach_gate.as_mut().expect("gate").claims = [None; 3];
     hold_moorings(&mut room, &players);
     room.tick();
     assert!(room.breach_opened("run-a"));
-    assert_eq!(room.players[&players[0]].character.items.len(), items, "nothing paid to one shut out");
+    let week = gear::clock::week_of(room.minute);
+    let character = &room.players[&players[0]].character;
+    let paid = character.breach_paid(&gear::breach::DROWNED_VALE, Tier::Normal, week, 0);
+    assert!(character.vestiges.is_empty() && !paid, "nothing paid to one shut out");
     let (mut room, players) = gate_room(2);
     for &player in &players {
         room.breach_company(player, "run-b", Tier::Normal);
@@ -194,4 +198,115 @@ fn the_zone_is_told_once_that_a_company_cleared_the_breach() {
         room.breach_inside("run-a", "Wenna", Tier::Normal, 6);
     }
     assert_eq!(room.take_events().iter().filter(|event| event.kind == EventKind::BreachCleared).count(), 1);
+}
+
+/// The company's Spire woken, its players stood off the moorings.
+fn woken(room: &mut Room, players: &[PlayerId]) {
+    room.breach_gate.as_mut().expect("gate").fill = SPIRE_TICKS - 1;
+    room.breach_gate.as_mut().expect("gate").claims = [None; 3];
+    hold_moorings(room, players);
+    room.tick();
+    assert!(room.breach_gate.as_ref().expect("gate").woken.is_some(), "woken");
+    let arrival = socket(room, "arrival");
+    for &player in players {
+        stand(room, player, arrival);
+    }
+}
+
+#[test]
+fn the_gate_stays_open_while_its_company_is_inside_and_one_too_far_from_it_is_out_of_reach() {
+    let (mut room, players) = gate_room(3);
+    for &player in &players {
+        room.breach_company(player, "run-a", Tier::Normal);
+    }
+    hold_moorings(&mut room, &players);
+    room.tick();
+    woken(&mut room, &players);
+    let door = socket(&room, "gate");
+    stand(&mut room, players[0], [door[0], door[1] + 20.0, door[2]]);
+    assert_eq!(room.ask_enter_breach(players[0]), crate::asks::OUT_OF_REACH, "too far to go in");
+    for _ in 0..gate::OPEN_TICKS / (10 * 60) + 2 {
+        room.breach_inside("run-a", "Ada", Tier::Normal, 2);
+        ticks(&mut room, 10 * 60);
+    }
+    stand(&mut room, players[0], door);
+    assert_eq!(room.ask_enter_breach(players[0]), crate::asks::INTO_BREACH, "open past its time, the company inside");
+}
+
+#[test]
+fn the_gate_holds_no_ninth_of_a_company_nor_a_kept_character_the_breach_shuts_out() {
+    let (mut room, players) = gate_room(10);
+    for &player in &players[..gear::breach::COMPANY_MOST] {
+        assert!(room.breach_company(player, "run-a", Tier::Normal));
+    }
+    assert!(!room.breach_company(players[8], "run-a", Tier::Normal), "a ninth is not held");
+    assert!(room.own(players[9], "ada"), "a kept character, level 1: the Breach shuts to it");
+    assert!(!room.breach_company(players[9], "run-b", Tier::Normal), "nor one it shuts out");
+    let gate = room.breach_gate.as_ref().expect("gate");
+    assert_eq!(gate.companies["run-a"].players.len(), gear::breach::COMPANY_MOST);
+    assert!(!gate.companies.contains_key("run-b"));
+}
+
+#[test]
+fn a_raising_under_way_ends_as_the_spire_wakes() {
+    let (mut room, players) = gate_room(5);
+    for &player in &players {
+        room.breach_company(player, "run-a", Tier::Normal);
+    }
+    hold_moorings(&mut room, &players);
+    room.tick();
+    room.harm_share(players[3], 1.0e3, 0);
+    let body = room.players[&players[3]].fighter.body;
+    stand(&mut room, players[4], [body.x + 1.0, body.y, body.z]);
+    assert_eq!(room.ask_raise(players[4], players[3]), 0);
+    assert!(!room.breach_seen().expect("the gate's").raising.is_empty(), "raising");
+    woken(&mut room, &players[..3]);
+    assert!(room.breach_seen().expect("the gate's").raising.is_empty(), "ended with the Waking");
+}
+
+#[test]
+fn one_fallen_in_the_waking_stands_again_at_the_gate_while_their_company_holds_it() {
+    let (mut room, players) = gate_room(3);
+    for &player in &players {
+        room.breach_company(player, "run-a", Tier::Normal);
+    }
+    hold_moorings(&mut room, &players);
+    room.tick();
+    room.harm_share(players[0], 1.0e3, 0);
+    ticks(&mut room, u64::from(super::fallen::STANDS_INSIDE) + crate::VIEW_LAG + 2);
+    let (body, arrival) = (room.players[&players[0]].fighter.body, socket(&room, "arrival"));
+    assert!(!room.players[&players[0]].fighter.dead(), "stood again");
+    assert!(combat::sight::apart([body.x, body.y], [arrival[0], arrival[1]]) < 1.0, "at the gate's arrival");
+}
+
+#[test]
+fn the_waking_stands_its_foes_within_what_the_garrison_may_take_and_counts_a_bulwark_once_it_stands() {
+    let (mut room, players) = gate_room(3);
+    room.open_public("saltgrass-downs", crate::public::Grounds::default(), None);
+    for &player in &players {
+        room.breach_company(player, "run-a", Tier::Normal);
+    }
+    let husk = ::foes::foe_type(::foes::roster::HUSK).expect("a Husk");
+    while room.living_foes() < room.others_most() {
+        room.stand_foe(husk, ::foes::Rank::Minor, [150.0, 150.0, 0.0], 0.0, None);
+    }
+    hold_moorings(&mut room, &players);
+    room.tick();
+    let gate = room.breach_gate.as_ref().expect("gate");
+    assert!(gate.held_by.is_some() && gate.claimers.is_empty(), "no Bulwark past the event's places");
+    assert_eq!(gate.bulwarks, 0, "and none counted");
+    let one = *room.foes.keys().next().expect("a foe");
+    room.gone(one);
+    room.tick();
+    let gate = room.breach_gate.as_ref().expect("gate");
+    assert_eq!((gate.claimers.len(), gate.bulwarks), (1, 1), "sent, and counted, once there is room");
+}
+
+#[test]
+fn only_normal_seas_stand_a_breachs_gate() {
+    let (mut room, _) = gate_room(0);
+    room.set_difficulty(gear::world::Difficulty::Normal);
+    assert!(room.breach_gate.is_some());
+    room.set_difficulty(gear::world::Difficulty::Elite);
+    assert!(room.breach_gate.is_none(), "none at Elite seas, where no run would hear it opened");
 }

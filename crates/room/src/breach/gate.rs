@@ -21,14 +21,15 @@ pub const SPIRE_TICKS: u64 = 150 * 60;
 pub const EBB_EVERY: (u64, u64) = (4, 2);
 /// How near a mooring a body holds it, metres.
 pub const MOORING_REACH_M: f64 = 1.7;
-/// How often a wave comes, ticks; how long the gate stays open to its company once woken, ticks; how long a word from
-/// a company inside lasts, ticks.
+/// How often a wave comes, ticks; how long the gate stays open to its company once woken, and longer while the
+/// company is inside, ticks; how long a word from a company inside lasts, ticks: a minute, as its host tells the gate
+/// every ten seconds and forgets a run silent for a minute.
 pub const WAVE_EVERY: u64 = 14 * 60;
 pub const OPEN_TICKS: u64 = 3 * 60 * 60;
-pub const INSIDE_LASTS: u64 = 10 * 60 * 60;
+pub const INSIDE_LASTS: u64 = 60 * 60;
 /// The moorings by their sockets.
 pub const MOORINGS: [&str; 3] = ["mooring-west", "mooring-south", "mooring-east"];
-/// The gate's answer to a player whose company has not opened it.
+/// The gate's answer to a player at it whose company has not opened it.
 pub const GATE_SHUT: u8 = 112;
 /// How far the gate's hollow reaches from its middle, metres, and how long the holding company may leave it empty of
 /// its living players before the gate is let go, ticks.
@@ -42,8 +43,8 @@ pub struct Company {
     pub players: Vec<PlayerId>,
 }
 
-/// A company inside a run, as its run's host tells the gate: its leader's name, its tier, the encounter it is on, and
-/// when the gate last heard.
+/// A company inside a run, as its run's host tells the gate: the name of its first player in, its tier, the encounter
+/// it is on, and when the gate last heard.
 #[derive(Clone, Debug, PartialEq)]
 pub struct Inside {
     pub name: String,
@@ -116,8 +117,21 @@ impl Room {
     }
 
     /// The host's word: a player came launched for a run at a tier, and stands at the gate's arrival. Answers whether
-    /// the room has a gate to hold them.
+    /// the gate holds them: not in a room with no gate, nor as a ninth of a company, nor a kept character the Breach
+    /// shuts out at that tier (one no one keeps, a test's, is held).
     pub fn breach_company(&mut self, player: PlayerId, run: &str, tier: Tier) -> bool {
+        let Some(gate) = self.breach_gate.as_ref() else { return false };
+        let full = gate.companies.get(run).is_some_and(|company| {
+            company.players.len() >= gear::breach::COMPANY_MOST && !company.players.contains(&player)
+        });
+        let shut = self.players.get(&player).is_some_and(|found| {
+            let place = gear::gate::Place::Breach(tier);
+            found.owner.is_some()
+                && gear::gate::shut(&found.character, place, gear::world::Difficulty::Normal).is_some()
+        });
+        if full || shut {
+            return false;
+        }
         let Some(gate) = self.breach_gate.as_mut() else { return false };
         for company in gate.companies.values_mut() {
             company.players.retain(|each| *each != player);
@@ -159,7 +173,8 @@ impl Room {
         let Some(mut gate) = self.breach_gate.take() else { return };
         let clock = self.clock;
         gate.inside.retain(|_, inside| clock < inside.heard + INSIDE_LASTS);
-        gate.opened.retain(|_, opened| clock < *opened + OPEN_TICKS);
+        // Open while its company is inside, so one who leaves the run can go back in.
+        gate.opened.retain(|run, opened| clock < *opened + OPEN_TICKS || gate.inside.contains_key(run));
         for company in gate.companies.values_mut() {
             company.players.retain(|player| self.players.contains_key(player));
         }
@@ -252,9 +267,12 @@ impl Room {
             gate.fill = gate.fill.saturating_sub(1);
         }
         let third = SPIRE_TICKS / 3;
-        if gate.fill >= third * u64::from(gate.bulwarks) && gate.bulwarks < 3 {
+        // Counted once one stands, so a room too full to stand it sends it again next tick.
+        if gate.fill >= third * u64::from(gate.bulwarks)
+            && gate.bulwarks < 3
+            && self.send_claimers(gate, &moorings, if tier == Tier::Hard { 2 } else { 1 }) > 0
+        {
             gate.bulwarks += 1;
-            self.send_claimers(gate, &moorings, if tier == Tier::Hard { 2 } else { 1 });
         }
         self.keep_claimers(gate, &moorings);
         if clock >= gate.next_wave {
@@ -275,6 +293,7 @@ impl Room {
         if gate.fill >= SPIRE_TICKS {
             gate.woken = Some(clock);
             gate.opened.insert(run, clock);
+            gate.raising.clear();
             for id in std::mem::take(&mut gate.foes) {
                 if self.foes.get(&id).is_some_and(|foe| !foe.fighter.dead()) {
                     self.inert.remove(&id);
@@ -288,15 +307,16 @@ impl Room {
         }
     }
 
-    /// Bulwarks sent from the mouths to claim the moorings left empty.
-    fn send_claimers(&mut self, gate: &mut Gate, moorings: &[[f64; 3]], count: usize) {
+    /// Bulwarks sent from the mouths to claim the moorings left empty; answers how many stood.
+    fn send_claimers(&mut self, gate: &mut Gate, moorings: &[[f64; 3]], count: usize) -> usize {
         let mouths: Vec<[f64; 3]> = (1..=4).filter_map(|number| gate.socket(&format!("mouth-{number}"))).collect();
         for nth in 0..count {
-            let Some(mouth) = mouths.get((gate.waves + nth) % mouths.len().max(1)) else { return };
-            let Some(id) = self.stand_gate_foe(gate, (BULWARK, Rank::Elite), *mouth) else { return };
+            let Some(mouth) = mouths.get((gate.waves + nth) % mouths.len().max(1)) else { return nth };
+            let Some(id) = self.stand_gate_foe(gate, (BULWARK, Rank::Elite), *mouth) else { return nth };
             self.inert.insert(id);
             gate.claimers.push((id, (gate.waves + nth) % moorings.len().max(1)));
         }
+        count
     }
 
     /// Each claimer walks to its mooring and, finding it empty of the company, claims it and fights there; one that
@@ -342,9 +362,10 @@ impl Room {
         gate.waves += 1;
     }
 
-    /// One of the Waking's foes: at the company's tier's level, dropping nothing, hunting the nearest living player.
+    /// One of the Waking's foes: at the company's tier's level, dropping nothing, hunting the nearest living player;
+    /// none while the room stands as many as it may beside a running public event's (`others_most`).
     fn stand_gate_foe(&mut self, gate: &mut Gate, (number, rank): (u8, Rank), at: [f64; 3]) -> Option<FighterId> {
-        if self.living_foes() >= self.foes_most {
+        if self.living_foes() >= self.others_most() {
             return None;
         }
         let tier = gate.held_by.as_ref().and_then(|run| gate.companies.get(run)).and_then(|company| company.tier);
@@ -417,7 +438,8 @@ impl Room {
         found.gear_changed = true;
     }
 
-    /// A player's ask at the gate: whether it is open to their company, for the page to go in.
+    /// A player's ask at the gate: whether it is open to their company, for the page to go in; out of reach for one
+    /// not at it.
     pub(crate) fn ask_enter_breach(&self, id: PlayerId) -> u8 {
         let Some(gate) = self.breach_gate.as_ref() else { return crate::asks::OUT_OF_REACH };
         let Some(found) = self.players.get(&id).filter(|found| found.living()) else {
@@ -427,6 +449,10 @@ impl Room {
             .socket("gate")
             .is_some_and(|at| apart([found.fighter.body.x, found.fighter.body.y], [at[0], at[1]]) <= 4.0);
         let open = gate.run_of(id).is_some_and(|run| gate.opened.contains_key(run));
-        if near && open { crate::asks::INTO_BREACH } else { GATE_SHUT }
+        match (near, open) {
+            (false, _) => crate::asks::OUT_OF_REACH,
+            (true, true) => crate::asks::INTO_BREACH,
+            (true, false) => GATE_SHUT,
+        }
     }
 }

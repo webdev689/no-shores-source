@@ -18,7 +18,8 @@ struct RunAsked {
     minute: u64,
 }
 
-/// A host's word naming a run and its tier, and for a company inside, its leader's name and the encounter it is on.
+/// A host's word naming a run and its tier, and for a company inside, the name of its first player in and the
+/// encounter it is on.
 #[derive(Deserialize)]
 struct RunWord {
     run: String,
