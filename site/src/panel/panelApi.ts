@@ -1,19 +1,24 @@
-// The panel's door to the bot: its address, the session token it keeps in this browser, and one call that sends the
-// token and turns every answer into { ok, status, body }.
+// The panel's door to the bot: its address, the session token it keeps in this tab, and one call that sends the
+// token and turns every answer into { ok, status, body }. The game's pages share this origin, so they can read the
+// storage every tab of it shares: nothing secret is kept there, only in this tab's own storage.
 import type { FieldError } from '../../../server/bot/law/settings.ts';
 
 /** The bot's Worker on the account's workers.dev. A panel served from this machine may name another (`npm run bot`). */
 export const BOT_ORIGIN = 'https://noshores-bot.mackcothran.workers.dev';
 /** The bot `npm run bot` runs, which a panel on this machine talks to unless the storage key below names another. */
 export const LOCAL_BOT_ORIGIN = 'http://localhost:8789';
+/** Which bot a panel on this machine talks to, kept for every tab. */
 export const BOT_ORIGIN_KEY = 'noshores.bot.origin';
+/** The session, kept for this tab alone. */
 export const TOKEN_KEY = 'noshores.bot.panel';
 /** A sign-in this tab began (its time, ms), kept for the tab alone: a ticket it did not begin is not traded. */
 export const SIGNING_KEY = 'noshores.bot.signing';
 /** How long a begun sign-in waits for its ticket. */
 export const SIGNING_TTL_MS = 10 * 60_000;
-/** A session whose sign-out did not reach the bot, told again at the next load. */
+/** A session whose sign-out did not reach the bot, kept for this tab alone and told again at its next load. */
 export const PENDING_OUT_KEY = 'noshores.bot.signout';
+/** Written and read back once, to learn whether the tab's storage can hold a begun sign-in. */
+const PROBE_KEY = 'noshores.bot.probe';
 
 /** What the bot says when it refuses, or when it cannot be reached (status 0). */
 export interface Refusal {
@@ -46,11 +51,14 @@ function write(store: StorageLike | null, key: string, value: string): void {
   }
 }
 
-/** Whether a storage can be read at all: one that refuses every call holds no begun sign-in to check. */
+/** Whether a storage gives back what it is given: one that refuses can hold no begun sign-in to check. */
 function keeps(store: StorageLike | null): boolean {
+  if (!store) return false;
   try {
-    store?.getItem(SIGNING_KEY);
-    return store !== null;
+    store.setItem(PROBE_KEY, '1');
+    const kept = store.getItem(PROBE_KEY) === '1';
+    store.removeItem(PROBE_KEY);
+    return kept;
   } catch {
     return false;
   }
@@ -66,7 +74,9 @@ function storageOf(name: 'localStorage' | 'sessionStorage'): StorageLike | null 
 }
 
 export interface PanelDeps {
+  /** The storage every tab of the origin shares, the browser's local storage. */
   readonly store?: StorageLike | null;
+  /** This tab's own storage, the browser's session storage: the session and its sign-in. */
   readonly tab?: StorageLike | null;
   readonly fetchFn?: Fetch;
   /** Whether the page is served from this machine, where another bot may be named. */
@@ -82,7 +92,7 @@ export function createPanelApi(deps: PanelDeps = {}) {
   const named = deps.local ? read(store, BOT_ORIGIN_KEY) : '';
   const fallback = deps.local ? LOCAL_BOT_ORIGIN : BOT_ORIGIN;
   const base = /^https?:\/\/[^\s/]+$/.test(named) ? named : fallback;
-  let token = read(store, TOKEN_KEY);
+  let token = read(tab, TOKEN_KEY);
 
   /** A call to the bot. A body is sent as JSON, or as it is when it is a file. */
   async function call<Body = Record<string, unknown>>(
@@ -103,11 +113,8 @@ export function createPanelApi(deps: PanelDeps = {}) {
         ...(body !== undefined ? { body: file ? body : JSON.stringify(body) } : {}),
       });
       const parsed: unknown = await response.json().catch(() => null);
-      // only the session this call carried is let go: another tab may have signed in since
-      if (response.status === 401 && bearer && bearer === token) {
-        token = '';
-        if (read(store, TOKEN_KEY) === bearer) write(store, TOKEN_KEY, '');
-      }
+      // only the session this call carried is let go: the person may have signed in again while it was on its way
+      if (response.status === 401 && bearer && bearer === token) setToken('');
       const held = (parsed !== null && typeof parsed === 'object' ? parsed : {}) as Body & Refusal;
       return response.ok
         ? { ok: true, status: response.status, body: held }
@@ -119,7 +126,7 @@ export function createPanelApi(deps: PanelDeps = {}) {
 
   function setToken(next: string): void {
     token = next;
-    write(store, TOKEN_KEY, next);
+    write(tab, TOKEN_KEY, next);
   }
 
   return {
@@ -134,15 +141,15 @@ export function createPanelApi(deps: PanelDeps = {}) {
     },
     /**
      * Trade the ticket Discord's round trip left in the address for a session, where this tab began that sign-in: a
-     * ticket in a link someone else sent is not traded, so no one is signed in as another. It is sent with no session,
-     * and a refusal lets go of nothing.
+     * ticket in a link someone else sent is not traded, so no one is signed in as another. A tab whose storage the
+     * browser blocks cannot show it began one, and trades nothing. The ticket is sent with no session, and a refusal
+     * lets go of nothing.
      */
     async exchange(ticket: string): Promise<Answer<{ token?: unknown }>> {
+      if (!keeps(tab)) return { ok: false, status: 0, body: { error: 'storage' } };
       const began = Number(read(tab, SIGNING_KEY));
       write(tab, SIGNING_KEY, '');
-      // a browser that keeps no tab storage, or refuses it, cannot tell, and signs in as before
-      if (keeps(tab) && !(began > 0 && now() - began < SIGNING_TTL_MS))
-        return { ok: false, status: 0, body: { error: 'ticket' } };
+      if (!(began > 0 && now() - began < SIGNING_TTL_MS)) return { ok: false, status: 0, body: { error: 'ticket' } };
       const answer = await call<{ token?: unknown }>('POST', '/v1/auth/exchange', { ticket }, { bearer: '' });
       if (answer.ok && typeof answer.body.token === 'string') setToken(answer.body.token);
       return answer;
@@ -153,14 +160,14 @@ export function createPanelApi(deps: PanelDeps = {}) {
       setToken('');
       if (!held) return;
       const answer = await call('POST', '/v1/auth/logout', undefined, { bearer: held });
-      if (answer.status === 0) write(store, PENDING_OUT_KEY, held);
+      if (answer.status === 0) write(tab, PENDING_OUT_KEY, held);
     },
     /** Tell the bot of a sign-out it did not hear. */
     async finishSignOut(): Promise<void> {
-      const held = read(store, PENDING_OUT_KEY);
+      const held = read(tab, PENDING_OUT_KEY);
       if (!held) return;
       const answer = await call('POST', '/v1/auth/logout', undefined, { bearer: held });
-      if (answer.status !== 0) write(store, PENDING_OUT_KEY, '');
+      if (answer.status !== 0) write(tab, PENDING_OUT_KEY, '');
     },
   };
 }

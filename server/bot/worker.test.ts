@@ -1,12 +1,26 @@
 import assert from 'node:assert/strict';
 import { beforeEach, test } from 'node:test';
-import { resetStarts } from './auth.ts';
-import { GUILD, ORIGIN, PANEL, bodyOf, countOf, panelRequest, signInPanel, standWorker } from './botForTests.ts';
+import { SESSION_IDLE_S, SESSION_MAX_S, STATE_KEEP_S, TICKET_KEEP_S, resetStarts } from './auth.ts';
+import {
+  GUILD,
+  MOD,
+  ORIGIN,
+  OWNER,
+  PANEL,
+  bodyOf,
+  countOf,
+  exchangeRequest,
+  panelRequest,
+  signInPanel,
+  standWorker,
+  ticketFor,
+} from './botForTests.ts';
 import { commandsOf, writeCommands } from './commands.ts';
 import type { ServerModule } from './modules/module.ts';
 import { resetMembers } from './panel.ts';
 import { registryOf } from './registry.ts';
 import { createRest } from './rest.ts';
+import { AUDIT_KEEP_S } from './store.ts';
 import { BOT_VERSION, tick } from './worker.ts';
 
 beforeEach(() => {
@@ -147,7 +161,7 @@ test('sign-in: Discord is asked for identify alone, with PKCE, and sent back to 
   assert.equal(countOf(bot.database, 'SELECT COUNT(*) AS count FROM oauth_states'), 1);
 });
 
-test("sign-in: the whole flow ends in a panel token; the ticket and the state work once; Discord's token is revoked", async () => {
+test("sign-in: the whole flow ends in a panel token, of which only the hash is kept; Discord's token is revoked", async () => {
   const bot = await standWorker();
   const token = await signInPanel(bot);
   assert.match(token, /^[A-Za-z0-9_-]{43}$/);
@@ -156,10 +170,24 @@ test("sign-in: the whole flow ends in a panel token; the ticket and the state wo
     'the token was revoked',
   );
   assert.match(bot.discord.calls.find((call) => call.path === '/api/v10/oauth2/token')?.body ?? '', /code_verifier=/);
-  assert.equal(countOf(bot.database, 'SELECT COUNT(*) AS count FROM panel_tickets'), 0);
-  assert.equal(countOf(bot.database, 'SELECT COUNT(*) AS count FROM oauth_states'), 0);
   const stored = bot.database.raw.prepare('SELECT token_hash FROM panel_sessions').get() as { token_hash: string };
   assert.notEqual(stored.token_hash, token, 'only the hash is kept');
+});
+
+test('sign-in: a ticket trades once and within two minutes; a state comes back within ten', async () => {
+  const bot = await standWorker();
+  const begun = Date.UTC(2026, 10, 15, 10, 0);
+  const trade = async (ticket: string, afterS: number) =>
+    (await bot.call(exchangeRequest(ticket), begun + afterS * 1000)).status;
+  const ticket = await ticketFor(bot, MOD, begun);
+  assert.equal(await trade(ticket, 1), 200);
+  assert.equal(await trade(ticket, 2), 401, 'the same ticket a second time is refused');
+  assert.equal(await trade(await ticketFor(bot, MOD, begun), TICKET_KEEP_S), 200, 'at two minutes it still trades');
+  assert.equal(await trade(await ticketFor(bot, MOD, begun), TICKET_KEEP_S + 1), 401, 'past two minutes it does not');
+  const late = stateOf(await bot.call(start(), begun));
+  assert.equal(backOf(await bot.call(callback(late), begun + (STATE_KEEP_S + 1) * 1000)).hash, '#error=state');
+  const inTime = stateOf(await bot.call(start(), begun));
+  assert.match(backOf(await bot.call(callback(inTime), begun + STATE_KEEP_S * 1000)).hash, /^#ticket=/);
 });
 
 test("sign-in: a replayed state, a bad code, and Discord's refusal each come back to the panel as an error", async () => {
@@ -252,6 +280,38 @@ test('clock: each minute makes sure of the Gateway and runs every module; minute
     ['/ensure', '/sweep'],
   );
   assert.equal(countOf(bot.database, 'SELECT COUNT(*) AS count FROM oauth_states'), 0);
+});
+
+test('clock: the sweep takes lapsed sessions, stale tickets and sign-ins, and old audit rows; fresh ones stay', async () => {
+  const bot = await standWorker();
+  const nowMs = Date.UTC(2026, 10, 15, 10, 17);
+  const nowS = nowMs / 1000;
+  const raw = bot.database.raw;
+  const session = raw.prepare(
+    'INSERT INTO panel_sessions (token_hash, user_id, user, created_at, last_seen) VALUES (?, ?, ?, ?, ?)',
+  );
+  session.run('idle', MOD, '{}', nowS - SESSION_IDLE_S - 60, nowS - SESSION_IDLE_S - 60);
+  session.run('too old', MOD, '{}', nowS - SESSION_MAX_S - 60, nowS - 60);
+  session.run('fresh', MOD, '{}', nowS - SESSION_MAX_S + 60, nowS - SESSION_IDLE_S + 60);
+  const ticket = raw.prepare('INSERT INTO panel_tickets (ticket_hash, user_id, user, created_at) VALUES (?, ?, ?, ?)');
+  ticket.run('stale', MOD, '{}', nowS - TICKET_KEEP_S - 60);
+  ticket.run('fresh', MOD, '{}', nowS - TICKET_KEEP_S + 60);
+  const state = raw.prepare(
+    "INSERT INTO oauth_states (state_hash, verifier, return_to, created_at) VALUES (?, 'v', '/panel/', ?)",
+  );
+  state.run('stale', nowS - STATE_KEEP_S - 60);
+  state.run('fresh', nowS - STATE_KEEP_S + 60);
+  const entry = raw.prepare(
+    "INSERT INTO audit_log (guild_id, at, actor_id, source, action) VALUES (?, ?, ?, 'panel', ?)",
+  );
+  entry.run(GUILD, nowS - AUDIT_KEEP_S - 60, OWNER, 'old');
+  entry.run(GUILD, nowS - AUDIT_KEEP_S + 60, OWNER, 'fresh');
+  await tick(bot.env, nowMs, bot.execution, { fetch: bot.discord.fetch, registry: registryOf([]) });
+  const left = (sql: string) => (raw.prepare(sql).all() as Array<{ kept: string }>).map((row) => row.kept);
+  assert.deepEqual(left('SELECT token_hash AS kept FROM panel_sessions'), ['fresh'], 'idle a week, or a month in all');
+  assert.deepEqual(left('SELECT ticket_hash AS kept FROM panel_tickets'), ['fresh']);
+  assert.deepEqual(left('SELECT state_hash AS kept FROM oauth_states'), ['fresh']);
+  assert.deepEqual(left('SELECT action AS kept FROM audit_log'), ['fresh']);
 });
 
 test("worker: a module's own public route answers before the panel's", async () => {

@@ -17,6 +17,7 @@ const SIGN_IN_ERRORS: Readonly<Record<string, string>> = {
   'login-off': 'Sign-in is not set up yet.',
   denied: 'Discord sign-in was cancelled.',
   rate: 'Too many sign-ins from here. Wait a minute and try again.',
+  storage: 'Your browser blocks the site data that sign-in needs. Allow site data for this site, then sign in again.',
 };
 export const LEVEL_WORDS: Readonly<Record<string, string>> = {
   viewer: 'Viewer',
@@ -383,7 +384,7 @@ async function route(): Promise<void> {
     window.history.replaceState(null, '', location.pathname);
     const done = await api.exchange(ticket);
     if (mine !== routeNo) return;
-    if (!done.ok) return signInPage('ticket');
+    if (!done.ok) return signInPage(done.body.error === 'storage' ? 'storage' : 'ticket');
     return route();
   }
   const board = fragment.get('lb') ?? '';
