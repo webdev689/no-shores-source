@@ -192,6 +192,27 @@ each part works is in its system note.
 
 The decisions in [[Open Questions]] are not repeated here.
 
+- **The island view in rain, the Playlist over the island and the ships at a roadstead** (#191, a draft for the
+  owner's yes; branch `claude/island-overworld-issues-e7fobt`). The owner's three reports:
+  - "When its cloudy and raining. The overworld pan over the island is shrouded and you can only see the nodes": the
+    weather's fog was charged along the whole line of sight, kilometres from the island view. It now lies under the
+    cloud deck's base: an eye under it (on foot, at the helm) is hazed as before; one risen to twice the base only
+    along the part under it ([[Sky]], "Seen from over the deck"; Claude's call in
+    [[Weather and Day as Claude Shapes It]]). Pictured headless under a told heavy rain: before, solid grey with only
+    the nodes; after, the island seen through the rain.
+  - "The Playlist node should be in the overworld view of the island itself, not only at sea": recorded as
+    [[The Playlist Shows Over Its Island, Not Only at Sea]]. It shows over a port's island docking or ashore, beside
+    its city's mark (from that height it fell on it), held at the picture's edge when far off. Pictured docking at
+    Overlook.
+  - "When leaving the social space, ships are seen overlapping and bunched up in one area": every course's ships lay
+    on the roadstead's one point (two or more hulls together a third of the time at Overlook, measured). Each course
+    now has berths of its own off each roadstead ([[World Map]], "Berths"); a day at each port holds no lying ship
+    within 150 m of another. The scripted Tithe clash's course was re-aimed and its fingerprint pinned anew (Rust and
+    `server/roomDoor.test.ts`). A rooms change: its merge deploys the rooms.
+  - Found and left, for the owner: on docking, the city's mark (and now the Playlist beside it) is framed at the
+    picture's foot, under the sea's bar, which stays up over the island view; the frame could keep the nodes above the
+    bar. A picture plan cannot set the weather (observation 201): a dev hook lending the sky would fix it.
+
 - **The key strip, the leave held and Settings in tabs** (#181), merged on the owner's "Merge and deploy", which
   deploys the page (the rooms' code is untouched). The owner's three asks
   ([[The Key Strip Is a Compact Panel, a Held Key Leaves, and Settings Has Tabs]], Claude's calls listed there): the
