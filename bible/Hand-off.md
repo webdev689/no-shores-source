@@ -192,18 +192,31 @@ each part works is in its system note.
 
 The decisions in [[Open Questions]] are not repeated here.
 
-- **The writing pass** (#176), merged, which deploys the page and the
-  rooms: every spoken line read and most reworded, all 33 lore chapters, the new tutorial with them, each
-  speaker in a voice of their own within [[Dialogue]], and the lore given more detail and mysteries shown and never
-  explained ([[Every Line Reads as Spoken, and the Lore Is Detailed, Mysterious and Gripping]], every call listed
-  there). Ids, scene names, each scene's speakers in order and the puzzles' orders are kept, so the game behaves as
-  before. The dialogue check holds two lines a turn across a quest's seams
-  ([[The Dialogue Check Holds Two Lines a Turn Across a Quest's Seams]]). `lore.json`, `quests.json`, `items.json` and
-  `factions.json` feed the protocol's version. Tested offline: the full check on the
-  head. Not yet read or heard in the game. For the owner: the Pearl Tomb's brief (`briefs.json`, never shown) has
-  dunes where the lore has cliffs; the books name Corran Hale, the brothers Penhallow and the wreckers' wars, which
-  no note of the owner's names.
-- **A ship's wake follows the track it sailed** (#177), merged, which deploys the page. The owner: "the waves that
+- **The fourth whole-codebase audit** (#180), merged on the owner's "Merge and depkoy", which deploys the page and the
+  rooms: twelve read-only auditors by area and a reviewer of the diff, each finding read against the code first and each
+  fix but two with a test that failed before it. High: the dungeon entrances bound no sky groups, so every frame on a
+  node with entrances failed WebGPU validation once #155 fixed the stride before it (maybe the owner's "world stopped
+  being drawn" in #163; unchecked). Medium: a hull pushed apart in a fight could be pressed onto a continent and stuck
+  there; the protocol's version missed the files that set a fighter's body, statuses and trim; the controls sheet's
+  repeated Use rows kept Tab and the pad from its sea fight rows and Reset; a failed wreck download stayed failed though
+  later beats fetched it; a failed return to the ship from a dungeon left it undrawn; `content/forged` joins
+  `ROOMS_CODE` (a deploy change, its own commit); the install no longer traces the SkillsMP key (a security change, its
+  own commit). Low: an unkept repair mended the kept ship, the pad's B on an entrance's card, the Ammo crate with no
+  Ranged weapon, a horse's "Level 1", the deep's heartbeat. What it found and left is in its description, among them for
+  the owner: a dungeon block split into 3 rooms where 4 fit (a fix changes every seed), the week's `--sea` run entered
+  from anywhere at sea, the starter stock's weapons rolling no element. Tested offline: `cargo xtask check` at its head;
+  nothing played.
+- **The writing pass** (#176), merged: every spoken line read and most reworded, all 33 lore chapters, the new tutorial
+  with them, each speaker in a voice of their own within [[Dialogue]], and the lore given more detail and mysteries
+  shown and never explained ([[Every Line Reads as Spoken, and the Lore Is Detailed, Mysterious and Gripping]], every
+  call listed there). Ids, scene names, each scene's speakers in order and the puzzles' orders are kept, so the game
+  behaves as before. The dialogue check holds two lines a turn across a quest's seams
+  ([[The Dialogue Check Holds Two Lines a Turn Across a Quest's Seams]]). Its merge deployed the rooms too: `lore.json`,
+  `quests.json`, `items.json` and `factions.json` feed the protocol's version. Tested offline: the full check on the
+  head. Not yet read or heard in the game. For the owner: the Pearl Tomb's brief (`briefs.json`, never shown) has dunes
+  where the lore has cliffs; the books name Corran Hale, the brothers Penhallow and the wreckers' wars, which no note of
+  the owner's names.
+- **A ship's wake follows the track it sailed** (#177), merged, which deployed the page. The owner: "the waves that
   follow behind the ship dont animate when you turn your ship. They are always straight". The water drew every wake
   straight aft of the heading the ship had that frame; it now keeps where each ship's stern has been and lays the arms
   and the wash along it ([[Water]], "Its wake"; the numbers in [[The Sea as Claude Shapes It]]). Tested offline
@@ -514,11 +527,11 @@ The decisions in [[Open Questions]] are not repeated here.
   its setup script runs `npm ci`. Run the check there as `NODE_USE_ENV_PROXY=1 cargo xtask check`: Node's `fetch`
   ignores `HTTPS_PROXY` without it. On the Default environment those four tests fail with "fetch failed" and xtask
   stops before the build, the bundle and the repo checks. The Context7 and SkillsMP keys are on neither environment.
-- **Unchecked, from the encounters' headless run**: on an Elite Dungeon's node the game's worker logged a WebGPU
-  validation error each frame ("Instance range ... requires a larger buffer (28) than the bound buffer size (24) of
-  the vertex buffer at slot 1 with stride 28"), the city models' instances by its look; whether `main` shows it too.
-  The dungeon picture driver (`tools/claude-toolkit/dungeon-plan.ts`) waits for an HTML "Enter" prompt the game now
-  draws in its worker, so it cannot picture a dungeon until it waits on the game's own word.
+- **The encounters' headless run's WebGPU error** ("Instance range ... requires a larger buffer (28) than the bound
+  buffer size (24) ..."): the dungeon entrances' instance, fixed by #155 (f895eb80); the error it hid, the entrances
+  drawing with no sky groups bound, is #180's first fix. Neither is yet pictured on a node. The dungeon picture driver
+  (`tools/claude-toolkit/dungeon-plan.ts`) waits for an HTML "Enter" prompt the game now draws in its worker, so it
+  cannot picture a dungeon until it waits on the game's own word.
 - **The public events' last pictures**, left for later by the owner: the raid's waves marching, a store
   plundered, Marrow, the Tithe giving up and a failed raid; the Fissure's growth sinking, the Warden, the last minute,
   the seal and a failed Fissure; the chest, the result and the reward feed; night; the banner at 1280x720, 1000x600,
@@ -639,7 +652,7 @@ The decisions in [[Open Questions]] are not repeated here.
   - The terrain's painted paths are sampled at window coordinates in f32 (3 to 6 cm steps far out), the water and the
     scene make about 13 GPU objects a frame, an island room's hauls are kept and never told, and `RoomHost`
     (`server/worker.ts`) has no test.
-  - Workflows: `content/forged` is not in `ROOMS_CODE` though the bake reads it; the wreck's and the ships' workflows
+  - Workflows (#180 adds `content/forged` to `ROOMS_CODE`, which the bake reads); the wreck's and the ships' workflows
     miss inputs they import (`tools/ships`, `shipPictures.ts`); a failed accounts deploy still lets the rooms record
     a deploy and the page publish.
   - Repo checks that still let things through: `shaders.mjs` reads a shader only when `code:` is its call's first key;

@@ -321,3 +321,20 @@ fn what_a_fight_owes_a_player_who_rejoined_goes_to_their_new_number_once() {
     assert!(count(ben) > 0, "it sank and floats for ben");
     assert_eq!((count(ada), count(again)), (0, count(ben)), "nothing for the old number, once for the new");
 }
+
+#[test]
+fn a_repair_begun_unkept_stops_as_the_kept_character_comes_and_mends_nothing_of_theirs() {
+    let mut sea = sea();
+    let player = sea.join();
+    sea.course(player, &[[60_000.0, 50_000.0]], 10).unwrap();
+    sea.tick();
+    sea.berths.get_mut(&player).unwrap().kept = [0.5; 3];
+    assert_eq!(sea.repair(player), Ok(()), "by a port, played unkept");
+    let mut character = gear::Character::starting();
+    character.ship = [1_000, 1_000, 1_000];
+    character.ship_at = Some([50_000, 50_000]);
+    assert!(sea.restore_character(player, &character.to_json()));
+    ticks(&mut sea, 100 * 60);
+    let (kept, left) = sea.kept(player).unwrap();
+    assert!((kept[0] - 0.1).abs() < 1e-6 && left == 0.0, "the kept ship, 10 km from a port, as it was: {kept:?}");
+}

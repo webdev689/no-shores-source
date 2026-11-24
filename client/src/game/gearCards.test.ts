@@ -140,7 +140,7 @@ test('the Ammo crate stands on the Consumables shelf with its count, held to fil
     inventoryPageOf(state(fields))
       .tabs.find((each) => each.id === 'consumables')
       ?.cells.find((each) => each.glyph === 'ammo-crate');
-  const crate = crateOf({ crates: 3, ammoShare: 0.5 });
+  const crate = crateOf({ crates: 3, ammoShare: 0.5, ammoMost: 24 });
   assert.deepEqual([crate?.name, crate?.glyph, crate?.count], ['Ammo crate', 'ammo-crate', 3]);
   assert.deepEqual(crate?.press, {
     label: 'Hold to fill your ammo',
@@ -149,7 +149,10 @@ test('the Ammo crate stands on the Consumables shelf with its count, held to fil
     held: true,
     burst: 'pulse',
   });
-  assert.equal(crateOf({ crates: 3, ammoShare: 1 })?.press, null, 'full, nothing to fill');
+  assert.equal(crateOf({ crates: 3, ammoShare: 1, ammoMost: 24 })?.press, null, 'full, nothing to fill');
+  const unarmed = crateOf({ crates: 3, ammoShare: 0.5, ammoMost: 0 });
+  assert.equal(unarmed?.press, null, 'no Ranged weapon worn, nothing to fill: the room would refuse it');
+  assert.ok(unarmed?.words.endsWith(' Wear a Ranged weapon first.'));
   assert.equal(crateOf({ crates: 0, ammoShare: 0 }), undefined, 'none held, not shown');
 });
 

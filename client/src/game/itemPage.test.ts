@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { item, state } from '../network/gearForTests.ts';
-import { KINDS } from '../player/gear.ts';
+import { HORSE, KINDS } from '../player/gear.ts';
 import { glyphDrawn } from '../ui/glyphs.ts';
 import type { Child, Node } from '../ui/node.ts';
 import { QuadList } from '../ui/quads.ts';
@@ -121,4 +121,11 @@ test('two presses of one name on an item’s page, as two like modules to infuse
   const ids = presses.map((press) => press.id);
   assert.equal(ids.filter((id) => id?.startsWith('press-Hold to infuse')).length, 2);
   assert.equal(new Set(ids).size, ids.length, ids.join(', '));
+});
+
+test("a horse's page names no level, as its card does not: a horse has no stats", () => {
+  const horse = item({ id: 7, kind: HORSE, name: 1 });
+  assert.ok(!cardOf(horse).rows.some(([label]) => label === 'Level'), 'its card');
+  const texts = textsOf(itemPage(context, horse, () => {}).page as Node);
+  assert.ok(!texts.some((text) => /^Level /.test(text.words)), 'its page');
 });
