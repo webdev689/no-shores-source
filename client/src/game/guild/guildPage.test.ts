@@ -149,8 +149,11 @@ test('a member sees the editor but has no press to keep a banner', async () => {
 });
 
 test('an admin sets the motto and description and invites a player by name from the details', async () => {
-  const { click, type, asked } = await tab(face({ rank: 1 }));
+  const { click, type, ui, asked } = await tab(face({ rank: 1 }));
   click(edgeId('details'));
+  // The motto's field starts from the motto the guild has; it is cleared to write another.
+  assert.equal(ui.fieldText(FIELDS.motto[0]), 'No tithe, no master.');
+  ui.setFieldText(FIELDS.motto[0], '');
   type(FIELDS.motto[0], 'Fair winds');
   click(sendId('motto'));
   await settle();
