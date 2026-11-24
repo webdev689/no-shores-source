@@ -34,6 +34,7 @@ export async function move(
   guild: string,
   move: { account: string | null; kind: string; amount: number; rid: string; now: number },
   paid: readonly Paid[] = [],
+  answer: Statement | null = null,
 ): Promise<Moved | 'stale'> {
   const mark = randomToken();
   const first = (from: number) =>
@@ -42,7 +43,7 @@ export async function move(
   const writes = paid.map((statement, place) =>
     place === 0 ? statement(first, [guild, move.rid, move.amount]) : statement(() => 'changes() = 1', []),
   );
-  const lined = move.amount === 0 ? [] : line(database, guild, move, mark, paid.length > 0);
+  const lined = move.amount === 0 ? [] : line(database, guild, move, mark, paid.length > 0, answer);
   let written;
   try {
     written = await database.batch([...writes, ...lined]);
@@ -66,13 +67,15 @@ export async function move(
   return balance?.fits === 1 ? 'stale' : 'refused';
 }
 
-/** The ledger line, the balance it moves and the oldest lines pruned: the line only after a paid write that changed. */
+/** The ledger line, the balance it moves, `kept` (written only once the balance moved), and the oldest lines pruned:
+ *  the line only after a paid write that changed. */
 function line(
   database: Db,
   guild: string,
   move: { account: string | null; kind: string; amount: number; rid: string; now: number },
   mark: string,
   afterPaid: boolean,
+  kept: Statement | null,
 ): Statement[] {
   return [
     database
@@ -88,6 +91,7 @@ function line(
          AND EXISTS (SELECT 1 FROM guild_ledger WHERE guild_id = ?1 AND rid = ?2 AND mark = ?3)`,
       )
       .bind(guild, move.rid, mark, move.amount),
+    ...(kept ? [kept] : []),
     database
       .prepare(
         `DELETE FROM guild_ledger WHERE guild_id = ?1 AND rowid NOT IN

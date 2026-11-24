@@ -11,6 +11,7 @@
 import manifest from '../content/modules/modules.json' with { type: 'json' };
 import type { Characters } from './accounts/characters.ts';
 import { keptBanner } from './accounts/guildFace.ts';
+import { LIMITED } from './accounts/outpostStores.ts';
 import type { Stuff } from '../client/src/game/guild/outpostLaw.ts';
 import { gateOf, gateTier } from '../client/src/game/guild/delveRoom.ts';
 import type { Plot } from '../client/src/game/guild/outpostLaw.ts';
@@ -165,9 +166,10 @@ export class OutpostHost {
     const rid = `${this.room}:${this.began}:${errand.player}:${errand.id}`;
     switch (errand.kind) {
       case 'deposit':
-        return this.retried(async () =>
-          (await this.accounts.deposit(account, amount, rid)) === 'refused' ? 0 : amount,
-        );
+        return this.retried(async () => {
+          const moved = await this.accounts.deposit(account, amount, rid);
+          return moved === 'refused' ? 0 : moved === 'limited' ? LIMITED : amount;
+        });
       case 'deliver':
         return this.retried(() =>
           this.accounts.deliver(account, this.room, { id: errand.structure ?? 0, stuff, amount }, rid),

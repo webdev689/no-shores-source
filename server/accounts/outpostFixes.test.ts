@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { weekOf } from '../../client/src/game/guild/guildLaw.ts';
-import { TREASURY_MOST } from '../../client/src/game/guild/outpostLaw.ts';
+import { STORES_TAKE_A_DAY, TREASURY_MOST, kindOf } from '../../client/src/game/guild/outpostLaw.ts';
 import { accounts, slowly } from './accountsForTests.ts';
 import { characters } from './characters.ts';
 import type { Db, Statement } from './database.ts';
@@ -271,7 +271,7 @@ test("a room's errands count in the account's outpost limit and are refused past
   const { ask, kept, accountOf, room } = await world();
   let asked = 0;
   while ((await ask('Ada', 'outpost/collect', { site: SITE })).status !== 429 && asked < 1_000) asked++;
-  assert.equal(await kept().deposit(await accountOf('Ada'), 5, `${await room()}:late`), 'refused');
+  assert.equal(await kept().deposit(await accountOf('Ada'), 5, `${await room()}:late`), 'limited');
   assert.equal(await kept().soundHorn(await accountOf('Ada'), await room()), -3, 'the horn past the limit');
 });
 
@@ -310,4 +310,78 @@ test("a Counting House risen part way through an hour pays that part at its old 
   assert.equal(await box(), 30 + 15, 'an hour and a half at tier 1, none yet at tier 2');
   clock.now += 0.5 * HOUR;
   assert.equal(await box(), 30 + 15 + 60);
+});
+
+test('a deposit asked again under its id after its player left the guild answers as it did', async () => {
+  const { ask, kept, accountOf, room, guild } = await world();
+  const [ben, rid] = [await accountOf('Ben'), `${await room()}:1795262400000:7:3`];
+  assert.equal(await kept().deposit(ben, 1_000, rid), 'moved');
+  assert.equal((await ask('Ben', 'guild/leave')).status, 200);
+  assert.equal(await kept().deposit(ben, 1_000, rid), 'already', 'the room gives nothing back');
+  assert.equal((await guild()).treasury, 1_000);
+});
+
+test('a deposit asked again after its ledger line was pruned by newer ones moves nothing more', async () => {
+  const { kept, accountOf, room, guild } = await world();
+  const [ada, cyra, here] = [await accountOf('Ada'), await accountOf('Cyra'), await room()];
+  assert.equal(await kept().deposit(ada, 5_000, `${here}:1:7:4`), 'moved');
+  for (let each = 0; each < 200; each++) await kept().deposit(cyra, 1, `${here}:other:${each}`);
+  assert.equal(await kept().deposit(ada, 5_000, `${here}:1:7:4`), 'already');
+  assert.equal((await guild()).treasury, 5_200);
+});
+
+test('an errand asked again a month later answers as it did and does nothing twice', async () => {
+  const { standAt, fund, ask, kept, accountOf, room, clock, guild, sql } = await world();
+  await sql('UPDATE guilds SET xp = 40000');
+  await standAt('Ada');
+  await fund(30_000);
+  await ask('Ada', 'outpost/raise', { site: SITE, turn: 0 });
+  await ask('Ada', 'outpost/place', { site: SITE, kind: 'camp', x: 0, y: 0, turn: 0 });
+  const [ada, here] = [await accountOf('Ada'), await room()];
+  assert.equal(await kept().deliver(ada, here, { id: 3, stuff: 'timber', amount: 10 }, 'deliver-once'), 10);
+  assert.equal(await kept().deposit(ada, 300, `${here}:1:1:1`), 'moved');
+  const treasury = (await guild()).treasury;
+  clock.now += 30 * 24 * HOUR;
+  await standAt('Ada');
+  // Another errand's write comes first, as it would in a month.
+  assert.equal(await kept().deliver(ada, here, { id: 3, stuff: 'timber', amount: 5 }, 'deliver-later'), 5);
+  assert.equal(await kept().deliver(ada, here, { id: 3, stuff: 'timber', amount: 10 }, 'deliver-once'), 10);
+  assert.equal(await kept().deposit(ada, 300, `${here}:1:1:1`), 'already');
+  assert.equal((await guild()).treasury, treasury, 'nothing moved again');
+  assert.equal(await kept().deliver(ada, here, { id: 3, stuff: 'timber', amount: 30 }), 25, 'fifteen of forty used');
+});
+
+test("two takes at once at two of a guild's outposts give no more than a day's take", async () => {
+  const { fund, ask, kept, accountOf, clock, sql, guild, deps, tokens } = await world();
+  await sql('UPDATE guilds SET xp = 800000');
+  await fund(100_000);
+  const ada = await accountOf('Ada');
+  const sites = ['gull-cove-outpost', 'salt-reach-outpost'];
+  const roomOf = async (site: string) => outpostRoom(site, (await guild()).id);
+  for (const site of sites) {
+    await kept().claim(tokens['Ada'] ?? '', `${await roomOf(site)}:Ada`);
+    assert.equal((await ask('Ada', 'outpost/raise', { site, turn: 0 })).status, 200);
+    assert.equal((await ask('Ada', 'outpost/place', { site, kind: 'dock', x: 0, y: 0, turn: 0 })).status, 200);
+    for (const [stuff, amount] of Object.entries(kindOf('dock')?.tiers[0]?.materials ?? {}))
+      await kept().deliver(ada, await roomOf(site), { id: 3, stuff: stuff as 'timber', amount: amount ?? 0 });
+  }
+  clock.now += 72 * HOUR;
+  slowly(deps);
+  const given = await Promise.all(
+    sites.map(async (site) => kept().takeStores(ada, await roomOf(site), 'timber', STORES_TAKE_A_DAY)),
+  );
+  assert.equal(given[0]! + given[1]!, STORES_TAKE_A_DAY, `given ${given.join(' and ')}`);
+});
+
+test('past the outpost limit every errand answers so, and plot reads count apart', async () => {
+  const { ask, kept, accountOf, room, get } = await world();
+  const [ada, here] = [await accountOf('Ada'), await room()];
+  for (let read = 0; read < 700; read++) await get('Ada', `/v1/outposts/${here}`);
+  assert.equal(await kept().deposit(ada, 5, `${here}:read-past`), 'moved', 'reads leave the errands their limit');
+  let asked = 0;
+  while ((await ask('Ada', 'outpost/collect', { site: SITE })).status !== 429 && asked < 1_000) asked++;
+  assert.equal(await kept().deposit(ada, 5, `${here}:late`), 'limited');
+  assert.equal(await kept().deliver(ada, here, { id: 3, stuff: 'timber', amount: 5 }), -3);
+  assert.equal(await kept().takeStores(ada, here, 'timber', 5), -3);
+  assert.equal(await kept().soundHorn(ada, here), -3);
 });
