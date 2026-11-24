@@ -93,7 +93,7 @@ fn wants(kind: AreaKind, land: &Reading, radius: f64) -> Option<f64> {
             bell(land.slope, 0.35, 0.9, 0.3) * 0.7 + (land.relief / 20.0).min(1.0) * 0.3
         }
         AreaKind::Entrance | AreaKind::Gate => flat(8.0),
-        // A hollow: flat, and lower than the land round it.
+        // A hollow: flat, and kept off ground higher than the land round it.
         AreaKind::Breach => flat(8.0) * 0.6 + (0.4 - high.max(0.0) * 0.4),
     };
     (score > 0.0).then_some(score)

@@ -167,6 +167,9 @@ fn its_seals_stand_across_their_doors_and_its_slabs_come_and_go_on_their_measure
     }
     let phases: std::collections::BTreeSet<u64> = plan.slabs.iter().map(|slab| slab.phase).collect();
     assert_eq!(phases.len(), plan.slabs.len(), "no two slabs keep one time");
+    let patterns: std::collections::BTreeSet<Vec<bool>> =
+        (0..SLAB_CYCLE).map(|tick| plan.slabs.iter().map(|slab| slab_stands(slab, tick)).collect()).collect();
+    assert!(patterns.len() > 2, "slabs come and go at their own ticks, not all at once");
 }
 
 const SLAB_CYCLE_TEST: u64 = SLAB_CYCLE;

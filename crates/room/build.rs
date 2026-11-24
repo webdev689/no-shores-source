@@ -1,6 +1,6 @@
-//! Writes the Breaches' tables as the crate builds: each plan in `content/dungeon/breach-*.json` and every module its
-//! rules stand on from `content/modules/modules.json`, so the rules lay the very pieces the Blender scripts build and
-//! the room reads no file at run time.
+//! Writes the Breaches' tables as the crate builds: the Drowned Vale's plan, `content/dungeon/breach-drowned-vale.json`,
+//! and every module its rules stand on from `content/modules/modules.json`, so the rules lay the very pieces the
+//! Blender scripts build and the room reads no file at run time.
 
 use std::fmt::Write as _;
 

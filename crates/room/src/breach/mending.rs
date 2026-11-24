@@ -34,7 +34,6 @@ const OPEN: [[bool; 3]; 3] = [[true, false, false], [false, true, true], [true, 
 /// Mender.
 #[derive(Clone, Debug, Default, PartialEq)]
 pub struct Mending {
-    pub begun: bool,
     pub stage: u8,
     pub stage_from: u64,
     pub fused: [u8; 3],

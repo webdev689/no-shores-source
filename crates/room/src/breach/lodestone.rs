@@ -24,7 +24,7 @@ pub const GROUND_REACH_M: f64 = 8.0;
 pub const STRIKE_TIMES: f64 = 3.0;
 /// How long the Lodestone may lie while an encounter needs it before the company is unwritten, ticks: Normal, Hard.
 pub const LYING_MOST: (u64, u64) = (6 * 60, 4 * 60);
-/// What a Rewritten player inside Hold True takes of a foe's blow.
+/// What a player inside Hold True takes of a foe's blow, Rewritten or not.
 pub const HELD_TIMES: f64 = 0.5;
 
 /// Where the Lodestone is.

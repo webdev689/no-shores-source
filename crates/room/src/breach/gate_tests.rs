@@ -10,7 +10,7 @@ use crate::encounters::encounters_tests::{hardy, ticks};
 use crate::{EventKind, PlayerId};
 
 /// A patrol's room on open ground standing the Sunken Gate at its middle, with `count` hardy players.
-fn gate_room(count: usize) -> (Room, Vec<PlayerId>) {
+pub(super) fn gate_room(count: usize) -> (Room, Vec<PlayerId>) {
     let module = super::plan::module("breach-gate").expect("the gate's module");
     let blocks: Vec<Block> = module
         .parts
