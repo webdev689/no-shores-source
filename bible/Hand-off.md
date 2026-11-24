@@ -192,6 +192,29 @@ each part works is in its system note.
 
 The decisions in [[Open Questions]] are not repeated here.
 
+- **The playtest's seven notes**, in three draft pull requests, each waiting on the owner's yes, each green in CI on
+  its head with `main` (#178) merged in. The owner's answers are recorded in three decisions, Claude's calls in their
+  tables. #185 (this branch): the Harbourmaster's stall in the Beacon Walk market and the harbour way sealed at its
+  head; rain spares the trees' crowns, fewer and finer puddles, a slower sway; every patrol node standing, one gathered
+  spent for its gatherer alone for 9 minutes
+  ([[The Harbourmaster Stands in the Market, Rain Spares the Trees, and Patrol Nodes Always Stand]]). #187: other
+  players' marks over their ships at sea, no fog on the sea map, the Bay given by the stranger, a rider's jump boosting
+  the horse 1.5x for 4 s with 12 s to recharge, the burst's spray and the boost's dust, and 17 horse cues
+  (its decision note, "Other Ships Wear Their Players' Marks, the Sea Map Has No Fog, and New Players Ride a Bay That
+  Bursts", is on #187's branch). #188:
+  the Lattice shaded darker with only its crystal's points glowing, its blows drawn through tell, strike and landing,
+  its shots as crystal tracers (its decision note, on #188's branch: "The Lattice Is Shaded Darker, With Detailed
+  Attacks and Projectile Tracers").
+  Tested offline; pictured headless only the rain, the sea's marks and map, and the Lattice's layers. For the owner:
+  - **The invisible public event is not found.** It drew on every offline path, with no WebGPU error. Needed: whether
+    the owner played online or alone, the browser and GPU, whether the foes and land drew, and the console (F12).
+  - Whether Haste and the horse's boost should stack (they do).
+  - **The horse cues' candidates** are in the `freesound` run 45359832025's download (on #187's branch), but this
+    session's network refused GitHub's artifact store (`productionresultssa14.blob.core.windows.net`), so the Overlook
+    Sound Sheet does not list them yet. A session that can reach that host adds them to the sheet; until the owner
+    picks, the horse is silent.
+  - Left as each pull request says: other riders show no boost dust, a ship behind an island still wears its mark, the
+    hub's buildings never draw headless (no picture of the stall or the gate).
 - **The key strip, the leave held and Settings in tabs** (#181), merged on the owner's "Merge and deploy", which
   deploys the page (the rooms' code is untouched). The owner's three asks
   ([[The Key Strip Is a Compact Panel, a Held Key Leaves, and Settings Has Tabs]], Claude's calls listed there): the
