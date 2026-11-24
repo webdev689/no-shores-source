@@ -157,10 +157,8 @@ test('a host’s keeper tells its Breach of each character it keeps, once kept, 
     owned: (player: number) => told.push(`owned ${player}`),
     named: (player: number, name: string) => told.push(`${player} ${name}`),
   };
-  const door = toldBreach(() => breach as unknown as Breach, {
-    own: (player: number) => player === 4,
-    name: () => true,
-  });
+  const kept: Parameters<typeof toldBreach>[1] = { own: (player) => player === 4, name: () => true };
+  const door = toldBreach(() => breach as unknown as Breach, kept);
   assert.deepEqual([door.own(4, 'ada'), door.own(5, 'ben'), door.name(4, 'Ada')], [true, false, true]);
   assert.deepEqual(told, ['owned 4', '4 Ada'], 'one refused is not told');
 });
