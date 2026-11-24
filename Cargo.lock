@@ -421,6 +421,7 @@ dependencies = [
  "land",
  "movement",
  "naval",
+ "passage",
  "protocol",
  "room",
  "sailing",

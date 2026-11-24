@@ -126,7 +126,6 @@ fn probe_webs() {
     let mut deals: BTreeMap<&str, u32> = BTreeMap::new();
     let mut grounds: BTreeMap<String, u32> = BTreeMap::new();
     let (mut zones, mut cells, mut placements, mut most_cells) = (0, 0_usize, 0_usize, 0_usize);
-    let started = std::time::Instant::now();
     for week in WEEKS {
         let web = Web::of(saltmere(), week);
         for zone in &web.zones {
@@ -147,7 +146,7 @@ fn probe_webs() {
             }
         }
     }
-    eprintln!("zones {zones} in {:?}; open cells {cells} most {most_cells} placements {placements}", started.elapsed());
+    eprintln!("zones {zones}; open cells {cells} most {most_cells} placements {placements}");
     eprintln!("deals {deals:?}");
     for (key, count) in grounds {
         eprintln!("{key}: {count}");

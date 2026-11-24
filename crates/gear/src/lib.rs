@@ -39,6 +39,7 @@ pub mod lore;
 pub mod mail;
 pub mod objectives;
 mod old_hands;
+pub mod passages;
 pub mod playlist;
 pub mod power;
 mod quest_defs;
