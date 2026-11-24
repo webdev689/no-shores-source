@@ -56,13 +56,13 @@ Claude's calls for how the run is lit and drawn ([[Breaches]], "Its art"). The o
 
 | Call | Chosen | Why |
 |---|---|---|
-| The run's sky | Its own, written every frame: no sun or moon, a low cool light from above (under half a clear noon's), darker from below, the dark as its fog | Underground; never the zone's day or night, which the run cannot see |
+| The run's sky | Its own, written every frame: no sun or moon, a cool light from above about three quarters of a clear noon's, darker from below, the dark as its fog | Underground; never the zone's day or night, which the run cannot see. A raid's floor must read where to stand, the foes and the edges: a floor median of at least 0.12 in sRGB where no lamp reaches |
 | Distance | Everything fades into the dark from 40 m and is black by 120 m | The shores no longer float in view, and the dark has depth |
-| Where the light comes from | The pieces' own crystal (red), flames (warm) and glass (coloured), read from the built meshes, the 16 lamps nearest the eye | The seals, bells, Seam, candles, rose window, hearth and lantern light what is round them, wherever Blender puts them |
+| Where the light comes from | The pieces' own crystal (a hot red, as bright as the square of its glow), flames (warm) and glass (coloured), read from the built meshes, the 16 lamps nearest the eye, falling off steeply | The seals, bells, Seam, candles, rose window, hearth and lantern light what is round them, wherever Blender puts them, in pools at least twice as bright as the floor, so the dark keeps its depth |
 | The figures | Lit by the same sky and lamps as the stone | A body by a fire is warm, one in the dark is dim |
 | The shores | Drawn only while a player is in one or being taken there | Rooms 230 m off across the dark were drawn every frame in plain view |
 | Stained glass | Leaded panes of ruby, cobalt, amber, green and pale, lit from behind | A rose window, not a flat orange disc |
 | Water | A slow ripple, the sky's glare at a grazing eye, and glints of the lamps | The drowned floors read as water |
 | Bells outside their rounds | A dim bell asleep at every socket no bell foe holds | Empty frames read as missing art; the woken bell is the bright one |
 | A hidden chest that will pay | The heroic chest, its crystal alight; the plain chest dim while it will not | Told apart at a glance, with what the game already has |
-| The gate opened to a company | Its doorway the dark of the way in, the seal's shape black with a violet sheen low in it | The recess's back wall read as a wall where the company is meant to go through |
+| The gate opened to a company | Its doorway the dark of the way in, filling the doorway's opening exactly, a faint violet low in it | The recess's back wall read as a wall where the company is meant to go through; the seal's own shape stood proud of the jambs |

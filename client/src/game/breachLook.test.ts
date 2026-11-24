@@ -34,13 +34,14 @@ test("the run's sky is underground: no key light, a low cool light from above, a
   assert.deepEqual(sky.keyLight, [0, 0, 0]);
   assert.equal(sky.darkM, RUN_DARK_M);
   assert.equal(sky.worldS, 12, 'the water ripples by the seconds');
-  const [red, , blue] = sky.ambientSky;
-  assert.ok(blue > red && blue < 0.35, 'cool, and under a clear noon');
+  const [red, green, blue] = sky.ambientSky;
+  assert.ok(blue > red, 'cool');
+  assert.ok(0.2126 * red + 0.7152 * green + 0.0722 * blue < 0.35, "dimmer than a clear noon's 0.35");
   const dark = runLightAt(sky, []);
   const lit = runLightAt(sky, [{ fromEye: [1, 0, 0], reachM: 7, light: [1, 0.6, 0.3] }]);
   assert.ok(
-    dark.every((part) => part < 0.35),
-    'far from any lamp a figure is dim',
+    dark.every((part) => part < 0.55),
+    'far from any lamp a figure is dimmer than in the open shade',
   );
   assert.ok((lit[0] ?? 0) > (dark[0] ?? 0) + 0.4, 'and warm by a fire');
   assert.ok(lit.every((part) => part <= 1.2));

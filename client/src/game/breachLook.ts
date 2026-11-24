@@ -3,7 +3,7 @@
 // and the bells' sockets that stand empty of a bell foe, where a bell hangs dim and asleep.
 import type { BreachSeen } from '../network/breachMessages.ts';
 import { AFTERNOON, type Lamp, type SkyLook } from '../sky/skyUniform.ts';
-import { moduleHasSocket, moduleNumber } from '../city/modules.ts';
+import { moduleHasSocket, moduleNumber, moduleParts, moduleSocket, moduleSocketFacing } from '../city/modules.ts';
 import { type BreachPlan, socketAt, spaceAt } from './breachPlan.ts';
 import { DARK_RGB } from './dungeonScene.ts';
 
@@ -26,8 +26,8 @@ export function runSky(seconds: number): SkyLook {
     zenith: DARK_RGB,
     horizon: DARK_RGB,
     cloud: 0,
-    ambientSky: [0.15, 0.165, 0.22],
-    ambientGround: [0.07, 0.075, 0.095],
+    ambientSky: [0.23, 0.27, 0.35],
+    ambientGround: [0.08, 0.09, 0.12],
     fogColour: DARK_RGB,
     worldS: seconds,
     darkM: RUN_DARK_M,
@@ -84,4 +84,20 @@ export function idleBells(plan: BreachPlan, drawn: (key: string) => boolean, bel
     }
   }
   return idle;
+}
+
+/** The gate's doorway as its seal's socket (`gate`) stands in it, from the gate's own parts (the solid the doorway is
+ *  shut with, from its face back): its half width, its height, and how far its face stands from the socket along the
+ *  way the socket faces (y); null where the gate has no such part. */
+export function gateWay(): [number, number, number] | null {
+  const gate = moduleNumber('breach-gate');
+  const [x, y, z] = moduleSocket(gate, 'gate');
+  const inside = moduleParts(gate).find(
+    ([west = 0, north = 0, bottom = 0, east = 0, south = 0, top = 0]) =>
+      west <= x && x <= east && north <= y && y <= south && bottom <= z + 1 && z + 1 <= top,
+  );
+  if (!inside) return null;
+  const [west = 0, north = 0, , east = 0, south = 0, top = 0] = inside;
+  const face = moduleSocketFacing(gate, 'gate')[1] >= 0 ? south - y : north - y;
+  return [Math.min(x - west, east - x), top - z, face];
 }

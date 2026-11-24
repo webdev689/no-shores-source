@@ -48,6 +48,16 @@ fn placed(vertex: Vertex) -> Placed {
   var local = vertex.position;
   var normal = vertex.normal.xyz;
   var below = 1.0;
+  // A way opened is the flat dark of its doorway, not the module's shape: each vertex snapped to the corner of the
+  // doorway's opening (look.y either side, look.z high) on its side and half, on the doorway's face (look.w in front
+  // of the foot). Every triangle is then half the opening or none, and together they fill it, with no ragged edge
+  // standing proud of the jambs and no gap between the module's pieces.
+  if prop.look.x > ${LOOK.dark - 0.5} {
+    let way = prop.look.yzw;
+    let side = select(-way.x, way.x, local.x >= 0.0);
+    local = vec3f(side, way.z + sign(way.z) * 0.03, select(0.0, way.y, local.z >= way.y * 0.5));
+    normal = vec3f(0.0, 1.0, 0.0);
+  }
   if prop.about.x > 0.5 {
     let across = mix(0.04, 1.0, prop.shape.y);
     let deep = mix(0.08, 1.0, prop.shape.y);
@@ -187,6 +197,26 @@ fn water_ripple(local: vec3f) -> vec2f {
   ) * 0.05;
 }
 
+// The lamps' light on a prop's face, as sky_lamps lays it but for the way a face turns to each: none to a face turned
+// away from it, and measured toward a point LAMP_LIFT_M over it: a crystal or a flame burns from its whole height, so the floor round its foot is lit,
+// not grazed.
+const LAMP_LIFT_M = 1.5;
+fn prop_lamps(from_eye: vec3f, normal: vec3f) -> vec3f {
+  var light = vec3f(0.0);
+  let count = min(u32(sky_state.lamp_count.x), ${LAMPS_MOST}u);
+  for (var lamp = 0u; lamp < count; lamp++) {
+    let place = sky_state.lamps[lamp * 2u];
+    let toward = place.xyz - from_eye;
+    let near = clamp(1.0 - dot(toward, toward) / (place.w * place.w), 0.0, 1.0);
+    let lifted = normalize(toward + vec3f(0.0, 0.0, LAMP_LIFT_M));
+    // A face turned away from the lamp takes none of it: no lamp lights a wall's far side through it.
+    let facing = select(0.0, 0.15 + 0.85 * max(dot(normal, lifted), 0.0), dot(normal, toward) > 0.0);
+    // Falling off a power steeper than the land's lamps: the run's lamps pool round what burns, not wash its floors.
+    light += sky_state.lamps[lamp * 2u + 1u].rgb * (near * near * near * facing);
+  }
+  return light;
+}
+
 // The lights a wet face mirrors toward the eye: the key light's glint, and each lamp's.
 fn water_glint(from_eye: vec3f, facing: vec3f, sun: f32) -> vec3f {
   let mirrored = reflect(normalize(from_eye), facing);
@@ -269,11 +299,11 @@ fn shade(in: Out) -> vec4f {
   // Cloth is one sheet: its back is lit as its front.
   if dot(facing, in.from_eye) > 0.0 { facing = -facing; }
   let look = props[in.prop].look;
-  // A way opened (a gate's doorway to the company it opened to) is the dark beyond, a violet sheen at its edges.
+  // A way opened (a gate's doorway to the company it opened to) is the dark beyond, a faint violet low in it.
   if look.x > ${LOOK.dark - 0.5} {
-    let rim = pow(1.0 - abs(dot(facing, normalize(in.from_eye))), 6.0);
-    let deep = 1.0 - smoothstep(0.0, 3.0, in.local.z);
-    return vec4f(vec3f(0.006, 0.003, 0.012) + vec3f(0.12, 0.04, 0.24) * (rim * 0.5 + deep * 0.35), 1.0);
+    // By height over its foot in the world, not by the module's own vertices, which no longer stand where drawn.
+    let deep = 1.0 - smoothstep(0.0, 3.0, in.from_eye.z - props[in.prop].place.z);
+    return vec4f(vec3f(0.006, 0.003, 0.012) + vec3f(0.04, 0.014, 0.08) * deep, 1.0);
   }
   // Only a face lying flat ripples: a fountain's jet is no pool.
   if in.material == WATER && facing.z > 0.7 { facing = normalize(facing + vec3f(water_ripple(in.local), 0.0)); }
@@ -300,7 +330,7 @@ fn shade(in: Out) -> vec4f {
   let ambient = AMBIENT + BOUNCE * (1.0 - abs(facing.z));
   let light = sky_ambient(facing) * (ambient / AMBIENT) + sky_direct(facing, sun) * ((1.0 - ambient) / 0.65);
   let grey = abs(look.x - ${LOOK.grey}.0) < 0.5;
-  var colour = material_colour(in.material, in.local, grey) * (light + sky_lamps(in.from_eye, facing));
+  var colour = material_colour(in.material, in.local, grey) * (light + prop_lamps(in.from_eye, facing));
   // Metal catches the sun.
   if in.material == ${id('iron')} || in.material == ${id('gold')} {
     let glint = pow(max(dot(reflect(normalize(in.from_eye), facing), sky_state.key.xyz), 0.0), 24.0) * sun;

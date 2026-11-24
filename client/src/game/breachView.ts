@@ -21,7 +21,7 @@ import { RunCounting } from './breachCounts.ts';
 import { type MarkedFoe, dashedRing, mooringMark, runMarks } from './breachMarks.ts';
 import { type Heard, MomentWords, beatOf, momentSounds, momentsHad, stingOf } from './breachMoments.ts';
 import { type BreachPlan, breachPlanOf, sealOpen, slabStands, socketAt, spaceSocket } from './breachPlan.ts';
-import { idleBells, isShore, shoresShown } from './breachLook.ts';
+import { gateWay, idleBells, isShore, shoresShown } from './breachLook.ts';
 import { ENCOUNTER, type Mooring, breachCall, encounterName, encounterOn } from './breachWords.ts';
 import { gateBanner, gateLine, inSentence, runBanner, teachingWords, wonWords } from './breachWords.ts';
 import type { Use } from './footGear.ts';
@@ -129,7 +129,7 @@ const HIDDEN_CHESTS = [
  *  the tier whose chest one open to pay is drawn as (the heroic, crystal set in it); a sleeping bell's glow. */
 const CHEST_GLOW = { shut: 0.25 } as const;
 const HEROIC_TIER = 3;
-const IDLE_BELL = 0.12;
+const IDLE_BELL = 0.35;
 /** The way out once the Breach is cleared, the court's portal, ringed as a dungeon's lit portal shows the way. */
 const PORTAL = { colour: [0.72, 0.55, 1, 0.7] as const, inner: 2.2, outer: 2.5 };
 
@@ -327,9 +327,10 @@ export class BreachView {
       markLine(marks, foot, tall, SPIRE.colour, SPIRE.least + seen.fill, here.clock, here.eye);
     }
     const door = this.gateSocket('gate');
-    // To the company it opened to, the doorway is the dark of the way in, the seal's shape gone black; to all else, sealed.
+    // To the company it opened to, the doorway is the dark of the way in, filling its opening; to all else, sealed.
     const seal = door && gate && prop('breach-seal', door, gate.turn * quarter);
-    const props = seal ? [this.openToMe(seen) ? { ...seal, glow: 0, dark: true } : seal] : [];
+    const way = this.openToMe(seen) ? gateWay() : null;
+    const props = seal ? [way ? { ...seal, glow: 0, dark: way } : seal] : [];
     const first = seen.holders[0];
     const mine = seen.holders.includes(here.own);
     const holding = first === undefined ? '' : mine ? 'Your company' : here.nameOf(first);

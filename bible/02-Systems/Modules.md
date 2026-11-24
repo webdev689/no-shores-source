@@ -236,7 +236,10 @@ publishes the first bake's meshes with the repository's `CLOUDFLARE_TOKEN`.
   its unmarked grey, as its sails are); the crystal is lit as above, its
   brightest cores light the light layer, and its glow lights lamps round it at night (`EVENT_LAMPS`). A Breach's
   pieces light lamps from their own surfaces: each 3 m cell its crystal, glow or glass falls in is one lamp at their
-  middle (`moduleLights.ts`), red, warm or the glass's coloured light. A fire (glow) and stained glass are their own
+  middle (`moduleLights.ts`), cells within a cell of each other one lamp and a lamp inside a solid moved out through
+  its nearest face, red, warm or the glass's coloured light. Their light falls off more steeply than the land's
+  lamps', and a face turns to each as to a point 1.5 m over it, so the floor round a crystal's foot is lit, not
+  grazed; a face turned away from a lamp takes none of it. A fire (glow) and stained glass are their own
   light, the glass leaded panes laid across the face it looks out of; still water's face ripples slowly and glints
   with the key light and the lamps; a prop marked dark (`dark`) is drawn as the dark of a way through it. Under a sky
   that sets how far off all is dark (`darkM`, a Breach's run's 120 m), every prop fades into the fog's colour from a
@@ -268,6 +271,7 @@ stand on the ground at every edge, and no cliff stair stands taller than it was 
   and only that drawer gives crystal's light into the light layer.
 - Lamps read from a module's surfaces sit at the middle of each 3 m cell, not at each flame; a long row of candles is
   a few lamps, and no lamp casts a shadow.
+- A lamp too faint to show (under 0.05 at full) takes no place among the 16 lit, on the land as in a Breach.
 - Stained glass's panes are a grid over the face, not cut to a window's tracery.
 - The fissure's chasm is drawn 2 to 4% of its distance nearer the eye than the land at its mouth: land rising more
   than that over the mouth's foot hides part of it, and anything standing that close in front of the mouth is drawn

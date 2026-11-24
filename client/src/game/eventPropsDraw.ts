@@ -23,7 +23,7 @@ const LIPS_MOST = 256;
 
 /** A prop's row in the table: where it stands from the eye and its turn; its scale, rise, lid and glow; whether it
  *  opens, its module's height, and where its lips start in the lips' list and how many stations they have; its look
- *  (LOOK: its canvas grey, or a way opened drawn dark), and its tint (none, a ghost's). */
+ *  (LOOK: its canvas grey, or a way opened drawn dark), and its tint (none, a ghost's) or a way opened's doorway. */
 const PROP_FLOATS = 16;
 /** No lamps and nothing drawn, shared, so a place with no props makes nothing a frame. */
 const NO_LAMPS: readonly LampPlace[] = [];
@@ -253,7 +253,7 @@ export class EventPropsDraw implements Drawer {
       rows[first + 10] = made.lips?.first ?? 0;
       rows[first + 11] = made.lips?.count ?? 0;
       rows[first + 12] = prop.dark ? LOOK.dark : GREY_CANVAS.has(prop.module) ? LOOK.grey : 0;
-      [rows[first + 13] = 0, rows[first + 14] = 0, rows[first + 15] = 0] = prop.tint ?? [];
+      [rows[first + 13] = 0, rows[first + 14] = 0, rows[first + 15] = 0] = prop.dark ?? prop.tint ?? [];
     });
     if (!this.table || this.table.size < rows.byteLength) {
       this.table?.destroy();

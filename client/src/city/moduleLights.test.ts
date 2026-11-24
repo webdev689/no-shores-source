@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { propLamps } from './eventProps.ts';
+import { breachLamp, propLamps } from './eventProps.ts';
 import { LIGHT_CELL_M, lightsOf } from './moduleLights.ts';
 
 const group = (material: string, points: readonly (readonly number[])[], glow = 0) => ({
@@ -41,4 +41,49 @@ test('stained glass lights as glass, and lit cells further apart than a cell are
 test("a Breach's piece whose meshes have not come lights nothing yet, and asks again", () => {
   const seal = { module: 'breach-seal', at: [0, 0, 0] as const, turn: 0, scale: 1, rise: 1, lid: 0, glow: 1 };
   assert.deepEqual(propLamps([seal]), []);
+});
+
+test("a crystal lying across a cell's edge is one lamp, not one each side of it", () => {
+  const bell = group(
+    'crystal',
+    [
+      [-0.4, -0.4, 2],
+      [0.4, -0.4, 2],
+      [-0.4, 0.4, 2],
+      [0.4, 0.4, 2],
+    ],
+    0.6,
+  );
+  const lights = lightsOf([bell]);
+  assert.equal(lights.length, 1);
+  assert.deepEqual(lights[0]?.at, [0, 0, 2]);
+});
+
+test("a crystal's lamp is as bright as the crystal glows: a dark root lights little, a lit point fully; a fire always", () => {
+  const at = (local: readonly [number, number, number]) => local;
+  const root = breachLamp({ at: [0, 0, 0], kind: 'crystal', glow: 0.075 }, 1, 1, at);
+  const point = breachLamp({ at: [0, 0, 0], kind: 'crystal', glow: 0.15 }, 1, 1, at);
+  assert.ok((root.light[0] ?? 0) * 3.9 < (point.light[0] ?? 0), 'a root at half the glow lights a quarter as much');
+  assert.equal(point.light[0], 1);
+  const fire = breachLamp({ at: [0, 0, 0], kind: 'fire', glow: 0 }, 1, 2, at);
+  assert.equal(fire.light[0], 1);
+  assert.equal(fire.reachM, 20, 'its reach scaled with its piece');
+});
+
+test("a lamp whose middle falls inside one of the module's solids stands out at the solid's nearest face", () => {
+  // Crystal grown over a wall's west face, gathered to a middle inside the wall.
+  const crust = group(
+    'crystal',
+    [
+      [-21.5, 6, 4.5],
+      [-21.9, 6, 3],
+    ],
+    0.3,
+  );
+  const wall = [-22, 2, 0, -14, 10, 5.2];
+  const [lamp] = lightsOf([crust], [wall]);
+  const [x = 0, y = 0, z = 0] = lamp?.at ?? [];
+  const inside = x > -22 && x < -14 && y > 2 && y < 10 && z > 0 && z < 5.2;
+  assert.ok(!inside, `out of the wall: ${lamp?.at.join(', ')}`);
+  assert.ok(Math.abs(x - -22) < 0.5, 'by its west face, the nearest');
 });

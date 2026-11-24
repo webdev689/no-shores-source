@@ -11,6 +11,7 @@ import { perfZone, PERF, timedEncoder } from '../perfMeter.ts';
 import { sceneScale, sceneSize } from './renderScale.ts';
 import { Upscale } from './upscale.ts';
 import { ShadowMap } from '../shadow.ts';
+import { type Lamp, type SkyLook, skyUniformFor } from '../sky/skyUniform.ts';
 import { SAMPLES } from '../water/waterView.ts';
 
 /** The dark past the farthest torch's reach, where nothing is drawn (a Breach's run's sky's fog, so its far pieces
@@ -42,16 +43,19 @@ export class DungeonScene {
   /** Draws one frame from `shot` into the canvas: each drawer into one pass, measured from the eye as the game's
    *  scene measures it, under no sun's shadow; then each drawer's over the picture (the blows' arcs, the see-through
    *  marks) and its light; `after` may draw over the finished picture (the first person's hands), and all of it
-   *  drains toward grey by `drain` (0 to 1), as the game's scene does. */
+   *  drains toward grey by `drain` (0 to 1), as the game's scene does. Every frame writes the sky it is drawn under
+   *  (`sky`), so none draws under the last frame's (a dungeon's after a Breach's run's). */
   draw(
     shot: Shot,
     size: { width: number; height: number },
     time: number,
     drawers: readonly Drawer[],
+    sky: { readonly look: SkyLook; readonly lamps: readonly Lamp[] },
     after?: (encoder: GPUCommandEncoder, view: GPUTextureView) => void,
     drain = 0,
   ): void {
     const { device } = this.gpu;
+    skyUniformFor(device).write(sky.look, sky.lamps, shot.eye);
     const drawnAt = sceneSize(size, sceneScale());
     PERF.current?.scene(drawnAt.width, drawnAt.height, drawnAt.width / size.width);
     const fromEye = fromEyeMatrix(shot, drawnAt.width / drawnAt.height);
