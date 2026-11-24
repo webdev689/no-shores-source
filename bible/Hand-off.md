@@ -215,7 +215,9 @@ The decisions in [[Open Questions]] are not repeated here.
     keep reported as fitting; rounds kept to a smooth shape where the page draws polygons and rings; large props'
     0.5 m columns standing 0.7 m off their mesh; turned props' strips adding a full 0.45 m; a test that passed
     without a raised place; the meadow on the layouts' paths and through thin walls, drawing grassless cells, its
-    card light law dimming all light where DFO's dims the sun's; and notes that said more than the code does.
+    card light law dimming all light where DFO's dims the sun's; and notes that said more than the code does. The
+    full check then caught the movement grid missing a block stacked out over a wall's face (fixed in `wall_top`),
+    and the boxes mended a known failure: the Lion Grasslands' Test Ledge's door is no longer walked round.
   - The meadow ([[Meadow]], [[Pick - Meadow Grass]]): the owner's five sprites written from DFO's PNGs by
     `tools/meadow/write.py` (pixel for pixel DFO's bake), DFO's atlas, chain, pick, sizes and colour law, 16 m cells
     of 576 tufts drawn by the GPU to 160 m over the grass of every grass biome.
