@@ -1,5 +1,5 @@
 ---
-id: 172
+id: 174
 title: "The harness's Stop hook asks to push unpushed commits every turn while CLAUDE.md's 25-minute check must pass first"
 status: open
 type: open-source
