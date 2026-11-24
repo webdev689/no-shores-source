@@ -326,9 +326,9 @@ async function moduleAction(
   const held = await memberRoles(context, snapshot.guildId, user.id);
   const roles = Array.isArray(held) ? held : [];
   const owner = user.id === snapshot.ownerId || ownersOf(context.vars).includes(user.id);
-  const perms = Array.isArray(held) ? basePermissions(serverOf(snapshot), { user_id: user.id, roles }) : 0n;
+  const permissions = Array.isArray(held) ? basePermissions(serverOf(snapshot), { user_id: user.id, roles }) : 0n;
   const needed = spec.perm ? PERMISSION[spec.perm] : 0n;
-  if (!owner && needed && (perms & needed) !== needed)
+  if (!owner && needed && (permissions & needed) !== needed)
     return fail('permission', 403, cors, 'You lack the Discord permission for this.');
   const body = await readJson(request);
   const checked = validate(spec.inputs, body?.input ?? {});
@@ -340,7 +340,7 @@ async function moduleAction(
     name: user.globalName || user.username,
     avatar: user.avatar,
     roles,
-    perms,
+    permissions,
     owner,
     mayGive: (ids) => roleRefusal(serverOf(snapshot), { user_id: user.id, roles }, ids, { owner }),
   };

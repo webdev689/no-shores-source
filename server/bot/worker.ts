@@ -104,10 +104,6 @@ export async function handle(request: Request, env: Env, execution: Execution, o
   if (url.pathname === INTERACTION_PATH) return interactionRoute({ ...context, nowS, registry }, request);
   if (url.pathname.startsWith(MEDIA_PATH) && request.method === 'GET')
     return serveMedia(env.BOT_MEDIA ?? null, url.pathname);
-  for (const shape of registry.modules) {
-    const answered = await shape.fetch?.(context, request, url);
-    if (answered) return answered;
-  }
   const auth = {
     vars: env,
     database: env.BOT_DB,
@@ -137,7 +133,13 @@ export async function handle(request: Request, env: Env, execution: Execution, o
     request,
     url,
   );
-  return panel ?? fail('route', 404, cors);
+  if (panel) return panel;
+  // a module's own routes come last, so none can take over the sign-in's or the panel's
+  for (const shape of registry.modules) {
+    const answered = await shape.fetch?.(context, request, url);
+    if (answered) return answered;
+  }
+  return fail('route', 404, cors);
 }
 
 /**

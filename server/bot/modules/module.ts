@@ -13,7 +13,7 @@ export interface Actor {
   readonly name: string;
   readonly avatar?: string | null;
   readonly roles: readonly string[];
-  readonly perms: bigint;
+  readonly permissions: bigint;
   readonly owner: boolean;
   readonly mayGive: (roleIds: readonly string[]) => { readonly role: string; readonly why: string } | null;
 }

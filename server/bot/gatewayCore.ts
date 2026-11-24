@@ -167,18 +167,18 @@ export class GatewayCore {
    * Make sure a connection exists or is on its way. Safe to call as often as the clock likes.
    * `force` clears a fatal stop, after the owner fixed its cause.
    */
-  async ensure(opts: { readonly force?: boolean } = {}): Promise<Status> {
+  async ensure(options: { readonly force?: boolean } = {}): Promise<Status> {
     await this.load();
-    if (this.status.state === 'fatal' && !opts.force) {
+    if (this.status.state === 'fatal' && !options.force) {
       // a stop met with other settings (a token put or rotated since, intents fixed by a deploy) is tried again; one
       // the owner pressed, which keeps no key, holds
       if (!this.status.fatalKey || this.status.fatalKey === this.settingsKey) return this.status;
       this.status.attempts = 0;
     }
-    if (opts.force && this.status.state === 'fatal') this.status.attempts = 0;
+    if (options.force && this.status.state === 'fatal') this.status.attempts = 0;
     if (this.socket) return this.status;
     // A back-off already planned stands: the clock's check must not turn an outage into a reconnect a minute.
-    if (!opts.force && this.status.state === 'waiting' && this.status.retryAt > this.deps.now()) {
+    if (!options.force && this.status.state === 'waiting' && this.status.retryAt > this.deps.now()) {
       await this.deps.setAlarm(this.status.retryAt);
       return this.status;
     }

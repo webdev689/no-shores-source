@@ -2,7 +2,7 @@
 // the checks a moderation act needs. A module that acts through another (auto-mod's warning is a moderation case)
 // calls that module's exported function, so the act is the same wherever it starts.
 
-import { escapeText } from './law/message.ts';
+import { DEFAULT_COLOUR, colorNumber, escapeText } from './law/message.ts';
 import { recordOf } from './law/settings.ts';
 import type { Cache } from './cache.ts';
 import type { Rest } from './rest.ts';
@@ -16,7 +16,7 @@ export const NO_PINGS = Object.freeze({ parse: [] as string[] });
 /** The custom id prefix of everything the bot draws: `bot:<module>:<words>`. */
 export const BOT_PREFIX = 'bot:';
 /** An embed's edge colour where a module names none. */
-export const EDGE_COLOUR = 0x8a5a2b;
+export const EDGE_COLOUR = colorNumber(DEFAULT_COLOUR);
 
 /**
  * The Worker's settings, each a plain string that may be empty: an empty one is a legal state, and the part that needs

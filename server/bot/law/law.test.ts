@@ -256,7 +256,7 @@ test('modules: each has a unique id, valid defaults, and levels that exist; core
   assert.equal(moduleOf('nothing'), null);
 });
 
-test('modules: every message setting offers only the placeholders the bot can fill', () => {
+test('modules: a message setting offers the member, the server, and only what its own module will fill (a card, a level)', () => {
   const fillable = new Set(['user', 'name', 'server', 'count', 'avatar', 'server_icon', 'welcome_card', 'level']);
   const walk = (schema: Schema, path: string) => {
     for (const [key, field] of Object.entries(schema)) {

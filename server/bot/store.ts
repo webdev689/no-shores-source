@@ -180,7 +180,8 @@ export async function audit(database: Db, entry: AuditEntry): Promise<void> {
 }
 
 /** A page of a server's audit log, newest first, before row `before` when given. */
-export async function readAudit(database: Db, guildId: string, before = 0) {
+export async function readAudit(database: Db, guildId: string, given = 0) {
+  const before = Math.max(0, given);
   const result = await database
     .prepare('SELECT * FROM audit_log WHERE guild_id = ? AND (? = 0 OR id < ?) ORDER BY id DESC LIMIT ?')
     .bind(guildId, before, before, AUDIT_PAGE)

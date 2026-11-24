@@ -53,7 +53,7 @@ async function answer(
 ): Promise<InteractionReply> {
   const isCommand = interaction.type === TYPE.COMMAND || interaction.type === TYPE.AUTOCOMPLETE;
   const guildId = String(interaction.guild_id ?? '');
-  if (isCommand && interaction.data?.name === 'panel') {
+  if (interaction.type === TYPE.COMMAND && interaction.data?.name === 'panel') {
     const panel = panelUrl(context.vars);
     if (!panel) return privateReply('The panel is not set up yet.');
     if (/^\d{5,25}$/.test(guildId)) panel.hash = `g=${guildId}`;

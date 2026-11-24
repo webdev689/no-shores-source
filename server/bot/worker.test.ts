@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { beforeEach, test } from 'node:test';
 import { resetStarts } from './auth.ts';
-import { GUILD, ORIGIN, PANEL, bodyOf, countOf, signInPanel, standWorker } from './botForTests.ts';
+import { GUILD, ORIGIN, PANEL, bodyOf, countOf, panelRequest, signInPanel, standWorker } from './botForTests.ts';
 import { commandsOf } from './commands.ts';
 import type { ServerModule } from './modules/module.ts';
 import { resetMembers } from './panel.ts';
@@ -231,4 +231,27 @@ test("worker: a module's own public route answers before the panel's", async () 
   const bot = await standWorker({ modules: [board] });
   assert.equal(await (await bot.call(new Request('https://bot.test/v1/public/board'))).text(), 'the board');
   assert.equal((await bot.call(new Request('https://bot.test/v1/public/other'))).status, 404);
+});
+
+test('sign-in: a session lapses after a week unseen or a month in all; each use within a week keeps it', async () => {
+  const bot = await standWorker();
+  const token = await signInPanel(bot);
+  const day = 86_400_000;
+  const now = Date.now();
+  const ask = (when: number) => bot.call(panelRequest(token, '/v1/panel/me'), when);
+  assert.equal((await ask(now + 6 * day)).status, 200);
+  assert.equal((await ask(now + 12 * day)).status, 200, 'seen six days ago: still kept');
+  assert.equal((await ask(now + 18 * day)).status, 200);
+  assert.equal((await ask(now + 24 * day)).status, 200);
+  assert.equal((await ask(now + 30 * day + 60_000)).status, 401, 'a month in all, however often it was used');
+  assert.equal(countOf(bot.database, 'SELECT COUNT(*) AS count FROM panel_sessions'), 0, 'and it is gone');
+  const idle = await signInPanel(bot);
+  assert.equal((await bot.call(panelRequest(idle, '/v1/panel/me'), now + 7 * day + 60_000)).status, 401);
+});
+
+test("worker: a module's route never takes over the sign-in's or the panel's", async () => {
+  const greedy: ServerModule = { id: 'levels', fetch: async () => new Response('taken') };
+  const bot = await standWorker({ modules: [greedy] });
+  assert.equal((await bot.call(new Request('https://bot.test/v1/panel/me'))).status, 401);
+  assert.equal((await bot.call(start())).status, 302);
 });
