@@ -415,7 +415,8 @@ The game draws every screen itself, and by the owner's word no HTML is laid over
   and in a sea fight in the top right corner, off the sky the aim looks at. On foot the company stands under the
   vitals, and the prompt for E stands over the Arts and weapons. The key strip stands at the bottom right, under the
   dialogue box's foot, 8 px over whatever stood under it at the view's foot the frame before (the Arts and weapons,
-  the sea bar, the offer to dock or go ashore, the ship's bar in a sea fight), which on a wide view is nothing. The task tracker stands
+  the sea bar, the offer to dock or go ashore, the ship's bar in a sea fight, the prompt for E or the leave held),
+  which on a wide view is nothing. The task tracker stands
   at the right under the place's name, above the Acquired feed, and under the compass's column in a view 900 px wide
   or less, and gives way to a public event's banner in a view under 1024 px wide; the toasts in the middle over the
   dialogue box's top. The key
@@ -989,10 +990,10 @@ never while a press is held. Each press is an ask the room answers.
   its name in capitals at the names' size, the one shown a lit brass press edged with a brass bar, as the menu's own
   tabs are. Beside the rail the tab's panel scrolls on its own, so the rail stands still; a tab newly shown stands
   from its top, its words at the face's 11 px, and the one last shown is kept while the page is open. At the rail's
-  foot stand Exit to Menu and Exit to Desktop, each held, in the warn role: Exit to Menu loads the page at its title, the tap to start, keeping the rooms asked for
-  in its address (`titleAddress`); Exit to Desktop closes the window where the browser lets a page close its own (the
-  desktop app's, [[Browser and Desktop From the Start]]), and where it does not (a browser's tab the player opened),
-  Settings says to close the tab. Escape opens Settings wherever nothing else is over the game, on foot or at sea.
+  foot stand Exit to Menu and Exit to Desktop, each held, in the warn role: Exit to Menu loads the page at its title,
+  the tap to start, keeping the rooms asked for in its address (`titleAddress`); Exit to Desktop closes the window
+  where the browser lets a page close its own (the desktop app's, [[Browser and Desktop From the Start]]), and where
+  it does not (a browser's tab the player opened), Settings says to close the tab. Escape opens Settings wherever nothing else is over the game, on foot or at sea.
   - **Graphics**: under Display, the resolution the world is drawn at ("Resolution": Auto, the first, or 100%, 85%,
     75%, 67% or 50%, kept in this browser; [[Game]], "Drawing"), the interface staying at the screen's own.
   - **Audio**: under Volume, the volumes of the interface, the world ("World sounds"), the music ("Music") and the

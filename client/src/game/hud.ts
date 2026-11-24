@@ -42,7 +42,7 @@ import type { ShipPanel } from './shipPanel.ts';
 import { gearScreenOpen } from './gearScreen.ts';
 import { TaskTracker } from './tasks.ts';
 import { drawToasts, keptToasts, layToasts, type Toast } from './toasts.ts';
-import { UsePrompt } from './usePrompt.ts';
+import { PROMPT_ID, UsePrompt } from './usePrompt.ts';
 
 export type { ScreenMark } from './hudMarks.ts';
 
@@ -65,8 +65,9 @@ const HINTS_MOST = 8;
 /** `rows` cut to the most the strip holds, those just before the last giving way. */
 const atMost = (rows: readonly StripRow[]): readonly StripRow[] =>
   rows.length > HINTS_MOST ? [...rows.slice(0, HINTS_MOST - 1), ...rows.slice(-1)] : rows;
-/** What stands at the view's foot that the key strip stands over where it would cover it, by id. */
-const UNDER_STRIP = ['fight-arms', 'sea:bar', 'sea:landfall', 'hud:wheel', 'hud:passage'];
+/** What stands at the view's foot that the key strip stands over where it would cover it, by id: the prompt in the
+ *  middle only on a view narrow enough for the two to meet. */
+const UNDER_STRIP = ['fight-arms', 'sea:bar', 'sea:landfall', 'hud:wheel', 'hud:passage', PROMPT_ID];
 
 /** The screen's edge darkened toward black, as a radial gradient over the whole view clear to 35% of the way out: drawn
  *  small and stretched, its steps too fine to see. */

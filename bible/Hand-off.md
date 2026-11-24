@@ -167,6 +167,10 @@ each part works is in its system note.
   pictured live (see Next); the shore's plain clothes (its key beat does not advance headless; tested); anything on a
   real GPU or played by hand. Known and left: the tour's keepers read small behind their counters (each stall is
   framed whole); a rollback past this round loses a new character's welcome (Gear).
+- **The writing pass** (#176) and **a ship's wake follows the track it sailed** (#177), merged on the owner's yes:
+  every spoken line and lore chapter read and reworded
+  ([[Every Line Reads as Spoken, and the Lore Is Detailed, Mysterious and Gripping]]), and each wake laid along where
+  its stern has been ([[Water]], "Its wake"). Neither yet read, heard or seen in the game on a real GPU.
 - **Not yet seen or heard.** Sessions test offline and picture headless. Headless Chromium has lost the game's WebGPU
   device about 2 s in when other jobs shared the cores; on an idle container at b81f0c40 the title and the social
   space kept it 80 s. SwiftShader is too slow to show the world, so these wait on a real GPU, an ear or a hand:
@@ -192,25 +196,18 @@ each part works is in its system note.
 
 The decisions in [[Open Questions]] are not repeated here.
 
-- **The writing pass** (#176, branch `ccr-c249af15-iwfmsb`, against `main` with `main` merged in), for the owner's
-  read and yes: every spoken line read and most reworded, all 33 lore chapters, the new tutorial with them, each
-  speaker in a voice of their own within [[Dialogue]], and the lore given more detail and mysteries shown and never
-  explained ([[Every Line Reads as Spoken, and the Lore Is Detailed, Mysterious and Gripping]], every call listed
-  there). Ids, scene names, each scene's speakers in order and the puzzles' orders are kept, so the game behaves as
-  before. The dialogue check holds two lines a turn across a quest's seams
-  ([[The Dialogue Check Holds Two Lines a Turn Across a Quest's Seams]]). Merging deploys the rooms too: `lore.json`,
-  `quests.json`, `items.json` and `factions.json` feed the protocol's version. Tested offline: the full check on the
-  head. Not yet read or heard in the game. For the owner: the Pearl Tomb's brief (`briefs.json`, never shown) has
-  dunes where the lore has cliffs; the books name Corran Hale, the brothers Penhallow and the wreckers' wars, which
-  no note of the owner's names.
-- **A ship's wake follows the track it sailed** (#177, branch `ccr-836ab6ff-vgzmxg`), for the owner's yes to merge,
-  which deploys the page. The owner: "the waves that follow behind the ship dont animate when you turn your ship. They
-  are always straight". The water drew every wake straight aft of the heading the ship had that frame; it now keeps
-  where each ship's stern has been and lays the arms and the wash along it ([[Water]], "Its wake"; the numbers in [[The
-  Sea as Claude Shapes It]]). Tested offline (`wakes.test.ts`: a turn's wash where it sailed, no wake ahead of the bow
-  after a stop or going astern, a ship drawn 5x in a hard turn, the wake's box holding all of it); a read-only review's
-  five findings fixed with those tests. Not seen on a real GPU: how the curved wake looks, and the shader's cost while a
-  ship turns (unmeasured; a straight course takes the old path).
+- **The key strip, the leave held and Settings in tabs** (#PRNUM, branch `ccr-cb6f70a9-3mm7g6`), for the owner's yes to
+  merge, which deploys the page (the rooms' code is untouched). The owner's three asks
+  ([[The Key Strip Is a Compact Panel, a Held Key Leaves, and Settings Has Tabs]], Claude's calls listed there): the
+  key strip a compact panel at the bottom right under the moment's name, 11 px to 1440p; the M menu gone, M or the
+  pad's View held 1.5 s on foot returning the player to their ship, Escape opening Settings; Settings in tabs down a
+  rail (Graphics, Audio, Controls, Account), Exit to Menu and Exit to Desktop held at its foot, the sound credits behind
+  a press, Controls binding as the sheet K opens does ([[Interface]], "The key strip", "The leave held", "Settings").
+  Tested offline: the full check on the head, driven headless in the real game (`noGpu`: Escape, every tab, the
+  credits, a short and a full hold of M to the sea) and pictured through the real renderer. Not yet: a real GPU, a
+  hand, a real pad's View held, and Exit to Desktop in a desktop app (there is none yet). For the owner: whether
+  Graphics gains settings of its own (it holds the resolution alone, none invented), and whether the strip's 11 px
+  reads well enough on the owner's own screen.
 - **The wreck's R2 tools after #172**, which no session may edit: `tools/wreck/wreck_level.py`'s waves still list the
   Tithe-Mates and Bosuns at rank 1; to match `content/prologue/wreck.json` each `(11, 1, ...)` becomes `(11, 2, ...)`
   and each `(10, 1, ...)` `(10, 2, ...)`, and `export_wreck.py` should write the quiet deck's `masts` (added to

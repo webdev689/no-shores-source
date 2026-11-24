@@ -275,6 +275,27 @@ const REST: OnFoot = {
   free: true,
 };
 
+test('the key strip stands clear of the prompt in the middle where a narrow view would bring them together', () => {
+  const [ui, hud] = [new Interface(renderer()), new Hud()];
+  hud.veil(null);
+  hud.strip(withMapKey(footStrip(REST)));
+  hud.usePrompt.show('Talk to the Quartermaster');
+  for (const [width, height] of [
+    [1280, 720],
+    [480, 800],
+    [390, 844],
+  ] as const) {
+    laidAt(ui, hud, width, height);
+    const laid = laidAt(ui, hud, width, height);
+    const [strip, prompt] = [boxOf(laid, 'hud:hints'), boxOf(laid, 'hud:prompt')];
+    assert.ok(strip && prompt, `${width}: both shown`);
+    const apart =
+      strip.x >= prompt.x + prompt.width || strip.y + strip.height <= prompt.y || prompt.y + prompt.height <= strip.y;
+    assert.ok(apart, `${width}: ${JSON.stringify([strip, prompt])}`);
+    if (width === 1280) assert.equal(strip.y + strip.height, height - 22, 'a wide view keeps its corner');
+  }
+});
+
 test('the key strip as shown holds eight entries at most, the key to every control last', () => {
   const [ui, hud] = [new Interface(renderer()), new Hud()];
   hud.veil(null);

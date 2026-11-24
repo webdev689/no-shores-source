@@ -6,7 +6,7 @@
 import type { Node } from '../ui/node.ts';
 import { boundCap } from './controls.ts';
 import { charge, play } from './uiSounds.ts';
-import { promptChip } from './usePrompt.ts';
+import { PROMPT_ID, promptChip } from './usePrompt.ts';
 
 /** How long the leave is held to act, and how long a hold let go takes to drain from full, seconds. */
 export const LEAVE_S = 1.5;
@@ -64,7 +64,7 @@ export class LeaveHold {
     const chip = refusal
       ? promptChip(refusal, null, boundCap('leave'))
       : promptChip('Return to ship', this.share, boundCap('leave'), place === '' ? null : `Leave ${place}`);
-    return { ...chip, float: { to: 'screen', at: [0.5, 1], anchor: [0.5, 1], y: big ? -154 : -110 } };
+    return { ...chip, id: PROMPT_ID, float: { to: 'screen', at: [0.5, 1], anchor: [0.5, 1], y: big ? -154 : -110 } };
   }
 
   private hush(): void {

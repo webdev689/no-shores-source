@@ -8,6 +8,9 @@ import type { Drawing, Node } from '../ui/node.ts';
 import type { Box } from '../ui/quads.ts';
 import { edged, paintBox } from '../combat/barDraw.ts';
 
+/** The prompt's id where it stands, low in the middle of the view: the use prompt's, or the leave held in its place. */
+export const PROMPT_ID = 'hud:prompt';
+
 /** The keycap's brass bevel, its foot deeper. */
 const BRASS_KEY = ['#f3cf86', '#8a5f17', '#8a5f17', '#f3cf86'];
 const BRASS_KEY_DEPTHS = [1, 1, 3, 1];
@@ -77,6 +80,7 @@ export class UsePrompt {
     const big = view.width >= 1500 && view.height >= 900;
     return {
       ...promptChip(this.said, this.held),
+      id: PROMPT_ID,
       float: { to: 'screen', at: [0.5, 1], anchor: [0.5, 1], y: big ? -154 : -110 },
     };
   }
