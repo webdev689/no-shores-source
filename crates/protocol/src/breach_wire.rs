@@ -35,6 +35,7 @@ pub(crate) fn breach_offset<'built>(
     let rift_held = Some(builder.create_vector(&seen.rift_held));
     let away = Some(builder.create_vector(&seen.away));
     let open_to = Some(builder.create_vector(&seen.open_to));
+    let holders = Some(builder.create_vector(&seen.holders));
     let args = messages::BreachSeenArgs {
         gate: seen.gate,
         tier: seen.tier,
@@ -85,6 +86,7 @@ pub(crate) fn breach_offset<'built>(
         claims: seen.claims,
         open_to,
         inside,
+        holders,
     };
     messages::BreachSeen::create(builder, &args)
 }
@@ -162,6 +164,7 @@ pub fn breach_of(snapshot: &messages::Snapshot<'_>) -> Option<BreachSeen> {
         woken: read.woken(),
         claims: read.claims(),
         open_to: numbers(read.open_to()),
+        holders: numbers(read.holders()),
         inside,
     })
 }
@@ -198,6 +201,7 @@ mod tests {
             away: vec![1, 2, 3, 4],
             inside: vec![("Wenna".to_owned(), 1, 4)],
             open_to: vec![11, 12],
+            holders: vec![11, 13],
             ..BreachSeen::default()
         };
         let room = room::Room::breach_run(gear::breach::Tier::Hard, 0).expect("a run");

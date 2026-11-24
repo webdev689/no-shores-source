@@ -63,6 +63,7 @@ test("a gate's Breach reads its Waking, who it is open to and the companies insi
       const inside = [BreachInside.createBreachInside(builder, builder.createString('Ada'), 1, 3)];
       const insideVector = BreachSeen.createInsideVector(builder, inside);
       const openTo = BreachSeen.createOpenToVector(builder, [4, 6]);
+      const holders = BreachSeen.createHoldersVector(builder, [4]);
       BreachSeen.startBreachSeen(builder);
       BreachSeen.addGate(builder, true);
       BreachSeen.addHeldBy(builder, true);
@@ -70,11 +71,13 @@ test("a gate's Breach reads its Waking, who it is open to and the companies insi
       BreachSeen.addClaims(builder, 0b101);
       BreachSeen.addOpenTo(builder, openTo);
       BreachSeen.addInside(builder, insideVector);
+      BreachSeen.addHolders(builder, holders);
       return BreachSeen.endBreachSeen(builder);
     }),
   );
   assert.ok(read);
   assert.deepEqual([read.gate, read.heldBy, read.fill, read.claims, read.openTo], [true, true, 0.64, 5, [4, 6]]);
   assert.deepEqual(read.inside, [{ name: 'Ada', tier: 1, encounter: 3 }]);
+  assert.deepEqual(read.holders, [4], 'the holding company');
   assert.equal(read.revives, -1, 'none counted unless said');
 });

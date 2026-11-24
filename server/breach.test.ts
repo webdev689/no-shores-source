@@ -1,9 +1,10 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { characters } from './accounts/characters.ts';
+import { launchedFor } from './accounts/companies.ts';
 import { foundRun } from './accounts/finding.ts';
 import { accounts } from './accounts/accountsForTests.ts';
-import { Breach, type BreachDeps, GATE_SHUT, breachAsked } from './breach.ts';
+import { Breach, type BreachDeps, GATE_SHUT, LAUNCH_ARRIVES_MS, breachAsked } from './breach.ts';
 import { NO_WAY_HERE } from './arrival.ts';
 import { Keeper } from './keeping.ts';
 import { roomOf } from './keepingForTests.ts';
@@ -67,15 +68,15 @@ test('a run asks its zone whether its gate opened until it says so once, and tel
   assert.equal(await run.gateOpen(), true);
   assert.equal(await run.gateOpen(), true);
   assert.deepEqual(said.asked, [`node-gullwing-vale ${RUN}`], 'asked once');
+  const word = (name: string) => JSON.stringify({ run: RUN, tier: 1, name, encounter: 3 });
   run.tick(20_000);
-  assert.deepEqual(said.inside, [], 'no one named yet');
+  assert.deepEqual(said.inside, [word('A company')], 'no one named yet');
   run.named(9, 'Wenna');
   run.named(3, 'Ossery');
-  run.tick(20_000);
   run.tick(25_000);
-  assert.deepEqual(said.inside, [JSON.stringify({ run: RUN, tier: 1, name: 'Ossery', encounter: 3 })], 'every ten s');
+  assert.equal(said.inside.length, 1, 'every ten s');
   run.tick(30_000);
-  assert.equal(said.inside.length, 2);
+  assert.deepEqual(said.inside, [word('A company'), word('Ossery')], 'by its first player in');
 });
 
 test('a Breach’s run lets its company in only once its gate opened, and its zone a player launched to it from anywhere', async () => {
@@ -107,4 +108,21 @@ test('a Breach’s run lets its company in only once its gate opened, and its zo
   assert.equal(await zone.signIn(8, ben, now, here), false);
   assert.deepEqual(sent, [[8, NO_WAY_HERE]], 'come by no way leading here, for no launch');
   assert.equal(await zone.signIn(7, cal, now, here), true, 'launched to the gate from wherever they were');
+});
+
+test('a launch takes its company to the gate from anywhere for half an hour, and admits its run for a day', async () => {
+  const made = accounts();
+  const kept = characters(
+    made.deps.database,
+    () => made.clock.now,
+    () => Promise.resolve(),
+  );
+  const token = (await made.ask('POST', '/v1/guest')).body['token'] as string;
+  const account = (await kept.look(token))?.account ?? '';
+  assert.equal(await foundRun(made.deps.database, RUN, [account], made.clock.now), true);
+  const arrives = (after: number) =>
+    launchedFor(made.deps.database, account, RUN, made.clock.now + after, LAUNCH_ARRIVES_MS);
+  assert.equal(await arrives(LAUNCH_ARRIVES_MS - 1), true);
+  assert.equal(await arrives(LAUNCH_ARRIVES_MS + 1), false, 'too long since: they sail there');
+  assert.equal(await launchedFor(made.deps.database, account, RUN, made.clock.now + LAUNCH_ARRIVES_MS + 1), true);
 });

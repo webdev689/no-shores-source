@@ -27,7 +27,7 @@ const SEEN: BreachSeen = {
   ...{ bellFoes: [40], broken: 0, ringTicks: 0, fontTicks: 0, boss: 0, warded: false, desk: 0, markedDesk: -1 },
   ...{ deskTicks: 0, writeTicks: 0, seen: false, wipeTicks: 0, rifts: [], riftHeld: [], kept: 0, takings: 0 },
   ...{ takingTicks: 0, awayShore: -1, away: [], wayBack: false, bareTicks: 0, heldBy: false, fill: 0 },
-  ...{ woken: false, claims: 0, openTo: [], inside: [] },
+  ...{ woken: false, claims: 0, openTo: [], holders: [], inside: [] },
 };
 
 /** Another player's word at (x, y, z), fallen or standing: their fighter's numbers, its action dead where fallen. */

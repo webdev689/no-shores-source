@@ -50,7 +50,7 @@ export interface Characters {
   release(account: string, holder: string, body: string | null): Promise<boolean>;
   present(token: string, room: string | null, water?: string | null): Promise<boolean>;
   companions(account: string, room: string): Promise<string[]>;
-  launched(account: string, room: string): Promise<boolean>;
+  launched(account: string, room: string, within?: number): Promise<boolean>;
 }
 
 /** The characters on a database, with a clock and a way to wait. */
@@ -71,8 +71,8 @@ export function characters(database: Db, now: () => number, wait: (millis: numbe
     /** Those a player may share a run's room with, whom it lets in beside them: their company's members longest there
      *  first, or the player alone, then those it was found for with them. */
     companions: (account, room) => companionsOf(database, account, room, now()),
-    /** Whether the server found or launched `room` for the account within FOUND_KEPT_MS (`finding.ts`). */
-    launched: (account, room) => launchedFor(database, account, room, now()),
+    /** Whether the server found or launched `room` for the account within FOUND_KEPT_MS, or `within` (`finding.ts`). */
+    launched: (account, room, within) => launchedFor(database, account, room, now(), within),
     /** Notes that a session's player is in a room that keeps no character, at sea in which water, or with none that
      *  they left it; false when the token is no live session. */
     async present(token, room, water = null) {

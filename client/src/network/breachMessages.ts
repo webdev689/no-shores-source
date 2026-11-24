@@ -111,6 +111,8 @@ export interface BreachSeen {
   readonly woken: boolean;
   readonly claims: number;
   readonly openTo: readonly number[];
+  /** At a gate, the players of the company holding it. */
+  readonly holders: readonly number[];
   readonly inside: readonly BreachInside[];
 }
 
@@ -175,6 +177,7 @@ export function breachOf(snapshot: Snapshot): BreachSeen | null {
     woken: read.woken(),
     claims: read.claims(),
     openTo: Array.from(read.openToArray() ?? []),
+    holders: Array.from(read.holdersArray() ?? []),
     inside: Array.from({ length: read.insideLength() }, (unused, index) => {
       const company = read.inside(index);
       return { name: company?.name() ?? '', tier: company?.tier() ?? 0, encounter: company?.encounter() ?? 0 };

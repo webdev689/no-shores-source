@@ -5,7 +5,7 @@ import roomModule from '../target/wasm32-unknown-unknown/release/room_wasm.wasm'
 import type { CharacterKeeper } from './accounts/worker.ts';
 import { type Listed, arrives, cameOutOf, reachOf, shipOf } from './arrival.ts';
 import { addressKey } from './address.ts';
-import { Breach, breachAsked } from './breach.ts';
+import { Breach, LAUNCH_ARRIVES_MS, breachAsked } from './breach.ts';
 import { type Count, admitsFrom, counted } from './budget.ts';
 import { Keeper, partFrom, TOKEN, TOKEN_WAIT_MS } from './keeping.ts';
 import {
@@ -257,7 +257,7 @@ export class RoomHost extends DurableObject<Env> {
     this.breach = new Breach(name, {
       room: this.room,
       zone: (zone) => this.env.ROOMS.getByName(zone),
-      launched: (account, run) => accounts.launched(account, run),
+      launched: (account, run) => accounts.launched(account, run, LAUNCH_ARRIVES_MS),
     });
     const characters = {
       look: (token: string) => accounts.look(token),

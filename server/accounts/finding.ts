@@ -8,7 +8,7 @@
  * launched for its seeker's company from the Playlist, up to eight, never matched.
  */
 
-import { BREACH_MOST, type BREACH_TIERS, RUN_MOST } from '../roomNames.ts';
+import { type BREACH_TIERS, RUN_MOST } from '../roomNames.ts';
 import { liveAccount } from './characters.ts';
 import { FOUND_KEPT_MS } from './companies.ts';
 import type { Db } from './database.ts';
@@ -44,6 +44,12 @@ const FINDING =
 /** A Breach's base, and the level each of its tiers opens at (`gear::breach::Tier::opens_at`), in the gate's words. */
 const BREACH_BASE = /--breach-(normal|hard)$/;
 export const BREACH_OPENS = { normal: 24, hard: 28 } as const;
+/** Each Breach by the patrol zone its gate stands in (`gear::breach::BREACHES`): no other zone launches one. */
+export const BREACH_ZONES: Readonly<Record<string, string>> = { 'gullwing-vale': 'drowned-vale' };
+/** Why Hard is shut to one who has not won the Breach at Normal (`gear::gate::Shut::BreachHard`). */
+export const BREACH_HARD_SHUT = 'A Breach at Hard opens once you have won it at Normal.';
+/** The Breach a base launches, by its zone; null for a base that is no Breach's. */
+const breachOf = (base: string) => BREACH_ZONES[/^node-(.+)--breach-/.exec(base)?.[1] ?? ''] ?? null;
 export const BREACH_LAUNCHED = 'A Breach is launched by its company from the Playlist.';
 const breachShut = (tier: (typeof BREACH_TIERS)[number]) =>
   `A Breach at ${tier === 'normal' ? 'Normal' : 'Hard'} opens at level ${BREACH_OPENS[tier]}.`;
@@ -63,6 +69,7 @@ export function bandOf(level: number): number {
 export function findingAt(request: Request): string | null {
   if (request.headers.get('Upgrade') !== 'websocket') return null;
   const base = FINDING.exec(new URL(request.url).pathname)?.[1];
+  if (base !== undefined && BREACH_BASE.test(base) && breachOf(base) === null) return null;
   return base !== undefined && base.length <= BASE_MOST ? base : null;
 }
 
@@ -81,14 +88,9 @@ export interface Seeker {
 const together = (one: Seeker, other: Seeker) =>
   !one.apart.includes(other.account) && !other.apart.includes(one.account);
 
-/** Those waiting for runs of one dungeon, as many to a run as `most`. */
+/** Those waiting for runs of one dungeon. */
 export class Queue {
   private waiting: Seeker[] = [];
-  private readonly most: number;
-
-  constructor(most = RUN_MOST) {
-    this.most = most;
-  }
 
   /** Puts a seeker in: the socket of the same account's older search to let go, or null. The newer socket stays
    *  whichever lookup answered first, so a search is never ended by an older tab's. */
@@ -104,8 +106,8 @@ export class Queue {
   }
 
   /** The runs to start at `now`, taken out of the queue, in the order their first joined. Within a band, oldest first,
-   *  each with the oldest still free who block none of those taken: its most as soon as there are as many, or as
-   *  many as there are once its first has waited FIND_WAIT_MS. */
+   *  each with the oldest still free who block none of those taken: four as soon as there are four, or as many as
+   *  there are once its first has waited FIND_WAIT_MS. */
   due(now: number): Seeker[][] {
     const oldest = [...this.waiting].sort((one, other) => one.since - other.since);
     const taken = new Set<Seeker>();
@@ -114,11 +116,11 @@ export class Queue {
       if (taken.has(first)) continue;
       const group = [first];
       for (const other of oldest) {
-        if (group.length === this.most || first.alone) break;
+        if (group.length === RUN_MOST || first.alone) break;
         const free = other !== first && !taken.has(other) && !other.alone && other.band === first.band;
         if (free && group.every((one) => together(one, other))) group.push(other);
       }
-      if (group.length < this.most && now - first.since < FIND_WAIT_MS && !first.alone) continue;
+      if (group.length < RUN_MOST && now - first.since < FIND_WAIT_MS && !first.alone) continue;
       for (const one of group) taken.add(one);
       runs.push(group);
     }
@@ -138,13 +140,25 @@ export async function seekerOf(database: Db, token: string, now: number): Promis
   if (account === null) return null;
   const kept = await database
     .prepare(
-      `SELECT json_extract(body, '$.shown.level') AS level, json_extract(body, '$.story.prologue') AS prologue
-       FROM characters WHERE account_id = ?1`,
+      `SELECT json_extract(body, '$.shown.level') AS level, json_extract(body, '$.story.prologue') AS prologue,
+       json_extract(body, '$.story.breaches') AS breaches FROM characters WHERE account_id = ?1`,
     )
     .bind(account)
-    .first<{ level: number | null; prologue: number | null }>();
+    .first<{ level: number | null; prologue: number | null; breaches: string | null }>();
   const [level, prologue] = [Number(kept?.level ?? 1) || 1, Boolean(kept?.prologue)];
-  return { account, level, prologue, apart: await apartFrom(database, account) };
+  const breaches = wonOf(kept?.breaches ?? null);
+  return { account, level, prologue, breaches, apart: await apartFrom(database, account) };
+}
+
+/** The Breaches a character has won, by their records' keys (`drowned-vale/normal`), from their JSON; none for any
+ *  other text. */
+function wonOf(text: string | null): string[] {
+  try {
+    const won: unknown = JSON.parse(text ?? '[]');
+    return Array.isArray(won) ? won.filter((each): each is string => typeof each === 'string') : [];
+  } catch {
+    return [];
+  }
 }
 
 /** A seeker as the accounts read them for the finder. */
@@ -152,6 +166,8 @@ export interface Seeking {
   readonly account: string;
   readonly level: number;
   readonly prologue: boolean;
+  /** The Breaches won, by their records' keys; none where the accounts did not say. */
+  readonly breaches?: readonly string[];
   readonly apart: readonly string[];
 }
 
@@ -180,7 +196,7 @@ export interface FinderDeps {
 export class Finder {
   private readonly base: string;
   private readonly deps: FinderDeps;
-  private readonly queue: Queue;
+  private readonly queue = new Queue();
   /** The accounts whose run is being started, out of the queue until their group is told: no second tab joins
    *  another group meanwhile. */
   private readonly starting = new Set<string>();
@@ -194,7 +210,6 @@ export class Finder {
   constructor(base: string, deps: FinderDeps) {
     this.base = base;
     this.deps = deps;
-    this.queue = new Queue(BREACH_BASE.test(base) ? BREACH_MOST : RUN_MOST);
   }
 
   /** Holds a new seeker's socket; `alone` for a playlist's Launch, whose run is drawn and kept here at once. */
@@ -230,6 +245,8 @@ export class Finder {
     if (WEEK.test(this.base) && level < WEEK_ELITE_OPENS) return this.letGo(socket, 4003, WEEK_ELITE_SHUT);
     const breach = BREACH_BASE.exec(this.base)?.[1] as (typeof BREACH_TIERS)[number] | undefined;
     if (breach !== undefined && level < BREACH_OPENS[breach]) return this.letGo(socket, 4003, breachShut(breach));
+    const won = `${breachOf(this.base) ?? ''}/normal`;
+    if (breach === 'hard' && !(found.breaches ?? []).includes(won)) return this.letGo(socket, 4003, BREACH_HARD_SHUT);
     // A Breach is no stranger's: it is launched for a company, never matched.
     if (breach !== undefined && !held.alone) return this.letGo(socket, 4003, BREACH_LAUNCHED);
     // Only a playlist's run and a Breach's are launched alone: an Elite Dungeon's and the week's start from their

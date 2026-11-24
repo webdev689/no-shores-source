@@ -70,13 +70,15 @@ pub struct BreachSeen {
     pub way_back: bool,
     pub bare_ticks: u32,
     /// A gate: whether a company holds it, the Spire's fill per mille, whether it woke, each mooring claimed (a bit
-    /// each), the players it is open to, and the companies inside the run: each leader's name, tier and encounter.
+    /// each), the players it is open to, the companies inside the run (each by its first player's name, its tier and
+    /// encounter), and the players of the company holding it.
     pub held_by: bool,
     pub fill: u16,
     pub woken: bool,
     pub claims: u8,
     pub open_to: Vec<PlayerId>,
     pub inside: Vec<(String, u8, u8)>,
+    pub holders: Vec<PlayerId>,
 }
 
 /// Ticks left until `at`, 0 once past.
@@ -101,7 +103,9 @@ impl Room {
                 .filter(|(run, _)| gate.opened.contains_key(*run))
                 .flat_map(|(_, company)| company.players.iter().copied())
                 .collect();
-            let tier = gate.held_by.as_ref().and_then(|run| gate.companies.get(run)).and_then(|company| company.tier);
+            let holding = gate.held_by.as_ref().and_then(|run| gate.companies.get(run));
+            let tier = holding.and_then(|company| company.tier);
+            let holders = holding.map(|company| company.players.clone()).unwrap_or_default();
             return Some(BreachSeen {
                 gate: true,
                 tier: u8::from(tier == Some(gear::breach::Tier::Hard)),
@@ -115,6 +119,7 @@ impl Room {
                     .enumerate()
                     .fold(0, |bits, (nth, claim)| bits | (u8::from(claim.is_some()) << nth)),
                 open_to,
+                holders,
                 inside: gate
                     .inside
                     .values()

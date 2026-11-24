@@ -553,6 +553,7 @@ table BreachSeen {
   claims: ubyte;
   open_to: [uint];
   inside: [BreachInside];
+  holders: [uint];
 }
 
 // Every player in the room after one of its ticks, the dresses that changed since the last snapshot, every foe, what

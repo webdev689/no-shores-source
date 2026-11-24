@@ -12,6 +12,10 @@ import type { RoomDoor } from './roomDoor.ts';
 
 /** How often a run tells its gate's zone how far its company has come; the zone forgets one silent for a minute. */
 const INSIDE_EVERY_MS = 10_000;
+/** How long after its launch a run's company may come to its gate from anywhere, as the Launch takes them there. */
+export const LAUNCH_ARRIVES_MS = 30 * 60_000;
+/** The name a company is shown by in its zone when no player of it has a username yet. */
+const NAMELESS = 'A company';
 
 /** Why a run turns away a character whose company's gate has not opened. */
 export const GATE_SHUT = 'The Sunken Gate has not opened to your company.';
@@ -46,6 +50,8 @@ export class Breach {
   /** In a zone, each player's run until the accounts answer; in a run, each player's name as the keeper gives it. */
   private readonly asked = new Map<number, string>();
   private readonly names = new Map<number, string>();
+  /** In a zone, the players the accounts said were launched as they came, held in their company without asking again. */
+  private readonly launched = new Set<number>();
 
   constructor(name: string, deps: BreachDeps) {
     this.name = name;
@@ -73,7 +79,9 @@ export class Breach {
   /** Whether a player joined the zone for a run the accounts say was launched for `account`. */
   async launchedHere(player: number, account: string): Promise<boolean> {
     const run = this.asked.get(player);
-    return run !== undefined && (await this.deps.launched(account, run));
+    const launched = run !== undefined && (await this.deps.launched(account, run));
+    if (launched) this.launched.add(player);
+    return launched;
   }
 
   /** A player's character is kept for `account`: in a zone, held in the company of the run they came for once the
@@ -83,9 +91,12 @@ export class Breach {
     const tier = run === undefined ? undefined : breachRun(run)?.tier;
     if (run === undefined || tier === undefined) return;
     this.asked.delete(player);
+    const hold = () => this.deps.room.breachCompany(player, JSON.stringify({ run, tier }));
+    // One the keeper let in as launched is held at once; one who came by a way leading here is asked of the accounts.
+    if (this.launched.delete(player)) return void hold();
     void this.deps
       .launched(account, run)
-      .then((launched) => launched && this.deps.room.breachCompany(player, JSON.stringify({ run, tier })))
+      .then((launched) => launched && hold())
       .catch(() => false);
   }
 
@@ -96,14 +107,16 @@ export class Breach {
   left(player: number): void {
     this.asked.delete(player);
     this.names.delete(player);
+    this.launched.delete(player);
   }
 
-  /** Each second's look: in a run, its progress told to its zone every INSIDE_EVERY_MS, by its first player's name. */
+  /** Each second's look: in a run, its progress told to its zone every INSIDE_EVERY_MS, by the name of its first player
+   *  in, or NAMELESS. */
   tick(now: number): void {
     if (!this.run || now - this.told < INSIDE_EVERY_MS) return;
     const progress = JSON.parse(this.deps.room.breachProgress()) as { tier: number; encounter: number } | null;
-    const name = [...this.names.entries()].sort(([one], [other]) => one - other)[0]?.[1];
-    if (!progress || name === undefined) return;
+    const name = [...this.names.entries()].sort(([one], [other]) => one - other)[0]?.[1] ?? NAMELESS;
+    if (!progress) return;
     this.told = now;
     const word = JSON.stringify({ run: this.name, tier: progress.tier, name, encounter: progress.encounter });
     void this.deps
