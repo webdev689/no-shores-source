@@ -101,6 +101,9 @@ pub struct Breach {
     pub baked: BTreeSet<String>,
     /// The blocks that stood last tick, seals and slabs among them, to know when the room's must be made again.
     pub(crate) standing: Vec<Block>,
+    /// The share of their health each account left the run with, 0 for one down, so coming back stands no one up
+    /// whole (as an Abyss run keeps it, `abyss::keep_body`).
+    pub(crate) left: BTreeMap<String, f64>,
 }
 
 impl Room {
@@ -139,6 +142,7 @@ impl Room {
             chests: BTreeSet::new(),
             baked: BTreeSet::from(["descent".to_owned()]),
             standing,
+            left: BTreeMap::new(),
         };
         breach.standing = breach.blocks_at(0);
         room.blocks = breach.standing.clone().into();
@@ -260,6 +264,9 @@ impl Room {
             }
             breach.reached = stage;
             self.bake_space(breach, space);
+            // Whoever comes in later, or back, comes in at the furthest stage.
+            let (at, _) = self.checkpoint(breach);
+            self.spawn_points = vec![(at[0], at[1])];
         }
     }
 
@@ -477,3 +484,6 @@ mod fights_tests;
 #[cfg(test)]
 #[path = "gate_tests.rs"]
 mod gate_tests;
+#[cfg(test)]
+#[path = "keeping_tests.rs"]
+mod keeping_tests;

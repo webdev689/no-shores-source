@@ -154,3 +154,44 @@ fn the_zone_hears_of_the_companies_inside_until_they_are_done_or_silent() {
     ticks(&mut room, gate::INSIDE_LASTS + 1);
     assert!(room.breach_seen().expect("the gate's").inside.is_empty(), "silent too long");
 }
+
+#[test]
+fn a_company_gone_from_the_hollow_lets_the_gate_go_and_a_member_it_would_shut_out_is_not_paid() {
+    let (mut room, players) = gate_room(3);
+    for &player in &players {
+        room.breach_company(player, "run-a", Tier::Normal);
+    }
+    assert!(room.own(players[0], "ada"), "a kept character, level 1: the Breach shuts to it");
+    hold_moorings(&mut room, &players);
+    room.tick();
+    assert_eq!(room.breach_gate.as_ref().expect("gate").held_by.as_deref(), Some("run-a"));
+    let items = room.players[&players[0]].character.items.len();
+    room.breach_gate.as_mut().expect("gate").fill = SPIRE_TICKS - 1;
+    room.breach_gate.as_mut().expect("gate").claims = [None; 3];
+    hold_moorings(&mut room, &players);
+    room.tick();
+    assert!(room.breach_opened("run-a"));
+    assert_eq!(room.players[&players[0]].character.items.len(), items, "nothing paid to one shut out");
+    let (mut room, players) = gate_room(2);
+    for &player in &players {
+        room.breach_company(player, "run-b", Tier::Normal);
+    }
+    hold_moorings(&mut room, &players);
+    room.tick();
+    for &player in &players {
+        stand(&mut room, player, [0.0, gate::HOLLOW_M + 40.0, 0.0]);
+    }
+    ticks(&mut room, gate::LEFT_TICKS + 2);
+    assert!(room.breach_gate.as_ref().expect("gate").held_by.is_none(), "let go to the next company");
+}
+
+#[test]
+fn the_zone_is_told_once_that_a_company_cleared_the_breach() {
+    let (mut room, _) = gate_room(1);
+    room.breach_inside("run-a", "Wenna", Tier::Normal, 5);
+    room.take_events();
+    for _ in 0..3 {
+        room.breach_inside("run-a", "Wenna", Tier::Normal, 6);
+    }
+    assert_eq!(room.take_events().iter().filter(|event| event.kind == EventKind::BreachCleared).count(), 1);
+}

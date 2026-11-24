@@ -317,9 +317,9 @@ impl Room {
     /// A body standing at a spawn: on the ground in a node's room, on the top of the block under it on a course.
     fn stand(&self, (x, y): (f64, f64)) -> Body {
         let body = if let Some(breach) = self.breach.as_ref() {
-            // Over the dark, from the furthest stage's height: the floor at 0 lies far below every space.
-            let (at, _) = self.checkpoint(breach);
-            let z = movement::blocks::ground_at(&self.blocks, &self.floor, x, y, at[2] + 1.0);
+            // Over the dark, from the top of the space it is in: the floor at 0 lies far below every space.
+            let ceiling = breach.plan.ceiling_at(x, y).unwrap_or_else(|| self.checkpoint(breach).0[2] + 1.0);
+            let z = movement::blocks::ground_at(&self.blocks, &self.floor, x, y, ceiling);
             Body { z, ..movement::standing(x, y) }
         } else if self.section.is_some() {
             standing_on(&self.floor, &self.blocks, x, y)

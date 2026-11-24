@@ -222,6 +222,17 @@ impl Plan {
         blocks
     }
 
+    /// The highest a body may stand at (x, y): over the top of the space it lies in, for finding its ground there; none
+    /// outside every space.
+    #[must_use]
+    pub fn ceiling_at(&self, x: f64, y: f64) -> Option<f64> {
+        self.spaces.iter().find_map(|space| {
+            let bounds = self.space_bounds(&space.key, 0.0)?;
+            let inside = x >= bounds.min_x && x <= bounds.max_x && y >= bounds.min_y && y <= bounds.max_y;
+            inside.then(|| space.at[2] + self.module_of(space).map_or(0.0, |module| module.size[2]) + 1.0)
+        })
+    }
+
     /// The run's bounds on the ground, round every space's module, `margin` metres more each way: west, north, east,
     /// south.
     #[must_use]

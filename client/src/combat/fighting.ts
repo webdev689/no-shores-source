@@ -125,6 +125,8 @@ interface Asked {
   readonly intent: Float64Array;
   readonly view: readonly Glanced[];
   readonly arms: number;
+  /** The room's tick it is expected to be stepped at: a Breach's run stands that tick's blocks under it. */
+  readonly tick: number;
   fired: Fired | null;
 }
 
@@ -145,6 +147,11 @@ export class Fighting {
   /** The trim last laid on the fighter from the room's word on the player's gear. */
   private trimTaken: readonly number[] | null = null;
   private seen = 0n;
+  /** Ticks stepped since the last snapshot; in a Breach's run, its seals open (null elsewhere), and whether the
+   *  player bears the Lodestone, which the room makes bare handed. */
+  private ahead = 0;
+  private breachSeals: number | null = null;
+  private bearing = false;
   private view: Glanced[] = [];
   private buttons: FightButtons = NO_BUTTONS;
   private readonly latches = {
@@ -365,8 +372,10 @@ export class Fighting {
     const view = this.view;
     // Arms the room would not let the player take up are bare hands, as the room makes them.
     const allowed = this.link.arms;
-    const arms = !allowed || allowed.length === 0 || allowed.includes(this.arms) ? this.arms : 0;
-    const asked: Asked = { intent, view, arms, fired: null };
+    const held = !allowed || allowed.length === 0 || allowed.includes(this.arms) ? this.arms : 0;
+    const arms = this.bearing ? 0 : held;
+    this.ahead += 1;
+    const asked: Asked = { intent, view, arms, tick: Number(this.seen) + this.ahead, fired: null };
     const sequence = this.prediction.next(asked);
     const spawned = this.spawnsQueued.shift();
     const gear = this.gearQueued.shift();
@@ -399,6 +408,7 @@ export class Fighting {
     }
     const before = this.fighter[BLOWS_AT] ?? 0;
     const drawing = this.fighter[ACTION_AT] === DRAW;
+    this.standBreach(asked.tick);
     const predicted = this.rules.predict(this.fighter, intent, this.player, arms, view);
     this.fighter = predicted.fighter;
     asked.fired = predicted.fired;
@@ -413,6 +423,12 @@ export class Fighting {
     if (swinging) this.struck = this.fighter[ACTION_AT + 1] ?? this.struck;
     this.rested = swinging ? 0 : this.rested + 1;
     return bodyOf(Array.from(this.fighter.subarray(0, 22)));
+  }
+
+  /** In a Breach's run, the blocks the room stands at `tick` (its seals open and its slabs in their cycle) made the
+   *  predictor's course; the rules make it anew only when a seal or a slab changed. */
+  private standBreach(tick: number): void {
+    if (this.breachSeals !== null) this.rules.setBreach(this.breachSeals, tick);
   }
 
   /** The fighter one tick on as the room steps a body the section killed (the room's `lying_still`): no push, its
@@ -432,6 +448,10 @@ export class Fighting {
     this.follow();
     const ticks = Math.max(1, Number(snapshot.tick - this.seen));
     this.seen = snapshot.tick;
+    this.ahead = 0;
+    const breach = snapshot.breach && !snapshot.breach.gate ? snapshot.breach : null;
+    this.breachSeals = breach?.seals ?? null;
+    this.bearing = breach !== null && breach.stone === 2 && breach.bearer === this.player;
     const view: Glanced[] = [];
     this.others.clear();
     for (const seen of snapshot.players) {
@@ -445,6 +465,7 @@ export class Fighting {
         this.fighter = this.prediction.corrected(whole, seen.acknowledged, (fighter, asked) => {
           // The room took every input after a death as the body lying, whatever the input asked.
           if (dead) return this.lying(fighter, asked.view);
+          this.standBreach(asked.tick);
           const replayed = this.rules.predict(fighter, asked.intent, this.player, asked.arms, asked.view);
           // A shot this input let go only as replayed on the room's word is the player's too; one it let go before
           // has been drawn already.

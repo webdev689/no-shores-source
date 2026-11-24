@@ -34,17 +34,29 @@ impl Room {
     /// for one down, so coming back stands no one up whole, as `arts::keep_casting` keeps their Arts.
     pub(crate) fn keep_body(&mut self, gone: &Player) {
         let Some(owner) = gone.owner.clone() else { return };
-        let Some(run) = self.run.as_mut().filter(|run| run.revives.is_some()) else { return };
         let fighter = gone.fighter;
         let share = if fighter.dead() { 0.0 } else { fighter.health / fighter.health_max.max(f64::EPSILON) };
+        // A Breach's run keeps it as well, at either tier.
+        if let Some(breach) = self.breach.as_mut() {
+            breach.left.insert(owner, share);
+            return;
+        }
+        let Some(run) = self.run.as_mut().filter(|run| run.revives.is_some()) else { return };
         run.left.insert(owner, share);
     }
 
     /// An account's body given back as it comes into the run again: down where it left down, so the next raising
     /// spends a revive or leaves it down, else at the share of its health it left with.
     pub(crate) fn give_body_back(&mut self, player: PlayerId, owner: &str) {
-        let Some(share) = self.run.as_mut().and_then(|run| run.left.remove(owner)) else { return };
+        let kept = self.breach.as_mut().and_then(|breach| breach.left.remove(owner));
+        let Some(share) = kept.or_else(|| self.run.as_mut().and_then(|run| run.left.remove(owner))) else { return };
+        // One back down in a Breach lies at its furthest stage, where the company can raise them.
+        let stage = self.breach.as_ref().filter(|_| share <= 0.0).map(|breach| self.checkpoint(breach).0);
         let Some(found) = self.players.get_mut(&player) else { return };
+        if let Some([x, y, z]) = stage {
+            (found.fighter.body.x, found.fighter.body.y, found.fighter.body.z) = (x, y, z);
+            found.stood = z;
+        }
         let fighter = &mut found.fighter;
         if share > 0.0 {
             fighter.health = fighter.health_max * share.min(1.0);

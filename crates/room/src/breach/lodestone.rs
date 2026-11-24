@@ -53,6 +53,8 @@ pub struct Lodestone {
     pub needed: bool,
     /// The last bearer to cross a rift with it, at Hard, who may not cross with it again until another has.
     pub crossed_by: Option<PlayerId>,
+    /// Where it was last carried, where it falls if its bearer leaves the run.
+    pub carried_at: [f64; 3],
 }
 
 impl Lodestone {
@@ -154,7 +156,7 @@ impl Room {
         let clock = self.clock;
         if let Some(bearer) = breach.lodestone.bearer() {
             let Some(found) = self.players.get(&bearer).filter(|found| found.living()) else {
-                let at = self.players.get(&bearer).map_or([0.0, 0.0, 0.0], |found| {
+                let at = self.players.get(&bearer).map_or(breach.lodestone.carried_at, |found| {
                     let body = found.fighter.body;
                     [body.x, body.y, body.z]
                 });
@@ -165,6 +167,7 @@ impl Room {
             };
             let guarding = found.fighter.guarding().is_some();
             let body = found.fighter.body;
+            breach.lodestone.carried_at = [body.x, body.y, body.z];
             match breach.lodestone.held_from {
                 Some(from) if !guarding || clock >= from + HOLD_MOST => {
                     breach.lodestone.held_from = None;

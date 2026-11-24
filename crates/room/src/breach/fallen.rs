@@ -30,36 +30,23 @@ impl Room {
     }
 
     /// How long a fallen player lies before standing again of themselves in a Breach's run, ticks; none for never
-    /// (Hard, inside a running encounter); in any other room, the combat rules' own.
+    /// (Hard, while an encounter runs, wherever they fell); in any other room, the combat rules' own.
     pub(crate) fn stands_after(&self, id: PlayerId) -> Option<u32> {
-        if let Some(gate) = self.breach_gate.as_ref().filter(|gate| gate.fighting(id)) {
+        let body = self.players.get(&id).map(|found| [found.fighter.body.x, found.fighter.body.y]);
+        if let Some(gate) =
+            self.breach_gate.as_ref().filter(|gate| gate.fighting(id) && body.is_some_and(|at| gate.in_hollow(at)))
+        {
             let tier = gate.run_of(id).and_then(|run| gate.companies.get(run)).and_then(|company| company.tier);
             return tier.unwrap_or(gear::breach::Tier::Normal).stands_again().then_some(STANDS_INSIDE);
         }
         let Some(breach) = self.breach.as_ref() else { return Some(combat::tuning::RESPAWN) };
-        let found = self.players.get(&id)?;
-        let body = found.fighter.body;
-        match (self.running_at(breach, [body.x, body.y]), breach.tier.stands_again()) {
+        self.players.get(&id)?;
+        let running = (super::MENDING..=super::STEWARD).any(|each| matches!(breach.phases[each], Phase::Running(_)));
+        match (running, breach.tier.stands_again()) {
             (false, _) => Some(STANDS_OUTSIDE),
             (true, true) => Some(STANDS_INSIDE),
             (true, false) => None,
         }
-    }
-
-    /// Whether a point lies in a running encounter's space or one of its shores.
-    pub(crate) fn running_at(&self, breach: &Breach, [x, y]: [f64; 2]) -> bool {
-        (super::MENDING..=super::STEWARD).any(|encounter| {
-            if !matches!(breach.phases[encounter], Phase::Running(_)) {
-                return false;
-            }
-            let key = gear::breach::DROWNED_VALE.encounters[encounter].key;
-            let shores = breach.plan.shores.get(key).cloned().unwrap_or_default();
-            std::iter::once(super::space_of(breach.plan, encounter)).chain(shores).any(|space| {
-                breach.plan.space_bounds(&space, 0.0).is_some_and(|bounds| {
-                    x >= bounds.min_x && x <= bounds.max_x && y >= bounds.min_y && y <= bounds.max_y
-                })
-            })
-        })
     }
 
     /// Whether a player the section killed (a fall) may ask to stand again: never at Hard inside a running encounter.

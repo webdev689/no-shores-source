@@ -30,6 +30,10 @@ pub const INSIDE_LASTS: u64 = 10 * 60 * 60;
 pub const MOORINGS: [&str; 3] = ["mooring-west", "mooring-south", "mooring-east"];
 /// The gate's answer to a player whose company has not opened it.
 pub const GATE_SHUT: u8 = 112;
+/// How far the gate's hollow reaches from its middle, metres, and how long the holding company may leave it empty of
+/// its living players before the gate is let go, ticks.
+pub const HOLLOW_M: f64 = 45.0;
+pub const LEFT_TICKS: u64 = 30 * 60;
 
 /// A company launched for a run: its tier and its players in this room.
 #[derive(Clone, Debug, Default, PartialEq)]
@@ -70,6 +74,8 @@ pub struct Gate {
     pub revives: Option<u8>,
     pub raising: BTreeMap<PlayerId, (PlayerId, u64)>,
     pub down_since: Option<u64>,
+    /// The last tick a living player of the holding company stood in the hollow.
+    pub last_near: u64,
     /// The runs whose gate has opened, by the tick it opened; and the companies inside runs, by run.
     pub opened: BTreeMap<String, u64>,
     pub inside: BTreeMap<String, Inside>,
@@ -94,6 +100,12 @@ impl Gate {
     #[must_use]
     pub fn fighting(&self, player: PlayerId) -> bool {
         self.woken.is_none() && self.held_by.as_deref().is_some_and(|run| self.run_of(player) == Some(run))
+    }
+
+    /// Whether a point lies in the gate's hollow.
+    #[must_use]
+    pub fn in_hollow(&self, [x, y]: [f64; 2]) -> bool {
+        apart([x, y], [self.at[0], self.at[1]]) <= HOLLOW_M
     }
 }
 
@@ -127,8 +139,10 @@ impl Room {
         let clock = self.clock;
         let Some(gate) = self.breach_gate.as_mut() else { return };
         if usize::from(encounter) >= gear::breach::DROWNED_VALE.encounters.len() {
-            gate.inside.remove(run);
-            self.tell_all(EventKind::BreachCleared, f64::from(encounter));
+            // Told once, as the company that was inside is done: its run says so again until it leaves.
+            if gate.inside.remove(run).is_some() {
+                self.tell_all(EventKind::BreachCleared, f64::from(encounter));
+            }
             return;
         }
         gate.inside.insert(run.to_owned(), Inside { name: name.to_owned(), tier, encounter, heard: clock });
@@ -180,6 +194,7 @@ impl Room {
         let Some((run, company)) = taker.map(|(run, company)| (run.clone(), company.clone())) else { return };
         gate.held_by = Some(run);
         (gate.since, gate.fill, gate.next_wave, gate.bulwarks) = (self.clock, 0, self.clock + 3 * 60, 0);
+        gate.last_near = self.clock;
         gate.revives = company.tier.and_then(Tier::revives);
         self.tell_all(EventKind::BreachBegun, 0.0);
     }
@@ -218,6 +233,18 @@ impl Room {
                     })
                 })
         });
+        // A company gone from the hollow lets the gate go to the next.
+        let near = company.players.iter().any(|player| {
+            self.players
+                .get(player)
+                .is_some_and(|found| found.living() && gate.in_hollow([found.fighter.body.x, found.fighter.body.y]))
+        });
+        if near {
+            gate.last_near = clock;
+        } else if clock >= gate.last_near + LEFT_TICKS {
+            self.settle_gate(gate);
+            return;
+        }
         let ebb = if tier == Tier::Hard { EBB_EVERY.1 } else { EBB_EVERY.0 };
         if held {
             gate.fill += 1;
@@ -378,6 +405,11 @@ impl Room {
         let week = gear::clock::week_of(self.minute);
         let dice = self.dice(player);
         let Some(found) = self.players.get_mut(&player).filter(|found| found.owner.is_some()) else { return };
+        // Only one the Breach's own gate would let in at this tier is paid for its opening.
+        let place = gear::gate::Place::Breach(tier);
+        if gear::gate::shut(&found.character, place, gear::world::Difficulty::Normal).is_some() {
+            return;
+        }
         let paid = found.character.breach_cleared(&gear::breach::DROWNED_VALE, tier, week, 0, &dice);
         for vestige in paid.vestiges {
             found.character.keep_paid(vestige);

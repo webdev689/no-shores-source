@@ -107,6 +107,10 @@ impl Room {
         let Some(space) = shores.get(shore) else { return };
         let mut court = self.in_space(breach, "court");
         let count = TAKES.min(court.len().div_ceil(2));
+        // No one in the court to take: the taking waits for them.
+        if count == 0 {
+            return;
+        }
         let mut draws = self.steward_draws(clock);
         let mut taken = Vec::new();
         for _ in 0..count {
@@ -212,10 +216,15 @@ impl Room {
                 self.carry(id, out);
             }
         }
-        if self.someone_in(breach, &space) || !away.done {
+        if self.someone_in(breach, &space) {
             fight.away = Some(away);
-        } else {
+        } else if away.done {
             self.tell_all(EventKind::Returned, away.shore as f64);
+        } else {
+            // Every one taken fell there: the taking ends with its bells, and the next takes others.
+            for (_, id) in away.bells {
+                self.gone(id);
+            }
         }
     }
 
