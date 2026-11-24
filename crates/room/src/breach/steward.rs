@@ -142,15 +142,16 @@ impl Room {
         }
     }
 
-    /// The Steward takes up to four of the company's living players, wherever they stand, into a shore, Rewriting
-    /// them; the Lodestone and five bells wait there, the bells' order drawn; and its next toll comes on its measure.
+    /// The Steward takes up to four of the company's living players (those the run counts, never a socket no
+    /// character is kept for), wherever they stand, into a shore, Rewriting them; the Lodestone and five bells wait
+    /// there, the bells' order drawn; and its next toll comes on its measure.
     fn take(&mut self, breach: &mut Breach, fight: &mut Steward) {
         let clock = self.clock;
         let shore = usize::from(fight.takings % 2);
         let plan = breach.plan;
         let Some(space) = plan.shores.get("steward").and_then(|shores| shores.get(shore)) else { return };
         let mut court: Vec<PlayerId> =
-            self.players.iter().filter(|(_, found)| found.living()).map(|(id, _)| *id).collect();
+            self.counted_players().into_iter().filter(|id| self.players[id].living()).collect();
         let count = TAKES.min(court.len().div_ceil(2));
         // No one living to take: the taking waits, and the company's wipe comes first.
         if count == 0 {

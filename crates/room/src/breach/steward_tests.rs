@@ -188,3 +188,21 @@ fn one_taken_who_leaves_comes_back_to_the_shore_while_the_taking_holds_and_down_
     assert!(room.own(again, &account));
     assert!(room.players[&again].fighter.dead(), "the taking over, lost as a shut shore loses those in it");
 }
+
+#[test]
+fn the_steward_takes_only_from_the_company_never_a_socket_no_character_is_kept_for() {
+    let (mut room, players) = won_to(Tier::Normal, 2, STEWARD);
+    for (player, account) in players.iter().zip(["ada", "ben"]) {
+        assert!(room.own(*player, account));
+    }
+    begin_at(&mut room, &players, "court", "chest");
+    // Six sockets that never sign in, living where the room stood them.
+    let strangers: Vec<PlayerId> = (0..6).map(|_| crate::encounters::encounters_tests::hardy(&mut room)).collect();
+    for _ in 0..4 {
+        let away = taken_now(&mut room);
+        assert!(away.taken.iter().all(|taken| players.contains(taken)), "taken from the company: {:?}", away.taken);
+        assert_eq!(away.taken.len(), 1, "half of the company's two");
+        room.breach.as_mut().expect("run").fights.steward.away = None;
+    }
+    assert!(strangers.iter().all(|stranger| room.players[stranger].living()));
+}
