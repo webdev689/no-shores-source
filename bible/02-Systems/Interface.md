@@ -756,7 +756,8 @@ keys on keycaps where the menu is wide enough; Guild opens the player's guild af
 and front, a blueprint while built, the decoration as marks, the footprint's ghost green or red as one is placed, the
 grid one Tab stop walked by the arrows; the plan beside the outpost's rows, and the building in a third column where wide; for a founder or admin standing there, a Decorate
 part listing each piece with its price and what the hall holds, whose choice closes the menu and stands the piece's
-ghost a metre past its own reach before the player, green or red, turned with [ and ], placed with the use key) and
+ghost a metre past its own reach before the player, green or red, turned with [ and ], placed with the use key, let go
+with Escape or the pad's B, which then does nothing else) and
 its Treasury page (the ledger in words under column heads), both headed and framed as the Journal is ([[Outposts]]). The chosen tab is a lit brass press; a tab with something new on it
 (the Compendium, while a chapter found waits unread) wears Destiny's small diamond at its top right, and its name is
 read with ", new"; the arrow keys move between tabs. At the top line's right stands the account's mark, after DFO's

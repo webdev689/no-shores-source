@@ -70,7 +70,8 @@ outpost there plays it in a room of its own, `node-<site>--guild-<key>`, apart f
   takes what fits, the rest lost, and the answer says how much came back.
 - **Decorating.** A piece of decoration costs 50 Aurem a metre of its reach (the half-diagonal of its model, so it
   stays within its reach however it turns), 25 at least and 500 at most, and taking it up gives half back. The hall
-  holds 40, 80 or 150 pieces by its tier (`decorPrice`, `decorCap`).
+  holds 40, 80 or 150 pieces by its tier (`decorPrice`, `decorCap`). A piece being placed in the world is let go with
+  Escape or the pad's B, which then does nothing else ([[Interface]]).
 - **What it earns.** A Counting House's strongbox fills each whole hour by its tier and holds two days; a member there
   empties it into the treasury. An Island Camp gathers the island's own resource and a Dockyard Timber, Canvas and
   Iron into the outpost's stores each whole day, three days at most; a member there takes up to 20 of each a game

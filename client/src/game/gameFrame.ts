@@ -25,7 +25,7 @@ import { autoChosen, heardFrame } from './renderScale.ts';
 import type { Foot } from './foot.ts';
 import type { FootView } from './footView.ts';
 import type { FriendlyTraffic, FriendlyWater } from './friendlyShips.ts';
-import { contextOf } from './gameKeys.ts';
+import { contextOf, withoutTaken } from './gameKeys.ts';
 import { gearScreenOpen } from './gearWindow.ts';
 import { stripOf, withMapKey } from './hints.ts';
 import { FALLEN, refusedWords } from './toShip.ts';
@@ -496,7 +496,7 @@ export function startFrames(parts: FrameParts, playing: Playing): void {
           : covered && 'menu';
     input.window(top || null);
     input.context = playing.flow.mode === 'story' && parts.story ? parts.story.context : contextOf(playing);
-    const heard = input.frame();
+    const heard = withoutTaken(input.frame());
     hud.controls.frame(seconds, input.padButtons);
     // The wheel turned over the interface scrolls it, not the camera.
     const controls = tookWheel ? { ...heard, wheel: 0 } : heard;
