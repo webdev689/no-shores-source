@@ -27,6 +27,8 @@ pub const MARK_LASTS: u64 = 20 * 60;
 /// second ring before it is lit again unwrites.
 pub const FONT_REACH_M: f64 = 2.5;
 pub const FONT_REST: u64 = 25 * 60;
+/// Once it first cleanses, the font stays lit this long for the rest of the Rewritten to reach it, then rests.
+pub const FONT_LIT: u64 = 3 * 60;
 /// A bell's health against a Brute Minor's: three blows of a sword, so a round is won by its order, not its harm.
 pub const BELL_HEALTH: f64 = 0.5;
 /// The Scrivener: how often it marks a desk, how long the mark shows, how often it writes, how often a bell wakes, and
@@ -56,6 +58,8 @@ pub struct Choir {
     pub round_from: u64,
     pub ring_at: Option<u64>,
     pub font_rests_until: u64,
+    /// While the font stays lit after its first cleanse.
+    pub font_lit_until: u64,
     pub scrivener: Option<FighterId>,
     /// The Scrivener's health held while warded, and its desk.
     pub warded: Option<f64>,
@@ -95,10 +99,12 @@ impl Room {
         }
     }
 
-    /// The font cleanses every Rewritten player standing in its light while it is lit, then rests.
+    /// The font cleanses every Rewritten player standing in its light while it is lit: from its first cleanse it
+    /// stays lit FONT_LIT for the rest of the company to reach it, then rests, FONT_REST from that first cleanse.
     fn keep_font(&mut self, breach: &mut Breach, fight: &mut Choir) {
         let Some((font, _)) = breach.plan.socket("choir", "font") else { return };
-        if self.clock < fight.font_rests_until {
+        let lit = self.clock < fight.font_lit_until;
+        if self.clock < fight.font_rests_until && !lit {
             return;
         }
         let cleansed: Vec<PlayerId> = breach
@@ -115,7 +121,9 @@ impl Room {
         if cleansed.is_empty() {
             return;
         }
-        fight.font_rests_until = self.clock + FONT_REST;
+        if !lit {
+            (fight.font_lit_until, fight.font_rests_until) = (self.clock + FONT_LIT, self.clock + FONT_REST);
+        }
         for id in cleansed {
             breach.marked.remove(&id);
             self.tell(EventKind::Cleansed, None, 0, id, 1.0);

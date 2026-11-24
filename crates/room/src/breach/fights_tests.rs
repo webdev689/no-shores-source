@@ -119,7 +119,7 @@ fn the_choirs_snapshot_shows_only_the_bells_woken_so_far_so_their_order_is_learn
 }
 
 #[test]
-fn a_bell_broken_out_of_order_rings_and_rewrites_the_chapel_and_the_font_cleanses_then_rests() {
+fn a_bell_broken_out_of_order_rings_and_rewrites_the_chapel_and_the_font_cleanses_stays_lit_a_moment_then_rests() {
     let (mut room, players) = won_to(Tier::Normal, 2, CHOIR);
     begin_at(&mut room, &players, "choir", "lectern-2");
     ticks(&mut room, 2 * 60 + 3 * choir::WAKE_APART.0);
@@ -135,7 +135,15 @@ fn a_bell_broken_out_of_order_rings_and_rewrites_the_chapel_and_the_font_cleanse
     assert_eq!(breach(&room).marked.len(), 1, "the font cleansed the one in its light");
     put_at(&mut room, players[1], "choir", "font");
     room.tick();
-    assert_eq!(breach(&room).marked.len(), 1, "and rests a while after");
+    assert!(breach(&room).marked.is_empty(), "lit a moment more, for the rest of the company to reach it");
+    put_at(&mut room, players[1], "choir", "lectern-3");
+    ticks(&mut room, choir::FONT_LIT);
+    let mut breach_box = room.breach.take().expect("run");
+    room.rewrite(&mut breach_box, players[1]);
+    room.breach = Some(breach_box);
+    put_at(&mut room, players[1], "choir", "font");
+    room.tick();
+    assert_eq!(breach(&room).marked.len(), 1, "then it rests");
     put_at(&mut room, players[1], "choir", "lectern-3");
     ticks(&mut room, choir::MARK_LASTS);
     assert!(room.players[&players[1]].fighter.dead(), "the mark kept unwrites its player");

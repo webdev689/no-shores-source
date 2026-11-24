@@ -214,7 +214,8 @@ impl Room {
                 seen.bells = woken.map(|(place, _)| u8::try_from(*place).unwrap_or(0)).collect();
                 seen.bell_foes = fight.bells.iter().map(|(_, id)| *id).collect();
                 seen.ring_ticks = fight.ring_at.map_or(0, |at| left(clock, at));
-                seen.font_ticks = left(clock, fight.font_rests_until);
+                // Lit after its first cleanse, it shows lit until it rests.
+                seen.font_ticks = if clock < fight.font_lit_until { 0 } else { left(clock, fight.font_rests_until) };
                 (seen.boss, seen.warded) = (fight.scrivener.unwrap_or(0), fight.warded.is_some());
                 seen.desk = u8::try_from(fight.desk).unwrap_or(0);
                 if let Some((desk, from)) = fight.marked_desk {
