@@ -6,13 +6,13 @@ import {
   countdownText,
   deathWords,
   greyed,
-  distanceText,
   placeWords,
   RESPAWN_SECONDS,
   standingOf,
   vignette,
   WARNING_SECONDS,
 } from './hudLaw.ts';
+import { distanceText } from '../plus/compass.ts';
 
 test('the warning counts down in whole seconds and stops at 0', () => {
   assert.equal(countdownText(9.2), '10');

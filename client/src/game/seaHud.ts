@@ -7,7 +7,9 @@ import type { FightCaptain } from '../rules/fightRules.ts';
 import { runOutAt } from '../ships/fightDisplay.ts';
 import type { Waterline } from '../ships/shipMesh.ts';
 import { seaStrip } from './hints.ts';
-import { sightOf } from './seaHostiles.ts';
+import { sightOf, sightedHostiles } from './seaHostiles.ts';
+import type { Quests } from './quests/quests.ts';
+import type { Chart } from './quests/waypoint.ts';
 import type { Hud } from './hud.ts';
 import type { Sea } from './sea.ts';
 import type { SeaFrame } from './seaFrame.ts';
@@ -34,6 +36,10 @@ export interface SeaHudState {
   readonly notices: readonly string[];
   /** Whether the mouse is free, for a click on the deck to take it. */
   readonly free: boolean;
+  /** The roads, the world their waypoint is found over, and whether the story and the welcome are past. */
+  readonly quests: Quests;
+  readonly chart: Chart;
+  readonly past: boolean;
 }
 
 /** The ships the compass marks at sea, as DFO's helm marks them: in a fight its captains, grey once its colours are
@@ -116,9 +122,16 @@ export function showSeaHud(hud: Hud, here: Sea, shown: SeaFrame, state: SeaHudSt
         }),
   );
   hud.notices([...state.notices, ...(fight && !deck ? fight.messages(state.clock) : [])]);
-  // shortcut: at sea the tracker shows only a fight's task, so a quest's would be hidden; share it once quests sail.
+  // The roads at sea: their waypoint on the compass, from the ship, at the isles and hostile ships in sight or the
+  // landing of the zone a goal is in; in the tracker, a fight's task while one runs, else the quest walked.
+  const isles = (here.isles?.all() ?? []).map(({ seen }) => ({ kind: seen.kind, at: seen.at }));
+  const hostiles = sightedHostiles(here.sighted?.hostiles ?? [], shown.focus).map((ship) => ({
+    faction: ship.faction,
+    at: [ship.x, ship.y] as const,
+  }));
+  const guided = state.quests.guide({ on: 'sea', at: shown.focus, isles, hostiles }, state.chart, state.past);
   const task = fight && !deck ? fight.readout(state.clock) : null;
-  hud.tasks.show(task && seaFightQuest('Sea fight', task.left, task.men));
+  hud.tasks.show(task ? seaFightQuest('Sea fight', task.left, task.men) : state.quests.tracked);
   hud.marks(shown.marks);
   // The player's plate, its abilities' bar, the card and the tally in a fight (on a struck ship's deck, the fight on foot's own),
   // before the ships' plates, which keep under its card.
@@ -132,7 +145,14 @@ export function showSeaHud(hud: Hud, here: Sea, shown: SeaFrame, state: SeaHudSt
   // The held map raised at the helm covers the view, the compass with it.
   const ships = seaShipMarks(here.fight?.captains ?? null, here.sighted, here.fight?.vessel.ship ?? null);
   hud.compass(
-    atHelm ? null : { heading: headingOf(forwardOf(yaw, 0)), from: shown.focus, ships: [...ships, ...state.friendly] },
+    atHelm
+      ? null
+      : {
+          heading: headingOf(forwardOf(yaw, 0)),
+          from: shown.focus,
+          ships: [...ships, ...state.friendly],
+          quest: guided.at,
+        },
   );
   // In a fight, and sailing away to other waters, the sea bar goes: its map, pace, Manage and Leave wait, as its keys do.
   const ship = { canLeave: here.sighted !== null, canManage: true };

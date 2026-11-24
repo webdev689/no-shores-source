@@ -19,3 +19,13 @@ test('the compass shows only the points on its strip, as wide as the view lets i
   const marks = (node.children ?? []).filter((child) => child && child.picture?.key.startsWith('compass bow'));
   assert.equal(marks.length, 1, 'the far ship is past the range');
 });
+
+test('the quest’s waypoint stands on the compass at sea with how far it is under it', () => {
+  const node = compassNode(1280, 0, [0, 0], [], [0, -2400]);
+  const children = node.children ?? [];
+  assert.equal(children.filter((child) => child && child.label === 'Quest').length, 1, 'its diamond');
+  const words = children.flatMap((child) => (child && child.text ? [child.text.words] : []));
+  assert.ok(words.includes('2.4 km'), words.join(' '));
+  const none = (compassNode(1280, 0).children ?? []).filter((child) => child && child.label === 'Quest');
+  assert.equal(none.length, 0, 'none without a waypoint');
+});
