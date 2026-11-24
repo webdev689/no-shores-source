@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { after, test } from 'node:test';
+import { after, mock, test } from 'node:test';
 import type { AccountLink, OutpostSeen } from '../../network/accounts.ts';
 import type { Block } from '../../rules/movementRules.ts';
 import { OutpostHere, useWords } from './outpostHere.ts';
@@ -43,7 +43,11 @@ function outpost(link: AccountLink | null = null) {
   return { here, courses };
 }
 
-test('a bare site stands only the standard’s oak staff at the plot’s middle, whose use says how to raise the outpost', () => {
+test('a bare site stands only the standard’s oak staff at the plot’s middle, whose use says how to raise the outpost', async () => {
+  await keepGuild({
+    guild: () => Promise.resolve({ guild: { key: '0a1b2c3d4e5f60718293a4b5c6d7e8f9', rank: 0, banner: {} } }),
+    outposts: () => Promise.resolve({ allowed: 1, outposts: [] }),
+  } as unknown as AccountLink);
   const { here } = outpost();
   const props = here.props();
   assert.deepEqual(
@@ -304,4 +308,123 @@ test('while placing, the law’s words show and Place is offered on the strip on
   assert.deepEqual(offered(), ['[ / ]', 'use', 'Esc'], 'green: Place');
   letGo();
   assert.equal(placingStrip(), null);
+});
+
+test("a company guest in another guild's outpost is offered only the Delve Gate's way down, never its own guild's page", () => {
+  const key = '0a1b2c3d4e5f60718293a4b5c6d7e8f9';
+  const course = { setCourse: () => undefined };
+  const delved: unknown[] = [];
+  const guest = new OutpostHere(
+    'gull-cove-outpost',
+    GROUND,
+    null,
+    { boxes: [], courses: [course] },
+    (...asked) => void delved.push(asked),
+    { guild: key, own: false },
+  );
+  made.push(guest);
+  const gate = structure(4, 'gate', 6, 12, 1);
+  const scaffold = structure(5, 'dock', 0, 12, 0, 1);
+  guest.take({ ...SEEN, plot: { ...SEEN.plot, structures: [...SEEN.plot.structures, gate, scaffold] } });
+  for (const standing of [...SEEN.plot.structures, scaffold]) {
+    const [atX, atY] = socketOf(standing, GROUND, '', standing.kind === 'dock' ? 'stores' : 'use');
+    assert.equal(
+      guest.uses(atX, atY, () => undefined),
+      null,
+      `nothing at the ${standing.kind}`,
+    );
+  }
+  const [wellX, wellY] = decorPlaceOf(SEEN.plot.decor[0] ?? { id: 0, piece: '', x: 0, y: 0, turn: 0 }, GROUND).at;
+  assert.equal(
+    guest.uses(wellX, wellY, () => undefined),
+    null,
+    'nothing at a piece',
+  );
+  const [doorX, doorY] = socketOf(gate, GROUND, '', 'door');
+  const delve = guest.uses(doorX, doorY + 1.5, () => undefined);
+  assert.equal(delve?.words, 'Delve: Normal', 'down with their company');
+  delve?.run();
+  assert.equal(delved.length, 1);
+  guest.take(null);
+  assert.equal(
+    guest.uses(...GROUND.plot, () => undefined),
+    null,
+    'no raise prompt at a site the host has not raised',
+  );
+});
+
+test('standing still at an outpost reads its plot once: again only when the room says it stood another', () => {
+  mock.timers.enable({ apis: ['setInterval', 'setTimeout'] });
+  let reads = 0;
+  const link = { outpost: () => (reads++, Promise.resolve('The accounts are away.')) } as unknown as AccountLink;
+  const heard = { plots: 1 };
+  const course = { setCourse: () => undefined };
+  const joined = { guild: null, own: true };
+  const here = new OutpostHere(
+    'gull-cove-outpost',
+    GROUND,
+    link,
+    { boxes: [], courses: [course] },
+    undefined,
+    joined,
+    heard,
+  );
+  made.push(here);
+  for (let second = 0; second < 3600; second++) {
+    mock.timers.tick(1000);
+    here.uses(0, 0, () => undefined);
+  }
+  mock.timers.reset();
+  assert.equal(reads, 1, 'an hour standing still');
+  heard.plots++;
+  here.uses(0, 0, () => undefined);
+  assert.equal(reads, 2);
+});
+
+test('the raise prompt goes only to the founder or an admin whose level allows another outpost', async () => {
+  const key = '0a1b2c3d4e5f60718293a4b5c6d7e8f9';
+  const guilds = [
+    { rank: 2, allowed: 2 },
+    { rank: 0, allowed: 1 },
+    { rank: 1, allowed: 2 },
+  ];
+  let now = guilds[0] ?? { rank: 2, allowed: 2 };
+  const link = {
+    guild: () => Promise.resolve({ guild: { key, rank: now.rank, banner: {} } }),
+    outposts: () => Promise.resolve({ allowed: now.allowed, outposts: [{ site: 'far-rocks-outpost' }] }),
+    outpost: () => Promise.resolve('The accounts are away.'),
+  } as unknown as AccountLink;
+  const { here } = outpost(link);
+  const offered: (string | undefined)[] = [];
+  for (const guild of guilds) {
+    now = guild;
+    await keepGuild(link);
+    offered.push(here.uses(...GROUND.plot, () => undefined)?.words);
+  }
+  assert.deepEqual(offered, [undefined, undefined, "Raise your guild's outpost here from the Guild tab."]);
+});
+
+test('the War Horn is offered to sound only while it has not sounded this week; a refused place shows no E', async () => {
+  const key = '0a1b2c3d4e5f60718293a4b5c6d7e8f9';
+  let hornSounded = false;
+  const link = {
+    guild: () => Promise.resolve({ guild: { key, rank: 0, banner: {} } }),
+    outposts: () => Promise.resolve({ allowed: 1, outposts: [], hornSounded }),
+    outpost: () => Promise.resolve('The accounts are away.'),
+  } as unknown as AccountLink;
+  await keepGuild(link);
+  const { here } = outpost(link);
+  const horn = structure(3, 'horn', 12, 0, 1, 0);
+  here.take({ ...SEEN, plot: { ...SEEN.plot, structures: [...SEEN.plot.structures.slice(0, 2), horn] } });
+  const [hornX, hornY] = socketOf(horn, GROUND, '', 'use');
+  assert.equal(here.uses(hornX, hornY, () => undefined)?.words, 'Sound the War Horn');
+  hornSounded = true;
+  await guildRead();
+  assert.equal(here.uses(hornX, hornY, () => undefined)?.words, 'War Horn I', 'sounded this week: its name alone');
+  startPlacing('gull-cove-outpost', 'bench');
+  const onHall = placeOf(structure(1, 'hall', 6, 6), GROUND, '').at;
+  const refused = here.uses(onHall[0], onHall[1], () => undefined);
+  assert.equal(refused?.words, 'A structure stands there.');
+  assert.equal(refused?.idle, true, 'E does nothing there, so no key is shown');
+  letGo();
 });

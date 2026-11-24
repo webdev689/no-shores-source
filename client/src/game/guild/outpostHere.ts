@@ -21,13 +21,11 @@ import { type Ground, type Placed, decorPlaceOf, placeOf, plotBoxes, socketOf } 
 
 /**
  * An outpost as the page stands it in its room: the plot read from the accounts on arriving, whenever the player
- * changes it, and every so often while there; each structure and piece of decoration drawn as a prop where the plot's
+ * changes it, and whenever the room says it stood the plot anew; each structure and piece of decoration drawn as a prop where the plot's
  * reckoning stands it, the same boxes walled in the page's own movement and fight as the room walls, and what E does
  * at each. A wild site, or one whose outpost is not raised, is bare ground with the standard's staff at its middle.
  */
 
-/** How often the plot is read again while the player is there. */
-const LOOK_MS = 15_000;
 /** How near a structure's socket, or a piece of decoration, E reaches, metres. */
 const REACH_M = 2.5;
 /** How far behind a structure's socket, along the way its front faces, a player may stand and still use it. */
@@ -150,7 +148,6 @@ export class OutpostHere {
   private takenUp: { readonly id: number; readonly why: string } | null = null;
   /** The way the player faced when last asked what E does: a piece being placed stands before them. */
   private facing = 0;
-  private readonly timer: ReturnType<typeof setInterval>;
 
   readonly site: string;
   private readonly ground: Ground;
@@ -178,7 +175,6 @@ export class OutpostHere {
     this.room = nodeRoom({ id: site, kind: 'outpost' }, 'normal', joined.guild);
     this.shown = this.standing();
     this.look();
-    this.timer = setInterval(this.look, LOOK_MS);
     addEventListener(OUTPOST_CHANGED, this.look);
     addEventListener(OUTPOST_DELVE, this.delveAsked);
   }
@@ -327,7 +323,7 @@ export class OutpostHere {
         dispatchEvent(new Event(OUTPOST_CHANGED));
       });
     };
-    return { words: refusal ?? placing.said ?? `Place the ${name}`, run };
+    return refusal === null ? { words: placing.said ?? `Place the ${name}`, run } : { words: refusal, run, idle: true };
   }
 
   /** Every prop the outpost stands as: each structure and piece of decoration, or the post while it is bare. */
@@ -357,26 +353,33 @@ export class OutpostHere {
     // A hold under way lasts only while each frame finds the same piece again (`takeUp`).
     const taking = this.taking;
     this.taking = null;
-    const placing = this.place([x, y], ask);
+    // A company guest goes down the Delve Gate with their company and does nothing else in another guild's outpost:
+    // the Guild tab E would open is their own guild's, which holds no structure of these ids here.
+    const guest = !this.entered.own;
+    const placing = guest ? null : this.place([x, y], ask);
     if (placing) return placing;
     const { seen, ground, site } = this;
     const near = ([atX, atY]: readonly [number, number] | readonly number[]) =>
       Math.hypot((atX ?? 0) - x, (atY ?? 0) - y) <= REACH_M;
+    const guild = guildLanded();
     if (!seen) {
-      return near(ground.plot)
+      const raises = !guest && guild !== null && guild.rank <= 1 && guild.allowsAnother;
+      return raises && near(ground.plot)
         ? { words: RAISE_WORDS, run: () => openGearWindow({ view: 'guild', outpost: { site } }) }
         : null;
     }
     const top = gateTier(seen.plot);
-    const runs = this.runs(seen);
+    const runs = !guest && this.runs(seen);
     for (const { standing, at, front } of this.sockets) {
       // Used from its front alone: never through its back wall, its socket within reach beyond it.
       if (!near(at) || (x - at[0]) * front[0] + (y - at[1]) * front[1] < -BEHIND_M) continue;
       // A gate standing goes down at its highest tier; a lower one is chosen on the Guild tab.
       if (standing.kind === 'gate' && standing.building === 0 && top !== null && this.delve)
         return { words: `Delve: ${DELVE_WORDS[top] ?? ''}`, run: () => this.delveAt(top) };
+      if (guest) continue;
       const outpost = { site, structure: standing.id };
-      return { words: useWords(standing, runs), run: () => openGearWindow({ view: 'guild', outpost }) };
+      const words = useWords(standing, runs && guild?.hornSounded !== true);
+      return { words, run: () => openGearWindow({ view: 'guild', outpost }) };
     }
     const piece = this.pieces.find(({ at }) => near(at))?.decor;
     if (!piece || !this.link || !runs) return null;
@@ -430,7 +433,6 @@ export class OutpostHere {
 
   /** Stops reading the plot, as the player leaves. */
   stop(): void {
-    clearInterval(this.timer);
     letGo();
     removeEventListener(OUTPOST_CHANGED, this.look);
     removeEventListener(OUTPOST_DELVE, this.delveAsked);

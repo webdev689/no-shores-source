@@ -3,7 +3,7 @@ import { test } from 'node:test';
 import type { Node, Picture } from '../ui/node.ts';
 import type { Interface } from '../ui/ui.ts';
 import type { AccountLink } from '../network/accounts.ts';
-import { guildHeld, keepGuild } from './guild/guildHeld.ts';
+import { keepGuild } from './guild/guildHeld.ts';
 import { markNodes, type ScreenMark } from './hudMarks.ts';
 
 /** What a picture's drawing does on a context that only notes it. */
@@ -48,11 +48,10 @@ test("the guild's own outposts are marked by a star over the ring and in words, 
   Object.assign(globalThis, { addEventListener: () => undefined });
   const banner = { cut: 'swallowtail', cloth: 'navy', device: 'halves', deviceColour: 'gold', sign: 'anchor' };
   const full = { ...banner, signColour: 'salt', ground: 'roundel', groundColour: 'crimson', staff: 'driftwood' };
-  keepGuild({
+  await keepGuild({
     guild: () => Promise.resolve({ guild: { key: '0a1b2c3d4e5f60718293a4b5c6d7e8f9', rank: 2, banner: full } }),
     outposts: () => Promise.resolve({ outposts: [{ site: 'gull-cove-outpost' }] }),
   } as unknown as AccountLink);
-  await guildHeld();
   await Promise.resolve();
   const ui = { clicked: () => false, hovered: () => false, focusOn: () => undefined } as unknown as Interface;
   const mark = (id: string, named = false) =>
