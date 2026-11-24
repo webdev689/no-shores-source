@@ -22,7 +22,7 @@ import { IDLE, type InputFrame } from '../player/input.ts';
 import { cameraFollowed, playerCamera, shownBody } from '../player/player.ts';
 import { AIM, handsZoom } from '../player/playerCamera.ts';
 import type { PlacedLoop } from '../player/playerMoves.ts';
-import { type OtherPlayers, type Others, ridersOf } from '../player/others.ts';
+import { type OtherPlayers, ridersOf } from '../player/others.ts';
 import type { CombatRules } from '../rules/combatRules.ts';
 import { crosshairOf } from '../combat/reticle.ts';
 import { type FighterView, fighterView } from '../rules/fighters.ts';
