@@ -33,7 +33,7 @@ pub fn radius_of(kind: AreaKind, blocks: u8) -> f64 {
         AreaKind::Ruin | AreaKind::Keep => 75.0,
         AreaKind::Graveyard | AreaKind::Coven | AreaKind::Wilds | AreaKind::Arena => 65.0,
         AreaKind::Quarry | AreaKind::Bones | AreaKind::Causeway => 55.0,
-        AreaKind::Camp | AreaKind::Mill | AreaKind::Landing => 48.0,
+        AreaKind::Camp | AreaKind::Mill | AreaKind::Landing | AreaKind::Breach => 48.0,
         AreaKind::Dock | AreaKind::Wreck | AreaKind::Shrine | AreaKind::Entrance | AreaKind::Gate => 40.0,
         AreaKind::Tower | AreaKind::Lighthouse | AreaKind::Cave => 30.0,
     }
@@ -93,6 +93,8 @@ fn wants(kind: AreaKind, land: &Reading, radius: f64) -> Option<f64> {
             bell(land.slope, 0.35, 0.9, 0.3) * 0.7 + (land.relief / 20.0).min(1.0) * 0.3
         }
         AreaKind::Entrance | AreaKind::Gate => flat(8.0),
+        // A hollow: flat, and lower than the land round it.
+        AreaKind::Breach => flat(8.0) * 0.6 + (0.4 - high.max(0.0) * 0.4),
     };
     (score > 0.0).then_some(score)
 }

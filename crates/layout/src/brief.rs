@@ -55,6 +55,8 @@ pub enum AreaKind {
     Gate,
     /// A graveyard of ships: hulls driven up and left to rot, and the wreckage strewn between them.
     Hulks,
+    /// A Breach's gate: the hollow its opening is fought in, sunk in the land before a cliff and its sealed doorway.
+    Breach,
 }
 
 /// One area a brief asks for.

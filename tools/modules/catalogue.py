@@ -1,5 +1,6 @@
 """Every module the bake builds, by name: its builder and its seed."""
 import adorn
+import breach_gate
 import bridge
 import cavern
 import chapels
@@ -76,5 +77,11 @@ EVENTS = {'lattice-fissure': (fissure.fissure, 101), 'lattice-fissure-sealed': (
           'tithe-banner': (tithe.banner, 115), 'event-chest': (chest.chest, 121), 'event-chest-lid': (chest.chest_lid, 122),
           'event-chest-heroic': (chest.heroic, 123), 'event-chest-heroic-lid': (chest.heroic_lid, 124)}
 for name, (build, seed) in EVENTS.items():
+    BUILDERS[name] = build
+    SEEDS[name] = seed
+# The first Breach's: the Sunken Gate, which the Gullwing Vale's layout stands, and the Drowned Vale's own spaces,
+# placed by its plan (content/breach/) and loaded by the page only on going in.
+BREACH = {'breach-gate': (breach_gate.build, 201)}
+for name, (build, seed) in BREACH.items():
     BUILDERS[name] = build
     SEEDS[name] = seed
