@@ -61,7 +61,7 @@ fn the_page_reads_the_drowned_vales_plan_and_its_tiers() {
     assert_eq!(plan["encounters"][0]["outside"], true, "the Waking is fought in the patrol zone");
     assert_eq!(plan["encounters"][1]["space"], "mending");
     assert_eq!(plan["tiers"][0]["revives"], Value::Null);
-    assert_eq!(plan["tiers"][1], json!({ "key": "hard", "name": "Hard", "level": 30, "opens": 28, "revives": 5 }));
+    assert_eq!(plan["tiers"][1], json!({ "key": "hard", "name": "Hard", "level": 30, "opens": 29, "revives": 5 }));
     assert_eq!(plan["horse"], "drowned");
 }
 
