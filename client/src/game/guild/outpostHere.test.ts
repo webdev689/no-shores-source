@@ -129,9 +129,9 @@ test("the guild's banner hangs from its standard's cloth socket, turned as the s
   const hung = here.cloth();
   assert.equal(hung?.turn, Math.PI / 2);
   assert.equal(hung?.banner.staff, 'driftwood', "the guild's banner, its name's while it keeps none");
-  // The socket stands 0.15 m before the pole and 5.35 m up: turned a quarter, before it is to the west.
+  // The socket stands 0.15 m before the pole and 5.45 m up, on the crossbar: turned a quarter, before it is west.
   assert.ok(Math.abs((hung?.at[0] ?? 0) - (placed.at[0] - 0.15)) < 1e-9);
-  assert.ok(Math.abs((hung?.at[2] ?? 0) - (GROUND.level + 5.35)) < 1e-9);
+  assert.ok(Math.abs((hung?.at[2] ?? 0) - (GROUND.level + 5.45)) < 1e-9);
 });
 
 test('at a Delve Gate standing, its prompt goes down at the highest tier it opens, out before its door', () => {
