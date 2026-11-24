@@ -40,6 +40,11 @@ export const EVENT = {
   /** An Ascent's drowned floor harmed the player, told to them alone; the warded Boss's slam landed. */
   drowned: 33,
   bossSlammed: 34,
+  /** A fallen player stood up by an ally (the striker), an activity's checkpoint reached, and a company all down in
+   *  a darkness zone fallen back to its checkpoint (crates/room/src/revive.rs). */
+  revived: 35,
+  checkpoint: 36,
+  fellBack: 37,
 } as const;
 export const HOW = { riposte: 2, counter: 3, shot: 6, spell: 7, leap: 8, burst: 9, bite: 10 } as const;
 

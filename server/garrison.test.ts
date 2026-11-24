@@ -79,7 +79,10 @@ function runIn(node: object): { hash: string; mostAlert: number; events: number 
     const swing = !running && tick % SWING_EVERY === 0 ? 1 : 0;
     const intent = new Float64Array([running ? 1 : 0, 0, 0, 1, 0, 0, 0, swing, 0, 0, 0, 0, 0, NaN, NaN, NaN, 0]);
     const look = { anim: '', frame: 0, facing: 0 };
-    assert.equal(room.input(player, inputBytes(tick, { intent, look, arms: 0, seen: BigInt(tick - 1) })), 'taken');
+    assert.equal(
+      room.input(player, inputBytes(tick, { intent, look, arms: 0, seen: BigInt(tick - 1), respawn: true })),
+      'taken',
+    );
     room.tick();
     const bytes = room.snapshot(player);
     for (const byte of bytes) hash = Math.imul(hash ^ byte, 0x0100_0193) >>> 0;
@@ -101,7 +104,7 @@ test('a node’s garrison fights to the same fingerprint through WebAssembly as 
 
 /** The room door's agreement test holds the same run and fingerprint: the node as a patrol whose layout marks a foes'
  *  site the player runs near, so its group stands mid-run on a mesh baked round it then. */
-const PATROL_SITE_HASH = 'ea374418';
+const PATROL_SITE_HASH = '5e2b263c';
 
 test('a patrol’s foes’ site stands its group to the same fingerprint through WebAssembly as natively', () => {
   const { hash, mostAlert } = runIn({ ...NODE, kind: 'patrol', foes: [[-60, 40]] });
@@ -126,7 +129,10 @@ test('two players against a node’s garrison fight to the same fingerprint thro
       const swing = !running && (tick + 15 * index) % SWING_EVERY === 0 ? 1 : 0;
       const intent = new Float64Array([running ? 1 : 0, 0, 0, 1, 0, 0, 0, swing, 0, 0, 0, 0, 0, NaN, NaN, NaN, 0]);
       const look = { anim: '', frame: 0, facing: 0 };
-      assert.equal(room.input(player, inputBytes(tick, { intent, look, arms: 0, seen: BigInt(tick - 1) })), 'taken');
+      assert.equal(
+        room.input(player, inputBytes(tick, { intent, look, arms: 0, seen: BigInt(tick - 1), respawn: true })),
+        'taken',
+      );
     });
     room.tick();
     // Each player's own snapshot, the first's then the second's; every event comes in both.

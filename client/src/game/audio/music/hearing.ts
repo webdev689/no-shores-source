@@ -47,8 +47,9 @@ export function hearFoot(place: Place, fight: FootHeard): Hearing {
   const struck = new Set<number>();
   let kills = 0;
   for (const event of events) {
-    // A player standing again or drinking names only themselves: no fight.
-    if (event.kind === EVENT.respawned || event.kind === EVENT.healed) continue;
+    // A player standing again, revived or drinking, or the run's word on its checkpoints, is no fight.
+    const calm: readonly number[] = [EVENT.respawned, EVENT.revived, EVENT.healed, EVENT.checkpoint, EVENT.fellBack];
+    if (calm.includes(event.kind)) continue;
     if (event.striker === player) struck.add(event.defender);
     if (event.defender === player) struck.add(event.striker);
     if (event.kind === EVENT.killed && event.striker === player) kills++;

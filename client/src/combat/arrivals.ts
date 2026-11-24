@@ -55,9 +55,10 @@ export class Arrivals {
     if (this.here) this.arrive(id, clock);
   }
 
-  /** Each fighter `events` tells respawned arrives at `clock`. */
+  /** Each fighter `events` tells respawned or revived arrives at `clock`. */
   told(events: readonly FightEvent[], clock: number): void {
-    for (const event of events) if (event.kind === EVENT.respawned) this.arrive(event.defender, clock);
+    const stands = (kind: number) => kind === EVENT.respawned || kind === EVENT.revived;
+    for (const event of events) if (stands(event.kind)) this.arrive(event.defender, clock);
   }
 
   /** How much of `id`'s figure is still to come at `clock`, 1 none to 0 whole, as a plain death crumbles it in held

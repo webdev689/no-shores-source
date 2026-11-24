@@ -22,6 +22,7 @@ import { FrameGuard } from '../frameGuard.ts';
 import { PERF, perfOn, PerfMeter } from '../perfMeter.ts';
 import { autoChosen, heardFrame } from './renderScale.ts';
 import type { Foot } from './foot.ts';
+import { type Fallen, ReviveNotices } from './footRevive.ts';
 import type { FootView } from './footView.ts';
 import type { FriendlyTraffic, FriendlyWater } from './friendlyShips.ts';
 import { contextOf } from './gameKeys.ts';
@@ -131,9 +132,10 @@ export interface FrameParts {
   readonly leave: () => void;
   readonly travel: (happening: Happening, work: () => Promise<void>) => void;
   readonly goFoot: (node: NodeInfo, facing: number) => Promise<void>;
-  /** The story that opens the game, if it does, and the arrival at the first node it hands the player to. */
+  /** The story that opens the game, if it does, and the arrival at the first node it hands the player to: `resuming`,
+   *  where they last left the overworld or a social space (`relog.ts`). */
   readonly story: StoryHost | null;
-  readonly arrive: () => void;
+  readonly arrive: (resuming?: boolean) => void;
   /** The sea's islands kept, shown and walked ashore on, each frame; their drawer; and the ground the camera keeps
    *  over, the islands' with the land's. */
   readonly isleFrame: () => void;
@@ -179,12 +181,13 @@ export function startFrames(parts: FrameParts, playing: Playing): void {
     return entrances ? [entrances, ...drawn] : drawn;
   };
 
-  const showStanding = (shown: Standing) => {
-    hud.reach(shown);
-    // Death's grey over the world is the one mark of it, once death is told (a fall plays out in colour first):
-    // leaving a place takes it off.
-    const [dead, wasDead] = [greyed(shown), drain.dead];
-    if (dead && !wasDead) document.exitPointerLock();
+  const showStanding = (shown: Standing, fallen: Fallen | null = null) => {
+    hud.reach(shown, fallen);
+    // Death's grey over the world is the one mark of it, once death is told (a fall plays out in colour first) or as
+    // the player falls in the fight: standing again, or leaving the place, takes it off. A fall in a fight keeps the
+    // pointer, to look round while an ally comes; Respawn's key works either way.
+    const [dead, wasDead] = [greyed(shown) || fallen !== null, drain.dead];
+    if (greyed(shown) && !wasDead) document.exitPointerLock();
     drain.toward(dead);
   };
   /** What the mount key says with no horse worn in the Mount slot. */
@@ -195,6 +198,8 @@ export function startFrames(parts: FrameParts, playing: Playing): void {
     if (walker.takeNoHorse()) playing.told = { words: NO_HORSE, until: performance.now() + TOLD_MS };
     return playing.told && performance.now() < playing.told.until ? [playing.told.words] : [];
   };
+  /** An ally down, a revive given or taken, a checkpoint reached: told over the middle of the view on foot. */
+  const reviveNotices = new ReviveNotices();
 
   const footFrame = (here: Foot, controls: InputFrame, seconds: number, size: { width: number; height: number }) => {
     if (parts.heed(here)) return true;
@@ -259,9 +264,7 @@ export function startFrames(parts: FrameParts, playing: Playing): void {
     const ward = quests.wardPlate(parts.groundAt);
     const foes = ward ? [...shown.fight.foes, ward] : shown.fight.foes;
     const players = platedPlayers(here.otherPlayers, [body.x, body.y, body.z]);
-    // Whether the room will stand a fallen player again on its own, for the veil's words.
-    const fallen = { revivesLeft: here.held.revives, sectionDead: shown.standing.kind === 'dead' };
-    const questShown = { ...shown, fight: { ...shown.fight, foes, questAt: quests.goalAt, players, ...fallen } };
+    const questShown = { ...shown, fight: { ...shown.fight, foes, questAt: quests.goalAt, players } };
     const fight = footView.frame(here, questShown, seconds, { size, viewport, groundAt: here.groundAt });
     // Use held on another player opens their menu, where it does nothing else (a deed or a gate) and no menu or map is up.
     const offered = !paused && !looking && !here.fallen && !hud.usePrompt.showing && !playing.through;
@@ -306,8 +309,8 @@ export function startFrames(parts: FrameParts, playing: Playing): void {
     const cards = [...(eye ? clearOfEye(near, eye, here.ownFigure) : near), ...met];
     if (here.dungeon) parts.dungeons.draw(here, shown, size, clock, fight, hands, more.drain);
     else scene.draw(shown.shot, size, clock, seconds, standing(ships, cards, fight), more);
-    showStanding(shown.standing);
-    hud.place(here.node.name, placeWords(here.node, here.roomName, here.held.revives));
+    showStanding(shown.standing, here.fell);
+    hud.place(here.node.name, placeWords(here.node, here.roomName, here.held.revives, here.held.darkness));
     // As E's other use, a gate takes no one while a menu or the held map is up, the player is down or in a dungeon.
     const gated = paused || looking || here.fallen || here.dungeon;
     playing.through = gated ? null : gateWay(playing.landmass, here.node.id, [body.x, body.y]);
@@ -324,7 +327,9 @@ export function startFrames(parts: FrameParts, playing: Playing): void {
     hud.marks(looking ? [] : quests.marks(shown.shot, viewport, [body.x, body.y], parts.groundAt, here.node.id));
     // The tracker is set once a frame, so a public event's steps stand in it unblinking, in the quest's place.
     hud.tasks.show(shown.quest ?? quests.tracked);
-    hud.toast(...toldNow(), ...quests.toasts, ...playing.lore.toasts);
+    const nameOf = (id: number) => (here.fight.others.has(id) ? (here.otherPlayers.plateOf(id)?.name ?? '') : null);
+    reviveNotices.hear(shown.fight.events, here.fight.player, nameOf, performance.now());
+    hud.toast(...toldNow(), ...reviveNotices.lines(performance.now()), ...quests.toasts, ...playing.lore.toasts);
     heldHud(hud, footView, told);
     hideSeaHud(hud);
     hud.note(here.roomNote);
@@ -404,7 +409,8 @@ export function startFrames(parts: FrameParts, playing: Playing): void {
     const crews = parts.crews.cards(ships, shown.shot, viewport.height, seconds, clock);
     const drawers = standing(ships, [...shown.figures, ...crews], herDeck);
     scene.draw(shown.shot, size, clock, seconds, drawers, more);
-    showStanding(here.boarding.standing ?? { kind: 'inside' });
+    // A boarder fallen on its deck is told so as on foot, Respawn with it.
+    showStanding(here.boarding.standing ?? { kind: 'inside' }, here.boarding.foot?.fell ?? null);
     const { landmass, seaWord } = playing;
     // The status chip keeps the state alone; the watch's and the sea's word are DFO's toasts. In a fight the fight's
     // own messages say who is sighted, so the watch's last line gives way.
@@ -450,7 +456,8 @@ export function startFrames(parts: FrameParts, playing: Playing): void {
     playing.after.storyEnded(left.epilogue);
     walker.you.dress = left.dress;
     playing.flow = next(playing.flow, { kind: 'story-ended', node: FIRST_NODE, name: 'Overlook' });
-    parts.arrive();
+    // One who played the story through arrives at Overlook, where its welcome waits; one back from the title resumes.
+    parts.arrive(left.epilogue === null);
   };
 
   /** The GPU's work for the frame drawn last. */
