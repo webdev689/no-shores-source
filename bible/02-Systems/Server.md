@@ -624,9 +624,9 @@ so every decision is Rust and the shell only carries bytes and time.
   (`<room>:<host start>:<player>:<errand>`), under which the accounts keep their answer in the same write as the
   errand; one they throw on is asked again under it, every 10 s at last, for as long as the room lives, so one that
   went through answers as it did and is never done or given back twice. A room that goes while the accounts are
-  down loses what such an errand took (see Limits). The horn's answer is its tier, or 0
-  (sounded this week), -1 (not the founder or an admin) or -2 (no horn at a tier), each its own refusal. A leaving
-  player's last save waits for their errands in flight, 30 s at most, its timer armed only while one is, and the room
+  down loses what such an errand took (see Limits). The horn's answer is its tier, or 0 (sounded this week), -1 (not
+  the founder or an admin), -2 (no horn at a tier) or -3 (past the accounts' limit on asks), each its own refusal. A
+  leaving player's last save waits for their errands in flight, 30 s at most, its timer armed only while one is, and the room
   is told they are leaving (`room_outpost_parting`): their account joining again meanwhile takes it over
   (`Room::own`) and is given each answer. An answer after they left is kept by the room for their account's next
   claim there.

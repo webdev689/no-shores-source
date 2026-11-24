@@ -279,6 +279,8 @@ pub enum Refusal {
     NoHorn = 164,
     /// A guild claim judged by a standing read for another week: the week has just turned.
     GuildWeekTurning = 165,
+    /// An outpost's ask past the accounts' limit on asks an hour.
+    TooManyAsks = 166,
 }
 
 /// What an ask did, when it did more than its ask says.

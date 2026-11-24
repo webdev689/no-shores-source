@@ -21,7 +21,8 @@ function accounts(guilds: Record<string, string>, companies: Record<string, stri
     companions: (account: string) => asked(companies[account] ?? [account]),
     guild: (account: string) => {
       const id = guilds[account];
-      return asked(id ? { id, done: [], beforeTheWeek: true, boons: { xp: 0, aurem: 0, reputation: 0 } } : null);
+      const boons = { xp: 0, aurem: 0, reputation: 0 };
+      return asked(id ? { id, done: [], beforeTheWeek: true, boons, week: 2_916 } : null);
     },
   };
 }
