@@ -51,7 +51,7 @@ test('a room welcomes players, takes the inputs a browser writes in order, and i
   const [first, second] = [room.join(), room.join()];
   // The room speaks the protocol the page was built from: the same schema's hash.
   const protocol = PROTOCOL;
-  const plate = (player: number, more = {}) => ({ player, name: '', level: 1, menu: false, ...more });
+  const plate = (player: number, more = {}) => ({ player, name: '', level: 1, menu: false, tag: '', ...more });
   assert.deepEqual(readFromRoom(room.joined(first)), {
     kind: 'joined',
     player: first,
@@ -87,10 +87,17 @@ test('a room welcomes players, takes the inputs a browser writes in order, and i
   // Named by their account and with a menu open, a player's plate goes to everyone once, as a dress does.
   assert.equal(room.name(first, 'Mariner'), true);
   assert.equal(room.name(second, 'not a name'), false);
+  assert.equal(room.tag(first, 'SALT'), true);
+  assert.equal(room.tag(second, 'not a tag'), false);
+  const told = { id: 'guild-salt', done: [true, false, false, false], beforeTheWeek: true };
+  assert.equal(room.guild(first, JSON.stringify(told)), true, "the guild's word is taken");
+  assert.equal(room.guild(first, ''), true, 'and none, for a player who left it');
+  assert.equal(room.guild(first, '{"id":3}'), false, 'but not a word that is no guild');
+  assert.equal(room.guild(99, ''), false, 'nor for a player not there');
   const busy = inputBytes(32, { intent: walk, look: walking, arms: 0, seen: snapshot.tick, menu: true });
   assert.equal(room.input(first, busy), 'taken');
   room.tick();
-  const named = plate(first, { name: 'Mariner', menu: true });
+  const named = plate(first, { name: 'Mariner', menu: true, tag: 'SALT' });
   // The page's screen showed the tick before, so only what changed since comes.
   assert.deepEqual((readFromRoom(room.snapshot(first)) as { plates: unknown }).plates, [named]);
   const third = room.join();
@@ -110,7 +117,7 @@ test('a room welcomes players, takes the inputs a browser writes in order, and i
   const { plates } = readFromRoom(room.snapshot(second)) as unknown as { plates: { player: number }[] };
   assert.deepEqual(
     plates.filter((each) => each.player === first),
-    [plate(first, { name: 'Mariner' })],
+    [plate(first, { name: 'Mariner', tag: 'SALT' })],
   );
 });
 
@@ -213,7 +220,7 @@ test('a node’s room warns a player past its edge, kills them 60 m out, and res
   assert.equal(room.openNode(text), true);
   const [first, second] = [room.join(), room.join()];
   const node = { id: 'glade', bounds: [-150, -150, 150, 150] };
-  const plate = (player: number) => ({ player, name: '', level: 1, menu: false });
+  const plate = (player: number) => ({ player, name: '', level: 1, menu: false, tag: '' });
   assert.deepEqual(readFromRoom(room.joined(first)), {
     kind: 'joined',
     player: first,
@@ -385,13 +392,13 @@ test('a sea where a Tithe ship attacks a friendly ship and a player joins them s
   const player = room.join();
   const out = [
     [450_000, 97_000],
-    [340_000, 92_000],
+    [340_000, 86_000],
   ] as const;
   assert.equal(room.input(player, courseBytes(out, 10)), 'taken');
   let hash = 0xcbf2_9ce4_8422_2325n;
   let friendly = false;
   for (let tick = 1; tick <= 16_000; tick++) {
-    if (tick === 1_831) assert.equal(room.input(player, courseBytes([[441_700, 96_800]], 10)), 'taken');
+    if (tick === 1_831) assert.equal(room.input(player, courseBytes([[441_700, 96_350]], 10)), 'taken');
     room.tick();
     if (tick % 60 !== 0) continue;
     const bytes = room.snapshot(player);
@@ -402,7 +409,7 @@ test('a sea where a Tithe ship attacks a friendly ship and a player joins them s
     friendly ||= others.some((other) => other.faction === 0);
   }
   assert.ok(friendly, 'the player fights beside the friendly ship');
-  assert.equal(hash.toString(16).padStart(16, '0'), '8aa4922bbf32e293');
+  assert.equal(hash.toString(16).padStart(16, '0'), 'ff1c9de49419087d');
 });
 
 test('a fleet room sails the ships a browser orders, and the browser predicts its own to the bit', () => {

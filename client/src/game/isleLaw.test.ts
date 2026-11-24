@@ -115,11 +115,12 @@ test("a door's dungeon room is named by its continent, style and the island's se
 test("an island's room is named by its number and its seed in 16 hex digits, and it stands in world metres", () => {
   const island = seen(7, [5000, 6000], 'ruin');
   assert.equal(isleRoomName(island), 'isle-7-00000000000000ff');
-  const plan = { ring: [[1, 2]], spawns: [[3, 4]], nodes: [[10, 20]] } as const;
+  const plan = { ring: [[1, 2]], spawns: [[3, 4]], nodes: [[10, 20]], wrecks: [[30, 40, 0]] } as const;
   const node = isleNode(island, plan, { continent: 'continent-4', seas: 'normal' });
   assert.equal(isleRoomName(island, 'abyss'), 'isle-7-00000000000000ff--abyss');
   assert.deepEqual([node.ring, node.spawns, node.name], [[[5001, 6002]], [[5003, 6004]], 'A ruined isle']);
   assert.deepEqual(node.resources, [{ at: [5010, 6020], holds: 'sunstone' }], "its nodes give Sunspire's resource");
+  assert.deepEqual([node.isle, node.wrecks], ['ruin', [[5030, 6040]]], 'its kind, and its wrecks where they lie');
 });
 
 test('E scavenges a wreck within reach until the room says it is spent, else opens the door, else nothing', () => {

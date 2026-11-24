@@ -11,7 +11,7 @@ import type { Child, Node } from '../ui/node.ts';
 import type { Interface } from '../ui/ui.ts';
 import { emblemOf } from '../plus/emblemArt.ts';
 import { INK, emblemNode, plateNode, pressNode, svgNode, words } from './gearNodes.ts';
-import { ROSTER_HEARD } from './gearScreen.ts';
+import { GUILD_CHANGED, ROSTER_HEARD } from './gearScreen.ts';
 import type { PlainContext } from './menuPage.ts';
 import { answerNode, PRESS_PADDING } from './menuPages.ts';
 import { DETAILS_BACK, detailsNode } from './playerDetails.ts';
@@ -254,6 +254,7 @@ export class RosterPage {
       .then((why) => {
         this.say(why ?? `${action.label}: done.`);
         if (why !== null) return;
+        if (action.path?.startsWith('guild/')) dispatchEvent(new Event(GUILD_CHANGED));
         this.closePanel();
         if (action.opens === 'join' && person) this.goTo(person);
       })

@@ -41,6 +41,7 @@ export function detailsNode(
   ];
   if (found.guild) facts.push(['Guild', `[${found.guild.tag}] ${found.guild.name} · ${found.guild.rank}`]);
   if (found.guild?.motto) facts.push(['Motto', found.guild.motto]);
+  if (found.guild?.description) facts.push(['About', found.guild.description]);
   if (found.shown) facts.push(['Attack', String(found.shown.attack)], ['Defense', String(found.shown.defense)]);
   // The pieces stand in as many columns of at least 220 pixels as the page has room for, sharing it.
   const inner = Math.min(PAGE_PX, room.width) - 36;

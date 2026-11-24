@@ -38,11 +38,20 @@ export interface Opening {
   readonly shelf?: string;
   /** Shuts the menu where it already stands at the view, as its key does. */
   readonly toggle?: boolean;
+  /** The Guild tab's Outposts page, on the outpost at a site and one of its structures, as using it asks. */
+  readonly outpost?: { readonly site: string; readonly structure?: number };
 }
 /** The page event that opens the menu at a view, as a station's counter does. */
 export const OPEN_AT = 'overlook:gear';
 /** The event the account's page sends once the player signs in or takes a username, so the banner names them. */
 export const ACCOUNT_CHANGED = 'overlook:account';
+/** The event sent once a player's guild changes (founded, joined, left), so the room reads their plate's tag again. */
+export const GUILD_CHANGED = 'overlook:guild';
+/** Said on the window when the player changed an outpost's plot through the accounts, so the outpost drawn reads it
+ *  again. */
+export const OUTPOST_CHANGED = 'overlook:outpost';
+/** Said on the window when the player asks, from the Guild tab, to delve the guild dungeon at a tier (its detail). */
+export const OUTPOST_DELVE = 'overlook:delve';
 /** The event the Roster sends with each answer it hears, so the company on the HUD need not ask as well. */
 export const ROSTER_HEARD = 'overlook:roster';
 

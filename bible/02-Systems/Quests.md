@@ -156,8 +156,8 @@ stall serves; the stranger is heard in a social space alone, never at the stall.
   [[The Journal Holds the Quests, the Bounties at Its Side and the Timers at Its Top]]): a card for the quest walked,
   at its task, and one for each quest done, in the file's order, each its name, the first line its `begin` says, and
   its task's number and words; nothing from a word not on the player's own character.
-- **The tracker** shows the quest walked on foot, once the story and the stranger's welcome are past: its name, its task and
-  each goal's words with its count.
+- **The tracker** shows the quest walked, on foot and at sea, once the story and the stranger's welcome are past: its
+  name, its task and each goal's words with its count, and under an unmet goal's words its way ("Marks").
 - **Lore**: a chapter the lore's file gives to a task is found as the task is done ([[Lore]]). Each house's road
   gives its house's book a chapter a task, the last as the road ends ([[Each House's Lore Book Tells Its Art's Origin]]).
 - **The lines** are the speech system's ([[Speech]]): a quest's `begin` as it is first walked, a task's `end` as it is
@@ -165,7 +165,28 @@ stall serves; the stranger is heard in a social space alone, never at the stall.
   mid-road says nothing it has said before. How they are written: [[Every Line Reads as Spoken, and the Lore Is Detailed, Mysterious and Gripping]].
 - **Speaking with a keeper**: within reach of a counter that a `talk` goal of the task names, the offer reads "Speak
   with" and the keeper's name; pressed, it asks 64 and the lines are said. Otherwise the counter opens as before.
-- **Marks**: `quest_at` stands a mark at its place, and the held map at sea rings the nodes the task's goals name (the land's map, raised on foot, draws no places). Both give way while the map is up.
+- **Marks**: every objective has a waypoint on the compass, on land and at sea, its distance under it, and on foot a
+  mark on the screen where it points ([[Every Objective Has a Waypoint on the Compass, on Land and at Sea]];
+  `client/src/game/quests/waypoint.ts`). It points at the task's first unmet goal with somewhere to point, step by step
+  from where the player stands:
+  - in the goal's zone, at the goal: the room's `quest_at` (its place, the figure walked with, the next checkpoint,
+    the ward), else its place, a keeper's counter (any chapel for a pledge, the smith for a buy), the nearest foe of
+    its types in sight, or the nearest materials to gather;
+  - in a patrol whose gate leads to the goal's zone (a dungeon's, a boss's), at that gate, its step saying "Through the
+    gate to" the zone; in an instance reached through a gate, back through it the same way;
+  - on any other land, at the landing of the zone it is landed at, across the water, its step saying "Hold M to return
+    to your ship"; at sea, at that landing, its step saying "Sail to" the zone;
+  - a goal with no zone of its own at the nearest place to do it: a talk, a pledge or a buy at the nearest social space
+    with its keeper, gathering at the nearest patrol with materials; one done at sea (a ship of its side beaten, an
+    isle or a cove landed on, wrecks searched, an isle's leader) at the nearest in sight at sea, its step saying "None
+    in sight: sail the open sea" while none is, and "Hold M to return to your ship" from land;
+  - a goal done anywhere (an Art's spell cast, a piece worn) at nothing, its step saying "Anywhere"; the stranger,
+    heard anywhere in a social space, "Anywhere here" there;
+  - inside a dungeon, only what stands in it (a foe of the goal's types, the room's mark); on a sea's island, its
+    wrecks not yet searched and, if it is of the goal's kind, its leader, any other goal back to the ship.
+
+  The held map at sea also rings the nodes the task's goals name (the land's map, raised on foot, draws no places).
+  The marks give way while the map is up. At sea the tracker shows the quest walked while no sea fight's task does.
 - **A keeper to speak with is lit**: while a `talk` goal of the task names a counter, its keeper's mark over them
   pulses and is seen from everywhere in the social space, and their coin on the land's map pulses; so does a smith's
   while a `buy` goal of the task asks one of their wares (the Weaponsmith's for `melee` and `ranged`, the
@@ -198,7 +219,9 @@ stall serves; the stranger is heard in a social space alone, never at the stall.
   layout's paths between its places (each path's points within 6 m join it to another), straight where none comes
   within a place's reach, on the ground's height, and is no fighter. An ambush stands 6 m round it, on a mesh baked
   there. A ward has 700 health (a player's is 100), stands where it is put and fights no one, and only its player is
-  sent it. Waves stand 25 to 30 m out. A puzzle's point is moved onto ground within about 7 m of where it is meant to stand. A failed defence waits 10 s, then 20, then 40 (its foes after the first failure in a task drop nothing, and so do those of a wave or an escort's ambush (its one wave) the character stood before in the task, kept with their road, so a rejoin or a return pays no wave twice: [[The Audit's Leftovers Are Fixed as Claude Suggested]]); a tail noticed waits 10 s and walks back, whichever is longer; an unseen step seen waits 10 s. A wave with no ground to stand on counts as fallen. A figure that arrived stays standing at its end for its player until they leave the node. A ward, a wave, an ambush or a watch stands only while the room's cap on foes leaves room for it, beside a public event's kept places ([[Public Events]]); wards count against no cap. A place's mesh is baked the first
+  sent it. Waves stand 25 to 30 m out. A puzzle's point is moved onto the nearest ground a walk reaches from its place's middle, as far out as the point stands from
+  it (6 m at least), or, where the middle is off the mesh, onto the mesh within 6 m
+  ([[What a Body Meets Keeps to What Is Drawn]]). A failed defence waits 10 s, then 20, then 40 (its foes after the first failure in a task drop nothing, and so do those of a wave or an escort's ambush (its one wave) the character stood before in the task, kept with their road, so a rejoin or a return pays no wave twice: [[The Audit's Leftovers Are Fixed as Claude Suggested]]); a tail noticed waits 10 s and walks back, whichever is longer; an unseen step seen waits 10 s. A wave with no ground to stand on counts as fallen. A figure that arrived stays standing at its end for its player until they leave the node. A ward, a wave, an ambush or a watch stands only while the room's cap on foes leaves room for it, beside a public event's kept places ([[Public Events]]); wards count against no cap. A place's mesh is baked the first
   time a kill group, a defence, a puzzle or an ambush needs it (about 140 to 270 ms that tick, natively).
 - **Figures, wards and points are the player's own**: they stand where the room's last word put them, unglided, and
   show only from the room the player is in, once it has spoken; other players do not see them.
@@ -210,8 +233,8 @@ stall serves; the stranger is heard in a social space alone, never at the stall.
   with nothing counted (one from before the roads). A switch back to a road says nothing. What a step says while the
   story or the welcome holds the screen waits for it to pass; the begin of a quest left meanwhile (the opening, left by
   a pledge during the welcome) is never said.
-- **The tracker and the marks show on foot**; at sea the tracker keeps a sea fight's task. The held map rings only
-  nodes the player has found.
+- **The tracker and the waypoint show on foot and at sea**; at sea a sea fight's task takes the tracker while it runs.
+  The held map rings only nodes the player has found.
 - **A keeper's lines are said as the room meets the goal**, a moment after the press; speaking with a keeper no goal asks
   for is refused ("They have nothing more to say to you now").
 - **"Within 150 m"** is measured from the place's middle. **Enter** and **Land** are told on joining and again when the

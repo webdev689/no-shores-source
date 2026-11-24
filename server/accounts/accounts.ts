@@ -13,6 +13,7 @@ import { INVITE_MS } from './companies.ts';
 import { bindsAsk } from './binds.ts';
 import { lastPlace } from './lastPlace.ts';
 import { socialAsk, socialRead } from './social.ts';
+import { forgetAnswers, outpostAllowed, plotReadAllowed } from './outpostStores.ts';
 import { USERNAME, refusalOf, skeleton } from './names.ts';
 import { NO_ONES_PASSWORD, hashOf, hashPassword, passwordMatches, randomToken } from './secrets.ts';
 
@@ -29,7 +30,8 @@ const PASSWORD_LEAST = 8;
 const PASSWORD_MOST = 200;
 const MINUTE = 60_000;
 /** How many times one address may ask each of these within its window, and new guests be made from everywhere at
- *  once; one username be tried from one address, and from everywhere at once; and one account take a Discord ticket. */
+ *  once; one username be tried from one address, and from everywhere at once; and one account take a Discord ticket.
+ *  Outpost asks count with the rooms' errands in `OUTPOST_LIMIT` (`outpostStores.ts`), plot reads apart in one alike. */
 const LIMITS = {
   guest: { most: 10, window: 60 * MINUTE },
   guests: { most: 500, window: 60 * MINUTE },
@@ -115,17 +117,25 @@ async function finish(request: Request, deps: Deps, now: number): Promise<Respon
   return json({ token: await newSession(database, row.id, now), account: shown(row) });
 }
 
-/** The Roster's routes (`social.ts`): `GET /v1/roster`, `GET /v1/players/<name>` and `POST /v1/social/<ask>`, each
- *  for a signed-in player with a username. Asks that reach other players are limited. */
+/** The Roster's routes (`social.ts`): `GET /v1/roster`, `GET /v1/guild`, `GET /v1/outposts` (one's guild's, or one
+ *  outpost's by its room), `GET /v1/players/<name>` and
+ *  `POST /v1/social/<ask>`, each for a signed-in player with a username. Asks that reach other players are limited. */
 async function social(request: Request, deps: Deps, route: string, now: number): Promise<Response> {
   const { database } = deps;
-  const read = /^GET \/v1\/(roster|players\/[^/]+)$/.exec(route)?.[1];
+  const read = /^GET \/v1\/(roster|guild|outposts|outposts\/[a-z0-9-]+|players\/[^/]+)$/.exec(route)?.[1];
   const asked = /^POST \/v1\/social\/([a-z]+(?:\/[a-z]+)?)$/.exec(route)?.[1];
   if (!read && !asked) return refused(404, 'No such page.');
   const account = await sessionOf(request, database, now);
   if (account === LAPSED) return refused(401, LAPSED);
   if (!account) return refused(401, 'Not signed in.');
   if (account.username === null) return refused(409, 'Add a username in Settings to use the Roster.');
+  // Outpost asks and reads of a plot each write or read a plot's rows, so they are limited too, each apart.
+  const allowed = read?.startsWith('outposts/')
+    ? plotReadAllowed
+    : asked?.startsWith('outpost/')
+      ? outpostAllowed
+      : null;
+  if (allowed && !(await allowed(database, account.id, now))) return refused(429, 'Too many asks. Wait a while.');
   if (read) {
     const answer = await socialRead(database, account.id, read, now);
     return json(answer.body, answer.status);
@@ -170,6 +180,7 @@ async function respond(request: Request, deps: Deps): Promise<Response> {
         )
         .bind(now - SESSION_IDLE_MS)
         .run();
+      await forgetAnswers(database, now);
       // A guest unused for 30 days, made, seen and saved by none since, goes with all it holds (each table's rows
       // follow their account). Ten at a time: every guest pruned was made by an ask like this one.
       await database

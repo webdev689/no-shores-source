@@ -224,7 +224,7 @@ fn every_basin_holds_its_area_and_its_pieces() {
     use AreaKind::*;
     let kinds = [
         Landing, Hamlet, Farm, Hulks, Ruin, Keep, Graveyard, Coven, Shrine, Bones, Camp, Wilds, Arena, Tower,
-        Lighthouse, Dock, Wreck, Mill, Causeway, Quarry, Cave, Entrance, Gate,
+        Lighthouse, Dock, Wreck, Mill, Causeway, Quarry, Cave, Entrance, Gate, Plot,
     ];
     let path = way(vec![offset(-300.0, 20.0), offset(0.0, 0.0)]);
     for kind in kinds {

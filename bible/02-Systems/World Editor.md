@@ -88,7 +88,7 @@ the layout as drafted generates in the background, the chosen one first; each ro
 | Port (`9`) | Click on the land by the coast |
 | Remove (`0`) | Click a river, road, town, port, node or spawn to remove it: a spawn within reach first, then the nearest line or port within reach, then the smallest area under the click, a node before a town |
 | Node (`N`) | Click round a node's section point by point; double-click or `Enter` closes it, `Backspace` takes back a point, `Esc` cancels. It is named `node-N` and takes a spawn at its middle |
-| Kind, Name | With Node: the next node's kind (social, patrol, mission, dungeon or boss) and name, blank for its id. Once drawn, or chosen in the list, the node is chosen and they change it |
+| Kind, Name | With Node: the next node's kind (social, patrol, mission, dungeon, boss or outpost) and name, blank for its id. Once drawn, or chosen in the list, the node is chosen and they change it |
 | Spawn (`X`) | Click inside a node to add a spawn; `Backspace` takes the last spawn of the node under the cursor |
 | City (`H`) | Click to move the port city's site there. Its Name and Motif (one of the nine) change it. A landmass's file names its city: the editor moves it, never adds or removes one |
 | Port city and nodes | The landmass's city and nodes. A row shows that one whole in both views and chooses it for the City or Node tool |
@@ -140,7 +140,7 @@ break, its city's and nodes' among them. Every place change, a city's and a node
 
 The port city and the nodes are drawn over both views as lines, not on the cells. The city is a marker with its name
 and its wall, a dashed circle 3,456 m out. A node is its section's outline in its kind's colour (social gold, patrol
-green, mission blue, dungeon purple, boss red) with its name; its spawns show as white dots once it is 40 pixels
+green, mission blue, dungeon purple, boss red, outpost teal) with its name; its spawns show as white dots once it is 40 pixels
 across, and under 10 pixels it shows as a dot. Names are laid city first, then the nodes largest on screen first;
 a name that would cover another is left out. In 3D they lie on the land as it is drawn, and a line that passes
 behind the camera is broken there.

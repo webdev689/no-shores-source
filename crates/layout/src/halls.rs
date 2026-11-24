@@ -10,8 +10,9 @@ use city::solids::{Material, Shape, Solid};
 
 /// A wall's thickness, metres.
 pub const WALL_M: f64 = 0.8;
-/// How far a wall piece's box may reach past the wall, metres: it decides the pieces' length on a slant.
-const OVERSHOOT_M: f64 = 0.45;
+/// How far a wall piece's box may reach past the wall, metres: it decides the pieces' length on a slant, as far as
+/// any box keeps off what it boxes.
+const OVERSHOOT_M: f64 = city::hug::KEEP_M;
 /// How far either side of where a way crosses a room's wall the wall is left open, and the lintel's underside over
 /// the floor, metres.
 const GAP_HALF_M: f64 = 3.6;

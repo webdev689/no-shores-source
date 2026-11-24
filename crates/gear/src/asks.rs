@@ -13,8 +13,6 @@ use crate::rarity::Rarity;
 use crate::vendor::{self, Vendor};
 use crate::vestige;
 
-pub use crate::refusal::Refusal;
-
 /// The XP a Fruit of Dagon gives an item.
 pub const FRUIT_ITEM_XP: u32 = 5_000;
 
@@ -174,6 +172,8 @@ pub enum Ask {
     /// One of the Harbourmaster's asks for the player's ships (`ship::shipyard`): at the Harbourmaster's counter.
     Ship(crate::ship::shipyard::ShipAsk),
 }
+
+pub use crate::refusal::Refusal;
 
 /// What an ask did, when it did more than its ask says.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]

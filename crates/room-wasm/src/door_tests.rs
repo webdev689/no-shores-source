@@ -237,7 +237,7 @@ fn the_sea_opens_on_a_layout_with_its_ports_whose_lanes_the_tithe_patrols() {
 }
 
 /// Both tests hold this value: roomDoor.test.ts runs the same sea through WebAssembly, as the servers and the page do.
-pub const SEA_CLASH_HASH: &str = "8aa4922bbf32e293";
+pub const SEA_CLASH_HASH: &str = "ff1c9de49419087d";
 
 /// A new player handed the Sloop, as the Harbourmaster hands it over in the welcome: one the sea lets in.
 fn sailor() -> gear::Character {
@@ -255,11 +255,11 @@ fn a_sea_where_a_tithe_ship_attacks_a_friendly_ship_and_a_player_joins_them_snap
     assert!(open_sea(TRAFFIC_SEA.as_bytes(), 6));
     room_world_start(CLASH_START_S);
     let player = room_join();
-    assert_eq!(input(player, &protocol::course_bytes(&[[450_000.0, 97_000.0], [340_000.0, 92_000.0]], 10)), TAKEN);
+    assert_eq!(input(player, &protocol::course_bytes(&[[450_000.0, 97_000.0], [340_000.0, 86_000.0]], 10)), TAKEN);
     let (mut hash, mut clashed, mut three) = (0xcbf2_9ce4_8422_2325_u64, false, false);
     for tick in 1..=16_000 {
         if tick == 1_831 {
-            assert_eq!(input(player, &protocol::course_bytes(&[[441_700.0, 96_800.0]], 10)), TAKEN);
+            assert_eq!(input(player, &protocol::course_bytes(&[[441_700.0, 96_350.0]], 10)), TAKEN);
         }
         room_tick();
         with_open(|opened| {

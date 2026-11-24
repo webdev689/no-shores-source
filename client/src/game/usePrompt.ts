@@ -64,6 +64,7 @@ const heldCap =
 export class UsePrompt {
   private said: string | null = null;
   private held: number | null = null;
+  private idle = false;
 
   /** Whether a deed within reach is shown. */
   get showing(): boolean {
@@ -71,9 +72,10 @@ export class UsePrompt {
   }
 
   /** Shows the deed within reach, or nothing, and how far E has been held for it (0 to 1), or null where it is not
-   *  being held; a new deed is told aloud, as a status is. */
-  show(deed: string | null, held: number | null = null): void {
+   *  being held; `idle` words (a refusal, E doing nothing) without a key; a new deed is told aloud, as a status is. */
+  show(deed: string | null, held: number | null = null, idle = false): void {
     this.held = deed === null ? null : held;
+    this.idle = idle;
     if (deed === this.said) return;
     this.said = deed;
     if (deed !== null) announce(deed);
@@ -85,20 +87,20 @@ export class UsePrompt {
     if (this.said === null) return null;
     const big = view.width >= 1500 && view.height >= 900;
     return {
-      ...promptChip(this.said, this.held),
+      ...promptChip(this.said, this.held, this.idle ? null : boundCap('use')),
       id: PROMPT_ID,
       float: { to: 'screen', at: [0.5, 1], anchor: [0.5, 1], y: big ? -154 : -110 },
     };
   }
 }
 
-/** A key's cap (`cap`, Use's unless given) and `deed` in the prompt's chip, `under` in faint words beneath the deed
- *  where given, the keycap ringed as far as it is `held` (0 to 1; null while not), for its caller to set where it
- *  stands. */
+/** A key's cap (`cap`, Use's unless given; none where null) and `deed` in the prompt's chip, `under` in faint words
+ *  beneath the deed where given, the keycap ringed as far as it is `held` (0 to 1; null while not), for its caller to
+ *  set where it stands. */
 export function promptChip(
   deed: string,
   held: number | null,
-  cap = boundCap('use'),
+  cap: string | null = boundCap('use'),
   under: string | null = null,
 ): Node {
   const said = { text: { words: deed, colour: '#efe8d6', edge: 'shadow', edgeColour: '#000', wrap: false } } as const;
@@ -109,14 +111,16 @@ export function promptChip(
     alignY: 'center',
     padding: [8, 16, 8, 10],
     children: [
-      {
-        minWidth: 36,
-        padding: [2, 7, 4, 7],
-        fill: 'rgba(192,138,62,0.15)',
-        alignX: 'center',
-        draw: heldCap(held),
-        children: [promptKey(cap)],
-      },
+      cap === null
+        ? null
+        : {
+            minWidth: 36,
+            padding: [2, 7, 4, 7],
+            fill: 'rgba(192,138,62,0.15)',
+            alignX: 'center',
+            draw: heldCap(held),
+            children: [promptKey(cap)],
+          },
       under === null
         ? said
         : {

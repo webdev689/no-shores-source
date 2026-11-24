@@ -48,8 +48,12 @@ bounded by rock and walls rather than open ground. How it is laid out is Claude'
 `content/world/briefs.json` gives each node a line on its character and the areas it holds, by kind and name, in the
 order they are placed: a hamlet (one to four RMB blocks), a farm, a ruin, a keep, a graveyard, a coven, a shrine, a
 camp, a watchtower, a lighthouse, open wilds, a dock, a mill, a quarry, a wreck, a graveyard of ships, the bones of
-something enormous, a causeway, a cave's mouth, and an instance's way in and the arena it ends in. A node with no brief
-is open ground to arrive on and fight over. Every one of the 90 drawn nodes has its own. A brief may also carry hints:
+something enormous, a causeway, a cave's mouth, an instance's way in and the arena it ends in, and a plot. A node with
+no brief is open ground to arrive on and fight over; an outpost site's is a landing, a plot and an arena (The Landing,
+The Plot, The Muster Ground), and it links to no patrol area. A plot is the ground a guild builds on: a square 64 m a
+side, axis-aligned round its middle, on flat dry ground within 250 m of the landing where the land allows. Nothing
+stands on it: no beacon or resource is marked there, a way ends at its rim, and four low stones stand just outside its
+corners. Of the 99 drawn nodes, the 90 that are not outpost sites each have their own. A brief may also carry hints:
 `rock`, the shape its outcrops stand in where its climate's would not suit it (the Saltgrass Downs' whalebacks, the
 Gullwing Vale's knolls, the Driftwood Moors' tors); `stone`, the stone its cliffs and rubble wear (the Downs' chalk);
 and `river`, that a river runs through it (the Vale), which carries the claim along the river (below). `heights` stands its places at heights (Saltmere's
@@ -66,7 +70,8 @@ from the sea, fresh water and the claim's edge), then:
    for a dock, a river bank for a mill, a slope for a quarry. Areas keep at least 50 m of open ground between their
    reaches and spread over the claim, so something stands every couple of hundred metres. A patrol area's landing
    comes first on its seaward side, then a gate at its edge toward each instance it leads to (the mission, dungeon
-   and boss nodes nearer it than any other patrol area), then the brief's areas. An instance's way in comes first,
+   and boss nodes nearer it than any other patrol area), then the brief's areas. An outpost site's landing comes first
+   the same way, then its plot near it. An instance's way in comes first,
    at its edge toward its patrol area, and each later area lies further on, so the way through runs one way.
 2. **The blocks.** A hamlet stands a tavern, houses, a shop and a temple; a farm, a ruin, a keep, a graveyard, a
    coven, a shrine and a cave's mouth stand one block of their kind. A hamlet's blocks stand apart across lanes and
@@ -137,9 +142,10 @@ from the sea, fresh water and the claim's edge), then:
      cutting through no building. A ramp runs on from one of its ends along the rim down to the floor, and rows of
      headstones stand on the shelf, askew, a few gone, either side of a lane down its middle, the last pieces stood,
      none in a building, a prop, a solid or on a ramp;
-   - a keep and a camp: such a bowl with a platform round the middle, ramped wherever a way crosses its edge or ends
+   - a keep, a camp and a plot: such a bowl with a platform round the middle, ramped wherever a way crosses its edge or ends
      short of it, each way its own ramp unless one already climbs there on the same bearing. A keep's reaches 6 m past its buildings and 34 m at the least, at 0.18 of the massif's height; a
-     camp's reaches 6 m past its palisade, at 0.12;
+     camp's reaches 6 m past its palisade, at 0.12; a plot's 6 m past its square's corners, at 0.12, so its whole square
+     stands level;
    - every other kind: a round bowl 32 m wider than its reach.
 
    A shelf and a platform are level climbs, and a ramp a climb from the floor to their level ([[Land]]), 9 m wide,
@@ -330,10 +336,10 @@ out past its edge.
   it keep off it; every ceiling over a building run's way stands 2.6 m or more over its floor. A body walks every run
   from its mouth to within 3 m of its door, and no further; up each keep's stair to its turret's top; and over each
   undercroft's chapel floor and down its stair (`crates/room/tests/runs_walked.rs`). Every patrol zone of every
-  continent is given a run of each of four kinds too, one test a continent (`runs_everywhere.rs`), with three failures
+  continent is given a run of each of four kinds too, one test a continent (`runs_everywhere.rs`), with two failures
   known and named with their reasons, so a new one fails CI ([[The Audit's Leftovers Are Fixed as Claude Suggested]]):
-  on the savanna a body walks round a ledge's and a rampart's doors across their faces, and at highwater-glen a
-  ledge's way meets a face a body would climb. They wait on the owner's call on the
+  on the savanna a body walks round a rampart's door across its face, and at highwater-glen a ledge's way meets a
+  face a body would climb. They wait on the owner's call on the
   runs there; only Saltmere's zones have runs of their own yet.
 
 ## Laid on the land
@@ -355,10 +361,32 @@ What a body meets ([[Movement]]): each room's linings, lintels, planks, slabs an
 too low to enter whole, each building not walked into whole, each plinth, set piece, great work, rock and wall by the
 ways, and each prop too tall to step over. What lies wholly past the section (at the cliffs' feet, on their tops) is
 never reached and is no box: a piece is kept by its middle in the section or a cell of it, or, for one wider than 8 m,
-by any corner. An arch is its two jambs and its head over the crown of its opening, so a body walks under it. A box's
-underside is its own, so a body walks under a viaduct's deck and a lintel. A leaning or rolled solid's box is the box
-of its turned corners. Boxes are written to the centimetre, grown out so none shrinks. No box of a solid, prop or
-building stands across a way's walked width under head height on continent 1 (`crates/room/tests/layouts_laid.rs`). A
+by any corner. What a body meets keeps to what is drawn ([[What a Body Meets Keeps to What Is Drawn]]): no box stands
+more than 0.45 m off what it boxes (`city::hug`), nor leaves more than that of it out, but for a tilted solid as
+below. A prop is the parts its drawn shape fills ([[Forged Models]], "Parts"), each within a 0.25 m column of its
+mesh; a turned prop is in strips within 0.2 m of its parts, so its edges stand no further past what is drawn than a
+solid's. A gate's arch has its parts taken down to its foot so the opening under its bar stays shut. A solid is cut
+into parts of its own frame: an arch its two jambs and its head over the crown of its opening, so a body walks under
+it; a column, a dome, a pyramid and a gable in layers that narrow as it does, a wide round in crossed boxes inside it,
+each kept to the faces the page draws (a round's polygon, a dome's rings). A part turned off the world's axes is
+boxed in strips across the world, each the box of the part within it, as wide as keeps it within 0.45 m; one leaning
+or rolled, however far (a mill's sails turn past a half-turn), is halved until each half's box keeps as close, but a
+solid tilted so little none of it moves 0.45 m is boxed as if upright, standing off it as far again as its tilt
+moves it, and a piece of 2 m or less is not halved for its tilt alone, standing off it as far as its tilt throws its
+box out. A box's underside is its own, so a body walks under a viaduct's deck and a lintel.
+
+What a solid or a turned prop may cost is held, as the owner approved ([[The Meadow Art Is the Owner's, Its Tables Stay in Git, and the Grass Takes the Trees' Rain]]; `city::collision::kept`,
+`layout::collide::prop_kept`): at most 64
+of its boxes over a 2 m square of ground, on a grid laid from its north-west corner (2 m is the finest cell of the
+movement rules' grid, every box of which a tick tests), and at most a box a square metre of its footprint, never
+fewer than 256. A solid's layers come first, as they take the fewest boxes; where they stack too thick over the
+ground, the same layers are laid as terraces, each boxed only where no layer over it stands, up from the foot, which
+holds the same and stands no further off. One that still costs more is boxed with its keep a quarter looser at a time
+until it fits (and halving that stops short of its keep costs more), never leaving more than 0.45 m of it out. Over every landmass 268,489 of 270,438 solids are boxed unloosened, and 11,659 of 12,016 laid props; on continent
+1's zones the loosened are small tilted stones and domes to within 0.56 to 1.1 m, the mills' two roofs 0.7 m, the
+Saltgrass Downs' wide dome 1.7 m, and the beached ships' strips 0.6 to 1.2 m; the cities' leaning spires are to
+within 13 m at most, nine in ten of their tilted columns unloosened. Continent 1's zones hold 86,909 boxes, every
+landmass's zones and cities 1,433,893, a city boxed natively in 0.05 to 0.3 s (tested offline). Boxes are written to the centimetre, grown out so none shrinks. No box of a solid, prop or building stands across a way's walked width under head height on continent 1 (`crates/room/tests/layouts_laid.rs`). A
 body walks in at every ground-floor door of the Saltgrass Downs' buildings, and up to every upper floor, as the bake
 lays them (`crates/room/tests/rooms_walked.rs`).
 
@@ -461,7 +489,7 @@ does nothing.
 The game draws the layouts within 4 km of the eye with the city layer ([[Cities]]), gathered again once the eye has
 moved 1.5 km: a plan of placed pieces (each building and prop where its layout stood it, a building walked into with
 its doorways open) and solids (plinths, set pieces, great works, rock, rooms), on a grid of cells just large enough
-to hold them, with no plates. Nature keeps off the buildings' yards and each place's open ground, and grows each
+to hold them, with no plates. Nature keeps off the buildings' yards, each place's open ground and the paths, and grows each
 layout's plantings where they were planted, as its own kind (`plantedOf`).
 
 The paths and a block's streets are the terrain's own ground ([[Game]], "The ground's pictures"): painted within

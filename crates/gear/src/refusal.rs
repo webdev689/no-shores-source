@@ -1,5 +1,5 @@
-//! Why an ask of a player's gear was refused, each by its number on the wire less one (`answer_code`): the room
-//! answers a refusal as its number plus one, so a refusal's number never moves once given.
+//! Why an ask is refused. A refusal's place in the list is its number on the wire, which the page reads in its own list
+//! (`gear.ts` `REFUSALS`), so a new one goes last.
 
 /// Why an ask was refused.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -87,17 +87,37 @@ pub enum Refusal {
     NoChoice = 137,
     /// No letter of that number waits in the mail, or none at all: answered as 141.
     NoSuchLetter = 140,
-    /// The shipyard has no hull of that number: answered as 151.
-    NoSuchShip = 150,
-    /// The player keeps no ship of that hull, or none at all: the Harbourmaster hands over the first.
-    NoShip = 151,
-    NoSuchDress = 152,
-    /// No word of the shipyard's lists has that place.
-    NoSuchName = 153,
-    /// The ship asked to be sailed is the one sailed.
-    Sailed = 154,
-    /// The ship asked to be named bears that name already.
-    Called = 155,
-    /// A free name was asked for a ship named already: a new name is the shipyard's renaming, asked as one.
-    Named = 156,
+    /// The guild's asks: no such guild bounty this week, one the guild has not finished, one claimed already this
+    /// week, a member who joined since the week turned, and a player in no guild (the room's).
+    NoSuchGuildBounty = 150,
+    GuildBountyNotDone = 151,
+    GuildBountyClaimed = 152,
+    JoinedThisWeek = 153,
+    NotInGuild = 154,
+    /// An outpost's asks (`room::outpost`): asked off its guild's outpost; the treasury is full; nothing being built
+    /// needs that; the stores hold none for the player today; the horn sounded this week; the accounts did not
+    /// answer; the guild boss stands; the last ask is unanswered; not the founder or an admin; no horn stands.
+    NotAtOutpost = 155,
+    TreasuryFull = 156,
+    NothingNeeds = 157,
+    StoresEmpty = 158,
+    HornSounded = 159,
+    OutpostTrouble = 160,
+    HornFoeStands = 161,
+    AskInFlight = 162,
+    HornNotLeader = 163,
+    NoHorn = 164,
+    /// Past the account's limit on outpost asks, which the accounts answer so: never a refusal of the ask itself.
+    TooManyAsks = 165,
+    /// The Harbourmaster's asks: the shipyard has no hull of that number (answered as 167); the player keeps no ship
+    /// of that hull, or none at all; no such dress; no word of the shipyard's lists has that place; the ship asked to
+    /// be sailed is the one sailed; the ship asked to be named bears that name already; and a free name asked for a
+    /// ship named already, which is the shipyard's renaming, asked as one.
+    NoSuchShip = 166,
+    NoShip = 167,
+    NoSuchDress = 168,
+    NoSuchName = 169,
+    Sailed = 170,
+    Called = 171,
+    Named = 172,
 }

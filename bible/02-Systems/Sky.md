@@ -9,6 +9,7 @@ code:
   - client/src/sky/skyLook.ts#lookOf
   - client/src/water/skyDome.ts#SKY_DOME_WGSL
   - client/src/overworld/overworldCamera.ts#cloudBaseOf
+  - client/src/sky/bolts.ts#underWeatherM
   - client/src/sky/lamps.ts#lampsRound
   - client/src/nearest.ts#Nearest
   - client/src/sky/skyUniform.ts#SKY_WGSL
@@ -68,6 +69,12 @@ the water's backdrop draws the sky from them, and the water reflects it.
   The fog lies between the eye and the clouds: in thick fog the sky closes in to the fog's colour, the clouds fading
   into it, and nothing behind a closed deck (stars, the moon, the sun's disc) shows through. In a sandstorm the light
   from above is the dust's, so the land under it is lit warm.
+- **Seen from over the deck.** The weather's fog, rain and sand lie under the cloud deck's base (where half cover's
+  would stand under thinner cover). An eye under it, on foot or at the helm, sees through them along all of its line;
+  one risen to twice the base, as the [[Overworld]]'s view over an island is, only along the part of its line under
+  it, the share eased between, so the island shows through the rain. From 20 km up, looking down through the heaviest
+  rain under a 400 m deck, about half the land's own colour comes through, where none did. The clear air's haze and
+  the fog lying low over the sea still fall along the whole line (`underWeatherM`, `under_weather`).
 - **The overworld camera** stays under the cloud deck. A deck forms from half cover, about 1150 m up, and lowers as
   the cover closes. Steady rain brings it down to about 400 m, the heaviest to about 200 m and a storm a little lower
   still; the camera keeps 60 m under it, and never comes lower than its floor.
@@ -103,8 +110,9 @@ what show the ground there.
   the pixel's footprint, on the city's stone from 4 to 12 m off ([[The Harbourmaster Stands in the Market, Rain Spares the Trees, and Patrol Nodes Always Stand]]). Snow
   that has fallen in the last twenty minutes whitens the flat ground and the city's flat stone where the weather laid
   it: on the ground under the eye, where it is read, and higher, fading out 100 to 300 m lower down, which is warmer.
-  Puddles lie only where no snow does. Rain darkens a plant's bark and leaves and lays no sheen on them, nor on the
-  far woods the land is painted with ([[Nature]], "Woods from afar").
+  Puddles lie only where no snow does. Rain darkens a plant's bark and leaves, and the meadow's tufts, and lays no
+  sheen on them, nor on the far woods the land is painted with ([[Nature]], "Woods from afar";
+  [[The Meadow Art Is the Owner's, Its Tables Stay in Git, and the Grass Takes the Trees' Rain]]).
 
 ## Limits
 

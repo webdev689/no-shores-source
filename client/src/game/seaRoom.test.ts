@@ -164,7 +164,7 @@ test('a travel given up lets courses through again and forgets any answer, as a 
 
 test('the plate over each other ship in sight is the one its last snapshot sent, and one no longer sent is gone', async () => {
   const { room, atTick } = await joined();
-  const plate = (player: number, name: string): PlayerPlate => ({ player, name, level: 9, menu: false });
+  const plate = (player: number, name: string): PlayerPlate => ({ player, name, level: 9, menu: false, tag: '' });
   atTick(1, [], [], [plate(2, 'Wooden_Osprey'), plate(3, '')]);
   assert.deepEqual([...room.plates.keys()], [2, 3]);
   assert.equal(room.plates.get(2)?.name, 'Wooden_Osprey');

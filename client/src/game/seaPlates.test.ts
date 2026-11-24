@@ -16,7 +16,13 @@ const ship = (player: number, x: number): SeenShip => ({
   name: [],
   emblem: 0,
 });
-const plate = (player: number, name: string, level: number): PlayerPlate => ({ player, name, level, menu: false });
+const plate = (player: number, name: string, level: number): PlayerPlate => ({
+  player,
+  name,
+  level,
+  menu: false,
+  tag: '',
+});
 const plates = new Map([
   [2, plate(2, 'Wooden_Osprey', 12)],
   [3, plate(3, '', 4)],

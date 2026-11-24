@@ -119,8 +119,8 @@ answered only within reach of that counter (`ShipAsk`).
 - **Name**: a ship is named from two lists of words, its first word none or one of the first list's; the first name
   is free, each after 250 Aurem, held for. Read as "the Grey Gull". The ask says which it is (`count` 1 a renaming):
   a free name asked of a ship named already is refused, and so is the name it bears, so an ask sent twice never pays.
-  Refusals the page says in words: no such ship (151), none kept (152), no such dress (153) or word (154), the ship
-  sailed already (155), the name it bears (156), and a named ship asked a free name (157).
+  Refusals the page says in words: no such ship (167), none kept (168), no such dress (169) or word (170), the ship
+  sailed already (171), the name it bears (172), and a named ship asked a free name (173).
 - **Shipwright**: the Shipwright's six modules of the day ([[Ship Power]]).
 
 ## Seen by others

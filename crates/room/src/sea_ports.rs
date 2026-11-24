@@ -63,12 +63,14 @@ impl Sea {
         let water = self.chart.water_id(sank.at);
         let (rank, day) = (sank.hostile.commission.rank.number(), gear::clock::day_of(self.minute));
         let fought: BTreeSet<PlayerId> = sank.players.iter().copied().collect();
-        for player in fought {
-            let Some(character) = self.harbour.characters.get_mut(&player) else { continue };
+        for player in &fought {
+            let Some(character) = self.harbour.characters.get_mut(player) else { continue };
             if gear::objectives::count_ship_down([character], water, rank, day) {
-                self.harbour.changed.insert(player);
+                self.harbour.changed.insert(*player);
             }
         }
+        let (fought, week) = (fought.into_iter().collect::<Vec<_>>(), gear::clock::week_of(self.minute));
+        super::guilds::guild_sunk(&mut self.harbour, week, &fought, water, rank);
     }
 
     /// Tells a player's quest log of a ship beaten: their deck room's while they fight on a captain's deck, which

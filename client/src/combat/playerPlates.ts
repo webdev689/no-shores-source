@@ -10,7 +10,7 @@ import { motionReduced } from '../plus/kit.ts';
 import { FILLS, TONES } from '../plus/tones.ts';
 import { LEVEL_BY_XP } from '../rules/fleetRules.ts';
 import { bodyDegrees, HEAD_M, PLATE_OVER_M, PLATE_RANGE_M, PlateSight, plateScale } from './plateSight.ts';
-import type { Node } from '../ui/node.ts';
+import type { Child, Node } from '../ui/node.ts';
 
 type Point = readonly [number, number, number];
 
@@ -20,8 +20,12 @@ export const SOCIAL_REACH_M = 6.4;
 const SIDE = EMBLEM_PIXELS * 2 + 4;
 /** The interact mark's least and most side, and the steps it grows in, in CSS pixels. */
 const MARK = { least: 8, most: 480, step: 8 } as const;
-/** About how wide a letter of a name stands at the plates' size, in CSS pixels: enough to lay plates apart. */
+/** About how wide a letter of a name stands at the plates' size, and how tall a line of them, in CSS pixels: enough to
+ *  lay plates apart. */
 const LETTER_PX = 7;
+const LINE_PX = 14;
+/** How much fainter a guild's tag reads than the name before it. */
+const TAG_OPACITY = 0.72;
 /** The plate's square and name colours: the company's green, everyone else's blue. */
 const COLOURS = {
   company: { fill: FILLS.green, edge: '#173d15', word: TONES.company },
@@ -155,9 +159,9 @@ export class PlayerPlates {
       x,
       y,
       depth,
-      // The name's letters are drawn whole at any distance: only the square shrinks.
-      width: (SIDE + 6) * scale + player.plate.name.length * LETTER_PX,
-      height: SIDE * scale,
+      // The words are drawn whole at any distance: only the square shrinks. A ship's name is a line under the rest.
+      width: (SIDE + 6) * scale + Math.max(plateWords(player.plate).length, player.vessel?.length ?? 0) * LETTER_PX,
+      height: SIDE * scale + (player.vessel ? LINE_PX : 0),
     }));
     const laid = this.layout.lay(spots, motionReduced() ? Infinity : seconds);
     this.drawn = shown.map(({ player, x, y, scale }) => {
@@ -203,8 +207,13 @@ export class PlayerPlates {
   }
 }
 
-/** A player's plate at `scale`: its square (or the bubble) and their name, in the company's colours or another's, and
- *  under it the name of the ship they sail, where it has one. */
+/** What a plate writes after its square: the name, and the guild's tag in brackets after it; none for a guest. */
+function plateWords(plate: PlayerPlate): string {
+  return plate.name === '' ? '' : plate.tag === '' ? plate.name : `${plate.name} [${plate.tag}]`;
+}
+
+/** A player's plate at `scale`: its square (or the bubble), their name and their guild's tag a shade fainter after it,
+ *  in the company's colours or another's, and under them the name of the ship they sail, where it has one. */
 export function plateNode(player: PlatedPlayer, scale: number): Node {
   const colours = player.company ? COLOURS.company : COLOURS.other;
   const side = Math.round(SIDE * scale);
@@ -229,16 +238,27 @@ export function plateNode(player: PlatedPlayer, scale: number): Node {
         alignY: 'center',
         children: [{ text: { words: String(plate.level), colour: levelInk(plate.level), edge: 'halo', wrap: false } }],
       };
-  const name = plate.name !== '' && {
-    text: { words: plate.name, colour: colours.word, edge: 'halo' as const, wrap: false },
-  };
-  const vessel = Boolean(player.vessel) && {
-    text: { words: player.vessel ?? '', colour: TONES.stoneHi, edge: 'halo' as const, wrap: false },
+  const gap = Math.round(5 * scale);
+  const named: Child[] = [
+    plate.name !== '' && { text: { words: plate.name, colour: colours.word, edge: 'halo', wrap: false } },
+    plate.name !== '' &&
+      plate.tag !== '' && {
+        opacity: TAG_OPACITY,
+        text: { words: `[${plate.tag}]`, colour: colours.word, edge: 'halo', wrap: false },
+      },
+  ];
+  const vessel: Node | false = Boolean(player.vessel) && {
+    text: { words: player.vessel ?? '', colour: TONES.stoneHi, edge: 'halo', wrap: false },
   };
   return {
     direction: 'row',
     alignY: 'center',
-    gap: Math.round(5 * scale),
-    children: [square, (name || vessel) && { direction: 'column', children: [name, vessel] }],
+    gap,
+    children: vessel
+      ? [
+          square,
+          { direction: 'column', children: [{ direction: 'row', alignY: 'center', gap, children: named }, vessel] },
+        ]
+      : [square, ...named],
   };
 }

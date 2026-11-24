@@ -277,6 +277,8 @@ export type FromRoomMessage =
       readonly cache: readonly number[];
       /** In an Abyss run, the revives its company has left; -1 in any other room. */
       readonly revives: number;
+      /** At a guild's outpost, how many plots its room has stood; 0 in any other room. */
+      readonly outpost: number;
       /** On land, whether the room is a darkness zone, where no one respawns by their own ask; and who is reviving whom. */
       readonly darkness: boolean;
       readonly reviving: readonly Reviving[];
@@ -546,6 +548,7 @@ export function readFromRoom(bytes: Uint8Array): FromRoomMessage | null {
       goneFoes: Array.from(snapshot.goneFoesArray() ?? []),
       cache: Array.from(snapshot.cacheArray() ?? []),
       revives: snapshot.revives(),
+      outpost: snapshot.outpost(),
       darkness: snapshot.darkness(),
       reviving: Array.from({ length: snapshot.revivingLength() }, (unused, index) =>
         revivingOf(snapshot.reviving(index)),

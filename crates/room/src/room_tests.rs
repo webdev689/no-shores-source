@@ -196,7 +196,7 @@ fn a_held_players_inputs_are_taken_in_order_and_stand_still_until_they_are_let_p
 fn a_plate_carries_its_players_name_level_and_menu_and_goes_once_each_time_it_changes() {
     let mut room = room();
     let (first, second) = (room.join().expect("a room with space"), room.join().expect("a room with space"));
-    let plate = |name: &str, menu| Plate { name: name.to_owned(), level: 1, menu };
+    let plate = |name: &str, menu| Plate { name: name.to_owned(), level: 1, menu, tag: String::new() };
     assert_eq!(room.take_plate_changes(), vec![(first, plate("", false)), (second, plate("", false))]);
     assert_eq!(room.take_plate_changes(), vec![], "a plate goes once");
     assert!(room.name_player(first, "Wooden_Osprey"));
@@ -214,4 +214,21 @@ fn a_plate_carries_its_players_name_level_and_menu_and_goes_once_each_time_it_ch
     room.players.get_mut(&first).unwrap().character.xp = 190_000;
     let raised = room.take_plate_changes();
     assert_eq!(raised.iter().map(|(player, plate)| (*player, plate.level)).collect::<Vec<_>>(), vec![(first, 20)]);
+}
+
+#[test]
+fn a_plate_carries_its_players_guild_tag_and_goes_again_when_it_changes() {
+    let mut room = room();
+    let player = room.join().expect("a room with space");
+    room.take_plate_changes();
+    assert!(room.tag_player(player, "SALT"));
+    assert_eq!(room.take_plate_changes().iter().map(|(_, plate)| plate.tag.as_str()).collect::<Vec<_>>(), ["SALT"]);
+    assert_eq!(room.take_plate_changes(), vec![], "a tag goes once");
+    // A tag no guild's could be gives none.
+    assert!(!room.tag_player(player, "salt"));
+    assert!(!room.tag_player(player, "TOOLONG"));
+    assert!(!room.tag_player(player, "S"));
+    assert!(room.take_plate_changes().is_empty(), "the tag kept as it was");
+    assert!(room.tag_player(player, ""), "leaving a guild takes the tag away");
+    assert_eq!(room.take_plate_changes().iter().map(|(_, plate)| plate.tag.as_str()).collect::<Vec<_>>(), [""]);
 }

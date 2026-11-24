@@ -218,13 +218,17 @@ impl Room {
     }
 
     /// A new player standing BEFORE_DOOR_M before the door of the entrance numbered `number`, facing away from it, as
-    /// they come out of its dungeon; none when the room has no such entrance or is full.
+    /// they come out of its dungeon, or at an outpost before its Delve Gate as 0; none when the room has no such
+    /// entrance or is full.
     pub fn join_at(&mut self, number: usize) -> Option<PlayerId> {
-        let entrance = *self.entrances().get(number)?;
+        let ([x, y], facing) = match self.entrances().get(number) {
+            Some(entrance) => entrance.door(),
+            None if number == 0 => self.outpost.as_ref()?.gate?,
+            None => return None,
+        };
         if self.players.len() >= crate::PLAYERS_MOST {
             return None;
         }
-        let ([x, y], facing) = entrance.door();
         let (x, y) = (x + libm::sin(facing) * BEFORE_DOOR_M, y - libm::cos(facing) * BEFORE_DOOR_M);
         let body = Body { facing, ..standing_on(&self.floor, &self.blocks, x, y) };
         Some(self.join_standing(body))

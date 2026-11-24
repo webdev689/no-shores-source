@@ -8,7 +8,7 @@ use flatbuffers::{FlatBufferBuilder, WIPOffset};
 use gear::arts::ArtAsk;
 use gear::ship::shipyard::ShipAsk;
 use gear::{Ask, At, Kind, Rarity, Slot};
-use room::{Asked, Drop, Dropped, Grant, PlayerId, Room};
+use room::{Asked, Drop, Dropped, Grant, OutpostAsk, PlayerId, Room};
 
 pub(crate) use crate::item_wire::{column_number, item_offset};
 
@@ -101,14 +101,24 @@ pub const CHOOSE_FRAGMENT: u8 = 65;
 pub const USE_POINT: u8 = 66;
 /// A return to the player's ship asked, which the room answers before the page leaves for the sea.
 pub const TO_SHIP: u8 = 73;
+/// A guild bounty claimed, by its slot among the week's four in `column`.
+pub const CLAIM_GUILD_BOUNTY: u8 = 75;
+/// At a guild's outpost: Aurem deposited (`count`), a material delivered to a structure being built (`item` the
+/// structure, `slot` the material, `count`), a material taken from the stores (`slot`, `count`), the War Horn sounded,
+/// and the plot changed through the accounts.
+pub const OUTPOST_DEPOSIT: u8 = 76;
+pub const OUTPOST_DELIVER: u8 = 77;
+pub const OUTPOST_TAKE: u8 = 78;
+pub const OUTPOST_HORN: u8 = 79;
+pub const OUTPOST_CHANGED: u8 = 80;
 /// The Harbourmaster's asks (`gear::ship::shipyard`), the hull's number in `column`: a hull bought, a ship kept sailed,
 /// a dress bought by its number in `item`, a dress kept laid on a ship (`item` the dress), and a ship named (its
-/// words' places in `node` and `slot`, 255 for no first word).
-pub const BUY_SHIP: u8 = 79;
-pub const SAIL_SHIP: u8 = 80;
-pub const BUY_DRESS: u8 = 81;
-pub const DRESS_SHIP: u8 = 82;
-pub const NAME_SHIP: u8 = 83;
+/// words' places in `node` and `slot`, 255 for no first word; `count` 1 for a renaming, 0 for the first, free name).
+pub const BUY_SHIP: u8 = 81;
+pub const SAIL_SHIP: u8 = 82;
+pub const BUY_DRESS: u8 = 83;
+pub const DRESS_SHIP: u8 = 84;
+pub const NAME_SHIP: u8 = 85;
 /// Shape's place on the gear message while he is away.
 pub const SHAPE_AWAY: u8 = 255;
 
@@ -206,6 +216,14 @@ pub fn asked_of(ask: &messages::Ask<'_>) -> Option<Asked> {
         USE_POINT => Asked::UsePoint { point: column },
         FIND_LORE => Asked::FindLore { chapter: u16::try_from(item).ok()? },
         TO_SHIP => Asked::ToShip,
+        CLAIM_GUILD_BOUNTY => Asked::ClaimGuild { slot: column },
+        OUTPOST_DEPOSIT => Asked::Outpost(OutpostAsk::Deposit { count: ask.count() }),
+        OUTPOST_DELIVER => {
+            Asked::Outpost(OutpostAsk::Deliver { structure: item, slot: ask.slot(), count: ask.count() })
+        }
+        OUTPOST_TAKE => Asked::Outpost(OutpostAsk::Take { slot: ask.slot(), count: ask.count() }),
+        OUTPOST_HORN => Asked::Outpost(OutpostAsk::Horn),
+        OUTPOST_CHANGED => Asked::Outpost(OutpostAsk::Changed),
         BUY_SHIP => Asked::Gear(Ask::Ship(ShipAsk::Buy { hull: column })),
         SAIL_SHIP => Asked::Gear(Ask::Ship(ShipAsk::Sail { hull: column })),
         BUY_DRESS => Asked::Gear(Ask::Ship(ShipAsk::BuyDress { dress: u16::try_from(item).ok()? })),
@@ -237,6 +255,19 @@ fn ship_ask_args<'built>(ask: ShipAsk, args: messages::AskArgs<'built>) -> messa
             count: u32::from(renaming),
             ..args
         },
+    }
+}
+
+/// An outpost's ask's fields, as a browser writes them.
+fn outpost_args(ask: OutpostAsk, args: messages::AskArgs<'_>) -> messages::AskArgs<'_> {
+    match ask {
+        OutpostAsk::Deposit { count } => messages::AskArgs { kind: OUTPOST_DEPOSIT, count, ..args },
+        OutpostAsk::Deliver { structure, slot, count } => {
+            messages::AskArgs { kind: OUTPOST_DELIVER, item: structure, slot, count, ..args }
+        }
+        OutpostAsk::Take { slot, count } => messages::AskArgs { kind: OUTPOST_TAKE, slot, count, ..args },
+        OutpostAsk::Horn => messages::AskArgs { kind: OUTPOST_HORN, ..args },
+        OutpostAsk::Changed => messages::AskArgs { kind: OUTPOST_CHANGED, ..args },
     }
 }
 
@@ -327,6 +358,8 @@ pub fn ask_offset<'built>(builder: &mut FlatBufferBuilder<'built>, asked: &Asked
         Asked::UsePoint { point } => args = messages::AskArgs { kind: USE_POINT, column: *point, ..args },
         Asked::FindLore { chapter } => args = messages::AskArgs { kind: FIND_LORE, item: u32::from(*chapter), ..args },
         Asked::ToShip => args = messages::AskArgs { kind: TO_SHIP, ..args },
+        Asked::ClaimGuild { slot } => args = messages::AskArgs { kind: CLAIM_GUILD_BOUNTY, column: *slot, ..args },
+        Asked::Outpost(outpost) => args = outpost_args(*outpost, args),
         Asked::Grant(Grant::Vestige { rarity, slot, level }) => {
             args = messages::AskArgs {
                 kind: GRANT_VESTIGE,

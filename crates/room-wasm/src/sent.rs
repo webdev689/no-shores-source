@@ -40,6 +40,7 @@ struct Now {
     revives: Option<u8>,
     public: Option<PublicSeen>,
     encounter: Option<room::encounters::EncounterSeen>,
+    outpost: u32,
     reviving: Vec<Reviving>,
 }
 
@@ -95,6 +96,7 @@ impl Sent {
             revives: room.revives(),
             public: room.public_seen(),
             encounter: room.encounter_seen(),
+            outpost: room.outpost_plot(),
             reviving: room.reviving_seen(),
         };
         let own: BTreeMap<_, _> = now
@@ -194,6 +196,7 @@ impl Sent {
             revives: now.revives,
             public,
             encounter: now.encounter.as_ref(),
+            outpost: now.outpost,
             // The darkness is where the viewer lies, so the Court's holds only those in it (`Room::darkness_for`).
             darkness: room.darkness_for(viewer),
             reviving: &now.reviving,

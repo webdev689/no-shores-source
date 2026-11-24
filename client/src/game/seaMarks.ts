@@ -1,15 +1,15 @@
 // The marks the sea's view shows: a port's icon over its harbour once the ship is near, the Playlist's beside it, and a
-// mark for each hostile ship within its sight; or the landings over the island's side the view stands over. Laid on
-// the picture, a crowd of ports thinned to the nearest (a hostile ship's mark is never thinned away), and each named
-// where its name fits. A locked node's mark still shows, so the player sees what lies ahead, but a click on it never
-// lands.
+// mark for each hostile ship within its sight; or the landings over the island's side the view stands over, with the
+// Playlist beside its city's. Laid on the picture, a crowd of ports thinned to the nearest (a hostile ship's mark is
+// never thinned away), and each named where its name fits. A locked node's mark still shows, so the player sees what
+// lies ahead, but a click on it never lands.
 import type { SeenHostile } from '../network/messages.ts';
 import type { CameraPose, Viewport } from '../overworld/overworldCamera.ts';
 import { type Mark, type PlacedMark, placeMarks } from '../overworld/overworldMarks.ts';
 import type { Point2, Vec3 } from '../overworld/ground.ts';
 import { sideNodes } from '../overworld/islandView.ts';
 import type { ScreenMark } from './hud.ts';
-import { distanceText } from './hudLaw.ts';
+import { distanceText } from '../plus/compass.ts';
 import { HOSTILE_PREFIX, hostileLook, hostileMarks, hostileNote } from './seaHostiles.ts';
 import type { Landmass } from './landmass.ts';
 import { LOCKED_WORDS, portOf, socialLater, socialLocked } from './nodes.ts';
@@ -65,11 +65,13 @@ export const playlistMarkOf = (city: string) => `${city}-playlist`;
 /** The port city a Playlist's mark stands beside; null for any other mark. */
 export const playlistPort = (id: string): string | null => (id.endsWith('-playlist') ? id.slice(0, -9) : null);
 
-/** Each Playlist's mark laid beside its port's, as wide apart as the two are drawn, so it never covers it: to its
- *  right, or to its left where the picture `width` across ends first. */
-function besidePorts(laid: readonly PlacedMark[], width: number): PlacedMark[] {
+/** Each Playlist's mark laid beside its city's, as wide apart as the two are drawn, so neither covers the other: its
+ *  port's at sea, its social space's over the island's side; to its right, or to its left where the picture `width`
+ *  across ends first. */
+function besideItsCity(laid: readonly PlacedMark[], width: number): PlacedMark[] {
   return laid.map((mark) => {
-    const port = mark.kind === 'playlist' ? laid.find((one) => one.id === `${playlistPort(mark.id)}-port`) : undefined;
+    const city = mark.kind === 'playlist' ? playlistPort(mark.id) : null;
+    const port = city ? laid.find((one) => one.id === `${city}-port` || one.id === `${city}-social`) : undefined;
     if (!port) return mark;
     const apart = (port.sizePx + mark.sizePx) / 2 + MARK_GAP_PX / 3;
     const right = port.x + apart + mark.sizePx / 2 <= width;
@@ -78,9 +80,9 @@ function besidePorts(laid: readonly PlacedMark[], width: number): PlacedMark[] {
 }
 
 /** The marks over the island's side a landfall shows, the ship at `ship` off an island whose middle is `centre`: the
- *  nodes on the ship's side, the city's social space among them when `docking`, and only then the Playlist beside its
- *  harbour; and those the view is framed on, the nodes alone, so a landfall far from the harbour is never stretched
- *  to show it. */
+ *  nodes on the ship's side, the city's social space among them when `docking`, and the island's Playlist however it
+ *  is reached; and those the view is framed on, the nodes alone, so a landfall far from the harbour is never stretched
+ *  to show it, its Playlist held at the picture's edge. */
 export function landfallMarks(
   island: readonly Mark[],
   ship: Point2,
@@ -91,7 +93,7 @@ export function landfallMarks(
   const near = sideNodes(ship, centre, nodes);
   const social = nodes.find((mark) => mark.kind === 'social');
   const framed = docking && social && !near.includes(social) ? [social, ...near] : near;
-  const playlist = docking ? island.filter((mark) => mark.kind === 'playlist') : [];
+  const playlist = island.filter((mark) => mark.kind === 'playlist');
   return { side: [...framed, ...playlist], framed };
 }
 
@@ -123,7 +125,7 @@ export function seaMarks(
           side.filter((mark) => !socialLocked(mark.id) || socialLater(mark.id))
         : [];
   const edges = view === 'sail' ? MARK_EDGES.sea : MARK_EDGES.side;
-  const laid = besidePorts(placeMarks(marks, pose, viewport, edges), viewport.width);
+  const laid = besideItsCity(placeMarks(marks, pose, viewport, edges), viewport.width);
   const ships = view === 'sail' ? placeMarks(hostileMarks(hostiles, ship), pose, viewport, edges) : [];
   // The Playlist stands beside its port, never thinned away by it, and shows while its port does.
   const kept =

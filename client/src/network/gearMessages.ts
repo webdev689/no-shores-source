@@ -103,15 +103,26 @@ export const ASKS = {
   /** A return to the player's ship, which the room answers (107 yes, or 103 its character not yet given it, 105
    *  fallen, 106 struck in the last ten seconds, 108 no ship kept yet) before the page leaves for the sea. */
   toShip: 73,
+  /** A guild bounty claimed, by its slot among the week's four in `column` (`gear::guild`). */
+  claimGuildBounty: 75,
+  /** At an outpost (`crates/room/src/outpost*.rs`): Aurem put into the guild's treasury, `count` of it; a material
+   *  delivered to the structure `item` being built, `slot` the material (0 Timber, 1 Canvas, 2 Iron, 3 Heartwood, 4 the
+   *  island's own) and `count` how many; a material taken from the stores, `slot` and `count` so; the War Horn
+   *  sounded; and the plot changed through the accounts, which the room reads again. */
+  outpostDeposit: 76,
+  outpostDeliver: 77,
+  outpostTake: 78,
+  outpostHorn: 79,
+  outpostChanged: 80,
   /** The Harbourmaster's asks, the hull's number in `column`: a hull bought, a ship kept sailed, a dress bought by its
    *  number in `item`, a dress kept laid on a ship (`item` the dress), and a ship named (its words' places in `node`
    *  and `slot`, 255 for no first word; `count` 1 for a renaming at the shipyard's price, 0 for the first, free name).
    *  At the Harbourmaster's counter. */
-  buyShip: 79,
-  sailShip: 80,
-  buyDress: 81,
-  dressShip: 82,
-  nameShip: 83,
+  buyShip: 81,
+  sailShip: 82,
+  buyDress: 83,
+  dressShip: 84,
+  nameShip: 85,
 } as const;
 
 /** Shape's place while he is away. */

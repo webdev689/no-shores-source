@@ -10,6 +10,7 @@ const plate = (more: Partial<PlayerPlate> = {}): PlayerPlate => ({
   name: 'Mariner',
   level: 6,
   menu: false,
+  tag: '',
   ...more,
 });
 const placed = (id: number, x: number, more: Partial<PlayerPlate> = {}, company = false): PlatedPlayer => ({
@@ -62,4 +63,17 @@ test('a plate is green for the company and blue for anyone else, and a menu open
   assert.deepEqual(words(plateNode({ ...sailing, plate: { ...sailing.plate, name: '' } }, 1)).slice(1), [
     '"words":"the Grey Gull"',
   ]);
+});
+
+test("a member's plate reads their guild's tag after their name, fainter; a guest's shows neither", () => {
+  const words = (node: Node): string[] =>
+    [node.text?.words, ...(node.children ?? []).flatMap((child) => (child ? words(child) : []))].filter(
+      (said): said is string => said !== undefined,
+    );
+  const tagged = plateNode(placed(1, 0, { tag: 'SALT' }), 1);
+  assert.deepEqual(words(tagged), ['6', 'Mariner', '[SALT]']);
+  const tag = tagged.children?.find((child) => child && child.text?.words === '[SALT]');
+  assert.ok(tag && (tag.opacity ?? 1) < 1, 'the tag a shade fainter than the name');
+  assert.deepEqual(words(plateNode(placed(2, 0, { name: '', tag: 'SALT' }), 1)), ['6'], "a guest's square alone");
+  assert.deepEqual(words(plateNode(placed(3, 0), 1)), ['6', 'Mariner'], 'in no guild, the name alone');
 });

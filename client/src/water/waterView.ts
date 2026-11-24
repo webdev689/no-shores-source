@@ -47,7 +47,10 @@ export interface WaterScene {
   readonly time: number;
   readonly seconds: number;
   readonly exaggeration: number;
+  /** How far the clear air lets the eye see, metres; and the cloud deck's base (metres over the sea), under which the
+   *  weather's fog lies, so an eye risen far over it sees the land through the rain (none given: no deck). */
   readonly fogM: number;
+  readonly fogTopM?: number;
   /** The window's north-west corner in the world, metres. */
   readonly world: readonly [number, number];
   readonly swell: Swell | undefined;
@@ -92,6 +95,8 @@ const SEGMENTS = 192;
 /** How far the breakers and the wakes raise the water, and the rounding, at most: metres more the surface may stand
  *  off its still level, and be carried sideways, than the swell's own waves take it. */
 const SURFACE_SLACK_M = 5;
+/** The weather's top where no deck is given, metres: above any eye, so its fog lies along every whole line. */
+const NO_DECK_M = 1e9;
 
 /** The bearings the chop is laid along: the local wind's, to the nearest of sixteen, so a slowly turning wind sets the
  *  pattern afresh only now and then; it fades from the last bearing's over this long, seconds, so it never jumps. */
@@ -347,7 +352,7 @@ export class WaterView {
     values.set([scene.size[0], scene.size[1], scene.fogM, surface], 36);
     const patch = scene.patch;
     values.set(patch ? [patch.corner[0], patch.corner[1], patch.step, 1] : [0, 0, 1, 0], 40);
-    values.set([scene.coarse.cellM, scene.eyeWater?.fresh ? 1 : 0, 0, 0], 44);
+    values.set([scene.coarse.cellM, scene.eyeWater?.fresh ? 1 : 0, 0, scene.fogTopM ?? NO_DECK_M], 44);
     const disc = this.discOf(scene);
     values.set([disc.inner, disc.outer, disc.rings, disc.segments], 48);
     const [rippleX, rippleY, rippleCell, rippleCells] = this.ripples.area;
