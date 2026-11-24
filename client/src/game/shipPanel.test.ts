@@ -61,3 +61,11 @@ test('Manage lists its men only once its build carries a crew', () => {
   assert.equal(rowsOf(0).has('Men'), false, 'no crew yet: no Men row over the Crew marked Later');
   assert.equal(rowsOf(12).get('Men'), '12 / 12');
 });
+
+test("Manage's title names its hull, and the ship once it is named", () => {
+  const build = sloopBuildOf(BUILD);
+  assert.ok(build);
+  const measure = { lengthM: 6, beamM: 2, draughtM: 0.6 };
+  assert.equal(shipPanelOf(build, measure, null).title, 'Your Sloop');
+  assert.equal(shipPanelOf(build, measure, null, null, 'the Grey Gull').title, 'Your Sloop, the Grey Gull');
+});

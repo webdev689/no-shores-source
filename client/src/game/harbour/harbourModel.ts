@@ -15,8 +15,8 @@ export const NO_WORD = 255;
 export const SLOOP = 0;
 
 /** How a hull stands at the counter: the one sailed, kept at the harbour, to be had, short of its price, not sold yet
- *  at the ship's level, or given in the welcome and not yet handed over. */
-export type HullState = 'sailing' | 'kept' | 'buy' | 'short' | 'locked' | 'given';
+ *  at the ship's level, not sold to one who keeps no ship yet, or given in the welcome and not yet handed over. */
+export type HullState = 'sailing' | 'kept' | 'buy' | 'short' | 'locked' | 'shipless' | 'given';
 
 /** A hull at the counter: its number, name and words, how it stands, the ship level it is sold from, its price in
  *  Aurem and in Timber, Canvas, Iron and Heartwood with what of each the player is short of, the ask that has it or
@@ -73,11 +73,13 @@ export function hullOffers(gear: GearState): HullOffer[] {
         : 'kept'
       : found.given
         ? 'given'
-        : fleet.length === 0 || level < found.level
-          ? 'locked'
-          : short.aurem || short.materials.some(Boolean)
-            ? 'short'
-            : 'buy';
+        : fleet.length === 0
+          ? 'shipless'
+          : level < found.level
+            ? 'locked'
+            : short.aurem || short.materials.some(Boolean)
+              ? 'short'
+              : 'buy';
     const ask: GearAsk | null =
       state === 'kept'
         ? { kind: ASKS.sailShip, column: hull }

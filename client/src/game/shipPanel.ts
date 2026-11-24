@@ -117,23 +117,26 @@ export function compassOf(heading: number): string {
 
 const metres = (value: number) => `${value.toFixed(1)} m`;
 
-/** The panel once its build is read, none before: for its build, its measure and its voyage, if it is under one. */
+/** The panel once its build is read, none before: for its build, its measure and its voyage, if it is under one, and
+ *  its name, if it has one. */
 export function shipPanelOnceBuilt(
   build: HullBuild | null,
   measure: Measure,
   voyage: Voyaging | null,
   kept: Kept | null = null,
+  called: string | null = null,
 ): ShipPanel | null {
-  return build ? shipPanelOf(build, measure, voyage, kept) : null;
+  return build ? shipPanelOf(build, measure, voyage, kept, called) : null;
 }
 
-/** The panel for its build, its measure, its voyage if it is under one, and the hurts the sea keeps with it (whole
- *  when it has said none) with its repair. */
+/** The panel for its build, its measure, its voyage if it is under one, the hurts the sea keeps with it (whole when it
+ *  has said none) with its repair, and its name in its title, "Your Brig, the Grey Gull", if it has one. */
 export function shipPanelOf(
   build: HullBuild,
   measure: Measure,
   voyage: Voyaging | null,
   kept: Kept | null = null,
+  called: string | null = null,
 ): ShipPanel {
   const have = (whole: number, share = 1) => `${Math.round(whole * share)} / ${whole}`;
   const guns =
@@ -141,7 +144,7 @@ export function shipPanelOf(
       ? `${build.guns.port} a side`
       : `${build.guns.port} to port, ${build.guns.starboard} to starboard`;
   return {
-    title: `Your ${build.name}`,
+    title: called ? `Your ${build.name}, ${called}` : `Your ${build.name}`,
     parts: [
       {
         heading: 'Vessel',

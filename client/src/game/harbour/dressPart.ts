@@ -24,6 +24,8 @@ const PART_NAMES: Readonly<Record<DressPart, string>> = {
 
 /** A swatch's size, pixels: a colour's square, and a flag's, half again as long as it is deep. */
 const SWATCH = 44;
+/** A swatch's tile is one width whatever its words, which wrap under it. */
+const SWATCH_TILE = 96;
 const FLAG = [54, 36] as const;
 /** The layer the first flag stands at among the ship's pictures. */
 const FIRST_FLAG = SHIP_PARTS.length;
@@ -70,7 +72,7 @@ function standing(tile: DressTile): { readonly said: string; readonly colour: st
       return { said: `Ship level ${entry.source.level ?? 1}`, colour: INK.faint };
     case 'faction': {
       const house = factions.factions.find((faction) => faction.id === entry.source.faction)?.name ?? 'its house';
-      return { said: `${house}, rank ${entry.source.rank ?? 1}`, colour: INK.faint };
+      return { said: `${house} rank ${entry.source.rank ?? 1}`, colour: INK.faint };
     }
   }
 }
@@ -115,7 +117,12 @@ function swatchTile(context: MenuContext, tile: DressTile, emblem: number): Node
       width: tile.state === 'worn' ? 2 : 1,
       colour: tile.state === 'worn' ? INK.gain : lit ? INK.brassLit : ring,
     },
-    children: [swatchOf(tile, emblem), words(said.said, 1, said.colour), fillNode(charged)],
+    width: SWATCH_TILE,
+    children: [
+      swatchOf(tile, emblem),
+      { width: 'grow', alignX: 'center', children: [{ text: { words: said.said, colour: said.colour, wrap: true } }] },
+      fillNode(charged),
+    ],
   };
 }
 

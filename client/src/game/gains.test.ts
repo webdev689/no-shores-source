@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { ARTS } from './artsCards.ts';
-import type { GearItem, GearState } from '../network/gearMessages.ts';
+import type { GearItem, GearShip, GearState } from '../network/gearMessages.ts';
 import { gainsOf } from './gains.ts';
 
 const item = (id: number, rarity: number, place = 0): GearItem => ({
@@ -176,7 +176,7 @@ test('XP, reputation and an Art’s progress are short lines; a level, a fragmen
       artXp: [5, 0, 0],
       artOwned: [0, 0, 0],
     },
-    ship: { xp: 50n, stocks: [1, 1, 1, 1] } as unknown as GearState['ship'],
+    ship: { xp: 50n, stocks: [1, 1, 1, 1], fleet: [], dresses: [] } as unknown as GearState['ship'],
   });
   const after = state({
     xp: 1250n,
@@ -188,7 +188,7 @@ test('XP, reputation and an Art’s progress are short lines; a level, a fragmen
       artXp: [45, 0, 0],
       artOwned: [0, 0, 1],
     },
-    ship: { xp: 80n, stocks: [3, 1, 1, 1] } as unknown as GearState['ship'],
+    ship: { xp: 80n, stocks: [3, 1, 1, 1], fleet: [], dresses: [] } as unknown as GearState['ship'],
   });
   const shown = gainsOf(before, after).map((gain) => [gain.name, gain.count, gain.compact]);
   assert.deepEqual(shown, [
@@ -200,4 +200,52 @@ test('XP, reputation and an Art’s progress are short lines; a level, a fragmen
     ['Timber', 2, false],
     ['Ship XP', 30, true],
   ]);
+});
+
+test('a ship handed over or bought and a ship’s dress bought are gains; a ship sailed again is not', () => {
+  const ship = (fields: Partial<GearShip>): GearShip => ({
+    xp: 0n,
+    level: 1,
+    prestige: 0,
+    attack: 0,
+    defense: 0,
+    toNext: 0,
+    toNextNeeds: 0,
+    stocks: [],
+    hands: 10,
+    handsMost: 10,
+    officers: [],
+    offers: [],
+    trim: [],
+    pledge: 0,
+    fleet: [],
+    sailed: 0,
+    dresses: [],
+    ...fields,
+  });
+  const sloop = { hull: 0, name: [255, 255], named: false, dress: [] };
+  const brig = { ...sloop, hull: 2 };
+  const handed = gainsOf(state({ ship: ship({}) }), state({ ship: ship({ fleet: [sloop] }) }));
+  assert.deepEqual(
+    handed.map((each) => [each.key, each.name, each.glyph]),
+    [['hull-0', 'Sloop', 'hull']],
+  );
+  const bought = gainsOf(
+    state({ ship: ship({ fleet: [sloop], dresses: [0] }) }),
+    state({ ship: ship({ fleet: [sloop, brig], sailed: 2, dresses: [0, 1] }) }),
+  );
+  assert.deepEqual(
+    bought.map((each) => [each.key, each.name]),
+    [
+      ['hull-2', 'Brig'],
+      ['dress-1', 'Tar Black'],
+    ],
+  );
+  assert.ok(bought[1]?.icon?.startsWith('<svg'));
+  const sailed = gainsOf(
+    state({ ship: ship({ fleet: [sloop, brig], sailed: 2 }) }),
+    state({ ship: ship({ fleet: [sloop, brig], sailed: 0 }) }),
+  );
+  assert.deepEqual(sailed, [], 'sailing another kept ship gains nothing');
+  assert.deepEqual(gainsOf(state({}), state({ ship: ship({ fleet: [sloop] }) })), [], 'nor the first word on the ship');
 });

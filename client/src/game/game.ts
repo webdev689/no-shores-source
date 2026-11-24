@@ -12,6 +12,7 @@ import { RoomThread } from '../network/roomThread.ts';
 import { RoomConnection } from '../network/roomConnection.ts';
 import { MarkView } from '../ships/markView.ts';
 import { HULL_NAMES, hullWaterline, SLOOP_HULL } from '../ships/hulls.ts';
+import { calledOf } from './harbour/harbourModel.ts';
 import { Ambience } from './audio/ambience/ambience.ts';
 import { MusicDirector } from './audio/music/director.ts';
 import { Charting } from './charting.ts';
@@ -504,6 +505,7 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement): Promise<vo
   // The hull the player sails, by the gear the room last sent, its build and its waterline.
   const sailed = () => fed()?.gear?.ship?.sailed ?? SLOOP_HULL;
   const builtShip = () => builtHulls()?.[sailed()] ?? null;
+  const called = () => calledOf(fed()?.gear?.ship?.fleet.find((ship) => ship.hull === sailed()));
   const shipWaterline = () => hullWaterline(sailed());
   // The Ship tab's papers: its voyage only while it is at sea.
   const shipNow = () =>
@@ -512,6 +514,7 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement): Promise<vo
       shipWaterline(),
       playing.flow.mode === 'sea' ? playing.sea : null,
       playing.seaWord?.keptOf(playing.sea?.sighted ?? null) ?? null,
+      called(),
     );
   /** Going through the gate the player stands in to the node it leads to. */
   const goThrough = () => {

@@ -63,8 +63,10 @@ function numberRow(number: HullNumber, size: number): Node {
   };
 }
 
-/** Its price: the Aurem and each ship material it asks, red where the player is short; nothing for a given hull. */
+/** Its price: the Aurem and each ship material it asks, red where the player is short; nothing for a given hull or
+ *  one kept already. */
 function priceRow(offer: HullOffer, size: number): Node | null {
+  if (offer.state === 'sailing' || offer.state === 'kept') return null;
   if (offer.aurem === 0 && offer.materials.every((count) => count === 0)) return null;
   const cost = (glyph: Parameters<typeof glyphNode>[0], count: number, short: boolean, name: string): Node => ({
     gap: 4,
@@ -88,11 +90,13 @@ function priceRow(offer: HullOffer, size: number): Node | null {
 function why(offer: HullOffer): string {
   switch (offer.state) {
     case 'sailing':
-      return offer.called ? `Sailing ${offer.called}` : 'Sailing';
+      return 'The ship you sail';
     case 'given':
       return 'The Harbourmaster hands it over in the welcome.';
     case 'locked':
-      return offer.level > 1 ? `Sold from ship level ${offer.level}` : 'Take your first ship from the Harbourmaster.';
+      return `Sold from ship level ${offer.level}`;
+    case 'shipless':
+      return 'Take your first ship from the Harbourmaster.';
     case 'short':
       return 'Not enough to pay for it';
     default:
@@ -143,6 +147,7 @@ function hullPanel(
     label: named,
     children: [
       headingNode(offer.name, offer.state === 'sailing' ? words('SAILING', size, INK.gain) : null, context.sizes.name),
+      offer.called ? words(offer.called, size, INK.brassLit) : null,
       { width: 'grow', text: { words: offer.words, size, colour: INK.faint, wrap: true } },
       // Its numbers stand once the rules' door has given them, a moment after the page opens.
       ...(build ? hullNumbers(build, all).map((number) => numberRow(number, size)) : []),
@@ -152,11 +157,12 @@ function hullPanel(
   };
 }
 
-/** The shipyard: every hull's panel, two to a row where the page is wide enough. */
+/** The shipyard: every hull's panel, four to a row where the page is wide enough, else two, else one. */
 export function shipyardPart(context: MenuContext, builds: readonly HullBuild[] | null): Node {
   const offers = hullOffers(context.gear);
-  const across = context.room.width >= 900 ? 2 : 1;
-  const width = Math.floor((context.room.width - 36 - (across - 1) * 14) / across);
+  const room = context.room.width - 36;
+  const across = room >= 1100 ? 4 : room >= 640 ? 2 : 1;
+  const width = Math.floor((room - (across - 1) * 14) / across);
   return {
     width: 'grow',
     wrap: true,

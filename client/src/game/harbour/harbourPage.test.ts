@@ -86,7 +86,7 @@ test('the shipyard offers every hull: the one sailed, the Sloop given, one to bu
   const shipless = hullOffers(gear({}, { fleet: [] }));
   assert.deepEqual(
     shipless.map((offer) => offer.state),
-    ['given', 'locked', 'locked', 'locked'],
+    ['given', 'shipless', 'shipless', 'shipless'],
     'before the welcome hands over the Sloop',
   );
 });
@@ -103,7 +103,7 @@ test("a hull's numbers stand against the most any hull has, a reload against the
 
 test('the shipyard is held to buy, a ship kept is clicked to sail, and nothing else is asked', () => {
   const page = drawn(gear(), (context) => harbourPage(context, BUILDS, ['shipyard', null], () => undefined));
-  assert.match(page.shows(), /SLOOP .*Sailing/);
+  assert.match(page.shows(), /SLOOP \| SAILING .*The ship you sail/);
   assert.match(page.shows(), /Sold from ship level 13/);
   page.click('hull-1');
   assert.deepEqual(page.asked, [], 'a click buys nothing');
@@ -174,4 +174,5 @@ test('with no ship kept yet the counter says so, and the shipyard offers the Slo
   assert.match(paint.shows(), /Keep a ship first/);
   const yard = drawn(shipless, (context) => harbourPage(context, BUILDS, ['shipyard', null], () => undefined));
   assert.match(yard.shows(), /hands it over in the welcome/);
+  assert.match(yard.shows(), /Take your first ship from the Harbourmaster/);
 });

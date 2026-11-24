@@ -97,6 +97,8 @@ The sea's snapshot carries each player's ship's hull, its four dresses, its name
 stands over its own hull's masthead with the ship's name under the player's. The shader lays the paint and the stripe
 on the hull's shell, the canvas on every sail (its second colour on every other cloth of the painter's picture), and
 flies the flag's own picture: one a side, one a flag dress, and one an emblem (`flagPictures.ts`).
+Dresses and the name's words cross the wire by their place in their lists, so both files are numbered content
+(`tools/numbered.json`): a page built from another order of either loads again, once ([[Server]]).
 
 ## Limits
 
