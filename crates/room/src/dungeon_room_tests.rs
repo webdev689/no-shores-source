@@ -281,10 +281,10 @@ fn the_cache_opens_with_a_dungeons_clear_for_each_player_in_when_the_reeve_falls
     let from = room.cache().map(|cache| [cache[0], cache[1], cache[2]]).unwrap();
     for (player, held) in players.iter().zip(held) {
         assert_eq!(items(&room, *player), held + 1, "an item for each player in the room, as a dungeon's clear pays");
-        // Beside the item, now and then a Vestige at the Reeve's level, thrown out of the cache.
+        // Beside the item, now and then a Vestige at the Reeve's level, poured out of the cache.
         for drop in room.drops_for(*player) {
             assert!(matches!(&drop.what, crate::Dropped::Vestige(vestige) if vestige.level == level), "{drop:?}");
-            assert!(apart([drop.at[0], drop.at[1]], [x, y]) < 1.0 && drop.from == from, "thrown out of it");
+            assert!(apart([drop.at[0], drop.at[1]], [x, y]) < 1.0 && drop.from == from && drop.poured, "poured");
         }
     }
     let later = room.join().expect("room");

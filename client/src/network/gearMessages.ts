@@ -184,8 +184,8 @@ export const AMMO_FULL = 720;
 export const DROPPED = { vestige: 0, ammoBox: 1, crate: 2, chest: 3 } as const;
 
 /** A drop lying for the player: their number for it, a Vestige's rarity and slot, where it rests, what it is, where it
- *  was thrown from, the room's ticks it has still to fly, and a chest's tier (1 won, 2 won with the bonus, 3 heroic,
- *  4 heroic with the bonus; 0 for anything else). */
+ *  was thrown from, the room's ticks it has still to fly, a chest's tier (1 won, 2 won with the bonus, 3 heroic,
+ *  4 heroic with the bonus; 0 for anything else), and whether it was poured out of a chest. */
 export interface GearDrop {
   readonly id: number;
   readonly rarity: number;
@@ -195,6 +195,7 @@ export interface GearDrop {
   readonly from: readonly [number, number, number];
   readonly flying: number;
   readonly tier: number;
+  readonly poured: boolean;
 }
 
 /** A resource node standing that the player may still gather: its number in the room, where, and its resource. */
@@ -412,6 +413,7 @@ export function gearOf(gear: Gear): GearState {
       from: [fromX, fromY, fromZ] as const,
       flying: drop.flying(),
       tier: drop.tier(),
+      poured: drop.poured(),
     };
   });
   return {

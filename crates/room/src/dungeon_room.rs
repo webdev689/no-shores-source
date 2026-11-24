@@ -290,10 +290,8 @@ impl Room {
         let Some(found) = self.players.get_mut(&player) else { return };
         let vestiges = found.character.reward_clear(gear::rewards::Clear::Dungeon, level, difficulty, source, &dice);
         found.gear_changed = true;
-        // Thrown out of the cache onto the floor before it, which `cache_by` keeps clear, as a kill throws its drops.
-        for vestige in vestiges {
-            self.lay(player, crate::Dropped::Vestige(vestige), cache.vestige, cache.at);
-        }
+        // Poured out of the cache onto the floor before it, which `cache_by` keeps clear.
+        self.pour(player, vestiges, cache.at, Some(cache.vestige));
     }
 
     /// The cache of a dungeon's room, as the snapshot carries it: x, y, z, the way it faces, and 1 open or 0 shut.

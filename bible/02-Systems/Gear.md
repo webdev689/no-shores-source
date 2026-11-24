@@ -172,7 +172,8 @@ number is one of [[Gear as Claude Shapes It]].
   resource one time in two and a Vestige one time in twenty, coloured as a Minor's. A harder voyage raises the Aurem
   and the Vestige's chance by its reward, as a kill's. Neither pays XP. It is of the island's band's middle, raised by
   the room's seas, and a full stock takes none of the resource while the rest is paid
-  ([[Chests and Searchable Containers as Claude Builds Them]]).
+  ([[Chests and Searchable Containers as Claude Builds Them]]). A chest's Vestige is poured out of it ("Drops",
+  below); a container's is thrown to the searcher's feet.
 - **Asks.** Wearing, taking off, buying and choosing nodes, dismantling, identifying, feeding Fruit, and the vault;
   a ship's modules are fitted, upgraded and infused by the same asks ([[Ship Power]]), and its officers have theirs
   ([[Crew]]).
@@ -212,7 +213,7 @@ number is one of [[Gear as Claude Shapes It]].
 - **A dungeon's cache.** When a dungeon's end foe falls (its Reeve, or an Elite Dungeon's Boss), its cache opens
   and pays every player then in the dungeon's room a dungeon's clear at the end foe's level, whoever struck it
   (`pay_cache`; "A clear", above): its XP and Aurem, an item coloured as its Miniboss's, and a Vestige as often as its
-  Miniboss leaves one, thrown out of the cache to lie before it for them as a kill's drop does ("Drops", below;
+  Miniboss leaves one, poured out of the cache onto the floor before it for them ("Drops", below;
   [[Dungeons]], "In the rooms"). A run's first clear in its period pays as well, the dungeon of the day's or the
   week's two's, its Vestige kept straight into the carried ten, else the vault, else the mail ([[Activities]], "What it
   pays, once").
@@ -359,6 +360,13 @@ DFO's spoils ([[Pick - Loot Drops]]).
   high stands anywhere in the throw's way, the ground there lies more than a step below, or the spot lies past the
   section's ring, so a piece never rests out of its player's reach. A piece is taken only once it has had time to
   settle, the longest it can bounce: a Vestige 94 ticks (about 1.6 s) after it is thrown, ammunition 60 (1 s).
+- **Poured out of a chest** ([[Every Chest Is DFO's Chest, and Its Vestige Pours Out as project-final's Cache Pours]]).
+  A chest's Vestige, a patrol's or a dungeon's chest to find, a dungeon's cache, or a public event's chest its player
+  opens, is poured out of it as project-final's cache pours its loot (`Room::pour`): thrown from the chest's foot,
+  fanned toward the player who opened it as a kill's are, or onto the floor the cache keeps clear before it. It may be
+  taken 122 ticks after (about 2 s: the lid's 0.22 s to open its mouth, and the longest the pour's higher pop
+  bounces), and is otherwise as any drop. An event's chest that lapses unopened, or is opened as its player leaves,
+  puts its Vestige in the ten, else the vault, else on the ground, as before.
 - **Taken.** Walking within 1.5 m of a piece at rest takes it: a Vestige while fewer than ten are carried, a box while
   the ammunition is not full, a crate while fewer than five are carried. A piece not taken stays two minutes; then
   the room sends the player's gear again without it, so their page stops showing it, and a Vestige among them goes
@@ -371,7 +379,8 @@ DFO's spoils ([[Pick - Loot Drops]]).
 - **Seen** ([[Vestiges Are project-final's Crystals, and Physical Pictures Are Baked]],
   [[Pick - project-final Drops]]). Each piece pops up out of the body, falls, and bounces until it lands slower than it
   settles, coming down on the room's spot; one thrown up to a spot over the body pops at least high enough to land
-  there. Settled, it rises to hover, bobbing and turning:
+  there. A poured Vestige waits unseen in its chest 0.22 s, then leaves its mouth 0.7 m over the chest's foot, popped
+  up at 6.2 to 7.6 m/s, and is otherwise a Vestige (`POURED_FEEL`). Settled, it rises to hover, bobbing and turning:
 
   | | A Vestige | Ammunition |
   |---|---|---|

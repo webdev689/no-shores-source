@@ -2,8 +2,8 @@
 //! middle, a container a second and a half within SEARCH_REACH of its sides, alive, on foot and on its level. Being
 //! hurt, mounting, falling or the find no longer standing stops it, and so does stirring or letting go before its
 //! last GATHER_GRACE_TICKS. Then it is opened for that player, kept for their account however often they rejoin, and
-//! pays them what it holds (`gear::finds`): a Vestige thrown out of a chest to lie before it, or out of a container to
-//! their feet, as a kill's drops are.
+//! pays them what it holds (`gear::finds`): a Vestige poured out of a chest as its lid opens, or thrown out of a
+//! container to their feet as a kill's drops are.
 
 use crate::asks::{GATHER_GRACE_TICKS, GATHER_STIR_M, MOUNTED, OUT_OF_REACH};
 use crate::finds::{Holder, Standing};
@@ -18,8 +18,6 @@ pub const SEARCH_TICKS: u64 = 90;
 pub const CHEST_REACH: f64 = 2.5;
 pub const SEARCH_REACH: f64 = 1.5;
 pub const FIND_HEIGHT: f64 = 2.0;
-/// How far before a chest its Vestige lies, metres.
-const VESTIGE_BEFORE_M: f64 = 0.8;
 
 /// A find being opened, E held: its number, the tick it began, where the body stood, its health last tick, and
 /// whether E was let go of.
@@ -121,17 +119,14 @@ impl Room {
         let paid = found.character.find(kind, (level, difficulty), resource, source, &dice);
         found.gear_changed = true;
         let body = [found.fighter.body.x, found.fighter.body.y, found.fighter.body.z];
-        let (to, from) = match standing {
-            Standing::Chest([x, y, z, facing]) => {
-                let before = [x + libm::sin(facing) * VESTIGE_BEFORE_M, y - libm::cos(facing) * VESTIGE_BEFORE_M, z];
-                (before, [x, y, z + crate::finds::CHEST_HALF_DEEP_M])
-            }
+        match standing {
+            Standing::Chest([x, y, z, _]) => self.pour(player, paid.vestiges, [x, y, z], None),
             Standing::Holder([west, north, east, south, _, top, _]) => {
-                (body, [(west + east) / 2.0, (north + south) / 2.0, top])
+                for vestige in paid.vestiges {
+                    let from = [(west + east) / 2.0, (north + south) / 2.0, top];
+                    self.lay(player, crate::Dropped::Vestige(vestige), body, from);
+                }
             }
-        };
-        for vestige in paid.vestiges {
-            self.lay(player, crate::Dropped::Vestige(vestige), to, from);
         }
     }
 

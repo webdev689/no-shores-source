@@ -72,7 +72,7 @@ pub mod winds;
 pub use arts::{Cast, Casting};
 pub use asks::{Asked, Grant, ResourceNode};
 pub use companions::Companion;
-pub use drops::{AMMO_REST_TICKS, DROP_TICKS, Drop, Dropped, VESTIGE_REST_TICKS};
+pub use drops::{AMMO_REST_TICKS, DROP_TICKS, Drop, Dropped, POURED_REST_TICKS, VESTIGE_REST_TICKS};
 pub use entrances::Entrance;
 pub use find_holds::{CHEST_REACH, FIND_HEIGHT, OPEN_TICKS, SEARCH_REACH, SEARCH_TICKS};
 pub use finds::{ChestPlace, Holder};

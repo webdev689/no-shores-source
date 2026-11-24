@@ -1,9 +1,9 @@
-//! A won event's chest: opened by its player within reach, paying once and never again; refused out of reach;
-//! opened for its player as it goes or as they leave, so it is never lost.
+//! A won event's chest: opened by its player within reach, paying once and never again, its Vestige poured out of it;
+//! refused out of reach; opened for its player as it goes or as they leave, so it is never lost.
 
 use super::fixture::{FISSURE_AT, place, room_at};
 use crate::asks::{Asked, OUT_OF_REACH};
-use crate::{DROP_TICKS, Dropped, EventKind, PlayerId, Room};
+use crate::{DROP_TICKS, Dropped, EventKind, POURED_REST_TICKS, PlayerId, Room};
 
 /// A room with one player and a heroic chest laid for them at the Fissure's ground; the chest's number.
 fn chested() -> (Room, PlayerId, u32) {
@@ -27,12 +27,23 @@ fn a_chest_opens_within_reach_pays_once_and_cannot_pay_again() {
     let before = room.players[&player].character.clone();
     room.answer(player, Asked::OpenChest { chest });
     let after = room.players[&player].character.clone();
-    assert!(after.xp > before.xp && after.materials.aurem > before.materials.aurem && after.vestiges.len() == 1);
+    assert!(after.xp > before.xp && after.materials.aurem > before.materials.aurem && after.vestiges.is_empty());
     assert_eq!(room.players[&player].answer, 0);
     assert!(chest_at(&room, player).is_none(), "taken off the ground");
+    let poured: Vec<_> = room.drops_for(player).collect();
+    assert!(
+        poured.len() == 1 && poured[0].poured && poured[0].from == at && matches!(poured[0].what, Dropped::Vestige(_)),
+        "its Vestige poured out of it: {poured:?}"
+    );
     assert_eq!(room.take_events().iter().filter(|event| event.kind == EventKind::ChestOpened).count(), 1);
     assert_eq!(room.open_chest(player, chest), OUT_OF_REACH, "no such chest any more");
     assert_eq!(room.players[&player].character, after, "paid once");
+    for _ in 1..POURED_REST_TICKS {
+        room.tick();
+    }
+    assert!(room.players[&player].character.vestiges.is_empty(), "never taken in the air");
+    room.tick();
+    assert_eq!(room.players[&player].character.vestiges.len(), 1, "taken once it rests, the player beside it");
 }
 
 #[test]
@@ -131,7 +142,7 @@ fn a_chest_stands_three_metres_out_from_the_grounds_middle_on_its_players_side()
 }
 
 #[test]
-fn opened_in_person_with_their_ten_full_its_vestige_goes_to_the_vault_and_with_the_vault_full_to_the_ground() {
+fn left_to_lapse_with_their_ten_full_its_vestige_goes_to_the_vault_and_with_the_vault_full_to_the_ground() {
     let fill = |room: &mut Room, player: PlayerId, vault: bool| {
         let character = &mut room.players.get_mut(&player).unwrap().character;
         for _ in 0..gear::character::VESTIGES_MOST {
@@ -143,19 +154,21 @@ fn opened_in_person_with_their_ten_full_its_vestige_goes_to_the_vault_and_with_t
             character.vestiges.insert(id, (gear::Vestige::new(id, gear::Rarity::Normal, gear::Slot::Head, 1), true));
         }
     };
-    let (mut room, player, chest) = chested();
+    let lapse = |room: &mut Room| {
+        for _ in 0..DROP_TICKS {
+            room.tick();
+        }
+    };
+    let (mut room, player, _) = chested();
     fill(&mut room, player, false);
-    let at = chest_at(&room, player).unwrap();
-    place(&mut room, player, [at[0] + 1.0, at[1]]);
-    assert_eq!(room.open_chest(player, chest), 0);
+    lapse(&mut room);
     let character = &room.players[&player].character;
     assert_eq!((character.vestiges_held(false), character.vestiges_held(true)), (10, 1), "to the vault");
     assert_eq!(room.drops_for(player).count(), 0, "nothing on the ground");
-    let (mut room, player, chest) = chested();
+    let (mut room, player, _) = chested();
     fill(&mut room, player, true);
     let at = chest_at(&room, player).unwrap();
-    place(&mut room, player, [at[0] + 1.0, at[1]]);
-    assert_eq!(room.open_chest(player, chest), 0);
+    lapse(&mut room);
     let character = &room.players[&player].character;
     assert_eq!(character.vestiges_held(true), gear::character::VAULT_MOST, "the vault kept to its limit");
     let lying: Vec<[f64; 3]> =

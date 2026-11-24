@@ -185,6 +185,30 @@ fn a_chest_opened_stays_opened_for_its_account_however_often_its_player_rejoins(
 }
 
 #[test]
+fn a_chests_vestige_is_poured_out_of_it_toward_its_opener_as_its_lid_opens() {
+    let (mut room, first) = patrol();
+    let mut poured = None;
+    // A chest holds a Vestige one time in four: each player opens every chest until one does.
+    for player in std::iter::once(first).chain(std::iter::from_fn(|| room.join()).take(5).collect::<Vec<_>>()) {
+        for (number, [x, y, z, _]) in room.chests_for(player) {
+            stand(&mut room, player, [x + 1.0, y]);
+            hold(&mut room, player, number, OPEN_TICKS);
+            if let Some(drop) = room.drops_for(player).find(|drop| matches!(drop.what, crate::Dropped::Vestige(_))) {
+                poured = Some((drop.clone(), [x, y, z], room.clock()));
+                break;
+            }
+        }
+        if poured.is_some() {
+            break;
+        }
+    }
+    let (drop, foot, now) = poured.expect("one of the chests holds a Vestige");
+    assert!(drop.poured && drop.from == foot, "poured out of the chest's foot: {drop:?}");
+    assert!(drop.at[0] > foot[0] + 1.0, "thrown toward its opener, east of it: {drop:?}");
+    assert!(drop.rests > now + crate::VESTIGE_REST_TICKS, "flying longer than a kill's throw, as the lid opens first");
+}
+
+#[test]
 fn a_container_searched_a_second_and_a_half_beside_it_pays_less_than_a_chest_and_its_vestige_lies_at_the_feet() {
     let (mut room, player) = patrol();
     let (number, [west, north, east, ..]) = room.searchables_for(player)[0];

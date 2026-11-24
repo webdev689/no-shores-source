@@ -133,6 +133,7 @@ test('a chest opened shows its tier in four pips, the XP it gave and the reputat
     from: [0, 0, 0] as const,
     flying: 0,
     tier: 3,
+    poured: false,
   };
   const before = state({
     xp: 1_000n,

@@ -391,7 +391,8 @@ pub fn gear_bytes(room: &Room, player: PlayerId) -> Option<Vec<u8>> {
                 Dropped::Chest { tier, .. } => (3, 0, 0, *tier),
             };
             let flying = u8::try_from(drop.rests.saturating_sub(room.clock())).unwrap_or(u8::MAX);
-            let args = messages::GearDropArgs { id: drop.id, rarity, slot, at, kind, from, flying, tier };
+            let poured = drop.poured;
+            let args = messages::GearDropArgs { id: drop.id, rarity, slot, at, kind, from, flying, tier, poured };
             messages::GearDrop::create(&mut builder, &args)
         })
         .collect();

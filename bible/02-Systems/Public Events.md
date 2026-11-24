@@ -136,9 +136,10 @@ Fragment and 3, 4, 6 and 8 of the island's resource, the same at any level; one 
 heroic chest a player opens each day, at any level, and none from any other, as Destiny 1's first gold event of the
 day sent an Ascendant material (`FIRST_HEROIC_ESSENCE`, kept with the day's record);
 and a Vestige always, of the event's level, a foe's colours from a plain chest (a Major's) and a Boss's from a heroic
-one ([[Gear]]'s colours by rank), the bonus's tier rolling twice and keeping the better. A Vestige with no room in the
-ten goes to the vault, and with no room there either lies on the ground where the chest stood, as any drop does; a
-leaver's goes to the vault however full, since the ground they leave would lose it.
+one ([[Gear]]'s colours by rank), the bonus's tier rolling twice and keeping the better. Opened by its player, the
+chest pours its Vestige out toward them, to be taken by walking over it ([[Gear]], "Drops"). One opened for them as it
+lapses puts its Vestige in the ten, else the vault, and with no room there either on the ground where the chest stood,
+as any drop does; a leaver's goes to the vault however full, since the ground they leave would lose it.
 
 **The wire.** A snapshot of a zone's room carries `public_event` ([[Server]]), but one built on a base leaves it
 out while it stands as the base's counted on, the page counting its countdowns on alike ("Limits"): the event running or showing its
@@ -210,7 +211,9 @@ sees and hears; the words are `game/publicLaw.ts`'s, worked out from the event a
   works out these moments from the event as it was and as it is.
 - **Props**: the marks go through `eventProps()` to the props' drawer every frame, each carried shard moved to its
   carrier's off hand as drawn (the player's own low in the left of a first-person view); the player's chests come
-  from their drops (drawn as props, not as drop pictures), and E within 2.5 m opens the one in reach (its lid swings
+  from their drops (drawn as props, not as drop pictures), each the owner's chest from DFO built in code, a plain
+  one timber with an iron hinge and a gold latch, a heroic one larger and all its metal gold ([[Pick - Chest]],
+  `client/src/city/chestModules.ts`), and E within 2.5 m opens the one in reach (its lid swings open to 77 degrees
   and it stands open 6 s from the asking). The fissure, its scar and the stores stand square to the grid, as the
   room stands them; the Tithe's banner is drawn in its grey canvas. The page's own movement and fight stand the
   fissure's four spires (`game/fissureSpires.ts`) at the event's ground while it runs, as the room does, and takes them
