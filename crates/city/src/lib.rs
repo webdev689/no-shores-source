@@ -213,18 +213,8 @@ pub fn plan_as(city: &City, ground: &Ground, blocks: &Blocks, ruined: bool) -> R
     if city.id == hub::HUB_CITY
         && let Some((harbour_avenue, roots)) = &harbour_way
     {
-        let (bounds, along_seaward) = social::plaza_bounds(centre, seaward, reach);
-        let frame = courtyard::Frame {
-            middle: [f64::midpoint(bounds[0], bounds[2]), f64::midpoint(bounds[1], bounds[3])],
-            seaward: along_seaward,
-            depth: social::PLAZA_M[1],
-            length: social::PLAZA_M[0],
-            level,
-        };
         let way = hub::Harboured {
             grid: &grid,
-            footings: &cell_footings,
-            uses: &uses,
             avenue: &avenues[*harbour_avenue]
                 .iter()
                 .copied()
@@ -234,7 +224,7 @@ pub fn plan_as(city: &City, ground: &Ground, blocks: &Blocks, ruined: bool) -> R
             works: &works,
             roots,
         };
-        hub::harbour(&mut social, &frame, &way);
+        hub::harbour(&mut social, &way);
     }
     let mut pads: Vec<Pad> = Vec::new();
     let mut cells = Vec::new();

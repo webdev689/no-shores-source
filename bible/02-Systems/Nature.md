@@ -133,8 +133,9 @@ width, and from the exact close patch where it reaches, eased in over its outer 
   runs, one instanced draw a run.
 - **Light.** As the land is lit, its ambient bounced warm from the ground onto a crown's underside and cool from the
   sky onto its top, with a little sun through the leaves, and the lamps' light at night ([[Sky]]); rain darkens bark
-  and leaves, with no sky's glare on a leaf, whose normal turns every way, so a crown never washes white; the meadow
-  is lit so too ([[The Meadow Art Is the Owner's, Its Tables Stay in Git, and the Grass Takes the Trees' Rain]]).
+  and leaves, with no sky's glare on a leaf, whose normal turns every way, so a crown never washes white
+  ([[The Harbourmaster Stands in the Market, Rain Spares the Trees, and Patrol Nodes Always Stand]]); the meadow is
+  lit so too ([[The Meadow Art Is the Owner's, Its Tables Stay in Git, and the Grass Takes the Trees' Rain]]).
   The plants lean the weather's way ([[Weather]]), a fresh breeze of 6 m/s bending them as they were drawn and a storm
   about twice as far, and gusts roll downwind across the land, deeper the gustier the wind; each plant rocks on its
   own beat, bending by its baked wind weights (still at the foot, free at the tips), and its leaves tremble, all
@@ -148,7 +149,8 @@ width, and from the exact close patch where it reaches, eased in over its outer 
   as thick as its trees grow, and the forest floor darker under them near. From 1 km, where the far trees thin out,
   the ground under the groves already takes most of the canopy's colour, so the gaps between the widened trees
   read as more crowns. So a forest reads from the sea and over an
-  island's side, and stands where its trees stand.
+  island's side, and stands where its trees stand. In rain the painted canopy, as much of the ground as it covers,
+  takes no sky's glare, as the crowns take none ([[The Harbourmaster Stands in the Market, Rain Spares the Trees, and Patrol Nodes Always Stand]]).
 - **Contact shade.** Each plant drawn far lays a soft dark disc on the ground under it,
   as wide as its crown, leaning a little the way the sun throws shadows and laid on the ground's slope at its foot,
   fading out by half its near range. Trunks darken toward the ground to meet it.

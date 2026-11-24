@@ -156,15 +156,19 @@ generated and shaped, before any city stands on it:
    [[Overlook's Hub as Claude Shapes It]]) lays Overlook's social space as courts and ways after the Tower: the
    Watch Court where players land, stone ranges with arched passages to the West Court and the Forge Yard, the Beacon
    Walk's market and the portico, the Hall of the Arts inside the Beacon's base with the three factions' chapels, the
-   Stair Yard, sealed gates, and the harbour way down the city's switchback and ramps to the quay and its pier, where
-   two ships lie moored. Each keeper stands in a stall of their own placed by its sockets. Its ways are laid as
+   Stair Yard, and sealed gates: one where the platform runs on round the base either side, and one at the harbour
+   way's head, where the city's switchback meets the Stair Yard's edge, a stone wall from the east sealed wall along
+   that edge with the gate in it across the switchback's top landing ([[The Harbourmaster Stands in the Market, Rain Spares the Trees, and Patrol Nodes Always Stand]]). Below it the harbour way runs down the
+   switchback and ramps to the quay and its pier, where two ships lie moored at their posts, seen and not walked. Each
+   keeper stands in a stall of their own placed by its sockets; the Harbourmaster's and the chandlery stand in the
+   Beacon Walk's market, in its outer bays between the lamp posts, backs on the base's face and facing the walk. Its ways are laid as
    flagstone walks, every corner where they meet curved, and its gardens' ground as lawn and the Forge Yard's as earth
    under them ([[The Hub's Paths Are Smooth and Rounded]]); each court is a scene of its own pieces
    ([[The Hub's Pieces Tell a Story, and Its Paths Are Paved Apart]]), its trees and bushes the land's own plants
    ([[The Hub's Plants Are the World's Low-Poly Ones]], [[Nature]]). Its townsfolk walk its ways ([[Game]]), and in it
    a fall of 6 m or more kills ([[Reach]]).
 10. **Ramps** (`ramps`): every avenue's terraces are joined by a ramp the road's width, and a switchback climbs at
-   each avenue's head; Overlook's harbour way is walked down them to the quay.
+   each avenue's head; Overlook's harbour way is laid down them to the quay, sealed at its head.
 
 **Open and locked.** Only Overlook's social space opens for now (`content/world/social.json`, read by the city crate and the page;
 [[Only Overlook's Social Space Opens for Now]]): the bake writes every other city's social node as closed, and the
@@ -178,8 +182,8 @@ Maren Hale behind the Lamplighters'; the Harbourmaster and the chandler as the t
 is here, he stands at his week's place, facing the plaza's middle (the plan's own plaza, `plazaBounds`, however far
 the ring reaches past it), his mark over him, E within 3 m opening his wares. In Overlook's hub his places stand
 clear of the townsfolk: 1.7 m or more from every way's line (a walker keeps 0.7 m right of it and over a metre from
-him) and over a metre from every post; at the pier's head 2 m out past the walkers' end, and on the switchback's
-middle landing 2 m aside of their line, away from the flights.
+him) and over a metre from every post; two of his eight stand before the harbour way's gate and in the market's west
+end.
 
 `city::settle` lays the plan's levels on the land as pads, rectangles of ground set to a level that the ground reads
 before its own relief (`land::pads`): the terraces, the plaza and the landmark's ground. So the city's ground is the
