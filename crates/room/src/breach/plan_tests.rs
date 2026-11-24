@@ -89,7 +89,8 @@ fn the_builds_tables_hold_each_module_as_the_manifest_does() {
         let found = city::modules::all().iter().find(|each| each.name == table.name).expect("in the manifest");
         assert_eq!(found.size, table.size, "{}", table.name);
         assert_eq!(found.parts, table.parts, "{}", table.name);
-        let sockets: Vec<_> = found.sockets.iter().map(|socket| (socket.name.as_str(), socket.at, socket.facing)).collect();
+        let sockets: Vec<_> =
+            found.sockets.iter().map(|socket| (socket.name.as_str(), socket.at, socket.facing)).collect();
         let tables: Vec<_> = table.sockets.iter().map(|socket| (socket.name, socket.at, socket.facing)).collect();
         assert_eq!(sockets, tables, "{}", table.name);
     }

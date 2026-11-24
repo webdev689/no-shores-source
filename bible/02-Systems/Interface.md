@@ -1031,7 +1031,10 @@ Playlist"), drawn after the owner's reference, Destiny's Vanguard screen (`Playl
 `playlistParts.ts`, in the entrance card's layer, over a dark scrim): "PLAYLIST" at its head and the port it was opened
 beside ("Beside Overlook") over a brass rule; then the four entries as crests, the Elite Playlist (three chevrons) and
 the Abyss Playlist (an eye of the deep) above, the Elite Dungeon of the week (crossed blades under a star) and the
-Abyss Dungeon of the week (a crown over the deep) below their playlists, a fifth smaller. A crest is a shield, brass
+Abyss Dungeon of the week (a crown over the deep) below their playlists, a fifth smaller; and the Breach, the Drowned
+Vale at Normal and at Hard (an arch under a crystal spire, ringed and violet at Hard), between them in the middle,
+up and down choosing its tier (`playlistBreach.ts`, [[Breaches]]). A Breach is launched for the company, never
+searched for. A crest is a shield, brass
 for Elite, violet for Abyss, grey while its entry is shut; at its shoulder a gold dot while a reward of it waits, or a
 padlock while it is shut. Under it its name in capitals (a week's dungeon's on two lines, broken before "of"), and its
 level a part a line past its tier ("Levels 15 to 19", "Foes at level 17"; "From level 10" before it), or, shut, why in

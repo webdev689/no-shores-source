@@ -87,6 +87,23 @@ Claude's ([[The Drowned Vale as Claude Builds It]]).
   (1 in 5 at Normal, 1 in 3 at Hard) and the horse barding Drowned (1 in 20, 1 in 8), each once.
 - **Hidden chests** pay Essence once a week; every find keeps its lore chapter of the book *Soundings* ([[Lore]]).
 
+## On the page
+
+- **Launched from the Playlist** (`playlistBreach.ts`, `breachTrips.ts`): its crest opens Find a Company's Launch at
+  its tier; the run found, the page travels to the Gullwing Vale joined with the run, standing at the gate. A refusal
+  shows its words.
+- **The gate in the zone** (`breachView.ts`, `breachWords.ts`): within 60 m of the gate its banner takes the zone's
+  banner's place (the Spire's fill, each mooring held, claimed or free, the companies inside); further off it is one
+  line under the zone's own; the compass marks the gate. A company the gate opened to is offered "Enter the Drowned
+  Vale" at its doorway.
+- **In the run**: its spaces drawn over the dark from the plan (`room_breach`), only the Breach's modules loaded while
+  there; its seals while shut, its slabs fading in and out over a second, its bells, the Lodestone (lying, on its
+  plinth, or turning 2.3 m over its bearer); each encounter's banner from the snapshot's Breach; the Rewritten ringed
+  at their feet and named on their plates; the revives left at Hard. The page predicts on the run's blocks as its
+  room stands them (`fighter_breach`). The way out is Use at the Descent's entry, or at the court's portal once won.
+- **Raising and following**: holding Use by a fallen company member raises them, its share a ring; while dead, the
+  view follows a living company member (`followCamera.ts`), F (RB) choosing the next.
+
 ## Its art
 
 Built in Blender ([[Modules]]): the Sunken Gate's hollow (the cliff of split stone and its portal, the Spire of red

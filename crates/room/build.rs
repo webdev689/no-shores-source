@@ -110,7 +110,8 @@ fn main() {
     writeln!(out, "pub(crate) static SLABS: &[SlabTable] = &[{}];", slabs.join(", ")).expect("written");
     let encounters = pairs("encounters").join(", ");
     writeln!(out, "pub(crate) static ENCOUNTERS: &[(&str, &[&str])] = &[{encounters}];").expect("written");
-    writeln!(out, "pub(crate) static SHORES: &[(&str, &[&str])] = &[{}];", pairs("shores").join(", ")).expect("written");
+    writeln!(out, "pub(crate) static SHORES: &[(&str, &[&str])] = &[{}];", pairs("shores").join(", "))
+        .expect("written");
     writeln!(out, "pub(crate) static MODULES: &[ModuleTable] = &[{}];", modules.join(", ")).expect("written");
     let target = std::path::Path::new(&std::env::var("OUT_DIR").expect("cargo's OUT_DIR")).join("breach_tables.rs");
     std::fs::write(target, out).expect("the tables are written");
