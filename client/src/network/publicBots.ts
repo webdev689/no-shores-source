@@ -179,7 +179,9 @@ export class BotPlay implements RoomPlay {
     for (const bot of this.bots) {
       const intent = decide(this.read, bot, this.ticks, this.heroic);
       const look = { anim: '', frame: 0, facing: 0 };
-      door.input(bot, inputBytes(this.ticks, { intent, look, arms: SWORD, seen: BigInt(this.ticks - 1) }));
+      // Each asks to respawn every tick, as the rules' own scripted players do: the room takes it once they may.
+      const parts = { intent, look, arms: SWORD, seen: BigInt(this.ticks - 1), respawn: true };
+      door.input(bot, inputBytes(this.ticks, parts));
     }
   }
 

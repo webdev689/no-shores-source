@@ -51,6 +51,7 @@ fn back_at_sea_their_ship_lies_where_the_room_last_kept_it_not_where_the_page_fi
         Some(vec![60_000.0, 50_000.0])
     );
     assert_eq!(kept(&sea, player).ship_at, Some([60_000, 50_000]));
+    assert_eq!(kept(&sea, player).last, Some(gear::last::Last::Sea), "and the sea is where they log back in");
 }
 
 #[test]

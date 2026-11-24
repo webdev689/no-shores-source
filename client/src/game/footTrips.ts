@@ -6,17 +6,19 @@ import type { Difficulty } from '../heldmap/heldMap.ts';
 import { roomNow } from '../sky/worldClock.ts';
 import type { GearAsk } from '../network/gearMessages.ts';
 import { RoomThread } from '../network/roomThread.ts';
-import type { FightEvent } from '../network/messages.ts';
+import type { Reviving } from '../network/messages.ts';
 import type { EncounterSeen } from '../network/encounterMessages.ts';
 import { TIERS } from './activityWords.ts';
 import { askDungeon, type DungeonAsk, type DungeonLayout } from './dungeonLayout.ts';
+import { cacheOf } from './dungeonChest.ts';
 import { DOOR_REACH_M, type Entrance, entranceAt, entrancesOf } from './entrances.ts';
 import type { PropTable } from '../models/tables.ts';
 import type { CombatRules } from '../rules/combatRules.ts';
 import type { MovementRules } from '../rules/movementRules.ts';
 import { type Speak, type Use, useAt } from './footGear.ts';
 import type { GearHere } from './gearScreen.ts';
-import type { Heard } from './footPlace.ts';
+import type { Heard, Held } from './footPlace.ts';
+import type { Snapshot } from '../network/roomConnection.ts';
 import type { NodeInfo } from './worldData.ts';
 
 /** A dungeon the player plays in: the place outside it (a patrol, an Elite Dungeon's node, or a sea island's
@@ -70,19 +72,39 @@ export function seaPlace(continent: string, layout: DungeonLayout): NodeInfo {
 }
 
 /** Takes a run's word from a snapshot: an Abyss run's revives left, whether it told this player their company fell,
- *  and an Elite Dungeon's encounters. */
+ *  an Elite Dungeon's encounters, and the room's darkness and revives under way. */
 export function heardRun(
-  held: { revives: number; wiped: boolean; encounter: EncounterSeen | null },
-  snapshot: {
-    readonly revives: number;
-    readonly events: readonly FightEvent[];
-    readonly encounter: EncounterSeen | null;
-  },
+  held: Pick<Held, 'revives' | 'wiped' | 'encounter' | 'darkness' | 'reviving'>,
+  snapshot: Pick<Snapshot, 'revives' | 'events' | 'encounter' | 'darkness' | 'reviving'>,
   own: number | null,
 ): void {
-  held.revives = snapshot.revives;
+  [held.revives, held.darkness, held.reviving] = [snapshot.revives, snapshot.darkness, snapshot.reviving];
   held.encounter = snapshot.encounter;
   if (snapshot.events.some((event) => event.kind === EVENT.wiped && event.defender === own)) held.wiped = true;
+}
+
+/** What the page hears of a node's or a dungeon's room, filling `held`: each snapshot (its cache and its run's word,
+ *  `own` the fight's player once it stands), and the room's word on the gear: online the player's own; offline it
+ *  tells only of the patrol's entrances and the chests, the figure keeping its dress. */
+export function hearRoom(
+  held: Held,
+  own: () => number | null,
+  received: (snapshot: Snapshot) => void,
+  { online, asks }: { readonly online: boolean; readonly asks: boolean },
+): Heard {
+  return {
+    snapshot: (snapshot) => {
+      received(snapshot);
+      held.cache = cacheOf(snapshot.cache);
+      heardRun(held, snapshot, own());
+    },
+    gear: (sent) => {
+      if (online) held.gear = sent;
+      else held.alone = sent;
+      held.entrances.heard(sent.dungeons);
+    },
+    asks,
+  };
 }
 
 /** Whether the room said this player's company fell, taken once and only on foot (`onFoot`): a trip's veil refuses the
@@ -212,5 +234,7 @@ export const unheard = () => ({
   cache: null,
   revives: -1,
   wiped: false,
+  darkness: false,
+  reviving: [] as readonly Reviving[],
   encounter: null as EncounterSeen | null,
 });
