@@ -21,7 +21,7 @@ import { type Bucket, MEDIA_PATH, serveMedia } from './media.ts';
 import { panelRoute } from './panel.ts';
 import { REGISTRY, type Registry } from './registry.ts';
 import { type Fetch, type Rest, createRest } from './rest.ts';
-import { type Db, readSnapshot, sweep } from './store.ts';
+import { type Db, forgetLeftServers, readSnapshot, sweep } from './store.ts';
 
 export { BotGateway } from './gateway.ts';
 
@@ -163,6 +163,11 @@ export async function tick(env: Env, nowMs: number, execution: Execution, over: 
     ticketS: TICKET_KEEP_S,
     sessionIdleS: SESSION_IDLE_S,
     sessionMaxS: SESSION_MAX_S,
+  });
+  // a picture the bucket would not let go of stays there; its row goes all the same, so nothing serves it again
+  await forgetLeftServers(env.BOT_DB, Math.floor(nowMs / 1000), async (keys) => {
+    for (const key of keys)
+      await env.BOT_MEDIA?.delete(key).catch((error) => console.warn(`[bot] a picture stayed: ${said(error)}`));
   });
 }
 

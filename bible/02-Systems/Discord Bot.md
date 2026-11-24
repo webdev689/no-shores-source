@@ -17,6 +17,7 @@ code:
   - server/bot/rest.ts#createRest
   - server/bot/store.ts#readConfig
   - server/bot/store.ts#writeConfig
+  - server/bot/store.ts#forgetLeftServers
   - server/bot/gateway.ts#BotGateway
   - server/bot/gatewayCore.ts#GatewayCore
   - server/bot/gatewayLaw.ts#BOT_INTENTS
@@ -96,11 +97,11 @@ Durable Object holding Discord's Gateway, and a service binding to the [[Account
 | The law (`law/`) | Platform-neutral TypeScript both the bot and the panel run. Each module's settings, tables and acts are declared once (`modules.ts`); the settings law checks a save against them and reads an old save under today's shape, keeping all it can. The access law turns a member's Discord permissions into a panel level: none, viewer, moderator, manager, owner. The message law builds what Discord is sent from a saved message, holding Discord's limits. |
 | Interactions | Every slash command and press arrives signed; a bad or stale signature is refused. `/panel` answers privately with a link to the panel. Anything else goes to the module that owns it (its command, or `bot:<module>:...` on what it drew), only where that module is on. |
 | Sign-in | Discord's OAuth2 with PKCE and `identify` alone. The sign-in comes back to the panel as a one-use ticket in the address's fragment, good for two minutes, traded for a session token sent as a bearer header; only hashes are kept. The panel keeps the token in the tab's own storage, never the storage the site's pages share with the game, so each tab signs in for itself; it trades a ticket only in the tab that began that sign-in, and a browser that blocks that storage is told it cannot sign in. |
-| The panel's API | A person's level in a server comes from Discord each minute: their roles, the server's, the owners `BOT_OWNERS` names, and the role grants in the core settings. A save is checked against its module's shape and revision, and every role, channel, emoji and mention of everyone it adds is held to what the saver could do in Discord. Saves, acts, tests and uploads go to the audit log. |
+| The panel's API | A person's level in a server comes from Discord each minute: their roles, the server's, the owners `BOT_OWNERS` names, and the role grants in the core settings. A save carries its settings and the revision it was made on, and is answered stale against any other. Each role setting says what the bot does with the role (`use` in the law): a role it gives is held to what the saver could give in Discord; a role a ticket is opened to needs Manage Roles; a role it mentions needs Mention Everyone, or a role Discord lets anyone mention (asked of Discord); a role only named, to match, exempt or let into the panel, need only be the server's own and not everyone. Every channel and emoji must be the server's, and a mention of everyone needs Mention Everyone. A person's list of servers is read in one query and weighs at most the first 50 by name. Without `DISCORD_BOT_TOKEN` a server answers that it is not set up. Saves, acts, tests and uploads go to the audit log. |
 | The Gateway | One connection, its heartbeat on the object's alarm so an evicted object resumes its stored session. Each event keeps the snapshot of the server the panel draws its pickers from, and the cache of what Discord does not resend, then reaches each module where it is on. |
 | REST | The one door to Discord with the bot's token: rate limits held per bucket and globally, never a thrown error or a token in a log line. |
-| Pictures | PNG, JPEG, GIF and WebP only, known by their bytes, their metadata taken out, each server held to 100 files and 200 MB. |
-| The clock | Each minute it makes sure of the Gateway and runs each module's minute; once an hour it sweeps old sign-ins, sessions and audit rows. |
+| Pictures | PNG, JPEG, GIF and WebP only, known by their bytes, their metadata taken out, each server held to 100 files and 200 MB. Served with a day's cache, so a removed one is not kept alive by the bot, though Discord's own copies may last longer. |
+| The clock | Each minute it makes sure of the Gateway and runs each module's minute; once an hour it sweeps old sign-ins, sessions and audit rows, tickets closed more than a month ago, and every server the bot left more than a month ago, its pictures and all its rows (a month is Claude's call, `LEFT_KEEP_S`). |
 
 A module is a `ServerModule` exported from `modules/` (most are one file; a large one, such as moderation or the
 welcome card, keeps its parts in files beside it), named in `registry.ts`, with its shape in

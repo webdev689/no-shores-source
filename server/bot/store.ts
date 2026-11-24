@@ -369,3 +369,69 @@ export async function sweep(database: Db, nowS: number, limits: SweepLimits): Pr
     .bind(nowS - AUDIT_KEEP_S)
     .run();
 }
+
+/** How long the bot keeps what it held for a server after leaving it, in case it is added back: a month. */
+export const LEFT_KEEP_S = 30 * 86_400;
+/** How long a closed ticket's row is kept; its transcript was posted when it closed. */
+export const CLOSED_TICKET_KEEP_S = 30 * 86_400;
+/** How many servers one sweep forgets, so a sweep after a long outage stays small. */
+const FORGET_AT_ONCE = 10;
+/** Every table that keeps rows for a server by its id. */
+export const SERVER_TABLES = [
+  'announce_posts',
+  'announce_sent',
+  'audit_log',
+  'birthdays',
+  'bot_ban_asks',
+  'giveaways',
+  'guild_config',
+  'invite_joins',
+  'levels',
+  'media',
+  'mod_cases',
+  'raid_mode',
+  'rolemenu_posts',
+  'social_seen',
+  'starboard_posts',
+  'temp_voice',
+  'tickets',
+  'welcome_pending',
+] as const;
+
+/**
+ * Forgets every server the bot left more than LEFT_KEEP_S ago: its pictures (through `removeMedia`, by their keys)
+ * and its rows in every table, then its snapshot; and drops tickets closed more than CLOSED_TICKET_KEEP_S ago.
+ * Returns the servers forgotten.
+ */
+export async function forgetLeftServers(
+  database: Db,
+  nowS: number,
+  removeMedia: (keys: readonly string[]) => Promise<void>,
+): Promise<string[]> {
+  await database
+    .prepare('DELETE FROM tickets WHERE closed_at > 0 AND closed_at < ?')
+    .bind(nowS - CLOSED_TICKET_KEEP_S)
+    .run();
+  const left = await database
+    .prepare('SELECT guild_id FROM guild_snapshot WHERE present = 0 AND updated_at < ? LIMIT ?')
+    .bind(nowS - LEFT_KEEP_S, FORGET_AT_ONCE)
+    .all<{ guild_id: string }>();
+  const forgotten: string[] = [];
+  for (const { guild_id: guildId } of left.results) {
+    const pictures = await database
+      .prepare('SELECT id FROM media WHERE guild_id = ?')
+      .bind(guildId)
+      .all<{ id: string }>();
+    await removeMedia(pictures.results.map((row) => String(row.id)));
+    // a giveaway's entries are kept by the giveaway, not the server: they go before it
+    await database
+      .prepare('DELETE FROM giveaway_entries WHERE giveaway_id IN (SELECT id FROM giveaways WHERE guild_id = ?)')
+      .bind(guildId)
+      .run();
+    for (const table of SERVER_TABLES)
+      await database.prepare(`DELETE FROM ${table} WHERE guild_id = ?`).bind(guildId).run();
+    await database.prepare('DELETE FROM guild_snapshot WHERE guild_id = ?').bind(guildId).run();
+    forgotten.push(guildId);
+  }
+  return forgotten;
+}
