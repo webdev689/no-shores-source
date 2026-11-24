@@ -3,7 +3,7 @@
 
 mod common;
 
-use combat::arms::{OffHand, PAIR_DAMAGE, WeaponClass, pair_swing_ticks, swing_ticks, weapon};
+use combat::arms::{OffHand, PAIR_DAMAGE, WeaponClass, foe_swing_ticks, pair_swing_ticks, swing_ticks, weapon};
 use combat::fighter::{Action, Swing};
 use combat::strike::{struck, weapon_reach};
 use combat::{CombatInput, Happening, Intent, Stroke, Surroundings, step_fighter};
@@ -64,6 +64,15 @@ fn a_pairs_blows_take_turns_between_the_hands() {
         })
         .collect();
     assert_eq!(hands, vec![false, true, false]);
+}
+
+#[test]
+fn a_foes_swing_takes_seven_eighths_of_the_laws_time_a_players_three_quarters() {
+    assert_eq!(foe_swing_ticks(WeaponClass::Sword), (21, 52), "seven eighths of DFO's 24 and 60");
+    assert_eq!(foe_at(0.0, 0.0, 0.0).swing_ticks(), foe_swing_ticks(WeaponClass::Sword));
+    assert_eq!(player_at(0.0, 0.0).swing_ticks(), swing_ticks(WeaponClass::Sword));
+    let (_, happenings) = run(foe_at(0.0, 0.0, 0.0), swinging(0.0, Stroke::Up), 1, None);
+    assert!(matches!(happenings.first(), Some((_, Happening::Swung(attack))) if attack.strike == 21), "{happenings:?}");
 }
 
 #[test]
