@@ -126,7 +126,7 @@ export function stripNode(shown: StripShown, foot: number): Node | null {
 /** A key on its small cap, its words at the view's `zoom`: the mouse's button drawn as the mouse and the pad's as the
  *  pad's, with no cap; an arrow drawn on its cap. `held` (0 to 1) rings the cap as far as it is held, over a faint
  *  whole ring; null for a control not held. */
-export function capNode(key: string, zoom: number, held: number | null = null): Node {
+function capNode(key: string, zoom: number, held: number | null = null): Node {
   if (key.startsWith('pad:')) return padCapNode(key.slice('pad:'.length), zoom);
   // The mouse a texel a pixel, edged dark; an arrow a texel a pixel on its cap.
   const mouse = isMouse(key);

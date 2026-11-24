@@ -2,7 +2,6 @@
 // `ui/paint.ts` leaves to the parts that draw them), a key on its keycap, words over the world, a press of the display,
 // and a value that eases to each new one it is set to, as a CSS transition does.
 import { edged } from '../combat/barDraw.ts';
-import type { Hint } from './gearNodes.ts';
 import { iconNode, isMouse } from './keyIcons.ts';
 import { padIconNode } from './padIcons.ts';
 import { TONES } from '../plus/tones.ts';
@@ -89,18 +88,6 @@ export function keycap(key: string, size = 1): Node {
 export function capFace(key: string, texel: number): Node | null {
   if (key.startsWith('pad:')) return padIconNode(key.slice('pad:'.length), texel, true);
   return iconNode(key, texel, true);
-}
-
-/** A line of what keys do, each key on its keycap (keys doing the same joined, each on its own) and its words. */
-export function hintRow(hints: readonly Hint[], size = 1): Node[] {
-  return hints.map(([key, words]) => ({
-    gap: 4,
-    alignY: 'center',
-    children: [
-      ...key.split(' / ').map((one) => keycap(one, size)),
-      { text: { words, size, colour: TONES.ink, edge: 'halo', wrap: false } },
-    ],
-  }));
 }
 
 /** A press of the display, in its role, its words at `size`: once pressed it lets go of focus, so Space or Enter, which
