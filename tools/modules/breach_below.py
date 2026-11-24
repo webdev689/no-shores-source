@@ -91,19 +91,21 @@ def mending(module):
 
 
 BELLS_Y = (-18.0, -2.0, 14.0)
+# How far east the side door's causeway runs: the streets it leads to stand clear of the Mending's green beside them.
+SIDE_DOOR_M = 35.0
 LECTERNS = ((0.0, 30.0, 1.2), (-8.0, -20.0, 0.0), (8.0, -20.0, 0.0), (-8.0, 10.0, 0.0), (8.0, 10.0, 0.0))
 
 
 def choir(module):
     """The chapel of a vale that never had one: a nave between rows of pillars, seven bells in timber frames down its
     walls and on its altar, the font in the middle of the nave, five desks the Scrivener writes at, the Lodestone's
-    plinth before the altar on a raised apse, and a side door into the old streets."""
+    plinth before the altar on a raised apse, and a side door onto a causeway to the old streets."""
     bk.floor(module, -16.0, -32.0, 16.0, 26.0)
     for west, south, east, north in ((-20.0, -36.0, -16.0, 38.0), (16.0, -36.0, 20.0, -26.0), (16.0, -20.0, 20.0, 38.0),
                                      (-16.0, -36.0, -2.5, -32.0), (2.5, -36.0, 16.0, -32.0), (-16.0, 36.0, 16.0, 38.0)):
         bk.wall(module, west, south, east, north, high=12.0)
     bk.floor(module, -2.5, -38.0, 2.5, -32.0)
-    bk.floor(module, 16.0, -26.0, 22.0, -20.0)
+    bk.floor(module, 16.0, -26.0, SIDE_DOOR_M, -20.0)
     # The apse: a dais up a broad flight across the nave's head.
     kit.block(module, (0.0, 31.0, 0.0), (32.0, 10.0, 1.2), 'trim', bevel=0.04, wear=0.02)
     bk.stair(module, (0.0, 26.0 - bk.flight_run(1.2)), (0, 1), 12.0, 0.0, 1.2)
@@ -130,7 +132,7 @@ def choir(module):
     module.socket('checkpoint', (0.0, -30.0, 0.0), (0.0, 1.0))
     module.socket('chest', (-5.0, 24.0, 0.0), (0.0, -1.0))
     module.socket('chest-page', (5.0, 32.0, 1.2), (0.0, -1.0))
-    module.socket('exit', (22.0, -23.0, 0.0), (1.0, 0.0))
+    module.socket('exit', (SIDE_DOOR_M, -23.0, 0.0), (1.0, 0.0))
     pick = latticekit.picker(module.random.randrange(1 << 30))
     for base in ((-15.0, 30.0, 1.2), (15.0, 30.0, 1.2), (-15.4, -30.0, 0.0), (15.4, -10.0, 0.0)):
         bk.crystal(module, pick, base, count=6, length=2.8, radius=0.5)

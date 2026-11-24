@@ -59,7 +59,8 @@ def ways(module):
     module.socket('entry', (-half - 6, 0.0, 0.0), (-1.0, 0.0))
     module.socket('checkpoint', (-half - 2, 0.0, 0.0), (1.0, 0.0))
     module.socket('exit', (half + 6, 0.0, 0.0), (1.0, 0.0))
-    for number, at in enumerate(((-30.0, 30.0), (30.0, -30.0), (-30.0, -30.0)), start=1):
+    # The mouths the Lattice comes out of: open crossings near three corners, clear of the Watchers and barricades.
+    for number, at in enumerate(((-24.0, 24.0), (24.0, -12.0), (-24.0, -24.0)), start=1):
         module.socket(f'mouth-{number}', (*at, 0.0), (0.0, 1.0))
     pick = latticekit.picker(module.random.randrange(1 << 30))
     for x, y, _ in WATCHERS:
@@ -116,11 +117,13 @@ def stair(module):
     kit.block(module, (hidden[0], hidden[1], top - 0.6), (SLAB, SLAB, 0.6), 'stone', bevel=0.05, wear=0.06)
     module.socket('chest-stair', hidden, (0.0, -1.0))
     first, last = landings[0], landings[-1]
-    bk.floor(module, first[0] - 4.0, -2.0, first[0], 2.0)
-    bk.floor(module, last[0] + LANDING, -2.0, last[0] + LANDING + 4.0, 2.0, top=last[1])
-    module.socket('entry', (first[0] - 4.0, 0.0, 0.0), (-1.0, 0.0))
+    # The way in reaches as far west as the way out does east, so the ground round the Stair is its own to its doors.
+    far = last[0] + LANDING + 4.0
+    bk.floor(module, -far, -2.0, first[0], 2.0)
+    bk.floor(module, last[0] + LANDING, -2.0, far, 2.0, top=last[1])
+    module.socket('entry', (-far, 0.0, 0.0), (-1.0, 0.0))
     module.socket('start', (first[0] + 2.0, 0.0, 0.0), (1.0, 0.0))
-    module.socket('exit', (last[0] + LANDING + 4.0, 0.0, last[1]), (1.0, 0.0))
+    module.socket('exit', (far, 0.0, last[1]), (1.0, 0.0))
     pick = latticekit.picker(module.random.randrange(1 << 30))
     for x, top, steady in slabs:
         if steady:

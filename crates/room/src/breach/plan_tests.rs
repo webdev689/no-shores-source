@@ -60,6 +60,60 @@ fn every_space_stands_a_module_and_each_way_in_meets_the_last_way_out() {
     }
 }
 
+/// How far two spaces joined at a door may share the edge of their grounds, metres: each module's box ends a few
+/// centimetres past its door.
+const TOUCH_M: f64 = 0.1;
+
+#[test]
+fn no_two_spaces_share_ground_and_each_spaces_mouths_lie_in_it_alone() {
+    let plan = drowned_vale();
+    let grounds: Vec<(&str, navmesh::Bounds)> = plan
+        .spaces
+        .iter()
+        .map(|space| (space.key.as_str(), plan.space_bounds(&space.key, 0.0).expect("its ground")))
+        .collect();
+    for (nth, (one, first)) in grounds.iter().enumerate() {
+        for (two, second) in &grounds[nth + 1..] {
+            let across = first.max_x.min(second.max_x) - first.min_x.max(second.min_x);
+            let along = first.max_y.min(second.max_y) - first.min_y.max(second.min_y);
+            assert!(across <= TOUCH_M || along <= TOUCH_M, "{one} and {two} share {across:.2} by {along:.2} m");
+        }
+    }
+    let inside = |ground: &navmesh::Bounds, at: [f64; 3]| {
+        at[0] >= ground.min_x && at[0] <= ground.max_x && at[1] >= ground.min_y && at[1] <= ground.max_y
+    };
+    for (key, own) in &grounds {
+        for (mouth, _) in plan.numbered(key, "mouth") {
+            assert!(inside(own, mouth), "{key}'s mouth at {mouth:?} lies in its own space");
+            for (other, ground) in grounds.iter().filter(|(other, _)| other != key) {
+                assert!(!inside(ground, mouth), "{key}'s mouth at {mouth:?} lies in {other}");
+            }
+        }
+    }
+}
+
+#[test]
+fn every_mouth_stands_on_its_spaces_floor_clear_of_every_part() {
+    let plan = drowned_vale();
+    let blocks = plan.standing();
+    for space in &plan.spaces {
+        for (at, _) in plan.numbered(&space.key, "mouth") {
+            let under: Vec<&movement::Block> = blocks
+                .iter()
+                .filter(|block| {
+                    block.min_x <= at[0] && at[0] <= block.max_x && block.min_y <= at[1] && at[1] <= block.max_y
+                })
+                .collect();
+            assert!(
+                under.iter().any(|block| (block.top - at[2]).abs() < 0.05),
+                "{}'s mouth {at:?}: a floor",
+                space.key
+            );
+            assert!(under.iter().all(|block| block.top < at[2] + 0.05), "{}'s mouth {at:?}: in a part", space.key);
+        }
+    }
+}
+
 #[test]
 fn every_piece_the_rules_stand_on_has_its_socket() {
     let plan = drowned_vale();
