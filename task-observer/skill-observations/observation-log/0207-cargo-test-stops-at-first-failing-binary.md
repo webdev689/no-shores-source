@@ -1,5 +1,5 @@
 ---
-id: 197
+id: 207
 title: "cargo test stops at the first failing test binary, hiding later failures; a worker needed --no-fail-fast, and cargo test -p room ran over 10 minutes on shared cores"
 status: open
 type: open-source

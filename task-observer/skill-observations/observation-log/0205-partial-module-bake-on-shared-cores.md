@@ -1,5 +1,5 @@
 ---
-id: 195
+id: 205
 title: "A full module bake took over 2 hours on shared cores; baking only the changed modules with bake.py's own baked() and splicing took 2 minutes, and 'before' renders raced the edits"
 status: open
 type: open-source
