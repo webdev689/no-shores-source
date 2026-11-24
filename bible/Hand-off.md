@@ -192,6 +192,27 @@ each part works is in its system note.
 
 The decisions in [[Open Questions]] are not repeated here.
 
+- **The island view in rain, the Playlist over the island and the ships at a roadstead** (#191, merged on the owner's
+  "Deploy", which deploys the page and the rooms). The owner's three reports:
+  - "When its cloudy and raining. The overworld pan over the island is shrouded and you can only see the nodes": the
+    weather's fog was charged along the whole line of sight, kilometres from the island view. It now lies under the
+    cloud deck's base: an eye under it (on foot, at the helm) is hazed as before; one risen to twice the base only
+    along the part under it ([[Sky]], "Seen from over the deck"; Claude's call in
+    [[Weather and Day as Claude Shapes It]]). Pictured headless under a told heavy rain: before, solid grey with only
+    the nodes; after, the island seen through the rain.
+  - "The Playlist node should be in the overworld view of the island itself, not only at sea": recorded as
+    [[The Playlist Shows Over Its Island, Not Only at Sea]]. It shows over a port's island docking or ashore, beside
+    its city's mark (from that height it fell on it), held at the picture's edge when far off. Pictured docking at
+    Overlook.
+  - "When leaving the social space, ships are seen overlapping and bunched up in one area": every course's ships lay
+    on the roadstead's one point (two or more hulls together a third of the time at Overlook, measured). Each course
+    now has berths of its own off each roadstead ([[World Map]], "Berths"); a day at each port holds no lying ship
+    within 150 m of another. The scripted Tithe clash's course was re-aimed and its fingerprint pinned anew (Rust and
+    `server/roomDoor.test.ts`). A rooms change: its merge deploys the rooms.
+  - Found and left, for the owner: on docking, the city's mark (and now the Playlist beside it) is framed at the
+    picture's foot, under the sea's bar, which stays up over the island view; the frame could keep the nodes above the
+    bar. A picture plan cannot set the weather (observation 201): a dev hook lending the sky would fix it.
+
 - **Guilds** (#179), merged on the owner's "Merge and deploy when ready", which deploys the page and the rooms and
   applies five migrations. The owner asked for guild names and banners with the tag on nameplates and in the social
   menu, descriptions, bounties and levelling, and outposts on any island for a cost whose structures give guild buffs,
@@ -337,8 +358,9 @@ The decisions in [[Open Questions]] are not repeated here.
     they stood, 25 m or more off (`crates/room/src/landing.rs`, [[Enemies]]).
   - [[Friendly Ships Take Several Courses, About Five in View, Sailing Visibly]]: three courses a pair, about five
     in view near a port, 60 m/s, departures staggered across all nine courses ([[World Map]], "Traffic").
-  - Tested offline only. Left: ships start and stop at 60 m/s at once, and lie on one point at a roadstead; some
-    retaining walls near Overlook's plaza may be dropped whole (low confidence, the seam audit's).
+  - Tested offline only. Left: ships start and stop at 60 m/s at once (they no longer lie on one point at a
+    roadstead: each course has berths of its own, below); some retaining walls near Overlook's plaza may be dropped
+    whole (low confidence, the seam audit's).
 - **#163's follow-up, the patrol audit and its leftovers** (#170, a draft for the owner's yes once its checks pass;
   main merged in up to #177). The owner's solid red patrol screen was the death veils piling up under a frame that
   threw before it presented; each frame now starts with none. What threw is still unknown: the owner's browser
