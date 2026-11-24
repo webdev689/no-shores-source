@@ -46,6 +46,10 @@ pub enum Purpose {
     Recruit = 1_100,
     /// Whether a boarded deck's officer joins the winner, and who it is.
     Taken = 1_900,
+    /// How much of the island's resource a chest or a search holds, and whether a search holds any (the question
+    /// added); and, apart, which places a patrol's chests and which containers are searchable stand at
+    /// (`room::finds`).
+    Find = 2_100,
 }
 
 /// One player's dice for one tick of one room.

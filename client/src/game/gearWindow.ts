@@ -302,7 +302,7 @@ export function startGearWindow(
     let aside: readonly Hint[] | null = null;
     let answer = '';
     let colour: string = INK.answer;
-    if (!ofGear(shown)) page = plainPage(shown, { ui: frame, room, sizes, holds });
+    if (!ofGear(shown)) page = plainPage(shown, { ui: frame, room, sizes, holds, card: cardFor });
     else if (!now || !gear) {
       // A room lost after the gear showed says so; with none yet, where gear is kept.
       const lost = bannerGear !== null ? 'The room was lost. Your gear shows again once you are back in one.' : null;
@@ -446,10 +446,10 @@ export function startGearWindow(
       id: 'gear-body',
       width: 'grow',
       height: 'grow',
-      // A column, as only a column's children scroll up and down in it. The Art's screen and a keeper's are laid to
-      // the body's height, a keeper's rows scrolling in it; the rest scroll.
+      // A column, as only a column's children scroll up and down in it. The Art's screen, a keeper's and the bounty
+      // board's are laid to the body's height, a keeper's rows scrolling in it; the rest scroll.
       direction: 'column',
-      scroll: item === null && !(bleed && !appearance) && !isKeeperView(shown),
+      scroll: item === null && !(bleed && !appearance) && !isKeeperView(shown) && shown !== 'board',
       padding: bleed ? 0 : [10, 20, 14, 20],
       children: [page, item?.page],
     };

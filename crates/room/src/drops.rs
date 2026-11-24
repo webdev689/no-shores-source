@@ -1,8 +1,9 @@
 //! What a kill lays on the ground for each player who earned it, seen by them alone for two minutes: their Vestige, an
 //! Ammo box by the foe's rank, and a Miniboss's or a Boss's Ammo crate when they carry five already. Each is thrown out
 //! of the fallen foe in a fan toward the player, comes to rest where the fan puts it, and is taken by walking within
-//! reach once it rests. A Vestige not taken goes to its player's mail as its time runs out or as they leave. And the
-//! shots a player spends, kept with their gear.
+//! reach once it rests. A chest's Vestige is poured out of it as its lid opens, as project-final's cache pours its
+//! loot. A Vestige not taken goes to its player's mail as its time runs out or as they leave. And the shots a player
+//! spends, kept with their gear.
 
 use crate::{PlayerId, Room};
 use gear::Vestige;
@@ -18,6 +19,9 @@ pub const DROP_TICKS: u64 = 7_200;
 pub const VESTIGE_REST_TICKS: u64 = 94;
 /// How long an Ammo box or crate may be in the air before it can be taken: the longest it bounces, 1 s.
 pub const AMMO_REST_TICKS: u64 = 60;
+/// How long a Vestige poured out of a chest may be before it can be taken: the 0.22 s the lid takes to open its mouth,
+/// then the longest its higher pop bounces, about 1.8 s.
+pub const POURED_REST_TICKS: u64 = 122;
 /// How near a player walks to a drop to take it, across and up, in metres.
 pub const PICK_UP_REACH: f64 = 1.5;
 const PICK_UP_HEIGHT: f64 = 2.0;
@@ -39,8 +43,8 @@ pub enum Dropped {
     },
 }
 
-/// A drop lying for one player: their number for it, what it is, where it rests and where it was thrown from, the tick
-/// it comes to rest and the tick it is gone.
+/// A drop lying for one player: their number for it, what it is, where it rests and where it was thrown from (the
+/// foot of the chest it was poured out of, if it was), the tick it comes to rest and the tick it is gone.
 #[derive(Clone, Debug, PartialEq)]
 pub struct Drop {
     pub player: PlayerId,
@@ -48,6 +52,7 @@ pub struct Drop {
     pub what: Dropped,
     pub at: [f64; 3],
     pub from: [f64; 3],
+    pub poured: bool,
     pub rests: u64,
     pub until: u64,
 }
@@ -73,13 +78,22 @@ impl Room {
         if !juggling && gear::ammo::drops_crate(rank) && !found.character.take_crate() {
             spoils.push(Dropped::Crate);
         }
-        let body = found.fighter.body;
-        let toward = combat::sight::bearing([from[0], from[1]], [body.x, body.y]);
-        let count = spoils.len() as f64;
-        for (place, what) in spoils.into_iter().enumerate() {
-            let angle = toward + ((place as f64 + 0.5) / count * 2.0 - 1.0) * FAN_HALF;
+        let body = [found.fighter.body.x, found.fighter.body.y];
+        for (what, angle) in spoils.iter().cloned().zip(fan(from, body, spoils.len())) {
             let at = self.rest_at(from, angle);
             self.lay(player, what, at, from);
+        }
+    }
+
+    /// Pours a chest's Vestiges out of it for the player who opened it, standing at its foot `from`: up out of its
+    /// mouth as its lid opens, onto the floor `onto` where the chest keeps it clear, else fanned toward them as a
+    /// kill's are, each where its throw puts it.
+    pub(crate) fn pour(&mut self, player: PlayerId, vestiges: Vec<Vestige>, from: [f64; 3], onto: Option<[f64; 3]>) {
+        let Some(found) = self.players.get(&player) else { return };
+        let body = [found.fighter.body.x, found.fighter.body.y];
+        for (vestige, angle) in vestiges.iter().cloned().zip(fan(from, body, vestiges.len())) {
+            let at = onto.unwrap_or_else(|| self.rest_at(from, angle));
+            self.put(player, Dropped::Vestige(vestige), (at, from), true);
         }
     }
 
@@ -105,14 +119,20 @@ impl Room {
 
     /// Lays a drop for a player, numbered as their own: a Vestige by its number, anything else a fresh one.
     pub(crate) fn lay(&mut self, player: PlayerId, what: Dropped, at: [f64; 3], from: [f64; 3]) {
+        self.put(player, what, (at, from), false);
+    }
+
+    /// Lays a drop for a player thrown from `from` to rest at `at`, `poured` out of a chest or not.
+    fn put(&mut self, player: PlayerId, what: Dropped, (at, from): ([f64; 3], [f64; 3]), poured: bool) {
         let Some(found) = self.players.get_mut(&player) else { return };
         let (id, flies) = match &what {
+            Dropped::Vestige(vestige) if poured => (vestige.id, POURED_REST_TICKS),
             Dropped::Vestige(vestige) => (vestige.id, VESTIGE_REST_TICKS),
             Dropped::AmmoBox | Dropped::Crate | Dropped::Chest { .. } => (found.character.take_id(), AMMO_REST_TICKS),
         };
         found.gear_changed = true;
         let (rests, until) = (self.clock + flies, self.clock + DROP_TICKS);
-        self.drops.push(Drop { player, id, what, at, from, rests, until });
+        self.drops.push(Drop { player, id, what, at, from, poured, rests, until });
     }
 
     /// Takes every drop at rest a player has walked over and has room for, and lets go of those that have lain their
@@ -154,7 +174,7 @@ impl Room {
         }
         self.drops = kept;
         for (player, chest, at) in expired {
-            self.pay_chest(player, chest, at, false);
+            self.pay_chest(player, chest, at, crate::public::Paid::Lapsed);
         }
     }
 
@@ -197,6 +217,12 @@ impl Room {
             found.gear_changed = true;
         }
     }
+}
+
+/// The way each of `count` drops thrown from `from` goes: in a fan toward `body`, `FAN_HALF` either side.
+fn fan(from: [f64; 3], body: [f64; 2], count: usize) -> impl Iterator<Item = f64> {
+    let toward = combat::sight::bearing([from[0], from[1]], body);
+    (0..count).map(move |place| toward + ((place as f64 + 0.5) / count as f64 * 2.0 - 1.0) * FAN_HALF)
 }
 
 #[cfg(test)]

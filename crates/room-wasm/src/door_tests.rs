@@ -357,6 +357,13 @@ fn a_patrol_on_overlooks_island_stands_its_foes_at_the_voyages_seas_and_sends_it
     let places: Vec<[f64; 2]> =
         (0..12).map(|at| [f64::from(at % 4) * 80.0 - 120.0, f64::from(at / 4) * 80.0 - 80.0]).collect();
     patrol["resources"] = json!(places);
+    // And its ten chest places and six crates, as the bake writes them; and seven crates and a rock among the props a
+    // page playing alone sends, of which the room takes the crates.
+    patrol["chests"] = json!((0..10).map(|at| [f64::from(at) * 30.0 - 150.0, 300.0, 0.0]).collect::<Vec<_>>());
+    patrol["holders"] =
+        json!((0..6).map(|at| [f64::from(at), 0.0, f64::from(at) + 0.8, 0.8, 0.0, 0.8, 41_816.0]).collect::<Vec<_>>());
+    patrol["props"] =
+        json!((0..8).map(|at| [if at < 7 { 41_816.0 } else { 41_704.0 }, 0.0, 9.0, 0.8, 9.8, 0.0]).collect::<Vec<_>>());
     assert!(open_node(patrol.to_string().as_bytes()));
     assert!(set_difficulty(2), "Abyss");
     assert!(!set_difficulty(3), "no such seas");
@@ -374,6 +381,13 @@ fn a_patrol_on_overlooks_island_stands_its_foes_at_the_voyages_seas_and_sends_it
     let nodes: Vec<f64> = messages::root_as_from_room(&sent).unwrap().gear().unwrap().nodes().unwrap().iter().collect();
     assert_eq!(nodes.len(), 12 * 4, "every one of its twelve places, four numbers each");
     assert!(nodes.chunks(4).all(|node| node[3] == 0.0), "Brineglass, the island's own");
+    let gear = messages::root_as_from_room(&sent).unwrap().gear().unwrap();
+    assert_eq!(gear.chests().unwrap().len(), 2 * 5, "a chest for each five places, five numbers each");
+    assert_eq!(
+        gear.searchables().unwrap().len(),
+        3 * 8,
+        "one of thirteen crates in six searchable, eight numbers each"
+    );
 }
 
 #[test]

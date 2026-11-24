@@ -5,6 +5,9 @@ code:
   - crates/room/src/lib.rs#Room
   - crates/room/src/floor.rs#Floor
   - crates/room/src/dungeon_room.rs#dungeon
+  - crates/room/src/finds.rs#keep_finds
+  - crates/room/src/find_holds.rs#open_find
+  - crates/protocol/src/finds_wire.rs#chests_of
   - crates/room/src/entrances.rs#laid
   - crates/room/src/entrances.rs#join_at
   - crates/room/src/judging.rs#Event
@@ -148,6 +151,20 @@ on Cloudflare.
   fewer when fewer fit (every patrol zone and Elite Dungeon's node lays all of its own). Each is the entrance
   model its dungeon's seed draws, turned so its door faces the middle of the ring. A kill, in any node, pays by the
   room's seas ([[Gear]], "Where foes stand").
+- **Chests and containers** ([[Patrols and Dungeons Hold Chests, and Their Containers May Be Searched]], Claude's
+  calls in [[Chests and Searchable Containers as Claude Builds Them]]): a patrol's room reads its node file's chest
+  places (`chests`, x, y and facing, [[Layouts]]) and its props that hold things (`holders`: box, foot, top and
+  model; from a page playing alone, every prop of its layout, `props`, keeping those the dungeon crate's families say
+  hold things, as the bake does), and stands a chest for every five places, two to four, each at a place no other holds; each moves on after
+  5 minutes to another as a new chest, the first ones staggered so one moves every 5 minutes over their count. One
+  holder in six is searchable at once, 16 at most, drawn again every 10 minutes; a holder no body has room to stand
+  beside, at any of eight spots 0.6 m out round its box (a crate inside a tent, one walled in by others), never is. A dungeon's room lays its own
+  ([[Dungeons]], "In the rooms"). Every draw is made on the room's loot seed, on a stream and a count of its own, at
+  its first tick, after its host seeds it. A player opens each find once: it stays for the rest, and the room keeps it
+  opened for their account however often they rejoin. Opened, it pays them ([[Gear]], "A find"): a chest's Vestige
+  poured out of it toward them (`pour`; [[Gear]], "Drops"), a container's thrown to their feet. A player's gear carries the chests standing they have not opened, five numbers each
+  (number, x, y, z, facing), the containers, eight each (number, box, foot, top, model), and the number of the last
+  find the room paid them for (`opened`).
 - **A patrol's dungeon** has a room of its own ([[Dungeons]], "In the rooms"), opened from its patrol's node file:
   its floor, its one spawn at the way in, a body standing there facing into the room, and the patrol's island band
   for its garrison's levels. The Grey Tithe's dungeon garrison stands where the Forge puts foes ([[Enemies]]). Beside
@@ -172,7 +189,7 @@ on Cloudflare.
   alone for two minutes and is picked up by walking within 1.5 m.
 - **Counts:** the room counts each foe felled for each player its kill pays, each node gathered, and each dungeon
   cleared for each kept player in it as its cache opens, once a day for each account, toward their bounties and side
-  quests, on the island its node's file or its dungeon names ([[Activities]], "Quests and bounties").
+  quests, on the island its node's file or its dungeon names ([[Activities]], "Bounties").
 - **Asks:** an input may carry an ask of the player's gear, answered in turn with it, and the answer kept to send
   them. A claim of a guild bounty is the room's own, answered by what its host last told it of the player's guild
   ([[Guilds]]): the keeper tells each room each kept player's guild as it keeps them, every 30 s after, and at once when
@@ -189,7 +206,10 @@ on Cloudflare.
   (`gather_refused`). It is then
   spent for them until it returns; a kept character's is spent for its account, however often its player
   rejoins. One whose resource the player holds the most of is left standing, and a body dead past the edge gathers
-  nothing. A room answers one player's asks five times a second at most, in the order asked, holding four for their
+  nothing. A chest or a container to search (`finds.rs`, below) is opened the same way by the open-find ask (81, its
+  number in `item`): held a second for a chest within 2.5 m of its middle, a second and a half for a container within
+  1.5 m of its sides, both within 2 m of its foot up or down, alive and on foot; the stop-gather ask lets go of it as of
+  a gather, and drops a held open-find ask too. A room answers one player's asks five times a second at most, in the order asked, holding four for their
   turn and letting go of any past those; and sends their gear five times a second at most, so each answer reaches
   them before the next is made and a page that asks without end cannot flood its socket or slow the room. A change to
   how they fight (their trim, or the arms their gear allows) is sent at once, and before the snapshot, so their
@@ -493,7 +513,7 @@ seeing the last one that did. A browser takes
 another player's dress only when it has a dress's shape, and their move only where the forge draws it for that
 figure; otherwise it shows the move their body is in.
 
-| Gear | The room, to one player alone, whenever theirs changes | Their XP, level, Prestige and Defense; their Aurem, fragments, Essence, Fruit of Dagon and each island's resource; every item they hold (its number, kind, rarity, level, name, island resource, XP and most, nodes bought and chosen, where it is, its Attack, Defense and Prestige, each column of its nodes with its traits, the XP that unlocks it and its cost, so the browser draws them without the rules, a weapon's element, and a ware's price); in a social space the day's wares; their Vestiges, and the drops lying for them (a Vestige, an Ammo box or an Ammo crate, where it lies, where it was thrown from and the ticks it still flies); the resource nodes they have spent; on a sea island, the wrecks they have scavenged there (`scavenged`); whether they stand where a Vestige opens (the Mage's counter, or the stall); the answer to their last ask; their fighter's trim, which their browser puts back on the fighter a snapshot gives before it predicts them; the arms their gear lets them take up, which their browser predicts them with, bare hands for any other; how far they are to their next level and their next Fruit of Dagon; the emblems they keep, the one they wear, and in a social space the Tailor's of the day; the Art they wear, each Art's Core, and how far their Anima and each Tenet have charged; and the Ranged loadout's ammunition (the shots left and the capacity of the one worn, the share of a full capacity kept), the Ammo crates carried and, in a social space, the Weaponsmith's price for one; where they stand with the factions (the pledge, each faction's reputation and packages waiting) and each Art's level, XP and fragments owned; the cosmetics they keep and wear and, in a social space, those the Tailor and the Tack sell that day; their Shapes, and while Shape is in their social space his place and wares; in a social space every faction's wares ([[Factions]]); the clock's day the room's word is of (each beginning at 09:00 UTC), which a smith's ware and a bounty's ask are asked by; in a patrol or an Elite Dungeon's node, its dungeons' entrances, each where it stands, the ground's height there, its model's yaw and which model it is; whether they have finished the prologue; their day's and week's record as kept (the day it is for and the tiers of the dungeon of the day cleared then, the week it is for, the week's two cleared and the Abyss boon), sent raw for the page to judge against its own day and week; and the day's six bounties on the board as they stand for them (each one's words, target, count, whether held and whether turned in, none held from another day), each one's pool (on land, at sea or in dungeons) and name, and what each pays them at their level |
+| Gear | The room, to one player alone, whenever theirs changes | Their XP, level, Prestige and Defense; their Aurem, fragments, Essence, Fruit of Dagon and each island's resource; every item they hold (its number, kind, rarity, level, name, island resource, XP and most, nodes bought and chosen, where it is, its Attack, Defense and Prestige, each column of its nodes with its traits, the XP that unlocks it and its cost, so the browser draws them without the rules, a weapon's element, and a ware's price); in a social space the day's wares; their Vestiges, and the drops lying for them (a Vestige, an Ammo box or an Ammo crate, where it lies, where it was thrown from and the ticks it still flies); the resource nodes they have spent; on a sea island, the wrecks they have scavenged there (`scavenged`); whether they stand where a Vestige opens (the Mage's counter, or the stall); the answer to their last ask; their fighter's trim, which their browser puts back on the fighter a snapshot gives before it predicts them; the arms their gear lets them take up, which their browser predicts them with, bare hands for any other; how far they are to their next level and their next Fruit of Dagon; the emblems they keep, the one they wear, and in a social space the Tailor's of the day; the Art they wear, each Art's Core, and how far their Anima and each Tenet have charged; and the Ranged loadout's ammunition (the shots left and the capacity of the one worn, the share of a full capacity kept), the Ammo crates carried and, in a social space, the Weaponsmith's price for one; where they stand with the factions (the pledge, each faction's reputation and packages waiting) and each Art's level, XP and fragments owned; the cosmetics they keep and wear and, in a social space, those the Tailor and the Tack sell that day; their Shapes, and while Shape is in their social space his place and wares; in a social space every faction's wares ([[Factions]]); the clock's day the room's word is of (each beginning at 09:00 UTC), which a smith's ware and a bounty's ask are asked by; in a patrol or an Elite Dungeon's node, its dungeons' entrances, each where it stands, the ground's height there, its model's yaw and which model it is; whether they have finished the prologue; their day's and week's record as kept (the day it is for and the tiers of the dungeon of the day cleared then, the week it is for, the week's two cleared and the Abyss boon), sent raw for the page to judge against its own day and week; and the day's bounties on the board as they stand for them, the town's six, then the pledged faction's three, then any other faction's held that day (each one's words, target, count, whether held and whether turned in, none held from another day), each one's pool (on land, at sea or in dungeons), name, tier, place on the board and the faction that posts it, and what a first tier's pays them at their level |
 
 ## The host
 

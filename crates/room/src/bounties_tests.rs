@@ -150,3 +150,46 @@ fn a_foe_felled_on_a_ships_deck_counts_toward_no_land_bounty_and_earns_no_boon()
     assert_eq!((land_count, deck_count), (Some(1), Some(0)));
     assert_eq!(land_xp, deck_xp + deck_xp / 4, "the boon's quarter more on land alone");
 }
+
+#[test]
+fn a_foe_felled_counts_toward_a_factions_bounty_only_for_the_player_wearing_its_cape() {
+    let mut room = Room::new(Vec::new(), (0.0, 0.0));
+    room.set_minute(FRIDAY_NINE);
+    let day = room.day();
+    let foe = crate::arts::arts_tests::stand_foe(&mut room, 2.0, 0.0, 1.0);
+    let standing = room.foes.get_mut(&foe).expect("standing");
+    standing.brain.foe_type = ::foes::foe_type(::foes::roster::COLLECTOR).expect("the Grey Tithe's");
+    let felled = gear::objectives::Feat::Felled { faction: GREY_TITHE, rank: standing.brain.rank as u8, island: None };
+    // The first faction whose bounty today counts this kill, and that bounty's place.
+    let (faction, place) = (1..=3)
+        .find_map(|faction| {
+            let board = gear::bounties::faction_board(day, faction)?;
+            let places = gear::bounties::faction_places(faction);
+            places.zip(board).find(|(_, bounty)| bounty.objective.counts(&felled)).map(|(place, _)| (faction, place))
+        })
+        .expect("a faction's bounty counts a Grey Tithe foe today");
+    let dice = gear::dice::Dice { seed: 1, tick: 1, player: 1 };
+    let pledged = |room: &mut Room, caped: bool| {
+        let player = room.join().expect("a room with space");
+        let character = &mut room.players.get_mut(&player).expect("in").character;
+        let here = gear::Here { social: true, day, ..gear::Here::default() };
+        character.materials.aurem = 1_000;
+        character.ask(gear::Ask::Pledge { faction }, here, &dice).expect("pledged");
+        if caped {
+            character.ask(gear::Ask::BuyFactionWare { faction, ware: 0 }, here, &dice).expect("the cape");
+            let cape = character.items.iter().find(|(_, (item, _))| item.kind.slot() == gear::Slot::Cloak);
+            let item = *cape.expect("the cape carried").0;
+            character.ask(gear::Ask::Wear { item, slot: gear::Slot::Cloak }, here, &dice).expect("the cape worn");
+        }
+        character.activity.today(day).faction_bounties.insert(place, 0);
+        player
+    };
+    let [caped, bare] = [pledged(&mut room, true), pledged(&mut room, false)];
+    let clock = room.clock;
+    for player in [caped, bare] {
+        room.foes.get_mut(&foe).expect("standing").struck_by.insert(player, (clock, gear::Slot::Melee));
+    }
+    room.pay_kill(foe);
+    let held = |player: PlayerId| room.players[&player].character.activity.today.faction_bounties.get(&place).copied();
+    assert_eq!([held(caped), held(bare)], [Some(1), Some(0)], "the cape worn, and none without it");
+}

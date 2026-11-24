@@ -47,6 +47,6 @@ export interface MenuContext {
   readonly against?: (slot: number) => GearItem | null;
 }
 
-/** What a drawn page that needs no gear (Ship, Social, Settings, a page to come) draws from: the part of `MenuContext`
- *  the menu gives with or without gear. */
-export type PlainContext = Pick<MenuContext, 'ui' | 'room' | 'sizes' | 'holds'>;
+/** What a drawn page that needs no gear (the Journal, Social, Settings, a page to come) draws from: the part of
+ *  `MenuContext` the menu gives with or without gear. */
+export type PlainContext = Pick<MenuContext, 'ui' | 'room' | 'sizes' | 'holds' | 'card'>;

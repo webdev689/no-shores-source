@@ -128,6 +128,7 @@ pub fn mark(zone: &str, field: &Field, areas: &[Area], paths: &[Path], seating: 
         radius,
         holds: Some(holds.to_owned()),
         node: None,
+        facing: None,
     };
     let mut sites = Vec::new();
     let hamlets = areas.iter().filter(|area| area.kind == AreaKind::Hamlet);
@@ -178,6 +179,7 @@ pub fn mark_events(zone: &str, areas: &[Area], sites: &mut Vec<Site>) {
         radius: area.radius,
         holds: Some(area.name.clone()),
         node: None,
+        facing: None,
     }));
 }
 
