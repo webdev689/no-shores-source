@@ -68,10 +68,11 @@ impl Tier {
         }
     }
 
-    /// The level a character may launch it from: two under its foes'.
+    /// The level a character may launch it from: one under its foes', so a company at the door can still fell its
+    /// last great foe in the time its rules give (`room::breach::steward::HEALTH_TIMES`).
     #[must_use]
     pub const fn opens_at(self) -> u8 {
-        self.foes_at() - 2
+        self.foes_at() - 1
     }
 
     /// The revives a company shares in each attempt at an encounter, where they are counted: Hard's alone.

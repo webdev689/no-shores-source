@@ -34,7 +34,7 @@ fn wear(character: &mut Character, item: Item) {
 #[test]
 fn normal_stands_its_foes_at_26_and_hard_at_30_and_only_hard_counts_revives_and_keeps_the_fallen_down() {
     assert_eq!((Tier::Normal.foes_at(), Tier::Hard.foes_at()), (26, 30));
-    assert_eq!((Tier::Normal.opens_at(), Tier::Hard.opens_at()), (24, 28));
+    assert_eq!((Tier::Normal.opens_at(), Tier::Hard.opens_at()), (25, 29));
     assert_eq!((Tier::Normal.revives(), Tier::Hard.revives()), (None, Some(5)));
     assert!(Tier::Normal.stands_again() && !Tier::Hard.stands_again());
     assert_eq!(Tier::of_key("hard"), Some(Tier::Hard));
@@ -120,9 +120,9 @@ fn a_hidden_chest_pays_essence_alone_once_a_week_and_every_find_keeps_its_lore_c
 #[test]
 fn a_breach_opens_at_its_tiers_level_and_hard_once_normal_is_won() {
     let at = |level, tier| shut_at(level, true, Place::Breach(tier), Difficulty::Normal);
-    assert_eq!(at(23, Tier::Normal), Some(Shut::BreachLevel(Tier::Normal)));
-    assert_eq!(at(24, Tier::Normal), None);
-    assert_eq!(at(27, Tier::Hard), Some(Shut::BreachLevel(Tier::Hard)));
+    assert_eq!(at(24, Tier::Normal), Some(Shut::BreachLevel(Tier::Normal)));
+    assert_eq!(at(25, Tier::Normal), None);
+    assert_eq!(at(28, Tier::Hard), Some(Shut::BreachLevel(Tier::Hard)));
     assert_eq!(shut_at(30, false, Place::Breach(Tier::Normal), Difficulty::Normal), Some(Shut::Prologue));
     let mut character = Character { xp: 1 << 40, ..Character::starting() };
     character.story.prologue = true;

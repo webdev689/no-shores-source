@@ -43,7 +43,7 @@ const FINDING =
   /^\/v1\/find\/(node-[a-z0-9]+(?:-[a-z0-9]+)*(?:--elite(?:--sea)?|--breach-(?:normal|hard))?|playlist-(?:elite|abyss))$/;
 /** A Breach's base, and the level each of its tiers opens at (`gear::breach::Tier::opens_at`), in the gate's words. */
 const BREACH_BASE = /--breach-(normal|hard)$/;
-export const BREACH_OPENS = { normal: 24, hard: 28 } as const;
+export const BREACH_OPENS = { normal: 25, hard: 29 } as const;
 /** Each Breach by the patrol zone its gate stands in (`gear::breach::BREACHES`): no other zone launches one. */
 export const BREACH_ZONES: Readonly<Record<string, string>> = { 'gullwing-vale': 'drowned-vale' };
 /** Why Hard is shut to one who has not won the Breach at Normal (`gear::gate::Shut::BreachHard`). */

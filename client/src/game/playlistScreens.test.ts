@@ -323,7 +323,7 @@ test("the Breach stands on the Playlist at Normal and Hard, shut below each tier
   assert.equal(normal?.launch.finds, 'node-gullwing-vale--breach-normal');
   assert.deepEqual(
     [hard?.shut, hard?.lock],
-    ['A Breach at Hard opens at level 28.', 'Hard · Opens at level 28 · You are 25'],
+    ['A Breach at Hard opens at level 29.', 'Hard · Opens at level 29 · You are 25'],
   );
   assert.ok(hard?.rules.includes('5 revives an attempt, for the company.'));
   assert.equal(hard?.launch.finds, null, 'no search for a tier shut');

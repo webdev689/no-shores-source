@@ -454,9 +454,9 @@ test('a Breach is launched from its own zone at its tier’s level, Hard once No
   assert.equal(asked('/v1/find/node-gullwing-vale--breach-hard'), 'node-gullwing-vale--breach-hard');
   assert.equal(asked('/v1/find/node-gullwing-vale--breach-easy'), null);
   assert.equal(asked('/v1/find/node-overlook-social--breach-normal'), null, 'no Breach’s gate stands there');
-  const { tokens: hardy, finderOf: hardOf, kept, ids } = await world(['Cal', 'Eve'], 28);
+  const { tokens: hardy, finderOf: hardOf, kept, ids } = await world(['Cal', 'Eve'], 29);
   const story = { prologue: true, breaches: ['drowned-vale/normal'] };
-  await kept.save(ids['Cal'] ?? '', 'room:Cal', JSON.stringify({ shown: { level: 28 }, story }));
+  await kept.save(ids['Cal'] ?? '', 'room:Cal', JSON.stringify({ shown: { level: 29 }, story }));
   const unwon = hardOf('node-gullwing-vale--breach-hard');
   const hard = new FakeSocket();
   await unwon.heard(unwon.opened(hard, true), hardy['Eve'] ?? '');
@@ -465,9 +465,9 @@ test('a Breach is launched from its own zone at its tier’s level, Hard once No
   await unwon.heard(unwon.opened(launched, true), hardy['Cal'] ?? '');
   await unwon.tick();
   assert.deepEqual(launched.sent, [JSON.stringify({ run: 'node-gullwing-vale--breach-hard--run-k3j4h5g6' })]);
-  const { tokens, finderOf } = await world(['Ada', 'Ben'], 27);
+  const { tokens, finderOf } = await world(['Ada', 'Ben'], 28);
   const under = finderOf('node-gullwing-vale--breach-hard');
-  assert.deepEqual((await seeking(under, tokens['Ada'] ?? '')).closed, [4003, 'A Breach at Hard opens at level 28.']);
+  assert.deepEqual((await seeking(under, tokens['Ada'] ?? '')).closed, [4003, 'A Breach at Hard opens at level 29.']);
   const matched = finderOf('node-gullwing-vale--breach-normal');
   assert.deepEqual((await seeking(matched, tokens['Ada'] ?? '')).closed, [4003, BREACH_LAUNCHED], 'never matched');
   const normal = finderOf('node-gullwing-vale--breach-normal');

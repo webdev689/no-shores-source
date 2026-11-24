@@ -37,7 +37,7 @@ Claude's ([[The Drowned Vale as Claude Builds It]]).
 
 ## How it works
 
-- **Two tiers.** `gear::breach::Tier`: Normal stands its foes at 26 and opens at level 24; Hard at 30, opening at 28
+- **Two tiers.** `gear::breach::Tier`: Normal stands its foes at 26 and opens at level 25; Hard at 30, opening at 29
   and only once Normal is won (`Shut::BreachHard`). The fallen are revived as anywhere ([[Revives]]); the Breach adds
   its own rules on top (`breach/fallen.rs`). At Normal the fallen in a running encounter stand again of themselves,
   unasked, after 10 s at its stage, unless revived sooner; at Hard they never stand again of themselves, and each
@@ -50,9 +50,10 @@ Claude's ([[The Drowned Vale as Claude Builds It]]).
   attempt: its foes go, the company stands whole at its stage, its revives are whole again, and it begins again as
   they walk in. A player who leaves and comes back keeps what the Breach laid on them: down if they left down (a fall
   too), their mark and its time, and a shore they were taken to (`breach/rejoin.rs`).
-- **Its great foes** are matched to the whole company in the run, living or not (each player past the first adds 0.45
+- **Its great foes** are matched to everyone who has played in the run, living, fallen or away (`Breach::company`), and
+  matched again as more come in, keeping their share of health (each player past the first adds 0.45
   of its health; a Keeper is matched to half the company), then stand at their own times: the Scrivener six, the
-  Steward eight, the Mender and the Warden one and a half.
+  Steward six and a half, the Mender and the Warden one and a half.
 - **The company.** Companies hold eight, as a Breach is taken on by up to eight
   ([[Breaches Drop the Best, at Sea Too, for a Fleet of Eight]]); a Breach's run holds eight and every other run four. It is
   launched from the Playlist: the finder (`/v1/find/node-gullwing-vale--breach-<tier>?launch`) starts the run for the

@@ -25,9 +25,11 @@ pub const TAKINGS_MOST: u8 = 4;
 pub const BARE_TICKS: u64 = 25 * 60;
 pub const BARE_BLOW: f64 = 5.0;
 pub const BARE_RECHARGE: f64 = 3.0;
-/// What its health is times past the company's match: more than a company of eight takes off it before its last toll
-/// unless they lay it bare, and enough that, laying it bare once between takings, they see its third taking come.
-pub const HEALTH_TIMES: f64 = 8.0;
+/// What its health is times past the company's match: more than a company of eight at its level takes off it before
+/// its last toll unless they lay it bare; little enough that eight at the tier's opening level, laying it bare in every
+/// window, can fell it before then; and enough that, laying it bare once between takings, they see its third taking
+/// come.
+pub const HEALTH_TIMES: f64 = 6.5;
 /// How near the Steward the Lodestone is grounded to lay it bare, metres.
 pub const BARE_REACH_M: f64 = 8.0;
 /// How often a wave comes, ticks.

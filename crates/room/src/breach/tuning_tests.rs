@@ -168,3 +168,22 @@ fn a_great_foe_is_matched_to_everyone_who_played_in_the_run_and_grows_with_those
     assert!((grown.health_max - matched).abs() < 1e-6, "eight came in: {} against {matched}", grown.health_max);
     assert!((grown.health / grown.health_max - 0.5).abs() < 0.01, "its share kept");
 }
+
+#[test]
+fn eight_at_the_tiers_opening_level_laying_the_steward_bare_in_every_window_can_fell_it_before_its_last_toll() {
+    for tier in Tier::ALL {
+        let (mut room, players) = won_to(tier, 8, STEWARD);
+        begin_at(&mut room, &players, "court", "chest");
+        let boss = breach(&room).fights.steward.boss.expect("the Steward stands");
+        let health = room.foes[&boss].fighter.health_max;
+        let every = if tier == Tier::Hard { steward::TAKING_EVERY.1 } else { steward::TAKING_EVERY.0 };
+        let last_toll = (steward::FIRST_TAKING + every * u64::from(steward::TAKINGS_MOST)) as f64 / 60.0;
+        // Every window laid bare, each second of it struck BARE_BLOW times over: the most a company can take off it.
+        let bare = f64::from(steward::TAKINGS_MOST) * steward::BARE_TICKS as f64 / 60.0 * (steward::BARE_BLOW - 1.0);
+        let matched = COMPANY_HARM * gear::power::foe_health_times(tier.foes_at());
+        let at_the_door = matched * gear::power::gap(tier.opens_at(), tier.foes_at());
+        let most = at_the_door * (last_toll + bare);
+        assert!(health <= 0.85 * most, "{tier:?}: {health:.0} of the {most:.0} a company at the door can take off it");
+        assert!(health > matched * last_toll, "{tier:?}: never laid bare, a matched company cannot fell it in time");
+    }
+}

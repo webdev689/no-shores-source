@@ -20,8 +20,8 @@ test("the Drowned Vale's plan reads from the room module, its gate in Gullwing V
   assert.deepEqual(
     plan.tiers.map((tier) => [tier.name, tier.level, tier.opens, tier.revives]),
     [
-      ['Normal', 26, 24, null],
-      ['Hard', 30, 28, 5],
+      ['Normal', 26, 25, null],
+      ['Hard', 30, 29, 5],
     ],
   );
   assert.equal(plan.encounters[0]?.outside, true, 'the Waking is fought at the gate');
