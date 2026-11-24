@@ -561,3 +561,7 @@ pub fn gear_bytes(room: &Room, player: PlayerId) -> Option<Vec<u8>> {
 #[cfg(test)]
 #[path = "gear_wire_tests.rs"]
 mod gear_wire_tests;
+
+#[cfg(test)]
+#[path = "ask_wire_tests.rs"]
+mod ask_wire_tests;
