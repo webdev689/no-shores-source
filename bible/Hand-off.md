@@ -199,26 +199,36 @@ The decisions in [[Open Questions]] are not repeated here.
   in each).
   - The bounds: a layout's prop was the box round its turned footprint to its highest point (a beached boat at a
     slant a block twice its size as tall as its mast), a turned or tilted solid the box round its turned corners (a
-    25 m rail at a slant 11 by 23 m). Now no box stands more than 0.45 m off what it boxes (`city::hug`, used by
-    cities and layouts alike): props are the parts their forged mesh fills (`content/forged/parts.json`, written by
-    `node tools/forgedParts.mjs`, held to the forge by a test), turned pieces strips, shaped solids layers or
-    terraces, tilted ones halved ([[Layouts]], "Boxes"; [[Forged Models]], "Parts"). What a solid may cost is held
-    (`city::collision::kept`: 64 boxes a 2 m cell, a box a square metre, at least 256; looser a quarter at a time
-    past that): 99.5 % of solids keep within 0.45 m, eleven on continent 1's zones within 0.56 to 1.1 m. Against the
-    merge base on one machine: 1,258,643 boxes over every landmass where 271,789 were, the rooms' files 40.1 MB where
-    16.4 MB were, a tick 9.0 µs where 3.4 µs, the largest city boxed in 0.5 s natively. A puzzle's point now stands on
-    ground a walk reaches from its place: the Tithe Barns' were reached only over a roof's invisible bounds. The node
-    runs' fingerprint moved with the boxes, native and WebAssembly agreeing on the new one.
+    25 m rail at a slant 11 by 23 m). Now no box stands more than 0.45 m off what is drawn, nor leaves more of it out
+    (`city::hug`, used by cities and layouts alike): props are the parts their forged mesh fills in 0.25 m columns
+    (`content/forged/parts.json`, written by `node tools/forgedParts.mjs`, held to the mesh by a test), a turned
+    prop's strips within 0.2 m of them; solids are cut to the faces the page draws (a round's polygon, a dome's
+    rings), turned pieces in strips, tilted ones halved however far they turn ([[Layouts]], "Boxes";
+    [[Forged Models]], "Parts"). What a solid or a turned prop may cost is held (64 boxes a 2 m cell, a box a square metre,
+    at least 256, a prop twice its loosest strips; looser a quarter at a time past that): 99.3 % of solids and 97 %
+    of laid props keep that close. Against the merge base on one machine: 1,433,893 boxes over every landmass where
+    271,789 were, the rooms' files 50 MB where 16.4 MB were, a tick 8.0 µs where 3.4 µs. A puzzle's point now stands
+    on ground a walk reaches from its place. The node runs' fingerprint moved with the boxes, native and WebAssembly
+    agreeing on the new one.
+  - A deep audit on the owner's "Do a deep audit on this" (five read-only audits by part) found and fixed: a mill's
+    sails rolled past a half-turn boxed 37 m off (a tilt's reach is now its chord); halving that stopped short of its
+    keep reported as fitting; rounds kept to a smooth shape where the page draws polygons and rings; large props'
+    0.5 m columns standing 0.7 m off their mesh; turned props' strips adding a full 0.45 m; a test that passed
+    without a raised place; the meadow on the layouts' paths and through thin walls, drawing grassless cells, its
+    card light law dimming all light where DFO's dims the sun's; and notes that said more than the code does.
   - The meadow ([[Meadow]], [[Pick - Meadow Grass]]): the owner's five sprites written from DFO's PNGs by
     `tools/meadow/write.py` (pixel for pixel DFO's bake), DFO's atlas, chain, pick, sizes and colour law, 16 m cells
     of 576 tufts drawn by the GPU to 160 m over the grass of every grass biome.
   - For the owner: the PNGs' metadata says Substance Designer at 2048 px (2021), saved in Photoshop; DFO and the Pick
     List call them the owner's: please confirm they are your own ([[Own Work]]). Whether the plants' baked grass stays
     under the meadow, and whether Graphics gains a grass setting.
-  - Tested offline: the full check on `17633429`, `main` merged in; the meadow pictured headless through the real
+  - Tested offline: the full check on the head (the commit named in the pull request), `main` merged in; the meadow pictured headless through the real
     renderer in the Saltgrass Downs. Not seen on a real GPU or played: the meadow's cost there is unmeasured (some
     180,000 tufts on open grass), and so is the boxing's in WebAssembly. For the owner too: the boxing's budget, a
-    trade of closeness for a tick's cost and the rooms' files.
+    trade of closeness for a tick's cost and the rooms' files (the beached ships' strips loosen to 0.6 to 1.5 m, the
+    cities' leaning spires to 13 m at most); and `content/forged/parts.json` and `client/src/nature/meadowArt.ts`,
+    tools' output committed, which Generated Files Stay Out of Git allows only with the owner's exception (else the
+    parts are made before each build, as the schema's code is).
 
 - **The key strip, the leave held and Settings in tabs** (#181), merged on the owner's "Merge and deploy", which
   deploys the page (the rooms' code is untouched). The owner's three asks
@@ -558,7 +568,7 @@ The decisions in [[Open Questions]] are not repeated here.
 
 ## Next
 
-- **The boxing's cost, further** (this branch): a leaning spire of the cities keeps within 5.3 m only, as boxes
+- **The boxing's cost, further** (this branch): a leaning spire of the cities keeps within 13 m only, as boxes
   square to the world stack up a lean; boxing a city takes 0.03 to 0.5 s natively where it took a millisecond, and
   WebAssembly's cost (the land worker boxes a node's city on entry) is unmeasured. The meadow's cost on a real GPU,
   and a hand's play of both, are still to come.

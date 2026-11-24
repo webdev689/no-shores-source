@@ -375,11 +375,11 @@ movement rules' grid, every box of which a tick tests), and at most a box a squa
 fewer than 256. A solid's layers come first, as they take the fewest boxes; where they stack too thick over the
 ground, the same layers are laid as terraces, each boxed only where no layer over it stands, up from the foot, which
 holds the same and stands no further off. One that still costs more is boxed with its keep a quarter looser at a time
-until it fits (and halving that stops short of its keep costs more), never leaving more than 0.45 m of it out. Over every landmass 269,060 of 270,438 solids are boxed unloosened; on continent 1's zones eleven
-are loosened, small tilted stones to within 0.7 m, the mills' two roofs 0.7 m, the Maw Shallows' dome 0.9 m and the
-Saltgrass Downs' wide dome 1.1 m; the cities' leaning spires to within 5.3 m at most. Continent 1's zones hold 67,482
-boxes, every landmass's zones and cities 1,258,643, a city boxed natively in 0.03 to 0.5 s (tested offline). Boxes
-are written to the centimetre, grown out so none shrinks. No box of a solid, prop or building stands across a way's walked width under head height on continent 1 (`crates/room/tests/layouts_laid.rs`). A
+until it fits (and halving that stops short of its keep costs more), never leaving more than 0.45 m of it out. Over every landmass 268,489 of 270,438 solids are boxed unloosened, and 11,659 of 12,016 laid props; on continent
+1's zones the loosened are small tilted stones and domes to within 0.56 to 1.1 m, the mills' two roofs 0.7 m, the
+Saltgrass Downs' wide dome 1.7 m, and the beached ships' strips 0.6 to 1.2 m; the cities' leaning spires are to
+within 13 m at most, nine in ten of their tilted columns unloosened. Continent 1's zones hold 86,909 boxes, every
+landmass's zones and cities 1,433,893, a city boxed natively in 0.05 to 0.3 s (tested offline). Boxes are written to the centimetre, grown out so none shrinks. No box of a solid, prop or building stands across a way's walked width under head height on continent 1 (`crates/room/tests/layouts_laid.rs`). A
 body walks in at every ground-floor door of the Saltgrass Downs' buildings, and up to every upper floor, as the bake
 lays them (`crates/room/tests/rooms_walked.rs`).
 
