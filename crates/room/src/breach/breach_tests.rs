@@ -253,12 +253,9 @@ fn bits(blocks: &[Block]) -> Vec<[u64; 6]> {
 fn the_room_stands_its_plans_blocks_for_the_seals_and_the_tick_its_snapshot_tells() {
     use movement::Near;
     let (mut room, _) = run(Tier::Normal, 1);
-    for won in [None, Some(MENDING), Some(CHOIR), Some(SHORES)] {
-        if let Some(encounter) = won {
-            let mut breach_box = room.breach.take().expect("run");
-            room.win_encounter(&mut breach_box, encounter);
-            room.breach = Some(breach_box);
-        }
+    for opened in [None, Some(0), Some(1), Some(2)] {
+        // Each seal opened as its encounter's win opens it, with no space walked into to bake.
+        room.breach.as_mut().expect("run").open_seals.extend(opened);
         for _ in 0..plan::SLAB_CYCLE / 6 {
             room.clock += 5;
             room.tick();
