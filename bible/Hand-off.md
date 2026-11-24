@@ -213,25 +213,23 @@ The decisions in [[Open Questions]] are not repeated here.
     picture's foot, under the sea's bar, which stays up over the island view; the frame could keep the nodes above the
     bar. A picture plan cannot set the weather (observation 201): a dev hook lending the sky would fix it.
 
-- **Guilds** (#179), merged on the owner's "Merge and deploy when ready", which deploys the page and the rooms and
-  applies five migrations. The owner asked for guild names and banners with the tag on nameplates and in the social
-  menu, descriptions, bounties and levelling, and outposts on any island for a cost whose structures give guild buffs,
-  passive income, guild dungeons, guild bosses and housing decoration
-  ([[Guilds Gain Banners, Levels, Bounties and Outposts]]). All of it is built ([[Guilds]], [[Outposts]],
+- **Guilds** (#179, with #195), deployed on the owner's "Merge and deploy when ready" and "Merge and deploy": the page,
+  the rooms and the accounts, with the guilds' five migrations and #195's index. The owner asked for guild names and
+  banners with the tag on nameplates and in the social menu, descriptions, bounties and levelling, and outposts on any
+  island for a cost whose structures give guild buffs, passive income, guild dungeons, guild bosses and housing
+  decoration ([[Guilds Gain Banners, Levels, Bounties and Outposts]]). All of it is built ([[Guilds]], [[Outposts]],
   [[Guilds and Outposts as Claude Shapes Them]]): the banner and its editor, the Guild tab after Destiny 2's clan
   screen, levels, weekly contribution and bounties, the treasury, an outpost site on each island with its own room for
   each guild, thirty-eight structure models in three tiers, the strongbox and stores, the boons, decoration placed in
   the world, the War Horn's guild boss and the guild dungeon behind the Delve Gate. Three deep audits ran; every real
-  finding is fixed with a test or pictures. The third found a give-back lost when a reload or a sailing off came before
-  the accounts' answer (the errand now rides in the character's save under its id, settled once by whichever room next
-  holds it), a deposit that could be done twice, idle plot reads eating the errands' limit, guests sent out when their
-  member stepped away, and the plan drawn over the menu when scrolled. Tested offline, not live; the PR names the commit
-  its last full check covered. Waiting on the owner: playing it; marking the DFO Pick rows for heraldry and for halls,
-  works and decor approved (`proposed` now). Known limits: the players on an abandoned outpost stand on bare ground
-  until they leave; an errand the accounts never answer at a claim holds that player's outpost asks until a later claim
-  answers it; the accounts keep every errand's answer for good, one row an errand; the guild boss is lost if everyone
-  leaves its room before it falls; a member can push older ledger lines out with many small deposits, each line naming
-  who moved it; the banner cloth takes no sky light, so it reads pale at night.
+  finding is fixed with a test or pictures. #195 put the guild's tag on the plate over each ship at sea
+  ([[Ships at Sea Wear Their Guild's Tag]]) and forgets an errand's kept answer a week on once no character carries it.
+  CI's check runs about 45 minutes, under a 75-minute limit (`ci.yml`). Tested offline, not live. Waiting on the owner:
+  playing it; marking the DFO Pick rows for heraldry and for halls, works and decor approved (`proposed` now). Known
+  limits: the players on an abandoned outpost stand on bare ground until they leave; an errand the accounts never answer
+  at a claim holds that player's outpost asks until a later claim answers it; the guild boss is lost if everyone leaves
+  its room before it falls; a member can push older ledger lines out with many small deposits, each line naming who
+  moved it; the banner cloth takes no sky light, so it reads pale at night.
 - **The Discord bot**: porting DFO Online's unmerged bot work (#1662 to #1680 there, reverted by #1682) and redesigning
   it around No Shores, which the owner raised and set aside: "Lets come back to this later."
 - **A foe's plain swing at seven eighths of its time**, for the owner's yes to merge, on the owner's "We recently
