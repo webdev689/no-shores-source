@@ -34,8 +34,10 @@ const PRESS_PX = 172;
 /** The guild's banner as kept, or the one its name draws. */
 const bannerOf = (face: GuildFace): Banner => bannerFrom(face.banner) ?? bannerOfName(face.name);
 
-/** The cells a banner's are drawn at beside these pages, as tall as the room allows. */
-const bannerScale = (height: number) => Math.max(2, Math.min(4, Math.floor((height - 30) / 100)));
+/** The cells a banner's are drawn at beside these pages, as tall as the room allows; small below 1000 px of room, so
+ *  the fields keep their width. */
+const bannerScale = (room: { width: number; height: number }) =>
+  Math.max(2, Math.min(room.width < 1000 ? 2 : 4, Math.floor((room.height - 30) / 100)));
 
 /** What a details or founding page may ask: a path of the guild's asks with its body, and opening the banner editor. */
 export type Ask = (path: string, body: Readonly<Record<string, unknown>>, said: string) => void;
@@ -101,7 +103,7 @@ export function detailsNode(context: PlainContext, face: GuildFace, holds: Holds
     gap: 28,
     padding: [6, 4, 0, 4],
     children: [
-      { direction: 'column', alignX: 'center', children: [standardNode(bannerOf(face), bannerScale(room.height))] },
+      { direction: 'column', alignX: 'center', children: [standardNode(bannerOf(face), bannerScale(room))] },
       {
         width: 'grow',
         maxWidth: 900 + 200 * (size - 1),
@@ -224,7 +226,7 @@ export function foundNode(
     gap: 28,
     padding: [6, 4, 0, 4],
     children: [
-      { direction: 'column', alignX: 'center', children: [standardNode(banner, bannerScale(room.height))] },
+      { direction: 'column', alignX: 'center', children: [standardNode(banner, bannerScale(room))] },
       {
         width: 'grow',
         maxWidth: 760,
@@ -250,6 +252,8 @@ export function foundNode(
               ],
             },
             {
+              width: 'grow',
+              wrap: true,
               gap: 10,
               alignY: 'center',
               children: [
