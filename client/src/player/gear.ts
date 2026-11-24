@@ -1,12 +1,14 @@
+import factions from '../../../content/gear/factions.json' with { type: 'json' };
 import items from '../../../content/gear/items.json' with { type: 'json' };
 import resources from '../../../content/gear/resources.json' with { type: 'json' };
 import rolled from '../../../content/gear/rolled.json' with { type: 'json' };
 import traits from '../../../content/gear/traits.json' with { type: 'json' };
+import words from '../../../content/gear/words.json' with { type: 'json' };
 import type { GlowLook } from '../elementGlow.ts';
 import { COSMETICS } from '../forge/cosmetics.ts';
 import { ASKS, type GearAsk, type GearItem, type GearState } from '../network/gearMessages.ts';
 import type { Wardrobe } from './dressing.ts';
-import { rolledMetal, sourceLooks } from './sourceLooks.ts';
+import { STORY_SET, numberOf, rolledArmourSet, rolledMetal, setName, sourceLooks } from './sourceLooks.ts';
 
 /** The kinds of item, by the gear crate's numbers: the Melee and Ranged loadouts, the armour and the cloak. */
 export const KINDS = [
@@ -169,30 +171,61 @@ export function answerText(answer: number): string {
   return answer === 0 || answer === 107 ? '' : (REFUSALS[answer] ?? `Refused (${answer}).`);
 }
 
-/** The prologue's own armour's names, by kind, for the steel it is drawn in (`gearLooks.ts` `STORY_SET`). */
-const STORY_NAMES: Readonly<Record<number, string>> = {
-  14: 'Steel Cuirass',
-  15: 'Steel Gauntlets',
-  16: 'Steel Greaves',
-};
+/** Each armour and weapon kind's word, said after its set's name ("Portwatch Helm"). */
+const KIND_WORDS: Readonly<Record<string, string | undefined>> = rolled.kinds;
 
-/** An item's name: a named item's own, the prologue's armour its steel's, or a rolled one's among its kind's for its
- *  rarity. */
-export function itemName(item: Pick<GearItem, 'named' | 'kind' | 'rarity' | 'name' | 'story'>): string {
+/** An item's name: a named item's own (a faction's piece's is its set's); a rolled armour piece or weapon its set's
+ *  and its kind's word, by the look it is drawn in, the prologue's armour by its steel; a horse by its coat; the cloak
+ *  its kind's. Ship modules are named by `gearName`. */
+export function itemName(
+  item: Pick<GearItem, 'named' | 'kind' | 'rarity' | 'name' | 'id' | 'level' | 'source' | 'story'>,
+): string {
   if (item.named) return items.items.find((found) => found.id === item.named)?.name ?? item.named;
-  const story = item.story ? STORY_NAMES[item.kind] : undefined;
-  if (story) return story;
+  const parts = rolledParts(item);
+  if (parts) return `${parts.set} ${parts.word}`;
+  // A horse by its coat's name among its kind's; the cloak by its kind.
   const kind = kindKey(item.kind);
   const names = (rolled.names as Record<string, Record<string, readonly string[]> | undefined>)[kind];
-  const rarity = (RARITIES[item.rarity]?.name ?? '').toLowerCase();
-  return names?.[rarity]?.[item.name] ?? kind;
+  return names?.[(RARITIES[item.rarity]?.name ?? '').toLowerCase()]?.[item.name] ?? kind;
 }
 
-/** A named item's words, or a horse's, its coat's; else none. */
-export function itemWords(item: Pick<GearItem, 'named' | 'kind' | 'name'>): string {
+/** A rolled armour piece's or weapon's set name and kind word, by the look it is drawn in, the prologue's armour by
+ *  its steel; null for a kind with no word (a horse, the cloak). */
+function rolledParts(
+  item: Pick<GearItem, 'named' | 'kind' | 'rarity' | 'name' | 'id' | 'level' | 'source' | 'story'>,
+): { readonly set: string; readonly word: string } | null {
+  const kind = kindKey(item.kind);
+  const word = KIND_WORDS[kind];
+  if (!word) return null;
+  const armour = slotOf(item.kind) > 1;
+  const look =
+    item.story && armour
+      ? STORY_SET
+      : item.rarity === 0
+        ? null
+        : armour
+          ? rolledArmourSet(item, kind === 'torso' || kind === 'legs')
+          : rolledMetal(item);
+  return { set: setName(item, look), word };
+}
+
+/** Each rolled set's words for each kind it is made in, by set name and kind word (`content/gear/words.json`). */
+const SET_WORDS: Readonly<Record<string, Readonly<Record<string, string | undefined>> | undefined>> = words.sets;
+
+/** An item's words: a named item's own, a faction's piece with none its faction's; a rolled armour piece's or
+ *  weapon's its set's for its kind; a horse's its coat's; else none. */
+export function itemWords(
+  item: Pick<GearItem, 'named' | 'kind' | 'rarity' | 'name' | 'id' | 'level' | 'source' | 'story'>,
+): string {
   const coat = coatOfHorse(item);
   if (coat) return COSMETICS.find((each) => each.id === coat)?.words ?? '';
-  return item.named ? (items.items.find((found) => found.id === item.named)?.words ?? '') : '';
+  if (item.named) {
+    const found = items.items.find((each) => each.id === item.named);
+    const faction = found && 'faction' in found ? factions.factions.find((each) => each.key === found.faction) : null;
+    return found?.words || faction?.words || '';
+  }
+  const parts = rolledParts(item);
+  return (parts && SET_WORDS[parts.set]?.[parts.word]) ?? '';
 }
 
 /** A trait's name and words: all it does (`words`), and for a perk that gives and takes, what it gives and what it
@@ -341,9 +374,7 @@ const WRITTEN: ReadonlyMap<string, { readonly look?: string; readonly make?: str
 export const rung = (item: GearItem, start: number, climb: number, spread: number): number =>
   start + Math.round(((Math.min(Math.max(item.level, 1), 20) - 1) * climb) / 19) + (item.name % spread);
 
-/** The item's own number for a choice its name does not make: its id (a smith's ware comes with the one it takes once
- *  bought), its name while it has none, and a named piece's name, so a faction's piece always shows one make. */
-export const numberOf = (item: GearItem): number => (item.named ? item.name : item.id || item.name);
+export { numberOf };
 
 /** The ladder sorted nearest first from rung `from`, the lesser first at one distance. */
 export const nearest = (ladder: readonly string[], from: number): readonly string[] =>

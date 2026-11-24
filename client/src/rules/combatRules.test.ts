@@ -7,7 +7,7 @@ import { PROTOCOL } from '../../../generated/messages/ts/version.ts';
 import { BODY_FLOATS } from './movementRules.ts';
 
 /** The combat crate's agreement test holds the same fingerprint, course and script (crates/combat/tests/agree.rs). */
-const FIGHT_HASH = 'ce32e3be40bda863';
+const FIGHT_HASH = 'ea928425bcd3ab23';
 
 const MODULE = new URL('../../../target/wasm32-unknown-unknown/release/room_wasm.wasm', import.meta.url);
 const compiled = new WebAssembly.Module(

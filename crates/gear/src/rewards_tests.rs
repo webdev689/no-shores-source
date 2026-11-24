@@ -5,6 +5,7 @@ use crate::kinds::{Kind, Slot};
 use crate::rarity::Rarity;
 use crate::rewards::{Clear, Foe, worth};
 use crate::source::Source;
+use crate::vestige;
 use crate::world::Difficulty;
 
 fn dice(seed: u64) -> Dice {
@@ -13,6 +14,12 @@ fn dice(seed: u64) -> Dice {
 
 fn found(character: &Character) -> usize {
     character.items.len() - Character::starting().items.len()
+}
+
+/// How many Vestiges a kill of `rank` rolls at `chance` on `seed`, sealed or Normal: a Normal one comes as an item, so
+/// what was found as itself is the rest of the items.
+fn rolls(chance: f64, rank: u8, seed: u64) -> usize {
+    vestige::dropped(chance, rank, 20, &dice(seed)).len()
 }
 
 #[test]
@@ -26,13 +33,15 @@ fn a_boss_always_leaves_an_item_and_a_vestige_and_a_harder_voyage_more() {
     for (difficulty, most) in [(Difficulty::Normal, 1), (Difficulty::Abyss, 2)] {
         let mut character = Character::starting();
         let vestiges = character.loot_kill(5, 20, difficulty, Source::World, &dice(1));
-        assert_eq!((found(&character), vestiges.len()), (most, most), "{difficulty:?}");
+        let commons = rolls(vestige::chance(5) * difficulty.reward(), 5, 1) - vestiges.len();
+        assert_eq!((found(&character) - commons, vestiges.len() + commons), (most, most), "{difficulty:?}");
     }
     let (mut items, mut vestiges) = (0, 0);
     for seed in 0..2_000 {
         let mut character = Character::starting();
-        vestiges += character.loot_kill(5, 20, Difficulty::Elite, Source::World, &dice(seed)).len();
-        items += found(&character);
+        let left = character.loot_kill(5, 20, Difficulty::Elite, Source::World, &dice(seed)).len();
+        let rolled = rolls(vestige::chance(5) * Difficulty::Elite.reward(), 5, seed);
+        (items, vestiges) = (items + found(&character) - (rolled - left), vestiges + rolled);
     }
     assert!((2_800..3_200).contains(&items) && (2_800..3_200).contains(&vestiges), "one and a half each at Elite");
 }
@@ -42,18 +51,20 @@ fn a_miniboss_leaves_an_item_and_a_vestige_each_about_a_third_of_the_time_and_a_
     let (mut items, mut vestiges, mut both) = (0, 0, 0);
     for seed in 0..4_000 {
         let mut character = Character::starting();
-        let left = character.loot_kill(4, 20, Difficulty::Normal, Source::World, &dice(seed)).len();
-        let kept = found(&character);
+        let sealed = character.loot_kill(4, 20, Difficulty::Normal, Source::World, &dice(seed)).len();
+        let left = rolls(vestige::chance(4), 4, seed);
+        let kept = found(&character) - (left - sealed);
         (items, vestiges, both) = (items + kept, vestiges + left, both + usize::from(kept > 0 && left > 0));
     }
     assert!((1_250..1_550).contains(&items) && (1_250..1_550).contains(&vestiges), "{items} {vestiges}");
     assert!((380..620).contains(&both), "rolled apart, both about one time in eight: {both}");
     for rank in 1..=3 {
-        let mut character = Character::starting();
+        let (mut character, mut commons) = (Character::starting(), 0);
         for seed in 0..500 {
-            character.loot_kill(rank, 20, Difficulty::Abyss, Source::World, &dice(seed));
+            let sealed = character.loot_kill(rank, 20, Difficulty::Abyss, Source::World, &dice(seed)).len();
+            commons += rolls(vestige::chance(rank) * Difficulty::Abyss.reward(), rank, seed) - sealed;
         }
-        assert_eq!(found(&character), 0, "rank {rank} leaves no item as itself");
+        assert_eq!(found(&character), commons, "rank {rank} leaves no item as itself, only its Normal Vestiges'");
     }
 }
 
@@ -96,8 +107,10 @@ fn a_dungeons_clear_always_leaves_an_item_coloured_as_its_minibosss_and_now_and_
     let mut vestiges = 0;
     for seed in 0..2_000 {
         let mut character = Character::starting();
-        vestiges += character.reward_clear(Clear::Dungeon, 20, Difficulty::Normal, Source::World, &dice(seed)).len();
-        assert_eq!(found(&character), 1, "one item, sure");
+        let sealed = character.reward_clear(Clear::Dungeon, 20, Difficulty::Normal, Source::World, &dice(seed)).len();
+        let rolled = rolls(vestige::chance(4), 4, seed);
+        assert_eq!(found(&character) - (rolled - sealed), 1, "one item, sure");
+        vestiges += rolled;
     }
     assert!((600..800).contains(&vestiges), "a Miniboss's 35 in 100: {vestiges}");
     for clear in [Clear::Mission, Clear::WorldBoss] {

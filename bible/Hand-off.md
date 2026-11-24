@@ -361,10 +361,8 @@ The decisions in [[Open Questions]] are not repeated here.
   - Tested offline: `cargo xtask check` on each pushed head (c2361953 last, with main merged in at 1cd6a379); three
     rounds of read-only audits (rules, page, design, bible, looks, and two mutation audits of the tests), every finding
     fixed with a test or recorded. Not yet: played by hand, or in a deployed room.
-  - Held by the owner: faction blades (built on `wt/fblade`, the forge's trim; its art unpublished); the Abyss
-    Dungeons' crossbow art ("Not now").
-  - To talk through with the owner: the named-piece gaps (36 of 60 contents, colours and slots have no named piece of
-    their own), and the Veiled's colour on a blade ([[Open Questions]]).
+  - The Abyss Dungeons' crossbow art waits ("Not now"). The faction blades, the named-piece gaps and the Veiled's
+    colour were settled by the owner in #169 (below).
 - **The whole-codebase audit** (#167), merged with the owner's yes ("Merge and deploy"), which deploys the page and
   the rooms: twelve read-only auditors by area and a reviewer of the diff, every
   finding checked against the code first and each bug fixed with a test that fails without it. Among the fixes: quest
@@ -386,6 +384,34 @@ The decisions in [[Open Questions]] are not repeated here.
     [[Only the Garrison's Own Kills Share Its Clear, and a Failed Trip Goes Back to the Beach]]: only the garrison's
     own kills share its clear; a failed trip from a beach, played alone, goes back to it; Branches and Merging says
     merge, not rebase and squash, and the `built` notes are `live` (Claude's calls).
+- **#169, the owner's gear calls, built whole**, a draft. The owner: "I dont want to merge until everything is
+  finished. Focus on getting this to 100% and stop depending on me"
+  ([[Claude Finishes the Gear Calls on Its Own Word]]). Every call is built; what is left is the owner's yes to merge
+  and one forge run (below). Tested offline with `cargo xtask check` on each pushed head, green but for the four R2 ship-mesh tests this container cannot
+  fetch; CI green on each head it finished.
+  - The owner's calls, in their words ([[Everything Carries a Set Name, and Perks Roll by Pool]] and the decisions it
+    links), and every perk in the game approved ("All approved": [[Every Perk Stands, the Factions' Nine With Them]];
+    the review page the owner marked: https://claude.ai/artifact/Jtfdq4zJyoUsQdsJqWgA4y).
+  - Built ([[Gear]]; each call of Claude's in [[Gear as Claude Shapes It]]): every armour piece and weapon named by
+    its set and kind ("Portwatch Helm"), Atherics and kept named pieces keeping theirs; every drop, Vestige and Shape's
+    Legendaries rolled in a content's set look with random perks, the named Legendaries kept-only; faction pieces
+    rolling the shared pool and one of their faction's nine perks; the Breaches' own pool of thirteen, a Breach piece
+    rolling its perk columns from it alone, never one twice (no Breach is built: the owner, "Lets just finish this");
+    no metal name in anything a player reads (`client/src/metalWords.test.ts`); a faction blade's hilt, guard and
+    trim in its faction's colour, the Veiled's a faint cold violet ([[Factions]], [[Sprite Forge]],
+    [[First Person]]); a rolled piece's look roll (`vestige::LOOK_ROLLS`, 36) choosing its set, metal, dye, make and
+    shield, so a ware is bought as shown.
+  - The set names stand: the owner's yes to merge settled them ([[The Set Names Stand as Claude Drafted Them]]).
+  - Asked to wait before the merge, the owner added three calls: flavour text for every weapon and armour piece
+    ([[Weapons and Armour Carry Flavour Text]]: `content/gear/words.json`, a line for each set and kind); commons drop
+    as themselves, never as Vestiges ([[Commons Drop as Themselves, Never as Vestiges]]); and a Breach's Hard weapons
+    named "(Forged)" ([[Breach Weapons Come Normal and Forged]]), for the Breach's own PR (#182, stacked on #169) to
+    build with its `Item.hard`. The owner relays that one: this session may not message another.
+  - The faction blades' art is published (forge run 18: figure strips and first person's frames, after a first run
+    failed on a missing scikit-image pin) and `content/forge/renders.json` points at it.
+  - Unchecked: whether the new first-person blades pair with the published hands (same size and `oFFs`); every look
+    of a kept piece moves once with the wider look roll; played live. Here the full check stops at four R2 ship tests
+    this container cannot fetch, before the repo checks: run `cargo xtask repo` beside it.
 - **Open pull requests**, for the owner's yes once their checks pass: #162 (the game's words out to Type and back; it
   conflicts with `main` in `Decisions.md`) and #159 (the rooms' worker tests wait for what they check; it conflicts
   with `main` in `roomThread.test.ts`). Drafts:
@@ -538,7 +564,6 @@ The decisions in [[Open Questions]] are not repeated here.
   over the upload token Cloudflare hands back.
 - **The forge's renders** leave `r2.dev`, which limits its rate, once `daggerfalljs.dev`'s DNS moves to Cloudflare
   ([[The Forge's Renders Will Use daggerfalljs.dev]]).
-- **Names** for the armour sets and weapons, to replace the forge's ([[Three Races]]).
 - **Proposed, not agreed**: a check for [[Plain Text]] like DFO's word limits (held in review for now); the comments
   check also catching a comment that names a note ("see the X note"); whether a ship deck's grid (`deck.py`) stays in
   the manifest or goes to R2 as a bake; whether the Overworld's rise and fall, ported but never wired, stays out
