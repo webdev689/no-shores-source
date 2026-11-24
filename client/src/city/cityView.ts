@@ -101,6 +101,8 @@ type Building = {
 };
 
 export class CityView implements CityDrawer {
+  /** Drawn before the ground, whose pixels it covers: opaque and pulled nearer than the ground it stands on. */
+  readonly coversGround = true;
   /** What the last frame drew, for a page to read. */
   readonly frame: CityFrame = { triangles: 0, draws: 0, nearCells: 0, buildMs: 0 };
   private readonly gpu: Gpu;

@@ -37,6 +37,9 @@ import { Upscale } from './upscale.ts';
  *  (`castInto`), and every one is handed the map to receive them; one may draw again over the water (`overWater`), and
  *  what gives light draws it into the light layer (`lightInto`). */
 export interface Drawer {
+  /** Drawn before the ground: what it draws is opaque and pulled nearer than the ground it stands on (a city), so the
+   *  ground it covers fails the depth test before it is shaded, the costliest shading in the pass. */
+  readonly coversGround?: boolean;
   drawInto(pass: GPURenderPassEncoder, fromEye: Float32Array, shot: Shot, time: number, shadow: ShadowMap): void;
   castInto?(pass: GPURenderPassEncoder, fromEye: Float32Array, shot: Shot, time: number, shadow: ShadowMap): void;
   /** Called once a frame before anything is recorded, for work that replaces what the frame draws with (a texture,
@@ -343,8 +346,9 @@ export class GameScene {
         depthStoreOp: 'store',
       },
     });
+    for (const drawer of drawers) if (drawer.coversGround) drawer.drawInto(pass, fromEye, shot, time, this.shadow);
     drawn.drawInto(pass, this.shadow);
-    for (const drawer of drawers) drawer.drawInto(pass, fromEye, shot, time, this.shadow);
+    for (const drawer of drawers) if (!drawer.coversGround) drawer.drawInto(pass, fromEye, shot, time, this.shadow);
     pass.end();
     this.copy.encode(encoder, targets.multidepth, targets.depth);
     const camera = frameOf(local);

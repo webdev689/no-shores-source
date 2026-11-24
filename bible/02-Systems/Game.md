@@ -668,6 +668,11 @@ the ship, every drawer into the same pass, then the water's sky, haze and surfac
 what a drawer draws over the water: on foot, the blows' arcs, then the fight's see-through marks far to near, each
 tested by hand against the scene's depth, so the water's sky and its surface near a coast never cover them.
 
+In the pass the city and the layouts' buildings draw first (`coversGround`): they are opaque and pulled nearer than
+the ground they stand on ([[Cities]]), so the ground they cover, the costliest pixels of the pass, fails the depth
+test before it is shaded; the land, then the plants, the ships and the figures follow, the plants' shades darkening
+the ground already drawn.
+
 The fight's solid marks write depth in the pass with the figures. Then the light layer (`LightLayer`): on foot the
 marks and arcs give their light, at sea a fight's puffs, which is added over the picture in blocks of 4 of the
 scene's pixels ([[Test Ground]], "The attack feel"), under the first person's hands. Its first pass is begun only once
