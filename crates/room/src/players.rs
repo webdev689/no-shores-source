@@ -431,6 +431,7 @@ impl Room {
             found.fighter = found.armed(found.fighter);
         }
         self.given_back(player);
+        self.stand_where_left(player);
         true
     }
 

@@ -1,3 +1,5 @@
+import type { LastPlace } from '../../../server/accounts/lastPlace.ts';
+
 /** Where the deployed accounts are (`server/accounts`). */
 export const LIVE_ACCOUNTS = 'https://overlook-accounts.mackcothran.workers.dev';
 
@@ -124,6 +126,9 @@ export class AccountLink {
   /** The session being asked for, while it is; and the account the accounts last said the page is. */
   private asking: Promise<Account | null> | null = null;
   private known: Account | null = null;
+  /** Where the account's character logs back in, as the accounts said with who it is (server/accounts/lastPlace.ts);
+   *  none for a guest just made, or a character never kept at sea or in a social space. */
+  place: LastPlace | null = null;
   /** How long an ask may go unanswered, milliseconds, before it is given up as out of reach: a host that never
    *  answers would otherwise hold whatever waits on it until the browser's own limit. */
   patienceMs = 10_000;
@@ -233,7 +238,10 @@ export class AccountLink {
     if (code !== null) await this.redeem(code);
     if (this.token) {
       const known = await this.call('GET', '/v1/me');
-      if (typeof known !== 'string') return known['account'] as Account;
+      if (typeof known !== 'string') {
+        this.place = (known['place'] as LastPlace | undefined) ?? null;
+        return known['account'] as Account;
+      }
       if (known !== 'Not signed in.' && known !== LAPSED) return null;
       if (known === LAPSED) this.said = LAPSED;
       this.kept.removeItem(this.key);

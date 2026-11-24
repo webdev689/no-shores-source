@@ -49,3 +49,72 @@ fn a_boarder_comes_onto_a_hostile_deck_whole_whatever_body_their_character_last_
     let fighter = *deck.fighter(boarder).expect("aboard");
     assert!(!fighter.dead() && fighter.health == fighter.health_max, "they come from their own ship, unhurt");
 }
+
+/// Overlook's social space as a room on open ground, a section 400 m square round its spawn, and a ledge to stand on.
+fn social() -> Room {
+    let ring = vec![[-200.0, -200.0], [200.0, -200.0], [200.0, 200.0], [-200.0, 200.0]];
+    let section = crate::Section { ring, spawns: vec![[0.0, 150.0]], falls_kill: true };
+    let ledge = movement::Block { min_x: 40.0, min_y: 40.0, max_x: 50.0, max_y: 50.0, top: 3.0, bottom: 0.0 };
+    let pillar = movement::Block { min_x: -20.0, min_y: -20.0, max_x: -10.0, max_y: -10.0, top: 6.0, bottom: 0.0 };
+    let kind = crate::NodeKind::Social;
+    Room::garrisoned(crate::Floor::Flat, vec![ledge, pillar], section, kind, ("overlook-social", None))
+}
+
+fn stand_at(room: &mut Room, player: crate::PlayerId, [x, y, z]: [f64; 3], facing: f64) {
+    let body = &mut room.players.get_mut(&player).expect("in").fighter.body;
+    (body.x, body.y, body.z, body.facing) = (x, y, z, facing);
+}
+
+#[test]
+fn a_player_logs_back_in_where_they_last_stood_in_a_social_space_on_the_floor_they_stood_on_facing_as_they_did() {
+    let mut left = social();
+    let player = left.join().expect("in");
+    stand_at(&mut left, player, [45.0, 44.0, 3.0], 2.0);
+    let kept = left.kept_character(player).expect("kept");
+    let last = gear::Character::from_json(&kept).and_then(|character| character.last);
+    assert_eq!(last, Some(gear::last::Last::social("overlook-social", [45.0, 44.0, 3.0], 2.0)), "where they stood");
+    let mut back = social();
+    let again = back.join().expect("in");
+    assert!(back.restore_character(again, &kept));
+    let body = back.players[&again].fighter.body;
+    assert_eq!([body.x, body.y, body.z, body.facing], [45.0, 44.0, 3.0, 2.0], "on the ledge, not under it");
+    let mut sea = social();
+    let docked = sea.join().expect("in");
+    let mut sailed = gear::Character::from_json(&kept).expect("a character");
+    sailed.last = Some(gear::last::Last::Sea);
+    assert!(sea.restore_character(docked, &sailed.to_json()));
+    assert_eq!([sea.players[&docked].fighter.body.x, sea.players[&docked].fighter.body.y], [0.0, 150.0], "came by sea");
+}
+
+#[test]
+fn no_spot_is_kept_from_a_jump_a_fall_or_another_room_and_one_a_body_no_longer_fits_stands_at_the_spawn() {
+    let mut left = social();
+    let player = left.join().expect("in");
+    let mut character = gear::Character::starting();
+    character.last = Some(gear::last::Last::Sea);
+    let earlier = character.to_json();
+    assert!(left.restore_character(player, &earlier));
+    left.players.get_mut(&player).expect("in").fighter.body.mode = movement::Mode::Air;
+    let last =
+        |room: &Room| gear::Character::from_json(&room.kept_character(player).expect("kept")).and_then(|c| c.last);
+    assert_eq!(last(&left), Some(gear::last::Last::Sea), "mid-jump: as it was");
+    left.players.get_mut(&player).expect("in").fighter.body.mode = movement::Mode::Ground;
+    left.players.get_mut(&player).expect("in").standing = crate::Standing::Dead { ticks: 0, fell: true };
+    assert_eq!(last(&left), Some(gear::last::Last::Sea), "dead by a fall: as it was");
+    let mut patrol = Room::new(Vec::new(), (0.0, 0.0));
+    let walker = patrol.join().expect("in");
+    assert!(patrol.restore_character(walker, &earlier));
+    let kept = patrol.kept_character(walker).expect("kept");
+    assert_eq!(
+        gear::Character::from_json(&kept).and_then(|c| c.last),
+        Some(gear::last::Last::Sea),
+        "no other room writes it"
+    );
+    let mut boxed = social();
+    let inside = boxed.join().expect("in");
+    let mut walled = gear::Character::starting();
+    walled.last = Some(gear::last::Last::social("overlook-social", [-15.0, -15.0, 0.0], 0.0));
+    assert!(boxed.restore_character(inside, &walled.to_json()));
+    let body = boxed.players[&inside].fighter.body;
+    assert_eq!([body.x, body.y], [0.0, 150.0], "a pillar stands there now: the spawn");
+}

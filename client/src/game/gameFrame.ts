@@ -132,9 +132,10 @@ export interface FrameParts {
   readonly leave: () => void;
   readonly travel: (happening: Happening, work: () => Promise<void>) => void;
   readonly goFoot: (node: NodeInfo, facing: number) => Promise<void>;
-  /** The story that opens the game, if it does, and the arrival at the first node it hands the player to. */
+  /** The story that opens the game, if it does, and the arrival at the first node it hands the player to: `resuming`,
+   *  where they last left the overworld or a social space (`relog.ts`). */
   readonly story: StoryHost | null;
-  readonly arrive: () => void;
+  readonly arrive: (resuming?: boolean) => void;
   /** The sea's islands kept, shown and walked ashore on, each frame; their drawer; and the ground the camera keeps
    *  over, the islands' with the land's. */
   readonly isleFrame: () => void;
@@ -455,7 +456,8 @@ export function startFrames(parts: FrameParts, playing: Playing): void {
     playing.after.storyEnded(left.epilogue);
     walker.you.dress = left.dress;
     playing.flow = next(playing.flow, { kind: 'story-ended', node: FIRST_NODE, name: 'Overlook' });
-    parts.arrive();
+    // One who played the story through arrives at Overlook, where its welcome waits; one back from the title resumes.
+    parts.arrive(left.epilogue === null);
   };
 
   /** The GPU's work for the frame drawn last. */

@@ -29,6 +29,7 @@ pub mod grid;
 pub mod horses;
 pub mod item;
 pub mod kinds;
+pub mod last;
 pub mod left;
 pub mod looks;
 pub mod lore;

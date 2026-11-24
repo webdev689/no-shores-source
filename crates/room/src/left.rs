@@ -12,13 +12,44 @@ const WAY_OUT_REACH: f64 = 3.5;
 use gear::left::{Left, share, whole_of};
 
 impl Room {
-    /// A player's character as it is kept between sessions, with the body they would leave with now.
+    /// A player's character as it is kept between sessions, with the body they would leave with now and, in a social
+    /// space, where they stand in it, to log back in there.
     #[must_use]
     pub fn kept_character(&self, player: PlayerId) -> Option<String> {
         let found = self.players.get(&player)?;
         let mut character = found.character.clone();
         character.left = Some(self.left_of(found));
+        character.last = self.social_spot(found).or(character.last);
         Some(character.to_json())
+    }
+
+    /// Where a player stands in a social space's room, as their character keeps it to log back in there: only while
+    /// they stand alive on their feet inside it, so none is kept from a fall, a jump or a death.
+    fn social_spot(&self, found: &Player) -> Option<gear::last::Last> {
+        let node = self.quests.node.as_deref().filter(|_| self.place == Some(gear::gate::Place::Social))?;
+        let body = found.fighter.body;
+        let standing = body.mode == movement::Mode::Ground && found.standing == crate::Standing::Inside;
+        (standing && found.living()).then(|| gear::last::Last::social(node, [body.x, body.y, body.z], body.facing))
+    }
+
+    /// A player whose character last stood in this very social space stands where they left it, facing as they did,
+    /// so logging back in takes them there; elsewhere, or where a body no longer fits there, as they joined.
+    pub(crate) fn stand_where_left(&mut self, player: PlayerId) {
+        let Some(node) = self.quests.node.clone().filter(|_| self.place == Some(gear::gate::Place::Social)) else {
+            return;
+        };
+        let Some(found) = self.players.get(&player) else { return };
+        let Some(([x, y, z], facing)) = found.character.last.as_ref().and_then(|last| last.stood_in(&node)) else {
+            return;
+        };
+        let inside = self.section.as_ref().is_some_and(|section| reach::inside(&section.ring, x, y));
+        // On the floor they stood on, a stair's or a bridge's over the ground among them.
+        let floor = movement::blocks::ground_at(&self.blocks, &self.floor, x, y, z);
+        let body = movement::Body { facing, z: floor, ..movement::standing(x, y) };
+        let fits = movement::blocks::room_at(&self.blocks, x, y, body.z, combat::tuning::BODY_HEIGHT);
+        if let Some(found) = self.players.get_mut(&player).filter(|_| inside && fits) {
+            (found.fighter.body, found.stood) = (body, body.z);
+        }
     }
 
     /// The body a player would leave with now.
