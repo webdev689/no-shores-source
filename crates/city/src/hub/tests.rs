@@ -58,7 +58,7 @@ fn every_keeper_has_a_stall_of_their_own_and_shape_eight_places() {
         assert_eq!(count(kind), 1, "{kind:?} keeps one stall");
     }
     assert_eq!(count(StationKind::Vault), 2, "two vault houses");
-    assert_eq!(social.visitor_spots.len(), 8, "Shape's eight places");
+    assert_eq!(social.visitor_spots.len(), 8, "Shape's eight places, one a week by `gear::shape::place`");
 }
 
 #[test]
@@ -82,9 +82,9 @@ fn every_counter_spawn_and_place_of_shapes_stands_inside_the_ring() {
 }
 
 /// Walked with the movement rules over the plan's ground, every way keeps clear of every piece either side, and
-/// every post is walked to: through the passages, into the Hall, down the Harbour Stair and the road to the pier.
+/// every post is walked to: through the passages, into the Hall, along the Beacon Walk's market, into the Stair Yard.
 #[test]
-fn the_hubs_ways_are_walked_clear_from_the_seaward_walk_to_the_pier() {
+fn the_hubs_ways_are_walked_clear_from_the_seaward_walk_to_the_stair_yard() {
     let (ground, plan) = planned();
     let social = &plan.social;
     let boxes = crate::collision::boxes_within(plan, ring_bounds(&social.ring));
@@ -331,7 +331,7 @@ fn the_postmasters_counter_stands_in_the_watch_court_clear_of_every_other_counte
 }
 
 #[test]
-fn the_hubs_places_are_named_inside_its_ring_the_quay_among_them() {
+fn the_hubs_places_are_named_inside_its_ring() {
     let (_, plan) = planned();
     let social = &plan.social;
     let names: Vec<&str> = social.areas.iter().map(|area| area.name.as_str()).collect();
@@ -343,7 +343,6 @@ fn the_hubs_places_are_named_inside_its_ring_the_quay_among_them() {
         "Beacon Walk",
         "Hall of the Arts",
         "Stair Yard",
-        "Quay",
     ] {
         assert!(names.contains(&name), "{name} is named: {names:?}");
     }
@@ -356,11 +355,11 @@ fn the_hubs_places_are_named_inside_its_ring_the_quay_among_them() {
     for area in &social.areas {
         assert!(inside(area.at), "{} at {:?} stands in the hub", area.name, area.at);
     }
-    // Each where its name puts it: the West Court west of the Watch Court and the Forge Yard east of it; from the quay
+    // Each where its name puts it: the West Court west of the Watch Court and the Forge Yard east of it; from the sea
     // inland, the Seaward Walk, the Watch Court, the Beacon Walk and the Hall of the Arts.
     let at = |name: &str| social.areas.iter().find(|area| area.name == name).expect("named").at;
     assert!(at("West Court")[0] < at("Watch Court")[0] && at("Watch Court")[0] < at("Forge Yard")[0]);
-    let inland = ["Quay", "Seaward Walk", "Watch Court", "Beacon Walk", "Hall of the Arts"].map(|name| at(name)[1]);
+    let inland = ["Seaward Walk", "Watch Court", "Beacon Walk", "Hall of the Arts"].map(|name| at(name)[1]);
     assert!(inland.windows(2).all(|pair| pair[0] < pair[1]), "{inland:?}");
 }
 
@@ -393,7 +392,7 @@ fn shapes_places_stand_clear_of_the_townsfolks_ways_and_posts() {
     assert!(near.is_empty(), "{}", near.join("\n"));
 }
 
-/// A talker and whoever they talk with, kept at posts side by side, face each other: in the courts and on the quay.
+/// A talker and whoever they talk with, kept at posts side by side, face each other.
 #[test]
 fn a_pair_at_posts_side_by_side_face_each_other() {
     let (_, plan) = planned();
@@ -415,21 +414,76 @@ fn a_pair_at_posts_side_by_side_face_each_other() {
     assert!(away.is_empty(), "{}", away.join("\n"));
 }
 
+/// The harbour way is sealed at its head: the ring takes in none of the city's ramps, no counter, place of Shape's or
+/// way's point stands on one, and a body walked from the Stair Yard at the switchback's head, straight or slantwise,
+/// never sets foot on it, stopped by the gate and its wall.
 #[test]
-fn shape_stands_on_the_switchback_landing_aside_of_the_walkers_line_away_from_the_flights() {
-    use crate::ramps::Piece;
+fn the_harbour_way_is_sealed_at_its_head_and_nothing_walked_or_used_lies_past_it() {
+    use movement::{Block, Blocks, Body, Controls, TICK_SECONDS, standing, step_body};
+    let (ground, plan) = planned();
+    let social = &plan.social;
+    let on = |[x, y]: [f64; 2], [west, north, east, south]: [f64; 4]| x > west && x < east && y > north && y < south;
+    // Each pad taken in half a metre, where the switchback's top meets the platform's edge.
+    let inset = |[west, north, east, south]: [f64; 4]| [west + 0.5, north + 0.5, east - 0.5, south - 0.5];
+    let pads: Vec<([f64; 4], f64)> = plan.ramps.iter().map(|ramp| (inset(ramp.pad.bounds), ramp.pad.level)).collect();
+    assert!(!pads.is_empty(), "the city lays its ramps");
+    let used = social.stations.iter().map(|station| station.counter);
+    let points = social.ways.points.iter().map(|point| point.at);
+    for point in used.chain(social.visitor_spots.iter().copied()).chain(points).chain(social.ring.iter().copied()) {
+        assert!(!pads.iter().any(|&(pad, _)| on(point, pad)), "{point:?} stands on the harbour way");
+    }
+    let list = crate::collision::boxes_within(plan, ring_bounds(&social.ring))
+        .into_iter()
+        .map(|[min_x, min_y, max_x, max_y, top, bottom]| Block { min_x, min_y, max_x, max_y, top, bottom })
+        .collect();
+    let blocks = Blocks::new(list);
+    let head = plan
+        .ramps
+        .iter()
+        .filter(|ramp| ramp.piece == crate::ramps::Piece::Landing)
+        .max_by(|one, two| one.pad.level.total_cmp(&two.pad.level))
+        .expect("the switchback's head");
+    let [west, north, east, south] = head.pad.bounds;
+    let middle = [f64::midpoint(west, east), f64::midpoint(north, south)];
+    let yard = social.areas.iter().find(|area| area.name == "Stair Yard").expect("named").at;
+    let toward = libm::atan2(middle[0] - yard[0], -(middle[1] - yard[1]));
+    for along in [-12.0, -6.0, 0.0, 6.0, 12.0, 18.0] {
+        let start = [middle[0] + (yard[0] - middle[0]) * 0.25, middle[1] + along];
+        for turn in [0.0, 0.5, -0.5] {
+            let controls = Controls { forward: 1.0, yaw: toward + turn, run: true, ..Controls::default() };
+            let mut body = Body { z: social.level, ..standing(start[0], start[1]) };
+            for _ in 0..600 {
+                body = step_body(&body, &controls, &blocks, &Ground(ground), TICK_SECONDS);
+                // On the way's floor; a body may still climb the wall, as any of the hub's sealed gates.
+                let reached = pads.iter().any(|&(pad, level)| on([body.x, body.y], pad) && body.z < level + 2.0);
+                assert!(!reached, "from {start:?}, turned {turn}: on the harbour way at ({}, {})", body.x, body.y);
+            }
+        }
+    }
+}
+
+/// The Harbourmaster's stall and the chandlery stand in the Beacon Walk's market, among the market's stalls.
+#[test]
+fn the_harbourmaster_and_the_chandler_keep_stalls_in_the_beacon_walks_market() {
     let (_, plan) = planned();
-    let middle = |ramp: &crate::ramps::Ramp| {
-        let [west, north, east, south] = ramp.pad.bounds;
-        [f64::midpoint(west, east), f64::midpoint(north, south)]
-    };
-    let apart = |one: [f64; 2], two: [f64; 2]| libm::hypot(one[0] - two[0], one[1] - two[1]);
-    let landed = plan.ramps.iter().filter(|ramp| ramp.piece == Piece::Landing).find_map(|landing| {
-        let at = middle(landing);
-        plan.social.visitor_spots.iter().find(|&&spot| (apart(spot, at) - 2.0).abs() < 1e-6).map(|&spot| (at, spot))
-    });
-    let (at, spot) = landed.expect("Shape's place on a landing");
-    let legs: Vec<[f64; 2]> = plan.ramps.iter().filter(|ramp| ramp.piece == Piece::Leg).map(middle).collect();
-    let nearest = |point: [f64; 2]| legs.iter().map(|&leg| apart(point, leg)).fold(f64::INFINITY, f64::min);
-    assert!(nearest(spot) > nearest(at), "away from the flights: {spot:?} by the landing at {at:?}");
+    let social = &plan.social;
+    let walk = social.areas.iter().find(|area| area.name == "Beacon Walk").expect("named").at;
+    let market: Vec<[f64; 2]> = social
+        .posts
+        .iter()
+        .filter(|post| post.task == crate::life::Task::Gesture)
+        .map(|post| post.at)
+        .filter(|at| libm::hypot(at[0] - walk[0], at[1] - walk[1]) < 110.0)
+        .collect();
+    assert!(market.len() >= 3, "the market's keepers: {market:?}");
+    for kind in [StationKind::Harbourmaster, StationKind::Chandler] {
+        let station = social.stations.iter().find(|station| station.kind == kind).expect("a stall");
+        let nearest = market
+            .iter()
+            .map(|at| libm::hypot(at[0] - station.counter[0], at[1] - station.counter[1]))
+            .fold(f64::INFINITY, f64::min);
+        assert!(nearest < 30.0, "{kind:?} stands {nearest:.1} m from the nearest market stall");
+        let from_walk = libm::hypot(station.counter[0] - walk[0], station.counter[1] - walk[1]);
+        assert!(from_walk < 100.0, "{kind:?} stands {from_walk:.1} m from the Beacon Walk's middle");
+    }
 }
