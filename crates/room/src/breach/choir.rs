@@ -1,7 +1,7 @@
 //! The Choir, the Drowned Vale's third encounter, after the Vault of Glass's Oracles and Templar, in the chapel of a
 //! vale that never had one. First the Choir: rounds of three, four, five, six and seven bells of its seven, each
 //! waking in turn with its own note, then ringing together a while after the last; broken in the order they woke they
-//! fall silent, and one broken out of order rings at once. A ring Rewrites every living player in the chapel, and the
+//! fall silent, and one broken out of order rings at once. A ring Rewrites every living player of the company, and the
 //! Rewritten are unwritten a while later unless they stand in the font's light, which rests a while after it cleanses,
 //! or in the Lodestone's. Then the Scrivener: warded at its desk until the Lodestone is grounded beside it; every so
 //! often it marks another desk and writes itself there, unless a player stands on that desk's step and blots it; every
@@ -186,7 +186,8 @@ impl Room {
         }
     }
 
-    /// The round's bells ring: every living player in the chapel is Rewritten and the bells still standing are gone.
+    /// The round's bells ring: every living player of the company is Rewritten, wherever they stand, and the bells
+    /// still standing are gone.
     fn ring(&mut self, breach: &mut Breach, fight: &mut Choir) {
         for (_, id) in std::mem::take(&mut fight.bells) {
             if self.foes.contains_key(&id) {
@@ -194,7 +195,8 @@ impl Room {
             }
         }
         self.tell_all(EventKind::BellRang, 0.0);
-        for id in self.in_space(breach, "choir") {
+        let company: Vec<PlayerId> = self.players.keys().copied().collect();
+        for id in company {
             self.rewrite(breach, id);
         }
     }

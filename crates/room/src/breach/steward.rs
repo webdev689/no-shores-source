@@ -1,11 +1,11 @@
 //! The Steward, the Drowned Vale's last encounter, after the Vault of Glass's Atheon, on the round court over the
-//! dark. On a measure it takes four living players (half the company, fewer when fewer stand) into a shore, what was
-//! and what is in turn, and Rewrites them; it tolls on a shorter measure, unwriting the Rewritten. In the shore the
-//! Lodestone stands on its plinth and five bells wake; their order is shown only in the court, over that rift's
-//! mooring, so the court must call it. Broken in order the way back opens, while a player in the court holds that
-//! rift's mooring (two at Hard, if two are left there). Grounded at its feet, the Lodestone lays it bare: every blow on
-//! it weighs five times, and Arts recharge three times as fast. After its fourth taking, when the next would come it
-//! unwrites the whole company, and on each toll's measure after. Its fall wins, bringing back any still in a shore.
+//! dark. On a fixed measure it takes four living players of the company (half, fewer when fewer stand) into a shore,
+//! what was and what is in turn, and Rewrites them, losing first any still away from its last taking; it tolls on a
+//! shorter measure from each taking, unwriting the Rewritten. In the shore the Lodestone stands on its plinth and five
+//! bells wake, their order shown only in the court over that rift's mooring. Broken in order the way back opens while
+//! a player in the court holds the mooring (two at Hard, if two are left there). Grounded at its feet, the Lodestone
+//! lays it bare: blows on it weigh five times, and Arts recharge three times as fast. After its fourth taking, when the
+//! next would come it unwrites the whole company, and on each toll's measure after. Its fall brings back any away.
 
 use super::{Breach, STEWARD};
 use crate::{EventKind, PlayerId, Room};
@@ -77,7 +77,10 @@ impl Room {
             (fight.next_toll, fight.next_wave) = (clock + TOLL_EVERY, clock + 5 * 60);
             self.tell_all(EventKind::BossWoke, 1.0);
         }
-        if clock >= fight.next_taking && fight.away.is_none() {
+        if clock >= fight.next_taking {
+            if let Some(away) = fight.away.take() {
+                self.lose_away(breach, &away);
+            }
             if fight.takings >= TAKINGS_MOST {
                 self.unwrite_all(breach);
                 fight.next_taking = clock + TOLL_EVERY;
@@ -118,16 +121,34 @@ impl Room {
         }
     }
 
-    /// The Steward takes up to four living players in the court into a shore, Rewriting them; the Lodestone and five
-    /// bells wait there, the bells' order drawn.
+    /// Those still in a shore as the next taking comes are lost, as a shut shore loses them, and its bells go.
+    fn lose_away(&mut self, breach: &Breach, away: &Away) {
+        let plan = breach.plan;
+        if let Some(space) = plan.shores.get("steward").and_then(|shores| shores.get(away.shore)) {
+            let lost = self.in_space(breach, space);
+            for id in &lost {
+                self.harm_share(*id, 4.0, 0);
+            }
+            if !lost.is_empty() {
+                self.tell_all(EventKind::Unwritten, lost.len() as f64);
+            }
+        }
+        for (_, id) in &away.bells {
+            self.gone(*id);
+        }
+    }
+
+    /// The Steward takes up to four of the company's living players, wherever they stand, into a shore, Rewriting
+    /// them; the Lodestone and five bells wait there, the bells' order drawn; and its next toll comes on its measure.
     fn take(&mut self, breach: &mut Breach, fight: &mut Steward) {
         let clock = self.clock;
         let shore = usize::from(fight.takings % 2);
         let plan = breach.plan;
         let Some(space) = plan.shores.get("steward").and_then(|shores| shores.get(shore)) else { return };
-        let mut court = self.in_space(breach, "court");
+        let mut court: Vec<PlayerId> =
+            self.players.iter().filter(|(_, found)| found.living()).map(|(id, _)| *id).collect();
         let count = TAKES.min(court.len().div_ceil(2));
-        // No one in the court to take: the taking waits for them.
+        // No one living to take: the taking waits, and the company's wipe comes first.
         if count == 0 {
             return;
         }
@@ -163,7 +184,7 @@ impl Room {
         fight.away = Some(Away { shore, taken, order, bells, broken: 0, done: false });
         fight.takings += 1;
         let every = if breach.tier == gear::breach::Tier::Hard { TAKING_EVERY.1 } else { TAKING_EVERY.0 };
-        fight.next_taking = clock + every;
+        (fight.next_taking, fight.next_toll) = (clock + every, clock + TOLL_EVERY);
         self.tell_all(EventKind::Taken, shore as f64);
     }
 

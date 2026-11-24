@@ -1,8 +1,8 @@
 //! What a Breach's run keeps as players fall, leave and come back: at Hard the fallen lie wherever they fell while an
 //! encounter runs; a late join comes in at the furthest stage, on its floor; one back after leaving comes back as they
 //! left, down at the stage if down, and whole once the attempt is won or wiped; the Lodestone falls where it was last
-//! carried if its bearer leaves; the Steward takes no one from an empty court, and a shore emptied of the living ends
-//! its taking; a mark goes with its player's fall; and a foe gone from the room is forgotten.
+//! carried if its bearer leaves; a shore emptied of the living ends its taking; a mark goes with its player's fall;
+//! and a foe gone from the room is forgotten.
 
 use super::breach_tests::{at, breach, fell, run, stand_at};
 use super::*;
@@ -81,40 +81,6 @@ fn the_lodestone_falls_where_it_was_last_carried_when_its_bearer_leaves() {
 }
 
 #[test]
-fn the_steward_takes_no_one_from_an_empty_court_and_a_shore_emptied_of_the_living_ends_its_taking() {
-    let (mut room, players) = run(Tier::Normal, 4);
-    let mut breach_box = room.breach.take().expect("run");
-    for before in MENDING..STEWARD {
-        room.win_encounter(&mut breach_box, before);
-    }
-    room.breach = Some(breach_box);
-    let court = at(&room, "court", "chest");
-    for (nth, &player) in players.iter().enumerate() {
-        stand_at(&mut room, player, [court[0] + nth as f64 * 0.5, court[1], court[2]]);
-    }
-    room.tick();
-    let hall = at(&room, "hall", "checkpoint");
-    for &player in &players {
-        stand_at(&mut room, player, hall);
-    }
-    room.breach.as_mut().expect("run").fights.steward.next_taking = room.clock;
-    room.tick();
-    assert!(breach(&room).fights.steward.away.is_none(), "no one in the court to take");
-    for (nth, &player) in players.iter().enumerate() {
-        stand_at(&mut room, player, [court[0] + nth as f64 * 0.5, court[1], court[2]]);
-    }
-    room.tick();
-    let away = breach(&room).fights.steward.away.clone().expect("taken once there are some to take");
-    for &player in &away.taken {
-        fell(&mut room, player);
-    }
-    room.tick();
-    room.tick();
-    assert!(breach(&room).fights.steward.away.is_none(), "the taking ends with every one taken fallen");
-    assert!(away.bells.iter().all(|(_, id)| !room.standing_foe(*id)), "its bells gone with it");
-}
-
-#[test]
 fn a_mark_goes_with_its_players_fall_so_one_stood_again_is_not_unwritten_by_it() {
     let (mut room, players) = run(Tier::Normal, 2);
     let mut breach_box = room.breach.take().expect("run");
@@ -172,4 +138,29 @@ fn a_foe_gone_from_the_room_is_gone_from_its_encounter_and_its_spoils() {
     let other = *breach(&room).foes.first().expect("another");
     room.gone(other);
     assert!(!room.quests.spoilless.contains(&other), "gone at once, its spoils forgotten");
+}
+
+#[test]
+fn a_shore_emptied_of_the_living_ends_its_taking() {
+    let (mut room, players) = run(Tier::Normal, 4);
+    let mut breach_box = room.breach.take().expect("run");
+    for before in MENDING..STEWARD {
+        room.win_encounter(&mut breach_box, before);
+    }
+    room.breach = Some(breach_box);
+    let court = at(&room, "court", "chest");
+    for (nth, &player) in players.iter().enumerate() {
+        stand_at(&mut room, player, [court[0] + nth as f64 * 0.5, court[1], court[2]]);
+    }
+    room.tick();
+    room.breach.as_mut().expect("run").fights.steward.next_taking = room.clock;
+    room.tick();
+    let away = breach(&room).fights.steward.away.clone().expect("taken");
+    for &player in &away.taken {
+        fell(&mut room, player);
+    }
+    room.tick();
+    room.tick();
+    assert!(breach(&room).fights.steward.away.is_none(), "the taking ends with every one taken fallen");
+    assert!(away.bells.iter().all(|(_, id)| !room.standing_foe(*id)), "its bells gone with it");
 }
