@@ -9,9 +9,9 @@ const NOISE_CELLS = 1024;
 const DAPPLE_CELL_M = 384;
 const PUDDLE_CELL_M = DAPPLE_CELL_M / 128;
 /** How deep a hollow of the puddles' noise (0 to 1) holds water once the ground is soaked: only the deepest few. */
-export const PUDDLE_DEEP = 0.72;
-/** The cells a ripple each spreads in, metres, and how often each ring starts again, a second. */
-const RIPPLE_CELL_M = 0.45;
+export const PUDDLE_DEEP = 0.76;
+/** The cells a ripple each spreads in, metres (a whole number of them to the puddles' wrap), and how often each ring starts again, a second. */
+const RIPPLE_CELL_M = 0.5;
 const RIPPLE_PER_S = 0.9;
 /** The world seconds the ripples' rings run on, wrapped so a float keeps their beat. */
 const RIPPLE_WRAP_S = 1000;
@@ -181,9 +181,11 @@ fn sky_puddle(from_eye: vec3f, slope: f32) -> f32 {
   }
   // The eye's place wrapped where the puddles' noise repeats, small enough that a float keeps their edges still.
   let place = (sky_state.puddle_place.xy + from_eye.xy) / ${PUDDLE_CELL_M.toFixed(1)};
-  let hollow = sky_noise(place) + 0.08 * (sky_noise(place * 7.0 + vec2f(31.0, 11.0)) - 0.5);
+  // The finer noise is read turned off the grid, so its cells' lines never show as steps along a shore.
+  let turned = vec2f(0.8 * place.x - 0.6 * place.y, 0.6 * place.x + 0.8 * place.y);
+  let hollow = sky_noise(place) + 0.06 * (sky_noise(turned * 5.0 + vec2f(31.0, 11.0)) - 0.5);
   let deep = ${PUDDLE_DEEP.toFixed(2)} - 0.03 * soaked;
-  return soaked * (1.0 - smoothstep(0.02, 0.06, slope)) * smoothstep(deep, deep + 0.012, hollow);
+  return soaked * (1.0 - smoothstep(0.02, 0.06, slope)) * smoothstep(deep, deep + 0.025, hollow);
 }
 
 // Rings spreading on standing water where drops land as it rains, as the tilt (east, south) they give its mirror: a
@@ -201,7 +203,8 @@ fn sky_ripple(from_eye: vec3f) -> vec2f {
   let age = fract(sky_state.puddle_place.w * ${RIPPLE_PER_S.toFixed(2)} + draws.z);
   let out = place - cell - (vec2f(0.3) + 0.4 * draws.xy);
   let reach = length(out);
-  let ring = exp(-pow((reach - 0.45 * age) / 0.035, 2.0)) * (1.0 - age) * step(draws.z, fall);
+  let off_ring = (reach - 0.45 * age) / 0.035;
+  let ring = exp(-off_ring * off_ring) * (1.0 - age) * step(draws.z, fall);
   return out / max(reach, 1e-4) * ring * 0.5;
 }
 

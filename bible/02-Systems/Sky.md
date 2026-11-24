@@ -97,8 +97,8 @@ what show the ground there.
 - **Wet and snow.** The weather's wetness darkens the land and the city's stone and gives them a sheen toward a
   grazing eye; once the ground is soaked, rain stands in puddles in the deepest few of the flat hollows of the land
   and the plaza (`PUDDLE_DEEP`), their shores ragged by a finer noise and sharp, mirroring the sky, and while it
-  rains rings spread on them where drops land, one a cell of 0.45 m in more cells the harder it falls, each starting
-  again about every 1.1 s (`sky_ripple`, on the world's clock) ({D}). Snow
+  rains rings spread on them where drops land, one a cell of 0.5 m in more cells the harder it falls, each starting
+  again about every 1.1 s (`sky_ripple`, on the world's clock) ([[The Harbourmaster Stands in the Market, Rain Spares the Trees, and Patrol Nodes Always Stand]]). Snow
   that has fallen in the last twenty minutes whitens the flat ground and the city's flat stone where the weather laid
   it: on the ground under the eye, where it is read, and higher, fading out 100 to 300 m lower down, which is warmer.
   Puddles lie only where no snow does. Rain darkens a plant's bark and leaves and lays no sheen on them.
