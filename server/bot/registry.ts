@@ -3,14 +3,23 @@
 
 import type { BotContext } from './kit.ts';
 import type { EventData, ServerModule } from './modules/module.ts';
+import { announceModule } from './modules/announce.ts';
 import { antiraidModule } from './modules/antiraid.ts';
 import { automodModule } from './modules/automod.ts';
+import { birthdaysModule } from './modules/birthdays.ts';
+import { giveawaysModule } from './modules/giveaways.ts';
+import { invitesModule } from './modules/invites.ts';
+import { levelsModule } from './modules/levels.ts';
 import { logsModule } from './modules/logs.ts';
 import { moderationModule } from './modules/moderation.ts';
-import { announceModule } from './modules/announce.ts';
-import { levelsModule } from './modules/levels.ts';
+import { pollsModule, suggestModule } from './modules/polls.ts';
 import { roleMenusModule } from './modules/roleMenus.ts';
+import { socialsModule } from './modules/socials.ts';
+import { starboardModule } from './modules/starboard.ts';
+import { statsModule } from './modules/stats.ts';
 import { tagsModule } from './modules/tags.ts';
+import { tempVoiceModule } from './modules/tempVoice.ts';
+import { ticketsModule } from './modules/tickets.ts';
 import { welcomeModule } from './modules/welcome.ts';
 
 // A module is added in two steps: its shape in `law/modules.ts` (what the panel draws and the bot checks), and its
@@ -26,6 +35,16 @@ export const SERVER_MODULES: readonly ServerModule[] = Object.freeze([
   roleMenusModule,
   tagsModule,
   announceModule,
+  giveawaysModule,
+  pollsModule,
+  suggestModule,
+  starboardModule,
+  ticketsModule,
+  birthdaysModule,
+  tempVoiceModule,
+  invitesModule,
+  statsModule,
+  socialsModule,
 ]);
 
 /** A module list, ready to route: tests build one of their own. */
