@@ -78,7 +78,12 @@ test("a layout's places are its areas at their reach and its runs at their mouth
 });
 
 test("a laid node's foes' sites are its caverns' and its runs' beats, as the bake writes them for its room", () => {
-  const foes = (at: readonly [number, number], holds?: string) => ({ kind: 'foes' as const, at, radius: 10, holds });
+  const foes = (point: readonly [number, number], holds?: string) => ({
+    kind: 'foes' as const,
+    at: point,
+    radius: 10,
+    holds,
+  });
   const laid: NodeLayout = {
     ...square('saltgrass-downs', 0, 0),
     spawns: [[0, 0]],
