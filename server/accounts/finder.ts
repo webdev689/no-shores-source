@@ -30,7 +30,7 @@ export class CompanyFinder extends DurableObject<{ readonly DB: D1Database }> {
     if (finder.full && !launch) return new Response('Find a Company is full', { status: 503 });
     const [client, server] = Object.values(new WebSocketPair()) as [WebSocket, WebSocket];
     server.accept();
-    // `?launch` asks for a playlist's run at once, alone or for the seeker's company, drawn here as a found one is.
+    // `?launch` asks for a playlist's run or a Breach's at once, alone or for the seeker's company, as a found one is.
     const socket = finder.opened(server, launch);
     server.addEventListener('message', (event) => void finder.heard(socket, event.data));
     server.addEventListener('close', () => this.left(socket));

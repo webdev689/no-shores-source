@@ -1,5 +1,6 @@
 /**
- * Companies: up to four players, as an Elite Dungeon's run is for, one of them its leader. A player alone leads their
+ * Companies: up to eight players, as a Breach's run is for (an Elite Dungeon's takes four of them), one of them its
+ * leader. A player alone leads their
  * own. Another joins by an invite, or by asking to, as the leader's privacy allows: anyone, the leader's friends,
  * those invited, or no one. The leader can remove a member or hand the lead on; a leader who leaves hands it to the
  * longest there. A member away from the game ten minutes leaves it.
@@ -9,8 +10,8 @@ import type { Db } from './database.ts';
 import { type Answer, done, said } from './friends.ts';
 import { AWAY_MS, LAST_SEEN, accountNamed, blocks } from './people.ts';
 
-/** The most players a company holds: four, as an Elite Dungeon's run is for. */
-export const COMPANY_MOST = 4;
+/** The most players a company holds: eight, as a Breach's run is for (`gear::breach::COMPANY_MOST`). */
+export const COMPANY_MOST = 8;
 /** How long an invite stands. */
 export const INVITE_MS = 10 * 60_000;
 /** Who may join: anyone, the leader's friends, those invited, no one. */

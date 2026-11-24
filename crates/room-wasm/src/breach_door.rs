@@ -9,10 +9,11 @@ use room::{PlayerId, Room};
 use serde::Deserialize;
 use serde_json::{Value, json};
 
-/// A run's ask: the Breach by its id, its tier (0 Normal, 1 Hard) and the Unix minute it opens.
+/// A run's ask: the Breach by the patrol zone its gate stands in, its tier (0 Normal, 1 Hard) and the Unix minute it
+/// opens.
 #[derive(Deserialize)]
 struct RunAsked {
-    breach: String,
+    zone: String,
     tier: usize,
     minute: u64,
 }
@@ -39,7 +40,8 @@ fn on_land<T>(ask: impl FnOnce(&mut Room) -> T) -> Option<T> {
 /// Opens a Breach's run from its ask; answers whether the ask read and names a Breach and a tier.
 pub fn open_breach(text: &[u8]) -> bool {
     let Ok(asked) = serde_json::from_slice::<RunAsked>(text) else { return false };
-    let (Some(_), Some(&tier)) = (gear::breach::breach(&asked.breach), Tier::ALL.get(asked.tier)) else { return false };
+    let breach = BREACHES.iter().find(|breach| breach.zone == asked.zone);
+    let (Some(_), Some(&tier)) = (breach, Tier::ALL.get(asked.tier)) else { return false };
     let Some(room) = Room::breach_run(tier, asked.minute) else { return false };
     let bounds = drowned_vale().bounds(0.0);
     let sent = Box::new(crate::sent::Sent::around(protocol::pack::middle_of(Some(bounds))));

@@ -445,3 +445,21 @@ test('a playlist’s Launch is started at once, for its seeker alone, its Elite 
   await elsewhere.tick();
   assert.deepEqual(alone.sent, [], 'only a playlist launches: an Elite Dungeon’s search waits for its company');
 });
+
+test('a Breach is found for eight at its tier, opens at its tier’s level, and its Launch starts it for the company', async () => {
+  assert.equal(asked('/v1/find/node-gullwing-vale--breach-hard'), 'node-gullwing-vale--breach-hard');
+  assert.equal(asked('/v1/find/node-gullwing-vale--breach-easy'), null);
+  const queue = new Queue(8);
+  for (let socket = 1; socket <= 9; socket++) queue.join(seeker(socket, `one-${socket}`, socket));
+  assert.deepEqual(queue.due(10).map(sockets), [[1, 2, 3, 4, 5, 6, 7, 8]], 'eight at once');
+  const { tokens, finderOf } = await world(['Ada', 'Ben'], 27);
+  const under = finderOf('node-gullwing-vale--breach-hard');
+  assert.deepEqual((await seeking(under, tokens['Ada'] ?? '')).closed, [4003, 'A Breach at Hard opens at level 28.']);
+  const normal = finderOf('node-gullwing-vale--breach-normal');
+  const launch = new FakeSocket();
+  await normal.heard(normal.opened(launch, true), tokens['Ben'] ?? '');
+  await normal.tick();
+  const run = 'node-gullwing-vale--breach-normal--run-k3j4h5g6';
+  assert.deepEqual(launch.sent, [JSON.stringify({ run })], 'launched at once');
+  assert.equal(runAsk(run, 1), null, 'a Breach’s run is no dungeon’s');
+});

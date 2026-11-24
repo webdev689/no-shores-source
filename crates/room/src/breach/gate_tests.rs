@@ -47,6 +47,8 @@ fn hold_moorings(room: &mut Room, players: &[PlayerId]) {
 fn a_company_launched_for_a_run_takes_the_gate_and_anyone_else_on_a_mooring_does_not() {
     let (mut room, players) = gate_room(4);
     assert!(room.breach_company(players[0], "run-a", Tier::Normal));
+    let (body, arrival) = (room.players[&players[0]].fighter.body, socket(&room, "arrival"));
+    assert!(combat::sight::apart([body.x, body.y], [arrival[0], arrival[1]]) < 1.0, "launched, they stand at the gate");
     let mooring = socket(&room, MOORINGS[0]);
     stand(&mut room, players[3], mooring);
     room.tick();

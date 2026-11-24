@@ -4,9 +4,11 @@ import layout from '../content/world/layout.json' with { type: 'json' };
 import roomModule from '../target/wasm32-unknown-unknown/release/room_wasm.wasm';
 import type { CharacterKeeper } from './accounts/worker.ts';
 import { type Listed, arrives, cameOutOf, reachOf, shipOf } from './arrival.ts';
+import { Breach, GATE_SHUT, breachAsked } from './breach.ts';
 import { type Count, counted } from './budget.ts';
 import { Keeper, partFrom, TOKEN, TOKEN_WAIT_MS } from './keeping.ts';
 import {
+  breachAsk,
   canonicalRoom,
   isleRoom,
   nodeRoom,
@@ -112,6 +114,7 @@ export class RoomHost extends DurableObject<Env> {
     }
   >();
   private keeper: Keeper | null = null;
+  private breach: Breach | null = null;
   /** The wait before an emptied run is forgotten, while it runs. */
   private closing: ReturnType<typeof setTimeout> | null = null;
   private name = '';
@@ -151,6 +154,16 @@ export class RoomHost extends DurableObject<Env> {
     return this.guarded(() => this.room.holdAshore(id, seed), false);
   }
 
+  /** A Breach's gate's word, for its run's room: whether that run's gate has opened in this zone's room. */
+  async breachOpened(run: string): Promise<boolean> {
+    return (await (this.opened ?? Promise.resolve(false))) && this.guarded(() => this.room.breachOpened(run), false);
+  }
+
+  /** A Breach's run's word, for its gate's zone's room: how far its company has come. */
+  async breachInside(word: string): Promise<boolean> {
+    return (await (this.opened ?? Promise.resolve(false))) && this.guarded(() => this.room.breachInside(word), false);
+  }
+
   override async fetch(request: Request): Promise<Response> {
     if (request.headers.get('Upgrade') !== 'websocket')
       return new Response('A room is joined by WebSocket', { status: 426 });
@@ -185,6 +198,7 @@ export class RoomHost extends DurableObject<Env> {
     server.accept();
     const held = { player, count: undefined, signed: false, spoke: false, token: null, door: atDoor ? entrance : null };
     this.players.set(server, held);
+    this.breach?.joined(player, breachAsked(request, this.name));
     if (held.door !== null) setTimeout(() => !held.signed && this.outOfDoor(server), TOKEN_WAIT_MS);
     // In a run no one plays before the room keeps their character, nor in a sea island's dungeon before the sea says
     // they are landed on its island: their inputs are taken in their order and stand still until then.
@@ -225,11 +239,20 @@ export class RoomHost extends DurableObject<Env> {
         // Kept, a run's player plays; a sea island's dungeon's waits on the sea's word that they are landed.
         if (owned && !this.name.startsWith('sea-dungeon-')) this.guarded(() => this.room.hold(player, false), false);
         if (owned && this.island) void this.landOn(this.island, player, account);
+        if (owned) this.breach?.owned(player, account);
         return owned;
       },
       shut: (player: number, kept: string | null) => this.guarded(() => this.room.shut(player, kept), ''),
-      name: (player: number, name: string) => this.guarded(() => this.room.name(player, name), false),
+      name: (player: number, name: string) => {
+        this.breach?.named(player, name);
+        return this.guarded(() => this.room.name(player, name), false);
+      },
     };
+    this.breach = new Breach(name, {
+      room: this.room,
+      zone: (zone) => this.env.ROOMS.getByName(zone),
+      launched: (account, run) => accounts.launched(account, run),
+    });
     const characters = {
       look: (token: string) => accounts.look(token),
       claim: (token: string, holder: string) => accounts.claim(token, holder),
@@ -254,6 +277,9 @@ export class RoomHost extends DurableObject<Env> {
     if (reached) {
       const reach = await this.reachOf(reached.id);
       this.keeper.judgingArrivals((from, body) => arrives(name, from, shipOf(body), reach));
+      this.keeper.arrivingLaunched(
+        async (player, account) => (await this.breach?.launchedHere(player, account)) ?? false,
+      );
     }
     // Every room on land, and the sea's flotsam and decks, roll their loot from seeds of their own that no player sees:
     // the sea's own seed shows in its islands'.
@@ -275,6 +301,12 @@ export class RoomHost extends DurableObject<Env> {
     const isle = /^isle-(.+)$/.exec(name)?.[1];
     if (isle !== undefined) return this.openIsland(isle);
     const node = /^node-(.+)$/.exec(name)?.[1];
+    // A Breach's run lets its company in once its gate's zone says they woke it.
+    const breach = breachAsk(name, Math.floor(Date.now() / MINUTE_MS));
+    if (breach !== null) {
+      this.keeper.behindGate(async () => ((await this.breach?.gateOpen()) ? '' : GATE_SHUT));
+      return this.room.openBreach(breach) && this.room.reseed(seeds);
+    }
     const ask = runAsk(name, Math.floor(Date.now() / MINUTE_MS));
     if (ask !== null || name.startsWith('sea-dungeon-')) {
       if (name.startsWith('sea-dungeon-') && !(await this.behindDoor(name))) return false;
@@ -461,6 +493,7 @@ export class RoomHost extends DurableObject<Env> {
     if (token)
       void (held.presenting ?? Promise.resolve()).then(() => this.env.ACCOUNTS.present(token, null)).catch(() => false);
     partFrom(this.room, this.keeper, held.player, (call) => this.guarded(call, undefined));
+    this.breach?.left(held.player);
     const others = this.open().filter((each) => each !== socket);
     if (others.length === 0 && this.ticking) {
       clearInterval(this.ticking);
@@ -550,6 +583,7 @@ export class RoomHost extends DurableObject<Env> {
         this.lastKept = now;
         void this.keeper?.due(now);
         this.guarded(() => this.room.minute(Math.floor(now / MINUTE_MS)), false);
+        this.guarded(() => this.breach?.tick(now), undefined);
       }
     }, tickMs);
   }

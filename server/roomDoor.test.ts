@@ -122,7 +122,7 @@ test('the roster reads from the rules: every type it drives with its name, facti
     ranks: number[];
     right: string;
   }[];
-  assert.equal(roster.length, 45);
+  assert.equal(roster.length, 48);
   const taker = roster.find((entry) => entry.type === 45);
   assert.deepEqual([taker?.name, taker?.faction_name, taker?.ranks], ['Tithe-Taker', 'The Grey Tithe', [3]]);
   const thule = roster.find((entry) => entry.type === 12);

@@ -6,8 +6,8 @@ use super::*;
 use crate::{open_node, room_join, room_tick, snapshot};
 use protocol::wire::overlook::wire as messages;
 
-fn ask(breach: &str, tier: usize) -> Vec<u8> {
-    json!({ "breach": breach, "tier": tier, "minute": 29_919_420_u64 }).to_string().into_bytes()
+fn ask(zone: &str, tier: usize) -> Vec<u8> {
+    json!({ "zone": zone, "tier": tier, "minute": 29_919_420_u64 }).to_string().into_bytes()
 }
 
 /// A patrol's node file as the bake writes one standing the Sunken Gate at its middle on open land.
@@ -27,7 +27,7 @@ fn gated_patrol() -> Value {
 #[test]
 fn a_run_opens_from_its_ask_at_either_tier_and_sends_each_player_its_breach() {
     for tier in [0, 1] {
-        assert!(open_breach(&ask("drowned-vale", tier)));
+        assert!(open_breach(&ask("gullwing-vale", tier)));
         let player = room_join();
         assert_ne!(player, 0);
         room_tick();
@@ -40,8 +40,8 @@ fn a_run_opens_from_its_ask_at_either_tier_and_sends_each_player_its_breach() {
         let progress: Value = serde_json::from_str(&progress_json()).expect("JSON");
         assert_eq!(progress, json!({ "tier": tier, "encounter": 1 }));
     }
-    assert!(!open_breach(&ask("vault-of-somewhere", 0)), "no such Breach");
-    assert!(!open_breach(&ask("drowned-vale", 2)), "no third tier");
+    assert!(!open_breach(&ask("saltgrass-downs", 0)), "no Breach's gate there");
+    assert!(!open_breach(&ask("gullwing-vale", 2)), "no third tier");
     assert!(!open_breach(b"not an ask"));
 }
 

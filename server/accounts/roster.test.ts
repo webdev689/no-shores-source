@@ -60,9 +60,10 @@ test('a block ends what is between two players, and what the blocked one asks af
   assert.deepEqual(names((await ben.roster()).asking), ['Ada']);
 });
 
-test('a company holds four, joined by invite or as its leader allows, and its lead passes on', async () => {
-  const { player, play } = await world('Ada', 'Ben', 'Cal', 'Dee', 'Eve');
-  for (const name of ['Ada', 'Ben', 'Cal', 'Dee', 'Eve']) await play(name, 'node-overlook-social');
+test('a company holds eight, joined by invite or as its leader allows, and its lead passes on', async () => {
+  const more = ['Fay', 'Gus', 'Hal', 'Ivy'];
+  const { player, play } = await world('Ada', 'Ben', 'Cal', 'Dee', 'Eve', ...more);
+  for (const name of ['Ada', 'Ben', 'Cal', 'Dee', 'Eve', ...more]) await play(name, 'node-overlook-social');
   const [ada, ben, cal, dee, eve] = ['Ada', 'Ben', 'Cal', 'Dee', 'Eve'].map(player) as [
     ReturnType<typeof player>,
     ReturnType<typeof player>,
@@ -80,7 +81,9 @@ test('a company holds four, joined by invite or as its leader allows, and its le
   await ada.ask('company/privacy', { privacy: 0 });
   assert.equal((await cal.ask('company/join', { name: 'Ben' })).status, 200, 'Public: anyone joins');
   assert.equal((await dee.ask('company/join', { name: 'Ada' })).status, 200, 'the fourth comes in');
-  assert.equal((await eve.ask('company/join', { name: 'Ada' })).status, 409, 'four at most');
+  for (const name of more) assert.equal((await player(name).ask('company/join', { name: 'Ada' })).status, 200, name);
+  assert.equal((await eve.ask('company/join', { name: 'Ada' })).status, 409, 'eight at most');
+  for (const name of more) await player(name).ask('company/leave');
   await dee.ask('company/leave');
   assert.equal((await ben.ask('company/kick', { name: 'Cal' })).status, 403, 'only the leader removes');
   assert.equal((await ada.ask('company/lead', { name: 'Cal' })).status, 200);
@@ -223,12 +226,10 @@ test('an invite ends when its sender joins another company', async () => {
 
 test('a full company is refused before the one joining leaves their own', async () => {
   const {
-    players: [ada, ben, cal, dee, eve, fay],
-  } = await playing('Ada', 'Ben', 'Cal', 'Dee', 'Eve', 'Fay');
+    players: [ada, dee, eve, ...joining],
+  } = await playing('Ada', 'Dee', 'Eve', 'Ben', 'Cal', 'Fay', 'Gus', 'Hal', 'Ivy', 'Joy');
   await ada.ask('company/privacy', { privacy: 0 });
-  await ben.ask('company/join', { name: 'Ada' });
-  await cal.ask('company/join', { name: 'Ada' });
-  await fay.ask('company/join', { name: 'Ada' });
+  for (const one of joining) await one.ask('company/join', { name: 'Ada' });
   await dee.ask('company/invite', { name: 'Eve' });
   await eve.ask('company/accept', { name: 'Dee' });
   assert.equal((await eve.ask('company/join', { name: 'Ada' })).status, 409);

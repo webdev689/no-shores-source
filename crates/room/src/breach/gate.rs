@@ -107,7 +107,8 @@ impl Room {
         self.breach_gate = Some(Box::new(Gate { at, quarters, ..Gate::default() }));
     }
 
-    /// The host's word: a player came launched for a run at a tier. Answers whether the room has a gate to hold them.
+    /// The host's word: a player came launched for a run at a tier, and stands at the gate's arrival. Answers whether
+    /// the room has a gate to hold them.
     pub fn breach_company(&mut self, player: PlayerId, run: &str, tier: Tier) -> bool {
         let Some(gate) = self.breach_gate.as_mut() else { return false };
         for company in gate.companies.values_mut() {
@@ -116,6 +117,12 @@ impl Room {
         let company = gate.companies.entry(run.to_owned()).or_default();
         company.tier = Some(tier);
         company.players.push(player);
+        let at = gate.socket("arrival").unwrap_or(gate.at);
+        let body = self.stand((at[0], at[1]));
+        if let Some(found) = self.players.get_mut(&player) {
+            let body = movement::Body { z: at[2].max(body.z), facing: found.fighter.body.facing, ..body };
+            (found.fighter.body, found.stood) = (body, body.z);
+        }
         true
     }
 

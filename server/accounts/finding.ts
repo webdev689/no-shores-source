@@ -4,10 +4,11 @@
  * starts with four of a band, or fewer once its first has waited a minute, keeping apart any two where one blocks the
  * other. A group found is no company: the accounts keep whom each run was found for (`found_runs`), and that run's
  * room lets them in together, for that run alone. The Abyss Dungeon of the week is never matched. The two playlists
- * have a queue each, banded by five levels, whose runs are drawn as they are found (playlists.ts).
+ * have a queue each, banded by five levels, whose runs are drawn as they are found (playlists.ts). A Breach's run is
+ * found for eight at its tier, and launched for its seeker's company from the Playlist.
  */
 
-import { RUN_MOST } from '../roomNames.ts';
+import { BREACH_MOST, type BREACH_TIERS, RUN_MOST } from '../roomNames.ts';
 import { liveAccount } from './characters.ts';
 import { FOUND_KEPT_MS } from './companies.ts';
 import type { Db } from './database.ts';
@@ -36,8 +37,15 @@ const ANOTHER_TAB = 'You are finding a company in another tab.';
 /** The longest base a run is found for, so its run's name (`--run-` and eight more) fits a room's 64. */
 const BASE_MOST = 50;
 /** An Elite Dungeon's base at Normal, the week's at Elite (`--sea` after it from the Playlist, whose run is started
- *  at sea), or a playlist's, as Find a Company is asked for it by WebSocket. */
-const FINDING = /^\/v1\/find\/(node-[a-z0-9]+(?:-[a-z0-9]+)*(?:--elite(?:--sea)?)?|playlist-(?:elite|abyss))$/;
+ *  at sea), a Breach's at its tier (`node-<its gate's zone>--breach-<tier>`), or a playlist's, as Find a Company is
+ *  asked for it by WebSocket. */
+const FINDING =
+  /^\/v1\/find\/(node-[a-z0-9]+(?:-[a-z0-9]+)*(?:--elite(?:--sea)?|--breach-(?:normal|hard))?|playlist-(?:elite|abyss))$/;
+/** A Breach's base, and the level each of its tiers opens at (`gear::breach::Tier::opens_at`), in the gate's words. */
+const BREACH_BASE = /--breach-(normal|hard)$/;
+export const BREACH_OPENS = { normal: 24, hard: 28 } as const;
+const breachShut = (tier: (typeof BREACH_TIERS)[number]) =>
+  `A Breach at ${tier === 'normal' ? 'Normal' : 'Hard'} opens at level ${BREACH_OPENS[tier]}.`;
 
 /** The week's Elite Dungeon's bases, from its door or from the Playlist. */
 const WEEK = /--elite(?:--sea)?$/;
@@ -72,9 +80,14 @@ export interface Seeker {
 const together = (one: Seeker, other: Seeker) =>
   !one.apart.includes(other.account) && !other.apart.includes(one.account);
 
-/** Those waiting for runs of one dungeon. */
+/** Those waiting for runs of one dungeon, as many to a run as `most`. */
 export class Queue {
   private waiting: Seeker[] = [];
+  private readonly most: number;
+
+  constructor(most = RUN_MOST) {
+    this.most = most;
+  }
 
   /** Puts a seeker in: the socket of the same account's older search to let go, or null. The newer socket stays
    *  whichever lookup answered first, so a search is never ended by an older tab's. */
@@ -90,8 +103,8 @@ export class Queue {
   }
 
   /** The runs to start at `now`, taken out of the queue, in the order their first joined. Within a band, oldest first,
-   *  each with the oldest still free who block none of those taken: four as soon as there are four, or as many as
-   *  there are once its first has waited FIND_WAIT_MS. */
+   *  each with the oldest still free who block none of those taken: its most as soon as there are as many, or as
+   *  many as there are once its first has waited FIND_WAIT_MS. */
   due(now: number): Seeker[][] {
     const oldest = [...this.waiting].sort((one, other) => one.since - other.since);
     const taken = new Set<Seeker>();
@@ -100,11 +113,11 @@ export class Queue {
       if (taken.has(first)) continue;
       const group = [first];
       for (const other of oldest) {
-        if (group.length === RUN_MOST || first.alone) break;
+        if (group.length === this.most || first.alone) break;
         const free = other !== first && !taken.has(other) && !other.alone && other.band === first.band;
         if (free && group.every((one) => together(one, other))) group.push(other);
       }
-      if (group.length < RUN_MOST && now - first.since < FIND_WAIT_MS && !first.alone) continue;
+      if (group.length < this.most && now - first.since < FIND_WAIT_MS && !first.alone) continue;
       for (const one of group) taken.add(one);
       runs.push(group);
     }
@@ -166,7 +179,7 @@ export interface FinderDeps {
 export class Finder {
   private readonly base: string;
   private readonly deps: FinderDeps;
-  private readonly queue = new Queue();
+  private readonly queue: Queue;
   /** The accounts whose run is being started, out of the queue until their group is told: no second tab joins
    *  another group meanwhile. */
   private readonly starting = new Set<string>();
@@ -180,6 +193,7 @@ export class Finder {
   constructor(base: string, deps: FinderDeps) {
     this.base = base;
     this.deps = deps;
+    this.queue = new Queue(BREACH_BASE.test(base) ? BREACH_MOST : RUN_MOST);
   }
 
   /** Holds a new seeker's socket; `alone` for a playlist's Launch, whose run is drawn and kept here at once. */
@@ -210,10 +224,14 @@ export class Finder {
     const playlist = playlistOf(this.base);
     const band = playlist === null ? bandOf(level) : playlistBand(playlist, level);
     if (playlist !== null && band === null) return this.letGo(socket, 4003, playlistShut(playlist));
-    // The week's Elite Dungeon opens at its own level, which its room would hold a seeker to after they were matched.
+    // The week's Elite Dungeon opens at its own level, which its room would hold a seeker to after they were matched,
+    // and a Breach at its tier's.
     if (WEEK.test(this.base) && level < WEEK_ELITE_OPENS) return this.letGo(socket, 4003, WEEK_ELITE_SHUT);
-    // Only a playlist's run is launched alone: an Elite Dungeon's and the week's start from their entrances.
-    const alone = held.alone && playlist !== null;
+    const breach = BREACH_BASE.exec(this.base)?.[1] as (typeof BREACH_TIERS)[number] | undefined;
+    if (breach !== undefined && level < BREACH_OPENS[breach]) return this.letGo(socket, 4003, breachShut(breach));
+    // Only a playlist's run and a Breach's are launched alone: an Elite Dungeon's and the week's start from their
+    // entrances.
+    const alone = held.alone && (playlist !== null || breach !== undefined);
     const replaced = this.queue.join({ socket, account, band: band ?? 0, since: this.deps.now(), apart, alone });
     if (replaced !== null) this.letGo(replaced, 4003, ANOTHER_TAB);
   }

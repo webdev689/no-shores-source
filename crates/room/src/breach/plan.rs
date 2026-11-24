@@ -1,8 +1,8 @@
-//! A Breach's plan as its run's room reads it (`content/breach/`): each space a module of the manifest stood at a
-//! point of the run's frame and turned whole quarters, its parts the blocks a body stands on and its sockets where the
-//! encounters' pieces stand; the seals across its ways on, each a module of its own that opens as an encounter wins;
-//! and the Broken Stair's slabs that come and go. Quarter turns are made by swapping and signing, never by sines, so
-//! every machine lays each block to the bit.
+//! A Breach's plan as its run's room reads it (`content/dungeon/breach-*.json`): each space a module of the manifest
+//! stood at a point of the run's frame and turned whole quarters, its parts the blocks a body stands on and its
+//! sockets where the encounters' pieces stand; the seals across its ways on, each a module of its own that opens as an
+//! encounter wins; and the Broken Stair's slabs that come and go. Quarter turns are made by swapping and signing, never
+//! by sines, so every machine lays each block to the bit.
 
 use city::modules::{Module, all as modules, number_of};
 use movement::Block;
@@ -62,8 +62,8 @@ pub struct Plan {
 pub fn drowned_vale() -> &'static Plan {
     static PLAN: OnceLock<Plan> = OnceLock::new();
     PLAN.get_or_init(|| {
-        serde_json::from_str(include_str!("../../../../content/breach/drowned-vale.json"))
-            .expect("content/breach/drowned-vale.json reads: its test says so")
+        serde_json::from_str(include_str!("../../../../content/dungeon/breach-drowned-vale.json"))
+            .expect("content/dungeon/breach-drowned-vale.json reads: its test says so")
     })
 }
 

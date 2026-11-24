@@ -83,7 +83,7 @@ for name, (build, seed) in EVENTS.items():
     BUILDERS[name] = build
     SEEDS[name] = seed
 # The first Breach's: the Sunken Gate, which the Gullwing Vale's layout stands, and the Drowned Vale's own spaces,
-# placed by its plan (content/breach/) and loaded by the page only on going in.
+# placed by its plan (content/dungeon/breach-*.json) and loaded by the page only on going in.
 BREACH = {'breach-gate': (breach_gate.build, 201), 'breach-descent': (breach_below.descent, 202),
           'breach-mending': (breach_below.mending, 203), 'breach-choir': (breach_below.choir, 204),
           'breach-ways': (breach_above.ways, 205), 'breach-stair': (breach_above.stair, 206),
