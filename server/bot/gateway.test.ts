@@ -19,8 +19,10 @@ import {
   GatewayCore,
   type GatewayDeps,
   HELLO_WAIT_MS,
+  RESUME_TRIES,
   type SocketLike,
 } from './gatewayCore.ts';
+import { openSocket } from './gateway.ts';
 import { MEMORY_KEEP_MS, pruneMemory } from './kit.ts';
 
 test('gateway law: the bot asks for members and message content, and never presences', () => {
@@ -78,6 +80,13 @@ interface FakeSocket extends SocketLike {
 
 const nextTurn = () => new Promise<void>((resolve) => setImmediate(resolve));
 
+/** Wait turn by turn until `holds`, however many awaits the core takes to get there (its digest runs off-thread). */
+async function until(holds: () => boolean, what: string): Promise<void> {
+  const giveUpAt = performance.now() + 2_000;
+  while (!holds() && performance.now() < giveUpAt) await nextTurn();
+  assert.ok(holds(), what);
+}
+
 function fakeSocket(url: string): FakeSocket {
   const listeners: Record<string, Array<(event: never) => void>> = {};
   const socket: FakeSocket = {
@@ -113,6 +122,9 @@ function world({ gatewayInfo = { url: 'wss://gateway.discord.gg', remaining: 999
     dispatched: [] as string[],
     opens: 0,
     openFails: 0,
+    /** Every URL an open was tried on, and the hosts that refuse every open. */
+    tried: [] as string[],
+    deadHosts: new Set<string>(),
     gatewayInfo,
     store,
     storage: {
@@ -131,6 +143,8 @@ function world({ gatewayInfo = { url: 'wss://gateway.discord.gg', remaining: 999
       gatewayBot: async () => w.gatewayInfo,
       openSocket: async (url) => {
         w.opens++;
+        w.tried.push(url);
+        if (w.deadHosts.has(new URL(url).host)) throw new Error('refused');
         if (w.openFails > 0) {
           w.openFails--;
           throw new Error('refused');
@@ -379,6 +393,96 @@ test('gateway core: Discord asking for a reconnect resumes', async () => {
   assert.equal(core.session?.id, 'sess1');
 });
 
+test('gateway core: a resume host that refuses or never says hello is given up after a few tries, and the bot identifies afresh', async () => {
+  for (const failure of ['refuses', 'silent']) {
+    const w = world();
+    const { core, socket } = await readyCore(w);
+    if (failure === 'refuses') w.deadHosts.add('resume.discord.gg');
+    await socket.frame(OPCODE.RECONNECT, null);
+    const onGateway = () => w.tried.length > 1 && w.tried.at(-1)?.startsWith('https://gateway.discord.gg') === true;
+    // the panel's Restart is one more try on the same host, not a way round the bound
+    await core.restart();
+    for (let alarm = 0; alarm < 30 && !onGateway(); alarm++) {
+      w.t = Math.max(w.t, w.alarm);
+      await core.alarm();
+    }
+    assert.ok(onGateway(), `${failure}: the bot asks Discord where the Gateway is again`);
+    const resumeTries = w.tried.filter((url) => url.startsWith('https://resume.discord.gg')).length;
+    assert.equal(resumeTries, RESUME_TRIES, `${failure}: the resume host was given its tries, and no more`);
+    await lastSocket(w).frame(OPCODE.HELLO, { heartbeat_interval: 40_000 });
+    assert.equal(lastSocket(w).sent.at(-1)?.op, OPCODE.IDENTIFY, `${failure}: a fresh session`);
+  }
+});
+
+test('gateway core: a connection still on its way when the owner presses Stop is closed or dropped, and the stop holds', async () => {
+  for (const when of ['asking for the Gateway', 'opened', 'refused']) {
+    const w = world();
+    const pending: { open?: () => void; refuse?: () => void; info?: () => void } = {};
+    const base = w.deps();
+    const opened: FakeSocket[] = [];
+    const deps: GatewayDeps = {
+      ...base,
+      gatewayBot: () =>
+        when === 'asking for the Gateway'
+          ? new Promise((resolve) => (pending.info = () => resolve(w.gatewayInfo)))
+          : base.gatewayBot(),
+      openSocket: (url) =>
+        new Promise((resolve, reject) => {
+          pending.open = () => {
+            const socket = fakeSocket(url);
+            opened.push(socket);
+            resolve(socket);
+          };
+          pending.refuse = () => reject(new Error('refused'));
+          // asked for only after the stop: it opens at once
+          if (when === 'asking for the Gateway') pending.open();
+        }),
+    };
+    const core = new GatewayCore(deps);
+    const starting = core.ensure();
+    await until(() => (when === 'asking for the Gateway' ? pending.info : pending.open) !== undefined, when);
+    await core.stop();
+    if (when === 'asking for the Gateway') pending.info?.();
+    else if (when === 'opened') pending.open?.();
+    else pending.refuse?.();
+    await starting;
+    assert.equal(core.status.state, 'fatal', `${when}: stopped`);
+    for (const socket of opened) assert.notEqual(socket.closed, null, `${when}: the late socket is closed`);
+    const alarmBefore = w.alarm;
+    await core.alarm();
+    await core.ensure();
+    assert.deepEqual(
+      [core.status.state, core.socket, w.alarm],
+      ['fatal', null, alarmBefore],
+      `${when}: nothing reconnects`,
+    );
+  }
+});
+
+test('gateway core: Start pressed right after Stop, while the stopped attempt is still on its way, starts again', async () => {
+  const w = world();
+  const late: { open?: () => void } = {};
+  const base = w.deps();
+  let first = true;
+  const deps: GatewayDeps = {
+    ...base,
+    openSocket: (url) => {
+      if (!first) return base.openSocket(url);
+      first = false;
+      return new Promise((resolve) => (late.open = () => resolve(fakeSocket(url))));
+    },
+  };
+  const core = new GatewayCore(deps);
+  const starting = core.ensure();
+  await until(() => late.open !== undefined, 'the first attempt is opening');
+  await core.stop();
+  const restarting = core.restart();
+  late.open?.();
+  await Promise.all([starting, restarting]);
+  assert.equal(core.socket, lastSocket(w), "the Start's own socket is kept");
+  assert.equal(core.status.state, 'connecting');
+});
+
 test('gateway core: no hello within the deadline drops the socket and tries again', async () => {
   const w = world();
   const core = new GatewayCore(w.deps());
@@ -442,11 +546,13 @@ test('gateway core: stop closes the socket and holds until forced', async () => 
 
 test('gateway core: a handler that throws is logged and the connection carries on', async () => {
   const w = world();
+  const lines: string[] = [];
   const deps: GatewayDeps = {
     ...w.deps(),
     onDispatch: () => {
       throw new Error('boom');
     },
+    log: (line) => lines.push(line),
   };
   const core = new GatewayCore(deps);
   await core.ensure();
@@ -454,11 +560,17 @@ test('gateway core: a handler that throws is logged and the connection carries o
   await socket.frame(OPCODE.HELLO, { heartbeat_interval: 40_000 });
   await socket.frame(OPCODE.DISPATCH, { session_id: 's', resume_gateway_url: 'wss://r' }, 'READY', 1);
   assert.equal(core.status.state, 'ready');
+  assert.deepEqual(lines, ['[gateway] READY handler failed: boom']);
+  await socket.frame(OPCODE.DISPATCH, { id: '2' }, 'MESSAGE_CREATE', 2);
+  assert.equal(lines.at(-1), '[gateway] MESSAGE_CREATE handler failed: boom', 'the next event is still handled');
 });
 
-test("gateway core: events are handled one after another in Discord's order, the sequence only moves forward, and a stuck one does not hold the rest", async () => {
+test("gateway core: events are handled one after another in Discord's order, the sequence only moves forward, and a stuck one does not hold the rest", async (context) => {
+  // the hold's clock is the test's: it moves only when the test says so
+  context.mock.timers.enable({ apis: ['setTimeout'] });
   const w = world();
   const log: string[] = [];
+  const lines: string[] = [];
   const release = { slow: () => {} };
   const base = w.deps;
   w.deps = () => ({
@@ -466,8 +578,10 @@ test("gateway core: events are handled one after another in Discord's order, the
     onDispatch: async (type) => {
       log.push(`start ${type}`);
       if (type === 'SLOW') await new Promise<void>((resolve) => (release.slow = resolve));
+      if (type === 'STUCK') await new Promise<void>(() => {});
       log.push(`end ${type}`);
     },
+    log: (line) => lines.push(line),
   });
   const { core, socket } = await readyCore(w);
   log.length = 0;
@@ -477,26 +591,44 @@ test("gateway core: events are handled one after another in Discord's order, the
   assert.equal(core.session?.seq, 6, "the sequence is the newest frame's at once");
   release.slow();
   await first;
-  for (let i = 0; i < 5; i++) await nextTurn();
+  await until(() => log.includes('end FAST'), 'both handled');
   assert.deepEqual(log, ['start SLOW', 'end SLOW', 'start FAST', 'end FAST']);
   assert.equal(core.session?.seq, 6, 'the older frame, handled last, did not move it back');
   // a handler that never answers is let go after DISPATCH_HOLD_MS, and the queue goes on
-  let timeout = () => {};
-  const realSetTimeout = globalThis.setTimeout;
-  const held = (callback: () => void, millis?: number) =>
-    millis === DISPATCH_HOLD_MS ? ((timeout = callback), 0) : realSetTimeout(callback, millis);
-  globalThis.setTimeout = held as unknown as typeof setTimeout;
+  log.length = 0;
+  void socket.frame(OPCODE.DISPATCH, {}, 'STUCK', 7);
+  await socket.frame(OPCODE.DISPATCH, {}, 'FAST', 8);
+  await until(() => log.includes('start STUCK'), 'the stuck one started');
+  assert.deepEqual(log, ['start STUCK'], 'the next waits while the hold lasts');
+  context.mock.timers.tick(DISPATCH_HOLD_MS);
+  await until(() => log.includes('end FAST'), 'the next event goes on once the hold is over');
+  assert.deepEqual(log, ['start STUCK', 'start FAST', 'end FAST']);
+  assert.ok(
+    lines.some((line) => line.startsWith('[gateway] STUCK took over')),
+    'the stuck one is logged',
+  );
+});
+
+test('gateway object: an upgrade Discord never answers fails after a bounded wait, as its other calls do', async () => {
+  const realFetch = globalThis.fetch;
+  // a fetch that answers only by failing once it is aborted, as the runtime's does
+  globalThis.fetch = ((_url: unknown, init?: RequestInit) =>
+    new Promise((_resolve, reject) => {
+      const signal = init?.signal;
+      signal?.addEventListener('abort', () => reject(signal.reason));
+    })) as typeof fetch;
+  // the test's own deadline, so a wait that never ends fails here instead of hanging the run
+  let deadline: ReturnType<typeof setTimeout> | undefined;
+  const stillWaiting = new Promise<string>((resolve) => (deadline = setTimeout(() => resolve('still waiting'), 2_000)));
   try {
-    log.length = 0;
-    void socket.frame(OPCODE.DISPATCH, {}, 'SLOW', 7);
-    for (let i = 0; i < 3; i++) await nextTurn();
-    const after = socket.frame(OPCODE.DISPATCH, {}, 'FAST', 8);
-    timeout();
-    await after;
-    for (let i = 0; i < 5; i++) await nextTurn();
-    assert.deepEqual(log, ['start SLOW', 'start FAST', 'end FAST']);
+    const outcome = openSocket('https://gateway.discord.gg/?v=10&encoding=json', 20).then(
+      () => 'opened',
+      (error: unknown) => (error instanceof Error ? error.message : String(error)),
+    );
+    assert.equal(await Promise.race([outcome, stillWaiting]), 'Discord did not answer in time');
   } finally {
-    globalThis.setTimeout = realSetTimeout;
+    clearTimeout(deadline);
+    globalThis.fetch = realFetch;
   }
 });
 

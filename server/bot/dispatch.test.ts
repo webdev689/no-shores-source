@@ -55,6 +55,36 @@ test('dispatch: the snapshot follows roles, channels, members and the bot leavin
   assert.equal(stored(database).present, 0);
 });
 
+test('dispatch: READY names every server the bot is in, so one it left while the Gateway was down reads as gone', async () => {
+  const database = freshDatabase();
+  const dispatcher = createDispatcher({ database, now: Date.now });
+  const left = '900000000000000050';
+  const leftLater = '900000000000000051';
+  for (const [id, name] of [
+    [GUILD, 'Harbour'],
+    [left, 'Left'],
+    [leftLater, 'Left later'],
+  ])
+    await dispatcher.dispatch('GUILD_CREATE', guildCreate({ id, name }));
+  const readyIn = (ids: string[]) => ({ guilds: ids.map((id) => ({ id, unavailable: true })) });
+  const presence = () =>
+    Object.fromEntries(
+      (
+        database.raw.prepare('SELECT guild_id, present FROM guild_snapshot').all() as Array<Record<string, unknown>>
+      ).map((row) => [String(row.guild_id), row.present]),
+    );
+  // the same object after a stop and a start, its copies still in memory
+  await dispatcher.dispatch('READY', readyIn([GUILD, leftLater]));
+  assert.deepEqual(presence(), { [GUILD]: 1, [left]: 0, [leftLater]: 1 });
+  assert.equal((await dispatcher.snapshot(left))?.present, false, 'the copy in memory reads as gone too');
+  // a fresh object, as after an eviction, knows only the stored copies
+  const fresh = createDispatcher({ database, now: Date.now });
+  await fresh.dispatch('READY', readyIn([GUILD]));
+  assert.deepEqual(presence(), { [GUILD]: 1, [left]: 0, [leftLater]: 0 });
+  await fresh.dispatch('READY', {});
+  assert.deepEqual(presence(), { [GUILD]: 1, [left]: 0, [leftLater]: 0 }, 'a READY with no list changes nothing');
+});
+
 test("dispatch: a join or a leave moves the count in memory, written at most once a minute and by the alarm's flush", async () => {
   const database = freshDatabase();
   const clock = { now: Date.now() };

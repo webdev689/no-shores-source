@@ -6,7 +6,7 @@ import { type Dispatcher, createDispatcher } from './dispatch.ts';
 import { GatewayCore, type SocketLike, type StorageLike } from './gatewayCore.ts';
 import { type BotContext, pruneMemory } from './kit.ts';
 import { REGISTRY, moduleHandlers } from './registry.ts';
-import { createRest } from './rest.ts';
+import { REST_TIMEOUT_MS, createRest } from './rest.ts';
 import type { Env } from './worker.ts';
 
 /** The one instance's name. */
@@ -22,9 +22,20 @@ export interface GatewayState {
   };
 }
 
-/** Workers open an outbound WebSocket with a fetch that asks to upgrade; the answer carries the socket. */
-async function openSocket(url: string): Promise<SocketLike> {
-  const response = await fetch(url, { headers: { upgrade: 'websocket' } });
+/**
+ * Workers open an outbound WebSocket with a fetch that asks to upgrade; the answer carries the socket. It waits no
+ * longer than a REST call: one connection attempt runs at a time, so an upgrade that never answers would hold every
+ * alarm. The wait ends with the answer, so it never reaches the socket the answer carries.
+ */
+export async function openSocket(url: string, waitMs = REST_TIMEOUT_MS): Promise<SocketLike> {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(new Error('Discord did not answer in time')), waitMs);
+  let response: Response;
+  try {
+    response = await fetch(url, { headers: { upgrade: 'websocket' }, signal: controller.signal });
+  } finally {
+    clearTimeout(timer);
+  }
   const socket = (response as unknown as { webSocket?: SocketLike & { accept(): void } }).webSocket;
   if (!socket) throw new Error(`Discord answered ${response.status} instead of a WebSocket`);
   socket.accept();
