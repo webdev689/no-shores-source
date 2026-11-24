@@ -263,3 +263,42 @@ fn a_race_s_clock_starts_as_the_player_leaves_its_first_checkpoint_and_run_late_
     }
     assert!(met(&room, player, key), "run in time");
 }
+
+/// Walks beside the player's escort until its ambush stands: the ambush's foes, none if it never stood.
+fn walked_to_ambush(room: &mut Room, player: PlayerId) -> Vec<FighterId> {
+    for _ in 0..6000 {
+        if let Some(Step { kind: Stepping::Figure(Figure { ambush: Some(ambush), .. }), .. }) =
+            room.quests.steps.get(&player)
+            && !ambush.is_empty()
+        {
+            return ambush.clone();
+        }
+        let (_, at, _) = figure(room, player);
+        stand_at(room, player, [at[0], at[1] + 10.0]);
+        run(room, 1);
+    }
+    Vec::new()
+}
+
+#[test]
+fn an_escorts_ambush_fought_before_a_rejoin_drops_nothing_again() {
+    let (key, goal) =
+        step_of(GoalKind::Escort, |goal| matches!(goal, Goal::Escort(escort) if !escort.ambush.is_empty()));
+    let Goal::Escort(escort) = &goal.goal else { unreachable!("an escort") };
+    let places = [(escort.from.as_str(), [0.0, 100.0], 65.0), (escort.to.as_str(), [0.0, -100.0], 70.0)];
+    let mut room = node_room(&escort.node, &places);
+    let player = joined(&mut room, &on_goal(key), [0.0, 110.0]);
+    run(&mut room, 2);
+    let first = walked_to_ambush(&mut room, player);
+    assert!(!first.is_empty() && first.iter().all(|id| !room.quests.spoilless.contains(id)), "its ambush drops");
+    for id in &first {
+        shoot_dead(&mut room, player, *id);
+    }
+    let kept = gear::Character::from_json(&room.kept_character(player).expect("kept")).expect("a character");
+    room.leave(player);
+    run(&mut room, 2);
+    let back = joined(&mut room, &kept, [0.0, 110.0]);
+    run(&mut room, 2);
+    let again = walked_to_ambush(&mut room, back);
+    assert!(!again.is_empty() && again.iter().all(|id| room.quests.spoilless.contains(id)), "fought before: nothing");
+}
