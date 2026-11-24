@@ -122,11 +122,19 @@ Claude's ([[The Drowned Vale as Claude Builds It]]).
   holding company, "Your company" to its own, its revives at Hard, the companies inside); further off it is one line
   under the zone's own; the compass marks the gate. The Spire's fill rises as a pillar of light the whole zone sees,
   and its company hears the tension music while it fills. The seal stands in its doorway until the gate opens to the
-  viewer's company, which is offered "Enter the Drowned Vale" there. The Waking's moments and stings reach only its
+  viewer's company, which sees the doorway as the dark of the way in (the seal's shape black, a violet sheen low in
+  it) and is offered "Enter the Drowned Vale" there. The Waking's moments and stings reach only its
   company and those in the hollow.
 - **In the run**: its spaces drawn over the dark from the plan (`room_breach`), only the Breach's modules loaded while
-  there and let go on any way out (the seal's in the gate's zone too); heard underground; its seals while shut, its
-  slabs fading in and out over a second, its bells, the hidden chests (shut, dimly lit, until they pay the player),
+  there and let go on any way out (the seal's in the gate's zone too); heard underground. It is lit as underground
+  (`breachLook.ts`, `drawRun`): a sky of its own written each frame, with no sun or moon, a low cool light from
+  above, and everything fading into the dark from 40 m to black at 120 m; the lamps nearest the eye (16) of those its
+  pieces give, each read from where the piece's crystal, fire and glass lie (red at the seals, bells, the Seam and the
+  clusters; warm at the Choir's candles and rose window, the shore's hearth and sconces, the Heart's lantern), and a
+  carried torch or lantern; the figures in the same light as the stone. A shore is drawn only while a player stands in
+  it, a rift to it is opening or open, or the Steward's taken are there. Its seals while shut, its slabs fading in and
+  out over a second, its bells (a dim one asleep at each bell socket no bell foe holds), the hidden chests (the plain
+  chest dim while it will not pay, the heroic chest, its crystal alight, once it will, thrown open once it has),
   the Lodestone (lying, on its plinth, or turning 2.3 m over its bearer); each encounter's banner from the snapshot's
   Breach, with its limits and its clocks (fusions of 4, Hard 3; the round of 5; a desk's marking, a bell's ringing,
   the Scrivener's fury; the takings of 4; the court's mooring "held 1 of 2"); a teaching line as each encounter begins
@@ -161,6 +169,11 @@ crystal, the moorings, the ledges) and each space of the run (`tools/modules/bre
 triangles, its parts and sockets what the rules stand on, every piece's socket on its floor clear of every part; the
 dressing (`breach_dress.py`) is drawn only. The Drowned horse is a mount look of the forge (`barding.py`).
 
+Its light comes from its pieces as built: wherever a module wears crystal, glow (a flame) or glass, the page gathers
+it into lamps 3 m across (`moduleLights.ts`), so a piece rebuilt lights where it now burns. Stained glass (`glass`) is
+drawn as leaded panes of ruby, cobalt, amber, green and pale, lit from behind; the drowned floors' water ripples
+slowly and glints with the lamps over it ([[Modules]], "In the game").
+
 ## Limits
 
 - **The Drowned horse is not rendered yet.** Its ridden strips come only from a forge run started by hand
@@ -178,4 +191,10 @@ dressing (`breach_dress.py`) is drawn only. The Drowned horse is a mount look of
   Vault let a few finish its maze. Claude's reading; the owner may want every player.
 - **The Two Shores' crossing rule at Hard** (the Lodestone may not cross a rift) never binds yet: no Keeper is warded.
   A Hard ward on the Keepers would give it weight; that is a new mechanic, for the owner.
-- **Played offline only**: tested by the rules' and the page's tests, never in a deployed room.
+- **The run's light casts no shadows**: its lamps reach through walls, and only the 16 nearest the eye light it; the
+  crystal clusters' many small lamps can crowd a far candle out.
+- **The figures do not fade into the dark** as the stone does; a figure 100 m off is drawn dim, not lost.
+- **Stained glass is on the page before any piece wears it**: until the modules are rebuilt with `glass`, the Choir's
+  rose window and the shore's lancets wear `glow` and read as a flat warm disc.
+- **Played offline only**: tested by the rules' and the page's tests, never in a deployed room; its light was
+  pictured by drawing the run's pieces through the page's own drawer and sky offline, never in a live run.

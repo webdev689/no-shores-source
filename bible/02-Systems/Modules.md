@@ -58,8 +58,8 @@ middle of its foot:
   as its strain's light says: bright toward a shard's point, dark at its root, alight at its heart.
 
 Each surface wears one of the game's materials: stone, trim, rubble, chalk, turf, timber, canvas, iron, plaster,
-roof, gold, crystal, bone, glow, the cloths, paving, lawn and water (`kit.MATERIALS`, the order its groups are
-written in). An object may wear one a face (a torn slab's turf top over its soil and its chalk). Crystal, the
+roof, gold, crystal, bone, glow, the cloths, paving, lawn, water and glass (`kit.MATERIALS`, the order its groups are
+written in; the page knows glass before the kit does, so the page's list may run one past the kit's). An object may wear one a face (a torn slab's turf top over its soil and its chalk). Crystal, the
 Lattice's, is drawn by code, not a picture: red where the sun reaches it, graded to purple in its shadows, a glint off
 each flat facet the sun catches, and its core glowing as much as each vertex says, more seen straight on and more at
 night.
@@ -234,7 +234,13 @@ publishes the first bake's meshes with the repository's `CLOUDFLARE_TOKEN`.
   from a line as it widens and deepens, a lid swung about its hinge, its crystal glowing as strongly as it is asked.
   Each material is its own colour worked by code over the module's own frame (canvas oiled tan, the Tithe's banner
   its unmarked grey, as its sails are); the crystal is lit as above, its
-  brightest cores light the light layer, and its glow lights lamps round it at night (`EVENT_LAMPS`). A module that
+  brightest cores light the light layer, and its glow lights lamps round it at night (`EVENT_LAMPS`). A Breach's
+  pieces light lamps from their own surfaces: each 3 m cell its crystal, glow or glass falls in is one lamp at their
+  middle (`moduleLights.ts`), red, warm or the glass's coloured light. A fire (glow) and stained glass are their own
+  light, the glass leaded panes laid across the face it looks out of; still water's face ripples slowly and glints
+  with the key light and the lamps; a prop marked dark (`dark`) is drawn as the dark of a way through it. Under a sky
+  that sets how far off all is dark (`darkM`, a Breach's run's 120 m), every prop fades into the fog's colour from a
+  third of that way. A module that
   opens draws each point of its chasm under the ground at the depth where the eye's line to it crosses the land at
   its foot, 2 to 4% of that distance nearer (`chasm_depth`), so the land round the mouth gives way and anything nearer
   keeps its place; a point whose crossing falls outside the mouth is not drawn.
@@ -260,6 +266,9 @@ stand on the ground at every edge, and no cliff stair stands taller than it was 
 
 - The city draws a module's crystal half alight everywhere: its glow by vertex reaches only the event props' drawer,
   and only that drawer gives crystal's light into the light layer.
+- Lamps read from a module's surfaces sit at the middle of each 3 m cell, not at each flame; a long row of candles is
+  a few lamps, and no lamp casts a shadow.
+- Stained glass's panes are a grid over the face, not cut to a window's tracery.
 - The fissure's chasm is drawn 2 to 4% of its distance nearer the eye than the land at its mouth: land rising more
   than that over the mouth's foot hides part of it, and anything standing that close in front of the mouth is drawn
   behind it; the events stand on clear ground. Grass drawn after it can stand over the chasm.
