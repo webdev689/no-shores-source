@@ -1,6 +1,7 @@
 // The Outposts page's Decorate part, for a founder or admin standing at the outpost: every piece of decoration with
 // its price and how many the hall holds. Choosing one closes the menu and stands its ghost a metre past its own reach
-// before the player in the world (`decorPlacing.ts`), placed with the use key, turned with its keys, let go with Escape.
+// before the player in the world (`decorPlacing.ts`), placed with the use key, turned with its keys, let go with
+// Escape.
 
 import type { OutpostFace } from '../../network/accounts.ts';
 import type { Node } from '../../ui/node.ts';

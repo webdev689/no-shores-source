@@ -3,7 +3,7 @@
 // its id, since a reply lost on the way may hide one that landed.
 
 /** The asks of the accounts that move a guild's Aurem. */
-const MOVES_AUREM = /^outpost\/(raise|place|rise|remove|abandon|collect|decorate)$/;
+const MOVES_AUREM = /^outpost\/(raise|place|rise|remove|abandon|collect|decorate|undecorate)$/;
 
 /** The last ask sent that moves Aurem and has not been said yes to, by its path and body, with its id. */
 let unanswered: { readonly said: string; readonly rid: string } | null = null;

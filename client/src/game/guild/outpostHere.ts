@@ -297,13 +297,16 @@ export class OutpostHere {
     const piece = seen.plot.decor.find((decor) => near(decorPlaceOf(decor, ground).at));
     if (!piece || !this.link) return null;
     const link = this.link;
-    const run = () =>
-      void link.social('outpost/undecorate', { site, id: piece.id }).then((why) => {
+    const run = () => {
+      const sent = withRid('outpost/undecorate', { site, id: piece.id });
+      void link.social('outpost/undecorate', sent).then((why) => {
         this.takenUp = why === null ? null : { id: piece.id, why };
         if (why !== null) return;
+        ridAnswered(sent);
         ask({ kind: ASKS.outpostChanged });
         dispatchEvent(new Event(OUTPOST_CHANGED));
       });
+    };
     // A refusal (a member below admin) is said where the piece stands, as the use prompt's words.
     const refused = this.takenUp?.id === piece.id ? this.takenUp.why : null;
     return { words: refused ?? `Take up the ${pieceOf(piece.piece)?.name ?? 'decoration'}`, run };

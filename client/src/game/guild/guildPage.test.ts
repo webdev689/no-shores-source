@@ -225,7 +225,7 @@ test("the week shows the player's contribution and the four guild bounties, and 
 
 test('a member who joined this week sees no claim press, but when claims open to them', async () => {
   const bounties = [bounty('Full Stores', 120, 120)];
-  const { shows, ui } = await tab(face({ bounties, beforeTheWeek: true }));
+  const { shows, ui } = await tab(face({ bounties, beforeTheWeek: false }));
   assert.equal(ui.boxOf(claimId(0)), null, 'no claim before their first whole week');
   assert.ok(shows().includes('Claims open to you next week.'), shows());
 });

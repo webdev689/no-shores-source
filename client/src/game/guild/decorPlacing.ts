@@ -7,8 +7,9 @@ import { chatOpen } from '../social/social.ts';
 
 /**
  * A piece of decoration being stood on an outpost's plot in the world: chosen on the Outposts page's Decorate part,
- * its ghost stands a metre past its own reach before the player, snapped to a quarter metre and turned in steps by its keys, until it is
- * placed or let go. Its spot is the law's: metres from the plot's north-west corner, as the accounts take it.
+ * its ghost stands a metre past its own reach before the player, snapped to a quarter metre and turned in steps by
+ * its keys, until it is placed or let go. Its spot is the law's: metres from the plot's north-west corner, as the
+ * accounts take it.
  */
 
 /** The piece being placed, at which site, and its turn in steps; and the accounts' last word on placing it. */

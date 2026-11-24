@@ -73,7 +73,7 @@ function bountyNode(
 /** The week's four guild bounties as a checklist. */
 export function bountiesNode(ui: Interface, face: GuildFace, size: number, claim: (slot: number) => void): Node {
   // A member who joined this week claims nothing till the next, so their done bounties offer no press.
-  const late = face.beforeTheWeek === true;
+  const late = face.beforeTheWeek === false;
   return {
     width: 'grow',
     direction: 'column',

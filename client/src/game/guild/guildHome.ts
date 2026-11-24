@@ -35,7 +35,7 @@ export interface RosterTurn {
   page: number;
 }
 
-/** What the home page shows: the guild, its banner, its members, its week, bounties and outposts, and what has been said. */
+/** What the home page shows: the guild, its banner, its members, its week, bounties and outposts, and what was said. */
 export interface Home {
   readonly face: GuildFace;
   readonly banner: Banner;
@@ -78,7 +78,8 @@ export function homeNode(context: PlainContext, home: Home, turn: RosterTurn): N
   };
 }
 
-/** The middle column: the guild's face, its week, and its bounties and outposts, its words at the menu's label and name steps. */
+/** The middle column: the guild's face, its week, its bounties and outposts; its words at the menu's label and name
+ *  steps. */
 function middleNode(home: Home, size: number, named: number): Node {
   const { face } = home;
   const toNext = face.nextXp === null ? null : face.nextXp - face.levelXp;

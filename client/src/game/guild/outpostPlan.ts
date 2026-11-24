@@ -178,7 +178,8 @@ export function stuffName(stuff: string, island = 'island goods'): string {
 }
 
 /** The kinds a founder or admin may build now, each a press that chooses it to place, its first tier's cost beside
- *  it (the island's own resource named `island`); those the guild's level has not opened are named after them, with the level that does. */
+ *  it (the island's own resource named `island`); those the guild's level has not opened are named after them, with
+ *  the level that does. */
 export function kindsNode(ui: Interface, plot: KeptPlot, state: PlanState, level: number, island: string): Node {
   const full = (kind: Kind) => plot.structures.filter((standing) => standing.kind === kind.id).length >= kind.most;
   const open = KINDS.filter((kind) => kind.id !== 'hall' && kind.level <= level && !full(kind));
