@@ -70,10 +70,10 @@ varied across the continent into other biomes. Which biome each continent is: [[
 - **Static isles** are fixed by the layout: a place, a seed and one biome. Thousands are too many to hand-shape, so
   each is generated from its seed by the same generators, identically everywhere. The server holds who discovered
   each first.
-- **Fog of war.** Each player's map starts dark and clears where they have been. The server keeps each character's
-  charted ground and the isles they have found, and tells a client about an isle only once that player has found it
-  or is close enough to see it, so a hidden isle cannot be read out of the client. For now the [[Held Map]] keeps what
-  a player has discovered in their browser, and the client holds every continent's outline.
+- **No fog of war.** The [[Held Map]] at sea shows every continent, port and node from the first time it is raised
+  ([[Other Ships Wear Their Players' Marks, the Sea Map Has No Fog, and New Players Ride a Bay That Bursts]]); the
+  client holds every continent's outline. The sea room tells a client about an isle it rolled only once that player
+  has found it or is close enough to see it, so a hidden isle cannot be read out of the client.
 - **Discoveries** are rolled by the server in the open sea of hostile waters: a place and a seed. Every client near
   one generates the same island from the seed, as DFO's spawned dungeons are shared. The server lets one go ten
   minutes after the last player leaves. How they are rolled, built, landed on and scavenged: [[Islands]].
@@ -82,13 +82,13 @@ varied across the continent into other biomes. Which biome each continent is: [[
 
 The player reaches an island only at its nodes ([[Every Island Is Seen Whole and Reached by Nodes]]). From the
 Overworld's bird's-eye view of the side of an island, they choose a node (a mission, a dungeon, a social space, a
-patrol area, a world boss) and are taken there. A node is one section of the land, and its edge warns the player to
+patrol area, a world boss, an outpost site) and are taken there. A node is one section of the land, and its edge warns the player to
 go back. The rest of the island and of its city is the same ground the [[Land]] generates, drawn in less detail with
 distance, never reached. Each island has one major port city; Saltmere's is Overlook.
 
 Patrol areas and missions open as a pass is done on each ([[Patrol Zones and Missions Open as Their Pass Is Done]]).
 `content/world/open.json` lists the open ones by id. Every other patrol area and mission is locked; social spaces,
-dungeons and world bosses never are. A locked node still shows where the player picks a landing, greyed with a lock
+dungeons, world bosses and outpost sites never are. A locked node still shows where the player picks a landing, greyed with a lock
 ([[Overworld]]), but neither a click on it nor a gate toward it ([[Layouts]], "Gates") takes anyone there, and its room
 turns every player away ([[Server]]). A pass opens a node by adding its id to the list; a test holds the list to
 patrol and mission nodes of the edits files, each once. The rooms read the list from the node files, so a change

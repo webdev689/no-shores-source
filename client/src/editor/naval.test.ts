@@ -149,6 +149,27 @@ test('a fight that is over hands it the last answer, ends, and keeps its lines a
   assert.ok(naval.lines(2).length > 0 && naval.lines(10).length === 0);
 });
 
+test('a fight begun after one that ended by itself bursting throws nothing of the burst', async () => {
+  const bursting = { ...vessel, boost: [0.5, 0] as const };
+  const ended = door({ over: 'beaten', player: bursting });
+  let drawn: readonly unknown[] = [];
+  const naval = new Naval({ drawInto: (_pass, marks) => void (drawn = marks) });
+  const sailing = await sloop();
+  naval.toggle(ended.source, 'land', sailing, 0, failed);
+  await ended.letGo();
+  naval.step(0.1, IDLE, 1, sailing, WINDOW, failed);
+  await ended.letGo();
+  naval.step(0.1, IDLE, 1.1, sailing, WINDOW, failed);
+  assert.equal(naval.view?.over, 'beaten', 'over, its ship bursting as it ended');
+  const next = door();
+  naval.toggle(next.source, 'land', sailing, 50, failed);
+  await next.letGo();
+  naval.step(0.1, IDLE, 50, sailing, WINDOW, failed);
+  const camera = { eye: [0, 0, 10] } as unknown as Parameters<Naval['draw']>[3];
+  naval.draw({} as GPURenderPassEncoder, WINDOW, 1, camera, 50.1);
+  assert.deepEqual(drawn, [], 'no settle from the last fight');
+});
+
 const LAID: FightLay = {
   side: 'starboard',
   launches: [

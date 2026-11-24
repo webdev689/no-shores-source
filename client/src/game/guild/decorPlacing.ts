@@ -1,0 +1,88 @@
+import { DECOR_TURNS, type Plot, decorRefusal, pieceOf } from './outpostLaw.ts';
+import { PLOT_M } from './outpostLaw.ts';
+import type { Ground } from './outpostPlaces.ts';
+import type { Strip } from '../hints.ts';
+import { gearScreenOpen } from '../gearScreen.ts';
+import { chatOpen } from '../social/social.ts';
+
+/**
+ * A piece of decoration being stood on an outpost's plot in the world: chosen on the Outposts page's Decorate part,
+ * its ghost stands a metre past its own reach before the player, snapped to a quarter metre and turned in steps by
+ * its keys, until it is placed or let go. Its spot is the law's: metres from the plot's north-west corner, as the
+ * accounts take it.
+ */
+
+/** The piece being placed, at which site, and its turn in steps; and the accounts' last word on placing it. */
+export interface Placing {
+  readonly site: string;
+  readonly piece: string;
+  turn: number;
+  said: string | null;
+  /** The spot the accounts last refused it at, and whether a placing is on its way to them. */
+  saidAt: string;
+  sending: boolean;
+  /** Whether the law refuses it where its ghost last stood, so Place is not offered. */
+  refused: boolean;
+}
+
+/** The strip while a piece is placed: its keys under the moment's name. */
+export const PLACING_STRIP: Strip = {
+  title: 'Decorating',
+  hints: [
+    ['[ / ]', 'Turn'],
+    ['use', 'Place'],
+    ['Esc', 'Let go'],
+  ],
+};
+
+/** The strip while the piece may not stand where its ghost is: no Place offered. */
+const REFUSED_STRIP: Strip = { ...PLACING_STRIP, hints: PLACING_STRIP.hints.filter(([keys]) => keys !== 'use') };
+
+let placing: Placing | null = null;
+
+/** The strip while a piece is placed, Place offered only where it may stand; none while none is. */
+export const placingStrip = (): Strip | null => (placing ? (placing.refused ? REFUSED_STRIP : PLACING_STRIP) : null);
+
+/** Turns the ghost a step either way, or lets it go; keys typed into the chat or a menu's field are theirs.
+ *  shortcut: plain keys, not bound controls, so a pad cannot turn a piece; bind them when the pad needs it. */
+function heard(event: KeyboardEvent): void {
+  if (!placing || chatOpen() || gearScreenOpen()) return;
+  if (event.key === 'Escape') letGo();
+  else if (event.key === '[' || event.key === ']') {
+    placing.turn = (placing.turn + (event.key === ']' ? 1 : DECOR_TURNS - 1)) % DECOR_TURNS;
+    placing.said = null;
+  }
+}
+
+/** Begins placing a piece at a site. */
+export function startPlacing(site: string, piece: string): void {
+  if (!placing) addEventListener('keydown', heard);
+  placing = { site, piece, turn: 0, said: null, saidAt: '', sending: false, refused: false };
+}
+
+/** Lets the piece go. */
+export function letGo(): void {
+  if (placing) removeEventListener('keydown', heard);
+  placing = null;
+}
+
+/** The piece being placed, if any. */
+export const placingNow = (): Placing | null => placing;
+
+/** Where the ghost of a piece stands for a spot at (`x`, `y`) on a plot's ground, before the player's feet: in metres
+ *  from the plot's corner snapped to a quarter, and the law's words where it may not stand (null where it may). */
+export function ghostOf(
+  placed: Pick<Placing, 'piece' | 'turn'>,
+  spot: readonly [number, number],
+  plot: Plot,
+  ground: Ground,
+) {
+  const quarter = (value: number) => Math.round(value * 4) / 4;
+  const decor = {
+    piece: placed.piece,
+    x: quarter(spot[0] - (ground.plot[0] - PLOT_M / 2)),
+    y: quarter(spot[1] - (ground.plot[1] - PLOT_M / 2)),
+    turn: placed.turn,
+  };
+  return { decor, refusal: decorRefusal(plot, decor), name: pieceOf(placed.piece)?.name ?? 'piece' };
+}

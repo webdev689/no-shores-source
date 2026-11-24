@@ -304,7 +304,7 @@ mod tests {
         for _ in 0..30 {
             let mut numbers = [0.0; STEP_FLOATS];
             numbers[..BODY_FLOATS].copy_from_slice(&body.to_floats());
-            numbers[BODY_FLOATS..].copy_from_slice(&[1.0, 0.0, 0.3, 1.0, 0.0, 0.0, 0.0]);
+            numbers[BODY_FLOATS..].copy_from_slice(&[1.0, 0.0, 0.3, 1.0, 0.0, 0.0, 0.0, 0.0]);
             let mut bytes: [u8; STEP_FLOATS * 8] = bytes_of(&numbers).try_into().unwrap();
             step(&mut bytes);
             let expected = step_body(&body, &controls, &[ledge], &Flat, TICK_SECONDS);
@@ -355,7 +355,7 @@ mod tests {
         for _ in 0..60 {
             let mut numbers = [0.0; STEP_FLOATS];
             numbers[..BODY_FLOATS].copy_from_slice(&body.to_floats());
-            numbers[BODY_FLOATS..].copy_from_slice(&[1.0, 0.0, 2.0, 0.0, 0.0, 0.0, 0.0]);
+            numbers[BODY_FLOATS..].copy_from_slice(&[1.0, 0.0, 2.0, 0.0, 0.0, 0.0, 0.0, 0.0]);
             let mut bytes: [u8; STEP_FLOATS * 8] = bytes_of(&numbers).try_into().unwrap();
             step(&mut bytes);
             let expected = step_body(&body, &controls, &[], &OnLand::Land(Box::new(ground.clone())), TICK_SECONDS);

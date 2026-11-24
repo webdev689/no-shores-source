@@ -252,7 +252,8 @@ the owner approved ([[Where You Go and the Seas You Choose Set the Difficulty]])
 
 ## Bounties
 
-The bounties count what the rooms see happen on an engine of their own (`gear::objectives`). The quests are the
+The bounties count what the rooms see happen on an engine of their own (`gear::objectives`), which a guild's week
+counts toward its guild bounties too ([[Guilds]]). The quests are the
 houses' roads, judged by their own events ([[Quests]]): the owner chose that the Journal shows them and the bounties
 keep their engine ([[The Journal Holds the Quests, the Bounties at Its Side and the Timers at Its Top]]).
 

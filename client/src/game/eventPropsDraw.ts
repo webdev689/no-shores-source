@@ -14,12 +14,21 @@ import { skyUniformFor } from '../sky/skyUniform.ts';
 import { SHARED_WGSL } from '../water/waterCommon.ts';
 import { SAMPLES } from '../water/waterView.ts';
 import { CRYSTAL_HOT, CRYSTAL_WGSL } from '../city/crystal.ts';
+import { CLOTH_COLOURS } from '../city/pictures.ts';
 import { type EventProp, OPENS, type PropModule, propLamps } from '../city/eventProps.ts';
 import { loadModules, moduleNumber, moduleShape } from '../city/modules.ts';
+import { BannerCloth, type Hung } from './guild/bannerCloth.ts';
 import { MATERIALS, type Material, STRIDE, packLips, packModule } from './eventPropsPack.ts';
 
 /** A material's number in the shader, as WGSL. */
 const id = (material: Material): string => `${MATERIALS.indexOf(material)}u`;
+/** A colour as WGSL. */
+const rgb = ([red, green, blue]: readonly [number, number, number]): string =>
+  `vec3f(${red.toFixed(3)}, ${green.toFixed(3)}, ${blue.toFixed(3)})`;
+/** Each cloth as the city dyes it, its weave a little uneven. */
+const CLOTH_CASES = Object.entries(CLOTH_COLOURS)
+  .map(([cloth, dye]) => `case ${id(cloth as Material)}: { return mix(${rgb(dye)} * 0.82, ${rgb(dye)}, fine); }`)
+  .join('\n    ');
 /** How far toward the eye a point of a chasm is drawn, as a share of its distance: enough to stand clear of the land
  *  round the mouth, too little to come in front of a rise or a house nearer the eye. */
 const CHASM_LEAD = 0.04;
@@ -28,13 +37,13 @@ const LIPS_MOST = 256;
 
 /** A prop's row in the table: where it stands from the eye and its turn; its scale, rise, lid and glow; whether it
  *  opens, its module's height, and where its lips start in the lips' list and how many stations they have; whether
- *  its canvas is grey. */
+ *  its canvas is grey, and its tint (none, a ghost's). */
 const PROP_FLOATS = 16;
 /** No lamps and nothing drawn, shared, so a place with no props makes nothing a frame. */
 const NO_LAMPS: readonly LampPlace[] = [];
 const NONE_DRAWN: readonly [EventProp, Made, number][] = [];
 /** The props whose canvas is the Tithe's unmarked grey, as its sails are; every other canvas is oiled tan. */
-const GREY_CANVAS: ReadonlySet<PropModule> = new Set(['tithe-banner']);
+const GREY_CANVAS: ReadonlySet<EventProp['module']> = new Set<PropModule>(['tithe-banner']);
 
 const VERTEX_LAYOUT: GPUVertexBufferLayout = {
   arrayStride: STRIDE,
@@ -166,7 +175,8 @@ fn noise3(at: vec3f) -> f32 {
 
 // Each material's colour at a point of the module's own frame, worked so a surface reads as what it is: chalk white
 // with grey flint in it, turf mottled green and dry, soil dark, timber weathered grey-brown along its grain, canvas
-// oiled tan with darker stains and dirtier toward the ground, iron dark with rust, gold, a heap of grain straw-pale.
+// oiled tan with darker stains and dirtier toward the ground, iron dark with rust, gold, a heap of grain straw-pale;
+// plaster lime-pale, shingles dark in courses, bone yellowed, paving in setts, still water deep, a fire's glow.
 fn material_colour(material: u32, local: vec3f, grey: bool) -> vec3f {
   let fine = noise3(local * 9.0);
   let broad = noise3(local * 1.3);
@@ -200,6 +210,20 @@ fn material_colour(material: u32, local: vec3f, grey: bool) -> vec3f {
     }
     case ${id('iron')}: { return mix(vec3f(0.17, 0.18, 0.2), vec3f(0.34, 0.2, 0.12), smoothstep(0.6, 0.9, fine) * 0.7); }
     case ${id('gold')}: { return mix(vec3f(0.78, 0.58, 0.2), vec3f(0.92, 0.74, 0.34), fine); }
+    case ${id('plaster')}: { return mix(vec3f(0.7, 0.66, 0.58), vec3f(0.8, 0.77, 0.7), broad * 0.6 + fine * 0.4); }
+    case ${id('roof')}: {
+      let course = smoothstep(0.0, 0.25, fract(local.z * 5.0));
+      return mix(vec3f(0.17, 0.14, 0.13), mix(vec3f(0.27, 0.22, 0.19), vec3f(0.36, 0.3, 0.25), fine), course);
+    }
+    case ${id('bone')}: { return mix(vec3f(0.74, 0.69, 0.56), vec3f(0.86, 0.82, 0.71), fine); }
+    case ${id('glow')}: { return mix(vec3f(1.9, 1.2, 0.5), vec3f(2.2, 1.6, 0.8), fine); }
+    ${CLOTH_CASES}
+    case ${id('paving')}: {
+      let joint = 1.0 - smoothstep(0.0, 0.08, min(fract(local.x * 3.0), fract(local.y * 3.0)));
+      return mix(mix(vec3f(0.44, 0.42, 0.38), vec3f(0.56, 0.53, 0.48), fine), vec3f(0.22, 0.21, 0.19), joint);
+    }
+    case ${id('lawn')}: { return mix(vec3f(0.19, 0.31, 0.1), vec3f(0.29, 0.41, 0.15), fine); }
+    case ${id('water')}: { return mix(vec3f(0.05, 0.15, 0.17), vec3f(0.09, 0.22, 0.24), broad); }
     default: { return vec3f(0.5, 0.48, 0.44); }
   }
 }
@@ -214,6 +238,14 @@ fn shade(in: Out) -> vec4f {
   if in.material == CRYSTAL {
     return vec4f(crystal_colour(facing, in.from_eye, in.glow, sun), 1.0);
   }
+  // A ghost (a piece of decoration being placed) is washed in its tint, its fire too.
+  let tint = props[in.prop].look.yzw;
+  let ghost = any(tint > vec3f(0.0));
+  // A fire is its own light, not lit by the sky's.
+  if in.material == ${id('glow')} {
+    let flame = material_colour(in.material, in.local, false);
+    return vec4f(select(flame, mix(flame, tint * 1.4, 0.6), ghost), 1.0);
+  }
   let ambient = AMBIENT + BOUNCE * (1.0 - abs(facing.z));
   let light = sky_ambient(facing) * (ambient / AMBIENT) + sky_direct(facing, sun) * ((1.0 - ambient) / 0.65);
   var colour = material_colour(in.material, in.local, props[in.prop].look.x > 0.5) * (light + sky_lamps(in.from_eye, facing));
@@ -222,6 +254,7 @@ fn shade(in: Out) -> vec4f {
     let glint = pow(max(dot(reflect(normalize(in.from_eye), facing), sky_state.key.xyz), 0.0), 24.0) * sun;
     colour += sky_state.key_light.rgb * glint * select(0.35, 0.9, in.material == ${id('gold')});
   }
+  if ghost { colour = mix(colour, tint * (light + 0.4), 0.6); }
   return vec4f(colour, 1.0);
 }
 
@@ -278,7 +311,7 @@ export class EventPropsDraw implements Drawer {
   private lipsTaken = 0;
   private table: GPUBuffer | null = null;
   private tableGroup: GPUBindGroup | null = null;
-  private readonly made = new Map<PropModule, Made>();
+  private readonly made = new Map<string, Made>();
   private props: readonly EventProp[] = [];
   /** The table's rows as written, kept between frames so a frame allocates none. */
   private rows = new Float32Array(16 * PROP_FLOATS);
@@ -287,11 +320,13 @@ export class EventPropsDraw implements Drawer {
   private readonly opening: [EventProp, Made, number][] = [];
   private readonly plain: [EventProp, Made, number][] = [];
   private ready = false;
+  private readonly cloth: BannerCloth;
   /** The frame the table was last written for, and the props it holds, each with its row. */
   private written: { fromEye: Float32Array | null; props: readonly EventProp[] } = { fromEye: null, props: [] };
 
   constructor(gpu: Gpu) {
     this.gpu = gpu;
+    this.cloth = new BannerCloth(gpu);
     const { device } = gpu;
     const viewLayout = device.createBindGroupLayout({
       entries: [{ binding: 0, visibility: SHADER_STAGE.vertex | SHADER_STAGE.fragment, buffer: {} }],
@@ -372,20 +407,30 @@ export class EventPropsDraw implements Drawer {
     return this.pipes;
   }
 
+  /** A guild's banner cloth the next frames hang with the props (an outpost's standard's), or none. */
+  hang(hung: Hung | null): void {
+    this.cloth.set(hung);
+  }
+
   /** The props the next frames draw (eventProps.ts), and the lamps their crystal lights. */
   set(props: readonly EventProp[]): void {
     this.props = props;
     EVENT_LAMPS.current = props.length > 0 ? propLamps(props) : NO_LAMPS;
   }
 
-  /** A module made ready to draw, the first time it is drawn after its meshes have come; none before. */
-  private madeOf(name: PropModule): Made | null {
+  /** A module made ready to draw, the first time it is drawn after its meshes have come; none before, its meshes
+   *  asked for again while one is missing. */
+  private madeOf(name: EventProp['module']): Made | null {
     const known = this.made.get(name);
     if (known) return known;
     if (!this.ready) return null;
     const number = moduleNumber(name);
     const packed = number >= 0 ? packModule(number) : null;
-    if (!packed) return null;
+    if (!packed) {
+      // A group of its that failed to come is asked for again, a while after it failed.
+      if (number >= 0) void loadModules();
+      return null;
+    }
     const { device } = this.gpu;
     const buffer = (data: ArrayBuffer | Uint32Array, usage: number) => {
       const made = device.createBuffer({
@@ -444,6 +489,7 @@ export class EventPropsDraw implements Drawer {
       rows[first + 10] = made.lips?.first ?? 0;
       rows[first + 11] = made.lips?.count ?? 0;
       rows[first + 12] = GREY_CANVAS.has(prop.module) ? 1 : 0;
+      [rows[first + 13] = 0, rows[first + 14] = 0, rows[first + 15] = 0] = prop.tint ?? [];
     });
     if (!this.table || this.table.size < rows.byteLength) {
       this.table?.destroy();
@@ -496,11 +542,12 @@ export class EventPropsDraw implements Drawer {
     pass: GPURenderPassEncoder,
     fromEye: Float32Array,
     shot: { eye: readonly [number, number, number] },
-    _time: number,
+    time: number,
     shadow: ShadowMap,
   ): void {
     const drawn = this.prepared(fromEye, shot.eye);
     if (drawn.length === 0 || !this.tableGroup) return;
+    this.cloth.drawInto(pass, fromEye, shot.eye, time);
     pass.setBindGroup(0, this.viewGroup);
     pass.setBindGroup(2, this.tableGroup);
     skyUniformFor(this.gpu.device).bindShared(pass);

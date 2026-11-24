@@ -12,7 +12,7 @@ import type { Walker } from '../player/walker.ts';
 import type { MovementRules } from '../rules/movementRules.ts';
 import { cellHeight, type Deck, deckToWorld, type Lying, worldToDeck } from '../ships/deck.ts';
 import { smooth01 } from '../overworld/overworldCamera.ts';
-import { type Shot, shotOfOrbit } from './camera.ts';
+import { CAMERA_CLEARANCE_M, type Shot, WALK_LENS, shotOfOrbit } from './camera.ts';
 import { Crew } from './crew.ts';
 import { type DeckRoom, DeckWalk } from './deckWalk.ts';
 import type { GearState } from '../network/gearMessages.ts';
@@ -29,9 +29,6 @@ const MIDDLE = [0, 1.2, 3] as const;
 export const WHEEL_REACH_M = 0.8;
 /** How long the room has to say the player is off the helm before the leave is taken back, seconds. */
 const LEAVING_S = 2;
-/** The walk's lens and how far the third-person camera keeps over its deck, as on foot. */
-const LENS = { fov: FIELD_OF_VIEW, near: 0.1, far: 60_000 } as const;
-const CAMERA_CLEARANCE_M = 0.3;
 /** A stand-in's moves loop at this many frames a second. */
 const LOOP_FPS = 6;
 /** The forge keeps a figure's last card by its number: the helmsman's and the hands' are their own. */
@@ -223,7 +220,7 @@ export class Aboard {
       pitch: MANAGE.pitch,
       fov: FIELD_OF_VIEW,
       near: 0.3,
-      far: LENS.far,
+      far: WALK_LENS.far,
     };
   }
 
@@ -232,7 +229,7 @@ export class Aboard {
     const groundAt = (x: number, y: number) => cellHeight(this.deck, x, y);
     // The deck has no blocks to ease the boom off, so a boom pulled in on foot is let go, not kept in.
     const free = { ...walker.player, view: { ...walker.player.view, boom: undefined } };
-    const local = shotOfOrbit(playerCamera(free, movement, []), LENS, groundAt, CAMERA_CLEARANCE_M);
+    const local = shotOfOrbit(playerCamera(free, movement, []), WALK_LENS, groundAt, CAMERA_CLEARANCE_M);
     return { ...local, eye: deckToWorld(lying, ...local.eye), yaw: local.yaw + lying.heading };
   }
 

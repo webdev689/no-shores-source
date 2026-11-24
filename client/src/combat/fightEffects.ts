@@ -5,9 +5,12 @@ import type { Block } from '../rules/movementRules.ts';
 import { blowLook } from './cues.ts';
 import type { Fighting } from './fighting.ts';
 import { Flashes } from './flashes.ts';
+import { type Boosting, HoofDust } from './hoofDust.ts';
 import { foeGlints } from './glints.ts';
 import { aimRingMesh } from './casting.ts';
 import { Impacts, warmImpactPictures } from './impacts.ts';
+import { LATTICE } from './lattice.ts';
+import { CRYSTAL } from './latticeLooks.ts';
 import { KillLooks, warmKillPictures } from './killLooks.ts';
 import { MARK_FLOATS, type TelegraphMark, marksMesh } from './marks.ts';
 import { Sparks } from './sparks.ts';
@@ -33,6 +36,8 @@ export class FightEffects {
   private readonly kills = new KillLooks(this.impacts.bits);
   private readonly tracers = new Tracers();
   private readonly spellLooks = new SpellLooks(this.sparks);
+  /** The dust each rider's horse throws as its boost runs. */
+  private readonly hooves = new HoofDust();
   /** The seconds the effects have run, which a Volt tracer jumps by. */
   private clock = 0;
   /** The marks beyond the fight's own laid each frame, kept from frame to frame so none is made afresh. */
@@ -84,7 +89,8 @@ export class FightEffects {
    * tracers run on by `seconds` (none while the fight waits), a shot stopped by `blocks`, the ground or one of
    * `bodies` (their feet) throwing sparks where it comes to rest; Dusk Daggers' ring while it is aimed; and every
    * spell in the room, with the statuses that show on the world, laid at the figures where `drawn` has them; and
-   * where blows land and kills fall. The marks are handed back in the effects' own array, good until the next frame's.
+   * where blows land and kills fall; and the dust each of the `riders`' horses throws as it boosts. The marks are
+   * handed back in the effects' own array, good until the next frame's.
    */
   marks(
     fight: Fighting,
@@ -98,13 +104,15 @@ export class FightEffects {
       readonly groundAt?: (x: number, y: number) => number | null;
       readonly more?: readonly number[];
       readonly drawn?: Drawn;
+      readonly riders?: readonly Boosting[];
     },
   ): Float32Array {
     // A companion's telegraphed blows threaten no player: only foes' are marked.
     const telegraphs = [...fight.foes.values()].flatMap((kept): TelegraphMark[] =>
       kept.view.action.kind === 'telegraph' && kept.view.side === 'foes' ? [kept.view.action] : [],
     );
-    const { eye, blocks, bodies, muzzleOf, origin, groundAt, more = [], drawn = null } = where;
+    const { eye, blocks, bodies, muzzleOf, origin, groundAt, more = [], drawn = null, riders } = where;
+    if (riders) this.hooves.frame(riders, where, seconds);
     const fired = fight.fired.splice(0);
     this.tracers.fired(fired, muzzleOf);
     this.tracers.seen(fight.takeShots(), fight.player);
@@ -115,8 +123,12 @@ export class FightEffects {
     this.shotsHeard = { fired, struck: this.tracers.struck };
     const look = this.ownLook;
     if (look) for (const head of this.tracers.ownHeads) this.sparks.trail(head, look, seconds);
-    const traced = this.tracers.mesh(eye, fight.shots, fight.player, look, this.clock);
-    const arrows = othersArrows(fight.shots, fight.player);
+    const latticeOf = (owner: number) => {
+      const kind = LATTICE[fight.foes.get(owner)?.type ?? -1];
+      return kind ? CRYSTAL[kind.strain] : null;
+    };
+    const traced = this.tracers.mesh(eye, fight.shots, fight.player, look, this.clock, latticeOf);
+    const arrows = othersArrows(fight.shots, fight.player, latticeOf);
     const ring = fight.aimRing ? aimRingMesh(fight.aimRing) : [];
     const spells = this.spellLooks.marks(fight, eye, seconds, this.clock, drawn);
     const glints = foeGlints(fight.foes.values(), eye);
@@ -127,6 +139,7 @@ export class FightEffects {
     if (laid.length !== count) laid.length = count;
     this.impacts.lay(laid, eye);
     this.kills.lay(laid, eye);
+    this.hooves.lay(laid, eye);
     const own = marksMesh(telegraphs, arrows, this.sparks.flying, [], origin);
     const total = own.length + laid.length;
     if (this.mesh.length < total) this.mesh = new Float32Array(2 ** Math.ceil(Math.log2(total)));

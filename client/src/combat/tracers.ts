@@ -9,7 +9,7 @@ import { GunLooks } from './gunLooks.ts';
 import { markArrow } from './marks.ts';
 import { POWDER, STEEL, type Ramp, layPicture } from './markSprites.ts';
 import { ShotMarks, type Surface, overSea, surfaceAt } from './shotMarks.ts';
-import { HOT, LIGHT, sprite } from './spellPixels.ts';
+import { BODY, HOT, LIGHT, sprite } from './spellPixels.ts';
 
 type Point = readonly [number, number, number];
 type Colour = readonly [number, number, number, number];
@@ -33,6 +33,16 @@ const BALL = { speed: 350, streak: 6, fade: 0.32 } as const;
 /** An arrow's trail: this long of its flight (seconds) behind it, breaking up over this long once it stops; a shot's
  *  trail comes out of the drawn bow or barrel and joins its true flight within this long. */
 const ARROW = { trail: 0.3, linger: 0.3, converge: 0.15, life: 4 } as const;
+/** A Lattice foe's shot trails this much of its flight (seconds), twice an arrow's, so its crystal's line reads. */
+const CRYSTAL_TRAIL_S = 0.6;
+/** The crystal a shooter's shots fly in, by its number: a Lattice foe's ramp, or null for any other's. */
+export type LatticeOf = (owner: number) => Ramp | null;
+const NO_LATTICE: LatticeOf = () => null;
+/** A trail's ribbons, glow then core, and how much of its flight it trails (seconds). */
+interface TrailLook {
+  readonly layers: readonly Layer[];
+  readonly trail: number;
+}
 /** A tracer's ribbon: its width (metres), the least of the eye's view it keeps (radians: 2 and 4 pixels at 720p, so a
  *  shot reads far off) and the most (so one leaving a first person's muzzle stays a line), its colour, and whether it
  *  is the core, drawn over its glow. A ball's core is white-hot round
@@ -397,7 +407,14 @@ export class Tracers {
   /** The tracers' triangles as seen from `eye`, with the player's own arrows and everyone else's arrows' trails (from
    *  the room's `shots`, the player's own left out), the guns' flashes and smoke, and what shots left where they
    *  stopped. The player's own take their weapon's element `own`, a Volt one jumping as `time` (seconds) runs. */
-  mesh(eye: Point, shots: readonly FlyingShot[], player: number, own: GlowLook = 0, time = 0): number[] {
+  mesh(
+    eye: Point,
+    shots: readonly FlyingShot[],
+    player: number,
+    own: GlowLook = 0,
+    time = 0,
+    latticeOf: LatticeOf = NO_LATTICE,
+  ): number[] {
     const out: number[] = [];
     for (const line of this.lines) this.lineMesh(out, eye, line, line.owner === null ? own : 0, time);
     for (const flight of this.flights) {
@@ -414,7 +431,22 @@ export class Tracers {
     for (const shot of shots) {
       if (shot.owner === player || BALLS.has(shot.ranged)) continue;
       const flown = shot.age * TICK;
-      this.trailMesh(out, eye, (when) => before(shot.at, shot.velocity, flown - when), flown, 1);
+      const shown = (when: number) => before(shot.at, shot.velocity, flown - when);
+      const crystal = latticeOf(shot.owner);
+      if (!crystal) {
+        this.trailMesh(out, eye, shown, flown, 1);
+        continue;
+      }
+      // A Lattice foe's shot is a shard of its crystal: a longer trail in its colours, its head a glint.
+      const layers = [
+        { ...ARROW_GLOW, colour: crystal[BODY] },
+        { ...ARROW_CORE, colour: crystal[HOT] },
+      ] as const;
+      this.trailMesh(out, eye, shown, flown, 1, 0, 0, { layers, trail: CRYSTAL_TRAIL_S });
+      const head = shown(flown);
+      layPicture(out, HEAD_GLINT, crystal, head, eye, {
+        cell: Math.max(HEAD_CELL.metres, Math.hypot(...minus(head, eye)) * HEAD_CELL.least),
+      });
     }
     this.guns.mesh(out, eye);
     this.left.mesh(out, eye);
@@ -461,8 +493,9 @@ export class Tracers {
     }
   }
 
-  /** A trail along a flight `shown` at each second flown, over its last ARROW.trail behind `flown`, `kept` of it, in
-   *  the element `look` (none by default) at `time`: its newest stretch whole, its oldest breaking up. */
+  /** A trail along a flight `shown` at each second flown, over its last `trail` seconds (an arrow's unless said) behind
+   *  `flown`, `kept` of it, in the element `look` (none by default) at `time`, or in `layers` where given: its newest
+   *  stretch whole, its oldest breaking up. */
   private trailMesh(
     out: number[],
     eye: Point,
@@ -471,15 +504,16 @@ export class Tracers {
     kept: number,
     look: GlowLook = 0,
     time = 0,
+    { layers = ribbonsOf(ARROW_GLOW, ARROW_CORE, look), trail = ARROW.trail }: Partial<TrailLook> = {},
   ): void {
-    const start = Math.max(0, flown - ARROW.trail);
+    const start = Math.max(0, flown - trail);
     if (flown - start < 1e-4 || kept <= 0) return;
     const steps = 10;
     const keeps = (step: number) => {
       const share = Math.min(kept, step >= 5 ? 1 : step >= 2 ? 0.5 : 0.25);
       return (PIECE_ORDER[step % 4] ?? 0) < share * 4;
     };
-    for (const layer of ribbonsOf(ARROW_GLOW, ARROW_CORE, look)) {
+    for (const layer of layers) {
       let run: { at: Point; width: number; colour: Colour }[] = [];
       const lay = () => {
         if (run.length > 1) ribbon(out, eye, jolted(run, look, time));
@@ -513,8 +547,13 @@ export function screenMuzzle(orbit: Orbit, aspect: number, design: readonly [num
 
 /** The arrows and bolts in flight the scene draws from the room's word: everyone's but the player's own, whose own
  *  ticks fly theirs; a ball's line is a tracer's, not an arrow. */
-export function othersArrows(shots: readonly FlyingShot[], player: number): FlyingShot[] {
-  return shots.filter((shot) => shot.owner !== player && !BALLS.has(shot.ranged));
+export function othersArrows(
+  shots: readonly FlyingShot[],
+  player: number,
+  latticeOf: LatticeOf = NO_LATTICE,
+): FlyingShot[] {
+  // A Lattice foe's shot is drawn as its crystal's tracer alone (`mesh`).
+  return shots.filter((shot) => shot.owner !== player && !BALLS.has(shot.ranged) && !latticeOf(shot.owner));
 }
 
 /** Where a shot leaves a figure's weapon seen from outside: ahead of its chest along `bearing`, a little to its right. */

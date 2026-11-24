@@ -213,6 +213,27 @@ The decisions in [[Open Questions]] are not repeated here.
     picture's foot, under the sea's bar, which stays up over the island view; the frame could keep the nodes above the
     bar. A picture plan cannot set the weather (observation 201): a dev hook lending the sky would fix it.
 
+- **Guilds** (#179), merged on the owner's "Merge and deploy when ready", which deploys the page and the rooms and
+  applies five migrations. The owner asked for guild names and banners with the tag on nameplates and in the social
+  menu, descriptions, bounties and levelling, and outposts on any island for a cost whose structures give guild buffs,
+  passive income, guild dungeons, guild bosses and housing decoration
+  ([[Guilds Gain Banners, Levels, Bounties and Outposts]]). All of it is built ([[Guilds]], [[Outposts]],
+  [[Guilds and Outposts as Claude Shapes Them]]): the banner and its editor, the Guild tab after Destiny 2's clan
+  screen, levels, weekly contribution and bounties, the treasury, an outpost site on each island with its own room for
+  each guild, thirty-eight structure models in three tiers, the strongbox and stores, the boons, decoration placed in
+  the world, the War Horn's guild boss and the guild dungeon behind the Delve Gate. Three deep audits ran; every real
+  finding is fixed with a test or pictures. The third found a give-back lost when a reload or a sailing off came before
+  the accounts' answer (the errand now rides in the character's save under its id, settled once by whichever room next
+  holds it), a deposit that could be done twice, idle plot reads eating the errands' limit, guests sent out when their
+  member stepped away, and the plan drawn over the menu when scrolled. Tested offline, not live; the PR names the commit
+  its last full check covered. Waiting on the owner: playing it; marking the DFO Pick rows for heraldry and for halls,
+  works and decor approved (`proposed` now). Known limits: the players on an abandoned outpost stand on bare ground
+  until they leave; an errand the accounts never answer at a claim holds that player's outpost asks until a later claim
+  answers it; the accounts keep every errand's answer for good, one row an errand; the guild boss is lost if everyone
+  leaves its room before it falls; a member can push older ledger lines out with many small deposits, each line naming
+  who moved it; the banner cloth takes no sky light, so it reads pale at night.
+- **The Discord bot**: porting DFO Online's unmerged bot work (#1662 to #1680 there, reverted by #1682) and redesigning
+  it around No Shores, which the owner raised and set aside: "Lets come back to this later."
 - **A foe's plain swing at seven eighths of its time**, for the owner's yes to merge, on the owner's "We recently
   adjusted parry timing and actually made it harder where I wanted to make it slighty easier"
   ([[A Foe's Plain Swing Takes Seven Eighths of Its Time]]). The longer parry window (15 ticks) forgave only an early
@@ -237,33 +258,32 @@ The decisions in [[Open Questions]] are not repeated here.
   offline: the full check at the PR's head (the commit named there), the rules' tests on Saltmere's real zones, the
   agreement runs natively and in WebAssembly. Not yet: played by hand, two players reviving in a deployed room, a real
   GPU. For the owner: [[Open Questions]], "Revives, respawns and relogs".
-- **The playtest's seven notes**, in three draft pull requests, each waiting on the owner's yes, with `main` (#178)
-  merged in. The owner's notes, and answers where asked, are recorded in three decisions, Claude's calls in their
-  tables. An independent audit by eight read-only reviewers followed, its findings fixed on each branch (each pull
-  request lists them). #185 (this branch): the Harbourmaster's stall in the Beacon Walk market and the harbour way
-  sealed at its head; rain spares the trees' crowns and the far woods, fewer and finer puddles, a slower sway; every
-  patrol node standing, one gathered spent for its gatherer alone for 9 minutes of wall-clock time
-  ([[The Harbourmaster Stands in the Market, Rain Spares the Trees, and Patrol Nodes Always Stand]]). #187: other
-  players' marks over their ships at sea, no fog on the sea map, the Bay given by the stranger, a rider's jump boosting
-  the horse 1.5x for 4 s with 12 s to recharge, the burst's spray and every rider's boost dust, and 14 horse cues
-  (its decision note, "Other Ships Wear Their Players' Marks, the Sea Map Has No Fog, and New Players Ride a Bay That
-  Bursts", is on #187's branch). #188: the Lattice shaded darker with only its crystal's points glowing, its blows
-  drawn through tell, strike and landing, its shots as crystal tracers, and the module meshes fetched again when a
-  fetch fails (its decision note, on #188's branch: "The Lattice Is Shaded Darker, With Detailed Attacks and
-  Projectile Tracers"). Tested offline; pictured headless only the rain, the sea's marks and map, and the Lattice's
-  layers. For the owner:
+- **The playtest's seven notes** (#185, #187, #188), merged on the owner's "Merge and deploy when ready", which
+  deploys the page and the rooms. The owner's notes, and answers where asked, are in three decisions, Claude's calls
+  in their tables: [[The Harbourmaster Stands in the Market, Rain Spares the Trees, and Patrol Nodes Always Stand]]
+  (the Harbourmaster's stall in the Beacon Walk market and the harbour way sealed at its head; rain spares the trees'
+  crowns and the far woods, fewer and finer puddles, a slower sway; every patrol node standing, one gathered spent for
+  its gatherer alone for 9 minutes of wall-clock time),
+  [[Other Ships Wear Their Players' Marks, the Sea Map Has No Fog, and New Players Ride a Bay That Bursts]] (other
+  players' marks over their ships, no fog on the sea map, the stranger's Bay, a rider's jump boosting the horse 1.5x
+  for 4 s with 12 s to recharge, the burst's spray and every rider's boost dust, 14 horse cues) and
+  [[The Lattice Is Shaded Darker, With Detailed Attacks and Projectile Tracers]] (the Lattice darker with only its
+  crystal's points glowing, its blows drawn through tell, strike and landing, its shots as crystal tracers). Eight
+  read-only reviewers audited the three before they merged, each finding fixed (the pull requests list them). Tested
+  offline: the full check on each head; pictured headless only the rain, the sea's marks and map, and the Lattice's
+  layers. Not yet: played by hand, a real GPU, a deployed room. For the owner:
   - **The invisible public event**: its likely cause, found in the code and not seen live, is fixed in #188. The page
     fetched all 512 module meshes at once from R2's rate-limited `r2.dev` address, never asked again for one that
-    failed, and drew no module missing a mesh; the event's 42 are the burst's last. If it is seen again, the browser's
-    console (F12) would name the meshes that could not be drawn.
+    failed, and drew no module missing a mesh; the event's 42 are the burst's last. Now fetches are retried and 8 go
+    at a time. If it is seen again, the browser's console (F12) names the meshes that could not be drawn.
   - Whether Haste and the horse's boost should stack (they do).
   - **The horse cues' candidates** come from the `freesound` workflow on #187's branch, but this session's network
     refused GitHub's artifact store (`productionresultssa14.blob.core.windows.net`), so the Overlook Sound Sheet does
     not list them yet. A session that can reach that host adds them to the sheet; until the owner picks, the horse is
     silent.
-  - Left as each pull request says: a ship behind an island still wears its mark, the hub's buildings never draw
+  - Left as the pull requests say: a ship behind an island still wears its mark, the hub's buildings never draw
     headless (no picture of the stall or the gate), a Grey Tithe figure's telegraphed blow snaps to idle after its
-    tell.
+    tell, a city built before its module meshes come draws none of them.
 - **The key strip, the leave held and Settings in tabs** (#181), merged on the owner's "Merge and deploy", which
   deploys the page (the rooms' code is untouched). The owner's three asks
   ([[The Key Strip Is a Compact Panel, a Held Key Leaves, and Settings Has Tabs]], Claude's calls listed there): the
@@ -530,7 +550,7 @@ The decisions in [[Open Questions]] are not repeated here.
   the rest: #59, #61 (a captain strikes from losing men at about 80% of its hull), #68, #69, #95, #98, #99.
 - **Elements and shields**: whether named weapons keep an element of their own (a leap is Volt on any Gullwing),
   whether a shield comes back after a while, and which foes beyond the patrols' carry them.
-- **The held map on land** has no fog of war, so a whole land shows the first time; whether to fog it as the sea is.
+- **The held map on land** has no fog of war, so a whole land shows the first time; whether to fog it.
 - **The hub's plants**: whether "any flora like bushes or trees" ([[The Hub's Plants Are the World's Low-Poly Ones]])
   also covers the wall ivy and the cut flowers at the flower stall and cart, which are the hub's own.
 - **The wreck's teaching** ([[The Wreck Opens by Teaching the Player]]): the owner's "teaching them the inventory" is
@@ -564,8 +584,8 @@ The decisions in [[Open Questions]] are not repeated here.
   in `combat/attackFeel.ts`). And whether a drawn bow or gun can punch, and in what element.
 - **The mirrored view**: a drawn sword, dagger or mace changes hands through the walk, the rest and a blow, as the
   forge draws none in the left fist there; whether it should.
-- **The Roster** ([[The Roster and Emblems as Claude Shapes Them]]): a join that loads another landmass; the Guild
-  tab's own page; more emblems and where they come from.
+- **The Roster** ([[The Roster and Emblems as Claude Shapes Them]]): a join that loads another landmass; more
+  emblems and where they come from.
 - **The ships** ([[The Ships as Claude Shapes Them]]): the owner asked for the Frigate as one more model "and call its
   there", so the Tithe Ram and the Fluyt wait until asked; splitting ships into parts for upgrades, and the cabin's
   decoration from DFO's `decor/`, are set aside by the owner for now.
@@ -755,10 +775,9 @@ The decisions in [[Open Questions]] are not repeated here.
   within 2 km of a city's wall yet); the World Editor's 3D view without the city, woods and shadows (its worker opens a
   landmass without the RMB index); flats and lit windows in the cities (the RMB table keeps no places for flats, and
   their archives are not paintable).
-- **The held map** ([[Held Map]]): discovery kept by the server per character, a quest's goals beyond the keepers it
-  names (ringed on land by #153) tracked on it, the charted sea's
-  wash laid while it is up; on land, the relief past the camera's 2 km read off the worker's exact ground, and lakes,
-  which only the 1 km grid holds.
+- **The held map** ([[Held Map]]): a quest's goals beyond the keepers it names (ringed on land by #153) tracked on
+  it; on land, the relief past the camera's 2 km read off the worker's exact ground, and lakes, which only the 1 km
+  grid holds.
 - **Touch**: no touch layer yet, so the sea fight and the wreck's fights need keys or a pad ([[Interface]], "Limits").
 - **The audit's findings left** (the audit's pull request lists each with its evidence), each needing the owner's word
   or more than a fix:

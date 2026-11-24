@@ -149,6 +149,8 @@ pub struct Harbour {
     pub repairs: Repairs,
     pub flotsam: crate::flotsam::Flotsam,
     pub characters: BTreeMap<PlayerId, gear::Character>,
+    /// Each kept player's guild, as the host told it (`guild_book.rs`).
+    pub guilds: crate::guild_book::Guilds,
     pub told: Vec<(PlayerId, Vec<f64>)>,
     /// In a sea that keeps characters, each player the keeper has not yet answered for, with the last course they
     /// asked meanwhile; none in a sea that keeps none.
@@ -158,6 +160,8 @@ pub struct Harbour {
     pub gear_sent: BTreeMap<PlayerId, u64>,
     /// The account that keeps each player's character, kept after they leave: what floats for them waits for it.
     pub accounts: BTreeMap<PlayerId, String>,
+    /// Each player's account's username, as the accounts gave it, for the plate over their ship.
+    pub names: BTreeMap<PlayerId, String>,
     /// Where each owner's ship lay as they left the sea unkept (a kept character keeps its own), its heading and the
     /// tick too: the sea's last word on it, where it comes back however far the page puts it, as a ship sails nowhere
     /// while its player is away. The LEFT_MOST latest at most.
@@ -171,6 +175,7 @@ impl Harbour {
     /// Forgets all it keeps for a player who left the sea.
     pub fn forget(&mut self, player: PlayerId) {
         self.characters.remove(&player);
+        self.names.remove(&player);
         self.changed.remove(&player);
         self.gear_sent.remove(&player);
         if let Some(awaiting) = self.awaiting.as_mut() {

@@ -22,7 +22,6 @@ test('what the game kept under its former name moves to its own, and nothing els
   const storage = storageOf({
     'overlook.session@https://accounts.test': 'token',
     'overlook.worldEditor.painting': '{"runs":[]}',
-    'overlook-discovery': '["saltmere"]',
     'overlook-content': 'not a key the game keeps here',
     'daggerfall.save': 'another project on the same origin',
   });
@@ -30,7 +29,6 @@ test('what the game kept under its former name moves to its own, and nothing els
   assert.deepEqual(Object.fromEntries(storage.held), {
     'noshores.session@https://accounts.test': 'token',
     'noshores.worldEditor.painting': '{"runs":[]}',
-    'noshores-discovery': '["saltmere"]',
     'overlook-content': 'not a key the game keeps here',
     'daggerfall.save': 'another project on the same origin',
   });

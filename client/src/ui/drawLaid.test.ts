@@ -91,3 +91,29 @@ test('what a scrolled list holds out of its sight is not drawn', () => {
   };
   assert.equal(draw(100), draw(3), 'the two rows in sight and the next, whose shadow could reach in; no more');
 });
+
+test('a field holding more than it shows draws its start while not typed in, and keeps its caret in sight while it is', () => {
+  const text = 'abcdefghijklmnopqrstuvwxyz'.repeat(4);
+  const firstX = (focused: boolean) => {
+    const ui = renderer();
+    const laid = layout(
+      { id: 'motto', width: 120, height: 30, field: { placeholder: '' } },
+      { x: 0, y: 0, width: 400, height: 100 },
+      { face, scrollOf: () => 0 },
+    );
+    const fieldScroll = new Map<string, number>();
+    drawLaid(ui, laid, 1, {
+      clock: 0.75,
+      field: () => ({ text, caret: text.length, anchor: text.length }),
+      focused: () => focused,
+      state: () => 'rest',
+      fieldScroll,
+    });
+    return { x: ui.quads.data[0] ?? Number.NaN, scrolled: fieldScroll.get('motto') ?? Number.NaN };
+  };
+  const resting = firstX(false);
+  const typing = firstX(true);
+  assert.equal(resting.scrolled, 0, 'not typed in, the words are not scrolled');
+  assert.ok(typing.scrolled > 0, 'typed in at the end, the words scroll to keep the caret in sight');
+  assert.ok(resting.x > typing.x, 'so the first letter drawn stands further left while typing');
+});

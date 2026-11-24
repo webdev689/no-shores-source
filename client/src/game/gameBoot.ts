@@ -12,7 +12,7 @@ import { openHull, ShipModels } from '../ships/shipModels.ts';
 import { startLandWorker } from '../terrain/landClient.ts';
 import { loadLandTexts } from '../terrain/landTexts.ts';
 import { seaWeatherOn } from '../water/seaWeather.ts';
-import { keptDiscovered } from './discovered.ts';
+import { worldShown } from './worldShown.ts';
 import { EventPropsDraw } from './eventPropsDraw.ts';
 import { FigureView } from './figureView.ts';
 import { gearScreenOpen } from './gearScreen.ts';
@@ -25,6 +25,8 @@ import { landDrawers, loadCityAssets } from './landDrawers.ts';
 import { type Landmass, openLandmass, terrainOf } from './landmass.ts';
 import { accountOf, roomsFrom } from './rooms.ts';
 import { keepBinds } from './bindsKept.ts';
+import { keepGuild } from './guild/guildHeld.ts';
+import { keepSites, siteOfWorld } from './guild/siteNames.ts';
 import { GameScene } from './scene.ts';
 import { roomModuleFrom } from './shipPanel.ts';
 import { arrivalAt, loadWorld } from './worldData.ts';
@@ -58,6 +60,7 @@ export async function bootGame(gpu: Gpu, canvas: HTMLCanvasElement, shipScale: (
   const rooms = roomsFrom(new URLSearchParams(location.search).get('room'));
   const { link, session } = accountOf(location, localStorage, sessionStorage);
   if (link) void keepBinds(link);
+  if (link) keepGuild(link);
   // The sea room's own module, for playing alone, fetched now; and the Sloop's build from it, for Manage's panel.
   const { module: roomModule, sloop: builtSloop } = roomModuleFrom(base);
   const land = startLandWorker();
@@ -84,6 +87,7 @@ export async function bootGame(gpu: Gpu, canvas: HTMLCanvasElement, shipScale: (
   // keys it hears after them.
   startSocial(stack, link, session, () => forge);
   const { continents } = world;
+  keepSites(siteOfWorld(world.nodes));
   // The sea by weather, the swell the sea is drawn with, and how far the view last reached.
   const [seaWeather, seaView] = [seaWeatherOn(roomModule, world.layoutText, world.cities), { reachM: 0 }];
   const cityAssets = loadCityAssets(base);
@@ -99,8 +103,7 @@ export async function bootGame(gpu: Gpu, canvas: HTMLCanvasElement, shipScale: (
     flow = arriving(start.node, start.name);
     if (flow.mode === 'loading') hud.veil(flow.words);
   }
-  const discovered = keptDiscovered(world);
-  discovered.arrived(start.continent, start.node);
+  const shown = worldShown(world);
   const landmass = await openLandmass(land, world, landTexts, start.continent);
   /** A landmass's land as the scene draws it, its biome's woods coloured on it past the reach of its drawn trees. */
   const terrainFor = (opened: Landmass) => {
@@ -133,7 +136,7 @@ export async function bootGame(gpu: Gpu, canvas: HTMLCanvasElement, shipScale: (
     world,
     landTexts,
     start,
-    discovered,
+    shown,
     landmass,
     ...views,
     ...modules,

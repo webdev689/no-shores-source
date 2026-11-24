@@ -21,6 +21,8 @@ export interface Controls {
   readonly jump: boolean;
   readonly crouch: boolean;
   readonly mounted: boolean;
+  /** The rider's boost tapped this tick; none is tapped where it is left out. */
+  readonly boost?: boolean;
 }
 
 /** How the body is held: on its feet, in the air, hanging from a lip, on a wall, or mantling or vaulting over one. */
@@ -57,6 +59,9 @@ export interface Body {
   readonly lip: number;
   /** Whether it moved along the ground or the wall this tick. */
   readonly moving: boolean;
+  /** The seconds its rider's boost still runs, then the seconds before it may boost again; none where left out. */
+  readonly boosting?: number;
+  readonly recharging?: number;
 }
 
 /** The movement crate, running in WebAssembly: the same steps, to the bit, as the crate run natively. */
@@ -151,8 +156,8 @@ interface Tuning {
 const flag = (value: boolean): number => (value ? 1 : 0);
 
 /** How many numbers a body is, and the controls. */
-export const BODY_FLOATS = 22;
-export const CONTROLS_FLOATS = 7;
+export const BODY_FLOATS = 24;
+export const CONTROLS_FLOATS = 8;
 
 /** Blocks as the movement crate reads them (`Block::from_floats`): every list of blocks the rules take. */
 export function blockFloats(blocks: readonly Block[]): number[] {
@@ -160,7 +165,8 @@ export function blockFloats(blocks: readonly Block[]): number[] {
 }
 
 /** A body's numbers in the movement crate's order: x, y, z, vx, vy, vz, facing, mode, crouched, crouch, grounded;
- *  whether it is going over a lip, and that move's start, end, progress and seconds; then lip and moving. */
+ *  whether it is going over a lip, and that move's start, end, progress and seconds; then lip and moving; then the
+ *  boost's seconds and the recharge's. */
 export function floatsOf(body: Body): number[] {
   const over = body.over ?? { from: [0, 0, 0], to: [0, 0, 0], progress: 0, seconds: 0 };
   return [
@@ -182,10 +188,12 @@ export function floatsOf(body: Body): number[] {
     over.seconds,
     body.lip,
     flag(body.moving),
+    body.boosting ?? 0,
+    body.recharging ?? 0,
   ];
 }
 
-/** The controls' numbers in the movement crate's order: forward, sideways, yaw, run, jump, crouch, mounted. */
+/** The controls' numbers in the movement crate's order: forward, sideways, yaw, run, jump, crouch, mounted, boost. */
 export const floatsOfControls = (controls: Controls): number[] => [
   controls.forward,
   controls.sideways,
@@ -194,6 +202,7 @@ export const floatsOfControls = (controls: Controls): number[] => [
   flag(controls.jump),
   flag(controls.crouch),
   flag(controls.mounted),
+  flag(controls.boost ?? false),
 ];
 
 /** The body the numbers hold, in the same order. */
@@ -222,6 +231,8 @@ export function bodyOf(floats: readonly number[]): Body {
           },
     lip: number(20),
     moving: number(21) !== 0,
+    boosting: number(22),
+    recharging: number(23),
   };
 }
 

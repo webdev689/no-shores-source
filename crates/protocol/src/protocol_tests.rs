@@ -158,7 +158,7 @@ const DRESSED: [(PlayerId, &str); 1] = [(7, r#"{"body":"male"}"#)];
 
 /// A named player's plate with a menu open, and a guest's with none.
 fn plates() -> Vec<(PlayerId, room::Plate)> {
-    let named = room::Plate { name: "Wooden_Osprey".to_owned(), level: 24, menu: true };
+    let named = room::Plate { name: "Wooden_Osprey".to_owned(), level: 24, menu: true, tag: "SALT".to_owned() };
     vec![(7, named), (9, room::Plate { level: 6, ..room::Plate::default() })]
 }
 
@@ -294,6 +294,7 @@ fn snapshot<'snapshot>(
         revives: None,
         public: Some(public),
         encounter: Some(&crate::encounter_wire_tests::ENCOUNTER),
+        outpost: 0,
         darkness: false,
         reviving: &[],
     }
@@ -391,7 +392,7 @@ fn bytes_that_are_not_an_input_and_numbers_of_the_wrong_count_are_refused() {
     let controls = Some(builder.create_vector(&[0.0; 6]));
     let short = messages::Input::create(&mut builder, &messages::InputArgs { controls, ..Default::default() });
     builder.finish(short, None);
-    assert_eq!(read_input(builder.finished_data()), Err("controls are 7 numbers, not 6".to_owned()));
+    assert_eq!(read_input(builder.finished_data()), Err("controls are 8 numbers, not 6".to_owned()));
 }
 
 #[test]
@@ -446,7 +447,7 @@ fn a_welcome_and_snapshots_read_back_to_the_bit() {
     // The player the snapshot is for has their fighter whole, less its trim: put back the plain one they wear.
     let mut own: Vec<f64> = read_players[1].fighter().unwrap().iter().collect();
     assert_eq!(own.len(), crate::UNTRIMMED_FLOATS);
-    assert_eq!(body_of(&own[..22]), Some(players[1].fighter.body));
+    assert_eq!(body_of(&own[..movement::floats::BODY_FLOATS]), Some(players[1].fighter.body));
     own.extend(combat::Trim::PLAIN.to_floats());
     assert_eq!(Fighter::from_floats(&own.try_into().unwrap()), players[1].fighter);
     assert!(read_players[1].packed().is_none());
@@ -745,4 +746,27 @@ fn a_sea_snapshot_carries_the_traffic_ids_the_room_took_and_the_friendly_ships_i
     let bytes = sea_snapshot_bytes(1, &[], &[], &[], &[], &SeaHarbour::default());
     let sea = flatbuffers::root::<messages::FromRoom>(&bytes).unwrap().snapshot().unwrap();
     assert!(sea.taken().is_none() && sea.friendlies().is_none(), "none when there are none: the bytes as before");
+}
+
+#[test]
+fn an_outposts_asks_read_back_as_sent_and_its_plot_count_crosses_in_the_snapshot() {
+    use room::OutpostAsk;
+    let plain = input(1, Controls::default());
+    for ask in [
+        OutpostAsk::Deposit { count: 250 },
+        OutpostAsk::Deliver { structure: 9, slot: 4, count: 12 },
+        OutpostAsk::Take { slot: 2, count: 3 },
+        OutpostAsk::Horn,
+        OutpostAsk::Changed,
+    ] {
+        let sent = Input { ask: Some(room::Asked::Outpost(ask)), ..plain.clone() };
+        assert_eq!(read_input(&input_bytes(&sent)).unwrap(), sent);
+    }
+    let none = crate::public_wire_tests::public();
+    let bare = Snapshot { public: None, ..snapshot(&[], &[], (&[], &[], &[]), &none) };
+    let read = |snapshot: &Snapshot<'_>| {
+        let bytes = snapshot_bytes(snapshot);
+        flatbuffers::root::<messages::FromRoom>(&bytes).expect("a message").snapshot().expect("a snapshot").outpost()
+    };
+    assert_eq!((read(&bare), read(&Snapshot { outpost: 3, ..bare })), (0, 3));
 }

@@ -6,7 +6,7 @@ const FORMER = 'overlook';
 const OWN = 'noshores';
 
 /** Whether a key was the game's under its former name. */
-const former = (key: string): boolean => key.startsWith(`${FORMER}.`) || key === `${FORMER}-discovery`;
+const former = (key: string): boolean => key.startsWith(`${FORMER}.`);
 
 /** Moves a storage's keys kept under the former name to the game's own, over any already there: a former key outlives
  *  a move only where one could not be made, and an account's sign-in kept there is worth more than a guest's made

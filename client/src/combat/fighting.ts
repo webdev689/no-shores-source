@@ -15,7 +15,14 @@ import { Prediction } from '../network/prediction.ts';
 import type { PublicEvent } from '../network/publicMessages.ts';
 import type { RoomLink, Snapshot } from '../network/roomConnection.ts';
 import type { CombatRules, Fired, Glanced } from '../rules/combatRules.ts';
-import { type Body, type Controls, type MovementRules, bodyOf, floatsOfControls } from '../rules/movementRules.ts';
+import {
+  BODY_FLOATS,
+  type Body,
+  type Controls,
+  type MovementRules,
+  bodyOf,
+  floatsOfControls,
+} from '../rules/movementRules.ts';
 import { type FighterView, fighterView, glanceFrom, glanceView, trimmed } from '../rules/fighters.ts';
 import type { AbilityState } from './abilityBar.ts';
 import { type AimRing, abilitiesAt } from './casting.ts';
@@ -24,12 +31,12 @@ import { SpellEffects } from './spellEffects.ts';
 
 /** Where the combat crate keeps, in a fighter's whole numbers, its arms, its swings so far (a swing begun moves it on)
  *  and its action's kind (0 at rest, 1 swinging, 12 for the dead), a swing's stroke the first of its numbers. */
-const ARMS_AT = 22 + 1;
-const BLOWS_AT = 22 + 21;
-const ACTION_AT = 22 + 23;
+const ARMS_AT = BODY_FLOATS + 1;
+const BLOWS_AT = BODY_FLOATS + 21;
+const ACTION_AT = BODY_FLOATS + 23;
 /** Where it keeps the ticks since a parry window passed unused (0 once a press may open another), and where its arms
  *  code keeps the ranged weapon's number. */
-const MISSED_PARRY_AT = 22 + 19;
+const MISSED_PARRY_AT = BODY_FLOATS + 19;
 const RANGED_SHIFT = 8;
 const IDLE = 0;
 const ATTACK = 1;
@@ -405,7 +412,7 @@ export class Fighting {
     if (this.standing.kind === 'dead') {
       this.struck = null;
       this.fighter = this.lying(this.fighter, view);
-      return bodyOf(Array.from(this.fighter.subarray(0, 22)));
+      return bodyOf(Array.from(this.fighter.subarray(0, BODY_FLOATS)));
     }
     const before = this.fighter[BLOWS_AT] ?? 0;
     const drawing = this.fighter[ACTION_AT] === DRAW;
@@ -422,14 +429,14 @@ export class Fighting {
     const swinging = this.fighter[ACTION_AT] === ATTACK;
     if (swinging) this.struck = this.fighter[ACTION_AT + 1] ?? this.struck;
     this.rested = swinging ? 0 : this.rested + 1;
-    return bodyOf(Array.from(this.fighter.subarray(0, 22)));
+    return bodyOf(Array.from(this.fighter.subarray(0, BODY_FLOATS)));
   }
 
   /** The fighter one tick on as the room steps a body the section killed (the room's `lying_still`): no push, its
    *  facing kept, letting go of any wall or lip it held, nothing fought and its arms kept, so it falls under its own
    *  weight and lies where it lands. */
   private lying(fighter: Float64Array, view: readonly Glanced[]): Float64Array {
-    const body = bodyOf(Array.from(fighter.subarray(0, 22)));
+    const body = bodyOf(Array.from(fighter.subarray(0, BODY_FLOATS)));
     const holding = body.mode === 'hang' || body.mode === 'climb';
     const controls = { forward: 0, sideways: 0, yaw: body.facing, run: false, jump: false, crouch: holding };
     const intent = new Float64Array([...floatsOfControls({ ...controls, mounted: false }), ...STILL_FIGHT]);

@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import { test } from 'node:test';
 import * as flatbuffers from 'flatbuffers';
-import { Course, Input } from '../../../generated/messages/ts/overlook/wire.ts';
+import { Course, FromRoom, Input, Snapshot } from '../../../generated/messages/ts/overlook/wire.ts';
 import { PROTOCOL } from '../../../generated/messages/ts/version.ts';
 import type { FightOrders } from '../rules/fightRules.ts';
 import { fighterView, glanceView, statusesOf } from '../rules/fighters.ts';
@@ -25,8 +25,8 @@ test('a welcome and a snapshot the server wrote read back to the bit', async () 
   const dressed = [{ player: 7, dress: '{"body":"male"}' }];
   // Everyone's plate: a named player at level 20, their Prestige and a menu open, and a guest, nameless.
   const plates = [
-    { player: 7, name: 'Wooden_Osprey', level: 24, menu: true },
-    { player: 9, name: '', level: 6, menu: false },
+    { player: 7, name: 'Wooden_Osprey', level: 24, menu: true, tag: 'SALT' },
+    { player: 9, name: '', level: 6, menu: false, tag: '' },
   ];
   const node = { id: 'overlook-social', bounds: [2_808_986, 1_201_139, 2_809_442, 1_201_455.5] };
   assert.deepEqual(readFromRoom(await written('joined.bin')), {
@@ -242,14 +242,14 @@ test('a fighting ship’s orders cross as the naval crate’s numbers', () => {
 });
 
 test('an input is its number, its controls and fight buttons in the combat crate’s order, its look, its arms, the tick seen, a foe asked for, a dress if given, and a respawn', () => {
-  const intent = new Float64Array([1, -0.5, 0.3, 1, 0, 1, 0, 6, 1, 0, 1, -0.2]);
+  const intent = new Float64Array([1, -0.5, 0.3, 1, 0, 1, 0, 1, 6, 1, 0, 1, -0.2]);
   const look = { anim: 'ride_gallop', frame: 3, facing: -1.5 };
   const parts = { intent, look, arms: 0x10002, seen: 977n, spawn: { type: 12, rank: 5 } };
   const input = Input.getRootAsInput(
     new flatbuffers.ByteBuffer(inputBytes(42, { ...parts, dress: '{"body":"female"}', respawn: true })),
   );
   assert.equal(input.sequence(), 42);
-  assert.deepEqual(Array.from(input.controlsArray() ?? []), [1, -0.5, 0.3, 1, 0, 1, 0]);
+  assert.deepEqual(Array.from(input.controlsArray() ?? []), [1, -0.5, 0.3, 1, 0, 1, 0, 1]);
   assert.deepEqual(Array.from(input.combatArray() ?? []), [6, 1, 0, 1, -0.2]);
   assert.deepEqual(
     [input.anim(), input.frame(), input.facing(), input.dress(), input.arms(), input.seen(), input.spawn()],
@@ -304,4 +304,17 @@ test('an input never wraps a number past its field: its number, arms and a foe�
   assert.throws(() => inputBytes(1, { ...parts, look: { ...look, frame: Number.NaN } }), RangeError);
   assert.throws(() => courseBytes([], 70_000), RangeError);
   assert.throws(() => walkBytes(-1, [0, 0, 0, 0, 0, 0, 0]), RangeError);
+});
+
+test("a snapshot carries how many plots its outpost's room has stood, which the page reads the plot again by", () => {
+  const builder = new flatbuffers.Builder(64);
+  Snapshot.startSnapshot(builder);
+  Snapshot.addTick(builder, 7n);
+  Snapshot.addOutpost(builder, 3);
+  const snapshot = Snapshot.endSnapshot(builder);
+  FromRoom.startFromRoom(builder);
+  FromRoom.addSnapshot(builder, snapshot);
+  builder.finish(FromRoom.endFromRoom(builder));
+  const read = readFromRoom(builder.asUint8Array());
+  assert.equal(read?.kind === 'snapshot' ? read.outpost : null, 3);
 });

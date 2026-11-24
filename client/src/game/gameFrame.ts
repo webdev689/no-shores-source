@@ -1,6 +1,7 @@
 // The game's frames: each one steps and draws the mode the flow is in, on foot or at sea, with the friendly ships round
 // the eye, the held map over the sea while it is up, and the veil lifted once a place has loaded. `game.ts` boots the
 // pieces and keeps the travel; this draws what they hold, as `Playing` has it this frame.
+import { placingStrip } from './guild/decorPlacing.ts';
 import type { FirstPerson } from '../firstperson/firstPerson.ts';
 import type { Gpu } from '../gpu.ts';
 import type { CardAt } from '../player/cards.ts';
@@ -13,7 +14,7 @@ import type { HelmMap } from './helmMap.ts';
 import { musiciansOf } from './audio/music/band.ts';
 import type { MusicDirector } from './audio/music/director.ts';
 import type { Charting } from './charting.ts';
-import type { Discovered } from './discovered.ts';
+import type { WorldShown } from './worldShown.ts';
 import type { EventPropsDraw } from './eventPropsDraw.ts';
 import type { DungeonDrawers } from './dungeonDrawers.ts';
 import type { FigureView } from './figureView.ts';
@@ -25,7 +26,7 @@ import type { Foot } from './foot.ts';
 import { type Fallen, ReviveNotices } from './footRevive.ts';
 import type { FootView } from './footView.ts';
 import type { FriendlyTraffic, FriendlyWater } from './friendlyShips.ts';
-import { contextOf } from './gameKeys.ts';
+import { contextOf, withoutTaken } from './gameKeys.ts';
 import { gearScreenOpen } from './gearWindow.ts';
 import { stripOf, withMapKey } from './hints.ts';
 import { FALLEN, refusedWords } from './toShip.ts';
@@ -120,7 +121,7 @@ export interface FrameParts {
   readonly traffic: FriendlyTraffic;
   /** The people aboard every other ship drawn, at sea and seen from land. */
   readonly crews: ShipPeople;
-  readonly discovered: Discovered;
+  readonly shown: WorldShown;
   readonly charting: Charting<Landmass>;
   readonly seaWeather: ReturnType<typeof seaWeatherOn>;
   readonly seaView: { reachM: number };
@@ -154,7 +155,7 @@ export interface FrameParts {
 
 /** Starts the frames: one each animation frame, at most one waiting on the GPU while the next is drawn. */
 export function startFrames(parts: FrameParts, playing: Playing): void {
-  const { gpu, canvas, hud, input, scene, walker, firstPerson, footView, traffic, discovered, charting } = parts;
+  const { gpu, canvas, hud, input, scene, walker, firstPerson, footView, traffic, charting } = parts;
   const { ui, stack, drain } = parts;
   let [last, clock] = [performance.now(), 0];
   let wasWalking = false;
@@ -230,7 +231,9 @@ export function startFrames(parts: FrameParts, playing: Playing): void {
     if (shown.sting) parts.music.moment(shown.sting);
     const listener = [walker.player.body.x, walker.player.body.y] as const;
     parts.music.onFoot(parts.world, here.node, shown.fight, seconds, { musicians: musiciansOf(here.folk), listener });
-    parts.eventProps.set(shown.props ?? []);
+    // An outpost's structures and decoration are drawn as the events' props are.
+    parts.eventProps.set(here.outpost?.props(shown.props, listener) ?? shown.props ?? []);
+    parts.eventProps.hang(here.outpost?.cloth() ?? null);
     parts.ambience.onFoot(here.node, playing.landmass, shown.shot, here.folk, !!here.dungeon);
     const { body } = walker.player;
     if (!here.dungeon) {
@@ -317,7 +320,8 @@ export function startFrames(parts: FrameParts, playing: Playing): void {
     hud.passageOffer(playing.through?.offer ?? null);
     // N raises the map on foot unless a menu is up, the player has fallen or is in a dungeon, as `openMap` has it.
     const mapless = paused || here.fallen || here.dungeon;
-    hud.strip(looking ? stripOf('landMap') : mapless ? shown.hints : withMapKey(shown.hints));
+    const placing = placingStrip();
+    hud.strip(looking ? stripOf('landMap') : (placing ?? (mapless ? shown.hints : withMapKey(shown.hints))));
     // The leave held through takes the player to their ship: not under a window, the sheet, the held map or the chat,
     // nor while she speaks; fallen, it says why not.
     const refused = here.fallen ? refusedWords(FALLEN) : null;
@@ -348,6 +352,7 @@ export function startFrames(parts: FrameParts, playing: Playing): void {
     // The sea by weather round the ship, reaching as far as the view last looked; the land's swell until it opens.
     const swell = parts.seaWeather()?.follow(here.position, parts.seaView.reachM, seconds) ?? scene.land?.swell;
     parts.eventProps.set([]);
+    parts.eventProps.hang(null);
     // The helm's controls while the sea's own view is up: the map's and the deck's are their own, and a fight's its.
     if (!paused && !helmMap.shown) {
       const steer = axis(controls, 'steerLeft', 'steerRight');
@@ -381,12 +386,10 @@ export function startFrames(parts: FrameParts, playing: Playing): void {
     const afoot = here.aboard.walking || here.boarding.onDeck;
     if (wasWalking && !afoot && input.locked) document.exitPointerLock();
     wasWalking = afoot;
-    // What a lookout sees is discovered as the ship sails.
-    if (flow.mode === 'sea') discovered.lookout(here.position);
     const free = flow.mode === 'sea';
     const dpr = canvas.width / Math.max(1, canvas.clientWidth);
     const hands = walker.you.dress.outfit.armour.gauntlets ?? null;
-    const mapDraw = helmMap.frame(here, seconds, { free, viewport, dpr, hands }, discovered);
+    const mapDraw = helmMap.frame(here, seconds, { free, viewport, dpr, hands }, parts.shown);
     // The map at the helm, or the player's own hands walking its deck in first person, over the finished picture.
     const after =
       mapDraw ??
@@ -498,7 +501,7 @@ export function startFrames(parts: FrameParts, playing: Playing): void {
           : covered && 'menu';
     input.window(top || null);
     input.context = playing.flow.mode === 'story' && parts.story ? parts.story.context : contextOf(playing);
-    const heard = input.frame();
+    const heard = withoutTaken(input.frame());
     hud.controls.frame(seconds, input.padButtons);
     // The wheel turned over the interface scrolls it, not the camera.
     const controls = tookWheel ? { ...heard, wheel: 0 } : heard;

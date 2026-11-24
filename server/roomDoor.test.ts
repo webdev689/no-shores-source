@@ -31,7 +31,7 @@ const built = (name: string) =>
   });
 const compiled = new WebAssembly.Module(await built('room_wasm'));
 /** Forward at a walk, looking north, no fight's buttons. */
-const walk = new Float64Array([1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, Number.NaN, Number.NaN, Number.NaN, 0]);
+const walk = new Float64Array([1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, Number.NaN, Number.NaN, Number.NaN, 0]);
 const walking = { anim: 'walk', frame: 2, facing: 0 };
 /** An input as a browser writes it, holding nothing and seeing the start of the room. */
 const asking = (sequence: number, intent: Float64Array, look: Look, dress?: string, respawn = false) =>
@@ -51,7 +51,7 @@ test('a room welcomes players, takes the inputs a browser writes in order, and i
   const [first, second] = [room.join(), room.join()];
   // The room speaks the protocol the page was built from: the same schema's hash.
   const protocol = PROTOCOL;
-  const plate = (player: number, more = {}) => ({ player, name: '', level: 1, menu: false, ...more });
+  const plate = (player: number, more = {}) => ({ player, name: '', level: 1, menu: false, tag: '', ...more });
   assert.deepEqual(readFromRoom(room.joined(first)), {
     kind: 'joined',
     player: first,
@@ -87,10 +87,17 @@ test('a room welcomes players, takes the inputs a browser writes in order, and i
   // Named by their account and with a menu open, a player's plate goes to everyone once, as a dress does.
   assert.equal(room.name(first, 'Mariner'), true);
   assert.equal(room.name(second, 'not a name'), false);
+  assert.equal(room.tag(first, 'SALT'), true);
+  assert.equal(room.tag(second, 'not a tag'), false);
+  const told = { id: 'guild-salt', done: [true, false, false, false], beforeTheWeek: true };
+  assert.equal(room.guild(first, JSON.stringify(told)), true, "the guild's word is taken");
+  assert.equal(room.guild(first, ''), true, 'and none, for a player who left it');
+  assert.equal(room.guild(first, '{"id":3}'), false, 'but not a word that is no guild');
+  assert.equal(room.guild(99, ''), false, 'nor for a player not there');
   const busy = inputBytes(32, { intent: walk, look: walking, arms: 0, seen: snapshot.tick, menu: true });
   assert.equal(room.input(first, busy), 'taken');
   room.tick();
-  const named = plate(first, { name: 'Mariner', menu: true });
+  const named = plate(first, { name: 'Mariner', menu: true, tag: 'SALT' });
   // The page's screen showed the tick before, so only what changed since comes.
   assert.deepEqual((readFromRoom(room.snapshot(first)) as { plates: unknown }).plates, [named]);
   const third = room.join();
@@ -110,7 +117,7 @@ test('a room welcomes players, takes the inputs a browser writes in order, and i
   const { plates } = readFromRoom(room.snapshot(second)) as unknown as { plates: { player: number }[] };
   assert.deepEqual(
     plates.filter((each) => each.player === first),
-    [plate(first, { name: 'Mariner' })],
+    [plate(first, { name: 'Mariner', tag: 'SALT' })],
   );
 });
 
@@ -213,7 +220,7 @@ test('a node’s room warns a player past its edge, kills them 60 m out, and res
   assert.equal(room.openNode(text), true);
   const [first, second] = [room.join(), room.join()];
   const node = { id: 'glade', bounds: [-150, -150, 150, 150] };
-  const plate = (player: number) => ({ player, name: '', level: 1, menu: false });
+  const plate = (player: number) => ({ player, name: '', level: 1, menu: false, tag: '' });
   assert.deepEqual(readFromRoom(room.joined(first)), {
     kind: 'joined',
     player: first,
@@ -654,6 +661,7 @@ test('a wounded player’s drink through the room heals them, and the page reads
   /** One tick of the player at rest, a drink asked if `heal`: what the page reads of them, and the fight's events. */
   const step = (heal = false) => {
     const intent = new Float64Array([
+      0,
       0,
       0,
       0,

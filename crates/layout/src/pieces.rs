@@ -153,6 +153,7 @@ pub fn build(kit: &mut Kit, area: &Area, toward: [f64; 2], seaward: [f64; 2]) {
         AreaKind::Causeway => crate::pieces_land::causeway(kit, area, toward),
         AreaKind::Cave => crate::pieces_land::cave(kit, area, toward),
         AreaKind::Hulks => crate::pieces_coast::hulks(kit, area, toward),
+        AreaKind::Plot => plot(kit, area),
         _ => {}
     }
 }
@@ -223,6 +224,15 @@ pub fn lantern(kit: &mut Kit, at: [f64; 2], height: f64) {
         [0.34, 0.34, 0.16],
         Material::Iron,
     ));
+}
+
+/// A plot's four low corner stones, each just outside a corner of its square, which is otherwise left bare.
+fn plot(kit: &mut Kit, area: &Area) {
+    let out = crate::areas::PLOT_HALF_M + 0.35;
+    for [east, south] in [[-1.0, -1.0], [1.0, -1.0], [1.0, 1.0], [-1.0, 1.0]] {
+        let at = [area.at[0] + east * out, area.at[1] + south * out];
+        kit.stand(Shape::Block, at, [0.6, 0.6, 0.7], 0.0, Material::Stone, 0.25);
+    }
 }
 
 /// A watchtower on the heights: a round stone tower, battlemented, with a fire burning on its top, a stair of stones

@@ -8,6 +8,7 @@ import { EMBLEM_PIXELS, markPicture } from '../plus/emblems.ts';
 import { TONES } from '../plus/tones.ts';
 import type { Child, Node, Picture } from '../ui/node.ts';
 import type { Interface } from '../ui/ui.ts';
+import { ownOutpostColours } from './guild/guildHeld.ts';
 import { KIND_WORDS, type MarkKind } from './hudLaw.ts';
 import type { HostileLook } from './seaHostiles.ts';
 
@@ -38,6 +39,7 @@ const GLYPHS: Record<MarkKind, string> = {
   mission: '◆',
   dungeon: '▼',
   boss: '☠',
+  outpost: '⚑',
   port: '⚓︎',
   playlist: '☰',
   hostile: '',
@@ -54,6 +56,7 @@ const KIND_COLOURS: Record<MarkKind | 'locked', string> = {
   mission: '#7fb4ee',
   dungeon: '#c193e6',
   boss: '#ee7c6e',
+  outpost: '#6fd3c9',
   port: '#e8e4d6',
   playlist: '#e0a458',
   // A hostile ship's mark wears its rank's colour, so its kind's own colour is the ink's.
@@ -90,12 +93,40 @@ function lockAt(
   context.stroke();
 }
 
-/** The ring and its glyph, the glyph in the mended face, which holds the ones Pixelify lacks. */
-function ring(glyph: string, colour: string, size: number, hovered: boolean, chosen: boolean): Picture {
+/** A flag round `middle`, 8 cells of `cell` pixels wide and 9 high, for the guild's own outposts: its pole and its
+ *  cloth in `cloth` with a band of `device` along its foot, edged in light so a dark cloth still reads on the ring.
+ *  Drawn, since the face's flag glyph reads as a "P" at a mark's size and shows its colour only as a line. */
+function flagAt(
+  context: OffscreenCanvasRenderingContext2D,
+  middle: readonly [number, number],
+  cell: number,
+  cloth: string,
+  device: string,
+): void {
+  const [x, y] = middle;
+  const box = (fill: string, left: number, top: number, wide: number, high: number) => {
+    context.fillStyle = fill;
+    context.fillRect(x + left * cell, y + top * cell, wide * cell, high * cell);
+  };
+  box(TONES.ink, -4, -4.5, 1, 9);
+  box(TONES.ink, -3, -4.5, 7, 5.5);
+  box(cloth, -3, -4, 6.5, 4.5);
+  box(device, -3, -1.5, 6.5, 2);
+}
+
+/** The ring and its glyph (in `ink`, the ring's colour unless given), the glyph in the mended face, which holds the ones Pixelify lacks. */
+function ring(
+  glyph: string,
+  colour: string,
+  size: number,
+  state: { readonly hovered: boolean; readonly chosen: boolean; readonly outlined: boolean },
+  ink = colour,
+): Picture {
+  const { hovered, chosen, outlined } = state;
   const edge = chosen ? GOLD : colour;
   const side = texels(size);
   return {
-    key: `mark ${glyph} ${colour} ${side} ${glyphPx(size)} ${hovered} ${chosen}`,
+    key: `mark ${glyph} ${colour} ${ink} ${side} ${glyphPx(size)} ${hovered} ${chosen} ${outlined}`,
     pixel: { width: side, height: side },
     source: {
       draw: (context, width, height) => {
@@ -108,8 +139,19 @@ function ring(glyph: string, colour: string, size: number, hovered: boolean, cho
         context.lineWidth = 2 * unit;
         context.strokeStyle = edge;
         context.stroke();
-        context.fillStyle = colour;
-        if (glyph === LOCK_GLYPH) return lockAt(context, middle, (glyphPx(size) * unit) / 11, colour);
+        // An outlined ring (the guild's own, in its banner's colours) is edged in light, its flag too, so a dark or
+        // sea-coloured cloth still reads against the sea.
+        if (outlined) {
+          context.beginPath();
+          context.arc(middle[0], middle[1], width / 2 - unit / 2, 0, Math.PI * 2);
+          context.lineWidth = unit;
+          context.strokeStyle = TONES.ink;
+          context.stroke();
+        }
+        const cell = (glyphPx(size) * unit) / 11;
+        if (outlined) return flagAt(context, middle, (size * unit) / 16, colour, ink);
+        context.fillStyle = ink;
+        if (glyph === LOCK_GLYPH) return lockAt(context, middle, cell, ink);
         context.font = `${glyphPx(size) * unit}px ${CANVAS_FACE}`;
         context.textAlign = 'center';
         context.textBaseline = 'middle';
@@ -151,17 +193,17 @@ function glow(size: number): Picture {
   };
 }
 
-/** The arrow a held mark points with, in its colour. */
-function arrow(colour: string): Picture {
+/** A sign drawn in a colour, filling its box: the arrow a held mark points with, the star over the guild's own. */
+function signOf(sign: string, colour: string): Picture {
   return {
-    key: `mark arrow ${colour}`,
+    key: `mark ${sign} ${colour}`,
     source: {
       draw: (context, width, height) => {
         context.fillStyle = colour;
         context.font = `${height}px ${CANVAS_FACE}`;
         context.textAlign = 'center';
         context.textBaseline = 'middle';
-        context.fillText('▲', width / 2, height / 2);
+        context.fillText(sign, width / 2, height / 2);
       },
     },
   };
@@ -178,7 +220,9 @@ export function markNodes(ui: Interface, marks: readonly ScreenMark[], chosen: (
     const size = Math.round(mark.sizePx);
     const [x, y] = [Math.round(mark.x), Math.round(mark.y)];
     const look = mark.hostile;
-    const colour = mark.locked ? KIND_COLOURS.locked : (look?.colour ?? KIND_COLOURS[mark.kind]);
+    // The guild's own outposts fly its banner's colours.
+    const own = mark.kind === 'outpost' && !mark.locked ? ownOutpostColours(mark.id) : null;
+    const colour = mark.locked ? KIND_COLOURS.locked : (look?.colour ?? own?.cloth ?? KIND_COLOURS[mark.kind]);
     // An emblem's ground stands as it is under the pointer too, so the emblem's own colours stay true.
     const hovered = ui.hovered(id) && !look?.emblem;
     const held = mark.arrowDegrees !== null;
@@ -200,14 +244,21 @@ export function markNodes(ui: Interface, marks: readonly ScreenMark[], chosen: (
       {
         id,
         press: true,
-        label: `${mark.name}, ${KIND_WORDS[mark.kind]}, ${mark.note}`,
+        label: `${mark.name}, ${own ? "your guild's outpost" : KIND_WORDS[mark.kind]}, ${mark.note}`,
         width: size,
         height: size,
         float: { to: 'screen', anchor: [0.5, 0.5], x, y },
-        picture: ring(glyph, colour, size, hovered, mark.chosen),
+        picture: ring(glyph, colour, size, { hovered, chosen: mark.chosen, outlined: own !== null }, own?.device),
         children: [
           look?.emblem ? emblemNode(look.emblem, size) : null,
           look?.badge ? badgeNode(look.badge) : null,
+          // Not by its colours alone: a light star over the ring marks the guild's own.
+          own && {
+            width: 18,
+            height: 18,
+            float: { at: [0.5, 0], anchor: [0.5, 1], y: 2 },
+            picture: signOf('★', TONES.ink),
+          },
           held && {
             width: 12,
             height: 12,
@@ -217,10 +268,12 @@ export function markNodes(ui: Interface, marks: readonly ScreenMark[], chosen: (
               x: Math.round(Math.sin(turn) * reach),
               y: Math.round(-Math.cos(turn) * reach),
             },
-            picture: { ...arrow(colour), turn: mark.arrowDegrees ?? 0 },
+            picture: { ...signOf('▲', colour), turn: mark.arrowDegrees ?? 0 },
           },
           mark.named && words(mark.name, mark.chosen ? GOLD : mark.locked ? DIM : TONES.ink, 4),
-          mark.named && !held && words(`${KIND_WORDS[mark.kind]} · ${mark.note}`, DIM, 22),
+          mark.named &&
+            !held &&
+            words(`${own ? "Your guild's outpost" : KIND_WORDS[mark.kind]} · ${mark.note}`, DIM, 22),
         ],
       },
     ];

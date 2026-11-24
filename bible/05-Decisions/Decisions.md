@@ -342,6 +342,8 @@ a decision is a record. How to add one: [[Recording a Decision]].
 - [[A Keeper With Something for You Pulses and Is Seen From Everywhere]]
 - [[Friendly Ships Take Several Courses, About Five in View, Sailing Visibly]]
 - [[Each Patrol Zone Has a Built Landing Site, Its Guards Beyond It]]
+- [[Guilds Gain Banners, Levels, Bounties and Outposts]]
+- [[Guilds and Outposts as Claude Shapes Them]]
 - [[The Patrol Audit's Leftovers Are Fixed as the Owner Chose]]
 - [[The Key Strip Is a Compact Panel, a Held Key Leaves, and Settings Has Tabs]]
 - [[The Balance and Economy Pass Is Claude's, After Destiny 1 Vanilla]]
@@ -355,6 +357,8 @@ a decision is a record. How to add one: [[Recording a Decision]].
 - [[Revives, Respawns and Relogs as Claude Shapes Them]]
 - [[A Foe's Plain Swing Takes Seven Eighths of Its Time]]
 - [[The Harbourmaster Stands in the Market, Rain Spares the Trees, and Patrol Nodes Always Stand]]
+- [[Other Ships Wear Their Players' Marks, the Sea Map Has No Fog, and New Players Ride a Bay That Bursts]]
+- [[The Lattice Is Shaded Darker, With Detailed Attacks and Projectile Tracers]]
 
 ## Replaced
 

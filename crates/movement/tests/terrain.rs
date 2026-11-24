@@ -23,8 +23,16 @@ const CLIFF: Shaped = Shaped(|_, y| if y < -1.0 { (-1.0 - y) * 2.0 } else { 0.0 
 /// Rising northward at 1.5 m a metre, about 56°: too steep to walk straight up, not slantwise.
 const SCARP: Shaped = Shaped(|_, y| -1.5 * y);
 
-const STILL: Controls =
-    Controls { forward: 0.0, sideways: 0.0, yaw: 0.0, run: false, jump: false, crouch: false, mounted: false };
+const STILL: Controls = Controls {
+    forward: 0.0,
+    sideways: 0.0,
+    yaw: 0.0,
+    run: false,
+    jump: false,
+    crouch: false,
+    mounted: false,
+    boost: false,
+};
 
 fn heading(yaw: f64, run: bool) -> Controls {
     Controls { forward: 1.0, yaw, run, ..STILL }

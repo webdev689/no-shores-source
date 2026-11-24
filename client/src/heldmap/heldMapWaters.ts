@@ -1,4 +1,4 @@
-// The waters on the held map: each charted water's name and level band, lettered at its label point and held inside
+// The waters on the held map: each water's name and level band, lettered at its label point and held inside
 // the map, and the places it names, a city that is no port named as the ruins it is. What is lettered is laid out
 // (mapLayout.ts) and painted with the parchment's ink (mapLetters.ts).
 import { ruinedName } from '../ruinedName.ts';
@@ -7,15 +7,7 @@ import type { MapPlace } from './heldMap.ts';
 import type { WaterJudge } from './heldMapAsk.ts';
 import type { Rect } from './heldMapLaw.ts';
 import { anyCellUnder } from './mapKey.ts';
-import {
-  chartedWaters,
-  difficultyColour,
-  labelPoints,
-  type MapWaters,
-  washOf,
-  type WatersWash,
-  waterWords,
-} from './watersWash.ts';
+import { difficultyColour, labelPoints, type MapWaters, washOf, type WatersWash, waterWords } from './watersWash.ts';
 
 /** The places the map names, a city that is no port named and marked as the ruins it is; before the waters are open,
  *  as they come. */
@@ -38,20 +30,18 @@ export class HeldMapWaters {
   /** The water at a point by the exact rule, the room's. */
   readonly judge: WaterJudge;
   private readonly points: Map<number, readonly [number, number]>;
-  private charted = new Set<number>();
 
   constructor(waters: MapWaters, judge: WaterJudge) {
     [this.waters, this.judge] = [waters, judge];
     this.points = labelPoints(waters);
   }
 
-  /** The wash for the sea charted now, and which waters are lettered from it. */
-  chart(charted: Uint8Array): WatersWash {
-    this.charted = chartedWaters(this.waters, charted);
-    return washOf(this.waters, charted);
+  /** The wash over every water. */
+  wash(): WatersWash {
+    return washOf(this.waters);
   }
 
-  /** The charted waters in view on a map `ink` wide and high (`toWorld` the world point at a point of it, `toInk`
+  /** The waters in view on a map `ink` wide and high (`toWorld` the world point at a point of it, `toInk`
    *  the reverse): each water's name, its difficulty's colour, and the spots its name may stand at, ink pixels. Its
    *  label point comes first while it is on the map, then every point of a grid `SPOT_PX` apart over the map that
    *  lies on its sea, nearest the middle of its sea in view first. */
@@ -68,7 +58,7 @@ export class HeldMapWaters {
         const [column, row] = [Math.floor(east / cellM), Math.floor(south / cellM)];
         if (column < 0 || row < 0 || column >= columns || row >= rows) continue;
         const water = this.waters.water[row * columns + column] ?? -1;
-        if (water < 0 || !this.charted.has(water)) continue;
+        if (water < 0) continue;
         const spots = seen.get(water) ?? [];
         spots.push({ x, y });
         seen.set(water, spots);

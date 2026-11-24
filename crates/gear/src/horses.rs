@@ -1,7 +1,8 @@
 //! Horses, items worn in the Mount slot: one to each coat in `content/gear/cosmetics.json`, the coat its hide, its
 //! name its coat's place among the coats (`content/gear/rolled.json` names them in that order). A horse is Normal, of
 //! level 1, with no stats, nodes or perks; it is carried and kept in the vault as gear is, never upgraded or
-//! dismantled. The Tack sells them as it sold coats; a character starts with none.
+//! dismantled. The Tack sells them as it sold coats; a character starts with none, and the stranger's gift gives the
+//! first.
 
 use crate::character::{At, Character};
 use crate::cosmetics::{CosmeticDef, CosmeticKind, cosmetics};
@@ -9,8 +10,8 @@ use crate::item::Item;
 use crate::kinds::{Kind, Slot};
 use crate::rarity::Rarity;
 
-/// The horse a new player's first is: the tutorial gives none, so the Tack sells it every day at the cheapest coat's
-/// price, always in reach once the tutorial is over.
+/// The horse a new player's first is: the stranger gives it worn with her Aurem as the welcome begins, and the Tack
+/// sells it every day at the cheapest coat's price.
 pub const FIRST_HORSE: &str = "bay";
 
 /// Every coat, in the order a horse's name counts them.
