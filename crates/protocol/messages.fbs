@@ -532,7 +532,8 @@ table Snapshot {
   // In an Abyss run, the revives its company has left; -1 in any other room.
   revives: byte = -1;
   public_event: PublicEvent;
-  // On land, the plates that changed since the snapshot the screen showed, as dresses are sent.
+  // On land, the plates that changed since the snapshot the screen showed, as dresses are sent; at sea, the plate
+  // of each other player's ship sent, every snapshot.
   plates: [Plate];
   // At sea, each traffic id the room has taken off its route, which the page draws no more, and those of its friendly
   // ships the room keeps at sea.

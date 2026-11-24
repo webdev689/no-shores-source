@@ -17,10 +17,15 @@ impl Sea {
     }
 
     /// A player's plate as others read it over their ship: their name (empty for a guest) and their character's
-    /// level; none before the sea holds their character.
+    /// level, a new character's for one who plays unkept, whose character the sea never holds; none for a player not
+    /// at sea.
     #[must_use]
     pub fn plate(&self, player: PlayerId) -> Option<Plate> {
-        let level = self.harbour.characters.get(&player)?.level();
+        if !self.berths.contains_key(&player) {
+            return None;
+        }
+        let held = self.harbour.characters.get(&player);
+        let level = held.map_or_else(|| gear::Character::starting().level(), gear::Character::level);
         let name = self.harbour.names.get(&player).cloned().unwrap_or_default();
         Some(Plate { name, level, menu: false })
     }

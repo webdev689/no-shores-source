@@ -23,9 +23,11 @@ fn at_sea_each_player_is_sent_the_plates_of_the_other_ships_in_sight_but_not_the
     room_tick();
     let mut seasoned = gear::Character::starting();
     seasoned.xp = 190_000;
-    for (player, character) in [(one, &seasoned), (near, &gear::Character::starting()), (far, &seasoned)] {
-        assert!(gear_door::restore_character(player, character.to_json().as_bytes()));
+    for player in [one, far] {
+        assert!(gear_door::restore_character(player, seasoned.to_json().as_bytes()));
     }
+    // A guest plays unkept: the sea holds no character of theirs.
+    gear_door::room_none_kept(near);
     assert!(name(one, b"Wooden_Osprey"));
     assert!(!name(near, b"Two words"), "a name no username could be names no one");
     assert!(name(far, b"Far_Away"));

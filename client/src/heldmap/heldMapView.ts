@@ -24,7 +24,7 @@ struct Ink {
   view: vec4f,
   // The coast field's columns and rows and its cell's side, metres.
   field: vec4f,
-  // The islands discovered, a bit each by their place among the outlines.
+  // The islands shown, a bit each by their place among the outlines.
   known: vec4u,
   // The parchment's rectangle, screen pixels: the pass covers it, the map's ink only within the map.
   sheet: vec4f,
@@ -196,7 +196,7 @@ export interface HeldMapFrame {
   readonly view: { readonly left: number; readonly top: number; readonly scale: number };
   /** Which frame of the hands' strip shows. */
   readonly handsFrame: number;
-  /** The islands discovered, a bit each by their place among the outlines. */
+  /** The islands shown, a bit each by their place among the outlines. */
   readonly knownIslands: number;
   /** The route's points: where each lies, metres, and how far along the route, four floats a point. */
   readonly route: Float32Array;
