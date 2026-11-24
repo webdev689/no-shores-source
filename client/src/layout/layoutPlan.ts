@@ -3,7 +3,7 @@
 // enough to hold them. Its cells carry no plates: what stands in them stands on the land. A block's streets and the
 // paths are the terrain's to draw (the game's groundPaint.ts).
 import { type CityPlan, CELL_M, type Pad, type PlanCell, type Piece } from '../city/plan.ts';
-import type { NodeLayout } from './layouts.ts';
+import { type NodeLayout, PATH_WIDTH_M } from './layouts.ts';
 
 /** How far round a building nothing wild grows, metres: its yard, its eaves' drip and the lane past its door. */
 const YARD_CLEAR_M = 10;
@@ -70,6 +70,22 @@ function runClearings(
     }));
   });
   return [...run.beats.map((beat) => ({ at: beat.at, radius: beat.radius + 2 })), ...along];
+}
+
+/** A path kept clear of the wild where the land paints it dirt (game/groundPaint.ts): circles as wide as the path, a
+ *  half-width apart along it, so no grass or plant grows on a track or a footpath. */
+function pathClearings(layout: NodeLayout): { at: readonly [number, number]; radius: number }[] {
+  return layout.paths.flatMap((path) => {
+    const half = PATH_WIDTH_M[path.tier] / 2;
+    return path.points.slice(1).flatMap((to, k) => {
+      const from = path.points[k] ?? to;
+      const steps = Math.max(1, Math.ceil(Math.hypot(to[0] - from[0], to[1] - from[1]) / half));
+      return Array.from({ length: steps + 1 }, (_unused, step) => ({
+        at: [from[0] + ((to[0] - from[0]) * step) / steps, from[1] + ((to[1] - from[1]) * step) / steps] as const,
+        radius: half,
+      }));
+    });
+  });
 }
 
 /** How far round a run's way nothing wild grows, metres, and how far apart its clearings are laid. */
@@ -167,6 +183,7 @@ export function planOfLayouts(layouts: readonly NodeLayout[]): CityPlan | null {
         return share ? [{ at: area.at, radius: area.radius * share }] : [];
       }),
       ...(layout.runs ?? []).flatMap(runClearings),
+      ...pathClearings(layout),
     ]),
   };
 }

@@ -180,13 +180,14 @@ test('going over a lip, the body’s centre passes behind the wall’s face, but
   assert.equal(cardBehind, false);
 });
 
-test("the camera's blocks are a node's boxes and any more, joined once while both stay the same lists", () => {
+test("the camera's blocks are a node's boxes, an outpost's walls and any more, joined once while all stay the same", () => {
   const box = (minX: number) => ({ minX, minY: 0, bottom: 0, maxX: minX + 1, maxY: 1, top: 1 });
-  const [boxes, more] = [[box(0), box(2)], [box(4)]];
-  assert.equal(withBlocks(boxes, undefined), boxes);
-  assert.equal(withBlocks(boxes, []), boxes);
-  const joined = withBlocks(boxes, more);
-  assert.deepEqual(joined, [...boxes, ...more]);
-  assert.equal(withBlocks(boxes, more), joined, 'the same list again');
-  assert.notEqual(withBlocks(boxes, [box(6)]), joined, 'more blocks of another deck join afresh');
+  const [boxes, walls, more] = [[box(0), box(2)], [box(8)], [box(4)]];
+  assert.equal(withBlocks(boxes, undefined, undefined), boxes);
+  assert.equal(withBlocks(boxes, [], []), boxes);
+  const joined = withBlocks(boxes, walls, more);
+  assert.deepEqual(joined, [...boxes, ...walls, ...more]);
+  assert.equal(withBlocks(boxes, walls, more), joined, 'the same list again');
+  assert.notEqual(withBlocks(boxes, walls, [box(6)]), joined, 'more blocks of another deck join afresh');
+  assert.deepEqual(withBlocks(boxes, [box(10)], more), [...boxes, box(10), ...more], 'and walls raised anew');
 });

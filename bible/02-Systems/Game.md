@@ -285,7 +285,9 @@ third person, the forge's figure and the first person's hands, and the Test Grou
   or a faction's emblem in the diamond edged in its Art's colour; over the bounty board in Overlook's hub its gold "!" in the keepers' diamond, over its
   gable (`countersOf`); over Shape on his spot his own; and, as the room's word on the gear names them online,
   over each chapter of the lore lying there for the player a closed book in a brass binding, 0.9 m over where it
-  lies ([[Lore]]); and, as the room names them online or alone, over each of a patrol's dungeon entrances a door, an arched door of planks banded in iron with a brass ring, 0.2 m
+  lies ([[Lore]]); over each chest standing for the player a chest, wood under an arched lid banded in iron with a
+  brass lock, over its lid, and over each container they may search a glass in a brass rim on a wooden handle, over
+  its top ([[Chests and Searchable Containers as Claude Builds Them]]); and, as the room names them online or alone, over each of a patrol's dungeon entrances a door, an arched door of planks banded in iron with a brass ring, 0.2 m
   over its door's lintel and a mark's width out from its face, once the forged props say where its door is. As DFO's, a mark's foot stands 0.2 m over the crown,
   0.32 m across, turned to the eye, never narrower on the screen than 0.017 radians
   either side so a keeper across the plaza still shows one; it bobs 6 cm once a second on a phase of its own, holding
@@ -310,7 +312,11 @@ third person, the forge's figure and the first person's hands, and the Test Grou
   [[Sprite Forge]], [[Material Nodes Stand Where They Are Dressed, Worked by Holding E]]), every resource at one scale,
   before the place its resource comes from, while the room stands it for the player, and as it looks spent once they
   gathered it, until it returns for them; a place the room stands no node at shows only its dressing. The picture alone marks a
-  node: no ring, no beam, no mark over it. Each drop lying for them hovers, a Vestige as its crystal, under its
+  node: no ring, no beam, no mark over it. Each chest standing for them in a patrol stands as a public event's plain
+  chest and its lid, the owner's chest from DFO built in code ([[Pick - Chest]], `foundChestProps`), its front looking
+  the way its place faces; one the room says it paid them for swings its lid open to 77 degrees over 0.6 s, its
+  Vestige poured out as its mouth opens ([[Gear]], "Drops"), and stands open 4 seconds before it goes, the interface's open sound and the chest's
+  clunk heard as an event chest's; one that moves on goes at once (`finds.ts`). Each drop lying for them, online or alone, hovers, a Vestige as its crystal, under its
   rarity's line (`combat/drops.ts`; [[Gear]], "Drops"), taken by walking over it.
 - **E** uses what is within reach, shown as Destiny shows it, a keycap and the deed low in the middle of the view
   (`UsePrompt`): at a counter, or within 3 m of Shape while he is here, it opens the keeper's screen in the menu
@@ -319,9 +325,14 @@ third person, the forge's figure and the first person's hands, and the Test Grou
   book's name, and asks the room to find it ([[Lore]]); within 2.5 m of a node it reads "Hold to gather" and its
   resource, and held it asks the room to gather it (`GatherHold`): a ring traced round the keycap's edge fills over the
   two seconds with the menus' build-up sound; that is all, no tool and no move of the figure's. A sea island's nodes
-  are offered and drawn as a patrol's ([[Islands]]). Letting go of E before the ring is full asks the room to stop, as does leaving
+  are offered and drawn as a patrol's ([[Islands]]). Within 2.5 m of a chest it reads "Hold to open the chest", within
+  1.5 m of a container's sides "Hold to search the" and its kind (crate, cabinet, cupboard, dresser, shelves,
+  wardrobe, sarcophagus or tomb, by its model's family), each within 2 m of its foot up or down; held a second, or a
+  second and a half, on the same ring and sound, it asks the room to open it, before any other use but a public
+  event's chest (`findUse`). The finds are read from the room's word on the gear online or alone, as a public event's
+  chests are, so a page playing alone stands, marks and opens them too. Letting go of E before the ring is full asks the room to stop, as does leaving
   or the page losing its focus; a step or a blow stops it there, and a refusal ends it. A node is not offered on
-  horseback, nor while its resource is full. On a patrol or an Elite Dungeon's node within 2.5 m of an entrance's door
+  horseback, nor while its resource is full, and a chest or a container not on horseback. On a patrol or an Elite Dungeon's node within 2.5 m of an entrance's door
   E goes into its dungeon, and in a dungeon within 2.5 m of its exit door it goes out ([[#A dungeon]]). None is offered while a menu is up or
   the player lies dead, past the edge or felled by a foe.
 
@@ -421,8 +432,11 @@ procedural textures as the city paints its own ([[Procedural Textures]]). Their 
   Saltmere".
 - **The figures**, the player's, the foes' and their fight's marks and blood, are drawn as on a node, but each figure
   lit by the light where it stands, at its chest's height, in place of the sun.
-- **The cache** is a chest of boxes, wood in the island's timber and bands of the textures' ironwork, where the room's
-  `Snapshot.cache` stands it and facing its way, its lid shut, or thrown back while it stands open.
+- **The cache** is the owner's chest from DFO ([[Pick - Chest]]), wood in the island's timber, its hinge and latch the
+  textures' ironwork, where the room's `Snapshot.cache` stands it and facing its way, its lid shut, or open to 77
+  degrees while it stands open.
+- **The chests to find** are the same chest, each where the room stands it for the player ([[Dungeons]], "In the
+  Game"), opened as a patrol's is (above).
 
 ## The edge
 
@@ -589,8 +603,8 @@ through its harbour to water 4 m deep, then 600 m on. Later returns find it wher
   `friendlyShips.ts`). The game asks the waters' rules where they are at world time, seconds since the Unix epoch by
   the browser's clock (the sea room sends none), four times a second within the sea view's reach of the ship (its far plane),
   and between answers reckons each on along its leg at the pace the waters' table gives (60 m/s); a new answer's gap,
-  as at a turn onto its next leg, is closed over about a second. One arrived lies at anchor at its destination's
-  roadstead, no way on it, until it is gone. A ship the room has taken off its route (the snapshot's `taken`) is
+  as at a turn onto its next leg, is closed over about a second. One arrived lies at anchor at its berth off its
+  destination's roadstead ([[World Map]], "Berths"), no way on it, until it is gone. A ship the room has taken off its route (the snapshot's `taken`) is
   left out: the sea draws it where the room has it. Of each hull only as many as the ships layer has slots for are drawn,
   16 less the room's own of that hull, the nearest first; only those are rigged, posed and footprinted. Each is drawn
   by the ships layer as its hull in friendly colours, its sails set and filled by the steady wind (furled while it

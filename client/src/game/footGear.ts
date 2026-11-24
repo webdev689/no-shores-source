@@ -45,12 +45,23 @@ const SHAPE_OFFER = { words: KEEPERS.shape.title, opens: { view: 'shape' } } as 
 /** The stations of the place a player stands in, and where Shape may stand there. */
 type Here = Pick<NodeInfo, 'stations' | 'visitorSpots'>;
 
-/** What E does where a player stands: its deed in words, and the doing; and for a node, which, as E is held there,
- *  or the fallen ally it revives (`footRevive.ts`). */
+/** What E held does: a node gathered, or a chest opened or a container searched (`finds.ts`), by its number in the
+ *  room, held so many seconds. */
+export interface HeldUse {
+  readonly kind: 'node' | 'find';
+  readonly index: number;
+  readonly seconds: number;
+}
+
+/** What E does where a player stands: its deed in words, and the doing; what it does as E is held there, if anything,
+ *  or the fallen ally it revives (`footRevive.ts`); for a deed done once E is held through, how far it has been held
+ *  (0 to 1); and `idle` where the words are a refusal and E does nothing, so no key is shown for it. */
 export interface Use {
   readonly words: string;
   readonly run: () => void;
-  readonly gather?: number;
+  readonly hold?: HeldUse;
+  readonly held?: number;
+  readonly idle?: boolean;
   readonly revive?: number;
 }
 
@@ -60,7 +71,7 @@ export type Speak = (counter: string, ask: (asked: GearAsk) => void) => Use | nu
 
 /** The use within reach of a player at (x, y): a station's offer (its keeper spoken with where `speak` says so), then
  *  Shape's, before a node, so a counter is never lost to one. A node is not offered on horseback (`mounted`), nor one
- *  whose resource the player is full of. */
+ *  whose resource the player is full of. A chest or a container is offered before all of these (`finds.ts`). */
 export function useAt(
   x: number,
   y: number,
@@ -92,7 +103,7 @@ export function useAt(
   return {
     words: `Hold to gather ${resourceName(node.resource)}`,
     run: () => ask({ kind: ASKS.gather, node: node.index }),
-    gather: node.index,
+    hold: { kind: 'node', index: node.index, seconds: GATHER_S },
   };
 }
 
@@ -167,6 +178,14 @@ export const STORY_BEHIND_ON_FOOT = true;
  *  gear that says it is not kept, so a kept character claimed after the first word is told again. */
 export function tellsPrologue(gear: GearState | null, played: boolean, told: GearState | null): boolean {
   return played && gear !== null && gear !== told && gear.prologueDone === false;
+}
+
+/** Tells the room the story is behind the player, once for each word on the gear that says it is not kept; answers the
+ *  gear last told of. */
+export function tellPrologue(gear: GearState | null, told: GearState | null, here: { ask(ask: GearAsk): void } | null) {
+  if (!tellsPrologue(gear, STORY_BEHIND_ON_FOOT, told)) return told;
+  here?.ask({ kind: ASKS.finishPrologue });
+  return gear;
 }
 
 /** The player's gear in their room, asked of through `ask`, with what draws it for the screens (`shown`); null offline

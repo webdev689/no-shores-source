@@ -1,6 +1,6 @@
 /**
- * The one judge of every name and line a player sets for others to read: usernames, guild names, guild tags and guild
- * mottos. Each kind keeps its own shape; none may hold a blocked word, and no name may claim to speak for the game.
+ * The one judge of every name and line a player sets for others to read: usernames, guild names, guild tags, guild
+ * mottos and guild descriptions. Each kind keeps its own shape; none may hold a blocked word, and no name may claim to speak for the game.
  * Look-alikes need the database, so each caller finds them by a name's `skeleton`.
  */
 
@@ -12,6 +12,8 @@ export const USERNAME = /^[A-Za-z][A-Za-z0-9_]{2,19}$/;
 const GUILD_NAME = /^(?=.{3,24}$)[A-Za-z][A-Za-z0-9]*(?:[' -][A-Za-z0-9]+)*$/;
 const TAG = /^[A-Za-z0-9]{2,4}$/;
 const MOTTO_MOST = 80;
+/** The most a guild's description holds: a few lines of its own words. */
+export const DESCRIPTION_MOST = 300;
 /** Control characters, the marks that turn text's direction, and other format marks, which could hide or reorder what
  *  others read, as the chat's lines hold none (`chatLaw.ts`); a joiner is kept, for emoji. */
 const HIDDEN = /(?!\u200d)[\p{Cc}\p{Cf}]/u;
@@ -50,6 +52,12 @@ const KINDS = {
     fits: (text) => text.length <= MOTTO_MOST && !HIDDEN.test(text),
     shape: `A motto is one line of ${MOTTO_MOST} characters at most.`,
     refused: 'That motto is not allowed.',
+    named: false,
+  },
+  description: {
+    fits: (text) => text.length <= DESCRIPTION_MOST && !HIDDEN.test(text),
+    shape: `A description is ${DESCRIPTION_MOST} characters at most.`,
+    refused: 'That description is not allowed.',
     named: false,
   },
 } satisfies Record<string, Rules>;

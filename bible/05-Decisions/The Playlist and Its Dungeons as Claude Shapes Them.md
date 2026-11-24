@@ -65,7 +65,7 @@ be; the calls below are the work after it. Claude's choices for [[Armour and Wea
 | The screen's presses | Find a Company the primary press; Launch reads "Go alone", or "Go with your company" when the Roster's company has more than one; Launch hidden while a search or a launch runs; no Stop while a Launch waits, though Close stops it | One clear first choice, and no press that does two things |
 | A shut entry | Its padlock on the crest's shoulder, its reason in neutral ink with a padlock on its card and footer ("Opens at level 24 · You are 22"), its Launch dim; red only for a refusal | A lock is information, not an error |
 | The crests' words | A crest's words drop its tier, which its shield and name say, one part a line; a week's dungeon's name on two lines, broken before "of"; the Abyss Playlist's rule "One of the 18 Elite Dungeons, at Abyss, drawn as each run starts." | Short lines that never break mid-phrase |
-| The Playlist's mark on land | Shown over an island's side only when docking at its port | A landing view frames its own island |
+| The Playlist's mark on land | Replaced by the owner's [[The Playlist Shows Over Its Island, Not Only at Sea]]: shown over its island's side however the island is reached | Was shown there only when docking |
 
 ### Encounters
 

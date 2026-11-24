@@ -45,6 +45,7 @@ import { type Landmass, openLandmass } from './landmass.ts';
 import { helmControls } from './helmControls.ts';
 import { arrivalFacing } from './nodes.ts';
 import { gearScreenOpen, startGearWindow } from './gearWindow.ts';
+import { rejoinOnGuild } from './footPlace.ts';
 import { listenForControls } from './gameKeys.ts';
 import { type OpenWaters, seaWatersOf, watersOnce } from './pageWaters.ts';
 import { nodeOfRoom, seaRoomName, startedAtSea } from './rooms.ts';
@@ -143,6 +144,7 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement): Promise<vo
     }),
     seaWord: null,
     landmass,
+    zones: world.nodes,
     drawers: drawersOn(landmass),
     ready: false,
     waited: 0,
@@ -225,8 +227,8 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement): Promise<vo
     // The rain stops under whatever a body meets overhead there: a roof, a ceiling, an arch.
     scene.sky.shelterUnder(playing.foot.boxes);
   };
-  const goFoot = (node: NodeInfo, facing: number, seas = playing.helmMap.difficulty) =>
-    goInto(() => Foot.enter(footContext, node, facing, seas));
+  const goFoot = (node: NodeInfo, facing: number, seas = playing.helmMap.difficulty, guild?: string | null) =>
+    goInto(() => Foot.enter(footContext, node, facing, seas, undefined, guild));
 
   const goSea = async (start?: { readonly anchorage: Point2; readonly heading: number }) => {
     leaveHere();
@@ -381,7 +383,7 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement): Promise<vo
       return place === 'sea' ? 'They are at sea: meet them where they land.' : 'They are across the sea.';
     const facing = arrivalFacing(node, playing.landmass.plan, null);
     if (where.dungeon !== null || where.run !== null) trips.join(node, place);
-    else travel({ kind: 'join', node: node.id, name: node.name }, () => goFoot(node, facing, where.seas));
+    else travel({ kind: 'join', node: node.id, name: node.name }, () => goFoot(node, facing, where.seas, where.guild));
     return null;
   };
 
@@ -517,6 +519,13 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement): Promise<vo
       travel(way.happening, () => goFoot(way.node, way.facing, playing.foot?.seas));
   };
   hud.onPassage(goThrough);
+  rejoinOnGuild(
+    () => (free() ? playing.foot : null),
+    ({ node, seas }) => {
+      const facing = arrivalFacing(node, playing.landmass.plan, null);
+      travel({ kind: 'pass', node: node.id, name: node.name, into: true }, () => goFoot(node, facing, seas));
+    },
+  );
   // The story keeps gear only on the wreck, where it teaches the menu; elsewhere in it the menu rests.
   const storyMode = () => playing.flow.mode === 'story';
   const gearHere = () =>

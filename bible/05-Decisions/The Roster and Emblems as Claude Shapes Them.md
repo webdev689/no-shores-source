@@ -45,3 +45,6 @@ Replaced in part by [[Chat Comes From DFO With Local, World and Whisper]]: Overl
 Whisper. By [[A Player May Mute Another]]: a player may mute another.
 
 Links: [[Accounts]], [[Interface]], [[Gear]], [[Gear as Claude Shapes It]].
+
+Replaced in part by [[Guilds Gain Banners, Levels, Bounties and Outposts]]: the Guild tab is built, and founds a guild
+as well as the Roster ([[Guilds and Outposts as Claude Shapes Them]]).

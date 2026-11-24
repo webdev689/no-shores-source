@@ -27,12 +27,16 @@ mod dungeon_room;
 pub mod encounter_plan;
 pub mod encounters;
 mod entrances;
+mod find_holds;
+mod finds;
 pub mod fleet;
 mod floor;
 pub mod flotsam;
 mod foes;
 pub mod friendlies;
 mod garrison;
+mod guild_book;
+mod guild_room;
 mod happening;
 pub mod harbour;
 pub mod hostiles;
@@ -41,6 +45,8 @@ mod judging;
 mod landing;
 mod left;
 pub mod lore;
+mod outpost;
+mod outpost_boss;
 pub mod patrol;
 mod perks;
 mod plates;
@@ -70,11 +76,15 @@ pub mod winds;
 pub use arts::{Cast, Casting};
 pub use asks::{Asked, Grant, ResourceNode};
 pub use companions::Companion;
-pub use drops::{AMMO_REST_TICKS, DROP_TICKS, Drop, Dropped, VESTIGE_REST_TICKS};
+pub use drops::{AMMO_REST_TICKS, DROP_TICKS, Drop, Dropped, POURED_REST_TICKS, VESTIGE_REST_TICKS};
 pub use entrances::Entrance;
+pub use find_holds::{CHEST_REACH, FIND_HEIGHT, OPEN_TICKS, SEARCH_REACH, SEARCH_TICKS};
+pub use finds::{ChestPlace, Holder};
 pub use floor::{Floor, standing_on};
 pub use foes::{CLEAR_FOES, FOES_MOST, FoeSeen, NODE_FOES_MOST, SHIELD_SHIFT};
+pub use guild_book::{GuildSeen, Guilds};
 pub use judging::{Event, EventKind, How};
+pub use outpost::{Errand, Material, OutpostAsk, PENDING, What, guild_key};
 pub use perks::trim_of;
 pub use plates::Plate;
 pub use players::{
@@ -100,7 +110,7 @@ pub use land::sites::NodeKind;
 use movement::standing;
 use movement::{Block, Body, Mode};
 use players::Player;
-use reach::{Place, respawn_point};
+use reach::Place;
 pub use reach::{Section, Standing};
 use std::borrow::Cow;
 use std::collections::{BTreeMap, BTreeSet, VecDeque};
@@ -137,6 +147,8 @@ pub struct Room {
     /// How many players have joined: the next stands at the spawn this many turns on.
     joins: usize,
     pub(crate) players: BTreeMap<PlayerId, Player>,
+    /// Each player's guild, as its host told it (`guild_book.rs`).
+    pub(crate) guilds: guild_book::Guilds,
     pub(crate) foes: BTreeMap<FighterId, Foe>,
     /// The foes a page stood itself, whose phases call no one (`course.rs`).
     pub(crate) quiet: BTreeSet<FighterId>,
@@ -199,6 +211,8 @@ pub struct Room {
     pub(crate) difficulty: gear::Difficulty,
     pub(crate) patrol: bool,
     pub(crate) gathered: std::collections::BTreeMap<String, Vec<(u8, u64)>>,
+    /// Its chests and searchable containers (`finds.rs`).
+    pub(crate) finds: finds::Finds,
     /// A patrol's dungeons' entrances, or an Elite Dungeon's node's one (`entrances.rs`).
     pub(crate) entrances: Vec<entrances::Entrance>,
     /// What the gates know it as (`gear::gate`): none for a course, which no gate shuts.
@@ -236,6 +250,8 @@ pub struct Room {
     pub(crate) quests: quests::QuestGround,
     /// An Elite Dungeon's seals and Court (`encounters.rs`); none in any other room.
     pub(crate) encounters: Option<Box<encounters::Encounters>>,
+    /// A guild's outpost's errands, plot and War Horn's foe (`outpost.rs`); none in any other room.
+    pub(crate) outpost: Option<Box<outpost::Outpost>>,
     /// Its fallen being revived, and where they respawn (`revive.rs`).
     pub(crate) respawning: revive::Respawning,
 }
@@ -298,6 +314,7 @@ impl Room {
             difficulty: gear::Difficulty::Normal,
             patrol: false,
             gathered: std::collections::BTreeMap::new(),
+            finds: finds::Finds::default(),
             entrances: Vec::new(),
             place: None,
             source: gear::Source::World,
@@ -317,7 +334,9 @@ impl Room {
             inert_ways: BTreeMap::new(),
             names: BTreeMap::new(),
             quests: quests::QuestGround::default(),
+            guilds: guild_book::Guilds::default(),
             encounters: None,
+            outpost: None,
             respawning: revive::Respawning::default(),
         }
     }
@@ -333,17 +352,6 @@ impl Room {
         let body =
             if self.section.is_some() { standing_on(&self.floor, &self.blocks, x, y) } else { self.on_top(x, y) };
         Body { facing: self.facing, ..body }
-    }
-
-    /// Where a body that fell at (x, y) stands again by its own respawn: at an activity's checkpoint, near where it
-    /// fell in a patrol zone (`respawns.rs`), else at the section's spawn nearest it, or the room's spawn.
-    pub(crate) fn stand_again(&self, x: f64, y: f64) -> Body {
-        if let Some(body) = self.at_checkpoint().or_else(|| self.near_where_fell(x, y)) {
-            return body;
-        }
-        let near = self.section.as_ref().and_then(|section| respawn_point(section, x, y));
-        let first = self.spawn_points.first().copied().unwrap_or((0.0, 0.0));
-        self.stand(near.map_or(first, |[near_x, near_y]| (near_x, near_y)))
     }
 
     /// A new player, standing at the next spawn in turn with nothing drawn; none when the room is full.
@@ -433,6 +441,8 @@ impl Room {
         self.spawn_asked();
         self.keep_patrol();
         self.keep_gathering();
+        self.keep_finds();
+        self.keep_opening();
         self.keep_companions();
         self.step_foes();
         self.keep_on_course();
@@ -445,11 +455,13 @@ impl Room {
         self.raise_the_dead();
         let checkpoint = self.checkpoint();
         self.keep_garrison();
+        self.keep_outpost();
         self.keep_encounters();
         self.keep_checkpoints(checkpoint);
         self.keep_public();
         self.keep_cache();
         self.keep_quests();
+        self.give_guilds();
         self.keep_steps();
         self.pick_up_drops();
         self.past.push_back((self.clock, self.fighters()));
@@ -542,10 +554,6 @@ impl Room {
 /// The seed every course's room draws its chances from, and every node's mixes with its id: one room plays the same
 /// fight for the same inputs.
 const SEED: u64 = 0x4f56_4552_4c4f_4f4b;
-/// A loot seed on which the tests' first kills, chests and flotsam roll finer than Normal, so each leaves a Vestige
-/// where a Normal roll would leave its item: for the tests of where a Vestige goes.
-#[cfg(test)]
-pub(crate) const SEALING_SEED: u64 = 5;
 #[cfg(test)]
 mod balance_tests;
 #[cfg(test)]

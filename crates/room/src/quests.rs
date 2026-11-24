@@ -79,8 +79,32 @@ pub(crate) fn foes_of<'list>(list: impl Iterator<Item = &'list (String, String)>
 
 /// The point the mesh holds nearest a point on the ground: there, else the nearest found looking outward in rings
 /// `RING_STEP` apart, as far as `reach`.
-pub(crate) fn held_near(mesh: &NavMesh, floor: &Floor, [x, y]: [f64; 2], reach: f64) -> Option<[f64; 3]> {
-    let on = |east: f64, south: f64| mesh.nearest_point([east, south, floor.height_at(east, south)]);
+pub(crate) fn held_near(mesh: &NavMesh, floor: &Floor, at: [f64; 2], reach: f64) -> Option<[f64; 3]> {
+    held_where(mesh, floor, at, reach, |_| true)
+}
+
+/// The point nearest a point on the ground that a path on the mesh reaches from `from`, looked for as `held_near`
+/// looks: a puzzle's point may lie by ground the mesh holds but no walk reaches, up a bank or over a roof.
+pub(crate) fn reached_near(
+    mesh: &NavMesh,
+    floor: &Floor,
+    from: [f64; 3],
+    at: [f64; 2],
+    reach: f64,
+) -> Option<[f64; 3]> {
+    held_where(mesh, floor, at, reach, |point| mesh.find_path(from, *point).is_some())
+}
+
+fn held_where(
+    mesh: &NavMesh,
+    floor: &Floor,
+    [x, y]: [f64; 2],
+    reach: f64,
+    keeps: impl Fn(&[f64; 3]) -> bool,
+) -> Option<[f64; 3]> {
+    let on = |east: f64, south: f64| {
+        mesh.nearest_point([east, south, floor.height_at(east, south)]).filter(|point| keeps(point))
+    };
     let apart = |point: &[f64; 3]| libm::hypot(point[0] - x, point[1] - y);
     let rings = (1..).map(|ring| f64::from(ring) * RING_STEP).take_while(|out| *out <= reach);
     on(x, y).or_else(|| {

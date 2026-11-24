@@ -10,6 +10,7 @@ pub mod book;
 pub mod brief;
 pub mod carve;
 pub mod caverns;
+pub mod chests;
 mod clearing;
 mod climbs;
 pub mod collide;
@@ -183,9 +184,13 @@ pub fn plan(
         .collect();
     let blocked = blocked_by(&field, &seating);
     let (mut paths, joined) = paths::lay(&field, &areas, &hubs, &blocked, patrol, seed);
-    // A way ending at an area's middle stops at what stands there: its set piece, tower or hull.
+    // A way ending at an area's middle stops at what stands there: its set piece, tower or hull; or at a plot's rim,
+    // past its square's corners.
     for (area, _) in areas.iter().zip(&hubs).filter(|&(area, &hub)| distance(hub, area.at) < 1e-6) {
-        clearing::end_at_rim(&mut paths, area.at, clearing::rim_of(&seating, area.at));
+        // A plot's rim stays inside its platform's edge, so a way crossing that edge is ramped up to it.
+        let rim =
+            if area.kind == AreaKind::Plot { areas::PLOT_CORNER_M + 1.0 } else { clearing::rim_of(&seating, area.at) };
+        clearing::end_at_rim(&mut paths, area.at, rim);
     }
     clearing::round_rooms(&mut paths, &seating);
     clearing::keep_off_paths(&mut seating, &paths, &|x, y| ground.height_at(x, y));
@@ -338,6 +343,7 @@ pub fn plan(
             radius: beat.radius,
             holds: None,
             node: None,
+            facing: None,
         }));
         sites.extend(end.map(|end| sites::Site {
             kind: sites::SiteKind::Objective,
@@ -345,8 +351,16 @@ pub fn plan(
             radius: end.radius,
             holds: named.clone(),
             node: None,
+            facing: None,
         }));
-        let door = sites::Site { kind: sites::SiteKind::Door, at: run.door, radius: 3.0, holds: named, node: None };
+        let door = sites::Site {
+            kind: sites::SiteKind::Door,
+            at: run.door,
+            radius: 3.0,
+            holds: named,
+            node: None,
+            facing: None,
+        };
         sites.push(door);
     }
     // What comes after keeps off the ways, a run's on past its end beat's middle to its door too.
@@ -396,6 +410,14 @@ pub fn plan(
         walkable && field::ring_holds(&ring, x, y) && collide::stands_clear(&seated, [x, y], carved_height(x, y))
     };
     let spawns = spawns::round(anchor, &stands);
+    // Last of the sites, once all stands where it will, so its chests keep clear of everything.
+    if patrol {
+        let rounds = chests::rounds_of(&areas, &sculpt.climbs, &runs);
+        let (boxes, buildings, props) = (&seated, &seating.buildings, &seating.props);
+        let standing =
+            chests::Standing { boxes, buildings, props, plantings: &plantings, paths: &ways, spawns: &spawns };
+        sites.extend(chests::mark(&rounds, &field, &ring, standing, (&sites, &carved_height), seed));
+    }
     let ways: Vec<(Path, [usize; 2])> = paths.iter().cloned().zip(joined.iter().copied()).collect();
     let raise = |[x, y]: [f64; 2]| carved.raise(x, y, ground.coast.at(x, y));
     let land = spaces::Land {
@@ -436,7 +458,8 @@ pub fn plan(
 }
 
 /// Places a brief's areas, and how many blocks each stands (0 for an area of no blocks). A patrol area's landing comes
-/// first, on the seaward side, then a gate at the edge toward each instance it leads to, then the brief's other areas.
+/// first, on the seaward side, then a gate at the edge toward each instance it leads to, then the brief's other areas;
+/// an outpost site's landing too, then its plot near it.
 /// An instance's entrance comes first, at the edge toward its patrol area, and each later area lies further on.
 fn place_areas(node: &Node, field: &Field, brief: &Brief, links: &[Link], seed: u32) -> (Vec<Area>, Vec<u8>) {
     let mut areas: Vec<Area> = Vec::new();
@@ -460,7 +483,7 @@ fn place_areas(node: &Node, field: &Field, brief: &Brief, links: &[Link], seed: 
             1.5 * (1.0 - distance(at, towards) / span).max(0.0) - inside / 150.0
         }
     };
-    if node.kind == NodeKind::Patrol {
+    if matches!(node.kind, NodeKind::Patrol | NodeKind::Outpost) {
         if let Some(landing) = brief.areas.iter().find(|area| area.kind == AreaKind::Landing) {
             // Players come ashore from the sea, so the landing lies on the claim's seaward side.
             let (middle, seaward) = (middle_of(node), field.seaward);
@@ -473,8 +496,15 @@ fn place_areas(node: &Node, field: &Field, brief: &Brief, links: &[Link], seed: 
         for link in links {
             put(&mut areas, AreaKind::Gate, "", 0, Some(link.id.clone()), &edge_pull(link.towards));
         }
+        // A plot lies near the landing, the ground a guild builds on in reach of its ships.
+        let landing = areas.first().filter(|area| area.kind == AreaKind::Landing).map(|area| area.at);
+        let near_landing = move |at: [f64; 2]| {
+            landing.map_or(0.0, |landing| if distance(at, landing) <= areas::PLOT_FROM_LANDING_M { 1.0 } else { -1.0 })
+        };
         for brief_area in brief.areas.iter().filter(|area| area.kind != AreaKind::Landing) {
-            put(&mut areas, brief_area.kind, &brief_area.name, brief_area.blocks.unwrap_or(1), None, &|_| 0.0);
+            let pull: &dyn Fn([f64; 2]) -> f64 =
+                if brief_area.kind == AreaKind::Plot { &near_landing } else { &|_| 0.0 };
+            put(&mut areas, brief_area.kind, &brief_area.name, brief_area.blocks.unwrap_or(1), None, pull);
         }
     } else {
         let entrance = brief.areas.iter().find(|area| area.kind == AreaKind::Entrance);
@@ -553,30 +583,5 @@ fn blocked_by(field: &Field, seating: &Seating) -> Blocked {
 }
 
 #[cfg(test)]
-mod tests {
-    use super::*;
-    use city::solids::{Material, Shape, Solid};
-
-    #[test]
-    fn a_lantern_on_a_way_goes_with_its_light_and_a_pile_under_a_deck_stays() {
-        let path = Path {
-            tier: Tier::Track,
-            points: vec![[0.0, 0.0], [100.0, 0.0]],
-            crossings: Vec::new(),
-            heights: Vec::new(),
-        };
-        let solid = |at: [f64; 3], size: [f64; 3]| Solid::upright(Shape::Block, at, size, Material::Timber);
-        let mut seating = Seating {
-            solids: vec![
-                solid([50.0, 1.0, -0.3], [0.16, 0.16, 2.8]),
-                solid([50.0, 1.0, 2.5], [0.2, 0.2, 0.26]),
-                solid([60.0, 0.5, -6.0], [0.5, 0.5, 6.0]),
-                solid([70.0, 9.0, -0.3], [0.16, 0.16, 2.8]),
-            ],
-            ..Seating::default()
-        };
-        clearing::keep_off_paths(&mut seating, &[path], &|_, _| 0.0);
-        let left: Vec<[f64; 2]> = seating.solids.iter().map(|solid| [solid.at[0], solid.at[1]]).collect();
-        assert_eq!(left, [[60.0, 0.5], [70.0, 9.0]], "the lantern on the track and its light are gone");
-    }
-}
+#[path = "plan_tests.rs"]
+mod plan_tests;

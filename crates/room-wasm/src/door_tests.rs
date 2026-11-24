@@ -237,7 +237,7 @@ fn the_sea_opens_on_a_layout_with_its_ports_whose_lanes_the_tithe_patrols() {
 }
 
 /// Both tests hold this value: roomDoor.test.ts runs the same sea through WebAssembly, as the servers and the page do.
-pub const SEA_CLASH_HASH: &str = "74ddb4da44c57151";
+pub const SEA_CLASH_HASH: &str = "2905558be09d8e59";
 /// The world time the sea opens at, so the weather its fights sail in is the same every run.
 pub const CLASH_START_S: f64 = 1_790_153_100.0;
 
@@ -248,11 +248,11 @@ fn a_sea_where_a_tithe_ship_attacks_a_friendly_ship_and_a_player_joins_them_snap
     assert!(open_sea(TRAFFIC_SEA.as_bytes(), 6));
     room_world_start(CLASH_START_S);
     let player = room_join();
-    assert_eq!(input(player, &protocol::course_bytes(&[[450_000.0, 97_000.0], [340_000.0, 92_000.0]], 10)), TAKEN);
+    assert_eq!(input(player, &protocol::course_bytes(&[[450_000.0, 97_000.0], [340_000.0, 86_000.0]], 10)), TAKEN);
     let (mut hash, mut clashed, mut three) = (0xcbf2_9ce4_8422_2325_u64, false, false);
     for tick in 1..=16_000 {
         if tick == 1_831 {
-            assert_eq!(input(player, &protocol::course_bytes(&[[441_700.0, 96_800.0]], 10)), TAKEN);
+            assert_eq!(input(player, &protocol::course_bytes(&[[441_700.0, 96_350.0]], 10)), TAKEN);
         }
         room_tick();
         with_open(|opened| {
@@ -357,6 +357,13 @@ fn a_patrol_on_overlooks_island_stands_its_foes_at_the_voyages_seas_and_sends_it
     let places: Vec<[f64; 2]> =
         (0..12).map(|at| [f64::from(at % 4) * 80.0 - 120.0, f64::from(at / 4) * 80.0 - 80.0]).collect();
     patrol["resources"] = json!(places);
+    // And its ten chest places and six crates, as the bake writes them; and seven crates and a rock among the props a
+    // page playing alone sends, of which the room takes the crates.
+    patrol["chests"] = json!((0..10).map(|at| [f64::from(at) * 30.0 - 150.0, 300.0, 0.0]).collect::<Vec<_>>());
+    patrol["holders"] =
+        json!((0..6).map(|at| [f64::from(at), 0.0, f64::from(at) + 0.8, 0.8, 0.0, 0.8, 41_816.0]).collect::<Vec<_>>());
+    patrol["props"] =
+        json!((0..8).map(|at| [if at < 7 { 41_816.0 } else { 41_704.0 }, 0.0, 9.0, 0.8, 9.8, 0.0]).collect::<Vec<_>>());
     assert!(open_node(patrol.to_string().as_bytes()));
     assert!(set_difficulty(2), "Abyss");
     assert!(!set_difficulty(3), "no such seas");
@@ -374,6 +381,13 @@ fn a_patrol_on_overlooks_island_stands_its_foes_at_the_voyages_seas_and_sends_it
     let nodes: Vec<f64> = messages::root_as_from_room(&sent).unwrap().gear().unwrap().nodes().unwrap().iter().collect();
     assert_eq!(nodes.len(), 12 * 4, "every one of its twelve places, four numbers each");
     assert!(nodes.chunks(4).all(|node| node[3] == 0.0), "Brineglass, the island's own");
+    let gear = messages::root_as_from_room(&sent).unwrap().gear().unwrap();
+    assert_eq!(gear.chests().unwrap().len(), 2 * 5, "a chest for each five places, five numbers each");
+    assert_eq!(
+        gear.searchables().unwrap().len(),
+        3 * 8,
+        "one of thirteen crates in six searchable, eight numbers each"
+    );
 }
 
 #[test]

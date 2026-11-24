@@ -25,7 +25,8 @@ The trees, plants and rocks that dress each continent's [[Land]], one cast for i
 ([[Each Continent Is One Biome]], [[The Continents' Biomes]]). Every plant is grown in Blender as a detailed model and
 baked into a textured near mesh and sprites for far away ([[Flora]], [[Flora Is Baked From Detailed Models]]), all
 of it by our own code ([[Own Work]]), drawn with WebGPU ([[WebGPU Only]]). The same ground grows the same plants for
-every player. The casts are Claude's choices ([[The World Is Claude's to Mold]]).
+every player. The casts are Claude's choices ([[The World Is Claude's to Mold]]). Over their grass the owner's
+handcrafted [[Meadow]] ([[The Owner's Handcrafted Meadow Grows Over the Grass]]) grows from the same ground, drawn after them.
 
 ## The casts
 
@@ -135,8 +136,10 @@ width, and from the exact close patch where it reaches, eased in over its outer 
   floats keep their centimetres anywhere in the world. Tiles out of view are culled, and the tiles in view drawn in
   runs, one instanced draw a run.
 - **Light.** As the land is lit, its ambient bounced warm from the ground onto a crown's underside and cool from the
-  sky onto its top, with a little sun through the leaves, and the lamps' light at night ([[Sky]]); rain darkens bark and leaves, with no sky's glare on a leaf, whose normal
-  turns every way, so a crown never washes white ([[The Harbourmaster Stands in the Market, Rain Spares the Trees, and Patrol Nodes Always Stand]]).
+  sky onto its top, with a little sun through the leaves, and the lamps' light at night ([[Sky]]); rain darkens bark
+  and leaves, with no sky's glare on a leaf, whose normal turns every way, so a crown never washes white
+  ([[The Harbourmaster Stands in the Market, Rain Spares the Trees, and Patrol Nodes Always Stand]]); the meadow is
+  lit so too ([[The Meadow Art Is the Owner's, Its Tables Stay in Git, and the Grass Takes the Trees' Rain]]).
   The plants lean the weather's way ([[Weather]]), a fresh breeze of 6 m/s bending them as they were drawn and a storm
   about twice as far, and gusts roll downwind across the land, deeper the gustier the wind; each plant rocks on its
   own beat, bending by its baked wind weights (still at the foot, free at the tips), and its leaves tremble, all

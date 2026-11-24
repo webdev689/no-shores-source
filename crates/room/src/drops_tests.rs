@@ -182,7 +182,7 @@ fn a_reeve_felled_beside_a_wall_leaves_his_drops_on_the_floor_where_his_slayer_t
 #[test]
 fn a_kills_drops_are_thrown_out_in_a_fan_toward_the_player_and_taken_at_rest() {
     let mut room = Room::new(Vec::new(), (0.0, 0.0));
-    room.seed = crate::SEALING_SEED;
+    room.seed = crate::gear_tests::SEALING_SEED;
     let player = room.join().expect("a room with space");
     hold(&mut room, player, Kind::Bow);
     if let Some(found) = room.players.get_mut(&player) {

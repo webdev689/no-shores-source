@@ -355,8 +355,12 @@ export class GameScene {
     const canvas = this.gpu.context.getCurrentTexture();
     const target = targets.picture ? viewOf(targets.picture) : canvas.createView();
     const eyeWater = this.waterAt(shot.eye[0], shot.eye[1], time);
-    // The weather's fog thickens the haze: their densities add.
-    const air = { clearM: 1 / (1 / Math.max(25_000, above * 60) + look.fogDensity), fogDensity: look.fogDensity };
+    const { strikes, worldS, reading } = SKY_NOW.current;
+    // The weather's rain and mist lie under the deck the Overworld's camera stays under; under thin cover, where half
+    // cover's base would be. Over the clear air's haze, they thicken it along the line under that.
+    const weather = reading ?? { cloud: 0, falling: 0, storm: 0 };
+    const deckM = cloudBaseOf({ ...weather, cloud: Math.max(weather.cloud, 0.5) }) ?? 0;
+    const air = { clearM: Math.max(25_000, above * 60), fogDensity: look.fogDensity, topM: deckM };
     perfZone('water');
     this.water.encode(encoder, {
       camera: { ...camera, fromEye, tanHalfView: Math.tan(shot.fov / 2) },
@@ -365,6 +369,7 @@ export class GameScene {
       seconds,
       exaggeration: 1,
       fogM: air.clearM,
+      fogTopM: air.topM,
       world: [...origin],
       // The sea's own swell, made by its weather, as handed; else the land's, raised by the weather's sea.
       swell: more.swell ?? this.drawnSwell(view),
@@ -384,11 +389,14 @@ export class GameScene {
     perfZone('weather');
     const over = { target, depth: targets.depth, size: [drawnAt.width, drawnAt.height] as const };
     this.fall.encode(encoder, over, { fromEye, eye: shot.eye, aboveM: above }, look, time);
-    const { strikes, worldS, reading } = SKY_NOW.current;
     const groundAt = (x: number, y: number) => this.groundAt(x, y);
-    // The bolts leave the deck the Overworld's camera stays under; under thin cover, where half cover's base would be.
-    const baseM = cloudBaseOf(reading && { ...reading, cloud: Math.max(reading.cloud, 0.5) }) ?? 0;
-    this.bolts.encode(encoder, over, { fromEye, eye: shot.eye }, { list: strikes, worldS, baseM, groundAt, air });
+    // The bolts leave the same deck.
+    this.bolts.encode(
+      encoder,
+      over,
+      { fromEye, eye: shot.eye },
+      { list: strikes, worldS, baseM: deckM, groundAt, air },
+    );
     perfZone('light');
     if (drawers.some((drawer) => drawer.lightInto))
       this.light.encode(encoder, target, targets.depth, (light) => {

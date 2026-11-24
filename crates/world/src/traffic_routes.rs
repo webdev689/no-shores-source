@@ -1,7 +1,10 @@
 //! Planning the traffic's routes round land: each port's roadstead, an A* path over a sea mask kept clear of every
 //! coast, then string-pulled into legs each checked exactly to stay clear of every coast and isle.
 
-use super::{LEG_CLEAR_M, MASK_CELL_M, MASK_CLEAR_M, ROADSTEAD_CLEAR_M, ROADSTEAD_OUT_M, ROADSTEAD_STEP_M};
+use super::{
+    BERTH_APART_M, BERTH_LEVELS, BERTH_M, BERTH_STEP_M, LEG_CLEAR_M, MASK_CELL_M, MASK_CLEAR_M, ROADSTEAD_CLEAR_M,
+    ROADSTEAD_OUT_M, ROADSTEAD_STEP_M, Route, Way,
+};
 use crate::check::{FRAME_HEIGHT_M, FRAME_WIDTH_M};
 use crate::geometry::{Point, edges, segment_clear_of_circle, segments_meet};
 use crate::layout::Layout;
@@ -51,6 +54,47 @@ pub(super) fn roadstead(waters: &Waters, continent: usize, centre: [f64; 2]) -> 
         }
         out += ROADSTEAD_STEP_M;
     }
+}
+
+/// Gives each course its berths off both its ports' roadsteads, in the routes' order (`BERTH_M`): each way then runs
+/// from the berth its ships leave at to the one they lie at.
+pub(super) fn berth(routes: &mut [Route], roadsteads: &[Point]) {
+    let mut laid: Vec<Vec<Point>> = vec![Vec::new(); roadsteads.len()];
+    for route in routes.iter_mut() {
+        let last = route.path.len() - 1;
+        let mut berth_at = |port: usize, from: Point| {
+            let (arrive, leave) = berths(roadsteads[port], from, &laid[port]);
+            laid[port].extend([arrive, leave]);
+            (arrive, leave)
+        };
+        let (into_first, out_of_first) = berth_at(route.from_port, route.path[1]);
+        let (into_second, out_of_second) = berth_at(route.to_port, route.path[last - 1]);
+        let mut paths = [route.path.clone(), route.path.iter().rev().copied().collect()];
+        [paths[0][0], paths[0][last]] = [out_of_first, into_second];
+        [paths[1][0], paths[1][last]] = [out_of_second, into_first];
+        route.ways = paths.map(Way::new);
+    }
+}
+
+/// A course's two berths off `roadstead`, its last leg coming in from `from`: the one its arrivals lie at, to starboard
+/// of the way in, and the one its departures leave from, as far to port; moved out a step while either comes within
+/// BERTH_APART_M of a berth `laid` there before.
+fn berths(roadstead: Point, from: Point, laid: &[Point]) -> (Point, Point) {
+    let (x, y) = ((roadstead.x - from.x) as f64, (roadstead.y - from.y) as f64);
+    let length = (x * x + y * y).sqrt();
+    // A quarter turn clockwise of the way in, east and south: its starboard.
+    let starboard = if length > 0.0 { [-y / length, x / length] } else { [1.0, 0.0] };
+    let at = |out: f64| rounded([roadstead.x as f64 + out * starboard[0], roadstead.y as f64 + out * starboard[1]]);
+    let clear = |point: Point| {
+        laid.iter().all(|other| {
+            let (dx, dy) = ((point.x - other.x) as f64, (point.y - other.y) as f64);
+            dx * dx + dy * dy >= BERTH_APART_M * BERTH_APART_M
+        })
+    };
+    let out = |level: u32| BERTH_M + f64::from(level) * BERTH_STEP_M;
+    let level = (0..BERTH_LEVELS).find(|&level| clear(at(out(level))) && clear(at(-out(level))));
+    let out = out(level.unwrap_or(BERTH_LEVELS - 1));
+    (at(out), at(-out))
 }
 
 /// The land a leg must keep clear of: every coast edge and every isle, in whole metres.

@@ -61,7 +61,7 @@ table GearVestige {
 // A drop lying on the ground for this player alone: their number for it, a Vestige's colour and slot, and where it
 // lies (x, y, z); then what it is (0 a Vestige, 1 an Ammo box, 2 an Ammo crate, 3 a public event's chest), where it
 // was thrown from (x, y, z) and how many ticks it has still to fly before it rests; then a chest's tier (1 won, 2 won
-// with the bonus, 3 heroic, 4 heroic with the bonus; 0 for anything else).
+// with the bonus, 3 heroic, 4 heroic with the bonus; 0 for anything else); and whether it was poured out of a chest.
 table GearDrop {
   id: uint;
   rarity: ubyte;
@@ -71,6 +71,7 @@ table GearDrop {
   from: [double];
   flying: ubyte;
   tier: ubyte;
+  poured: bool;
 }
 
 // A letter of the game's mail: its number, where what it holds came from (the gear crate's `mail::Source`, which the
@@ -253,6 +254,13 @@ table Gear {
   abyss_playlist_taken: bool;
   elite_playlist_clears: ubyte;
   abyss_playlist_clears: ubyte;
+  // The chests standing in the room that they have not opened, five numbers each: its number, x, y, z and the way
+  // its front faces (radians clockwise from north); and the containers searchable that they have not searched, eight
+  // each: its number, its box across (west, north, east, south), its foot, its top and its model.
+  chests: [double];
+  searchables: [double];
+  // The number of the last chest or container the room paid them for, 0 for none: their page tells of it once.
+  opened: uint;
 }
 
 // A named officer: their number, post (0 First Mate, 1 Gunner, 2 Bosun, 3 Carpenter, 4 Lookout), grade (a rarity),

@@ -5,6 +5,9 @@ code:
   - crates/room/src/lib.rs#Room
   - crates/room/src/floor.rs#Floor
   - crates/room/src/dungeon_room.rs#dungeon
+  - crates/room/src/finds.rs#keep_finds
+  - crates/room/src/find_holds.rs#open_find
+  - crates/protocol/src/finds_wire.rs#chests_of
   - crates/room/src/entrances.rs#laid
   - crates/room/src/entrances.rs#join_at
   - crates/room/src/judging.rs#Event
@@ -148,6 +151,20 @@ on Cloudflare.
   fewer when fewer fit (every patrol zone and Elite Dungeon's node lays all of its own). Each is the entrance
   model its dungeon's seed draws, turned so its door faces the middle of the ring. A kill, in any node, pays by the
   room's seas ([[Gear]], "Where foes stand").
+- **Chests and containers** ([[Patrols and Dungeons Hold Chests, and Their Containers May Be Searched]], Claude's
+  calls in [[Chests and Searchable Containers as Claude Builds Them]]): a patrol's room reads its node file's chest
+  places (`chests`, x, y and facing, [[Layouts]]) and its props that hold things (`holders`: box, foot, top and
+  model; from a page playing alone, every prop of its layout, `props`, keeping those the dungeon crate's families say
+  hold things, as the bake does), and stands a chest for every five places, two to four, each at a place no other holds; each moves on after
+  5 minutes to another as a new chest, the first ones staggered so one moves every 5 minutes over their count. One
+  holder in six is searchable at once, 16 at most, drawn again every 10 minutes; a holder no body has room to stand
+  beside, at any of eight spots 0.6 m out round its box (a crate inside a tent, one walled in by others), never is. A dungeon's room lays its own
+  ([[Dungeons]], "In the rooms"). Every draw is made on the room's loot seed, on a stream and a count of its own, at
+  its first tick, after its host seeds it. A player opens each find once: it stays for the rest, and the room keeps it
+  opened for their account however often they rejoin. Opened, it pays them ([[Gear]], "A find"): a chest's Vestige
+  poured out of it toward them (`pour`; [[Gear]], "Drops"), a container's thrown to their feet. A player's gear carries the chests standing they have not opened, five numbers each
+  (number, x, y, z, facing), the containers, eight each (number, box, foot, top, model), and the number of the last
+  find the room paid them for (`opened`).
 - **A patrol's dungeon** has a room of its own ([[Dungeons]], "In the rooms"), opened from its patrol's node file:
   its floor, its one spawn at the way in, a body standing there facing into the room, and the patrol's island band
   for its garrison's levels. The Grey Tithe's dungeon garrison stands where the Forge puts foes ([[Enemies]]). Beside
@@ -174,7 +191,9 @@ on Cloudflare.
   cleared for each kept player in it as its cache opens, once a day for each account, toward their bounties and side
   quests, on the island its node's file or its dungeon names ([[Activities]], "Quests and bounties").
 - **Asks:** an input may carry an ask of the player's gear, answered in turn with it, and the answer kept to send
-  them. A social space's room serves each of its asks within 4 m of that ask's counter, which its node
+  them. A claim of a guild bounty is the room's own, answered by what its host last told it of the player's guild
+  ([[Guilds]]): the keeper tells each room each kept player's guild as it keeps them, every 30 s after, and at once when
+  the page sends its token again. A social space's room serves each of its asks within 4 m of that ask's counter, which its node
   file names (a ruin's plaza names none, and its room serves and shows nothing: [[Cities]], "Ruins"): a Vestige
   opened at the Mage's, the vault at a vault's, a ware at its own smith's, an emblem or a dye at
   the Tailor's, a horse or barding at the Tack's, a faction's asks and its Art's at that faction's counter, and Shape's
@@ -187,7 +206,10 @@ on Cloudflare.
   (`gather_refused`). It is then
   spent for them until it returns; a kept character's is spent for its account, however often its player
   rejoins. One whose resource the player holds the most of is left standing, and a body dead past the edge gathers
-  nothing. A room answers one player's asks five times a second at most, in the order asked, holding four for their
+  nothing. A chest or a container to search (`finds.rs`, below) is opened the same way by the open-find ask (81, its
+  number in `item`): held a second for a chest within 2.5 m of its middle, a second and a half for a container within
+  1.5 m of its sides, both within 2 m of its foot up or down, alive and on foot; the stop-gather ask lets go of it as of
+  a gather, and drops a held open-find ask too. A room answers one player's asks five times a second at most, in the order asked, holding four for their
   turn and letting go of any past those; and sends their gear five times a second at most, so each answer reaches
   them before the next is made and a page that asks without end cannot flood its socket or slow the room. A change to
   how they fight (their trim, or the arms their gear allows) is sent at once, and before the snapshot, so their
@@ -404,8 +426,8 @@ Overlook's ([[Only Overlook's Social Space Opens for Now]]); and its gates: the 
 lead to, each with a layout of its own, as the [[Game]]'s passages go. The index lists each node's id, kind, name,
 continent, rect and gates, which the host reads to judge arrivals. A locked node's room opens but takes no player, and so does
 each dungeon's room of a locked patrol, its runs among them, which open only with the patrol's file. The bake takes
-about 17 s for the nine continents' 99 nodes, a few at a time, and writes about 15.2 MB in all, a patrol area's file
-the largest at about 0.59 MB (the Saltgrass Downs', its rooms' and rock's boxes). `server`, `server:bundle` and
+about 18 s for the nine continents' 99 nodes, a few at a time, and writes about 50 MB in all, a patrol area's file
+the largest at about 1.6 MB (the Gullwing Vale's, its boxes keeping to what is drawn, [[Layouts]], "Boxes"). `server`, `server:bundle` and
 `server:deploy` run it first. It fails, writing nothing, when two nodes of the world share an id, when one is called
 `index`, or when an id is too long for its rooms' longest name, `node-<id>--abyss--dungeon-2--run-00000000`, of at
 most 64 characters.
@@ -426,11 +448,12 @@ an older reader skips them.
 | Snapshot | The room | Cut for each player (under this table): the room's tick, the snapshot it is built on (0 for whole), the room's middle, the players and foes gone since; each player whole or as what changed: their number, their fighter without its gear's trim (its first 24 numbers their body, its rider's boost's two clocks among them, its healing charges and meter after its action's numbers and the shots its Ranged weapon has left, then its statuses' ticks left, a Veiled player's among them), the number of their last input taken, the look that came with it, and their standing (0 inside, 1 warned with the ticks left, 2 dead with the ticks since); the dresses changed since the screen's snapshot; the plates changed since it, each player's newest alone; each foe whole or as what changed: its number, role, a glance at its fighter, its level and its shield (its element, what it holds and held whole; none for a foe without one), type, rank, faction, phase (1 to 3), alert state (0 idle, 1 suspicious, 2 alert, 3 searching), and the ticks left of its Expose, its Charge and the immunity a Charge leaves, and for a companion (an officer ashore) its leader's number, its officer's given and family names' places and its post; and the name a foe stands under, if it has one (an event's great foe's); the fight's events since the screen's snapshot (each its kind, how the blow was struck, who struck whom, how much it did, its stroke, whether it was a crit and the element it carried); the shots in flight with the ticks each has flown, and each ball that stopped since the screen's snapshot as its last segment with the point it left its gun; in a dungeon's room its cache: where it stands, the way it faces, and whether it is open; in an Abyss run the revives its company has left (-1 in any other room); and at sea every ship near the player (as "The sea" cuts it): its player, position, heading and pace, 0 at rest; every hostile ship near them (the Grey Tithe's, sailing or in a clash): its number, position, heading, faction, rank and hull (0 the Sloop to 3 the Frigate; a reader that knows none reads the Sloop); each player's fight as the naval crate's numbers; each traffic id the room has taken off its route (`taken`) and each friendly ship it keeps at sea that the player's ship keeps in sight, as a hostile ship is kept (`friendlies`: its traffic id, position, heading and hull), none when there are none; and each player off the helm on a ship sent, as a player whose fighter is only their body on its deck, in its frame, with the number of their last step taken; in a fleet every ship with its hull, a captain's with its faction and rank, the balls aloft (each where and when it left its gun, its launch and its radius), the fight's events since the last snapshot, and the fight's clock; and on land every spell: its number, kind (1 Tempest's orb to 9 Vanish's veil, 10 a Duskraven's bolt), caster and Art, where it is and where it heads, the foe it seeks, the ticks it has lasted and its whole life, and how far it reaches; and in a zone's room its public event (`public_event`, left out of one built on a base while it stands as the base's counted on: [[Public Events]], "The wire"); and on land whether the room is a darkness zone (`darkness`) and each fallen player being revived, with their reviver and the hold's share per mille (`reviving`, [[Revives]]) |
 
 **Plates.** On land each player's plate, what others read over their head ([[Interface]], "Players"), crosses as a table
-of its own: their number, their username (none for a guest), their level, and whether a menu is open on their screen, as
-their last input said. Every plate goes in the welcome, and a plate that changed goes in every snapshot until a later
+of its own: their number, their username (none for a guest), their level, whether a menu is open on their screen, as their
+last input said, and their guild's tag (none in no guild). Every plate goes in the welcome, and a plate that changed goes in every snapshot until a later
 one is shown, as a dress does, the newest of each player's alone (`plates.rs`, `take_plate_changes`). At sea every snapshot
 carries the plate of each other player's ship it sends, whole, as the sea's ships are sent whole: their username, their
-character's level (a new character's for one who plays unkept), and never a menu, which the sea hears nothing of; and
+character's level (a new character's for one who plays unkept), their guild's tag as the keeper told it
+(`Sea::tag_player`; [[Ships at Sea Wear Their Guild's Tag]]), and never a menu, which the sea hears nothing of; and
 none of the player's own (`Sea::plate`;
 [[Other Ships Wear Their Players' Marks, the Sea Map Has No Fog, and New Players Ride a Bay That Bursts]]). A deck boarded draws none.
 
@@ -612,6 +635,55 @@ so every decision is Rust and the shell only carries bytes and time.
 - Each second, and before its first tick, the host gives the room the Unix minute; the rules read the day and the week
   from it (`gear::clock`).
 
+## An outpost's room
+
+- **Its name**: `node-<site>--guild-<key>`, `<key>` the guild id's 32 lowercase hex digits (`guildKey`),
+  only on a bare node (`nodeRoom`'s `guild`). It opens only on a node whose baked file has an `outpost` part; the bare
+  `node-<site>` is the wild site, nobody's plot. Both keep characters, and a player walks between them at Normal.
+- **Who comes in** (`Keeper.forGuild`): the guild's members, and anyone in a company with a member playing there;
+  anyone else closes with 4003 and "This outpost is another guild's.". It keeps no one unkept, as a run. A member
+  the keeper is told is in no guild or another (every 30 s) no longer brings their company in, and is sent away the
+  same unless their company has a member there; only one whose own guild changed away is. A guest let in with a
+  member stays until they leave, the member there or not, and the guild dungeon's run sends no one away (leaving it
+  brings them back to the outpost, whose gate judges them).
+- **The plot stands** (`outpostHost.ts`): the host reads `outpost(room)` and stands `plotBoxes` as blocks, under the
+  banner the page reads (`keptBanner`: one empty or no banner is the one its name draws), taking
+  those it stood before, when the read (the plot, its banner and its Delve Gate) differs from what stands; it reads at
+  open, every 30 s, on the ask `OUTPOST_CHANGED` (at most once a second a room; one asked sooner is read once the
+  second has passed) and after every delivery the accounts used. An abandoned outpost reads as none, and stands
+  nothing. The snapshot's `outpost` counts each plot stood, so the page reads the outpost again.
+- **The asks** (76 to 80): the room takes what an ask gives and holds it as an errand; each tick the host takes the
+  errands (`room_outpost_errands`), asks the accounts (`deposit`, `deliver`, `takeStores`, `soundHorn`) and gives the
+  answer back (`room_outpost_answered`): what was not moved or used goes back, what the stores gave is given, and the
+  player is answered (156 to 166 beside the gear's). A player has one errand with the accounts at a time ("Wait for your
+  last ask."), and a take of nothing is refused in the room. Each errand has its one id
+  (`<room>:<room opened>:<player>:<errand>`), under which the accounts keep their answer (a week, longer while a
+  character carries it) in the same write as the errand, a refusal too (the first answer kept wins); one they throw on
+  is asked again under it, every 10 s at the slowest, for as long as the room lives, so one that went through answers as
+  it did and is never done or given back twice. A deposit, delivery or take is carried by the character under its id
+  (`gear::errand`, the body's `errand`) until it is answered, and goes only once the keeper has saved the character so
+  (`Keeper.saveNow`); unsaved, it goes back whole, and a take's gift is saved at once. The room that answers it while it
+  holds the character settles it, in the same save: this room when the accounts answer, or, when another claim took the
+  character first (a reload, a sailing off), the room that claimed it, whose keeper asks the accounts again under the id
+  and writes the answer into the body before the room reads it (`Keeper.signIn`); not answered, it is carried on to the
+  next. Past the account's limit on outpost asks every errand answers so (a deposit `limited`, the rest -3), given back
+  whole as "Too many asks. Wait a while." (166). The horn's answer is its tier, or 0 (sounded this week), -1 (not the
+  founder or an admin), -2 (no horn at a tier), each its own refusal. A leaving player's last save waits for their
+  errands in flight, 30 s at most, its timer armed only while one is, and the room is told they are leaving
+  (`room_outpost_parting`): their account joining again meanwhile takes it over (`Room::own`) and is given each answer
+  its character carries.
+- **Its guild dungeon's run**: `node-<site>--guild-<key>--run-<i>` at Normal, `--elite--run-<i>` or `--abyss--run-<i>`
+  after the key at the harder two (`delveRoom.ts`, read by `nodeRoom`). It keeps to the guild as the outpost does and
+  to one company as any run does. The host opens it (`delveAsk`) only on an outpost's site while `outpost(room)` of
+  its outpost says the Delve Gate stands at the run's tier or higher, as a sea island's dungeon in the site's
+  continent, its seed and style drawn from the key and the week its instance names (its first three letters, the week
+  in base 36: `delveInstance`), this week's, last week's or (a page's clock turned first) next week's, no other, with
+  the key in the ask (`guild`). A companion who joins after the week turned lays that week's dungeon too, as the room
+  does; a clear pays the guild package in the week of the clear, whatever week the run began in. It is entered from
+  its guild's outpost alone and left back to it at any tier; the host tells the room where the gate's `door` socket
+  lies and the way it faces (`room_outpost_gate`), and one who joins the outpost at entrance 0 coming out of the run
+  stands there, a companion who joined the run too (the page reads the gate from the plot).
+
 ## The browser's side
 
 - `RoomConnection` joins a room, keeps its welcome's node, sends its session's token once welcomed when the page holds
@@ -722,6 +794,8 @@ set no swing on: every difference came within 2 s of a blow by or on the player,
   the World Editor asks for open water 15 m deep before it joins. A fleet's lay is judged at the room's tick, not as
   the player's screen showed the ships (a ball's flight is long beside the lag).
 - Players do not harm one another.
+- An errand's kept answer stays in the accounts a week (`outpost_errands`), and for as long after as a saved character
+  carries its errand, which may be as long as it is not played (`forgetAnswers`, on each new guest).
 - On a boarded deck each boarder's snapshot is sent whole every tick, not as what changed (the sea's page reads it
   without a keeper), and a boarder's input is read alone, without the inputs it carries from before.
 - A dress travels with a player's inputs, which flow only while they play: until then, others see a plain figure.

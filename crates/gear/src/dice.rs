@@ -32,6 +32,8 @@ pub enum Purpose {
     Cosmetic = 12,
     /// A faction's package: whether its Vestige is Legendary, and its slot.
     Package = 40,
+    /// A guild package, as a faction's: whether its Vestige is Legendary, and its slot.
+    GuildPackage = 48,
     /// Where Shape stands in a week, and the order his wares are shuffled in.
     Shape = 44,
     /// Where a patrol stands a foe, what kind and its level (the try added to the purpose's number).
@@ -44,6 +46,10 @@ pub enum Purpose {
     Recruit = 1_100,
     /// Whether a boarded deck's officer joins the winner, and who it is.
     Taken = 1_900,
+    /// How much of the island's resource a chest or a search holds, and whether a search holds any (the question
+    /// added); and, apart, which places a patrol's chests and which containers are searchable stand at
+    /// (`room::finds`).
+    Find = 2_100,
 }
 
 /// One player's dice for one tick of one room.

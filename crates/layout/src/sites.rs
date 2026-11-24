@@ -40,6 +40,8 @@ pub enum SiteKind {
     /// Where a wilds' fissure opens: clear ground beside its middle, off the obelisk and the ruins its battlefield
     /// stands there; the site names the wilds.
     Fissure,
+    /// A place a patrol's chest may stand, tucked against something tall, its front facing away from it (`chests`).
+    Chest,
 }
 
 /// A site: what it is for, where, how much ground it takes, and what it holds or leads to.
@@ -54,6 +56,9 @@ pub struct Site {
     /// is off the section's floor.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub node: Option<[f64; 2]>,
+    /// Which way a chest's place faces, radians clockwise from north.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub facing: Option<f64>,
 }
 
 /// How far apart resource nodes stand along the paths, metres.
@@ -128,8 +133,14 @@ pub fn mark(
     resource: Option<&str>,
 ) -> Vec<Site> {
     let mut sites = Vec::new();
-    let site =
-        |kind: SiteKind, at: [f64; 2], radius: f64, holds: Option<String>| Site { kind, at, radius, holds, node: None };
+    let site = |kind: SiteKind, at: [f64; 2], radius: f64, holds: Option<String>| Site {
+        kind,
+        at,
+        radius,
+        holds,
+        node: None,
+        facing: None,
+    };
     for (number, area) in areas.iter().enumerate() {
         match area.kind {
             AreaKind::Landing | AreaKind::Entrance => sites.push(site(SiteKind::Landing, area.at, area.radius, None)),
@@ -151,7 +162,7 @@ pub fn mark(
         ) {
             sites.push(site(SiteKind::Foes, area.at, area.radius * 0.8, Some(area.name.clone())));
         }
-        if matches!(area.kind, AreaKind::Gate | AreaKind::Landing | AreaKind::Entrance) {
+        if matches!(area.kind, AreaKind::Gate | AreaKind::Landing | AreaKind::Entrance | AreaKind::Plot) {
             continue;
         }
         // Two beacons a place, on its rim, where a body can stand: something to take up on arriving.
@@ -162,7 +173,7 @@ pub fn mark(
             let at = [area.at[0] + sine * area.radius * 0.85, area.at[1] - cosine * area.radius * 0.85];
             let apart =
                 sites.iter().filter(|other| other.kind == SiteKind::Beacon).all(|other| distance(other.at, at) > 40.0);
-            if clear(field, seating, at) && apart && off_paths(paths, at) {
+            if clear(field, seating, at) && apart && off_paths(paths, at) && !crate::areas::on_plot(areas, at, 3.0) {
                 sites.push(site(SiteKind::Beacon, at, 3.0, None));
                 placed += 1;
                 if placed == 2 {
@@ -196,6 +207,7 @@ pub fn mark(
                 && clear(field, seating, at)
                 && off_paths(paths, at)
                 && areas.iter().all(|area| distance(area.at, at) > area.radius * 0.6)
+                && !crate::areas::on_plot(areas, at, NODE_FRONT_M + 3.0)
             {
                 let back = NODE_FRONT_M / off;
                 let node = [at[0] + (pair[1][0] - at[0]) * back, at[1] + (pair[1][1] - at[1]) * back];

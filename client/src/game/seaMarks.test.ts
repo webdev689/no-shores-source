@@ -95,7 +95,7 @@ test('a Playlist shows at sea only while its port’s mark does, so a port thinn
   );
 });
 
-test('a landfall frames only the nodes on its side; the Playlist shows there only when docking at its harbour', () => {
+test('a landfall frames only the nodes on its side; the Playlist shows there however the island is reached', () => {
   const centre: Point2 = [ship[0], ship[1] - 2_000];
   const island: Mark[] = [
     { id: 'downs', kind: 'patrol', name: 'The Downs', at: [ship[0], ship[1] - 300, 0] },
@@ -106,10 +106,13 @@ test('a landfall frames only the nodes on its side; the Playlist shows there onl
   const ashore = landfallMarks(island, ship, centre, false);
   assert.deepEqual(
     ashore.side.map((mark) => mark.id),
+    ['downs', 'sunspire-playlist'],
+  );
+  assert.deepEqual(
+    ashore.framed.map((mark) => mark.id),
     ['downs'],
     'the far harbour’s Playlist is not stretched into view',
   );
-  assert.deepEqual(ashore.framed, ashore.side);
   const docking = landfallMarks(island, ship, centre, true);
   assert.deepEqual(
     docking.side.map((mark) => mark.id),
@@ -120,4 +123,34 @@ test('a landfall frames only the nodes on its side; the Playlist shows there onl
     ['sunspire-social', 'downs'],
     'framed on the nodes',
   );
+});
+
+test('over the island’s side the Playlist stands beside its city’s mark, never on it, and off the picture at its edge', () => {
+  const centre: Point2 = [ship[0], ship[1] - 2_000];
+  // The plaza a few hundred metres from the harbour: from over the side the two would be drawn as one.
+  const island: Mark[] = [
+    { id: 'downs', kind: 'patrol', name: 'The Downs', at: [ship[0] + 1_500, ship[1] - 1_200, 0], edge: true },
+    { id: 'sunspire-social', kind: 'social', name: 'Sunspire', at: [ship[0], ship[1] - 1_500, 0], edge: true },
+    {
+      id: 'sunspire-playlist',
+      kind: 'playlist',
+      name: 'Playlist',
+      at: [ship[0] + 200, ship[1] - 1_400, 0],
+      edge: true,
+    },
+  ];
+  const pose = poseOf(eyeFor([ship[0], ship[1] - 1_400, 0], 0, TILT.initial, 6_000));
+  const { side } = landfallMarks(island, ship, centre, true);
+  const { placed } = seaMarks('landing', island, side, ship, pose, viewport, null);
+  const placedAs = (id: string) => placed.find((mark) => mark.id === id);
+  const [social, playlist] = [placedAs('sunspire-social'), placedAs('sunspire-playlist')];
+  assert.ok(social && playlist, 'both shown');
+  assert.equal(playlist.y, social.y, 'level with it');
+  assert.ok(Math.abs(playlist.x - social.x) >= (playlist.sizePx + social.sizePx) / 2, 'clear of it');
+  // Gone ashore far along the coast, the harbour off the picture: the Playlist waits at its edge.
+  const far = poseOf(eyeFor([ship[0] + 60_000, ship[1], 0], 0, TILT.initial, 2_000));
+  const away = seaMarks('landing', island, landfallMarks(island, ship, centre, false).side, ship, far, viewport, null);
+  const held = away.placed.find((mark) => mark.id === 'sunspire-playlist');
+  assert.ok(held, 'still shown');
+  assert.ok(held.x >= 0 && held.x <= viewport.width && held.y >= 0 && held.y <= viewport.height, 'on the picture');
 });

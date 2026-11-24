@@ -23,6 +23,10 @@ import type { Use } from './footGear.ts';
 import type { Strip } from './hints.ts';
 import type { Standing } from './hudLaw.ts';
 import type { Quest } from './tasks.ts';
+import { guildRead } from './guild/guildHeld.ts';
+import { GUILD_CHANGED } from './gearScreen.ts';
+import { nodeRoom } from './rooms.ts';
+import type { NodeInfo } from './worldData.ts';
 
 /** What a node on foot needs of the game: the movement rules, the land's worker, the player, the forge's cards, the
  *  rooms (null offline), the room's compiled module, the ground as drawn (to hold the camera over it), the foes to
@@ -59,6 +63,50 @@ export function stand(context: FootContext, x: number, y: number, facing: number
   walker.player = social ? { ...arrived, pitch: OVER_THE_PARAPET } : arrived;
 }
 
+/** The guild whose outpost's room a player arriving at an outpost site joins: `asked`, a companion's (null for the
+ *  wild site), else the player's own read afresh; `own` while it is the player's own. Null at any other node. */
+export interface OutpostJoined {
+  readonly guild: string | null;
+  readonly own: boolean;
+}
+
+export async function outpostJoined(node: NodeInfo, asked?: string | null): Promise<OutpostJoined | null> {
+  if (node.kind !== 'outpost') return null;
+  const mine = (await guildRead())?.key ?? null;
+  return asked === undefined || asked === mine ? { guild: mine, own: true } : { guild: asked, own: false };
+}
+
+/** Where a player stands on foot, as a guild change at an outpost site reads it. */
+interface AtOutpost {
+  readonly node: NodeInfo;
+  readonly seas: Difficulty;
+  readonly outpost: { rejoins(key: string | null): boolean } | null;
+}
+
+/** Calls `rejoin` where the player, at an outpost site in their own guild's outpost's room or the wild site's, founds,
+ *  joins or leaves a guild (`here` none while nothing may take them elsewhere), so they join the room they belong in. */
+export function rejoinOnGuild(here: () => AtOutpost | null, rejoin: (standing: AtOutpost) => void): void {
+  addEventListener(GUILD_CHANGED, () => {
+    const standing = here();
+    void guildRead().then((guild) => {
+      if (standing && here() === standing && standing.outpost?.rejoins(guild?.key ?? null)) rejoin(standing);
+    });
+  });
+}
+
+/** The address of the room a player arriving at a node joins (null offline), at the entrance they come out of or
+ *  logging back in (`joinAsk`): at an outpost site, the room of the outpost of `guild`, or the wild site for none. */
+export function nodeAddress(
+  context: FootContext,
+  node: NodeInfo,
+  seas: Difficulty,
+  asked: AtEntrance | 'relog' | undefined,
+  guild: string | null,
+): string | null {
+  if (!context.rooms) return null;
+  return `${context.rooms(nodeRoom(node, seas, guild))}${joinAsk(asked)}`;
+}
+
 /** Where a player arrives on a patrol leaving one of its dungeons: before entrance `number`'s door, facing out. */
 export interface AtEntrance {
   readonly number: number;
@@ -74,14 +122,15 @@ export interface Heard {
   readonly asks: boolean;
 }
 
-/** A room joined: its link, what is seen to stand in the place, the patrol's node file's text, the dungeon, and the
- *  seas the room stands at. */
+/** A room joined: its link, what is seen to stand in the place, the patrol's node file's text, the dungeon, the
+ *  seas the room stands at, and at an outpost site whose outpost's room it is. */
 export interface Opened {
   readonly link: RoomLink;
   readonly boxes: readonly Block[];
   readonly text: string;
   readonly dungeon: InDungeon | null;
   readonly seas: Difficulty;
+  readonly outpost?: OutpostJoined | null;
 }
 
 /** What the room last said of the player's gear (online), of a patrol's entrances, and of a dungeon's cache and
@@ -101,6 +150,8 @@ export interface Held {
   reviving: readonly Reviving[];
   /** An Elite Dungeon's encounters as its room last said; null in any other room. */
   encounter: EncounterSeen | null;
+  /** At a guild's outpost, how many plots its room has stood (0 in any other room): its plot is read again on a change. */
+  plots: number;
 }
 
 /** What a join into a node's room asks of it besides: to stand before an entrance's door, coming out of its dungeon,

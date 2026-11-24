@@ -231,6 +231,16 @@ class Publishing(unittest.TestCase):
             self.assertTrue(r2.put(b'data', 'islands', 'modules', 'application/octet-stream').startswith('islands/'))
         self.assertEqual([call.args[0] for call in slept.call_args_list], [5, 20])
 
+    def test_the_check_that_r2_serves_an_upload_asks_again_after_a_passing_fault(self):
+        answers = iter([(0, b'dropped'), (503, b'busy'), (200, b'')])
+        with mock.patch.object(r2, 'fetch', side_effect=lambda *_, **__: next(answers)), \
+                mock.patch.object(r2.time, 'sleep') as slept:
+            self.assertEqual(r2.served('modules/x.mesh'), 200)
+        self.assertEqual([call.args[0] for call in slept.call_args_list], [5, 20])
+        with mock.patch.object(r2, 'fetch', return_value=(404, b'')), mock.patch.object(r2.time, 'sleep') as slept:
+            self.assertEqual(r2.served('modules/x.mesh'), 404)
+        self.assertEqual([call.args[0] for call in slept.call_args_list], [5, 20, 60])
+
     def test_a_staged_put_writes_the_stage_and_reads_back_from_it_with_no_upload(self):
         offline = mock.patch('urllib.request.urlopen', side_effect=urllib.error.URLError('offline'))
         with tempfile.TemporaryDirectory() as stage, mock.patch.dict(os.environ, {'R2_STAGE': stage}), offline as sent:

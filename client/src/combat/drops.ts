@@ -1,5 +1,6 @@
 // The drops lying for the player, seen in the world as project-final throws its loot: each popped up out of the fallen
-// foe, bouncing until it settles where the room put it, then rising to hover, bobbing and turning. A Vestige is its
+// foe, or poured higher out of a chest as its lid opens as project-final's cache pours, bouncing until it settles where
+// the room put it, then rising to hover, bobbing and turning. A Vestige is its
 // crystal and an Ammo box or crate its Blender model, each turn baked into frames and turned to the eye. Over each
 // at rest a thin line of its rarity's colour rises, taller the rarer it is, a glint climbing it, a Legendary's and an
 // Atheric's pulsing. Each is drawn as the marks are, the halo and the line as light added to what stands behind them.
@@ -22,8 +23,9 @@ export const RISE_S = 0.4;
  *  the pull, the share of a bounce's speed it keeps and of its way along the ground, the speed under which it settles,
  *  its middle's height over the ground as it bounces and as it hovers, how long it takes to rise there, its bob's
  *  height and rate (radians a second), and its turn in the air and at rest (radians a second): project-final's, but
- *  for the heights, raised so no frame dips into the ground. And how long the room waits before it may be taken, the
- *  longest it can bounce (crates/room/src/drops.rs, VESTIGE_REST_TICKS and AMMO_REST_TICKS). */
+ *  for the heights, raised so no frame dips into the ground. How long it waits unseen before it leaves (a chest's lid
+ *  opening its mouth), and how long the room waits before it may be taken, that and the longest it can bounce
+ *  (crates/room/src/drops.rs, VESTIGE_REST_TICKS, AMMO_REST_TICKS and POURED_REST_TICKS). */
 export interface Feel {
   readonly leaves: number;
   readonly pop: number;
@@ -39,6 +41,7 @@ export interface Feel {
   readonly bobRate: number;
   readonly airTurn: number;
   readonly restTurn: number;
+  readonly waitS: number;
   readonly restS: number;
 }
 
@@ -57,8 +60,13 @@ export const CRYSTAL_FEEL: Feel = {
   bobRate: 1.9,
   airTurn: 7,
   restTurn: 2.4,
+  waitS: 0,
   restS: 94 / 60,
 };
+
+/** A Vestige poured out of a chest leaves from its mouth, popped higher and wider than a body's, once the lid has
+ *  opened its mouth: project-final's cache's pour. */
+export const POURED_FEEL: Feel = { ...CRYSTAL_FEEL, leaves: 0.7, pop: 6.2, popMore: 1.4, waitS: 0.22, restS: 122 / 60 };
 
 /** Ammunition pops lower and settles sooner. */
 export const AMMO_FEEL: Feel = {
@@ -76,6 +84,7 @@ export const AMMO_FEEL: Feel = {
   bobRate: 2,
   airTurn: 5,
   restTurn: 2.4,
+  waitS: 0,
   restS: 60 / 60,
 };
 
@@ -168,8 +177,9 @@ const topOf = (frames: readonly PixelPicture[]): number =>
 const BOX_TOP_M = topOf(AMMO_BOX_TURN);
 const CRATE_TOP_M = topOf(AMMO_CRATE_TURN);
 
-/** How a drop moves: a Vestige as a crystal, ammunition as ammunition. */
-const feelOf = (drop: Pick<GearDrop, 'kind'>): Feel => (drop.kind === DROPPED.vestige ? CRYSTAL_FEEL : AMMO_FEEL);
+/** How a drop moves: a Vestige as a crystal, poured out of a chest or thrown, ammunition as ammunition. */
+const feelOf = (drop: Pick<GearDrop, 'kind' | 'poured'>): Feel =>
+  drop.kind !== DROPPED.vestige ? AMMO_FEEL : drop.poured ? POURED_FEEL : CRYSTAL_FEEL;
 
 /** What a drop is drawn as turned `turn` radians: its frame of a Vestige's crystal or of ammunition's turn, and the
  *  halo a crystal glows in. */
@@ -459,13 +469,11 @@ export class DropsShown {
         this.began.set(key, seconds - Math.max(0, flown));
         if (drop.flying === 0) this.rested.add(key);
       }
-      const motion = motionAt(
-        feelOf(drop),
-        drop.from,
-        drop.at,
-        drop.id * 7 + drop.kind,
-        seconds - (this.began.get(key) ?? seconds),
-      );
+      const feel = feelOf(drop);
+      const since = seconds - (this.began.get(key) ?? seconds);
+      // Still in the chest as its lid opens.
+      if (since < feel.waitS) continue;
+      const motion = motionAt(feel, drop.from, drop.at, drop.id * 7 + drop.kind, since - feel.waitS);
       const { body, halo } = pictureOf(drop, motion.turn);
       const tallM = body.rows.length * (body.pixelM ?? PIXEL_M);
       const base: Point = [motion.middle[0], motion.middle[1], motion.middle[2] - tallM / 2];

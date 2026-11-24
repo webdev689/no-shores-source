@@ -30,3 +30,5 @@ already planned, or nothing:
   strikes ([[Gear and Power Follow Destiny 1 Vanilla]]).
 
 It is part of [[The Game's Loop Runs From Town to the Land and the Sea]].
+
+Added to by [[Guilds Gain Banners, Levels, Bounties and Outposts]]: a guild's outpost may open a guild dungeon.

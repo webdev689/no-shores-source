@@ -174,15 +174,25 @@ function headOf(player: Player, movement: MovementRules): readonly [number, numb
   return [body.x, body.y, body.z + movement.eyeHeight(body) + (player.mounted ? SADDLE : 0)];
 }
 
-/** A node's boxes and any more the camera keeps off (a boarded deck's), as one list made once while both stay the
- *  same lists: a node has thousands of boxes, and the camera is set every frame. */
-const JOINED = new WeakMap<readonly Block[], { readonly more: readonly Block[]; readonly blocks: readonly Block[] }>();
-export function withBlocks(boxes: readonly Block[], more: readonly Block[] | undefined): readonly Block[] {
-  if (!more?.length) return boxes;
+/** A node's boxes, an outpost's walls and any more the camera keeps off (a boarded deck's), as one list made once
+ *  while all stay the same lists: a node has thousands of boxes, and the camera is set every frame. */
+interface Joined {
+  readonly walls: readonly Block[];
+  readonly more: readonly Block[];
+  readonly blocks: readonly Block[];
+}
+const JOINED = new WeakMap<readonly Block[], Joined>();
+const NONE: readonly Block[] = [];
+export function withBlocks(
+  boxes: readonly Block[],
+  walls: readonly Block[] = NONE,
+  more: readonly Block[] = NONE,
+): readonly Block[] {
+  if (!walls.length && !more.length) return boxes;
   const kept = JOINED.get(boxes);
-  if (kept?.more === more) return kept.blocks;
-  const blocks = [...boxes, ...more];
-  JOINED.set(boxes, { more, blocks });
+  if (kept?.walls === walls && kept.more === more) return kept.blocks;
+  const blocks = [...boxes, ...walls, ...more];
+  JOINED.set(boxes, { walls, more, blocks });
   return blocks;
 }
 

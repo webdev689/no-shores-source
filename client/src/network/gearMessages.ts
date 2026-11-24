@@ -5,6 +5,7 @@ import { type ActivityRecord, activityOf } from './activityRecord.ts';
 import { type ArtState, artsOf } from './artMessages.ts';
 import { type GearLetter, mailOf } from './mailMessages.ts';
 import { type QuestState, questOf } from './questMessages.ts';
+import { FIND_ASKS, type FindState, findsOf } from './findMessages.ts';
 import { LORE_ASKS, type LoreState, loreOf } from './loreMessages.ts';
 import { type GearShip, shipOf } from './shipMessages.ts';
 
@@ -100,9 +101,21 @@ export const ASKS = {
   takeLetter: 71,
   takeAllLetters: 72,
   ...LORE_ASKS,
+  ...FIND_ASKS,
   /** A return to the player's ship, which the room answers (107 yes, or 105 fallen, 106 struck in the last ten
    *  seconds) before the page leaves for the sea. */
   toShip: 73,
+  /** A guild bounty claimed, by its slot among the week's four in `column` (`gear::guild`). */
+  claimGuildBounty: 75,
+  /** At an outpost (`crates/room/src/outpost*.rs`): Aurem put into the guild's treasury, `count` of it; a material
+   *  delivered to the structure `item` being built, `slot` the material (0 Timber, 1 Canvas, 2 Iron, 3 Heartwood, 4 the
+   *  island's own) and `count` how many; a material taken from the stores, `slot` and `count` so; the War Horn
+   *  sounded; and the plot changed through the accounts, which the room reads again. */
+  outpostDeposit: 76,
+  outpostDeliver: 77,
+  outpostTake: 78,
+  outpostHorn: 79,
+  outpostChanged: 80,
 } as const;
 
 /** Shape's place while he is away. */
@@ -182,8 +195,8 @@ export const AMMO_FULL = 720;
 export const DROPPED = { vestige: 0, ammoBox: 1, crate: 2, chest: 3 } as const;
 
 /** A drop lying for the player: their number for it, a Vestige's rarity and slot, where it rests, what it is, where it
- *  was thrown from, the room's ticks it has still to fly, and a chest's tier (1 won, 2 won with the bonus, 3 heroic,
- *  4 heroic with the bonus; 0 for anything else). */
+ *  was thrown from, the room's ticks it has still to fly, a chest's tier (1 won, 2 won with the bonus, 3 heroic,
+ *  4 heroic with the bonus; 0 for anything else), and whether it was poured out of a chest. */
 export interface GearDrop {
   readonly id: number;
   readonly rarity: number;
@@ -193,6 +206,7 @@ export interface GearDrop {
   readonly from: readonly [number, number, number];
   readonly flying: number;
   readonly tier: number;
+  readonly poured: boolean;
 }
 
 /** A resource node standing that the player may still gather: its number in the room, where, and its resource. */
@@ -206,7 +220,7 @@ export interface GearNode {
 /** A player's own gear, as the room sends it to them alone when it changes. `stocks` holds their Weapon and Armor
  *  Fragments, Weapon and Armor Essence and Fruit of Dagon; `answer` is their last ask's (0 done), `identified` the
  *  item a Vestige last opened to, `answered` how many asks have been answered. */
-export interface GearState extends LoreState {
+export interface GearState extends LoreState, FindState {
   readonly xp: bigint;
   readonly level: number;
   readonly prestige: number;
@@ -410,6 +424,7 @@ export function gearOf(gear: Gear): GearState {
       from: [fromX, fromY, fromZ] as const,
       flying: drop.flying(),
       tier: drop.tier(),
+      poured: drop.poured(),
     };
   });
   return {
@@ -485,6 +500,7 @@ export function gearOf(gear: Gear): GearState {
     bountyAurem: gear.bountyAurem(),
     mail: mailOf(gear, itemOf),
     ...loreOf(gear),
+    ...findsOf(gear),
   };
 }
 
