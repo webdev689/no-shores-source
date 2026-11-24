@@ -555,7 +555,7 @@ The decisions in [[Open Questions]] are not repeated here.
 
 ## Next
 
-- **The boxing's cost, further** (this branch): a leaning spire of the cities keeps within 2.7 to 8 m only, as boxes
+- **The boxing's cost, further** (this branch): a leaning spire of the cities keeps within 5.3 m only, as boxes
   square to the world stack up a lean; boxing a city takes 0.03 to 0.5 s natively where it took a millisecond, and
   WebAssembly's cost (the land worker boxes a node's city on entry) is unmeasured. The meadow's cost on a real GPU,
   and a hand's play of both, are still to come.

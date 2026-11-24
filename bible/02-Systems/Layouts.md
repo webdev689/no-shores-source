@@ -372,7 +372,7 @@ ground, the same layers are laid as terraces, each boxed only where no layer ove
 holds the same and stands no further off. A solid that still costs more is boxed with its keep a quarter looser at a
 time until it fits. Over every landmass 269,060 of 270,438 solids keep within 0.45 m; on continent 1's zones eleven
 do not, small tilted stones within 0.7 m, the mills' two roofs within 0.7 m, the Maw Shallows' dome within 0.9 m and
-the Saltgrass Downs' wide dome within 1.1 m; the cities' leaning spires within 2.7 to 8 m, where their box round
+the Saltgrass Downs' wide dome within 1.1 m; the cities' leaning spires within 5.3 m at most, where their box round
 their corners stood further. Continent 1's zones hold 67,482 boxes where a box round each piece's turned corners made
 22,509; every landmass's zones and cities 1,258,643 where they made 271,789, boxed natively in 0.03 to 0.5 s a city
 where it took a millisecond (tested offline). Boxes are written to the centimetre, grown out so none shrinks. No box
