@@ -132,7 +132,7 @@ impl Room {
         if matches!(pays, Pays::Playlist { .. }) {
             return self.pay_playlist(player, level);
         }
-        if let Pays::Guild { key, .. } = pays {
+        if let Pays::Guild { key } = pays {
             return self.pay_delve(player, &key);
         }
         let (day, now, tier) = (self.day(), week_of(self.minute), self.difficulty);
@@ -163,8 +163,7 @@ impl Room {
     /// Makes this run its guild's dungeon, the guild's key `key`: its clear pays as a sea island's dungeon's, and each
     /// member a guild package at their first clear of the week. False in a room that is no run.
     pub fn delve_for(&mut self, key: &str) -> bool {
-        let week = week_of(self.minute);
-        self.run.as_mut().map(|run| run.pays = Pays::Guild { key: key.to_owned(), week }).is_some()
+        self.run.as_mut().map(|run| run.pays = Pays::Guild { key: key.to_owned() }).is_some()
     }
 
     /// A guild package to a kept member of the run's guild from before the week turned, once a week: in the week of the

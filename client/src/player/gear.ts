@@ -171,7 +171,7 @@ const REFUSALS: Readonly<Record<number, string>> = {
   158: 'Nothing here needs that.',
   159: 'The stores hold none of that for you today.',
   160: 'The War Horn has sounded this week.',
-  161: "The guild's books could not be reached. Try again.",
+  161: "The guild's books are busy. Try again in a moment.",
   162: 'The guild boss still stands.',
   163: 'Wait for your last ask.',
   164: 'Only the founder or an admin sounds the War Horn.',
