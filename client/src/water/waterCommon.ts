@@ -526,8 +526,13 @@ fn chop_set(first: i32, local: vec2f, flow: vec2f, footprint: f32) -> vec2f {
 }
 
 // Foam's lace: high inside the bubbles' cells, low along their walls, drifting with 'drift'. Where 'amount' is small
-// only the walls show; where it is 1 the foam is solid.
+// only the walls show; where it is 1 the foam is solid. A quad of pixels none of which shows lace (too little foam, or
+// past a 3 m footprint, drawn as a share alone) works none out; one that does, all of it, so its edges read true.
+@diagnostic(off, derivative_uniformity)
 fn foam_cover(local: vec2f, drift: vec2f, amount: f32, footprint: f32) -> f32 {
+  let wanted = select(0.0, 1.0, amount >= 0.04 && footprint < 3.0);
+  let along = min(1.0, wanted + abs(dpdxFine(wanted)));
+  if (min(1.0, along + abs(dpdyFine(along))) < 0.5) { return 0.0; }
   let time = frame.eye.w;
   let warp = (vec2f(value_noise(local * 0.25), value_noise(local * 0.25 + vec2f(31.0, 17.0))) - 0.5) * 3.2
     + (vec2f(value_noise(local * 1.0), value_noise(local * 1.0 + vec2f(5.0, 9.0))) - 0.5) * 0.9;
