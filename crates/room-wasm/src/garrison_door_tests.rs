@@ -76,7 +76,7 @@ fn a_node_s_garrison_fights_to_the_same_fingerprint_natively_as_in_the_browser_s
 
 /// Both tests hold this value: the node as a patrol whose layout marks a foes' site the player runs near, so its
 /// group stands mid-run on a mesh baked round it then.
-pub const PATROL_SITE_HASH: &str = "ea374418";
+pub const PATROL_SITE_HASH: &str = "5e2b263c";
 const PATROL_SITE: [f64; 2] = [-60.0, 40.0];
 
 /// The node as a patrol, its file naming one foes' site at `site`.
@@ -108,10 +108,12 @@ fn run_in(node: &str) -> (u32, usize, usize) {
         let controls = Controls { forward: if running { 1.0 } else { 0.0 }, run: true, ..Controls::default() };
         let swing = !running && tick % SWING_EVERY == 0;
         let combat = CombatInput { attack: swing.then_some(Stroke::Down), ..CombatInput::default() };
+        // It asks to respawn every tick, as a page's player presses once they may: the room takes it then.
         let input = room::Input {
             sequence: tick,
             intent: combat::Intent { controls, combat },
             seen: u64::from(tick - 1),
+            respawn: true,
             ..room::Input::default()
         };
         assert_eq!(input_of(player, &input), TAKEN);
@@ -148,7 +150,8 @@ fn two_players_against_a_node_s_garrison_fight_to_the_same_fingerprint_natively_
             let controls = Controls { forward: if running { 1.0 } else { 0.0 }, run: true, ..Controls::default() };
             let combat = CombatInput { attack: swing.then_some(Stroke::Down), ..CombatInput::default() };
             let intent = combat::Intent { controls, combat };
-            let input = room::Input { sequence: tick, intent, seen: u64::from(tick - 1), ..room::Input::default() };
+            let seen = u64::from(tick - 1);
+            let input = room::Input { sequence: tick, intent, seen, respawn: true, ..room::Input::default() };
             assert_eq!(input_of(player, &input), TAKEN);
         }
         room_tick();

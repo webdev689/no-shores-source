@@ -299,7 +299,9 @@ WebAssembly, so names, factions and weapons are read in one place.
 - **Standing again**: a group whose last foe has fallen stands again, whole and idle at its places at its post and
   its beat begun again from there, 120 s later (a group with a Miniboss or a Boss, 10 minutes later, so neither is
   farmed: [[Bosses and Dungeons Drop Items, Clears Pay, and Shapes Come From the Week's Abyss]]), once
-  no player stands within 40 m of its post and the room's living foes leave room for all of it.
+  no player stands within 40 m of its post and the room's living foes leave room for all of it. In a dungeon run a
+  band whose fall won a checkpoint holds its ground instead while anyone is in the room; elsewhere, a mission's group
+  among them, its checkpoint falls back as it stands again ([[Revives]]).
 - **The limit**: a node's room holds 24 foes, its garrison and every foe its Boss calls counted; a course's room 12.
   Only the living count when a group stands again or a Boss calls, so the fallen, lying their ten seconds, never
   hold them back.

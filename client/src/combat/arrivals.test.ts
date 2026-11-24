@@ -45,6 +45,9 @@ test('players already there when the player arrives stand whole; one met after a
     3,
   );
   assert.equal(arrivals.shareOf(101, 3), 1, 'respawned');
+  arrivals.told([{ kind: EVENT.revived, striker: 101, defender: 103 } as FightEvent], 4);
+  assert.equal(arrivals.shareOf(103, 4), 1, 'revived by an ally, they arrive too');
+  assert.equal(arrivals.shareOf(101, 4), undefined, 'not their reviver');
 });
 
 test('the player’s own figure begins building once their view is first open, and stands whole as it opens', () => {

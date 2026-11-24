@@ -338,13 +338,16 @@ fn every_dungeons_cache_stands_by_its_reeve_its_open_chest_off_rock_every_solid_
 }
 
 #[test]
-fn the_dead_stand_again_at_the_way_in_facing_into_the_room() {
+fn the_dead_who_ask_stand_again_at_the_way_in_facing_into_the_room_before_any_checkpoint() {
     let mut room = Room::dungeon(PATROLS[0], 2, LEVELS).expect("a patrol's dungeon");
     let (arrival, toward) = forged(PATROLS[0], 2).arrival();
     let player = room.join().expect("room");
     let end = room.garrison[0].at;
     stand_player(&mut room, player, [end[0], end[1]]);
     room.players.get_mut(&player).expect("in").fighter.action = Action::Dead { elapsed: combat::tuning::RESPAWN };
+    run(&mut room, 1);
+    assert!(room.players[&player].fighter.dead(), "a page's player lies until they ask");
+    room.players.get_mut(&player).expect("in").respawn_asked = true;
     run(&mut room, 1);
     let body = room.players[&player].fighter.body;
     assert_eq!([body.x, body.y], arrival);

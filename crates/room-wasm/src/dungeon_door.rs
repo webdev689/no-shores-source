@@ -265,6 +265,17 @@ pub extern "C" fn room_stand_at_spawn(player: PlayerId) -> bool {
     .unwrap_or(false)
 }
 
+/// Stands a player logging back in where their character last stood in this social space; whether it did
+/// (`Room::stand_where_left`).
+#[unsafe(no_mangle)]
+pub extern "C" fn room_stand_where_left(player: PlayerId) -> bool {
+    with_open(|opened| match opened {
+        Opened::Land { room, .. } => room.stand_where_left(player),
+        Opened::Sea(_) | Opened::Fleet(_) => false,
+    })
+    .unwrap_or(false)
+}
+
 #[cfg(test)]
 mod tests {
     use super::dungeon_json;

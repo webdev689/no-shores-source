@@ -314,11 +314,18 @@ impl Fighter {
         self.is_player() && self.arms.off_hand == crate::arms::OffHand::Weapon
     }
 
-    /// The ticks from its swing's start to its blow landing, and to its end: a player's pair's at `arms::PAIR_PACE`.
+    /// The ticks from its swing's start to its blow landing, and to its end: a player's pair's at `arms::PAIR_PACE`, a
+    /// foe's at `arms::FOE_SWING_PACE`; a player's companions swing as players do.
     #[must_use]
     pub fn swing_ticks(&self) -> (u32, u32) {
         let melee = self.arms.melee;
-        if self.swings_a_pair() { crate::arms::pair_swing_ticks(melee) } else { crate::arms::swing_ticks(melee) }
+        if !self.side.is_players() {
+            crate::arms::foe_swing_ticks(melee)
+        } else if self.swings_a_pair() {
+            crate::arms::pair_swing_ticks(melee)
+        } else {
+            crate::arms::swing_ticks(melee)
+        }
     }
 
     #[must_use]

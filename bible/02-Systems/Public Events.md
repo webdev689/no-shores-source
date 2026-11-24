@@ -160,10 +160,11 @@ a chest, with its tier. The browser reads it all in `client/src/network/publicMe
 **Agreement.** Every path is tested natively in `crates/room/src/public/`. Two scripted players, reading only their
 snapshots, play a whole Fissure and a whole raid through the room's door
 (`crates/room-wasm/src/public_door_tests.rs`), at level 6 with Rare gear at 6: they win the Fissure, heroic, and
-meet the raid's heroic task but run out its clock in its fourth wave, its stores nearly whole, under `main`'s fight
-(its harm ×1.5 and ×0.75, its foes' pace, and the swings' chain the room keeps whatever stroke is asked)
+meet the raid's heroic task and hold its stores, under `main`'s fight (its harm ×1.5 and ×0.75, its foes' pace and
+their swings at seven eighths, and the swings' chain the room keeps whatever stroke is asked)
 ([[The Balance Pass Goes Halfway Back, and Loot Follows Destiny 1's Order]],
-[[The Audit's Leftovers Are Fixed as Claude Suggested]], [[The Balance and Economy Pass as Claude Shapes It]]); the same script, run through
+[[The Audit's Leftovers Are Fixed as Claude Suggested]], [[The Balance and Economy Pass as Claude Shapes It]],
+[[A Foe's Plain Swing Takes Seven Eighths of Its Time]]); the same script, run through
 WebAssembly by `server/public.test.ts`, comes to the same fingerprints ([[Agree to the Bit]]).
 
 ## The page

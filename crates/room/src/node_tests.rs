@@ -428,7 +428,7 @@ fn a_player_stood_again_below_where_they_died_may_jump_at_once() {
     room.tick();
     room.players.get_mut(&jumper.player).unwrap().fighter.action =
         combat::fighter::Action::Dead { elapsed: combat::tuning::RESPAWN };
-    room.tick();
+    jumper.play(&mut room, STILL, true);
     let stood = room.seen().next().unwrap().fighter.body;
     assert!(stood.z < 1.0 && !room.seen().next().unwrap().fighter.dead(), "stood again on the land: {stood:?}");
     for tick in 0..60 {

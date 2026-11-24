@@ -22,11 +22,13 @@ import { type Strip, type StripRow, hintsFor } from './hints.ts';
 import { stripFit, stripFoot, stripNode } from './keyStrip.ts';
 import { FEED_RISE } from './acquiredFeed.ts';
 import { LeaveHold } from './leaveHold.ts';
-import { countdownText, deathWords, type Standing, vignette, WARNING_SECONDS } from './hudLaw.ts';
+import { countdownText, DEAD_SHADE, deathWords, type Standing, vignette, WARNING_SECONDS } from './hudLaw.ts';
+import type { Fallen } from './footRevive.ts';
 import { markNodes, type ScreenMark } from './hudMarks.ts';
 import { capFace, Tween } from './hudParts.ts';
 import {
   deathNode,
+  fallenNode,
   type HudView,
   noticesNode,
   offerNode,
@@ -112,6 +114,8 @@ export class Hud {
   private title = '';
   private kind = '';
   private standing: Standing = { kind: 'inside' };
+  /** The player's fall in the fight, as the death screen tells it (`footRevive.ts`); null while they stand. */
+  private fallen: Fallen | null = null;
   private readonly shade = new Tween(0, SHADE_S, ease);
   private stripShown: Strip | null = null;
   /** The toasts said now, which the game draws. */
@@ -148,10 +152,10 @@ export class Hud {
   }
 
   /** Shows the player's standing against their section's edge: the warning and its count, or death once it is told,
-   *  saying how they died. */
-  reach(standing: Standing): void {
-    this.standing = standing;
-    this.shade.set(vignette(standing, WARNING_SECONDS), now());
+   *  saying how they died; and their fall in the fight, darkened as a death told. */
+  reach(standing: Standing, fallen: Fallen | null = null): void {
+    [this.standing, this.fallen] = [standing, fallen];
+    this.shade.set(fallen && standing.kind === 'inside' ? DEAD_SHADE : vignette(standing, WARNING_SECONDS), now());
   }
 
   /** What Respawn does. */
@@ -404,6 +408,7 @@ export class Hud {
       standing.kind === 'dead' &&
         standing.told &&
         deathNode(ui, deathWords(standing.fell), standing.canRespawn, () => this.respawnWanted()),
+      standing.kind !== 'dead' && this.fallen && fallenNode(ui, this.fallen, () => this.respawnWanted()),
       this.veilNode(width, clock, still),
       !this.quiet && (this.leaving.node(view, this.title) ?? this.usePrompt.node(view)),
       this.seaSight.node(),
