@@ -16,9 +16,11 @@ import { BannerEditor } from './bannerEditor.ts';
 import { type Banner, bannerFrom, bannerOfName } from './bannerLaw.ts';
 import { detailsNode, FIELDS, foundNode } from './guildDetails.ts';
 import { EDGE, edgeId, homeNode, type Home, type RosterTurn } from './guildHome.ts';
+import { scrollNode } from './guildNodes.ts';
 import { bountiesNode, contributionNode } from './guildWeek.ts';
 import { ridAnswered, withRid } from './outpostAsks.ts';
 import { tierName, kindOf } from './outpostLaw.ts';
+import type { Said } from './outpostRows.ts';
 import { type OutpostsState, type SiteOf, outpostsNode } from './outpostsView.ts';
 import { sitesKept } from './siteNames.ts';
 import { treasuryNode } from './treasuryView.ts';
@@ -80,6 +82,12 @@ export class GuildPage {
     this.now = given.now ?? Date.now;
     this.hidden = given.hidden ?? (() => false);
     this.siteOf = given.siteOf ?? sitesKept;
+    // A guild founded, joined or left elsewhere (the Social tab) is read at once, not at the next look; the page's own
+    // ask, still busy when it tells the change, reads once it is answered.
+    if (typeof addEventListener === 'function')
+      addEventListener(GUILD_CHANGED, () => {
+        if (!this.busy) this.look();
+      });
     this.look();
   }
 
@@ -111,6 +119,7 @@ export class GuildPage {
       this.outpostsState.shown = onto.site;
       this.outpostsState.plan.chosen = onto.structure ?? null;
       this.outpostsState.plan.choosing = null;
+      this.outpostsState.planned = onto.site;
     }
     this.look();
   }
@@ -137,14 +146,17 @@ export class GuildPage {
 
   /** Sends an ask of the guild, one at a time, and asks for the guild again once it is answered; one that changes an
    *  outpost's plot tells the room, which stands it again. */
-  private ask(path: string, body: Readonly<Record<string, unknown>>, said: string, changes = false): void {
+  private ask(path: string, body: Readonly<Record<string, unknown>>, said: Said, changes = false): void {
     if (this.busy) return;
     this.busy = true;
     const sent = withRid(path, body);
-    void this.link
-      .social(path, sent)
-      .then((why) => {
-        this.say(why ?? said);
+    // Words made from the answer need the whole answer; fixed words only whether it was taken.
+    const answered =
+      typeof said === 'string' ? this.link.social(path, sent).then((why) => why ?? {}) : this.link.answered(path, sent);
+    void answered
+      .then((answer) => {
+        const why = typeof answer === 'string' ? answer : null;
+        this.say(typeof answer === 'string' ? answer : typeof said === 'string' ? said : said(answer));
         if (why !== null) return;
         ridAnswered(sent);
         if (MOVES.test(path)) {
@@ -158,7 +170,8 @@ export class GuildPage {
           if (this.outposts?.at === body['site']) this.here()?.ask({ kind: ASKS.outpostChanged });
           dispatchEvent(new Event(OUTPOST_CHANGED));
         }
-        for (const [id] of Object.values(FIELDS)) this.clearField(id);
+        // Only the name invited is cleared: the other fields hold the guild's own words, filled once.
+        if (path === 'guild/invite') this.clearField(FIELDS.invite[0]);
       })
       .finally(() => {
         this.busy = false;
@@ -182,6 +195,8 @@ export class GuildPage {
     this.ui = ui;
     if (this.now() - this.lookedAt >= LOOK_MS && !this.hidden()) this.look();
     if (!this.looked) return { width: 'grow', padding: 24, children: [words('Asking for your guild…', 1, INK.faint)] };
+    // Read before the failure's page returns, which holds the press.
+    if (ui.clicked(AGAIN_ID)) this.look();
     if (this.failure !== null && this.face === null)
       return {
         width: 'grow',
@@ -190,7 +205,6 @@ export class GuildPage {
         padding: 24,
         children: [hintNode(this.failure), pressNode(AGAIN_ID, 'Try again')],
       };
-    if (ui.clicked(AGAIN_ID)) this.look();
     const face = this.face;
     const named = ui.fieldText(FIELDS.name[0]).trim() || 'Guild';
     if (this.view === 'banner' && this.editor) {
@@ -206,7 +220,7 @@ export class GuildPage {
         gap: 10,
         children: [
           foundNode(context, this.roster, banner, this.ask.bind(this), () => this.openEditor(banner, named, true)),
-          this.said !== '' && words(this.said, 1, INK.answer, { wrap: true }),
+          this.said !== '' && words(this.said, context.sizes.label, INK.answer, { wrap: true }),
         ],
       };
     }
@@ -217,14 +231,15 @@ export class GuildPage {
         gap: 10,
         children: [
           detailsNode(context, face, context.holds, this.ask.bind(this), () => this.back()),
-          this.said !== '' && words(this.said, 1, INK.answer, { wrap: true }),
+          this.said !== '' && words(this.said, context.sizes.label, INK.answer, { wrap: true }),
         ],
       };
     if (this.view === 'outposts' || this.view === 'treasury') return this.outpostsPage(context, face);
     for (const icon of EDGE)
       if (ui.clicked(edgeId(icon))) {
         if (icon === 'banner') this.openEditor(this.bannerOf(face), face.name, face.rank <= 1);
-        if (icon === 'details' || icon === 'outposts' || icon === 'treasury') this.view = icon;
+        if (icon === 'details') this.view = icon;
+        if (icon === 'outposts' || icon === 'treasury') this.open(icon);
       }
     return homeNode(context, this.home(ui, face, context.sizes.label), this.turn);
   }
@@ -251,7 +266,8 @@ export class GuildPage {
         setTimeout(() => this.look(), CLAIM_SAVED_MS);
       },
     };
-    const cellPx = Math.max(14, Math.min(26, Math.floor((room.height - 150) / 16)));
+    // The plan's cells fit the room's height under the page's head where they can.
+    const cellPx = Math.max(12, Math.min(26, Math.floor((room.height - 140) / 16)));
     const page =
       this.view === 'treasury'
         ? treasuryNode(ui, outposts, this.now(), sizes.label, acts.room)
@@ -270,12 +286,11 @@ export class GuildPage {
             },
             acts,
           );
-    return {
-      width: 'grow',
-      direction: 'column',
-      gap: 10,
-      children: [page, this.said !== '' && words(this.said, 1, INK.answer, { wrap: true })],
-    };
+    // The page scrolls inside the room, a cue at its foot while more lies below, as the home's middle does.
+    return scrollNode(ui, 'guild-outposts-scroll', room.height - 6, [
+      page,
+      this.said !== '' && words(this.said, sizes.label, INK.answer, { wrap: true }),
+    ]);
   }
 
   /** The guild's outposts on its home, each by its site and its hall. */

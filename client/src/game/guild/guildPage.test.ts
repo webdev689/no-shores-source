@@ -8,7 +8,8 @@ import { type Banner, bannerOfName } from './bannerLaw.ts';
 import { DETAILS_BACK_ID, FIELDS, FOUND_BANNER_ID, FOUND_ID, joinId, sendId } from './guildDetails.ts';
 import { edgeId } from './guildHome.ts';
 import { claimId } from './guildWeek.ts';
-import { GuildPage, guildPage } from './guildPage.ts';
+import { GUILD_CHANGED } from '../gearScreen.ts';
+import { AGAIN_ID, GuildPage, guildPage } from './guildPage.ts';
 
 // What the page dispatches to the page around it: heard and counted, never acted on.
 const heard: string[] = [];
@@ -253,4 +254,59 @@ test('the home names the part over the bounties and outposts for what it holds, 
   const drawing = drawn((context) => guildPage(context, waiting));
   drawing.frame();
   assert.ok(drawing.shows().includes('Asking for your guild…'), drawing.shows());
+});
+
+test("a successful invite clears only the invite's field; the guild's own words stay in theirs", async () => {
+  const { click, type, ui, frame, asked } = await tab(face({ rank: 1 }));
+  click(edgeId('details'));
+  type(FIELDS.invite[0], 'Dax');
+  click(sendId('invite'));
+  await settle();
+  await settle();
+  frame();
+  assert.equal(ui.fieldText(FIELDS.invite[0]), '', 'the name invited is cleared');
+  assert.equal(ui.fieldText(FIELDS.motto[0]), 'No tithe, no master.', 'the motto stays');
+  assert.equal(ui.fieldText(FIELDS.description[0]), 'We sail from Overlook.', 'the description stays');
+  click(sendId('description'));
+  await settle();
+  assert.equal(asked.at(-1), 'guild/description {"description":"We sail from Overlook."}');
+});
+
+for (const failed of ['guild', 'roster'] as const)
+  test(`a failed ${failed} read offers Try again, and the press reads again`, async () => {
+    let reads = 0;
+    const link = {
+      guild: async () => (reads++, failed === 'guild' ? 'The accounts could not be reached.' : { guild: null }),
+      roster: async () => (failed === 'roster' ? 'The accounts could not be reached.' : roster()),
+      outposts: async () => 'You are in no guild.',
+      social: async () => null,
+    } as unknown as AccountLink;
+    const page = new GuildPage({ link, here: () => null, now: () => 0 });
+    const { frame, click, shows } = drawn((context) => guildPage(context, page));
+    await settle();
+    frame();
+    assert.ok(shows().includes('Try again'), shows());
+    click(AGAIN_ID);
+    await settle();
+    assert.equal(reads, 2, 'Try again asks the accounts again');
+  });
+
+test('the Outposts and Treasury presses and a guild change made elsewhere read the guild again', async () => {
+  let reads = 0;
+  const { link } = fakeLink(face());
+  const counting = { ...link, guild: async () => (reads++, { guild: face() }) } as unknown as AccountLink;
+  const listeners: Record<string, () => void> = {};
+  const before = Object.getOwnPropertyDescriptor(globalThis, 'addEventListener');
+  Object.assign(globalThis, { addEventListener: (type: string, heard: () => void) => (listeners[type] = heard) });
+  const page = new GuildPage({ link: counting, here: () => null, now: () => 0 });
+  const { frame, click } = drawn((context) => guildPage(context, page));
+  await settle();
+  frame();
+  click(edgeId('treasury'));
+  assert.equal(reads, 2, 'the Treasury press reads again');
+  await settle();
+  listeners[GUILD_CHANGED]?.();
+  assert.equal(reads, 3, 'a guild change heard reads again');
+  if (before) Object.defineProperty(globalThis, 'addEventListener', before);
+  else Reflect.deleteProperty(globalThis, 'addEventListener');
 });

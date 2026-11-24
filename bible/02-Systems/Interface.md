@@ -752,12 +752,15 @@ the tabs Character (I), Inventory (O), Journal, Compendium, Ship, Social, Guild 
 whole number of pixels wide, their words at the names' size (the words' under 1100 px, or wherever one would not fit
 its tab at the names' size);
 keys on keycaps where the menu is wide enough; Guild opens the player's guild after Destiny 2's clan screen
-([[Guilds]]), with its Outposts page (each outpost's plan from above, a structure a block in its colour with its tier
-and front, a blueprint while built, the decoration as marks, the footprint's ghost green or red as one is placed, the
-grid one Tab stop walked by the arrows; the plan beside the outpost's rows, and the building in a third column where wide; for a founder or admin standing there, a Decorate
+([[Guilds]]), with its Outposts page (each outpost's plan from above, a structure a block in its colour saying its
+mark and tier as the key does, with its front, hollow while built and banded while it rises, the decoration as dots,
+the key naming each by the law and each mark; the footprint's ghost green or red as one is placed, kept on the plot,
+its words beside the plan; the grid one Tab stop walked by the arrows, which speak the ghost's words; the plan beside
+the outpost's rows, its cells shrinking before that column would pass the room, and the building in a third column
+where wide; the page scrolls with a More below chip, every word at the label step; for a founder or admin standing there, a Decorate
 part listing each piece with its price and what the hall holds, whose choice closes the menu and stands the piece's
 ghost a metre past its own reach before the player, green or red, turned with [ and ], placed with the use key) and
-its Treasury page (the ledger in words under column heads), both headed and framed as the Journal is ([[Outposts]]). The chosen tab is a lit brass press; a tab with something new on it
+its Treasury page (the ledger in words in four columns, each as wide as its words), both headed and framed as the Journal is ([[Outposts]]). The chosen tab is a lit brass press; a tab with something new on it
 (the Compendium, while a chapter found waits unread) wears Destiny's small diamond at its top right, and its name is
 read with ", new"; the arrow keys move between tabs. At the top line's right stands the account's mark, after DFO's
 ([[The HUD Drops Its Room Line, and the Account Mark Comes From DFO]]): a round well rimmed in brass with the player's

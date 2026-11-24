@@ -28,19 +28,19 @@ export const TURN_ID = 'outpost-turn';
 export const PLAN_ID = 'outpost-plan';
 export const FACINGS = ['south', 'west', 'north', 'east'] as const;
 
-/** Each kind's colour on the plan, its mark, and its short name for a block too narrow for its whole one. Every colour
- *  keeps 4.5:1 against the dark ink on it and against the blueprint's ground beneath it. */
-export const LOOKS: Readonly<Record<string, readonly [string, string, string]>> = {
-  hall: ['#b9843c', 'H', 'Hall'],
-  standard: ['#8a6fc4', 'S', 'S'],
-  counting: ['#d2ad48', 'C', 'Counting'],
-  'war-table': ['#bc685c', 'W', 'War'],
-  camp: ['#6f9a52', 'I', 'Island'],
-  dock: ['#5483ab', 'D', 'Dock'],
-  gate: ['#847b90', 'G', 'Gate'],
-  lodge: ['#4c9a90', 'L', 'Lodge'],
-  horn: ['#c66d39', 'N', 'Horn'],
-  assay: ['#a89366', 'A', 'Assay'],
+/** Each kind's colour on the plan and its mark. Every colour keeps 4.5:1 against the dark ink on it and against the
+ *  blueprint's ground beneath it. */
+export const LOOKS: Readonly<Record<string, readonly [string, string]>> = {
+  hall: ['#b9843c', 'H'],
+  standard: ['#8a6fc4', 'S'],
+  counting: ['#d2ad48', 'C'],
+  'war-table': ['#bc685c', 'W'],
+  camp: ['#6f9a52', 'I'],
+  dock: ['#5483ab', 'D'],
+  gate: ['#847b90', 'G'],
+  lodge: ['#4c9a90', 'L'],
+  horn: ['#c66d39', 'N'],
+  assay: ['#a89366', 'A'],
 };
 export const DARK_INK = '#0a0c0e';
 export const BLUEPRINT = '#11140f';
@@ -48,8 +48,8 @@ export const BLUEPRINT = '#11140f';
 const FRONT = '#f4ecd8';
 const GROUND = '#1b1f17';
 const GROUND_LIT = '#20251b';
-/** About how wide a letter of the plan's words is, so a block takes the longest name it holds. */
-const CHAR_PX = 7.5;
+/** A piece of decoration's mark on the plan. */
+const DECOR = '#d8cfb8';
 const GHOST_FITS = '#4c9a5c';
 const GHOST_REFUSED = '#9a4c4c';
 const CELL_IDS = Array.from({ length: PLOT_CELLS * PLOT_CELLS }, (_unused, cell) =>
@@ -151,23 +151,31 @@ export function planNode(
   ui: Interface,
   plot: KeptPlot,
   state: PlanState,
-  given: { readonly level: number; readonly treasury: number; readonly cellPx: number },
-): { readonly node: Node; readonly placing: Placing | null; readonly refusal: string | null } {
+  given: { readonly level: number; readonly treasury: number; readonly cellPx: number; readonly size?: number },
+): {
+  readonly node: Node;
+  readonly placing: Placing | null;
+  readonly refusal: string | null;
+  /** What the ghost says: why it cannot stand there, or that it fits; null with no ghost. */
+  readonly said: string | null;
+} {
   const { level, treasury, cellPx } = given;
   const grid = gridOf(plot);
+  // A block's words take the menu's label size where a cell holds them, 12 px of cell a step.
+  const wordsSize = Math.max(1, Math.min(given.size ?? 1, Math.floor(cellPx / 12)));
   let cursor = state.cursor ?? (PLOT_CELLS / 2) * PLOT_CELLS + PLOT_CELLS / 2;
-  for (const key of ui.keysOn(PLAN_ID)) {
+  const keys = ui.keysOn(PLAN_ID);
+  for (const key of keys) {
     const [across, down] = MOVES[key] ?? [0, 0];
     const x = Math.max(0, Math.min(PLOT_CELLS - 1, (cursor % PLOT_CELLS) + across));
     const y = Math.max(0, Math.min(PLOT_CELLS - 1, Math.floor(cursor / PLOT_CELLS) + down));
     cursor = y * PLOT_CELLS + x;
-    ui.speak(cellWords(grid, cursor));
   }
   const hovered = pointedAt(ui, cellPx);
   const focused = ui.focused(PLAN_ID);
   // The keys' cursor leads while the keys hold the focus; else the pointer's cell, or the cursor where it left.
   // The arrows hand the lead to the cursor even after a click put focus there; a click by the pointer takes it back.
-  if (ui.keysOn(PLAN_ID).length > 0 || (focused && ui.keyFocused)) state.keyed = true;
+  if (keys.length > 0 || (focused && ui.keyFocused)) state.keyed = true;
   if (ui.drag(PLAN_ID) !== null) state.keyed = false;
   const keyed = focused && state.keyed === true;
   const spotted = keyed ? cursor : hovered >= 0 ? hovered : focused ? cursor : -1;
@@ -181,50 +189,62 @@ export function planNode(
       ? (placeRefusal(plot, choosing, spot, level) ??
         (kind ? lacksWords(treasury, kind.tiers[0]?.aurem ?? 0, `the ${kind.name}`) : null))
       : null;
+  const fits = kind && spot && refusal === null ? `The ${kind.name} fits here, facing ${FACINGS[state.turn]}.` : null;
+  const said = refusal ?? fits;
+  // The arrows speak the cell they reach and what the ghost says of it.
+  if (keys.length > 0) ui.speak(`${cellWords(grid, cursor)}${said ? `: ${said}` : ''}`);
   let placing: Placing | null = null;
   if (ui.clicked(PLAN_ID) && spot) {
     if (choosing && refusal === null) placing = { kind: choosing, ...spot };
     else if (!choosing) state.chosen = grid.cells[spotted]?.id ?? null;
   }
-  const ghost = choosing && spot ? rectOf({ kind: choosing, ...spot }) : null;
-  const ghostNode: Child = ghost && {
-    width: ((ghost[2] ?? 0) - (ghost[0] ?? 0)) * cellPx,
-    height: ((ghost[3] ?? 0) - (ghost[1] ?? 0)) * cellPx,
-    float: { to: 'parent', x: (ghost[0] ?? 0) * cellPx, y: (ghost[1] ?? 0) * cellPx },
-    through: true,
-    fill: refusal === null ? GHOST_FITS : GHOST_REFUSED,
-    opacity: 0.7,
-    outline: { width: 2, colour: refusal === null ? '#9be0a8' : '#e8968a' },
-    children: [
-      frontNode(
-        state.turn,
-        [((ghost[2] ?? 0) - (ghost[0] ?? 0)) * cellPx, ((ghost[3] ?? 0) - (ghost[1] ?? 0)) * cellPx],
-        cellPx,
-        '#e8e0cc',
-      ),
-    ],
-  };
+  // The ghost is drawn on the plot's cells only: one past its edge is cut at the edge, its refusal saying why.
+  const ghost =
+    choosing && spot
+      ? rectOf({ kind: choosing, ...spot }).map((edge) => Math.max(0, Math.min(PLOT_CELLS, edge)))
+      : null;
+  const ghostSize = ghost
+    ? ([((ghost[2] ?? 0) - (ghost[0] ?? 0)) * cellPx, ((ghost[3] ?? 0) - (ghost[1] ?? 0)) * cellPx] as const)
+    : null;
+  const ghostNode: Child = ghost &&
+    ghostSize && {
+      width: ghostSize[0],
+      height: ghostSize[1],
+      float: { to: 'parent', clipped: true, x: (ghost[0] ?? 0) * cellPx, y: (ghost[1] ?? 0) * cellPx },
+      through: true,
+      fill: refusal === null ? GHOST_FITS : GHOST_REFUSED,
+      opacity: 0.7,
+      outline: { width: 2, colour: refusal === null ? '#9be0a8' : '#e8968a' },
+      // Thicker than a block's, so it shows inside the ghost's outline.
+      children: [frontNode(state.turn, ghostSize, cellPx, '#ffffff', Math.max(5, Math.round(cellPx / 3)))],
+    };
   // The keys' cursor, ringed where the keys hold the focus.
   const ring: Child = keyed && {
     width: cellPx,
     height: cellPx,
-    float: { to: 'parent', x: (cursor % PLOT_CELLS) * cellPx, y: Math.floor(cursor / PLOT_CELLS) * cellPx },
+    float: {
+      to: 'parent',
+      clipped: true,
+      x: (cursor % PLOT_CELLS) * cellPx,
+      y: Math.floor(cursor / PLOT_CELLS) * cellPx,
+    },
     through: true,
     outline: { width: 2, colour: INK.brassLit },
   };
   // Blocks, marks, the ghost and the ring float over the cells without a z of their own, so each is drawn just above
-  // whatever holds the plan: the menu's window floats high, and a fixed low z would draw them under it.
+  // whatever holds the plan: the menu's window floats high, and a fixed low z would draw them under it. Each is clipped
+  // as the cells are, so a scrolled plan never draws over the menu's head.
   return {
     node: {
       id: PLAN_ID,
       press: true,
       keys: ['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown'],
-      label: `The plan, ${cellWords(grid, cursor)}${refusal ? `: ${refusal}` : ''}`,
+      label: `The plan, ${cellWords(grid, cursor)}${said ? `: ${said}` : ''}`,
       direction: 'column',
       outline: { width: 2, colour: INK.stoneHi },
       children: [
         ...rowsOf(grid, cellPx),
-        ...plot.structures.map((standing) => blockNode(standing, cellPx, state.chosen === standing.id)),
+        ...plot.structures.map((standing) => blockNode(standing, cellPx, state.chosen === standing.id, wordsSize)),
         ...plot.decor.map((decor) => decorNode(decor, cellPx)),
         ghostNode,
         ring,
@@ -232,19 +252,31 @@ export function planNode(
     },
     placing,
     refusal,
+    said,
   };
 }
 
-/** A bar along the front of a block `size` pixels across and down, the side it faces as it is turned. */
-function frontNode(turn: number, size: readonly [number, number], cellPx: number, colour: string): Node {
-  const bar = Math.max(3, Math.round(cellPx / 6));
+/** A bar along the front of a block `size` pixels across and down, the side it faces as it is turned; `bar` pixels
+ *  thick. */
+function frontNode(
+  turn: number,
+  size: readonly [number, number],
+  cellPx: number,
+  colour: string,
+  bar = Math.max(3, Math.round(cellPx / 6)),
+): Node {
   const facing = FACINGS[turn % 4];
   const [across, down] = size;
   const flat = facing === 'south' || facing === 'north';
   return {
     width: flat ? across : bar,
     height: flat ? bar : down,
-    float: { to: 'parent', x: facing === 'east' ? across - bar : 0, y: facing === 'south' ? down - bar : 0 },
+    float: {
+      to: 'parent',
+      clipped: true,
+      x: facing === 'east' ? across - bar : 0,
+      y: facing === 'south' ? down - bar : 0,
+    },
     through: true,
     fill: colour,
     opacity: 0.8,
@@ -259,29 +291,27 @@ function decorNode(decor: KeptPlot['decor'][number], cellPx: number): Node {
     height: mark,
     float: {
       to: 'parent',
+      clipped: true,
       x: Math.round((decor.x / CELL_M) * cellPx - mark / 2),
       y: Math.round((decor.y / CELL_M) * cellPx - mark / 2),
     },
     through: true,
-    fill: '#d8cfb8',
+    fill: DECOR,
     outline: { width: 1, colour: DARK_INK },
   };
 }
 
-/** What a block says: its name at its tier where it fits, a shorter name or its mark with the tier where not. */
-export function blockWords(standing: Standing, room: number): string {
-  const [, mark, short] = LOOKS[standing.kind] ?? ['', '?', '?'];
-  const kind = kindOf(standing.kind);
-  const fits = (said: string) => said.length * CHAR_PX <= room;
-  if (!kind || standing.tier === 0) return [kind?.name ?? mark, short].find(fits) ?? mark;
-  const tier = String(standing.tier);
-  const named = kind.tierNames ? `${tierName(kind, standing.tier)} ${tier}` : `${kind.name} ${tier}`;
-  return [named, `${short} ${tier}`, `${mark}${tier}`].find(fits) ?? mark;
+/** What a block says, at every size, as the key names it: its kind's mark and, for a kind with tiers, the tier it
+ *  stands at (none while it is first built); the key gives its name by the law beside the same words. */
+export function blockWords(standing: Standing): string {
+  const [, mark = '?'] = LOOKS[standing.kind] ?? [];
+  const tiered = (kindOf(standing.kind)?.tiers.length ?? 0) > 1 && standing.tier > 0;
+  return tiered ? `${mark}${standing.tier}` : mark;
 }
 
 /** One structure as a block over its cells: its colour, its words, a bar on its front, hollow in its colour while it
  *  is built, banded while a tier rises over it, ringed when chosen. */
-function blockNode(standing: Standing, cellPx: number, chosen: boolean): Node {
+function blockNode(standing: Standing, cellPx: number, chosen: boolean, size: number): Node {
   const [west = 0, north = 0, east = 0, south = 0] = rectOf(standing);
   const [colour] = LOOKS[standing.kind] ?? ['#999999'];
   // A structure never built is its plan drawn in its colour, as a blueprint is, till it stands.
@@ -292,7 +322,7 @@ function blockNode(standing: Standing, cellPx: number, chosen: boolean): Node {
   return {
     width: (east - west) * cellPx - 2,
     height: tall - 2,
-    float: { to: 'parent', x: west * cellPx + 1, y: north * cellPx + 1 },
+    float: { to: 'parent', clipped: true, x: west * cellPx + 1, y: north * cellPx + 1 },
     through: true,
     fill: blueprint ? BLUEPRINT : colour,
     bevel: blueprint ? 0 : 2,
@@ -302,13 +332,12 @@ function blockNode(standing: Standing, cellPx: number, chosen: boolean): Node {
     alignY: 'center',
     gap: 2,
     children: [
-      words(blockWords(standing, (east - west) * cellPx - 8), 1, ink),
-      (blueprint || rising) && tall >= 40 && words(blueprint ? 'building' : 'rising', 1, ink),
+      words(blockWords(standing), size, ink),
       frontNode(standing.turn, [(east - west) * cellPx - 2, tall - 2], cellPx, blueprint ? colour : FRONT),
       rising && {
         width: 'grow',
         height: Math.max(4, Math.round(cellPx / 4)),
-        float: { to: 'parent', anchor: [0, 0], at: [0, 0] },
+        float: { to: 'parent', clipped: true, anchor: [0, 0], at: [0, 0] },
         through: true,
         fill: BLUEPRINT,
         opacity: 0.85,
@@ -317,25 +346,35 @@ function blockNode(standing: Standing, cellPx: number, chosen: boolean): Node {
   };
 }
 
-/** The plan's key: each structure's colour and mark beside its name and tier, so a block too small for its words
- *  still says what it is. */
-export function legendNode(plot: KeptPlot): Node {
+/** The plan's key at `size`: each structure's colour and its block's words beside its name by the law, so a block
+ *  too small for its name still says what it is, and what each other mark the plan draws means. */
+export function legendNode(plot: KeptPlot, size: number): Node {
+  const swatch = (more: Partial<Node>): Node => ({ width: 10 * size, height: 10 * size, ...more });
+  const entry = (mark: Node, said: string): Node => ({
+    gap: 4,
+    alignY: 'center',
+    children: [mark, words(said, size, INK.faint)],
+  });
+  const built = plot.structures.some((standing) => standing.tier === 0);
+  const rising = plot.structures.some((standing) => standing.tier > 0 && standing.building > 0);
   return {
     width: 'grow',
     gap: 10,
     wrap: true,
-    children: plot.structures.map((standing) => {
-      const [colour, mark] = LOOKS[standing.kind] ?? ['#999999', '?'];
-      const tier = standing.tier > 0 ? String(standing.tier) : '';
-      return {
-        gap: 4,
-        alignY: 'center',
-        children: [
-          { width: 10, height: 10, fill: colour },
-          words(`${mark}${tier} ${standingWords(standing)}`, 1, INK.faint),
-        ],
-      };
-    }),
+    children: [
+      ...plot.structures.map((standing) => {
+        const [colour = '#999999'] = LOOKS[standing.kind] ?? [];
+        return entry(swatch({ fill: colour }), `${blockWords(standing)} ${standingWords(standing)}`);
+      }),
+      built && entry(swatch({ fill: BLUEPRINT, outline: { width: 2, colour: INK.faint } }), 'Hollow: being built'),
+      rising &&
+        entry(
+          swatch({ fill: INK.faint, children: [{ width: 'grow', height: 3 * size, fill: BLUEPRINT }] }),
+          'Banded: rising a tier',
+        ),
+      plot.decor.length > 0 &&
+        entry(swatch({ fill: DECOR, outline: { width: 1, colour: DARK_INK } }), 'Dot: decoration'),
+    ],
   };
 }
 
@@ -354,8 +393,14 @@ export function stuffName(stuff: string, island = 'island goods'): string {
 
 /** The kinds a founder or admin may build now, each a press that chooses it to place, its first tier's cost beside
  *  it (the island's own resource named `island`); those the guild's level has not opened are named after them, with
- *  the level that does. */
-export function kindsNode(ui: Interface, plot: KeptPlot, state: PlanState, level: number, island: string): Node {
+ *  the level that does; the words at `size`. */
+export function kindsNode(
+  ui: Interface,
+  plot: KeptPlot,
+  state: PlanState,
+  given: { readonly level: number; readonly island: string; readonly size: number },
+): Node {
+  const { level, island, size } = given;
   const full = (kind: Kind) => plot.structures.filter((standing) => standing.kind === kind.id).length >= kind.most;
   const open = KINDS.filter((kind) => kind.id !== 'hall' && kind.level <= level && !full(kind));
   const later = KINDS.filter((kind) => kind.level > level);
@@ -376,12 +421,12 @@ export function kindsNode(ui: Interface, plot: KeptPlot, state: PlanState, level
       gap: 10,
       alignY: 'center',
       children: [
-        { width: 12, height: 12, fill: colour },
+        { width: 12 * size, height: 12 * size, fill: colour },
         {
           width: 'grow',
           direction: 'column',
           gap: 3,
-          children: [words(kind.name, 1), words(cost, 1, INK.faint, { wrap: true })],
+          children: [words(kind.name, size), words(cost, size, INK.faint, { wrap: true })],
         },
       ],
     };
@@ -392,21 +437,26 @@ export function kindsNode(ui: Interface, plot: KeptPlot, state: PlanState, level
     direction: 'column',
     gap: 6,
     children: [
-      label('Build'),
-      ...(presses.length > 0 ? presses : [words('Everything open to your guild stands here.', 1, INK.faint)]),
+      label('Build', size),
+      ...(presses.length > 0 ? presses : [words('Everything open to your guild stands here.', size, INK.faint)]),
       state.choosing !== null && {
         gap: 10,
         alignY: 'center',
         wrap: true,
         children: [
-          pressNode(TURN_ID, `Turn it: facing ${FACINGS[state.turn]}`),
-          words('Press a cell for its north-west corner.', 1, INK.faint),
+          pressNode(TURN_ID, `Turn it: facing ${FACINGS[state.turn]}`, 'button', '', size),
+          words('Press a cell for its north-west corner.', size, INK.faint, { wrap: true }),
         ],
       },
       later.length > 0 &&
-        words(`Opens later: ${later.map((kind) => `${kind.name} at level ${kind.level}`).join(', ')}.`, 1, INK.faint, {
-          wrap: true,
-        }),
+        words(
+          `Opens later: ${later.map((kind) => `${kind.name} at level ${kind.level}`).join(', ')}.`,
+          size,
+          INK.faint,
+          {
+            wrap: true,
+          },
+        ),
     ],
   };
 }

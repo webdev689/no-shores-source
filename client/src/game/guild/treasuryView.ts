@@ -4,7 +4,7 @@
 
 import type { LedgerLine, OutpostsFace } from '../../network/accounts.ts';
 import { ASKS, type GearAsk } from '../../network/gearMessages.ts';
-import type { Child, Node } from '../../ui/node.ts';
+import type { Node } from '../../ui/node.ts';
 import type { Interface } from '../../ui/ui.ts';
 import { INK, label, pressNode, words } from '../gearNodes.ts';
 import { hintNode } from '../menuPages.ts';
@@ -54,35 +54,52 @@ export function ledgerWords(kind: string): string {
   }
 }
 
-/** The ledger's columns: when, who and what, the amount moved and the balance after. */
-function columnsNode(cells: readonly [Node, Node, Node, Node]): Node {
-  const [when, what, amount, balance] = cells;
+/** The ledger as four columns, each as wide as its longest words at `size`: when, who and what (taking the rest, cut
+ *  with an ellipsis), the amount moved and the balance after. Every cell is one line at one size, so the lines meet. */
+function ledgerNode(ledger: readonly LedgerLine[], now: number, size: number): Node {
+  const column = (head: string, cells: readonly Node[], more: Partial<Node> = {}): Node => ({
+    direction: 'column',
+    gap: 3,
+    ...more,
+    children: [label(head, size), ...cells],
+  });
   return {
     width: 'grow',
-    gap: 14,
-    alignY: 'center',
+    gap: 14 * size,
     children: [
-      { width: 110, children: [when] },
-      { width: 'grow', children: [what] },
-      { width: 90, alignX: 'end', children: [amount] },
-      { width: 110, alignX: 'end', children: [balance] },
+      column(
+        'When',
+        ledger.map((line) => words(agoWords(now, line.at), size, INK.faint)),
+      ),
+      column(
+        'Who and what',
+        ledger.map((line) =>
+          words(`${line.name ?? 'The outpost'}: ${ledgerWords(line.kind)}`, size, INK.word, { ellipsis: true }),
+        ),
+        { width: 'grow' },
+      ),
+      column(
+        'Aurem',
+        ledger.map((line) =>
+          words(
+            `${line.amount >= 0 ? '+' : '−'}${counted(Math.abs(line.amount))}`,
+            size,
+            line.amount >= 0 ? INK.gain : INK.loss,
+          ),
+        ),
+        { alignX: 'end' },
+      ),
+      column(
+        'Balance',
+        ledger.map((line) => words(counted(line.balance), size, INK.faint)),
+        { alignX: 'end' },
+      ),
     ],
   };
 }
 
-/** One line of the ledger, its words at `size`. */
-function lineNode(line: LedgerLine, now: number, size: number): Node {
-  const gain = line.amount >= 0;
-  return columnsNode([
-    words(agoWords(now, line.at), size, INK.faint),
-    words(`${line.name ?? 'The outpost'}: ${ledgerWords(line.kind)}`, size, INK.word, { ellipsis: true }),
-    words(`${gain ? '+' : '−'}${counted(Math.abs(line.amount))}`, size, gain ? INK.gain : INK.loss),
-    words(counted(line.balance), size, INK.faint),
-  ]);
-}
-
-/** The field and the press that put the player's own Aurem in; `fits` whether what is typed may go in. */
-function depositNode(fits: boolean): Node {
+/** The field and the press that put the player's own Aurem in, at `size`; `fits` whether what is typed may go in. */
+function depositNode(fits: boolean, size: number): Node {
   return {
     gap: 10,
     alignY: 'center',
@@ -91,13 +108,13 @@ function depositNode(fits: boolean): Node {
         id: DEPOSIT_FIELD,
         role: 'well',
         width: 200,
-        height: 26,
+        height: 14 + 12 * size,
         padding: [0, 8],
         alignY: 'center',
         label: 'Aurem to put in',
-        field: { most: 7, placeholder: 'Aurem' },
+        field: { most: 7, size, placeholder: 'Aurem' },
       },
-      pressNode(DEPOSIT_ID, 'Put in', 'primary', '', 1, { disabled: !fits }),
+      pressNode(DEPOSIT_ID, 'Put in', 'primary', '', size, { disabled: !fits }),
     ],
   };
 }
@@ -118,7 +135,6 @@ export function treasuryNode(
     room({ kind: ASKS.outpostDeposit, count: amount });
     ui.setFieldText(DEPOSIT_FIELD, '');
   }
-  const lines: Child[] = outposts.ledger.map((line) => lineNode(line, now, size));
   const over =
     typed && !fits
       ? `The treasury holds at most ${counted(TREASURY_MOST)} Aurem: put in ${counted(space)} or less.`
@@ -128,9 +144,8 @@ export function treasuryNode(
     direction: 'column',
     gap: 12,
     padding: [6, 4, 0, 4],
-    maxWidth: 900,
     children: [
-      headNode('Treasury', null, words(`At most ${counted(TREASURY_MOST)} Aurem`, 1, INK.faint)),
+      headNode('Treasury', null, words(`At most ${counted(TREASURY_MOST)} Aurem`, size, INK.faint)),
       partNode([
         {
           width: 'grow',
@@ -140,27 +155,22 @@ export function treasuryNode(
           children: [
             words(`${counted(outposts.treasury)} Aurem`, size + 1, INK.brassLit),
             { width: 'grow' },
-            outposts.at !== null && depositNode(fits),
+            outposts.at !== null && depositNode(fits, size),
           ],
         },
-        over !== null && words(over, 1, INK.loss, { wrap: true }),
+        over !== null && words(over, size, INK.loss, { wrap: true }),
         words(
           "Members put Aurem in at the guild's outposts, and the outposts' strongboxes empty into it. It is spent only on outposts.",
-          1,
+          size,
           INK.faint,
           { wrap: true },
         ),
         outposts.at === null && hintNode("Put your own Aurem in at any of your guild's outposts."),
       ]),
-      {
-        ...partNode([
-          headNode('Ledger', outposts.ledger.length > 0 ? String(outposts.ledger.length) : null),
-          lines.length > 0 && columnsNode([label('When'), label('Who and what'), label('Aurem'), label('Balance')]),
-          ...(lines.length > 0 ? lines : [hintNode('Nothing has moved yet.')]),
-        ]),
-        // Close lines, so the most of the ledger fits on a short screen.
-        gap: 3,
-      },
+      partNode([
+        headNode('Ledger', outposts.ledger.length > 0 ? String(outposts.ledger.length) : null),
+        outposts.ledger.length > 0 ? ledgerNode(outposts.ledger, now, size) : hintNode('Nothing has moved yet.'),
+      ]),
     ],
   };
 }

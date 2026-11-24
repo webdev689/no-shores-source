@@ -70,7 +70,8 @@ const held = (here: boolean, more: Partial<OutpostsFace> = {}, plot: KeptPlot = 
   ...more,
 });
 
-/** The Guild tab over a fake of the accounts whose outposts answer from `answers` in turn, the last kept. */
+/** The Guild tab over a fake of the accounts whose outposts answer from `answers` in turn, the last kept; the first
+ *  answers both the tab's first read and the Outposts press's. */
 async function page(answers: (OutpostsFace | string)[], rank = 0, gear?: GearState | null) {
   let now = 0;
   let reads = 0;
@@ -78,8 +79,10 @@ async function page(answers: (OutpostsFace | string)[], rank = 0, gear?: GearSta
   const link = {
     guild: async () => ({ guild: face(rank) }),
     roster: async () => ({ guild: null }) as unknown as Roster,
-    outposts: async () => answers[Math.min(reads++, answers.length - 1)],
+    outposts: async () => answers[Math.min(Math.max(0, reads++ - 1), answers.length - 1)],
     social: async (path: string) => (asked.push(path), null),
+    // The accounts answer what came back to the treasury: here more than the page weighed.
+    answered: async (path: string) => (asked.push(path), { ok: true, back: 4_321 }),
   } as unknown as AccountLink;
   const room = { ask: (ask: GearAsk) => void asked.push(`room ${ask.kind}`), ...(gear !== undefined && { gear }) };
   const guild = new GuildPage({ link, here: () => room, now: () => now });
@@ -96,11 +99,11 @@ test('the Outposts page reads again every 15 s while it is seen, and on open; a 
   away.later(15_000);
   away.frame();
   await settle();
-  assert.equal(away.reads(), 2, 'read again on the Outposts page');
+  assert.equal(away.reads(), 3, 'read again on the Outposts page');
   away.guild.open('outposts', { site: SITE, structure: 3 });
   await settle();
   away.frame();
-  assert.equal(away.reads(), 3, 'opening it reads');
+  assert.equal(away.reads(), 4, 'opening it reads');
   assert.notEqual(away.ui.boxOf(COLLECT_ID), null, 'the Counting House shows its own Empty press');
   const failed = await page(['Too many asks. Wait a while.', held(true)]);
   assert.ok(failed.shows().includes('Too many asks. Wait a while.'), failed.shows());
@@ -160,7 +163,7 @@ test('the page weighs the treasury: a red ghost and no ask at 0 Aurem, a greyed 
 });
 
 test('abandoning from away asks only the accounts, never the room the player stands in', async () => {
-  const { asked, ui, frame } = await page([held(false)]);
+  const { asked, ui, frame, shows } = await page([held(false)]);
   const box = ui.boxOf(ABANDON_ID);
   assert.ok(box);
   const point = { x: box.x + 4, y: box.y + 4 };
@@ -171,6 +174,8 @@ test('abandoning from away asks only the accounts, never the room the player sta
   for (let step = 0; step < 200; step++) frame([], 1 / 30);
   await settle();
   assert.deepEqual(asked, ['outpost/abandon']);
+  frame();
+  assert.ok(shows().includes('The outpost is abandoned, 4,321 Aurem back.'), 'the amount the accounts answer');
 });
 
 test('by keys the plan is one Tab stop, its arrows move a cursor that shows the ghost and the law, and Enter places', async () => {
@@ -289,7 +294,7 @@ test('the plan draws above the menu window that holds it, and its blocks say the
   const hall = inMenu.ui.laid.find((laid) => laid.node.float && laid.node.fill === LOOKS['hall']?.[0]);
   assert.ok(hall && hall.z > 20, `the hall block at z ${hall?.z}`);
   const stronghold = structure(1, 'hall', 6, 6, 3);
-  for (const room of [40, 80, 200]) assert.match(blockWords(stronghold, room), /3/, `at ${room} px`);
+  assert.equal(blockWords(stronghold), 'H3', 'its mark and tier, at every size');
 });
 
 test('every word on a plan block is at least 4.5:1 against its block', () => {
