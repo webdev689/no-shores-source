@@ -178,6 +178,13 @@ impl Standing {
     pub fn of_week(self, week: u64) -> Result<Self, Refusal> {
         if self.week == Some(week) { Ok(self) } else { Err(Refusal::OutpostTrouble) }
     }
+
+    /// Whether its player was in the guild before `week` turned: so it says for that week, and a standing read in an
+    /// earlier week (the room not yet told the new week's word) says so of anyone it names a member at all.
+    #[must_use]
+    pub fn before(self, week: u64) -> bool {
+        self.before_the_week || self.week.is_some_and(|read| read < week)
+    }
 }
 
 /// What a member's guild's outposts give them wherever they play, each a percent more of what kills and clears pay:
@@ -268,7 +275,7 @@ impl Character {
         if self.guild_week(week).horn {
             return Err(Refusal::GuildBountyClaimed);
         }
-        if !standing.before_the_week {
+        if !standing.before(week) {
             return Err(Refusal::JoinedThisWeek);
         }
         self.keep_package(Purpose::GuildPackage, dice);
@@ -279,12 +286,13 @@ impl Character {
     /// Takes the guild package a member's first clear of their guild dungeon gives, once a week.
     ///
     /// # Errors
-    /// Taken already this week, in the guild only since the week turned, or ten Vestiges carried.
+    /// Taken already this week, in the guild only since the week turned, or ten Vestiges carried. A standing of an
+    /// earlier week judges it as well, as the horn's does.
     pub fn claim_delve_package(&mut self, week: u64, standing: Standing, dice: &Dice) -> Result<(), Refusal> {
         if self.guild_week(week).delve {
             return Err(Refusal::GuildBountyClaimed);
         }
-        if !standing.before_the_week {
+        if !standing.before(week) {
             return Err(Refusal::JoinedThisWeek);
         }
         self.give_package(Purpose::GuildPackage, dice)?;
