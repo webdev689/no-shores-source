@@ -1,5 +1,5 @@
 ---
-id: 175
+id: 186
 title: "A workflow step tested in a worker's own venv passed locally, then failed in CI on a module the pinned requirements lacked, after four hours of figure strips, losing them all"
 status: open
 type: open-source
