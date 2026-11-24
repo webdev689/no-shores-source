@@ -136,7 +136,9 @@ Fragment and 3, 4, 6 and 8 of the island's resource, the same at any level; one 
 heroic chest a player opens each day, at any level, and none from any other, as Destiny 1's first gold event of the
 day sent an Ascendant material (`FIRST_HEROIC_ESSENCE`, kept with the day's record);
 and a Vestige always, of the event's level, a foe's colours from a plain chest (a Major's) and a Boss's from a heroic
-one ([[Gear]]'s colours by rank), the bonus's tier rolling twice and keeping the better. A Vestige with no room in the
+one ([[Gear]]'s colours by rank), the bonus's tier rolling twice and keeping the better; a Normal one comes as its item,
+kept in its slot's nine, else the vault, else the mail ([[Gear]], "Commons drop as themselves").
+A Vestige with no room in the
 ten goes to the vault, and with no room there either lies on the ground where the chest stood, as any drop does; a
 leaver's goes to the vault however full, since the ground they leave would lose it.
 

@@ -80,6 +80,8 @@ mod breach_perks_tests;
 #[cfg(test)]
 mod clock_tests;
 #[cfg(test)]
+mod commons_tests;
+#[cfg(test)]
 mod cosmetics_tests;
 #[cfg(test)]
 mod economy_tests;

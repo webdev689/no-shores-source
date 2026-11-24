@@ -228,6 +228,18 @@ Replaced in part by [[The Balance Pass Goes Halfway Back, and Loot Follows Desti
 order, it opens to its own colour three times in four, and a Miniboss, a Boss and a dungeon's clear leave items as
 themselves too ([[Gear]], "Vestiges").
 
+Replaced in part by [[Commons Drop as Themselves, Never as Vestiges]]: no Vestige is Normal. The calls it leaves open,
+made on the owner's word that Claude finishes them ([[Claude Finishes the Gear Calls on Its Own Word]]):
+
+| Choice | Chosen | Why |
+|---|---|---|
+| A Vestige that rolls Normal | Wherever one would come (a kill, a Boss or a Miniboss, at sea, a chest, a first clear, a playlist, the Test Ground), its item comes instead, made as it would have opened, at Normal, of its slot, level and content; the colours' weights stay as they are | The owner: "Commons should drop, no vestiges for commons". Keeping the weights keeps every rarity's chance as it was: only a Normal one comes unsealed |
+| Where that item goes | As an item found as itself: its slot's nine, else the vault, else the mail; never the ground | A kill's items as themselves are kept so already; the mail keeps it from being lost, as it keeps a Vestige |
+| A Normal item found with no room | Posted as itself, from a new source the page words, where a finer one is still laid as a Vestige of its colour | Laying it as a Vestige would seal a common again |
+| A Vestige opening below its colour | Unchanged: a Magic one may still open Normal | The call is about what drops; what a Vestige opens to is the owner's own earlier call |
+| A Normal Vestige a save already holds | Kept, and opens as before | No Vestige is lost |
+| The Test Ground | Hands out no Normal Vestige; asked for one, the room gives its item | One rule for everything that hands a Vestige out |
+
 ### Materials and keeping things
 
 | Choice | Chosen | Why |

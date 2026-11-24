@@ -1,6 +1,7 @@
 //! A public event's chest, opened by the player it was left for: XP, which grows the worn Art and the faction pledged
 //! as a kill's does; Aurem, Fragments and the island's resource, more with each tier; Essence from the day's first
-//! heroic chest alone; and a Vestige always, the better colours likelier with each tier.
+//! heroic chest alone; and a Vestige always, the better colours likelier with each tier, a
+//! Normal one coming as its item.
 
 use crate::character::{Character, Stuff, Vestige};
 use crate::dice::Dice;
@@ -27,8 +28,9 @@ const HEROIC: u8 = 3;
 pub struct Chest {
     pub xp: u32,
     pub aurem: u32,
-    /// Its Vestige, numbered here and returned to be carried, or laid on the ground when the player's ten are full.
-    pub vestige: Vestige,
+    /// Its Vestige, numbered here and returned to be carried, or laid on the ground when the player's ten are full;
+    /// none when it rolled Normal, whose item is kept as a found item is (`Character::unsealed`).
+    pub vestige: Option<Vestige>,
 }
 
 /// A chest's Vestige: a foe's colours (a Major's, the rank a role's numbers are given at) from a plain chest, a Boss's
@@ -73,8 +75,8 @@ impl Character {
         if let Some(resource) = resource {
             self.materials.add(Stuff::Resource(resource), CHEST_RESOURCE[at]);
         }
-        let (rarity, slot, level) = chest_vestige(tier, level, dice)?;
-        Some(Chest { xp, aurem, vestige: Vestige::new(self.take_id(), rarity, slot, level) })
+        let rolled = chest_vestige(tier, level, dice)?;
+        Some(Chest { xp, aurem, vestige: self.unsealed(rolled, crate::Source::World, dice) })
     }
 }
 

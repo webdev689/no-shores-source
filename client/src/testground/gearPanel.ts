@@ -234,11 +234,16 @@ export class GearPanel {
         'Slot',
         pick(ui, 'tg:grant:slot', slots, String(grant.slot), (value) => (grant.slot = Number(value))),
       ),
+      // No Normal Vestige: a Normal piece drops as itself, so the room hands one out as its item.
       presses(
-        RARITIES.map((rarity, index) =>
-          press(ui, `tg:grant:vestige${index}`, `${rarity.name} Vestige`, () =>
-            ask({ kind: ASKS.grantVestige, rarity: index, slot: grant.slot, level }),
-          ),
+        RARITIES.flatMap((rarity, index) =>
+          index === 0
+            ? []
+            : [
+                press(ui, `tg:grant:vestige${index}`, `${rarity.name} Vestige`, () =>
+                  ask({ kind: ASKS.grantVestige, rarity: index, slot: grant.slot, level }),
+                ),
+              ],
         ),
       ),
       labelled(

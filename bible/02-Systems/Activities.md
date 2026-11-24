@@ -174,9 +174,10 @@ Claude's, recorded in [[The Playlist and Its Dungeons as Claude Shapes Them]].
   the sea ([[Server]], "Where a character comes from").
 - **What it pays.** Every clear pays its kills, its cache and a dungeon's clear, as any run. Beside them:
   - **Daily:** each playlist's first clear each day, a Boss Captain's kill at the run's level and tier (as the dungeon
-    of the day pays) and a sure Vestige in a Boss's colours.
+    of the day pays) and a sure Vestige in a Boss's colours, a Normal one coming as its item
+    ([[Gear]], "Commons drop as themselves").
   - **Weekly:** each playlist's third clear each week, Essence of each stock (Elite 2, Abyss 3) and Vestiges in a
-    Boss's colours (Elite one, Abyss two).
+    Boss's colours (Elite one, Abyss two), each Normal one as its item.
   - A clear counts once a run for each account (`Run::playlist_counted`), however often its cache opens. The daily pays
     only in the day the run was opened for, its modifiers fixed then; a clear counts toward the weekly only in the
     week it was opened in.
@@ -227,7 +228,8 @@ the owner approved ([[Where You Go and the Seas You Choose Set the Difficulty]])
 - **The dungeon of the day**, the first clear at each tier each day, on any island's: beside the cache's own pay
   ([[Dungeons]], "The cache"), a Boss Captain's kill at the run's level, raised by the tier (XP 840 and Aurem 56 at
   level 5, times (5 + level) ÷ 10, times the tier's 1, 1.5 or 2), and a sure Vestige in a Boss's colours at the run's
-  level ([[Gear]], "Vestiges"). Three a day at most, under the rules every Vestige keeps now (no Legendary from foes
+  level ([[Gear]], "Vestiges"), a Normal one coming as its item ([[Gear]], "Commons drop as themselves").
+  Three a day at most, under the rules every Vestige keeps now (no Legendary from foes
   under level 18).
 - **The Elite Dungeon of the week**, once: a Legendary Vestige (its item at level 20) and 3 Essence of each stock.
 - **The Abyss Dungeon of the week**, once: a Legendary Vestige, Atheric one time in five, 5 Essence of each stock,
@@ -237,7 +239,8 @@ the owner approved ([[Where You Go and the Seas You Choose Set the Difficulty]])
   deck earns no boon, as it pays no officer ([[Naval Combat]]).
 - **Where it is paid.** The room pays as the cache opens, each player then in it whose character it keeps, and keeps the
   Vestige with the record that pays it, in the carried ten, else the vault, else the mail ([[Gear]], "The mail"), so a
-  Vestige once paid is never lost (`pay_clear`, `keep_paid`). A player playing unkept finds the
+  Vestige once paid is never lost (`pay_clear`, `keep_paid`); a Normal one's item is kept as it is made, in its slot's
+  nine, else the vault, else the mail. A player playing unkept finds the
   cache's own pay alone. A run's first clear pays only in the day or the week it was opened for, as its modifiers
   are fixed then. The day's pays in a run opened while its dungeon was its island's dungeon of the day, with that day's
   modifier at Elite and Abyss, and cleared that day; and at Normal in a patrol's shared room while it is its island's

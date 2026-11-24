@@ -1,4 +1,5 @@
-//! A public event's chest pays more with each tier, always a Vestige, and reputation as a kill does.
+//! A public event's chest pays more with each tier, always a Vestige (or a Normal roll's item), and reputation as a
+//! kill does.
 
 use crate::asks::{Ask, Here};
 use crate::character::Character;
@@ -43,7 +44,8 @@ fn a_heroic_chest_draws_the_better_colours_and_the_bonus_keeps_the_better_of_two
                     .open_chest(tier, (20, Difficulty::Normal, 0), None, &dice)
                     .expect("a chest")
                     .vestige
-                    .rarity as u32
+                    // A Normal roll comes as its item, no Vestige: the least colour.
+                    .map_or(0, |vestige| vestige.rarity as u32)
             })
             .sum::<u32>()
     };

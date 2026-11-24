@@ -45,6 +45,7 @@ code:
   - crates/gear/src/rewards.rs#worth
   - crates/gear/src/rewards.rs#loot_kill
   - crates/gear/src/rewards.rs#keep_found
+  - crates/gear/src/rewards.rs#unsealed
   - crates/gear/src/rewards.rs#Clear
   - crates/gear/src/vestige.rs#found_items
   - crates/room/src/clears.rs#pay_garrison_clear
@@ -170,6 +171,14 @@ number is one of [[Gear as Claude Shapes It]].
   level 20, its Prestige a Legendary's, its nodes asking for an island's resource rolled among the catalogue's, and a
   Breach's Legendary armour climbs to 30 Prestige. A Breach's armour or weapon rolls its perk columns from the
   Breaches' own perks ("Verbs", "The Breaches' perks"). A ship's Legendary module is a named one ([[Ship Power]]).
+- **Commons drop as themselves** ([[Commons Drop as Themselves, Never as Vestiges]]). A Vestige is Magic or finer:
+  wherever a Vestige rolls Normal (a kill's, a Boss's or a Miniboss's, at sea too, a chest's, a first clear's, a
+  playlist's, the [[Test Ground]]'s), the Normal item comes instead, made as that Vestige would have opened, at
+  Normal, of its slot, level and content (`unsealed`), at the same chance, the colours' weights as they stand. It is
+  kept as an item found as itself is: in its slot's nine, else the vault, else the mail ("Items as themselves", "The
+  mail"); the page shows it in the loot feed as every new item, never as a crystal on the ground. A Vestige still
+  opens below its colour as above, so a Magic one may open Normal. A Normal Vestige a save already holds is kept and
+  opens as before. A package is Rare or Legendary and a week's clear Legendary or Atheric, so neither ever rolls one.
 - **Names** ([[Everything Carries a Set Name, and Perks Roll by Pool]]). Every rolled armour piece and weapon is named
   by its set and its kind's word: "Portwatch Helm", "Wreckborn Sword and Shield" (`itemName`). Its set is the one its
   look is drawn in, before the forge's fallbacks: each look of each content carries its set's name in
@@ -186,7 +195,8 @@ number is one of [[Gear as Claude Shapes It]].
   35 times in 100, each beside its Vestige and by a roll of its own, raised by the tier as the Vestige is
   (`vestige::found_items`, `loot_kill`). It is made as a Vestige of its rank's colours, opened, would make it, for any
   slot, at the foe's level, and goes into its slot's nine, else the vault; with both full it is laid as a Vestige of
-  its colour and slot at the foe's level, whatever a named item's own (`keep_found`).
+  its colour and slot at the foe's level, whatever a named item's own, but a Normal one is posted as itself
+  (`keep_found`).
 - **A clear** ([[Bosses and Dungeons Drop Items, Clears Pay, and Shapes Come From the Week's Abyss]], `room::clears`):
   once every group of a mission's, a dungeon's or a world boss's garrison is down at once, no wave standing, each
   player still in the room who shared a kill of a foe of its own groups, not a wave's or a quest's, since its last
@@ -463,7 +473,9 @@ DFO's spoils ([[Pick - Loot Drops]]).
 - **What goes there.** What a player owned and would lose: a Vestige drop that lay its two minutes out, or still lay
   as they left the room ("Drops"); a first clear's Vestige while the carried ten and the vault were full
   ([[Activities]], "Where it is paid"); a Vestige in flotsam gathered while the ten were full; a module salvaged while
-  its slot carried nine ([[Ship Power]]). Each letter says in plain words where its piece came from. Ammo boxes, Ammo crates and materials
+  its slot carried nine ([[Ship Power]]); a Normal item found, or come in a Vestige's place, while its slot carried
+  nine and the vault was full ("Commons drop as themselves").
+  Each letter says in plain words where its piece came from. Ammo boxes, Ammo crates and materials
   past their most are not items, and stay as they were.
 - **Fifty letters.** A mailbox keeps 50 (`MAIL_MOST`). One more lets go the letter holding the least (by rarity, a
   letter holding what this build does not know above all), the oldest of those and the new one among them, and the

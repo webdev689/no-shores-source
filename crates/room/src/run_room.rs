@@ -149,12 +149,15 @@ impl Room {
                 (opened == day).then(|| character.clear_of_the_day(day, tier, level, &dice)).flatten()
             }
             Pays::Week { weekly, week } => {
-                (week == now).then(|| character.clear_of_the_week(week, weekly, &dice)).flatten()
+                (week == now).then(|| character.clear_of_the_week(week, weekly, &dice).map(Some)).flatten()
             }
         };
-        let Some(vestige) = vestige else { return };
+        // Paid, a Vestige to keep or a Normal one's item kept already; nothing once taken.
+        let Some(paid) = vestige else { return };
         found.gear_changed = true;
-        character.keep_paid(vestige);
+        if let Some(vestige) = paid {
+            character.keep_paid(vestige);
+        }
     }
 }
 

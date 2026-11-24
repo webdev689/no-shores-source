@@ -7,7 +7,7 @@
 use crate::{PlayerId, Room, Standing};
 use gear::dice::Dice;
 use gear::vendor::Vendor;
-use gear::{Ask, Here, Item, Kind, Rarity, Refusal, Slot, Vestige};
+use gear::{Ask, Here, Item, Kind, Rarity, Refusal, Slot};
 
 /// How near the stall a player must stand for a social space's asks, a counter for its own, and a resource node for
 /// gathering, in metres. A counter's is a metre past where the browser offers it, for a body still walking up.
@@ -440,9 +440,10 @@ impl Room {
         let character = &mut found.character;
         match grant {
             Grant::Vestige { rarity, slot, level } => {
-                let id = character.take_id();
-                let vestige = Vestige::new(id, rarity, slot, level.clamp(1, gear::item::ITEM_LEVEL_MOST));
-                if !character.pick_up(vestige) {
+                // A Normal one comes as its item, as every Normal drop does, kept as a found item is.
+                let rolled = (rarity, slot, level.clamp(1, gear::item::ITEM_LEVEL_MOST));
+                let unsealed = character.unsealed(rolled, gear::Source::World, &dice);
+                if unsealed.is_some_and(|vestige| !character.pick_up(vestige)) {
                     return answer_code(Err(Refusal::VestigesFull));
                 }
             }

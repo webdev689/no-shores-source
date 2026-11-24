@@ -119,9 +119,13 @@ fn a_kills_drops_and_items_come_from_the_content_it_was_in() {
 
 #[test]
 fn first_clears_pay_vestiges_of_their_content() {
+    // A Normal roll is kept as its item, the newest one, of the same content.
+    let content = |character: &Character, paid: Option<Vestige>| {
+        paid.map_or_else(|| character.items.values().last().expect("an item").0.source, |vestige| vestige.source)
+    };
     let mut character = Character::starting();
     let day = character.clear_of_the_day(20_778, Difficulty::Elite, 12, &dice(1)).expect("the day's");
-    assert_eq!(day.source, Source::Dungeon);
+    assert_eq!(content(&character, day), Source::Dungeon);
     let weekly = |weekly| Character::starting().clear_of_the_week(2_968, weekly, &dice(1)).expect("the week's").source;
     assert_eq!(weekly(crate::activities::Weekly::Elite), Source::Elite);
     assert_eq!(weekly(crate::activities::Weekly::Abyss), Source::Abyss);
@@ -129,7 +133,7 @@ fn first_clears_pay_vestiges_of_their_content() {
     for (playlist, source) in [(Playlist::Elite, Source::Elite), (Playlist::Abyss, Source::Abyss)] {
         let mut character = Character::starting();
         let daily = character.playlist_of_the_day(20_778, playlist, 22, &dice(1)).expect("the day's");
-        assert_eq!(daily.source, source);
+        assert_eq!(content(&character, daily), source);
         let weekly: Vec<Vestige> =
             (0..3).flat_map(|_| character.playlist_of_the_week(2_968, playlist, 22, &dice(2))).collect();
         assert!(!weekly.is_empty() && weekly.iter().all(|vestige| vestige.source == source));
@@ -199,8 +203,11 @@ fn an_item_with_no_room_is_laid_as_a_vestige_of_the_content_it_dropped_in() {
     }
     let laid: Vec<Vestige> =
         (0..20).flat_map(|seed| character.loot_kill(5, 20, Difficulty::Normal, Source::Abyss, &dice(seed))).collect();
-    assert!(laid.len() > 20, "a Boss's item each kill, laid for want of room: {}", laid.len());
+    // A Normal one, never sealed, is posted as itself instead.
+    let posted: Vec<&Item> = character.mail.iter().filter_map(|letter| letter.item.as_ref()).collect();
+    assert!(laid.len() + posted.len() > 20, "a Boss's item each kill, laid for want of room: {}", laid.len());
     assert!(laid.iter().all(|vestige| vestige.source == Source::Abyss));
+    assert!(posted.iter().all(|item| item.source == Source::Abyss && item.rarity == Rarity::Normal));
 }
 
 #[test]
