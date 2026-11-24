@@ -19,6 +19,7 @@ code:
   - crates/room/src/sea.rs#Sea
   - crates/room/src/sea.rs#PACES
   - crates/room/src/plates.rs#take_plate_changes
+  - crates/room/src/sea_plates.rs#plate
   - crates/room/src/sea_waters.rs#water_name
   - crates/room/src/fleet.rs#Fleet
   - crates/room/src/fleet.rs#CAPTAINS_MOST
@@ -418,8 +419,11 @@ an older reader skips them.
 **Plates.** On land each player's plate, what others read over their head ([[Interface]], "Players"), crosses as a table
 of its own: their number, their username (none for a guest), their level, and whether a menu is open on their screen, as
 their last input said. Every plate goes in the welcome, and a plate that changed goes in every snapshot until a later
-one is shown, as a dress does, the newest of each player's alone (`plates.rs`, `take_plate_changes`). At sea no plate
-crosses: a deck draws none, and the sea names no one.
+one is shown, as a dress does, the newest of each player's alone (`plates.rs`, `take_plate_changes`). At sea every snapshot
+carries the plate of each other player's ship it sends, whole, as the sea's ships are sent whole: their username, their
+character's level, and never a menu, which the sea hears nothing of; none before the sea holds their character, and
+none of the player's own (`Sea::plate`; [[Other Ships Wear Their Players' Marks, the Sea Map Has No Fog, and New
+Players Ride a Bay That Bursts]]). A deck boarded draws none.
 
 **Each player's own snapshot.** On land a snapshot is written for each player. Their own fighter crosses whole, as
 they predict from it; everyone else's numbers, and every foe's, cross packed: each in thousandths, a whole number
@@ -540,8 +544,8 @@ so every decision is Rust and the shell only carries bytes and time.
   second (a browser sends 60), closes the socket, since that browser is not keeping to the messages. Its player
   leaves at once, no snapshot is sent to a socket that is closing, and whatever it had already sent is passed over
   unread.
-- A kept player is named in the room by their account's username, which the claim answers (`Room::name_player`, through
-  `room_name`), for their plate; a guest, or a player who plays unkept, has no name.
+- A kept player is named in the room by their account's username, which the claim answers (`Room::name_player`, or at
+  sea `Sea::name_player`, through `room_name`), for their plate; a guest, or a player who plays unkept, has no name.
 - A browser's one text message is its session's token. In a node's room, a dungeon's, an island's and at sea the
   player's character is claimed with it from the [[Accounts]], saved as it changes and let go when they leave. As a
   player leaves, the host first has the room send every Vestige still lying for them to their mail (`mailLying`, at sea

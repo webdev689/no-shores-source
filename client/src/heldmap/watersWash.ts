@@ -1,4 +1,4 @@
-// The waters as the held map shows them: a faint wash over the charted sea in each water's holder's colour, soft
+// The waters as the held map shows them: a faint wash over the sea in each water's holder's colour, soft
 // across borders, the Grey Tithe's and the Lattice's waters hatched, and each water's name and level band lettered at
 // the sea cell of it farthest from land and from other waters. Worked out on the grid the waters' rules judge, which
 // the game hands over in the map's own terms (`MapWaters`); nothing here draws.
@@ -36,7 +36,7 @@ export const HOLDER_COLOURS: Readonly<Record<WaterHolder, string>> = {
   // than the others' (the game's test holds the two alike).
   lattice: '#de3d49',
 };
-/** How strongly the holders' colours are washed over the charted sea; and the level lines laid over the Grey Tithe's
+/** How strongly the holders' colours are washed over the sea; and the level lines laid over the Grey Tithe's
  *  wash in a dark slate and over the Lattice's in a dark crystal red, each line's colour, strength and spacing, device
  *  pixels. */
 export const WASH_STRENGTH = 0.26;
@@ -44,17 +44,17 @@ export const HATCHES = {
   lattice: { colour: [96, 20, 28], strength: 0.3, spacingPx: 7 },
   'grey-tithe': { colour: [74, 85, 99], strength: 0.3, spacingPx: 7 },
 } as const;
-/** The map's parchment where its ink is laid, the forge's sheet's middle colour, under the charted sea's faint ink. */
+/** The map's parchment where its ink is laid, the forge's sheet's middle colour, under the sea's faint ink. */
 export const MAP_PARCHMENT: readonly [number, number, number] = [208, 171, 118];
-const CHARTED_INK = { colour: [58, 40, 22], strength: 0.08 } as const;
+const SEA_INK = { colour: [58, 40, 22], strength: 0.08 } as const;
 
-/** A holder's wash as the map shows it on the charted sea: its colour at `WASH_STRENGTH` over the parchment and the
- *  charted sea's faint ink, `#rrggbb`. */
+/** A holder's wash as the map shows it on the sea: its colour at `WASH_STRENGTH` over the parchment and the
+ *  sea's faint ink, `#rrggbb`. */
 export function washedOver(holder: WaterHolder): string {
   const own = rgbOf(HOLDER_COLOURS[holder]);
   return `#${MAP_PARCHMENT.map((channel, index) => {
-    const charted = channel * (1 - CHARTED_INK.strength) + CHARTED_INK.colour[index]! * CHARTED_INK.strength;
-    const washed = charted * (1 - WASH_STRENGTH) + own[index]! * WASH_STRENGTH;
+    const inked = channel * (1 - SEA_INK.strength) + SEA_INK.colour[index]! * SEA_INK.strength;
+    const washed = inked * (1 - WASH_STRENGTH) + own[index]! * WASH_STRENGTH;
     return Math.round(washed).toString(16).padStart(2, '0');
   }).join('')}`;
 }
@@ -94,7 +94,7 @@ export function difficultyColour(levels: readonly [number, number] | null): stri
 }
 
 /** The wash a cell at a time: `colour` RGBA, its colour the holders' of the sea round it blended over the cells either
- *  side, its alpha the share of them that is charted sea, the colour multiplied by it; `hatch` two bytes a cell, the
+ *  side, its alpha the share of them that is sea, the colour multiplied by it; `hatch` two bytes a cell, the
  *  share of them that is the Lattice's and the share that is the Grey Tithe's. */
 export interface WatersWash {
   readonly colour: Uint8Array;
@@ -116,12 +116,11 @@ export function holderOf(waters: MapWaters, index: number): WaterHolder | null {
   return waters.waters[water]?.holder ?? 'home';
 }
 
-/** The wash over the waters, only where `charted` (a byte a cell, the waters' own cells) is set. Each cell blends the
- *  charted sea cells within one of it, so a border is soft over a cell or two once the map samples it between cells. */
-export function washOf(waters: MapWaters, charted: Uint8Array): WatersWash {
+/** The wash over the waters. Each cell blends the sea cells within one of it, so a border is soft over a cell or two
+ *  once the map samples it between cells. */
+export function washOf(waters: MapWaters): WatersWash {
   const { columns, rows } = waters;
   const cells = waters.water;
-  if (charted.length !== cells.length) throw new Error('the charted sea is not on the waters’ grid');
   const colours = Object.fromEntries(
     Object.entries(HOLDER_COLOURS).map(([holder, hex]) => [holder, rgbOf(hex)]),
   ) as Record<WaterHolder, readonly [number, number, number]>;
@@ -135,7 +134,7 @@ export function washOf(waters: MapWaters, charted: Uint8Array): WatersWash {
           const [x, y] = [column + across, row + down];
           if (x < 0 || y < 0 || x >= columns || y >= rows) continue;
           const near = y * columns + x;
-          const holder = charted[near] ? holderOf(waters, near) : null;
+          const holder = holderOf(waters, near);
           if (!holder) continue;
           const [cellRed, cellGreen, cellBlue] = colours[holder];
           [red, green, blue, sea] = [red + cellRed, green + cellGreen, blue + cellBlue, sea + 1];
@@ -201,15 +200,6 @@ export function labelPoints(waters: MapWaters): Map<number, readonly [number, nu
   for (const [own, { index }] of best)
     points.set(own, [((index % columns) + 0.5) * cellM, (Math.floor(index / columns) + 0.5) * cellM]);
   return points;
-}
-
-/** The waters any of whose sea is charted, by continent index. */
-export function chartedWaters(waters: MapWaters, charted: Uint8Array): Set<number> {
-  const found = new Set<number>();
-  waters.water.forEach((water, index) => {
-    if (charted[index] && water >= 0) found.add(water);
-  });
-  return found;
 }
 
 /** A water's words on the map: its name and its level band, "The Fen Deeps, 22-26". */

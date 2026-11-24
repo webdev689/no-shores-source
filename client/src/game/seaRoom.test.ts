@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { courseBytes, helmBytes } from '../network/messages.ts';
 import type { SeenShip } from '../network/messages.ts';
+import type { PlayerPlate } from '../network/plateMessages.ts';
 import type { Snapshot } from '../network/roomConnection.ts';
 import { SeaRoom } from './seaRoom.ts';
 
@@ -26,7 +27,12 @@ async function joined() {
     [50_000, 150_000],
     10,
   );
-  const atTick = (tick: number, ships: readonly SeenShip[] = [], told: readonly number[][] = []) =>
+  const atTick = (
+    tick: number,
+    ships: readonly SeenShip[] = [],
+    told: readonly number[][] = [],
+    plates: readonly PlayerPlate[] = [],
+  ) =>
     hand({
       tick: BigInt(tick),
       players: [],
@@ -40,6 +46,7 @@ async function joined() {
       islands: [],
       taken: [],
       friendlies: [],
+      plates,
     } as unknown as Snapshot);
   return { room, sent, atTick, link };
 }
@@ -145,4 +152,14 @@ test('a travel given up lets courses through again and forgets any answer, as a 
   atTick(1100, [], [[24, 1099, 0]]);
   room.travel([[550_000, 150_000]], 10);
   assert.equal(room.takeTravelled(), null, 'a late answer is no answer to the new travel');
+});
+
+test('the plate over each other ship in sight is the one its last snapshot sent, and one no longer sent is gone', async () => {
+  const { room, atTick } = await joined();
+  const plate = (player: number, name: string): PlayerPlate => ({ player, name, level: 9, menu: false });
+  atTick(1, [], [], [plate(2, 'Wooden_Osprey'), plate(3, '')]);
+  assert.deepEqual([...room.plates.keys()], [2, 3]);
+  assert.equal(room.plates.get(2)?.name, 'Wooden_Osprey');
+  atTick(2, [], [], [plate(3, '')]);
+  assert.deepEqual([...room.plates.keys()], [3], 'sailed out of sight');
 });

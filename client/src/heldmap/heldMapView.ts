@@ -1,5 +1,5 @@
-// The held map drawn over the finished picture: the forge's parchment, the world inked on it under the player's fog of
-// war, then the gauntlets holding it. The ink is worked out a pixel at a time from the coast field, so its coasts are
+// The held map drawn over the finished picture: the forge's parchment, the world inked on it, then the gauntlets
+// holding it. The ink is worked out a pixel at a time from the coast field, so its coasts are
 // sharp at any zoom.
 import { DESIGN_HEIGHT, DESIGN_WIDTH } from '../firstperson/fpMotion.ts';
 import { FirstPersonView } from '../firstperson/firstPersonView.ts';
@@ -36,11 +36,10 @@ struct Ink {
 @group(0) @binding(0) var<uniform> ink: Ink;
 @group(0) @binding(1) var distances: texture_2d<f32>;
 @group(0) @binding(2) var islands: texture_2d<u32>;
-@group(0) @binding(3) var charted: texture_2d<f32>;
 @group(0) @binding(4) var soft: sampler;
 // Each of the route's points: where it lies, metres, and how far along the route.
 @group(0) @binding(5) var<storage, read> route: array<vec4f>;
-// The waters' wash over the charted sea, its holders' colours blended and its alpha how much is charted sea; and how
+// The waters' wash over the sea, its holders' colours blended and its alpha how much is sea; and how
 // much of it is the Lattice's and how much the Grey Tithe's, each hatched (watersWash.ts).
 @group(0) @binding(6) var wash: texture_2d<f32>;
 @group(0) @binding(7) var hatch: texture_2d<f32>;
@@ -135,13 +134,12 @@ fn route_at(world: vec2f) -> f32 {
   let cell = vec2i(clamp(floor(world / ink.field.z), vec2f(0.0), ink.field.xy - 1.0));
   let island = textureLoad(islands, cell, 0).r;
   let seen = island != NO_ISLAND && ((ink.known.x >> min(island, 31u)) & 1u) == 1u;
-  let fog = textureSampleLevel(charted, soft, world / size, 0.0).r;
   let onMap = all(at.xy >= ink.rect.xy) && all(at.xy <= ink.rect.xy + ink.rect.zw);
   let inside = onMap && all(world >= vec2f(0.0)) && all(world <= size);
   let metres = distance_at(world);
   let pixels = metres * ink.view.z;
-  // The charted sea, a faint wash; the parchment itself is the land and the unknown.
-  var alpha = select(0.0, 0.08 * fog, metres > 0.0 && inside);
+  // The sea, a faint wash; the parchment itself is the land.
+  var alpha = select(0.0, 0.08, metres > 0.0 && inside);
   if (seen && onMap) {
     // The coast drawn twice, as a pen does: a soft wash on the sea's side, then the line.
     alpha = max(alpha, 0.92 * (1.0 - smoothstep(0.55, 1.35, abs(pixels))));
@@ -223,8 +221,6 @@ export class HeldMapView {
   private readonly inking: GPURenderPipeline;
   private readonly inkUniforms: GPUBuffer;
   private readonly routeBuffer: GPUBuffer;
-  private readonly charted: GPUTexture;
-  private readonly chartedBytes: Uint8Array;
   private readonly wash: GPUTexture;
   private readonly hatch: GPUTexture;
   private readonly lit: GPUTexture;
@@ -251,7 +247,6 @@ export class HeldMapView {
         { binding: 0, visibility: SHADER_STAGE.vertex | SHADER_STAGE.fragment, buffer: {} },
         { binding: 1, visibility: SHADER_STAGE.fragment, texture: { sampleType: 'unfilterable-float' } },
         { binding: 2, visibility: SHADER_STAGE.fragment, texture: { sampleType: 'uint' } },
-        { binding: 3, visibility: SHADER_STAGE.fragment, texture: {} },
         { binding: 4, visibility: SHADER_STAGE.fragment, sampler: {} },
         { binding: 5, visibility: SHADER_STAGE.fragment, buffer: { type: 'read-only-storage' } },
         { binding: 6, visibility: SHADER_STAGE.fragment, texture: {} },
@@ -285,8 +280,6 @@ export class HeldMapView {
     device.queue.writeTexture({ texture: distances }, field.distance, { bytesPerRow: columns * 4 }, [columns, rows]);
     const islands = texture('r8uint');
     device.queue.writeTexture({ texture: islands }, field.island, { bytesPerRow: columns }, [columns, rows]);
-    this.charted = texture('r8unorm');
-    this.chartedBytes = new Uint8Array(columns * rows);
     this.wash = texture('rgba8unorm');
     this.hatch = texture('rg8unorm');
     this.lit = texture('r8unorm');
@@ -296,7 +289,6 @@ export class HeldMapView {
         { binding: 0, resource: { buffer: this.inkUniforms } },
         { binding: 1, resource: distances.createView() },
         { binding: 2, resource: islands.createView() },
-        { binding: 3, resource: this.charted.createView() },
         { binding: 4, resource: device.createSampler({ magFilter: 'linear', minFilter: 'linear' }) },
         { binding: 5, resource: { buffer: this.routeBuffer } },
         { binding: 6, resource: this.wash.createView() },
@@ -330,16 +322,6 @@ export class HeldMapView {
   /** Whether the pictures have come, so the map can be drawn. */
   get ready(): boolean {
     return this.pictures !== null;
-  }
-
-  /** Lays the charted sea on the map: a byte a cell, 1 where charted. */
-  setCharted(charted: Uint8Array): void {
-    for (let index = 0; index < charted.length; index++) this.chartedBytes[index] = charted[index] ? 255 : 0;
-    const { columns, rows } = this.field;
-    this.gpu.device.queue.writeTexture({ texture: this.charted }, this.chartedBytes, { bytesPerRow: columns }, [
-      columns,
-      rows,
-    ]);
   }
 
   /** Lays the waters' wash on the map, on the coast field's own cells (`washOf`). */

@@ -69,7 +69,7 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement): Promise<vo
   // The size ships are drawn at this frame, which a ruin's wrecks are drawn at too: the sea's, true size on foot.
   let shipScale = 1;
   const boot = await bootGame(gpu, canvas, () => shipScale);
-  const { hud, stack, ui, story, rooms, link, session, world, landTexts, start, discovered, roomModule, land } = boot;
+  const { hud, stack, ui, story, rooms, link, session, world, landTexts, start, shown, roomModule, land } = boot;
   const { scene, shipModels, figureView, forge, firstPerson, store, sloop, movement, drawersOn, terrainFor } = boot;
   const { builtSloop } = boot;
   const dungeons = new DungeonDrawers(gpu, figureView, boot.cityAssets, boot.biomeOf);
@@ -325,7 +325,6 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement): Promise<vo
     ...{ walker, dead, game: playing },
   });
   const landAt = (id: string) => {
-    discovered.nodes([id]);
     const landing = playing.sea?.view.landingOf(id);
     const node = playing.landmass.nodes.find((each) => each.id === id);
     if (!landing || !node || !playing.sea) return;
@@ -356,7 +355,6 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement): Promise<vo
     if (!where || !node)
       return place === 'sea' ? 'They are at sea: meet them where they land.' : 'They are across the sea.';
     const facing = arrivalFacing(node, playing.landmass.plan, null);
-    discovered.nodes([node.id]);
     if (where.dungeon !== null || where.run !== null) trips.join(node, place);
     else travel({ kind: 'join', node: node.id, name: node.name }, () => goFoot(node, facing, where.seas));
     return null;
@@ -383,7 +381,6 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement): Promise<vo
     }
     if (!playing.sea.goAshore()) return;
     change({ kind: 'view-landings' });
-    discovered.nodes(playing.sea.view.landings);
   };
 
   /** The player walks ashore on an island, the veil saying why: anchored off it, or washed up on its beach. The sea
@@ -577,7 +574,7 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement): Promise<vo
     {
       ...{ gpu, canvas, hud, input, scene, walker, firstPerson, footView, shipModels, figureView, traffic },
       ...{ ui, stack, drain, crews: shipPeopleOf(roomModule, forge) },
-      ...{ discovered, charting, seaWeather: boot.seaWeather, seaView: boot.seaView, waterline: sloop.waterline },
+      ...{ shown, charting, seaWeather: boot.seaWeather, seaView: boot.seaView, waterline: sloop.waterline },
       ...{ builtSloop, closeSource, waterHere, leave, travel, goFoot, isleFrame, groundAt, story, arrive },
       ...{ isles: islesDrawer, eventProps: boot.eventProps },
       ...{ world, music, ambience, dungeons },

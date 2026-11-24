@@ -191,6 +191,7 @@ code:
   - client/src/trueType.ts#trueType
   - client/src/combat/playerPlates.ts#PlayerPlates
   - client/src/combat/playerPlates.ts#aimedPlayer
+  - client/src/game/seaPlates.ts#seaPlated
   - client/src/combat/playerPlates.ts#levelInk
   - client/src/game/social/interactMenu.ts#interactRows
   - client/src/game/social/social.ts#holdOnPlayer
@@ -1322,6 +1323,12 @@ serves each ask only at its own counter ([[Gear]], "In the rooms"; [[Factions]])
   place's blocks and land do not hide, the line tried as a foe's plate's is (`PlateSight`), shrinking with distance by
   the foes' plates' law (`plateScale`) and laid so none covers another (`BarLayout`); not the cone the foes' plates
   keep. They stand under the foes' plates, 1.9 m over the feet.
+- **At sea** ([[Other Ships Wear Their Players' Marks, the Sea Map Has No Fog, and New Players Ride a Bay That
+  Bursts]]): out of a fight, each other player's ship wears the same plate, the room's ([[Server]], "Plates"), as far
+  over its masthead as drawn as a captain's plate stands in a fight (`plateOverM`, `seaPlated`), laid by the same
+  law: shrinking with distance to the size its name still reads at, laid so none covers another, out to 8 km across
+  the water (`SEA_PLATE_RANGE_M`), and only before the eye. No line is tried, so a ship behind an island still wears
+  its mark. The player's own ship wears none, and in a fight the captains' plates stand alone.
 - **Interact** ([[Holding Use on a Player Opens Their Interact Menu]]): the named player the crosshair rests on within
   6.4 m of the player's own feet, the nearest of several (`aimedPlayer`), a guest nearer in the line hiding one
   behind, wears a thin diamond round their body, a chevron in each corner, with Use's key and "Interact" beside it,

@@ -275,7 +275,8 @@ ship and every afloat, unstruck ship of another faction, and chooses, engages an
 player's; they never fight their own faction, and a struck ship is nobody's enemy. Any foe's hit provokes them. Over each
 captain's ship in a fight stands their plate, as a foe's ([[Interface]]): their faction's emblem, and their name, with an
 Elite's or a Miniboss's mark, above a bar of their hull, red, orange or yellow by rank, their losses read as a foe's;
-no plate covers another. A Boss's stands across the top of the screen with their faction's name.
+no plate covers another. A Boss's stands across the top of the screen with their faction's name. Out of a fight, each
+other player's ship wears the plate that player wears on land ([[Interface]], "Players").
 
 A hull changes the ship's size, its boxes, its sails, its handling, its stem and how many guns it carries, never its
 strength: the table above is the whole of it. A bigger box is struck more often, so its canvas and men are its class's

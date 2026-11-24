@@ -165,6 +165,7 @@ pub fn prepare() {
                     islands: Vec::new(),
                     taken: sea.taken(),
                     friendlies: sea.friendlies(),
+                    plates: sea.ships().filter_map(|(player, _)| Some((player, sea.plate(player)?))).collect(),
                 },
                 deck_views,
                 islands,
@@ -194,6 +195,9 @@ pub fn snapshot_for(player: PlayerId) -> Vec<u8> {
         Some(Prepared::Everyone(bytes)) => bytes.clone(),
         Some(Prepared::Sea(parts)) => {
             let all = &parts.harbour;
+            let (ships, hostiles) = parts.near(player);
+            // The plate over each other ship this player is sent: their own is never drawn.
+            let sent = |other: &PlayerId| *other != player && ships.iter().any(|(each, _)| each == other);
             let harbour = protocol::SeaHarbour {
                 flotsam: all.flotsam.iter().filter(|piece| piece.0 == player).copied().collect(),
                 kept: all.kept.iter().filter(|kept| kept.0 == player).copied().collect(),
@@ -210,10 +214,10 @@ pub fn snapshot_for(player: PlayerId) -> Vec<u8> {
                 islands: parts.islands(player),
                 taken: all.taken.clone(),
                 friendlies: friendlies_seen(parts.own(player), &all.friendlies),
+                plates: all.plates.iter().filter(|(other, _)| sent(other)).cloned().collect(),
             };
             // Each player's fight view is theirs alone too.
             let fights: Vec<_> = parts.fights.iter().filter(|fight| fight.player == player).cloned().collect();
-            let (ships, hostiles) = parts.near(player);
             parts.bytes((&ships, &hostiles), &fights, &harbour)
         }
     })

@@ -34,3 +34,16 @@ ring in the ship's bar, the owner chose "Same as the ship", the option that read
 - A ship's boost and a horse's each have a detailed effect.
 - Horses get a detailed pass of sounds from Freesound, judged on the sound sheet as every sound is
   ([[Sounds Come From Freesound, Judged on a Test Sheet]]).
+
+## Claude's calls
+
+| Call | Chosen | Why |
+|---|---|---|
+| How high the mark stands over a ship | As far over its masthead as drawn as a captain's plate stands in a fight (`plateOverM`) | Clear of the rig, and level with the plates the sea already shows |
+| How far off a ship wears its mark | 8 km across the water, only before the eye | About where a ship drawn 75 m long shrinks to a few pixels; past it a mark names a speck |
+| Whether a mark is hidden behind something | No line is tried at sea, so a ship behind an island still wears its mark | Only an island stands between ships at sea, and the land's line test is against a node's blocks and ground |
+| The mark's menu dots at sea | Never shown | The sea hears nothing of a player's menu |
+| The mark in a sea fight | None; the captains' plates stand alone | A fight's plates and card already fill the view over its ships |
+| How the room sends the marks | Each sea snapshot carries the plate of each other player's ship it sends, whole | The sea sends its ships whole every snapshot; no base to send changes against |
+| The held map's charted sea | Deleted with the fog: the wash, the waters' names and the faint sea ink lie over all the sea | Only the fog needed it |
+| The browser's kept discovery | No longer read or written; one already kept is left where it is | Nothing else read it; it does no harm left |
