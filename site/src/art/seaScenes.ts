@@ -126,8 +126,8 @@ function thule(): Sheet {
     reflection: '#080406',
   });
   const splinters = seeded(33);
-  burning(sheet, seeded(36), 110, horizon + 44, 46, '#2a1810');
   smoke(sheet, seeded(35), 104, horizon + 20, 100, '#140c10');
+  burning(sheet, seeded(36), 110, horizon + 44, 46, '#3a2418');
   for (let piece = 0; piece < 30; piece++) {
     const angle = splinters() * Math.PI * 1.3 + Math.PI * 0.85;
     const reach = 8 + splinters() * 34;

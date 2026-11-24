@@ -56,7 +56,7 @@ Online's ([[The Website Is at noshores.online, After DFO's]], [[Pick - Website]]
   has its links left out of the page, and a section that needs it (`data-needs`) left out whole; the tests check both
   against a stand-in list of places.
 - **The frame.** Every page gets the same bar (the logo, The World, The Game, the Discord, Play), a skip link, and a
-  foot in columns: the logo, the line "A pirate sandbox in a shared world." (the owner's own words for the game,
+  foot in columns: the logo, the line "A pirate sandbox in a shared world." (Claude's, from the owner's own words for the game in
   [[No Shores]]) and "© Vestige Studios" ([[Copyright Held by Vestige Studios]]); the pages by name, the Discord bot's
   among them; then Play and the Discord. A tab reads "The World | No Shores"; Home's, its own line. Each page's head
   carries the tags a shared link unfolds into on Discord and elsewhere: its title and description, its address, and
@@ -75,7 +75,7 @@ Online's ([[The Website Is at noshores.online, After DFO's]], [[Pick - Website]]
   ship, Thule's flagship over a captain's broken, burning ship at a red dusk, the captain sinking toward a faint
   light, a ruined port overtaken by crystal, Saltmere's shore at first light, a ship under full sail, the three Arts'
   flames in braziers on the quay, gear under a lantern, a ship's bell on the quay; and of play itself
-  (`gameScenes.ts`): the keepers' stalls on Overlook's quay, a duel by firelight with the fighters' edges lit by the
+  (`gameScenes.ts`): the keepers at their counters in the arcades of Overlook's court, a duel by firelight with the fighters' edges lit by the
   brazier between them, and a dungeon's gate in a hillside. Every scene fills its frame; only the lights layer and the
   logo have clear cells. The logo is drawn cell for cell from
   the game's own picture of it, shown at whole-number scale; the tab's icon is its first letter.

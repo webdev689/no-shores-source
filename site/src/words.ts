@@ -39,7 +39,8 @@ const PREMISE = {
 
 const SHELL = {
   'shell.brand': 'No Shores',
-  // The owner's own words for the game, in No Shores: "A proper pirate sandbox experience" and "A shared world".
+  // Claude's line, from the owner's own words for the game in No Shores: "A proper pirate sandbox experience" and "A
+  // shared world instead of an MMO".
   'shell.tagline': 'A pirate sandbox in a shared world.',
   'shell.skip': 'Skip to the page',
   'shell.navLabel': 'The site',
@@ -59,7 +60,8 @@ const SHELL = {
 // Cut, Overhead and Thrust; Arts Are Overlook's Subclasses; Three Factions Keep the Arts, After Destiny 1; Gear and
 // Power Follow Destiny 1 Vanilla; Dailies and Weeklies Follow Destiny 1, With One Abyss Dungeon a Week; Public Events
 // Run on a Clock, After Destiny 1; Guilds Gain Banners, Levels, Bounties and Outposts; Accounts Start as Guests, on
-// Cloudflare D1; WebGPU Only; Every Control Can Be Rebound, and the Pad Plays as Destiny's.
+// Cloudflare D1; WebGPU Only; Every Control Can Be Rebound, and the Pad Plays as Destiny's; and "action RPG" from the
+// owner's own description of the repository, "A shared world action-rpg".
 const HOME = {
   'home.title': 'No Shores: a pirate sandbox in a shared world',
   'home.description':
@@ -73,33 +75,33 @@ const HOME = {
   'home.needs': 'Runs in your browser with WebGPU. Keyboard and mouse or gamepad.',
   'home.introHead': 'What is No Shores?',
   'home.intro':
-    'No Shores is an action RPG set in the Pale Expanse, a vast ocean between nine continents where only three port cities still stand. You begin in Overlook, the one port that refuses the Grey Tithe. From there you sail your own ship, fight on deck and ashore, take on dungeons and events with other players, and grow stronger through the gear you earn.',
+    'No Shores is an action RPG set in the Pale Expanse, a vast ocean between nine continents where only three port cities still stand. Your home port is Overlook, the one port that refuses the Grey Tithe. From there you sail your own ship, fight on deck and ashore, take on dungeons and events with other players, and grow stronger through the gear you earn.',
   'home.introShared':
-    'The world is shared. Overlook is a social hub full of other captains, and the islands, waters and dungeons beyond it are played together with whoever is there.',
+    'The world is shared. Overlook is a social hub full of other captains, and the waters, islands and patrol zones beyond it are shared with whoever is there. For the hardest dungeons, you bring your own company.',
   'home.featuresHead': 'What you do',
   'home.portHead': 'Overlook, the last free port',
   'home.portText':
-    'Every voyage begins and ends in Overlook, on the island of Saltmere. Meet other captains, trade with the keepers at their stalls, hire a crew, take on bounties and pledge yourself to one of three factions.',
+    'Overlook, on the island of Saltmere, is the social heart of the game. Meet other captains, buy from the keepers at their counters, take on bounties and pledge yourself to one of three factions.',
   'home.portHub': 'Social hub',
-  'home.portKeepers': 'Keepers and vendors',
+  'home.portKeepers': 'Vendors',
   'home.portBounties': 'Bounties',
   'home.portFactions': 'Three factions',
   'home.seaHead': 'A ship of your own',
   'home.seaText':
     'Take the helm and sail the open sea at true scale. Every stretch of water has an owner and a level, and the ships you sight on the horizon are yours to chase, evade or let pass.',
   'home.seaFight':
-    'Win with broadsides and rams, then sink your enemy and salvage what floats, or force them to strike and board them for the fight on their deck.',
+    'Fight with broadsides and rams. Sink your enemy and salvage what floats, or force them to strike and board them for the fight on their deck.',
   'home.seaSailing': 'Free sailing',
   'home.seaBoarding': 'Broadsides and boarding',
-  'home.seaCrew': 'Crew and officers',
-  'home.seaFleets': 'Fleets with friends',
+  'home.seaCrew': 'Officers and hands',
+  'home.seaFleets': 'A shared sea',
   'home.fightHead': 'Steel, timing and the Arts',
   'home.fightText':
     'Fights on foot come down to timing. Hold your guard, parry a blow as it lands and answer with a riposte, dodge through attacks and chain your swings, in first or third person.',
   'home.fightArts':
-    'Then master an Art. Storm is fast and deadly, Divine heals and empowers your allies, and Shadow deals in the mystic and the unseen.',
+    'Then master an Art. Storm is agile and deadly, Divine heals and empowers your allies, and Shadow deals in the mystic and the unseen.',
   'home.fightParry': 'Parry and riposte',
-  'home.fightLock': 'Lock-on',
+  'home.fightPoise': 'Stamina and poise',
   'home.fightRanged': 'Ranged weapons',
   'home.fightThree': 'Storm, Divine and Shadow',
   'home.gearHead': 'Power you earn',
@@ -111,12 +113,12 @@ const HOME = {
   'home.gearVestiges': 'Vestiges',
   'home.doHead': 'Dungeons, events and guilds',
   'home.doText':
-    'A new dungeon of the day across six styles, from crypts and temples to caverns and mines, with Elite and Abyss dungeons when you want a harder fight. Public events break out in the wilds on a schedule, open to everyone nearby. Find a company for any run, or found a guild under a banner of your own.',
+    'Each patrol zone holds three dungeons in six styles, from crypts and halls to caverns and mines, with a dungeon of the day, Elite Dungeons and one Abyss Dungeon a week when you want a harder fight. Public events break out in the wilds on a schedule, open to everyone nearby. Find a Company matches you with other players for Elite Dungeons, and guilds gather under a banner of their own.',
   'home.doDaily': 'Daily dungeons',
   'home.doEvents': 'Public events',
   'home.doCompany': 'Find a Company',
   'home.doGuilds': 'Guilds and outposts',
-  'home.gameLead': 'Everything in the game',
+  'home.gameLead': 'More about the game',
   'home.numbersHead': 'No Shores at a glance',
   // The numbers band: the premise ("a vast ocean stretching between nine continents"; "Today, only three remain."),
   // Arts Are Overlook's Subclasses (three Arts) and Dungeons (six styles).
@@ -133,10 +135,10 @@ const HOME = {
   'home.stepKeepText':
     'You start as a guest straight away. Add a username, or link your Discord account, to play the same captain on any device.',
   'home.stepCrewHead': 'Find your crew',
-  'home.stepCrewText': 'Join the No Shores Discord to meet other captains, form a company and hear about every update.',
+  'home.stepCrewText': 'Join the No Shores Discord to meet other captains and form a company for your next run.',
   'home.communityHead': 'Join the community',
   'home.communityText':
-    'Meet other captains, find a crew for your next run and hear about every update first on the No Shores Discord.',
+    'Talk with other captains, find a company for your next run and follow the game as it grows, on the No Shores Discord.',
 } as const;
 
 // The World: the owner's premise, told as it was written, under headings of its own places.
@@ -149,13 +151,13 @@ const WORLD = {
   'world.titheHead': 'The Grey Tithe',
   'world.titheAlt': 'Grey, unmarked sails closing out of the mist on a lone ship.',
   'world.overlookHead': 'Overlook',
-  'world.ambushHead': 'The Ambush',
-  'world.ambushAlt': 'A huge dark flagship beside a smaller ship broken apart and burning, under a red sky.',
-  'world.depthsHead': 'The Depths',
+  'world.ambushHead': 'The ambush',
+  'world.ambushAlt': 'A huge dark flagship beside a smaller ship broken in two and burning, under a red sky.',
+  'world.depthsHead': 'The depths',
   'world.depthsAlt': 'A captain sinking through dark water toward a faint light far below.',
-  'world.shoreHead': "Saltmere's Shore",
+  'world.shoreHead': "Saltmere's shore",
   'world.shoreAlt': 'A captain lying on a beach at first light, a lit town on the rock above.',
-  'world.ruinsHead': 'The Ruined Ports',
+  'world.ruinsHead': 'The ruined ports',
   'world.ruinsAlt': 'A ruined port on the coast, overtaken by red and purple crystal.',
 } as const;
 
@@ -167,39 +169,40 @@ const GAME = {
   'game.title': 'The Game',
   'game.description':
     'Sail your own ship, fight with steel and the Arts, earn your gear, and take on dungeons, public events and guilds in No Shores.',
-  'game.lede': 'A pirate sandbox in a shared world, played in your browser.',
+  'game.lede': "What you do in No Shores, from Overlook's court to the open sea.",
   'game.portHead': 'Overlook',
-  'game.portAlt': "Keepers' stalls under lanterns on Overlook's quay at night, ships moored beyond.",
+  'game.portAlt':
+    "Keepers at their counters under hanging lamps in the arcades of Overlook's court at night, a brazier burning in the plaza.",
   'game.portStart':
-    "Your story begins on Saltmere's shore and leads up into Overlook, a port town climbing the island's rock and the social heart of the game.",
+    "Your story begins at sea, on a captain's voyage to Overlook that ends in a wreck and a waking on Saltmere's shore. From there you climb into Overlook, the port town on the island's rock and the social heart of the game.",
   'game.portPlayers':
-    'Other players walk its quays and courts with you. Trade with the keepers at their stalls, hire hands and officers for your ship, collect your bounties and mail, and pledge yourself to a faction.',
+    'Other players fill its court with you. Buy from the keepers at their counters, collect your bounties and your mail, and pledge yourself to a faction, whose muster signs on officers for your ship.',
   'game.seaHead': 'The sea',
   'game.seaAlt': 'A ship under full sail by moonlight, other ships far off.',
   'game.seaSail':
     'Sail at the helm, from oars to full sail, at true scale across the waters between the islands. Wind, swell and weather are the same for every player.',
   'game.seaWaters':
-    "The sea is divided into waters, each with an owner and a level. Overlook's home waters are safe. Beyond them, hostile captains sail Schooners, Brigs and Frigates.",
+    "The sea is divided into waters, each with an owner and a level. Overlook's home waters are safe; beyond them, hostile captains sail everything from Sloops to Frigates.",
   'game.seaFight':
-    'Sight a ship on the horizon and decide: chase it, evade it or let it pass. Fight with broadsides and rams, then sink it and salvage what floats, or force it to strike and board it.',
+    'Sight a ship on the horizon and decide: chase it, evade it or let it pass. Fight with broadsides and rams. Sink it and salvage what floats, or force it to strike and board it.',
   'game.seaShip':
-    'Your ship is a second set of gear. Fit it with modules from the Shipwright, raise its level, and sign on hands and named officers, who fight beside you ashore as well.',
+    'Your ship is a second set of gear. Fit it with modules from the Shipwright and raise its level. Its hands fight beside you when you board, and named officers hold posts aboard; two of them can come ashore and fight at your side.',
   'game.seaIslands':
-    'Land on coves and guarded isles, scavenge their wreckage for your ship, and find the dungeon doors they hide. Sail with friends as a fleet: players never fight each other at sea.',
+    'Land on coves and guarded isles, scavenge their wreckage for your ship, and find the dungeon doors they hide. Other captains share the sea with you, and players never fight each other at sea.',
   'game.fightHead': 'Combat',
   'game.fightAlt': 'Two fighters squaring off by firelight on a hamlet path at night, blades raised.',
   'game.fightTiming':
     'Fights on foot are about timing. Hold your guard, parry a blow just as it lands and answer with a riposte, or dodge clean through it. Stamina and poise decide who breaks first.',
   'game.fightSwings':
-    'Chain side cuts, overheads and thrusts, lock on to your target, and turn to ranged weapons when a fight calls for distance. Play in first or third person.',
+    'Chain side cuts, overheads and thrusts, and your blows turn to the foe you are fighting. Switch to ranged weapons when a fight calls for distance, and play in first or third person.',
   'game.fightFoes':
-    "Enemies fight as groups that lead, break and give ground, from the Grey Tithe's crews to stranger things in the ruined ports.",
+    "Enemies fight in groups that press, break and fall back, from the Grey Tithe's crews to stranger things that pour out of the earth.",
   'game.artsHead': 'The Arts and the factions',
   'game.artsAlt': 'Three flames on a quay at night: electric blue, fire orange, violet.',
   'game.artsThree':
     'Three Arts shape how you fight. Storm is agile and deadly, Divine heals and empowers your allies, and Shadow is the Art of the mystic.',
   'game.artsParts':
-    'Each Art has its Anima, a powerful main cast, two Tenets, and a Core of fragments to make it your own.',
+    'Each Art has three parts: its Anima, a powerful main cast; two Tenets, its lesser casts; and a Core of fragments that makes it your own.',
   'game.artsFactions':
     'The Stormcallers, the Lamplighters and the Veiled each keep one Art. Pledge to one, follow its road to earn your Art, and raise it level by level up to five.',
   'game.artsCape':
@@ -210,15 +213,15 @@ const GAME = {
     'Your power comes from your gear. Earn weapons and armour in five rarities from drops, activities and quests.',
   'game.gearNodes':
     'Upgrade them through their nodes with Aurem, fragments from dismantled gear and rare materials. The more you use a weapon, the more nodes it opens.',
-  'game.gearVestiges': 'The rarest drops come sealed as Vestiges, crystals you open back in a social space.',
+  'game.gearVestiges': 'Better drops come sealed as Vestiges, crystals you open back in a social space.',
   'game.doHead': 'Things to do',
   'game.doAlt': 'A stone dungeon gate cut into a hillside at night, braziers burning either side of the steps down.',
   'game.doDungeons':
-    'Every patrol zone hides dungeons in six styles: crypts, halls, cells, temples, caverns and mines. There is a dungeon of the day, Elite dungeons, and one Abyss dungeon each week.',
+    'Each patrol zone holds three dungeons, each in one of six styles: crypts, halls, cells, sanctums, caverns and mines. There is a dungeon of the day, Elite Dungeons, and one Abyss Dungeon each week.',
   'game.doEvents':
     "Public events break out in the wilds on a set schedule. Seal a Fissure torn in the earth or drive off a Grey Tithe raid on a hamlet's stores, and every player who takes part earns a chest.",
   'game.doGroups':
-    'Find a Company matches you with other players for any run, or keep a run private for your own group. Bounties and the Journal show what is on today and this week.',
+    'Find a Company matches you with other players for Elite Dungeons, or keep a run private for your own company. Bounties and the Journal show what is on today and this week.',
   'game.doGuilds':
     'Found or join a guild of up to a hundred players, with its own name, tag and banner, guild levels, bounties and outposts.',
   'game.playHead': 'How you play',

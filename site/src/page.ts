@@ -164,6 +164,7 @@ function shareTags(html: string, page: SitePage): string {
     tags.push(`<meta property="og:image" content="${SITE_ORIGIN}${pictureAddress('share', share)}" />`);
     tags.push(`<meta property="og:image:width" content="${share.width}" />`);
     tags.push(`<meta property="og:image:height" content="${share.height}" />`);
+    tags.push(`<meta property="og:image:alt" content="${wordOf('home.heroAlt')}" />`);
   }
   return html.replace('</head>', `  ${tags.join('\n    ')}\n  </head>`);
 }

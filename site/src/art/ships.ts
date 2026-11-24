@@ -229,7 +229,8 @@ export function ship(sheet: Sheet, x: number, waterline: number, length: number,
     lantern(sheet, along(-1.05), deck - Math.round(length * 0.13), Math.max(3, Math.round(length * 0.07)));
 }
 
-/** A ship broken and burning: its two halves and a mast down, fire along the break, and the light it throws. */
+/** A ship broken and burning: two halves riding up from the break, their decks lit by the fire, planks, a mast down
+ *  with its sail torn, and flames standing on what is left. */
 export function burning(
   sheet: Sheet,
   random: () => number,
@@ -238,58 +239,68 @@ export function burning(
   size: number,
   hullInk: Ink,
 ): void {
-  halo(sheet, x - size * 0.2, waterline - size * 0.2, size * 1.2, ['#1e0c0c', '#3a1610', '#6a2414']);
+  halo(sheet, x - size * 0.2, waterline - size * 0.25, size * 1.25, ['#1e0c0c', '#3a1610', '#6a2414']);
+  const plank = '#22140c';
+  const lit = '#c0602a';
+  const stern: [number, number][] = [
+    [x - size, waterline - size * 0.46],
+    [x - size * 0.72, waterline - size * 0.36],
+    [x - size * 0.16, waterline - size * 0.04],
+    [x - size * 0.22, waterline + 2],
+    [x - size * 0.92, waterline + 2],
+  ];
+  const bow: [number, number][] = [
+    [x + size * 0.06, waterline - size * 0.06],
+    [x + size * 0.58, waterline - size * 0.5],
+    [x + size * 0.62, waterline - size * 0.44],
+    [x + size * 0.5, waterline + 2],
+    [x + size * 0.1, waterline + 2],
+  ];
+  shape(sheet, stern, hullInk);
+  shape(sheet, bow, hullInk);
+  box(sheet, x - size * 1.0, waterline - size * 0.62, size * 0.22, size * 0.2, hullInk);
+  for (const [half, from, to] of [
+    [stern, x - size * 0.98, x - size * 0.18],
+    [bow, x + size * 0.08, x + size * 0.58],
+  ] as const) {
+    for (let row = waterline - size * 0.5; row < waterline + 2; row += 3)
+      for (let column = from; column < to; column++)
+        if (inkAt(sheet, Math.round(column), Math.round(row)) === hullInk) dot(sheet, column, row, plank);
+    line(sheet, half[0]?.[0] ?? x, half[0]?.[1] ?? waterline, half[1]?.[0] ?? x, half[1]?.[1] ?? waterline, lit);
+  }
+  line(sheet, x - size * 0.72, waterline - size * 0.36, x - size * 0.16, waterline - size * 0.04, lit);
+  line(sheet, x + size * 0.06, waterline - size * 0.06, x + size * 0.58, waterline - size * 0.5, lit);
+  line(sheet, x - size * 0.5, waterline - size * 0.26, x - size * 0.96, waterline - size * 1.08, hullInk);
+  line(sheet, x - size * 0.49, waterline - size * 0.26, x - size * 0.95, waterline - size * 1.08, hullInk);
   shape(
     sheet,
     [
-      [x - size, waterline - size * 0.34],
-      [x - size * 0.2, waterline - size * 0.12],
-      [x - size * 0.26, waterline + 2],
-      [x - size * 0.92, waterline + 1],
+      [x - size * 0.9, waterline - size * 0.96],
+      [x - size * 0.62, waterline - size * 0.9],
+      [x - size * 0.7, waterline - size * 0.56],
+      [x - size * 0.84, waterline - size * 0.66],
+      [x - size * 0.95, waterline - size * 0.6],
     ],
-    hullInk,
+    '#7a6a64',
   );
-  shape(
-    sheet,
-    [
-      [x + size * 0.02, waterline - size * 0.46],
-      [x + size * 0.48, waterline - 3],
-      [x + size * 0.2, waterline + 2],
-      [x - size * 0.1, waterline - size * 0.1],
-    ],
-    hullInk,
-  );
-  line(sheet, x - size * 0.98, waterline - size * 0.22, x - size * 0.25, waterline - size * 0.06, '#5a3420');
-  line(sheet, x + size * 0.04, waterline - size * 0.4, x + size * 0.44, waterline - 4, '#5a3420');
-  line(sheet, x - size * 0.6, waterline - size * 0.24, x - size * 0.92, waterline - size * 1.05, hullInk);
-  line(sheet, x + size * 0.18, waterline - size * 0.34, x + size * 0.62, waterline - size * 0.95, hullInk);
-  shape(
-    sheet,
-    [
-      [x - size * 1.0, waterline - size * 0.98],
-      [x - size * 0.72, waterline - size * 0.92],
-      [x - size * 0.76, waterline - size * 0.64],
-      [x - size * 1.02, waterline - size * 0.68],
-    ],
-    '#3a3036',
-  );
-  for (let tongue = 0; tongue < 14; tongue++) {
-    const base = x - size * 0.75 + random() * size * 1.1;
-    const high = size * (0.12 + random() * random() * 0.6);
+  line(sheet, x - size * 0.62, waterline - size * 0.9, x - size * 0.7, waterline - size * 0.56, '#4a3c3a');
+  line(sheet, x + size * 0.3, waterline - size * 0.3, x + size * 0.42, waterline - size * 0.66, hullInk);
+  for (let tongue = 0; tongue < 16; tongue++) {
+    const onStern = tongue % 2 === 0;
+    const along = random();
+    const base = onStern ? x - size * (0.9 - along * 0.7) : x + size * (0.1 + along * 0.45);
+    const deck = onStern ? waterline - size * (0.42 - along * 0.36) : waterline - size * (0.08 + along * 0.4);
+    const high = size * (0.1 + random() * random() * 0.5);
     const lean = (random() - 0.3) * 0.5;
     for (let row = 0; row < high; row++) {
-      const wide = Math.max(0, 2.4 * (1 - row / high));
+      const wide = Math.max(0, 2.2 * (1 - row / high));
       for (let column = -wide; column <= wide; column++) {
         const ink = row < high * 0.25 ? '#fff1c4' : row < high * 0.55 ? '#ffc04a' : '#ff7a2a';
-        dot(sheet, base + column + row * lean, waterline - size * 0.14 - row, ink);
+        dot(sheet, base + column + row * lean, deck - row, ink);
       }
     }
   }
-  for (let row = waterline - size * 0.5; row < waterline + 2; row++)
-    for (let column = x - size; column < x + size * 0.5; column++)
-      if (
-        inkAt(sheet, Math.round(column), Math.round(row)) === hullInk &&
-        patternOn(Math.round(column), Math.round(row), 0.3)
-      )
-        dot(sheet, column, row, '#6a2a14');
+  for (let row = waterline + 2; row < waterline + 8; row++)
+    for (let column = x - size * 0.2; column < x + size * 0.1; column++)
+      if (patternOn(Math.round(column), row, 0.5)) dot(sheet, column, row, '#e07a2a');
 }

@@ -26,6 +26,8 @@
   font-family: 'Site Marks', 'Pixelify Sans Variable', system-ui, sans-serif;
   font-size: clamp(17px, 0.6vw + 14px, 20px);
   line-height: 1.6;
+  /* Pixelify Sans's fi and fl ligatures read as other letters ("Aght" for "fight"): every letter stands alone. */
+  font-variant-ligatures: none;
   color: var(--ink);
   background: var(--night);
   scrollbar-color: var(--edge-lit) var(--deep);
@@ -267,9 +269,10 @@ p {
 
 .hero-needs {
   margin: 14px 0 0;
+  padding: 2px 10px;
   font-size: 0.85rem;
   color: var(--ink-soft);
-  text-shadow: 1px 1px 0 rgb(0 0 0 / 85%);
+  background: rgb(7 12 24 / 78%);
 }
 
 /* The narrowest phones keep the bar to the logo and one row of links. */
@@ -286,9 +289,13 @@ p {
 
 /* On a phone the scene's words stay compact: both buttons on one row, the bar's logo already naming the site. */
 @media (max-width: 639px) {
-  .hero-logo {
-    width: 191px;
-    height: 48px;
+  /* the bar's logo already names the site on a phone: the scene's stays in its heading for screen readers alone */
+  .hero h1 {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
   }
 
   .hero .button-big {

@@ -1,8 +1,7 @@
-// The pictures The Game's sections and Home's rows show of play itself: Overlook's quay with the keepers at their
-// stalls, a duel by firelight on a hamlet's path, and a dungeon's gate in a hillside.
+// The pictures The Game's sections and Home's rows show of play itself: Overlook's court with the keepers at their
+// counters in its arcades, a duel by firelight on a hamlet's path, and a dungeon's gate in a hillside.
 import { seeded } from '../../../client/src/seeded.ts';
-import { clouds, lantern, LIGHTS, range, sea, sky, stars } from './light.ts';
-import { ship } from './ships.ts';
+import { clouds, lantern, LIGHTS, range, sky, stars } from './light.ts';
 import {
   box,
   disc,
@@ -35,25 +34,6 @@ function stroke(
       line(sheet, from[0] + across, from[1] + down, to[0] + across, to[1] + down, ink);
 }
 
-/** A stall on the quay: its counter, the posts, a striped awning, goods on the board and a lantern under the edge. */
-function stall(sheet: Sheet, x: number, ground: number, wide: number, stripes: readonly [Ink, Ink]): void {
-  const top = ground - 30;
-  box(sheet, x, ground - 12, wide, 12, '#2a1d16');
-  box(sheet, x, ground - 12, wide, 1, '#5a4030');
-  for (const post of [x + 1, x + wide - 3]) box(sheet, post, top, 2, 18, '#1d140f');
-  for (let column = 0; column < wide + 6; column++) {
-    const ink = Math.floor(column / 4) % 2 === 0 ? stripes[0] : stripes[1];
-    for (let row = 0; row < 6; row++) dot(sheet, x - 3 + column, top - 5 + row + Math.floor(column / 12), ink);
-    if (column % 4 === 2) dot(sheet, x - 3 + column, top + 1 + Math.floor(column / 12), ink);
-  }
-  for (let good = 0; good < Math.floor(wide / 5); good++) {
-    const spot = x + 2 + good * 5;
-    const ink = ['#9a5a1c', '#6a7a3a', '#8a4a3a', '#c0a060'][good % 4] ?? '#9a5a1c';
-    box(sheet, spot, ground - 15, 3, 3, ink);
-  }
-  lantern(sheet, x + Math.round(wide / 2), top + 4, 12);
-}
-
 /** A townsperson standing, side on, in a coat; `tall` cells high. */
 function person(sheet: Sheet, x: number, ground: number, tall: number, ink: Ink): void {
   const head = Math.max(2, Math.round(tall * 0.12));
@@ -72,61 +52,101 @@ function person(sheet: Sheet, x: number, ground: number, tall: number, ink: Ink)
   box(sheet, x + head - 2, ground - tall * 0.36, 2, tall * 0.36, ink);
 }
 
-/** Overlook's quay at night: keepers at their stalls under lanterns, townsfolk between them, ships moored beyond. */
-function overlookQuay(): Sheet {
+/** One bay of an arcade: two columns under an arch, an alcove behind with a keeper at a counter under a hung lamp. */
+function bay(sheet: Sheet, x: number, floor: number, wide: number, goods: Ink): void {
+  const stone = { face: '#2a3044', dark: '#1a1e2c', lit: '#4a5268' };
+  const top = floor - 62;
+  box(sheet, x + 4, top + 16, wide - 8, 46, '#0c0e16');
+  halo(sheet, x + wide / 2, top + 26, 24, ['#1a1410', '#2a1c12', '#4a2c14']);
+  box(sheet, x + wide / 2 - 1, top + 14, 1, 8, '#2a2420');
+  lantern(sheet, x + Math.round(wide / 2), top + 24, 8);
+  person(sheet, x + Math.round(wide / 2), floor - 14, 24, '#070810');
+  box(sheet, x + 5, floor - 16, wide - 10, 16, '#2a1d16');
+  box(sheet, x + 5, floor - 16, wide - 10, 1, '#6a4a30');
+  for (let good = 0; good < Math.floor((wide - 12) / 5); good++) box(sheet, x + 7 + good * 5, floor - 19, 3, 3, goods);
+  for (const column of [x, x + wide - 4]) {
+    box(sheet, column, top + 8, 4, 54, stone.face);
+    box(sheet, column + 3, top + 8, 1, 54, stone.dark);
+    box(sheet, column - 1, top + 6, 6, 3, stone.lit);
+    box(sheet, column - 1, floor - 3, 6, 3, stone.lit);
+  }
+  for (let column = 0; column < wide; column++) {
+    const rise = Math.sqrt(Math.max(0, 1 - ((column - wide / 2) / (wide / 2)) ** 2)) * 10;
+    for (let row = top; row < top + 16 - rise; row++) dot(sheet, x + column, row, stone.face);
+    dot(sheet, x + column, top + 16 - rise, stone.lit);
+  }
+}
+
+/** A banner stand: a pole, a crossbar and a hanging banner in a colour, its folds shaded. */
+function banner(sheet: Sheet, x: number, floor: number, cloth: Ink, fold: Ink): void {
+  box(sheet, x, floor - 50, 2, 50, '#1d140f');
+  box(sheet, x - 7, floor - 48, 16, 2, '#1d140f');
+  for (let row = 0; row < 26; row++)
+    for (let column = -6; column < 8; column++) {
+      if (row > 20 && Math.abs(column - 0.5) < row - 20) continue;
+      dot(sheet, x + column, floor - 46 + row, column % 4 === 0 || column % 4 === 1 ? fold : cloth);
+    }
+}
+
+/** Overlook's court at night: keepers at their counters in the arcades, the factions' banners, a brazier, townsfolk. */
+function overlookCourt(): Sheet {
   const sheet = makeSheet(WIDE, TALL);
-  const horizon = 92;
   const light = LIGHTS.night;
-  sky(sheet, light, horizon);
-  stars(sheet, seeded(101), light, 170, horizon - 20);
-  clouds(sheet, seeded(102), light, { top: 30, depth: 30, count: 4 });
-  range(sheet, seeded(103), {
-    left: 0,
-    width: WIDE,
-    top: horizon - 12,
-    foot: horizon,
-    floor: horizon + 1,
-    ink: light.ranges[0] ?? '',
-  });
-  sea(sheet, seeded(104), light, horizon, [{ x: 64, wide: 5, ink: '#7a4416', core: '#c0802c', from: horizon + 4 }]);
-  for (const [x, length, facing] of [
-    [54, 46, 1],
-    [250, 60, -1],
-  ] as const)
-    ship(sheet, x, horizon + 20, length, {
-      hull: '#04070d',
-      wale: '#1c2a40',
-      sail: '#3a4558',
-      shade: '#283244',
-      rig: '#0a101c',
-      masts: length > 50 ? 3 : 2,
-      facing,
-      furled: true,
-      lantern: true,
-      reflection: '#03060c',
-    });
-  const quay = 124;
-  box(sheet, 0, quay, WIDE, TALL - quay, '#161c2c');
-  box(sheet, 0, quay, WIDE, 2, '#3a4660');
-  for (let row = quay + 6; row < TALL; row += 7)
-    for (let column = (row / 7) % 2 === 0 ? 0 : 9; column < WIDE; column += 18)
-      box(sheet, column, row, 1, 7, '#0e1320');
-  for (let row = quay + 6; row < TALL; row += 7) box(sheet, 0, row, WIDE, 1, '#0e1320');
-  stall(sheet, 36, 158, 44, ['#8a2a2a', '#d8c8a8']);
-  stall(sheet, 136, 156, 50, ['#1e4a7a', '#d8c8a8']);
-  stall(sheet, 238, 160, 46, ['#2e6a3a', '#d8c8a8']);
+  sky(sheet, light, 70);
+  stars(sheet, seeded(101), light, 120, 40);
+  box(sheet, 0, 40, WIDE, 34, '#0e1424');
+  for (let gable = 0; gable < WIDE; gable += 28) {
+    shape(
+      sheet,
+      [
+        [gable - 2, 42],
+        [gable + 13, 28 + ((gable * 7) % 9)],
+        [gable + 28, 42],
+      ],
+      '#0a0f1c',
+    );
+    if ((gable / 28) % 2 === 0) box(sheet, gable + 10, 50, 3, 4, '#c0802c');
+  }
+  const floor = 142;
+  box(sheet, 0, 70, WIDE, floor - 70, '#141a28');
+  for (let bayIndex = 0; bayIndex < 5; bayIndex++)
+    bay(
+      sheet,
+      4 + bayIndex * 64,
+      floor,
+      56,
+      ['#9a5a1c', '#6a7a3a', '#8a4a3a', '#c0a060', '#5a6a8a'][bayIndex] ?? '#9a5a1c',
+    );
+  box(sheet, 0, floor, WIDE, TALL - floor, '#1c2232');
+  for (let row = floor + 4; row < TALL; row += 5 + Math.floor((row - floor) / 6))
+    box(sheet, 0, row, WIDE, 1, '#141824');
+  for (let column = 0; column < WIDE; column += 16)
+    line(sheet, column, floor, column + (column - 160) * 0.4, TALL, '#141824');
+  const brazier: [number, number] = [160, 166];
+  halo(sheet, brazier[0], brazier[1] - 4, 20, ['#1e1a1e', '#2a1e1a', '#4a2a18']);
+  box(sheet, brazier[0] - 6, brazier[1] - 8, 13, 4, '#120c08');
+  box(sheet, brazier[0] - 1, brazier[1] - 4, 3, 10, '#120c08');
+  for (let tongue = -4; tongue <= 4; tongue++) {
+    const high = 9 - Math.abs(tongue) * 1.6;
+    for (let row = 0; row < high; row++)
+      dot(
+        sheet,
+        brazier[0] + tongue,
+        brazier[1] - 9 - row,
+        row < high * 0.35 ? '#fff1c4' : row < high * 0.7 ? '#ffc04a' : '#ff7a2a',
+      );
+  }
+  banner(sheet, 70, floor + 6, '#2a5aa8', '#1e4480');
+  banner(sheet, 250, floor + 6, '#c06a20', '#9a5018');
+  banner(sheet, 290, floor + 10, '#6a3aa8', '#4e2a80');
   for (const [x, ground, tall] of [
-    [100, 166, 26],
-    [114, 168, 24],
-    [206, 170, 28],
-    [300, 172, 30],
-    [20, 174, 30],
+    [36, 170, 30],
+    [104, 166, 26],
+    [118, 168, 28],
+    [210, 172, 30],
+    [226, 170, 26],
   ] as const)
     person(sheet, x, ground, tall, '#05070d');
-  for (const x of [96, 196, 292]) {
-    box(sheet, x, quay - 26, 2, 26, '#1d140f');
-    lantern(sheet, x + 1, quay - 28, 10);
-  }
   return sheet;
 }
 
@@ -369,4 +389,4 @@ function dungeon(): Sheet {
   return sheet;
 }
 
-export const GAME_SCENES: Readonly<Record<string, () => Sheet>> = { 'overlook-quay': overlookQuay, duel, dungeon };
+export const GAME_SCENES: Readonly<Record<string, () => Sheet>> = { 'overlook-court': overlookCourt, duel, dungeon };
