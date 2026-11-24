@@ -1,5 +1,5 @@
 ---
-id: 214
+id: 221
 title: "Parallel module workers on one core each had to edit the same core test and build their own fake-Discord rig; the proxy refuses Context7 and SkillsMP in every worker"
 status: open
 type: internal
