@@ -16,9 +16,11 @@ import { BannerEditor } from './bannerEditor.ts';
 import { type Banner, bannerFrom, bannerOfName } from './bannerLaw.ts';
 import { detailsNode, FIELDS, foundNode } from './guildDetails.ts';
 import { EDGE, edgeId, homeNode, type Home, type RosterTurn } from './guildHome.ts';
+import { scrollNode } from './guildNodes.ts';
 import { bountiesNode, contributionNode } from './guildWeek.ts';
 import { ridAnswered, withRid } from './outpostAsks.ts';
 import { tierName, kindOf } from './outpostLaw.ts';
+import type { Said } from './outpostRows.ts';
 import { type OutpostsState, type SiteOf, outpostsNode } from './outpostsView.ts';
 import { sitesKept } from './siteNames.ts';
 import { treasuryNode } from './treasuryView.ts';
@@ -113,6 +115,7 @@ export class GuildPage {
       this.outpostsState.shown = onto.site;
       this.outpostsState.plan.chosen = onto.structure ?? null;
       this.outpostsState.plan.choosing = null;
+      this.outpostsState.planned = onto.site;
     }
     this.look();
   }
@@ -139,14 +142,17 @@ export class GuildPage {
 
   /** Sends an ask of the guild, one at a time, and asks for the guild again once it is answered; one that changes an
    *  outpost's plot tells the room, which stands it again. */
-  private ask(path: string, body: Readonly<Record<string, unknown>>, said: string, changes = false): void {
+  private ask(path: string, body: Readonly<Record<string, unknown>>, said: Said, changes = false): void {
     if (this.busy) return;
     this.busy = true;
     const sent = withRid(path, body);
-    void this.link
-      .social(path, sent)
-      .then((why) => {
-        this.say(why ?? said);
+    // Words made from the answer need the whole answer; fixed words only whether it was taken.
+    const answered =
+      typeof said === 'string' ? this.link.social(path, sent).then((why) => why ?? {}) : this.link.answered(path, sent);
+    void answered
+      .then((answer) => {
+        const why = typeof answer === 'string' ? answer : null;
+        this.say(typeof answer === 'string' ? answer : typeof said === 'string' ? said : said(answer));
         if (why !== null) return;
         ridAnswered(sent);
         if (MOVES.test(path)) {
@@ -210,7 +216,7 @@ export class GuildPage {
         gap: 10,
         children: [
           foundNode(context, this.roster, banner, this.ask.bind(this), () => this.openEditor(banner, named, true)),
-          this.said !== '' && words(this.said, 1, INK.answer, { wrap: true }),
+          this.said !== '' && words(this.said, context.sizes.label, INK.answer, { wrap: true }),
         ],
       };
     }
@@ -221,7 +227,7 @@ export class GuildPage {
         gap: 10,
         children: [
           detailsNode(context, face, context.holds, this.ask.bind(this), () => this.back()),
-          this.said !== '' && words(this.said, 1, INK.answer, { wrap: true }),
+          this.said !== '' && words(this.said, context.sizes.label, INK.answer, { wrap: true }),
         ],
       };
     if (this.view === 'outposts' || this.view === 'treasury') return this.outpostsPage(context, face);
@@ -275,12 +281,11 @@ export class GuildPage {
             },
             acts,
           );
-    return {
-      width: 'grow',
-      direction: 'column',
-      gap: 10,
-      children: [page, this.said !== '' && words(this.said, 1, INK.answer, { wrap: true })],
-    };
+    // The page scrolls inside the room, a cue at its foot while more lies below, as the home's middle does.
+    return scrollNode(ui, 'guild-outposts-scroll', room.height - 6, [
+      page,
+      this.said !== '' && words(this.said, sizes.label, INK.answer, { wrap: true }),
+    ]);
   }
 
   /** The guild's outposts on its home, each by its site and its hall. */

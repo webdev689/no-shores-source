@@ -426,8 +426,17 @@ export class AccountLink {
 
   /** Asks something of the Roster (`friend/ask`, `company/join`, `guild/promote`, `block`...); why not, if it cannot. */
   async social(path: string, body: Readonly<Record<string, unknown>> = {}): Promise<string | null> {
-    const answer = await this.call('POST', `/v1/social/${path}`, body);
+    const answer = await this.answered(path, body);
     return typeof answer === 'string' ? answer : null;
+  }
+
+  /** A social ask's whole answer, as `social` sends it: what the accounts said back (a take-down's `back`, the Aurem
+   *  the treasury got), or why not. */
+  async answered(
+    path: string,
+    body: Readonly<Record<string, unknown>> = {},
+  ): Promise<Readonly<Record<string, unknown>> | string> {
+    return this.call('POST', `/v1/social/${path}`, body);
   }
 
   /** The controls the player bound, as kept with their account (null for none kept yet), or why not; read as the

@@ -176,8 +176,8 @@ test('standing at a site the guild has not raised, a founder raises an outpost t
   ]);
   const poor = await opened(0, outposts({ at: 'salt-hythe-outpost', treasury: RAISE_AUREM - 1 }));
   poor.click(outpostTabId('salt-hythe-outpost'));
-  const want = 'The treasury holds 4,999 of the 5,000 Aurem. Put Aurem in on the Treasury page while you stand here.';
-  assert.ok(poor.shows().includes(want), poor.shows());
+  assert.ok(poor.shows().includes('from the treasury, which holds 4,999.'), poor.shows());
+  assert.ok(poor.shows().includes('Put Aurem in on the Treasury page while you stand here.'), poor.shows());
 });
 
 test('the Treasury page reads the ledger in words, and a member at an outpost puts Aurem in through the room', async () => {

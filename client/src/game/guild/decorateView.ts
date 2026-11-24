@@ -8,16 +8,17 @@ import type { Node } from '../../ui/node.ts';
 import type { Interface } from '../../ui/ui.ts';
 import { INK, label, pressNode, words } from '../gearNodes.ts';
 import { openGearWindow } from '../gearScreen.ts';
-import { hintNode } from '../menuPages.ts';
 import { counted } from './guildHome.ts';
 import { startPlacing } from './decorPlacing.ts';
 import { PIECES, decorCap, decorPrice, hallTier } from './outpostLaw.ts';
+import { hintAt } from './outpostRows.ts';
 
 /** A piece's press. */
 export const decorId = (piece: string) => `outpost-decor-${piece}`;
 
-/** The Decorate part of an outpost, the treasury's `treasury` Aurem weighed against each piece's price. */
-export function decorateNode(ui: Interface, outpost: OutpostFace, treasury: number): Node {
+/** The Decorate part of an outpost, the treasury's `treasury` Aurem weighed against each piece's price; its words at
+ *  `size`. */
+export function decorateNode(ui: Interface, outpost: OutpostFace, treasury: number, size: number): Node {
   const cap = decorCap(hallTier(outpost.plot));
   const full = outpost.plot.decor.length >= cap;
   const dear = (piece: string) => treasury < decorPrice(piece);
@@ -31,8 +32,8 @@ export function decorateNode(ui: Interface, outpost: OutpostFace, treasury: numb
     direction: 'column',
     gap: 8,
     children: [
-      label('Decorate'),
-      words(`${outpost.plot.decor.length} of ${cap} pieces the hall holds`, 1, INK.faint),
+      label('Decorate', size),
+      words(`${outpost.plot.decor.length} of ${cap} pieces the hall holds`, size, INK.faint),
       {
         gap: 6,
         wrap: true,
@@ -42,17 +43,18 @@ export function decorateNode(ui: Interface, outpost: OutpostFace, treasury: numb
             `${piece.name} · ${counted(decorPrice(piece.piece))} Aurem`,
             'button',
             '',
-            1,
+            size,
             { disabled: full || dear(piece.piece) },
           ),
         ),
       },
-      hintNode(
+      hintAt(
         full
           ? 'Raise the hall to hold more decoration.'
           : PIECES.some((piece) => dear(piece.piece))
             ? `The treasury holds ${counted(treasury)} Aurem: a greyed piece costs more.`
             : 'Choose a piece, then place it just before you.',
+        size,
       ),
     ],
   };
