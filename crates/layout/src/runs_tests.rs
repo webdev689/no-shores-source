@@ -193,3 +193,63 @@ fn the_same_seed_finds_the_same_runs() {
     let first = one(RunKind::Mine, RunPlace::Rock, &field, &[]);
     assert_eq!(first, one(RunKind::Mine, RunPlace::Rock, &field, &[]));
 }
+
+#[test]
+fn a_rampart_drawn_at_its_shortest_is_not_found_climbing_too_steep() {
+    let field = made_field(60.0);
+    let (claim, areas, bare) = basin();
+    let setting =
+        Setting { field: &field, claim: &claim, areas: &areas, bare: &bare, taken: &[], avoid: &[], rise: 28.0 };
+    // Four beats at their largest, the entry and the whole at their shortest: its passages are too short for the
+    // massif's height at a rampart's steepest.
+    let draw = |key: i64| match key {
+        1 => 0.5,
+        2 | 3 => 0.0,
+        10..=19 => 1.0,
+        _ => 0.5,
+    };
+    let way = [1.0, 0.0];
+    let mouth = mouth_of(&setting, &areas[0], way).expect("the floor ends");
+    let run = shaped(&brief(RunKind::Rampart, RunPlace::Rock), (0, mouth, 0.0), way, 28.0, &draw);
+    assert_eq!(run.beats.len(), 4);
+    let steepest = steepest_climb(&run, 28.0);
+    assert!(steepest > RAMPART_STEEPEST, "drawn this way it climbs {steepest:.3}");
+    assert!(!fits(&setting, &run, &[]), "so it does not fit");
+}
+
+#[test]
+fn a_building_run_off_a_raised_floor_is_reached_by_a_ramp_down_to_its_mouth() {
+    let field = made_field(60.0);
+    let (claim, areas, _) = basin();
+    let floors: Vec<[f64; 5]> =
+        areas.iter().map(|area| [area.at[0], area.at[1], area.at[0], area.at[1], 80.0]).collect();
+    let sculpt = Sculpt {
+        claim: claim.clone(),
+        floors,
+        outcrops: Vec::new(),
+        rise: 28.0,
+        seed: 5,
+        climbs: Vec::new(),
+        runs: Vec::new(),
+        wings: Vec::new(),
+        levels: areas.iter().map(|area| [area.at[0], area.at[1], area.at[0], area.at[1], 82.0, 0.5, 0.5]).collect(),
+        terraced: false,
+        roofed: Vec::new(),
+    };
+    let bare = Sculpts::from(vec![sculpt]);
+    let setting =
+        Setting { field: &field, claim: &claim, areas: &areas, bare: &bare, taken: &[], avoid: &[], rise: 28.0 };
+    for kind in [RunKind::Keep, RunKind::Mine, RunKind::Undercroft] {
+        let runs = find(&setting, &[brief(kind, RunPlace::Rock)], 9);
+        assert_eq!(runs.len(), 1, "a {kind:?} is found");
+        let run = &runs[0];
+        assert!(distance(run.mouth, areas[run.area].at) < areas[run.area].radius * 4.0, "it breaks off its area");
+        assert!(run.levels.iter().all(|level| *level == 0.0), "a {kind:?} keeps to the land's level: {:?}", run.levels);
+        let ramp = run.ramp.expect("a ramp is cut down to its mouth");
+        let [x1, y1, x2, y2, _, from, to] = ramp;
+        assert_eq!(([x2, y2], from, to), (run.mouth, 0.5, 0.0), "from its area's level to its mouth");
+        let slope = (from - to) * 28.0 / distance([x1, y1], [x2, y2]);
+        assert!(slope <= RAMPART_STEEPEST + 1e-9, "no steeper than a rampart: {slope}");
+        assert!(capsules(run, 2.5).contains(&ramp), "and carved with it");
+    }
+}

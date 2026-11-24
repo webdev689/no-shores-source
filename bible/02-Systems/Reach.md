@@ -18,7 +18,8 @@ one section of an island's land; the rest of the island is seen and never reache
 ([[Every Island Is Seen Whole and Reached by Nodes]]). Past the section's edge the player is warned to go back, then
 dies and is asked to respawn. The times and distances are Claude's choices ([[The World as Claude Shapes It]]). A drawn
 node's section is its layout's, traced round the floor its carving leaves, so its edge is the foot of its cliffs and
-walls ([[Layouts]]).
+walls ([[Layouts]]); every way, run, beat, climb, stair and tunnel lies inside it a metre either side, and the rock's
+top beside a rampart or a ledge outside it.
 
 ## How it works
 
