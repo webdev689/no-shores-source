@@ -9,7 +9,7 @@ mod common;
 use combat::arms::{Arms, OffHand, Ranged, WeaponClass};
 use combat::fighter::{Action, Side};
 use combat::floats::{FIGHTER_FLOATS, INTENT_FLOATS};
-use combat::shots::{AIMED_POWER, DRAW_FULL, Flight, PLAYER_BOW, fly, loose};
+use combat::shots::{AIMED_POWER, DRAW_FULL, FOE_GUN, Flight, PLAYER_BOW, by_foe, fly, loose};
 use combat::{CombatInput, Fighter, Happening, Intent, Stroke, player_tick};
 use common::{asking, foe_at, guarding, idle, player_at, run};
 use core::f64::consts::PI;
@@ -409,4 +409,16 @@ fn a_shot_stops_at_a_thin_wall_however_far_it_flies_in_a_tick() {
         }
     };
     assert!((at[1] + 3.0).abs() < 1e-6, "stopped at the wall: {at:?}");
+}
+
+#[test]
+fn a_foes_ball_strikes_two_thirds_of_its_gun_and_its_arrow_or_bolt_whole() {
+    for ranged in [Ranged::Pistolet, Ranged::Thunderlock] {
+        let shot = loose(1, ranged, [0.0, 0.0, 1.1], 0.0, 0.0, 1.0);
+        assert!((by_foe(&shot).damage - shot.damage * FOE_GUN).abs() < 1e-9, "{ranged:?}");
+    }
+    for ranged in [Ranged::Bow, Ranged::Crossbow] {
+        let shot = loose(1, ranged, [0.0, 0.0, 1.1], 0.0, 0.0, 1.0);
+        assert_eq!(by_foe(&shot).damage, shot.damage, "{ranged:?}");
+    }
 }

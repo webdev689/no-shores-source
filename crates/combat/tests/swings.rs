@@ -3,7 +3,7 @@
 
 mod common;
 
-use combat::arms::{OffHand, WeaponClass, swing_ticks, weapon};
+use combat::arms::{OffHand, PAIR_DAMAGE, WeaponClass, pair_swing_ticks, swing_ticks, weapon};
 use combat::fighter::{Action, Swing};
 use combat::strike::{struck, weapon_reach};
 use combat::{CombatInput, Happening, Intent, Stroke, Surroundings, step_fighter};
@@ -55,7 +55,7 @@ fn a_fighter_with_no_stamina_cannot_swing_and_stamina_comes_back_after_its_rest(
 fn a_pairs_blows_take_turns_between_the_hands() {
     let mut pair = player_at(0.0, 0.0);
     pair.arms.off_hand = OffHand::Weapon;
-    let (_, happenings) = run(pair, swinging(0.0, Stroke::DownLeft), 125, None);
+    let (_, happenings) = run(pair, swinging(0.0, Stroke::DownLeft), 100, None);
     let hands: Vec<bool> = happenings
         .iter()
         .filter_map(|(_, happening)| match happening {
@@ -64,6 +64,28 @@ fn a_pairs_blows_take_turns_between_the_hands() {
         })
         .collect();
     assert_eq!(hands, vec![false, true, false]);
+}
+
+#[test]
+fn a_players_pair_comes_round_in_four_fifths_of_its_lone_weapons_time_each_blow_nine_tenths_and_a_foes_as_lone() {
+    assert_eq!(pair_swing_ticks(WeaponClass::Sword), (14, 36), "a sword's 18 and 45 at four fifths");
+    let mut striker = player_at(0.0, 0.0);
+    let (_, happenings) = run(striker.clone(), swinging(0.0, Stroke::Up), 1, None);
+    let Some(Happening::Swung(attack)) = happenings.first().map(|(_, happening)| *happening) else { panic!("a swing") };
+    let lone = combat::judge::swing_blow(1, &striker, &attack, 2).damage;
+    striker.arms.off_hand = OffHand::Weapon;
+    let paired = combat::judge::swing_blow(1, &striker, &attack, 2).damage;
+    assert!((paired - lone * PAIR_DAMAGE).abs() < 1e-9, "{paired} against {lone}");
+    let (_, happenings) = run(striker.clone(), swinging(0.0, Stroke::Up), 1, None);
+    assert!(matches!(happenings.first(), Some((_, Happening::Swung(attack))) if attack.end == 36), "a player's pair");
+    let mut foe = foe_at(0.0, 0.0, 0.0);
+    let foes_lone = combat::judge::swing_blow(1, &foe, &attack, 2).damage;
+    foe.arms.off_hand = OffHand::Weapon;
+    assert_eq!(
+        combat::judge::swing_blow(1, &foe, &attack, 2).damage,
+        foes_lone,
+        "a foe's pair strikes as its lone weapon"
+    );
 }
 
 #[test]

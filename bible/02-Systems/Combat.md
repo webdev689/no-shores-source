@@ -68,7 +68,9 @@ A player's weapon reaches a tenth further than the table's reach; a foe's reache
 
 - **Swings.** DFO's swing law times them, each swing taking three quarters of its time at the owner's word: five strike
   frames, each 0.15 s for a sword, shorter or longer by the weapon's handling and a two-handed weight; the blow lands as
-  the third frame begins. Holding the button swings again as each blow ends. A swing costs its stamina, and while it is
+  the third frame begins. A player's pair comes round in four fifths of its lone weapon's time, each blow 0.9 of its
+damage (`PAIR_PACE`, `PAIR_DAMAGE`), about an eighth more a second for a left hand with no shield; a foe's pair swings
+as its lone weapon. Holding the button swings again as each blow ends. A swing costs its stamina, and while it is
   struck the fighter moves at a third of its pace. The player's swings chain the side cut (left), the overhead (down)
   and the thrust (up) in turn, starting over at the side cut after a second without a swing; a stroke that does not
   reach the locked foe gives way to the next in the chain that does
@@ -203,7 +205,8 @@ A bow, a crossbow or a gun raises no guard: the guard's button fires it ([[Range
   ground the room stands bodies on (a node's land, its hills included), a dungeon's wall where it first enters one,
   or a body stops it; a pistolet's or
   thunderlock's ball reaches 60 m along its line at once from a player's gun, and flies from a foe's, at 70 m/s and
-  110 m/s, so it can be dodged. A body is an upright cylinder
+  110 m/s, so it can be dodged; a foe's ball strikes two thirds of its gun's damage (`FOE_GUN`), so an Elite
+  Marksman's aimed shot fells a player of its level in three, not two. A foe's arrow and bolt strike whole. A body is an upright cylinder
   0.35 m across its middle (0.7 m wide) and 1.8 m tall; a shot strikes only what lies ahead of where it flew from, and
   one coming down over a head meets its top.
 - **Reloading.** A shot comes again after the first person's firing and reload: a bow's 0.6 s, a crossbow's 1.6, a

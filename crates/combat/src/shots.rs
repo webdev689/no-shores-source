@@ -52,7 +52,12 @@ pub fn foe_speed(ranged: Ranged) -> f64 {
     }
 }
 
-/// A shot as a foe looses it: an arrow or a bolt as it is; a ball along the same line at a foe's speed.
+/// A foe's ball strikes this share of its gun's damage, as a player's bow does of its own: an Elite Marksman's aimed
+/// shot fells a player of its level in three, not two. A foe's arrow or bolt is whole.
+pub const FOE_GUN: f64 = 2.0 / 3.0;
+
+/// A shot as a foe looses it: an arrow or a bolt as it is; a ball along the same line at a foe's speed and FOE_GUN of
+/// its damage.
 #[must_use]
 pub fn by_foe(shot: &Shot) -> Shot {
     if shot_numbers(shot.ranged).0 > 0.0 {
@@ -61,7 +66,7 @@ pub fn by_foe(shot: &Shot) -> Shot {
     let [east, south, up] = shot.velocity;
     let speed = (east * east + south * south + up * up).sqrt();
     let scale = if speed > 0.0 { foe_speed(shot.ranged) / speed } else { 0.0 };
-    Shot { velocity: shot.velocity.map(|along| along * scale), ..*shot }
+    Shot { velocity: shot.velocity.map(|along| along * scale), damage: shot.damage * FOE_GUN, ..*shot }
 }
 
 /// Whether a ball has flown its whole reach by the end of this tick: a player's, crossing it at once, in its first; a

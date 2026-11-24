@@ -299,6 +299,12 @@ impl Fighter {
         self.side.is_players() && !self.ally
     }
 
+    /// Whether it swings a player's pair (`arms::PAIR_PACE`): a foe's pair swings as its lone weapon.
+    #[must_use]
+    pub fn swings_a_pair(&self) -> bool {
+        self.is_player() && self.arms.off_hand == crate::arms::OffHand::Weapon
+    }
+
     #[must_use]
     pub fn dead(&self) -> bool {
         matches!(self.action, Action::Dead { .. })

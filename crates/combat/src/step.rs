@@ -2,7 +2,7 @@
 //! still), what it is doing carried on or ended, a new swing, guard, dodge, shot or telegraphed blow begun, its body
 //! moved by the movement rules as that allows (faster Hasted), and its aim turned. What it does to others is the host's: a blow that lands now is said, and the host judges it.
 
-use crate::arms::{Ranged, swing_ticks, weapon};
+use crate::arms::{Ranged, pair_swing_ticks, swing_ticks, weapon};
 use crate::fighter::{Action, Attack, CombatInput, Fighter, Held, Intent, Kept, Swing};
 use crate::shapes::Telegraph;
 use crate::shots::{BRACE_GAP, DRAW_FULL, Shot, aimed_power, by_foe, loose, player_power, shot_numbers, toward};
@@ -381,7 +381,8 @@ fn swing(next: &mut Fighter, intent: &Intent) -> Option<Happening> {
         return None;
     }
     let stroke = intent.combat.attack.or(next.kept.stroke.filter(|_| next.kept.attack > 0))?;
-    let (strike, end) = swing_ticks(next.arms.melee);
+    let (strike, end) =
+        if next.swings_a_pair() { pair_swing_ticks(next.arms.melee) } else { swing_ticks(next.arms.melee) };
     let swing = if let Some((foe, _)) = next.riposte.take() {
         Swing::Riposte(foe)
     } else if next.counter > 0 {

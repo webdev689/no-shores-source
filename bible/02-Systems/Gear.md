@@ -231,7 +231,7 @@ number is one of [[Gear as Claude Shapes It]].
   pistolet or thunderlock (`gear::kinds`). A loadout is one item, however many hands it fills: one Attack, one element,
   one set of perks. A Vestige for Melee opens to any Melee kind, evenly, and one for Ranged to any Ranged.
 - **How each fights** ([[Combat]], `room::power::loadout_arms`). A pair's blows take turns between its two blades or
-  maces; an "& Shield" holds its weapon with a shield that blocks as a shield does (80 degrees, and shots); a lone
+  maces, coming round faster than the lone weapon's, each a little lighter; an "& Shield" holds its weapon with a shield that blocks as a shield does (80 degrees, and shots); a lone
   sword, mace or flail, or a pistolet, leaves the left hand free for a torch; the Great Axe fights as the axe; the
   Greatsword is its own, a sword held on its hilt in both hands; a double pistolet fires right, then left, before one
   long reload.

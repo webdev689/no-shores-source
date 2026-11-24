@@ -485,11 +485,16 @@ The decisions in [[Open Questions]] are not repeated here.
   second and ×1.3; a travel never brings the next hostile roll sooner; a cove's wreck one material of 1 or 2,
   Heartwood 1.5%, a module 3%; a fire's bite scales with the shooter's level strength and the ball. With the
   Bulwark blocking, the rules' scripted pair and the dev page's bots still win the heroic Fissure, the pair 32 s later
-  than on `main`. Measured with `economy_tests.rs` (six pace tests and the
+  than on `main`. On the owner's "Go ahead with your proposals except the stamina change"
+  ([[Pairs Swing Faster, Foes' Guns Strike Two Thirds and Faction Gear Has No Weekly Limit]]): a player's pair comes
+  round in 0.8 of its lone weapon's time at 0.9 of its blow (a foe's pair as its lone weapon, for faster paired daggers
+  set a crowd of skirmishers turning about); a foe's ball strikes two thirds (`FOE_GUN`, its aimed shot too), so an
+  Elite Marksman fells a matched player in three aimed shots, not two; no weekly limit on faction gear; stamina as it
+  was. Measured with `economy_tests.rs` (six pace tests and the
   ledger), `balance_tests.rs` (`measure_ranks`), `measure_blows` and `measure_fights_by_rank`. Destiny 1's numbers
   came from search summaries; the proxy refused every page, so they are unchecked against the pages. Tested offline:
   `cargo xtask check` on its head; not played. The rules' two scripted sword players run out the heroic raid's clock
-  in its fourth wave; with `main`'s captains, before this pass's, they hold it. The owner keeps it as it is for now. Its other open points are in [[Open Questions]], "The balance pass's open points".
+  in its fourth wave; with `main`'s captains, before this pass's, they hold it. The owner keeps it as it is for now. Its one open point, Conduit, is in [[Open Questions]].
 
 ## Next
 

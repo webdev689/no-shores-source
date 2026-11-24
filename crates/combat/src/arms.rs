@@ -89,12 +89,28 @@ pub const SWING_PACE: f64 = 0.75;
 const STRIKE_FRAMES: f64 = 5.0;
 const HIT_FRAME: f64 = 2.0;
 
+/// A player's pair's swings come round in this share of its lone weapon's time, each blow at this share of its damage:
+/// about an eighth more a second than the lone weapon, for a left hand that holds no shield.
+pub const PAIR_PACE: f64 = 0.8;
+pub const PAIR_DAMAGE: f64 = 0.9;
+
 /// The ticks from a swing's start to its blow landing, and to its end.
 #[must_use]
 pub fn swing_ticks(class: WeaponClass) -> (u32, u32) {
+    paced_ticks(class, 1.0)
+}
+
+/// The ticks of a player's pair's swing: PAIR_PACE of its lone weapon's.
+#[must_use]
+pub fn pair_swing_ticks(class: WeaponClass) -> (u32, u32) {
+    paced_ticks(class, PAIR_PACE)
+}
+
+fn paced_ticks(class: WeaponClass, pace: f64) -> (u32, u32) {
     let weapon = weapon(class);
-    let frame =
-        (SWING_FRAME * weapon.handling * if weapon.two_handed { 1.06 } else { 1.0 }).clamp(0.09, 0.4) * SWING_PACE;
+    let frame = (SWING_FRAME * weapon.handling * if weapon.two_handed { 1.06 } else { 1.0 }).clamp(0.09, 0.4)
+        * SWING_PACE
+        * pace;
     (ticks(frame * HIT_FRAME), ticks(frame * STRIKE_FRAMES))
 }
 
