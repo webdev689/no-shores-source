@@ -15,6 +15,8 @@ import { randomToken } from './secrets.ts';
 
 /** The week's four guild bounties, by slot. */
 const SLOTTED = [0, 1, 2, 3] as const;
+/** How many weeks back a guild's weeks are kept. */
+const WEEKS_KEPT = 8;
 
 /** A character's guild record as the rules keep it: the week, the XP given, and the counts toward its bounties. */
 interface GuildRecord {
@@ -85,7 +87,10 @@ export async function creditGuild(database: Db, account: string, body: string): 
     .bind(account)
     .first<{ guild_id: string; counted: string }>();
   if (!member) return;
-  const added = since(record, recordOf(member.counted));
+  const before = recordOf(member.counted);
+  // A save older than the week counted already gives nothing, and must not set the count back to its week.
+  if (before && record.week < before.week) return;
+  const added = since(record, before);
   const counted = JSON.stringify({
     week: record.week,
     given: record.given,
@@ -123,6 +128,7 @@ export async function creditGuild(database: Db, account: string, body: string): 
       )
       .bind(guild, record.week, BOUNTY_XP),
     database.prepare(`UPDATE guild_weeks SET ${paidSql} WHERE guild_id = ?1 AND week = ?2`).bind(guild, record.week),
+    database.prepare('DELETE FROM guild_weeks WHERE guild_id = ?1 AND week < ?2').bind(guild, record.week - WEEKS_KEPT),
   ]);
 }
 
@@ -162,7 +168,8 @@ export async function guildTold(
 }
 
 /** A guild's week as its tab shows it: each of the four bounties drawn with the guild's count and whether it is done,
- *  the XP its members gave, and the player's own part (what they gave, and which they claimed) from their character. */
+ *  the XP its members gave, the player's own part (what they gave, and which they claimed) from their character, and
+ *  whether they joined before the week turned. */
 export async function weekRead(database: Db, guild: string, account: string, now: number) {
   const week = weekOf(now);
   const kept = await database
@@ -170,9 +177,12 @@ export async function weekRead(database: Db, guild: string, account: string, now
     .bind(guild, week)
     .first<{ given: number; [part: string]: number }>();
   const body = await database
-    .prepare('SELECT body FROM characters WHERE account_id = ?1')
+    .prepare(
+      `SELECT characters.body, guild_members.joined_at FROM guild_members
+       LEFT JOIN characters ON characters.account_id = guild_members.account_id WHERE guild_members.account_id = ?1`,
+    )
     .bind(account)
-    .first<{ body: string | null }>();
+    .first<{ body: string | null; joined_at: number }>();
   const own = recordOfBody(body?.body ?? null);
   const mine = own?.week === week ? own : null;
   return {
@@ -190,5 +200,7 @@ export async function weekRead(database: Db, guild: string, account: string, now
       };
     }),
     contribution: mine?.given ?? 0,
+    // As the rooms' claim rule reads it: a member who joined before the week turned.
+    beforeTheWeek: (body?.joined_at ?? Infinity) < weekStart(week),
   };
 }

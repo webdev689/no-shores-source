@@ -115,3 +115,30 @@ test("the Guild tab reads the week's four bounties with the guild's counts, its 
   assert.equal(read['given'], 1_800, "the guild's XP this week");
   assert.equal(read['contribution'], 1_800, 'and the player’s own');
 });
+
+test("a stale save of last week's record never sets the count back, so this week's is not given twice", async () => {
+  const { ask, save, guild, tab, deps } = await world('Ada');
+  await ask('Ada', 'guild/found', { name: 'Salt Kings', tag: 'SALT' });
+  await save('Ada', record(500));
+  await save('Ada', { ...record(900), week: WEEK - 1 });
+  await save('Ada', record(500));
+  assert.equal((await guild()).xp, 500);
+  assert.equal((await tab('Ada'))['beforeTheWeek'], false, 'joined this week');
+  await deps.database.prepare('UPDATE guild_members SET joined_at = 0').run();
+  assert.equal((await tab('Ada'))['beforeTheWeek'], true);
+});
+
+test("a guild's weeks long past are let go as its members' saves are counted", async () => {
+  const { ask, save, deps, guild } = await world('Ada');
+  await ask('Ada', 'guild/found', { name: 'Salt Kings', tag: 'SALT' });
+  await deps.database
+    .prepare('INSERT INTO guild_weeks (guild_id, week) VALUES (?1, ?2), (?1, ?3)')
+    .bind((await guild()).id, WEEK - 30, WEEK - 1)
+    .run();
+  await save('Ada', record(5));
+  const { results } = await deps.database.prepare('SELECT week FROM guild_weeks ORDER BY week').all<{ week: number }>();
+  assert.deepEqual(
+    results.map((row) => row.week),
+    [WEEK - 1, WEEK],
+  );
+});

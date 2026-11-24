@@ -192,6 +192,7 @@ export async function detailsOf(database: Db, own: string, name: string, now: nu
           name: guild.name,
           tag: guild.tag,
           motto: guild.motto,
+          description: guild.description,
           banner: keptBanner(guild.banner, guild.name),
           level: levelOf(guild.xp),
           rank: RANKS[guild.rank],
