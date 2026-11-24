@@ -20,7 +20,10 @@ test('a burst heaves spray off both bows and foam astern as it begins, a wake wh
   const foam = marks.filter((mark) => mark.flat);
   assert.ok(foam.length >= WAKE_RATE, 'the wake lies on the water');
   // The wake is laid astern: south of a ship heading north.
-  assert.ok(foam.every((mark) => mark.y > SHIP.anchor[1]), 'astern');
+  assert.ok(
+    foam.every((mark) => mark.y > SHIP.anchor[1]),
+    'astern',
+  );
   const running = effects.count;
   wake.frame(0, SHIP, 0, 1.02, 1 / 60);
   assert.ok(effects.count > running, 'a last fall of spray and foam as it settles');
