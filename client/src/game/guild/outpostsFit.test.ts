@@ -247,3 +247,12 @@ test('the Delve Gate, the raise panel and the heading each say a thing once', as
   assert.equal(said.split('5,000').length - 1, 1, said);
   assert.equal(said.split('4,999').length - 1, 2, 'the heading and the panel, once each');
 });
+
+test('too narrow for a column beside it, the plan stands over the rest at its full cells', async () => {
+  const { laid } = await opened({ width: 560, height: 470 }, [800, 720]);
+  const plan = laid().find((each) => each.node.id === PLAN_ID);
+  const beside = laid().find((each) => each.node.id === SIDE_ID);
+  assert.ok(plan && beside);
+  assert.equal(plan.box.width, 20 * 16, 'the cells the height allows');
+  assert.ok(beside.box.y >= plan.box.y + plan.box.height, 'the rest under it');
+});

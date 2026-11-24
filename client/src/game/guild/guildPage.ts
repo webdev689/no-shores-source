@@ -82,8 +82,12 @@ export class GuildPage {
     this.now = given.now ?? Date.now;
     this.hidden = given.hidden ?? (() => false);
     this.siteOf = given.siteOf ?? sitesKept;
-    // A guild founded, joined or left elsewhere (the Social tab) is read at once, not at the next look.
-    if (typeof addEventListener === 'function') addEventListener(GUILD_CHANGED, () => this.look());
+    // A guild founded, joined or left elsewhere (the Social tab) is read at once, not at the next look; the page's own
+    // ask, still busy when it tells the change, reads once it is answered.
+    if (typeof addEventListener === 'function')
+      addEventListener(GUILD_CHANGED, () => {
+        if (!this.busy) this.look();
+      });
     this.look();
   }
 

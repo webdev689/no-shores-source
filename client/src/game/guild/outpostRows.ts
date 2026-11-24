@@ -24,7 +24,7 @@ export const COLLECT_ID = 'outpost-collect';
 export const HORN_ID = 'outpost-horn';
 export const takeId = (stuff: Stuff) => `outpost-take-${stuff}`;
 /** A row's press's width at the first label step, so a part's presses line up. */
-const PRESS_PX = 190;
+export const PRESS_PX = 190;
 
 /** What an ask says once the accounts take it: fixed words, or words made from their answer. */
 export type Said = string | ((answer: Readonly<Record<string, unknown>>) => string);

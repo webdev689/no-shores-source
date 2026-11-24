@@ -296,6 +296,7 @@ test('the Outposts and Treasury presses and a guild change made elsewhere read t
   const { link } = fakeLink(face());
   const counting = { ...link, guild: async () => (reads++, { guild: face() }) } as unknown as AccountLink;
   const listeners: Record<string, () => void> = {};
+  const before = Object.getOwnPropertyDescriptor(globalThis, 'addEventListener');
   Object.assign(globalThis, { addEventListener: (type: string, heard: () => void) => (listeners[type] = heard) });
   const page = new GuildPage({ link: counting, here: () => null, now: () => 0 });
   const { frame, click } = drawn((context) => guildPage(context, page));
@@ -303,6 +304,9 @@ test('the Outposts and Treasury presses and a guild change made elsewhere read t
   frame();
   click(edgeId('treasury'));
   assert.equal(reads, 2, 'the Treasury press reads again');
+  await settle();
   listeners[GUILD_CHANGED]?.();
   assert.equal(reads, 3, 'a guild change heard reads again');
+  if (before) Object.defineProperty(globalThis, 'addEventListener', before);
+  else Reflect.deleteProperty(globalThis, 'addEventListener');
 });

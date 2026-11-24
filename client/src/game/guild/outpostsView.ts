@@ -34,6 +34,7 @@ import {
   headNode,
   heldOf,
   hintAt,
+  PRESS_PX,
   hornNodes,
   partNode,
   rowNode,
@@ -190,7 +191,9 @@ function outpostNode(ui: Interface, holds: Holds, given: Given & { readonly outp
   const build = BUILD_PX * size;
   // The page's own padding, 4 px a side, comes off the room it is given.
   const width = (given.width ?? given.cellPx * PLOT_CELLS + column + 32) - 8;
-  const cellPx = Math.max(LEAST_CELL_PX, Math.min(given.cellPx, Math.floor((width - column - 24) / PLOT_CELLS)));
+  const beside = Math.floor((width - column - 24) / PLOT_CELLS);
+  // Too narrow for a column beside even the least plan, the plan stands over the rest and takes the row's width.
+  const cellPx = Math.min(given.cellPx, beside >= LEAST_CELL_PX ? beside : Math.floor((width - 4) / PLOT_CELLS));
   const builds = face.rank <= 1 && outpost.here;
   if (!builds) state.plan.choosing = null;
   const plan = planNode(ui, outpost.plot, state.plan, { level: face.level, treasury: outposts.treasury, cellPx, size });
@@ -285,7 +288,7 @@ function structureNode(
         pressNode(deliverId(stuff), 'Deliver', 'button', '', size, {
           disabled: !gives,
           label: held === 0 ? `Deliver ${named}: you carry none` : `Deliver ${named}`,
-          width: 190 * size,
+          width: PRESS_PX * size,
         }),
     );
   });
