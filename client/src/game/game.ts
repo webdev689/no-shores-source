@@ -143,6 +143,7 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement): Promise<vo
     }),
     seaWord: null,
     landmass,
+    zones: world.nodes,
     drawers: drawersOn(landmass),
     ready: false,
     waited: 0,

@@ -18,8 +18,9 @@ export interface SeenFoe {
 }
 
 /** Where the player stands as the waypoint reads it: on land, the room's node, their feet, the room's own mark for
- *  the goal it marks, the foes they see and the gates of the zone with the zone each leads to; at sea, the ship, the
- *  isles in sight by kind and the hostile ships by faction. */
+ *  the goal it marks, the foes they see, whether they are inside a dungeon (its own ground, in its own frame, its
+ *  node's places and landing not where they stand) and, on a sea's island, the wrecks they have searched by their
+ *  place in its `wrecks`; at sea, the ship, the isles in sight by kind and the hostile ships by faction. */
 export type Standing =
   | {
       readonly on: 'land';
@@ -27,6 +28,8 @@ export type Standing =
       readonly at: Point;
       readonly marked: Point | null;
       readonly foes: readonly SeenFoe[];
+      readonly inside?: boolean;
+      readonly spent?: readonly number[];
     }
   | {
       readonly on: 'sea';
@@ -91,14 +94,17 @@ function countersOf(goal: Goal): readonly string[] {
   return goal.to === 'stranger' ? [] : [goal.to ?? ''];
 }
 
-/** The zone a goal is done in: its node, a social space with its counter, a patrol with materials to gather; the sea
- *  for a goal done there or on its islands; none where no zone holds it. */
-function zoneOf(goal: Goal, from: Point, chart: Chart): NodeInfo | 'sea' | null {
+/** The zone a goal is done in: its node, a social space with its counter, the zone with materials to gather the
+ *  player stands in or else the nearest patrol with them; the sea for a goal done there or on its islands; none where
+ *  no zone holds it. A zone locked to the player is never one. */
+function zoneOf(goal: Goal, standing: Standing, chart: Chart): NodeInfo | 'sea' | null {
+  const from = standing.at;
   if (goal.island !== undefined || AT_SEA.has(goal.kind)) return 'sea';
   if (goal.node !== undefined) return chart.nodes.find((node) => node.id === goal.node) ?? null;
+  const open = chart.nodes.filter((node) => !node.locked);
   if (goal.kind === 'talk' || goal.kind === 'pledge' || goal.kind === 'buy') {
     const counters = countersOf(goal);
-    const socials = chart.nodes.filter((node) => node.kind === 'social');
+    const socials = open.filter((node) => node.kind === 'social');
     const keeping = socials.filter(
       (node) => counters.length === 0 || (node.stations ?? []).some((station) => counters.includes(station.kind)),
     );
@@ -106,7 +112,8 @@ function zoneOf(goal: Goal, from: Point, chart: Chart): NodeInfo | 'sea' | null 
     return nearest(from, keeping.length > 0 ? keeping : socials, landingOf);
   }
   if (goal.kind === 'gather') {
-    const patrols = chart.nodes.filter((node) => node.kind === 'patrol' && (node.resources ?? []).length > 0);
+    if (standing.on === 'land' && (standing.node.resources ?? []).length > 0) return standing.node;
+    const patrols = open.filter((node) => node.kind === 'patrol' && (node.resources ?? []).length > 0);
     return nearest(from, patrols, landingOf);
   }
   return null;
@@ -134,13 +141,30 @@ function within(goal: Goal, zone: NodeInfo, standing: Extract<Standing, { on: 'l
     const stations = (zone.stations ?? []).filter((station) => counters.includes(station.kind));
     return nearest(standing.at, stations, (station) => station.counter)?.counter ?? null;
   }
-  if (goal.kind === 'kill' && goal.types) {
-    const least = goal.rank === undefined ? 0 : RANKS.indexOf(goal.rank as (typeof RANKS)[number]) + 1;
-    const foes = standing.foes.filter((foe) => goal.types?.includes(foe.name) && foe.rank >= least);
-    return nearest(standing.at, foes, (foe) => foe.at)?.at ?? null;
-  }
+  if (goal.kind === 'kill' && goal.types) return foeOf(goal, standing);
   if (goal.kind === 'gather') return nearest(standing.at, zone.resources ?? [], (each) => each.at)?.at ?? null;
   return null;
+}
+
+/** The foes of a kill goal's types and rank in sight, the nearest; none for another goal or none in sight. */
+function foeOf(goal: Goal, standing: Extract<Standing, { on: 'land' }>): Point | null {
+  if (goal.kind !== 'kill' || !goal.types) return null;
+  const least = goal.rank === undefined ? 0 : RANKS.indexOf(goal.rank as (typeof RANKS)[number]) + 1;
+  const foes = standing.foes.filter((foe) => goal.types?.includes(foe.name) && foe.rank >= least);
+  return nearest(standing.at, foes, (foe) => foe.at)?.at ?? null;
+}
+
+/** A goal done at sea or on its islands, the player on one of its islands: there, if the island is of the goal's
+ *  kind (its leader, its wrecks not yet searched); else back to the ship. */
+function onIsle(goal: Goal, standing: Extract<Standing, { on: 'land' }>, kind: string): Leg {
+  const fits = goal.island === undefined || (ISLANDS[goal.island] ?? []).includes(kind);
+  if (goal.kind === 'scavenge') {
+    const wrecks = (standing.node.wrecks ?? []).filter((_wreck, index) => !(standing.spent ?? []).includes(index));
+    const wreck = nearest(standing.at, wrecks, (each) => each);
+    return wreck ? { at: wreck, note: null, here: true } : { at: null, note: LEGS.ship };
+  }
+  if (goal.kind === 'kill' && fits) return { at: foeOf(goal, standing), note: null, here: true };
+  return { at: null, note: LEGS.ship };
 }
 
 /** A goal done at sea or on its islands, at sea: the nearest isle of its kind, the nearest of its side's ships. */
@@ -165,14 +189,18 @@ interface Leg {
 }
 
 function legOf(goal: Goal, standing: Standing, chart: Chart): Leg | null {
-  const zone = zoneOf(goal, standing.at, chart);
+  const zone = zoneOf(goal, standing, chart);
+  // Inside a dungeon its ground is in its own frame: only what stands in it is pointed at (a foe of the goal's types,
+  // the room's own mark), the rest waiting until the player is out.
+  if (standing.on === 'land' && standing.inside) {
+    const there = zone === 'sea' || zone?.id === standing.node.id;
+    return { at: there ? (foeOf(goal, standing) ?? standing.marked) : null, note: null, here: true };
+  }
   if (zone === 'sea') {
     if (standing.on === 'land') {
-      // On an island the sea holds, its foes and its wrecks are here; from a zone, back to the ship.
-      const isle = !chart.nodes.some((node) => node.id === standing.node.id);
-      return isle
-        ? { at: within(goal, standing.node, standing), note: null, here: true }
-        : { at: null, note: LEGS.ship };
+      // On an island the sea holds, what its kind holds is here; from a zone, back to the ship.
+      const kind = standing.node.isle;
+      return kind === undefined ? { at: null, note: LEGS.ship } : onIsle(goal, standing, kind);
     }
     const found = atSea(goal, standing);
     return { at: found, note: found ? null : LEGS.search };

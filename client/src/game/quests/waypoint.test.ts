@@ -136,3 +136,44 @@ test('in an instance reached through a gate, the way back is that gate to the zo
     notes: [LEGS.gate('Saltgrass Downs')],
   });
 });
+
+test('inside a dungeon only what stands in it is pointed at, the rest waiting until the player is out', () => {
+  const tail = onTask('veiled', 'tail-collector');
+  assert.deepEqual(guide(tail, land(SALTGRASS, [100, 100], { inside: true }), CHART), { at: null, notes: [null] });
+  const inside = { inside: true, foes: [{ name: 'High Assessor Corvane', rank: 5, at: [12, 30] as const }] };
+  const boss = onTask('stormcallers', 'face-high-assessor', [1]);
+  assert.deepEqual(guide(boss, land(MAW, [10, 10], inside), CHART).at, [12, 30]);
+});
+
+test('gathering points at the materials of the zone the player stands in before another patrol’s', () => {
+  const storm = onTask('stormcallers', 'take-back-storm', [1, 5]);
+  assert.deepEqual(guide(storm, land(SALTGRASS, [5900, 1000]), CHART).at, [5900, 900]);
+});
+
+test('on a sea’s island: its wrecks not yet searched, its leader if it is of the goal’s kind, else back to the ship', () => {
+  const wrecks = [
+    [100, 0],
+    [300, 0],
+  ] as const;
+  const isle = (kind: string) =>
+    node({ id: 'isle-1-00000000000000ff', kind: 'patrol', name: 'An isle', isle: kind, wrecks });
+  const search = onTask('stormcallers', 'search-hoard-isle', [1]);
+  assert.deepEqual(guide(search, land(isle('ruin'), [0, 0]), CHART).at, [100, 0]);
+  assert.deepEqual(guide(search, land(isle('ruin'), [0, 0], { spent: [0] }), CHART).at, [300, 0], 'one searched');
+  assert.deepEqual(guide(search, land(isle('ruin'), [0, 0], { spent: [0, 1] }), CHART), {
+    at: null,
+    notes: [null, LEGS.ship],
+  });
+  const leader = onTask('veiled', 'reckoner-isle', [1]);
+  const reeve = { foes: [{ name: 'Reeve', rank: 3, at: [50, 50] as const }] };
+  assert.deepEqual(guide(leader, land(isle('ruin'), [0, 0], reeve), CHART).at, [50, 50]);
+  assert.deepEqual(guide(leader, land(isle('cove'), [0, 0], reeve), CHART), { at: null, notes: [null, LEGS.ship] });
+  const ship = onTask('stormcallers', 'catch-tithe-sea');
+  assert.deepEqual(guide(ship, land(isle('ruin'), [0, 0]), CHART), { at: null, notes: [LEGS.ship] });
+});
+
+test('a keeper or materials are never sought in a zone locked to the player', () => {
+  const locked = node({ id: 'sunspire-social', kind: 'social', name: 'Sunspire', spawns: [[0, 50]], locked: true });
+  const chart = { ...CHART, nodes: [...CHART.nodes, locked] };
+  assert.deepEqual(guide(onTask('house', 'find-your-way'), sea([0, 0]), chart).at, [1000, 0], 'Overlook, not Sunspire');
+});

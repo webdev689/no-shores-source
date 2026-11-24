@@ -91,6 +91,8 @@ export interface Playing {
   through: GateWay | null;
   seaWord: SeaWord | null;
   landmass: Landmass;
+  /** Every zone of the world, the open landmass's and the rest, which the roads' waypoint is found over. */
+  readonly zones: readonly NodeInfo[];
   drawers: LandDrawers;
   ready: boolean;
   waited: number;
@@ -268,8 +270,16 @@ export function startFrames(parts: FrameParts, playing: Playing): void {
       rank: foe.rank,
       at: [foe.view.x, foe.view.y] as const,
     }));
-    const afoot = { on: 'land', node: here.node, at: [body.x, body.y], marked: null, foes: seen } as const;
-    const guided = quests.guide(afoot, playing.landmass);
+    const afoot = {
+      on: 'land',
+      node: here.node,
+      at: [body.x, body.y],
+      marked: null,
+      foes: seen,
+      inside: here.dungeon !== null,
+      spent: here.gear?.gear?.scavenged ?? [],
+    } as const;
+    const guided = quests.guide(afoot, { nodes: playing.zones, layouts: playing.landmass.layouts });
     const ward = quests.wardPlate(parts.groundAt);
     const foes = ward ? [...shown.fight.foes, ward] : shown.fight.foes;
     const players = platedPlayers(here.otherPlayers, [body.x, body.y, body.z]);
@@ -378,6 +388,8 @@ export function startFrames(parts: FrameParts, playing: Playing): void {
       paused,
     });
     playing.shipScale = shown.shipScale;
+    // Alone the sea's word on the gear comes only here; online the room's connection hears it too.
+    playing.quests.hear(playing.sea?.gear?.gear);
     playing.quests.frame(seconds, playing.after.past, paused);
     playing.lore.hear(playing.sea?.gear?.gear);
     hud.toast(...toldNow(), ...playing.quests.toasts, ...playing.lore.toasts);
@@ -438,7 +450,7 @@ export function startFrames(parts: FrameParts, playing: Playing): void {
       notices,
       free: !input.locked && !paused,
       quests: playing.quests,
-      chart: landmass,
+      chart: { nodes: playing.zones, layouts: landmass.layouts },
       past: playing.after.past,
     });
     // Only while sailing: a landing chosen, or under way, stands on the landmass open now.

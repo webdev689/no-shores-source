@@ -177,7 +177,9 @@ stall serves; the stranger is heard in a social space alone, never at the stall.
     isle or a cove landed on, wrecks searched, an isle's leader) at the nearest in sight at sea, its step saying "None
     in sight: sail the open sea" while none is, and "Hold M to return to your ship" from land;
   - a goal done anywhere (an Art's spell cast, a piece worn) at nothing, its step saying "Anywhere"; the stranger,
-    heard anywhere in a social space, "Anywhere here" there.
+    heard anywhere in a social space, "Anywhere here" there;
+  - inside a dungeon, only what stands in it (a foe of the goal's types, the room's mark); on a sea's island, its
+    wrecks not yet searched and, if it is of the goal's kind, its leader, any other goal back to the ship.
 
   The held map at sea also rings the nodes the task's goals name (the land's map, raised on foot, draws no places).
   The marks give way while the map is up. At sea the tracker shows the quest walked while no sea fight's task does.
