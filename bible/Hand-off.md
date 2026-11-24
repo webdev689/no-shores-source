@@ -226,7 +226,8 @@ The decisions in [[Open Questions]] are not repeated here.
   middle round after it (on main a foe of a four-foe group stood behind a still player about a quarter of the time),
   and the board dropped the flanker as it took its turn. Measured offline with a scratch probe (the pull request has
   the table): against three, blows a minute 36 to 31 and time in 2 s lulls 38% to 61%; against six, 44 to 35 and 14%
-  to 47%. Not yet played by hand. Left for the owner: whether a fight should wake a second group less (a foe's alert
+  to 47%. The dev page's two bots now win both raids, and the scripted pairs seal the heroic Fissure and win the
+  heroic raid sooner. Not yet played by hand. Left for the owner: whether a fight should wake a second group less (a foe's alert
   shout reaches any ally within 12 m), and the director's direction (a kill still raises the heat, so a dominating
   player meets more foes, with shorter breaths).
 - **Guilds** (#179), merged on the owner's "Merge and deploy when ready", which deploys the page and the rooms and
