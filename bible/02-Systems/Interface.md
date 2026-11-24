@@ -839,7 +839,8 @@ never while a press is held. Each press is an ask the room answers.
   stays in. Hovering or focusing a dye shows it on the display before it is worn; after the pointer leaves, a piece
   keeps its preview only if the keys focused it. The display keeps the figure's pictures without coat or barding, and
   the barding tiles' horse pictures without the dyes, 96 at most, letting go of the least lately shown. Escape goes back to the button. On a screen 800 px tall or less the tiles are 52 px, so every row shows at 1280 by 720.
-- **The card.** An item's name on its rarity's band, its kind, pips and element, its picture, its main number large,
+- **The card.** An item's name (its set's and its kind's, "Portwatch Helm", or a named piece's own; [[Gear]],
+  "Names") on its rarity's band, its kind, pips and element, its picture, its main number large,
   its level, its chosen traits, its words, and what it changes over the piece it would replace, each number's meter
   with the gain or loss in green or red. Along its foot what its presses do. Where the menu is wide, every card's words
   stand at 22, as the menu's labels do, in a card 440 px wide. It shows only for a pointer that moves or a focus the
@@ -879,7 +880,9 @@ never while a press is held. Each press is an ask the room answers.
   word on the gear is not a gain, nor what changes in the ten seconds after it, while the player's own character is
   claimed. Ammunition an Ammo box gives back shows as "Ammo" and its shots, and Ammo crates gained as theirs; a crate
   used is spent, not gained. Letters newly in the mail show as one row, "Sent to the mail" and how many, under the
-  Postmaster's mark; a letter taken is not a gain, though what it held is.
+  Postmaster's mark; a letter taken is not a gain, though what it held is. A Normal piece a kill, a chest or a clear
+  gives in a Vestige's place shows as its item's row, as any item new to them does
+  ([[Gear]], "Commons drop as themselves").
   Currency, XP, each faction's reputation ("Reputation") and an Art's XP ([[Material Nodes Stand Where They Are Dressed, Worked by Holding E]]) stand as short
   lines over the rows, as Destiny shows them: the count, its word where the icon alone is not enough, and its icon,
   with no band; five stand at most, apart from the rows' six, so a kill's lines never push its drops out. An Art's
@@ -1115,8 +1118,8 @@ fades out, and keeps a thin brass bar in a gutter at its right whose thumb stand
 it, Page Up and Page Down, and the pad's right stick scroll it (`Interface.scrollBy`, `Interface.stickScroll`).
 
 The card: its name on a brass band (balanced over two lines where it is long) with its level and what its runs drop
-("Drops orcish and mithril gear" for Elite, "Drops adamantium and ebony gear" for Abyss, from
-`content/gear/looks.json`); why it is shut, led by a padlock in neutral ink (red is kept for a refusal); its rules
+by its content's name, never a metal's ("Drops Elite Dungeon gear", "Drops Abyss Dungeon gear", from
+`content/gear/looks.json`; [[No Elder Scrolls Metal Names Reach the Player]]); why it is shut, led by a padlock in neutral ink (red is kept for a refusal); its rules
 (the Abyss Playlist's "One of the 18 Elite Dungeons, at Abyss, drawn as each run starts."); its modifiers, each led by
 its icon with what it does; its rewards, kept while it is shut, each its words ("a Vestige in a Boss's colours"),
 then "Taken" (with the timers' tick) or "Not taken", a playlist's weekly as three marks filling with its clears ("2 of

@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import { test } from 'node:test';
+import items from '../../../content/gear/items.json' with { type: 'json' };
 import * as flatbuffers from 'flatbuffers';
 import { Gear, GearColumn, GearOfficer, GearShip, Input } from '../../../generated/messages/ts/overlook/wire.ts';
 import { earnedOf } from './artMessages.ts';
@@ -125,11 +126,19 @@ test('where a player stands crosses as the server wrote it, away from Shape and 
   assert.equal(here.cosmeticsSold?.length, 9, 'four the Tailor’s, four the Tack’s and its Bay Horse');
   assert.equal(here.shapes, 9);
   assert.equal(here.shape?.place, 6);
+  const wares = here.shape?.wares ?? [];
   assert.deepEqual(
-    here.shape?.wares.map((ware) => [ware.id, ware.rarity, ware.price, ware.level]),
-    [0, 1, 2, 3, 4, 5].map((id) => [id, id < 4 ? 3 : 4, id < 4 ? 7 : 23, 20]),
-    'four Legendary, then two Atheric (this week both weapons, 23), numbered by place and priced in Shapes',
+    wares.map((ware) => [ware.rarity, ware.price, ware.level, ware.named === null]),
+    [0, 1, 2, 3, 4, 5].map((place) => [place < 4 ? 3 : 4, place < 4 ? 7 : 23, 20, place < 4]),
+    'four rolled Legendary, then two named Atheric (this week both weapons, 23), priced in Shapes',
   );
+  // Each is numbered as a page asks for it: an Atheric by its place in the catalogue, a rolled piece by its hash.
+  const atheric = wares[4];
+  assert.equal(
+    atheric?.id,
+    items.items.findIndex((entry) => entry.id === atheric?.named),
+  );
+  assert.equal(new Set(wares.map((ware) => ware.id)).size, 6, 'no two numbered alike');
   const sold = here.factionWares ?? [];
   assert.equal(sold.length, 21, 'seven pieces of each faction’s');
   const hood = sold.find((ware) => ware.named === 'lamplighters_hood');

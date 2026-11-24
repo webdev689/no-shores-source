@@ -17,6 +17,7 @@ import hashlib
 import json
 import math
 import os
+import re
 import sys
 import tempfile
 from types import SimpleNamespace
@@ -35,6 +36,7 @@ import drape  # noqa: E402
 import fit  # noqa: E402
 import forge  # noqa: E402
 import materials  # noqa: E402
+import metals  # noqa: E402
 import model  # noqa: E402
 import bowhold  # noqa: E402
 import bows  # noqa: E402
@@ -198,6 +200,9 @@ OFFHAND_LAYERS = (*SHIELD_LAYERS, *LEFT_HELD, *guns3p.OFF, torch3p.LAYER)
 GUN_LAYERS = guns3p.HELD
 # the weapons worn on the body (sheaths.py): sheathed, and the empty sheath or the quiver worn while one is drawn
 SHEATH_LAYERS = sheaths.LAYERS
+# the weapons whose hilt, guard and trim each strip marks for a faction's colour (stage.py `mark_trim`, metals.py
+# `is_trim`): every sword, dagger, axe, mace, flail and warhammer, in hand or sheathed
+TRIMMED = re.compile(r'^(sheath_)?(sword|dagger|axe|mace|flail|warhammer)_')
 WORK = (360, 240)   # the work frame: room for a body fallen its length and a weapon raised overhead
 # rows under the ground in the work frame, by animation: a weapon a fallen body drops lies nearer the eye than the body
 # and lower on the screen, seen from behind most of all
@@ -513,6 +518,12 @@ def every_set(body):
 PER = {}   # the body's fits and keys by animation (`load_body`), for what is posed outside a layer's own frames
 
 
+def trim_classify(classify):
+    """`classify` with a weapon's hilt, guard and trim (metals.py `is_trim`) told apart: their class negated, which
+    `render` reads back as the trim's mask. The raster holds classes as signed bytes, every class under 128."""
+    return lambda m: -classify(m) if m is not None and metals.is_trim(m.name) else classify(m)
+
+
 class Layer:
     """One layer: the fighter its objects belong to and the objects it shows, and its raster of them alone. Its
     `drapes` are made again each frame over `over` (its own fighter, or the armour's envelope); its free objects (the
@@ -521,6 +532,8 @@ class Layer:
     def __init__(self, name, fighter, obs, classify, drapes=(), over=None, dye=False, order=0.0, cover=0.0, casters=(),
                  under=0.0):
         self.name, self.fighter, self.obs = name, fighter, set(obs) | {d.ob for d in drapes}
+        if TRIMMED.match(name):
+            classify = trim_classify(classify)
         # the weapon its frames hold: a staff in the forge's own moves, an axe or a sword in the spell
         held = held_as(name)
         self.weapon = ('staff' if name == 'staff' or name in STAFF_LAYERS else held if held in ('axe', 'sword')
@@ -904,7 +917,9 @@ class Keys:
                       if k.split('@')[0] in used}
             self.made[ly.name] = rendercache.digest(
                 self.run, ly.name, self._worn(ly, True), grades, ly.dye, ly.weapon, bool(getattr(ly, 'extras', None)),
-                ('cloth', rendercache.VERSION['cloth']) if ly.drapes else None, *drape_tags(ly))
+                ('cloth', rendercache.VERSION['cloth']) if ly.drapes else None, *drape_tags(ly),
+                # a weapon's trim marked (`mark_trim`): its strips drawn again, and no other's
+                'trim' if TRIMMED.match(ly.name) else None)
         return self.made[ly.name]
 
     def cloth(self, ly):
@@ -1095,6 +1110,7 @@ def render(layer, anim, frame, view, per, tmp, names):
         v, t, c, pc = np.concatenate(vs), np.concatenate(ts), np.concatenate(cs), np.concatenate(ps)
     px, py, depth = fit.project(v, layer.cloud.scale)
     ids, zs = fit.rasterize(px, py, depth, t, c, stage.WORK_W, stage.WORK_H, with_depth=True)
+    trim, ids = ids < 0, np.abs(ids)   # a weapon's hilt, guard and trim (`trim_classify`), and every texel's class
     part = fit.rasterize(px, py, depth, t, pc, stage.WORK_W, stage.WORK_H)   # the part of the body each pixel shows
     if forge.GRADE and not RAW['all']:
         work = forge.grade_frame(work, ids, names, view)
@@ -1123,6 +1139,9 @@ def render(layer, anim, frame, view, per, tmp, names):
         # the horse's strands lie along its cards, unrastered: each takes the depth of the card nearest it, however far
         near = hole & (dist <= (np.inf if layer.name in riding.LAYERS else 3))
         zs, part = np.where(near, zs[iy, ix], zs), np.where(near, part[iy, ix], part)
+        trim = np.where(near, trim[iy, ix], trim)   # and its trim, so a guard's rim is marked as the guard
+    if trim.any():   # where a faction's colour lies on a faction's weapon
+        work = stage.mark_trim(work, trim)
     part = np.where(on & np.isinf(zs), fit.WEAPON_PIECE, part)
     if layer.dye == 'hair':   # a part of its own: no order weighs between it and the head or the armour it lies on
         part = np.where(on, fit.HAIR_PIECE, part)

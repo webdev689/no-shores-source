@@ -14,7 +14,7 @@ pub enum Purpose {
     Opens = 4,
     /// The kind of item a lesser Vestige opens to, or which named item a Legendary or Atheric one does.
     Which = 5,
-    /// A rolled item's name.
+    /// A rolled item's look, or a ship module's name; past it (1), a rolled Legendary's island resource.
     Name = 6,
     /// A rolled item's traits, column by column (the column times 8 and the node added to the purpose's number).
     Traits = 16,

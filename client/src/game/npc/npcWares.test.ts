@@ -93,15 +93,21 @@ test('the Tack sells the day’s horses and bardings', () => {
   );
 });
 
-test('Shape sells his week’s wares for Shapes while here, and is gone while away', () => {
-  const wares = [item({ id: 0, rarity: 3, price: 7, named: 'seawall' }), item({ id: 1, rarity: 4, price: 13 })];
-  const here = state({ shapes: 10, shape: { place: 2, wares } });
-  const [row] = rowsOf('shape', here);
-  assert.equal(row?.heading, 'Wares');
+test('Shape sells his week’s wares for Shapes while here, each asked for by the number the room sent with it', () => {
+  // The room numbers a rolled Legendary by a hash of the piece and an Atheric by its place in the catalogue.
   const seawall = items.items.findIndex((entry) => entry.id === 'seawall');
   assert.ok(seawall >= 0);
-  assert.deepEqual(row?.wares[0]?.ask, { kind: ASKS.buyFromShape, node: 0, item: seawall }, 'the piece shown, named');
-  assert.deepEqual(row?.wares[1]?.price, { amount: 13, currency: 'shapes' });
+  const wares = [
+    item({ id: 3_405_691_582, kind: 2, rarity: 3, level: 20, source: 3, name: 0, price: 7 }),
+    item({ id: seawall, kind: 12, rarity: 4, level: 20, price: 23, named: 'seawall' }),
+  ];
+  const here = state({ shapes: 10, level: 20, shape: { place: 2, wares } });
+  const [row] = rowsOf('shape', here);
+  assert.equal(row?.heading, 'Wares');
+  assert.equal(row?.wares[0]?.name, 'Wreckborn Sword', 'a rolled Legendary named by its content’s set');
+  assert.deepEqual(row?.wares[0]?.ask, { kind: ASKS.buyFromShape, node: 0, item: 3_405_691_582 }, 'the rolled piece');
+  assert.deepEqual(row?.wares[1]?.ask, { kind: ASKS.buyFromShape, node: 1, item: seawall }, 'the Atheric shown');
+  assert.deepEqual(row?.wares[1]?.price, { amount: 23, currency: 'shapes' });
   assert.equal(row?.wares[1]?.short, true);
   assert.deepEqual(rowsOf('shape', state({ shape: null })), [
     { heading: 'Wares', wares: [], empty: 'Shape is away. He comes on Fridays.' },
