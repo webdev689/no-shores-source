@@ -221,7 +221,8 @@ the owner approved ([[Where You Go and the Seas You Choose Set the Difficulty]])
 
 - **Each character keeps its day and its week** with the account (`Character.activity`): `today` holds the tiers of
   the dungeon of the day it has cleared, its bounties, each by its board place with its count, and the places it
-  turned in (`turned_in`); `this_week` holds whether it cleared each of the week's two dungeons and whether it holds
+  turned in (`turned_in`), the town's six under those keys and the factions' under keys of their own
+  (`faction_bounties`, `faction_turned_in`), so a room built before them carries them through a rollback; `this_week` holds whether it cleared each of the week's two dungeons and whether it holds
   the Abyss boon. Each begins anew at its first touch in a later day or week, and never turns back, so a room whose
   clock is behind cannot pay twice. `today` and `story` keep any key a later build wrote in them, so a rollback to
   this build loses none.
@@ -274,7 +275,9 @@ keep their engine ([[The Journal Holds the Quests, the Bounties at Its Side and 
   court ([[Cities]], `city::board`), and opens after the prologue, on the counters' pattern of the
   plaza's keepers: the bake writes its counter on the plaza's node file, and the room serves its asks there. It is
   no station and has no keeper. It holds the town's six bounties and each faction's three, every one drawn by the
-  day and the same for everyone ([[The Bounty Board as Claude Shapes It]]).
+  day and the same for everyone
+  ([[Standard and Faction Bounties Each Wear One Design, on a Board After the Bounty Tracker]],
+  [[The Bounty Board as Claude Shapes It]]).
 - **The town's six** (`gear::bounties::board`): places 0 and 1 on land, 2 and 3 at sea, 4 and 5 in dungeons, each pair
   two different ones of its pool. None names an island or a water, since the islands' bands run from 1 to 30. A
   character takes any of them; each pays once when turned in, by its tier as Destiny 1's three tiers paid (2,500,

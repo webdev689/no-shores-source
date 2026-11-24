@@ -91,14 +91,17 @@ const BOARD: Pixels = {
 };
 const BOARD_CELLS = [44, 42] as const;
 const BOARD_SVG = svgOf(BOARD);
+/** A stage narrower than this, in pixels, sets its title a step smaller, so it keeps clear of the board. */
+const NARROW_TITLE = 320;
 /** What the stage keeps clear around the board: its title above, the floor's margin below. */
 const AROUND = [44, 120] as const;
 
 /** The board's stage `width` by `height`: its mark and title at its top left, the board on its lit floor, drawn at
- *  the largest whole step of its cells that fits, from two to twelve. */
+ *  the largest whole step of its cells that fits, from one to twelve; its title a step smaller on a stage too narrow
+ *  for it. */
 export function boardStage(title: string, width: number, height: number, wide: boolean): Node {
   const step = Math.max(
-    2,
+    1,
     Math.min(12, Math.floor((width - AROUND[0]) / BOARD_CELLS[0]), Math.floor((height - AROUND[1]) / BOARD_CELLS[1])),
   );
   const mark = wide ? 63 : 42;
@@ -118,7 +121,7 @@ export function boardStage(title: string, width: number, height: number, wide: b
         float: { to: 'parent', x: 22, y: 22 },
         children: [
           svgNode('keeper mark board', keeperMarkSvg('board'), mark),
-          words(title.toUpperCase(), wide ? 3 : 2, INK.word, { tracking: 2 }),
+          words(title.toUpperCase(), wide ? 3 : width < NARROW_TITLE ? 1 : 2, INK.word, { tracking: 2 }),
         ],
       },
       {

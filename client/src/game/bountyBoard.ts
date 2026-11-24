@@ -99,8 +99,26 @@ export function serves(gear: GearState, faction: number): boolean {
   return gear.items.some((item) => item.at === WORN + SLOT_CLOAK && item.named === cape);
 }
 
-/** What a bounty's card says along its foot at the board: E takes one open, turns in one done. */
-const boardHints = (row: BountyRow): readonly Hint[] => (row.press ? [['E', row.press.label]] : []);
+/** What a bounty's card says along its foot at the board: a click or E takes one open, turns in one done. */
+const boardHints = (row: BountyRow): readonly Hint[] => (row.press ? [['Click / E', row.press.label]] : []);
+
+/** What a tile reads to a screen reader beyond its name, task and state: what it pays, whether a faction's counts
+ *  now, and what pressing it does, or why the board is shut. */
+function heard(gear: GearState, row: BountyRow, shut: boolean): string {
+  if (shut) return SHUT;
+  const pay = payOf(gear, row);
+  const faction = row.faction === 0 ? null : factionNamed(row.faction);
+  const earned = faction
+    ? `${pay.reputation.toLocaleString('en')} ${faction.name.replace(/^The /, '')} reputation`
+    : `${pay.aurem.toLocaleString('en')} Aurem`;
+  const counts = faction
+    ? serves(gear, row.faction)
+      ? ' Counts now.'
+      : ' Counts only while pledged to them and wearing their cape.'
+    : '';
+  const press = row.press ? ` Press to ${row.press.label === 'Take' ? 'take it' : 'turn it in'}.` : '';
+  return `Pays ${pay.xp.toLocaleString('en')} XP and ${earned}.${counts}${press}`;
+}
 
 /** The currencies' ids, whose cards name them. */
 const COINS = ['board-aurem', 'board-rank'] as const;
@@ -120,7 +138,9 @@ function purseNode(context: MenuContext, shown: string | null): Node {
   const faction = pledge === 0 ? null : factionNamed(pledge);
   const coin = (id: string, mark: Node, said: string, named: string): Node => {
     if (id === shown) context.card(id, () => nameCard(sizes, named));
-    return { id, focusable: true, gap: 6, alignY: 'center', label: named, children: [mark, words(said, 2, INK.word)] };
+    // It hears E too, so E acts on the bounty whose card shows wherever the focus rests on the board.
+    const children = [mark, words(said, 2, INK.word)];
+    return { id, focusable: true, keys: ['e'], gap: 6, alignY: 'center', label: named, children };
   };
   const aurem = gear.aurem.toLocaleString('en');
   const standing = faction ? reputationOf(pledge, gear.standing) : null;
@@ -161,9 +181,9 @@ function footNode(until: number | null, size: number, width: number): Node {
 
 /** The bounty board's screen: the board on its stage, and beside it its words and purse, "Available bounties" with the
  *  town's six in a row and the pledged faction's three under them (or three locked slots while pledged to none), and
- *  the time to the next board. The tile pointed at or holding the keys shows its card; a click, Enter or E on a tile
- *  takes or turns it in, E the one whose card shows; the arrows move between tiles. Before the prologue the tiles
- *  rest grey and their cards say why. */
+ *  under them the time to the next board, all in a scroll of their own. The tile pointed at or holding the keys shows
+ *  its card; a click, Enter or E on a tile takes or turns it in, E the one whose card shows; the arrows move between
+ *  tiles. Before the prologue the tiles rest grey and their cards say why. */
 export function boardPage(context: MenuContext, resetAt: () => number | null, now = roomNow): Node {
   const { ui, gear, room, sizes } = context;
   const wide = sizes.name > 1 && sizes.label > 1;
@@ -175,11 +195,10 @@ export function boardPage(context: MenuContext, resetAt: () => number | null, no
   const locks = Array.from({ length: pledge === 0 ? FACTION_BOUNTIES : 0 }, (unused, slot) => `bounty-locked-${slot}`);
   const shown = shownOf(context, [...ids, ...locks, ...COINS]);
   const shownRow = rows.find((row) => idOf(row) === shown) ?? null;
-  // E reaches only the press holding the focus, so while nothing holds it the first tile takes it, unringed, and E is
-  // heard; E then acts on the bounty whose card shows, as its keycap says, and on none while no bounty's card shows.
-  const first = ids[0];
-  if (ui.focusedId === null && first) ui.focusOn(first);
-  const keyed = ids.some((id) => ui.keysOn(id).includes('e'));
+  // E reaches the press holding the focus (a tile, a padlock or a coin, each hearing it) and acts on the bounty whose
+  // card shows, as its keycap says, and on none while no bounty's card shows. Nothing is focused for the player, so
+  // the pad's A or Enter never takes a bounty unseen.
+  const keyed = [...ids, ...locks, ...COINS].some((id) => ui.keysOn(id).includes('e'));
   const pressed = rows.find((row) => ui.clicked(idOf(row))) ?? (keyed ? shownRow : null);
   if (!shut && pressed?.press) context.ask(pressed.press.ask);
   const tile = (row: BountyRow): Node => {
@@ -195,7 +214,7 @@ export function boardPage(context: MenuContext, resetAt: () => number | null, no
             }),
       );
     const lit = ui.hovered(id) || (ui.focused(id) && ui.keyFocused);
-    return bountyTileNode(row, id, wide, { lit, shut, press: true });
+    return bountyTileNode(row, id, wide, { lit, shut, press: true, heard: heard(gear, row, shut) });
   };
   const town = rows.filter((row) => row.faction === 0).map(tile);
   // The pledged faction's three, then any other's held today; three locked slots while pledged to none.
@@ -235,12 +254,14 @@ export function boardPage(context: MenuContext, resetAt: () => number | null, no
             ],
           },
           {
+            // Its own scroll, so on a short screen the faction's row and the time to the next board can be reached.
             id: 'board-bounties',
             width: 'grow',
+            height: 'grow',
+            scroll: true,
             direction: 'column',
             gap,
             padding: [11, 0, 0, 0],
-            opacity: shut ? 0.6 : 1,
             children: [
               {
                 width: 'grow',
@@ -248,16 +269,19 @@ export function boardPage(context: MenuContext, resetAt: () => number | null, no
                 gap: 4,
                 padding: [0, 0, 6, 0],
                 children: [
-                  label('Available bounties', text + 1, INK.word),
+                  label('Available bounties', narrow ? text : text + 1, INK.word),
                   { width: 'grow', height: 1, fill: 'rgba(163,152,128,0.26)' },
                 ],
               },
-              row(town),
-              row([...theirs, ...locked]),
+              { direction: 'column', gap, opacity: shut ? 0.6 : 1, children: [row(town), row([...theirs, ...locked])] },
+              {
+                padding: [gap, 0, 0, 0],
+                children: [
+                  footNode(reset === null ? null : reset - now(), text, Math.min(wide ? 880 : 572, sideWidth - 44)),
+                ],
+              },
             ],
           },
-          { width: 'grow', height: 'grow' },
-          footNode(reset === null ? null : reset - now(), text, Math.min(wide ? 880 : 572, sideWidth - 44)),
         ],
       },
     ],

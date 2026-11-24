@@ -1334,30 +1334,33 @@ serves each ask only at its own counter ([[Gear]], "In the rooms"; [[Factions]])
     top left, and the board itself drawn in the game's pixels (`bountyStage.ts`, 44 cells by 42 after `board.rs`: two
     posts, a planked face, a shingled gable and its lamp, six notices in two rows of three, the top row's under red
     seals and the bottom row's in the three factions' colours) on a floor lit in its gold (`litGround`, the keepers'),
-    at the largest whole step that fits, two to twelve. On a phone (under 600 px) it stands over the rest, a third of
-    the room tall.
+    at the largest whole step that fits, one to twelve, its title a step smaller on a stage under 320 px. On a phone
+    (under 600 px) it stands over the rest, a third of the room tall.
   - **Beside it**: "When Overlook needs a hand, it posts a bounty here. The factions post their own." with the
-    player's Aurem and, pledged, their faction's rank by its emblem, each named by its card; "Available bounties"
-    ruled under; the town's six in a row and the pledged faction's three under them, then any other faction's held
-    that day, or three locked wells with a padlock while pledged to none; and at the foot a sunk well with "New
-    bounties" and the time to the next board.
+    player's Aurem and, pledged, their faction's rank by its emblem, each named by its card; then in a scroll of their
+    own, so every row stays in reach on a short screen, "Available bounties" ruled under (a step smaller on a phone);
+    the town's six in a row and the pledged faction's three under them, then any other faction's held that day, or
+    three locked wells with a padlock while pledged to none; and right under the tiles, as the Tracker lays its
+    refresh, a sunk well with "New bounties" and the time to the next board.
   - **A tile** has no words. Its face says who posts it (`bountyFaces.ts`), a sign 24 cells square grounded and
     framed as an emblem's: every town bounty a pinned writ under a red wax seal with two ribbons on slate, every
     faction's its faction's emblem (the Stormcallers' bolt, the Lamplighters' lantern, the Veiled's moon). The face is
     laid at twice its cells in a 2 pixel edge, 52 pixels, and three times, 76, where the menu is wide and tall. Its
-    edge and marks say its state: stone open; brass taken, with a gauge of its count along its foot; gilt done, the
+    edge and marks say its state: stone open; brass taken, with a gauge of its count along its foot; green done, the
     gauge full and green; dimmed with a gold tick once turned in; greyed before the prologue. Pointed at or holding
-    the keys it is ringed white just outside its edge.
+    the keys it is ringed white just outside its edge. A screen reader hears its name, kind, task and state, what it
+    pays, for a faction's whether it counts now, and what pressing it does, or why the board is shut.
   - **The card** of the tile pointed at or holding the keys floats beside it (`bountyCardNode`): its name in capitals
-    and its kind by the mark of where it counts ("Land bounty", or "Lamplighters bounty") on a band in its poster's
-    colour; its words; its count once taken; "Rewards" with what it pays the player now by its tier (`payOf`: XP by its
+    and its kind ("Land bounty" by the mark of where it counts, or "Lamplighters bounty" by its faction's emblem) on a
+    band in its poster's colour; its words; its count once taken, green once done; "Rewards" with what it pays the player now by its tier (`payOf`: XP by its
     letters, and the town's Aurem by its coin or the faction's reputation by its emblem), resting once turned in; for
     a faction's, "Counts while pledged to them and wearing their cape", ticked while it is met (`serves`); and along
-    its foot E's press, Take on one not held or Turn in on one done, or "Turned in". A locked well's card says "Pledge
+    its foot "Click / E" with its press, Take on one not held or Turn in on one done, or "Turned in". A locked well's card says "Pledge
     to a faction at its counter in Overlook to take its bounties."
-  - **Its keys**: a click, Enter or E on a tile takes or turns it in, E the one whose card shows and none while no
-    bounty's card shows (while nothing holds the focus the first tile takes it, unringed, so E is heard), each asked
-    by its place with the day of the board shown; the arrows move between tiles and rows. The footer reads "Click / E
+  - **Its keys**: a click, Enter or E on a tile takes or turns it in; E, heard on any tile, padlock or coin holding the
+    focus, the one whose card shows, and none while no bounty's card shows; nothing takes the focus for the player,
+    so the pad's A or Enter never takes a bounty unseen. Each is asked by its place with the day of the board shown;
+    the arrows move between tiles and rows. The footer reads "Click / E
     Take or turn in", the Character key "Open Character" and "Esc Dismiss". Before the prologue every tile rests grey,
     its card holds the padlock and "The bounty board opens after the prologue.", and nothing is asked.
 
@@ -1421,6 +1424,8 @@ button's corner and screen, and the Tailor's wares.
 
 - On a view under 386 px tall (a phone held sideways) the broadside warning reaches down over the sight; the sea
   fight has no touch controls yet.
+- The menu's cards show by the pointer or the keys alone, so none shows by touch; at the bounty board a tap takes or
+  turns in a bounty at once.
 - The sea fight's readout writes at the face's 11 px where DFO's wrote 10, 12 and 15, and the sight's aim line at 11
   where DFO's was 13; the laid side's soft 8 px glow stands as a hard gold
   halo round its broadside's ring; and a long ship's name on the card is cut short where the face's letters run

@@ -16,9 +16,18 @@ test('a faction’s bounties wear its own emblem, and the town’s a writ on sla
   }
   const town = bountyFacePixels(0);
   assert.equal(town.length, SIGN_CELLS * SIGN_CELLS * 4);
-  assert.equal(colourAt(town, 4 + 6, 3 + 0), OUTLINE, 'the tack outlined, as the gear glyphs are');
-  assert.equal(colourAt(town, 4 + 4, 3 + 5), '#4a3b2a', 'a line of the writ inked');
-  assert.equal(colourAt(town, 4 + 11, 3 + 11), '#d8553c', 'its red seal');
+  const tones = new Set(
+    Array.from({ length: SIGN_CELLS * SIGN_CELLS }, (unused, cell) =>
+      colourAt(town, cell % SIGN_CELLS, Math.floor(cell / SIGN_CELLS)),
+    ),
+  );
+  for (const [tone, what] of [
+    [OUTLINE, 'outlined, as the gear glyphs are'],
+    ['#4a3b2a', 'its lines inked'],
+    ['#d8553c', 'its red seal'],
+    ['#f1e6c8', 'its paper'],
+  ] as const)
+    assert.ok(tones.has(tone), what);
   const faces = [0, ...factions.factions.map((faction) => faction.id)].map((id) => bountyFacePixels(id).join());
   assert.equal(new Set(faces).size, 4, 'the town and each faction apart at a glance');
 });

@@ -10,7 +10,8 @@ use crate::dice::Dice;
 use crate::factions::factions;
 use crate::factions_tests::caped;
 use crate::kinds::Slot;
-use crate::objectives::Feat;
+use crate::objectives::{Feat, Objective};
+use crate::world::Difficulty;
 use crate::{Ask, Character, Done, Here, Refusal};
 use std::collections::{BTreeMap, BTreeSet};
 
@@ -52,7 +53,7 @@ fn each_faction_posts_three_of_its_own_four_a_day_at_its_places_after_the_towns_
     assert_eq!(owners, expected);
     assert_eq!((faction_board(DAY, 0), faction_board(DAY, 4)), (None, None), "the town and no faction post none here");
     for faction in 1..=POSTING_FACTIONS {
-        let mut seen = BTreeSet::new();
+        let mut seen = BTreeMap::new();
         for day in 20_000..20_400 {
             let board = faction_board(day, faction).expect("a faction posts");
             let names: BTreeSet<&str> = board.iter().map(|bounty| bounty.name).collect();
@@ -61,9 +62,12 @@ fn each_faction_posts_three_of_its_own_four_a_day_at_its_places_after_the_towns_
             for (place, bounty) in faction_places(faction).zip(&board) {
                 assert_eq!(bounty_at(day, place).as_ref(), Some(bounty), "found again by its place");
             }
-            seen.extend(names);
+            for name in &names {
+                *seen.entry(*name).or_insert(0) += 1;
+            }
         }
         assert_eq!(seen.len(), 4, "each of its four comes up");
+        assert!(seen.values().all(|&days| days < 400), "and each is left out on some days: {seen:?}");
     }
     assert_eq!(bounty_at(DAY, BOUNTY_PLACES), None);
     assert!(bounty_at(DAY, BOUNTIES - 1).is_some_and(|bounty| bounty.faction == 0));
@@ -74,7 +78,7 @@ fn every_bounty_of_the_town_and_the_factions_has_a_short_plain_name_of_its_own()
     let towns = LAND.iter().chain(&SEA).chain(&DUNGEONS);
     let names: Vec<&str> = towns.chain(FACTION_POOLS.iter().flatten()).map(|template| template.name).collect();
     let unique: BTreeSet<&str> = names.iter().copied().collect();
-    assert_eq!((names.len(), unique.len()), (22, 22), "each its own name");
+    assert_eq!(unique.len(), names.len(), "each its own name");
     for name in names {
         let plain = !name.is_empty() && name.chars().count() <= BOUNTY_NAME_MOST && !name.contains('\u{2014}');
         assert!(plain, "{name:?} is short and plain");
@@ -114,7 +118,7 @@ fn a_factions_bounty_counts_only_while_its_cape_is_worn_and_pays_xp_and_its_repu
     for _ in 0..target + 2 {
         caped_again.saw(&ELITE_FOE, DAY);
     }
-    assert_eq!(caped_again.activity.today.bounties, BTreeMap::from([(place, target)]), "up to its target");
+    assert_eq!(caped_again.activity.today.faction_bounties, BTreeMap::from([(place, target)]), "up to its target");
     let tier = bounty_at(DAY, place).expect("on the board").tier;
     let (xp, aurem, reputation) = (caped_again.xp, caped_again.materials.aurem, caped_again.reputation(faction));
     let turn_in = Ask::TurnInBounty { place, day: DAY };
@@ -149,24 +153,29 @@ fn a_switch_of_pledge_stops_a_held_bounty_counting_but_it_still_turns_in_to_its_
         "to the faction that posted it"
     );
     let mut held = serving(faction);
-    held.activity.today(DAY).bounties.insert(place, 0);
+    held.activity.today(DAY).faction_bounties.insert(place, 0);
     held.allegiance.pledge = other;
     assert!(!held.saw(&ELITE_FOE, DAY), "pledged to another, it counts no more");
 }
 
 #[test]
-fn the_record_keeps_every_place_on_the_board_and_none_past_it() {
+fn the_record_keeps_the_towns_places_and_the_factions_each_under_their_own_keys_and_none_past_the_board() {
     let mut activity = Activity::default();
-    activity.today.bounties.extend([(0, 3), (14, 1), (15, 2)]);
-    activity.today.turned_in.extend([5, 12, 40]);
+    activity.today.bounties.extend([(0, 3), (6, 4)]);
+    activity.today.turned_in.extend([5, 12]);
+    activity.today.faction_bounties.extend([(2, 1), (14, 1), (15, 2)]);
+    activity.today.faction_turned_in.extend([3, 12, 40]);
     let kept = activity.kept();
-    assert_eq!(kept.today.bounties, BTreeMap::from([(0, 3), (14, 1)]));
-    assert_eq!(kept.today.turned_in, BTreeSet::from([5, 12]));
+    assert_eq!(kept.today.bounties, BTreeMap::from([(0, 3)]));
+    assert_eq!(kept.today.turned_in, BTreeSet::from([5]));
+    assert_eq!(kept.today.faction_bounties, BTreeMap::from([(14, 1)]));
+    assert_eq!(kept.today.faction_turned_in, BTreeSet::from([12]));
 }
 
 #[test]
 fn a_factions_day_of_bounties_pays_about_a_tenth_of_a_rank_as_destiny_1s_did() {
-    // Destiny 1's bounties paid 50 reputation against ranks 2,000 to 2,500 apart: a day's handful about a tenth.
+    // Destiny 1's bounties paid 50 to 100 reputation by tier against ranks 2,000 to 2,500 apart: a day's handful
+    // about a tenth.
     let per_rank = factions().reputation_per_rank;
     for faction in 1..=POSTING_FACTIONS {
         for day in 20_000..20_200 {
@@ -178,7 +187,9 @@ fn a_factions_day_of_bounties_pays_about_a_tenth_of_a_rank_as_destiny_1s_did() {
 }
 
 #[test]
-fn the_guilds_reputation_boon_raises_a_factions_bounty_as_it_raises_every_reputation_earned() {
+fn the_guilds_reputation_boon_raises_a_bountys_xp_share_but_not_a_factions_own_reputation() {
+    // The boon raises what kills, clears, chests and the Abyss boon earn, and every deed's XP share (Outposts); a
+    // faction's bounty pays its own flat, as its card says it.
     let faction = (1..=POSTING_FACTIONS).find(|&faction| felling_place(faction).is_some()).expect("one fells Elites");
     let (place, target) = felling_place(faction).expect("found");
     let paid = |boon: u8| {
@@ -194,7 +205,78 @@ fn the_guilds_reputation_boon_raises_a_factions_bounty_as_it_raises_every_reputa
     };
     let tier = bounty_at(DAY, place).expect("on the board").tier;
     let (paid_xp, _) = bounty_pay(serving(faction).level(), tier);
-    let base = u64::from(paid_xp) + u64::from(faction_bounty_reputation(tier));
-    assert_eq!(paid(0), base);
-    assert_eq!(paid(10), base + base / 10, "the Captain's Lodge's 10% on its XP's share and its own alike");
+    let own = u64::from(faction_bounty_reputation(tier));
+    assert_eq!(paid(0), u64::from(paid_xp) + own);
+    assert_eq!(paid(10), u64::from(paid_xp) + u64::from(paid_xp) / 10 + own, "the Lodge's 10% on the XP's share alone");
+}
+
+#[test]
+fn a_factions_bounties_are_kept_under_keys_of_their_own_so_an_older_room_carries_them_through() {
+    // A room built before the factions' bounties keeps only places 0 to 5 under `bounties` and `turned_in`, and keeps
+    // a key it does not know as it was: under keys of their own, a rollback cannot trim them and pay one twice.
+    let mut character = serving(1);
+    for place in [0, 6, 7] {
+        character.ask(Ask::TakeBounty { place, day: DAY }, at_board(DAY), &DICE).expect("taken");
+    }
+    character.activity.today.faction_turned_in.insert(8);
+    let kept: serde_json::Value = serde_json::from_str(&character.to_json()).expect("a character");
+    let today = &kept["activity"]["today"];
+    assert_eq!(today["bounties"], serde_json::json!({ "0": 0 }), "the town's alone where an older room reads");
+    assert_eq!(today["faction_bounties"], serde_json::json!({ "6": 0, "7": 0 }));
+    assert_eq!(today["faction_turned_in"], serde_json::json!([8]));
+    assert!(today.get("turned_in").is_none(), "nothing of the town's turned in");
+    let read = Character::from_json(&character.to_json()).expect("read back");
+    assert_eq!(read.activity.today, character.activity.today);
+}
+
+/// A feat each objective the factions' bounties name counts: of its faction and rank where it names one.
+fn feat_for(objective: &Objective) -> Feat<'static> {
+    match objective {
+        Objective::Fell { faction, rank, .. } => {
+            Feat::Felled { faction: faction.unwrap_or(1), rank: rank.unwrap_or(1), island: Some("continent-1") }
+        }
+        Objective::Gather { .. } => Feat::Gathered { resource: 0 },
+        Objective::Sink { rank, .. } => Feat::Sunk { water: None, rank: rank.unwrap_or(1) },
+        Objective::Clear { .. } => Feat::Cleared { island: None, tier: Difficulty::Normal },
+    }
+}
+
+#[test]
+fn every_factions_every_bounty_counts_at_its_own_place_and_pays_its_tier() {
+    for faction in 1..=POSTING_FACTIONS {
+        for day in DAY..DAY + 6 {
+            let mut character = serving(faction);
+            let board = faction_board(day, faction).expect("a faction posts");
+            for place in faction_places(faction) {
+                character.ask(Ask::TakeBounty { place, day }, at_board(day), &DICE).expect("taken");
+            }
+            for bounty in &board {
+                for _ in 0..bounty.target {
+                    character.saw(&feat_for(&bounty.objective), day);
+                }
+            }
+            let counts: Vec<(u8, u32)> =
+                faction_places(faction).zip(board.iter().map(|bounty| bounty.target)).collect();
+            assert_eq!(character.activity.today.faction_bounties, counts.into_iter().collect(), "{faction} on {day}");
+            for (place, bounty) in faction_places(faction).zip(&board) {
+                let (before, aurem) = (character.reputation(faction), character.materials.aurem);
+                let (xp, _) = bounty_pay(character.level(), bounty.tier);
+                character.ask(Ask::TurnInBounty { place, day }, at_board(day), &DICE).expect("turned in");
+                let own = u64::from(faction_bounty_reputation(bounty.tier));
+                assert_eq!(character.reputation(faction), before + u64::from(xp) + own, "{} paid", bounty.name);
+                assert_eq!(character.materials.aurem, aurem);
+            }
+        }
+    }
+}
+
+#[test]
+fn another_factions_cape_counts_nothing_for_the_faction_pledged() {
+    let mut wearing_another = serving(1);
+    wearing_another.allegiance.pledge = 2;
+    assert!(!wearing_another.serves(2) && !wearing_another.serves(1));
+    let place = faction_places(2).start;
+    wearing_another.activity.today(DAY).faction_bounties.insert(place, 0);
+    let bounty = bounty_at(DAY, place).expect("on the board");
+    assert!(!wearing_another.saw(&feat_for(&bounty.objective), DAY));
 }

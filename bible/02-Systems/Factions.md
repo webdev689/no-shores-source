@@ -51,7 +51,9 @@ keeps a counter in Overlook's plaza ([[Cities]]), and a lore book its road gives
   pledged, but only while the player wears that faction's cape (`earn_reputation`), and a kill's a quarter more while
   they hold the Abyss boon ([[Activities]]). A faction's own bounties, taken at the bounty board by those pledged to
   it, pay its reputation besides: 2,500 at the first tier, 3,750 at the second and 5,000 at the third
-  (`bountyReputation`; [[Activities]], "Bounties"). A rank is every 100,000 reputation, without end, so a player nears
+  (`bountyReputation`; [[Activities]], "Bounties";
+  [[Standard and Faction Bounties Each Wear One Design, on a Board After the Bounty Tracker]],
+  [[The Bounty Board as Claude Shapes It]]). A rank is every 100,000 reputation, without end, so a player nears
   rank 2 as they reach level 20 (190,000 XP), as Destiny 1's ranks fell
   ([[The Balance and Economy Pass as Claude Shapes It]]).
 - **What a rank earns.** Rank 1 keeps the faction's emblem and rank 2 its dye, as a level keeps its emblem

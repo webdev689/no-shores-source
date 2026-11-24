@@ -56,9 +56,6 @@ no quests, stood beside the roads. Asked "How should they come together?", the o
 
 ## Claude's calls
 
-The calls on the bounties' tiles, their states, their card, the board and the Journal's bounties are replaced by
-[[The Bounty Board as Claude Shapes It]].
-
 | Call | Chosen | Why |
 |---|---|---|
 | The quest grid | Two columns of three cards a page, how many are held beside the title and the page between its drawn arrows at the right; one column of cards under 900 px, the bounties staying beside it down to 600 px | Destiny's grid, folded where two columns do not fit |
@@ -70,7 +67,12 @@ The calls on the bounties' tiles, their states, their card, the board and the Jo
 | The banners | A story mission's swallowtail in blood and brass, a side quest's shield (a kind to come wears a side quest's), each of six charges, the shields each of six fields; a quest wears the banner it names, else one of its kind's chosen by its id | Two kinds told apart at a glance, and quests side by side apart: "better and more.varied quest banners" |
 | The order | Story missions first, then side quests, then kinds to come | The story leads |
 | The empty line | "No quests held. Quests you take up are kept here.", before any room's word or on a word not the player's own | The page says plainly why it is empty |
+| The tiles | A square tile a bounty, bearing its bounty's own glyph (a bounty not drawn, the mark of where it counts) on its kind's ground: stone for land, deep water for the sea (a tone the kit gains), blood for dungeons | Destiny's rows of colour, in the kit's tones; each bounty its own glyph, as each of Destiny's wears its own: "better bounty glyphs" |
+| The tiles' states | Open, plain; taken, a gauge of its count along its foot; done, a gold edge; turned in, dimmed with a check | A state read from the tile, with no words on it |
+| The card | The bounty's name, its kind in small type under it, its words, a gauge with its count, its rewards, and at the board its press | Destiny's card on the tile under the pointer |
 | The names | Tithe Collector, A Cut Above, Honest Work, Big Game, Broadside, Bigger Fish, Sea Wolf, Into the Dark, Deeper Still and Deep Delver, each at most 16 letters | Short and catchy, at the owner's ask |
+| The board | Its title, one line, the tiles in three rows of two, the rising sun and the time to the daily reset over a bar, and the card beside them; arrows move between tiles, and E or a click takes or turns one in | The Bounty Tracker's right half |
+| The Journal's bounties | Six slots three to a row under "Bounties" with how many are taken, the same tiles and card with no press | Bounties are taken and turned in at the board alone; three to a row as Destiny's tracker, from one left edge with the column's head |
 | The timers | Under Today, This week and Later, each head carrying its reset's icon and its one countdown, so no row repeats a clock and none says Now; no bar of groups | DFO's timers window with our own rows, and few enough of them to need no filter; every row runs to its group's reset, so one clock says it once |
 | The timers' icons | Each row its icon in a well, its marks drawn: the seas of each tier with a tick, a ring or a padlock; each modifier its own icon alone, Burn's flame in its Art's colours; the isles' level band the character is in lit; the pay by the gear's own glyphs and a chest; the Abyss's revives a heart and its wipe a skull | More icons and less text, at the owner's word, in the gear glyphs' style so the screens share one hand |
 | The timers' words | Said at the panel's foot for whatever is pointed at or focused, and read to a screen reader, never written on the rows; the arrows step between the rows | The words stay one look away, and no mark is a sign without a meaning |
@@ -78,6 +80,10 @@ The calls on the bounties' tiles, their states, their card, the board and the Jo
 | The key | T drops the timers, with its keycap in the footer | T was free on foot, at sea and in the menu |
 | The panel | It lies over the page, which rests under it, and goes up as the Journal is left | So the timers never stand over another tab |
 | This Week | Its title goes, its rows becoming the timers' | The owner's drop-down holds them |
+
+Replaced in part by [[The Bounty Board as Claude Shapes It]]: every bounty of a kind wears one face (the town's a
+writ, a faction's its emblem) on a smaller tile; the card floats beside the tile pointed at; the board is laid as a
+keeper's screen with the factions' bounties under the town's; and the Journal's column takes the same tiles and card.
 
 Links: [[Interface]], [[Activities]], [[Pick - Enhanced Plus UI]],
 [[The HUD Drops Its Room Line, and the Account Mark Comes From DFO]],

@@ -17,10 +17,11 @@ export const BOUNTY_KINDS: readonly string[] = ['Land bounty', 'Sea bounty', 'Du
 const KIND_MARKS: readonly IconName[] = ['land', 'sea', 'dungeon'];
 /** A tile's edge, in pixels, around its face. */
 const EDGE = 2;
-/** A tile's edge at rest, taken, and done: the kit's stone, its brass, and a gilded edge. */
+/** A tile's edge at rest, taken, and done: the kit's stone, its brass, and green. */
 const STONE = [INK.stoneHi, INK.stoneLo, INK.stoneLo, INK.stoneHi];
 const BRASS = [INK.brassLit, INK.brass, INK.brass, INK.brassLit];
-const GILT = ['#f3cf86', '#7a5424', '#5c3f1a', '#c08a3e'];
+/** Done: green as its full gauge, so it reads apart from one still counting. */
+const DONE = [INK.gain, '#2f6b4a', '#24533a', '#4fae7c'];
 /** The tile pointed at or holding the keys: ringed in white just outside its edge, as Destiny marks what its cursor
  *  is on, so its state's edge still shows inside the ring. */
 const RING = '#f2efe6';
@@ -45,6 +46,8 @@ export interface TileLook {
   readonly lit: boolean;
   readonly shut: boolean;
   readonly press: boolean;
+  /** What a screen reader hears after its name, task and state: what it pays and what pressing it does. */
+  readonly heard?: string;
 }
 
 /** A gauge of a count toward its target, `height` pixels tall, filled in `colour`. */
@@ -59,6 +62,9 @@ function gauge(count: number, target: number, height: number, colour: string, wi
     children: [{ width: `${share}%`, height: 'grow', fill: colour }],
   };
 }
+
+/** Words ended as a sentence, with one full stop. */
+const sentence = (said: string | undefined): string => (said?.endsWith('.') ? said : `${said ?? ''}.`);
 
 /** A bounty's state in words: its count while held, done, turned in, or not taken. */
 export function stateWords(row: Pick<BountyRow, 'state' | 'progress'>): string {
@@ -76,12 +82,15 @@ export function bountyTileNode(row: BountyRow, id: string, wide: boolean, look: 
   return {
     id,
     ...(look.press ? { press: true, keys: ['e'] } : { focusable: true }),
-    label: `${row.name}, ${kindOf(row)}: ${row.words} ${stateWords(row)}`,
+    label: [`${row.name}, ${kindOf(row)}: ${row.words}`, stateWords(row), look.heard]
+      .filter(Boolean)
+      .map(sentence)
+      .join(' '),
     width: size,
     height: size,
     padding: EDGE,
     fill: INK.well,
-    draw: edged(row.state === 'done' ? GILT : row.state === 'held' ? BRASS : STONE, EDGE),
+    draw: edged(row.state === 'done' ? DONE : row.state === 'held' ? BRASS : STONE, EDGE),
     children: [
       {
         ...drawn,
@@ -113,6 +122,7 @@ export function lockedTileNode(id: string, wide: boolean): Node {
   return {
     id,
     focusable: true,
+    keys: ['e'],
     role: 'well',
     label: 'A faction’s bounty: pledge to a faction to take theirs.',
     width: size,
@@ -179,7 +189,13 @@ export function bountyCardNode(row: BountyRow, pay: Pay, sizes: Sizes, more: Car
     {
       gap: 6,
       alignY: 'center',
-      children: [iconNode(KIND_MARKS[row.pool] ?? 'land', 24), words(kindOf(row), size, INK.faint)],
+      // A faction's by its emblem, the town's by the mark of where it counts.
+      children: [
+        faction
+          ? emblemNode(posterEmblem(row.faction), 'sign', 24, 24, 24)
+          : iconNode(KIND_MARKS[row.pool] ?? 'land', 24),
+        words(kindOf(row), size, INK.word),
+      ],
     },
   ];
   const pays: Node[] = [earnLine(iconNode('xp', 24), `+${pay.xp.toLocaleString('en')}`, size, colour)];
@@ -200,7 +216,10 @@ export function bountyCardNode(row: BountyRow, pay: Pay, sizes: Sizes, more: Car
       gap: 8,
       alignY: 'center',
       padding: [2, 0, 0, 0],
-      children: [gauge(shown, row.target, 6, INK.brassLit), words(`${shown}/${row.target}`, size, INK.word)],
+      children: [
+        gauge(shown, row.target, 6, row.state === 'done' ? INK.gain : INK.brassLit),
+        words(`${shown}/${row.target}`, size, INK.word),
+      ],
     },
     { width: 'grow', padding: [4, 0], children: [{ width: 'grow', height: 1, fill: 'rgba(163,152,128,0.26)' }] },
     label('Rewards', size),

@@ -74,7 +74,8 @@ impl Character {
         let served = if self.serves(pledge) { faction_board(day, pledge) } else { None };
         let first = faction_places(pledge).start;
         let mut moved = false;
-        for (place, count) in &mut self.activity.today.bounties {
+        let today = &mut self.activity.today;
+        for (place, count) in today.bounties.iter_mut().chain(today.faction_bounties.iter_mut()) {
             let bounty = match faction_at(*place) {
                 Some(0) => town.get(usize::from(*place)),
                 Some(faction) if faction == pledge => {

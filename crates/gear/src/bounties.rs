@@ -227,10 +227,10 @@ impl Character {
             return Err(Refusal::NotPledged);
         }
         let today = self.activity.today(here.day);
-        if today.bounties.contains_key(&place) {
+        if today.held(place).contains_key(&place) {
             return Err(Refusal::BountyHeld);
         }
-        today.bounties.insert(place, 0);
+        today.held_mut(place).insert(place, 0);
         Ok(None)
     }
 
@@ -242,13 +242,13 @@ impl Character {
         }
         let bounty = self.on_the_board(place, day, here)?;
         let today = self.activity.today(here.day);
-        if today.turned_in.contains(&place) {
+        if today.paid(place).contains(&place) {
             return Err(Refusal::BountyPaid);
         }
-        if today.bounties.get(&place).is_none_or(|count| *count < bounty.target) {
+        if today.held(place).get(&place).is_none_or(|count| *count < bounty.target) {
             return Err(Refusal::BountyNotDone);
         }
-        today.turned_in.insert(place);
+        today.paid_mut(place).insert(place);
         let (xp, aurem) = bounty_pay(self.level(), bounty.tier);
         self.earn_play_xp(xp, None);
         if bounty.faction == 0 {

@@ -6,7 +6,7 @@ import type { Node } from '../ui/node.ts';
 import type { Interface, UiEvent } from '../ui/ui.ts';
 import { byId, fakeInterface, laidOf, nodesOf, wordsIn } from '../ui/uiForTests.ts';
 import { boardPage, bountyRows, payOf, serves } from './bountyBoard.ts';
-import { bountyTileNode, stateWords } from './bountyTiles.ts';
+import { bountyTileNode, kindOf, stateWords } from './bountyTiles.ts';
 import { sizesOf } from './gearNodes.ts';
 import type { MenuContext } from './menuPage.ts';
 
@@ -97,6 +97,8 @@ test('a faction’s bounty counts while its cape is worn by one pledged to it', 
   assert.equal(serves({ ...PLEDGED, items: [] }, 2), false, 'no cape');
   assert.equal(serves({ ...PLEDGED, items: [{ ...CAPE, at: 0 }] }, 2), false, 'carried, not worn');
   assert.equal(serves({ ...PLEDGED, standing: standing({ pledge: 3 }) }, 2), false, 'pledged to another');
+  const another = { ...CAPE, named: 'stormcallers_cape' };
+  assert.equal(serves({ ...PLEDGED, items: [another] }, 2), false, 'another faction’s cape worn');
   assert.equal(serves(PLEDGED, 0), false, 'the town’s asks no cape');
 });
 
@@ -300,10 +302,83 @@ test('E acts only on the bounty whose card shows: none while the pointer rests o
   assert.deepEqual(asked, [], 'no bounty taken behind another card');
 });
 
-test('with nothing holding the focus, E takes the tile the pointer rests on, as its card’s keycap says', () => {
-  const { ui, asked, frame, point } = boardOf(PLEDGED);
+test('opening the board takes no focus, so a pad’s A or Enter takes nothing unseen; the card says a click or E takes it', () => {
+  const { ui, asked, frame, point, tree } = boardOf(PLEDGED);
+  assert.equal(ui.focusedId, null, 'nothing chosen for the player');
+  frame([{ kind: 'key', key: 'Enter' }]);
+  frame([{ kind: 'key', key: ' ' }]);
+  assert.deepEqual(asked, []);
   point('bounty-4');
-  assert.notEqual(ui.focusedId, 'bounty-4', 'pointed at, not pressed');
+  const card = wordsIn(byId(tree(), 'bounty-card'));
+  assert.ok(
+    ['Click', 'E', 'Take'].every((said) => card.includes(said)),
+    'the card’s press, as the footer says it',
+  );
+});
+
+test('E is heard while a coin or a padlock holds the focus, and acts on the bounty whose card shows', () => {
+  const { ui, asked, frame, point } = boardOf(UNPLEDGED);
+  ui.focusOn('bounty-locked-2');
+  frame([{ kind: 'key', key: 'ArrowRight' }]);
+  frame();
+  point('bounty-4');
   frame([{ kind: 'key', key: 'e' }]);
   assert.deepEqual(asked, [{ kind: ASKS.takeBounty, node: 4, item: 20_778 }]);
+  for (const id of ['board-aurem', 'bounty-locked-0'])
+    assert.deepEqual(laidOf(boardOf(UNPLEDGED).tree()).find((each) => each.node.id === id)?.node.keys, ['e'], id);
+});
+
+test('the bounties and the time to the next board stand in a scroll of their own, the time just under the tiles', () => {
+  const { ui, tree } = boardOf(PLEDGED);
+  const scroll = byId(tree(), 'board-bounties');
+  assert.equal(scroll?.scroll, true, 'reachable on a short screen');
+  assert.ok(
+    nodesOf(scroll).some((node) => node.id === 'board-refresh'),
+    'the time inside it',
+  );
+  const [faction, refresh] = [ui.boxOf('bounty-9'), ui.boxOf('board-refresh')];
+  assert.ok(faction && refresh);
+  assert.ok(refresh.y - (faction.y + faction.height) < 40, 'under the tiles, as the Tracker lays it');
+});
+
+test('a faction’s card is marked by its faction’s emblem, and ticks its requirement only while it is met', () => {
+  const { point, tree } = boardOf(PLEDGED);
+  point('bounty-10');
+  const keys = () => nodesOf(byId(tree(), 'bounty-card')).map((node) => node.picture?.key ?? '');
+  const kindLine = nodesOf(byId(tree(), 'bounty-card')).find((node) =>
+    (node.children ?? []).some((child) => child && child.text?.words === 'Lamplighters bounty'),
+  );
+  const mark = (kindLine?.children ?? []).find((child) => child && child.picture);
+  assert.equal(mark && mark.picture?.key, 'emblem lamplighters sign 24', 'the Lamplighters’ emblem by its kind');
+  assert.ok(
+    keys().some((key) => key.startsWith('journal icon taken')),
+    'ticked: pledged, its cape worn',
+  );
+  const bare = boardOf({ ...PLEDGED, items: [] });
+  bare.point('bounty-10');
+  const ticks = nodesOf(byId(bare.tree(), 'bounty-card')).filter((node) =>
+    node.picture?.key?.startsWith('journal icon taken'),
+  );
+  assert.equal(ticks.length, 0, 'no cape, no tick');
+});
+
+test('a tile reads to a screen reader what it pays and what pressing it does, and why the board is shut', () => {
+  const label = (shown: GearState, id: string) => byId(boardOf(shown).tree(), id)?.label ?? '';
+  assert.match(label(PLEDGED, 'bounty-0'), /Pays 5,250 XP and 315 Aurem\. Press to take it\./);
+  assert.match(label(PLEDGED, 'bounty-2'), /Press to turn it in\./);
+  assert.match(label(PLEDGED, 'bounty-10'), /Pays 5,250 XP and 3,750 Lamplighters reputation\./);
+  assert.match(label(PLEDGED, 'bounty-10'), /Counts now\./);
+  assert.match(
+    label({ ...PLEDGED, items: [] }, 'bounty-10'),
+    /Counts only while pledged to them and wearing their cape\./,
+  );
+  assert.match(label({ ...PLEDGED, prologueDone: false }, 'bounty-0'), /The bounty board opens after the prologue\./);
+});
+
+test('a faction’s kind drops its name’s “The”: Veiled bounty, Stormcallers bounty', () => {
+  assert.deepEqual(
+    [1, 3].map((faction) => kindOf({ pool: 0, faction })),
+    ['Stormcallers bounty', 'Veiled bounty'],
+  );
+  assert.equal(kindOf({ pool: 1, faction: 0 }), 'Sea bounty');
 });

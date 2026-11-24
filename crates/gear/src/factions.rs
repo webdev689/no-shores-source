@@ -183,16 +183,14 @@ impl Character {
         if pledge == 0 || self.cape_worn() != Some(pledge) {
             return;
         }
-        self.add_reputation(pledge, xp);
+        self.add_reputation(pledge, crate::guild::Boons::more(xp, self.boons.reputation));
     }
 
-    /// Reputation with a faction, cape or none, raised by the guild's reputation boon: a deed's to the faction pledged,
-    /// and a faction's bounty its own.
+    /// Reputation with a faction, cape or none, as it is: a deed's raised already, and a faction's bounty its own.
     pub(crate) fn add_reputation(&mut self, faction: u8, amount: u32) {
-        let raised = crate::guild::Boons::more(amount, self.boons.reputation);
         self.allegiance = std::mem::take(&mut self.allegiance).kept();
         if let Some(reputation) = place(faction).and_then(|at| self.allegiance.reputation.get_mut(at)) {
-            *reputation = reputation.saturating_add(u64::from(raised));
+            *reputation = reputation.saturating_add(u64::from(amount));
         }
     }
 

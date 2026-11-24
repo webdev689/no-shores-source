@@ -495,7 +495,8 @@ export function gearOf(gear: Gear): GearState {
       const [target, count] = [bounty?.target() ?? 0, bounty?.count() ?? 0];
       const [held, paid] = [bounty?.held() ?? false, bounty?.paid() ?? false];
       const [pool, name, tier] = [bounty?.pool() ?? 0, bounty?.name() ?? '', bounty?.tier() || 1];
-      const [place, faction] = [bounty?.place() ?? index, bounty?.faction() ?? 0];
+      // A field a room leaves out reads 0, so a place of 0 falls back to its index, where the town's first stands.
+      const [place, faction] = [bounty?.place() || index, bounty?.faction() ?? 0];
       return { words, target, count, held, paid, pool, name, tier, place, faction };
     }),
     bountyXp: gear.bountyXp(),
