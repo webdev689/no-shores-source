@@ -7,6 +7,7 @@ import math
 import breach_dress
 import breach_kit as bk
 import breach_lore
+import breach_town
 import kit
 import latticekit
 
@@ -93,6 +94,7 @@ def mending(module):
         bk.drowned_floor(module, west, south, east, north)
     breach_dress.mending(module)
     breach_lore.green(module)
+    breach_town.green(module)
 
 
 BELLS_Y = (-18.0, -2.0, 14.0)

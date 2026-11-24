@@ -341,6 +341,21 @@ def hall(module):
     rubble(module, (-15.0, -20.0), 3.0, 6)
     rubble(module, (15.0, 20.0), 3.0, 6)
     hanging(module, -17.0, -23.0, 17.0, 23.0, -1.2, 16.0)
+    # Its face toward the Stair dressed as the keep's gatehouse: an arched door between two towers hung with the
+    # vale's crimson, merlons along its top.
+    for side in (-1, 1):
+        kit.block(module, (side * 5.5, -30.8, -1.2), (4.0, 1.6, 15.7), 'stone', bevel=0.05, wear=0.04, part=False)
+        kit.battlements(module, (side * 5.5 - 2.0, -31.4), (side * 5.5 + 2.0, -31.4), 14.5, 0.5, every=1.4,
+                        wide=0.8)
+        kit.block(module, (side * 5.5, -31.64, 6.0), (2.0, 0.06, 5.0), 'crimson', bevel=0.0, wear=0.0, part=False)
+        kit.block(module, (side * 5.5, -31.7, 11.0), (2.4, 0.14, 0.12), 'iron', bevel=0.0, wear=0.0, part=False)
+        for z in (2.6, 12.2):
+            kit.block(module, (side * 5.5, -31.62, z), (0.16, 0.04, 1.3), 'black', bevel=0.0, wear=0.0, part=False)
+    head = kit.block(module, (0.0, -28.0, 4.5), (5.0, 4.0, 7.5), 'stone', bevel=0.0, wear=0.02, part=False)
+    kit.cut(head, kit.cylinder_cutter((0.0, -28.0, 4.5), 2.5, 4.4))
+    bk.arch(module, (0.0, -30.3, 4.5), 2.5, 0.7, 0.7, stones=11)
+    for west, east in ((-24.0, -7.5), (7.5, 24.0)):
+        kit.battlements(module, (west, -30.2), (east, -30.2), 12.0, 0.6)
 
 
 def banner(module, at, facing, field, band):

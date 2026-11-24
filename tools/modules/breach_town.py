@@ -134,3 +134,32 @@ def ways(module, cells, half, house_m, watchers):
             spot = (-half + 12.0 * column, -half + 12.0 * row, -0.04)
             kit.block(module, spot, (3.6, 3.6, 0.08), 'paving', turn=math.pi / 4, bevel=0.0, wear=0.0, part=False)
     breach_dress.hanging(module, -30.0, -30.0, 30.0, 30.0, -1.2, 18.0)
+
+
+SEAMS = (((0.0, 18.0), True), ((-18.0, -4.0), False), ((18.0, -4.0), False))
+MOUTHS = ((-27.0, -27.0), (27.0, -27.0), (-27.0, 27.0), (27.0, 27.0))
+
+
+def green(module):
+    """The Mending's seams and mouths read at a glance: each seam a crack 7 m long torn in the turf, its lips heaved
+    up and crystal grown along it; each mouth crystal climbing the corner of the houses' backs it comes out of."""
+    pick = latticekit.picker(module.random.randrange(1 << 30))
+    for (x, y), along_x in SEAMS:
+        kit.block(module, (x, y, -0.03), (7.0, 0.7, 0.06) if along_x else (0.7, 7.0, 0.06), 'black', bevel=0.0,
+                  wear=0.0, part=False)
+        for step in range(-3, 4):
+            spot = (x + step, y, 0.0) if along_x else (x, y + step, 0.0)
+            bk.crystal(module, pick, spot, count=3, length=1.7 - abs(step) * 0.2, radius=0.3, spread=0.5)
+            for lip in (-1, 1):
+                turf = (spot[0], spot[1] + lip * 0.6, 0.0) if along_x else (spot[0] + lip * 0.6, spot[1], 0.0)
+                slab = kit.block(module, turf, (0.9, 0.5, 0.16) if along_x else (0.5, 0.9, 0.16), 'turf', bevel=0.0,
+                                 wear=0.0, part=False)
+                tilt = lip * module.draw(0.15, 0.35)
+                slab.rotation_euler = (tilt, 0.0, 0.0) if along_x else (0.0, -tilt, 0.0)
+    for x, y in MOUTHS:
+        sign_x, sign_y = math.copysign(1.0, x), math.copysign(1.0, y)
+        for far, z in ((1.0, 0.0), (2.6, 1.2), (1.6, 2.8), (3.6, 0.3), (1.1, 4.4)):
+            bk.crystal(module, pick, (sign_x * 29.9, sign_y * (30.0 - far), z), count=3, length=2.2, radius=0.35,
+                       up=(-sign_x * 0.8, 0.0, 1.0))
+            bk.crystal(module, pick, (sign_x * (30.0 - far), sign_y * 29.9, z + 0.6), count=3, length=2.2,
+                       radius=0.35, up=(0.0, -sign_y * 0.8, 1.0))
