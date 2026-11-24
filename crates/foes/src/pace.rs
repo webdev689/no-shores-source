@@ -7,7 +7,6 @@ use crate::board::Board;
 use crate::brain::Brain;
 use crate::senses::Here;
 use crate::shoot::aimed_shot;
-use combat::arms::swing_ticks;
 use combat::fighter::Action;
 use combat::shapes::{IRON_EXTRA, Shape};
 use combat::shots::{Shot, by_foe, loose, toward};
@@ -19,7 +18,7 @@ use movement::TICK_SECONDS;
 /// The tick a swing begun now lands.
 #[must_use]
 pub fn swing_lands(here: &Here<'_, '_>) -> u64 {
-    here.tick() + u64::from(swing_ticks(here.fighter.arms.melee).0)
+    here.tick() + u64::from(here.fighter.swing_ticks().0)
 }
 
 /// The tick a shot loosed now at a body standing at `target` lands, after its flight.
