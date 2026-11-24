@@ -390,3 +390,51 @@ fn a_hard_companys_fallen_stand_again_at_the_gate_once_it_woke() {
     assert!(!room.players[&players[0]].fighter.dead(), "stood again");
     assert!(combat::sight::apart([body.x, body.y], [arrival[0], arrival[1]]) < 1.0, "at the gate's arrival");
 }
+
+/// A character the Breach lets in at either tier but for Hard's Normal win: level 30, by XP to 20 and four Hard
+/// Breach pieces with every upgrade bought.
+fn breach_ready() -> gear::Character {
+    use gear::grid::Column;
+    let mut character = gear::Character { xp: 1 << 40, ..gear::Character::starting() };
+    character.story.prologue = true;
+    let dice = gear::dice::Dice { seed: 1, tick: 0, player: 0 };
+    for slot in [gear::Slot::Head, gear::Slot::Torso, gear::Slot::Arms, gear::Slot::Legs] {
+        let made = gear::vestige::make(0, gear::Rarity::Legendary, slot, 20, gear::Source::Breach, &dice);
+        let mut item = made.expect("a piece");
+        item.hard = true;
+        let columns = item.columns();
+        for column in (0..columns.len()).filter(|at| columns[*at] == Column::Upgrade) {
+            item.bought |= item.node_bit(column, 0).expect("an upgrade's node");
+        }
+        let id = character.take_id();
+        character.items.insert(id, (gear::Item { id, ..item }, gear::At::Worn(slot)));
+    }
+    assert_eq!(character.level(), 30);
+    character
+}
+
+/// What a player was told of being shut out of a company, by the amount told them.
+fn shut_out(room: &mut Room, player: PlayerId) -> Vec<f64> {
+    let told = room.take_events();
+    assert!(told.iter().filter(|event| event.kind as u8 == 67).all(|event| event.defender == player), "them alone");
+    told.iter().filter(|event| event.kind as u8 == 67).map(|event| event.amount).collect()
+}
+
+#[test]
+fn one_the_gates_company_refuses_is_told_why_once() {
+    let (mut room, players) = gate_room(11);
+    for &player in &players[..gear::breach::COMPANY_MOST] {
+        assert!(room.breach_company(player, "run-a", Tier::Normal));
+    }
+    room.take_events();
+    assert!(!room.breach_company(players[8], "run-a", Tier::Normal));
+    assert_eq!(shut_out(&mut room, players[8]), [1.0], "the company full");
+    assert!(room.own(players[9], "ada"));
+    assert!(!room.breach_company(players[9], "run-b", Tier::Normal));
+    assert_eq!(shut_out(&mut room, players[9]), [2.0], "under the tier's level");
+    assert!(room.own(players[10], "ben"));
+    room.players.get_mut(&players[10]).expect("in").character = breach_ready();
+    assert!(!room.breach_company(players[10], "run-b", Tier::Hard));
+    assert_eq!(shut_out(&mut room, players[10]), [3.0], "Hard without Normal won");
+    assert!(room.breach_company(players[10], "run-b", Tier::Normal), "Normal lets them in");
+}

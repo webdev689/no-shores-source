@@ -101,6 +101,9 @@ pub enum EventKind {
     WayBack = 64,
     Returned = 65,
     LaidBare = 66,
+    /// A player the gate's company would not hold, told to them alone: the amount why (`breach::gate::SHUT_FULL`,
+    /// `SHUT_LEVEL`, `SHUT_HARD`).
+    ShutOut = 67,
 }
 
 /// How a blow was struck, for the words a client shows: an Atheric's leap from one foe to the next, its burst round

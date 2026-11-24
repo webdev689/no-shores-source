@@ -34,6 +34,10 @@ pub const INSIDE_LASTS: u64 = 60 * 60;
 pub const MOORINGS: [&str; 3] = ["mooring-west", "mooring-south", "mooring-east"];
 /// The gate's answer to a player at it whose company has not opened it.
 pub const GATE_SHUT: u8 = 112;
+/// Why the gate's company shuts a player out, as it tells them: full, under the tier's level, or Hard before Normal.
+pub const SHUT_FULL: f64 = 1.0;
+pub const SHUT_LEVEL: f64 = 2.0;
+pub const SHUT_HARD: f64 = 3.0;
 /// How far the gate's hollow reaches from its middle, metres, and how long the holding company may leave it empty of
 /// its living players before the gate is let go, ticks.
 pub const HOLLOW_M: f64 = 45.0;
@@ -131,18 +135,23 @@ impl Room {
 
     /// The host's word: a player came launched for a run at a tier, and stands at the gate's arrival. Answers whether
     /// the gate holds them: not in a room with no gate, nor as a ninth of a company, nor a kept character the Breach
-    /// shuts out at that tier (one no one keeps, a test's, is held).
+    /// shuts out at that tier (one no one keeps, a test's, is held); one shut out is told why.
     pub fn breach_company(&mut self, player: PlayerId, run: &str, tier: Tier) -> bool {
         let Some(gate) = self.breach_gate.as_ref() else { return false };
         let full = gate.companies.get(run).is_some_and(|company| {
             company.players.len() >= gear::breach::COMPANY_MOST && !company.players.contains(&player)
         });
-        let shut = self.players.get(&player).is_some_and(|found| {
-            let place = gear::gate::Place::Breach(tier);
-            found.owner.is_some()
-                && gear::gate::shut(&found.character, place, gear::world::Difficulty::Normal).is_some()
+        let shut = self.players.get(&player).filter(|found| found.owner.is_some()).and_then(|found| {
+            gear::gate::shut(&found.character, gear::gate::Place::Breach(tier), gear::world::Difficulty::Normal)
         });
-        if full || shut {
+        let why = match (full, shut) {
+            (true, _) => Some(SHUT_FULL),
+            (false, Some(gear::gate::Shut::BreachHard)) => Some(SHUT_HARD),
+            (false, Some(_)) => Some(SHUT_LEVEL),
+            (false, None) => None,
+        };
+        if let Some(why) = why {
+            self.tell(EventKind::ShutOut, None, 0, player, why);
             return false;
         }
         let Some(gate) = self.breach_gate.as_mut() else { return false };
