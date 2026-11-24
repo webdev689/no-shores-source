@@ -16,12 +16,13 @@ import { PIECES, decorCap, decorPrice, hallTier } from './outpostLaw.ts';
 /** A piece's press. */
 export const decorId = (piece: string) => `outpost-decor-${piece}`;
 
-/** The Decorate part of an outpost. */
-export function decorateNode(ui: Interface, outpost: OutpostFace): Node {
+/** The Decorate part of an outpost, the treasury's `treasury` Aurem weighed against each piece's price. */
+export function decorateNode(ui: Interface, outpost: OutpostFace, treasury: number): Node {
   const cap = decorCap(hallTier(outpost.plot));
   const full = outpost.plot.decor.length >= cap;
+  const dear = (piece: string) => treasury < decorPrice(piece);
   for (const piece of PIECES) {
-    if (full || !ui.clicked(decorId(piece.piece))) continue;
+    if (full || dear(piece.piece) || !ui.clicked(decorId(piece.piece))) continue;
     startPlacing(outpost.site, piece.piece);
     openGearWindow({ view: 'guild', toggle: true });
   }
@@ -42,13 +43,17 @@ export function decorateNode(ui: Interface, outpost: OutpostFace): Node {
             'button',
             '',
             1,
-            {
-              disabled: full,
-            },
+            { disabled: full || dear(piece.piece) },
           ),
         ),
       },
-      hintNode(full ? 'Raise the hall to hold more decoration.' : 'Choose a piece, then stand it just before you.'),
+      hintNode(
+        full
+          ? 'Raise the hall to hold more decoration.'
+          : PIECES.some((piece) => dear(piece.piece))
+            ? `The treasury holds ${counted(treasury)} Aurem: a greyed piece costs more.`
+            : 'Choose a piece, then place it just before you.',
+      ),
     ],
   };
 }

@@ -70,8 +70,14 @@ function bountyNode(
   } satisfies Node;
 }
 
-/** The week's four guild bounties as a checklist. */
-export function bountiesNode(ui: Interface, face: GuildFace, size: number, claim: (slot: number) => void): Node {
+/** The week's four guild bounties as a checklist; at sea, where no room answers a claim, none offers a press. */
+export function bountiesNode(
+  ui: Interface,
+  face: GuildFace,
+  size: number,
+  claim: (slot: number) => void,
+  atSea = false,
+): Node {
   // A member who joined this week claims nothing till the next, so their done bounties offer no press.
   const late = face.beforeTheWeek === false;
   return {
@@ -79,8 +85,12 @@ export function bountiesNode(ui: Interface, face: GuildFace, size: number, claim
     direction: 'column',
     gap: 8,
     children: [
-      ...(face.bounties ?? []).map((bounty, slot) => bountyNode(ui, bounty, slot, size, late ? null : claim)),
+      ...(face.bounties ?? []).map((bounty, slot) => bountyNode(ui, bounty, slot, size, late || atSea ? null : claim)),
       late && words('Claims open to you next week.', 1, INK.faint),
+      !late &&
+        atSea &&
+        (face.bounties ?? []).some((bounty) => bounty.done && !bounty.claimed) &&
+        words('Claim a done bounty ashore.', 1, INK.faint),
     ],
   };
 }
