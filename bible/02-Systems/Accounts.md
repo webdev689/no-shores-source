@@ -147,13 +147,16 @@ they play in holds it while they are there.
   No other room writes it, so one who logs out in a patrol zone, a dungeon or on an island comes back to whichever of
   the two they were in last. `GET /v1/me` answers it beside the account (`place`: `{ "kind": "sea" }`, or
   `{ "kind": "social", "node", "at", "facing" }` in metres and radians, or null; `lastPlace.ts`). After the title the
-  page goes there (`relog.ts`): aboard, where the sea room puts the ship it kept; or into that social space, whose room
-  stands a player whose character last stood in it where they left it, on the floor they stood on (`stand_where_left`;
-  where a body no longer fits there, at a spawn). One who has just played the story through, one with none kept, or one
-  whose social space is not open on the landmass arrives at Overlook. The sea's tier is Normal, as every voyage's
-  begins. Offline, where no room keeps a character, the page keeps the place itself in the browser
-  (`noshores.place`, every 10 s and as the page hides or goes, `keepPlace`), the ship where it lay and the player where
-  they stood, and resumes from it the same way.
+  page goes there (`relog.ts`): aboard, where the sea room puts the ship it kept; or into that social space, joining
+  its room with `?relog=1`, and the room stands a player whose character last stood in it where they left it, on the
+  floor they stood on (`stand_where_left`; where a body no longer fits there, at a spawn). Only logging back in asks
+  it: travelling there, taking a gate or coming back from an activity arrives at the arrival. One who has just played
+  the story through, one with none kept, or one whose social space is not open on the landmass arrives at Overlook.
+  The sea's tier is Normal, as every voyage's begins. Offline, where no room keeps a character, the page keeps the
+  place itself in the browser (`noshores.place`, every 10 s and as the page hides or goes, `keepPlace`), the ship
+  where it lay and the player's spot across, not its height, and resumes from it the same way, the player on the
+  ground under the spot. A page reloaded the moment it leaves a room may read the place before that room has saved
+  it, and so resumes at the one before.
 - **What is not kept.** A character the room cannot read is left as it was, untouched, and the player plays one
   that is not kept, or in a run, which keeps no one unkept, is sent away. A socket with no session, its token none in
   five seconds or no session at all, is sent away from any room that keeps characters ([[Server]], "The host"). The

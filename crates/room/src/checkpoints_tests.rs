@@ -7,6 +7,7 @@ use crate::encounters::encounters_tests::{elite_room, unseal};
 use crate::garrison::STAND_AGAIN;
 use crate::{EventKind, Floor, NodeKind, PlayerId, Room, RunOf, Section};
 use combat::Action;
+use combat::sight::{apart, bearing};
 use combat::tuning::RESPAWN;
 
 const PATROL: &str = "saltgrass-downs";
@@ -94,8 +95,9 @@ fn the_fallen_stand_at_the_band_fallen_farthest_along_and_every_player_is_told_a
 }
 
 #[test]
-fn a_band_holds_the_ground_its_fall_won_while_anyone_is_in_the_room_and_stands_again_once_it_empties() {
-    let mut room = Room::dungeon(PATROL, 0, LEVELS).expect("a patrol's dungeon");
+fn in_a_run_a_band_holds_the_ground_its_fall_won_while_anyone_is_in_it_and_stands_again_once_it_empties() {
+    let of = RunOf::Patrol { patrol: "gullwing-vale".into(), number: 1 };
+    let mut room = Room::dungeon_run(&of, gear::Difficulty::Elite, 29_919_420).expect("an Elite run");
     let player = room.join().expect("in");
     let post = 1;
     clear(&mut room, post);
@@ -135,6 +137,17 @@ fn a_mission_lays_a_checkpoint_at_each_post_and_its_fallen_stand_at_the_cleared_
     let mut room = Room::garrisoned(Floor::Flat, Vec::new(), section.clone(), NodeKind::Mission, ("keep", None));
     let posts: Vec<usize> = (0..room.garrison.len()).filter(|&post| !room.garrison[post].arrival).collect();
     assert_eq!(room.respawning.checkpoints.len(), posts.len(), "one for each post");
+    let last =
+        room.encounter.as_ref().map(|encounter| [encounter.last_stand[0], encounter.last_stand[1]]).expect("one");
+    room.facing = 1.0;
+    room.lay_post_checkpoints();
+    for laid in &room.respawning.checkpoints {
+        let facing = if apart(laid.at, last) > 0.5 { bearing(laid.at, last) } else { room.facing };
+        assert!(
+            (laid.facing - facing).abs() < 1e-9,
+            "toward the last stand, or the room's way at the last stand itself"
+        );
+    }
     let player = room.join().expect("in");
     let farthest = room.respawning.checkpoints.iter().max_by(|one, two| one.along.total_cmp(&two.along)).copied();
     let farthest = farthest.expect("laid");
@@ -160,4 +173,23 @@ fn an_abyss_wipe_stands_every_band_again_so_its_fallen_begin_again_at_the_way_in
     }
     room.tick();
     assert_eq!(room.checkpoint(), None, "every band stands again");
+}
+
+#[test]
+fn in_a_shared_dungeon_a_band_stands_again_as_any_group_does_and_its_checkpoint_falls_back() {
+    let mut room = Room::dungeon(PATROL, 0, LEVELS).expect("a patrol's shared dungeon");
+    let player = room.join().expect("in");
+    let feet = room.players[&player].fighter.body;
+    // A band beyond the 40 m a group waits for no one to be within.
+    let far = |post: &usize| apart([room.garrison[*post].at[0], room.garrison[*post].at[1]], [feet.x, feet.y]) > 45.0;
+    let post = (1..room.garrison.len()).find(far).expect("a band far off");
+    clear(&mut room, post);
+    room.tick();
+    assert!(room.checkpoint().is_some(), "won");
+    let cleared = room.garrison[post].cleared_at.expect("cleared");
+    room.clock = cleared + STAND_AGAIN + 1;
+    room.tick();
+    assert!(room.garrison[post].cleared_at.is_none(), "stood again with the player far off, as the patrol's others do");
+    assert_eq!(room.checkpoint(), None, "its ground retaken");
+    assert!(room.players.contains_key(&player));
 }

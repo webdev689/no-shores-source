@@ -460,8 +460,9 @@ impl Room {
     /// inputs have stopped coming is stepped standing still once they fall a view's lag behind, so nothing they were
     /// doing (a dodge's safe stretch, a guard's parry window) outlasts its time while they are away. A body the section
     /// killed falls under its own weight (`lying_still`): its inputs are taken without steering it, and one asking to
-    /// respawn, once the section allows, stands it at the spawn nearest where it fell. Then each player is judged
-    /// against the section, from the height their feet last stood at.
+    /// respawn, once the section allows, stands it where a respawn stands a player (`stand_again`). Each input also
+    /// says whether Use is held to revive and whether the player asks to respawn (`revive.rs`). Then each player is
+    /// judged against the section, from the height their feet last stood at.
     fn step_players(&mut self) {
         // The kept views are lent to each input, not copied: they stand aside while the players step.
         let past = std::mem::take(&mut self.past);

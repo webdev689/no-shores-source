@@ -476,6 +476,14 @@ table SealSeen {
 // per mille; the ticks until a Reckoning lands while one is shown (0 for none) and the anchor it is shown at; Fury's
 // step (each a tenth more on its company's blows); the ticks until Fury begins while its clock runs (0 before and
 // after); and the ticks until the warded Boss's slam lands while it is shown (0 for none).
+// A fallen player an ally is reviving: the fallen player's number, the ally's, and how much of the hold is done, per
+// mille.
+table Reviving {
+  fallen: uint;
+  reviver: uint;
+  progress: ushort;
+}
+
 table EncounterSeen {
   seals: [SealSeen];
   woken: bool;
@@ -498,15 +506,8 @@ table EncounterSeen {
 // land; and at sea what floats for each player, each player's ship's kept hurts, what each player is told this tick,
 // and each deck boarded; and in a fleet room the world time its clock started at, seconds since the Unix epoch, which
 // sets its weather. Then, at sea, the islands the player sees or has found. Then, in a zone that holds them, its
-// public events, sent whole in each snapshot; last, in an Elite Dungeon, its encounters.
-// A fallen player an ally is reviving: the fallen player's number, the ally's, and how much of the hold is done, per
-// mille.
-table Reviving {
-  fallen: uint;
-  reviver: uint;
-  progress: ushort;
-}
-
+// public events, sent whole in each snapshot; in an Elite Dungeon, its encounters; last, on land, the darkness where
+// the player lies and each revive under way.
 table Snapshot {
   tick: ulong;
   players: [Seen];
@@ -550,7 +551,7 @@ table Snapshot {
   friendlies: [Friendly];
   // In an Elite Dungeon's room, its encounters, sent whole in each snapshot; none in any other room.
   encounter: EncounterSeen;
-  // On land, whether the room is a darkness zone now, where no fallen player respawns by their own ask; and each
+  // On land, whether the player lies in a darkness zone now, where no one fallen respawns by their own ask; and each
   // fallen player an ally is reviving.
   darkness: bool;
   reviving: [Reviving];

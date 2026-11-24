@@ -23,12 +23,14 @@ pub const REVIVE_RISE_M: f64 = 2.0;
 
 /// What a room keeps of its players standing again: each fallen player an ally is reviving, with the ally and the
 /// ticks they have held; in a patrol zone or a world boss's node the points near where a player fell that they may
-/// stand again at (`respawns.rs`); and an activity's checkpoints (`checkpoints.rs`).
+/// stand again at (`respawns.rs`); and an activity's checkpoints (`checkpoints.rs`), held in a run's room.
 #[derive(Debug, Default)]
 pub(crate) struct Respawning {
     pub revivals: BTreeMap<PlayerId, (PlayerId, u32)>,
     pub near: Vec<[f64; 2]>,
     pub checkpoints: Vec<crate::checkpoints::Checkpoint>,
+    /// Whether a fallen group holds the ground its fall won: a run's room's, kept to one company.
+    pub holds_ground: bool,
 }
 
 /// A fallen player being revived, as a snapshot carries it: who, by whom, and how much of the hold is done, per mille.
@@ -53,14 +55,15 @@ impl Room {
             return;
         }
         self.keep_revivals();
-        let (unasked, dark) = (self.section.is_none(), self.darkness());
+        let unasked = self.section.is_none();
         let fallen: Vec<(PlayerId, Body)> = self
             .players
             .iter()
             .filter(|(_, found)| matches!(found.fighter.action, Action::Dead { elapsed } if elapsed >= RESPAWN))
             // One the section killed too stands again only by its own respawn, which ends that death as well.
             .filter(|(_, found)| !matches!(found.standing, Standing::Dead { .. }))
-            .filter(|(_, found)| (unasked || found.respawn_asked) && !dark)
+            .filter(|(_, found)| unasked || found.respawn_asked)
+            .filter(|(_, found)| !self.dark_at(found.fighter.body.x, found.fighter.body.y))
             .map(|(id, found)| (*id, found.fighter.body))
             .collect();
         for found in self.players.values_mut() {
@@ -88,11 +91,28 @@ impl Room {
         }
     }
 
-    /// Whether the room is a darkness zone now, where no one respawns by their own ask: an Elite Dungeon's Court while
-    /// its Boss stands, or an Abyss run with no revive left.
+    /// Whether a darkness zone stands in the room now, where no one lying in it respawns by their own ask: an Elite
+    /// Dungeon's Court while its Boss stands, or an Abyss run with no revive left (`dark_at`).
     #[must_use]
     pub fn darkness(&self) -> bool {
         self.boss().is_some() || self.revives() == Some(0)
+    }
+
+    /// Whether the darkness holds a player where they are now (`dark_at`): none for one not in the room.
+    #[must_use]
+    pub fn darkness_for(&self, player: PlayerId) -> bool {
+        self.players.get(&player).is_some_and(|found| self.dark_at(found.fighter.body.x, found.fighter.body.y))
+    }
+
+    /// Whether a body at (x, y) lies in a darkness zone: anywhere in an Abyss run with no revive left, or on a cell of an
+    /// Elite Dungeon's Court while its Boss stands, so one come back down at the way in may still respawn.
+    fn dark_at(&self, x: f64, y: f64) -> bool {
+        let in_court = self.encounters.as_ref().is_some_and(|encounters| {
+            let columns = encounters.plan.columns;
+            let cell = (y / dungeon::CELL_M).max(0.0) as usize * columns + (x / dungeon::CELL_M).max(0.0) as usize;
+            encounters.court_cells.contains(&cell)
+        });
+        self.revives() == Some(0) || (in_court && self.boss().is_some())
     }
 
     /// Whether every player the room judges (those it keeps, where it keeps anyone) is down in the Court's darkness.
@@ -142,25 +162,27 @@ impl Room {
         if self.revives() == Some(0) {
             return;
         }
+        let reached = |from: [f64; 3], lying: [f64; 3]| {
+            libm::hypot(lying[0] - from[0], lying[1] - from[1]) <= REVIVE_REACH_M
+                && (lying[2] - from[2]).abs() <= REVIVE_RISE_M
+        };
+        // Holds under way first, each its ally's while they stay in reach, so no newcomer takes one over.
         let mut revivals: BTreeMap<PlayerId, (PlayerId, u32)> = BTreeMap::new();
-        for (reviver, from) in revivers {
-            let reached = |lying: [f64; 3]| {
-                libm::hypot(lying[0] - from[0], lying[1] - from[1]) <= REVIVE_REACH_M
-                    && (lying[2] - from[2]).abs() <= REVIVE_RISE_M
-            };
+        for &(reviver, from) in &revivers {
             let kept = held.iter().find(|(_, (by, _))| *by == reviver).map(|(lying, (_, ticks))| (*lying, *ticks));
-            let kept = kept.filter(|(lying, _)| fallen.iter().any(|(id, place)| id == lying && reached(*place)));
-            let taken = |id: &PlayerId| revivals.contains_key(id);
-            let nearest = fallen
-                .iter()
-                .filter(|(id, place)| !taken(id) && reached(*place))
-                .min_by(|one, two| {
-                    let far = |place: [f64; 3]| libm::hypot(place[0] - from[0], place[1] - from[1]);
-                    far(one.1).total_cmp(&far(two.1))
-                })
-                .map(|(id, _)| (*id, 0));
-            if let Some((lying, ticks)) = kept.filter(|(lying, _)| !taken(lying)).or(nearest) {
+            let kept = kept.filter(|(lying, _)| fallen.iter().any(|(id, place)| id == lying && reached(from, *place)));
+            if let Some((lying, ticks)) = kept {
                 revivals.insert(lying, (reviver, ticks + 1));
+            }
+        }
+        for &(reviver, from) in &revivers {
+            if revivals.values().any(|(by, _)| *by == reviver) {
+                continue;
+            }
+            let free = fallen.iter().filter(|(id, place)| !revivals.contains_key(id) && reached(from, *place));
+            let far = |place: [f64; 3]| libm::hypot(place[0] - from[0], place[1] - from[1]);
+            if let Some((lying, _)) = free.min_by(|one, two| far(one.1).total_cmp(&far(two.1))) {
+                revivals.insert(*lying, (reviver, 1));
             }
         }
         let done: Vec<(PlayerId, PlayerId)> =
@@ -171,7 +193,9 @@ impl Room {
                 continue;
             }
             let Some(lain) = self.players.get(&id).map(|found| found.fighter.body) else { continue };
-            let body = Body { facing: lain.facing, ..self.stand((lain.x, lain.y)) };
+            // On the floor they lay on, a ledge's or a pad's over the ground among them.
+            let floor = movement::blocks::ground_at(&self.blocks, &self.floor, lain.x, lain.y, lain.z);
+            let body = Body { facing: lain.facing, z: floor, ..movement::standing(lain.x, lain.y) };
             self.stand_up(id, body, Some(by));
         }
     }

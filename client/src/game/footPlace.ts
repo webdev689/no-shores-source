@@ -103,6 +103,11 @@ export interface Held {
   encounter: EncounterSeen | null;
 }
 
+/** What a join into a node's room asks of it besides: to stand before an entrance's door, coming out of its dungeon,
+ *  or to stand where the kept character left this social space, logging back in (`relog.ts`). */
+export const joinAsk = (asked?: AtEntrance | 'relog'): string =>
+  asked === 'relog' ? '?relog=1' : asked ? `?entrance=${asked.number}` : '';
+
 /** What E does where a player stands on a place of its own, if anything: with the way to ask of their gear. */
 export type Uses = (x: number, y: number, ask: (asked: GearAsk) => void) => Use | null;
 

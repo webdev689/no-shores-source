@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import type { Flow } from './flow.ts';
+import { joinAsk } from './footPlace.ts';
 import {
   PLACE_KEY,
   type Resumed,
@@ -136,4 +137,10 @@ test('where the player is now is kept aboard and on their feet in a social space
   assert.equal(placeNow({ flow: foot, sea: null, foot: { ...overlook, node: NODES[1] as NodeInfo } }, body), null);
   assert.equal(placeNow({ flow: foot, sea: null, foot: { ...overlook, dungeon: {} } }, body), null, 'in a dungeon');
   assert.equal(placeNow({ flow: { mode: 'story' }, sea, foot: null }, body), null, 'in the story');
+});
+
+test('a join asks its room to stand the player before an entrance, or where they left a social space, or nothing', () => {
+  assert.equal(joinAsk('relog'), '?relog=1');
+  assert.equal(joinAsk({ number: 2, x: 0, y: 0, facing: 0 }), '?entrance=2');
+  assert.equal(joinAsk(), '');
 });

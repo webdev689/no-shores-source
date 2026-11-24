@@ -257,8 +257,9 @@ The patrol areas' dungeons: three in each patrol, each laid by DFO's Forge from 
 - **Checkpoints** ([[Revives]]): each room whose band stands lays one, and an Elite Dungeon one at each seal's room and
   one at the Court, each at the doorway cell the walk from the way in enters its room by, facing in. One is won as its
   band falls, its seal breaks or the Court's Boss wakes; a player who respawns stands at the one won farthest along,
-  before any at the arrival, and every player is told "Checkpoint reached" as it moves on. A band whose fall won its
-  room's checkpoint does not stand again while anyone is in the room.
+  before any at the arrival, and every player is told "Checkpoint reached" as it moves on. In a run a band whose fall
+  won its room's checkpoint does not stand again while anyone is in the room; in a shared dungeon it stands again as
+  any group does, and the checkpoint falls back to the one won before it.
 - **What a body stands on** (`DungeonGround`): the dungeon's own ground, not [[Movement]]'s blocks. Its height is the
   cells' (0 m open, a wall 10 m over the floor for rock), and over a jamb, a pillar or a prop that solid's own top. A move is walled where it crosses rock,
   or where it ends nearer than a body's half-width (0.35 m) to rock, a jamb, a pillar or a prop and nearer than it
@@ -408,10 +409,11 @@ lays them where its end foe is a Boss (`laid_dungeon`); no patrol's or sea islan
 - **A wipe at Abyss** keeps every broken seal; the rest wait again, every wave is gone before the posts stand again
   (any dungeon's, as a wave never stands again), and the Court starts over, its Boss held back again unless every seal
   is broken. Leaving and coming back keeps everything: it is the room's.
-- **The Court's darkness.** While the Boss stands the Court is a darkness zone ([[Revives]]): no one respawns by their
-  own ask, and only an ally stands the fallen up. A company all down there below Abyss falls back to the Court's
-  checkpoint, every player whole at its door: its waves are gone, its ward, anchors and Fury begin again, and its Boss
-  stands again whole and awake; every seal stays broken.
+- **The Court's darkness.** While the Boss stands the Court's cells are a darkness zone ([[Revives]]): no one fallen
+  there respawns by their own ask, and only an ally stands them up; one fallen outside it may. A company all down
+  while the Boss stands, below Abyss, falls back to the Court's checkpoint, every player whole at its door: its waves
+  are gone, its ward, anchors and Fury begin again, and its Boss stands again whole and awake; every seal stays
+  broken.
 - **On the wire.** Each snapshot carries the encounters whole (`EncounterSeen`, about 240 bytes): each seal's kind,
   state, progress, its pieces' marks (a Litany's runes dark, showing, lit or wrong; a Weighing's plates in play and a
   Holdfast's ring stood on; an Ascent's players on its stone and the living in its room) and its relic's strength;

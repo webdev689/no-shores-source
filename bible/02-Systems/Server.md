@@ -540,7 +540,8 @@ so every decision is Rust and the shell only carries bytes and time.
   its address stands them before that entrance's door, and an entrance it does not have is an ordinary join. They
   stay there only once the room keeps their character as come out of that entrance's dungeon or its run: one whose
   character came from anywhere else, who sends no token within five seconds or who plays unkept is stood at the next
-  spawn (`outOfDoor`). Each
+  spawn (`outOfDoor`). In a social space's room, `?relog=1` asks, once the room keeps the character, to stand the
+  player where that character left the space (`standWhereLeft`; [[Accounts]], "Where a player logs back in"). Each
   binary message is one of their inputs, at sea their course, or in a fleet their ship's orders. A course too soon after the last is dropped and a course
   the sea will not sail is refused; any other input refused, a message over 8 KB, or more than 240 messages in a
   second (a browser sends 60), closes the socket, since that browser is not keeping to the messages. Its player

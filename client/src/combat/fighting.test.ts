@@ -528,15 +528,22 @@ test('a public event’s beats are kept apart from the fight’s events, and its
     players: [],
     dressed: [],
     foes: [],
-    events: [event(1), event(EVENT.chestOpened), event(EVENT.publicBegun)],
+    events: [
+      event(1),
+      event(EVENT.chestOpened),
+      event(EVENT.publicBegun),
+      event(EVENT.revived),
+      event(EVENT.checkpoint),
+      event(EVENT.fellBack),
+    ],
     shots: [],
     spells: [],
     public: word,
   } as unknown as Snapshot);
   assert.deepEqual(
     fighting.takeEvents().map((each) => each.kind),
-    [1],
-    'a chest opened is no blow on the player',
+    [1, EVENT.revived, EVENT.checkpoint, EVENT.fellBack],
+    'a chest opened is no blow on the player; a revive, a checkpoint and a fall back are the fight’s',
   );
   assert.deepEqual(
     fighting.takePublicEvents().map((each) => each.kind),

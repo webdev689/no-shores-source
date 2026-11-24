@@ -316,8 +316,11 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement): Promise<vo
    *  overworld or a social space (`relog.ts`). */
   const arrive = (resuming = false) => {
     const overlook = () => goFoot(firstNode, firstFacing ?? arrivalFacing(firstNode, playing.landmass.plan, null));
+    // Into the social space logging back in: its room stands the player where they left it (`?relog=1`).
     const ashore = (node: NodeInfo, facing: number | null) =>
-      goFoot(node, facing ?? arrivalFacing(node, playing.landmass.plan, null));
+      goInto(() =>
+        Foot.enter(footContext, node, facing ?? arrivalFacing(node, playing.landmass.plan, null), 'normal', 'relog'),
+      );
     const flow = (next: Flow) => void ((playing.flow = next), next.mode === 'loading' && hud.veil(next.words));
     const heard = () => session().then(() => link?.place);
     behindVeil(playing.flow.mode === 'loading' ? playing.flow.words : '', () =>

@@ -1,9 +1,10 @@
 //! An activity's checkpoints, after Destiny's: the ground a company has won, where its fallen stand again by their
 //! own respawn. In a dungeon, each room whose band has fallen, each seal broken and the Court once its Boss wakes, each
 //! at the doorway its room is entered by, facing in; in a mission, each group's post once it is cleared. The fallen
-//! stand at the won checkpoint farthest along, or before any at the way in. A band holds the ground its fall won,
-//! standing no more while anyone is in the room, so no company fights back through rooms it cleared; a room no one
-//! is in stands its bands again as ever, and an Abyss wipe stands every one (`abyss.rs`).
+//! stand at the won checkpoint farthest along, or before any at the way in. In a run's room, kept to one company, a
+//! band holds the ground its fall won, standing no more while anyone is in it, so no company fights back through rooms
+//! it cleared; a shared room's bands, and an empty run's, stand again after their wait, and an Abyss wipe stands every
+//! one (`abyss.rs`).
 
 use crate::{EventKind, Room};
 use combat::sight::{apart, bearing};
@@ -78,7 +79,8 @@ impl Room {
         let last = self.encounter.as_ref().map(|encounter| [encounter.last_stand[0], encounter.last_stand[1]]);
         let laid = self.garrison.iter().enumerate().filter(|(_, post)| !post.arrival).map(|(number, post)| {
             let at = [post.at[0], post.at[1]];
-            let facing = last.map_or(self.facing, |last| bearing(at, last));
+            // The last stand's own post faces the room's way: it has nowhere further on to face.
+            let facing = last.filter(|last| apart(at, *last) > 0.5).map_or(self.facing, |last| bearing(at, last));
             Checkpoint { at, facing, along: apart(at, [first.0, first.1]), won: Won::Post(number) }
         });
         self.respawning.checkpoints = laid.collect();
@@ -109,10 +111,11 @@ impl Room {
         Some(Body { facing: checkpoint.facing, ..self.stand((checkpoint.at[0], checkpoint.at[1])) })
     }
 
-    /// Whether a post's group holds the ground its fall won: it is a checkpoint's, and someone is in the room.
+    /// Whether a post's group holds the ground its fall won: in a run's room, kept to one company, while someone is in
+    /// it; a shared room's groups stand again as any group does, so the next to come finds them.
     pub(crate) fn holds_ground(&self, post: usize) -> bool {
-        !self.players.is_empty()
-            && self.respawning.checkpoints.iter().any(|checkpoint| checkpoint.won == Won::Post(post))
+        let won = self.respawning.checkpoints.iter().any(|checkpoint| checkpoint.won == Won::Post(post));
+        self.respawning.holds_ground && !self.players.is_empty() && won
     }
 
     /// Each tick, as the checkpoint stood at moves on to one farther along, every player is told its number.

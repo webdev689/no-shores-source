@@ -193,8 +193,11 @@ fn in_the_court_while_its_boss_stands_no_one_respawns_by_their_ask_but_an_ally_r
     let mut fallen = Page::join(&mut room);
     unseal(&mut room);
     assert!(room.darkness() && !room.players.is_empty(), "the Boss awake: darkness");
-    let at = room.players[&ally.player].fighter.body;
-    put(&mut room, fallen.player, [at.x + 1.0, at.y]);
+    // Both in the Court, where it holds.
+    let cell = room.encounters.as_ref().expect("encounters").court_cells[0];
+    let [x, y] = crate::encounters::encounters_tests::middle_of(&room, cell);
+    put(&mut room, ally.player, [x, y]);
+    put(&mut room, fallen.player, [x + 1.0, y]);
     fell(&mut room, fallen.player, RESPAWN);
     fallen.send(&mut room, false, true);
     ally.send(&mut room, false, false);
@@ -234,4 +237,74 @@ fn a_company_all_down_in_the_court_falls_back_to_its_checkpoint_as_the_court_sta
     let seals = &room.encounters.as_ref().expect("encounters").seals;
     assert!(seals.iter().all(|seal| seal.state == crate::encounters::SealState::Broken), "every seal still broken");
     assert_eq!(room.checkpoint(), Some(court));
+}
+
+#[test]
+fn a_hold_under_way_is_kept_by_its_ally_when_another_with_a_lower_number_comes_to_the_same_fallen_player() {
+    let mut room = node();
+    let (mut first, mut fallen, mut later) = (Page::join(&mut room), Page::join(&mut room), Page::join(&mut room));
+    for (page, x) in [(&first, 10.0), (&fallen, 12.0), (&later, 13.0)] {
+        put(&mut room, page.player, [x, 10.0]);
+    }
+    fell(&mut room, fallen.player, 0);
+    // The third player holds first; the first, numbered lower, comes to the same body half way through.
+    let hold = |room: &mut Room, first: &mut Page, fallen: &mut Page, later: &mut Page, both: bool| {
+        first.send(room, both, false);
+        fallen.send(room, false, false);
+        later.send(room, true, false);
+        room.tick();
+    };
+    for _ in 0..REVIVE_TICKS / 2 {
+        hold(&mut room, &mut first, &mut fallen, &mut later, false);
+    }
+    for _ in REVIVE_TICKS / 2..REVIVE_TICKS - 1 {
+        hold(&mut room, &mut first, &mut fallen, &mut later, true);
+        assert_eq!(room.reviving_seen()[0].reviver, later.player, "the hold stays its ally's");
+    }
+    room.take_events();
+    hold(&mut room, &mut first, &mut fallen, &mut later, true);
+    assert!(!room.players[&fallen.player].fighter.dead(), "revived on time, not begun again");
+    assert_eq!(told(&room.take_events(), EventKind::Revived), [(later.player, fallen.player)]);
+}
+
+#[test]
+fn a_player_revived_on_a_ledge_stands_on_it_not_on_the_ground_under_it() {
+    let ring = vec![[-200.0, -200.0], [200.0, -200.0], [200.0, 200.0], [-200.0, 200.0]];
+    let ledge = movement::Block { min_x: 5.0, min_y: 5.0, max_x: 20.0, max_y: 20.0, top: 3.0, bottom: 0.0 };
+    let section = Section { ring, spawns: vec![[0.0, 150.0]], falls_kill: false };
+    let mut room = Room::node(Floor::Flat, vec![ledge], section);
+    let (mut ally, mut fallen) = (Page::join(&mut room), Page::join(&mut room));
+    for (page, x) in [(&ally, 10.0), (&fallen, 12.0)] {
+        let body = &mut room.players.get_mut(&page.player).expect("in").fighter.body;
+        (body.x, body.y, body.z) = (x, 10.0, 3.0);
+    }
+    fell(&mut room, fallen.player, 0);
+    for _ in 0..REVIVE_TICKS {
+        tick(&mut room, &mut [&mut ally, &mut fallen], 1);
+    }
+    let body = room.players[&fallen.player].fighter.body;
+    assert!(!room.players[&fallen.player].fighter.dead() && body.z == 3.0, "on the ledge: {body:?}");
+}
+
+#[test]
+fn the_courts_darkness_holds_those_lying_in_it_and_one_down_at_the_way_in_may_respawn_to_the_courts_door() {
+    let mut room = elite_room("krakens-grotto");
+    let _ally = hardy(&mut room);
+    let mut outside = Page::join(&mut room);
+    let mut inside = Page::join(&mut room);
+    unseal(&mut room);
+    let cell = room.encounters.as_ref().expect("encounters").court_cells[0];
+    let court = crate::encounters::encounters_tests::middle_of(&room, cell);
+    put(&mut room, inside.player, court);
+    let door = room.respawning.checkpoints[room.checkpoint().expect("the Court's")].at;
+    assert!(room.darkness_for(inside.player) && !room.darkness_for(outside.player), "dark in the Court alone");
+    for page in [&outside, &inside] {
+        fell(&mut room, page.player, RESPAWN);
+    }
+    outside.send(&mut room, false, true);
+    inside.send(&mut room, false, true);
+    room.tick();
+    let stood = room.players[&outside.player].fighter;
+    assert!(!stood.dead() && [stood.body.x, stood.body.y] == door, "come back down at the way in: to the Court's door");
+    assert!(room.players[&inside.player].fighter.dead(), "fallen in the Court: only an ally raises them");
 }

@@ -34,22 +34,22 @@ impl Room {
 
     /// A player whose character last stood in this very social space stands where they left it, facing as they did,
     /// so logging back in takes them there; elsewhere, or where a body no longer fits there, as they joined.
-    pub(crate) fn stand_where_left(&mut self, player: PlayerId) {
+    pub fn stand_where_left(&mut self, player: PlayerId) -> bool {
         let Some(node) = self.quests.node.clone().filter(|_| self.place == Some(gear::gate::Place::Social)) else {
-            return;
+            return false;
         };
-        let Some(found) = self.players.get(&player) else { return };
+        let Some(found) = self.players.get(&player) else { return false };
         let Some(([x, y, z], facing)) = found.character.last.as_ref().and_then(|last| last.stood_in(&node)) else {
-            return;
+            return false;
         };
         let inside = self.section.as_ref().is_some_and(|section| reach::inside(&section.ring, x, y));
         // On the floor they stood on, a stair's or a bridge's over the ground among them.
         let floor = movement::blocks::ground_at(&self.blocks, &self.floor, x, y, z);
         let body = movement::Body { facing, z: floor, ..movement::standing(x, y) };
         let fits = movement::blocks::room_at(&self.blocks, x, y, body.z, combat::tuning::BODY_HEIGHT);
-        if let Some(found) = self.players.get_mut(&player).filter(|_| inside && fits) {
-            (found.fighter.body, found.stood) = (body, body.z);
-        }
+        let Some(found) = self.players.get_mut(&player).filter(|_| inside && fits) else { return false };
+        (found.fighter.body, found.stood) = (body, body.z);
+        true
     }
 
     /// The body a player would leave with now.

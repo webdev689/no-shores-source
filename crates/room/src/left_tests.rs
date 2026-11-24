@@ -76,6 +76,9 @@ fn a_player_logs_back_in_where_they_last_stood_in_a_social_space_on_the_floor_th
     let mut back = social();
     let again = back.join().expect("in");
     assert!(back.restore_character(again, &kept));
+    let at_spawn = back.players[&again].fighter.body;
+    assert_eq!([at_spawn.x, at_spawn.y], [0.0, 150.0], "a claim alone moves no one: through a gate, a rejoin");
+    assert!(back.stand_where_left(again), "logging back in");
     let body = back.players[&again].fighter.body;
     assert_eq!([body.x, body.y, body.z, body.facing], [45.0, 44.0, 3.0, 2.0], "on the ledge, not under it");
     let mut sea = social();
@@ -83,6 +86,7 @@ fn a_player_logs_back_in_where_they_last_stood_in_a_social_space_on_the_floor_th
     let mut sailed = gear::Character::from_json(&kept).expect("a character");
     sailed.last = Some(gear::last::Last::Sea);
     assert!(sea.restore_character(docked, &sailed.to_json()));
+    assert!(!sea.stand_where_left(docked), "last at sea");
     assert_eq!([sea.players[&docked].fighter.body.x, sea.players[&docked].fighter.body.y], [0.0, 150.0], "came by sea");
 }
 
@@ -116,6 +120,7 @@ fn no_spot_is_kept_from_a_jump_a_fall_or_another_room_and_one_a_body_no_longer_f
     let mut walled = gear::Character::starting();
     walled.last = Some(gear::last::Last::social("overlook-social", [-15.0, -15.0, 0.0], 0.0));
     assert!(boxed.restore_character(inside, &walled.to_json()));
+    assert!(!boxed.stand_where_left(inside));
     let body = boxed.players[&inside].fighter.body;
     assert_eq!([body.x, body.y], [0.0, 150.0], "a pillar stands there now: the spawn");
 }

@@ -709,3 +709,25 @@ test('a wounded player’s drink through the room heals them, and the page reads
   assert.equal(fighterView(after.fighter).health, before.health + gave);
   assert.equal(chargesOf(after.fighter).charges, CHARGES_MOST - 1);
 });
+
+test('logging back in, a social room stands the player where their kept character left it, and only then', () => {
+  const { text } = nodeFile();
+  const room = startRoomDoor(compiled);
+  assert.equal(room.openNode(JSON.stringify({ ...(JSON.parse(text) as object), id: 'quay', kind: 'social' })), true);
+  const player = room.join();
+  room.tick();
+  const character = JSON.parse(room.character(player) ?? 'null') as object;
+  const last = { kind: 'social', node: 'quay', at: [3000, 2000, 1000], facing: 1500 };
+  assert.equal(room.restoreCharacter(player, JSON.stringify({ ...character, last })), true);
+  const feet = () => {
+    room.tick();
+    const seen = readFromRoom(room.snapshot(player));
+    const body = seen?.kind === 'snapshot' ? seen.players.find((each) => each.player === player)?.body : undefined;
+    return body ? [Math.round(body.x), Math.round(body.y), Math.round(body.facing * 1000)] : null;
+  };
+  assert.deepEqual(feet(), [0, 0, 3142], 'a claim alone stands no one elsewhere: at the spawn');
+  assert.equal(room.standWhereLeft(player), true);
+  assert.deepEqual(feet(), [30, 20, 1500], 'where it left the quay, facing as it did');
+  assert.equal(room.restoreCharacter(player, JSON.stringify({ ...character, last: { kind: 'sea' } })), true);
+  assert.equal(room.standWhereLeft(player), false, 'last at sea');
+});

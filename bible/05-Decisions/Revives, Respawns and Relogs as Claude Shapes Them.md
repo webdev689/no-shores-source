@@ -35,21 +35,21 @@ works is in [[Revives]] and [[Accounts]].
 |---|---|---|
 | The fall | The fallen lie where they fell; the world greys; "YOU DIED" with "Respawn in 3 s", then Respawn | Destiny greys the screen and counts down; the section's death already showed so |
 | When | Respawn is offered 4 s after a fall, and taken only when pressed | D1's self-respawn came after 3 s; a respawn of its own would stand the player up before an ally could reach them |
-| Rooms whose page never asks | The Test Ground and the prologue's wreck stand their fallen again at 4 s, as before | Neither has a death screen with Respawn |
+| Rooms whose page never asks | The Test Ground and the prologue's wreck stand their fallen again at 4 s, unasked | Neither has a death screen with Respawn |
 | Where, in a patrol zone or a world boss's node | The point nearest the fall among the zone's spawns and points every 25 m along its ways, 8 m or more inside the section, with room for a body and no living foe within 25 m, facing where they fell; the landing where a foe stands by every point | "close to where you died"; 25 m is the garrison's own clear of a spawn; measured on Saltmere's three zones, 43 m from the fall at most where the landing stood 0.4 to 1.5 km off |
 | Where, in an activity | At its last checkpoint; before any, at its way in | "checkpoint progress where you can respawn" |
 | A dungeon's checkpoints | Each room whose band has fallen, each seal broken and the Court as its Boss wakes, at the doorway the walk from the way in enters the room by, facing in; the one won farthest along is used | Destiny's checkpoints fall at its encounters; a doorway is clear of a seal's pieces and the room's props |
 | A mission's checkpoints | Each post once its group is cleared, the one farthest from the landing used | A mission is one encounter giving ground; its cleared posts are the ground won |
-| Ground held | A band or group whose fall won a checkpoint does not stand again while anyone is in the room; once the room is empty, as ever | Destiny's cleared areas stay cleared for a run; a band that stood again would retake its checkpoint |
+| Ground held | In a dungeon run, a band whose fall won a checkpoint does not stand again while anyone is in the room; in a shared room, a mission's among them, it stands again as any group does and the checkpoint falls back to the one won before it | Destiny's cleared areas stay cleared for a run, which is one company's; a shared room is many players', and a group held back for one would be held back for all |
 | Told | "Checkpoint reached" over the view as the one used moves on | Destiny's own words are unconfirmed |
 
 ### Darkness zones
 
 | Choice | Chosen | Why |
 |---|---|---|
-| Where | An Elite Dungeon's Court while its Boss stands, and an Abyss run with no revive left | Destiny's dungeons and raids make their boss encounters darkness zones; its hardest Nightfalls leave the fallen to their allies once the revives are spent |
+| Where | A body lying on an Elite Dungeon's Court's cells while its Boss stands, and anywhere in an Abyss run with no revive left; one fallen outside the Court, come back down at the way in, may respawn | Destiny's dungeons and raids make their boss encounters darkness zones; its hardest Nightfalls leave the fallen to their allies once the revives are spent |
 | What changes | No Respawn is offered; only an ally stands the fallen up | Destiny's darkness zone |
-| A company all down in the Court | Falls back to the Court's checkpoint, every player whole there; the Court starts over, its waves gone, its ward, anchors and Fury as they first were, its Boss whole and awake; every seal stays broken | Destiny's wipe returns the fireteam to the last checkpoint, the encounter reset |
+| A company all down while the Court's Boss stands | Falls back to the Court's checkpoint, every player whole there; the Court starts over, its waves gone, its ward, anchors and Fury as they first were, its Boss whole and awake; every seal stays broken | Destiny's wipe returns the fireteam to the last checkpoint, the encounter reset |
 | Told | "Darkness zone" on the place line, and "Darkness zone. Only an ally can raise you." on the death screen; "Your company fell. Back to the checkpoint" | D1's own name for it |
 | A shared fate timer | None | Destiny's raids kill the living 2:30 after a death left unrevived; the Court is not a raid |
 
@@ -58,8 +58,8 @@ works is in [[Revives]] and [[Accounts]].
 | Choice | Chosen | Why |
 |---|---|---|
 | What takes one | Every stand of a fallen player, revived by an ally or respawned | The owner's limited revives, each stand taking one; Destiny's Grandmasters spend a token on a revive |
-| None left | No hold is taken up and no Respawn is offered; the fallen stay down | As before; Destiny's darkness once the tokens are spent |
-| A wipe | Ends the run, as before | The owner's ([[Where You Go and the Seas You Choose Set the Difficulty]]) |
+| None left | No hold is taken up and no Respawn is offered; the fallen stay down | Destiny's darkness once the tokens are spent |
+| A wipe | Ends the run | The owner's ([[Where You Go and the Seas You Choose Set the Difficulty]]) |
 
 ### Logging back in
 
@@ -67,8 +67,8 @@ works is in [[Revives]] and [[Accounts]].
 |---|---|---|
 | What is kept | The sea, its ship where the sea keeps it (`ship_at`); or a social space, by its node, with where the player stood to the centimetre and the way they faced | "the overworld or social space" |
 | Who writes it | The sea room as it keeps the ship, and a social space's room while the player stands there on their feet, alive; no other room | One who logs out in a patrol zone, a dungeon or on an island comes back to whichever of the two they were in last |
-| Online | The accounts' `/v1/me` says where; the sea room puts the ship where it kept it and a social room stands the player where they left it | The server is the authority over where a player arrives ([[The Server Is the Authority Over Everything]]) |
-| Offline | The page keeps the place in the browser every 10 s and as the page hides or goes | No room keeps a character offline |
+| Online | The accounts' `/v1/me` says where; the sea room puts the ship where it kept it, and a social room stands the player where they left it as they log back in (the page joins it with `?relog=1`), not as they travel there, take a gate or come back from an activity | The server is the authority over where a player arrives ([[The Server Is the Authority Over Everything]]); arriving any other way is arriving, not resuming |
+| Offline | The page keeps the place in the browser every 10 s and as the page hides or goes; the player stands on the ground under the spot kept | No room keeps a character offline |
 | After the story played through | Overlook, where the welcome waits | The welcome is played there |
 | A social space not open on the landmass, or locked | Overlook | Only Overlook's social space is open |
 | The sea's tier on logging in | Normal | A voyage's tier is chosen as it sets out |

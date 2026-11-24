@@ -2,7 +2,7 @@
 //! fell, not back at the landing. The points lie along the node's ways every ALONG_M, its spawns among them, each
 //! FROM_EDGE_M or more inside the section with room for a body to stand; the fallen stand at the one nearest where
 //! they fell with no living foe within FOES_CLEAR_M, facing where they fell. Where a foe stands near every one, they
-//! stand at the section's spawn nearest them, as ever.
+//! stand at the section's spawn nearest them.
 
 use crate::Room;
 use crate::garrison::SPAWN_CLEAR;

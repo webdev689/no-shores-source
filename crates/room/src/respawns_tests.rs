@@ -117,7 +117,7 @@ fn on_saltmere_s_zones_the_fallen_stand_within_fifty_metres_of_where_they_fell_o
             let body = stands_again(&mut room, player, place.at);
             let (from_landing, from_here) =
                 (combat::sight::apart(landing, place.at), combat::sight::apart([body.x, body.y], place.at));
-            // Measured at 43 m at most where the landing was 0.4 to 1.5 km off.
+            // Measured: 43 m at most, where the landing stands 0.4 to 1.5 km off.
             let named = format!("{} at {}: {from_here:.0} m, the landing {from_landing:.0} m", node.id, place.name);
             assert!(from_here <= from_landing && from_here <= NEAR_M, "{named}");
             room.tick();

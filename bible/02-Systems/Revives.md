@@ -4,11 +4,12 @@ status: live
 code:
   - crates/room/src/revive.rs#REVIVE_TICKS
   - crates/room/src/revive.rs#raise_the_dead
-  - crates/room/src/revive.rs#darkness
+  - crates/room/src/revive.rs#darkness_for
   - crates/room/src/revive.rs#stand_up
   - crates/room/src/respawns.rs#near_where_fell
   - crates/room/src/checkpoints.rs#Checkpoint
   - crates/room/src/checkpoints.rs#doorway_of
+  - crates/room/src/checkpoints.rs#holds_ground
   - crates/room/src/encounters.rs#court_start_over
   - client/src/game/footRevive.ts#reviveHere
   - client/src/game/footRevive.ts#fallenOf
@@ -51,18 +52,24 @@ shows what the room says.
   room by, facing in from the cell before it (`doorway_of`). One is won while its band has fallen, its seal is broken,
   or the Court's Boss has woken. A mission lays one at each of its garrison's posts, won while its group is cleared,
   along by its distance from the first spawn. The fallen stand at the one won farthest along, before any at the way
-  in; every player is told `Checkpoint` (36) as the one used moves on. A band or group whose fall won a checkpoint
-  holds its ground: it does not stand again while anyone is in the room ([[Enemies]], "Standing again").
-- **Darkness zones** (`darkness`). An Elite Dungeon's Court while its Boss stands, and an Abyss run with no revive
-  left, take no ask to respawn: only an ally stands the fallen up. When every player the room judges (those it keeps,
-  where it keeps anyone) is down in the Court below Abyss, each is told `FellBack` (37), shots, blows waiting and
-  spells are dropped, the Court starts over (`court_start_over`: its waves gone, its ward, anchors and Fury as they
-  first were, its Boss stood again whole and awake) and every player stands whole at the Court's checkpoint. Every
-  seal stays broken.
+  in; every player is told `Checkpoint` (36) as the one used moves on. In a run's own room (`holds_ground`) a band or
+  group whose fall won a checkpoint holds its ground: it does not stand again while anyone is in the room. In a shared
+  room it stands again as any group does, and its checkpoint falls back to the one won before it ([[Enemies]],
+  "Standing again").
+- **Darkness zones** (`darkness_for`). A body lying on a cell of an Elite Dungeon's Court while its Boss stands, or
+  anywhere in an Abyss run with no revive left, takes no ask to respawn: only an ally stands them up. One fallen
+  outside the Court, come back down at the way in, may still respawn. When every player the room judges (those it
+  keeps, where it keeps anyone) is down while the Court's Boss stands, below Abyss, each is told `FellBack` (37),
+  shots, blows waiting and spells are dropped, the Court starts over (`court_start_over`: its waves gone, its ward,
+  anchors and Fury as they first were, its Boss stood again whole and awake) and every player stands whole at the
+  Court's checkpoint. Every seal stays broken.
 - **An Abyss run** spends one of the company's five revives on every stand, revived or respawned; with none left no
-  hold is taken up, and an Abyss wipe ends the run as before ([[Activities]], "Abyss's rules").
-- **On the wire.** Each input carries `revive`, Use held to revive. Each snapshot on land carries `darkness` and
-  `reviving`: each fallen player being revived, their reviver and the hold's share per mille ([[Server]]).
+  hold is taken up, and an Abyss wipe ends the run ([[Activities]], "Abyss's rules").
+- **Revived where they lay**: on the ground under the body, a ledge or a floor above as much as the terrain, facing as
+  they fell.
+- **On the wire.** Each input carries `revive`, Use held to revive. Each snapshot on land, and on a ship's deck,
+  carries `darkness`, whether the darkness holds the player it is sent to, and `reviving`: each fallen player being
+  revived, their reviver and the hold's share per mille ([[Server]]).
 
 ## On the page
 
@@ -72,10 +79,11 @@ shows what the room says.
 - **The fallen ally's mark** (`fallenMarks`): a faceted shell of light round a glowing eye, after Destiny's Ghost,
   1.1 m over the body, lit, so it beats and shows through walls ([[What a Player Can Use Wears Its Mark Over It]]).
 - **The player fallen** (`fallenOf`): the world greys and the screen's edge darkens, the pointer kept to look round
-  while an ally comes, and death's words stand over the view: "YOU DIED", then "Respawn in 3 s" and Respawn waiting, "You fell." and Respawn once it may
-  be pressed (the respawn key, Enter or the pad's A), "Ada is reviving you  40%" while an ally holds, or "Darkness zone.
-  Only an ally can raise you." and "No revives left. Only an ally can raise you." with no Respawn. The key strip shows
-  Respawn only once it may be pressed. The place line adds "Darkness zone" while the room is one ([[Interface]]).
+  while an ally comes, and death's words stand over the view: "YOU DIED", then "Respawn in 3 s" and Respawn waiting,
+  "You fell." and Respawn once it may be pressed (the respawn key, Enter or the pad's A, the keys' "dead" context),
+  "Ada is reviving you  40%" while an ally holds, or "Darkness zone. Only an ally can raise you." and "No revives
+  left. Only an ally can raise you." with no Respawn. The key strip shows Respawn only once it may be pressed. The
+  place line adds "Darkness zone" while the darkness holds the player ([[Interface]]).
 - **Told** over the view for 3 s (`ReviveNotices`): "Ada is down" as another player falls, "Ada revived you", "You
   revived Ada", "Checkpoint reached", and "Your company fell. Back to the checkpoint".
 - **Standing again**, revived or respawned, the player's figure arrives as a respawn does
@@ -86,7 +94,7 @@ shows what the room says.
 ## Limits
 
 - A fallen player who leaves and comes back stays down (`left.rs`), and asks again; in an Abyss run their body is kept
-  by the run as before.
+  by the run.
 - The points near a patrol's fall are laid only from the ways the node's file names; a page playing alone writes them
   into its own node file from the layout, as the bake does.
 - Nothing yet speeds a revive or raises a fallen player alone (Destiny 1's Fireborn had no match here).

@@ -81,7 +81,8 @@ where
 
 /// The input an input's bytes hold: its number, its intent, what the player's figure shows, their dress when it
 /// changed, what their hands hold, the tick their screen showed, a foe asked for (a type and a rank) or every foe sent
-/// away, whether they ask to respawn, and whether they hold Use to revive an ally; or why they do not read. The bytes come from a player's machine, so the
+/// away, whether they ask to respawn, and whether they hold Use to revive an ally; or why they do not read. The bytes
+/// come from a player's machine, so the
 /// verifier passes them first. An input with no fight's numbers asks for nothing in the fight.
 pub fn read_input(bytes: &[u8]) -> Result<Input, String> {
     input_of(&from_a_browser::<messages::Input>(bytes)?)

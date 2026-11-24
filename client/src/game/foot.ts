@@ -59,7 +59,7 @@ import { worldOutput } from './uiSounds.ts';
 import type { UsePrompt } from './usePrompt.ts';
 import { type Dressed, dressInGear, figureWhere, figuresEye, otherCards, ownCard, strikersOf } from './footFigures.ts';
 import type { AtEntrance, FootAsk, FootContext, FootFight, FootFrame, Heard, Held, Opened, Uses } from './footPlace.ts';
-import { closedIfThrown, stand } from './footPlace.ts';
+import { closedIfThrown, joinAsk, stand } from './footPlace.ts';
 import { hearing, nextOtherId, roomNote, rulesOf } from './footRoom.ts';
 
 export type { AtEntrance, FootContext, FootFight, FootFrame, Uses } from './footPlace.ts';
@@ -196,16 +196,16 @@ export class Foot {
     node: NodeInfo,
     facing: number,
     seas: Difficulty = 'normal',
-    arriving?: AtEntrance,
+    asked?: AtEntrance | 'relog',
   ): Promise<Foot> {
     const rules = await rulesOf(context);
     const module = await context.roomModule;
     let rect = windowRect(node.ring);
     let { boxes, ground } = await standOn(context, rules.combat, rect);
+    const arriving = asked === 'relog' ? undefined : asked;
     const [x, y] = arriving ? [arriving.x, arriving.y] : (node.spawns[0] ?? node.centre);
     stand(context, x, y, arriving?.facing ?? facing, node.kind === 'social');
-    const address =
-      context.rooms && `${context.rooms(nodeRoom(node, seas))}${arriving ? `?entrance=${arriving.number}` : ''}`;
+    const address = context.rooms && `${context.rooms(nodeRoom(node, seas))}${joinAsk(asked)}`;
     return Foot.start(context, node, rules, async (heard, session) => {
       const connection = address ? await RoomConnection.open(address, heard.snapshot, heard.gear, session) : null;
       // The room names the rect its window was cut to; a room baked from older edits is stood on as it stands.

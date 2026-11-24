@@ -86,8 +86,8 @@ export function placeKept(storage: Pick<Storage, 'getItem'> = localStorage): Res
 }
 
 /** What resuming asks of the game: whether it plays online, the accounts' word on the place once the session is
- *  settled, the place the browser kept (offline), the landmass's nodes, the ways aboard (at a spot the page kept) and into a social space, Overlook's own
- *  arrival, and the flow set as the trip begins. */
+ *  settled, the place the browser kept (offline), the landmass's nodes, the ways aboard (at a spot the page kept)
+ *  and into a social space, Overlook's own arrival, and the flow set as the trip begins. */
 export interface Resuming {
   readonly online: boolean;
   readonly heard: () => Promise<LastPlace | null | undefined>;
