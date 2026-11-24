@@ -59,7 +59,8 @@ ranks are the Roster's as well ([[Accounts]], "The Roster").
   puts it on the player's plate (`Room::tag_player`), sent once each time it changes. A guild founded, joined or left
   sends the page's token again, as a username taken does, and the room reads the plate again; a guild the keeper is
   told has changed (a member removed, or one who left from another tab) reads it again too. The plate reads
-  `Ada [SALT]`, the tag a shade fainter ([[Interface]], "Players").
+  `Ada [SALT]`, the tag a shade fainter ([[Interface]], "Players"). At sea the plate over each other player's ship
+  carries it the same, the keeper telling the sea's room as it tells a node's ([[Ships at Sea Wear Their Guild's Tag]]).
 - **Levels.** A guild's level comes from its XP: ten levels, from 15,000 for level 2 to 800,000 for level 10
   (`content/guilds/guilds.json`, `guildLaw.ts`). A level reached is never lost.
 - **The week.** Each week (from Tuesday 09:00 UTC, the game's one clock) draws four guild bounties of twelve, the same
