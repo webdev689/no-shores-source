@@ -7,6 +7,11 @@ import { antiraidModule } from './modules/antiraid.ts';
 import { automodModule } from './modules/automod.ts';
 import { logsModule } from './modules/logs.ts';
 import { moderationModule } from './modules/moderation.ts';
+import { announceModule } from './modules/announce.ts';
+import { levelsModule } from './modules/levels.ts';
+import { roleMenusModule } from './modules/roleMenus.ts';
+import { tagsModule } from './modules/tags.ts';
+import { welcomeModule } from './modules/welcome.ts';
 
 // A module is added in two steps: its shape in `law/modules.ts` (what the panel draws and the bot checks), and its
 // code as one file in `modules/` exporting a `ServerModule` with the same id, named in the list below. Its tables, if
@@ -16,6 +21,11 @@ export const SERVER_MODULES: readonly ServerModule[] = Object.freeze([
   logsModule,
   automodModule,
   antiraidModule,
+  welcomeModule,
+  levelsModule,
+  roleMenusModule,
+  tagsModule,
+  announceModule,
 ]);
 
 /** A module list, ready to route: tests build one of their own. */
