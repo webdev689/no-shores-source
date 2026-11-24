@@ -162,3 +162,47 @@ fn one_out_of_the_guild_dungeon_stands_before_the_delve_gate_facing_away_and_onl
     assert_eq!(room.join_at(0), None, "taken down");
     assert_eq!(Room::new(Vec::new(), (0.0, 0.0)).join_at(0), None, "a room that is no outpost has none");
 }
+
+#[test]
+fn a_player_has_one_ask_with_the_accounts_at_a_time_and_a_take_of_nothing_is_refused() {
+    let (mut room, player) = outpost();
+    let in_flight = answer_code(Err(Refusal::AskInFlight));
+    assert_eq!(ask(&mut room, player, OutpostAsk::Take { slot: 0, count: 0 }), answer_code(Err(Refusal::Short)));
+    assert_eq!(ask(&mut room, player, OutpostAsk::Deposit { count: 10 }), PENDING);
+    assert_eq!(ask(&mut room, player, OutpostAsk::Take { slot: 0, count: 5 }), in_flight, "held, not yet taken");
+    let errands = room.outpost_errands();
+    assert_eq!(errands.len(), 1, "the refused asks hold no errand");
+    assert_eq!(ask(&mut room, player, OutpostAsk::Horn), in_flight, "with the accounts");
+    assert_eq!(ask(&mut room, player, OutpostAsk::Changed), 0, "a plot read again waits on no answer");
+    room.outpost_answered(errands[0].id, Some(10));
+    assert_eq!(ask(&mut room, player, OutpostAsk::Take { slot: 0, count: 5 }), PENDING, "answered, the next goes");
+}
+
+#[test]
+fn the_horn_s_refusals_are_each_its_own() {
+    let (mut room, player) = outpost();
+    for (answer, refusal) in [(0, Refusal::HornSounded), (-1, Refusal::HornNotLeader), (-2, Refusal::NoHorn)] {
+        ask(&mut room, player, OutpostAsk::Horn);
+        let errand = room.outpost_errands().remove(0);
+        room.outpost_answered(errand.id, Some(answer));
+        assert_eq!(room.players[&player].answer, answer_code(Err(refusal)), "answered {answer}");
+    }
+    assert!(!room.horn_foe_up());
+}
+
+#[test]
+fn an_answer_after_the_player_left_is_given_at_their_account_s_next_claim_here() {
+    let (mut room, player) = outpost();
+    ask(&mut room, player, OutpostAsk::Deposit { count: 200 });
+    let deposit = room.outpost_errands().remove(0);
+    room.leave(player);
+    assert!(room.outpost_answered(deposit.id, Some(50)), "kept for them");
+    let other = room.join().expect("a room with space");
+    assert!(room.own(other, "pepper"));
+    let back = room.join().expect("a room with space");
+    let aurem = room.players[&back].character.materials.aurem;
+    assert!(room.own(back, "salt"));
+    assert_eq!(room.players[&back].character.materials.aurem, aurem + 150, "what the treasury did not take");
+    assert!(room.own(back, "salt"));
+    assert_eq!(room.players[&back].character.materials.aurem, aurem + 150, "given once");
+}

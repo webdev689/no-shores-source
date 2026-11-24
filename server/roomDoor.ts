@@ -206,8 +206,8 @@ export interface RoomDoor {
   outpost(key: string, muster: readonly [number, number]): boolean;
   /** The errands the outpost's players' asks hold for the host since it last took them (`outpostHost.ts`). */
   outpostErrands(): Errand[];
-  /** The accounts' answer to an errand: how many they moved, used or gave, or the horn's tier; null when they could
-   *  not be reached, and the errand is given back whole. False for no such errand. */
+  /** The accounts' answer to an errand: how many they moved, used or gave, or the horn's answer (its tier, or 0, -1
+   *  or -2 for why it did not sound); null when they could not be reached, and the errand is given back whole. False for no such errand. */
   outpostAnswered(id: number, answer: number | null): boolean;
   /** Says the host stood the outpost's plot anew, which the snapshot counts. */
   outpostStood(): boolean;
@@ -484,7 +484,10 @@ export function startRoomDoor(module: WebAssembly.Module): RoomDoor {
     outpost: (key, muster) => openWith(exports.room_outpost, JSON.stringify({ key, muster })),
     outpostErrands: () => JSON.parse(new TextDecoder().decode(take(exports.room_outpost_errands()))) as Errand[],
     outpostAnswered: (id, answer) =>
-      exports.room_outpost_answered(id >>> 0, answer === null ? -1 : Math.min(answer, 0x7fff_ffff)) === 1,
+      exports.room_outpost_answered(
+        id >>> 0,
+        answer === null ? -0x8000_0000 : Math.max(-0x7fff_ffff, Math.min(answer, 0x7fff_ffff)),
+      ) === 1,
     outpostStood: () => exports.room_outpost_stood() === 1,
     outpostGate: (gate) => exports.room_outpost_gate(...(gate ?? [Number.NaN, 0, 0])) === 1,
   };

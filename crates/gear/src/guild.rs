@@ -247,10 +247,13 @@ impl Character {
     /// Takes the guild package the War Horn's foe gives a member who fought it, once a week.
     ///
     /// # Errors
-    /// Taken already this week, or ten Vestiges carried.
-    pub fn claim_horn_package(&mut self, week: u64, dice: &Dice) -> Result<(), Refusal> {
+    /// Taken already this week, in the guild only since the week turned, or ten Vestiges carried.
+    pub fn claim_horn_package(&mut self, week: u64, standing: Standing, dice: &Dice) -> Result<(), Refusal> {
         if self.guild_week(week).horn {
             return Err(Refusal::GuildBountyClaimed);
+        }
+        if !standing.before_the_week {
+            return Err(Refusal::JoinedThisWeek);
         }
         self.give_package(Purpose::GuildPackage, dice)?;
         self.guild.horn = true;
@@ -260,10 +263,13 @@ impl Character {
     /// Takes the guild package a member's first clear of their guild dungeon gives, once a week.
     ///
     /// # Errors
-    /// Taken already this week, or ten Vestiges carried.
-    pub fn claim_delve_package(&mut self, week: u64, dice: &Dice) -> Result<(), Refusal> {
+    /// Taken already this week, in the guild only since the week turned, or ten Vestiges carried.
+    pub fn claim_delve_package(&mut self, week: u64, standing: Standing, dice: &Dice) -> Result<(), Refusal> {
         if self.guild_week(week).delve {
             return Err(Refusal::GuildBountyClaimed);
+        }
+        if !standing.before_the_week {
+            return Err(Refusal::JoinedThisWeek);
         }
         self.give_package(Purpose::GuildPackage, dice)?;
         self.guild.delve = true;

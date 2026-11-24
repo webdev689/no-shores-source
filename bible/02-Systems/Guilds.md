@@ -68,7 +68,8 @@ ranks are the Roster's as well ([[Accounts]], "The Roster").
   room.
 - **What a member gives.** A character keeps its part in its guild's week (`GuildWeek`: the XP given, its counts
   toward the four bounties, its claims). A room told the player's guild (`Guilds`, on land and at sea) gives the
-  guild a tenth of the XP they gain, at most 5,000 a week, measured from a mark it keeps: XP of a character given back
+  guild a tenth of the XP they gain, at most 5,000 a week (a tenth of the week's whole gain less what was given, so
+  small gains count), measured from a mark it keeps: XP of a character given back
   in place of the starting one, or a jump past any one tick's pay, is measured afresh, never given. A player in no
   guild gives nothing.
 - **What the guild gets.** As a room saves a member's character, the accounts add what their record gained since it

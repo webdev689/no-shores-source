@@ -164,7 +164,7 @@ const REFUSALS: Readonly<Record<number, string>> = {
   151: 'There is no such guild bounty this week.',
   152: 'Your guild has not finished that bounty yet.',
   153: 'You have claimed that this week.',
-  154: 'Members who joined before the week turned claim it.',
+  154: 'Only members who joined before the week turned may claim it.',
   155: 'You are in no guild.',
   156: 'Do that at your guild’s outpost.',
   157: 'The treasury holds no more.',
@@ -172,7 +172,10 @@ const REFUSALS: Readonly<Record<number, string>> = {
   159: 'The stores hold none of that for you today.',
   160: 'The War Horn has sounded this week.',
   161: 'The guild’s books could not be reached. Try again.',
-  162: 'The War Horn’s foe still stands.',
+  162: 'The guild boss still stands.',
+  163: 'Wait for your last ask.',
+  164: 'Only the founder or an admin sounds the War Horn.',
+  165: 'No War Horn stands here yet.',
 };
 
 /** What a room's answer to an ask says: nothing for done. */

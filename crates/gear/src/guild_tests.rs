@@ -136,10 +136,10 @@ fn a_week_kept_by_a_later_build_keeps_what_this_one_does_not_know() {
 fn the_war_horn_s_foe_pays_each_member_a_guild_package_once_a_week() {
     let mut character = Character::starting();
     character.xp = crate::power::xp_for_level(12);
-    assert_eq!(character.claim_horn_package(WEEK, &DICE), Ok(()));
+    assert_eq!(character.claim_horn_package(WEEK, DONE, &DICE), Ok(()));
     assert_eq!(character.vestiges.len(), 1, "a Vestige");
-    assert_eq!(character.claim_horn_package(WEEK, &DICE), Err(Refusal::GuildBountyClaimed), "once that week");
-    assert_eq!(character.claim_horn_package(WEEK + 1, &DICE), Ok(()), "again the next");
+    assert_eq!(character.claim_horn_package(WEEK, DONE, &DICE), Err(Refusal::GuildBountyClaimed), "once that week");
+    assert_eq!(character.claim_horn_package(WEEK + 1, DONE, &DICE), Ok(()), "again the next");
     let kept: crate::guild::GuildWeek = serde_json::from_str(r#"{"week":7}"#).unwrap();
     assert!(!kept.horn, "a week kept before the horn's package was is unclaimed");
 }
@@ -148,11 +148,21 @@ fn the_war_horn_s_foe_pays_each_member_a_guild_package_once_a_week() {
 fn a_guild_dungeons_first_clear_pays_each_member_a_guild_package_once_a_week_beside_the_horns() {
     let mut character = Character::starting();
     character.xp = crate::power::xp_for_level(12);
-    assert_eq!(character.claim_delve_package(WEEK, &DICE), Ok(()));
-    assert_eq!(character.claim_delve_package(WEEK, &DICE), Err(Refusal::GuildBountyClaimed), "once that week");
-    assert_eq!(character.claim_horn_package(WEEK, &DICE), Ok(()), "the horn's is its own");
+    assert_eq!(character.claim_delve_package(WEEK, DONE, &DICE), Ok(()));
+    assert_eq!(character.claim_delve_package(WEEK, DONE, &DICE), Err(Refusal::GuildBountyClaimed), "once that week");
+    assert_eq!(character.claim_horn_package(WEEK, DONE, &DICE), Ok(()), "the horn's is its own");
     assert_eq!(character.vestiges.len(), 2, "a Vestige each");
-    assert_eq!(character.claim_delve_package(WEEK + 1, &DICE), Ok(()), "again the next");
+    assert_eq!(character.claim_delve_package(WEEK + 1, DONE, &DICE), Ok(()), "again the next");
     let kept: crate::guild::GuildWeek = serde_json::from_str(r#"{"week":7,"horn":true}"#).unwrap();
     assert!(!kept.delve, "a week kept before the guild dungeon's package was is unclaimed");
+}
+
+#[test]
+fn the_horn_s_and_the_guild_dungeon_s_packages_go_only_to_members_from_before_the_week() {
+    let mut character = Character::starting();
+    character.xp = crate::power::xp_for_level(12);
+    let new = Standing { done: [true; SLOTS], before_the_week: false };
+    assert_eq!(character.claim_horn_package(WEEK, new, &DICE), Err(Refusal::JoinedThisWeek));
+    assert_eq!(character.claim_delve_package(WEEK, new, &DICE), Err(Refusal::JoinedThisWeek));
+    assert!(character.vestiges.is_empty() && !character.guild.horn && !character.guild.delve, "nothing given");
 }

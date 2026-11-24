@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import type { Claimed } from './accounts/characters.ts';
-import { ACCOUNTS_TROUBLE, ANOTHER_GUILD, Keeper } from './keeping.ts';
+import { ACCOUNTS_TROUBLE, ANOTHER_GUILD, GUILD_EVERY_MS, Keeper, SAVE_AFTER_CHANGE_MS } from './keeping.ts';
 import { roomOf } from './keepingForTests.ts';
 
 const GUILD = '0a1b2c3d-4e5f-6071-8293-a4b5c6d7e8f9';
@@ -87,4 +87,62 @@ test('the wild site keeps anyone, as any node’s room does', async () => {
     () => Promise.resolve(),
   );
   assert.equal(await joins(keeper, room, 1, 'cal'), true);
+});
+
+const settle = () => new Promise((done) => setTimeout(done, 0));
+
+test('one told they are no longer in the guild no longer admits their company', async () => {
+  const guilds: Record<string, string> = { ada: GUILD };
+  const room = roomOf();
+  const sent: [number, string | undefined][] = [];
+  const keeper = new Keeper(
+    accounts(guilds, { ben: ['ben', 'ada'] }),
+    room,
+    ROOM,
+    (player, why) => sent.push([player, why]),
+    () => Promise.resolve(),
+  );
+  keeper.forGuild('0a1b2c3d4e5f60718293a4b5c6d7e8f9');
+  assert.equal(await joins(keeper, room, 1, 'ada'), true);
+  delete guilds['ada'];
+  await keeper.due(GUILD_EVERY_MS);
+  await settle();
+  assert.equal(await joins(keeper, room, 2, 'ben'), false, 'Ada is no member now');
+  assert.deepEqual(sent, [[2, ANOTHER_GUILD]]);
+});
+
+test('a save now saves the character as the room holds it, after the save under way, and says whether it held', async () => {
+  let up = true;
+  const kept = accounts({ ada: GUILD }, {}, () => up);
+  const saved: string[] = [];
+  let first: (held: boolean) => void = () => undefined;
+  kept.save = (...args: unknown[]) => {
+    saved.push(String(args[2]));
+    if (saved.length === 1) return new Promise<boolean>((done) => (first = done));
+    return up ? Promise.resolve(true) : Promise.reject(new Error('down'));
+  };
+  const room = roomOf();
+  const keeper = new Keeper(
+    kept,
+    room,
+    ROOM,
+    () => undefined,
+    () => Promise.resolve(),
+  );
+  keeper.forGuild('0a1b2c3d4e5f60718293a4b5c6d7e8f9');
+  assert.equal(await joins(keeper, room, 1, 'ada'), true);
+  room.held.set(1, '{"aurem":500}');
+  keeper.changed(1);
+  const due = keeper.due(SAVE_AFTER_CHANGE_MS);
+  room.held.set(1, '{"aurem":0}');
+  const now = keeper.saveNow(1);
+  await settle();
+  assert.deepEqual(saved, ['{"aurem":500}'], 'waits for the save under way');
+  first(true);
+  assert.equal(await now, true);
+  await due;
+  assert.deepEqual(saved, ['{"aurem":500}', '{"aurem":0}'], 'the deposit’s body saved last');
+  up = false;
+  assert.equal(await keeper.saveNow(1), false, 'the accounts down');
+  assert.equal(await keeper.saveNow(9), false, 'no one kept');
 });

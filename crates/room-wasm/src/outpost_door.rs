@@ -70,11 +70,12 @@ pub extern "C" fn room_outpost_errands() -> u64 {
     hand_over(errands().into_bytes())
 }
 
-/// The accounts' answer to an errand by its number: how many they moved, used or gave, or the horn's tier; below 0
-/// when they could not be reached. 1 if the room held such an errand, 0 if not.
+/// The accounts' answer to an errand by its number: how many they moved, used or gave, or the horn's answer (its tier,
+/// or 0, -1 or -2 for why it did not sound); `i32::MIN` when they could not be reached. 1 if the room held such an
+/// errand, 0 if not.
 #[unsafe(no_mangle)]
 pub extern "C" fn room_outpost_answered(id: u32, answer: i32) -> u32 {
-    let answer = u32::try_from(answer).ok();
+    let answer = (answer != i32::MIN).then_some(i64::from(answer));
     u32::from(on_land(|room| room.outpost_answered(id, answer)).unwrap_or(false))
 }
 

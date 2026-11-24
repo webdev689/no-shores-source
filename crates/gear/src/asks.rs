@@ -264,9 +264,9 @@ pub enum Refusal {
     GuildBountyClaimed = 152,
     JoinedThisWeek = 153,
     NotInGuild = 154,
-    /// An outpost's asks (`room::outpost`): asked off one's guild's outpost; the treasury holds no more; no structure
-    /// being built needs that; the stores hold none of it for the player today; the War Horn sounded this week, or
-    /// not by them; the accounts did not answer; and the horn's foe still stands.
+    /// An outpost's asks (`room::outpost`): asked off its guild's outpost; the treasury is full; nothing being built
+    /// needs that; the stores hold none for the player today; the horn sounded this week; the accounts did not
+    /// answer; the guild boss stands; the last ask is unanswered; not the founder or an admin; no horn stands.
     NotAtOutpost = 155,
     TreasuryFull = 156,
     NothingNeeds = 157,
@@ -274,6 +274,9 @@ pub enum Refusal {
     HornSounded = 159,
     OutpostTrouble = 160,
     HornFoeStands = 161,
+    AskInFlight = 162,
+    HornNotLeader = 163,
+    NoHorn = 164,
 }
 
 /// What an ask did, when it did more than its ask says.

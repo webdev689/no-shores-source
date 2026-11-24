@@ -99,7 +99,7 @@ impl Room {
     }
 
     /// Pays each player still here who fought the horn's foe as a world boss's clear pays, and each member of the
-    /// guild among them a guild package, once a week.
+    /// guild among them from before the week turned a guild package, once a week.
     fn pay_horn_foe(&mut self) {
         let Some(outpost) = self.outpost.as_mut() else { return };
         let HornFoe { level, tier, fought, .. } = std::mem::take(&mut outpost.boss);
@@ -107,13 +107,14 @@ impl Room {
         let week = gear::clock::week_of(self.minute);
         for player in fought {
             let dice = self.dice(player);
-            let member = self.guilds.of(player).is_some_and(|seen| crate::outpost::guild_key(&seen.id) == key);
+            let seen = self.guilds.of(player).filter(|seen| crate::outpost::guild_key(&seen.id) == key);
+            let standing = seen.map(|seen| seen.standing);
             let Some(found) = self.players.get_mut(&player) else { continue };
             let character = &mut found.character;
             character.reward_clear(Clear::WorldBoss, level, difficulty_of(tier), self.source, &dice);
-            if member {
-                // Refused only once taken this week, or with ten Vestiges carried: nothing more to give.
-                let _ = character.claim_horn_package(week, &dice);
+            if let Some(standing) = standing {
+                // Refused once taken this week, to one who joined since it turned, or with ten Vestiges carried.
+                let _ = character.claim_horn_package(week, standing, &dice);
             }
             found.gear_changed = true;
         }

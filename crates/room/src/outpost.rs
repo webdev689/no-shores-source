@@ -71,8 +71,9 @@ pub struct Errand {
 }
 
 /// A guild's outpost as its room holds it: the guild's key, its muster ground, how many plots the host has stood, the
-/// errands not yet taken and those with the accounts, when its plot was last read again on a player's word, and the
-/// War Horn's foe; and the foot of its Delve Gate's steps and the way out from it, where one stands.
+/// errands not yet taken and those with the accounts, the answers that came after their player left (by account, given
+/// at its next claim here), when its plot was last read again on a player's word, and the War Horn's foe; and the foot
+/// of its Delve Gate's steps and the way out from it, where one stands.
 #[derive(Debug, Default)]
 pub(crate) struct Outpost {
     pub key: String,
@@ -82,6 +83,7 @@ pub(crate) struct Outpost {
     next: u32,
     waiting: Vec<Errand>,
     out: BTreeMap<u32, Errand>,
+    owed: BTreeMap<String, Vec<(What, Option<i64>)>>,
     changed_at: Option<u64>,
     pub boss: crate::outpost_boss::HornFoe,
 }
@@ -158,8 +160,9 @@ impl Room {
         resource.filter(|_| slot == 4).map(Material::Island)
     }
 
-    /// A player's ask at an outpost: refused off their guild's outpost; otherwise what it gives is taken from them and
-    /// its errand held for the host, answered once the accounts answer (`PENDING`).
+    /// A player's ask at an outpost: refused off their guild's outpost, and while their last is not yet answered;
+    /// otherwise what it gives is taken from them and its errand held for the host, answered once the accounts answer
+    /// (`PENDING`).
     pub(crate) fn ask_outpost(&mut self, player: PlayerId, ask: OutpostAsk) -> u8 {
         let Some(account) = self.outpost_member(player) else { return answer_code(Err(Refusal::NotAtOutpost)) };
         let clock = self.clock;
@@ -169,6 +172,10 @@ impl Room {
         };
         let horn_up = self.horn_foe_up();
         let (Some(outpost), Some(found)) = (self.outpost.as_mut(), self.players.get_mut(&player)) else { return 0 };
+        let mut held = outpost.waiting.iter().chain(outpost.out.values());
+        if ask != OutpostAsk::Changed && held.any(|errand| errand.player == player && errand.what != What::Changed) {
+            return answer_code(Err(Refusal::AskInFlight));
+        }
         let materials = &mut found.character.materials;
         let what = match (ask, stuff) {
             (OutpostAsk::Deposit { count }, _) => {
@@ -188,6 +195,7 @@ impl Room {
                 *held -= u16::try_from(amount).unwrap_or(0);
                 What::Deliver { structure, stuff, amount }
             }
+            (OutpostAsk::Take { count: 0, .. }, _) => return answer_code(Err(Refusal::Short)),
             (OutpostAsk::Take { count, .. }, Some(stuff)) => {
                 // Asked only for what the player has room for, so nothing the stores give is lost.
                 let room_for = u32::from(STOCK_MOST.saturating_sub(*held_mut(materials, stuff)));
@@ -224,64 +232,72 @@ impl Room {
         taken
     }
 
-    /// The accounts' answer to an errand: how many they moved, used or gave, or the horn's tier; none when they could
-    /// not be reached, when the errand is given back whole. The room gives back what was not moved or used, gives what
-    /// was given, and answers the player. False for no such errand.
-    pub fn outpost_answered(&mut self, id: u32, answer: Option<u32>) -> bool {
-        let Some(errand) = self.outpost.as_mut().and_then(|outpost| outpost.out.remove(&id)) else { return false };
-        let refused = |refusal: Refusal| answer_code(Err(refusal));
-        let mut tier = 0;
-        let Some(found) = self.players.get_mut(&errand.player) else { return true };
-        let materials = &mut found.character.materials;
-        let code = match (errand.what, answer) {
-            (What::Deposit(amount), answer) => {
-                let moved = answer.unwrap_or(0).min(amount);
-                materials.add_aurem(amount - moved);
-                if answer.is_none() {
-                    refused(Refusal::OutpostTrouble)
-                } else if moved == 0 {
-                    refused(Refusal::TreasuryFull)
-                } else {
-                    0
-                }
-            }
-            (What::Deliver { stuff, amount, .. }, answer) => {
-                let used = answer.unwrap_or(0).min(amount);
-                give(materials, stuff, amount - used);
-                if answer.is_none() {
-                    refused(Refusal::OutpostTrouble)
-                } else if used == 0 {
-                    refused(Refusal::NothingNeeds)
-                } else {
-                    0
-                }
-            }
-            (What::Take { stuff, amount }, answer) => {
-                let given = answer.unwrap_or(0).min(amount);
-                give(materials, stuff, given);
-                if answer.is_none() {
-                    refused(Refusal::OutpostTrouble)
-                } else if given == 0 {
-                    refused(Refusal::StoresEmpty)
-                } else {
-                    0
-                }
-            }
-            (What::Horn, None) => refused(Refusal::OutpostTrouble),
-            (What::Horn, Some(0)) => refused(Refusal::HornSounded),
-            (What::Horn, Some(sounded)) => {
-                tier = sounded;
-                0
-            }
-            (What::Changed, _) => 0,
-        };
-        found.answer = code;
-        found.answered = found.answered.wrapping_add(1);
-        found.gear_changed = true;
-        if tier > 0 {
+    /// The accounts' answer to an errand: how many they moved, used or gave, or the horn's tier (0 sounded this week,
+    /// -1 not by this player, -2 no horn stands); none when they could not be reached, when the errand is given back
+    /// whole. The room gives back what was not moved or used, gives what was given, and answers the player; one who
+    /// left is given it at their account's next claim here (`outpost_owed`). False for no such errand.
+    pub fn outpost_answered(&mut self, id: u32, answer: Option<i64>) -> bool {
+        let Some(outpost) = self.outpost.as_mut() else { return false };
+        let Some(errand) = outpost.out.remove(&id) else { return false };
+        let tier = answer.and_then(|tier| u32::try_from(tier).ok()).filter(|tier| *tier > 0);
+        if let (What::Horn, Some(tier)) = (errand.what, tier) {
             self.horn_sounded(tier);
         }
+        let here = self.players.get(&errand.player).is_some_and(|found| found.owner.as_ref() == Some(&errand.account));
+        let Some(found) = self.players.get_mut(&errand.player).filter(|_| here) else {
+            if let Some(outpost) = self.outpost.as_mut() {
+                outpost.owed.entry(errand.account).or_default().push((errand.what, answer));
+            }
+            return true;
+        };
+        found.answer = settle(&mut found.character.materials, errand.what, answer);
+        found.answered = found.answered.wrapping_add(1);
+        found.gear_changed = true;
         true
+    }
+
+    /// Gives a player kept by `account` what the answers to their errands that came after they left give.
+    pub(crate) fn outpost_owed(&mut self, player: PlayerId, account: &str) {
+        let Some(owed) = self.outpost.as_mut().and_then(|outpost| outpost.owed.remove(account)) else { return };
+        let Some(found) = self.players.get_mut(&player) else { return };
+        for (what, answer) in owed {
+            settle(&mut found.character.materials, what, answer);
+        }
+        found.gear_changed = true;
+    }
+}
+
+/// Gives back what an answered errand did not move or use and gives what it was given; the player's answer code.
+fn settle(materials: &mut Materials, what: What, answer: Option<i64>) -> u8 {
+    let refused = |refusal: Refusal| answer_code(Err(refusal));
+    let count = |most: u32| answer.map_or(0, |count| u32::try_from(count).unwrap_or(0).min(most));
+    let (done, none) = match what {
+        What::Deposit(amount) => {
+            materials.add_aurem(amount - count(amount));
+            (count(amount), Refusal::TreasuryFull)
+        }
+        What::Deliver { stuff, amount, .. } => {
+            give(materials, stuff, amount - count(amount));
+            (count(amount), Refusal::NothingNeeds)
+        }
+        What::Take { stuff, amount } => {
+            give(materials, stuff, count(amount));
+            (count(amount), Refusal::StoresEmpty)
+        }
+        What::Horn => match answer {
+            Some(-1) => (0, Refusal::HornNotLeader),
+            Some(tier) if tier < 0 => (0, Refusal::NoHorn),
+            Some(tier) => (u32::try_from(tier).unwrap_or(0), Refusal::HornSounded),
+            None => (0, Refusal::OutpostTrouble),
+        },
+        What::Changed => return 0,
+    };
+    if answer.is_none() {
+        refused(Refusal::OutpostTrouble)
+    } else if done == 0 {
+        refused(none)
+    } else {
+        0
     }
 }
 
