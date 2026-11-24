@@ -25,6 +25,8 @@ pub const FUSIONS_MOST: (u8, u8) = (4, 3);
 /// player's health it takes each second.
 pub const OVERTAKEN_M: (f64, f64) = (2.5, 1.5);
 pub const OVERTAKEN_HARM: f64 = 0.1;
+/// What the Mender's health is times past the company's match.
+pub const MENDER_TIMES: f64 = 1.5;
 /// The seams by their sockets, and which are open in each stage.
 pub const SEAMS: [&str; 3] = ["seam-north", "seam-west", "seam-east"];
 const OPEN: [[bool; 3]; 3] = [[true, false, false], [false, true, true], [true, true, true]];
@@ -112,7 +114,7 @@ impl Room {
         let Some((at, _)) = breach.plan.socket("mending", "mender") else { return };
         let mender = self.stand_breach_foe(breach, (BULWARK, Rank::Miniboss), at, Some("The Mender"));
         if let Some(id) = mender {
-            self.match_company(id, self.company(), 1.0);
+            self.match_company(id, self.company(), MENDER_TIMES);
         }
         fight.mender = mender;
     }

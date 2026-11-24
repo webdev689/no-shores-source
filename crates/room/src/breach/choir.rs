@@ -34,6 +34,9 @@ pub const WRITE_EVERY: u64 = 30 * 60;
 pub const BELL_EVERY: u64 = 20 * 60;
 pub const FURY_AFTER: u64 = 8 * 60 * 60;
 pub const BLOT_REACH_M: f64 = 1.8;
+/// What the Scrivener's health is times past the company's match: a company of eight fights it a minute and a half,
+/// so its bells, marks and writings come round.
+pub const SCRIVENER_TIMES: f64 = 6.0;
 const DRAWS: u64 = 0x0063_686f_6972;
 
 /// The Choir as it stands.
@@ -228,7 +231,7 @@ impl Room {
         let Some((at, _)) = breach.plan.socket("choir", "lectern-1") else { return };
         let scrivener = self.stand_breach_foe(breach, (SCRIVENER, Rank::Boss), at, Some("The Scrivener"));
         if let Some(id) = scrivener {
-            self.match_company(id, self.company(), 1.0);
+            self.match_company(id, self.company(), SCRIVENER_TIMES);
             fight.warded = self.foes.get(&id).map(|foe| foe.fighter.health);
         }
         (fight.phase, fight.scrivener, fight.desk, fight.phase_from) = (2, scrivener, 0, clock);

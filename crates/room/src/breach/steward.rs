@@ -25,6 +25,8 @@ pub const TAKINGS_MOST: u8 = 4;
 pub const BARE_TICKS: u64 = 25 * 60;
 pub const BARE_BLOW: f64 = 5.0;
 pub const BARE_RECHARGE: f64 = 3.0;
+/// What its health is times past the company's match, so the company sees its takings come round.
+pub const HEALTH_TIMES: f64 = 5.0;
 /// How near the Steward the Lodestone is grounded to lay it bare, metres.
 pub const BARE_REACH_M: f64 = 8.0;
 /// How often a wave comes, ticks.
@@ -72,7 +74,7 @@ impl Room {
                 breach.fights.steward = fight;
                 return;
             };
-            self.match_company(boss, self.company(), 1.0);
+            self.match_company(boss, self.company(), HEALTH_TIMES);
             fight.boss = Some(boss);
             (fight.woke_at, fight.next_taking) = (clock, clock + FIRST_TAKING);
             (fight.next_toll, fight.next_wave) = (clock + TOLL_EVERY, clock + 5 * 60);

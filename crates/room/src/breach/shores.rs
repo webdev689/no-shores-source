@@ -29,6 +29,8 @@ pub const WALK_EVERY: u64 = 7 * 60;
 pub const WAVE_EVERY: u64 = 20 * 60;
 /// The fusions into the Seam that close the hall: Normal, Hard.
 pub const FUSIONS_MOST: (u8, u8) = (4, 3);
+/// What the Warden's health is times past the company's match.
+pub const WARDEN_TIMES: f64 = 1.5;
 /// The rifts' sockets in the hall, and their shores, what was first.
 pub const RIFTS: [(&str, &str); 2] = [("rift-was", "mooring-was"), ("rift-is", "mooring-is")];
 
@@ -67,7 +69,7 @@ impl Room {
             fight.begun = true;
             if let Some((at, _)) = breach.plan.socket("hall", "warden") {
                 fight.warden = self.stand_breach_foe(breach, (BULWARK, Rank::Miniboss), at, Some("The Warden"));
-                fight.warden.iter().for_each(|id| self.match_company(*id, self.company(), 1.0));
+                fight.warden.iter().for_each(|id| self.match_company(*id, self.company(), WARDEN_TIMES));
             }
             (fight.next_wave, fight.next_walker) = (clock + 2 * 60, u64::MAX);
         }
