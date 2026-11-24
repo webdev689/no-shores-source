@@ -340,6 +340,7 @@ a decision is a record. How to add one: [[Recording a Decision]].
 - [[Activities Keep Checkpoints, and Patrol Zones Respawn the Player Near Where They Fell]]
 - [[A Player Logs Back In Where They Left the Overworld or a Social Space]]
 - [[Revives, Respawns and Relogs as Claude Shapes Them]]
+- [[A Foe's Plain Swing Takes Seven Eighths of Its Time]]
 - [[Patrols and Dungeons Hold Chests, and Their Containers May Be Searched]]
 - [[Chests and Searchable Containers as Claude Builds Them]]
 
