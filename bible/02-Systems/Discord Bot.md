@@ -38,6 +38,13 @@ code:
   - server/bot/migrations/20261124120000_core.sql
   - server/bot/migrations/20261124120100_messages.sql
   - server/bot/wrangler.jsonc
+  - server/bot/modules/moderation.ts#moderationModule
+  - server/bot/modules/moderationCases.ts#moderate
+  - server/bot/modules/logs.ts#logsModule
+  - server/bot/modules/automod.ts#syncRules
+  - server/bot/modules/automod.ts#breaks
+  - server/bot/modules/antiraid.ts#antiraidModule
+  - server/bot/migrations/20261124130000_safety.sql
 ---
 # Discord Bot
 
@@ -66,11 +73,32 @@ A module is one file in `modules/` exporting a `ServerModule`, named in `registr
 tables and acts, keep Discord in step when it is saved, fill placeholders of its own, and serve public routes. Its
 tables come with a migration named by its UTC time.
 
+## Moderation modules
+
+**Moderation** warns, times out, kicks, bans, unbans and notes, from a slash command, the panel or another module.
+Every act goes through one path (`moderate`): Discord's own permission of whoever asks, role order on the target, the
+bot's own permission before a member is told of a kick or a ban, then Discord, a numbered case in `mod_cases`, the
+member's direct message and the case log. A warning can set off the step its count names. The clock lifts temporary
+bans, and tries one the bot may not lift again an hour later. Purge, slow mode, lock and unlock act on the channel.
+
+**Logs** posts edits and deletions with the words the Gateway's cache kept, joins with the account's age, leaves with
+the roles held, role and nickname changes, voice moves, and channels, roles and bans made or deleted.
+
+**Auto-mod** keeps Discord's own AutoMod rules for blocked words, word lists, mentions and spam in step on each save,
+its own named `No Shores: ...`, and leaves rules made by hand alone. It checks each message from a member without
+Manage Messages for invites, links, capitals, emoji, floods and repeats, deletes one that breaks a filter, and warns or
+times out through moderation.
+
+**Raid guard** counts joins in the Gateway object's memory. Enough inside the window starts raid mode, kept in
+`raid_mode` so a restart does not end it: joiners are reported, timed out or kicked, and the verification level is
+raised and given back when the clock ends it. Very new accounts can be dealt with at any time.
+
 ## Limits
 
 - Not deployed: the Discord application's keys and the deploy wait on the owner ([[Open Questions]]). Every var in
   `wrangler.jsonc` may be empty, and the part that needs one says it is not set up.
-- No module has its code yet: their settings are declared and the panel can save them, but nothing acts on them.
+- Only the moderation modules have their code: the others' settings are declared and the panel can save them, but
+  nothing acts on them yet.
 - A message's placeholders are the member's and the server's; a game character waits on the accounts' link.
 - A Worker isolate trusts a module's settings for 30 seconds after reading them, and the Gateway until the panel
   saves.
