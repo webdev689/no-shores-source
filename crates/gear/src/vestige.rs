@@ -186,7 +186,7 @@ pub fn rolled(id: u32, kind: Kind, rarity: Rarity, bucket: Slot, level: u8, dice
     let content = catalogue();
     let legendary = rarity == Rarity::Legendary;
     let mut item = Item::new(id, kind, rarity, if legendary { NAMED_LEVEL } else { level }, bucket);
-    let looks = if kind.module() { content.names_of(kind, rarity).len() } else { look_rolls(rarity) };
+    let looks = if kind.module() { content.names_of(kind, rarity).len() } else { LOOK_ROLLS };
     item.name = u8::try_from(dice.pick(Purpose::Name, 0, looks)).unwrap_or_default();
     if legendary {
         item.resource = u8::try_from(dice.pick(Purpose::Name, 1, content.resources.len())).ok();
@@ -195,11 +195,10 @@ pub fn rolled(id: u32, kind: Kind, rarity: Rarity, bucket: Slot, level: u8, dice
     item
 }
 
-/// How many looks a rolled armour piece or weapon of a rarity rolls among: a Normal piece's one, for its plain dye;
-/// three past it, which a content's two or three sets and its dyes are counted off.
-fn look_rolls(rarity: Rarity) -> usize {
-    if rarity == Rarity::Normal { 1 } else { 3 }
-}
+/// How many looks a rolled armour piece or weapon rolls among: its remainders by 2, 3 and 4 climb its content's sets
+/// and metals and pick its dye, and its sixths its make, shield and Magic set (the page's `numberOf`), so each pairs
+/// with each, and a ware shows the look it keeps once bought.
+pub const LOOK_ROLLS: usize = 36;
 
 /// The traits an item's columns offer, each column's rolled from its kind's pool, never one trait twice; with a
 /// faction, the first node of its first perk column is drawn from that faction's own perks that fit it instead. A

@@ -624,13 +624,14 @@ to every other player. Every garment is armour ([[Clothing Is Armour, With a War
   and mithril, in orcish and mithril; an Abyss Dungeon adamantium and ebony, in adamantium and ebony; a Breach
   daedric, in daedric; a faction its guild set. No armour set is two contents'; a faction's weapons share a metal with
   another content's but wear their faction's colour.
-- **Magic** pieces are light armour or clothes by the item's own number (its id; a smith's ware's the one it takes
-  once bought, below): the head and arms its content's lightest sets (the world's leather or the thieves', another
+- **Magic** pieces are light armour or clothes by the sixths of their look roll (`numberOf`): the head and arms its content's lightest sets (the world's leather or the thieves', another
   content's first), the torso and legs clothes (a shirt with a tunic or vest over it, breeches, trousers or a skirt,
   and tall boots or shoes, in brighter dyes) or those sets.
-- **A smith's ware** is drawn by the number it takes once bought, which the gear message sends (`next_id`, the number
-  the next item the player gets takes), so the shop shows the piece the player gets: its set or clothes, its shield
-  and its make. A test buys each of the day's wares in turn and holds each to its look in the shop.
+- **A smith's ware**, and Shape's, is drawn by its look roll alone, rolled as it was made and kept once bought
+  (`vestige::LOOK_ROLLS`: 36, its remainders by 2, 3 and 4 climbing its sets and metals and picking its dye, its
+  sixths its make, shield and Magic set, so each pairs with each), so the shop shows the piece the player gets: its
+  set or clothes, its name, its shield and its make. A test buys each of the day's wares in turn and holds each to its
+  look in the shop.
 - **Rare and finer** pieces are armour sets of the forge. A rolled Rare piece of the world climbs its sets over levels 1
   to 20, chain to steel, and one more by its look roll where one is left (`rareSet`); a rolled Legendary climbs as a
   Rare does; another content's drops at its own
@@ -648,9 +649,8 @@ to every other player. Every garment is armour ([[Clothing Is Armour, With a War
 - **The hands** hold the loadout drawn in its look (`weaponLook`). A rolled Normal weapon is iron to level 10 and steel
   past it from any content, as Normal armour is clothes; a Magic or finer one is made in its content's metals: the
   world's climbing them over levels 1 to 20 and one more by its look roll where one is left, another content's chosen
-  by its look roll alone (`rolledMetal`). Its make is chosen by its own
-  number: a Sword & Shield's shield kite, round or tower, a Dagger & Shield's buckler, round or kite, a Mace & Shield's
-  round, kite or tower, a bow long or short. A Normal shield is plain or iron to level 10 by its number and its weapon's
+  by its look roll alone (`rolledMetal`). Its make is chosen by its look roll's sixths: a Sword & Shield's shield kite, round or tower, a Dagger & Shield's buckler, round or kite, a Mace & Shield's
+  round, kite or tower, a bow long or short. A Normal shield is plain or iron to level 10 by its look roll's sixths and its weapon's
   metal past it; a finer one its weapon's metal. A rolled pistolet, double pistolet or thunderlock is plain, gilded from Legendary up. A named
   weapon wears the metal (or a gun's `gilded` or `plain`) and make (a shield's kind, a bow's, `short` for a short sword)
   written on it; a faction's weapon its faction's metal and colour, its shield and bow their make by its name. A metal

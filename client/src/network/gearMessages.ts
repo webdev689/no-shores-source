@@ -371,8 +371,8 @@ export function gearOf(gear: Gear): GearState {
       return itemOf(item);
     });
   const items = listed(gear.itemsLength(), (index) => gear.items(index), 'gear item');
-  // Each ware carries the number it takes once bought, so it is drawn as the piece it becomes; it is asked for by its
-  // place (`vendorsOf`).
+  // Each ware carries the number it takes once bought; it is drawn by its look roll, which buying keeps, and asked for
+  // by its place (`vendorsOf`).
   const wares = listed(gear.waresLength(), (index) => gear.wares(index), 'ware').map((ware) => ({
     ...ware,
     id: gear.nextId(),

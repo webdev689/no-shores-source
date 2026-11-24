@@ -27,10 +27,11 @@ const layers = BODIES.male;
 let wardrobe = wardrobeOf('male', layers);
 
 const plain: Outfit = { armour: {}, garments: [], dyes: {}, right: null, left: null, drawn: true, hair: null };
-/** The rarities a piece is rolled at, Normal to Legendary, and how many looks each rolls among (`vestige::rolled`). */
-const LOOK_ROLLS = [1, 3, 3, 3] as const;
-/** A spread of item numbers, enough to turn every choice a number makes (up to three), and every level. */
-const NUMBERS = Array.from({ length: 6 }, (unused, place) => place + 1);
+/** The rarities a piece is rolled at, Normal to Legendary, and how many looks each rolls among
+ *  (`vestige::LOOK_ROLLS`): every choice of look is its roll's, none its number's. */
+const LOOK_ROLLS = [36, 36, 36, 36] as const;
+/** One item number: a piece's look never turns on it. */
+const NUMBERS = [1];
 const LEVELS = Array.from({ length: 20 }, (unused, place) => place + 1);
 
 /** The forge's weapon and armour layers: the weapons a hand holds, and each armour piece in any set. */

@@ -12,7 +12,7 @@ use crate::dice::Dice;
 use crate::grid::{Column, Cost};
 use crate::item::{Item, NONE_CHOSEN};
 use crate::kinds::Kind;
-use crate::vestige::named_item;
+use crate::vestige::made_named;
 use serde_json::{Map, Value};
 
 const MAIN: &str = "main_hand";
@@ -124,7 +124,9 @@ impl Shields {
                 continue;
             };
             give_back(character, &shield, |_, _| true);
-            let mut item = named_item(shield.id, def, def.kind.slot());
+            // Made as one is made for a player: a faction's weapon rolls its traits, its entry writing none.
+            let dice = Dice { seed: 0, tick: u64::from(shield.id), player: 0 };
+            let mut item = made_named(shield.id, def, def.kind.slot(), &dice);
             item.xp = shield.xp.min(item.xp_most());
             character.items.insert(item.id, (item, at));
         }
