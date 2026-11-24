@@ -192,8 +192,8 @@ each part works is in its system note.
 
 The decisions in [[Open Questions]] are not repeated here.
 
-- **The island view in rain, the Playlist over the island and the ships at a roadstead** (#191, a draft for the
-  owner's yes; branch `claude/island-overworld-issues-e7fobt`). The owner's three reports:
+- **The island view in rain, the Playlist over the island and the ships at a roadstead** (#191, merged on the owner's
+  "Deploy", which deploys the page and the rooms). The owner's three reports:
   - "When its cloudy and raining. The overworld pan over the island is shrouded and you can only see the nodes": the
     weather's fog was charged along the whole line of sight, kilometres from the island view. It now lies under the
     cloud deck's base: an eye under it (on foot, at the helm) is hazed as before; one risen to twice the base only
