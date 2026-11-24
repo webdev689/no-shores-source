@@ -20,25 +20,27 @@ def seal(module):
     behind them so nothing is seen through it; one part, its whole box, and nothing drawn past it either side."""
     pick = latticekit.picker(module.random.randrange(1 << 30))
     materials = latticekit.kinds()
-    # Every shard's root stands its own radius and a little more inside the part's sides, top and foot, and none is
-    # long enough to pass the far jamb, so the crystal is no wider than the doorway it shuts.
+    # Every shard's root stands its own radius and a little more inside the part's sides, top and foot, near its middle
+    # through, and none is long enough to pass the far jamb or lean out of its depth, so the crystal is no wider or
+    # deeper than the doorway it shuts.
     for side in (-1, 1):
         for row in range(9):
             for _ in range(2):
                 radius = pick.uniform(0.18, 0.3)
                 z = 0.5 + row * 0.85 + pick.uniform(-0.2, 0.2)
                 rise = pick.uniform(0.0 if row == 0 else -0.35, 0.0 if row == 8 else 0.35)
-                base = (side * (SEAL_HALF - radius - 0.05), pick.uniform(-0.25, 0.25), z)
-                latticekit.shard(module, materials, base, (-side, pick.uniform(-0.08, 0.08), rise),
+                base = (side * (SEAL_HALF - radius - 0.05), pick.uniform(-0.1, 0.1), z)
+                latticekit.shard(module, materials, base, (-side, pick.uniform(-0.03, 0.03), rise),
                                  pick.uniform(1.6, 2.9), radius, pick.uniform(0.0, math.pi), dim=0.8)
     for column in range(8):
         x = -2.45 + column * 0.7 + pick.uniform(-0.1, 0.1)
         for z, way in ((0.0, 1.0), (SEAL_HIGH, -1.0)):
             radius = pick.uniform(0.18, 0.28)
-            base = (x, pick.uniform(-0.25, 0.25), z + way * (radius + 0.05))
-            latticekit.shard(module, materials, base, (pick.uniform(-0.15, 0.15), pick.uniform(-0.08, 0.08), way),
+            base = (x, pick.uniform(-0.1, 0.1), z + way * (radius + 0.05))
+            latticekit.shard(module, materials, base, (pick.uniform(-0.15, 0.15), pick.uniform(-0.03, 0.03), way),
                              pick.uniform(1.0, 2.2), radius, pick.uniform(0.0, math.pi), dim=0.8)
-    latticekit.light(module, materials, (0.0, 0.0, 3.6), 0.8)
+    # Its heart's light, small enough to stay inside the part's depth.
+    latticekit.light(module, materials, (0.0, 0.0, 3.6), 0.45)
     module.part((-SEAL_HALF, -0.5, 0.0), (SEAL_HALF, 0.5, SEAL_HIGH))
     # A sheet of the dark crystal across the whole doorway behind the panes, so nothing shows between them.
     sheet = kit.block(module, (0.0, 0.0, 0.0), (SEAL_HALF * 2 - 0.1, 0.12, SEAL_HIGH - 0.05), 'crystal', bevel=0.0,
