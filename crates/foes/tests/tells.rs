@@ -182,9 +182,15 @@ fn corvane_holds_his_shield_up_then_summons_crossbowmen_behind_him_and_collector
     assert_eq!(room.crew_calls.iter().map(|call| call.2).collect::<Vec<_>>(), [crossbowmen]);
     assert_eq!(room.crew_calls[0].0, roars(&room, 10)[0] + 1, "as its roar begins");
     assert!((room.brain(10).might() - might).abs() < 1e-12, "no harder yet");
-    room.run(1800, &mut still(0.0));
-    let summons = room.orders(10);
-    assert!(summons.iter().any(|(_, order)| order.shape == Shape::Slam && order.iron), "iron slams: {summons:?}");
+    // His blow is a roll among his phase's shapes, so an iron slam comes as the dice give one: within 100 s.
+    let slammed = |room: &Room| room.orders(10).iter().any(|(_, order)| order.shape == Shape::Slam && order.iron);
+    for _ in 0..6000 {
+        if slammed(&room) {
+            break;
+        }
+        room.step(&mut still(0.0));
+    }
+    assert!(slammed(&room), "iron slams: {:?}", room.orders(10));
     room.set(10, |boss| boss.health = 0.3 * boss.health_max);
     room.run(240, &mut still(0.0));
     assert_eq!((roars(&room, 10).len(), room.brain(10).phase()), (2, 3), "the seizure, roared once");
