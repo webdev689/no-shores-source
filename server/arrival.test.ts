@@ -49,6 +49,9 @@ test('a node is landed at from the sea at its seas, its ship lying off the node�
   assert.equal(arrives('node-tidewall', 'sea', OFF_COAST, null), false, 'a node the index does not list');
   assert.equal(arrives('node-sunspire-social', 'sea--abyss', OFF_COAST, reach([], true)), true, 'one room each tier');
   assert.equal(arrives('node-sunspire-social', 'sea', FAR_OFF, reach([], true)), false);
+  const plot = 'node-gull-cove-outpost--guild-0a1b2c3d4e5f60718293a4b5c6d7e8f9';
+  for (const sea of ['sea--elite', 'sea--abyss'])
+    assert.equal(arrives(plot, sea, OFF_COAST, reach([], true)), true, sea);
   // The page's own measure off a coast, and every landfall it offers within the room's reach.
   for (const ship of [OFF_COAST, FAR_OFF, [1_050_000, 1_050_000], [900_000, 1_250_000]] as const)
     assert.equal(toCoast(ship, COAST), coastDistance(ship, COAST), String(ship));
@@ -138,6 +141,11 @@ test('a node’s reach reads from the bake’s index, and a ship’s place from 
     gatedFrom: ['gullwing-vale'],
   });
   assert.equal(reachOf(index, continents, 'overlook-social')?.social, true);
+  assert.equal(
+    reachOf([{ id: 'gull-cove', kind: 'outpost', continent: 'continent-1' }], continents, 'gull-cove')?.social,
+    true,
+    'an outpost site',
+  );
   assert.equal(reachOf(index, continents, 'nowhere'), null);
   assert.deepEqual(shipOf('{"xp":1,"ship_at":[5000,6000]}'), [5000, 6000]);
   for (const body of [null, '{"xp":1}', '{"ship_at":null}', '{"ship_at":["a",1]}', 'not a character'])

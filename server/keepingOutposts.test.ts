@@ -3,6 +3,7 @@ import { test } from 'node:test';
 import type { Claimed } from './accounts/characters.ts';
 import { ACCOUNTS_TROUBLE, ANOTHER_GUILD, GUILD_EVERY_MS, Keeper, SAVE_AFTER_CHANGE_MS } from './keeping.ts';
 import { roomOf } from './keepingForTests.ts';
+import { weekOf, weekStart } from '../client/src/game/guild/guildLaw.ts';
 
 const GUILD = '0a1b2c3d-4e5f-6071-8293-a4b5c6d7e8f9';
 const ROOM = 'node-oakfast-landing--guild-0a1b2c3d4e5f60718293a4b5c6d7e8f9';
@@ -107,8 +108,84 @@ test('one told they are no longer in the guild no longer admits their company', 
   delete guilds['ada'];
   await keeper.due(GUILD_EVERY_MS);
   await settle();
+  assert.deepEqual(sent, [[1, ANOTHER_GUILD]], 'Ada, out of the guild, is sent from its outpost');
+  assert.equal(room.tagged.get(1), '', 'and reads no tag');
   assert.equal(await joins(keeper, room, 2, 'ben'), false, 'Ada is no member now');
-  assert.deepEqual(sent, [[2, ANOTHER_GUILD]]);
+  assert.deepEqual(sent, [
+    [1, ANOTHER_GUILD],
+    [2, ANOTHER_GUILD],
+  ]);
+});
+
+test('one who leaves the guild stays at its outpost while their company has a member here', async () => {
+  const guilds: Record<string, string> = { ada: GUILD, ben: GUILD };
+  const room = roomOf();
+  const sent: [number, string | undefined][] = [];
+  const keeper = new Keeper(
+    accounts(guilds, { ben: ['ben', 'ada'], ada: ['ada', 'ben'] }),
+    room,
+    ROOM,
+    (player, why) => sent.push([player, why]),
+    () => Promise.resolve(),
+  );
+  keeper.forGuild('0a1b2c3d4e5f60718293a4b5c6d7e8f9');
+  assert.equal(await joins(keeper, room, 1, 'ada'), true);
+  assert.equal(await joins(keeper, room, 2, 'ben'), true);
+  await keeper.due(GUILD_EVERY_MS);
+  await settle();
+  delete guilds['ben'];
+  await keeper.due(2 * GUILD_EVERY_MS);
+  await settle();
+  assert.deepEqual(sent, [], 'in Ada’s company');
+  assert.equal(room.tagged.get(2), '', 'his tag gone all the same');
+});
+
+test('a member who changes guild reads the new guild’s tag, in any room', async () => {
+  const guilds: Record<string, string> = { ada: GUILD };
+  const kept = accounts(guilds, {});
+  const tags: Record<string, string> = { [GUILD]: 'SALT', other: 'BRINE' };
+  kept.look = (token: string) =>
+    Promise.resolve({ account: token, body: '{}', from: null, name: null, tag: tags[guilds[token] ?? ''] ?? null });
+  const room = roomOf();
+  const keeper = new Keeper(
+    kept,
+    room,
+    'node-tidewall',
+    () => undefined,
+    () => Promise.resolve(),
+  );
+  assert.equal(await joins(keeper, room, 1, 'ada'), true);
+  await keeper.due(GUILD_EVERY_MS);
+  await settle();
+  guilds['ada'] = 'other';
+  await keeper.due(2 * GUILD_EVERY_MS);
+  await settle();
+  assert.equal(room.tagged.get(1), 'BRINE');
+});
+
+test('every room is told each player’s guild again as the week turns', async () => {
+  const kept = accounts({ ada: GUILD }, {});
+  let asked = 0;
+  const guild = kept.guild;
+  kept.guild = (account: string) => {
+    asked += 1;
+    return guild(account);
+  };
+  const room = roomOf();
+  const keeper = new Keeper(
+    kept,
+    room,
+    'node-tidewall',
+    () => undefined,
+    () => Promise.resolve(),
+  );
+  assert.equal(await joins(keeper, room, 1, 'ada'), true);
+  const turn = weekStart(weekOf(10 ** 12) + 1);
+  await keeper.due(turn - 1_000);
+  await keeper.due(turn - 500);
+  assert.equal(asked, 1, 'once in 30 s');
+  await keeper.due(turn);
+  assert.equal(asked, 2, 'and at once as the week turns');
 });
 
 test('a save now saves the character as the room holds it, after the save under way, and says whether it held', async () => {
