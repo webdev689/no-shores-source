@@ -1,8 +1,8 @@
 // The Settings page, set out as other games set theirs out: tabs for Graphics (the resolution the world is drawn at),
 // Audio (the volumes, and the recorded sounds' credits behind a press of their own), Controls (every control, bound
-// anew there as in the sheet K opens) and Account (the account and the players blocked or muted), and beside them
-// Exit to Menu and Exit to Desktop, each held. Each setting is kept as before: the resolution and the volumes in this
-// browser, the binds with the account.
+// anew there as in the sheet K opens) and Account (the account and the players blocked or muted), down a rail with
+// Exit to Menu and Exit to Desktop at its foot, each held. The resolution and the volumes are kept in this browser,
+// the binds with the account.
 import type { Child, Node } from '../ui/node.ts';
 import { PAGE, type Page } from '../ui/page.ts';
 import { button, choice, slider } from '../ui/controls.ts';
@@ -64,6 +64,9 @@ export class Settings {
   private credits = false;
   /** What the page says above its tabs: why the window stayed open. */
   private said = '';
+  /** How many times a tab has been shown: a window that stayed open is told of only while the tab it was asked from
+   *  still shows. */
+  private shownTimes = 0;
   /** Whether the menu's body goes back to its top as the page is next drawn: a tab or the credits newly shown. */
   private toTop = false;
   private readonly account: () => AccountPanel | null;
@@ -78,6 +81,7 @@ export class Settings {
   /** Shows `tab`, the credits put away and a binding under way given up. */
   show(tab: SettingsTab): void {
     [this.tab, this.credits, this.said, this.toTop] = [tab, false, '', true];
+    this.shownTimes += 1;
     this.rebinding.cancel();
   }
 
@@ -155,9 +159,12 @@ export class Settings {
   private exits(context: PlainContext): Node[] {
     const toTitle = () => this.page.assign(titleAddress(this.page.address()));
     const toDesktop = () => {
+      const asked = this.shownTimes;
       this.page.close();
       // A browser's tab the player opened is theirs to close: still here, the page says so.
-      setTimeout(() => (this.said = 'Your browser keeps this tab open. Close it to leave the game.'), CLOSE_WAIT_MS);
+      setTimeout(() => {
+        if (this.shownTimes === asked) this.said = 'Your browser keeps this tab open. Close it to leave the game.';
+      }, CLOSE_WAIT_MS);
     };
     return [
       held(context, 'settings-exit-menu', 'Exit to Menu', toTitle),

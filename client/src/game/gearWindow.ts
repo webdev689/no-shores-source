@@ -191,6 +191,11 @@ export function startGearWindow(
     // Opened, or moved to a station: the tab, or the station's first press.
     focusNext = isTab(wanted) ? tabId(wanted) : null;
   };
+  /** The account's mark: Settings at its Account tab, from Settings too, where opening it again would shut it. */
+  const toAccount = () => {
+    settings.show('account');
+    if (view !== 'settings') open('settings');
+  };
   /** The page shown takes the step first when it has one of its own (a panel, a player's details, a keeper's choice);
    *  either way the hold under way is let go, so a step back never buys what was being held. */
   const stepOnce = () => {
@@ -421,13 +426,7 @@ export function startGearWindow(
         // On the Journal DFO's hourglass stands in the account mark's place.
         shown === 'journal'
           ? journal.hourglass(frame)
-          : accountMark(
-              frame,
-              account,
-              figure.picture,
-              () => (settings.show('account'), open('settings')),
-              sizes.ratio,
-            ),
+          : accountMark(frame, account, figure.picture, toAccount, sizes.ratio),
       ),
       // On a short screen an item's page takes the banner's height back for its nodes.
       (named !== null || bannerGear !== null) &&

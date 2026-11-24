@@ -28,7 +28,7 @@ import { rosterOf } from '../../rules/roster.ts';
 import { type Shot, shotOfOrbit } from '../camera.ts';
 import type { FootFight, FootFrame } from '../foot.ts';
 import { figuresEye } from '../footFigures.ts';
-import { footStrip, onFoot } from '../hints.ts';
+import { footStrip, onFoot, withoutLeave } from '../hints.ts';
 import { worldOutput } from '../uiSounds.ts';
 import type { GearHere } from '../gearScreen.ts';
 import { louder, STORY_FIGHT_GAIN } from './fightSound.ts';
@@ -566,11 +566,11 @@ export class WreckRun {
     // The room raises a fallen player at the last checkpoint by itself: there is no edge to stray past, nothing
     // to press, and the story says what happens.
     const dead = ownView?.action.kind === 'dead';
-    // The story is not left, so its keys leave the leave's out. Frozen with the pointer free, the click that takes it is
-    // asked for too, as the parry's key does nothing until then.
+    // The story is not left, so its keys leave the leave's out. Frozen with the pointer free, the click that takes it
+    // is asked for too, as the parry's key does nothing until then.
     const free = !controls.locked && !paused && !held;
-    const strip = footStrip(onFoot(walker, shown, fight, free));
-    const hints = { ...strip, hints: dead ? [] : strip.hints.filter(([key]) => key !== 'leave') };
+    const strip = withoutLeave(footStrip(onFoot(walker, shown, fight, free)));
+    const hints = dead ? { ...strip, hints: [] } : strip;
     return {
       shot,
       figures,

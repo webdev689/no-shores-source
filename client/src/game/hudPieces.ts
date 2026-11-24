@@ -1,7 +1,7 @@
-// The heads-up display's pieces as nodes, each set against the view where it stands: the place's name,
-// the warning and its count, death's words, the status line, the notices, the sea bar and the offers over it, and
-// Manage's panel (the key strip is `keyStrip.ts`). Each answers its node for a frame, or nothing while it does not show; presses
-// run what they are handed.
+// The heads-up display's pieces as nodes, each set against the view where it stands: the place's name, the warning
+// and its count, death's words, the status line, the notices, the sea bar and the offers over it, and Manage's panel
+// (the key strip is `keyStrip.ts`). Each answers its node for a frame, or nothing while it does not show; presses run
+// what they are handed.
 import { NOTICE_LOOK, type NoticeRow, slidIn } from '../plus/notices.ts';
 import { TONES } from '../plus/tones.ts';
 import type { Node } from '../ui/node.ts';

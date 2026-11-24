@@ -66,8 +66,8 @@ export function bindingColumns(ui: Interface, rebinding: Rebinding, size: number
   const count = Math.max(1, Math.floor((room + GAP * size) / ((COLUMN + GAP) * size)));
   const column = Math.min(COLUMN * size, room);
   const sheet: SheetNow = { ui, size, width: column, device: BINDS.device, waiting: rebinding.slot };
-  if (!rebinding.swallowed() && !sheet.waiting)
-    for (const slot of everySlot()) if (ui.clicked(slotId(slot))) rebinding.start(slot);
+  // While a slot waits, and while the click that bound one comes up, the interface hears no press (`busy`).
+  if (!sheet.waiting) for (const slot of everySlot()) if (ui.clicked(slotId(slot))) rebinding.start(slot);
   return columnsOf(CONTROL_GROUPS, count).map((groups) => ({
     direction: 'column',
     width: column,

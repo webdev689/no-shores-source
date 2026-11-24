@@ -80,8 +80,9 @@ export const CONTROLS = {
   lookUp: control(['insert'], ['RS up'], ['foot', 'helm']),
   lookDown: control(['delete'], ['RS down'], ['foot', 'helm']),
   perspective: control(['mouse3'], ['RS'], FOOT),
-  // Held, it takes the player back to their ship from wherever they stand on foot (`leaveHold.ts`).
-  leave: control(['m'], ['View hold'], FOOT),
+  // Held, it takes the player back to their ship from wherever they stand on foot (`leaveHold.ts`); fallen, it says
+  // why not, so the pad tells its View held from a tap there too.
+  leave: control(['m'], ['View hold'], ['foot', 'dead']),
   character: control(['i'], ['Start'], EVERYWHERE),
   inventory: control(['o'], [], EVERYWHERE),
   details: control(['x'], [], ['menu']),

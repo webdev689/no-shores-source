@@ -17,7 +17,7 @@ import {
   type StandOnDeck,
 } from './deckFight.ts';
 import type { FootContext, FootFrame } from './foot.ts';
-import type { Strip } from './hints.ts';
+import { type Strip, withoutLeave } from './hints.ts';
 import type { FootView } from './footView.ts';
 import type { Drawer } from './scene.ts';
 
@@ -147,20 +147,22 @@ export class Boarding {
     return view.frame(shown.fight.foot, shown.frame, seconds, { ...drawnOn, groundAt, onBoarded });
   }
 
-  /** What the display says on its deck: where the player is, the line under it, and the keys listed. */
+  /** What the display says on its deck: where the player is, the line under it, and the keys listed, the leave held
+   *  not among them, as at sea there is nothing to leave. */
   get words(): { readonly place: string; readonly line: string; readonly hints: Strip } | null {
     const shown = this.shown;
     if (!shown) return null;
     const { fight, captain, frame } = shown;
     const left = fight.holdLeft;
     const take = fight.take;
-    if (left === null) return { place: captain.name, line: 'Aboard: its crew stands to meet you', hints: frame.hints };
+    const hints = withoutLeave(frame.hints);
+    if (left === null) return { place: captain.name, line: 'Aboard: its crew stands to meet you', hints };
     // The take on one line under its name, as the place's line holds it; the minute left with the key that ends it.
     const line = take ? `Its hold: ${holdWords(take)}` : 'Its hold is open';
     return {
       place: 'Its deck is yours',
       line,
-      hints: { ...frame.hints, hints: [['use', `Back aboard your ship · ${left} s left`], ...frame.hints.hints] },
+      hints: { ...hints, hints: [['use', `Back aboard your ship · ${left} s left`], ...hints.hints] },
     };
   }
 

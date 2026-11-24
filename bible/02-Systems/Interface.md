@@ -628,7 +628,8 @@ The game draws every screen itself, and by the owner's word no HTML is laid over
   B. The leave's cap is ringed, traced round as far as it is held. Its words stand at the face's 11 px at every size
   to 1440p, a row 19 px tall, and doubled past it as the rest of the display is. The moment's names: on foot, On
   foot, Melee, Ranged, Aiming, Dusk Daggers, Ledge, Climbing, Riding, Fallen and Map (the land's held map); at sea,
-  Sailing, Manage, On deck, Sea fight, Guns laid, Chart (the helm's map) and Landing; on a boarded deck, the stance's.
+  Sailing, Manage, On deck, Sea fight, Guns laid, Chart (the helm's map) and Landing; on a boarded deck, the stance's,
+  its keys less the leave held.
   On foot: with the weapon put away, draw, run, jump, crouch and the leave held; a melee weapon drawn, the swing, the
   guard or parry, the dodge, the drink and the Ranged loadout; a ranged one, the aim, the fire, the dodge, the drink
   and the Melee loadout; aiming, the fire and letting go; Dusk Daggers aimed, only letting go of the first Tenet;
@@ -653,9 +654,11 @@ The game draws every screen itself, and by the owner's word no HTML is laid over
   "Leave" and the place, as holding E rings E, and the menu holds' rising sound plays; let go early, the ring drains
   over 0.3 s and nothing happens. Held through, it acts once until let go: the room is asked, as a return to the
   ship always is (`toShip.ts`; refused while fallen or within 10 s of a foe's blow, said in a toast), and on its yes
-  the veil comes up, "Returning to your ship". Fallen, the prompt says so while the key is held, and fills nothing.
-  It is not offered under a window, behind a veil, in the story or while the stranger speaks, and at sea there is
-  nothing to leave.
+  the veil comes up, "Returning to your ship", unless the player has gone elsewhere on foot while the room answered.
+  Fallen, the prompt says so while the key is held, on the keys and the pad alike, and fills nothing. On the pad the
+  hold counts from the 0.3 s that tells View held from a tap. It is not offered under a window, the sheet of every
+  control or the held map, behind a veil, in the story or while the stranger speaks, and at sea there is nothing to
+  leave, so a struck ship's deck lists no leave either.
 - **The sheet of every control** (`ControlsSheet`) opens with its key (K, or the pad's View) wherever the key strip
   shows, except over the menu's gear screen, and its key, Escape, the pad's B or its Close press shuts it. It is a
   window of the kit over a dimmed view, over every layer the game draws but the screen's keyboard: ALL CONTROLS on its
@@ -990,7 +993,8 @@ never while a press is held. Each press is an ask the room answers.
   its name in capitals at the names' size, the one shown a lit brass press edged with a brass bar, as the menu's own
   tabs are. Beside the rail the tab's panel scrolls on its own, so the rail stands still; a tab newly shown stands
   from its top, its words at the face's 11 px, and the one last shown is kept while the page is open. At the rail's
-  foot stand Exit to Menu and Exit to Desktop, each held, in the warn role: Exit to Menu loads the page at its title,
+  foot stand Exit to Menu and Exit to Desktop, each held, in the warn role; the account's mark shows Account, from
+  Settings too: Exit to Menu loads the page at its title,
   the tap to start, keeping the rooms asked for in its address (`titleAddress`); Exit to Desktop closes the window
   where the browser lets a page close its own (the desktop app's, [[Browser and Desktop From the Start]]), and where
   it does not (a browser's tab the player opened), Settings says to close the tab. Escape opens Settings wherever nothing else is over the game, on foot or at sea.

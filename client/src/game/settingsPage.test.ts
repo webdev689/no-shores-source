@@ -112,6 +112,12 @@ test('Exit to Menu and Exit to Desktop act only once held; the menu is the title
   page.settings.show('audio');
   page.frame();
   assert.ok(!page.shows().includes('Your browser keeps'), 'said once, until another tab is shown');
+  // Asked, then another tab shown (or the menu shut) before the page could have closed: nothing stale is said.
+  hold(page, 'settings-exit-desktop', 2);
+  page.settings.show('graphics');
+  await new Promise((wait) => setTimeout(wait, 600));
+  page.frame();
+  assert.ok(!page.shows().includes('Your browser keeps'), 'not said over a tab shown since');
 });
 
 test('the title’s address keeps the rooms asked for and drops what goes past the title', () => {

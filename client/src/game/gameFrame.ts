@@ -199,7 +199,7 @@ export function startFrames(parts: FrameParts, playing: Playing): void {
     if (parts.heed(here)) return true;
     const { flow, helmMap } = playing;
     const paused = flow.mode !== 'foot' || gearScreenOpen() || socialUp();
-    // Others see three dots over a player in a menu, not over one still behind the loading veil.
+    // Others see three dots over a player in a menu.
     here.fight.menuOpen = gearScreenOpen() || socialUp();
     const aspect = size.width / Math.max(1, size.height);
     // The land's held map is raised from the player's own eyes, and the view goes back as it was once it is lowered.
@@ -312,10 +312,11 @@ export function startFrames(parts: FrameParts, playing: Playing): void {
     // N raises the map on foot unless a menu is up, the player has fallen or is in a dungeon, as `openMap` has it.
     const mapless = paused || here.fallen || here.dungeon;
     hud.strip(looking ? stripOf('landMap') : mapless ? shown.hints : withMapKey(shown.hints));
-    // The leave held through takes the player to their ship: not under a window, nor while she speaks; fallen, it says
-    // why not.
+    // The leave held through takes the player to their ship: not under a window, the sheet or the held map, nor while
+    // she speaks; fallen, it says why not.
     const fallen = here.fallen ? refusedWords(FALLEN) : null;
-    if (hud.leaving.frame(controls.held('leave'), !paused && !told, fallen, seconds)) parts.leave();
+    const leaving = !paused && !told && !looking && !hud.controls.open;
+    if (hud.leaving.frame(controls.held('leave'), leaving, fallen, seconds)) parts.leave();
     // The quest's mark gives way to the map, as the fight's display does.
     hud.marks(looking ? [] : quests.marks(shown.shot, viewport, [body.x, body.y], parts.groundAt, here.node.id));
     // The tracker is set once a frame, so a public event's steps stand in it unblinking, in the quest's place.

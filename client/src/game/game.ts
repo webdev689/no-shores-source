@@ -362,8 +362,12 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement): Promise<vo
     return null;
   };
 
-  /** The leave held through: back to the ship on the room's yes, or told why not. */
-  const leave = () => returnToShip(playing.foot, () => travel({ kind: 'return-to-ship' }, goSea), tell);
+  /** The leave held through: back to the ship on the room's yes, or told why not; a yes that comes once the player is
+   *  on foot elsewhere (through a gate while the room answered) takes them nowhere. */
+  const leave = () => {
+    const from = playing.foot;
+    returnToShip(from, () => void (playing.foot === from && travel({ kind: 'return-to-ship' }, goSea)), tell);
+  };
 
   /** Moves the flow on for something that needs no veil. */
   const change = (happening: Happening) => void (playing.flow = next(playing.flow, happening));

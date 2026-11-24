@@ -71,13 +71,6 @@ export class Rebinding {
     this.swallowing = false;
   }
 
-  /** Whether this frame's clicks go unheard; asked once a frame. */
-  swallowed(): boolean {
-    const swallowed = this.swallowNext;
-    this.swallowNext = false;
-    return swallowed;
-  }
-
   /** One frame `seconds` on, the pad's buttons `padDown` down: a pad's slot takes its press once it is told. */
   frame(seconds: number, padDown: ReadonlySet<string>): void {
     this.padDown = padDown;

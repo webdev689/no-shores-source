@@ -1,7 +1,7 @@
 // The page's own services that a screen drawn by the game asks for and cannot draw: opening a link in a new tab, the
-// page's address, loaded again or left for another, its window closed, its touches held, its clipboard, a file saved or opened from the
-// player's chooser (through a link or a file input borrowed for a moment and never shown), a yes or no asked in the
-// browser's dialog, a sign-in kept in the browser's own password store, and the words written into the page when
+// page's address, loaded again or left for another, its window closed, its touches held, its clipboard, a file saved
+// or opened from the player's chooser (through a link or a file input borrowed for a moment and never shown), a yes or
+// no asked in the browser's dialog, a sign-in kept in the browser's own password store, and the words written into the page when
 // nothing can be drawn. None builds interface. Only here, canvasEvents.ts, pictures.ts, announce.ts, main.ts and the
 // page's side of the game's worker (thread/pageHost.ts, thread/audioHost.ts) touch the page, so the interface itself
 // runs anywhere.

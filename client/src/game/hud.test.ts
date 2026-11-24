@@ -330,15 +330,32 @@ test('the leave’s cap in the strip is ringed as far as it is held', () => {
   const [ui, hud] = [new Interface(renderer()), new Hud()];
   hud.veil(null);
   hud.strip(footStrip({ ...REST, worn: 0 }));
-  const quads = () => {
-    const laid = frame(ui, hud);
-    const rendered = renderer();
-    for (const each of laid) each.node.draw?.(rendered, each.box, 1, each.box, 1);
-    return rendered.quads;
+  /** How many device pixels of the strip are drawn in the ring's lit brass, `#f3cf86`. */
+  const lit = () => {
+    const laid = frame(ui, hud).filter((each) => each.node.id === 'hud:hints' || each.parent);
+    let area = 0;
+    const counting = {
+      ...renderer(),
+      quads: {
+        add: (box: Box, colour: readonly number[]) => {
+          const [red = 0, green = 0, blue = 0] = colour.map((channel) => Math.round(channel * 255));
+          if (red === 0xf3 && green === 0xcf && blue === 0x86) area += box.width * box.height;
+        },
+      },
+    } as unknown as UiRenderer;
+    const strip = laid.find((each) => each.node.id === 'hud:hints');
+    const inStrip = (each: Laid): boolean => each === strip || (!!each.parent && inStrip(each.parent));
+    for (const each of laid.filter(inStrip)) each.node.draw?.(counting, each.box, 1, each.box, 1);
+    return area;
   };
-  const before = quads().count;
-  hud.leaving.frame(true, true, null, 0.75);
-  assert.ok(quads().count > before, 'the ring lit as far as held');
+  const brass = (share: number) => {
+    hud.leaving.frame(false, false, null, 1);
+    if (share > 0) hud.leaving.frame(true, true, null, share * 1.5);
+    return lit();
+  };
+  // Not held, only the head's diamond is lit brass; the ring is faint all round.
+  const [none, part, more] = [brass(0), brass(0.25), brass(0.75)];
+  assert.ok(part > none && more > part, `traced as far as held: ${[none, part, more].join(' < ')}`);
 });
 
 test('the sheet of every control is offered only while the key strip shows', () => {

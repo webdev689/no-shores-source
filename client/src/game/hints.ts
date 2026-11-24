@@ -269,6 +269,12 @@ export function keysShown(standing: Standing, foot: OnFoot): Strip {
   return standing.told ? stripOf('dead') : { title: '', hints: [] };
 }
 
+/** `strip` without the leave held, where there is nothing to leave: the story, a struck ship's deck at sea. */
+export const withoutLeave = (strip: Strip): Strip => ({
+  ...strip,
+  hints: strip.hints.filter(([names]) => names !== 'leave'),
+});
+
 /** The strip on foot where the held map can be raised (not in the story, nor on a ship's deck, nor down): the map's
  *  before the leave's, or before the strip's last where the leave's is not shown. */
 export function withMapKey(strip: Strip): Strip {

@@ -331,6 +331,18 @@ test('the Escape that opened Settings, heard by the menu a frame later, does not
   assert.equal(ui.boxOf('gear-screen'), null, 'a later Escape closes it');
 });
 
+test("the account's mark opens Settings at Account, and from Settings shows Account there, never shutting it", () => {
+  const { ui, click, open } = menu();
+  open('character');
+  click('account-mark');
+  assert.ok(ui.boxOf('settings-account') && !ui.boxOf('resolution'), 'Settings at Account, not Graphics');
+  click('settings-graphics');
+  assert.ok(ui.boxOf('resolution'));
+  click('account-mark');
+  assert.ok(ui.boxOf('gear-screen'), 'Settings stays open');
+  assert.equal(ui.boxOf('resolution'), null, 'at Account again');
+});
+
 test('Escape steps back from the sound credits to Audio before it closes the menu', () => {
   const { ui, click, key, open } = menu();
   open('settings');
