@@ -351,13 +351,16 @@ The decisions in [[Open Questions]] are not repeated here.
     [[First Person]]); a rolled piece's look roll (`vestige::LOOK_ROLLS`, 36) choosing its set, metal, dye, make and
     shield, so a ware is bought as shown.
   - The set names stand: the owner's yes to merge settled them ([[The Set Names Stand as Claude Drafted Them]]).
-  - The forge run, for the owner's named yes (a write to R2 with the Cloudflare key): forge.yml by hand on the branch
-    or on `main`, `figures` =
-    `|sword_elven,sword_elven_l,dagger_ebony,dagger_ebony_l,sheath_dagger_ebony,sheath_dagger_ebony_l` and
-    `firstperson` = `sword|Elven;dagger|Ebony`, then its log's manifest line into `content/forge/renders.json`. Until
-    then every blade draws as before; the large weapon pictures re-render by themselves on the merge.
+  - Asked to wait before the merge, the owner added three calls: flavour text for every weapon and armour piece
+    ([[Weapons and Armour Carry Flavour Text]]: `content/gear/words.json`, a line for each set and kind); commons drop
+    as themselves, never as Vestiges ([[Commons Drop as Themselves, Never as Vestiges]]); and a Breach's Hard weapons
+    named "(Forged)" ([[Breach Weapons Come Normal and Forged]]), for the Breach's own PR (#182, stacked on #169) to
+    build with its `Item.hard`. The owner relays that one: this session may not message another.
+  - The faction blades' art is published (forge run 18: figure strips and first person's frames, after a first run
+    failed on a missing scikit-image pin) and `content/forge/renders.json` points at it.
   - Unchecked: whether the new first-person blades pair with the published hands (same size and `oFFs`); every look
-    of a kept piece moves once with the wider look roll; played live.
+    of a kept piece moves once with the wider look roll; played live. Here the full check stops at four R2 ship tests
+    this container cannot fetch, before the repo checks: run `cargo xtask repo` beside it.
 - **Open pull requests**, for the owner's yes once their checks pass: #162 (the game's words out to Type and back; it
   conflicts with `main` in `Decisions.md`) and #159 (the rooms' worker tests wait for what they check; it conflicts
   with `main` in `roomThread.test.ts`). Drafts:
