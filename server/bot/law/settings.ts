@@ -41,11 +41,15 @@ export interface ChannelField extends FieldBase {
 }
 /**
  * What the bot does with the role a role setting holds. `give` hands it to members, so whoever saves it must be able
- * to give it in Discord; `name` only matches, exempts or lets in the members who hold it, so it need only be the
- * server's; `mention` pings it, held to Discord's rule for mentions.
+ * to give it in Discord; `open` opens a channel the bot makes to it, which in Discord needs Manage Roles; `name` only
+ * matches, exempts or lets into the panel the members who hold it, so it need only be the server's; `mention` pings
+ * it, held to Discord's rule for mentions.
  */
-export type RoleUse = 'give' | 'name' | 'mention';
-/** `usedWhen` names the settings beside it that must hold these values for the bot to use the role at all. */
+export type RoleUse = 'give' | 'open' | 'name' | 'mention';
+/**
+ * `usedWhen` names the settings beside it that must hold these values for the bot to put the role to its use; until
+ * they do, the role is only named.
+ */
 export interface RoleField extends FieldBase {
   readonly type: 'role';
   readonly use: RoleUse;
@@ -321,17 +325,14 @@ function spotsOf(
 
 /**
  * Every role a config puts to `use` (or to any use), as `path=roleId`, with where it is named (`spotsOf`). A role
- * whose `usedWhen` the settings beside it do not meet is not used, so turning those settings on uses it anew.
+ * whose `usedWhen` the settings beside it do not meet is only named, so turning those settings on uses it anew.
  */
 export const roleSpots = (schema: Schema, value: unknown, use?: RoleUse): string[] =>
-  spotsOf(schema, value, (field, held, beside) =>
-    field.type === 'role' &&
-    held &&
-    (!use || field.use === use) &&
-    Object.entries(field.usedWhen ?? {}).every(([key, wanted]) => beside[key] === wanted)
-      ? String(held)
-      : null,
-  );
+  spotsOf(schema, value, (field, held, beside) => {
+    if (field.type !== 'role' || !held) return null;
+    const met = Object.entries(field.usedWhen ?? {}).every(([key, wanted]) => beside[key] === wanted);
+    return !use || (met ? field.use : 'name') === use ? String(held) : null;
+  });
 
 /** Every setting that mentions everyone, with where it stands (`spotsOf`). */
 export const everyoneSpots = (schema: Schema, value: unknown): string[] =>

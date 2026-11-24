@@ -17,7 +17,7 @@ const roles = (label: string): ListField => ({
   label,
   max: 10,
   default: [],
-  of: { type: 'role', use: 'name', label: 'Role', default: '' },
+  of: { type: 'role', use: 'open', label: 'Role', default: '' },
 });
 const DURATION: TextField = {
   type: 'text',

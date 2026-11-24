@@ -11,6 +11,7 @@ import {
   basePermissions,
   levelOf,
   mentionRefusal,
+  openRefusal,
   roleNameRefusal,
   roleRefusal,
 } from './law/access.ts';
@@ -33,6 +34,7 @@ import {
   readAudit,
   readConfig,
   readSnapshot,
+  roleOf,
   writeConfig,
 } from './store.ts';
 
@@ -212,11 +214,10 @@ async function overview(context: PanelContext, snapshot: Snapshot, level: Level)
 
 /**
  * A role the save puts to a use where the settings did not before is held to Discord's own rule for that use (its
- * setting says which): one the bot gives, to the rule for giving it, so the panel never lets anyone hand out a role
- * they could not hand out in Discord, nor move one the owner only named (no experience, say) into a setting that gives
- * it out (a reward, a welcome); one it mentions, to the rule for mentions; one it only names, to being the server's.
- * A mention of everyone set here is the saver's own, as in Discord: it needs Mention Everyone. Answers the refusal, or
- * null.
+ * setting says which), so the panel never lets anyone hand out a role they could not hand out in Discord, nor move one
+ * the owner only named (no experience, say) into a setting that gives it out (a reward, a welcome). Whether a role
+ * lets anyone mention it is asked of Discord, as a snapshot may not say. A mention of everyone set here is the saver's
+ * own, as in Discord: it needs Mention Everyone. Answers the refusal, or null.
  */
 async function refusedRoles(
   context: PanelContext,
@@ -232,17 +233,20 @@ async function refusedRoles(
     const fresh = roleSpots(shape.schema, after, use).filter((spot) => !held.has(spot));
     return [...new Set(fresh.map((spot) => spot.slice(spot.lastIndexOf('=') + 1)))];
   };
-  const [given, named, mentioned] = [added('give'), added('name'), added('mention')];
+  const [given, opened, named, mentioned] = [added('give'), added('open'), added('name'), added('mention')];
   const loud = new Set(before ? everyoneSpots(shape.schema, before) : []);
   const louder = everyoneSpots(shape.schema, after).some((spot) => !loud.has(spot));
   const owner = level === 'owner';
-  if (!given.length && !named.length && !mentioned.length && (!louder || owner)) return null;
+  if (![...given, ...opened, ...named, ...mentioned].length && (!louder || owner)) return null;
   const roles = await memberRoles(context, snapshot.guildId, user.id);
   const member = { user_id: user.id, roles: Array.isArray(roles) ? roles : [] };
   const server = serverOf(snapshot);
+  const asked = mentioned.length && !owner ? await context.rest.get(`/guilds/${snapshot.guildId}/roles`) : null;
+  const current = asked?.ok && Array.isArray(asked.json) ? { ...server, roles: asked.json.map(roleOf) } : server;
   const refused =
     roleRefusal(server, member, given, { owner }) ??
-    mentionRefusal(server, member, mentioned, { owner }) ??
+    openRefusal(server, member, opened, { owner }) ??
+    mentionRefusal(current, member, mentioned, { owner }) ??
     roleNameRefusal(server, named);
   if (refused)
     return json({ error: 'role', role: refused.role, message: ROLE_REFUSALS[refused.why] }, 403, context.cors);

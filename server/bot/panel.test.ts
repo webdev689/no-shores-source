@@ -14,6 +14,7 @@ import {
   type StoodWorker,
   bodyOf,
   freshDatabase,
+  guildCreate,
   guildWithRanks,
   panelRequest,
   signInPanel,
@@ -301,8 +302,11 @@ test("panel: a role a setting only names need only be the server's, even an app'
   const grants = { ...CORE, panelGrants: [...CORE.panelGrants, { role: BOT_ROLE, level: 'viewer' }] };
   assert.equal((await save(bot, owner, 'core', grants, 1)).status, 200);
   const tickets = await configOf(bot, owner, 'tickets');
-  assert.equal((await save(bot, mod, 'tickets', { ...tickets, staffRoles: [BOT_ROLE] }, 0)).status, 200);
-  const everyone = await save(bot, mod, 'tickets', { ...tickets, staffRoles: [GUILD] }, 1);
+  assert.equal((await save(bot, owner, 'tickets', { ...tickets, staffRoles: [BOT_ROLE] }, 0)).status, 200);
+  // a ticket's channel opened to a role changes who sees it, which Discord leaves to Manage Roles
+  const staff = await save(bot, mod, 'tickets', { ...tickets, staffRoles: [BOT_ROLE, MOD_ROLE] }, 1);
+  assert.deepEqual([staff.status, (await bodyOf(staff)).role], [403, MOD_ROLE]);
+  const everyone = await save(bot, owner, 'tickets', { ...tickets, staffRoles: [GUILD] }, 1);
   assert.match(String((await bodyOf(everyone)).message), /everyone role/, 'a ticket open to everyone is not');
   const base = await configOf(bot, owner, 'announce');
   const item = { name: 'rules', channels: [], message: { content: 'Read the rules.', embeds: [] } };
@@ -313,6 +317,8 @@ test("panel: a role a setting only names need only be the server's, even an app'
   const said = await bodyOf(closed);
   assert.deepEqual([closed.status, said.role], [403, ADMIN_ROLE]);
   assert.match(String(said.message), /Mention Everyone/);
+  const nowhere = await announce(mod, 'none', '900000000000000777', 1);
+  assert.deepEqual([nowhere.status, (await bodyOf(nowhere)).role], [403, '900000000000000777'], 'unmentioned: named');
   assert.equal((await announce(owner, 'none', ADMIN_ROLE, 1)).status, 200);
   const turned = await announce(mod, 'role', ADMIN_ROLE, 2);
   assert.deepEqual([turned.status, (await bodyOf(turned)).role], [403, ADMIN_ROLE], 'a kept role mentioned anew');
@@ -320,6 +326,24 @@ test("panel: a role a setting only names need only be the server's, even an app'
   const feed = (role: string) => ({ ...socials, feeds: [{ kind: 'rss', source: 'https://x.example/feed', role }] });
   assert.equal((await save(bot, mod, 'socials', feed(open), 0)).status, 200);
   assert.equal((await save(bot, mod, 'socials', feed(ADMIN_ROLE), 1)).status, 403, "a feed's mention too");
+});
+
+test('panel: whether a role lets anyone mention it is asked of Discord, so a snapshot that does not say still lets it', async () => {
+  const open = '900000000000000024';
+  const pings = { id: open, name: 'Pings', color: 0, position: 1, permissions: '0', managed: false, mentionable: true };
+  const roles = [...(guildWithRanks().roles as object[]), pings];
+  const bot = await standWorker({ routes: { [`GET /api/v10/guilds/${GUILD}/roles`]: () => [200, roles] } });
+  await bot.dispatcher.dispatch('GUILD_CREATE', guildCreate({ roles }));
+  // a snapshot written before roles were kept with whether they may be mentioned
+  const unsaid = JSON.stringify(roles.map((role) => ({ ...role, mentionable: undefined })));
+  bot.database.raw.prepare('UPDATE guild_snapshot SET roles = ? WHERE guild_id = ?').run(unsaid, GUILD);
+  const owner = await signInPanel(bot, OWNER);
+  const mod = await signInPanel(bot, MOD);
+  await save(bot, owner, 'core', CORE, 0);
+  const base = await configOf(bot, owner, 'announce');
+  const item = { name: 'rules', channels: [], message: { content: 'Read the rules.', embeds: [] }, ping: 'role' };
+  const saved = await save(bot, mod, 'announce', { ...base, messages: [{ ...item, role: open }] }, 0);
+  assert.equal(saved.status, 200);
 });
 
 test('panel: a save against any revision but the one there is answered stale before its roles are weighed', async () => {

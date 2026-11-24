@@ -156,6 +156,24 @@ export function roleNameRefusal(server: ServerOfAccess, roleIds: readonly string
 }
 
 /**
+ * Discord's rule for opening a channel to a role, held for every role a setting makes the bot open its channels to:
+ * the role is one a setting may name, and the person holds Manage Roles, which Discord asks for to change who sees a
+ * channel. The server's owner, and the bot's owners (`owner`), are held only to the first.
+ */
+export function openRefusal(
+  server: ServerOfAccess,
+  member: MemberOfAccess,
+  roleIds: readonly string[],
+  { owner = false }: { readonly owner?: boolean } = {},
+): RoleRefusal | null {
+  const named = roleNameRefusal(server, roleIds);
+  const first = roleIds[0];
+  if (named || owner || first === undefined || hasAll(basePermissions(server, member), PERMISSION.MANAGE_ROLES))
+    return named;
+  return { role: first, why: 'permission' };
+}
+
+/**
  * Discord's rule for mentioning a role, held for every role a setting makes the bot mention: the role is one a setting
  * may name, and it lets anyone mention it or the person holds Mention Everyone. The server's owner, and the bot's
  * owners (`owner`), are held only to the first.
