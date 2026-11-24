@@ -17,6 +17,7 @@ use crate::sighting::{
 use naval::captain::course::heading_to;
 use naval::captain::wary_takes;
 use naval::captain::{ENGAGE_RANGE, Temper, temper_for};
+use naval::class::class_of;
 use naval::fight::SPAWN_TRIES;
 use naval::random::Mulberry32;
 use naval::ranks::Commission;
@@ -170,7 +171,7 @@ fn come_for(hostile: &Hostile, ships: &[Voyager], (seconds, clock): (f64, f64)) 
     let nearest = || ships.iter().filter(open).min_by(|one, other| apart(at, one.at).total_cmp(&apart(at, other.at)));
     let Some(ship) = kept.or_else(nearest) else { return (hostile.heading, None) };
     // Its lead is reckoned in seconds of its clock: the player's own, or real time in shared waters.
-    let way = if ship.pace > 0 { SHIP_SPEED_M_S * ship.clock / clock } else { 0.0 };
+    let way = if ship.pace > 0 { SHIP_SPEED_M_S * class_of(ship.hull_kind).way * ship.clock / clock } else { 0.0 };
     let velocity = [libm::sin(ship.heading) * way, -libm::cos(ship.heading) * way];
     let want = intercept_heading(at, way_of(hostile.commission.rank), ship.at, velocity);
     (turned_toward(hostile.heading, want, HELM_TURN_RAD_S * seconds * clock), Some(ship.player))
@@ -227,7 +228,9 @@ impl Hostiles {
             let hostile = self.sailing[index];
             let at = [hostile.x, hostile.y];
             let closest = ships.iter().min_by(|one, other| apart(at, one.at).total_cmp(&apart(at, other.at)));
-            let sight = closest.map_or(hostile.sight_m, |ship| sight_for(f64::from(ship.pace)).max(hostile.sight_m));
+            let sight = closest.map_or(hostile.sight_m, |ship| {
+                sight_for(f64::from(ship.pace), class_of(ship.hull_kind).way).max(hostile.sight_m)
+            });
             let clock = clock_at(&hostile, ships);
             let (heading, quarry) = come_for(&hostile, ships, (seconds, clock));
             let step = way_of(hostile.commission.rank) * seconds * clock;
@@ -309,7 +312,7 @@ impl Hostiles {
             level => self.difficulty.raise(level),
         };
         let seed = self.draws.seed();
-        let sight_m = sight_for(f64::from(ship.pace));
+        let sight_m = sight_for(f64::from(ship.pace), class_of(ship.hull_kind).way);
         let bold = matches!(temper_for(commission, seed), Temper::Bold);
         // A bold ship comes where it can meet a voyage that holds its course; at the helm's slow paces, near and slow
         // under 5 km of sight, it comes anywhere ahead as a wary one does.

@@ -89,6 +89,17 @@ test('the shipyard offers every hull: the one sailed, the Sloop given, one to bu
     ['given', 'shipless', 'shipless', 'shipless'],
     'before the welcome hands over the Sloop',
   );
+  const pledged = hullOffers(gear({}, { fleet: [], pledge: 2 }));
+  assert.deepEqual(
+    [pledged[0]?.state, pledged[0]?.ask],
+    ['take', { kind: 81, column: 0 }],
+    'pledged before the welcome',
+  );
+  const taking = drawn(gear({}, { fleet: [], pledge: 2 }), (context) =>
+    harbourPage(context, BUILDS, ['shipyard', null], () => undefined),
+  );
+  taking.click('hull-0');
+  assert.deepEqual(taking.asked, [{ kind: 81, column: 0 }], 'taken with a click: it costs nothing');
 });
 
 test("a hull's numbers stand against the most any hull has, a reload against the quickest", () => {

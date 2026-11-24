@@ -437,12 +437,13 @@ they press it or an ally revives them ([[Revives]], "On the page"); a respawn st
 `Sea` is the [[Overworld]] in play. The first return puts the ship off Overlook's harbour: out from the city's middle
 through its harbour to water 4 m deep, then 600 m on. Later returns find it where it was left.
 
-- **The ship** is the owner's Sloop ([[Sailing]]), in its parts' pictures, flying Overlook's blue at its masthead.
+- **The ship** is the hull the player sails, in its parts' pictures and the dress they laid on it ([[Shipyard]]), the
+  Sloop as built until the room says otherwise.
   Like the World Editor's, it rides the swell the sea draws and heels into its turns ([[Sailing]], "Drawn at sea").
   Its sails are set while it is under way and furled at rest, filled by the weather's wind ([[World Map]], [[Weather]]).
   The Overworld is not to scale: the Sloop is drawn 75 m long (four times its length), so one reads from the raised
   view, and every hull the same four times its own, so a Frigate reads larger than a Sloop. Every other player's ship
-  is the Sloop too. A captain's ship is drawn as the hull the wire carries for it, in its side's colours, and as the
+  is drawn in its own hull and dress, as the sea's snapshot says. A captain's ship is drawn as the hull the wire carries for it, in its side's colours, and as the
   Sloop until the wire carries one ([[Sailing]], "Its look"); in a fight and in a fleet room too, each read through
   `hullOfCaptain` (at sea and in a fleet its `hull`, in a fight's view its `hull_kind`). Every hull's model and its
   shell tags are made ready behind the sea's veil (`SeaHull.warm`), so the first of each seen holds no frame. At the
@@ -503,9 +504,9 @@ through its harbour to water 4 m deep, then 600 m on. Later returns find it wher
   plans the way there again from wherever the ship lies, after going ashore and coming back too. A destination in
   other waters asks whether to travel there, and yes sails the ship away to them in a cinematic: the flow stays at
   sea throughout, its keys held until the ship has arrived ([[Sailing]], "Travel by the held map").
-- **Manage** pans the view down over 1.4 s to the Sloop at its true size, from its starboard quarter 39 m off,
+- **Manage** pans the view down over 1.4 s to the ship at its true size, from its starboard quarter 39 m off,
   looking 0.5 radians down at its middle; a drag turns the view round it, the wheel brings it from 18 m to 78 m. The player
-  stands at its wheel, three stand-in hands go about its deck, and a panel of the [[Interface]] shows it: its hull
+  stands at its wheel, its stand-in hands go about its deck, and a panel of the [[Interface]] shows it: its hull
   and canvas whole (the naval rules' build, read through the room's own module), its guns a side and their loads,
   its length, beam and draught, and its men where it has a crew; and its heading, pace and voyage. B, or the panel's
   Back to the sea, pans back up.

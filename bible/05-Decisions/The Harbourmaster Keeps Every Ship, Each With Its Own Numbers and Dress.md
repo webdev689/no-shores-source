@@ -22,5 +22,5 @@ status: in force
   its strength" ([[Hulls]], [[Naval Combat]]).
 - **Ships can be customised**, each option at a cost.
 - **Claude decides what the owner has not**, on its autonomy, and records each call in
-  [[The Ships at the Harbourmaster as Claude Shapes Them]].
+  [[The Ships at the Harbourmaster as Claude Shapes Them]]; how it works is in [[Shipyard]].
 - **The bar is very high**: extremely detailed, and not done until it is 100%.

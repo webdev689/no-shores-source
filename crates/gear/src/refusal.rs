@@ -1,5 +1,5 @@
-//! Why an ask is refused. A refusal's place in the list is its number on the wire, which the page reads in its own list
-//! (`gear.ts` `REFUSALS`), so a new one goes last.
+//! Why an ask is refused, each by its number: the room answers a refusal as its number plus one (`answer_code`), which
+//! the page reads in its own list (`gear.ts` `REFUSALS`), so a refusal's number never moves and a new one goes last.
 
 /// Why an ask was refused.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]

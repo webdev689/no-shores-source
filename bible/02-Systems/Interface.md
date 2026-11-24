@@ -885,7 +885,7 @@ never while a press is held. Each press is an ask the room answers.
   the focus leaving a press held by Enter or Space, or leaving the window, lets go.
 - **Acquired.** What the player gains shows at the right of the screen, in play and over the menu alike, as Destiny
   shows a pickup: a row each, its picture in a well of its rarity, its name and how many; every dye or barding
-  newly kept among them, and a horse as any item. Rows slide in, stay four
+  newly kept among them, a horse as any item, and a ship or a ship's dress newly kept ([[Shipyard]]). Rows slide in, stay four
   and a half seconds and fade; a gain like one still shown adds to its row; six stand at most. Each batch chimes
   once, for its rarest gain. Over the menu the rows stand low, above its footer and under a hover card. A room's first
   word on the gear is not a gain, nor what changes in the ten seconds after it, while the player's own character is
@@ -1198,7 +1198,7 @@ the card are the vitals' thin bars (`combat/barDraw.ts#thinBarNode`) with the ki
 lost strip and falling pieces), and the ship's bar is built of the Arts' bar's own rings and keycaps
 (`combat/ringSlot.ts`).
 
-- **The Sloop's plate**, at the top left, is the vitals' long thin bars, as on foot
+- **The ship's plate**, at the top left, is the vitals' long thin bars, as on foot
   ([[The Sea Fight's Ship Plate Wears the Vitals' Thin Bars]]; `thinBarNode`, the one build both wear): Hull over Sails over Crew (hull red as health and at its height, sails bone, crew green as stamina, both at
   stamina's height), each as long as the vitals' health is laid for the view, stepping and doubling with the display,
   with no words inside; a reader hears each by its name and percentage. The hull's frame flashes blood at a quarter or
@@ -1359,8 +1359,9 @@ serves each ask only at its own counter ([[Gear]], "In the rooms"; [[Factions]])
   keep. They stand under the foes' plates, 1.9 m over the feet.
 - **At sea**
   ([[Other Ships Wear Their Players' Marks, the Sea Map Has No Fog, and New Players Ride a Bay That Bursts]]):
-  out of a fight, each other player's ship wears the same plate, the room's ([[Server]], "Plates"), as far
-  over its masthead as drawn as a captain's plate stands in a fight (`plateOverM`, `seaPlated`), laid by the same
+  out of a fight, each other player's ship wears the same plate, the room's ([[Server]], "Plates"), with the ship's
+  name on a line under the player's once they named it ([[Shipyard]]), as far over the masthead of the hull they sail
+  as drawn as a captain's plate stands in a fight (`plateOverM`, `seaPlated`), laid by the same
   law: shrinking with distance to the size its name still reads at, laid so none covers another, out to 8 km across
   the water (`SEA_PLATE_RANGE_M`), and only before the eye. No line is tried, so a ship behind an island still wears
   its mark. The player's own ship wears none; in a fight the captains' plates stand alone, and at the helm,

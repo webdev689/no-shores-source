@@ -119,6 +119,7 @@ test("a hull sails its course at its class's way, as the room sails it: a Schoon
   passage.straightOn();
   passage.advance(1);
   assert.ok(Math.abs(passage.ship.y - (place(0, 0)[1] - 12 * 1.15)) < 1e-6, `13.8 m: ${passage.ship.y}`);
+  assert.ok(Math.abs(passage.speed - 12 * 1.15) < 1e-9, 'the speed its time left and its chase reckon by');
 });
 
 test("the room's word sets it right: at rest where it has it, or laid there when it drifts off its course", () => {

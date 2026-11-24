@@ -535,7 +535,8 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement): Promise<vo
   const storyMode = () => playing.flow.mode === 'story';
   const gearHere = () =>
     playing.flow.mode === 'foot' ? (playing.foot?.gear ?? null) : storyMode() ? (story?.gear ?? null) : null;
-  const fed = () => (playing.flow.mode === 'sea' ? (playing.sea?.gear ?? null) : gearHere());
+  // Read each frame by the menu's feed, so the ship sailed hears every gear the rooms send.
+  const fed = () => sailed.heard(playing.flow.mode === 'sea' ? (playing.sea?.gear ?? null) : gearHere());
   /** A gate shut sends the player back to their ship; one who keeps none yet, to Overlook, where the Harbourmaster is. */
   const shutOut = (why: string) => {
     const home = sailed.shipless() ? playing.landmass.nodes.find((node) => node.id === FIRST_NODE) : undefined;

@@ -71,6 +71,16 @@ pub const CLASSES: [Class; 4] = [
     },
 ];
 
+/// The most way any class makes against the Sloop's at the same pace: the Schooner's.
+pub const FASTEST: f64 = {
+    let (mut most, mut at) = (0.0, 0);
+    while at < CLASSES.len() {
+        most = CLASSES[at].way.max(most);
+        at += 1;
+    }
+    most
+};
+
 /// A hull's class.
 #[must_use]
 pub fn class_of(hull: HullKind) -> &'static Class {

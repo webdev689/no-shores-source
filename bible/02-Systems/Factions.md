@@ -52,7 +52,8 @@ keeps a counter in Overlook's plaza ([[Cities]]), and a lore book its road gives
   they hold the Abyss boon ([[Activities]]). A rank is every 100,000 reputation, without end, so a player nears rank 2
   as they reach level 20 (190,000 XP), as Destiny 1's ranks fell
   ([[The Balance and Economy Pass as Claude Shapes It]]).
-- **What a rank earns.** Rank 1 keeps the faction's emblem and rank 2 its dye, as a level keeps its emblem
+- **What a rank earns.** Rank 1 keeps the faction's emblem and rank 2 its dye and its ship's canvas and flag
+  ([[Shipyard]]), as a level keeps its emblem
   (`earn_due`). From rank 3, every rank leaves a package: collected at the counter, it gives a Vestige at the player's
   level for a slot of the dice's (Rare, or Legendary one time in two from level 18) and 2,500 Aurem, and is refused
   while ten Vestiges are carried.

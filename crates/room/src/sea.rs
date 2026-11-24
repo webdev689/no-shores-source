@@ -369,7 +369,7 @@ impl Sea {
                 .collect();
             // Judged along every leg its pace would take it through this tick, so no turn of its course slips by.
             let reach = f64::from(ship.pace) * SHIP_SPEED_M_S * class.way.max(1.0) * TICK_SECONDS;
-            let held = |way: f64| held_pace(ship.pace, [ship.x, ship.y], way, hostiles.iter().copied());
+            let held = |way: f64| held_pace(ship.pace, [ship.x, ship.y], (way, class.way), hostiles.iter().copied());
             sailing.ship.rate = if self.fights.fighting(*player) {
                 0
             } else {

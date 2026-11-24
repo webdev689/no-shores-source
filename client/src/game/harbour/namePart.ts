@@ -75,7 +75,7 @@ export function namePart(context: MenuContext, draft: NameDraft, choose: (hull: 
   if (price === 0) {
     if (!same && ui.clicked(id)) context.ask(asked);
     press = pressNode(id, `Name it ${spelled(draft)}`, 'primary', '', size, {
-      ...(same && { state: 'disabled' as const }),
+      ...(same && { disabled: true }),
     });
   } else {
     const charged = same || short ? 0 : holds.press(ui, id, () => context.ask(asked));
@@ -83,7 +83,7 @@ export function namePart(context: MenuContext, draft: NameDraft, choose: (hull: 
       id,
       press: true,
       role: 'primary',
-      ...((same || short) && { state: 'disabled' as const }),
+      ...((same || short) && { disabled: true }),
       label: `Hold to name it ${spelled(draft)} for ${price.toLocaleString('en')} Aurem`,
       padding: [9, 16],
       children: [

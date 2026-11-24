@@ -159,9 +159,9 @@ sea's soundscape ([[Ambience]]).
   where it struck (holed within 1.1 m of the water under it, 40% more; the hull above; the canvas), 85 to 115% by its
   own roll. A captain's men stand 1.6 blows each, a player's crew 3.2.
 - **A ship** has hull, canvas and men. A captain strikes at their rank's share of their hull (a Major's quarter) or with no
-  men left. Any ship, the player's Sloop too, goes down over 20 s at none (`Sinking`, then gone), listing and trimming
+  men left. Any ship, the player's too, goes down over 20 s at none (`Sinking`, then gone), listing and trimming
   by its seed (a player's by none) and settling slowly, then fast; going down, its guns are silent and its helm takes
-  no orders. The rest of the volley that made a captain strike cannot sink their ship. A player's Sloop never strikes. Fires
+  no orders. The rest of the volley that made a captain strike cannot sink their ship. A player's ship never strikes. Fires
   (three at most) burn hull, canvas and men for 15 s, each as strong against its ship as the ball that set it: 1.4
   hull a second times the shooter's level strength (a captain's) and what both ships' fittings made of the ball
   (`apply_burning`), so a fire keeps its worth as levels rise; a ball that does its target no harm, its ship four
@@ -408,7 +408,7 @@ At sea ([[Server]], "The sea"), each a rule the owner chose
   keeps them while it lasts; a player joining it fights in its weather, a fight among captains a player came on keeps
   its own, and what floats drifts down the wind of the fight it came from.
 - **Many in a fight** (`battle.rs`). Any player not fighting and not in Overlook's home waters who comes within 750 m of a ship of a fight joins it, a
-  fight with players in it too, their Sloop hove to under a number of their own; every player in it fights every
+  fight with players in it too, their ship hove to under a number of their own; every player in it fights every
   captain, and players never harm one another (a ball passes through a ship of its own flag). A hostile ship at sea
   within 750 m of a fight joins it on its own side, under sail where it lay: it fights players and captains of other
   factions. Each player sees the fight from their own ship: their view numbers it as the player's and the fight's first
@@ -639,7 +639,7 @@ the Grey Tithe's ships alone ([[Pirates Are Replaced by the Grey Tithe]]).
   pace is capped so the player takes 0.6 s of real time or more to reach its sight (750 m), closing at their ship's 12
   m/s and the fastest rank's 2.88, down DFO's ladder by fives, never under ×5. The player's way is judged along every leg of their course they would
   sail through that tick at their own pace, so no turn of a course slips past it. Within 700 m of a hostile ship that
-  would engage this player (bold, chased by them, one `wary_takes` would fall on their Sloop, or one in a clash, which a
+  would engage this player (bold, chased by them, one `wary_takes` would fall on their ship, or one in a clash, which a
   player in sight joins), it is held to ×1, the world's own time (`threat.rs`, `holds`); a wary ship
   that will not engage caps the pace by the ladder alone. A ship in Overlook's home waters is neither held nor slowed
   by any hostile ship, as none meets it there. The room sails
@@ -659,18 +659,18 @@ the Grey Tithe's ships alone ([[Pirates Are Replaced by the Grey Tithe]]).
   which hold no hostile ship. A fight with no ship a player keeps at sea leaves the sea, as a ship does. Two Tithe
   ships never meet.
 - **Joining.** A player not fighting, and not in Overlook's home waters, who comes within 750 m of any ship of such a fight, or of a fight with players in
-  it, joins it: their Sloop heaves to there and is put into it with the hurts it keeps, beside the friendly ship, and
+  it, joins it: their ship heaves to there and is put into it with the hurts it keeps, beside the friendly ship, and
   its captains choose whom to fight by their own law, the one each fights reckoned nearer ("How a fight ends"). It is
   won once every Tithe ship is beaten: each pays as a Tithe ship beaten, nothing is paid or lost for the friendly ship
   (`SeaFight::friends`), and one sunk lays nothing that floats. Afloat as the fight ends, it sails on for its port.
 - **The meeting.** A bold ship within 750 m of a player who is not fighting, and not in Overlook's home waters, meets
-  them: it leaves the sea and the fight begins with it where it lay, under sail, and the player's Sloop hove to
+  them: it leaves the sea and the fight begins with it where it lay, under sail, and the player's ship hove to
   (`Fight::meet`). The room steps it each tick by the players' orders on the fight of many ships, so the Sloop's stem
   may ram the captain's, on waters made from the coasts (open sea, the swell on it, dry land on them), until every
   captain has sunk or gone; its last view is shown once, in the next snapshot however many ticks the room caught up before it (`Fights::sent`),
   and the players sail on from where it left them, keeping their
   hurts.
-- **In the game** the view pans down over 1.5 s from the raised sea to their Sloop, every ship easing on the way from
+- **In the game** the view pans down over 1.5 s from the raised sea to their ship, every ship easing on the way from
   the size the sea draws it to its true size as on the sea's other views near the Sloop ([[Game]], "At sea"); the fight is
   the World Editor's (its look and lay, effects and panel), its controls A and D, W and S, the right button to aim and
   let go to fire, a left click to hold fire, the wheel for the load while aiming and the camera's zoom otherwise, C to

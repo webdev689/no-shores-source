@@ -85,6 +85,7 @@ impl Character {
             character.fit_first_modules();
         }
         character.allegiance = std::mem::take(&mut character.allegiance).kept();
+        character.dress_kept();
         character.quests = std::mem::take(&mut character.quests).kept();
         character.materials.shapes = character.materials.shapes.min(STOCK_MOST);
         let mut seen = std::collections::BTreeSet::new();

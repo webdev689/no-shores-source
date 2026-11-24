@@ -92,6 +92,7 @@ fn others_see_a_ship_in_its_hull_its_dress_its_name_and_its_players_emblem() {
     let mut character = sailing(HullKind::Brig);
     let brig = character.fleet.ships.iter_mut().find(|ship| ship.hull == HullKind::Brig.number()).expect("kept");
     brig.dress.canvas = "red_ochre".to_owned();
+    character.fleet.dress.push("red_ochre".to_owned());
     brig.name = [String::new(), "Gull".to_owned()];
     character.emblems.push("veiled".to_owned());
     character.emblem = "veiled".to_owned();

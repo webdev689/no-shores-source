@@ -127,7 +127,8 @@ are in [[Crew]].
 
 - The gear message carries the ship's part (`GearShip`): its experience, level, Prestige, Attack and Defense and how
   far to its next level, its materials, its hands and its whole complement, its officers and the officers offered at
-  the muster, and its trim. Its modules are the gear message's items of kinds 24 to 27, worn in slots 7 to 10.
+  the muster, its trim, and the fleet: each ship kept with its name and dress, the hull sailed and every dress kept
+  ([[Shipyard]]). Its modules are the gear message's items of kinds 24 to 27, worn in slots 7 to 10.
 - Infusion is ask 17 (the kept module in `item`, the fed one in `count`).
 
 ## In the fleet room

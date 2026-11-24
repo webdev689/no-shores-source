@@ -192,23 +192,21 @@ each part works is in its system note.
 
 The decisions in [[Open Questions]] are not repeated here.
 
-- **The ships at the Harbourmaster**, on branch `ccr-227e6a07-cigm8y`, for the owner's yes to merge, on the owner's
-  "integrating all our current models into the harbormaster", "shouldnt have a ship until they reach the harbor master",
-  "their own standard defined statistics" and "customization options with a cost"
+- **The ships at the Harbourmaster**, #201 on branch `ccr-227e6a07-cigm8y` (main merged in), for the owner's yes to
+  merge, on the owner's "integrating all our current models into the harbormaster", "shouldnt have a ship until they
+  reach the harbor master", "their own standard defined statistics" and "customization options with a cost"
   ([[The Harbourmaster Keeps Every Ship, Each With Its Own Numbers and Dress]], every call of Claude's in
   [[The Ships at the Harbourmaster as Claude Shapes Them]], the system in [[Shipyard]]). A character keeps a fleet: the
-  Sloop handed over by the welcome's Harbourmaster (a task of its own), the Schooner, Brig and Frigate bought from ship
-  levels 7, 13 and 20; each hull with its class's numbers (how long it lasts, broadside, reload, way, swing, boarders),
-  answering its helm as the Sloop does; 43 dresses (paint, stripe, canvas, flag) bought once and laid free; names from
-  two word lists, free once then 250 Aurem; every ship seen by others in its hull, dress, name and flag. A read-only
-  review found seven faults after the first commit, each fixed with a test (a free name sent twice paid 250, the
-  page's voyage ignored the class's way, refusals without words, a return to the ship before the claim, a shipless
-  player shut out to the sea, a module worn twice, the settled swing); measuring then found the Frigate's lower gun
-  deck falling short, so a player's guns are each elevated from their own deck, still square. Tested offline: the full
-  check (its commit in the pull request), the counter pictured headless (`harbourShots.ts`), a dressed Brig pictured
-  at sea, and 12 fights a row by hull ([[Shipyard]], "Measured"). Not yet played by hand or in a deployed room. Open
-  for the owner: the prices, levels and class numbers, the word lists, a figurehead once one is modelled, and whether
-  a captain's guns are elevated gun by gun too ([[Shipyard]], "Limits").
+  Sloop handed over by the welcome's Harbourmaster (a task of its own; at the counter to one who pledged before it),
+  the Schooner, Brig and Frigate bought from ship levels 7, 13 and 20; each hull with its class's numbers (how long it
+  lasts, broadside, reload, way, swing, boarders), answering its helm as the Sloop does, each gun elevated from its
+  own deck; 33 dresses sold, besides each part's start and the houses' six at rank 2, bought once and laid free;
+  names from two word lists, free once then 250 Aurem; every ship seen by others in its hull, dress, name and flag.
+  Asks 81 to 85, refusals answered 167 to 173. Tested offline: the full check on the branch's head as pushed, the
+  counter pictured headless (`harbourShots.ts`), a dressed Brig pictured at sea, and 12 fights a row by hull
+  ([[Shipyard]], "Measured"). Not yet played by hand or in a deployed room. Open for the owner: the prices, levels and
+  class numbers, the word lists, a figurehead once one is modelled, whether a captain's guns are elevated gun by gun
+  too, and whether a shipless player may join a companion where only the sea leads ([[Shipyard]], "Limits").
 - **The island view in rain, the Playlist over the island and the ships at a roadstead** (#191, merged on the owner's
   "Deploy", which deploys the page and the rooms). The owner's three reports:
   - "When its cloudy and raining. The overworld pan over the island is shrouded and you can only see the nodes": the

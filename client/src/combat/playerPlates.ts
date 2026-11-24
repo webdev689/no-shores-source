@@ -159,9 +159,9 @@ export class PlayerPlates {
       x,
       y,
       depth,
-      // The words are drawn whole at any distance: only the square shrinks. A ship's name is a line under the rest.
+      // The words are drawn whole at any distance: only the square shrinks. A ship's name is a second line.
       width: (SIDE + 6) * scale + Math.max(plateWords(player.plate).length, player.vessel?.length ?? 0) * LETTER_PX,
-      height: SIDE * scale + (player.vessel ? LINE_PX : 0),
+      height: player.vessel ? Math.max(SIDE * scale, 2 * LINE_PX) : SIDE * scale,
     }));
     const laid = this.layout.lay(spots, motionReduced() ? Infinity : seconds);
     this.drawn = shown.map(({ player, x, y, scale }) => {

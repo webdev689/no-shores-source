@@ -94,8 +94,9 @@ Done for the Schooner, the Brig and the Frigate:
 - **Its numbers**: `SCHOONER`, `BRIG` and `FRIGATE` beside `SLOOP`, from their exports, each with DFO's gain for the
   matching rig and its sails; `HullKind` names each by its manifest key. Its arms (`arms_of`): each side's mouths
   fore to aft, its hull's box and each sail's.
-- **Square sails** in the rules: a square-rigged hull sails, tacks and turns as the Sloop does. Its way is the Sloop's
-  times its rank's, and its gain shapes its handling (how its way comes and goes, and its steerage).
+- **Square sails** in the rules: a square-rigged hull sails, tacks and turns as the Sloop does. A captain's way is
+  the Sloop's times its rank's, and its hull's gain shapes its handling (how its way comes and goes, and its
+  steerage); a player's is the Sloop's times its hull's class, at the Sloop's gain ([[Shipyard]]).
 - **A ship's hull, everywhere** in the rules: every ship in a fight carries its hull and sails, fights, is struck and
   rams as it; a captain's rank picks it (`Rank::hull`) and names the ship (the Tithe Brig, the Tithe Frigate; a friendly ship keeps the traffic's hull, the Merchant Brig); the
   snapshots, a fight's view and the doors carry it.
@@ -105,7 +106,6 @@ Done for the Schooner, the Brig and the Frigate:
   long it lasts, its broadside's weight and reload, its way and swing (answering its helm as the Sloop does), and its
   boarders ([[Shipyard]],
   [[The Harbourmaster Keeps Every Ship, Each With Its Own Numbers and Dress]]).
-
 - **Drawing them**: every ship is drawn as its own hull in its side's colours, its square sails bellied and their
   yards braced round ([[Sailing]], "Square sails"); a hull with no model yet is drawn as the Sloop.
 - **Its drawn size**: every hull grows by one law as the view comes in, never under its true size ([[Game]], "Its

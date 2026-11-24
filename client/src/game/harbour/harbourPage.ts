@@ -51,7 +51,7 @@ export function harbourPage(
     children: [
       {
         padding: [0, 18],
-        children: [shelvesNode(context, HARBOUR_PARTS, part, (next) => choose(next, chosen), 'harbour')],
+        children: [shelvesNode(context, HARBOUR_PARTS, part, (next) => choose(next, hull), 'harbour')],
       },
       body,
     ],

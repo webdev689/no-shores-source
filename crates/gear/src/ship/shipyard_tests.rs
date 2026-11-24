@@ -251,3 +251,53 @@ fn one_past_the_harbourmasters_task_with_no_ship_is_handed_the_sloop_as_read() {
     assert_eq!(read.sailed_hull(), Some(SLOOP));
     assert!(read.fitted(Slot::Guns).is_some());
 }
+
+#[test]
+fn one_who_pledged_before_the_harbourmasters_task_takes_the_sloop_at_the_counter_and_no_one_else_does() {
+    let mut character = Character::starting();
+    assert_eq!(ask(&mut character, ShipAsk::Buy { hull: SLOOP }), Err(Refusal::NotSold), "the welcome hands it over");
+    assert!(character.ask(Ask::Pledge { faction: 1 }, AT_COUNTER, &DICE).is_ok(), "a house pledged early");
+    assert!(!character.has_ship(), "the opening's task is off their road, and no ship came with the pledge");
+    assert!(ask(&mut character, ShipAsk::Buy { hull: SLOOP }).is_ok());
+    assert_eq!(character.sailed_hull(), Some(SLOOP));
+    assert_eq!(character.all_fitted().count(), 4, "fitted as the welcome's Sloop is");
+    assert_eq!(ask(&mut character, ShipAsk::Buy { hull: SLOOP }), Err(Refusal::NotSold), "never a second");
+}
+
+#[test]
+fn a_save_whose_fleet_cannot_be_read_is_still_read_and_its_quests_say_whether_the_sloop_is_due() {
+    let fresh = Character::starting();
+    let mut past = Character::starting();
+    let opening = crate::quests::quests().quests.iter().position(|quest| quest.faction == 0).expect("the opening");
+    let ship = crate::quests::quests().quests[opening].tasks.iter().position(|task| task.reward.ship).expect("a task");
+    past.quests.set_task(opening, ship + 1);
+    for broken in [
+        serde_json::json!(null),
+        serde_json::json!({ "ships": [{ "named": true }] }),
+        serde_json::json!({ "sailed": 300 }),
+    ] {
+        for (character, due) in [(&fresh, false), (&past, true)] {
+            let mut kept: serde_json::Value = serde_json::from_str(&character.to_json()).expect("json");
+            kept["fleet"] = broken.clone();
+            let read = Character::from_json(&kept.to_string()).expect("read whatever its fleet");
+            assert_eq!(read.has_ship(), due, "{broken}: the Sloop only past the Harbourmaster's task");
+            let written: serde_json::Value = serde_json::from_str(&read.to_json()).expect("json");
+            assert_eq!(written["fleet"]["unread"], broken, "what could not be read is written back as it was");
+        }
+    }
+}
+
+#[test]
+fn a_dress_laid_but_not_kept_or_on_another_part_is_read_as_the_parts_start() {
+    let mut character = captain(1);
+    let sloop = character.fleet.kept_mut(SLOOP).expect("the Sloop");
+    sloop.dress.paint = "lacquer_crimson".to_owned();
+    sloop.dress.flag = "harbour_blue".to_owned();
+    sloop.dress.stripe = "gold_leaf".to_owned();
+    character.fleet.dress.push("gold_leaf".to_owned());
+    let read = Character::from_json(&character.to_json()).expect("read");
+    let dress = &read.fleet.kept(SLOOP).expect("the Sloop").dress;
+    assert_eq!(dress.on(Part::Paint), built(Part::Paint), "a paint never bought");
+    assert_eq!(dress.on(Part::Flag), built(Part::Flag), "a paint laid as a flag");
+    assert_eq!(dress.on(Part::Stripe), "gold_leaf", "a stripe bought stays");
+}

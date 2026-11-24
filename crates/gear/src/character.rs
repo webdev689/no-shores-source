@@ -196,7 +196,7 @@ pub struct Character {
     #[serde(default)]
     pub ship_fitted: bool,
     /// The ships kept and the one sailed (`ship::fleet`); a save from before fleets keeps the Sloop.
-    #[serde(default = "crate::ship::fleet::Fleet::kept_before")]
+    #[serde(default = "crate::ship::fleet::Fleet::kept_before", deserialize_with = "crate::ship::fleet::lenient")]
     pub fleet: crate::ship::fleet::Fleet,
     /// Its named officers (`crew.rs`).
     #[serde(default)]

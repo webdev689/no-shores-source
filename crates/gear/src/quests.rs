@@ -387,6 +387,13 @@ impl Character {
         }
     }
 
+    /// Whether the task that hands over the first ship is off the player's road: in a quest they no longer walk, as a
+    /// pledge to a house before the Harbourmaster leaves the opening behind.
+    pub(crate) fn ship_task_left(&self) -> bool {
+        let giving = quests().quests.iter().position(|def| def.tasks.iter().any(|task| task.reward.ship));
+        giving.is_some_and(|quest| self.quest_walked() != Some(quest))
+    }
+
     /// Speaks with a keeper at their counter, by the number ask 64 sends, when a goal of the task the player is on
     /// asks it.
     pub(crate) fn speak(&mut self, keeper: u8, here: Here) -> Result<Option<Done>, Refusal> {

@@ -33,8 +33,12 @@ every call of Claude's in [[The Ships at the Harbourmaster as Claude Shapes Them
 - **A new player keeps none.** The welcome's Harbourmaster hands over the Sloop: the opening's task "Take your ship
   from the Harbourmaster" comes after the round of the counters, its reward `"ship": true` ([[Quests]]). The Sloop
   comes fitted with a plain module in each slot that wears none (one bought before it keeps its slot). One who walked
-  past that task with no ship is handed it as their character is read; a save from before fleets keeps and sails the
-  Sloop, as every player sailed it then.
+  past that task with no ship is handed it as their character is read; one who pledged to a house before it, which
+  leaves the opening off their road, takes it at the Harbourmaster's counter, free (`ship_task_left`); a save from
+  before fleets keeps and sails the Sloop.
+- **A save is read whole.** A fleet the room cannot read keeps no ship, holding what was kept so it is written back as
+  it was, and the character's quests say whether the Sloop is due; a dress laid that the player does not keep, or on a
+  part it is not for, is the part's start entry again (`dress_kept`).
 - **No ship, no sea.** The land room answers a return to the ship with 103 ("Wait a moment before you try that
   again.") until the accounts have said whose character it holds, and with 108 for a player who keeps none, and the
   page says "You have no ship yet. The Harbourmaster in Overlook's market has one for you." The sea's gate shuts to a
@@ -63,10 +67,14 @@ exposure and how long it lasts. As the rules build them (`hull_builds_json`, whi
   reloads at its class's pace, times its trim's and its hands'; its helm pulls and swings at its class's way and swing
   (`sail_hurt`); a captain sizing it up reckons its class (`Power::player_in`). Every player's hull answers its helm
   as the Sloop does (the Sloop's gain), and its canvas drives it as the Sloop's, so its class alone sets its way and
-  swing apart: held at the same way, it swings its class's share of the Sloop's swing. Its deck is its own hull's,
-  walked off the helm and steered from.
-- **At sea**: a voyage sails at its pace times the canvas it keeps and its class's way, and the page eases its ship
-  along the same way.
+  swing apart: held at the same way, it swings its class's share of the Sloop's swing, and from rest it gathers way
+  as the Sloop does. Its ram strikes by its hull points as any ship's does (a share of the lesser hull), so a
+  Frigate's ram, and a big ship's on it, weighs most. Its deck is its own hull's, walked off the helm and steered
+  from.
+- **At sea**: a voyage sails at its pace times the canvas it keeps and its class's way; the page eases its ship along
+  the same way, and reckons its time to go and where a chase meets its quarry by it (`Passage::way`). A hostile leads
+  it and sights it by its class's way, and a voyage is eased by its own closing on a hostile; the hold a hostile keeps
+  round itself is reckoned for the fastest hull, so the warning holds whatever is sailed (`threat::hold_reach_m`).
 - **A captain's ship keeps its rank's numbers** ([[Naval Combat]], "Ranks and factions"), and the World Editor's fleet
   room, which holds no characters, and the story's fight still sail the Sloop.
 
@@ -90,9 +98,11 @@ waters, standing off at 300 m or closing to 150 m (`measure_fights_by_hull`, run
 | Frigate, Elite | 12 / 0 of 12, 234 s, 93% | 10 / 2 of 12, 280 s, 55% |
 | Frigate, Miniboss | 12 / 0 of 12, 256 s, 82% | 4 / 8 of 12, 238 s, 32% |
 
-Standing off, every hull wins every fight. Closing in, the Schooner fights as the Sloop does, its edge its speed; the
-Brig and the Frigate take ten Elites in twelve to the Sloop's four; the Frigate keeps the most of its hull and takes
-the most Minibosses. Twelve fights a row leave a row's wins within two or so of chance.
+Hull kept is the mean over the fights a ship came out of afloat, so a row with one win reads that one fight. Standing
+off, every hull wins every fight. Closing in, the Schooner fights as the Sloop does, its edge its speed; the Brig and
+the Frigate take ten Elites in twelve to the Sloop's four; the Frigate keeps the most of its hull against Majors and
+Elites and takes the most Minibosses. Twelve fights a row leave a row's wins within two or so of chance. The measure's
+plain player lays for the water's range, never a look on a ship.
 
 ## The Harbourmaster's counter
 
@@ -138,9 +148,13 @@ Dresses and the name's words cross the wire by their place in their lists, so bo
 - A broadside fires square ([[Ship Guns Keep Square Broadsides]]), so a battery longer than its target lands less of
   its weight on it as the range opens. Abeam of an Elite's Schooner, at 60 m every hull lands 96 to 98% of its weight
   against what the Sloop lands; at 150 m the Schooner 93%, the Brig 85%, the Frigate 79%.
-- A captain's battery takes its middle's elevation, so a Boss's Frigate's lower deck still falls short, as a
-  player's did. Laying each of its guns too is the owner's to choose: it would make Minibosses and Bosses hit harder
-  than their ranks were measured.
-
-- Playing offline the page holds no gear, so it sails the Sloop as built, as before.
+- A captain's battery takes its middle's elevation, so a Boss's Frigate's lower deck falls short. Laying each of its
+  guns too is the owner's to choose: it would make Minibosses and Bosses hit harder than their ranks were measured.
+- A captain sizing up a player's ship reckons its class's weight and reload, not its swing or how much of a long
+  battery's weight lands, so a wary one rates a Frigate a little above what it throws.
+- A player joined to a companion in a place entered only from the sea (a sea island, a run begun at sea) is not asked
+  for a ship. Leaving, one who keeps none is turned away by the sea, and the page sails on alone, kept by no room,
+  until they come ashore. Whether a shipless player may join a companion there is the owner's to choose.
+- A page the accounts leave unkept at sea sails the Sloop as built whatever it keeps, as it is kept by no one.
+- Playing offline the page holds no gear, so it sails the Sloop as built.
 - A figurehead waits on a model of one; the owner's ask was the models built.

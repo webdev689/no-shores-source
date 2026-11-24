@@ -1,7 +1,6 @@
-// Returning to the ship, on the room's word: refused while fallen or within ten seconds of a foe's blow, as the owner
-// chose ([[The Audit's Leftovers Are Fixed as Claude Suggested]]), and to a player who keeps no ship yet
-// ([[The Harbourmaster Keeps Every Ship, Each With Its Own Numbers and Dress]]); the room judges, the page leaves only
-// on its yes.
+// Returning to the ship, on the room's word: refused while fallen or within ten seconds of a foe's blow, before the
+// accounts have said whose character the room holds, and to a player who keeps no ship yet; the room judges, the page
+// leaves only on its yes.
 
 import { ASKS, type GearAsk, type GearState } from '../network/gearMessages.ts';
 import { answerText } from '../player/gear.ts';

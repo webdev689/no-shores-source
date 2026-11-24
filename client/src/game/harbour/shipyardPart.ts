@@ -112,6 +112,10 @@ function pressOf(context: MenuContext, offer: HullOffer, size: number): Child {
     if (ui.clicked(id)) context.ask(offer.ask);
     return pressNode(id, 'Sail it', 'primary', '', size, { label: `Sail the ${offer.name} from now on` });
   }
+  if (offer.state === 'take' && offer.ask) {
+    if (ui.clicked(id)) context.ask(offer.ask);
+    return pressNode(id, 'Take it', 'primary', '', size, { label: `Take the ${offer.name}, your first ship` });
+  }
   if (offer.state === 'buy' && offer.ask) {
     const ask = offer.ask;
     const charged = holds.press(ui, id, () => context.ask(ask));

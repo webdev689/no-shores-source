@@ -36,12 +36,17 @@ impl Character {
     }
 
     /// Buys a hull the shipyard sells, from its ship level, for its Aurem and its materials, and sails it: the ship
-    /// sailed before is kept at the harbour. The first ship is given, never sold, so a player keeps a ship before they
-    /// buy one.
+    /// sailed before is kept at the harbour. The first ship is given, never sold: by the welcome's task, or here to one
+    /// who keeps none and whose road no longer leads to that task (`ship_task_left`), so a player keeps a ship before
+    /// they buy one.
     fn buy_ship(&mut self, hull: u8) -> Result<Option<Done>, Refusal> {
         let found = shipyard().hulls.get(usize::from(hull)).ok_or(Refusal::NoSuchShip)?;
         if found.given {
-            return Err(Refusal::NotSold);
+            if self.has_ship() || !self.ship_task_left() {
+                return Err(Refusal::NotSold);
+            }
+            self.give_first_ship();
+            return Ok(None);
         }
         if self.fleet.kept(hull).is_some() {
             return Err(Refusal::Kept);

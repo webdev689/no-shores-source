@@ -12,7 +12,7 @@ import { INK, tileLabel, words } from '../gearNodes.ts';
 import { fillNode } from '../gearHold.ts';
 import type { MenuContext } from '../menuPage.ts';
 import { headingNode } from '../menuPages.ts';
-import { type DressTile, calledOf, dressRows } from './harbourModel.ts';
+import { type DressTile, SHIPYARD, calledOf, dressRows } from './harbourModel.ts';
 
 /** Each part's heading. */
 const PART_NAMES: Readonly<Record<DressPart, string>> = {
@@ -87,8 +87,10 @@ function swatchTile(context: MenuContext, tile: DressTile, emblem: number): Node
   const rarity = Math.max(0, RARITY.indexOf(tile.entry.rarity));
   const ring = RARITIES[rarity]?.colour ?? INK.faint;
   let charged = 0;
-  if (ask && tile.state === 'kept' && ui.clicked(id)) context.ask(ask);
   if (ask && tile.state === 'buy') charged = holds.press(ui, id, () => context.ask(ask));
+  // Asked every frame, so the release of a hold that bought it never also lays it.
+  const justHeld = holds.heldDown(ui, id);
+  if (ask && tile.state === 'kept' && ui.clicked(id) && !justHeld) context.ask(ask);
   const said = standing(tile);
   const lit = ui.hovered(id) || (ui.focused(id) && ui.keyFocused);
   const doing = tile.state === 'kept' ? 'click to lay it' : tile.state === 'buy' ? 'hold to buy' : said.said;
@@ -129,7 +131,6 @@ function swatchTile(context: MenuContext, tile: DressTile, emblem: number): Node
 /** A chip for each ship kept, the one dressed or named lit; a click chooses another. */
 export function shipChips(context: MenuContext, chosen: number, choose: (hull: number) => void, prefix: string): Child {
   const fleet = context.gear.ship?.fleet ?? [];
-  const names = ['Sloop', 'Schooner', 'Brig', 'Frigate'];
   return {
     gap: 8,
     wrap: true,
@@ -137,7 +138,8 @@ export function shipChips(context: MenuContext, chosen: number, choose: (hull: n
       const id = `${prefix}-ship-${ship.hull}`;
       if (context.ui.clicked(id)) choose(ship.hull);
       const named = calledOf(ship);
-      const said = named ? `${names[ship.hull] ?? 'Ship'}, ${named}` : (names[ship.hull] ?? 'Ship');
+      const hull = SHIPYARD.hulls[ship.hull]?.name ?? 'Ship';
+      const said = named ? `${hull}, ${named}` : hull;
       return {
         id,
         press: true,

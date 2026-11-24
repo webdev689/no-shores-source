@@ -77,7 +77,7 @@ export class Sea {
     [this.chase.metM, this.passage.holdReachM] = [facts.engageM, facts.holdReachM];
   }
   private readonly watch = new SeaWatch();
-  private readonly chase = new Chase((ship) => this.room?.chase(ship));
+  private readonly chase = new Chase({ tell: (ship) => this.room?.chase(ship), speed: () => this.passage.speed });
   /** Where it lies and heads, its voyage and pace dial, and its courses to the sea room. */
   private readonly passage: Passage;
   /** The view over it: the sea's, over an island's side, or down at its helm. */

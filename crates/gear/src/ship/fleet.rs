@@ -1,8 +1,8 @@
 //! The ships a player keeps and the one they sail: each hull by its number (sailing's, 0 the Sloop to 3 the Frigate),
 //! its name and its dress, a dress kept for each of its four parts (its hull's paint, the stripe along its gunports,
 //! its canvas, its flag). A new player keeps none until the Harbourmaster hands over the Sloop in the welcome; a save
-//! from before fleets keeps the Sloop, as every player sailed it. What each hull costs and the words a ship is named
-//! from are `content/gear/shipyard.json`'s, the dresses `content/gear/ship_dress.json`'s.
+//! from before fleets keeps the Sloop. What each hull costs and the words a ship is named from are
+//! `content/gear/shipyard.json`'s, the dresses `content/gear/ship_dress.json`'s.
 
 use crate::character::{Character, UnknownKeys};
 use crate::emblems::Source;
@@ -10,7 +10,7 @@ use crate::rarity::Rarity;
 use serde::{Deserialize, Serialize};
 use std::sync::OnceLock;
 
-/// The Sloop's number, the ship every player starts with.
+/// The Sloop's number, the first ship, which the Harbourmaster hands over.
 pub const SLOOP: u8 = 0;
 
 /// A hull as the shipyard sells it: its key in the ships manifest, whether it is given rather than sold, its price in
@@ -200,6 +200,22 @@ impl KeptShip {
 /// A word's place for none, in a ship's name.
 pub const NO_WORD: u8 = u8::MAX;
 
+/// A character's fleet as kept, read leniently: one of a shape this room cannot read keeps no ship, holding what was
+/// kept (`unread`) so it is written back as it was, and the character is still read; its quests then say whether the
+/// Sloop is due (`give_ship_due`).
+///
+/// # Errors
+///
+/// None the deserializer gives: any value is read.
+pub fn lenient<'de, D: serde::Deserializer<'de>>(deserializer: D) -> Result<Fleet, D::Error> {
+    let kept = serde_json::Value::deserialize(deserializer)?;
+    Ok(Fleet::deserialize(&kept).unwrap_or_else(|_| {
+        let mut unread = UnknownKeys::new();
+        unread.insert("unread".to_owned(), kept);
+        Fleet { unknown: unread, ..Fleet::none() }
+    }))
+}
+
 /// The ships a player keeps, by hull, the one they sail, and the dresses they bought (each part's start entry and a
 /// faction's dress at its rank are kept without being bought).
 #[derive(Clone, Debug, PartialEq, Eq, Deserialize, Serialize)]
@@ -221,7 +237,7 @@ impl Fleet {
         Fleet { ships: Vec::new(), sailed: SLOOP, dress: Vec::new(), unknown: UnknownKeys::new() }
     }
 
-    /// A save's from before fleets: the Sloop, sailed, as every player sailed it then.
+    /// A save's from before fleets: the Sloop, sailed.
     #[must_use]
     pub fn kept_before() -> Self {
         Fleet { ships: vec![KeptShip::new(SLOOP)], ..Fleet::none() }
@@ -257,6 +273,24 @@ impl Fleet {
 }
 
 impl Character {
+    /// Each ship's dress as kept: a dress laid that the player does not keep, or laid on a part it is not for, is the
+    /// part's start entry again.
+    pub(crate) fn dress_kept(&mut self) {
+        let unkept: Vec<(usize, Part)> = (self.fleet.ships.iter().enumerate())
+            .flat_map(|(at, ship)| Part::ALL.into_iter().map(move |part| (at, part, ship.dress.on(part))))
+            .filter(|(_, part, id)| {
+                let fits = dresses().iter().any(|found| found.id == *id && found.part == *part);
+                !fits || !self.keeps_dress(id)
+            })
+            .map(|(at, part, _)| (at, part))
+            .collect();
+        for (at, part) in unkept {
+            if let Some(ship) = self.fleet.ships.get_mut(at) {
+                built(part).clone_into(ship.dress.on_mut(part));
+            }
+        }
+    }
+
     /// Whether the player keeps a ship at all.
     #[must_use]
     pub fn has_ship(&self) -> bool {

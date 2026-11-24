@@ -119,3 +119,24 @@ fn in_a_fight_its_class_sets_its_way_and_its_swing_against_the_sloops() {
         assert!((turned - class.turn).abs() < 0.01, "{:?} swings {swing}° a second to {sloop_swing}", class.hull);
     }
 }
+
+/// Its way a second after its sails are set from rest, on a beam reach, in a fight with nothing hurt.
+fn gathered(hull: HullKind) -> f64 {
+    let sound = Hurts::of(&crate::damage::Damage::new(class_of(hull).build(), true));
+    let mut ship = Ship { x: 0.0, y: 0.0, heading: 0.0, ahead: 0.0, abeam: 0.0, turn: 0.0, sail_way: 0.0, rung: 0 };
+    for tick in 0..60u32 {
+        let helm = Helm { steer: 0.0, climb: if tick == 0 { 2 } else { 0 } };
+        ship = sail_hurt(&ship, hull, helm, sound, &Open, [1.5, 0.0], f64::from(tick) * TICK_SECONDS).0;
+    }
+    ship.ahead
+}
+
+#[test]
+fn from_rest_each_hull_gathers_way_as_the_sloop_does_its_class_only_setting_how_far() {
+    let sloop = gathered(HullKind::Sloop);
+    assert!(sloop > 0.0);
+    for class in &CLASSES[1..] {
+        let way = gathered(class.hull);
+        assert!((way - sloop).abs() < 1e-9, "{:?} gathers {way} m/s in a second to the Sloop's {sloop}", class.hull);
+    }
+}

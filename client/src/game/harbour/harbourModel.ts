@@ -11,12 +11,13 @@ import { DRESS_PARTS, type DressEntry, type DressPart, SHIP_DRESSES, dressOn } f
 export const SHIPYARD = shipyard;
 /** A name's word's place for none, as the wire carries it. */
 export const NO_WORD = 255;
-/** The Sloop's number, the ship every player starts with. */
+/** The Sloop's number, the first ship, which the Harbourmaster hands over. */
 export const SLOOP = 0;
 
 /** How a hull stands at the counter: the one sailed, kept at the harbour, to be had, short of its price, not sold yet
- *  at the ship's level, not sold to one who keeps no ship yet, or given in the welcome and not yet handed over. */
-export type HullState = 'sailing' | 'kept' | 'buy' | 'short' | 'locked' | 'shipless' | 'given';
+ *  at the ship's level, not sold to one who keeps no ship yet, given in the welcome and not yet handed over, or given
+ *  here to one who keeps none and pledged to a house before the welcome's task gave it. */
+export type HullState = 'sailing' | 'kept' | 'buy' | 'short' | 'locked' | 'shipless' | 'given' | 'take';
 
 /** A hull at the counter: its number, name and words, how it stands, the ship level it is sold from, its price in
  *  Aurem and in Timber, Canvas, Iron and Heartwood with what of each the player is short of, the ask that has it or
@@ -49,6 +50,7 @@ export function calledOf(ship: Pick<GearKeptShip, 'name'> | undefined): string |
 function fleetOf(gear: GearState) {
   const ship = gear.ship;
   return {
+    pledged: (ship?.pledge ?? 0) !== 0,
     fleet: ship?.fleet ?? [],
     sailed: ship?.sailed ?? SLOOP,
     level: ship?.level ?? 1,
@@ -59,7 +61,7 @@ function fleetOf(gear: GearState) {
 
 /** Every hull at the counter, in the shipyard's order. */
 export function hullOffers(gear: GearState): HullOffer[] {
-  const { fleet, sailed, level, stocks } = fleetOf(gear);
+  const { pledged, fleet, sailed, level, stocks } = fleetOf(gear);
   return shipyard.hulls.map((found, hull): HullOffer => {
     const kept = fleet.find((ship) => ship.hull === hull);
     const materials = [found.timber, found.canvas, found.iron, found.heartwood] as const;
@@ -72,7 +74,9 @@ export function hullOffers(gear: GearState): HullOffer[] {
         ? 'sailing'
         : 'kept'
       : found.given
-        ? 'given'
+        ? pledged && fleet.length === 0
+          ? 'take'
+          : 'given'
         : fleet.length === 0
           ? 'shipless'
           : level < found.level
@@ -83,7 +87,7 @@ export function hullOffers(gear: GearState): HullOffer[] {
     const ask: GearAsk | null =
       state === 'kept'
         ? { kind: ASKS.sailShip, column: hull }
-        : state === 'buy'
+        : state === 'buy' || state === 'take'
           ? { kind: ASKS.buyShip, column: hull }
           : null;
     const base = { hull, name: found.name, words: found.words, level: found.level, aurem: found.aurem };
