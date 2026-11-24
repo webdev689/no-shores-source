@@ -166,3 +166,8 @@ test('every refusal a part can meet has a few words for its cell', () => {
         if (why) assert.match(clashOf(part, why, shown), /^Same as (cloth|device|sign|ground)$/, `${part} ${choice}`);
       }
 });
+
+test('at 1600 by 900 the signs stand at twice their cells where they fit so, named or not', () => {
+  const { ui } = editor('sign', { width: 1500, height: 650 }, [1600, 900]);
+  assert.equal(ui.boxOf(choiceId('sign', 'raven'))?.width, 72);
+});

@@ -211,8 +211,8 @@ export class BannerEditor {
       const across = Math.max(1, Math.floor((width + 8) / ((named ? cellOf(cells) : faceWidth * cells + 8) + 8)));
       return Math.ceil(choices.length / across) * (faceHeight * cells + 20 + (named ? wordsHeight : 0)) <= height;
     };
-    const scale = fits(2, true) ? 2 : 1;
-    const named = colour || part === 'staff' || fits(scale, true);
+    const named = colour || part === 'staff' || fits(1, true);
+    const scale = fits(2, named) ? 2 : 1;
     const cellWidth = colour ? 64 * size + 8 : named ? cellOf(scale) : faceWidth * scale + 8;
     return {
       width: 'grow',
