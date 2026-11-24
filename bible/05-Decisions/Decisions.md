@@ -363,6 +363,8 @@ a decision is a record. How to add one: [[Recording a Decision]].
 - [[CI Is the Check Before a Merge]]
 - [[Every Objective Has a Waypoint on the Compass, on Land and at Sea]]
 - [[Waypoints as Claude Builds Them]]
+- [[The Inspect Panel Follows Destiny's Weapon Page, Its Stats Shown and Its Nodes Square]]
+- [[The Inspect Panel as Claude Shapes It]]
 
 ## Replaced
 

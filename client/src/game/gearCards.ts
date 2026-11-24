@@ -19,6 +19,7 @@ import {
   itemWords,
   resourceName,
   resourceWords,
+  slotOf,
   traitOf,
   wearAsks,
 } from '../player/gear.ts';
@@ -26,6 +27,7 @@ import type { Press } from './gearScreen.ts';
 import { gearKindName, gearName } from './shipGear.ts';
 import type { ShipGlyph } from './shipGlyphs.ts';
 import { earnedFrom } from '../player/sourceLooks.ts';
+import { type StatSheet, givenTraits, sheetOf, statsOf } from './itemStats.ts';
 
 /** How many items a slot carries beside the one worn, how many Vestiges are carried, how many of each the vault
  *  keeps, and how many Ammo crates are carried (the gear crate's `CARRIED_MOST`, `VESTIGES_MOST`, `VAULT_MOST` and
@@ -51,7 +53,12 @@ export interface Card {
   readonly compare: {
     readonly replaces: string;
     readonly rows: readonly { readonly label: string; readonly from: number; readonly to: number }[];
+    /** Neither's chosen nodes count in the numbers compared, as on Inspect. */
+    readonly nodesAside?: boolean;
   } | null;
+  /** An item's fight numbers as bars, beside the piece it would replace's: set on every item's card, null until the
+   *  rules have come or for an item with none (a horse, a ship's module). */
+  readonly sheet?: StatSheet | null;
 }
 
 /** A trait an item gives: its name, its words, and its column's kind (`COLUMNS`). */
@@ -109,8 +116,9 @@ export function traitsShown(item: Pick<GearItem, 'columns' | 'chosen'>): Trait[]
   return traitsOf(item).map(({ id, kind }) => ({ ...traitOf(id), kind }));
 }
 
-/** An item's card; against `worn`, the piece it would replace, what changes. */
-export function cardOf(item: GearItem, worn: GearItem | null = null): Card {
+/** An item's card; against `worn`, the piece it would replace, what changes. `nodesAside`, as Inspect sets another
+ *  player's piece beside the player's own, whose nodes it never knows: neither's chosen nodes count in their numbers. */
+export function cardOf(item: GearItem, worn: GearItem | null = null, nodesAside = false): Card {
   const big = item.attack
     ? { label: 'Attack', value: item.attack }
     : item.defense
@@ -124,6 +132,10 @@ export function cardOf(item: GearItem, worn: GearItem | null = null): Card {
   const changes = (['attack', 'defense', 'prestige'] as const)
     .map((stat) => ({ label: capital(stat), from: worn?.[stat] ?? 0, to: item[stat] }))
     .filter((change) => change.from !== 0 || change.to !== 0);
+  // Set beside another piece, never itself: the same object, as an item's own id may be shared by a ware or by
+  // another player's piece.
+  const beside = worn && worn !== item ? worn : null;
+  const against = beside ? statsOf(beside.kind, givenTraits(nodesAside ? { ...beside, columns: [] } : beside)) : null;
   return {
     name: gearName(item),
     rarity: item.rarity,
@@ -134,8 +146,14 @@ export function cardOf(item: GearItem, worn: GearItem | null = null): Card {
     // An Atheric's intrinsic heads its perks, as the piece is chiefly that.
     traits: [...[intrinsicOf(item)].filter((trait) => trait !== null), ...traitsShown(item)],
     words: itemWords(item),
-    compare: worn && worn.id !== item.id ? { replaces: gearName(worn), rows: changes } : null,
+    compare: beside ? { replaces: gearName(beside), rows: changes, ...(nodesAside && { nodesAside }) } : null,
+    sheet: sheetOf(item, against, givenTraits(nodesAside ? { ...item, columns: [] } : item)),
   };
+}
+
+/** The piece worn in the slot `item` is worn in, which its card sets it beside; null where none is. */
+export function wornFor(state: GearState, item: Pick<GearItem, 'kind'>): GearItem | null {
+  return state.items.find((each) => each.at === WORN + slotOf(item.kind)) ?? null;
 }
 
 /** A slot's flyout: the piece it wears, and its nine carried places, empty ones null. */

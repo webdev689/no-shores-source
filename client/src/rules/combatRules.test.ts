@@ -141,6 +141,15 @@ test('the parry window a press opens is the combat crate’s: a quarter of a sec
   assert.deepEqual([rules.parryWindow(true), rules.parryWindow(false)], [15, 9]);
 });
 
+test("an item's fight numbers come from the room's stats, then its traits' trim; none for no kind", () => {
+  const rules = startCombatRules(compiled);
+  const sword = rules.itemStats(2, ['light_grip']);
+  assert.equal(sword.length, 17 + 33, "the room's stats, then a trim's numbers");
+  assert.equal(sword[0], 1, 'a sword fights as a Melee loadout');
+  assert.equal(sword[17], 0.85, "its trim's first number, a swing's stamina, Light Grip's");
+  assert.equal(rules.itemStats(0, []).length, 0);
+});
+
 test('rules that lay a fighter, an intent or a glance out otherwise than the page are refused, and their address names the protocol', () => {
   assert.doesNotThrow(() => checkSizes(PAGE_SIZES));
   for (const wrong of [{ fighter: FIGHTER_FLOATS - 2 }, { intent: INTENT_FLOATS - 1 }, { glance: GLANCE_FLOATS + 1 }])

@@ -7,6 +7,9 @@ code:
   - client/src/player/sourceLooks.ts#earnedFrom
   - client/src/game/gearCards.ts#cardOf
   - client/src/game/gearScreen.ts#itemDetailOf
+  - crates/room/src/stats.rs#stats
+  - crates/room/src/perks.rs#trim_by
+  - client/src/game/itemStats.ts#statsOf
   - crates/gear/src/cosmetics.rs#dressed
   - content/gear/drawn.json
   - crates/gear/src/emblems.rs#sold_on
@@ -200,6 +203,19 @@ number is one of [[Gear as Claude Shapes It]].
   word ("Portwatch", "Helm"): one line for every pair a rolled piece is made in, Homespun's for every kind. A test makes
   every rolled piece of every content, rarity, level and look roll, and holds each to its line and every line to a
   piece. A named piece reads its own words in `content/gear/items.json`; a faction's piece with none, its faction's.
+- **Stats** ([[The Inspect Panel Follows Destiny's Weapon Page, Its Stats Shown and Its Nodes Square]],
+  [[The Inspect Panel as Claude Shapes It]]). An item's fight numbers, as its card and page show them, are the room's
+  own (`room::stats`), never numbers of the screen's: what its kind fights with, from combat's arms and shots and the
+  player's swing and reload as the step paces them, under the trim the traits it gives make (`trim_by`, the one
+  `trim_of` makes of a player's worn gear), so a page and play agree to the bit. A Melee loadout's: a diagonal blow's
+  damage (a pair's at its pair's share), blows a second, how far the blow reaches from the feet to a body's middle, the
+  poise it fills and the stamina a swing costs. A Ranged one's: a quick shot's damage (a bow's two thirds) and a full
+  draw's, shots a second with the reload (a pair of pistolets fires twice, a brace's gap apart, then reloads), the
+  poise a shot fills (its weight's alone), the shots it carries (`ammo::capacity`), how fast an arrow or a bolt flies
+  (a ball at once) and the share of the pace kept aiming. How either is held: a hand free for a torch, a shield, a pair
+  or both hands. Any item's body numbers, which armour shows: the stamina back a second resting, a dodge's cost, the
+  poise held before a stagger and a healing charge's share. Damage is the weapon's own, before its Attack and the levels
+  weigh it. The browser asks them of the room's module (`fighter_item_stats`), as it predicts the player's fighter.
 - **Items as themselves.** A Boss's kill always leaves each player who struck it an item, not sealed, and a Miniboss's
   35 times in 100, each beside its Vestige and by a roll of its own, raised by the tier as the Vestige is
   (`vestige::found_items`, `loot_kill`). It is made as a Vestige of its rank's colours, opened, would make it, for any

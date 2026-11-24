@@ -79,6 +79,16 @@ test('a card names the item and its kind, its main number, its chosen traits, an
   assert.equal(cardOf(worn, worn).compare, null, 'no comparing a piece with itself');
 });
 
+test('a card is set beside any other piece, though it share an id, and on Inspect with neither’s nodes counted', () => {
+  const worn = item({ id: 4, attack: 248, at: 2 });
+  const ware = item({ id: 4, attack: 260, price: 2_000 });
+  assert.equal(cardOf(ware, worn).compare?.replaces, cardOf(worn).name, "a ware's number may be a worn piece's");
+  const theirs = item({ id: 9, rarity: 3, attack: 300, columns: [], at: 2 });
+  const aside = cardOf(theirs, worn, true).compare;
+  assert.equal(aside?.nodesAside, true, 'Inspect never knows the other player’s nodes, so it counts neither’s');
+  assert.equal(cardOf(theirs, worn).compare?.nodesAside, undefined);
+});
+
 test('a slot’s flyout holds its nine places, and a carried loadout is worn in the slot it is shown under', () => {
   const brace = item({ id: 3, kind: 23, at: 0, bucket: 1 });
   const gear = state({ items: [item({ id: 1, at: 3, kind: 8 }), brace, item({ id: 4, at: 0, bucket: 0 })] });

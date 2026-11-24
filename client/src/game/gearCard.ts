@@ -1,13 +1,14 @@
-// An item's card as the game draws it, after Enhanced Plus's: its name on a band of its rarity, its kind, pips and
-// element, its picture large, its main number, its rows, its traits and words, what it changes over the piece it would
-// replace, and along its foot what may be done with it. Every card of the menu (a cell's, a node's) wears the same
-// frame (`cardFrame`).
+// An item's card as the game draws it, after Enhanced Plus's and Destiny's: its name on a band of its rarity, its kind,
+// pips and element, its picture beside its main number and lines, its fight numbers as bars, its traits and words, what
+// it changes over the piece it would replace, and along its foot what may be done with it. Every card of the menu (a
+// cell's, a node's) wears the same frame (`cardFrame`).
 
 import { edged } from '../combat/barDraw.ts';
 import { ELEMENTS, RARITIES } from '../player/gear.ts';
 import type { Picture } from '../player/picture.ts';
 import type { Child, Node } from '../ui/node.ts';
 import type { Card, Trait } from './gearCards.ts';
+import { powerNode, statSheetNode } from './statBars.ts';
 import {
   type Hint,
   INK,
@@ -122,70 +123,6 @@ export function kindLine(
   };
 }
 
-/** How far each number's meter reaches, for what a piece changes over the one it would replace. */
-const MOST: Readonly<Record<string, number>> = { Attack: 300, Defense: 450, Prestige: 30 };
-
-/** What a piece changes over the one it would replace, as Destiny's card shows it: each number's meter at the lesser
- *  of the two, the rest of the greater a segment gained or lost, and the new number with the change beside it. */
-export function compareNode(compare: NonNullable<Card['compare']>, size: number, wide: boolean): Node {
-  const [labelWidth, valueWidth] = wide ? [110, 96] : [64, 72];
-  return {
-    width: 'grow',
-    direction: 'column',
-    gap: 8,
-    padding: [8, 0, 0, 0],
-    children: [
-      rule('rgba(255,255,255,0.08)'),
-      words(`Replaces ${compare.replaces}`, size, INK.faint),
-      ...compare.rows.map((row): Node => {
-        const change = row.to - row.from;
-        const most = Math.max(MOST[row.label] ?? 0, row.from, row.to, 1);
-        const sign = change > 0 ? '+' : change < 0 ? '−' : '';
-        const tone = change > 0 ? INK.gain : INK.loss;
-        return {
-          width: 'grow',
-          gap: 8,
-          alignY: 'center',
-          children: [
-            { width: labelWidth, children: [label(row.label, size)] },
-            {
-              width: 'grow',
-              height: 8,
-              padding: 2,
-              role: 'well',
-              children: [
-                { width: `${(Math.min(row.from, row.to) / most) * 100}%`, height: 'grow', fill: '#d9d0ae' },
-                change !== 0 && {
-                  width: `${(Math.abs(change) / most) * 100}%`,
-                  height: 'grow',
-                  fill: change > 0 ? INK.gain : 'rgba(232,150,138,0.45)',
-                },
-              ],
-            },
-            {
-              width: valueWidth,
-              alignX: 'end',
-              children: [
-                {
-                  text: {
-                    words: [
-                      { words: String(row.to) },
-                      ...(change !== 0 ? [{ words: ` ${sign}${Math.abs(change)}`, colour: tone }] : []),
-                    ],
-                    size,
-                    colour: INK.word,
-                    wrap: false,
-                  },
-                },
-              ],
-            },
-          ],
-        };
-      }),
-    ],
-  };
-}
-
 /** A trait as a card or a page lists it: its column's glyph, its name and its words. What a perk that gives and takes
  *  costs stands apart, in the colour of a loss; a word says where an Atheric's perk stands, and its own node not yet
  *  chosen is drawn dim. */
@@ -214,41 +151,148 @@ export function traitNode(trait: Trait, size: number): Node {
   };
 }
 
-/** An item's hover card. */
+/** A card's lines of a name and a value, the value's change beside it where the card compares. */
+function rowsNode(card: Card, size: number): Node {
+  return {
+    width: 'grow',
+    direction: 'column',
+    gap: 2,
+    children: card.rows.map(([name, value]): Node => {
+      const compared = card.compare?.rows.find((row) => row.label === name);
+      const change = compared ? compared.to - compared.from : 0;
+      return {
+        width: 'grow',
+        children: [
+          { width: 'grow', children: [label(name, size)] },
+          {
+            text: {
+              words: [
+                { words: value },
+                ...(change !== 0
+                  ? [
+                      {
+                        words: ` ${change > 0 ? '+' : '−'}${Math.abs(change)}`,
+                        colour: change > 0 ? INK.gain : INK.loss,
+                      },
+                    ]
+                  : []),
+              ],
+              size,
+              colour: INK.word,
+              wrap: false,
+            },
+          },
+        ],
+      };
+    }),
+  };
+}
+
+/** Words in italic, faint, as an item's flavour stands apart from what it does. */
+export const flavourNode = (said: string, size: number): Node => ({
+  width: 'grow',
+  text: { words: [{ words: said, style: 'italic' }], size, colour: INK.faint },
+});
+
+/** A thin rule parting a card's numbers from its bars and its perks. */
+const parted = (colour: string): Node => ({ width: 'grow', height: 1, fill: colour });
+
+/** An item's hover card: its picture beside its main number and its lines, its fight numbers as bars, its perks and
+ *  its words; set beside the piece it would replace, what changes, in green and red. */
+function itemCardBody(card: Card, picture: Picture | null, sizes: Sizes, more: CardMore): Child[] {
+  const size = sizes.label;
+  const box = size > 1 ? 112 : 80;
+  const icon = more.icon ?? (picture && pictureNode(picture, box - 8, sizes.ratio));
+  const compared = card.big ? card.compare?.rows.find((row) => row.label === card.big?.label) : undefined;
+  return [
+    {
+      width: 'grow',
+      gap: 12,
+      alignY: 'center',
+      children: [
+        icon && {
+          width: box,
+          height: box,
+          alignX: 'center',
+          alignY: 'center',
+          fill: INK.well,
+          outline: { width: 1, colour: 'rgba(163,152,128,0.2)' },
+          children: [icon],
+        },
+        {
+          width: 'grow',
+          direction: 'column',
+          gap: 6,
+          children: [
+            card.big && powerNode(card.big, compared ? compared.to - compared.from : null, size > 1 ? 4 : 3, size),
+            card.rows.length > 0 && rowsNode(card, size),
+          ],
+        },
+      ],
+    },
+    card.sheet && parted('rgba(255,255,255,0.07)'),
+    card.sheet && { width: 'grow', padding: [2, 0], children: [statSheetNode(card.sheet, size, false)] },
+    card.traits.length > 0 && parted('rgba(255,255,255,0.07)'),
+    ...card.traits.map((trait) => traitNode(trait, size)),
+    card.words !== '' && { width: 'grow', padding: [4, 0, 0, 0], children: [flavourNode(card.words, size)] },
+    card.compare && {
+      width: 'grow',
+      padding: [4, 0, 0, 0],
+      children: [
+        {
+          width: 'grow',
+          text: {
+            words: `Against your ${card.compare.replaces}${card.compare.nodesAside ? ', nodes aside' : ''}`,
+            size,
+            colour: INK.faint,
+          },
+        },
+      ],
+    },
+    ...(more.after ?? []),
+  ];
+}
+
+/** What a card may be given beside its item: its tone, an icon in its picture's place, and lines after its own. */
+interface CardMore {
+  readonly tone?: Tone;
+  readonly icon?: Node;
+  readonly after?: readonly Child[];
+}
+
+/** An item's hover card, or any other card of the menu's (an Art's, a fragment's, an emblem's), its icon over its
+ *  number. A card with a sheet set, every item's, is laid as an item's (`itemCardBody`). */
 export function cardNode(
   card: Card,
   picture: Picture | null,
   hints: readonly Hint[],
   sizes: Sizes,
-  more: { readonly tone?: Tone; readonly icon?: Node; readonly after?: readonly Child[] } = {},
+  more: CardMore = {},
 ): Node {
   const size = sizes.label;
   const icon = more.icon ?? (picture && pictureNode(picture, 96, sizes.ratio));
-  const body: Child[] = [
-    icon && { width: 'grow', alignX: 'center', padding: [0, 0, 8, 0], children: [icon] },
-    card.big && {
-      gap: 8,
-      alignY: 'end',
-      children: [
-        words(String(card.big.value), 3, INK.word),
-        { padding: [0, 0, 6, 0], children: [label(card.big.label, size)] },
-      ],
-    },
-    card.rows.length > 0 && {
-      width: 'grow',
-      direction: 'column',
-      gap: 2,
-      padding: [8, 0],
-      children: card.rows.map(([name, value]): Node => ({
-        width: 'grow',
-        children: [{ width: 'grow', children: [label(name, size)] }, words(value, size, INK.word)],
-      })),
-    },
-    ...card.traits.map((trait) => traitNode(trait, size)),
-    card.words !== '' && { width: 'grow', padding: [4, 0], text: { words: card.words, size, colour: INK.faint } },
-    card.compare && compareNode(card.compare, size, sizes.label > 1),
-    ...(more.after ?? []),
-  ];
+  const body: Child[] =
+    card.sheet !== undefined
+      ? itemCardBody(card, picture, sizes, more)
+      : [
+          icon && { width: 'grow', alignX: 'center', padding: [0, 0, 8, 0], children: [icon] },
+          card.big && {
+            gap: 8,
+            alignY: 'end',
+            children: [
+              words(String(card.big.value), 3, INK.word),
+              { padding: [0, 0, 6, 0], children: [label(card.big.label, size)] },
+            ],
+          },
+          card.rows.length > 0 && { width: 'grow', padding: [8, 0], children: [rowsNode(card, size)] },
+          ...card.traits.map((trait) => traitNode(trait, size)),
+          card.words !== '' && {
+            width: 'grow',
+            padding: [4, 0],
+            text: { words: card.words, size, colour: INK.faint },
+          },
+          ...(more.after ?? []),
+        ];
   return cardFrame(
     sizes,
     more.tone ?? rarityTone(card.rarity),

@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { RESOURCE_COUNT } from '../player/gear.ts';
-import { glyphSvg } from './gearGlyphs.ts';
+import { glyphSvg, growthSvg, nodeGlyphSvg } from './gearGlyphs.ts';
 
 /** Each pixel a glyph's picture fills: its column, its row and its colour, each run along a row unpacked. */
 const pixelsOf = (svg: string) =>
@@ -65,4 +65,27 @@ test('each island’s resource is a baked picture of its own, 18 pixels square, 
   });
   assert.equal(new Set(mains).size, RESOURCE_COUNT, 'no two are mostly the same colour');
   assert.equal(glyphSvg('resource', 0, RESOURCE_COUNT), glyphSvg('empty'), 'one past the list is an empty place');
+});
+
+test("a locked node's growth is a square round its edge, lit clockwise from its top's middle as far as it has grown", () => {
+  const lit = (svg: string) => [...svg.matchAll(/x="(\d+)" y="(\d+)" width="1" height="1" fill="currentColor"/g)];
+  const cells = (svg: string) => [...svg.matchAll(/x="(\d+)" y="(\d+)" width="1" height="1"/g)];
+  const whole = growthSvg(1, '#000');
+  assert.equal(cells(whole).length, 4 * 17, 'every cell of a square 18 a side, its corners counted once');
+  for (const [, x, y] of cells(whole))
+    assert.ok([1, 18].includes(Number(x)) || [1, 18].includes(Number(y)), `(${x}, ${y}) stands on the edge`);
+  assert.equal(lit(growthSvg(0, '#000')).length, 0);
+  assert.equal(lit(whole).length, cells(whole).length);
+  const quarter = lit(growthSvg(0.25, '#000')).map(([, x, y]) => [Number(x), Number(y)]);
+  assert.ok(quarter.length > 12 && quarter.length < 22, `about a quarter round (${quarter.length})`);
+  assert.ok(
+    quarter.every(([x, y]) => (x ?? 0) >= 10 && (y ?? 0) <= 10),
+    'the top right, from the middle of its top',
+  );
+});
+
+test("no node's glyph is round: an Atheric's own is a square with square rays", () => {
+  const rows = (svg: string) => [...svg.matchAll(/x="(\d+)" y="(\d+)"/g)].map(([, x, y]) => `${x},${y}`);
+  const own = new Set(rows(nodeGlyphSvg(4)));
+  for (const x of [4, 5, 6, 7]) for (const y of [4, 5, 6, 7]) assert.ok(own.has(`${x},${y}`), 'its square heart');
 });

@@ -26,7 +26,7 @@ import {
 } from './gearNodes.ts';
 import { tileOf, vendorsOf } from './gearScreen.ts';
 import { shelvesNode } from './inventoryPage.ts';
-import { bar, nodeGrid } from './itemPage.ts';
+import { bar, nodeGrid } from './itemNodes.ts';
 import type { MenuContext } from './menuPage.ts';
 import { headingNode, hintNode, shipPage } from './menuPages.ts';
 import {

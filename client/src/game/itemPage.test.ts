@@ -74,19 +74,18 @@ const own = (chosen: number) => ({
 
 const pageTexts = (shown: ReturnType<typeof own>) => textsOf(itemPage(context, shown, () => {}).page as Node);
 
-test("an Atheric's page shows both its perks at its head, its own node's even before it is chosen", () => {
+test("an Atheric's page shows both its perks at the head of its perks, its own node's even before it is chosen", () => {
   const texts = pageTexts(own(255));
   const place = (said: string | RegExp) =>
     texts.findIndex((text) => (typeof said === 'string' ? text.words === said : said.test(text.words)));
-  assert.ok(place('ATHERIC') >= 0, 'its heading');
-  assert.ok(place('ATHERIC') < place('Coral Guard') && place('Coral Guard') < place('Riptide'), 'the intrinsic first');
+  assert.ok(place('PERKS') >= 0, 'its heading');
+  assert.ok(place('PERKS') < place('Coral Guard') && place('Coral Guard') < place('Riptide'), 'the intrinsic first');
   assert.ok(place(/^INTRINSIC: ALWAYS ON$/) > place('Coral Guard'), 'marked always on');
-  assert.ok(place('Riptide') < place('NODES'), 'before the nodes');
   assert.equal(texts[place('Riptide')]?.colour, INK.faint, 'dim until it is chosen');
   const chosen = pageTexts(own(0));
   assert.equal(chosen.find((text) => text.words === 'Riptide')?.colour, INK.brassLit, 'lit once chosen');
   assert.equal(chosen.filter((text) => text.words === 'Riptide').length, 1, 'its own node is no perk listed twice');
-  assert.ok(!chosen.some((text) => text.words === 'PERKS'));
+  assert.equal(chosen.filter((text) => text.words === 'PERKS').length, 1, 'one heading over all of them');
 });
 
 test("an Atheric's card names its intrinsic first", () => {
