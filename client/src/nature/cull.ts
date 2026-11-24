@@ -1,6 +1,9 @@
-import { sphereSeen, viewPlanes } from '../frustum.ts';
+import { type Planes, sphereSeen, viewPlanes } from '../frustum.ts';
 import type { Group, Packed } from './field.ts';
 import { TILE_M } from './scatter.ts';
+
+/** The view's planes, kept: a cull reads them only while it runs, so each frame lays them over the last's. */
+const PLANES: Planes = new Float64Array(24);
 
 /**
  * Which packed tiles the camera may see: each tile's bounding sphere against the view's planes, read from the
@@ -14,11 +17,12 @@ export function tilesInView(
   exaggeration: number,
   out: Uint8Array = new Uint8Array(packed.tiles.length / 4),
 ): Uint8Array {
-  const planes = viewPlanes(fromEye);
+  const planes = viewPlanes(fromEye, PLANES);
   const { tiles } = packed;
   const across = TILE_M * Math.SQRT1_2 + packed.spread;
   const tileSeen = (tile: number): number => {
-    const [lowest, highest] = [tiles[tile * 4 + 2] ?? 0, tiles[tile * 4 + 3] ?? 0];
+    const lowest = tiles[tile * 4 + 2] ?? 0;
+    const highest = tiles[tile * 4 + 3] ?? 0;
     const centreX = (tiles[tile * 4] ?? 0) + anchorFromEye[0];
     const centreY = (tiles[tile * 4 + 1] ?? 0) + anchorFromEye[1];
     const centreZ = ((lowest + highest) / 2) * exaggeration + anchorFromEye[2];
@@ -33,17 +37,27 @@ export function tilesInView(
   // A block's sphere holds each of its tiles' (their middles' spread, a tile's own reach, the block's whole height),
   // and a metre more for the rounding: a block out of view has every tile of it out.
   out.fill(0);
-  forEachBlock(blocks, (span, first, last) => {
-    const [west, north, low, east, south, high] = span;
-    const radius = Math.hypot((east - west) / 2, (south - north) / 2) + across + ((high - low) / 2) * exaggeration + 1;
+  const { firsts, members, spans } = blocks;
+  for (let block = 0; block + 1 < firsts.length; block++) {
+    const row = block * 6;
+    const west = spans[row]!;
+    const north = spans[row + 1]!;
+    const low = spans[row + 2]!;
+    const east = spans[row + 3]!;
+    const south = spans[row + 4]!;
+    const high = spans[row + 5]!;
+    const halfAcross = (east - west) / 2;
+    const halfDown = (south - north) / 2;
+    const radius =
+      Math.sqrt(halfAcross * halfAcross + halfDown * halfDown) + across + ((high - low) / 2) * exaggeration + 1;
     const centreX = (west + east) / 2 + anchorFromEye[0];
     const centreY = (north + south) / 2 + anchorFromEye[1];
-    if (!sphereSeen(planes, centreX, centreY, ((low + high) / 2) * exaggeration + anchorFromEye[2], radius)) return;
-    for (let member = first; member < last; member++) {
-      const tile = blocks.members[member] ?? 0;
+    if (!sphereSeen(planes, centreX, centreY, ((low + high) / 2) * exaggeration + anchorFromEye[2], radius)) continue;
+    for (let member = firsts[block]!; member < firsts[block + 1]!; member++) {
+      const tile = members[member]!;
       out[tile] = tileSeen(tile);
     }
-  });
+  }
   return out;
 }
 
@@ -85,16 +99,25 @@ export function tilesCasting(
   // A block's box holds each of its tiles' boxes, and a metre more for the rounding: a block that casts nowhere has
   // no tile that does.
   out.fill(0);
-  forEachBlock(blocks, (span, first, last) => {
-    const [west, north, lowest, east, south, highest] = span;
-    const [fromX, fromY] = [anchorFromEye[0] - 1, anchorFromEye[1] - 1];
-    const [toX, toY] = [anchorFromEye[0] + 1, anchorFromEye[1] + 1];
-    if (!boxCasts(west + fromX, north + fromY, east + toX, south + toY, lowest - 1, highest + 1)) return;
-    for (let member = first; member < last; member++) {
-      const tile = blocks.members[member] ?? 0;
+  const { firsts, members, spans } = blocks;
+  const fromX = anchorFromEye[0] - 1;
+  const fromY = anchorFromEye[1] - 1;
+  const toX = anchorFromEye[0] + 1;
+  const toY = anchorFromEye[1] + 1;
+  for (let block = 0; block + 1 < firsts.length; block++) {
+    const row = block * 6;
+    const west = spans[row]!;
+    const north = spans[row + 1]!;
+    const lowest = spans[row + 2]!;
+    const east = spans[row + 3]!;
+    const south = spans[row + 4]!;
+    const highest = spans[row + 5]!;
+    if (!boxCasts(west + fromX, north + fromY, east + toX, south + toY, lowest - 1, highest + 1)) continue;
+    for (let member = firsts[block]!; member < firsts[block + 1]!; member++) {
+      const tile = members[member]!;
       out[tile] = tileCasts(tile);
     }
-  });
+  }
   return out;
 }
 
@@ -111,70 +134,86 @@ export interface TileBlocks {
   readonly spans: Float32Array;
 }
 
-/** The packed tiles' rows gathered in blocks, once a packing. */
+/** The packed tiles' rows gathered in blocks, once a packing: blocks in the order their first tile comes, each
+ *  one's tiles in their order. */
 export function blocksOf(tiles: Float32Array): TileBlocks {
-  const byBlock = new Map<string, number[]>();
-  for (let tile = 0; tile < tiles.length / 4; tile++) {
-    const key = `${Math.floor((tiles[tile * 4] ?? 0) / BLOCK_M)} ${Math.floor((tiles[tile * 4 + 1] ?? 0) / BLOCK_M)}`;
-    const block = byBlock.get(key);
-    if (block) block.push(tile);
-    else byBlock.set(key, [tile]);
+  const count = tiles.length / 4;
+  const blockOf = new Uint32Array(count);
+  const numbered = new Map<number, number>();
+  for (let tile = 0; tile < count; tile++) {
+    // A block's place as one number: the tiles lie within a few kilometres of the packing's anchor.
+    const key = (Math.floor(tiles[tile * 4]! / BLOCK_M) + BLOCK_KEY_HALF) * BLOCK_KEY_ROW;
+    const place = key + Math.floor(tiles[tile * 4 + 1]! / BLOCK_M) + BLOCK_KEY_HALF;
+    let block = numbered.get(place);
+    if (block === undefined) numbered.set(place, (block = numbered.size));
+    blockOf[tile] = block;
   }
-  const firsts = new Uint32Array(byBlock.size + 1);
-  const members = new Uint32Array(tiles.length / 4);
-  const spans = new Float32Array(byBlock.size * 6);
-  let [block, laid] = [0, 0];
-  for (const inBlock of byBlock.values()) {
-    firsts[block] = laid;
-    const span = [Infinity, Infinity, Infinity, -Infinity, -Infinity, -Infinity];
-    for (const tile of inBlock) {
-      members[laid++] = tile;
-      for (let part = 0; part < 3; part++) {
-        const [least, most] = [tiles[tile * 4 + part] ?? 0, tiles[tile * 4 + (part === 2 ? 3 : part)] ?? 0];
-        span[part] = Math.min(span[part] ?? 0, least);
-        span[part + 3] = Math.max(span[part + 3] ?? 0, most);
-      }
+  const blocks = numbered.size;
+  const firsts = new Uint32Array(blocks + 1);
+  for (let tile = 0; tile < count; tile++) firsts[blockOf[tile]! + 1]! += 1;
+  for (let block = 0; block < blocks; block++) firsts[block + 1]! += firsts[block]!;
+  const members = new Uint32Array(count);
+  const laid = firsts.slice(0, blocks);
+  const spans = new Float32Array(blocks * 6);
+  for (let block = 0; block < blocks; block++) spans.set(EMPTY_SPAN, block * 6);
+  for (let tile = 0; tile < count; tile++) {
+    const block = blockOf[tile]!;
+    members[laid[block]!++] = tile;
+    for (let part = 0; part < 3; part++) {
+      const [least, most] = [tiles[tile * 4 + part]!, tiles[tile * 4 + (part === 2 ? 3 : part)]!];
+      spans[block * 6 + part] = Math.min(spans[block * 6 + part]!, least);
+      spans[block * 6 + part + 3] = Math.max(spans[block * 6 + part + 3]!, most);
     }
-    spans.set(span, block * 6);
-    block += 1;
   }
-  firsts[block] = laid;
   return { firsts, members, spans };
 }
 
-/** Each block's span (west, north, lowest, east, south, highest) and its tiles' place in `members`, in turn. */
-function forEachBlock(
-  blocks: TileBlocks,
-  each: (span: readonly [number, number, number, number, number, number], first: number, last: number) => void,
-): void {
-  for (let block = 0; block + 1 < blocks.firsts.length; block++) {
-    const row = block * 6;
-    const { spans } = blocks;
-    const span = [
-      spans[row]!,
-      spans[row + 1]!,
-      spans[row + 2]!,
-      spans[row + 3]!,
-      spans[row + 4]!,
-      spans[row + 5]!,
-    ] as const;
-    each(span, blocks.firsts[block] ?? 0, blocks.firsts[block + 1] ?? 0);
+/** A block's place as one number, its column offset by half a row so no tile's goes below zero. */
+const BLOCK_KEY_ROW = 1 << 16;
+const BLOCK_KEY_HALF = 1 << 15;
+const EMPTY_SPAN = [Infinity, Infinity, Infinity, -Infinity, -Infinity, -Infinity];
+
+/** Draws laid out a frame at a time into arrays kept from frame to frame, so laying them makes nothing: the first
+ *  `length` are each a part and a run of the list, from `firsts` for `counts` instances. */
+export class Runs<Part> {
+  readonly parts: Part[] = [];
+  firsts = new Uint32Array(64);
+  counts = new Uint32Array(64);
+  length = 0;
+
+  /** Empties the list, keeping its room. */
+  clear(): void {
+    this.length = 0;
+  }
+
+  /** Adds a draw of `part`, `count` instances from `first`. */
+  add(part: Part, first: number, count: number): void {
+    if (this.length === this.firsts.length) {
+      const [firsts, counts] = [new Uint32Array(this.length * 2), new Uint32Array(this.length * 2)];
+      firsts.set(this.firsts);
+      counts.set(this.counts);
+      [this.firsts, this.counts] = [firsts, counts];
+    }
+    this.parts[this.length] = part;
+    this.firsts[this.length] = first;
+    this.counts[this.length] = count;
+    this.length += 1;
   }
 }
 
-/** A group's instances in view, as (first, count) pairs: neighbouring tiles in view join into one draw. */
-export function runsInView(group: Group, visible: Uint8Array): number[] {
-  const runs: number[] = [];
+/** Adds to `into` a group's instances in view as draws of `part`, each a run of the list: neighbouring tiles in view
+ *  join into one draw. */
+export function addRunsInView<Part>(group: Group, visible: Uint8Array, part: Part, into: Runs<Part>): void {
+  const from = into.length;
+  const { tiles, counts } = group;
   let next = group.first;
-  for (const [index, tile] of group.tiles.entries()) {
-    const count = group.counts[index] ?? 0;
-    if (visible[tile]) {
-      const last = runs.length - 2;
-      if (last >= 0 && (runs[last] ?? 0) + (runs[last + 1] ?? 0) === next)
-        runs[last + 1] = (runs[last + 1] ?? 0) + count;
-      else runs.push(next, count);
+  for (let index = 0; index < tiles.length; index++) {
+    const count = counts[index] ?? 0;
+    if (visible[tiles[index]!]) {
+      const last = into.length - 1;
+      if (last >= from && into.firsts[last]! + into.counts[last]! === next) into.counts[last]! += count;
+      else into.add(part, next, count);
     }
     next += count;
   }
-  return runs;
 }

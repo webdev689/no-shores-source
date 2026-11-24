@@ -158,7 +158,9 @@ const leastSquared = (cascade: Cascade): number => (CASTER_LEAST_TEXELS * texelO
 /** Whether a box measured from the eye (west, north, low, then east, south, high) may cast into a cascade whose square
  *  `planes` bound: whether, seen along the sun, it overlaps the square, and is large enough to show in its map. */
 export function boxCasts(planes: Planes, cascade: Cascade, low: Vector, high: Vector): boolean {
-  const [across, down, tall] = [high[0] - low[0], high[1] - low[1], high[2] - low[2]];
+  const across = high[0] - low[0];
+  const down = high[1] - low[1];
+  const tall = high[2] - low[2];
   return (across * across + down * down + tall * tall) / 4 >= leastSquared(cascade) && boxSeen(planes, low, high);
 }
 

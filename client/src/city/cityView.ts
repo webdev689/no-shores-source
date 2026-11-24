@@ -4,9 +4,8 @@
 // into its own pass.
 import { CITY_LAMPS } from '../sky/lamps.ts';
 import { skyUniformFor } from '../sky/skyUniform.ts';
-import { boxSeen, viewPlanes } from '../frustum.ts';
 import { type Gpu, TEXTURE_USAGE } from '../gpu.ts';
-import { FAR, NEAR, ShadowMap } from '../shadow.ts';
+import { FAR, ShadowMap } from '../shadow.ts';
 import type { RmbBlock } from './blocks.ts';
 import {
   type Chunk,
@@ -30,7 +29,7 @@ import { standIn } from '../standIns.ts';
 import { PICTURE_LAYERS } from './pictures.ts';
 import { type CityClimate, type CityPlan, glowLamps } from './plan.ts';
 import { stepWithin } from './steps.ts';
-import { boxReach, NEAR_M, tiersReached } from './tiers.ts';
+import { CitySelector, type Modelled, sameCells, type Seen, solidsOf } from './citySelect.ts';
 
 /** What the scene hands a drawer each frame: the eye in world metres, and how it looks. */
 export interface CityShot {
@@ -47,19 +46,12 @@ export interface CityDrawer {
   drawInto(pass: GPURenderPassEncoder, fromEye: Float32Array, shot: CityShot, time: number, shadow?: ShadowMap): void;
 }
 
-/** Some of the city's chunks, and of their cells within the whole tier's reach. */
-type Selection = { readonly chunks: Chunk[]; readonly cells: number[] };
-
-/** Which of a frame's selections: what the view sees, and what may cast into the near square and into the far one. */
-type Holding = 'view' | 'near' | 'far';
-/** The selections whose near cells draw their models: the far square casts buildings by their masses. */
-type Modelled = Exclude<Holding, 'far'>;
-
-/** What a frame draws, worked out once for its shadows' passes and its own. */
-type Seen = { readonly fromEye: Float32Array } & Record<Holding, Selection>;
-
 /** The near cells' model instances for one selection, written afresh only when its cells change. */
-type Instances = { buffer: GPUBuffer | null; key: string; draws: [model: number, first: number, count: number][] };
+type Instances = {
+  buffer: GPUBuffer | null;
+  readonly cells: number[];
+  draws: [model: number, first: number, count: number][];
+};
 
 /** What the last frame drew. */
 export type CityFrame = { triangles: number; draws: number; nearCells: number; buildMs: number };
@@ -116,6 +108,10 @@ export class CityView implements CityDrawer {
   private drawn: Drawn | null = null;
   private building: Building | null = null;
   private seen: Seen | null = null;
+  /** What a frame selects, laid into lists the view keeps, and its terms, written afresh each frame. */
+  private readonly selector = new CitySelector();
+  private readonly uniforms = new Float32Array(VIEW_BYTES / 4);
+  private readonly solidRunList: Range[] = [];
   private onPainted: () => void = () => {};
 
   /** Lists a pass's crystal draws are laid into, kept from pass to pass. */
@@ -302,8 +298,8 @@ export class CityView implements CityDrawer {
       plates: buffer(data.plates.tops, CITY_BUFFER_USAGE.vertex),
       plateVertices: data.plates.tops.length / 3,
       instances: {
-        view: { buffer: null, key: '', draws: [] },
-        near: { buffer: null, key: '', draws: [] },
+        view: { buffer: null, cells: [], draws: [] },
+        near: { buffer: null, cells: [], draws: [] },
       },
       crystal: buffer(data.crystal.bytes, CITY_BUFFER_USAGE.vertex),
       wreckCrust: data.wrecks.length
@@ -369,67 +365,16 @@ export class CityView implements CityDrawer {
     if (painting(drawn.painter)) standIn('city pictures');
     const { data } = drawn;
     const eye: [number, number, number] = [shot.eye[0] - data.origin[0], shot.eye[1] - data.origin[1], shot.eye[2]];
-    const uniforms = new Float32Array(VIEW_BYTES / 4);
+    const { uniforms } = this;
     uniforms.set(fromEye, 0);
-    uniforms.set([...eye, time], 16);
-    uniforms.set([...data.grid, data.plates.width, data.ruined ? 1 : 0], 20);
+    uniforms.set(eye, 16);
+    uniforms[19] = time;
+    uniforms.set(data.grid, 20);
+    uniforms[22] = data.plates.width;
+    uniforms[23] = data.ruined ? 1 : 0;
     this.gpu.device.queue.writeBuffer(drawn.view, 0, uniforms);
-    const planes = viewPlanes(fromEye);
-    const casting = shadow?.active ? shadow : null;
-    type Box = readonly [number, number, number];
-    const tests: [Holding, (low: Box, high: Box) => boolean][] = [['view', (low, high) => boxSeen(planes, low, high)]];
-    if (casting)
-      tests.push(
-        ['near', (low, high) => casting.reaches(low, high, NEAR)],
-        ['far', (low, high) => casting.reaches(low, high, FAR)],
-      );
-    const seen: Seen = {
-      fromEye,
-      view: { chunks: [], cells: [] },
-      near: { chunks: [], cells: [] },
-      far: { chunks: [], cells: [] },
-    };
-    for (const chunk of data.chunks) {
-      const low: Box = [chunk.low[0] - eye[0], chunk.low[1] - eye[1], chunk.low[2] - eye[2]];
-      const high: Box = [chunk.high[0] - eye[0], chunk.high[1] - eye[1], chunk.high[2] - eye[2]];
-      const wanting = tests.filter(([, test]) => test(low, high));
-      if (!wanting.length) continue;
-      for (const [holding] of wanting) seen[holding].chunks.push(chunk);
-      const middles = boxReach(
-        [chunk.middlesLow[0] - eye[0], chunk.middlesLow[1] - eye[1], chunk.middlesLow[2] - eye[2]],
-        [chunk.middlesHigh[0] - eye[0], chunk.middlesHigh[1] - eye[1], chunk.middlesHigh[2] - eye[2]],
-      );
-      if (middles.nearest >= NEAR_M) continue;
-      for (const cell of chunk.cells) {
-        const middle = data.cells.subarray(cell * 4, cell * 4 + 3);
-        const offset = [middle[0] - eye[0], middle[1] - eye[1], middle[2] - eye[2]];
-        if (Math.hypot(offset[0], offset[1], offset[2]) >= NEAR_M) continue;
-        const half = 51.2 + 10;
-        const cellLow: Box = [offset[0] - half, offset[1] - half, offset[2] - 5];
-        const cellHigh: Box = [offset[0] + half, offset[1] + half, offset[2] + 70];
-        for (const [holding, test] of wanting)
-          if (holding !== 'far' && test(cellLow, cellHigh)) seen[holding].cells.push(cell);
-      }
-    }
-    this.seen = seen;
-    return seen;
-  }
-
-  /** The masses and hulls of some chunks, by the tiers the eye's distance draws them in; `standIn` takes the masses
-   *  for the whole tier too, as the far shadow casts it. */
-  private massRuns(chunks: readonly Chunk[], eye: readonly [number, number, number], standIn = false): Range[] {
-    const masses: Range[] = [];
-    const hulls: Range[] = [];
-    for (const chunk of chunks) {
-      const middles = boxReach(
-        [chunk.middlesLow[0] - eye[0], chunk.middlesLow[1] - eye[1], chunk.middlesLow[2] - eye[2]],
-        [chunk.middlesHigh[0] - eye[0], chunk.middlesHigh[1] - eye[1], chunk.middlesHigh[2] - eye[2]],
-      );
-      const tiers = tiersReached(middles.nearest, middles.farthest);
-      if (tiers.has('masses') || (standIn && tiers.has('whole'))) masses.push(chunk.masses);
-      if (tiers.has('hulls')) hulls.push(chunk.hulls);
-    }
-    return [...runs(masses), ...runs(hulls)];
+    this.seen = this.selector.select(data, fromEye, eye, shadow?.active ? shadow : null);
+    return this.seen;
   }
 
   /** Draws into the cascade being drawn what may cast there: the solids into both; into the near one the near cells'
@@ -450,7 +395,7 @@ export class CityView implements CityDrawer {
     pass.setVertexBuffer(0, drawn.solidVertices);
     pass.setVertexBuffer(1, drawn.origin);
     pass.setIndexBuffer(drawn.solidIndices, 'uint32');
-    for (const run of runs(chunks.map((chunk) => chunk.solids))) pass.drawIndexed(run.count, 1, run.first, 0, 0);
+    for (const run of runs(chunks, solidsOf, this.solidRunList)) pass.drawIndexed(run.count, 1, run.first, 0, 0);
     const { origin } = drawn.data;
     const eye = [shot.eye[0] - origin[0], shot.eye[1] - origin[1], shot.eye[2]] as const;
     if (!far) for (const run of detailRuns(chunks, eye, this.detail)) pass.drawIndexed(run.count, 1, run.first, 0, 0);
@@ -459,7 +404,8 @@ export class CityView implements CityDrawer {
     pass.setPipeline(this.pipelines.massesCast);
     pass.setBindGroup(1, shadow.casterGroup(this.pipelines.massesCast));
     pass.setVertexBuffer(0, drawn.masses);
-    for (const run of this.massRuns(chunks, eye, true)) pass.draw(42, run.count, 0, run.first);
+    for (const tier of this.selector.massRuns(chunks, eye, true))
+      for (const run of tier) pass.draw(42, run.count, 0, run.first);
   }
 
   drawInto(pass: GPURenderPassEncoder, fromEye: Float32Array, shot: CityShot, time: number, shadow?: ShadowMap): void {
@@ -489,11 +435,12 @@ export class CityView implements CityDrawer {
     pass.setVertexBuffer(0, drawn.solidVertices);
     pass.setVertexBuffer(1, drawn.origin);
     pass.setIndexBuffer(drawn.solidIndices, 'uint32');
-    for (const run of [...runs(chunks.map((chunk) => chunk.solids)), ...detailRuns(chunks, eye, this.detail)]) {
-      pass.drawIndexed(run.count, 1, run.first, 0, 0);
-      frame.draws++;
-      frame.triangles += run.count / 3;
-    }
+    for (const listed of [runs(chunks, solidsOf, this.solidRunList), detailRuns(chunks, eye, this.detail)])
+      for (const run of listed) {
+        pass.drawIndexed(run.count, 1, run.first, 0, 0);
+        frame.draws++;
+        frame.triangles += run.count / 3;
+      }
     const crystal = this.drawCrystal(pass, drawn, chunks, eye);
     // the view draws once a frame: the size its wrecks stood at, for the next frame to tell whether it has settled
     if (drawn.wreckCrust) drawn.wreckCrust.crust.lastFrame = this.wreckScale();
@@ -502,11 +449,12 @@ export class CityView implements CityDrawer {
 
     pass.setPipeline(drawn.data.ruined ? this.pipelines.brokenMasses : this.pipelines.masses);
     pass.setVertexBuffer(0, drawn.masses);
-    for (const run of this.massRuns(chunks, eye)) {
-      pass.draw(42, run.count, 0, run.first);
-      frame.draws++;
-      frame.triangles += run.count * 14;
-    }
+    for (const tier of this.selector.massRuns(chunks, eye))
+      for (const run of tier) {
+        pass.draw(42, run.count, 0, run.first);
+        frame.draws++;
+        frame.triangles += run.count * 14;
+      }
     Object.assign(this.frame, frame);
   }
 
@@ -520,9 +468,9 @@ export class CityView implements CityDrawer {
   ): { draws: number; triangles: number } {
     const { data } = drawn;
     const held = drawn.instances[holding];
-    const key = cells.join(',');
-    if (key !== held.key) {
-      held.key = key;
+    if (!sameCells(cells, held.cells)) {
+      held.cells.length = 0;
+      for (const cell of cells) held.cells.push(cell);
       const counts = new Map<number, number>();
       for (const cell of cells)
         for (const instance of data.near.get(cell) ?? [])

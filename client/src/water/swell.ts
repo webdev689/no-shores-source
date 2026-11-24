@@ -22,20 +22,28 @@ export function displacement(
   time: number,
   depth: number,
   lag = 0,
+  out: [number, number, number] = [0, 0, 0],
 ): [number, number, number] {
   const share = reach(swell, depth);
-  const out: [number, number, number] = [0, 0, 0];
-  if (share <= 0) return out;
+  if (share <= 0) return out.fill(0);
+  let [east, south, up] = [0, 0, 0];
   for (const wave of swell.waves) {
     const phase = wave.number * (wave.direction[0] * x + wave.direction[1] * y) - wave.frequency * time + wave.phase;
-    const [sine, cosine] = [Math.sin(phase), Math.cos(phase)];
+    const sine = Math.sin(phase);
+    const cosine = Math.cos(phase);
     const slowness = wave.frequency * lag;
-    out[0] += wave.shift * wave.direction[0] * cosine;
-    out[1] += wave.shift * wave.direction[1] * cosine;
-    out[2] += (wave.amplitude * (sine + slowness * cosine)) / (1 + slowness * slowness);
+    east += wave.shift * wave.direction[0] * cosine;
+    south += wave.shift * wave.direction[1] * cosine;
+    up += (wave.amplitude * (sine + slowness * cosine)) / (1 + slowness * slowness);
   }
-  return [out[0] * share, out[1] * share, out[2] * share];
+  out[0] = east * share;
+  out[1] = south * share;
+  out[2] = up * share;
+  return out;
 }
+
+/** The carry `swellHeight` asks for at each of its steps, laid afresh over the last's. */
+const CARRIED: [number, number, number] = [0, 0, 0];
 
 /**
  * The sea's surface over (x, y) from still water: the water at rest whose carried place is (x, y), found in four
@@ -48,8 +56,9 @@ export function swellHeight(swell: ShelteredSwell, x: number, y: number, time: n
   const carry = Math.min(sheltered, 1);
   let [restX, restY] = [x, y];
   for (let step = 0; step < 4; step++) {
-    const [east, south] = displacement(swell, restX, restY, time, depth);
-    [restX, restY] = [x - east * carry, y - south * carry];
+    displacement(swell, restX, restY, time, depth, 0, CARRIED);
+    restX = x - CARRIED[0] * carry;
+    restY = y - CARRIED[1] * carry;
   }
-  return displacement(swell, restX, restY, time, depth, lag)[2] * sheltered;
+  return displacement(swell, restX, restY, time, depth, lag, CARRIED)[2] * sheltered;
 }
