@@ -94,23 +94,31 @@ const HIT_FRAME: f64 = 2.0;
 pub const PAIR_PACE: f64 = 0.8;
 pub const PAIR_DAMAGE: f64 = 0.9;
 
-/// The ticks from a swing's start to its blow landing, and to its end.
+/// A foe's swing takes this share of the law's time, slower than a player's three quarters, so a person has a little
+/// longer to see its blow come and parry it: a sword's lands 21 ticks after it begins, a player's 18.
+pub const FOE_SWING_PACE: f64 = 0.875;
+
+/// The ticks from a player's swing's start to its blow landing, and to its end.
 #[must_use]
 pub fn swing_ticks(class: WeaponClass) -> (u32, u32) {
-    paced_ticks(class, 1.0)
+    paced_ticks(class, SWING_PACE)
 }
 
 /// The ticks of a player's pair's swing: PAIR_PACE of its lone weapon's.
 #[must_use]
 pub fn pair_swing_ticks(class: WeaponClass) -> (u32, u32) {
-    paced_ticks(class, PAIR_PACE)
+    paced_ticks(class, SWING_PACE * PAIR_PACE)
+}
+
+/// The ticks of a foe's swing, at FOE_SWING_PACE.
+#[must_use]
+pub fn foe_swing_ticks(class: WeaponClass) -> (u32, u32) {
+    paced_ticks(class, FOE_SWING_PACE)
 }
 
 fn paced_ticks(class: WeaponClass, pace: f64) -> (u32, u32) {
     let weapon = weapon(class);
-    let frame = (SWING_FRAME * weapon.handling * if weapon.two_handed { 1.06 } else { 1.0 }).clamp(0.09, 0.4)
-        * SWING_PACE
-        * pace;
+    let frame = (SWING_FRAME * weapon.handling * if weapon.two_handed { 1.06 } else { 1.0 }).clamp(0.09, 0.4) * pace;
     (ticks(frame * HIT_FRAME), ticks(frame * STRIKE_FRAMES))
 }
 

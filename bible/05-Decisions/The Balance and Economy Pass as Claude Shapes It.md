@@ -124,25 +124,24 @@ What finishing a piece takes now, every node and one node a column (Aurem, fragm
 | A foe's gun | Its ball strikes two thirds of the gun's damage (`FOE_GUN`): an Elite Marksman's 39 a shot and 54 aimed on a player of its level become 26 and 36, three aimed shots to fell them or four plain. A foe's arrow and bolt strike whole | The owner's yes. The Marksman's aimed shots felled a level-matched player in two; its accuracy is unchanged |
 | A drawn shot | The room tells a player's shot loosed from the draw by its damage against a player's quick shot's (`power::aimed`) | Gullwing's leap is for aimed shots alone; told against the bow's whole 18, every quick shot at 12 would have leapt |
 | Companions and boarding hands | Their blows on foes take the land's ×1.5 and foes' blows on them ×0.75 | They fight "as a player matched to their level", and the fight's heat already took the ease off what they dealt and took |
-| The Bulwark | Blocks as a swordsman does, 35% as a Major, until its change (its second phase or half its health) drops the shield for its maul (`roster::standing`); any brute bearing a shield the same | The owner's yes ([[The Bulwark Blocks, Supers Are Powerful, the Sea's Gaps Close and Level 30 Takes Breach Gear]]). As a brute it carried a shield but never raised it. The rules' two scripted sword players still win the heroic Fissure, its Bulwarks leading and its Warden a Bulwark Miniboss (49% of blows from the front blocked), 32 s later than on `main` alone; the dev page's two bots still win it |
+| The Bulwark | Blocks as a swordsman does, 35% as a Major, until its change (its second phase or half its health) drops the shield for its maul (`roster::standing`); any brute bearing a shield the same | The owner's yes ([[The Bulwark Blocks, Supers Are Powerful, the Sea's Gaps Close and Level 30 Takes Breach Gear]]). As a brute it carried a shield but never raised it. The rules' two scripted sword players still win the heroic Fissure, its Bulwarks leading and its Warden a Bulwark Miniboss (49% of blows from the front blocked), as do the dev page's two bots |
 
 Measured, a level 1 player with the starting sword swinging once a second and never guarding (`measure_blows`):
 
 | Foe | Felled in | Fells the player in |
 |---|---|---|
-| Minor Collector | 3 blows, 2.3 s | 31.4 s |
+| Minor Collector | 3 blows, 2.3 s | 30.0 s |
 | Major Hookman | 4 blows, 3.3 s | 16.7 s |
-| Major Enforcer | 7 blows, 9.3 s | 13.9 s |
-| Elite Reeve | 18 blows, 29.8 s (33.8 before) | 16.3 s |
-| Miniboss Tithe-Mate | 31 blows, 56.8 s | 16.4 s |
-| Boss (Thule) | 59 blows, 112.3 s | 18.4 s |
+| Major Enforcer | 7 blows, 9.8 s | 13.1 s |
+| Elite Reeve | 18 blows, 33.3 s | 16.4 s |
+| Miniboss Tithe-Mate | 31 blows, 50.8 s | 16.3 s |
+| Boss (Thule) | 55 blows, 106.3 s | 16.3 s |
 
 The Miniboss's and the Boss's times move by a few seconds from run to run as the dice fall; each is one fight. The
-rules' two scripted sword players (`public_door_tests.rs`) meet the heroic raid's task but run out its clock in its
-fourth wave, its stores nearly whole; with `main`'s captains (parry 0.25, block 0.3, dodge 0.15) they hold it. The
-captains alone make the difference: the pair keeps falling back from its Reeve-led waves, though a Reeve alone now
-falls sooner (why a captain that defends less fells a pair more often is unchecked). The pair stands near the line,
-and the owner keeps it so for now.
+rules' two scripted sword players (`public_door_tests.rs`) meet the heroic raid's task and hold its stores, foes'
+swings taking seven eighths of their time ([[A Foe's Plain Swing Takes Seven Eighths of Its Time]]); at three quarters,
+with this pass's captains, they ran out its clock in its fourth wave. The pair stands near the line, which a small
+change to the fight moves either way, and the owner keeps it so for now.
 
 ## Left as it was
 
