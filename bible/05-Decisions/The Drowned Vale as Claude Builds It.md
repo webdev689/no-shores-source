@@ -73,3 +73,24 @@ recordings are the owner's picks on the sound sheet, none made yet.
 | What the state tells | A slab rising or sinking within 40 m; a mooring as it is newly held while the Waking runs; a hidden chest as it pays the player, at the chest; the Spire on its waking, for its company; each silent until picked | They sounded nothing before, so nothing borrowed stands in |
 | A chest's chime | Kept beside the chest's own sound | It says the reward came, as every chest's does |
 | The Breach cleared | No victory sting | The room tells it at the gate, where no one who cleared it stands |
+
+## Its rules at their edges
+
+Each a call of Claude's, made where an audit of the whole raid found a rule that could be slipped or a mechanic that
+punished what play could not prevent.
+
+| Call | Chosen | Why |
+|---|---|---|
+| Who a great foe is matched to | Everyone who has played in the run, by account, still here, away or fallen; a great foe standing as more come in is matched again, keeping its share of health | Seven could leave before the Steward stood and come back to a quarter of its health; one could stand it alone for the rest to join |
+| The company unwritten | Loses the attempt 3 s on, whoever stands again meanwhile | At Normal one fallen a few seconds earlier stood again inside the wipe's 3 s, the attempt went on with the Lodestone's rule off, and the Steward's last unwritings could be outlasted |
+| Hold True's rest | From whenever it ends: guard let go, its most held, a set-down, a pass, its bearer fallen | A set-down and a take-up raised it again at once, near always up |
+| The Lodestone in the dark | Fallen into the dark with its bearer, it goes home to its plinth; it is set down only standing | Lying metres under any floor, out of reach, it unwrote the company with no counterplay |
+| The Scrivener's ward | Holds where a blow is judged, as an Elite Dungeon's Boss's ward does | Re-warded at a sliver, one heavy blow felled it in the tick before its health was put back |
+| The Arts and the bells | No spell seeks or strikes a bell or a Watcher | A Tempest's orbs and the Duskraven's bolts seek the nearest foe, so an Art could break a bell out of its order |
+| The font | Stays lit 3 s after its first cleanse, then rests 25 s from it | A ring marks the whole chapel; the first to reach the font spent it for everyone |
+| The Scrivener's lone bell | Once a writing, 22 s before it: a miss rings 14 s (Hard 16 s) before the writing | Every 20 s against writings every 30 s, a miss rang 2, 12 or 22 s before one in turn: the clocks decided, not the company |
+| The Mending's Penitents | Each walks to the nearest open seam, turning as one shuts and falling apart with none open; one every 5 s for four, as much more often for more | They fused into seams just shut, and into the vale with the Mender up; at six to eight the fusions never came near |
+| The Watchers' hearing | From 3 s into the Ways | The first Watcher posts within its hearing of where the Ways begin, so a company running in was heard before it could read the teaching line |
+| A sighting at Hard | Its unwriting comes whoever reaches the Stair in its 3 s; the Heart's chest shuts once anyone is seen | Stepping onto the Stair cancelled it; the chest stayed open to an attempt someone had been seen in |
+| A Bulwark at a rift's mooring | Shuts the rift only from a mooring the company has left, as at the gate | It shut a held rift at once, stranding those inside, against what the Waking teaches |
+| The Steward's weight and the tiers' doors | 6.5 times its match; each tier opens one level under its foes, 25 and 29 | Two under, a company strikes at about half its match and could not fell an eight-times Steward in the time its takings give, however it played; never laid bare, a matched company still cannot fell it before its last toll |

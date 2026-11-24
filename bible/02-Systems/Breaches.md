@@ -42,11 +42,12 @@ Claude's ([[The Drowned Vale as Claude Builds It]]).
   its own rules on top (`breach/fallen.rs`). At Normal the fallen in a running encounter stand again of themselves,
   unasked, after 10 s at its stage, unless revived sooner; at Hard they never stand again of themselves, and each
   revive spends one of the attempt's 5 revives, none left meaning none (`breach_lets_revive`). Outside a running
-  encounter the fallen stand again after 6 s at either tier (`stands_after`); a fall into the dark is not revived, and
+  encounter the fallen stand again after 6 s at either tier (`stands_after`); a fall into the dark is not revived (one who leaves so comes back so), and
   waits as long. Every stand at the stage reached is a respawn there, the stage the Breach's checkpoint, told
   `Checkpoint` as it moves on. At the Waking the same holds for the company holding the gate in its hollow, standing
   again at the gate's arrival, its fallen revived only by its own company. At Hard every blow on a player
-  in the run, or of the company in its Waking, weighs 1.25 times. Every living player down 3 s at once wipes the
+  in the run, or of the company in its Waking, weighs 1.25 times. The whole company unwritten (`unwrite_all`) loses the attempt 3 s on, whoever stands again meanwhile
+  (`Breach::lost`); and every living player down 3 s at once wipes the
   attempt: its foes go, the company stands whole at its stage, its revives are whole again, and it begins again as
   they walk in. A player who leaves and comes back keeps what the Breach laid on them: down if they left down (a fall
   too), their mark and its time, and a shore they were taken to (`breach/rejoin.rs`).
@@ -80,7 +81,8 @@ Claude's ([[The Drowned Vale as Claude Builds It]]).
 - **The Lodestone.** The Breach's relic, taken from its plinth within 2.5 m and set down again. Its bearer fights bare
   handed: their swing is its Strike (three times a blow); Guard raises Hold True (4 m round the bearer, 6 s at most,
   10 s to rest), which cleanses the Rewritten and halves a foe's blow there; the Art key Grounds it once charged
-  (20 s): within 8 m it breaks a ward. Left lying 6 s (Hard 4) it unwrites the company.
+  (20 s): within 8 m it breaks a ward. Left lying 6 s (Hard 4) it unwrites the company. Hold True rests from whenever it ends, a set-down or a pass
+  too; the stone is set down only standing; fallen into the dark with its bearer, it goes home to its plinth.
 - **Rewritten.** A mark the encounters lay on players; when its time comes the Rewritten are unwritten (killed)
   unless cleansed first.
 
@@ -90,11 +92,11 @@ Claude's ([[The Drowned Vale as Claude Builds It]]).
 |---|---|---|
 | The Waking | The Spire at the Sunken Gate, in the zone | Above |
 | The Descent | Down the old mill race: drops, the fallen wheel across a gap, a jump; a hidden chest off a ledge | A traversal |
-| The Mending | The drowned green: three seams | Three stages of 60 s (north; west and east; all three), waves between; Husks walk to an open seam and fuse, each fusion overtaking ground round it (a tenth of health a second), the walkers standing whatever the waves; four fusions (Hard three) wipe; the Mender last |
-| The Choir | The chapel: seven bells, five desks, the font | Rounds of 3 to 7 bells waking 1 s apart (Hard 0.7 s) and ringing 8 s (Hard 6 s) after the last; broken in waking order (a few blows each) or they ring; a wave stands as each round wakes; a ring Rewrites every living player in the run; the font cleanses, then rests 25 s. Then the Scrivener, warded, at a desk, its aimed shot telegraphed, at half health quicker with two Flickers called behind it: Ground breaks the ward; every 25 s it marks a desk for 4 s, blotted by a player standing on it, or it moves there; every 30 s it writes, unwriting the Rewritten; a bell wakes every 20 s; fury at 8 minutes |
-| The Unlit Ways | The old town's streets between houses bricked shut, and its Watchers | A Watcher sees 14 m in a 40° cone on its sweep; a living player in its sight 0.75 s, or sprinting within 8 m, is seen: at Normal they are unwritten, at Hard the company in 3 s; Watchers cannot be harmed; won when every living member of the company stands on the Stair; the Heart's chest opens to an attempt in which no one was seen |
+| The Mending | The drowned green: three seams | Three stages of 60 s (north; west and east; all three), waves between; Penitents walk to the nearest open seam (turning to another as one shuts, falling apart with none open; one every 5 s for four, as much more often for more) and fuse, each fusion overtaking ground round it (a tenth of health a second), the walkers standing whatever the waves; four fusions (Hard three) wipe; the Mender last |
+| The Choir | The chapel: seven bells, five desks, the font | No spell seeks or strikes a bell or a Watcher, so the Arts never break the order; Rounds of 3 to 7 bells waking 1 s apart (Hard 0.7 s) and ringing 8 s (Hard 6 s) after the last; broken in waking order (a few blows each) or they ring; a wave stands as each round wakes; a ring Rewrites every living player in the run; the font cleanses, stays lit 3 s for the rest to reach it, then rests 25 s. Then the Scrivener, warded, at a desk, its aimed shot telegraphed, at half health quicker with two Flickers called behind it: Ground breaks the ward; every 25 s it marks a desk for 4 s, blotted by a player standing on it, or it moves there; every 30 s it writes, unwriting the Rewritten; a bell wakes 22 s before each writing; fury at 8 minutes |
+| The Unlit Ways | The old town's streets between houses bricked shut, and its Watchers | The Watchers listen from 3 s in; a Watcher sees 14 m in a 40° cone on its sweep; a living player in its sight 0.75 s, or sprinting within 8 m, is seen: at Normal they are unwritten, at Hard the company in 3 s, whoever reaches the Stair meanwhile; Watchers cannot be harmed; won when every living member of the company stands on the Stair; the Heart's chest opens to an attempt in which no one was seen, and shuts once anyone is |
 | The Broken Stair | Slabs over the dark | A traversal on the slabs' measure; a hidden chest on a side slab |
-| The Two Shores | The keep's hall: the Seam, two rifts | The Warden first; then each rift opens (3 s) while its mooring is held; inside, its Keeper; a Keeper's fall Rewrites its shore, again every 4 s while inside; a shore shut strands those in it (unwritten after 8 s); the Seam tolls every 30 s and fuses Husks as the Mending's seams do |
+| The Two Shores | The keep's hall: the Seam, two rifts | The Warden first; then each rift opens (3 s) while its mooring is held, and a Bulwark shuts it only from a mooring the company has left; inside, its Keeper; a Keeper's fall Rewrites its shore, again every 4 s while inside; a shore shut strands those in it (unwritten after 8 s); the Seam tolls every 30 s and fuses Husks as the Mending's seams do |
 | The Steward | Its court over the dark | Its first taking at 25 s, then every 70 s (Hard 60 s) on a fixed clock: half the living players in the run not away, up to four, into one shore, Rewritten; any still away when the next taking comes are unwritten first; there, five bells broken in the order shown in the court open the way back while the rift's mooring is held from the court (by two at Hard, or as many as are left there; with none left, the bells alone); it tolls 20 s after each taking and every 20 s; Grounded at its feet it lies bare 25 s, once between takings (blows on it five times, the Arts recharging three times as fast), and a company that never lays it bare cannot fell it before its last toll; it sweeps and lunges, at two thirds slams with two Husks called beside it, at one third rings; after the fourth taking, when a fifth would come it unwrites everyone, and every 20 s after; its fall wins, bringing back any still in a shore |
 
 ## Rewards
