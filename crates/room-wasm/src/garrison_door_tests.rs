@@ -135,7 +135,7 @@ fn input_of(player: PlayerId, input: &room::Input) -> i32 {
 }
 
 /// Both tests hold this value: two players in one node's room, the garrison's foes shared out between them.
-pub const GARRISON_PAIR_HASH: &str = "212fe761";
+pub const GARRISON_PAIR_HASH: &str = "b228c7e4";
 
 #[test]
 fn two_players_against_a_node_s_garrison_fight_to_the_same_fingerprint_natively_as_in_the_browser_s_webassembly() {

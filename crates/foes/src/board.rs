@@ -185,7 +185,9 @@ impl Board {
         let fight = self.fights.entry(target).or_default();
         let breathed = fight.due.is_none_or(|(_, at)| lands >= at + breath);
         let (count, by) = fight.exchange;
-        fight.exchange = if breathed { (1, Some(foe)) } else { (count.saturating_add(1), by.filter(|by| *by == foe)) };
+        // The first blow since a breath, or since an exchange closed, begins an exchange of its own striker's.
+        let fresh = breathed || count == 0;
+        fight.exchange = if fresh { (1, Some(foe)) } else { (count.saturating_add(1), by.filter(|by| *by == foe)) };
         if fight.due.is_none_or(|(_, at)| lands >= at) {
             fight.due = Some((foe, lands));
         }

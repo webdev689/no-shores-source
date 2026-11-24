@@ -117,6 +117,7 @@ fn the_bias_leaves_a_fight_at_rest_as_tuned_and_presses_a_hot_one_by_at_most_thr
     for heat in [0.7, 0.85, 1.0] {
         let pressed = at(heat).pressed();
         assert!(pressed.patience < last.patience && pressed.ring_gap < last.ring_gap && pressed.beat < last.beat);
+        assert!(pressed.breath < last.breath, "and the breath after an exchange");
         assert!(pressed.swing_delay.0 < last.swing_delay.0 && pressed.swing_delay.1 < last.swing_delay.1);
         last = pressed;
     }
@@ -127,6 +128,7 @@ fn the_bias_leaves_a_fight_at_rest_as_tuned_and_presses_a_hot_one_by_at_most_thr
         (last.swing_delay.1, SWING_DELAY.1),
         (last.ring_gap, RING_GAP),
         (last.beat, BEAT),
+        (last.breath, BREATH),
     ] {
         assert!((share(pressed, tuned) - 0.7).abs() < 1e-12, "full heat takes off three tenths: {pressed} of {tuned}");
     }

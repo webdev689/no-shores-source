@@ -219,8 +219,8 @@ strikes ([[Public Events]]).
   piles it onto its target. A target who turns its back (more than 110 degrees) on a waiting foe in its place near its
   ring (the flanker, or one in the line), or walks in on one inside the near edge of the ring a turn holds, is open to
   it without a turn, but to one such foe at a time, and never while it breathes (below). A foe walked in on fights
-  back where it stands, though another goes in. One
-  open to a turned back keeps to the ring like a holder while another goes in, then goes in. Either goes on fighting
+  back where it stands, though another goes in. One open to a turned back keeps to the ring like a holder while
+  another goes in, then goes in. Either goes on fighting
   while the target stays that close. A back walking away is no such opening: the one whose turn it is runs after it.
   A foe that blocks holds its guard up on the ring while it waits its turn, as a shield-bearer does: it raises it
   within 0.3 m of the ring's line and keeps it up across the ring's give and the step back in from just past it. A
@@ -237,8 +237,10 @@ strikes ([[Public Events]]).
   foe begins a swing, a telegraphed blow or a shot there, none goes in to strike, and nothing is open to strike without
   a turn. A foe with a turn stands back on the ring the waiting stand on, and one its target walks in on steps back from
   it, so a player fighting a crowd alone has a moment to move, turn or drink. A riposte or a counter a foe earned, and a
-  chained or feinted blow, still come: they answer the player, or finish a blow begun. A blow a breath or more after the
-  one before begins an exchange afresh. One foe alone makes none, and fights at its own pace
+  chained or feinted blow, still come, and so does a Boss's roar into its next phase, which the beat never held either:
+  they answer the player, or finish a blow begun, or mark the fight's turn. Only the factions' foes give a breath: the
+  players' side (companions, boarding hands, the Brig's crew) fights at its own pace and keeps the nearer ring. A blow a
+  breath or more after the one before begins an exchange afresh. One foe alone makes none, and fights at its own pace
   ([[Foes in a Crowd Give a Breath After Each Exchange, and the Waiting Stand Farther Out]]).
 - **The line.** A foe with a turn holds a ring 1.5 m outside its reach, with 0.6 m of give. While another foe fights
   its target, the waiting stand on one 1.5 m farther out, 3 m outside their reach, a second's walk from going in, so
@@ -365,6 +367,9 @@ more often than an Elite's) and the three of each Boss, its own, are [[Enemies]]
 
 ## Limits
 
+- A breath is kept on the board while a foe fights its target: foes that all lose sight of it for 1.5 s let it go,
+  breath and beat with it. It is its target's own: a sweep at a companion beside a breathing player still reaches
+  them.
 - A foe answers one blow at a time: a second swing seen while it answers the first is not weighed.
 - A wind-up goes on when its foe changes target (DFO's breaks it).
 - A shot is taken to leave as the room says it was loosed; a draw is not read.

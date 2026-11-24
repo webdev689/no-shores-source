@@ -1,10 +1,11 @@
 //! The tactics brain, DFO's, standing on the game's fight: whom a foe fights and whether it is its turn. As many foes a
-//! target as the director allows fight it hand to hand and shoot at it; the rest stand on a ring just outside their
-//! reach and circle round to its flanks. A holder walks in and strikes, hops back after its blow and hands its turn to
-//! whoever waited longest; one that waited past its patience goes in anyway, one over the count at most, and a target
-//! that turns its back or walks inside the ring is open to anyone. The waiting stand apart, a ring farther out for those
-//! a ring has no room for. A hurt foe backs off, a coward runs, and a shooter kites. Each turn it answers blows at it
-//! first, then takes the openings it is given, as its group asks: broken, raging, defending or screened.
+//! target as the director allows fight it hand to hand and shoot at it; the rest wait on a ring outside their reach,
+//! farther out in a crowd, and circle round to its flanks. A holder walks in and strikes, hops back after its blow and
+//! hands its turn to whoever waited longest; one that waited past its patience goes in anyway, one over the count at
+//! most, and a target that turns its back or walks inside the ring is open, but never while it breathes after an
+//! exchange. The waiting stand apart, a ring farther out for those a ring has no room for. A hurt foe backs off, a
+//! coward runs, and a shooter kites. Each turn it answers blows at it first, then takes the openings it is given, as
+//! its group asks: broken, raging, defending or screened.
 
 use crate::board::Board;
 use crate::brain::{Brain, Homeward, Plan};
@@ -287,10 +288,11 @@ fn melee(brain: &mut Brain, here: &Here<'_, '_>, board: &mut Board, sight: &Sigh
     let reach = reach_of(&here.fighter);
     let director = here.world.director;
     let pressed = director.pressed();
-    // The ring a foe with a turn holds, and the one farther out that the waiting stand on while another fights
-    // their target; a foe alone at its target never waits for a turn, so its fight is its own.
+    // The ring a foe with a turn holds, and the one farther out that the factions' waiting stand on while another
+    // fights their target; a foe alone at its target never waits for a turn, so its fight is its own, and the players'
+    // side keeps the nearer ring.
     let ring = reach + pressed.ring_gap;
-    let crowd = board.fighting(sight.id, me) > 0;
+    let crowd = !here.fighter.side.is_players() && board.fighting(sight.id, me) > 0;
     let waiting = ring + if crowd { WAIT_GAP } else { 0.0 };
     // A leader its followers screen takes no turn while they fight, nor waits in their line for one, so the first of
     // them to have waited goes in; raging, or going in now they are gone, it takes one at once, one over the count at

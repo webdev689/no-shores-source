@@ -78,5 +78,7 @@ pub fn note(brain: &Brain, here: &Here<'_, '_>, board: &mut Board, intent: &Inte
     } else {
         return;
     };
-    board.struck(target, here.me, lands, Here::ticks(here.world.director.pressed().breath));
+    // Only the factions' foes give a breath: the players' side (companions, hands, crews) fights at its own pace.
+    let breath = if here.fighter.side.is_players() { 0.0 } else { here.world.director.pressed().breath };
+    board.struck(target, here.me, lands, Here::ticks(breath));
 }

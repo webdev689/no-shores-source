@@ -15,7 +15,7 @@ use foes::Board;
 use foes::Director;
 use foes::Rank::Major;
 use foes::brain::Plan;
-use foes::tuning::{BEAT, BREATH, EXCHANGE, LINE_ARC};
+use foes::tuning::{BEAT, BREATH, EXCHANGE, LINE_ARC, RING_GAP, RING_SLACK, WAIT_GAP};
 
 const PLAYER: u32 = 1;
 
@@ -112,6 +112,20 @@ fn one_foes_own_blows_make_no_exchange() {
 }
 
 #[test]
+fn after_a_breath_one_foes_own_blows_still_make_no_exchange() {
+    let (beat, breath) = (72, 150);
+    let mut board = Board::default();
+    for (foe, lands) in [(1, 100), (2, 180), (3, 260)] {
+        board.struck(9, foe, lands, breath);
+    }
+    // Foe 1's riposte lands inside the breath, then its own blows, each within a breath of the one before.
+    for lands in [300, 380, 460] {
+        board.struck(9, 1, lands, breath);
+    }
+    assert!(board.go_in(9, 1, 461) && board.may_strike(9, 1, 540, beat, 461, true), "alone, a riposte among them");
+}
+
+#[test]
 fn a_lone_player_meets_no_more_than_an_exchange_of_blows_without_a_breath() {
     let breath = u64::from(combat::ticks(BREATH));
     let mut exchanges = 0;
@@ -127,6 +141,34 @@ fn a_lone_player_meets_no_more_than_an_exchange_of_blows_without_a_breath() {
         }
     }
     assert!(exchanges >= 3 * 5, "and they fight in exchanges: {exchanges} in three half-minutes");
+}
+
+#[test]
+fn the_players_side_fighting_a_foe_gives_it_no_breath() {
+    // Three of the crew's types on the players' side against a still foe of a faction: their blows at it run on a beat
+    // apart, as the factions' did before any breath.
+    let breath = u64::from(combat::ticks(BREATH));
+    let mut longest = 0;
+    for seed in [2, 5, 9] {
+        let mut room = group(seed, foes::director::REST, &[(SWORDSMAN, -40.0), (BRUTE, 0.0), (SKIRMISHER, 40.0)]);
+        room.set(PLAYER, |fighter| fighter.side = combat::fighter::Side::Faction(1));
+        for id in [10, 11, 12] {
+            room.set(id, |fighter| (fighter.side, fighter.ally) = (combat::fighter::Side::Players, true));
+            room.brains
+                .iter_mut()
+                .find(|(other, _)| *other == id)
+                .unwrap()
+                .1
+                .fights_for(combat::fighter::Side::Players);
+        }
+        room.run(1800, &mut still(0.0));
+        let mut run = 1;
+        for pair in landings(&room).windows(2) {
+            run = if pair[1].0 < pair[0].0 + breath { run + 1 } else { 1 };
+            longest = longest.max(run);
+        }
+    }
+    assert!(longest > usize::from(EXCHANGE), "blows ran on without a breath: at most {longest} in a row");
 }
 
 #[test]
@@ -159,8 +201,11 @@ fn a_player_walking_off_in_a_breath_leaves_the_foes_behind() {
         room.run(1800, &mut walking_off);
     }
     assert!(breaths.len() >= 3 * 3, "breaths enough to judge: {}", breaths.len());
+    // The nearest ends it no nearer than the ring the waiting stand on, a dagger's, less its give: even the one whose
+    // turn it was stood back.
+    let waiting = 1.3 + RING_GAP + WAIT_GAP - RING_SLACK;
     for (start, end) in &breaths {
-        assert!(end > &(start + 1.0), "walked off in a breath, it gains ground: from {start:.1} m to {end:.1} m");
+        assert!(*end >= waiting, "walked off in a breath, it gains ground: from {start:.1} m to {end:.1} m");
     }
 }
 

@@ -8,6 +8,7 @@ use super::*;
 use crate::{Fighter, Input};
 use ::foes::Rank;
 use ::foes::brain::Plan;
+use ::foes::director::Pressed;
 use ::foes::roster::{COLLECTOR, ENFORCER, RUNNER};
 use ::foes::tuning::RING_SLACK;
 use combat::sight::{apart, bearing};
@@ -28,13 +29,15 @@ pub(crate) struct Crowd {
     pub overlapping: f64,
     /// The share of swings begun with an ally's body across the line to the target, nearer than it.
     pub through_ally: f64,
-    /// Swings begun a minute outside the player's breaths (`Board::breathing`), when no foe may begin one.
+    /// Swings begun a minute outside the player's breaths (`Board::breathing`), when no foe begins one of its own.
     pub swings: f64,
     /// The melee turns out, on average and at most.
     pub turns: f64,
     pub turns_most: usize,
     /// Waiting foes standing inside their ring's near edge, on average a tick.
     pub inside_ring: f64,
+    /// The share of the fight the player breathes.
+    pub breathing: f64,
 }
 
 /// Where a crowd fights.
@@ -100,6 +103,7 @@ pub(crate) fn crowd(on: Ground, count: usize, heat: f64, walking: bool) -> Crowd
         total.turns += measured.turns / f64::from(RUNS);
         total.turns_most = total.turns_most.max(measured.turns_most);
         total.inside_ring += measured.inside_ring / f64::from(RUNS);
+        total.breathing += measured.breathing / f64::from(RUNS);
     }
     total
 }
@@ -198,6 +202,7 @@ fn crowd_run(on: Ground, count: usize, heat: f64, walking: bool, run: u32) -> Cr
     measured.inside_ring /= samples;
     measured.through_ally = f64::from(through) / f64::from(swings.max(1));
     measured.swings = f64::from(swings) / f64::from(open.max(1)) * 3600.0;
+    measured.breathing = 1.0 - f64::from(open) / samples;
     measured
 }
 
@@ -223,8 +228,11 @@ fn sixteen_melee_foes_round_a_player_stand_apart_take_their_turns_and_keep_fight
         assert!(crowd.turns_most <= cap + 1, "{on:?}: at most one past the turns' cap: {}", crowd.turns_most);
         // One blow at a time lands at a target, a beat apart, and one foe goes in at a time: they keep swinging at
         // least once in 2.4 beats.
-        let beat = ::foes::Director { heat }.pressed().beat;
+        let Pressed { beat, breath, .. } = ::foes::Director { heat }.pressed();
         let swings = crowd.swings;
+        // And breathe at most a breath an exchange, its blows a beat apart at the closest.
+        let most = breath / (breath + f64::from(::foes::tuning::EXCHANGE - 1) * beat);
+        assert!(crowd.breathing <= most, "{on:?}: breathing {:.2} of the fight, past {most:.2}", crowd.breathing);
         assert!(swings >= 25.0 / beat, "{on:?}: and they keep fighting: {swings} swings a minute, a beat {beat} s");
     }
 }
