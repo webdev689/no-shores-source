@@ -103,8 +103,7 @@ impl Room {
     }
 
     /// An escort's ambush, standing round its figure on a mesh baked there, coming at the player, and holding the
-    /// figure; it waits a tick while the room has no room for it or a mesh was baked this tick. One the character stood
-    /// before in this task, before a rejoin, drops nothing again, as a defence's waves do.
+    /// figure; it waits a tick while the room has no room for it or a mesh was baked this tick.
     fn stand_ambush(&mut self, player: PlayerId, goal: &'static GoalDef, at: [f64; 3]) {
         let Goal::Escort(escort) = &goal.goal else { return };
         let members = foes_of(escort.ambush.iter());
@@ -116,22 +115,20 @@ impl Room {
         let seed = self.world_seed ^ AMBUSH_STREAM ^ u64::from(player);
         let stood = self.stand_arriving(ground, place.at, AMBUSH_REACH, &members, AMBUSH_OUT, seed).unwrap_or_default();
         let target = self.fighter(player).map(|fighter| [fighter.body.x, fighter.body.y, fighter.body.z]);
-        let key = self.quests.steps.get(&player).map(|step| step.key);
-        let quest = key.and_then(|key| gear::quests::quests().quests.get(key[0])).map(|quest| quest.id.as_str());
-        let fought = !stood.is_empty()
-            && self
-                .players
-                .get_mut(&player)
-                .zip(quest.zip(key))
-                .is_some_and(|(found, (quest, key))| found.character.quests.fought_wave(quest, key[2], 0));
         let clock = self.clock;
         for id in &stood {
             if let (Some(found), Some(target)) = (self.foes.get_mut(id), target) {
                 found.brain.hunt(player, target, clock);
             }
-            if fought {
-                self.quests.spoilless.insert(*id);
-            }
+        }
+        // An ambush is its escort's one wave: stood before in this task, before a rejoin or a return, it drops nothing.
+        let key = self.quests.steps.get(&player).map(|step| step.key);
+        let quest = key.and_then(|key| gear::quests::quests().quests.get(key[0])).map(|quest| quest.id.as_str());
+        let fought = self.players.get_mut(&player).zip(quest.zip(key)).is_some_and(|(found, (quest, key))| {
+            !stood.is_empty() && found.character.quests.fought_wave(quest, key[2], 0)
+        });
+        if fought {
+            self.quests.spoilless.extend(&stood);
         }
         if let Some(Step { kind: Stepping::Figure(figure), .. }) = self.quests.steps.get_mut(&player) {
             figure.state = if stood.is_empty() { figure.state } else { HELD };

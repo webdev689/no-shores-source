@@ -186,3 +186,17 @@ fn a_cleared_group_stands_again_at_its_post_and_walks_its_beat_from_there() {
     run(&mut room, PAUSE + 600);
     assert!(apart(feet(&room, leader), flat(room.garrison[0].at)) > 5.0, "and it walks its beat from there");
 }
+
+#[test]
+fn a_follower_beside_its_leader_on_a_raised_floor_keeps_a_place_of_its_own_on_it() {
+    // A platform 40 m square and 6 m high on open ground: no ground within 4 m of its middle on the ground's level.
+    let platform = movement::Block { min_x: -20.0, min_y: -20.0, max_x: 20.0, max_y: 20.0, top: 6.0, bottom: -1.0 };
+    let bounds = navmesh::Bounds { min_x: -40.0, min_y: -40.0, max_x: 40.0, max_y: 40.0 };
+    let nav = navmesh::NavMesh::bake(&[platform], bounds, &navmesh::AGENT);
+    let lead = nav.nearest_point([0.0, 0.0, 6.0]).expect("the platform's top is on the mesh");
+    let place = beat::near_on((&nav, &Floor::Flat), lead, (SPREAD, 0.0));
+    assert!((place[2] - 6.0).abs() < 0.1, "on the platform's top: {place:?}");
+    assert!(apart(flat(place), [SPREAD, 0.0]) < 0.5, "its own place, not its leader's: {place:?}");
+    let ground = beat::near_on((&nav, &Floor::Flat), [30.0, 0.0, 0.0], (30.0 + SPREAD, 0.0));
+    assert!(ground[2].abs() < 0.1 && apart(flat(ground), [30.0 + SPREAD, 0.0]) < 0.5, "on the ground: {ground:?}");
+}

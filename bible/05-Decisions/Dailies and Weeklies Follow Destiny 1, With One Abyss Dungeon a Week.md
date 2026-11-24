@@ -22,8 +22,8 @@ the best drops, as Destiny 2's Ordeal:
 
 - **Daily and weekly activities follow Destiny 1**: stark and consistent, over the tiers
   ([[The Tiers Are Normal, Elite and Abyss]]).
-- **Abyss Dungeons are the hardest content after Breaches** ([[Breaches Drop the Best, at Sea Too, for a Fleet of
-  Eight]]).
+- **Abyss Dungeons are the hardest content after Breaches**
+  ([[Breaches Drop the Best, at Sea Too, for a Fleet of Eight]]).
 - **Abyss is one featured dungeon a week**, the same for everyone, its rewards locked weekly, as Destiny 1's
   Nightfall.
 - **It is built in full.** The rest of the shape offered is Claude's to make, and the owner's to change.

@@ -21,9 +21,17 @@ const MOST_CLIMBS: usize = 2;
 /// Ways up the massif from the edges of the larger basins, each to a lookout on the top over its basin: a straight
 /// climb from where the basin's floor really ends (`bare`, the floors as carved, wander and all), turned out from
 /// along its edge, boring into the rock as it rises so its face stands over it and its drop falls to the floor, clear
-/// of every other floor and well inside the claim; each a climb and its lookout (land's `Sculpt::climbs`).
-pub(crate) fn climbs(field: &Field, areas: &[Area], bare: &Sculpts, rise: f64, seed: u32) -> Vec<[f64; 7]> {
+/// of every other floor and well inside the claim; each a climb and its lookout (land's `Sculpt::climbs`), and the
+/// area each climbs out of (its place among `areas`).
+pub(crate) fn climbs(
+    field: &Field,
+    areas: &[Area],
+    bare: &Sculpts,
+    rise: f64,
+    seed: u32,
+) -> (Vec<[f64; 7]>, Vec<usize>) {
     let mut found: Vec<[f64; 7]> = Vec::new();
+    let mut from = Vec::new();
     for (number, area) in areas.iter().enumerate() {
         if found.len() >= 2 * MOST_CLIMBS {
             break;
@@ -49,12 +57,13 @@ pub(crate) fn climbs(field: &Field, areas: &[Area], bare: &Sculpts, rise: f64, s
                 let way = [along[0] * out_cosine + radial[0] * out_sine, along[1] * out_cosine + radial[1] * out_sine];
                 if let Some(climb) = climb_along(field, bare, &found, start, way, rise) {
                     found.extend(climb);
+                    from.push(number);
                     break 'tries;
                 }
             }
         }
     }
-    found
+    (found, from)
 }
 
 /// A climb from `start` (on a floor's edge, at its level) along `way` up the massif, and its lookout on the top, where

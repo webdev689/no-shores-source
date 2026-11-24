@@ -159,8 +159,8 @@ climbing after them, is fingerprinted natively (`crates/room-wasm/src/climb_door
   offline, natively and in Node's WebAssembly: the [[Test Ground]]'s course, its 115 links among it, bakes in about
   90 and 100 ms, its links some 6 ms of that natively; a node's 70 m square in 85 to 95 ms natively, and 115 ms in
   WebAssembly; an open field 200 m across in about 0.9 and 1.2 s, needing some 170 MB while it bakes.
-- A node's room bakes none of its city's blocks, so its foes neither climb nor drop there; its layout's boxes inside
-  its square it does, links and all. Its links' tries step bodies through the movement rules' grid of blocks. On the
+- A node's room bakes every box inside its square, links and all: its layout's, and its city's where any reach in
+  (a social space's). Its links' tries step bodies through the movement rules' grid of blocks. On the
   Saltgrass Downs, its square moved to where its boxes stand thickest (406 of them), the room opens natively in about
   130 ms bare and 205 ms among its boxes (`cargo test --release -p room --test near_blocks -- --ignored --nocapture`,
   tested offline on an idle machine).

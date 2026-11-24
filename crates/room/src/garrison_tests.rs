@@ -401,6 +401,15 @@ fn a_patrol_zone_s_foes_leave_a_player_be_in_its_landing_until_they_strike_from_
     stand_player(&mut room, player, [0.0, 175.0]);
     run(&mut room, 1);
     assert!(room.left_be(player), "back in the landing, the landing's leave again");
+    // The landing reaches 15 m round each spawn, the second's too.
+    stand_player(&mut room, player, [15.0 + 14.9, 185.0]);
+    run(&mut room, 1);
+    assert!(room.left_be(player), "14.9 m from the second spawn");
+    stand_player(&mut room, player, [15.0 + 15.1, 185.0]);
+    run(&mut room, 1);
+    assert!(!room.left_be(player), "15.1 m from it, past the landing");
+    stand_player(&mut room, player, [0.0, 175.0]);
+    run(&mut room, 1);
     // A fight brought into the landing goes on: the landing is somewhere to arrive, not to hide.
     let (_, _, place, facing) = room.garrison[0].members[0];
     stand_player(&mut room, player, [place[0] + libm::sin(facing) * 6.0, place[1] - libm::cos(facing) * 6.0]);
@@ -413,11 +422,99 @@ fn a_patrol_zone_s_foes_leave_a_player_be_in_its_landing_until_they_strike_from_
     stand_player(&mut room, player, [0.0, 175.0]);
     run(&mut room, 1);
     assert!(!room.left_be(player), "fought, then come back into the landing");
+    // Struck from the landing and stood again there, as a fallen player is: the landing's leave is theirs again.
+    let mut again = node(NodeKind::Patrol, "downs");
+    let fallen = again.join().unwrap();
+    stand_player(&mut again, fallen, [0.0, 180.0]);
+    let input = swing(&again, 1);
+    again.input(fallen, input).unwrap();
+    run(&mut again, 2);
+    assert!(!again.left_be(fallen), "struck from the landing");
+    again.players.get_mut(&fallen).unwrap().graced = again.clock() + crate::players::GRACE;
+    run(&mut again, crate::players::GRACE + 1);
+    assert!(again.left_be(fallen), "stood again at the landing, left be once their grace ends");
+    // A spell cast from the landing is a strike from it, as a blow is.
+    let mut caster_room = node(NodeKind::Patrol, "downs");
+    let caster = caster_room.join().unwrap();
+    stand_player(&mut caster_room, caster, [0.0, 180.0]);
+    caster_room.players.get_mut(&caster).unwrap().character.arts.earned = None;
+    crate::arts::arts_tests::wearing(&mut caster_room, caster, 1, &[]);
+    run(&mut caster_room, 1);
+    assert!(caster_room.left_be(caster), "where they land, their Art worn");
+    crate::arts::arts_tests::cast(&mut caster_room, caster, 2, None, 1);
+    assert!(caster_room.player(caster).unwrap().casting.tenets[0] < 0.01, "the Tenet cast");
+    assert!(!caster_room.left_be(caster), "cast from the landing");
     let mut mission = node(NodeKind::Mission, "keep");
     let player = mission.join().unwrap();
     stand_player(&mut mission, player, [0.0, 180.0]);
     run(&mut mission, 1);
     assert!(!mission.left_be(player), "a mission has no landing");
+}
+
+#[test]
+fn only_a_living_thinking_foe_that_fights_a_landed_player_takes_the_landing_s_leave() {
+    let mut room = node(NodeKind::Patrol, "downs");
+    let player = room.join().unwrap();
+    stand_player(&mut room, player, [0.0, 180.0]);
+    run(&mut room, 1);
+    let hunter = crate::arts::arts_tests::stand_foe(&mut room, 0.0, 120.0, 100.0);
+    let at = [0.0, 180.0, 0.0];
+    let hunt = |room: &mut Room| {
+        let clock = room.clock();
+        room.foes.get_mut(&hunter).unwrap().brain.hunt(player, at, clock);
+    };
+    // An event's growth or tithe-taker stands inert: it never thinks, so it fights no one.
+    hunt(&mut room);
+    room.inert.insert(hunter);
+    assert!(room.left_be(player), "held by an inert foe");
+    room.inert.remove(&hunter);
+    assert!(!room.left_be(player), "fought by a foe that thinks, a fight brought in");
+    // A fallen foe lies a while with its target kept: it fights no more.
+    room.foes.get_mut(&hunter).unwrap().fighter.action = Action::Dead { elapsed: 0 };
+    assert!(room.left_be(player), "held by a fallen foe");
+}
+
+#[test]
+fn in_the_landing_only_a_foe_already_fighting_a_player_fights_them_and_no_other_joins() {
+    let mut room = node(NodeKind::Patrol, "downs");
+    let player = room.join().unwrap();
+    stand_player(&mut room, player, [0.0, 180.0]);
+    run(&mut room, 1);
+    // One foe brought its fight into the landing; another, 8 m off and facing the player, has none.
+    let brought = crate::arts::arts_tests::stand_foe(&mut room, 0.0, 174.0, 100.0);
+    let clock = room.clock();
+    room.foes.get_mut(&brought).unwrap().brain.hunt(player, [0.0, 180.0, 0.0], clock);
+    let other = crate::arts::arts_tests::stand_foe(&mut room, 3.0, 188.0, 100.0);
+    for _ in 0..180 {
+        run(&mut room, 1);
+        assert_ne!(room.foes[&other].brain.fights(), Some(player), "no other foe joins a fight brought in");
+    }
+    assert_eq!(room.foes[&brought].brain.fights(), Some(player), "the fight brought in goes on");
+}
+
+#[test]
+fn an_officer_standing_in_the_landing_is_left_be_and_starts_no_fight_from_it() {
+    let mut room = node(NodeKind::Patrol, "downs");
+    let player = room.join().unwrap();
+    let character = &mut room.players.get_mut(&player).unwrap().character;
+    let mut officer = gear::crew::Officer::new(0, gear::crew::Post::FirstMate, gear::Rarity::Magic, 6);
+    (officer.given, officer.family) = (3, 7);
+    let id = character.sign_on(officer).expect("room in the crew");
+    character.crew.officers.get_mut(&id).unwrap().duty = gear::crew::Duty::Ashore;
+    stand_player(&mut room, player, [0.0, 180.0]);
+    run(&mut room, 30);
+    let ashore = room.foes.keys().copied().find(|foe| room.companion(*foe).is_some()).expect("the officer ashore");
+    // A foe of the Tithe's 9 m off, facing the landing, sees the officer standing in it.
+    let foe = crate::arts::arts_tests::stand_foe(&mut room, 0.0, 165.0, 100.0);
+    let mut faced = room.foes[&foe].fighter;
+    (faced.aim, faced.body.facing) = (core::f64::consts::PI, core::f64::consts::PI);
+    room.foes.get_mut(&foe).unwrap().fighter = faced;
+    for _ in 0..600 {
+        run(&mut room, 1);
+        stand_player(&mut room, player, [0.0, 180.0]);
+        assert_ne!(room.foes[&foe].brain.fights(), Some(ashore), "the officer in the landing is left be");
+        assert_ne!(room.foes[&ashore].brain.fights(), Some(foe), "and starts no fight from it");
+    }
 }
 
 #[test]

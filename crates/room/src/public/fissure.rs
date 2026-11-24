@@ -190,6 +190,10 @@ impl Room {
                     running.stages = 2;
                     fissure.heroic_more = fissure.needed().saturating_sub(fissure.set) / 2;
                     self.tell(EventKind::HeroicMet, None, killer, foe, f64::from(running.kind as u8));
+                } else {
+                    // Broken by no player, it is broken for good: the task missed, nothing left to mark.
+                    fissure.growth = None;
+                    self.close_heroic(running);
                 }
                 continue;
             }
@@ -256,7 +260,7 @@ impl Room {
                 [fissure.at[0], fissure.at[1]],
             );
             let home = (fissure.growth_spot, public.level);
-            if let Some(id) = self.stand_event_foe(running, GROWTH, (fissure.growth_spot, facing), home) {
+            if let Some(id) = self.stand_event_foe(running, GROWTH, (fissure.growth_spot, facing), home, false) {
                 self.toughen(id, usize::from(fissure.players_most));
                 self.inert.insert(id);
                 self.names.insert(id, GROWTH_NAME);
@@ -298,7 +302,7 @@ impl Room {
         for (turn, member) in members.into_iter().enumerate() {
             let facing = start + TAU * turn as f64 / size as f64;
             let place = [at[0] + libm::sin(facing) * POUR_OUT, at[1] - libm::cos(facing) * POUR_OUT, at[2]];
-            self.stand_event_foe(running, member, (place, facing), (at, public.level));
+            self.stand_event_foe(running, member, (place, facing), (at, public.level), true);
         }
     }
 
@@ -308,7 +312,8 @@ impl Room {
     fn raise_warden(&mut self, public: &Public, running: &mut Running, fissure: &mut Fissure) {
         let at = fissure.at;
         let place = [at[0], at[1] - POUR_OUT, at[2]];
-        if let Some(id) = self.stand_event_foe(running, (BULWARK, Miniboss), (place, 0.0), (place, public.level)) {
+        if let Some(id) = self.stand_event_foe(running, (BULWARK, Miniboss), (place, 0.0), (place, public.level), true)
+        {
             self.toughen(id, usize::from(fissure.players_most));
             self.names.insert(id, WARDEN_NAME);
             fissure.warden = Some(id);

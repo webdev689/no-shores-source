@@ -13,7 +13,7 @@ import type { GearState } from '../network/gearMessages.ts';
 import { BODY_HEIGHT } from '../player/crosshair.ts';
 import { ELEMENTS } from '../player/gear.ts';
 import { emblemOf, emblemPixels } from './emblemArt.ts';
-import { doorOf, entrancesOf } from './entrances.ts';
+import { type Entrance, doorOf, entrancesOf } from './entrances.ts';
 import { keeperOf } from './keepers.ts';
 import { factionOf } from './npc/factionRows.ts';
 import { keeperPicture } from './npc/npcMarks.ts';
@@ -110,14 +110,15 @@ export const keeperLit = (gear: GearState | null, kind: string, waits: (counter:
  *  over its keeper's crown while the keeper stands there (the bounty board over its gable), lit while `speak` says a
  *  quest step asks to speak with its keeper or, the Postmaster's, while letters wait; Shape over his while he is here;
  *  each chapter of the lore lying here for them (its gear's `loreHere`) as a book floating over where it lies; and
- *  each of a patrol's dungeon entrances (its gear's `dungeons`) over its door's lintel, once `props` gives its
- *  model's door. */
+ *  each of a patrol's dungeon entrances over its door's lintel, once `props` gives its model's door: `entrances`, the
+ *  room's word on them, which comes alone too, where the page holds no gear; else its gear's `dungeons`. */
 export function markedHere(
   gear: GearState | null,
   here: Pick<NodeInfo, 'stations' | 'visitorSpots'>,
   floor: (x: number, y: number) => number,
   props: PropTable | null = null,
   speak: (counter: string, ask: () => void) => unknown = () => null,
+  entrances: readonly Entrance[] = entrancesOf(gear?.dungeons ?? []),
 ): Marked[] {
   const waits = (counter: string) => Boolean(speak(counter, () => undefined));
   const marked: Marked[] = [];
@@ -133,7 +134,7 @@ export function markedHere(
   if (shape && own) marked.push({ picture: own, at: crown(...shape) });
   // A chapter lying in the world is the book itself, floating at a crown's height over where it lies.
   for (const { at } of gear?.loreHere ?? []) marked.push({ picture: LORE_PICTURE, at: crown(...at, LORE_TOP_M) });
-  for (const entrance of entrancesOf(gear?.dungeons ?? [])) {
+  for (const entrance of entrances) {
     const door = props && doorOf(entrance, props);
     if (!door) continue;
     // A mark's width out from the door's face, so it turns clear of the mound round the door.

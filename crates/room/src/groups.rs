@@ -6,6 +6,7 @@
 //! farthest from the spawns; less, all gather there to defend it, and the fall of the highest rank there breaks them.
 //! A mission's reserve comes in a wave as it falls back and another as it makes its last stand, hunting the players.
 
+use super::beat::near_on;
 use super::{PATROL, POSTS_APART, Post, SPAWN_CLEAR, SPREAD, draws_of, gird_of, ground_middle, index, open_points};
 use crate::Room;
 use ::foes::roles::Role;
@@ -398,7 +399,7 @@ impl Room {
     fn spaced(&self, point: [f64; 3], out: f64, turn: f64, laid: &mut Vec<[f64; 3]>) -> ([f64; 3], f64) {
         let at = |out: f64, facing: f64| {
             let (x, y) = (point[0] + libm::sin(facing) * out, point[1] - libm::cos(facing) * out);
-            self.mesh_at(point).nearest_point([x, y, self.floor.height_at(x, y)]).unwrap_or(point)
+            near_on((self.mesh_at(point), &self.floor), point, (x, y))
         };
         let clear =
             |place: [f64; 3]| laid.iter().all(|other| apart([place[0], place[1]], [other[0], other[1]]) >= ROOM);
@@ -580,7 +581,7 @@ impl Room {
             .map(|nth| {
                 let facing = start + TAU * nth as f64 / count.max(1) as f64;
                 let (x, y) = (point[0] + libm::sin(facing) * out, point[1] - libm::cos(facing) * out);
-                (self.mesh_at(point).nearest_point([x, y, self.floor.height_at(x, y)]).unwrap_or(point), facing)
+                (near_on((self.mesh_at(point), &self.floor), point, (x, y)), facing)
             })
             .collect()
     }

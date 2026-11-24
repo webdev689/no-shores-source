@@ -53,6 +53,18 @@ fn a_patrol_stands_no_camps_of_its_own_its_fights_are_its_garrisons() {
     }
     assert!(room.foes.is_empty(), "with a player in it a minute, no camp stood");
     assert_eq!(room.resource_nodes.len(), 12, "its nodes keep their places");
+    // Garrisoned, as a patrol zone's room is: every foe it stands is its garrison's.
+    let ring = vec![[-200.0, -200.0], [200.0, -200.0], [200.0, 200.0], [-200.0, 200.0]];
+    let section = Section { ring, spawns: vec![[0.0, 180.0]], falls_kill: false };
+    let mut garrisoned = Room::garrisoned(Floor::Flat, Vec::new(), section, NodeKind::Patrol, ("downs", None));
+    garrisoned.start_patrol("downs", 0, &[]);
+    garrisoned.join().expect("a room with space");
+    for _ in 0..600 {
+        garrisoned.tick();
+    }
+    let posted: Vec<FighterId> = garrisoned.garrison.iter().flat_map(|post| post.standing.iter().copied()).collect();
+    assert!(!posted.is_empty(), "its garrison stands");
+    assert!(garrisoned.foes.keys().all(|id| posted.contains(id)), "no foe but its garrison's");
 }
 
 #[test]
@@ -75,6 +87,13 @@ fn resource_nodes_stand_at_the_layouts_places_a_third_at_a_time_and_each_may_be_
     assert_eq!(next.len(), 12 / GROUPS);
     assert!(next.iter().all(|index| !first.contains(index)), "the next third");
     assert_eq!(hold(&mut room, player, first[0], 0), asks::OUT_OF_REACH, "its place rests this turn");
+    // Its group's turn come round again, the node gathered before stands and is gathered again.
+    while !standing(&room).contains(&first[0]) {
+        room.tick();
+    }
+    assert_eq!(standing(&room), first, "the first third again");
+    assert_eq!(hold(&mut room, player, first[0], GATHER_TICKS + 1), 0, "gathered again");
+    assert!(spent(&room, player, first[0]));
 }
 
 #[test]

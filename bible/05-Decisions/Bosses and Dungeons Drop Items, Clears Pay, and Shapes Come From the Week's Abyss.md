@@ -58,8 +58,8 @@ the owner.
   Vestige 35% of the time. Elite and Abyss raise each chance as they raise a kill's.
 - A cleared mission, dungeon or world boss pays bonus XP and Aurem, a world boss's the most.
 - A cove's wreck holds less than a Minor ship's whole lot.
-- Shapes come only from the weekly Abyss content ([[Dailies and Weeklies Follow Destiny 1, With One Abyss Dungeon a
-  Week]]); no kill gives any.
+- Shapes come only from the weekly Abyss content
+  ([[Dailies and Weeklies Follow Destiny 1, With One Abyss Dungeon a Week]]); no kill gives any.
 - A fight on foot on a boarded deck takes the land's ×1.5 and ×0.75.
 
 ## Claude's calls
