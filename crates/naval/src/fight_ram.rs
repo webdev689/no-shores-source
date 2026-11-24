@@ -66,20 +66,26 @@ fn settle(vessel: &mut Vessel, waters: &impl Waters, time: f64) {
     vessel.pose = Pose { heave: afloat.heave - drop, pitch: afloat.pitch + pitch, roll: afloat.roll + roll, ..afloat };
 }
 
-/// Moves it by `push` and cuts its way by how squarely it drove into it.
-fn shove(vessel: &mut Vessel, push: [f64; 2]) {
+/// Cuts its way by how squarely it drove into what pushes it back along `push`.
+fn cut_way(vessel: &mut Vessel, push: [f64; 2]) {
     let (forward, _) = frame(vessel.ship.heading);
     let kept = 1.0 - driven_into(forward, push);
     let ship = &mut vessel.ship;
-    (ship.x, ship.y) = (ship.x + push[0], ship.y + push[1]);
     (ship.ahead, ship.sail_way) = (ship.ahead * kept, ship.sail_way * kept);
+}
+
+/// Moves it by `push` and cuts its way by how squarely it drove into it.
+fn shove(vessel: &mut Vessel, push: [f64; 2]) {
+    cut_way(vessel, push);
+    let ship = &mut vessel.ship;
+    (ship.x, ship.y) = (ship.x + push[0], ship.y + push[1]);
 }
 
 impl Fight {
     /// Hulls that overlap pushed apart, each pair in the order of their numbers: each out of the other by half the
     /// overlap, its way cut by how squarely it drove into it; one that half would ground, as the ground refuses a
-    /// ship's own move (`aground`), stays, and the other takes the whole push where that leaves it afloat. A ship gone
-    /// down is no longer in the way.
+    /// ship's own move (`aground`), stays, its way cut all the same, and the other takes the whole push where that
+    /// leaves it afloat. A ship gone down is no longer in the way.
     pub(super) fn keep_apart(&mut self, waters: &impl Waters, time: f64) {
         let ids: Vec<ShipId> = self
             .ships
@@ -103,8 +109,11 @@ impl Fight {
                     (false, true) => [0.0, if afloat(other, -1.0) { -1.0 } else { -0.5 }],
                     (false, false) => [0.0, 0.0],
                 };
-                for (id, share) in [(*first, shares[0]), (*second, shares[1])] {
-                    if let Some(vessel) = self.ships.get_mut(&id).filter(|_| share != 0.0) {
+                for (id, share, half) in [(*first, shares[0], 0.5), (*second, shares[1], -0.5)] {
+                    let Some(vessel) = self.ships.get_mut(&id) else { continue };
+                    if share == 0.0 {
+                        cut_way(vessel, [push[0] * half, push[1] * half]);
+                    } else {
                         shove(vessel, [push[0] * share, push[1] * share]);
                         settle(vessel, waters, time);
                     }

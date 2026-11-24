@@ -177,3 +177,24 @@ fn a_hull_pressed_against_the_shore_is_not_pushed_onto_it_and_the_other_takes_th
     assert!(keel.iter().all(|spot| spot.surface.is_some()), "its keel still afloat, at x {}", player.x);
     assert_eq!(overlap(&flat(&fight, PLAYER), &flat(&fight, CAPTAIN)), None, "the captain is pushed clear of it");
 }
+
+/// The player's Sloop at (0, 0.5) turned 0.3 rad to starboard at 3 m/s, a captain abreast 1.2 m east overlapping it:
+/// the player's x and way after one step on `waters`.
+fn pressed_on(waters: &impl Waters) -> (f64, f64) {
+    let mut fight = bow_to_side(0.5, 3.0);
+    fight.ships.get_mut(&PLAYER).unwrap_or_else(|| panic!("player")).ship.heading = 0.3;
+    let theirs = Ship { x: 1.2, y: 0.5, heading: 0.0, ahead: 0.0, abeam: 0.0, turn: 0.0, sail_way: 0.0, rung: 0 };
+    fight.ships.get_mut(&CAPTAIN).unwrap_or_else(|| panic!("captain")).ship = theirs;
+    fight.step(&[(PLAYER, ROWING)], waters, &|_| WIND, 0.0);
+    let ship = fight.vessel(PLAYER).map(|vessel| vessel.ship).unwrap_or_else(|| panic!("player"));
+    (ship.x, ship.ahead)
+}
+
+#[test]
+fn a_hull_the_ground_holds_still_loses_the_way_that_drove_it_into_the_other() {
+    let (free_x, free_way) = pressed_on(&Open);
+    let (held_x, held_way) = pressed_on(&Shore { shore: -1.0 });
+    assert!(free_x < held_x - 0.01, "pushed off in open water, held where the push would ground it: {free_x} {held_x}");
+    assert!(free_way < 2.9, "driving into the captain cuts its way: {free_way}");
+    assert!((held_way - free_way).abs() < 1e-9, "held, it loses the same way: {held_way} {free_way}");
+}
