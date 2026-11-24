@@ -70,7 +70,8 @@ const held = (here: boolean, more: Partial<OutpostsFace> = {}, plot: KeptPlot = 
   ...more,
 });
 
-/** The Guild tab over a fake of the accounts whose outposts answer from `answers` in turn, the last kept. */
+/** The Guild tab over a fake of the accounts whose outposts answer from `answers` in turn, the last kept; the first
+ *  answers both the tab's first read and the Outposts press's. */
 async function page(answers: (OutpostsFace | string)[], rank = 0, gear?: GearState | null) {
   let now = 0;
   let reads = 0;
@@ -78,7 +79,7 @@ async function page(answers: (OutpostsFace | string)[], rank = 0, gear?: GearSta
   const link = {
     guild: async () => ({ guild: face(rank) }),
     roster: async () => ({ guild: null }) as unknown as Roster,
-    outposts: async () => answers[Math.min(reads++, answers.length - 1)],
+    outposts: async () => answers[Math.min(Math.max(0, reads++ - 1), answers.length - 1)],
     social: async (path: string) => (asked.push(path), null),
   } as unknown as AccountLink;
   const room = { ask: (ask: GearAsk) => void asked.push(`room ${ask.kind}`), ...(gear !== undefined && { gear }) };
@@ -96,11 +97,11 @@ test('the Outposts page reads again every 15 s while it is seen, and on open; a 
   away.later(15_000);
   away.frame();
   await settle();
-  assert.equal(away.reads(), 2, 'read again on the Outposts page');
+  assert.equal(away.reads(), 3, 'read again on the Outposts page');
   away.guild.open('outposts', { site: SITE, structure: 3 });
   await settle();
   away.frame();
-  assert.equal(away.reads(), 3, 'opening it reads');
+  assert.equal(away.reads(), 4, 'opening it reads');
   assert.notEqual(away.ui.boxOf(COLLECT_ID), null, 'the Counting House shows its own Empty press');
   const failed = await page(['Too many asks. Wait a while.', held(true)]);
   assert.ok(failed.shows().includes('Too many asks. Wait a while.'), failed.shows());

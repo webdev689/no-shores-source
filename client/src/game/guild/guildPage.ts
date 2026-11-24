@@ -80,6 +80,8 @@ export class GuildPage {
     this.now = given.now ?? Date.now;
     this.hidden = given.hidden ?? (() => false);
     this.siteOf = given.siteOf ?? sitesKept;
+    // A guild founded, joined or left elsewhere (the Social tab) is read at once, not at the next look.
+    if (typeof addEventListener === 'function') addEventListener(GUILD_CHANGED, () => this.look());
     this.look();
   }
 
@@ -158,7 +160,8 @@ export class GuildPage {
           if (this.outposts?.at === body['site']) this.here()?.ask({ kind: ASKS.outpostChanged });
           dispatchEvent(new Event(OUTPOST_CHANGED));
         }
-        for (const [id] of Object.values(FIELDS)) this.clearField(id);
+        // Only the name invited is cleared: the other fields hold the guild's own words, filled once.
+        if (path === 'guild/invite') this.clearField(FIELDS.invite[0]);
       })
       .finally(() => {
         this.busy = false;
@@ -182,6 +185,8 @@ export class GuildPage {
     this.ui = ui;
     if (this.now() - this.lookedAt >= LOOK_MS && !this.hidden()) this.look();
     if (!this.looked) return { width: 'grow', padding: 24, children: [words('Asking for your guild…', 1, INK.faint)] };
+    // Read before the failure's page returns, which holds the press.
+    if (ui.clicked(AGAIN_ID)) this.look();
     if (this.failure !== null && this.face === null)
       return {
         width: 'grow',
@@ -190,7 +195,6 @@ export class GuildPage {
         padding: 24,
         children: [hintNode(this.failure), pressNode(AGAIN_ID, 'Try again')],
       };
-    if (ui.clicked(AGAIN_ID)) this.look();
     const face = this.face;
     const named = ui.fieldText(FIELDS.name[0]).trim() || 'Guild';
     if (this.view === 'banner' && this.editor) {
@@ -224,7 +228,8 @@ export class GuildPage {
     for (const icon of EDGE)
       if (ui.clicked(edgeId(icon))) {
         if (icon === 'banner') this.openEditor(this.bannerOf(face), face.name, face.rank <= 1);
-        if (icon === 'details' || icon === 'outposts' || icon === 'treasury') this.view = icon;
+        if (icon === 'details') this.view = icon;
+        if (icon === 'outposts' || icon === 'treasury') this.open(icon);
       }
     return homeNode(context, this.home(ui, face, context.sizes.label), this.turn);
   }
