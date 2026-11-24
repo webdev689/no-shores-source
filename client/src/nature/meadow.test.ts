@@ -2,7 +2,20 @@ import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { MEADOW_SPRITES } from './meadowArt.ts';
 import { MEADOW_CELL, MEADOW_SLOTS, meadowAtlas, meadowLevels, slotCoverage, spriteBox } from './meadowAtlas.ts';
-import { BOXES, BUSH, DRY, FLOWERS, GREEN, pick, SHORT, TALL, texelOver, TONE } from './meadowLaw.ts';
+import {
+  BOXES,
+  BUSH,
+  cardReach,
+  DRY,
+  FLOWERS,
+  GREEN,
+  HEIGHT_M,
+  pick,
+  SHORT,
+  TALL,
+  texelOver,
+  TONE,
+} from './meadowLaw.ts';
 import { MEADOW_SHADER } from './meadowShader.ts';
 
 const pixelOf = (slot: number, column: number, row: number): number[] => {
@@ -149,4 +162,21 @@ test("the shader draws with the law's numbers, and three cards near", () => {
   for (const { u0, u1, v0, v1 } of BOXES)
     assert.ok(MEADOW_SHADER.includes(`vec4f(${[u0, u1, v0, v1].map((value) => value.toFixed(6)).join(', ')})`));
   assert.ok(MEADOW_SHADER.includes('fn meadow_near') && MEADOW_SHADER.includes('fn meadow_far'));
+});
+
+test("a cell's cull box grown by the cards' reach holds every corner of every tuft, in a gale, on the steepest grass", () => {
+  const { tallest, widest } = cardReach();
+  for (let step = 0; step <= 64; step++)
+    for (const tint of [0, 0.5, 1]) {
+      const { variant, scale } = pick(step / 64, tint);
+      const box = BOXES[variant];
+      const sway = variant === BUSH ? 0.6 : 1;
+      const stiff = variant === BUSH ? 0.3 : 1;
+      assert.ok(box);
+      const side = (HEIGHT_M[0] + HEIGHT_M[1]) * scale;
+      const lean = (Math.hypot(0.25, 0.25) * stiff + 2.2 * 6 * 1.05 * 0.032 * sway) * box.v1 * box.v1 * side;
+      const across = Math.max(0.5 - box.u0, box.u1 - 0.5) * side + lean + 0.55;
+      assert.ok(across <= widest + 1e-9, `${variant}: reaches ${across}`);
+      assert.ok(box.v1 * side + across * 0.45 <= tallest + 1e-9, `${variant}: stands ${box.v1 * side}`);
+    }
 });

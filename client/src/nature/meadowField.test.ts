@@ -97,7 +97,20 @@ test('a changed ground is read again only where it changed', () => {
   const changed = ground(2, (tileX) => tileX !== 0);
   field.update(0, 0, changed);
   assert.ok(field.filled.length > 0 && field.filled.length < before);
-  assert.ok(field.filled.every(({ x }) => Math.floor((x * CELL_M) / 64) === 0));
+  // Only cells whose grid reaches tile 0, from the one whose east edge lies on it to the last within it.
+  assert.ok(field.filled.every(({ x }) => x >= -1 && x <= 3));
   assert.equal(field.update(0, 0, changed), false);
   assert.equal(field.filled.length, 0, 'then nothing more');
+});
+
+test("a cell whose grid's edge lies on a changed tile is read again, though its corner's tile is unchanged", () => {
+  const field = new MeadowField(512, Infinity);
+  field.update(0, 0, ground(1));
+  // Cell 3 runs from 48 m to 64 m: its last column samples x = 64, the next tile's.
+  const changed = ground(2, (tileX) => tileX !== 1);
+  field.update(0, 0, changed);
+  assert.ok(
+    field.filled.some(({ x }) => x === 3),
+    'the cell beside the changed tile',
+  );
 });

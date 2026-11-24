@@ -14,18 +14,94 @@ const LEAST_HEIGHT_M: f64 = 0.3;
 /// An arch's opening as a share of its width, as the page draws it (`solidMesh.ts`, `OPENING_WIDTH`).
 pub(crate) const ARCH_OPENING_WIDTH: f64 = 0.8;
 
-/// A solid as boxes that keep within a quarter metre of it (`hug`), each underside where it really is: a roof, a
-/// lintel or a hung lamp over the floor is walked under. Natural rock and a module are their parts' boxes (a module's
-/// surfaces after its first carry none), so a body walks under a cave roof, through a rock arch and into a stall; an
-/// arch is its jambs and the head over its crown, so a body walks through it.
+/// The most of a solid's boxes over any one 2 m square of ground (a cell of the movement rules' grid, whose every box a
+/// tick tests), and the most boxes a square metre of its footprint, though never fewer than `FEWEST_ALLOWED`: what a
+/// room's file and a tick may spend on one solid. One boxed within `KEEP_M` that costs more (a wide dome, a landmark's
+/// spire leaning out of true) is boxed with its keep a quarter looser at a time until it fits.
+pub(crate) const MOST_OVER_A_CELL: usize = 64;
+pub(crate) const MOST_A_SQUARE_METRE: f64 = 1.0;
+pub(crate) const FEWEST_ALLOWED: usize = 256;
+const CELL_M: f64 = 2.0;
+const LOOSER: f64 = 1.25;
+const MOST_LOOSENINGS: u32 = 20;
+
+/// A solid as boxes that keep within 0.45 m of it (`hug`), or as near as its cost allows (`kept`), each underside where
+/// it really is: a roof, a lintel or a hung lamp over the floor is walked under. Natural rock and a module are their
+/// parts' boxes (a module's surfaces after its first carry none), so a body walks under a cave roof, through a rock
+/// arch and into a stall; an arch is its jambs and the head over its crown, so a body walks through it.
 #[must_use]
 pub fn boxes(solid: &Solid) -> Vec<Box2> {
+    kept(solid).0
+}
+
+/// A solid's boxes and how many times `KEEP_M` they keep within, within the budget above. Layers take the fewest
+/// boxes; a layered solid whose layers crowd the ground takes terraces at the same keep before it loosens.
+#[must_use]
+pub fn kept(solid: &Solid) -> (Vec<Box2>, f64) {
+    let [width, depth, _] = solid.size;
+    let allowed = FEWEST_ALLOWED.max(floor_count(width * depth * MOST_A_SQUARE_METRE));
+    // A try stops as soon as it takes more boxes than allowed, so a great spire's tight tries cost no more than one.
+    let fitting = |terraced: bool, loosened: f64| {
+        boxed_at_most(solid, loosened, terraced, allowed).filter(|found| crowding(found) <= MOST_OVER_A_CELL)
+    };
+    let terraced = crate::hug::is_layered(solid.shape);
+    let mut loosened = 1.0;
+    for _ in 0..MOST_LOOSENINGS {
+        if let Some(found) = fitting(false, loosened).or_else(|| if terraced { fitting(true, loosened) } else { None })
+        {
+            return (found, loosened);
+        }
+        loosened *= LOOSER;
+    }
+    (boxed(solid, loosened, false), loosened)
+}
+
+/// Whether a solid is boxed as if it stood upright: a built one leaning or rolling so little no point of it moves
+/// further than `STILL_M` (rock keeps its own tilt).
+fn is_still(solid: &Solid) -> bool {
+    !crate::rock::is_rock(solid.shape) && crate::hug::tilt_move(solid) <= crate::hug::STILL_M
+}
+
+/// How many whole boxes `share` allows, none for less than one.
+fn floor_count(share: f64) -> usize {
+    let whole = share.floor();
+    if whole >= 1.0 { whole as usize } else { 0 }
+}
+
+/// The most boxes whose footprints reach into any one cell of a `CELL_M` grid laid from their north-west corner.
+pub(crate) fn crowding(boxes: &[Box2]) -> usize {
+    let west = boxes.iter().map(|found| found[0]).fold(f64::INFINITY, f64::min);
+    let north = boxes.iter().map(|found| found[1]).fold(f64::INFINITY, f64::min);
+    let east = boxes.iter().map(|found| found[2]).fold(f64::NEG_INFINITY, f64::max);
+    let south = boxes.iter().map(|found| found[3]).fold(f64::NEG_INFINITY, f64::max);
+    if !(west <= east && north <= south) {
+        return 0;
+    }
+    let cell = |from: f64, at: f64| floor_count((at - from) / CELL_M);
+    let (columns, rows) = (cell(west, east) + 1, cell(north, south) + 1);
+    let mut counts = vec![0_usize; columns * rows];
+    for &[box_west, box_north, box_east, box_south, ..] in boxes {
+        for row in cell(north, box_north)..=cell(north, box_south) {
+            for column in cell(west, box_west)..=cell(west, box_east) {
+                counts[row * columns + column] += 1;
+            }
+        }
+    }
+    counts.into_iter().max().unwrap_or(0)
+}
+
+/// A solid's boxes with its keep `loosened` times over, its layers `terraced` or not.
+pub(crate) fn boxed(solid: &Solid, loosened: f64, terraced: bool) -> Vec<Box2> {
+    boxed_at_most(solid, loosened, terraced, usize::MAX).unwrap_or_default()
+}
+
+/// A solid's boxes as `boxed`, or none once they number more than `most`.
+fn boxed_at_most(solid: &Solid, loosened: f64, terraced: bool, most: usize) -> Option<Vec<Box2>> {
     let (shaped, keep) = crate::hug::keeps_of(solid.shape);
-    // A solid that leans or rolls so little no point of it moves more than `STILL_M` is boxed as if it stood upright.
-    // A round standing so whose width and depth differ by twice `KEEP_M` at most is boxed as a circle of their mean,
-    // square to the world, as a circle is the same however it is turned: its boxes are its parts, so its parts may
-    // stand all of `KEEP_M` off it, less how far the circle stands off it.
-    let still = crate::hug::tilt_move(solid) <= crate::hug::STILL_M;
+    // A solid still enough is boxed upright. A round standing so whose width and depth differ by twice `KEEP_M` at
+    // most is boxed as a circle of their mean, square to the world, as a circle is the same however it is turned: its
+    // boxes are its parts, so its parts may stand all of `KEEP_M` off it, less how far the circle stands off it.
+    let still = is_still(solid);
     let [width, depth, height] = solid.size;
     let round =
         matches!(solid.shape, Shape::Column { .. } | Shape::Dome { .. }) && (width - depth).abs() <= 2.0 * KEEP_M;
@@ -38,10 +114,14 @@ pub fn boxes(solid: &Solid) -> Vec<Box2> {
     } else {
         (*solid, shaped)
     };
-    crate::hug::shape_parts(solid.shape, solid.size, shaped)
-        .into_iter()
-        .flat_map(|part| crate::hug::part_boxes(&solid, part, keep))
-        .collect()
+    let mut found = Vec::new();
+    for part in crate::hug::shape_parts(solid.shape, solid.size, shaped * loosened, terraced) {
+        found.extend(crate::hug::part_boxes(&solid, part, keep * loosened));
+        if found.len() > most {
+            return None;
+        }
+    }
+    Some(found)
 }
 
 /// A city's solid as its boxes, but for the ground's own surfaces and what is stepped over.
@@ -54,14 +134,20 @@ pub(crate) fn into_boxes(solid: &Solid) -> Vec<Box2> {
     boxes(solid)
 }
 
-/// The plan's solids reaching into `bounds` (west, north, east, south), as boxes.
+/// The plan's solids reaching into `bounds` (west, north, east, south), as boxes. A solid is boxed only where its box
+/// round its turned corners reaches in, as none of its boxes reaches further.
 #[must_use]
 pub fn boxes_within(plan: &Plan, bounds: [f64; 4]) -> Vec<Box2> {
+    let reaches = |solid: &&Solid| {
+        let [west, north, east, south, ..] = solid.bounds();
+        west <= bounds[2] && east >= bounds[0] && north <= bounds[3] && south >= bounds[1]
+    };
     plan.social
         .solids
         .iter()
         .chain(&plan.landmark)
         .chain(&plan.works)
+        .filter(reaches)
         .flat_map(into_boxes)
         .filter(|found| {
             found[0] <= bounds[2] && found[2] >= bounds[0] && found[1] <= bounds[3] && found[3] >= bounds[1]

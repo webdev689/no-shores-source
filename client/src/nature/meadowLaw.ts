@@ -76,3 +76,26 @@ export function texelOver(art: readonly number[], ground: readonly number[]): nu
   const green = Math.min(1, Math.max(0, ((art[1] ?? 0) - Math.max(art[0] ?? 0, art[2] ?? 0)) * GREEN_EDGE));
   return art.map((value, channel) => value * (light + ((shift[channel] ?? 1) - light) * green));
 }
+
+/** The most a tuft's standing lean, wind lean (a gale's push, metres a metre of height) and its place's cluster carry
+ *  it, as the shader lays them. */
+const STANDING_LEAN = Math.hypot(0.25, 0.25);
+const GALE_LEAN = 2.2 * 6 * (0.6 + 0.45) * 0.032;
+const CLUSTER_M = 0.55;
+/** The steepest ground a tuft grows on (meadowField.ts grassShare), its card's foot raised as far again. */
+const STEEPEST = 0.45;
+
+/** How high over its cell's ground a tuft's card reaches at most, and how far past its cell's edge, metres: a cell is
+ *  culled by its box grown by these, so no tuft still in view is dropped with it. */
+export function cardReach(): { tallest: number; widest: number } {
+  const most = (HEIGHT_M[0] + HEIGHT_M[1]) * PATCH_SCALE[1];
+  const sides = VARIANTS.map((variant, place) => {
+    const box = BOXES[place] ?? { u0: 0, u1: 1, v0: 0, v1: 1 };
+    const side = most * variant.scale;
+    const lean = (STANDING_LEAN * variant.stiff + GALE_LEAN * variant.sway) * box.v1 * box.v1;
+    return { side, across: side * (Math.max(0.5 - box.u0, box.u1 - 0.5) + lean), up: side * box.v1 };
+  });
+  const widest = Math.max(...sides.map(({ across }) => across)) + CLUSTER_M;
+  const tallest = Math.max(...sides.map(({ up }) => up)) + widest * STEEPEST;
+  return { tallest, widest };
+}

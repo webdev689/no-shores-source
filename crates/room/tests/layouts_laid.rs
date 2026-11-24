@@ -498,10 +498,13 @@ fn no_box_of_a_laid_prop_or_solid_stands_further_off_what_is_drawn_than_a_box_ma
             if ground || solid.size[2] < STEPPED_OVER_M || city::rock::is_rock(solid.shape) {
                 continue;
             }
-            // A solid hardly tilted is boxed as if upright, as far off as its tilt moves it.
+            // A solid hardly tilted is boxed as if upright, as far off as its tilt moves it; one too costly to box
+            // so closely keeps as far as its budget loosens it.
+            let (boxes, loosened) = city::collision::kept(solid);
             let tilted = city::hug::tilt_move(solid);
-            let allowed = keep + if tilted <= city::hug::STILL_M { tilted } else { 2.0 * city::hug::tilt_reach(solid) };
-            for found in city::collision::boxes(solid) {
+            let tilt = if tilted <= city::hug::STILL_M { tilted } else { 2.0 * city::hug::tilt_reach(solid) };
+            let allowed = keep * loosened + tilt;
+            for found in boxes {
                 let off = corners(found).map(|corner| off_box(solid.size, solid.own(corner))).fold(0.0, f64::max);
                 if off > allowed {
                     failed.push(format!("{}: {:?} {off:.2} m off", layout.id, solid.shape));

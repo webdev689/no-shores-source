@@ -135,10 +135,16 @@ export class MeadowField {
     return read < wanted.length;
   }
 
-  /** Whether a cell's ground is as it was read: the plants' tiles under it are unchanged since. */
+  /** Whether a cell's ground is as it was read: every one of the plants' tiles its grid reaches, its far edge
+   *  included, is unchanged since. */
   private unchanged(cell: Cell, ground: NatureGround): boolean {
-    if (!ground.unchanged) return false;
-    const [tileX, tileY] = [Math.floor((cell.x * CELL_M) / TILE_M), Math.floor((cell.y * CELL_M) / TILE_M)];
-    return ground.unchanged(tileX, tileY, cell.version);
+    const { unchanged } = ground;
+    if (!unchanged) return false;
+    const [fromX, toX] = [cell.x * CELL_M, (cell.x + 1) * CELL_M].map((east) => Math.floor(east / TILE_M));
+    const [fromY, toY] = [cell.y * CELL_M, (cell.y + 1) * CELL_M].map((south) => Math.floor(south / TILE_M));
+    for (let tileY = fromY ?? 0; tileY <= (toY ?? 0); tileY++)
+      for (let tileX = fromX ?? 0; tileX <= (toX ?? 0); tileX++)
+        if (!unchanged(tileX, tileY, cell.version)) return false;
+    return true;
   }
 }

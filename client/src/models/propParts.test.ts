@@ -2,7 +2,7 @@ import { strict as assert } from 'node:assert';
 import { readFileSync } from 'node:fs';
 import { test } from 'node:test';
 import { propModel } from './props.ts';
-import { STEPPED_OVER_M, TOP_KEEP_M, partsTable, partsText, type PropPart } from './propParts.ts';
+import { STEPPED_OVER_M, TOP_KEEP_M, joined, partsTable, partsText, type PropPart } from './propParts.ts';
 import { idsOf, propTable } from './fixtures.test.ts';
 
 const table = partsTable(propTable);
@@ -148,4 +148,22 @@ test("a gate's arch is its two piers and its bar, the opening under the bar left
 test('a piece its box keeps to is its box', () => {
   assert.equal(table.get(41817), undefined, 'a crate');
   assert.equal(table.get(41005), undefined, 'a shelf');
+});
+
+test('columns join only while every top in the box stands within the keep of its top', () => {
+  // Three columns in a row, the first's top between the others': each is within the keep of it, not of each other.
+  const tops = [1.2, 1.0, 1.4];
+  const boxes = joined(
+    tops.map((top) => [[0, top]]),
+    1,
+    tops.length,
+    0,
+  );
+  for (const [, firstRow, , lastRow, , top] of boxes) {
+    const lowest = Math.min(...tops.slice(firstRow, lastRow + 1));
+    assert.ok(
+      (top ?? 0) - lowest <= TOP_KEEP_M + 1e-9,
+      `rows ${firstRow} to ${lastRow} stand ${(top ?? 0) - lowest} m over one`,
+    );
+  }
 });

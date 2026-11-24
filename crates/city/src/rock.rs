@@ -180,7 +180,7 @@ pub const fn is_rock(shape: Shape) -> bool {
     )
 }
 
-/// What a body runs into of a rock: each part as boxes square to the world that keep within a quarter metre of it
+/// What a body runs into of a rock: each part as boxes square to the world that keep within 0.45 m of it
 /// (west, north, east, south, top, bottom, as the city's boxes).
 #[must_use]
 pub fn boxes(solid: &Solid) -> Vec<Box2> {

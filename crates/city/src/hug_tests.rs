@@ -32,6 +32,25 @@ fn distance_to(shape: Shape, [width, depth, height]: [f64; 3], [x, y, z]: [f64; 
             let across = outward(x.abs(), z);
             (across * across + past * past).sqrt()
         }
+        Shape::Pyramid { .. } => {
+            // Square at every height: how far the point lies outside the cross-section there, nearest over the height.
+            let off_at = |at: f64| {
+                let (wide, deep) = (reach_at(shape, half_width, at, height), reach_at(shape, half_depth, at, height));
+                let (out_x, out_y) = ((x.abs() - wide).max(0.0), (y.abs() - deep).max(0.0));
+                (out_x, out_y)
+            };
+            let (out_x, out_y) = off_at(z);
+            if (0.0..=height).contains(&z) && out_x == 0.0 && out_y == 0.0 {
+                return 0.0;
+            }
+            (0..=2000)
+                .map(|step| {
+                    let at = height * f64::from(step) / 2000.0;
+                    let ((out_x, out_y), rise) = (off_at(at), z - at);
+                    (out_x * out_x + out_y * out_y + rise * rise).sqrt()
+                })
+                .fold(f64::INFINITY, f64::min)
+        }
         _ => outward((x * x + y * y).sqrt(), z),
     }
 }
@@ -71,9 +90,15 @@ fn gap_to_box(&[west, north, east, south, top, bottom]: &Box2, [x, y, z]: [f64; 
 }
 
 /// How far the farthest corner of any box stands from the solid (a box's farthest point from anything convex is a
-/// corner), how far the farthest point of the solid lies from every box, and how many boxes there are.
+/// corner), how far the farthest point of the solid lies from every box, and how many boxes there are: the rule's own
+/// boxes, before any budget loosens them, its layers laid as they are and as terraces, the worse of the two.
 fn misfit(solid: &Solid) -> (f64, f64, usize) {
-    let boxes = crate::collision::boxes(solid);
+    let layered = fitted(solid, &crate::collision::boxed(solid, 1.0, false));
+    let terraced = fitted(solid, &crate::collision::boxed(solid, 1.0, true));
+    (layered.0.max(terraced.0), layered.1.max(terraced.1), layered.2.max(terraced.2))
+}
+
+fn fitted(solid: &Solid, boxes: &[Box2]) -> (f64, f64, usize) {
     let standing_off = boxes
         .iter()
         .flat_map(|&[west, north, east, south, top, bottom]| {
@@ -200,4 +225,39 @@ fn an_upright_arch_is_walked_through_under_its_crown_turned_or_not() {
             }
         }
     }
+}
+
+#[test]
+fn a_solid_too_costly_to_box_closely_is_boxed_more_loosely_within_its_budget_leaving_none_of_it_out() {
+    let roof = Solid::upright(Shape::Gable, [0.0; 3], [74.0, 34.0, 16.0], Material::Roof).turned(0.7);
+    let dome = Solid::upright(Shape::Dome { sides: 14 }, [0.0; 3], [30.0, 30.0, 14.0], Material::Stone).turned(0.5);
+    let upright = Solid::upright(Shape::Pyramid { top: 0.0 }, [0.0; 3], [32.0, 32.0, 26.0], Material::Roof);
+    let pyramid = Solid { lean: 0.05, ..upright }.turned(0.4);
+    let small = Solid::upright(Shape::Gable, [0.0; 3], [4.0, 5.0, 2.0], Material::Roof).turned(0.3);
+    for solid in [roof, dome, pyramid, small] {
+        let (boxes, loosened) = crate::collision::kept(&solid);
+        let (standing_off, left_out, count) = fitted(&solid, &boxes);
+        let crowded = crate::collision::crowding(&boxes);
+        let tilted = tilt_move(&solid);
+        let reach = KEEP_M * loosened + if tilted <= STILL_M { tilted } else { TILTED_PIECE_M * tilt_reach(&solid) };
+        let [width, depth, _] = solid.size;
+        let allowed =
+            (width * depth * crate::collision::MOST_A_SQUARE_METRE).max(crate::collision::FEWEST_ALLOWED as f64);
+        assert!(crowded <= crate::collision::MOST_OVER_A_CELL, "{:?}: {crowded} boxes over a cell", solid.shape);
+        assert!(count as f64 <= allowed, "{:?}: {count} boxes", solid.shape);
+        assert!(standing_off <= reach + 1e-6, "{:?}: {standing_off} m off at {loosened}x", solid.shape);
+        assert!(left_out <= KEEP_M + 1e-6, "{:?}: {left_out} m of it left out", solid.shape);
+        // Loosened only as far as it must be: a quarter tighter breaks the budget.
+        if loosened > 1.0 {
+            for terraced in [false, true] {
+                let tighter = crate::collision::boxed(&solid, loosened / 1.25, terraced);
+                let crowded = crate::collision::crowding(&tighter) > crate::collision::MOST_OVER_A_CELL;
+                assert!(tighter.len() as f64 > allowed || crowded, "{:?}: a quarter tighter fits", solid.shape);
+            }
+        }
+    }
+    let (_, loosened) = crate::collision::kept(&small);
+    assert!((loosened - 1.0).abs() < 1e-12, "a small turned roof keeps within KEEP_M: {loosened}x");
+    let tower = Solid::upright(Shape::Column { sides: 12, top: 1.0 }, [0.0; 3], [6.3, 6.3, 14.6], Material::Stone);
+    assert!((crate::collision::kept(&tower.turned(0.6)).1 - 1.0).abs() < 1e-12, "a straight tower keeps within KEEP_M");
 }

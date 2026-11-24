@@ -192,6 +192,29 @@ each part works is in its system note.
 
 The decisions in [[Open Questions]] are not repeated here.
 
+- **What a body meets keeps to what is drawn, and the owner's meadow** (this branch's pull request, a draft for the
+  owner's yes; its merge redeploys the page and the rooms). The owner: "In patrol zones there are invisible bounds of
+  some props that can be climbed" and "Implement the handcrafted grass texture we have from DFO"
+  ([[What a Body Meets Keeps to What Is Drawn]], [[The Owner's Hand-Drawn Meadow Grows Over the Grass]], Claude's calls
+  in each).
+  - The bounds: a layout's prop was the box round its turned footprint to its highest point (a beached boat at a
+    slant a block twice its size as tall as its mast), a turned or tilted solid the box round its turned corners (a
+    25 m rail at a slant 11 by 23 m). Now no box stands more than 0.45 m off what it boxes (`city::hug`, used by
+    cities and layouts alike): props are the parts their forged mesh fills (`content/forged/parts.json`, written by
+    `node tools/forgedParts.mjs`, held to the forge by a test), turned pieces strips, shaped solids layers, tilted
+    ones halved ([[Layouts]], "Boxes"; [[Forged Models]], "Parts"). Continent 1's zones hold 70,268 boxes where they
+    held 22,518. A puzzle's point now stands on ground a walk reaches from its place: the Tithe Barns' were reached
+    only over a roof's invisible bounds. The node runs' fingerprint moved with the boxes, native and WebAssembly
+    agreeing on the new one.
+  - The meadow ([[Meadow]], [[Pick - Meadow Grass]]): the owner's five sprites written from DFO's PNGs by
+    `tools/meadow/write.py` (pixel for pixel DFO's bake), DFO's atlas, chain, pick, sizes and colour law, 16 m cells
+    of 576 tufts drawn by the GPU to 160 m over the grass of every grass biome.
+  - For the owner: the PNGs' metadata says Substance Designer at 2048 px (2021), saved in Photoshop; DFO and the Pick
+    List call them the owner's: please confirm they are your own ([[Own Work]]). Whether the plants' baked grass stays
+    under the meadow, and whether Graphics gains a grass setting.
+  - Tested offline: <CHECK>. Not seen on a real GPU or played: the meadow's cost there is unmeasured (some 180,000
+    tufts on open grass).
+
 - **The key strip, the leave held and Settings in tabs** (#181), merged on the owner's "Merge and deploy", which
   deploys the page (the rooms' code is untouched). The owner's three asks
   ([[The Key Strip Is a Compact Panel, a Held Key Leaves, and Settings Has Tabs]], Claude's calls listed there): the

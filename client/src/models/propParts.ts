@@ -157,41 +157,66 @@ function filled(spans: Span[][], columns: number, rows: number, floor: number): 
   );
 }
 
+/** What a box of columns holds so far: the least and most of its tops and of its undersides, and whether they stand
+ *  on the floor. */
+type Held = { lowTop: number; highTop: number; lowUnder: number; highUnder: number; grounded: boolean };
+
 /** Neighbouring columns' spans joined into boxes of columns (first and last column and row, bottom, top): each seed
- *  grows along z, then along x while a whole row of it matches; spans match whose tops lie within TOP_KEEP_M and
- *  whose undersides are both the floor, or both overhead within UNDERSIDE_KEEP_M. */
-function joined(spans: Span[][], columns: number, rows: number, floor: number): number[][] {
+ *  grows along z, then along x while a whole row of it can join; a span joins while every top in the box lies within
+ *  TOP_KEEP_M of every other, and its underside stands on the floor with the box's, or overhead within
+ *  UNDERSIDE_KEEP_M of every other underside in it. */
+export function joined(spans: Span[][], columns: number, rows: number, floor: number): number[][] {
   const taken = spans.map((list) => list.map(() => false));
-  const matches = (span: Span, seed: Span): boolean =>
-    Math.abs(span[1] - seed[1]) <= TOP_KEEP_M &&
-    (span[0] === floor) === (seed[0] === floor) &&
-    Math.abs(span[0] - seed[0]) <= UNDERSIDE_KEEP_M;
-  const free = (column: number, row: number, seed: Span): number =>
-    spans[column * rows + row].findIndex((span, index) => !taken[column * rows + row][index] && matches(span, seed));
+  const widened = (held: Held, [under, top]: Span): Held | null => {
+    const next = {
+      lowTop: Math.min(held.lowTop, top),
+      highTop: Math.max(held.highTop, top),
+      lowUnder: Math.min(held.lowUnder, under),
+      highUnder: Math.max(held.highUnder, under),
+      grounded: held.grounded,
+    };
+    const fits =
+      next.highTop - next.lowTop <= TOP_KEEP_M &&
+      (under === floor) === held.grounded &&
+      next.highUnder - next.lowUnder <= UNDERSIDE_KEEP_M;
+    return fits ? next : null;
+  };
+  /** The first free span of a column that can join, and the box as it would hold with it. */
+  const free = (column: number, row: number, held: Held): [number, Held] | null => {
+    const list = spans[column * rows + row];
+    for (let index = 0; index < list.length; index++) {
+      const joins = !taken[column * rows + row][index] && widened(held, list[index]);
+      if (joins) return [index, joins];
+    }
+    return null;
+  };
   const boxes: number[][] = [];
   for (let column = 0; column < columns; column++)
     for (let row = 0; row < rows; row++)
-      spans[column * rows + row].forEach((seed, index) => {
+      spans[column * rows + row].forEach(([under, top], index) => {
         if (taken[column * rows + row][index]) return;
         taken[column * rows + row][index] = true;
-        let [bottom, top, lastRow, lastColumn] = [seed[0], seed[1], row, column];
-        const take = (atColumn: number, atRow: number, found: number): void => {
-          taken[atColumn * rows + atRow][found] = true;
-          const span = spans[atColumn * rows + atRow][found];
-          [bottom, top] = [Math.min(bottom, span[0]), Math.max(top, span[1])];
-        };
-        for (let found = 0; lastRow + 1 < rows && (found = free(column, lastRow + 1, seed)) >= 0;)
-          take(column, ++lastRow, found);
-        while (lastColumn + 1 < columns) {
-          const row0 = row;
-          const found = Array.from({ length: lastRow - row0 + 1 }, (unused, step) =>
-            free(lastColumn + 1, row0 + step, seed),
-          );
-          if (found.some((index) => index < 0)) break;
-          lastColumn++;
-          found.forEach((index, step) => take(lastColumn, row0 + step, index));
+        let held: Held = { lowTop: top, highTop: top, lowUnder: under, highUnder: under, grounded: under === floor };
+        let [lastRow, lastColumn] = [row, column];
+        for (let found = row + 1 < rows ? free(column, row + 1, held) : null; found;) {
+          taken[column * rows + ++lastRow][found[0]] = true;
+          held = found[1];
+          found = lastRow + 1 < rows ? free(column, lastRow + 1, held) : null;
         }
-        boxes.push([column, row, lastColumn, lastRow, bottom, top]);
+        while (lastColumn + 1 < columns) {
+          let trial: Held | null = held;
+          const found: number[] = [];
+          for (let step = row; step <= lastRow && trial; step++) {
+            const joins: [number, Held] | null = free(lastColumn + 1, step, trial);
+            [trial] = [joins?.[1] ?? null];
+            if (joins) found.push(joins[0]);
+          }
+          if (!trial) break;
+          lastColumn++;
+          found.forEach((taking, step) => (taken[lastColumn * rows + row + step][taking] = true));
+          held = trial;
+        }
+        boxes.push([column, row, lastColumn, lastRow, held.grounded ? floor : held.lowUnder, held.highTop]);
       });
   return boxes;
 }

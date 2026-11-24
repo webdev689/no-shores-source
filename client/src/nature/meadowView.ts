@@ -9,6 +9,7 @@ import type { NatureGround } from './field.ts';
 import { smooth } from './ground.ts';
 import { meadowLevels } from './meadowAtlas.ts';
 import { CELL_M, GRID, MEADOW_BIOMES, MeadowField, REACH_M, TUFTS } from './meadowField.ts';
+import { cardReach } from './meadowLaw.ts';
 import { FAR_FROM, FAR_VERTICES, MEADOW_FRAME_FLOATS, MEADOW_SHADER, NEAR_VERTICES } from './meadowShader.ts';
 import type { NatureFrame } from './natureView.ts';
 import { plantWind } from './natureView.ts';
@@ -19,9 +20,8 @@ export const KEPT_CELLS = 512;
 const ANCHOR_STEP_M = 256;
 /** How much higher than the reach the eye may stand over the ground below before no meadow is drawn, metres. */
 const HIGH_MARGIN_M = 200;
-/** A card stands this tall at most over its root, and reaches this far beside it, metres, for culling a cell. */
-const TALLEST_M = 1.7;
-const WIDEST_M = 1.2;
+/** How tall a card stands at most over its cell's ground and how far past its edge, for culling a cell. */
+const { tallest: TALLEST_M, widest: WIDEST_M } = cardReach();
 /** The plants' breeze, the wind's way before the weather is read, as natureView's. */
 const GUST_PER_M = 0.035;
 

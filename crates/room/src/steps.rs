@@ -303,7 +303,9 @@ impl Room {
                     // As far as its place's middle at most, which is always reached.
                     let reach = POINT_NUDGE.max(point.at);
                     let reached = from.and_then(|from| reached_near(mesh, &self.floor, from, [x, y], reach));
-                    reached.unwrap_or([x, y, self.floor.height_at(x, y)])
+                    // A place whose middle the mesh does not hold still puts its points on the mesh near them.
+                    let held = reached.or_else(|| held_near(mesh, &self.floor, [x, y], POINT_NUDGE));
+                    held.unwrap_or([x, y, self.floor.height_at(x, y)])
                 });
                 Stepping::Puzzle(Lit { points: points.collect(), ..Lit::default() })
             }

@@ -32,9 +32,9 @@ pub type Part = [f64; 6];
 
 /// The parts of a shape's own frame, each within `budget` of what is drawn: a block whole; an arch its jambs and the
 /// head over its crown, so a body walks through it; a column, a dome, a pyramid and a gable in layers that narrow as
-/// it does; natural rock and a module their own parts.
+/// it does, or `terraced`, those layers as columns from its foot; natural rock and a module their own parts.
 #[must_use]
-pub fn shape_parts(shape: Shape, size: [f64; 3], budget: f64) -> Vec<Part> {
+pub fn shape_parts(shape: Shape, size: [f64; 3], budget: f64, terraced: bool) -> Vec<Part> {
     let [width, depth, height] = size;
     let (half_width, half_depth) = (width / 2.0, depth / 2.0);
     let reach = half_width.max(half_depth);
@@ -77,17 +77,15 @@ pub fn shape_parts(shape: Shape, size: [f64; 3], budget: f64) -> Vec<Part> {
             let round = !matches!(shape, Shape::Pyramid { .. });
             // A rectangle's corner narrows along its diagonal; a round's as far as its reach.
             let narrowing = if round { reach } else { (half_width * half_width + half_depth * half_depth).sqrt() };
-            layers(&outline, narrowing, budget, |share| if round { round_misfit(reach * share, budget) } else { 0.0 })
-                .into_iter()
-                .flat_map(|(from, to, share)| across(half_width * share, half_depth * share, round, from, to, budget))
-                .collect()
+            let misfit = |share: f64| if round { round_misfit(reach * share, budget) } else { 0.0 };
+            let cut = layers(&outline, narrowing, budget, misfit);
+            laid(cut, terraced, |share| across(half_width * share, half_depth * share, round, budget))
         }
         Shape::Gable => {
             let outline = Outline { height, narrows: &|up| 1.0 - up / height, up_at: &|share| height * (1.0 - share) };
-            layers(&outline, half_width, budget, |_| 0.0)
-                .into_iter()
-                .map(|(from, to, share)| [-half_width * share, -half_depth, from, half_width * share, half_depth, to])
-                .collect()
+            laid(layers(&outline, half_width, budget, |_| 0.0), terraced, |share| {
+                vec![[half_depth, half_width * share]]
+            })
         }
         _ => crate::rock::parts(shape, size),
     }
@@ -134,27 +132,88 @@ fn round_misfit(reach: f64, budget: f64) -> f64 {
     }
 }
 
-/// A layer's cross-section, halves `half_x` by `half_y`, as boxes of its own frame: a rectangle whole; a round in
-/// its own box while that stands within half of `budget` of it, then in one box a little inside it, then in boxes
-/// crossed inside it, as many as keep the round within `budget` of them.
-fn across(half_x: f64, half_y: f64, round: bool, from: f64, to: f64, budget: f64) -> Vec<Part> {
+/// A layer's cross-section, halves `half_x` by `half_y`, as boxes of its own frame centred on its axis, given as a
+/// staircase: each step how far out along y it reaches and its half-width in x, out from the axis. A rectangle is
+/// one step; a round its own box while that stands within half of `budget` of it, then one box a little inside it,
+/// then boxes crossed inside it, as many as keep the round within `budget` of them.
+fn across(half_x: f64, half_y: f64, round: bool, budget: f64) -> Vec<[f64; 2]> {
     let reach = half_x.max(half_y);
     if !round || reach * (std::f64::consts::SQRT_2 - 1.0) <= budget / 2.0 {
-        return vec![[-half_x, -half_y, from, half_x, half_y, to]];
+        return vec![[half_y, half_x]];
     }
     if reach * ROUND_OFF_SHARE <= budget / 2.0 {
-        let (x, y) = (half_x * ROUND_SHARE, half_y * ROUND_SHARE);
-        return vec![[-x, -y, from, x, y, to]];
+        return vec![[half_y * ROUND_SHARE, half_x * ROUND_SHARE]];
     }
     let count = (std::f64::consts::PI * reach / (4.0 * budget)).ceil().max(2.0) as u32;
     (0..count)
         .map(|step| {
             let angle = (f64::from(step) + 0.5) * std::f64::consts::FRAC_PI_2 / f64::from(count);
             let (sine, cosine) = sin_cos(angle);
-            let (x, y) = (half_x * cosine, half_y * sine);
-            [-x, -y, from, x, y, to]
+            [half_y * sine, half_x * cosine]
         })
         .collect()
+}
+
+/// A narrowing shape's layers (each its foot, its top and its share of the base) as parts, each as wide as its
+/// cross-section at its foot (`steps`, its boxes crossed), or as terraces.
+fn laid(cut: Vec<(f64, f64, f64)>, terraced: bool, steps: impl Fn(f64) -> Vec<[f64; 2]>) -> Vec<Part> {
+    if terraced {
+        return terraces(cut.into_iter().map(|(_, to, share)| (to, steps(share))));
+    }
+    cut.into_iter()
+        .flat_map(|(from, to, share)| {
+            steps(share).into_iter().map(move |[reach, half_x]| [-half_x, -reach, from, half_x, reach, to])
+        })
+        .collect()
+}
+
+/// A narrowing shape's layers, each its top and its cross-section's staircase, as columns from its foot: each layer
+/// boxed only where no layer over it stands, up from the foot to its own top. Every layer is as wide as the shape at
+/// its foot and the shape widens downward, so they hold what its layers held and stand no further off it, and no
+/// point of the ground lies under more than one: a body's step tests the few boxes over it, not a stack of layers.
+fn terraces(layers: impl DoubleEndedIterator<Item = (f64, Vec<[f64; 2]>)>) -> Vec<Part> {
+    let mut held: Vec<[f64; 2]> = Vec::new();
+    let mut parts = Vec::new();
+    for (top, steps) in layers.rev() {
+        let half_x =
+            |stairs: &[[f64; 2]], out: f64| stairs.iter().find(|step| step[0] >= out).map_or(0.0, |step| step[1]);
+        let mut edges: Vec<f64> = steps.iter().chain(&held).map(|step| step[0]).collect();
+        edges.sort_by(f64::total_cmp);
+        edges.dedup();
+        let reach = steps.last().map_or(0.0, |step| step[0]);
+        let mut from = 0.0;
+        for &to in edges.iter().filter(|&&edge| edge <= reach) {
+            let (outer, inner) = (half_x(&steps, to), half_x(&held, to));
+            if outer > inner && to > from {
+                let xs: &[[f64; 2]] =
+                    if inner > 0.0 { &[[inner, outer], [-outer, -inner]] } else { &[[-outer, outer]] };
+                let ys: &[[f64; 2]] = if from > 0.0 { &[[from, to], [-to, -from]] } else { &[[-to, to]] };
+                for &[x0, x1] in xs {
+                    parts.extend(ys.iter().map(|&[y0, y1]| [x0, y0, 0.0, x1, y1, top]));
+                }
+            }
+            from = to;
+        }
+        let mut grown: Vec<[f64; 2]> = edges
+            .iter()
+            .map(|&out| [out, half_x(&steps, out).max(half_x(&held, out))])
+            .filter(|step| step[1] > 0.0)
+            .collect();
+        grown.dedup_by(|outer, inner| {
+            outer[1] == inner[1] && {
+                inner[0] = outer[0];
+                true
+            }
+        });
+        held = grown;
+    }
+    parts
+}
+
+/// Whether a shape is cut in layers that narrow as it rises, which may be laid as terraces.
+#[must_use]
+pub const fn is_layered(shape: Shape) -> bool {
+    matches!(shape, Shape::Column { .. } | Shape::Dome { .. } | Shape::Pyramid { .. } | Shape::Gable)
 }
 
 /// How far a solid's parts may stand off it, and their boxes off them: a shape whose parts are itself (a block, an

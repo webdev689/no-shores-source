@@ -34,7 +34,7 @@ ${PLANT_LIGHT_WGSL}
 
 struct MeadowFrame {
   from_eye: mat4x4f,
-  // The anchor from the eye (east, south), the eye's meadow_draw height negated, and the heights' exaggeration.
+  // The anchor from the eye (east, south), the eye's drawn height negated, and the heights' exaggeration.
   anchor: vec4f,
   // Seconds, the wind's way (east, south), and the gusts' phase at the anchor.
   wind: vec4f,
@@ -58,7 +58,7 @@ const MEADOW_TUFTS = ${TUFTS}u;
 const MEADOW_SLOTS = ${MEADOW_SLOTS.toFixed(1)};
 const MEADOW_NOWHERE = vec4f(2.0, 2.0, 2.0, 1.0);
 const MEADOW_PI = 3.14159265;
-// Each sprite's meadow_draw box (u from its left, v up from its foot), card scale, stiffness and share of the wind.
+// Each sprite's drawn box (u from its left, v up from its foot), card scale, stiffness and share of the wind.
 const MEADOW_BOXES = array<vec4f, 5>(${BOXES.map((box) => `vec4f(${list([box.u0, box.u1, box.v0, box.v1])})`).join(', ')});
 const MEADOW_SCALES = array<f32, 5>(${list(VARIANTS.map((variant) => variant.scale))});
 const MEADOW_STIFF = array<f32, 5>(${list(VARIANTS.map((variant) => variant.stiff))});
@@ -69,7 +69,7 @@ const MEADOW_RICH = vec4f(${list([SHARES.bush[1], SHARES.flowers[1], SHARES.dry[
 const MEADOW_PATCH = vec2f(${list(PATCH_SCALE)});
 const MEADOW_LUSH = vec2f(${list(LUSH)});
 const MEADOW_HEIGHT_M = vec2f(${list(HEIGHT_M)});
-// The ground the art is meadow_draw for, the span its ratio is held to, and how much hue a green texel takes.
+// The ground the art is drawn for, the span its ratio is held to, and how much hue a green texel takes.
 const MEADOW_ART_GROUND = ${vec3(GREEN.map((value, channel) => value / (TONE[channel] ?? 1)))};
 const MEADOW_SHIFT = vec2f(${list(SHIFT)});
 const MEADOW_GREEN_EDGE = ${GREEN_EDGE.toFixed(1)};
@@ -156,7 +156,7 @@ fn meadow_tuft(vertex: u32, instance: u32, cards: u32) -> MeadowShaded {
   let root = vec3f(anchored + frame.anchor.xy, ground.x * frame.anchor.w + frame.anchor.z);
   let distance = length(root);
   let reach = frame.land.w;
-  // A far cell holds fewer: its tufts past their share of what the fade leaves are not meadow_draw at all.
+  // A far cell holds fewer: its tufts past their share of what the fade leaves are not drawn at all.
   let fade = 1.0 - smoothstep(0.55 * reach, reach, distance);
   let share = f32(number) / f32(MEADOW_TUFTS);
   if (share > fade * 1.15) { return out; }
@@ -192,7 +192,7 @@ fn meadow_tuft(vertex: u32, instance: u32, cards: u32) -> MeadowShaded {
   let gust = 1.0 - gusting + gusting * sin(rolling + meadow_draw(&seed) * 0.6);
   let push = frame.land.y * MEADOW_BREEZE_MS * (0.6 + 0.45 * gust);
   let lean = standing + frame.wind.yz * push * MEADOW_LEAN_PER_PUSH * MEADOW_SWAY[variant];
-  // The card's corner, cut to the sprite's meadow_draw box, and the card turned its own way, a mirrored one a half-turn.
+  // The card's corner, cut to the sprite's drawn box, and the card turned its own way, a mirrored one a half-turn.
   let corners = array<vec2f, 6>(vec2f(0.0, 0.0), vec2f(1.0, 0.0), vec2f(1.0, 1.0), vec2f(0.0, 0.0), vec2f(1.0, 1.0), vec2f(0.0, 1.0));
   let corner = corners[vertex % 6u];
   let box = MEADOW_BOXES[variant];

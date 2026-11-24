@@ -163,7 +163,7 @@ pub fn seated_boxes(seating: &Seating, ring: &[[f64; 2]], book: &Book) -> Vec<Bo
 }
 
 /// A prop's boxes: each part its drawn shape fills (its whole box where that keeps to it) where the prop stands, a
-/// part turned off the world's axes in strips that keep within a quarter metre of it. A gate's arch is shut: its
+/// part turned off the world's axes in strips that keep within 0.45 m of it. A gate's arch is shut: its
 /// parts reach down to its foot, so the opening its bar spans stays closed as its whole box kept it.
 #[must_use]
 pub fn prop_boxes(prop: &Seated, measure: &Measure, parts: Option<&Vec<[f64; 6]>>) -> Vec<Box3> {
