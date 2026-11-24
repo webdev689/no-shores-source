@@ -158,6 +158,13 @@ raised and given back when the clock ends it. Very new accounts can be dealt wit
 - **Feeds**: every ten minutes each YouTube channel or https RSS or Atom feed is read, at most 512 KB and 50 items.
   The first read marks the place; later reads post up to five new items, their titles shown as typed.
 
+## The panel
+
+The bot is set up from its page on the [[Website]], `noshores.online/panel/` (`site/src/panel/`). A manager signs in
+with Discord there, picks a server, turns modules on, sets them through forms drawn from the law, runs their acts,
+reads their tables and the audit log, keeps the server's pictures, and writes messages in a composer whose preview is
+built by the message law. The page only draws what the panel's API answers; every check is the bot's.
+
 ## Limits
 
 - Not deployed: the Discord application's keys and the deploy wait on the owner ([[Open Questions]]). Every var in

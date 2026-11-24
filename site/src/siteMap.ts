@@ -17,6 +17,7 @@ export const SITE_PAGES: readonly SitePage[] = [
   { id: 'home', folder: '', inBar: false },
   { id: 'world', folder: 'world', inBar: true },
   { id: 'game', folder: 'game', inBar: true },
+  { id: 'panel', folder: 'panel', inBar: false },
 ];
 
 /**
