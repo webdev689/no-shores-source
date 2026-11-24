@@ -252,6 +252,12 @@ test('a piece is offered to take up only to the founder or an admin, held throug
   here.uses(wellX, wellY, () => undefined, 0, true);
   assert.deepEqual(asked, [], 'nothing asked before it is held through');
   here.uses(wellX, wellY, () => undefined)?.run();
+  now += 400;
+  here.uses(hornX, hornY, () => undefined, 0, true);
+  now += 400;
+  here.uses(wellX, wellY, () => undefined, 0, true);
+  assert.deepEqual(asked, [], 'a hold broken by stepping to a structure starts again');
+  here.uses(wellX, wellY, () => undefined)?.run();
   now += 800;
   here.uses(wellX, wellY, () => undefined, 0, true);
   assert.deepEqual(asked, ['outpost/undecorate'], 'held through, it is asked once');

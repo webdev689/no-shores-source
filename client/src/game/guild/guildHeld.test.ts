@@ -21,7 +21,7 @@ test("the guild kept from the accounts names its rooms' key and flies its banner
   assert.equal(ownOutpostColours('far-rocks-outpost'), null, "another guild's site, or none, as it is");
 });
 
-test('a failed read is tried again at the next ask, and a fresh read takes a removal the player did not make', async () => {
+test('a failed read keeps the last guild and is tried again at the next ask, and a fresh read takes a removal the player did not make', async () => {
   const key = 'ffeeddccbbaa99887766554433221100';
   const answers: unknown[] = ['The accounts are away.', { guild: { key, rank: 1, banner: {} } }, { guild: null }];
   const link = {
@@ -29,7 +29,8 @@ test('a failed read is tried again at the next ask, and a fresh read takes a rem
     outposts: () => Promise.resolve({ outposts: [] }),
   } as unknown as AccountLink;
   keepGuild(link);
-  assert.equal(await guildHeld(), null, 'the first read failed');
+  const before = await guildHeld();
+  assert.equal(before?.key, '0a1b2c3d4e5f60718293a4b5c6d7e8f9', 'a failed read keeps the guild last read');
   assert.deepEqual(await guildHeld(), { key, rank: 1, banner: {}, sites: [] }, 'read again, not kept failed');
   assert.equal((await guildHeld())?.key, key, 'an answer is kept');
   assert.equal(await guildRead(), null, 'removed by an admin, seen at a fresh read');

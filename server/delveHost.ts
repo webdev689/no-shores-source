@@ -28,9 +28,10 @@ export async function delveAsk(
   const read = await outpost(`node-${named.id}--guild-${named.guild}`).catch(() => null);
   const most = read ? gateTier(read.plot) : null;
   if (most === null || most < named.seas) return null;
-  // Laid for the week its name carries, this week's or, for a run opened before the turn, last week's.
+  // Laid for the week its name carries: this week's, last week's for a run opened before the turn, or next week's
+  // for one named by a page whose clock turned a little before the host's.
   const [week, now] = [delveWeek(named.run), weekOf(minute * 60_000)];
-  if (week !== now && week !== now - 1) return null;
+  if (Math.abs(week - now) > 1) return null;
   const { seed, style } = delveLaid(named.guild, week);
   return JSON.stringify({ dungeon: { seed, style, continent }, tier: named.seas, minute, guild: named.guild });
 }

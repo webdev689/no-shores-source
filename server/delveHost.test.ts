@@ -54,7 +54,7 @@ test('it opens only while its guild’s gate stands at its tier or higher, on an
   assert.equal(await asked('node-oakfast-landing--run-abcd1234', 3).ask, null, 'nor a run of no guild');
 });
 
-test('a run is laid for the week its name carries: last week’s for one opened before the turn, never an older one', async () => {
+test('a run is laid for the week its name carries: last week’s for one opened before the turn, never another', async () => {
   const run = (back: number) => delveRoom(KEY, 'oakfast-landing', 1, laidFor(back));
   const { seed, style } = delveLaid(KEY, weekOf(MINUTE * 60_000) - 1);
   assert.deepEqual(JSON.parse((await asked(run(1), 2).ask) ?? 'null').dungeon, {
@@ -63,5 +63,6 @@ test('a run is laid for the week its name carries: last week’s for one opened 
     continent: 'continent-4',
   });
   assert.equal(await asked(run(2), 2).ask, null, 'two weeks back');
-  assert.equal(await asked(run(-1), 2).ask, null, 'a week not yet come');
+  assert.notEqual(await asked(run(-1), 2).ask, null, 'next week, from a page whose clock turned first');
+  assert.equal(await asked(run(-2), 2).ask, null, 'a week further on');
 });

@@ -46,7 +46,8 @@ function read(): Promise<Held | null> {
   const number = ++reads;
   failed = false;
   const reading = readGuild(link).catch(() => undefined);
-  held = reading.then((guild) => guild ?? null);
+  // A failed read keeps the guild last read, so a blip never takes a member out of their guild's room.
+  held = reading.then((guild) => (guild === undefined ? landed : guild));
   void reading.then((guild) => {
     if (number !== reads) return;
     failed = guild === undefined;

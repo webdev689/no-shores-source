@@ -354,6 +354,9 @@ export class OutpostHere {
   ): Use | null => {
     this.facing = facing;
     this.hear();
+    // A hold under way lasts only while each frame finds the same piece again (`takeUp`).
+    const taking = this.taking;
+    this.taking = null;
     const placing = this.place([x, y], ask);
     if (placing) return placing;
     const { seen, ground, site } = this;
@@ -376,11 +379,8 @@ export class OutpostHere {
       return { words: useWords(standing, runs), run: () => openGearWindow({ view: 'guild', outpost }) };
     }
     const piece = this.pieces.find(({ at }) => near(at))?.decor;
-    if (!piece || !this.link || !runs) {
-      this.taking = null;
-      return null;
-    }
-    return this.takeUp(piece, ask, useHeld);
+    if (!piece || !this.link || !runs) return null;
+    return this.takeUp(piece, ask, useHeld && taking?.id === piece.id ? taking : null);
   };
 
   /** Whether the player is the founder or an admin of the guild whose outpost this is, as the guild was last read. */
@@ -398,11 +398,11 @@ export class OutpostHere {
 
   /** Taking up `piece`, as the page holds a structure's take-down: E pressed begins it, held through it is asked of
    *  the accounts, let go before it is not. */
-  private takeUp(piece: Decor, ask: (asked: GearAsk) => void, useHeld: boolean): Use {
+  private takeUp(piece: Decor, ask: (asked: GearAsk) => void, held: OutpostHere['taking']): Use {
     const link = this.link;
     const { site } = this;
     const now = this.clock();
-    if (this.taking && (this.taking.id !== piece.id || !useHeld)) this.taking = null;
+    this.taking = held;
     const share = this.taking ? (now - this.taking.since) / HOLD_MS : null;
     if (this.taking && share !== null && share >= 1 && link) {
       this.taking = null;
