@@ -32,7 +32,9 @@ export class LiveBinds {
   /** What the pad waits to tell apart in `context` (anywhere, without one): each button with a hold bound there, and
    *  each two bound together, so a button with no hold bound where the player is acts as it goes down. */
   waits(context?: Context): Waits {
-    const here = BIND_IDS.filter((id) => context === undefined || CONTROLS[id].where.includes(context));
+    // Riding is on foot here: the rider's boost waits as the foot's controls do.
+    const places: readonly Context[] = context === 'foot' ? ['foot', 'riding'] : context ? [context] : [];
+    const here = BIND_IDS.filter((id) => !context || CONTROLS[id].where.some((place) => places.includes(place)));
     const names = here.flatMap((id) => this.binds[id].pad);
     const holds = new Set(names.filter((name) => name.endsWith(' hold')).map((name) => name.slice(0, -' hold'.length)));
     const chords = names.filter((name) => name.includes('+')).map((name) => name.split('+') as [string, string]);

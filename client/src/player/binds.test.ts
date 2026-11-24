@@ -147,8 +147,12 @@ test('binds read from outside are checked strictly: known controls, known keys a
 
 test('every control acts somewhere, the menus and the sheet everywhere, and the leave on foot alone', () => {
   for (const id of BIND_IDS) assert.ok(CONTROLS[id].where.length > 0, id);
-  for (const id of ['character', 'controls'] as const) assert.equal(CONTROLS[id].where.length, 5, id);
-  assert.deepEqual(CONTROLS.leave.where, ['foot', 'dead'], 'on foot, fallen saying why not; nothing to leave at sea');
+  for (const id of ['character', 'controls'] as const) assert.equal(CONTROLS[id].where.length, 6, id);
+  assert.deepEqual(
+    CONTROLS.leave.where,
+    ['foot', 'riding', 'dead'],
+    'on foot, fallen saying why not; nothing to leave at sea',
+  );
   assert.deepEqual(CONTROLS.leave.pad, ['View hold'], "the pad's View held");
 });
 

@@ -1,6 +1,6 @@
 import type { FightEvent } from '../network/messages.ts';
 import type { FighterView } from '../rules/fighters.ts';
-import type { Block } from '../rules/movementRules.ts';
+import type { Block, Body } from '../rules/movementRules.ts';
 import { PLATES } from '../plus/barLayout.ts';
 import { COMPASS, headingOf, type PlaceMark } from '../plus/compass.ts';
 import { compassNode } from './compassNode.ts';
@@ -30,7 +30,8 @@ import { Vitals } from './vitals.ts';
 import { blockedBy, clearOf, clipOf, meets, project, sidesOf, spanOf, veilOf } from './hudPlace.ts';
 import { type PlatedPlayer, PlayerPlates } from './playerPlates.ts';
 import { type ArmsShown, LOADOUT_KEYS, WeaponRows } from './weapons.ts';
-import type { CapFace } from './shipAbilityBar.ts';
+import { type CapFace, ShipAbilityBar } from './shipAbilityBar.ts';
+import { rideAbilities } from './rideBoost.ts';
 
 /** What the display is drawn from each frame: the player's fighter, the foes, every fighter's place by number, how the
  *  camera projects a point, the canvas's size in CSS pixels, the fight's events since the last frame, whether the view
@@ -70,6 +71,8 @@ export interface HudFrame {
   readonly groundAt: ((x: number, y: number) => number | null) | null;
   /** The Art's abilities as the bar shows them (Fighting's abilities); none hides the bar. */
   readonly abilities?: AbilityState | null;
+  /** The player's body while they ride, whose boost's ring stands in the Art's place; none on foot. */
+  readonly rider?: Body | null;
   /** Whether the player has just stepped onto an Ammo box they cannot take, their ammunition full (DropsShown's
    *  ammoFull). */
   readonly ammoFull?: boolean;
@@ -83,15 +86,16 @@ export interface HudFrame {
   readonly players?: readonly PlatedPlayer[];
 }
 
-/** The keycaps of the Art's abilities (the Anima's, then each Tenet's) and of the two loadouts: a key's name, or a
- *  pad's button with `pad:` before it. */
+/** The keycaps of the Art's abilities (the Anima's, then each Tenet's), of the two loadouts and of a rider's boost: a
+ *  key's name, or a pad's button with `pad:` before it. */
 export interface HudKeys {
   readonly arts: readonly [string, string, string];
   readonly loadouts: readonly [string, string];
+  readonly boost: string;
 }
 
 /** The keys the game binds at first, for a display given none. */
-const FIRST_KEYS: HudKeys = { arts: ABILITY_KEYS, loadouts: LOADOUT_KEYS };
+const FIRST_KEYS: HudKeys = { arts: ABILITY_KEYS, loadouts: LOADOUT_KEYS, boost: 'Space' };
 
 /** A foe winding up an iron blow this near is told to be dodged. */
 const IRON_NEAR_M = 12;
@@ -139,6 +143,8 @@ export class Hud {
   /** The side the next number with no stroke to follow is thrown to. */
   private nextSide = 1;
   private readonly abilities: AbilityBar | null;
+  /** A rider's boost, its ring drawn as a ship's burst is. */
+  private readonly ride: ShipAbilityBar;
   /** The Arts' and the loadouts' keycaps, as bound now. */
   private readonly caps: () => HudKeys;
   private readonly weapons: WeaponRows;
@@ -200,6 +206,7 @@ export class Hud {
     this.beside = beside;
     this.caps = keys?.caps ?? (() => FIRST_KEYS);
     this.abilities = pictures && new AbilityBar(pictures, keys?.face);
+    this.ride = new ShipAbilityBar(keys?.face ?? null, 'Your Horse');
     this.weapons = new WeaponRows(forge && new ItemPictures(forge), keys?.face);
   }
 
@@ -272,6 +279,7 @@ export class Hud {
     if (frame.abilities)
       this.abilities?.update(frame.abilities, seconds, UNABLE.has(own?.action.kind ?? ''), caps.arts);
     else this.abilities?.hide();
+    this.ride.update(frame.rider ? rideAbilities(frame.rider, caps.boost) : null, seconds);
     const arms = frame.arms ?? { gear: null, loadout: 0, drawn: false, dress: null };
     this.weapons.update(arms, own, seconds, caps.loadouts);
     this.edges = this.threats(frame);
@@ -516,7 +524,8 @@ export class Hud {
   /** The Art's abilities and the weapons at the bottom left, the weapons over the Arts in a view too narrow for both. */
   private armsNode(): Child {
     const { zoom, wide, stacked } = this.layout;
-    const abilities = this.abilities?.node(wide, zoom) ?? null;
+    // Riding, the horse's boost stands where the Art's abilities do: no Art is cast from the saddle.
+    const abilities = this.ride.node(wide, zoom) ?? this.abilities?.node(wide, zoom) ?? null;
     const weapons = this.weapons.node();
     if (!abilities && !weapons) return null;
     return {

@@ -2,8 +2,16 @@ use super::*;
 use movement::Terrain;
 
 /// Forward at a walk, toward the ship's bow (north in its frame).
-const FORWARD: Controls =
-    Controls { forward: 1.0, sideways: 0.0, yaw: 0.0, run: false, jump: false, crouch: false, mounted: false };
+const FORWARD: Controls = Controls {
+    forward: 1.0,
+    sideways: 0.0,
+    yaw: 0.0,
+    run: false,
+    jump: false,
+    crouch: false,
+    mounted: false,
+    boost: false,
+};
 
 #[test]
 fn a_player_leaving_the_helm_stands_behind_the_wheel_on_the_deck_facing_its_bow() {

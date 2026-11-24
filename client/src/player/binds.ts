@@ -7,10 +7,13 @@
 // two pressed together `LB+RB`. What the player changed is kept with their account (`readOverrides`), and the accounts
 // check it against this table.
 
-/** Where a control acts: on foot (on land or a deck), dead, in a window, at the helm, or in a fight at sea. */
-export type Context = 'foot' | 'dead' | 'menu' | 'helm' | 'fight';
-const EVERYWHERE: readonly Context[] = ['foot', 'dead', 'menu', 'helm', 'fight'];
+/** Where a control acts: on foot (on land or a deck), riding, dead, in a window, at the helm, or in a fight at sea.
+ *  Riding is on foot as the pad reads it; it is its own only so the rider's boost may share a key with the jump,
+ *  which a rider never makes, and clashes with what a rider does use. */
+export type Context = 'foot' | 'riding' | 'dead' | 'menu' | 'helm' | 'fight';
+const EVERYWHERE: readonly Context[] = ['foot', 'riding', 'dead', 'menu', 'helm', 'fight'];
 const FOOT: readonly Context[] = ['foot'];
+const RIDDEN: readonly Context[] = ['foot', 'riding'];
 const HELM: readonly Context[] = ['helm'];
 const FIGHT: readonly Context[] = ['fight'];
 
@@ -51,15 +54,17 @@ export const HOLD_S = 0.3;
 /** DFO's keys, as the owner chose them ("same control scheme"), and Destiny's pad, as the owner chose it ("#1 but b
  *  to dodge/b hold to crouch"). */
 export const CONTROLS = {
-  forward: control(['w'], ['LS up'], FOOT),
-  back: control(['s'], ['LS down'], FOOT),
-  left: control(['a'], ['LS left'], FOOT),
-  right: control(['d'], ['LS right'], FOOT),
-  run: control(['shift'], ['LS'], FOOT),
+  forward: control(['w'], ['LS up'], RIDDEN),
+  back: control(['s'], ['LS down'], RIDDEN),
+  left: control(['a'], ['LS left'], RIDDEN),
+  right: control(['d'], ['LS right'], RIDDEN),
+  run: control(['shift'], ['LS'], RIDDEN),
   jump: control([' '], ['A'], FOOT),
   crouch: control(['c'], ['B hold'], FOOT),
-  mount: control([','], ['Up'], FOOT),
-  use: control(['e'], ['X'], ['foot', 'fight']),
+  mount: control([','], ['Up'], RIDDEN),
+  // The rider's boost, on the jump's keys: a horse never jumps.
+  boost: control([' '], ['A'], ['riding']),
+  use: control(['e'], ['X'], ['foot', 'riding', 'fight']),
   ready: control(['z'], ['Y'], FOOT),
   melee: control(['1'], ['Left'], FOOT),
   ranged: control(['2'], ['Right'], FOOT),
@@ -75,20 +80,20 @@ export const CONTROLS = {
   tenetOne: control(['q'], ['LB'], FOOT),
   tenetTwo: control(['g'], ['RB'], FOOT),
   respawn: control(['enter'], ['A'], ['dead']),
-  turnLeft: control(['arrowleft'], ['RS left'], ['foot', 'helm']),
-  turnRight: control(['arrowright'], ['RS right'], ['foot', 'helm']),
-  lookUp: control(['insert'], ['RS up'], ['foot', 'helm']),
-  lookDown: control(['delete'], ['RS down'], ['foot', 'helm']),
-  perspective: control(['mouse3'], ['RS'], FOOT),
+  turnLeft: control(['arrowleft'], ['RS left'], ['foot', 'riding', 'helm']),
+  turnRight: control(['arrowright'], ['RS right'], ['foot', 'riding', 'helm']),
+  lookUp: control(['insert'], ['RS up'], ['foot', 'riding', 'helm']),
+  lookDown: control(['delete'], ['RS down'], ['foot', 'riding', 'helm']),
+  perspective: control(['mouse3'], ['RS'], RIDDEN),
   // Held, it takes the player back to their ship from wherever they stand on foot (`leaveHold.ts`); fallen, it says
   // why not, so the pad tells its View held from a tap there too.
-  leave: control(['m'], ['View hold'], ['foot', 'dead']),
+  leave: control(['m'], ['View hold'], ['foot', 'riding', 'dead']),
   character: control(['i'], ['Start'], EVERYWHERE),
   inventory: control(['o'], [], EVERYWHERE),
   details: control(['x'], [], ['menu']),
   controls: control(['k'], ['View'], EVERYWHERE),
   // The chat's field opens on T wherever the player plays, the owner's choice: at the helm Enter sets sail.
-  chat: control(['t'], [], ['foot', 'dead', 'helm', 'fight']),
+  chat: control(['t'], [], ['foot', 'riding', 'dead', 'helm', 'fight']),
   steerLeft: control(['a'], ['LS left'], HELM),
   steerRight: control(['d'], ['LS right'], HELM),
   sailOn: control(['w'], ['LS up'], HELM),
@@ -98,7 +103,7 @@ export const CONTROLS = {
   faster: control([']'], ['Right'], HELM),
   map: control(['n'], ['Up'], HELM),
   // The held map of the land on foot; the pad's D-pad up mounts there, so it has no pad button until one is bound.
-  landMap: control(['n'], [], FOOT),
+  landMap: control(['n'], [], RIDDEN),
   confirm: control(['enter'], ['A'], HELM),
   ashore: control(['l'], [], HELM),
   manage: control(['b'], ['Y'], HELM),

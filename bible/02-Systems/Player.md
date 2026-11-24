@@ -45,7 +45,23 @@ moves and figure are DFO's ([[The Player Plays as in DFO]]); the Test Ground's n
   slot, as the room allows (`mountAsked`). The walker rides only once the gear the room sends says a horse is worn
   (`ridesIn`, on foot, in the prologue's wreck and on the Test Ground alike); one taken off under its rider sets them
   on foot. With none, a press does nothing and the frame it was pressed in says "You have no horse." once for it,
-  ashore or at sea; the story says nothing. Getting down is never refused.
+  ashore or at sea; the story says nothing. Getting down is never refused. A new character's first horse is the
+  stranger's Bay ([[Gear]]).
+- **The boost** ([[Other Ships Wear Their Players' Marks, the Sea Map Has No Fog, and New Players Ride a Bay That Bursts]]): a rider taps the boost key (Space, or the pad's A, on the jump's
+  keys, since a horse never jumps; rebound on the controls sheet) for half again the horse's pace, walking or
+  galloping, for 4 s; then it recharges for 12 s before it may boost again. The run stays as it is. It is the
+  movement rules' (`boost_run`, `TUNING`'s `ride_boost`, `boost_seconds`, `recharge_seconds`): the controls carry
+  the tap (`boost`) and the body its two clocks (`boosting`, `recharging`), so the room steps it and the page
+  predicts it to the bit; a tap on foot, or while it runs or recharges, does nothing. The walker queues the tap to the
+  next tick as it does a jump. Its ring stands at the bottom left while riding ([[Interface]]) and its sounds are the
+  horse's ([[Interface]], "Horses").
+- **The boost's look** (`combat/hoofDust.ts`, laid with the fight's marks): as it begins the hind hooves dig in, dust
+  bursting out round them (18 motes) and clods of earth flying up behind (8); while it runs the hooves strike in turn
+  ten times a second at a boosted walk's pace or faster (fewer slower, none standing), each kicking up dust that hangs,
+  swells and thins behind the horse, a clod one strike in three; as it ends the horse sits back in a low cloud thrown
+  ahead and to the sides (14). Stone and wood throw paler dust and no clods, water a white spray. Every mote is a square
+  of the figures' pixels facing the eye, from one pool of 192, the oldest given up for a new one, so it makes nothing
+  new a frame. The player's own horse alone: another player's glance carries no boost.
 - **The camera** sits in the head, or behind it and up in third person on a boom (`cameraOrbit`). Through the
   head it sees 65° tall where third person sees the lens's 50°, widening as the camera comes in past third person's
   nearest, 0.6 m;

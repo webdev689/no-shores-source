@@ -10,6 +10,7 @@ import { type Action, type FighterView, type StatusName, fighterView } from '../
 import { audioPoint, listen } from '../listener.ts';
 import { playSample, rushOfCue } from '../soundSamples.ts';
 import { blowLook } from './cues.ts';
+import { HorseSounds, type Rider } from './horseSounds.ts';
 import type { Fighting } from './fighting.ts';
 import { elementOfArt } from './spellLooks.ts';
 import type { Struck } from './tracers.ts';
@@ -61,6 +62,8 @@ export interface WorldFrame {
     readonly walked: number;
     readonly drawn: boolean;
     readonly mounted: boolean;
+    /** The seconds the rider's boost still runs; none where left out. */
+    readonly boosting?: number;
     readonly look: GlowLook;
     readonly pulled: boolean;
   };
@@ -88,7 +91,7 @@ const MOST_VOICES = 16;
 const GAP_S = 0.1;
 /** How far a step's, a swing's or a blow's pitch strays either way, as a share of it, so a run of them never drones. */
 const STRAY = 0.08;
-const STRAYS = /^(step|swing|hit)\./;
+const STRAYS = /^(step|swing|hit|horse)\./;
 /** A figure that moved farther than this in a frame was placed afresh, not walked. */
 const LEAP_M = 3;
 /** A shot or spell first seen within this many ticks of its start is heard starting. */
@@ -141,6 +144,7 @@ export class WorldSounds {
   private readonly play: Play;
   private clock = 0;
   private readonly kept = new Map<number, Kept>();
+  private readonly horses = new HorseSounds();
   private readonly spells = new Map<number, { kind: number; at: Point; age: number; life: number }>();
   private readonly released = new Map<number, number>();
   private readonly heardAt = new Map<string, number>();
@@ -172,6 +176,7 @@ export class WorldSounds {
     const seen = this.seen(frame);
     const byId = new Map(seen.map((one) => [one.id, one]));
     this.fighters(frame, seen, hear);
+    this.horses.frame(ridersOf(frame), frame.seconds, frame.ground, hear);
     const { fight, walker } = frame;
     const spellLook = (id: number) => elementOfArt(fight.spells.arts.get(id));
     for (const event of frame.events) {
@@ -244,7 +249,7 @@ export class WorldSounds {
   /** Each fighter's changes since the last frame: its action, its air, its statuses, its weapon drawn or put away, its
    *  steps and a foe's alert. */
   private fighters(
-    { fight, walker, ground }: WorldFrame,
+    { fight, walker, ground, others }: WorldFrame,
     seen: readonly Seen[],
     hear: (cue: string | null, at: Point, key: number) => void,
   ): void {
@@ -269,7 +274,9 @@ export class WorldSounds {
       for (const cue of statusCues(kept.statuses, statuses)) hear(cue, at, id);
       if (drawn !== null && kept.drawn !== null && drawn !== kept.drawn)
         hear(drawn ? 'weapon.draw' : 'weapon.sheathe', at, id);
-      if (!(own && walker.mounted) && stepsBetween(kept.travelled, travelled) > 0) hear(stepCue(at, ground), at, id);
+      // A rider's horse is heard instead (`HorseSounds`).
+      const riding = own ? walker.mounted : (others.get(id)?.anim.startsWith('horse') ?? false);
+      if (!riding && stepsBetween(kept.travelled, travelled) > 0) hear(stepCue(at, ground), at, id);
       if (alert === FOE_ALERT && kept.alert !== FOE_ALERT) hear('foe.alert', at, id);
     }
     for (const id of this.kept.keys()) if (!present.has(id)) this.kept.delete(id);
@@ -367,4 +374,15 @@ export class WorldSounds {
       panner.disconnect();
     });
   }
+}
+
+/** Everyone as their horse is heard: the player by their walker, every other player by how they are drawn (a rider's
+ *  moves are the horse's). */
+function ridersOf({ fight, walker, others }: WorldFrame): Rider[] {
+  const own = { id: fight.player, feet: walker.feet, mounted: walker.mounted, boosting: walker.boosting ?? 0 };
+  const rest = [...others].map(([id, placed]): Rider => {
+    const feet = [placed.x, placed.y, placed.z] as const;
+    return { id, feet, mounted: placed.anim.startsWith('horse'), boosting: 0 };
+  });
+  return [own, ...rest];
 }
