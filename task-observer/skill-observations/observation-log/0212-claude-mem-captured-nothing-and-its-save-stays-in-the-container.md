@@ -33,3 +33,7 @@ when it carries nothing forward.
 
 **Principle:** A save step that reports success must check that it saved something, and to somewhere that outlives
 the thing it is saving.
+
+**Later the same session:** the first save's stop and start brought the worker up, and from then on it captured: the
+end-of-session save wrote a 5 MB archive. So the worker was simply not running before that first save; install-all.sh
+starting it, and checking it captured, is the fix. The archive still stays in the container.

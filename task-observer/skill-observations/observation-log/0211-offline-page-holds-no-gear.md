@@ -1,6 +1,6 @@
 ---
 id: 211
-title: "Offline the page holds no gear (`foot.gear` is null without a socket), and `__qaView` stands the body clear of what stands, metres off the asked point"
+title: "Offline the page holds no gear (`foot.gear` is null without a socket; drops were drawn only from it), `__qaView` stands the body clear of what stands and re-arrives it as a fresh character, and a GPU run cannot finish a timed hold"
 status: open
 type: open-source
 skill: []
@@ -26,3 +26,11 @@ for the player is read from `held.gear ?? held.alone`"; and "`__qaView` stands t
 
 **Principle:** A test harness that silently relocates its subject needs its post-condition checked, not assumed;
 and an accessor named for the general case but valid only in one mode should say so where it is defined.
+
+**Second instance (same session, DFO's chest and the pour):**
+- The foot view drew drops only from `this.gear?.gear`, so a page playing alone never drew a drop. It was found only when a GPU picture of a poured Vestige showed nothing; fixed to read `held.gear ?? held.alone`.
+- `__qaView` re-arrives the player as a fresh character: the gear's Aurem and resources restart, and a chest already opened stands again. A no-GPU plan that opened four chests each through `__qaView` read each chest's Aurem diff as 0 after the first, which looked like a bug in the room. A room test showed the four chests paying 21 each.
+- With the GPU on, neither `askGear` nor a `hold` step finished a chest's 1 s hold: a headless frame moves the game on too little. Opening works only in a `noGpu` plan.
+- Handing the page a state to picture (`held.alone = {...}`) lasts one frame, because each room message replaces it. Wrapping the field in a getter that re-applies the state to every message worked.
+
+**Suggested improvement (added):** Toolkit's Browser QA row: "`__qaView` re-arrives a fresh character; a timed hold cannot finish with the GPU on (drive it `noGpu`); to picture a state the room sends, wrap `foot.held.alone` (or `.gear`) in a getter, as a plain assignment lasts one message."
