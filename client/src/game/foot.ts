@@ -475,6 +475,7 @@ export class Foot {
       groundAt,
       drawn: { foes: foes.placed, others: this.otherPlayers.placed },
       more: dropped.marks,
+      rider: { feet, facing: walker.player.facing, mounted: walker.player.mounted, boosting: body.boosting ?? 0 },
     });
     this.sounds.frame({
       seconds,
@@ -489,6 +490,7 @@ export class Foot {
         walked: walker.walked,
         drawn: walker.you.dress.outfit.drawn,
         mounted: walker.player.mounted,
+        boosting: walker.player.body.boosting ?? 0,
         look: effects.ownLook,
         pulled: shown.pulled,
       },
@@ -543,6 +545,7 @@ export class Foot {
       parryOpen: fight.parryOpen,
       parryWindow: fight.parryWindow,
       abilities: fight.abilities,
+      rider: walker.player.mounted ? walker.player.body : null,
       // The shots left stand beside the crosshair, wherever it shows.
       ammo: sights ? (ownView?.ammo ?? null) : null,
       ammoMost: held?.ammoMost ?? null,

@@ -388,7 +388,7 @@ fn bytes_that_are_not_an_input_and_numbers_of_the_wrong_count_are_refused() {
     let controls = Some(builder.create_vector(&[0.0; 6]));
     let short = messages::Input::create(&mut builder, &messages::InputArgs { controls, ..Default::default() });
     builder.finish(short, None);
-    assert_eq!(read_input(builder.finished_data()), Err("controls are 7 numbers, not 6".to_owned()));
+    assert_eq!(read_input(builder.finished_data()), Err("controls are 8 numbers, not 6".to_owned()));
 }
 
 #[test]
@@ -443,7 +443,7 @@ fn a_welcome_and_snapshots_read_back_to_the_bit() {
     // The player the snapshot is for has their fighter whole, less its trim: put back the plain one they wear.
     let mut own: Vec<f64> = read_players[1].fighter().unwrap().iter().collect();
     assert_eq!(own.len(), crate::UNTRIMMED_FLOATS);
-    assert_eq!(body_of(&own[..22]), Some(players[1].fighter.body));
+    assert_eq!(body_of(&own[..movement::floats::BODY_FLOATS]), Some(players[1].fighter.body));
     own.extend(combat::Trim::PLAIN.to_floats());
     assert_eq!(Fighter::from_floats(&own.try_into().unwrap()), players[1].fighter);
     assert!(read_players[1].packed().is_none());

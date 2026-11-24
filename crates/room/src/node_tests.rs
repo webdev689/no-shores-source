@@ -4,8 +4,16 @@ use reach::{RESPAWN_TICKS, WARNING_TICKS};
 use serde_json::json;
 use std::f64::consts::PI;
 
-const STILL: Controls =
-    Controls { forward: 0.0, sideways: 0.0, yaw: 0.0, run: false, jump: false, crouch: false, mounted: false };
+const STILL: Controls = Controls {
+    forward: 0.0,
+    sideways: 0.0,
+    yaw: 0.0,
+    run: false,
+    jump: false,
+    crouch: false,
+    mounted: false,
+    boost: false,
+};
 /// Walking north, toward -y.
 const NORTH: Controls = Controls { forward: 1.0, ..STILL };
 const RUN_NORTH: Controls = Controls { run: true, ..NORTH };

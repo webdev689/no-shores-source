@@ -186,6 +186,12 @@ sea's soundscape ([[Ambience]]).
   ring, lit and draining as it runs, then swept dark as it recharges with its last seconds counted, the browser
   turning the shares to seconds by the burst's 4 s and 12 s (`ships/shipAbilities.ts`; "How it looks", "The
   readout"). Sailing between ports has no burst: only a fight's helm has one, and a fleet room's fight has none.
+- **The burst's look** ([[Other Ships Wear Their Players' Marks, the Sea Map Has No Fog, and New Players Ride a Bay That Bursts]], `ships/burstWake.ts`): as a ship's burst begins its bow
+  heaves up a sheet of spray to either side (16 drops each) and a ring of foam spreads under its stern; while it runs,
+  spray flies off both bows (14 drops each a second) and foam is laid astern (9 puffs a second, each spreading for
+  some 3 s where it was laid), so a bursting ship draws a white road behind it; as it ends, a last low fall of spray
+  at the bow and a wide ring of foam as it settles. Every ship's, read from the view's burst, none for one going
+  down. Its puffs are the fight's own spray and foam (`Effects`), in its budget and drawn as theirs are.
 - **Ship power** ([[Ship Power]]): a player's ship whose character the sea holds is fitted each tick (`fitting.rs`):
   its harm on each captain and each captain's on it by its level, Attack and Defense against the captain's level, and
   its trim from its modules and posted officers, among them its Gunner firing the broadside it does not lay, its

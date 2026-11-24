@@ -122,6 +122,21 @@ fn the_strangers_gift_is_given_once_however_often_she_is_heard() {
 }
 
 #[test]
+fn the_stranger_gives_the_bay_worn_with_her_aurem_once_and_never_a_second() {
+    let welcomed = welcomed();
+    assert!(welcomed.may_ride(), "the Bay worn in the Mount slot");
+    assert_eq!(welcomed.coat_worn(), Some(crate::horses::FIRST_HORSE));
+    let horses = |character: &Character| character.items.values().filter(|(item, _)| item.kind == Kind::Horse).count();
+    assert_eq!(horses(&welcomed), 1);
+    // One who keeps a Bay already (a save that rode one) hears her and is given none: one horse of each coat.
+    let mut riding = Character::starting();
+    riding.give_horse(crate::horses::FIRST_HORSE, false);
+    assert!(riding.ask(Ask::Speak { keeper: keeper("stranger") }, SOCIAL, &DICE).is_ok());
+    assert_eq!(horses(&riding), 1, "no second Bay");
+    assert_eq!(riding.materials.aurem, 400, "her Aurem all the same");
+}
+
+#[test]
 fn the_round_of_the_counters_then_the_gift_spent_on_starter_gear_worn_reaches_the_houses() {
     let mut character = welcomed();
     for key in ["weaponsmith", "armorsmith", "mage", "vault", "tailor", "tack", "mail", "harbourmaster"] {

@@ -7,7 +7,7 @@ use movement::{Block, Body, Controls, Flat, Mode, TICK_SECONDS, standing, step_b
 use std::f64::consts::{FRAC_PI_2, PI};
 
 /// Both tests hold this value; a change to the moves changes it in both, on purpose.
-pub const RUN_HASH: &str = "2267bd9bb6ecb0ec";
+pub const RUN_HASH: &str = "e8369fd91758ace2";
 
 /// A ledge to catch and climb, a low thin wall to vault, a tower to climb, and a step.
 const COURSE: [Block; 4] = [
@@ -17,12 +17,13 @@ const COURSE: [Block; 4] = [
     Block { min_x: -2.0, min_y: 3.0, max_x: 2.0, max_y: 5.0, top: 0.4, bottom: 0.0 },
 ];
 
-/// Ticks, then forward, sideways, yaw, run, jump and crouch (on the first tick only) and mounted.
+/// Ticks, then forward, sideways, yaw, run, jump and crouch (on the first tick only) and mounted (its boost tapped on
+/// the first tick).
 type Phase = (usize, f64, f64, f64, bool, bool, bool, bool);
 
 /// Walk to the ledge, jump and catch it on the seventh tick, shimmy and climb over; run off it onto the step; crouch
 /// and walk west, stand and run on; vault the thin wall; run to the tower, edge along it, climb it and go over; then
-/// gallop off it mounted, the jump refused.
+/// gallop off it mounted and boosted, the jump refused.
 const SCRIPT: [Phase; 14] = [
     (20, 1.0, 0.0, 0.05, false, false, false, false),
     (7, 1.0, 0.0, 0.05, false, true, false, false),
@@ -46,8 +47,16 @@ fn run_script() -> Vec<Body> {
     for (ticks, forward, sideways, yaw, run, jump, crouch, mounted) in SCRIPT {
         for tick in 0..ticks {
             let first = tick == 0;
-            let controls =
-                Controls { forward, sideways, yaw, run, jump: jump && first, crouch: crouch && first, mounted };
+            let controls = Controls {
+                forward,
+                sideways,
+                yaw,
+                run,
+                jump: jump && first,
+                crouch: crouch && first,
+                mounted,
+                boost: mounted && first,
+            };
             body = step_body(&body, &controls, &COURSE, &Flat, TICK_SECONDS);
             bodies.push(body);
         }

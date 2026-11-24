@@ -608,7 +608,7 @@ test('a room left, its foes are forgotten: the next room’s foe of the same num
 
 test("the Arts' and the loadouts' keycaps are the keys the game answers each frame, not those it binds at first", () => {
   const pictures = () => ({ anima: '<svg></svg>', animaOutline: '', tenets: ['', ''] as const, diamond: '', ring: '' });
-  let keys: HudKeys = { arts: ['R', 'E', 'G'], loadouts: ['1', '2'] };
+  let keys: HudKeys = { arts: ['R', 'E', 'G'], loadouts: ['1', '2'], boost: 'Space' };
   const hud = new Hud(pictures, null, () => [], { caps: () => keys, face: () => null });
   const labels = () =>
     allOf(drawn(hud))
@@ -616,7 +616,7 @@ test("the Arts' and the loadouts' keycaps are the keys the game answers each fra
       .join('|');
   hud.update(bare({ abilities: { art: 1, animaShare: 1, tenets: [1, 1] } }), 1 / 60);
   assert.ok(labels().includes('Quicken (E), ready'), labels());
-  keys = { arts: ['pad:LB+RB', 'pad:LB', 'pad:RB'], loadouts: ['pad:Left', 'pad:Right'] };
+  keys = { arts: ['pad:LB+RB', 'pad:LB', 'pad:RB'], loadouts: ['pad:Left', 'pad:Right'], boost: 'pad:A' };
   // A sword in hand, a crossbow in the other loadout, its row naming the key that draws it.
   const worn = (kind: string, slot: number) => ({ kind: KINDS.indexOf(kind as never), at: WORN + slot, rarity: 0 });
   const items = [worn('sword', 0), worn('crossbow', 1)];

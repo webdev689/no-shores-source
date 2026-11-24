@@ -126,7 +126,16 @@ export function updatePlayer(
   while (carry >= movement.tickSeconds) {
     carry -= movement.tickSeconds;
     previous = body;
-    body = movement.step(body, { forward, sideways, yaw, run: input.held('run'), ...queued, mounted });
+    // A horse never jumps (the movement crate's rule), so a rider's jump is the horse's boost.
+    body = movement.step(body, {
+      forward,
+      sideways,
+      yaw,
+      run: input.held('run'),
+      ...queued,
+      boost: queued.jump,
+      mounted,
+    });
     queued = { jump: false, crouch: false };
   }
   // DFO's figure faces where it moves and keeps its facing when still; striking or casting, it turns to the view.
