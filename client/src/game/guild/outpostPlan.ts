@@ -190,7 +190,7 @@ export function planNode(
   const ghostNode: Child = ghost && {
     width: ((ghost[2] ?? 0) - (ghost[0] ?? 0)) * cellPx,
     height: ((ghost[3] ?? 0) - (ghost[1] ?? 0)) * cellPx,
-    float: { to: 'parent', x: (ghost[0] ?? 0) * cellPx, y: (ghost[1] ?? 0) * cellPx },
+    float: { to: 'parent', clipped: true, x: (ghost[0] ?? 0) * cellPx, y: (ghost[1] ?? 0) * cellPx },
     through: true,
     fill: refusal === null ? GHOST_FITS : GHOST_REFUSED,
     opacity: 0.7,
@@ -208,12 +208,18 @@ export function planNode(
   const ring: Child = keyed && {
     width: cellPx,
     height: cellPx,
-    float: { to: 'parent', x: (cursor % PLOT_CELLS) * cellPx, y: Math.floor(cursor / PLOT_CELLS) * cellPx },
+    float: {
+      to: 'parent',
+      clipped: true,
+      x: (cursor % PLOT_CELLS) * cellPx,
+      y: Math.floor(cursor / PLOT_CELLS) * cellPx,
+    },
     through: true,
     outline: { width: 2, colour: INK.brassLit },
   };
   // Blocks, marks, the ghost and the ring float over the cells without a z of their own, so each is drawn just above
-  // whatever holds the plan: the menu's window floats high, and a fixed low z would draw them under it.
+  // whatever holds the plan: the menu's window floats high, and a fixed low z would draw them under it. Each is clipped
+  // as the cells are, so a scrolled plan never draws over the menu's head.
   return {
     node: {
       id: PLAN_ID,
@@ -244,7 +250,12 @@ function frontNode(turn: number, size: readonly [number, number], cellPx: number
   return {
     width: flat ? across : bar,
     height: flat ? bar : down,
-    float: { to: 'parent', x: facing === 'east' ? across - bar : 0, y: facing === 'south' ? down - bar : 0 },
+    float: {
+      to: 'parent',
+      clipped: true,
+      x: facing === 'east' ? across - bar : 0,
+      y: facing === 'south' ? down - bar : 0,
+    },
     through: true,
     fill: colour,
     opacity: 0.8,
@@ -259,6 +270,7 @@ function decorNode(decor: KeptPlot['decor'][number], cellPx: number): Node {
     height: mark,
     float: {
       to: 'parent',
+      clipped: true,
       x: Math.round((decor.x / CELL_M) * cellPx - mark / 2),
       y: Math.round((decor.y / CELL_M) * cellPx - mark / 2),
     },
@@ -292,7 +304,7 @@ function blockNode(standing: Standing, cellPx: number, chosen: boolean): Node {
   return {
     width: (east - west) * cellPx - 2,
     height: tall - 2,
-    float: { to: 'parent', x: west * cellPx + 1, y: north * cellPx + 1 },
+    float: { to: 'parent', clipped: true, x: west * cellPx + 1, y: north * cellPx + 1 },
     through: true,
     fill: blueprint ? BLUEPRINT : colour,
     bevel: blueprint ? 0 : 2,
@@ -308,7 +320,7 @@ function blockNode(standing: Standing, cellPx: number, chosen: boolean): Node {
       rising && {
         width: 'grow',
         height: Math.max(4, Math.round(cellPx / 4)),
-        float: { to: 'parent', anchor: [0, 0], at: [0, 0] },
+        float: { to: 'parent', clipped: true, anchor: [0, 0], at: [0, 0] },
         through: true,
         fill: BLUEPRINT,
         opacity: 0.85,
