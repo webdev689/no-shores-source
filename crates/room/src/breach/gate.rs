@@ -91,6 +91,8 @@ pub struct Gate {
     /// The runs whose gate has opened, by the tick it opened; and the companies inside runs, by run.
     pub opened: BTreeMap<String, u64>,
     pub inside: BTreeMap<String, Inside>,
+    /// The runs whose gate opened and has shut again, cleared or its day past: none of them takes the gate again.
+    pub spent: BTreeSet<String>,
 }
 
 impl Gate {
@@ -184,6 +186,7 @@ impl Room {
         if usize::from(encounter) >= gear::breach::DROWNED_VALE.encounters.len() {
             // Told once, as the company that was inside is done: its run says so again until it leaves.
             gate.opened.remove(run);
+            gate.spent.insert(run.to_owned());
             if gate.inside.remove(run).is_some() {
                 self.tell_all(EventKind::BreachCleared, f64::from(encounter));
             }
@@ -202,7 +205,16 @@ impl Room {
     pub(crate) fn keep_breach_gate(&mut self) {
         let Some(mut gate) = self.breach_gate.take() else { return };
         let clock = self.clock;
-        gate.opened.retain(|_, opened| clock < *opened + OPENED_TICKS);
+        let past: Vec<String> = gate
+            .opened
+            .iter()
+            .filter(|(_, opened)| clock >= **opened + OPENED_TICKS)
+            .map(|(run, _)| run.clone())
+            .collect();
+        for run in past {
+            gate.opened.remove(&run);
+            gate.spent.insert(run);
+        }
         gate.inside.retain(|run, inside| clock < inside.heard + INSIDE_LASTS && gate.opened.contains_key(run));
         for company in gate.companies.values_mut() {
             company.players.retain(|player| self.players.contains_key(player));
@@ -222,10 +234,12 @@ impl Room {
         self.breach_gate = Some(gate);
     }
 
-    /// The first company whose living player stands on a mooring takes the gate, unless the gate already opened to it.
+    /// The first company whose living player stands on a mooring takes the gate, unless the gate already opened to it,
+    /// now or before (`spent`).
     fn take_gate(&mut self, gate: &mut Gate) {
         let moorings: Vec<[f64; 3]> = MOORINGS.iter().filter_map(|name| gate.socket(name)).collect();
-        let taker = gate.companies.iter().filter(|(run, _)| !gate.opened.contains_key(*run)).find(|(_, company)| {
+        let fresh = |run: &&String| !gate.opened.contains_key(*run) && !gate.spent.contains(*run);
+        let taker = gate.companies.iter().filter(|(run, _)| fresh(run)).find(|(_, company)| {
             company.players.iter().any(|player| {
                 self.players.get(player).is_some_and(|found| {
                     found.living()

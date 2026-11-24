@@ -483,3 +483,33 @@ fn breach_won() -> std::collections::BTreeSet<String> {
     character.breach_cleared(&gear::breach::DROWNED_VALE, Tier::Normal, 0, last, &dice);
     character.story.breaches
 }
+
+#[test]
+fn no_company_whose_gate_opened_takes_it_again_once_it_cleared_or_its_day_is_past() {
+    for cleared in [true, false] {
+        let (mut room, players) = gate_room(3);
+        for &player in &players {
+            room.breach_company(player, "run-a", Tier::Normal);
+        }
+        hold_moorings(&mut room, &players);
+        room.tick();
+        woken(&mut room, &players);
+        room.clock += gate::OPEN_TICKS;
+        room.tick();
+        assert!(room.breach_opened("run-a"), "opened to its company");
+        if cleared {
+            room.breach_inside("run-a", "Wenna", Tier::Normal, 6);
+        } else {
+            room.clock += gate::OPENED_TICKS;
+        }
+        room.tick();
+        assert!(!room.breach_opened("run-a"), "shut to it again");
+        let mooring = socket(&room, MOORINGS[0]);
+        stand(&mut room, players[0], mooring);
+        room.tick();
+        assert!(
+            room.breach_gate.as_ref().expect("gate").held_by.is_none(),
+            "cleared {cleared}: it takes the gate no more"
+        );
+    }
+}
