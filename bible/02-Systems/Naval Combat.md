@@ -422,7 +422,9 @@ rammer's way along its keel, at the most over the last 0.6 s, closes on that fac
 - **One ram a tick** for each player, none on the same ship again within 3 s, and the rammer's remembered way is spent on it.
   A ram provokes the captain struck. Captains do not ram.
 - **Hulls kept apart.** Two hulls whose boxes overlap on the flat are each pushed out half the overlap, and each loses
-  the share of its way that drove squarely into it. DFO kept the player's own boat apart by Come Sail Away's sweep;
+  the share of its way that drove squarely into it. A hull that half would ground, as the ground refuses a ship's own
+  move, stays where it is, and the other takes the whole push where that leaves it afloat, so no ship is pressed onto
+  a coast it could not then sail off. DFO kept the player's own boat apart by Come Sail Away's sweep;
   here every ship is pushed alike, so the room can do it.
 
 For the owner's Sloop and the Tithe Sloop, a ram at 8 m/s into its side deals 36 and costs the rammer 22; six from

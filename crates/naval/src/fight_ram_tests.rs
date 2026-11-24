@@ -147,3 +147,33 @@ fn a_player_going_down_pushed_apart_keeps_foundering() {
     assert!(alone.heave < -0.1, "it settles as it goes down: {}", alone.heave);
     assert_eq!([pushed.heave, pushed.pitch, pushed.roll], [alone.heave, alone.pitch, alone.roll]);
 }
+
+/// Deep water east of `shore` (x, metres), dry land west of it.
+struct Shore {
+    shore: f64,
+}
+
+impl Waters for Shore {
+    fn at(&self, x: f64, _y: f64, _time: f64) -> Spot {
+        if x < self.shore { Spot { bed: 2.0, surface: None } } else { Spot { bed: -50.0, surface: Some(0.0) } }
+    }
+}
+
+#[test]
+fn a_hull_pressed_against_the_shore_is_not_pushed_onto_it_and_the_other_takes_the_push() {
+    let shore = Shore { shore: -0.2 };
+    let mut fight = bow_to_side(0.5, 0.0);
+    let theirs = Ship { x: 1.2, y: 0.5, heading: 0.0, ahead: 0.0, abeam: 0.0, turn: 0.0, sail_way: 0.0, rung: 0 };
+    fight.ships.get_mut(&CAPTAIN).unwrap_or_else(|| panic!("captain")).ship = theirs;
+    let flat = |fight: &Fight, id| {
+        let ship = fight.vessel(id).map_or(theirs, |vessel| vessel.ship);
+        let (forward, starboard) = sailing::pose::frame(ship.heading);
+        let middle = [ship.x + forward[0] * 0.28125, ship.y + forward[1] * 0.28125];
+        Flat { middle, forward, starboard, half_length: 3.55105, half_beam: 1.0009 }
+    };
+    fight.step(&[(PLAYER, ROWING)], &shore, &|_| WIND, 0.0);
+    let player = fight.vessel(PLAYER).map(|vessel| vessel.ship).unwrap_or_else(|| panic!("player"));
+    let keel = sailing::pose::keel_spots(&player, sailing::hull::HullKind::Sloop.hull(), &shore, 0.0);
+    assert!(keel.iter().all(|spot| spot.surface.is_some()), "its keel still afloat, at x {}", player.x);
+    assert_eq!(overlap(&flat(&fight, PLAYER), &flat(&fight, CAPTAIN)), None, "the captain is pushed clear of it");
+}
