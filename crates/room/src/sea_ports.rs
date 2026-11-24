@@ -390,6 +390,8 @@ impl Sea {
         } else if let Some((points, pace)) = held {
             let _ = self.course(player, &points, pace);
         }
+        // A repair begun while played unkept mended the unkept ship, not the kept one, which may lie far from a port.
+        self.harbour.repairs.under_way.remove(&player);
         if let Some(berth) = self.berths.get_mut(&player) {
             berth.kept = character.ship.map(|share| f64::from(share) / f64::from(gear::character::SHIP_WHOLE));
         }
