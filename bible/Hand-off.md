@@ -192,6 +192,18 @@ each part works is in its system note.
 
 The decisions in [[Open Questions]] are not repeated here.
 
+- **The bounty board after the Bounty Tracker, and faction bounties** (#PR_NUMBER, a draft for the owner's yes), on the
+  owner's "take autonomy and focus on overhauling the bounty menu and bounty design" with Destiny 1's Bounty Tracker
+  ([[Standard and Faction Bounties Each Wear One Design, on a Board After the Bounty Tracker]]; every call in
+  [[The Bounty Board as Claude Shapes It]]). Each faction posts three of its own four bounties a day, taken only by
+  those pledged to it, counting only with its cape worn, paying XP and its reputation (2,500, 3,750, 5,000 by tier);
+  the wire carries each bounty's place and faction, so the merge deploys the page and the rooms together. The board is
+  laid as a keeper's screen, the board drawn where a keeper stands; every town bounty wears one writ, every faction's
+  its emblem, 52 px tiles (were 80), the card floating beside the tile pointed at; the Journal's column takes the same.
+  Tested offline: the full check on the PR's head (the commit named there), the rules', wire's and page's tests, and
+  pictures through the real renderer at three sizes. Not yet: the board in the live game (the picture driver reaches
+  no local room and the offline page keeps no gear), a real GPU, a hand. For the owner: the faction bounties' design,
+  and whether a card gains a line of tale ([[Open Questions]]).
 - **A foe's plain swing at seven eighths of its time**, for the owner's yes to merge, on the owner's "We recently
   adjusted parry timing and actually made it harder where I wanted to make it slighty easier"
   ([[A Foe's Plain Swing Takes Seven Eighths of Its Time]]). The longer parry window (15 ticks) forgave only an early
