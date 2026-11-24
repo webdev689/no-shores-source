@@ -332,6 +332,7 @@ a decision is a record. How to add one: [[Recording a Decision]].
 - [[Each Patrol Zone Has a Built Landing Site, Its Guards Beyond It]]
 - [[The Patrol Audit's Leftovers Are Fixed as the Owner Chose]]
 - [[The Key Strip Is a Compact Panel, a Held Key Leaves, and Settings Has Tabs]]
+- [[The Lattice Is Shaded Darker, With Detailed Attacks and Projectile Tracers]]
 
 ## Replaced
 
