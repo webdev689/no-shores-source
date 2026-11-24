@@ -269,7 +269,7 @@ test("the ship's part of the gear message reads back: its power, materials, hand
 
 test("the ship's, crew's, story's and bounties' asks carry the numbers the protocol reads them by", async () => {
   const read = (file: string) => readFile(new URL(`../../../crates/protocol/src/${file}`, import.meta.url), 'utf8');
-  const wire = (await read('gear_wire.rs')) + (await read('lore_wire.rs'));
+  const wire = (await read('gear_wire.rs')) + (await read('lore_wire.rs')) + (await read('finds_wire.rs'));
   const number = (name: string) => Number(new RegExp(`pub const ${name}: u8 = (\\d+);`).exec(wire)?.[1]);
   assert.deepEqual(
     [
@@ -288,11 +288,13 @@ test("the ship's, crew's, story's and bounties' asks carry the numbers the proto
       ASKS.takeLetter,
       ASKS.takeAllLetters,
       ASKS.findLore,
+      ASKS.openFind,
     ],
     [
       ...['INFUSE', 'RECRUIT', 'STATION', 'DISMISS', 'TRAIN', 'CHOOSE_OFFICER', 'GRANT_OFFICERS', 'SCAVENGE'],
       ...['STOP_GATHER', 'FINISH_PROLOGUE', 'TAKE_BOUNTY', 'TURN_IN_BOUNTY', 'TAKE_LETTER', 'TAKE_ALL_LETTERS'],
       'FIND_LORE',
+      'OPEN_FIND',
     ].map(number),
   );
   const numbers = Object.values(ASKS);
@@ -424,4 +426,9 @@ test('the lore found and lying in the node read back: each found by its number, 
   bare.finish(Gear.endGear(bare));
   const none = gearOf(Gear.getRootAsGear(new flatbuffers.ByteBuffer(bare.asUint8Array())));
   assert.deepEqual([none.lore, none.loreHere], [[], []], 'a room that sends none');
+});
+
+test('every ask has a number of its own, so the room never mistakes one for another', () => {
+  const numbers = Object.values(ASKS);
+  assert.equal(new Set(numbers).size, numbers.length);
 });

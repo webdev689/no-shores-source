@@ -893,7 +893,10 @@ never while a press is held. Each press is an ask the room answers.
   used is spent, not gained. Letters newly in the mail show as one row, "Sent to the mail" and how many, under the
   Postmaster's mark; a letter taken is not a gain, though what it held is. A Normal piece a kill, a chest or a clear
   gives in a Vestige's place shows as its item's row, as any item new to them does
-  ([[Gear]], "Commons drop as themselves").
+  ([[Gear]], "Commons drop as themselves"). A chest opened in a patrol or a dungeon shows as "Chest", and a container
+  searched as "Searched the" and its kind, under its mark and with no count, over the Aurem and the resource it gave
+  (`gainsOf`; [[Chests and Searchable Containers as Claude Builds Them]]): told once the room names it as the last
+  find it paid the player for (the gear's `opened`), so a chest that moved on is no gain.
   Currency, XP, each faction's reputation ("Reputation") and an Art's XP ([[Material Nodes Stand Where They Are Dressed, Worked by Holding E]]) stand as short
   lines over the rows, as Destiny shows them: the count, its word where the icon alone is not enough, and its icon,
   with no band; five stand at most, apart from the rows' six, so a kill's lines never push its drops out. An Art's

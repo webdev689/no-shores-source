@@ -9,7 +9,7 @@ use crate::garrison::SPAWN_CLEAR;
 use combat::sight::{apart, bearing};
 use combat::tuning::BODY_HEIGHT;
 use movement::Body;
-use reach::{distance_to_ring, inside};
+use reach::{distance_to_ring, inside, respawn_point};
 
 /// How far apart the points lie along a way, metres.
 pub(crate) const ALONG_M: f64 = 25.0;
@@ -39,6 +39,17 @@ fn along(way: &[[f64; 2]]) -> Vec<[f64; 2]> {
 }
 
 impl Room {
+    /// Where a body that fell at (x, y) stands again by its own respawn: at an activity's checkpoint, near where it
+    /// fell in a patrol zone (below), else at the section's spawn nearest it, or the room's spawn.
+    pub(crate) fn stand_again(&self, x: f64, y: f64) -> Body {
+        if let Some(body) = self.at_checkpoint().or_else(|| self.near_where_fell(x, y)) {
+            return body;
+        }
+        let near = self.section.as_ref().and_then(|section| respawn_point(section, x, y));
+        let first = self.spawn_points.first().copied().unwrap_or((0.0, 0.0));
+        self.stand(near.map_or(first, |[near_x, near_y]| (near_x, near_y)))
+    }
+
     /// Lays the points a patrol zone's or a world boss's fallen stand again at, from its ways; any other room lays none.
     pub(crate) fn lay_near(&mut self, ways: &[Vec<[f64; 2]>]) {
         let world_boss =

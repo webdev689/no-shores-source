@@ -21,6 +21,7 @@ mod seen;
 mod walk;
 
 pub use chest::CHEST_REACH;
+pub(crate) use chest::Paid;
 pub use seen::{PublicMark, PublicSeen};
 
 /// The zones that hold public events, in the order of their place on the clock.

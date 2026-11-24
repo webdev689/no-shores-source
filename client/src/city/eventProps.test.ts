@@ -3,6 +3,7 @@ import { test } from 'node:test';
 import {
   type Ager,
   eventProps,
+  foundChestProps,
   GROWTH,
   MARK,
   MOTION,
@@ -89,21 +90,33 @@ test("a chest's lid stands at its hinge, shut until opened and then swung open",
   const shut = eventProps(null, [{ id: 1, at: [5, 6, 7], tier: 1, opened: null }], aged(0), 0);
   assert.deepEqual(
     shut.map((prop) => prop.module),
-    ['event-chest', 'event-chest-lid'],
+    ['chest', 'chest-lid'],
   );
   const [body, lid] = shut;
   assert.ok(body && lid);
-  assert.deepEqual(lid.at, propPoint(body, moduleSocket(moduleNumber('event-chest'), 'hinge')));
-  assert.ok(lid.at[2] > 7.4, 'the hinge is at the top of the chest');
+  assert.deepEqual(lid.at, propPoint(body, moduleSocket(moduleNumber('chest'), 'hinge')));
+  assert.ok(lid.at[2] > 7.35 && lid.at[1] < 6, "the hinge is at the top of the chest's back");
   assert.equal(lid.lid, 0);
   const open = eventProps(null, [{ id: 1, at: [5, 6, 7], tier: 4, opened: 5 }], aged(0), 0);
   assert.deepEqual(
     open.map((prop) => [prop.module, prop.lid]),
     [
-      ['event-chest-heroic', 0],
-      ['event-chest-heroic-lid', MOTION.lidOpenRad],
+      ['chest-heroic', 0],
+      ['chest-heroic-lid', MOTION.lidOpenRad],
     ],
   );
+});
+
+test("a patrol's chest looks the way its place faces, its hinge behind it", () => {
+  for (const facing of [0, Math.PI / 2, Math.PI, -Math.PI / 2]) {
+    const [body, lid] = foundChestProps({ at: [10, 20, 0], facing, opened: null });
+    assert.ok(body && lid);
+    const front = propPoint(body, [0, 1, 0]);
+    assert.ok(Math.abs(front[0] - 10 - Math.sin(facing)) < 1e-9, `east at ${facing}`);
+    assert.ok(Math.abs(front[1] - 20 + Math.cos(facing)) < 1e-9, `south at ${facing}`);
+    const back = [lid.at[0] - 10, lid.at[1] - 20];
+    assert.ok(back[0] * Math.sin(facing) - (back[1] ?? 0) * Math.cos(facing) < 0, 'its hinge behind it');
+  }
 });
 
 test('the state clock ages a mark from when its state began, and forgets a mark no longer drawn', () => {

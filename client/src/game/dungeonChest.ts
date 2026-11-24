@@ -1,25 +1,43 @@
-// The dungeon's cache: a chest of wooden boxes bound in iron, its lid shut or thrown back, where the room says it
-// stands and the way it faces.
+// The dungeon's cache: the owner's chest (models/chest.ts) in the dungeon's wood and iron, lit by its torches, its lid
+// shut or swung open, where the room says it stands and the way it faces; and the chests the dungeon stands for the
+// player to find (finds.ts), the same chest, each lid as far open as it has swung.
+import { CHEST_OPEN_RAD, chestFaces, chestScale, chestTall } from '../models/chest.ts';
 import { type ForgedModel, meshBuilder } from '../models/model.ts';
-import { box, IRON } from './dungeonMesh.ts';
+import { IRON } from './dungeonMesh.ts';
+import { uvOf } from './dungeonUv.ts';
 
 /** The cache as a room's snapshot gives it: where it stands, the way it faces (radians clockwise from north), and
- *  whether it stands open. */
+ *  whether it stands open; or how far its lid has swung back (radians), for a chest opening. */
 export interface Cache {
   readonly x: number;
   readonly y: number;
   readonly z: number;
   readonly bearing: number;
   readonly open: boolean;
+  readonly lid?: number;
 }
 
-/** The chest's body, its lid, its iron bands and how far its lid is thrown back open, metres and radians. */
-const BODY = { half: 0.45, depth: 0.5, height: 0.42 };
-const LID = 0.14;
-const BAND = { half: 0.04, proud: 0.012 };
-const BANDS_AT = [-0.3, 0.3];
-const LOCK = { half: 0.06, low: 0.28, high: 0.46 };
-const OPENED = 1.9;
+/** How long a found chest's lid takes to swing open, seconds. Open, it is short of upright, so standing off its wall as
+ *  the room stands it (crates/room finds.rs) it stays clear of every kit piece, none more than 0.3 m proud of a wall
+ *  (tools/dungeon/envelope.py). */
+const LID_OPEN_S = 0.6;
+/** The chest's size: fitted within 0.9 m across and 0.5 m deep, the box the room stands a chest in (finds.rs). */
+const SCALE = chestScale(0.9, 0.5);
+const HALF_DEEP = 0.25;
+const TALL = chestTall(SCALE);
+
+/** A chest the dungeon stands for the player to find (finds.ts) as the cache's chest is built: from its front's
+ *  middle, half its depth before the middle the room stands it at, its lid swung back as far as it has opened. */
+export function foundChest(chest: {
+  readonly at: readonly [number, number, number];
+  readonly facing: number;
+  readonly opened: number | null;
+}): Cache {
+  const lid = chest.opened === null ? 0 : Math.min(1, chest.opened / LID_OPEN_S) * CHEST_OPEN_RAD;
+  const [x, y, z] = chest.at;
+  const front = { x: x + Math.sin(chest.facing) * HALF_DEEP, y: y - Math.cos(chest.facing) * HALF_DEEP };
+  return { ...front, z, bearing: chest.facing, open: chest.opened !== null, lid };
+}
 
 /** The cache read from a snapshot's numbers (x, y, z, bearing, 1 open or 0 shut); null where it holds none. */
 export function cacheOf(numbers: readonly number[]): Cache | null {
@@ -28,60 +46,33 @@ export function cacheOf(numbers: readonly number[]): Cache | null {
   return { x, y, z, bearing, open: open === 1 };
 }
 
-/** The chest built from boxes, wood in `wood` and bands of iron, placed where the cache stands. */
+/** The chest, its wood in `wood`, placed where the cache stands. */
 export function chestMesh(cache: Cache, wood: readonly [number, number]): ForgedModel {
-  // Built with x to its right, y to its back and z up, its front's middle at its foot at the origin.
-  const body = meshBuilder();
-  const lid = meshBuilder();
-  const iron = IRON;
-  const back = BODY.depth;
-  box(body, wood, [-BODY.half, 0, 0], [BODY.half, back, BODY.height]);
-  box(lid, wood, [-BODY.half, 0, BODY.height], [BODY.half, back, BODY.height + LID]);
-  for (const across of BANDS_AT) {
-    const [left, right] = [across - BAND.half, across + BAND.half];
-    box(body, iron, [left, -BAND.proud, 0], [right, back + BAND.proud, BODY.height]);
-    box(lid, iron, [left, -BAND.proud, BODY.height], [right, back + BAND.proud, BODY.height + LID + BAND.proud]);
-  }
-  box(lid, iron, [-LOCK.half, -BAND.proud * 2, LOCK.low], [LOCK.half, 0, LOCK.high]);
-  const lidTurn = cache.open ? OPENED : 0;
-  const hinge = [back, BODY.height] as const;
-  const [cosine, sine] = [Math.cos(cache.bearing), Math.sin(cache.bearing)];
-  // Its right and its back in the world; with z up the turn keeps every face wound as it was.
-  const place = ([x, y, z]: readonly number[], shift: boolean): [number, number, number] => [
-    (shift ? cache.x : 0) + x * cosine - y * sine,
-    (shift ? cache.y : 0) + x * sine + y * cosine,
-    (shift ? cache.z : 0) + z,
-  ];
-  const opened = ([x, y, z]: readonly number[]): number[] => {
-    const [along, up] = [y - hinge[0], z - hinge[1]];
-    return [
-      x,
-      hinge[0] + along * Math.cos(lidTurn) + up * Math.sin(lidTurn),
-      hinge[1] - along * Math.sin(lidTurn) + up * Math.cos(lidTurn),
-    ];
-  };
+  return chestsMesh([cache], wood);
+}
+
+/** Every chest of `chests` built so, as one mesh. */
+export function chestsMesh(chests: readonly Cache[], wood: readonly [number, number]): ForgedModel {
   const joined = meshBuilder();
-  for (const [built, turn] of [
-    [body.model(), (point: readonly number[]) => [...point]],
-    [lid.model(), opened],
-  ] as const) {
-    for (const part of built.parts)
-      for (let index = part.start; index < part.start + part.count; index += 3) {
-        const vertices = [0, 1, 2].map((offset) => built.indices[index + offset] ?? 0);
-        const corners = vertices.map((vertex) =>
-          place(turn([0, 1, 2].map((axis) => built.positions[vertex * 3 + axis] ?? 0)), true),
-        );
-        const first = vertices[0] ?? 0;
-        // A normal turns as the points do, without their shift.
-        const tip = turn([0, 1, 2].map((axis) => built.normals[first * 3 + axis] ?? 0));
-        const origin = turn([0, 0, 0]);
-        const normal = place(
-          [0, 1, 2].map((axis) => (tip[axis] ?? 0) - (origin[axis] ?? 0)),
-          false,
-        );
-        const mapping = vertices.map((vertex) => [built.uvs[vertex * 2] ?? 0, built.uvs[vertex * 2 + 1] ?? 0]);
-        joined.tri([part.archive, part.record], corners, normal, mapping);
-      }
-  }
+  for (const cache of chests) addChest(joined, cache, wood);
   return joined.model();
+}
+
+/** Adds one chest to `joined`: its wood in `wood`, its hinge and latch in iron, its front's middle where the cache
+ *  stands, facing its bearing. */
+function addChest(joined: ReturnType<typeof meshBuilder>, cache: Cache, wood: readonly [number, number]): void {
+  const [cosine, sine] = [Math.cos(cache.bearing), Math.sin(cache.bearing)];
+  const middle = [cache.x - sine * HALF_DEEP, cache.y + cosine * HALF_DEEP] as const;
+  // The chest's x across and y out of its front, the front looking along its bearing.
+  const turned = ([x, y, z]: readonly number[], shift: boolean): [number, number, number] => [
+    (shift ? middle[0] : 0) + (x ?? 0) * cosine + (y ?? 0) * sine,
+    (shift ? middle[1] : 0) + (x ?? 0) * sine - (y ?? 0) * cosine,
+    (shift ? cache.z : 0) + (z ?? 0),
+  ];
+  for (const face of chestFaces(SCALE, cache.lid ?? (cache.open ? CHEST_OPEN_RAD : 0))) {
+    const corners = face.corners.map((corner) => turned(corner, true));
+    const normal = turned(face.normal, false);
+    const picture = face.part === 'hinge' || face.part === 'latch' ? IRON : wood;
+    joined.tri([picture[0], picture[1]], corners, normal, corners.map(uvOf(normal, TALL)));
+  }
 }

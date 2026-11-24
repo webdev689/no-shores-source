@@ -189,9 +189,7 @@ test('a chest the room refuses closes again, and E asks again', () => {
   const lying = [chest(5, [1, 0, 0], 1)];
   view.use(lying, [0, 0, 0], (ask) => asked.push(ask), 0)?.run();
   const lid = (clock: number) =>
-    view
-      .frame(raid([]), [], lying, bodies(), clock, [], () => 0)
-      .props.find((prop) => prop.module === 'event-chest-lid');
+    view.frame(raid([]), [], lying, bodies(), clock, [], () => 0).props.find((prop) => prop.module === 'chest-lid');
   assert.ok((lid(0.5)?.lid ?? 0) > 0, 'swinging while the room is asked');
   assert.ok((lid(3)?.lid ?? 0) > 0, 'held open while the room is slow to take it');
   assert.equal(

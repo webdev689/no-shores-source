@@ -26,6 +26,7 @@ pub mod element;
 pub mod emblems;
 pub mod errand;
 pub mod factions;
+pub mod finds;
 pub mod gate;
 pub mod grid;
 pub mod guild;

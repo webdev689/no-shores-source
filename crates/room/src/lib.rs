@@ -27,6 +27,8 @@ mod dungeon_room;
 pub mod encounter_plan;
 pub mod encounters;
 mod entrances;
+mod find_holds;
+mod finds;
 pub mod fleet;
 mod floor;
 pub mod flotsam;
@@ -74,8 +76,10 @@ pub mod winds;
 pub use arts::{Cast, Casting};
 pub use asks::{Asked, Grant, ResourceNode};
 pub use companions::Companion;
-pub use drops::{AMMO_REST_TICKS, DROP_TICKS, Drop, Dropped, VESTIGE_REST_TICKS};
+pub use drops::{AMMO_REST_TICKS, DROP_TICKS, Drop, Dropped, POURED_REST_TICKS, VESTIGE_REST_TICKS};
 pub use entrances::Entrance;
+pub use find_holds::{CHEST_REACH, FIND_HEIGHT, OPEN_TICKS, SEARCH_REACH, SEARCH_TICKS};
+pub use finds::{ChestPlace, Holder};
 pub use floor::{Floor, standing_on};
 pub use foes::{CLEAR_FOES, FOES_MOST, FoeSeen, NODE_FOES_MOST, SHIELD_SHIFT};
 pub use guild_book::{GuildSeen, Guilds};
@@ -106,7 +110,7 @@ pub use land::sites::NodeKind;
 use movement::standing;
 use movement::{Block, Body, Mode};
 use players::Player;
-use reach::{Place, respawn_point};
+use reach::Place;
 pub use reach::{Section, Standing};
 use std::borrow::Cow;
 use std::collections::{BTreeMap, BTreeSet, VecDeque};
@@ -207,6 +211,8 @@ pub struct Room {
     pub(crate) difficulty: gear::Difficulty,
     pub(crate) patrol: bool,
     pub(crate) gathered: std::collections::BTreeMap<String, Vec<(u8, u64)>>,
+    /// Its chests and searchable containers (`finds.rs`).
+    pub(crate) finds: finds::Finds,
     /// A patrol's dungeons' entrances, or an Elite Dungeon's node's one (`entrances.rs`).
     pub(crate) entrances: Vec<entrances::Entrance>,
     /// What the gates know it as (`gear::gate`): none for a course, which no gate shuts.
@@ -308,6 +314,7 @@ impl Room {
             difficulty: gear::Difficulty::Normal,
             patrol: false,
             gathered: std::collections::BTreeMap::new(),
+            finds: finds::Finds::default(),
             entrances: Vec::new(),
             place: None,
             source: gear::Source::World,
@@ -345,17 +352,6 @@ impl Room {
         let body =
             if self.section.is_some() { standing_on(&self.floor, &self.blocks, x, y) } else { self.on_top(x, y) };
         Body { facing: self.facing, ..body }
-    }
-
-    /// Where a body that fell at (x, y) stands again by its own respawn: at an activity's checkpoint, near where it
-    /// fell in a patrol zone (`respawns.rs`), else at the section's spawn nearest it, or the room's spawn.
-    pub(crate) fn stand_again(&self, x: f64, y: f64) -> Body {
-        if let Some(body) = self.at_checkpoint().or_else(|| self.near_where_fell(x, y)) {
-            return body;
-        }
-        let near = self.section.as_ref().and_then(|section| respawn_point(section, x, y));
-        let first = self.spawn_points.first().copied().unwrap_or((0.0, 0.0));
-        self.stand(near.map_or(first, |[near_x, near_y]| (near_x, near_y)))
     }
 
     /// A new player, standing at the next spawn in turn with nothing drawn; none when the room is full.
@@ -445,6 +441,8 @@ impl Room {
         self.spawn_asked();
         self.keep_patrol();
         self.keep_gathering();
+        self.keep_finds();
+        self.keep_opening();
         self.keep_companions();
         self.step_foes();
         self.keep_on_course();

@@ -366,6 +366,9 @@ a decision is a record. How to add one: [[Recording a Decision]].
 - [[What a Body Meets Keeps to What Is Drawn]]
 - [[The Owner's Handcrafted Meadow Grows Over the Grass]]
 - [[The Meadow Art Is the Owner's, Its Tables Stay in Git, and the Grass Takes the Trees' Rain]]
+- [[Patrols and Dungeons Hold Chests, and Their Containers May Be Searched]]
+- [[Chests and Searchable Containers as Claude Builds Them]]
+- [[Every Chest Is DFO's Chest, and Its Vestige Pours Out as project-final's Cache Pours]]
 
 ## Replaced
 
