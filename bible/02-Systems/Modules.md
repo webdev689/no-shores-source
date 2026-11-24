@@ -130,6 +130,9 @@ are written with paving last, since the first group carries the parts and paving
   - The chests (`event-chest`, iron-bound; `event-chest-heroic`, gilded and set with crystal at its corners) and their
     lids (`event-chest-lid`, `event-chest-heroic-lid`, the heroic one crowned with crystal): each lid a module of its
     own, its hinge at its origin, and the chest's `hinge` socket where that hinge sits on it.
+- **The Drowned Vale's** ([[Breaches]], "Its art"): the Sunken Gate's hollow (`breach-gate`), the run's nine spaces
+  (`breach-descent`, `-mending`, `-choir`, `-ways`, `-stair`, `-hall`, `-shore-was`, `-shore-is`, `-court`) and its
+  pieces (`breach-seal`, `-slab`, `-bell`, `-lodestone`), from `tools/modules/breach_*.py`.
 
 ## Baking and publishing
 
@@ -203,14 +206,16 @@ publishes the first bake's meshes with the repository's `CLOUDFLARE_TOKEN`.
   its foot, 2 to 4% of that distance nearer (`chasm_depth`), so the land round the mouth gives way and anything nearer
   keeps its place; a point whose crossing falls outside the mouth is not drawn.
 - **The browser** fetches every module's meshes from R2 once, with the forged models' tables, before it builds a city
-  (`loadModules`), and draws each triangle in its material's picture, laid from the axis it faces most, as natural
+  (`loadModules`), but a Breach's run's (`ofRun`), fetched only as the run is entered, and draws each triangle in its material's picture, laid from the axis it faces most, as natural
   rock is.
 
-The Gullwing Vale stands the Old Stones, the citadel at Valeguard and the chamber in the Hollow Coven's cavern, each
+The Gullwing Vale stands the Old Stones, the citadel at Valeguard, the chamber in the Hollow Coven's cavern and the
+Sunken Gate, each
 walked by `crates/room/tests/modules_walked.rs`, a walk stopping where the body would climb: up the Old Stones'
 flights to the upper tier; up the citadel's ramp, through its gate and up to its ward and its wall-walk; from the
 coven in under the tunnel's mouth to the chamber, and up its steps onto its shelf; up every ledge's stair from the low
-floor onto the high one; over every stone bridge both ways, on its deck at its middle. The Old Stones and the citadel
+floor onto the high one; over every stone bridge both ways, on its deck at its middle; from the Sunken Gate's way to
+each mooring, onto its dais and up each ledge to its perch. The Old Stones and the citadel
 stand on the ground at every edge, and no cliff stair stands taller than it was baked.
 
 ## Limits

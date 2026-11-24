@@ -1,6 +1,6 @@
 ---
 type: system
-status: built
+status: live
 code:
   - crates/gear/src/breach.rs#DROWNED_VALE
   - crates/gear/src/breach.rs#breach_cleared
@@ -53,7 +53,7 @@ Claude's ([[The Drowned Vale as Claude Builds It]]).
   the Spire (150 s); fewer let it ebb (at a quarter the pace at Normal, a half at Hard), and a Bulwark sent out claims
   a mooring left empty, which holds nothing while it stands. Waves come from the hollow's four growths. The Spire
   woken, the gate opens to that company alone; lost, the company stands whole at the gate's arrival and the gate is
-  free. Everyone in the zone sees the Waking, and the companies inside the run by their leader, tier and encounter.
+  free. Everyone in the zone sees the Waking, and the companies inside the run by the name of their run's first player, tier and encounter.
 - **Into the run.** The run's room lets a character in only once the zone's room says its company's gate opened
   (`server/breach.ts`), and its first player must be one the run was launched for. Its spaces are the plan's
   (`content/dungeon/breach-drowned-vale.json`): each a module stood at a point of the run's own frame and turned whole
@@ -82,7 +82,7 @@ Claude's ([[The Drowned Vale as Claude Builds It]]).
 ## Rewards
 
 - **Each encounter's first clear a week** at each tier pays a Breach Vestige of that tier; the Steward pays two.
-  Normal's pieces climb to Prestige 28, Hard's to 30: only Hard reaches level 30 ([[Gear]]).
+  Normal's armour climbs from Prestige 19 to 28, Hard's from 21 to 30: only Hard reaches level 30 ([[Gear]]).
 - **The Steward's first clear ever** keeps the banner, the emblem The Drowned Vale; by chance the dye Drowned Vale
   (1 in 5 at Normal, 1 in 3 at Hard) and the horse barding Drowned (1 in 20, 1 in 8), each once.
 - **Hidden chests** pay Essence once a week; every find keeps its lore chapter of the book *Soundings* ([[Lore]]).

@@ -1037,7 +1037,7 @@ gone into, and the card says "The week turned. Try again.".
 A Playlist mark beside a port's harbour ([[Overworld]], "Marks") opens the Playlist screen ([[Activities]], "The
 Playlist"), drawn after the owner's reference, Destiny's Vanguard screen (`PlaylistView`, its parts in
 `playlistParts.ts`, in the entrance card's layer, over a dark scrim): "PLAYLIST" at its head and the port it was opened
-beside ("Beside Overlook") over a brass rule; then the four entries as crests, the Elite Playlist (three chevrons) and
+beside ("Beside Overlook") over a brass rule; then six crests, the Elite Playlist (three chevrons) and
 the Abyss Playlist (an eye of the deep) above, the Elite Dungeon of the week (crossed blades under a star) and the
 Abyss Dungeon of the week (a crown over the deep) below their playlists, a fifth smaller; and the Breach, the Drowned
 Vale at Normal and at Hard (an arch under a crystal spire, ringed and violet at Hard), between them in the middle,
@@ -1052,7 +1052,7 @@ focus glows a little.
 
 On a screen 1000 pixels wide or more the crests stand on a chart (`playlistMap.ts`: a lit middle fading to nothing
 before its edges, faint stars, two wide rings, a ring round each crest's spot and dotted lines from each playlist to
-the other and to its week's dungeon), each shield's middle on its spot, its words wrapped to 2.2 times a playlist's
+the Breach between them and to its week's dungeon, and from the Breach's Normal to its Hard), each shield's middle on its spot, its words wrapped to 2.2 times a playlist's
 shield; the chart's picture is drawn again only at 64-pixel steps of the screen. The chosen entry's card stands beside
 it in a column that grows to the footer and scrolls. Narrower, the crests stand two by two over the chart's ground
 (its stars and rings, no spots), each its half of a row, and the card under them, the two scrolling together. A list

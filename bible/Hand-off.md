@@ -329,7 +329,7 @@ The decisions in [[Open Questions]] are not repeated here.
     its set and kind ("Portwatch Helm"), Atherics and kept named pieces keeping theirs; every drop, Vestige and Shape's
     Legendaries rolled in a content's set look with random perks, the named Legendaries kept-only; faction pieces
     rolling the shared pool and one of their faction's nine perks; the Breaches' own pool of thirteen, a Breach piece
-    rolling its perk columns from it alone, never one twice (no Breach is built: the owner, "Lets just finish this");
+    rolling its perk columns from it alone, never one twice (the Drowned Vale pays them, #182);
     no metal name in anything a player reads (`client/src/metalWords.test.ts`); a faction blade's hilt, guard and
     trim in its faction's colour, the Veiled's a faint cold violet ([[Factions]], [[Sprite Forge]],
     [[First Person]]); a rolled piece's look roll (`vestige::LOOK_ROLLS`, 36) choosing its set, metal, dye, make and

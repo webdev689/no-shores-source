@@ -38,7 +38,7 @@ it pays once, and what opens it. The owner's decisions are
 [[Where You Go and the Seas You Choose Set the Difficulty]] and [[The Tiers Are Normal, Elite and Abyss]]. Everything else here is Claude's call, listed at the end,
 and the owner can change any of it. The owner approved it to be built in full, the story's missions apart
 ([[The Activities Are Built in Full, Before the Story's Missions]]). All five steps are built: the core, the
-dungeons, the screens, companies of four with Find a Company, and the bounties, ships sunk at sea among them.
+dungeons, the screens, companies with Find a Company, and the bounties, ships sunk at sea among them.
 
 ## What it is for
 
@@ -220,8 +220,9 @@ the owner approved ([[Where You Go and the Seas You Choose Set the Difficulty]])
 
 - **Each character keeps its day and its week** with the account (`Character.activity`): `today` holds the tiers of
   the dungeon of the day it has cleared, its bounties, each by its board place with its count, and the places it
-  turned in (`turned_in`); `this_week` holds whether it cleared each of the week's two dungeons and whether it holds
-  the Abyss boon. Each begins anew at its first touch in a later day or week, and never turns back, so a room whose
+  turned in (`turned_in`); `this_week` holds whether it cleared each of the week's two dungeons, whether it holds
+  the Abyss boon, the playlists' clears counted, and each Breach's finds paid at each tier (`breaches`, one bit each:
+  its encounters in order, then its hidden chests; [[Breaches]]). Each begins anew at its first touch in a later day or week, and never turns back, so a room whose
   clock is behind cannot pay twice. `today` and `story` keep any key a later build wrote in them, so a rollback to
   this build loses none.
 - **What a first clear pays** is `gear::clears`. Each writes the record, and none pays for a day or a week behind the
@@ -293,7 +294,8 @@ keep their engine ([[The Journal Holds the Quests, the Bounties at Its Side and 
 ## What opens when
 
 - **The story's progress is kept with the account** (`Character.story`), not only in the browser: the prologue's
-  end, which the room records; the houses' roads keep their own place ([[Quests]]). A new character starts short of
+  end, which the room records, and each Breach won at each tier (`breaches`, "drowned-vale/normal"), which opens
+  its Hard; the houses' roads keep their own place ([[Quests]]). A new character starts short of
   the prologue. The gear message says whether it is done. On foot the story is behind the page, so it asks each room
   on land whose word says not done to mark it (`Ask::FinishPrologue`): no one is kept out by a prologue that did not
   run.
@@ -307,10 +309,11 @@ keep their engine ([[The Journal Holds the Quests, the Bounties at Its Side and 
   the accounts do not hand over plays unkept, as a new character, and keeps nothing. The gate is `gear::gate::shut`,
   which reads a character's level and prologue into `shut_at`: a social space never shuts; a patrol, its dungeons
   and an Elite Dungeon (its node, its approach and its run at Normal) need the prologue; the week's two need it and
-  then their own level, 24 or 28, whatever the seas; then Elite seas need level 10 and Abyss seas level 20, anywhere
-  else. A room asks it before it gives a player their kept character, with the story they already hold in the room
+  then their own level, 24 or 28, whatever the seas; a Breach's run and its gate's company need its tier's level, 24
+  or 28, and Hard a win at Normal; then Elite seas need level 10 and Abyss seas level 20, anywhere else. A room asks it before it gives a player their kept character, with the story they already hold in the room
   carried forward (`Story::merged`, which never goes back), and a new one is judged as it starts. The reasons read
-  "This place opens after the prologue.", "This dungeon opens at level 24." (or 28), "Elite seas open at level 10."
+  "This place opens after the prologue.", "This dungeon opens at level 24." (or 28), "A Breach at Normal opens at
+  level 24." (or Hard at 28), "A Breach at Hard opens once you have won it at Normal.", "Elite seas open at level 10."
   and "Abyss seas open at level 20.". The sea's room, a sea island's room and a sea island's dungeon are gated by
   their seas alone: the sea's tier is its room's name's (`sea--elite`, `sea--abyss`), and an island's is its sea's
   (`Sea::shut`, an island's room `Place::Node`), so the server keeps a character below the tier's level off those
@@ -354,7 +357,7 @@ Its parts:
 - **The dungeons:** the dungeon of the day, the Elite Dungeons, the week's two, the modifiers, Abyss's rules and the
   rewards.
 - **The screens:** the Journal, its timers, the bounty board and the card at a dungeon's entrance.
-- **Companies of four**, private runs and Find a Company.
+- **Companies** (four in a run, eight in a Breach's), private runs and Find a Company.
 - **Bounties**: their engine and the board, which no keeper keeps.
 
 The modifiers' and the rewards' numbers, how a modifier is shown, how a private run's room is named and closed, and

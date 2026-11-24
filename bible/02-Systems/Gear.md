@@ -339,7 +339,7 @@ player while they are in it (`room::perks`). A blow lands when it strikes, is bl
   Splinter (melee) Exposes the foe a riposte lands on and every other foe within 3 m of it. Shard Round (ranged)
   Charges a foe a shot lands on that was Exposed as it landed. Each is in the room's one door for statuses but
   Crystal Skin and Lattice Shell; every number is Claude's, in [[Gear as Claude Shapes It]] ("The Breaches'
-  perks"). No Breach is built yet, so only the rules and their tests make a Breach's piece.
+  perks"). A Breach's piece is made by a Breach Vestige, which the Drowned Vale pays ([[Breaches]], "Rewards").
 - **The pools.** With the verbs and the perks that give and take, a Melee loadout is offered among 6 handling traits,
   7 finishes and 8 perks (9 with a shield), a Ranged one among 6, 7 and 6; armour among its 6 perks.
 
@@ -547,7 +547,8 @@ and its art (`gear::emblems`).
   keep wears the starting one.
 - **Where each comes from**: Overlook's own at the start; one at each of levels 5, 10, 15, 20, 25 and 30; deeds
   (a piece fully upgraded, a Vestige opened to a Legendary or an Atheric, a foe's shield broken, a foe slain at Abyss
-  difficulty, a resource gathered); each faction's first rank ([[Factions]]); and the Tailor, who sells six a day of
+  difficulty, a resource gathered); each faction's first rank ([[Factions]]); a Breach's banner, at its last
+  encounter's first clear ([[Breaches]]); and the Tailor, who sells six a day of
   twelve, the same for everyone that day, at 500 Aurem for Magic and 2,500 for Rare, some from a level. Levels, ranks
   and a piece fully upgraded are earned as they happen.
 - **Asks**: wearing one kept, anywhere; buying one of the day's at the Tailor's counter. A kept character carries what
@@ -563,7 +564,8 @@ is a horse's hide, kept as its horse ("Horses").
 - **Kept and worn** as emblems are: a character keeps every dye and barding they have had and wears one of each. A
   new one keeps and wears the starts: Own Colours and Bare. One worn that is not kept, or of another kind, is the
   start again as the character is read.
-- **Where each comes from**: the start; a faction's second rank (its dye, [[Factions]]); and the Tailor (dyes) and the
+- **Where each comes from**: the start; a faction's second rank (its dye, [[Factions]]); a Breach's dye and barding,
+  each by chance at its last encounter's weekly clear, likelier at Hard ([[Breaches]]); and the Tailor (dyes) and the
   Tack (horses and bardings), each showing four a day of those they sell, the same for everyone that day, for Aurem,
   some from a level.
 - **Asks**: wearing a dye or barding kept, anywhere (55, its number in `item`); buying one of the day's at its
@@ -790,8 +792,9 @@ Officers ashore fight beside their player, as DFO's crew companions did
   woman's, and fails on any weapon or armour layer of the forge no item wears but a class's own (the class sword, axe,
   bow and staff, the archer's dark helm, the woman's horned one) and the laced boots, a garment. A gilded double
   pistolet's left gun is worn only by a named gilded double pistolet, Brass Chorus.
-- No Breach items exist yet, and no Breach drops one: a Breach's piece and its perks are in the rules alone. The factions' pieces (each one's cape, armour and two weapons) are the only named items a
-  Vestige never opens to ([[Factions]]).
+- A Breach's pieces are rolled, never named: its Vestige opens to its armour and weapons at its tier ([[Breaches]]).
+  The factions' pieces (each one's cape, armour and two weapons) are the only named items a Vestige never opens to
+  ([[Factions]]).
 - The Wraith Mist barding's ride strips on R2 are blank, so it shows in third person only until the forge draws them
   again. In the ride, about a tenth of the hide (its darkest texels) keeps the bay's colour under a coat: colour alone
   cannot tell it from the bridle, and the forge's ride `_uv` strips would make an exact mask. A coat leaves the mane

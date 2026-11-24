@@ -157,7 +157,7 @@ username, as a player is found by theirs; a guest is told to add one in Settings
   the database, so an ask that crosses one already made accepts it. Each player's count is their friends and the asks
   they made, at most 100, so strangers' asks cannot fill it. Accepting or ending with a name no one holds answers as
   for one that never asked.
-- **The company**: four at most, as an Elite Dungeon's run is for, one its leader; a player alone leads their own. A player is
+- **The company**: eight at most, as a Breach's run is for ([[Breaches]]; every other run holds four), one its leader; a player alone leads their own. A player is
   invited (the invite stands ten minutes, then is let go), or joins as the leader's privacy allows: Public, anyone;
   Friends Only (each player's first setting), the leader's friends; Invite Only, those invited; Closed, no one, though
   an invite still stands. The Roster shows the leader's privacy, the one that applies; a member's own applies once they
@@ -193,8 +193,9 @@ each playlist, never the Abyss Dungeon of the week, whose company forms it.
 - **The queue** is a Durable Object of the accounts' Worker, one for each run's base (`CompanyFinder`, `finder.ts`),
   reached at `/v1/find/<base>` by WebSocket: `node-<id>` for an Elite Dungeon at Normal, `node-<id>--elite` for the
   week's from its door and `node-<id>--elite--sea` from the Playlist (its run named `--sea`, gone into from the sea),
-  and `playlist-elite` and `playlist-abyss` for the playlists, one queue each for the whole game, whichever
-  port the Playlist was opened beside. A socket's first message is its session's token; one that is no session, or that sends none within five
+  `playlist-elite` and `playlist-abyss` for the playlists, one queue each for the whole game, whichever
+  port the Playlist was opened beside, and `node-gullwing-vale--breach-normal` and `--breach-hard` for the Drowned
+  Vale, the one zone a Breach's gate stands in (`BREACH_ZONES`). A socket's first message is its session's token; one that is no session, or that sends none within five
   seconds (`TOKEN_WAIT_MS`, as a run's room waits), is closed with 4003 and "Sign in to find a company.". At most 64
   sockets with a token wait in one (a search past them is answered 503; a Launch is always taken, as it is gone at the
   next look), and at most 64 silent ones, the oldest let go as each new one comes, so silent sockets never shut out
@@ -211,7 +212,10 @@ each playlist, never the Abyss Dungeon of the week, whose company forms it.
   under the week's Elite Dungeon's level, on its bases, with "This dungeon opens at level 24." (`WEEK_ELITE_OPENS`).
 - **Launch** (`?launch` on a playlist's address, `opened(socket, alone)`): the seeker's run is started at the next
   look, alone, its Elite Dungeon drawn and kept for them as a found run is; no other seeker joins it, and it joins no
-  group. Only a playlist launches: on an Elite Dungeon's base a launch waits as any search does. A playlist's run
+  group. Only a playlist and a Breach launch: on an Elite Dungeon's base a launch waits as any search does. A Breach
+  is only launched ("A Breach is launched by its company from the Playlist."): at its tier's level (24, Hard 28) and,
+  at Hard, once the character has won it at Normal (`story.breaches`); its run is named for its zone's gate, and its
+  company may come to the gate from anywhere for half an hour after (`LAUNCH_ARRIVES_MS`). A playlist's run
   lets in first one it was found or launched for, or one of their company (`launchedFor`), as it would let them
   in after them: a member back first, the room forgotten while empty, is not shut out.
 - **Matching** (`Queue`): within a band, the one waiting longest first, then each next longest still free who blocks

@@ -25,7 +25,7 @@ rules carry them out is [[Gear]].
 | Who earns a kill's XP | Every player who landed a blow on the foe in its last 10 s, in full | A shared world: helping is never a loss |
 | An item's XP | A kill's XP goes to the weapon whose blow last landed on the foe and to every armour piece worn | "The more the weapon itself is used"; armour earns as the player plays |
 | Prestige for each level, 21 to 30 | 21, 32, 43, 54, 65, 76, 87, 98, 109, 120 | Destiny 1 at launch: 21, then 11 more for each level |
-| Prestige a piece | Rare at level 20, 13 to 15; Legendary, 18 to 27; a Breach's Legendary, 18 to 30; Atheric, 21 to 30; Normal, Magic and Rare below 20, none | Destiny 1 at launch, its raid armour as the Breaches' (the owner: "Highest prestige drops") |
+| Prestige a piece | Rare at level 20, 13 to 15; Legendary, 18 to 27; a Breach's Legendary, 18 to 30 (narrowed by tier in [[The Drowned Vale as Claude Builds It]]: Normal's 19 to 28, Hard's 21 to 30); Atheric, 21 to 30; Normal, Magic and Rare below 20, none | Destiny 1 at launch, its raid armour as the Breaches' (the owner: "Highest prestige drops") |
 | What that reaches | Four Rares, level 24; four Legendaries, 28; three Legendaries and an Atheric, 29; level 30 only with Breach armour | Destiny 1 at launch: level 30 took raid armour |
 
 Replaced in part by [[The Balance Pass Goes Halfway Back, and Loot Follows Destiny 1's Order]]: a kill's XP goes by its kind and its rank, and the captain's 2,000 is gone
@@ -71,7 +71,7 @@ offers a trait twice.
 | Their last three upgrades | 1,500 Aurem and 6 Essence each, 18 an item | Destiny 1 at launch: the last three nodes, 6 Ascendant materials each |
 | An Atheric's own node | 1,000 Aurem and 1 Essence | Destiny 1's exotics needed Ascendant materials at launch |
 
-A Breach's Legendary armour has a Legendary's columns, its upgrades 4 Prestige each instead of 3.
+A Breach's Legendary armour has a Legendary's columns, its upgrades 4 Prestige each instead of 3. Replaced in [[The Drowned Vale as Claude Builds It]]: 3 each, from 19 at Normal and 21 at Hard.
 
 Fragments and Essence are the item's own kind: a weapon's are Weapon Fragments and Weapon Essence, armour's Armor.
 A Fruit of Dagon gives an item 5,000 XP.
@@ -152,7 +152,7 @@ what it touches, so its pool Exposes, spreads and hardens; each perk uses a stat
 | Choice | Chosen | Why |
 |---|---|---|
 | What a Breach perk is | A perk-column trait marked `breach`; no shared pool and no faction offers it, and it fits only a Breach's piece | The factions' perks' mechanism, so the page shows its words from `traits.json` as any other's |
-| What a Breach piece is | An armour piece or weapon made from a Breach (`vestige::make`, `Source::Breach`), marked `breach`; its Legendary armour climbs to 30 Prestige, a Breach's Legendary's range | One mark says both what it rolls and how far it climbs |
+| What a Breach piece is | An armour piece or weapon made from a Breach (`vestige::make`, `Source::Breach`), marked `breach`; its Legendary armour climbs to 30 Prestige, a Breach's Legendary's range (narrowed by tier in [[The Drowned Vale as Claude Builds It]]: Normal's 19 to 28, Hard's 21 to 30) | One mark says both what it rolls and how far it climbs |
 | How it rolls | Handling and finish from the shared pools, as any piece; every node of its perk columns from the Breaches' perks that fit it, never one the piece already offers; the catalogue check refuses a kind with fewer Breach perks than its widest piece's perk nodes in all | The owner: "its own unique perk pool". A shared piece never offers a trait twice, and a perk chosen twice would count twice; six fit armour, a Legendary's six perk nodes, and four or five each weapon, a Legendary weapon's four |
 | A kept Breach piece | Keeps what it rolled, checked against its columns' pools and the Breaches' perks; a Breach perk gone gives way to another Breach perk | A piece a player earned never changes under them, as a faction's piece |
 | Shatterpoint (melee) | A blow that breaks a foe's guard Exposes it | Breaking is the Lattice cracking a foe open; Thunderclap's hook, with Expose |
@@ -273,7 +273,7 @@ for what they leave open ([[Claude Finishes the Gear Calls on Its Own Word]]).
 | A faction's pieces | Renamed in `items.json` by its faction's set ("Stormcaller Bow", "Veiled Dagger and Shield"), whatever metal they are drawn in | The draft: a faction's pieces take its set; written once, so no rule computes it beside the entry |
 | A Breach's pieces | The Lattice, for daedric | The Lattice's armour takes daedric's place ([[The Lattice's Armour and Weapons Take Daedric's Place]]) |
 | A rolled Legendary | Made as a rolled Rare is, at Legendary and level 20: its look climbs its content's sets and metals, its traits roll from the shared pools, its nodes ask for an island's resource rolled among the catalogue's | The owner: "Set look, random perks"; a Legendary's nodes already asked for a resource |
-| A Breach's rolled Legendary armour | Climbs to 30 Prestige, as a Breach's named armour was to | The owner: the Breaches give the "Highest prestige drops" |
+| A Breach's rolled Legendary armour | Climbs to 30 Prestige, as a Breach's named armour was to (narrowed by tier in [[The Drowned Vale as Claude Builds It]]: Normal's 19 to 28, Hard's 21 to 30) | The owner: the Breaches give the "Highest prestige drops" |
 | An Atheric Vestige, and a ship's Legendary module | Still a named piece, of its own content where it has one, else any content's | "Atherics remain unique"; ship modules are no armour or weapon |
 | The named Legendaries that are no faction's | Left out of every drop, Vestige and vendor, Shape's week among them; kept in `items.json`, so a kept one reads and is named as it was | The owner: "Everything recieves set names", "Atherics remain unique": only Atherics keep their own names and fixed perks |
 | Shape's four Legendaries a week | Rolled, one for each of four Vestige slots the week's dice draw, as `vestige::make` makes a Legendary at level 20, in a content the week's dice draw among the world, a dungeon, a sea dungeon, an Elite Dungeon and an Abyss Dungeon, never a faction's or a Breach's; the same for everyone in a week. His two Atherics stay named | A Legendary is a rolled piece in its content's set wherever it is had; a faction's pieces are its counter's, a Breach's the raids' highest |

@@ -16,7 +16,6 @@ writes them for the game's 3D horse (barding_bake.py).
 A piece's UV points into the swatches (`SWATCHES`): u its stripe, v along the piece (a flame's root to its tip). The
 picture's alpha says how much a texel glows (255 none, 0 all), which the game's character pass and the forge both
 read. Pure: numpy alone."""
-import json
 import math
 import os
 import sys
@@ -41,7 +40,7 @@ SWATCHES = {
     'wisp': ((110, 170, 230), (200, 236, 255), 0.6, False),
     'flame': ((210, 60, 8), (255, 236, 150), 0.95, False),
     'gilt': ((214, 160, 48), (255, 226, 120), 0.35, True),
-    'rust': ((62, 44, 34), (62, 44, 34), 0.0, True),
+    'rust': ((62, 44, 34), (62, 44, 34), 0.0, False),
     'barnacle': ((112, 108, 96), (150, 144, 128), 0.0, False),
     'weed': ((18, 44, 30), (64, 104, 60), 0.0, False),
     'crystal': ((128, 12, 22), (255, 120, 120), 0.7, False),

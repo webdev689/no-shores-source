@@ -420,7 +420,8 @@ The node's room judges the body against the node's section each tick ([[Reach]])
 "Return to the area" counts down 10 s; back inside, it ends. At 0, or 60 m past, the player dies: "You died", the
 pointer is freed, and Respawn is offered after 4 s (or Enter). The player comes back at the section's spawn nearest
 where they fell. A dead body lies still while its standing ticks on. A player killed in the fight falls, the fight's
-display counts down 4 s, and the room stands them again at the section's spawn nearest where they fell.
+display counts down 4 s, and the room stands them again at the section's spawn nearest where they fell. A Breach's fallen keep
+its own times and places ([[Breaches]]).
 
 ## At sea
 
