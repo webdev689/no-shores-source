@@ -20,6 +20,8 @@ export type StripHint = readonly [names: string, words: string, padWords?: strin
 
 /** The strip's last entry wherever it shows: the key to every control. */
 export const ALL_CONTROLS: StripHint = ['controls', 'All controls'];
+/** Fallen in a Breach's run, the key that follows the next of the company. */
+export const FOLLOW_HINT: StripHint = ['follow', 'Follow'];
 /** The click that takes the mouse to look round, shown while the mouse is free. */
 const LOOK: StripHint = ['Left button', 'Look round'];
 const MENU: StripHint = ['menu', 'Menu'];

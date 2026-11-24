@@ -395,6 +395,6 @@ impl Room {
             .socket("gate")
             .is_some_and(|at| apart([found.fighter.body.x, found.fighter.body.y], [at[0], at[1]]) <= 4.0);
         let open = gate.run_of(id).is_some_and(|run| gate.opened.contains_key(run));
-        if near && open { 0 } else { GATE_SHUT }
+        if near && open { crate::asks::INTO_BREACH } else { GATE_SHUT }
     }
 }

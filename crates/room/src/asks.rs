@@ -40,6 +40,8 @@ pub const FALLEN: u8 = 105;
 pub const FIGHTING: u8 = 106;
 /// The player may return to their ship: a yes no other ask gives, so the page never takes another's done for it.
 pub const TO_SHIP: u8 = 107;
+/// A player let through a Breach's gate into its run (`Room::ask_enter_breach`): its own yes, as `TO_SHIP` is.
+pub const INTO_BREACH: u8 = 108;
 /// How long past a foe's blow a player waits to return to their ship: ten seconds.
 pub const TO_SHIP_AFTER_TICKS: u64 = 10 * 60;
 

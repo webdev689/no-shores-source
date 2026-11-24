@@ -26,7 +26,9 @@ import type { FootView } from './footView.ts';
 import type { FriendlyTraffic, FriendlyWater } from './friendlyShips.ts';
 import { contextOf } from './gameKeys.ts';
 import { gearScreenOpen } from './gearWindow.ts';
-import { HINTS, withMapKey } from './hints.ts';
+import { FOLLOW_HINT, HINTS, withMapKey } from './hints.ts';
+import { runPlaceWords } from './breachWords.ts';
+import { ofRun, releaseRunModules } from '../city/modules.ts';
 import { gearTakesKeys } from './gearScreen.ts';
 import type { Drain } from './drain.ts';
 import type { DrawnInterface } from './drawnInterface.ts';
@@ -206,9 +208,14 @@ export function startFrames(parts: FrameParts, playing: Playing): void {
     const listener = [walker.player.body.x, walker.player.body.y] as const;
     parts.music.onFoot(parts.world, here.node, shown.fight, seconds, { musicians: musiciansOf(here.folk), listener });
     parts.eventProps.set(shown.props ?? []);
+    // Out of a Breach's run, its modules are let go, drawn and read.
+    if (!here.run) {
+      parts.eventProps.forget(ofRun);
+      releaseRunModules();
+    }
     parts.ambience.onFoot(here.node, playing.landmass, shown.shot, here.folk, !!here.dungeon);
     const { body } = walker.player;
-    if (!here.dungeon) {
+    if (!here.mapless) {
       scene.keepClose([body.x, body.y], parts.closeSource, () => undefined);
       scene.keepMiddle([body.x, body.y], parts.closeSource);
     }
@@ -237,7 +244,10 @@ export function startFrames(parts: FrameParts, playing: Playing): void {
     // The roads' next goal on the compass, and the ward a step defends among the plates, as a companion's.
     const ward = quests.wardPlate(parts.groundAt);
     const foes = ward ? [...shown.fight.foes, ward] : shown.fight.foes;
-    const players = platedPlayers(here.otherPlayers, [body.x, body.y, body.z]);
+    // A Breach's Rewritten are marked so on their plates.
+    const marked = new Set(here.held.breach?.marked.map((each) => each.player));
+    const plated = platedPlayers(here.otherPlayers, [body.x, body.y, body.z]);
+    const players = plated.map((each) => (marked.has(each.id) ? { ...each, marked: true } : each));
     const questShown = { ...shown, fight: { ...shown.fight, foes, questAt: quests.goalAt, players } };
     const fight = footView.frame(here, questShown, seconds, { size, viewport, groundAt: here.groundAt });
     // Use held on another player opens their menu, where it does nothing else (a deed or a gate) and no menu or map is up.
@@ -281,16 +291,20 @@ export function startFrames(parts: FrameParts, playing: Playing): void {
     const crews = parts.crews.cards(ships, shown.shot, viewport.height, seconds, clock);
     const cards = [...shown.figures, ...met, ...nodes, ...walking, ...crews];
     if (here.dungeon) parts.dungeons.draw(here, shown, size, clock, fight, hands, more.drain);
+    else if (here.run) parts.dungeons.drawRun(shown, size, clock, fight, parts.eventProps, hands, more.drain);
     else scene.draw(shown.shot, size, clock, seconds, standing(ships, cards, fight), more);
     showStanding(shown.standing);
-    hud.place(here.node.name, placeWords(here.node, here.roomName, here.held.revives));
+    const run = here.run && runPlaceWords(here.run.plan, here.held.breach, here.run.tier);
+    hud.place(here.node.name, run || placeWords(here.node, here.roomName, here.held.revives));
     // As E's other use, a gate takes no one while a menu or the held map is up, the player is down or in a dungeon.
-    const gated = paused || looking || here.fallen || here.dungeon;
+    const gated = paused || looking || here.fallen || here.mapless;
     playing.through = gated ? null : gateWay(playing.landmass, here.node.id, [body.x, body.y]);
     hud.passageOffer(playing.through?.offer ?? null);
     // N raises the map on foot unless a menu is up, the player has fallen or is in a dungeon, as `openMap` has it.
-    const mapless = paused || here.fallen || here.dungeon;
-    hud.hints(looking ? HINTS.landMap : mapless ? shown.hints : withMapKey(shown.hints));
+    const mapless = paused || here.fallen || here.mapless;
+    // Fallen in a Breach's run, the camera follows the company: its key is shown.
+    const hints = here.run && here.fallen ? [FOLLOW_HINT, ...shown.hints] : shown.hints;
+    hud.hints(looking ? HINTS.landMap : mapless ? hints : withMapKey(hints));
     // The quest's mark gives way to the map, as the fight's display does.
     hud.marks(looking ? [] : quests.marks(shown.shot, viewport, [body.x, body.y], parts.groundAt, here.node.id));
     // The tracker is set once a frame, so a public event's steps stand in it unblinking, in the quest's place.
@@ -298,9 +312,9 @@ export function startFrames(parts: FrameParts, playing: Playing): void {
     hud.toast(...toldNow(), ...quests.toasts, ...playing.lore.toasts);
     hideSeaHud(hud);
     hud.note(here.roomNote);
-    // A dungeon's floor is all there before the veil lifts; a node waits for the exact ground round the player and its
-    // city, built a few steps a frame, whole.
-    return !!here.dungeon || (scene.closeReady(body.x, body.y) && playing.drawers.ready());
+    // A dungeon's floor and a Breach's run are all there before the veil lifts; a node waits for the exact ground round
+    // the player and its city, built a few steps a frame, whole.
+    return here.mapless || (scene.closeReady(body.x, body.y) && playing.drawers.ready());
   };
 
   const seaFrame = (here: Sea, controls: InputFrame, seconds: number, size: { width: number; height: number }) => {

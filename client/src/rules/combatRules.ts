@@ -48,6 +48,9 @@ export interface CombatRules {
   /** Keeps a ship's deck, as its grid's numbers (`deckFloats`), for every later prediction to stand on in place of any
    *  ground; false if the numbers are not a grid. */
   setHeights(grid: readonly number[]): boolean;
+  /** Keeps a Breach's run for every later prediction: open ground under its blocks as its room stands them at room tick
+   *  `tick` with the seals `open` (a bit each), made anew only as a seal or a slab changes; true if it was. */
+  setBreach(open: number, tick: number): boolean;
   /** Stands every later prediction on the rim round a course laid over the sea, as the sea room holds its bodies
    *  (`Floor::Sea`), made from these blocks by the rules; false if they are not blocks. */
   setRim(blocks: readonly Block[]): boolean;
@@ -77,6 +80,7 @@ interface FightExports {
   fighter_ground(address: number, length: number): number;
   fighter_dungeon(address: number, length: number): number;
   fighter_heights(address: number, length: number): number;
+  fighter_breach(open: number, tick: number): number;
   fighter_rim(address: number, length: number): number;
   fighter_predict(address: number, length: number): bigint;
   fighter_arms(address: number, length: number): number;
@@ -141,6 +145,7 @@ export function startCombatRules(module: WebAssembly.Module): CombatRules {
       const floats = new Float64Array(grid);
       return lend(floatBytes(floats), (address) => exports.fighter_heights(address, floats.byteLength)) === 1;
     },
+    setBreach: (open, tick) => exports.fighter_breach(open >>> 0, Math.max(0, Math.floor(tick)) >>> 0) === 1,
     predict: (fighter, intent, id, arms, view) => {
       const floats = new Float64Array(sizes.fighter + sizes.intent + 2 + view.length * (sizes.glance + 1));
       floats.set(fighter, 0);

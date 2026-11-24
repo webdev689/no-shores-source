@@ -15,15 +15,20 @@ import type { Difficulty } from '../heldmap/heldMap.ts';
 import type { PropTable } from '../models/tables.ts';
 import { dungeonRoom, nodeOfRoom, nodeRoom, runInstance, runOf, sharedRun, startedAtSea } from './rooms.ts';
 import type { NodeInfo } from './worldData.ts';
+import type { InBreach } from './breachView.ts';
+import type { GearAsk, GearState } from '../network/gearMessages.ts';
 
 /** What a trip reads of where the player stands on foot: the place, its node file's text, the seas of its room, the
- *  dungeon they are in, and the entrances its room last gave. */
+ *  dungeon or the Breach's run they are in, the entrances its room last gave, and their gear and the way to ask of
+ *  it. */
 export interface TripFoot {
   readonly node: NodeInfo;
   readonly text: string;
   readonly seas: Difficulty;
   readonly dungeon: InDungeon | null;
+  readonly run: InBreach | null;
   readonly held: { readonly entrances: { readonly entrances: readonly Entrance[] } };
+  readonly gear: { readonly gear: GearState | null; ask(ask: GearAsk): void } | null;
 }
 
 /** Where a sea island's dungeon leads back to: its door's point in the sea's room (x, y, metres) and the bearing out,
@@ -48,6 +53,8 @@ export interface TripGame {
     seas: Difficulty,
   ) => Promise<void>;
   readonly ontoPatrol: (patrol: NodeInfo, facing: number, seas: Difficulty, arriving?: AtEntrance) => Promise<void>;
+  /** Into a Breach's run, from its gate or a company member's place. */
+  readonly intoBreach?: (into: InBreach) => Promise<void>;
   readonly ontoSea: (back?: SeaBack) => Promise<void>;
   readonly companyPlaces: () => Promise<readonly (string | null)[]>;
   readonly drawers: {

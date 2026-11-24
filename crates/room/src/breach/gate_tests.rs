@@ -87,7 +87,7 @@ fn all_three_moorings_held_fill_the_spire_and_fewer_let_it_ebb_until_it_wakes_an
     let door = socket(&room, "gate");
     stand(&mut room, players[0], door);
     stand(&mut room, players[3], door);
-    assert_eq!(room.ask_enter_breach(players[0]), 0, "open to the company that woke it");
+    assert_eq!(room.ask_enter_breach(players[0]), crate::asks::INTO_BREACH, "open to the company that woke it");
     assert_eq!(room.ask_enter_breach(players[3]), gate::GATE_SHUT, "shut to any other");
     assert_eq!(room.take_events().iter().filter(|event| event.kind == EventKind::BreachWon).count(), players.len());
 }

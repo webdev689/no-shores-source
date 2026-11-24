@@ -1,6 +1,7 @@
 // Handcrafted modules' surfaces (tools/modules), read from R2 as content/modules/modules.json names them, once for
 // every city built after: a module's solid is drawn from its group's mesh in its material's picture. A city built
-// before they come draws no module; the loaders that build cities wait for them.
+// before they come draws no module; the loaders that build cities wait for them. A Breach's run's are read only for
+// the run, and let go after it.
 import manifest from '../../../content/modules/modules.json' with { type: 'json' };
 import { contentBytes } from '../contentCache.ts';
 
@@ -19,7 +20,7 @@ type Listed = {
   readonly modules: readonly {
     readonly name: string;
     readonly size: readonly number[];
-    readonly sockets: readonly { readonly name: string; readonly at: Point }[];
+    readonly sockets: readonly { readonly name: string; readonly at: Point; readonly facing?: readonly number[] }[];
     readonly groups: readonly { readonly mesh: string; readonly material: string }[];
     /** Where it opens the land under its foot: its two lips, each a line of points (x, y) along it at the ground. */
     readonly mouth?: readonly (readonly (readonly [number, number])[])[];
@@ -52,6 +53,12 @@ export function moduleShape(module: number): { size: readonly number[]; material
 /** A socket of a module (a chest's hinge) in its own frame, or the middle of its foot where it has none so named. */
 export function moduleSocket(module: number, name: string): Point {
   return listed.modules[module]?.sockets.find((socket) => socket.name === name)?.at ?? [0, 0, 0];
+}
+
+/** The way a socket of a module faces out in its own frame (x east, y south), or south where it says none. */
+export function moduleSocketFacing(module: number, name: string): readonly [number, number] {
+  const facing = listed.modules[module]?.sockets.find((socket) => socket.name === name)?.facing;
+  return [facing?.[0] ?? 0, facing?.[1] ?? 1];
 }
 
 /** A module's solid parts, each a box in its own frame (x east, y south, z up): west, north, bottom, east, south,
@@ -94,18 +101,47 @@ export function readModuleMesh(bytes: ArrayBuffer): ModuleMesh {
   return { positions, normals, glows, triangles };
 }
 
-/** Fetches every module's meshes once; a group that cannot be read is left undrawn, and said so. */
-export function loadModules(): Promise<void> {
-  loading ??= Promise.all(
+/** Whether a module is a Breach's run's own (`breach-*`, but the gate, which stands in its patrol zone): its meshes
+ *  are fetched only for the run, so the open world never carries the raid's. */
+export const ofRun = (name: string): boolean => name.startsWith('breach-') && name !== 'breach-gate';
+
+/** Fetches the meshes of each module `wanted` names; a group that cannot be read is left undrawn, and said so. */
+function fetchMeshes(wanted: (name: string) => boolean): Promise<void> {
+  return Promise.all(
     listed.modules.flatMap((module, number) =>
-      module.groups.map(async (group, index) => {
-        try {
-          meshes.set(`${number}:${index}`, readModuleMesh((await contentBytes(`${manifest.base}${group.mesh}`)).bytes));
-        } catch (error) {
-          console.error(`module ${number}'s ${group.mesh} cannot be drawn:`, error);
-        }
-      }),
+      wanted(module.name)
+        ? module.groups.map(async (group, index) => {
+            try {
+              const bytes = (await contentBytes(`${manifest.base}${group.mesh}`)).bytes;
+              meshes.set(`${number}:${index}`, readModuleMesh(bytes));
+            } catch (error) {
+              console.error(`module ${number}'s ${group.mesh} cannot be drawn:`, error);
+            }
+          })
+        : [],
     ),
   ).then(() => undefined);
+}
+
+/** Fetches every module's meshes once, but a Breach's run's. */
+export function loadModules(): Promise<void> {
+  loading ??= fetchMeshes((name) => !ofRun(name));
   return loading;
+}
+
+let runLoading: Promise<void> | null = null;
+
+/** Fetches a Breach's run's modules' meshes, as the player goes into it, once until they are let go. */
+export function loadRunModules(): Promise<void> {
+  runLoading ??= fetchMeshes(ofRun);
+  return runLoading;
+}
+
+/** Lets go of a Breach's run's modules' meshes, once the player is out of it. */
+export function releaseRunModules(): void {
+  if (!runLoading) return;
+  runLoading = null;
+  listed.modules.forEach((module, number) => {
+    if (ofRun(module.name)) module.groups.forEach((_group, index) => meshes.delete(`${number}:${index}`));
+  });
 }

@@ -164,7 +164,7 @@ export function itemDetailOf(item: GearItem, state: GearState, atVault = false):
   return {
     name: gearName(item),
     colour: colourOf(item.rarity),
-    kind: `${RARITIES[item.rarity]?.name ?? ''} ${gearKindName(item.kind)}${item.breach ? ' · from a Breach' : ''}`,
+    kind: `${RARITIES[item.rarity]?.name ?? ''} ${gearKindName(item.kind)}${item.breach ? ` · from a Breach${item.hard ? ', Hard' : ''}` : ''}`,
     numbers,
     columns: item.columns.map((column, index) => ({
       nodes: Array.from({ length: Math.max(1, column.traits.length) }, (unused, node) =>

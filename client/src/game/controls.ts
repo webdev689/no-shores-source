@@ -80,6 +80,7 @@ export const CONTROL_GROUPS: readonly ControlGroup[] = [
       row('Dodge', 'dodge'),
       row('Heal', 'heal'),
       row('Respawn', 'respawn'),
+      row('Follow your company', 'follow'),
     ],
   },
   {

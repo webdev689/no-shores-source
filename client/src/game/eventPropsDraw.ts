@@ -378,6 +378,16 @@ export class EventPropsDraw implements Drawer {
     EVENT_LAMPS.current = props.length > 0 ? propLamps(props) : NO_LAMPS;
   }
 
+  /** Lets go of the modules `gone` names, made ready to draw before: a Breach's run's, once the player is out of it. */
+  forget(gone: (name: PropModule) => boolean): void {
+    for (const [name, made] of this.made) {
+      if (!gone(name)) continue;
+      made.vertices.destroy();
+      made.indices.destroy();
+      this.made.delete(name);
+    }
+  }
+
   /** A module made ready to draw, the first time it is drawn after its meshes have come; none before. */
   private madeOf(name: PropModule): Made | null {
     const known = this.made.get(name);

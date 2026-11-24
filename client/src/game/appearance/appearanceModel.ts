@@ -66,6 +66,8 @@ export function howHad(source: CosmeticSource, kind: CosmeticKind): string {
     const rank = source.rank ?? 1;
     return `Reach ${factionOwn(source.faction ?? 0)} ${ORDINALS[rank - 1] ?? `${rank}th`} rank.`;
   }
+  // A Breach's own rewards come from its last encounter (crates/gear/src/breach.rs).
+  if (source.kind === 'breach') return 'Clear a Breach.';
   return 'Yours from the start.';
 }
 

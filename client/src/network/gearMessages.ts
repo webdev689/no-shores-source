@@ -102,6 +102,14 @@ export const ASKS = {
   /** A return to the player's ship, which the room answers (107 yes, or 105 fallen, 106 struck in the last ten
    *  seconds) before the page leaves for the sea. */
   toShip: 73,
+  /** A Breach's: a fallen player raised (`item` their number) while Use is held, and let go; the Lodestone taken up
+   *  and set down; and the gate asked whether it is open (0 yes, 112 shut). A raising answers 110 with no revive
+   *  left, 111 with none in reach to raise. */
+  raise: 80,
+  stopRaise: 81,
+  takeLodestone: 82,
+  dropLodestone: 83,
+  enterBreach: 84,
 } as const;
 
 /** Shape's place while he is away. */
@@ -144,6 +152,8 @@ export interface GearItem {
   readonly name: number;
   readonly resource: number | null;
   readonly breach: boolean;
+  /** A Breach's piece won at Hard. */
+  readonly hard: boolean;
   readonly xp: number;
   readonly xpMost: number;
   readonly bought: number;
@@ -346,6 +356,7 @@ function itemOf(item: GearItemTable): GearItem {
     name: item.name(),
     resource: resource === NONE ? null : resource,
     breach: item.breach(),
+    hard: item.hard(),
     xp: item.xp(),
     xpMost: item.xpMost(),
     bought: item.bought(),

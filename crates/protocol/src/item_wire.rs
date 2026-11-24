@@ -58,6 +58,7 @@ pub(crate) fn item_offset<'built>(
         name: item.name,
         resource: item.resource.unwrap_or(NONE_CHOSEN),
         breach: item.breach,
+        hard: item.hard,
         xp: item.xp,
         xp_most: item.xp_most(),
         bought: item.bought,

@@ -49,6 +49,7 @@ pub fn set_ground(text: &[u8]) -> bool {
         serde_json::from_slice::<Ground>(text).ok().map(|ground| Floor::Land(Box::new(ground)))
     };
     let kept = floor.is_some();
+    BREACH.with(|breach| breach.set(None));
     FLOOR.with(|kept_floor| *kept_floor.borrow_mut() = floor.unwrap_or(Floor::Flat));
     kept
 }
@@ -91,6 +92,7 @@ pub fn set_breach(open: u8, tick: u64) -> bool {
 pub fn set_heights(bytes: &[u8]) -> bool {
     let deck = movement::Heights::from_floats(&floats_of(bytes));
     let kept = deck.is_some();
+    BREACH.with(|breach| breach.set(None));
     FLOOR.with(|floor| *floor.borrow_mut() = deck.map_or(Floor::Flat, |deck| Floor::Deck(Box::new(deck))));
     kept
 }
@@ -109,6 +111,7 @@ pub fn set_rim(bytes: &[u8]) -> bool {
         .map(Block::from_floats)
         .collect();
     let rim = Heights::rim(&blocks, RIM_CELL_M);
+    BREACH.with(|breach| breach.set(None));
     FLOOR.with(|floor| *floor.borrow_mut() = Floor::Sea(Box::new(rim)));
     true
 }

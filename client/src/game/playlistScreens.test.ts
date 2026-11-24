@@ -11,6 +11,7 @@ import { gearScreenOpen } from './gearScreen.ts';
 import { FakeEvent, fakePage } from './pageForTests.ts';
 import { launchRoom, playlistScreenOf } from './playlistWords.ts';
 import { startedAtSea } from './rooms.ts';
+import { breachPlanOf } from './breachPlan.ts';
 import type { NodeInfo } from './worldData.ts';
 
 const bytes = await readFile(
@@ -137,8 +138,9 @@ class FinderSocket {
   }
 }
 
-/** The 18 Elite Dungeons a run is drawn from, and Overlook's social space, which names the port. */
-const places = [...activitiesAt(await module, FRIDAY_NINE).elites, 'overlook-social'].map(
+/** The 18 Elite Dungeons a run is drawn from, Overlook's social space, which names the port, and the patrol zone the
+ *  Breach's gate stands in. */
+const places = [...activitiesAt(await module, FRIDAY_NINE).elites, 'overlook-social', 'gullwing-vale'].map(
   (id) =>
     ({ id, name: id === 'overlook-social' ? 'Overlook' : id, kind: 'dungeon', continent: 'continent-1' }) as NodeInfo,
 );
@@ -158,6 +160,7 @@ async function atSea(level: number, signedIn = true, members = 1, roster?: () =>
   const trips = {
     enter: () => undefined,
     intoRun: (node: NodeInfo, run: string) => void into.push(`${node.id} ${run}`),
+    toBreach: (run: string) => void into.push(`breach ${run}`),
   };
   const gear = { level, prologueDone: true, activity: record } as GearState;
   const company = async () => ({ company: { leader: null, members: Array.from({ length: members }, () => ({})) } });
@@ -292,4 +295,53 @@ test('a Roster answer to an earlier opening is not taken for the screen opened a
   answers[0]?.({ company: { leader: null, members: [{}, {}] } });
   await new Promise((done) => setTimeout(done, 0));
   assert.ok(root.find('Go alone'), 'the first opening’s company is not this one’s');
+});
+
+test("the Breach stands on the Playlist at Normal and Hard, shut below each tier's level in the finder's words", async () => {
+  const drawn = activitiesAt(await module, FRIDAY_NINE);
+  const plan = breachPlanOf(await module);
+  const screen = playlistScreenOf(
+    'Beside Overlook',
+    drawn,
+    gatesAt(await module, 25, true),
+    record,
+    25,
+    named,
+    NOW,
+    plan,
+  );
+  const [normal, hard] = screen.entries.slice(4);
+  assert.deepEqual(
+    [normal?.kind, normal?.name, normal?.about, normal?.shut],
+    ['breach-normal', 'The Drowned Vale', 'Normal · Foes at level 26', null],
+  );
+  assert.equal(normal?.launch.finds, 'node-gullwing-vale--breach-normal');
+  assert.deepEqual(
+    [hard?.shut, hard?.lock],
+    ['A Breach at Hard opens at level 28.', 'Hard · Opens at level 28 · You are 25'],
+  );
+  assert.ok(hard?.rules.includes('5 revives an attempt, for the company.'));
+  assert.equal(hard?.launch.finds, null, 'no search for a tier shut');
+  assert.equal(normal?.drops, 'Drops Breach gear');
+});
+
+test("Launch on the Breach asks the server for its run, and goes to its gate's zone with it", async () => {
+  const { screens, window, sockets, into, root } = await atSea(26);
+  screens.playlist('overlook-playlist');
+  for (let step = 0; step < 4; step += 1) window.dispatchEvent(new FakeEvent('keydown', { key: 'ArrowRight' }));
+  assert.ok(root.find('THE DROWNED VALE'));
+  assert.ok(root.click('playlist-launch'));
+  assert.equal(sockets[0]?.address, 'ws://finder.test/v1/find/node-gullwing-vale--breach-normal?launch');
+  sockets[0]?.fire('open');
+  sockets[0]?.fire('message', { data: '{"run":"node-gullwing-vale--breach-normal--run-m9n8b7v6"}' });
+  assert.deepEqual(into, ['breach node-gullwing-vale--breach-normal--run-m9n8b7v6']);
+});
+
+test('playing alone, the Breach launches nothing and says it is played online', async () => {
+  const { screens, window, into, root } = await atSea(26, false);
+  screens.playlist('overlook-playlist');
+  for (let step = 0; step < 4; step += 1) window.dispatchEvent(new FakeEvent('keydown', { key: 'ArrowRight' }));
+  assert.ok(root.click('playlist-launch'));
+  assert.ok(root.find('A Breach is played online.'));
+  assert.equal(into.length, 0);
 });

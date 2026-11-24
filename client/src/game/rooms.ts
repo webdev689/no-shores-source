@@ -1,6 +1,7 @@
 import { AccountLink, type Kept, LIVE_ACCOUNTS } from '../network/accounts.ts';
 import { LIVE_ROOMS } from '../network/roomAddress.ts';
 import type { Difficulty } from '../heldmap/heldMap.ts';
+import { BREACH_TIERS } from '../../../server/roomNames.ts';
 
 /**
  * Where the game's rooms are, from its page's `?room=`: none without it (the game plays offline, judging the edge
@@ -70,16 +71,18 @@ const OLD_NAMES: Readonly<Record<string, Difficulty>> = { rough: 'elite', storm:
 
 /** The node and difficulty a node's room is for (`node-<id>`, `node-<id>--elite`), the patrol's dungeon it is
  *  (`--dungeon-<number>` after those, never a node's own name), a playlist's run's foes' level (`--playlist-<level>`),
- *  and its run's instance (`--run-<instance>` last); null for any other room. */
+ *  a Breach's run's tier (`--breach-<tier>` after its gate's patrol zone alone, 0 Normal, 1 Hard), and its run's
+ *  instance (`--run-<instance>` last); null for any other room. */
 export function nodeOfRoom(room: string): {
   readonly id: string;
   readonly seas: Difficulty;
   readonly dungeon: number | null;
   readonly run: string | null;
   readonly playlist: number | null;
+  readonly breach: number | null;
 } | null {
   const found =
-    /^node-([a-z0-9-]+?)(?:--(elite|abyss|rough|storm))?(?:--dungeon-([0-2]))?(?:--playlist-([1-9][0-9]?)|--(sea))?(?:--run-([a-z0-9]{8}))?$/.exec(
+    /^node-([a-z0-9-]+?)(?:--(elite|abyss|rough|storm))?(?:--dungeon-([0-2]))?(?:--playlist-([1-9][0-9]?)|--(sea)|--breach-(normal|hard))?(?:--run-([a-z0-9]{8}))?$/.exec(
       room,
     );
   if (!found?.[1]) return null;
@@ -87,10 +90,14 @@ export function nodeOfRoom(room: string): {
   const dungeon = found[3] === undefined ? null : Number(found[3]);
   const seas = named === undefined ? 'normal' : (OLD_NAMES[named] ?? (named as Difficulty));
   const playlist = found[4] === undefined ? null : Number(found[4]);
+  const run = found[7] ?? null;
   // A run started from the Playlist is an Elite Dungeon's alone, at Elite or Abyss, as the rooms read it.
   const marked = playlist !== null || found[5] !== undefined;
-  if (marked && (dungeon !== null || found[6] === undefined || seas === 'normal')) return null;
-  return { id: found[1], seas, dungeon, run: found[6] ?? null, playlist };
+  if (marked && (dungeon !== null || run === null || seas === 'normal')) return null;
+  // A Breach's run names its gate's zone and its tier alone, and is only ever a run (server/roomNames.ts).
+  const breach = found[6] === undefined ? null : BREACH_TIERS.indexOf(found[6] as (typeof BREACH_TIERS)[number]);
+  if (breach !== null && (named !== undefined || dungeon !== null || run === null)) return null;
+  return { id: found[1], seas, dungeon, run, playlist, breach };
 }
 
 // A run's instance is drawn as the server's Find a Company draws one, and a run started at sea read, by one rule.

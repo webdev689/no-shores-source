@@ -2,7 +2,8 @@
 // the player sees and hears. The banner, the compass's places and the stores' bars go to the fight's display; the
 // ring at the ground's edge and the light pillars over the shards on the ground go with the fight's marks; the props
 // (the fissure, the growth, the stores, the banners, the shards, the chests) go to the event props' drawer, each
-// carried shard at its carrier's off hand; the beats' sounds go to the world's sounds, their stings to the music.
+// carried shard at its carrier's off hand; the beats' sounds go to the world's sounds, their stings to the music. A
+// Breach's gate in the zone, or its run, is played beside them (`breachView.ts`).
 import { type ChestLike, eventProps, type EventProp, MOTION, StateClock } from '../city/eventProps.ts';
 import { EVENT } from '../combat/cues.ts';
 import { markLine } from '../combat/drops.ts';
@@ -37,6 +38,7 @@ import type { Block } from '../rules/movementRules.ts';
 import type { Shot } from './camera.ts';
 import type { Quest } from './tasks.ts';
 import { chime as rarityChime, play } from './uiSounds.ts';
+import { type BreachOn, type BreachParts, BreachView, withBreach } from './breachView.ts';
 
 type Point = readonly [number, number, number];
 
@@ -212,6 +214,8 @@ export class PublicView {
   /** What shakes the player's view (0 to 1) as the ground trembles; the course the fissure's spires stand in. */
   private readonly feel: { tremor(trauma: number): void };
   private readonly course: SpireCourse | null;
+  /** A Breach's gate in this zone, or its run; none in any other place. */
+  private readonly breach: BreachView | null;
   /** The ring's colour this frame, kept between frames so its arcs make none. */
   private readonly ringColour: [number, number, number, number] = [0, 0, 0, 0];
   /** The wall's seconds: a hidden tab and the room's countdowns are told by them, since the frame clock moves at most a
@@ -219,21 +223,28 @@ export class PublicView {
   private readonly now: () => number;
 
   /** The events of `zone`, shaking `feel`'s view; the fissure's spires stood among the place's `boxes` in each of
-   *  `courses` (the page's movement and fight), where given; `now` reads the wall's seconds. */
+   *  `courses` (the page's movement and fight), where given, and a Breach as `breach` makes it; `now` reads the
+   *  wall's seconds. */
   constructor(
     zone: string,
     feel: { tremor(trauma: number): void } = { tremor: () => undefined },
-    course: { boxes: readonly Block[]; courses: ConstructorParameters<typeof SpireCourse>[1] } | null = null,
+    course: {
+      boxes: readonly Block[];
+      courses: ConstructorParameters<typeof SpireCourse>[1];
+      breach?: BreachParts;
+    } | null = null,
     now: () => number = () => performance.now() / 1000,
   ) {
     this.zone = zone;
     this.now = now;
     this.feel = feel;
     this.course = course && new SpireCourse(course.boxes, course.courses);
+    this.breach = course?.breach ? new BreachView(course.breach) : null;
   }
 
   /** One frame at `clock` (the page's seconds): the room's `event` and its `events` since the last, the player's
-   *  `drops` (their chests among them), the bodies as drawn, the land's height, and the marks laid into `marks`. */
+   *  `drops` (their chests among them), the bodies as drawn, the land's height, the marks laid into `marks`, and a
+   *  Breach's word where the room gives one. */
   frame(
     word: PublicEvent | null,
     events: readonly FightEvent[],
@@ -246,7 +257,8 @@ export class PublicView {
       quiet = false,
       held = null,
       encounter = null,
-    }: { quiet?: boolean; held?: PublicEvent | null; encounter?: EncounterHere | null } = {},
+      breach = null,
+    }: { quiet?: boolean; held?: PublicEvent | null; encounter?: EncounterHere | null; breach?: BreachOn | null } = {},
   ): PublicFrame {
     const wall = this.now();
     const event = this.counted(word, wall);
@@ -317,12 +329,15 @@ export class PublicView {
     const left = Math.min(...waiting.map((chest) => moments.chestsLeft.get(chest.id) ?? CHEST_LIES_S));
     const sealed = encounter && encounterFrame(encounter, stale ? [] : events, bodies, clock, marks, this.heard);
     if (loud) sealed?.ui.forEach(play);
+    const breached = breach && this.breach?.frame(breach, stale ? [] : events, bodies.feet, bodies.where, clock, marks);
+    if (breached) props.push(...breached.props);
+    const heard = [...(sealed && !stale ? sealed.sounds : []), ...(breached?.sounds ?? [])];
     return {
-      shown: shown ?? sealed?.shown ?? null,
+      shown: withBreach(shown ?? sealed?.shown ?? null, breached ?? null),
       quest: questOf(event, this.zone) ?? (waiting.length > 0 ? chestQuestOf(left, this.zone, this.lastKind) : null),
       props,
-      sounds: sealed && !stale ? [...sounds, ...sealed.sounds] : sounds,
-      sting: stale ? null : ((beat && STINGS[beat]) ?? sealed?.sting ?? null),
+      sounds: [...sounds, ...heard],
+      sting: stale ? null : ((beat && STINGS[beat]) ?? sealed?.sting ?? breached?.sting ?? null),
       chime,
     };
   }
@@ -352,9 +367,11 @@ export class PublicView {
     return { ...banner, objective, heroic, elsewhere };
   }
 
-  /** What E does at the player's feet: opens their chest in reach not yet asked, if one is. */
+  /** What E does at the player's feet: opens their chest in reach not yet asked, if one is, else what it does in a
+   *  Breach. */
   use(drops: readonly GearDrop[], feet: Point, ask: (asked: GearAsk) => void, clock: number) {
-    if (!this.present) return null;
+    const breach = this.breach?.use(feet, ask) ?? null;
+    if (!this.present) return breach;
     const chest = drops.find(
       (drop) =>
         drop.kind === DROPPED.chest &&
@@ -363,7 +380,7 @@ export class PublicView {
         Math.hypot(drop.at[0] - feet[0], drop.at[1] - feet[1]) <= CHEST_REACH_M &&
         Math.abs(drop.at[2] - feet[2]) <= CHEST_HEIGHT_M,
     );
-    if (!chest) return null;
+    if (!chest) return breach;
     return {
       words: chest.tier >= 3 ? 'Open the heroic chest' : 'Open the chest',
       run: () => {

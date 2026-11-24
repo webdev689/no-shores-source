@@ -18,6 +18,7 @@ import { type FinderSocket, type Finding, findCompany, findingWords } from './co
 import { askDungeon } from './dungeonLayout.ts';
 import { countBy } from './npc/npcClock.ts';
 import { type TripFoot, type TripGame, dungeonTrips } from './dungeonTrips.ts';
+import { breachTrips } from './breachTrips.ts';
 import { EntranceCardView } from './entranceCard.ts';
 import { type Trips, takeWipe } from './footTrips.ts';
 import { setGearScreenOpen } from './gearScreen.ts';
@@ -73,7 +74,11 @@ export function startActivityScreens(
   module: Promise<WebAssembly.Module>,
   nodes: readonly NodeInfo[],
   foot: () => ScreensFoot | null,
-  trips: { enter(number: number, name: string, run?: string): void; intoRun?(node: NodeInfo, run: string): void },
+  trips: {
+    enter(number: number, name: string, run?: string): void;
+    intoRun?(node: NodeInfo, run: string): void;
+    toBreach?(run: string): void;
+  },
   link: (Pick<AccountLink, 'token' | 'finderAt'> & Partial<Pick<AccountLink, 'roster'>>) | null,
   clock: ScreensClock = PAGE_CLOCK,
   atSea: () => GearState | null = () => null,
@@ -166,6 +171,7 @@ export function startActivityScreens(
     nodes,
     kept: () => kept,
     intoRun: (node, run) => trips.intoRun?.(node, run),
+    toBreach: (run) => trips.toBreach?.(run),
     link,
     atSea: onSea,
     now: clock.now,
@@ -228,7 +234,7 @@ export function startActivities(
     readonly atSea?: () => GearState | null | undefined;
   },
 ): {
-  readonly trips: ReturnType<typeof dungeonTrips>;
+  readonly trips: ReturnType<typeof dungeonTrips> & ReturnType<typeof breachTrips>;
   readonly screens: ActivityScreens;
   readonly onFoot: Trips;
   heed(
@@ -237,7 +243,11 @@ export function startActivities(
     onFoot: boolean,
   ): boolean;
 } {
-  const trips = dungeonTrips({ ...game, companyPlaces: () => companyPlaces(link) });
+  const dungeons = dungeonTrips({ ...game, companyPlaces: () => companyPlaces(link) });
+  const breaches = breachTrips({ ...game, nodes });
+  // A company member in a Breach's run is joined in its run; in any other, as a dungeon's.
+  const join = (node: NodeInfo, place: string) => void (breaches.joinRun(place) || dungeons.join(node, place));
+  const trips = { ...dungeons, ...breaches, join, toBreach: breaches.toGate };
   const atSea = game.atSea;
   const screens = startActivityScreens(
     game.module,

@@ -4,7 +4,8 @@
 import type { Difficulty } from '../heldmap/heldMap.ts';
 import { boundWord } from './controls.ts';
 import { type Happening, next, onTheSea } from './flow.ts';
-import { Foot, type FootContext } from './foot.ts';
+import type { Foot, FootContext } from './foot.ts';
+import { enterBreachRun, enterDungeon } from './footEntries.ts';
 import { FIRST_NODE } from './gameBoot.ts';
 import type { Playing } from './gameFrame.ts';
 import type { Hud } from './hud.ts';
@@ -70,9 +71,12 @@ export function startTravel(game: TravelGame) {
       const outside = { node: dungeon.patrol, text };
       return {
         flow: stood,
-        go: () => game.goInto(() => Foot.enterDungeon(game.footContext, outside, dungeon, dungeon.layout, seas)),
+        go: () => game.goInto(() => enterDungeon(game.footContext, outside, dungeon, dungeon.layout, seas)),
       };
     }
+    // A Breach's run is joined again by its name, as its room lets its company back in.
+    const run = foot.run;
+    if (run) return { flow: stood, go: () => game.goInto(() => enterBreachRun(game.footContext, run)) };
     if (held) return { flow: stood, go: () => game.backAshore(held) };
     return { flow: stood, go: () => game.goFoot(node, arrivalFacing(node, playing.landmass.plan, null), seas) };
   };

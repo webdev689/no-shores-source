@@ -7,6 +7,7 @@ import type { GearAsk } from '../network/gearMessages.ts';
 import { RoomThread } from '../network/roomThread.ts';
 import type { FightEvent } from '../network/messages.ts';
 import type { EncounterSeen } from '../network/encounterMessages.ts';
+import type { BreachSeen } from '../network/breachMessages.ts';
 import { askDungeon, type DungeonAsk, type DungeonLayout } from './dungeonLayout.ts';
 import { DOOR_REACH_M, type Entrance, entranceAt, entrancesOf } from './entrances.ts';
 import type { PropTable } from '../models/tables.ts';
@@ -27,11 +28,14 @@ export interface InDungeon {
   readonly layout: DungeonLayout;
 }
 
-/** What going in and out asks of the game: the forged props' table once read, and the ways in and out. */
+/** What going in and out asks of the game: the forged props' table once read, and the ways in and out: a dungeon's,
+ *  and a Breach's run's from its gate and back to it. */
 export interface Trips {
   props(): PropTable | null;
   enter(number: number, name: string): void;
   leave(): void;
+  enterBreach?(): void;
+  leaveBreach?(): void;
 }
 
 /** The name of the room a point stands in, or null in a corridor or past the grid: "the Ossuary". */
@@ -68,18 +72,20 @@ export function seaPlace(continent: string, layout: DungeonLayout): NodeInfo {
 }
 
 /** Takes a run's word from a snapshot: an Abyss run's revives left, whether it told this player their company fell,
- *  and an Elite Dungeon's encounters. */
+ *  an Elite Dungeon's encounters, and a Breach, in its run or at its gate. */
 export function heardRun(
-  held: { revives: number; wiped: boolean; encounter: EncounterSeen | null },
+  held: { revives: number; wiped: boolean; encounter: EncounterSeen | null; breach?: BreachSeen | null },
   snapshot: {
     readonly revives: number;
     readonly events: readonly FightEvent[];
     readonly encounter: EncounterSeen | null;
+    readonly breach?: BreachSeen | null;
   },
   own: number | null,
 ): void {
   held.revives = snapshot.revives;
   held.encounter = snapshot.encounter;
+  held.breach = snapshot.breach ?? null;
   if (snapshot.events.some((event) => event.kind === EVENT.wiped && event.defender === own)) held.wiped = true;
 }
 
@@ -187,11 +193,13 @@ export function useOnFoot(
   return place ?? useAt(x, y, counters, gear?.gear ?? null, ask, speak, mounted) ?? tripAt(x, y, here, trips);
 }
 
-/** What a room has said of a place before it says anything: no entrances, no cache, no run, no encounters. */
+/** What a room has said of a place before it says anything: no entrances, no cache, no run, no encounters, no
+ *  Breach. */
 export const unheard = () => ({
   entrances: new Entrances(),
   cache: null,
   revives: -1,
   wiped: false,
   encounter: null as EncounterSeen | null,
+  breach: null as BreachSeen | null,
 });

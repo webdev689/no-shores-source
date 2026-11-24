@@ -43,23 +43,17 @@ import { PlazaLife, countersOf, floorOver } from './plazaLife.ts';
 import { PublicView } from './publicView.ts';
 import { openNodeAlone } from './footNode.ts';
 import { nodeRoom } from './rooms.ts';
-import {
-  dungeonPlace,
-  heardRun,
-  type InDungeon,
-  openAlone,
-  roomNameAt,
-  standInDungeon,
-  unheard,
-  useOnFoot,
-} from './footTrips.ts';
+import { heardRun, type InDungeon, roomNameAt, unheard, useOnFoot } from './footTrips.ts';
 import { cacheOf } from './dungeonChest.ts';
-import { ceilingAt, type DungeonAsk, type DungeonLayout, openAt, seenBlocks } from './dungeonLayout.ts';
+import { ceilingAt, openAt } from './dungeonLayout.ts';
 import { worldOutput } from './uiSounds.ts';
 import type { UsePrompt } from './usePrompt.ts';
 import { type Dressed, dressInGear, figureWhere, otherCards, ownCard, strikersOf } from './footFigures.ts';
 import type { AtEntrance, FootContext, FootFight, FootFrame, Heard, Held, Opened, Uses } from './footPlace.ts';
-import { stand } from './footPlace.ts';
+import { arrivalQuery, stand } from './footPlace.ts';
+import type { InBreach } from './breachView.ts';
+import { gateArrival } from './breachTrips.ts';
+import { FollowCamera, livingAmong } from '../player/followCamera.ts';
 import { hearing, nextOtherId, roomNote, rulesOf } from './footRoom.ts';
 
 export type { AtEntrance, FootContext, FootFight, FootFrame, Uses } from './footPlace.ts';
@@ -83,8 +77,9 @@ const CAMERA_CLEARANCE_M = 0.3;
 export class Foot {
   readonly node: NodeInfo;
   readonly boxes: readonly Block[];
-  /** The dungeon the player plays in, or null on a node's land. */
+  /** The dungeon the player plays in, or null on a node's land; the Breach's run, or null anywhere else. */
   readonly dungeon: InDungeon | null;
+  readonly run: InBreach | null;
   /** The patrol's node file's text, which a room alone opens its dungeons from. */
   readonly text: string;
   /** The seas of the room the player joined, which a trip into or out of its dungeons keeps. */
@@ -127,6 +122,8 @@ export class Foot {
   private using: Use | null = null;
   /** The zone's public events as the page plays them. */
   private readonly publicView: PublicView;
+  /** Fallen in a Breach's run, whom the camera follows. */
+  private readonly follow = new FollowCamera();
   /** A node being gathered while E is held. */
   readonly hold = new GatherHold(
     () => this.gear?.ask({ kind: ASKS.stopGather }),
@@ -148,11 +145,12 @@ export class Foot {
     this.context = context;
     this.node = node;
     [this.boxes, this.text, this.dungeon, this.seas] = [opened.boxes, opened.text, opened.dungeon, opened.seas];
+    this.run = opened.run ?? null;
     this.module = people.module;
     const layout = opened.dungeon?.layout;
     this.groundAt = layout
       ? (x, y) => (openAt(layout, Math.floor(x / layout.cell), Math.floor(y / layout.cell)) ? 0 : null)
-      : context.groundAt;
+      : (opened.groundAt ?? context.groundAt);
     this.roof = layout ? (x, y) => ceilingAt(layout, x, y) : null;
     this.link = parts.link;
     this.fight = parts.fight;
@@ -178,6 +176,7 @@ export class Foot {
     this.publicView = new PublicView(node.id, this.feel, {
       boxes: opened.boxes,
       courses: [context.movement, parts.combat],
+      breach: { zone: node, run: this.run, context, module: people.module },
     });
     addEventListener(ACCOUNT_CHANGED, this.renamed);
   }
@@ -199,10 +198,11 @@ export class Foot {
     const module = await context.roomModule;
     let rect = windowRect(node.ring);
     let { boxes, ground } = await standOn(context, rules.combat, rect);
-    const [x, y] = arriving ? [arriving.x, arriving.y] : (node.spawns[0] ?? node.centre);
-    stand(context, x, y, arriving?.facing ?? facing, node.kind === 'social');
-    const address =
-      context.rooms && `${context.rooms(nodeRoom(node, seas))}${arriving ? `?entrance=${arriving.number}` : ''}`;
+    // Launched for a Breach's run, the player stands at its gate, where the zone's room stands them.
+    const placed = arriving?.breach === undefined ? arriving : await gateArrival(context.land, node, arriving.breach);
+    const [x, y] = placed ? [placed.x, placed.y] : (node.spawns[0] ?? node.centre);
+    stand(context, x, y, placed?.facing ?? facing, node.kind === 'social');
+    const address = context.rooms && `${context.rooms(nodeRoom(node, seas))}${arriving ? arrivalQuery(arriving) : ''}`;
     return Foot.start(context, node, rules, async (heard, session) => {
       const connection = address ? await RoomConnection.open(address, heard.snapshot, heard.gear, session) : null;
       // The room names the rect its window was cut to; a room baked from older edits is stood on as it stands.
@@ -222,35 +222,9 @@ export class Foot {
     });
   }
 
-  /** Takes the player into the dungeon `into` names (its number among the entrances of the place `outside`, whose node
-   *  file's text a room alone opens it from, the ask it is laid by and its room's name), at its way in, and joins its
-   *  room: online the server's, alone one in the rooms' worker. */
-  static async enterDungeon(
-    context: FootContext,
-    outside: { readonly node: NodeInfo; readonly text: string },
-    into: { readonly number: number; readonly ask: DungeonAsk; readonly room: string },
-    layout: DungeonLayout,
-    seas: Difficulty = 'normal',
-  ): Promise<Foot> {
-    const rules = await rulesOf(context);
-    const module = await context.roomModule;
-    standInDungeon(context.movement, rules.combat, into.ask);
-    stand(context, layout.arrival.x, layout.arrival.y, layout.arrival.bearing, false);
-    const address = context.rooms?.(into.room);
-    const dungeon = { patrol: outside.node, ...into, layout };
-    return Foot.start(context, dungeonPlace(outside.node, layout), rules, async (heard, session) => ({
-      link: address
-        ? await RoomConnection.open(address, heard.snapshot, heard.gear, session)
-        : await openAlone(module, outside.text, into, heard),
-      boxes: seenBlocks(layout),
-      text: outside.text,
-      dungeon,
-      seas,
-    }));
-  }
-
-  /** Joins the room `open` opens, handing it what the page hears of it, and stands the fight on it. */
-  private static async start(
+  /** Joins the room `open` opens, handing it what the page hears of it, and stands the fight on it: each way onto foot
+   *  ends here (`footEntries.ts` has the runs'). */
+  static async start(
     context: FootContext,
     node: NodeInfo,
     rules: { combat: CombatRules; roster: readonly FoeType[] },
@@ -343,6 +317,11 @@ export class Foot {
     return { gear: this.held.gear, ask: (ask) => fight.askGear(ask), forge, dress: walker.you.dress };
   }
 
+  /** Whether the place has no land's map: a dungeon, or a Breach's run over the dark. */
+  get mapless(): boolean {
+    return this.dungeon !== null || this.run !== null;
+  }
+
   /** Whether the player has fallen and waits to respawn. */
   get fallen(): boolean {
     return this.standing.kind === 'dead' || this.fight.own?.action.kind === 'dead';
@@ -397,7 +376,10 @@ export class Foot {
     // The tumble starts the way the figure was last drawn facing (the aim, while aiming).
     walker.fall = this.falling.figure(fight.standing, walker.player.body, walker.you.facing);
     const blocks = [...this.boxes, ...(this.context.cameraBlocks ?? [])];
-    const aimed = () => playerCamera(walker.player, movement, blocks, AIM, groundAt, this.roof);
+    // Fallen in a Breach's run, the camera follows a living member of the company (`followCamera.ts`).
+    const living = livingAmong(fight.others, this.otherPlayers.placed);
+    this.follow.frame(this.run !== null && this.fallen, living, controls.pressed('follow'));
+    const aimed = () => playerCamera(this.follow.viewed(walker.player), movement, blocks, AIM, groundAt, this.roof);
     const camera = () => pushedIn(aimed(), effects.anima.push);
     const shown = this.player.frame(still ? IDLE : { ...controls, locked: true }, this.steps, seconds, clock, {
       running: true,
@@ -420,11 +402,8 @@ export class Foot {
     const sights = shown.aiming || (shown.rangedDrawn && firstPerson);
     const kicked = pushedIn(feel.camera(aimed(), fight.player, fight.own, firstPerson, sights), effects.anima.push);
     const { x: fallX, y: fallY, z: fallZ } = walker.player.body;
-    const shot = this.falling.shot(
-      shotOfOrbit(kicked, LENS, groundAt, CAMERA_CLEARANCE_M),
-      [fallX, fallY, fallZ],
-      seconds,
-    );
+    const orbit = shotOfOrbit(kicked, LENS, groundAt, CAMERA_CLEARANCE_M);
+    const shot = this.follow.following === null ? this.falling.shot(orbit, [fallX, fallY, fallZ], seconds) : orbit;
     const [eyeX, eyeY] = shot.eye;
     // Through the player's own eyes no other figure stands so near that it fills the view.
     const nearest = firstPerson ? CARD_NEAREST_M : 0;
@@ -469,6 +448,7 @@ export class Foot {
       quiet: paused,
       held: fight.publicHeld,
       encounter: { layout: this.dungeon?.layout, seen: this.held.encounter },
+      breach: { seen: this.held.breach, using: controls.held('use'), fight, others: this.otherPlayers },
     });
     const marks = effects.marks(fight, seconds, {
       eye: shot.eye,

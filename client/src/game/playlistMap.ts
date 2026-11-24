@@ -1,23 +1,29 @@
-// The Playlist's map, after the owner's reference, Destiny's Vanguard screen: a dark chart under the four entries, each
-// a crest standing where `nodeSpots` puts it, joined by faint lines and ringed, the week's dungeons below their
-// playlists. Each crest says its entry at a glance: chevrons for the Elite Playlist, an eye of the deep for the Abyss
-// Playlist, crossed blades for the Elite Dungeon of the week, a crown over the deep for the Abyss's.
+// The Playlist's map, after the owner's reference, Destiny's Vanguard screen: a dark chart under the entries, each a
+// crest standing where `SPOTS` puts it, joined by faint lines and ringed, the week's dungeons below their playlists
+// and a Breach's Hard below its Normal between them. Each crest says its entry at a glance: chevrons for the Elite
+// Playlist, an eye of the deep for the Abyss Playlist, crossed blades for the Elite Dungeon of the week, a crown over
+// the deep for the Abyss's, and a gate under a crystal spire for a Breach, ringed at Hard.
 import type { PlaylistKind } from './playlistWords.ts';
 
 /** Where each entry's crest stands, as shares of the map's width and height, in the screen's order: the two playlists
  *  above, each week's dungeon below its playlist. */
 const SPOTS: Readonly<Record<PlaylistKind, readonly [number, number]>> = {
-  elite: [0.3, 0.33],
-  abyss: [0.72, 0.33],
-  'week-elite': [0.18, 0.74],
-  'week-abyss': [0.84, 0.74],
+  elite: [0.2, 0.3],
+  abyss: [0.8, 0.3],
+  'week-elite': [0.2, 0.74],
+  'week-abyss': [0.8, 0.74],
+  'breach-normal': [0.5, 0.3],
+  'breach-hard': [0.5, 0.74],
 };
 
-/** The lines the chart draws between crests: each playlist to the other and to its week's dungeon. */
+/** The lines the chart draws between crests: each playlist to the Breach between them and to its week's dungeon, and
+ *  a Breach's Normal to its Hard. */
 const LINKS: readonly (readonly [PlaylistKind, PlaylistKind])[] = [
-  ['elite', 'abyss'],
+  ['elite', 'breach-normal'],
+  ['breach-normal', 'abyss'],
   ['elite', 'week-elite'],
   ['abyss', 'week-abyss'],
+  ['breach-normal', 'breach-hard'],
 ];
 
 /** Where an entry's crest stands on the chart, as shares of its width and height. */
@@ -179,6 +185,10 @@ const DEVICES: Readonly<Record<PlaylistKind, (context: OffscreenCanvasRenderingC
     }
     star(context, side / 2, side * 0.24, side * 0.07);
   },
+  // A gate's arch under a crystal spire, as the Sunken Gate stands.
+  'breach-normal': (context, side) => breachDevice(context, side, false),
+  // The same, ringed as the deep's eye is.
+  'breach-hard': (context, side) => breachDevice(context, side, true),
   // A crown over the deep's rings.
   'week-abyss': (context, side) => {
     context.beginPath();
@@ -202,6 +212,32 @@ const DEVICES: Readonly<Record<PlaylistKind, (context: OffscreenCanvasRenderingC
     }
   },
 };
+
+/** A Breach's device, `side` pixels square: an arch under a spire's crystal, ringed at Hard. */
+function breachDevice(context: OffscreenCanvasRenderingContext2D, side: number, ringed: boolean): void {
+  context.lineWidth = side * 0.06;
+  context.beginPath();
+  context.moveTo(side * 0.34, side * 0.76);
+  context.lineTo(side * 0.34, side * 0.54);
+  context.quadraticCurveTo(side / 2, side * 0.34, side * 0.66, side * 0.54);
+  context.lineTo(side * 0.66, side * 0.76);
+  context.stroke();
+  context.beginPath();
+  for (const [x, y] of [
+    [0.5, 0.16],
+    [0.57, 0.3],
+    [0.5, 0.42],
+    [0.43, 0.3],
+  ] as const)
+    context.lineTo(side * x, side * y);
+  context.closePath();
+  context.fill();
+  if (!ringed) return;
+  context.lineWidth = side * 0.035;
+  context.beginPath();
+  context.arc(side / 2, side * 0.29, side * 0.12, 0, Math.PI * 2);
+  context.stroke();
+}
 
 /** A five-pointed star of `radius` about (x, y), filled. */
 function star(context: OffscreenCanvasRenderingContext2D, x: number, y: number, radius: number): void {
@@ -229,7 +265,7 @@ export function drawWaiting(context: OffscreenCanvasRenderingContext2D, side: nu
 /** Draws an entry's crest in a square: its glow, its shield's field and rim, and its device; grey where it is shut.
  *  `lit` 1 (under the pointer or the focus) brightens its glow; 2 (chosen) more, its shield filling the square. */
 export function drawCrest(kind: PlaylistKind, shut: boolean, lit: 0 | 1 | 2 = 0) {
-  const inks = shut ? SHUT : kind === 'abyss' || kind === 'week-abyss' ? DEEP : LIT;
+  const inks = shut ? SHUT : kind === 'abyss' || kind === 'week-abyss' || kind === 'breach-hard' ? DEEP : LIT;
   // At rest the shield stands a step inside its square, so the chosen one is drawn larger in the same room.
   const shrink = lit === 2 ? 1 : 1 / CHOSEN_SCALE;
   return (context: OffscreenCanvasRenderingContext2D, drawn: number): void => {

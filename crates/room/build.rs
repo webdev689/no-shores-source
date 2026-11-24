@@ -45,15 +45,14 @@ fn module(entry: &serde_json::Value) -> String {
 }
 
 fn main() {
-    let root = concat!(env!("CARGO_MANIFEST_DIR"), "/../../content");
-    let (plan_path, manifest_path) =
-        (format!("{root}/dungeon/breach-drowned-vale.json"), format!("{root}/modules/modules.json"));
+    let plan_path = concat!(env!("CARGO_MANIFEST_DIR"), "/../../content/dungeon/breach-drowned-vale.json");
+    let manifest_path = concat!(env!("CARGO_MANIFEST_DIR"), "/../../content/modules/modules.json");
     println!("cargo::rerun-if-changed={plan_path}");
     println!("cargo::rerun-if-changed={manifest_path}");
     let read = |path: &str| -> serde_json::Value {
         serde_json::from_str(&std::fs::read_to_string(path).expect("the content file")).expect("its JSON")
     };
-    let (plan, manifest) = (read(&plan_path), read(&manifest_path));
+    let (plan, manifest) = (read(plan_path), read(manifest_path));
     let spaces: Vec<String> = plan["spaces"]
         .as_array()
         .expect("its spaces")
