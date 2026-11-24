@@ -101,7 +101,7 @@ decision, made in the same change as its entry here.
 | `site/src/panel/` | The Discord bot's panel, the one site page that runs a script: its door to the bot (`panelApi.ts`), its pages by hash (`panelMain.ts`, `records.ts`), forms drawn from the bot's law (`form.ts`, `parts.ts`), the message composer, its tools, templates and live preview, the pictures section, its stylesheet, and a stand-in document for its tests (`domForTests.ts`) |
 | `server/bot/` | The [[Discord Bot]]'s own Worker over its own D1: Discord's signed interactions, the panel's Discord sign-in and API, the Durable Object holding Discord's Gateway, the one door to Discord's REST, uploaded pictures with their metadata taken out, the registry that routes events, commands, presses, tables, acts and the clock to modules, and the database's migrations |
 | `server/bot/law/` | The bot's law, platform-neutral so the website's panel imports it too: access levels from Discord permissions, the settings law, every module's declared settings, tables and acts, and the message law that builds what Discord is sent |
-| `server/bot/modules/` | The bot's modules, one file each, and what a module is (`module.ts`) |
+| `server/bot/modules/` | The bot's modules, most one file each, a large one's parts beside it, and what a module is (`module.ts`) |
 | `crates/` | Every Rust crate, one folder each, named after its crate |
 | `crates/world` | The world's structure: the layout of continents and isles, its rules and exact geometry ([[World Map]]) |
 | `crates/world/src/waters.rs`, `traffic.rs`, `traffic_routes.rs`, `ports.rs` | The sea's nine waters, their holders, names and borders; the three port cities; and the friendly traffic's routes and ships ([[World Map]], "Waters" and "Traffic") |

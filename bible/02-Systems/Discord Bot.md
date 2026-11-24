@@ -99,7 +99,8 @@ Durable Object holding Discord's Gateway, and a service binding to the [[Account
 | Pictures | PNG, JPEG, GIF and WebP only, known by their bytes, their metadata taken out, each server held to 100 files and 200 MB. |
 | The clock | Each minute it makes sure of the Gateway and runs each module's minute; once an hour it sweeps old sign-ins, sessions and audit rows. |
 
-A module is one file in `modules/` exporting a `ServerModule`, named in `registry.ts`, with its shape in
+A module is a `ServerModule` exported from `modules/` (most are one file; a large one, such as moderation or the
+welcome card, keeps its parts in files beside it), named in `registry.ts`, with its shape in
 `law/modules.ts`. It may answer commands and presses, hear Gateway events, run each minute, answer the panel's
 tables and acts, keep Discord in step when it is saved, fill placeholders of its own, and serve public routes. Its
 tables come with a migration named by its UTC time.
@@ -189,8 +190,9 @@ bucket, applies the migrations, deploys with `BOT_URL` set to its own `workers.d
 repository has, makes `CARD_SIGNING_KEY` once when the Worker has none, writes the slash commands to the application
 (`commands.ts`'s whole list, in place of the one Discord had), and waits for `/health` to name the commit it
 stamped on the Worker as `BOT_COMMIT`, so the new code is known to be live.
-`deploy-ready.sh` decides whether a deploy is due, for the rooms as for the bot. Run by hand from the Actions tab it
-deploys whatever changed, which is how keys added later reach the Worker.
+`deploy-ready.sh` decides whether a deploy is due, for the rooms, the accounts and the bot. Run by hand from the Actions
+tab it deploys whether anything changed or not, but only a commit whose own CI check passed; that is how keys added
+later reach the Worker.
 
 ## One Discord application
 
