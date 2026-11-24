@@ -1,5 +1,5 @@
 import { hideShade } from './cosmetics.ts';
-import { type CoverSteps, lightOf } from './coverLight.ts';
+import { type CoverSteps, TRIM_ALPHA, coverSteps, lightOf } from './coverLight.ts';
 import { type Figure, type ForgeLooks, HORSE_LAYER, layerCellOf, layerPath, layersOf, lookCell } from './looks.ts';
 import type { PaletteSnap, Rgb } from './dyes.ts';
 import { type HairColours, type RaceSkins, hairRamp, raceSkinOf, toneSkinOf } from './skins.ts';
@@ -48,6 +48,8 @@ export const PART = {
   hair: 12,
 } as const;
 const NO_HANG = new Set<number>([PART.armL, PART.armR, PART.footL, PART.footR, PART.weapon]);
+/** Each light at its own share of a ramp, for a trim whose span of light is not known. */
+const OWN_LIGHT = coverSteps([]);
 const FAR = 0x7fffffff;
 /** How far behind the horse's hide a barding texel may lie and still be drawn over it, in metres: the forge renders
  *  a barding a little off the hide, while its far side and inside lie well behind the horse. */
@@ -143,6 +145,10 @@ export async function composeFrame(
     const ramp = hair ?? (dyeable.has(layer) ? (ramps[layer] ?? null) : null);
     const coat = layer === HORSE_LAYER ? (ramps[layer] ?? null) : null;
     const steps = ramp ? (covers.get(layer) ?? null) : null;
+    // A ramp on a layer the forge draws in its own colours (a faction's blade) lies on its marked trim alone, laid
+    // across the trim's span of light (`covers`). The horse's ramp is its coat's.
+    const trim = !dyeable.has(layer) && layer !== HORSE_LAYER ? (ramps[layer] ?? null) : null;
+    const trimSteps = trim ? (covers.get(layer) ?? OWN_LIGHT) : null;
     const skin =
       figure.tone === null
         ? raceSkinOf(colours.skins, layer, figure.body, figure.race, view)
@@ -202,7 +208,8 @@ export async function composeFrame(
         rgb[2] = colour.data[source + 2] ?? 0;
         skin?.(rgb);
         if (coat) hideShade(rgb, coat);
-        const dyed = onRamp(rgb, ramp, steps);
+        const dyed =
+          trim && colour.data[source + 3] === TRIM_ALPHA ? onRamp(rgb, trim, trimSteps) : onRamp(rgb, ramp, steps);
         const out = spot * 4;
         pixels[out] = dyed?.[0] ?? rgb[0] ?? 0;
         pixels[out + 1] = dyed?.[1] ?? rgb[1] ?? 0;

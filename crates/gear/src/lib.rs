@@ -77,13 +77,19 @@ mod asks_tests;
 #[cfg(test)]
 mod bounties_tests;
 #[cfg(test)]
+mod breach_perks_tests;
+#[cfg(test)]
 mod clock_tests;
+#[cfg(test)]
+mod commons_tests;
 #[cfg(test)]
 mod cosmetics_tests;
 #[cfg(test)]
 mod economy_tests;
 #[cfg(test)]
 mod emblems_tests;
+#[cfg(test)]
+mod faction_perks_tests;
 #[cfg(test)]
 mod factions_tests;
 #[cfg(test)]
@@ -116,6 +122,8 @@ mod quests_tests;
 mod refusals_tests;
 #[cfg(test)]
 mod rewards_tests;
+#[cfg(test)]
+mod set_tests;
 #[cfg(test)]
 mod shape_tests;
 #[cfg(test)]

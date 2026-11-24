@@ -1,8 +1,10 @@
 //! Perks in the room: the trim a player's worn traits make of combat's numbers, which their fighter carries so their
 //! browser predicts it too; the perks a blow takes on as it is struck, which the room alone knows the moment of (Honed,
-//! Executioner, Undertow, Exploit, Attuned, Point Blank, Long Shot); those a parry, a block or a kill sets off; and the
-//! verbs, the perks that give a status as a blow lands or a foe falls, with what they count from blow to blow.
+//! Executioner, Undertow, Exploit, Attuned, Point Blank, Long Shot, Vein Strike); those a parry, a block, a perfect
+//! dodge or a kill sets off; and the verbs, the perks that give a status as a blow lands or a foe falls, with what they
+//! count from blow to blow.
 
+use crate::power::Loosed;
 use crate::{PlayerId, Room};
 use combat::fighter::{Action, FighterId};
 use combat::judge::Blow;
@@ -24,16 +26,39 @@ const KEEN_EYE_S: f64 = 4.0;
 /// shots landed.
 const ROW_EXPOSES: u32 = 3;
 const SHOTS_CHARGE: u32 = 5;
+/// Gathering Storm Charges a foe at this many blows or shots in a row landed on it.
+const ROW_CHARGES: u32 = 4;
+/// Thunderhead's blows on a Charged foe, and Shared Flame's while Linked, deal this much.
+const THUNDERHEAD_TIMES: f64 = 1.15;
+const SHARED_FLAME_TIMES: f64 = 1.1;
+/// How long Kindling's Linked, Nightfall's veil and Squall Step's Haste last (seconds).
+const KINDLING_S: f64 = 6.0;
+const NIGHTFALL_S: f64 = 3.0;
+const SQUALL_STEP_S: f64 = 3.0;
+/// Kindling Links the nearest ally within this of its striker: the reach of the Sunwell, the Art that Links allies
+/// (metres).
+const KINDLING_M: f64 = 10.0;
+/// Vein Strike's blows on an Exposed foe deal this much; Bloom Exposes the foes within this of the slain (metres);
+/// Regrowth gives back this share of the most health on a kill.
+const VEIN_STRIKE_TIMES: f64 = 1.15;
+const BLOOM_M: f64 = 4.0;
+const REGROWTH_SHARE: f64 = 0.05;
+/// Shardburst Exposes the foes within this of its wearer, and Splinter those within this of the foe a riposte lands
+/// on (metres).
+const SHARDBURST_M: f64 = 3.0;
+const SPLINTER_M: f64 = 3.0;
 
 /// What a player's verbs count from blow to blow, kept by the room alone: the ticks of their last two swings that
 /// landed, and each foe struck in a row with how many and the tick of the last (Exposing Strikes); the living foes
-/// their shots have marked (Marked Shot); and their shots landed since Shocking Rounds last Charged.
+/// their shots have marked (Marked Shot); their shots landed since Shocking Rounds last Charged; and the foe their
+/// last shots landed on in a row, with how many (Gathering Storm).
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
 pub struct PerkCounts {
     swung: [u64; 2],
     rows: Vec<(FighterId, u32, u64)>,
     marked: Vec<FighterId>,
     shots: u32,
+    shot_row: Option<(FighterId, u32)>,
 }
 
 impl PerkCounts {
@@ -72,6 +97,20 @@ impl PerkCounts {
             self.marked.push(foe);
         }
         first
+    }
+
+    /// Counts a shot on a foe, answering its place in the row of shots landed on that foe (0 for none): one landing on
+    /// another foe begins a row of its own, and one that does not land ends the foe's.
+    fn shot_in_row(&mut self, foe: FighterId, landed: bool) -> u32 {
+        let held = self.shot_row.filter(|row| row.0 == foe).map_or(0, |row| row.1);
+        if !landed {
+            if held > 0 {
+                self.shot_row = None;
+            }
+            return 0;
+        }
+        self.shot_row = Some((foe, held + 1));
+        held + 1
     }
 
     /// Counts a shot landed, answering whether it is the fifth, after which the count begins again.
@@ -154,6 +193,12 @@ pub fn trim_of(character: &Character, drawn: Slot) -> Trim {
             "barnacle" => trim.behind_taken *= 2.0 / 3.0,
             "ebb" => trim.parry_stamina += 30.0,
             "slipstream" => trim.counter *= 1.5,
+            // The factions' armour perks that trim: Lightbearer's healing charges and Shade Step's veiled dodge.
+            "lightbearer" => trim.drink_heal *= 1.15,
+            "shade_step" => trim.veiled_dodge_stamina *= 0.8,
+            // The Breaches' armour perks that trim: Crystal Skin's blows taken while hale, Lattice Shell's while low.
+            "crystal_skin" => trim.hale_taken *= 0.9,
+            "lattice_shell" => trim.low_taken *= 0.8,
             _ => {}
         }
     }
@@ -172,13 +217,16 @@ impl Room {
 
     /// The perks a player's blow on a foe takes on as it is struck: Honed on every blow, Executioner on a staggered
     /// foe (a riposte, the stagger's own answer, aside, as combat counts it), Undertow on one below half its health,
-    /// Exploit on a swing at an Exposed foe, Attuned on a blow in the worn Art's element, and what an
-    /// Atheric's own adds (`struck_harder`) (`perk_on`: of the loadout the blow came from, never a spell's).
-    pub(crate) fn sharpened(&self, blow: Blow, defender: FighterId, trim: &Trim) -> Blow {
+    /// Exploit on a swing at an Exposed foe, Attuned on a blow in the worn Art's element, Thunderhead on a Charged foe,
+    /// Vein Strike on an Exposed one, Shared Flame while its striker was Linked and From the Dark's crit while they were
+    /// Veiled, as the blow was struck or the shot loosed (`held`), and what an Atheric's own adds (`struck_harder`)
+    /// (`perk_on`: of the loadout the blow came from, never a spell's).
+    pub(crate) fn sharpened(&self, blow: Blow, defender: FighterId, held: &Loosed) -> Blow {
         let Some(foe) = self.fighter(defender) else { return blow };
         let Some(player) = self.players.get(&blow.striker).filter(|_| self.foes.contains_key(&defender)) else {
             return blow;
         };
+        let trim = &held.trim;
         let staggered = if foe.staggered() && !blow.riposte() { trim.on_staggered } else { 1.0 };
         let low = if foe.health < foe.health_max / 2.0 { trim.on_low } else { 1.0 };
         let swing = matches!(blow.kind, BlowKind::Swing(_));
@@ -188,9 +236,16 @@ impl Room {
             && blow.element != 0
             && player.character.worn_art().is_some_and(|art| art.element == blow.element);
         let attuned = if in_element && self.perk_on(&blow, "attuned") { ATTUNED_TIMES } else { 1.0 };
+        let charged = foe.statuses.has(Status::Charge) && self.perk_on(&blow, "thunderhead");
+        let thunderhead = if charged { THUNDERHEAD_TIMES } else { 1.0 };
+        let shared_flame = if held.linked && self.perk_on(&blow, "shared_flame") { SHARED_FLAME_TIMES } else { 1.0 };
+        let from_the_dark = held.veiled && self.perk_on(&blow, "from_the_dark");
+        let veined = foe.statuses.has(Status::Expose) && self.perk_on(&blow, "vein_strike");
+        let vein_strike = if veined { VEIN_STRIKE_TIMES } else { 1.0 };
         let atheric = self.struck_harder(&blow, defender);
-        let damage = blow.damage * trim.damage * staggered * low * attuned * exploited * atheric;
-        Blow { damage, ..blow }
+        let damage = blow.damage * trim.damage * staggered * low * attuned * exploited * thunderhead * shared_flame;
+        let damage = damage * vein_strike * atheric;
+        Blow { damage, crit: blow.crit || from_the_dark, ..blow }
     }
 
     /// A player's shot by the ground it covered to its mark and the trim it was loosed with: Point Blank within 5 m,
@@ -209,18 +264,51 @@ impl Room {
         Blow { damage: blow.damage * range, ..blow }
     }
 
-    /// What a verdict sets off of a player's perks: a parry or a block gives the defender back stamina, and a kill
-    /// gives its striker stamina and may reload their weapon at once.
+    /// What a verdict sets off of a player's perks: a parry or a block gives the defender back stamina, a block with
+    /// Lattice Wall drawn, a perfect dodge in Resonance and a parry in Fracture Expose the foe who struck, a guard
+    /// broken in Shardburst Exposes every foe near the wearer, and a kill gives its striker stamina and may reload their
+    /// weapon at once.
     pub(crate) fn perks_after(&mut self, striker: FighterId, defender: FighterId, verdict: &Verdict, killed: bool) {
         let back = |fighter: &mut combat::Fighter, stamina: f64| {
             fighter.stamina = (fighter.stamina + stamina).min(STAMINA);
         };
+        let (mut squall_step, mut exposes_striker, mut shardburst) = (false, false, false);
+        let guarding = self.striking(defender);
         if let Some(found) = self.players.get_mut(&defender) {
             let trim = found.fighter.trim;
+            let character = &found.character;
             match verdict {
-                Verdict::Parried => back(&mut found.fighter, trim.parry_stamina),
-                Verdict::Blocked { .. } => back(&mut found.fighter, trim.block_stamina),
+                Verdict::Parried => {
+                    back(&mut found.fighter, trim.parry_stamina);
+                    exposes_striker = character.has_trait("fracture");
+                }
+                Verdict::Blocked { .. } => {
+                    back(&mut found.fighter, trim.block_stamina);
+                    exposes_striker = character.has_drawn_trait("lattice_wall", guarding);
+                }
+                Verdict::GuardBroken { .. } => shardburst = character.has_trait("shardburst"),
+                Verdict::Dodged { perfect: true } => {
+                    squall_step = character.has_trait("squall_step");
+                    exposes_striker = character.has_trait("resonance");
+                }
                 _ => {}
+            }
+        }
+        // Squall Step: the armour's Haste on a perfect dodge, whatever loadout is drawn.
+        if squall_step {
+            self.give(defender, Status::Haste, Some(ticks(SQUALL_STEP_S)), Some(defender));
+        }
+        // Resonance on a perfect dodge and Fracture on a parry, the armour's, and Lattice Wall on a block, the
+        // shield's: the foe is Exposed.
+        if exposes_striker && self.foes.contains_key(&striker) {
+            self.give(striker, Status::Expose, None, Some(defender));
+        }
+        // Shardburst, the armour's: a foe breaking the wearer's guard Exposes every foe near the wearer.
+        if shardburst && self.foes.contains_key(&striker) {
+            let around = self.fighter(defender).map(crate::spells::feet_of);
+            let near = around.map(|at| self.foes_near(at, SHARDBURST_M, crate::spells::SPELL_HEIGHT));
+            for foe in near.unwrap_or_default() {
+                self.give(foe, Status::Expose, None, Some(defender));
             }
         }
         if !killed {
@@ -238,52 +326,169 @@ impl Room {
     }
 
     /// What a player's blow on a foe sets off of their verbs, through the room's one door for statuses, so no browser
-    /// predicts them: Exposing Strikes on the third swing in a row landed on one foe, Thunderclap on a guard a swing
-    /// breaks, Marked Shot on the player's first shot to land on a foe, Shocking Rounds on every fifth shot landed, and
-    /// Keen Eye's Crit on a kill; each the loadout's the blow came from (`perk_on`), none a spell's.
+    /// predicts them: Exposing Strikes on the third swing in a row landed on one foe, Gathering Storm's Charge on the
+    /// fourth blow or shot, Thunderclap on a guard a swing breaks, Nightfall's veil on a riposte, Marked Shot on the
+    /// player's first shot to land on a foe, Shocking Rounds on every fifth shot landed, and Keen Eye's Crit and
+    /// Kindling's Link on a kill; the Breaches' Shatterpoint on a guard a swing breaks, Crystal Sight on a shot landing
+    /// 20 m or more off, Bloom on a kill, Splinter on a riposte that lands and Shard Round's Charge on a shot landing on
+    /// an Exposed foe; each the loadout's the blow came from (`perk_on`), none a spell's. And
+    /// Regrowth's health on a kill, the armour's, so a spell's kill gives it too.
     pub(crate) fn verbs_after(&mut self, blow: &Blow, defender: FighterId, verdict: &Verdict, killed: bool) {
         if !self.foes.contains_key(&defender) {
             return;
         }
         let clock = self.clock;
-        let [rows, clap, marked, shocking, keen, cuts] =
-            ["exposing_strikes", "thunderclap", "marked_shot", "shocking_rounds", "keen_eye", "thousand_cuts"]
-                .map(|id| self.perk_on(blow, id));
+        let [
+            rows,
+            clap,
+            marked,
+            shocking,
+            keen,
+            cuts,
+            storm,
+            nightfall,
+            kindling,
+            shatter,
+            bloom,
+            sight,
+            splinter,
+            shard,
+        ] = [
+            "exposing_strikes",
+            "thunderclap",
+            "marked_shot",
+            "shocking_rounds",
+            "keen_eye",
+            "thousand_cuts",
+            "gathering_storm",
+            "nightfall",
+            "kindling",
+            "shatterpoint",
+            "bloom",
+            "crystal_sight",
+            "splinter",
+            "shard_round",
+        ]
+        .map(|id| self.perk_on(blow, id));
+        let apart = self.fighter(blow.striker).zip(self.fighter(defender)).map(|(striker, foe)| {
+            crate::spells::distance(crate::spells::feet_of(striker), crate::spells::feet_of(foe))
+        });
+        // Bloom spreads from where the slain fell, to every other living foe in reach.
+        let bloomed: Vec<FighterId> = match self.fighter(defender).filter(|_| killed && bloom) {
+            Some(slain) => {
+                let near = self.foes_near(crate::spells::feet_of(slain), BLOOM_M, crate::spells::SPELL_HEIGHT);
+                near.into_iter().filter(|foe| *foe != defender).collect()
+            }
+            None => Vec::new(),
+        };
+        let landed = matches!(verdict, Verdict::Hit { .. } | Verdict::Blocked { .. } | Verdict::GuardBroken { .. });
+        // Splinter spreads from the foe a riposte lands on, to every other foe near it; Shard Round asks whether the
+        // foe was Exposed as the shot landed, before this shot gives it anything.
+        let splintered: Vec<FighterId> = match self.fighter(defender).filter(|_| landed && splinter && blow.riposte()) {
+            Some(struck) => {
+                let near = self.foes_near(crate::spells::feet_of(struck), SPLINTER_M, crate::spells::SPELL_HEIGHT);
+                near.into_iter().filter(|foe| *foe != defender).collect()
+            }
+            None => Vec::new(),
+        };
+        let shard_charges =
+            shard && landed && self.fighter(defender).is_some_and(|foe| foe.statuses.has(Status::Expose));
+        // Regrowth is the armour's, so a kill by any blow of the player's gives it, a spell's too.
+        let regrowth =
+            killed && self.players.get(&blow.striker).is_some_and(|found| found.character.has_trait("regrowth"));
         let foes = &self.foes;
         let living = |foe: FighterId| foes.get(&foe).is_some_and(|found| !found.fighter.dead());
         let Some(found) = self.players.get_mut(&blow.striker) else { return };
-        let landed = matches!(verdict, Verdict::Hit { .. } | Verdict::Blocked { .. } | Verdict::GuardBroken { .. });
         let mut given = Vec::new();
+        let mut to_players = Vec::new();
         match blow.kind {
             BlowKind::Swing(_) => {
-                // Thousand Cuts counts the same rows, its blows struck harder by their place in them.
-                let row = if rows || cuts { found.counts.in_row(defender, landed, clock) } else { 0 };
+                // Thousand Cuts and Gathering Storm count the same rows, the one's blows struck harder by their place.
+                let row = if rows || cuts || storm { found.counts.in_row(defender, landed, clock) } else { 0 };
                 if rows && row > 0 && row % ROW_EXPOSES == 0 {
                     given.push(Status::Expose);
+                }
+                if storm && row > 0 && row % ROW_CHARGES == 0 {
+                    given.push(Status::Charge);
                 }
                 if clap && matches!(verdict, Verdict::GuardBroken { .. }) {
                     given.push(Status::Charge);
                 }
-            }
-            BlowKind::Shot(_) if landed => {
-                if marked && found.counts.marks(defender, living) {
+                if shatter && matches!(verdict, Verdict::GuardBroken { .. }) {
                     given.push(Status::Expose);
                 }
-                if shocking && found.counts.shot_landed() {
+                if splinter && landed && blow.riposte() {
+                    given.push(Status::Expose);
+                }
+                if nightfall && landed && blow.riposte() {
+                    to_players.push((blow.striker, Status::Veiled, NIGHTFALL_S));
+                }
+            }
+            BlowKind::Shot(_) => {
+                let row = if storm { found.counts.shot_in_row(defender, landed) } else { 0 };
+                if row > 0 && row % ROW_CHARGES == 0 {
+                    given.push(Status::Charge);
+                }
+                if landed && marked && found.counts.marks(defender, living) {
+                    given.push(Status::Expose);
+                }
+                if landed && shocking && found.counts.shot_landed() {
+                    given.push(Status::Charge);
+                }
+                // Crystal Sight measures from the shooter to the foe as the shot lands.
+                if landed && sight && apart.is_some_and(|apart| apart >= LONG_SHOT_M) {
+                    given.push(Status::Expose);
+                }
+                if shard_charges {
                     given.push(Status::Charge);
                 }
             }
             _ => {}
         }
+        let regrown = found.fighter.health_max * REGROWTH_SHARE;
         if killed && keen {
-            self.give(blow.striker, Status::Crit, Some(ticks(KEEN_EYE_S)), Some(blow.striker));
+            to_players.push((blow.striker, Status::Crit, KEEN_EYE_S));
+        }
+        if killed && kindling {
+            to_players.push((blow.striker, Status::Linked, KINDLING_S));
+            if let Some(ally) = self.nearest_ally(blow.striker) {
+                to_players.push((ally, Status::Linked, KINDLING_S));
+            }
+        }
+        for (fighter, status, seconds) in to_players {
+            self.give(fighter, status, Some(ticks(seconds)), Some(blow.striker));
         }
         for status in given {
             self.give(defender, status, None, Some(blow.striker));
         }
+        // The room's heal, so the dead take none and the run's healing factor counts.
+        if regrowth {
+            self.heal(blow.striker, regrown);
+        }
+        for foe in bloomed.into_iter().chain(splintered) {
+            self.give(foe, Status::Expose, None, Some(blow.striker));
+        }
+    }
+
+    /// The living player nearest a player, within Kindling's reach of them, but for themselves.
+    fn nearest_ally(&self, player: PlayerId) -> Option<PlayerId> {
+        let at = crate::spells::feet_of(self.fighter(player)?);
+        let apart = |other: &PlayerId| {
+            self.fighter(*other).map_or(f64::INFINITY, |found| libm::hypot(found.body.x - at[0], found.body.y - at[1]))
+        };
+        let near = self.players_near(at, KINDLING_M).into_iter().filter(|other| *other != player);
+        near.min_by(|first, second| apart(first).total_cmp(&apart(second)))
     }
 }
 
 #[cfg(test)]
 #[path = "verbs_tests.rs"]
 mod verbs_tests;
+
+#[cfg(test)]
+#[path = "faction_perks_tests.rs"]
+mod faction_perks_tests;
+
+#[cfg(test)]
+#[path = "breach_perks_tests.rs"]
+mod breach_perks_tests;

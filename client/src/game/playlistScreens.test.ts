@@ -52,13 +52,8 @@ test('the Playlist says each entry’s level, rules, modifiers, rewards and gate
   assert.equal(abyss?.rules[0], 'One of the 18 Elite Dungeons, at Abyss, drawn as each run starts.');
   assert.deepEqual(
     screen.entries.map((entry) => entry.drops),
-    [
-      'Drops orcish and mithril gear',
-      'Drops adamantium and ebony gear',
-      'Drops orcish and mithril gear',
-      'Drops adamantium and ebony gear',
-    ],
-    'what each tier’s content drops, by its looks',
+    ['Drops Elite Dungeon gear', 'Drops Abyss Dungeon gear', 'Drops Elite Dungeon gear', 'Drops Abyss Dungeon gear'],
+    'what each tier’s content drops, by its content’s name and never a metal’s',
   );
   assert.equal(
     elite?.rewards[0]?.words,

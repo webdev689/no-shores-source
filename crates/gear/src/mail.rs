@@ -1,10 +1,10 @@
-//! The game's mail, after Destiny's Postmaster: letters only the game writes to a player, kept with their character
-//! and handed over at the mail counter in Overlook's social space. A letter is where what it holds came from and, for
+//! The game's mail, after Destiny's Postmaster: letters only the game writes to a player, kept with their character and
+//! handed over at the mail counter in Overlook's social space. A letter is where what it holds came from and, for
 //! something the player would have lost, that thing: a Vestige left lying out its time or as they left, a Vestige a
-//! first clear paid while the carried ten and the vault were full or flotsam paid while the carried ten were, or a
-//! module salvaged while its slot carried nine. A mailbox keeps `MAIL_MOST` letters; one more lets go the letter
-//! holding the least, the oldest of those, and the newest letter kept says so. The page words each letter by its
-//! source.
+//! first clear paid while the carried ten and the vault were full or flotsam paid while the carried ten were, a module
+//! salvaged while its slot carried nine, or a Normal item found while its slot and the vault were full. A mailbox keeps
+//! `MAIL_MOST` letters; one more lets go the letter holding the least, the oldest of those, and the newest letter kept
+//! says so. The page words each letter by its source.
 
 use crate::asks::{Done, Here, Refusal};
 use crate::character::{At, CARRIED_MOST, Character, UnknownKeys, VAULT_MOST, VESTIGES_MOST, Vestige};
@@ -30,6 +30,8 @@ pub enum Source {
     Flotsam = 3,
     /// A module salvaged while its slot carried nine.
     Salvage = 4,
+    /// A Normal item found as itself while its slot carried nine and the vault was full.
+    Found = 5,
 }
 
 /// What a letter holds.

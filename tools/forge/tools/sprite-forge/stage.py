@@ -125,6 +125,31 @@ def _png(path, w, h, rgba, offset=None, box=None):
                 + chunk(b'IDAT', zlib.compress(raw, 9)) + chunk(b'IEND', b''))
 
 
+# a texel of a weapon's hilt, guard or trim is drawn at this alpha, every other drawn texel at 255: the page lays a
+# faction's colour there on a faction's weapon (coverLight.ts `TRIM_ALPHA`), and on no other
+TRIM_ALPHA = 254
+
+
+def mark_trim(rgba, trim):
+    """`rgba` (h, w, 4) with its drawn texels in `trim` (h, w bool) at TRIM_ALPHA, and no other texel at it."""
+    out = rgba.copy()
+    alpha = out[..., 3]
+    alpha[alpha == TRIM_ALPHA] = 255
+    alpha[trim & (alpha >= 128)] = TRIM_ALPHA
+    return out
+
+
+def edged_trim(trim, hit, drawn):
+    """`trim` with each texel `drawn` that the raster missed (`hit` false: an edge the render softens past it)
+    taking its nearest hit texel's, so a guard's rim is marked as the guard is."""
+    missed = drawn & ~hit
+    if not missed.any() or not hit.any():
+        return trim
+    from scipy import ndimage
+    _, (iy, ix) = ndimage.distance_transform_edt(~hit, return_indices=True)
+    return np.where(missed, trim[iy, ix], trim)
+
+
 def write_png(path, arr, offset=None, box=None):
     """arr: (h, w, 4) uint8, top row first; `offset` (x, y) its place in pixels, written as its `oFFs`; `box` where
     Daggerfall's box lies in it (x, y, width, height), as its `boXs`."""

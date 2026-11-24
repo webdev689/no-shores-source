@@ -55,7 +55,9 @@ export const INFUSE_AUREM = 150;
 export const INFUSE_MATERIAL = 2;
 
 /** An item's name: a module's rolled one among its kind's, as `itemName` names every other item's. */
-export function gearName(item: Pick<GearItem, 'named' | 'kind' | 'rarity' | 'name'>): string {
+export function gearName(
+  item: Pick<GearItem, 'named' | 'kind' | 'rarity' | 'name' | 'id' | 'level' | 'source'>,
+): string {
   const module = moduleOf(item.kind);
   if (!module || item.named) return itemName(item);
   const names = (rolled.names as Record<string, Record<string, readonly string[]> | undefined>)[module.key];

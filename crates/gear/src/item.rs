@@ -15,7 +15,8 @@ pub const NAMED_LEVEL: u8 = 20;
 pub const ITEM_LEVEL_MOST: u8 = 20;
 
 /// An item as a player holds it. Its own number is the player's for it; a named item's traits are copied from the
-/// catalogue when it is made, and follow it as a kept character is read (`old_hands::unfit`). `bucket` is the slot
+/// catalogue when it is made, and follow it as a kept character is read (`old_hands::unfit`), but a faction's armour
+/// and weapons, which roll theirs (`vestige::made_named`). `bucket` is the slot
 /// whose carried items it counts among: its kind's own.
 #[derive(Clone, Debug, PartialEq, Eq, serde::Deserialize, serde::Serialize)]
 pub struct Item {
@@ -25,13 +26,15 @@ pub struct Item {
     pub level: u8,
     /// The named item it is, or none for a rolled one.
     pub named: Option<String>,
-    /// A rolled item's name, among its kind's for its rarity.
+    /// A rolled armour piece's or weapon's look roll, which the page climbs its content's sets and dyes by (its name is
+    /// its set's, `itemName`); a ship's rolled module's name among its kind's for its rarity.
     pub name: u8,
     /// The traits each of its trait columns offers, in order.
     pub layout: Vec<Vec<String>>,
     /// The island resource its nodes ask for, as its place in the catalogue's list.
     pub resource: Option<u8>,
-    /// A Breach's Legendary armour, whose upgrades climb further in Prestige.
+    /// A Breach's armour piece or weapon: its perk columns roll from the Breaches' own perks, and a Legendary armour
+    /// piece's upgrades climb further in Prestige.
     pub breach: bool,
     pub xp: u32,
     /// The nodes bought, one bit each, column after column.
@@ -186,7 +189,7 @@ impl Item {
             (node != NONE_CHOSEN && self.has(column, node))
                 .then(|| self.traits_of(column).get(usize::from(node)).map(String::as_str))
                 .flatten()
-                .filter(|id| content.trait_fits(id, self.kind, self.named.as_deref()))
+                .filter(|id| content.trait_fits(id, self.kind, self.named.as_deref(), self.breach))
         });
         intrinsic.into_iter().chain(chosen)
     }

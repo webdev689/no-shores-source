@@ -46,10 +46,4 @@ impl Rarity {
             Self::Atheric => 15_000,
         }
     }
-
-    /// Whether items of this rarity are named ones from the catalogue, with set perks, rather than rolled.
-    #[must_use]
-    pub fn named(self) -> bool {
-        self >= Self::Legendary
-    }
 }

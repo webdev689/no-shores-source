@@ -293,6 +293,15 @@ pub fn player(body: Body, arms: Arms) -> Fighter {
 }
 
 impl Fighter {
+    /// What a dodge costs it: a dodge's stamina, trimmed by its perks, by its drawn weapon's balance (bare hands have
+    /// none) and, while it is Veiled, by Shade Step.
+    #[must_use]
+    pub fn dodge_stamina(&self) -> f64 {
+        let drawn = if self.arms == crate::arms::BARE_HANDS { 1.0 } else { self.trim.drawn_dodge_stamina };
+        let veiled = if self.statuses.has(crate::Status::Veiled) { self.trim.veiled_dodge_stamina } else { 1.0 };
+        crate::tuning::DODGE_STAMINA * self.trim.dodge_stamina * drawn * veiled
+    }
+
     /// Whether a player fights as it: on the players' side, and no ally the rules drive.
     #[must_use]
     pub fn is_player(&self) -> bool {

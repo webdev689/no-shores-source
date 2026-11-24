@@ -298,7 +298,8 @@ Vestiges, those lying for them on the ground, and the vault; and the answer to t
   one of their level handed out. Each picker shows what is worn, so a refused pick shows the kind still worn. Their
   Left picks a torch or a lantern, held wherever the room's arms allow it beside the loadout drawn ([[Gear]], "In
   the rooms"); beside a shield, a second weapon or a greatsword's grip, the loadout's own left is held.
-- **Hand out**, to try the loop without playing it through: a Vestige of any colour for any slot and level, a lesser
+- **Hand out**, to try the loop without playing it through: a Vestige of Magic or finer for any slot and level
+  (no Normal one: the room would hand it out as its item ([[Gear]], "Commons drop as themselves")), a lesser
   item of any kind, rarity and level, any named item, 50 of every material, and XP; and ammunition full or none, five
   Ammo crates, and one used. The panel shows the shots left and the crates carried; with no Ranged weapon worn, the
   share of a full load kept for one.

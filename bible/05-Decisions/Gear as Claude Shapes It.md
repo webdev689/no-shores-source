@@ -128,6 +128,51 @@ Destiny 1's perks were for guns and space magic; these are Overlook's own, for i
 armour stats (Intellect, Discipline, Strength) shortened ability cooldowns Overlook does not have, so armour has none
 yet.
 
+### The factions' perks
+
+The factions' nine, approved by the owner ([[Every Perk Stands, the Factions' Nine With Them]]), as the rules carry
+them ([[Gear]], "Verbs"; [[Factions]]):
+
+| Choice | Chosen | Why |
+|---|---|---|
+| What a faction perk is | A perk-column trait with its faction's key (`faction`); no shared pool offers it, and it fits only a piece whose named entry is that faction's | One trait list for every perk, so the page shows its words from `traits.json` as it shows any other's |
+| How a faction's piece rolls | Its armour and weapons roll every trait column from their kind's shared pools, never one trait twice, as a rolled piece does, when bought or handed out at the Test Ground; the first node of the first perk column is always drawn from its faction's perks that fit it. Name, look, faction, resource and source stay the entry's; the cape has no nodes | The owner: "their own faction specific perk pool along with the general perk roll". The first perk column is the earliest a player can buy one |
+| Their written layouts | Gone from `items.json`: nothing reads them | Less to keep |
+| A kept faction piece | Keeps the traits it rolled, checked against its columns' pools and its faction's perks, as a rolled piece's are; one kept from before keeps its old written traits, all of which still fit | A piece a player bought never changes under them |
+| Its counter | Shows each piece by name, rarity and level, its traits unrolled until it is bought | Each one bought rolls its own |
+| Gathering Storm's row | A swing's row is Exposing Strikes'. A shot's is the shots landing on one foe one after another: one landing on another foe begins a row of its own, and one dodged or parried by that foe ends it | The same row a swing keeps, said for a shot |
+| Thunderhead | 1.15 times on a foe Charged as the blow or shot lands, a riposte counted | Executioner's number; a riposte answers a stagger, not a Charge |
+| Shared Flame, From the Dark | The striker's Linked, and their veil, as the blow was struck or the shot loosed | A shot carries what its striker was as it left the bow; the veil it ends is gone by the time it lands |
+| Kindling's reach | The nearest other living player within 10 m of the striker, Linked beside them for 6 s; alone, the striker only | The Sunwell's reach, the one Art that Links allies |
+| Nightfall | On a riposte that lands | A verb gives its status as a blow lands |
+| Squall Step, Shade Step, Lightbearer | The armour's, whatever loadout is drawn; Shade Step and Lightbearer are trims, so a browser predicts them | Armour perks are the armour's alone |
+
+### The Breaches' perks
+
+The Breaches' own pool ([[Breaches Roll From a Perk Pool of Their Own]]), Claude's under the owner's "stop depending on
+me" ([[Claude Finishes the Gear Calls on Its Own Word]]), as the rules carry it ([[Gear]], "Verbs"). The Lattice overtakes
+what it touches, so its pool Exposes, spreads and hardens; each perk uses a status and a hook the fight already has.
+
+| Choice | Chosen | Why |
+|---|---|---|
+| What a Breach perk is | A perk-column trait marked `breach`; no shared pool and no faction offers it, and it fits only a Breach's piece | The factions' perks' mechanism, so the page shows its words from `traits.json` as any other's |
+| What a Breach piece is | An armour piece or weapon made from a Breach (`vestige::make`, `Source::Breach`), marked `breach`; its Legendary armour climbs to 30 Prestige, a Breach's Legendary's range | One mark says both what it rolls and how far it climbs |
+| How it rolls | Handling and finish from the shared pools, as any piece; every node of its perk columns from the Breaches' perks that fit it, never one the piece already offers; the catalogue check refuses a kind with fewer Breach perks than its widest piece's perk nodes in all | The owner: "its own unique perk pool". A shared piece never offers a trait twice, and a perk chosen twice would count twice; six fit armour, a Legendary's six perk nodes, and four or five each weapon, a Legendary weapon's four |
+| A kept Breach piece | Keeps what it rolled, checked against its columns' pools and the Breaches' perks; a Breach perk gone gives way to another Breach perk | A piece a player earned never changes under them, as a faction's piece |
+| Shatterpoint (melee) | A blow that breaks a foe's guard Exposes it | Breaking is the Lattice cracking a foe open; Thunderclap's hook, with Expose |
+| Vein Strike (weapon) | Blows and shots on an Exposed foe strike 15% harder | The pool's payoff for its own Exposes; Thunderhead's number |
+| Bloom (weapon) | A kill with it Exposes every other living foe within 4 m of the slain | The Lattice spreads from what it takes; 4 m is a knot of foes, not a room |
+| Crystal Sight (ranged) | A shot that lands on a foe 20 m or more from the shooter, as it lands, Exposes it | Long Shot's and Vigil's 20 m; measured shooter to foe as it lands, so no shot's flight need be carried to it |
+| Crystal Skin (armour) | While above three quarters of the wearer's health, blows hit 10% softer, a blocked blow's chip too; a trim (`hale_taken`), so a browser predicts it | Hardening while whole; Hardy's number, and a trim as Barnacle's and Hardy's are |
+| Regrowth (armour) | A kill of a foe gives back 5% of the most health through the room's heal, a spell's kill too; a player already fallen takes none | The Lattice regrows; armour is no loadout, so any kill counts |
+| Resonance (armour) | A perfect dodge Exposes the foe whose blow was dodged | Squall Step's hook, turned on the foe |
+| Lattice Wall (shield) | Blocking a blow, with the shield's loadout drawn, Exposes its striker | Bulwark's and Coral Guard's hook; the shield is the loadout's |
+| Fracture (armour) | A parry Exposes the foe parried | Ebb's hook, the parry, turned on the foe as Resonance turns the perfect dodge |
+| Lattice Shell (armour) | Below a quarter of the wearer's health, blows hit 20% softer, a blocked blow's chip too; a trim (`low_taken`) beside Crystal Skin's, so a browser predicts it | Crystal Skin's other end: the Lattice hardens round a wearer near breaking; Guarded's 20% |
+| Shardburst (armour) | When a foe's blow breaks the wearer's guard, every foe within 3 m of the wearer, its striker too, is Exposed | A guard shattering throws shards; 3 m is the foes at the wearer's side, closer than Bloom's 4 |
+| Splinter (melee) | A riposte that lands Exposes its foe and every other foe within 3 m of it | Nightfall's hook, the riposte, with Bloom's spread from the foe struck, not the slain |
+| Shard Round (ranged) | A shot that lands on a foe Exposed as it lands Charges it | The pool's ranged payoff for its own Exposes, as Vein Strike's is for any weapon; Shocking Rounds' Charge |
+
 ### Islands, seas and patrols
 
 | Choice | Chosen | Why |
@@ -176,9 +221,24 @@ these are Claude's numbers for them.
 
 Replaced in part by [[Factions and Vendors as Claude Shapes Them]]: Vestiges open at the Mage's counter.
 
+Replaced in part by [[Every Drop Wears Its Content's Set, With Random Perks]]: a Legendary Vestige opens to a rolled
+piece in its content's set look ("Set names and drops in their set", below).
+
 Replaced in part by [[The Balance Pass Goes Halfway Back, and Loot Follows Destiny 1's Order]] and [[Bosses and Dungeons Drop Items, Clears Pay, and Shapes Come From the Week's Abyss]]: a Vestige's chance and colour go by the foe's rank in Destiny 1's
 order, it opens to its own colour three times in four, and a Miniboss, a Boss and a dungeon's clear leave items as
 themselves too ([[Gear]], "Vestiges").
+
+Replaced in part by [[Commons Drop as Themselves, Never as Vestiges]]: no Vestige is Normal. The calls it leaves open,
+made on the owner's word that Claude finishes them ([[Claude Finishes the Gear Calls on Its Own Word]]):
+
+| Choice | Chosen | Why |
+|---|---|---|
+| A Vestige that rolls Normal | Wherever one would come (a kill, a Boss or a Miniboss, at sea, a chest, a first clear, a playlist, the Test Ground), its item comes instead, made as it would have opened, at Normal, of its slot, level and content; the colours' weights stay as they are | The owner: "Commons should drop, no vestiges for commons". Keeping the weights keeps every rarity's chance as it was: only a Normal one comes unsealed |
+| Where that item goes | As an item found as itself: its slot's nine, else the vault, else the mail; never the ground | A kill's items as themselves are kept so already; the mail keeps it from being lost, as it keeps a Vestige |
+| A Normal item found with no room | Posted as itself, from a new source the page words, where a finer one is still laid as a Vestige of its colour | Laying it as a Vestige would seal a common again |
+| A Vestige opening below its colour | Unchanged: a Magic one may still open Normal | The call is about what drops; what a Vestige opens to is the owner's own earlier call |
+| A Normal Vestige a save already holds | Kept, and opens as before | No Vestige is lost |
+| The Test Ground | Hands out no Normal Vestige; asked for one, the room gives its item | One rule for everything that hands a Vestige out |
 
 ### Materials and keeping things
 
@@ -212,7 +272,60 @@ Replaced in part by [[The Perk Pass as Claude Shapes It]]: a named piece wears i
 
 Replaced in part by [[Factions and Vendors as Claude Shapes Them]]: each faction's cape is a cloak that belongs to it ([[Factions]]).
 
+### Set names and drops in their set
+
+The owner's calls are [[Everything Carries a Set Name, and Perks Roll by Pool]] and
+[[Every Drop Wears Its Content's Set, With Random Perks]]; the set names are
+[[Set Names and Faction Perks as Claude Drafts Them]]. These are Claude's
+for what they leave open ([[Claude Finishes the Gear Calls on Its Own Word]]).
+
+| Choice | Chosen | Why |
+|---|---|---|
+| Where the set names live | In `content/gear/looks.json`, each content's looks with the name each carries; a faction's by its faction's key; a Normal piece's at its head | One place the rules and the page both read, beside the looks they name |
+| A piece's name | Its set's name and its kind's word, the set the one its look is drawn in before the forge falls back: "Portwatch Helm", "Wreckborn Sword and Shield" | The owner: "Destiny has names for everythibg"; the forge's fallback is a matter of which body wears it, not of the piece |
+| A kind's word | A weapon's as the game already said its plain one ("Sword and Shield", "Twin Daggers", "Brace of Pistolets"); armour Helm, Hauberk, Gauntlets, Greaves, as the Stormcallers' armour was already named | Words the game already used, one for each kind |
+| A gun | Its content's metal's set ("Wreckborn Pistolet"), though the forge draws every gun plain or gilded | A finish is no set; its name still says where it was earned |
+| A Normal piece, and a Magic one drawn as clothes | Homespun | Clothes are no armour set; the draft names a Normal piece Homespun |
+| A faction's pieces | Renamed in `items.json` by its faction's set ("Stormcaller Bow", "Veiled Dagger and Shield"), whatever metal they are drawn in | The draft: a faction's pieces take its set; written once, so no rule computes it beside the entry |
+| A Breach's pieces | The Lattice, for daedric | The Lattice's armour takes daedric's place ([[The Lattice's Armour and Weapons Take Daedric's Place]]) |
+| A rolled Legendary | Made as a rolled Rare is, at Legendary and level 20: its look climbs its content's sets and metals, its traits roll from the shared pools, its nodes ask for an island's resource rolled among the catalogue's | The owner: "Set look, random perks"; a Legendary's nodes already asked for a resource |
+| A Breach's rolled Legendary armour | Climbs to 30 Prestige, as a Breach's named armour was to | The owner: the Breaches give the "Highest prestige drops" |
+| An Atheric Vestige, and a ship's Legendary module | Still a named piece, of its own content where it has one, else any content's | "Atherics remain unique"; ship modules are no armour or weapon |
+| The named Legendaries that are no faction's | Left out of every drop, Vestige and vendor, Shape's week among them; kept in `items.json`, so a kept one reads and is named as it was | The owner: "Everything recieves set names", "Atherics remain unique": only Atherics keep their own names and fixed perks |
+| Shape's four Legendaries a week | Rolled, one for each of four Vestige slots the week's dice draw, as `vestige::make` makes a Legendary at level 20, in a content the week's dice draw among the world, a dungeon, a sea dungeon, an Elite Dungeon and an Abyss Dungeon, never a faction's or a Breach's; the same for everyone in a week. His two Atherics stay named | A Legendary is a rolled piece in its content's set wherever it is had; a faction's pieces are its counter's, a Breach's the raids' highest |
+| How a page names the Shape ware it buys | By its place and the number the room sent with it as its `id`: an Atheric's place in the catalogue's items, a rolled Legendary's a hash of the piece; the room refuses another number as not sold here | The smallest change that keeps a page shown another week's piece, or one drawn again as the catalogue grew, from buying the new one unseen |
+| A rolled piece's `name` byte | Kept, as the roll its look is chosen and its clothes dyed by: one roll for a Normal piece, three past it, as its names were | A piece kept from before keeps its look; no save changes |
+| The Test Ground's rolled item | Any rarity but Atheric | A rolled Legendary works everywhere a rolled Rare does |
+| No metal word | A test reads every string in `content/` but the forge's looks, and every string in the client's code but the forge's own, for elven, dwarven, orcish, mithril, adamantium, ebony and daedric | The owner: "Everything players read"; the forge's layer names stay inside the code |
+
 ### Names
 
 The named Legendaries and Atherics, their perks and words, and the clothing sets are in `content/gear/`. They are
 Overlook's own, read from the sea and the Pale Expanse; none is Destiny's.
+
+### The faction blades' colour
+
+The calls [[Faction Blades Wear Their Faction's Colour on Hilt and Trim]] and
+[[Faction Weapons Wear Their Colour and Roll Their Faction's Perks]] leave open, made on the owner's word that Claude
+finishes them ([[Claude Finishes the Gear Calls on Its Own Word]]).
+
+| Choice | Chosen | Why |
+|---|---|---|
+| What the colour lies on | A blade's, head's or haft's hilt work: its fittings and guard, its grip, haft and cords, its accents and inlaid trim. Never its blade or head, a glow, a haft's wood or a dagger's stones | The owner's "hilt and trim", the blade keeping its metal; a glow keeps its fire and a stone its colour |
+| How it is laid | By its light across the trim's own span of light: the darkest of the trim to the colour's first step, the brightest to its last. The figure and the item pictures read the span from the blade as it stands; first person from the blade's first frame in hand | Each hilt is drawn in colours of its own (elven gold, ebony black), as a guild's set is, so a ramp on greys alone would leave it. First person is lit brighter than the figure: the figure's span left its brightest trim one flat step |
+| Which blades | Every sword, dagger, axe, mace, flail and warhammer the forge draws in a metal is marked, in hand and sheathed; the colour lies only on a faction's | One rule for every melee weapon a faction may sell; today they sell an elven sword (Squallbreak) and an ebony dagger (Hushguard) |
+| The Veiled's colour | Nightveil laid as #131313, #35353b, #555560 and #a5a5ae: Daggerfall's cold lavender greys over a black foot | The game's palette has no stronger violet this light; these are the coldest steps it keeps, and they stay as far from the Veiled Dusk dye as a test asks |
+
+### Flavour text
+
+The call [[Weapons and Armour Carry Flavour Text]] leaves open, made on the owner's word that Claude finishes it
+([[Claude Finishes the Gear Calls on Its Own Word]]).
+
+| Choice | Chosen | Why |
+|---|---|---|
+| Whose words a rolled piece reads | Its set's for its kind: one line for each set name and kind word a rolled piece can be named by ("Portwatch Helm", "Lattice Bow"), Homespun's for every kind | The owner: "Weapons and armor need flavor text"; a rolled piece is named by its set and kind, so its words follow its name |
+| Where they live | `content/gear/words.json`, each set name's lines by kind word, read by the page's `itemWords` | One place, beside the looks and kinds that name the piece; no rule needs them |
+| Which pairs | Every pair a rolled piece is made in: each content's armour sets for the four armour kinds, its metals' sets for the eighteen weapon kinds, Homespun for all; 258 lines. A test makes every rolled piece of every content, rarity, level and look roll and holds each to its line, and every line to a piece | No piece left without, and no line for a piece never made |
+| A named piece | Keeps its own words; a faction's piece with none reads its faction's | The named pieces' words were written for them |
+| The voice | One or two short sentences, each about that set and that kind: the content it comes from (the ports and roads, the barrows, the sea dungeons, the Elite and Abyss Dungeons, the ruined ports a Breach overtook), what the piece was for, or someone who carried it. No metal word, no new name, no line twice | [[Every Line Reads as Spoken, and the Lore Is Detailed, Mysterious and Gripping]]: shown, never explained, and nothing new named |
+| The cloak, a horse | Unchanged: a rolled cloak has no set, a horse reads its coat's words | The owner asked for weapons and armour |

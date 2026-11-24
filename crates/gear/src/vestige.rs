@@ -1,11 +1,12 @@
 //! Vestiges, the sealed drops: whether a kill leaves one for a player, the colour it shows and the slot it holds an
 //! item for; and, once identified in a social space, the colour it opens to (at, above or below its own) and the item
-//! that comes out: a named Legendary or Atheric of its slot, or a lesser item of its kind with rolled traits. A
+//! that comes out: a named Atheric of its slot, or an item of its kind in its content's set with rolled traits. A
 //! Miniboss's or a Boss's kill may also leave an item as itself, made as an opened Vestige's is.
 
 use crate::catalogue::{NamedDef, catalogue};
 use crate::dice::{Dice, Purpose};
 use crate::element;
+use crate::grid::Column;
 use crate::item::{Item, NAMED_LEVEL};
 use crate::kinds::{Kind, Slot};
 use crate::rarity::Rarity;
@@ -131,13 +132,14 @@ pub fn opens_to(colour: Rarity, level: u8, dice: &Dice) -> Rarity {
     Rarity::ALL[dice.weighted(Purpose::Opens, 0, &gated(OPENS[colour as usize], level))]
 }
 
-/// The item a Vestige of this slot and level from `source` makes at this rarity, numbered `id`: a named one of its
-/// slot, chosen evenly among its source's, else among every source's while its own has none, at level 20, keeping its
-/// own source; or a lesser item of a kind the slot takes, its name and traits rolled, from `source`. A weapon may roll
-/// an element.
+/// The item a Vestige of this slot and level from `source` makes at this rarity, numbered `id`: an Atheric (or a
+/// ship's Legendary module) is a named one of its slot, chosen evenly among its source's, else among every source's
+/// while its own has none, at level 20, keeping its own source; anything else an item of a kind the slot takes, its
+/// look and traits rolled, from `source`. A weapon may roll an element.
 #[must_use]
 pub fn make(id: u32, rarity: Rarity, slot: Slot, level: u8, source: Source, dice: &Dice) -> Option<Item> {
-    let mut item = if rarity.named() {
+    let named = rarity == Rarity::Atheric || (rarity == Rarity::Legendary && Slot::SHIP.contains(&slot));
+    let mut item = if named {
         let every: Vec<&NamedDef> = catalogue().vestige_pool(rarity, slot).collect();
         let own: Vec<&NamedDef> = every.iter().copied().filter(|named| named.source() == source).collect();
         let pool = if own.is_empty() { every } else { own };
@@ -146,6 +148,11 @@ pub fn make(id: u32, rarity: Rarity, slot: Slot, level: u8, source: Source, dice
         let kinds: Vec<Kind> = slot.kinds().collect();
         let mut item = rolled(id, *kinds.get(dice.pick(Purpose::Which, 0, kinds.len()))?, rarity, slot, level, dice);
         item.source = source;
+        // A Breach's armour and weapons roll their perks from the Breaches' own; its Legendary armour climbs further.
+        item.breach = source == Source::Breach && (item.kind.armour() || item.kind.weapon());
+        if item.breach {
+            item.layout = rolled_layout(&item, None, dice);
+        }
         item
     };
     item.element = element::rolled(item.kind, item.rarity, dice);
@@ -153,7 +160,8 @@ pub fn make(id: u32, rarity: Rarity, slot: Slot, level: u8, source: Source, dice
 }
 
 /// A named item from the catalogue, carried with `bucket`'s items: a cloak at level 1, anything else at 20, its traits
-/// copied from its entry, which a kept one follows as it is read (`old_hands::unfit`).
+/// copied from its entry, which a kept one follows as it is read (`old_hands::unfit`); none for a faction's armour or
+/// weapon, whose traits roll as it is made for a player (`made_named`).
 #[must_use]
 pub fn named_item(id: u32, named: &NamedDef, bucket: Slot) -> Item {
     let level = if named.kind == Kind::Cloak { 1 } else { NAMED_LEVEL };
@@ -170,31 +178,76 @@ pub fn named_item(id: u32, named: &NamedDef, bucket: Slot) -> Item {
     item
 }
 
-/// A lesser item of a kind, its name and its traits rolled from the kind's pools, never one trait twice.
+/// A rolled item of a kind, its traits rolled from the kind's pools, never one trait twice. Its `name` is a ship
+/// module's name among its kind's, or an armour piece's or weapon's look, which the page climbs its content's sets
+/// and dyes by. A Legendary is level 20, its nodes asking for an island's resource rolled among the catalogue's.
 #[must_use]
 pub fn rolled(id: u32, kind: Kind, rarity: Rarity, bucket: Slot, level: u8, dice: &Dice) -> Item {
     let content = catalogue();
-    let mut item = Item::new(id, kind, rarity, level, bucket);
-    let names = content.names_of(kind, rarity);
-    item.name = u8::try_from(dice.pick(Purpose::Name, 0, names.len())).unwrap_or_default();
+    let legendary = rarity == Rarity::Legendary;
+    let mut item = Item::new(id, kind, rarity, if legendary { NAMED_LEVEL } else { level }, bucket);
+    let looks = if kind.module() { content.names_of(kind, rarity).len() } else { LOOK_ROLLS };
+    item.name = u8::try_from(dice.pick(Purpose::Name, 0, looks)).unwrap_or_default();
+    if legendary {
+        item.resource = u8::try_from(dice.pick(Purpose::Name, 1, content.resources.len())).ok();
+    }
+    item.layout = rolled_layout(&item, None, dice);
+    item
+}
+
+/// How many looks a rolled armour piece or weapon rolls among: its remainders by 2, 3 and 4 climb its content's sets
+/// and metals and pick its dye, and its sixths its make, shield and Magic set (the page's `numberOf`), so each pairs
+/// with each, and a ware shows the look it keeps once bought.
+pub const LOOK_ROLLS: usize = 36;
+
+/// The traits an item's columns offer, each column's rolled from its kind's pool, never one trait twice; with a
+/// faction, the first node of its first perk column is drawn from that faction's own perks that fit it instead. A
+/// Breach's piece draws every node of its perk columns from the Breaches' own perks that fit it, never one it has
+/// already offered (the catalogue holds enough of them for every perk node, `Catalogue::problems`).
+fn rolled_layout(item: &Item, faction: Option<&str>, dice: &Dice) -> Vec<Vec<String>> {
+    let content = catalogue();
     let mut used: Vec<&str> = Vec::new();
+    let mut layout = Vec::new();
+    let mut faction_node = faction;
+    let breach_perks: Vec<&str> = content.breach_perks(item.kind).into_iter().map(|found| found.id.as_str()).collect();
     for (column_index, column) in item.columns().iter().enumerate().filter(|(_, column)| column.traits()) {
-        let mut pool: Vec<&str> = content
-            .pool(*column, kind)
-            .into_iter()
-            .map(|found| found.id.as_str())
-            .filter(|found| !used.contains(found))
-            .collect();
-        let mut offered = Vec::new();
+        let fresh = |found: &&str| !used.contains(found);
+        let shared: Vec<&str> = content.pool(*column, item.kind).into_iter().map(|found| found.id.as_str()).collect();
+        let mut pool: Vec<&str> = shared.into_iter().filter(fresh).collect();
+        let breach_column = item.breach && matches!(column, Column::Perk(_));
+        let mut offered: Vec<String> = Vec::new();
         for nth in 0..column.nodes() {
-            let taken = dice.pick(Purpose::Traits, column_index as u32 * 8 + u32::from(nth), pool.len());
-            if taken < pool.len() {
-                let chosen = pool.remove(taken);
+            let index = column_index as u32 * 8 + u32::from(nth);
+            let own = faction_node.filter(|_| matches!(column, Column::Perk(_)));
+            let chosen = if breach_column {
+                let unoffered: Vec<&str> = breach_perks.iter().copied().filter(|id| !used.contains(id)).collect();
+                unoffered.get(dice.pick(Purpose::Traits, index, unoffered.len())).copied()
+            } else if let Some(faction) = own {
+                faction_node = None;
+                let perks = content.faction_perks(faction, item.kind);
+                perks.get(dice.pick(Purpose::Traits, index, perks.len())).map(|found| found.id.as_str())
+            } else {
+                let taken = dice.pick(Purpose::Traits, index, pool.len());
+                (taken < pool.len()).then(|| pool.remove(taken))
+            };
+            if let Some(chosen) = chosen {
                 used.push(chosen);
                 offered.push(chosen.to_owned());
             }
         }
-        item.layout.push(offered);
+        layout.push(offered);
     }
+    layout
+}
+
+/// A named item made for a player at a faction's counter or the Test Ground: a faction's armour or weapon rolls its
+/// traits from its kind's shared pools, one always its faction's own (`rolled_layout`); a weapon may roll an element.
+#[must_use]
+pub fn made_named(id: u32, named: &NamedDef, bucket: Slot, dice: &Dice) -> Item {
+    let mut item = named_item(id, named, bucket);
+    if let Some(faction) = named.faction.as_deref().filter(|_| named.kind != Kind::Cloak) {
+        item.layout = rolled_layout(&item, Some(faction), dice);
+    }
+    item.element = element::rolled(item.kind, item.rarity, dice);
     item
 }
