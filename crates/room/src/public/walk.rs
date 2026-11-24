@@ -78,13 +78,16 @@ impl Room {
         }
     }
 
-    /// A foe gone from the room at once, as a garrison's dead are once they have lain their time.
+    /// A foe gone from the room at once, as a garrison's dead are once they have lain their time, and what it loosed or
+    /// swung gone with it: no shot of one no longer here flies on, nor does a blow it began land.
     pub(crate) fn gone(&mut self, id: FighterId) {
         self.foes.remove(&id);
         self.board.forget(id);
         self.inert.remove(&id);
         self.names.remove(&id);
         self.quests.spoilless.remove(&id);
+        self.shots.retain(|(shot, _)| shot.owner != id);
+        self.pending.retain(|pending| pending.blow.striker != id);
     }
 
     /// The foes the room moves itself are never stepped, so their statuses, poise and staggers run down here, as a

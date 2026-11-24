@@ -221,6 +221,27 @@ fn every_living_player_down_three_seconds_wipes_the_attempt_and_stands_them_at_i
 }
 
 #[test]
+fn a_wipe_takes_its_foes_shots_in_flight_with_them_and_leaves_a_players() {
+    let (mut room, players) = run(Tier::Normal, 2);
+    let inside = at(&room, "mending", "mender");
+    for &player in &players {
+        stand_at(&mut room, player, inside);
+    }
+    ticks(&mut room, 5 * 60);
+    let foe = *breach(&room).foes.first().expect("the Mending stood its foes");
+    let ball = |owner| {
+        let aimed = combat::shots::loose(owner, combat::Ranged::Pistolet, [inside[0], inside[1], 1.3], 0.0, 0.0, 1.0);
+        (combat::shots::by_foe(&aimed), None)
+    };
+    room.shots.extend([ball(foe), ball(players[0])]);
+    let mut breach_box = room.breach.take().expect("run");
+    room.wipe(&mut breach_box, MENDING);
+    room.breach = Some(breach_box);
+    let owners: Vec<_> = room.shots.iter().map(|(shot, _)| shot.owner).collect();
+    assert_eq!(owners, vec![players[0]], "the foe's ball went with it; the player's flies on");
+}
+
+#[test]
 fn the_lodestone_is_taken_in_reach_held_bare_handed_set_down_and_left_lying_unwrites_the_company() {
     let (mut room, players) = run(Tier::Hard, 2);
     let mut breach_box = room.breach.take().expect("run");
