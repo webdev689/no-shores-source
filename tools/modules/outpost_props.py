@@ -119,8 +119,8 @@ def strongbox(module, at, size=(0.8, 0.5, 0.48), turn=0.0, metal='iron'):
                   bevel=0.02, wear=0.0, part=False)
     cos, sin = math.cos(turn), math.sin(turn)
 
-    def placed(px, py, pz):
-        return (at[0] + px * cos - py * sin, at[1] + px * sin + py * cos, at[2] + pz)
+    def placed(local_x, local_y, local_z):
+        return (at[0] + local_x * cos - local_y * sin, at[1] + local_x * sin + local_y * cos, at[2] + local_z)
 
     for share in (-0.34, 0.0, 0.34):
         shapes.slab(module, placed(wide * share, 0.0, high + 0.005), (0.07, deep + 0.04, 0.012), metal,

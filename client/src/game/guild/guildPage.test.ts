@@ -215,10 +215,28 @@ test("the week shows the player's contribution and the four guild bounties, and 
     ],
   };
   const { shows, click, ui, asked } = await tab(face(week));
-  assert.ok(shows().includes('Weekly Personal Contribution | 1,200 / 5,000'));
+  assert.ok(shows().includes('Weekly personal contribution | 1,200 / 5,000'));
   assert.ok(shows().includes('The Long Cull | 412 / 1,500'));
   assert.ok(shows().includes('Into the Abyss | Claimed'));
   assert.equal(ui.boxOf(claimId(0)), null, 'one not done has no claim');
   click(claimId(1));
   assert.deepEqual(asked, ['room {"kind":75,"column":1}']);
+});
+
+test('a member who joined this week sees no claim press, but when claims open to them', async () => {
+  const bounties = [bounty('Full Stores', 120, 120)];
+  const { shows, ui } = await tab(face({ bounties, beforeTheWeek: false }));
+  assert.equal(ui.boxOf(claimId(0)), null, 'no claim before their first whole week');
+  assert.ok(shows().includes('Claims open to you next week.'), shows());
+});
+
+test('the home names the part over the bounties and outposts for what it holds, and says it waits with an ellipsis', async () => {
+  const { shows } = await tab(face());
+  assert.ok(!shows().includes('GUILD DETAILS'), 'Details is its own page');
+  assert.ok(shows().includes('BOUNTIES AND OUTPOSTS'), shows());
+  const { link } = fakeLink(face());
+  const waiting = new GuildPage({ link, now: () => 0 });
+  const drawing = drawn((context) => guildPage(context, waiting));
+  drawing.frame();
+  assert.ok(drawing.shows().includes('Asking for your guild…'), drawing.shows());
 });

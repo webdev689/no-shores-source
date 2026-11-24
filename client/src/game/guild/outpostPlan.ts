@@ -19,9 +19,9 @@ export const TURN_ID = 'outpost-turn';
 const LOOKS: Readonly<Record<string, readonly [string, string, string]>> = {
   hall: ['#b9843c', 'H', 'Hall'],
   standard: ['#8a6fc4', 'S', 'S'],
-  counting: ['#d2ad48', 'C', 'Coin'],
+  counting: ['#d2ad48', 'C', 'Counting'],
   'war-table': ['#b4574a', 'W', 'War'],
-  camp: ['#6f9a52', 'I', 'Camp'],
+  camp: ['#6f9a52', 'I', 'Island'],
   dock: ['#4f7fa8', 'D', 'Dock'],
   gate: ['#6b6079', 'G', 'Gate'],
   lodge: ['#4c9a90', 'L', 'Lodge'],
@@ -164,11 +164,11 @@ function blockNode(
   };
 }
 
-/** What a kind's next tier costs, in the plan's plain words. */
-export function costWords(kind: Kind, tier: number): string {
+/** What a kind's next tier costs, in the plan's plain words, the island's own resource named `island`. */
+export function costWords(kind: Kind, tier: number, island?: string): string {
   const cost = kind.tiers[tier - 1];
   if (!cost) return '';
-  const materials = Object.entries(cost.materials).map(([stuff, amount]) => `${amount} ${stuffName(stuff)}`);
+  const materials = Object.entries(cost.materials).map(([stuff, amount]) => `${amount} ${stuffName(stuff, island)}`);
   return [`${counted(cost.aurem)} Aurem`, ...materials].join(', ');
 }
 
@@ -178,8 +178,9 @@ export function stuffName(stuff: string, island = 'island goods'): string {
 }
 
 /** The kinds a founder or admin may build now, each a press that chooses it to place, its first tier's cost beside
- *  it; those the guild's level has not opened are named after them, with the level that does. */
-export function kindsNode(ui: Interface, plot: KeptPlot, state: PlanState, level: number): Node {
+ *  it (the island's own resource named `island`); those the guild's level has not opened are named after them, with
+ *  the level that does. */
+export function kindsNode(ui: Interface, plot: KeptPlot, state: PlanState, level: number, island: string): Node {
   const full = (kind: Kind) => plot.structures.filter((standing) => standing.kind === kind.id).length >= kind.most;
   const open = KINDS.filter((kind) => kind.id !== 'hall' && kind.level <= level && !full(kind));
   const later = KINDS.filter((kind) => kind.level > level);
@@ -204,7 +205,7 @@ export function kindsNode(ui: Interface, plot: KeptPlot, state: PlanState, level
           width: 'grow',
           direction: 'column',
           gap: 3,
-          children: [words(kind.name, 1), words(costWords(kind, 1), 1, INK.faint, { wrap: true })],
+          children: [words(kind.name, 1), words(costWords(kind, 1, island), 1, INK.faint, { wrap: true })],
         },
       ],
     };
@@ -222,7 +223,7 @@ export function kindsNode(ui: Interface, plot: KeptPlot, state: PlanState, level
         alignY: 'center',
         children: [
           pressNode(TURN_ID, `Turn it: facing ${['south', 'west', 'north', 'east'][state.turn]}`),
-          words('Press a cell for its corner.', 1, INK.faint),
+          words('Press a cell for its north-west corner.', 1, INK.faint),
         ],
       },
       later.length > 0 &&

@@ -74,9 +74,9 @@ missions and by a mine that fills over time; Albion's guild islands are bought l
 | Call | Chosen | Why |
 |---|---|---|
 | What it is | Aurem the guild keeps, up to 1,000,000 | DFO's treasury |
-| In | Any member puts in their own Aurem, from anywhere; the outposts' income | A guild funds its own works |
+| In | Any member puts in their own Aurem, standing at one of the guild's outposts; the outposts' income | A guild funds its own works, and a reason to sail there |
 | Out | Only onto the guild's outposts, by the founder and admins; never back to a player | DFO found a treasury paid out to players could be made to mint; a one-way treasury cannot |
-| Kept | On a ledger: each line names who, what and the balance after, and a request id so a retried ask is one line | DFO's ledger and its idempotent asks |
+| Kept | On a ledger: each line names who, what and the balance after, and a request id (the room's errand id, or the page's `rid`) so a retried ask is one line | DFO's ledger and its idempotent asks |
 
 ## Outposts
 
@@ -106,7 +106,7 @@ missions and by a mine that fills over time; Albion's guild islands are bought l
 | War Table | 2 × 2 | Level 2 | Members earn 5, 10 or 15% more XP from kills and clears |
 | Island Camp | 2 × 2 | Level 2 | Gathers 15, 30 or 60 of its island's resource a day into the outpost's stores |
 | Dockyard | 2 × 3 | Level 3 | Brings in 8, 16 or 32 each of Timber, Canvas and Iron a day into the stores |
-| Delve Gate | 3 × 3 | Level 4 | Opens the guild dungeon, in its island's style, at Normal, Elite or Abyss |
+| Delve Gate | 3 × 3 | Level 4 | Opens the guild dungeon, laid afresh each week in its site's continent, at Normal, Elite or Abyss |
 | Captain's Lodge | 2 × 2 | Level 5 | Members earn 5, 10 or 15% more faction reputation |
 | War Horn | 2 × 2 | Level 5 | Sounded once a week, calls the guild boss to the muster ground |
 | Assay House | 2 × 2 | Level 8 | Members earn 5, 10 or 15% more Aurem from kills and clears |
@@ -118,7 +118,7 @@ tier, so a tier 3 asks for many members' stores.
 | Call | Chosen | Why |
 |---|---|---|
 | The stores | A member takes up to 20 of each a day | Income for the members, not only the treasury |
-| The guild dungeon | Laid afresh each week from the guild and the week, in its island's style; a company of members enters by the gate; its first clear each week pays each player a guild package | "guild dungeons"; [[The Dungeons Are Perfect and Insanely Varied]] already lays them |
+| The guild dungeon | Laid afresh each week from the guild and the week, in its site's continent; a company of members enters by the gate; its first clear each week pays each player a guild package | "guild dungeons"; [[The Dungeons Are Perfect and Insanely Varied]] already lays them |
 | The guild boss | The founder or an admin sounds the horn once a week; a Boss and its guard come to the muster ground beyond the plot, stronger at each tier; felled, each player who fought pays as a world boss and claims a guild package once that week | "guild bosses"; foes keep off the plot, so nothing built is in their way |
-| Housing decoration | The hub's adornments and court dressing (lanterns, planters, statues, a well, rugs, carts, tables and benches, barrels, hay, flowers), set on a 25 cm grid, turned in 15° steps, kept off structures; each costs Aurem by its size, half back when removed | "housing decoration": the outpost is the guild's home. DFO's piece law: a grid on the ground, steps of 15°, price by size, half back |
+| Housing decoration | The hub's adornments and court dressing (lanterns, planters, statues, a well, a long rug, carts, tables and benches, barrels, hay, flowers), set on a 25 cm grid, turned in 15° steps, kept off structures; each costs Aurem by its size, half back when removed | "housing decoration": the outpost is the guild's home. DFO's piece law: a grid on the ground, steps of 15°, price by size, half back |
 | Where it is done | At the outpost: building, decorating, delivering, collecting and taking. The plan and the treasury are seen from anywhere | A reason to sail there; what the player changes they see change |

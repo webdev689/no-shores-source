@@ -27,7 +27,7 @@ export function contributionNode(face: GuildFace, size: number): Node {
     gap: 10,
     label: `Weekly personal contribution, ${counted(given)} of ${counted(most)}`,
     children: [
-      words('Weekly Personal Contribution', size, INK.faint),
+      words('Weekly personal contribution', size, INK.faint),
       {
         width: 10,
         height: 10,
@@ -46,10 +46,10 @@ function bountyNode(
   bounty: GuildBountyShown,
   slot: number,
   size: number,
-  claim: (slot: number) => void,
+  claim: ((slot: number) => void) | null,
 ) {
   const id = claimId(slot);
-  const claimable = bounty.done && !bounty.claimed;
+  const claimable = claim !== null && bounty.done && !bounty.claimed;
   if (claimable && ui.clicked(id)) claim(slot);
   const beside: Node = bounty.claimed
     ? words('Claimed', 1, INK.faint)
@@ -72,10 +72,15 @@ function bountyNode(
 
 /** The week's four guild bounties as a checklist. */
 export function bountiesNode(ui: Interface, face: GuildFace, size: number, claim: (slot: number) => void): Node {
+  // A member who joined this week claims nothing till the next, so their done bounties offer no press.
+  const late = face.beforeTheWeek === false;
   return {
     width: 'grow',
     direction: 'column',
     gap: 8,
-    children: (face.bounties ?? []).map((bounty, slot) => bountyNode(ui, bounty, slot, size, claim)),
+    children: [
+      ...(face.bounties ?? []).map((bounty, slot) => bountyNode(ui, bounty, slot, size, late ? null : claim)),
+      late && words('Claims open to you next week.', 1, INK.faint),
+    ],
   };
 }

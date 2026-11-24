@@ -103,9 +103,12 @@ test('a piece being placed stands its ghost just before the player, snapped to a
   place?.run();
   place?.run();
   await Promise.resolve();
-  assert.deepEqual(asked, [
+  const [[path, { rid, ...body }] = ['', {}]] = asked as [string, Record<string, unknown>][];
+  assert.deepEqual(
+    [path, body],
     ['outpost/decorate', { site: 'gull-cove-outpost', piece: 'bench', x: 3, y: 30.5, turn: 0 }],
-  ]);
+  );
+  assert.match(String(rid), /^[a-z0-9-]{1,64}$/, 'setting a piece pays Aurem, so it goes with its request id');
   letGo();
   assert.equal(here.props([], open).length, 4, 'let go, the ghost is gone');
 });

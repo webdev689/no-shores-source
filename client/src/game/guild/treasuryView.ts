@@ -24,7 +24,8 @@ export function agoWords(now: number, then: number): string {
   return `${days} ${days === 1 ? 'day' : 'days'} ago`;
 }
 
-/** What a ledger line's kind says: `build counting` is "Built the Counting House". */
+/** What a ledger line's kind says: `begin counting` is "Began the Counting House" (its scaffold), `build counting`
+ *  "Built the Counting House" (standing at once), `take down well` "Took down the Well". */
 export function ledgerWords(kind: string): string {
   const [what = '', ...rest] = kind.split(' ');
   const thing = rest.join(' ').replace(/^down /, '');
@@ -38,6 +39,8 @@ export function ledgerWords(kind: string): string {
       return 'Abandoned an outpost';
     case 'raise':
       return thing === '' ? 'Raised an outpost' : `Raised the ${named} a tier`;
+    case 'begin':
+      return `Began the ${named}`;
     case 'build':
       return `Built the ${named}`;
     case 'take':
@@ -90,7 +93,7 @@ export function treasuryNode(
       headingNode('Treasury', words(`At most ${counted(TREASURY_MOST)} Aurem`, size, INK.faint), size),
       words(`${counted(outposts.treasury)} Aurem`, size + 1, INK.brassLit),
       words(
-        "Members put Aurem in at the guild's outposts, and their strongboxes empty into it. It is spent only on outposts.",
+        "Members put Aurem in at the guild's outposts, and the outposts' strongboxes empty into it. It is spent only on outposts.",
         1,
         INK.faint,
         { wrap: true },

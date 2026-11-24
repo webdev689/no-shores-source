@@ -63,7 +63,7 @@ ranks are the Roster's as well ([[Accounts]], "The Roster").
   (`content/guilds/guilds.json`, `guildLaw.ts`). A level reached is never lost.
 - **The week.** Each week (from Tuesday 09:00 UTC, the game's one clock) draws four guild bounties of twelve, the same
   for every guild: the rules (`gear::guild::bounties_of`) and the page (`bountiesOf`) shuffle the list by the same
-  32-bit sum, held to the same table by a test on each side. Each asks for felling, gathering, sinking or clearing, as
+  32-bit xorshift seeded by the week, held to the same table by a test on each side. Each asks for felling, gathering, sinking or clearing, as
   the day's bounties count them ([[Activities]]); some count a feat only with another member of the guild in the same
   room.
 - **What a member gives.** A character keeps its part in its guild's week (`GuildWeek`: the XP given, its counts
@@ -108,8 +108,8 @@ ranks are the Roster's as well ([[Accounts]], "The Roster").
 ## An outpost's room
 
 At the guild's outpost (`node-<site>--guild-<key>`, [[Server]]) a member puts Aurem into the treasury, delivers
-materials to a structure being built, takes from the stores and sounds the War Horn; the room asks the accounts for
-each and gives back what they did not take. The horn calls a High Assessor with four Majors to the muster ground, at
+materials to a structure being built and takes from the stores, and the founder or an admin sounds the War Horn; the
+room asks the accounts for each and gives back what they did not take. The horn calls a High Assessor with four Majors to the muster ground, at
 the level of the highest member there raised by the horn's tier (1 Normal, 2 Elite, 3 Abyss), one at a time. Felled,
 each player who fought it is paid as a world boss's clear pays, and each member among them takes a guild package,
 once a week (`GuildWeek.horn`).

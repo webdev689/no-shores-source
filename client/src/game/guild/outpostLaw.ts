@@ -50,7 +50,7 @@ export interface Standing {
   readonly turn: number;
 }
 
-/** A piece of decoration on a plot: at metres from the plot's corner, turned so many fifteenths of a half turn. */
+/** A piece of decoration on a plot: at metres from the plot's corner, turned so many steps of 15 degrees, 24 a turn. */
 export interface Decor {
   readonly id: number;
   readonly piece: string;

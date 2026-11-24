@@ -13,6 +13,7 @@ import { nodeRoom } from '../rooms.ts';
 import type { NodeInfo } from '../worldData.ts';
 import { ghostOf, letGo, placingNow } from './decorPlacing.ts';
 import { accountsHeld, guildHeld } from './guildHeld.ts';
+import { ridAnswered, withRid } from './outpostAsks.ts';
 import { kindOf, pieceOf, type Plot, type Standing } from './outpostLaw.ts';
 import { type Ground, type Placed, decorPlaceOf, placeOf, plotBoxes, socketOf } from './outpostPlaces.ts';
 
@@ -240,10 +241,12 @@ export class OutpostHere {
     const run = () => {
       if (refusal !== null || placing.sending) return;
       placing.sending = true;
-      void link.social('outpost/decorate', { site: this.site, ...decor }).then((why) => {
+      const sent = withRid('outpost/decorate', { site: this.site, ...decor });
+      void link.social('outpost/decorate', sent).then((why) => {
         placing.sending = false;
         [placing.said, placing.saidAt] = [why, spot];
         if (why !== null) return;
+        ridAnswered(sent);
         letGo();
         ask({ kind: ASKS.outpostChanged });
         dispatchEvent(new Event(OUTPOST_CHANGED));
@@ -294,13 +297,16 @@ export class OutpostHere {
     const piece = seen.plot.decor.find((decor) => near(decorPlaceOf(decor, ground).at));
     if (!piece || !this.link) return null;
     const link = this.link;
-    const run = () =>
-      void link.social('outpost/undecorate', { site, id: piece.id }).then((why) => {
+    const run = () => {
+      const sent = withRid('outpost/undecorate', { site, id: piece.id });
+      void link.social('outpost/undecorate', sent).then((why) => {
         this.takenUp = why === null ? null : { id: piece.id, why };
         if (why !== null) return;
+        ridAnswered(sent);
         ask({ kind: ASKS.outpostChanged });
         dispatchEvent(new Event(OUTPOST_CHANGED));
       });
+    };
     // A refusal (a member below admin) is said where the piece stands, as the use prompt's words.
     const refused = this.takenUp?.id === piece.id ? this.takenUp.why : null;
     return { words: refused ?? `Take up the ${pieceOf(piece.piece)?.name ?? 'decoration'}`, run };

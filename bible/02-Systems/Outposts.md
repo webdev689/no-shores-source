@@ -67,14 +67,17 @@ Them]]). Each island has one outpost site, and each guild that raises an outpost
   The founder may abandon an outpost from anywhere, for half of all spent on it.
 - **What it earns.** A Counting House's strongbox fills each whole hour by its tier and holds two days; a member there
   empties it into the treasury. An Island Camp gathers the island's own resource and a Dockyard Timber, Canvas and
-  Iron into the outpost's stores each whole day, three days at most; a member there takes up to 20 of each a day.
-  Neither is written until it is read or emptied, or a structure that fills them stands, rises or is taken down: then
-  both are settled to that moment at the rates before it, so a new rate counts only from then. A strongbox the
-  treasury cannot hold whole gives what fits and keeps the rest.
+  Iron into the outpost's stores each whole day, three days at most; a member there takes up to 20 of each a day,
+  counted across all the guild's outposts. Each outpost keeps its own strongbox and stores. Neither is written until
+  it is read or emptied, or a structure that fills them stands, rises or is taken down: then both are settled to that
+  moment at the rates before it, so a new rate counts only from then. A strongbox the treasury cannot hold whole gives
+  what fits and keeps the rest.
 - **Boons.** The War Table, Captain's Lodge and Assay House give every member, wherever they play, 5, 10 or 15% more
   XP, reputation or Aurem from kills and clears (reputation from chests and the Abyss boon too): the highest tier of
-  each standing at any of the guild's outposts. The accounts tell the rooms with the player's guild (`boonsOf`); the
-  room gives them to the character each tick, never kept (`gear::guild::Boons`), and the central payout adds them.
+  each standing at any of the guild's outposts, counted once however many stand. A member's contribution to the
+  guild's week is a tenth of all the XP they gain, a boon's share with the rest ([[Guilds]]). The accounts tell the
+  rooms with the player's guild (`boonsOf`); the room gives them to the character each tick, never kept
+  (`gear::guild::Boons`), and the central payout adds them.
 - **The Guild tab.** The Outposts page shows each outpost by its site: its plan from above, each structure a block in
   its colour (a blueprint while built), its strongbox and stores, and what it gives. Standing there a member delivers,
   takes and empties; a founder or admin builds on the plan (the footprint's ghost green where the law lets it stand,
@@ -112,4 +115,5 @@ Them]]). Each island has one outpost site, and each guild that raises an outpost
 ## Limits
 
 - No upkeep: each guild has its own ground, so none is hoarded.
+- The guild boss is lost if everyone leaves its room before it falls.
 - Materials delivered to a structure taken down are spent.

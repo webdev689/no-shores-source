@@ -53,7 +53,7 @@ no brief is open ground to arrive on and fight over; an outpost site's is a land
 The Plot, The Muster Ground), and it links to no patrol area. A plot is the ground a guild builds on: a square 64 m a
 side, axis-aligned round its middle, on flat dry ground within 250 m of the landing where the land allows. Nothing
 stands on it: no beacon or resource is marked there, a way ends at its rim, and four low stones stand just outside its
-corners. Every one of the 90 drawn nodes but the outpost sites has its own. A brief may also carry hints:
+corners. Of the 99 drawn nodes, the 90 that are not outpost sites each have their own. A brief may also carry hints:
 `rock`, the shape its outcrops stand in where its climate's would not suit it (the Saltgrass Downs' whalebacks, the
 Gullwing Vale's knolls, the Driftwood Moors' tors); `stone`, the stone its cliffs and rubble wear (the Downs' chalk);
 and `river`, that a river runs through it (the Vale), which carries the claim along the river (below). `heights` stands its places at heights (the Vale's

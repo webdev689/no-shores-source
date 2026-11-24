@@ -281,7 +281,7 @@
       ],
       "level": 4,
       "most": 1,
-      "words": "Opens the guild dungeon, in its island's style, at Normal, Elite or Abyss by its tier.",
+      "words": "Opens the guild dungeon, laid afresh each week in its island's continent, at Normal, Elite or Abyss by its tier.",
       "effect": {
         "kind": "dungeon"
       },
@@ -478,14 +478,14 @@
       "reach": 0.73
     },
     {
-      "piece": "court-tree",
-      "name": "Court Tree",
-      "reach": 2.45
-    },
-    {
       "piece": "lawn-bed",
       "name": "Lawn Bed",
       "reach": 4.0
+    },
+    {
+      "piece": "rug-long",
+      "name": "Long Rug",
+      "reach": 9.3
     },
     {
       "piece": "well",

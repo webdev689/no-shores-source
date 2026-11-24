@@ -72,6 +72,8 @@ export interface GuildFace {
   readonly contribution?: number;
   /** The week's four guild bounties, each with the guild's count, whether it is done and whether the player claimed it. */
   readonly bounties?: readonly GuildBountyShown[];
+  /** Whether the player was in the guild before the week turned, as a claim needs; none from older accounts. */
+  readonly beforeTheWeek?: boolean;
 }
 
 /** A material a structure is built from, as the accounts name it: the ship's four and the island's own. */
@@ -132,6 +134,8 @@ export interface OutpostsFace {
   readonly allowed: number;
   readonly at: string | null;
   readonly outposts: readonly OutpostFace[];
+  /** How much of each material the player has taken from any outpost's stores today; none from older accounts. */
+  readonly taken?: Readonly<Partial<Record<StuffName, number>>>;
 }
 
 /** An outpost as anyone standing in its room reads it: its guild's id, name and banner, its site and its plot. */
@@ -179,6 +183,8 @@ export interface Details extends Person {
     readonly name: string;
     readonly tag: string;
     readonly motto: string;
+    /** Its description; none from older accounts. */
+    readonly description?: string;
     readonly rank: string;
     readonly banner?: Readonly<Record<string, unknown>>;
     readonly level?: number;

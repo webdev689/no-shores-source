@@ -86,7 +86,7 @@ export function staffOpen(staff: string, level: number): boolean {
 /** Why a banner may not be kept, in the words the player reads, or null when it may: every part from its list, the
  *  device unlike the cloth, the sign unlike what it sits on, and a staff the guild's level has opened. */
 export function bannerRefusal(banner: Banner, level: number): string | null {
-  if (!PARTS.every((part) => choicesOf(part).includes(banner[part]))) return 'That banner has a part we do not know.';
+  if (!PARTS.every((part) => choicesOf(part).includes(banner[part]))) return 'That banner has an unknown part.';
   if (banner.device !== 'plain' && banner.deviceColour === banner.cloth)
     return 'Give the device a colour unlike the cloth.';
   const under = banner.ground === 'none' ? [banner.cloth, banner.device === 'plain' ? null : banner.deviceColour] : [];
