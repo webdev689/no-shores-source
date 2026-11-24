@@ -290,25 +290,58 @@ test('without a room keeping gear the menu says where gear shows, and the invent
   assert.equal(ui.boxOf('shelf-materials'), null);
 });
 
-test('Settings is drawn in the menu’s body, which the wheel scrolls to its volumes', () => {
+test('Settings is drawn in the menu’s body, its tabs standing over a panel the wheel scrolls, Controls the longest', () => {
   const { ui, frame, click, open } = menu();
   open('settings');
-  const before = ui.boxOf('volume-ambience');
-  assert.ok(before, 'the volumes are laid');
-  frame([
-    { kind: 'pointer', x: 640, y: 400 },
-    // Far enough that the volumes stand a little under the body's top.
-    { kind: 'wheel', x: 640, y: 400, dy: before.y - (ui.boxOf('gear-body')?.y ?? 0) - 60 },
-  ]);
-  frame();
-  const after = ui.boxOf('volume-ambience');
-  assert.ok(after && after.y < before.y, 'the body scrolled');
+  assert.ok(ui.boxOf('settings-graphics') && ui.boxOf('resolution'), 'at its first tab, Graphics');
+  click('settings-audio');
   click('volume-music');
   assert.equal(ui.focusedId, 'volume-music');
   frame([{ kind: 'key', key: 'ArrowLeft' }]);
   frame();
   assert.equal(ui.focusedId, 'volume-music', 'the slider keeps its arrows');
-  assert.ok(Math.abs((ui.boxOf('volume-ambience')?.y ?? 0) - after.y) < 4, 'and the body stays where it was scrolled');
+  click('settings-controls');
+  /** How far down its panel the first key stands. */
+  const down = () => (ui.boxOf('controls:jump:keys:0')?.y ?? 0) - (ui.boxOf('settings-list')?.y ?? 0);
+  const before = ui.boxOf('controls:jump:keys:0');
+  assert.ok(before, 'every control is laid');
+  const top = down();
+  frame([
+    { kind: 'pointer', x: 640, y: 400 },
+    { kind: 'wheel', x: 640, y: 400, dy: 200 },
+  ]);
+  frame();
+  const after = ui.boxOf('controls:jump:keys:0');
+  assert.ok(after && after.y < before.y, 'the body scrolled');
+  assert.ok(ui.boxOf('settings-graphics'), 'the tabs stay where they stand');
+  click('settings-graphics');
+  click('settings-controls');
+  assert.equal(down(), top, 'a tab shown anew stands from its top');
+});
+
+test('the Escape that opened Settings, heard by the menu a frame later, does not close it again', () => {
+  const { ui, frame, key, window } = menu();
+  // As the game's keys open it on Escape: the menu opens, then its interface hears the same key.
+  window.dispatchEvent(new FakeEvent(OPEN_AT, { detail: { view: 'settings' } }));
+  frame([{ kind: 'key', key: 'Escape' }]);
+  frame();
+  assert.ok(ui.boxOf('gear-screen') && ui.boxOf('settings-graphics'), 'Settings stands open');
+  key('Escape');
+  frame();
+  assert.equal(ui.boxOf('gear-screen'), null, 'a later Escape closes it');
+});
+
+test('Escape steps back from the sound credits to Audio before it closes the menu', () => {
+  const { ui, click, key, open } = menu();
+  open('settings');
+  click('settings-audio');
+  click('settings-credits');
+  assert.ok(ui.boxOf('settings-credits-back'), 'the credits stand in the volumes’ place');
+  key('Escape');
+  key('Escape', 'keyup');
+  assert.ok(ui.boxOf('volume-music') && !ui.boxOf('settings-credits-back'), 'back at Audio, the menu still open');
+  key('Escape');
+  assert.equal(ui.boxOf('gear-screen'), null, 'then the menu closes');
 });
 
 test('the Ship tab steps back from an officer’s page with Escape, and shows its papers without the room’s word', () => {

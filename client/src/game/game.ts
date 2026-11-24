@@ -52,7 +52,7 @@ import { sailOrTravel } from './seaTravel.ts';
 import { SeaWord } from './seaWord.ts';
 import { seaPointer } from './seaPointer.ts';
 import { shipPanelOnceBuilt } from './shipPanel.ts';
-import { firstAnchorage, landfallWords } from './seaLaw.ts';
+import { firstAnchorage } from './seaLaw.ts';
 import { arrivalAt, type NodeInfo, portsOf } from './worldData.ts';
 import { startTravel } from './travel.ts';
 import { Drain } from './drain.ts';
@@ -339,7 +339,6 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement): Promise<vo
    *  on the way to the helm, walking the deck, sailing away to other waters, landing, or while another landmass opens. */
   const free = () =>
     (playing.flow.mode === 'foot' || playing.flow.mode === 'sea') &&
-    !playing.flow.menu &&
     !playing.helmMap.busy &&
     !playing.sea?.busy &&
     !charting.busy;
@@ -363,31 +362,16 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement): Promise<vo
     return null;
   };
 
-  const toSea = () => travel({ kind: 'return-to-ship' }, goSea);
-  const syncMenu = () => {
-    const resume = { label: 'Resume', run: () => change({ kind: 'back' }) };
-    if (playing.flow.mode === 'foot' && playing.flow.menu && playing.foot) {
-      const home = { label: 'Return to ship', run: () => returnToShip(playing.foot, toSea, tell) };
-      hud.menu({ title: playing.foot.node.name, choices: [resume, home] });
-    } else if (playing.flow.mode === 'sea' && playing.flow.menu) {
-      const landfall = playing.sea?.landfall;
-      const choices = landfall ? [resume, { label: landfallWords(landfall), run: () => goAshore() }] : [resume];
-      hud.menu({ title: 'At sea', choices });
-    } else hud.menu(null);
-  };
+  /** The leave held through: back to the ship on the room's yes, or told why not. */
+  const leave = () => returnToShip(playing.foot, () => travel({ kind: 'return-to-ship' }, goSea), tell);
 
-  /** Moves the flow on for something that needs no veil, and shows its menu. */
-  const change = (happening: Happening) => {
-    playing.flow = next(playing.flow, happening);
-    if ((playing.flow.mode === 'foot' || playing.flow.mode === 'sea') && playing.flow.menu) document.exitPointerLock();
-    syncMenu();
-  };
+  /** Moves the flow on for something that needs no veil. */
+  const change = (happening: Happening) => void (playing.flow = next(playing.flow, happening));
 
   /** Docks or goes ashore as the sea offers: the view flies up over the island's side to choose a landing. */
   const goAshore = () => {
     // While another landmass opens, the worker's landmass is not the one the landings would be on.
     if (playing.flow.mode !== 'sea' || !playing.sea || charting.busy) return;
-    if (playing.flow.menu) change({ kind: 'back' });
     const landfall = playing.sea.landfall;
     if (landfall?.kind === 'isle') {
       isleLanding.begin(playing.sea, isles, landfall.id);
@@ -408,7 +392,7 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement): Promise<vo
         foot = await isleFoot(held, word);
       } catch (error) {
         // Still aboard, at sea: the veil lifts on the ship, as no load is under way.
-        playing.flow = { mode: 'sea', menu: false };
+        playing.flow = { mode: 'sea' };
         hud.veil(null);
         tell(`You could not go ashore: ${error instanceof Error ? error.message : String(error)}.`);
         if (rooms) await enterSea(seaSeas).catch(() => undefined); // the island's room may have taken the character
@@ -478,8 +462,8 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement): Promise<vo
    *  pointer let go to pan it; none in a dungeon, under no land. */
   const openMap = () => {
     const { flow, sea, foot } = playing;
-    if (flow.mode === 'sea' && !flow.menu && sea) playing.helmMap.open(sea);
-    else if (flow.mode === 'foot' && !flow.menu && !gearScreenOpen() && foot && !foot.fallen && !foot.dungeon) {
+    if (flow.mode === 'sea' && sea) playing.helmMap.open(sea);
+    else if (flow.mode === 'foot' && !gearScreenOpen() && foot && !foot.fallen && !foot.dungeon) {
       // Read each time it is raised, off the ground as the camera keeps it (an island's, or the land's exact round the
       // player): the ground drawn by then is the truest.
       playing.helmMap.openLand(landSheetOf(foot.node, playing.landmass, groundAt));
@@ -489,28 +473,28 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement): Promise<vo
 
   /** Opens Manage over its deck, or closes it. */
   const manage = () => {
-    if (playing.flow.mode === 'sea' && !playing.flow.menu && !playing.sea?.aboard.walking) playing.sea?.manage();
+    if (playing.flow.mode === 'sea' && !playing.sea?.aboard.walking) playing.sea?.manage();
   };
 
   /** The player leaves the helm to walk its deck, the pointer held to look round as on foot. */
   const leaveHelm = () => {
-    if (playing.flow.mode === 'sea' && !playing.flow.menu && playing.sea?.leaveHelm()) input.lock();
+    if (playing.flow.mode === 'sea' && playing.sea?.leaveHelm()) input.lock();
   };
 
   /** Takes the helm again, at its wheel. */
   const takeHelm = () => {
-    if (playing.flow.mode === 'sea' && !playing.flow.menu) playing.sea?.takeHelm();
+    if (playing.flow.mode === 'sea') playing.sea?.takeHelm();
   };
 
   /** Stops the voyage under way, or resumes the one stopped. */
   const stopOrResume = () => {
-    if (playing.flow.mode !== 'sea' || playing.flow.menu || !playing.sea || playing.sea.aboard.active) return;
+    if (playing.flow.mode !== 'sea' || !playing.sea || playing.sea.aboard.active) return;
     if (playing.sea.resumable) playing.sea.resume();
     else playing.sea.stop();
   };
 
   const choose = (id: string) => {
-    if (playing.flow.mode === 'sea' && !playing.flow.menu) playing.sea?.sailToMark(id);
+    if (playing.flow.mode === 'sea') playing.sea?.sailToMark(id);
     if (playing.flow.mode !== 'landing' || !playing.sea) return;
     const choice = playing.sea.view.choose(id, playing.flow.chosen);
     if (choice === 'land') landAt(id);
@@ -564,13 +548,13 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement): Promise<vo
     if (ui.takesPointer || gearScreenOpen()) return;
     if (playing.flow.mode === 'story' && story?.wantsPointer && !input.locked) input.lock();
     const { flow, foot, sea, helmMap } = playing;
-    const onFoot = flow.mode === 'foot' && !flow.menu && !helmMap.looking && foot?.standing.kind !== 'dead';
-    const onDeck = flow.mode === 'sea' && !flow.menu && (sea?.aboard.walking || sea?.boarding.onDeck);
+    const onFoot = flow.mode === 'foot' && !helmMap.looking && foot?.standing.kind !== 'dead';
+    const onDeck = flow.mode === 'sea' && (sea?.aboard.walking || sea?.boarding.onDeck);
     if (!input.locked && (onFoot || onDeck)) input.lock();
   });
   seaPointer(canvas, input, {
     // On a struck ship's deck the pointer and the wheel are the fight's on foot.
-    atSea: () => playing.flow.mode === 'sea' && !playing.flow.menu && !playing.sea?.boarding.onDeck,
+    atSea: () => playing.flow.mode === 'sea' && !playing.sea?.boarding.onDeck,
     overInterface: () => ui.takesPointer,
     sea: () => playing.sea,
     map: () => playing.helmMap.held,
@@ -590,7 +574,7 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement): Promise<vo
       ...{ gpu, canvas, hud, input, scene, walker, firstPerson, footView, shipModels, figureView, traffic },
       ...{ ui, stack, drain, crews: shipPeopleOf(roomModule, forge) },
       ...{ discovered, charting, seaWeather: boot.seaWeather, seaView: boot.seaView, waterline: sloop.waterline },
-      ...{ builtSloop, closeSource, waterHere, syncMenu, travel, goFoot, isleFrame, groundAt, story, arrive },
+      ...{ builtSloop, closeSource, waterHere, leave, travel, goFoot, isleFrame, groundAt, story, arrive },
       ...{ isles: islesDrawer, eventProps: boot.eventProps },
       ...{ world, music, ambience, dungeons },
       heed: (here) => heed(here, (why) => travel({ kind: 'shut', why }, goSea), playing.flow.mode === 'foot'),

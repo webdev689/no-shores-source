@@ -3,7 +3,7 @@
 // and the pad's buttons drawn as the key strip draws them and a few words on what it does. Each key or button chosen
 // (a click, Enter or the pad's A) waits for its new one (`rebinding.ts`); Reset to defaults binds them all as they
 // came. While it is open the game hears no key, its scrim takes the pointer, and the keys and the pad move among its
-// keys, a screen reader hearing each as it takes focus.
+// keys, a screen reader hearing each as it takes focus. Settings' Controls tab lays the same list (`bindingColumns`).
 import { edged } from '../combat/barDraw.ts';
 import type { Device, Slot } from '../player/binds.ts';
 import { BINDS, keyNameOf } from '../player/input.ts';
@@ -13,7 +13,7 @@ import type { Interface } from '../ui/ui.ts';
 import { CONTROL_GROUPS, type Cell, type ControlGroup, type Row, boundWord, cellsOf, doesFor } from './controls.ts';
 import { footer, header, hudPress, keycap, ruleUnder, said } from './hudParts.ts';
 import { DIM } from './hudPieces.ts';
-import { Rebinding } from './rebinding.ts';
+import { REBINDING, type Rebinding } from './rebinding.ts';
 
 /** Its depth over the other layers: over the menu's hover card and holds, under the screen's keyboard. */
 const DEPTH = 80;
@@ -60,13 +60,40 @@ export const slotId = (slot: Slot): string => `controls:${slot.id}:${slot.device
 const sameSlot = (one: Slot | null, other: Slot | null) =>
   one !== null && other !== null && slotId(one) === slotId(other);
 
+/** Every control's groups as presses to bind them anew, in as many columns as `room` pixels holds, the words at
+ *  `size`: a key or button clicked waits on `rebinding` for its new one. The sheet's list and Settings' Controls. */
+export function bindingColumns(ui: Interface, rebinding: Rebinding, size: number, room: number): Node[] {
+  const count = Math.max(1, Math.floor((room + GAP * size) / ((COLUMN + GAP) * size)));
+  const column = Math.min(COLUMN * size, room);
+  const sheet: SheetNow = { ui, size, width: column, device: BINDS.device, waiting: rebinding.slot };
+  if (!rebinding.swallowed() && !sheet.waiting)
+    for (const slot of everySlot()) if (ui.clicked(slotId(slot))) rebinding.start(slot);
+  return columnsOf(CONTROL_GROUPS, count).map((groups) => ({
+    direction: 'column',
+    width: column,
+    gap: 18 * size,
+    children: groups.map((group) => groupNode(sheet, group)),
+  }));
+}
+
+/** A few words on the binding: what a waiting key wants, or what the last binding came to. */
+export function bindingWords(rebinding: Rebinding): string {
+  const waiting = rebinding.slot;
+  if (waiting) return waiting.device === 'keys' ? 'Press a key or button · Esc cancels' : 'Press a button';
+  return rebinding.said;
+}
+
 export class ControlsSheet {
   private shown = false;
   /** Whether the first key takes the focus as the sheet is next drawn. */
   private opening = false;
   private ui: Interface | null = null;
-  readonly rebinding = new Rebinding();
-  private padDown: ReadonlySet<string> = new Set();
+  readonly rebinding: Rebinding;
+
+  /** The sheet, binding through `rebinding`: the game's one, unless given its own. */
+  constructor(rebinding: Rebinding = REBINDING) {
+    this.rebinding = rebinding;
+  }
 
   get open(): boolean {
     return this.shown;
@@ -87,21 +114,21 @@ export class ControlsSheet {
 
   /** Each frame, `seconds` on: the pad's buttons `padDown` down now, for a key waiting to be bound. */
   frame(seconds: number, padDown: ReadonlySet<string>): void {
-    this.padDown = padDown;
     this.rebinding.frame(seconds, padDown);
   }
 
   /** Hears the keys ahead of the game: its key opens the sheet while `may` lets it and no words are being typed, and
-   *  while it is open its key or Escape closes it, a key waiting to be bound takes the next, and no key reaches the
-   *  game. Keys let go still do, so none stays held. */
+   *  while it is open its key or Escape closes it, and no key reaches the game. A key waiting to be bound, here or in
+   *  Settings, takes the next. Keys let go still do, so none stays held. */
   listen(may: () => boolean): void {
     addEventListener(
       'keydown',
       (event) => {
         const named = keyNameOf(event);
         const ours = BINDS.now.controls.keys.includes(named);
+        const waiting = this.rebinding.slot !== null;
         if (this.ui?.typing) return;
-        if (!this.shown && (!ours || event.repeat || !may())) return;
+        if (!this.shown && !waiting && (!ours || event.repeat || !may())) return;
         event.stopImmediatePropagation();
         BINDS.device = 'keys';
         if (event.repeat) return;
@@ -116,7 +143,7 @@ export class ControlsSheet {
     addEventListener(
       'mousedown',
       (event) => {
-        if (!this.shown || !this.rebinding.slot) return;
+        if (!this.rebinding.slot) return;
         event.stopImmediatePropagation();
         this.rebinding.mouse(event.button);
       },
@@ -136,18 +163,11 @@ export class ControlsSheet {
     }
     const size = view.big ? 2 : 1;
     const room = view.width - 2 * MARGIN - 2 * 2 - 2 * 22 * size;
-    const count = Math.max(1, Math.floor((room + GAP * size) / ((COLUMN + GAP) * size)));
-    const column = Math.min(COLUMN * size, room);
-    const device = BINDS.device;
-    const heard = !this.rebinding.swallowed();
     if (this.opening) {
       this.opening = false;
       ui.speak('All controls');
-      ui.focusOn(firstCell(device));
+      ui.focusOn(firstCell(BINDS.device));
     }
-    const sheet: SheetNow = { ui, size, width: column, device, waiting: this.rebinding.slot };
-    if (heard && !sheet.waiting)
-      for (const slot of everySlot()) if (ui.clicked(slotId(slot))) this.rebinding.start(slot, this.padDown);
     const close = `Close  ${boundWord('controls')}`;
     return {
       width: 'grow',
@@ -182,12 +202,7 @@ export class ControlsSheet {
               scroll: true,
               gap: GAP * size,
               padding: [14 * size, 22 * size, 18 * size, 22 * size],
-              children: columnsOf(CONTROL_GROUPS, count).map((groups) => ({
-                direction: 'column',
-                width: column,
-                gap: 18 * size,
-                children: groups.map((group) => groupNode(sheet, group)),
-              })),
+              children: bindingColumns(ui, this.rebinding, size, room),
             },
             {
               width: 'grow',
@@ -196,7 +211,7 @@ export class ControlsSheet {
               gap: 16 * size,
               ...footer(),
               children: [
-                { width: 'grow', children: [said(this.footWords(), { size, colour: DIM })] },
+                { width: 'grow', children: [said(bindingWords(this.rebinding), { size, colour: DIM })] },
                 hudPress(ui, 'controls:reset', 'Reset to defaults', () => this.rebinding.reset(), {
                   size,
                   padding: [6 * size, 12 * size],
@@ -207,13 +222,6 @@ export class ControlsSheet {
         },
       ],
     };
-  }
-
-  /** The footer's few words: what a waiting key wants, or what the last binding came to. */
-  private footWords(): string {
-    const waiting = this.rebinding.slot;
-    if (waiting) return waiting.device === 'keys' ? 'Press a key or button · Esc cancels' : 'Press a button';
-    return this.rebinding.said;
   }
 }
 

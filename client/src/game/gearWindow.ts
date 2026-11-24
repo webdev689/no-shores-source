@@ -44,7 +44,9 @@ import { HOURGLASS, Journal, type JournalSource } from './journalPage.ts';
 import { Compendium } from './compendium/compendiumPage.ts';
 import type { Lore } from './compendium/lore.ts';
 import type { MenuContext, PlainContext } from './menuPage.ts';
-import { laterPage, settingsPage, shipPage } from './menuPages.ts';
+import { laterPage, shipPage } from './menuPages.ts';
+import { Settings } from './settingsPage.ts';
+import { besideOf, pressesIn } from './menuFocus.ts';
 import { hush } from './npc/npcSpeech.ts';
 import { isKeeperView, npcChoosing, npcHints, npcOpened, npcStepBack } from './npc/npcScreen.ts';
 import { RosterPage, socialPage } from './rosterTab.ts';
@@ -112,6 +114,8 @@ export function startGearWindow(
   let said = '';
   /** The press to give the focus to on the next frame: a tab as the menu opens, a tile as a page over it closes. */
   let focusNext: string | null = null;
+  /** Whether the menu opened since its last frame: the Escape that opened Settings is not its step back. */
+  let fresh = false;
   /** The tile to give the focus back to once an item's page closes. */
   let returnTo: string | null = null;
   /** The press the menu last built with the focus, and the presses beside it, nearest first. */
@@ -119,6 +123,7 @@ export function startGearWindow(
   /** The Roster and the account, asked of the accounts as Social or Settings opens and kept while it shows. */
   let roster: RosterPage | null = null;
   let accountPanel: AccountPanel | null = null;
+  const settings = new Settings(() => (link ? (accountPanel ??= new AccountPanel(link)) : null));
   let figure: { key: string; picture: Picture | null } = { key: '', picture: null };
   /** The player's name and account, once the accounts give them; and the gear the banner last showed. */
   let named: string | null = null;
@@ -142,6 +147,7 @@ export function startGearWindow(
     setGearScreenOpen(false);
     // The pages go with the menu, so nothing on them, a list asked for again among them, runs while it is shut.
     [roster, accountPanel] = [null, null];
+    settings.show(settings.tab);
     ui?.focusOn(null);
   };
   /** Escape's one step back: the item's page, then the flyout, then the Art's screen, then the menu. With no gear
@@ -160,7 +166,7 @@ export function startGearWindow(
     } else if (artSlot !== null) [artSlot, focusNext] = [null, `core-${artSlot}`];
     else if (npcStepBack()) return play('back');
     else if (view === 'journal' && journal.up()) focusNext = HOURGLASS;
-    else if (view === 'compendium' && compendium.back()) focusNext = null;
+    else if ((view === 'compendium' && compendium.back()) || (view === 'settings' && settings.back())) focusNext = null;
     else if (arts) [arts, focusNext] = [false, ART_DIAMOND_KEY];
     else if (appearance) [appearance, focusNext] = [false, APPEARANCE_KEY];
     else return shut();
@@ -171,6 +177,7 @@ export function startGearWindow(
     // A hold under way on the page left behind does not act on it unseen, nor does its card stay.
     holds.letGo();
     const opening = view === null;
+    fresh ||= opening;
     if (wanted !== 'journal') journal.up();
     if (wanted !== 'compendium') compendium.reset();
     [view, slot, inspecting, roster, accountPanel] = [wanted, null, null, null, null];
@@ -206,7 +213,7 @@ export function startGearWindow(
     const later = isTab(shown) ? TAB_PRESSES[shown].later : undefined;
     if (later !== undefined) return laterPage(TAB_PRESSES[shown as Tab].label, later);
     if (shown === 'social') return socialPage(plain, link ? (roster ??= new RosterPage({ link, travel })) : null);
-    return settingsPage(plain, link ? (accountPanel ??= new AccountPanel(link)) : null);
+    return settings.node(plain);
   };
 
   /** The figure, drawn once a dress, for the Character page and the account's mark. */
@@ -414,7 +421,13 @@ export function startGearWindow(
         // On the Journal DFO's hourglass stands in the account mark's place.
         shown === 'journal'
           ? journal.hourglass(frame)
-          : accountMark(frame, account, figure.picture, () => open('settings'), sizes.ratio),
+          : accountMark(
+              frame,
+              account,
+              figure.picture,
+              () => (settings.show('account'), open('settings')),
+              sizes.ratio,
+            ),
       ),
       // On a short screen an item's page takes the banner's height back for its nodes.
       (named !== null || bannerGear !== null) &&
@@ -466,7 +479,8 @@ export function startGearWindow(
     // keeps the keys from what plays after it.
     if (view !== null && resting()) shut();
     // Escape, or the pad's B, steps back once, letting go of a hold under way before it could act.
-    if (view !== null && frame.escaped) stepOnce();
+    if (view !== null && frame.escaped && !fresh) stepOnce();
+    fresh = false;
     holds.frame(frame);
     const box = frame.boxOf(LAYER) ?? { width: innerWidth, height: innerHeight };
     if (focusNext && view !== null && frame.boxOf(focusNext)) [focusNext] = [null, frame.focusOn(focusNext)];
@@ -560,38 +574,4 @@ export function cardFloat(
     float: { to: 'screen', x: Math.max(gap, left), y: Math.max(gap, top), z: 40 },
     children: [card.content()],
   };
-}
-
-/** The ids of what takes the focus under `node`, as the interface walks them: presses, fields and the focusable. */
-function pressesIn(node: Child): string[] {
-  if (!node) return [];
-  const own = (node.press || node.field || node.focusable) && !node.disabled && node.id ? [node.id] : [];
-  return [...own, ...(node.children ?? []).flatMap(pressesIn)];
-}
-
-/** The nodes from `node` down to the one named `id`, or null where it holds none. */
-function pathTo(node: Node, id: string): Node[] | null {
-  if (node.id === id) return [node];
-  for (const child of node.children ?? []) {
-    const below = child ? pathTo(child, id) : null;
-    if (below) return [node, ...below];
-  }
-  return null;
-}
-
-/** The presses to take the focus should `id` go, nearest first: the next and the last before it among what holds
- *  it, then among what holds that, and so on out to the menu's body. A keeper's tile, held with its price, so finds
- *  the tiles beside it, then the next row's first and the last row's last. */
-function besideOf(root: Node, id: string): string[] {
-  const path = pathTo(root, id) ?? [];
-  const found: string[] = [];
-  for (let level = path.length - 1; level > 0 && path[level]?.id !== 'gear-body'; level--) {
-    const [holder, held] = [path[level - 1], path[level]];
-    const children = holder?.children ?? [];
-    const place = children.indexOf(held);
-    const [after] = children.slice(place + 1).flatMap(pressesIn);
-    const before = children.slice(0, place).flatMap(pressesIn).at(-1);
-    found.push(...[after, before].filter((each): each is string => each !== undefined));
-  }
-  return found;
 }

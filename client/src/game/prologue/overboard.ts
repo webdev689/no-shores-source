@@ -70,7 +70,7 @@ export class Overboard implements Beat {
     const { screen, ambience } = stage.parts;
     setAblaze(story, layout);
     ambience.heartbeat(false);
-    stage.parts.hud.hints([]);
+    stage.parts.hud.strip(null);
     stage.parts.hud.tasks.show(null);
     // The fight has faded out already; begun here, the beat starts as black as the fight left it.
     screen.fade(1, 0);

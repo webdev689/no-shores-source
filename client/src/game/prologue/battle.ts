@@ -6,7 +6,7 @@
 import { forwardOf, poseOf } from '../../overworld/overworldCamera.ts';
 import { shipSails } from '../../ships/shipMesh.ts';
 import { onScreen, type Shot } from '../camera.ts';
-import { HINTS } from '../hints.ts';
+import { stripOf } from '../hints.ts';
 import { seaFightQuest } from '../seaPanel.ts';
 import type { Beat, Tick } from './beat.ts';
 import { type Ambusher, type Going, type Happening, StoryFight, type StoryFightFrame } from './fightAtSea.ts';
@@ -243,7 +243,7 @@ export class Battle implements Beat {
     const heads = own ? brig.heads(own) : undefined;
     if (heads) this.sayCries(shown.shot, heads, tick.viewport);
     const { hud } = stage.parts;
-    hud.hints(fight.aiming ? HINTS.aim : HINTS.fight);
+    hud.strip(stripOf(fight.aiming ? 'aim' : 'fight'));
     hud.sight(fight.aiming && !shown.over, fight.aimLine);
     hud.seaFight(shown.over ? null : shown.display);
     hud.tasks.show(seaFightQuest(QUEST, shown.readout.left, shown.readout.men));
@@ -284,7 +284,7 @@ export class Battle implements Beat {
     hud.seaFight(null);
     hud.sight(false, null);
     hud.toast();
-    hud.hints([]);
+    hud.strip(null);
     hud.shipBars([], poseOf({ eye: [0, 0, 0], forward: [0, 1, 0] }, 1));
     // The calm draws its sails, and each wreck's, on from where the fight left them.
     const { sailing } = this.story;

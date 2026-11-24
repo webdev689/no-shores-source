@@ -80,7 +80,8 @@ export const CONTROLS = {
   lookUp: control(['insert'], ['RS up'], ['foot', 'helm']),
   lookDown: control(['delete'], ['RS down'], ['foot', 'helm']),
   perspective: control(['mouse3'], ['RS'], FOOT),
-  menu: control(['m'], ['View hold'], EVERYWHERE),
+  // Held, it takes the player back to their ship from wherever they stand on foot (`leaveHold.ts`).
+  leave: control(['m'], ['View hold'], FOOT),
   character: control(['i'], ['Start'], EVERYWHERE),
   inventory: control(['o'], [], EVERYWHERE),
   details: control(['x'], [], ['menu']),
@@ -132,7 +133,7 @@ export const DEFAULTS: Binds = Object.fromEntries(
 /** The controls that act on a key going down or the pad's press, or at the helm, whose pointer is free: none hears a
  *  mouse button. */
 const KEYS_ONLY: ReadonlySet<BindId> = new Set<BindId>([
-  ...(['use', 'menu', 'landMap', 'map', 'respawn', 'confirm', 'voyage', 'manage', 'leaveHelm', 'repair'] as const),
+  ...(['use', 'leave', 'landMap', 'map', 'respawn', 'confirm', 'voyage', 'manage', 'leaveHelm', 'repair'] as const),
   ...(['ashore', 'slower', 'faster', 'character', 'inventory', 'details', 'controls', 'chat'] as const),
   ...(['steerLeft', 'steerRight', 'sailOn', 'heaveTo'] as const),
 ]);

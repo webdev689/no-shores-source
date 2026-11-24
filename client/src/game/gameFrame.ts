@@ -26,7 +26,9 @@ import type { FootView } from './footView.ts';
 import type { FriendlyTraffic, FriendlyWater } from './friendlyShips.ts';
 import { contextOf } from './gameKeys.ts';
 import { gearScreenOpen } from './gearWindow.ts';
-import { HINTS, withMapKey } from './hints.ts';
+import { stripOf, withMapKey } from './hints.ts';
+import { FALLEN, refusedWords } from './toShip.ts';
+import { binding } from './rebinding.ts';
 import { gearTakesKeys } from './gearScreen.ts';
 import type { Drain } from './drain.ts';
 import type { DrawnInterface } from './drawnInterface.ts';
@@ -124,7 +126,8 @@ export interface FrameParts {
   readonly builtSloop: () => SloopBuild | null;
   readonly closeSource: Parameters<GameScene['keepClose']>[1];
   readonly waterHere: () => FriendlyWater;
-  readonly syncMenu: () => void;
+  /** The leave held through: back to the ship on the room's yes, or told why not. */
+  readonly leave: () => void;
   readonly travel: (happening: Happening, work: () => Promise<void>) => void;
   readonly goFoot: (node: NodeInfo, facing: number) => Promise<void>;
   /** The story that opens the game, if it does, and the arrival at the first node it hands the player to. */
@@ -195,9 +198,9 @@ export function startFrames(parts: FrameParts, playing: Playing): void {
   const footFrame = (here: Foot, controls: InputFrame, seconds: number, size: { width: number; height: number }) => {
     if (parts.heed(here)) return true;
     const { flow, helmMap } = playing;
-    const paused = flow.mode !== 'foot' || flow.menu || gearScreenOpen() || socialUp();
+    const paused = flow.mode !== 'foot' || gearScreenOpen() || socialUp();
     // Others see three dots over a player in a menu, not over one still behind the loading veil.
-    here.fight.menuOpen = (flow.mode === 'foot' && flow.menu) || gearScreenOpen() || socialUp();
+    here.fight.menuOpen = gearScreenOpen() || socialUp();
     const aspect = size.width / Math.max(1, size.height);
     // The land's held map is raised from the player's own eyes, and the view goes back as it was once it is lowered.
     const looking = helmMap.looking;
@@ -308,7 +311,11 @@ export function startFrames(parts: FrameParts, playing: Playing): void {
     hud.passageOffer(playing.through?.offer ?? null);
     // N raises the map on foot unless a menu is up, the player has fallen or is in a dungeon, as `openMap` has it.
     const mapless = paused || here.fallen || here.dungeon;
-    hud.hints(looking ? HINTS.landMap : mapless ? shown.hints : withMapKey(shown.hints));
+    hud.strip(looking ? stripOf('landMap') : mapless ? shown.hints : withMapKey(shown.hints));
+    // The leave held through takes the player to their ship: not under a window, nor while she speaks; fallen, it says
+    // why not.
+    const fallen = here.fallen ? refusedWords(FALLEN) : null;
+    if (hud.leaving.frame(controls.held('leave'), !paused && !told, fallen, seconds)) parts.leave();
     // The quest's mark gives way to the map, as the fight's display does.
     hud.marks(looking ? [] : quests.marks(shown.shot, viewport, [body.x, body.y], parts.groundAt, here.node.id));
     // The tracker is set once a frame, so a public event's steps stand in it unblinking, in the quest's place.
@@ -325,7 +332,7 @@ export function startFrames(parts: FrameParts, playing: Playing): void {
   const seaFrame = (here: Sea, controls: InputFrame, seconds: number, size: { width: number; height: number }) => {
     const { flow, helmMap } = playing;
     const viewport = { width: canvas.clientWidth, height: canvas.clientHeight };
-    const paused = flow.mode !== 'sea' || flow.menu || gearScreenOpen() || socialUp();
+    const paused = flow.mode !== 'sea' || gearScreenOpen() || socialUp();
     // Her welcome is ashore only: a place left mid-welcome leaves nothing of the HUD set aside at sea.
     hud.quiet = false;
     chatAtSea(here.waterAt?.(here.position)?.name ?? null);
@@ -367,7 +374,7 @@ export function startFrames(parts: FrameParts, playing: Playing): void {
     wasWalking = afoot;
     // What a lookout sees is discovered as the ship sails.
     if (flow.mode === 'sea') discovered.lookout(here.position);
-    const free = flow.mode === 'sea' && !flow.menu;
+    const free = flow.mode === 'sea';
     const dpr = canvas.width / Math.max(1, canvas.clientWidth);
     const hands = walker.you.dress.outfit.armour.gauntlets ?? null;
     const mapDraw = helmMap.frame(here, seconds, { free, viewport, dpr, hands }, discovered);
@@ -401,7 +408,7 @@ export function startFrames(parts: FrameParts, playing: Playing): void {
     const notices = [...watched, ...(seaWord?.notices(here.sighted, clock) ?? [])];
     showSeaHud(hud, here, shown, {
       landing: flow.mode === 'landing',
-      onSea: flow.mode === 'sea' && !flow.menu,
+      onSea: flow.mode === 'sea',
       island: ISLANDS[landmass.id],
       region: REGION,
       clock,
@@ -464,12 +471,13 @@ export function startFrames(parts: FrameParts, playing: Playing): void {
     last = now;
     clock += seconds;
     drain.step(seconds);
-    const menuUp = 'menu' in playing.flow && Boolean(playing.flow.menu);
-    const windowUp = menuUp || gearTakesKeys() || creationOpen() || socialUp();
+    const windowUp = gearTakesKeys() || creationOpen() || socialUp();
     // The open chat's field has the keys as a window's would, and the pad plays nothing of the game's under it.
-    const covered = menuUp || socialUp() || chatOpen();
-    // The sheet takes the keys and the pad but while it waits for one to bind.
-    const tookWheel = ui.hear(seconds, !input.locked, windowUp || hud.controls.takesKeys);
+    const covered = socialUp() || chatOpen();
+    // The sheet takes the keys and the pad but while it waits for one to bind, as a window does; while a control waits
+    // to be bound, from the sheet or Settings, the interface hears nothing that would press behind it.
+    const bound = binding();
+    const tookWheel = ui.hear(seconds, !input.locked && !bound, (windowUp && !bound) || hud.controls.takesKeys);
     const top = hud.controls.open
       ? 'sheet'
       : gearTakesKeys()
@@ -493,6 +501,8 @@ export function startFrames(parts: FrameParts, playing: Playing): void {
     if (shown?.mode === 'story' && parts.story) storyFrame(parts.story, controls, seconds, size);
     else if (shown?.mode === 'foot' && foot) settled = footFrame(foot, controls, seconds, size);
     else if ((shown?.mode === 'sea' || shown?.mode === 'landing') && sea) seaFrame(sea, controls, seconds, size);
+    // Only on foot is there a place to leave: a hold under way goes with the place it was begun in.
+    if (shown?.mode !== 'foot') hud.leaving.frame(false, false, null, seconds);
     parts.ambience.frame(seconds);
     ui.present(stack);
     // What stood in for the place this frame, asked every frame so none is carried into the next.
@@ -511,7 +521,6 @@ export function startFrames(parts: FrameParts, playing: Playing): void {
         if (playing.told) playing.told = { ...playing.told, until: performance.now() + TOLD_MS };
         // The player arrives on foot as the veil lifts, so their arrival is seen.
         if (playing.flow.mode === 'foot') playing.foot?.arrive(clock);
-        parts.syncMenu();
       }
     }
   };

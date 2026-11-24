@@ -82,9 +82,11 @@ export class UsePrompt {
   }
 }
 
-/** Use's keycap and `deed` in the prompt's chip, the keycap ringed as far as it is `held` (0 to 1; null while not),
- *  for its caller to set where it stands. */
-export function promptChip(deed: string, held: number | null): Node {
+/** A key's cap (`cap`, Use's unless given) and `deed` in the prompt's chip, `under` in faint words beneath the deed
+ *  where given, the keycap ringed as far as it is `held` (0 to 1; null while not), for its caller to set where it
+ *  stands. */
+export function promptChip(deed: string, held: number | null, cap = boundCap('use'), under: string | null = null): Node {
+  const said = { text: { words: deed, colour: '#efe8d6', edge: 'shadow', edgeColour: '#000', wrap: false } } as const;
   return {
     role: 'chip',
     through: true,
@@ -98,16 +100,21 @@ export function promptChip(deed: string, held: number | null): Node {
         fill: 'rgba(192,138,62,0.15)',
         alignX: 'center',
         draw: heldCap(held),
-        children: [promptKey()],
+        children: [promptKey(cap)],
       },
-      { text: { words: deed, colour: '#efe8d6', edge: 'shadow', edgeColour: '#000', wrap: false } },
+      under === null
+        ? said
+        : {
+            direction: 'column',
+            gap: 2,
+            children: [said, { text: { words: under, colour: TONES.stoneHi, wrap: false } }],
+          },
     ],
   };
 }
 
-/** Use's key in brass, or the pad's button drawn, as the player last played. */
-function promptKey(): Node {
-  const cap = boundCap('use');
+/** A key's cap in brass, or the pad's button drawn, as the player last played. */
+function promptKey(cap: string): Node {
   if (cap.startsWith('pad:')) return keycap(cap);
   return { text: { words: cap, colour: TONES.brassHi, wrap: false } };
 }

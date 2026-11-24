@@ -20,7 +20,7 @@ import type { HudFrame } from '../combat/hud.ts';
 import type { CardAt } from '../player/cards.ts';
 import type { Shot } from './camera.ts';
 import type { Use } from './footGear.ts';
-import type { StripHint } from './hints.ts';
+import type { Strip } from './hints.ts';
 import type { Standing } from './hudLaw.ts';
 import type { Quest } from './tasks.ts';
 
@@ -133,7 +133,7 @@ export interface FootFrame {
   readonly hidden?: Float32Array;
   readonly swings: Float32Array;
   readonly fight: FootFight;
-  readonly hints: readonly StripHint[];
+  readonly hints: Strip;
   readonly dark: number;
   readonly props?: readonly EventProp[];
   readonly quest?: Quest | null;

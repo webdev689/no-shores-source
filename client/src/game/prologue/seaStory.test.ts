@@ -54,7 +54,7 @@ export function storied(options: { land?: LandWorker; refused?: boolean } = {}) 
       dialogue: { skip: note('cut') },
       screen: { fade: note('fade'), flash: note('flash') },
       hud: {
-        hints: (hints: (readonly [string, string])[]) => done.push(`hints ${hints[0]?.join(' ') ?? ''}`),
+        strip: (strip: { readonly title: string } | null) => done.push(`strip ${strip?.title ?? ''}`),
         shipBars: () => undefined,
         seaFight: () => undefined,
         sight: () => undefined,

@@ -17,7 +17,7 @@ import {
   type StandOnDeck,
 } from './deckFight.ts';
 import type { FootContext, FootFrame } from './foot.ts';
-import type { StripHint } from './hints.ts';
+import type { Strip } from './hints.ts';
 import type { FootView } from './footView.ts';
 import type { Drawer } from './scene.ts';
 
@@ -148,7 +148,7 @@ export class Boarding {
   }
 
   /** What the display says on its deck: where the player is, the line under it, and the keys listed. */
-  get words(): { readonly place: string; readonly line: string; readonly hints: readonly StripHint[] } | null {
+  get words(): { readonly place: string; readonly line: string; readonly hints: Strip } | null {
     const shown = this.shown;
     if (!shown) return null;
     const { fight, captain, frame } = shown;
@@ -160,7 +160,7 @@ export class Boarding {
     return {
       place: 'Its deck is yours',
       line,
-      hints: [['use', `Back aboard your ship · ${left} s left`], ...frame.hints],
+      hints: { ...frame.hints, hints: [['use', `Back aboard your ship · ${left} s left`], ...frame.hints.hints] },
     };
   }
 

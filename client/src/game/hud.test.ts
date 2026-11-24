@@ -11,7 +11,7 @@ import type { FightVessel } from '../rules/fightRules.ts';
 import { shipAbilities } from '../ships/shipAbilities.ts';
 import type { Box } from '../ui/quads.ts';
 import type { UiRenderer } from '../ui/uiRenderer.ts';
-import { HINTS, type OnFoot, type StripHint, footHints, withMapKey } from './hints.ts';
+import { type OnFoot, type StripHint, footStrip, stripOf, withMapKey } from './hints.ts';
 import { Hud } from './hud.ts';
 import { placeNode } from './hudPieces.ts';
 
@@ -140,17 +140,14 @@ test('a mark is pressed by its ring, its name and note under it; a held one poin
   assert.deepEqual(chosen, ['a']);
 });
 
-test('a menu’s choices run, and the veil stands over all and takes the pointer until it is lifted', () => {
+test('the veil stands over all and takes the pointer until it is lifted', () => {
   const [ui, hud] = [new Interface(renderer()), new Hud()];
   frame(ui, hud, [{ kind: 'pointer', x: 640, y: 360 }]);
   assert.equal(ui.takesPointer, true, 'the HUD starts veiled');
   hud.veil(null);
-  let ran = 0;
-  hud.menu({ title: 'Overlook', choices: [{ label: 'Resume', run: () => (ran += 1) }] });
-  const laid = frame(ui, hud);
-  assert.ok(words(laid).includes('OVERLOOK'));
-  clickOn(ui, hud, laid, 'menu:0');
-  assert.equal(ran, 1);
+  frame(ui, hud);
+  frame(ui, hud);
+  assert.equal(ui.takesPointer, false);
 });
 
 test('a trip’s veil is the loading screen: the logo, LOADING and its words; failed, its words alone', () => {
@@ -185,18 +182,21 @@ test('a trip’s veil is said to a screen reader as it comes up, once, and again
   }
 });
 
-test('while a menu is up the keys walk its choices alone, never the sea bar under it', () => {
+test('the leave held stands where the use prompt does, ringed as far as held, naming the place; let go, it drains', () => {
   const [ui, hud] = [new Interface(renderer()), new Hud()];
   hud.veil(null);
-  hud.seaBar(SEA);
-  hud.menu({ title: 'Overlook', choices: [{ label: 'Resume', run: () => undefined }] });
-  frame(ui, hud);
-  const seen = new Set<string | null>();
-  for (let step = 0; step < 20; step++) {
-    frame(ui, hud, [{ kind: 'key', key: 'Tab' }]);
-    seen.add(ui.focusedId);
-  }
-  assert.deepEqual([...seen], ['menu:0']);
+  hud.place('Overlook', 'Social space');
+  hud.usePrompt.show('Talk to the Quartermaster');
+  assert.ok(words(frame(ui, hud)).includes('Talk to the Quartermaster'));
+  hud.leaving.frame(true, true, null, 0.5);
+  let said = words(frame(ui, hud));
+  assert.ok(said.includes('Return to ship') && said.includes('Leave Overlook'), said.join(', '));
+  assert.ok(!said.includes('Talk to the Quartermaster'), 'the use prompt stands aside');
+  hud.leaving.frame(false, true, null, 1);
+  said = words(frame(ui, hud));
+  assert.ok(said.includes('Talk to the Quartermaster') && !said.includes('Return to ship'), 'drained, it goes');
+  hud.leaving.frame(true, true, 'You cannot return to your ship while fallen.', 0.1);
+  assert.ok(words(frame(ui, hud)).includes('You cannot return to your ship while fallen.'));
 });
 
 test('on foot beside the fight’s display the place’s name stands at the right, and gives way to a boss’s bar', () => {
@@ -214,65 +214,116 @@ test('on foot beside the fight’s display the place’s name stands at the righ
   assert.equal(nameBox(), undefined);
 });
 
-test('the key strip stands over the sea bar and its offer, gives way to speech, and its box is answered', () => {
+/** The words in the key strip's panel, its head first, as laid. */
+function stripWords(laid: Laid[]): string[] {
+  const inStrip = (each: Laid): boolean => each.node.id === 'hud:hints' || (!!each.parent && inStrip(each.parent));
+  return words(laid.filter(inStrip));
+}
+
+test('the key strip is a panel at the bottom right, the moment named over its rows, gone while someone speaks', () => {
   const [ui, hud] = [new Interface(renderer()), new Hud()];
   hud.veil(null);
-  hud.hints([['N', 'Map']]);
+  hud.strip(stripOf('dead'));
   frame(ui, hud);
-  assert.equal(hud.hintsBox(ui)?.y, VIEW.height - 22 - (hud.hintsBox(ui)?.height ?? 0));
-  hud.seaBar({ ...SEA, landfall: { kind: 'dock', port: 'Saltmere' } });
-  const laid = frame(ui, hud);
-  assert.equal(hud.hintsBox(ui)?.y, VIEW.height - 148 - (hud.hintsBox(ui)?.height ?? 0));
-  assert.ok(words(laid).includes('Dock at Saltmere Enter'));
+  const box = hud.hintsBox(ui);
+  assert.ok(box);
+  assert.deepEqual([box.x + box.width, box.y + box.height], [VIEW.width - 28, VIEW.height - 22]);
+  assert.ok(box.width < 300 && box.height < 120, `compact: ${JSON.stringify(box)}`);
+  assert.deepEqual(stripWords(frame(ui, hud)), ['FALLEN', 'Enter', 'K', 'Respawn', 'All controls']);
   hud.onBesides(() => ({ fight: false, bossed: false, speaking: true, map: false }));
   frame(ui, hud);
   assert.equal(hud.hintsBox(ui), null);
 });
 
+test('the key strip keeps its corner over the sea bar where it is clear, and stands over it where they would meet', () => {
+  const [ui, hud] = [new Interface(renderer()), new Hud()];
+  hud.veil(null);
+  hud.strip(stripOf('sea'));
+  hud.seaBar({ ...SEA, landfall: { kind: 'dock', port: 'Saltmere' } });
+  const seen = new Set<boolean>();
+  for (const [width, height] of [
+    [1280, 720],
+    [1920, 1080],
+    [900, 700],
+    [600, 800],
+  ] as const) {
+    laidAt(ui, hud, width, height);
+    const laid = laidAt(ui, hud, width, height);
+    const [strip, bar, offer] = [boxOf(laid, 'hud:hints'), boxOf(laid, 'sea:bar'), boxOf(laid, 'sea:landfall')];
+    assert.ok(strip && bar && offer, `${width}: all shown`);
+    for (const under of [bar, offer])
+      assert.ok(
+        strip.x > under.x + under.width || strip.y + strip.height <= under.y,
+        `${width}: ${JSON.stringify([strip, under])}`,
+      );
+    const meets = strip.x <= bar.x + bar.width + 8;
+    assert.equal(strip.y + strip.height === height - 22, !meets, `${width}: in its corner unless it would meet`);
+    seen.add(meets);
+  }
+  assert.equal(seen.size, 2, 'kept in its corner on a wide view, lifted on a narrow one');
+});
+
+/** On foot at rest, the mouse free, Shadow worn. */
+const REST: OnFoot = {
+  worn: 3,
+  drawn: false,
+  ranged: false,
+  aiming: false,
+  daggers: false,
+  mounted: false,
+  mode: 'ground',
+  free: true,
+};
+
 test('the key strip as shown holds eight entries at most, the key to every control last', () => {
   const [ui, hud] = [new Interface(renderer()), new Hud()];
   hud.veil(null);
-  const rest: OnFoot = {
-    worn: 3,
-    drawn: false,
-    ranged: false,
-    aiming: false,
-    daggers: false,
-    mounted: false,
-    mode: 'ground',
-    free: true,
-  };
-  const away = withMapKey(footHints(rest));
-  const drawn = withMapKey(footHints({ ...rest, worn: 1, drawn: true }));
-  const boarded: StripHint[] = [['use', 'Back aboard your ship · 30 s left'], ...footHints({ ...rest, drawn: true })];
-  for (const strip of [away, drawn, boarded]) {
-    assert.ok(strip.length > 8, 'more than the strip holds');
-    hud.hints(strip);
-    const laid = frame(ui, hud);
-    const entries = laid.filter((each) => each.parent?.node.id === 'hud:hints');
-    assert.equal(entries.length, 8);
-    const said = words(laid.filter((each) => entries.some((entry) => each.parent === entry)));
-    assert.equal(said.at(-1), 'All controls');
-    assert.equal(said[strip[0]?.[0] === 'use' ? 1 : 0], 'Look round', 'the click to look round kept');
+  const rest = REST;
+  const away = withMapKey(footStrip(rest));
+  const drawn = withMapKey(footStrip({ ...rest, worn: 1, drawn: true }));
+  const melee = footStrip({ ...rest, drawn: true });
+  const boarded: StripHint[] = [['use', 'Back aboard your ship · 30 s left'], ...melee.hints];
+  for (const strip of [away, drawn, { ...melee, hints: boarded }]) {
+    assert.ok(strip.hints.length > 8, 'more than the strip holds');
+    hud.strip(strip);
+    const said = stripWords(frame(ui, hud));
+    // The head, then the keys' column (eight rows of caps), then the words' column.
+    const rows = said.slice(said.length - 8);
+    assert.equal(said[0], strip.title.toUpperCase());
+    assert.equal(rows.at(-1), 'All controls');
+    assert.equal(rows[strip.hints[0]?.[0] === 'use' ? 1 : 0], 'Look round', 'the click to look round kept');
   }
-  hud.hints(away);
-  const said = words(frame(ui, hud));
+  hud.strip(away);
+  const said = stripWords(frame(ui, hud));
   assert.ok(said.includes('Hold to aim daggers'), 'the Arts kept');
-  assert.ok(!said.includes('Menu'), 'the menu’s key gave way');
+  assert.ok(!said.includes('Hold to leave'), 'the leave’s key gave way');
   BINDS.device = 'pad';
   try {
-    const onPad = frame(ui, hud).filter((each) => each.parent?.node.id === 'hud:hints');
-    assert.equal(onPad.length, 8, 'the pad has no way to the click or the map, so the menu’s fits');
-    assert.ok(words(frame(ui, hud)).includes('Menu'));
+    assert.ok(stripWords(frame(ui, hud)).includes('Leave'), 'the pad has no way to the click or the map');
   } finally {
     BINDS.device = 'keys';
   }
 });
 
+test('the leave’s cap in the strip is ringed as far as it is held', () => {
+  const [ui, hud] = [new Interface(renderer()), new Hud()];
+  hud.veil(null);
+  hud.strip(footStrip({ ...REST, worn: 0 }));
+  const quads = () => {
+    const laid = frame(ui, hud);
+    const rendered = renderer();
+    for (const each of laid) each.node.draw?.(rendered, each.box, 1, each.box, 1);
+    return rendered.quads;
+  };
+  const before = quads().count;
+  hud.leaving.frame(true, true, null, 0.75);
+  assert.ok(quads().count > before, 'the ring lit as far as held');
+});
+
 test('the sheet of every control is offered only while the key strip shows', () => {
   const [ui, hud] = [new Interface(renderer()), new Hud()];
   hud.veil(null);
-  hud.hints([['K', 'All controls']]);
+  hud.strip({ title: '', hints: [['controls', 'All controls']] });
   frame(ui, hud);
   assert.ok(hud.keysOffered);
   hud.onBesides(() => ({ fight: false, bossed: false, speaking: true, map: false }));
@@ -362,7 +413,7 @@ test('in a sea fight the place gives way and the status line stands in the top r
   assert.equal(status.y, 22);
 });
 
-test('while the held map is up the place’s kind stands as written, and at the larger step the strip clears the Arts', () => {
+test('while the held map is up the place’s kind stands as written', () => {
   const [ui, hud] = [new Interface(renderer()), new Hud()];
   hud.veil(null);
   hud.place('At the helm', 'Saltmere Reach');
@@ -371,12 +422,6 @@ test('while the held map is up the place’s kind stands as written, and at the 
   assert.ok(words(frame(ui, hud)).includes('SALTMERE REACH'));
   besides = { ...besides, map: true };
   assert.ok(words(frame(ui, hud)).includes('Saltmere Reach'));
-  const wide = { width: 1600, height: 900, scale: 1 };
-  hud.hints([['Q', 'Guard']]);
-  besides = { ...besides, map: false, fight: true };
-  ui.frame(wide, [], 1 / 60);
-  ui.draw(hud.node(ui));
-  assert.equal(hud.hintsBox(ui)?.y, wide.height - 200 - (hud.hintsBox(ui)?.height ?? 0));
 });
 
 test('a hostile ship’s mark wears its rank’s colour, its faction’s emblem and a Miniboss’s mark over its ring', () => {
@@ -469,9 +514,11 @@ test("in a sea fight the ship's bar stands at the bottom left, clear of the key 
   for (const [width, height, zoom] of sizes) {
     const [ui, hud] = [new Interface(renderer()), new Hud()];
     hud.veil(null);
-    for (const hints of [HINTS.fight, HINTS.aim]) {
-      hud.hints(hints);
+    for (const name of ['fight', 'aim'] as const) {
+      hud.strip(stripOf(name));
       hud.seaFight({ ship, card: null, tally: null, warn: null });
+      // The strip stands clear of what stood under it the frame before.
+      laidAt(ui, hud, width, height);
       const laid = laidAt(ui, hud, width, height);
       const [bar, strip] = [boxOf(laid, 'fight-ship'), boxOf(laid, 'hud:hints')];
       assert.ok(bar && strip, `${width} by ${height}: both shown`);

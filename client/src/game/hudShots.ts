@@ -1,0 +1,76 @@
+// Pictures of the key strip and the leave held, headless (`tools/uiShot.mjs`), over a plain dusk in place of the
+// world: on foot at rest with the leave half held, a melee weapon drawn, sailing over the sea bar, and the pad's
+// buttons. The game never imports it.
+import { BINDS } from '../player/input.ts';
+import type { Node } from '../ui/node.ts';
+import type { Interface } from '../ui/ui.ts';
+import { type OnFoot, footStrip, stripOf, withMapKey } from './hints.ts';
+import { Hud } from './hud.ts';
+
+const DUSK = '#4a5662';
+const REST: OnFoot = {
+  worn: 1,
+  drawn: false,
+  ranged: false,
+  aiming: false,
+  daggers: false,
+  mounted: false,
+  mode: 'ground',
+  free: false,
+};
+
+/** Each shot's HUD, kept across its frames, as the strip stands by where it was laid the frame before. */
+const huds = new Map<string, Hud>();
+
+/** The HUD of shot `name` over dusk in Overlook, its veil lifted, with `set` done to it each frame. */
+function hudOver(ui: Interface, name: string, set: (hud: Hud) => void): Node {
+  let hud = huds.get(name);
+  if (!hud) {
+    hud = new Hud();
+    hud.veil(null);
+    hud.place('Overlook', 'Social space · Saltmere');
+    huds.set(name, hud);
+  }
+  set(hud);
+  return { width: 'grow', height: 'grow', fill: DUSK, children: [hud.node(ui)] };
+}
+
+/** At rest on foot, an Art worn, the map's key and the leave's; the leave held 60% of its way. */
+export function stripRestShot(ui: Interface): Node {
+  return hudOver(ui, 'rest', (hud) => {
+    hud.strip(withMapKey(footStrip(REST)));
+    // Held 60% of its way, and kept there.
+    if (hud.leaving.held === 0) hud.leaving.frame(true, true, null, 0.9);
+  });
+}
+
+/** A melee weapon drawn, the mouse free. */
+export function stripMeleeShot(ui: Interface): Node {
+  return hudOver(ui, 'melee', (hud) => hud.strip(withMapKey(footStrip({ ...REST, drawn: true, free: true }))));
+}
+
+/** Sailing, over the sea bar and its offer to dock. */
+export function stripSeaShot(ui: Interface): Node {
+  return hudOver(ui, 'sea', (hud) => {
+    hud.strip(stripOf('sea'));
+    hud.seaBar({
+      pace: 2,
+      sailing: true,
+      resumable: false,
+      landfall: { kind: 'dock', port: 'Saltmere' },
+      canLeave: true,
+      canManage: true,
+    });
+  });
+}
+
+/** At rest on foot as the pad shows it. */
+export function stripPadShot(ui: Interface): Node {
+  const device = BINDS.device;
+  BINDS.device = 'pad';
+  try {
+    return hudOver(ui, 'pad', (hud) => hud.strip(withMapKey(footStrip(REST))));
+  } finally {
+    BINDS.device = device;
+  }
+}
