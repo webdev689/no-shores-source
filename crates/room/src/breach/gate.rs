@@ -36,6 +36,9 @@ pub const GATE_SHUT: u8 = 112;
 /// its living players before the gate is let go, ticks.
 pub const HOLLOW_M: f64 = 45.0;
 pub const LEFT_TICKS: u64 = 30 * 60;
+/// How long the Spire may stand empty before the Waking is lost, ticks: a minute, so one who cannot fill it never holds
+/// the gate from the rest.
+pub const EMPTY_TICKS: u64 = 60 * 60;
 
 /// A company launched for a run: its tier and its players in this room.
 #[derive(Clone, Debug, Default, PartialEq)]
@@ -76,8 +79,9 @@ pub struct Gate {
     pub revives: Option<u8>,
     pub raising: BTreeMap<PlayerId, (PlayerId, u64)>,
     pub down_since: Option<u64>,
-    /// The last tick a living player of the holding company stood in the hollow.
+    /// The last tick a living player of the holding company stood in the hollow, and since when the Spire is empty.
     pub last_near: u64,
+    pub empty_since: Option<u64>,
     /// The runs whose gate has opened, by the tick it opened; and the companies inside runs, by run.
     pub opened: BTreeMap<String, u64>,
     pub inside: BTreeMap<String, Inside>,
@@ -224,7 +228,7 @@ impl Room {
             }
         }
         (gate.held_by, gate.fill, gate.woken, gate.claims) = (None, 0, None, [None; 3]);
-        (gate.claimers, gate.raising, gate.down_since) = (Vec::new(), BTreeMap::new(), None);
+        (gate.claimers, gate.raising, gate.down_since, gate.empty_since) = (Vec::new(), BTreeMap::new(), None, None);
     }
 
     /// The Waking under way: the moorings judged, the Spire filled or ebbing, the Bulwarks sent to claim, the waves,
@@ -266,6 +270,12 @@ impl Room {
             gate.fill += 1;
         } else if clock.is_multiple_of(ebb) {
             gate.fill = gate.fill.saturating_sub(1);
+        }
+        if gate.fill > 0 {
+            gate.empty_since = None;
+        } else if clock >= *gate.empty_since.get_or_insert(clock) + EMPTY_TICKS {
+            self.lose_waking(gate, &company);
+            return;
         }
         let third = SPIRE_TICKS / 3;
         // Counted once one stands, so a room too full to stand it sends it again next tick.

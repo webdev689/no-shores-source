@@ -327,3 +327,17 @@ fn the_gates_waves_are_sized_to_the_living_company_holding_it() {
         assert_eq!(wave, size, "{count} holding, and no Ravager on the first wave");
     }
 }
+
+#[test]
+fn a_waking_whose_spire_stands_empty_a_minute_is_lost_and_the_gate_freed() {
+    let (mut room, players) = gate_room(1);
+    room.breach_company(players[0], "run-a", Tier::Normal);
+    hold_moorings(&mut room, &players);
+    room.tick();
+    assert!(room.breach_gate.as_ref().expect("gate").held_by.is_some(), "one holds it, and cannot fill it");
+    room.take_events();
+    room.clock += 60 * 60;
+    room.tick();
+    assert!(room.breach_gate.as_ref().expect("gate").held_by.is_none(), "lost after a minute empty");
+    assert_eq!(room.take_events().iter().filter(|event| event.kind == EventKind::BreachWiped).count(), 1);
+}
