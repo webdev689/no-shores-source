@@ -1,5 +1,6 @@
 // The Cloudflare Worker that keeps the accounts, their sessions and their characters, over D1. `npm run accounts`
-// runs it here, beside `npm run server`; the rooms reach its CharacterKeeper through their service binding.
+// runs it here, beside `npm run server`; the rooms reach its CharacterKeeper through their service binding, and the
+// Discord bot its LinkedCharacters through its own.
 {
   "name": "overlook-accounts",
   "main": "worker.ts",

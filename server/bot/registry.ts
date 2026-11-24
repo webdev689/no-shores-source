@@ -7,6 +7,7 @@ import { announceModule } from './modules/announce.ts';
 import { antiraidModule } from './modules/antiraid.ts';
 import { automodModule } from './modules/automod.ts';
 import { birthdaysModule } from './modules/birthdays.ts';
+import { gameModule } from './modules/game.ts';
 import { giveawaysModule } from './modules/giveaways.ts';
 import { invitesModule } from './modules/invites.ts';
 import { levelsModule } from './modules/levels.ts';
@@ -45,6 +46,7 @@ export const SERVER_MODULES: readonly ServerModule[] = Object.freeze([
   invitesModule,
   statsModule,
   socialsModule,
+  gameModule,
 ]);
 
 /** A module list, ready to route: tests build one of their own. */
