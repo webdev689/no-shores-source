@@ -15,7 +15,7 @@ fn feet(player: PlayerId) -> [f64; 3] {
     let bytes = snapshot(player);
     let seen = messages::root_as_from_room(&bytes).unwrap().snapshot().unwrap().players().unwrap();
     let found = seen.iter().find(|seen| seen.player() == player).unwrap();
-    let numbers: Vec<f64> = found.fighter().unwrap().iter().take(22).collect();
+    let numbers: Vec<f64> = found.fighter().unwrap().iter().take(movement::floats::BODY_FLOATS).collect();
     let body = protocol::body_of(&numbers).unwrap();
     [body.x, body.y, body.z]
 }

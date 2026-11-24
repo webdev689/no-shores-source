@@ -433,7 +433,7 @@ export class Fighting {
    *  facing kept, letting go of any wall or lip it held, nothing fought and its arms kept, so it falls under its own
    *  weight and lies where it lands. */
   private lying(fighter: Float64Array, view: readonly Glanced[]): Float64Array {
-    const body = bodyOf(Array.from(fighter.subarray(0, 22)));
+    const body = bodyOf(Array.from(fighter.subarray(0, BODY_FLOATS)));
     const holding = body.mode === 'hang' || body.mode === 'climb';
     const controls = { forward: 0, sideways: 0, yaw: body.facing, run: false, jump: false, crouch: holding };
     const intent = new Float64Array([...floatsOfControls({ ...controls, mounted: false }), ...STILL_FIGHT]);

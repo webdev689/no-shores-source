@@ -60,7 +60,7 @@ pub const GARRISON_NODE: &str = r#"{ "id": "glade", "kind": "mission", "name": "
             -50] } } }"#;
 
 /// Both tests hold this value; a change to the garrison, the foes or the fight changes it in both, on purpose.
-pub const GARRISON_HASH: &str = "6df4581a";
+pub const GARRISON_HASH: &str = "d4b41f69";
 
 /// Ticks the player runs north into the garrison, then stands and swings each SWING_EVERY ticks until RUN_TICKS.
 const RUN_IN: u32 = 420;
@@ -76,7 +76,7 @@ fn a_node_s_garrison_fights_to_the_same_fingerprint_natively_as_in_the_browser_s
 
 /// Both tests hold this value: the node as a patrol whose layout marks a foes' site the player runs near, so its
 /// group stands mid-run on a mesh baked round it then.
-pub const PATROL_SITE_HASH: &str = "ea374418";
+pub const PATROL_SITE_HASH: &str = "ade4d029";
 const PATROL_SITE: [f64; 2] = [-60.0, 40.0];
 
 /// The node as a patrol, its file naming one foes' site at `site`.
@@ -133,7 +133,7 @@ fn input_of(player: PlayerId, input: &room::Input) -> i32 {
 }
 
 /// Both tests hold this value: two players in one node's room, the garrison's foes shared out between them.
-pub const GARRISON_PAIR_HASH: &str = "c0541149";
+pub const GARRISON_PAIR_HASH: &str = "212fe761";
 
 #[test]
 fn two_players_against_a_node_s_garrison_fight_to_the_same_fingerprint_natively_as_in_the_browser_s_webassembly() {
