@@ -74,7 +74,7 @@ code:
   - client/src/game/shipCompany.ts#companyOf
   - client/src/ships/shipCrew.ts#handsShown
   - client/src/game/shipPanel.ts#shipPanelOf
-  - client/src/game/hints.ts#seaHints
+  - client/src/game/hints.ts#seaStrip
   - client/src/game/hints.ts#footHints
   - client/src/game/rooms.ts#roomsFrom
   - client/src/heldmap/heldMap.ts#HeldMap
@@ -127,7 +127,7 @@ interface, the Test Ground's and the editors' panels too, is laid at the ratio i
 ## The flow
 
 `flow.ts` holds where the player is: loading behind a veil, on foot in a node, at sea, or over an island's side
-choosing a landing; on foot and at sea a menu may be open. It is pure: the game hands it what happened and draws what
+choosing a landing. It is pure: the game hands it what happened and draws what
 it answers. `gameBoot.ts` makes the pieces (the rooms, the modules, the scene, the world and the place arrived at),
 `game.ts` keeps the flow, the ways into each place and the player's actions, `travel.ts` the travel between places
 behind the veil, and `gameFrame.ts` draws each frame of the mode the flow is in, a frame on foot first heeding the
@@ -136,7 +136,7 @@ activities' word (`startActivities`: a gate that shut, a company that fell); eac
 | From | Happening | To |
 |---|---|---|
 | Arriving | The ground round the spawn is in | On foot in Overlook's social space |
-| On foot | M, then Return to ship | The room's word first: refused while fallen or within 10 s of a foe's blow, said in a toast (`toShip.ts`, [[The Audit's Leftovers Are Fixed as Claude Suggested]]), and no yes while the room joins again or has not sent the gear (a room lost for good is played on alone, and the page goes); else the veil, "Returning to your ship", then at sea |
+| On foot | The leave held (M, or the pad's View held, 1.5 s; [[Interface]], "The leave held") | The room's word first: refused while fallen or within 10 s of a foe's blow, said in a toast (`toShip.ts`, [[The Audit's Leftovers Are Fixed as Claude Suggested]]), and no yes while the room joins again or has not sent the gear (a room lost for good is played on alone, and the page goes); else the veil, "Returning to your ship", then at sea |
 | On foot, or behind the veil to land | The room's gate shuts to the character, or it came by no way that leads there | The veil, the room's reason and "Returning to your ship", then at sea |
 | At sea | Enter, L or the offer to dock or go ashore, off a coast | Over the island's side |
 | Over the side | A mark clicked, then clicked again or Enter | The veil, "Landing at" the node, then on foot there |
@@ -220,9 +220,10 @@ third person, the forge's figure and the first person's hands, and the Test Grou
   taken. Shots stop on that land, and the aimed shot's crosshair and the player's own arrows meet it. The key strip
   shows only the keys of what the player is doing now, and K opens the sheet of every control ([[Interface]], "The
   key strip"). Every key hint, on foot and at sea, is a key on its keycap, or its mouse button drawn, and its
-  action, with no colon. Where the HUD is wide and not doubled (1500 by 900 and up, under 2400 by 1300), its keys
-  stand at 22 px, at the bottom right ([[Interface]]), and the place line's small words under its name at the face's 11 px
-  (22 over the held map; [[Interface]], "Limits").
+  action, with no colon. The strip is a compact panel at the bottom right under the moment's name, its words at the
+  face's 11 px as the place line's small words under its name are (22 over the held map at the larger step;
+  [[Interface]], "Limits"). Escape opens Settings wherever nothing else is over the game
+  ([[The Key Strip Is a Compact Panel, a Held Key Leaves, and Settings Has Tabs]]).
 - **The foes.** Every foe the room holds stands as a figure in its type's dress ([[Enemies]]), with the Test Ground's
   display: the compass at the top with the boss bar and the target's plate under it, the vitals at the top left, the
   Arts and weapons at the bottom left, each foe's name and bar, the parry rings, the words, the arrows to foes out of

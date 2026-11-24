@@ -8,17 +8,19 @@ import { type BindId, DEFAULTS, overridesOf, readOverrides } from '../player/bin
 import { BINDS } from '../player/input.ts';
 import { CONTROL_GROUPS, cellsOf, doesFor } from './controls.ts';
 import { ControlsSheet, columnsOf, slotId, spokenKeys } from './controlsSheet.ts';
+import { Rebinding } from './rebinding.ts';
 import { FakeEvent, fakePage } from './pageForTests.ts';
 
 /** The sheet hearing the page's keys, with a listener after it standing for the game. */
 function listening(may = () => true) {
   const { window } = fakePage();
-  const sheet = new ControlsSheet();
+  const sheet = new ControlsSheet(new Rebinding());
   sheet.listen(may);
   const game: string[] = [];
   addEventListener('keydown', (event) => game.push((event as KeyboardEvent).key));
   const key = (name: string) => window.dispatchEvent(new FakeEvent('keydown', { key: name }));
-  return { sheet, game, key };
+  const press = (button: number) => window.dispatchEvent(Object.assign(new FakeEvent('mousedown'), { button }));
+  return { sheet, game, key, press };
 }
 
 test('K opens the sheet and K or Escape closes it; while it is open no key reaches the game', () => {
@@ -36,6 +38,23 @@ test('K opens the sheet and K or Escape closes it; while it is open no key reach
   key('Escape');
   assert.ok(!sheet.open);
   assert.deepEqual(game, ['w'], 'not even the Escape that closed it');
+});
+
+test('with the sheet shut, a key chosen in Settings waits on its binding: the next key or button binds it, unheard', () => {
+  const { sheet, game, key, press } = listening(() => false);
+  const before = BINDS.now;
+  try {
+    sheet.rebinding.start({ id: 'jump', device: 'keys', place: 0 }, new Set());
+    key('j');
+    assert.deepEqual(BINDS.now.jump.keys, ['j'], 'bound');
+    assert.deepEqual(game, [], 'the game never heard it');
+    assert.ok(!sheet.open, 'nor did the sheet open');
+    sheet.rebinding.start({ id: 'dodge', device: 'keys', place: 0 }, new Set());
+    press(3);
+    assert.deepEqual(BINDS.now.dodge.keys[0], 'mouse3', 'a mouse button binds too');
+  } finally {
+    BINDS.set(before);
+  }
 });
 
 test('K does nothing where the strip does not offer it', () => {

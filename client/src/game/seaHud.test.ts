@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import type { FightCaptain, ShipState } from '../rules/fightRules.ts';
-import { HINTS } from './hints.ts';
+import { stripOf } from './hints.ts';
 import type { Hud } from './hud.ts';
 import type { Sea } from './sea.ts';
 import type { SeaFrame } from './seaFrame.ts';
@@ -151,12 +151,12 @@ test("in a fight the readout stands over the sea: the ship's plate, rose, card a
   const show = (deck: unknown) =>
     showSeaHud(hud as unknown as Hud, sea(deck), shown as unknown as SeaFrame, state as unknown as SeaHudState);
   show(null);
-  show({ place: 'Its deck', line: 'Fighting', hints: [] });
+  show({ place: 'Its deck', line: 'Fighting', hints: { title: '', hints: [] } });
   assert.deepEqual(readouts, [model, null]);
 });
 
 test("in a fight the hints are the fight's keys alone, as on foot, and the sea's word and the fight's messages are notices", () => {
-  const said: Record<string, unknown[]> = { hints: [], notices: [] };
+  const said: Record<string, unknown[]> = { strip: [], notices: [] };
   const tasks: unknown[] = [];
   const hud = new Proxy(
     {},
@@ -191,7 +191,7 @@ test("in a fight the hints are the fight's keys alone, as on foot, and the sea's
   const notices = ['The Tithe Schooner joined the fight.'];
   const state = { landing: false, onSea: true, region: 'The sea', clock: 0, friendly: [], notices };
   showSeaHud(hud as unknown as Hud, sea, shown as unknown as SeaFrame, state as unknown as SeaHudState);
-  assert.deepEqual(said['hints'], [HINTS.fight]);
+  assert.deepEqual(said['strip'], [stripOf('fight')]);
   assert.deepEqual(said['notices'], [['The Tithe Schooner joined the fight.', 'The Tithe Brig surrenders!']]);
   // The tracker holds the fight's task: the ships left and their men.
   assert.deepEqual(tasks, [seaFightQuest('Sea fight', 2, 9)]);

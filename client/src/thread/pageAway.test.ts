@@ -56,6 +56,7 @@ test("an event the page heard on its canvas reaches the canvas's listeners, then
       'window',
       'matchMedia',
       'open',
+      'close',
       'addEventListener',
       'removeEventListener',
       'dispatchEvent',
@@ -123,6 +124,9 @@ test("an event the page heard on its canvas reaches the canvas's listeners, then
     history.replaceState(null, '', '/?at=overlook-social');
     assert.equal(location.href, 'https://example.org/?at=overlook-social');
     assert.ok(sent.some((message) => message.kind === 'go' && message.how === 'replaceState'));
+    // Closing the window is the page's to do: the worker goes on until the page it runs for is gone.
+    window.close();
+    assert.ok(sent.some((message) => message.kind === 'go' && message.how === 'close'));
     void away.canvas.requestPointerLock();
     assert.equal(document.pointerLockElement, null, 'locked only once the page says so');
     away.heard({ kind: 'lock', locked: true });

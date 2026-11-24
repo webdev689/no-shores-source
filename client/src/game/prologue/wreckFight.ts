@@ -319,7 +319,7 @@ export class WreckFight implements Beat {
     });
     // A cutscene shows no bars, compass or keys; the dialogue box is the stage's own and stays.
     if (held) footView.hideDisplay();
-    hud.hints(held ? [] : shown.hints);
+    hud.strip(held ? null : shown.hints);
     // Read every frame, a cutscene's too, so a turn the camera makes for it is never taken for the player's look.
     const tasks = this.teach(run, shown.fight, seconds);
     hud.tasks.show(held ? null : tasks);
@@ -559,7 +559,7 @@ export class WreckFight implements Beat {
     this.nameplate.hide();
     screen.showPrompt(null);
     this.story.walker.you.dress = this.story.dress;
-    hud.hints([]);
+    hud.strip(null);
     hud.reach({ kind: 'inside' });
     footView.hide();
     hud.tasks.show(null);

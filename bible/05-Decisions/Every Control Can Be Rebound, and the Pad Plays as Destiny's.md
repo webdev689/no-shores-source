@@ -60,4 +60,7 @@ steps the focus and the left stick moves the pad's cursor.
 | Keeping the binds | Only what differs from the defaults, sent a moment and a half after the last change, read once the account is known and again when another signs in; a save waits on a read that answers, and what was bound before it is laid over what the account kept. Binds from another build keep what this one reads, and a kept one that clashes with a default goes back to its own. Offline, the game plays on with what it has | Few saves, the defaults can change later, and nothing kept is lost to a blip |
 | The page's pads in the game's thread | The page reads the pads each frame and sends them to the game's worker | A worker has no Gamepad API |
 
+Replaced in part by [[The Key Strip Is a Compact Panel, a Held Key Leaves, and Settings Has Tabs]]: the game's menu
+is gone; M held and the pad's View held leave, on foot, and Escape opens Settings.
+
 Links: [[Interface]], [[Accounts]], [[The Key Strip Follows the Moment, and K Opens Every Control]].

@@ -202,7 +202,7 @@ export class Stage {
     hud.sight(false, null);
     hud.toast();
     hud.reach({ kind: 'inside' });
-    hud.hints([]);
+    hud.strip(null);
     footView.hide();
     // The game's veil rises under the story's black (the screen stands over the HUD) as the game takes over; the black
     // is let go only once the veil is wholly up, so the story's last picture never shows through the crossing.

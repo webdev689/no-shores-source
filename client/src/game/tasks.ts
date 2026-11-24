@@ -94,6 +94,9 @@ export function sameQuest(one: Quest | null, other: Quest | null): boolean {
   });
 }
 
+/** The tracker's id where it stands in play, which the key strip keeps under. */
+export const TRACKER_ID = 'hud:tracker';
+
 export class TaskTracker {
   private shown: Quest | null = null;
   /** Whether anything was shown yet: the first call takes note even of no quest. */
@@ -156,6 +159,7 @@ export class TaskTracker {
     // Four hard steps from lit to settled, as `steps(4, end)` takes them.
     const flash = still ? 0 : 1 - Math.floor(Math.min(1, Math.max(0, (now - this.metAt) / MET_S)) * 4) / 4;
     return {
+      id: TRACKER_ID,
       role: 'window',
       direction: 'column',
       through: true,
