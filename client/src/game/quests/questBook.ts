@@ -108,7 +108,9 @@ const met = (goal: Goal, count: number): boolean => count >= most(goal);
 /** The task now's goals not yet met, in its order, each with its place among the task's goals. */
 export function openGoals(state: QuestState | null | undefined): { readonly goal: Goal; readonly index: number }[] {
   const now = walked(state);
-  return (now?.task.goals ?? []).flatMap((goal, index) => (met(goal, now?.counts[index] ?? 0) ? [] : [{ goal, index }]));
+  return (now?.task.goals ?? []).flatMap((goal, index) =>
+    met(goal, now?.counts[index] ?? 0) ? [] : [{ goal, index }],
+  );
 }
 
 /** The kinds whose goal runs the task's clock: a race's time left, or the wait before a failed step (a ward lost, a
