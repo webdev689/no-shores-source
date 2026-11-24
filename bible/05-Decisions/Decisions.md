@@ -358,6 +358,7 @@ a decision is a record. How to add one: [[Recording a Decision]].
 - [[The Harbourmaster Stands in the Market, Rain Spares the Trees, and Patrol Nodes Always Stand]]
 - [[Other Ships Wear Their Players' Marks, the Sea Map Has No Fog, and New Players Ride a Bay That Bursts]]
 - [[The Lattice Is Shaded Darker, With Detailed Attacks and Projectile Tracers]]
+- [[Ships at Sea Wear Their Guild's Tag]]
 
 ## Replaced
 
