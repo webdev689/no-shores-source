@@ -22,11 +22,13 @@ pub const SPIRE_TICKS: u64 = 150 * 60;
 pub const EBB_EVERY: (u64, u64) = (4, 2);
 /// How near a mooring a body holds it, metres.
 pub const MOORING_REACH_M: f64 = 1.7;
-/// How often a wave comes, ticks; how long the gate stays open to its company once woken, and longer while the
-/// company is inside, ticks; how long a word from a company inside lasts, ticks: a minute, as its host tells the gate
-/// every ten seconds and forgets a run silent for a minute.
+/// How often a wave comes, ticks; how long the company that woke the gate holds it before the next may take it, ticks;
+/// how long the gate stays open to that company unless it clears the Breach first, ticks: a day, so its company can
+/// always come back in; how long a word from a company inside lasts, ticks: a minute, as its host tells the gate every
+/// ten seconds and forgets a run silent for a minute.
 pub const WAVE_EVERY: u64 = 14 * 60;
 pub const OPEN_TICKS: u64 = 3 * 60 * 60;
+pub const OPENED_TICKS: u64 = 24 * 60 * 60 * 60;
 pub const INSIDE_LASTS: u64 = 60 * 60;
 /// The moorings by their sockets.
 pub const MOORINGS: [&str; 3] = ["mooring-west", "mooring-south", "mooring-east"];
@@ -153,12 +155,14 @@ impl Room {
         true
     }
 
-    /// The host's word from a run: its company is inside, on an encounter; or, with `encounter` past the last, done.
+    /// The host's word from a run: its company is inside, on an encounter; or, with `encounter` past the last, done,
+    /// and the gate shut to it. Only a run the gate opened is heard, so no word makes a company the gate never knew.
     pub fn breach_inside(&mut self, run: &str, name: &str, tier: Tier, encounter: u8) {
         let clock = self.clock;
-        let Some(gate) = self.breach_gate.as_mut() else { return };
+        let Some(gate) = self.breach_gate.as_mut().filter(|gate| gate.opened.contains_key(run)) else { return };
         if usize::from(encounter) >= gear::breach::DROWNED_VALE.encounters.len() {
             // Told once, as the company that was inside is done: its run says so again until it leaves.
+            gate.opened.remove(run);
             if gate.inside.remove(run).is_some() {
                 self.tell_all(EventKind::BreachCleared, f64::from(encounter));
             }
@@ -177,9 +181,8 @@ impl Room {
     pub(crate) fn keep_breach_gate(&mut self) {
         let Some(mut gate) = self.breach_gate.take() else { return };
         let clock = self.clock;
-        gate.inside.retain(|_, inside| clock < inside.heard + INSIDE_LASTS);
-        // Open while its company is inside, so one who leaves the run can go back in.
-        gate.opened.retain(|run, opened| clock < *opened + OPEN_TICKS || gate.inside.contains_key(run));
+        gate.opened.retain(|_, opened| clock < *opened + OPENED_TICKS);
+        gate.inside.retain(|run, inside| clock < inside.heard + INSIDE_LASTS && gate.opened.contains_key(run));
         for company in gate.companies.values_mut() {
             company.players.retain(|player| self.players.contains_key(player));
         }

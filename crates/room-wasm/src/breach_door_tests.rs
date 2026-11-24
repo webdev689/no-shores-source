@@ -81,9 +81,9 @@ fn a_patrols_node_file_with_a_gate_stands_it_and_hears_the_hosts_words() {
     assert!(!breach_company(player, b"no word"));
     assert!(!breach_opened(b"breach-drowned-vale--hard--run-1"), "shut until its Spire wakes");
     let inside = json!({ "run": "run-2", "tier": 0, "name": "Wenna", "encounter": 3 }).to_string();
-    assert!(breach_inside(inside.as_bytes()));
+    assert!(breach_inside(inside.as_bytes()), "the word read");
     room_tick();
-    assert_eq!(seen(player).expect("the gate").inside, [("Wenna".to_owned(), 0, 3)]);
+    assert!(seen(player).expect("the gate").inside.is_empty(), "and dropped: the gate never opened to that run");
     assert_eq!(progress_json(), "null", "no run of its own");
     let mut ungated = gated_patrol();
     ungated.as_object_mut().expect("an object").remove("breach");

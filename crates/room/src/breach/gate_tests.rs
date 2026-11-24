@@ -1,8 +1,8 @@
 //! The Waking at a Breach's gate in its patrol zone: one company at a time holds it, its three moorings held by the
 //! company's living players fill the Spire and fewer let it ebb, a Bulwark claims a mooring left empty, the gate opens
-//! to that company alone once the Spire wakes and while it is inside, a lost Waking stands the company again at the
-//! gate, its fallen stand again there, the zone hears of the companies inside, the gate holds eight it would let in,
-//! the Waking's foes keep within the room's places, and only Normal seas stand a gate.
+//! to that company alone once the Spire wakes, for a day or until it clears, a lost Waking stands the company again at
+//! the gate, its fallen stand again there, the zone hears of the companies inside, the gate holds eight it would let
+//! in, the Waking's foes keep within the room's places, and only Normal seas stand a gate.
 
 use super::gate::{MOORINGS, SPIRE_TICKS};
 use super::*;
@@ -146,14 +146,18 @@ fn a_hard_companys_fallen_do_not_stand_again_and_its_wipe_stands_it_whole_at_the
 #[test]
 fn the_zone_hears_of_the_companies_inside_until_they_are_done_or_silent() {
     let (mut room, _) = gate_room(1);
+    opened(&mut room, &["run-a", "run-b"]);
     room.breach_inside("run-a", "Wenna", Tier::Hard, 2);
+    room.breach_inside("run-a", "Wenna", Tier::Hard, 3);
+    room.breach_inside("run-x", "Phantom", Tier::Hard, 2);
     let seen = room.breach_seen().expect("the gate's");
-    assert_eq!(seen.inside, [("Wenna".to_owned(), Tier::Hard as u8, 2)]);
+    assert_eq!(seen.inside, [("Wenna".to_owned(), Tier::Hard as u8, 3)], "one a company, none for a run never opened");
     assert_eq!((seen.marked_desk, seen.away_shore), (-1, -1), "no desk marked, no one away, as a run says it");
     room.breach_inside("run-a", "Wenna", Tier::Hard, 6);
     assert!(room.breach_seen().expect("the gate's").inside.is_empty(), "done");
     room.breach_inside("run-b", "Ossery", Tier::Normal, 1);
-    ticks(&mut room, 61 * 60);
+    room.clock += 61 * 60;
+    room.tick();
     assert!(room.breach_seen().expect("the gate's").inside.is_empty(), "silent a minute, as its host forgets it");
 }
 
@@ -192,6 +196,7 @@ fn a_company_gone_from_the_hollow_lets_the_gate_go_and_a_member_it_would_shut_ou
 #[test]
 fn the_zone_is_told_once_that_a_company_cleared_the_breach() {
     let (mut room, _) = gate_room(1);
+    opened(&mut room, &["run-a"]);
     room.breach_inside("run-a", "Wenna", Tier::Normal, 5);
     room.take_events();
     for _ in 0..3 {
@@ -211,26 +216,6 @@ fn woken(room: &mut Room, players: &[PlayerId]) {
     for &player in players {
         stand(room, player, arrival);
     }
-}
-
-#[test]
-fn the_gate_stays_open_while_its_company_is_inside_and_one_too_far_from_it_is_out_of_reach() {
-    let (mut room, players) = gate_room(3);
-    for &player in &players {
-        room.breach_company(player, "run-a", Tier::Normal);
-    }
-    hold_moorings(&mut room, &players);
-    room.tick();
-    woken(&mut room, &players);
-    let door = socket(&room, "gate");
-    stand(&mut room, players[0], [door[0], door[1] + 20.0, door[2]]);
-    assert_eq!(room.ask_enter_breach(players[0]), crate::asks::OUT_OF_REACH, "too far to go in");
-    for _ in 0..gate::OPEN_TICKS / (10 * 60) + 2 {
-        room.breach_inside("run-a", "Ada", Tier::Normal, 2);
-        ticks(&mut room, 10 * 60);
-    }
-    stand(&mut room, players[0], door);
-    assert_eq!(room.ask_enter_breach(players[0]), crate::asks::INTO_BREACH, "open past its time, the company inside");
 }
 
 #[test]
@@ -340,4 +325,35 @@ fn a_waking_whose_spire_stands_empty_a_minute_is_lost_and_the_gate_freed() {
     room.tick();
     assert!(room.breach_gate.as_ref().expect("gate").held_by.is_none(), "lost after a minute empty");
     assert_eq!(room.take_events().iter().filter(|event| event.kind == EventKind::BreachWiped).count(), 1);
+}
+
+/// The gate opened to each of these runs now, as their Spires woke.
+fn opened(room: &mut Room, runs: &[&str]) {
+    let clock = room.clock;
+    let gate = room.breach_gate.as_mut().expect("gate");
+    gate.opened.extend(runs.iter().map(|run| ((*run).to_owned(), clock)));
+}
+
+#[test]
+fn the_gate_stays_open_to_its_company_a_day_or_until_it_clears_and_one_too_far_from_it_is_out_of_reach() {
+    let (mut room, players) = gate_room(3);
+    for &player in &players {
+        room.breach_company(player, "run-a", Tier::Normal);
+    }
+    hold_moorings(&mut room, &players);
+    room.tick();
+    woken(&mut room, &players);
+    let door = socket(&room, "gate");
+    stand(&mut room, players[0], [door[0], door[1] + 20.0, door[2]]);
+    assert_eq!(room.ask_enter_breach(players[0]), crate::asks::OUT_OF_REACH, "too far to go in");
+    stand(&mut room, players[0], door);
+    room.clock += 23 * 60 * 60 * 60;
+    room.tick();
+    assert_eq!(room.ask_enter_breach(players[0]), crate::asks::INTO_BREACH, "open hours on, its company silent");
+    room.clock += 60 * 60 * 60;
+    room.tick();
+    assert_eq!(room.ask_enter_breach(players[0]), gate::GATE_SHUT, "shut a day on");
+    opened(&mut room, &["run-a"]);
+    room.breach_inside("run-a", "Ada", Tier::Normal, 6);
+    assert_eq!(room.ask_enter_breach(players[0]), gate::GATE_SHUT, "shut once its company cleared the Breach");
 }
