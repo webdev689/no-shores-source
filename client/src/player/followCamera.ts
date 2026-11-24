@@ -1,6 +1,7 @@
 // Following the company while fallen, as the owner asked for the Breach: while the player lies down or waits to stand
-// again in a Breach's run, the camera stands over a living member of their company (every other player in a run is
-// one), in third person, turned as the player turns it; Follow goes to the next. Standing again, it is the player's own.
+// again in a Breach's run, or at its gate while their company holds it, the camera stands over a living member of
+// their company (every other player in a run is one), in third person, turned as the player turns it; Follow goes to
+// the next. Standing again, it is the player's own.
 import type { SeenPlayer } from '../network/messages.ts';
 import { fighterView } from '../rules/fighters.ts';
 import type { Player } from './player.ts';
@@ -49,6 +50,18 @@ export class FollowCamera {
     const body = { ...player.body, x, y, z };
     return { ...player, body, previous: body, blend: 1, view: { ...player.view, firstPerson: false } };
   }
+}
+
+/** Whom of `living` the camera may follow while the player numbered `player` lies fallen: in a Breach's run (`run`)
+ *  every one; at its gate (`seen` from its room) those of the company holding it, while it is the player's; null where
+ *  the camera follows no one. */
+export function followable(
+  living: readonly Followed[],
+  { run, seen, player }: { run: boolean; seen: { gate: boolean; holders: readonly number[] } | null; player: number },
+): readonly Followed[] | null {
+  if (run) return living;
+  if (!seen?.gate || !seen.holders.includes(player)) return null;
+  return living.filter((each) => seen.holders.includes(each.id));
 }
 
 /** Every other player living, where their figure stands: those whose fighter the room says has not fallen. */

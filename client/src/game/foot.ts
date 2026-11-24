@@ -36,7 +36,7 @@ import { GatherHold } from './gatherHold.ts';
 import { markedHere } from './overheadMarks.ts';
 import { nodeText, standOn } from './footGround.ts';
 import { ACCOUNT_CHANGED, type GearHere } from './gearScreen.ts';
-import { keysShown, onFoot } from './hints.ts';
+import { bearerHints, keysShown, onFoot } from './hints.ts';
 import { type Standing, standingOf } from './hudLaw.ts';
 import { windowRect } from './nodes.ts';
 import { PlazaLife, countersOf, floorOver } from './plazaLife.ts';
@@ -51,9 +51,9 @@ import type { UsePrompt } from './usePrompt.ts';
 import { type Dressed, dressInGear, figureWhere, figuresEye, otherCards, ownCard, strikersOf } from './footFigures.ts';
 import type { AtEntrance, FootAsk, FootContext, FootFight, FootFrame, Heard, Held, Opened, Uses } from './footPlace.ts';
 import { arrivalQuery, closedIfThrown, stand } from './footPlace.ts';
-import type { InBreach } from './breachView.ts';
+import { type InBreach, bearing } from './breachView.ts';
 import { gateArrival } from './breachTrips.ts';
-import { FollowCamera, livingAmong } from '../player/followCamera.ts';
+import { FollowCamera, followable, livingAmong } from '../player/followCamera.ts';
 import { hearing, nextOtherId, roomNote, rulesOf } from './footRoom.ts';
 
 export type { AtEntrance, FootContext, FootFight, FootFrame, Uses } from './footPlace.ts';
@@ -124,8 +124,9 @@ export class Foot {
   ownFigure: CardAt | null = null;
   /** The zone's public events as the page plays them. */
   private readonly publicView: PublicView;
-  /** Fallen in a Breach's run, whom the camera follows. */
+  /** Fallen in a Breach, whom the camera follows, and whether anyone living may be followed now. */
   private readonly follow = new FollowCamera();
+  followable = false;
   /** A node being gathered while E is held. */
   readonly hold = new GatherHold(
     () => this.gear?.ask({ kind: ASKS.stopGather }),
@@ -363,7 +364,8 @@ export class Foot {
     const { walker, movement, forge } = this.context;
     const { groundAt } = this;
     const { fight, foes, effects } = this;
-    dressInGear(walker, forge, this.held.gear, this.dressed);
+    const bearer = bearing(this.held.breach, fight.player);
+    dressInGear(walker, forge, this.held.gear, this.dressed, bearer !== null);
     this.tellPrologue();
     this.plaza?.frame(WORLD_CLOCK.seconds(), this.gear?.gear ?? null);
     const near = [...foes.placed.values(), ...this.otherPlayers.placed.values()];
@@ -372,9 +374,13 @@ export class Foot {
     // The tumble starts the way the figure was last drawn facing (the aim, while aiming).
     walker.fall = this.falling.figure(fight.standing, walker.player.body, walker.you.facing);
     const blocks = [...this.boxes, ...(this.context.cameraBlocks ?? [])];
-    // Fallen in a Breach's run, the camera follows a living member of the company (`followCamera.ts`).
-    const living = livingAmong(fight.others, this.otherPlayers.placed);
-    this.follow.frame(this.run !== null && this.fallen, living, controls.pressed('follow'));
+    // Fallen in a Breach, the camera follows a living member of the company (`followCamera.ts`), once the player's own
+    // fall has played.
+    const breach = { run: this.run !== null, seen: this.held.breach, player: fight.player };
+    const company = followable(livingAmong(fight.others, this.otherPlayers.placed), breach);
+    const down = this.fallen && (this.standing.kind !== 'dead' || this.standing.told) && company !== null;
+    this.followable = down && (company?.length ?? 0) > 0;
+    this.follow.frame(down, company ?? [], controls.pressed('follow'));
     const aimed = () => playerCamera(this.follow.viewed(walker.player), movement, blocks, AIM, groundAt, this.roof);
     const camera = () => pushedIn(aimed(), effects.anima.push);
     const shown = this.player.frame(still ? IDLE : { ...controls, locked: true }, this.steps, seconds, clock, {
@@ -383,6 +389,7 @@ export class Foot {
       markOf: () => crosshairPoint(camera(), aspect, this.boxes, shotBodies(foes.placed, fight.foes), groundAt),
       zoomOf: () => handsZoom(camera(), walker.player.view),
       handsSeconds: feel.shownSeconds(fight.player, seconds),
+      bearer,
     });
     walker.player = cameraFollowed(walker.player, movement, this.boxes, groundAt, seconds);
     effects.ownLook = walker.glowing[0];
@@ -443,7 +450,13 @@ export class Foot {
       quiet: paused,
       held: fight.publicHeld,
       encounter: { layout: this.dungeon?.layout, seen: this.held.encounter },
-      breach: { seen: this.held.breach, using: controls.held('use'), fight, others: this.otherPlayers },
+      breach: {
+        seen: this.held.breach,
+        using: controls.held('use'),
+        fight,
+        others: this.otherPlayers,
+        gear: this.held.gear,
+      },
     });
     const marks = effects.marks(fight, seconds, {
       eye: shot.eye,
@@ -507,7 +520,8 @@ export class Foot {
     this.using = able ? (chest ?? useOnFoot(x, y, placeUse, counters, gear, here, trips, speak, mounted)) : null;
     // Use let go, as bound (a key, the pad's button, or the page's focus lost): a gather under way is let go of.
     if (!controls.held('use')) this.hold.release();
-    this.prompt.show(this.using?.words ?? null, this.hold.share(clock, able && !mounted, gear?.gear ?? null));
+    const gathered = this.hold.share(clock, able && !mounted, gear?.gear ?? null);
+    this.prompt.show(this.using?.words ?? null, gathered ?? this.using?.share ?? null);
     const held = gear?.gear;
     // The room leaves an Ammo box lying while the ammunition is full, whether a Ranged weapon is worn or not.
     const full = (held?.ammoShare ?? 1) >= 1;
@@ -523,11 +537,11 @@ export class Foot {
       parryOpen: fight.parryOpen,
       parryWindow: fight.parryWindow,
       abilities: fight.abilities,
-      // The shots left stand beside the crosshair, wherever it shows.
-      ammo: sights ? (ownView?.ammo ?? null) : null,
+      // The shots left stand beside the crosshair, wherever it shows; the Lodestone's bearer holds no weapon.
+      ammo: sights && !bearer ? (ownView?.ammo ?? null) : null,
       ammoMost: held?.ammoMost ?? null,
       ammoFull: !!ownView && this.drops.ammoFull(held?.drops ?? [], [ownView.x, ownView.y, ownView.z], full),
-      crosshair: crosshairOf(shown.reticle, sights, ownView, fight.reach),
+      crosshair: bearer ? null : crosshairOf(shown.reticle, sights, ownView, fight.reach),
       arms: {
         gear: this.gear?.gear ?? null,
         loadout: walker.player.loadout,
@@ -535,9 +549,11 @@ export class Foot {
         dress: walker.you.dress,
       },
       public: shownPublic.shown,
+      fall: this.publicView.fall,
     };
     const standing = this.standing;
-    const hints = keysShown(standing, onFoot(walker, shown, fight, !controls.locked && !paused));
+    const keys = keysShown(standing, onFoot(walker, shown, fight, !controls.locked && !paused));
+    const hints = bearer ? [...bearerHints(bearer.charged), ...keys] : keys;
     const dark = arrivals.darkOf(fight.player, clock);
     const { props, quest, sting } = shownPublic;
     return { shot, figures, standing, marks, lit, hidden, swings, fight: fought, hints, dark, props, quest, sting };
@@ -548,7 +564,9 @@ export class Foot {
     const standing = this.fight.standing;
     if (standing.kind === 'inside') return standingOf('inside', 0);
     const byFall = standing.kind === 'dead' && standing.fell;
-    return standingOf(standing.kind, standing.ticks, byFall, this.falling.told(byFall));
+    // A Breach stands a fall again as it stands its fallen (`breachFall`); the reach rules' own elsewhere.
+    const fall = this.publicView.fall;
+    return standingOf(standing.kind, standing.ticks, byFall, this.falling.told(byFall), fall ? fall.ticks : undefined);
   }
 
   /** Asks the room to stand the player again at the section's spawn nearest where they died, while it offers it. */

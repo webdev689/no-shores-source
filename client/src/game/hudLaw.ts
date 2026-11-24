@@ -23,12 +23,20 @@ export const TICKS_A_SECOND = 60;
 
 /** A standing given in ticks, as the movement door's reach rules and a room's snapshots give it (the ticks left of a
  *  warning, or the ticks dead), as the player reads it: in seconds, with Respawn offered once the body has lain dead
- *  long enough; a death by a fall (`fell`) told once `told`, one by straying at once. */
-export function standingOf(kind: Standing['kind'], ticks: number, fell = false, told = true): Standing {
+ *  `respawnTicks` (the reach rules' own unless the place says otherwise; null where its room never takes it); a death
+ *  by a fall (`fell`) told once `told`, one by straying at once. */
+export function standingOf(
+  kind: Standing['kind'],
+  ticks: number,
+  fell = false,
+  told = true,
+  respawnTicks: number | null = RESPAWN_SECONDS * TICKS_A_SECOND,
+): Standing {
   if (kind === 'inside') return { kind };
   if (kind === 'warned') return { kind, secondsLeft: ticks / TICKS_A_SECOND };
   const secondsDead = ticks / TICKS_A_SECOND;
-  return { kind, secondsDead, canRespawn: secondsDead >= RESPAWN_SECONDS, fell, told: told || !fell };
+  const canRespawn = respawnTicks !== null && ticks >= respawnTicks;
+  return { kind, secondsDead, canRespawn, fell, told: told || !fell };
 }
 
 /** Whether the world drains to grey: once death is told, so a fall plays out in colour first. */

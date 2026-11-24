@@ -24,6 +24,9 @@ export const CAST_LOCKOUT_MOST_S = 2;
 /** What a fighter is doing that no cast starts from, as the room has it: staggered (a Charge with it), down,
  *  drinking, dead. */
 export const UNABLE: ReadonlySet<string> = new Set(['staggered', 'down', 'drink', 'dead']);
+/** The spell a Lodestone's grounding is asked with: the room grounds it for its bearer whatever Art's key is cast
+ *  (crates/room/src/arts.rs `ask_cast`), so any will do. */
+export const GROUND_SPELL = 1;
 
 /** Dusk Daggers aimed: the middle of the ring where they will whirl, its radius, and its Art's element. */
 export interface AimRing {
@@ -89,10 +92,12 @@ export function aimRingMesh(ring: AimRing): number[] {
   return AIMED.laid();
 }
 
-/** What a frame of casting asks: the cast to send (none for none), and Dusk Daggers' ring while it is aimed. */
+/** What a frame of casting asks: the cast to send (none for none), and Dusk Daggers' ring while it is aimed; a
+ *  grounding of the Lodestone (`grounds`) is no spell, and plays none. */
 export interface CastFrame {
   readonly cast: CastAsk | null;
   readonly ring: AimRing | null;
+  readonly grounds?: boolean;
 }
 
 /** The casting keys, frame by frame: a press casts its ability once the room's word has it ready; Dusk Daggers' key
@@ -109,7 +114,8 @@ export class CastKeys {
 
   /** One frame, `seconds` long: the keys taken only while `hands` (the pointer held, the player on foot and free);
    *  `state` the room's word on the Arts, `abilities` as the bar shows them now; the ring laid on `markOf`'s point (the
-   *  crosshair's) from where `own` stands, looking along `yaw`, on the ground `floorAt` gives. */
+   *  crosshair's) from where `own` stands, looking along `yaw`, on the ground `floorAt` gives. While the player bears
+   *  the Lodestone (`bearer`), any Art's key asks to ground it once it is charged, and nothing else. */
   frame(
     controls: InputFrame,
     seconds: number,
@@ -121,6 +127,7 @@ export class CastKeys {
       yaw,
       markOf,
       floorAt,
+      bearer = null,
     }: {
       hands: boolean;
       state: ArtState | null | undefined;
@@ -129,9 +136,17 @@ export class CastKeys {
       yaw: number;
       markOf: () => Point | null;
       floorAt: (x: number, y: number) => number;
+      bearer?: { readonly charged: boolean } | null;
     },
   ): CastFrame {
     this.waited(state, abilities, seconds);
+    if (bearer) {
+      this.aiming = false;
+      const able = hands && !!own && !UNABLE.has(own.action.kind);
+      const pressed = ABILITY_ACTIONS.some((action) => controls.pressed(action));
+      const cast = able && pressed && bearer.charged ? { spell: GROUND_SPELL, aim: null } : null;
+      return { cast, ring: null, grounds: true };
+    }
     const art = state && artOf(state.art);
     const element = art?.element;
     const unable = !hands || !state || !art || !abilities || !own || UNABLE.has(own.action.kind);

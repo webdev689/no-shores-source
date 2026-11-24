@@ -46,20 +46,34 @@ export function clearOf<Spot extends { readonly x: number; readonly y: number }>
   return { ...spot, y: below ? box.bottom + gap : box.top - gap };
 }
 
+/** How the fallen stand again where a place's room says so (a Breach's): after `ticks` lain, or never of themselves
+ *  (null), when a company member may still raise them while `revives` are left (-1 none counted). */
+export interface StandingAgain {
+  readonly ticks: number | null;
+  readonly revives: number;
+}
+
 /** The veil over the display, by what holds the player: joining the room again, the room lost (and why), or their
- *  death (the ticks they have lain, while the room will stand them again: with no revive left, it promises nothing);
- *  a link's veil is plain, death's is blood. Null while none of these holds, and for a death the section dealt too,
- *  whose own veil offers Respawn. */
+ *  death (the ticks they have lain, while the room will stand them again: with no revive left, it promises nothing;
+ *  where the place says how its fallen stand, as it says); a link's veil is plain, death's is blood. Null while none
+ *  of these holds, and for a death the section dealt too, whose own veil offers Respawn. */
 export function veilOf(
-  frame: Pick<HudFrame, 'own' | 'lost' | 'rejoining' | 'revivesLeft' | 'sectionDead'>,
+  frame: Pick<HudFrame, 'own' | 'lost' | 'rejoining' | 'revivesLeft' | 'sectionDead' | 'fall'>,
 ): { readonly words: string; readonly link: boolean } | null {
   if (frame.rejoining) return { words: 'Reconnecting…', link: true };
   if (frame.lost !== null) return { words: `The link to the room was lost: ${frame.lost}.`, link: true };
   const dead = frame.own?.action.kind === 'dead' ? frame.own.action : null;
   if (!dead || frame.sectionDead) return null;
-  if (frame.revivesLeft === 0) return { words: 'You fell.', link: false };
-  const seconds = Math.ceil(Math.max(0, RESPAWN_TICKS - dead.elapsed) / 60);
-  return { words: `You fell. Standing again in ${seconds} s`, link: false };
+  const standing = (ticks: number) => ({
+    words: `You fell. Standing again in ${Math.ceil(Math.max(0, ticks - dead.elapsed) / 60)} s`,
+    link: false,
+  });
+  const fall = frame.fall;
+  if (!fall) return frame.revivesLeft === 0 ? { words: 'You fell.', link: false } : standing(RESPAWN_TICKS);
+  if (fall.ticks !== null) return standing(fall.ticks);
+  if (fall.revives === 0) return { words: 'You fell. No revives are left to raise you.', link: false };
+  const left = fall.revives > 0 ? ` · ${fall.revives} revive${fall.revives === 1 ? '' : 's'} left` : '';
+  return { words: `You fell. A company member can raise you${left}`, link: false };
 }
 
 /** The span down the view a figure standing at `view` fills, where it stands within the call's reach (at `zoom`) of

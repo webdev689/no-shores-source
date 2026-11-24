@@ -3,7 +3,7 @@
 import { loadRunModules } from '../city/modules.ts';
 import type { Difficulty } from '../heldmap/heldMap.ts';
 import { RoomConnection, type Snapshot } from '../network/roomConnection.ts';
-import { blocksGround, planBlocks, runPlace, slabStands, socketBearing, spaceSocket } from './breachPlan.ts';
+import { blocksGround, runPlace, socketBearing, spaceSocket, standingBlocks } from './breachPlan.ts';
 import type { InBreach } from './breachView.ts';
 import { type DungeonAsk, type DungeonLayout, seenBlocks } from './dungeonLayout.ts';
 import { Foot, type FootContext } from './foot.ts';
@@ -39,25 +39,22 @@ export async function enterDungeon(
   }));
 }
 
-/** Which of a run's seals are open and slabs stand at a tick, as one key: a course is made anew only when it changes. */
-const courseKey = (into: InBreach, seals: number, tick: number) =>
-  `${seals}:${into.plan.slabs.map((slab) => Number(slabStands(into.plan, slab.phase, tick))).join('')}`;
-
 /** Takes the player into a Breach's run, at the Descent's arrival, and joins its room: the server's alone, which lets
- *  in only a company whose gate has opened. The page's movement and fight stand on its blocks over the dark as each
- *  snapshot says its seals and its slabs stand. */
+ *  in only a company whose gate has opened. The page's movement and fight, and the run's own ground, stand on its
+ *  blocks over the dark as each snapshot says its seals and its slabs stand. */
 export async function enterBreachRun(context: FootContext, into: InBreach): Promise<Foot> {
   const { rooms, movement } = context;
   if (!rooms) throw new Error('a Breach is played online');
   // Its spaces' meshes come before the veil lifts on it; they are let go once the player is out (`gameFrame.ts`).
   const [rules] = await Promise.all([rulesOf(context), loadRunModules()]);
-  const blocks = planBlocks(into.plan, 0, 0);
+  const { blocks, keep } = standingBlocks(into.plan, (seals, tick) => {
+    movement.setCourse(blocks);
+    rules.combat.setBreach(seals, tick);
+  });
   movement.setCourse(blocks);
   movement.setGround(null);
+  // Open ground forgets the run's last seals and slabs, so the rules make its course anew.
   rules.combat.setGround(null);
-  // The rules keep the run's last seals and slabs over any course set since: asked once with every seal open, its
-  // course is made anew whatever was kept.
-  rules.combat.setBreach(0xff, 0);
   rules.combat.setBreach(0, 0);
   const [x, y, z] = spaceSocket(into.plan, 'descent', 'arrival') ?? [0, 0, 0];
   const descent = into.plan.spaces.find((space) => space.key === 'descent');
@@ -66,19 +63,10 @@ export async function enterBreachRun(context: FootContext, into: InBreach): Prom
   const { walker } = context;
   const body = { ...walker.player.body, z };
   walker.player = { ...walker.player, body, previous: body };
-  let kept = courseKey(into, 0, 0);
-  const keep = (snapshot: Snapshot) => {
-    const [seals, tick] = [snapshot.breach?.seals ?? 0, Number(snapshot.tick)];
-    const key = courseKey(into, seals, tick);
-    if (key === kept) return;
-    kept = key;
-    movement.setCourse(planBlocks(into.plan, seals, tick));
-    rules.combat.setBreach(seals, tick);
-  };
   return Foot.start(context, runPlace(into), rules, async (heard, session) => {
     const hear = (snapshot: Snapshot) => {
       heard.snapshot(snapshot);
-      keep(snapshot);
+      keep(snapshot.breach?.seals ?? 0, Number(snapshot.tick));
     };
     const link = await RoomConnection.open(rooms(into.run), hear, heard.gear, session);
     return { link, boxes: blocks, text: '', dungeon: null, seas: 'normal', run: into, groundAt: blocksGround(blocks) };

@@ -12,10 +12,18 @@ import type { NodeLayout } from '../layout/layouts.ts';
 import { nodeOfRoom } from './rooms.ts';
 import type { NodeInfo } from './worldData.ts';
 
-/** The gate's answers to a player asking to enter (crates/room/src/asks.rs INTO_BREACH, breach/gate.rs GATE_SHUT):
- *  let through, or shut to them. */
+/** The gate's answers to a player asking to enter (crates/room/src/asks.rs INTO_BREACH and OUT_OF_REACH,
+ *  breach/gate.rs GATE_SHUT): let through, too far from its doorway, or shut to them. */
 export const INTO_BREACH = 108;
+export const OUT_OF_REACH = 100;
 export const GATE_SHUT = 112;
+/** What the page says of each refusal, the shut gate in the server's own words (server/breach.ts GATE_SHUT), and of
+ *  a gate that gave no answer. */
+export const GATE_WORDS: Readonly<Record<number, string>> = {
+  [OUT_OF_REACH]: 'Too far from the gate.',
+  [GATE_SHUT]: 'The Sunken Gate has not opened to your company.',
+};
+export const GATE_UNANSWERED = 'The gate did not answer. Try again.';
 /** How long the page waits on the gate's answer, and how often it looks. */
 const ANSWER_WAIT_MS = 3000;
 const POLL_MS = 100;
@@ -80,6 +88,8 @@ export function breachTrips(game: BreachGame) {
       await game.ontoPatrol(into.zone, 0, 'normal', { number: -1, x: 0, y: 0, facing: 0, breach: into.run });
     });
   return {
+    /** Says a word of the Breach's to the player, as the gate's refusals are said. */
+    tell: (words: string) => game.tell?.(words),
     /** To the gate of the run the Playlist launched or found. */
     toGate: (run: string) =>
       void plan().then((read) => {
@@ -101,9 +111,10 @@ export function breachTrips(game: BreachGame) {
             game.travel({ kind: 'enter', node: `${into.zone.id}--breach`, name: inSentence(into.plan.name) }, () =>
               enter(into),
             );
-          else if (now.answer === GATE_SHUT) game.tell?.(`The gate of ${inSentence(into.plan.name)} is shut to you.`);
+          else game.tell?.(GATE_WORDS[now.answer] ?? GATE_UNANSWERED);
           return;
         }
+        game.tell?.(GATE_UNANSWERED);
       })();
     },
     /** Out of the run, back to its gate in the zone, in its company still. */

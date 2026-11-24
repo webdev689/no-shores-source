@@ -38,6 +38,8 @@ export interface Trips {
   leave(): void;
   enterBreach?(): void;
   leaveBreach?(): void;
+  /** Says a word of the Breach's to the player: a refusal, a moment. */
+  tell?(words: string): void;
 }
 
 /** The name of the room a point stands in, or null in a corridor or past the grid: "the Ossuary". */

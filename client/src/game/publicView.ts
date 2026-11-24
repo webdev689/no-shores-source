@@ -39,6 +39,7 @@ import type { Shot } from './camera.ts';
 import type { Quest } from './tasks.ts';
 import { chime as rarityChime, play } from './uiSounds.ts';
 import { type BreachOn, type BreachParts, BreachView, withBreach } from './breachView.ts';
+import type { StandingAgain } from '../combat/hudPlace.ts';
 
 type Point = readonly [number, number, number];
 
@@ -365,6 +366,11 @@ export class PublicView {
     const heroic = banner.heroic && moments.call ? { ...banner.heroic, text: moments.call } : banner.heroic;
     const elsewhere = banner.tone === 'next' ? elsewhereOf(event, this.zone) : '';
     return { ...banner, objective, heroic, elsewhere };
+  }
+
+  /** How the player stands again if they fall where they stand, where a Breach's room says (`breachFall`). */
+  get fall(): StandingAgain | null {
+    return this.breach?.fall() ?? null;
   }
 
   /** What E does at the player's feet: opens their chest in reach not yet asked, if one is, else what it does in a

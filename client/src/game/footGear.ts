@@ -50,6 +50,8 @@ export interface Use {
   readonly words: string;
   readonly run: () => void;
   readonly gather?: number;
+  /** How far a deed held under way has come, 0 to 1, as the room says (a Breach's raising); none while none is. */
+  readonly share?: number | null;
 }
 
 /** What E does at a counter of a kind (its offer's view) besides opening it: speaking with its keeper, while a quest

@@ -232,6 +232,8 @@ export function startActivities(
     /** The sea's last word of the character while the player is at sea or over an island's side (null before one),
      *  undefined anywhere else: the Playlist closes once the player is not there. */
     readonly atSea?: () => GearState | null | undefined;
+    /** Says why the player is not where they went, or a Breach's word to them. */
+    readonly tell?: (words: string) => void;
   },
 ): {
   readonly trips: ReturnType<typeof dungeonTrips> & ReturnType<typeof breachTrips>;

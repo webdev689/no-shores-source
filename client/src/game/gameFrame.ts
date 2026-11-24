@@ -185,6 +185,12 @@ export function startFrames(parts: FrameParts, playing: Playing): void {
     if (dead && !wasDead) document.exitPointerLock();
     drain.toward(dead);
   };
+  /** Out of a Breach's run by any way (to another place on foot, or to the ship), its modules are let go, drawn and
+   *  read. */
+  const outOfRun = () => {
+    parts.eventProps.forget(ofRun);
+    releaseRunModules();
+  };
   /** What the mount key says with no horse worn in the Mount slot. */
   const NO_HORSE = 'You have no horse.';
   /** The words that tell why the player is not where they went, or that the mount key found no horse, while they
@@ -224,12 +230,9 @@ export function startFrames(parts: FrameParts, playing: Playing): void {
     const listener = [walker.player.body.x, walker.player.body.y] as const;
     parts.music.onFoot(parts.world, here.node, shown.fight, seconds, { musicians: musiciansOf(here.folk), listener });
     parts.eventProps.set(shown.props ?? []);
-    // Out of a Breach's run, its modules are let go, drawn and read.
-    if (!here.run) {
-      parts.eventProps.forget(ofRun);
-      releaseRunModules();
-    }
-    parts.ambience.onFoot(here.node, playing.landmass, shown.shot, here.folk, !!here.dungeon);
+    if (!here.run) outOfRun();
+    // A Breach's run is heard as a dungeon is, under the ground.
+    parts.ambience.onFoot(here.node, playing.landmass, shown.shot, here.folk, !!here.dungeon || !!here.run);
     const { body } = walker.player;
     if (!here.mapless) {
       scene.keepClose([body.x, body.y], parts.closeSource, () => undefined);
@@ -322,8 +325,8 @@ export function startFrames(parts: FrameParts, playing: Playing): void {
     hud.passageOffer(playing.through?.offer ?? null);
     // N raises the map on foot unless a menu is up, the player has fallen or is in a dungeon, as `openMap` has it.
     const mapless = paused || here.fallen || here.mapless;
-    // Fallen in a Breach's run, the camera follows the company: its key is shown.
-    const hints = here.run && here.fallen ? [FOLLOW_HINT, ...shown.hints] : shown.hints;
+    // Fallen in a Breach, the camera follows the company: its key is shown while anyone living may be followed.
+    const hints = here.followable ? [FOLLOW_HINT, ...shown.hints] : shown.hints;
     hud.hints(looking ? HINTS.landMap : mapless ? hints : withMapKey(hints));
     // The quest's mark gives way to the map, as the fight's display does.
     hud.marks(looking ? [] : quests.marks(shown.shot, viewport, [body.x, body.y], parts.groundAt, here.node.id));
@@ -348,6 +351,7 @@ export function startFrames(parts: FrameParts, playing: Playing): void {
     // The sea by weather round the ship, reaching as far as the view last looked; the land's swell until it opens.
     const swell = parts.seaWeather()?.follow(here.position, parts.seaView.reachM, seconds) ?? scene.land?.swell;
     parts.eventProps.set([]);
+    outOfRun();
     // The helm's controls while the sea's own view is up: the map's and the deck's are their own, and a fight's its.
     if (!paused && !helmMap.shown) {
       const steer = axis(controls, 'steerLeft', 'steerRight');

@@ -66,6 +66,12 @@ test('the veil is blood for a death, plain for a link joining again or lost, and
     link: false,
   });
   assert.equal(veilOf({ own: dead, lost: null, sectionDead: true }), null);
+  // A Breach says how its fallen stand: later than the rules' own, or never, raised by the company while revives last.
+  const fallen = (ticks: number | null, revives: number) => veilOf({ own: dead, lost: null, fall: { ticks, revives } });
+  assert.equal(fallen(600, -1)?.words, 'You fell. Standing again in 9 s');
+  assert.equal(fallen(null, 3)?.words, 'You fell. A company member can raise you · 3 revives left');
+  assert.equal(fallen(null, 1)?.words, 'You fell. A company member can raise you · 1 revive left');
+  assert.equal(fallen(null, 0)?.words, 'You fell. No revives are left to raise you.');
   assert.deepEqual(veilOf({ own: standing, lost: 'the room closed' }), {
     words: 'The link to the room was lost: the room closed.',
     link: true,

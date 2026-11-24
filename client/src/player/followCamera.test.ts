@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { FollowCamera, nextFollowed } from './followCamera.ts';
+import { FollowCamera, followable, nextFollowed } from './followCamera.ts';
 import type { Player } from './player.ts';
 
 const ada = { id: 4, at: [10, 0, 50] as const };
@@ -37,4 +37,12 @@ test('fallen, the camera stands over a living member in third person; standing a
   assert.equal(camera.viewed(own), own, 'with no one living, the own');
   camera.frame(false, [ada], false);
   assert.equal(camera.following, null);
+});
+
+test("fallen, the camera follows anyone living in a run, at the gate its holding company's, and no one elsewhere", () => {
+  const gate = (holders: readonly number[]) => ({ gate: true, holders });
+  assert.deepEqual(followable([ada, ben], { run: true, seen: null, player: 7 }), [ada, ben]);
+  assert.deepEqual(followable([ada, ben], { run: false, seen: gate([7, 9]), player: 7 }), [ben]);
+  assert.equal(followable([ada, ben], { run: false, seen: gate([4, 9]), player: 7 }), null, "another company's");
+  assert.equal(followable([ada, ben], { run: false, seen: null, player: 7 }), null, 'no Breach');
 });

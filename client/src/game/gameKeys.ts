@@ -39,7 +39,8 @@ export interface Controlled {
 export function contextOf(playing: Pick<Playing, 'flow' | 'sea' | 'foot'>): Context {
   const { flow, sea, foot } = playing;
   if (('menu' in flow && flow.menu) || socialUp()) return 'menu';
-  if (flow.mode === 'foot') return foot?.standing.kind === 'dead' ? 'dead' : 'foot';
+  // Fallen in a fight or past the edge alike, the dead's controls act (Follow among them, where it is read).
+  if (flow.mode === 'foot') return foot?.fallen ? 'dead' : 'foot';
   if (sea?.boarding.onDeck) return sea.boarding.foot?.standing.kind === 'dead' ? 'dead' : 'foot';
   if (sea?.aboard.walking) return 'foot';
   return sea?.fight ? 'fight' : 'helm';

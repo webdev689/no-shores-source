@@ -126,6 +126,26 @@ export function planBlocks(plan: BreachPlan, seals: number, tick: number): Block
   return blocks;
 }
 
+/** The run's blocks as they stand, in one array that whatever reads the run's ground keeps (the camera, the
+ *  crosshair, the plates' sight, the marks): `keep` makes it anew in place once a snapshot's seals or its slabs stand
+ *  otherwise than they last did, and tells `changed`, as the page's courses are made anew. */
+export function standingBlocks(plan: BreachPlan, changed: (seals: number, tick: number) => void) {
+  const blocks = planBlocks(plan, 0, 0);
+  const keyOf = (seals: number, tick: number) =>
+    `${seals}:${plan.slabs.map((slab) => Number(slabStands(plan, slab.phase, tick))).join('')}`;
+  let kept = keyOf(0, 0);
+  return {
+    blocks: blocks as readonly Block[],
+    keep(seals: number, tick: number): void {
+      const key = keyOf(seals, tick);
+      if (key === kept) return;
+      kept = key;
+      blocks.splice(0, blocks.length, ...planBlocks(plan, seals, tick));
+      changed(seals, tick);
+    },
+  };
+}
+
 /** The space a point stands over, by its module's foot; null between spaces. */
 export function spaceAt(plan: BreachPlan, x: number, y: number): BreachSpace | null {
   return (

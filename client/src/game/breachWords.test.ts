@@ -11,10 +11,13 @@ import {
   gateLine,
   insideWords,
   runBanner,
+  momentWords,
+  revivesWords,
   runPlaceWords,
   stoneWords,
   ticksWords,
 } from './breachWords.ts';
+import { BREACH_EVENT } from '../network/breachMessages.ts';
 
 const MODULE = new URL('../../../target/wasm32-unknown-unknown/release/room_wasm.wasm', import.meta.url);
 const plan = breachPlanOf(
@@ -90,8 +93,10 @@ test("the run's banner names the encounter under way with its countdown, the Lod
     [banner.tone, banner.kicker, banner.title, banner.clock],
     ['running', 'Breach · Hard', 'The Choir', '0:08'],
   );
-  assert.equal(banner.objective, 'Round 2 · Rings in 0:08 · Font lit');
+  assert.equal(banner.objective, 'Round 2 of 5 · Rings in 0:08 · Font lit');
   assert.deepEqual(banner.bar, { share: 0.25, label: 'Bells broken 1 of 4' });
+  const waking = runBanner(plan, { ...choir, bells: [3, 1] }, names).bar;
+  assert.deepEqual(waking, { share: 0.25, label: 'Bells broken 1 of 4' }, "the round's bells, woken or not");
   assert.equal(banner.elsewhere, 'Lodestone borne by Ada · charge 50% · 3 revives left');
   const scrivener = { ...choir, stage: 2, warded: true, markedDesk: 2, deskTicks: 4 * 60, writeTicks: 20 * 60 };
   assert.equal(
@@ -100,6 +105,13 @@ test("the run's banner names the encounter under way with its countdown, the Lod
   );
   const between = runBanner(plan, RUN, names);
   assert.deepEqual([between.tone, between.title, between.objective], ['next', 'The Mending', '']);
+  const mending = { ...RUN, encounter: ENCOUNTER.mending, stage: 1, counts: [1, 0, 1] };
+  assert.equal(
+    runBanner(plan, mending, names).objective,
+    'The west and east seams open · Fused 2 of 4: north 1 · west 0 · east 1',
+  );
+  assert.match(runBanner(plan, { ...mending, tier: 1 }, names).objective, /Fused 2 of 3/, "Hard's fewer");
+  assert.match(runBanner(plan, { ...choir, revives: 1 }, names).elsewhere ?? '', /· 1 revive left$/);
 });
 
 test('the Ways, the Shores and the Steward each say what their room counts', () => {
@@ -121,7 +133,7 @@ test('the Ways, the Shores and the Steward each say what their room counts', () 
   };
   assert.equal(
     runBanner(plan, shores, names).objective,
-    'Rift of what was opening 50% · Rift of what is open · Keepers fallen 1 of 2 · Tolls in 0:21 · Fused 2',
+    'Rift of what was opening 50% · Rift of what is open · Keepers fallen 1 of 2 · Tolls in 0:21 · Fused 2 of 4',
   );
   const steward = {
     ...RUN,
@@ -136,8 +148,10 @@ test('the Ways, the Shores and the Steward each say what their room counts', () 
   };
   assert.equal(
     runBanner(plan, steward, names).objective,
-    'Takings 2 · Takes in 0:40 · Taken to what is: Ada, Ben · the way back is open · Bells broken 5 of 5',
+    'Takings 2 of 4 · Takes in 0:40 · Taken to what is: Ada, Ben · the way back is open · Bells broken 5 of 5',
   );
+  const last = { ...steward, takings: 4, awayShore: -1 };
+  assert.equal(runBanner(plan, last, names).objective, 'Takings 4 of 4 · The company is unwritten in 0:40');
 });
 
 test('the Lodestone lying says the time before the company is unwritten', () => {
@@ -160,4 +174,23 @@ test("the place line names the run's tier, its encounter and its revives; the ca
   assert.equal(breachCall(marked, 7), 'Rewritten: unwritten in 0:09');
   assert.equal(breachCall(marked, 8), null, "another's mark is theirs");
   assert.equal(breachCall({ ...marked, lyingTicks: 120 }, 8), 'The Lodestone lies: the company is unwritten in 0:02');
+  const waits = { ...marked, marked: [{ player: 7, ticks: 0 }] };
+  assert.equal(breachCall({ ...waits, encounter: ENCOUNTER.choir }, 7), 'Rewritten: unwritten at the next writing');
+  assert.equal(breachCall({ ...waits, encounter: ENCOUNTER.shores }, 7), 'Rewritten: unwritten at the next toll');
+  assert.equal(breachCall({ ...waits, encounter: ENCOUNTER.steward }, 7), 'Rewritten: unwritten at the next toll');
+  assert.deepEqual(
+    [revivesWords(1), revivesWords(2), revivesWords(0), revivesWords(-1)],
+    ['1 revive left', '2 revives left', 'No revives left', ''],
+  );
+  assert.equal(runPlaceWords(plan, { ...RUN, tier: 1, revives: 1 }, 1), 'Breach · Hard · The Mending · 1 revive left');
+});
+
+test("the room's moments are said: the company fallen, a raising with its revives, the whole company unwritten", () => {
+  const moment = (kind: number, amount = 0, striker = 0, defender = 0) => ({ kind, amount, striker, defender });
+  assert.equal(momentWords(moment(BREACH_EVENT.wiped, 2), 3, names), 'Your company fell.');
+  assert.equal(momentWords(moment(BREACH_EVENT.revived, 2, 1, 0), 3, names), 'Ada raised you · 2 revives left');
+  assert.equal(momentWords(moment(BREACH_EVENT.revived, 255, 0, 2), 3, names), 'You raised Ben', 'none counted');
+  assert.equal(momentWords(moment(BREACH_EVENT.unwritten, 3), 3, names), 'The company is unwritten.');
+  assert.equal(momentWords(moment(BREACH_EVENT.unwritten, 1), 3, names), null, 'one of them, marked');
+  assert.equal(momentWords(moment(BREACH_EVENT.bellRang), 3, names), null);
 });

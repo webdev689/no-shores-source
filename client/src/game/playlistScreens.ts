@@ -41,9 +41,11 @@ export interface Playlists {
   readonly layer: Layer;
 }
 
-/** What the footer says when the accounts do not answer Launch's ask for a run, and of a Breach played alone. */
+/** What the footer says when the accounts do not answer Launch's ask for a run, of a Breach played alone, and of one
+ *  Launched online while signed out. */
 export const LAUNCH_LOST = 'The accounts did not answer. Try again.';
 export const BREACH_ONLINE = 'A Breach is played online.';
+export const BREACH_SIGN_IN = 'Sign in to launch a Breach.';
 
 export function startPlaylists(deps: PlaylistDeps): Playlists {
   const instance = deps.instance ?? (() => runInstance());
@@ -134,7 +136,8 @@ export function startPlaylists(deps: PlaylistDeps): Playlists {
       if (entry.launch.place === null && entry.launch.playlist !== null && seek(entry, true)) return;
       if (entry.launch.seas === 'breach') {
         if (seek(entry, true)) return;
-        said = BREACH_ONLINE;
+        // Online, the finder launches only for an account; a tier shut or a search under way says nothing more.
+        said = !deps.link ? BREACH_ONLINE : !deps.link.token ? BREACH_SIGN_IN : said;
         return render();
       }
       const module = deps.module();

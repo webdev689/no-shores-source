@@ -77,8 +77,7 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement): Promise<vo
   const input = new Input(canvas, () => ui.typing);
   const dress = plainDressOf(keptLook(localStorage) ?? FIRST_LOOK);
   const you: Placed = { id: 1, x: 0, y: 0, z: 0, facing: 0, dress, anim: 'idle', frame: null, spin: false };
-  // Arriving, the camera stands far enough back to show the whole figure against the view it arrives to.
-  // The address may ask for another (`&view=`), to picture a place from first person or nearer.
+  // Arriving, the camera stands back to show the whole figure; the address may ask for another view (`&view=`).
   const arrivalView = askedView(location.search) ?? { firstPerson: false, distance: 4.5, shown: 4.5 };
   const walker = new Walker({ ...newPlayer(movement, 0, 0), view: arrivalView }, you, firstPerson, forge);
   /** The ground the camera keeps over: an island's where one stands higher than the land's. */
@@ -91,6 +90,7 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement): Promise<vo
     foot: () => playing.foot,
     atSea: () => (onTheSea(playing.flow) ? (playing.sea?.gear?.gear ?? null) : undefined),
     travel: (happening, work) => travel(happening, work),
+    tell: (words) => tell(words),
     module: roomModule,
     intoDungeon: (...into) => goInto(() => enterDungeon(footContext, ...into)),
     intoBreach: (into) => goInto(() => enterBreachRun(footContext, into)),

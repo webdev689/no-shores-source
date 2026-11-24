@@ -147,7 +147,12 @@ const places = [...activitiesAt(await module, FRIDAY_NINE).elites, 'overlook-soc
 const link = { token: 'a'.repeat(64), finderAt: (base: string) => `ws://finder.test/v1/find/${base}` };
 
 /** The screens at sea for a character of `level`, the Playlist's layer drawn on a page, every run gone into kept. */
-async function atSea(level: number, signedIn = true, members = 1, roster?: () => Promise<unknown>) {
+async function atSea(
+  level: number,
+  signedIn: boolean | 'signed out' = true,
+  members = 1,
+  roster?: () => Promise<unknown>,
+) {
   const { window } = fakePage();
   const [sockets, into] = [[] as FinderSocket[], [] as string[]];
   let look = () => undefined as void;
@@ -169,7 +174,7 @@ async function atSea(level: number, signedIn = true, members = 1, roster?: () =>
     places,
     () => null,
     trips,
-    signedIn ? { ...link, roster: (roster ?? company) as never } : null,
+    signedIn ? { ...link, roster: (roster ?? company) as never, ...(signedIn === true ? {} : { token: null }) } : null,
     clock,
     () => gear,
     () => world.onSea,
@@ -322,7 +327,13 @@ test("the Breach stands on the Playlist at Normal and Hard, shut below each tier
   );
   assert.ok(hard?.rules.includes('5 revives an attempt, for the company.'));
   assert.equal(hard?.launch.finds, null, 'no search for a tier shut');
-  assert.equal(normal?.drops, 'Drops Breach gear');
+  assert.equal(normal?.rules[0], 'Played online, with a company of up to eight.', 'said first');
+  assert.ok(normal?.rules.includes('Outside an encounter the fallen stand again after 6 s. In one, after 10 s.'));
+  assert.ok(hard?.rules.includes('Outside an encounter the fallen stand again after 6 s.'));
+  assert.deepEqual(
+    [normal?.drops, hard?.drops],
+    ['Drops Breach gear, its armour to 28 Prestige', 'Drops Breach gear, its armour to 30 Prestige'],
+  );
 });
 
 test("Launch on the Breach asks the server for its run, and goes to its gate's zone with it", async () => {
@@ -337,11 +348,16 @@ test("Launch on the Breach asks the server for its run, and goes to its gate's z
   assert.deepEqual(into, ['breach node-gullwing-vale--breach-normal--run-m9n8b7v6']);
 });
 
-test('playing alone, the Breach launches nothing and says it is played online', async () => {
-  const { screens, window, into, root } = await atSea(26, false);
-  screens.playlist('overlook-playlist');
-  for (let step = 0; step < 4; step += 1) window.dispatchEvent(new FakeEvent('keydown', { key: 'ArrowRight' }));
-  assert.ok(root.click('playlist-launch'));
-  assert.ok(root.find('A Breach is played online.'));
-  assert.equal(into.length, 0);
+test('playing alone, the Breach launches nothing and says it is played online; signed out, to sign in', async () => {
+  for (const [signedIn, words] of [
+    [false, 'A Breach is played online.'],
+    ['signed out', 'Sign in to launch a Breach.'],
+  ] as const) {
+    const { screens, window, into, root } = await atSea(26, signedIn);
+    screens.playlist('overlook-playlist');
+    for (let step = 0; step < 4; step += 1) window.dispatchEvent(new FakeEvent('keydown', { key: 'ArrowRight' }));
+    assert.ok(root.click('playlist-launch'));
+    assert.ok(root.find(words), words);
+    assert.equal(into.length, 0);
+  }
 });

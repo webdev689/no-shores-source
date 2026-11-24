@@ -271,10 +271,11 @@ export class Fighting {
     this.gearQueued.push(ask);
   }
 
-  /** Casts a spell with the next tick's input (spell 0 carries only Dusk Daggers' aim, while it is held). */
-  cast(ask: CastAsk): void {
+  /** Casts a spell with the next tick's input (spell 0 carries only Dusk Daggers' aim, while it is held); one not
+   *  `seen` (the Lodestone's grounding) begins no spell's look. */
+  cast(ask: CastAsk, seen = true): void {
     if (ask.spell > 0 || this.castQueued === null) this.castQueued = ask;
-    if (ask.spell > 0) this.castSent = { spell: ask.spell, tick: this.roomTick };
+    if (ask.spell > 0 && seen) this.castSent = { spell: ask.spell, tick: this.roomTick };
   }
 
   /** The room's last word on the player's Arts; none before it. */

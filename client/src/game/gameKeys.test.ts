@@ -5,8 +5,8 @@ import { OPEN_AT } from './gearScreen.ts';
 import { FakeEvent, fakePage } from './pageForTests.ts';
 
 type Playing = Parameters<typeof contextOf>[0];
-const dead = { standing: { kind: 'dead' } };
-const alive = { standing: { kind: 'inside' } };
+const dead = { standing: { kind: 'dead' }, fallen: true };
+const alive = { standing: { kind: 'inside' }, fallen: false };
 /** The game as `contextOf` reads it: its flow, and the sea and the foot as far as it looks at them. */
 const game = (flow: object, sea: object | null = null, foot: object | null = null) =>
   ({ flow, sea, foot }) as unknown as Playing;
@@ -21,6 +21,8 @@ test('the controls act where the player is: a window, dead, on foot, at the helm
   assert.equal(contextOf(game({ mode: 'foot', menu: true }, null, alive)), 'menu');
   assert.equal(contextOf(game({ mode: 'foot' }, null, alive)), 'foot');
   assert.equal(contextOf(game({ mode: 'foot' }, null, dead)), 'dead');
+  const felled = { standing: { kind: 'inside' }, fallen: true };
+  assert.equal(contextOf(game({ mode: 'foot' }, null, felled)), 'dead', 'felled in a fight, as the Follow key is read');
   assert.equal(contextOf(game({ mode: 'sea' }, afloat())), 'helm');
   assert.equal(contextOf(game({ mode: 'landing' }, afloat())), 'helm');
   assert.equal(contextOf(game({ mode: 'sea' }, afloat({ fight: {} }))), 'fight');

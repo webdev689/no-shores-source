@@ -186,7 +186,7 @@ const CLOTHES: Readonly<Record<number, Clothes>> = {
   ),
   // The Drowned Vale's Bosses wear the Lattice's own bodies until their own art is drawn: the Scrivener shoots, as
   // the Idol does; the Steward is the Breach's last Boss, as the Heart is the Fissure's. A Bell (46) is no figure:
-  // its crystal is drawn where it stands (`breachProps.ts`).
+  // its crystal is drawn where it stands (`breachView.ts`).
   47: lattice('idol', { breeches: 'Grey' }, ['emitter']),
   48: lattice('heart', {}, ['fused', 'core', 'anchor', 'torn']),
 };

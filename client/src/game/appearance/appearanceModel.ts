@@ -65,8 +65,9 @@ export function howHad(source: CosmeticSource, kind: CosmeticKind): string {
     const rank = source.rank ?? 1;
     return `Reach ${factionOwn(source.faction ?? 0)} ${ORDINALS[rank - 1] ?? `${rank}th`} rank.`;
   }
-  // A Breach's own rewards come from its last encounter (crates/gear/src/breach.rs).
-  if (source.kind === 'breach') return 'Clear a Breach.';
+  // A Breach's dye and horse come by chance with its last encounter's first clear a week, likelier at Hard
+  // (crates/gear/src/breach.rs `rewards_chance`).
+  if (source.kind === 'breach') return "A chance with the Steward's first clear each week, likelier at Hard.";
   return 'Yours from the start.';
 }
 

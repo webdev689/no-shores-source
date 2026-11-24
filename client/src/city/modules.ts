@@ -101,9 +101,10 @@ export function readModuleMesh(bytes: ArrayBuffer): ModuleMesh {
   return { positions, normals, glows, triangles };
 }
 
-/** Whether a module is a Breach's run's own (`breach-*`, but the gate, which stands in its patrol zone): its meshes
- *  are fetched only for the run, so the open world never carries the raid's. */
-export const ofRun = (name: string): boolean => name.startsWith('breach-') && name !== 'breach-gate';
+/** Whether a module is a Breach's run's own (`breach-*`, but the gate and the seal its doorway stands sealed by, which
+ *  stand in its patrol zone): its meshes are fetched only for the run, so the open world never carries the raid's. */
+export const ofRun = (name: string): boolean =>
+  name.startsWith('breach-') && name !== 'breach-gate' && name !== 'breach-seal';
 
 /** Fetches the meshes of each module `wanted` names; a group that cannot be read is left undrawn, and said so. */
 function fetchMeshes(wanted: (name: string) => boolean): Promise<void> {

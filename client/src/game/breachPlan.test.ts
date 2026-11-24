@@ -2,7 +2,8 @@ import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import { test } from 'node:test';
 import { moduleNumber, moduleParts } from '../city/modules.ts';
-import { breachPlanOf, planBlocks, sealOpen, slabStands, spaceAt, spaceSocket, turned } from './breachPlan.ts';
+import { breachPlanOf, planBlocks, sealOpen, slabStands, spaceAt, spaceSocket, standingBlocks } from './breachPlan.ts';
+import { turned } from './breachPlan.ts';
 
 const MODULE = new URL('../../../target/wasm32-unknown-unknown/release/room_wasm.wasm', import.meta.url);
 const plan = breachPlanOf(
@@ -60,4 +61,22 @@ test('a point over a space is in it, and its sockets stand where its module turn
   const checkpoint = spaceSocket(plan, 'hall', 'checkpoint');
   assert.ok(checkpoint);
   assert.equal(spaceAt(plan, checkpoint[0], checkpoint[1])?.key, 'hall');
+});
+
+test("the run's blocks are kept as they stand now, in the one array, made anew only as seals or slabs change", () => {
+  const changed: [number, number][] = [];
+  const { blocks, keep } = standingBlocks(plan, (seals, tick) => void changed.push([seals, tick]));
+  const before = blocks;
+  assert.deepEqual(blocks, planBlocks(plan, 0, 0));
+  keep(0, 0);
+  assert.equal(changed.length, 0, 'as it stood');
+  keep(0b1, 0);
+  assert.deepEqual([blocks, changed], [planBlocks(plan, 0b1, 0), [[0b1, 0]]]);
+  const shifts = Array.from({ length: plan.slabCycle }, (unused, tick) => tick).find(
+    (tick) => planBlocks(plan, 0b1, tick).length !== planBlocks(plan, 0b1, 0).length,
+  );
+  assert.ok(shifts !== undefined);
+  keep(0b1, shifts);
+  assert.deepEqual(blocks, planBlocks(plan, 0b1, shifts), 'a slab gone or come');
+  assert.equal(blocks, before, 'the same array, which every reader holds');
 });
