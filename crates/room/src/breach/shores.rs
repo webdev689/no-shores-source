@@ -114,8 +114,9 @@ impl Room {
         else {
             return;
         };
+        // A Bulwark claims a mooring the company has left, as at the gate; one held is fought for, not lost.
         let held = self.held_by_players(mooring, MOORING_REACH_M) > 0;
-        let claimed = self.held_by_bulwark(breach, mooring);
+        let claimed = !held && self.held_by_bulwark(breach, mooring);
         let state = &mut fight.rifts[rift];
         if held && !claimed {
             state.last_held = clock;
