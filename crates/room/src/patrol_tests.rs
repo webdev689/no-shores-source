@@ -94,9 +94,11 @@ fn every_node_stands_for_everyone_and_one_gathered_is_spent_for_its_gatherer_alo
         room.tick();
     }
     assert_eq!(hold(&mut room, player, 4, 0), asks::OUT_OF_REACH, "spent a moment before it returns");
+    room.players.get_mut(&player).expect("in").gear_changed = false;
     room.tick();
     room.tick();
     assert!(standing(&room, player).contains(&4), "back for them");
+    assert!(room.player(player).expect("in").gear_changed, "and their page is told");
     assert_eq!(hold(&mut room, player, 4, GATHER_TICKS + 1), 0, "gathered again");
     assert_eq!(RETURN_TICKS, 60 * 540, "nine minutes");
 }
