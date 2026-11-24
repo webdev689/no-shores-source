@@ -40,3 +40,23 @@ fn a_walker_bound_for_a_seam_that_shuts_turns_to_an_open_one_or_falls_apart() {
     assert_eq!(breach(&room).fights.mending.fusions(), 0, "no seam open, no fusion");
     assert!(!room.foes.get(&walker).is_some_and(|foe| !foe.fighter.dead()), "it fell apart");
 }
+
+#[test]
+fn the_penitents_come_as_much_more_often_as_the_living_company_is_larger_than_four() {
+    assert_eq!([2, 4, 6, 8].map(mending::walk_every), [300, 300, 200, 150]);
+    let walkers = |count: usize| {
+        let (mut room, players) = run(Tier::Normal, count);
+        super::fights_tests::begin_at(&mut room, &players, "mending", "mender");
+        for &player in &players {
+            super::fights_tests::put_at(&mut room, player, "mending", "checkpoint");
+        }
+        let mut stood = std::collections::BTreeSet::new();
+        for _ in 0..40 * 60 {
+            room.tick();
+            stood.extend(breach(&room).fights.mending.walkers.iter().map(|(id, _)| *id));
+        }
+        stood.len()
+    };
+    let (four, eight) = (walkers(4), walkers(8));
+    assert!(eight >= four * 2 - 1, "eight see about twice four's walkers: {eight} against {four}");
+}

@@ -60,7 +60,19 @@ impl Mending {
     }
 }
 
+/// How often a walker comes for a living company of `living`: WALK_EVERY for four or fewer, and as much more often
+/// beyond as the company is larger, so the seams ask as much of eight as of four.
+#[must_use]
+pub fn walk_every(living: usize) -> u64 {
+    WALK_EVERY * 4 / living.clamp(4, gear::breach::COMPANY_MOST) as u64
+}
+
 impl Room {
+    /// The living players the run counts.
+    fn living_company(&self) -> usize {
+        self.counted_players().iter().filter(|id| self.players[id].living()).count()
+    }
+
     pub(crate) fn keep_mending(&mut self, breach: &mut Breach) {
         let clock = self.clock;
         let mut fight = std::mem::take(&mut breach.fights.mending);
@@ -136,7 +148,7 @@ impl Room {
     ) {
         let clock = self.clock;
         if fight.stage < 3 && clock >= fight.next_walker && !mouths.is_empty() && seams.len() == SEAMS.len() {
-            fight.next_walker = clock + WALK_EVERY;
+            fight.next_walker = clock + walk_every(self.living_company());
             let (mouth, _) = mouths[(clock / WALK_EVERY) as usize % mouths.len()];
             let open = (0..SEAMS.len()).filter(|&seam| fight.open(seam));
             let seam = open.min_by(|&one, &two| {
