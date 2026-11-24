@@ -1,5 +1,5 @@
 ---
-id: 185
+id: 192
 title: "Seven headless workers on four cores pushed the load to 20-34: cargo builds passed the 600 s Bash limit, a full Blender bake took 19 minutes, and timing tests flaked"
 status: open
 type: open-source

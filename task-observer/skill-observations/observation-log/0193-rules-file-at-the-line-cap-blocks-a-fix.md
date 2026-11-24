@@ -1,5 +1,5 @@
 ---
-id: 186
+id: 193
 title: "A rules file sitting at exactly 600 lines (asks.rs) blocked a new refusal code, so two refusals were folded into an existing one's words"
 status: open
 type: open-source
