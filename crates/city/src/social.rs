@@ -47,7 +47,7 @@ pub struct Social {
     /// The trees and bushes its beds, pots and planters stand, drawn as the world's own plants (`hub::plants`).
     #[serde(skip_serializing_if = "Vec::is_empty")]
     pub plants: Vec<crate::hub::plants::Plant>,
-    /// Its places by name, as the held map names them (`hub`): a court, a walk, the quay.
+    /// Its places by name, as the held map names them (`hub`): a court, a walk, a yard.
     #[serde(skip_serializing_if = "Vec::is_empty")]
     pub areas: Vec<NamedPlace>,
 }
