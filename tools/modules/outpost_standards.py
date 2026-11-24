@@ -248,7 +248,7 @@ def scaffold(module, wide, deep):
     shapes.lathe(module, (corner[0], corner[1] + 0.35, 0.6), [(0.14, 0.0), (0.18, 0.36), (0.0, 0.36)], 'timber',
                  sides=8)
     # Inside: a course of laid stones round the footing, timber stacked, sacks under a tarp.
-    inner = (hx - band - 0.25, hy - band - 0.25)
+    inner = (half_x - band - 0.25, half_y - band - 0.25)
     if min(inner) > 1.2:
         for x0, y0, x1, y1 in ((-inner[0], -inner[1], inner[0], -inner[1]), (-inner[0], inner[1], inner[0], inner[1]),
                                (-inner[0], -inner[1], -inner[0], inner[1]), (inner[0], -inner[1], inner[0], inner[1])):
