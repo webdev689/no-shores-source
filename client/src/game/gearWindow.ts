@@ -533,8 +533,15 @@ export function startGearWindow(
         event.preventDefault();
         inspecting = shown.id;
         [returnTo, focusNext] = [ui?.focusedId ?? null, ITEM_NAME];
-      } else if (bound('compare') && !typing && inspecting !== null && !event.repeat) {
-        // C sets the piece worn beside an item's page, or takes it away, as its press does.
+      } else if (
+        bound('compare') &&
+        !typing &&
+        inspecting !== null &&
+        !event.repeat &&
+        !event.ctrlKey &&
+        !event.metaKey
+      ) {
+        // C sets the piece worn beside an item's page, or takes it away, as its press does; Ctrl+C copies.
         event.preventDefault();
         comparing.toggle(here()?.gear ?? null, inspecting);
       } else if (opens && !event.repeat) {

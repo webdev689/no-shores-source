@@ -538,9 +538,12 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement): Promise<vo
   const resting = () => (storyMode() && !story?.gear) || Boolean(playing.sea?.travelling);
   stack.add(startGearWindow(fighting, link, gearHere, shipNow, joinAt, resting, fed, screens, playing.lore));
   // The gear's pages ask items' fight numbers of the same rules the player's fighter is predicted by; Inspect sets
-  // another player's pieces beside the player's own.
-  void rulesOf({ roomModule }).then(({ combat }) => setItemRules(combat));
-  inspectAgainst(() => gearHere()?.gear ?? null);
+  // another player's pieces beside the player's own, at sea the sea's word on them.
+  rulesOf({ roomModule }).then(
+    ({ combat }) => setItemRules(combat),
+    (error: unknown) => console.error('the gear pages have no rules to ask items’ numbers of:', error),
+  );
+  inspectAgainst(() => fed()?.gear ?? null);
   stack.add(screens.layer); // the card E opens at a dungeon's entrance, over the menu's layer
   addEventListener('keyup', (event) => void (playing.flow.mode === 'story' && story?.key(keyUpNameOf(event), false)));
   listenForControls({

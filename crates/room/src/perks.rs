@@ -132,8 +132,8 @@ pub fn trim_of(character: &Character, drawn: Slot) -> Trim {
     trim_by(character.traits(drawn))
 }
 
-/// The trim these traits make together, each trait's own once as listed: a player's worn gear's (`trim_of`), or one
-/// item's as its page shows it.
+/// The trim these traits make together, each listed trait's own, a trait listed twice counted twice: a player's worn
+/// gear's, each once (`trim_of`), or one item's as its page shows it.
 #[must_use]
 pub fn trim_by<'a>(traits: impl IntoIterator<Item = &'a str>) -> Trim {
     let mut trim = Trim::PLAIN;

@@ -284,19 +284,21 @@ export function nodeGlyphSvg(kind: number): string {
   return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 12 12" shape-rendering="crispEdges" fill="currentColor" aria-hidden="true">${squares.join('')}</svg>`;
 }
 
-/** The cells across a node's growth: its square's edge runs one cell in from them. */
+/** The cells across a node's growth, and how many deep its band runs in from one cell inside them. */
 const GROWTH_CELLS = 20;
+const GROWTH_BAND = 2;
 
-/** A locked node's growth, pixel by pixel: a square round its edge, lit clockwise from the middle of its top as far as
- *  `share` of the way round, the rest dark; how far the item has grown toward the node. Its colours are the text's
- *  around it (lit) and `dark`. */
+/** A locked node's growth, pixel by pixel: a square band round its edge, lit clockwise from the middle of its top as
+ *  far as `share` of the way round, the rest dark; how far the item has grown toward the node. Its colours are the
+ *  text's around it (lit) and `dark`. */
 export function growthSvg(share: number, dark: string): string {
   const [first, last] = [1, GROWTH_CELLS - 2];
   const middle = (GROWTH_CELLS - 1) / 2;
+  const onBand = (cell: number) => cell < first + GROWTH_BAND || cell > last - GROWTH_BAND;
   const squares: string[] = [];
   for (let line = first; line <= last; line++)
     for (let column = first; column <= last; column++) {
-      if (line !== first && line !== last && column !== first && column !== last) continue;
+      if (!onBand(line) && !onBand(column)) continue;
       const round = (Math.atan2(column - middle, middle - line) / (2 * Math.PI) + 1) % 1;
       const fill = round < share ? 'currentColor' : dark;
       squares.push(`<rect x="${column}" y="${line}" width="1" height="1" fill="${fill}"/>`);

@@ -5,10 +5,10 @@
 
 import items from '../../../content/gear/items.json' with { type: 'json' };
 import { type GearItem, NONE } from '../network/gearMessages.ts';
-import { KINDS, isWeapon, slotOf } from '../player/gear.ts';
+import { KINDS, RARITIES, isWeapon, slotOf } from '../player/gear.ts';
 import type { CombatRules } from '../rules/combatRules.ts';
 
-/** The numbers in the order `room::stats` lays them, then its trim's. */
+/** The numbers in the order `room::stats` lays them (`STATS_FLOATS`). */
 const FIELDS = [
   'loadout',
   'impact',
@@ -18,8 +18,6 @@ const FIELDS = [
   'poise',
   'stamina',
   'ammo',
-  'reload',
-  'draw',
   'flight',
   'aimPace',
   'hands',
@@ -31,9 +29,10 @@ const FIELDS = [
 type Field = (typeof FIELDS)[number];
 export type ItemStats = Readonly<Record<Field, number>>;
 
-/** Which loadout the numbers are of (`room::stats::Loadout`), and how one is held (`Hands`). */
+/** Which loadout the numbers are of (`room::stats::Loadout`), and how one is held (`Hands`): each but the last its
+ *  note, a pair's by what it strikes with. */
 export const LOADOUT = { none: 0, melee: 1, ranged: 2 } as const;
-const HANDS = ['Leaves a hand free for a torch', 'Blocks with its shield', 'A pair: blows take turns', 'Two-handed'];
+const HANDS = ['Leaves a hand free for a torch', 'Blocks with its shield', 'A pair', 'Two-handed'];
 
 type Rules = Pick<CombatRules, 'itemStats'>;
 let rules: Rules | null = null;
@@ -46,13 +45,14 @@ export function setItemRules(given: Rules | null): void {
   most.clear();
 }
 
-/** The numbers of an item of `kind` giving `traits`; null until the rules are given, or for no such kind. */
+/** The numbers of an item of `kind` giving `traits`; null until the rules are given, for no such kind, or from rules
+ *  that lay them out otherwise than this page reads them, which are never misread. */
 export function statsOf(kind: number, traits: readonly string[]): ItemStats | null {
   if (!rules) return null;
   const key = `${kind}\n${traits.join('\n')}`;
   if (!asked.has(key)) {
     const numbers = rules.itemStats(kind, traits);
-    const found = numbers.length >= FIELDS.length;
+    const found = numbers.length === FIELDS.length;
     asked.set(
       key,
       found ? (Object.fromEntries(FIELDS.map((field, place) => [field, numbers[place] ?? 0])) as ItemStats) : null,
@@ -61,15 +61,14 @@ export function statsOf(kind: number, traits: readonly string[]): ItemStats | nu
   return asked.get(key) ?? null;
 }
 
-/** The traits an item gives while worn, as the room counts them (`Item::active_traits`): an Atheric's intrinsic, then
- *  each trait column's chosen node, bought; with `trying`, that column's node in place of what it has chosen. */
+/** The traits an item gives while worn, as the room counts them (`Item::active_traits`): an Atheric's intrinsic, at
+ *  its catalogue's own rarity alone, then each trait column's chosen node, bought; with `trying`, that column's node
+ *  in place of what it has chosen. */
 export function givenTraits(
-  item: Pick<GearItem, 'named' | 'columns' | 'chosen' | 'bought'>,
+  item: Pick<GearItem, 'named' | 'rarity' | 'columns' | 'chosen' | 'bought'>,
   trying: { readonly column: number; readonly node: number } | null = null,
 ): string[] {
-  const entry: { readonly id: string; readonly intrinsic?: string } | undefined = items.items.find(
-    (found) => found.id === item.named,
-  );
+  const intrinsic = intrinsicIdOf(item);
   let offset = 0;
   const chosen = item.columns.flatMap((column, index) => {
     const start = offset;
@@ -79,65 +78,85 @@ export function givenTraits(
     const id = node === NONE || !bought ? undefined : column.traits[node];
     return id ? [id] : [];
   });
-  return [...(entry?.intrinsic ? [entry.intrinsic] : []), ...chosen];
+  return [...(intrinsic ? [intrinsic] : []), ...chosen];
 }
 
-/** One number as a bar shows it: its name, its value and the words for it, its share of the bar, whether less is
- *  better (a cost), and what it was against another item or choice, where one is set beside it. */
+/** A named item's intrinsic, where it is of its catalogue entry's rarity: one of another rarity keeps its traits and
+ *  takes none, as the room counts it. */
+export function intrinsicIdOf(item: Pick<GearItem, 'named' | 'rarity'>): string | null {
+  const entry: { readonly id: string; readonly rarity: string; readonly intrinsic?: string } | undefined =
+    items.items.find((found) => found.id === item.named);
+  const rarity = RARITIES[item.rarity]?.name.toLowerCase();
+  return entry?.intrinsic && entry.rarity === rarity ? entry.intrinsic : null;
+}
+
+/** One number as its row shows it: its name, its value and the words for it, its bar's share (none for a count),
+ *  whether less is better (a cost), and what it was against another item or choice, where one is set beside it. */
 export interface StatRow {
   readonly label: string;
   readonly value: number;
   readonly said: string;
+  readonly bar: boolean;
   readonly share: number;
   readonly less: boolean;
   readonly from: number | null;
   readonly fromShare: number | null;
-  /** The change's words, signed: "+2.1", "−0.4"; empty where nothing changes. */
+  /** The change's words, signed: "+2.1", "−0.4"; empty where nothing changes as shown. */
   readonly change: string;
 }
 
-/** What an item's numbers show: its bars, and the lines that say how it is held and what it carries. */
+/** What an item's numbers show: its rows, and the lines that say how it is held. */
 export interface StatSheet {
   readonly rows: readonly StatRow[];
   readonly notes: readonly string[];
 }
 
+/** A number's row: its name, its field, the places it is shown to (a share shown in hundredths, as a percentage), its
+ *  unit, whether less is better, and whether it is a count with no bar. */
 interface Stat {
   readonly label: string;
   readonly field: Field;
-  readonly said: (value: number) => string;
+  readonly places: number;
+  readonly unit?: '/s' | ' m' | '%';
   readonly less?: boolean;
+  readonly count?: boolean;
 }
 
-/** A number to a tenth, whole where it is whole. */
-const tenth = (value: number) =>
-  Math.abs(value - Math.round(value)) < 0.05 ? String(Math.round(value)) : value.toFixed(1);
-const percent = (value: number) => `${Math.round(value * 100)}%`;
-const perSecond = (value: number) => `${value.toFixed(2)}/s`;
-
 const MELEE: readonly Stat[] = [
-  { label: 'Impact', field: 'impact', said: tenth },
-  { label: 'Speed', field: 'rate', said: perSecond },
-  { label: 'Reach', field: 'reach', said: (value) => `${value.toFixed(1)} m` },
-  { label: 'Poise', field: 'poise', said: tenth },
-  { label: 'Swing cost', field: 'stamina', said: tenth, less: true },
+  { label: 'Impact', field: 'impact', places: 1 },
+  { label: 'Speed', field: 'rate', places: 2, unit: '/s' },
+  { label: 'Reach', field: 'reach', places: 1, unit: ' m' },
+  { label: 'Poise', field: 'poise', places: 1 },
+  { label: 'Swing cost', field: 'stamina', places: 1, less: true },
 ];
 const RANGED: readonly Stat[] = [
-  { label: 'Impact', field: 'impact', said: tenth },
-  { label: 'Aimed', field: 'aimed', said: tenth },
-  { label: 'Fire rate', field: 'rate', said: perSecond },
-  { label: 'Poise', field: 'poise', said: tenth },
-  { label: 'Pace aiming', field: 'aimPace', said: percent },
+  { label: 'Impact', field: 'impact', places: 1 },
+  { label: 'Aimed', field: 'aimed', places: 1 },
+  { label: 'Fire rate', field: 'rate', places: 2, unit: '/s' },
+  { label: 'Poise', field: 'poise', places: 1 },
+  { label: 'Pace aiming', field: 'aimPace', places: 0, unit: '%' },
+  { label: 'Ammo', field: 'ammo', places: 0, count: true },
 ];
 const BODY: readonly Stat[] = [
-  { label: 'Stamina back', field: 'staminaBack', said: (value) => `${tenth(value)}/s` },
-  { label: 'Dodge cost', field: 'dodgeCost', said: tenth, less: true },
-  { label: 'Poise held', field: 'poiseHeld', said: tenth },
-  { label: 'Healing', field: 'healing', said: percent },
+  { label: 'Stamina back', field: 'staminaBack', places: 1, unit: '/s' },
+  { label: 'Dodge cost', field: 'dodgeCost', places: 1, less: true },
+  { label: 'Poise held', field: 'poiseHeld', places: 1 },
+  { label: 'Healing', field: 'healing', places: 0, unit: '%' },
 ];
+/** What a weapon's finish moves of the body while it is drawn, shown with its own rows where it moves them. */
+const DRAWN: readonly Stat[] = BODY.filter((stat) => stat.field === 'dodgeCost' || stat.field === 'poiseHeld');
 
-/** A bar's most for each number: the most any kind of the loadout reaches with no traits, with this much room left
- *  for a trait's gain; a body's, its own number's this many times, so a perk's change shows either way. */
+/** A number as its row shows it, rounded to its places (a share in hundredths, as a percentage). */
+const shown = (stat: Stat, value: number) => {
+  const scale = 10 ** stat.places * (stat.unit === '%' ? 100 : 1);
+  return Math.round(value * scale) / 10 ** stat.places;
+};
+/** A shown number's words, whole where it is whole but to a rate's hundredths. */
+const wordsOf = (stat: Stat, number: number, unit = stat.unit ?? '') =>
+  `${stat.places === 2 || !Number.isInteger(number) ? number.toFixed(stat.places) : String(number)}${unit}`;
+
+/** A bar's most for each number: the most any kind of the loadout reaches with no traits and three tenths again, so a
+ *  trait's gain still fits; a body's own number three fifths again; the pace kept aiming, all of it. */
 const HEADROOM = 1.3;
 const BODY_ROOM = 1.6;
 const most = new Map<string, number>();
@@ -147,7 +166,7 @@ function mostOf(loadout: number, stat: Stat): number {
   let found = most.get(key);
   if (found === undefined) {
     if (stat.field === 'aimPace') found = 1;
-    else if (loadout === LOADOUT.none) found = (statsOf(KINDS.indexOf('head'), [])?.[stat.field] ?? 0) * BODY_ROOM;
+    else if (BODY.includes(stat)) found = (statsOf(KINDS.indexOf('head'), [])?.[stat.field] ?? 0) * BODY_ROOM;
     else {
       const values = KINDS.map((_name, kind) => (isWeapon(kind) ? statsOf(kind, []) : null))
         .filter((stats) => stats?.loadout === loadout)
@@ -159,19 +178,38 @@ function mostOf(loadout: number, stat: Stat): number {
   return found;
 }
 
-/** The change from `from` to `to` in a stat's own words, signed; empty for none. */
+/** The change from `from` to `to` as the row shows them, signed; empty where they show alike. */
 function changeOf(stat: Stat, from: number, to: number): string {
-  const [before, after] = [stat.said(from), stat.said(to)];
-  if (before === after) return '';
-  const difference = Math.abs(to - from);
-  const words = stat.said(difference).replace(/\/s$/, '');
-  return `${to > from ? '+' : '−'}${words}`;
+  const places = 10 ** stat.places;
+  const difference = Math.round((shown(stat, to) - shown(stat, from)) * places) / places;
+  if (difference === 0) return '';
+  const unit = stat.unit === '%' ? '%' : '';
+  return `${difference > 0 ? '+' : '−'}${wordsOf(stat, Math.abs(difference), unit)}`;
 }
 
-/** An item's numbers as bars, from its traits (or `traits` given); beside `against`'s numbers where it is set, as the
- *  piece it would replace or the choice of nodes it had. Null until the rules are given. */
+/** A stat's row of `stats`, beside `compared`'s where it is set. */
+function rowOf(stat: Stat, stats: ItemStats, compared: ItemStats | null): StatRow {
+  const top = mostOf(stats.loadout, stat) || 1;
+  const value = stats[stat.field];
+  const from = compared ? compared[stat.field] : null;
+  return {
+    label: stat.label,
+    value,
+    said: wordsOf(stat, shown(stat, value)),
+    bar: !stat.count,
+    share: Math.min(1, value / top),
+    less: stat.less ?? false,
+    from,
+    fromShare: from === null ? null : Math.min(1, from / top),
+    change: from === null ? '' : changeOf(stat, from, value),
+  };
+}
+
+/** An item's numbers as rows, from its traits (or `traits` given); beside `against`'s numbers where it is set, as the
+ *  piece it would replace or the choice of nodes it had. A weapon whose finish moves the body while it is drawn, or is
+ *  set beside one that does, shows those numbers too. Null until the rules are given. */
 export function sheetOf(
-  item: Pick<GearItem, 'kind' | 'named' | 'columns' | 'chosen' | 'bought'>,
+  item: Pick<GearItem, 'kind' | 'named' | 'rarity' | 'columns' | 'chosen' | 'bought'>,
   against: ItemStats | null = null,
   traits: readonly string[] = givenTraits(item),
 ): StatSheet | null {
@@ -179,27 +217,20 @@ export function sheetOf(
   // A body's numbers are armour's and the cloak's (slots 2 to 6); a horse's or a ship module's are no one's.
   const worn = slotOf(item.kind);
   if (!stats || (stats.loadout === LOADOUT.none && (worn < 2 || worn > 6 || item.kind >= KINDS.length))) return null;
-  const measures = stats.loadout === LOADOUT.melee ? MELEE : stats.loadout === LOADOUT.ranged ? RANGED : BODY;
   const compared = against && against.loadout === stats.loadout ? against : null;
-  const rows = measures.map((stat): StatRow => {
-    const top = mostOf(stats.loadout, stat) || 1;
-    const value = stats[stat.field];
-    const from = compared ? compared[stat.field] : null;
-    return {
-      label: stat.label,
-      value,
-      said: stat.said(value),
-      share: Math.min(1, value / top),
-      less: stat.less ?? false,
-      from,
-      fromShare: from === null ? null : Math.min(1, from / top),
-      change: from === null ? '' : changeOf(stat, from, value),
-    };
-  });
+  const body = statsOf(KINDS.indexOf('head'), []);
+  const moved = (stat: Stat) =>
+    [stats, compared].some(
+      (each) => each !== null && body !== null && shown(stat, each[stat.field]) !== shown(stat, body[stat.field]),
+    );
+  const measures =
+    stats.loadout === LOADOUT.none
+      ? BODY
+      : [...(stats.loadout === LOADOUT.melee ? MELEE : RANGED), ...DRAWN.filter(moved)];
   const notes: string[] = [];
-  if (stats.loadout === LOADOUT.ranged) notes.push(`Ammo ${Math.round(stats.ammo)}`);
   if (stats.loadout === LOADOUT.ranged && stats.flight === 0) notes.push('Strikes at once');
   const held = HANDS[stats.hands];
-  if (stats.loadout !== LOADOUT.none && held) notes.push(held);
-  return { rows, notes };
+  if (stats.loadout !== LOADOUT.none && held)
+    notes.push(held === 'A pair' ? `A pair: ${stats.loadout === LOADOUT.ranged ? 'shots' : 'blows'} take turns` : held);
+  return { rows: measures.map((stat) => rowOf(stat, stats, compared)), notes };
 }

@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { ASKS, type GearItem, type GearState } from '../network/gearMessages.ts';
-import { cardOf, flyoutOf, inventoryPageOf, vaultOf, wearIn } from './gearCards.ts';
+import { cardOf, flyoutOf, inventoryPageOf, vaultOf, wearIn, wornFor } from './gearCards.ts';
 import words from '../../../content/gear/words.json' with { type: 'json' };
 
 const item = (fields: Partial<GearItem>): GearItem => ({
@@ -87,6 +87,21 @@ test('a card is set beside any other piece, though it share an id, and on Inspec
   const aside = cardOf(theirs, worn, true).compare;
   assert.equal(aside?.nodesAside, true, 'Inspect never knows the other player’s nodes, so it counts neither’s');
   assert.equal(cardOf(theirs, worn).compare?.nodesAside, undefined);
+});
+
+test('a card is set beside the piece worn in its own slot: a module beside the module fitted, a horse beside none', () => {
+  const sword = item({ id: 1, kind: 2, at: 2, attack: 200 });
+  const guns = item({ id: 2, kind: 24, at: 2 + 7, attack: 40 });
+  const gear = state({ items: [sword, guns] });
+  assert.equal(wornFor(gear, item({ id: 3, kind: 24, at: 1 })), guns, 'a vaulted Guns module, beside the guns fitted');
+  assert.equal(wornFor(gear, item({ id: 4, kind: 25, at: 1 })), null, 'no hull fitted, nothing beside it');
+  assert.equal(wornFor(gear, item({ id: 5, kind: 2, at: 1 })), sword);
+  const horse = item({ id: 6, kind: 28, at: 0 });
+  assert.equal(
+    wornFor(state({ items: [item({ id: 7, kind: 28, at: 2 + 11 })] }), horse),
+    null,
+    'a horse has no numbers',
+  );
 });
 
 test('a slot’s flyout holds its nine places, and a carried loadout is worn in the slot it is shown under', () => {

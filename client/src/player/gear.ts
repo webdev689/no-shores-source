@@ -116,7 +116,7 @@ const REFUSALS: Readonly<Record<number, string>> = {
   8: 'You already carry ten Vestiges.',
   9: 'Only at its counter in a social space.',
   10: 'Not while it is worn or in the vault.',
-  11: 'Locked until its ring fills.',
+  11: 'Locked until its square fills.',
   12: 'There is no such node.',
   13: 'That node is already bought.',
   14: 'That node is not bought.',
@@ -342,7 +342,7 @@ export function nodeShown(item: GearItem, column: number, node: number): NodeSho
     bought,
     chosen: bought && (!trait || item.chosen[column] === node),
     unlocked,
-    cost: bought ? 'Bought.' : unlocked ? `Costs ${costs.join(', ')}.` : 'Its ring fills as the item is used.',
+    cost: bought ? 'Bought.' : unlocked ? `Costs ${costs.join(', ')}.` : 'Its square fills as the item is used.',
     ask: unlocked ? ask : null,
   };
 }

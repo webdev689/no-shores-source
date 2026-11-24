@@ -25,8 +25,8 @@ stat bar in green and its loss on another in red.
 - **An item's page and its hover card push toward the two pictures**, as detailed as Claude can make them.
 - **A weapon's and an armour piece's stats are made more visible.**
 - **The hover card is improved, and a compare is added.**
-- **Nodes are squares, never circles.** The growth inside a locked node that [[Text Is Plain]] set as a ring is a
-  square.
+- **Nodes are squares, never circles**: nothing round is drawn in a node, so the growth inside a locked node, a ring
+  under [[Text Is Plain]], is a square.
 - **Claude makes the calls** and writes each down with its reason
   ([[The Inspect Panel as Claude Shapes It]]), for the owner to change.
 

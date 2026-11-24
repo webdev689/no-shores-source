@@ -254,8 +254,8 @@ pub extern "C" fn fighter_stroke_arc(stroke: u32) -> f64 {
         .map_or(0.0, |stroke| combat::arms::stroke_shape(stroke).half_arc)
 }
 
-/// An item's fight numbers and the trim its traits make (`room::stats`), as little-endian floats, for the text written
-/// at `address`: its kind's number, then each trait it gives, a line each. Empty for a kind there is none of.
+/// An item's fight numbers (`room::stats`), `STATS_FLOATS` little-endian floats, for the text written at `address`:
+/// its kind's number, then each trait it gives, a line each. Empty for a kind there is none of.
 ///
 /// # Safety
 /// `address` must point at `length` readable bytes, as `reserve` gives.
@@ -270,8 +270,8 @@ fn item_stats(bytes: &[u8]) -> Vec<u8> {
     let mut lines = text.lines();
     let kind = lines.next().and_then(|number| number.parse().ok()).and_then(gear::Kind::from_number);
     let Some(kind) = kind else { return Vec::new() };
-    let (stats, trim) = room::stats::stats(kind, lines.filter(|line| !line.is_empty()));
-    stats.to_floats().into_iter().chain(trim.to_floats()).flat_map(f64::to_le_bytes).collect()
+    let (stats, _) = room::stats::stats(kind, lines.filter(|line| !line.is_empty()));
+    stats.to_floats().into_iter().flat_map(f64::to_le_bytes).collect()
 }
 
 /// How many numbers a fighter, an intent and a glance are, for the browser to lay them out: as one number, each in a

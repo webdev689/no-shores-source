@@ -466,18 +466,21 @@ test('a focused carried piece that goes (dismantled, worn, sold) leaves the focu
   assert.ok(ui.keyFocused, 'as the keys left it');
 });
 
-test("an item's words take half its page across within their least and most, the art's side the rest", () => {
-  const { ui, click, open, frame } = menu();
+test("an item's page stands whole on a 1600 by 900 screen: its words half across, its nodes over the footer, the art the rest", () => {
+  const view = { width: 1600, height: 900, scale: 1 };
+  const { ui, click, open, frame } = menu(sampleGear(), () => false, null, view);
   open('character');
   click('slot-0', 2);
   frame();
-  const [body, words, side, art] = ['gear-body', 'item-words', 'item-side', 'item-art'].map((id) => ui.boxOf(id));
-  assert.ok(body && words && side && art);
-  const across = body.width - 2 * (2 + 24);
-  assert.equal(words.width, Math.round(Math.min(600, Math.max(460, across / 2))), 'at 1280 by 720, half of it');
-  assert.equal(side.x - (words.x + words.width), 32, 'the gap before the art’s side');
-  assert.equal(art.x, side.x, 'the art fills its side');
-  assert.ok(art.width > 300 && art.height >= 140, `the art keeps its room (${art.width} by ${art.height})`);
+  const [body, words, art, foot] = ['gear-body', 'item-words', 'item-art', 'gear-foot'].map((id) => ui.boxOf(id));
+  assert.ok(body && words && art && foot);
+  assert.equal(words.width, 740, 'half the page across, within 460 and 780 at the larger words');
+  assert.equal(art.x - (words.x + words.width), 32, 'the gap before the art');
+  assert.ok(art.width > 600 && art.height > 400, `the art takes the rest (${art.width} by ${art.height})`);
+  for (const id of ['node-0-0', 'node-0-1', 'node-2-0']) {
+    const node = ui.boxOf(id);
+    assert.ok(node && node.y + node.height <= foot.y, `${id} stands over the footer, in reach`);
+  }
 });
 
 test("a keeper's coin and the account's mark are named in a card on hover, and on a key's focus", () => {
@@ -622,4 +625,37 @@ test("a node tried on an item's page shows on its bars what choosing it would ch
   assert.ok(
     !(ui as unknown as { laid: readonly Laid[] }).laid.some((each) => each.node.picture?.key.startsWith('ring')),
   );
+});
+
+test("a locked node's card shows on hover; Ctrl+C copies and sets nothing beside; a node tried drops the worn's change", () => {
+  const { ui, frame, click, open, window } = menu();
+  open('character');
+  click('slot-0');
+  click('item-7', 2);
+  const locked = ui.boxOf('node-0-0');
+  assert.ok(locked, 'its one column, locked until it grows');
+  frame([{ kind: 'pointer', x: locked.x + 4, y: locked.y + 4 }]);
+  frame();
+  frame();
+  assert.ok(laidWords(ui).includes('Locked'), 'its card says it is locked, and how it unlocks');
+  window.dispatchEvent(new FakeEvent('keydown', { key: 'c', ctrlKey: true }));
+  frame();
+  assert.ok(!laidWords(ui).includes('WORN'), 'Ctrl+C is the browser’s');
+  click('press-compare');
+  assert.ok(laidWords(ui).includes('+18'));
+  const tried = ui.boxOf('node-0-1');
+  assert.ok(tried);
+  frame([{ kind: 'pointer', x: tried.x + 4, y: tried.y + 4 }]);
+  frame();
+  frame();
+  assert.ok(!laidWords(ui).includes('+18'), 'while a node is tried the numbers stand beside its own choice alone');
+});
+
+test('on a narrow screen the words stand under the nodes as wide as their column', () => {
+  const { ui, click, open } = menu(sampleGear(), () => false, null, { width: 900, height: 700, scale: 1 });
+  open('character');
+  click('slot-0', 2);
+  const [words, flavour] = [ui.boxOf('item-words'), ui.boxOf('item-flavour')];
+  assert.ok(words && flavour);
+  assert.ok(flavour.width > words.width * 0.8, `${flavour.width} of ${words.width}`);
 });

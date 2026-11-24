@@ -1,9 +1,9 @@
 // An item's page, laid over the menu as Destiny 1's weapon page is. At its head the item's tile, its name and its
 // kind, rarity, element and level on a band of its rarity. Down the left, its words; its main number large beside its
-// fight numbers as bars; an Atheric's two perks of its own; its node grid; and the perks it gives. To the right, the
-// item drawn large on a lit floor, and with Compare the piece worn in its slot beside it. Hovering a node not chosen
-// shows on the bars what choosing it would change; comparing, what this piece changes over the one worn. What may be
-// done with it goes to the menu's footer.
+// fight numbers as bars; its node grid; and the perks it gives, an Atheric's two first. To the right, the item drawn
+// large on a lit floor, and with Compare the piece worn in its slot over it. Hovering a node not chosen shows on the
+// bars what choosing it would change; comparing, what this piece changes over the one worn. What may be done with it
+// goes to the menu's footer.
 
 import type { GearItem, GearState } from '../network/gearMessages.ts';
 import { HORSE, RARITIES, STOCK_NAMES, WORN, isModule, isWeapon, resourceName } from '../player/gear.ts';
@@ -42,7 +42,7 @@ import { powerNode, statSheetNode } from './statBars.ts';
 /** The art's box: the most it takes, and before its place is known, what the page's height leaves it within the
  *  least and the most; and the least height its place keeps. */
 const ART_LEAST = 200;
-const ART_MOST = 560;
+const ART_MOST = 760;
 const ART_AROUND = 110;
 const ART_LEAST_SHOWN = 140;
 /** A module's glyph on its page, in pixels: its 24 cells at eleven times. */
@@ -50,19 +50,18 @@ const GLYPH_PX = 264;
 /** The item's tile at the page's head, in pixels. */
 const HEAD_TILE = 64;
 /** The words' column, in pixels: the least it takes, and the most at the first words' size and at the larger, half the
- *  page across between those; then the page's edge, the body's padding across and the gap between columns. */
+ *  page across between those; then the page's edge, the body's padding across and the gap before the art; and the
+ *  fade at the column's foot, which says it scrolls. */
 const WORDS_LEAST = 460;
 const WORDS_MOST = 600;
 const WORDS_MOST_LARGE = 780;
 const PAGE_EDGE = 2;
 const BODY_ACROSS = 24;
 const ART_GAP = 32;
-/** The words and perks over the art: the room the art's side must have across for them to stand there, at each size,
- *  and the most they take of it. */
-const SIDE_LEAST = 460;
-const SIDE_LEAST_LARGE = 600;
-const PERKS_MOST = 620;
-const PERKS_MOST_LARGE = 820;
+const FADE = 24;
+/** The least the bars take across beside the main number, at each size, so a bar keeps its length. */
+const SHEET_LEAST = 340;
+const SHEET_LEAST_LARGE = 480;
 /** The id of the item's art, which charges as a hold on its page is held. */
 export const ITEM_ART = 'item-art';
 /** The id of the item's name, which takes the focus as its page opens, so the page is read from it. */
@@ -95,7 +94,7 @@ function heading(said: string, size: number, hints: readonly Hint[] = []): Node 
       {
         width: 'grow',
         alignY: 'end',
-        children: [{ width: 'grow', children: [label(said, size)] }, hints.length > 0 && hintsNode(hints, 1, 12)],
+        children: [{ width: 'grow', children: [label(said, size)] }, hints.length > 0 && hintsNode(hints, size, 12)],
       },
       { width: 'grow', height: 1, fill: 'rgba(163,152,128,0.26)' },
     ],
@@ -205,7 +204,7 @@ function headNode(context: MenuContext, item: GearItem, detail: ReturnType<typeo
             sizes.label,
             item.kind === HORSE
               ? []
-              : [{ role: 'chip', padding: [1, 8], children: [words(`Level ${item.level}`, 1, INK.word)] }],
+              : [{ role: 'chip', padding: [1, 8], children: [words(`Level ${item.level}`, sizes.label, INK.word)] }],
           ),
         ],
       },
@@ -219,10 +218,13 @@ function statsNode(
   context: MenuContext,
   item: GearItem,
   against: GearItem | null,
-  sheet: ReturnType<typeof sheetOf>,
+  [sheet, across]: readonly [ReturnType<typeof sheetOf>, number],
 ): Node | null {
   const { sizes } = context;
   const size = sizes.label;
+  const power = size > 1 ? 220 : 170;
+  // The bars stand beside the number where they keep their least across, as Destiny's do; else under it.
+  const beside = across - power - 24 >= (size > 1 ? SHEET_LEAST_LARGE : SHEET_LEAST);
   const main = item.attack
     ? { label: 'Attack', value: item.attack, was: against?.attack }
     : item.defense
@@ -234,9 +236,12 @@ function statsNode(
     width: 'grow',
     gap: 24,
     padding: [12, 0, 4, 0],
+    // The number stands level with the middle of its bars.
+    alignY: 'center',
+    direction: beside ? 'row' : 'column',
     children: [
       main && {
-        width: size > 1 ? 250 : 180,
+        width: power,
         direction: 'column',
         gap: 10,
         children: [
@@ -261,7 +266,11 @@ function statsNode(
           },
         ],
       },
-      sheet && { width: 'grow', padding: [6, 0, 0, 0], children: [statSheetNode(sheet, size, true)] },
+      sheet && {
+        width: 'grow',
+        padding: [6, 0, 0, 0],
+        children: [statSheetNode(sheet, size, true)],
+      },
     ],
   };
 }
@@ -284,6 +293,19 @@ function glowDrawing(rgb: string): NonNullable<Node['picture']>['source'] {
       glow.addColorStop(1, rgba(rgb, 0));
       drawing.fillStyle = glow;
       drawing.fillRect(-wide, -wide, 2 * wide, 2 * wide);
+    },
+  };
+}
+
+/** The words' column's foot fading into the page, so words that run past it read as more below. */
+function fadeDrawing(): NonNullable<Node['picture']>['source'] {
+  return {
+    draw: (drawing, across, down) => {
+      const fade = drawing.createLinearGradient(0, 0, 0, down);
+      fade.addColorStop(0, 'rgba(14,16,19,0)');
+      fade.addColorStop(1, INK.ground);
+      drawing.fillStyle = fade;
+      drawing.fillRect(0, 0, across, down);
     },
   };
 }
@@ -347,43 +369,20 @@ export function itemPage(
   const traits = traitsShown(item).filter((trait) => trait.kind !== ATHERIC_OWN);
   // An Atheric's two perks of its own head its perks together, its own node's shown even before it is chosen.
   const atheric = [intrinsicOf(item), ownOf(item)].filter((trait) => trait !== null);
-  // Where the page is wide enough, its words and perks stand over the art, at its side; else, or while the piece worn
-  // stands there, under the nodes.
   const across = (ui.boxOf('gear-body')?.width ?? 0) - 2 * (PAGE_EDGE + BODY_ACROSS);
   const wordsWidth = Math.round(
     Math.min(size > 1 ? WORDS_MOST_LARGE : WORDS_MOST, Math.max(WORDS_LEAST, across * 0.5)),
   );
-  const side = !compared && across - wordsWidth - ART_GAP >= (size > 1 ? SIDE_LEAST_LARGE : SIDE_LEAST);
-  const panel = Math.min(size > 1 ? PERKS_MOST_LARGE : PERKS_MOST, across - wordsWidth - ART_GAP);
   const perks = [...atheric, ...traits];
-  const flavour: Child = detail.words !== '' && {
-    width: 'grow',
-    maxWidth: panel,
-    padding: [2, 0, 10, 0],
-    children: [flavourNode(detail.words, size)],
-  };
-  const perksNode = (width: number): Child =>
-    perks.length > 0 && {
-      width: 'grow',
-      direction: 'column',
-      children: [
-        heading('Perks', size),
-        {
-          width: 'grow',
-          gap: 20,
-          wrap: true,
-          children: perks.map((trait): Node => ({ width, children: [traitNode(trait, size)] })),
-        },
-      ],
-    };
   const left: Child[] = [
-    !side && flavour,
-    !side && rule(),
-    statsNode(context, item, compared, sheet),
+    detail.words !== '' && { width: 'grow', padding: [2, 0, 10, 0], children: [flavourNode(detail.words, size)] },
+    rule(),
+    statsNode(context, item, tried ? null : compared, [sheet, wordsWidth]),
     detail.columns.length > 0 && heading('Nodes', size, HINTS.item),
     detail.columns.length > 0 &&
       nodeGrid(context, item, detail.columns, isModule(item.kind) ? null : costsOf(context, item)),
-    !side && perksNode(Math.floor((wordsWidth - 20) / 2)),
+    perks.length > 0 && heading('Perks', size),
+    ...perks.map((trait) => traitNode(trait, size)),
   ];
   // The art as large as its box lets it stand whole, a tenth of its width off the floor's light.
   const region = ui.boxOf(ITEM_ART);
@@ -410,7 +409,10 @@ export function itemPage(
     alignY: glyph ? 'center' : 'end',
     clip: true,
     picture: { key: `item floor ${rgb}`, source: floorDrawing(rgb) },
-    children: [{ padding: [0, 0, glyph ? 0 : lift, 0], children: [shaken ? { ...drawn, offset: shaken } : drawn] }],
+    // While the piece worn stands in its place the art is not drawn, but its place stays, which a hold charges.
+    children: [
+      !compared && { padding: [0, 0, glyph ? 0 : lift, 0], children: [shaken ? { ...drawn, offset: shaken } : drawn] },
+    ],
   };
   const page: Node = {
     id: 'item-page',
@@ -439,32 +441,35 @@ export function itemPage(
             height: 'grow',
             direction: 'column',
             scroll: true,
-            padding: [0, 0, 18, 0],
-            children: left,
+            padding: [0, 0, FADE, 0],
+            children: [
+              ...left,
+              {
+                width: 'grow',
+                height: FADE,
+                // A float stands one over what holds it unless told; a number would be the screen's own.
+                float: { to: 'parent', anchor: [0, 1], at: [0, 1] },
+                picture: { key: 'item words fade', source: fadeDrawing() },
+              },
+            ],
           },
           {
-            id: 'item-side',
-            width: 'grow',
-            height: 'grow',
-            direction: compared ? 'row' : 'column',
-            gap: compared ? 24 : 0,
-            clip: true,
-            children: compared
-              ? [
-                  {
-                    height: 'grow',
-                    direction: 'column',
-                    scroll: true,
-                    gap: 6,
-                    padding: [0, 0, 12, 0],
-                    children: [
-                      label('Worn', size, INK.brassLit),
-                      cardNode(cardOf(compared), context.picture(compared), [], sizes),
-                    ],
-                  },
-                  art,
-                ]
-              : [side && flavour, side && perksNode(Math.floor((panel - 20) / 2)), art],
+            ...art,
+            children: [
+              ...(art.children ?? []),
+              compared && {
+                float: { to: 'parent', anchor: [0.5, 0], at: [0.5, 0] },
+                height: 'grow',
+                direction: 'column',
+                scroll: true,
+                gap: 6,
+                padding: [0, 0, 12, 0],
+                children: [
+                  label('Worn', size, INK.brassLit),
+                  cardNode(cardOf(compared), context.picture(compared), [], sizes),
+                ],
+              },
+            ],
           },
         ],
       },
@@ -475,9 +480,13 @@ export function itemPage(
   const presses: Node[] = [pressNode('press-back', 'Back', 'button', 'Esc', sizes.label)];
   if (worn)
     presses.push(
-      pressNode(COMPARE, 'Compare', comparing.shown ? 'primary' : 'button', boundKey('compare'), sizes.label),
+      pressNode(COMPARE, comparing.shown ? 'Compare: on' : 'Compare', 'button', boundKey('compare'), sizes.label),
     );
-  for (const [place, press] of detail.presses.entries()) {
+  // What wears the piece stands last, at the footer's right, as Destiny's main press does.
+  const ordered = [...detail.presses.entries()].sort(([, one], [, other]) =>
+    one.role === 'primary' ? (other.role === 'primary' ? 0 : 1) : other.role === 'primary' ? -1 : 0,
+  );
+  for (const [place, press] of ordered) {
     // Two like modules to infuse share a name; an id is the frame's own (ui/node.ts), so the second takes its place.
     const named = `press-${press.label}`;
     const id = presses.some((each) => each.id === named) ? `${named} ${place}` : named;

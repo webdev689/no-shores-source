@@ -3,7 +3,7 @@ import { test } from 'node:test';
 import { item, state } from '../network/gearForTests.ts';
 import { HORSE, KINDS } from '../player/gear.ts';
 import { glyphDrawn } from '../ui/glyphs.ts';
-import type { Child, Node } from '../ui/node.ts';
+import type { Child, Node, Span } from '../ui/node.ts';
 import { QuadList } from '../ui/quads.ts';
 import { type Face, widthOf } from '../ui/text.ts';
 import { Interface } from '../ui/ui.ts';
@@ -13,6 +13,7 @@ import { cardOf, intrinsicOf } from './gearCards.ts';
 import { Holds } from './gearHold.ts';
 import { INK, sizesOf } from './gearNodes.ts';
 import { itemPage } from './itemPage.ts';
+import { nodeAimed } from './itemNodes.ts';
 import type { MenuContext } from './menuPage.ts';
 
 const reefwall = item({ named: 'the_reefwall', kind: KINDS.indexOf('sword_and_shield'), rarity: 4, attack: 200 });
@@ -127,4 +128,74 @@ test("a horse's page names no level, as its card does not: a horse has no stats"
   assert.ok(!cardOf(horse).rows.some(([label]) => label === 'Level'), 'its card');
   const texts = textsOf(itemPage(context, horse, () => {}).page as Node);
   assert.ok(!texts.some((text) => /^Level /.test(text.words)), 'its page');
+});
+
+/** Each card the page offers, by the press it stands beside, built. */
+function cardsOf(shown: Parameters<typeof itemPage>[1], gear = state({})): Map<string, Node> {
+  const cards = new Map<string, Node>();
+  itemPage({ ...context, gear, card: (id, content) => cards.set(id, content()) }, shown, () => {});
+  return cards;
+}
+const column = (kind: number, traits: readonly string[], unlocks: number, aurem = 800) => ({
+  kind,
+  traits,
+  xp: unlocks,
+  aurem,
+  fragments: 2,
+  essence: 0,
+  resource: 0,
+});
+
+test("a locked node's card says once, in its own words, that it fills as it grows; a module's too", () => {
+  const hull = item({ id: 3, kind: 25, rarity: 2, level: 2, columns: [column(0, [], 9_000)] });
+  const words = textsOf(cardsOf(hull).get('node-0-0')).map((text) => text.words);
+  assert.equal(words.filter((said) => /fills/.test(said)).length, 1, words.join(' | '));
+  assert.ok(!words.some((said) => /ring/.test(said)), 'a node is a square, never a ring');
+});
+
+test('a node not affordable says what is short, and one beside another chosen says what it replaces', () => {
+  const sword = item({
+    id: 4,
+    kind: 2,
+    rarity: 3,
+    xp: 20_000,
+    columns: [column(1, ['light_grip', 'heavy_head'], 10_000)],
+    bought: 1,
+    chosen: [0],
+  });
+  const poor = textsOf(cardsOf(sword, state({ aurem: 100, stocks: [9, 0, 0, 0, 0] })).get('node-0-1'));
+  const short = poor.find((text) => /^Not enough/.test(text.words));
+  assert.ok(short, poor.map((text) => text.words).join(' | '));
+  assert.equal(short.colour, INK.loss);
+  assert.ok(
+    poor.some((text) => text.words === 'Replaces Light Grip'),
+    'choosing it sets Light Grip aside',
+  );
+  const richCard = cardsOf(sword, state({ aurem: 900, stocks: [9, 0, 0, 0, 0] })).get('node-0-1');
+  assert.ok(textsOf(richCard).some((text) => text.words === 'Hold to buy'));
+  const spans = (node: Child): Span[] =>
+    node
+      ? [
+          ...(node.text && typeof node.text.words !== 'string' ? node.text.words : []),
+          ...(node.children ?? []).flatMap(spans),
+        ]
+      : [];
+  assert.ok(
+    spans(richCard).some((span) => span.words === '900' && span.colour === INK.gain),
+    'what is had, enough',
+  );
+});
+
+test('the node the keys moved to is the one tried, over the one under a pointer left resting', () => {
+  const node = { label: '', words: '', bought: false, chosen: false, unlocked: true, cost: '', ask: null };
+  const columns = [{ nodes: [node, node] }, { nodes: [node] }];
+  const ui = (hovered: string, focused: string, keyFocused: boolean) =>
+    ({
+      hovered: (id: string) => id === hovered,
+      focused: (id: string) => id === focused,
+      keyFocused,
+    }) as unknown as Interface;
+  assert.deepEqual(nodeAimed(ui('node-0-1', 'node-1-0', true), columns), { column: 1, node: 0 });
+  assert.deepEqual(nodeAimed(ui('node-0-1', 'node-1-0', false), columns), { column: 0, node: 1 }, 'a click’s focus');
+  assert.equal(nodeAimed(ui('', '', false), columns), null);
 });

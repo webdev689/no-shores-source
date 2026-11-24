@@ -2,7 +2,6 @@
 // traits and, against the piece it would replace, what changes), a slot's flyout of the nine it carries, the
 // inventory page's currencies and its shelves of cells, and the vault's. The page draws these in the Enhanced Plus kit.
 
-import items from '../../../content/gear/items.json' with { type: 'json' };
 import { ASKS, type GearItem, type GearState, NONE } from '../network/gearMessages.ts';
 import {
   CARRIED,
@@ -16,6 +15,7 @@ import {
   capital,
   isModule,
   isWeapon,
+  moduleOf,
   itemWords,
   resourceName,
   resourceWords,
@@ -27,7 +27,7 @@ import type { Press } from './gearScreen.ts';
 import { gearKindName, gearName } from './shipGear.ts';
 import type { ShipGlyph } from './shipGlyphs.ts';
 import { earnedFrom } from '../player/sourceLooks.ts';
-import { type StatSheet, givenTraits, sheetOf, statsOf } from './itemStats.ts';
+import { type StatSheet, givenTraits, intrinsicIdOf, sheetOf, statsOf } from './itemStats.ts';
 
 /** How many items a slot carries beside the one worn, how many Vestiges are carried, how many of each the vault
  *  keeps, and how many Ammo crates are carried (the gear crate's `CARRIED_MOST`, `VESTIGES_MOST`, `VAULT_MOST` and
@@ -80,11 +80,9 @@ export const ATHERIC_OWN = 4;
 
 /** An Atheric's intrinsic, always on while it is worn and never a node, as its page and card show it; null for any
  *  other. */
-export function intrinsicOf(item: Pick<GearItem, 'named'>): Trait | null {
-  const entry: { readonly id: string; readonly intrinsic?: string } | undefined = items.items.find(
-    (found) => found.id === item.named,
-  );
-  return entry?.intrinsic ? { ...traitOf(entry.intrinsic), kind: ATHERIC_OWN, note: 'Intrinsic: always on' } : null;
+export function intrinsicOf(item: Pick<GearItem, 'named' | 'rarity'>): Trait | null {
+  const intrinsic = intrinsicIdOf(item);
+  return intrinsic ? { ...traitOf(intrinsic), kind: ATHERIC_OWN, note: 'Intrinsic: always on' } : null;
 }
 
 /** An Atheric's own node's perk as its page shows it beside its intrinsic: on once bought and chosen, else marked as
@@ -151,9 +149,12 @@ export function cardOf(item: GearItem, worn: GearItem | null = null, nodesAside 
   };
 }
 
-/** The piece worn in the slot `item` is worn in, which its card sets it beside; null where none is. */
+/** The piece worn in the slot `item` is worn in, which its card sets it beside: a ship's module beside the module
+ *  fitted in its own slot; none where none is, nor for a horse, which has no numbers to set beside another's. */
 export function wornFor(state: GearState, item: Pick<GearItem, 'kind'>): GearItem | null {
-  return state.items.find((each) => each.at === WORN + slotOf(item.kind)) ?? null;
+  if (item.kind === HORSE) return null;
+  const slot = moduleOf(item.kind)?.slot ?? slotOf(item.kind);
+  return state.items.find((each) => each.at === WORN + slot) ?? null;
 }
 
 /** A slot's flyout: the piece it wears, and its nine carried places, empty ones null. */

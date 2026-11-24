@@ -217,7 +217,7 @@ test("an officer's nodes train and are chosen by the crew's asks, priced in Aure
   assert.deepEqual(bought?.nodes[1]?.ask, { kind: ASKS.chooseOfficer, item: 4, column: 0, node: 1 });
   const [locked] = officerColumns(officer({ trained: 0 }));
   assert.equal(locked?.nodes[0]?.ask, null);
-  assert.equal(locked?.nodes[0]?.cost, 'Its ring fills as they serve.');
+  assert.equal(locked?.nodes[0]?.cost, 'Its square fills as they serve.');
 });
 
 test('the muster offers the officers of the day for their wage, or says why there are none', () => {

@@ -67,25 +67,43 @@ test('each island’s resource is a baked picture of its own, 18 pixels square, 
   assert.equal(glyphSvg('resource', 0, RESOURCE_COUNT), glyphSvg('empty'), 'one past the list is an empty place');
 });
 
-test("a locked node's growth is a square round its edge, lit clockwise from its top's middle as far as it has grown", () => {
+test("a locked node's growth is a square band round its edge, lit clockwise from its top's middle as far as it has grown", () => {
   const lit = (svg: string) => [...svg.matchAll(/x="(\d+)" y="(\d+)" width="1" height="1" fill="currentColor"/g)];
   const cells = (svg: string) => [...svg.matchAll(/x="(\d+)" y="(\d+)" width="1" height="1"/g)];
   const whole = growthSvg(1, '#000');
-  assert.equal(cells(whole).length, 4 * 17, 'every cell of a square 18 a side, its corners counted once');
-  for (const [, x, y] of cells(whole))
-    assert.ok([1, 18].includes(Number(x)) || [1, 18].includes(Number(y)), `(${x}, ${y}) stands on the edge`);
+  const band = (cell: number) => cell <= 2 || cell >= 17;
+  assert.equal(cells(whole).length, 18 * 18 - 14 * 14, 'a band two cells deep round a square 18 a side');
+  for (const [, x, y] of cells(whole)) assert.ok(band(Number(x)) || band(Number(y)), `(${x}, ${y}) stands on the band`);
   assert.equal(lit(growthSvg(0, '#000')).length, 0);
   assert.equal(lit(whole).length, cells(whole).length);
   const quarter = lit(growthSvg(0.25, '#000')).map(([, x, y]) => [Number(x), Number(y)]);
-  assert.ok(quarter.length > 12 && quarter.length < 22, `about a quarter round (${quarter.length})`);
+  assert.ok(quarter.length > 20 && quarter.length < 40, `about a quarter round (${quarter.length})`);
   assert.ok(
-    quarter.every(([x, y]) => (x ?? 0) >= 10 && (y ?? 0) <= 10),
+    quarter.every(([x, y]) => (x ?? 0) >= 9 && (y ?? 0) <= 10),
     'the top right, from the middle of its top',
   );
 });
 
-test("no node's glyph is round: an Atheric's own is a square with square rays", () => {
-  const rows = (svg: string) => [...svg.matchAll(/x="(\d+)" y="(\d+)"/g)].map(([, x, y]) => `${x},${y}`);
-  const own = new Set(rows(nodeGlyphSvg(4)));
-  for (const x of [4, 5, 6, 7]) for (const y of [4, 5, 6, 7]) assert.ok(own.has(`${x},${y}`), 'its square heart');
+test("no node's glyph is round: an Atheric's own is a square heart with square rays, nothing of a sun's ring", () => {
+  const cells = new Set([...nodeGlyphSvg(4).matchAll(/x="(\d+)" y="(\d+)"/g)].map(([, x, y]) => `${x},${y}`));
+  for (const x of [4, 5, 6, 7]) for (const y of [4, 5, 6, 7]) assert.ok(cells.has(`${x},${y}`), 'its square heart');
+  for (const [x, y] of [
+    [1, 2],
+    [2, 3],
+    [9, 2],
+    [10, 3],
+    [1, 8],
+    [2, 9],
+    [9, 8],
+    [10, 9],
+  ])
+    assert.ok(cells.has(`${x},${y}`), `a square ray's cell (${x}, ${y})`);
+  for (const [x, y] of [
+    [4, 3],
+    [7, 3],
+    [3, 5],
+    [8, 6],
+    [4, 8],
+  ])
+    assert.ok(!cells.has(`${x},${y}`), `no rounded shoulder at (${x}, ${y})`);
 });

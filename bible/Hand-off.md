@@ -192,6 +192,21 @@ each part works is in its system note.
 
 The decisions in [[Open Questions]] are not repeated here.
 
+- **The inspect panel after Destiny 1's weapon page** (#202, a draft, waiting on the owner's yes to merge). Built on the
+  owner's "take some autonomy" from
+  [[The Inspect Panel Follows Destiny's Weapon Page, Its Stats Shown and Its Nodes Square]]; Claude's calls in
+  [[The Inspect Panel as Claude Shapes It]]. Fight numbers from the room's own rules (`room::stats` through the room's
+  WebAssembly) as Destiny's stat bars on every item's page and card, a node hovered previewing its change in green and
+  red, a node's card with its costs as have over need, square nodes and a square growth band, the art large, Compare
+  (its press or C) and every card set beside the piece worn, Inspect beside the player's own ([[Interface]], [[Gear]],
+  "Stats"). Five read-only audits (the rules, the page, the design, the bible, the tests) and each finding tested
+  before its fix: the fire rate a tick fast per reload, Impact without a player's ×1.5, a finish's drawn trims unseen,
+  a module's card set against the worn sword, locked nodes' cards never reachable, italic breaking the face's letters,
+  among them. Tested offline: the crates' and the page's tests, `cargo xtask repo`, pictures rendered headless at
+  1280 by 720, 1600 by 900 and 1920 by 1080; not played by hand, on a real GPU or in a deployed room. For the owner:
+  [[Plain Text]] still names the growth "a ring in its nodes", a rule note Claude does not change without a yes;
+  and whether the hover card should keep every perk's words (it runs tall on a 900 px screen).
+
 - **The island view in rain, the Playlist over the island and the ships at a roadstead** (#191, merged on the owner's
   "Deploy", which deploys the page and the rooms). The owner's three reports:
   - "When its cloudy and raining. The overworld pan over the island is shrouded and you can only see the nodes": the

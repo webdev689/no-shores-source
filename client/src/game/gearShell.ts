@@ -185,7 +185,7 @@ export function footerNode(
         wrap: true,
         children: [answer !== '' && words(answer, 1, colour), hintsNode(hints, sizes.label)],
       },
-      // Too many to stand on one line beside the hints (an item's page on a narrow screen), the presses wrap.
+      // Too many to stand on one line (an item's page on a narrow screen), the presses wrap.
       { gap: 8, alignY: 'center', alignX: 'end', wrap: true, children: actions },
     ],
   };

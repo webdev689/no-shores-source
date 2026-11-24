@@ -5,7 +5,8 @@
 //
 // shots.json: { "size": [w, h], "scale": 2, "frames": 10, "shots": [{ "module": "/src/game/journalShots.ts", "build":
 // "journalShot", "out": "target/ui/journal.png", "size": [w, h], "events": [...], "at": 3 }] }: `build` answers the
-// tree for the interface it is given; `events`, `at` and `frames` are as the Interface note says. Errors are printed.
+// tree for the interface it is given; `events`, `at` and `frames` are as `client/src/ui/shot.ts` hears them. Errors are
+// printed.
 import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname } from 'node:path';
 import { createRequire } from 'node:module';

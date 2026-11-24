@@ -7,17 +7,20 @@ import type { Child, Node } from '../ui/node.ts';
 import { INK, label, words } from './gearNodes.ts';
 import type { StatRow, StatSheet } from './itemStats.ts';
 
-/** The bone a bar is filled with, the track it is sunk in, and what is lost of a bar, faded. */
+/** The bone a bar is filled with, the track it is sunk in, and what is lost of a bar or saved of a cost. */
 const BONE = '#d9d0ae';
-const TRACK = '#07080a';
-const LOST = 'rgba(232,150,138,0.5)';
-const SAVED = 'rgba(116,217,160,0.45)';
+const TRACK = 'rgba(217,208,174,0.1)';
+const LOST = '#b8443c';
+const SAVED = 'rgba(116,217,160,0.9)';
 
-/** How wide the names and values stand, by the face's step and whether the bars are a page's (wide) or a card's; a
- *  card names its numbers at the face's first step, as small as its hints, so the bars keep their room. */
-function widthsOf(size: number, wide: boolean): { readonly name: number; readonly value: number } {
-  if (wide) return size > 1 ? { name: 168, value: 150 } : { name: 104, value: 104 };
-  return size > 1 ? { name: 86, value: 150 } : { name: 86, value: 88 };
+/** How wide the names and values stand and how tall a bar is, by the face's step and whether the bars are a page's
+ *  (wide) or a card's. */
+function widthsOf(
+  size: number,
+  wide: boolean,
+): { readonly name: number; readonly value: number; readonly bar: number } {
+  if (wide) return size > 1 ? { name: 168, value: 150, bar: 14 } : { name: 104, value: 104, bar: 10 };
+  return size > 1 ? { name: 150, value: 120, bar: 8 } : { name: 86, value: 88, bar: 6 };
 }
 
 /** Whether a change is for the better. */
@@ -35,7 +38,6 @@ function barNode(row: StatRow, height: number): Node {
     width: 'grow',
     height,
     fill: TRACK,
-    outline: { width: 1, colour: 'rgba(163,152,128,0.22)' },
     children: [
       { width: share(low), height: 'grow', fill: BONE },
       changed && {
@@ -47,36 +49,32 @@ function barNode(row: StatRow, height: number): Node {
   };
 }
 
-/** One stat's row: its name, its bar and its value, with what changed. */
+/** One stat's row: its name, its bar (none for a count, as Destiny's magazine) and its value, with what changed. */
 export function statRowNode(row: StatRow, size: number, wide: boolean): Node {
-  const { name, value } = widthsOf(size, wide);
+  const { name, value, bar } = widthsOf(size, wide);
   const tone = better(row) ? INK.gain : INK.loss;
+  const said: Node = {
+    text: {
+      words: [{ words: row.said }, ...(row.change ? [{ words: ` ${row.change}`, colour: tone }] : [])],
+      size,
+      colour: INK.word,
+      wrap: false,
+    },
+  };
   return {
     width: 'grow',
     gap: 10,
     alignY: 'center',
     label: `${row.label} ${row.said}${row.change ? `, ${row.change}` : ''}`,
     children: [
-      { width: name, alignX: 'end', children: [label(row.label, wide ? size : 1)] },
-      barNode(row, size > 1 ? 10 : wide ? 8 : 6),
-      {
-        width: value,
-        children: [
-          {
-            text: {
-              words: [{ words: row.said }, ...(row.change ? [{ words: ` ${row.change}`, colour: tone }] : [])],
-              size,
-              colour: INK.word,
-              wrap: false,
-            },
-          },
-        ],
-      },
+      { width: name, alignX: 'end', children: [label(row.label, size)] },
+      row.bar ? barNode(row, bar) : { width: 'grow', children: [said] },
+      row.bar && { width: value, children: [said] },
     ],
   };
 }
 
-/** An item's bars, and under them how it is held and what it carries, each a chip. */
+/** An item's bars, and under them how it is held, each a chip; a card's chips are left to its page. */
 export function statSheetNode(sheet: StatSheet, size: number, wide: boolean): Node {
   return {
     width: 'grow',
@@ -84,17 +82,20 @@ export function statSheetNode(sheet: StatSheet, size: number, wide: boolean): No
     gap: wide ? 9 : 6,
     children: [
       ...sheet.rows.map((row) => statRowNode(row, size, wide)),
-      sheet.notes.length > 0 && {
-        gap: 6,
-        wrap: true,
-        padding: [wide ? 4 : 2, 0, 0, widthsOf(size, wide).name + 10],
-        children: sheet.notes.map((note): Node => ({
-          padding: [1, 7],
-          fill: 'rgba(163,152,128,0.12)',
-          outline: { width: 1, colour: 'rgba(163,152,128,0.25)' },
-          children: [words(note, 1, INK.faint)],
-        })),
-      },
+      wide &&
+        sheet.notes.length > 0 && {
+          width: 'grow',
+          gap: 6,
+          wrap: true,
+          alignX: 'end',
+          padding: [4, 0, 0, 0],
+          children: sheet.notes.map((note): Node => ({
+            padding: [1, 7],
+            fill: 'rgba(163,152,128,0.12)',
+            outline: { width: 1, colour: 'rgba(163,152,128,0.25)' },
+            children: [{ text: { words: note, size, colour: INK.faint } }],
+          })),
+        },
     ],
   };
 }

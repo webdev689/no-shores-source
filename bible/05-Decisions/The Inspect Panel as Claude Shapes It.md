@@ -19,12 +19,15 @@ is [[Interface]], and where the numbers come from is [[Gear]].
 
 | Choice | Chosen | Why |
 |---|---|---|
-| Where the numbers come from | The room's own rules (`room::stats`), asked through its WebAssembly as the player's fighter is predicted, each trait the item gives trimming them as it trims a player wearing it | No stat invented for the screen: each bar is a number the fight turns on, so the page cannot disagree with play ([[Agree to the Bit]]) |
-| A Melee weapon's bars | Impact (a diagonal blow's damage), Speed (blows a second), Reach (from the feet to a body's middle), Poise (what a blow fills of a foe's), Swing cost (stamina) | Destiny's Impact, Rate of Fire and Range, as the fight on foot has them; Poise and Swing cost are what tell a dagger from a warhammer |
-| A Ranged weapon's bars | Impact (a quick shot), Aimed (a full draw), Fire rate (shots a second, its reload with it), Poise, Pace aiming; Ammo as a number | Destiny's Impact, Rate of Fire and Magazine, the magazine a number as Destiny's is; Pace aiming is what Light Stock moves |
-| How a weapon is held | A line under its bars: a hand free for a torch, blocks with its shield, a pair whose blows take turns, two-handed; a gun "Strikes at once" | Each changes how it plays, and none is a number |
-| An armour piece's bars | Stamina back (a second), Dodge cost, Poise held, Healing (of a charge) | Armour carries no weapon numbers; these are what its perks move, as Destiny's armour shows Intellect, Discipline and Strength |
-| A bar's length | Against the most any kind of its loadout reaches with no traits, with a third more room; a body's against its own number half again over | So a dagger's short reach reads short beside a greatsword's, and a perk's gain still fits |
+| Where the numbers come from | The room's own rules (`room::stats`), asked through its WebAssembly as the player's fighter is predicted, each trait the item gives trimming them as it trims a player wearing it; a test steps a fighter to hold the rates to combat's own timing | No stat invented for the screen: each is a number the fight turns on, so the page cannot disagree with play ([[Agree to the Bit]]) |
+| Impact | A player's blow or shot on a foe of level 0, half again as the room strikes it, before Attack and the levels weigh it | The number a player meets first; Attack already shows the item's own power |
+| A Melee weapon's rows | Impact (a diagonal blow), Speed (blows a second), Reach (from the feet to a body's middle), Poise (what a blow fills of a foe's), Swing cost (stamina) | Destiny's Impact, Rate of Fire and Range, as the fight on foot has them; Poise and Swing cost are what tell a dagger from a warhammer |
+| A Ranged weapon's rows | Impact (a quick shot), Aimed (a full draw), Fire rate (shots a second, the reload with it), Poise, Pace aiming, and Ammo as a count with no bar | Destiny's Impact, Rate of Fire and Magazine, the magazine a row of its own as Destiny's is; Pace aiming is what Light Stock moves |
+| A weapon's finish | Where it moves the body while drawn (Balanced, Steady, Reckless, Guarded), Dodge cost and Poise held show under its rows | A perk that gives and takes shows both, as the Pest Control Matrix picture does |
+| How a weapon is held | A line on the page: a hand free for a torch, blocks with its shield, a pair whose blows or shots take turns, two-handed; a gun "Strikes at once" | Each changes how it plays, and none is a number; a card leaves it to the page, to stay short |
+| An armour piece's rows | Stamina back (a second), Dodge cost, Poise held, Healing (of a charge) | Armour carries no weapon numbers; these are what its perks move, as Destiny's armour shows Intellect, Discipline and Strength |
+| A bar's length | Against the most any kind of its loadout reaches with no traits and three tenths again; a body's own number and three fifths again; Pace aiming against the whole pace | So a dagger's short reach reads short beside a greatsword's, and a perk's gain still fits |
+| A change's words | The difference of the two numbers as they are shown, so a change never reads "+0" | A shown number and its change agree |
 | XP | Shown nowhere on the page; the nodes' squares grow | [[Text Is Plain]] |
 
 ### The page
@@ -32,19 +35,19 @@ is [[Interface]], and where the numbers come from is [[Gear]].
 | Choice | Chosen | Why |
 |---|---|---|
 | Its head | The item's tile (its picture, element and gauge, gilded once full), its name large over a band of its rarity fading to the right, its kind, level, pips and element | Destiny's small icon beside the name; the band is Enhanced Plus's card |
-| Its left | Attack or Defense large with its element's glyph and its Prestige, beside the bars; under them the node grid | Destiny's page: the number beside its stats, the grid under them |
-| Its right | The words in italic and the perks in two columns over the item drawn large on a lit floor, the item as large as its room lets it stand whole | The owner's enlarged picture ([[The Gear Screens Follow Destiny, on Enhanced Plus]]); the perks read beside the grid that gives them |
-| A narrow page | The words and perks go under the nodes, and the left column scrolls; the art keeps its place | Nothing out of reach at 1280 by 720 |
-| A node hovered or focused, not chosen | The bars show what choosing it would change, a gain in green and a loss in red, a cost better as it falls | The Pest Control Matrix picture |
-| A node's card | Its name and state, its words, and until it is bought what it costs beside what the player has, the short one in the colour of a loss | The No Time to Explain picture |
-| A node | A square tile; locked, a square round its edge lit clockwise from the top's middle as far as the item has grown; an Atheric's own glyph a square with square rays | The owner: "do not use circles and use squares" |
+| Its left | The words, upright and faint; Attack or Defense large with its element's glyph and its Prestige, level with the middle of its bars, the bars under it where the column is too narrow for both; the node grid; the perks, an Atheric's two first. It scrolls, a fade at its foot saying so | Destiny's page: the number beside its stats, the grid under them. Italic broke the pixel face's letters |
+| Its right | The item drawn large on a lit floor, as large as its place lets it stand whole, up to 760 px | The owner's enlarged picture ([[The Gear Screens Follow Destiny, on Enhanced Plus]]); the art is the page's hero, as Destiny's weapon is |
+| A node hovered or focused, not chosen | The rows show what choosing it would change, a gain in green and a loss in red, a cost better as it falls; the main number then shows no compare | The Pest Control Matrix picture; one baseline at a time |
+| A node's card | Beside its node: its name and state, its words, the perk it would replace, and until it is bought each cost with what the player has over what it asks, enough in green and short in red | The No Time to Explain picture |
+| A node | A square tile; locked, a square band round its edge lit clockwise from its top's middle; edged in brass when it can be bought, dim with "Not enough …" when the player cannot pay, and then not held; reachable and its card shown whatever its state; an Atheric's own glyph a square with square rays | The owner: "do not use circles and use squares"; the rarity's red would read as a loss, and a hold the room would refuse asks for nothing |
 | Its hints | "Hold, Buy a node" and "Click, Choose one bought" over the grid, not in the footer | They are the grid's, and the footer's presses keep their room |
+| Its footer | Back, Compare, the held presses, then what wears it last, at the right | Destiny's main press stands last |
 
 ### The card and the compare
 
 | Choice | Chosen | Why |
 |---|---|---|
-| An item's card | Its picture beside its main number and lines, its bars, its perks, its words in italic | Destiny 2's card; the bars make a hover enough to judge a piece |
-| What a card compares | A carried piece's, a ware's, a vault's or a letter's card against the piece worn in its slot: the main number's change, each bar's, "Against your …" | The compare the owner asked for, wherever a piece could be worn instead |
-| Compare on the page | A Compare press and C (a control of its own, rebound as any is), setting the worn piece's card beside the item, kept from page to page until the menu shuts | Destiny 2 holds a compare key; kept, so pieces are looked through against what is worn |
-| Inspect | Another player's piece's card against the player's own in that slot, neither's nodes counted, and so said | The room tells no one another's nodes; counting the player's own alone would mislead |
+| An item's card | Its picture (or its initials while there is none) beside its main number, "Against your …" under it where it compares, its lines, its rows, its perks close, its words | Destiny 2's card; the rows make a hover enough to judge a piece |
+| What a card compares | A carried piece's, a ware's, a vault's or a letter's card against the piece worn in its own slot, a module's against the module fitted; never a horse's | The compare the owner asked for, wherever a piece could be worn instead |
+| Compare on the page | A Compare press and C (a control of its own, rebound as any is; never with Ctrl or Cmd, which copy), the worn piece's card standing in the art's place while the page stays as it is, "Compare: on" while it shows, kept from page to page until the menu shuts | Destiny 2 holds a compare key; the page does not move, so the eye keeps its place |
+| Inspect | Another player's piece's card against the player's own in that slot, neither's nodes counted, "not counting nodes" said; at sea the sea's word on the player's gear | The room tells no one another's nodes; counting the player's own alone would mislead |

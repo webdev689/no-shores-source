@@ -394,7 +394,7 @@ function officerPage(context: MenuContext, officer: GearOfficer): Node {
       officerHead(officerShown(officer), context.sizes.name, '', true),
       ...(perks.length > 0 ? [heading('Perks'), ...perks.map((perk) => traitNode(perk, size))] : []),
       heading('Nodes'),
-      nodeGrid(context, { ...officerAsItem(officer), rarity: officer.grade }, officerColumns(officer)),
+      nodeGrid(context, officerAsItem(officer), officerColumns(officer)),
     ],
   };
 }

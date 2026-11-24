@@ -1,7 +1,7 @@
 // Pictures of an item's page and cards, headless (`tools/uiShot.mjs`): the menu as the game opens it over sample gear
-// that carries a Legendary sword with its whole grid, an Atheric bow and a Legendary helm beside what is worn, so a
-// shot's events can open a slot's flyout, hover a piece's card or open its page; its fight numbers asked of the room's
-// rules as the game asks them. The game never imports it.
+// with a Legendary sword and a Legendary helm carried beside what is worn, the sword with its whole grid, and an
+// Atheric bow worn, so a shot's events can open a slot's flyout, hover a piece's card or a node, or open a page; its
+// fight numbers asked of the room's rules as the game asks them. The game never imports it.
 import type { GearColumn, GearItem, GearState } from '../network/gearMessages.ts';
 import { NONE } from '../network/gearMessages.ts';
 import { WORN } from '../player/gear.ts';

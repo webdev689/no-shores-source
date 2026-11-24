@@ -12,6 +12,7 @@ import { powerNode, statSheetNode } from './statBars.ts';
 import {
   type Hint,
   INK,
+  itemIconNode,
   type Sizes,
   elementNode,
   hintsNode,
@@ -126,12 +127,13 @@ export function kindLine(
 /** A trait as a card or a page lists it: its column's glyph, its name and its words. What a perk that gives and takes
  *  costs stands apart, in the colour of a loss; a word says where an Atheric's perk stands, and its own node not yet
  *  chosen is drawn dim. */
-export function traitNode(trait: Trait, size: number): Node {
+export function traitNode(trait: Trait, size: number, close = false): Node {
   const lit = trait.off ? INK.brass : INK.brassLit;
   return {
     width: 'grow',
     gap: 8,
-    padding: [4, 0],
+    // A card's perks stand closer than a page's, so the card stays short beside what it describes.
+    padding: close ? [1, 0] : [4, 0],
     children: [
       nodeGlyphNode(trait.kind, lit),
       {
@@ -190,27 +192,35 @@ function rowsNode(card: Card, size: number): Node {
 
 /** Words in italic, faint, as an item's flavour stands apart from what it does. */
 export const flavourNode = (said: string, size: number): Node => ({
+  id: 'item-flavour',
   width: 'grow',
-  text: { words: [{ words: said, style: 'italic' }], size, colour: INK.faint },
+  text: { words: said, size, colour: INK.faint },
 });
 
 /** A thin rule parting a card's numbers from its bars and its perks. */
 const parted = (colour: string): Node => ({ width: 'grow', height: 1, fill: colour });
 
+/** The piece a card is set beside, in its words: "Against your" it; on Inspect, whose nodes it never knows, not
+ *  counting either's. */
+export const againstWords = (compare: NonNullable<Card['compare']>): string =>
+  `Against your ${compare.replaces}${compare.nodesAside ? ', not counting nodes' : ''}`;
+
 /** An item's hover card: its picture beside its main number and its lines, its fight numbers as bars, its perks and
- *  its words; set beside the piece it would replace, what changes, in green and red. */
+ *  its words; set beside the piece it would replace, what changes, in green and red, named under the number. */
 function itemCardBody(card: Card, picture: Picture | null, sizes: Sizes, more: CardMore): Child[] {
   const size = sizes.label;
-  const box = size > 1 ? 112 : 80;
-  const icon = more.icon ?? (picture && pictureNode(picture, box - 8, sizes.ratio));
+  const box = size > 1 ? 104 : 80;
+  // While its picture is drawn, or where the forge draws none (Inspect without one), its initials stand in its well.
+  const icon = more.icon ?? itemIconNode(picture, card.name, box - 8, sizes, card.rarity);
   const compared = card.big ? card.compare?.rows.find((row) => row.label === card.big?.label) : undefined;
+  const against = card.compare ? againstWords(card.compare) : null;
   return [
     {
       width: 'grow',
       gap: 12,
       alignY: 'center',
       children: [
-        icon && {
+        {
           width: box,
           height: box,
           alignX: 'center',
@@ -225,6 +235,7 @@ function itemCardBody(card: Card, picture: Picture | null, sizes: Sizes, more: C
           gap: 6,
           children: [
             card.big && powerNode(card.big, compared ? compared.to - compared.from : null, size > 1 ? 4 : 3, size),
+            against !== null && { width: 'grow', text: { words: against, size, colour: INK.faint } },
             card.rows.length > 0 && rowsNode(card, size),
           ],
         },
@@ -233,22 +244,8 @@ function itemCardBody(card: Card, picture: Picture | null, sizes: Sizes, more: C
     card.sheet && parted('rgba(255,255,255,0.07)'),
     card.sheet && { width: 'grow', padding: [2, 0], children: [statSheetNode(card.sheet, size, false)] },
     card.traits.length > 0 && parted('rgba(255,255,255,0.07)'),
-    ...card.traits.map((trait) => traitNode(trait, size)),
+    ...card.traits.map((trait) => traitNode(trait, size, true)),
     card.words !== '' && { width: 'grow', padding: [4, 0, 0, 0], children: [flavourNode(card.words, size)] },
-    card.compare && {
-      width: 'grow',
-      padding: [4, 0, 0, 0],
-      children: [
-        {
-          width: 'grow',
-          text: {
-            words: `Against your ${card.compare.replaces}${card.compare.nodesAside ? ', nodes aside' : ''}`,
-            size,
-            colour: INK.faint,
-          },
-        },
-      ],
-    },
     ...(more.after ?? []),
   ];
 }

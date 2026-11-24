@@ -207,15 +207,19 @@ number is one of [[Gear as Claude Shapes It]].
   [[The Inspect Panel as Claude Shapes It]]). An item's fight numbers, as its card and page show them, are the room's
   own (`room::stats`), never numbers of the screen's: what its kind fights with, from combat's arms and shots and the
   player's swing and reload as the step paces them, under the trim the traits it gives make (`trim_by`, the one
-  `trim_of` makes of a player's worn gear), so a page and play agree to the bit. A Melee loadout's: a diagonal blow's
+  `trim_of` makes of a player's worn gear), so a page and play agree to the bit; a test steps a fighter holding each
+  weapon's stroke or trigger and holds the rates to it. Damage is a player's on a foe of level 0, half again as the
+  room strikes a foe (`PLAYER_HARM`), before the Attack and the levels weigh it. A Melee loadout's: a diagonal blow's
   damage (a pair's at its pair's share), blows a second, how far the blow reaches from the feet to a body's middle, the
   poise it fills and the stamina a swing costs. A Ranged one's: a quick shot's damage (a bow's two thirds) and a full
-  draw's, shots a second with the reload (a pair of pistolets fires twice, a brace's gap apart, then reloads), the
-  poise a shot fills (its weight's alone), the shots it carries (`ammo::capacity`), how fast an arrow or a bolt flies
-  (a ball at once) and the share of the pace kept aiming. How either is held: a hand free for a torch, a shield, a pair
-  or both hands. Any item's body numbers, which armour shows: the stamina back a second resting, a dodge's cost, the
-  poise held before a stagger and a healing charge's share. Damage is the weapon's own, before its Attack and the levels
-  weigh it. The browser asks them of the room's module (`fighter_item_stats`), as it predicts the player's fighter.
+  draw's, shots a second (the tick a reload ends begins nothing, so the next shot comes a tick after it; a pair of
+  pistolets fires twice, the left a brace's gap and a tick after the right, then reloads), the poise a shot fills (its
+  weight's alone), the shots it carries (`ammo::capacity`), how fast an arrow or a bolt flies (a ball at once) and the
+  share of the pace kept aiming. How either is held: a hand free for a torch, a shield, a pair, or both hands (a
+  two-handed blade, a bow, a crossbow, a thunderlock). Any item's body numbers, which armour shows: the stamina back a
+  second resting, a dodge's cost, the poise held before a stagger and a healing charge's share; a weapon's with its
+  finish's trims while it is drawn. The browser asks them of the room's module (`fighter_item_stats`), as it predicts
+  the player's fighter; an Atheric's intrinsic counts only at its catalogue entry's rarity, as the room counts it.
 - **Items as themselves.** A Boss's kill always leaves each player who struck it an item, not sealed, and a Miniboss's
   35 times in 100, each beside its Vestige and by a roll of its own, raised by the tier as the Vestige is
   (`vestige::found_items`, `loot_kill`). It is made as a Vestige of its rank's colours, opened, would make it, for any
