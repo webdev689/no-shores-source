@@ -238,9 +238,13 @@ fn shade(in: Out) -> vec4f {
   if in.material == CRYSTAL {
     return vec4f(crystal_colour(facing, in.from_eye, in.glow, sun), 1.0);
   }
+  // A ghost (a piece of decoration being placed) is washed in its tint, its fire too.
+  let tint = props[in.prop].look.yzw;
+  let ghost = any(tint > vec3f(0.0));
   // A fire is its own light, not lit by the sky's.
   if in.material == ${id('glow')} {
-    return vec4f(material_colour(in.material, in.local, false), 1.0);
+    let flame = material_colour(in.material, in.local, false);
+    return vec4f(select(flame, mix(flame, tint * 1.4, 0.6), ghost), 1.0);
   }
   let ambient = AMBIENT + BOUNCE * (1.0 - abs(facing.z));
   let light = sky_ambient(facing) * (ambient / AMBIENT) + sky_direct(facing, sun) * ((1.0 - ambient) / 0.65);
@@ -250,9 +254,7 @@ fn shade(in: Out) -> vec4f {
     let glint = pow(max(dot(reflect(normalize(in.from_eye), facing), sky_state.key.xyz), 0.0), 24.0) * sun;
     colour += sky_state.key_light.rgb * glint * select(0.35, 0.9, in.material == ${id('gold')});
   }
-  // A ghost (a piece of decoration being placed) is washed in its tint.
-  let tint = props[in.prop].look.yzw;
-  if any(tint > vec3f(0.0)) { colour = mix(colour, tint * (light + 0.4), 0.6); }
+  if ghost { colour = mix(colour, tint * (light + 0.4), 0.6); }
   return vec4f(colour, 1.0);
 }
 

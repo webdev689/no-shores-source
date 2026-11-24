@@ -48,6 +48,13 @@ test('every material a module may wear has a colour of its own in the drawer, no
   assert.deepEqual(missing, []);
 });
 
+test("a ghost's fire is washed in its tint too: a Lamp Post's flame being placed shows green or red", () => {
+  const shade = /fn shade[^]*?\n}\n/.exec(PROPS_SHADER)?.[0] ?? '';
+  const fire = /if in\.material == \d+u \{\n\s*let flame[^]*?\n {2}}\n/.exec(shade)?.[0] ?? '';
+  assert.ok(fire.includes('tint'), "the fire's early return takes the tint");
+  assert.ok(shade.indexOf('look.yzw') < shade.indexOf(fire), 'read before it');
+});
+
 test('the drawer makes its pipelines only once it has props to draw, not as the game boots', () => {
   const made: string[] = [];
   // A device whose every call answers another such stand-in, noting each pipeline and shader made.
