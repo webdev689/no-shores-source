@@ -15,7 +15,7 @@ const DICE: Dice = Dice { seed: 7, tick: 1, player: 1 };
 fn seen(id: &str) -> Option<GuildSeen> {
     Some(GuildSeen {
         id: id.to_owned(),
-        standing: Standing { done: [true; SLOTS], before_the_week: true },
+        standing: Standing { done: [true; SLOTS], before_the_week: true, week: Some(WEEK) },
         boons: Boons::default(),
     })
 }

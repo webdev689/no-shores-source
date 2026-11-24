@@ -1,10 +1,11 @@
 /**
  * The host's side of a guild's outpost's room (`node-<site>--guild-<key>`): it stands the guild's plot as blocks, as
- * the page draws it (`outpostPlaces.ts` `plotBoxes`), anew each time the plot is read again, and runs the errands the
- * room holds for its players' asks with the accounts. A deposit or delivery goes only once the character it was taken
- * from is saved, so no claim elsewhere finds it whole, and a take's gift is saved at once. The accounts keep each
- * errand's answer under its own id, so one they throw on is asked again under it and is never done or given back
- * twice. A leaving player's last save waits a while for their errands (`settled`); the room keeps a later answer.
+ * the page draws it (`outpostPlaces.ts` `plotBoxes`), anew each time the plot is read again (every half minute besides,
+ * so a plot changed or abandoned from anywhere stands here soon after), and runs the errands the room holds for its
+ * players' asks with the accounts. A deposit or delivery goes only once the character it was taken from is saved, so
+ * no claim elsewhere finds it whole, and a take's gift is saved at once. The accounts keep each errand's answer under
+ * its own id, so one they throw on is asked again under it until they answer, and is never done or given back twice. A
+ * leaving player's last save waits a while for their errands (`settled`); the room keeps a later answer.
  */
 
 import manifest from '../content/modules/modules.json' with { type: 'json' };
@@ -20,12 +21,14 @@ import type { Errand, RoomDoor } from './roomDoor.ts';
 export type OutpostAccounts = Pick<Characters, 'outpost' | 'deposit' | 'deliver' | 'takeStores' | 'soundHorn'>;
 type OutpostDoor = Pick<
   RoomDoor,
-  'outpostErrands' | 'outpostAnswered' | 'outpostStood' | 'outpostGate' | 'standBlock' | 'takeBlock'
+  'outpostErrands' | 'outpostAnswered' | 'outpostStood' | 'outpostGate' | 'outpostParting' | 'standBlock' | 'takeBlock'
 >;
 
-/** How long an errand the accounts threw on waits before each try again, under its one id: about five minutes in all,
- *  past which they are taken to have never done it. */
-export const AGAIN_WAITS_MS = [250, 1_000, 4_000, ...Array<number>(30).fill(10_000)];
+/** How long an errand the accounts threw on waits before each try again, under its one id, the last wait again for as
+ *  long as the room lives: only an answer says whether they did it, so none is ever taken to be undone. */
+export const AGAIN_WAITS_MS = [250, 1_000, 4_000, 10_000];
+/** How often the host reads the plot again unasked. */
+export const READ_EVERY_MS = 30_000;
 /** How long a leaving player's last save waits for their errands at most: past it, it is made all the same. */
 export const SETTLE_MOST_MS = 30_000;
 
@@ -57,6 +60,8 @@ export class OutpostHost {
   /** The read under way, and whether another was asked meanwhile. */
   private reading: Promise<void> | null = null;
   private again = false;
+  /** When the plot was last read; null before its first read, which the room's opening asks. */
+  private readAt: number | null = null;
   /** Each player's errands with the accounts. */
   private readonly flying = new Map<number, Set<Promise<void>>>();
 
@@ -93,7 +98,8 @@ export class OutpostHost {
   }
 
   /** Reads the plot and stands it anew; one read at a time, and one asked during it reads once more after. */
-  read(): Promise<void> {
+  read(now = Date.now()): Promise<void> {
+    this.readAt = now;
     if (this.reading) {
       this.again = true;
       return this.reading;
@@ -121,8 +127,10 @@ export class OutpostHost {
     this.guarded(() => this.door.outpostStood(), false);
   }
 
-  /** Takes the errands the room holds and runs each: a plot to read again is read, the rest asked of the accounts. */
-  tick(): void {
+  /** Reads the plot again once it was last read a while ago, and takes the errands the room holds and runs each: a
+   *  plot to read again is read, the rest asked of the accounts. */
+  tick(now = Date.now()): void {
+    if (this.readAt !== null && now - this.readAt >= READ_EVERY_MS) void this.read(now);
     for (const errand of this.guarded(() => this.door.outpostErrands(), [])) {
       if (errand.kind === 'changed') {
         void this.read();
@@ -149,8 +157,8 @@ export class OutpostHost {
     if (errand.kind === 'deliver' && (answer ?? 0) > 0) void this.read();
   }
 
-  /** What the accounts answer an errand: how many they moved, used or gave, or the horn's tier; null when they threw
-   *  on every try. */
+  /** What the accounts answer an errand: how many they moved, used or gave, or the horn's tier; null for no errand
+   *  they answer. */
   private answer(errand: Errand): Promise<number | null> {
     const { account, amount = 0 } = errand;
     const stuff = (errand.stuff ?? 'timber') satisfies Stuff;
@@ -173,19 +181,21 @@ export class OutpostHost {
     }
   }
 
-  /** An errand asked again under its one id while the accounts throw: answered once, or null after every try. */
-  private async retried(ask: () => Promise<number>): Promise<number | null> {
-    for (const millis of [0, ...this.waits]) {
+  /** An errand asked again under its one id while the accounts throw, until they answer. */
+  private async retried(ask: () => Promise<number>): Promise<number> {
+    for (let tries = 0; ; tries++) {
+      const millis = tries === 0 ? 0 : (this.waits[Math.min(tries, this.waits.length) - 1] ?? 0);
       if (millis > 0) await new Promise((done) => setTimeout(done, millis));
       const answered = await ask().catch(() => null);
       if (answered !== null) return answered;
     }
-    return null;
   }
 
   /** Once a leaving player's errands are answered, those the room holds meanwhile taken too, or `most` on; its timer
-   *  runs only while one is in flight. */
+   *  runs only while one is in flight. Their account joining again meanwhile is the room's from then on, and is given
+   *  each answer. */
   async settled(player: number, most = SETTLE_MOST_MS): Promise<void> {
+    this.guarded(() => this.door.outpostParting(player), false);
     let timer: ReturnType<typeof setTimeout> | undefined;
     let late: Promise<boolean> | null = null;
     try {

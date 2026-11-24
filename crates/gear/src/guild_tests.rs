@@ -12,7 +12,8 @@ use crate::world::Difficulty;
 
 const DICE: Dice = Dice { seed: 7, tick: 1, player: 1 };
 const WEEK: u64 = 2_916;
-const DONE: Standing = Standing { done: [true; SLOTS], before_the_week: true };
+const DONE: Standing = Standing { done: [true; SLOTS], before_the_week: true, week: Some(WEEK) };
+const NEXT: Standing = Standing { week: Some(WEEK + 1), ..DONE };
 
 #[test]
 fn the_week_draws_the_page_s_guild_bounties() {
@@ -97,13 +98,13 @@ fn a_claim_pays_a_guild_package_once_a_week_for_a_bounty_the_guild_finished() {
     assert_eq!(character.vestiges.len(), 1, "a Vestige");
     assert!(character.materials.aurem > aurem, "and Aurem");
     assert_eq!(character.claim_guild_bounty(WEEK, 2, DONE, &DICE), Err(Refusal::GuildBountyClaimed));
-    assert_eq!(character.claim_guild_bounty(WEEK + 1, 2, DONE, &DICE), Ok(()), "again the next week");
+    assert_eq!(character.claim_guild_bounty(WEEK + 1, 2, NEXT, &DICE), Ok(()), "again the next week");
 }
 
 #[test]
 fn a_claim_is_refused_for_a_bounty_not_done_one_not_drawn_or_a_member_who_joined_this_week() {
     let mut character = Character::starting();
-    let undone = Standing { done: [false; SLOTS], before_the_week: true };
+    let undone = Standing { done: [false; SLOTS], ..DONE };
     assert_eq!(character.claim_guild_bounty(WEEK, 0, undone, &DICE), Err(Refusal::GuildBountyNotDone));
     assert_eq!(character.claim_guild_bounty(WEEK, 4, DONE, &DICE), Err(Refusal::NoSuchGuildBounty));
     let joined = Standing { before_the_week: false, ..DONE };
@@ -139,7 +140,7 @@ fn the_war_horn_s_foe_pays_each_member_a_guild_package_once_a_week() {
     assert_eq!(character.claim_horn_package(WEEK, DONE, &DICE), Ok(()));
     assert_eq!(character.vestiges.len(), 1, "a Vestige");
     assert_eq!(character.claim_horn_package(WEEK, DONE, &DICE), Err(Refusal::GuildBountyClaimed), "once that week");
-    assert_eq!(character.claim_horn_package(WEEK + 1, DONE, &DICE), Ok(()), "again the next");
+    assert_eq!(character.claim_horn_package(WEEK + 1, NEXT, &DICE), Ok(()), "again the next");
     let kept: crate::guild::GuildWeek = serde_json::from_str(r#"{"week":7}"#).unwrap();
     assert!(!kept.horn, "a week kept before the horn's package was is unclaimed");
 }
@@ -152,7 +153,7 @@ fn a_guild_dungeons_first_clear_pays_each_member_a_guild_package_once_a_week_bes
     assert_eq!(character.claim_delve_package(WEEK, DONE, &DICE), Err(Refusal::GuildBountyClaimed), "once that week");
     assert_eq!(character.claim_horn_package(WEEK, DONE, &DICE), Ok(()), "the horn's is its own");
     assert_eq!(character.vestiges.len(), 2, "a Vestige each");
-    assert_eq!(character.claim_delve_package(WEEK + 1, DONE, &DICE), Ok(()), "again the next");
+    assert_eq!(character.claim_delve_package(WEEK + 1, NEXT, &DICE), Ok(()), "again the next");
     let kept: crate::guild::GuildWeek = serde_json::from_str(r#"{"week":7,"horn":true}"#).unwrap();
     assert!(!kept.delve, "a week kept before the guild dungeon's package was is unclaimed");
 }
@@ -161,8 +162,36 @@ fn a_guild_dungeons_first_clear_pays_each_member_a_guild_package_once_a_week_bes
 fn the_horn_s_and_the_guild_dungeon_s_packages_go_only_to_members_from_before_the_week() {
     let mut character = Character::starting();
     character.xp = crate::power::xp_for_level(12);
-    let new = Standing { done: [true; SLOTS], before_the_week: false };
+    let new = Standing { before_the_week: false, ..DONE };
     assert_eq!(character.claim_horn_package(WEEK, new, &DICE), Err(Refusal::JoinedThisWeek));
     assert_eq!(character.claim_delve_package(WEEK, new, &DICE), Err(Refusal::JoinedThisWeek));
     assert!(character.vestiges.is_empty() && !character.guild.horn && !character.guild.delve, "nothing given");
+}
+
+#[test]
+fn a_bounty_claim_judged_by_another_week_s_standing_waits_for_the_room_to_be_told_again() {
+    let mut character = Character::starting();
+    character.xp = crate::power::xp_for_level(12);
+    for stale in [DONE, Standing { week: None, ..NEXT }] {
+        assert_eq!(character.claim_guild_bounty(WEEK + 1, 0, stale, &DICE), Err(Refusal::GuildWeekTurning));
+    }
+    assert!(character.vestiges.is_empty() && !character.guild.claimed[0], "nothing given, nothing spent");
+    assert_eq!(character.claim_guild_bounty(WEEK + 1, 0, NEXT, &DICE), Ok(()), "told the week, it pays");
+    // The horn's and the dungeon's judge only membership, which last week's standing does not overstate.
+    assert_eq!(character.claim_horn_package(WEEK + 1, DONE, &DICE), Ok(()));
+}
+
+#[test]
+fn the_horn_s_package_is_kept_with_ten_vestiges_carried_as_its_foe_pays_it_once() {
+    let mut character = Character::starting();
+    character.xp = crate::power::xp_for_level(12);
+    for _ in 0..VESTIGES_MOST {
+        let id = character.next_id;
+        character.next_id += 1;
+        character.vestiges.insert(id, (Vestige::new(id, Rarity::Rare, Slot::Head, 1), false));
+    }
+    let aurem = character.materials.aurem;
+    assert_eq!(character.claim_horn_package(WEEK, DONE, &DICE), Ok(()));
+    assert_eq!(character.vestiges_held(true), 1, "kept in the vault");
+    assert!(character.materials.aurem > aurem && character.guild.horn, "its Aurem too, and taken this week");
 }

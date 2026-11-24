@@ -31,11 +31,15 @@ struct Held {
 
 /// More XP than any one tick pays: a jump past it is a character given back or replaced, measured afresh.
 const MOST_A_TICK: u64 = 50_000;
+/// How many ticks after the week turns a member whose record is still the week before's neither gives nor counts nor
+/// claims: ten seconds, past the save that keeps that week's last count, which their record begun afresh would lose.
+const TURN_WAIT_TICKS: u32 = 600;
 
-/// Each player's guild in a room.
+/// Each player's guild in a room, and the week it last gave in with the ticks since it turned.
 #[derive(Debug, Default)]
 pub struct Guilds {
     held: BTreeMap<PlayerId, Held>,
+    turn: Option<(u64, u32)>,
 }
 
 impl Guilds {
@@ -67,11 +71,21 @@ impl Guilds {
     ) -> Vec<PlayerId> {
         let mut moved = Vec::new();
         let mut present = Vec::new();
+        self.turn = Some(match self.turn {
+            Some((was, ticks)) if was == week => (week, ticks.saturating_add(1)),
+            Some(_) => (week, 0),
+            None => (week, TURN_WAIT_TICKS),
+        });
         for (player, character, claimed) in characters {
             present.push(player);
+            let turning = self.turning(character, week);
             let Some(held) = self.held.get_mut(&player) else { continue };
             // A character given back or replaced holds no boons of its own: they are the guild's, given each tick.
             character.boons = held.seen.as_ref().map(|seen| seen.boons).unwrap_or_default();
+            if turning {
+                // Its gains wait, measured from the mark still, for the new week's record.
+                continue;
+            }
             let gained = character.xp.saturating_sub(held.mark);
             held.mark = character.xp;
             let given_back = claimed && !held.claimed;
@@ -87,9 +101,16 @@ impl Guilds {
         moved
     }
 
-    /// Counts a feat toward a member's guild bounties, together when another of `present` is in their guild.
+    /// Whether a character's guild record is of the week before `week` while the week has only just turned
+    /// (`TURN_WAIT_TICKS`): touched now, it would begin afresh before that week's last count is saved.
+    fn turning(&self, character: &Character, week: u64) -> bool {
+        character.guild.week < week && self.turn.is_some_and(|(at, ticks)| at == week && ticks < TURN_WAIT_TICKS)
+    }
+
+    /// Counts a feat toward a member's guild bounties, together when another of `present` is in their guild; none
+    /// while their record waits on the week's turn.
     pub fn saw(&self, player: PlayerId, character: &mut Character, week: u64, feat: &Feat<'_>, present: &[PlayerId]) {
-        let Some(own) = self.of(player) else { return };
+        let Some(own) = self.of(player).filter(|_| !self.turning(character, week)) else { return };
         let together =
             present.iter().any(|other| *other != player && self.of(*other).is_some_and(|theirs| theirs.id == own.id));
         character.guild_saw(week, feat, together);
@@ -98,7 +119,7 @@ impl Guilds {
     /// A member's claim of a guild bounty their guild finished this week (`Character::claim_guild_bounty`).
     ///
     /// # Errors
-    /// Why not: in no guild, or the character's own refusal.
+    /// Why not: in no guild, the week only just turned over their record, or the character's own refusal.
     pub fn claim(
         &self,
         player: PlayerId,
@@ -108,6 +129,9 @@ impl Guilds {
         dice: &Dice,
     ) -> Result<(), Refusal> {
         let seen = self.of(player).ok_or(Refusal::NotInGuild)?;
+        if self.turning(character, week) {
+            return Err(Refusal::GuildWeekTurning);
+        }
         character.claim_guild_bounty(week, slot, seen.standing, dice)
     }
 }

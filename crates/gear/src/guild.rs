@@ -159,12 +159,25 @@ pub struct GuildWeek {
     pub unknown: UnknownKeys,
 }
 
-/// What the accounts say of a player's guild this week, as the room holds it: which of the week's bounties the guild has
-/// done, and whether the player was in it before the week turned.
+/// What the accounts say of a player's guild in a week, as the room holds it: which of the week's bounties the guild has
+/// done, whether the player was in it before the week turned, and the week they read it for (none when they did not
+/// say, which judges no claim).
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
 pub struct Standing {
     pub done: [bool; SLOTS],
     pub before_the_week: bool,
+    pub week: Option<u64>,
+}
+
+impl Standing {
+    /// Whether it may judge a claim in `week`: one read for another week (the week has just turned, and the room is
+    /// told again in a moment) would pay or refuse by the wrong week's bounties.
+    ///
+    /// # Errors
+    /// Read for another week, or for none.
+    pub fn of_week(self, week: u64) -> Result<Self, Refusal> {
+        if self.week == Some(week) { Ok(self) } else { Err(Refusal::GuildWeekTurning) }
+    }
 }
 
 /// What a member's guild's outposts give them wherever they play, each a percent more of what kills and clears pay:
@@ -223,13 +236,14 @@ impl Character {
     /// Claims a guild bounty the guild finished this week, once: a guild package, as a faction's is.
     ///
     /// # Errors
-    /// Why not: no such bounty, not done yet, claimed already, in the guild only since the week turned, or ten
-    /// Vestiges carried.
+    /// Why not: no such bounty, the standing read for another week, not done yet, claimed already, in the guild only
+    /// since the week turned, or ten Vestiges carried.
     pub fn claim_guild_bounty(&mut self, week: u64, slot: u8, standing: Standing, dice: &Dice) -> Result<(), Refusal> {
         let slot = usize::from(slot);
         if slot >= SLOTS {
             return Err(Refusal::NoSuchGuildBounty);
         }
+        let standing = standing.of_week(week)?;
         if !standing.done[slot] {
             return Err(Refusal::GuildBountyNotDone);
         }
@@ -247,7 +261,9 @@ impl Character {
     /// Takes the guild package the War Horn's foe gives a member who fought it, once a week.
     ///
     /// # Errors
-    /// Taken already this week, in the guild only since the week turned, or ten Vestiges carried.
+    /// Taken already this week, or in the guild only since the week turned. With ten Vestiges carried, its Vestige is
+    /// kept as a first clear's is (the vault, else the mail), as the horn's foe pays it once and never again.
+    /// A standing of an earlier week judges it as well: a member before that week's turn was one before this week's.
     pub fn claim_horn_package(&mut self, week: u64, standing: Standing, dice: &Dice) -> Result<(), Refusal> {
         if self.guild_week(week).horn {
             return Err(Refusal::GuildBountyClaimed);
@@ -255,7 +271,7 @@ impl Character {
         if !standing.before_the_week {
             return Err(Refusal::JoinedThisWeek);
         }
-        self.give_package(Purpose::GuildPackage, dice)?;
+        self.keep_package(Purpose::GuildPackage, dice);
         self.guild.horn = true;
         Ok(())
     }

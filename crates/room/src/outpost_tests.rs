@@ -216,3 +216,37 @@ fn an_answer_after_the_player_left_is_given_at_their_account_s_next_claim_here()
     assert!(room.outpost_answered(deposit.id, Some(0)));
     assert_eq!(room.players[&again].character.materials.aurem, aurem + 100, "back already, given at once");
 }
+
+#[test]
+fn a_plot_asked_to_be_read_again_too_soon_is_read_once_the_second_has_passed() {
+    let (mut room, player) = outpost();
+    ask(&mut room, player, OutpostAsk::Changed);
+    assert_eq!(room.outpost_errands().len(), 1);
+    room.tick();
+    ask(&mut room, player, OutpostAsk::Changed);
+    ask(&mut room, player, OutpostAsk::Changed);
+    assert!(room.outpost_errands().is_empty(), "too soon");
+    for _ in 0..60 {
+        room.tick();
+    }
+    let later: Vec<What> = room.outpost_errands().iter().map(|errand| errand.what).collect();
+    assert_eq!(later, vec![What::Changed], "read once, late");
+    assert!(room.outpost_errands().is_empty());
+}
+
+#[test]
+fn the_same_account_joining_again_while_its_errand_settles_takes_it_over_and_is_answered() {
+    let (mut room, player) = outpost();
+    ask(&mut room, player, OutpostAsk::Deposit { count: 200 });
+    let deposit = room.outpost_errands().remove(0);
+    let again = room.join().expect("a room with space");
+    assert!(!room.own(again, "salt"), "a second tab while the first plays");
+    assert!(room.outpost_parting(player));
+    assert!(room.own(again, "salt"), "the first is leaving");
+    let aurem = room.players[&again].character.materials.aurem;
+    assert!(room.outpost_answered(deposit.id, Some(50)));
+    assert_eq!(room.players[&again].character.materials.aurem, aurem + 150, "given back to the one it is now");
+    assert_eq!(room.players[&player].owner, None, "the leaving one keeps none of it");
+    let mut plain = Room::new(Vec::new(), (0.0, 0.0));
+    assert!(!plain.outpost_parting(0), "no outpost");
+}

@@ -1,5 +1,5 @@
 //! The door the host tells a room of a player's guild through, as the accounts told it: which guild, which of the
-//! week's four guild bounties it has done, whether the player was in it before the week turned, and what its outposts
+//! week's four guild bounties it has done and for which week, whether the player was in it before the week turned, and what its outposts
 //! give its members.
 
 use crate::{Opened, with_open};
@@ -13,6 +13,9 @@ struct Told {
     id: String,
     done: [bool; gear::guild::SLOTS],
     before_the_week: bool,
+    /// The week `done` was read for; none from accounts that did not say, which judges no claim.
+    #[serde(default)]
+    week: Option<u64>,
     /// What the guild's outposts give, percent; none before the accounts told them.
     #[serde(default)]
     boons: Boons,
@@ -26,17 +29,21 @@ struct Boons {
     reputation: u8,
 }
 
+/// A player's guild from the text in `bytes` (`Told`), none given no text; `Err` if the text is no guild.
+fn seen_of(bytes: &[u8]) -> Result<Option<GuildSeen>, serde_json::Error> {
+    if bytes.is_empty() {
+        return Ok(None);
+    }
+    let told = serde_json::from_slice::<Told>(bytes)?;
+    let standing = gear::guild::Standing { done: told.done, before_the_week: told.before_the_week, week: told.week };
+    let Boons { xp, aurem, reputation } = told.boons;
+    Ok(Some(GuildSeen { id: told.id, standing, boons: gear::guild::Boons { xp, aurem, reputation } }))
+}
+
 /// Tells the room a player's guild from the text in `bytes` (`Told`), or that they are in none, given no text; false
 /// if the text is no guild, or the room keeps no such player.
 pub fn guild(player: PlayerId, bytes: &[u8]) -> bool {
-    let seen = if bytes.is_empty() {
-        None
-    } else {
-        let Ok(told) = serde_json::from_slice::<Told>(bytes) else { return false };
-        let standing = gear::guild::Standing { done: told.done, before_the_week: told.before_the_week };
-        let Boons { xp, aurem, reputation } = told.boons;
-        Some(GuildSeen { id: told.id, standing, boons: gear::guild::Boons { xp, aurem, reputation } })
-    };
+    let Ok(seen) = seen_of(bytes) else { return false };
     with_open(|opened| match opened {
         Opened::Land { room, .. } => room.guild_player(player, seen),
         Opened::Sea(sea) => sea.guild_player(player, seen),

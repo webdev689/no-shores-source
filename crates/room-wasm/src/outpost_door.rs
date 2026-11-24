@@ -1,6 +1,7 @@
 //! The door a guild's outpost's room runs its errands through. The host makes a node's room an outpost (`room_outpost`),
 //! takes the errands its players' asks hold each tick (`room_outpost_errands`), asks the accounts, and gives each
-//! answer back (`room_outpost_answered`); and it says each time it stood the plot anew (`room_outpost_stood`).
+//! answer back (`room_outpost_answered`); it says each time it stood the plot anew (`room_outpost_stood`), and which
+//! player is leaving while their errands settle (`room_outpost_parting`).
 
 use crate::{Opened, hand_over, with_open};
 use room::{Errand, Room, What};
@@ -77,6 +78,12 @@ pub extern "C" fn room_outpost_errands() -> u64 {
 pub extern "C" fn room_outpost_answered(id: u32, answer: i32) -> u32 {
     let answer = (answer != i32::MIN).then_some(i64::from(answer));
     u32::from(on_land(|room| room.outpost_answered(id, answer)).unwrap_or(false))
+}
+
+/// A player leaves while their errands settle (`Room::outpost_parting`); 1 at an outpost, 0 elsewhere.
+#[unsafe(no_mangle)]
+pub extern "C" fn room_outpost_parting(player: u32) -> u32 {
+    u32::from(on_land(|room| room.outpost_parting(player)).unwrap_or(false))
 }
 
 /// The host stood the plot anew; 1 in a room on land, 0 elsewhere.
