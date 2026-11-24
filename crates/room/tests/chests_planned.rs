@@ -123,8 +123,9 @@ fn swing_of(place: &Site) -> [f64; 4] {
     let (across, deep, behind) = (0.55, 0.4, OUT_M - 0.05);
     let corners = [(-across, -deep), (across, -deep), (-across, behind), (across, behind)]
         .map(|(side, along)| [x + back_y * side + back_x * along, y - back_x * side + back_y * along]);
-    corners.iter().fold([f64::INFINITY, f64::INFINITY, f64::NEG_INFINITY, f64::NEG_INFINITY], |[w, n, e, s], p| {
-        [w.min(p[0]), n.min(p[1]), e.max(p[0]), s.max(p[1])]
+    let start = [f64::INFINITY, f64::INFINITY, f64::NEG_INFINITY, f64::NEG_INFINITY];
+    corners.iter().fold(start, |[west, north, east, south], corner| {
+        [west.min(corner[0]), north.min(corner[1]), east.max(corner[0]), south.max(corner[1])]
     })
 }
 
