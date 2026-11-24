@@ -27,6 +27,8 @@ let landed: Held | null = null;
 let reads = 0;
 /** When the last read failed, on the wall clock; null while the last read answered or one is under way. */
 let failedAt: number | null = null;
+/** The guilds read whose outposts failed to read: kept as read, and read again as a failed read is. */
+const partial = new WeakSet<Held>();
 
 /** Reads the guild once from the accounts: null in none, undefined when the accounts do not answer. Where only its
  *  outposts fail to read, what was last read of them is kept, so the map keeps marking its sites. */
@@ -39,7 +41,9 @@ async function readGuild(link: AccountLink): Promise<Held | null | undefined> {
   const { key, rank, banner } = guild;
   if (!outposts || typeof outposts === 'string') {
     const kept = landed?.key === key ? landed : { sites: [], allowsAnother: false, hornSounded: false };
-    return { ...kept, key, rank, banner };
+    const half = { ...kept, key, rank, banner };
+    partial.add(half);
+    return half;
   }
   const sites = outposts.outposts.map((outpost) => outpost.site);
   const allowsAnother = sites.length < outposts.allowed;
@@ -64,7 +68,7 @@ function read(): Promise<Held | null> {
   held = reading.then((guild) => (guild === undefined ? landed : guild));
   void reading.then((guild) => {
     if (number !== reads) return;
-    failedAt = guild === undefined ? Date.now() : null;
+    failedAt = guild === undefined || (guild !== null && partial.has(guild)) ? Date.now() : null;
     if (guild !== undefined) landed = guild;
   });
   return held;

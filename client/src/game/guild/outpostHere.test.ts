@@ -350,6 +350,15 @@ test("a company guest in another guild's outpost is offered only the Delve Gate'
   assert.equal(delve?.words, 'Delve: Normal', 'down with their company');
   delve?.run();
   assert.equal(delved.length, 1);
+  startPlacing('gull-cove-outpost', 'bench');
+  const open = [GROUND.plot[0] - PLOT_M / 2 + 0.85, GROUND.plot[1] - PLOT_M / 2 + 30.4] as const;
+  assert.equal(
+    guest.uses(...open, () => undefined, Math.PI / 2),
+    null,
+    'no Place in the host’s plot',
+  );
+  assert.equal(guest.props([], open).length, guest.props().length, 'nor its ghost');
+  letGo();
   guest.take(null);
   assert.equal(
     guest.uses(...GROUND.plot, () => undefined),

@@ -299,7 +299,8 @@ export class OutpostHere {
   private placing(feet: readonly [number, number]) {
     const placing = placingNow();
     const { seen } = this;
-    if (!placing || placing.site !== this.site || !seen) return null;
+    // A guest never places in another guild's plot, though their own guild may hold an outpost at this site too.
+    if (!placing || placing.site !== this.site || !seen || !this.entered.own) return null;
     const ahead = AHEAD_M + (pieceOf(placing.piece)?.reach ?? 0);
     const spot = [feet[0] + Math.sin(this.facing) * ahead, feet[1] - Math.cos(this.facing) * ahead] as const;
     return { placing, ...ghostOf(placing, spot, seen.plot, this.ground) };
@@ -370,7 +371,7 @@ export class OutpostHere {
     // A company guest goes down the Delve Gate with their company and does nothing else in another guild's outpost:
     // the Guild tab E would open is their own guild's, which holds no structure of these ids here.
     const guest = !this.entered.own;
-    const placing = guest ? null : this.place([x, y], ask);
+    const placing = this.place([x, y], ask);
     if (placing) return placing;
     const { seen, ground, site } = this;
     const near = ([atX, atY]: readonly [number, number] | readonly number[]) =>

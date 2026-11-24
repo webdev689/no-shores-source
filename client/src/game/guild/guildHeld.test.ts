@@ -57,5 +57,15 @@ test("where only the outposts fail to read, the guild's sites are kept", async (
   } as unknown as AccountLink;
   await keepGuild(link);
   outposts = () => Promise.reject(new Error('lost'));
+  mock.timers.enable({ apis: ['Date'], now: 2_000_000 });
   assert.deepEqual((await guildRead())?.sites, ['gull-cove-outpost']);
+  await Promise.resolve();
+  let asked = 0;
+  outposts = () => (asked++, Promise.resolve({ allowed: 3, outposts: [{ site: 'gull-cove-outpost' }] }));
+  mock.timers.tick(10_000);
+  guildLanded();
+  await new Promise((done) => setImmediate(done));
+  mock.timers.reset();
+  assert.equal(asked, 1, 'and read again a while after, as a failed read is');
+  assert.equal(guildLanded()?.allowsAnother, true);
 });
