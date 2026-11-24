@@ -187,6 +187,11 @@ function legOf(goal: Goal, standing: Standing, chart: Chart): Leg | null {
   const landed = gated ? (chart.nodes.find((node) => node.id === gated.node) ?? zone) : zone;
   if (standing.on === 'sea') return { at: landingOf(landed), note: LEGS.sail(landed.name) };
   if (gated && standing.node.id === gated.node) return { at: gated.gate, note: LEGS.gate(zone.name) };
+  // In an instance reached through a gate, back through it to the zone that leads on.
+  const back = chart.layouts
+    .find((layout) => layout.id === standing.node.id)
+    ?.areas.find((area) => area.leads_to === landed.id);
+  if (back) return { at: back.at, note: LEGS.gate(landed.name) };
   return { at: landingOf(landed), note: LEGS.ship };
 }
 

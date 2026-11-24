@@ -169,7 +169,7 @@ stall serves; the stranger is heard in a social space alone, never at the stall.
     the ward), else its place, a keeper's counter (any chapel for a pledge, the smith for a buy), the nearest foe of
     its types in sight, or the nearest materials to gather;
   - in a patrol whose gate leads to the goal's zone (a dungeon's, a boss's), at that gate, its step saying "Through the
-    gate to" the zone;
+    gate to" the zone; in an instance reached through a gate, back through it the same way;
   - on any other land, at the landing of the zone it is landed at, across the water, its step saying "Hold M to return
     to your ship"; at sea, at that landing, its step saying "Sail to" the zone;
   - a goal with no zone of its own at the nearest place to do it: a talk, a pledge or a buy at the nearest social space

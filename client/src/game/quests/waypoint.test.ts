@@ -41,12 +41,17 @@ const SALTGRASS = node({
 });
 const GULLWING = node({ id: 'gullwing-vale', kind: 'patrol', name: 'Gullwing Vale', spawns: [[-8000, 0]] });
 const MAW = node({ id: 'maw-shallows', kind: 'boss', name: 'The Maw of the Shallows', spawns: [[-8100, 50]] });
+const MILL = node({ id: 'burned-mill', kind: 'mission', name: 'The Burned Mill', spawns: [[5600, 900]] });
 const CHART: Chart = {
-  nodes: [OVERLOOK, SALTGRASS, GULLWING, MAW],
+  nodes: [OVERLOOK, SALTGRASS, GULLWING, MAW, MILL],
   layouts: [
     {
       id: 'gullwing-vale',
       areas: [{ kind: 'gate', name: '', at: [-8300, 400], radius: 40, leads_to: 'maw-shallows' }],
+    },
+    {
+      id: 'burned-mill',
+      areas: [{ kind: 'gate', name: '', at: [5550, 880], radius: 40, leads_to: 'saltgrass-downs' }],
     },
   ],
 };
@@ -122,4 +127,12 @@ test('a goal done anywhere says so and leaves the compass to the next, and gathe
   const casting = guide(onTask(cast.quest.id, cast.task.id), land(SALTGRASS, [5000, 0]), CHART);
   const index = cast.task.goals.findIndex((goal) => goal.kind === 'cast');
   assert.equal(casting.notes[index], LEGS.anywhere);
+});
+
+test('in an instance reached through a gate, the way back is that gate to the zone the goal is in', () => {
+  const tail = onTask('veiled', 'tail-collector');
+  assert.deepEqual(guide(tail, land(MILL, [5600, 900]), CHART), {
+    at: [5550, 880],
+    notes: [LEGS.gate('Saltgrass Downs')],
+  });
 });
