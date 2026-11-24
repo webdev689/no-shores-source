@@ -197,13 +197,14 @@ export const keepAnswer = (database: Db, rid: string, answer: number, now: numbe
 const ANSWER_KEPT_MS = 7 * DAY_MS;
 
 /** Forgets the kept answers older than a week whose errand no saved character carries, a few hundred at a time: one a
- *  character still carries is kept whatever its age, as the next room to hold the character asks it again. The id's
- *  `+` drops its column's text affinity, so the carried errands' index is searched, not scanned. */
+ *  character still carries is kept whatever its age, as the next room to hold the character asks it again. The match
+ *  is the carried errands' index's own expression, and the id's `+` drops its text affinity, so the index is searched. */
 export const forgetAnswers = (database: Db, now: number) =>
   database
     .prepare(
       `DELETE FROM outpost_errands WHERE rid IN (SELECT rid FROM outpost_errands WHERE at < ?1
-       AND NOT EXISTS (SELECT 1 FROM characters WHERE json_extract(body, '$.errand.rid') = +outpost_errands.rid)
+       AND NOT EXISTS (SELECT 1 FROM characters
+         WHERE json_extract(CASE WHEN json_valid(body) THEN body END, '$.errand.rid') = +outpost_errands.rid)
        LIMIT 500)`,
     )
     .bind(now - ANSWER_KEPT_MS)
