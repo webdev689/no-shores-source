@@ -285,6 +285,21 @@ test("a cue heard whole (a Breach's toll, its far bells) plays out and carries f
   );
 });
 
+test('a cue heard whole ranks as near among sixteen voices: a far bell is heard over nearer swings, and stays', () => {
+  const { output, play, played, stopped } = fakeSound();
+  const sounds = new WorldSounds(() => output, play);
+  const near = Array.from({ length: 16 }, (unused, index) => [index + 1, 3, 2] as const);
+  sounds.frame({ ...frameOf(), landed: near });
+  sounds.frame({ ...frameOf(), heard: [{ cue: 'breach.bell.wake', at: [60, 3, 2], whole: true }] });
+  assert.ok(
+    played.some((one) => one.id === 'breach.bell.wake'),
+    'the far bell is heard',
+  );
+  assert.deepEqual(stopped, ['drop.land'], 'the farthest landing gave way');
+  sounds.frame({ ...frameOf(), landed: [[0.5, 3, 2]] });
+  assert.deepEqual(stopped, ['drop.land', 'drop.land'], "a nearer one takes a landing's place, not the bell's");
+});
+
 test("another rider's boost is heard as it begins, from their body as the room last stepped it", () => {
   const { output, play, played } = fakeSound();
   const sounds = new WorldSounds(() => output, play);

@@ -92,17 +92,19 @@ test('a hidden chest the room pays the player opens where it stands; another pla
   assert.deepEqual(momentSounds(plan, SEEN, [paid(9)], places, all), []);
 });
 
-test("the Broken Stair's slabs are heard rising and sinking near the listener, and none on the first tick", () => {
+test("the Broken Stair's slabs are heard rising and sinking where they stand, and none on the first tick", () => {
   const slab = plan.slabs.find((each) => each.at);
   assert.ok(slab?.at);
   let tick = 0;
   while (slabStands(plan, slab.phase, tick) === slabStands(plan, slab.phase, tick + 1)) tick++;
-  const heard = slabSounds(plan, tick, tick + 1, slab.at, all);
+  const heard = slabSounds(plan, tick, tick + 1, all);
   assert.ok(heard.some((one) => one.cue === 'breach.slab' && one.at === slab.at));
-  assert.deepEqual(slabSounds(plan, null, tick + 1, slab.at, all), []);
-  assert.deepEqual(slabSounds(plan, tick - 600, tick + 1, slab.at, all), [], 'a hidden page coming back');
-  const far = [slab.at[0] + 500, slab.at[1], slab.at[2]] as const;
-  assert.deepEqual(slabSounds(plan, tick, tick + 1, far, all), [], 'too far to hear');
+  assert.ok(
+    heard.every((one) => one.whole === undefined),
+    "heard only within the world's sounds' reach",
+  );
+  assert.deepEqual(slabSounds(plan, null, tick + 1, all), []);
+  assert.deepEqual(slabSounds(plan, tick - 600, tick + 1, all), [], 'a hidden page coming back');
 });
 
 test('a mooring is heard as it is newly held, not as it stays held or is claimed', () => {

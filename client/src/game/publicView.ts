@@ -10,6 +10,7 @@ import { markLine } from '../combat/drops.ts';
 import { sealWave } from '../combat/latticeLooks.ts';
 import { markRing } from '../combat/marks.ts';
 import type { BannerBeat, PublicShown } from '../combat/publicBanner.ts';
+import type { HeardSound } from '../combat/worldSounds.ts';
 import { ASKS, DROPPED, type GearAsk, type GearDrop } from '../network/gearMessages.ts';
 import type { FightEvent } from '../network/messages.ts';
 import {
@@ -118,12 +119,7 @@ export interface PublicFrame {
   readonly quest: Quest | null;
   readonly props: EventProp[];
   /** Each sound heard where it happens, at its own pitch where it has one (a Breach's bell's note). */
-  readonly sounds: readonly {
-    readonly cue: string;
-    readonly at: Point;
-    readonly rate?: number;
-    readonly whole?: true;
-  }[];
+  readonly sounds: readonly HeardSound[];
   readonly sting: 'cadence' | 'victory' | 'defeat' | null;
   /** The interface's cue for a beat heard by the player alone (played as the frame is worked out): a heroic task
    *  missed, a chest opened, their own shard taken. */
@@ -340,7 +336,7 @@ export class PublicView {
     const { feet, where, shot } = bodies;
     const breached = breach && this.breach?.frame(breach, stale ? [] : events, feet, where, clock, marks, shot.eye);
     if (breached) props.push(...breached.props);
-    const heard = [...(sealed && !stale ? sealed.sounds : []), ...(breached?.sounds ?? [])];
+    const heard = stale ? [] : [...(sealed?.sounds ?? []), ...(breached?.sounds ?? [])];
     return {
       shown: withBreach(shown ?? sealed?.shown ?? null, breached ?? null),
       quest: questOf(event, this.zone) ?? (waiting.length > 0 ? chestQuestOf(left, this.zone, this.lastKind) : null),

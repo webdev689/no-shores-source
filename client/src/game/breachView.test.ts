@@ -485,6 +485,37 @@ test('the Spire is heard woken once, as the gate opens to the player; a mooring 
   assert.deepEqual(cues(opened), [], 'once');
 });
 
+test('the Spire rings on its waking alone: not on a return from the run, nor a mooring walked over after', async (context) => {
+  const sounds = bank.sounds as Record<string, unknown>;
+  for (const cue of ['breach.mooring', 'breach.spire.woken']) sounds[cue] = {};
+  context.after(() => ['breach.mooring', 'breach.spire.woken'].forEach((cue) => delete sounds[cue]));
+  const { view, word, others } = inRun(true);
+  await settled();
+  const hollow = [GATE_AT[0] + 10, GATE_AT[1], 3] as const;
+  const cues = (more: Partial<BreachSeen>) =>
+    view.frame(word(more), [], hollow, () => null, 0, [])?.sounds.map((sound) => sound.cue) ?? [];
+  // Back from the run, the company's gate long woken: the room counts the player in again a few snapshots on.
+  const woken = { heldBy: true, holders: [7, 9], woken: true };
+  assert.deepEqual(cues({ ...woken, openTo: [9] }), []);
+  assert.deepEqual(cues({ ...woken, openTo: [7, 9] }), [], 'no ring on the return');
+  others.set(9, player(9, socketAt('breach-gate', 'mooring-west', GATE_AT, 0), false));
+  assert.deepEqual(cues({ ...woken, openTo: [7, 9] }), [], 'a mooring walked over on the way to the door');
+  const again = inRun(true);
+  await settled();
+  const againCues = (more: Partial<BreachSeen>) =>
+    again.view.frame(again.word(more), [], hollow, () => null, 0, [])?.sounds.map((sound) => sound.cue) ?? [];
+  again.others.set(9, player(9, socketAt('breach-gate', 'mooring-west', GATE_AT, 0), false));
+  assert.deepEqual(againCues({ heldBy: false, holders: [] }), []);
+  assert.deepEqual(againCues({ heldBy: true, holders: [7, 9] }), ['breach.mooring'], 'held as the Waking begins');
+  // Another company's waking rings for none of this one.
+  const theirs = inRun(true);
+  await settled();
+  const theirCues = (more: Partial<BreachSeen>) =>
+    theirs.view.frame(theirs.word(more), [], hollow, () => null, 0, [])?.sounds.map((sound) => sound.cue) ?? [];
+  assert.deepEqual(theirCues({ heldBy: true, holders: [9] }), []);
+  assert.deepEqual(theirCues({ heldBy: true, holders: [9], woken: true, openTo: [9] }), []);
+});
+
 test('in the run a hidden chest is heard opening where it stands, and a slab rising near the listener', (context) => {
   const sounds = bank.sounds as Record<string, unknown>;
   for (const cue of ['breach.chest', 'breach.slab']) sounds[cue] = {};

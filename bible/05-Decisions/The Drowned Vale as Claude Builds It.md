@@ -69,7 +69,7 @@ recordings are the owner's picks on the sound sheet, none made yet.
 | The Spire's hum | At the Spire, its gain the Spire's fill, only while the listener's company holds the Waking | It fills for them; to others the Spire's light is enough |
 | A moment unpicked | Plays the world's sound it played before; a wipe, which had none, a low thud | Nothing goes silent while the sheet is judged |
 | A player carried into a shore | The taken's recording, plunged under | No cue of its own; it is the same crossing |
-| Heard whole and far | An encounter begun, a seal, a wipe, the bells, the toll, a rift, a Keeper falling, the Steward laid bare, the Spire waking: never cut, up to 160 m | A toll rings 3 to 15 s and the Choir's last bell stands 64 m from its stage; the world's 5 s and 40 m would cut them |
-| What the state tells | A slab rising or sinking within 40 m; a mooring as it is newly held; a hidden chest as it pays the player, at the chest; the Spire waking as the gate opens to the player's company; each silent until picked | They sounded nothing before, so nothing borrowed stands in |
+| Heard whole and far | An encounter begun, a seal, a wipe, the bells, the toll, a rift, a Keeper falling, the Steward laid bare, the Spire waking: never cut, up to 160 m, ranked as near among the world's voices | A toll rings 3 to 15 s and the Choir's last bell stands 64 m from its stage; the world's 5 s and 40 m would cut them |
+| What the state tells | A slab rising or sinking within 40 m; a mooring as it is newly held while the Waking runs; a hidden chest as it pays the player, at the chest; the Spire on its waking, for its company; each silent until picked | They sounded nothing before, so nothing borrowed stands in |
 | A chest's chime | Kept beside the chest's own sound | It says the reward came, as every chest's does |
 | The Breach cleared | No victory sting | The room tells it at the gate, where no one who cleared it stands |

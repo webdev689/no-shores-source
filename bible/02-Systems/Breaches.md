@@ -124,8 +124,9 @@ Claude's ([[The Drowned Vale as Claude Builds It]]).
   and its company hears the tension music while it fills. The seal stands in its doorway until the gate opens to the
   viewer's company, which is offered "Enter the Drowned Vale" there. The Waking's moments and stings reach only its
   company and those in the hollow. Within 60 m the hollow's own air stands at the gate over the vale's ambience, and
-  while the viewer's company holds the Waking the Spire hums at the Spire, louder as it fills; each mooring newly held
-  catches, and the Spire's waking rings out as the gate opens to the company ([[Ambience]]).
+  while the viewer's company holds the Waking the Spire hums at the Spire, louder as it fills; while the Waking runs,
+  each mooring newly held catches, and the Spire rings out on its waking for its company ([[Ambience]]). What changed
+  while the tab was hidden is not heard on its return.
 - **In the run**: its spaces drawn over the dark from the plan (`room_breach`), only the Breach's modules loaded while
   there and let go on any way out (the seal's in the gate's zone too); heard underground, each space by its own
   ambience ([[Ambience]]); its seals while shut, its
@@ -147,8 +148,9 @@ Claude's ([[The Drowned Vale as Claude Builds It]]).
   rift, a desk, a Keeper's shore, the marked or seen player. Each plays its own Freesound recording (`breach.*`), and
   until the owner picks it the world's sound it borrowed (a wipe, a low thud); a carried player is plunged under as
   the taken are. The gong of an encounter begun, a seal shattering, a wipe, the bells, the toll, a rift, a Keeper
-  falling, the Steward laid bare and the Spire waking are heard whole and up to 160 m off; the rest as the world's
-  sounds are (40 m, 5 s at most). The room's state is heard too: a slab of the Broken Stair rising or sinking within
+  falling, the Steward laid bare and the Spire waking are heard whole and up to 160 m off, and rank as near among the
+  world's sixteen voices, so a far bell's note is never the first to give way; the rest as the world's sounds are
+  (40 m, 5 s at most). The room's state is heard too: a slab of the Broken Stair rising or sinking within
   40 m, a hidden chest opening where it stands as it pays the player (its chime kept), each silent until its own
   recording is picked. The great foes' waking plays the Elite Boss's sting and the music's peak; the Breach cleared,
   told at the gate where no one who cleared it stands, plays none. A wipe names its cause ("Your company fell: the

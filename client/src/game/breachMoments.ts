@@ -7,23 +7,15 @@
 // judges every one.
 import bank from '../../../content/audio/sounds.json' with { type: 'json' };
 import { EVENT } from '../combat/cues.ts';
+import type { HeardSound as Heard } from '../combat/worldSounds.ts';
 import type { BannerBeat } from '../combat/publicBanner.ts';
 import { BREACH_EVENT, type BreachSeen } from '../network/breachMessages.ts';
 import type { FightEvent } from '../network/messages.ts';
+import { chestOf } from './breachCounts.ts';
 import { type BreachPlan, slabStands, spaceSocket } from './breachPlan.ts';
 import { ENCOUNTER, type Mooring, momentWords, shutOutWords, unwrittenBy } from './breachWords.ts';
 
 type Point = readonly [number, number, number];
-
-/** A moment heard: its recording, where, how fast it plays (1 as recorded; a bell's note), and whether it is heard
- *  whole and from afar (a toll, a bell, the gong of an encounter begun), whichever recording plays it, not cut short
- *  and near as the world's other sounds are. */
-export interface Heard {
-  readonly cue: string;
-  readonly at: Point;
-  readonly rate?: number;
-  readonly whole?: true;
-}
 
 /** Whether the owner has picked a cue's recording (content/audio/sounds.json). */
 const pickedCue = (cue: string): boolean => cue in bank.sounds;
@@ -86,8 +78,6 @@ const WHOLE: ReadonlySet<string> = new Set([
   'breach.laid.bare',
   'breach.spire.woken',
 ]);
-/** How near the listener a slab's rising or sinking is heard, metres. */
-const SLAB_HEARD_M = 40;
 /** The most room ticks between two frames for a slab's change between them to be heard: a second's. */
 const SLAB_GAP_TICKS = 60;
 
@@ -172,8 +162,7 @@ export function momentSounds(
   const marked = rewritten.find((event) => Math.round(event.amount) === places.own) ?? rewritten[0];
   return had.flatMap((event): Heard[] => {
     if (event.kind === EVENT.chestOpened) {
-      const nth = Math.round(event.amount) - plan.encounters.length;
-      const spot = event.striker === places.own ? places.chest?.(nth) : null;
+      const spot = event.striker === places.own ? places.chest?.(chestOf(plan, event)) : null;
       const heard = spot && heardOf({ cue: STATE_CUES.chest, until: null }, spot, picked);
       return heard ? [heard] : [];
     }
@@ -187,20 +176,18 @@ export function momentSounds(
 }
 
 /** The Broken Stair's slabs that rose or sank between the room's ticks `from` and `to`, each heard where it stands
- *  within earshot of `ear`; none on the first tick seen (`from` null) or across a gap of more than a second. */
+ *  (within the world's sounds' reach); none on the first tick seen (`from` null) or across a gap of more than a second. */
 export function slabSounds(
   plan: BreachPlan,
   from: number | null,
   to: number,
-  ear: Point,
   picked: (cue: string) => boolean = pickedCue,
 ): Heard[] {
   // A jump of more than a second (a hidden page's frames stopped) was not seen moving, so it is not heard.
   if (from === null || to <= from || to - from > SLAB_GAP_TICKS) return [];
   return plan.slabs.flatMap(({ at, phase }) => {
     const moved = slabStands(plan, phase, from) !== slabStands(plan, phase, to);
-    const near = at && Math.hypot(at[0] - ear[0], at[1] - ear[1], at[2] - ear[2]) <= SLAB_HEARD_M;
-    const heard = moved && near ? heardOf({ cue: STATE_CUES.slab, until: null }, at, picked) : null;
+    const heard = moved && at ? heardOf({ cue: STATE_CUES.slab, until: null }, at, picked) : null;
     return heard ? [heard] : [];
   });
 }
@@ -263,8 +250,7 @@ export class MomentWords {
     { ours, nameOf, lost }: { ours: boolean; nameOf: (player: number) => string; lost: string | null },
   ): string[] {
     return had.flatMap((event) => {
-      // The room tells why, not the tier the player was refused at (gate.rs `breach_company`): no tier is named.
-      if (event.kind === BREACH_EVENT.shutOut) return [shutOutWords(plan, -1, Math.round(event.amount))];
+      if (event.kind === BREACH_EVENT.shutOut) return [shutOutWords(plan, Math.round(event.amount))];
       if (event.kind === BREACH_EVENT.begun) this.cause = null;
       const cause = event.kind === BREACH_EVENT.unwritten ? unwrittenBy(before, seen) : null;
       if (cause) this.cause = cause;

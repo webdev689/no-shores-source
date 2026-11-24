@@ -46,7 +46,8 @@ owner picked ([[Every Sound Comes From Freesound, and the Music Rests Between Pi
 - **The story.** While the [[Prologue]] plays, its beats at sea and on the wreck are heard as the open sea round the
   Brig or the wreck, and its shore at dawn as Saltmere's coast, under the sky the story tells ([[Sky]]): its rain,
   its wind and the thunder of its strikes. The story's own beds keep only the fire, the deep and its moments.
-- **Beds.** A recording played over and over, each play fading into the next over 4 s at equal power. A bed is wide
+- **Beds.** A recording played over and over, each play fading into the next over 4 s at equal power; one shorter
+  than 8 s loops on itself instead, so no copies of it overlap. A bed is wide
   about the ear or stands at a point through a panner: the nearest shore, the harbour, the nearest river within 400 m,
   or a city's streets; where there is no such place near, it is silent. Each breathes on slow waves that never come
   round within an hour. Wind, grass and leaves gust: a gust swells them, wandering without a beat.
@@ -60,7 +61,8 @@ owner picked ([[Every Sound Comes From Freesound, and the Music Rests Between Pi
   and sent to the place's room, more of it the farther it is. At most 20 sound at once; thunder is counted apart
   (below).
 - **Rooms.** Each place answers in its own way: a forest's long, soft tail; a valley's echoes; the plaza's walls; the
-  open steppe's short, dry air.
+  open steppe's short, dry air. Each room's reverberation is made once a sample rate and kept, so a place coming
+  back (a doorway in a Breach's run) costs nothing.
 - **The sea.** The swell rises and falls on three long waves. The wash past its hull grows with its way: none hove
   to, more at each step of its pace dial. Its timbers, ropes, canvas and blocks are heard fully on its deck and at
   its helm, and a little off from the raised view. Gulls call only within 3 km of a coast.

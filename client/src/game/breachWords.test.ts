@@ -306,7 +306,7 @@ test('the company is unwritten whole only as the rules unwrite it, whoever alrea
 });
 
 test('the gate shutting a member of its company out says why, as the room tells it', () => {
-  assert.equal(shutOutWords(plan, 0, 1), 'The gate shut you out: your company holds eight already.');
-  assert.equal(shutOutWords(plan, 1, 2), 'The gate shut you out: Hard opens at level 28.');
-  assert.equal(shutOutWords(plan, 1, 3), 'The gate shut you out: Hard opens once the Drowned Vale is won at Normal.');
+  assert.equal(shutOutWords(plan, 1), 'The gate shut you out: your company holds eight already.');
+  assert.equal(shutOutWords(plan, 2), 'The gate shut you out.', 'under the level, the tier untold');
+  assert.equal(shutOutWords(plan, 3), 'The gate shut you out: Hard opens once the Drowned Vale is won at Normal.');
 });

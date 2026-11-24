@@ -32,6 +32,11 @@ export interface CountedFrame {
   readonly living: () => readonly Point[];
 }
 
+/** A hidden chest's place among the Breach's, as the room tells its find (mod.rs `keep_chests`): after the
+ *  encounters. */
+export const chestOf = (plan: Pick<BreachPlan, 'encounters'>, event: Pick<FightEvent, 'amount'>): number =>
+  Math.round(event.amount) - plan.encounters.length;
+
 export class RunCounting {
   private readonly plan: BreachPlan;
   /** The shore the player stands in while its rift is shut, and the tick it was first seen so. */
@@ -49,8 +54,8 @@ export class RunCounting {
   frame(frame: CountedFrame): RunCounts {
     const { seen, tick } = frame;
     for (const event of frame.events)
-      if (event.kind === EVENT.chestOpened && event.striker === frame.own && !this.paid.has(this.chestOf(event)))
-        this.paid.set(this.chestOf(event), tick);
+      if (event.kind === EVENT.chestOpened && event.striker === frame.own && !this.paid.has(chestOf(this.plan, event)))
+        this.paid.set(chestOf(this.plan, event), tick);
     const living = seen.encounter === ENCOUNTER.ways || seen.awayShore >= 0 ? frame.living() : [];
     const stair =
       seen.encounter === ENCOUNTER.ways ? { on: this.inSpace(living, 'stair'), living: living.length } : null;
@@ -67,12 +72,6 @@ export class RunCounting {
   chestOpened(nth: number, tick: number): number | null {
     const paid = this.paid.get(nth);
     return paid === undefined ? null : (tick - paid) / 60;
-  }
-
-  /** A hidden chest's place among the Breach's, as the room tells its find (mod.rs `keep_chests`): after the
-   *  encounters. */
-  private chestOf(event: FightEvent): number {
-    return Math.round(event.amount) - this.plan.encounters.length;
   }
 
   private inSpace(bodies: readonly Point[], space: string): number {

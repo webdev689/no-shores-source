@@ -9,7 +9,8 @@ import { Ambience } from './ambience.ts';
 import { BREACH_HEARD } from './breachHeard.ts';
 import { seeded } from './dsp.ts';
 import { CROSSFADE_S } from './law.ts';
-import { type Heard, MOST_THUNDERS, ScapePlayer } from './player.ts';
+import { roomOf } from './graph.ts';
+import { type Heard, MOST_THUNDERS, ScapePlayer, bedPlayOf } from './player.ts';
 
 /** An audio parameter that keeps the last value it was set toward. */
 const param = () => {
@@ -336,4 +337,42 @@ test("by a Breach's gate its hollow is heard over the vale's own, and its Spire'
   assert.deepEqual(last.heard?.gate, { at: gate.gate, spire: gate.spire });
   step(CROSSFADE_S + 1, [200, 0, 6]);
   assert.deepEqual(keys.at(-1), ['woodland'], 'out of its reach, the vale alone');
+});
+
+test("a room's response is built once for its room and sample rate, not again at each doorway", () => {
+  const fake = fakeAudio();
+  let drawn = 0;
+  const random = () => (drawn++, 0.5);
+  const room = { seconds: 0.2, corner: 2000, echoes: [0.05], send: 0.1 };
+  roomOf(fake.audio, room, random, fake.out);
+  const first = drawn;
+  roomOf(fake.audio, room, random, fake.out);
+  assert.ok(first > 0);
+  assert.equal(drawn, first, 'the second built from the first');
+  roomOf({ ...fake.audio, sampleRate: 16000 } as BaseAudioContext, room, random, fake.out);
+  assert.ok(drawn > first, 'another sample rate is another response');
+});
+
+test('a bed recording shorter than two fades loops whole; a longer one fades into its next play', () => {
+  assert.deepEqual(bedPlayOf(5, 1, 10), { loop: true, endsAt: Infinity });
+  assert.deepEqual(bedPlayOf(5, 0.5, 10), { loop: false, endsAt: 20 }, 'played slower, it lasts ten seconds');
+  assert.deepEqual(bedPlayOf(30, 1, 10), { loop: false, endsAt: 40 });
+});
+
+test("a Breach's gate's hollow is let go with everything when the ambience may not sound", (context) => {
+  heardKeys(context);
+  const fake = fakeAudio();
+  let live = true;
+  const ambience = new Ambience(world, () => (live ? fake : null), { random: seeded(8) });
+  const gate = { gate: [40, 0, 5] as const, spire: [40, 0, 14] as const, hum: 0 };
+  const step = () => {
+    BREACH_HEARD.current = gate;
+    ambience.onFoot(patrol, land, { eye: [0, 0, 6], yaw: 0 });
+    ambience.frame(0.1);
+  };
+  step();
+  assert.equal(ambience.stats.places, 2, 'the vale and the hollow');
+  live = false;
+  step();
+  assert.equal(ambience.stats.places, 0, 'both let go');
 });

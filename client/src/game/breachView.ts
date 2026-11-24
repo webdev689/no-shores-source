@@ -21,7 +21,8 @@ import type { NodeLayout } from '../layout/layouts.ts';
 import { BREACH_HEARD } from './audio/ambience/breachHeard.ts';
 import { RunCounting } from './breachCounts.ts';
 import { type MarkedFoe, dashedRing, mooringMark, runMarks } from './breachMarks.ts';
-import { type Heard, MomentWords, STATE_CUES, beatOf, heardOf, momentSounds, momentsHad } from './breachMoments.ts';
+import type { HeardSound } from '../combat/worldSounds.ts';
+import { MomentWords, STATE_CUES, beatOf, heardOf, momentSounds, momentsHad } from './breachMoments.ts';
 import { mooringSounds, slabSounds, stingOf } from './breachMoments.ts';
 import { type BreachPlan, breachPlanOf, sealOpen, slabStands, socketAt, spaceSocket } from './breachPlan.ts';
 import { ENCOUNTER, type Mooring, breachCall, encounterName, encounterOn } from './breachWords.ts';
@@ -78,7 +79,7 @@ export interface BreachFrame {
   /** Whether the Breach's banner stands before any other: in its run, or by its gate. */
   readonly first: boolean;
   readonly props: EventProp[];
-  readonly sounds: readonly Heard[];
+  readonly sounds: readonly HeardSound[];
   readonly sting: 'cadence' | 'victory' | 'defeat' | null;
 }
 
@@ -275,7 +276,7 @@ export class BreachView {
         return chest ? spaceSocket(plan, chest.space, chest.socket) : null;
       },
     };
-    const slabs = seen.gate ? [] : slabSounds(plan, this.tick, tick, eye);
+    const slabs = seen.gate ? [] : slabSounds(plan, this.tick, tick);
     this.tick = tick;
     const sounds = [...momentSounds(plan, seen, had, places), ...slabs];
     // A Waking lost while some of its company still lived was lost to its Spire left empty.
@@ -343,10 +344,13 @@ export class BreachView {
     const mine = seen.holders.includes(here.own);
     // The ambience hears the gate's hollow, and the Spire's hum as it fills while the player's company holds it.
     if (gate && spire) BREACH_HEARD.current = { gate: gate.at, spire, hum: mine && waking ? seen.fill : 0 };
-    const moored = mooringSounds(this.moored, moorings, (nth) => this.gateSocket(MOORINGS[nth] ?? ''));
-    this.moored = moorings;
-    // The Spire woken is heard as the gate opens to the player's company.
-    const opened = here.before && !here.before.openTo.includes(here.own) && this.openToMe(seen);
+    // A mooring is heard held only while the Waking runs: its holders stay a while after, as they walk to the door.
+    const moored = waking ? mooringSounds(this.moored, moorings, (nth) => this.gateSocket(MOORINGS[nth] ?? '')) : [];
+    // Outside the Waking every mooring stands free, so one held as it begins is heard; one held as the page joins it
+    // (no frame before) is not.
+    this.moored = waking ? moorings : moorings.map((): Mooring => 'free');
+    // The Spire is heard on its waking, by its own company: not as a player coming back is counted in again.
+    const opened = mine && here.before && !here.before.woken && seen.woken;
     const woken = opened && spire ? heardOf({ cue: STATE_CUES.woken, until: null }, spire) : null;
     const sounds = [...heard.sounds, ...moored, ...(woken ? [woken] : [])];
     const first = seen.holders[0];

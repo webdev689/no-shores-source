@@ -122,6 +122,14 @@ function placePanner(panner: PannerNode, [x, y, z]: readonly [number, number, nu
     else param.setTargetAtTime(value, now, 0.5);
 }
 
+/** How a bed's recording plays from `now`, `seconds` long at `rate`: one shorter than two of its fades loops whole
+ *  on itself and never ends, since fading each play into the next would overlap copies of it; a longer one ends
+ *  where it does, and the next play fades in over its last. */
+export function bedPlayOf(seconds: number, rate: number, now: number): { loop: boolean; endsAt: number } {
+  const lasts = seconds / rate;
+  return lasts < 2 * BED_FADE_S ? { loop: true, endsAt: Infinity } : { loop: false, endsAt: now + lasts };
+}
+
 interface VoiceClock {
   readonly voice: Voice;
   readonly seed: number;
@@ -317,7 +325,9 @@ export class ScapePlayer {
       bed.play.gain.gain.setValueCurveAtTime(FADE_OUT, now, BED_FADE_S);
     }
     source.addEventListener('ended', () => gain.disconnect());
-    bed.play = { gain, source, endsAt: now + source.buffer.duration / source.playbackRate.value };
+    const { loop, endsAt } = bedPlayOf(source.buffer.duration, source.playbackRate.value, now);
+    source.loop = loop;
+    bed.play = { gain, source, endsAt };
     playing.chain = bed;
   }
 
