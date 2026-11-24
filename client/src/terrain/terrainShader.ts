@@ -224,7 +224,7 @@ fn fragment_main(surface: Surface) -> @location(0) vec4f {
   let soaked = max(sky_state.ambient_sky.w * open_ground * 0.8, puddle);
   dry = sky_soaked(dry, soaked);
   var colour = mix(dry, wet, under);
-  let lit_normal = normalize(mix(normal, vec3f(0.0, 0.0, 1.0), puddle));
+  let lit_normal = normalize(mix(normal, vec3f(0.0, 0.0, 1.0), puddle) + vec3f(sky_ripple(on_ground) * puddle, 0.0));
   let direct = max(dot(lit_normal, sky_state.key.xyz), 0.0);
   // Under water the sun's shadow fades with the depth it is seen through, scattered by the water above: a ship's
   // shadow lies on the surface beside it, not on the seabed far from it.

@@ -131,10 +131,13 @@ width, and from the exact close patch where it reaches, eased in over its outer 
   floats keep their centimetres anywhere in the world. Tiles out of view are culled, and the tiles in view drawn in
   runs, one instanced draw a run.
 - **Light.** As the land is lit, its ambient bounced warm from the ground onto a crown's underside and cool from the
-  sky onto its top, with a little sun through the leaves, and the lamps' light at night ([[Sky]]); wet leaves glisten.
+  sky onto its top, with a little sun through the leaves, and the lamps' light at night ([[Sky]]); rain darkens bark and leaves, with no sky's glare on a leaf, whose normal
+  turns every way, so a crown never washes white ([[The Harbourmaster Stands in the Market, Rain Spares the Trees, and Patrol Nodes Always Stand]]).
   The plants lean the weather's way ([[Weather]]), a fresh breeze of 6 m/s bending them as they were drawn and a storm
   about twice as far, and gusts roll downwind across the land, deeper the gustier the wind; each plant rocks on its
-  own beat, bending by its baked wind weights (still at the foot, free at the tips), and its leaves tremble. Before the weather is read they sway in a breeze from the west-south-west.
+  own beat, bending by its baked wind weights (still at the foot, free at the tips), and its leaves tremble, all
+  slowly (`SWAY`): a gust rolls by about every 10 s, a plant rocks about every 7 s and its leaves tremble about every
+  2 s. Before the weather is read they sway in a breeze from the west-south-west.
 - **Shadows.** In the game the near plants round the eye cast into the sun's near shadow map, swaying as they are
   drawn and cut out by their cards' coverage, and every plant, near or far, is lit through the near and far maps
   ([[Game]]): a tree in another's shade, or a wall's, is in shade.
