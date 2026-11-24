@@ -96,7 +96,7 @@ test('a banner breaking the law, or on a staff not yet earned, is refused in wor
     'with no ground the sign sits on the cloth and its device',
   );
   assert.equal(await asked({ ...NAVY_ANCHOR, staff: 'gilded' }), 'Your guild has not yet earned that staff.');
-  assert.equal(await asked({ ...NAVY_ANCHOR, sign: 'dragon' }), 'That banner has a part we do not know.');
+  assert.equal(await asked({ ...NAVY_ANCHOR, sign: 'dragon' }), 'That banner has an unknown part.');
   assert.equal(await asked({ cut: 'square' }), 'That is not a banner.');
 });
 
