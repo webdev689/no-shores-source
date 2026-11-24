@@ -98,7 +98,8 @@ def house(module, at, size, pick):
         window(module, (x + door, y - half), (0.0, -1.0), 3.3)
         window(module, (x + door, y + half), (0.0, 1.0), 2.0)
     for side in (-1, 1):
-        window(module, (x + side * half, y), (side, 0.0), 2.0)
+        # Off the middle, where a barricade across the street beside it stands.
+        window(module, (x + side * half, y + 1.8), (side, 0.0), 2.0)
     eave = EAVE_M
     if 0.3 <= kind < 0.55:
         # A storey more, its timber-framed upper floor jettied out over the street.

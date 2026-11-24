@@ -59,7 +59,8 @@ middle of its foot:
 
 Each surface wears one of the game's materials: stone, trim, rubble, chalk, turf, timber, canvas, iron, plaster,
 roof, gold, crystal, bone, glow, the cloths, paving, lawn, water and glass, a window's stained glass
-(`kit.MATERIALS`, the order its groups are written in). An object may wear one a face (a torn slab's turf top over its soil and its chalk). Crystal, the
+(`kit.MATERIALS`, the order its groups are written in). An object may wear one a face (a torn slab's turf top over its
+soil and its chalk). Crystal, the
 Lattice's, is drawn by code, not a picture: red where the sun reaches it, graded to purple in its shadows, a glint off
 each flat facet the sun catches, and its core glowing as much as each vertex says, more seen straight on and more at
 night.

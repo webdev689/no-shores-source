@@ -196,8 +196,8 @@ def mending(module):
                                                                                                     0.0)
     for at in ((-21.0, 21.0), (21.0, 21.0), (-22.0, -20.0), (22.0, -20.0)):
         kit.block(module, (at[0] + 2.0, at[1] + 1.5, 0.0), (0.9, 0.9, 5.0), 'stone', bevel=0.04, wear=0.06)
-    # A cart tipped on its wheels by the east cottage, barrels against the west cottage's wall, each stack the part of
-    # the box round it; and fieldstone walls, each its part, clear of the ways between the seams.
+    # A cart tipped on its wheels by the east cottage, barrels north of the west cottage, each the part of the box
+    # round it; and fieldstone walls, each its part, clear of the ways between the seams.
     cart = kit.block(module, (14.0, -12.0, 0.6), (2.6, 1.5, 0.5), 'timber', bevel=0.02, wear=0.02, part=False)
     cart.rotation_euler = (0.18, 0.0, 0.0)
     for wheel in (-1, 1):

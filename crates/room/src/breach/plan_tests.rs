@@ -186,7 +186,9 @@ fn its_seals_stand_across_their_doors_and_its_slabs_come_and_go_on_their_measure
     // Its crystal drawn no wider than its part, so it hangs over no wall it is set in.
     let seal = module("breach-seal").expect("the seal");
     let wide = seal.parts.iter().map(|part| part[3] - part[0]).fold(0.0, f64::max);
+    let deep = seal.parts.iter().map(|part| part[4] - part[1]).fold(0.0, f64::max);
     assert!(seal.size[0] <= wide + 1e-3, "the seal drawn {:.2} m wide over its part's {wide:.2}", seal.size[0]);
+    assert!(seal.size[1] <= deep + 1e-3, "the seal drawn {:.2} m deep over its part's {deep:.2}", seal.size[1]);
     assert_eq!(plan.slabs.len(), 6);
     for slab in &plan.slabs {
         assert!(plan.slab_block(slab).is_some());
@@ -313,12 +315,15 @@ fn a_body_pressing_or_jumping_into_the_ways_barricades_and_walls_never_gets_up_t
     let plan = drowned_vale();
     let blocks: Blocks = plan.standing().into();
     let (stage, _) = plan.socket("ways", "checkpoint").expect("its stage");
-    // Into each barricade along its street from 3 m short of it; north from the stage into the west wall.
+    // Into each barricade along its street from 3 m short of it on either side; north from the stage into the west wall.
     let mut pressings: Vec<([f64; 3], f64, String)> = bars(plan)
         .into_iter()
         .enumerate()
-        .map(|(nth, (at, along))| {
-            ([at[0] - along[0] * 3.0, at[1] - along[1] * 3.0, at[2]], bearing_of(along), format!("bar-{}", nth + 1))
+        .flat_map(|(nth, (at, along))| {
+            [1.0, -1.0].map(|sign| {
+                let way = [along[0] * sign, along[1] * sign];
+                ([at[0] - way[0] * 3.0, at[1] - way[1] * 3.0, at[2]], bearing_of(way), format!("bar-{}", nth + 1))
+            })
         })
         .collect();
     pressings.push((stage, 0.0, "the west wall".into()));
@@ -335,8 +340,9 @@ fn each_of_the_ways_barricades_cuts_its_street_between_two_crossings() {
     let plan = drowned_vale();
     let blocks: Blocks = plan.standing().into();
     for (nth, (at, along)) in bars(plan).into_iter().enumerate() {
-        // Its street's crossings 6 m either way, or the lane inside the town's wall, stopped short of their middles.
-        let crossing = |sign: f64| [at[0] + along[0] * sign * 5.5, at[1] + along[1] * sign * 5.5, at[2]];
+        // Toward its street's crossings 6 m either way, or the lane inside the town's wall, stopped short of a Watcher's
+        // post standing in one.
+        let crossing = |sign: f64| [at[0] + along[0] * sign * 4.5, at[1] + along[1] * sign * 4.5, at[2]];
         for (from, to) in [(crossing(-1.0), crossing(1.0)), (crossing(1.0), crossing(-1.0))] {
             assert!(!walks_to(&blocks, from, to, 0.8), "bar-{} lets a body down its street from {from:?}", nth + 1);
         }

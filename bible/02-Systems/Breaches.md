@@ -164,9 +164,10 @@ on, each a part: the court's broken columns, the walls' stubs by its rifts and t
 field walls, cart, barrels, well posts and chimneys; the Choir's fallen beams; the jambs of the Ways' porches, deep
 enough to hide a body from a Watcher. Nothing promises what it does not keep: the court's rim is broken flags and the
 torn rock's teeth, no rail; every rift's arch opens onto a wall; each seal stands in its doorway's walls, its crystal
-grown from them no wider than its part; each of the Ways' barricades cuts its street between two crossings, or a crossing and the lane inside its wall. Stained
-glass (`glass`) fills the Choir's rose and the shore's lancets. The pieces' calls are
-[[The Drowned Vale as Claude Builds It]]'s "Its pieces". The Drowned horse is a mount look of the forge (`barding.py`).
+grown from them no wider or deeper than its part; each of the Ways' barricades cuts its street between two crossings,
+or a crossing and the lane inside its wall. Stained glass (`glass`) fills the Choir's rose and the shore's lancets.
+The pieces' calls are [[The Drowned Vale as Claude Builds It]]'s "Its pieces". The Drowned horse is a mount look of
+the forge (`barding.py`).
 
 ## Limits
 
