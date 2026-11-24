@@ -229,22 +229,32 @@ The decisions in [[Open Questions]] are not repeated here.
     practice merges; `built` is a status Writing Notes does not list; two repo-check gaps (the vault check passes a
     `code:` symbol any word of its file names; the html check excuses `.append(` on a name made with `new` anywhere and
     misses `insertNode`, `importNode` and `new Text(`).
-- **#169, the owner's gear calls, every perk approved and the factions' nine perks built**, a draft for the owner's
-  yes to merge, CI green on `b6641cda` (the perks' head `651fb0a6` tested offline, `cargo xtask check` green but for
-  the four R2 ship-mesh tests this container cannot fetch):
-  - The owner's calls, in their words: every drop in its content's set look with random perks; Breaches a perk pool
-    of their own; faction weapons in their faction's colour (the Veiled a faint cold violet), rolling their faction's
-    perks beside the shared pool; no metal names reach the player; every piece named by its set
-    ([[Everything Carries a Set Name, and Perks Roll by Pool]] and the decisions it links).
-  - Every perk in the game approved ("All approved"), the factions' nine with them
-    ([[Every Perk Stands, the Factions' Nine With Them]]); built: faction armour and weapons roll their traits when
-    bought, one always their faction's ([[Gear]], "The factions' perks"; Claude's calls in [[Gear as Claude Shapes
-    It]]). The review page the owner marked: https://claude.ai/artifact/Jtfdq4zJyoUsQdsJqWgA4y.
-  - The Playlist card names its content's gear ("Drops Elite Dungeon gear"), never a metal.
-  - Still to build from those calls: set names, which wait on the owner ("Not yet": [[Set Names and Faction Perks as
-    Claude Drafts Them]]); every drop rolled in its content's set look, Legendaries included; the Breaches' own pool,
-    made with the Breaches; the faction blades' colour. `wt/fblade`, where an earlier session built the blades' trim,
-    was never pushed and is lost: the work starts again, and publishing its art needs the owner's yes.
+- **#169, the owner's gear calls, built whole**, a draft. The owner: "I dont want to merge until everything is
+  finished. Focus on getting this to 100% and stop depending on me" ([[Claude Finishes the Gear Calls on Its Own
+  Word]]). Every call is built; what is left is the owner's yes to merge and one forge run (below). Tested offline
+  with `cargo xtask check` on each pushed head, green but for the four R2 ship-mesh tests this container cannot
+  fetch; CI green on each head it finished.
+  - The owner's calls, in their words ([[Everything Carries a Set Name, and Perks Roll by Pool]] and the decisions it
+    links), and every perk in the game approved ("All approved": [[Every Perk Stands, the Factions' Nine With Them]];
+    the review page the owner marked: https://claude.ai/artifact/Jtfdq4zJyoUsQdsJqWgA4y).
+  - Built ([[Gear]]; each call of Claude's in [[Gear as Claude Shapes It]]): every armour piece and weapon named by
+    its set and kind ("Portwatch Helm"), Atherics and kept named pieces keeping theirs; every drop, Vestige and Shape's
+    Legendaries rolled in a content's set look with random perks, the named Legendaries kept-only; faction pieces
+    rolling the shared pool and one of their faction's nine perks; the Breaches' own pool of thirteen, a Breach piece
+    rolling its perk columns from it alone, never one twice (no Breach is built: the owner, "Lets just finish this");
+    no metal name in anything a player reads (`client/src/metalWords.test.ts`); a faction blade's hilt, guard and
+    trim in its faction's colour, the Veiled's a faint cold violet ([[Factions]], [[Sprite Forge]], [[First
+    Person]]); a rolled piece's look roll (`vestige::LOOK_ROLLS`, 36) choosing its set, metal, dye, make and shield,
+    so a ware is bought as shown.
+  - The set names are built as Claude drafted them and stay a draft until the owner's yes at the merge (the owner:
+    "Not yet"; [[Set Names and Faction Perks as Claude Drafts Them]]).
+  - The forge run, for the owner's named yes (a write to R2 with the Cloudflare key): forge.yml by hand on the branch
+    or on `main`, `figures` =
+    `|sword_elven,sword_elven_l,dagger_ebony,dagger_ebony_l,sheath_dagger_ebony,sheath_dagger_ebony_l` and
+    `firstperson` = `sword|Elven;dagger|Ebony`, then its log's manifest line into `content/forge/renders.json`. Until
+    then every blade draws as before; the large weapon pictures re-render by themselves on the merge.
+  - Unchecked: whether the new first-person blades pair with the published hands (same size and `oFFs`); every look
+    of a kept piece moves once with the wider look roll; played live.
 - **Open pull requests**, for the owner's yes once their checks pass: #162 (the game's words out to Type and back; it
   conflicts with `main` in `Decisions.md`) and #159 (the rooms' worker tests wait for what they check; it conflicts
   with `main` in `roomThread.test.ts`). Drafts: #93 (the toolkit's first
