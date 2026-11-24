@@ -13,7 +13,9 @@ hand-made model lives on R2 beside its mesh ([[Ship Models Live on R2]]). No fil
 The exception is the small pixel pictures a tool writes into the client as rows of letters: the [[Item Pictures]]
 baked in Blender, and `shipGlyphs.ts`, where the ship's baked materials and modules stand beside the officers' posts
 its writer draws by hand, as that file was kept before
-([[Vestiges Are project-final's Crystals, and Physical Pictures Are Baked]]).
+([[Vestiges Are project-final's Crystals, and Physical Pictures Are Baked]]). On the owner's word, two more: the
+meadow's sprites (`client/src/nature/meadowArt.ts`), and the props' parts (`content/forged/parts.json`), written from
+the forge so the bake and the browser read the same ([[The Meadow Art Is the Owner's, Its Tables Stay in Git, and the Grass Takes the Trees' Rain]]).
 
 **Why.** DFO Online kept forge renders in 251 branches of their own, and its deploy needed size guards at 900 MB and
 1.8 GB.

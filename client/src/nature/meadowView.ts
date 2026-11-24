@@ -11,6 +11,7 @@ import { meadowLevels } from './meadowAtlas.ts';
 import { CELL_M, CLEAR_SQUARES, GRID, MEADOW_BIOMES, MeadowField, REACH_M, TUFTS } from './meadowField.ts';
 import { cardReach } from './meadowLaw.ts';
 import { FAR_FROM, FAR_VERTICES, MEADOW_FRAME_FLOATS, MEADOW_SHADER, NEAR_VERTICES } from './meadowShader.ts';
+import { GUST_PER_M } from './natureShader.ts';
 import type { NatureFrame } from './natureView.ts';
 import { plantWind } from './natureView.ts';
 
@@ -22,8 +23,6 @@ const ANCHOR_STEP_M = 256;
 const HIGH_MARGIN_M = 200;
 /** How tall a card stands at most over its cell's ground and how far past its edge, for culling a cell. */
 const { tallest: TALLEST_M, widest: WIDEST_M } = cardReach();
-/** The plants' breeze, the wind's way before the weather is read, as natureView's. */
-const GUST_PER_M = 0.035;
 
 /** One cell drawn: its slot, how many of its tufts and with which cards. */
 interface CellDraw {

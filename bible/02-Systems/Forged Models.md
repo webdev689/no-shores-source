@@ -87,7 +87,7 @@ Columns are joined whose tops lie within 0.25 m and whose undersides are both th
 gate's arch its piers and bar. No part's top stands more than 0.45 m from the mesh (`propParts.test.ts`).
 `node tools/forgedParts.mjs` writes every piece's parts into `content/forged/parts.json`, but for a piece its box
 keeps to or one stepped over whole, and a test holds the file to what the forge builds; the rules read it with the
-props' measures ([[Layouts]], "Boxes").
+props' measures ([[Layouts]], "Boxes"). It is kept in git by the owner's word ([[The Meadow Art Is the Owner's, Its Tables Stay in Git, and the Grass Takes the Trees' Rain]]).
 
 ## The room kit
 

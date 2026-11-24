@@ -24,7 +24,7 @@ import {
   TONE,
   VARIANTS,
 } from './meadowLaw.ts';
-import { GUST_PER_M, GUST_PER_S, PLANT_LIGHT_WGSL } from './natureShader.ts';
+import { GUST_PER_M, PLANT_LIGHT_WGSL, SWAY } from './natureShader.ts';
 
 /** The frame's uniform floats: the view-projection, the anchor, the wind, the snow line and reach, and the ground. */
 export const MEADOW_FRAME_FLOATS = 32;
@@ -101,7 +101,7 @@ const MEADOW_LUMA_WEIGHTS = vec3f(${list(LUMA)});
 // How far a gust travels a metre and a second, as the plants' (natureShader.ts), and a fresh breeze, m/s, that
 // leans a tuft's top this much a metre a second over its height (meadowLaw.ts).
 const MEADOW_GUST_PER_M = ${GUST_PER_M};
-const MEADOW_GUST_PER_S = ${GUST_PER_S};
+const MEADOW_GUST_PER_S = ${SWAY.gustPerS.toFixed(2)};
 const MEADOW_BREEZE_MS = ${BREEZE_MS.toFixed(1)};
 const MEADOW_LEAN_PER_PUSH = ${LEAN_PER_PUSH};
 const MEADOW_GUST = vec2f(${list(GUST)});

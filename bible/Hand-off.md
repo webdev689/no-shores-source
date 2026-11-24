@@ -221,16 +221,14 @@ The decisions in [[Open Questions]] are not repeated here.
   - The meadow ([[Meadow]], [[Pick - Meadow Grass]]): the owner's five sprites written from DFO's PNGs by
     `tools/meadow/write.py` (pixel for pixel DFO's bake), DFO's atlas, chain, pick, sizes and colour law, 16 m cells
     of 576 tufts drawn by the GPU to 160 m over the grass of every grass biome.
-  - For the owner: the PNGs' metadata says Substance Designer at 2048 px (2021), saved in Photoshop; DFO and the Pick
-    List call them the owner's: please confirm they are your own ([[Own Work]]). Whether the plants' baked grass stays
-    under the meadow, and whether Graphics gains a grass setting.
+  - The owner's answers ([[The Meadow Art Is the Owner's, Its Tables Stay in Git, and the Grass Takes the Trees' Rain]]): the sprites are the owner's own; `parts.json` and `meadowArt.ts` stay in git by
+    exception; the boxes' budget stands; and the meadow takes the trees' rain fix (no sky's glare in rain, the plants'
+    slower sway), brought over as the trees' unmerged branch (`ccr-3a567ab9-nzyr44`) has it, so whichever merges
+    second meets the same light and the same `SWAY`. Still the owner's: whether the plants' baked grass stays under
+    the meadow, and whether Graphics gains a grass setting.
   - Tested offline: the full check on the head (the commit named in the pull request), `main` merged in; the meadow pictured headless through the real
     renderer in the Saltgrass Downs. Not seen on a real GPU or played: the meadow's cost there is unmeasured (some
-    180,000 tufts on open grass), and so is the boxing's in WebAssembly. For the owner too: the boxing's budget, a
-    trade of closeness for a tick's cost and the rooms' files (the beached ships' strips loosen to 0.6 to 1.5 m, the
-    cities' leaning spires to 13 m at most); and `content/forged/parts.json` and `client/src/nature/meadowArt.ts`,
-    tools' output committed, which Generated Files Stay Out of Git allows only with the owner's exception (else the
-    parts are made before each build, as the schema's code is).
+    180,000 tufts on open grass), and so is the boxing's in WebAssembly.
 
 - **The key strip, the leave held and Settings in tabs** (#181), merged on the owner's "Merge and deploy", which
   deploys the page (the rooms' code is untouched). The owner's three asks

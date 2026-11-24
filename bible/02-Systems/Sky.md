@@ -98,7 +98,8 @@ what show the ground there.
   grazing eye; once the ground is soaked, rain stands in puddles in the flat hollows of the land and the plaza. Snow
   that has fallen in the last twenty minutes whitens the flat ground and the city's flat stone where the weather laid
   it: on the ground under the eye, where it is read, and higher, fading out 100 to 300 m lower down, which is warmer.
-  Puddles lie only where no snow does. Wet leaves glisten.
+  Puddles lie only where no snow does. Rain darkens a plant's bark and leaves, and the meadow's tufts, and lays no
+  sheen on them ([[The Meadow Art Is the Owner's, Its Tables Stay in Git, and the Grass Takes the Trees' Rain]]).
 
 ## Limits
 

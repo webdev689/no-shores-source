@@ -15,7 +15,7 @@ code:
 # Meadow
 
 The owner's handcrafted grass over the land: a tall tuft, the same tuft cut short, a tuft of flowers, a dry tuft and a
-bush, five pixel sprites DFO keeps as the owner's ([[Pick - Meadow Grass]],
+bush, five pixel sprites the owner made for DFO ([[The Meadow Art Is the Owner's, Its Tables Stay in Git, and the Grass Takes the Trees' Rain]], [[Pick - Meadow Grass]],
 [[The Owner's Handcrafted Meadow Grows Over the Grass]]), stood up as crossed cards round the eye. It grows beside the
 [[Nature]] layer's plants and is drawn after them, in the land's pass.
 
@@ -61,7 +61,7 @@ alone. Each tuft's draws are a hash of its cell and its number, so a cell grows 
 
 Near, a tuft is three cards 60° apart; past 0.3 of the reach two, each tuft letting its third go at its own distance
 over the band before. Its foot follows the slope, each corner as high as the ground under it. It sways in the
-plants' wind, gusts rolling downwind across the land, a bush six tenths as far.
+plants' wind, gusts rolling downwind across the land as slowly as theirs (about every 10 s), a bush six tenths as far.
 
 ## Its colour and light
 
@@ -70,7 +70,8 @@ ground over the ground the tall tuft's green would stand a shade lighter over, h
 that ratio's hue as far as it is green and only its light where it is not, so the green becomes the ground's own and
 the petals and dry stalks keep their colours (`texelOver`). A patch's tint lightens or darkens it in four bands, each rounded to its middle, and
 from 0.12 of the reach to 0.6 it gives way to the ground's colour. It is lit as the plants are (the sky, the sun
-through the shadow map, the lamps, rain), its foot shaded and its light leaning across its lean, and each card's face
+through the shadow map, the lamps), darkened by rain with no sky's glare on it, as the plants' leaves are, its foot
+shaded and its light leaning across its lean, and each card's face
 takes a low sun's or the moon's own light whole when turned to it and half when turned away; the sky, the lamps and
 the light through it fall on every card alike.
 

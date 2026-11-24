@@ -338,6 +338,7 @@ a decision is a record. How to add one: [[Recording a Decision]].
 - [[Pairs Swing Faster, Foes' Guns Strike Two Thirds and Faction Gear Has No Weekly Limit]]
 - [[What a Body Meets Keeps to What Is Drawn]]
 - [[The Owner's Handcrafted Meadow Grows Over the Grass]]
+- [[The Meadow Art Is the Owner's, Its Tables Stay in Git, and the Grass Takes the Trees' Rain]]
 
 ## Replaced
 

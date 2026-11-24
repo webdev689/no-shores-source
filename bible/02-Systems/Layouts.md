@@ -369,7 +369,8 @@ solid tilted so little none of it moves 0.45 m is boxed as if upright, standing 
 moves it, and a piece of 2 m or less is not halved for its tilt alone, standing off it as far as its tilt throws its
 box out. A box's underside is its own, so a body walks under a viaduct's deck and a lintel.
 
-What a solid or a turned prop may cost is held (`city::collision::kept`, `layout::collide::prop_kept`): at most 64
+What a solid or a turned prop may cost is held, as the owner approved ([[The Meadow Art Is the Owner's, Its Tables Stay in Git, and the Grass Takes the Trees' Rain]]; `city::collision::kept`,
+`layout::collide::prop_kept`): at most 64
 of its boxes over a 2 m square of ground, on a grid laid from its north-west corner (2 m is the finest cell of the
 movement rules' grid, every box of which a tick tests), and at most a box a square metre of its footprint, never
 fewer than 256. A solid's layers come first, as they take the fewest boxes; where they stack too thick over the
