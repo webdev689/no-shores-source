@@ -37,6 +37,34 @@ test('raid guard: a wave of joins starts raid mode, raises verification, deals w
   assert.equal(titles(bot).at(-1), 'Raid mode off');
 });
 
+test('raid guard: set to only report, raid mode reports each joiner in the alert channel and leaves them be', async () => {
+  const settings = {
+    joinCount: 3,
+    joinSeconds: 30,
+    raidAction: 'alert',
+    raiseVerification: false,
+    alertChannel: ALERTS,
+  };
+  const bot = await standSafetyGateway({ antiraid: settings });
+  const joiners = ['900000000000000101', '900000000000000102', '900000000000000103', '900000000000000104'];
+  for (const id of joiners) {
+    bot.discord.state.members.set(id, []);
+    bot.clock.now += 1000;
+    await bot.send('GUILD_MEMBER_ADD', { guild_id: GUILD, user: author(id), roles: [] });
+  }
+  assert.deepEqual(titles(bot), ['Raid mode on', 'Joined in raid mode', 'Joined in raid mode']);
+  const reported = bot.discord.postsTo(ALERTS).slice(1);
+  assert.deepEqual(
+    reported.map((post) => /\d{18}/.exec(JSON.stringify(post.embeds))?.[0]),
+    joiners.slice(2),
+    'the joiner who made it a raid, and the one after',
+  );
+  assert.ok(
+    joiners.every((id) => bot.discord.state.members.has(id) && !bot.discord.state.timeouts.has(id)),
+    'no one is kicked or timed out',
+  );
+});
+
 test('raid guard: joins spread wider than the window never start raid mode', async () => {
   const bot = await standSafetyGateway({ antiraid: { joinCount: 3, joinSeconds: 10, alertChannel: ALERTS } });
   for (const id of ['900000000000000101', '900000000000000102', '900000000000000103']) {
