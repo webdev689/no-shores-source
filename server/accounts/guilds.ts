@@ -121,9 +121,20 @@ export async function guildAsk(
   if (asked === 'leave') {
     const left = (await members())?.count ?? 1;
     if (mine.rank === FOUNDER && left > 1) return said(409, 'Make an admin the founder first.');
-    await database.prepare('DELETE FROM guild_members WHERE account_id = ?1').bind(own).run();
-    if (left <= 1) await database.prepare('DELETE FROM guilds WHERE id = ?1').bind(mine.id).run();
-    return done;
+    // They leave only at the rank read, and a founder only alone, so a founding handed to them meanwhile never
+    // leaves the guild with none; it ends only while no one is left in it.
+    const [gone] = await database.batch([
+      database
+        .prepare(
+          `DELETE FROM guild_members WHERE account_id = ?1 AND guild_id = ?2 AND rank = ?3 AND (rank <> ${FOUNDER}
+           OR NOT EXISTS (SELECT 1 FROM guild_members WHERE guild_id = ?2 AND account_id <> ?1))`,
+        )
+        .bind(own, mine.id, mine.rank),
+      database
+        .prepare('DELETE FROM guilds WHERE id = ?1 AND NOT EXISTS (SELECT 1 FROM guild_members WHERE guild_id = ?1)')
+        .bind(mine.id),
+    ]);
+    return gone?.meta.changes === 1 ? done : said(409, 'That changed as you asked. Look again.');
   }
   /** SQL that holds while the asker (?1) is in their guild (?2) at a rank so. */
   const asker = (rank: string) =>

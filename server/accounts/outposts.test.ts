@@ -37,7 +37,7 @@ async function world() {
   const standAt = async (name: string) =>
     kept.claim(tokens[name] ?? '', `${outpostRoom(SITE, (await guild()).id)}:${name}`);
   const fund = async (amount: number) =>
-    kept.deposit(await accountOf('Ada'), amount, `fund-${amount}-${Math.random()}`);
+    kept.deposit(await accountOf('Ada'), amount, `${outpostRoom(SITE, (await guild()).id)}:fund-${Math.random()}`);
   const read = async (name: string) => (await made.ask('GET', '/v1/outposts', undefined, tokens[name])).body;
   const get = async (name: string, path: string) => (await made.ask('GET', path, undefined, tokens[name])).body;
   const raiseXp = (amount: number) => made.deps.database.prepare('UPDATE guilds SET xp = ?1').bind(amount).run();
@@ -47,7 +47,7 @@ async function world() {
 test('an outpost is raised at its site by the founder or an admin for its Aurem, its hall and standard standing', async () => {
   const { ask, standAt, fund, guild, read } = await world();
   const raise = () => ask('Ada', 'outpost/raise', { site: SITE, turn: 0 });
-  assert.equal((await raise()).body['error'], 'Go to that outpost to do that.');
+  assert.equal((await raise()).body['error'], "Do that at your guild's outpost.");
   assert.equal((await read('Ada'))['at'], null);
   await standAt('Ada');
   assert.equal((await read('Ada'))['at'], SITE, 'standing at a site the guild has not raised');
@@ -150,7 +150,7 @@ test('the strongbox fills by the hour to two days and is emptied into the treasu
     ['iron', 20],
   ] as const)
     await kept.deliver(await accountOf('Ada'), room, { id: 3, stuff, amount });
-  assert.equal((await ask('Ben', 'outpost/collect', { site: SITE })).body['error'], 'Go to that outpost to do that.');
+  assert.equal((await ask('Ben', 'outpost/collect', { site: SITE })).body['error'], "Do that at your guild's outpost.");
   await standAt('Ben');
   clock.now += 5.5 * HOUR;
   await standAt('Ben');
@@ -198,11 +198,12 @@ test('the founder abandons an outpost from anywhere for half of all spent on it'
 
 test('a deposit a room makes twice by the same id moves the Aurem once', async () => {
   const { kept, accountOf, guild } = await world();
-  const ada = await accountOf('Ada');
-  assert.equal(await kept.deposit(ada, 500, 'room-1'), 'moved');
-  assert.equal(await kept.deposit(ada, 500, 'room-1'), 'already');
+  const [ada, room] = [await accountOf('Ada'), outpostRoom(SITE, (await guild()).id)];
+  assert.equal(await kept.deposit(ada, 500, `${room}:1`), 'moved');
+  assert.equal(await kept.deposit(ada, 500, `${room}:1`), 'already');
   assert.equal((await guild()).treasury, 500);
-  assert.equal(await kept.deposit(ada, 2_000_000, 'room-2'), 'refused', 'past the most a treasury holds');
+  assert.equal(await kept.deposit(ada, 2_000_000, `${room}:2`), 'refused', 'past the most a treasury holds');
+  assert.equal(await kept.deposit(ada, 500, 'room-3'), 'refused', 'no outpost room named');
 });
 
 test("anyone signed in reads an outpost's plot and banner by its room, and none for a room with none", async () => {
@@ -367,7 +368,7 @@ test('a character whose outpost room let go of it is no longer there, and the pa
   clock.now += 2 * 24 * HOUR;
   assert.equal(
     (await ask('Ada', 'outpost/decorate', { site: SITE, piece: 'well', x: 3, y: 50, turn: 0 })).body['error'],
-    'Go to that outpost to do that.',
+    "Do that at your guild's outpost.",
   );
   assert.equal(await kept.takeStores(ada, room, 'island', 7), 7);
   assert.deepEqual((await read('Ada'))['taken'], { island: 7 });

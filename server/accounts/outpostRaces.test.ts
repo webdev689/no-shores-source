@@ -38,7 +38,7 @@ async function world() {
   const standAt = async (name: string, site = SITE) =>
     kept().claim(tokens[name] ?? '', `${outpostRoom(site, (await guild()).id)}:${name}`);
   const fund = async (amount: number) =>
-    kept().deposit(await accountOf('Ada'), amount, `fund-${amount}-${Math.random()}`);
+    kept().deposit(await accountOf('Ada'), amount, `${outpostRoom(SITE, (await guild()).id)}:fund-${Math.random()}`);
   const count = async (sql: string) =>
     (await made.deps.database.prepare(`SELECT COUNT(*) AS count FROM ${sql}`).first<{ count: number }>())?.count;
   /** Raises the outpost and builds a Counting House (id 3) standing at tier 1. */
@@ -132,10 +132,10 @@ test('an admin demoted since their rank was read moves no Aurem and changes noth
 
 test('the treasury stays within its bounds under deposits at once', async () => {
   const { kept, accountOf, guild, deps } = await world();
-  const ada = await accountOf('Ada');
-  await kept().deposit(ada, 990_000, 'big');
+  const [ada, room] = [await accountOf('Ada'), outpostRoom(SITE, (await guild()).id)];
+  await kept().deposit(ada, 990_000, `${room}:big`);
   slowly(deps);
-  await Promise.all([1, 2, 3, 4, 5].map((each) => kept().deposit(ada, 5_000, `d${each}`)));
+  await Promise.all([1, 2, 3, 4, 5].map((each) => kept().deposit(ada, 5_000, `${room}:d${each}`)));
   assert.equal((await guild()).treasury, 1_000_000);
 });
 

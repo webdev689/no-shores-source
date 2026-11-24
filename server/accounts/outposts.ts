@@ -3,9 +3,9 @@
  * once; structures placed and risen tier by tier, each costing the treasury its Aurem at once and then waiting on the
  * materials its members deliver; decoration set and taken up; the strongbox emptied into the treasury; and an outpost
  * abandoned. Its founder and admins build, at the outpost itself; any member collects there; only the founder abandons,
- * from anywhere. Whatever is taken back refunds half its Aurem. Each write holds only while the asker still has their
- * rank and what it changes is as it was read, both inside it; a page may name its ask (`rid`), so one sent twice
- * moves its Aurem once.
+ * from anywhere. Whatever is taken back refunds half its Aurem, as much of it as the treasury holds. Each write holds
+ * only while the asker still has their rank and what it changes is as it was read, both inside it; a page may name its
+ * ask (`rid`), so one sent twice moves its Aurem once.
  */
 
 import { levelOf } from '../../client/src/game/guild/guildLaw.ts';
@@ -112,8 +112,10 @@ const moveFor = (database: Db, asking: Asking, kind: string, amount: number, wri
 
 /** Raises an outpost at a site, its hall at the plot's middle turned as asked and its standard before the hall; the
  *  guild's count of outposts is read inside the write, so two raised at once never pass what its level allows. */
-async function raise(database: Db, asking: Asking, turn: number) {
+async function raise(database: Db, asking: Asking, turned: number) {
   const { guild, site, now } = asking;
+  // Refused before any write, so a turn that is no number never reaches the database.
+  if (!STANDARD_AT[turned]) return said(400, 'Turn it a quarter at a time.');
   const allowed = outpostsAllowed(levelOf(guild.xp));
   const most = `At its level your guild holds ${allowed} ${allowed === 1 ? 'outpost' : 'outposts'}.`;
   const held = await database
@@ -121,7 +123,6 @@ async function raise(database: Db, asking: Asking, turn: number) {
     .bind(guild.id)
     .first<{ count: number }>();
   if ((held?.count ?? 0) >= allowed) return said(409, most);
-  const turned = ((Math.trunc(turn) % 4) + 4) % 4;
   const [standardX, standardY] = STANDARD_AT[turned] ?? [7, 11];
   const structure = (id: number, kind: string, x: number, y: number) =>
     paid(
@@ -204,8 +205,23 @@ async function rise(database: Db, asking: Asking, id: number) {
   return answered(moved, lacks(tier.aurem, 'that tier'));
 }
 
-/** Takes a structure or a piece of decoration down, half its Aurem back to the treasury; the hall stands for good. It
- *  goes only while it cost what was read, so the half given back is what it cost. */
+/** What of `amount` given back the treasury holds as read: the rest is lost, so a full treasury never keeps a guild
+ *  from taking something down or abandoning an outpost. */
+async function fitting(database: Db, guild: string, amount: number) {
+  const row = await database
+    .prepare('SELECT treasury FROM guilds WHERE id = ?1')
+    .bind(guild)
+    .first<{ treasury: number }>();
+  return Math.max(0, Math.min(amount, TREASURY_MOST - (row?.treasury ?? TREASURY_MOST)));
+}
+
+/** The answer for a move giving `back` to the treasury, saying how much came back. It was sized to fit the treasury
+ *  as read, so a refusal means the treasury changed meanwhile. */
+const gaveBack = (moved: Moved | 'stale', back: number): Answer =>
+  moved === 'moved' || moved === 'already' ? { status: 200, body: { ok: true, back } } : said(409, STALE);
+
+/** Takes a structure or a piece of decoration down, half its Aurem back to the treasury as it holds it; the hall
+ *  stands for good. It goes only while it cost what was read. */
 async function takeDown(database: Db, asking: Asking, what: 'structure' | 'decor', id: number) {
   const { guild, site } = asking;
   const plot = await plotOf(database, guild.id, site);
@@ -216,22 +232,17 @@ async function takeDown(database: Db, asking: Asking, what: 'structure' | 'decor
   const [table, cost, spent] = structure
     ? ['outpost_structures', 'spent', structure.spent]
     : ['outpost_decor', 'paid', decor?.paid ?? 0];
-  const moved = await moveFor(
-    database,
-    asking,
-    `take down ${structure?.kind ?? decor?.piece ?? ''}`,
-    Math.floor(spent / 2),
-    [
-      ...(structure ? await settleFirst(database, asking, structure.kind, plot) : []),
-      paid(
-        database,
-        asking,
-        (guards) => `DELETE FROM ${table} WHERE guild_id = ?1 AND site = ?2 AND id = ?3 AND ${cost} = ?4 AND ${guards}`,
-        [guild.id, site, id, spent],
-      ),
-    ],
-  );
-  return answered(moved, 'The treasury cannot hold what it would give back.');
+  const back = await fitting(database, guild.id, Math.floor(spent / 2));
+  const moved = await moveFor(database, asking, `take down ${structure?.kind ?? decor?.piece ?? ''}`, back, [
+    ...(structure ? await settleFirst(database, asking, structure.kind, plot) : []),
+    paid(
+      database,
+      asking,
+      (guards) => `DELETE FROM ${table} WHERE guild_id = ?1 AND site = ?2 AND id = ?3 AND ${cost} = ?4 AND ${guards}`,
+      [guild.id, site, id, spent],
+    ),
+  ]);
+  return gaveBack(moved, back);
 }
 
 /** Sets a piece of decoration on the plot, paying its price; its id, and how many the hall holds, read inside the
@@ -293,8 +304,8 @@ async function collect(database: Db, asking: Asking) {
   return answered(moved, 'The treasury is full.');
 }
 
-/** Abandons an outpost, half the Aurem spent on it, its structures and its decoration back to the treasury: only while
- *  all of it cost what was read. */
+/** Abandons an outpost, half the Aurem spent on it, its structures and its decoration back to the treasury as it holds
+ *  it: only while all of it cost what was read. */
 async function abandon(database: Db, asking: Asking) {
   const { guild, site } = asking;
   const spentSql = `outposts.spent + COALESCE((SELECT SUM(spent) FROM outpost_structures WHERE guild_id = ?1 AND
@@ -304,7 +315,8 @@ async function abandon(database: Db, asking: Asking) {
     .bind(guild.id, site)
     .first<{ spent: number }>();
   if (!row) return said(404, 'Your guild holds no outpost there.');
-  const moved = await moveFor(database, asking, 'abandon', Math.floor(row.spent / 2), [
+  const back = await fitting(database, guild.id, Math.floor(row.spent / 2));
+  const moved = await moveFor(database, asking, 'abandon', back, [
     paid(
       database,
       asking,
@@ -313,7 +325,7 @@ async function abandon(database: Db, asking: Asking) {
       FOUNDER,
     ),
   ]);
-  return answered(moved, 'The treasury cannot hold what it would give back.');
+  return gaveBack(moved, back);
 }
 
 /** Whether the guild's ledger holds a line under this id: an ask made already. */
@@ -346,9 +358,9 @@ export async function outpostAsk(
   const asking: Asking = { own, guild, site, rid, now };
   if (asked === 'abandon')
     return guild.rank === FOUNDER ? abandon(database, asking) : said(403, 'Only the founder can abandon an outpost.');
-  if (!(await there(database, own, site, guild.id, now))) return said(409, 'Go to that outpost to do that.');
+  if (!(await there(database, own, site, guild.id, now))) return said(409, "Do that at your guild's outpost.");
   if (asked === 'collect') return collect(database, asking);
-  if (guild.rank > ADMIN) return said(403, 'Only the founder and admins can build.');
+  if (guild.rank > ADMIN) return said(403, 'Only the founder and admins can change the outpost.');
   const raised = (await plotOf(database, guild.id, site)).structures.length > 0;
   if (asked === 'raise')
     return raised

@@ -172,7 +172,7 @@ username, as a player is found by theirs; a guest is told to add one in Settings
   founding to an admin, who must first be made one, in one write, so two at once cannot make two founders. Every
   such write holds only while both are still in that guild at the ranks read, so a rank never lands in another guild
   and a guild never loses its founder. An invite unanswered is kept 30 days. A founder leaves only once another founds it, or alone, which
-  ends it. A hundred at most. Its banner, description and level, and the Guild tab's own read (`GET /v1/guild`), are
+  ends it; a member leaves only at the rank read, so a founding handed to them as they leave keeps its founder. A hundred at most. Its banner, description and level, and the Guild tab's own read (`GET /v1/guild`), are
   in [[Guilds]].
 - **Blocking** ends a friendship and its ask and the invites either way. What the one blocked asks after is answered
   as sent and never arrives. A block either way between a player and anyone in a company keeps them out of it, by
@@ -186,7 +186,16 @@ username, as a player is found by theirs; a guest is told to add one in Settings
 - **The room's own**: the Game column lists the players with a name in the same room beside the company, the guests
   only counted. Another player's details show what they wear always, and where they are only to their friends, company
   and guild, and their guild's motto and description. A friend ask still waiting and a guild's invite show no one where the player asked is.
-- **Limits**: 60 an hour of the asks that reach another player (a friend ask, an invite, founding a guild).
+- **Limits**: 60 an hour of the asks that reach another player (a friend ask, an invite, founding a guild); 600 an
+  hour of one account's outpost asks, plot reads and its rooms' errands together.
+- **Outposts** ([[Outposts]]): `GET /v1/outposts` gives a member their guild's outposts, its treasury and ledger, the
+  site they stand at, what they took from the stores this game day (`taken`, the day turning at 09:00 UTC) and
+  whether the War Horn sounded this week (`hornSounded`); `GET /v1/outposts/<room>` gives anyone signed in the plot and
+  banner of an outpost raised there, null where none is. `POST /v1/social/outpost/<ask>` raises, places, rises,
+  removes, decorates, undecorates, collects and abandons; a removal or abandonment answers `back`, the Aurem the
+  treasury took of the half, the rest lost when it is full. A room's errands go over its binding: a deposit (its id
+  begins with the room's name, so it goes only to that outpost's guild), a delivery, a take and the horn, each answered
+  again the same under its id.
 
 ## Find a Company
 
