@@ -1,5 +1,5 @@
 ---
-id: 174
+id: 177
 title: "uiShot calls a shot's build every frame, so a shot that makes its own display inside build restarts it each frame"
 status: open
 type: internal

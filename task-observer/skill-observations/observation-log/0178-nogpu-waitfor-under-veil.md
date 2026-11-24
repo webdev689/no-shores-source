@@ -1,5 +1,5 @@
 ---
-id: 175
+id: 178
 title: "A noGpu waitFor on the key strip's words passes behind the arrival veil, so a held key after it is held while nothing on foot is offered"
 status: open
 type: internal
