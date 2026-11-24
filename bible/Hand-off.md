@@ -243,7 +243,8 @@ The decisions in [[Open Questions]] are not repeated here.
   holds the heroic raid again, the dev page's bots now lose the plain raid's stores in its third wave, and the road's
   test player, facing north while foes struck from its sides, fell before a kill (it now turns to the nearest foe).
   A lone player is felled about as fast as before (`measure_blows`). Tested offline; not played.
-- **Patrol chests, the same chests in every dungeon, and searchable containers** (#192, a draft for the owner's yes). The owner's ask ([[Patrols and Dungeons Hold Chests, and Their Containers May Be Searched]]), built on "Take
+- **Patrol chests, the same chests in every dungeon, and searchable containers** (#192, merged on the owner's "Merge
+  and deploy", which deploys the page and the rooms). The owner's ask ([[Patrols and Dungeons Hold Chests, and Their Containers May Be Searched]]), built on "Take
   autonomy", every call in [[Chests and Searchable Containers as Claude Builds Them]] after Destiny 1's loot chests. A
   patrol's layout marks 12 to 24 chest places tucked against something tall (`layout::chests`); its room stands one
   chest for every five, two to four, each moving to another place every 5 minutes, staggered; every dungeon (a
