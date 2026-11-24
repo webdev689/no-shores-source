@@ -1,9 +1,9 @@
-//! The Steward's court played through its rules: the way back opened by the court that is left, the Lodestone taken
-//! to the shore from its bearer, a bell broken out of order, its measure kept whoever is away, its last takings
-//! unwriting the company, and its fall, which wins the Drowned Vale and brings back any still in a shore; and the
-//! Choir's ring, which reaches the whole company.
+//! The Steward's court played through its rules: the way back opened by the court that is left, or by its bells alone
+//! with none left there, the Lodestone taken to the shore from its bearer, a bell broken out of order, its measure kept
+//! whoever is away, its laying bare once a taking, its last takings unwriting the company, and its fall, which wins the
+//! Drowned Vale and brings back any still in a shore; and the Choir's ring, which reaches the whole company.
 
-use super::breach_tests::{breach, told};
+use super::breach_tests::{breach, stand_at, told};
 use super::fights_tests::{begin_at, kill, put_at, won_to};
 use super::*;
 use crate::encounters::encounters_tests::ticks;
@@ -141,4 +141,27 @@ fn a_company_taken_whole_comes_back_on_the_bells_alone() {
     put_at(&mut room, players[0], "court-was", "rift");
     room.tick();
     assert!(room.in_space(breach(&room), "court").contains(&players[0]), "home with no one to hold the mooring");
+}
+
+#[test]
+fn the_steward_lies_bare_once_between_takings() {
+    let (mut room, players) = won_to(Tier::Normal, 2, STEWARD);
+    begin_at(&mut room, &players, "court", "chest");
+    let boss = breach(&room).fights.steward.boss.expect("the Steward stands");
+    let ground = |room: &mut Room| {
+        let body = room.foes[&boss].fighter.body;
+        stand_at(room, players[0], [body.x + 2.0, body.y, body.z]);
+        let breach = room.breach.as_mut().expect("run");
+        (breach.fights.steward.away, breach.lodestone.grounded_at) = (None, None);
+        breach.lodestone.stone = lodestone::Stone::Borne(players[0]);
+        room.ground_lodestone(players[0]);
+        room.breach.as_ref().expect("run").fights.steward.bare_until
+    };
+    taken_now(&mut room);
+    let first = ground(&mut room);
+    assert!(first > room.clock, "laid bare");
+    room.clock += 1;
+    assert_eq!(ground(&mut room), first, "not again before the next taking");
+    taken_now(&mut room);
+    assert!(ground(&mut room) > first, "again once it has taken");
 }

@@ -3,9 +3,9 @@
 //! what was and what is in turn, and Rewrites them, losing first any still away from its last taking; it tolls on a
 //! shorter measure from each taking, unwriting the Rewritten. In the shore five bells wake, their order shown only in
 //! the court over that rift's mooring; broken in order, the way back opens while the court holds the mooring (two at
-//! Hard if two are there; with none there, the bells alone open it). Grounded at its feet, the Lodestone lays it bare:
-//! blows on it weigh five times, and Arts recharge three times as fast. After its fourth taking, when the next would
-//! come it unwrites the whole company, and on each toll's measure after. Its fall brings back any away.
+//! Hard if two are there; with none there, the bells alone open it). Grounded at its feet once a taking, the Lodestone
+//! lays it bare: blows on it weigh five times, and Arts recharge three times as fast. After its fourth taking, when the
+//! next would come it unwrites the whole company, and on each toll's measure after. Its fall brings back any away.
 
 use super::{Breach, STEWARD};
 use crate::{EventKind, PlayerId, Room};
@@ -43,7 +43,7 @@ pub struct Away {
     pub done: bool,
 }
 
-/// The Steward's court as it stands.
+/// The Steward's court as it stands, and whether it has lain bare since its last taking.
 #[derive(Clone, Debug, Default, PartialEq)]
 pub struct Steward {
     pub boss: Option<FighterId>,
@@ -51,6 +51,7 @@ pub struct Steward {
     pub takings: u8,
     pub next_taking: u64,
     pub away: Option<Away>,
+    pub bared: bool,
     pub bare_until: u64,
     pub next_toll: u64,
     pub next_wave: u64,
@@ -182,7 +183,7 @@ impl Room {
             }
         }
         fight.away = Some(Away { shore, taken, order, bells, broken: 0, done: false });
-        fight.takings += 1;
+        (fight.takings, fight.bared) = (fight.takings + 1, false);
         let every = if breach.tier == gear::breach::Tier::Hard { TAKING_EVERY.1 } else { TAKING_EVERY.0 };
         (fight.next_taking, fight.next_toll) = (clock + every, clock + TOLL_EVERY);
         self.tell_all(EventKind::Taken, shore as f64);
@@ -264,15 +265,15 @@ impl Room {
         }
     }
 
-    /// The Lodestone grounded within reach of the Steward, with no one left away, lays it bare.
+    /// The Lodestone grounded within reach of the Steward, with no one left away, lays it bare, once between takings.
     pub(crate) fn ground_steward(&mut self, breach: &mut Breach, at: [f64; 3]) -> bool {
         let fight = &mut breach.fights.steward;
-        let Some(id) = fight.boss.filter(|_| fight.away.is_none()) else { return false };
+        let Some(id) = fight.boss.filter(|_| fight.away.is_none() && !fight.bared) else { return false };
         let Some(foe) = self.foes.get(&id).filter(|foe| !foe.fighter.dead()) else { return false };
         if apart([foe.fighter.body.x, foe.fighter.body.y], [at[0], at[1]]) > BARE_REACH_M {
             return false;
         }
-        fight.bare_until = self.clock + BARE_TICKS;
+        (fight.bare_until, fight.bared) = (self.clock + BARE_TICKS, true);
         self.tell_all(EventKind::LaidBare, 0.0);
         true
     }
