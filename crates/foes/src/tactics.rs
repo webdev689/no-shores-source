@@ -23,14 +23,14 @@ use crate::tell::{After, follow, roar, throw};
 use crate::tuning::{
     BACK_TURNED, BACKOFF, BACKOFF_COOLDOWN, BACKOFF_GAP, BLOCKED_ENOUGH, CIRCLE_PACE, CLOSE_IN, CLOSING, FLEE,
     FLEE_SHARE, FOLLOW, GUARD_RESERVE, HURT_SHARE, KITE_CORNERED, POISE_NEAR, RANK_GAP, RECOVER, RECOVER_HOP,
-    RING_ROOM, RING_SLACK, RUN_FROM, STALE, STEP_PACE, SWING_FACE, SWING_SLACK, WALLED,
+    RING_ROOM, RING_SLACK, RUN_FROM, STALE, STEP_PACE, SWING_FACE, SWING_SLACK, WAIT_GAP, WALLED,
 };
 use combat::arms::{stroke_shape, weapon};
 use combat::fighter::Action;
 use combat::sight::{apart, bearing, clear_line, off, wrap};
 use combat::strike::reach_of;
 use combat::tuning::{ATTACK_PACE, BODY_RADIUS, guard_of};
-use combat::{CombatInput, Stroke};
+use combat::{CombatInput, FighterId, Stroke};
 use core::f64::consts::{FRAC_PI_2, PI};
 use movement::blocks::blocking_at;
 use movement::{TICK_SECONDS, TUNING};
@@ -287,7 +287,11 @@ fn melee(brain: &mut Brain, here: &Here<'_, '_>, board: &mut Board, sight: &Sigh
     let reach = reach_of(&here.fighter);
     let director = here.world.director;
     let pressed = director.pressed();
+    // The ring a foe with a turn holds, and the one farther out that the waiting stand on while another fights
+    // their target; a foe alone at its target never waits for a turn, so its fight is its own.
     let ring = reach + pressed.ring_gap;
+    let crowd = board.fighting(sight.id, me) > 0;
+    let waiting = ring + if crowd { WAIT_GAP } else { 0.0 };
     // A leader its followers screen takes no turn while they fight, nor waits in their line for one, so the first of
     // them to have waited goes in; raging, or going in now they are gone, it takes one at once, one over the count at
     // most.
@@ -301,13 +305,16 @@ fn melee(brain: &mut Brain, here: &Here<'_, '_>, board: &mut Board, sight: &Sigh
     // Only a foe where its group means it to stand strikes a back turned to it: the flanker, or one in the line; and
     // not a back walking away, which the one whose turn it is runs after.
     let turned_away = off(sight.fighter.aim, from_target) > BACK_TURNED && speed_away(sight) <= CLOSING;
-    let back_turned = turned_away && in_place(here, sight, brain.flanking);
+    let flanker = board.flanker(sight.id);
+    let back_turned = turned_away && in_place(here, sight, flanker);
     // Walked in on, it fights back rather than backpedal, and goes on fighting while the target stays that close; a
-    // foe's own hop that ends inside the ring opens nothing.
+    // foe's own hop that ends inside the ring opens nothing. While its target breathes nothing is open: it keeps its
+    // place, and steps back from a target walking in on it.
     let body = sight.fighter.body;
     let closing = body.vx * libm::sin(from_target) - body.vy * libm::cos(from_target) > CLOSING;
     let inside = sight.distance < ring - RING_SLACK && (closing || brain.plan == Plan::Engage);
-    let opened = (back_turned && sight.distance <= ring + RING_SLACK) || inside;
+    let opened =
+        ((back_turned && sight.distance <= waiting + RING_SLACK) || inside) && !board.breathing(sight.id, tick);
     let open = board.opening(sight.id, me, opened && !board.holds(sight.id, me, false));
     let patience = if brain.raging || brain.orders.push { 0 } else { Here::ticks(pressed.patience) };
     if brain.plan == Plan::Wait
@@ -323,19 +330,23 @@ fn melee(brain: &mut Brain, here: &Here<'_, '_>, board: &mut Board, sight: &Sigh
     }
     match brain.plan {
         // While another goes in, or waits in reach for the beat to strike, one in to fight keeps to the ring, not crowd
-        // in beside it; one walked in on without a turn fights back where it stands.
-        Plan::Engage if !(open && inside) && !board.go_in(sight.id, me, tick) => hold_ring(brain, here, sight, ring),
+        // in beside it, and while its target breathes it stands back with the waiting; one walked in on without a turn
+        // fights back where it stands.
+        Plan::Engage if !(open && inside) && !board.go_in(sight.id, me, tick) => {
+            let ring = if board.breathing(sight.id, tick) { waiting } else { ring };
+            hold_ring(brain, here, sight, ring, crowd, flanker)
+        }
         Plan::Engage => engage(brain, here, board, sight, reach),
-        Plan::Backoff => hold_ring(brain, here, sight, ring + BACKOFF_GAP),
+        Plan::Backoff => hold_ring(brain, here, sight, ring + BACKOFF_GAP, crowd, flanker),
         Plan::Wait => {
             // Screened, it waits a ring farther out, right behind its shield-bearer if it has one: its shield front.
-            let ring = ring_of(brain, here, board, sight, ring) + if screened { RANK_GAP } else { 0.0 };
+            let ring = ring_of(brain, here, board, sight, waiting) + if screened { RANK_GAP } else { 0.0 };
             if let Some(shield) = brain.orders.behind.filter(|_| screened).and_then(|id| here.find(id)) {
                 brain.slot = Some(bearing([sight.spot[0], sight.spot[1]], [shield.body.x, shield.body.y]));
             }
-            hold_ring(brain, here, sight, ring)
+            hold_ring(brain, here, sight, ring, crowd, board.flanker(sight.id))
         }
-        _ => hold_ring(brain, here, sight, ring),
+        _ => hold_ring(brain, here, sight, ring, crowd, flanker),
     }
 }
 
@@ -477,7 +488,14 @@ fn stroke(here: &Here<'_, '_>, sight: &Sight) -> Stroke {
 /// On its ring: hop back to it after a blow (or, backing off, walk out to it facing away), hold its ground inside it
 /// for the beat after a blow and step back out to it after that, walk in from afar to its own place on it, and on it
 /// circle toward that place.
-fn hold_ring(brain: &mut Brain, here: &Here<'_, '_>, sight: &Sight, ring: f64) -> Ask {
+fn hold_ring(
+    brain: &mut Brain,
+    here: &Here<'_, '_>,
+    sight: &Sight,
+    ring: f64,
+    crowd: bool,
+    flanker: Option<FighterId>,
+) -> Ask {
     let tick = here.tick();
     let away = sight.toward + PI;
     // A foe that blocks holds its guard up on the ring while it waits its turn, as a shield-bearer does: raised near the
@@ -512,7 +530,15 @@ fn hold_ring(brain: &mut Brain, here: &Here<'_, '_>, sight: &Sight, ring: f64) -
             return Ask::facing(sight.toward);
         }
         // Waiting inside its ring it steps back out, leaving room for the foes whose turn it is: straight out, or,
-        // backed against a block, toward the nearest place round the ring that is open to it.
+        // backed against a block, toward the nearest place round the ring that is open to it. Waiting only just
+        // inside, slipped round an ally of a crowd on its way, it goes on for its place as on the ring, so it never
+        // turns about.
+        let place = brain.slot.filter(|place| !hidden(*place));
+        if let Some(place) =
+            place.filter(|_| crowd && brain.plan == Plan::Wait && sight.distance >= ring - 2.0 * RING_SLACK)
+        {
+            return round_to(sight, place, ring);
+        }
         let turns = (0..=6).flat_map(|turn| [1.0, -1.0].map(|side| away + side * f64::from(turn) * PI / 6.0));
         let out = turns.into_iter().find(|place| !hidden(*place)).unwrap_or(away);
         return Ask::stepping(out, CIRCLE_PACE, sight.toward);
@@ -534,15 +560,20 @@ fn hold_ring(brain: &mut Brain, here: &Here<'_, '_>, sight: &Sight, ring: f64) -
     // On the ring its place drifts round only as far as its target can still see it: stepped round the ring with
     // no route, a place drifted behind a block would lead it into the block's face.
     let held = brain.slot.filter(|place| !hidden(*place)).unwrap_or(away);
-    let drifted = drift(here, sight, held, ring, brain.flanking);
+    let drifted = drift(here, sight, held, ring, flanker);
     let slot = if hidden(drifted) { held } else { drifted };
     brain.slot = Some(slot);
-    // Round the ring to its place and out or in to the ring's own line, not merely inside its give, the faster the
-    // farther it is from its place: a place drifting on draws it along, rather than by stops and starts.
-    let (round, out) = (wrap(slot - away) * ring, ring - sight.distance);
-    // Far round from its place, as a foe joining the line is, it walks there; near it, it circles slowly.
+    let out = ring - sight.distance;
+    round_to(sight, slot, ring).guarded(guarding || (shield && out.abs() <= RING_SLACK / 2.0))
+}
+
+/// Round the ring to its `place` and out or in to the ring's own line, not merely inside its give, the faster the
+/// farther it is from its place: a place drifting on draws it along, rather than by stops and starts. Far round from
+/// its place, as a foe joining the line is, it walks there; near it, it circles slowly.
+fn round_to(sight: &Sight, place: f64, ring: f64) -> Ask {
+    let away = sight.toward + PI;
+    let (round, out) = (wrap(place - away) * ring, ring - sight.distance);
     let most = if round.abs() > RING_ROOM { 1.0 } else { CIRCLE_PACE };
     let pace = (libm::hypot(round, out) * FOLLOW / TUNING.walk).min(most);
     Ask::stepping(away + libm::atan2(round, out), pace, sight.toward)
-        .guarded(guarding || (shield && out.abs() <= RING_SLACK / 2.0))
 }

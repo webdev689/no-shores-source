@@ -1,19 +1,21 @@
 //! Foes in numbers fight as a group, not a rush: their blows at one target land a beat apart, the first held back by
-//! the beat going first and a shot taking only a beat no blow waits for; while one waits in reach the rest keep to the
+//! the beat going first and a shot taking only a beat no blow waits for, and after each exchange of blows they give
+//! their target a breath, in which none strikes or closes in; while one waits in reach the rest keep to the
 //! ring; the waiting hold a line before their group's side, one foe at a time, a skirmisher before others, working
 //! round to the flank; and only a foe in its place strikes a back turned to it. One foe alone fights at its own pace.
 
 mod common;
 
+use combat::FighterId;
 use combat::fighter::Action;
 use combat::sight::off;
-use common::{ARCHER, BRUTE, CAPTAIN, Room, SKIRMISHER, SWORDSMAN, still};
+use common::{ARCHER, BRUTE, CAPTAIN, Room, SKIRMISHER, SWORDSMAN, standing_still, still};
 use core::f64::consts::{PI, TAU};
 use foes::Board;
 use foes::Director;
 use foes::Rank::Major;
 use foes::brain::Plan;
-use foes::tuning::{BEAT, LINE_ARC};
+use foes::tuning::{BEAT, BREATH, EXCHANGE, LINE_ARC};
 
 const PLAYER: u32 = 1;
 
@@ -55,25 +57,121 @@ fn blows_from_several_foes_at_one_target_land_a_beat_apart() {
 #[test]
 fn of_the_foes_the_beat_holds_back_the_first_held_goes_first() {
     let mut board = Board::default();
-    board.struck(9, 1, 100);
+    board.struck(9, 1, 100, 150);
     assert!(!board.may_strike(9, 2, 120, 72, 50, true), "too soon after foe 1's blow");
     assert!(!board.may_strike(9, 3, 150, 72, 50, true), "and for foe 3");
     assert!(!board.may_strike(9, 3, 180, 72, 51, true), "past the beat, foe 2 was held back first");
     assert!(board.may_strike(9, 2, 180, 72, 51, true), "so foe 2 goes first");
-    board.struck(9, 2, 180);
+    board.struck(9, 2, 180, 150);
     assert!(board.may_strike(9, 2, 200, 72, 52, true), "its own blows never hold a foe back");
     assert!(!board.may_strike(9, 3, 260, 72, 53, true), "foe 2, asking still, keeps its place");
     assert!(board.may_strike(9, 3, 260, 72, 55, true), "one that stops asking loses it");
 }
 
 #[test]
+fn after_an_exchange_no_foe_strikes_or_goes_in_until_a_breath_after_its_last_blow() {
+    let (beat, breath) = (72, 150);
+    let mut board = Board::default();
+    board.struck(9, 1, 100, breath);
+    board.struck(9, 2, 180, breath);
+    assert!(board.go_in(9, 3, 190), "two blows in, foe 3 goes in");
+    board.struck(9, 3, 260, breath);
+    assert!(!board.go_in(9, 4, 270), "the exchange's third begun: no one goes in");
+    assert!(!board.may_strike(9, 3, 420, beat, 405, true), "its own blow holds it back too");
+    assert!(!board.may_strike(9, 4, 430, beat, 409, true), "none begins a blow till a breath after the third lands");
+    assert!(board.may_strike(9, 4, 440, beat, 410, true), "a breath on, the next may");
+    assert!(board.go_in(9, 4, 410), "and goes in");
+}
+
+#[test]
+fn blows_each_a_breath_after_the_last_make_no_exchange() {
+    let (beat, breath) = (72, 150);
+    let mut board = Board::default();
+    // A duel's pace: no breath after three blows each landing a breath or more after the one before.
+    for lands in [100, 250, 400] {
+        board.struck(9, 1, lands, breath);
+    }
+    assert!(board.go_in(9, 2, 401) && board.may_strike(9, 2, 480, beat, 401, true), "no breath at a duel's pace");
+    // Two quick blows, a breath, then two more: the breath between starts the count again.
+    board.struck(9, 2, 480, breath);
+    board.struck(9, 1, 640, breath);
+    board.struck(9, 2, 720, breath);
+    assert!(board.may_strike(9, 1, 800, beat, 650, true), "two since the breath, the third may still come");
+}
+
+#[test]
+fn one_foes_own_blows_make_no_exchange() {
+    let (beat, breath) = (72, 150);
+    let mut board = Board::default();
+    for lands in [100, 180, 260, 340] {
+        board.struck(9, 1, lands, breath);
+    }
+    assert!(board.go_in(9, 1, 341) && board.may_strike(9, 1, 400, beat, 341, true), "alone, it keeps its own pace");
+    board.struck(9, 2, 420, breath);
+    assert!(!board.go_in(9, 3, 421), "joined by another, the exchange closes and its target breathes");
+}
+
+#[test]
+fn a_lone_player_meets_no_more_than_an_exchange_of_blows_without_a_breath() {
+    let breath = u64::from(combat::ticks(BREATH));
+    let mut exchanges = 0;
+    for seed in [2, 5, 9] {
+        let foes = [(SWORDSMAN, -40.0), (BRUTE, 0.0), (SKIRMISHER, 40.0), (ARCHER, 150.0), (ARCHER, -150.0)];
+        let mut room = group(seed, foes::director::REST, &foes);
+        room.run(1800, &mut still(0.0));
+        let mut run = 1;
+        for pair in landings(&room).windows(2) {
+            run = if pair[1].0 < pair[0].0 + breath { run + 1 } else { 1 };
+            assert!(run <= usize::from(EXCHANGE), "seed {seed}: {run} blows without a breath, to {pair:?}");
+            exchanges += usize::from(run == usize::from(EXCHANGE));
+        }
+    }
+    assert!(exchanges >= 3 * 5, "and they fight in exchanges: {exchanges} in three half-minutes");
+}
+
+#[test]
+fn a_player_walking_off_in_a_breath_leaves_the_foes_behind() {
+    let breath = u64::from(combat::ticks(BREATH));
+    let melee = [10, 11, 12];
+    let mut breaths: Vec<(f64, f64)> = Vec::new();
+    for seed in [2, 5, 9] {
+        let mut room = group(seed, foes::director::REST, &[(SWORDSMAN, -40.0), (BRUTE, 0.0), (SKIRMISHER, 40.0)]);
+        let mut began: Option<f64> = None;
+        let mut walking_off = |room: &Room, me: FighterId| {
+            let nearest = melee.iter().min_by(|a, b| room.distance(me, **a).total_cmp(&room.distance(me, **b)));
+            let (nearest, from) = nearest.map(|id| (room.distance(me, *id), room.toward(*id, me))).unwrap();
+            let blows = landings(room);
+            let last = blows.len().checked_sub(usize::from(EXCHANGE)).map(|first| &blows[first..]);
+            // The exchange just closed: its blows each landed within a breath of the one before.
+            let closed = last.is_some_and(|run| run.windows(2).all(|pair| pair[1].0 < pair[0].0 + breath));
+            let breathing = closed && blows.last().is_some_and(|(at, _)| room.tick < at + breath);
+            if breathing {
+                began.get_or_insert(nearest);
+                let mut intent = standing_still(from);
+                intent.controls.forward = 1.0;
+                return intent;
+            }
+            if let Some(start) = began.take() {
+                breaths.push((start, nearest));
+            }
+            standing_still(from + PI)
+        };
+        room.run(1800, &mut walking_off);
+    }
+    assert!(breaths.len() >= 3 * 3, "breaths enough to judge: {}", breaths.len());
+    for (start, end) in &breaths {
+        assert!(end > &(start + 1.0), "walked off in a breath, it gains ground: from {start:.1} m to {end:.1} m");
+    }
+}
+
+#[test]
 fn a_shot_takes_only_a_beat_no_blow_waits_for() {
     let mut board = Board::default();
-    board.struck(9, 1, 100);
+    board.struck(9, 1, 100, 150);
     assert!(!board.may_strike(9, 2, 150, 72, 60, true), "a swordsman waits in reach for the beat");
     assert!(!board.may_strike(9, 4, 190, 72, 61, false), "the shooter yields the beat to it");
     assert!(board.may_strike(9, 2, 180, 72, 61, true));
-    board.struck(9, 2, 180);
+    board.struck(9, 2, 180, 150);
     assert!(board.may_strike(9, 4, 260, 72, 70, false), "with no one waiting, it looses into the next");
     assert!(board.may_strike(9, 2, 400, 72, 71, true), "and takes no place a blow would wait behind");
     assert!(board.go_in(9, 3, 80), "foe 3 goes in to strike next");

@@ -8,6 +8,7 @@ use combat::fighter::Action;
 use common::{Room, SKIRMISHER, SWORDSMAN, still, swinging, watching};
 use core::f64::consts::PI;
 use foes::Rank::Major;
+use foes::tuning::{RING_GAP, WAIT_GAP};
 use foes::{Board, Director};
 
 const PLAYER: u32 = 1;
@@ -49,7 +50,7 @@ fn four_swordsmen(seed: u64) -> Room {
 fn of_four_swordsmen_only_two_fight_at_once_and_the_rest_ring_the_player_and_circle() {
     let mut room = four_swordsmen(3);
     let foes = [10, 11, 12, 13];
-    let ring = 1.8 + 1.5;
+    let ring = 1.8 + RING_GAP + WAIT_GAP;
     let mut most = 0;
     // For each foe, the bearing from the player where its present stretch on the ring began.
     let mut stretches: [Option<f64>; 4] = [None; 4];
@@ -65,7 +66,7 @@ fn of_four_swordsmen_only_two_fight_at_once_and_the_rest_ring_the_player_and_cir
         }
         if tick == 100 {
             let ringed = foes.iter().filter(|id| (room.distance(PLAYER, **id) - ring).abs() <= 0.6).count();
-            assert!(ringed >= 2, "the waiting stand on the ring, 1.5 m outside their reach");
+            assert!(ringed >= 2, "the waiting stand on their ring, 3 m outside their reach");
         }
     }
     assert!(most <= 2, "never more than two at once: {most}");

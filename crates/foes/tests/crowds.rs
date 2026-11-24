@@ -11,10 +11,11 @@ use core::f64::consts::{PI, TAU};
 use foes::Director;
 use foes::Rank::Major;
 use foes::brain::Plan;
-use foes::tuning::{RANK_GAP, RING_GAP, RING_ROOM};
+use foes::tuning::{RANK_GAP, RING_GAP, RING_ROOM, WAIT_GAP};
 
 const PLAYER: u32 = 1;
-const RING: f64 = 1.8 + RING_GAP;
+/// The ring a swordsman waiting its turn stands on.
+const RING: f64 = 1.8 + RING_GAP + WAIT_GAP;
 
 /// A room held cold, so one foe at a time fights the player hand to hand.
 fn cold(seed: u64) -> Room {
@@ -57,7 +58,7 @@ fn a_foe_going_in_behind_an_ally_slips_round_it_rather_than_through_it() {
 
 #[test]
 fn a_waiting_foe_inside_its_ring_steps_back_out_onto_it() {
-    let (mut room, _) = ringed(cold(7), 2.0, &[180.0, 90.0]);
+    let (mut room, _) = ringed(cold(7), RING - 1.3, &[180.0, 90.0]);
     room.run(90, &mut still(0.0));
     let (holder, waiter) = if waiting(&room, 11) { (10, 11) } else { (11, 10) };
     assert!(!waiting(&room, holder) && room.swings(waiter).is_empty(), "one fights, the other waits its turn");
@@ -91,7 +92,8 @@ fn foes_bunched_on_their_ring_spread_round_it() {
 fn past_a_ring_s_room_the_waiting_stand_on_a_ring_farther_out() {
     let degrees: Vec<f64> = (0..12).map(|index| f64::from(index) * 30.0).collect();
     let (mut room, ids) = ringed(cold(9), 6.0, &degrees);
-    room.run(60, &mut still(0.0));
+    // Time to walk round into their line, a third of the ring for some, before they stand.
+    room.run(300, &mut still(0.0));
     let (mut first, mut farther) = (0, 0);
     for _ in 0..300 {
         room.step(&mut still(0.0));

@@ -145,6 +145,6 @@ fn foes_waiting_round_a_player_by_a_block_never_take_hold_of_it_nor_press_into_i
     assert!(all.pressed <= 30, "waiting foes stood pressed into a face: {all:?}");
     // Hidden from their target only on their way round a block to an open place: under 8 in 100 of their ticks.
     assert!(all.hidden * 100 <= all.waiting * 8, "waiting foes stood hidden from their target too long: {all:?}");
-    // And they fight on: eight runs of 30 s land over 170 blows.
-    assert!(all.blows >= 170, "foes struck {} times", all.blows);
+    // And they fight on: eight runs of 30 s land over 120 blows, the player's breaths between exchanges among them.
+    assert!(all.blows >= 120, "foes struck {} times", all.blows);
 }

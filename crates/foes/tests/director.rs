@@ -7,7 +7,7 @@ mod common;
 use common::{Room, still, swinging};
 use core::f64::consts::PI;
 use foes::director::{DEALT_GAIN, KILL_GAIN, REST};
-use foes::tuning::{BEAT, PATIENCE, RING_GAP, SWING_DELAY};
+use foes::tuning::{BEAT, BREATH, PATIENCE, RING_GAP, SWING_DELAY};
 use foes::{Board, Caps, Director, Pressed, Rank};
 
 const PLAYER: u32 = 1;
@@ -106,7 +106,8 @@ fn a_holder_keeps_its_turn_when_the_caps_drop_until_it_hands_it_on() {
 
 #[test]
 fn the_bias_leaves_a_fight_at_rest_as_tuned_and_presses_a_hot_one_by_at_most_three_tenths() {
-    let tuned = Pressed { patience: PATIENCE, swing_delay: SWING_DELAY, ring_gap: RING_GAP, beat: BEAT };
+    let tuned =
+        Pressed { patience: PATIENCE, swing_delay: SWING_DELAY, ring_gap: RING_GAP, beat: BEAT, breath: BREATH };
     for heat in [0.0, 0.25, REST, 0.6] {
         assert_eq!(at(heat).bias(), 0.0);
         assert_eq!(at(heat).pressed(), tuned, "exactly today's numbers at heat {heat}");

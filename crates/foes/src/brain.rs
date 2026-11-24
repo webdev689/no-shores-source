@@ -112,8 +112,6 @@ pub struct Brain {
     /// Its own place on the ring, a bearing from its target: it starts where the foe first stands on the ring, so foes
     /// do not cross each other to reach theirs.
     pub(crate) slot: Option<f64>,
-    /// Whether, waiting, it works round to its target's flank rather than hold the line.
-    pub(crate) flanking: bool,
     /// Its health at the last few samples, oldest first, and when the newest was taken.
     pub(crate) health: [f64; SAMPLES],
     pub(crate) sampled: u64,
@@ -176,7 +174,6 @@ impl Brain {
             backoff_ready: 0,
             fled: false,
             slot: None,
-            flanking: false,
             health: [foe_type.numbers(rank, 1).health; SAMPLES],
             sampled: 0,
             ready_at: None,

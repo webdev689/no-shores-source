@@ -71,10 +71,13 @@ pub const MUFFLED: f64 = 0.5;
 pub const PRESENCE_LOUDNESS: f64 = 0.2;
 pub const PRESENCE_REACH: f64 = 60.0;
 
-/// The ring the waiting stand on: this far outside their reach, with this much give either side. A waiting foe circles
-/// at this share of its walk toward its place on the ring, which drifts this far round a second away from its target's
-/// face, out to FLANK_ARC either side of it: short of the turned back that would open the target to it.
+/// The ring a foe with a turn holds: this far outside its reach, with this much give either side. Those waiting for one
+/// stand WAIT_GAP farther out, a second's walk from going in, so a player fighting a crowd has room to step about it.
+/// A waiting foe circles at this share of its walk toward its place on its ring, which drifts this far round a second
+/// away from its target's face, out to FLANK_ARC either side of it: short of the turned back that would open the
+/// target to it.
 pub const RING_GAP: f64 = 1.5;
+pub const WAIT_GAP: f64 = 1.5;
 pub const RING_SLACK: f64 = 0.6;
 pub const CIRCLE_PACE: f64 = 0.4;
 pub const SLOT_TURN: f64 = 0.4;
@@ -255,6 +258,11 @@ pub const DRAW_THUNDERLOCK: f64 = 1.5;
 /// A crowd's pace: a foe begins a blow at a target only if it lands this long after the latest another foe has begun
 /// there, so blows at one target come one at a time and a player can answer each.
 pub const BEAT: f64 = 1.2;
+/// An exchange: this many blows at one target from more than one foe, each landing within a breath of the one before.
+/// After it no foe begins a blow there, nor goes in to strike, until a breath after its last lands, so a player
+/// fighting a crowd alone has a moment to move, turn or drink. One foe alone makes none, and fights at its own pace.
+pub const EXCHANGE: u8 = 3;
+pub const BREATH: f64 = 2.0;
 /// The waiting hold a line before the group's side of their target, out to this either side of its middle, the
 /// rest on rings farther out; one foe at a time, the best suited, works round to the target's flank instead. The
 /// group's side is where its foes stand round the target, once the mean of their bearings leans this far one way;

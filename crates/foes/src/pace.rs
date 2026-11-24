@@ -78,5 +78,5 @@ pub fn note(brain: &Brain, here: &Here<'_, '_>, board: &mut Board, intent: &Inte
     } else {
         return;
     };
-    board.struck(target, here.me, lands);
+    board.struck(target, here.me, lands, Here::ticks(here.world.director.pressed().breath));
 }

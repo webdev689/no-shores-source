@@ -3,7 +3,7 @@
 //! back to its rest. The heat sets how many foes a target fights at once, and, in a hot fight, an aggression bias
 //! that makes the waiting foes go in sooner and stand closer.
 
-use crate::tuning::{BEAT, MELEE_TOKENS, PATIENCE, RANGED_TOKENS, RING_GAP, SWING_DELAY};
+use crate::tuning::{BEAT, BREATH, MELEE_TOKENS, PATIENCE, RANGED_TOKENS, RING_GAP, SWING_DELAY};
 use movement::TICK_SECONDS;
 
 /// Where the heat settles between beats, in the mid band, so a fight at rest is fought as it always was.
@@ -34,14 +34,15 @@ pub const BANDS: [(f64, Caps); 4] = [
     (0.85, Caps { melee: 3, ranged: 3 }),
 ];
 
-/// What a waiting foe turns on, shortened by the bias's share: its patience, its swing delay and the beat between
-/// blows at one target in seconds, and its ring's gap in metres.
+/// What a waiting foe turns on, shortened by the bias's share: its patience, its swing delay, the beat between blows
+/// at one target and the breath after an exchange of them in seconds, and its ring's gap in metres.
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub struct Pressed {
     pub patience: f64,
     pub swing_delay: (f64, f64),
     pub ring_gap: f64,
     pub beat: f64,
+    pub breath: f64,
 }
 
 /// The room's heat, between 0 and 1.
@@ -103,6 +104,7 @@ impl Director {
             swing_delay: (SWING_DELAY.0 * share, SWING_DELAY.1 * share),
             ring_gap: RING_GAP * share,
             beat: BEAT * share,
+            breath: BREATH * share,
         }
     }
 }

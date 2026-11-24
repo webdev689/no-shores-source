@@ -135,10 +135,12 @@ fn a_raging_foe_goes_in_over_the_turns_cap_never_backs_off_and_answers_no_blow()
         intents.iter().filter(|(tick, intent)| *tick > raged && (intent.combat.guard || intent.combat.dodge));
     assert_eq!(answered.count(), 0, "a raging foe answers no blow");
     assert_ne!(room.brain(other).plan(), Plan::Backoff);
-    // Left be, it keeps striking, its blows a beat from the other's.
+    // Left be, it keeps striking, its blows a beat from the other's and none in its target's breaths: swings and
+    // telegraphed blows alike.
     let calm = room.tick;
     room.run(600, &mut watching(other));
-    assert!(swings_between(&room, other, calm, room.tick) >= 2, "and it keeps striking");
+    let told = room.orders(other).iter().filter(|(tick, _)| (calm..room.tick).contains(tick)).count();
+    assert!(swings_between(&room, other, calm, room.tick) + told >= 2, "and it keeps striking");
 }
 
 #[test]

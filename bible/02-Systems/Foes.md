@@ -31,6 +31,9 @@ code:
   - crates/foes/src/pace.rs#may
   - crates/foes/src/board.rs#go_in
   - crates/foes/src/tuning.rs#BEAT
+  - crates/foes/src/tuning.rs#BREATH
+  - crates/foes/src/tuning.rs#WAIT_GAP
+  - crates/foes/src/board.rs#breathing
   - crates/foes/src/react.rs#defend
   - crates/foes/src/tell.rs#throw
   - crates/foes/src/shoot.rs#ranged
@@ -213,9 +216,10 @@ strikes ([[Public Events]]).
   until it has struck: it walks in to its reach, squares up within 22.5 degrees, waits 0.3 to 0.9 s and swings once;
   then it hops back for at most 0.4 s, holds its ground 0.8 to 1.6 s, and hands its turn on: the foe that has waited
   longest goes next, and one that has waited 6 s goes in, one over the count at most, so a crowd's patience never
-  piles it onto its target. A target who turns its back (more than 110 degrees) on a waiting foe in its place near the
-  ring (the flanker, or one in the line), or walks in on one inside the ring's near edge, is open to it without a
-  turn, but to one such foe at a time. A foe walked in on fights back where it stands, though another goes in. One
+  piles it onto its target. A target who turns its back (more than 110 degrees) on a waiting foe in its place near its
+  ring (the flanker, or one in the line), or walks in on one inside the near edge of the ring a turn holds, is open to
+  it without a turn, but to one such foe at a time, and never while it breathes (below). A foe walked in on fights
+  back where it stands, though another goes in. One
   open to a turned back keeps to the ring like a holder while another goes in, then goes in. Either goes on fighting
   while the target stays that close. A back walking away is no such opening: the one whose turn it is runs after it.
   A foe that blocks holds its guard up on the ring while it waits its turn, as a shield-bearer does: it raises it
@@ -228,9 +232,20 @@ strikes ([[Public Events]]).
   the first held strikes first. A shooter looses only into a beat no foe ready in reach waits for, so its shots fill
   the gap while the next goes in. A foe's own last blow never holds back its next, and its riposte and its counter
   are never held back, so one foe alone fights at its own pace.
-- **The line.** The waiting stand on a ring 1.5 m outside their reach, with 0.6 m of give, in a line before their
-  group's side of the target: the bearing where the foes fighting it hand to hand stand round it, once the mean of
-  their bearings leans a quarter of the way one way, else the way the target faces. A place more than 75 degrees off
+- **The breath.** Blows at one target come in exchanges: three, from more than one foe, each landing within a breath
+  (2 s) of the one before. After an exchange its target breathes until a breath after the exchange's last blow lands: no
+  foe begins a swing, a telegraphed blow or a shot there, none goes in to strike, and nothing is open to strike without
+  a turn. A foe with a turn stands back on the ring the waiting stand on, and one its target walks in on steps back from
+  it, so a player fighting a crowd alone has a moment to move, turn or drink. A riposte or a counter a foe earned, and a
+  chained or feinted blow, still come: they answer the player, or finish a blow begun. A blow a breath or more after the
+  one before begins an exchange afresh. One foe alone makes none, and fights at its own pace
+  ([[Foes in a Crowd Give a Breath After Each Exchange, and the Waiting Stand Farther Out]]).
+- **The line.** A foe with a turn holds a ring 1.5 m outside its reach, with 0.6 m of give. While another foe fights
+  its target, the waiting stand on one 1.5 m farther out, 3 m outside their reach, a second's walk from going in, so
+  a player has room to step about inside it; a foe alone at its target keeps the nearer ring. They wait in a line
+  before their group's side of the target: the bearing where the foes fighting it hand to hand stand round it, the
+  flanker left out as it stands off the line on purpose, once the mean of their bearings leans a quarter of the way
+  one way, else the way the target faces. A place more than 75 degrees off
   the line's middle moves to the line's nearer end, and the foe walks there while more than 2.5 m round, else circles
   at up to 0.4 of a walk, three times its distance from its place a second, so a place drifting on draws it along
   without a stop; in the line a place closes up toward the middle, stopping 2.5 m short of the next foe that way. So a
@@ -238,21 +253,23 @@ strikes ([[Public Events]]).
 - **The flanker.** One waiting foe at a time **flanks** instead: a skirmisher before any other, a foe with no shield
   before none, and a shield-bearer never, as it holds the line. Its place drifts 0.4 radians a second away from where
   the target faces, past the line, out to 100 degrees either side of its face, and it keeps flanking through its own
-  turn. A foe alone at its target keeps no line: its place flanks the same way, stopping 2.5 m short of the next foe on
-  the ring (dead ahead, it takes a side by its number).
-- **Room on the ring.** The waiting keep apart. The nearest ring holds as many as stand 2.5 m apart along the line;
-  the rest, in the order they wait, stand on a ring 2.5 m farther out, holding as many as fit along its own line, and
-  so on, so the next to go in stand nearest; the flanker stands on the nearest. Nearer than 2.5 m to the next on its
-  ring, a foe's place moves toward the middle of the room between its neighbours, so a crowded ring evens out. A
-  waiting foe stands on its ring's own line, not merely within its give: inside the ring once it has held its ground
-  after its blow, it steps back out at 0.4 of a walk. From afar it makes for its own place on the ring rather than for
-  its target, so the waiting come in spread round it. A place is no place to wait when a block stands between its
-  target's chest and it, as beyond a wall the target stands against, or when a block too high to step onto stands
-  within a body's width of it. Making for such a place from afar, or standing where its own place on the ring would
-  be one, it makes for its target by the room's routes instead, and comes onto the ring on its own side. On the ring
-  its place moves round only into places open to it, so it is never led into a block's face. Stepping back out from
-  inside the ring with a block behind it, it steps toward the nearest place round the ring, by twelfths of a turn,
-  that is open to it.
+  turn, no other taking the flank meanwhile unless it is better suited. A foe alone at its target keeps no line: its
+  place flanks the same way, stopping 2.5 m short of the next foe on the ring (dead ahead, it takes a side by its
+  number).
+- **Room on the ring.** The waiting keep apart. The nearest ring holds as many as stand 2.5 m apart along the line; the
+  rest, in the order they wait, stand on a ring 2.5 m farther out, holding as many as fit along its own line, and so on,
+  so the next to go in stand nearest; the flanker stands on the nearest. Nearer than 2.5 m to the next on its ring, a
+  foe's place moves toward the middle of the room between its neighbours, so a crowded ring evens out. A waiting foe
+  stands on its ring's own line, not merely within its give: inside the ring once it has held its ground after its blow,
+  it steps back out at 0.4 of a walk; only just inside, slipped round an ally of a crowd on its way, it goes on for its
+  place as on the ring, so it never turns about at the ring's edge. From afar it makes for its own place on the ring
+  rather than for its target, so the waiting come in spread round it. A place is no place to wait when a block stands
+  between its target's chest and it, as beyond a wall the target stands against, or when a block too high to step onto
+  stands within a body's width of it. Making for such a place from afar, or standing where its own place on the ring
+  would be one, it makes for its target by the room's routes instead, and comes onto the ring on its own side. On the
+  ring its place moves round only into places open to it, so it is never led into a block's face. Stepping back out from
+  inside the ring with a block behind it, it steps toward the nearest place round the ring, by twelfths of a turn, that
+  is open to it.
 - **The director.** The room keeps one heat from 0 to 1 for its fight, at rest 0.35. It rises 0.0022 for each point of
   health the players' side (players and their companions) takes from foes, and of what a foe's shield takes, counted
   as combat is tuned for (divided by what the foe's level grows its health by, so a matched player heats the fight
@@ -260,8 +277,8 @@ strikes ([[Public Events]]).
   a player or companion loses, counted before the foes' `FOE_HARM` (three times as fast), and eases back to rest with
   a time constant of 6 s. By its heat, the turns: below 0.25 one hand to
   hand and one shooting, from 0.25 two and two, from 0.6 three and two, from 0.85 three and three; a holder keeps its
-  turn when they drop. Above 0.6 a bias rising to 0.3 at full heat shortens patience, the swing delay, the beat and
-  the ring's gap by its share. A dominating player meets more foes at once; one being beaten, fewer.
+  turn when they drop. Above 0.6 a bias rising to 0.3 at full heat shortens patience, the swing delay, the beat, the
+  breath and the ring's gap by its share. A dominating player meets more foes at once; one being beaten, fewer.
 - **Swings.** A chop into a raised guard, a sweep when two or more stand in reach before it, a thrust at the edge of
   reach, otherwise a slash, chop or thrust by chance. Its wait before a swing begins in reach and runs on while its
   target sways out to 0.3 m past it. A foe that guards keeps 30 stamina for its guard; short of a swing and that, it

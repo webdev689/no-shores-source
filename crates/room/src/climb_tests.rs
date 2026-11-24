@@ -244,6 +244,6 @@ fn foes_crowding_a_player_at_the_foot_of_a_tall_wall_never_take_hold_of_it() {
         }
     }
     assert_eq!(grabs, 0, "foes took hold of the wall {grabs} times");
-    // And they fight on: four runs of 30 s land over a hundred blows.
-    assert!(blows >= 100, "foes struck {blows} times");
+    // And they fight on: four runs of 30 s land over 75 blows, the player's breaths between exchanges among them.
+    assert!(blows >= 75, "foes struck {blows} times");
 }

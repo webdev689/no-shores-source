@@ -9,6 +9,7 @@ use crate::brain::Brain;
 use crate::roles::Role;
 use crate::senses::{Here, Sight};
 use crate::tuning::{FLANK_ARC, LINE_ARC, LINE_LEAN, RANK_GAP, RING_ROOM, RING_SLACK, SLOT_TURN};
+use combat::FighterId;
 use combat::arms::OffHand;
 use combat::sight::{apart, bearing, off, wrap};
 
@@ -23,8 +24,7 @@ pub fn ring_of(brain: &mut Brain, here: &Here<'_, '_>, board: &mut Board, sight:
         _ if here.fighter.arms.off_hand == OffHand::Shield => None,
         _ => Some(1),
     };
-    brain.flanking = board.flank(sight.id, here.me, suits);
-    if brain.flanking {
+    if board.flank(sight.id, here.me, suits) {
         return ring;
     }
     let (mut ring, mut before, line) = (ring, 0, board.in_line(sight.id, here.me));
@@ -38,20 +38,26 @@ pub fn ring_of(brain: &mut Brain, here: &Here<'_, '_>, board: &mut Board, sight:
 }
 
 /// The middle of the line, a bearing from the target: the group's side, where the foes fighting it hand to hand stand
-/// round it, once the mean of their bearings leans LINE_LEAN one way; short of that, the way the target faces. None
-/// for a foe fighting its target alone, which keeps no line.
-fn front(here: &Here<'_, '_>, sight: &Sight) -> Option<f64> {
+/// round it, once the mean of their bearings leans LINE_LEAN one way; short of that, the way the target faces. The
+/// `flanker`, standing off the line on purpose, is left out, or it would draw the line round after it. None for a foe
+/// fighting its target alone, which keeps no line.
+fn front(here: &Here<'_, '_>, sight: &Sight, flanker: Option<FighterId>) -> Option<f64> {
     let centre = [sight.spot[0], sight.spot[1]];
-    let toward = bearing(centre, here.at());
-    let (mut east, mut south, mut count) = (libm::sin(toward), -libm::cos(toward), 1.0);
-    for (id, other) in here.world.fighters {
-        if !here.ally(*id, other) || other.target != Some(sight.id) || other.arms.ranged.is_some() {
-            continue;
+    let (mut east, mut south, mut count, mut fighting) = (0.0, 0.0, 0.0, 0);
+    let mut stands = |id: FighterId, at: [f64; 2]| {
+        fighting += 1;
+        if Some(id) != flanker {
+            let toward = bearing(centre, at);
+            (east, south, count) = (east + libm::sin(toward), south - libm::cos(toward), count + 1.0);
         }
-        let toward = bearing(centre, [other.body.x, other.body.y]);
-        (east, south, count) = (east + libm::sin(toward), south - libm::cos(toward), count + 1.0);
+    };
+    stands(here.me, here.at());
+    for (id, other) in here.world.fighters {
+        if here.ally(*id, other) && other.target == Some(sight.id) && other.arms.ranged.is_none() {
+            stands(*id, [other.body.x, other.body.y]);
+        }
     }
-    if count < 2.0 {
+    if fighting < 2 {
         return None;
     }
     if libm::sqrt(east * east + south * south) < LINE_LEAN * count {
@@ -60,12 +66,12 @@ fn front(here: &Here<'_, '_>, sight: &Sight) -> Option<f64> {
     Some(bearing([0.0, 0.0], [east, south]))
 }
 
-/// Whether a foe stands where its group means it to: a flanker anywhere, any other within LINE_ARC of the line's
+/// Whether a foe stands where its group means it to: the `flanker` anywhere, any other within LINE_ARC of the line's
 /// middle.
 #[must_use]
-pub fn in_place(here: &Here<'_, '_>, sight: &Sight, flanking: bool) -> bool {
+pub fn in_place(here: &Here<'_, '_>, sight: &Sight, flanker: Option<FighterId>) -> bool {
     let toward = bearing([sight.spot[0], sight.spot[1]], here.at());
-    flanking || front(here, sight).is_none_or(|front| off(toward, front) <= LINE_ARC)
+    flanker == Some(here.me) || front(here, sight, flanker).is_none_or(|front| off(toward, front) <= LINE_ARC)
 }
 
 /// Its place on the ring this tick, a bearing from its target, drifted on from `place` on a ring `ring` metres round.
@@ -75,13 +81,13 @@ pub fn in_place(here: &Here<'_, '_>, sight: &Sight, flanking: bool) -> bool {
 /// toward the line's middle, RING_ROOM short of the next. Alone at its target, within FLANK_ARC of its target's face it
 /// drifts away from the face up to RING_ROOM short of the next.
 #[must_use]
-pub fn drift(here: &Here<'_, '_>, sight: &Sight, place: f64, ring: f64, flanking: bool) -> f64 {
+pub fn drift(here: &Here<'_, '_>, sight: &Sight, place: f64, ring: f64, flanker: Option<FighterId>) -> f64 {
     let step = SLOT_TURN / 60.0;
     let from_face = wrap(place - sight.fighter.aim);
-    if flanking {
+    if flanker == Some(here.me) {
         return if from_face.abs() < FLANK_ARC { wrap(place + here.way_round(from_face) * step) } else { place };
     }
-    let line = front(here, sight);
+    let line = front(here, sight, flanker);
     if let Some(front) = line {
         let from_front = wrap(place - front);
         if from_front.abs() > LINE_ARC {

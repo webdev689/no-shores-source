@@ -167,6 +167,30 @@ each part works is in its system note.
   pictured live (see Next); the shore's plain clothes (its key beat does not advance headless; tested); anything on a
   real GPU or played by hand. Known and left: the tour's keepers read small behind their counters (each stall is
   framed whole); a rollback past this round loses a new character's welcome (Gear).
+- **A foe's plain swing at seven eighths of its time** (#190), merged on the owner's yes, after the owner's "We
+  recently adjusted parry timing and actually made it harder where I wanted to make it slighty easier"
+  ([[A Foe's Plain Swing Takes Seven Eighths of Its Time]]). The longer parry window (15 ticks) forgave only an early
+  press; the swings made a quarter faster had sped foes' swings too, so a foe's sword blow landed 0.3 s after its
+  swing began. Now 0.35 s (21 ticks, `FOE_SWING_PACE`); a player's and their companions' swings as they were, and the
+  foes' plan of when a blow lands follows (`Fighter::swing_ticks`). The scripted runs moved both ways: the rules' pair
+  holds the heroic raid again, the dev page's bots now lose the plain raid's stores in its third wave, and the road's
+  test player, facing north while foes struck from its sides, fell before a kill (it now turns to the nearest foe).
+  A lone player is felled about as fast as before (`measure_blows`). Tested offline; not played.
+- **Revives, respawns near the fall or at a checkpoint, and logging back in where the player left** (#184), merged on
+  the owner's yes. The owner's three asks ([[Fallen Players Are Revived as in Destiny]],
+  [[Activities Keep Checkpoints, and Patrol Zones Respawn the Player Near Where They Fell]],
+  [[A Player Logs Back In Where They Left the Overworld or a Social Space]]), built on "take autonomy", every call in
+  [[Revives, Respawns and Relogs as Claude Shapes Them]] with the Destiny research behind it ([[Revives]], [[Accounts]],
+  "Where a player logs back in"). A fallen player lies until an ally holds Use 2 s beside them or they press Respawn
+  after 4 s; a respawn stands them at the activity's checkpoint, near the fall in a patrol zone (43 m at most on
+  Saltmere's three zones, where the landing stood up to 1.5 km off), else at a spawn; the Court's cells while its Boss
+  stands and an Abyss run with no revive left are darkness zones; a company all down while the Court's Boss stands falls
+  back to its checkpoint. Only a dungeon run holds the ground its bands' falls won. The character keeps its last sea or
+  social-space place, `/v1/me` says it, and the page resumes there after the title, the social room standing the player
+  where they left only on that `?relog=1` join (offline from the browser, the spot across but not its height). Tested
+  offline: the full check at the PR's head (the commit named there), the rules' tests on Saltmere's real zones, the
+  agreement runs natively and in WebAssembly. Not yet: played by hand, two players reviving in a deployed room, a real
+  GPU. For the owner: [[Open Questions]], "Revives, respawns and relogs".
 - **Not yet seen or heard.** Sessions test offline and picture headless. Headless Chromium has lost the game's WebGPU
   device about 2 s in when other jobs shared the cores; on an idle container at b81f0c40 the title and the social
   space kept it 80 s. SwiftShader is too slow to show the world, so these wait on a real GPU, an ear or a hand:
@@ -192,6 +216,19 @@ each part works is in its system note.
 
 The decisions in [[Open Questions]] are not repeated here.
 
+- **Foes in a crowd give a breath after each exchange, and the waiting stand farther out**, a draft pull request for
+  the owner's yes, on the owner's note that "constant enemy chasing and pressure" overwhelms a solo player and their
+  "Lets do that. Take autonomy and develop this in full"
+  ([[Foes in a Crowd Give a Breath After Each Exchange, and the Waiting Stand Farther Out]], [[Foes]], "The breath").
+  After three blows from more than one foe, each within 2 s of the one before, no foe strikes, goes in or takes an
+  opening for 2 s, and the one with the turn stands back; the waiting stand 3 m outside their reach while another foe
+  fights the same target; a duel is unchanged. Two faults the breath exposed are fixed: the flanker drew the line's
+  middle round after it (on main a foe of a four-foe group stood behind a still player about a quarter of the time),
+  and the board dropped the flanker as it took its turn. Measured offline with a scratch probe (the pull request has
+  the table): against three, blows a minute 36 to 31 and time in 2 s lulls 38% to 61%; against six, 44 to 35 and 14%
+  to 47%. Not yet played by hand. Left for the owner: whether a fight should wake a second group less (a foe's alert
+  shout reaches any ally within 12 m), and the director's direction (a kill still raises the heat, so a dominating
+  player meets more foes, with shorter breaths).
 - **Guilds** (#179), merged on the owner's "Merge and deploy when ready", which deploys the page and the rooms and
   applies five migrations. The owner asked for guild names and banners with the tag on nameplates and in the social
   menu, descriptions, bounties and levelling, and outposts on any island for a cost whose structures give guild buffs,
@@ -213,30 +250,6 @@ The decisions in [[Open Questions]] are not repeated here.
   who moved it; the banner cloth takes no sky light, so it reads pale at night.
 - **The Discord bot**: porting DFO Online's unmerged bot work (#1662 to #1680 there, reverted by #1682) and redesigning
   it around No Shores, which the owner raised and set aside: "Lets come back to this later."
-- **A foe's plain swing at seven eighths of its time**, for the owner's yes to merge, on the owner's "We recently
-  adjusted parry timing and actually made it harder where I wanted to make it slighty easier"
-  ([[A Foe's Plain Swing Takes Seven Eighths of Its Time]]). The longer parry window (15 ticks) forgave only an early
-  press; the swings made a quarter faster had sped foes' swings too, so a foe's sword blow landed 0.3 s after its
-  swing began. Now 0.35 s (21 ticks, `FOE_SWING_PACE`); a player's and their companions' swings as they were, and the
-  foes' plan of when a blow lands follows (`Fighter::swing_ticks`). The scripted runs moved both ways: the rules' pair
-  holds the heroic raid again, the dev page's bots now lose the plain raid's stores in its third wave, and the road's
-  test player, facing north while foes struck from its sides, fell before a kill (it now turns to the nearest foe).
-  A lone player is felled about as fast as before (`measure_blows`). Tested offline; not played.
-- **Revives, respawns near the fall or at a checkpoint, and logging back in where the player left** (#184, a draft for
-  the owner's yes). The owner's three asks ([[Fallen Players Are Revived as in Destiny]],
-  [[Activities Keep Checkpoints, and Patrol Zones Respawn the Player Near Where They Fell]],
-  [[A Player Logs Back In Where They Left the Overworld or a Social Space]]), built on "take autonomy", every call in
-  [[Revives, Respawns and Relogs as Claude Shapes Them]] with the Destiny research behind it ([[Revives]], [[Accounts]],
-  "Where a player logs back in"). A fallen player lies until an ally holds Use 2 s beside them or they press Respawn
-  after 4 s; a respawn stands them at the activity's checkpoint, near the fall in a patrol zone (43 m at most on
-  Saltmere's three zones, where the landing stood up to 1.5 km off), else at a spawn; the Court's cells while its Boss
-  stands and an Abyss run with no revive left are darkness zones; a company all down while the Court's Boss stands falls
-  back to its checkpoint. Only a dungeon run holds the ground its bands' falls won. The character keeps its last sea or
-  social-space place, `/v1/me` says it, and the page resumes there after the title, the social room standing the player
-  where they left only on that `?relog=1` join (offline from the browser, the spot across but not its height). Tested
-  offline: the full check at the PR's head (the commit named there), the rules' tests on Saltmere's real zones, the
-  agreement runs natively and in WebAssembly. Not yet: played by hand, two players reviving in a deployed room, a real
-  GPU. For the owner: [[Open Questions]], "Revives, respawns and relogs".
 - **The playtest's seven notes** (#185, #187, #188), merged on the owner's "Merge and deploy when ready", which
   deploys the page and the rooms. The owner's notes, and answers where asked, are in three decisions, Claude's calls
   in their tables: [[The Harbourmaster Stands in the Market, Rain Spares the Trees, and Patrol Nodes Always Stand]]

@@ -28,7 +28,7 @@ pub(crate) struct Crowd {
     pub overlapping: f64,
     /// The share of swings begun with an ally's body across the line to the target, nearer than it.
     pub through_ally: f64,
-    /// Swings begun a minute.
+    /// Swings begun a minute outside the player's breaths (`Board::breathing`), when no foe may begin one.
     pub swings: f64,
     /// The melee turns out, on average and at most.
     pub turns: f64,
@@ -120,7 +120,7 @@ fn crowd_run(on: Ground, count: usize, heat: f64, walking: bool, run: u32) -> Cr
         .collect();
     let ticks = SECONDS * 60;
     let mut measured = Crowd { closest: f64::INFINITY, ..Crowd::default() };
-    let (mut samples, mut swings, mut through) = (0_u32, 0_u32, 0_u32);
+    let (mut samples, mut swings, mut through, mut open) = (0_u32, 0_u32, 0_u32, 0_u32);
     let mut swinging: BTreeMap<FighterId, bool> = BTreeMap::new();
     for sequence in 1..=ticks {
         room.director.heat = heat;
@@ -151,6 +151,7 @@ fn crowd_run(on: Ground, count: usize, heat: f64, walking: bool, run: u32) -> Cr
                 through += u32::from(blocked);
             }
         }
+        open += u32::from(counted && !room.board.breathing(player, room.clock()));
         if !counted {
             continue;
         }
@@ -196,7 +197,7 @@ fn crowd_run(on: Ground, count: usize, heat: f64, walking: bool, run: u32) -> Cr
     measured.turns /= samples;
     measured.inside_ring /= samples;
     measured.through_ally = f64::from(through) / f64::from(swings.max(1));
-    measured.swings = f64::from(swings) / (f64::from(SECONDS) * 2.0 / 3.0) * 60.0;
+    measured.swings = f64::from(swings) / f64::from(open.max(1)) * 3600.0;
     measured
 }
 
