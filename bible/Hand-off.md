@@ -234,9 +234,9 @@ The decisions in [[Open Questions]] are not repeated here.
   who moved it; the banner cloth takes no sky light, so it reads pale at night.
 - **The Discord bot**: porting DFO Online's unmerged bot work (#1662 to #1680 there, reverted by #1682) and redesigning
   it around No Shores, which the owner raised and set aside: "Lets come back to this later."
-- **Every objective has a waypoint on the compass, on land and at sea**, for the owner's yes to merge, on the owner's
-  "for any and all objectives we need to utilize waypoints utilizing our compass with land and sea, I dont want players
-  to feel lost" and their four answers ([[Every Objective Has a Waypoint on the Compass, on Land and at Sea]]; Claude's
+- **Every objective has a waypoint on the compass, on land and at sea** (#193, merged on the owner's "Merge and
+  deploy", which deploys the page and the rooms), on the owner's "for any and all objectives we need to utilize
+  waypoints utilizing our compass with land and sea, I dont want players to feel lost" and their five answers ([[Every Objective Has a Waypoint on the Compass, on Land and at Sea]]; Claude's
   calls in [[Waypoints as Claude Builds Them]]). A playtester on "Tail a collector" did not know what to do: the step
   works (its walk on the baked Saltgrass Downs is tested) but its mark stood only inside Saltgrass Downs and its words
   name no place. Now the page points step by step (`client/src/game/quests/waypoint.ts`): in the goal's zone at the
@@ -466,9 +466,8 @@ The decisions in [[Open Questions]] are not repeated here.
     this container cannot fetch, before the repo checks: run `cargo xtask repo` beside it.
 - **Open pull requests**, for the owner's yes once their checks pass: #162 (the game's words out to Type and back; it
   conflicts with `main` in `Decisions.md`) and #159 (the rooms' worker tests wait for what they check; it conflicts
-  with `main` in `roomThread.test.ts`). Drafts:
-  #169 (the owner's gear calls), #178 (the balance and economy pass), #179 (guilds), #93 (the toolkit's first
-  review) and #114 (the gear message carries the pledge once).
+  with `main` in `roomThread.test.ts`). Drafts: #93 (the toolkit's first review) and #114 (the gear message carries
+  the pledge once).
 - **Open points from merged work**, each the owner's to say:
   - #158 (the prologue's waking, scenes and arena, one loading screen, foes that give up only when far, feet on the
     city's ground; [[One Loading Screen Covers Every Trip Until the Place Is Ready]] and the decisions it names): the
