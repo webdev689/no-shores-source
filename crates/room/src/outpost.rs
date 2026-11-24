@@ -10,11 +10,11 @@ use crate::{PlayerId, Room};
 use gear::Refusal;
 use gear::character::{Materials, STOCK_MOST};
 use gear::ship::materials::ShipMaterial;
-use std::collections::BTreeMap;
+use std::collections::{BTreeMap, BTreeSet};
 
 /// An ask's answer while its errand is with the accounts: the player is answered once they answer.
 pub const PENDING: u8 = u8::MAX;
-/// How often a room reads its plot again on its players' word, ticks: once a second.
+/// How often a room reads its plot again on its players' word, ticks: once a second, a word sooner read once it has.
 const CHANGED_EVERY_TICKS: u64 = 60;
 
 /// What a player asks at their guild's outpost, as the page sends it: Aurem put into the treasury; a material
@@ -72,8 +72,9 @@ pub struct Errand {
 
 /// A guild's outpost as its room holds it: the guild's key, its muster ground, how many plots the host has stood, the
 /// errands not yet taken and those with the accounts, the answers that came after their player left (by account, given
-/// at its next claim here), when its plot was last read again on a player's word, and the War Horn's foe; and the foot
-/// of its Delve Gate's steps and the way out from it, where one stands.
+/// at its next claim here), when its plot was last read again on a player's word and who asked again since, the players
+/// leaving while their errands settle, and the War Horn's foe; and the foot of its Delve Gate's steps and the way out
+/// from it, where one stands.
 #[derive(Debug, Default)]
 pub(crate) struct Outpost {
     pub key: String,
@@ -85,6 +86,8 @@ pub(crate) struct Outpost {
     out: BTreeMap<u32, Errand>,
     owed: BTreeMap<String, Vec<(What, Option<i64>)>>,
     changed_at: Option<u64>,
+    changed_late: Option<(PlayerId, String)>,
+    parting: BTreeSet<PlayerId>,
     pub boss: crate::outpost_boss::HornFoe,
 }
 
@@ -208,6 +211,7 @@ impl Room {
             (OutpostAsk::Horn, _) => What::Horn,
             (OutpostAsk::Changed, _) => {
                 if outpost.changed_at.is_some_and(|at| clock < at + CHANGED_EVERY_TICKS) {
+                    outpost.changed_late = Some((player, account));
                     return 0;
                 }
                 outpost.changed_at = Some(clock);
@@ -222,9 +226,17 @@ impl Room {
         if what == What::Changed { 0 } else { PENDING }
     }
 
-    /// The errands held for the host since it last took them; each but a plot to read again waits on its answer.
+    /// The errands held for the host since it last took them; each but a plot to read again waits on its answer. A
+    /// plot asked to be read again too soon after the last is held for the host once the second has passed.
     pub fn outpost_errands(&mut self) -> Vec<Errand> {
+        let clock = self.clock;
         let Some(outpost) = self.outpost.as_mut() else { return Vec::new() };
+        let due = outpost.changed_at.is_none_or(|at| clock >= at + CHANGED_EVERY_TICKS);
+        if due && let Some((player, account)) = outpost.changed_late.take() {
+            outpost.changed_at = Some(clock);
+            outpost.next = outpost.next.wrapping_add(1);
+            outpost.waiting.push(Errand { id: outpost.next, player, account, what: What::Changed });
+        }
         let taken = std::mem::take(&mut outpost.waiting);
         for errand in taken.iter().filter(|errand| errand.what != What::Changed) {
             outpost.out.insert(errand.id, errand.clone());
@@ -233,8 +245,8 @@ impl Room {
     }
 
     /// The accounts' answer to an errand: how many they moved, used or gave, or the horn's tier (0 sounded this week,
-    /// -1 not by this player, -2 no horn stands); none when they could not be reached, when the errand is given back
-    /// whole. The room gives back what was not moved or used, gives what was given, and answers the player; one who
+    /// -1 not by this player, -2 no horn stands, -3 past the accounts' limit on asks); none when they could not be
+    /// reached, when the errand is given back whole. The room gives back what was not moved or used, gives what was given, and answers the player; one who
     /// left is given it at their account's next claim here (`outpost_owed`). False for no such errand.
     pub fn outpost_answered(&mut self, id: u32, answer: Option<i64>) -> bool {
         let Some(outpost) = self.outpost.as_mut() else { return false };
@@ -255,6 +267,33 @@ impl Room {
         found.answered = found.answered.wrapping_add(1);
         found.gear_changed = true;
         true
+    }
+
+    /// A player leaving this room while their errands settle (`outpostHost.ts` `settled`): the same account joining
+    /// again meanwhile takes their account over (`Room::own`), so each answer goes to the player it is now. False in a
+    /// room that is no outpost.
+    pub fn outpost_parting(&mut self, player: PlayerId) -> bool {
+        let present: Vec<PlayerId> = self.players.keys().copied().collect();
+        let Some(outpost) = self.outpost.as_mut() else { return false };
+        outpost.parting.retain(|kept| present.contains(kept));
+        outpost.parting.insert(player);
+        true
+    }
+
+    /// Whether another player in the room holds `owner`'s account; one leaving an outpost's room gives it up to
+    /// `player` instead.
+    pub(crate) fn owned_elsewhere(&mut self, player: PlayerId, owner: &str) -> bool {
+        let parting = self.outpost.as_ref().map(|outpost| outpost.parting.clone()).unwrap_or_default();
+        let holders: Vec<_> = (self.players.iter_mut())
+            .filter(|(id, found)| **id != player && found.owner.as_deref() == Some(owner))
+            .collect();
+        if holders.iter().any(|(id, _)| !parting.contains(*id)) {
+            return true;
+        }
+        for (_, found) in holders {
+            found.owner = None;
+        }
+        false
     }
 
     /// Gives a player kept by `account` what the answers to their errands that came after they left give.
@@ -287,6 +326,7 @@ fn settle(materials: &mut Materials, what: What, answer: Option<i64>) -> u8 {
         }
         What::Horn => match answer {
             Some(-1) => (0, Refusal::HornNotLeader),
+            Some(-3) => (0, Refusal::OutpostTrouble),
             Some(tier) if tier < 0 => (0, Refusal::NoHorn),
             Some(tier) => (u32::try_from(tier).unwrap_or(0), Refusal::HornSounded),
             None => (0, Refusal::OutpostTrouble),

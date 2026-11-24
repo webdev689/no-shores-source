@@ -3,6 +3,7 @@ import { test } from 'node:test';
 import { NO_WAY_HERE } from './arrival.ts';
 import { GUILD_EVERY_MS, Keeper, leftByWayOut, partFrom, SAVE_AFTER_CHANGE_MS, SAVE_UNCHANGED_MS } from './keeping.ts';
 import { roomOf, world } from './keepingForTests.ts';
+import { weekOf } from '../client/src/game/guild/guildLaw.ts';
 
 test('a signed-in player plays their kept character, saved after a change and kept while they play', async () => {
   const { clock, kept, token } = await world();
@@ -533,11 +534,15 @@ test("a kept player's room is told their guild as it keeps them, again now and t
   await new Promise((done) => setTimeout(done, 0));
   assert.equal(room.guilds.get(1), '', 'not told again so soon');
   await keeper.rename(1, token);
-  assert.deepEqual(JSON.parse(room.guilds.get(1) ?? 'null'), {
+  const told = JSON.parse(room.guilds.get(1) ?? 'null') as Record<string, unknown>;
+  // The week the accounts read `done` for, where they tell it.
+  const week = 'week' in told ? { week: weekOf(clock.now) } : {};
+  assert.deepEqual(told, {
     id: 'g',
     done: [false, false, false, false],
     beforeTheWeek: true,
     boons: { xp: 0, aurem: 0, reputation: 0 },
+    ...week,
   });
   await database.prepare('DELETE FROM guild_members').run();
   await keeper.due(clock.now + GUILD_EVERY_MS);

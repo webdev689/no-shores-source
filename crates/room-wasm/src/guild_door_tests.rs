@@ -38,3 +38,14 @@ fn a_character_in_no_guild_has_no_boons() {
     room_tick();
     assert_eq!(boons_of(player), Some(gear::guild::Boons::default()));
 }
+
+#[test]
+fn the_told_week_is_the_standing_s_and_a_word_without_one_judges_no_claim() {
+    let told = json!({ "id": "g", "done": [true, false, false, false], "beforeTheWeek": true, "week": 2_916 });
+    let seen = seen_of(told.to_string().as_bytes()).expect("a guild").expect("in one");
+    assert_eq!(seen.standing.week, Some(2_916));
+    let old = json!({ "id": "g", "done": [true, false, false, false], "beforeTheWeek": true });
+    assert_eq!(seen_of(old.to_string().as_bytes()).expect("a guild").expect("in one").standing.week, None);
+    assert_eq!(seen_of(b"").expect("no guild"), None);
+    assert!(seen_of(b"not a guild").is_err());
+}

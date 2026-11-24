@@ -98,17 +98,21 @@ outpost there plays it in a room of its own, `node-<site>--guild-<key>`, apart f
   heads, and lets a member at an outpost put Aurem in, saying why when the treasury cannot hold it ([[Interface]]).
 - **The room.** Each guild plays its outpost at a site in a room of its own, `node-<site>--guild-<key>`, the key its
   whole id; the bare site is nobody's ([[Server]], "An outpost's room"). Its members come in, and anyone in a company
-  with a member there. The host stands the plot's boxes as the room's blocks (`outpostHost.ts`), and stands them anew
-  when a member changes the plot or a delivery raises a structure; the snapshot counts each plot stood, so the page
-  reads it again. Putting Aurem in, delivering, taking from the stores and sounding the horn are asked of the room,
+  with a member there; one who leaves the guild while there, in no such company, is sent out as a stranger arriving
+  would be. The host stands the plot's boxes as the room's blocks (`outpostHost.ts`), and stands them anew when a
+  member changes the plot, a delivery raises a structure, and every 30 s besides; an outpost abandoned stands nothing
+  within that time, its players left on the site's bare ground until they go. The snapshot counts each plot stood, so
+  the page reads it again. Putting Aurem in, delivering, taking from the stores and sounding the horn are asked of the room,
   which takes what is given at once, saves the character so taken, and asks the accounts as an errand under an id of
-  its own: asked again, the accounts answer as they did, so nothing is done or given back twice. A player has one
-  such ask with the accounts at a time.
+  its own: asked again, the accounts answer as they did, so nothing is done or given back twice; it is asked again
+  until they answer. A player has one such ask with the accounts at a time.
 - **The guild boss.** The War Horn, sounded once a week by the founder or an admin (the accounts answer its tier, 0
-  when it sounded this week, -1 for one who may not sound it, -2 when none stands at a tier, -3 past the account's outpost limit), calls a High Assessor and four
-  Majors to the muster ground beyond the plot, at the level of the highest member there, at Normal, Elite or Abyss by
-  the horn's tier. Felled, each player who struck it is paid as a world boss's clear pays, and each member among them
-  who was in the guild before the week turned takes a guild package once that week, as from the guild dungeon.
+  when it sounded this week, -1 for one who may not sound it, -2 when none stands at a tier, -3 past the account's
+  outpost limit), calls a High Assessor and four Majors to the muster ground beyond the plot, at the level of the
+  highest member there, at Normal, Elite or Abyss by the horn's tier. Felled, each player who struck it is paid as a
+  world boss's clear pays, and each member among them who was in the guild before the week turned takes a guild
+  package once that week, as from the guild dungeon; its Vestige goes to the vault, else the mail, when ten are
+  carried.
 - **The guild dungeon.** A Delve Gate opens a dungeon behind it, at Normal with the gate at tier 1, Elite at tier 2
   and Abyss at tier 3; a company may choose a lower tier than its gate's. It is a run of its own for each company of
   the guild's members (and anyone in a company with one), `node-<site>--guild-<key>--run-<instance>`, the tier after

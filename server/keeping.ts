@@ -11,6 +11,7 @@
 
 import type { Claimed, Characters as Kept } from './accounts/characters.ts';
 import { guildKey } from './accounts/outpostStores.ts';
+import { weekOf } from '../client/src/game/guild/guildLaw.ts';
 import { NO_WAY_HERE } from './arrival.ts';
 import { nodeRoom, runFull } from './roomNames.ts';
 
@@ -74,6 +75,8 @@ export const TOKEN = /^[0-9a-f]{64}$/;
 
 interface Held {
   readonly account: string;
+  /** The session's token they signed in with, which reads their guild's tag again when their guild changes. */
+  readonly token: string;
   readonly holder: string;
   /** The room that held the character before this one, and whether it left that room by a dungeon's way out. */
   readonly from: string | null;
@@ -85,11 +88,13 @@ interface Held {
   saved: string | null;
   /** The save under way, which a leaving player's last save waits for so it is never overtaken by an older one. */
   inFlight: Promise<unknown> | null;
-  /** When the room was last told the player's guild. */
+  /** When the room was last told the player's guild, and which it was told (undefined before it was). */
   guildAt: number;
+  guild?: string | null;
 }
 
-/** How often a room is told each kept player's guild again: which of the week's bounties it has done. */
+/** How often a room is told each kept player's guild again: which of the week's bounties it has done. Every player's
+ *  is told at once besides as the week turns, so a claim waits a moment at most for the new week's word. */
 export const GUILD_EVERY_MS = 30_000;
 
 export class Keeper {
@@ -110,6 +115,8 @@ export class Keeper {
   /** At a guild's outpost, its guild's key, and the accounts found to be its members. */
   private guild: string | null = null;
   private readonly members = new Set<string>();
+  /** The week the room was last told everyone's guild in. */
+  private toldWeek: number | null = null;
 
   constructor(
     characters: Characters | null,
@@ -232,6 +239,7 @@ export class Keeper {
     if (this.company) this.admitted.add(claimed.account);
     this.held.set(player, {
       account: claimed.account,
+      token,
       holder,
       from: claimed.from,
       out: leftByWayOut(claimed.body),
@@ -246,7 +254,9 @@ export class Keeper {
   }
 
   /** Tells the room a kept player's guild as the accounts tell it now, and at an outpost notes whether they are still
-   *  its member, so one who left it no longer admits their company; nothing if they cannot be reached. */
+   *  its member, so one who left it no longer admits their company; nothing if they cannot be reached. A guild that
+   *  changed since the room was last told reads the tag over their head again (none for no guild), and at an outpost
+   *  one who is no longer its member, and in no company with one here, is sent away as a stranger arriving would be. */
   private async tellGuild(player: number, held: Held): Promise<void> {
     const told = await this.characters?.guild(held.account).catch(() => undefined);
     if (told === undefined) return;
@@ -254,6 +264,16 @@ export class Keeper {
     else this.members.delete(held.account);
     if (this.held.get(player) !== held) return;
     this.room.guild(player, told === null ? '' : JSON.stringify(told));
+    const [was, now] = [held.guild, told?.id ?? null];
+    held.guild = now;
+    const here = () => this.held.get(player) === held;
+    if (was !== now && now === null) this.room.tag(player, '');
+    else if (was !== now && was !== undefined) {
+      const looked = await this.characters?.look(held.token).catch(() => null);
+      if (looked?.account === held.account && here()) this.room.tag(player, looked.tag ?? '');
+    }
+    if (this.guild !== null && !this.members.has(held.account) && (await this.outsider(held.account, here)) && here())
+      this.lost(player, ANOTHER_GUILD);
   }
 
   /** Why this room turns a character away ('' when it lets it in): its gate, in a run its four accounts and its
@@ -354,8 +374,10 @@ export class Keeper {
   async due(now: number): Promise<void> {
     const characters = this.characters;
     if (!characters) return;
+    const turned = this.toldWeek !== null && weekOf(now) !== this.toldWeek;
+    this.toldWeek = weekOf(now);
     for (const [player, held] of this.held)
-      if (now - held.guildAt >= GUILD_EVERY_MS) {
+      if (turned || now - held.guildAt >= GUILD_EVERY_MS) {
         held.guildAt = now;
         void this.tellGuild(player, held);
       }

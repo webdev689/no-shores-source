@@ -279,16 +279,21 @@ impl Character {
         if self.vestiges_held(false) >= VESTIGES_MOST {
             return Err(Refusal::VestigesFull);
         }
+        self.keep_package(purpose, dice);
+        Ok(())
+    }
+
+    /// Gives a package that is paid once and never asked for again, whatever is carried: its Vestige kept as a first
+    /// clear's is (`keep_paid`: carried, else the vault, else the mail).
+    pub(crate) fn keep_package(&mut self, purpose: Purpose, dice: &Dice) {
         let numbers = factions();
         let level = self.level().clamp(1, NAMED_LEVEL);
         let legendary =
             level >= numbers.package_legendary_from_level && dice.roll(purpose, 0) < numbers.package_legendary_share;
         let rarity = if legendary { Rarity::Legendary } else { Rarity::Rare };
         let slot = Slot::VESTIGE[dice.pick(purpose, 1, Slot::VESTIGE.len())];
-        let id = self.take_id();
-        self.vestiges.insert(id, (Vestige::new(id, rarity, slot, level), false));
+        self.keep_paid(Vestige::new(0, rarity, slot, level));
         self.materials.add_aurem(numbers.package_aurem);
-        Ok(())
     }
 }
 

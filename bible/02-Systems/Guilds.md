@@ -57,7 +57,8 @@ ranks are the Roster's as well ([[Accounts]], "The Roster").
   guilds (`guildSigns.ts`).
 - **The tag over a head.** The accounts give a claimed character its guild's tag beside its username, and the room
   puts it on the player's plate (`Room::tag_player`), sent once each time it changes. A guild founded, joined or left
-  sends the page's token again, as a username taken does, and the room reads the plate again. The plate reads
+  sends the page's token again, as a username taken does, and the room reads the plate again; a guild the keeper is
+  told has changed (a member removed, or one who left from another tab) reads it again too. The plate reads
   `Ada [SALT]`, the tag a shade fainter ([[Interface]], "Players").
 - **Levels.** A guild's level comes from its XP: ten levels, from 15,000 for level 2 to 800,000 for level 10
   (`content/guilds/guilds.json`, `guildLaw.ts`). A level reached is never lost.
@@ -78,10 +79,13 @@ ranks are the Roster's as well ([[Accounts]], "The Roster").
   the guild gains 2,500 XP for it once. Joining counts the record as it stands, so nothing done before joining goes to
   the guild.
 - **Claiming.** The keeper tells each room which of the week's bounties a player's guild has done, and whether they
-  joined before the week turned, as it keeps them and every 30 s after, and at once when their guild changes. On the
-  tab a done bounty offers Claim, asked of the room the player is in (ask 75): it pays a guild package, as a faction's
-  (a Vestige at their level, Rare or now and then Legendary, and 1,000 Aurem), once a week each, to a member who was
-  in the guild before the week turned. A guild bounty is claimed ashore.
+  joined before the week turned, and the week it read them for, as it keeps them and every 30 s after, at once when
+  their guild changes, and at once as the week turns. On the tab a done bounty offers Claim, asked of the room the
+  player is in (ask 75): it pays a guild package, as a faction's (a Vestige at their level, Rare or now and then
+  Legendary, and 1,000 Aurem), once a week each, to a member who was in the guild before the week turned. A guild
+  bounty is claimed ashore. A claim judged by what was read for another week, or in the ten seconds after the week
+  turns over a record of the week before (whose last count is saved meanwhile), answers "The guild’s books
+  could not be reached. Try again."
 - **The Guild tab** (`client/src/game/guild/`), drawn as the owner's picture of Destiny 2's clan screen: the standard
   at the left at whole multiples of its cells; the name and tag, its members, its motto and description; the week
   with when it turns; the level as a diamond on a rule filled toward the next, with the XP, and the player's weekly

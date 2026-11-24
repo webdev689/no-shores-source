@@ -21,8 +21,9 @@ export const NO_WAY_HERE = 'You cannot reach this place from where you were.';
  *  (`SIDE.coastReachM`), and the ship heaves to a moment after it does. */
 export const LANDFALL_M = 32_000;
 
-/** What a node's room knows of where its node lies and what leads into it: whether it is a social space (one room at
- *  every tier), its island's coast, and the nodes whose gates lead into it. */
+/** What a node's room knows of where its node lies and what leads into it: whether it is landed on from every tier's
+ *  sea (a social space, or an outpost site, whose rooms are at Normal alone), its island's coast, and the nodes whose
+ *  gates lead into it. */
 export interface Reach {
   readonly social: boolean;
   readonly coast: readonly Point[];
@@ -48,7 +49,7 @@ export function reachOf(
   const outline = continents.find((each) => each.id === node.continent)?.outline ?? [];
   const coast = outline.map(([x = 0, y = 0]): Point => [x, y]);
   const gatedFrom = index.filter((each) => each.gates?.includes(id)).map((each) => each.id);
-  return { social: node.kind === 'social', coast, gatedFrom };
+  return { social: node.kind === 'social' || node.kind === 'outpost', coast, gatedFrom };
 }
 
 /** Where a kept character's ship lies, as the sea last kept it; null for none, or a character that does not read. */

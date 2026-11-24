@@ -507,9 +507,9 @@ impl Room {
     /// they landed if the sea said that account did; the Arts' charge the room kept for it is theirs again; and in a
     /// run that counts revives, the body it left with; at an outpost, what its errands' answers gave after it left. A
     /// sea island's wrecks are kept on the character itself. False, noting nothing, for an account another player in
-    /// the room already has: one account is one player in a room.
+    /// the room already has (one account is one player in a room), unless they are leaving an outpost's room.
     pub fn own(&mut self, player: PlayerId, owner: &str) -> bool {
-        if self.players.iter().any(|(id, found)| *id != player && found.owner.as_deref() == Some(owner)) {
+        if self.owned_elsewhere(player, owner) {
             return false;
         }
         let gathered = self.gathered.get(owner).cloned().unwrap_or_default();

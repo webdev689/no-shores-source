@@ -113,7 +113,7 @@ impl Room {
             let character = &mut found.character;
             character.reward_clear(Clear::WorldBoss, level, difficulty_of(tier), self.source, &dice);
             if let Some(standing) = standing {
-                // Refused once taken this week, to one who joined since it turned, or with ten Vestiges carried.
+                // Refused once taken this week, or to one who joined since it turned; kept past ten Vestiges carried.
                 let _ = character.claim_horn_package(week, standing, &dice);
             }
             found.gear_changed = true;

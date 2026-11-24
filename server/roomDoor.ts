@@ -210,6 +210,8 @@ export interface RoomDoor {
    *  or -2 for why it did not sound); null when they could not be reached, and the errand is given back whole. False
    *  for no such errand. */
   outpostAnswered(id: number, answer: number | null): boolean;
+  /** Says a player is leaving the outpost while their errands settle: their account joining again takes it over. */
+  outpostParting(player: number): boolean;
   /** Says the host stood the outpost's plot anew, which the snapshot counts. */
   outpostStood(): boolean;
   /** Says where the plot's Delve Gate stands, as x east, y south and the way out from it (radians clockwise from
@@ -303,6 +305,7 @@ interface RoomExports {
   room_outpost_errands(): bigint;
   room_outpost_answered(id: number, answer: number): number;
   room_outpost_stood(): number;
+  room_outpost_parting(player: number): number;
   room_outpost_gate(x: number, y: number, facing: number): number;
 }
 
@@ -490,6 +493,7 @@ export function startRoomDoor(module: WebAssembly.Module): RoomDoor {
         answer === null ? -0x8000_0000 : Math.max(-0x7fff_ffff, Math.min(answer, 0x7fff_ffff)),
       ) === 1,
     outpostStood: () => exports.room_outpost_stood() === 1,
+    outpostParting: (player) => exports.room_outpost_parting(player) === 1,
     outpostGate: (gate) => exports.room_outpost_gate(...(gate ?? [Number.NaN, 0, 0])) === 1,
   };
 }
