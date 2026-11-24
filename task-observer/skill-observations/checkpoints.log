@@ -102,3 +102,7 @@
 2026-11-24 11:31 [no-shores-source] session-start scan: files=175 parsed=166 principles=0
 2026-11-24 13:12 [no-shores-source] session-start scan: files=178 parsed=169 principles=0
 2026-11-24T13:46:10Z no-shores PR #186 owner answers: no new observations (the cross-branch rain fix was applied verbatim; nothing generalisable beyond 0196)
+2026-11-24 11:34 [no-shores-source] session-start scan: files=175 parsed=166 principles=0
+2026-11-24 checkpoint: observation 0201 logged (tsc config gap, stale fixtures)
+2026-11-24 checkpoint: observation 0202 logged
+2026-11-24T14:23:19Z end of session: 0203 logged (claude-mem captured nothing)
